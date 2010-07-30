@@ -222,12 +222,12 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   A->fillComplete(domMap,rowMap,Tpetra::DoOptimizeStorage);
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
 Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
                        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                        const Teuchos::RCP<Node> &node,
-                       Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A,
+                       Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
                        const bool transpose = false,
                        Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null)
 {
@@ -437,7 +437,7 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
   for (size_t i = Teuchos::OrdinalTraits<size_t>::zero(); i < lnz; i++) 
     numNonzerosPerRow[rowMap1->getLocalElement(iv[i])]++;
 
-  A = Teuchos::rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatVec, LocalMatSolve>(rowMap1, numNonzerosPerRow));
+  A = Teuchos::rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>(rowMap1, numNonzerosPerRow));
   //A->SetTracebackMode(1);
 
   // Rows are inserted in ascending global number, and the insertion uses numNonzerosPerRow.

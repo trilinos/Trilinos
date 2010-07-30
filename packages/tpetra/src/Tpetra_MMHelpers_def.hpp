@@ -40,22 +40,22 @@
  */
 namespace Tpetra {
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::CrsMatrixStruct()
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::CrsMatrixStruct()
  : numRows(0), numEntriesPerRow(NULL), indices(NULL), values(NULL),
       remote(NULL), numRemote(0), rowMap(NULL), colMap(NULL),
       domainMap(NULL), importColMap(NULL), importMatrix(NULL)
 {
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::~CrsMatrixStruct()
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::~CrsMatrixStruct()
 {
   deleteContents();
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-void CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::deleteContents()
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+void CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::deleteContents()
 {
   numRows = 0;
   numEntriesPerRow.clear();
@@ -66,8 +66,8 @@ void CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatS
   importMatrix.reset();
 }
 
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-int dumpCrsMatrixStruct(const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>& M)
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+int dumpCrsMatrixStruct(const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M)
 {
   std::cout << "proc " << M.rowMap->Comm().MyPID()<<std::endl;
   std::cout << "numRows: " << M.numRows<<std::endl;
@@ -86,40 +86,40 @@ int dumpCrsMatrixStruct(const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdina
   return(0);
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::CrsWrapper_CrsMatrix(Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& crsmatrix)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::CrsWrapper_CrsMatrix(Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >& crsmatrix)
  : crsmat_(crsmatrix)
 {
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::~CrsWrapper_CrsMatrix()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::~CrsWrapper_CrsMatrix()
 {
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
-CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::getRowMap() const
+CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::getRowMap() const
 {
   return crsmat_->getRowMap();
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-bool CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::isFillComplete()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+bool CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::isFillComplete()
 {
   return crsmat_->isFillComplete();
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 void
-CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::insertGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
+CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::insertGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
 {
   crsmat_->insertGlobalValues(globalRow, indices, values);
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 void 
-CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
+CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
 {
 /*  std::cout << "summing" << std::endl;
   std::cout << "  indices: " << indices << std::endl;
@@ -201,9 +201,9 @@ CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_graph()
   return graph_;
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>& graphbuilder,
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& C)
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >& C)
 {
   global_size_t max_row_length = graphbuilder.get_max_row_length();
   if (max_row_length < 1) return;

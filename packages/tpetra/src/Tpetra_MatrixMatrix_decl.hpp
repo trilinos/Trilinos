@@ -32,8 +32,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultSparseMultiply.hpp>
-#include <Kokkos_DefaultSparseSolve.hpp>
+#include <Kokkos_DefaultKernels.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
@@ -45,7 +44,7 @@
 namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS  
   // forward declaration
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 class CrsMatrix;
 #endif
   /** Collection of matrix-matrix operations. This class basically
@@ -88,14 +87,13 @@ template <class Scalar,
   class LocalOrdinal,
   class GlobalOrdinal,
   class Node,
-  class SpMatVec,
-  class SpMatSlv >
+  class SpMatOps >
 static int Multiply(
-  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > A,
+  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > A,
   bool transposeA,
-  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > B,
+  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > B,
   bool transposeB,
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > C,
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C,
   bool call_FillComplete_on_result=true);
 
     /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
@@ -118,13 +116,12 @@ static int Multiply(
     class LocalOrdinal,
     class GlobalOrdinal,
     class Node,
-    class SpMatVec,
-    class SpMatSlv >
+    class SpMatOps >
   static int Add(
-    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > A,
+    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > A,
     bool transposeA,
     double scalarA,
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > B,
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > B,
     double scalarB );
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
@@ -150,27 +147,25 @@ static int Multiply(
     class LocalOrdinal,
     class GlobalOrdinal,
     class Node,
-    class SpMatVec,
-    class SpMatSlv >
+    class SpMatOps >
   static int Add(
-    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > A,
+    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > A,
     bool transposeA,
     Scalar scalarA,
-    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > B,
+    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > B,
     bool transposeB,
     Scalar scalarB,
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > C);
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > C);
 
   template<
     class Scalar,
     class LocalOrdinal, 
     class GlobalOrdinal, 
     class Node, 
-    class SpMatVec, 
-    class SpMatSlv >
+    class SpMatOps >
   static Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
   find_rows_containing_cols(
-    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > M,
+    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > M,
     Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
 
 };//class MatrixMatrix

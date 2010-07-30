@@ -34,16 +34,16 @@
 
 namespace Tpetra {
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::RowMatrixTransposer(const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::RowMatrixTransposer(const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix)
   : origMatrix_(origMatrix), comm_(origMatrix->getComm()), indexBase_(origMatrix_->getIndexBase()) {}
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::~RowMatrixTransposer() {}
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::~RowMatrixTransposer() {}
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::createTranspose (const OptimizeOption optimizeTranspose, 
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > &transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose, 
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > &transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
 {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
