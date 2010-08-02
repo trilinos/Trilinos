@@ -61,7 +61,7 @@
 #include "Epetra_MultiVector.h"
 
 // Teko includes
-#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
 
 namespace Teko {
 namespace Epetra {

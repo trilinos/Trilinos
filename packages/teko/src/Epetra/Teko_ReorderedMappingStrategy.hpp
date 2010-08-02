@@ -66,7 +66,7 @@
 
 // Teko includes
 #include "Teko_BlockedReordering.hpp"
-#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
 
 namespace Teko {
 namespace Epetra {

@@ -66,8 +66,8 @@
 #include "Epetra_CrsMatrix.h"
 
 // Teko includes
-#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
-#include "Epetra/Teko_BlockingEpetra.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_BlockingEpetra.hpp"
 
 namespace Teko {
 namespace Epetra {
