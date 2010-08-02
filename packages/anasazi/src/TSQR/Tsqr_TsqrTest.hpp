@@ -30,7 +30,9 @@
 #define __TSQR_Test_TsqrTest_hpp
 
 #include <Tsqr.hpp>
+#ifdef HAVE_ANASAZI_TBB
 #include <TbbTsqr.hpp>
+#endif // HAVE_ANASAZI_TBB
 #include <Tsqr_TestSetup.hpp>
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
@@ -240,6 +242,7 @@ namespace TSQR {
 
       if (which == "MpiTbbTSQR")
 	{
+#ifdef HAVE_ANASAZI_TBB
 	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
 
@@ -251,6 +254,9 @@ namespace TSQR {
 				       R, contiguous_cache_blocks, b_debug);
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
+#else
+	  throw std::invalid_argument("Anasazi was not built with Intel TBB support");
+#endif // HAVE_ANASAZI_TBB
 	}
       else if (which == "MpiSeqTSQR")
 	{
@@ -304,10 +310,10 @@ namespace TSQR {
 	  if (human_readable)
 	    {
 	      std::string human_readable_name;
-	      if (which == "MpiTbbTSQR")
-		human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
-	      else if (which == "MpiSeqTSQR")
+	      if (which == "MpiSeqTSQR")
 		human_readable_name = "MPI parallel / cache-blocked TSQR";
+	      else if (which == "MpiTbbTSQR")
+		human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
 	      else 
 		throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
 
@@ -560,6 +566,7 @@ namespace TSQR {
 
       if (which == "MpiTbbTSQR")
 	{
+#ifdef HAVE_ANASAZI_TBB
 	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, TimerType > node_tsqr_type;
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
 
@@ -575,6 +582,9 @@ namespace TSQR {
 
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
+#else
+	  throw std::invalid_argument("Anasazi was not built with Intel TBB support");
+#endif // HAVE_ANASAZI_TBB
 	}
       else if (which == "MpiSeqTSQR")
 	{
