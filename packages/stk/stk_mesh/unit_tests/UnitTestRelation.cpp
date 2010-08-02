@@ -177,8 +177,8 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
 
     const bool aura_flag = false ;
     RingMeshFixture mesh2( pm , nPerProc , false /* No edge parts */ );
-
-    mesh2.generate_loop( aura_flag );
+    mesh2.m_meta_data.commit();
+    mesh2.generate_mesh( aura_flag );
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node
@@ -206,8 +206,8 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
     const bool aura_flag = true ;
 
     RingMeshFixture mesh3( pm , nPerProc , false /* No edge parts */ );
-
-    mesh3.generate_loop( aura_flag );
+    mesh3.m_meta_data.commit();
+    mesh3.generate_mesh( aura_flag );
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
