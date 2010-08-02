@@ -11,11 +11,71 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <unit_tests/UnitTestMesh.hpp>
+#include <unit_tests/UnitTestBoxFixture.hpp>
 #include <unit_tests/UnitTestBoxMeshFixture.hpp>
 
 namespace {
 
 }
+
+//----------------------------------------------------------------------------
+
+STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD ;
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const unsigned p_size = stk::parallel_machine_size( pm );
+
+  if ( 1 < p_size ) { return ; }
+
+  const unsigned nx = 2 , ny = 2 , nz = 1 ;
+
+  for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
+  for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
+    QuadFixture fixture( pm , nx , ny );
+
+    fixture.m_bulk_data.modification_begin();
+
+    stk::mesh::Entity * elem = fixture.elem( ix , iy );
+
+    if ( elem && p_rank == elem->owner_rank() ) {
+      stk::mesh::Entity * tmp = elem ;
+      fixture.m_bulk_data.destroy_entity( tmp );
+    }
+
+    fixture.m_bulk_data.modification_end();
+
+    if ( elem ) {
+      STKUNIT_EXPECT_TRUE ( elem->log_query() == stk::mesh::EntityLogDeleted );
+    }
+  }
+  }
+
+  for ( unsigned iz = 0 ; iz < nz ; ++iz ) {
+  for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
+  for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
+    BoxFixture fixture( pm , nx , ny , nz );
+
+    fixture.m_bulk_data.modification_begin();
+
+    stk::mesh::Entity * elem = fixture.elem( ix , iy , iz );
+
+    if ( elem && p_rank == elem->owner_rank() ) {
+      stk::mesh::Entity * tmp = elem ;
+      fixture.m_bulk_data.destroy_entity( tmp );
+    }
+
+    fixture.m_bulk_data.modification_end();
+
+    if ( elem ) {
+      STKUNIT_EXPECT_TRUE ( elem->log_query() == stk::mesh::EntityLogDeleted );
+    }
+  }
+  }
+  }
+}
+
+//----------------------------------------------------------------------------
 
 STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 {
@@ -68,4 +128,4 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   }
 }
 
-
+//----------------------------------------------------------------------------
