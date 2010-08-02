@@ -270,7 +270,8 @@ bool EntityImpl::declare_relation( Entity & e_to,
 
   // If the relation is not degenerate, we add it
 
-  if ( ( !is_converse && (fe == fi || new_relation.attribute() != fi->attribute() ) ) ||
+  if ( ( !is_converse && (fe == fi ||
+                          new_relation.attribute() != fi->attribute() ) ) ||
        (is_converse && (fe == fi || new_relation != *fi ) ) ) {
 
     fi = m_relation.insert( fi , new_relation );
