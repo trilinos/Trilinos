@@ -121,6 +121,7 @@ namespace TSQR {
 								     cacheBlockSize, contiguousCacheBlocks, 
 								     humanReadable, bDebug);
 	  }
+#ifdef HAVE_ANASAZI_TBB
 	else if (params.which == "TbbTSQR")
 	  {
 	    using TSQR::Test::verifyTbbTsqr;
@@ -130,6 +131,7 @@ namespace TSQR {
 									  humanReadable, bDebug);
 	    ordinalComm.barrier ();
 	  }
+#endif // HAVE_ANASAZI_TBB
 	else if (params.which == "SeqTSQR")
 	  {
 	    using TSQR::Test::verifySeqTsqr;
