@@ -31,26 +31,30 @@
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
+namespace stk {
+namespace mesh {
+namespace fixtures {
+
 template < unsigned NX, unsigned NY, unsigned NZ>
 class HexFixture
 {
 public:
 
   typedef double Scalar ;
-  typedef stk::mesh::Field<Scalar, stk::mesh::Cartesian>     CoordFieldType;
-  typedef stk::mesh::Field<Scalar*,stk::mesh::ElementNode>   CoordGatherFieldType;
-  typedef stk::mesh::Field<Scalar*,stk::mesh::QuadratureTag> QuadFieldType;
-  typedef stk::mesh::Field<Scalar*,stk::mesh::BasisTag>      BasisFieldType;
+  typedef Field<Scalar, Cartesian>     CoordFieldType;
+  typedef Field<Scalar*,ElementNode>   CoordGatherFieldType;
+  typedef Field<Scalar*,QuadratureTag> QuadFieldType;
+  typedef Field<Scalar*,BasisTag>      BasisFieldType;
 
 
   HexFixture(stk::ParallelMachine pm, const std::vector<unsigned> * element_ids_this_processor = NULL);
 
   ~HexFixture() {};
 
-  stk::mesh::MetaData  m_meta_data;
-  stk::mesh::BulkData  m_bulk_data;
-  stk::mesh::Part    & m_hex_part;
-  stk::mesh::Part    & m_skin_part;
+  MetaData  m_meta_data;
+  BulkData  m_bulk_data;
+  Part    & m_hex_part;
+  Part    & m_skin_part;
 
   CoordFieldType       & m_coord_field ;
   CoordGatherFieldType & m_coord_gather_field ;
@@ -59,8 +63,8 @@ public:
 
 
 
-  stk::mesh::EntityId m_elems_id[NZ][NY][NX] ;
-  stk::mesh::EntityId m_node_id[NZ+1][NY+1][NX+1] ;
+  EntityId m_elems_id[NZ][NY][NX] ;
+  EntityId m_node_id[NZ+1][NY+1][NX+1] ;
   Scalar              m_node_coord[NZ+1][NY+1][NX+1][3] ;
 
 private:
@@ -76,9 +80,9 @@ typedef HexFixture<3,3,3> HexFixture3x3x3;
 
 template < unsigned NX, unsigned NY, unsigned NZ>
 HexFixture<NX,NY,NZ>::HexFixture(stk::ParallelMachine pm, const std::vector<unsigned> * element_ids_this_processor)
-  : m_meta_data( stk::mesh::fem_entity_rank_names() )
+  : m_meta_data( fem_entity_rank_names() )
   , m_bulk_data( m_meta_data , pm )
-  , m_hex_part( m_meta_data.declare_part("hex_part", stk::mesh::Element) )
+  , m_hex_part( m_meta_data.declare_part("hex_part", Element) )
   , m_skin_part( m_meta_data.declare_part("skin_part"))
   , m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") )
   , m_coord_gather_field(
@@ -92,29 +96,29 @@ HexFixture<NX,NY,NZ>::HexFixture(stk::ParallelMachine pm, const std::vector<unsi
   enum { NodesPerElem = Hex8::node_count };
 
   // Set topology of the element block part
-  stk::mesh::set_cell_topology<shards::Hexahedron<8> >(m_hex_part);
+  set_cell_topology<shards::Hexahedron<8> >(m_hex_part);
 
   //put coord-field on all nodes:
-  stk::mesh::put_field(
+  put_field(
       m_coord_field,
-      stk::mesh::Node,
+      Node,
       m_meta_data.universal_part(),
       SpatialDim
       );
 
   //put coord-gather-field on all elements:
-  stk::mesh::put_field(
+  put_field(
       m_coord_gather_field,
-      stk::mesh::Element,
+      Element,
       m_meta_data.universal_part(),
       NodesPerElem
       );
 
   // Field relation so coord-gather-field on elements points
   // to coord-field of the element's nodes
-  m_meta_data.declare_field_relation( m_coord_gather_field, stk::mesh::element_node_stencil<shards::Hexahedron<8> >, m_coord_field);
-  m_meta_data.declare_field_relation( m_coord_gather_field, stk::mesh::element_node_stencil<void>, m_coord_field);
-  m_meta_data.declare_field_relation( m_coord_gather_field, stk::mesh::element_node_lock_stencil<void>, m_coord_field);
+  m_meta_data.declare_field_relation( m_coord_gather_field, element_node_stencil<shards::Hexahedron<8> >, m_coord_field);
+  m_meta_data.declare_field_relation( m_coord_gather_field, element_node_stencil<void>, m_coord_field);
+  m_meta_data.declare_field_relation( m_coord_gather_field, element_node_lock_stencil<void>, m_coord_field);
 
   m_meta_data.commit();
 
@@ -182,13 +186,13 @@ void HexFixture<NX,NY,NZ>::generate_mesh(const std::vector<unsigned> * element_i
   const std::vector<unsigned>::iterator elem_it_end = local_element_ids_this_processor.end();
 
   for ( ; elem_it != elem_it_end ; elem_it++ ) {
-    stk::mesh::EntityId elem_id = *elem_it;
+    EntityId elem_id = *elem_it;
     // figure out what ix,iy,iz is for this element_id
     const unsigned ix = elems_id_map[elem_id][0];
     const unsigned iy = elems_id_map[elem_id][1];
     const unsigned iz = elems_id_map[elem_id][2];
 
-    stk::mesh::EntityId elem_node[8] ;
+    EntityId elem_node[8] ;
     Scalar * node_coord[8] ;
 
     elem_node[0] = m_node_id[iz  ][iy  ][ix  ] ;
@@ -209,13 +213,13 @@ void HexFixture<NX,NY,NZ>::generate_mesh(const std::vector<unsigned> * element_i
     node_coord[6] = m_node_coord[iz+1][iy+1][ix+1] ;
     node_coord[7] = m_node_coord[iz+1][iy+1][ix  ] ;
 
-    stk::mesh::Entity& element = stk::mesh::declare_element( m_bulk_data, m_hex_part, elem_id, elem_node);
+    Entity& element = declare_element( m_bulk_data, m_hex_part, elem_id, elem_node);
 
-    stk::mesh::PairIterRelation rel = element.relations(stk::mesh::Node);
+    PairIterRelation rel = element.relations(Node);
 
     for(unsigned i=0; i< 8 ; ++i ) {
-      stk::mesh::Entity& node = *rel[i].entity();
-      Scalar* data = stk::mesh::field_data( m_coord_field, node);
+      Entity& node = *rel[i].entity();
+      Scalar* data = field_data( m_coord_field, node);
       data[0] = node_coord[i][0];
       data[1] = node_coord[i][1];
       data[2] = node_coord[i][2];
@@ -225,7 +229,11 @@ void HexFixture<NX,NY,NZ>::generate_mesh(const std::vector<unsigned> * element_i
 
   m_bulk_data.modification_end();
 
-  skin_mesh(m_bulk_data, stk::mesh::Element, &m_skin_part);
+  skin_mesh(m_bulk_data, Element, &m_skin_part);
 
 }
+
+} // fixtures
+} // mesh
+} // stk
 #endif

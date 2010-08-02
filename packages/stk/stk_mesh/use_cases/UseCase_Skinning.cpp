@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 #include <use_cases/UseCase_Skinning.hpp>
-#include <use_cases/HexFixture.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
 

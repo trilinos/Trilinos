@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <use_cases/GridFixture.hpp>
+#include <stk_mesh/fixtures/GridFixture.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -39,13 +39,18 @@ The following fixture creates the mesh below
 37---38---39---40---41
 */
 
+namespace stk {
+namespace mesh {
+namespace fixtures {
+
+
 GridFixture::GridFixture(stk::ParallelMachine pm)
-  : m_meta_data( stk::mesh::fem_entity_rank_names() )
+  : m_meta_data( fem_entity_rank_names() )
   , m_bulk_data( m_meta_data , pm )
-  , m_quad_part( m_meta_data.declare_part("quad_part", stk::mesh::Face) )
+  , m_quad_part( m_meta_data.declare_part("quad_part", Face) )
   , m_dead_part( m_meta_data.declare_part("dead_part"))
 {
-  stk::mesh::set_cell_topology<shards::Quadrilateral<4> >(m_quad_part);
+  set_cell_topology<shards::Quadrilateral<4> >(m_quad_part);
 
   m_meta_data.commit();
 
@@ -63,7 +68,7 @@ void GridFixture::generate_grid()
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
-  std::vector<stk::mesh::Entity*> all_entities;
+  std::vector<Entity*> all_entities;
 
   // assign ids, quads, nodes, then shells
   // (we need this order to be this way in order for our connectivity setup to  work)
@@ -85,12 +90,12 @@ void GridFixture::generate_grid()
   // declare entities such that entity_id - 1 is the index of the
   // entity in the all_entities vector
   {
-    const stk::mesh::PartVector no_parts;
+    const PartVector no_parts;
     const unsigned first_quad = (p_rank * num_quad_faces) / p_size;
     const unsigned end_quad = ((p_rank + 1) * num_quad_faces) / p_size;
 
     // declare faces
-    stk::mesh::PartVector face_parts;
+    PartVector face_parts;
     face_parts.push_back(&m_quad_part);
     const unsigned num_nodes_per_quad = 4;
     // (right-hand rule) counterclockwise:
@@ -100,13 +105,13 @@ void GridFixture::generate_grid()
       unsigned face_id = quad_face_ids[i];
       unsigned row = (face_id - 1) / num_nodes_per_quad;
 
-      stk::mesh::Entity& face = m_bulk_data.declare_entity(stk::mesh::Face, face_id, face_parts);
+      Entity& face = m_bulk_data.declare_entity(Face, face_id, face_parts);
 
       unsigned node_id = num_quad_faces + face_id + row;
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        stk::mesh::Entity& node = m_bulk_data.declare_entity(stk::mesh::Node, node_id, no_parts);
+        Entity& node = m_bulk_data.declare_entity(Node, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }
@@ -114,5 +119,10 @@ void GridFixture::generate_grid()
 
   m_bulk_data.modification_end();
 
-  skin_mesh(m_bulk_data, stk::mesh::Face);
+  skin_mesh(m_bulk_data, Face);
 }
+
+} // fixtures
+} // mesh
+} // stk
+
