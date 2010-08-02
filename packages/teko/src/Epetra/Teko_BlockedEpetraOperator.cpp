@@ -43,9 +43,9 @@
 // @HEADER
 */
 
-#include "Epetra/Teko_BlockedEpetraOperator.hpp"
-#include "Epetra/Teko_BlockedMappingStrategy.hpp"
-#include "Epetra/Teko_ReorderedMappingStrategy.hpp"
+#include "Teko_BlockedEpetraOperator.hpp"
+#include "Teko_BlockedMappingStrategy.hpp"
+#include "Teko_ReorderedMappingStrategy.hpp"
 
 #include "Teuchos_VerboseObject.hpp"
 
