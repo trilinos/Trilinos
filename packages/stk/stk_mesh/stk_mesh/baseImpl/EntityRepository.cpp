@@ -152,7 +152,7 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
   const bool modified_parts = ! e.m_entityImpl.is_bucket_valid() ||
                               ! b.equivalent( e.bucket() );
   if ( modified_parts ) {
-    e.m_entityImpl.log_modified();
+    modify_and_propagate( e );
   }
   e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
 }
@@ -186,8 +186,8 @@ void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
   }
 
   if ( caused_change_fwd ) {
-    e_to.m_entityImpl.log_modified();
-    e_from.m_entityImpl.log_modified();
+    modify_and_propagate( e_to );
+    modify_and_propagate( e_from );
   }
 }
 
@@ -225,8 +225,24 @@ void EntityRepository::declare_relation( Entity & e_from,
   }
 
   if ( caused_change_fwd ) {
-    e_to.m_entityImpl.log_modified();
-    e_from.m_entityImpl.log_modified();
+    modify_and_propagate( e_to );
+    modify_and_propagate( e_from );
+  }
+}
+
+void EntityRepository::modify_and_propagate( Entity & modified_entity ) const
+{
+  // mark this entity as modified
+  modified_entity.m_entityImpl.log_modified();
+
+  // recurse on related entities w/ higher rank
+  EntityRank rank_of_original_entity = modified_entity.entity_rank();
+  for ( PairIterRelation irel = modified_entity.relations();
+        !irel.empty();
+        ++irel ) {
+    if ( rank_of_original_entity < irel->entity_rank() ) {
+      modify_and_propagate( *(irel->entity()) );
+    }
   }
 }
 
