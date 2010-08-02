@@ -55,6 +55,10 @@ namespace TSQR {
     /// class produce R factors with all negative diagonal entries.
     static bool QR_produces_R_factor_with_nonnegative_diagonal();
 
+    /// If the LAPACK library has _LARFGP, calls that.  Else, if the
+    /// LAPACK library has _LARFP, calls that.  Otherwise, calls
+    /// _LARF.  The last choice means that the alpha output may be
+    /// negative if Scalar is real.
     void 
     LARFP (const Ordinal n, 
 	   Scalar& alpha, 
@@ -62,6 +66,10 @@ namespace TSQR {
 	   const Ordinal incx, 
 	   Scalar& tau);
 
+    /// If the LAPACK library has _GEQRFP, calls that.  Otherwise,
+    /// calls _GEQRF.  _GEQRFP always computes an R factor with
+    /// nonnegative diagonal entries.  _GEQRF does this in LAPACK 3.2
+    /// and 3.2.1, but not in LAPACK <= 3.1.1 or LAPACK >= 3.2.2.
     void
     GEQRF  (const Ordinal m,
 	    const Ordinal n, 
@@ -72,6 +80,10 @@ namespace TSQR {
 	    const int lwork,
 	    int* const INFO);
 
+    /// If the LAPACK library has _GEQR2P, calls that.  Otherwise,
+    /// calls _GEQR2.  _GEQR2P always computes an R factor with
+    /// nonnegative diagonal entries.  _GEQR2 does this in LAPACK 3.2
+    /// and 3.2.1, but not in LAPACK <= 3.1.1 or LAPACK >= 3.2.2.
     void 
     GEQR2 (const Ordinal m, 
 	   const Ordinal n, 

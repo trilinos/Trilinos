@@ -199,7 +199,8 @@ namespace TSQR {
     }
 
     void
-    apply_pair (const LocalOrdinal ncols_C,
+    apply_pair (const ApplyType& apply_type,
+		const LocalOrdinal ncols_C,
 		const LocalOrdinal ncols_Q,
 		Scalar C_mine[],
 		const LocalOrdinal ldc_mine,
@@ -232,11 +233,13 @@ namespace TSQR {
 
       Combine< LocalOrdinal, Scalar > combine;
       if (P_mine == P_top)
-	combine.apply_pair ("N", ncols_C, ncols_Q, &Q_cur[0], ldq, &tau_cur[0], 
-			    C_mine, ldc_mine, C_other, ldc_other, &work[0]);
+	combine.apply_pair (apply_type, ncols_C, ncols_Q, &Q_cur[0], ldq, 
+			    &tau_cur[0], C_mine, ldc_mine, C_other, ldc_other, 
+			    &work[0]);
       else if (P_mine == P_bot)
-	combine.apply_pair ("N", ncols_C, ncols_Q, &Q_cur[0], ldq, &tau_cur[0], 
-			    C_other, ldc_other, C_mine, ldc_mine, &work[0]);
+	combine.apply_pair (apply_type, ncols_C, ncols_Q, &Q_cur[0], ldq, 
+			    &tau_cur[0], C_other, ldc_other, C_mine, ldc_mine, 
+			    &work[0]);
       else
 	{
 	  ostringstream os;
@@ -247,7 +250,8 @@ namespace TSQR {
     }
 
     void
-    apply_helper (const LocalOrdinal ncols_C,
+    apply_helper (const ApplyType& apply_type,
+		  const LocalOrdinal ncols_C,
 		  const LocalOrdinal ncols_Q,
 		  Scalar C_mine[],
 		  const LocalOrdinal ldc_mine,
@@ -314,8 +318,8 @@ namespace TSQR {
 		  if (P_other < P_mid || P_other > P_last)
 		    throw std::logic_error("Should never get here");
 
-		  apply_pair (ncols_C, ncols_Q, C_mine, ldc_mine, C_other, 
-			      my_rank, P_other, tag, messenger, 
+		  apply_pair (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine, 
+			      C_other, my_rank, P_other, tag, messenger, 
 			      Q_factors[cur_pos], tau_arrays[cur_pos], work);
 		  new_cur_pos = cur_pos - 1;
 		}
@@ -326,9 +330,10 @@ namespace TSQR {
 
 		  new_cur_pos = cur_pos;
 		}
-	      apply_helper (ncols_C, ncols_Q, C_mine, ldc_mine, C_other, 
-			    my_rank, P_first, P_mid - 1, tag + 1, messenger, 
-			    Q_factors, tau_arrays, new_cur_pos, work);
+	      apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine, 
+			    C_other, my_rank, P_first, P_mid - 1, tag + 1, 
+			    messenger, Q_factors, tau_arrays, new_cur_pos, 
+			    work);
 	    }
 	  else
 	    {
@@ -345,12 +350,13 @@ namespace TSQR {
 	      const int my_offset = my_rank - P_mid;
 	      const int P_other = P_first + my_offset;
 	      // assert (0 <= P_other && P_other < P_mid);
-	      apply_pair (ncols_C, ncols_Q, C_mine, ldc_mine, C_other,
-			  my_rank, P_other, tag, messenger, 
+	      apply_pair (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine, 
+			  C_other, my_rank, P_other, tag, messenger, 
 			  Q_factors[cur_pos], tau_arrays[cur_pos], work);
-	      apply_helper (ncols_C, ncols_Q, C_mine, ldc_mine, C_other, 
-			    my_rank, P_mid, P_last, tag + 1, messenger,
-			    Q_factors, tau_arrays, cur_pos - 1, work);
+	      apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine, 
+			    C_other, my_rank, P_mid, P_last, tag + 1, 
+			    messenger, Q_factors, tau_arrays, cur_pos - 1, 
+			    work);
 	    }
 	}
     }

@@ -60,14 +60,14 @@ namespace TSQR {
       ///   seed.  See documentation of _LARNV.  In particular, the
       ///   array elements must be in [0,4095], and the last element
       ///   (iseed[3]) must be odd.
-      NormalGenerator (const int iseed[4], 
+      NormalGenerator (const std::vector<int> iseed,
 		       const int buffer_length = defaultBufferLength) :
 	iseed_ (4),
 	buffer_ (buffer_length),
 	buffer_length_ (buffer_length),
 	cur_pos_ (0)
       {
-	std::copy (iseed, iseed+4, iseed_.begin());
+	std::copy (iseed.begin(), iseed.end(), iseed_.begin());
 	fill_buffer ();
       }
 
@@ -102,9 +102,9 @@ namespace TSQR {
       /// Get the current seed.  This ca be used to restart the
       /// generator, but only if you account for the buffered values.
       void 
-      getSeed (int iseed[4]) const
+      getSeed (std::vector<int>& iseed) const
       {
-	std::copy (iseed_.begin(), iseed_.end(), iseed);
+	std::copy (iseed_.begin(), iseed_.end(), iseed.begin());
       }
 
     private:

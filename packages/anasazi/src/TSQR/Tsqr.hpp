@@ -166,22 +166,16 @@ namespace TSQR {
     /// nodes' C_local matrices stacked on top of each other.
     ///
     /// \param [in] If "N", compute Q*C.  If "T", compute Q^T * C.
+    ///   If "H" or "C", compute Q^H * C.  (The last option may not 
+    ///   be implemented in all cases.)
     ///
     /// \param nrows_local [in] Number of rows of this node's local
     ///   component (C_local) of the matrix C.  Should be the same on
     ///   this node as the nrows_local argument with which factor() was
     ///   called  Precondition: nrows_local >= ncols.
     ///
-    /// \param ncols_C [in] Number of columns in C.  Should be the same
-    ///   on all nodes.  Precondition: nrows_local >= ncols_C.
-    ///
-    /// \param C_local [in,out] On input, this node's local component of
-    ///   the matrix C, stored as a general dense matrix in column-major
-    ///   order.  On output, overwritten with this node's component of 
-    ///   op(Q)*C, where op(Q) = Q or Q^T.
-    ///
-    /// \param ldc_local [in] Leading dimension of C_local.  
-    ///   Precondition: ldc_local >= nrows_local.
+    /// \param ncols_Q [in] Number of columns in Q.  Should be the same
+    ///   on all nodes.  Precondition: nrows_local >= ncols_Q.
     ///
     /// \param Q_local [in] Same as A_local output of factor()
     ///
@@ -189,8 +183,20 @@ namespace TSQR {
     ///
     /// \param factor_output [in] Return value of factor()
     ///
-    /// \param comm [in] Communicator object for all nodes
-    ///   participating in the operation.
+    /// \param ncols_C [in] Number of columns in C.  Should be the same
+    ///   on all nodes.  Precondition: nrows_local >= ncols_C.
+    ///
+    /// \param C_local [in,out] On input, this node's local component of
+    ///   the matrix C, stored as a general dense matrix in column-major
+    ///   order.  On output, overwritten with this node's component of 
+    ///   op(Q)*C, where op(Q) = Q, Q^T, or Q^H.
+    ///
+    /// \param ldc_local [in] Leading dimension of C_local.  
+    ///   Precondition: ldc_local >= nrows_local.
+    ///
+    /// \param contiguous_cache_blocks [in] Whether or not the cache
+    ///   blocks of Q and C are stored contiguously.
+    ///
     void
     apply (const std::string& op,
 	   const LocalOrdinal nrows_local,
@@ -204,14 +210,15 @@ namespace TSQR {
 	   const bool contiguous_cache_blocks = false)
     {
       ApplyType apply_type (op);
-      const bool transposed = apply_type.transposed();
 
-      if (apply_type == ApplyType::ConjugateTranspose)
-	{
-	  if (ScalarTraits< Scalar >::is_complex)
-	    throw std::logic_error("TSQR::apply: applying Q^H for complex "
-				   "scalar types not yet implemented");
-	}
+      // "Conjugate transpose" means the same thing as "Transpose"
+      // when Scalar is real.
+      if (apply_type == ApplyType::ConjugateTranspose && 
+	  ! ScalarTraits< Scalar >::is_complex)
+	apply_type = ApplyType::Transpose;
+      // This determines the order in which we apply the intranode
+      // part of the Q factor vs. the internode part of the Q factor.
+      const bool transposed = apply_type.transposed();
 
       // View of this node's local part of the matrix C.
       mat_view C_view (nrows_local, ncols_C, C_local, ldc_local);
@@ -238,8 +245,8 @@ namespace TSQR {
       	  Matrix< LocalOrdinal, Scalar > C_top (C_top_view);
 
 	  // Compute in place on all processors' C_top blocks.
-	  dist_.apply (op, C_top.ncols(), ncols_Q, C_top.get(), C_top.lda(),
-		       factor_output.second);
+	  dist_.apply (apply_type, C_top.ncols(), ncols_Q, C_top.get(), 
+		       C_top.lda(), factor_output.second);
 
 	  // Copy the result from C_top back into the top ncols_C by
 	  // ncols_C block of C_local.
@@ -247,16 +254,18 @@ namespace TSQR {
 
 	  // Apply the local Q factor (in Q_local and
 	  // factor_output.first) to C_local.
-	  node_tsqr_.apply (op, nrows_local, ncols_Q, Q_local, ldq_local, 
-			    factor_output.first, ncols_C, C_local, ldc_local,
+	  node_tsqr_.apply (apply_type, nrows_local, ncols_Q, 
+			    Q_local, ldq_local, factor_output.first, 
+			    ncols_C, C_local, ldc_local,
 			    contiguous_cache_blocks);
 	}
       else
 	{
 	  // Apply the (transpose of the) local Q factor (in Q_local
 	  // and factor_output.first) to C_local.
-	  node_tsqr_.apply (op, nrows_local, ncols_Q, Q_local, ldq_local, 
-			    factor_output.first, ncols_C, C_local, ldc_local,
+	  node_tsqr_.apply (apply_type, nrows_local, ncols_Q, 
+			    Q_local, ldq_local, factor_output.first, 
+			    ncols_C, C_local, ldc_local,
 			    contiguous_cache_blocks);
 
 	  // C_top (small compact storage) gets a deep copy of the top
@@ -264,8 +273,8 @@ namespace TSQR {
       	  Matrix< LocalOrdinal, Scalar > C_top (C_top_view);
 
 	  // Compute in place on all processors' C_top blocks.
-	  dist_.apply (op, ncols_C, ncols_Q, C_top.get(), C_top.lda(),
-		       factor_output.second);
+	  dist_.apply (apply_type, ncols_C, ncols_Q, C_top.get(), 
+		       C_top.lda(), factor_output.second);
 
 	  // Copy the result from C_top back into the top ncols_C by
 	  // ncols_C block of C_local.

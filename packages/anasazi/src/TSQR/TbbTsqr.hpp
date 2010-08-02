@@ -107,6 +107,13 @@ namespace TSQR {
 	impl_ (numCores, cacheBlockSize)
       {}
 
+      /// Whether or not this QR factorization produces an R factor
+      /// with all nonnegative diagonal entries.
+      static bool QR_produces_R_factor_with_nonnegative_diagonal() {
+	typedef TbbParallelTsqr< LocalOrdinal, Scalar, TimerType > impl_type;
+	return impl_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      }
+
       void
       cache_block (const LocalOrdinal nrows,
 		   const LocalOrdinal ncols, 
@@ -197,7 +204,8 @@ namespace TSQR {
       /// Apply the Q factor (computed by factor() and represented
       /// implicitly) to the dense matrix C.
       ///
-      /// \param [in] If "N", compute Q*C.  If "T", compute Q^T * C.
+      /// \param apply_type [in] Whether to compute Q*C, Q^T * C, or
+      ///   Q^H * C.
       ///
       /// \param nrows [in] Number of rows of the matrix C and the
       ///   matrix Q.  Precondition: nrows >= ncols_Q, ncols_C.
@@ -225,7 +233,7 @@ namespace TSQR {
       ///   blocks of Q and C are stored contiguously (default:
       ///   false).
       void
-      apply (const std::string& op,
+      apply (const ApplyType& apply_type,
 	     const LocalOrdinal nrows,
 	     const LocalOrdinal ncols_Q,
 	     const Scalar Q[],
@@ -236,7 +244,7 @@ namespace TSQR {
 	     const LocalOrdinal ldc,
 	     const bool contiguous_cache_blocks = false)
       {
-	impl_.apply (op, nrows, ncols_Q, Q, ldq, factor_output, 
+	impl_.apply (apply_type, nrows, ncols_Q, Q, ldq, factor_output, 
 		     ncols_C, C, ldc, contiguous_cache_blocks);
       }
 

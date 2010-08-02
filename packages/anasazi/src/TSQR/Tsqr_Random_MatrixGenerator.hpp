@@ -101,8 +101,11 @@ namespace TSQR {
 	if (info != 0)
 	  throw std::logic_error("LAPACK ORGQR LWORK query failed");
 
-	// Allocate workspace
-	const Ordinal lwork = checkedCast (std::max (_lwork1, _lwork2));
+	// Allocate workspace.  abs() returns a magnitude_type, and we
+	// can compare those using std::max.  If Scalar is complex,
+	// you can't compare it using max.
+	const Ordinal lwork = checkedCast (std::max (ScalarTraits< Scalar >::abs (_lwork1), 
+						     ScalarTraits< Scalar >::abs (_lwork2)));
 	std::vector< Scalar > work (lwork);
 
 	// Factor the input matrix
@@ -145,8 +148,8 @@ namespace TSQR {
 	if (info != 0)
 	  throw std::logic_error("LAPACK GEQRF LWORK query failed");
 
-	// Allocate workspace
-	const Ordinal lwork = checkedCast (_lwork1);
+	// Allocate workspace.
+	const Ordinal lwork = checkedCast (ScalarTraits< Scalar >::abs (_lwork1));
 	std::vector< Scalar > work (lwork);
 
 	// Factor the input matrix
@@ -207,7 +210,7 @@ namespace TSQR {
 	    throw std::logic_error(os.str());
 	  }
 	if (ScalarTraits< Scalar >::is_complex)
-	  lapack.ORMQR ("R", "H", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
+	  lapack.ORMQR ("R", "C", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
 			A, lda, &_lwork2, -1, &info);
 	else
 	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
@@ -216,7 +219,8 @@ namespace TSQR {
 	  throw std::logic_error("LAPACK ORMQR LWORK query failed");
 
 	// Allocate workspace.
-	Ordinal lwork = checkedCast (std::max (_lwork1, _lwork2));
+	Ordinal lwork = checkedCast (std::max (ScalarTraits< Scalar >::abs (_lwork1), 
+					       ScalarTraits< Scalar >::abs (_lwork2)));
 	std::vector< Scalar > work (lwork);
 
 	// Apply U to the left side of A, and V^H to the right side of A.
@@ -225,7 +229,7 @@ namespace TSQR {
 	if (info != 0)
 	  throw std::runtime_error("LAPACK ORMQR failed (first time)");
 	if (ScalarTraits< Scalar >::is_complex)
-	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
+	  lapack.ORMQR ("R", "C", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
 			A, lda, &work[0], lwork, &info);
 	else
 	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
@@ -235,16 +239,26 @@ namespace TSQR {
       }
 
 
-      // Generate a random n x n upper triangular matrix R, not packed, with
-      // leading dimension stride, with specified singular values.
-      //
-      // generator: generates random values from a normal (0,1) distribution.
-      // (Defines "double operator()".)
+      /// \brief Fill in a random upper triangular matrix
+      ///
+      /// Fill R with a random n by n upper triangular matrix, with
+      /// the specified singular values.
+      ///
+      /// \param n [in] Dimension of R (n by n)
+      ///
+      /// \param R [out] On output: n by n upper triangular matrix
+      ///   with stride ldr, stored in non-packed, column-major
+      ///   format.
+      ///
+      /// \param ldr [in] Stride (a.k.a. leading dimension) of R
+      ///
+      /// \param singular_values [in] n nonnegative real values, to be
+      ///   used as the singular values of the output R.
       void
       fill_random_R (const Ordinal n,
 		     Scalar R[],
 		     const Ordinal ldr,
-		     const Scalar singular_values[])
+		     const magnitude_type singular_values[])
       {
 	// Fill R with an n x n (not upper triangular) random matrix
 	// having the given singular values.
@@ -262,7 +276,7 @@ namespace TSQR {
 	  throw std::logic_error("LAPACK GEQRF LWORK query failed");
 
 	// Allocate workspace
-	Ordinal lwork = checkedCast (_lwork1);
+	Ordinal lwork = checkedCast (ScalarTraits< Scalar >::abs (_lwork1));
 	std::vector< Scalar > work (lwork);
 
 	// Compute QR factorization (implicit representation in place).
@@ -278,12 +292,12 @@ namespace TSQR {
 
     private:
       static Ordinal 
-      checkedCast (const Scalar& x)
+      checkedCast (const magnitude_type& x)
       {
 	if (x < std::numeric_limits< Ordinal >::min() || x > std::numeric_limits< Ordinal >::max())
 	  throw std::range_error("Scalar input cannot be safely cast to an Ordinal");
-	else if (std::numeric_limits< Scalar >::is_signed && 
-		 x < Scalar(0) &&
+	else if (std::numeric_limits< magnitude_type >::is_signed && 
+		 x < magnitude_type(0) &&
 		 ! std::numeric_limits< Ordinal >::is_signed)
 	  throw std::range_error("Scalar input is negative, but Ordinal is unsigned");
 	else

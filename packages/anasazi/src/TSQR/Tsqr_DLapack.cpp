@@ -27,33 +27,32 @@
 // @HEADER
 
 #include <Tsqr_Lapack.hpp>
-#include <Tsqr_FortranCInterface.hpp>
 #include <Tsqr_Config.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-extern "C" void FortranCInterface_GLOBAL(dlarnv, DLARNV)
+extern "C" void F77_BLAS_MANGLE(dlarnv, DLARNV)
   (const int* const IDIST,
    int ISEED[],
    const int* const N,
    double X[]);
 
-extern "C" void FortranCInterface_GLOBAL(dpotri, DPOTRI)
+extern "C" void F77_BLAS_MANGLE(dpotri, DPOTRI)
   (const char* const UPLO,
    const int* const N,
    double A[],
    const int* const LDA,
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(dpotrf, DPOTRF)
+extern "C" void F77_BLAS_MANGLE(dpotrf, DPOTRF)
   (const char* const UPLO,
    const int* const N,
    double A[],
    const int* const LDA,
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(dpotrs, DPOTRS)
+extern "C" void F77_BLAS_MANGLE(dpotrs, DPOTRS)
   (const char* const UPLO,
    const int* const N,
    const int* const NRHS,
@@ -64,7 +63,7 @@ extern "C" void FortranCInterface_GLOBAL(dpotrs, DPOTRS)
    int* const INFO);
 
 #ifdef HAVE_LAPACK_DLARFGP
-extern "C" void FortranCInterface_GLOBAL(dlarfgp,DLARFGP)
+extern "C" void F77_BLAS_MANGLE(dlarfgp,DLARFGP)
   (const int* const N,    // IN
    double* const ALPHA,   // IN/OUT
    double X[],            // IN/OUT
@@ -72,14 +71,14 @@ extern "C" void FortranCInterface_GLOBAL(dlarfgp,DLARFGP)
    double* const TAU);    // OUT
 #else
 #  ifdef HAVE_LAPACK_DLARFP
-extern "C" void FortranCInterface_GLOBAL(dlarfp,DLARFP)
+extern "C" void F77_BLAS_MANGLE(dlarfp,DLARFP)
   (const int* const N,    // IN
    double* const ALPHA,   // IN/OUT
    double X[],            // IN/OUT
    const int* const INCX, // IN
    double* const TAU);    // OUT
 #  else
-extern "C" void FortranCInterface_GLOBAL(dlarfg,DLARFG)
+extern "C" void F77_BLAS_MANGLE(dlarfg,DLARFG)
   (const int* const N,    // IN
    double* const ALPHA,   // IN/OUT
    double X[],            // IN/OUT
@@ -88,7 +87,7 @@ extern "C" void FortranCInterface_GLOBAL(dlarfg,DLARFG)
 #  endif // HAVE_LAPACK_DLARFP
 #endif // HAVE_LAPACK_DLARFGP
 
-extern "C" void FortranCInterface_GLOBAL(dgeqrf, DGEQRF)
+extern "C" void F77_BLAS_MANGLE(dgeqrf, DGEQRF)
   (const int* const M,
    const int* const N,
    double A[],
@@ -99,7 +98,7 @@ extern "C" void FortranCInterface_GLOBAL(dgeqrf, DGEQRF)
    int* const INFO);
 
 #ifdef HAVE_LAPACK_DGEQRFP
-extern "C" void FortranCInterface_GLOBAL(dgeqrfp, DGEQRFP)
+extern "C" void F77_BLAS_MANGLE(dgeqrfp, DGEQRFP)
   (const int* const M,
    const int* const N,
    double A[],
@@ -110,7 +109,7 @@ extern "C" void FortranCInterface_GLOBAL(dgeqrfp, DGEQRFP)
    int* const INFO);
 #endif // HAVE_LAPACK_DGEQRFP
 
-extern "C" void FortranCInterface_GLOBAL(dgeqr2, DGEQR2)
+extern "C" void F77_BLAS_MANGLE(dgeqr2, DGEQR2)
   (const int* const M,
    const int* const N,
    double A[],
@@ -120,7 +119,7 @@ extern "C" void FortranCInterface_GLOBAL(dgeqr2, DGEQR2)
    int* const INFO);
 
 #ifdef HAVE_LAPACK_DGEQR2P
-extern "C" void FortranCInterface_GLOBAL(dgeqr2p, DGEQR2P)
+extern "C" void F77_BLAS_MANGLE(dgeqr2p, DGEQR2P)
   (const int* const M,
    const int* const N,
    double A[],
@@ -130,7 +129,7 @@ extern "C" void FortranCInterface_GLOBAL(dgeqr2p, DGEQR2P)
    int* const INFO);
 #endif // HAVE_LAPACK_DGEQR2P
 
-extern "C" void FortranCInterface_GLOBAL(dormqr, DORMQR)
+extern "C" void F77_BLAS_MANGLE(dormqr, DORMQR)
   (const char* const SIDE,
    const char* const TRANS,
    const int* const M,
@@ -145,7 +144,7 @@ extern "C" void FortranCInterface_GLOBAL(dormqr, DORMQR)
    const int* const LWORK,
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(dorm2r, DORM2R)
+extern "C" void F77_BLAS_MANGLE(dorm2r, DORM2R)
   (const char* const SIDE,
    const char* const TRANS,
    const int* const M,
@@ -159,7 +158,7 @@ extern "C" void FortranCInterface_GLOBAL(dorm2r, DORM2R)
    double WORK[],
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(dorgqr, DORGQR)
+extern "C" void F77_BLAS_MANGLE(dorgqr, DORGQR)
   (const int* const M,
    const int* const N,
    const int* const K,
@@ -170,7 +169,7 @@ extern "C" void FortranCInterface_GLOBAL(dorgqr, DORGQR)
    const int* const LWORK,
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(dgesvd, DGESVD) 
+extern "C" void F77_BLAS_MANGLE(dgesvd, DGESVD) 
   (const char* const JOBU, 
    const char* const JOBVT, 
    const int* const M, 
@@ -220,11 +219,12 @@ namespace TSQR {
 			       double& tau)
   {
 #ifdef HAVE_LAPACK_DLARFGP
-    FortranCInterface_GLOBAL(dlarfgp,DLARFGP) (&n, &alpha, x, &incx, &tau);
+    F77_BLAS_MANGLE(dlarfgp,DLARFGP) (&n, &alpha, x, &incx, &tau);
+#else // Don't HAVE_LAPACK_DLARFGP
 #  ifdef HAVE_LAPACK_DLARFP
-    FortranCInterface_GLOBAL(dlarfp,DLARFP) (&n, &alpha, x, &incx, &tau);
+    F77_BLAS_MANGLE(dlarfp,DLARFP) (&n, &alpha, x, &incx, &tau);
 #  else
-    FortranCInterface_GLOBAL(dlarfg,DLARFG) (&n, &alpha, x, &incx, &tau);
+    F77_BLAS_MANGLE(dlarfg,DLARFG) (&n, &alpha, x, &incx, &tau);
 #  endif // HAVE_LAPACK_DLARFP
 #endif // HAVE_LAPACK_DLARFGP
   }
@@ -244,9 +244,11 @@ namespace TSQR {
 			       int* const INFO)
   {
 #ifdef HAVE_LAPACK_DGEQRFP
-    FortranCInterface_GLOBAL(dgeqrfp, DGEQRFP) (&m, &n, A, &lda, tau, work, &lwork, INFO);
+    F77_BLAS_MANGLE(dgeqrfp, DGEQRFP) 
+      (&m, &n, A, &lda, tau, work, &lwork, INFO);
 #else
-    FortranCInterface_GLOBAL(dgeqrf, DGEQRF) (&m, &n, A, &lda, tau, work, &lwork, INFO);
+    F77_BLAS_MANGLE(dgeqrf, DGEQRF) 
+      (&m, &n, A, &lda, tau, work, &lwork, INFO);
 #endif // HAVE_LAPACK_DGEQRFP
   }
 
@@ -264,9 +266,9 @@ namespace TSQR {
 			       int* const INFO)
   {
 #ifdef HAVE_LAPACK_DGEQR2P
-    FortranCInterface_GLOBAL(dgeqr2p, DGEQR2P) (&m, &n, A, &lda, tau, work, INFO);
+    F77_BLAS_MANGLE(dgeqr2p, DGEQR2P) (&m, &n, A, &lda, tau, work, INFO);
 #else
-    FortranCInterface_GLOBAL(dgeqr2, DGEQR2) (&m, &n, A, &lda, tau, work, INFO);
+    F77_BLAS_MANGLE(dgeqr2, DGEQR2) (&m, &n, A, &lda, tau, work, INFO);
 #endif // HAVE_LAPACK_DGEQR2P
   }
 
@@ -286,7 +288,8 @@ namespace TSQR {
 			       const int lwork,
 			       int* const INFO)
   {
-    FortranCInterface_GLOBAL(dormqr, DORMQR) (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, &lwork, INFO);
+    F77_BLAS_MANGLE(dormqr, DORMQR) 
+      (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, &lwork, INFO);
   }
 
   template <>
@@ -304,7 +307,8 @@ namespace TSQR {
 			       double work[],
 			       int* const INFO)
   {
-    FortranCInterface_GLOBAL(dorm2r, DORM2R) (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, INFO);
+    F77_BLAS_MANGLE(dorm2r, DORM2R) 
+      (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, INFO);
   }
 
   template <>
@@ -319,7 +323,8 @@ namespace TSQR {
 			       const int lwork,
 			       int* const INFO)
   {
-    FortranCInterface_GLOBAL(dorgqr, DORGQR) (&m, &n, &k, A, &lda, tau, work, &lwork, INFO);
+    F77_BLAS_MANGLE(dorgqr, DORGQR) 
+      (&m, &n, &k, A, &lda, tau, work, &lwork, INFO);
   }
 
   template <>
@@ -330,7 +335,7 @@ namespace TSQR {
 			       const int lda,
 			       int* const INFO)
   {
-    FortranCInterface_GLOBAL(dpotrf, DPOTRF) (uplo, &n, A, &lda, INFO);
+    F77_BLAS_MANGLE(dpotrf, DPOTRF) (uplo, &n, A, &lda, INFO);
   }
 
   template <>
@@ -344,7 +349,8 @@ namespace TSQR {
 			       const int ldb,
 			       int* const INFO)
   {
-    FortranCInterface_GLOBAL(dpotrs, DPOTRS) (uplo, &n, &nrhs, A, &lda, B, &ldb, INFO);
+    F77_BLAS_MANGLE(dpotrs, DPOTRS) 
+      (uplo, &n, &nrhs, A, &lda, B, &ldb, INFO);
   }
 
   template <>
@@ -355,7 +361,7 @@ namespace TSQR {
 			       const int lda, 
 			       int* const INFO)
   {
-    FortranCInterface_GLOBAL(dpotri, DPOTRI) (uplo, &n, A, &lda, INFO);
+    F77_BLAS_MANGLE(dpotri, DPOTRI) (uplo, &n, A, &lda, INFO);
   }
 
   template <>
@@ -365,7 +371,7 @@ namespace TSQR {
 			       const int n,
 			       double x[])
   {
-    FortranCInterface_GLOBAL(dlarnv, DLARNV) (&idist, iseed, &n, x);
+    F77_BLAS_MANGLE(dlarnv, DLARNV) (&idist, iseed, &n, x);
   }
 
   template <>
@@ -386,10 +392,10 @@ namespace TSQR {
 			       double rwork[],
 			       int* const INFO)
   {
-    FortranCInterface_GLOBAL(dgesvd, DGESVD) (jobu, jobvt, &m, &n, 
-					      A, &lda, s, 
-					      U, &ldu, VT, &ldvt, 
-					      work, &lwork, rwork, INFO);
+    F77_BLAS_MANGLE(dgesvd, DGESVD) (jobu, jobvt, &m, &n, 
+				     A, &lda, s, 
+				     U, &ldu, VT, &ldvt, 
+				     work, &lwork, rwork, INFO);
   }
 
 } // namespace TSQR

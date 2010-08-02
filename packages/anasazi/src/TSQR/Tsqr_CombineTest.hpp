@@ -26,79 +26,44 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __TSQR_TsqrBlas_hpp
-#define __TSQR_TsqrBlas_hpp
+/// \file Tsqr_CombineTest.hpp
+/// \brief Test for TSQR::Combine
+///
+/// TSQR::Combine implements two structured QR factorizations: [R1;
+/// R2] (where R1 and R2 are both square and upper triangular) and [R;
+/// A] (where R is square and upper triangular, and A is a general
+/// dense matrix).  This file implements accuracy tests for both
+/// versions.
+
+#ifndef __TSQR_Test_CombineTest_hpp
+#define __TSQR_Test_CombineTest_hpp
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
+  namespace Test {
 
-  template< class Ordinal, class Scalar >
-  class BLAS {
-  public:
-    BLAS () {}
-
-    void 
-    GEMV (const char* const trans, 
-	  const Ordinal m, 
-	  const Ordinal n,
-	  const Scalar alpha,
-	  const Scalar A[],
-	  const Ordinal lda,
-	  const Scalar x[],
-	  const Ordinal incx,
-	  const Scalar beta,
-	  Scalar y[],
-	  const Ordinal incy);
-
-    void
-    GEMM (const char* const transa,
-	  const char* const transb,
-	  const Ordinal m,
-	  const Ordinal n,
-	  const Ordinal k,
-	  const Scalar alpha,
-	  const Scalar A[],
-	  const Ordinal lda,
-	  const Scalar B[],
-	  const Ordinal ldb,
-	  const Scalar beta,
-	  Scalar C[],
-	  const Ordinal ldc);
-
+    /// \brief Test accuracy of TSQR::Combine
     ///
-    /// If ScalarTraits< Scalar >::is_complex, calls _GERC.
-    /// Otherwise, calls _GER.
+    /// Test the accuracy of TSQR::Combine, and print the results to
+    /// stdout.  Rather than template on Ordinal and Scalar, as with
+    /// the full TSQR tests, we pick Ordinal=int and try four
+    /// different Scalar types (the same four that LAPACK supports:
+    /// double, float, complex<double>, complex<float> -- i.e.,
+    /// S,D,C,Z).
+    /// 
+    /// \param numRows [in]
+    /// \param numCols [in]
     void
-    GER (const Ordinal m,
-	 const Ordinal n,
-	 const Scalar alpha,
-	 const Scalar x[],
-	 const Ordinal incx,
-	 const Scalar y[],
-	 const Ordinal incy,
-	 Scalar A[],
-	 const Ordinal lda);
+    verifyCombine (const int numRows,
+		   const int numCols, 
+		   const bool test_complex,
+		   const bool simulate_sequential_tsqr = false,
+		   const bool debug = false);
 
-    void
-    TRSM (const char* const side,
-	  const char* const uplo,
-	  const char* const transa,
-	  const char* const diag,
-	  const Ordinal m,
-	  const Ordinal n,
-	  const Scalar alpha,
-	  const Scalar A[],
-	  const Ordinal lda,
-	  Scalar B[],
-	  const Ordinal ldb);
-
-  private:
-    BLAS (const BLAS&);
-    BLAS& operator= (const BLAS&);
-  };
-
+  } // namespace Test
 } // namespace TSQR
 
-#endif // __TSQR_TsqrBlas_hpp
+#endif // __TSQR_Test_CombineTest_hpp

@@ -27,34 +27,33 @@
 // @HEADER
 
 #include <Tsqr_Lapack.hpp>
-#include <Tsqr_FortranCInterface.hpp>
 #include <Tsqr_Config.hpp>
 #include <complex>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-extern "C" void FortranCInterface_GLOBAL(zlarnv, ZLARNV)
+extern "C" void F77_BLAS_MANGLE(zlarnv, ZLARNV)
   (const int* const IDIST,
    int ISEED[],
    const int* const N,
    std::complex<double> X[]);
 
-extern "C" void FortranCInterface_GLOBAL(zpotri, ZPOTRI)
+extern "C" void F77_BLAS_MANGLE(zpotri, ZPOTRI)
   (const char* const UPLO,
    const int* const N,
    std::complex<double> A[],
    const int* const LDA,
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(zpotrf, ZPOTRF)
+extern "C" void F77_BLAS_MANGLE(zpotrf, ZPOTRF)
   (const char* const UPLO,
    const int* const N,
    std::complex<double> A[],
    const int* const LDA,
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(zpotrs, ZPOTRS)
+extern "C" void F77_BLAS_MANGLE(zpotrs, ZPOTRS)
   (const char* const UPLO,
    const int* const N,
    const int* const NRHS,
@@ -65,7 +64,7 @@ extern "C" void FortranCInterface_GLOBAL(zpotrs, ZPOTRS)
    int* const INFO);
 
 #ifdef HAVE_LAPACK_ZLARFGP
-extern "C" void FortranCInterface_GLOBAL(zlarfgp,ZLARFGP)
+extern "C" void F77_BLAS_MANGLE(zlarfgp,ZLARFGP)
   (const int* const N,    // IN
    std::complex<double>* const ALPHA,   // IN/OUT
    std::complex<double> X[],            // IN/OUT
@@ -73,14 +72,14 @@ extern "C" void FortranCInterface_GLOBAL(zlarfgp,ZLARFGP)
    std::complex<double>* const TAU);    // OUT
 #else
 #  ifdef HAVE_LAPACK_ZLARFP
-extern "C" void FortranCInterface_GLOBAL(zlarfp,ZLARFP)
+extern "C" void F77_BLAS_MANGLE(zlarfp,ZLARFP)
   (const int* const N,    // IN
    std::complex<double>* const ALPHA,   // IN/OUT
    std::complex<double> X[],            // IN/OUT
    const int* const INCX, // IN
    std::complex<double>* const TAU);    // OUT
 #  else
-extern "C" void FortranCInterface_GLOBAL(zlarfg,ZLARFG)
+extern "C" void F77_BLAS_MANGLE(zlarfg,ZLARFG)
   (const int* const N,    // IN
    std::complex<double>* const ALPHA,   // IN/OUT
    std::complex<double> X[],            // IN/OUT
@@ -89,7 +88,7 @@ extern "C" void FortranCInterface_GLOBAL(zlarfg,ZLARFG)
 #  endif // HAVE_LAPACK_ZLARFP
 #endif // HAVE_LAPACK_ZLARFGP
 
-extern "C" void FortranCInterface_GLOBAL(zgeqrf, ZGEQRF)
+extern "C" void F77_BLAS_MANGLE(zgeqrf, ZGEQRF)
   (const int* const M,
    const int* const N,
    std::complex<double> A[],
@@ -100,7 +99,7 @@ extern "C" void FortranCInterface_GLOBAL(zgeqrf, ZGEQRF)
    int* const INFO);
 
 #ifdef HAVE_LAPACK_ZGEQRFP
-extern "C" void FortranCInterface_GLOBAL(zgeqrfp, ZGEQRFP)
+extern "C" void F77_BLAS_MANGLE(zgeqrfp, ZGEQRFP)
   (const int* const M,
    const int* const N,
    std::complex<double> A[],
@@ -111,7 +110,7 @@ extern "C" void FortranCInterface_GLOBAL(zgeqrfp, ZGEQRFP)
    int* const INFO);
 #endif // HAVE_LAPACK_ZGEQRFP
 
-extern "C" void FortranCInterface_GLOBAL(zgeqr2, ZGEQR2)
+extern "C" void F77_BLAS_MANGLE(zgeqr2, ZGEQR2)
   (const int* const M,
    const int* const N,
    std::complex<double> A[],
@@ -121,7 +120,7 @@ extern "C" void FortranCInterface_GLOBAL(zgeqr2, ZGEQR2)
    int* const INFO);
 
 #ifdef HAVE_LAPACK_ZGEQR2P
-extern "C" void FortranCInterface_GLOBAL(zgeqr2p, ZGEQR2P)
+extern "C" void F77_BLAS_MANGLE(zgeqr2p, ZGEQR2P)
   (const int* const M,
    const int* const N,
    std::complex<double> A[],
@@ -137,7 +136,7 @@ extern "C" void FortranCInterface_GLOBAL(zgeqr2p, ZGEQR2P)
 // though, so our LAPACK::ORMQR(), etc. wrappers have the same name
 // for both the real and the complex cases.
 
-extern "C" void FortranCInterface_GLOBAL(zungqr, ZUNGQR)
+extern "C" void F77_BLAS_MANGLE(zungqr, ZUNGQR)
   (const int* const M,
    const int* const N,
    const int* const K,
@@ -148,7 +147,7 @@ extern "C" void FortranCInterface_GLOBAL(zungqr, ZUNGQR)
    const int* const LWORK,
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(zunmqr, ZUNMQR)
+extern "C" void F77_BLAS_MANGLE(zunmqr, ZUNMQR)
   (const char* const SIDE,
    const char* const TRANS,
    const int* const M,
@@ -163,7 +162,7 @@ extern "C" void FortranCInterface_GLOBAL(zunmqr, ZUNMQR)
    const int* const LWORK,
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(zunm2r, ZUNM2R)
+extern "C" void F77_BLAS_MANGLE(zunm2r, ZUNM2R)
   (const char* const SIDE,
    const char* const TRANS,
    const int* const M,
@@ -177,7 +176,7 @@ extern "C" void FortranCInterface_GLOBAL(zunm2r, ZUNM2R)
    std::complex<double> WORK[],
    int* const INFO);
 
-extern "C" void FortranCInterface_GLOBAL(zgesvd, ZGESVD) 
+extern "C" void F77_BLAS_MANGLE(zgesvd, ZGESVD) 
   (const char* const JOBU, 
    const char* const JOBVT, 
    const int* const M, 
@@ -220,18 +219,20 @@ namespace TSQR {
   ////////////////////////////////////////////////////////////////////////////
   template <>
   void 
-  LAPACK<int, std::complex<double> >::LARFP (const int n, 
-					     std::complex<double>& alpha, 
-					     std::complex<double> x[], 
-					     const int incx, 
-					     std::complex<double>& tau)
+  LAPACK<int, std::complex<double> >::
+  LARFP (const int n, 
+	 std::complex<double>& alpha, 
+	 std::complex<double> x[], 
+	 const int incx, 
+	 std::complex<double>& tau)
   {
 #ifdef HAVE_LAPACK_ZLARFGP
-    FortranCInterface_GLOBAL(zlarfgp,ZLARFGP) (&n, &alpha, x, &incx, &tau);
+    F77_BLAS_MANGLE(zlarfgp,ZLARFGP) (&n, &alpha, x, &incx, &tau);
+#else // Don't HAVE_LAPACK_CLARFGP
 #  ifdef HAVE_LAPACK_ZLARFP
-    FortranCInterface_GLOBAL(zlarfp,ZLARFP) (&n, &alpha, x, &incx, &tau);
+    F77_BLAS_MANGLE(zlarfp,ZLARFP) (&n, &alpha, x, &incx, &tau);
 #  else
-    FortranCInterface_GLOBAL(zlarfg,ZLARFG) (&n, &alpha, x, &incx, &tau);
+    F77_BLAS_MANGLE(zlarfg,ZLARFG) (&n, &alpha, x, &incx, &tau);
 #  endif // HAVE_LAPACK_ZLARFP
 #endif // HAVE_LAPACK_ZLARFGP
   }
@@ -241,19 +242,20 @@ namespace TSQR {
   ////////////////////////////////////////////////////////////////////////////
   template <>
   void
-  LAPACK<int, std::complex<double> >::GEQRF (const int m,
-					     const int n, 
-					     std::complex<double> A[],
-					     const int lda, 
-					     std::complex<double> tau[],
-					     std::complex<double> work[],
-					     const int lwork,
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  GEQRF (const int m,
+	 const int n, 
+	 std::complex<double> A[],
+	 const int lda, 
+	 std::complex<double> tau[],
+	 std::complex<double> work[],
+	 const int lwork,
+	 int* const INFO)
   {
 #ifdef HAVE_LAPACK_ZGEQRFP
-    FortranCInterface_GLOBAL(zgeqrfp, ZGEQRFP) (&m, &n, A, &lda, tau, work, &lwork, INFO);
+    F77_BLAS_MANGLE(zgeqrfp, ZGEQRFP) (&m, &n, A, &lda, tau, work, &lwork, INFO);
 #else
-    FortranCInterface_GLOBAL(zgeqrf, ZGEQRF) (&m, &n, A, &lda, tau, work, &lwork, INFO);
+    F77_BLAS_MANGLE(zgeqrf, ZGEQRF) (&m, &n, A, &lda, tau, work, &lwork, INFO);
 #endif // HAVE_LAPACK_ZGEQRFP
   }
 
@@ -262,141 +264,154 @@ namespace TSQR {
   ////////////////////////////////////////////////////////////////////////////
   template <>
   void
-  LAPACK<int, std::complex<double> >::GEQR2 (const int m,
-					     const int n, 
-					     std::complex<double> A[],
-					     const int lda, 
-					     std::complex<double> tau[],
-					     std::complex<double> work[],
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  GEQR2 (const int m,
+	 const int n, 
+	 std::complex<double> A[],
+	 const int lda, 
+	 std::complex<double> tau[],
+	 std::complex<double> work[],
+	 int* const INFO)
   {
 #ifdef HAVE_LAPACK_ZGEQR2P
-    FortranCInterface_GLOBAL(zgeqr2p, ZGEQR2P) (&m, &n, A, &lda, tau, work, INFO);
+    F77_BLAS_MANGLE(zgeqr2p, ZGEQR2P) (&m, &n, A, &lda, tau, work, INFO);
 #else
-    FortranCInterface_GLOBAL(zgeqr2, ZGEQR2) (&m, &n, A, &lda, tau, work, INFO);
+    F77_BLAS_MANGLE(zgeqr2, ZGEQR2) (&m, &n, A, &lda, tau, work, INFO);
 #endif // HAVE_LAPACK_ZGEQR2P
   }
 
   template <>
   void
-  LAPACK<int, std::complex<double> >::ORMQR (const char* const side,
-					     const char* const trans,
-					     const int m,
-					     const int n,
-					     const int k,
-					     const std::complex<double> A[],
-					     const int lda,
-					     const std::complex<double> tau[],
-					     std::complex<double> C[],
-					     const int ldc,
-					     std::complex<double> work[],
-					     const int lwork,
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  ORMQR (const char* const side,
+	 const char* const trans,
+	 const int m,
+	 const int n,
+	 const int k,
+	 const std::complex<double> A[],
+	 const int lda,
+	 const std::complex<double> tau[],
+	 std::complex<double> C[],
+	 const int ldc,
+	 std::complex<double> work[],
+	 const int lwork,
+	 int* const INFO)
   {
-    FortranCInterface_GLOBAL(zunmqr, ZUNMQR) (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, &lwork, INFO);
+    F77_BLAS_MANGLE(zunmqr, ZUNMQR) 
+      (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, &lwork, INFO);
   }
 
   template <>
   void
-  LAPACK<int, std::complex<double> >::ORM2R (const char* const side,
-					     const char* const trans,
-					     const int m,
-					     const int n,
-					     const int k,
-					     const std::complex<double> A[],
-					     const int lda,
-					     const std::complex<double> tau[],
-					     std::complex<double> C[],
-					     const int ldc,
-					     std::complex<double> work[],
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  ORM2R (const char* const side,
+	 const char* const trans,
+	 const int m,
+	 const int n,
+	 const int k,
+	 const std::complex<double> A[],
+	 const int lda,
+	 const std::complex<double> tau[],
+	 std::complex<double> C[],
+	 const int ldc,
+	 std::complex<double> work[],
+	 int* const INFO)
   {
-    FortranCInterface_GLOBAL(zunm2r, ZUNM2R) (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, INFO);
+    F77_BLAS_MANGLE(zunm2r, ZUNM2R) 
+      (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, INFO);
   }
 
   template <>
   void
-  LAPACK<int, std::complex<double> >::ORGQR (const int m,
-					     const int n,
-					     const int k,
-					     std::complex<double> A[],
-					     const int lda,
-					     std::complex<double> tau[],
-					     std::complex<double> work[],
-					     const int lwork,
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  ORGQR (const int m,
+	 const int n,
+	 const int k,
+	 std::complex<double> A[],
+	 const int lda,
+	 std::complex<double> tau[],
+	 std::complex<double> work[],
+	 const int lwork,
+	 int* const INFO)
   {
-    FortranCInterface_GLOBAL(zungqr, ZUNGQR) (&m, &n, &k, A, &lda, tau, work, &lwork, INFO);
+    F77_BLAS_MANGLE(zungqr, ZUNGQR) 
+      (&m, &n, &k, A, &lda, tau, work, &lwork, INFO);
   }
 
   template <>
   void
-  LAPACK<int, std::complex<double> >::POTRF (const char* const uplo,
-					     const int n,
-					     std::complex<double> A[],
-					     const int lda,
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  POTRF (const char* const uplo,
+	 const int n,
+	 std::complex<double> A[],
+	 const int lda,
+	 int* const INFO)
   {
-    FortranCInterface_GLOBAL(zpotrf, ZPOTRF) (uplo, &n, A, &lda, INFO);
+    F77_BLAS_MANGLE(zpotrf, ZPOTRF) (uplo, &n, A, &lda, INFO);
   }
 
   template <>
   void
-  LAPACK<int, std::complex<double> >::POTRS (const char* const uplo,
-					     const int n,
-					     const int nrhs,
-					     const std::complex<double> A[],
-					     const int lda,
-					     std::complex<double> B[],
-					     const int ldb,
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  POTRS (const char* const uplo,
+	 const int n,
+	 const int nrhs,
+	 const std::complex<double> A[],
+	 const int lda,
+	 std::complex<double> B[],
+	 const int ldb,
+	 int* const INFO)
   {
-    FortranCInterface_GLOBAL(zpotrs, ZPOTRS) (uplo, &n, &nrhs, A, &lda, B, &ldb, INFO);
+    F77_BLAS_MANGLE(zpotrs, ZPOTRS) 
+      (uplo, &n, &nrhs, A, &lda, B, &ldb, INFO);
   }
 
   template <>
   void
-  LAPACK<int, std::complex<double> >::POTRI (const char* const uplo, 
-					     const int n, 
-					     std::complex<double> A[], 
-					     const int lda, 
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  POTRI (const char* const uplo, 
+	 const int n, 
+	 std::complex<double> A[], 
+	 const int lda, 
+	 int* const INFO)
   {
-    FortranCInterface_GLOBAL(zpotri, ZPOTRI) (uplo, &n, A, &lda, INFO);
+    F77_BLAS_MANGLE(zpotri, ZPOTRI) (uplo, &n, A, &lda, INFO);
   }
 
   template <>
   void
-  LAPACK<int, std::complex<double> >::LARNV (const int idist, 
-					     int iseed[],
-					     const int n,
-					     std::complex<double> x[])
+  LAPACK<int, std::complex<double> >::
+  LARNV (const int idist, 
+	 int iseed[],
+	 const int n,
+	 std::complex<double> x[])
   {
-    FortranCInterface_GLOBAL(zlarnv, ZLARNV) (&idist, iseed, &n, x);
+    F77_BLAS_MANGLE(zlarnv, ZLARNV) (&idist, iseed, &n, x);
   }
 
   template <>
   void
-  LAPACK<int, std::complex<double> >::GESVD (const char* const jobu,
-					     const char* const jobvt,
-					     const int m,
-					     const int n,
-					     std::complex<double> A[],
-					     const int lda,
-					     double s[],
-					     std::complex<double> U[],
-					     const int ldu,
-					     std::complex<double> VT[],
-					     const int ldvt,
-					     std::complex<double> work[],
-					     const int lwork,
-					     double rwork[],
-					     int* const INFO)
+  LAPACK<int, std::complex<double> >::
+  GESVD (const char* const jobu,
+	 const char* const jobvt,
+	 const int m,
+	 const int n,
+	 std::complex<double> A[],
+	 const int lda,
+	 double s[],
+	 std::complex<double> U[],
+	 const int ldu,
+	 std::complex<double> VT[],
+	 const int ldvt,
+	 std::complex<double> work[],
+	 const int lwork,
+	 double rwork[],
+	 int* const INFO)
   {
-    FortranCInterface_GLOBAL(zgesvd, ZGESVD) (jobu, jobvt, &m, &n, 
-					      A, &lda, s, 
-					      U, &ldu, VT, &ldvt, 
-					      work, &lwork, rwork, INFO);
+    F77_BLAS_MANGLE(zgesvd, ZGESVD) (jobu, jobvt, &m, &n, 
+				     A, &lda, s, 
+				     U, &ldu, VT, &ldvt, 
+				     work, &lwork, rwork, INFO);
   }
 
 

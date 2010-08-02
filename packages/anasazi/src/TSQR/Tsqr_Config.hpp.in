@@ -49,4 +49,6 @@
 #cmakedefine HAVE_LAPACK_ZGEQR2P 1
 #cmakedefine HAVE_LAPACK_CGEQR2P 1
 
+#define F77_BLAS_MANGLE@F77_BLAS_MANGLE@
+
 #endif // __TSQR_Tsqr_Config_hpp

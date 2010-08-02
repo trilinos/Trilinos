@@ -77,6 +77,7 @@ namespace TSQR {
 	top_blocks_ (top_blocks), 
 	factor_output_ (factor_output), 
 	seq_ (seq), 
+	apply_type_ (ApplyType::NoTranspose), // FIXME: modify to support Q^T and Q^H
 	my_seq_timing_ (my_seq_timing),
 	min_seq_timing_ (min_seq_timing),
 	max_seq_timing_ (max_seq_timing),
@@ -91,9 +92,10 @@ namespace TSQR {
 	    TimerType timer;
 	    timer.start();
 	    const std::vector< SeqOutput >& seq_outputs = factor_output_.first;
-	    seq_.apply ("N", Q_.nrows(), Q_.ncols(), Q_.get(), Q_.lda(), 
-			seq_outputs[P_first_], C_.ncols(), C_.get(), 
-			C_.lda(), contiguous_cache_blocks_);
+	    seq_.apply (apply_type_, Q_.nrows(), Q_.ncols(), 
+			Q_.get(), Q_.lda(), seq_outputs[P_first_], 
+			C_.ncols(), C_.get(), C_.lda(), 
+			contiguous_cache_blocks_);
 	    my_seq_timing_ = timer.stop();
 	    return NULL;
 	  }
@@ -151,6 +153,7 @@ namespace TSQR {
       array_top_blocks_t& top_blocks_;
       const FactorOutput& factor_output_;
       SequentialTsqr< LocalOrdinal, Scalar > seq_;
+      TSQR::ApplyType apply_type_;
       TSQR::Combine< LocalOrdinal, Scalar > combine_;
       Partitioner< LocalOrdinal, Scalar > partitioner_;
       double& my_seq_timing_;
@@ -172,7 +175,7 @@ namespace TSQR {
 	const ParOutput& par_output = factor_output_.second;
 	const std::vector< Scalar >& tau = par_output[P_bot];
 	std::vector< Scalar > work (C_top.ncols());
-	combine_.apply_pair ("N", C_top.ncols(), Q_bot.ncols(), 
+	combine_.apply_pair (apply_type_, C_top.ncols(), Q_bot.ncols(), 
 			     Q_bot.get(), Q_bot.lda(), &tau[0],
 			     C_top.get(), C_top.lda(), 
 			     C_bot.get(), C_bot.lda(), &work[0]);

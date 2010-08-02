@@ -29,6 +29,7 @@
 #ifndef __TSQR_Tsqr_NodeTsqr_hpp
 #define __TSQR_Tsqr_NodeTsqr_hpp
 
+#include <Tsqr_ApplyType.hpp>
 #include <Tsqr_Lapack.hpp>
 #include <Tsqr_MatView.hpp>
 #include <Tsqr_ScalarTraits.hpp>
@@ -90,7 +91,7 @@ namespace TSQR {
 	    const bool contiguous_cache_blocks) = 0;
 
     virtual void
-    apply (const std::string& op,
+    apply (const ApplyType& apply_type,
 	   const LocalOrdinal nrows,
 	   const LocalOrdinal ncols_Q,
 	   const Scalar* const Q,

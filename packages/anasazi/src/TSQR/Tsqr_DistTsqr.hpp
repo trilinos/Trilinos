@@ -29,7 +29,9 @@
 #ifndef __TSQR_Tsqr_DistTsqr_hpp
 #define __TSQR_Tsqr_DistTsqr_hpp
 
+#include <Tsqr_ApplyType.hpp>
 #include <Tsqr_DistTsqrHelper.hpp>
+#include <Tsqr_ScalarTraits.hpp>
 
 #include <algorithm> // std::min, std::max
 #include <stdexcept>
@@ -121,25 +123,18 @@ namespace TSQR {
     }
 
     void
-    apply (const std::string& op,
+    apply (const ApplyType& apply_type,
 	   const LocalOrdinal ncols_C,
 	   const LocalOrdinal ncols_Q,
 	   Scalar C_mine[],
 	   const LocalOrdinal ldc_mine,
 	   const FactorOutput& factor_output)
     {
-      bool transposed;
-      if (op[0] == 'T' || op[0] == 't')
-	transposed = true;
-      else if (op[0] == 'H' || op[0] == 'h')
-	transposed = true;
-      else if (op[0] == 'N' || op[0] == 'n')
-	transposed = false;
-      else
-	throw std::invalid_argument ("Invalid op argument \"" + op + "\"");
-    
+      const bool transposed = apply_type.transposed();
+
       if (transposed)
-	throw std::logic_error("Applying Q^T or Q^H not yet implemented");
+	throw std::logic_error("DistTsqr: Applying Q^T or Q^H "
+			       "not yet implemented");
 
       const int P = messenger_->size();
       const int my_rank = messenger_->rank();
@@ -153,9 +148,9 @@ namespace TSQR {
       // assert (Q_factors.size() == tau_arrays.size());
       const int cur_pos = Q_factors.size() - 1;
       DistTsqrHelper< LocalOrdinal, Scalar > helper;
-      helper.apply_helper (ncols_C, ncols_Q, C_mine, ldc_mine, &C_other[0], 
-			   my_rank, 0, P-1, first_tag, messenger_, Q_factors, 
-			   tau_arrays, cur_pos, work);
+      helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine, 
+			   &C_other[0], my_rank, 0, P-1, first_tag, messenger_, 
+			   Q_factors, tau_arrays, cur_pos, work);
     }
 
     void
@@ -171,7 +166,8 @@ namespace TSQR {
 	  for (int j = 0; j < ncols_Q; j++)
 	    Q_mine[j + j*ldq_mine] = 1.0;
 	}
-      apply ("N", ncols_Q, ncols_Q, Q_mine, ldq_mine, factor_output);
+      apply (ApplyType::NoTranspose, ncols_Q, ncols_Q, 
+	     Q_mine, ldq_mine, factor_output);
     }
 
   private:

@@ -29,7 +29,7 @@
 #ifndef __TSQR_Tsqr_SequentialTsqr_hpp
 #define __TSQR_Tsqr_SequentialTsqr_hpp
 
-#include <Tsqr_Lapack.hpp>
+#include <Tsqr_ApplyType.hpp>
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_CacheBlockingStrategy.hpp>
 #include <Tsqr_CacheBlocker.hpp>
@@ -82,24 +82,14 @@ namespace TSQR {
     ///
     /// \param work [out] Workspace array of length >= A_top.ncols()
     mat_view
-    factor_first_block (LAPACK< LocalOrdinal, Scalar >& lapack,
+    factor_first_block (Combine< LocalOrdinal, Scalar >& combine,
 			mat_view& A_top,
-			Scalar tau[],
-			Scalar work[])
+			std::vector< Scalar >& tau,
+			std::vector< Scalar >& work)
     {
       const LocalOrdinal ncols = A_top.ncols();
-
-      // info must be an int, not a LocalOrdinal, since LAPACK
-      // routines always (???) use int for the INFO output argument.
-      int info = 0;
-      lapack.GEQR2 (A_top.nrows(), A_top.ncols(), A_top.get(), A_top.lda(), tau, work, &info);
-      if (info != 0)
-	{
-	  std::ostringstream os;
-	  os << "GEQR2 failed with INFO == " << info;
-	  throw std::logic_error (os.str());
-	}
-
+      combine.factor_first (A_top.nrows(), ncols, A_top.get(), A_top.lda(), 
+			    &tau[0], &work[0]);
       return mat_view(ncols, ncols, A_top.get(), A_top.lda());
     }
 
@@ -108,46 +98,22 @@ namespace TSQR {
     /// Q_first and tau, to the first (topmost) block C_first of the
     /// matrix C.
     void 
-    apply_first_block (const std::string& trans,
-		       LAPACK< LocalOrdinal, Scalar >& lapack,
+    apply_first_block (Combine< LocalOrdinal, Scalar >& combine,
+		       const ApplyType& applyType,
 		       const const_mat_view& Q_first,
 		       const std::vector< Scalar >& tau,
 		       mat_view& C_first,
 		       std::vector< Scalar >& work)
     {
-      const LocalOrdinal nrows_local = Q_first.nrows();
-      int info = 0;
-      lapack.ORM2R ("L", trans.c_str(), nrows_local, 
-		    C_first.ncols(), Q_first.ncols(),
-		    Q_first.get(), Q_first.lda(), &tau[0], 
-		    C_first.get(), C_first.lda(), &work[0], &info);
-      if (info != 0)
-	{
-	  std::ostringstream os;
-	  os << "ORM2R failed with INFO == " << info;
-	  throw std::logic_error (os.str());
-	}
-    }
-
-    void 
-    combine_apply_transpose (Combine< LocalOrdinal, Scalar >& combine,
-			     const const_mat_view& Q_cur,
-			     const std::vector< Scalar >& tau,
-			     mat_view& C_top,
-			     mat_view& C_cur,
-			     std::vector< Scalar >& work)
-    {
-      const LocalOrdinal nrows_local = C_cur.nrows();
-      combine.apply_inner ("T", nrows_local, 
-			   C_cur.ncols(), Q_cur.ncols(),
-			   Q_cur.get(), Q_cur.lda(), &tau[0], 
-			   C_top.get(), C_top.lda(),
-			   C_cur.get(), C_cur.lda(),
-			   &work[0]);
+      const LocalOrdinal nrowsLocal = Q_first.nrows();
+      combine.apply_first (applyType, nrowsLocal, C_first.ncols(), 
+			   Q_first.ncols(), Q_first.get(), Q_first.lda(),
+			   &tau[0], C_first.get(), C_first.lda(), &work[0]);
     }
 
     void
     combine_apply (Combine< LocalOrdinal, Scalar >& combine,
+		   const ApplyType& apply_type,
 		   const const_mat_view& Q_cur,
 		   const std::vector< Scalar >& tau,
 		   mat_view& C_top,
@@ -158,7 +124,8 @@ namespace TSQR {
       const LocalOrdinal ncols_Q = Q_cur.ncols();
       const LocalOrdinal ncols_C = C_cur.ncols();
 
-      combine.apply_inner ("N", nrows_local, ncols_C, ncols_Q, 
+      combine.apply_inner (apply_type, 
+			   nrows_local, ncols_C, ncols_Q, 
 			   Q_cur.get(), C_cur.lda(), &tau[0],
 			   C_top.get(), C_top.lda(),
 			   C_cur.get(), C_cur.lda(), &work[0]);
@@ -168,14 +135,15 @@ namespace TSQR {
     combine_factor (Combine< LocalOrdinal, Scalar >& combine,
 		    mat_view& R,
 		    mat_view& A_cur,
-		    Scalar tau[],
-		    Scalar work[])
+		    std::vector< Scalar >& tau,
+		    std::vector< Scalar >& work)
     {
       const LocalOrdinal nrows_local = A_cur.nrows();
       const LocalOrdinal ncols = A_cur.ncols();
 
       combine.factor_inner (nrows_local, ncols, R.get(), R.lda(), 
-			    A_cur.get(), A_cur.lda(), tau, work);
+			    A_cur.get(), A_cur.lda(), &tau[0], 
+			    &work[0]);
     }
 
   public:
@@ -196,7 +164,8 @@ namespace TSQR {
     /// Whether or not the R factor from the QR factorization has a
     /// nonnegative diagonal.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      return LAPACK< LocalOrdinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal;
+      typedef Combine< LocalOrdinal, Scalar > combine_type;
+      return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     /// \return Cache block size in bytes
@@ -220,7 +189,6 @@ namespace TSQR {
 	    const bool contiguous_cache_blocks = false)
     {
       CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
-      LAPACK< LocalOrdinal, Scalar > lapack;
       Combine< LocalOrdinal, Scalar > combine;
       std::vector< Scalar > work (ncols);
       FactorOutput tau_arrays;
@@ -240,14 +208,14 @@ namespace TSQR {
 
       // Factor the topmost block of A.
       std::vector< Scalar > tau_first (ncols);
-      mat_view R_view = factor_first_block (lapack, A_cur, &tau_first[0], &work[0]);
+      mat_view R_view = factor_first_block (combine, A_cur, tau_first, work);
       tau_arrays.push_back (tau_first);
 
       while (! A_rest.empty())
 	{
 	  A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
 	  std::vector< Scalar > tau (ncols);
-	  combine_factor (combine, R_view, A_cur, &tau[0], &work[0]);
+	  combine_factor (combine, R_view, A_cur, tau, work);
 	  tau_arrays.push_back (tau);
 	}
       return tau_arrays;
@@ -294,7 +262,6 @@ namespace TSQR {
 	    const bool contiguous_cache_blocks = false)
     {
       CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
-      LAPACK< LocalOrdinal, Scalar > lapack;
       Combine< LocalOrdinal, Scalar > combine;
       std::vector< Scalar > work (ncols);
       FactorOutput tau_arrays;
@@ -314,14 +281,14 @@ namespace TSQR {
 
       // Factor the topmost block of A.
       std::vector< Scalar > tau_first (ncols);
-      mat_view R_view = factor_first_block (lapack, A_cur, &tau_first[0], &work[0]);
+      mat_view R_view = factor_first_block (combine, A_cur, tau_first, work);
       tau_arrays.push_back (tau_first);
 
       while (! A_rest.empty())
 	{
 	  A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
 	  std::vector< Scalar > tau (ncols);
-	  combine_factor (combine, R_view, A_cur, &tau[0], &work[0]);
+	  combine_factor (combine, R_view, A_cur, tau, work);
 	  tau_arrays.push_back (tau);
 	}
       
@@ -333,15 +300,44 @@ namespace TSQR {
       return tau_arrays;
     }
 
+
+    /// \brief Number of cache blocks that factor() would use.
+    ///
+    LocalOrdinal
+    factor_num_cache_blocks (const LocalOrdinal nrows,
+			     const LocalOrdinal ncols,
+			     Scalar A[],
+			     const LocalOrdinal lda, 
+			     const bool contiguous_cache_blocks = false)
+    {
+      CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
+      LocalOrdinal count = 0;
+
+      mat_view A_rest (nrows, ncols, A, lda);
+      if (A_rest.empty())
+	return count;
+
+      mat_view A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+      count++; // first factor step
+
+      while (! A_rest.empty())
+	{
+	  A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
+	  count++; // next factor step
+	}
+      return count;
+    }
+
+
     void
-    apply (const std::string& op,
+    apply (const ApplyType& apply_type,
 	   const LocalOrdinal nrows,
 	   const LocalOrdinal ncols_Q,
-	   const Scalar* const Q,
+	   const Scalar Q[],
 	   const LocalOrdinal ldq,
 	   const FactorOutput& factor_output,
 	   const LocalOrdinal ncols_C,
-	   Scalar* const C,
+	   Scalar C[],
 	   const LocalOrdinal ldc,
 	   const bool contiguous_cache_blocks = false)
     {
@@ -369,16 +365,7 @@ namespace TSQR {
       LAPACK< LocalOrdinal, Scalar > lapack;
       Combine< LocalOrdinal, Scalar > combine;
 
-      bool transposed;
-      if (op[0] == 'H' || op[0] == 'h')
-	throw std::logic_error("TSQR::apply: applying Q^H not yet implemented");
-      else if (op[0] == 'N' || op[0] == 'n')
-	transposed = false;
-      else if (op[0] == 't' || op[0] == 't')
-	transposed = true;
-      else
-	throw std::invalid_argument ("SequentialTsqr::apply: Invalid op argument \"" + op + "\"");
-
+      const bool transposed = apply_type.transposed();
       const FactorOutput& tau_arrays = factor_output; // rename for encapsulation
       std::vector< Scalar > work (ncols_C);
       
@@ -420,7 +407,7 @@ namespace TSQR {
 	  // Apply the topmost block of Q.
 	  FactorOutputIter tau_iter = tau_arrays.begin();
 	  const std::vector< Scalar >& tau = *tau_iter++;
-	  apply_first_block ("T", lapack, Q_cur, tau, C_cur, work);
+	  apply_first_block (combine, apply_type, Q_cur, tau, C_cur, work);
 
 	  while (! Q_rest.empty())
 	    {
@@ -430,7 +417,7 @@ namespace TSQR {
 	      if (tau_iter == tau_arrays.end())
 		throw std::logic_error("Not enough tau arrays!");
 #endif // TSQR_SEQ_TSQR_EXTRA_DEBUG
-	      combine_apply_transpose (combine, Q_cur, *tau_iter++, C_top, C_cur, work);
+	      combine_apply (combine, apply_type, Q_cur, *tau_iter++, C_top, C_cur, work);
 	    }
 #ifdef TSQR_SEQ_TSQR_EXTRA_DEBUG
 	  if (tau_iter != tau_arrays.end())
@@ -455,7 +442,7 @@ namespace TSQR {
 	      else if (tau_iter == tau_arrays.rend())
 	      	throw std::logic_error ("Not enough tau arrays!");
 #endif // TSQR_SEQ_TSQR_EXTRA_DEBUG
-	      combine_apply (combine, Q_cur, *tau_iter++, C_top, C_cur, work);
+	      combine_apply (combine, apply_type, Q_cur, *tau_iter++, C_top, C_cur, work);
 	      Q_cur = blocker.split_bottom_block (Q_rest, contiguous_cache_blocks);
 	      C_cur = blocker.split_bottom_block (C_rest, contiguous_cache_blocks);
 	    }
@@ -471,7 +458,7 @@ namespace TSQR {
 	    throw std::logic_error ("Not enough tau arrays!");
 #endif // TSQR_SEQ_TSQR_EXTRA_DEBUG
 
-	  apply_first_block ("N", lapack, Q_cur, *tau_iter++, C_cur, work);
+	  apply_first_block (combine, apply_type, Q_cur, *tau_iter++, C_cur, work);
 
 #ifdef TSQR_SEQ_TSQR_EXTRA_DEBUG
 	  if (tau_iter != tau_arrays.rend())
@@ -503,12 +490,13 @@ namespace TSQR {
       // itself contains the first ncols_C columns of the identity
       // matrix.
       fill_with_zeros (nrows, ncols_C, C, ldc, contiguous_cache_blocks);
-      for (LocalOrdinal j = 0; j < ncols_C; j++)
+      for (LocalOrdinal j = 0; j < ncols_C; ++j)
       	C_top(j, j) = Scalar(1);
 
       // Apply the Q factor to C, to extract the first ncols_C columns
       // of Q in explicit form.
-      apply ("N", nrows, ncols_Q, Q, ldq, factor_output, 
+      apply (ApplyType::NoTranspose, 
+	     nrows, ncols_Q, Q, ldq, factor_output, 
 	     ncols_C, C, ldc, contiguous_cache_blocks);
     }
 

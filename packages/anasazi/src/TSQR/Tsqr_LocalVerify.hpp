@@ -54,14 +54,14 @@ namespace TSQR {
     
     // FIXME (mfh 22 Apr 2010) This function does no scaling of
     // intermediate quantities, so it might overflow unnecessarily.
-    magnitude_type result = 0.0;
+    magnitude_type result (0);
     for (Ordinal j = 0; j < ncols; j++)
       {
 	const Scalar* const cur_col = &A_local[j*lda_local];
 	for (Ordinal i = 0; i < nrows_local; ++i)
 	  {
-	    const Scalar xi = cur_col[i];
-	    result = result + xi * xi;
+	    const magnitude_type abs_xi = ScalarTraits< Scalar >::abs (cur_col[i]);
+	    result = result + abs_xi * abs_xi;
 	  }
       }
     return sqrt (result);
@@ -117,6 +117,8 @@ namespace TSQR {
 				const typename ScalarTraits< Scalar >::magnitude_type A_norm_F)
   {
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    const Scalar ZERO (0);
+    const Scalar ONE (1);
 
     const bool relative = false; // whether to scale $\|I-Q^T*Q\|_F$ by $\|A\|_F$
     BLAS<Ordinal, Scalar> blas;
@@ -124,13 +126,17 @@ namespace TSQR {
     std::vector<Scalar> AbsOrthog (ncols * ncols, std::numeric_limits<Scalar>::quiet_NaN());
     const Ordinal AbsOrthog_stride = ncols;
 
-    // Compute AbsOrthog := Q^T * Q - I.  First, compute Q^T * Q:
-    blas.GEMM ("T", "N", ncols, ncols, nrows, 1.0, Q, ldq, Q, ldq, 
-	       0.0, &AbsOrthog[0], AbsOrthog_stride);
+    // Compute AbsOrthog := Q' * Q - I.  First, compute Q' * Q:
+    if (ScalarTraits< Scalar >::is_complex)
+      blas.GEMM ("C", "N", ncols, ncols, nrows, ONE, Q, ldq, Q, ldq, 
+		 ZERO, &AbsOrthog[0], AbsOrthog_stride);
+    else
+      blas.GEMM ("T", "N", ncols, ncols, nrows, ONE, Q, ldq, Q, ldq, 
+		 ZERO, &AbsOrthog[0], AbsOrthog_stride);
 
     // Now, compute (Q^T*Q) - I.
     for (Ordinal j = 0; j < ncols; j++)
-      AbsOrthog[j + j*AbsOrthog_stride] = AbsOrthog[j + j*AbsOrthog_stride] - 1.0;
+      AbsOrthog[j + j*AbsOrthog_stride] = AbsOrthog[j + j*AbsOrthog_stride] - ONE;
 
     // Now AbsOrthog == Q^T * Q - I.  Compute its Frobenius norm.
     const magnitude_type AbsOrthog_norm_F = 
@@ -155,9 +161,10 @@ namespace TSQR {
   {
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
 
-    std::vector<Scalar> AbsResid (nrows * ncols, std::numeric_limits<Scalar>::quiet_NaN());
+    std::vector< Scalar > AbsResid (nrows * ncols, std::numeric_limits< Scalar >::quiet_NaN());
     const Ordinal AbsResid_stride = nrows;
-    BLAS<Ordinal, Scalar> blas;
+    BLAS< Ordinal, Scalar > blas;
+    const magnitude_type ONE (1);
 
     // if (b_debug)
     //   cerr << "relative_residual:" << endl;
@@ -174,8 +181,8 @@ namespace TSQR {
     // if (NaN_in_matrix (nrows, ncols, AbsResid, AbsResid_stride))
     //   cerr << "relative_residual: matrix AbsResid := A contains a NaN" << endl;
 
-    blas.GEMM ("N", "N", nrows, ncols, ncols, -1.0, Q, ldq, R, ldr, 
-	       1.0, &AbsResid[0], AbsResid_stride);
+    blas.GEMM ("N", "N", nrows, ncols, ncols, -ONE, Q, ldq, R, ldr, 
+	       ONE, &AbsResid[0], AbsResid_stride);
 
     // if (NaN_in_matrix (nrows, ncols, AbsResid, AbsResid_stride))
     //   cerr << "relative_residual: matrix AbsResid := A - Q*R contains a NaN" << endl;

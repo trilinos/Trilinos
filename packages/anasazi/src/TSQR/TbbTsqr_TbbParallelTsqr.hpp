@@ -90,6 +90,16 @@ namespace TSQR {
       typedef Scalar scalar_type;
       typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       typedef LocalOrdinal ordinal_type;
+      
+      /// Whether or not this QR factorization produces an R factor
+      /// with all nonnegative diagonal entries.
+      static bool QR_produces_R_factor_with_nonnegative_diagonal() {
+	typedef Combine< LocalOrdinal, Scalar > combine_type;
+	typedef LAPACK< LocalOrdinal, Scalar > lapack_type;
+      
+	return combine_type::QR_produces_R_factor_with_nonnegative_diagonal() &&
+	  lapack_type::QR_produces_R_factor_with_nonnegative_diagonal();
+      }
 
       /// Results of SequentialTsqr for each core.
       ///
@@ -215,7 +225,7 @@ namespace TSQR {
       }
 
       void
-      apply (const std::string& op,
+      apply (const ApplyType& apply_type,
 	     const LocalOrdinal nrows,
 	     const LocalOrdinal ncols_Q,
 	     const Scalar Q[],
@@ -228,11 +238,8 @@ namespace TSQR {
       {
 	using tbb::task;
 
-	const ApplyType apply_type (op);
-	if (apply_type == ApplyType::ConjugateTranspose && 
-	    ScalarTraits< Scalar >::is_complex)
-	  throw std::logic_error("Applying Q^H for complex scalar types "
-				 "not yet implemented");
+	if (apply_type.transposed())
+	  throw std::logic_error ("Applying Q^T and Q^H not implemented");
 
 	const_mat_view Q_view (nrows, ncols_Q, Q, ldq);
 	mat_view C_view (nrows, ncols_C, C, ldc);
@@ -269,8 +276,6 @@ namespace TSQR {
 	    if (max_seq_timing > max_seq_apply_timing_)
 	      max_seq_apply_timing_ = max_seq_timing;
 	  }
-	else
-	  throw std::logic_error ("Applying Q^T and Q^H not implemented");
       }
 
 
@@ -304,8 +309,10 @@ namespace TSQR {
 	     << ex.what();
 	  throw std::runtime_error (os.str());
 	}
-	apply ("N", nrows, ncols_Q_in, Q_in, ldq_in, factor_output,
-	       ncols_Q_out, Q_out, ldq_out, contiguous_cache_blocks);
+	apply (ApplyType::NoTranspose, 
+	       nrows, ncols_Q_in, Q_in, ldq_in, factor_output, 
+	       ncols_Q_out, Q_out, ldq_out, 
+	       contiguous_cache_blocks);
       }
 
       /// \brief Compute Q*B

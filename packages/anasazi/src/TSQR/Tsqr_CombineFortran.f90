@@ -27,7 +27,7 @@
 ! @HEADER
 
 module TsqrCombine
-  use TsqrHouseholderReflector, only : DLARFP_wrapper, SLARFP_wrapper
+  use TsqrHouseholderReflector, only : DLARFP_wrapper, SLARFP_wrapper, ZLARFP_wrapper, CLARFP_wrapper
 
   implicit none
 
@@ -40,6 +40,14 @@ module TsqrCombine
        real (8), intent(inout) :: Y(*)
      end subroutine DGEMV
 
+     subroutine ZGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
+       complex (8), intent(in)    :: ALPHA,BETA
+       integer, intent(in)        :: INCX,INCY,LDA,M,N
+       character, intent(in)      :: TRANS
+       complex (8), intent(in)    :: A(LDA,*), X(*)
+       complex (8), intent(inout) :: Y(*)
+     end subroutine ZGEMV
+
      subroutine SGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
        real (4), intent(in)    :: ALPHA,BETA
        integer, intent(in)     :: INCX,INCY,LDA,M,N
@@ -47,6 +55,14 @@ module TsqrCombine
        real (4), intent(in)    :: A(LDA,*), X(*)
        real (4), intent(inout) :: Y(*)
      end subroutine SGEMV
+
+     subroutine CGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
+       complex (4), intent(in)    :: ALPHA,BETA
+       integer, intent(in)        :: INCX,INCY,LDA,M,N
+       character, intent(in)      :: TRANS
+       complex (4), intent(in)    :: A(LDA,*), X(*)
+       complex (4), intent(inout) :: Y(*)
+     end subroutine CGEMV
      
      subroutine DGER(M,N,ALPHA,X,INCX,Y,INCY,A,LDA)
        real (8), intent(in)    :: ALPHA
@@ -55,6 +71,13 @@ module TsqrCombine
        real (8), intent(in)    :: X(*),Y(*)
      end subroutine DGER
 
+     subroutine ZGERC(M,N,ALPHA,X,INCX,Y,INCY,A,LDA)
+       complex (8), intent(in)    :: ALPHA
+       integer, intent(in)        :: INCX,INCY,LDA,M,N
+       complex (8), intent(inout) :: A(LDA,*)
+       complex (8), intent(in)    :: X(*),Y(*)
+     end subroutine ZGERC
+
      subroutine SGER(M,N,ALPHA,X,INCX,Y,INCY,A,LDA)
        real (4), intent(in)    :: ALPHA
        integer, intent(in)     :: INCX,INCY,LDA,M,N
@@ -62,163 +85,12 @@ module TsqrCombine
        real (4), intent(in)    :: X(*),Y(*)
      end subroutine SGER
 
-     subroutine DGEQR2( M, N, A, LDA, TAU, WORK, INFO )
-       integer, intent(in)     :: M, N, LDA
-       real (8), intent(inout) :: A(LDA,*)
-       real (8), intent(out)   :: TAU(*), WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine DGEQR2
-
-     subroutine SGEQR2( M, N, A, LDA, TAU, WORK, INFO )
-       integer, intent(in)     :: M, N, LDA
-       real (4), intent(inout) :: A(LDA,*)
-       real (4), intent(out)   :: TAU(*), WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine SGEQR2
-
-     subroutine DGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
-       integer, intent(in)     :: M, N, LDA, LWORK
-       real (8), intent(inout) :: A(LDA,*)
-       real (8), intent(out)   :: TAU(*), WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine DGEQRF
-
-     subroutine SGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
-       integer, intent(in)     :: M, N, LDA, LWORK
-       real (4), intent(inout) :: A(LDA,*)
-       real (4), intent(out)   :: TAU(*), WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine SGEQRF
-
-     subroutine DORMQR( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, LWORK, INFO )
-       character, intent(in) :: SIDE, TRANS
-       integer, intent(in)     :: M, N, K, LDA, LDC, LWORK
-       real (8), intent(in)    :: A(LDA,*), TAU(*)
-       real (8), intent(inout) :: C(LDC,*)
-       real (8), intent(out)   :: WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine DORMQR
-
-     subroutine SORMQR( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, LWORK, INFO )
-       character, intent(in) :: SIDE, TRANS
-       integer, intent(in)     :: M, N, K, LDA, LDC, LWORK
-       real (4), intent(in)    :: A(LDA,*), TAU(*)
-       real (4), intent(inout) :: C(LDC,*)
-       real (4), intent(out)   :: WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine SORMQR
-
-     subroutine DORM2R( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, INFO )
-       character, intent(in) :: SIDE, TRANS
-       integer, intent(in)     :: M, N, K, LDA, LDC
-       real (8), intent(in)    :: A(LDA,*), TAU(*)
-       real (8), intent(inout) :: C(LDC,*)
-       real (8), intent(out)   :: WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine DORM2R
-
-     subroutine SORM2R( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, INFO )
-       character, intent(in) :: SIDE, TRANS
-       integer, intent(in)     :: M, N, K, LDA, LDC
-       real (4), intent(in)    :: A(LDA,*), TAU(*)
-       real (4), intent(inout) :: C(LDC,*)
-       real (4), intent(out)   :: WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine SORM2R
-
-     subroutine DORGQR( M, N, K, A, LDA, TAU, WORK, LWORK, INFO )
-       integer, intent(in)     :: M, N, K, LDA, LWORK
-       real (8), intent(inout) :: A(LDA,*)
-       real (8), intent(in)    :: TAU(*)
-       real (8), intent(out)   :: WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine DORGQR
-
-     subroutine SORGQR( M, N, K, A, LDA, TAU, WORK, LWORK, INFO )
-       integer, intent(in)     :: M, N, K, LDA, LWORK
-       real (4), intent(inout) :: A(LDA,*)
-       real (4), intent(in)    :: TAU(*)
-       real (4), intent(out)   :: WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine SORGQR
-
-     subroutine DGEMM(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
-       real (8), intent(in)    :: ALPHA,BETA
-       integer, intent(in)     :: K,LDA,LDB,LDC,M,N
-       character, intent(in)   :: TRANSA,TRANSB
-       real (8), intent(in)    :: A(LDA,*), B(LDB,*)
-       real (8), intent(inout) :: C(LDC,*)
-     end subroutine DGEMM
-
-     subroutine SGEMM(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
-       real (4), intent(in)    :: ALPHA,BETA
-       integer, intent(in)     :: K,LDA,LDB,LDC,M,N
-       character, intent(in)   :: TRANSA,TRANSB
-       real (4), intent(in)    :: A(LDA,*), B(LDB,*)
-       real (4), intent(inout) :: C(LDC,*)
-     end subroutine SGEMM
-
-     subroutine DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
-       character, intent(in)   :: JOBZ, UPLO
-       integer, intent(in)     :: LDA, LWORK, N
-       real (8), intent(inout) :: A(LDA,*)
-       real (8), intent(out)   :: W(*), WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine DSYEV
-
-     subroutine SSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
-       character, intent(in)   :: JOBZ, UPLO
-       integer, intent(in)     :: LDA, LWORK, N
-       real (4), intent(inout) :: A(LDA,*)
-       real (4), intent(out)   :: W(*), WORK(*)
-       integer, intent(out)    :: INFO
-     end subroutine SSYEV
-
-     real(8) function DNRM2( N, X, INCX )
-       integer, intent(in)  :: N, INCX
-       real (8), intent(in) :: X(*)
-     end function DNRM2
-
-     real(4) function SNRM2( N, X, INCX )
-       integer, intent(in)  :: N, INCX
-       real (4), intent(in) :: X(*)
-     end function SNRM2
-
-     real(8) function DDOT( N, DX, INCX, DY, INCY )
-       integer, intent(in)  :: N, INCX, INCY
-       real (8), intent(in) :: DX(*), DY(*)
-     end function DDOT
-
-     real(4) function SDOT( N, DX, INCX, DY, INCY )
-       integer, intent(in)  :: N, INCX, INCY
-       real (4), intent(in) :: DX(*), DY(*)
-     end function SDOT
-
-     integer function IDAMAX( N, X, INCX )
-       integer, intent(in)  :: N, INCX
-       real (8), intent(in) :: X(*)
-     end function IDAMAX
-
-     integer function ISAMAX( N, X, INCX )
-       integer, intent(in)  :: N, INCX
-       real (4), intent(in) :: X(*)
-     end function ISAMAX
-
-     subroutine DGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT, WORK, LWORK, INFO )
-       character, intent(in) :: JOBU, JOBVT
-       integer, intent(in)   :: LDA, LDU, LDVT, LWORK, M, N
-       integer, intent(out)  :: INFO
-       real (8), intent(inout) :: A(LDA,*)
-       real (8), intent(out) :: S(*), U(LDU,*), VT(LDVT,*), WORK(*)
-     end subroutine DGESVD
-
-     subroutine SGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT, WORK, LWORK, INFO )
-       character, intent(in) :: JOBU, JOBVT
-       integer, intent(in)   :: LDA, LDU, LDVT, LWORK, M, N
-       integer, intent(out)  :: INFO
-       real (4), intent(inout) :: A(LDA,*)
-       real (4), intent(out) :: S(*), U(LDU,*), VT(LDVT,*), WORK(*)
-     end subroutine SGESVD
+     subroutine CGERC(M,N,ALPHA,X,INCX,Y,INCY,A,LDA)
+       complex (4), intent(in)    :: ALPHA
+       integer, intent(in)        :: INCX,INCY,LDA,M,N
+       complex (4), intent(inout) :: A(LDA,*)
+       complex (4), intent(in)    :: X(*),Y(*)
+     end subroutine CGERC
   end interface
 
 contains
@@ -330,6 +202,58 @@ contains
   end subroutine d_apply_inner
 
 
+  subroutine z_apply_inner( trans, m, ncols_C, ncols_Q, A, lda, tau, &
+       C_top, ldc_top, C_bot, ldc_bot, work )
+    implicit none
+    
+    character, intent(in)           :: trans
+    integer, intent(in), value      :: m, ncols_Q, ncols_C, lda, ldc_top, ldc_bot
+    complex(8), intent(in)          :: A(lda,ncols_Q)
+    complex(8), intent(inout)       :: C_top(ldc_top,ncols_C), C_bot(ldc_bot,ncols_C)
+    complex(8), intent(in)          :: tau(ncols_Q)
+    complex(8), intent(out)         :: work(ncols_C)
+
+    complex(8)                      :: ZERO, ONE, tau_k
+    integer                         :: j, k, k_first, k_second, k_step
+    logical                         :: no_trans
+
+    ZERO = complex( 0.0d0, 0.0d0 )
+    ONE = complex( 1.0d0, 0.0d0 )
+    do k = 1, ncols_C
+       work(k) = ZERO
+    end do
+
+    no_trans = (trans == 'N' .or. trans == 'n')
+    if (no_trans) then
+       k_first = ncols_Q
+       k_second = 1
+       k_step = -1
+    else 
+       k_first = 1
+       k_second = ncols_Q
+       k_step = 1
+    end if
+
+    do k = k_first, k_second, k_step
+       if (no_trans) then
+          tau_k = tau(k)
+       else
+          tau_k = conjg( tau(k) )
+       end if
+
+       call ZGEMV( 'Conjugate transpose', m, ncols_C, ONE, C_bot, ldc_bot, A(1, k), 1, ZERO, work, 1 )
+       do j = 1, ncols_C
+          work(j) = work(j) + conjg( C_top(k, j) )
+       end do
+       do j = 1, ncols_C
+          C_top(k, j) = C_top(k, j) - tau_k * work(j)
+       end do
+       call ZGERC( m, ncols_C, -tau_k, A(1,k), 1, work, 1, C_bot(1, 1), ldc_bot )
+    end do
+  end subroutine z_apply_inner
+
+
+
   subroutine s_apply_inner( trans, m, ncols_C, ncols_Q, A, lda, tau, &
        C_top, ldc_top, C_bot, ldc_bot, work )
     implicit none
@@ -398,6 +322,60 @@ contains
        end do
     end if
   end subroutine s_apply_inner
+
+
+
+  subroutine c_apply_inner( trans, m, ncols_C, ncols_Q, A, lda, tau, &
+       C_top, ldc_top, C_bot, ldc_bot, work )
+    implicit none
+    
+    character, intent(in)      :: trans
+    integer, intent(in), value :: m, ncols_Q, ncols_C, lda, ldc_top, ldc_bot
+    complex(4), intent(in)     :: A(lda,ncols_Q)
+    complex(4), intent(inout)  :: C_top(ldc_top,ncols_C), C_bot(ldc_bot,ncols_C)
+    complex(4), intent(in)     :: tau(ncols_Q)
+    complex(4), intent(out)    :: work(ncols_C)
+
+    complex(4)                 :: ZERO, ONE, tau_k
+    integer                    :: j, k, k_first, k_second, k_step
+    logical                    :: no_trans
+
+    ZERO = complex( 0.0e0, 0.0e0 )
+    ONE = complex( 1.0e0, 0.0e0 )
+    do k = 1, ncols_C
+       work(k) = ZERO
+    end do
+
+    no_trans = (trans == 'N' .or. trans == 'n')
+    if (no_trans) then
+       k_first = ncols_Q
+       k_second = 1
+       k_step = -1
+    else 
+       k_first = 1
+       k_second = ncols_Q
+       k_step = 1
+    end if
+
+    do k = k_first, k_second, k_step
+       if (no_trans) then
+          tau_k = tau(k)
+       else
+          tau_k = conjg( tau(k) )
+       end if
+
+       call CGEMV( 'Conjugate transpose', m, ncols_C, ONE, C_bot, ldc_bot, &
+            A(1, k), 1, ZERO, work, 1 )
+       do j = 1, ncols_C
+          work(j) = work(j) + conjg( C_top(k, j) )
+       end do
+       do j = 1, ncols_C
+          C_top(k, j) = C_top(k, j) - tau_k * work(j)
+       end do
+       call CGERC( m, ncols_C, -tau_k, A(1,k), 1, work, 1, C_bot(1, 1), ldc_bot )
+    end do
+  end subroutine c_apply_inner
+
 
   ! Perform one "inner" QR factorization step of sequential / parallel
   ! TSQR.  (In either case, only one processor calls this routine.)
@@ -492,6 +470,52 @@ contains
   end subroutine d_factor_inner
 
 
+  subroutine z_factor_inner( m, n, R, ldr, A, lda, tau, work )
+    implicit none
+
+    integer, value, intent(in) :: m, n, ldr, lda
+    complex (8), intent(inout) :: R(ldr,n)
+    complex (8), intent(inout) :: A(lda,n)
+    complex (8), intent(out)   :: tau(n)
+    complex (8), intent(out)   :: work(n)
+
+    complex (8)                :: ZERO, ONE
+    integer                    :: j, k
+
+    ZERO = complex( 0.0d0, 0.0d0 )
+    ONE = complex( 1.0d0, 0.0d0 )
+    do k = 1, n
+       work(k) = ZERO
+    end do
+
+    do k = 1, n-1
+       ! Form the "sparse" Householder reflector, so that the diagonal
+       ! elements of the R factor are nonnegative.
+       call ZLARFP_wrapper( m + 1, R(k,k), A(1,k), 1, tau(k) )
+
+       ! $y^* := A(1:m,k)^* A(1:m, k+1:n)$, so $y := A(1:m, k+1:n)^* A(1:m, k)$.
+       call ZGEMV( 'Conjugate transpose', m, n-k, ONE, A(1, k+1), lda, &
+            A(1, k), 1, ZERO, work, 1 )
+
+       ! $y^* := y^* + R(k, k+1:n)$, so $y := y + R(k,k+1:n)^*$.
+       do j = k+1, n
+          work(j-k) = work(j-k) + conjg( R(k, j) )
+       end do
+
+       ! Update R(k, k+1:n)
+       do j = k+1, n
+          R(k, j) = R(k, j) - tau(k) * work(j-k)
+       end do
+
+       ! $A(1:m, k+1:n) := A(1:m, k+1:n) + \alpha \cdot x \cdot y^*$
+       call ZGERC( m, n-k, -tau(k), A(1,k), 1, work, 1, A(1, k+1), lda )
+    end do
+
+    ! Compute the Householder reflector for the last column.
+    call ZLARFP_wrapper( m + 1, R(n,n), A(1,n), 1, tau(n) )
+  end subroutine z_factor_inner
+
+
   subroutine s_factor_inner( m, n, R, ldr, A, lda, tau, work )
     implicit none
 
@@ -535,6 +559,52 @@ contains
     ! because there is no trailing matrix left!
     call SLARFP_WRAPPER( m + 1, R(n,n), A(1,n), 1, tau(n) )
   end subroutine s_factor_inner
+
+
+  subroutine c_factor_inner( m, n, R, ldr, A, lda, tau, work )
+    implicit none
+
+    integer, value, intent(in) :: m, n, ldr, lda
+    complex (4), intent(inout) :: R(ldr,n)
+    complex (4), intent(inout) :: A(lda,n)
+    complex (4), intent(out)   :: tau(n)
+    complex (4), intent(out)   :: work(n)
+
+    complex (4)                :: ZERO, ONE
+    integer                    :: j, k
+
+    ZERO = complex( 0.0e0, 0.0e0 )
+    ONE = complex( 1.0e0, 0.0e0 )
+    do k = 1, n
+       work(k) = ZERO
+    end do
+
+    do k = 1, n-1
+       ! Form the "sparse" Householder reflector, so that the diagonal
+       ! elements of the R factor are nonnegative.
+       call CLARFP_wrapper( m + 1, R(k,k), A(1,k), 1, tau(k) )
+
+       ! $y^* := A(1:m,k)^* A(1:m, k+1:n)$, so $y := A(1:m, k+1:n)^* A(1:m, k)$.
+       call CGEMV( 'Conjugate transpose', m, n-k, ONE, A(1, k+1), lda, A(1, k), 1, ZERO, work, 1 )
+
+       ! $y^* := y^* + R(k, k+1:n)$, so $y := y + R(k,k+1:n)^*$.
+       do j = k+1, n
+          work(j-k) = work(j-k) + conjg( R(k, j) )
+       end do
+
+       ! Update R(k, k+1:n)
+       do j = k+1, n
+          R(k, j) = R(k, j) - tau(k) * work(j-k)
+       end do
+
+       ! $A(1:m, k+1:n) := A(1:m, k+1:n) + \alpha \cdot x \cdot y^*$
+       call CGERC( m, n-k, -tau(k), A(1,k), 1, work, 1, A(1, k+1), lda )
+    end do
+
+    ! Compute the Householder reflector for the last column.
+    call CLARFP_wrapper( m + 1, R(n,n), A(1,n), 1, tau(n) )
+  end subroutine c_factor_inner
+
 
 
   ! Compute QR factorization of [R_top; R_bot].  Store resulting R
@@ -595,6 +665,42 @@ contains
   end subroutine d_factor_pair
 
 
+  subroutine z_factor_pair( n, R_top, ldr_top, R_bot, ldr_bot, tau, work )
+    implicit none
+
+    integer, value, intent(in) :: n, ldr_top, ldr_bot
+    complex (8), intent(inout) :: R_top(ldr_top,n), R_bot(ldr_bot,n)
+    complex (8), intent(out)   :: tau(n)
+    complex (8), intent(out)   :: work(n)
+
+    complex (8)                :: ZERO, ONE
+    integer                    :: j, k
+
+    ZERO = complex( 0.0d0, 0.0d0 )
+    ONE = complex( 1.0d0, 0.0d0 )
+    do k = 1, n
+       work(k) = ZERO
+    end do
+
+    do k = 1, n-1
+       call ZLARFP_wrapper( k + 1, R_top(k,k), R_bot(1,k), 1, tau(k) )
+       call ZGEMV( 'Conjugate transpose', k, n-k, ONE, &
+            R_bot(1, k+1), ldr_bot, &
+            R_bot(1, k), 1, ZERO, work, 1 )
+       do j = k+1, n
+          work(j-k) = work(j-k) + conjg( R_top(k, j) )
+       end do
+       do j = k+1, n
+          R_top(k, j) = R_top(k, j) - tau(k) * work(j-k)
+       end do
+       call ZGERC( k, n-k, -tau(k), R_bot(1,k), 1, work, 1, &
+            R_bot(1, k+1), ldr_bot )
+    end do
+
+    call ZLARFP_wrapper( n + 1, R_top(n,n), R_bot(1,n), 1, tau(n) )
+  end subroutine z_factor_pair
+
+
   subroutine s_factor_pair( n, R_top, ldr_top, R_bot, ldr_bot, tau, work )
     implicit none
 
@@ -640,6 +746,42 @@ contains
     ! because there is no trailing matrix left!
     call SLARFP_WRAPPER( n + 1, R_top(n,n), R_bot(1,n), 1, tau(n) )
   end subroutine s_factor_pair
+
+
+  subroutine c_factor_pair( n, R_top, ldr_top, R_bot, ldr_bot, tau, work )
+    implicit none
+
+    integer, value, intent(in) :: n, ldr_top, ldr_bot
+    complex (4), intent(inout) :: R_top(ldr_top,n), R_bot(ldr_bot,n)
+    complex (4), intent(out)   :: tau(n)
+    complex (4), intent(out)   :: work(n)
+
+    complex (4)                :: ZERO, ONE
+    integer                    :: j, k
+
+    ZERO = complex( 0.0e0, 0.0e0 )
+    ONE = complex( 1.0e0, 0.0e0 )
+    do k = 1, n
+       work(k) = ZERO
+    end do
+
+    do k = 1, n-1
+       call CLARFP_wrapper( k + 1, R_top(k,k), R_bot(1,k), 1, tau(k) )
+       call CGEMV( 'Conjugate transpose', k, n-k, ONE, &
+            R_bot(1, k+1), ldr_bot, &
+            R_bot(1, k), 1, ZERO, work, 1 )
+       do j = k+1, n
+          work(j-k) = work(j-k) + conjg( R_top(k, j) )
+       end do
+       do j = k+1, n
+          R_top(k, j) = R_top(k, j) - tau(k) * work(j-k)
+       end do
+       call CGERC( k, n-k, -tau(k), R_bot(1,k), 1, work, 1, &
+            R_bot(1, k+1), ldr_bot )
+    end do
+
+    call CLARFP_wrapper( n + 1, R_top(n,n), R_bot(1,n), 1, tau(n) )
+  end subroutine c_factor_pair
 
 
   ! Apply Q factor (or Q^T) of the 2*ncols_Q by ncols_Q matrix 
@@ -715,6 +857,58 @@ contains
   end subroutine d_apply_pair
 
 
+  subroutine z_apply_pair( trans, ncols_C, ncols_Q, R_bot, ldr_bot, &
+       tau, C_top, ldc_top, C_bot, ldc_bot, work )
+    implicit none
+    
+    character, intent(in)      :: trans
+    integer, intent(in), value :: ncols_Q, ncols_C, ldr_bot, ldc_top, ldc_bot
+    complex(8), intent(in)     :: R_bot(ldr_bot,ncols_Q)
+    complex(8), intent(inout)  :: C_top(ldc_top,ncols_C), C_bot(ldc_bot,ncols_C)
+    complex(8), intent(in)     :: tau(ncols_Q)
+    complex(8), intent(out)    :: work(ncols_C)
+
+    complex(8)                 :: ZERO, ONE, tau_k
+    integer                    :: j, k, k_first, k_second, k_step
+    logical                    :: no_trans
+
+    ZERO = complex( 0.0d0, 0.0d0 )
+    ONE = complex( 1.0d0, 0.0d0 )
+    do k = 1, ncols_C
+       work(k) = ZERO
+    end do
+
+    no_trans = (trans == 'N' .or. trans == 'n')
+    if (no_trans) then
+       k_first = ncols_Q
+       k_second = 1
+       k_step = -1
+    else 
+       k_first = 1
+       k_second = ncols_Q
+       k_step = 1
+    end if
+
+    do k = k_first, k_second, k_step
+       if (no_trans) then
+          tau_k = tau(k)
+       else
+          tau_k = conjg( tau(k) )
+       end if
+
+       call ZGEMV( 'Conjugate transpose', k, ncols_C, ONE, C_bot, ldc_bot, &
+            R_bot(1, k), 1, ZERO, work, 1 )
+       do j = 1, ncols_C
+          work(j) = work(j) + conjg( C_top(k, j) )
+       end do
+       do j = 1, ncols_C
+          C_top(k, j) = C_top(k, j) - tau_k * work(j)
+       end do
+       call ZGERC( k, ncols_C, -tau_k, R_bot(1,k), 1, work, 1, C_bot, ldc_bot )
+    end do
+  end subroutine z_apply_pair
+
+
   subroutine s_apply_pair( trans, ncols_C, ncols_Q, R_bot, ldr_bot, &
        tau, C_top, ldc_top, C_bot, ldc_bot, work )
     implicit none
@@ -781,6 +975,59 @@ contains
        end do
     end if
   end subroutine s_apply_pair
+
+
+  subroutine c_apply_pair( trans, ncols_C, ncols_Q, R_bot, ldr_bot, &
+       tau, C_top, ldc_top, C_bot, ldc_bot, work )
+    implicit none
+    
+    character, intent(in)      :: trans
+    integer, intent(in), value :: ncols_Q, ncols_C, ldr_bot, ldc_top, ldc_bot
+    complex(4), intent(in)     :: R_bot(ldr_bot,ncols_Q)
+    complex(4), intent(inout)  :: C_top(ldc_top,ncols_C), C_bot(ldc_bot,ncols_C)
+    complex(4), intent(in)     :: tau(ncols_Q)
+    complex(4), intent(out)    :: work(ncols_C)
+
+    complex(4)                 :: ZERO, ONE, tau_k
+    integer                    :: j, k, k_first, k_second, k_step
+    logical                    :: no_trans
+
+    ZERO = complex( 0.0e0, 0.0e0 )
+    ONE = complex( 1.0e0, 0.0e0 )
+    do k = 1, ncols_C
+       work(k) = ZERO
+    end do
+
+    no_trans = (trans == 'N' .or. trans == 'n')
+    if (no_trans) then
+       k_first = ncols_Q
+       k_second = 1
+       k_step = -1
+    else 
+       k_first = 1
+       k_second = ncols_Q
+       k_step = 1
+    end if
+
+    do k = k_first, k_second, k_step
+       if (no_trans) then
+          tau_k = tau(k)
+       else
+          tau_k = conjg( tau(k) )
+       end if
+
+       call CGEMV( 'Conjugate transpose', k, ncols_C, ONE, C_bot, ldc_bot, &
+            R_bot(1, k), 1, ZERO, work, 1 )
+       do j = 1, ncols_C
+          work(j) = work(j) + conjg( C_top(k, j) )
+       end do
+       do j = 1, ncols_C
+          C_top(k, j) = C_top(k, j) - tau_k * work(j)
+       end do
+       call CGERC( k, ncols_C, -tau_k, R_bot(1,k), 1, work, 1, C_bot, ldc_bot )
+    end do
+  end subroutine c_apply_pair
+
 
 
 end module TsqrCombine

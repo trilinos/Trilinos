@@ -29,6 +29,8 @@
 #ifndef __TSQR_Tsqr_Util_hpp
 #define __TSQR_Tsqr_Util_hpp
 
+#include "Tsqr_ScalarTraits.hpp"
+
 #include <algorithm>
 #include <complex>
 #include <ostream>
@@ -38,6 +40,50 @@
 
 namespace TSQR {
 
+  /// \brief Print a Scalar value to the given output stream
+  /// 
+  /// C++ annoyingly doesn't let me do partial template specialization
+  /// of functions.  Because of that, I can't use a template function;
+  /// instead, I have to reify the function into a class ("function
+  /// object"), in the worst Java style (where everything is a noun
+  /// with a "run()" method).
+  ///
+  template< class Scalar, bool isComplex >
+  class ScalarPrinter {
+  public:
+    ///
+    /// Print elt to out
+    void operator() (std::ostream& out, const Scalar& elt) const;
+  };
+
+  // Partial specialization for real Scalar
+  template< class Scalar >
+  class ScalarPrinter< Scalar, false > {
+  public:
+    void operator() (std::ostream& out, const Scalar& elt) const {
+      out << elt;
+    }
+  };
+
+  // Partial specialization for complex Scalar
+  template< class Scalar >
+  class ScalarPrinter< Scalar, true > {
+  public:
+    void operator() (std::ostream& out, const Scalar& elt) const {
+      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+
+      const magnitude_type ZERO (0);
+      const magnitude_type& realPart = std::real (elt);
+      const magnitude_type& imagPart = std::imag (elt);
+
+      out << realPart;
+      if (imagPart < ZERO)
+	out << "-" << ScalarTraits< Scalar >::abs(imagPart) << "*i";
+      else if (imagPart > ZERO)
+	out << "+" << imagPart << "*i";
+    }
+  };
+
   template< class LocalOrdinal, class Scalar >
   void
   print_local_matrix (std::ostream& out,
@@ -46,11 +92,17 @@ namespace TSQR {
 		      const Scalar A[],
 		      const LocalOrdinal lda)
   {
+    ScalarPrinter< Scalar, ScalarTraits< Scalar >::is_complex > printer;
     for (LocalOrdinal i = 0; i < nrows_local; i++)
       {
 	for (LocalOrdinal j = 0; j < ncols; j++)
-	  out << A[i + j*lda] << " ";
-	out << std::endl;
+	  {
+	    const Scalar& curElt = A[i + j*lda];
+	    printer (out, curElt);
+	    if (j < ncols - 1)
+	      out << ", ";
+	  }
+	out << ";" << std::endl;
       }
   }
 
