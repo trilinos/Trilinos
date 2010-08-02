@@ -1,5 +1,5 @@
 
-#include <use_cases/GridFixture.hpp>
+#include <stk_mesh/fixtures/GridFixture.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -208,7 +208,7 @@ namespace {
   };
 }
 
-bool validate_sides( GridFixture & fixture, int iteration) {
+bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration) {
 
   enum {
     LEFT   = 0,
@@ -591,7 +591,7 @@ bool validate_sides( GridFixture & fixture, int iteration) {
 
 
 //Validates that the correct entites were killed in this iteration
-bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int iteration) {
+bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixture & fixture, int iteration) {
 
   if (iteration >= NUM_ITERATIONS || iteration < 0) {
     return false;

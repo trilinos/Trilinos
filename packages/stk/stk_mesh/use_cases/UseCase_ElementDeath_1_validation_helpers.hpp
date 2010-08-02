@@ -12,12 +12,18 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
-class GridFixture;
 
 namespace stk {
 namespace mesh {
+
   class Entity;
   class BulkData;
+
+namespace fixtures {
+
+  class GridFixture;
+}
+
 }
 }
 
@@ -25,6 +31,10 @@ namespace mesh {
 std::vector<stk::mesh::Entity *> entities_to_be_killed( const stk::mesh::BulkData & mesh, int iteration);
 
 //Validates that the correct entites were killed in this iteration
-bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int iteration);
+bool validate_iteration(
+    stk::ParallelMachine pm,
+    stk::mesh::fixtures::GridFixture & fixture,
+    int iteration
+    );
 
 #endif

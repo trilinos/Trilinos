@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 #include <use_cases/UseCase_Skinning.hpp>
-#include <use_cases/HexFixture.hpp>
+#include <stk_mesh/fixtures/HexFixture.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -29,7 +29,7 @@
 
 namespace {
 
-  unsigned count_skin_entities( HexFixture3x3x3 & fixture) {
+  unsigned count_skin_entities( stk::mesh::fixtures::HexFixture3x3x3 & fixture) {
 
     const unsigned mesh_rank = stk::mesh::Element;
 
@@ -55,7 +55,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
   if ( 4 < p_size ) { return true; }
 
   //setup the mesh
-  HexFixture3x3x3 fixture(pm);
+  stk::mesh::fixtures::HexFixture3x3x3 fixture(pm);
 
   stk::mesh::MetaData& meta = fixture.m_meta_data;
   stk::mesh::BulkData& mesh = fixture.m_bulk_data;
