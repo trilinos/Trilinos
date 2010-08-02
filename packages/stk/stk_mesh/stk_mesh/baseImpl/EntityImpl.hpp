@@ -77,11 +77,13 @@ public:
     m_bucket_ord = ordinal;
   }
 
-  void set_owner_rank( unsigned owner_rank ) {
+  // return true if entity was actually modified
+  bool set_owner_rank( unsigned owner_rank ) {
     if ( owner_rank != m_owner_rank ) {
       m_owner_rank = owner_rank;
-      log_modified();
+      return true;
     }
+    return false;
   }
 
   void set_sync_count( size_t sync_count ) {
