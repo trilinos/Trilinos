@@ -31,7 +31,7 @@ public:
 
   // Testing for a simple loop of mesh entities:
   // node[i] : edge[i] : node[ ( i + 1 ) % node.size() ]
-  void generate_loop( bool generate_aura = true );
+  void generate_mesh( bool generate_aura = true );
 
   void test_shift_loop( bool generate_aura );
 
