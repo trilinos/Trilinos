@@ -69,13 +69,17 @@ namespace TSQR {
 	  kokkos_node_type ("SerialNode"),
 	  action (Verify), 
 	  nrows (10000), ncols (10), ncores (1), ntrials (1), cache_block_size (0),
-	  verbose (true), debug (false), contiguous_cache_blocks (false), 
+	  verbose (true), debug (false), 
+	  test_complex_arithmetic (true),
+	  contiguous_cache_blocks (false), 
 	  human_readable (false), tpetra (false)
 	{}
 	std::string which, kokkos_node_type;
 	TsqrTestAction action;
 	int nrows, ncols, ncores, ntrials, cache_block_size;
-	bool verbose, debug, contiguous_cache_blocks, human_readable, tpetra;
+	bool verbose, debug, test_complex_arithmetic, 
+	  contiguous_cache_blocks, 
+	  human_readable, tpetra;
       };
 
 
@@ -93,6 +97,7 @@ namespace TSQR {
 	int numCores = params.ncores;
 	size_t cacheBlockSize = static_cast<size_t> (params.cache_block_size);
 	bool contiguousCacheBlocks = params.contiguous_cache_blocks;
+	bool testComplexArithmetic = params.test_complex_arithmetic;
 	bool humanReadable = params.human_readable;
 	bool bDebug = params.debug;
 	
@@ -121,8 +126,10 @@ namespace TSQR {
 	  {
 	    using TSQR::Test::verifySeqTsqr;
 	    if (ordinalComm.rank() == 0)
-	      verifySeqTsqr< ordinal_type, scalar_type, generator_type > (generator, nrowsGlobal, ncols, cacheBlockSize, 
-									  contiguousCacheBlocks, humanReadable, bDebug);
+	      verifySeqTsqr (nrowsGlobal, ncols, cacheBlockSize, 
+			     testComplexArithmetic,
+			     contiguousCacheBlocks, 
+			     humanReadable, bDebug);
 	    ordinalComm.barrier ();
 	  }
       }
@@ -219,6 +226,10 @@ namespace TSQR {
 	  cmdLineProc.setOption ("cache-block-size", 
 				 &params.cache_block_size, 
 				 "Cache block size (0 means set a reasonable default)");
+	  cmdLineProc.setOption ("complex", 
+				 "nocomplex",
+				 &params.test_complex_arithmetic,
+				 "Test complex arithmetic");
 	  cmdLineProc.setOption ("contiguous-cache-blocks", 
 				 "noncontiguous-cache-blocks", 
 				 &params.contiguous_cache_blocks, 

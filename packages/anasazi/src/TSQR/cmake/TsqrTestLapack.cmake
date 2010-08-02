@@ -105,5 +105,5 @@ TSQR_CHECK_LAPACK_ROUTINE ("ZGEQR2P" HAVE_LAPACK_ZGEQR2P)
 TSQR_CHECK_LAPACK_ROUTINE ("CGEQR2P" HAVE_LAPACK_CGEQR2P)
 
 # Write out a header file with the appropriate #defines.
-configure_file ("Tsqr_Config.hpp.in" "Tsqr_Config.hpp")
+configure_file ("TSQR/Tsqr_Config.hpp.in" "Tsqr_Config.hpp")
 
