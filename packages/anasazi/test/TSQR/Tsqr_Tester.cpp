@@ -34,7 +34,9 @@
 #include "Tpetra_DefaultPlatform.hpp"
 
 #include "Tsqr_SeqTest.hpp"
-#include "Tsqr_TbbTest.hpp"
+#ifdef HAVE_ANASAZI_TBB
+#  include "Tsqr_TbbTest.hpp"
+#endif // HAVE_ANASAZI_TBB
 #include "Tsqr_TsqrTest.hpp"
 #include "Teuchos_Time.hpp"
 
@@ -55,11 +57,17 @@ namespace TSQR {
       TsqrTestAction TsqrTestActionValues[] = { Verify, Benchmark };
       const char* TsqrTestActionNames[] = {"verify", "benchmark"};
 
+#ifdef HAVE_ANASAZI_TBB
       const int numTsqrTestRoutines = 4;
-      const char* TsqrTestRoutineNames[] = {"MpiSeqTSQR", "MpiTbbTSQR", "SeqTSQR", 
-					    "TbbTSQR"};
+      const char* TsqrTestRoutineNames[] = {"MpiSeqTSQR", "MpiTbbTSQR", "SeqTSQR", "TbbTSQR"};
       const int numSupportedKokkosNodeTypes = 2;
       const char* supportedKokkosNodeTypes[] = {"SerialNode", "TBBNode"};
+#else
+      const int numTsqrTestRoutines = 2;
+      const char* TsqrTestRoutineNames[] = {"MpiSeqTSQR", "SeqTSQR"};
+      const int numSupportedKokkosNodeTypes = 1;
+      const char* supportedKokkosNodeTypes[] = {"SerialNode"};
+#endif // HAVE_ANASAZI_TBB
 
       /// \class TsqrTestParameters
       /// \brief Encapsulates values of command-line parameters
@@ -288,7 +296,8 @@ namespace TSQR {
 	return serialnode;
       }
 
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_ANASAZI_TBB
+#  ifdef HAVE_KOKKOS_TBB
       RCP< Kokkos::TBBNode > tbbnode;
       template <>
       RCP< Kokkos::TBBNode > 
@@ -319,7 +328,8 @@ namespace TSQR {
 	  tbbnode = Teuchos::rcp (new Kokkos::TBBNode (tbbPlist));
 	return tbbnode;
       }
-#endif
+#  endif // HAVE_KOKKOS_TBB
+#endif // HAVE_ANASAZI_TBB
 
     } // namespace Test
   } // namespace Trilinos
