@@ -7,7 +7,7 @@
 #ifndef KLU2_FREE_NUMERIC_HPP
 #define KLU2_FREE_NUMERIC_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 #include "klu2_memory.hpp"
 
 template <typename Entry, typename Int>

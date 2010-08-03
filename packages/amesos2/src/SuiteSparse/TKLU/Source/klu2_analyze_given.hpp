@@ -9,7 +9,7 @@
 #ifndef KLU2_ANALYZE_GIVEN_HPP
 #define KLU2_ANALYZE_GIVEN_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 #include "klu2_memory.hpp"
 
 /* ========================================================================== */

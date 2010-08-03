@@ -42,7 +42,7 @@ MEX = mex -O -largeArrayDims -lmwlapack -lmwblas
 C = $(CPLUSPLUS) $(CFLAGS)
 
 
-INC = ../Include/tklu.h ../Include/tklu_internal.h ../Include/tklu_version.h \
+INC = ../Include/klu2.h ../Include/klu2_internal.h ../Include/klu2_version.h \
     $(SS_HOME)/UFconfig/amesos_UFconfig.h Makefile
 
 I = -I../../AMD/Include -I../../COLAMD/Include -I../../BTF/Include \
@@ -63,7 +63,7 @@ $(OBJ): $(INC)
 #-------------------------------------------------------------------------------
 
 example: klu2_simple.cpp libamesos.a
-	$(C) $(I) klu2_simple.cpp libamesos.a
+	$(C) $(I) klu2_simple.cpp libamesos.a -o klu2_simple.exe
 
 allcpp:
 	$(C) $(I) *.cpp
@@ -71,7 +71,7 @@ allcpp:
 purge: distclean
 
 distclean: clean
-	- $(RM) libtklu.a 
+	- $(RM) klu2_simple.exe
 
 clean:
 	- $(RM) $(CLEAN)

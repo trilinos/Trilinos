@@ -9,7 +9,7 @@
 #ifndef KLU2_DUMP_HPP
 #define KLU2_DUMP_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 
 #ifndef NDEBUG
 

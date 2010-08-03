@@ -12,7 +12,7 @@
 #ifndef KLU2_MEMORY_H
 #define KLU2_MEMORY_H
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 
 /* ========================================================================== */
 /* === KLU_add_size_t ======================================================= */

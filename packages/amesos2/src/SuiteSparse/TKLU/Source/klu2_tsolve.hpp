@@ -12,7 +12,7 @@
 #ifndef KLU2_TSOLVE_HPP
 #define KLU2_TSOLVE_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 
 template <typename Entry, typename Int>
 Int KLU_tsolve

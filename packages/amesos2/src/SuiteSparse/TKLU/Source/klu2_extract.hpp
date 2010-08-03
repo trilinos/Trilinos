@@ -12,7 +12,7 @@
 #ifndef KLU2_EXTRACT_HPP
 #define KLU2_EXTRACT_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 
 template <typename Entry, typename Int>
 Int KLU_extract     /* returns TRUE if successful, FALSE otherwise */

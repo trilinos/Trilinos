@@ -17,7 +17,7 @@
 #ifndef KLU2_SCALE_HPP
 #define KLU2_SCALE_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 
 template <typename Entry, typename Int>
 Int KLU_scale           /* return TRUE if successful, FALSE otherwise */

@@ -7,12 +7,12 @@
 #ifndef _TKLU_INTERNAL_H
 #define _TKLU_INTERNAL_H
 
-#include "tklu.h" 
+#include "klu2.h" 
 #include "amesos_btf_decl.h"
 #include <stdio.h>
 #include <complex>
 #include "Teuchos_ScalarTraits.hpp"
-#include "tklu_version.h"
+#include "klu2_version.h"
 
 /* ========================================================================== */
 /* make sure debugging and printing is turned off */

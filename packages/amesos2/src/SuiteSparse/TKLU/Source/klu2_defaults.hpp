@@ -6,7 +6,7 @@
 #ifndef KLU2_DEFAULTS_HPP
 #define KLU2_DEFAULTS_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 
 template <typename Entry, typename Int>
 Int KLU_defaults

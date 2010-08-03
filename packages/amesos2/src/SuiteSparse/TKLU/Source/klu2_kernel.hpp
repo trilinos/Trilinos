@@ -10,7 +10,7 @@
 #ifndef KLU2_KERNEL_HPP
 #define KLU2_KERNEL_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 #include "klu2_memory.hpp"
 
 /* ========================================================================== */

@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <iostream>
 #include <complex>
-#include "tklu.h"
 #include "klu2_defaults.hpp"
 #include "klu2_analyze.hpp"
 #include "klu2_factor.hpp"

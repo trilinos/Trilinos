@@ -9,7 +9,7 @@
 #ifndef KLU2_SORT_HPP
 #define KLU2_SORT_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 #include "klu2_memory.hpp"
 
 /* ========================================================================== */

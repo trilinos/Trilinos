@@ -14,7 +14,7 @@
 #ifndef KLU2_DIAGNOSTICS_HPP
 #define KLU2_DIAGNOSTICS_HPP
 
-#include "tklu_internal.h"
+#include "klu2_internal.h"
 #include "klu2_tsolve.hpp"
 
 /* ========================================================================== */
