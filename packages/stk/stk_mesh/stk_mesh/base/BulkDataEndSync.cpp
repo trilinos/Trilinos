@@ -119,6 +119,7 @@ void communicate_entity_modification( const BulkData & mesh ,
     comm.allocate_buffers( comm.parallel_size() / 4 , false , local_mod );
 
   if ( global_mod ) {
+    const std::vector<Entity*> & entity_comm = mesh.entity_comm();
 
     // Packing send buffers:
     pack_entity_modification( mesh , shared , comm );
@@ -135,7 +136,18 @@ void communicate_entity_modification( const BulkData & mesh ,
         buf.unpack<EntityKey>( key )
            .unpack<EntityModificationLog>( tmp.state );
 
-        tmp.entity_proc.first  = mesh.get_entity( key );
+        // search through entity_comm, should only receive info on entities
+        // that are communicated.
+        EntityVector::const_iterator itr =
+          std::lower_bound(entity_comm.begin(),
+                           entity_comm.end(),
+                           key,
+                           EntityLess());
+        if (itr == entity_comm.end() || (*itr)->key() != key) {
+          throw std::logic_error("Unpacked non-communicated entity");
+        }
+
+        tmp.entity_proc.first  = *itr;
         tmp.entity_proc.second = p ;
 
         data.push_back( tmp );
@@ -144,74 +156,6 @@ void communicate_entity_modification( const BulkData & mesh ,
   }
 
   std::sort( data.begin() , data.end() );
-}
-
-
-bool send_to_shared_and_ghost_recv( const BulkData                     & mesh ,
-                                    const std::vector<Entity*>         & send ,
-                                          std::vector<EntityProcState> & recv )
-{
-  const unsigned p_size = mesh.parallel_size();
-  // const unsigned p_rank = mesh.parallel_rank();
-
-  CommAll comm( mesh.parallel() );
-
-  std::vector<unsigned> procs ;
-
-  // We need to go through the packing phase twice, once to get the length of
-  // the data to be communicated, once to actually fill in the data
-  bool local = false ;
-  for ( unsigned pack_phase = 0; pack_phase < 2; ++pack_phase ) {
-    for ( std::vector<Entity*>::const_iterator
-            i = send.begin(); i != send.end() ; ++i ) {
-      Entity & entity = **i ;
-//      if ( p_rank == entity.owner_rank() || in_shared( entity ) ) {
-        comm_procs( entity , procs );
-        for ( std::vector<unsigned>::iterator
-              ip = procs.begin() ; ip != procs.end() ; ++ip ) {
-          comm.send_buffer( *ip ).pack<EntityKey>( entity.key() )
-            .pack<EntityModificationLog>( entity.log_query() );
-          local = true ;
-        }
-//      }
-    }
-    if (pack_phase == 0) {
-      const bool global = comm.allocate_buffers( p_size/4, false, local );
-
-      if ( ! global ) { return false ; }
-    }
-  }
-
-  comm.communicate();
-
-  // Unpack the data
-  for ( unsigned p = 0 ; p < p_size ; ++p ) {
-    CommBuffer & buf = comm.recv_buffer( p );
-
-    EntityProcState eps;
-    eps.entity_proc.second = p;
-
-    while ( buf.remaining() ) {
-      EntityKey key ; buf.unpack<EntityKey>( key );
-      EntityModificationLog state ; buf.unpack<EntityModificationLog>( state );
-
-      eps.entity_proc.first = mesh.get_entity( key );
-      if (eps.entity_proc.first == NULL) {
-        std::ostringstream msg;
-        msg << "Sent key not found. ";
-        print_entity_key( msg, mesh.mesh_meta_data(), key);
-
-        throw std::logic_error(msg.str());
-      }
-      eps.state = state;
-
-      recv.push_back( eps );
-    }
-  }
-
-  std::sort( recv.begin() , recv.end() );
-
-  return true ;
 }
 
 }
@@ -754,7 +698,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
   if ( doit ) {
     std::ostringstream msg ;
 
-    msg << std::endl ; 
+    msg << std::endl ;
 
     for ( std::vector<Entity*>::const_iterator
           i =  mesh.entity_comm().begin() ;
@@ -774,7 +718,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
       for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
         msg << " (" << ec->ghost_id << "," << ec->proc << ")" ;
       }
-      msg << std::endl ; 
+      msg << std::endl ;
     }
 
     std::cout << msg.str();
@@ -1078,7 +1022,16 @@ void BulkData::internal_resolve_shared_membership()
         // Any current part that is not a member of owners_parts
         // must be removed.
 
-        Entity * const entity = get_entity( key );
+        EntityVector::const_iterator itr =
+          std::lower_bound(m_entity_comm.begin(),
+                           m_entity_comm.end(),
+                           key,
+                           EntityLess());
+        if (itr == m_entity_comm.end() || (*itr)->key() != key) {
+          throw std::logic_error("Unpacked non-communicated entity");
+        }
+
+        Entity * const entity = *itr;
 
         entity->bucket().supersets( current_parts );
 
