@@ -68,14 +68,14 @@ public:
    virtual bool isParallel() const { return false; }
 
    bool test_createPrec(int verbosity,std::ostream & os);
-   bool test_initializePrec(int verbosity,std::ostream & os,bool use_blocking);
+   bool test_initializePrec(int verbosity,std::ostream & os,int use_blocking);
    bool test_uninitializePrec(int verbosity,std::ostream & os);
    bool test_isCompatable(int verbosity,std::ostream & os);
 
    // non-member tests
-  bool test_result(int verbosity,std::ostream & os,bool use_blocking);
+  bool test_result(int verbosity,std::ostream & os,int use_blocking);
    bool test_identity(int verbosity,std::ostream & os);
-   bool test_diagonal(int verbosity,std::ostream & os,bool use_blocking);
+   bool test_diagonal(int verbosity,std::ostream & os,int use_blocking);
 
 protected:
    // some simple matrix subblocks

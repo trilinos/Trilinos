@@ -193,14 +193,20 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
    failcount += status ? 0 : 1;
    totalrun++;
 
-   status = test_initializePrec(verbosity,failstrm,false);
+   status = test_initializePrec(verbosity,failstrm,0);
    Teko_TEST_MSG(stdstrm,1,"   \"initializePrec(diag)\" ... PASSED","   \"initializePrec(diag)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
+   status = test_initializePrec(verbosity,failstrm,1);
+   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec(block-1)\" ... PASSED","   \"initializePrec(block-1)\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
 
-   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec(block)\" ... PASSED","   \"initializePrec(block)\" ... FAILED");
+   status = test_initializePrec(verbosity,failstrm,2);
+   Teko_TEST_MSG(stdstrm,1,"   \"initializePrec(block-2)\" ... PASSED","   \"initializePrec(block-2)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
@@ -217,26 +223,38 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
    failcount += status ? 0 : 1;
    totalrun++;
 
-   status = test_diagonal(verbosity,failstrm,false);
+   status = test_diagonal(verbosity,failstrm,0);
    Teko_TEST_MSG(stdstrm,1,"   \"diagonal(diag)\" ... PASSED","   \"diagonal(diag)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
-   status = test_diagonal(verbosity,failstrm,true);
-   Teko_TEST_MSG(stdstrm,1,"   \"diagonal(block)\" ... PASSED","   \"diagonal(block)\" ... FAILED");
+   status = test_diagonal(verbosity,failstrm,1);
+   Teko_TEST_MSG(stdstrm,1,"   \"diagonal(block-1)\" ... PASSED","   \"diagonal(block-1)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
-   status = test_result(verbosity,failstrm,false);
+   status = test_diagonal(verbosity,failstrm,2);
+   Teko_TEST_MSG(stdstrm,1,"   \"diagonal(block-2)\" ... PASSED","   \"diagonal(block-2)\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
+   status = test_result(verbosity,failstrm,0);
    Teko_TEST_MSG(stdstrm,1,"   \"result(diag)\" ... PASSED","   \"result(diag)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
-   status = test_result(verbosity,failstrm,true);
-   Teko_TEST_MSG(stdstrm,1,"   \"result(block)\" ... PASSED","   \"result(block)\" ... FAILED");
+   status = test_result(verbosity,failstrm,1);
+   Teko_TEST_MSG(stdstrm,1,"   \"result(block-1)\" ... PASSED","   \"result(block-1)\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+ 
+   status = test_result(verbosity,failstrm,2);
+   Teko_TEST_MSG(stdstrm,1,"   \"result(block-2)\" ... PASSED","   \"result(block-2)\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
@@ -271,7 +289,7 @@ bool tSIMPLEPreconditionerFactory::test_createPrec(int verbosity,std::ostream & 
    return true;
 }
 
-  bool tSIMPLEPreconditionerFactory::test_initializePrec(int verbosity,std::ostream & os,bool use_blocking)
+  bool tSIMPLEPreconditionerFactory::test_initializePrec(int verbosity,std::ostream & os,int use_blocking)
 {
    bool status = false;
    bool allPassed = true;
@@ -281,12 +299,20 @@ bool tSIMPLEPreconditionerFactory::test_createPrec(int verbosity,std::ostream & 
    const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory =sFactory;
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory->createPrec();
    
-   if(use_blocking){
+   if(use_blocking==1){
      // parameter list for (1,1) block
      Teuchos::ParameterList List,BlkList;   
      BlkList.set("number of local blocks",1);
      BlkList.set("block start index",&*block_starts_);
      BlkList.set("block entry gids",&*block_gids_);
+     List.set("H options",BlkList);
+     List.set("Explicit Velocity Inverse Type","BlkDiag");
+     List.set("Inverse Pressure Type","Amesos");
+     sFactory->initializeFromParameterList(List);
+   }
+   else if(use_blocking==2){
+     Teuchos::ParameterList List,BlkList;   
+     BlkList.set("contiguous block size",2);
      List.set("H options",BlkList);
      List.set("Explicit Velocity Inverse Type","BlkDiag");
      List.set("Inverse Pressure Type","Amesos");
@@ -335,7 +361,7 @@ bool tSIMPLEPreconditionerFactory::test_isCompatable(int verbosity,std::ostream 
    return true;
 }
 
-  bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os,bool use_blocking)
+  bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os,int use_blocking)
 {
    // make sure the preconditioner is working by testing against the identity matrix
    typedef RCP<const Thyra::VectorBase<double> > Vector;
@@ -381,12 +407,20 @@ bool tSIMPLEPreconditionerFactory::test_isCompatable(int verbosity,std::ostream 
    const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory =sFactory;
    RCP<Thyra::PreconditionerBase<double> > prec = Thyra::prec<double>(*precFactory,A);
 
-   if(use_blocking){
+   if(use_blocking==1){
      // parameter list for (1,1) block
      Teuchos::ParameterList List,BlkList;   
      BlkList.set("number of local blocks",1);
      BlkList.set("block start index",&*block_starts_);
      BlkList.set("block entry gids",&*block_gids_);
+     List.set("H options",BlkList);
+     List.set("Explicit Velocity Inverse Type","BlkDiag");
+     List.set("Inverse Pressure Type","Amesos");
+     sFactory->initializeFromParameterList(List);
+   }
+   else if(use_blocking==2){
+     Teuchos::ParameterList List,BlkList;   
+     BlkList.set("contiguous block size",2);
      List.set("H options",BlkList);
      List.set("Explicit Velocity Inverse Type","BlkDiag");
      List.set("Inverse Pressure Type","Amesos");
@@ -470,7 +504,7 @@ bool tSIMPLEPreconditionerFactory::test_isCompatable(int verbosity,std::ostream 
    return allPassed;
 }
 
-  bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os,bool use_blocking)
+  bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os,int use_blocking)
 {
    typedef RCP<const Thyra::VectorBase<double> > Vector;
    typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
@@ -490,6 +524,14 @@ bool tSIMPLEPreconditionerFactory::test_isCompatable(int verbosity,std::ostream 
      BlkList.set("number of local blocks",1);
      BlkList.set("block start index",&*block_starts_);
      BlkList.set("block entry gids",&*block_gids_);
+     List.set("H options",BlkList);
+     List.set("Explicit Velocity Inverse Type","BlkDiag");
+     List.set("Inverse Pressure Type","Amesos");
+     sFactory->initializeFromParameterList(List);
+   }
+   else if(use_blocking==2){
+     Teuchos::ParameterList List,BlkList;   
+     BlkList.set("contiguous block size",2);
      List.set("H options",BlkList);
      List.set("Explicit Velocity Inverse Type","BlkDiag");
      List.set("Inverse Pressure Type","Amesos");
