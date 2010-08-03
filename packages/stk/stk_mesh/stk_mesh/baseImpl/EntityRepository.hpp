@@ -60,15 +60,15 @@ class EntityRepository {
                            const unsigned local_id,
                            unsigned sync_count );
 
-  private:
-    void internal_expunge_entity( EntityMap::iterator i);
-
     // Based on our modification model, if an entity gets modified, then all
     // entities of higher rank that depend on this entity must also be marked
     // as modified. In other words, all entities that have modified_entity
     // in their closure must also be marked as modified. This is the ONLY
     // place in the code base that should call log_modified directly.
     void modify_and_propagate( Entity & modified_entity ) const;
+
+  private:
+    void internal_expunge_entity( EntityMap::iterator i);
 
     EntityMap                           m_entities ;
 

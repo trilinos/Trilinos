@@ -75,7 +75,7 @@ EntityRepository::internal_create_entity( const EntityKey & key )
   if ( insert_result.second )  { // A new entity
     insert_result.first->second = result.first = new Entity( key );
   }
-  else if ( result.first->marked_for_destruction() ) {
+  else if ( EntityLogDeleted == result.first->log_query() ) {
     // resurrection
     result.first->m_entityImpl.log_resurrect();
     result.second = true;

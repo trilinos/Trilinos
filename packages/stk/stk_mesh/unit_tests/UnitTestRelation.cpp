@@ -597,24 +597,9 @@ void UnitTestRelation::generate_boxes(
     }
   }
 
-
-  //coverage of in_send_ghost(  const Entity & entity , unsigned ) in EntityComm.cpp     
-  std::vector< stk::mesh::Entity * > entities ;
-  stk::mesh::get_entities( mesh , p_rank , entities );
-
-  for ( std::vector< stk::mesh::Entity * >::iterator
-        i = entities.begin() ; i != entities.end() ; ++i ) {
-        stk::mesh::Entity & e = **i ;
-        for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {  
-           stk::mesh::in_send_ghost( e, p );  
-        }
-  }
-
   mesh.modification_begin();
   mesh.destroy_all_ghosting();
   mesh.modification_end();
-
-
 
   delete[] p_box ;
 }

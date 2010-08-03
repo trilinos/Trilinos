@@ -70,8 +70,8 @@ void assert_valid_relation( const char method[] ,
   const bool error_mesh_from = & mesh != & e_from.bucket().mesh();
   const bool error_mesh_to   = & mesh != & e_to.bucket().mesh();
   const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
-  const bool error_nil_from  = e_from.marked_for_destruction();
-  const bool error_nil_to    = e_to.marked_for_destruction();
+  const bool error_nil_from  = EntityLogDeleted == e_from.log_query();
+  const bool error_nil_to    = EntityLogDeleted == e_to.log_query();
 
   if ( error_mesh_from || error_mesh_to || error_type ||
        error_nil_from || error_nil_to ) {

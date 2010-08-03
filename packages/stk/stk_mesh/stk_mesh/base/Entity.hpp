@@ -109,10 +109,6 @@ public:
   PairIterEntityComm comm( const Ghosting & sub ) const { return m_entityImpl.comm( sub ); }
 
   //------------------------------------
-  bool marked_for_destruction() const {
-    return m_entityImpl.marked_for_destruction();
-  }
-
 private:
 
   impl::EntityImpl m_entityImpl;
