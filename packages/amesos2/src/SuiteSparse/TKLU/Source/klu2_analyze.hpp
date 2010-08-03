@@ -6,12 +6,18 @@
  * ordering, or the user-provided-function on the blocks.  Does not support
  * using a given ordering (use klu_analyze_given for that case). */
 
+#ifndef KLU2_ANALYZE_HPP
+#define KLU2_ANALYZE_HPP
+
 #include "tklu_internal.h"
+#include "klu2_analyze_given.hpp"
+#include "klu2_memory.hpp"
 
 /* ========================================================================== */
 /* === analyze_worker ======================================================= */
 /* ========================================================================== */
 
+template <typename Entry, typename Int>
 static Int analyze_worker       /* returns KLU_OK or < 0 if error */
 (
     /* inputs, not modified */
@@ -37,8 +43,8 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
     Int Pinv [ ],       /* size maxblock */
 
     /* input/output */
-    KLU_symbolic *Symbolic,
-    KLU_common *Common
+    KLU_symbolic<Entry, Int> *Symbolic,
+    KLU_common<Entry, Int> *Common
 )
 {
     double amd_Info [AMD_INFO], lnz, lnz1, flops, flops1 ;
@@ -254,7 +260,8 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
  * or the user ordering function.  Does not handle the natural or given
  * ordering cases. */
 
-static KLU_symbolic *order_and_analyze  /* returns NULL if error, or a valid
+template <typename Entry, typename Int>
+static KLU_symbolic<Entry, Int> *order_and_analyze  /* returns NULL if error, or a valid
                                            KLU_symbolic object if successful */
 (
     /* inputs, not modified */
@@ -262,11 +269,11 @@ static KLU_symbolic *order_and_analyze  /* returns NULL if error, or a valid
     Int Ap [ ],         /* size n+1, column pointers */
     Int Ai [ ],         /* size nz, row indices */
     /* --------------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     double work ;
-    KLU_symbolic *Symbolic ;
+    KLU_symbolic<Entry, Int> *Symbolic ;
     double *Lnz ;
     Int *Qbtf, *Cp, *Ci, *Pinv, *Pblk, *Pbtf, *P, *Q, *R ;
     Int nblocks, nz, block, maxblock, k1, k2, nk, do_btf, ordering, k, Cilen,
@@ -290,7 +297,8 @@ static KLU_symbolic *order_and_analyze  /* returns NULL if error, or a valid
     ordering = Common->ordering ;
     if (ordering == 1)
     {
-        /* COLAMD */
+        /* COLAMD TODO : Should call the right version of COLAMD and other 
+         external functions below */
         Cilen = COLAMD_recommended (nz, n, n) ;
     }
     else if (ordering == 0 || (ordering == 3 && Common->user_order != NULL))
@@ -354,6 +362,7 @@ static KLU_symbolic *order_and_analyze  /* returns NULL if error, or a valid
             return (NULL) ;
         }
 
+        /* TODO : Correct version of BTF */
         nblocks = BTF_order (n, Ap, Ai, Common->maxwork, &work, Pbtf, Qbtf, R,
                 &(Symbolic->structural_rank), Work) ;
         Common->structural_rank = Symbolic->structural_rank ;
@@ -448,7 +457,8 @@ static KLU_symbolic *order_and_analyze  /* returns NULL if error, or a valid
 /* === KLU_analyze ========================================================== */
 /* ========================================================================== */
 
-KLU_symbolic *KLU_analyze       /* returns NULL if error, or a valid
+template <typename Entry, typename Int>
+KLU_symbolic<Entry, Int> *KLU_analyze       /* returns NULL if error, or a valid
                                    KLU_symbolic object if successful */
 (
     /* inputs, not modified */
@@ -456,7 +466,7 @@ KLU_symbolic *KLU_analyze       /* returns NULL if error, or a valid
     Int Ap [ ],         /* size n+1, column pointers */
     Int Ai [ ],         /* size nz, row indices */
     /* -------------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
 
@@ -478,7 +488,10 @@ KLU_symbolic *KLU_analyze       /* returns NULL if error, or a valid
     if (Common->ordering == 2)
     {
         /* natural ordering */
-        return (KLU_analyze_given (n, Ap, Ai, NULL, NULL, Common)) ;
+        /* TODO : c++ sees Ap, Ai as int *& Why ? */
+        /* TODO : c++ does not allow NULL to be passed directly */
+        int *dummy = NULL ;
+        return (KLU_analyze_given (n, Ap, Ai, dummy, dummy, Common)) ;
     }
     else
     {
@@ -486,3 +499,5 @@ KLU_symbolic *KLU_analyze       /* returns NULL if error, or a valid
         return (order_and_analyze (n, Ap, Ai, Common)) ;
     }
 }
+
+#endif

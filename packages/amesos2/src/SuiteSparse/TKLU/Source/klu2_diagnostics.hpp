@@ -11,7 +11,11 @@
  *              Takes O(n) time.
  */
 
+#ifndef KLU2_DIAGNOSTICS_HPP
+#define KLU2_DIAGNOSTICS_HPP
+
 #include "tklu_internal.h"
+#include "klu2_tsolve.hpp"
 
 /* ========================================================================== */
 /* === KLU_rgrowth ========================================================== */
@@ -22,14 +26,15 @@
  *   rgrowth = min (max (abs ((R \ A (p,q)) - F))) ./ max (abs (U)))
  */
 
+template <typename Entry, typename Int>
 Int KLU_rgrowth         /* return TRUE if successful, FALSE otherwise */
 (
     Int *Ap,
     Int *Ai,
     double *Ax,
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    KLU_symbolic<Entry, Int> *Symbolic,
+    KLU_numeric<Entry, Int> *Numeric,
+    KLU_common<Entry, Int> *Common
 )
 {
     double temp, max_ai, max_ui, min_block_rgrowth ;
@@ -167,13 +172,14 @@ Int KLU_rgrowth         /* return TRUE if successful, FALSE otherwise */
  * 1-norm pseudospectra, SIAM J. Matrix Anal. Appl., 21(4):1185-1201, 2000.
  */
 
+template <typename Entry, typename Int>
 Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
 (
     Int Ap [ ],
-    double Ax [ ],
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    double Ax [ ], /* TODO : Check !!! */
+    KLU_symbolic<Entry, Int> *Symbolic,
+    KLU_numeric<Entry, Int> *Numeric,
+    KLU_common<Entry, Int> *Common
 )
 {
     double xj, Xmax, csum, anorm, ainv_norm, est_old, est_new, abs_value ;
@@ -265,7 +271,9 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
     {
         CLEAR (S [i]) ;
         CLEAR (X [i]) ;
-        REAL (X [i]) = 1.0 / ((double) n) ;
+        /* TODO : Check REAL(X[i]) -> X[i]*/
+        /*REAL (X [i]) = 1.0 / ((double) n) ;*/
+        X [i] = 1.0 / ((double) n) ;
     }
     jmax = 0 ;
 
@@ -280,7 +288,9 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
                 /* X [j] = 0 ;*/
                 CLEAR (X [j]) ;
             }
-            REAL (X [jmax]) = 1 ;
+            /* TODO : Check REAL(X[i]) -> X[i]*/
+            /*REAL (X [jmax]) = 1 ;*/
+            X [jmax] = 1 ;
         }
 
         KLU_solve (Symbolic, Numeric, n, 1, (double *) X, Common) ;
@@ -322,7 +332,9 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
             else
             {
                 CLEAR (S [j]) ;
-                REAL (S [j]) = 1 ;
+                /* TODO : Check REAL(X[i]) -> X[i]*/
+                /*REAL (S [j]) = 1 ; */
+                S [j] = 1 ;
             }
         }
 
@@ -376,11 +388,15 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
         CLEAR (X [j]) ;
         if (j % 2)
         {
-            REAL (X [j]) = 1 + ((double) j) / ((double) (n-1)) ;
+            /* TODO : Check REAL(X[i]) -> X[i]*/
+            /*REAL (X [j]) = 1 + ((double) j) / ((double) (n-1)) ;*/
+            X [j] = 1 + ((double) j) / ((double) (n-1)) ;
         }
         else
         {
-            REAL (X [j]) = -1 - ((double) j) / ((double) (n-1)) ;
+            /* TODO : Check REAL(X[i]) -> X[i]*/
+            /*REAL (X [j]) = -1 - ((double) j) / ((double) (n-1)) ;*/
+            X [j] = -1 - ((double) j) / ((double) (n-1)) ;
         }
     }
 
@@ -411,11 +427,12 @@ Int KLU_condest         /* return TRUE if successful, FALSE otherwise */
 
 /* Compute the flop count for the LU factorization (in Common->flops) */
 
+template <typename Entry, typename Int>
 Int KLU_flops           /* return TRUE if successful, FALSE otherwise */
 (
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    KLU_symbolic<Entry, Int> *Symbolic,
+    KLU_numeric<Entry, Int> *Numeric,
+    KLU_common<Entry, Int> *Common
 )
 {
     double flops = 0 ;
@@ -496,11 +513,12 @@ Int KLU_flops           /* return TRUE if successful, FALSE otherwise */
  * pivot, or a NaN pivot, rcond will be zero.  Takes O(n) time.
  */   
 
+template <typename Entry, typename Int>
 Int KLU_rcond           /* return TRUE if successful, FALSE otherwise */
 (
-    KLU_symbolic *Symbolic,     /* input, not modified */
-    KLU_numeric *Numeric,       /* input, not modified */
-    KLU_common *Common          /* result in Common->rcond */
+    KLU_symbolic<Entry, Int> *Symbolic,     /* input, not modified */
+    KLU_numeric<Entry, Int> *Numeric,       /* input, not modified */
+    KLU_common<Entry, Int> *Common          /* result in Common->rcond */
 )
 {
     double ukk, umin = 0, umax = 0 ;
@@ -568,3 +586,5 @@ Int KLU_rcond           /* return TRUE if successful, FALSE otherwise */
     }
     return (TRUE) ;
 }
+
+#endif

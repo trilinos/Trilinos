@@ -58,8 +58,14 @@
 
 /* ========================================================================== */
 
-#include "tklu_internal.h"
+#ifndef KLU2_HPP
+#define KLU2_HPP
 
+#include "tklu_internal.h"
+#include "klu2_kernel.hpp"
+#include "klu2_memory.hpp"
+
+template <typename Entry, typename Int>
 size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
 (
     /* inputs, not modified */
@@ -95,7 +101,7 @@ size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
     Int Offi [ ],
     Entry Offx [ ],
     /* --------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     double maxlnz, dunits ;
@@ -169,7 +175,7 @@ size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
     /* ---------------------------------------------------------------------- */
 
     /* with pruning, and non-recursive depth-first-search */
-    lusize = KLU_kernel (n, Ap, Ai, Ax, Q, lusize,
+    lusize = KLU_kernel<Entry> (n, Ap, Ai, Ax, Q, lusize,
             Pinv, P, &LU, Udiag, Llen, Ulen, Lip, Uip, lnz, unz,
             X, Stack, Flag, Ap_pos, Lpend,
             k1, PSinv, Rs, Offp, Offi, Offx, Common) ;
@@ -188,7 +194,6 @@ size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
     return (lusize) ;
 }
 
-
 /* ========================================================================== */
 /* === KLU_lsolve =========================================================== */
 /* ========================================================================== */
@@ -198,6 +203,7 @@ size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
  * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
  * range 1 to 4. */
 
+template <typename Entry, typename Int>
 void KLU_lsolve
 (
     /* inputs, not modified: */
@@ -301,6 +307,7 @@ void KLU_lsolve
  * and is stored in ROW form with row dimension nrhs.  nrhs must be in the
  * range 1 to 4. */
 
+template <typename Entry, typename Int>
 void KLU_usolve
 (
     /* inputs, not modified: */
@@ -425,7 +432,6 @@ void KLU_usolve
     }
 }
 
-
 /* ========================================================================== */
 /* === KLU_ltsolve ========================================================== */
 /* ========================================================================== */
@@ -435,6 +441,7 @@ void KLU_usolve
  * and is stored in ROW form with row dimension nrhs.  nrhs must in the
  * range 1 to 4. */
 
+template <typename Entry, typename Int>
 void KLU_ltsolve
 (
     /* inputs, not modified: */
@@ -588,6 +595,7 @@ void KLU_ltsolve
  * with the solution X.  B is n-by-nrhs and is stored in ROW form with row
  * dimension nrhs.  nrhs must be in the range 1 to 4. */
 
+template <typename Entry, typename Int>
 void KLU_utsolve
 (
     /* inputs, not modified: */
@@ -771,3 +779,5 @@ void KLU_utsolve
             break ;
     }
 }
+
+#endif /* KLU2_HPP */

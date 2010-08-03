@@ -2,11 +2,9 @@
 #define _TKLU_VERSION_H
 
 #ifdef DLONG
-#define Int UF_long
 #define Int_id UF_long_id
 #define Int_MAX UF_long_max
 #else
-#define Int int
 #define Int_id "%d"
 #define Int_MAX INT_MAX
 #endif
@@ -37,83 +35,6 @@
 }
 
 /* function names */
-#ifdef COMPLEX 
-
-#ifdef DLONG
-
-#define KLU_scale klu_zl_scale
-#define KLU_solve klu_zl_solve
-#define KLU_tsolve klu_zl_tsolve
-#define KLU_free_numeric klu_zl_free_numeric
-#define KLU_factor klu_zl_factor
-#define KLU_refactor klu_zl_refactor
-#define KLU_kernel_factor klu_zl_kernel_factor 
-#define KLU_lsolve klu_zl_lsolve
-#define KLU_ltsolve klu_zl_ltsolve
-#define KLU_usolve klu_zl_usolve
-#define KLU_utsolve klu_zl_utsolve
-#define KLU_kernel klu_zl_kernel
-#define KLU_valid klu_zl_valid
-#define KLU_valid_LU klu_zl_valid_LU
-#define KLU_sort klu_zl_sort
-#define KLU_rgrowth klu_zl_rgrowth
-#define KLU_rcond klu_zl_rcond
-#define KLU_extract klu_zl_extract
-#define KLU_condest klu_zl_condest
-#define KLU_flops klu_zl_flops
-
-#else
-
-#define KLU_scale klu_z_scale
-#define KLU_solve klu_z_solve
-#define KLU_tsolve klu_z_tsolve
-#define KLU_free_numeric klu_z_free_numeric
-#define KLU_factor klu_z_factor
-#define KLU_refactor klu_z_refactor
-#define KLU_kernel_factor klu_z_kernel_factor 
-#define KLU_lsolve klu_z_lsolve
-#define KLU_ltsolve klu_z_ltsolve
-#define KLU_usolve klu_z_usolve
-#define KLU_utsolve klu_z_utsolve
-#define KLU_kernel klu_z_kernel
-#define KLU_valid klu_z_valid
-#define KLU_valid_LU klu_z_valid_LU
-#define KLU_sort klu_z_sort
-#define KLU_rgrowth klu_z_rgrowth
-#define KLU_rcond klu_z_rcond
-#define KLU_extract klu_z_extract
-#define KLU_condest klu_z_condest
-#define KLU_flops klu_z_flops
-
-#endif
-
-#else
-
-#ifdef DLONG
-
-#define KLU_scale klu_l_scale
-#define KLU_solve klu_l_solve
-#define KLU_tsolve klu_l_tsolve
-#define KLU_free_numeric klu_l_free_numeric
-#define KLU_factor klu_l_factor
-#define KLU_refactor klu_l_refactor
-#define KLU_kernel_factor klu_l_kernel_factor 
-#define KLU_lsolve klu_l_lsolve
-#define KLU_ltsolve klu_l_ltsolve
-#define KLU_usolve klu_l_usolve
-#define KLU_utsolve klu_l_utsolve
-#define KLU_kernel klu_l_kernel
-#define KLU_valid klu_l_valid
-#define KLU_valid_LU klu_l_valid_LU
-#define KLU_sort klu_l_sort
-#define KLU_rgrowth klu_l_rgrowth
-#define KLU_rcond klu_l_rcond
-#define KLU_extract klu_l_extract
-#define KLU_condest klu_l_condest
-#define KLU_flops klu_l_flops
-
-#else
-
 #define KLU_scale klu_scale
 #define KLU_solve klu_solve
 #define KLU_tsolve klu_tsolve
@@ -135,27 +56,7 @@
 #define KLU_condest klu_condest
 #define KLU_flops klu_flops
 
-#endif
-
-#endif
-
-
 #ifdef DLONG
-
-#define KLU_analyze klu_l_analyze
-#define KLU_analyze_given klu_l_analyze_given
-#define KLU_alloc_symbolic klu_l_alloc_symbolic
-#define KLU_free_symbolic klu_l_free_symbolic
-#define KLU_defaults klu_l_defaults
-#define KLU_free klu_l_free
-#define KLU_malloc klu_l_malloc
-#define KLU_realloc klu_l_realloc
-#define KLU_add_size_t klu_l_add_size_t
-#define KLU_mult_size_t klu_l_mult_size_t
-
-#define KLU_symbolic klu_l_symbolic
-#define KLU_numeric klu_l_numeric
-#define KLU_common klu_l_common
 
 #define BTF_order amesos_btf_l_order
 #define BTF_strongcomp amesos_btf_l_strongcomp
@@ -189,7 +90,6 @@
 #define COLAMD_recommended amesos_colamd_recommended
 
 #endif
-
 
 /* -------------------------------------------------------------------------- */
 /* Numerical relop macros for correctly handling the NaN case */
@@ -248,18 +148,164 @@ SCALAR_IS_LTZERO(x):
 /* Real floating-point arithmetic */
 /* -------------------------------------------------------------------------- */
 
+template <typename T>
+struct KLU_ScalarTraits
+{
+    typedef T magnitudeType ;
+    static inline magnitudeType real(T c) {}
+};
+
+template <>
+struct KLU_ScalarTraits<double>
+{
+    typedef double magnitudeType ;
+    static inline double reciprocal (double c) { return 1.0/c ; }
+    static inline double divide (double a, double b) { return a/b ; }
+    static inline double divideConjugate (double a, double b) { return a/b ; }
+    static inline magnitudeType approxABS (double a)
+    {
+        return (SCALAR_ABS (a));
+    }
+    static inline magnitudeType abs (double a)
+    {
+        return (SCALAR_ABS (a));
+    }
+};
+
+template <typename T>
+struct KLU_ScalarTraits<
+std::complex<T>
+>
+{
+    typedef std::complex<T> ComplexT ;
+    typedef typename KLU_ScalarTraits<T>::magnitudeType magnitudeType ;
+
+    static inline ComplexT reciprocal (ComplexT c) 
+    {
+        T r, den, cr, ci ;
+        ComplexT ret ;
+        cr = (Teuchos::ScalarTraits<ComplexT>::real(c)) ;
+        ci = (Teuchos::ScalarTraits<ComplexT>::imag(c)) ;
+        if (SCALAR_ABS (cr) >= SCALAR_ABS (ci))
+        {
+            r = ci / cr ;
+            den = cr + r * ci ;
+            ret = std::complex<T>(1.0 / den, -r / den) ;
+        }
+        else
+        {
+            r = cr / ci ;
+            den = r * cr + ci ;
+            ret = std::complex<T>(r / den, -1.0 / den) ;
+        }
+        return ret;
+    }
+    
+    static inline ComplexT divide (ComplexT a, ComplexT b)
+    {
+        T r, den, ar, ai, br, bi ;
+        ComplexT ret;
+
+        br = (Teuchos::ScalarTraits<ComplexT>::real(b)) ;
+        bi = (Teuchos::ScalarTraits<ComplexT>::imag(b)) ;
+        ar = (Teuchos::ScalarTraits<ComplexT>::real(a)) ;
+        ai = (Teuchos::ScalarTraits<ComplexT>::imag(a)) ;
+        if (SCALAR_ABS (br) >= SCALAR_ABS (bi))
+        {
+            r = bi / br ;
+            den = br + r * bi ;
+            ret = std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
+        }
+        else
+        {
+            r = br / bi ;
+            den = r * br + bi ;
+            ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
+        }
+        return ret;
+    }
+    
+    static inline ComplexT divideConjugate (ComplexT a, ComplexT b)
+    {
+        T r, den, ar, ai, br, bi ;
+        ComplexT ret;
+
+        br = (Teuchos::ScalarTraits<ComplexT>::real(b)) ;
+        bi = (Teuchos::ScalarTraits<ComplexT>::imag(b)) ;
+        ar = (Teuchos::ScalarTraits<ComplexT>::real(a)) ;
+        ai = (Teuchos::ScalarTraits<ComplexT>::imag(a)) ;
+        if (SCALAR_ABS (br) >= SCALAR_ABS (bi))
+        {
+            r = (-bi) / br ;
+            den = br - r * bi ;
+            ret = std::complex<T>((ar + ai * r) / den, (ai - ar * r) / den) ;
+        }
+        else
+        {
+            r = br / (-bi) ;
+            den =  r * br - bi;
+            ret = std::complex<T>((ar * r + ai) / den, (ai * r - ar) / den) ;
+        }
+        return ret;
+    }
+    
+    static inline magnitudeType approxABS (ComplexT a)
+    {
+        return ( SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::real(a)) + 
+                    SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::imag(a)) ) ;
+    }
+    
+    static inline magnitudeType abs (ComplexT a)
+    {
+        T r, ar, ai ;
+        magnitudeType s;
+
+        ar = SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::real(a)) ;
+        ai = SCALAR_ABS (Teuchos::ScalarTraits<ComplexT>::imag(a)) ;
+        if (ar >= ai)
+        {
+            if (ar + ai == ar)
+            {
+                (s) = ar ;
+            }
+            else
+            {
+                r = ai / ar ;
+                (s) = ar * sqrt (1.0 + r*r) ;
+            }
+        }
+        else
+        {
+            if (ai + ar == ai)
+            {
+                (s) = ai ;
+            }
+            else
+            {
+                r = ar / ai ;
+                (s) = ai * sqrt (1.0 + r*r) ;
+            }
+        }
+        return s;
+    }
+};
+
 #ifndef COMPLEX
 
 typedef double Unit ;
-#define Entry double
+/*#define Entry double*/
 
 #define SPLIT(s)                    (1)
-#define REAL(c)                     (c)
+/*#define REAL(c)                     (c)
 #define IMAG(c)                     (0.)
 #define ASSIGN(c,s1,s2,p,split)     { (c) = (s1)[p] ; }
+#define MULT_CONJ(c,a,b)            { (c) = (a) * (b) ; }
+#define MULT_SUB_CONJ(c,a,b)        { (c) -= (a) * (b) ; }*/
+#define REAL(c)                     (Teuchos::ScalarTraits<Entry>::real(c))
+#define IMAG(c)                     (Teuchos::ScalarTraits<Entry>::imag(c))
 #define CLEAR(c)                    { (c) = 0. ; }
 #define CLEAR_AND_INCREMENT(p)      { *p++ = 0. ; }
-#define IS_NAN(a)                   SCALAR_IS_NAN (a)
+#define IS_NAN(a)                   SCALAR_IS_NAN (a) /* TODO : ???*/
 #define IS_ZERO(a)                  SCALAR_IS_ZERO (a)
 #define IS_NONZERO(a)               SCALAR_IS_NONZERO (a)
 #define SCALE_DIV(c,s)              { (c) /= (s) ; }
@@ -269,16 +315,16 @@ typedef double Unit ;
 #define ASSEMBLE_AND_INCREMENT(c,p) { (c) += *p++ ; }
 #define DECREMENT(c,a)              { (c) -= (a) ; }
 #define MULT(c,a,b)                 { (c) = (a) * (b) ; }
-#define MULT_CONJ(c,a,b)            { (c) = (a) * (b) ; }
+#define MULT_CONJ(c,a,b)            { (c) = (a) * Teuchos::ScalarTraits<Entry>::conjugate(b) ; }
 #define MULT_SUB(c,a,b)             { (c) -= (a) * (b) ; }
-#define MULT_SUB_CONJ(c,a,b)        { (c) -= (a) * (b) ; }
-#define DIV(c,a,b)                  { (c) = (a) / (b) ; }
-#define RECIPROCAL(c)               { (c) = 1.0 / (c) ; }
-#define DIV_CONJ(c,a,b)             { (c) = (a) / (b) ; }
-#define APPROX_ABS(s,a)             { (s) = SCALAR_ABS (a) ; }
-#define ABS(s,a)                    { (s) = SCALAR_ABS (a) ; }
+#define MULT_SUB_CONJ(c,a,b)        { (c) -= (a) * Teuchos::ScalarTraits<Entry>::conjugate(b) ; }
+#define DIV(c,a,b)                  { (c) = KLU_ScalarTraits<Entry>::divide(a, b) ; }
+#define RECIPROCAL(c)               { (c) = KLU_ScalarTraits<Entry>::reciprocal(c) ; }
+#define DIV_CONJ(c,a,b)             { (c) = KLU_ScalarTraits<Entry>::divideConjugate(a, b) ; }
+#define APPROX_ABS(s,a)             { (s) =  KLU_ScalarTraits<Entry>::approxABS(a) ; }
+#define ABS(s,a)                    { (s) =  KLU_ScalarTraits<Entry>::abs(a) ; }
 #define PRINT_ENTRY(a)              PRINT_SCALAR (a)
-#define CONJ(a,x)                   a = x
+#define CONJ(a,x)                   a = (Teuchos::ScalarTraits<Entry>::conjugate(x))
 
 /* for flop counts */
 #define MULTSUB_FLOPS   2.      /* c -= a*b */
@@ -319,6 +365,7 @@ typedef double Unit ;
 
 */
 
+#if 0
 typedef struct
 {
     double component [2] ;      /* real and imaginary parts */
@@ -326,7 +373,7 @@ typedef struct
 } Double_Complex ;
 
 typedef Double_Complex Unit ;
-#define Entry Double_Complex
+/*#define Entry Double_Complex*/
 #define Real component [0]
 #define Imag component [1]
 
@@ -654,6 +701,7 @@ typedef Double_Complex Unit ;
         } \
     } \
 }
+#endif
 #endif
 
 /* -------------------------------------------------------------------------- */

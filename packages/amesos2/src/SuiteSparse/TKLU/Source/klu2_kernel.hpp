@@ -7,7 +7,11 @@
  * Liu's symmetric pruning.  No user-callable routines are in this file.
  */
 
+#ifndef KLU2_KERNEL_HPP
+#define KLU2_KERNEL_HPP
+
 #include "tklu_internal.h"
+#include "klu2_memory.hpp"
 
 /* ========================================================================== */
 /* === dfs ================================================================== */
@@ -15,6 +19,7 @@
 
 /* Does a depth-first-search, starting at node j. */
 
+template <typename Int>
 static Int dfs
 (
     /* input, not modified on output: */
@@ -119,6 +124,7 @@ static Int dfs
 
 /* Finds the pattern of x, for the solution of Lx=b */
 
+template <typename Int>
 static Int lsolve_symbolic
 (
     /* input, not modified on output: */
@@ -205,6 +211,7 @@ static Int lsolve_symbolic
  * Scatter the numerical values into the workspace X, and construct the
  * corresponding column of the off-diagonal matrix. */
 
+template <typename Entry, typename Int>
 static void construct_column
 (
     /* inputs, not modified on output */
@@ -302,6 +309,7 @@ static void construct_column
  * to be unit-diagonal, with possibly unsorted columns (but the first entry in
  * the column must always be the diagonal entry). */
 
+template <typename Entry, typename Int>
 static void lsolve_numeric
 (
     /* input, not modified on output: */
@@ -351,6 +359,7 @@ static void lsolve_numeric
 
 /* Find a pivot via partial pivoting, and scale the column of L. */
 
+template <typename Entry, typename Int>
 static Int lpivot
 (
     Int diagrow,
@@ -369,7 +378,7 @@ static Int lpivot
                          * row i is not yet pivotal.  */
 
     Int *p_firstrow,
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     Entry x, pivot, *Lx ;
@@ -512,6 +521,7 @@ static Int lpivot
 /* ========================================================================== */
 
 /* Prune the columns of L to reduce work in subsequent depth-first searches */
+template <typename Entry, typename Int>
 static void prune
 (
     /* input/output: */
@@ -623,6 +633,7 @@ static void prune
 /* === KLU_kernel =========================================================== */
 /* ========================================================================== */
 
+template <typename Entry, typename Int>
 size_t KLU_kernel   /* final size of LU on output */
 (
     /* input, not modified */
@@ -667,7 +678,7 @@ size_t KLU_kernel   /* final size of LU on output */
     Int Offi [ ],
     Entry Offx [ ],
     /* --------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     Entry pivot ;
@@ -833,14 +844,14 @@ size_t KLU_kernel   /* final size of LU on output */
         /* get the column of the matrix to factorize and scatter into X */
         /* ------------------------------------------------------------------ */
 
-        construct_column (k, Ap, Ai, Ax, Q, X,
+        construct_column <Entry> (k, Ap, Ai, Ax, Q, X,
             k1, PSinv, Rs, scale, Offp, Offi, Offx) ;
 
         /* ------------------------------------------------------------------ */
         /* compute the numerical values of the kth column (s = L \ A (:,k)) */
         /* ------------------------------------------------------------------ */
 
-        lsolve_numeric (Pinv, LU, Stack, Lip, top, n, Llen, X) ;
+        lsolve_numeric <Entry> (Pinv, LU, Stack, Lip, top, n, Llen, X) ;
 
 #ifndef NDEBUG
         for (p = top ; p < n ; p++)
@@ -866,7 +877,7 @@ size_t KLU_kernel   /* final size of LU on output */
             k, diagrow, UNFLIP (diagrow))) ;
 
         /* find a pivot and scale the pivot column */
-        if (!lpivot (diagrow, &pivrow, &pivot, &abs_pivot, tol, X, LU, Lip,
+        if (!lpivot <Entry> (diagrow, &pivrow, &pivot, &abs_pivot, tol, X, LU, Lip,
                     Llen, k, n, Pinv, &firstrow, Common))
         {
             /* matrix is structurally or numerically singular */
@@ -962,7 +973,7 @@ size_t KLU_kernel   /* final size of LU on output */
         /* symmetric pruning */
         /* ------------------------------------------------------------------ */
 
-        prune (Lpend, Pinv, k, pivrow, LU, Uip, Lip, Ulen, Llen) ;
+        prune<Entry> (Lpend, Pinv, k, pivrow, LU, Uip, Lip, Ulen, Llen) ;
 
         *lnz += Llen [k] + 1 ; /* 1 added to lnz for diagonal */
         *unz += Ulen [k] + 1 ; /* 1 added to unz for diagonal */
@@ -1007,3 +1018,5 @@ size_t KLU_kernel   /* final size of LU on output */
     *p_LU = LU ;
     return (newlusize) ;
 }
+
+#endif

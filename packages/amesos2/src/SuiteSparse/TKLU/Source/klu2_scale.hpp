@@ -14,8 +14,12 @@
  *      2 or more: the scale factor for row i is max (abs (A (i,:)))
  */
 
+#ifndef KLU2_SCALE_HPP
+#define KLU2_SCALE_HPP
+
 #include "tklu_internal.h"
 
+template <typename Entry, typename Int>
 Int KLU_scale           /* return TRUE if successful, FALSE otherwise */
 (
     /* inputs, not modified */
@@ -23,13 +27,15 @@ Int KLU_scale           /* return TRUE if successful, FALSE otherwise */
     Int n,
     Int Ap [ ],         /* size n+1, column pointers */
     Int Ai [ ],         /* size nz, row indices */
-    double Ax [ ],
+    /* TODO : double to Entry */
+    Entry Ax [ ],
     /* outputs, not defined on input */
+    /* TODO : double to Entry */
     double Rs [ ],      /* size n, can be NULL if scale <= 0 */
     /* workspace, not defined on input or output */
     Int W [ ],          /* size n, can be NULL */
     /* --------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     double a ;
@@ -157,3 +163,4 @@ Int KLU_scale           /* return TRUE if successful, FALSE otherwise */
 
     return (TRUE) ;
 }
+#endif

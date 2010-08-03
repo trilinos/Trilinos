@@ -6,6 +6,9 @@
  * compile-time.
  */
 
+#ifndef KLU2_DUMP_HPP
+#define KLU2_DUMP_HPP
+
 #include "tklu_internal.h"
 
 #ifndef NDEBUG
@@ -29,6 +32,7 @@
  * Not user-callable.  Only used when debugging.
  */
 
+template <typename Entry, typename Int>
 Int KLU_valid (Int n, Int Ap [ ], Int Ai [ ], Entry Ax [ ])
 {
     Int nz, j, p1, p2, i, p ;
@@ -87,6 +91,7 @@ Int KLU_valid (Int n, Int Ap [ ], Int Ai [ ], Entry Ax [ ])
  * function for U, the flag should be set to false.  Only used when debugging.
  */
 
+template <typename Entry, typename Int>
 Int KLU_valid_LU (Int n, Int flag_test_start_ptr, Int Xip [ ],
                    Int Xlen [ ],  Unit LU [ ])
 {
@@ -139,4 +144,6 @@ Int KLU_valid_LU (Int n, Int flag_test_start_ptr, Int Xip [ ],
 
     return (TRUE) ;
 }
+#endif
+
 #endif

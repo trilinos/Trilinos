@@ -4,15 +4,20 @@
 
 /* Free the KLU Numeric object. */
 
-#include "tklu_internal.h"
+#ifndef KLU2_FREE_NUMERIC_HPP
+#define KLU2_FREE_NUMERIC_HPP
 
+#include "tklu_internal.h"
+#include "klu2_memory.hpp"
+
+template <typename Entry, typename Int>
 Int KLU_free_numeric
 (
-    KLU_numeric **NumericHandle,
-    KLU_common  *Common
+    KLU_numeric<Entry, Int> **NumericHandle,
+    KLU_common<Entry, Int>  *Common
 )
 {
-    KLU_numeric *Numeric ;
+    KLU_numeric<Entry, Int> *Numeric ;
     Unit **LUbx ;
     size_t *LUsize ;
     Int block, n, nzoff, nblocks ;
@@ -64,8 +69,10 @@ Int KLU_free_numeric
 
     KLU_free (Numeric->Work, Numeric->worksize, 1, Common) ;
 
-    KLU_free (Numeric, 1, sizeof (KLU_numeric), Common) ;
+    KLU_free (Numeric, 1, sizeof (KLU_numeric<Entry, Int>), Common) ;
 
     *NumericHandle = NULL ;
     return (TRUE) ;
 }
+
+#endif

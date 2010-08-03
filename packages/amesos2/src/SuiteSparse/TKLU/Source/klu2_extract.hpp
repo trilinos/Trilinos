@@ -9,13 +9,17 @@
  * nnz(L) = Numeric->lnz, nnz(U) = Numeric->unz, and nnz(F) = Numeric->Offp [n]
  */
 
+#ifndef KLU2_EXTRACT_HPP
+#define KLU2_EXTRACT_HPP
+
 #include "tklu_internal.h"
 
+template <typename Entry, typename Int>
 Int KLU_extract     /* returns TRUE if successful, FALSE otherwise */
 (
     /* inputs: */
-    KLU_numeric *Numeric,
-    KLU_symbolic *Symbolic,
+    KLU_numeric<Entry, Int> *Numeric,
+    KLU_symbolic<Entry, Int> *Symbolic,
 
     /* outputs, all of which must be allocated on input */
 
@@ -55,7 +59,7 @@ Int KLU_extract     /* returns TRUE if successful, FALSE otherwise */
     /* R, block boundaries */
     Int *R,         /* size nblocks+1 */
 
-    KLU_common *Common
+    KLU_common<Entry> *Common
 )
 {
     Int *Lip, *Llen, *Uip, *Ulen, *Li2, *Ui2 ;
@@ -288,3 +292,5 @@ Int KLU_extract     /* returns TRUE if successful, FALSE otherwise */
 
     return (TRUE) ;
 }
+
+#endif

@@ -9,21 +9,27 @@
  * Numeric->Iwork).
  */
 
-#include "tklu_internal.h"
+#ifndef KLU2_SOLVE_HPP
+#define KLU2_SOLVE_HPP
 
+#include "tklu_internal.h"
+#include "klu2.hpp"
+
+template <typename Entry, typename Int>
 Int KLU_solve
 (
     /* inputs, not modified */
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
+    KLU_symbolic<Entry, Int> *Symbolic,
+    KLU_numeric<Entry, Int> *Numeric,
     Int d,                  /* leading dimension of B */
     Int nrhs,               /* number of right-hand-sides */
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
-    double B [ ],           /* size n*nrhs, in column-oriented form, with
+    /* TODO: Switched from double to Entry, check for all cases */
+    Entry B [ ],           /* size n*nrhs, in column-oriented form, with
                              * leading dimension d. */
     /* --------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     Entry x [4], offik, s ;
@@ -394,3 +400,5 @@ Int KLU_solve
     }
     return (TRUE) ;
 }
+
+#endif

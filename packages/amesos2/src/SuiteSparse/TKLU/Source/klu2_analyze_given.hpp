@@ -6,7 +6,11 @@
  * be done to modify the user's P and Q (does not perform the max transversal;
  * just finds the strongly-connected components). */
 
+#ifndef KLU2_ANALYZE_GIVEN_HPP
+#define KLU2_ANALYZE_GIVEN_HPP
+
 #include "tklu_internal.h"
+#include "klu2_memory.hpp"
 
 /* ========================================================================== */
 /* === klu_alloc_symbolic =================================================== */
@@ -14,15 +18,16 @@
 
 /* Allocate Symbolic object, and check input matrix.  Not user callable. */
 
-KLU_symbolic *KLU_alloc_symbolic
+template <typename Entry, typename Int>
+KLU_symbolic<Entry, Int> *KLU_alloc_symbolic
 (
     Int n,
     Int *Ap,
     Int *Ai,
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
-    KLU_symbolic *Symbolic ;
+    KLU_symbolic<Entry, Int> *Symbolic ;
     Int *P, *Q, *R ;
     double *Lnz ;
     Int nz, i, j, p, pend ;
@@ -96,7 +101,7 @@ KLU_symbolic *KLU_alloc_symbolic
     /* allocate the Symbolic object */
     /* ---------------------------------------------------------------------- */
 
-    Symbolic = (KLU_symbolic *) KLU_malloc (sizeof (KLU_symbolic), 1, Common) ;
+    Symbolic = (KLU_symbolic<Entry, Int> *) KLU_malloc (sizeof (KLU_symbolic<Entry, Int>), 1, Common) ;
     if (Common->status < KLU_OK)
     {
         /* out of memory */
@@ -132,7 +137,8 @@ KLU_symbolic *KLU_alloc_symbolic
 /* === KLU_analyze_given ==================================================== */
 /* ========================================================================== */
 
-KLU_symbolic *KLU_analyze_given     /* returns NULL if error, or a valid
+template <typename Entry, typename Int>
+KLU_symbolic<Entry, Int> *KLU_analyze_given     /* returns NULL if error, or a valid
                                        KLU_symbolic object if successful */
 (
     /* inputs, not modified */
@@ -142,10 +148,10 @@ KLU_symbolic *KLU_analyze_given     /* returns NULL if error, or a valid
     Int Puser [ ],      /* size n, user's row permutation (may be NULL) */
     Int Quser [ ],      /* size n, user's column permutation (may be NULL) */
     /* -------------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
-    KLU_symbolic *Symbolic ;
+    KLU_symbolic<Entry, Int> *Symbolic ;
     double *Lnz ;
     Int nblocks, nz, block, maxblock, *P, *Q, *R, nzoff, p, pend, do_btf, k ;
 
@@ -250,6 +256,7 @@ KLU_symbolic *KLU_analyze_given     /* returns NULL if error, or a valid
         /* find the strongly-connected components */
         /* ------------------------------------------------------------------ */
 
+        /* TODO : Correct version of BTF */
         /* modifies Q, and determines P and R */
         nblocks = BTF_strongcomp (n, Ap, Bi, Q, P, R, Work) ;
 
@@ -367,3 +374,5 @@ KLU_symbolic *KLU_analyze_given     /* returns NULL if error, or a valid
 
     return (Symbolic) ;
 }
+
+#endif /* KLU2_ANALYZE_GIVEN_HPP */

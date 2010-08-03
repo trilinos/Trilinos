@@ -8,24 +8,30 @@
  * the pattern given to KLU_factor.
  */
 
+#ifndef KLU2_REFACTOR_HPP
+#define KLU2_REFACTOR_HPP
+
 #include "tklu_internal.h"
+#include "klu2_memory.hpp"
+#include "klu2_scale.hpp"
 
 
 /* ========================================================================== */
 /* === KLU_refactor ========================================================= */
 /* ========================================================================== */
 
+template <typename Entry, typename Int>
 Int KLU_refactor        /* returns TRUE if successful, FALSE otherwise */
 (
     /* inputs, not modified */
     Int Ap [ ],         /* size n+1, column pointers */
     Int Ai [ ],         /* size nz, row indices */
     double Ax [ ],
-    KLU_symbolic *Symbolic,
+    KLU_symbolic<Entry, Int> *Symbolic,
 
     /* input/output */
-    KLU_numeric *Numeric,
-    KLU_common  *Common
+    KLU_numeric<Entry, Int> *Numeric,
+    KLU_common<Entry, Int>  *Common
 )
 {
     Entry ukk, ujk, s ;
@@ -429,7 +435,9 @@ Int KLU_refactor        /* returns TRUE if successful, FALSE otherwise */
     {
         for (k = 0 ; k < n ; k++)
         {
-            REAL (X [k]) = Rs [Pnum [k]] ;
+            /* TODO : Check. REAL(X[k]) Can be just X[k] */
+            /* REAL (X [k]) = Rs [Pnum [k]] ; */
+            X [k] = Rs [Pnum [k]] ;
         }
         for (k = 0 ; k < n ; k++)
         {
@@ -476,3 +484,5 @@ Int KLU_refactor        /* returns TRUE if successful, FALSE otherwise */
 
     return (TRUE) ;
 }
+
+#endif

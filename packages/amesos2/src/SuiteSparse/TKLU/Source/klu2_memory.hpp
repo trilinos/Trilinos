@@ -9,6 +9,9 @@
  * KLU_realloc                  realloc wrapper
  */
 
+#ifndef KLU2_MEMORY_H
+#define KLU2_MEMORY_H
+
 #include "tklu_internal.h"
 
 /* ========================================================================== */
@@ -17,6 +20,7 @@
 
 /* Safely compute a+b, and check for size_t overflow */
 
+template <typename Int>
 size_t KLU_add_size_t (size_t a, size_t b, Int *ok)
 {
     (*ok) = (*ok) && ((a + b) >= MAX (a,b)) ;
@@ -29,6 +33,7 @@ size_t KLU_add_size_t (size_t a, size_t b, Int *ok)
 
 /* Safely compute a*k, where k should be small, and check for size_t overflow */
 
+template <typename Int>
 size_t KLU_mult_size_t (size_t a, size_t k, Int *ok)
 {
     size_t i, s = 0 ;
@@ -57,13 +62,14 @@ size_t KLU_mult_size_t (size_t a, size_t k, Int *ok)
  * Uses a pointer to the malloc routine (or its equivalent) defined in Common.
  */
 
+template <typename Entry, typename Int>
 void *KLU_malloc        /* returns pointer to the newly malloc'd block */
 (
     /* ---- input ---- */
     size_t n,           /* number of items */
     size_t size,        /* size of each item */
     /* --------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     void *p ;
@@ -117,6 +123,7 @@ void *KLU_malloc        /* returns pointer to the newly malloc'd block */
  *      p = KLU_free (p, n, sizeof (int), Common) ;
  */
 
+template <typename Entry, typename Int>
 void *KLU_free          /* always returns NULL */
 (
     /* ---- in/out --- */
@@ -125,7 +132,7 @@ void *KLU_free          /* always returns NULL */
     size_t n,           /* size of block to free, in # of items */
     size_t size,        /* size of each item */
     /* --------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     size_t s ;
@@ -165,6 +172,7 @@ void *KLU_free          /* always returns NULL */
  * Uses a pointer to the realloc routine (or its equivalent) defined in Common.
  */
 
+template <typename Entry, typename Int>
 void *KLU_realloc       /* returns pointer to reallocated block */
 (
     /* ---- input ---- */
@@ -174,7 +182,7 @@ void *KLU_realloc       /* returns pointer to reallocated block */
     /* ---- in/out --- */
     void *p,            /* block of memory to realloc */
     /* --------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     void *pnew ;
@@ -223,3 +231,5 @@ void *KLU_realloc       /* returns pointer to reallocated block */
     }
     return (p) ;
 }
+
+#endif /* KLU_MEMORY_H */

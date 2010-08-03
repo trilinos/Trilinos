@@ -6,23 +6,31 @@
  * or KLU_analyze_given.
  */
 
+#ifndef KLU2_FACTOR_HPP
+#define KLU2_FACTOR_HPP
+
 #include "tklu_internal.h"
+#include "klu2.hpp"
+#include "klu2_memory.hpp"
+#include "klu2_scale.hpp"
+
 
 /* ========================================================================== */
 /* === KLU_factor2 ========================================================== */
 /* ========================================================================== */
 
+template <typename Entry, typename Int>
 static void factor2
 (
     /* inputs, not modified */
     Int Ap [ ],         /* size n+1, column pointers */
     Int Ai [ ],         /* size nz, row indices */
     Entry Ax [ ],
-    KLU_symbolic *Symbolic,
+    KLU_symbolic<Entry, Int> *Symbolic,
 
     /* inputs, modified on output: */
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    KLU_numeric<Entry, Int> *Numeric,
+    KLU_common<Entry, Int> *Common
 )
 {
     double lsize ;
@@ -107,7 +115,8 @@ static void factor2
          * the scale factors are permuted according to the final pivot row
          * permutation, so that Rs [k] is the scale factor for the kth row of
          * A(p,q) where p and q are the final row and column permutations. */
-        KLU_scale (scale, n, Ap, Ai, (double *) Ax, Rs, Pnum, Common) ;
+        /*KLU_scale (scale, n, Ap, Ai, (double *) Ax, Rs, Pnum, Common) ;*/
+        KLU_scale (scale, n, Ap, Ai, Ax, Rs, Pnum, Common) ;
         if (Common->status < KLU_OK)
         {
             /* matrix is invalid */
@@ -318,7 +327,9 @@ static void factor2
     {
         for (k = 0 ; k < n ; k++)
         {
-            REAL (X [k]) = Rs [Pnum [k]] ;
+            /* TODO : Check. REAL(X[k]) Can be just X[k] */
+            /* REAL (X [k]) = Rs [Pnum [k]] ; */
+            X [k] = Rs [Pnum [k]] ;
         }
         for (k = 0 ; k < n ; k++)
         {
@@ -381,21 +392,23 @@ static void factor2
 /* === KLU_factor =========================================================== */
 /* ========================================================================== */
 
-KLU_numeric *KLU_factor         /* returns NULL if error, or a valid
+template <typename Entry, typename Int>
+KLU_numeric<Entry, Int> *KLU_factor         /* returns NULL if error, or a valid
                                    KLU_numeric object if successful */
 (
     /* --- inputs --- */
     Int Ap [ ],         /* size n+1, column pointers */
     Int Ai [ ],         /* size nz, row indices */
-    double Ax [ ],
-    KLU_symbolic *Symbolic,
+    /* TODO : Checked, switch from double to Entry , still make sure works in all cases */
+    Entry Ax [ ],       
+    KLU_symbolic<Entry, Int> *Symbolic,
     /* -------------- */
-    KLU_common *Common
+    KLU_common<Entry, Int> *Common
 )
 {
     Int n, nzoff, nblocks, maxblock, k, ok = TRUE ;
     Int *R ;
-    KLU_numeric *Numeric ;
+    KLU_numeric<Entry, Int> *Numeric ;
     size_t n1, nzoff1, s, b6, n3 ;
 
     if (Common == NULL)
@@ -443,7 +456,7 @@ KLU_numeric *KLU_factor         /* returns NULL if error, or a valid
     n1 = ((size_t) n) + 1 ;
     nzoff1 = ((size_t) nzoff) + 1 ;
 
-    Numeric = (KLU_numeric *) KLU_malloc (sizeof (KLU_numeric), 1, Common) ;
+    Numeric = (KLU_numeric<Entry, Int> *) KLU_malloc (sizeof (KLU_numeric<Entry, Int>), 1, Common) ;
     if (Common->status < KLU_OK)
     {
         /* out of memory */
@@ -543,3 +556,5 @@ KLU_numeric *KLU_factor         /* returns NULL if error, or a valid
     }
     return (Numeric) ;
 }
+
+#endif

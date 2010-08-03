@@ -6,7 +6,11 @@
  * increasing order.
  */
 
+#ifndef KLU2_SORT_HPP
+#define KLU2_SORT_HPP
+
 #include "tklu_internal.h"
+#include "klu2_memory.hpp"
 
 /* ========================================================================== */
 /* === sort ================================================================= */
@@ -14,6 +18,7 @@
 
 /* Sort L or U using a double-transpose */
 
+template <typename Entry, typename Int>
 static void sort (Int n, Int *Xip, Int *Xlen, Unit *LU, Int *Tp, Int *Tj,
     Entry *Tx, Int *W)
 {
@@ -88,11 +93,12 @@ static void sort (Int n, Int *Xip, Int *Xlen, Unit *LU, Int *Tp, Int *Tj,
 /* === KLU_sort ============================================================= */
 /* ========================================================================== */
 
+template <typename Entry, typename Int>
 Int KLU_sort
 (
-    KLU_symbolic *Symbolic,
-    KLU_numeric *Numeric,
-    KLU_common *Common
+    KLU_symbolic<Entry, Int> *Symbolic,
+    KLU_numeric<Entry, Int> *Numeric,
+    KLU_common<Entry, Int> *Common
 )
 {
     Int *R, *W, *Tp, *Ti, *Lip, *Uip, *Llen, *Ulen ;
@@ -154,3 +160,5 @@ Int KLU_sort
     KLU_free (Tx, nz, sizeof (Entry), Common) ;
     return (Common->status == KLU_OK) ;
 }
+
+#endif

@@ -9,6 +9,9 @@
 
 #include "tklu.h" 
 #include "amesos_btf_decl.h"
+#include <stdio.h>
+#include <complex>
+#include "Teuchos_ScalarTraits.hpp"
 #include "tklu_version.h"
 
 /* ========================================================================== */
@@ -31,7 +34,6 @@
 
 /* ========================================================================== */
 
-#include <stdio.h>
 #include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -76,7 +78,7 @@
 #define FLIP(i) (-(i)-2)
 #define UNFLIP(i) (((i) < EMPTY) ? FLIP (i) : (i))
 
-
+template <typename Entry, typename Int>
 size_t KLU_kernel   /* final size of LU on output */
 (
     /* input, not modified */
@@ -119,10 +121,11 @@ size_t KLU_kernel   /* final size of LU on output */
     Int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
     Int Offi [ ],
     Entry Offx [ ],
-    KLU_common *Common  /* the control input/output structure */
+    KLU_common<Entry, Int> *Common  /* the control input/output structure */
 ) ;
 
 
+template <typename Entry, typename Int>
 size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
 (
     /* inputs, not modified */
@@ -157,9 +160,10 @@ size_t KLU_kernel_factor            /* 0 if failure, size of LU if OK */
     Int Offp [ ],   /* off-diagonal matrix (modified by this routine) */
     Int Offi [ ],
     Entry Offx [ ],
-    KLU_common *Common  /* the control input/output structure */
+    KLU_common<Entry, Int> *Common  /* the control input/output structure */
 ) ;
 
+template <typename Entry, typename Int>
 void KLU_lsolve
 (
     /* inputs, not modified: */
@@ -172,6 +176,7 @@ void KLU_lsolve
     Entry X [ ]
 ) ;
 
+template <typename Entry, typename Int>
 void KLU_ltsolve
 (
     /* inputs, not modified: */
@@ -188,6 +193,7 @@ void KLU_ltsolve
 ) ;
 
 
+template <typename Entry, typename Int>
 void KLU_usolve
 (
     /* inputs, not modified: */
@@ -201,6 +207,7 @@ void KLU_usolve
     Entry X [ ]
 ) ;
 
+template <typename Entry, typename Int>
 void KLU_utsolve
 (
     /* inputs, not modified: */
@@ -210,13 +217,14 @@ void KLU_utsolve
     Unit LU [ ],
     Entry Udiag [ ],
     Int nrhs,
-#ifdef COMPLEX
+#ifdef COMPLEX /* TODO : Need to fix this */
     Int conj_solve,
 #endif
     /* right-hand-side on input, solution to U'x=b on output */
     Entry X [ ]
 ) ;
 
+template <typename Entry, typename Int>
 Int KLU_valid 
 (
     Int n, 
@@ -225,6 +233,7 @@ Int KLU_valid
     Entry Ax [ ]
 ) ;
 
+template <typename Int>
 Int KLU_valid_LU 
 (
     Int n, 
@@ -234,10 +243,13 @@ Int KLU_valid_LU
     Unit LU [ ]
 );
 
+template <typename Int>
 size_t KLU_add_size_t (size_t a, size_t b, Int *ok) ;
 
+template <typename Int>
 size_t KLU_mult_size_t (size_t a, size_t k, Int *ok) ;
 
-KLU_symbolic *KLU_alloc_symbolic (Int n, Int *Ap, Int *Ai, KLU_common *Common) ;
+template <typename Entry, typename Int>
+KLU_symbolic<Entry, Int> *KLU_alloc_symbolic (Int n, Int *Ap, Int *Ai, KLU_common<Entry, Int> *Common) ;
 
 #endif
