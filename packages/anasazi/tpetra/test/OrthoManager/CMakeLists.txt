@@ -4,9 +4,8 @@ INCLUDE(PackageAddExecutableAndTest)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
-  # This test only works if Teuchos supports complex arithmetic.  
-  # Complex arithmetic is not supported by default in the push tests.
-  IF (${TEUCHOS_HAVE_COMPLEX})
+  # This test depends on complex arithmetic support.
+  IF (${${PACKAGE_NAME}_ENABLE_COMPLEX})
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       Tpetra_OrthoManager_Complex_test
       SOURCES cxx_main_complex.cpp 
