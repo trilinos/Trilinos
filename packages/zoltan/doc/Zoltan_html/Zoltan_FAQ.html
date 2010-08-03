@@ -274,11 +274,13 @@ Frequently Asked Questions
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <li>  <a href="#EMPTYPART">Zoltan's hypergraph partitioner
-is returning empty parts -- that is, parts that have zero
+is returning empty parts, that is, parts that have zero
 objects in them. Is this a bug?</a>
 <li>  <a href="#MPILEAK">On some platforms, why do Zoltan partitioning 
 methods RCB and RIB use an increasing amount of memory over multiple 
 invocations?</a>
+<li> <a href=#INTELF90">Why does compilation of the Fortran interface hang
+with Intel's F90 compiler?</a>
 <li>  <a href="#MPIRECVLIMIT">During runs (particularly on RedStorm), MPI 
 reports that it is out of resources or too many messages have been posted.
 What does this mean and what can I do?</a>
@@ -302,7 +304,7 @@ Makefile:28: mem.d: No such file or directory
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <li>  <a NAME="EMPTYPART"></a>Zoltan's hypergraph partitioner
-is returning empty parts -- that is, parts that have zero
+is returning empty parts, that is, parts that have zero
 objects in them. Is this a bug?
 <p>
 The hypergraph partitioner creates partitions with up to a specified amount
@@ -350,6 +352,18 @@ Zoltan is to set the TFLOPS_SPECIAL parameter to 1 (e.g.,
 <a href="ug_html/ug_interface_init.html#Zoltan_Set_Param"><b>Zoltan_Set_Param</b></a>(zz,"TFLOPS_SPECIAL","1");), which causes an 
 implementation that doesn't use MPI_Comm_split to be invoked.
 
+<hr WIDTH="100%">
+<li> <a NAME=INTELF90"></a>Why does compilation of the Fortran interface hang
+with Intel's F90 compiler?
+<p>
+There is a bug in some versions of Intel's F90 compiler.  We know
+Zoltan's Fortran interface compiles with Intel's F90 compiler versions
+10.1.015 through 11.1.056.  We know that it does not compile with
+versions 11.1.059, 11.1.069 and 11.1.072.  We reported the problem to 
+Intel, and we are told that the compiler bug is fixed in version 11.1 update 7,
+which is scheduled for release in August 2010.  See this 
+<a href="http://software.intel.com/en-us/forums/showthread.php?t=75385">Intel 
+Forum link</a> for more details.
 
 <hr WIDTH="100%">
 <li><a NAME="MPIRECVLIMIT"></a>During runs (particularly on RedStorm), MPI 
