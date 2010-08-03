@@ -49,14 +49,7 @@ I = -I../../AMD/Include -I../../COLAMD/Include -I../../BTF/Include \
     -I../Include -I$(SS_HOME)/UFconfig -I$(SS_HOME)/AMD/Include \
     -I$(SS_HOME)/BTF/Include -I$(SS_HOME)/COLAMD/Include -I$(INCLUDE_HOME)
 
-#all: library
-
-#library: libtklu.a
-
-
-#libtklu.a: $(OBJ)
-#$(AR) libtklu.a $(OBJ)
-#$(RANLIB) libtklu.a
+all: example
 
 $(OBJ): $(INC)
 
