@@ -153,8 +153,12 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   //! Returns the size of the total Data block
   int NumData() const {return DataMap_->NumMyPoints();}
   
+  //! Gets apply mode info
+  int GetApplyMode() {return ApplyMode_;}
+
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(ostream & os) const;  
+
   //@}
 
   

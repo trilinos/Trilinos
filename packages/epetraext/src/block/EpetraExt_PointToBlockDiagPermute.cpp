@@ -15,6 +15,8 @@ EpetraExt_PointToBlockDiagPermute::EpetraExt_PointToBlockDiagPermute(const Epetr
   :Epetra_DistObject(MAT.RowMap()),
    Matrix_(&MAT),
    PurelyLocalMode_(true),
+   ContiguousBlockMode_(false),
+   ContiguousBlockSize_(0),
    NumBlocks_(0),
    Blockstart_(0),
    Blockids_(0),
@@ -49,13 +51,16 @@ EpetraExt_PointToBlockDiagPermute::~EpetraExt_PointToBlockDiagPermute()
 int EpetraExt_PointToBlockDiagPermute::SetParameters(Teuchos::ParameterList & List){
   List_=List;
 
+  // Check for contiguous blocking first
+  ContiguousBlockSize_=List_.get("contiguous block size",0);
+  if(ContiguousBlockSize_!=0){
+    ContiguousBlockMode_=true;
+    PurelyLocalMode_=false;
+  }  
+  
   // Local vs. global ids & mode
-  NumBlocks_=List_.get("number of local blocks",0);
-  if(NumBlocks_ <= 0) EPETRA_CHK_ERR(-1);
-  
-  Blockstart_=List_.get("block start index",(int*)0);
-  if(!NumBlocks_) EPETRA_CHK_ERR(-2);
-  
+  NumBlocks_=List_.get("number of local blocks",0);  
+  Blockstart_=List_.get("block start index",(int*)0);    
   Blockids_=List_.get("block entry lids",(int*)0);
   if(Blockids_)
     PurelyLocalMode_=true;
@@ -63,7 +68,17 @@ int EpetraExt_PointToBlockDiagPermute::SetParameters(Teuchos::ParameterList & Li
     Blockids_=List_.get("block entry gids",(int*)0);
     PurelyLocalMode_=false;
   }
-  if(!Blockids_) EPETRA_CHK_ERR(-3);
+  
+  // Sanity checks
+  if(ContiguousBlockMode_){
+    // Can't use contiguous at the same time as the other modes
+    if(NumBlocks_ || Blockstart_ || Blockids_) EPETRA_CHK_ERR(-4);
+  }
+  else {
+    if(NumBlocks_ <= 0) EPETRA_CHK_ERR(-1);
+    if(!Blockstart_) EPETRA_CHK_ERR(-2);
+    if(!Blockids_) EPETRA_CHK_ERR(-3);
+  }
   
   return 0;
 }
@@ -153,13 +168,16 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
   int Nrows=Matrix_->NumMyRows();
   int *l2b,*block_offset,*l2blockid;
   const Epetra_Map &RowMap=Matrix_->RowMap();
-  int *bsize=new int[NumBlocks_]; 
   int index,col,row_in_block,col_in_block,length,*colind;
   double *values;
 
   bool verbose=(bool)(List_.get("output",0) > 0);
   
+  // Contiguous Setup
+  SetupContiguousMode();
+
   // Compute block size lists
+  int *bsize=new int[NumBlocks_]; 
   for(i=0;i<NumBlocks_;i++) 
     bsize[i]=Blockstart_[i+1]-Blockstart_[i];
   
@@ -383,7 +401,7 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     Importer_ = new Epetra_Import(*CompatibleMap_,Matrix_->DomainMap());
   if(!CompatibleMap_->SameAs(Matrix_->RangeMap()))
     Exporter_ = new Epetra_Export(*CompatibleMap_,Matrix_->RangeMap());
-  
+
   // Cleanup
   delete [] LocalColIDS;
   delete [] block_offset;
@@ -392,10 +410,48 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
   delete [] bsize;
   delete [] MyBlockGIDs;
 
+  // Contiguous Cleanup
+  CleanupContiguousMode();
+
   return 0;
 }
+//=======================================================================================================
+int EpetraExt_PointToBlockDiagPermute::SetupContiguousMode(){
+  if(!ContiguousBlockMode_) return 0;
+  // NTS: In case of processor-crossing blocks, the lowest PID always gets the block;
+  const Epetra_Map &RowMap=Matrix_->RowMap();
+  
+  int MinMyGID=RowMap.MinMyGID(); 
+  int MaxMyGID=RowMap.MaxMyGID(); 
+  int Base=Matrix_->IndexBase();
 
+  // Find the GID that begins my first block
+  int MyFirstBlockGID=ContiguousBlockSize_*(int)ceil(((double)(MinMyGID - Base))/ContiguousBlockSize_)+Base;
+  NumBlocks_=(int)ceil((double)((MaxMyGID-MyFirstBlockGID+1.0)) / ContiguousBlockSize_);
 
+  // Allocate memory
+  Blockstart_=new int[NumBlocks_+1];
+  Blockids_=new int[NumBlocks_*ContiguousBlockSize_];
+  Blockstart_[NumBlocks_]=NumBlocks_*ContiguousBlockSize_;
+
+  // Fill the arrays
+  for(int i=0,ct=0;i<NumBlocks_;i++){
+    Blockstart_[i]=ct;
+    for(int j=0;j<ContiguousBlockSize_;j++,ct++){
+      Blockids_[ct]=MyFirstBlockGID+ct;
+    }
+  }
+  
+  return 0;
+}
+//=======================================================================================================
+int EpetraExt_PointToBlockDiagPermute::CleanupContiguousMode(){
+  if(!ContiguousBlockMode_) return 0;
+  NumBlocks_=0;
+  if(Blockstart_) {delete [] Blockstart_; Blockstart_=0;}
+  if(Blockids_)   {delete [] Blockids_; Blockids_=0;}
+  return 0;
+}
 
 //=======================================================================================================
 void EpetraExt_PointToBlockDiagPermute::UpdateImportVector(int NumVectors) const {    
