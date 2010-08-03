@@ -24,11 +24,8 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD ;
   const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
 
-  if ( 1 < p_size ) { return ; }
-
-  const unsigned nx = 2 , ny = 2 , nz = 1 ;
+  const unsigned nx = 3 , ny = 3 , nz = 3 ;
 
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
@@ -85,33 +82,36 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 
   fixture.fill_mesh();
 
-  stk::mesh::Entity & old_node = * fixture.m_nodes[0][0][1];
+  stk::mesh::Entity * const old_node = fixture.m_nodes[0][0][1];
 
-  stk::mesh::Entity & right_element = * fixture.m_elems[0][0][1];
+  stk::mesh::Entity * const right_element = fixture.m_elems[0][0][1];
 
   unsigned right_ordinal = 0;
-  {
-    stk::mesh::PairIterRelation rel = old_node.relations();
+  unsigned new_node_id = 28;
+
+  if ( old_node && right_element ) {
+    stk::mesh::PairIterRelation rel = old_node->relations();
 
     for (; rel.first != rel.second; ++rel) {
-      if ( (rel.first->entity()) == & right_element) {
+      if ( (rel.first->entity()) == right_element) {
         right_ordinal = rel.first->identifier();
       }
     }
   }
 
-  unsigned new_node_id = 28;
-
   mesh.modification_begin();
 
   //only crack the mesh if I own the element
-  if (mesh.parallel_rank() == right_element.owner_rank()) {
+  if ( right_element &&
+       right_element->owner_rank() == mesh.parallel_rank() ) {
+
     const stk::mesh::PartVector no_parts;
+
     stk::mesh::Entity & new_node =
       mesh.declare_entity(stk::mesh::Node, new_node_id, no_parts);
 
-    mesh.destroy_relation(right_element, old_node);
-    mesh.declare_relation(right_element, new_node, right_ordinal);
+    mesh.destroy_relation(*right_element, *old_node);
+    mesh.declare_relation(*right_element, new_node, right_ordinal);
   }
 
   //copy parts
@@ -120,8 +120,8 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 
   mesh.modification_end();
 
-  {
-    stk::mesh::PairIterRelation rel = right_element.relations();
+  if ( right_element ) {
+    stk::mesh::PairIterRelation rel = right_element->relations();
     stk::mesh::Entity & new_node = * (rel.first[right_ordinal].entity());
 
     STKUNIT_EXPECT_TRUE ( new_node.identifier() == new_node_id );

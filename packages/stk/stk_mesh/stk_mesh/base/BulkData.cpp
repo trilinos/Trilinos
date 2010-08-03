@@ -549,7 +549,7 @@ bool BulkData::destroy_entity( Entity * & e )
 
   if ( has_upward_relation ) { return false ; }
 
-  if (  entity.marked_for_destruction() ) {
+  if (  EntityLogDeleted == entity.log_query() ) {
     // Cannot already be destroyed.
     return false ;
   }
