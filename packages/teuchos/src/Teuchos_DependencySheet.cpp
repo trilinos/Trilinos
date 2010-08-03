@@ -33,31 +33,31 @@
 namespace Teuchos{
 
 
-DependencySheet::DependencySheet(Teuchos::RCP<Teuchos::ParameterList> rootList):name("DEP_ANONYMOUS"), rootList(rootList){}
+DependencySheet::DependencySheet(RCP<ParameterList> rootList):name_("DEP_ANONYMOUS"), rootList_(rootList){}
 
-DependencySheet::DependencySheet(Teuchos::RCP<Teuchos::ParameterList> rootList, const std::string &name):name(name), rootList(rootList){}
+DependencySheet::DependencySheet(RCP<ParameterList> rootList, const std::string &name):name_(name), rootList_(rootList){}
 
-bool DependencySheet::addDependency(Teuchos::RCP<Teuchos::Dependency> dependency){
+bool DependencySheet::addDependency(RCP<Dependency> dependency){
 	validateExistanceInRoot(dependency);
 	bool successfulAdd = true;
 	Dependency::ParameterParentMap dependees = dependency->getDependees();
 	for(Dependency::ParameterParentMap::iterator it  = dependees.begin(); it != dependees.end(); ++it){
-		if(!dependencies[it->second->getEntryPtr(it->first)].insert(dependency).second){
+		if(!dependencies_[it->second->getEntryPtr(it->first)].insert(dependency).second){
 			successfulAdd = false;
 		}
 	}
 	return successfulAdd;
 }
 
-bool DependencySheet::removeDependency(Teuchos::RCP<Teuchos::Dependency> dependency){
+bool DependencySheet::removeDependency(RCP<Dependency> dependency){
 	bool succesfulRemove = true;	
 	Dependency::ParameterParentMap dependees = dependency->getDependees();
 	for(Dependency::ParameterParentMap::iterator it  = dependees.begin(); it != dependees.end(); ++it){
 		bool successFullCurrentRemove = false;
-		Teuchos::ParameterEntry* currentDependee = it->second->getEntryPtr(it->first);
-		for(DepSet::iterator it2 = dependencies[currentDependee].begin(); it2 != dependencies[currentDependee].end(); ++it2){
+		ParameterEntry* currentDependee = it->second->getEntryPtr(it->first);
+		for(DepSet::iterator it2 = dependencies_[currentDependee].begin(); it2 != dependencies_[currentDependee].end(); ++it2){
 			if((*it2) == dependency){
-				dependencies[currentDependee].erase(it2);
+				dependencies_[currentDependee].erase(it2);
 				successFullCurrentRemove = true;
 				break;
 			}
@@ -69,35 +69,35 @@ bool DependencySheet::removeDependency(Teuchos::RCP<Teuchos::Dependency> depende
 	return succesfulRemove;
 }
 
-bool DependencySheet::hasDependents(const Teuchos::ParameterEntry* dependee) const{
-	return (dependencies.find(dependee) != dependencies.end() && dependencies.find(dependee)->second.size() > 0);
+bool DependencySheet::hasDependents(const ParameterEntry* dependee) const{
+	return (dependencies_.find(dependee) != dependencies_.end() && dependencies_.find(dependee)->second.size() > 0);
 }
 
-const DependencySheet::DepSet& DependencySheet::getDependenciesForParameter(const Teuchos::ParameterEntry* dependee) const{
-	return dependencies.find(dependee)->second;
+const DependencySheet::DepSet& DependencySheet::getDependenciesForParameter(const ParameterEntry* dependee) const{
+	return dependencies_.find(dependee)->second;
 }
 
 DependencySheet::DepMap::iterator DependencySheet::depBegin(){
-	return dependencies.begin();
+	return dependencies_.begin();
 }
 
 DependencySheet::DepMap::iterator DependencySheet::depEnd(){
-	return dependencies.end();
+	return dependencies_.end();
 }
 
 DependencySheet::DepMap::const_iterator DependencySheet::depBegin() const{
-	return dependencies.begin();
+	return dependencies_.begin();
 }
 
 DependencySheet::DepMap::const_iterator DependencySheet::depEnd() const{
-	return dependencies.end();
+	return dependencies_.end();
 }
 
 void DependencySheet::printDeps(){
-	std::cout << "Dependency Sheet: " << name << "\n\n";
+	std::cout << "Dependency Sheet: " << name_ << "\n\n";
 	for(DepMap::iterator it = depBegin(); it != depEnd(); ++it){
-		const Teuchos::ParameterEntry* dependee = it->first;
-		for(DepSet::iterator it2 = dependencies.find(dependee)->second.begin(); it2 != dependencies.find(dependee)->second.end(); ++it2){
+		const ParameterEntry* dependee = it->first;
+		for(DepSet::iterator it2 = dependencies_.find(dependee)->second.begin(); it2 != dependencies_.find(dependee)->second.end(); ++it2){
 			std::set<std::string> dependeeNames = (*it2)->getDependeeNames();
 			std::cout << "Dependees: \n";
 			for(std::set<std::string>::iterator it3 = dependeeNames.begin(); it3 != dependeeNames.end(); ++it3){
@@ -114,13 +114,13 @@ void DependencySheet::printDeps(){
 	}
 }
 
-void DependencySheet::validateExistanceInRoot(Teuchos::RCP<Teuchos::Dependency> dependency){
+void DependencySheet::validateExistanceInRoot(RCP<Dependency> dependency){
 	Dependency::ParameterParentMap::const_iterator it;
-	Teuchos::ParameterEntry *currentDependee;
+	ParameterEntry *currentDependee;
 	Dependency::ParameterParentMap dependees = dependency->getDependees();
 	for(it = dependees.begin(); it != dependees.end(); ++it){ 
 		currentDependee = it->second->getEntryPtr(it->first);
-		TEST_FOR_EXCEPTION(!Dependency::doesListContainList(rootList, it->second),
+		TEST_FOR_EXCEPTION(!Dependency::doesListContainList(rootList_, it->second),
 			InvalidDependencyException,
 			"FAILED TO ADD DEPENDENCY!\n\n"
 			"Sorry for the yelling there, but this is kind of a big deal. Dependencies are hard and complex so don't beat "
@@ -129,20 +129,19 @@ void DependencySheet::validateExistanceInRoot(Teuchos::RCP<Teuchos::Dependency> 
 			"exactly went wrong. I've got confidence in you! :)\n\n"
 			"Error:\n"
 			"An attempt was made to add a dependency containing a the dependee parameter \"" << it->first << "\""
-			" to the Dependency Sheet \"" << name << "\"."
+			" to the Dependency Sheet \"" << name_ << "\"."
 			" The Dependency Sheet's root list does not contain nor does it have"
 			" child ParameterLists that contain the parameter.\n"
-			"Dependency Sheet: " << name << "\n"
+			"Dependency Sheet: " << name_ << "\n"
 			"Dependency Type: " <<dependency->getType() << "\n"
 			"Bad Dependee Name: " << it->first);
-		}
 	}
 
-	Teuchos::ParameterEntry *currentDependent;
+	ParameterEntry *currentDependent;
 	Dependency::ParameterParentMap dependents = dependency->getDependents();
 	for(it = dependents.begin(); it != dependents.end(); ++it){ 
 		currentDependent = it->second->getEntryPtr(it->first);
-		TEST_FOR_EXCEPTION(!Dependency::doesListContainList(rootList, it->second),
+		TEST_FOR_EXCEPTION(!Dependency::doesListContainList(rootList_, it->second),
 			InvalidDependencyException,
 			"FAILED TO ADD DEPENDENCY!\n\n"
 			"Sorry for the yelling there, but this is kind of a big deal. Dependencies are hard and complex so don't beat "
@@ -151,13 +150,12 @@ void DependencySheet::validateExistanceInRoot(Teuchos::RCP<Teuchos::Dependency> 
 			"exactly went wrong. I've got confidence in you! :)\n\n"
 			"Error:\n"
 			"An attempt was made to add a dependency containing a the dependent parameter \"" << it->first << "\""
-			" to the Dependency Sheet \"" << name << "\"."
+			" to the Dependency Sheet \"" << name_ << "\"."
 			" The Dependency Sheet's root list does not contain nor does it have"
 			" child ParameterLists that contain the parameter.\n"
-			"Dependency Sheet: " << name << "\n"
+			"Dependency Sheet: " << name_ << "\n"
 			"Dependency Type: " << dependency->getType() << "\n"
 			"Bad Dependent Name: " << it->first);
-		}
 	}
 }
 

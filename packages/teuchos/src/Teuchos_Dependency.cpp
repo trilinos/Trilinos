@@ -32,37 +32,37 @@
 
 namespace Teuchos{
 
-Dependency::Dependency(ParameterParentMap& dependees, ParameterParentMap& dependents, Type type):
-	type(type)
+Dependency::Dependency(ParameterParentMap& dependees, ParameterParentMap& dependents, Type depType):
+	type_(depType)
 {
 	intitializeDependeesAndDependents(dependees,dependents);
 }
 
-Dependency::Dependency(ParameterParentMap& dependees, std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, Type type):
-	type(type)
+Dependency::Dependency(ParameterParentMap& dependees, std::string dependentName, RCP<ParameterList> dependentParentList, Type depType):
+	type_(depType)
 {
 	ParameterParentMap dependents;
-	dependents.insert(std::pair<std::string, Teuchos::RCP<Teuchos::ParameterList> >(dependentName, dependentParentList));
+	dependents.insert(std::pair<std::string, RCP<ParameterList> >(dependentName, dependentParentList));
 	intitializeDependeesAndDependents(dependees,dependents);
 }
 
-Dependency::Dependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
-	ParameterParentMap& dependents, Type type):
-	type(type)
+Dependency::Dependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
+	ParameterParentMap& dependents, Type depType):
+	type_(depType)
 {
 	ParameterParentMap dependees;
-	dependees.insert(std::pair<std::string, Teuchos::RCP<Teuchos::ParameterList> >(dependeeName, dependeeParentList));
+	dependees.insert(std::pair<std::string, RCP<ParameterList> >(dependeeName, dependeeParentList));
 	intitializeDependeesAndDependents(dependees,dependents);
 }
 	
-Dependency::Dependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
- 	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, Type type):
-	type(type)
+Dependency::Dependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
+ 	std::string dependentName, RCP<ParameterList> dependentParentList, Type depType):
+	type_(depType)
 {
 	ParameterParentMap dependees;
-	dependees.insert(std::pair<std::string, Teuchos::RCP<Teuchos::ParameterList> >(dependeeName, dependeeParentList));
+	dependees.insert(std::pair<std::string, RCP<ParameterList> >(dependeeName, dependeeParentList));
 	ParameterParentMap dependents;
-	dependents.insert(std::pair<std::string, Teuchos::RCP<Teuchos::ParameterList> >(dependentName, dependentParentList));
+	dependents.insert(std::pair<std::string, RCP<ParameterList> >(dependentName, dependentParentList));
 	intitializeDependeesAndDependents(dependees, dependents);
 }
 
@@ -79,8 +79,8 @@ void Dependency::intitializeDependeesAndDependents(ParameterParentMap& dependees
 			"You're a great programmer, I'm sure you'll figure it out! :)");
 		}
 		else{
-			this->dependees.insert(std::pair<std::string, Teuchos::RCP<Teuchos::ParameterList> >(it->first, it->second));
-			dependeeNames.insert(it->first);
+			dependees_.insert(std::pair<std::string, RCP<ParameterList> >(it->first, it->second));
+			dependeeNames_.insert(it->first);
 		}
 	}
 	for(it = dependents.begin(); it != dependents.end(); ++it){
@@ -94,27 +94,27 @@ void Dependency::intitializeDependeesAndDependents(ParameterParentMap& dependees
 			"You're a great programmer, I'm sure you'll figure it out! :)");
 		}
 		else{
-			this->dependents.insert(std::pair<std::string, Teuchos::RCP<Teuchos::ParameterList> >(it->first, it->second));
-			dependentNames.insert(it->first);
+			dependents_.insert(std::pair<std::string, RCP<ParameterList> >(it->first, it->second));
+			dependentNames_.insert(it->first);
 		}
 	}
 }
 
 
-Dependency::ParameterParentMap Dependency::getDependees() const{
-	return dependees;
+const Dependency::ParameterParentMap& Dependency::getDependees() const{
+	return dependees_;
 }
 
-Dependency::ParameterParentMap Dependency::getDependents() const{
-	return dependents;
+const Dependency::ParameterParentMap& Dependency::getDependents() const{
+	return dependents_;
 }
 
-std::set<std::string> Dependency::getDependeeNames() const{
-	return dependeeNames;
+const std::set<std::string>& Dependency::getDependeeNames() const{
+	return dependeeNames_;
 }
 
-std::string Dependency::getDependeeName(const Teuchos::ParameterEntry* dependee) const{
-	for(ParameterParentMap::const_iterator it = dependees.begin(); it != dependees.end(); ++it){
+std::string Dependency::getDependeeName(const ParameterEntry* dependee) const{
+	for(ParameterParentMap::const_iterator it = dependees_.begin(); it != dependees_.end(); ++it){
 		if(dependee == it->second->getEntryPtr(it->first)){
 			return it->first;
 		}
@@ -129,13 +129,13 @@ std::string Dependency::getDependeeName(const Teuchos::ParameterEntry* dependee)
 }
 
 
-std::set<std::string> Dependency::getDependentNames() const{
-	return dependentNames;
+const std::set<std::string>& Dependency::getDependentNames() const{
+	return dependentNames_;
 }
 
 std::string Dependency::getDependeeNamesString() const{
 	std::string names = "";
-	for(std::set<std::string>::const_iterator it=dependeeNames.begin(); it != dependeeNames.end(); ++it){
+	for(std::set<std::string>::const_iterator it=dependeeNames_.begin(); it != dependeeNames_.end(); ++it){
 		names += *it + " ";
 	}
 	return names;
@@ -143,22 +143,22 @@ std::string Dependency::getDependeeNamesString() const{
 
 std::string Dependency::getDependentNamesString() const{
 	std::string names = "";
-	for(std::set<std::string>::const_iterator it=dependentNames.begin(); it != dependentNames.end(); ++it){
+	for(std::set<std::string>::const_iterator it=dependentNames_.begin(); it != dependentNames_.end(); ++it){
 		names += *it + " ";
 	}
 	return names;
 }
 
-Dependency::Type Dependency::getType() const{
-	return type;
+const Dependency::Type& Dependency::getType() const{
+	return type_;
 }
 
-bool Dependency::doesListContainList(Teuchos::RCP<Teuchos::ParameterList> parentList, Teuchos::RCP<Teuchos::ParameterList> listToFind){
+bool Dependency::doesListContainList(RCP<ParameterList> parentList, RCP<ParameterList> listToFind){
 	if(parentList.get() == listToFind.get()){
 		return true;
 	}
 	else{
-		for(Teuchos::ParameterList::ConstIterator it = parentList->begin(); it!=parentList->end(); ++it){
+		for(ParameterList::ConstIterator it = parentList->begin(); it!=parentList->end(); ++it){
 			if(it->second.isList()){
 				if(doesListContainList(sublist(parentList, it->first,true), listToFind)){
 					return true;

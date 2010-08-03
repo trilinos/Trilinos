@@ -165,6 +165,9 @@ public:
   inline
   bool isType() const;
 
+  //! Test if the type of data being contained is a Teuchos::Array.
+  inline bool isArray() const;
+
   //! Indicate whether this entry takes on the default value.
   inline
   bool isDefault() const;
@@ -352,6 +355,10 @@ template <typename T>
 inline
 bool ParameterEntry::isType() const
 { return val_.type() == typeid(T); }
+
+inline
+bool ParameterEntry::isArray() const
+{ return val_.typeName().find("Array<")!=std::string::npos; }
 
 inline
 bool ParameterEntry::isDefault() const

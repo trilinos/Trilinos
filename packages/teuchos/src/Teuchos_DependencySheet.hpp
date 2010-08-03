@@ -48,13 +48,13 @@ public:
 	/**
 	 * Convience typedef representing a set of dependencies.
 	 */
-	typedef std::set<Teuchos::RCP<Teuchos::Dependency>, Teuchos::Dependency::DepComp > DepSet;
+	typedef std::set<RCP<Dependency>, Dependency::DepComp > DepSet;
 
 	/**
 	 * Convience typedef. Maps dependee parameter entries to a set of their corresponding
 	 * dependencies.
 	 */
-	typedef Teuchos::map<const Teuchos::ParameterEntry*, DepSet > DepMap;
+	typedef map<const ParameterEntry*, DepSet > DepMap;
 
 	/**
 	 * Constructs an empty DependencySheet with the name DEP_ANONYMOUS.
@@ -62,7 +62,7 @@ public:
 	 * @param rootList The Parameter List containing all parameters and sublists
 	 * for which this Dependency will keep track of dependencies.
 	 */
-	DependencySheet(Teuchos::RCP<Teuchos::ParameterList> rootList);
+	DependencySheet(RCP<ParameterList> rootList);
 
 	/**
 	 * Constructs a DependencySheet.
@@ -71,7 +71,7 @@ public:
 	 * for which this Dependency will keep track of dependencies.
 	 * @param name Name of the Dependency Sheet.
 	 */
-	DependencySheet(Teuchos::RCP<Teuchos::ParameterList> rootList, const std::string &name);
+	DependencySheet(RCP<ParameterList> rootList, const std::string &name);
 
 	/**
 	 * Adds a dependency to the sheet.
@@ -79,7 +79,7 @@ public:
 	 * @param dependency The dependency to be added.
 	 * @return True if the addition was sucessful, false otherwise.
 	 */
-	bool addDependency(const Teuchos::RCP<Teuchos::Dependency> dependency);
+	bool addDependency(const RCP<Dependency> dependency);
 
 	/**
 	 * Removes a particular dependency between two parameters.
@@ -87,7 +87,7 @@ public:
 	 * @param dependency The dependency to be removed.
 	 * @return True if the removal was sucessfull, false otherwise.
 	 */
-	bool removeDependency(Teuchos::RCP<Teuchos::Dependency> dependency);
+	bool removeDependency(RCP<Dependency> dependency);
 
 	/**
 	 * Determines whether or not a parameter is depended upon by any another
@@ -96,7 +96,7 @@ public:
 	 * @param name The paramteter to be checked for dependents.
 	 * @return True if the parameter you're checking has other dependents, false otherwise.
 	 */
-	bool hasDependents(const Teuchos::ParameterEntry *dependee) const;
+	bool hasDependents(const ParameterEntry *dependee) const;
 
 	/**
 	 * Returns a set of all the dependencies associated with a particular dependee.
@@ -104,7 +104,7 @@ public:
 	 * @param dependee The parameter whose dependencies are sought. 
 	 * @return A set of all dependencies associated with the dependee parameter.
 	 * */
-	const DepSet& getDependenciesForParameter(const Teuchos::ParameterEntry *dependee) const;
+	const DepSet& getDependenciesForParameter(const ParameterEntry *dependee) const;
 
 	/**
 	 * Returns an iterator to the beginning of all the dependees in the sheet.
@@ -144,23 +144,23 @@ private:
 	 * A map containing all the depenecies for a list. Dependencies with multiple dependees will be found in multiple
 	 * places within the map. Essentially, for each dependee, there will be a pointer to for dependency of which it is a part.
 	 */
-	DepMap dependencies;
+	DepMap dependencies_;
 
 	/**
 	 * The Name of the dependency sheet.
 	 */
-	std::string name;
+	std::string name_;
 
 	/**
 	 * The root parameterlist that this dependency sheet is associated with.
 	 */
-	Teuchos::RCP<Teuchos::ParameterList> rootList;
+	RCP<ParameterList> rootList_;
 
 	/**
 	 * Validates whether or not the dependees and dependents of a dependency exist
 	 * within the root ParameterList.
 	 */
-	void validateExistanceInRoot(Teuchos::RCP<Teuchos::Dependency> dependency);
+	void validateExistanceInRoot(RCP<Dependency> dependency);
 };
 
 

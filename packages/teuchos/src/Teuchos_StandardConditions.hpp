@@ -27,7 +27,6 @@
 // @HEADER
 
 
-
 #ifndef TEUCHOS_STANDARDCONDITION_HPP_
 #define TEUCHOS_STANDARDCONDITION_HPP_
 #include "Teuchos_Condition.hpp"
@@ -44,39 +43,53 @@ namespace Teuchos{
  * can actually evaluate and arbiturary number of conditions.
  */
 class BinaryLogicalCondition : public Condition{
+
 public:
-	/**
-	 * Constructs a BinaryLogicCondition
-	 *
-	 * @param conditions The conditions to be evaluated.
-	 */
-	BinaryLogicalCondition(ConditionList& conditions);
 
-	/**
-	 * Deconstructor for a BinaryLogicCondition
-	 */
-	virtual ~BinaryLogicalCondition(){}
-	
-	/**
-	 * Adds a Condition to the list of conditions that will
-	 * be evaluated by this Binary Logica Condition.
-	 *
-	 * @param toAdd The condition to be added to the list of
-	 * conditions this Binary Logic Condition will evaluate.
-	 */
-	virtual void addCondition(Teuchos::RCP<Condition> toAdd);
+  /**
+   * Constructs a BinaryLogicCondition
+   *
+   * @param conditions The conditions to be evaluated.
+   */
+  BinaryLogicalCondition(ConditionList& conditions);
 
-	virtual bool isConditionTrue()=0;
+  /**
+   * Deconstructor for a BinaryLogicCondition
+   */
+  virtual ~BinaryLogicalCondition(){}
+  
+  /**
+   * Adds a Condition to the list of conditions that will
+   * be evaluated by this Binary Logica Condition.
+   *
+   * @param toAdd The condition to be added to the list of
+   * conditions this Binary Logic Condition will evaluate.
+   */
+  void addCondition(RCP<Condition> toAdd);
 
-	bool containsAtLeasteOneParameter();
+  /**
+   * Applies a Binary Logci operator to two operands and returns the
+   * result.
+   *
+   * @param op1 The first operand.
+   * @param op2 The second operand.
+   * @return The result of applying a binary logical operator to
+   * the two operands.
+   */
+  virtual bool applyOperator(bool op1, bool op2) const = 0;
 
-	Dependency::ParameterParentMap getAllParameters();
+  virtual bool isConditionTrue() const;
 
-protected:
-	/*
-	 * A list of conditions on which to perform some logic operation.
-	 */
-	ConditionList conditions;
+  bool containsAtLeasteOneParameter() const;
+
+  Dependency::ParameterParentMap getAllParameters() const;
+
+private:
+
+  /*
+   * A list of conditions on which to perform some logic operation.
+   */
+  ConditionList conditions_;
 };
 
 /**
@@ -84,20 +97,22 @@ protected:
  * or perfroming a logical OR on the conditions.
  */
 class OrCondition : public BinaryLogicalCondition{
+
 public:
-	/**
-	 * Constructs an Or Condition
-	 *
-	 * @param conditions The conditions to be evaluated.
-	 */
-	OrCondition(ConditionList& conditions);
 
-	/**
-	 * Deconstructs an Or Condition.
-	 */
-	virtual ~OrCondition(){}
+  /**
+   * Constructs an Or Condition
+   *
+   * @param conditions The conditions to be evaluated.
+   */
+  OrCondition(ConditionList& conditions);
 
-	bool isConditionTrue();
+  /**
+   * Deconstructs an Or Condition.
+   */
+  virtual ~OrCondition(){}
+
+  bool applyOperator(bool op1, bool op2) const;
 };
 
 /**
@@ -105,20 +120,23 @@ public:
  * or perfroming a logical AND on the conditions.
  */
 class AndCondition : public BinaryLogicalCondition{
+
 public:
-	/**
-	 * Constructs an And Condition
-	 *
-	 * @param conditions The conditions to be evaluated.
-	 */
-	AndCondition(ConditionList& conditions);
 
-	/**
-	 * Deconstructs an And Condition.
-	 */
-	virtual ~AndCondition(){}
+  /**
+   * Constructs an And Condition
+   *
+   * @param conditions The conditions to be evaluated.
+   */
+  AndCondition(ConditionList& conditions);
 
-	bool isConditionTrue();
+  /**
+   * Deconstructs an And Condition.
+   */
+  virtual ~AndCondition(){}
+
+  bool applyOperator(bool op1, bool op2) const;
+
 };
 
 /**
@@ -126,20 +144,23 @@ public:
  * or perfroming a logical EQUALS on the conditions.
  */
 class EqualsCondition : public BinaryLogicalCondition{
+
 public:
-	/**
-	 * Constructs an Equals Condition
-	 *
-	 * @param conditions The conditions to be evaluated.
-	 */
-	EqualsCondition(ConditionList& conditions);
 
-	/**
-	 * Deconstructs an Equals Condition.
-	 */
-	virtual ~EqualsCondition(){}
+  /**
+   * Constructs an Equals Condition
+   *
+   * @param conditions The conditions to be evaluated.
+   */
+  EqualsCondition(ConditionList& conditions);
 
-	bool isConditionTrue();
+  /**
+   * Deconstructs an Equals Condition.
+   */
+  virtual ~EqualsCondition(){}
+
+  bool applyOperator(bool op1, bool op2) const;
+
 };
 
 /**
@@ -148,30 +169,34 @@ public:
  * condition.
  */
 class NotCondition : public Condition{
+
 public:
-	/**
-	 * Constructs a Not Condition
-	 *
-	 * @param condition The condition to be evaluated.
-	 */
-	NotCondition(Teuchos::RCP<Condition> condition);
 
-	/**
-	 * Deconstructs a Not Condition.
-	 */
-	virtual ~NotCondition(){}
+  /**
+   * Constructs a Not Condition
+   *
+   * @param condition The condition to be evaluated.
+   */
+  NotCondition(RCP<Condition> condition);
 
-	bool isConditionTrue();
+  /**
+   * Deconstructs a Not Condition.
+   */
+  virtual ~NotCondition(){}
 
-	bool containsAtLeasteOneParameter();
+  bool isConditionTrue() const;
 
-	Dependency::ParameterParentMap getAllParameters();
+  bool containsAtLeasteOneParameter() const;
+
+  Dependency::ParameterParentMap getAllParameters() const;
 
 private:
-	/**
-	 * The condition on which to perfrom the logical NOT.
-	 */
-	Teuchos::RCP<Condition> condition;
+
+  /**
+   * The condition on which to perfrom the logical NOT.
+   */
+  RCP<Condition> condition_;
+
 };
 
 /**
@@ -181,48 +206,76 @@ private:
  * that value.
  */
 class ParameterCondition : public Condition{
+
 public:
 
-   /**
- 	* Constructs a Parameter Condition.
-	*
-	* @param parameterName The name of the parameter to be evaluated.
-	* @param parentList The parent Parameter List of the parameter to be evaluated.
-	* @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-	* results in a true or when the evaluation results in a false. When set to true, if the parameter
-	* evaluates to true then the condition will evaluate to true. If set to false if the parameter
-	* evaluates to false, then the condition will evaluatae to true.
- 	*/
-	ParameterCondition(std::string parameterName, Teuchos::RCP<Teuchos::ParameterList> parentList, bool whenParamEqualsValue);
+  /**
+   * Constructs a Parameter Condition.
+   *
+   * @param parameterName The name of the parameter to be evaluated.
+   * @param parentList The parent Parameter List of the parameter to be evaluated.
+   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
+   * results in a true or when the evaluation results in a false. When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. If set to false if the parameter
+   * evaluates to false, then the condition will evaluate to true.
+   */
+  ParameterCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue);
 
-	virtual ~ParameterCondition(){}
+  virtual ~ParameterCondition(){}
 
-	virtual bool isConditionTrue()=0;
+  /**
+   * Evaluate the current condition of a paramtere and
+   * return the result.
+   *
+   * @param The result of evaluating the current condition
+   * of the parameter.
+   */
+  virtual bool evaluateParameter() const = 0;
 
-	bool containsAtLeasteOneParameter();
+  bool isConditionTrue() const{
+    if((whenParamEqualsValue_ && evaluateParameter()) || 
+      (!whenParamEqualsValue_ && evaluateParameter()))
+    {
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }
 
-	Dependency::ParameterParentMap getAllParameters();
+  bool containsAtLeasteOneParameter() const{
+    return true;
+  }
 
-protected:
-	/**
-	 * Name of parameter to be evaluated.
-	 */
-	std::string parameterName;
+  Dependency::ParameterParentMap getAllParameters() const;
 
-	/**
-	 * Parent List of the parameter to be evaluated.
-	 */
-	Teuchos::RCP<Teuchos::ParameterList> parentList;
+  inline const ParameterEntry* getParameter() const{
+    return parameter_;
+  }
 
-	/**
-	 * Wether or not the condition should evaluate to true if the parameter evaluated to true.
-	 */
-	bool whenParamEqualsValue;
+private:
 
-	/**
-	 * A pointer to the actual parameter to be evaluated.
-	 */
-	Teuchos::ParameterEntry* parameter;
+  /**
+   * Name of parameter to be evaluated.
+   */
+  std::string parameterName_;
+
+  /**
+   * Parent List of the parameter to be evaluated.
+   */
+  RCP<ParameterList> parentList_;
+
+  /**
+   * Wether or not the condition should evaluate to true if the parameter evaluated to true.
+   */
+  bool whenParamEqualsValue_;
+
+  /**
+   * A pointer to the actual parameter to be evaluated.
+   */
+  ParameterEntry* parameter_;
+
 };
 
 /**
@@ -231,47 +284,50 @@ protected:
  * value or set of values.
  */
 class StringCondition : public ParameterCondition{
+
 public:
-	/**
-	 * Convience typedef representing an array of strings.
-	 */
-	typedef Teuchos::Array<std::string> ValueList; 
 
-   /**
- 	* Constructs a String Condition.
-	*
-	* @param parameterName The name of the parameter to be evaluated.
-	* @param parentList The parent Parameter List of the parameter to be evaluated.
-	* #param value The value to compare the parameter's value against.
-	* @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-	* results in a true or when the evaluation results in a false. When set to true, if the parameter
-	* evaluates to true then the condition will evaluate to true. If set to false if the parameter
-	* evaluates to false, then the condition will evaluatae to true.
- 	*/
-	StringCondition(std::string parameterName, Teuchos::RCP<Teuchos::ParameterList> parentList, std::string value, bool whenParamEqualsValue=true);
+  /**
+   * Convience typedef representing an array of strings.
+   */
+  typedef Array<std::string> ValueList; 
 
-   /**
- 	* Constructs a String Condition.
-	*
-	* @param parameterName The name of the parameter to be evaluated.
-	* @param parentList The parent Parameter List of the parameter to be evaluated.
-	* #param values The values to compare the parameter's value against.
-	* @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-	* results in a true or when the evaluation results in a false. When set to true, if the parameter
-	* evaluates to true then the condition will evaluate to true. If seet to false if the parameter
-	* evaluates to false, then the condition will evaluatae to true.
- 	*/
-	StringCondition(std::string parameterName, Teuchos::RCP<Teuchos::ParameterList> parentList, ValueList values, bool whenParamEqualsValue=true);
+  /**
+   * Constructs a String Condition.
+   *
+   * @param parameterName The name of the parameter to be evaluated.
+   * @param parentList The parent Parameter List of the parameter to be evaluated.
+   * @param value The value to compare the parameter's value against.
+   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
+   * results in a true or when the evaluation results in a false. When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. If set to false if the parameter
+   * evaluates to false, then the condition will evaluate to true.
+   */
+  StringCondition(std::string parameterName, RCP<ParameterList> parentList, std::string value, bool whenParamEqualsValue=true);
 
-	virtual ~StringCondition(){}
+  /**
+   * Constructs a String Condition.
+   *
+   * @param parameterName The name of the parameter to be evaluated.
+   * @param parentList The parent Parameter List of the parameter to be evaluated.
+   * @param values The values to compare the parameter's value against.
+   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
+   * results in a true or when the evaluation results in a false. When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. If seet to false if the parameter
+   * evaluates to false, then the condition will evaluate to true.
+   */
+  StringCondition(std::string parameterName, RCP<ParameterList> parentList, ValueList values, bool whenParamEqualsValue=true);
 
-	bool isConditionTrue();
+  virtual ~StringCondition(){}
+
+  bool evaluateParameter() const;
 
 private:
-	/**
-	 * A list of values against which to evaluate the parameter's value.
-	 */
-	ValueList values;
+
+  /**
+   * A list of values against which to evaluate the parameter's value.
+   */
+  ValueList values_;
 };
 
 /**
@@ -282,74 +338,84 @@ private:
  */
 template<class T>
 class NumberCondition : public ParameterCondition{
+
 public:
-	/**
- 	* Constructs a Number Condition.
-	*
-	* @param parameterName The name of the parameter to be evaluated.
-	* @param parentList The parent Parameter List of the parameter to be evaluated.
-	* @param func A function to run the value of the parameter through. If the function returns a value
-	* greater than 0, this will be interperted as the condition being "true". If the 
-	* function returns a value of 0 or less, this will be interperted as the condition being false.
-	* @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-	* results in a true or when the evaluation results in a false. When set to true, if the parameter
-	* evaluates to true then the condition will evaluate to true. If seet to false if the parameter
-	* evaluates to false, then the condition will evaluatae to true.
- 	*/
-	NumberCondition(std::string parameterName, Teuchos::RCP<Teuchos::ParameterList> parentList, T (*func)(T)=0, bool whenParamEqualsValue=true):
-		ParameterCondition(parameterName, parentList, whenParamEqualsValue), func(func)
-	{
-		if(!parameter->isType<int>()
-		&& !parameter->isType<short>()
-		&& !parameter->isType<double>()
-		&& !parameter->isType<float>()){
-			std::string expectedTypeName = typeid(T).name();
-			throw InvalidConditionException("The parameter of a "
-			"Number Condition must be of a supported number type!\n"
-			"Expected type: " + expectedTypeName + "\n" 
-			"Actual type: " + parameter->getAny().typeName());
-		}
-	}
-		
-	/**
- 	* Constructs a Number Condition.
-	*
-	* @param parameterName The name of the parameter to be evaluated.
-	* @param parentList The parent Parameter List of the parameter to be evaluated.
-	* @param func A function to run the value of the parameter through. If the function returns a value
-	* greater than 0, this will be interperted as the parameter's current state being "true". If the 
-	* function returns a value of 0 or less, this will be interperted as the parameter's current state
-	* being "false".
-	* @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-	* results in a true or when the evaluation results in a fals. When set to true, if the parameter
-	* evaluates to true then the condition will evaluate to true. If seet to false if the parameter
-	* evaluates to false, then the condition will evaluatae to true.
- 	*/
-	NumberCondition(std::string parameterName, Teuchos::RCP<Teuchos::ParameterList> parentList, bool whenParamEqualsValue=true):
-		ParameterCondition(parameterName, parentList, whenParamEqualsValue), func(0){}
 
-	virtual ~NumberCondition(){}
+  /**
+   * Constructs a Number Condition.
+   *
+   * @param parameterName The name of the parameter to be evaluated.
+   * @param parentList The parent Parameter List of the parameter to be evaluated.
+   * @param func A function to run the value of the parameter through. If the function returns a value
+   * greater than 0, this will be interperted as the condition being "true". If the 
+   * function returns a value of 0 or less, this will be interperted as the condition being false.
+   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
+   * results in a true or when the evaluation results in a false. When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. If seet to false if the parameter
+   * evaluates to false, then the condition will evaluate to true.
+   */
+  NumberCondition(std::string parameterName, RCP<ParameterList> parentList, T (*func)(T)=0, bool whenParamEqualsValue=true):
+    ParameterCondition(parameterName, parentList, whenParamEqualsValue), func_(func)
+  {
+    checkForNumberType();
+  }
+    
+  /**
+   * Constructs a Number Condition.
+   *
+   * @param parameterName The name of the parameter to be evaluated.
+   * @param parentList The parent Parameter List of the parameter to be evaluated.
+   * @param func A function to run the value of the parameter through. If the function returns a value
+   * greater than 0, this will be interperted as the parameter's current state being "true". If the 
+   * function returns a value of 0 or less, this will be interperted as the parameter's current state
+   * being "false".
+   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
+   * results in a true or when the evaluation results in a fals. When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. If seet to false if the parameter
+   * evaluates to false, then the condition will evaluate to true.
+   */
+  NumberCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue=true):
+    ParameterCondition(parameterName, parentList, whenParamEqualsValue), func_(0)
+  {
+    checkForNumberType();
+  }
 
-	bool isConditionTrue(){
-		bool toReturn = (runFunction(Teuchos::getValue<T>(*parameter)) > 0);
-		return whenParamEqualsValue ? toReturn : !toReturn;
-	}
+  virtual ~NumberCondition(){}
+
+  bool evaluateParameter() const{
+    return (runFunction(getValue<T>(*getParameter())) > 0);
+  }
 
 private:
-	T (*func)(T); 	
 
-	/**
-	 * Runs the function associated with this condition and
-	 * returns the result.
-	 *
-	 * @param argument The value upon which to run the function.
-	 */
-	T runFunction(T argument) const{
-		if(func !=0)
-			return (*func)(argument);
-		else
-			return argument;
-	}	
+  T (*func_)(T);   
+
+  /**
+   * Runs the function associated with this condition and
+   * returns the result.
+   *
+   * @param argument The value upon which to run the function.
+   */
+  inline T runFunction(T argument) const{
+    if(func_ !=0)
+      return (*func_)(argument);
+    else
+      return argument;
+  }  
+
+  void checkForNumberType() const{
+	const ParameterEntry* toCheck = getParameter();
+    TEST_FOR_EXCEPTION(
+	!toCheck->isType<int>() &&
+	!toCheck->isType<short>() &&
+	!toCheck->isType<double>() &&
+	!toCheck->isType<float>(),
+	InvalidConditionException,
+	"The parameter of a Number Condition "
+	"must be of a supported number type!" << std::endl <<
+	"Actual Parameter type: " << getParameter()->getAny().typeName() );
+  }
+
 };
 
 /**
@@ -359,20 +425,21 @@ private:
 class BoolCondition : public ParameterCondition{
 public:
    /**
- 	* Constructs a Bool Condition.
-	*
-	* @param parameterName The name of the parameter to be evaluated.
-	* @param parentList The parent Parameter List of the parameter to be evaluated.
-	* @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-	* results in a true or when the evaluation results in a false. When set to true, if the parameter
-	* evaluates to true then the condition will evaluate to true. If set to false if the parameter
-	* evaluates to false, then the condition will evaluatae to true.
- 	*/
-	BoolCondition(std::string parameterName, Teuchos::RCP<Teuchos::ParameterList> parentList, bool whenParamEqualsValue=true);
+    * Constructs a Bool Condition.
+    *
+    * @param parameterName The name of the parameter to be evaluated.
+    * @param parentList The parent Parameter List of the parameter to be evaluated.
+    * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
+    * results in a true or when the evaluation results in a false. When set to true, if the parameter
+    * evaluates to true then the condition will evaluate to true. If set to false if the parameter
+    * evaluates to false, then the condition will evaluate to true.
+    */
+  BoolCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue=true);
 
-	virtual ~BoolCondition(){}
+  virtual ~BoolCondition(){}
 
-	bool isConditionTrue();
+  bool evaluateParameter() const;
+
 };
 
 }

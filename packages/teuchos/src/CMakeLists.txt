@@ -61,12 +61,15 @@ APPEND_SET(HEADERS
   Teuchos_CommandLineProcessor.hpp
   Teuchos_CompObject.hpp
   Teuchos_CompileTimeAssert.hpp
+  Teuchos_Condition.hpp
   Teuchos_ConfigDefs.hpp
   Teuchos_ConstNonconstObjectContainer.hpp
   Teuchos_ConstTypeTraits.hpp
   Teuchos_DataAccess.hpp
   Teuchos_DefaultComm.hpp
   Teuchos_DefaultSerialComm.hpp
+  Teuchos_Dependency.hpp
+  Teuchos_DependencySheet.hpp
   Teuchos_Describable.hpp
   Teuchos_ENull.hpp
   Teuchos_ErrorPolling.hpp
@@ -79,6 +82,8 @@ APPEND_SET(HEADERS
   Teuchos_GlobalMPISession.hpp
   Teuchos_Handle.hpp
   Teuchos_Handleable.hpp
+  Teuchos_InvalidConditionException.hpp
+  Teuchos_InvalidDependencyException.hpp
   Teuchos_LAPACK.hpp
   Teuchos_LAPACK_wrappers.hpp
   Teuchos_LabeledObject.hpp
@@ -134,6 +139,8 @@ APPEND_SET(HEADERS
   Teuchos_SimpleObjectTable.hpp
   Teuchos_StandardCatchMacros.hpp
   Teuchos_StandardCompositionMacros.hpp
+  Teuchos_StandardConditions.hpp
+  Teuchos_StandardDependencies.hpp
   Teuchos_StandardMemberCompositionMacros.hpp
   Teuchos_StandardParameterEntryValidators.hpp
   Teuchos_StringToIntMap.hpp
@@ -181,6 +188,8 @@ APPEND_SET(SOURCES
   Teuchos_CommandLineProcessor.cpp
   Teuchos_CompObject.cpp
   Teuchos_Describable.cpp
+  Teuchos_Dependency.cpp
+  Teuchos_DependencySheet.cpp
   Teuchos_ErrorPolling.cpp
   Teuchos_Flops.cpp
   Teuchos_GlobalMPISession.cpp
@@ -199,6 +208,8 @@ APPEND_SET(SOURCES
   Teuchos_RCPNode.cpp
   Teuchos_Range1D.cpp
   Teuchos_ScalarTraits.cpp
+  Teuchos_StandardConditions.cpp
+  Teuchos_StandardDependencies.cpp
   Teuchos_StandardParameterEntryValidators.cpp
   Teuchos_StringToIntMap.cpp
   Teuchos_TableColumn.cpp

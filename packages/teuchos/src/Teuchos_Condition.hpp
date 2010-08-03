@@ -55,7 +55,7 @@ public:
 	/**
 	 * Construcst a Condition
 	 */
-	Condition(Type type):type(type){}
+	Condition(Type type):type_(type){}
 
 	/**
 	 * Deconstructs a condition.
@@ -65,7 +65,7 @@ public:
 	/**
 	 * Determins whether or not a condition is true.
 	 */
-	virtual bool isConditionTrue()=0;
+	virtual bool isConditionTrue() const = 0;
 
 	/**
 	 * Determines whether or not the evaluation of a parameter
@@ -74,7 +74,7 @@ public:
 	 * @return Whether or not the evaluation of a parameter
 	 * occurs somewhere in this condition.
 	 */
-	virtual bool containsAtLeasteOneParameter()=0;
+	virtual bool containsAtLeasteOneParameter() const = 0;
 
 	/**
 	 * Gets all of the parameters that are evaluated in this
@@ -84,22 +84,22 @@ public:
 	 * condition.
 	 */
 
-	virtual Dependency::ParameterParentMap getAllParameters()=0;
+	virtual Dependency::ParameterParentMap getAllParameters() const = 0;
 
 	/**
 	 * Gets the type of the condition.
 	 *
 	 * @return The type of the condition.
 	 */
-	Type getType(){
-		return type;
+	const Type& getType() const{
+		return type_;
 	}
 
 private:
 	/**
 	 * The Conditions's type.
 	 */
-	Type type;
+	Type type_;
 
 };
 
