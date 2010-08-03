@@ -31,10 +31,13 @@
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 #include "Teuchos_ValidatorMaps.hpp"
 
+
 namespace Teuchos{
+
 
 XMLParameterListWriter::XMLParameterListWriter()
 {;}
+
 
 XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
 {
@@ -45,11 +48,12 @@ XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
   return toReturn;
 }
 
+
 XMLObject XMLParameterListWriter::convertValidators(
   const ParameterList& p, ValidatortoIDMap& validatorIDMap) const
 {
   XMLObject validators(getValidatorsTagName());
-  for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i){
+  for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i) {
     const ParameterEntry& entry = p.entry(i);
     if(entry.isList()){
       convertValidators(getValue<ParameterList>(entry), validatorIDMap);
@@ -59,12 +63,14 @@ XMLObject XMLParameterListWriter::convertValidators(
     }
   }
   ValidatortoIDMap::const_iterator it = validatorIDMap.begin();
-  for(;it != validatorIDMap.end(); ++it){
-    XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(*(it->first))->fromValidatortoXML(it->first, validatorIDMap);
+  for (; it != validatorIDMap.end(); ++it) {
+    XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(
+      *(it->first))->fromValidatortoXML(it->first, validatorIDMap);
     validators.addChild(currentValidator);
   }
   return validators;
 }
+
 
 XMLObject XMLParameterListWriter::convertParameterList(
   const ParameterList& p,
@@ -80,7 +86,8 @@ XMLObject XMLParameterListWriter::convertParameterList(
     }
     else{
       const std::string& name = p.name(i);
-      RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(entry);
+      RCP<const ParameterEntryXMLConverter> converter =
+        ParameterEntryXMLConverterDB::getConverter(entry);
       XMLObject parameterEntryXML = converter->fromParameterEntrytoXML(entry, name);
       if(!entry.validator().is_null()){
         ValidatortoIDMap::const_iterator result = validatorIDMap.getID(entry.validator());
@@ -92,5 +99,5 @@ XMLObject XMLParameterListWriter::convertParameterList(
   return rtn;
 }
 
-} //end Teuchos namepsace
 
+} // namespace Teuchos

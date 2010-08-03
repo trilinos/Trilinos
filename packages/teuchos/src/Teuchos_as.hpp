@@ -166,7 +166,18 @@ inline TypeTo asSafe( const TypeFrom& t )
 //
 
 
-// ToDo: Add specializations as needed!
+/** \brief Convert raw C string to std::string. */
+template<int N>
+class ValueTypeConversionTraits<std::string, char[N]> {
+public:
+  static std::string convert( const char t[] )
+    { return std::string(t); }
+  static std::string safeConvert( const char t[] )
+    { return std::string(t); }
+};
+
+
+// ToDo: Add more specializations as needed!
 
 
 } // end namespace Teuchos

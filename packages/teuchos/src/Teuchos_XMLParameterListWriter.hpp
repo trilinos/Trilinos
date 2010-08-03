@@ -29,6 +29,7 @@
 #ifndef Teuchos_XMLPARAMETERLISTWRITER_H
 #define Teuchos_XMLPARAMETERLISTWRITER_H
 
+
 /*! \file Teuchos_XMLParameterListWriter.hpp
  *
  *   \brief Writes a ParameterList to an XML object
@@ -39,8 +40,9 @@
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_ValidatorMaps.hpp"
 
-namespace Teuchos
-{
+
+namespace Teuchos {
+
 
 /** \ingroup XML 
  * \brief Writes a ParameterList to an XML object
@@ -78,18 +80,20 @@ public:
 
 private:
 
-  /**
-   * \brief Write the given list to an XML object and record all the validators in it on a map.
+  /** \brief Write the given list to an XML object and record all the
+   * validators in it on a map.
    */
-  XMLObject convertParameterList( const ParameterList& p, ValidatortoIDMap& validatorIDMap) const;
+  XMLObject convertParameterList( const ParameterList& p,
+    ValidatortoIDMap& validatorIDMap) const;
 
-  /**
-   * \brief Build a map of validators and convert them.
-   */
-  XMLObject convertValidators(const ParameterList& p, ValidatortoIDMap& validatorIDMap) const;
+  /** \brief Build a map of validators and convert them. */
+  XMLObject convertValidators(const ParameterList& p,
+    ValidatortoIDMap& validatorIDMap) const;
 
 };
 
-} //end teuchos namespace
+
+} // namespace teuchos
+
 
 #endif

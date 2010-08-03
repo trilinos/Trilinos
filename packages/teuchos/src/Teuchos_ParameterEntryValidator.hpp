@@ -50,7 +50,13 @@ class ParameterEntry;
  */
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator {
 public:
+
+  // 2010/07/30: rabartl: Below, you need to add at least a \brief field for
+  // every entity that you want doxygen to include (see TCDG 1.0 DOX 4)
+
+  /** \brief . */
   typedef RCP<const Array<std::string> > ValidStringsList;
+
   /** \brief . */
   virtual ~ParameterEntryValidator() {}
 
@@ -64,18 +70,17 @@ public:
 
   /** \brief Print documentation for this parameter.
    *
-   * \param  docString 
-   *           [in] (Multi-line) documentation std::string.
-   * \param  out
-   *           [out] The std::ostream used for the output
+   * \param docString [in] (Multi-line) documentation std::string.
+   *
+   * \param out [out] The std::ostream used for the output
    *
    * The purpose of this function is to augment what is in <tt>docString</tt>
    * with some description of what valid values this parameter validator will
    * accept.
    */
   virtual void printDoc(
-    std::string         const& docString
-    ,std::ostream            & out
+    std::string const& docString,
+    std::ostream &out
     ) const = 0;
 
   /** \brief Return an array of strings of valid values if applicable.
@@ -86,8 +91,10 @@ public:
    * The returned strings must not contain any newlines (i.e. no <tt>'\n'</tt>
    * characters) and must be short enough to fit on one line and be readable.
    */
-  virtual ValidStringsList
-  validStringValues() const = 0;
+  virtual ValidStringsList validStringValues() const = 0;
+
+  // 2010/07/30: rabartl: Above, put the entire prototype on one line if it
+  // fits in 80 columns (see TCDG 1.0 FSC 7)
 
   /** \brief Validate a parameter entry value and throw std::exception (with a
    * great error message) if validation fails.
@@ -108,14 +115,14 @@ public:
 
   /** \brief Validate and perhaps modify a parameter entry's value.
    *
-   * \param  paramName
-   *            [in] The name of the ParameterEntry that is used to build error messages.
-   * \param  sublistName
-   *            [in] The name of the ParameterList that <tt>paramName</tt> exists in
-   *            that is used to build error messages.
-   * \param  entry
-   *            [in/out] The ParameterEntry who's type and value is being validated and
-   *            perhaps even changed as a result of calling this function.
+   * \param paramName [in] The name of the ParameterEntry that is used to
+   * build error messages.
+   *
+   * \param sublistName [in] The name of the ParameterList that
+   * <tt>paramName</tt> exists in that is used to build error messages.
+   *
+   * \param entry [in/out] The ParameterEntry who's type and value is being
+   * validated and perhaps even changed as a result of calling this function.
    *
    * The default implementation simply calls <tt>this->validate()</tt>.
    */

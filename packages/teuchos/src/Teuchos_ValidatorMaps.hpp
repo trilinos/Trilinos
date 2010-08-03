@@ -31,84 +31,94 @@
 /*! \file Teuchos_ValidatorMaps.hpp"
  */
 
+
 #include "Teuchos_ParameterEntryValidator.hpp"
 
-namespace Teuchos{
 
-/**
- * \brief Maps Validators to integers.
- */
-class IDtoValidatorMap{
+namespace Teuchos {
 
+
+/** \brief Maps Validators to integers. */
+class IDtoValidatorMap {
 public:
 
+  /** \brief . */
   typedef std::map<int, RCP<ParameterEntryValidator> > ValidatorMap;
 
+  /** \brief . */
   typedef std::pair<int, RCP<ParameterEntryValidator> > IDValidatorPair;
 
+  /** \brief . */
   typedef ValidatorMap::iterator iterator;
 
+  /** \brief . */
   typedef ValidatorMap::const_iterator const_iterator;
 
   /** \brief inserts an IDValidatorPair into the map. */
   void insertValidator(IDValidatorPair toInsert);
 
-  /** \brief Retrieves and iterator to a validator and id based on the id given. If no
-   * validator is found that has been mappend to the given id, a reference to the end of the
-   * map is returned */
+  /** \brief Retrieves and iterator to a validator and id based on the id given.
+   *
+   * If no validator is found that has been mappend to the given id, a
+   * reference to the end of the map is returned.
+   */
   const_iterator getValidator(int id) const;
 
-  /** \brief Returns a const_reference to the beginning of the map.
-   */
+  /** \brief Returns a const_reference to the beginning of the map. */
   const_iterator begin() const;
 
-  /** \brief Returns a const_reference to the end of the map.
-   */
+  /** \brief Returns a const_reference to the end of the map. */
   const_iterator end() const;
 
 private:
 
   ValidatorMap validatorMap;
+
 };
 
-/**
- * \brief A class for mapping validators to integers.
- */
-class ValidatortoIDMap{
 
+/** \brief A class for mapping validators to integers. */
+class ValidatortoIDMap {
 public:
-
-  struct rcpcomp{
+  
+  /** \brief . */
+  struct rcpcomp {
+    /** \brief . */
     template<class T1, class T2> inline
     bool operator() (const RCP<T1> &p1, const RCP<T2> &p2) const{
       return p1.get() < p2.get();
     }
   };
 
+  /** \brief . */
   typedef std::map<RCP<const ParameterEntryValidator>, int, rcpcomp> ValidatorMap;
 
+  /** \brief . */
   typedef std::pair<RCP<const ParameterEntryValidator>, int> ValidatorIDPair;
 
+  /** \brief . */
   typedef ValidatorMap::iterator iterator;
 
+  /** \brief . */
   typedef ValidatorMap::const_iterator const_iterator;
 
+  /** \brief . */
   ValidatortoIDMap();
 
   /** \brief inserts an IDValidatorPair into the map. */
   void insertValidator(RCP<const ParameterEntryValidator> toInsert);
   
-  /** \brief Returns an iterator to the validator and id specified by the validator. If no id
-   * is found with the associated validator, a reference to the end of the map is returned.
+  /** \brief Returns an iterator to the validator and id specified by the validator.
+   *
+   * If no id is found with the associated validator, a reference to the end
+   * of the map is returned.
    */
   const_iterator getID(const RCP<const ParameterEntryValidator> validator) const;
   
-  /** \brief Returns a const_reference to the beginning of the map.
-   */
+  /** \brief Returns a const_reference to the beginning of the map. */
   const_iterator begin() const;
 
-  /** \brief Returns a const_reference to the end of the map.
-   */
+  /** \brief Returns a const_reference to the end of the map. */
   const_iterator end() const;
 
 private:
@@ -119,6 +129,8 @@ private:
 
 };
 
-} //end Teuchos namespace
+
+} // namespace Teuchos
+
 
 #endif //Teuchos_VALIDATORMAPS_HPP

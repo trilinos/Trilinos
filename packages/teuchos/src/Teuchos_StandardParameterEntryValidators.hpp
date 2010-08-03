@@ -37,6 +37,12 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+
+
+// 2010/07/30: rabartl: This below header is *not* a standard C++ headers.
+// This will not port to MS Windows I don't think.  Something will need to be
+// done to remove a mandatory include for this header "sys/stat.h".
+
 #include <sys/stat.h>
 
 

@@ -32,14 +32,21 @@
 /*! \file Teuchos_StandardParameterEntryXMLConverters.hpp
 */
 
+
 #include "Teuchos_ParameterEntryXMLConverter.hpp"
+
 
 namespace Teuchos {
 
-/**
- * \brief A last resort converter for when no others will do. Writes out
- * a raw string representation to xml and sets ParameterEntryValues as
- * strings when they are read back in.
+
+// 2010/07/30: rabartl: Below, the \brief line must be seprated by a newline
+// (I think).
+
+
+/** \brief A last resort converter for when no others will do.
+ *
+ * Writes out a raw string representation to xml and sets ParameterEntryValues
+ * as strings when they are read back in.
  */
 class AnyParameterEntryConverter : public ParameterEntryXMLConverter{
 
@@ -54,13 +61,13 @@ public:
   bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
-/**
- * \brief A standard ParameterEntryXMLConverter for most data types.
+
+/** \brief A standard ParameterEntryXMLConverter for most data types.
  *
  * This converter is appropriate for most data types.
  */
 template<class T>
-class StandardTemplatedParameterConverter : public ParameterEntryXMLConverter{
+class StandardTemplatedParameterConverter : public ParameterEntryXMLConverter {
 
 public:
 
@@ -70,14 +77,16 @@ public:
   }
 
   /** \brief */
-  virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const{
+  virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const {
     return toString(any_cast<T>(entry.getAny(false)));
   }
 
   /** \brief */
-  virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj, bool isDefault) const{
-    entry.setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
-  }
+  virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj,
+    bool isDefault) const
+    {
+      entry.setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
+    }
 
   /** \brief */
   virtual bool isAppropriateConverter(const ParameterEntry& entry) const{
@@ -86,13 +95,13 @@ public:
 
 };
 
-/**
- * \brief A standard ParameterEntryXMLConverter for array data types.
+
+/** \brief A standard ParameterEntryXMLConverter for array data types.
  *
  * This converter is appropriate for most array data types.
  */
 template<class T>
-class ArrayTemplatedParameterConverter : public ParameterEntryXMLConverter{
+class ArrayTemplatedParameterConverter : public ParameterEntryXMLConverter {
 
 public:
 
@@ -107,12 +116,14 @@ public:
   }
 
   /** \brief */
-  virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj, bool isDefault) const{
-    std::string arrayString = xmlObj.getRequired(getValueAttributeName());
-    Array<T> convertedArray;
-    convertedArray = fromStringToArray<T>(arrayString);
-    entry.setValue<Array<T> >(convertedArray, isDefault);
-  }
+  virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj,
+    bool isDefault) const
+    {
+      std::string arrayString = xmlObj.getRequired(getValueAttributeName());
+      Array<T> convertedArray;
+      convertedArray = fromStringToArray<T>(arrayString);
+      entry.setValue<Array<T> >(convertedArray, isDefault);
+    }
 
   /** \brief */
   virtual bool isAppropriateConverter(const ParameterEntry& entry) const{
@@ -121,6 +132,8 @@ public:
 
 };
 
-}
+
+} // namespace Teuchos
+
 
 #endif // TEUCHOS_STANDARDPARAMETERENTRYXMLCONVERTERS_HPP
