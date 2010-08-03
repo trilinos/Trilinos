@@ -10,7 +10,7 @@
 #define IOSS_code_types_h
 
 #if !defined(HAVE_MPI) 
-#if defined(SIERRA_PARALLEL_MPI) || defined(STK_BUILT_IN_SIERRA)
+#if defined(SIERRA_PARALLEL_MPI)
 #define HAVE_MPI
 #else
 #if !defined(NO_MPI)
