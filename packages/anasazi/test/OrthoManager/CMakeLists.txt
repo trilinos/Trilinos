@@ -59,6 +59,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       EXEDEPS OrthoManagerComplexGenTester
       )
 
-  ENDIF (${${PACKAGE_NAME}_ENABLE_COMPLEX})
+  ENDIF ()
 
-ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
+ENDIF ()
