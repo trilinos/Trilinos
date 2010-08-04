@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
+#if 0
 #include <stdexcept>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
@@ -18,7 +18,7 @@ namespace {
     const unsigned NX = 3;
     const unsigned NY = 1;
     const unsigned NZ = 1;
-    stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD);
+    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][0] == 1 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][1] == 2 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][2] == 3 );
@@ -28,7 +28,7 @@ namespace {
     const unsigned NX = 3;
     const unsigned NY = 3;
     const unsigned NZ = 3;
-    stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD);
+    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][0] == 1 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][1] == 2 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][2] == 3 );
@@ -38,7 +38,7 @@ namespace {
     const unsigned NX = 1;
     const unsigned NY = 3;
     const unsigned NZ = 1;
-    stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD);
+    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][0] == 1 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][1][0] == 2 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][2][0] == 3 );
@@ -48,7 +48,7 @@ namespace {
     const unsigned NX = 3;
     const unsigned NY = 3;
     const unsigned NZ = 3;
-    stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD);
+    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][0] == 1 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][1][0] == 4 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][2][0] == 7 );
@@ -58,7 +58,7 @@ namespace {
     const unsigned NX = 1;
     const unsigned NY = 1;
     const unsigned NZ = 3;
-    stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD);
+    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][0] == 1 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[1][0][0] == 2 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[2][0][0] == 3 );
@@ -68,7 +68,7 @@ namespace {
     const unsigned NX = 3;
     const unsigned NY = 3;
     const unsigned NZ = 3;
-    stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD);
+    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][0] == 1 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[1][0][0] == 10 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[2][0][0] == 19 );
@@ -78,7 +78,7 @@ namespace {
     const unsigned NX = 3;
     const unsigned NY = 3;
     const unsigned NZ = 3;
-    stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD);
+    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[0][0][0] == 1 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[1][1][1] == 14 );
     STKUNIT_EXPECT_TRUE( hf.m_elems_id[2][2][2] == 27 );
@@ -100,6 +100,7 @@ namespace {
     const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
     const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
     if (2 <= p_size) {
+    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
       stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD,&parallel_distribution[p_rank]);
       stk::mesh::BulkData & mesh = hf.m_bulk_data;
       // Verify element_id 1 is owned by proc 0
@@ -140,6 +141,7 @@ namespace {
         element_ids.push_back(p+1); // element id's start at 1
         parallel_distribution[p] = element_ids;
       }
+      stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
       stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD,&parallel_distribution[p_rank]);
       stk::mesh::BulkData & mesh = hf.m_bulk_data;
       if (p_rank == 0) {
@@ -206,6 +208,7 @@ namespace {
     const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
     const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
     if (2 <= p_size) {
+      stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
       stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD,&parallel_distribution[p_rank]);
       stk::mesh::BulkData & mesh = hf.m_bulk_data;
       // Verify element_id 1 is owned by proc 0
@@ -291,6 +294,7 @@ namespace {
     const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
     const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
     if (2 <= p_size) {
+      stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
       stk::mesh::fixtures::HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD,&parallel_distribution[p_rank]);
       stk::mesh::BulkData & mesh = hf.m_bulk_data;
       // Verify element_id 1 is owned by proc 0
@@ -337,4 +341,4 @@ namespace {
   }
 
 } // end namespace
-
+#endif

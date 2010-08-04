@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef STK_MESH_FIXTURES_HEX_MESH_FIXTURE_HPP
-#define STK_MESH_FIXTURES_HEX_MESH_FIXTURE_HPP
+#ifndef STK_MESH_FIXTURES_QUAD_MESH_FIXTURE_HPP
+#define STK_MESH_FIXTURES_QUAD_MESH_FIXTURE_HPP
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -27,45 +27,36 @@ namespace stk {
 namespace mesh {
 namespace fixtures {
 
-class HexFixture
-{
+class QuadFixture {
+
 public:
+  typedef int Scalar ;
+  typedef Field<Scalar, Cartesian>    CoordFieldType;
+  typedef Field<Scalar*,ElementNode>  CoordGatherFieldType;
 
-  typedef double Scalar ;
-  typedef Field<Scalar, Cartesian>     CoordFieldType;
-  typedef Field<Scalar*,ElementNode>   CoordGatherFieldType;
+  QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny );
 
-  HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz);
+  ~QuadFixture();
 
-  ~HexFixture();
-
-  const unsigned NX;
-  const unsigned NY;
-  const unsigned NZ;
-
-  MetaData  meta_data;
-  BulkData  bulk_data;
-
-  Part    & hex_part;
-
+  stk::mesh::MetaData    meta_data ;
+  stk::mesh::BulkData    bulk_data ;
+  stk::mesh::Part      & quad_part ;
   CoordFieldType       & coord_field ;
   CoordGatherFieldType & coord_gather_field ;
+  const unsigned         NX ;
+  const unsigned         NY ;
 
-  EntityId node_id( unsigned ix , unsigned iy , unsigned iz ) const  {
-    return 1 + ix + ( NX + 1 ) * ( iy + ( NY + 1 ) * iz );
-  }
+  stk::mesh::EntityId node_id( unsigned ix , unsigned iy ) const
+    { return 1 + ix + ( NX + 1 ) * iy ; }
 
-  EntityId elem_id( unsigned ix , unsigned iy , unsigned iz ) const  {
-    return 1 + ix + NX * ( iy + NY * iz );
-  }
+  stk::mesh::EntityId elem_id( unsigned ix , unsigned iy ) const
+    { return 1 + ix + NX * iy ; }
 
-  Entity * node( unsigned ix , unsigned iy , unsigned iz ) const {
-    return bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy,iz) );
-  }
+  stk::mesh::Entity * node( unsigned ix , unsigned iy ) const
+    { return bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy) ); }
 
-  Entity * elem( unsigned ix , unsigned iy , unsigned iz ) const {
-    return bulk_data.get_entity( stk::mesh::Element , elem_id(ix,iy,iz) );
-  }
+  stk::mesh::Entity * elem( unsigned ix , unsigned iy ) const
+    { return bulk_data.get_entity( stk::mesh::Element , elem_id(ix,iy) ); }
 
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
 
@@ -76,11 +67,10 @@ public:
 
 private:
 
-  HexFixture();
-  HexFixture( const HexFixture &);
-  HexFixture & operator = (const HexFixture &);
+  QuadFixture();
+  QuadFixture( const QuadFixture & );
+  QuadFixture & operator = ( const QuadFixture & );
 };
-
 
 } // fixtures
 } // mesh

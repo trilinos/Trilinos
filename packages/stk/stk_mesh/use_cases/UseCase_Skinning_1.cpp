@@ -22,20 +22,17 @@
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
 
-
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_mesh/fem/SkinMesh.hpp>
 
 namespace {
 
-  unsigned count_skin_entities( stk::mesh::fixtures::HexFixture3x3x3 & fixture) {
+  unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
 
     const unsigned mesh_rank = stk::mesh::Element;
 
-    stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    stk::mesh::MetaData & meta = fixture.m_meta_data;
-    stk::mesh::Part & skin_part = fixture.m_skin_part;
+    const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
     stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
@@ -51,21 +48,28 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
   // TODO This test should be able to run with up to 27
   // processes, but it fails with corrupt communication
   // with 10 or more processes
-  const unsigned p_size = stk::parallel_machine_size( pm );
-  if ( 4 < p_size ) { return true; }
+  //const unsigned p_size = stk::parallel_machine_size( pm );
+  //if ( 4 < p_size ) { return true; }
 
   //setup the mesh
-  stk::mesh::fixtures::HexFixture3x3x3 fixture(pm);
+  stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
 
-  stk::mesh::MetaData& meta = fixture.m_meta_data;
-  stk::mesh::BulkData& mesh = fixture.m_bulk_data;
+  stk::mesh::MetaData & meta = fixture.meta_data;
+  stk::mesh::BulkData & mesh = fixture.bulk_data;
 
-  stk::mesh::Part & skin_part = fixture.m_skin_part;
+  stk::mesh::Part & skin_part = meta.declare_part("skin_part");
+  meta.commit();
+
+  fixture.generate_mesh();
+
+  skin_mesh(mesh, stk::mesh::Element, &skin_part);
+
+
 
   std::vector< stk::mesh::EntityId > elements_to_separate;
 
   //separate out the middle element
-  elements_to_separate.push_back(fixture.m_elems_id[1][1][1]);
+  elements_to_separate.push_back(fixture.elem_id(1,1,1));
 
   separate_and_skin_mesh(
       meta,
@@ -76,9 +80,9 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
 
   // pointer to middle_element after mesh modification.
-  stk::mesh::Entity * middle_element = mesh.get_entity(stk::mesh::Element,fixture.m_elems_id[1][1][1]);
+  stk::mesh::Entity * middle_element = mesh.get_entity(stk::mesh::Element,fixture.elem_id(1,1,1));
 
-  unsigned num_skin_entities = count_skin_entities(fixture);
+  unsigned num_skin_entities = count_skin_entities(mesh, skin_part);
 
   stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
