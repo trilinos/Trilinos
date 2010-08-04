@@ -66,38 +66,37 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
 
   // Field relation so coord-gather-field on elements points
   // to coord-field of the element's nodes
-  meta_data.declare_field_relation( coord_gather_field, element_node_stencil<shards::Hexahedron<8> >, coord_field);
-  meta_data.declare_field_relation( coord_gather_field, element_node_stencil<void>, coord_field);
-  meta_data.declare_field_relation( coord_gather_field, element_node_lock_stencil<void>, coord_field);
+  meta_data.declare_field_relation( coord_gather_field, element_node_stencil<Hex8>, coord_field);
 
 }
 
-void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor) {
+void HexFixture::generate_mesh() {
+  std::vector<EntityId> element_ids_on_this_processor;
 
   const unsigned p_size = bulk_data.parallel_size();
   const unsigned p_rank = bulk_data.parallel_rank();
   const unsigned num_elems = NX * NY * NZ ;
 
-  if (element_ids_on_this_processor.empty() ) {
-    const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
-    const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
+  const EntityId beg_elem = 1 + ( num_elems * p_rank ) / p_size ;
+  const EntityId end_elem = 1 + ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
-    for ( EntityId i = beg_elem; i != end_elem; ++i) {
-      element_ids_on_this_processor.push_back(i);
-    }
+  for ( EntityId i = beg_elem; i != end_elem; ++i) {
+    element_ids_on_this_processor.push_back(i);
   }
-  else {
 
-    //sort and unique the input elements
+  generate_mesh(element_ids_on_this_processor);
+}
 
-    std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
-    std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor) {
 
-    std::sort( ib, ie);
-    ib = std::unique( ib, ie);
-    element_ids_on_this_processor.erase(ib, ie);
+  //sort and unique the input elements
+  std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
+  std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
 
-  }
+  std::sort( ib, ie);
+  ib = std::unique( ib, ie);
+  element_ids_on_this_processor.erase(ib, ie);
+
 
   bulk_data.modification_begin();
 
@@ -110,8 +109,9 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
       std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
       std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+      ib = lower_bound( ib, ie, i_elem);
 
-      if ( i_elem == * lower_bound( ib, ie, i_elem) ) {
+      if ( ib != ie && *ib ==  i_elem ) {
 
         stk::mesh::EntityId elem_node[8] ;
 

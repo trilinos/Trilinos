@@ -69,11 +69,7 @@ public:
 
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
 
-  void generate_mesh() {
-    std::vector<EntityId> empty_vector;
-    generate_mesh(empty_vector);
-  }
-
+  void generate_mesh();
 private:
 
   HexFixture();
