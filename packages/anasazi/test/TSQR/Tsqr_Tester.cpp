@@ -80,11 +80,12 @@ namespace TSQR {
 	  test_complex_arithmetic (true),
 #endif // HAVE_ANASAZI_COMPLEX
 	  contiguous_cache_blocks (false), 
-	  human_readable (false), 
+	  human_readable (false)
 	{}
+
 	std::string which;
 	TsqrTestAction action;
-	int nrows, ncols, ncores, ntrials, cache_block_size;
+	int nrows, ncols, ntrials, cache_block_size;
 	bool verbose, debug;
 #ifdef HAVE_ANASAZI_COMPLEX
 	bool test_complex_arithmetic;
