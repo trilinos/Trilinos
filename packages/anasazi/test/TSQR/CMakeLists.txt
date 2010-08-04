@@ -7,8 +7,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES Tsqr_Tester.cpp
   COMM serial mpi
   ARGS 
-    "--verbose"
-    "--verify"
-#    "--debug"
   STANDARD_PASS_OUTPUT
 )
