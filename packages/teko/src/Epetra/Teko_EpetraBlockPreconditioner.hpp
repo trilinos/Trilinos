@@ -100,7 +100,7 @@ public:
      * \param[in] clear If true, than any previous state saved by the preconditioner
      *                  is discarded.
      */
-   virtual void buildPreconditioner(const Epetra_Operator & A,bool clear=true);
+   virtual void buildPreconditioner(const Teuchos::RCP<const Epetra_Operator> & A,bool clear=true);
 
    /** \brief Build this preconditioner from an Epetra_Operator 
      * passed in to this object. It is assumed that this Epetra_Operator
@@ -115,7 +115,7 @@ public:
      * \param[in] clear If true, than any previous state saved by the preconditioner
      *                  is discarded.
      */
-   virtual void buildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & mv,bool clear=true);
+   virtual void buildPreconditioner(const Teuchos::RCP<const Epetra_Operator> & A,const Epetra_MultiVector & mv,bool clear=true);
 
    /** \brief Rebuild this preconditioner from an Epetra_Operator passed
      * in this to object. 
@@ -129,7 +129,7 @@ public:
      *
      * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
      */
-   virtual void rebuildPreconditioner(const Epetra_Operator & A);
+   virtual void rebuildPreconditioner(const Teuchos::RCP<const Epetra_Operator> & A);
 
    /** \brief Rebuild this preconditioner from an Epetra_Operator passed
      * in this to object. 
@@ -144,7 +144,7 @@ public:
      * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
      * \param[in] mv A vector that was used to build the source operator.
      */
-   virtual void rebuildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & mv);
+   virtual void rebuildPreconditioner(const Teuchos::RCP<const Epetra_Operator> & A,const Epetra_MultiVector & mv);
 
    /** Try to get a <code>Teko::PreconditionerState</code> object. This method
      * attempts to cast its internal representation of a preconditioner 
@@ -169,8 +169,8 @@ public:
    virtual Teuchos::RCP<const PreconditionerState> getPreconditionerState() const;
 
 protected:
-   Teuchos::RCP<const Thyra::LinearOpBase<double> > extractLinearOp(const Epetra_Operator & A) const;
-   Teuchos::RCP<const MappingStrategy> extractMappingStrategy(const Epetra_Operator & A) const;
+   Teuchos::RCP<const Thyra::LinearOpBase<double> > extractLinearOp(const Teuchos::RCP<const Epetra_Operator> & A) const;
+   Teuchos::RCP<const MappingStrategy> extractMappingStrategy(const Teuchos::RCP<const Epetra_Operator> & A) const;
 
    EpetraBlockPreconditioner(); 
    EpetraBlockPreconditioner(const EpetraBlockPreconditioner &); 

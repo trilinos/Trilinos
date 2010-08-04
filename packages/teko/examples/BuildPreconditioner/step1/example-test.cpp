@@ -115,11 +115,12 @@ int main(int argc,char * argv[])
    Teko::LinearOp A_11 = Thyra::epetraLinearOp(build2x2(2,1,1,2,Comm));
 
    // build the Epetra operator
-   Teko::Epetra::EpetraOperatorWrapper A(Teko::block2x2(A_00,A_01,A_10,A_11));
+   Teuchos::RCP<Teko::Epetra::EpetraOperatorWrapper> A
+         = Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(Teko::block2x2(A_00,A_01,A_10,A_11)));
 
    // build the Epetra vector
-   Epetra_Vector b(A.OperatorRangeMap());
-   Epetra_Vector x(A.OperatorDomainMap());
+   Epetra_Vector b(A->OperatorRangeMap());
+   Epetra_Vector x(A->OperatorDomainMap());
    x.PutScalar(0.0);
 
    // build the RHS vector

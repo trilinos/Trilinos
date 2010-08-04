@@ -161,7 +161,8 @@ int main(int argc,char * argv[])
 
    std::cout << "Building strided operator" << std::endl;
    std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
-   Teko::Epetra::StridedEpetraOperator sA(vec,A);
+   Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA 
+         = Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec,A));
 
    double alpha = 0.9;
    RCP<Teko::InverseFactory> inverse = Teko::invFactoryFromParamList(*paramList,solveName);

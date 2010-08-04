@@ -108,7 +108,8 @@ int main(int argc,char * argv[])
 
    // Block the linear system using a strided epetra operator
    std::vector<int> vec(2); vec[0] = 2; vec[1] = 1; /*@ \label{lned:define-strided} @*/
-   Teko::Epetra::StridedEpetraOperator sA(vec,A);
+   Teuchos::RCP<Teko::Epetra::StridedEpetraOperator> sA
+         = Teuchos::rcp(new Teko::Epetra::StridedEpetraOperator(vec,A));
 
    // Build the preconditioner /*@ \label{lned:construct-prec} @*/
    /////////////////////////////////////////////////////////

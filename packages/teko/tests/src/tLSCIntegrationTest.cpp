@@ -233,7 +233,7 @@ bool tLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream & os)
    const RCP<Teko::NS::LSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(invFact,Qu));
    const RCP<Teko::BlockPreconditionerFactory> precFact = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
    const RCP<Teko::Epetra::EpetraBlockPreconditioner> prec = rcp(new Teko::Epetra::EpetraBlockPreconditioner(precFact));
-   prec->buildPreconditioner(*sA_);
+   prec->buildPreconditioner(sA_);
 
    // B. Build solver and solve system
    Epetra_Vector x(sA_->OperatorDomainMap());
@@ -299,7 +299,7 @@ bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
    const RCP<Teko::NS::LSCStrategy> strategy = rcp(new Teko::NS::InvLSCStrategy(invFact));
    const RCP<Teko::BlockPreconditionerFactory> precFact = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
    const RCP<Teko::Epetra::EpetraBlockPreconditioner> prec = rcp(new Teko::Epetra::EpetraBlockPreconditioner(precFact));
-   prec->buildPreconditioner(*sA_);
+   prec->buildPreconditioner(sA_);
 
    // B. Build solver and solve system
    Epetra_Vector x(sA_->OperatorDomainMap());

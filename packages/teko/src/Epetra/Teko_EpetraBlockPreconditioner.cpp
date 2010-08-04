@@ -94,7 +94,7 @@ void EpetraBlockPreconditioner::initPreconditioner(bool clearOld)
   * 
   * \note This will clear any internal state stored by the state object
   */
-void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,bool clear)
+void EpetraBlockPreconditioner::buildPreconditioner(const Teuchos::RCP<const Epetra_Operator> & A,bool clear)
 {
    Teko_DEBUG_SCOPE("EBP::buildPreconditioner",10);
 
@@ -138,7 +138,7 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,bo
   *
   * \note This will clear any internal state stored by the state object
   */
-void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & epetra_mv,bool clear)
+void EpetraBlockPreconditioner::buildPreconditioner(const Teuchos::RCP<const Epetra_Operator> & A,const Epetra_MultiVector & epetra_mv,bool clear)
 {
    Teko_DEBUG_SCOPE("EBP::buildPreconditioner - with solution",10);
 
@@ -184,7 +184,7 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,co
   * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
   * \param[in] mv A vector that was used to build the source operator.
   */
-void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A)
+void EpetraBlockPreconditioner::rebuildPreconditioner(const Teuchos::RCP<const Epetra_Operator> & A)
 {
    Teko_DEBUG_SCOPE("EBP::rebuildPreconditioner",10);
 
@@ -231,7 +231,7 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A)
   * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
   * \param[in] mv A vector that was used to build the source operator.
   */
-void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & epetra_mv)
+void EpetraBlockPreconditioner::rebuildPreconditioner(const Teuchos::RCP<const Epetra_Operator> & A,const Epetra_MultiVector & epetra_mv)
 {
    Teko_DEBUG_SCOPE("EBP::rebuildPreconditioner - with solution",10);
 
@@ -311,36 +311,32 @@ Teuchos::RCP<const PreconditionerState> EpetraBlockPreconditioner::getPreconditi
    return Teuchos::null;
 }
 
-Teuchos::RCP<const Thyra::LinearOpBase<double> > EpetraBlockPreconditioner::extractLinearOp(const Epetra_Operator & A) const
+Teuchos::RCP<const Thyra::LinearOpBase<double> > EpetraBlockPreconditioner::extractLinearOp(const Teuchos::RCP<const Epetra_Operator> & A) const
 {
-   Teuchos::RCP<const Epetra_Operator> ptrA = rcpFromRef(A);
-
    // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
-   const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(ptrA);
+   const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(A);
   
    // if it is an EpetraOperatorWrapper, then get the Thyra operator
    if(eow!=Teuchos::null)
       return eow->getThyraOp(); 
 
    // otherwise wrap it up as a thyra operator 
-   return Thyra::epetraLinearOp(ptrA);
+   return Thyra::epetraLinearOp(A);
 }
 
-Teuchos::RCP<const MappingStrategy> EpetraBlockPreconditioner::extractMappingStrategy(const Epetra_Operator & A) const
+Teuchos::RCP<const MappingStrategy> EpetraBlockPreconditioner::extractMappingStrategy(const Teuchos::RCP<const Epetra_Operator> & A) const
 {
-   Teuchos::RCP<const Epetra_Operator> ptrA = rcpFromRef(A);
-
    // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
-   const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(ptrA);
+   const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(A);
   
    // if it is an EpetraOperatorWrapper, then get the Thyra operator
    if(eow!=Teuchos::null)
       return eow->getMapStrategy(); 
 
    // otherwise wrap it up as a thyra operator 
-   RCP<const Epetra_Map> range = rcpFromRef(A.OperatorRangeMap());
-   RCP<const Epetra_Map> domain = rcpFromRef(A.OperatorDomainMap());
-   return rcp(new BasicMappingStrategy(range,domain,A.Comm()));
+   RCP<const Epetra_Map> range = rcpFromRef(A->OperatorRangeMap());
+   RCP<const Epetra_Map> domain = rcpFromRef(A->OperatorDomainMap());
+   return rcp(new BasicMappingStrategy(range,domain,A->Comm()));
 }
 
 } // end namespace Epetra
