@@ -138,4 +138,5 @@ PACKAGE_ADD_LIBRARY(
   fei_test_utils
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
+  DEPLIBS fei_base fei_trilinos
   )
