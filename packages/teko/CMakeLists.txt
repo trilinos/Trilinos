@@ -12,11 +12,6 @@ PACKAGE(Teko)
 # B) Set up package-specific options
 #
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Isorropia
-   Teko_ENABLE_Isorropia
-   "Turn on Isorropia related options including probing"
-   OFF)
-
 #
 # C) Add the libraries, tests, and examples
 #
