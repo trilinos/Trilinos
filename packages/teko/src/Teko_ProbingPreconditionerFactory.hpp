@@ -55,14 +55,9 @@
 #include "Teko_PreconditionerFactory.hpp"
 
 // Isorropia includes
-#ifdef Teko_ENABLE_Isorropia
 #include "Isorropia_EpetraProber.hpp"
-#endif
 
 namespace Teko {
-
-#ifdef Teko_ENABLE_Isorropia
-#endif
 
 /** \brief Preconditioner factory that for (block) diagonals of explicit operators.
   *
