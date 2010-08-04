@@ -1078,6 +1078,8 @@ ZOLTAN_GNO_TYPE *repart_dist_x = NULL;           /* Distribution of repartition 
 ZOLTAN_GNO_TYPE *repart_dist_y = NULL;           /* Distribution of repartition edges
                                         to proc cols; similar to phg->dist_y. */
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   if (myProc_x >= 0 && myProc_y >= 0) {  /* This proc is part of 2D decomp */
 
     /* Compute distribution of repartition vertices and edges */
@@ -1425,6 +1427,7 @@ End:
   ZOLTAN_FREE(&proclist);
   ZOLTAN_FREE(&sendgno);
   ZOLTAN_FREE(&recvgno);
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 /****************************************************************************/

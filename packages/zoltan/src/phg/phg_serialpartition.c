@@ -477,11 +477,13 @@ static int seq_part (
 
   if (part_sizes==NULL){
     /* part_sizes should always exist, even with uniform partitions */
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_FATAL;
   }
 
   if (p<1){
     /* should never happen */
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_FATAL;
   }
 

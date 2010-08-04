@@ -239,6 +239,7 @@ int Zoltan_PHG_Partition (
 
   if (!(vcycle = newVCycle(zz, hg, parts, NULL, vcycle_timing))) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -292,6 +293,7 @@ int Zoltan_PHG_Partition (
       /* Allocate and initialize Matching Array */
       if (hg->nVtx && !(match = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC (hg->nVtx*sizeof(ZOLTAN_GNO_TYPE)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: Matching array");
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_MEMERR;
       }
       for (i = 0; i < hg->nVtx; i++)
@@ -368,6 +370,7 @@ int Zoltan_PHG_Partition (
 
 	  if(hg->nVtx&&!(hg->vmap=(int*)ZOLTAN_MALLOC(hg->nVtx*sizeof(int)))) {
 	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: hg->vmap");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 
@@ -385,6 +388,7 @@ int Zoltan_PHG_Partition (
 
 	  if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
 	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: PHGComm");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 
@@ -471,6 +475,7 @@ int Zoltan_PHG_Partition (
 Refine:
   del = vcycle;
   refine = 1;
+
   /****** Uncoarsening/Refinement ******/
   while (vcycle) {
     VCycle *finer = vcycle->finer;
@@ -558,6 +563,7 @@ Refine:
 	  rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->LevelSndCnt * sizeof(int));
 	  if (!rbuffer)    {
 	    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 	}       
@@ -593,6 +599,7 @@ Refine:
 	  sendbuf = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int));
 	  if (!sendbuf) {
 	    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 
@@ -622,6 +629,7 @@ Refine:
 
 	  if (!rbuffer) {
 	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 	}

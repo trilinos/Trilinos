@@ -1311,6 +1311,8 @@ End:
   phg_free_GID_lookup_table(&lookup_myHshVtxs);
   phg_free_GID_lookup_table(&lookup_myObjs);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
   return ierr;
 }
 
@@ -1327,6 +1329,8 @@ int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len, in
   ZOLTAN_GNO_TYPE tmp;
   int i, rc;
   MPI_Comm comm = zz->Communicator;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* The application uses global IDs which are unique but arbitrary.  Zoltan_PHG will
    * use global numbers which are consecutive integers beginning with zero.  Convert
@@ -1399,6 +1403,7 @@ End:
 
   ZOLTAN_FREE(&gtotal);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 /*****************************************************************************/
@@ -1546,6 +1551,7 @@ int numGID = zz->Num_GID;
   ierr = ZOLTAN_OK;
 
   if (num_pins == 0){
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ierr;
   }
 
@@ -1562,6 +1568,7 @@ int numGID = zz->Num_GID;
     (struct _hash_node **)ZOLTAN_CALLOC(ht_size, sizeof(struct _hash_node *));
 
   if (!hash_table){
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -1709,6 +1716,8 @@ float *gewgts = NULL, *wgt_ptr = NULL;
 int sumNumEntries, temp;
 int *numEdges = NULL;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   *tot_nbors = 0;
   *num_nbors = NULL;
   *nbor_GIDs = NULL;
@@ -1723,6 +1732,7 @@ int *numEdges = NULL;
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Error returned from Zoltan_Get_Num_Edges_Per_Obj");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -1737,6 +1747,7 @@ int *numEdges = NULL;
   if (!nbor_gids || !nbor_procs || (ew_dim && !gewgts)){
     Zoltan_Multifree(__FILE__, __LINE__, 3, &nbor_gids, &nbor_procs, &gewgts);
     ZOLTAN_FREE(&num_nbors);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -1786,6 +1797,7 @@ End:
   *nbor_Procs = nbor_procs;
   *edgeWeights = gewgts;
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 /*****************************************************************************/
