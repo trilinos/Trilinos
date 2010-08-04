@@ -141,11 +141,11 @@ AC_PROG_CXX(CC g++ c++ cxx)
 #fi
 
 if test "X$ac_cv_use_fortran90" = "Xyes"; then
-AC_PROG_FC(gfortran f90 xlf90 f95)
+AC_PROG_FC(FC gfortran f90 xlf90 f95)
 fi
 
 if test "X$ac_cv_use_fortran" = "Xyes"; then
-AC_PROG_FC(gfortran f90 xlf90 f95)
+AC_PROG_FC(FC gfortran f90 xlf90 f95)
 fi
 
 AC_PROG_RANLIB
