@@ -34,6 +34,7 @@
 // FIXME (mfh 04 Aug 2010) Should remove all Tpetra
 // dependencies... Teuchos dependencies are necessary, of course.
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tsqr_TpetraMessenger.hpp"
 
 #include "Tsqr_SeqTest.hpp"
 #include "Tsqr_TsqrTest.hpp"
@@ -107,7 +108,6 @@ namespace TSQR {
 	
 	ordinal_type nrowsGlobal = params.nrows;
 	ordinal_type ncols = params.ncols;
-	int numCores = params.ncores;
 	size_t cacheBlockSize = static_cast<size_t> (params.cache_block_size);
 	bool contiguousCacheBlocks = params.contiguous_cache_blocks;
 #ifdef HAVE_ANASAZI_COMPLEX
@@ -128,6 +128,8 @@ namespace TSQR {
 	if (params.which == "MpiSeqTSQR")
 	  {
 	    using TSQR::Test::verifyTsqr;
+	    const int numCores = 1;
+
 	    // 
 	    // FIXME (mfh 04 Aug 2010) Remove the templating from this
 	    // test.  It should just go through the usual scalar
@@ -279,11 +281,6 @@ namespace TSQR {
 	  throw std::domain_error ("Number of rows must be >= number of columns");
 	else if (params.cache_block_size < 0)
 	  throw std::domain_error ("Cache block size must be nonnegative");
-
-#ifndef HAVE_ANASAZI_COMPLEX
-	if (params.test_complex_arithmetic)
-	  throw std::logic_error ("Complex arithmetic not supported in the build");
-#endif // HAVE_ANASAZI_COMPLEX
 
 	return params;
       }
