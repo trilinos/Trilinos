@@ -805,16 +805,6 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       CLONE_OR_UPDATE_EXTRAREPO(${EXTRAREPO_DIRNAME} ${EXTRAREPO_GITURL})
       MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
     ENDFOREACH()
-  
-    IF(CTEST_TEST_TYPE STREQUAL Continuous)
-      IF(UPDATE_RETURN_VAL EQUAL 0)
-        IF(NOT CTEST_START_WITH_EMPTY_BINARY_DIRECTORY) # indicator of '1st time'...
-          MESSAGE("CTEST_UPDATE reported no changes for Continuous - returning early...")
-          REPORT_QUEUED_ERRORS()
-          RETURN()
-        ENDIF()
-      ENDIF()
-    ENDIF()
 
     # Setting branch switch to success in case we are not doing a switch to a
     # different branch.
@@ -863,30 +853,6 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
 
   ENDIF()
 
-  IF (UPDATE_FAILED)
-    MESSAGE("The VC update failed so submitting update and stopping ...") 
-    IF (CTEST_DO_SUBMIT)
-      CTEST_SUBMIT( PARTS update notes )
-    ENDIF()
-    REPORT_QUEUED_ERRORS()
-    RETURN()
-  ENDIF()
-
-  
-  MESSAGE(
-    "\n***"
-    "\n*** Uploading the subproject dependencies XML file ..."
-    "\n***\n"
-    )
-
-  PRINT_VAR(CTEST_DROP_SITE)
-  IF (CTEST_DO_SUBMIT)
-    CTEST_SUBMIT( FILES ${CDASH_SUBPROJECT_XML_FILE})
-    MESSAGE("\nSubmitted subproject dependencies XML file!")
-  ELSE()
-    MESSAGE("\nSkipping submitted subproject dependencies XML file on request!")
-  ENDIF()
-
 
   MESSAGE(
     "\n***"
@@ -930,7 +896,52 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET(Trilinos_ENABLE_EXAMPLES ON)
   SET(Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   SET(DO_PROCESS_MPI_ENABLES FALSE) # Should not be needed but CMake is messing up
-  PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
+  PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES() # Sets ${PROJECT_NAME}_NUM_ENABLED_PACKAGES
+
+  
+  MESSAGE(
+    "\n***"
+    "\n*** Determine if to go ahead with configure, build, test ..."
+    "\n***")
+
+  IF (${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0)
+    MESSAGE(
+      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
+      "  Configuring packages!\n")
+  ELSE()
+    MESSAGE(
+      "\n${PROJECT_NAME}_NUM_ENABLED_PACKAGES=${${PROJECT_NAME}_NUM_ENABLED_PACKAGES}:"
+      "  Exiting the script!\n")
+    REPORT_QUEUED_ERRORS()
+    RETURN()
+  ENDIF()
+
+  
+  MESSAGE(
+    "\n***"
+    "\n*** Uploading update, notes, and the subproject dependencies XML files ..."
+    "\n***\n"
+    )
+
+  # Note: We must only do the submit after we have decided if there are any
+  # packages to enable or not and otherwise exit the script!
+
+  IF (UPDATE_FAILED)
+    MESSAGE("The VC update failed so submitting update and stopping ...") 
+    IF (CTEST_DO_SUBMIT)
+      CTEST_SUBMIT( PARTS update notes )
+    ENDIF()
+    REPORT_QUEUED_ERRORS()
+    RETURN()
+  ENDIF()
+
+  PRINT_VAR(CTEST_DROP_SITE)
+  IF (CTEST_DO_SUBMIT)
+    CTEST_SUBMIT( FILES ${CDASH_SUBPROJECT_XML_FILE})
+    MESSAGE("\nSubmitted subproject dependencies XML file!")
+  ELSE()
+    MESSAGE("\nSkipping submitted subproject dependencies XML file on request!")
+  ENDIF()
 
   
   MESSAGE(
