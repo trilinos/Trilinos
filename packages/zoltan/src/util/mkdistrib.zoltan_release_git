@@ -17,8 +17,8 @@ rm -f zoltan_distrib.tar.gz
 #Zoltan checkout
 git clone software.sandia.gov:/space/git/Trilinos
 cd Trilinos/packages
-git branch trilinos-release-10-0-branch origin/trilinos-release-10-0-branch
-git checkout trilinos-release-10-0-branch
+git branch trilinos-release-10-4-branch origin/trilinos-release-10-4-branch
+git checkout trilinos-release-10-4-branch
 #
 #ParMETIS checkout
 cvs -d software:/space/CVS-Zoltan checkout -P ParMETIS3_1
@@ -74,9 +74,9 @@ done;
 #
 # Build tarball.
 chmod -R ogu+r *
-mv zoltan Zoltan_v3.201
-tar cvf zoltan_distrib_v3.201.tar Zoltan_v3.201 ParMETIS3_1
-gzip zoltan_distrib_v3.201.tar
+mv zoltan Zoltan_v3.3
+tar cvf zoltan_distrib_v3.3.tar Zoltan_v3.3 ParMETIS3_1
+gzip zoltan_distrib_v3.3.tar
 #
 # Tag repository.
 git tag -a ${ACT_TAG} -m "Distribution created"
