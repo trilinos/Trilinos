@@ -119,9 +119,10 @@ extern "C" {
  */
 /*****************************************************************************/
 
-#define ZOLTAN_PRINT_ERROR(proc,yo,str) \
+#define ZOLTAN_PRINT_ERROR(proc,yo,str) { \
   fprintf(stderr, "[%d] Zoltan ERROR in %s (line %d of %s):  %s\n", \
-          proc, yo, __LINE__, __FILE__, str);
+          proc, yo, __LINE__, __FILE__, str);                       \
+  Zoltan_print_trace(proc); }
 
 #define ZOLTAN_PRINT_WARN(proc,yo,str) \
   fprintf(stderr, "[%d] Zoltan WARNING in %s (line %d of %s):  %s\n", \

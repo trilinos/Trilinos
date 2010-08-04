@@ -190,8 +190,9 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/zz/zz_init.c $(srcdir)/zz/zz_obj_list.c \
 	$(srcdir)/zz/zz_rand.c $(srcdir)/zz/zz_set_fn.c \
 	$(srcdir)/zz/zz_sort.c $(srcdir)/zz/zz_struct.c \
-	$(srcdir)/zz/zz_util.c $(srcdir)/fort/ztypes.f90 \
-	$(srcdir)/fort/cwrap.c $(srcdir)/fort/zoltan_user_data.f90 \
+	$(srcdir)/zz/zz_back_trace.c $(srcdir)/zz/zz_util.c \
+	$(srcdir)/fort/ztypes.f90 $(srcdir)/fort/cwrap.c \
+	$(srcdir)/fort/zoltan_user_data.f90 \
 	$(srcdir)/fort/lb_user_const.f90 $(srcdir)/fort/fwrap.f90
 am__objects_1 = all_allo.$(OBJEXT)
 am__objects_2 = coloring.$(OBJEXT) color_test.$(OBJEXT) \
@@ -270,7 +271,7 @@ am__objects_26 = zz_coord.$(OBJEXT) zz_gen_files.$(OBJEXT) \
 	zz_hash.$(OBJEXT) zz_map.$(OBJEXT) zz_heap.$(OBJEXT) \
 	zz_init.$(OBJEXT) zz_obj_list.$(OBJEXT) zz_rand.$(OBJEXT) \
 	zz_set_fn.$(OBJEXT) zz_sort.$(OBJEXT) zz_struct.$(OBJEXT) \
-	zz_util.$(OBJEXT)
+	zz_back_trace.$(OBJEXT) zz_util.$(OBJEXT)
 am__objects_27 = ztypes.$(OBJEXT) cwrap.$(OBJEXT) \
 	zoltan_user_data.$(OBJEXT) lb_user_const.$(OBJEXT) \
 	fwrap.$(OBJEXT)
@@ -790,6 +791,7 @@ ZZ = \
 	$(srcdir)/zz/zz_set_fn.c \
 	$(srcdir)/zz/zz_sort.c \
 	$(srcdir)/zz/zz_struct.c \
+	$(srcdir)/zz/zz_back_trace.c \
 	$(srcdir)/zz/zz_util.c
 
 EXTRA_FORTRAN_H = \
@@ -1404,6 +1406,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zoltan_align.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zoltan_id.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zoltan_timer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zz_back_trace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zz_coord.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zz_gen_files.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zz_hash.Po@am__quote@
@@ -3614,6 +3617,20 @@ zz_struct.obj: $(srcdir)/zz/zz_struct.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/zz_struct.c' object='zz_struct.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zz_struct.obj `if test -f '$(srcdir)/zz/zz_struct.c'; then $(CYGPATH_W) '$(srcdir)/zz/zz_struct.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/zz_struct.c'; fi`
+
+zz_back_trace.o: $(srcdir)/zz/zz_back_trace.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zz_back_trace.o -MD -MP -MF $(DEPDIR)/zz_back_trace.Tpo -c -o zz_back_trace.o `test -f '$(srcdir)/zz/zz_back_trace.c' || echo '$(srcdir)/'`$(srcdir)/zz/zz_back_trace.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zz_back_trace.Tpo $(DEPDIR)/zz_back_trace.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/zz_back_trace.c' object='zz_back_trace.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zz_back_trace.o `test -f '$(srcdir)/zz/zz_back_trace.c' || echo '$(srcdir)/'`$(srcdir)/zz/zz_back_trace.c
+
+zz_back_trace.obj: $(srcdir)/zz/zz_back_trace.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zz_back_trace.obj -MD -MP -MF $(DEPDIR)/zz_back_trace.Tpo -c -o zz_back_trace.obj `if test -f '$(srcdir)/zz/zz_back_trace.c'; then $(CYGPATH_W) '$(srcdir)/zz/zz_back_trace.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/zz_back_trace.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/zz_back_trace.Tpo $(DEPDIR)/zz_back_trace.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/zz/zz_back_trace.c' object='zz_back_trace.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o zz_back_trace.obj `if test -f '$(srcdir)/zz/zz_back_trace.c'; then $(CYGPATH_W) '$(srcdir)/zz/zz_back_trace.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zz/zz_back_trace.c'; fi`
 
 zz_util.o: $(srcdir)/zz/zz_util.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT zz_util.o -MD -MP -MF $(DEPDIR)/zz_util.Tpo -c -o zz_util.o `test -f '$(srcdir)/zz/zz_util.c' || echo '$(srcdir)/'`$(srcdir)/zz/zz_util.c

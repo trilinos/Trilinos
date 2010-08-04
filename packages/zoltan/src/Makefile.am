@@ -399,6 +399,7 @@ ZZ = \
 	$(srcdir)/zz/zz_set_fn.c \
 	$(srcdir)/zz/zz_sort.c \
 	$(srcdir)/zz/zz_struct.c \
+	$(srcdir)/zz/zz_back_trace.c \
 	$(srcdir)/zz/zz_util.c
 
 EXTRA_FORTRAN_H = \

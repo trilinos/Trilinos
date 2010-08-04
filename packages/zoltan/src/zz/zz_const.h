@@ -71,7 +71,8 @@ struct Param_List;
 /*
  *  Define the debug levels allowed.
  *    ZOLTAN_DEBUG_NONE = 0           - quiet mode; no debugging information.
- *    ZOLTAN_DEBUG_PARAMS = 1         - print values of all parameters used.
+ *    ZOLTAN_DEBUG_PARAMS = 1         - print values of all parameters used 
+ *                                           plus backtrace on Zoltan error.
  *    ZOLTAN_DEBUG_ZTIME = 2          - print Zoltan timing information.
  *    ZOLTAN_DEBUG_ATIME = 3          - print algorithm's timing info, if the
  *                                  algorithm supports this level.
@@ -579,12 +580,16 @@ typedef struct Zoltan_Transform_Struct ZZ_Transform;
  *  Print trace information.
  */
 #define ZOLTAN_TRACE_ENTER(zz,yo) do { \
+  if ((zz)->Debug_Level >= ZOLTAN_DEBUG_PARAMS)  \
+    Zoltan_add_back_trace((yo));           \
   if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
      ((zz)->Proc == (zz)->Debug_Proc && \
       (zz)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
     ZOLTAN_TRACE_IN((zz)->Proc, (yo), NULL); } while (0)
 
 #define ZOLTAN_TRACE_EXIT(zz,yo) do { \
+  if ((zz)->Debug_Level >= ZOLTAN_DEBUG_PARAMS)  \
+    Zoltan_remove_back_trace();           \
   if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
      ((zz)->Proc == (zz)->Debug_Proc && \
       (zz)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \

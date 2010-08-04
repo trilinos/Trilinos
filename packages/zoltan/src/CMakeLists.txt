@@ -581,6 +581,7 @@ APPEND_SET(SOURCES
   zz/zz_set_fn.c
   zz/zz_sort.c
   zz/zz_struct.c
+  zz/zz_back_trace.c
   zz/zz_util.c
   )
 
