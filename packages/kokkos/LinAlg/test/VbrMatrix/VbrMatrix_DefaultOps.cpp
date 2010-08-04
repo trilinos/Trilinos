@@ -687,10 +687,13 @@ namespace {
     ArrayRCP<Scalar> xdat, ydat, x_check;
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
-    ydat[0] = 6;
-    ydat[1] = 5;
-    ydat[2] = 5;
-    ydat[3] = 1;
+    {
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      yview[0] = 6;
+      yview[1] = 5;
+      yview[2] = 5;
+      yview[3] = 1;
+    }
     x_check = arcp<Scalar>(num_point_rows);
     x_check[0] = 1;
     x_check[1] = 1;
@@ -759,10 +762,13 @@ namespace {
     ArrayRCP<Scalar> xdat, ydat, x_check;
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
-    ydat[0] = 6;
-    ydat[1] = 5;
-    ydat[2] = 5;
-    ydat[3] = 1;
+    {
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      yview[0] = 6;
+      yview[1] = 5;
+      yview[2] = 5;
+      yview[3] = 1;
+    }
     x_check = arcp<Scalar>(num_point_rows);
     x_check[0] = 1;
     x_check[1] = 1;
@@ -831,10 +837,13 @@ namespace {
     ArrayRCP<Scalar> xdat, ydat, x_check;
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
-    ydat[0] = 6;
-    ydat[1] = 6;
-    ydat[2] = 7;
-    ydat[3] = 4;
+    {
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      yview[0] = 6;
+      yview[1] = 6;
+      yview[2] = 7;
+      yview[3] = 4;
+    }
     x_check = arcp<Scalar>(num_point_rows);
     x_check[0] = 1;
     x_check[1] = 1;
@@ -903,10 +912,13 @@ namespace {
     ArrayRCP<Scalar> xdat, ydat, x_check;
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
-    ydat[0] = 1;
-    ydat[1] = 3;
-    ydat[2] = 7;
-    ydat[3] = 12;
+    {
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      yview[0] = 1;
+      yview[1] = 3;
+      yview[2] = 7;
+      yview[3] = 12;
+    }
     x_check = arcp<Scalar>(num_point_rows);
     x_check[0] = 1;
     x_check[1] = 1;
@@ -975,10 +987,13 @@ namespace {
     ArrayRCP<Scalar> xdat, ydat, x_check;
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
-    ydat[0] = 1;
-    ydat[1] = 2;
-    ydat[2] = 5;
-    ydat[3] = 9;
+    {
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      yview[0] = 1;
+      yview[1] = 2;
+      yview[2] = 5;
+      yview[3] = 9;
+    }
     x_check = arcp<Scalar>(num_point_rows);
     x_check[0] = 1;
     x_check[1] = 1;
@@ -1047,10 +1062,13 @@ namespace {
     ArrayRCP<Scalar> xdat, ydat, x_check;
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
-    ydat[0] = 1;
-    ydat[1] = 2;
-    ydat[2] = 5;
-    ydat[3] = 9;
+    {
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      yview[0] = 1;
+      yview[1] = 2;
+      yview[2] = 5;
+      yview[3] = 9;
+    }
     x_check = arcp<Scalar>(num_point_rows);
     x_check[0] = 1;
     x_check[1] = 1;
@@ -1119,10 +1137,13 @@ namespace {
     ArrayRCP<Scalar> xdat, ydat, x_check;
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
-    ydat[0] = 1;
-    ydat[1] = 3;
-    ydat[2] = 7;
-    ydat[3] = 12;
+    {
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      yview[0] = 1;
+      yview[1] = 3;
+      yview[2] = 7;
+      yview[3] = 12;
+    }
     x_check = arcp<Scalar>(num_point_rows);
     x_check[0] = 1;
     x_check[1] = 1;
@@ -1191,10 +1212,13 @@ namespace {
     ArrayRCP<Scalar> xdat, ydat, x_check;
     xdat = node->template allocBuffer<Scalar>(num_point_rows);
     ydat = node->template allocBuffer<Scalar>(num_point_rows);
-    ydat[0] = 6;
-    ydat[1] = 6;
-    ydat[2] = 7;
-    ydat[3] = 4;
+    {
+      ArrayRCP<Scalar> yview = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,ydat.size(),ydat);
+      yview[0] = 6;
+      yview[1] = 6;
+      yview[2] = 7;
+      yview[3] = 4;
+    }
     x_check = arcp<Scalar>(num_point_rows);
     x_check[0] = 1;
     x_check[1] = 1;
