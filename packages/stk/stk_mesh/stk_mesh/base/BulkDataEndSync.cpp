@@ -59,8 +59,28 @@ unsigned BulkData::determine_new_owner( Entity & entity ) const
 
 namespace {
 
-//----------------------------------------------------------------------
-// Send to shared and ghost-receive,
+// A method for quickly finding an entity
+Entity* find_entity(const EntityVector& entities, const EntityKey& key,
+                    bool expect_success = false)
+{
+  EntityVector::const_iterator itr =
+    std::lower_bound(entities.begin(),
+                     entities.end(),
+                     key,
+                     EntityLess());
+  if (itr == entities.end() || (*itr)->key() != key) {
+    if (expect_success) {
+      std::ostringstream err;
+      err << "Expected to be able to find entity of type: " << key.type()
+          << " and rank: " << key.rank();
+      throw std::logic_error(err.str());
+    }
+    else {
+      return NULL;
+    }
+  }
+  return *itr;
+}
 
 struct EntityProcState {
   EntityProc entity_proc;
@@ -138,16 +158,7 @@ void communicate_entity_modification( const BulkData & mesh ,
 
         // search through entity_comm, should only receive info on entities
         // that are communicated.
-        EntityVector::const_iterator itr =
-          std::lower_bound(entity_comm.begin(),
-                           entity_comm.end(),
-                           key,
-                           EntityLess());
-        if (itr == entity_comm.end() || (*itr)->key() != key) {
-          throw std::logic_error("Unpacked non-communicated entity");
-        }
-
-        tmp.entity_proc.first  = *itr;
+        tmp.entity_proc.first  = find_entity(entity_comm, key, true);
         tmp.entity_proc.second = p ;
 
         data.push_back( tmp );
@@ -1022,16 +1033,7 @@ void BulkData::internal_resolve_shared_membership()
         // Any current part that is not a member of owners_parts
         // must be removed.
 
-        EntityVector::const_iterator itr =
-          std::lower_bound(m_entity_comm.begin(),
-                           m_entity_comm.end(),
-                           key,
-                           EntityLess());
-        if (itr == m_entity_comm.end() || (*itr)->key() != key) {
-          throw std::logic_error("Unpacked non-communicated entity");
-        }
-
-        Entity * const entity = *itr;
+        Entity * const entity = find_entity(m_entity_comm, key, true);
 
         entity->bucket().supersets( current_parts );
 
