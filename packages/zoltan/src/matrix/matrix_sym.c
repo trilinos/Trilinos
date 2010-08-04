@@ -54,6 +54,9 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   if (matrix->nPins && tr_tab == NULL) MEMORY_ERROR;
 
   pinwgt = (float*)ZOLTAN_MALLOC((matrix->nPins*2+matrix->nY)*matrix->pinwgtdim*sizeof(float));
+
+  if (((matrix->nPins*2+matrix->nY)*matrix->pinwgtdim) && !pinwgt) MEMORY_ERROR;
+
   for (i = 0 ; i < 2 ; ++i) /* Copy pin weights */
     memcpy(pinwgt + i*matrix->nPins*matrix->pinwgtdim*sizeof(float),
 	   matrix->pinwgt, matrix->nPins*matrix->pinwgtdim*sizeof(float));
@@ -94,6 +97,8 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
     ybipart = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
 
+    if (matrix->nY && (!yGID || !ypid || !ybipart)) MEMORY_ERROR;
+
     for (endX = 0 ; endX < matrix->nY ; ++endX) {
       if (matrix->yGNO[endX] >= matrix->globalX)
 	break;
@@ -104,6 +109,8 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 		    endX, NULL);
 
     yGNO = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(endX*sizeof(ZOLTAN_GNO_TYPE));
+    if (endX && !yGNO) MEMORY_ERROR;
+
     for (i = endX ; i < matrix->nY ; ++i) {
       yGNO[i-endX] = matrix->yGNO[i] - matrix->globalX;
       /* TODO: add a something to have the correct ypid */

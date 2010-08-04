@@ -68,6 +68,8 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 
   MPI_Comm_group(ompicomm, &allgrp);
   ranks = (int *) ZOLTAN_MALLOC(nProc * sizeof(int));
+  if (!ranks) return ZOLTAN_MEMERR;
+
   for (i=loRank; i<=hiRank; ++i)
     ranks[i-loRank] = i;
 
@@ -246,6 +248,8 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   if ((outmat->mtx.nPins + outmat->mtx.nY >0) && (proclist == NULL || sendbuf == NULL)) MEMORY_ERROR;
 
   wgtarray = (float*) ZOLTAN_MALLOC(outmat->mtx.nPins*outmat->mtx.pinwgtdim*sizeof(float));
+
+  if (outmat->mtx.nPins*outmat->mtx.pinwgtdim && !wgtarray) MEMORY_ERROR;
 
   yGNO = outmat->mtx.yGNO;
   pinGNO = outmat->mtx.pinGNO;

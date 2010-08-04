@@ -470,6 +470,7 @@ static int seq_part (
   double weight_sum = 0.0, part_sum, old_sum, cutoff;
   double psize_sum = 0.0;
   double *fixed_wgts = NULL;
+  int ierr = ZOLTAN_OK;
   char *yo = "seq_part";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -486,6 +487,7 @@ static int seq_part (
 
   if (hgp->UsePrefPart) {
     fixed_wgts = (double *) ZOLTAN_CALLOC(p, sizeof(double));
+    if (!fixed_wgts) MEMORY_ERROR;
   }
 
   /* Sum up all the vertex weights. */
@@ -557,8 +559,9 @@ static int seq_part (
 
   if (fixed_wgts) ZOLTAN_FREE(&fixed_wgts);
 
+End:
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ZOLTAN_OK;
+  return ierr;
 }
 
 /****************************************************************************/

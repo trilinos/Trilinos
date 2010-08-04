@@ -238,7 +238,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   fprintf(stderr, "(%d) remove arcs: %g\n", zz->Proc, MPI_Wtime()-time);
 #endif
 
-#define MATRIX_DEBUG
+/*#define MATRIX_DEBUG*/
 
 #ifdef MATRIX_DEBUG
  {
@@ -354,8 +354,9 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
     wgtfct = &wgtFctAdd;
   }
 
-
   tmparray = (int*)ZOLTAN_CALLOC(outmat->nY, sizeof(int));
+
+  if (outmat->nY && !tmparray) MEMORY_ERROR;
 
   /* Count degree for each vertex */
   for (i = 0 ; i < size ; i++) {
@@ -391,8 +392,14 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   outmat->pinwgt = (float *) ZOLTAN_REALLOC(outmat->pinwgt,
 			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
 
+  if ((outmat->nPins && !outmat->pinGNO) ||
+      (outmat->nPins*outmat->pinwgtdim && !outmat->pinwgt)){
+    MEMORY_ERROR;
+  }
+
   ZOLTAN_FREE(&tmparray);
 
+End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 
@@ -544,12 +551,16 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
     else
       ybipart = NULL;
 
+    if (m->nY && (!yGID || !ypid || (m->bipartite && !ybipart))) MEMORY_ERROR;
+
     /* Get Informations about Y */
     Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, (char *)ypid, ybipart, m->nY, NULL);
   }
 
   if (ybipart){
     tmpgid = (int *)ZOLTAN_MALLOC(sizeof(int) * m->nY);
+    if (m->nY && !tmpgid) MEMORY_ERROR;
+
     for (i=0; i < m->nY; i++){
       tmpgid[i] = ybipart[i];
     }

@@ -377,6 +377,10 @@ int nRepartEdge = 0, nRepartVtx = 0;
   proclist = (int *)ZOLTAN_MALLOC(MAX(nPins, zhg->nObj)*sizeof(int));
   sendbuf = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nPins * 2 * sizeof(ZOLTAN_GNO_TYPE));
 
+  if ( ((nPins || zhg->nObj) && !proclist) || (nPins && !sendbuf)){
+    MEMORY_ERROR;
+  }
+
   cnt = 0; 
   for (i = 0; i < nLocalEdges; i++) {
     /* processor row for the edge */
@@ -874,6 +878,8 @@ intptr_t iptr;                   /* an int the size of a pointer */
 
   /* Send partition info back to requesting processor */
   pin_parts = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
+  if (npins && !pin_parts) MEMORY_ERROR;
+
   Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) outparts, sizeof(int), NULL, (char *) pin_parts);
 
   ZOLTAN_FREE(&outparts);
@@ -1076,6 +1082,9 @@ ZOLTAN_GNO_TYPE *repart_dist_y = NULL;           /* Distribution of repartition 
 
     /* Compute distribution of repartition vertices and edges */
     repart_dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC((2+nProc_x+nProc_y) * sizeof(ZOLTAN_GNO_TYPE));
+
+    if (!repart_dist_x) MEMORY_ERROR;
+
     repart_dist_y = repart_dist_x + nProc_x + 1;
 
     for (i = 0; i < nProc_x; i++)
@@ -1398,6 +1407,9 @@ ZOLTAN_GNO_TYPE *repart_dist_y = NULL;           /* Distribution of repartition 
      * Need to get actual nRepartEdge values from each proc in column. */
     
     colProc_cnt = (int *) ZOLTAN_MALLOC(nProc_y * sizeof(int));
+
+    if (!colProc_cnt) MEMORY_ERROR;
+
     MPI_Allgather(&nRepartEdge, 1, MPI_INT, colProc_cnt, 1, MPI_INT, 
                   phg->comm->col_comm);
     for (sum = 0, i = 0; i < nProc_y; i++) {
@@ -1436,6 +1448,7 @@ int i;
 int *colProc_cnt = NULL;
 int myProc_x = phg->comm->myProc_x;
 int myProc_y = phg->comm->myProc_y;
+int ierr = ZOLTAN_OK;
 
   if (myProc_x >= 0 && myProc_y >= 0) {  /* This proc is part of 2D decomp */
     /* Only processors in the 2D decomp added repartition data, so 
@@ -1464,6 +1477,11 @@ int myProc_y = phg->comm->myProc_y;
     phg->dist_x[nProc_x] -= sum;
   
     colProc_cnt = (int *) ZOLTAN_MALLOC(nProc_y * sizeof(int));
+    if (!colProc_cnt){
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
     MPI_Allgather(&(phg->nRepartEdge), 1, MPI_INT, colProc_cnt, 1, MPI_INT, 
                   phg->comm->col_comm);
     for (sum = 0, i = 0; i < nProc_y; i++) {
@@ -1474,7 +1492,8 @@ int myProc_y = phg->comm->myProc_y;
     ZOLTAN_FREE(&colProc_cnt);
   }
 
-  return ZOLTAN_OK;
+End:
+  return ierr;
 }
 /****************************************************************************/
 

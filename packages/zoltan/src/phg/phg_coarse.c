@@ -227,6 +227,11 @@ int Zoltan_PHG_Coarsening
   c_hg->fixed_part = (hg->fixed_part) ? (int*)ZOLTAN_MALLOC(hg->nVtx * sizeof(int)) : NULL;
   c_hg->pref_part = (hg->pref_part) ? (int*)ZOLTAN_MALLOC(hg->nVtx * sizeof(int)) : NULL;
 
+  if ( ((hg->nVtx && hg->fixed_part) && !c_hg->fixed_part) ||
+       ((hg->nVtx && hg->pref_part) && !c_hg->pref_part) ){
+    MEMORY_ERROR;
+  }
+
 #ifdef _DEBUG1  
   if (c_hg->fixed_part)  
       for (i = 0; i < hg->nVtx; i++)
@@ -677,6 +682,9 @@ int Zoltan_PHG_Coarsening
   emptynetsize = (size >> 5)+1;
   emptynets = (int*) ZOLTAN_CALLOC(emptynetsize, sizeof(int));
   idennets = (int *) ZOLTAN_MALLOC(size*sizeof(int));
+
+  if ((emptynetsize && !emptynets) || (size && !idennets)) MEMORY_ERROR;
+
   iden = listproc; /* just better variable name */
 #ifdef _DEBUG1
   emptynetcnt=0;
@@ -755,8 +763,10 @@ int Zoltan_PHG_Coarsening
                        &i, &rootRank); 
   
   /* communicate empty-nets to row-root */
-  if (hgc->myProc_x == rootRank) 
+  if (hgc->myProc_x == rootRank){ 
       allemptynets = (int *) ZOLTAN_MALLOC(emptynetsize*hgc->nProc_x*sizeof(int));
+      if ((emptynetsize*hgc->nProc_x > 0) && !allemptynets) MEMORY_ERROR;
+  }
   MPI_Gather(emptynets, emptynetsize, MPI_INT, allemptynets, emptynetsize, MPI_INT, rootRank, hgc->row_comm);
 
   /* communicate identical nets to row-root */
@@ -768,6 +778,8 @@ int Zoltan_PHG_Coarsening
 
       allidennets = (int *) ZOLTAN_MALLOC(recsize*sizeof(int));
       idennetdest = (int *) ZOLTAN_MALLOC(hgc->nProc_x*sizeof(int));
+
+      if ((recsize && !allidennets) || (hgc->nProc_x && !idennetdest)) MEMORY_ERROR;
       
       idennetdest[0] = 0;
       for (i = 1; i < hgc->nProc_x; i++)
@@ -889,6 +901,7 @@ int Zoltan_PHG_Coarsening
   Zoltan_Multifree(__FILE__, __LINE__, 3, &c_hg->hindex, &c_hg->hvertex, &c_hg->ewgt);
 
   c_hg->hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int));
+  if (!c_hg->hindex) MEMORY_ERROR;
   if (c_hg->nPins &&
       !(c_hg->hvertex=(int*)ZOLTAN_MALLOC(c_hg->nPins*sizeof(int))))
       MEMORY_ERROR;

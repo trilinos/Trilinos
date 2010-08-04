@@ -162,6 +162,8 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     proclist = (int *) ZOLTAN_MALLOC(nsend * sizeof(int));
     sendbuf = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nsend * elemsz);
 
+    if (nsend && (!proclist || !sendbuf)) MEMORY_ERROR;
+
     /* first communicate pins */
     nPins = 0;
     for (v = 0; v < ohg->nVtx; ++v) { 
@@ -256,8 +258,10 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
 
     /* now communicate vertex weights */
     if (ohg->VtxWeightDim) {
-        if (nVtx)
+        if (nVtx){
             nhg->vwgt = (float*) ZOLTAN_MALLOC(nVtx*ohg->VtxWeightDim*sizeof(float));
+            if (!nhg->vwgt) MEMORY_ERROR;
+        }
     
         --msg_tag;
         Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->vwgt,
@@ -268,8 +272,10 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
 
     /* communicate fixed vertices, if any */
     if (hgp->UseFixedVtx) {
-        if (nVtx)
+        if (nVtx){
             nhg->fixed_part = (int *) ZOLTAN_MALLOC(nVtx*sizeof(int));
+            if (!nhg->fixed_part) MEMORY_ERROR;
+        }
         --msg_tag;
         Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->fixed_part,
                        sizeof(int), (char *) nhg->fixed_part);
@@ -278,8 +284,10 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     }    
     /* communicate pref parts, if any */
     if (hgp->UsePrefPart) {
-        if (nVtx)
+        if (nVtx){
             nhg->pref_part = (int *) ZOLTAN_MALLOC(nVtx*sizeof(int));
+            if (!nhg->pref_part) MEMORY_ERROR;
+        }
         --msg_tag;
         Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->pref_part,
                        sizeof(int), (char *) nhg->pref_part);
@@ -316,8 +324,10 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
 #endif
         }
         
-        if (nEdge)
+        if (nEdge){
             nhg->ewgt = (float*) ZOLTAN_MALLOC(nEdge*ohg->EdgeWeightDim*sizeof(float));
+            if (!nhg->ewgt) MEMORY_ERROR;
+        }
     
         --msg_tag;
         Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->ewgt,
@@ -420,6 +430,8 @@ int Zoltan_PHG_Redistribute(
     /* create a new communicator for procs[lo..hi] */
     MPI_Comm_group(ocomm->Communicator, &allgrp);
     ranks = (int *) ZOLTAN_MALLOC(ocomm->nProc * sizeof(int));
+    if (!ranks) MEMORY_ERROR;
+
     for (i=lo; i<=hi; ++i)
         ranks[i-lo] = i;
     
@@ -441,6 +453,8 @@ int Zoltan_PHG_Redistribute(
     
     v2Col = (int *) ZOLTAN_MALLOC(ohg->nVtx * sizeof(int));    
     n2Row = (int *) ZOLTAN_MALLOC(ohg->nEdge * sizeof(int));
+
+    if ( (ohg->nVtx && !v2Col) || (ohg->nEdge && !n2Row)) MEMORY_ERROR;
 
     /* UVC: TODO very simple straight forward partitioning right now;
        later we can implement a more "load balanced", or smarter
@@ -469,6 +483,8 @@ int Zoltan_PHG_Redistribute(
                                                nhg, vmap, vdest);
     Zoltan_Multifree(__FILE__, __LINE__, 2,
                      &v2Col, &n2Row);
+
+End:
     
     return ierr;
 }

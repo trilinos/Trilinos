@@ -406,6 +406,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 #endif /* CEDRIC_PRINT */
 
       egno = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(zhg->nHedges*sizeof(ZOLTAN_GNO_TYPE));
+      if (zhg->nHedges && !egno) MEMORY_ERROR;
+
       for (j=0; j < zhg->nHedges; j++){
 	egno[j] = j + offset;
       }
