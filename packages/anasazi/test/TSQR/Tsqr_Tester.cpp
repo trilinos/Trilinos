@@ -26,19 +26,22 @@
 // ***********************************************************************
 // @HEADER
 
-#include "TsqrTpetraTest.hpp"
-
+#include "AnasaziConfigDefs.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+
+// FIXME (mfh 04 Aug 2010) Should remove all Tpetra
+// dependencies... Teuchos dependencies are necessary, of course.
 #include "Tpetra_DefaultPlatform.hpp"
 
 #include "Tsqr_SeqTest.hpp"
-#ifdef HAVE_ANASAZI_TBB
-#  include "Tsqr_TbbTest.hpp"
-#endif // HAVE_ANASAZI_TBB
 #include "Tsqr_TsqrTest.hpp"
 #include "Teuchos_Time.hpp"
+
+#ifdef HAVE_ANASAZI_COMPLEX
+#  include <complex>
+#endif // HAVE_ANASAZI_COMPLEX
 
 #include <sstream>
 #include <stdexcept>
@@ -50,6 +53,7 @@
 namespace TSQR { 
   namespace Trilinos { 
     namespace Test {
+
       using Teuchos::RCP;
       using Teuchos::Tuple;
 
@@ -57,37 +61,35 @@ namespace TSQR {
       TsqrTestAction TsqrTestActionValues[] = { Verify, Benchmark };
       const char* TsqrTestActionNames[] = {"verify", "benchmark"};
 
-#ifdef HAVE_ANASAZI_TBB
-      const int numTsqrTestRoutines = 4;
-      const char* TsqrTestRoutineNames[] = {"MpiSeqTSQR", "MpiTbbTSQR", "SeqTSQR", "TbbTSQR"};
-      const int numSupportedKokkosNodeTypes = 2;
-      const char* supportedKokkosNodeTypes[] = {"SerialNode", "TBBNode"};
-#else
       const int numTsqrTestRoutines = 2;
       const char* TsqrTestRoutineNames[] = {"MpiSeqTSQR", "SeqTSQR"};
-      const int numSupportedKokkosNodeTypes = 1;
-      const char* supportedKokkosNodeTypes[] = {"SerialNode"};
-#endif // HAVE_ANASAZI_TBB
 
       /// \class TsqrTestParameters
       /// \brief Encapsulates values of command-line parameters
       struct TsqrTestParameters {
 	TsqrTestParameters () :
 	  which ("MpiSeqTSQR"),
-	  kokkos_node_type ("SerialNode"),
 	  action (Verify), 
-	  nrows (10000), ncols (10), ncores (1), ntrials (1), cache_block_size (0),
-	  verbose (true), debug (false), 
+	  nrows (10000), 
+	  ncols (10), 
+	  ntrials (1), 
+	  cache_block_size (0),
+	  verbose (true), 
+	  debug (false),
+#ifdef HAVE_ANASAZI_COMPLEX
 	  test_complex_arithmetic (true),
+#endif // HAVE_ANASAZI_COMPLEX
 	  contiguous_cache_blocks (false), 
-	  human_readable (false), tpetra (false)
+	  human_readable (false), 
 	{}
-	std::string which, kokkos_node_type;
+	std::string which;
 	TsqrTestAction action;
 	int nrows, ncols, ncores, ntrials, cache_block_size;
-	bool verbose, debug, test_complex_arithmetic, 
-	  contiguous_cache_blocks, 
-	  human_readable, tpetra;
+	bool verbose, debug;
+#ifdef HAVE_ANASAZI_COMPLEX
+	bool test_complex_arithmetic;
+#endif // HAVE_ANASAZI_COMPLEX
+	bool contiguous_cache_blocks, human_readable, tpetra;
       };
 
 
@@ -96,47 +98,59 @@ namespace TSQR {
       verifyTsqrAlone (RCP< const Teuchos::Comm<int> > comm,
 		       const TsqrTestParameters& params)
       {
+	using TSQR::Random::NormalGenerator;
+
 	typedef int ordinal_type;
 	typedef Scalar scalar_type;
-	typedef TSQR::Random::NormalGenerator< ordinal_type, scalar_type > generator_type;
+	typedef NormalGenerator< ordinal_type, scalar_type > generator_type;
 	
 	ordinal_type nrowsGlobal = params.nrows;
 	ordinal_type ncols = params.ncols;
 	int numCores = params.ncores;
 	size_t cacheBlockSize = static_cast<size_t> (params.cache_block_size);
 	bool contiguousCacheBlocks = params.contiguous_cache_blocks;
+#ifdef HAVE_ANASAZI_COMPLEX
 	bool testComplexArithmetic = params.test_complex_arithmetic;
+#else
+	bool testComplexArithmetic = false;
+#endif // HAVE_ANASAZI_COMPLEX
 	bool humanReadable = params.human_readable;
 	bool bDebug = params.debug;
 	
 	generator_type generator;
+	//
+	// FIXME (mfh 04 Aug 2010) Is this a Tpetra dependency?
+	//
 	TSQR::Trilinos::TpetraMessenger< ordinal_type > ordinalComm (comm);
 	TSQR::Trilinos::TpetraMessenger< scalar_type > scalarComm (comm);
 	
-	if (params.which == "MpiSeqTSQR" || params.which == "MpiTbbTSQR")
+	if (params.which == "MpiSeqTSQR")
 	  {
 	    using TSQR::Test::verifyTsqr;
-	    verifyTsqr< ordinal_type, scalar_type, generator_type > (params.which, generator, nrowsGlobal, ncols, 
-								     &ordinalComm, &scalarComm, numCores, 
-								     cacheBlockSize, contiguousCacheBlocks, 
-								     humanReadable, bDebug);
+	    // 
+	    // FIXME (mfh 04 Aug 2010) Remove the templating from this
+	    // test.  It should just go through the usual scalar
+	    // type(s), do its own random number generation, etc.
+	    //
+	    verifyTsqr< ordinal_type, scalar_type, generator_type > (params.which, 
+								     generator, 
+								     nrowsGlobal, 
+								     ncols, 
+								     &ordinalComm, 
+								     &scalarComm, 
+								     numCores, 
+								     cacheBlockSize, 
+								     contiguousCacheBlocks, 
+								     humanReadable, 
+								     bDebug);
 	  }
-#ifdef HAVE_ANASAZI_TBB
-	else if (params.which == "TbbTSQR")
-	  {
-	    using TSQR::Test::verifyTbbTsqr;
-	    if (ordinalComm.rank() == 0)
-	      verifyTbbTsqr< ordinal_type, scalar_type, generator_type > (generator, nrowsGlobal, ncols, numCores,
-									  cacheBlockSize, contiguousCacheBlocks, 
-									  humanReadable, bDebug);
-	    ordinalComm.barrier ();
-	  }
-#endif // HAVE_ANASAZI_TBB
 	else if (params.which == "SeqTSQR")
 	  {
 	    using TSQR::Test::verifySeqTsqr;
 	    if (ordinalComm.rank() == 0)
-	      verifySeqTsqr (nrowsGlobal, ncols, cacheBlockSize, 
+	      verifySeqTsqr (nrowsGlobal, 
+			     ncols, 
+			     cacheBlockSize, 
 			     testComplexArithmetic,
 			     contiguousCacheBlocks, 
 			     humanReadable, bDebug);
@@ -155,7 +169,10 @@ namespace TSQR {
       ///
       /// \return Encapsulation of command-line options 
       static TsqrTestParameters
-      parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHelp)
+      parseOptions (int argc, 
+		    char* argv[], 
+		    const bool allowedToPrint, 
+		    bool& printedHelp)
       {
 	using std::cerr;
 	using std::endl;
@@ -206,13 +223,6 @@ namespace TSQR {
 	  cmdLineProc.setOption ("which", 
 				 &params.which, 
 				 "Which TSQR routine to test");
-	  cmdLineProc.setOption ("node-type",
-				 &params.kokkos_node_type,
-				 "Kokkos node type to use (for Tpetra::MultiVector test)");
-	  cmdLineProc.setOption ("tpetra",
-				 "tsqr-alone",
-				 &params.tpetra,
-				 "Test Tpetra::MultiVector (default is TSQR alone)");
 	  cmdLineProc.setOption ("verbose", 
 				 "quiet", 
 				 &params.verbose,
@@ -227,19 +237,18 @@ namespace TSQR {
 	  cmdLineProc.setOption ("ncols", 
 				 &params.ncols, 
 				 "Number of columns in the test matrix to factor");
-	  cmdLineProc.setOption ("ncores", 
-				 &params.ncores, 
-				 "Number of cores to use (per MPI process)");
 	  cmdLineProc.setOption ("ntrials", 
 				 &params.ntrials, 
 				 "Number of trials for the benchmark");
 	  cmdLineProc.setOption ("cache-block-size", 
 				 &params.cache_block_size, 
 				 "Cache block size (0 means set a reasonable default)");
+#ifdef HAVE_ANASAZI_COMPLEX
 	  cmdLineProc.setOption ("complex", 
 				 "nocomplex",
 				 &params.test_complex_arithmetic,
 				 "Test complex arithmetic");
+#endif // HAVE_ANASAZI_COMPLEX
 	  cmdLineProc.setOption ("contiguous-cache-blocks", 
 				 "noncontiguous-cache-blocks", 
 				 &params.contiguous_cache_blocks, 
@@ -267,71 +276,16 @@ namespace TSQR {
 	  throw std::domain_error ("Number of columns must be positive");
 	else if (params.nrows < params.ncols)
 	  throw std::domain_error ("Number of rows must be >= number of columns");
-	else if (params.ncores < 1)
-	  throw std::domain_error ("Number of cores must be positive");
 	else if (params.cache_block_size < 0)
 	  throw std::domain_error ("Cache block size must be nonnegative");
 
+#ifndef HAVE_ANASAZI_COMPLEX
+	if (params.test_complex_arithmetic)
+	  throw std::logic_error ("Complex arithmetic not supported in the build");
+#endif // HAVE_ANASAZI_COMPLEX
+
 	return params;
       }
-
-////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////
-
-      template < class Node >
-      RCP< Node > getNode (const Teuchos::ParameterList& plist) 
-      {
-	throw std::logic_error ("Node type not defined");
-      }
-
-      RCP< Kokkos::SerialNode > serialnode;
-      template <>
-      RCP< Kokkos::SerialNode > 
-      getNode< Kokkos::SerialNode > (const Teuchos::ParameterList& plist) 
-      {
-	if (serialnode == Teuchos::null)
-	  {
-	    Teuchos::ParameterList plist2;
-	    // Constructor requires a non-const plist, for some reason.
-	    serialnode = Teuchos::rcp(new Kokkos::SerialNode(plist2));
-	  }
-	return serialnode;
-      }
-
-#ifdef HAVE_ANASAZI_TBB
-#  ifdef HAVE_KOKKOS_TBB
-      RCP< Kokkos::TBBNode > tbbnode;
-      template <>
-      RCP< Kokkos::TBBNode > 
-      getNode< Kokkos::TBBNode >(const Teuchos::ParameterList& plist) 
-      {
-	using Teuchos::Exceptions::InvalidParameter;
-
-	// TBBNode reads the "Num Threads" parameter, but we define
-	// only the "numCores" parameter.  0, the default, tells TBB
-	// to figure out on its own how many threads to use.
-	std::string numCoresParamName ("numCores");
-	int numCores = 0;
-
-	// mfh 14 Jul 2010: I can never get the two-argument version
-	// of plist.get() to work.  The C++ compiler is too stupid to
-	// figure out which method to instantiate, even when I give it
-	// all the type hints I possibly can.
-
-	try {
-	  numCores = plist.get< int > (numCoresParamName);
-	} catch (InvalidParameter&) {
-	  numCores = 0;
-	}
-	Teuchos::ParameterList tbbPlist;
-	tbbPlist.set ("Num Threads", numCores);
-	
-	if (tbbnode == Teuchos::null)
-	  tbbnode = Teuchos::rcp (new Kokkos::TBBNode (tbbPlist));
-	return tbbnode;
-      }
-#  endif // HAVE_KOKKOS_TBB
-#endif // HAVE_ANASAZI_TBB
 
     } // namespace Test
   } // namespace Trilinos
@@ -347,7 +301,6 @@ main (int argc, char *argv[])
   using Teuchos::RCP;
   using TSQR::Trilinos::Test::TsqrTestParameters;
   using TSQR::Trilinos::Test::parseOptions;
-  using TSQR::Trilinos::Test::getNode;
   typedef RCP< const Teuchos::Comm<int> > comm_ptr;
 
   Teuchos::oblackholestream blackhole;
@@ -355,7 +308,6 @@ main (int argc, char *argv[])
   comm_ptr comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   size_t myRank = comm->getRank();
-  //size_t numProc = comm->getSize();
   bool allowedToPrint = (myRank==0);
   bool printedHelp = false;
   
@@ -364,47 +316,15 @@ main (int argc, char *argv[])
   if (printedHelp)
     return 0;
 
-  if (params.tpetra)
+  TSQR::Trilinos::Test::verifyTsqrAlone< double > (comm, params);
+  TSQR::Trilinos::Test::verifyTsqrAlone< float > (comm, params);
+#ifdef HAVE_ANASAZI_COMPLEX
+  if (params.test_complex_arithmetic)
     {
-      typedef double S;
-      typedef int LO;
-      typedef int GO;
-      typedef TSQR::ScalarTraits< S >::magnitude_type magnitude_type;
-
-      Teuchos::ParameterList plist;
-      plist.set ("cacheBlockSize", size_t(params.cache_block_size), 
-		 "Cache block capacity per core (in bytes)");
-      plist.set ("numCores", int(params.ncores), 
-		 "If using a CPU-multithreaded intranode TSQR "
-		 "implementation: number of CPU cores");
-      using TSQR::Trilinos::Test::TpetraTsqrTest;
-
-      std::pair< magnitude_type, magnitude_type > 
-	results (magnitude_type(0), magnitude_type(0));
-      if (params.kokkos_node_type == "SerialNode")
-	{
-	  typedef Kokkos::SerialNode Node;
-	  RCP< Node > node = getNode< Node > (plist);
-	  TpetraTsqrTest< S, LO, GO, Node > tester (params.nrows, params.ncols, 
-						    comm, node, plist);
-	  results = tester.getResults ();
-	}
-      // else if (params.kokkos_node_type == "TBBNode")
-      // 	{
-      // 	  typedef Kokkos::TBBNode Node;
-      // 	  RCP< Node > node = getNode< Node > (plist);
-      // 	  TpetraTsqrTest< S, LO, GO, Node > tester (params.nrows, params.ncols, 
-      // 						    comm, node, plist);
-      // 	  results = tester.getResults ();
-      // 	}
-      if (allowedToPrint)
-	std::cout << results.first << ", " << results.second << std::endl;
+      TSQR::Trilinos::Test::verifyTsqrAlone< std::complex<double> > (comm, params);
+      TSQR::Trilinos::Test::verifyTsqrAlone< std::complex<float> > (comm, params);
     }
-  else
-    {
-      TSQR::Trilinos::Test::verifyTsqrAlone< double > (comm, params);
-      TSQR::Trilinos::Test::verifyTsqrAlone< float > (comm, params);
-    }
+#endif // HAVE_ANASAZI_COMPLEX
 
   if (allowedToPrint) {
     std::cout << "\nEnd Result: TEST PASSED" << std::endl;

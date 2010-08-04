@@ -28,7 +28,15 @@ PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
 # The default value of this config variable should be the same as
 # Teuchos_ENABLE_COMPLEX, because most of Anasazi's complex-arithmetic
 # tests depend heavily on Teuchos' complex arithmetic support.
-SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT ${Teuchos_ENABLE_COMPLEX})
+
+# mfh 04 Aug 2010: This makes CMake complain about "ON"
+#  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT ${Teuchos_ENABLE_COMPLEX})
+
+IF (${Teuchos_ENABLE_COMPLEX})
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT TRUE)
+ELSE ()
+  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT FALSE)
+ENDIF ()
 
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
