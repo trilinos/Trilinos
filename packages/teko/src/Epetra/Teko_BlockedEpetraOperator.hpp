@@ -62,15 +62,38 @@
 namespace Teko {
 namespace Epetra {
 
+/** \brief Tear about a user specified Epetra_Operator (CrsMatrix)
+  *        using a vector of vectors of GIDs for each block. 
+  */
 class BlockedEpetraOperator : public EpetraOperatorWrapper {
 public:
+
+   /** Build a blocked operator based on a vector of vector
+     * of global IDs.
+     *
+     * \param[in] vars Vector of vectors of global ids specifying
+     *                 how the operator is to be blocked.
+     * \param[in] content Operator to be blocked
+     * \param[in] label Label for name the operator
+     */
    BlockedEpetraOperator(const std::vector<std::vector<int> > & vars,
                          const Teuchos::RCP<Epetra_Operator> & content,
                          const std::string & label="<ANYM>");
 
+   /** Build a blocked operator based on a vector of vector
+     * of global IDs. This function basically sets up the mapping
+     * strategy used by this operator.
+     *
+     * \param[in] vars Vector of vectors of global ids specifying
+     *                 how the operator is to be blocked.
+     * \param[in] content Operator to be blocked
+     */
    virtual void SetContent(const std::vector<std::vector<int> > & vars,
                            const Teuchos::RCP<Epetra_Operator> & content);
 
+   /** Force a rebuild of the blocked operator from the stored
+     * content operator.
+     */
    virtual void RebuildOps()
    { BuildBlockedOperator(); }
 

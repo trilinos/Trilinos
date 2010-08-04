@@ -53,6 +53,22 @@ namespace Teko {
 namespace NS {
 
 // Declaration of the preconditioner factory
+/** The basic XML parameter list for SIMPLE looks like.
+   
+   \code
+    <ParameterList name="SIMPLEC">
+      <Parameter name="Type" type="string" value="NS SIMPLE"/>
+
+      <!-- Inverse operations to use -->
+      <Parameter name="Inverse Velocity Type" type="string" value="ML_GS-Velocity"/>
+      <Parameter name="Inverse Pressure Type" type="string" value="ML_GS-Pressure"/>
+
+      <Parameter name="Explicit Velocity Inverse Type" type="string" value="AbsRowSum"/>
+
+      <Parameter name="Alpha" type="double" value="0.9"/>
+    </ParameterList>
+  \endcode
+  */
 class SIMPLEPreconditionerFactory : public BlockPreconditionerFactory {
 public:
    // Constructor
