@@ -582,6 +582,12 @@ ENDMACRO()
 #
 # Adjust package enable logic and print out before and after state
 #
+# On output sets:
+#
+#    ${PROJECT_NAME}_NUM_ENABLED_PACKAGES: Number of enabled packages (local variable)
+#    ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}: Enable status of PACKAGE_NAME (local variable)
+#    ToDo: Fill in others as well!
+#
 
 MACRO(PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES)
 
@@ -605,6 +611,9 @@ MACRO(PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES)
     "\nFinal set of enabled TPLs" ON FALSE)
   PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
     "\nFinal set of non-enabled TPLs" OFF TRUE)
+
+  PACKAGE_ARCH_GET_ENABLED_LIST( ${PROJECT_NAME}_PACKAGES ${PROJECT_NAME} ON FALSE
+    ${PROJECT_NAME}_ENABLED_PACKAGES ${PROJECT_NAME}_NUM_ENABLED_PACKAGES )
 
 ENDMACRO()
 
