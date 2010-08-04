@@ -35,6 +35,7 @@
 
 
 /*! \file Teuchos_ParameterEntryXMLCoverterDB.hpp
+ * \brief A database for ParameterEntryXMLConverters.
 */
 
 
@@ -70,6 +71,9 @@ namespace Teuchos {
 class ParameterEntryXMLConverterDB {
 public:
 
+  /** \name Modifier Functions */
+  //@{
+  
   /** \brief Add a converter to the database.
    *
    * \param convertToAdd The converter to add to the database.
@@ -78,6 +82,11 @@ public:
     getConverterMap().insert(ConverterPair(converterToAdd->getTypeAttributeValue(),
         converterToAdd));
   }
+  
+  //@}
+
+  /** \name Getter Functions */
+  //@{
 
   /** \brief Get an appropriate ParameterEntryXMLConverter given a ParameterEntry.
    *
@@ -105,20 +114,25 @@ public:
     ConverterMap::const_iterator it = getConverterMap().find(parameterType);
 
     TEST_FOR_EXCEPTION(it == getConverterMap().end(),
-	  CantFindParameterEntryConverterException,
-	  "Could not find a ParameterEntryConverter" << std::endl <<
-	  "Bad parameter name: " <<
-	  xmlObject.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
-	  std::endl << "Unkonwn Type: " << parameterType << std::endl << std::endl);
-	  
+    CantFindParameterEntryConverterException,
+    "Could not find a ParameterEntryConverter" << std::endl <<
+    "Bad parameter name: " <<
+    xmlObject.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+    std::endl << "Unkonwn Type: " << parameterType << std::endl << std::endl);
+    
     return it->second;
   }
+  
+  //@}
 
   // 2010/07/30: rabarlt: The above two functions should be moved into
   // Teuchos_ParameterEntryXMLConvergerDB.cpp.  These functions don't need to
   // be inlined and it will be easier to set breakpoints in the debugger if
   // they are in a *.cpp file.
 
+  /** \name Converter Functions */
+  //@{
+  
   /**
    * \brief Converts the given ParameterEntry to XML.
    */
@@ -132,6 +146,11 @@ public:
   static ParameterEntry convertXML(const XMLObject& xmlObj){
     return getConverter(xmlObj)->fromXMLtoParameterEntry(xmlObj);
   }
+  
+  //@}
+
+  /** \name I/O Functions */
+  //@{
 
   /**
    * \brief prints the xml tags associated with all known converters
@@ -139,28 +158,34 @@ public:
    * \param out Stream to which tags should be printed.
    */
   static void printKnownConverters(std::ostream& out){
-	out << "Known ParameterEntryXMLConverters: " << std::endl;
+    out << "Known ParameterEntryXMLConverters: " << std::endl;
     for(
-	  ConverterMap::const_iterator it = getConverterMap().begin();
-	  it != getConverterMap().end();
-	  ++it)
-	{
-	  out << "\t" << it->first <<std::endl;
-	}
+      ConverterMap::const_iterator it = getConverterMap().begin();
+      it != getConverterMap().end();
+      ++it)
+    {
+      out << "\t" << it->first <<std::endl;
+    }
   }
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /** \brief convience typedef */
   typedef std::map<std::string, RCP<ParameterEntryXMLConverter> > ConverterMap;
 
   /** \brief convience typedef */
   typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
 
+  /** \brief Gets the default converter to be used on Parameter Entries */
   static RCP<const ParameterEntryXMLConverter> getDefaultConverter(){
-    static RCP<AnyParameterEntryConverter> defaultConverter = 
+    static RCP<const AnyParameterEntryConverter> defaultConverter = 
         rcp(new AnyParameterEntryConverter);
-	return defaultConverter;
+    return defaultConverter;
   }
 
   /** \brief Gets the map containing all the converters. */
@@ -195,6 +220,8 @@ private:
     }
     return masterMap;
   }
+  
+  //@}
 
   // 2010/07/30: rabartl: Move this longer function getConvergetMap() and the
   // macros that it uses to the *.cpp file.  This function is *not* going to

@@ -30,6 +30,7 @@
 #define TEUCHOS_STANDARDPARAMETERENTRYXMLCONVERTERS_HPP
 
 /*! \file Teuchos_StandardParameterEntryXMLConverters.hpp
+ * \brief A collection of standard ParameterEntryXMLConverters.
 */
 
 
@@ -48,11 +49,19 @@ class AnyParameterEntryConverter : public ParameterEntryXMLConverter{
 
 public:
 
+  /** \name Overridden from ParameterEntryXMLConverter */
+  //@{
+
+  /** \brief . */
   const std::string getTypeAttributeValue() const;
 
+  /** \brief . */
   const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 
+  /** \brief . */
   void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
+  
+  //@}
 
 };
 
@@ -66,22 +75,27 @@ class StandardTemplatedParameterConverter : public ParameterEntryXMLConverter {
 
 public:
 
-  /** \brief */
+  /** \name Overridden from ParameterEntryXMLConverter */
+  //@{
+
+  /** \brief . */
   virtual const std::string getTypeAttributeValue() const{
     return TypeNameTraits<T>::name();
   }
 
-  /** \brief */
+  /** \brief . */
   virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const {
     return toString(any_cast<T>(entry.getAny(false)));
   }
 
-  /** \brief */
+  /** \brief . */
   virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj,
     bool isDefault) const
     {
       entry.setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
     }
+  
+  //@}
 
 };
 
@@ -95,7 +109,10 @@ class ArrayTemplatedParameterConverter : public StandardTemplatedParameterConver
 
 public:
 
-  /** \brief */
+  /** \name Overridden from StandardTemplatedParameterConverter */
+  //@{
+
+  /** \brief . */
   virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj,
     bool isDefault) const
     {
@@ -103,6 +120,8 @@ public:
       Array<T> convertedArray = fromStringToArray<T>(arrayString);
       entry.setValue<Array<T> >(convertedArray, isDefault);
     }
+  
+  //@}
 
 };
 

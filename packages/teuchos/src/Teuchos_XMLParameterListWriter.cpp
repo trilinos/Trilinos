@@ -66,7 +66,7 @@ XMLObject XMLParameterListWriter::convertValidators(
   ValidatortoIDMap::const_iterator it = validatorIDMap.begin();
   for (; it != validatorIDMap.end(); ++it) {
     validators.addChild(
-	  ValidatorXMLConverterDB::convertValidator(it->first, validatorIDMap));
+    ValidatorXMLConverterDB::convertValidator(it->first, validatorIDMap));
   }
   return validators;
 }
@@ -86,9 +86,7 @@ XMLObject XMLParameterListWriter::convertParameterList(
     }
     else{
       rtn.addChild(ParameterEntryXMLConverterDB::convertEntry(
-	    entry,
-		p.name(i),
-		validatorIDMap));
+        entry, p.name(i), validatorIDMap));
     }
   }
   return rtn;

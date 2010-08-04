@@ -452,24 +452,34 @@ class DummyObjectGetter<StringToIntegralParameterEntryValidator<IntegralType> >{
 
 public:
 
-/** \brief Retrieves a dummy object of type
- * StringToIntegralParameterEntryValidator<IntegralType>.
- */
-static RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
-  getDummyObject()
-{
-  if(dummyObject.is_null()){
-    dummyObject = stringToIntegralParameterEntryValidator<IntegralType>
-	  (tuple<std::string>(""), "").getConst();
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * StringToIntegralParameterEntryValidator<IntegralType>.
+  */
+  static RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = stringToIntegralParameterEntryValidator<IntegralType>
+      (tuple<std::string>(""), "").getConst();
+    }
+    return dummyObject;
   }
-  return dummyObject;
-}
-
+  
+  //@}
+  
 private:
-
+  
+  /** \name Private Members */
+  //@{
+  
   static RCP<const StringToIntegralParameterEntryValidator<IntegralType> > 
     dummyObject;
-
+  
+  //@}
+  
 };
 
 
@@ -1021,7 +1031,11 @@ public:
  */
 template <class T>
 class EnhancedNumberValidator : public ParameterEntryValidator{
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /** \brief Constructs a EnhancedNumberValidator.
    *
@@ -1059,7 +1073,12 @@ public:
     precision_(EnhancedNumberTraits<T>::defaultPrecision()),
     containsMin(false),
     containsMax(false){}
+  
+  //@}
     
+  //! \name Setter Functions
+  //@{
+  
   /** \brief Sets the minimum acceptable value for the validator.
    * 
    * @param min The desired minimum acceptable value for the validator.
@@ -1078,6 +1097,27 @@ public:
     containsMax = true;
   }
 
+  /** \brief Sets the step being used for the validator.
+   *
+   * @param The step to be used for the validator.
+   */
+  void setStep(T step){
+    step_ = step;
+  }
+
+  /** \brief Sets the precision specified for the validator.
+   *
+   * @param The precision specific for the validator.
+   */
+  void setPrecision(unsigned short precision){
+    precision_ = precision;
+  }
+  
+  //@}
+
+  /** \name Getter Functions */
+  //@{
+
   /** \brief Gets the minimum acceptable value for the validator.
    *
    *@return The minimum acceptable value for the validator.
@@ -1094,6 +1134,27 @@ public:
     return maxVal;
   }
 
+  /** \brief Gets the step being used for the validator.
+   *
+   * @return The step being used for the validator.
+   */
+  T getStep() const{
+    return step_;
+  }
+
+  /** \brief  Gets the precision specified for the validator.
+   *
+   * @return The precision specific for the validator.
+   */
+  unsigned short getPrecision() const{
+    return precision_;
+  }
+  
+  //@}
+
+  //! \name Attribute/Query Methods 
+  //@{
+
   /** \brief Determines whether or not the validator has a minimum value.
    *
    * @return True if the validator has a minimum value, false otherwise.
@@ -1109,38 +1170,11 @@ public:
   bool hasMax() const{
     return containsMax;
   }
+  
+  //@}
 
-  /** \brief Gets the step being used for the validator.
-   *
-   * @return The step being used for the validator.
-   */
-  T getStep() const{
-    return step_;
-  }
-
-  /** \brief Sets the step being used for the validator.
-   *
-   * @param The step to be used for the validator.
-   */
-  void setStep(T step){
-    step_ = step;
-  }
-
-  /** \brief Sets the precision specified for the validator.
-   *
-   * @param The precision specific for the validator.
-   */
-  void setPrecision(unsigned short precision){
-    precision_ = precision;
-  }
-
-  /** \brief  Gets the precision specified for the validator.
-   *
-   * @return The precision specific for the validator.
-   */
-  unsigned short getPrecision() const{
-    return precision_;
-  }
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
 
   /** \brief . */
   ValidStringsList validStringValues() const{
@@ -1165,9 +1199,14 @@ public:
     out << "#    Min (inclusive): " << minVal << "\n";
     out << "#    Max (inclusive): " << maxVal << "\n";
   }
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /** \brief The minimum value accepted by the validator.
    */
   T minVal;
@@ -1192,6 +1231,9 @@ private:
   /** \brief Whetehr or not a maximum value has been specified for this validator.
    */
   bool containsMax;
+  
+  //@}
+  
 };
 
 template<class T>
@@ -1243,11 +1285,20 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
  * contain a filename.
  */
 class FileNameValidator : public ParameterEntryValidator {
+
 public:
+
+  /** \name Public types */
+  //@{
 
   /** \brief The default value of the mustAlreadyExist parameter in the
    * constructor. */
   static bool mustAlreadyExistDefault() { return false; }
+  
+  //@}
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /** \brief Constructs a FileNameValidator.
    *
@@ -1255,14 +1306,24 @@ public:
    * already exists, false otherwise.
    */
   FileNameValidator(bool mustAlreadyExist = mustAlreadyExistDefault());
+  
+  //@}
 
+  //! \name Attribute/Query Functions 
+  //@{
+  
   /** \brief Gets the variable describing whether or not this validator wants
    * the file that is specified to already exist.
    *
    * @return Whether or not the validator requires the file to already exist
    */
   bool fileMustExist() const;
+  
+  //@}
 
+  //! \name Setter Functions
+  //@{
+  
   /** \brief Sets whether or not the validator requires the file to already
    * exist.
    *
@@ -1272,6 +1333,11 @@ public:
    * @return The new value of the shouldFileExist variable.
    */
   bool setFileMustExist(bool shouldFileExist);
+  
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
 
   /** \brief . */
   ValidStringsList validStringValues() const;
@@ -1284,12 +1350,19 @@ public:
 
   /** \brief . */
   void printDoc(std::string const &docString, std::ostream &out) const;
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /** \brief Whether or not the file specified in the parameter should already exist.
    */
   bool mustAlreadyExist_;
+  
+  //@}
 
 };
 
@@ -1299,7 +1372,11 @@ private:
  * for a value.
  */
 class StringValidator : public ParameterEntryValidator {
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /** \brief Constructs a StringValidator.
    *
@@ -1310,7 +1387,12 @@ public:
   /** \brief Constructs a StringValidator.
    */
   StringValidator();
+  
+  //@}
 
+  //! \name Setter Functions
+  //@{
+ 
   /** \brief Sets the Array of valid strings and returns what the current
    * array of valid string now is.
    *
@@ -1319,6 +1401,11 @@ public:
    * @return What the arry for the valid strings now conatians.
    */
   ValidStringsList setValidStrings(const Teuchos::Array<std::string> &validStrings);
+  
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
 
   /** \brief . */
   ValidStringsList validStringValues() const;
@@ -1332,12 +1419,19 @@ public:
 
   /** \brief . */
   void printDoc(std::string const &docString, std::ostream &out) const;
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /** \brief An array containing a list of all the valid string values.
    */
   ValidStringsList validStrings_;
+  
+  //@}
 
 };
 
@@ -1350,7 +1444,11 @@ private:
  */
 template<class ValidatorType, class EntryType>
 class ArrayValidator : public ParameterEntryValidator {
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /** \brief Constructs a ArrayValidator.
    *
@@ -1360,6 +1458,21 @@ public:
   ArrayValidator(RCP<const ValidatorType> prototypeValidator):
     ParameterEntryValidator(),
       prototypeValidator_(prototypeValidator){}
+  
+  //@}
+
+  /** \name Getter Functions */
+  //@{
+
+  /** \brief Returns the protorype validator for this Array Validator */
+  RCP<const ValidatorType> getPrototype() const{
+    return prototypeValidator_;
+  }
+  
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
 
   /** \brief . */
   ValidStringsList validStringValues() const {
@@ -1384,19 +1497,22 @@ public:
     toPrint += "Prototype Validator:\n";
     prototypeValidator_->printDoc(toPrint, out);
   }
-
-  /** \brief Returns the protorype validator for this Array Validator */
-  RCP<const ValidatorType> getPrototype() const{
-    return prototypeValidator_;
-  }
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /** \brief The prototype validator to be applied to each entry in the Array.
    */
   RCP<const ValidatorType> prototypeValidator_;
 
+  /** \brief Hidden default constructor. */
   ArrayValidator<ValidatorType, EntryType>();
+  
+  //@}
 
 };
 
@@ -1447,9 +1563,18 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
  * class which cannot be typedef'd.
  */
 class ArrayStringValidator : public ArrayValidator<StringValidator, std::string>{
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief . */
   ArrayStringValidator(RCP<const StringValidator> prototypeValidator):
     ArrayValidator<StringValidator, std::string>(prototypeValidator){}
+  
+  //@}
+
 };
 
 
@@ -1462,9 +1587,18 @@ public:
  * class which cannot be typedef'd.
  */
 class ArrayFileNameValidator : public ArrayValidator<FileNameValidator, std::string>{
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief . */
   ArrayFileNameValidator(RCP<const FileNameValidator> prototypeValidator):
     ArrayValidator<FileNameValidator, std::string>(prototypeValidator){}
+  
+  //@}
+
 };
 
 
@@ -1478,8 +1612,15 @@ public:
 template<class T>
 class ArrayNumberValidator : public ArrayValidator<EnhancedNumberValidator<T>, T>{
 public:
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief . */
   ArrayNumberValidator(RCP<const EnhancedNumberValidator<T> > prototypeValidator):
     ArrayValidator<EnhancedNumberValidator<T>, T>(prototypeValidator){}
+  
+  //@}
+  
 };
 
 /** \brief Speicialized class for retrieving a dummy object of type
@@ -1492,23 +1633,33 @@ class DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >{
 
 public:
 
-/** \brief Retrieves a dummy object of type
- * ArrayValidator<ValidatorType, EntryType>.
- */
-static RCP<const ArrayValidator<ValidatorType, EntryType> >
-  getDummyObject()
-{
-  if(dummyObject.is_null()){
-	RCP<const ValidatorType> dummyPrototype =
-	  DummyObjectGetter<ValidatorType>::getDummyObject();
-    dummyObject = rcp(new ArrayValidator<ValidatorType, EntryType>(dummyPrototype));
+  /** \name Getter Functions */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * ArrayValidator<ValidatorType, EntryType>.
+  */
+  static RCP<const ArrayValidator<ValidatorType, EntryType> >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      RCP<const ValidatorType> dummyPrototype =
+        DummyObjectGetter<ValidatorType>::getDummyObject();
+        dummyObject = rcp(new ArrayValidator<ValidatorType, EntryType>(dummyPrototype));
+    }
+    return dummyObject;
   }
-  return dummyObject;
-}
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   static RCP<const ArrayValidator<ValidatorType, EntryType> > dummyObject;
+  
+  //@}
 
 };
 

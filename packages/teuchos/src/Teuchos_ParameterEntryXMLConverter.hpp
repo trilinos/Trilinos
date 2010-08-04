@@ -31,6 +31,7 @@
 
 
 /*! \file Teuchos_ParameterEntryXMLCoverter.hpp
+ *  \brief The base class for all ParameterEntryXMLConverters.
 */
 
 
@@ -46,7 +47,11 @@ class ValidatortoIDMap;
 /** \brief A class used to convert parameter entries to xml and vice versa.
  */
 class ParameterEntryXMLConverter : public Describable {
+
 public:
+
+  /** \name Converter Functions */
+  //@{
 
   /** \brief Converts the given xml into a parameter entry. 
    *
@@ -63,7 +68,16 @@ public:
    */
   XMLObject fromParameterEntrytoXML(const ParameterEntry &entry,
     const std::string &name, const ValidatortoIDMap& validatorIDMap) const;
+  
+  /** \brief sets the value  */
+  virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj,
+    bool isDefault) const=0;
 
+  //@}
+
+  //! \name Attribute/Query Methods 
+  //@{
+  
   /** \brief Gets a string representing the value that should be assigned to
    * the "type" attribute when converting a parameter entry to xml.
    *
@@ -81,11 +95,7 @@ public:
    * converting the parameter entry to xml.
    */
   virtual const std::string getValueAttributeValue(const ParameterEntry &entry) const=0;
-
-  /** \brief sets the value  */
-  virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj,
-    bool isDefault) const=0;
-
+  
   /** \brief . */
   static const std::string& getTypeAttributeName() {
     static const std::string typeAttributeName_ = "type";
@@ -97,9 +107,14 @@ public:
     static const std::string valueAttributeName_ = "value";
     return valueAttributeName_;
   }
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   static const std::string& getDefaultAttributeName() {
     static const std::string defaultAttributeName_ = "isDefault";
     return defaultAttributeName_;
@@ -109,6 +124,8 @@ private:
     static const std::string usedAttributeName_ = "isUsed";
     return usedAttributeName_;
   }
+  
+  //@}
 
 };
 

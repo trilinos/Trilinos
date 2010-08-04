@@ -31,75 +31,102 @@
 #ifndef TEUCHOS_CONDITION_HPP_
 #define TEUCHOS_CONDITION_HPP_
 
+/*! \file Teuchos_Condition.hpp
+    \brief An object to determin if a particular set of conditions
+    are occuring.
+*/
+
 #include "Teuchos_Dependency.hpp"
 
 namespace Teuchos{
 
 /**
- * A Condition determines whether or not 
+ * \brief A Condition determines whether or not 
  * a particular set of conditions are currently
  * occuring.
  */
-class Condition{
+class Condition {
+
 public:
-	/**
-	 * Conviencne typedef for defining a list of conditions.
-	 */
-	typedef Teuchos::Array<Teuchos::RCP<Condition> > ConditionList;
 
-	/**
-	 * Enum to determine the conditoin type.
-	 */
-	enum Type{BinLogicCon, NotCon, ParamCon};
+  /** \name Public types */
+  //@{
+  
+  /**
+   * \brief Convenience typedef for defining a list of conditions.
+   */
+  typedef Teuchos::Array<Teuchos::RCP<Condition> > ConditionList;
 
-	/**
-	 * Construcst a Condition
-	 */
-	Condition(Type type):type_(type){}
+  /**
+   * \brief Enum to determine the conditoin type.
+   */
+  enum Type{BinLogicCon, NotCon, ParamCon};
 
-	/**
-	 * Deconstructs a condition.
-	 */
-	virtual ~Condition(){}
+  //@}
 
-	/**
-	 * Determins whether or not a condition is true.
-	 */
-	virtual bool isConditionTrue() const = 0;
+  /** \name Constructors/Destructor */
+  //@{
+  
+  /**
+   * \brief Construcst a Condition
+   */
+  Condition(Type type):type_(type){}
 
-	/**
-	 * Determines whether or not the evaluation of a parameter
-	 * occurs somewhere in this condition.
-	 *
-	 * @return Whether or not the evaluation of a parameter
-	 * occurs somewhere in this condition.
-	 */
-	virtual bool containsAtLeasteOneParameter() const = 0;
+  /**
+   * \brief Destructs a condition.
+   */
+  virtual ~Condition(){}
 
-	/**
-	 * Gets all of the parameters that are evaluated in this
-	 * condition.
-	 *
-	 * @return A map of all of the parameters that are evaluated in this
-	 * condition.
-	 */
+  //@}
 
-	virtual Dependency::ParameterParentMap getAllParameters() const = 0;
 
-	/**
-	 * Gets the type of the condition.
-	 *
-	 * @return The type of the condition.
-	 */
-	const Type& getType() const{
-		return type_;
-	}
+  /** Attribute/Query Functions */
+  //@{
+  
+  /**
+   * \brief Determins whether or not a condition is true.
+   */
+  virtual bool isConditionTrue() const = 0;
 
+  /**
+   * \brief Determines whether or not the evaluation of a parameter
+   * occurs somewhere in this condition.
+   *
+   * @return Whether or not the evaluation of a parameter
+   * occurs somewhere in this condition.
+   */
+  virtual bool containsAtLeasteOneParameter() const = 0;
+
+  /**
+   * \brief Gets all of the parameters that are evaluated in this
+   * condition.
+   *
+   * @return A map of all of the parameters that are evaluated in this
+   * condition.
+   */
+
+  virtual Dependency::ParameterParentMap getAllParameters() const = 0;
+
+  /**
+   * \brief Gets the type of the condition.
+   */
+  const Type& getType() const{
+    return type_;
+  }
+
+  //@}
+  
 private:
-	/**
-	 * The Conditions's type.
-	 */
-	Type type_;
+
+  /** \name Private memebers */
+  //@{
+
+  /**
+   * \brief The Conditions's type.
+   */
+  Type type_;
+
+  //@}
 
 };
 

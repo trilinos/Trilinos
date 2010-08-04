@@ -38,11 +38,11 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
 {
   #ifdef HAVE_TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(),
-	BadParameterEntryXMLConverterTypeException,
-	"Error: this Parameter Entry XML tag has a type different than "
-	"the XMLConverter being used to convert it." <<std::endl <<
+    BadParameterEntryXMLConverterTypeException,
+    "Error: this Parameter Entry XML tag has a type different than "
+    "the XMLConverter being used to convert it." <<std::endl <<
     "Parameter name: " << xmlObj.getRequired(
-	  XMLParameterListWriter::getNameAttributeName()) << std::endl << 
+    XMLParameterListWriter::getNameAttributeName()) << std::endl << 
     "XML Parameter Entry type: " << xmlObj.getRequired(getTypeAttributeName()) << std::endl << 
     "XMLConverter type: " << getTypeAttributeValue() << std::endl <<std::endl);
   #endif
@@ -52,18 +52,18 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
     NoNameAttributeExecption,
     ParameterEntry::getTagName() <<" tags must "
     "have a " << getTypeAttributeName() << " attribute." << std::endl <<
-	"Bad Parameter: " << 
-	xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
-	std::endl << std::endl);
+    "Bad Parameter: " << 
+    xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+    std::endl << std::endl);
 
   TEST_FOR_EXCEPTION(
     !xmlObj.hasAttribute(getValueAttributeName()), 
     NoNameAttributeExecption,
     ParameterEntry::getTagName() <<" tags must "
     "have a " << getValueAttributeName() << " attribute" << std::endl <<
-	"Bad Parameter: " << 
-	xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
-	std::endl << std::endl);
+    "Bad Parameter: " << 
+    xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+    std::endl << std::endl);
 
   ParameterEntry toReturn;
   bool isDefault = false;
@@ -97,9 +97,9 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry,
     BadParameterEntryXMLConverterTypeException,
     "Error: This converter can't convert the given ParameterEntry to XML "
     "because their types don't match." << std::endl <<
-	"Parameter name: " << name << std::endl <<
-	"Parameter type: " << entry.getAny().typeName() << std::endl <<
-	"Converter type: " << getTypeAttributeValue() << std::endl << std::endl);
+    "Parameter name: " << name << std::endl <<
+    "Parameter type: " << entry.getAny().typeName() << std::endl <<
+    "Converter type: " << getTypeAttributeValue() << std::endl << std::endl);
   #endif
 
   XMLObject toReturn(ParameterEntry::getTagName());

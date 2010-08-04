@@ -39,12 +39,12 @@ namespace Teuchos {
  */
 class InvalidDependencyException : public std::logic_error{
 public: 
-	/**
-	 * Constructs an InvalidDependencyException
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	InvalidDependencyException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * Constructs an InvalidDependencyException
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  InvalidDependencyException(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 }

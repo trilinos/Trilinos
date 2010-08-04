@@ -44,12 +44,12 @@ class CantFindParameterEntryConverterException : public std::logic_error{
 
 public: 
 
-	/**
-	 * \brief Constructs an CantFindParameterEntryConverterException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	CantFindParameterEntryConverterException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs an CantFindParameterEntryConverterException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  CantFindParameterEntryConverterException(const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
@@ -62,12 +62,12 @@ class DuplicateValidatorIDsException : public std::logic_error{
 
 public: 
 
-	/**
-	 * \brief Constructs an DuplicateValidatorIDsException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	DuplicateValidatorIDsException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs an DuplicateValidatorIDsException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  DuplicateValidatorIDsException(const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
@@ -77,12 +77,12 @@ public:
 class BadValidatorXMLConverterException : public std::logic_error{
 
 public: 
-	/**
-	 * \brief Constructs an BadValidatorXMLConverterException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	BadValidatorXMLConverterException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs an BadValidatorXMLConverterException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  BadValidatorXMLConverterException(const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
@@ -94,12 +94,12 @@ public:
 class CantFindValidatorConverterException : public std::logic_error{
 
 public: 
-	/**
-	 * \brief Constructs a CantFindValidatorConverterException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	CantFindValidatorConverterException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a CantFindValidatorConverterException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  CantFindValidatorConverterException(const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
@@ -112,12 +112,12 @@ class BadParameterEntryXMLConverterTypeException : public std::logic_error{
 
 public: 
 
-	/**
-	 * \brief Constructs a BadParmaeterEntryXMLConverterTypeException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	BadParameterEntryXMLConverterTypeException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a BadParmaeterEntryXMLConverterTypeException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  BadParameterEntryXMLConverterTypeException(const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
@@ -128,12 +128,12 @@ public:
  */
 class NoValueAttributeExecption : public std::logic_error{
 public: 
-	/**
-	 * \brief Constructs a NoValueAttributeExecption.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	NoValueAttributeExecption(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a NoValueAttributeExecption.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  NoValueAttributeExecption(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 
@@ -142,12 +142,12 @@ public:
  */
 class NoTypeAttributeExecption : public std::logic_error{
 public: 
-	/**
-	 * \brief Constructs a NoTypeAttributeExecption.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	NoTypeAttributeExecption(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a NoTypeAttributeExecption.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  NoTypeAttributeExecption(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 /**
@@ -155,12 +155,12 @@ public:
  */
 class NoNameAttributeExecption : public std::logic_error{
 public: 
-	/**
-	 * \brief Constructs a NoNameAttributeExecption.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	NoNameAttributeExecption(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a NoNameAttributeExecption.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  NoNameAttributeExecption(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 /**
@@ -168,12 +168,12 @@ public:
  */
 class BadParameterListElementException : public std::logic_error{
 public: 
-	/**
-	 * \brief Constructs a BadParameterListElementException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	BadParameterListElementException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a BadParameterListElementException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  BadParameterListElementException(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 /**
@@ -181,12 +181,12 @@ public:
  */
 class BadXMLParameterListRootElementException : public std::logic_error{
 public: 
-	/**
-	 * \brief Constructs a BadXMLParameterListRootElementException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	BadXMLParameterListRootElementException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a BadXMLParameterListRootElementException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  BadXMLParameterListRootElementException(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 /**
@@ -195,12 +195,12 @@ public:
  */
 class MissingValidatorDefinitionException : public std::logic_error{
 public: 
-	/**
-	 * \brief Constructs a MissingValidatorDefinitionException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	MissingValidatorDefinitionException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a MissingValidatorDefinitionException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  MissingValidatorDefinitionException(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 /**
@@ -209,12 +209,12 @@ public:
  */
 class BadTagException : public std::logic_error{
 public: 
-	/**
-	 * \brief Constructs a MissingValidatorDefinitionException.
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	BadTagException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * \brief Constructs a MissingValidatorDefinitionException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  BadTagException(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 

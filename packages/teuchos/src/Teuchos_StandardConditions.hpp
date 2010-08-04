@@ -29,6 +29,11 @@
 
 #ifndef TEUCHOS_STANDARDCONDITION_HPP_
 #define TEUCHOS_STANDARDCONDITION_HPP_
+
+/*! \file Teuchos_StandardConditions.hpp
+    \brief Standard Conditions to be used.
+*/
+
 #include "Teuchos_Condition.hpp"
 #include "Teuchos_InvalidConditionException.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -36,7 +41,8 @@
 namespace Teuchos{
 
 /**
- * An abstract parent class for all Binary Logic Conditions.
+ * \brief An abstract parent class for all Binary Logic Conditions.
+ *
  * Binary Logic Conditions return the result of performing some
  * Logical operation on a set of conditions. Note that although the
  * name implies the evaluation of two conditions, Binary Logic Conditions
@@ -46,125 +52,191 @@ class BinaryLogicalCondition : public Condition{
 
 public:
 
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs a BinaryLogicCondition
+   * \brief Constructs a BinaryLogicCondition
    *
-   * @param conditions The conditions to be evaluated.
+   * \param conditions The conditions to be evaluated.
    */
   BinaryLogicalCondition(ConditionList& conditions);
 
+  //@}
+
   /**
-   * Deconstructor for a BinaryLogicCondition
+   * \brief Deconstructor for a BinaryLogicCondition
    */
   virtual ~BinaryLogicalCondition(){}
+
+  //@}
   
+  /** \name Modifier Functions */
+
+  //@{
+
   /**
-   * Adds a Condition to the list of conditions that will
-   * be evaluated by this Binary Logica Condition.
+   * \brief Adds a Condition to the list of conditions that will
+   * be evaluated by this Binary Logical Condition.
    *
-   * @param toAdd The condition to be added to the list of
+   * \param toAdd The condition to be added to the list of
    * conditions this Binary Logic Condition will evaluate.
    */
   void addCondition(RCP<Condition> toAdd);
 
+  //@}
+
+  //! @name Attribute/Query Methods 
+  //@{
+
   /**
-   * Applies a Binary Logci operator to two operands and returns the
+   * \brief Applies a Binary Logic operator to two operands and returns the
    * result.
    *
-   * @param op1 The first operand.
-   * @param op2 The second operand.
-   * @return The result of applying a binary logical operator to
+   * \param op1 The first operand.
+   * \param op2 The second operand.
+   * \return The result of applying a binary logical operator to
    * the two operands.
    */
   virtual bool applyOperator(bool op1, bool op2) const = 0;
 
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  /** \brief . */
   virtual bool isConditionTrue() const;
 
+  /** \brief . */
   bool containsAtLeasteOneParameter() const;
 
+  /** \brief . */
   Dependency::ParameterParentMap getAllParameters() const;
+
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /*
-   * A list of conditions on which to perform some logic operation.
+   * \brief A list of conditions on which to perform some logic operation.
    */
   ConditionList conditions_;
+
+  //@}
+
 };
 
 /**
- * A Binary Logic Condition that returns the result
+ * \brief A Binary Logic Condition that returns the result
  * or perfroming a logical OR on the conditions.
  */
 class OrCondition : public BinaryLogicalCondition{
 
 public:
 
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs an Or Condition
+   * \brief Constructs an Or Condition
    *
    * @param conditions The conditions to be evaluated.
    */
   OrCondition(ConditionList& conditions);
 
   /**
-   * Deconstructs an Or Condition.
+   * \brief Deconstructs an Or Condition.
    */
   virtual ~OrCondition(){}
 
+  //@}
+
+  /** \name Overridden from BinaryLogicalCondition */
+  //@{
+
+  /** \brief . */
   bool applyOperator(bool op1, bool op2) const;
+  
+  //@}
+
 };
 
 /**
- * A Binary Logic Condition that returns the result
+ * \brief A Binary Logic Condition that returns the result
  * or perfroming a logical AND on the conditions.
  */
 class AndCondition : public BinaryLogicalCondition{
 
 public:
 
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs an And Condition
+   * \brief Constructs an And Condition
    *
    * @param conditions The conditions to be evaluated.
    */
   AndCondition(ConditionList& conditions);
 
   /**
-   * Deconstructs an And Condition.
+   * \brief Deconstructs an And Condition.
    */
   virtual ~AndCondition(){}
+  
+  //@}
 
+  /** \name Overridden from BinaryLogicalCondition */
+  //@{
+
+  /** \brief . */
   bool applyOperator(bool op1, bool op2) const;
+  
+  //@}
 
 };
 
 /**
- * A Binary Logic Condition that returns the result
+ * \brief A Binary Logic Condition that returns the result
  * or perfroming a logical EQUALS on the conditions.
  */
 class EqualsCondition : public BinaryLogicalCondition{
 
 public:
 
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs an Equals Condition
+   * \brief Constructs an Equals Condition
    *
    * @param conditions The conditions to be evaluated.
    */
   EqualsCondition(ConditionList& conditions);
 
   /**
-   * Deconstructs an Equals Condition.
+   * \brief Deconstructs an Equals Condition.
    */
   virtual ~EqualsCondition(){}
+  
+  //@}
 
+  /** \name Overridden from Condition */
+  //@{
+
+  /** \brief . */
   bool applyOperator(bool op1, bool op2) const;
+  
+  //@}
 
 };
 
 /**
- * A Not condition returns the result of
+ * \brief A Not condition returns the result of
  * performing a logical NOT on a given
  * condition.
  */
@@ -172,35 +244,55 @@ class NotCondition : public Condition{
 
 public:
 
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs a Not Condition
+   * \brief Constructs a Not Condition
    *
    * @param condition The condition to be evaluated.
    */
   NotCondition(RCP<Condition> condition);
 
   /**
-   * Deconstructs a Not Condition.
+   * \brief Deconstructs a Not Condition.
    */
   virtual ~NotCondition(){}
+  
+  //@}
 
+  /** \name Overridden from Condition */
+  //@{
+
+  /** \brief . */
   bool isConditionTrue() const;
 
+  /** \brief . */
   bool containsAtLeasteOneParameter() const;
 
+  /** \brief . */
   Dependency::ParameterParentMap getAllParameters() const;
+
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /**
    * The condition on which to perfrom the logical NOT.
    */
   RCP<Condition> condition_;
+  
+  //@}
+
 
 };
 
 /**
- * An Abstract Base class for all ParameterConditions.
+ * \brief An Abstract Base class for all ParameterConditions.
+ *
  * A Parmaeter Condition examines the value of a given
  * parameter and returns a bool based on the condition of
  * that value.
@@ -209,8 +301,11 @@ class ParameterCondition : public Condition{
 
 public:
 
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs a Parameter Condition.
+   * \brief Constructs a Parameter Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
    * @param parentList The parent Parameter List of the parameter to be evaluated.
@@ -222,6 +317,11 @@ public:
   ParameterCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue);
 
   virtual ~ParameterCondition(){}
+  
+  //@}
+
+  //! @name Attribute/Query Methods 
+  //@{
 
   /**
    * Evaluate the current condition of a paramtere and
@@ -231,6 +331,18 @@ public:
    * of the parameter.
    */
   virtual bool evaluateParameter() const = 0;
+
+  /** \brief Gets a const pointer to the Parameter being
+   *  evaluated by this ParameterCondition
+   */
+  inline const ParameterEntry* getParameter() const{
+    return parameter_;
+  }
+  
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
 
   bool isConditionTrue() const{
     if((whenParamEqualsValue_ && evaluateParameter()) || 
@@ -249,13 +361,14 @@ public:
   }
 
   Dependency::ParameterParentMap getAllParameters() const;
-
-  inline const ParameterEntry* getParameter() const{
-    return parameter_;
-  }
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /**
    * Name of parameter to be evaluated.
    */
@@ -275,11 +388,13 @@ private:
    * A pointer to the actual parameter to be evaluated.
    */
   ParameterEntry* parameter_;
+  
+  //@}
 
 };
 
 /**
- * A String Condition is a Parameter Condition that evaluates
+ * \brief A String Condition is a Parameter Condition that evaluates
  * whether or not a string parameter has taken on a particular
  * value or set of values.
  */
@@ -287,13 +402,21 @@ class StringCondition : public ParameterCondition{
 
 public:
 
-  /**
-   * Convience typedef representing an array of strings.
-   */
-  typedef Array<std::string> ValueList; 
+  /** \name Public types */
+  //@{
 
   /**
-   * Constructs a String Condition.
+   * \brief Convience typedef representing an array of strings.
+   */
+  typedef Array<std::string> ValueList; 
+  
+  //@}
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a String Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
    * @param parentList The parent Parameter List of the parameter to be evaluated.
@@ -306,7 +429,7 @@ public:
   StringCondition(std::string parameterName, RCP<ParameterList> parentList, std::string value, bool whenParamEqualsValue=true);
 
   /**
-   * Constructs a String Condition.
+   * \brief Constructs a String Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
    * @param parentList The parent Parameter List of the parameter to be evaluated.
@@ -319,20 +442,35 @@ public:
   StringCondition(std::string parameterName, RCP<ParameterList> parentList, ValueList values, bool whenParamEqualsValue=true);
 
   virtual ~StringCondition(){}
+  
+  //@}
+
+  /** \name Overridden from ParameterCondition */
+  //@{
 
   bool evaluateParameter() const;
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /**
    * A list of values against which to evaluate the parameter's value.
    */
   ValueList values_;
+  
+  //@}
+  
 };
 
 /**
- * A Number Condition is a Parameter Condition that evaluates
- * whether or not a number parameter is greater 0. If the parameter is
+ * \brief A Number Condition is a Parameter Condition that evaluates
+ * whether or not a number parameter is greater 0. 
+ *
+ * If the parameter is
  * greater than 0 this is interperted as the condition being "true".
  * Otherwise the oncidiont is interperted as false.
  */
@@ -341,8 +479,11 @@ class NumberCondition : public ParameterCondition{
 
 public:
 
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs a Number Condition.
+   * \brief Constructs a Number Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
    * @param parentList The parent Parameter List of the parameter to be evaluated.
@@ -381,17 +522,28 @@ public:
   }
 
   virtual ~NumberCondition(){}
+  
+  //@}
+
+  /** \name Overridden from ParameterCondition */
+  //@{
 
   bool evaluateParameter() const{
     return (runFunction(getValue<T>(*getParameter())) > 0);
   }
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
+  /** \brief . */
   T (*func_)(T);   
 
   /**
-   * Runs the function associated with this condition and
+   * \brief Runs the function associated with this condition and
    * returns the result.
    *
    * @param argument The value upon which to run the function.
@@ -403,44 +555,64 @@ private:
       return argument;
   }  
 
+  /** \brief Checks to make sure the given parameter is a 
+   * number type
+   */
   void checkForNumberType() const{
-	const ParameterEntry* toCheck = getParameter();
+  const ParameterEntry* toCheck = getParameter();
     TEST_FOR_EXCEPTION(
-	!toCheck->isType<int>() &&
-	!toCheck->isType<short>() &&
-	!toCheck->isType<double>() &&
-	!toCheck->isType<float>(),
-	InvalidConditionException,
-	"The parameter of a Number Condition "
-	"must be of a supported number type!" << std::endl <<
-	"Actual Parameter type: " << getParameter()->getAny().typeName() );
+      !toCheck->isType<int>() &&
+      !toCheck->isType<short>() &&
+      !toCheck->isType<double>() &&
+      !toCheck->isType<float>(),
+      InvalidConditionException,
+      "The parameter of a Number Condition "
+      "must be of a supported number type!" << std::endl <<
+      "Actual Parameter type: " << getParameter()->getAny().typeName() );
   }
+  
+  //@}
 
 };
 
 /**
- * A Bool Condition is a Parameter Condition that evaluates
+ * \brief A Bool Condition is a Parameter Condition that evaluates
  * whether or not a Boolean parameter is ture.
  * */
 class BoolCondition : public ParameterCondition{
+
 public:
-   /**
-    * Constructs a Bool Condition.
-    *
-    * @param parameterName The name of the parameter to be evaluated.
-    * @param parentList The parent Parameter List of the parameter to be evaluated.
-    * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-    * results in a true or when the evaluation results in a false. When set to true, if the parameter
-    * evaluates to true then the condition will evaluate to true. If set to false if the parameter
-    * evaluates to false, then the condition will evaluate to true.
-    */
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a Bool Condition.
+   *
+   * @param parameterName The name of the parameter to be evaluated.
+   * @param parentList The parent Parameter List of the parameter to be evaluated.
+   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
+   * results in a true or when the evaluation results in a false. When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. If set to false if the parameter
+   * evaluates to false, then the condition will evaluate to true.
+   */
   BoolCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue=true);
 
   virtual ~BoolCondition(){}
+  
+  //@}
+
+  /** \name Overridden from ParameterCondition */
+  //@{
 
   bool evaluateParameter() const;
+  
+  //@}
 
 };
 
-}
+
+} //namespace Teuchos
+
+
 #endif //TEUCHOS_STANDARDCONDITION_HPP_

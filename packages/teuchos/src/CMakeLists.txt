@@ -263,7 +263,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_XMLInputStream.hpp
     Teuchos_XMLObject.hpp
     Teuchos_XMLObjectImplem.hpp
-	Teuchos_XMLParameterListExceptions.hpp
+    Teuchos_XMLParameterListExceptions.hpp
     Teuchos_XMLParameterListHelpers.hpp
     Teuchos_XMLParameterListReader.hpp
     Teuchos_XMLParameterListWriter.hpp

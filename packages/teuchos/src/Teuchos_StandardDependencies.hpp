@@ -30,6 +30,11 @@
 
 #ifndef TEUCHOS_STANDARDDEPENDCIES_HPP_
 #define TEUCHOS_STANDARDDEPENDCIES_HPP_
+
+/*! \file Teuchos_StandardDependencies.hpp
+    \brief A collection of standard dependencies.
+*/
+
 #include "Teuchos_Dependency.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_Condition.hpp"
@@ -37,18 +42,22 @@
 namespace Teuchos{
 
 /**
- * An abstract parent class for all visual dependencies.
+ * \brief An abstract parent class for all visual dependencies.
  *
  * IMPORTANT NOTE:
- * If a parameter becomes hidden, it's validity will not be checked by the GUI. This means that it
- * is indeed possible for the GUI to return a non-valid ParameterList. Make sure that you program code takes
+ * If a parameter becomes hidden, it's validity will not necessarily be checked. This means that it
+ * is indeed possible for a non-valid ParameterList to occur. Make sure that you program code takes
  * this into account.
  */
 class VisualDependency : public Dependency{
 
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs a VisualDependency.
+   * \brief Constructs a VisualDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -60,7 +69,7 @@ public:
   std::string dependentName, RCP<ParameterList> dependentParentList, bool showIf=true);
 
   /**
-   * Constructs a VisualDependency.
+   * \brief Constructs a VisualDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -71,7 +80,7 @@ public:
   ParameterParentMap dependents, bool showIf=true);
 
   /**
-   * Constructs a VisualDependency.
+   * \brief Constructs a VisualDependency.
    *
    * @param dependees A map containing all the dependee Parameters associated with their parent ParameterLists.
    * @param dependentName The name of the dependent parameter.
@@ -81,7 +90,7 @@ public:
   VisualDependency(ParameterParentMap dependees, std::string dependentName, RCP<ParameterList> dependentParentList, bool showIf=true);
 
   /**
-   * Constructs a VisualDependency.
+   * \brief Constructs a VisualDependency.
    *
    * @param dependees A map containing all the dependee Parameters associated with their parent ParameterLists.
    * @param dependents A map containing dependent Parameters associated with their paraent ParameterLists.
@@ -89,20 +98,36 @@ public:
   VisualDependency(ParameterParentMap dependees, ParameterParentMap dependents, bool showIf=true);
 
   /**
-   * Desctructor
+   * \brief Desctructor
    *
    * Simply declaring the descrutor as virtual.
    */
   virtual ~VisualDependency(){}
+  
+  //@}
+
+  //! @name Attribute/Query Methods 
+  //@{
 
   /**
-   * Get the state of the dependee in order to evaluate the
+   * \brief Get the state of the dependee in order to evaluate the
    * dependency.
    *
    * @return The state of the dependee.
    */
   virtual bool getDependeeState() const = 0;
+  
+  /**
+   * \brief Determines whether or not the dependent is currently visible.
+   */
+  bool isDependentVisible() const;
 
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
   virtual void evaluate(){
     if((getDependeeState() && showIf_) || (!getDependeeState() && !showIf_)){
       dependentVisible_ = true;
@@ -111,36 +136,41 @@ public:
       dependentVisible_ = false;
     }
   }
-
-  /**
-   * Determines whether or not the dependent is currently visible.
-   */
-  bool isDependentVisible() const;
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /**
-   * Whether or not the dependent is currently visible.
+   * \brief Whether or not the dependent is currently visible.
    */
   bool dependentVisible_;
 
   /**
-   * Whether or not to show the dependent if the dependee is set to the value.
+   * \brief Whether or not to show the dependent if the dependee is set to the value.
    */
   bool showIf_;
-
-  virtual void validateDep() const = 0;
+  
+  //@}
 
 };
 
 
 /**
- * An abstract base class for all validator dependencies.
+ * \brief An abstract base class for all validator dependencies.
  */
 class ValidatorDependency : public Dependency{
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs a ValidatorDependency.
+   * \brief Constructs a ValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -151,7 +181,7 @@ public:
   std::string dependentName, RCP<ParameterList> dependentParentList);
 
   /**
-   * Constructs a ValidatorDependency.
+   * \brief Constructs a ValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -161,33 +191,47 @@ public:
   ParameterParentMap dependents);
 
   /**
-   * Desctructor
+   * \brief Desctructor
    *
    * Simply declaring the descrutor as virtual.
    */
   virtual ~ValidatorDependency(){}
+  
+  //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
   virtual void evaluate() = 0;
-
-private:
-
-  virtual void validateDep() const = 0;
+  
+  //@}
 
 };
 
 /**
- * A string visual depdencies says the following about the relationship between two elements in a Parameter List:
- * Depending on whether or not the dependee has a particular value, the dependent may or may not be displayed to the user in a GUI.
+ * \brief A string visual depdencies says the following about the relationship between two elements in a Parameter List:
+ * Depending on whether or not the dependee has a particular value, the dependent may or may not be displayed to the user in a UI.
  * 
  * The dependee of a StringVisualDependency must be of type string and can't be an array. The dependent may be any type of
  * parameter or parameter list.
  */
 class StringVisualDependency : public VisualDependency{
+
 public:
+
+  /** \name Public types */
+  //@{
+
   /**
    * Convience typedef representing an array of strings.
    */
   typedef Array<std::string> ValueList; 
+  
+  //@}
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /**
    * Constructs a StringVisualDependency.
@@ -268,20 +312,40 @@ public:
    */
   StringVisualDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
   ParameterParentMap dependents, const ValueList& values, bool showIf=true);
+  
+  //@}
+
+  /** \name Overridden from VisualDependency */
+  //@{
 
   bool getDependeeState() const;
+  
+  //@}
 
 private:
+
+  /** \name Private Members */
+  //@{
+  
   /**
    * The value used to deteremine the visiblity of the dependent.
    */
   const ValueList values_;
+  
+  //@}
+  
+  /** \name Overridden from Dependency */
+  //@{
 
+  /** \brief . */
   void validateDep() const;
+  
+  //@}
+  
 };
 
 /**
- * A bool visual dependency says the following about the relationship between two elements in a Parameter List:
+ * \brief A bool visual dependency says the following about the relationship between two elements in a Parameter List:
  * Depending on whether or not the dependee is true or false, the dependent may or may not be displayed to the user in a GUI.
  *
  * The dependee of a BoolVisualDependency must be of type bool and can't be an array. The dependent may be any type of parameter
@@ -290,6 +354,9 @@ private:
 class BoolVisualDependency : public VisualDependency{
 
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /**
    * Constructs a BoolVisualDependency.
@@ -327,15 +394,30 @@ public:
    */
   BoolVisualDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
   ParameterParentMap dependents, bool showIf=true);
+  
+  //@}
+
+  /** \name Overridden from VisualDependency */
+  //@{
 
   bool getDependeeState() const;
+  
+  //@}
 
+private:
+
+  /** \name Overridden from Dependency */
+  //@{
+  
+  /** \brief . */
   void validateDep() const;
+  
+  //@}
 
 };
 
 /**
- * A condition visual dependency says the following about the relationship between elements in a Parameter List:
+ * \brief A condition visual dependency says the following about the relationship between elements in a Parameter List:
  * Depending on whether or not the dependee(s) statisfy a particual condition, the dependent may or may not be displayed to the user in a GUI.
  *
  * Conditoin Visual Dependencies are unique in that via the Condition class, they allow for multiple dependees.
@@ -345,6 +427,9 @@ public:
 class ConditionVisualDependency : public VisualDependency{
 
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /**
    * Constructs a ConditionVisualDependency.
@@ -361,7 +446,7 @@ public:
   std::string dependentName, RCP<ParameterList> dependentParentList, bool showIf=true);
 
   /**
-   * Constructs a BoolVisualDependency.
+   * Constructs a ConditionVisualDependency.
    *
    * @param condition The condition that must be satisfied in order to display the dependent
    * parameter.
@@ -370,20 +455,40 @@ public:
    * If false, the dependent will be shown only when the dependee is false.
    */
   ConditionVisualDependency(RCP<Condition> condition, ParameterParentMap dependents, bool showIf=true);
+  
+  //@}
+
+  /** \name Overridden from VisualDependency */
+  //@{
 
   bool getDependeeState() const;
-
-  void validateDep() const;
+  
+  //@}
 
 private:
+
+  /** \name Private Members */
+  //@{
+  
   /**
-   * The Condition to determine whether or not the dependent is displayed.
+   * \brief The Condition to determine whether or not the dependent is displayed.
    */
   RCP<Condition> condition_;
+  
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  void validateDep() const;
+  
+  //@}
+
 };
 
 /**
- * A number visual dependency says the following about the relationship between two elements in a Parameter List:
+ * \brief A number visual dependency says the following about the relationship between two elements in a Parameter List:
  * Depending on whether or not the dependee has a certain value, the dependent may or may not be displayed to the user in a GUI.
  *
  * The dependee of a NumberVisualDependency must be a number type and can't be an array. The dependent may be any type of parameter
@@ -391,9 +496,14 @@ private:
  */
 template <class T>
 class NumberVisualDependency : public VisualDependency{
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs a NumberVisualDependency.
+   * \brief Constructs a NumberVisualDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -414,7 +524,7 @@ public:
   }
 
   /**
-   * Constructs a NumberVisualDependency.
+   * \brief Constructs a NumberVisualDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependentName The name of the dependent parameter.
@@ -434,7 +544,7 @@ public:
   }
 
   /**
-   * Constructs a NumberVisualDependency.
+   * \brief Constructs a NumberVisualDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -452,20 +562,31 @@ public:
   {
     validateDep();
   }
+  
+  //@}
+
+  /** \name Overridden from VisualDependency */
+  //@{
 
   bool getDependeeState() const{
     return runFunction(getFirstDependeeValue<T>()) > 0 ? true : false;
   }
+  
+  //@}
 
 private:
+
+  /** \name Private Members */
+  //@{
+  
   /**
-   * the function used to determine the
+   * \brief the function used to determine the
    * visibility of the dependent.
    */
   T (*func_)(T);
 
   /**
-   * Run the function on the argument and returns the value of the fucntion. If no function is specified,
+   * \brief Run the function on the argument and returns the value of the fucntion. If no function is specified,
    * the argument is simple returned.
    *
    * @param argument the value to use as an argument for the function.
@@ -478,7 +599,13 @@ private:
     else
       return argument;
   }  
+  
+  //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
   void validateDep() const{
     /*
      * This error should never get thrown, unless someone
@@ -509,19 +636,24 @@ private:
       "Dependees: " << getDependeeNamesString() << "\n"
       "Dependents: " << getDependentNamesString());
   }
+  
+  //@}
+  
 };
 
 /**
- * A NumberValidatorAspectDependency says the following about the relationship between two parameters in a dependent parameter list:
+ * \brief A NumberValidatorAspectDependency says the following about the relationship between two parameters in a dependent parameter list:
  * depending of the value of the dependee a particular aspect of the dependents validator will have a certain value.
  *
  * A NumberValidatorAspectDependency must have the following characteristics:
- * <ul>
- *   <li>The dependee must be of a number type and can't be an array.</li>
- *   <li>The dependent must have an enhancednumberparameter validator or an arrayNumberValidator.</li>
- *   <li>The validator specified in the constructor must be the same validator being used on the dependent parameter.</li>
- *   <li>The template type, dependee type, and dependent type must all be the same.</li>
- * <ul>
+ *
+ *   \li The dependee must be of a number type and can't be an array.
+ *
+ *   \li The dependent must have an enhancednumberparameter validator or an arrayNumberValidator.
+ *
+ *   \li The validator specified in the constructor must be the same validator being used on the dependent parameter.
+ *
+ *   \li The template type, dependee type, and dependent type must all be the same.
  *
  * This dependency can have an interesting effect on your program. The class will modifies
  * dependents validator. If that same validator is used more than once, every other 
@@ -533,8 +665,11 @@ class NumberValidatorAspectDependency : public Dependency{
 
 public:
 
+  /** \name Public types */
+  //@{
+
   /**
-   * An enum specifying the aspect of the
+   * \brief An enum specifying the aspect of the
    * validator that should be modified
    */
   enum ValidatorAspect{
@@ -542,9 +677,14 @@ public:
     Max,
     Step
   };
+  
+  //@}
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /**
-   * Constructs a NumberValidatorDependency
+   * \brief Constructs a NumberValidatorDependency
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -569,7 +709,7 @@ public:
   }
 
   /**
-   * Constructs a NumberValidatorDependency
+   * \brief Constructs a NumberValidatorDependency
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependentName The name of the dependent parameter.
@@ -591,10 +731,8 @@ public:
     validateDep();
   }
 
-
-
   /**
-   * Constructs a NumberValidatorDependency. Conveniece Constructor for ArrayNumberValidators
+   * \brief Constructs a NumberValidatorDependency. Conveniece Constructor for ArrayNumberValidators
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -618,7 +756,7 @@ public:
   }
 
   /**
-   * Constructs a NumberValidatorDependency. Conveniece Constructor for ArrayNumberValidators
+   * \brief Constructs a NumberValidatorDependency. Conveniece Constructor for ArrayNumberValidators
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependentName The name of the dependent parameter.
@@ -642,7 +780,7 @@ public:
   }
 
   /**
-   * Constructs a NumberValidatorDependency
+   * \brief Constructs a NumberValidatorDependency
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -666,7 +804,7 @@ public:
   }
 
   /**
-   * Constructs a NumberValidatorDependency. Conveniece Constructor for ArrayNumberValidators
+   * \brief Constructs a NumberValidatorDependency. Conveniece Constructor for ArrayNumberValidators
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -688,6 +826,10 @@ public:
     validateDep();
   }
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
   void evaluate(){
     T newAspectValue = runFunction(getFirstDependeeValue<T>());
     switch(aspect_){
@@ -702,26 +844,32 @@ public:
         break;
     }
   }
+  
+  //@}
 
 private:
+
+  /** \name Private Members */
+  //@{
+  
   /**
-   * The aspect of the validator to be modified.
+   * \brief The aspect of the validator to be modified.
    */
   ValidatorAspect aspect_;
 
   /**
-   * The validator to be modified.
+   * \brief The validator to be modified.
    */
   RCP<EnhancedNumberValidator<T> > validator_;
 
   /**
-   * The function used to calculate the new value of the
+   * \brief The function used to calculate the new value of the
    * aspect of the validator.
    */
   T (*func_)(T);
   
   /**
-   * Runs the dependency's function on the given argument and returns
+   * \brief Runs the dependency's function on the given argument and returns
    * the value that function returns.
    *
    * @param The value to run the function on.
@@ -733,7 +881,13 @@ private:
     else
       return argument;
   }  
+  
+  //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
   void validateDep() const{
     /*
      * This error should never get thrown, unless someone
@@ -766,7 +920,7 @@ private:
 
     TEST_FOR_EXCEPTION(typeid(T) != dependee->getAny().type(),
       InvalidDependencyException,
-	  "The dependee type and EnhancedNumberValidator "
+    "The dependee type and EnhancedNumberValidator "
       "template type must all be the same for a Number Validator Aspect Dependency.\n"
       "Problem Dependee: " << dependeeName << "\n"
       "Dependee Type: " << dependee->getAny().typeName() << "\n"
@@ -778,7 +932,7 @@ private:
       currentDependent = it->second->getEntryPtr(it->first);
       TEST_FOR_EXCEPTION(currentDependent->validator() == null,
         InvalidDependencyException,
-		"The dependent of an "
+    "The dependent of an "
         "Number Validator Aspect Dependency must have an EnhancedNumberValidator "
         "or an ArrayNumberValidator\n"
         "Problem dependent: " << it->first << "\n" 
@@ -787,7 +941,7 @@ private:
 
       TEST_FOR_EXCEPTION(validator_ != currentDependent->validator(),
         InvalidDependencyException,
-		"The dependent's validator and the validator specified "
+    "The dependent's validator and the validator specified "
         "in the constructor must be the same for a Number Validator Aspect Dependency!\n"
         "Problem dependent: " << it->first << "\n" 
         "Dependees: " << getDependeeNamesString() << "\n"
@@ -795,29 +949,38 @@ private:
 
       TEST_FOR_EXCEPTION(typeid(T) != currentDependent->getAny().type(),
         InvalidDependencyException,
-		"The dependent type and EnhancedNumberValidator "
+    "The dependent type and EnhancedNumberValidator "
         "template type must all be the same for a Number Validator Aspect Dependency.\n"
         "Dependent: " << it->first << "\n" 
         "Dependent Type: " << currentDependent->getAny().typeName() << "\n"
         "Validator Template Type: " << typeid(T).name());
     }
   }
+  
+  //@}
+  
 };
 
 /**
- * An ArrayLengthDependency says the following about the relationship between two parameters:
+ * \brief A NumberArrayLengthDependency says the following about the relationship between two parameters:
  * The length of the dependent's array depends on the value of the dependee.
  *
- * An ArrayLengthDependency must have the following characteristics:
- * <ul>
- *   <li>The dependee must be either of type int or type short.</li>
- *   <li>The dependent must be an array</li>
- * </ul>
+ * A NumberArrayLengthDependency must have the following characteristics:
+ *
+ *   \li The dependee must be either of type int or type short.
+ *
+ *   \li The dependent must be an array.
+ *
  */
 class NumberArrayLengthDependency : public Dependency{
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs an ArrayLengthDependency.
+   * \brief Constructs a NumberArrayLengthDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -830,7 +993,7 @@ public:
   std::string dependentName, RCP<ParameterList> dependentParentList, int (*func)(int) = 0);
 
   /**
-   * Constructs an ArrayLengthDependency.
+   * \brief Constructs an NumberArrayLengthDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependentName The name of the dependent parameter.
@@ -842,7 +1005,7 @@ public:
   RCP<ParameterList> parentList, int (*func)(int) = 0);
 
   /**
-   * Constructs an ArrayLengthDependency.
+   * \brief Constructs an NumberArrayLengthDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -853,17 +1016,29 @@ public:
   NumberArrayLengthDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
   ParameterParentMap dependents, int (*func)(int) = 0);
   
+  //@}
+  
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
   void evaluate();
+  
+  //@}
 
 private:
+
+  /** \name Private Members */
+  //@{
+  
   /**
-   * The function used to calculate the new value of the
+   * \brief The function used to calculate the new value of the
    * arrays length.
    */
   int (*func_)(int);
   
   /**
-   * Runs the dependency's function on the given argument and returns
+   * \brief Runs the dependency's function on the given argument and returns
    * the value that function returns.
    *
    * @param The value to run the function on.
@@ -872,39 +1047,59 @@ private:
   int runFunction(int argument) const;
 
   /**
-   * Modifies the length of an array.
+   * \brief Modifies the length of an array.
    *
    * @param newLength The new length the array should be.
    * @param dependentValue The index of the dependent array that is going to be changed.
    */
   template <class T>
   void modifyArrayLength(int newLength, ParameterEntry* dependentToModify);
+  
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
 
   void validateDep() const;
+  
+  //@}
+  
 };
 
 /**
- * A StringValidatorDependency says the following about the relationship between two parameters:
+ * \brief A StringValidatorDependency says the following about the relationship between two parameters:
  * Dependening on the value of the dependee, the dependent should use a particular validator from
  * a given set of validators.
  *
  * A StringValidatorDependency must have the following characterisitics:
- * <ul>
- *   <li>The dependee must be of type string</li>
- *   <li>The dependent must already have a validator assigned to it.</li>
- *   <li>All of the validators that may be applied to the dependent must match the type of the
- *   validator that is currently on the dependent.</li>
- * </ul>
+ * 
+ *   \li The dependee must be of type string
+ *
+ *   \li The dependent must already have a validator assigned to it.
+ *
+ *   \li All of the validators that may be applied to the dependent must match the type of the
+ *   validator that is currently on the dependent.
+ *
  */
 class StringValidatorDependency : public ValidatorDependency{
+
 public:
-  /**
-   * Conveniece typedef
-   */
-  typedef std::map<std::string, RCP<const ParameterEntryValidator> > ValueToValidatorMap;
+
+  /** \name Public types */
+  //@{
 
   /**
-   * Constructs a StringValidatorDependency.
+   * \brief Conveniece typedef
+   */
+  typedef std::map<std::string, RCP<const ParameterEntryValidator> > ValueToValidatorMap;
+  
+  //@}
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a StringValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -920,7 +1115,7 @@ public:
   RCP<ParameterEntryValidator> defaultValidator);
 
   /**
-   * Constructs a StringValidatorDependency.
+   * \brief Constructs a StringValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependentName The name of the dependent parameter.
@@ -935,7 +1130,7 @@ public:
   RCP<ParameterEntryValidator> defaultValidator);
 
   /**
-   * Constructs a StringValidatorDependency.
+   * \brief Constructs a StringValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -948,42 +1143,69 @@ public:
   StringValidatorDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
   ParameterParentMap dependents,  ValueToValidatorMap valuesAndValidators, 
   RCP<ParameterEntryValidator> defaultValidator);
+  
+  //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
   void evaluate();
+  
+  //@}
 
 private:
+
+  /** \name Private Members */
+  //@{
+  
   /**
-   * The default validator to be used if a request is made for a value that does not
+   * \brief The default validator to be used if a request is made for a value that does not
    * appear in the valuesAndValidators map.
    */
   RCP<ParameterEntryValidator> defaultValidator_;
 
   /**
-   * A map associating particular dependee values with validators that
+   * \brief A map associating particular dependee values with validators that
    * could be placed on the dependent.
    */
   ValueToValidatorMap valuesAndValidators_;
   
+  //@}
+  
+  /** \name Overridden from Dependency */
+  //@{
+
   void validateDep() const;
+  
+  //@}
+
 };
 
 /**
- * A BoolValidatorDependency says the following about the relationship between two parameters:
+ * \brief A BoolValidatorDependency says the following about the relationship between two parameters:
  * Dependening on the value of the dependee, the dependent should use a particular validator from
  * a given set of validators.
  *
  * A StringValidatorDependency must have the following characterisitics:
- * <ul>
- *   <li>The dependee must be of type bool</li>
- *   <li>The dependent must already have a validator assigned to it.</li>
- *   <li>The "true" and "false" validators that may be applied to the dependent must match the type of the
- *   validator that is currently on the dependent.</li>
- * </ul>
+ *
+ *   \li The dependee must be of type bool
+ *
+ *   \li The dependent must already have a validator assigned to it.
+ *
+ *   \li The "true" and "false" validators that may be applied to the dependent must match the type of the
+ *   validator that is currently on the dependent.
+ *
  */
 class BoolValidatorDependency : public ValidatorDependency{
+
 public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
   /**
-   * Constructs a BoolValidatorDependency.
+   * \brief Constructs a BoolValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -998,7 +1220,7 @@ public:
   RCP<const ParameterEntryValidator> falseValidator);
 
   /**
-   * Constructs a BoolValidatorDependency.
+   * \brief Constructs a BoolValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependentName The name of the dependent parameter.
@@ -1012,7 +1234,7 @@ public:
   RCP<const ParameterEntryValidator> falseValidator);
 
   /**
-   * Constructs a BoolValidatorDependency.
+   * \brief Constructs a BoolValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -1024,22 +1246,41 @@ public:
   ParameterParentMap dependents,
   RCP<const ParameterEntryValidator> trueValidator,
   RCP<const ParameterEntryValidator> falseValidator);
+  
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
 
   void evaluate();
+  
+  //@}
 
 private:
+
+  /** \name Private Members */
+  //@{
+  
   /**
-   * The validators to be used when the dependee is either
+   * \brief The validators to be used when the dependee is either
    * true or false.
    */
   RCP<const ParameterEntryValidator> trueValidator_, falseValidator_;
+  
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
 
   void validateDep() const;
+  
+  //@}
+  //
 };
 
 
 /**
- * A RangeValidatorDependency says the following about the relationship between two parameters:
+ * \brief A RangeValidatorDependency says the following about the relationship between two parameters:
  * Dependening on the value of the dependee, the dependent should use a particular validator from
  * a given set of validators.
  *
@@ -1048,24 +1289,40 @@ private:
  * used on the dependent. All ranges are inclusive.
  *
  * A RangeValidatorDependency must have the following characterisitics:
- * <ul>
- *   <li>The dependee must be a number type</li>
- *   <li>The dependent must already have a validator assigned to it.</li>
- *   <li>All of the validators that may be applied to the dependent must match the type of the
- *   validator that is currently on the dependent.</li>
- * </ul>
+ *
+ *   \li The dependee must be a number type
+ *
+ *   \li The dependent must already have a validator assigned to it.
+ *
+ *   \li All of the validators that may be applied to the dependent must match the type of the
+ *   validator that is currently on the dependent.
+ *
  */
 template<class S>
 class RangeValidatorDependency : public ValidatorDependency{
+
 public:
-  /**
-   * Convenience typedef
-   */
-  typedef std::pair<S,S> Range;
-  typedef std::map<Range, RCP<const ParameterEntryValidator> > RangeToValidatorMap;
+
+  /** \name Public types */
+  //@{
 
   /**
-   * Constructs a RangeValidatorDependency.
+   * \brief Convenience typedef
+   */
+  typedef std::pair<S,S> Range;
+
+  /**
+   * \brief Convenience typedef
+   */
+  typedef std::map<Range, RCP<const ParameterEntryValidator> > RangeToValidatorMap;
+  
+  //@}
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a RangeValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -1087,7 +1344,7 @@ public:
   }
 
   /**
-   * Constructs a RangeValidatorDependency.
+   * \brief Constructs a RangeValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependentName The name of the dependent parameter.
@@ -1108,7 +1365,7 @@ public:
   }
 
   /**
-   * Constructs a RangeValidatorDependency.
+   * \brief Constructs a RangeValidatorDependency.
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -1127,7 +1384,13 @@ public:
   {
     validateDep();
   }
+  
+  //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
   void evaluate(){
     typename RangeToValidatorMap::const_iterator it;
     S dependeeValue = getFirstDependeeValue<S>();
@@ -1144,19 +1407,31 @@ public:
         return;
       }
     }
-
   }
+  
+  //@}
+  
 private:
+
+  /** \name Private Members */
+  //@{
+  
   /**
-   * The default validator
+   * \brief The default validator
    */
   RCP<const ParameterEntryValidator> defaultValidator_;
 
   /**
-   * A map associating ranges with validators.
+   * \brief A map associating ranges with validators.
    */
   RangeToValidatorMap rangesAndValidators_;
   
+  //@}
+
+  /** \name Overridden from Dependency */
+  //@{
+  
+  /** \brief . */
   void validateDep() const{
     /*
      * This error should never get thrown, unless someone
@@ -1164,7 +1439,7 @@ private:
      */
     TEST_FOR_EXCEPTION(getDependees().size() != 1,
       InvalidDependencyException,
-	  "Uh oh. Looks like you tried to make a "
+    "Uh oh. Looks like you tried to make a "
       "Number Visual Dependency doesn't have exactly one dependee. This is kind of a problem. "
       "You should probably take a look into it. I'm actually amazed you even threw this error. You must "
       "be doing some subclassing you sly-dog ;)\n\n" 
@@ -1176,12 +1451,12 @@ private:
     const ParameterEntry* dependee = getFirstDependee();
     std::string dependeeName = getFirstDependeeName();
     TEST_FOR_EXCEPTION(
-	  !dependee->isType<int>() 
-	  && !dependee->isType<short>() 
-	  && !dependee->isType<double>() 
-	  && !dependee->isType<float>(),
+    !dependee->isType<int>() 
+    && !dependee->isType<short>() 
+    && !dependee->isType<double>() 
+    && !dependee->isType<float>(),
       InvalidDependencyException,
-	  "The dependee of a "
+    "The dependee of a "
       "Range Validator Dependency must be of a supported number type!\n"
       "Problem dependee: " << dependeeName << "\n"
       "Actual type: " << dependee->getAny().typeName() << "\n"
@@ -1195,7 +1470,7 @@ private:
         currentDependent = it2->second->getEntryPtr(it2->first);
         TEST_FOR_EXCEPTION(typeid(*(currentDependent->validator().get())) != typeid(*(it->second.get())),
           InvalidDependencyException,
-		  "The validator of a dependent of a "
+      "The validator of a dependent of a "
           "Range Validator Dependency must be the same type as all of the validators "
           "in the rangesAndValidators map.\n"
           "Note this means that the dependent must have an initial validator.\n"
@@ -1205,6 +1480,9 @@ private:
       }
     }
   }
+  
+  //@}
+
 };
 
 

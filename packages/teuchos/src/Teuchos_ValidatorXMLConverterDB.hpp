@@ -30,7 +30,8 @@
 #ifndef TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
 #define TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
 
-/*! \file Teuchos_ParameterEntryXMLCoverterDB.hpp
+/*! \file Teuchos_ValidatorXMLConverterDB.hpp
+ * \brief A database for ValidatorXMLConverters.
 */
 
 #include "Teuchos_ValidatorXMLConverter.hpp"
@@ -45,16 +46,24 @@ class ParameterEntryValidator;
 class ValidatorXMLConverterDB {
 public:
 
+  /** \name Modifier Functions */
+  //@{
+  
   /** \brief Add a converter to the database.
    *
-   * @param convertToAdd The converter to add to the database.
+   * \param convertToAdd The converter to add to the database.
    */
   static void addConverter(ParameterEntryValidator& validator,
     RCP<ValidatorXMLConverter> converterToAdd);
+  
+  //@}
 
+  /** \name Converter Functions */
+  //@{
+  
   /** \brief Get an appropriate ValidatorXMLConverter given a ParameterEntry.
    *
-   * @param validator The ParameterEntryValidator for which a converter is
+   * \param validator The ParameterEntryValidator for which a converter is
    * desired.
    */
   static RCP<const ValidatorXMLConverter> getConverter(
@@ -84,6 +93,11 @@ public:
    */
   static RCP<ParameterEntryValidator> convertXML(const XMLObject& xmlObject, 
     IDtoValidatorMap& idValidatorMap);
+  
+  //@}
+
+  /** \name I/O Functions */
+  //@{
 
   /**
    * \brief prints the xml tags associated with all known converters
@@ -91,19 +105,23 @@ public:
    * \param out Stream to which tags should be printed.
    */
   static void printKnownConverters(std::ostream& out){
-	out << "Known ValidatorXMLConverters: " << std::endl;
+    out << "Known ValidatorXMLConverters: " << std::endl;
     for(
-	  ConverterMap::const_iterator it = getConverterMap().begin();
-	  it != getConverterMap().end();
-	  ++it)
-	{
-	  out << "\t" << it->first <<std::endl;
-	}
+      ConverterMap::const_iterator it = getConverterMap().begin();
+      it != getConverterMap().end();
+      ++it)
+    {
+      out << "\t" << it->first <<std::endl;
+    }
   }
-
+  
+  //@}
 
 private:
 
+  /** \name Private Members */
+  //@{
+  
   /** \brief convience class. */
   typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
 
@@ -114,6 +132,8 @@ private:
    * ParameterEntries.
    */
   static ConverterMap& getConverterMap();
+  
+  //@}
 
 };
 

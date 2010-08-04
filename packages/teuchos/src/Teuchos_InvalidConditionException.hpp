@@ -39,12 +39,12 @@ namespace Teuchos {
  */
 class InvalidConditionException : public std::logic_error{
 public: 
-	/**
-	 * Constructs an InvalidConditionException
-	 *
-	 * @param what_arg The error message to be associated with this error.
-	 */
-	InvalidConditionException(const std::string& what_arg):std::logic_error(what_arg){}
+  /**
+   * Constructs an InvalidConditionException
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  InvalidConditionException(const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 }

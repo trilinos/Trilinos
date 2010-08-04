@@ -68,7 +68,7 @@ void XMLParameterListReader::convertValidators(
       validatorsWithPrototypes.insert(&xml.getChild(i));
     }
     else{
-	  ValidatorXMLConverterDB::convertXML(xml.getChild(i), validatorMap);
+    ValidatorXMLConverterDB::convertXML(xml.getChild(i), validatorMap);
     }
   }
   for (
@@ -133,11 +133,10 @@ ParameterList XMLParameterListReader::convertParameterList(
           NoNameAttributeExecption,
           ParameterEntry::getTagName() <<" tags must " <<
           "have a " << 
-		  XMLParameterListWriter::getNameAttributeName() << 
-		  " attribute" << std::endl <<
-	      "Bad Parameter: " << 
-	      child.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
-	      std::endl << std::endl);
+          XMLParameterListWriter::getNameAttributeName() << 
+          " attribute" << std::endl << "Bad Parameter: " << 
+          child.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+          std::endl << std::endl);
 
         const std::string& name =
           child.getRequired(XMLParameterListWriter::getNameAttributeName());
@@ -153,8 +152,7 @@ ParameterList XMLParameterListReader::convertParameterList(
             TEST_FOR_EXCEPTION(true, MissingValidatorDefinitionException,
               "Could not find validator with id: "
               << child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName()) << std::endl << 
-			  "Bad Parameter: " << name << std::endl << std::endl
-              );
+              "Bad Parameter: " << name << std::endl << std::endl);
           }
         }  
         rtn.setEntry(name, parameter);

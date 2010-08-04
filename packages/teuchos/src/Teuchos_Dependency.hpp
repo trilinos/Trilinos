@@ -37,14 +37,20 @@ namespace Teuchos{
 
 
 /**
- * This class represents a depndency between elements in a Parameter List.
+ * \brief This class represents a depndency between elements in a Parameter List.
  * 
- * @see DependencyList 
+ * \reference DependencySheet
+ * \reference ParameterList
  */
 class Dependency{
+
 public:
+
+  /** \name Public types */
+  //@{
+
   /**
-   * Allows two dependecies to be compared.
+   * \brief Allows two dependecies to be compared.
    */
   class DepComp{
   public:
@@ -54,17 +60,22 @@ public:
   };
 
   /**
-   * Enum classifying various types of dependencies.
+   * \brief Enum classifying various types of dependencies.
    */
   enum Type{VisualDep, ValidatorDep, NumberValidatorAspectDep, NumberArrayLengthDep};
 
   /**
-   * Maps parameters to their associated parent ParametersList.
+   * \brief Maps parameters to their associated parent ParametersList.
    */
   typedef std::map<const std::string, const RCP<ParameterList> > ParameterParentMap;
+  
+  //@}
+
+  /** \name Constructors/Destructor */
+  //@{
 
   /**
-   * Constructs a Dependency
+   * \brief Constructs a Dependency
    *
    * @param dependees A map of all the dependees and their associated parent lists.
    * @param dependents A map of all the dependents and their associated parent lists.
@@ -73,7 +84,7 @@ public:
   Dependency(ParameterParentMap& dependees, ParameterParentMap& dependents, Type depType);
 
   /**
-   * Constructs a Dependency
+   * \brief Constructs a Dependency
    *
    * @param dependees A map of all the dependees and their associated parent lists.
    * @param dependentName The name of the dependent parameter.
@@ -83,7 +94,7 @@ public:
   Dependency(ParameterParentMap& dependees, std::string dependentName, RCP<ParameterList> dependentParentList, Type depType);
 
   /**
-   * Constructs a Dependency
+   * \brief Constructs a Dependency
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -94,7 +105,7 @@ public:
   ParameterParentMap& dependents, Type depType);
 
   /**
-   * Constructs a Dependency
+   * \brief Constructs a Dependency
    *
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
@@ -106,14 +117,19 @@ public:
   std::string dependentName, RCP<ParameterList> dependentParentList, Type depType);
 
   /**
-   * Desctructor
+   * \brief Desctructor
    *
    * Simply declaring the descrutor as virtual.
    */
   virtual ~Dependency(){}
+  
+  //@}
 
-  /**
-   * Determines whether or not a ParameterList or any of it's children lists contain a specific
+  //! @name Attribute/Query Methods 
+  //@{
+
+  /** 
+   * \brief Determines whether or not a ParameterList or any of it's children lists contain a specific
    * ParameterList.
    *
    * @param parentList The ParameterList to search.
@@ -124,49 +140,49 @@ public:
   static bool doesListContainList(RCP<ParameterList> parentList, RCP<ParameterList> listToFind);
 
   /**
-   * Gets the dependees of the dependency.
+   * \brief Gets the dependees of the dependency.
    *
    *  @return The dependees of the dependency.
    */
   const ParameterParentMap& getDependees() const;
 
   /**
-   * Gets the dependents of the dependency.
+   * \brief Gets the dependents of the dependency.
    *
    * @return The dependents of the dependency.
    */
   const ParameterParentMap& getDependents() const;
 
   /**
-   * Gets the names of the dependee parameters.
+   * \brief Gets the names of the dependee parameters.
    *
    * @return The names of the dependee parameters.
    */
   const std::set<std::string>& getDependeeNames() const;
 
   /**
-   * Gets a set containing the names of the dependent parameters.
+   * \brief Gets a set containing the names of the dependent parameters.
    *
    * @return A set containing the names of the dependent parameters.
    */
   const std::set<std::string>& getDependentNames() const;
 
   /**
-   * Gets a string containing all the names of the dependee parameters.
+   * \brief Gets a string containing all the names of the dependee parameters.
    *
    * @return A string containing all the names of the dependee parameters.
    */
   std::string getDependeeNamesString() const;
 
   /**
-   * Gets a string containing all the names of the dependent parameters.
+   * \brief Gets a string containing all the names of the dependent parameters.
    *
    * @return A string containing all the names of the dependent parameters.
    */
   std::string getDependentNamesString() const;
 
   /**
-   * Gets the name of a dependee given a pointer to the dependee parameter.
+   * \brief Gets the name of a dependee given a pointer to the dependee parameter.
    *
    * @param Pointer to the dependee parameter whose name is desired.
    * @return The name of the dependee parameter associated with the pointer specified in the arguments.
@@ -174,20 +190,14 @@ public:
   std::string getDependeeName(const ParameterEntry* dependee) const;
 
   /**
-   * Gets the type of the dependency.
+   * \brief Gets the type of the dependency.
    *
    * @return The type of dependency.
    */
   const Type& getType() const;
 
   /**
-   * Evaluates the dependency and makes any appropriate changes to the
-   * dependee based on the dependent.
-   */
-  virtual void evaluate() = 0;
-
-  /**
-   * Convienence function. Returns the first dependee in the list of dependees.
+   * \brief Convienence function. Returns the first dependee in the list of dependees.
    *
    * @return The first dependee in the list of dependees.
    */
@@ -196,7 +206,7 @@ public:
   }
 
   /**
-   * Convienence function. Returns the first dependee in the list of dependees.
+   * \brief Convienence function. Returns the first dependee in the list of dependees.
    *
    * @return The first dependee in the list of dependees.
    */
@@ -206,7 +216,7 @@ public:
   }
 
   /**
-   * Gets the name of the first dependee in the dependees map.
+   * \brief Gets the name of the first dependee in the dependees map.
    *
    * @return the name of the first dependee in the dependees map.
    */
@@ -214,37 +224,53 @@ public:
     return dependees_.begin()->first;
   }
 
-private:
+  //@}
+
+  /** \name Evalutation Functions */
+  //@{
 
   /**
-   * The dependee is the parameter being depended upon.
+   * \brief Evaluates the dependency and makes any appropriate changes to the
+   * dependee based on the dependent.
+   */
+  virtual void evaluate() = 0;
+  
+  //@}
+
+ private:
+
+  /** \name Private Members */
+  //@{
+  
+  /**
+   * \brief The dependee is the parameter being depended upon.
    * This is a map of all the dependees and their associated parent ParameterLists.
    */
   ParameterParentMap dependees_;
 
   /**
-   * The dependent is the parameter that dependes on another parameter.
+   * \brief The dependent is the parameter that dependes on another parameter.
    * This is a map of all the dependents and their associated parent ParametersLists.
    */
   ParameterParentMap dependents_;
 
   /**
-   * The names of all the dependees
+   * \brief The names of all the dependees
    */
   std::set<std::string> dependeeNames_;
 
   /**
-   * The names of all the dependents
+   * \brief The names of all the dependents
    */
   std::set<std::string> dependentNames_;
 
   /**
-   * The type of dependency.
+   * \brief The type of dependency.
    */
   Type type_;
 
   /**
-   * Initializes all the dependnees and dependents along with checking to make sure
+   * \brief Initializes all the dependnees and dependents along with checking to make sure
    * that their parents lists are actually valid.
    *
    * @param dependees The dependees to be initialized.
@@ -253,10 +279,12 @@ private:
   void intitializeDependeesAndDependents(ParameterParentMap& dependees, ParameterParentMap& dependents);
 
   /**
-   * Validates the dependency to make sure it's valid/has been setup properly. If subclassing, this fucntion should
+   * \brief Validates the dependency to make sure it's valid/has been setup properly. If subclassing, this fucntion should
    * be called in the new subclasses constructor.
    */
   virtual void validateDep() const = 0;
+  
+  //@}
 
 };
 

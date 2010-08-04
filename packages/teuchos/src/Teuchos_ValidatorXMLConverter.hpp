@@ -30,6 +30,8 @@
 #define TEUCHOS_VALIDATORXMLCONVERTER_HPP
 
 /*! \file Teuchos_ValidatorXMLConverter.hpp
+ * \brief Converters back and forth between XML
+ * and ParameterEntryValidators.
 */
 
 #include "Teuchos_XMLObject.hpp"
@@ -41,13 +43,15 @@
 namespace Teuchos {
 
 
-
 /** \brief An abstract base class for converting ParameterEntryValidators to
  * and from XML.
  */
 class ValidatorXMLConverter : public Describable {
 public:
 
+  /** \name Converter Functions */
+  //@{
+  
   /** \brief Converts a given XMLObject to a ParameterEntryValidator.
    *
    * @param xmlObj The XMLObject to convert to a ParameterEntryValidator.
@@ -56,24 +60,24 @@ public:
   RCP<ParameterEntryValidator>
   fromXMLtoValidator(const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const {
     #ifdef HAVE_TEUCHOS_DEBUG
-	RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
+    RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
     TEST_FOR_EXCEPTION(xmlObj.getTag() != dummyValidator->getXMLTagName(), 
       BadValidatorXMLConverterException, 
       "Cannot convert xmlObject " << 
-	  ". Expected a " << dummyValidator->getXMLTagName() <<
+      ". Expected a " << dummyValidator->getXMLTagName() <<
       " tag but got a " << xmlObj.getTag() << "tag");
     #endif
   
     RCP<ParameterEntryValidator> toReturn = convertXML(xmlObj, validatorMap);
     if(xmlObj.hasAttribute(getIdAttributeName())){
 
-	  TEST_FOR_EXCEPTION(
-		validatorMap.getValidator(xmlObj.getRequiredInt(getIdAttributeName()))
-	    !=
-		validatorMap.end(),
-		DuplicateValidatorIDsException,
-		"Two validators in the XML file have the same ID!" <<std::endl<<
-		"Conflicting ID: " << xmlObj.getRequiredInt(getIdAttributeName()));
+      TEST_FOR_EXCEPTION(
+        validatorMap.getValidator(xmlObj.getRequiredInt(getIdAttributeName()))
+        !=
+        validatorMap.end(),
+        DuplicateValidatorIDsException,
+        "Two validators in the XML file have the same ID!" <<std::endl<<
+        "Conflicting ID: " << xmlObj.getRequiredInt(getIdAttributeName()));
         
       validatorMap.insertValidator(
         IDtoValidatorMap::IDValidatorPair(
@@ -101,14 +105,14 @@ public:
    */
   XMLObject fromValidatortoXML(const RCP<const ParameterEntryValidator> validator,
     const ValidatortoIDMap& validatorMap) const
-    {
-      XMLObject toReturn = convertValidator(validator, validatorMap);
-      ValidatortoIDMap::const_iterator result = validatorMap.getID(validator);
-      if(result != validatorMap.end()){
-        toReturn.addAttribute(getIdAttributeName(), result->second);
-      }
-      return toReturn;
+  {
+    XMLObject toReturn = convertValidator(validator, validatorMap);
+    ValidatortoIDMap::const_iterator result = validatorMap.getID(validator);
+    if(result != validatorMap.end()){
+      toReturn.addAttribute(getIdAttributeName(), result->second);
     }
+    return toReturn;
+  }
 
 
   // 2010/07/30: rabartl: ToDo: Move the above function bodies into the *.cpp
@@ -125,16 +129,26 @@ public:
    */
   virtual XMLObject convertValidator(const RCP<const ParameterEntryValidator> validator,
     const ValidatortoIDMap& validatorMap) const = 0;
+  
+  //@}
 
   #ifdef HAVE_TEUCHOS_DEBUG
+  /** \name Debug Functions */
+  //@{
+
   /**
    * \brief Returns the a default dummy validator.
    *
    * @return A default dummy validator.
    */
   virtual Teuchos::RCP<const ParameterEntryValidator> getDummyValidator() const = 0;
+  
+  //@}
   #endif
 
+  //! \name Attribute/Query Functions
+  //@{
+  
   /** \brief . */
   static const std::string& getIdAttributeName(){
     static const std::string idAttributeName = "validatorid";
@@ -146,6 +160,8 @@ public:
     static const std::string prototypeIdAttributeName = "prototypeid";
     return prototypeIdAttributeName;
   }
+  
+  //@}
 
 };
 

@@ -33,161 +33,171 @@
 namespace Teuchos{
 
 ParameterCondition::ParameterCondition(std::string parameterName, Teuchos::RCP<Teuchos::ParameterList> parentList, bool whenParamEqualsValue):
-	Condition(Condition::ParamCon),
-	parameterName_(parameterName),
-	parentList_(parentList),
-	whenParamEqualsValue_(whenParamEqualsValue)
+  Condition(Condition::ParamCon),
+  parameterName_(parameterName),
+  parentList_(parentList),
+  whenParamEqualsValue_(whenParamEqualsValue)
 {
-	parameter_ = parentList_->getEntryPtr(parameterName);
-	if(getParameter() == NULL){
-		throw InvalidConditionException("Oh noes!!!!!!! Looks like the parameter " +
-		parameterName + " isn't actually contained in the " + parentList->name() + " parameter list. "
-		"You should go back and check your code. Maybe the information below can help you.\n\n"
-		"Error: Parameter not contained in specified Parent list:\n"
-		"Problem Parameter: " + parameterName_ + "\n"
-		"Problem List: " + parentList_->name());
-	}
+  parameter_ = parentList_->getEntryPtr(parameterName);
+  if(getParameter() == NULL){
+    throw InvalidConditionException("Oh noes!!!!!!! Looks like the parameter " +
+    parameterName + " isn't actually contained in the " + parentList->name() + " parameter list. "
+    "You should go back and check your code. Maybe the information below can help you.\n\n"
+    "Error: Parameter not contained in specified Parent list:\n"
+    "Problem Parameter: " + parameterName_ + "\n"
+    "Problem List: " + parentList_->name());
+  }
 }
 
 Dependency::ParameterParentMap ParameterCondition::getAllParameters() const{
-	Dependency::ParameterParentMap toReturn;
-	toReturn.insert(std::pair<std::string, RCP<ParameterList> >(parameterName_, parentList_));
-	return toReturn;
+  Dependency::ParameterParentMap toReturn;
+  toReturn.insert(std::pair<std::string, RCP<ParameterList> >(parameterName_, parentList_));
+  return toReturn;
 }
 
 BinaryLogicalCondition::BinaryLogicalCondition(ConditionList& conditions):
-	Condition(Condition::BinLogicCon),
-	conditions_(conditions)
+  Condition(Condition::BinLogicCon),
+  conditions_(conditions)
 {
-	if(conditions_.size() ==0){
-		throw InvalidConditionException("Sorry bud, but you gotta at least give me one condition "
-		"when you're constructing a BinaryLogicalCondition. Looks like you didn't. I'm just gonna "
-		"chalk it up a silly little mistake though. Take a look over your conditions again and make sure "
-		"you don't ever give any of your BinaryLogicConditions and empty condition list.\n\n"
-		"Error: Empty condition list given to a BinaryLogicalCondition constructor.");
-	}
+  if(conditions_.size() ==0){
+    throw InvalidConditionException("Sorry bud, but you gotta at least give me one condition "
+    "when you're constructing a BinaryLogicalCondition. Looks like you didn't. I'm just gonna "
+    "chalk it up a silly little mistake though. Take a look over your conditions again and make sure "
+    "you don't ever give any of your BinaryLogicConditions and empty condition list.\n\n"
+    "Error: Empty condition list given to a BinaryLogicalCondition constructor.");
+  }
 }
 
 
 void BinaryLogicalCondition::addCondition(RCP<Condition> toAdd){
-	conditions_.append(toAdd);
+  conditions_.append(toAdd);
 }
 
 bool BinaryLogicalCondition::isConditionTrue() const{
-	ConditionList::const_iterator it = conditions_.begin();
-	bool toReturn = (*it)->isConditionTrue();
-	++it;
-	for(;it != conditions_.end(); ++it){
-		toReturn = applyOperator(toReturn,(*it)->isConditionTrue());
-	}
-	return toReturn;
+  ConditionList::const_iterator it = conditions_.begin();
+  bool toReturn = (*it)->isConditionTrue();
+  ++it;
+  for(;it != conditions_.end(); ++it){
+    toReturn = applyOperator(toReturn,(*it)->isConditionTrue());
+  }
+  return toReturn;
 }
 
 bool BinaryLogicalCondition::containsAtLeasteOneParameter() const{
-	for(ConditionList::const_iterator it=conditions_.begin(); it!=conditions_.end(); ++it){
-		if((*it)->containsAtLeasteOneParameter()){
-			return true;
-		}
-	}
-	return false;
+  for(ConditionList::const_iterator it=conditions_.begin(); it!=conditions_.end(); ++it){
+    if((*it)->containsAtLeasteOneParameter()){
+      return true;
+    }
+  }
+  return false;
 }
 
 Dependency::ParameterParentMap BinaryLogicalCondition::getAllParameters() const{
-	Dependency::ParameterParentMap toReturn;
-	Dependency::ParameterParentMap currentMap;
-	for(ConditionList::const_iterator it = conditions_.begin(); it != conditions_.end(); ++it){
-		currentMap = (*it)->getAllParameters();
-		toReturn.insert(currentMap.begin(), currentMap.end());
-	}
-	return toReturn;
+  Dependency::ParameterParentMap toReturn;
+  Dependency::ParameterParentMap currentMap;
+  for(ConditionList::const_iterator it = conditions_.begin(); it != conditions_.end(); ++it){
+    currentMap = (*it)->getAllParameters();
+    toReturn.insert(currentMap.begin(), currentMap.end());
+  }
+  return toReturn;
 }
 
 OrCondition::OrCondition(ConditionList& conditions):
-	BinaryLogicalCondition(conditions){}
+  BinaryLogicalCondition(conditions){}
 
 bool OrCondition::applyOperator(bool op1, bool op2) const{
-	return op1 || op2;
+  return op1 || op2;
 }
 
 AndCondition::AndCondition(ConditionList& conditions):
-	BinaryLogicalCondition(conditions){}
+  BinaryLogicalCondition(conditions){}
 
 bool AndCondition::applyOperator(bool op1, bool op2) const{
-	return op1 && op2;
+  return op1 && op2;
 }
 
 EqualsCondition::EqualsCondition(ConditionList& conditions):
-	BinaryLogicalCondition(conditions){}
+  BinaryLogicalCondition(conditions){}
 
 bool EqualsCondition::applyOperator(bool op1, bool op2) const{
-	return op1 == op2;
+  return op1 == op2;
 }
 
 NotCondition::NotCondition(RCP<Condition> condition):
-	Condition(Condition::NotCon),
-	condition_(condition)
+  Condition(Condition::NotCon),
+  condition_(condition)
 {
-	if(condition_.is_null()){
-		throw InvalidConditionException("OOOOOOOOPppppps! Looks like you tried to give me "
-		"a null pointer when you were making a not conditon. That's a no no. Go back and "
-		"checkout your not conditions and make sure you didn't give any of them a null pointer "
-		"as an argument to the constructor.\n\n"
-		"Error: Null pointer given to NotCondition constructor.");
-	}
+  if(condition_.is_null()){
+    throw InvalidConditionException("OOOOOOOOPppppps! Looks like you tried to give me "
+    "a null pointer when you were making a not conditon. That's a no no. Go back and "
+    "checkout your not conditions and make sure you didn't give any of them a null pointer "
+    "as an argument to the constructor.\n\n"
+    "Error: Null pointer given to NotCondition constructor.");
+  }
 }
 
 bool NotCondition::isConditionTrue() const{
-	return (!condition_->isConditionTrue());
+  return (!condition_->isConditionTrue());
 }
 
 bool NotCondition::containsAtLeasteOneParameter() const{
-	return condition_->containsAtLeasteOneParameter();
+  return condition_->containsAtLeasteOneParameter();
 }
 
 Dependency::ParameterParentMap NotCondition::getAllParameters() const{
-	return condition_->getAllParameters();
+  return condition_->getAllParameters();
 }
 
-StringCondition::StringCondition(std::string parameterName, RCP<ParameterList> parentList, std::string value, bool whenParamEqualsValue):
-	ParameterCondition(parameterName, parentList, whenParamEqualsValue), values_(ValueList(1,value))
+StringCondition::StringCondition(
+  std::string parameterName, RCP<ParameterList> parentList, 
+  std::string value, bool whenParamEqualsValue):
+  ParameterCondition(parameterName, parentList, whenParamEqualsValue), 
+  values_(ValueList(1,value))
 {
-	if(!getParameter()->isType<std::string>()){
-		throw InvalidConditionException("The parameter of a String Condition "
-		"must be of type string. \n"
-		"Expected type: std::string\n"
-		"Actual type: " + getParameter()->getAny().typeName() + "\n");
-	}
+  if(!getParameter()->isType<std::string>()){
+    throw InvalidConditionException("The parameter of a String Condition "
+    "must be of type string. \n"
+    "Expected type: std::string\n"
+    "Actual type: " + getParameter()->getAny().typeName() + "\n");
+  }
 }
 
-StringCondition::StringCondition(std::string parameterName, RCP<ParameterList> parentList, ValueList values, bool whenParamEqualsValue):
-	ParameterCondition(parameterName, parentList, whenParamEqualsValue), values_(values)
+StringCondition::StringCondition(
+  std::string parameterName, RCP<ParameterList> parentList, ValueList values,
+  bool whenParamEqualsValue):
+  ParameterCondition(parameterName, parentList, whenParamEqualsValue), 
+  values_(values)
 {
-	if(!getParameter()->isType<std::string>()){
-		throw InvalidConditionException("The parameter of a String Condition "
-		"must be of type string. \n"
-		"Expected type: std::string\n"
-		"Actual type: " + getParameter()->getAny().typeName() + "\n");
-	}
+  if(!getParameter()->isType<std::string>()){
+    throw InvalidConditionException("The parameter of a String Condition "
+    "must be of type string. \n"
+    "Expected type: std::string\n"
+    "Actual type: " + getParameter()->getAny().typeName() + "\n");
+  }
 }
 
 bool StringCondition::evaluateParameter() const{
-	return find(values_.begin(), values_.end(), getValue<std::string>(*getParameter())) != values_.end();
+  return find(
+    values_.begin(), values_.end(), 
+    getValue<std::string>(*getParameter())) != values_.end();
 }
 
-BoolCondition::BoolCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue):
-	ParameterCondition(parameterName, parentList, whenParamEqualsValue)
+BoolCondition::BoolCondition(
+  std::string parameterName, RCP<ParameterList> parentList, 
+  bool whenParamEqualsValue):
+  ParameterCondition(parameterName, parentList, whenParamEqualsValue)
 {
-	if(!getParameter()->isType<bool>()){
-		throw InvalidConditionException("The parameter of a Bool Condition "
-		"must be of type Bool. \n"
-		"Expected type: Bool\n"
-		"Actual type: " + getParameter()->getAny().typeName() + "\n");
-	}
+  if(!getParameter()->isType<bool>()){
+    throw InvalidConditionException("The parameter of a Bool Condition "
+    "must be of type Bool. \n"
+    "Expected type: Bool\n"
+    "Actual type: " + getParameter()->getAny().typeName() + "\n");
+  }
 }
 
 bool BoolCondition::evaluateParameter() const{
-	return getValue<bool>(*getParameter());
+  return getValue<bool>(*getParameter());
 }
 
-}
+} //namespace Teuchos
 
