@@ -11,4 +11,8 @@
 
 all-local:
 
+if HAVE_ZOLTAN_CPPDRIVER
 SUBDIRS = C CPP
+else
+SUBDIRS = C
+endif
