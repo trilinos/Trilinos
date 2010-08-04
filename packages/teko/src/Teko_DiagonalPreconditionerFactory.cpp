@@ -101,6 +101,10 @@ LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(LinearOp & l
 
 void DiagonalPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl){
   List_=pl;
+
+  // Reset default to invert mode if the user hasn't specified something else
+  Teuchos::ParameterList & SubList=List_.sublist("blockdiagmatrix: list");	    
+  SubList.set("apply mode",SubList.get("apply mode","invert"));
 }
 
 
