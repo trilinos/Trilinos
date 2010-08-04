@@ -52,6 +52,21 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 #PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc/matrix_.*.gif
+  src/Make..*
+  src/clean_code.h
+  src/init..*
+  src/malloc.c
+  src/my_srand48.c
+  )
+
+#
 # D) Do standard postprocessing
 #
 

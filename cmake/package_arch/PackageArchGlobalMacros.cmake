@@ -832,3 +832,63 @@ MACRO(PACKAGE_ARCH_SET_SS_FOR_DEV_MODE OUTPUT_VAR)
     SET(${OUTPUT_VAR} ON)
   ENDIF()
 ENDMACRO()
+
+MACRO(PACKAGE_ARCH_EXCLUDE_FILES)
+  SET(FILES_TO_EXCLUDE ${ARGN})
+  
+  #need to add "/<project name>/packages/<package name>/" to each file this is to prevent
+  #someone from trying to exclude a file like "readme" and having it 
+  #inadvertently exclude a file matching that name in another package.
+  SET(MODIFIED_FILES_TO_EXCLUDE "")
+  FOREACH(FILE ${FILES_TO_EXCLUDE})
+    #Ensure that if the full path was specified for the file that we don't add
+    #"/<project name>/packages/<package name>/" again.
+    SET(MATCH_STRING "${PROJECT_NAME}/packages/${PACKAGE_DIR}")
+    STRING(REGEX MATCH ${MATCH_STRING} MATCHED ${FILE} )
+    IF(NOT MATCHED)
+      LIST(APPEND MODIFIED_FILES_TO_EXCLUDE /${PROJECT_NAME}/packages/${PACKAGE_DIR}/${FILE})
+    ELSE()
+      LIST(APPEND MODIFIED_FILES_TO_EXCLUDE ${FILE})
+    ENDIF()
+  ENDFOREACH()
+ 
+#Leaving in for debugging purposes
+#  MESSAGE("List of files being excluded for package ${PACKAGE_NAME}")
+#  FOREACH(NEW_FILE ${MODIFIED_FILES_TO_EXCLUDE})
+#    MESSAGE(${NEW_FILE})
+#  ENDFOREACH()
+
+  LIST(APPEND CPACK_SOURCE_IGNORE_FILES ${MODIFIED_FILES_TO_EXCLUDE})
+  SET(CPACK_SOURCE_IGNORE_FILES ${CPACK_SOURCE_IGNORE_FILES} PARENT_SCOPE)
+
+ENDMACRO()
+
+
+#
+#  macro for helping set up exclude files only for the packages
+#  that will not be supporting autotools.
+#  Returns a list of the autotools files that shoudl be excluded for
+#  the package.
+#
+#  example: PACKAGE_APPLY_TO_NO_AUTOTOOLS_PACKAGES("configure.ac" list)
+#    assuming that the packages epetra and teuchos are not supporting 
+#    autotools anymore then the return value would be:
+#    "epetra/configure.ac;teuchos/configure.ac"
+#
+#
+
+MACRO(PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
+  SET(AUTOTOOLS_FILES 
+    configure.ac
+    configure
+    Makefile.am
+    Makefile.in
+    .*.m4
+    bootstrap
+    config/
+    )
+
+  FOREACH(FILE ${AUTOTOOLS_FILES})
+    PACKAGE_ARCH_EXCLUDE_FILES(${FILE} \(.*/\)*${FILE}) 
+  ENDFOREACH()
+ENDMACRO()

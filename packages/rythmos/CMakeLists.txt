@@ -112,6 +112,12 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 ADD_SUBDIRECTORY(adapters)
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+#
 # D) Do standard postprocessing
 #
 

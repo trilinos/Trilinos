@@ -191,5 +191,25 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 # Add the example scripts
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
+#
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  Notes.txt
+  aclocal.m4
+  bootstrap
+  config
+  lib
+  macdist
+  shared
+  src/PyTrilinos_config.h.in
+  src/depend
+  src/setup.py
+  src-boost
+  )
+
 # Execute the package postprocessing
 PACKAGE_POSTPROCESS()

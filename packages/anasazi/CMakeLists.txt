@@ -67,6 +67,19 @@ IF (Anasazi_ENABLE_Tpetra)
 ENDIF()
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc/TOMS
+  doc/OrthoStudy
+  doc/ThyraPerf
+  src/ModalAnalysisSolvers
+  )
+
+#
 # D) Do standard postprocessing
 #
 
