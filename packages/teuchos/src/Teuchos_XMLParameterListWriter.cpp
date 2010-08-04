@@ -30,6 +30,7 @@
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 #include "Teuchos_ValidatorMaps.hpp"
+#include "Teuchos_XMLParameterListExceptions.hpp"
 
 
 namespace Teuchos{
@@ -64,9 +65,8 @@ XMLObject XMLParameterListWriter::convertValidators(
   }
   ValidatortoIDMap::const_iterator it = validatorIDMap.begin();
   for (; it != validatorIDMap.end(); ++it) {
-    XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(
-      *(it->first))->fromValidatortoXML(it->first, validatorIDMap);
-    validators.addChild(currentValidator);
+    validators.addChild(
+	  ValidatorXMLConverterDB::convertValidator(it->first, validatorIDMap));
   }
   return validators;
 }
@@ -85,15 +85,10 @@ XMLObject XMLParameterListWriter::convertParameterList(
       rtn.addChild(convertParameterList(getValue<ParameterList>(entry), validatorIDMap));
     }
     else{
-      const std::string& name = p.name(i);
-      RCP<const ParameterEntryXMLConverter> converter =
-        ParameterEntryXMLConverterDB::getConverter(entry);
-      XMLObject parameterEntryXML = converter->fromParameterEntrytoXML(entry, name);
-      if(!entry.validator().is_null()){
-        ValidatortoIDMap::const_iterator result = validatorIDMap.getID(entry.validator());
-          parameterEntryXML.addInt(ValidatorXMLConverter::getIdAttributeName(), result->second);  
-      }
-      rtn.addChild(parameterEntryXML);
+      rtn.addChild(ParameterEntryXMLConverterDB::convertEntry(
+	    entry,
+		p.name(i),
+		validatorIDMap));
     }
   }
   return rtn;

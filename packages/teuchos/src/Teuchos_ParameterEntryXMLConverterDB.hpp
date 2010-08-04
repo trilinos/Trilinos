@@ -31,6 +31,7 @@
 #define TEUCHOS_PARAMETERENTRYXMLCONVERTERDB_HPP
 
 #include "Teuchos_StandardParameterEntryXMLConverters.hpp"
+#include "Teuchos_XMLParameterListExceptions.hpp"
 
 
 /*! \file Teuchos_ParameterEntryXMLCoverterDB.hpp
@@ -85,29 +86,68 @@ public:
   static RCP<const ParameterEntryXMLConverter> getConverter(const ParameterEntry& entry) {
     ConverterMap::const_iterator it = getConverterMap().find(entry.getAny().typeName());
     if(it != getConverterMap().end()){
+      return getDefaultConverter();
+    }
+    else{
       return it->second;
     }
-    return getDefaultConverter();
   }
 
   /** \brief Get an appropriate ParameterEntryXMLConverter given a XMLObject.
    *
    * \param xmlObject The XMLObject for which a converter is desired.
    */
-  static RCP<const ParameterEntryXMLConverter> getConverter(const XMLObject& xmlObject) { 
+  static RCP<const ParameterEntryXMLConverter> 
+    getConverter(const XMLObject& xmlObject)
+  {
     std::string parameterType = xmlObject.getRequired(
       ParameterEntryXMLConverter::getTypeAttributeName());
     ConverterMap::const_iterator it = getConverterMap().find(parameterType);
-    if(it != getConverterMap().end()){
-      return it->second;
-    }
-    return getDefaultConverter();
+
+    TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+	  CantFindParameterEntryConverterException,
+	  "Could not find a ParameterEntryConverter" << std::endl <<
+	  "Bad parameter name: " <<
+	  xmlObject.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+	  std::endl << "Unkonwn Type: " << parameterType << std::endl << std::endl);
+	  
+    return it->second;
   }
 
   // 2010/07/30: rabarlt: The above two functions should be moved into
   // Teuchos_ParameterEntryXMLConvergerDB.cpp.  These functions don't need to
   // be inlined and it will be easier to set breakpoints in the debugger if
   // they are in a *.cpp file.
+
+  /**
+   * \brief Converts the given ParameterEntry to XML.
+   */
+  static XMLObject convertEntry(const ParameterEntry& entry, const std::string& name, const ValidatortoIDMap& validatorIDMap){
+    return getConverter(entry)->fromParameterEntrytoXML(entry, name, validatorIDMap);
+  }
+
+  /**
+   * \brief Converts XML to a ParameterEntry.
+   */
+  static ParameterEntry convertXML(const XMLObject& xmlObj){
+    return getConverter(xmlObj)->fromXMLtoParameterEntry(xmlObj);
+  }
+
+  /**
+   * \brief prints the xml tags associated with all known converters
+   *
+   * \param out Stream to which tags should be printed.
+   */
+  static void printKnownConverters(std::ostream& out){
+	out << "Known ParameterEntryXMLConverters: " << std::endl;
+    for(
+	  ConverterMap::const_iterator it = getConverterMap().begin();
+	  it != getConverterMap().end();
+	  ++it)
+	{
+	  out << "\t" << it->first <<std::endl;
+	}
+  }
 
 private:
 
@@ -117,13 +157,10 @@ private:
   /** \brief convience typedef */
   typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
 
-  /** \brief Gets the default converter to be used to convert ParameterEntries. */
-  static RCP<ParameterEntryXMLConverter> getDefaultConverter(){
-    static RCP<ParameterEntryXMLConverter> defaultConverter;
-    if(defaultConverter.is_null()){
-      defaultConverter = rcp(new AnyParameterEntryConverter());
-    }
-    return defaultConverter;
+  static RCP<const ParameterEntryXMLConverter> getDefaultConverter(){
+    static RCP<AnyParameterEntryConverter> defaultConverter = 
+        rcp(new AnyParameterEntryConverter);
+	return defaultConverter;
   }
 
   /** \brief Gets the map containing all the converters. */
@@ -148,6 +185,12 @@ private:
 
       ADD_TYPE_CONVERTER(char, char);
       ADD_TYPE_CONVERTER(bool, bool);
+
+
+      RCP<AnyParameterEntryConverter> anyConverter = 
+        rcp(new AnyParameterEntryConverter);
+      masterMap.insert(ConverterPair(anyConverter->getTypeAttributeValue(), 
+      anyConverter)); 
 
     }
     return masterMap;

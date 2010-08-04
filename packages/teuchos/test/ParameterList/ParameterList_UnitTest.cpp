@@ -38,12 +38,27 @@
 
 namespace Teuchos {
 
+class UNDEFINED_PARAMETERENTRY_VALIDATOR : public ParameterEntryValidator
+{
+  
+  public:
 
-// 2010/07/29: rabartl: Use as<T>(val) and *never* (T)(val).  See TCDG 1.0 GCG 19 
+  void printDoc(const std::string& docString, std::ostream& out){}
+
+  ValidStringsList validStringValues() const{
+    return rcp(new tuple<std::string>(""));
+  
+  void validate(
+    ParameterEntry  const& entry,
+    std::string const& paramName,
+    std::string const& sublistName
+    ) const {}
+
+};
+
+
 #define ADD_TYPE_PARAMETER(T,VALUE) \
   myList.set( #T , as<T>(VALUE));
-// 2010/07/29: rabartl: Avoid magic numbers (if you will ever repeat tem).
-// See CPPCS Item 17
 const int g_arraySize = 5;
 #define ADD_ARRAY_TYPE_PARAMETER(T,VALUE) \
   myList.set( #T " Array", Array< T >(g_arraySize, ( T ) VALUE ));
@@ -137,9 +152,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentSublistNames )
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
 }
 
-
-// 2010/07/29: rabartl: You have to test these macros to know that they
-// actually work!
 TEUCHOS_UNIT_TEST(Teuchos_ParameterList, ADD_TYPE_AND_ARRAY_TYPE_PARAMETER)
 {
   ParameterList myList;
@@ -172,7 +184,6 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters)
   ADD_TYPE_PARAMETER(char, 'a');
   ADD_TYPE_PARAMETER(bool, true);
 
-  // 2010/07/30: rabartl: Never write directly to std::cout (see TCDG 1.0 GCG 17)
   out << "\nwriting xml to file...\n";
   writeParameterListToXmlFile(myList, xmlFileName);
   out << "reading xml from file...\n";
@@ -187,37 +198,75 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters)
 }
 
 
-// 2010/07/29: rabartl: Use two vertical spaces between definitions.  See TCDG 1.0 FSC 4
-
-
 TEUCHOS_UNIT_TEST(Teuchos_ParameterList, converterExceptions)
-// 2010/07/29: rabartl: Put opening brace on new line.  See TCDG 1.0 FSC 8 for example
 {
-  // 2010/07/29: rabartl: Try to keep formatting within the first 80 columns.
-  // See TCDG 1.0 FSC 2
+
   TEST_THROW(RCP<ParameterList>
     missingValidatorList = getParametersFromXmlFile("MissingValidator.xml"),
-    std::runtime_error);
+    MissingValidatorDefinitionException);
+ 
   TEST_THROW(RCP<ParameterList>
-    missingValidatorList = getParametersFromXmlFile("BadRootElement.xml"),
-    std::runtime_error);
+    missingPrototypeList = getParametersFromXmlFile("MissingPrototypeValidator.xml"),
+	MissingValidatorDefinitionException);
+
   TEST_THROW(RCP<ParameterList>
-    missingValidatorList = getParametersFromXmlFile("BadParameterListElement.xml"),
-    std::runtime_error);
+    badRootElementList = getParametersFromXmlFile("BadRootElement.xml"),
+    BadXMLParameterListRootElementException);
+
   TEST_THROW(RCP<ParameterList>
-    missingValidatorList = getParametersFromXmlFile("NoNameAttribute.xml"),
-    std::runtime_error);
+    badParameterListElementList = getParametersFromXmlFile("BadParameterListElement.xml"),
+    BadParameterListElementException);
+
   TEST_THROW(RCP<ParameterList>
-    missingValidatorList = getParametersFromXmlFile("NoTypeAttribute.xml"),
-    std::runtime_error);
+    noNameAttributeList = getParametersFromXmlFile("NoNameAttribute.xml"),
+    NoNameAttributeExecption);
+
   TEST_THROW(RCP<ParameterList>
-    missingValidatorList = getParametersFromXmlFile("NoValueAttribute.xml"),
-    std::runtime_error);
-  // 2010/07/29: rabartl: Above, you need to use a *different* exception type
-  // for each type of error.  Otherwise, you can't be sure that you are
-  // throwing the exceptions that you think you are.  For example, you should
-  // have MissigValidatorError, BadRootElementError,
-  // BadParameterListError, etc.
+    noTypeAttributeList = getParametersFromXmlFile("NoTypeAttribute.xml"),
+    NoValueAttributeExecption);
+  
+  TEST_THROW(RCP<ParameterList>
+    noValueAttributeList = getParametersFromXmlFile("NoValueAttribute.xml"),
+    NoValueAttributeExecption);
+
+  TEST_THROW(RCP<ParameterList>
+    conflicitingValiIdsList = getParametersFromXmlFile("ConflictingValidatorIDs.xml"),
+    DuplicateValidatorIDsException);
+
+  TEST_THROW(RCP<ParameterList>
+    stringValidatorBadTagList = getParametersFromXmlFile("StringValidatorBadTag.xml"),
+    BadTagException);
+
+  TEST_THROW(RCP<ParameterList>
+    stringValidatorBadTagList = getParametersFromXmlFile("StringToIntegralValidatorBadTag.xml"),
+    BadTagException);
+
+  TEST_THROW(RCP<ParameterList>
+    badParameterEntryConverterList = getParametersFromXmlFile("CantFindParameterEntryConverter.xml"),
+	CantFindParameterEntryConverterException);
+
+  UNDEFINED_PARAMETERENTRY_VALIDATOR badValidator;
+  TEST_THROW(ValidatorXMLConverterDB::getConverter(badValidator), CantFindValidatorConverterException);
+
+  #ifdef HAVE_TEUCHOS_DEBUG
+  StandardTemplatedParameterConverter<int> intConverter;
+  StandardTemplatedParameterConverter<float> floatConverter;
+  ParameterEntry floatParameter("float", (float)3.0);
+  TEST_THROW(intConverter.fromParameterEntryToXML(doubleParameter, "blah"), BadParameterEntryXMLConverterTypeExecption);
+
+  XMLObject floatXML = floatConverter.fromParameterEntryToXML(floatParameter, "float");
+  TEST_THROW(intConverter.fromXMLtoParameterEntry(floatXML), BadParameterEntryXMLConverterTypeExecption);
+
+  IDtoValidatorMap dummyIDtoVMap;
+  ValidatortoIDMap dummyVtoIDMap;
+  StringValidatorXMLConverter stringConverter;
+  AnyNumberValidatorXMLConverter anyNumberConverter;
+  AnyNumberParameterEntryValidator anyNumberValidator;
+  TEST_THROW(stringConverter.fromValidatortoXML(anyNumberValidator, dummyIDtoVMap), BadValidatorXMLConverterException);
+  XMLObject anyNumberXML = anyNumberConverter(anyNumberValidator);
+  TEST_THROW(stringConverter.fromXMLtoValidator(anyNumberXML, dummyVtoIDMap), BadValidatorXMLConverterException);
+  #endif
+
 }
 
 
@@ -255,6 +304,10 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, fileNameValidatorConverter)
 // 2010/07/30: rabartl: I am a little worried about all of the static casts.
 // Can you not use dynamic casts?  You can only use (rcp_)dynamic_cast when
 // the type has at least one virtual function (which all Validators should).
+// 
+// 2010/08/03 I'm using static casts because from what I understand
+// they are faster than dynamic casts. there should be no danger because 
+// I know these are valid casts.
 
 
 TEUCHOS_UNIT_TEST(Teuchos_ParameterList, stringValidatorConverter)
@@ -544,8 +597,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_ParameterList, StringToIntegralConvert
 
 }
 
+TEUCHOS_UNIT_TEST(Teuchos_ParameterList, existingPrototypeTest){
+  ParameterList pl("ExsitingPrototypeList");
+  RCP<StringValidator> stringVali = rcp(new StringValidator());
+  RCP<ArrayValidator<StringValidator, std::string> > arrayStringVali 
+    = rcp(new ArrayValidator<StringValidator, std::string>(stringVali));
+  Array<std::string> strArray = tuple<std::string>("blah", "blah", "blah");
+  pl.set("string param", "hi", "a string param", stringVali);
+  pl.set("string array param", strArray, "a string array parameter", arrayStringVali);
+  XMLParameterListWriter plWriter;
+  XMLObject plXMLOut = plWriter.toXML(pl);
+  std::string plStrOut = toString(plXMLOut);
+  RCP<StringInputStream> plInStream = rcp( new StringInputStream(plStrOut));
+  XMLParser xmlParser(plInStream);
+  XMLObject plXMLIn = xmlParser.parse();
+  XMLParameterListReader plReader;
+  ParameterList plIn = plReader.toParameterList(plXMLIn);
+  RCP<ArrayValidator<StringValidator, std::string> > inArrayValidator = rpc_dynamic_cast(plIn.getEntry("string array param").validator());
+  TEST_ASSERT(*(plIn.getEntry().validator()) == *(inArrayValidator->getPrototype()));
+}
 
-#define FULL_NUMBER_TYEP_TEST( T ) \
+
+#define FULL_NUMBER_TYPE_TEST( T ) \
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_ParameterList, EnhancedNumberValidatorConverter, T ) \
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_ParameterList, NumberArrayValidatorConverterTest, T ) \
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_ParameterList, StringToIntegralConverterTest, T ) 
@@ -556,19 +629,19 @@ typedef unsigned short ushort;
 typedef unsigned long ulong;
 
 
-FULL_NUMBER_TYEP_TEST(int)
-FULL_NUMBER_TYEP_TEST(uint)
-FULL_NUMBER_TYEP_TEST(short)
-FULL_NUMBER_TYEP_TEST(ushort)
-FULL_NUMBER_TYEP_TEST(long)
-FULL_NUMBER_TYEP_TEST(ulong)
-FULL_NUMBER_TYEP_TEST(float)
-FULL_NUMBER_TYEP_TEST(double)
+FULL_NUMBER_TYPE_TEST(int)
+FULL_NUMBER_TYPE_TEST(uint)
+FULL_NUMBER_TYPE_TEST(short)
+FULL_NUMBER_TYPE_TEST(ushort)
+FULL_NUMBER_TYPE_TEST(long)
+FULL_NUMBER_TYPE_TEST(ulong)
+FULL_NUMBER_TYPE_TEST(float)
+FULL_NUMBER_TYPE_TEST(double)
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long int llint;
 typedef unsigned long long int ullint;
-FULL_NUMBER_TYEP_TEST(llint)
-FULL_NUMBER_TYEP_TEST(ullint)
+FULL_NUMBER_TYPE_TEST(llint)
+FULL_NUMBER_TYPE_TEST(ullint)
 #endif
 
 

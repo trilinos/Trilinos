@@ -191,17 +191,14 @@ public:
       it will be followed by "[unused]".  This function is called by the "std::ostream& operator<<". 
   */
   std::ostream& leftshift(std::ostream& os, bool printFlags = true) const;
+
   /*! \brief Get the string that should be used as the tag name for all parameters when they are serialized
    * to xml.
    */
-  static const std::string& getTagName() 
-    {
-      static std::string tagName;
-      if (tagName=="") {
-        tagName = "Parameter";
-      }
+  static const std::string& getTagName(){
+      static const std::string tagName = "Parameter";
       return tagName;
-    }
+  }
   
 
   //@}

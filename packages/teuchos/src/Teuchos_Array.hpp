@@ -643,6 +643,19 @@ std::string toString(const Array<T>& array);
 template<typename T>
 Array<T> fromStringToArray(const std::string& arrayStr);
 
+/** \brief A wrapper around the \c fromStringToArray function 
+ * which allows the operator>> to be used on Arrays.
+ *
+ * \relates Array
+ */
+template<typename T>
+std::istringstream& operator>> (std::istringstream& in, Array<T>& array){
+  const std::string arrayString;
+  in.str(arrayString);
+  array = fromStringToArray<T>(arrayString);
+  return in;
+}
+
 /** \brief Extracts data from an istringstream object 
  * \note This templated function is necessary for the proper extraction of 
  *       data by the \c fromStringToArray function.

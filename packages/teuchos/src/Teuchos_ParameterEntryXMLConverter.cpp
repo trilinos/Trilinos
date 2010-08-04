@@ -27,18 +27,44 @@
 // @HEADER
 
 #include "Teuchos_ParameterEntryXMLConverter.hpp"
+#include "Teuchos_XMLParameterListExceptions.hpp"
+#include "Teuchos_ValidatorXMLConverter.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
 
 namespace Teuchos{
 
 ParameterEntry
 ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) const
 {
-/*  TEST_FOR_EXCEPTION(xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(), 
-    std::runtime_error, 
-    "This converter is not approriate for converting a ParameterEntry tag with a type of " 
-    << xmlObj.getRequired(getTypeAttributeName()) << " to a ParameterEntry with type " 
-    << getTypeAttributeValue());*/
-  // 2010/07/30: rabartl: Remove dead code above.
+  #ifdef HAVE_TEUCHOS_DEBUG
+    TEST_FOR_EXCEPTION(xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(),
+	BadParameterEntryXMLConverterTypeException,
+	"Error: this Parameter Entry XML tag has a type different than "
+	"the XMLConverter being used to convert it." <<std::endl <<
+    "Parameter name: " << xmlObj.getRequired(
+	  XMLParameterListWriter::getNameAttributeName()) << std::endl << 
+    "XML Parameter Entry type: " << xmlObj.getRequired(getTypeAttributeName()) << std::endl << 
+    "XMLConverter type: " << getTypeAttributeValue() << std::endl <<std::endl);
+  #endif
+
+  TEST_FOR_EXCEPTION(
+    !xmlObj.hasAttribute(getTypeAttributeName()), 
+    NoNameAttributeExecption,
+    ParameterEntry::getTagName() <<" tags must "
+    "have a " << getTypeAttributeName() << " attribute." << std::endl <<
+	"Bad Parameter: " << 
+	xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+	std::endl << std::endl);
+
+  TEST_FOR_EXCEPTION(
+    !xmlObj.hasAttribute(getValueAttributeName()), 
+    NoNameAttributeExecption,
+    ParameterEntry::getTagName() <<" tags must "
+    "have a " << getValueAttributeName() << " attribute" << std::endl <<
+	"Bad Parameter: " << 
+	xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+	std::endl << std::endl);
+
   ParameterEntry toReturn;
   bool isDefault = false;
   bool isUsed = false;
@@ -64,15 +90,28 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
 
 XMLObject
 ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry,
-  const std::string &name) const
+  const std::string &name, const ValidatortoIDMap& validatorIDMap) const
 {
-  //TEST_FOR_EXCEPTION(!isAppropriateConverter(entry), std::runtime_error, "This converter is not approriate for converting the ParameterEntry " << name << " to the xml tag with a type attribute of " << getTypeAttributeValue());
+  #ifdef HAVE_TEUCHOS_DEBUG
+  TEST_FOR_EXCEPTION(entry.getAny().typeName() != getTypeAttributeValue(),
+    BadParameterEntryXMLConverterTypeException,
+    "Error: This converter can't convert the given ParameterEntry to XML "
+    "because their types don't match." << std::endl <<
+	"Parameter name: " << name << std::endl <<
+	"Parameter type: " << entry.getAny().typeName() << std::endl <<
+	"Converter type: " << getTypeAttributeValue() << std::endl << std::endl);
+  #endif
+
   XMLObject toReturn(ParameterEntry::getTagName());
-  toReturn.addAttribute(getNameAttributeName(), name);
+  toReturn.addAttribute(XMLParameterListWriter::getNameAttributeName(), name);
   toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
   toReturn.addAttribute(getValueAttributeName(), getValueAttributeValue(entry));
   toReturn.addBool(getDefaultAttributeName(), entry.isDefault());
   toReturn.addBool(getUsedAttributeName(), entry.isUsed());
+  if(nonnull(entry.validator())){
+    ValidatortoIDMap::const_iterator result = validatorIDMap.getID(entry.validator());
+    toReturn.addInt(ValidatorXMLConverter::getIdAttributeName(), result->second);  
+  }
   return toReturn;
 }
 

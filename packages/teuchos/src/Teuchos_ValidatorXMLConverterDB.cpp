@@ -67,10 +67,11 @@ RCP<const ValidatorXMLConverter>
 ValidatorXMLConverterDB::getConverter(const ParameterEntryValidator& validator)
 {
   ConverterMap::const_iterator it = getConverterMap().find(validator.getXMLTagName());
-  if (it != getConverterMap().end()){
-    return it->second;
-  }
-  return getDefaultConverter();
+  TEST_FOR_EXCEPTION(it != getConverterMap().end(),
+    CantFindValidatorConverterException,
+    "Could not find a ValidatorXMLConverter for a validator"
+  )
+  return it->second;
 }
 
 
@@ -79,23 +80,27 @@ ValidatorXMLConverterDB::getConverter(const XMLObject& xmlObject)
 { 
   std::string parameterType = xmlObject.getTag();
   ConverterMap::const_iterator it = getConverterMap().find(parameterType);
-  if(it != getConverterMap().end()){
-    return it->second;
-  }
-  return getDefaultConverter();
+  TEST_FOR_EXCEPTION(it != getConverterMap().end(),
+    CantFindValidatorConverterException,
+    "Could not find a ValidatorXMLConverter for a validator"
+  )
+  return it->second;
 }
 
-
-RCP<ValidatorXMLConverter>
-ValidatorXMLConverterDB::getDefaultConverter()
+XMLObject ValidatorXMLConverterDB::convertValidator(
+  RCP<const ParameterEntryValidator> validator,
+  const ValidatortoIDMap& validatorIDMap)
 {
-  static RCP<ValidatorXMLConverter> defaultConverter;
-  if(defaultConverter.is_null()){
-    defaultConverter = rcp(new UnknownValidatorXMLConverter);
-  }
-  return defaultConverter;
+  return getConverter(*validator)->fromValidatortoXML(validator, validatorIDMap);
 }
-
+ 
+RCP<ParameterEntryValidator> ValidatorXMLConverterDB::convertXML(
+  const XMLObject& xmlObject, 
+  IDtoValidatorMap& idValidatorMap)
+{
+  return ValidatorXMLConverterDB::getConverter(xmlObject)->fromXMLtoValidator(xmlObject,
+    idValidatorMap);
+}
 
 ValidatorXMLConverterDB::ConverterMap&
 ValidatorXMLConverterDB::getConverterMap()

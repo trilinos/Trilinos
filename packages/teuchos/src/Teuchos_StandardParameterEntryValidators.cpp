@@ -389,21 +389,15 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
   }
   if(mustAlreadyExist_){
     std::string fileName = getValue<std::string>(entry);
-    struct stat fileInfo;
-    int intStat= stat(fileName.c_str(),&fileInfo);
-    if(intStat !=0){
-      std::stringstream oss;
-      std::string msg;
-      oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+    TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
+      Exceptions::InvalidParameterValue,
+      "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
       " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
       "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
       "can help you figure out what went wrong.\n\n"
       "Error: The file must already exists. The value you entered does not corresspond to an existing file name.\n" <<
       "Parameter: " << paramName << "\n" << 
-      "File name specified: " << fileName << "\n";
-      msg = oss.str();
-      throw Exceptions::InvalidParameterValue(msg);
-    }
+      "File name specified: " << fileName << "\n");
   }
 }
 

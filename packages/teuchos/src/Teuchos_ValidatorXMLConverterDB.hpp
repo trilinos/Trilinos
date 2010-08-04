@@ -30,7 +30,7 @@
 #ifndef TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
 #define TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
 
-/*! \file Teuchos_ParameterEntryXMLCoverter.hpp
+/*! \file Teuchos_ParameterEntryXMLCoverterDB.hpp
 */
 
 #include "Teuchos_ValidatorXMLConverter.hpp"
@@ -38,9 +38,7 @@
 
 namespace Teuchos {
 
-
 class ParameterEntryValidator;
-
 
 /** \brief Provides ability to lookup ValidatorXMLConverterDB
  */
@@ -68,18 +66,49 @@ public:
    */
   static RCP<const ValidatorXMLConverter> getConverter(const XMLObject& xmlObject);
 
+  /**
+   * \brief Given a validator and ValidatortoIDMap, converts the
+   * validator to XML.
+   *
+   * \return XML representation of the validator.
+   */
+  static XMLObject convertValidator(
+    RCP<const ParameterEntryValidator> validator,
+    const ValidatortoIDMap& validatorIDMap); 
+
+  /**
+   * \brief Given an XMLObject and IDtoValidatorMap, converts the XMLObject 
+   * to a ParameterEntryValidator and inserts the validator into the map.
+   *
+   * \return A ParameterEntryValidator that was represented by the XML.
+   */
+  static RCP<ParameterEntryValidator> convertXML(const XMLObject& xmlObject, 
+    IDtoValidatorMap& idValidatorMap);
+
+  /**
+   * \brief prints the xml tags associated with all known converters
+   *
+   * \param out Stream to which tags should be printed.
+   */
+  static void printKnownConverters(std::ostream& out){
+	out << "Known ValidatorXMLConverters: " << std::endl;
+    for(
+	  ConverterMap::const_iterator it = getConverterMap().begin();
+	  it != getConverterMap().end();
+	  ++it)
+	{
+	  out << "\t" << it->first <<std::endl;
+	}
+  }
+
+
 private:
 
-  /** \brief convience typedef. */
+  /** \brief convience class. */
   typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
 
   /** \brief convience typedef. */
   typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
-
-  /** \brief Gets the default converter to be used to convert
-   * ParameterEntryValidator.
-   */
-  static RCP<ValidatorXMLConverter> getDefaultConverter();
 
   /** \brief Gets the default converter to be used to convert
    * ParameterEntries.

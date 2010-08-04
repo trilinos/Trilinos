@@ -23,6 +23,9 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ParameterListFileCopies
   DEST_FILES
     blah.txt MissingValidator.xml BadRootElement.xml BadParameterListElement.xml
     NoNameAttribute.xml NoTypeAttribute.xml NoValueAttribute.xml
+	ConflictingValidatorIDs.xml StringToIntegralValidatorBadTag.xml
+	StringValidatorBadTag.xml CantFindParameterEntryConverter.xml
+	MissingPrototypeValidator.xml
   SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/ParameterList
   EXEDEPS ParameterList_UnitTest
 )

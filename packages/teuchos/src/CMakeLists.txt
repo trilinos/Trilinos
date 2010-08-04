@@ -71,6 +71,7 @@ APPEND_SET(HEADERS
   Teuchos_Dependency.hpp
   Teuchos_DependencySheet.hpp
   Teuchos_Describable.hpp
+  Teuchos_DummyObjectGetter.hpp
   Teuchos_ENull.hpp
   Teuchos_ErrorPolling.hpp
   Teuchos_Exceptions.hpp
@@ -262,6 +263,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_XMLInputStream.hpp
     Teuchos_XMLObject.hpp
     Teuchos_XMLObjectImplem.hpp
+	Teuchos_XMLParameterListExceptions.hpp
     Teuchos_XMLParameterListHelpers.hpp
     Teuchos_XMLParameterListReader.hpp
     Teuchos_XMLParameterListWriter.hpp

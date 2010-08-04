@@ -26,21 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_StandardParameterEntryXMLConverters.hpp"
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-namespace Teuchos{
-
-const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
-  return "any";
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
-
-const std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
-  return toString(entry.getAny(false));
-}
-
-void AnyParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
-  entry.setValue<std::string>(xmlObj.getRequired(getValueAttributeName()), isDefault);
-}
-
-}
-

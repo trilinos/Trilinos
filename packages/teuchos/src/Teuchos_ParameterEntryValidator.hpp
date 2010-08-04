@@ -51,9 +51,6 @@ class ParameterEntry;
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator {
 public:
 
-  // 2010/07/30: rabartl: Below, you need to add at least a \brief field for
-  // every entity that you want doxygen to include (see TCDG 1.0 DOX 4)
-
   /** \brief . */
   typedef RCP<const Array<std::string> > ValidStringsList;
 
@@ -92,9 +89,6 @@ public:
    * characters) and must be short enough to fit on one line and be readable.
    */
   virtual ValidStringsList validStringValues() const = 0;
-
-  // 2010/07/30: rabartl: Above, put the entire prototype on one line if it
-  // fits in 80 columns (see TCDG 1.0 FSC 7)
 
   /** \brief Validate a parameter entry value and throw std::exception (with a
    * great error message) if validation fails.
@@ -136,7 +130,6 @@ public:
       this->validate(*entry,paramName,sublistName);
     }
 
-	//virtual XMLObject getXML() const = 0;
   
 };
 

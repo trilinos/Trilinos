@@ -39,10 +39,6 @@
 namespace Teuchos {
 
 
-// 2010/07/30: rabartl: Below, the \brief line must be seprated by a newline
-// (I think).
-
-
 /** \brief A last resort converter for when no others will do.
  *
  * Writes out a raw string representation to xml and sets ParameterEntryValues
@@ -58,7 +54,6 @@ public:
 
   void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 
-  bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 
@@ -88,11 +83,6 @@ public:
       entry.setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
     }
 
-  /** \brief */
-  virtual bool isAppropriateConverter(const ParameterEntry& entry) const{
-    return entry.isType<T>();  
-  }
-
 };
 
 
@@ -101,34 +91,18 @@ public:
  * This converter is appropriate for most array data types.
  */
 template<class T>
-class ArrayTemplatedParameterConverter : public ParameterEntryXMLConverter {
+class ArrayTemplatedParameterConverter : public StandardTemplatedParameterConverter<Array<T> > {
 
 public:
-
-  /** \brief */
-  virtual const std::string getTypeAttributeValue() const{
-    return TypeNameTraits<Array<T> >::name();
-  }
-
-  /** \brief */
-  virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const{
-    return toString(any_cast<Array<T> >(entry.getAny(false)));
-  }
 
   /** \brief */
   virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj,
     bool isDefault) const
     {
-      std::string arrayString = xmlObj.getRequired(getValueAttributeName());
-      Array<T> convertedArray;
-      convertedArray = fromStringToArray<T>(arrayString);
+      std::string arrayString = xmlObj.getRequired(ParameterEntryXMLConverter::getValueAttributeName());
+      Array<T> convertedArray = fromStringToArray<T>(arrayString);
       entry.setValue<Array<T> >(convertedArray, isDefault);
     }
-
-  /** \brief */
-  virtual bool isAppropriateConverter(const ParameterEntry& entry) const{
-    return entry.isType<Array<T> >();  
-  }
 
 };
 

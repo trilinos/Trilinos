@@ -24,7 +24,7 @@
 // 
 // ***********************************************************************
 // @HEADER
-#include "Teuchos_LocalTestingHelpers.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -40,9 +40,8 @@ namespace Teuchos {
 /**
  * Tests Number Validators.
  */
-int testNumberValis(FancyOStream &out)
+TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
 {
-	bool success = true;
 	/*
 	 * Testing Int Validator.
 	 */
@@ -148,26 +147,21 @@ int testNumberValis(FancyOStream &out)
     Exceptions::InvalidParameterValue);
 	TEST_THROW(doubleList->set("Int Parameter", 5, "int parameter", doubleVali),
     Exceptions::InvalidParameterType);
-	return (success ? 0:1);
 }
 
 
 /*
  * Testing StringValidator.
  */
-int testStringVali(FancyOStream &out)
+TEUCHOS_UNIT_TEST(Teuchos_Validators, stringValidator)
 {
 	bool success = true;
 	RCP<ParameterList> stringList = rcp(new ParameterList("String List"));
 	Array<std::string> stringVals = tuple<std::string>("str1", "str2", "str3");
 	RCP<StringValidator> stringVali = rcp(new StringValidator(stringVals));
 	RCP<const Array<std::string> > valiVals = stringVali->validStringValues();
-	bool local_success = true;
 	for(int i=0;i<stringVals.size(); i++){
 		TEST_ARRAY_ELE_EQUALITY(*valiVals, i, stringVals[i]);
-	}
-	if(!local_success){
-		success = false;
 	}
 	TEST_NOTHROW(stringList->set("String param1", "str1", "a string parameter", stringVali));
 	TEST_THROW(stringList->set("String param2", "not in list", "a string parameter", stringVali),
@@ -175,16 +169,14 @@ int testStringVali(FancyOStream &out)
 	TEST_THROW(stringList->set("int param", 5, "a int parameter", stringVali),
     Exceptions::InvalidParameterType);
 
-	return (success ? 0:1);
 }
 
 
 /*
  * Testing FileNameValidator.
  */
-int testFileNameVali(FancyOStream &out)
+TEUCHOS_UNIT_TEST(Teuchos_Validators, fileNameValidator)
 {
-	bool success = true;
 	RCP<ParameterList> fileNameList = rcp(new ParameterList("Filename List"));
 	RCP<FileNameValidator> fileNameVali = rcp(new FileNameValidator(true));
 	TEST_ASSERT(fileNameVali->fileMustExist());
@@ -198,18 +190,14 @@ int testFileNameVali(FancyOStream &out)
 	TEST_NOTHROW(fileNameList->set("file name param", "testFile.txt", "a file name", fileNameVali));
 	TEST_THROW(fileNameList->set("file name param", "doesntexist.txt", "a file name", fileNameVali),
     Exceptions::InvalidParameterValue);
-
-	return (success ? 0:1);
 }
 
 
 /*
  * Testing Array Validators.
  */
-int testArrayValis(FancyOStream &out)
+TEUCHOS_UNIT_TEST(Teuchos_Validators, arrayValidators)
 {
-
-	bool success = true;
 
 	/*
 	 * Testing StringArrayValidator.
@@ -310,39 +298,8 @@ int testArrayValis(FancyOStream &out)
     Exceptions::InvalidParameterValue);
 	TEST_THROW(stringList->set("Long array param", longArray, "long array parameter", arrayFileNameVali),
     Exceptions::InvalidParameterType);
-
-
-	return (success ? 0:1);
 }
 
 
 } // namespace Teuchos
-
-
-// 2010/07/30: rabartl: Because macros from Teuchos::LocalTestHelpers.hpp were
-// used above, the above unit tests could be converted to use
-// TEUCHOS_UNIT_TEST(...) in five minutes.  The advantages of this is more
-// controlled outputting, more control over what gets run, not having to even
-// write a main function (that you can't control the outputtting as well).
-
-
-int main(int argc, char* argv[])
-{
-	bool success = true;
-  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-	if (Teuchos::testNumberValis(*out) == 1){
-		success = false;
-	}
-	if (Teuchos::testStringVali(*out) == 1){
-		success = false;
-	}
-	if (Teuchos::testFileNameVali(*out) == 1){
-		success = false;
-	}
-	if (Teuchos::testArrayValis(*out) == 1){
-		success = false;
-	}
-  if(success) {*out << "\nEnd Result: TEST PASSED" << std::endl;}
-	return (success ? 0:1);
-}
 

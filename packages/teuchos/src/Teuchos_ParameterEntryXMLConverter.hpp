@@ -41,6 +41,7 @@
 
 namespace Teuchos {
 
+class ValidatortoIDMap;
 
 /** \brief A class used to convert parameter entries to xml and vice versa.
  */
@@ -61,7 +62,7 @@ public:
    * \returns An XMLObject representing the parameter entry.
    */
   XMLObject fromParameterEntrytoXML(const ParameterEntry &entry,
-    const std::string &name) const;
+    const std::string &name, const ValidatortoIDMap& validatorIDMap) const;
 
   /** \brief Gets a string representing the value that should be assigned to
    * the "type" attribute when converting a parameter entry to xml.
@@ -85,11 +86,6 @@ public:
   virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj,
     bool isDefault) const=0;
 
-  /** \brief determines wether or not this converter is appropriate for the
-   * given parameter entry.
-   */
-  virtual bool isAppropriateConverter(const ParameterEntry& entry) const=0;
-
   /** \brief . */
   static const std::string& getTypeAttributeName() {
     static const std::string typeAttributeName_ = "type";
@@ -112,11 +108,6 @@ private:
   static const std::string& getUsedAttributeName() {
     static const std::string usedAttributeName_ = "isUsed";
     return usedAttributeName_;
-  }
-
-  static const std::string& getNameAttributeName() {
-    static const std::string nameAttributeName_ = "name";
-    return nameAttributeName_;
   }
 
 };

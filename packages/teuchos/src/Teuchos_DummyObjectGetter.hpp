@@ -26,21 +26,37 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_StandardParameterEntryXMLConverters.hpp"
+/*! \file Teuchos_DummyObjectGetter.hpp
+*/
+
+#ifndef TEUCHOS_DUMMYOBJECTGETTER_HPP
+#define TEUCHOS_DUMMYOBJECTGETTER_HPP
+
 
 namespace Teuchos{
 
-const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
-  return "any";
+
+/** \brief Class for retrieving a dummy object of type T.*/
+template<class T>
+class DummyObjectGetter{
+
+public:
+
+/** \brief Retrieves a dummy object of type T. */
+static RCP<const T> getDummyObject(){
+  if(dummyObject.is_null()){
+    dummyObject = rcp(new T);
+  }
+  return dummyObject;
 }
 
-const std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
-  return toString(entry.getAny(false));
-}
+private:
+  static RCP<const T> dummyObject;
 
-void AnyParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
-  entry.setValue<std::string>(xmlObj.getRequired(getValueAttributeName()), isDefault);
-}
+};
 
-}
 
+} // namespace Teuchos
+
+
+#endif // TEUCHOS_DUMMYOBJECTGETTER_HPP

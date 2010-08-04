@@ -37,14 +37,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-
-
-// 2010/07/30: rabartl: This below header is *not* a standard C++ headers.
-// This will not port to MS Windows I don't think.  Something will need to be
-// done to remove a mandatory include for this header "sys/stat.h".
-
-#include <sys/stat.h>
-
+#include "Teuchos_DummyObjectGetter.hpp"
 
 namespace Teuchos {
 
@@ -448,6 +441,37 @@ std::string getVerbosityLevelParameterValueName(
  */
 RCP<StringToIntegralParameterEntryValidator<EVerbosityLevel> >
 verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * StringToIntegralParameterEntryValidator<IntegralType>.
+ *
+ * \relates StringToIntegralParameterEntryValidator
+ */
+template<class IntegralType>
+class DummyObjectGetter<StringToIntegralParameterEntryValidator<IntegralType> >{
+
+public:
+
+/** \brief Retrieves a dummy object of type
+ * StringToIntegralParameterEntryValidator<IntegralType>.
+ */
+static RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
+  getDummyObject()
+{
+  if(dummyObject.is_null()){
+    dummyObject = stringToIntegralParameterEntryValidator<IntegralType>
+	  (tuple<std::string>(""), "").getConst();
+  }
+  return dummyObject;
+}
+
+private:
+
+  static RCP<const StringToIntegralParameterEntryValidator<IntegralType> > 
+    dummyObject;
+
+};
+
 
 
 /** \brief Standard implementation of a ParameterEntryValidator that accepts
@@ -1333,7 +1357,7 @@ public:
    * @param prototypeValidator The validator to be used on each
    * entry in the array.
    */
-  ArrayValidator(RCP<ValidatorType> prototypeValidator):
+  ArrayValidator(RCP<const ValidatorType> prototypeValidator):
     ParameterEntryValidator(),
       prototypeValidator_(prototypeValidator){}
 
@@ -1370,7 +1394,9 @@ private:
 
   /** \brief The prototype validator to be applied to each entry in the Array.
    */
-  RCP<ValidatorType> prototypeValidator_;
+  RCP<const ValidatorType> prototypeValidator_;
+
+  ArrayValidator<ValidatorType, EntryType>();
 
 };
 
@@ -1422,7 +1448,7 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
  */
 class ArrayStringValidator : public ArrayValidator<StringValidator, std::string>{
 public:
-  ArrayStringValidator(RCP<StringValidator> prototypeValidator):
+  ArrayStringValidator(RCP<const StringValidator> prototypeValidator):
     ArrayValidator<StringValidator, std::string>(prototypeValidator){}
 };
 
@@ -1437,7 +1463,7 @@ public:
  */
 class ArrayFileNameValidator : public ArrayValidator<FileNameValidator, std::string>{
 public:
-  ArrayFileNameValidator(RCP<FileNameValidator> prototypeValidator):
+  ArrayFileNameValidator(RCP<const FileNameValidator> prototypeValidator):
     ArrayValidator<FileNameValidator, std::string>(prototypeValidator){}
 };
 
@@ -1452,9 +1478,40 @@ public:
 template<class T>
 class ArrayNumberValidator : public ArrayValidator<EnhancedNumberValidator<T>, T>{
 public:
-  ArrayNumberValidator(RCP<EnhancedNumberValidator<T> > prototypeValidator):
+  ArrayNumberValidator(RCP<const EnhancedNumberValidator<T> > prototypeValidator):
     ArrayValidator<EnhancedNumberValidator<T>, T>(prototypeValidator){}
 };
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * ArrayValidator<ValidatorType, EntryType>.
+ *
+ * \relates ArrayValidator
+ */
+template<class ValidatorType, class EntryType>
+class DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >{
+
+public:
+
+/** \brief Retrieves a dummy object of type
+ * ArrayValidator<ValidatorType, EntryType>.
+ */
+static RCP<const ArrayValidator<ValidatorType, EntryType> >
+  getDummyObject()
+{
+  if(dummyObject.is_null()){
+	RCP<const ValidatorType> dummyPrototype =
+	  DummyObjectGetter<ValidatorType>::getDummyObject();
+    dummyObject = rcp(new ArrayValidator<ValidatorType, EntryType>(dummyPrototype));
+  }
+  return dummyObject;
+}
+
+private:
+
+  static RCP<const ArrayValidator<ValidatorType, EntryType> > dummyObject;
+
+};
+
 
 
 // ///////////////////////////

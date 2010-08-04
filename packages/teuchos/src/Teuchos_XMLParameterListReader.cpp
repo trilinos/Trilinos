@@ -43,11 +43,9 @@ XMLParameterListReader::XMLParameterListReader()
 ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) const
 {
   TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
-    std::runtime_error,
+    BadXMLParameterListRootElementException,
     "XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListTagName()
     <<", found " << xml.getTag());
-  // 2010/07/30: rabartl: Above, use a custom exception type to catch in unit
-  // testing!
   IDtoValidatorMap validatorMap;
   ParameterList rtn;
   for(int i =0; i<xml.numChildren(); ++i){
@@ -55,15 +53,6 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
       convertValidators(xml.getChild(i), validatorMap);
     }
   }
-
-  /*for(int i =0; i<xml.numChildren(); ++i){
-    if(xml.getChild(i).getTag() == XMLParameterListWriter::getParameterListTagName()){
-      rtn = convertParameterList(xml.getChild(i).getChild(0), validatorMap);
-    }
-  }*/
-  // 2010/07/30: rabartl: Above, try to remove dead code as long as you don't
-  // need it anymore.  You can always get it back by looking in the hsitory.
-
 
   rtn = convertParameterList(xml, validatorMap);
   return rtn;
@@ -79,18 +68,15 @@ void XMLParameterListReader::convertValidators(
       validatorsWithPrototypes.insert(&xml.getChild(i));
     }
     else{
-      ValidatorXMLConverterDB::getConverter(xml.getChild(i))->fromXMLtoValidator(xml.getChild(i),
-        validatorMap);
+	  ValidatorXMLConverterDB::convertXML(xml.getChild(i), validatorMap);
     }
   }
-  // 2010/07/30: rabartl: Use "ANSI" style and multi-lines for long for(..) 
-  // statements.  See TCDG 1.0 FSC 9
   for (
     std::set<const XMLObject*>::const_iterator it = validatorsWithPrototypes.begin();
     it!=validatorsWithPrototypes.end();
     ++it)
   {
-    ValidatorXMLConverterDB::getConverter(*(*it))->fromXMLtoValidator(*(*it), validatorMap);
+    ValidatorXMLConverterDB::convertXML(*(*it), validatorMap);
   }
 }
 
@@ -99,12 +85,10 @@ ParameterList XMLParameterListReader::convertParameterList(
   const XMLObject& xml, const IDtoValidatorMap& validatorMap) const
 {
   TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
-    std::runtime_error,
+    BadParameterListElementException,
     "XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListTagName()
     <<", found the tag "
     << xml.getTag());
-  // 2010/07/30: rabartl: Above, use a custom exception type to catch in unit
-  // testing!
 
   ParameterList rtn;
 
@@ -112,7 +96,6 @@ ParameterList XMLParameterListReader::convertParameterList(
 
       XMLObject child = xml.getChild(i);
       
-      // 2010/07/30: rabartl: Make the and/or logic more clear with better formatting.
       TEST_FOR_EXCEPTION(
         (
           child.getTag() != XMLParameterListWriter::getParameterListTagName() 
@@ -121,23 +104,19 @@ ParameterList XMLParameterListReader::convertParameterList(
           )
         &&
         child.getTag() != XMLParameterListWriter::getValidatorsTagName(),
-        std::runtime_error,
+        BadParameterListElementException,
         "XMLParameterListReader expected tag "
         << XMLParameterListWriter::getParameterListTagName() << " or "
         << ParameterEntry::getTagName() << ", but found "
         << child.getTag() << " tag.");
-      // 2010/07/30: rabartl: Above, use a custom exception type to catch in unit
-      // testing!
       
       if (child.getTag()==XMLParameterListWriter::getParameterListTagName()) {
         TEST_FOR_EXCEPTION(
           !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()), 
-          std::runtime_error,
+          NoNameAttributeExecption,
           XMLParameterListWriter::getParameterListTagName() <<" tags must "
           "have a " << XMLParameterListWriter::getNameAttributeName() << " attribute"
           << child.getTag());
-        // 2010/07/30: rabartl: Above, use a custom exception type to catch in unit
-        // testing!
         
         const std::string& name =
           child.getRequired(XMLParameterListWriter::getNameAttributeName());
@@ -148,11 +127,21 @@ ParameterList XMLParameterListReader::convertParameterList(
         rtn.set(name, sublist);
       }
       else if (child.getTag() == ParameterEntry::getTagName()) {
+
+        TEST_FOR_EXCEPTION(
+          !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()), 
+          NoNameAttributeExecption,
+          ParameterEntry::getTagName() <<" tags must " <<
+          "have a " << 
+		  XMLParameterListWriter::getNameAttributeName() << 
+		  " attribute" << std::endl <<
+	      "Bad Parameter: " << 
+	      child.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+	      std::endl << std::endl);
+
         const std::string& name =
           child.getRequired(XMLParameterListWriter::getNameAttributeName());
-        RCP<const ParameterEntryXMLConverter> converter =
-          ParameterEntryXMLConverterDB::getConverter(child);
-        ParameterEntry parameter = converter->fromXMLtoParameterEntry(child);
+        ParameterEntry parameter = ParameterEntryXMLConverterDB::convertXML(child);
         if (child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
           IDtoValidatorMap::const_iterator result =
             validatorMap.getValidator(
@@ -161,12 +150,11 @@ ParameterList XMLParameterListReader::convertParameterList(
             parameter.setValidator(result->second);
           }
           else {
-            TEST_FOR_EXCEPTION(true, std::runtime_error,
+            TEST_FOR_EXCEPTION(true, MissingValidatorDefinitionException,
               "Could not find validator with id: "
-              << child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName())
+              << child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName()) << std::endl << 
+			  "Bad Parameter: " << name << std::endl << std::endl
               );
-            // 2010/07/30: rabartl: Replace the above with a more specific exception
-            // type and catch it in the unit test.
           }
         }  
         rtn.setEntry(name, parameter);
@@ -177,7 +165,4 @@ ParameterList XMLParameterListReader::convertParameterList(
 
 
 } // namespace Teuchos
-
-// 2010/07/30: rabartl: Above, use commented end braces for namespaces.  See
-// TCDG 1.0 FSC 5
 
