@@ -1,4 +1,4 @@
-Trilnos has the capability to allow Makefiles to import important variables
+Trilinos has the capability to allow Makefiles to import important variables
 that can be used to compile against either a Trilinos installation or a build
 tree. This capability is similar to the previously supported autotools
 Makefile.export system. There are some important differences though as the

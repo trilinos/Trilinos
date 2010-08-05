@@ -87,7 +87,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   STK                   stk                            SS # Depends on boost
   Intrepid              intrepid                       PS
   Phalanx               phalanx                        SS
-  Phdmesh               phdmesh                        SS # to be replaced by STK
+  Phdmesh               phdmesh                        EX # to be replaced by STK
   NOX                   nox                            PS
   Moertel               moertel                        PS
   TrilinosCouplings     trilinoscouplings              SS
