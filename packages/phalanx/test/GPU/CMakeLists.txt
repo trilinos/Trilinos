@@ -1,0 +1,12 @@
+
+INCLUDE(PackageAddExecutableAndTest)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  thrust
+  SOURCES gpu.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "Test passed!"
+  )  
