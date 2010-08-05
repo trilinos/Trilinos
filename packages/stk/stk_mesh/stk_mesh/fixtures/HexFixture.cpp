@@ -109,7 +109,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
       std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
       std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
-      ib = lower_bound( ib, ie, i_elem);
+      ib = std::lower_bound( ib, ie, i_elem);
 
       if ( ib != ie && *ib ==  i_elem ) {
 
