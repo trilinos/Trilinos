@@ -36,7 +36,6 @@
 #include <algorithm>	// for std::min and std::max
 #include "Sacado_ConfigDefs.h"
 
-#if !defined(_AIX)
 // Define some math functions that aren't usually in cmath
 #ifndef HAS_C99_TR1_CMATH
 namespace std {
@@ -55,6 +54,5 @@ namespace std {
     return double(0.5)*std::log((double(1.0)+x)/(double(1.0)-x)); }
 }
 #endif // HAS_C99_TR1_CMATH
-#endif
 
 #endif // SACADO_CMATH_HPP
