@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 2.8)
-
 foreach (_LIBNAME "BLAS" "LAPACK")
   set (_CURRENT_LIB "TPL_${_LIBNAME}_LIBRARIES")
   set (_CURRENT_LIB_VALUE "${${_CURRENT_LIB}}")
