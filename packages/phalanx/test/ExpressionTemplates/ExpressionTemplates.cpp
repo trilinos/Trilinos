@@ -227,6 +227,47 @@ int main(int argc, char *argv[])
 
     cout << "Passed!" << endl;
 
+
+    // ************
+    // Timings
+    // ************
+    {
+      const int my_size = 100;
+      ExprArray<std::size_t,double> ea1(my_size);
+      ExprArray<std::size_t,double> ea2(my_size);
+      ExprArray<std::size_t,double> ea4(my_size);
+      ExprArray<std::size_t,double> result(my_size);
+      RCP<Time> raw_time = TimeMonitor::getNewTimer("Raw Pointer Time");
+      RCP<Time> expr_time = TimeMonitor::getNewTimer("Expression Time");
+      //result = 0.0;
+      //ea1 = 1.0;
+      //ea2 = 1.0;
+      {
+      TimeMonitor tm(*expr_time);
+      result = 4.0 * ea1 + 3.0 * ea2; 
+      }
+      ArrayRCP<double> raw_result = arcp<double>(my_size);
+      ArrayRCP<double> raw_ea1 = arcp<double>(my_size);
+      ArrayRCP<double> raw_ea2 = arcp<double>(my_size);
+      for (int i=0; i < my_size; ++i) {
+	raw_result[i] = 0.0;
+	raw_ea1[i] = 1.0;
+	raw_ea2[i] = 1.0;
+      }
+      
+      double* r_ptr = raw_result.get();
+      double* ea1_ptr = raw_ea1.get();
+      double* ea2_ptr = raw_ea2.get();
+      {
+	TimeMonitor tm(*raw_time);
+	for (int i=0; i < my_size; ++i) {
+	  r_ptr[i] = 4.0 * ea1_ptr[i] + 3.0 * ea2_ptr[i];
+	}
+	
+      }
+    }
+
+
     // *********************************************************************
     // *********************************************************************
     std::cout << "\nTest passed!\n" << std::endl; 
