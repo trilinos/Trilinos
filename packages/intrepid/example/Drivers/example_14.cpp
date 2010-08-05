@@ -70,7 +70,7 @@
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
-#include "Intrepid_CubaturePolyLib.hpp"
+#include "Intrepid_CubaturePolylib.hpp"
 //#include "Intrepid_ArrayTools.hpp"
 #include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
 //#include "Intrepid_RealSpaceTools.hpp"
@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
 	  for (int i=0; i<NX; i++) 
 	    {
 	      int ielem = i + j * NX + k * NX * NY;
-	      for (int m=0; m<pow(numLineFieldsG,3); m++)
+	      for (int m=0; m<numLineFieldsG*numLineFieldsG*numLineFieldsG; m++)
 		{
 		  ltgout << ltgMapping(ielem,m) <<"  ";
 		}
@@ -350,8 +350,8 @@ int main(int argc, char *argv[]) {
 
 
   // ************* MATRIX-FREE APPLICATION 
-  FieldContainer<double> uScattered(numElems,pow(numLineFieldsG,3));
-  FieldContainer<double> KuScattered(numElems,pow(numLineFieldsG,3));
+  FieldContainer<double> uScattered(numElems,numLineFieldsG*numLineFieldsG*numLineFieldsG);
+  FieldContainer<double> KuScattered(numElems,numLineFieldsG*numLineFieldsG*numLineFieldsG);
 
   u.GlobalAssemble();
 
@@ -368,7 +368,7 @@ int main(int argc, char *argv[]) {
   // Scatter
   for (int k=0; k<numElems; k++) 
     {
-      for (int i=0;i<pow(numLineFieldsG,3);i++) 
+      for (int i=0;i<numLineFieldsG*numLineFieldsG*numLineFieldsG;i++) 
         {
           uScattered(k,i) = uVals[ltgMapping(k,i)];
         }
@@ -551,7 +551,7 @@ int main(int argc, char *argv[]) {
   // Gather
   for (int k=0;k<numElems;k++)
     {
-      for (int i=0;i<pow(numLineFieldsG,3);i++)
+      for (int i=0;i<numLineFieldsG*numLineFieldsG*numLineFieldsG;i++)
         {
           KuVals[ltgMapping(k,i)] += KuScattered(k,i);
         }
