@@ -20,8 +20,6 @@
 ##   -yes_drum
 ##   -old_interface
 
-ZDRIVE=/home/lriesen/projects/zoltan_gid_64/Trilinos/packages/zoltan/build/src/driver/zdrive.exe
+ZDRIVE=/home/lriesen/zoltan_gid_64-3.3/build/src/driver/zdrive.exe
 
-test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic -no_rcb  -no_rib  -no_hsfc -no_reftree  -no_order  -no_hier -no_parmetis -no_color -no_scotch -no_oct -failure_detail | tee test_zoltan_output.txt
-
-#test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic -no_parmetis -no_color -no_scotch -no_oct -exit_on_failure | tee test_zoltan_output.txt
+test_zoltan -no_oct -no_color -no_hier -no_parmetis -no_scotch -logfile test_zoltan.log -exe $ZDRIVE -arch generic  | tee test_zoltan_output.txt
