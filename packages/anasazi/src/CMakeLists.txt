@@ -190,7 +190,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/TSQR)
 # generated header file (which doesn't start out in the source tree)
 # to HEADERS.
 APPEND_SET(HEADERS
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_Config.hpp
+  ${CMAKE_CURRENT_BINARY_DIR}/Tsqr_Config.hpp
   )
 APPEND_SET(HEADERS 
   TSQR/TsqrAdaptor.hpp
