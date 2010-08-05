@@ -1,4 +1,5 @@
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageAddExecutable)
+INCLUDE(PackageAddTest)
 
 ADD_DEFINITIONS(-DUSING_CMAKE)
 
@@ -21,24 +22,30 @@ CREATE_TEST_SOURCELIST( ExoIICTests
 PACKAGE_ADD_EXECUTABLE(
  ExoIICTests
  SOURCES ${ExoIICTests}
- COMM serial
 )
 
 PACKAGE_ADD_TEST(
 	ExoIICTests
 	NAME CreateEdgeFaceWithConcats
+	COMM mpi serial
 	NUM_MPI_PROCS 1
-	COMM serial
 	ARGS "CreateEdgeFace -pcab -pcset -pvpax"
 )
 
 PACKAGE_ADD_TEST(
 	ExoIICTests
 	NAME ReadEdgeFaceWithConcats
+	COMM mpi serial
 	NUM_MPI_PROCS 1
-	COMM serial
 	ARGS ReadEdgeFace
 )
+
+# Should be a better way to do this, but...
+if (TPL_ENABLE_MPI)
+ set_property(TEST Trios_ReadEdgeFaceWithConcats_MPI_1 APPEND PROPERTY DEPENDS Trios_CreateEdgeFaceWithConcats_MPI_1)
+ELSE()
+ set_property(TEST Trios_ReadEdgeFaceWithConcats APPEND PROPERTY DEPENDS Trios_CreateEdgeFaceWithConcats)
+ENDIF()
 
 # ===============================================
 
