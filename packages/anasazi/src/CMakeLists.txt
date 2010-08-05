@@ -186,6 +186,12 @@ endif ()
 # Some of these depend on Epetra or Tpetra, so check accordingly if
 # Anasazi_ENABLE_{Epetra,Tpetra} is defined.
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/TSQR)
+# Teuchos/src/CMakeLists.txt shows the canonical way to add a
+# generated header file (which doesn't start out in the source tree)
+# to HEADERS.
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_Config.hpp
+  )
 APPEND_SET(HEADERS 
   TSQR/TsqrAdaptor.hpp
   TSQR/TsqrCommFactory.hpp
@@ -204,7 +210,6 @@ APPEND_SET(HEADERS
   TSQR/Tsqr_Combine.hpp
   TSQR/Tsqr_CombineNative.hpp
   TSQR/Tsqr_CombineTest.hpp
-  TSQR/Tsqr_Config.hpp
   TSQR/Tsqr_DistTsqrHelper.hpp
   TSQR/Tsqr_DistTsqr.hpp
   TSQR/Tsqr_generateStack.hpp
