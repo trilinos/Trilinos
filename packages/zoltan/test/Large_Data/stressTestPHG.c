@@ -25,6 +25,11 @@ static double mbytes=0;
 #define VERTEX_WEIGHT_DIMENSION 1
 #define EDGE_WEIGHT_DIMENSION 1
 
+/* We can define hypergraph queries, graph queries, or both */
+
+/*#define USE_HYPERGRAPH_QUERIES*/
+#define USE_GRAPH_QUERIES
+
 /*************************************************************
  * Defining GID_BASE allows us to test 64 bit global IDs when we
  * don't have enough memory to run a test that has more than
@@ -70,7 +75,7 @@ void meminfo_signal_handler(int sig)
 }
 
 
-/* Zoltan hypergraph query functions. */
+/* Zoltan query functions. */
 
 static int get_number_of_vertices(void *data, int *ierr)
 {
@@ -95,6 +100,8 @@ static void get_vertex_list(void *data, int sizeGID, int sizeLID,
 #endif
   }
 }
+
+#ifdef USE_HYPERGRAPH_QUERIES
 
 static void get_local_hypergraph_size(void *data, 
                   int *num_lists, int *num_pins, int *format, int *ierr)
@@ -168,7 +175,76 @@ static void get_edge_weights(void *data, int sizeGID, int sizeLID,
   }
 }
 
-/* Zoltan partition query functions. */
+#endif
+
+#ifdef USE_GRAPH_QUERIES
+
+static void get_num_edges_list(void *data, int sizeGID, int sizeLID,
+                      int num_obj,
+             ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+             int *numEdges, int *ierr)
+{
+int i;
+
+  *ierr = ZOLTAN_OK;
+
+  for (i=0; i < num_obj; i++){
+    /* Every vertex has nborCount neighbors */
+    numEdges[i] = nborCount - 1;
+  }
+}
+static void get_edge_list(void *data, int sizeGID, int sizeLID,
+        int num_obj, ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+        int *num_edges,
+        ZOLTAN_ID_PTR nborGID, int *nborProc,
+        int wgt_dim, float *ewgts, int *ierr)
+{
+int i;
+ZOLTAN_ID_TYPE lid, before, after, left, right;
+float wgt;
+
+  *ierr = ZOLTAN_OK;
+
+  wgt = (float)edgeCutCost / (float)(nborCount-1);
+
+  for (i=0; i < num_obj; i++){
+
+    lid = localID[i];
+
+    if (lid==0){
+      before = proc_vertex_gid(myRank, num_obj-1);
+    }
+    else{
+      before = globalID[i] - 1;
+    }
+
+    if (lid==num_obj-1){
+      after = proc_vertex_gid(myRank, 0);
+    }
+    else{
+      after = globalID[i] + 1;
+    }
+
+    if (myRank > 0){
+      left = proc_vertex_gid(myRank-1, lid);
+    }
+
+    if (myRank < numProcs-1){
+      right = proc_vertex_gid(myRank+1, lid);
+    }
+
+    *nborGID++ = before;  *nborProc++ = myRank;  *ewgts++ = wgt;
+    *nborGID++ = after;   *nborProc++ = myRank;  *ewgts++ = wgt;
+    if (myRank > 0){
+      *nborGID++ = left;   *nborProc++ = myRank-1;  *ewgts++ = wgt;
+    }
+    if (myRank < numProcs-1){
+      *nborGID++ = right;  *nborProc++ = myRank+1;  *ewgts++ = wgt;
+    }
+  }
+}
+
+#endif
 
 static void get_partition_list(void *data, int sizeGID, int sizeLID, int num_obj,
         ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID, int*parts, int *ierr)
@@ -311,10 +387,18 @@ int main(int argc, char *argv[])
 
   Zoltan_Set_Num_Obj_Fn(zz, get_number_of_vertices, NULL);
   Zoltan_Set_Obj_List_Fn(zz, get_vertex_list, NULL);
+
+#ifdef USE_HYPERGRAPH_QUERIES
   Zoltan_Set_HG_Size_CS_Fn(zz, get_local_hypergraph_size, NULL);
   Zoltan_Set_HG_CS_Fn(zz, get_local_hypergraph, NULL);
   Zoltan_Set_HG_Size_Edge_Wts_Fn(zz, get_edge_weights_size, NULL);
   Zoltan_Set_HG_Edge_Wts_Fn(zz, get_edge_weights, NULL);
+#endif
+
+#ifdef USE_GRAPH_QUERIES
+  Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list,  NULL);
+  Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list,  NULL);
+#endif
 
   Zoltan_Set_Part_Multi_Fn(zz, get_partition_list, NULL);
 
