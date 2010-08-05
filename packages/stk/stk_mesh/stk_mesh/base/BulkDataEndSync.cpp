@@ -348,21 +348,24 @@ void BulkData::internal_resolve_shared_modify_delete()
     // If this is the last information update on this entity
     // then time to resolve ownership.
 
-    if ( i == remote_mod.begin() || entity != (i-1)->entity_proc.first ) {
+    const bool last_update_of_this_entity =
+      (i == remote_mod.begin() || entity != (i-1)->entity_proc.first);
+
+    if ( last_update_of_this_entity ) {
 
       PairIterEntityComm new_sharing = entity->sharing();
       const bool   delete_everywhere = locally_destroyed && new_sharing.empty();
 
       if ( ! delete_everywhere ) {
 
-        const bool local_owner = m_parallel_rank == entity->owner_rank();
+        const bool old_local_owner = m_parallel_rank == entity->owner_rank();
 
         // Giving away ownership to another process in the sharing list:
-        const bool give_ownership = locally_destroyed && local_owner ;
+        const bool give_ownership = locally_destroyed && old_local_owner ;
 
         // The remote owner has been destroyed, choose a new owner
         const bool remote_owner_destroyed =
-          ! local_owner && ! in_shared( *entity , entity->owner_rank() );
+          ! old_local_owner && ! in_shared( *entity , entity->owner_rank() );
 
         if ( give_ownership || remote_owner_destroyed ) {
 
@@ -381,7 +384,12 @@ void BulkData::internal_resolve_shared_modify_delete()
             remove_part.push_back(& m_mesh_meta_data.globally_shared_part());
           }
 
-          if ( ! local_owner && entity->owner_rank() == m_parallel_rank ) {
+          const bool new_local_owner = m_parallel_rank == entity->owner_rank();
+
+          const bool local_claimed_ownership =
+           ( ! old_local_owner && new_local_owner );
+
+          if ( local_claimed_ownership ) {
             // Changing remotely owned to locally owned
             add_part.push_back( & m_mesh_meta_data.locally_owned_part() );
           }
@@ -438,9 +446,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
     Entity *       entity       = i->entity_proc.first ;
     const unsigned remote_proc  = i->entity_proc.second ;
-    const bool     remote_owner = entity->owner_rank() == remote_proc ;
     const bool     local_owner  = entity->owner_rank() == m_parallel_rank ;
-
     const bool remotely_destroyed = EntityLogDeleted == i->state ;
     const bool locally_destroyed  = EntityLogDeleted == entity->log_query();
 
@@ -462,8 +468,6 @@ void BulkData::internal_resolve_ghosted_modify_delete()
     }
     else { // Receiving from 'remote_proc' for ghosting
 
-      if ( ! remote_owner ) { throw std::logic_error("ghost ownership"); }
-
       // Owner modified or destroyed, must locally destroy.
 
       for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
@@ -483,14 +487,15 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
         if ( ! in_owned_closure( *entity , m_parallel_rank ) ) {
 
+          const bool destroy_entity_successful = destroy_entity(entity);
           // Entity pointer is set to NULL:
-          if ( ! destroy_entity( entity ) ) {
+          if ( ! destroy_entity_successful ) {
             throw std::logic_error("could not destroy ghost entity");
           }
         }
       }
     }
-  }
+  } // end loop on remote mod
 
   // Erase all ghosting communication lists for:
   // 1) Destroyed entities.
