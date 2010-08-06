@@ -150,6 +150,7 @@ $testcnt = 0;
 $failcnt = 0;
 $passcnt = 0;
 $purifyerrcnt = 0;
+$zmemerrcnt = 0;
 
 ### For each zdrive.inp file, run the test.
 TEST:  foreach $file (@inpfiles) {
@@ -270,11 +271,14 @@ TEST:  foreach $file (@inpfiles) {
     $passcnt++;
   }
   ### look for purify errors in outerr file.
-  ### OK if didn't run under purify; it just won't find any errors.
-  open (ZOUTERR, "output/$zouterrfile") || print "cannot open output/$zouterrfile for purify check\n";
-  while (<ZOUTERR>) {
-    chomp;
-    @foo = grep(/ABR:|ABW:|BRK:|BSR:|BSW:|COR:|FMM:|FMR:|FMW:|FNH:|FUM:|IPR:|IPW:|MAF:|MIU:|MLK:|MRE:|MSE:|NPR:|NPW:|PLK:|SBR:|SBW:|SIG:|SOF:|UMC:|UMR:|WPF:|WPM:|WPN:|WPR:|WPW:|WPX:|ZPR:|ZPW:/, $_);
+  ### look for Zoltan memory tool errors, too.
+  ### OK if didn't run under purify; it just won't find any purify errors.
+  open (ZOUTERR, "output/$zouterrfile") || print "cannot open output/$zouterrfile\n";
+  while ($text = <ZOUTERR>) {
+    chomp($text);
+    @foo = grep(/Possible memory error/, $text);
+    $zmemerrcnt += @foo;
+    @foo = grep(/ABR:|ABW:|BRK:|BSR:|BSW:|COR:|FMM:|FMR:|FMW:|FNH:|FUM:|IPR:|IPW:|MAF:|MIU:|MLK:|MRE:|MSE:|NPR:|NPW:|PLK:|SBR:|SBW:|SIG:|SOF:|UMC:|UMR:|WPF:|WPM:|WPN:|WPR:|WPW:|WPX:|ZPR:|ZPW:/, $text);
     $nerr = @foo;
     if ($nerr) {
       # Check for errors from the third-party libraries.
@@ -317,6 +321,10 @@ if ($failcnt > 0) {
 if ($purifyerrcnt) {
   print LOG "Test $dirname:  $purifyerrcnt purify errors; test FAILED.\n";
   print "Test $dirname:  $purifyerrcnt purify errors; test FAILED.\n";
+}
+if ($zmemerrcnt) {
+  print LOG "Test $dirname:  $zmemerrcnt Zoltan memory errors; test FAILED.\n";
+  print "Test $dirname:  $zmemerrcnt Zoltan memory errors; test FAILED.\n";
 }
 $time = localtime;
 print LOG "$time\n";
