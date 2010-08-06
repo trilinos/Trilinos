@@ -37,17 +37,13 @@
 
 #include "Teuchos_Dependency.hpp"
 
+
 namespace Teuchos{
 
+
 /**
- * \brief A Dependency sheet keeps track of dependencies between various elements located
- * somewhere within a "Root List". 
- *
- * All dependencies added to a DependencySheet
- * must have dependents and dependees who are either in the Root List or one of
- * its sublists.
- * Note that a DependencySheet never acts on these dependencies. It mearly keeps
- * track of them.
+ * \brief A Dependency sheet keeps track of dependencies between various
+ * ParameterEntries
  */
 class DependencySheet{
 
@@ -74,20 +70,15 @@ public:
 
   /**
    * \brief Constructs an empty DependencySheet with the name DEP_ANONYMOUS.
-   * 
-   * @param rootList The Parameter List containing all parameters and sublists
-   * for which this Dependency will keep track of dependencies.
    */
-  DependencySheet(RCP<const ParameterList> rootList);
+  DependencySheet();
 
   /**
    * \brief Constructs a DependencySheet.
    *
-   * @param rootList The Parameter List containing all parameters and sublists
-   * for which this Dependency will keep track of dependencies.
    * @param name Name of the Dependency Sheet.
    */
-  DependencySheet(RCP<const ParameterList> rootList, const std::string &name);
+  DependencySheet(const std::string &name);
   
   //@}
 
@@ -122,7 +113,10 @@ public:
    * @param name The paramteter to be checked for dependents.
    * @return True if the parameter you're checking has other dependents, false otherwise.
    */
-  bool hasDependents(const ParameterEntry *dependee) const;
+  inline bool hasDependents(const ParameterEntry *dependee) const{
+    return (dependencies_.find(dependee) != dependencies_.end() 
+      && dependencies_.find(dependee)->second.size() > 0);
+  }
 
   /**
    * \brief Returns a set of all the dependencies associated with a particular dependee.
@@ -130,17 +124,19 @@ public:
    * @param dependee The parameter whose dependencies are sought. 
    * @return A set of all dependencies associated with the dependee parameter.
    * */
-  const DepSet& getDependenciesForParameter(const ParameterEntry *dependee) const;
-
-  /**
-   * \brief Gets an RCP for the root list.
-   */
-  RCP<const ParameterList> getRootList() const;
+  inline
+  const DepSet& getDependenciesForParameter(
+    const ParameterEntry *dependee) const
+  {
+    return dependencies_.find(dependee)->second;
+  }
 
   /**
    * \brief Gets the name of the dependency sheet.
    */
-  const std::string& getName() const;
+  inline const std::string& getName() const{
+    return name_;
+  }
   
   //@}
 
@@ -150,24 +146,32 @@ public:
   /**
    * \brief Returns an iterator to the beginning of all the dependees in the sheet.
    */
-  DepMap::iterator depBegin();
+  inline DepMap::iterator depBegin(){
+    return dependencies_.begin();
+  }
 
   /**
    * Returns an iterator to the end of all of the dependees in the sheet.
    *
    * @return An iterator to the end of all of the dependees in the sheet.
    */
-  DepMap::iterator depEnd();
+  inline DepMap::iterator depEnd(){
+    return dependencies_.end();
+  }
 
   /**
    * \brief Returns a const iterator to the beginning of all the dependees in the sheet.
    */
-  DepMap::const_iterator depBegin() const;
-
+  inline DepMap::const_iterator depBegin() const{
+    return depBegin();
+  }
+    
   /**
    * \brief Returns a const iterator to the end of all of the dependees in the sheet.
    */
-  DepMap::const_iterator depEnd() const;
+  inline DepMap::const_iterator depEnd() const{
+     return depEnd();
+   }
   
   //@}
 
@@ -200,17 +204,6 @@ private:
    */
   std::string name_;
 
-  /**
-   * \brief The root parameterlist that this dependency sheet is associated with.
-   */
-  RCP<const ParameterList> rootList_;
-
-  /**
-   * \brief Validates whether or not the dependees and dependents of a dependency exist
-   * within the root ParameterList.
-   */
-  void validateExistanceInRoot(RCP<Dependency> dependency);
-  
   //@}
 
 };

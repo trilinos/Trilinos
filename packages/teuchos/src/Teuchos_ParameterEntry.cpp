@@ -147,7 +147,7 @@ void ParameterEntry::reset()
 }
 
 void ParameterEntry::incrementMasterCounter(){
-  masterIDCounter++;
+  getMasterIDCounter()++;
   if(masterIDMap.find(masterIDCounter) != masterIDMap.end()){
     incrementMasterCounter;
   }
@@ -161,7 +161,7 @@ ParameterEntryID ParameterEntry::getAvailableID(){
     return toReturn;
   }
   else{
-    toReturn = masterIDCounter;
+    toReturn = getMasterIDCounter();
     incrementMasterCounter();
   }
   return toReturn;

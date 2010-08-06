@@ -152,24 +152,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentSublistNames )
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
 }
 
-TEUCHOS_UNIT_TEST( Teuchos_ParameterList, doesListContainListTest)
-{
-  RCP<ParameterList> rootList = rcp( new ParameterList("root list"));
-  RCP<ParameterList> sub1 = sublist(rootList, "sub1");
-  RCP<ParameterList> sub2 = sublist(sub1, "sub2");
-  TEST_ASSERT(doesListContainList(rootList, sub2));
-}
-
-TEUCHOS_UNIT_TEST( Teuchos_ParameterList, findChildListTest)
-{
-
-  RCP<ParameterList> rootList = rcp( new ParameterList("root list"));
-  RCP<ParameterList> sub1 = sublist(rootList, "sub1");
-  RCP<ParameterList> sub2 = sublist(sub1, "sub2");
-  TEST_ASSERT(nonnull(findChildList(rootList, "sub2")));
-  TEST_ASSERT(is_null(findChildList(rootList, "NON EXISTANT LIST")));
-}
-
 TEUCHOS_UNIT_TEST(Teuchos_ParameterList, ADD_TYPE_AND_ARRAY_TYPE_PARAMETER)
 {
   ParameterList myList;

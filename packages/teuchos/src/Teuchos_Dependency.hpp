@@ -59,21 +59,34 @@ public:
    */
   class DepComp{
   public:
-    bool operator () (const RCP<Dependency> dep1, const RCP<Dependency> dep2) const{
-      return dep1->getDependents().begin()->first >= dep2->getDependents().begin()->first;
+    bool operator () (const RCP<Dependency> dep1,
+      const RCP<Dependency> dep2) const
+    {
+      return dep1->getDependents().begin().get()
+        >= dep2->getDependents().begin().get();
     }
   };
 
   /**
-   * \brief Maps parameters to their associated parent ParametersList.
+   * \brief A list of Dependees.
    */
-  typedef std::map<const std::string, const RCP<ParameterList> > ParameterParentMap;
+  typedef std::set<RCP<ParameterEntry> > DependeeList;
 
   /**
-   * \brief convience typedef.
+   * \brief A list of dependents.
    */
-  typedef std::pair<const std::string, const RCP<ParameterList> > ParameterParentPair;
-  
+  typedef std::set<RCP<ParameterEntry> > DependentList;
+
+  /**
+   * \brief A list of Dependees.
+   */
+  typedef std::set<RCP<const ParameterEntry> > ConstDependeeList;
+
+  /**
+   * \brief A list of dependents.
+   */
+  typedef std::set<RCP<const ParameterEntry> > ConstDependentList;
+
   //@}
 
   /** \name Constructors/Destructor */
@@ -82,40 +95,34 @@ public:
   /**
    * \brief Constructs a Dependency
    *
-   * @param dependees A map of all the dependees and their associated parent lists.
-   * @param dependents A map of all the dependents and their associated parent lists.
+   * @param dependees A list of all the dependees.
+   * @param dependents A list of all the dependents.
    */
-  Dependency(ParameterParentMap& dependees, ParameterParentMap& dependents);
+  Dependency(DependeeList& dependees, DependentList& dependents);
 
   /**
    * \brief Constructs a Dependency
    *
-   * @param dependees A map of all the dependees and their associated parent lists.
-   * @param dependentName The name of the dependent parameter.
-   * @param dependentParentList The ParameterList containing the dependent.
+   * @param dependees A list of all the dependees.
+   * @param dependent The dependent parameter.
    */
-  Dependency(ParameterParentMap& dependees, std::string dependentName, RCP<ParameterList> dependentParentList);
+  Dependency(DependeeList& dependees, RCP<ParameterEntry> dependent);
 
   /**
    * \brief Constructs a Dependency
    *
-   * @param dependeeName The name of the dependee parameter.
-   * @param dependeeParentList The ParameterList containing the dependee.
-   * @param dependents A map of all the dependents and their associated parent lists.
+   * @param dependee The dependee parameter.
+   * @param dependents A List of all the dependents.
    */
-  Dependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
-  ParameterParentMap& dependents);
+  Dependency(RCP<ParameterEntry> dependeeName, DependentList& dependents);
 
   /**
    * \brief Constructs a Dependency
    *
-   * @param dependeeName The name of the dependee parameter.
-   * @param dependeeParentList The ParameterList containing the dependee.
-   * @param dependentName The name of the dependent parameter.
-   * @param dependentParentList The ParameterList containing the dependent.
+   * @param dependee The dependee parameter.
+   * @param dependent The dependent parameter.
    */
-  Dependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
-  std::string dependentName, RCP<ParameterList> dependentParentList);
+  Dependency(RCP<ParameterEntry> dependee, RCP<ParameterEntry> dependent);
 
   /**
    * \brief Desctructor
@@ -134,77 +141,35 @@ public:
    *
    *  @return The dependees of the dependency.
    */
-  const ParameterParentMap& getDependees() const;
+  inline const ConstDependeeList& getDependees() const{
+    return dependees_;
+  }
 
   /**
    * \brief Gets the dependents of the dependency.
    *
    * @return The dependents of the dependency.
    */
-  const ParameterParentMap& getDependents() const;
+  inline const ConstDependentList& getDependents() const{
+    return dependents_;
+  }
 
-  /**
-   * \brief Gets the names of the dependee parameters.
-   *
-   * @return The names of the dependee parameters.
+  /** \brief Gets the first dependee in the dependees list.
+   * This is a convience function.
    */
-  const std::set<std::string>& getDependeeNames() const;
-
-  /**
-   * \brief Gets a set containing the names of the dependent parameters.
-   *
-   * @return A set containing the names of the dependent parameters.
-   */
-  const std::set<std::string>& getDependentNames() const;
-
-  /**
-   * \brief Gets a string containing all the names of the dependee parameters.
-   *
-   * @return A string containing all the names of the dependee parameters.
-   */
-  std::string getDependeeNamesString() const;
-
-  /**
-   * \brief Gets a string containing all the names of the dependent parameters.
-   *
-   * @return A string containing all the names of the dependent parameters.
-   */
-  std::string getDependentNamesString() const;
-
-  /**
-   * \brief Gets the name of a dependee given a pointer to the dependee parameter.
-   *
-   * @param Pointer to the dependee parameter whose name is desired.
-   * @return The name of the dependee parameter associated with the pointer specified in the arguments.
-   */
-  std::string getDependeeName(const ParameterEntry* dependee) const;
-
-  /**
-   * \brief Convienence function. Returns the first dependee in the list of dependees.
-   *
-   * @return The first dependee in the list of dependees.
-   */
-  inline const ParameterEntry* getFirstDependee() const{
-    return dependees_.begin()->second->getEntryPtr(dependees_.begin()->first);
+  inline RCP<const ParameterEntry> getFirstDependee() const{
+    return dependees_.begin();
   }
 
   /**
-   * \brief Convienence function. Returns the first dependee in the list of dependees.
+   * \brief Convienence function. 
+   * Returns the first dependee in the list of dependees.
    *
    * @return The first dependee in the list of dependees.
    */
   template<class S>
   inline const S getFirstDependeeValue() const{
-    return dependees_.begin()->second->get<S>(dependees_.begin()->first);
-  }
-
-  /**
-   * \brief Gets the name of the first dependee in the dependees map.
-   *
-   * @return the name of the first dependee in the dependees map.
-   */
-  inline const std::string& getFirstDependeeName() const{
-    return dependees_.begin()->first;
+    return getValue<S>(dependees_.begin());
   }
 
   /**
@@ -228,51 +193,44 @@ public:
   
   //@}
 
- private:
+protected:
 
-  /** \name Private Members */
+  /** \name Validation Functions */
   //@{
-  
-  /**
-   * \brief The dependee is the parameter being depended upon.
-   * This is a map of all the dependees and their associated parent ParameterLists.
-   */
-  ParameterParentMap dependees_;
 
   /**
-   * \brief The dependent is the parameter that dependes on another parameter.
-   * This is a map of all the dependents and their associated parent ParametersLists.
-   */
-  ParameterParentMap dependents_;
-
-  /**
-   * \brief The names of all the dependees
-   */
-  std::set<std::string> dependeeNames_;
-
-  /**
-   * \brief The names of all the dependents
-   */
-  std::set<std::string> dependentNames_;
-
-  /**
-   * \brief Initializes all the dependnees and dependents along with checking to make sure
-   * that their parents lists are actually valid.
-   *
-   * @param dependees The dependees to be initialized.
-   * @param dependents The dependents to be initialized.
-   */
-  void intitializeDependeesAndDependents(ParameterParentMap& dependees, ParameterParentMap& dependents);
-
-  /**
-   * \brief Validates the dependency to make sure it's valid/has been setup properly. If subclassing, this fucntion should
+   * \brief Validates the dependency to make sure it's valid/has been setup 
+   * properly. If subclassing, this fucntion should
    * be called in the new subclasses constructor.
    */
   virtual void validateDep() const = 0;
 
   //@}
 
+ private:
+
+  /** \name Private Members */
+  //@{
+  
+  /**
+   * \brief The parameters being depended upon.
+   */
+  DependeeList dependees_;
+
+  /**
+   * \brief The dependent paramters.
+   */
+  DependentList dependents_;
+
+  /**
+   * \brief Declaring and defining the default constructor as private.
+   */
+  Dependency(){}
+
+  //@}
+
 };
 
-}
+
+} //namespace Teuchos
 #endif //TEUCHOS_DEPENDENCY_HPP_

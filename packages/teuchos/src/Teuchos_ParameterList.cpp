@@ -736,38 +736,3 @@ bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& l
   return true;
 }
 
-bool doesListContainList(RCP<ParameterList> parentList, RCP<ParameterList> listToFind){
-  if(parentList.get() == listToFind.get()){
-    return true;
-  }
-  else{
-    for(ParameterList::ConstIterator it = parentList->begin(); it!=parentList->end(); ++it){
-      if(it->second.isList()){
-        if(doesListContainList(sublist(parentList, it->first,true), listToFind)){
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-TEUCHOS_LIB_DLL_EXPORT RCP<ParameterList> 
-findChildList(RCP<ParameterList> parentList, std::string searchName){
-  if(parentList.name() == listToFind.name()){
-    return parentList;
-  }
-  else{
-    for(ParameterList::ConstIterator it = parentList->begin(); it!=parentList->end(); ++it){
-      if(it->second.isList()){
-        RCP<ParameterList> result = findChildList(sublist(parentList, it->first,true), searchName);
-        if(result != null){
-          return result;
-        }
-      }
-    }
-  }
-  return null;
-
-}
-

@@ -238,9 +238,11 @@ private:
 #pragma warning(pop)
 #endif
 
-  typedef std::map<RCP<ParameterEntry>, ParameterEntryID, RCP::rcpcomp> ParameterEntryToIDMap;
+  typedef std::map< RCP<ParameterEntry> , ParameterEntryID, RCP::rcpcomp > 
+    ParameterEntryToIDMap;
 
-  typedef std::map<ParameterEntryID, RCP<ParameterEntry> > IDToParameterEntryMap;
+  typedef std::map<ParameterEntryID, RCP<ParameterEntry> > 
+    IDToParameterEntryMap;
 
   typedef std::vector<ParameterEntryID> FreeIDsVector;
 
@@ -248,15 +250,20 @@ private:
 
   static IDToParameterEntryMap masterIDMap;
   
-  static ParameterEntryID masterIDCounter = 0;
+  static ParameterEntryID& getMasterIDCounter(){
+    static ParameterEntryID masterCounter = 0;
+    return masterCounter;
+  }
 
   static FreeIDsVector masterFreeIDs;
 
   static void addParameterEntryToIDMap(ParameterEntry* entryToAdd);
 
-  static void addParameterEntryToIDMap(ParameterEntry* entryToAdd, ParameterEntryID idToUse);
+  static void addParameterEntryToIDMap(
+    ParameterEntry* entryToAdd, ParameterEntryID idToUse);
 
-  static void removeParameterEntryFromMasterMaps(ParameterEntry* entryToRemove);
+  static void removeParameterEntryFromMasterMaps(
+    ParameterEntry* entryToRemove);
 
   static ParameterEntryID getAvailableID();
 
@@ -328,7 +335,7 @@ ParameterEntry::ParameterEntry(
 inline
 ParameterEntry::~ParameterEntry()
 {
-  removeParameterEntryFromIDMap(this);
+  removeParameterEntryFromMasterMaps(this);
 }
 
 // Set Methods

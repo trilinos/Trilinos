@@ -411,6 +411,7 @@ if (!is_null(b1))
 \ingroup teuchos_mem_mng_grp
 
  */
+
 template<class T>
 class RCP {
 public:
@@ -418,7 +419,8 @@ public:
   /** \brief . */
   typedef T  element_type;
 
-  /** \brief . */
+  /** \brief Struct for comparing two RCPs. Simply compares
+  * the raw pointers contained within the RCPs*/
   struct rcpcomp {
     /** \brief . */
     template<class T1, class T2> inline

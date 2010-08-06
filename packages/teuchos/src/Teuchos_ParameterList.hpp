@@ -639,32 +639,6 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
  */
 TEUCHOS_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
 
-/** 
- * \brief Determines whether or not a ParameterList or any of it's children lists contain 
- * an RCP for a specific ParameterList. 
- *
- * @param parentList The ParameterList to search.
- * @param listToFind The ParameterList to for which we are searching.
- * @return True if the parentList or and or any of it's children ParameterLists contains the list
- * specified by the listToFind parameter.
- */
-TEUCHOS_LIB_DLL_EXPORT bool 
-doesListContainList(RCP<ParameterList> parentList, RCP<ParameterList> listToFind);
-
-/**
- * \brief Attempts to find a ParameterList with a given name within another ParameterList.
- *
- * This function will recursively search the given parentList and all of it's children list.
- *
- * @param parentList The list to recursively search.
- * @param searchName The name of the list being searched for.
- * @return An RCP of the first list found with a name matching that of
- * searchName. If no list is found the RCP will be null.
- */
-TEUCHOS_LIB_DLL_EXPORT RCP<ParameterList> 
-findChildList(RCP<ParameterList> parentList, RCP<ParameterList> listToFind);
-
-
 // /////////////////////////////////////////////////////
 // Inline and Template Function Definitions
 
