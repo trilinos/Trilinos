@@ -13,10 +13,10 @@ large-scale, complex multi-physics engineering and scientific problems.
 Packages:
 
 The Trilinos 10.4 general release contains 47 packages: Amesos, Anasazi,
-AztecOO, Belos, CTrilinos*, Didasko, Epetra, EpetraExt, FEI, Galeri, Globipack*,
+AztecOO, Belos, CTrilinos*, Didasko, Epetra, EpetraExt, FEI, Galeri, GlobiPack*,
 Ifpack, Intrepid, Isorropia, Kokkos, Komplex, LOCA, Meros, Mesquite, ML,
-Moertel, MOOCHO, NOX, Optika, Optipack*, Pamgen, Phalanx, Piro, Pliris,
-PyTrilinos, RTOp, Rythmos, Sacado, Shards, STK, Stokhos, Stratimikos, Sundace,
+Moertel, MOOCHO, NOX, Optika, OptiPack*, Pamgen, Phalanx, Piro, Pliris,
+PyTrilinos, RTOp, Rythmos, Sacado, Shards, STK, Stokhos, Stratimikos, Sundance,
 Teuchos, ThreadPool, Thyra, Tifpack, Tpetra, TriKota, TrilinosCouplings,
 Triutils, Zoltan.
 
