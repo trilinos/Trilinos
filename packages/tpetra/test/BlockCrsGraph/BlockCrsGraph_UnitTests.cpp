@@ -26,6 +26,7 @@
 namespace {
 
   using Teuchos::as;
+  using Teuchos::null;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -137,7 +138,7 @@ namespace {
 
   template <>
   RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == Teuchos::null) {
+    if (snode == null) {
       Teuchos::ParameterList pl;
       snode = rcp(new SerialNode(pl));
     }
@@ -147,7 +148,7 @@ namespace {
 #ifdef HAVE_KOKKOS_TBB
   template <>
   RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == Teuchos::null) {
+    if (tbbnode == null) {
       Teuchos::ParameterList pl;
       pl.set<int>("Num Threads",0);
       tbbnode = rcp(new TBBNode(pl));
@@ -159,7 +160,7 @@ namespace {
 #ifdef HAVE_KOKKOS_THREADPOOL
   template <>
   RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == Teuchos::null) {
+    if (tpinode == null) {
       Teuchos::ParameterList pl;
       pl.set<int>("Num Threads",0);
       tpinode = rcp(new TPINode(pl));
