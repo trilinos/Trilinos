@@ -267,7 +267,7 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  0"
-    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+    "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
   SKIP_STANDARD_DEPS_CHECK
   )
 
@@ -281,7 +281,7 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
     CTEST_UPDATE_RETURN_VAL=1
   PASS_REGULAR_EXPRESSION_ALL
-    "Directly modified non-disabled packages that need to be tested:  Teuchos 1"
+    "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
     "Explicitly enabled packages on input .*  Teuchos 1"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
     "Final set of non-enabled packages:  Stokhos Stalix 2"
@@ -304,7 +304,7 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly
     CTEST_UPDATE_RETURN_VAL=1
   PASS_REGULAR_EXPRESSION_ALL
-    "Directly modified non-disabled packages that need to be tested:  Teuchos 1"
+    "Directly modified or failing non-disabled packages that need to be tested:  Teuchos 1"
     "Explicitly enabled packages on input .*  Teuchos 1"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko ExtraPack 23"
     "Final set of non-enabled packages:  Stokhos Stalix 2"
@@ -329,7 +329,7 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
     CTEST_UPDATE_RETURN_VAL=1
   PASS_REGULAR_EXPRESSION_ALL
-    "Directly modified non-disabled packages that need to be tested:  Thyra 1"
+    "Directly modified or failing non-disabled packages that need to be tested:  Thyra 1"
     "Explicitly enabled packages on input .*  Thyra 1"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
     "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 7"
@@ -354,7 +354,7 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=TRUE
     CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
   PASS_REGULAR_EXPRESSION_ALL
-    "Directly modified non-disabled packages that need to be tested:  Teko 1"
+    "Directly modified or failing non-disabled packages that need to be tested:  Teko 1"
     "Explicitly enabled packages on input .*  Teko 1"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos Teko 17"
     "Final set of non-enabled packages:  Shards Stokhos Sacado Intrepid RBGen Phalanx Stalix 7"
@@ -383,7 +383,7 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     "MODIFIED_PACKAGES_LIST='Teuchos.Teko'"
     "Enabling modified package: Teuchos"
     "Enabling modified package: Teko"
-    "Directly modified non-disabled packages that need to be tested:  Teuchos Teko 2"
+    "Directly modified or failing non-disabled packages that need to be tested:  Teuchos Teko 2"
     "Explicitly enabled packages on input .*  Teuchos Teko 2"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko 22"
     "Final set of non-enabled packages:  Stokhos Stalix 2"
@@ -410,7 +410,7 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     "FAILING_PACKAGES_LIST=''"
     "Not enabling explicitly disabled modified package: Stokhos"
     "Not enabling explicitly disabled modified package: Stalix"
-    "Directly modified non-disabled packages that need to be tested:  0"
+    "Directly modified or failing non-disabled packages that need to be tested:  0"
     "Explicitly enabled packages on input .*  0"
     "Explicitly disabled packages on input .*  Stokhos Stalix 2"
     "Final set of enabled packages:  0"
@@ -434,7 +434,7 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     "Enabling modified package: Teko"
     "Enabling previously failing package: Thyra"
     "Enabling previously failing package: RBGen"
-    "Directly modified non-disabled packages that need to be tested:  Thyra RBGen Teko 3"
+    "Directly modified or failing non-disabled packages that need to be tested:  Thyra RBGen Teko 3"
     "Explicitly enabled packages on input .*  Thyra RBGen Teko 3"
     "Explicitly disabled packages on input .*  Stokhos Stalix 2"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos RBGen Teko 18"
@@ -451,7 +451,27 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
 
 
 CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
-  CI_EnableOnlyModified_FailedStokhosStalix
+  CI_EnableOnlyModified_ModifiedNone_FailedThyraRBGen
+  COPY_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/failedPackages.Thyra.RBGen.txt failedPackages.txt
+  ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
+    CTEST_TEST_TYPE=Continuous CTEST_ENABLE_MODIFIED_PACKAGES_ONLY=ON
+    CTEST_UPDATE_RETURN_VAL=0 # Main update returns nothing for the main Trilinos repo!
+  PASS_REGULAR_EXPRESSION_ALL
+    "CTEST_UPDATE.+ returned '0'"
+    "MODIFIED_PACKAGES_LIST=''"
+    "FAILING_PACKAGES_LIST='Thyra.RBGen'"
+    "Directly modified or failing non-disabled packages that need to be tested:  Thyra RBGen 2"
+    "Explicitly enabled packages on input .*  Thyra RBGen 2"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Belos Stratimikos RBGen Teko 18"
+    "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
+  )
+
+
+CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
+  CI_EnableOnlyModified_ModifiedNone_FailedStokhosStalix
   COPY_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.txt
     ${CMAKE_CURRENT_SOURCE_DIR}/modifiedFiles.empty.txt modifiedFiles.preCopyrightTrilinos.txt
@@ -465,12 +485,12 @@ CREATE_CTEST_DEPENCENCY_HANDLING_TEST_CASE(
     "FAILING_PACKAGES_LIST='Stokhos.Stalix'"
     "Not enabling explicitly disabled previously failing package: Stokhos"
     "Not enabling explicitly disabled previously failing package: Stalix"
-    "Directly modified non-disabled packages that need to be tested:  0"
+    "Directly modified or failing non-disabled packages that need to be tested:  0"
     "Explicitly enabled packages on input .*  0"
     "Explicitly disabled packages on input .*  Stokhos Stalix 2"
     "Final set of enabled packages:  0"
     "Final set of non-enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Teko Stalix 24"
-    "Trilinos_NUM_ENABLED_PACKAGES=0:  Exiting the script!"
+    "MODIFIED_PACKAGES_LIST='':  No modified packages to justify continuous integration test iteration"
   )
 
 # ToDo: Test ???

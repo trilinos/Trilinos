@@ -32,7 +32,6 @@
 
 #include <unit_tests/UnitTestBucket.hpp>
 #include <unit_tests/UnitTestMesh.hpp>
-#include <unit_tests/UnitTestBoxMeshFixture.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -375,7 +374,7 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
       stk::mesh::MetaData meta2 (stk::unit_test::get_entity_rank_names ( 3 ));
       stk::mesh::BulkData bulk2 ( meta2 , pm , 100 );
       new_id = size * (++id_base) + rank;
-      stk::mesh::Entity &face = stk::mesh::declare_element_side( bulk2, 3, elem4, new_id+1, &partLeft_2 );      
+      stk::mesh::Entity &face = stk::mesh::declare_element_side( bulk2, 3, elem4, new_id+1, &partLeft_2 );
       stk::mesh::PairIterRelation rel = face.relations(stk::mesh::Node);
     }
     catch( const std::exception & x ) {
@@ -394,7 +393,7 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
 
    {
     int ok = 0 ;
-    try {  
+    try {
 
       stk::mesh::EntityId elem_node[4];
 
@@ -414,7 +413,7 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
 
       stk::mesh::Entity &face2 = stk::mesh::declare_element_side( bulk, new_id+1, element, nSideCount, &part_A_3 );
 
-      stk::mesh::PairIterRelation rel2 = face2.relations(stk::mesh::Node);  
+      stk::mesh::PairIterRelation rel2 = face2.relations(stk::mesh::Node);
 
    }
     catch( const std::exception & x ) {
@@ -427,7 +426,7 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
     if ( ! ok ) {
       throw std::runtime_error("UnitTestBucket FAILED to catch error for verify_declare_element_side, element4");
     }
-    } 
+    }
 
   // Go all way the through declare_element_side - use new element
 
@@ -1204,16 +1203,16 @@ void UnitTestBucket::test_EntityComm( ParallelMachine pm )
 
     for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
       std::cout << std::endl << "in relation h and p =" << p << std::endl ;
-    
+
       STKUNIT_ASSERT_EQUAL( in_send_ghost( *elem , p ), false );
-      std::cout << std::endl << "in relation ii =" << std::endl 
+      std::cout << std::endl << "in relation ii =" << std::endl
    }
 
   std::cout << std::endl << "Bucket test line 5" << std::endl ;
   result = in_send_ghost(elem);
   if( result) {
      STKUNIT_ASSERT_EQUAL( result , true );
-     } 
+     }
 
   std::cout << std::endl << "Bucket test line 6" << std::endl ;
 

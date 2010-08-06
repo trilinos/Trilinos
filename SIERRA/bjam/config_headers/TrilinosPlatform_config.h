@@ -128,6 +128,7 @@ specific items to form TrilinosPlatform_config.h
 #if defined(_AIX)
 #  define TEMPLATE_FRIENDS_NOT_SUPPORTED
 #  define TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#  define HAS_C99_TR1_CMATH
 #endif
 
 #if (defined(__GNUC__) && !defined(__INTEL_COMPILER)) || defined(__PGI)

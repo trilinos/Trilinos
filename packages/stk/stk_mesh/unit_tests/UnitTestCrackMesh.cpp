@@ -10,9 +10,9 @@
 #include <stdexcept>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_mesh/fixtures/QuadFixture.hpp>
+#include <stk_mesh/fixtures/HexFixture.hpp>
 #include <unit_tests/UnitTestMesh.hpp>
-#include <unit_tests/UnitTestBoxFixture.hpp>
-#include <unit_tests/UnitTestBoxMeshFixture.hpp>
 
 namespace {
 
@@ -29,18 +29,20 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
 
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-    QuadFixture fixture( pm , nx , ny );
+    stk::mesh::fixtures::QuadFixture fixture( pm , nx , ny );
+    fixture.meta_data.commit();
+    fixture.generate_mesh();
 
-    fixture.m_bulk_data.modification_begin();
+    fixture.bulk_data.modification_begin();
 
     stk::mesh::Entity * elem = fixture.elem( ix , iy );
 
     if ( elem && p_rank == elem->owner_rank() ) {
       stk::mesh::Entity * tmp = elem ;
-      fixture.m_bulk_data.destroy_entity( tmp );
+      fixture.bulk_data.destroy_entity( tmp );
     }
 
-    fixture.m_bulk_data.modification_end();
+    fixture.bulk_data.modification_end();
 
     if ( elem ) {
       STKUNIT_EXPECT_TRUE ( elem->log_query() == stk::mesh::EntityLogDeleted );
@@ -51,18 +53,20 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
   for ( unsigned iz = 0 ; iz < nz ; ++iz ) {
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-    BoxFixture fixture( pm , nx , ny , nz );
+    stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
+    fixture.meta_data.commit();
+    fixture.generate_mesh();
 
-    fixture.m_bulk_data.modification_begin();
+    fixture.bulk_data.modification_begin();
 
     stk::mesh::Entity * elem = fixture.elem( ix , iy , iz );
 
     if ( elem && p_rank == elem->owner_rank() ) {
       stk::mesh::Entity * tmp = elem ;
-      fixture.m_bulk_data.destroy_entity( tmp );
+      fixture.bulk_data.destroy_entity( tmp );
     }
 
-    fixture.m_bulk_data.modification_end();
+    fixture.bulk_data.modification_end();
 
     if ( elem ) {
       STKUNIT_EXPECT_TRUE ( elem->log_query() == stk::mesh::EntityLogDeleted );
@@ -76,15 +80,15 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
 
 STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 {
-  BoxMeshFixture fixture( MPI_COMM_WORLD );
+  stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
+  fixture.meta_data.commit();
+  fixture.generate_mesh();
 
-  stk::mesh::BulkData & mesh = fixture.m_bulk_data;
+  stk::mesh::BulkData & mesh = fixture.bulk_data;
 
-  fixture.fill_mesh();
+  stk::mesh::Entity * const old_node = fixture.node(0,1,1);
 
-  stk::mesh::Entity * const old_node = fixture.m_nodes[0][0][1];
-
-  stk::mesh::Entity * const right_element = fixture.m_elems[0][0][1];
+  stk::mesh::Entity * const right_element = fixture.elem(0,0,1);
 
   unsigned right_ordinal = 0;
   unsigned new_node_id = 28;
