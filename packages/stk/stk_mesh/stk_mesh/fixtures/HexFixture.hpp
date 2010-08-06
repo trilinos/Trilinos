@@ -59,6 +59,30 @@ public:
     return 1 + ix + NX * ( iy + NY * iz );
   }
 
+  void node_ix_iy_iz( EntityId entity_id, unsigned &ix , unsigned &iy , unsigned &iz ) const  {
+    entity_id -= 1;
+
+    ix = entity_id % (NX+1);
+    entity_id /= (NX+1);
+
+    iy = entity_id % (NY+1);
+    entity_id /= (NY+1);
+
+    iz = entity_id;
+  }
+
+  void elem_ix_iy_iz( EntityId entity_id, unsigned &ix , unsigned &iy , unsigned &iz ) const  {
+    entity_id -= 1;
+
+    ix = entity_id % NX;
+    entity_id /= NX;
+
+    iy = entity_id % NY;
+    entity_id /= NY;
+
+    iz = entity_id;
+  }
+
   Entity * node( unsigned ix , unsigned iy , unsigned iz ) const {
     return bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy,iz) );
   }

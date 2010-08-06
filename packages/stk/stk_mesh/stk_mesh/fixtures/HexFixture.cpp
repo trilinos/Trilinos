@@ -101,54 +101,47 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
   bulk_data.modification_begin();
 
   {
+    std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
+    const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+    for (; ib != ie; ++ib) {
+      EntityId entity_id = *ib;
+      unsigned ix = 0, iy = 0, iz = 0;
+      elem_ix_iy_iz(entity_id, ix, iy, iz);
 
-    for ( unsigned iz = 0 ; iz < NZ ; ++iz ) {
-    for ( unsigned iy = 0 ; iy < NY ; ++iy ) {
-    for ( unsigned ix = 0 ; ix < NX ; ++ix ) {
-      EntityId i_elem = elem_id( ix, iy, iz);
+      stk::mesh::EntityId elem_node[8] ;
 
-      std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
-      std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
-      ib = std::lower_bound( ib, ie, i_elem);
+      elem_node[0] = node_id( ix   , iy   , iz   );
+      elem_node[1] = node_id( ix+1 , iy   , iz   );
+      elem_node[2] = node_id( ix+1 , iy   , iz+1 );
+      elem_node[3] = node_id( ix   , iy   , iz+1 );
+      elem_node[4] = node_id( ix   , iy+1 , iz   );
+      elem_node[5] = node_id( ix+1 , iy+1 , iz   );
+      elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
+      elem_node[7] = node_id( ix   , iy+1 , iz+1 );
 
-      if ( ib != ie && *ib ==  i_elem ) {
+      stk::mesh::declare_element( bulk_data, hex_part, elem_id( ix , iy , iz ) , elem_node);
 
-        stk::mesh::EntityId elem_node[8] ;
+      for (unsigned i = 0; i<8; ++i) {
+        stk::mesh::Entity * const node =
+          bulk_data.get_entity( stk::mesh::Node , elem_node[i] );
 
-        elem_node[0] = node_id( ix   , iy   , iz   );
-        elem_node[1] = node_id( ix+1 , iy   , iz   );
-        elem_node[2] = node_id( ix+1 , iy   , iz+1 );
-        elem_node[3] = node_id( ix   , iy   , iz+1 );
-        elem_node[4] = node_id( ix   , iy+1 , iz   );
-        elem_node[5] = node_id( ix+1 , iy+1 , iz   );
-        elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
-        elem_node[7] = node_id( ix   , iy+1 , iz+1 );
+        if ( node != NULL) {
 
-        stk::mesh::declare_element( bulk_data, hex_part, elem_id( ix , iy , iz ) , elem_node);
+          unsigned nx = 0, ny = 0, nz = 0;
+          node_ix_iy_iz(elem_node[i], nx, ny, nz);
+
+          Scalar * data = stk::mesh::field_data( coord_field , *node );
+
+          data[0] = nx ;
+          data[1] = ny ;
+          data[2] = -nz ;
+        }
       }
     }
-  }
-  }
   }
 
   bulk_data.modification_end();
 
-  for ( unsigned iz = 0 ; iz <= NZ ; ++iz ) {
-  for ( unsigned iy = 0 ; iy <= NY ; ++iy ) {
-  for ( unsigned ix = 0 ; ix <= NX ; ++ix ) {
-    stk::mesh::Entity * const entity =
-      bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy,iz) );
-
-    if ( entity ) {
-      Scalar * data = stk::mesh::field_data( coord_field , *entity );
-
-      data[0] = ix ;
-      data[1] = iy ;
-      data[2] = - iz ;
-    }
-  }
-  }
-  }
 
 }
 

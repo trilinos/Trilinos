@@ -45,11 +45,6 @@ namespace {
 
 bool skinning_use_case_1(stk::ParallelMachine pm)
 {
-  // TODO This test should be able to run with up to 27
-  // processes, but it fails with corrupt communication
-  // with 10 or more processes
-  //const unsigned p_size = stk::parallel_machine_size( pm );
-  //if ( 4 < p_size ) { return true; }
 
   //setup the mesh
   stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);

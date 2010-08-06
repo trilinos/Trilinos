@@ -55,6 +55,24 @@ public:
   stk::mesh::Entity * node( unsigned ix , unsigned iy ) const
     { return bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy) ); }
 
+  void node_ix_iy( EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
+    entity_id -= 1;
+
+    ix = entity_id % (NX+1);
+    entity_id /= (NX+1);
+
+    iy = entity_id;
+  }
+
+  void elem_ix_iy( EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
+    entity_id -= 1;
+
+    ix = entity_id % NX;
+    entity_id /= NX;
+
+    iy = entity_id;
+  }
+
   stk::mesh::Entity * elem( unsigned ix , unsigned iy ) const
     { return bulk_data.get_entity( stk::mesh::Element , elem_id(ix,iy) ); }
 
