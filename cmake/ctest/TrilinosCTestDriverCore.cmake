@@ -377,7 +377,7 @@ MACRO(ENABLE_MODIFIED_PACKAGES_ONLY)
   #
 
   PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-    "\nDirectly modified non-disabled packages that need to be tested" ON FALSE)
+    "\nDirectly modified or failing non-disabled packages that need to be tested" ON FALSE)
 
 ENDMACRO()
 
@@ -903,6 +903,22 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     "\n***"
     "\n*** Determine if to go ahead with configure, build, test ..."
     "\n***")
+
+  IF (CTEST_ENABLE_MODIFIED_PACKAGES_ONLY)
+    IF (MODIFIED_PACKAGES_LIST)
+      MESSAGE("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
+        ":  Found modified packages, processing enabled packages!\n")
+    ELSE()
+      MESSAGE("\nMODIFIED_PACKAGES_LIST='${MODIFIED_PACKAGES_LIST}'"
+        ":  No modified packages to justify continuous integration test iteration!\n")
+      REPORT_QUEUED_ERRORS()
+      RETURN()
+    ENDIF()
+  ELSE()
+    MESSAGE(
+      "\nCTEST_ENABLE_MODIFIED_PACKAGES_ONLY=${CTEST_ENABLE_MODIFIED_PACKAGES_ONLY}"
+      "  Running in regular mode, processing all enabled packages!\n")
+  ENDIF()
 
   IF (${PROJECT_NAME}_NUM_ENABLED_PACKAGES GREATER 0)
     MESSAGE(
