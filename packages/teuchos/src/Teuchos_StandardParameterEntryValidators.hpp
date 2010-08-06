@@ -250,13 +250,6 @@ public:
 
 private:
 
-  /** \brief. static decleration and assignment of the tagName */
-  static const std::string& tagName()
-    {
-      static const std::string tagName_ =
-        TypeNameTraits<IntegralType>::name() + "stringtointegralvalidator";
-      return tagName_;
-    }
   typedef std::map<std::string,IntegralType> map_t;
   std::string defaultParameterName_;
   std::string validValues_;
@@ -1187,7 +1180,7 @@ public:
 
   /** \brief . */
   const std::string getXMLTagName() const{
-    return StrUtils::removeAllSpaces(TypeNameTraits<T>::name()) + "enhancednumbervalidator";
+    return StrUtils::removeAllSpaces(TypeNameTraits<T>::name()) + "EnhancedNumberValidator";
   }
 
   /** \brief . */
@@ -1485,7 +1478,7 @@ public:
 
   /** \brief . */
   const std::string getXMLTagName() const{
-    return "arrayvalidator";
+    return "ArrayValidator";
   }
 
   /** \brief . */
@@ -1877,7 +1870,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
 
 template<class IntegralType>
 const std::string StringToIntegralParameterEntryValidator<IntegralType>::getXMLTagName() const{
-  return StrUtils::removeAllSpaces(TypeNameTraits<IntegralType>::name()) + "stringintegralvalidator";
+  return StrUtils::removeAllSpaces(TypeNameTraits<IntegralType>::name()) + "StringIntegralValidator";
 }
 
 template<class IntegralType>

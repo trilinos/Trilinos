@@ -418,6 +418,16 @@ public:
   /** \brief . */
   typedef T  element_type;
 
+  /** \brief . */
+  struct rcpcomp {
+    /** \brief . */
+    template<class T1, class T2> inline
+    bool operator() (const RCP<T1> &p1, const RCP<T2> &p2) const{
+      return p1.get() < p2.get();
+    }
+  };
+
+
   /** \name Constructors/destructors/initializers. */
   //@{
 

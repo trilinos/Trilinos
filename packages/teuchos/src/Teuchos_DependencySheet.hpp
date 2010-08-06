@@ -78,7 +78,7 @@ public:
    * @param rootList The Parameter List containing all parameters and sublists
    * for which this Dependency will keep track of dependencies.
    */
-  DependencySheet(RCP<ParameterList> rootList);
+  DependencySheet(RCP<const ParameterList> rootList);
 
   /**
    * \brief Constructs a DependencySheet.
@@ -87,7 +87,7 @@ public:
    * for which this Dependency will keep track of dependencies.
    * @param name Name of the Dependency Sheet.
    */
-  DependencySheet(RCP<ParameterList> rootList, const std::string &name);
+  DependencySheet(RCP<const ParameterList> rootList, const std::string &name);
   
   //@}
 
@@ -100,7 +100,7 @@ public:
    * @param dependency The dependency to be added.
    * @return True if the addition was sucessful, false otherwise.
    */
-  bool addDependency(const RCP<Dependency> dependency);
+  bool addDependency(RCP<const Dependency> dependency);
 
   /**
    * \brief Removes a particular dependency between two parameters.
@@ -108,7 +108,7 @@ public:
    * @param dependency The dependency to be removed.
    * @return True if the removal was sucessfull, false otherwise.
    */
-  bool removeDependency(RCP<Dependency> dependency);
+  bool removeDependency(RCP<const Dependency> dependency);
   
   //@}
 
@@ -131,6 +131,16 @@ public:
    * @return A set of all dependencies associated with the dependee parameter.
    * */
   const DepSet& getDependenciesForParameter(const ParameterEntry *dependee) const;
+
+  /**
+   * \brief Gets an RCP for the root list.
+   */
+  RCP<const ParameterList> getRootList() const;
+
+  /**
+   * \brief Gets the name of the dependency sheet.
+   */
+  const std::string& getName() const;
   
   //@}
 
@@ -193,7 +203,7 @@ private:
   /**
    * \brief The root parameterlist that this dependency sheet is associated with.
    */
-  RCP<ParameterList> rootList_;
+  RCP<const ParameterList> rootList_;
 
   /**
    * \brief Validates whether or not the dependees and dependents of a dependency exist

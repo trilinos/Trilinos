@@ -38,17 +38,17 @@ namespace Teuchos{
 
 VisualDependency::VisualDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
 std::string dependentName, RCP<ParameterList> dependentParentList, bool showIf)
-:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::VisualDep), showIf_(showIf){}
+:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList), showIf_(showIf){}
 
 VisualDependency::VisualDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
 ParameterParentMap dependents, bool showIf)
-:Dependency(dependeeName, dependeeParentList, dependents,  Dependency::VisualDep), showIf_(showIf){}
+:Dependency(dependeeName, dependeeParentList, dependents), showIf_(showIf){}
 
 VisualDependency::VisualDependency(ParameterParentMap dependees, std::string dependentName, RCP<ParameterList> dependentParentList, bool showIf)
-:Dependency(dependees, dependentName, dependentParentList, Dependency::VisualDep), showIf_(showIf){}
+:Dependency(dependees, dependentName, dependentParentList), showIf_(showIf){}
 
 VisualDependency::VisualDependency(ParameterParentMap dependees, ParameterParentMap dependents, bool showIf) 
-:Dependency(dependees, dependents, Dependency::VisualDep), showIf_(showIf){}
+:Dependency(dependees, dependents), showIf_(showIf){}
 
 bool VisualDependency::isDependentVisible() const{
   return dependentVisible_;
@@ -56,11 +56,11 @@ bool VisualDependency::isDependentVisible() const{
 
 ValidatorDependency::ValidatorDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
 std::string dependentName, RCP<ParameterList> dependentParentList)
-:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::ValidatorDep){}
+:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList){}
 
 ValidatorDependency::ValidatorDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
 ParameterParentMap dependents)
-:Dependency(dependeeName, dependeeParentList, dependents, Dependency::ValidatorDep){}
+:Dependency(dependeeName, dependeeParentList, dependents){}
 
 
 StringVisualDependency::StringVisualDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
@@ -196,19 +196,19 @@ void ConditionVisualDependency::validateDep() const {}
 
 NumberArrayLengthDependency::NumberArrayLengthDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
 std::string dependentName, RCP<ParameterList> dependentParentList, int (*func)(int))
-:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::NumberArrayLengthDep), func_(func){
+:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList), func_(func){
   validateDep();
 }
 
 NumberArrayLengthDependency::NumberArrayLengthDependency(std::string dependeeName, std::string dependentName, 
 RCP<ParameterList> parentList, int (*func)(int))
-:Dependency(dependeeName, parentList, dependentName, parentList, Dependency::NumberArrayLengthDep), func_(func){
+:Dependency(dependeeName, parentList, dependentName, parentList), func_(func){
   validateDep();
 }
 
 NumberArrayLengthDependency::NumberArrayLengthDependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
 ParameterParentMap dependents, int (*func)(int))
-:Dependency(dependeeName, dependeeParentList, dependents, Dependency::NumberArrayLengthDep), func_(func){
+:Dependency(dependeeName, dependeeParentList, dependents), func_(func){
   validateDep();
 }
 

@@ -26,21 +26,23 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_StandardParameterEntryXMLConverters.hpp"
-
 namespace Teuchos{
 
-const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
-  return "any";
+RCP<Condition>
+ConditionXMLConverter::fromXMLtoCondition(const XMLObject &xmlObj) const
+{
+  return convertXML(xmlObj);
 }
 
-const std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
-  return toString(entry.getAny(false));
+XMLObject
+ConditionXMLConverter::fromConditiontoXML(const RCP<const Condition> condition) const
+{
+  XMLObject toReturn;
+  toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
+  convertCondition(condition, toReturn);
+  return toReturn;
 }
 
-void AnyParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
-  entry.setValue<std::string>(xmlObj.getRequired(getValueAttributeName()), isDefault);
-}
 
-} //namespace Teuchos
+} // namespace Teuchos
 

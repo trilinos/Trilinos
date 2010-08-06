@@ -27,12 +27,17 @@
 // @HEADER
 
 
-
 #ifndef TEUCHOS_DEPENDENCY_HPP_
 #define TEUCHOS_DEPENDENCY_HPP_
 #include "Teuchos_RCPDecl.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_InvalidDependencyException.hpp"
+/*! \file Dependency.hpp
+    \brief DataStructure for expressing dependencies between elements
+    in ParameterLists.
+*/
+
+
 namespace Teuchos{
 
 
@@ -60,14 +65,14 @@ public:
   };
 
   /**
-   * \brief Enum classifying various types of dependencies.
-   */
-  enum Type{VisualDep, ValidatorDep, NumberValidatorAspectDep, NumberArrayLengthDep};
-
-  /**
    * \brief Maps parameters to their associated parent ParametersList.
    */
   typedef std::map<const std::string, const RCP<ParameterList> > ParameterParentMap;
+
+  /**
+   * \brief convience typedef.
+   */
+  typedef std::pair<const std::string, const RCP<ParameterList> > ParameterParentPair;
   
   //@}
 
@@ -79,9 +84,8 @@ public:
    *
    * @param dependees A map of all the dependees and their associated parent lists.
    * @param dependents A map of all the dependents and their associated parent lists.
-   * @param depType The type of dependency.
    */
-  Dependency(ParameterParentMap& dependees, ParameterParentMap& dependents, Type depType);
+  Dependency(ParameterParentMap& dependees, ParameterParentMap& dependents);
 
   /**
    * \brief Constructs a Dependency
@@ -89,9 +93,8 @@ public:
    * @param dependees A map of all the dependees and their associated parent lists.
    * @param dependentName The name of the dependent parameter.
    * @param dependentParentList The ParameterList containing the dependent.
-   * @param depType The type of dependency.
    */
-  Dependency(ParameterParentMap& dependees, std::string dependentName, RCP<ParameterList> dependentParentList, Type depType);
+  Dependency(ParameterParentMap& dependees, std::string dependentName, RCP<ParameterList> dependentParentList);
 
   /**
    * \brief Constructs a Dependency
@@ -99,10 +102,9 @@ public:
    * @param dependeeName The name of the dependee parameter.
    * @param dependeeParentList The ParameterList containing the dependee.
    * @param dependents A map of all the dependents and their associated parent lists.
-   * @param depType The type of dependency.
    */
   Dependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
-  ParameterParentMap& dependents, Type depType);
+  ParameterParentMap& dependents);
 
   /**
    * \brief Constructs a Dependency
@@ -111,10 +113,9 @@ public:
    * @param dependeeParentList The ParameterList containing the dependee.
    * @param dependentName The name of the dependent parameter.
    * @param dependentParentList The ParameterList containing the dependent.
-   * @param depType The type of dependency.
    */
   Dependency(std::string dependeeName, RCP<ParameterList> dependeeParentList,
-  std::string dependentName, RCP<ParameterList> dependentParentList, Type depType);
+  std::string dependentName, RCP<ParameterList> dependentParentList);
 
   /**
    * \brief Desctructor
@@ -127,17 +128,6 @@ public:
 
   //! @name Attribute/Query Methods 
   //@{
-
-  /** 
-   * \brief Determines whether or not a ParameterList or any of it's children lists contain a specific
-   * ParameterList.
-   *
-   * @param parentList The ParameterList to search.
-   * @param listToFind The ParameterList to for which we are searching.
-   * @return True if the parentList or and or any of it's children ParameterLists contains the list
-   * specified by the listToFind parameter.
-   */
-  static bool doesListContainList(RCP<ParameterList> parentList, RCP<ParameterList> listToFind);
 
   /**
    * \brief Gets the dependees of the dependency.
@@ -190,13 +180,6 @@ public:
   std::string getDependeeName(const ParameterEntry* dependee) const;
 
   /**
-   * \brief Gets the type of the dependency.
-   *
-   * @return The type of dependency.
-   */
-  const Type& getType() const;
-
-  /**
    * \brief Convienence function. Returns the first dependee in the list of dependees.
    *
    * @return The first dependee in the list of dependees.
@@ -222,6 +205,14 @@ public:
    */
   inline const std::string& getFirstDependeeName() const{
     return dependees_.begin()->first;
+  }
+
+  /**
+   * \brief Returns the XML tag to use when serializing Dependencies.
+   */
+  static const std::string& getXMLTagName(){
+    static const std::string xmlTagName = "Dependency";
+    return xmlTagName;
   }
 
   //@}
@@ -265,11 +256,6 @@ public:
   std::set<std::string> dependentNames_;
 
   /**
-   * \brief The type of dependency.
-   */
-  Type type_;
-
-  /**
    * \brief Initializes all the dependnees and dependents along with checking to make sure
    * that their parents lists are actually valid.
    *
@@ -283,7 +269,7 @@ public:
    * be called in the new subclasses constructor.
    */
   virtual void validateDep() const = 0;
-  
+
   //@}
 
 };

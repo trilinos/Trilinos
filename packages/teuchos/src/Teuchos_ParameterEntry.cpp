@@ -37,7 +37,9 @@ namespace Teuchos {
 ParameterEntry::ParameterEntry() : 
   isUsed_(false),
   isDefault_(false)
-{}
+{
+  addParameterEntryToIDMap(this);
+}
 
 
 ParameterEntry::ParameterEntry(const ParameterEntry& source)
@@ -56,6 +58,8 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
   isDefault_ = source.isDefault_;
   docString_ = source.docString_;
   validator_ = source.validator_;
+
+  addParameterEntryToIDMap(this);
 
   return *this;
 }
@@ -119,6 +123,18 @@ std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
   return os;
 }
 
+RCP<ParameterEntry> ParameterEntry::getParameterEntry(ParameterEntryID id){
+  IDToParameterEntryMap::iterator result = find(
+    masterIDMap.begin(), masterIDMap.end(), id);
+  result != masterIDMap.end() ? return result->second : return null;
+}
+
+ParameterEntryID ParameterEntry::getParameterEntryID(RCP<ParameterEntry> entry){
+  ParameterEntryToIDMap::iterator result = find(
+    masterParameterEntryMap.begin(), masterParameterEntryMap.end(), entry);
+  result != masterParameterEntryMap.end() ? 
+    return it->second : return OrdinalTraits<ParameterEntryID>::invalid();
+}
 
 // private
 
@@ -130,5 +146,67 @@ void ParameterEntry::reset()
   isDefault_ = false;
 }
 
+void ParameterEntry::incrementMasterCounter(){
+  masterIDCounter++;
+  if(masterIDMap.find(masterIDCounter) != masterIDMap.end()){
+    incrementMasterCounter;
+  }
+}
+
+ParameterEntryID ParameterEntry::getAvailableID(){
+  ParameterEntryID toReturn;
+  if(masterFreeIDs.size() != 0)
+    toReturn = masterFreeIDs.back();
+    masterFreeIDs.pop_back();
+    return toReturn;
+  }
+  else{
+    toReturn = masterIDCounter;
+    incrementMasterCounter();
+  }
+  return toReturn;
+}
+
+void ParameterEntry::addParameterEntryToIDMap(ParameterEntry* entryToAdd){
+  RCP<ParameterEntry> toInsert = rcp(entryToAdd, false);
+  TEST_FOR_EXCEPTION(
+  masterParameterEntryMap.find(toInsert)
+  !=
+  masterParameterEntryMap.end(),
+  DuplicateParameterEntryException,
+  "Error: parameter entry has already been added to the parameter entry maps!" <<
+  std::endl << std::endl);
+
+  ParameterEntryID insertionID = getAvailableID();
+
+  masterIDMap.insert(value_type(insertionID, toInsert));
+  masterParameterEntryMap.insert(value_type(toInsert, insertionID));
+}
+
+void ParameterEntry::addParameterEntryToIDMap(
+  ParameterEntry* entry, ParameterEntryID idToUse)
+{
+  TEST_FOR_EXCEPTION(
+  masterIDMap.find(idToUse)
+  !=
+  masterIDMap.end(),
+  DuplicateParameterEntryIDException,
+  "Error: can't create a ParameterEntry with the ID" <<
+  insertionID << ". That ID is already being used to track another " <<
+  "ParameterEntry!" << std::endl << std::endl);
+  masterParameterEntryMap.insert( value_type(rcp(entry, false), idToUse));
+  masterIDMap.insert(value_type(idToUse, rcp(entry, false)));
+}
+
+void ParameterEntry::removeParameterEntryFromMasterMaps(Parameter* entryToRemove){
+  ParameterEntryToIDMap::iterator toRemove = 
+    masterParameterEntryMap.find(rcp(entryToRemove, false));
+  ParameterEntryID idToFree = toRemove->second;
+  masterParameterEntryMap.remove(toRemove);
+  masterIDMap.erase(idToFree);
+  masterFreeIDs.push_back(idToFree);
+}
+
 
 } // namespace Teuchos
+

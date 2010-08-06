@@ -77,6 +77,14 @@ const DependencySheet::DepSet& DependencySheet::getDependenciesForParameter(cons
   return dependencies_.find(dependee)->second;
 }
 
+RCP<const ParameterList> getRootList() const{
+  return  rootList_;
+}
+
+const std::string& getName() const{
+  return name_;
+}
+
 DependencySheet::DepMap::iterator DependencySheet::depBegin(){
   return dependencies_.begin();
 }
@@ -120,7 +128,7 @@ void DependencySheet::validateExistanceInRoot(RCP<Dependency> dependency){
   Dependency::ParameterParentMap dependees = dependency->getDependees();
   for(it = dependees.begin(); it != dependees.end(); ++it){ 
     currentDependee = it->second->getEntryPtr(it->first);
-    TEST_FOR_EXCEPTION(!Dependency::doesListContainList(rootList_, it->second),
+    TEST_FOR_EXCEPTION(!doesListContainList(rootList_, it->second),
       InvalidDependencyException,
       "FAILED TO ADD DEPENDENCY!\n\n"
       "Sorry for the yelling there, but this is kind of a big deal. Dependencies are hard and complex so don't beat "
@@ -141,7 +149,7 @@ void DependencySheet::validateExistanceInRoot(RCP<Dependency> dependency){
   Dependency::ParameterParentMap dependents = dependency->getDependents();
   for(it = dependents.begin(); it != dependents.end(); ++it){ 
     currentDependent = it->second->getEntryPtr(it->first);
-    TEST_FOR_EXCEPTION(!Dependency::doesListContainList(rootList_, it->second),
+    TEST_FOR_EXCEPTION(!doesListContainList(rootList_, it->second),
       InvalidDependencyException,
       "FAILED TO ADD DEPENDENCY!\n\n"
       "Sorry for the yelling there, but this is kind of a big deal. Dependencies are hard and complex so don't beat "

@@ -41,6 +41,13 @@
 
 namespace Teuchos{
 
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<VisualDependency>{
+public:
+  static std::string name(){ return "VisualDependency"; }
+  static std::string concreteName(const VisualDependency&){ return name(); }
+};
+
 /**
  * \brief An abstract parent class for all visual dependencies.
  *
@@ -122,6 +129,11 @@ public:
    */
   bool isDependentVisible() const;
 
+  inline
+  bool getShowIf() const{
+    return showIf_;
+  }
+
   //@}
 
   /** \name Overridden from Dependency */
@@ -158,6 +170,13 @@ private:
 
 };
 
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ValidatorDependency>{
+public:
+  static std::string name(){ return "ValidatorDependency"; }
+  static std::string concreteName(const ValidatorDependency&){ return name(); }
+};
 
 /**
  * \brief An abstract base class for all validator dependencies.
@@ -207,6 +226,13 @@ public:
   
   //@}
 
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringVisualDependency>{
+public:
+  static std::string name(){ return "StringVisualDependency"; }
+  static std::string concreteName(const StringVisualDependency&){ return name(); }
 };
 
 /**
@@ -315,6 +341,16 @@ public:
   
   //@}
 
+  /** \name Attribute/Query Functions */
+  //@{
+
+  inline
+  const ValueList& getValues() const{
+    return values_;
+  }
+
+  //@}
+
   /** \name Overridden from VisualDependency */
   //@{
 
@@ -342,6 +378,13 @@ private:
   
   //@}
   
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolVisualDependency>{
+public:
+  static std::string name(){ return "BoolVisualDependency"; }
+  static std::string concreteName(const BoolVisualDependency&){ return name(); }
 };
 
 /**
@@ -416,6 +459,13 @@ private:
 
 };
 
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ConditionVisualDependency>{
+public:
+  static std::string name(){ return "ConditionVisualDependency"; }
+  static std::string concreteName(const ConditionVisualDependency&){ return name(); }
+};
+
 /**
  * \brief A condition visual dependency says the following about the relationship between elements in a Parameter List:
  * Depending on whether or not the dependee(s) statisfy a particual condition, the dependent may or may not be displayed to the user in a GUI.
@@ -485,6 +535,13 @@ private:
   
   //@}
 
+};
+
+template<class T>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberVisualDependency<T> >{
+public:
+  static std::string name(){ return TypeNameTraits<T> + "NumberVisualDependency"; }
+  static std::string concreteName(const NumberVisualDependency<T>&){ return name(); }
 };
 
 /**
@@ -641,6 +698,13 @@ private:
   
 };
 
+template<class T>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberValidatorAspectDependency<T> >{
+public:
+  static std::string name(){ return TypeNameTraits<T> + "NumberValidatorAspectDependency"; }
+  static std::string concreteName(const NumberValidatorAspectDependency<T>&){ return name(); }
+};
+
 /**
  * \brief A NumberValidatorAspectDependency says the following about the relationship between two parameters in a dependent parameter list:
  * depending of the value of the dependee a particular aspect of the dependents validator will have a certain value.
@@ -699,7 +763,7 @@ public:
   std::string dependentName, RCP<ParameterList> dependentParentList, 
   RCP<EnhancedNumberValidator<T> > validator,
   ValidatorAspect aspect, T (*func)(T) =0)
-    :Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::NumberValidatorAspectDep),
+    :Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList),
     aspect_(aspect),
     validator_(validator),
     func_(func)
@@ -723,7 +787,7 @@ public:
   RCP<ParameterList> parentList, 
   RCP<EnhancedNumberValidator<T> > validator,
   ValidatorAspect aspect, T (*func)(T) =0)
-    :Dependency(dependeeName, parentList, dependentName, parentList, Dependency::NumberValidatorAspectDep),
+    :Dependency(dependeeName, parentList, dependentName, parentList),
     aspect_(aspect),
     validator_(validator),
     func_(func)
@@ -747,7 +811,7 @@ public:
   std::string dependentName, RCP<ParameterList> dependentParentList, 
   RCP<ArrayNumberValidator<T> > validator,
   ValidatorAspect aspect, T (*func)(T) =0)
-    :Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::NumberValidatorAspectDep),
+    :Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList),
     aspect_(aspect),
     validator_(validator->getPrototype()),
     func_(func)
@@ -770,7 +834,7 @@ public:
   RCP<ParameterList> parentList,
   RCP<ArrayNumberValidator<T> > validator,
   ValidatorAspect aspect, T (*func)(T) =0)
-    :Dependency(dependeeName, parentList, dependentName, parentList, Dependency::NumberValidatorAspectDep),
+    :Dependency(dependeeName, parentList, dependentName, parentList),
     aspect_(aspect),
     validator_(validator),
     func_(func)
@@ -794,7 +858,7 @@ public:
   ParameterParentMap dependents, 
   RCP<EnhancedNumberValidator<T> > validator,
   ValidatorAspect aspect, T (*func)(T) =0)
-    :Dependency(dependeeName, dependeeParentList, dependents, Dependency::NumberValidatorAspectDep),
+    :Dependency(dependeeName, dependeeParentList, dependents),
     aspect_(aspect),
     validator_(validator),
     func_(func)
@@ -818,7 +882,7 @@ public:
   ParameterParentMap dependents,
   RCP<ArrayNumberValidator<T> > validator,
   ValidatorAspect aspect, T (*func)(T) =0)
-    :Dependency(dependeeName, dependeeParentList, dependents, Dependency::NumberValidatorAspectDep),
+    :Dependency(dependeeName, dependeeParentList, dependents),
     aspect_(aspect),
     validator_(validator->getPrototype()),
     func_(func)
@@ -961,6 +1025,13 @@ private:
   
 };
 
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberArrayLengthDependency>{
+public:
+  static std::string name(){ return "NumberArrayLengthDependency"; }
+  static std::string concreteName(const NumberArrayLengthDependency&){ return name(); }
+};
+
 /**
  * \brief A NumberArrayLengthDependency says the following about the relationship between two parameters:
  * The length of the dependent's array depends on the value of the dependee.
@@ -1064,6 +1135,13 @@ private:
   
   //@}
   
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringValidatorDependency>{
+public:
+  static std::string name(){ return "StringValidatorDependency"; }
+  static std::string concreteName(const StringValidatorDependency&){ return name(); }
 };
 
 /**
@@ -1182,6 +1260,13 @@ private:
 
 };
 
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolValidatorDependency>{
+public:
+  static std::string name(){ return "BoolValidatorDependency"; }
+  static std::string concreteName(const BoolValidatorDependency&){ return name(); }
+};
+
 /**
  * \brief A BoolValidatorDependency says the following about the relationship between two parameters:
  * Dependening on the value of the dependee, the dependent should use a particular validator from
@@ -1278,6 +1363,12 @@ private:
   //
 };
 
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<RangeValidatorDependency>{
+public:
+  static std::string name(){ return "RangeValidatorDependency"; }
+  static std::string concreteName(const RangeValidatorDependency&){ return name(); }
+};
 
 /**
  * \brief A RangeValidatorDependency says the following about the relationship between two parameters:

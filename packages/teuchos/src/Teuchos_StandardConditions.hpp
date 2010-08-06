@@ -40,6 +40,13 @@
 
 namespace Teuchos{
 
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BinaryLogicalCondition>{
+public:
+  static std::string name(){ return "BinaryLogicalCondition"; }
+  static std::string concreteName(const BinaryLogicalCondition&){ return name(); }
+};
+
 /**
  * \brief An abstract parent class for all Binary Logic Conditions.
  *
@@ -100,6 +107,15 @@ public:
    */
   virtual bool applyOperator(bool op1, bool op2) const = 0;
 
+  /**
+   * \brief Gets a list of all conditions that are a part of this 
+   * BinaryLogicalCondition/
+   */
+  inline
+  const ConditionList& getConditions() const{
+    return conditions_;
+  }
+
   //@}
 
   /** \name Overridden from Condition */
@@ -128,6 +144,13 @@ private:
 
   //@}
 
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<OrCondition>{
+public:
+  static std::string name(){ return "OrCondition"; }
+  static std::string concreteName(const OrCondition&){ return name(); }
 };
 
 /**
@@ -165,6 +188,13 @@ public:
 
 };
 
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<AndCondition>{
+public:
+  static std::string name(){ return "AndCondition"; }
+  static std::string concreteName(const AndCondition&){ return name(); }
+};
+
 /**
  * \brief A Binary Logic Condition that returns the result
  * or perfroming a logical AND on the conditions.
@@ -198,6 +228,13 @@ public:
   
   //@}
 
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<EqualsCondition>{
+public:
+  static std::string name(){ return "EqualsCondition"; }
+  static std::string concreteName(const EqualsCondition&){ return name(); }
 };
 
 /**
@@ -235,6 +272,13 @@ public:
 
 };
 
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NotCondition>{
+public:
+  static std::string name(){ return "NotCondition"; }
+  static std::string concreteName(const NotCondition&){ return name(); }
+};
+
 /**
  * \brief A Not condition returns the result of
  * performing a logical NOT on a given
@@ -261,6 +305,16 @@ public:
   
   //@}
 
+  /** \name Attribute/Query Functions */
+  //@{
+
+  /** \brief Retrieve the child condition */
+  RCP<const Condition> getChildCondition(){
+    return childCondition_;
+  }
+  
+  //@}
+
   /** \name Overridden from Condition */
   //@{
 
@@ -283,11 +337,18 @@ private:
   /**
    * The condition on which to perfrom the logical NOT.
    */
-  RCP<Condition> condition_;
+  RCP<Condition> childCondition_;
   
   //@}
 
 
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ParameterCondition>{
+public:
+  static std::string name(){ return "ParameterCondition"; }
+  static std::string concreteName(const ParameterCondition&){ return name(); }
 };
 
 /**
@@ -337,6 +398,24 @@ public:
    */
   inline const ParameterEntry* getParameter() const{
     return parameter_;
+  }
+
+  /** \brief Gets the parameter name */
+  inline
+  const std::string& getParameterName() const{
+    return parameterName_;
+  }
+
+  /** \brief Gets the parent parameter list */
+  inline
+  const RCP<const ParameterList> getParentList() const{
+    return parentList_;
+  }
+
+  /** \brief Gets the WhenParamEqualsValue */
+  inline
+  bool getWhenParamEqualsValue() const{
+    return whenParamEqualsValue_;
   }
   
   //@}
@@ -391,6 +470,13 @@ private:
   
   //@}
 
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringCondition>{
+public:
+  static std::string name(){ return "StringCondition"; }
+  static std::string concreteName(const StringCondition&){ return name(); }
 };
 
 /**
@@ -464,6 +550,13 @@ private:
   
   //@}
   
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberCondition>{
+public:
+  static std::string name(){ return "NumberCondition"; }
+  static std::string concreteName(const NumberCondition&){ return name(); }
 };
 
 /**
@@ -573,6 +666,13 @@ private:
   
   //@}
 
+};
+
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolCondition>{
+public:
+  static std::string name(){ return "BoolCondition"; }
+  static std::string concreteName(const BoolCondition&){ return name(); }
 };
 
 /**

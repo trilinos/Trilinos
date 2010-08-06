@@ -53,6 +53,9 @@ class ParameterList; // another parameter type (forward declaration)
 */
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntry {
 public:
+  /** \name Public Types */
+  //@{
+  typedef unsigned int ParameterEntryID;
 
   //! @name Constructors/Destructor 
   //@{
@@ -148,6 +151,10 @@ public:
   inline
   const any& getAny(bool activeQry = true) const;
 
+  static RCP<ParameterEntry> getParameterEntry(ParameterEntryID id);
+
+  static ParameterEntryID getParameterEntryID(RCP<ParameterEntry> entry);
+
   //@}
 
   //! @name Attribute/Query Methods 
@@ -231,6 +238,30 @@ private:
 #pragma warning(pop)
 #endif
 
+  typedef std::map<RCP<ParameterEntry>, ParameterEntryID, RCP::rcpcomp> ParameterEntryToIDMap;
+
+  typedef std::map<ParameterEntryID, RCP<ParameterEntry> > IDToParameterEntryMap;
+
+  typedef std::vector<ParameterEntryID> FreeIDsVector;
+
+  static ParameterEntryToIDMap masterParameterEntryMap;
+
+  static IDToParameterEntryMap masterIDMap;
+  
+  static ParameterEntryID masterIDCounter = 0;
+
+  static FreeIDsVector masterFreeIDs;
+
+  static void addParameterEntryToIDMap(ParameterEntry* entryToAdd);
+
+  static void addParameterEntryToIDMap(ParameterEntry* entryToAdd, ParameterEntryID idToUse);
+
+  static void removeParameterEntryFromMasterMaps(ParameterEntry* entryToRemove);
+
+  static ParameterEntryID getAvailableID();
+
+  static void incrementMasterCounter();
+
 };
 
 /*! \relates ParameterEntry 
@@ -296,7 +327,9 @@ ParameterEntry::ParameterEntry(
 
 inline
 ParameterEntry::~ParameterEntry()
-{}
+{
+  removeParameterEntryFromIDMap(this);
+}
 
 // Set Methods
 

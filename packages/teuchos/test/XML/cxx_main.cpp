@@ -66,6 +66,9 @@ int main(int argc, char** argv)
 
       problem.addChild(solver);
 
+      TEST_EQUALITY(&(problem.findFirstChild("Solver")), &solver);
+      TEST_ASSERT(problem.findFirstChild("NON EXSISTENT CHILD") == null);
+
       std::string str = problem.toString();
       std::cerr << str << std::endl;
 

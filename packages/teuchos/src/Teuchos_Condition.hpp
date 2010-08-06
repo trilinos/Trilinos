@@ -57,20 +57,15 @@ public:
    */
   typedef Teuchos::Array<Teuchos::RCP<Condition> > ConditionList;
 
-  /**
-   * \brief Enum to determine the conditoin type.
-   */
-  enum Type{BinLogicCon, NotCon, ParamCon};
-
-  //@}
+    //@}
 
   /** \name Constructors/Destructor */
   //@{
   
   /**
-   * \brief Construcst a Condition
+   * \brief Constructs a Condition
    */
-  Condition(Type type):type_(type){}
+  Condition(){}
 
   /**
    * \brief Destructs a condition.
@@ -83,9 +78,7 @@ public:
   /** Attribute/Query Functions */
   //@{
   
-  /**
-   * \brief Determins whether or not a condition is true.
-   */
+  /** \brief Determins whether or not a condition is true. */
   virtual bool isConditionTrue() const = 0;
 
   /**
@@ -107,27 +100,8 @@ public:
 
   virtual Dependency::ParameterParentMap getAllParameters() const = 0;
 
-  /**
-   * \brief Gets the type of the condition.
-   */
-  const Type& getType() const{
-    return type_;
-  }
-
   //@}
   
-private:
-
-  /** \name Private memebers */
-  //@{
-
-  /**
-   * \brief The Conditions's type.
-   */
-  Type type_;
-
-  //@}
-
 };
 
 }

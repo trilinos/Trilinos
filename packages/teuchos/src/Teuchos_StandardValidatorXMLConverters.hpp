@@ -82,31 +82,31 @@ private:
   
   /** \brief . */
   static const std::string& getIntegralValueAttributeName() {
-    static const std::string integralValueAttributeName_ = "integralvalue";
+    static const std::string integralValueAttributeName_ = "integralValue";
     return integralValueAttributeName_;
   }
 
   /** \brief . */
   static const std::string& getStringTagName() {
-    static const std::string stringTagName_ = "string";
+    static const std::string stringTagName_ = "String";
     return stringTagName_;
   }
 
   /** \brief . */
   static const std::string& getStringValueAttributeName() {
-    static const std::string stringValueAttributeName_ = "stringvalue";
+    static const std::string stringValueAttributeName_ = "stringValue";
     return stringValueAttributeName_;
   }
 
   /** \brief . */
   static const std::string& getStringDocAttributeName() {
-    static const std::string stringDocAttributeName_ = "stringdoc";
+    static const std::string stringDocAttributeName_ = "stringDoc";
     return stringDocAttributeName_;
   }
 
   /** \brief . */
   static const std::string& getDefaultParameterAttributeName() {
-    static const std::string defaultParameterAttributeName_ = "defaultparametername";
+    static const std::string defaultParameterAttributeName_ = "defaultParameterName";
     return defaultParameterAttributeName_;
   }
   
@@ -388,7 +388,7 @@ private:
   
   /** \brief . */
   static const std::string& getFileMustExistAttributeName() {
-    static const std::string fileMustExistAttributeName = "filemustexist";
+    static const std::string fileMustExistAttributeName = "fileMustExist";
     return fileMustExistAttributeName;
   }
   
@@ -430,13 +430,13 @@ private:
   
   /** \brief . */
   static const std::string& getStringTagName() {
-    static const std::string stringTagName = "string";
+    static const std::string stringTagName = "String";
     return stringTagName;
   }
 
   /** \brief . */
   static const std::string& getStringValueAttributeName() {
-    static const std::string stringValueAttributeName = "stringvalue";
+    static const std::string stringValueAttributeName = "stringValue";
     return stringValueAttributeName;
   }
   

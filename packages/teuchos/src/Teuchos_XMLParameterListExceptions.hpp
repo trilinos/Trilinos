@@ -27,10 +27,12 @@
 // @HEADER
 
 
-#ifndef TEUCHOS_XMLPARAMETERLISTEXCEPTION_HPP_
-#define TEUCHOS_XMLPARAMETERLISTEXCEPTION_HPP_
+#ifndef TEUCHOS_XMLPARAMETERLISTEXCEPTIONS_HPP_
+#define TEUCHOS_XMLPARAMETERLISTEXCEPTIONS_HPP_
 
 /*! \file Teuchos_XMLParameterListExceptions.hpp
+ * \brief A collection of Exceptions that can be potentially
+ * thrown when converting a ParameterList to and from XML
  */
 #include <stdexcept>
 
@@ -219,4 +221,4 @@ public:
 
 
 } // namespace Teuchos
-#endif //TEUCHOS_XMLPARAMETERLISTEXCEPTION_HPP_
+#endif //TEUCHOS_XMLPARAMETERLISTEXCEPTIONS_HPP_

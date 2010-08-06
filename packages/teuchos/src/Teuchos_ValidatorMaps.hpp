@@ -82,16 +82,7 @@ class ValidatortoIDMap {
 public:
   
   /** \brief . */
-  struct rcpcomp {
-    /** \brief . */
-    template<class T1, class T2> inline
-    bool operator() (const RCP<T1> &p1, const RCP<T2> &p2) const{
-      return p1.get() < p2.get();
-    }
-  };
-
-  /** \brief . */
-  typedef std::map<RCP<const ParameterEntryValidator>, int, rcpcomp> ValidatorMap;
+  typedef std::map<RCP<const ParameterEntryValidator>, int, RCP::rcpcomp> ValidatorMap;
 
   /** \brief . */
   typedef std::pair<RCP<const ParameterEntryValidator>, int> ValidatorIDPair;

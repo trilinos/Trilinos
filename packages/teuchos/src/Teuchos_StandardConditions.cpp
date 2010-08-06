@@ -33,7 +33,6 @@
 namespace Teuchos{
 
 ParameterCondition::ParameterCondition(std::string parameterName, Teuchos::RCP<Teuchos::ParameterList> parentList, bool whenParamEqualsValue):
-  Condition(Condition::ParamCon),
   parameterName_(parameterName),
   parentList_(parentList),
   whenParamEqualsValue_(whenParamEqualsValue)
@@ -56,7 +55,6 @@ Dependency::ParameterParentMap ParameterCondition::getAllParameters() const{
 }
 
 BinaryLogicalCondition::BinaryLogicalCondition(ConditionList& conditions):
-  Condition(Condition::BinLogicCon),
   conditions_(conditions)
 {
   if(conditions_.size() ==0){
@@ -123,11 +121,10 @@ bool EqualsCondition::applyOperator(bool op1, bool op2) const{
   return op1 == op2;
 }
 
-NotCondition::NotCondition(RCP<Condition> condition):
-  Condition(Condition::NotCon),
-  condition_(condition)
+NotCondition::NotCondition(RCP<Condition> childCondition):
+  childCondition_(childCondition)
 {
-  if(condition_.is_null()){
+  if(childCondition_.is_null()){
     throw InvalidConditionException("OOOOOOOOPppppps! Looks like you tried to give me "
     "a null pointer when you were making a not conditon. That's a no no. Go back and "
     "checkout your not conditions and make sure you didn't give any of them a null pointer "
@@ -137,11 +134,11 @@ NotCondition::NotCondition(RCP<Condition> condition):
 }
 
 bool NotCondition::isConditionTrue() const{
-  return (!condition_->isConditionTrue());
+  return (!childCondition_->isConditionTrue());
 }
 
 bool NotCondition::containsAtLeasteOneParameter() const{
-  return condition_->containsAtLeasteOneParameter();
+  return childCondition_->containsAtLeasteOneParameter();
 }
 
 Dependency::ParameterParentMap NotCondition::getAllParameters() const{

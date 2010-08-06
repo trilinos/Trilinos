@@ -153,21 +153,5 @@ const Dependency::Type& Dependency::getType() const{
   return type_;
 }
 
-bool Dependency::doesListContainList(RCP<ParameterList> parentList, RCP<ParameterList> listToFind){
-  if(parentList.get() == listToFind.get()){
-    return true;
-  }
-  else{
-    for(ParameterList::ConstIterator it = parentList->begin(); it!=parentList->end(); ++it){
-      if(it->second.isList()){
-        if(doesListContainList(sublist(parentList, it->first,true), listToFind)){
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
 }
 

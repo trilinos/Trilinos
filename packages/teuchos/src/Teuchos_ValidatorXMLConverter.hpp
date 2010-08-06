@@ -30,7 +30,7 @@
 #define TEUCHOS_VALIDATORXMLCONVERTER_HPP
 
 /*! \file Teuchos_ValidatorXMLConverter.hpp
- * \brief Converters back and forth between XML
+ * \brief Converts back and forth between XML
  * and ParameterEntryValidators.
 */
 
@@ -47,6 +47,7 @@ namespace Teuchos {
  * and from XML.
  */
 class ValidatorXMLConverter : public Describable {
+
 public:
 
   /** \name Converter Functions */
@@ -90,9 +91,9 @@ public:
    * particular ParameterEntryValidator.
    *
    * @param xmlObj The xml to be converted.
-   *
    * @param validatorMap The validator map storing all validators that are
    * being converted.
+   * @return The converted ParameterEntryValidator.
    */
   virtual RCP<ParameterEntryValidator> convertXML(const XMLObject& xmlObj,
     IDtoValidatorMap& validatorMap) const=0;
@@ -100,7 +101,6 @@ public:
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param validator The ParameterEntryValidator to be converted to XML.
-   *
    * @return An XML representation of the given ParameterEntryValidator.
    */
   XMLObject fromValidatortoXML(const RCP<const ParameterEntryValidator> validator,
@@ -123,7 +123,6 @@ public:
    * specific to a particlar ParameterEntryValidator
    *
    * @param validator The validator to be converted.
-   *
    * @param validatorMap The validator map storing all validators that are
    * being converted.
    */
@@ -151,13 +150,13 @@ public:
   
   /** \brief . */
   static const std::string& getIdAttributeName(){
-    static const std::string idAttributeName = "validatorid";
+    static const std::string idAttributeName = "validatorId";
     return idAttributeName;
   }
 
   /** \brief . */
   static const std::string& getPrototypeIdAttributeName(){
-    static const std::string prototypeIdAttributeName = "prototypeid";
+    static const std::string prototypeIdAttributeName = "prototypeId";
     return prototypeIdAttributeName;
   }
   

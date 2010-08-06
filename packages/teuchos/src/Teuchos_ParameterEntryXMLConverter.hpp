@@ -115,11 +115,13 @@ private:
   /** \name Private Members */
   //@{
   
+  /** \brief . */
   static const std::string& getDefaultAttributeName() {
     static const std::string defaultAttributeName_ = "isDefault";
     return defaultAttributeName_;
   }
 
+  /** \brief . */
   static const std::string& getUsedAttributeName() {
     static const std::string usedAttributeName_ = "isUsed";
     return usedAttributeName_;
