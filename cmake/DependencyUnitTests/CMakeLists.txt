@@ -147,7 +147,8 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableAllPackages_DefaultTPLs
   ARGS -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "Final set of enabled TPLs:  BLAS LAPACK 2"
+    "Final set of enabled TPLs:  BLAS LAPACK DUMMY 3"
+    "Final set of non-enabled TPLs:  MPI Boost Scotch METIS ParMETIS CppUnit ADOLC ADIC TVMET y12m SuperLUDist SuperLU UMFPACK AMD PETSC MUMPS 16"
   )
 
 
@@ -155,7 +156,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableAllPackages_EnableBoost
   ARGS -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON -DTPL_ENABLE_Boost:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "Final set of enabled TPLs:  BLAS LAPACK Boost 3"
+    "Final set of enabled TPLs:  BLAS LAPACK Boost DUMMY 4"
   )
 
 
@@ -164,7 +165,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON -DTPL_ENABLE_Boost:BOOL=ON
     -DTPL_ENABLE_ParMETIS:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "Final set of enabled TPLs:  BLAS LAPACK Boost ParMETIS 4"
+    "Final set of enabled TPLs:  BLAS LAPACK Boost ParMETIS DUMMY 5"
   )
 
 
@@ -200,7 +201,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 21"
-    "Final set of enabled TPLs:  BLAS LAPACK Boost 3"
+    "Final set of enabled TPLs:  BLAS LAPACK Boost DUMMY 4"
   )
 
 
@@ -245,6 +246,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
     -DTrilinos_ENABLE_Teko=ON
   PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_TPLS='20'"
     "Explicitly enabled packages on input .* Teko 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
     "Setting Trilinos_ENABLE_Teuchos=ON because Teko_ENABLE_Teuchos=ON"
@@ -252,6 +254,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
     "Trilinos_ENABLE_Thyra=ON because Teko_ENABLE_Thyra=ON"
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Triutils EpetraExt Thyra Isorropia AztecOO Galeri Amesos Ifpack ML Stratimikos Teko 15"
     "Final set of non-enabled packages:  Shards Tpetra Stokhos Sacado Intrepid Belos RBGen Phalanx Stalix 9"
+    "Final set of enabled TPLs:  BLAS LAPACK TekoDepTPL 3"
   )
 
 
@@ -289,12 +292,25 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   ARGS "-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos,extraTrilinosRepo"
     -DTrilinos_ENABLE_ExtraPack=ON
   PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_TPLS='22'"
     "Explicitly enabled packages on input .* ExtraPack 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
     "Setting Trilinos_ENABLE_Teuchos=ON because ExtraPack_ENABLE_Teuchos=ON"
     "Setting Trilinos_ENABLE_Teko=ON because Trilinos_ENABLE_ExtraPack=ON"
     "Final set of enabled packages:  Teuchos RTOp Epetra Triutils EpetraExt Thyra AztecOO Amesos Ifpack ML Stratimikos Teko ExtraPack 13"
     "Final set of non-enabled packages:  Zoltan Shards Tpetra Stokhos Sacado Isorropia Galeri Intrepid Belos RBGen Phalanx Stalix 12"
+    "Final set of enabled TPLs:  BLAS LAPACK TekoDepTPL ExtraTPL2 4"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  extraTrilinosRepo_EnableExtraPack_EnableExtraTPL1
+  ARGS "-DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos,extraTrilinosRepo"
+    -DTrilinos_ENABLE_ExtraPack=ON -DTPL_ENABLE_ExtraTPL1=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Trilinos_NUM_TPLS='22'"
+    "Explicitly enabled packages on input .* ExtraPack 1"
+    "Final set of enabled TPLs:  BLAS LAPACK TekoDepTPL ExtraTPL1 ExtraTPL2 5"
   )
 
 
