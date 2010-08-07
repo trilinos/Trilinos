@@ -682,6 +682,30 @@ void extractDataFromISS( std::istringstream& iss, std::string& data )
   data = Utils::trimWhiteSpace(data);
 }
 
+
+/** \brief TypeNameTraits specialization for Array.
+ *
+ * NOTE: Use of this class requires that either that the type T be defined or
+ * that a TypeNameTraits<T> specialization exists.  In order to not restrict
+ * the use of Array<T> for undefined pointer types (where T=U*), this
+ * TypeNameTraits class specialization will not be used in core Array
+ * functionality.  This might seem trivial except that some MPI
+ * implementations use pointers to undefined structs and if you want to
+ * portably story these undefined struct pointers in an Array, then you can't
+ * use this traits class.  C++ is quite lacking in cases like this.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<typename T>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<Array<T> > {
+public:
+  static std::string name()
+    { return "Array<"+TypeNameTraits<T>::name()+">"; }
+  static std::string concreteName(const Array<T>&)
+    { return name(); }
+};
+
+
 } // namespace Teuchos
 
 
@@ -1381,8 +1405,7 @@ void Array<T>::assertIndex(int i) const
 {
   TEST_FOR_EXCEPTION(
     !( 0 <= i && i < length() ), RangeError,
-    typeName(*this)<<"::assertIndex(i): "
-    "index " << i << " out of range [0, "<< length() << ")"
+    "Array<T>::assertIndex(i): i="<<i<<" out of range [0, "<< length() << ")"
     );
 }
 
