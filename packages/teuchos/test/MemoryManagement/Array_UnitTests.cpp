@@ -23,6 +23,13 @@ using Teuchos::fromStringToArray;
 using Teuchos::InvalidArrayStringRepresentation;
 
 
+TEUCHOS_UNIT_TEST( Array, TypeNameTraits )
+{
+  TEST_EQUALITY(Teuchos::TypeNameTraits<Array<double> >::name(),
+    std::string("Array<double>"));
+}
+
+
 TEUCHOS_UNIT_TEST( Array, stringToArray )
 {
 
