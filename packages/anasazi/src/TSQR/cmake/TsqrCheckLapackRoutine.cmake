@@ -3,7 +3,9 @@ INCLUDE(TsqrBlasAndLapack)
 
 FUNCTION(TSQR_CHECK_LAPACK_ROUTINE ROUTINE VARNAME)
 
-  message (STATUS "Checking whether your LAPACK library includes ${ROUTINE}")
+  IF (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+    message (STATUS "Checking whether your LAPACK library includes ${ROUTINE}")
+  ENDIF()
 
   # Remember the current CMAKE_REQUIRED_LIBRARIES so we can restore it
   # after we are done testing.
