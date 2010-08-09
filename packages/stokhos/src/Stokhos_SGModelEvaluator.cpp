@@ -46,6 +46,8 @@
 #include "Stokhos_MeanEpetraOp.hpp"
 #include "Stokhos_GaussSeidelEpetraOp.hpp"
 #include "Stokhos_ApproxGaussSeidelEpetraOp.hpp"
+#include "Stokhos_ApproxJacobiEpetraOp.hpp"
+#include "Stokhos_KroneckerProductEpetraOp.hpp"
 #include "Stokhos_IfpackPreconditionerFactory.hpp"
 #include "Stokhos_MLPreconditionerFactory.hpp"
 #include "Stokhos_EpetraMultiVectorOperator.hpp"
@@ -196,6 +198,8 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
       precMethod = GAUSS_SEIDEL;
     else if (prec_method == "Approximate Gauss-Seidel")
       precMethod = APPROX_GAUSS_SEIDEL;
+    else if (prec_method == "Approximate Jacobi")
+      precMethod = APPROX_JACOBI;
     else if (prec_method == "Jacobi")
       precMethod = JACOBI;
     else if (prec_method == "Kronecker Product")
@@ -342,7 +346,8 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     }
     
     // Get preconditioner factory for matrix-free
-    if ((precMethod == MEAN_BASED || precMethod == APPROX_GAUSS_SEIDEL) && 
+    if ((precMethod == MEAN_BASED || precMethod == APPROX_GAUSS_SEIDEL
+         || precMethod == APPROX_JACOBI || precMethod == KRONECKER) && 
 	(jacobianMethod == MATRIX_FREE || 
 	 jacobianMethod == KL_MATRIX_FREE || 
 	 jacobianMethod == KL_REDUCED_MATRIX_FREE)) {
@@ -500,6 +505,22 @@ Stokhos::SGModelEvaluator::create_WPrec() const
 								Cijk, my_W,
 								symmetric));
         }
+        else if (precMethod == APPROX_JACOBI) {
+          bool symmetric = params->get("Symmetric Gauss-Seidel", false);
+          precOp = 
+            Teuchos::rcp(new Stokhos::ApproxJacobiEpetraOp(x_map,
+                                                                sg_x_map,
+                                                                num_sg_blocks,
+                                                                Teuchos::null,
+                                                                Cijk, my_W,
+                                                                symmetric));
+        }
+        else if (precMethod == KRONECKER)
+          precOp = Teuchos::rcp(new Stokhos::KroneckerProductEpetraOp(x_map, 
+                                                                sg_x_map,
+                                                                num_sg_blocks,
+                                                                Teuchos::null,
+                                                                Cijk, my_W));       
         return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(precOp,true));
     }
     else if (jacobianMethod == FULLY_ASSEMBLED) {
@@ -721,7 +742,21 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       W_ags->setOperator(my_W);
       W_ags->setPrecOperator(prec);
     }
-
+    else if (precMethod == APPROX_JACOBI) {
+      Teuchos::RCP<Stokhos::ApproxJacobiEpetraOp> W_ags =
+        Teuchos::rcp_dynamic_cast<Stokhos::ApproxJacobiEpetraOp>(WPrec_out, true);
+      Teuchos::RCP<Epetra_Operator> prec =
+        precFactory->compute(W_sg_blocks->getCoeffPtr(0));
+      W_ags->setOperator(my_W);
+      W_ags->setPrecOperator(prec);
+    }
+    else if (precMethod == KRONECKER) {
+      Teuchos::RCP<Stokhos::KroneckerProductEpetraOp> W_mean =
+        Teuchos::rcp_dynamic_cast<Stokhos::KroneckerProductEpetraOp>(WPrec_out, true);
+      Teuchos::RCP<Epetra_Operator> prec =
+        precFactory->compute(W_sg_blocks->getCoeffPtr(0));
+      W_mean->setMeanOperator(prec);
+    }
     // We can now quit unless a fill of f, g, or dg/dp was also requested
     bool done = (f_out == Teuchos::null);
     for (int i=0; i<outArgs.Ng(); i++) {
@@ -993,6 +1028,21 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 	  W_ags->setOperator(W);
 	  W_ags->setPrecOperator(prec);
 	}
+        else if (precMethod == APPROX_JACOBI) {
+          Teuchos::RCP<Stokhos::ApproxJacobiEpetraOp> W_ags =
+            Teuchos::rcp_dynamic_cast<Stokhos::ApproxJacobiEpetraOp>(WPrec_out, true);
+          Teuchos::RCP<Epetra_Operator> prec =
+            precFactory->compute(W_sg_blocks->getCoeffPtr(0));
+          W_ags->setOperator(W);
+          W_ags->setPrecOperator(prec);
+        }
+        else if (precMethod == KRONECKER) {
+          Teuchos::RCP<Stokhos::KroneckerProductEpetraOp> W_mean =
+            Teuchos::rcp_dynamic_cast<Stokhos::KroneckerProductEpetraOp>(WPrec_out, true);
+          Teuchos::RCP<Epetra_Operator> prec =
+            precFactory->compute(W_sg_blocks->getCoeffPtr(0));
+          W_mean->setMeanOperator(prec);
+        }
       }
     }
     else if (jacobianMethod == FULLY_ASSEMBLED) {

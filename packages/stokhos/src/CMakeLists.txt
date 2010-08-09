@@ -103,6 +103,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_MeanEpetraOp.hpp
   Stokhos_GaussSeidelEpetraOp.hpp
   Stokhos_ApproxGaussSeidelEpetraOp.hpp
+  Stokhos_ApproxJacobiEpetraOp.hpp
+  Stokhos_KroneckerProductEpetraOp.hpp
   Stokhos_PreconditionerFactory.hpp
   Stokhos_IfpackPreconditionerFactory.hpp
   Stokhos_MLPreconditionerFactory.hpp
@@ -136,6 +138,8 @@ SET(SOURCES ${SOURCES}
   Stokhos_MeanEpetraOp.cpp
   Stokhos_GaussSeidelEpetraOp.cpp
   Stokhos_ApproxGaussSeidelEpetraOp.cpp
+  Stokhos_ApproxJacobiEpetraOp.cpp
+  Stokhos_KroneckerProductEpetraOp.cpp
   Stokhos_IfpackPreconditionerFactory.cpp
   Stokhos_MLPreconditionerFactory.cpp
   Stokhos_MLPrecOp.cpp

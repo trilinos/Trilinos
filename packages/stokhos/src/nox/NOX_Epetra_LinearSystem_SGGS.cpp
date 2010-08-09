@@ -5,7 +5,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "EpetraExt_BlockVector.h"
-//bool full_expansion = true;
+//bool full_expansion = false;
 
 NOX::Epetra::LinearSystemSGGS::
 LinearSystemSGGS(
@@ -70,7 +70,7 @@ applyJacobianInverse(Teuchos::ParameterList &params,
 
     int max_iter = params.get("Max Iterations",100 );
     double sg_tol = params.get("Tolerance", 1e-12);
-    bool MatVecTable = params.get("Save MatVec Table", true);
+    bool MatVecTable = params.get("Save MatVec Table", false);
 
 //  *rightHandSide = input.getEpetraVector();
 
@@ -94,7 +94,7 @@ applyJacobianInverse(Teuchos::ParameterList &params,
     EpetraExt::BlockVector sg_df_block(View, detvec->Map(), *sg_df);
 
     int sz = sg_J_poly->basis()->size();
-    int num_KL = sg_J_poly->basis()->dimension();
+    //int num_KL = sg_J_poly->basis()->dimension();
     const Teuchos::Array<double>& norms = sg_J_poly->basis()->norm_squared();
     for (int i=0; i<sz; i++) {
       sg_dx_vec_all.push_back(sg_dx_block.GetBlock(i));
@@ -105,7 +105,6 @@ applyJacobianInverse(Teuchos::ParameterList &params,
       sg_dxold_vec_all.push_back(Teuchos::rcp(new Epetra_Vector(detvec->Map())));
     }
 
-//  Teuchos::RCP< Epetra_Vector> kx ;
     Teuchos::RCP<Epetra_Vector> kx =
       Teuchos::rcp(new Epetra_Vector(detvec->Map()));
     Teuchos::RCP<Epetra_Vector> dx =
@@ -134,20 +133,14 @@ applyJacobianInverse(Teuchos::ParameterList &params,
 
 // 2D array to store mat-vec results
 //int expn;
-std::vector< std::vector< Teuchos::RCP< Epetra_Vector> > > Kx_table(sz);
-for (int i=0;i<sz;i++) {
-/*  if(full_expansion){
-  Kx_table[i].resize(sz);
-  expn =sz;
-  }
-//  if(!full_expansion){
-  else {
-  Kx_table[i].resize(num_KL+1);
-  expn = num_KL+1;
-  }*/
-  Kx_table[i].resize(num_KL+1);
-  for (int j=0;j<num_KL+1;j++) {
-    Kx_table[i][j] = Teuchos::rcp(new Epetra_Vector(detvec->Map()));
+std::vector< std::vector< Teuchos::RCP< Epetra_Vector> > > Kx_table;
+if (MatVecTable) {
+  Kx_table.resize(sz);
+  for (int i=0;i<sz;i++) {
+    Kx_table[i].resize(sg_J_poly->size());
+    for (int j=0;j<sg_J_poly->size();j++) {
+      Kx_table[i][j] = Teuchos::rcp(new Epetra_Vector(detvec->Map()));
+    }
   }
 }
 
@@ -174,10 +167,13 @@ while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
         double c;
         Cijk->value(k,l,i,j,c); 
         if (i!=0) {
-         if (!MatVecTable) {
-          (*sg_J_poly)[i].Apply(*(sg_dx_vec_all[j]),*(Kx_table[j][i]));
+         if (MatVecTable) {
+          sg_df_vec_all[k]->Update(-1.0*c/norms[k],*(Kx_table[j][i]),1.0);      
          }
-         sg_df_vec_all[k]->Update(-1.0*c/norms[k],*(Kx_table[j][i]),1.0);      
+         else {
+          (*sg_J_poly)[i].Apply(*(sg_dx_vec_all[j]),*kx);
+          sg_df_vec_all[k]->Update(-1.0*c/norms[k],*kx,1.0);      
+         }
         }
       }
 
@@ -204,7 +200,7 @@ while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
 //      (sg_f_vec_all[0])->Norm2(&norm_f);
 
       if (MatVecTable) {
-       for(int i=1;i<num_KL+1;i++) {
+       for(int i=1;i<sg_J_poly->size();i++) {
 	(*sg_J_poly)[i].Apply(*(sg_dx_vec_all[k]),*(Kx_table[k][i]));
        }
       }

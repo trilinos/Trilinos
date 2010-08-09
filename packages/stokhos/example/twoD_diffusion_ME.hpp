@@ -41,6 +41,7 @@
 #include "Epetra_Import.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+#include "Stokhos.hpp"
 
 /* Simple model evaluator demonstrating how to use the Stokhos
  * ModelEvaluator to solve a nonlinear stochastic Galerkin problem.  
@@ -58,7 +59,7 @@ public:
 
   //! Constructor
   twoD_diffusion_ME(const Teuchos::RCP<Epetra_Comm>& comm, int n, int d,
-		    double s = 0.1, double mu = 0.2);
+		    double s = 0.1, double mu = 0.2, bool full_expansion = false);
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
@@ -140,6 +141,17 @@ protected:
 
  //! PC coefficients of operator  
   Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > B_k;
+
+ //! PC coefficients of operator with LogNormal RF  
+  Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > C_k;
+
+ //! Compute PCE Coef of LogNormal RF
+  double evalPCECoefLogNormalRF(double, double, int, 
+               const Stokhos::ProductBasis<int, double>& ) const;
+  
+ //! Compute PCE Coef of LogNormal RF using quadrature
+  double evalPCECoefLogNormalRFQuad(double, double, int, 
+         const Teuchos::RCP<const Stokhos::ProductBasis<int, double> >& ) const;
   
 };
 

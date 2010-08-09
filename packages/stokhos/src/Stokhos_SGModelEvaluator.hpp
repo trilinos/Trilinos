@@ -289,6 +289,7 @@ namespace Stokhos {
       MEAN_BASED,
       GAUSS_SEIDEL,
       APPROX_GAUSS_SEIDEL,
+      APPROX_JACOBI,
       JACOBI,
       KRONECKER
     };

@@ -63,6 +63,34 @@
 double evalRF(double x, double y, Teuchos::Array<double> xi,
                        Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis);
 
+// Compute PCE Coeff of LogNormal RF
+double evalPCECoefLogNormalRF(double x, double y, int k,
+               const Stokhos::ProductBasis<int, double>& basis) { 
+  Teuchos::Array<int> multiIndex;
+  int d = basis.dimension();
+  const Teuchos::Array<double> *norms;
+  norms = &(basis.norm_squared());
+  multiIndex = basis.getTerm(k);
+  //std::cout << "multiIndex: ";
+ // for (int l=0; l<d; l++)
+ //   std::cout << multiIndex[l] << " ";
+ // std::cout << std::endl;
+  double sum_g = 0.0, efval;
+  for (int l=0; l<d; l++) {
+    //sum_g = sum_g + pow((sigma*evalEigenfunction(x,y,l)),2);
+    sum_g = sum_g + pow((evalEigenfunction(x,y,l+1)),2);
+  }
+  efval = (exp(mean + 0.5*sum_g))/((*norms)[k]);
+  //efval = (exp(0.5*sum_g))/((*norms)[k]);
+  //std::cout << "norms[" <<k <<"] = " << (*norms)[k] << std::endl;
+  for (int l=0; l<d; l++) {
+    //efval *= sqrt(((*norms)[k])/(factorial(multiIndex[l])))*pow((sigma*evalEigenfunction(x,y,l)),multiIndex[l]); 
+    //efval *= sqrt(((*norms)[k])/(factorial(multiIndex[l])))*pow((evalEigenfunction(x,y,l+1)),multiIndex[l]); 
+    efval *= pow((evalEigenfunction(x,y,l+1)),multiIndex[l]); 
+  }
+  return efval;
+}
+
 int main(int argc, char **argv)
 {
 
@@ -128,7 +156,8 @@ int main(int argc, char **argv)
     PolyBasisTimer.start();
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
     for (int i=0; i<d; i++) {
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
+//      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
+      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,true));
 //      bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("Beta",p,&weight,leftEndPt,rightEndPt,true));
     }
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
@@ -147,8 +176,10 @@ int main(int argc, char **argv)
     Teuchos::Time SparseGridSetup("SP grid timer",false);
     SparseGridSetup.start();
     Stokhos::SparseGridQuadrature<int,double> my_quadrature(basis, level);
+    //Stokhos::TensorProductQuadrature<int,double> my_quadrature(basis);
     Teuchos::Array< Teuchos::Array<double> > quad_points = my_quadrature.getQuadPoints();
     Teuchos::Array<double> quad_weights = my_quadrature.getQuadWeights();
+    Teuchos::Array< Teuchos::Array<double> > quad_basis_values = my_quadrature.getBasisAtQuadPoints();
     SparseGridSetup.stop();
 
 
@@ -230,6 +261,93 @@ int main(int argc, char **argv)
      }
      A_k[k]->FillComplete(); 
     }
+     // Compute eigen functions of lognormal RF 
+  // from Maarten's matlab code
+  Teuchos::RCP<const Stokhos::ProductBasis<int, double> > prodbasis =
+      Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<int, double> >(basis, true);
+
+  std::string filename;
+  std::string filename1("C");
+  std::string filename2(".mm");
+
+/*  // Jacobian graph
+  int NumMyElements = x_map->NumMyElements();
+  int * MyGlobalElements = x_map->MyGlobalElements();
+  int * NumNz = new int[NumMyElements];
+
+  int NumEntries;
+  int * bcIndices = new int[NumMyElements];
+  double two;
+  double *Values = new double[4];
+  int *Indices = new int[4];
+  int n2 = x.size()*x.size();
+  meshSize = x[1]-x[0];*/
+  for(int i = 0; i<NumMyElements; i++){
+    // MyGlobalElements[i]<x.size() ==> Boundary node on bottom edge.
+    // MyGlobalElements[i]%x.size() == 0 ==> Boundary node on left edge.
+    // MyGlobalElements[i]+1%x.size() == 0 ==> right edge.
+    // MyGlobalElements[i] >= n - x.size() ==> top edge.
+    if((MyGlobalElements[i] < static_cast<int>(x.size()) || MyGlobalElements[i]%x.size() == 0 ||
+        (MyGlobalElements[i]+1)%x.size() == 0 || MyGlobalElements[i] >= x.size()*x.size() - static_cast<int>(x.size()))){
+        NumNz[i] = 1;
+      bcIndices[i] = 1;
+    }else{
+      NumNz[i] = 5;
+      bcIndices[i] = 0;
+    }
+  }
+  Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > C_k(basis->size());
+  for (int k=0; k<basis->size(); k++) {
+    C_k[k] = Teuchos::rcp(new Epetra_CrsMatrix(Copy, A_k[0]->Graph()));
+    for( int i=0 ; i<NumMyElements; ++i ) {
+    if (bcIndices[i] == 1 && k == 0) two = 1; //Enforce BC in mean matrix
+    if (bcIndices[i] == 0) {
+      Indices[0] = MyGlobalElements[i]-x.size(); //Down
+      Indices[1] = MyGlobalElements[i]-1;        //left
+      Indices[2] = MyGlobalElements[i]+1;        //right
+      Indices[3] = MyGlobalElements[i]+x.size(); //up
+      NumEntries = 4;
+      Values[0] = -(1/(meshSize*meshSize))*evalPCECoefLogNormalRF(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()]-(meshSize/2),k,*prodbasis);
+      Values[1] = -(1/(meshSize*meshSize))*evalPCECoefLogNormalRF(x[(MyGlobalElements[i]%n2)%x.size()]-(meshSize/2), x[(MyGlobalElements[i]%n2)/x.size()],k,*prodbasis);
+      Values[2] = -(1/(meshSize*meshSize))*evalPCECoefLogNormalRF(x[(MyGlobalElements[i]%n2)%x.size()]+(meshSize/2), x[(MyGlobalElements[i]%n2)/x.size()],k,*prodbasis);
+      Values[3] = -(1/(meshSize*meshSize))*evalPCECoefLogNormalRF(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()]+(meshSize/2),k,*prodbasis);
+
+      two = (evalPCECoefLogNormalRF(x[(MyGlobalElements[i]%n2)%x.size()]-(meshSize/2), x[(MyGlobalElements[i]%n2)/x.size()],k,*prodbasis)
+               + evalPCECoefLogNormalRF(x[(MyGlobalElements[i]%n2)%x.size()]+(meshSize/2), x[(MyGlobalElements[i]%n2)/x.size()],k,*prodbasis)
+               + evalPCECoefLogNormalRF(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()]-(meshSize/2),k,*prodbasis)
+               +evalPCECoefLogNormalRF(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()]+(meshSize/2),k,*prodbasis))
+               /(meshSize*meshSize);
+     /* Values[0] = -(1/(meshSize*meshSize))*evalPCECoefLogNormalRFQuad(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()]-(meshSize/2),k,prodbasis);
+      Values[1] = -(1/(meshSize*meshSize))*evalPCECoefLogNormalRFQuad(x[(MyGlobalElements[i]%n2)%x.size()]-(meshSize/2), x[(MyGlobalElements[i]%n2)/x.size()],k,prodbasis);
+      Values[2] = -(1/(meshSize*meshSize))*evalPCECoefLogNormalRFQuad(x[(MyGlobalElements[i]%n2)%x.size()]+(meshSize/2), x[(MyGlobalElements[i]%n2)/x.size()],k,prodbasis);
+      Values[3] = -(1/(meshSize*meshSize))*evalPCECoefLogNormalRFQuad(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()]+(meshSize/2),k,prodbasis);
+
+      two = (evalPCECoefLogNormalRFQuad(x[(MyGlobalElements[i]%n2)%x.size()]-(meshSize/2), x[(MyGlobalElements[i]%n2)/x.size()],k,prodbasis)
+               + evalPCECoefLogNormalRFQuad(x[(MyGlobalElements[i]%n2)%x.size()]+(meshSize/2), x[(MyGlobalElements[i]%n2)/x.size()],k,prodbasis)
+               + evalPCECoefLogNormalRFQuad(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()]-(meshSize/2),k,prodbasis)
+               +evalPCECoefLogNormalRFQuad(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()]+(meshSize/2),k,prodbasis))
+               /(meshSize*meshSize);*/
+    }
+   if(bcIndices[i] == 0) C_k[k]->ReplaceGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
+    if (bcIndices[i]==0 || k == 0) C_k[k]->ReplaceGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i);
+  }
+ C_k[k]->FillComplete();
+ std::stringstream ss;
+ ss << k ;
+ std::string sstr = ss.str();
+ filename = filename1 + sstr + filename2;
+ //std::cout << ss.str() << std::endl;
+ EpetraExt::RowMatrixToMatrixMarketFile(filename.c_str(), *(C_k[k]));
+ }
+
+/* // Teuchos::RCP<Epetra_Vector>b = Teuchos::rcp(new Epetra_Vector(*x_map));
+  for( int i=0 ; i<NumMyElements; ++i ) {
+    if (bcIndices[i] == 1 )
+     b[i] = 0;
+    else
+     b[i] = 1;
+  }
+*/
     AssemblyTimer.stop();
 
     ///////////////////////////////////////////////////////////////////////
@@ -253,7 +371,7 @@ int main(int argc, char **argv)
     #else
       MLList.set("coarse: type","Jacobi");
     #endif
-    ML_Epetra::MultiLevelPreconditioner* MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A_k[0], MLList);
+    ML_Epetra::MultiLevelPreconditioner* MLPrec = new ML_Epetra::MultiLevelPreconditioner(*C_k[0], MLList);
     PreconConstruct.stop();
   
     
@@ -270,49 +388,64 @@ int main(int argc, char **argv)
     Epetra_LinearProblem problem(&(*A),&x2,&b);
     AztecOO aztec_solver(problem);
     aztec_solver.SetPrecOperator(MLPrec);
-    aztec_solver.SetAztecOption(AZ_solver, AZ_cg);
+    aztec_solver.SetAztecOption(AZ_solver, AZ_gmres);
     //aztec_solver.SetAztecOption(AZ_precond, AZ_none);
     aztec_solver.SetAztecOption(AZ_output, AZ_none);
     
     
     //LOOP OVER COLLOCATION POINTS.
-    double coll_time = 0; 
+    
+    double coll_time = 0;
     int iters = 0;
     SolutionTimer.start();
     for( std::size_t sp_idx = 0; sp_idx < quad_points.size(); sp_idx++){
       AssemblyTimer.start();
       if(sp_idx%100 ==0) std::cout << sp_idx <<'/' << quad_points.size() << "\n";
-      xi = quad_points[sp_idx];
+      //xi = quad_points[sp_idx];
       B_k->PutScalar(0);
-      for(int k = 0; k<=d; k++){
-        EpetraExt::MatrixMatrix::Add(*A_k[k],false,(k>0)?xi[k-1]:1,*B_k,1.0);
+//        std::cout << "quad_points" << sp_idx << quad_points[sp_idx]<< endl;
+        //std::cout << "quad_basis_values" << sp_idx << quad_basis_values[sp_idx]<< endl;
+      //for(int k = 0; k<=d); k++){
+      for(int k = 0; k<basis->size(); k++){
+        //EpetraExt::MatrixMatrix::Add(*A_k[k],false,(k>0)?xi[k-1]:1,*B_k,1.0);
+        //EpetraExt::MatrixMatrix::Add(*C_k[k],false,(k>0)?quad_basis_values[sp_idx][k-1]:1,*B_k,1.0);
+        EpetraExt::MatrixMatrix::Add(*C_k[k],false,quad_basis_values[sp_idx][k],*B_k,1.0);
       }
       for(int i = 0; i<NumMyElements; i++){
          if(bcIndices[i] == 0){
-          b[i] = RHS_function(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()],xi);
+          b[i] = RHS_function(x[(MyGlobalElements[i]%n2)%x.size()], x[(MyGlobalElements[i]%n2)/x.size()],quad_basis_values[sp_idx]);
          }else b[i] = 0;
       }
-      
+     /* //Teuchos::RCP<Epetra_Vector>b = Teuchos::rcp(new Epetra_Vector(*x_map));
+      for( int i=0 ; i<NumMyElements; ++i ) {
+        if (bcIndices[i] == 1 )
+         b[i] = 0;
+        else
+         b[i] = 1;
+      }*/
+ 
       B_k->FillComplete();
       AssemblyTimer.stop();
       //////////////////////////////////////////////////
       //Solve the Linear System.
       /////////////////////////////////////////////////
-    
-      Teuchos::Time SolveTimer("Total Collocation Solve Time",false);
-      SolveTimer.start();  
-      aztec_solver.Iterate(1000, 1e-12);
+      {
+       //TEUCHOS_FUNC_TIME_MONITOR("Total Collocation Solve Time"); 
+       Teuchos::Time SolveTimer("Total Collocation Solve Time",false);
+       SolveTimer.start();
+       aztec_solver.Iterate(1000, 1e-12);
+       SolveTimer.stop();
+       //std::cout << "Solve time at qp " << sp_idx <<" is = "<< SolveTimer.totalElapsedTime(false) << std::endl;
+       coll_time += SolveTimer.totalElapsedTime(false);
+      }
       iters = iters + aztec_solver.NumIters();
-      SolveTimer.stop();
-      coll_time += SolveTimer.totalElapsedTime(false);
       Eofu.Update(quad_weights[sp_idx],x2,1.0);
       x22.Multiply(1.0,x2,x2,0.0);
       Eofu2.Update(quad_weights[sp_idx], x22, 1.0);
-      
     }
     SolutionTimer.stop();
-    TotalTimer.stop();   
-    std::cout << "Total Collocation Solve Time is =  " << coll_time << std::endl; 
+    TotalTimer.stop();    
+    std::cout << "Total Collocation Solve Time is =  " << coll_time << std::endl;
     ///////////////////////////////////////////////////////////
     //Output timings and results.
     //////////////////////////////////////////////////////////
@@ -332,11 +465,12 @@ int main(int argc, char **argv)
     
     std::ofstream time;
     time.open("sp_time.txt");
-    time << TotalTimer.totalElapsedTime(false) << "\n";
-    time << SolutionTimer.totalElapsedTime(false) << "\n";
-    time << precon_time << "\n";
-    time << A->ApplyTime()<< "\n";
-    time << SparseGridSetup.totalElapsedTime(false) << "\n";
+    time <<"TotalTimer= " <<TotalTimer.totalElapsedTime(false) << "\n";
+    time <<"SolutionTimer= " <<SolutionTimer.totalElapsedTime(false) << "\n";
+    time <<"SolveTimer= " <<coll_time << "\n";
+    time <<"precon_time= " <<precon_time << "\n";
+    time <<"A->ApplyTime= " <<A->ApplyTime()<< "\n";
+    time <<"SparseGridSetuptime= " <<SparseGridSetup.totalElapsedTime(false) << "\n";
     time.close();
 
     std::ofstream dof;

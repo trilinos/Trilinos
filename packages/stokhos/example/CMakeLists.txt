@@ -71,9 +71,29 @@ IF(Stokhos_ENABLE_TriKota)
      )
 
      PACKAGE_ADD_EXECUTABLE(
+       twoD_diffusion_collocation_example_rcg-v2
+       SOURCES twoD_diffusion_collocation_example-rcg-v2.cpp
+       COMM serial mpi
+     )
+
+     PACKAGE_ADD_EXECUTABLE(
+       twoD_diffusion_collocation_log-normal_example
+       SOURCES twoD_diffusion_collocation_log-normal.cpp
+       COMM serial mpi
+     )
+
+     PACKAGE_ADD_EXECUTABLE(
        Linear2D_Diffusion_PCE_Example
        SOURCES linear2d_diffusion_pce.cpp
                twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
+       COMM serial mpi
+      )
+
+     PACKAGE_ADD_EXECUTABLE(
+       Linear2D_Diffusion_PCE_DiagOP_Example
+       SOURCES linear2d_diffusion_pce_diag_op.cpp
+               twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
+               Stokhos_DiagEpetraOp.hpp Stokhos_DiagEpetraOp.cpp
        COMM serial mpi
       )
 
@@ -90,7 +110,14 @@ IF(Stokhos_ENABLE_TriKota)
                twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
        COMM serial mpi
       )
- 
+
+     PACKAGE_ADD_EXECUTABLE(
+       Linear2D_Diffusion_PCE_NOX_Belos
+       SOURCES linear2d_diffusion_pce_nox_belos.cpp
+               twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
+       COMM serial mpi
+      )  
+
   ENDIF()
 
 ENDIF()

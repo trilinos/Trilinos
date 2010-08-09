@@ -158,30 +158,23 @@ Stokhos::GaussSeidelEpetraOp::ApplyInverse(const Epetra_MultiVector& Input,
     sg_df->Update(1.0,*sg_y,-1.0,sg_f_block,0.0);
     sg_df->Norm2(&norm_df);
 
-    std::cout << "\nInitial residual norm = " << norm_f << std::endl;
+//    std::cout << "\nInitial residual norm = " << norm_f << std::endl;
 
     // Set deterministic solver K0
     //detsolve->setJacobianOperatorForSolve(sg_J_poly->getCoeffPtr(0));
 
 // 2D array to store mat-vec results
 //int expn;
-std::vector< std::vector< Teuchos::RCP< Epetra_Vector> > > Kx_table(sz);
-for (int i=0;i<sz;i++) {
-/*  if(full_expansion){
-  Kx_table[i].resize(sz);
-  expn =sz;
-  }
-//  if(!full_expansion){
-  else {
-  Kx_table[i].resize(num_KL+1);
-  expn = num_KL+1;
-  }*/
-  Kx_table[i].resize(num_KL+1);
-  for (int j=0;j<num_KL+1;j++) {
-    Kx_table[i][j] = Teuchos::rcp(new Epetra_Vector(detvec->Map()));
-  }
+std::vector< std::vector< Teuchos::RCP< Epetra_Vector> > > Kx_table;
+if (MatVecTable) {
+ Kx_table.resize(sz);
+ for (int i=0;i<sz;i++) {
+   Kx_table[i].resize(sg_J_poly->size());
+   for (int j=0;j<sg_J_poly->size();j++) {
+     Kx_table[i][j] = Teuchos::rcp(new Epetra_Vector(detvec->Map()));
+   }
+ }
 }
-
 int iter = 0;
 //for (int iter=0;iter<28;iter++){
 while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
@@ -204,11 +197,14 @@ while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
         int i,j;
         double c;
         Cijk->value(k,l,i,j,c); 
-        if (i!=0) {
-         if (!MatVecTable) {
-          (*sg_J_poly)[i].Apply(*(sg_dx_vec_all[j]),*(Kx_table[j][i]));
+        if (i!=0 && i<=num_KL+1) {
+         if (MatVecTable) {
+          sg_df_vec_all[k]->Update(-1.0*c/norms[k],*(Kx_table[j][i]),1.0);      
          }
-         sg_df_vec_all[k]->Update(-1.0*c/norms[k],*(Kx_table[j][i]),1.0);      
+         else {
+          (*sg_J_poly)[i].Apply(*(sg_dx_vec_all[j]),*kx);
+          sg_df_vec_all[k]->Update(-1.0*c/norms[k],*kx,1.0);      
+         }  
         }
       }
 
@@ -249,7 +245,7 @@ while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
 //    stokhos_op->Apply(sg_dx_block,*(sg_y));
 //    sg_df->Update(1.0,*sg_y,-1.0,sg_f_block,0.0);
     sg_df->Norm2(&norm_df);
-    std::cout << "rel residual norm at iteration "<< iter <<" is " << norm_df/norm_f << std::endl;
+//    std::cout << "rel residual norm at iteration "<< iter <<" is " << norm_df/norm_f << std::endl;
   } //End of iter loop 
 
   //result.getEpetraVector() = *leftHandSide;

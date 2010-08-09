@@ -144,8 +144,8 @@ double meshSize = x[1]-x[0];
 /////////////////////////////////////////////////////////////////////////////////
 Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
 for (int i = 0; i< d; i++){
-  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&weight,-weightCut,weightCut,true));
-  //bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p));
+  ///bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&weight,-weightCut,weightCut,true));
+  bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
 }
 
 std::cout << *bases[0] << std::endl;
@@ -316,7 +316,7 @@ Teuchos::Time SolutionTimer("Total Timer",false);
 SolutionTimer.start();
 aztec_solver.Iterate(1000, 1e-12);
 SolutionTimer.stop();
-std::cout << "x2" <<x2 << std::endl;
+//std::cout << "x2" <<x2 << std::endl;
 //std::cout << b << std::endl;
 //////////////////////////////////////////////////////////////////////
 //Post process and output the results.

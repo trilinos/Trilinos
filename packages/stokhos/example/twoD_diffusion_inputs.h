@@ -90,7 +90,7 @@ return result;
 
 }
 
-//Function for the righ hand side.
+//Function for the right hand side.
 double RHS_function(double x, double y, Teuchos::Array<double>& xi){
    
    double result = RHS_function_PC(x,y,0);
@@ -99,3 +99,14 @@ double RHS_function(double x, double y, Teuchos::Array<double>& xi){
    }
    return result;
 }
+
+// Function to compute the factorial.
+int factorial(int number) {
+	int temp;
+
+	if(number <= 1) return 1;
+
+	temp = number * factorial(number - 1);
+	return temp;
+}
+

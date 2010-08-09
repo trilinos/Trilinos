@@ -138,7 +138,7 @@ TotalTimer.start();
   if(argc < 10){
     n = 32; //Number of mesh points
     p = 5; //Polynomial degree
-    num_KL = 2;  //Terms in KL expansion
+    num_KL = 3;  //Terms in KL expansion
     sigma = .1;
     mean = .2;
     weightCut = 1;   // Support for distribution is +-weightCut
@@ -146,8 +146,8 @@ TotalTimer.start();
     precMethod = "Mean-based";
     //precMethod = "Gauss-Seidel";
     //precMethod = "Approx-Gauss-Seidel";
-    //randField = "UNIFORM";
-    randField = "LOG-NORMAL";
+    randField = "UNIFORM";
+    //randField = "LOG-NORMAL";
   }else{
     n = atoi(argv[1]);
     p = atoi(argv[2]);
@@ -366,7 +366,7 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
       GS_params.set("Deterministic Solver", det_linsys);
       GS_params.set("Max Iterations", 2);
       GS_params.set("Tolerance", 3e-13);
-      GS_params.set("Save MatVec Table", true);
+      GS_params.set("Save MatVec Table", false);
     }
     else if (precMethod == "Approx-Gauss-Seidel")  {
       sgParams->set("Preconditioner Method", "Approximate Gauss-Seidel");
@@ -379,13 +379,6 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     else if (precMethod == "Approx-Jacobi")  {
       sgParams->set("Preconditioner Method", "Approximate Jacobi");
       sgParams->set("Symmetric Gauss-Seidel", false);
-      sgParams->set("Mean Preconditioner Type", "ML");
-      Teuchos::ParameterList& precParams =
-        sgParams->sublist("Preconditioner Parameters");
-      precParams = det_ML;
-    }
-    else if (precMethod == "Kronecker-Product")  {
-      sgParams->set("Preconditioner Method", "Kronecker Product");
       sgParams->set("Mean Preconditioner Type", "ML");
       Teuchos::ParameterList& precParams =
         sgParams->sublist("Preconditioner Parameters");

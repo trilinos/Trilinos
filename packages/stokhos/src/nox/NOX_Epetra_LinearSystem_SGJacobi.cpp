@@ -131,7 +131,7 @@ while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
     for (int i=0; i<sz; i++) {
       (sg_df_vec_all[i])->Update(1.0, *sg_f_vec_all[i], 0.0);
     }
-    for (int k=1; k<num_KL+1; k++) {
+    for (int k=1; k<sg_J_poly->size(); k++) {
       int nj = Cijk->num_j(k);
       const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
       for (int jj=0; jj<nj; jj++) {

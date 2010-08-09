@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     // Create Stochastic Galerkin basis and expansion
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
     for (int i=0; i<num_KL; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     int sz = basis->size();

@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "finalSolution" << finalSolution <<std::endl;
       
-    // Evaluate SG responses at SG parameters
+/*    // Evaluate SG responses at SG parameters
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
       sg_model->createOutArgs();
@@ -296,7 +296,7 @@ int main(int argc, char *argv[]) {
     sg_g_poly.print(std::cout);
     std::cout << "\nResponse Mean =      " << std::endl << mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << std_dev << std::endl;
-      
+*/      
     if (status == NOX::StatusTest::Converged) 
       utils.out() << "Test Passed!" << std::endl;
 
