@@ -33,6 +33,7 @@ Ifpack_SORa::Ifpack_SORa(Epetra_RowMatrix* A):
   NumSweeps_(1),
   IsParallel_(false),
   HaveOAZBoundaries_(false),
+  UseInterprocDamping_(false),
   Time_(A->Comm())
 {
   Epetra_CrsMatrix *Acrs=dynamic_cast<Epetra_CrsMatrix*>(A);
@@ -50,9 +51,14 @@ int Ifpack_SORa::Initialize(){
   Gamma_            = List_.get("sora: gamma",Gamma_);
   NumSweeps_        = List_.get("sora: sweeps",NumSweeps_);
   HaveOAZBoundaries_= List_.get("sora: oaz boundaries", HaveOAZBoundaries_);
+  UseInterprocDamping_ = List_.get("sora: use interproc damping",UseInterprocDamping_);
 
   if (A_->Comm().NumProc() != 1) IsParallel_ = true;
-  else IsParallel_ = false;
+  else {
+    IsParallel_ = false;    
+    // Don't use interproc damping, for obvious reasons
+    UseInterprocDamping_=false;
+  }
 
   // Counters
   IsInitialized_=true;
@@ -131,7 +137,9 @@ int Ifpack_SORa::Compute(){
     // Build the - (1+alpha)/2 E - (1-alpha)/2 F part of the W matrix
     int rowgid=A_->GRID(i);
     double c_data=0.0;
+    double ipdamp=0.0;
     int idx=0;
+
     for(int j=rowptr_s[i];j<rowptr_s[i+1];j++){      
       int colgid=Askew2->GCID(colind_s[j]);
       c_data+=fabs(vals_s[j]);
@@ -140,11 +148,20 @@ int Ifpack_SORa::Compute(){
 	newvals[idx]=vals_h[j]/2 + Alpha_ * vals_s[j]/2;
 	idx++;
       }
+      // Rely on the fact that epetra always number off-proc entries last
+      // and add the abs of any of the off-proc entries to the diagona for damping
+      if(colind_s[j] >= N) {
+	ipdamp+=fabs(vals_h[j]/2 + Alpha_ * vals_s[j]/2);
+	// Drop the entry entirely if we're damping
+	if(UseInterprocDamping_ && rowgid>colgid) newvals[idx-1]=0;
+      }
     }
     IFPACK_CHK_ERR(W->InsertGlobalValues(rowgid,idx,newvals,gids));
 
     // Do the diagonal
     double w_val= c_data*Alpha_*Gamma_/4 + Adiag[A_->LRID(rowgid)];
+    if(UseInterprocDamping_) w_val+=ipdamp;
+
     W->InsertGlobalValues(rowgid,1,&w_val,&rowgid);
     IFPACK_CHK_ERR(Wdiag->ReplaceGlobalValues(1,&w_val,&rowgid));
   }

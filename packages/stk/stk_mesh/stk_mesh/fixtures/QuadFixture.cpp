@@ -96,45 +96,41 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
   bulk_data.modification_begin();
 
   {
-    for ( unsigned iy = 0 ; iy < NY ; ++iy ) {
-    for ( unsigned ix = 0 ; ix < NX ; ++ix ) {
+    std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
+    const std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+    for (; ib != ie; ++ib) {
+      EntityId entity_id = *ib;
+      unsigned ix = 0, iy = 0;
+      elem_ix_iy(entity_id, ix, iy);
 
-      EntityId i_elem = elem_id( ix, iy);
+      stk::mesh::EntityId elem_node[4] ;
 
-      std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
-      std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
-      ib = std::lower_bound( ib, ie, i_elem);
+      elem_node[0] = node_id( ix   , iy );
+      elem_node[1] = node_id( ix+1 , iy );
+      elem_node[2] = node_id( ix+1 , iy+1 );
+      elem_node[3] = node_id( ix   , iy+1 );
 
-      if ( ib != ie && *ib ==  i_elem ) {
+      stk::mesh::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
+      for (unsigned i = 0; i<4; ++i) {
+        stk::mesh::Entity * const node =
+          bulk_data.get_entity( stk::mesh::Node , elem_node[i] );
 
-        stk::mesh::EntityId elem_node[4] ;
+        if ( node != NULL) {
 
-        elem_node[0] = node_id( ix   , iy );
-        elem_node[1] = node_id( ix+1 , iy );
-        elem_node[2] = node_id( ix+1 , iy+1 );
-        elem_node[3] = node_id( ix   , iy+1 );
+          unsigned nx = 0, ny = 0;
+          node_ix_iy(elem_node[i], nx, ny);
 
-        stk::mesh::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
+          Scalar * data = stk::mesh::field_data( coord_field , *node );
+
+          data[0] = nx ;
+          data[1] = ny ;
+        }
       }
     }
-  }
   }
 
   bulk_data.modification_end();
 
-  for ( unsigned iy = 0 ; iy <= NY ; ++iy ) {
-  for ( unsigned ix = 0 ; ix <= NX ; ++ix ) {
-    stk::mesh::Entity * const entity =
-      bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy) );
-
-    if ( entity ) {
-      Scalar * data = stk::mesh::field_data( coord_field , *entity );
-
-      data[0] = ix ;
-      data[1] = iy ;
-    }
-  }
-  }
 }
 
 

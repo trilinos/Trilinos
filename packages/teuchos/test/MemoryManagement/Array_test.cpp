@@ -735,7 +735,8 @@ bool testArray( const int n, Teuchos::FancyOStream &out )
 
 
 template<class T>
-bool testArrayOpaqueWithoutTNT( const int n, const T &someValue, Teuchos::FancyOStream &out )
+bool testArrayOpaqueWithoutTNT( const std::string &T_name, const int n,
+  const T &someValue, Teuchos::FancyOStream &out )
 {
   
   using Teuchos::Array;
@@ -748,7 +749,7 @@ bool testArrayOpaqueWithoutTNT( const int n, const T &someValue, Teuchos::FancyO
  
   out
     << "\n***"
-    << "\n*** Testing "<<TypeNameTraits<Array<T> >::name()<<" for opaque type without TNT of size = "<<n
+    << "\n*** Testing Array<"<<T_name<<"> for opaque type without TNT of size = "<<n
     << "\n***\n";
   
   Teuchos::OSTab tab(out);
@@ -930,7 +931,8 @@ int main( int argc, char* argv[] ) {
     //if (!result) success = false;
     // 2007/12/03: rabartl: Commented this out so I can test comparison operators
 
-    result = testArrayOpaqueWithoutTNT<Opaque_handle>(n, OPAQUE_HANDLE_NULL, *out);
+    result = testArrayOpaqueWithoutTNT<Opaque_handle>("Opaque_handle", n,
+      OPAQUE_HANDLE_NULL, *out);
     if (!result) success = false;
 
     result = testArrayOpaqueWithTNT<Opaque2_handle>(n, OPAQUE2_HANDLE_NULL, *out);

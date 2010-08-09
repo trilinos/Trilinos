@@ -2,10 +2,14 @@ foreach (_LIBNAME "BLAS" "LAPACK")
   set (_CURRENT_LIB "TPL_${_LIBNAME}_LIBRARIES")
   set (_CURRENT_LIB_VALUE "${${_CURRENT_LIB}}")
   if ("${_CURRENT_LIB_VALUE}" STREQUAL "")
-    message (STATUS "${_CURRENT_LIB} not defined: building outside Trilinos")
+    if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+      message (STATUS "${_CURRENT_LIB} not defined: building outside Trilinos")
+    endif()
     set ("HAVE_${_CURRENT_LIB}" False)
   else ("${_CURRENT_LIB_VALUE}" STREQUAL "")
-    message (STATUS "${_CURRENT_LIB} = ${_CURRENT_LIB_VALUE}: building inside Trilinos")
+    if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+      message (STATUS "${_CURRENT_LIB} = ${_CURRENT_LIB_VALUE}: building inside Trilinos")
+    endif()
     set ("HAVE_${_CURRENT_LIB}" True)
   endif ("${_CURRENT_LIB_VALUE}" STREQUAL "")
 endforeach (_LIBNAME "BLAS" "LAPACK")
@@ -15,8 +19,10 @@ if (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_
   if ("${PKG_DIR}" STREQUAL "")
     set (PKG_DIR "$ENV{HOME}/pkg")
   endif ("${PKG_DIR}" STREQUAL "")
-  message (STATUS "Setting TPL_{BLAS,LAPACK}_LIBRARIES here, since they were not set already")
-  message (STATUS "Assuming libraries live in subdirectories of PKG_DIR = ${PKG_DIR}")
+  if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+    message (STATUS "Setting TPL_{BLAS,LAPACK}_LIBRARIES here, since they were not set already")
+    message (STATUS "Assuming libraries live in subdirectories of PKG_DIR = ${PKG_DIR}")
+  endif()
 
   #set (BLAS_AND_LAPACK_SETUP mkl)
   #set (BLAS_AND_LAPACK_SETUP goto)
@@ -31,7 +37,9 @@ if (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_
   # OMP_NUM_THREADS?) to 1, to avoid similar problems.
 
   if ("${BLAS_AND_LAPACK_SETUP}" STREQUAL "goto")
-    message (STATUS "-- Goto BLAS and custom LAPACK")
+    if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+      message (STATUS "-- Goto BLAS and custom LAPACK")
+    endif()
 
     set (BLAS_LIB_DIR "${PKG_DIR}/GotoBLAS2-1.11p1")
     set (BLAS_LIBS goto2)
@@ -61,7 +69,9 @@ if (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_
     set (TPL_LAPACK_LIBRARIES "-L${LAPACK_LIB_DIR} ${LAPACK_LIBS}")
         
   elseif ("${BLAS_AND_LAPACK_SETUP}" STREQUAL "mkl")
-    message (STATUS "-- Intel MKL BLAS and LAPACK")
+    if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+      message (STATUS "-- Intel MKL BLAS and LAPACK")
+    endif()
 
     set (MKL_LIB_PATH "/usr/mill/pkg/intel_mkl/lib/em64t/")
     set (BLAS_LIB_DIR ${MKL_LIB_PATH})
@@ -76,7 +86,9 @@ if (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_
     set (TPL_LAPACK_LIBRARIES "-L${LAPACK_LIB_DIR}")
 
   elseif ("${BLAS_AND_LAPACK_SETUP}" STREQUAL "default")
-    message (STATUS "-- Default system BLAS and custom LAPACK")
+    if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+      message (STATUS "-- Default system BLAS and custom LAPACK")
+    endif()
 
     # Default setup is to use the system BLAS library with a
     # custom-built LAPACK library.
@@ -102,16 +114,22 @@ if (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_
     set (TPL_LAPACK_LIBRARIES "-L${LAPACK_LIB_DIR} ${LAPACK_LIBS}")
 
   else ("${BLAS_AND_LAPACK_SETUP}" STREQUAL "goto")
-    message (FATAL_ERROR "No BLAS / LAPACK libraries specified")
+    if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+      message (FATAL_ERROR "No BLAS / LAPACK libraries specified")
+    endif()
 
   endif ("${BLAS_AND_LAPACK_SETUP}" STREQUAL "goto")
 
 else (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_LIBRARIES}" STREQUAL "True")))
-  message (STATUS "Using previously set TPL_{BLAS,LAPACK}_LIBRARIES")
+  if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+    message (STATUS "Using previously set TPL_{BLAS,LAPACK}_LIBRARIES")
+  endif()
 endif (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_LIBRARIES}" STREQUAL "True")))
 
-message (STATUS "* TPL_BLAS_LIBRARIES = ${TPL_BLAS_LIBRARIES}")
-message (STATUS "* TPL_LAPACK_LIBRARIES = ${TPL_LAPACK_LIBRARIES}")
+IF (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+  message (STATUS "* TPL_BLAS_LIBRARIES = ${TPL_BLAS_LIBRARIES}")
+  message (STATUS "* TPL_LAPACK_LIBRARIES = ${TPL_LAPACK_LIBRARIES}")
+ENDIF()
 
 
   

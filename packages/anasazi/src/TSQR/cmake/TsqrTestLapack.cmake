@@ -26,7 +26,9 @@
 # ***********************************************************************
 # @HEADER
 
-message (STATUS "Checking LAPACK QR factorization routine names")
+IF (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
+  message (STATUS "Checking LAPACK QR factorization routine names")
+ENDIF()
 
 # Use TsqrCheckLapackRoutine to search the LAPACK library for
 # {D,S,Z,C}LARFP.  Also, search for DLARFG, just as a sanity check.
