@@ -13,6 +13,8 @@
 #include <complex>
 #include "Teuchos_ScalarTraits.hpp"
 #include "klu2_version.h"
+#include "klu2_ordinaltraits.h"
+#include "klu2_scalartraits.h"
 
 /* ========================================================================== */
 /* make sure debugging and printing is turned off */

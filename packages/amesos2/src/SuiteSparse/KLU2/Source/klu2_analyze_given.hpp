@@ -258,7 +258,9 @@ KLU_symbolic<Entry, Int> *KLU_analyze_given     /* returns NULL if error, or a v
 
         /* TODO : Correct version of BTF */
         /* modifies Q, and determines P and R */
-        nblocks = BTF_strongcomp (n, Ap, Bi, Q, P, R, Work) ;
+        /*nblocks = BTF_strongcomp (n, Ap, Bi, Q, P, R, Work) ;*/
+        nblocks = KLU_OrdinalTraits<Int>::btf_strongcomp (n, Ap, Bi, Q, P, R, 
+                    Work) ;
 
         /* ------------------------------------------------------------------ */
         /* P = P * Puser */

@@ -153,7 +153,9 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
             /* order the block with AMD (C+C') */
             /* -------------------------------------------------------------- */
 
-            result = AMD_order (nk, Cp, Ci, Pblk, NULL, amd_Info) ;
+            /*result = AMD_order (nk, Cp, Ci, Pblk, NULL, amd_Info) ;*/
+            result = KLU_OrdinalTraits<int>::amd_order (nk, Cp, Ci, Pblk, 
+                        NULL, amd_Info) ;
             ok = (result >= AMD_OK) ;
             if (result == AMD_OUT_OF_MEMORY)
             {
@@ -185,7 +187,9 @@ static Int analyze_worker       /* returns KLU_OK or < 0 if error */
              * COLAMD "cannot" fail since the matrix has already been checked,
              * and Ci allocated. */
 
-            ok = COLAMD (nk, nk, Cilen, Ci, Cp, NULL, cstats) ;
+            /*ok = COLAMD (nk, nk, Cilen, Ci, Cp, NULL, cstats) ;*/
+            ok = KLU_OrdinalTraits<Int>::colamd (nk, nk, Cilen, Ci, Cp, 
+                                NULL, cstats) ;
             lnz1 = EMPTY ;
             flops1 = EMPTY ;
 
@@ -299,7 +303,8 @@ static KLU_symbolic<Entry, Int> *order_and_analyze  /* returns NULL if error, or
     {
         /* COLAMD TODO : Should call the right version of COLAMD and other 
          external functions below */
-        Cilen = COLAMD_recommended (nz, n, n) ;
+        /*Cilen = COLAMD_recommended (nz, n, n) ;*/
+        Cilen = KLU_OrdinalTraits<Int>::colamd_recommended (nz, n, n) ;
     }
     else if (ordering == 0 || (ordering == 3 && Common->user_order != NULL))
     {
@@ -363,7 +368,10 @@ static KLU_symbolic<Entry, Int> *order_and_analyze  /* returns NULL if error, or
         }
 
         /* TODO : Correct version of BTF */
-        nblocks = BTF_order (n, Ap, Ai, Common->maxwork, &work, Pbtf, Qbtf, R,
+        /*nblocks = BTF_order (n, Ap, Ai, Common->maxwork, &work, Pbtf, Qbtf, R,
+                &(Symbolic->structural_rank), Work) ;*/
+        nblocks = KLU_OrdinalTraits<Int>::btf_order (n, Ap, Ai, 
+                Common->maxwork, &work, Pbtf, Qbtf, R, 
                 &(Symbolic->structural_rank), Work) ;
         Common->structural_rank = Symbolic->structural_rank ;
         Common->work += work ;
