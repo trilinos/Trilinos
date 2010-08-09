@@ -144,19 +144,19 @@ int Ifpack_SORa::Compute(){
       int colgid=Askew2->GCID(colind_s[j]);
       c_data+=fabs(vals_s[j]);
       if(rowgid>colgid){
-	gids[idx]=colgid;
-	newvals[idx]=vals_h[j]/2 + Alpha_ * vals_s[j]/2;
-	idx++;
-      }
-      // Rely on the fact that epetra always number off-proc entries last
-      // and add the abs of any of the off-proc entries to the diagona for damping
-      if(colind_s[j] >= N) {
-	ipdamp+=fabs(vals_h[j]/2 + Alpha_ * vals_s[j]/2);
-	// Drop the entry entirely if we're damping
-	if(UseInterprocDamping_ && rowgid>colgid) newvals[idx-1]=0;
-      }
+	// Rely on the fact that off-diagonal entries are always numbered last, dropping the entry entirely.
+	if(colind_s[j] < N) {       
+	  gids[idx]=colgid;
+	  newvals[idx]=vals_h[j]/2 + Alpha_ * vals_s[j]/2;
+	  idx++;
+	}
+	else{
+	  ipdamp+=fabs(vals_h[j]/2 + Alpha_ * vals_s[j]/2);
+	}
+      }   
     }
-    IFPACK_CHK_ERR(W->InsertGlobalValues(rowgid,idx,newvals,gids));
+    if(idx>0)
+      IFPACK_CHK_ERR(W->InsertGlobalValues(rowgid,idx,newvals,gids));
 
     // Do the diagonal
     double w_val= c_data*Alpha_*Gamma_/4 + Adiag[A_->LRID(rowgid)];
@@ -208,7 +208,7 @@ int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
   // Note: This is the lazy man's version sacrificing a few extra flops for avoiding if statements to determine 
   // if things are on or off processor.
   // Note: T2 must be zero'd out
-  if (IsParallel_)  T2 = Teuchos::rcp( new Epetra_MultiVector(W_->Importer()->TargetMap(),NumVectors,true));
+  if (IsParallel_ && W_->Importer())  T2 = Teuchos::rcp( new Epetra_MultiVector(W_->Importer()->TargetMap(),NumVectors,true));
   else T2 = Teuchos::rcp( new Epetra_MultiVector(A_->RowMap(),NumVectors,true));
 
   // Pointer grabs
