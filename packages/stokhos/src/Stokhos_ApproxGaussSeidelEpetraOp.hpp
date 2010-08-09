@@ -41,8 +41,8 @@
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing applying the mean in a block
-   * stochastic Galerkin expansion.
+   * \brief An Epetra operator representing applying one iteration of
+   * approximate Gauss-Seidel.
    */
   class ApproxGaussSeidelEpetraOp : public Epetra_Operator {
       
