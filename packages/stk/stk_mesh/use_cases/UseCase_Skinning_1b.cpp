@@ -34,15 +34,17 @@ void destroy_entity_and_create_particles(
   fixture.bulk_data.modification_begin();
 
   // request 8 particles on owning process
+  std::vector<size_t> requests(fixture.meta_data.entity_rank_count(), 0);
+
   if ( elem != NULL && p_rank == elem->owner_rank() ) {
-
-    std::vector<size_t> requests(fixture.meta_data.entity_rank_count(), 0);
     requests[stk::mesh::Particle] = 8;
+  }
 
-    stk::mesh::EntityVector new_particles;
+  stk::mesh::EntityVector new_particles;
 
-    fixture.bulk_data.generate_new_entities(requests, new_particles);
+  fixture.bulk_data.generate_new_entities(requests, new_particles);
 
+  if ( ! new_particles.empty() ) {
     stk::mesh::PairIterRelation relations = elem->relations();
 
     std::vector<stk::mesh::Part*> add_parts;
@@ -55,26 +57,28 @@ void destroy_entity_and_create_particles(
       fixture.bulk_data.copy_entity_fields( *(relations[i].entity()), *new_particles[i]);
     }
   }
-  else {
-    std::vector<size_t> empty_requests(fixture.meta_data.entity_rank_count(), 0);
-    stk::mesh::EntityVector empty_entity_vector;
-
-    fixture.bulk_data.generate_new_entities(empty_requests, empty_entity_vector);
-  }
 
   //delete element and entities in closure that have been orphaned
   if ( elem != NULL ) {
 
     stk::mesh::PairIterRelation relations = elem->relations();
+    stk::mesh::EntityVector downward_relations;
+
+    for (; relations.first != relations.second;) {
+      --relations.second;
+      stk::mesh::Entity * current_entity = (relations.second->entity());
+
+      downward_relations.push_back(current_entity);
+    }
 
 
     fixture.bulk_data.destroy_entity( elem );
 
     //destroy the related entities if they are not connected to any
     //higher order entities
-    for (; relations.first != relations.second;) {
-      --relations.second;
-      stk::mesh::Entity * current_entity = (relations.second->entity());
+    for (stk::mesh::EntityVector::iterator itr = downward_relations.begin();
+        itr != downward_relations.end(); ++itr) {
+      stk::mesh::Entity * current_entity = *itr;
 
       if (current_entity->relations(stk::mesh::Element).empty()) {
         fixture.bulk_data.destroy_entity( current_entity);
