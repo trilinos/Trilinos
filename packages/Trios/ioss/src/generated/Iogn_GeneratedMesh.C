@@ -1,10 +1,34 @@
-/*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
-/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
-/*  license for use of this work by or on behalf of the U.S. Government.  */
-/*  Export of this program may require a license from the                 */
-/*  United States Government.                                             */
-/*------------------------------------------------------------------------*/
+// Copyright(C) 1999-2010
+// Sandia Corporation. Under the terms of Contract
+// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+// certain rights in this software.
+//         
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated/Iogn_GeneratedMesh.h>
 #include <tokenize.h>
@@ -1109,107 +1133,3 @@ namespace Iogn {
   }
 }
 
-#if defined(DEBUG)
-#include <sstream>
-  std::string ToString(size_t t) {
-    std::ostringstream os;
-    os << t;
-    return os.str();
-  }
-
-#include <exodusII.h>
-#include <ne_nemesisI.h>
-
-  int main() {
-    int num_processors = 8;
-    for (int proc = 0; proc < num_processors; proc++) {
-
-      Iogn::GeneratedMesh mesh(100, 125, 10*num_processors, num_processors, proc);
-
-      std::cerr << "Node Count (total)    = " << mesh.node_count() << "\n";
-      std::cerr << "Node Count (proc)     = " << mesh.node_count_proc() << "\n";
-      std::cerr << "Element Count (total) = " << mesh.element_count() << "\n";
-      std::cerr << "Element Count (proc)  = " << mesh.element_count_proc() << "\n";
-      std::cerr << "Block Count           = " << mesh.block_count() << "\n";
-
-      int CPU_word_size = 8;                   /* sizeof(float) */
-      int IO_word_size = 8;                    /* (4 bytes) */
-      std::string name = "test-scale.e";
-      if (num_processors > 1) {
-        name += "." + ToString(num_processors) + "." + ToString(proc);
-      }
-      int exoid = ex_create (name.c_str(), EX_CLOBBER, &CPU_word_size, &IO_word_size);
-
-      int num_nodes = mesh.node_count_proc();
-      int num_elems = mesh.element_count_proc();
-      int num_elem_blk = mesh.block_count();
-      int error = ex_put_init (exoid, "title", 3, num_nodes, num_elems,
-                               num_elem_blk, 0, 0);
-
-      if (num_processors > 1) {
-        std::vector<int> nodes;
-        std::vector<int> procs;
-        mesh.node_communication_map(nodes, procs);
-
-        int node_map_ids[1] = {1};
-        int node_map_node_cnts[1] = {procs.size()};
-        ne_put_init_info(exoid, num_processors, 1, "p");
-        ne_put_loadbal_param(exoid, 0, 0, 0, 0, 0, 1, 0, proc);
-        ne_put_cmap_params(exoid, node_map_ids, node_map_node_cnts, 0, 0, proc);
-        ne_put_node_cmap(exoid, 1, &nodes[0], &procs[0], proc);
-      }
-
-      for (int i=1; i < mesh.block_count(); i++) {
-        std::cerr << "Block " << i+1 << " has " << mesh.element_count_proc(i+1) << " "
-                  << mesh.topology_type(i+1).first <<" elements\n";
-
-        std::string btype = mesh.topology_type(i+1).first;
-        error = ex_put_elem_block(exoid, i+1, btype.c_str(),
-                                  mesh.element_count_proc(i+1),
-                                  mesh.topology_type(i+1).second, 0);
-      }
-      {
-        std::cerr << "Block " << 1 << " has " << mesh.element_count_proc(1) << " "
-                  << mesh.topology_type(1).first <<" elements\n";
-
-        std::string btype = mesh.topology_type(1).first;
-        error = ex_put_elem_block(exoid, 1, btype.c_str(),
-                                  mesh.element_count_proc(1),
-                                  mesh.topology_type(1).second, 0);
-      }
-
-      if (num_processors > 1) {
-        std::vector<int> map;
-        mesh.node_map(map);
-        ex_put_id_map(exoid, EX_NODE_MAP, &map[0]);
-
-        mesh.element_map(map);
-        ex_put_id_map(exoid, EX_ELEM_MAP, &map[0]);
-      }
-
-      std::cerr << "Outputting connectivity...\n";
-      for (int i=1; i < mesh.block_count(); i++) {
-        if (mesh.element_count_proc(i+1) > 0) {
-          std::vector<int> connectivity;
-          mesh.connectivity(i+1, connectivity);
-          ex_put_elem_conn(exoid, i+1, &connectivity[0]);
-        }
-      }
-      {
-        std::vector<int> connectivity;
-        mesh.connectivity(1, connectivity);
-        ex_put_elem_conn(exoid, 1, &connectivity[0]);
-      }
-
-      {
-        std::vector<double> x;
-        std::vector<double> y;
-        std::vector<double> z;
-        mesh.coordinates(x, y, z);
-        error = ex_put_coord (exoid, &x[0], &y[0], &z[0]);
-      }
-
-      ex_close(exoid);
-    }
-  }
-#endif
