@@ -46,9 +46,6 @@
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
-/* Define if want to build with Intel TBB enabled */
-#cmakedefine HAVE_ANASAZI_TBB
-
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 

@@ -29,10 +29,12 @@
 #ifndef __TSQR_Test_TsqrTest_hpp
 #define __TSQR_Test_TsqrTest_hpp
 
+#include <Tsqr_Config.hpp>
+
 #include <Tsqr.hpp>
-#ifdef HAVE_ANASAZI_TBB
-#include <TbbTsqr.hpp>
-#endif // HAVE_ANASAZI_TBB
+#ifdef HAVE_TSQR_INTEL_TBB
+#  include <TbbTsqr.hpp>
+#endif // HAVE_TSQR_INTEL_TBB
 #include <Tsqr_TestSetup.hpp>
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
@@ -242,7 +244,7 @@ namespace TSQR {
 
       if (which == "MpiTbbTSQR")
 	{
-#ifdef HAVE_ANASAZI_TBB
+#ifdef HAVE_TSQR_INTEL_TBB
 	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
 
@@ -255,8 +257,8 @@ namespace TSQR {
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
 #else
-	  throw std::invalid_argument("Anasazi was not built with Intel TBB support");
-#endif // HAVE_ANASAZI_TBB
+	  throw std::logic_error("TSQR not built with Intel TBB support");
+#endif // HAVE_TSQR_INTEL_TBB
 	}
       else if (which == "MpiSeqTSQR")
 	{
@@ -310,10 +312,17 @@ namespace TSQR {
 	  if (human_readable)
 	    {
 	      std::string human_readable_name;
+
 	      if (which == "MpiSeqTSQR")
 		human_readable_name = "MPI parallel / cache-blocked TSQR";
 	      else if (which == "MpiTbbTSQR")
-		human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
+		{
+#ifdef HAVE_TSQR_INTEL_TBB
+		  human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
+#else
+		  throw std::logic_error("TSQR not built with Intel TBB support");
+#endif // HAVE_TSQR_INTEL_TBB
+		}
 	      else 
 		throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
 
@@ -321,8 +330,10 @@ namespace TSQR {
 		   << "# rows = " << nrows_global << endl
 		   << "# columns = " << ncols << endl
 		   << "# MPI processes = " << nprocs << endl;
+#ifdef HAVE_TSQR_INTEL_TBB
 	      if (which == "MpiTbbTSQR")
 		cout << "# cores per process = " << num_cores << endl;
+#endif // HAVE_TSQR_INTEL_TBB
 	      cout << "cache block # bytes = " << actual_cache_block_size << endl
 		   << "contiguous cache blocks? " << contiguous_cache_blocks << endl
 		   << "Relative residual $\\|A - Q*R\\|_2 / \\|A\\|_2$ = " 
@@ -337,8 +348,10 @@ namespace TSQR {
 		   << "," << nrows_global
 		   << "," << ncols
 		   << "," << nprocs;
+#ifdef HAVE_TSQR_INTEL_TBB
 	      if (which == "MpiTbbTSQR")
 		cout << "," << num_cores << endl;
+#endif // HAVE_TSQR_INTEL_TBB
 	      cout << "," << actual_cache_block_size
 		   << "," << contiguous_cache_blocks 
 		   << "," << result.first 
@@ -566,7 +579,7 @@ namespace TSQR {
 
       if (which == "MpiTbbTSQR")
 	{
-#ifdef HAVE_ANASAZI_TBB
+#ifdef HAVE_TSQR_INTEL_TBB
 	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, TimerType > node_tsqr_type;
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
 
@@ -583,8 +596,8 @@ namespace TSQR {
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
 #else
-	  throw std::invalid_argument("Anasazi was not built with Intel TBB support");
-#endif // HAVE_ANASAZI_TBB
+	  throw std::logic_error("TSQR not built with Intel TBB support");
+#endif // HAVE_TSQR_INTEL_TBB
 	}
       else if (which == "MpiSeqTSQR")
 	{
@@ -617,10 +630,17 @@ namespace TSQR {
 	  if (human_readable)
 	    {
 	      std::string human_readable_name;
-	      if (which == "MpiTbbTSQR")
-		human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
-	      else if (which == "MpiSeqTSQR")
+
+	      if (which == "MpiSeqTSQR")
 		human_readable_name = "MPI parallel / cache-blocked TSQR";
+	      else if (which == "MpiTbbTSQR")
+		{
+#ifdef HAVE_TSQR_INTEL_TBB
+		  human_readable_name = "MPI parallel / TBB parallel / cache-blocked TSQR";
+#else
+		  throw std::logic_error("TSQR not built with Intel TBB support");
+#endif // HAVE_TSQR_INTEL_TBB
+		}
 	      else 
 		throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
 
@@ -629,8 +649,10 @@ namespace TSQR {
 		   << "# columns = " << ncols << endl
 		   << "# MPI processes = " << nprocs << endl;
 
+#ifdef HAVE_TSQR_INTEL_TBB
 	      if (which == "MpiTbbTSQR")
 		cout << "# cores per process = " << num_cores << endl;
+#endif // HAVE_TSQR_INTEL_TBB
 
 	      cout << "cache block # bytes = " << actual_cache_block_size << endl
 		   << "contiguous cache blocks? " << contiguous_cache_blocks << endl
@@ -647,8 +669,10 @@ namespace TSQR {
 		   << "," << nrows_global
 		   << "," << ncols 
 		   << "," << nprocs ;
+#ifdef HAVE_TSQR_INTEL_TBB
 	      if (which == "MpiTbbTSQR")
 		cout << "," << num_cores << endl;
+#endif // HAVE_TSQR_INTEL_TBB
 	      cout << "," << actual_cache_block_size
 		   << "," << contiguous_cache_blocks
 		   << "," << ntrials 

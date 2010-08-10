@@ -13,8 +13,8 @@
 # DLARFP resp. SLARFP.  In LAPACK version 3.2.2 (latest as of writing
 # this, on 30 Jun 2010), the desired routines are called DLARFGP
 # resp. SLARFGP.
-set (_FORTRAN_MODULE_FILENAME "Tsqr_HouseholderReflector.f90")
-file (WRITE "${_FORTRAN_MODULE_FILENAME}" "module TsqrHouseholderReflector
+set (TSQR_FORTRAN_MODULE_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/Tsqr_HouseholderReflector.f90")
+file (WRITE "${TSQR_FORTRAN_MODULE_FILENAME}" "module TsqrHouseholderReflector
   implicit none
 
   contains
@@ -46,7 +46,7 @@ foreach (_LAPACK_PREFIX "D" "S" "Z" "C")
   
   message (STATUS "Detected LAPACK routine ${_LAPACK_ROUTINE}")
 
-  file (APPEND "${_FORTRAN_MODULE_FILENAME}" 
+  file (APPEND "${TSQR_FORTRAN_MODULE_FILENAME}" 
 "  subroutine ${_LAPACK_PREFIX}LARFP_wrapper( n, alpha, x, incx, tau )
      integer, intent(in)     :: n, incx
      ${_DATATYPE}, intent(inout) :: alpha
@@ -67,5 +67,5 @@ foreach (_LAPACK_PREFIX "D" "S" "Z" "C")
 
 ")
 endforeach ()
-file (APPEND "${_FORTRAN_MODULE_FILENAME}" "end module TsqrHouseholderReflector")
+file (APPEND "${TSQR_FORTRAN_MODULE_FILENAME}" "end module TsqrHouseholderReflector")
 

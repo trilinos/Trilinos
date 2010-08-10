@@ -29,8 +29,12 @@
 #ifndef __TSQR_Test_MgsTest_hpp
 #define __TSQR_Test_MgsTest_hpp
 
+#include <Tsqr_Config.hpp>
+
 #include <Tsqr_Mgs.hpp>
-#include <TbbTsqr_TbbMgs.hpp>
+#ifdef HAVE_TSQR_INTEL_TBB
+#  include <TbbTsqr_TbbMgs.hpp>
+#endif // HAVE_TSQR_INTEL_TBB
 #include <Tsqr_TestSetup.hpp>
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
@@ -40,7 +44,7 @@
 #include <sstream>
 #include <limits>
 #include <iostream>
-#include <string>
+#include <stdexcept>
 #include <utility>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -52,10 +56,16 @@ namespace TSQR {
     static std::string
     mgs_human_readable_name (const std::string& which)
     {
-      if (which == "MpiTbbMGS")
-	return std::string ("MPI parallel / TBB parallel MGS");
-      else if (which == "MpiSeqMGS")
-	return std::string ("MPI parallel / sequential TSQR");
+      if (which == "MpiSeqMGS")
+	return std::string ("MPI parallel / sequential MGS");
+      else if (which == "MpiTbbMGS")
+	{
+#ifdef HAVE_TSQR_INTEL_TBB
+	  return std::string ("MPI parallel / TBB parallel MGS");
+#else
+	  throw std::logic_error("MGS not built with Intel TBB support");
+#endif // HAVE_TSQR_INTEL_TBB
+	}
       else 
 	throw std::logic_error("Unknown MGS implementation type \"" + which + "\"");
     }
@@ -155,9 +165,13 @@ namespace TSQR {
 
       if (which == "MpiTbbMGS")
 	{
+#ifdef HAVE_TSQR_INTEL_TBB
 	  typedef TSQR::TBB::TbbMgs< Ordinal, Scalar > mgs_type;
 	  mgs_type mgser (scalarComm);
 	  do_mgs_verify< mgs_type > (mgser, scalarComm, Q_local, R, b_debug);
+#else
+	  throw std::logic_error("MGS not built with Intel TBB support");
+#endif // HAVE_TSQR_INTEL_TBB
 	}
       else if (which == "MpiSeqMGS")
 	{
@@ -352,10 +366,14 @@ namespace TSQR {
       double mgs_timing; // Total run time in seconds of all ntrials trials
       if (which == "MpiTbbMGS")
 	{
+#ifdef HAVE_TSQR_INTEL_TBB
 	  typedef TSQR::TBB::TbbMgs< Ordinal, Scalar > mgs_type;
 	  mgs_type mgser (scalarComm);
 	  mgs_timing = do_mgs_benchmark< mgs_type, TimerType > (mgser, Q_local, R, 
 								ntrials, human_readable);
+#else
+	  throw std::logic_error("MGS not built with Intel TBB support");
+#endif // HAVE_TSQR_INTEL_TBB
 	}
       else if (which == "MpiSeqMGS")
 	{

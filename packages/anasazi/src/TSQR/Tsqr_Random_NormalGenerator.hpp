@@ -111,11 +111,12 @@ namespace TSQR {
       std::vector< int > iseed_;
       std::vector< Scalar > buffer_;
       int buffer_length_, cur_pos_;
-      LAPACK<int, Scalar > lapack_;
 
       void
       fill_buffer () 
       {
+	LAPACK< int, Scalar > lapack;
+
 	// LAPACK's _LARNV routine defines this "enum" (just an
 	// integer, because it's Fortran) that lets users choose from
 	// one of three different pseudorandom distributions:
@@ -125,7 +126,7 @@ namespace TSQR {
 	  uniform_m1_1 = 2, 
 	  normal_0_1 = 3 
 	};
-	lapack_.LARNV (normal_0_1, &iseed_[0], buffer_length_, &buffer_[0]);
+	lapack.LARNV (normal_0_1, &iseed_[0], buffer_length_, &buffer_[0]);
       }
 
       Scalar 

@@ -494,7 +494,7 @@ namespace TSQR {
 
   template<>
   void
-  CombineFortran<int, std::complex<float>, true >::
+  CombineFortran< std::complex<float>, true >::
   factor_pair (const int n, 
   	       std::complex<float> R_top[], 
   	       const int ldr_top, 
@@ -509,7 +509,7 @@ namespace TSQR {
 
   template<>
   void
-  CombineFortran<int, std::complex<float>, true >::
+  CombineFortran< std::complex<float>, true >::
   apply_pair (const ApplyType& apply_type,
   	      const int ncols_C, 
   	      const int ncols_Q, 

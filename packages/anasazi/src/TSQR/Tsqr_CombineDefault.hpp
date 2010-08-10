@@ -32,6 +32,7 @@
 #include <Tsqr_ApplyType.hpp>
 #include <Tsqr_Lapack.hpp>
 #include <Tsqr_Matrix.hpp>
+#include <Tsqr_ScalarTraits.hpp>
 
 #include <algorithm>
 #include <sstream>
@@ -60,6 +61,7 @@ namespace TSQR {
 
   public:
     typedef Scalar scalar_type;
+    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
     typedef Ordinal ordinal_type;
 
     CombineDefault () {}

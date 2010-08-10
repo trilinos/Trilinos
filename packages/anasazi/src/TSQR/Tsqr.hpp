@@ -33,7 +33,6 @@
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_MessengerBase.hpp>
 #include <Tsqr_DistTsqr.hpp>
-// #include <Tsqr_RMessenger.hpp>
 #include <Tsqr_SequentialTsqr.hpp>
 #include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>

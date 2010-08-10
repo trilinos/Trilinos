@@ -148,9 +148,19 @@ ENDIF()
 
 IF(${PACKAGE_NAME}_ENABLE_TSQR)
 
+  if (${PACKAGE_NAME}_ENABLE_COMPLEX)
+    set(TSQR_ENABLE_Complex BOOL TRUE)
+  else ()
+    set(TSQR_ENABLE_Complex BOOL FALSE)
+  endif ()
+
   if (TSQR_ENABLE_Fortran)
-    # TSQR has an optional Fortran dependency.  Fortran is used to build
-    # Tsqr_Combine.f90, which is the back end of TSQR::CombineFortran.
+    # TSQR has an optional Fortran dependency.  Fortran is used to
+    # build Tsqr_Combine.f90, which is the back end of
+    # TSQR::CombineFortran.  It's not good enough for Trilinos to be
+    # build with Fortran support, because TSQR depends on Fortran 2003
+    # features.  "Trilinos is built with Fortran support" usually
+    # means no better than Fortran 90, and sometimes just Fortran 77.
     enable_language (Fortran)
 
     # Generate macros for Fortran >= 90 name mangling.  Only
@@ -159,7 +169,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     # advantage of FortranCInterface is that it includes macros for
     # mangling the names of Fortran routines contained in modules.
     include(FortranCInterface)
-    FortranCInterface_HEADER(${CMAKE_CURRENT_SOURCE_DIR}/TSQR/Tsqr_FortranCInterface.hpp)
+    FortranCInterface_HEADER(${CMAKE_CURRENT_BINARY_DIR}/Tsqr_FortranCInterface.hpp)
   endif ()
 
   # Add TSQR-specific CMake files to the CMake module path.  Save the
@@ -167,25 +177,46 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   set (CMAKE_MODULE_PATH_SAVE ${CMAKE_MODULE_PATH})
   set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/TSQR/cmake)
 
+  if (${TSQR_ENABLE_Complex})
+    set (HAVE_TSQR_COMPLEX BOOL TRUE)
+  else ()
+    set (HAVE_TSQR_COMPLEX BOOL FALSE)
+  endif ()
+
+  if (${TSQR_ENABLE_Fortran})
+    set (HAVE_TSQR_FORTRAN BOOL TRUE)
+  else ()
+    set (HAVE_TSQR_FORTRAN BOOL FALSE)
+  endif ()
+
+  if (${TSQR_ENABLE_Intel_TBB})
+    set (HAVE_TSQR_INTEL_TBB BOOL TRUE)
+  else ()
+    set (HAVE_TSQR_INTEL_TBB BOOL FALSE)
+  endif ()
+
   include (TsqrBlasAndLapack)
   include (TsqrCheckLapackRoutine)
-  # Include tests for LAPACK functionality required by TSQR.  
-  # Generate TSQR/Tsqr_Config.hpp.
   include (TsqrTestLapack)
+
+  # Write out a header file (Tsqr_Config.hpp) with the appropriate
+  # #defines.  Tsqr_Config.hpp.in is in TSQR/cmake, which was added to
+  # the CMAKE_MODULE_PATH above.
+  configure_file ("TSQR/Tsqr_Config.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/Tsqr_Config.hpp")
 
   if (TSQR_ENABLE_Fortran)
     # Generate LAPACK wrapper routines for _LARF(G)(P) used by
     # Tsqr_CombineFortran.f90.  The wrappers are written to
-    # TSQR/Tsqr_HouseholderReflector.f90.
+    # ${TSQR_FORTRAN_MODULE_FILENAME}.
     include (TsqrLapackWrappers)
     
     APPEND_SET(SOURCES
-      TSQR/Tsqr_HouseholderReflector.f90
+      ${TSQR_FORTRAN_MODULE_FILENAME}
       TSQR/Tsqr_CombineFortran.f90
-      TSQR/Tsqr_CombineFortran.cpp)
+      ${CMAKE_CURRENT_BINARY_DIR}/Tsqr_CombineFortran.cpp)
     APPEND_SET(HEADERS 
       TSQR/Tsqr_CombineFortran.hpp
-      TSQR/Tsqr_FortranCInterface.hpp)
+      ${CMAKE_CURRENT_BINARY_DIR}/Tsqr_FortranCInterface.hpp)
   endif ()
 
   # Include headers and source files for Trilinos -> TSQR adaptors.
@@ -215,6 +246,8 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_CacheBlockingStrategy.hpp
     TSQR/Tsqr_CombineDefault.hpp
     TSQR/Tsqr_Combine.hpp
+    TSQR/Tsqr_CombineBenchmark.hpp
+    TSQR/Tsqr_CombineBenchmarker.hpp
     TSQR/Tsqr_CombineNative.hpp
     TSQR/Tsqr_CombineTest.hpp
     TSQR/Tsqr_DistTsqrHelper.hpp
