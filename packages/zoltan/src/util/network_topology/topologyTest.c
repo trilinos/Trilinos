@@ -340,6 +340,8 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
    MPI_Request request, request_a, request_b;
    MPI_Status status;
 
+   if ((myproc != senderRank) && (myproc != receiverRank)) return;
+
 #if defined (_CRAYT3E)
    a = (double *) shmalloc (132000 * sizeof (double));
    b = (double *) shmalloc (132000 * sizeof (double));
@@ -355,8 +357,6 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
 
    other_proc = ((myproc == senderRank) ? receiverRank : senderRank);
 
-   MPI_Barrier(comm);
-
 /* Timer accuracy test */
 
    if (myproc == senderRank){
@@ -370,8 +370,6 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
      printf("Timer accuracy of ~%f usecs\n\n", accuracy);
      fflush(stdout);
    }
-
-   MPI_Barrier(comm);
 
 /* Communications between nodes 
  *   - Blocking sends and recvs
@@ -433,7 +431,6 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
  *   - Prepost receives to guarantee bypassing the comm buffer
  */
 
-   MPI_Barrier(comm);
    if (myproc == senderRank){
       printf("\n  Asynchronous ping-pong, averages over %d ping-pong tests\n\n",ntests);
       fflush(stdout);
@@ -445,13 +442,10 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
 
       for (j=0; j < ntests; j++){
 
-        if ((myproc == senderRank) || (myproc == receiverRank)){
-          MPI_Irecv(b, size/8, MPI_DOUBLE, other_proc, j, comm, &request);
-        }
-
-        MPI_Barrier(comm);
-
         if (myproc == senderRank) {
+
+           MPI_Recv(NULL, 0, MPI_CHAR, receiverRank, 99, MPI_COMM_WORLD, &status);   /* ok to start */
+           MPI_Irecv(b, size/8, MPI_DOUBLE, other_proc, j, comm, &request);
   
            t0 = MPI_Wtime();
            MPI_Send(a, size/8, MPI_DOUBLE, other_proc, j, comm);
@@ -459,13 +453,16 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
            tsum += MPI_Wtime() - t0;
   
         } else if (myproc == receiverRank) {
+
+           MPI_Irecv(b, size/8, MPI_DOUBLE, other_proc, j, comm, &request);
+
+           MPI_Send(NULL, 0, MPI_CHAR, senderRank, 99, MPI_COMM_WORLD);    /* ok to start */
   
            MPI_Wait(&request, &status);
+
            MPI_Send(b, size/8, MPI_DOUBLE, other_proc, j, comm);
         }
       }
-
-      MPI_Barrier(comm);
 
       if (myproc == senderRank) {
         time = (1.e6 * tsum) / ntests;
@@ -479,7 +476,6 @@ void ping_pong_test(MPI_Comm comm, int myproc, int senderRank, int receiverRank,
         }
         fflush(stdout);
       }
-      MPI_Barrier(comm);
    }
 
 #if 0
