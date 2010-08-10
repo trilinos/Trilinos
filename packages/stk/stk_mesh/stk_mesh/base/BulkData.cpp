@@ -567,7 +567,12 @@ bool BulkData::destroy_entity( Entity * & e )
     destroy_relation( entity , * entity.relations().back().entity() );
   }
 
-  m_bucket_repository.remove_entity( &(entity.bucket()) , entity.bucket_ordinal() );
+  // We need to save these items and call remove_entity AFTER the call to
+  // destroy_later because remove_entity may destroy the bucket
+  // which would cause problems in m_entity_repo.destroy_later because it
+  // makes references to the entity's original bucket.
+  Bucket& orig_bucket = entity.bucket();
+  unsigned orig_bucket_ordinal = entity.bucket_ordinal();
 
   // Set the bucket to 'bucket_nil' which:
   //   1) has no parts at all
@@ -578,6 +583,8 @@ bool BulkData::destroy_entity( Entity * & e )
   // with a bad bucket pointer.
 
   m_entity_repo.destroy_later( entity, m_bucket_repository.get_nil_bucket() );
+
+  m_bucket_repository.remove_entity( &orig_bucket , orig_bucket_ordinal );
 
   // Add destroyed entity to the transaction
   // m_transaction_log.delete_entity ( *e );

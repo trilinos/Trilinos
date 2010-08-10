@@ -81,7 +81,7 @@ void destroy_entity_and_create_particles(
       stk::mesh::Entity * current_entity = *itr;
 
       if (current_entity->relations(stk::mesh::Element).empty()) {
-        fixture.bulk_data.destroy_entity( current_entity);
+        fixture.bulk_data.destroy_entity( current_entity );
       }
     }
   }

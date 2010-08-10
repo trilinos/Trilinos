@@ -143,6 +143,13 @@ bool EntityRepository::insert_comm_info( Entity & e, const EntityCommInfo & comm
 }
 
 void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket ) {
+  if ( e.log_query() == EntityLogDeleted ) {
+    std::ostringstream msg;
+    msg << "Error: double deletion of entity: ";
+    print_entity_key( msg, nil_bucket->mesh().mesh_meta_data(), e.key() );
+    throw std::runtime_error(msg.str());
+  }
+
   change_entity_bucket( *nil_bucket, e, 0);
   e.m_entityImpl.log_deleted(); //important that this come last
 }
