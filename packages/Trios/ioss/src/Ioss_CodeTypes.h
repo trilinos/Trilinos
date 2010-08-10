@@ -35,6 +35,8 @@
 
 #if defined(SIERRA_PARALLEL_MPI)
 #define HAVE_MPI
+#else
+#include<Trios_config.h>
 #endif
 
 #if defined(HAVE_MPI)
