@@ -1,0 +1,63 @@
+Tue Aug 10 11:02:57 MDT 2010
+Level 0 (world) has 1 groups: 
+  Group 0 has parts 0 through 63
+Level 1 (node) has 4 groups: 
+  Group 0 has parts 0 through 15
+  Group 1 has parts 16 through 31
+  Group 2 has parts 32 through 47
+  Group 3 has parts 48 through 63
+
+Ping pong test within a node communicator (between parts 0 and 15):
+Timer accuracy of ~4.053116 usecs
+
+
+  Asynchronous ping-pong, averages over 100 ping-pong tests
+
+       8 bytes took        11 usec (   1.462 MB/sec)
+      16 bytes took         9 usec (   3.692 MB/sec)
+      32 bytes took        10 usec (   6.617 MB/sec)
+      64 bytes took        10 usec (  13.325 MB/sec)
+     128 bytes took        10 usec (  25.294 MB/sec)
+     256 bytes took        11 usec (  45.935 MB/sec)
+     512 bytes took        13 usec (  80.824 MB/sec)
+    1024 bytes took        16 usec ( 126.285 MB/sec)
+    2048 bytes took        23 usec ( 176.911 MB/sec)
+    4096 bytes took        24 usec ( 342.024 MB/sec)
+    8192 bytes took        34 usec ( 484.145 MB/sec)
+   16384 bytes took        56 usec ( 587.748 MB/sec)
+   32768 bytes took        99 usec ( 661.066 MB/sec)
+   65536 bytes took       153 usec ( 855.278 MB/sec)
+  131072 bytes took       254 usec (1032.182 MB/sec)
+  262144 bytes took       441 usec (1189.838 MB/sec)
+  524288 bytes took       836 usec (1254.109 MB/sec)
+ 1048576 bytes took      1725 usec (1215.570 MB/sec)
+
+ Max rate = 1254.108748 MB/sec  Min latency = 4.333258 usec
+
+Ping pong test between two node communicators (between parts 0 and 16):
+Timer accuracy of ~1.907349 usecs
+
+
+  Asynchronous ping-pong, averages over 100 ping-pong tests
+
+       8 bytes took        11 usec (   1.425 MB/sec)
+      16 bytes took         9 usec (   3.628 MB/sec)
+      32 bytes took        13 usec (   4.942 MB/sec)
+      64 bytes took        11 usec (  11.467 MB/sec)
+     128 bytes took        12 usec (  21.415 MB/sec)
+     256 bytes took        13 usec (  38.062 MB/sec)
+     512 bytes took        15 usec (  66.733 MB/sec)
+    1024 bytes took        17 usec ( 119.971 MB/sec)
+    2048 bytes took        23 usec ( 178.771 MB/sec)
+    4096 bytes took        30 usec ( 273.914 MB/sec)
+    8192 bytes took        42 usec ( 388.553 MB/sec)
+   16384 bytes took        49 usec ( 671.745 MB/sec)
+   32768 bytes took        67 usec ( 971.197 MB/sec)
+   65536 bytes took       109 usec (1201.836 MB/sec)
+  131072 bytes took       194 usec (1354.295 MB/sec)
+  262144 bytes took       364 usec (1441.217 MB/sec)
+  524288 bytes took       704 usec (1489.586 MB/sec)
+ 1048576 bytes took      1385 usec (1513.749 MB/sec)
+
+ Max rate = 1513.749057 MB/sec  Min latency = 4.409552 usec
+Tue Aug 10 11:03:01 MDT 2010
