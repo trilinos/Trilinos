@@ -167,6 +167,12 @@ public:
     return getValue<S>(*(*(dependees_.begin())));
   }
 
+  /** \brief Returns the string to be used for the value of the 
+   * type attribute when converting the dependency to XML.
+   */
+  virtual std::string getTypeAttributeValue() const = 0;
+ 
+
   /**
    * \brief Returns the XML tag to use when serializing Dependencies.
    */

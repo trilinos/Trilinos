@@ -154,7 +154,7 @@ ConditionVisualDependency::convertSpecialVisualAttributes(
 {
   XMLObject conditionObj = xmlObj.findFirstChild(Condition::getXMLTagName());
   TEST_FOR_EXCEPTION(conditionObj == NULL,
-    MissingConditionTag,
+    MissingConditionTagException,
     "ConditionVisualDependencies must have a Condition tag!"
   );
   Teuchos::RCP<Condition> condition = 
@@ -197,7 +197,7 @@ StringValidatorDependencyConverter::convertSpecialValidatorAttributes(
   XMLObject valuesAndValidatorTag = 
     xmlObj.findFirstChild(getValuesAndValidatorsTag());
   TEST_FOR_EXCEPTION(valuesAndValidatorTag != NULL,
-    MissingValuesAndValidatorsTag,
+    MissingValuesAndValidatorsTagException,
     "Error: All StringValidatorDependencies must have a " << 
     getValuesAndValidatorsTag() << "tag!" << std::endl << std::endl);
   for(int i=0; i < valuesAndValidatorTag.numChildren(); ++i){

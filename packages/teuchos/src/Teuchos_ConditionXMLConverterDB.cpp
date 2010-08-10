@@ -28,7 +28,7 @@
 
 #include "Teuchos_ConditionXMLConverterDB.hpp"
 #include "Teuchos_StandardConditionXMLConverters.hpp"
-#include "Teuchos_StandardParameterEntryConditions.hpp"
+#include "Teuchos_StandardConditions.hpp"
 
 
 

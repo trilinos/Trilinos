@@ -167,13 +167,6 @@ private:
 
 };
 
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<VisualDependency>{
-public:
-  static std::string name(){ return "VisualDependency"; }
-  static std::string concreteName(const VisualDependency&){ return name(); }
-};
-
 /**
  * \brief An abstract base class for all validator dependencies.
  */
@@ -221,15 +214,6 @@ public:
   
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ValidatorDependency>{
-public:
-  static std::string name(){ return "ValidatorDependency"; }
-  static std::string concreteName(const ValidatorDependency&){ 
-    return name();
-  }
 };
 
 /**
@@ -358,6 +342,16 @@ public:
   
   //@}
   
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return "stringVisualDependency";
+  }
+  
+  //@}
+
 protected:
 
   /** \name Overridden from Dependency */
@@ -380,15 +374,6 @@ private:
   
   //@}
   
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringVisualDependency>{
-public:
-  static std::string name(){ return "StringVisualDependency"; }
-  static std::string concreteName(const StringVisualDependency&){ 
-    return name(); 
-  }
 };
 
 /**
@@ -446,6 +431,16 @@ public:
   
   //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return "boolVisualDependency";
+  }
+  
+  //@}
+
 protected:
 
   /** \name Overridden from Dependency */
@@ -456,15 +451,6 @@ protected:
   
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolVisualDependency>{
-public:
-  static std::string name(){ return "BoolVisualDependency"; }
-  static std::string concreteName(const BoolVisualDependency&){ 
-    return name();
-  }
 };
 
 /**
@@ -529,6 +515,16 @@ public:
   
   //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return "conditionVisualDependency";
+  }
+  
+  //@}
+
 protected:
 
   /** \name Overridden from Dependency */
@@ -552,15 +548,6 @@ private:
   
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ConditionVisualDependency>{
-public:
-  static std::string name(){ return "ConditionVisualDependency"; }
-  static std::string concreteName(const ConditionVisualDependency&){ 
-    return name();
-  }
 };
 
 /**
@@ -640,6 +627,37 @@ public:
   
   //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return TypeNameTraits<T>::name() + "NumberVisualDependency";
+  }
+  
+  //@}
+
+protected:
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  void validateDep() const{
+    const ParameterEntry* dependee = getFirstDependee();
+    TEST_FOR_EXCEPTION(
+      !dependee->isType<int>()
+      && !dependee->isType<short>()
+      && !dependee->isType<double>()
+      && !dependee->isType<float>(),
+      InvalidDependencyException,
+      "The dependee of a "
+      "Number Visual Dependency must be of a supported number type!\n"
+      "Type Encountered: " << dependee->getAny().typeName() << "\n");
+  }
+  
+  //@}
+  
 private:
 
   /** \name Private Members */
@@ -669,37 +687,7 @@ private:
   }  
   
   //@}
-
-  /** \name Overridden from Dependency */
-  //@{
-
-  /** \brief . */
-  void validateDep() const{
-    const ParameterEntry* dependee = getFirstDependee();
-    TEST_FOR_EXCEPTION(
-      !dependee->isType<int>()
-      && !dependee->isType<short>()
-      && !dependee->isType<double>()
-      && !dependee->isType<float>(),
-      InvalidDependencyException,
-      "The dependee of a "
-      "Number Visual Dependency must be of a supported number type!\n"
-      "Type Encountered: " << dependee->getAny().typeName() << "\n");
-  }
-  
-  //@}
-  
-};
-
-template<class T>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberVisualDependency<T> >{
-public:
-  static std::string name(){
-    return TypeNameTraits<T>::name() + "NumberVisualDependency";
-  }
-  static std::string concreteName(const NumberVisualDependency<T>&){
-    return name();
-  }
+  //
 };
 
 /**
@@ -869,6 +857,15 @@ public:
     return (EPreferredType)-1;  
   }
   
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return TypeNameTraits<T>::name() +"NumberValidatorAspectDependency";
+  }
+  
+  //@}
 
 
 protected:
@@ -969,21 +966,6 @@ private:
 
 };
 
-template<class T>
-class TEUCHOS_LIB_DLL_EXPORT 
-  TypeNameTraits<NumberValidatorAspectDependency<T> >{
-public:
-  static std::string name(){ 
-    return TypeNameTraits<T>::name() + "NumberValidatorAspectDependency"; 
-  }
-
-  static std::string concreteName(
-    const NumberValidatorAspectDependency<T>&)
-  {
-    return name();
-  }
-};
-
 /**
  * \brief A NumberArrayLengthDependency says the following about the 
  * relationship between two parameters:
@@ -1035,6 +1017,16 @@ public:
   
   //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return "numberArrayLengthDependency";
+  }
+  
+  //@}
+
 protected:
 
   /** \name Overridden from Dependency */
@@ -1076,15 +1068,6 @@ private:
   
   //@}
   
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberArrayLengthDependency>{
-public:
-  static std::string name(){ return "NumberArrayLengthDependency"; }
-  static std::string concreteName(const NumberArrayLengthDependency&){ 
-    return name(); 
-  }
 };
 
 /**
@@ -1185,6 +1168,16 @@ public:
   
   //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return "stringValidatorDependency";
+  }
+  
+  //@}
+
 protected:
 
   /** \name Overridden from Dependency */
@@ -1214,15 +1207,6 @@ private:
   
   //@}
   
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringValidatorDependency>{
-public:
-  static std::string name(){ return "StringValidatorDependency"; }
-  static std::string concreteName(const StringValidatorDependency&){ 
-    return name();
-  }
 };
 
 /**
@@ -1301,6 +1285,25 @@ public:
   
   //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return "boolValidatorDependency";
+  }
+  
+  //@}
+
+protected:
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  void validateDep() const;
+  
+  //@}
+
 private:
 
   /** \name Private Members */
@@ -1314,22 +1317,6 @@ private:
   
   //@}
 
-  /** \name Overridden from Dependency */
-  //@{
-
-  void validateDep() const;
-  
-  //@}
-  //
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolValidatorDependency>{
-public:
-  static std::string name(){ return "BoolValidatorDependency"; }
-  static std::string concreteName(const BoolValidatorDependency&){ 
-    return name(); 
-  }
 };
 
 /**
@@ -1457,6 +1444,16 @@ public:
   
   //@}
 
+  /** \name Overridden from Dependency */
+  //@{
+
+  /** \brief . */
+  std::string getTypeAttributeValue() const{
+    return TypeNameTraits<T>::name() + "RangeValidatorDependency";
+  }
+  
+  //@}
+
 protected:
 
   /** \name Overridden from Dependency */
@@ -1511,21 +1508,11 @@ private:
       (*it)->setValidator(toSet);
     }
   }
+
   //@}
 
 };
 
-template<class T>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<RangeValidatorDependency<T> >{
-public:
-  static std::string name(){
-    return TypeNameTraits<T>::name() + "RangeValidatorDependency";
-  }
-  static std::string concreteName(const RangeValidatorDependency<T>&){ 
-    return name();
-  }
-};
 
-
-}
+} //namespace Teuchos
 #endif //TEUCHOS_STANDARDDEPENDCIES_HPP_

@@ -51,7 +51,8 @@ public:
    *
    * @param what_arg The error message to be associated with this error.
    */
-  MissingDependeesException(const std::string& what_arg):std::logic_error(what_arg){}
+  MissingDependeesException(
+    const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
@@ -67,7 +68,8 @@ public:
    *
    * @param what_arg The error message to be associated with this error.
    */
-  MissingDependentsException(const std::string& what_arg):std::logic_error(what_arg){}
+  MissingDependentsException(
+    const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
@@ -83,7 +85,8 @@ public:
    *
    * @param what_arg The error message to be associated with this error.
    */
-  TooManyDependeesException(const std::string& what_arg):std::logic_error(what_arg){}
+  TooManyDependeesException( 
+    const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
@@ -99,26 +102,63 @@ public:
    *
    * @param what_arg The error message to be associated with this error.
    */
-  ValuesTagMissingException(const std::string& what_arg):std::logic_error(what_arg){}
+  ValuesTagMissingException(
+    const std::string& what_arg):std::logic_error(what_arg){}
 
 };
 
-/** \brief Thrown when a parent list can't be found in the
- * dependency sheet in which a dependency is trying to be
- * inserted.
+/** \brief Thrown when  the rangesAndValidators tag for
+ * the RangeValidatorDepencyConverter can't be found.
  */
-class ParentListNotFoundException : public std::logic_error{
+class MissingRangesAndValidatorsTagException : public std::logic_error{
 
 public:
 
   /**
-   * \brief Constructs an ParentListNotFoundException.
+   * \brief Constructs an MissingRangesAndValidatorsTagException.
    *
    * @param what_arg The error message to be associated with this error.
    */
-  ParentListNotFoundException(const std::string& what_arg):std::logic_error(what_arg){}
+  MissingRangesAndValidatorsTagException(
+    const std::string& what_arg):std::logic_error(what_arg){}
 
 };
+
+
+/** \brief Thrown when converting a StrinvValidatorDependcny from XML
+ * and no valuesAndValidators tag is found.
+ */
+class MissingValuesAndValidatorsTagException : public std::logic_error{
+
+public:
+
+  /**
+   * \brief Constructs an MissingValuesAndValidatorsTagException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  MissingValuesAndValidatorsTagException(
+    const std::string& what_arg):std::logic_error(what_arg){}
+
+};
+
+/** \brief Thrown when no condtion tag is found when converting a 
+ * ConditionVisualDependency from XML.
+ */
+class MissingConditionTagException : public std::logic_error{
+
+public:
+
+  /**
+   * \brief Constructs an MissingConditionTagException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  MissingConditionTagException(
+    const std::string& what_arg):std::logic_error(what_arg){}
+
+};
+
 
 
 } // namespace Teuchos
