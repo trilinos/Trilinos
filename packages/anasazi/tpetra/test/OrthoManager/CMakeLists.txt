@@ -5,7 +5,7 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   # This test depends on complex arithmetic support.
-  IF (${${PACKAGE_NAME}_ENABLE_COMPLEX})
+  IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       Tpetra_OrthoManager_Complex_test
       SOURCES cxx_main_complex.cpp 
@@ -20,10 +20,12 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       )
   ENDIF ()
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    Tpetra_OrthoManager_Real_Tsqr_test
-    SOURCES cxx_main_tsqr.cpp 
-    ARGS 
-    COMM serial mpi
-    )
+  IF (${PACKAGE_NAME}_ENABLE_TSQR)
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      Tpetra_OrthoManager_Real_Tsqr_test
+      SOURCES cxx_main_tsqr.cpp 
+      ARGS 
+      COMM serial mpi
+      )
+  ENDIF ()
 ENDIF()

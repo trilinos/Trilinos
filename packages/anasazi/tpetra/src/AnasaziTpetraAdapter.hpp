@@ -44,9 +44,13 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "AnasaziMultiVecTraits.hpp"
-#include "AnasaziTsqrAdaptor.hpp" // mfh 15 Jul 2010
-#include "TsqrAdaptor_Tpetra_MultiVector.hpp" // mfh 15 Jul 2010
-#include "TsqrRandomizer_Tpetra_MultiVector.hpp" // mfh 15 Jul 2010
+
+#ifdef HAVE_ANASAZI_TSQR
+#  include "AnasaziTsqrAdaptor.hpp" 
+#include "TsqrAdaptor_Tpetra_MultiVector.hpp" 
+#include "TsqrRandomizer_Tpetra_MultiVector.hpp" 
+#endif // HAVE_ANASAZI_TSQR
+
 #include "AnasaziOperatorTraits.hpp"
 
 namespace Anasazi {
@@ -234,6 +238,7 @@ namespace Anasazi {
 
   };        
 
+#ifdef HAVE_ANASAZI_TSQR
   ////////////////////////////////////////////////////////////////////
   //
   // Implementation of Anasazi::TsqrAdaptor for Tpetra::MultiVector.
@@ -246,6 +251,7 @@ namespace Anasazi {
   public:
     typedef TSQR::Trilinos::TsqrTpetraAdaptor< Scalar, LO, GO, Node > adaptor_type;
   };
+#endif // HAVE_ANASAZI_TSQR
 
   ////////////////////////////////////////////////////////////////////
   //
