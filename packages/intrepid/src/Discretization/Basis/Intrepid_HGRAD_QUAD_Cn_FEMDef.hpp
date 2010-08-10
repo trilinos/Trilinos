@@ -289,8 +289,8 @@ namespace Intrepid {
 	for (int j=0;j<yBasis_.getCardinality();j++) {
 	  for (int i=0;i<xBasis_.getCardinality();i++) {
 	    for (int k=0;k<inputPoints.dimension(0);k++) {
-	      outputValues(bfcur,k,0) = -xBasisValues(i,k) * yBasisDerivs(j,k,0);
-	      outputValues(bfcur,k,1) = xBasisDerivs(i,k,0) * yBasisValues(j,k);
+	      outputValues(bfcur,k,0) = xBasisValues(i,k) * yBasisDerivs(j,k,0);
+	      outputValues(bfcur,k,1) = -xBasisDerivs(i,k,0) * yBasisValues(j,k);
 	    }
 	    bfcur++;
 	  }
