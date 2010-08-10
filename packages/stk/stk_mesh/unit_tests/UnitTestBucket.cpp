@@ -502,31 +502,6 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
     }
   }
 
-  //Coverage of TopologyHelpers element_local_side_id(const Entity & elem, const Entity & side )
-
-  tmp[0] = & part_A_3;
-  bulk.change_entity_parts ( element3 , tmp );
-
-  int localSide;
-
-  localSide = element_local_side_id ( element3, face2);
-
-  STKUNIT_ASSERT_EQUAL(localSide, -1);
-
-  //Coverage of TopologyHelpers for element_local_side_id(const Entity & elem, const std::vector<Entity*>& entity_nodes) with topology
-
-  std::vector<Entity*> node_entities2;
-
-  localSide = element_local_side_id ( element, node_entities2);
-
-  STKUNIT_ASSERT_EQUAL(localSide, -1);
-
-  //Coverage of TopologyHelpers element_local_side_id(const Entity & elem, const std::vector<Entity*>& entity_nodes) with topology is null
-  // Element, elem2, has NULL topology
-
-  localSide = element_local_side_id ( elem2, node_entities2);
-
-  STKUNIT_ASSERT_EQUAL(localSide, -1);
 
   bulk.modification_end();
 }

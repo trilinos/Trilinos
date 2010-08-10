@@ -122,7 +122,7 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
 
       fixture.generate_mesh();
 
-      skin_mesh(fixture.bulk_data, stk::mesh::Element, &skin_part);
+      stk::mesh::skin_mesh(fixture.bulk_data, stk::mesh::Element, &skin_part);
 
       stk::mesh::Entity * elem = fixture.elem( ix , iy , iz );
 
