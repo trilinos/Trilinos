@@ -85,7 +85,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   if (!shg) MEMORY_ERROR;
 
   Zoltan_HG_HGraph_Init(shg);
-  shg->nVtx = phg->dist_x[nProc_x];
+  shg->nVtx = phg->dist_x[nProc_x];    /* TODO64 - can this exceed 2B? */
   shg->nEdge = phg->dist_y[nProc_y];
 
   shg->dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(2 * sizeof(ZOLTAN_GNO_TYPE));
@@ -118,6 +118,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   each = recv_size + max_nProc_xy;
   disp = each + max_nProc_xy;
  
+  /* TODO64 - phg->dist_y[nProc_y] could exceed 2 Billion, NO? */
   send_size = MAX(phg->dist_x[myProc_x+1] - phg->dist_x[myProc_x], 
                   phg->dist_y[nProc_y]);
   send_buf = (int *) ZOLTAN_MALLOC(send_size * sizeof(int));
@@ -159,7 +160,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
                   phg->comm->col_comm);
   
     /* Compute number of vtx, edge, and nnz in column */
-    col_nVtx = phg->dist_x[myProc_x+1] - phg->dist_x[myProc_x];
+    col_nVtx = (int)(phg->dist_x[myProc_x+1] - phg->dist_x[myProc_x]);
     col_nEdge = phg->dist_y[nProc_y];   /* SCHEMEA */
     col_nPin = 0;
     for (i = 0; i < nProc_y; i++) {
@@ -324,7 +325,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
      * SCHEMEB would need to gather the number of vtxs recv'd from each proc. */
   
     for (i = 0; i < nProc_x; i++) 
-      each[i] = phg->dist_x[i+1] - phg->dist_x[i];
+      each[i] = (int)(phg->dist_x[i+1] - phg->dist_x[i]);
 
     disp[0] = 0;  /* Can't use dist_x, may not be sizeof(int) */
     for (i = 1; i < nProc_x; i++) 

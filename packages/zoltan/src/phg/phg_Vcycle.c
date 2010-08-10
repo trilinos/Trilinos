@@ -200,11 +200,12 @@ int Zoltan_PHG_Partition (
 
   PHGComm *hgc = hg->comm;
   VCycle  *vcycle=NULL, *del=NULL;
-  int  i, err = ZOLTAN_OK, middle, tot_nPins;
-  int  origVpincnt; /* for processor reduction test */
-  int  prevVcnt     = 2*hg->dist_x[hgc->nProc_x]; /* initialized so that the */
-  int  prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
-						     before any coarsening */
+  int  i, err = ZOLTAN_OK, middle;
+  ZOLTAN_GNO_TYPE origVpincnt; /* for processor reduction test */
+  ZOLTAN_GNO_TYPE prevVcnt     = 2*hg->dist_x[hgc->nProc_x]; /* initialized so that the */
+  ZOLTAN_GNO_TYPE prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
+				 		               before any coarsening */
+  ZOLTAN_GNO_TYPE tot_nPins, local_nPins;
   char *yo = "Zoltan_PHG_Partition";
   int do_timing = (hgp->use_timers > 1);
   int fine_timing = (hgp->use_timers > 2);
@@ -234,7 +235,10 @@ int Zoltan_PHG_Partition (
     ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
   }
 
-  MPI_Allreduce(&hg->nPins,&tot_nPins,1,MPI_INT,MPI_SUM,hgc->Communicator);
+  local_nPins = (ZOLTAN_GNO_TYPE)hg->nPins;
+
+  MPI_Allreduce(&local_nPins,&tot_nPins,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,hgc->Communicator);
+
   origVpincnt = tot_nPins;
 
   if (!(vcycle = newVCycle(zz, hg, parts, NULL, vcycle_timing))) {
@@ -245,9 +249,9 @@ int Zoltan_PHG_Partition (
 
   /****** Coarsening ******/    
 #define COARSEN_FRACTION_LIMIT 0.9  /* Stop if we don't make much progress */
-  while ((hg->redl>0) && (hg->dist_x[hgc->nProc_x] > hg->redl)
-	 && ((hg->dist_x[hgc->nProc_x] < (int) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5)) /* prevVcnt initialized to 2*hg->dist_x[hgc->nProc_x] */
-	     || (hg->dist_y[hgc->nProc_y] < (int) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5))) /* prevVedgecnt initialized to 2*hg->dist_y[hgc->nProc_y] */
+  while ((hg->redl>0) && (hg->dist_x[hgc->nProc_x] > (ZOLTAN_GNO_TYPE)hg->redl)
+	 && ((hg->dist_x[hgc->nProc_x] < (ZOLTAN_GNO_TYPE) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5)) /* prevVcnt initialized to 2*hg->dist_x[hgc->nProc_x] */
+	     || (hg->dist_y[hgc->nProc_y] < (ZOLTAN_GNO_TYPE) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5))) /* prevVedgecnt initialized to 2*hg->dist_y[hgc->nProc_y] */
     && hg->dist_y[hgc->nProc_y] && hgp->matching) {
       ZOLTAN_GNO_TYPE *match = NULL;
       VCycle *coarser=NULL, *redistributed=NULL;
@@ -357,10 +361,11 @@ int Zoltan_PHG_Partition (
       hg = vcycle->hg;
 
       if (hgc->nProc > 1 && hgp->ProRedL > 0) {
-	MPI_Allreduce(&hg->nPins, &tot_nPins, 1, MPI_INT, MPI_SUM,
+        local_nPins = (ZOLTAN_GNO_TYPE)hg->nPins;
+	MPI_Allreduce(&local_nPins, &tot_nPins, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM,
 		      hgc->Communicator);
 
-	if (tot_nPins < (int)(hgp->ProRedL * origVpincnt + 0.5)) {
+	if (tot_nPins < (ZOLTAN_GNO_TYPE)(hgp->ProRedL * origVpincnt + 0.5)) {
 	  if (do_timing) {
 	    ZOLTAN_TIMER_STOP(zz->ZTime, timer->vcycle, hgc->Communicator);
 	    ZOLTAN_TIMER_START(zz->ZTime, timer->procred, hgc->Communicator);

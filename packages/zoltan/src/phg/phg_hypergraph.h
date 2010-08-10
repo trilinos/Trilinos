@@ -149,11 +149,11 @@ struct Zoltan_HGraph {
   ZOLTAN_ID_PTR objLID;     /* user's object local ID */
   int *numHEdges;           /* number of hyperedges containing object */
 
-  int *fixed;               /* vertex assignments for fixed vertices */
+  int *fixed;               /* size nObj, part assignments for fixed vertices */
 
   int GnRepartVtx;          /* Global number of repartition vtxs added for
                                LB_APPROACH=repartition. */
-  int GnRepartEdge;         /* Global number of repartition edges added for
+  ZOLTAN_GNO_TYPE GnRepartEdge;  /* Global number of repartition edges added for
                                LB_APPROACH=repartition. */
 
   int *Input_Parts;         /* Initial partition #s for on-processor objects */
