@@ -59,7 +59,7 @@ public:
    * @return The converted ParameterEntryValidator.
    */
   RCP<ParameterEntryValidator>
-  fromXMLtoValidator(const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const {
+  fromXMLtoValidator(const XMLObject& xmlObj) const {
     #ifdef HAVE_TEUCHOS_DEBUG
     RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
     TEST_FOR_EXCEPTION(xmlObj.getTag() != dummyValidator->getXMLTagName(), 
@@ -68,22 +68,10 @@ public:
       ". Expected a " << dummyValidator->getXMLTagName() <<
       " tag but got a " << xmlObj.getTag() << "tag");
     #endif
-  
-    RCP<ParameterEntryValidator> toReturn = convertXML(xmlObj, validatorMap);
-    if(xmlObj.hasAttribute(getIdAttributeName())){
-
-      TEST_FOR_EXCEPTION(
-        validatorMap.getValidator(xmlObj.getRequiredInt(getIdAttributeName()))
-        !=
-        validatorMap.end(),
-        DuplicateValidatorIDsException,
-        "Two validators in the XML file have the same ID!" <<std::endl<<
-        "Conflicting ID: " << xmlObj.getRequiredInt(getIdAttributeName()));
-        
-      validatorMap.insertValidator(
-        IDtoValidatorMap::IDValidatorPair(
-          xmlObj.getRequiredInt(getIdAttributeName()), toReturn));
-    }
+    ParameterEntryID::ValidatorID validatorID = 
+      xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
+        getIdAttributeName());
+    RCP<ParameterEntryValidator> toReturn = convertXML(xmlObj, validatorID);
     return toReturn;
   }
 
@@ -91,26 +79,23 @@ public:
    * particular ParameterEntryValidator.
    *
    * @param xmlObj The xml to be converted.
-   * @param validatorMap The validator map storing all validators that are
-   * being converted.
    * @return The converted ParameterEntryValidator.
    */
-  virtual RCP<ParameterEntryValidator> convertXML(const XMLObject& xmlObj,
-    IDtoValidatorMap& validatorMap) const=0;
+  virtual RCP<ParameterEntryValidator> 
+    convertXML(const XMLObject& xmlObj, 
+    ParameterEntryValidator::validatorID validatorID) const=0;
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param validator The ParameterEntryValidator to be converted to XML.
    * @return An XML representation of the given ParameterEntryValidator.
    */
-  XMLObject fromValidatortoXML(const RCP<const ParameterEntryValidator> validator,
-    const ValidatortoIDMap& validatorMap) const
+  XMLObject 
+    fromValidatortoXML(const RCP<const ParameterEntryValidator> validator) const
   {
-    XMLObject toReturn = convertValidator(validator, validatorMap);
-    ValidatortoIDMap::const_iterator result = validatorMap.getID(validator);
-    if(result != validatorMap.end()){
-      toReturn.addAttribute(getIdAttributeName(), result->second);
-    }
+    XMLObject toReturn = convertValidator(validator);
+    toReturn.addAttribute(getIdAttributeName(),
+      ParameterEntryValidator::getValidatorID(*validator));
     return toReturn;
   }
 
@@ -126,8 +111,8 @@ public:
    * @param validatorMap The validator map storing all validators that are
    * being converted.
    */
-  virtual XMLObject convertValidator(const RCP<const ParameterEntryValidator> validator,
-    const ValidatortoIDMap& validatorMap) const = 0;
+  virtual XMLObject convertValidator(
+    const RCP<const ParameterEntryValidator> validator) const = 0;
   
   //@}
 
@@ -140,7 +125,8 @@ public:
    *
    * @return A default dummy validator.
    */
-  virtual Teuchos::RCP<const ParameterEntryValidator> getDummyValidator() const = 0;
+  virtual Teuchos::RCP<const ParameterEntryValidator> 
+    getDummyValidator() const = 0;
   
   //@}
   #endif

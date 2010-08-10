@@ -26,65 +26,36 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ValidatorMaps.hpp"
 
-namespace Teuchos{
+#ifndef TEUCHOS_XMLCONDITIONEXCEPTIONS_HPP_
+#define TEUCHOS_XMLCONDITIONEXCEPTIONS_HPP_
 
+/*! \file Teuchos_XMLConditionExceptions.hpp
+ * \brief A collection of Exceptions thrown
+ * when converting Conditions to and from
+ * XML.
+ */
+#include <stdexcept>
 
-void IDtoValidatorMap::insertValidator(IDValidatorPair toInsert)
-{
-  validatorMap.insert(toInsert);
-}
+namespace Teuchos {
 
+/** \brief Thrown when a StringConditon is missing it's Value tag.
+ */
+class MissingValuesTagException : public std::logic_error{
 
-IDtoValidatorMap::const_iterator IDtoValidatorMap::getValidator(int id) const
-{
-  return validatorMap.find(id);
-}
+public:
 
+  /**
+   * \brief Constructs an MissingValuesTagException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  MissingValuesTagException(const std::string& what_arg):
+    std::logic_error(what_arg){}
 
-IDtoValidatorMap::const_iterator IDtoValidatorMap::begin() const
-{
-  return validatorMap.begin();
-}
-
-
-IDtoValidatorMap::const_iterator IDtoValidatorMap::end() const
-{
-  return validatorMap.end();
-}
-
-
-ValidatortoIDMap::ValidatortoIDMap():counter(0)
-{}
-
-void ValidatortoIDMap::insertValidator(RCP<const ParameterEntryValidator> toInsert)
-{
-  const_iterator result = validatorMap.find(toInsert);
-  if(result == validatorMap.end()){
-    validatorMap.insert(ValidatorIDPair(toInsert, counter));
-    ++counter;
-  }
-}
-
-
-ValidatortoIDMap::const_iterator ValidatortoIDMap::getID(
-  const RCP<const ParameterEntryValidator> validator) const
-{
-  return validatorMap.find(validator);
-}
-
-
-ValidatortoIDMap::const_iterator ValidatortoIDMap::begin() const
-{
-  return validatorMap.begin();
-}
-
-
-ValidatortoIDMap::const_iterator ValidatortoIDMap::end() const
-{
-  return validatorMap.end();
-}
+};
 
 
 } // namespace Teuchos
+#endif //TEUCHOS_XMLCONDITIONEXCEPTIONS_HPP_
+

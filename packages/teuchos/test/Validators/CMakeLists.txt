@@ -5,6 +5,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Validator_UnitTest
   SOURCES cxx_main.cpp Validator_UnitTest.cpp
   STANDARD_PASS_OUTPUT
+  COMM serial
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(ValidatorFileCopies

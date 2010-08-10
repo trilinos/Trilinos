@@ -91,9 +91,6 @@ public:
   //! \name Attribute/Query Functions
   //@{
 
-  /** \brief gets the value to be used for the type attribute. */
-  const std::string& getTypeAttributeValue() const = 0;
-
   /**
    * \brief Returns the string to be used for the type attribute.
    */

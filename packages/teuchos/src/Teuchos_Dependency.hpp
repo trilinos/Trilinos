@@ -55,37 +55,14 @@ public:
   //@{
 
   /**
-   * \brief Allows two dependecies to be compared.
-   */
-  class DepComp{
-  public:
-    bool operator () (const RCP<Dependency> dep1,
-      const RCP<Dependency> dep2) const
-    {
-      return dep1->getDependents().begin().get()
-        >= dep2->getDependents().begin().get();
-    }
-  };
-
-  /**
    * \brief A list of Dependees.
    */
-  typedef std::set<RCP<ParameterEntry> > DependeeList;
+  typedef std::set<RCP<ParameterEntry>, RCPComp > ParameterEntryList;
 
   /**
    * \brief A list of dependents.
    */
-  typedef std::set<RCP<ParameterEntry> > DependentList;
-
-  /**
-   * \brief A list of Dependees.
-   */
-  typedef std::set<RCP<const ParameterEntry> > ConstDependeeList;
-
-  /**
-   * \brief A list of dependents.
-   */
-  typedef std::set<RCP<const ParameterEntry> > ConstDependentList;
+  typedef std::set<RCP<const ParameterEntry>, RCPConstComp > ConstParameterEntryList;
 
   //@}
 
@@ -98,7 +75,9 @@ public:
    * @param dependees A list of all the dependees.
    * @param dependents A list of all the dependents.
    */
-  Dependency(DependeeList& dependees, DependentList& dependents);
+  Dependency(
+    ConstParameterEntryList dependees, 
+    ParameterEntryList dependents);
 
   /**
    * \brief Constructs a Dependency
@@ -106,7 +85,9 @@ public:
    * @param dependees A list of all the dependees.
    * @param dependent The dependent parameter.
    */
-  Dependency(DependeeList& dependees, RCP<ParameterEntry> dependent);
+  Dependency(
+    ConstParameterEntryList dependees, 
+    RCP<ParameterEntry> dependent);
 
   /**
    * \brief Constructs a Dependency
@@ -114,7 +95,9 @@ public:
    * @param dependee The dependee parameter.
    * @param dependents A List of all the dependents.
    */
-  Dependency(RCP<ParameterEntry> dependeeName, DependentList& dependents);
+  Dependency(
+    RCP<const ParameterEntry> dependee, 
+    ParameterEntryList dependents);
 
   /**
    * \brief Constructs a Dependency
@@ -122,7 +105,9 @@ public:
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
    */
-  Dependency(RCP<ParameterEntry> dependee, RCP<ParameterEntry> dependent);
+  Dependency(
+    RCP<const ParameterEntry> dependee, 
+    RCP<ParameterEntry> dependent);
 
   /**
    * \brief Desctructor
@@ -141,7 +126,7 @@ public:
    *
    *  @return The dependees of the dependency.
    */
-  inline const ConstDependeeList& getDependees() const{
+  inline const ConstParameterEntryList& getDependees() const{
     return dependees_;
   }
 
@@ -150,15 +135,25 @@ public:
    *
    * @return The dependents of the dependency.
    */
-  inline const ConstDependentList& getDependents() const{
+  inline ParameterEntryList& getDependents(){
     return dependents_;
   }
+
+  /**
+   * \brief Gets the dependents of the dependency.
+   *
+   * @return The dependents of the dependency.
+   */
+  inline const ConstParameterEntryList& getDependents() const{
+    return constDependents_;
+  }
+
 
   /** \brief Gets the first dependee in the dependees list.
    * This is a convience function.
    */
   inline RCP<const ParameterEntry> getFirstDependee() const{
-    return dependees_.begin();
+    return *(dependees_.begin());
   }
 
   /**
@@ -169,7 +164,7 @@ public:
    */
   template<class S>
   inline const S getFirstDependeeValue() const{
-    return getValue<S>(dependees_.begin());
+    return getValue<S>(*(*(dependees_.begin())));
   }
 
   /**
@@ -191,6 +186,14 @@ public:
    */
   virtual void evaluate() = 0;
   
+  //@}
+  
+  /** \name I/O Functions */
+  //@{
+
+  /** \brief prints out information about the dependency. */
+  virtual void print(){}
+
   //@}
 
 protected:
@@ -215,17 +218,27 @@ protected:
   /**
    * \brief The parameters being depended upon.
    */
-  DependeeList dependees_;
+  ConstParameterEntryList dependees_;
 
   /**
    * \brief The dependent paramters.
    */
-  DependentList dependents_;
+  ParameterEntryList dependents_;
+
+  /**
+   * \brief A const version dependent paramters.
+   */
+  ConstParameterEntryList constDependents_;
 
   /**
    * \brief Declaring and defining the default constructor as private.
    */
   Dependency(){}
+
+  /**
+   * \brief creates a const version of the dependent parameters.
+   */
+  void createConstDependents();
 
   //@}
 

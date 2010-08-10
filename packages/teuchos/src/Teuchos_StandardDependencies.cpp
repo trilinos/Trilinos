@@ -39,34 +39,32 @@ namespace Teuchos{
 
 
 VisualDependency::VisualDependency(
-  RCP<ParameterEntry> dependee, 
+  RCP<const ParameterEntry> dependee, 
   RCP<ParameterEntry> dependent,
   bool showIf):
   Dependency(dependee, dependent),
   showIf_(showIf){}
 
 VisualDependency::VisualDependency(
-  RCP<ParameterEntry> dependee,
-  DependentList& dependents,
+  RCP<const ParameterEntry> dependee,
+  ParameterEntryList dependents,
   bool showIf):
   Dependency(dependee, dependents),
   showIf_(showIf){}
 
 VisualDependency::VisualDependency(
-  DependeeList& dependees, 
+  ConstParameterEntryList dependees, 
   RCP<ParameterEntry> dependent,
   bool showIf):
   Dependency(dependees, dependent),
   showIf_(showIf){}
 
 VisualDependency::VisualDependency(
-  DependeeList dependees,
-  DependentList dependents,
+  ConstParameterEntryList dependees,
+  ParameterEntryList dependents,
   bool showIf):
   Dependency(dependees, dependents),
   showIf_(showIf){}
-
-
 
 bool VisualDependency::isDependentVisible() const{
   return dependentVisible_;
@@ -81,16 +79,18 @@ void VisualDependency::evaluate(){
   }
 }
   
-ValidatorDependency::ValidatorDependency( RCP<ParameterEntry> dependee,
+ValidatorDependency::ValidatorDependency( 
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent):
   Dependency(dependee, dependent){}
 
-ValidatorDependency::ValidatorDependency(RCP<ParameterEntry> dependee, 
-  DependentList dependents):
+ValidatorDependency::ValidatorDependency(
+  RCP<const ParameterEntry> dependee, 
+  ParameterEntryList dependents):
   Dependency(dependee, dependents){}
 
 StringVisualDependency::StringVisualDependency(
-  RCP<ParameterEntry> dependee,
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
   std::string value,
   bool showIf):
@@ -101,8 +101,8 @@ StringVisualDependency::StringVisualDependency(
 }
 
 StringVisualDependency::StringVisualDependency(
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<ParameterEntry> dependee,
   const ValueList& values,
   bool showIf):
   VisualDependency(dependee, dependent, showIf),
@@ -112,8 +112,8 @@ StringVisualDependency::StringVisualDependency(
 }
 
 StringVisualDependency::StringVisualDependency(
-  RCP<ParameterEntry> dependee, 
-  Dependency::DependentList& dependents, 
+  RCP<const ParameterEntry> dependee, 
+  Dependency::ParameterEntryList dependents, 
   const std::string& value,
   bool showIf):
   VisualDependency(dependee, dependents, showIf),
@@ -123,8 +123,8 @@ StringVisualDependency::StringVisualDependency(
 }
 
 StringVisualDependency::StringVisualDependency(
-  RCP<ParameterEntry> dependee, 
-  Dependency::DependentList& dependents, 
+  RCP<const ParameterEntry> dependee, 
+  Dependency::ParameterEntryList dependents, 
   const ValueList& values,
   bool showIf):
   VisualDependency(dependee, dependents, showIf),
@@ -138,12 +138,11 @@ void StringVisualDependency::validateDep() const{
     InvalidDependencyException,
     "Ay no! The dependee of a "
     "String Visual Dependency must be of type string.\n"
-    "Problem dependee: " << getFirstDependeeName() << "\n"
-    "Actual type: " << getFirstDependee()->getAny().typeName() << "\n");
+    "Type encountered: " << getFirstDependee()->getAny().typeName() << "\n");
 }
 
 BoolVisualDependency::BoolVisualDependency(
-  RCP<ParameterEntry> dependee,
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
   bool showIf):
   VisualDependency(dependee, dependent, showIf)
@@ -152,10 +151,10 @@ BoolVisualDependency::BoolVisualDependency(
 }
 
 BoolVisualDependency::BoolVisualDependency(
-  RCP<ParameterEntry> dependee, 
-  Dependency::DependentList dependents, 
+  RCP<const ParameterEntry> dependee, 
+  Dependency::ParameterEntryList dependents, 
   bool showIf):
-  VisualDependency(dependee, dependent, showIf)
+  VisualDependency(dependee, dependents, showIf)
 {
   validateDep();
 }
@@ -165,13 +164,11 @@ void BoolVisualDependency::validateDep() const{
     InvalidDependencyException,
     "Ay no! The dependee of a "
     "Bool Visual Dependency must be of type bool.\n"
-    "Problem dependee: " << getFirstDependeeName() << "\n"
-    "Actual type: " << getFirstDependee()->getAny().typeName() << "\n"
-    "Dependents: " << getDependentNamesString());
+    "Encountered type: " << getFirstDependee()->getAny().typeName() << "\n");
 }
 
 ConditionVisualDependency::ConditionVisualDependency(
-  RCP<Condition> condition,
+  RCP<const Condition> condition,
   RCP<ParameterEntry> dependent, 
   bool showIf):
   VisualDependency(condition->getAllParameters(), dependent, showIf),
@@ -181,8 +178,8 @@ ConditionVisualDependency::ConditionVisualDependency(
 }
 
 ConditionVisualDependency::ConditionVisualDependency(
-  RCP<Condition> condition,
-  Dependency::DependentList dependents,
+  RCP<const Condition> condition,
+  Dependency::ParameterEntryList dependents,
   bool showIf):
   VisualDependency(condition->getAllParameters(), dependents, showIf),
   condition_(condition)
@@ -191,9 +188,9 @@ ConditionVisualDependency::ConditionVisualDependency(
 }
 
 NumberArrayLengthDependency::NumberArrayLengthDependency(
-  RCP<ParameterEntry> dependee,
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  int (*func)(int) = 0):
+  int (*func)(int)):
   Dependency(dependee, dependent),
   func_(func)
 {
@@ -201,9 +198,9 @@ NumberArrayLengthDependency::NumberArrayLengthDependency(
 }
 
 NumberArrayLengthDependency::NumberArrayLengthDependency(
-  RCP<ParameterEntry> dependee,
-  DependentList& dependent,
-  int (*func)(int) = 0):
+  RCP<const ParameterEntry> dependee,
+  ParameterEntryList dependents,
+  int (*func)(int)):
   Dependency(dependee, dependents),
   func_(func)
 {
@@ -222,7 +219,7 @@ int NumberArrayLengthDependency::runFunction(int argument) const{
 
 template <class T>
 void NumberArrayLengthDependency::modifyArrayLength(
-  int newLength, ParameterEntry* dependentToModify)
+  int newLength, RCP<ParameterEntry> dependentToModify)
 {
   const Array<T> originalArray = 
     any_cast<Array<T> >(dependentToModify->getAny()); 
@@ -250,7 +247,7 @@ void NumberArrayLengthDependency::modifyArrayLength(
 
 template<>
 void NumberArrayLengthDependency::modifyArrayLength<std::string>(
-  int newLength, ParameterEntry* dependentToModify)
+  int newLength, RCP<ParameterEntry> dependentToModify)
 {
   const Array<std::string> originalArray = 
     any_cast<Array<std::string> >(dependentToModify->getAny()); 
@@ -287,37 +284,32 @@ void NumberArrayLengthDependency::evaluate(){
   int newLength = runFunction(getFirstDependeeValue<int>());
   TEST_FOR_EXCEPTION(newLength <0, Exceptions::InvalidParameterValue,
     "Ruh Roh Shaggy! Looks like a dependency tried to set the length "
-    "of the Array(s) in the " << getDependentNamesString() << 
-    " parameter(s) to a negative number. Silly. You can't have "
-    "an Array with a negative length! You should probably contact the "
-    "maintainer of this program and "
-    "give him or her the following information: \n\n" <<
+    "of the Array(s) to a negative number. Silly. You can't have "
+    "an Array with a negative length!\n\n" <<
     "Error:\n" <<
     "An attempt was made to set the length of an Array to a negative "
     "number by a NumberArrayLengthDependency\n");
-  ParameterEntry *currentDependent;
   for(
-    ParameterParentMap::const_iterator it = getDependents().begin(); 
+    ParameterEntryList::iterator it = getDependents().begin(); 
     it != getDependents().end(); 
     ++it)
   {
-    currentDependent = it->second->getEntryPtr(it->first);
-    if(currentDependent->getAny().type() == typeid(Array<int>)){
-      modifyArrayLength<int>(newLength, currentDependent);
+    if((*it)->getAny().type() == typeid(Array<int>)){
+      modifyArrayLength<int>(newLength, (*it));
     }
-    else if(currentDependent->getAny().type() == typeid(Array<short>)){
-      modifyArrayLength<short>(newLength, currentDependent);
+    else if((*it)->getAny().type() == typeid(Array<short>)){
+      modifyArrayLength<short>(newLength, (*it));
     }
-    else if(currentDependent->getAny().type() == typeid(Array<double>)){
-      modifyArrayLength<double>(newLength, currentDependent);
+    else if((*it)->getAny().type() == typeid(Array<double>)){
+      modifyArrayLength<double>(newLength, (*it));
     }
-    else if(currentDependent->getAny().type() == typeid(Array<float>)){
-      modifyArrayLength<float>(newLength, currentDependent);
+    else if((*it)->getAny().type() == typeid(Array<float>)){
+      modifyArrayLength<float>(newLength, (*it));
     }
     else if(
-      currentDependent->getAny().type() == typeid(Array<std::string>))
+      (*it)->getAny().type() == typeid(Array<std::string>))
     {
-      modifyArrayLength<std::string>(newLength, currentDependent);
+      modifyArrayLength<std::string>(newLength, (*it));
     }
   }
 }
@@ -332,24 +324,22 @@ void NumberArrayLengthDependency::validateDep() const{
     "Problem Dependee type: " << getFirstDependee()->getAny().typeName() 
     << "\n");
 
-  ParameterEntry *currentDependent;
   for(
-    ParameterParentMap::const_iterator it = getDependents().begin(); 
+    ConstParameterEntryList::const_iterator it = getDependents().begin(); 
     it != getDependents().end(); 
     ++it)
   {
-    currentDependent = it->second->getEntryPtr(it->first);
-    TEST_FOR_EXCEPTION(!currentDependent->isArray(),
+    TEST_FOR_EXCEPTION(!(*it)->isArray(),
       InvalidDependencyException,
       "Ay no! The dependent of an "
       "Array Length Dependency must be an array.\n"
       "Actual Dependent type: "
-      << currentDependent->getAny().typeName() << "\n");
+      << (*it)->getAny().typeName() << "\n");
   }
 }
 
-StringValidatorDependency(
-  RCP<ParameterEntry> dependee, 
+StringValidatorDependency::StringValidatorDependency(
+  RCP<const ParameterEntry> dependee, 
   RCP<ParameterEntry> dependent,
   ValueToValidatorMap valuesAndValidators, 
   RCP<ParameterEntryValidator> defaultValidator):
@@ -360,12 +350,12 @@ StringValidatorDependency(
   validateDep();
 }
 
-StringValidatorDependency(
-  RCP<ParameterEntry> dependeeName, 
-  Dependency::DependeeList& dependents,
+StringValidatorDependency::StringValidatorDependency(
+  RCP<const ParameterEntry> dependee, 
+  Dependency::ParameterEntryList dependents,
   ValueToValidatorMap valuesAndValidators, 
   RCP<ParameterEntryValidator> defaultValidator):
-  ValidatorDependency(dependee, dependent),
+  ValidatorDependency(dependee, dependents),
   valuesAndValidators_(valuesAndValidators),
   defaultValidator_(defaultValidator)
 {
@@ -374,23 +364,20 @@ StringValidatorDependency(
 
 void StringValidatorDependency::evaluate(){
   std::string currentDependeeValue = getFirstDependeeValue<std::string>();
-  ParameterEntry *currentDependent;
   for(
-    ParameterParentMap::const_iterator it = getDependents().begin(); 
+    ParameterEntryList::iterator it = getDependents().begin(); 
     it != getDependents().end(); 
     ++it)
   {
-    currentDependent = it->second->getEntryPtr(it->first);
     if(
       valuesAndValidators_.find(currentDependeeValue) 
       == 
       valuesAndValidators_.end())
     {
-      currentDependent->setValidator(defaultValidator_);
+      (*it)->setValidator(defaultValidator_);
     }
     else{
-      currentDependent->setValidator(
-        valuesAndValidators_[currentDependeeValue]);
+      (*it)->setValidator(valuesAndValidators_[currentDependeeValue]);
     }
   }
 }
@@ -399,52 +386,51 @@ void StringValidatorDependency::validateDep() const{
     InvalidDependencyException,
     "Ay no! The dependee of a "
     "String Validator Dependency must be of type string.\n"
-    "Problem dependee: " << getFirstDependeeName() << "\n"
-    "Actual type: " << getFirstDependee()->getAny().typeName() << "\n"
-    "Dependent: " << getDependentNamesString());
+    "Type Encountered: " << getFirstDependee()->getAny().typeName() <<
+    std::endl << std::endl);
 
   ValueToValidatorMap::const_iterator it = valuesAndValidators_.begin();
-  type_info firstValidatorType = typeid(it->second);
+  RCP<const ParameterEntryValidator> firstVali = (it->second);
   ++it;
   for(; it != valuesAndValidators_.end(); ++it){
-    TEST_FOR_EXCEPTION( firstValidatorType != typeid(it->second),
+    TEST_FOR_EXCEPTION( typeid(firstVali.get()) != typeid(it->second.get()),
       InvalidDependencyException,
       "Ay no! All of the validators in a StringValidatorDependency"
       "must have the same type.");
    }
 }
 
-BoolValidatorDependency(
-  RCP<ParameterEntry> dependee,
+BoolValidatorDependency::BoolValidatorDependency(
+  RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
   RCP<const ParameterEntryValidator> trueValidator,
   RCP<const ParameterEntryValidator> falseValidator):
   ValidatorDependency(dependee, dependent),
-  trueValidator_(trueValidator);
-  falseValidator_(falseValidator);
+  trueValidator_(trueValidator),
+  falseValidator_(falseValidator)
+{}
 
-BoolValidatorDependency(
-  RCP<ParameterEntry> dependee,
-  Dependency::DependentList dependents,
+BoolValidatorDependency::BoolValidatorDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
   RCP<const ParameterEntryValidator> trueValidator,
   RCP<const ParameterEntryValidator> falseValidator):
   ValidatorDependency(dependee, dependents),
-  trueValidator_(trueValidator);
-  falseValidator_(falseValidator);
+  trueValidator_(trueValidator),
+  falseValidator_(falseValidator)
+{}
 
 void BoolValidatorDependency::evaluate(){
   bool dependeeValue = getFirstDependeeValue<bool>();
-  ParameterEntry *currentDependent;
   for(
-    ParameterParentMap::const_iterator it = getDependents().begin();
+    ParameterEntryList::iterator it = getDependents().begin();
     it != getDependents().end(); 
     ++it)
   { 
-    currentDependent = it->second->getEntryPtr(it->first);
     dependeeValue ? 
-      currentDependent->setValidator(trueValidator_) 
+      (*it)->setValidator(trueValidator_) 
       :
-      currentDependent->setValidator(falseValidator_);
+      (*it)->setValidator(falseValidator_);
   }
 }
 
@@ -454,9 +440,8 @@ void BoolValidatorDependency::validateDep() const{
     InvalidDependencyException,
     "Ay no! The dependee of a "
     "Bool Validator Dependency must be of type boolean.\n"
-    "Problem dependee: " << getFirstDependeeName() << "\n"
-    "Actual type: " << getFirstDependee()->getAny().typeName() << "\n"
-    "Dependent: " << getDependentNamesString());
+    "Encountered type: " << getFirstDependee()->getAny().typeName() <<
+    std::endl << std::endl);
 
   TEST_FOR_EXCEPTION(typeid(falseValidator_) != typeid(trueValidator_),
     InvalidDependencyException,

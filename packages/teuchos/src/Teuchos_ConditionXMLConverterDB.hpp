@@ -27,23 +27,24 @@
 // @HEADER
 
 
-#ifndef TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
+#ifndef TEUCHOS_CONDITIONXMLCONVERTERDB_HPP
 #define TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
 
-/*! \file Teuchos_ValidatorXMLConverterDB.hpp
- * \brief A database for ValidatorXMLConverters.
+/*! \file Teuchos_ConditionXMLConverterDB.hpp
+ * \brief A database for ConditionXMLConverters.
 */
 
-#include "Teuchos_ValidatorXMLConverter.hpp"
+#include "Teuchos_ConditionXMLConverter.hpp"
 
 
 namespace Teuchos {
 
-class ParameterEntryValidator;
+class Condition;
 
-/** \brief Provides ability to lookup ValidatorXMLConverterDB
+/** \brief Provides ability to lookup ConditionXMLConverters
  */
-class ValidatorXMLConverterDB {
+class ConditionXMLConverterDB {
+
 public:
 
   /** \name Modifier Functions */
@@ -53,46 +54,45 @@ public:
    *
    * \param convertToAdd The converter to add to the database.
    */
-  static void addConverter(ParameterEntryValidator& validator,
-    RCP<ValidatorXMLConverter> converterToAdd);
+  static void addConverter(Condition& condition,
+    RCP<ConditionXMLConverter> converterToAdd);
   
   //@}
 
   /** \name Converter Functions */
   //@{
   
-  /** \brief Get an appropriate ValidatorXMLConverter given a 
-   * Validator.
+  /** \brief Get an appropriate ConditionXMLConverter given a 
+   *  Condition.
    *
-   * \param validator The ParameterEntryValidator for which a converter is
+   * \param condition The Condition for which a converter is
    * desired.
    */
-  static RCP<const ValidatorXMLConverter> getConverter(
-    const ParameterEntryValidator& validator);
+  static RCP<const ConditionXMLConverter> 
+    getConverter(const Condition& condition);
 
-  /** \brief Get an appropriate ValidatorXMLConverter given a XMLObject.
+  /** \brief Get an appropriate ConditionXMLConverter given a XMLObject.
    *
    * @param xmlObject The XMLObject for which a converter is desired.
    */
-  static RCP<const ValidatorXMLConverter> 
+  static RCP<const ConditionXMLConverter> 
     getConverter(const XMLObject& xmlObject);
 
   /**
-   * \brief Given a validator converts the
-   * validator to XML.
+   * \brief Given a condition and ConditiontoIDMap, converts the
+   * condition to XML.
    *
-   * \return XML representation of the validator.
+   * \return XML representation of the condition.
    */
-  static XMLObject convertValidator(
-    RCP<const ParameterEntryValidator> validator); 
+  static XMLObject convertCondition(RCP<const EntryCondition> condition);
 
   /**
-   * \brief Given an XMLObject converts the XMLObject 
-   * to a ParameterEntryValidator and inserts the validator into the map.
+   * \brief Given an XMLObject and IDtoConditionMap, converts the XMLObject 
+   * to a ParameterEntryCondition and inserts the condition into the map.
    *
-   * \return A ParameterEntryValidator that was represented by the XML.
+   * \return A ParameterEntryCondition that was represented by the XML.
    */
-  static RCP<ParameterEntryValidator> 
+  static RCP<ParameterEntryCondition> 
     convertXML(const XMLObject& xmlObject);
   
   //@}
@@ -106,7 +106,7 @@ public:
    * \param out Stream to which tags should be printed.
    */
   static void printKnownConverters(std::ostream& out){
-    out << "Known ValidatorXMLConverters: " << std::endl;
+    out << "Known ConditionXMLConverters: " << std::endl;
     for(
       ConverterMap::const_iterator it = getConverterMap().begin();
       it != getConverterMap().end();
@@ -124,13 +124,13 @@ private:
   //@{
   
   /** \brief convience class. */
-  typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
+  typedef std::map<std::string, RCP<ConditionXMLConverter> > ConverterMap;
 
   /** \brief convience typedef. */
-  typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
+  typedef std::pair<std::string, RCP<ConditionXMLConverter> > ConverterPair;
 
   /** \brief Gets the default converter to be used to convert
-   * Validators.
+   * Conditions.
    */
   static ConverterMap& getConverterMap();
   

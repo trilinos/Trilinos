@@ -29,50 +29,34 @@
 namespace Teuchos{
 
 RCP<Dependency>
-DependencyXMLConverter::fromXMLtoDependency(const XMLObject &xmlObj, RCP<ParameterList> rootParameterList) const
+DependencyXMLConverter::fromXMLtoDependency(const XMLObject &xmlObj) const
 {
   Dependency::ParameterParentMap dependees;
   Dependency::ParameterParentMap dependents;
 
   TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependeeTagName()) == null,
     MissingDependeesException,
-    "Could not find any dependees for a dependency!" <<std::endl <<std::endl);
+    "Could not find any dependees for a dependency!" 
+    <<std::endl <<std::endl);
 
   TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependentTagName()) == null,
     MissingDependentsException,
-    "Could not find any dependents for a dependency!" <<std::endl <<std::endl);
+    "Could not find any dependents for a dependency!" 
+    <<std::endl <<std::endl);
 
   for(int i=0; i<xmlObj.numChildren(); ++i){
     XMLObject child = xmlObj.getChild(i);
     if(child.getTag() == getDependeeTagName()){
-      std::string dependeeName = child.getAttribute(getParameterNameAttributeName());
-      std::string parentListName = child.getAttribute(getParentListAttributeName());
-      RPC<ParameterList> parentList = findChildList(rootParameterList, parentListName);
+      ParameterEntry::ParameterEntryID dependeeID = 
+        child.getAttribute(getParameterIDAttributeName());
 
-      TEST_FOR_EXCEPTION(parentList.is_null(),
-        ParentListNotFoundException,
-        "Could not find the parent list of a dependee in root list of the dependency"
-        "sheet the dependency is being inserted into." <<std::endl <<
-        "DependencySheet: " << depSheet.getName() << std::endl <<
-        "Bad Dependee name: " << dependeeName << std::endl <<
-        "Bad ParentList name: " << parentListName << std::endl << std::endl);
-
-      dependees.insert(Dependency::ParameterParentPair(dependeeName, parentList));
+      dependees.insert(ParameterEntry::getParameterEntry(dependeeID));
     }
     else if(child.getTag() == getDependentTagName()){
-      std::string dependentName = child.getAttribute(getParameterNameAttributeName());
-      std::string parentListName = child.getAttribute(getParentListAttributeName());
-      RPC<ParameterList> parentList = findChildList(rootParameterList, parentListName);
+      ParameterEntry::ParameterEntryID dependentID = 
+        child.getAttribute(getParameterIDAttributeName());
 
-      TEST_FOR_EXCEPTION(parentList.is_null(),
-      ParentListNotFoundException,
-      "Could not find the parent list of a dependent in root list of the dependency
-      sheet the dependency is being inserted into." <<std::endl <<
-      "DependencySheet: " << depSheet.getName() << std::endl <<
-      "Bad Dependent name: " << dependentName << std::endl <<
-      "Bad ParentList name: " << parentListName << std::endl << std::endl);
-
-      dependents.insert(Dependency::ParameterParentPair(dependeeName, parentList));
+      dependents.insert(ParameterEntry::getParameterEntry(dependentID));
     }
   }
 
@@ -91,16 +75,16 @@ DependencyXMLConverter::fromDependencytoXML(const RCP<const Dependency> dependen
 
   for(;it != dependency.getDependees().end(): ++it){
     XMLObject currentDependee(getDependeeTagName());
-    currentDependee.setAttribute(getParameterNameAttributeName(), it->first);
-    currentDependee.setAttribute(getParentListAttributeName(), it->first->name());
+    currentDependee.setAttribute(getParameterIDAttributeName(), 
+      ParameterEntry::getParameterID(*it));
     toReturn.addChild(currentDependee);
   }
 
   it = dependency->getDependents().begin();
   for(; it != dependency->getDependents().end(); ++it){
     XMLObject currentDependent(getDependentTagName());
-    currentDependent.setAttribute(getParameterNameAttributeName(), it->first);
-    currentDependent.setAttribute(getParentListAttributeName(), it->first->name());
+    currentDependent.setAttribute(getParameterIDAttributeName(), 
+      ParameterEntry::getParameterID(*it));
     toReturn.addChild(currentDependent);
   }
 

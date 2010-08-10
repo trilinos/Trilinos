@@ -29,6 +29,7 @@
 
 #include "Teuchos_ParameterEntry.hpp" // class definition
 #include "Teuchos_ParameterList.hpp"	 // for sublists
+#include "Teuchos_OrdinalTraits.hpp"
 
 
 namespace Teuchos {
@@ -38,7 +39,7 @@ ParameterEntry::ParameterEntry() :
   isUsed_(false),
   isDefault_(false)
 {
-  addParameterEntryToIDMap(this);
+  addParameterEntryToMasterMaps(this);
 }
 
 
@@ -59,7 +60,7 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
   docString_ = source.docString_;
   validator_ = source.validator_;
 
-  addParameterEntryToIDMap(this);
+  addParameterEntryToMasterMaps(this);
 
   return *this;
 }
@@ -124,16 +125,15 @@ std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
 }
 
 RCP<ParameterEntry> ParameterEntry::getParameterEntry(ParameterEntryID id){
-  IDToParameterEntryMap::iterator result = find(
-    masterIDMap.begin(), masterIDMap.end(), id);
-  result != masterIDMap.end() ? return result->second : return null;
+  IDToParameterEntryMap::iterator result = masterIDMap.find(id);
+  return result != masterIDMap.end() ? result->second : null;
 }
 
-ParameterEntryID ParameterEntry::getParameterEntryID(RCP<ParameterEntry> entry){
-  ParameterEntryToIDMap::iterator result = find(
-    masterParameterEntryMap.begin(), masterParameterEntryMap.end(), entry);
-  result != masterParameterEntryMap.end() ? 
-    return it->second : return OrdinalTraits<ParameterEntryID>::invalid();
+ParameterEntry::ParameterEntryID 
+ParameterEntry::getParameterEntryID(RCP<ParameterEntry> entry){
+  ParameterEntryToIDMap::iterator result = masterParameterEntryMap.find(entry);
+  return result != masterParameterEntryMap.end() ? 
+    result->second : OrdinalTraits<ParameterEntryID>::invalid();
 }
 
 // private
@@ -148,14 +148,14 @@ void ParameterEntry::reset()
 
 void ParameterEntry::incrementMasterCounter(){
   getMasterIDCounter()++;
-  if(masterIDMap.find(masterIDCounter) != masterIDMap.end()){
-    incrementMasterCounter;
+  if(masterIDMap.find(getMasterIDCounter()) != masterIDMap.end()){
+    incrementMasterCounter();
   }
 }
 
-ParameterEntryID ParameterEntry::getAvailableID(){
+ParameterEntry::ParameterEntryID ParameterEntry::getAvailableID(){
   ParameterEntryID toReturn;
-  if(masterFreeIDs.size() != 0)
+  if(masterFreeIDs.size() != 0){
     toReturn = masterFreeIDs.back();
     masterFreeIDs.pop_back();
     return toReturn;
@@ -167,23 +167,18 @@ ParameterEntryID ParameterEntry::getAvailableID(){
   return toReturn;
 }
 
-void ParameterEntry::addParameterEntryToIDMap(ParameterEntry* entryToAdd){
+void ParameterEntry::addParameterEntryToMasterMaps(ParameterEntry* entryToAdd){
   RCP<ParameterEntry> toInsert = rcp(entryToAdd, false);
-  TEST_FOR_EXCEPTION(
-  masterParameterEntryMap.find(toInsert)
-  !=
-  masterParameterEntryMap.end(),
-  DuplicateParameterEntryException,
-  "Error: parameter entry has already been added to the parameter entry maps!" <<
-  std::endl << std::endl);
 
   ParameterEntryID insertionID = getAvailableID();
 
-  masterIDMap.insert(value_type(insertionID, toInsert));
-  masterParameterEntryMap.insert(value_type(toInsert, insertionID));
+  masterIDMap.insert(
+    IDParameterEntryPair(insertionID, toInsert));
+  masterParameterEntryMap.insert(
+    ParameterEntryIDPair(toInsert, insertionID));
 }
 
-void ParameterEntry::addParameterEntryToIDMap(
+void ParameterEntry::addParameterEntryToMasterMaps(
   ParameterEntry* entry, ParameterEntryID idToUse)
 {
   TEST_FOR_EXCEPTION(
@@ -192,17 +187,20 @@ void ParameterEntry::addParameterEntryToIDMap(
   masterIDMap.end(),
   DuplicateParameterEntryIDException,
   "Error: can't create a ParameterEntry with the ID" <<
-  insertionID << ". That ID is already being used to track another " <<
+  idToUse << ". That ID is already being used to track another " <<
   "ParameterEntry!" << std::endl << std::endl);
-  masterParameterEntryMap.insert( value_type(rcp(entry, false), idToUse));
-  masterIDMap.insert(value_type(idToUse, rcp(entry, false)));
+  masterParameterEntryMap.insert(
+    ParameterEntryIDPair(rcp(entry, false), idToUse));
+  masterIDMap.insert(IDParameterEntryPair(idToUse, rcp(entry, false)));
 }
 
-void ParameterEntry::removeParameterEntryFromMasterMaps(Parameter* entryToRemove){
+void ParameterEntry::removeParameterEntryFromMasterMaps(
+  ParameterEntry* entryToRemove)
+{
   ParameterEntryToIDMap::iterator toRemove = 
     masterParameterEntryMap.find(rcp(entryToRemove, false));
   ParameterEntryID idToFree = toRemove->second;
-  masterParameterEntryMap.remove(toRemove);
+  masterParameterEntryMap.erase(toRemove);
   masterIDMap.erase(idToFree);
   masterFreeIDs.push_back(idToFree);
 }

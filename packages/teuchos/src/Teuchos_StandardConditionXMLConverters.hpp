@@ -50,11 +50,12 @@ public:
   /** \name Special Converter Functions */
   //@{
 
-  /** \brief Gets the specific BinaryLogicalCondition to be returned by this conveter
-   * when converting from XML.
+  /** \brief 
+   * Gets the specific BinaryLogicalCondition to be returned 
+   * by this conveter when converting from XML.
    *
-   * @param conditions The condition list for the BinaryLogical converter that is
-   * being converted.
+   * @param conditions The condition list for the BinaryLogical converter 
+   * that is being converted.
    */
   virtual RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
     Condition::ConditionList& conditions) const = 0;
@@ -91,17 +92,6 @@ public:
  
   //@}
 
-  /** \name Overridden from ConditionXMLConverter */
-  //@{
-
-  /** \brief . */
-  inline
-  const std::string& getTypeAttributeValue() const{
-    return TypeNameTraits<OrCondition>::name();
-  }
-  
-  //@}
-
 };
 
 /** \brief An xml converter for AndConditions
@@ -117,17 +107,6 @@ public:
   RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
     Condition::ConditionList& conditions);
  
-  //@}
-
-  /** \name Overridden from ConditionXMLConverter */
-  //@{
-
-  /** \brief . */
-  inline
-  const std::string& getTypeAttributeValue() const{
-    return TypeNameTraits<AndCondition>::name();
-  }
-  
   //@}
 
 };
@@ -146,17 +125,6 @@ public:
   RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
     Condition::ConditionList& conditions);
  
-  //@}
-
-  /** \name Overridden from ConditionXMLConverter */
-  //@{
-
-  /** \brief . */
-  inline
-  const std::string& getTypeAttributeValue() const{
-    return TypeNameTraits<EqualsCondition>::name();
-  }
-  
   //@}
 
 };
@@ -178,12 +146,6 @@ public:
     const RCP<const Condition> condition, 
     XMLObject& xmlObj) const;
 
-  /** \brief . */
-  inline
-  const std::string& getTypeAttributeValue() const{
-    return TypeNameTraits<NotCondition>::name();
-  }
-  
   //@}
 
 };
@@ -197,26 +159,26 @@ public:
   /** \name Special Converter Functions */
   //@{
 
-  /** \brief Gets the specific ParameterCondition to be returned by this conveter
+  /** \brief Gets the specific ParameterCondition to be returned 
+   * by this conveter
    * when converting from XML.
    *
-   * @param xmlObj The xml object from which the ParameterCondition is being derived.
-   * @param parameterName The parameter name for the ParameterCondition to be created.
-   * @param parentList The parent list for the ParameterCondition to be created.
-   * @param whenParamEqualsValue The whenParamEqualsValue for the ParameterCondition to
-   * be created
+   * @param xmlObj The xml object from which the ParameterCondition 
+   * is being derived.
+   * @param whenParamEqualsValue The whenParamEqualsValue for the 
+   * ParameterCondition to be created
    */
   virtual RCP<ParameterCondition> getSpecificParameterCondition(
     XMLObject& xmlObj,
-    const std::string& parameterName, 
-    RCP<ParameterList> parentList,
+    ParameterEntryID paramID,
     bool whenParamEqualsValue) const = 0;
   
   /** \brief Adds specific xml traits to the xmlObj for a particular
    * ParmaterCondtion
    *
    * @param condition The ParameterCondition to be converted.
-   * @param xmlObj The XMLObject to which the specific traits should be added.
+   * @param xmlObj The XMLObject to which the specific traits should be 
+   * added.
    */
   virtual void addSpecificXMLTraits(
     RCP<const ParameterCondition> condition, XMLObject& xmlObj) const = 0;
@@ -241,18 +203,14 @@ private:
   /** \name Private Members */
   //@{
  
-  static const std::string& getParameterNameAttributeName(){
-    const std::string parameterNameAttributeName = "parameterName";
+  static const std::string& getParameterEntryIDAttributeName(){
+    const std::string parameterNameAttributeName = "id";
     return parameterNameAttributeName;
   }
 
-  static const std::string& getParentListNameAttributeName(){
-    const std::string parentListNameAttributeName = "parentListName";
-    return parentListNameAttributeName;
-  }
-
   static const std::string& getWhenParamEqualsValueAttributeName(){
-    const std::string whenParamEqualsValueAttributeName = "whenParamEqualsValue";
+    const std::string whenParamEqualsValueAttributeName = 
+      "whenParamEqualsValue";
     return whenParamEqualsValueAttributeName;
   }
 
@@ -273,8 +231,7 @@ public:
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
     XMLObject& xmlObj,
-    const std::string& parameterName, 
-    RCP<ParameterList> parentList,
+    ParameterEntry::ParameterEntryID paramID,
     bool whenParamEqualsValue) const;
  
   /** \brief . */
@@ -283,16 +240,22 @@ public:
  
   //@}
 
-  /** \name Overridden from ConditionXMLConverter */
-  //@{
-
-  /** \brief . */
-  inline
-  const std::string& getTypeAttributeValue() const{
-    return TypeNameTraits<StringCondition>::name();
+private:
+  static const std::string& getValuesTagName(){
+    static const std::string valuesTagName = "Values";
+    return valuesTagName;
   }
-  
-  //@}
+
+  static const std::string& getStringTagName(){
+    static const std::string stringTagName = "String";
+    return stringTagName;
+  }
+
+  static const std::string& getStringValueAttributeName(){
+    static const std::string stringValueAttributeName = "value";
+    return stringValueAttributeName;
+  }
+
 
 };
 
@@ -320,14 +283,6 @@ public:
   /** \name Overridden from ConditionXMLConverter */
   //@{
 
-  /** \brief . */
-  inline
-  const std::string& getTypeAttributeValue() const{
-    return TypeNameTraits<BoolCondition>::name();
-  }
-  
-  //@}
-
 };
 
 /** \brief An xml converter for NumberConditions
@@ -345,23 +300,17 @@ public:
     XMLObject& xmlObj,
     const std::string& parameterName, 
     RCP<ParameterList> parentList,
-    bool whenParamEqualsValue) const;
+    bool whenParamEqualsValue) const
+  {
+    return rcp(new NumberCondition<T>(
+      ParameterEntry::getParameterEntry(paramID), 0, whenParamEqualsValue));
+  }
 
   /** \brief . */
   void addSpecificXMLTraits(
-    RCP<const ParameterCondition> condition, XMLObject& xmlObj) const;
+    RCP<const ParameterCondition> condition, XMLObject& xmlObj) const
+  {}
  
-  //@}
-
-  /** \name Overridden from ConditionXMLConverter */
-  //@{
-
-  /** \brief . */
-  inline
-  const std::string& getTypeAttributeValue() const{
-    return TypeNameTraits<NumberCondition<T> >::name();
-  }
-  
   //@}
 
 };

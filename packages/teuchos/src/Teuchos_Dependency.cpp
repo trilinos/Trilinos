@@ -32,22 +32,52 @@
 namespace Teuchos{
 
 
-Dependency::Dependency(DependeeList& dependees, DependeeList& dependents):
+Dependency::Dependency(
+ConstParameterEntryList dependees,
+ParameterEntryList dependents):
   dependees_(dependees), dependents_(dependents)
-{}
+{
+  createConstDependents();
+}
 
-Dependency::Dependency(DependeeList& dependees, RCP<ParameterEntry> dependent):
-  dependees_(dependees), dependents(DependentList(1, dependent))
-{}
+Dependency::Dependency(
+  ConstParameterEntryList dependees, 
+  RCP<ParameterEntry> dependent):
+  dependees_(dependees), 
+  dependents_(ParameterEntryList(&dependent, &dependent+1))
+{
+  createConstDependents();
+}
 
-Dependency::Dependency(RCP<ParameterEntry> dependee, DependentList dependents):
-  dependees_(DependeeList(1, dependee)), dependents_(dependents)
-{}
+
+Dependency::Dependency(
+  RCP<const ParameterEntry> dependee, 
+  ParameterEntryList dependents):
+  dependees_(ConstParameterEntryList(&dependee, &dependee+1)),
+  dependents_(dependents)
+{
+  createConstDependents();
+}
   
-Dependency::Dependency(RCP<ParameterEntry> dependee, RCP<ParameterEntry> dependent)
-  dependees_(DependeeList(1, dependee)), dependents_(DependentList(1, dependent))
-{}
+Dependency::Dependency(
+  RCP<const ParameterEntry> dependee, 
+  RCP<ParameterEntry> dependent):
+  dependees_(ConstParameterEntryList(&dependee, &dependee+1)),
+  dependents_(ParameterEntryList(&dependent, &dependent+1))
+{
+  createConstDependents();
+}
 
+
+void Dependency::createConstDependents(){
+  for(
+    ParameterEntryList::iterator it = dependents_.begin();
+    it != dependents_.end();
+    ++it)
+  {
+    constDependents_.insert(it->getConst());
+  }
+}
 
 } //namespace Teuchos
 

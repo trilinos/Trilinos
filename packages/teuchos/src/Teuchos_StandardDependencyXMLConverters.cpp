@@ -32,10 +32,10 @@ namespace Teuchos{
 
 RCP<Dependency> VisualDependencyConverter::convertXML(
     const XMLObject& xmlObj, 
-    const ParameterParentMap& dependees, 
-    const ParameterParentMap& dependents) const
+    const Dependency::ConstParameterEntryList dependees,
+    const Dependency::ParameterEntryList dependents) const
 {
-  bool showIf = xmlObj.getRequiredBool(getShowIfAttributeName);
+  bool showIf = xmlObj.getWithDefault(getShowIfAttributeName, true);
   return convertSpecialVisualAttributes(xmlObj,
     dependees,
     dependents,
@@ -53,7 +53,27 @@ void VisualDependencyConverter::convertDependency(
   convertSpecialVisualAttributes(dependency, xmlObj);
 }
 
+RCP<Dependency> ValidatorDependencyXMLConverter::convertXML(
+    const XMLObject& xmlObj, 
+    const Dependency::ConstParameterEntryList dependees,
+    const Dependency::ParameterEntryList dependents) const
+{
+  TEST_FOR_EXCEPTION(dependees.size() > 1,
+    TooManyDependeesException,
+    "A Validator Dependency can only have 1 dependee!" << 
+    std::endl << std::endl);
+  return convertSpecialValidatorAttributes(
+    xmlObj, *(dependees.begin()), dependents);
+}
 
+void ValidatorDependencyXMLConverter::convertDependency(
+  const RCP<const Dependency> dependency, 
+  XMLObject& xmlObj) const
+{
+  convertSpecialValidatorAttributes(dependency, xmlObj);
+}
+  
+ 
 StringVisualDependencyConverter::convertSpecialVisualAttributes(
   RCP<const VisualDepenency> dependency, XMLObject& xmlObj) const
 {
@@ -71,8 +91,8 @@ StringVisualDependencyConverter::convertSpecialVisualAttributes(
   
 RCP<VisualDepenency> StringVisualDependencyConverter::convertSpecialVisualAttributes(
   XMLObject& xmlObj,
-  const ParameterParentMap& dependees,
-  const ParameterParentMap& dependets,
+  const Dependency::ConstParameterEntryList dependees,
+  const Dependency::ParameterEntryList dependents,
   bool showIf) const
 {
   TEST_FOR_EXCEPTION(dependees.size() > 1,
@@ -100,20 +120,154 @@ void BoolVisualDependencyConverter::convertSpecialVisualAttributes(
   RCP<const VisualDepenency> dependency,
   XMLObject& xmlObj) const {}
   
-RCP<VisualDepenency> BoolVisualDependencyConverter::convertSpecialVisualAttributes(
+RCP<VisualDepenency> 
+BoolVisualDependencyConverter::convertSpecialVisualAttributes(
   XMLObject& xmlObj,
-  const ParameterParentMap& dependees,
-  const ParameterParentMap& dependets,
+  const Dependency::ConstParameterEntryList dependees,
+  const Dependency::ParameterEntryList dependents,
   bool showIf) const
 {
   TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
-    "A StringVisualDependency can only have 1 dependee!" << std::endl << std::endl
-  );
-  return rcp(new BoolVisualDependency(dependees, dependents, showIf));
+    "A StringVisualDependency can only have 1 dependee!" <<
+    std::endl << std::endl);
+  return rcp(new BoolVisualDependency(
+    *(dependees.begin()), dependents, showIf));
+}
+
+void ConditionVisualDependencyConverter::convertSpecialVisualAttributes(
+  RCP<const VisualDepenency> dependency,
+  XMLObject& xmlObj) const
+{
+  RCP<ConditionVisualDependency> castedDependency = 
+    rcp_dynamic_cast<ConditionVisualDependency>(dependency);
+  xmlObj.addChild(
+    ConditionXMLConvertDB::convertCondition(castedDependency->getCondition()));
 }
   
+RCP<VisualDepenency> 
+ConditionVisualDependency::convertSpecialVisualAttributes(
+  XMLObject& xmlObj,
+  const Dependency::ConstParameterEntryList dependees,
+  const Dependency::ParameterEntryList dependents,
+  bool showIf) const
+{
+  XMLObject conditionObj = xmlObj.findFirstChild(Condition::getXMLTagName());
+  TEST_FOR_EXCEPTION(conditionObj == NULL,
+    MissingConditionTag,
+    "ConditionVisualDependencies must have a Condition tag!"
+  );
+  Teuchos::RCP<Condition> condition = 
+    ConditionXMLConvertDB::convertXML(conditionObj);
+  return rcp(new ConditionVisualDependency(
+    ConditionXMLConvertDB::convertXML(condition, dependents, showIf)));
+}
+ 
+void
+StringValidatorDependencyConverter::convertSpecialValidatorAttributes(
+  RCP<const ValidatorDepenency> dependency,
+  XMLObject& xmlObj) const
+{
+  RCP<const StringValidatorDependency> castedDependency = 
+    rcp_dynamic_cast<const StringValidatorDependency>(dependency, true);  
+  XMLObject valueMapTag(getValuesAndValidatorsTag()); 
+  const StringVisualDependency::ValueToValidatorMap valuesAndValidators = 
+    castedDependency->getValuesAndValidators();
+  for(
+    StringValidatorDependencyConverter::ValidatorDepenency::const_iterator it =
+      valuesAndValidators.begin();
+    it != valuesAndValidators.end();
+    ++it)
+  {
+    XMLObject pairTag(getPairTag());
+    pairTag.addAttribute(getValueAttributeName(), it->first);
+    pairTag.addAttribute(getValidatorIDAttributeName(), 
+      ParameterEntryValidator::getValidatorID(it->second));
+    valueMapTag.addChild(pairTag);
+  }  
+}
+
+RCP<ValidatorDepenency> 
+StringValidatorDependencyConverter::convertSpecialValidatorAttributes(
+  XMLObject& xmlObj,
+  const RCP<const ParameterEntry> dependee,
+  const Dependency::ParameterEntryList dependents) const
+{
+  ValueToValidatorMap valueValidatorMap;
+  XMLObject valuesAndValidatorTag = 
+    xmlObj.findFirstChild(getValuesAndValidatorsTag());
+  TEST_FOR_EXCEPTION(valuesAndValidatorTag != NULL,
+    MissingValuesAndValidatorsTag,
+    "Error: All StringValidatorDependencies must have a " << 
+    getValuesAndValidatorsTag() << "tag!" << std::endl << std::endl);
+  for(int i=0; i < valuesAndValidatorTag.numChildren(); ++i){
+    XMLObject child = valuesAndValidatorTag.getChild(i);
+    std::string value = child.getRequired(getValueAttributeName());
+    RCP<ParameterEntryValidator> validator = 
+      ParameterEntryValidator::getValidator(child.getRequired(
+        getValidatorIDAttributeName()));
+    valueValidatorMap.insert(
+      StringValidatorDependency::ValueToValidatorPair(value, validator));
+  }
+  return rcp(new StringValidatorDependency(
+    dependee, dependents, valueValidatorMap));
+}
+
+void
+BoolValidatorDependencyConverter::convertSpecialValidatorAttributes(
+  RCP<const ValidatorDepenency> dependency,
+  XMLObject& xmlObj) const
+{
+  RCP<const BoolValidatorDependency> castedDependency = 
+    rcp_dynamic_cast<const BoolValidatorDependency>(dependency, true);  
+  xmlObj.addAttribute(getFalseValidatorIDAttributeName(),
+    ParameterEntryValidator::getValidatorID(
+      castedDependency->getFalseValidator()));
+
+  xmlObj.addAttribute(getTrueValidatorIDAttributeName(),
+    ParameterEntryValidator::getValidatorID(
+      castedDependency->getTrueValidator()));
+}
+
+RCP<ValidatorDepenency> 
+BoolValidatorDependencyConverter::convertSpecialValidatorAttributes(
+  XMLObject& xmlObj,
+  const RCP<const ParameterEntry> dependee,
+  const Dependency::ParameterEntryList dependents) const
+{
+  RCP<ParameterEntryValidator> falseValidator = 
+    ParameterEntryValidator::getValidator(
+      xmlObj.getRequired(getFalseValidatorIDAttributeName()));
+    
+  RCP<ParameterEntryValidator> trueValidator = 
+    ParameterEntryValidator::getValidator(
+      xmlObj.getRequired(getTrueValidatorIDAttributeName()));
+
+  return rcp(new BoolValidatorDependency(
+    dependee, dependents, falseValidator, trueValidator));
+}
+
+RCP<Dependency> NumberArrayLengthDependencyConverter::convertXML(
+  const XMLObject& xmlObj, 
+  const Dependency::ConstParameterEntryList dependees,
+  const Dependency::ParameterEntryList dependents) const
+{
+  TEST_FOR_EXCEPTION(dependees.size() > 1,
+    TooManyDependeesException,
+    "A NumberArrayLengthDependency can only have 1 dependee!" <<
+    std::endl << std::endl);
+  
+  return rcp(new NumberArrayLengthDependency(
+    *(dependees.begin()), dependents));
+}
+
+void convertDependency(
+  const RCP<const Dependency> dependency, 
+  XMLObject& xmlObj) const
+{
+  
+}
+
 
 } //namespace Teuchos
-
 

@@ -35,10 +35,12 @@ ConditionXMLConverter::fromXMLtoCondition(const XMLObject &xmlObj) const
 }
 
 XMLObject
-ConditionXMLConverter::fromConditiontoXML(const RCP<const Condition> condition) const
+ConditionXMLConverter::fromConditiontoXML(
+  const RCP<const Condition> condition) const
 {
-  XMLObject toReturn;
-  toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
+  XMLObject toReturn(Condition::getXMLTagName());
+  toReturn.addAttribute(
+    getTypeAttributeName(), condition->getTypeAttributeValue());
   convertCondition(condition, toReturn);
   return toReturn;
 }

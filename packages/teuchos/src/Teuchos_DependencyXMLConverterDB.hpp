@@ -27,23 +27,23 @@
 // @HEADER
 
 
-#ifndef TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
-#define TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
+#ifndef TEUCHOS_DEPENDENCYXMLCONVERTERDB_HPP
+#define TEUCHOS_DEPENDENCYXMLCONVERTERDB_HPP
 
-/*! \file Teuchos_ValidatorXMLConverterDB.hpp
- * \brief A database for ValidatorXMLConverters.
+/*! \file Teuchos_DependencyXMLConverterDB.hpp
+ * \brief A database for DependencyXMLConverters.
 */
 
-#include "Teuchos_ValidatorXMLConverter.hpp"
+#include "Teuchos_DependencyXMLConverter.hpp"
 
 
 namespace Teuchos {
 
-class ParameterEntryValidator;
+class Dependency;
 
-/** \brief Provides ability to lookup ValidatorXMLConverterDB
+/** \brief Provides ability to lookup DependencyXMLConverterDB
  */
-class ValidatorXMLConverterDB {
+class DependencyXMLConverterDB {
 public:
 
   /** \name Modifier Functions */
@@ -53,46 +53,46 @@ public:
    *
    * \param convertToAdd The converter to add to the database.
    */
-  static void addConverter(ParameterEntryValidator& validator,
-    RCP<ValidatorXMLConverter> converterToAdd);
+  static void addConverter(Dependency& dependency,
+    RCP<DependencyXMLConverter> converterToAdd);
   
   //@}
 
   /** \name Converter Functions */
   //@{
   
-  /** \brief Get an appropriate ValidatorXMLConverter given a 
-   * Validator.
+  /** \brief Get an appropriate DependencyXMLConverter given a 
+   *  ParameterEntry.
    *
-   * \param validator The ParameterEntryValidator for which a converter is
-   * desired.
+   * \param dependency The ParameterEntryDependency for which a 
+   * converter is desired.
    */
-  static RCP<const ValidatorXMLConverter> getConverter(
-    const ParameterEntryValidator& validator);
+  static RCP<const DependencyXMLConverter> getConverter(
+    const Dependency& dependency);
 
-  /** \brief Get an appropriate ValidatorXMLConverter given a XMLObject.
+  /** \brief Get an appropriate DependencyXMLConverter given a XMLObject.
    *
    * @param xmlObject The XMLObject for which a converter is desired.
    */
-  static RCP<const ValidatorXMLConverter> 
+  static RCP<const DependencyXMLConverter> 
     getConverter(const XMLObject& xmlObject);
 
   /**
-   * \brief Given a validator converts the
-   * validator to XML.
+   * \brief Given a dependency converts the
+   * dependency to XML.
    *
-   * \return XML representation of the validator.
+   * \return XML representation of the dependency.
    */
-  static XMLObject convertValidator(
-    RCP<const ParameterEntryValidator> validator); 
+  static XMLObject convertDependency(
+    RCP<const ParameterEntryDependency> dependency); 
 
   /**
    * \brief Given an XMLObject converts the XMLObject 
-   * to a ParameterEntryValidator and inserts the validator into the map.
+   * to a Dependency.
    *
-   * \return A ParameterEntryValidator that was represented by the XML.
+   * \return A Dependency that was represented by the XML.
    */
-  static RCP<ParameterEntryValidator> 
+  static RCP<ParameterEntryDependency> 
     convertXML(const XMLObject& xmlObject);
   
   //@}
@@ -106,7 +106,7 @@ public:
    * \param out Stream to which tags should be printed.
    */
   static void printKnownConverters(std::ostream& out){
-    out << "Known ValidatorXMLConverters: " << std::endl;
+    out << "Known DependencyXMLConverters: " << std::endl;
     for(
       ConverterMap::const_iterator it = getConverterMap().begin();
       it != getConverterMap().end();
@@ -124,13 +124,14 @@ private:
   //@{
   
   /** \brief convience class. */
-  typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
+  typedef std::map<std::string, RCP<DependencyXMLConverter> > ConverterMap;
 
   /** \brief convience typedef. */
-  typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
+  typedef std::pair<std::string, RCP<DependencyXMLConverter> > 
+    ConverterPair;
 
   /** \brief Gets the default converter to be used to convert
-   * Validators.
+   * Dependencies.
    */
   static ConverterMap& getConverterMap();
   
@@ -142,4 +143,4 @@ private:
 } // end namespace Teuchos
 
 
-#endif // TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
+#endif // TEUCHOS_DEPENDENCYXMLCONVERTERDB_HPP

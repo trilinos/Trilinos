@@ -55,13 +55,13 @@ public:
   /**
    * \brief Convience typedef representing a set of dependencies.
    */
-  typedef std::set<RCP<Dependency>, Dependency::DepComp > DepSet;
+  typedef std::set<RCP<Dependency>, RCPComp > DepSet;
 
   /**
    * \brief Convience typedef. Maps dependee parameter entries to a set of their corresponding
    * dependencies.
    */
-  typedef map<const ParameterEntry*, DepSet > DepMap;
+  typedef map<RCP<const ParameterEntry>, DepSet, RCPConstComp > DepMap;
   
   //@}
 
@@ -89,9 +89,8 @@ public:
    * \brief Adds a dependency to the sheet.
    * 
    * @param dependency The dependency to be added.
-   * @return True if the addition was sucessful, false otherwise.
    */
-  bool addDependency(RCP<const Dependency> dependency);
+  void addDependency(RCP<Dependency> dependency);
 
   /**
    * \brief Removes a particular dependency between two parameters.
@@ -99,7 +98,7 @@ public:
    * @param dependency The dependency to be removed.
    * @return True if the removal was sucessfull, false otherwise.
    */
-  bool removeDependency(RCP<const Dependency> dependency);
+  void removeDependency(RCP<Dependency> dependency);
   
   //@}
 
@@ -113,9 +112,9 @@ public:
    * @param name The paramteter to be checked for dependents.
    * @return True if the parameter you're checking has other dependents, false otherwise.
    */
-  inline bool hasDependents(const ParameterEntry *dependee) const{
-    return (dependencies_.find(dependee) != dependencies_.end() 
-      && dependencies_.find(dependee)->second.size() > 0);
+  inline bool hasDependents(RCP<const ParameterEntry> dependee) const{
+    return (dependenciesMap_.find(dependee) != dependenciesMap_.end() 
+      && dependenciesMap_.find(dependee)->second.size() > 0);
   }
 
   /**
@@ -126,9 +125,9 @@ public:
    * */
   inline
   const DepSet& getDependenciesForParameter(
-    const ParameterEntry *dependee) const
+    RCP<const ParameterEntry> dependee) const
   {
-    return dependencies_.find(dependee)->second;
+    return dependenciesMap_.find(dependee)->second;
   }
 
   /**
@@ -146,7 +145,7 @@ public:
   /**
    * \brief Returns an iterator to the beginning of all the dependees in the sheet.
    */
-  inline DepMap::iterator depBegin(){
+  inline DepSet::iterator depBegin(){
     return dependencies_.begin();
   }
 
@@ -155,21 +154,21 @@ public:
    *
    * @return An iterator to the end of all of the dependees in the sheet.
    */
-  inline DepMap::iterator depEnd(){
+  inline DepSet::iterator depEnd(){
     return dependencies_.end();
   }
 
   /**
    * \brief Returns a const iterator to the beginning of all the dependees in the sheet.
    */
-  inline DepMap::const_iterator depBegin() const{
+  inline DepSet::const_iterator depBegin() const{
     return depBegin();
   }
     
   /**
    * \brief Returns a const iterator to the end of all of the dependees in the sheet.
    */
-  inline DepMap::const_iterator depEnd() const{
+  inline DepSet::const_iterator depEnd() const{
      return depEnd();
    }
   
@@ -197,7 +196,12 @@ private:
    * places within the map. Essentially, for each dependee, there will 
    * be a pointer to for dependency of which it is a part.
    */
-  DepMap dependencies_;
+  DepMap dependenciesMap_;
+
+  /**
+   *\brief A simple set of all the dependencies in this Dependency Sheet.
+   */
+  DepSet dependencies_;
 
   /**
    * \brief The Name of the dependency sheet.

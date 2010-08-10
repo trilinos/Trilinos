@@ -116,6 +116,16 @@ AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
 {
   finishInitialization();
 }
+AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
+  EPreferredType const preferredType, AcceptedTypes const& acceptedTypes,
+  ValidatorID validatorID
+  )
+  : ParameterEntryValidator(validatorID), preferredType_(preferredType), 
+  acceptedTypes_(acceptedTypes)
+{
+  finishInitialization();
+}
+
 
 
 //  Local non-virtual validated lookup functions
@@ -347,6 +357,11 @@ FileNameValidator::FileNameValidator(bool mustAlreadyExist)
   : ParameterEntryValidator(), mustAlreadyExist_(mustAlreadyExist)
 {}
 
+FileNameValidator::FileNameValidator(
+  bool mustAlreadyExist, 
+  ValidatorID validatorID):
+  ParameterEntryValidator(validatorID), mustAlreadyExist_(mustAlreadyExist)
+{}
 
 bool FileNameValidator::fileMustExist() const
 {
@@ -371,31 +386,33 @@ FileNameValidator::validStringValues() const
 void FileNameValidator::validate(ParameterEntry const &entry, std::string const &paramName,
   std::string const &sublistName) const
 {
+  const std::string &entryName = entry.getAny(false).typeName();
   any anyValue = entry.getAny(true);
-  if(!(anyValue.type() == typeid(std::string) )){
-    const std::string &entryName = entry.getAny(false).typeName();
-    std::stringstream oss;
-    std::string msg;
-    oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-    " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-    "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
+    InvalidParameterType,
+    "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+    " parameter in the \"" << sublistName << 
+    "\" sublist didn't quite work out.\n" <<
+    "No need to fret though. I'm sure it's just a small mistake. "
+    "Maybe the information below "<<
     "can help you figure out what went wrong.\n\n"
     "Error: The value that you entered was the wrong type.\n" <<
     "Parameter: " << paramName << "\n" << 
     "Type specified: " << entryName << "\n" <<
-    "Type accepted: " << typeid(std::string).name() << "\n";
-    msg = oss.str();
-    throw Exceptions::InvalidParameterType(msg);
+    "Type accepted: " << typeid(std::string).name() << "\n");
   }
   if(mustAlreadyExist_){
     std::string fileName = getValue<std::string>(entry);
     TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
       Exceptions::InvalidParameterValue,
       "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-      " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-      "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+      " parameter in the \"" << sublistName << "\" sublist didn't quite work "
+      "out.\n" <<
+      "No need to fret though. I'm sure it's just a small mistake. " <<
+      "Maybe the information below "<<
       "can help you figure out what went wrong.\n\n"
-      "Error: The file must already exists. The value you entered does not corresspond to an existing file name.\n" <<
+      "Error: The file must already exists. The value you entered does " <<
+      "not corresspond to an existing file name.\n" <<
       "Parameter: " << paramName << "\n" << 
       "File name specified: " << fileName << "\n");
   }
@@ -408,22 +425,27 @@ const std::string FileNameValidator::getXMLTagName() const
 }
 
 
-void FileNameValidator::printDoc(std::string const &docString, std::ostream &out) const
+void FileNameValidator::printDoc(
+  std::string const &docString, std::ostream &out) const
 {
   StrUtils::printLines(out,"# ",docString);
   out << "#  Validator Used: \n";
   out << "#  FileName Validator\n";
 }
 
+StringValidator::StringValidator()
+  : ParameterEntryValidator(), validStrings_(NULL)
+{}
 
 StringValidator::StringValidator(const Array<std::string>& validStrings):
   ParameterEntryValidator(),
   validStrings_(rcp(new Array<std::string>(validStrings)))
 {}
 
-
-StringValidator::StringValidator()
-  : ParameterEntryValidator(), validStrings_(NULL)
+StringValidator::StringValidator(
+  const Array<std::string>& validStrings, ValidatorID validatorID):
+  ParameterEntryValidator(validatorID),
+  validStrings_(rcp(new Array<std::string>(validStrings)))
 {}
 
 
@@ -442,44 +464,41 @@ StringValidator::validStringValues() const
 }
 
 
-void StringValidator::validate(ParameterEntry const &entry, std::string const &paramName,
+void StringValidator::validate(
+  ParameterEntry const &entry, std::string const &paramName,
   std::string const &sublistName) const
 {
   any anyValue = entry.getAny(true);
-  if(!(anyValue.type() == typeid(std::string) )){
-    const std::string &entryName = entry.getAny(false).typeName();
-    std::stringstream oss;
-    std::string msg;
-    oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-    " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-    "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+  const std::string &entryName = entry.getAny(false).typeName();
+  TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
+    InvalidParameterType,
+    "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+    " parameter in the \"" << sublistName << 
+    "\" sublist didn't quite work out.\n" <<
+    "No need to fret though. I'm sure it's just a small mistake. " <<
+    "Maybe the information below "<<
     "can help you figure out what went wrong.\n\n"
     "Error: The value that you entered was the wrong type." <<
     "Parameter: " << paramName << "\n" << 
     "Type specified: " << entryName << "\n" <<
-    "Type accepted: " << Teuchos::TypeNameTraits<std::string>::name() << "\n";
-    msg = oss.str();
-    throw Exceptions::InvalidParameterType(msg);
-  }
-  else if(!validStrings_.is_null()){
+    "Type accepted: " << Teuchos::TypeNameTraits<std::string>::name() << "\n");
+  if(!validStrings_.is_null()){
     Array<std::string>::const_iterator
       it = std::find(validStrings_->begin(),
       validStrings_->end(), getValue<std::string>(entry));
-    if(it == validStrings_->end()){
-      std::stringstream oss;
-      std::string msg;
-      oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-      " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-      "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+    TEST_FOR_EXCEPTION(it == validStrings_->end(),
+      InvalidParameterValue,
+      "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+      " parameter in the \"" << sublistName << 
+      "\" sublist didn't quite work out.\n" <<
+      "No need to fret though. I'm sure it's just a small mistake. "
+      "Maybe the information below "
       "can help you figure out what went wrong.\n\n"
-      "Error: The value that was entered doesn't fall with in " <<
+      "Error: The value that was entered doesn't fall with in "
       "the range set by the validator." <<
       "Parameter: " << paramName << "\n" <<
       "Acceptable Values: " << validStrings_ << "\n" <<
-      "Value entered: " << getValue<std::string>(entry) << "\n";
-      msg = oss.str();
-      throw Exceptions::InvalidParameterValue(msg);
-    }
+      "Value entered: " << getValue<std::string>(entry) << "\n");
   }
 }
 
@@ -513,6 +532,20 @@ Teuchos::anyNumberParameterEntryValidator(
   return rcp(
     new AnyNumberParameterEntryValidator(
       preferredType, acceptedTypes
+      )
+    );
+}
+
+Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
+Teuchos::anyNumberParameterEntryValidator(
+  AnyNumberParameterEntryValidator::EPreferredType const preferredType,
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
+  ValidatorID validatorID
+  )
+{
+  return rcp(
+    new AnyNumberParameterEntryValidator(
+      preferredType, acceptedTypes, validatorID
       )
     );
 }

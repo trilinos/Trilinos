@@ -43,13 +43,6 @@
 namespace Teuchos{
 
 
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<VisualDependency>{
-public:
-  static std::string name(){ return "VisualDependency"; }
-  static std::string concreteName(const VisualDependency&){ return name(); }
-};
-
 /**
  * \brief An abstract parent class for all visual dependencies.
  *
@@ -75,7 +68,7 @@ public:
    * @param showIf When true, the depndent will be be shown if the dependee is true.
    */
   VisualDependency(
-    RCP<ParameterEntry> dependee, 
+    RCP<const ParameterEntry> dependee, 
     RCP<ParameterEntry> dependent,
     bool showIf=true);
 
@@ -87,8 +80,8 @@ public:
    * @param showIf When true, the depndent will be be shown if the dependee is true.
    */
   VisualDependency(
-    RCP<ParameterEntry> dependee,
-    DependentList& dependents,
+    RCP<const ParameterEntry> dependee,
+    ParameterEntryList dependents,
     bool showIf=true);
 
   /**
@@ -99,7 +92,7 @@ public:
    * @param showIf When true, the depndent will be be shown if the dependee is true.
    */
   VisualDependency(
-    DependeeList& dependees, 
+    ConstParameterEntryList dependees, 
     RCP<ParameterEntry> dependent,
     bool showIf=true);
 
@@ -111,8 +104,8 @@ public:
    * @param showIf When true, the depndent will be be shown if the dependee is true.
    */
   VisualDependency(
-    DependeeList dependees,
-    DependentList dependents,
+    ConstParameterEntryList dependees,
+    ParameterEntryList dependents,
     bool showIf=true);
 
   /**
@@ -175,12 +168,10 @@ private:
 };
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<VisualDependency>{
 public:
-  static std::string name(){ return "ValidatorDependency"; }
-  static std::string concreteName(const ValidatorDependency&){ 
-    return name();
-  }
+  static std::string name(){ return "VisualDependency"; }
+  static std::string concreteName(const VisualDependency&){ return name(); }
 };
 
 /**
@@ -200,7 +191,7 @@ public:
    * @param dependent The dependent parameter.
    */
   ValidatorDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent);
 
   /**
@@ -209,8 +200,9 @@ public:
    * @param dependee The dependee parameter.
    * @param dependents The dependents.
    */
-  ValidatorDependency(RCP<ParameterEntry> dependee, 
-    DependentList dependents);
+  ValidatorDependency(
+    RCP<const ParameterEntry> dependee, 
+    ParameterEntryList dependents);
 
   /**
    * \brief Desctructor
@@ -232,11 +224,11 @@ public:
 };
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ValidatorDependency>{
 public:
-  static std::string name(){ return "StringVisualDependency"; }
-  static std::string concreteName(const StringVisualDependency&){ 
-    return name(); 
+  static std::string name(){ return "ValidatorDependency"; }
+  static std::string concreteName(const ValidatorDependency&){ 
+    return name();
   }
 };
 
@@ -281,7 +273,7 @@ public:
    * set to a value other than the one specified by the value parameter.
    */
   StringVisualDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     std::string value,
     bool showIf=true);
@@ -300,7 +292,7 @@ public:
    * to a value other than the ones specified by the values parameter.
    */
   StringVisualDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     const ValueList& values,
     bool showIf=true);
@@ -319,11 +311,10 @@ public:
    * values parameter.
    */
   StringVisualDependency(
-    RCP<ParameterEntry> dependee, 
-    Dependency::DependentList& dependents, 
+    RCP<const ParameterEntry> dependee, 
+    Dependency::ParameterEntryList dependents, 
     const std::string& value,
     bool showIf=true);
-  
 
   /**
    * Constructs a StringVisualDependency.
@@ -340,8 +331,8 @@ public:
    * the values parameter.
    */
   StringVisualDependency(
-    RCP<ParameterEntry> dependee, 
-    Dependency::DependentList& dependents, 
+    RCP<const ParameterEntry> dependee, 
+    Dependency::ParameterEntryList dependents, 
     const ValueList& values,
     bool showIf=true);
   
@@ -361,7 +352,7 @@ public:
   //@{
 
   inline bool getDependeeState() const{
-    return find(values_.being(), values_.end(), 
+    return find(values_.begin(), values_.end(), 
       getFirstDependeeValue<std::string>()) != values_.end();
   }
   
@@ -392,11 +383,11 @@ private:
 };
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringVisualDependency>{
 public:
-  static std::string name(){ return "BoolVisualDependency"; }
-  static std::string concreteName(const BoolVisualDependency&){ 
-    return name();
+  static std::string name(){ return "StringVisualDependency"; }
+  static std::string concreteName(const StringVisualDependency&){ 
+    return name(); 
   }
 };
 
@@ -426,7 +417,7 @@ public:
    * If false, the dependent will be shown only when the dependee is false.
    */
   BoolVisualDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     bool showIf=true);
 
@@ -439,8 +430,8 @@ public:
    * If false, the dependent will be shown only when the dependee is false.
    */
   BoolVisualDependency(
-    RCP<ParameterEntry> dependee, 
-    Dependency::DependentList dependents, 
+    RCP<const ParameterEntry> dependee, 
+    Dependency::ParameterEntryList dependents, 
     bool showIf=true);
   
   //@}
@@ -468,10 +459,10 @@ protected:
 };
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ConditionVisualDependency>{
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolVisualDependency>{
 public:
-  static std::string name(){ return "ConditionVisualDependency"; }
-  static std::string concreteName(const ConditionVisualDependency&){ 
+  static std::string name(){ return "BoolVisualDependency"; }
+  static std::string concreteName(const BoolVisualDependency&){ 
     return name();
   }
 };
@@ -508,7 +499,7 @@ public:
    * only when the condition is false.
    */
   ConditionVisualDependency(
-    RCP<Condition> condition,
+    RCP<const Condition> condition,
     RCP<ParameterEntry> dependent,
     bool showIf=true);
 
@@ -523,8 +514,8 @@ public:
    * only when the condition is false.
    */
   ConditionVisualDependency(
-    RCP<Condition> condition, 
-    Dependency::DependentList dependents,
+    RCP<const Condition> condition, 
+    Dependency::ParameterEntryList dependents,
     bool showIf=true);
   
   //@}
@@ -532,7 +523,7 @@ public:
   /** \name Overridden from VisualDependency */
   //@{
 
-  inline bool getDependeeState() const;
+  inline bool getDependeeState() const{
     return condition_->isConditionTrue();
   }
   
@@ -557,19 +548,17 @@ private:
   /**
    * \brief The Condition to determine whether or not the dependent is displayed.
    */
-  RCP<Condition> condition_;
+  RCP<const Condition> condition_;
   
   //@}
 
 };
 
-template<class T>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberVisualDependency<T> >{
+template<>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ConditionVisualDependency>{
 public:
-  static std::string name(){
-    return TypeNameTraits<T> + "NumberVisualDependency";
-  }
-  static std::string concreteName(const NumberVisualDependency<T>&){
+  static std::string name(){ return "ConditionVisualDependency"; }
+  static std::string concreteName(const ConditionVisualDependency&){ 
     return name();
   }
 };
@@ -607,7 +596,7 @@ public:
    * negative numbers causing the dependent to be hidden).
    */
   NumberVisualDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     T (*func)(T) =0)
     :VisualDependency(dependee, dependent),
@@ -631,8 +620,8 @@ public:
    * negative numbers causing the dependent to be hidden).
    */
   NumberVisualDependency(
-    RCP<ParameterEntry> dependee,
-    DependentList& dependents,
+    RCP<const ParameterEntry> dependee,
+    ParameterEntryList dependents,
     T (*func)(T) =0)
     :VisualDependency(dependee, dependents),
     func_(func)
@@ -695,10 +684,7 @@ private:
       InvalidDependencyException,
       "The dependee of a "
       "Number Visual Dependency must be of a supported number type!\n"
-      "Problem dependee: " << getFirstDependeeName() << "\n"
-      "Actual type: " << dependee->getAny().typeName() << "\n"
-      "Dependees: " << getDependeeNamesString() << "\n"
-      "Dependents: " << getDependentNamesString());
+      "Type Encountered: " << dependee->getAny().typeName() << "\n");
   }
   
   //@}
@@ -706,16 +692,12 @@ private:
 };
 
 template<class T>
-class TEUCHOS_LIB_DLL_EXPORT 
-  TypeNameTraits<NumberValidatorAspectDependency<T> >{
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberVisualDependency<T> >{
 public:
-  static std::string name(){ 
-    return TypeNameTraits<T> + "NumberValidatorAspectDependency"; 
+  static std::string name(){
+    return TypeNameTraits<T>::name() + "NumberVisualDependency";
   }
-
-  static std::string concreteName(
-    const NumberValidatorAspectDependency<T>&)
-  {
+  static std::string concreteName(const NumberVisualDependency<T>&){
     return name();
   }
 };
@@ -777,13 +759,13 @@ public:
    * aspect should be calculated from the dependees value.
    */
   NumberValidatorAspectDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     ValidatorAspect aspect, 
     T (*func)(T) =0)
     :Dependency(dependee, dependent),
     aspect_(aspect),
-    validator_(dependnets.front()->getValidator()),
+    validator_(dependent->validator()),
     func_(func)
   {
     validateDep();
@@ -799,13 +781,13 @@ public:
    * aspect should be calculated from the dependees value.
    */
   NumberValidatorAspectDependency(
-    RCP<ParameterEntry> dependee,
-    DependentList& dependent,
+    RCP<const ParameterEntry> dependee,
+    ParameterEntryList dependents,
     ValidatorAspect aspect, 
     T (*func)(T) =0)
     :Dependency(dependee, dependents),
     aspect_(aspect),
-    validator_(dependnets.front()->getValidator()),
+    validator_((*dependents.begin())->validator()),
     func_(func)
   {
     validateDep();
@@ -833,6 +815,61 @@ public:
   }
   
   //@}
+  
+  /** \name Getters */
+  //@{
+  ValidatorAspect getAspect() const{
+    return aspect_;
+  }
+
+  /** \brief Gets the string representation 
+   * of a given preferred type enum. */
+  static const std::string& 
+    getAspectString(ValidatorAspect enumValue)
+  {
+    switch(enumValue){
+      case Min:
+        return getMinEnumString();
+        break;
+      case Max:
+        return getMaxEnumString();
+        break;
+      case Step:
+        return getStepEnumString();
+        break;
+      default:
+        throw std::runtime_error("Cannot convert enumValue: " 
+        + toString(enumValue) + " to a string");
+    }
+    //Should never get here. 
+    //This code is here so that a warning is not generated.
+    static const std::string& emptyString("");
+    return emptyString;
+  }
+
+  /** \brief Gets the preferred type enum associated with a give string. */
+  static ValidatorAspect 
+    getAspectStringEnum(const std::string& enumString)
+  {
+    if(enumString == getMinEnumString()){
+      return Min;
+    }
+    else if(enumString == getMaxEnumString()){
+      return Max;
+    }
+    else if(enumString == getStepEnumString()){
+      return Step;
+    }
+    else{
+      throw std::runtime_error("Cannot convert enumString: " 
+      + enumString + " to an enum");
+    }
+    //Should never get here. 
+    //This code is here so that a warning is not generated.
+    return (EPreferredType)-1;  
+  }
+  
+
 
 protected:
 
@@ -851,10 +888,10 @@ protected:
       "Dependee Type: " << dependee->getAny().typeName() << "\n"
       "Validator Template Type: " << typeid(T).name());
 
-    typename ParameterParentMap::const_iterator it;
-    ParameterEntry *currentDependent;
+    typename ParameterEntryList::const_iterator it;
+    RCP<const ParameterEntry> currentDependent;
     for(it = getDependents().begin(); it != getDependents().end(); ++it){ 
-      currentDependent = it->second->getEntryPtr(it->first);
+      currentDependent = *it;
 
       TEST_FOR_EXCEPTION(typeid(T) != currentDependent->getAny().type(),
         InvalidDependencyException,
@@ -866,9 +903,9 @@ protected:
         "Validator Template Type: " << typeid(T).name());
      
       TEST_FOR_EXCEPTION( 
-        validator.get() 
+        validator_.get() 
         != 
-        currentDependent->getValidator().get(),
+        currentDependent->validator().get(),
         InvalidDependencyException,
         "Error! All dependents in a NumberValidatorAspectDependency "
         "must have the same validator!");
@@ -913,16 +950,37 @@ private:
       return argument;
   }  
   
+  static cosnt std::string& getMinEnumString(){
+    static const std::string minEnumString = "min";
+    return minEnumString;
+  }
+
+  static cosnt std::string& getMaxEnumString(){
+    static const std::string maxEnumString = "max";
+    return maxEnumString;
+  }
+
+  static cosnt std::string& getStepEnumString(){
+    static const std::string stepEnumString = "step";
+    return stepEnumString;
+  }
+
   //@}
 
 };
 
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberArrayLengthDependency>{
+template<class T>
+class TEUCHOS_LIB_DLL_EXPORT 
+  TypeNameTraits<NumberValidatorAspectDependency<T> >{
 public:
-  static std::string name(){ return "NumberArrayLengthDependency"; }
-  static std::string concreteName(const NumberArrayLengthDependency&){ 
-    return name(); 
+  static std::string name(){ 
+    return TypeNameTraits<T>::name() + "NumberValidatorAspectDependency"; 
+  }
+
+  static std::string concreteName(
+    const NumberValidatorAspectDependency<T>&)
+  {
+    return name();
   }
 };
 
@@ -955,7 +1013,7 @@ public:
    * should be calculated from the dependees value.
    */
   NumberArrayLengthDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     int (*func)(int) = 0);
 
@@ -968,8 +1026,8 @@ public:
    * should be calculated from the dependees value.
    */
   NumberArrayLengthDependency(
-    RCP<ParameterEntry> dependee,
-    DependentList& dependent,
+    RCP<const ParameterEntry> dependee,
+    ParameterEntryList dependent,
     int (*func)(int) = 0);
 
   /** \brief . */
@@ -1014,18 +1072,18 @@ private:
    */
   template <class T>
   void modifyArrayLength(
-    int newLength, ParameterEntry* dependentToModify);
+    int newLength, RCP<ParameterEntry> dependentToModify);
   
   //@}
   
 };
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberArrayLengthDependency>{
 public:
-  static std::string name(){ return "StringValidatorDependency"; }
-  static std::string concreteName(const StringValidatorDependency&){ 
-    return name();
+  static std::string name(){ return "NumberArrayLengthDependency"; }
+  static std::string concreteName(const NumberArrayLengthDependency&){ 
+    return name(); 
   }
 };
 
@@ -1059,6 +1117,12 @@ public:
    */
   typedef std::map<std::string, RCP<const ParameterEntryValidator> > 
     ValueToValidatorMap;
+
+  /**
+   * \brief Conveniece typedef
+   */
+  typedef std::pair<std::string, RCP<const ParameterEntryValidator> > 
+    ValueToValidatorPair;
   
   //@}
 
@@ -1079,7 +1143,7 @@ public:
    * this is the validator that will be assigned to the dependent.
    */
   StringValidatorDependency(
-    RCP<ParameterEntry> dependee, 
+    RCP<const ParameterEntry> dependee, 
     RCP<ParameterEntry> dependent,
     ValueToValidatorMap valuesAndValidators, 
     RCP<ParameterEntryValidator> defaultValidator=null);
@@ -1087,8 +1151,8 @@ public:
   /**
    * \brief Constructs a StringValidatorDependency.
    *
-   * @param dependeeName The name of the dependee parameter.
-   * @param dependentName The name of the dependent parameter.
+   * @param dependee The dependee parameter.
+   * @param dependents The dependents.
    * @param valuesAndValidators A map associating string values 
    * with ParameterEntryValidators. This will be used
    * to deteremine what type of validator should be applied to 
@@ -1098,18 +1162,35 @@ public:
    * this is the validator that will be assigned to the dependent.
    */
   StringValidatorDependency(
-    RCP<ParameterEntry> dependeeName, 
-    Dependency::DependeeList& dependents,
+    RCP<const ParameterEntry> dependee, 
+    Dependency::ParameterEntryList dependents,
     ValueToValidatorMap valuesAndValidators, 
     RCP<ParameterEntryValidator> defaultValidator = null);
 
   //@}
 
+  /** \name Getters */
+  //@{
+
+  /** \brief retrieve a const reference to the ValueToValidator map being 
+   * used by this StringValidatorDependency */
+  const ValueToValidatorMap& getValuesAndValidators(){
+    return valuesAndValidators_;
+  }
   /** \name Overridden from Dependency */
   //@{
 
   /** \brief . */
   void evaluate();
+  
+  //@}
+
+protected:
+
+  /** \name Overridden from Dependency */
+  //@{
+
+  void validateDep() const;
   
   //@}
 
@@ -1119,35 +1200,28 @@ private:
   //@{
   
   /**
+   * \brief A map associating particular dependee values with validators 
+   * that could be placed on the dependent.
+   */
+  ValueToValidatorMap valuesAndValidators_;
+
+  /**
    * \brief The default validator to be used if a request is made 
    * for a value that does not
    * appear in the valuesAndValidators map.
    */
   RCP<ParameterEntryValidator> defaultValidator_;
-
-  /**
-   * \brief A map associating particular dependee values with validators 
-   * that could be placed on the dependent.
-   */
-  ValueToValidatorMap valuesAndValidators_;
   
   //@}
   
-  /** \name Overridden from Dependency */
-  //@{
-
-  void validateDep() const;
-  
-  //@}
-
 };
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringValidatorDependency>{
 public:
-  static std::string name(){ return "BoolValidatorDependency"; }
-  static std::string concreteName(const BoolValidatorDependency&){ 
-    return name(); 
+  static std::string name(){ return "StringValidatorDependency"; }
+  static std::string concreteName(const StringValidatorDependency&){ 
+    return name();
   }
 };
 
@@ -1182,7 +1256,7 @@ public:
    * dependent if the dependee is set to false.
    */
   BoolValidatorDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     RCP<const ParameterEntryValidator> trueValidator,
     RCP<const ParameterEntryValidator> falseValidator);
@@ -1198,8 +1272,8 @@ public:
    * if the dependee is set to false.
    */
   BoolValidatorDependency(
-    RCP<ParameterEntry> dependee,
-    Dependency::DependentList dependents,
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
     RCP<const ParameterEntryValidator> trueValidator,
     RCP<const ParameterEntryValidator> falseValidator);
 
@@ -1209,6 +1283,21 @@ public:
   //@{
 
   void evaluate();
+  
+  //@}
+
+  /** \name Getters */
+  //@{
+    
+  /** \brief Gets the true validator */
+  RCP<const ParameterEntryValidator> getTrueValidator(){
+    return trueValidator_;
+  }
+
+  /** \brief Gets the false validator */
+  RCP<const ParameterEntryValidator> getFalseValidator(){
+    return falseValidator_;
+  }
   
   //@}
 
@@ -1235,10 +1324,12 @@ private:
 };
 
 template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<RangeValidatorDependency>{
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolValidatorDependency>{
 public:
-  static std::string name(){ return "RangeValidatorDependency"; }
-  static std::string concreteName(const RangeValidatorDependency&){ return name(); }
+  static std::string name(){ return "BoolValidatorDependency"; }
+  static std::string concreteName(const BoolValidatorDependency&){ 
+    return name(); 
+  }
 };
 
 /**
@@ -1262,7 +1353,7 @@ public:
  *   \li All the validators in the rangesAndValidators_ map must be
  *   the same type.
  */
-template<class S>
+template<class T>
 class RangeValidatorDependency : public ValidatorDependency{
 
 public:
@@ -1273,12 +1364,19 @@ public:
   /**
    * \brief Convenience typedef
    */
-  typedef std::pair<S,S> Range;
+  typedef std::pair<T,T> Range;
 
   /**
    * \brief Convenience typedef
    */
-  typedef std::map<Range, RCP<const ParameterEntryValidator> > RangeToValidatorMap;
+  typedef std::map<Range, RCP<const ParameterEntryValidator> > 
+    RangeToValidatorMap;
+
+  /**
+   * \brief Convenience typedef
+   */
+  typedef std::pair<Range, RCP<const ParameterEntryValidator> > 
+    RangeValidatorPair;
   
   //@}
 
@@ -1296,7 +1394,7 @@ public:
    * to the dependent based on the dependees value.
    */
   RangeValidatorDependency(
-    RCP<ParameterEntry> dependee,
+    RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     RangeToValidatorMap rangesAndValidators)
     :ValidatorDependency(dependee, dependent),
@@ -1316,8 +1414,8 @@ public:
    * to the dependent based on the dependees value.
    */
   RangeValidatorDependency(
-    RCP<ParameterEntry> dependee,
-    Dependency::DependentList& dependent,
+    RCP<const ParameterEntry> dependee,
+    Dependency::ParameterEntryList dependents,
     RangeToValidatorMap rangesAndValidators)
     :ValidatorDependency(dependee, dependents),
     rangesAndValidators_(rangesAndValidators)
@@ -1327,20 +1425,28 @@ public:
 
   //@}
 
+  /** \name Getters */
+  //@{
+  const RangeToValidatorMap& getRangeToValidatorMap(){
+    return rangesAndValidators_;
+  }
+  
+  //@}
+
   /** \name Overridden from Dependency */
   //@{
 
   /** \brief . */
   void evaluate(){
     typename RangeToValidatorMap::const_iterator it;
-    S dependeeValue = getFirstDependeeValue<S>();
+    T dependeeValue = getFirstDependeeValue<T>();
     for(
       it = rangesAndValidators_.begin(); 
       it != rangesAndValidators_.end(); 
       ++it)
     {
-      S min = it->first.first;
-      S max = it->first.second;
+      T min = it->first.first;
+      T max = it->first.second;
       if(dependeeValue >= min && dependeeValue <=max){
         setDependentsToValidator(it->second);
         return;
@@ -1350,6 +1456,39 @@ public:
   }
   
   //@}
+
+protected:
+
+  /** \name Overridden from Dependency */
+  //@{
+  
+  /** \brief . */
+  void validateDep() const{
+
+    RCP<const ParameterEntry> dependee = getFirstDependee();
+    TEST_FOR_EXCEPTION(
+    !dependee->isType<int>() 
+    && !dependee->isType<short>() 
+    && !dependee->isType<double>() 
+    && !dependee->isType<float>(),
+      InvalidDependencyException,
+      "The dependee of a "
+      "Range Validator Dependency must be of a supported number type!\n"
+      "Type encountered: " << dependee->getAny().typeName() << "\n");
+
+    typename RangeToValidatorMap::const_iterator it = 
+      rangesAndValidators_.begin();
+    std::type_info firstValidatorType = typeid(it->second);
+    for(; it!=rangesAndValidators_.end(); ++it){
+      TEST_FOR_EXCEPTION( firstValidatorType != typeid(it->second),
+       InvalidDependencyException,
+       "Ay no! All of the validators in a RangeValidatorDependency "
+       "must have the same type.");
+    }
+  }
+  
+  //@}
+
   
 private:
 
@@ -1362,51 +1501,29 @@ private:
   RangeToValidatorMap rangesAndValidators_;
   
   void setDependentsToValidator(RCP<ParameterEntryValidator> toSet){
-    typename ParameterParentMap::const_iterator it2;
+    typename ParameterEntryList::const_iterator it;
     ParameterEntry *currentDependent;
     for(
-      it2 = getDependents().begin(); 
-      it2 != getDependents().end(); 
-      ++it2)
+      it = getDependents().begin(); 
+      it != getDependents().end(); 
+      ++it)
     {
-      currentDependent = it2->second->getEntryPtr(it2->first);
-      currentDependent->setValidator(toSet);
+      (*it)->setValidator(toSet);
     }
   }
   //@}
 
-  /** \name Overridden from Dependency */
-  //@{
-  
-  /** \brief . */
-  void validateDep() const{
+};
 
-    const ParameterEntry* dependee = getFirstDependee();
-    std::string dependeeName = getFirstDependeeName();
-    TEST_FOR_EXCEPTION(
-    !dependee->isType<int>() 
-    && !dependee->isType<short>() 
-    && !dependee->isType<double>() 
-    && !dependee->isType<float>(),
-      InvalidDependencyException,
-      "The dependee of a "
-      "Range Validator Dependency must be of a supported number type!\n"
-      "Problem dependee: " << dependeeName << "\n"
-      "Actual type: " << dependee->getAny().typeName() << "\n"
-      "Dependents: " << getDependentNamesString());
-
-    RangeToValidatorMap::const_iterator it = rangesAndValidators_.begin();
-    type_info firstValidatorType = typeid(it->second);
-    for(; it!=rangesAndValidators_.end(); ++it){
-      TEST_FOR_EXCEPTION( firstValidatorType != typeid(it->second),
-       InvalidDependencyException,
-       "Ay no! All of the validators in a RangeValidatorDependency "
-       "must have the same type.");
-    }
+template<class T>
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<RangeValidatorDependency<T> >{
+public:
+  static std::string name(){
+    return TypeNameTraits<T>::name() + "RangeValidatorDependency";
   }
-  
-  //@}
-
+  static std::string concreteName(const RangeValidatorDependency<T>&){ 
+    return name();
+  }
 };
 
 

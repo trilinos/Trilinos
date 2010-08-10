@@ -55,7 +55,20 @@ public:
   typedef RCP<const Array<std::string> > ValidStringsList;
 
   /** \brief . */
-  virtual ~ParameterEntryValidator() {}
+  typedef unsigned int ValidatorID;
+
+  /** \brief Default Constructor */
+  ParameterEntryValidator();
+
+  /** \brief Constructor allowing for direct setting of the ValidatorID.
+   * DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT YOU'RE DOING!
+   */
+  ParameterEntryValidtor(ValidatorID id);
+
+  /** \brief . */
+  ~ParameterEntryValidator(){
+     removeValidatorFromMasterMaps(*this);
+  }
 
   /** \brief Get a string that should be used as a tag for this validator
    * when serializing it to XML.
@@ -129,6 +142,45 @@ public:
       TEST_FOR_EXCEPT(0==entry);
       this->validate(*entry,paramName,sublistName);
     }
+
+private:
+  
+  typedef std::map< RCP<ParameterEntryValidator> , ValidatorID, RCPComp > 
+    ValidatorToIDMap;
+
+  typedef std::pair<RCP<ParameterEntryValidator>, ValidatorID>
+    ValidatorIDPair;
+
+  typedef std::map<ValidatorID, RCP<ParameterEntryValidator> > 
+    IDToValidatorMap;
+
+  typedef std::pair<ValidatorID, RCP<ParameterEntryValidator> >
+    IDValidatorPair;
+
+  typedef std::vector<ValidatorID> FreeIDsVector;
+
+  static ValidatorToIDMap masterValidatorMap;
+
+  static IDToValidatorMap masterIDMap;
+  
+  static ValidatorID& getMasterIDCounter(){
+    static ValidatorID masterCounter = 0;
+    return masterCounter;
+  }
+
+  static FreeIDsVector masterFreeIDs;
+
+  static void addValidatorToMasterMaps(ParameterEntryValidator* entryToAdd);
+
+  static void addValidatorToMasterMaps(
+    ParameterEntryValidator* entryToAdd, ValidatorID idToUse);
+
+  static void removeValidatorFromMasterMaps(
+    ParameterEntryValidator* entryToRemove);
+
+  static ValidatorID getAvailableID();
+
+  static void incrementMasterCounter();
 
   
 };

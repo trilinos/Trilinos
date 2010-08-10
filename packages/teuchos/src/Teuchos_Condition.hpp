@@ -57,6 +57,8 @@ public:
    */
   typedef Teuchos::Array<Teuchos::RCP<Condition> > ConditionList;
 
+  typedef Teuchos::Array<Teuchos::RCP<const Condition> > ConstConditionList;
+
     //@}
 
   /** \name Constructors/Destructor */
@@ -93,12 +95,19 @@ public:
   /**
    * \brief Gets all of the parameters that are evaluated in this
    * condition.
-   *
-   * @return A map of all of the parameters that are evaluated in this
-   * condition.
    */
+  virtual Dependency::ConstParameterEntryList getAllParameters() const = 0;
 
-  virtual Dependency::ParameterParentMap getAllParameters() const = 0;
+  /** \brief Get the value that should be used for the condition type
+   * attribute when converting a condition to XML.
+   */
+  virtual std::string getTypeAttributeValue() const = 0;
+
+  /** \brief . */
+  static const std::string& getXMLTagName(){
+    static const xmlTagName = "Condition";
+    return xmlTagName;
+  }
 
   //@}
   

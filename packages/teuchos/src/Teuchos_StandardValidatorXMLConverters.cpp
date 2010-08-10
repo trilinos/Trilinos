@@ -37,102 +37,112 @@ namespace Teuchos {
 
 
 RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
- const XMLObject& xmlObj, 
- IDtoValidatorMap& validatorMap) const
+    const XMLObject& xmlObj,
+    ParameterEntryValidator::ValidatorID validatorID) const;
 {
 
   AnyNumberParameterEntryValidator::AcceptedTypes acceptedTypes;
   acceptedTypes.allowInt(xmlObj.getRequiredBool(getAllowIntAttributeName()));
-  acceptedTypes.allowDouble(xmlObj.getRequiredBool(getAllowDoubleAttributeName()));
-  acceptedTypes.allowString(xmlObj.getRequiredBool(getAllowStringAttributeName()));
-  return rcp(
-    new AnyNumberParameterEntryValidator(
+  acceptedTypes.allowDouble(
+    xmlObj.getRequiredBool(getAllowDoubleAttributeName()));
+  acceptedTypes.allowString(
+    xmlObj.getRequiredBool(getAllowStringAttributeName()));
+  return anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::getPrefferedTypeStringEnum(
-        xmlObj.getRequired(getPrefferedTypeAttributeName())), acceptedTypes));
+        xmlObj.getRequired(getPrefferedTypeAttributeName())), 
+      acceptedTypes,
+      validatorID);
 }
 
 
 XMLObject AnyNumberValidatorXMLConverter::convertValidator(
-  const RCP<const ParameterEntryValidator> validator, 
-  const ValidatortoIDMap& validatorMap) const
+  const RCP<const ParameterEntryValidator> validator) const
 {
   RCP<const AnyNumberParameterEntryValidator> castedValidator = 
     rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(validator, true);
   XMLObject toReturn(validator->getXMLTagName());
-  toReturn.addBool(getAllowIntAttributeName(), castedValidator->isIntAllowed());
-  toReturn.addBool(getAllowDoubleAttributeName(), castedValidator->isDoubleAllowed());
-  toReturn.addBool(getAllowStringAttributeName(), castedValidator->isStringAllowed());
+  toReturn.addBool(
+    getAllowIntAttributeName(), castedValidator->isIntAllowed());
+  toReturn.addBool(
+    getAllowDoubleAttributeName(), castedValidator->isDoubleAllowed());
+  toReturn.addBool(
+    getAllowStringAttributeName(), castedValidator->isStringAllowed());
   toReturn.addAttribute(getPrefferedTypeAttributeName(),
-    castedValidator->getPrefferedTypeString(castedValidator->getPreferredType()));
+    castedValidator->getPrefferedTypeString(
+      castedValidator->getPreferredType()));
   return toReturn;
 }
 
 #ifdef HAVE_TEUCHOS_DEBUG
-RCP<const ParameterEntryValidator> AnyNumberValidatorXMLConverter::getDummyValidator() const{
+RCP<const ParameterEntryValidator> 
+AnyNumberValidatorXMLConverter::getDummyValidator() const{
   return DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject();
 }
 #endif
 
 RCP<ParameterEntryValidator> FileNameValidatorXMLConverter::convertXML(
-  const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const
+    const XMLObject& xmlObj,
+    ParameterEntryValidator::ValidatorID validatorID) const;
 {
   return rcp(
     new FileNameValidator(
       xmlObj.getWithDefault<bool>(
         getFileMustExistAttributeName(),
         FileNameValidator::mustAlreadyExistDefault()
-        )
+        ),
+      validatorID
       )
     );
 }
 
 
 XMLObject FileNameValidatorXMLConverter::convertValidator(
-  const RCP<const ParameterEntryValidator> validator, 
-  const ValidatortoIDMap& validatorMap) const
+  const RCP<const ParameterEntryValidator> validator) const
 {
   RCP<const FileNameValidator> castedValidator =
     rcp_dynamic_cast<const FileNameValidator>(validator);
   XMLObject toReturn(validator->getXMLTagName());
-  toReturn.addBool(getFileMustExistAttributeName(), castedValidator->fileMustExist());
+  toReturn.addBool(
+    getFileMustExistAttributeName(), castedValidator->fileMustExist());
   return toReturn;
 }
 
 
 #ifdef HAVE_TEUCHOS_DEBUG
-RCP<const ParameterEntryValidator> FileNameValidatorXMLConverter::getDummyValidator() const{
+RCP<const ParameterEntryValidator> 
+FileNameValidatorXMLConverter::getDummyValidator() const{
   return DummyObjectGetter<FileNameValidator>::getDummyObject();
 }
 #endif
 
 
 RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
-  const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const
+    const XMLObject& xmlObj,
+    ParameterEntryValidator::ValidatorID validatorID) const;
 {
+  Array<std::string> strings(xmlObj.numChildren());
   if(xmlObj.numChildren()!=0){
-    Array<std::string> strings(xmlObj.numChildren());
     for(int i=0; i<xmlObj.numChildren(); ++i){
       XMLObject currentChild = xmlObj.getChild(i);
       TEST_FOR_EXCEPTION(currentChild.getTag() != getStringTagName(), 
         BadTagException,  
         "Error converting xmlObject to StringValidator." << std::endl << 
-		"Unrecognized tag: " << currentChild.getTag());
-      strings[i] = (currentChild.getRequired(getStringValueAttributeName()));
+		    "Unrecognized tag: " << currentChild.getTag());
+        strings[i] = (currentChild.getRequired(getStringValueAttributeName()));
     }
-    return rcp(new StringValidator(strings));
   }
-  return rcp(new StringValidator());
+  return rcp(new StringValidator(strings, ValidatorID));
 }
 
 
 XMLObject StringValidatorXMLConverter::convertValidator(
-  const RCP<const ParameterEntryValidator> validator,
-  const ValidatortoIDMap& validatorMap) const
+  const RCP<const ParameterEntryValidator> validator) const
 {
   RCP<const StringValidator> castedValidator = 
     rcp_dynamic_cast<const StringValidator>(validator);
   XMLObject toReturn(validator->getXMLTagName());
-  Array<std::string>::const_iterator it = validator->validStringValues()->begin();
+  Array<std::string>::const_iterator it = 
+    validator->validStringValues()->begin();
   for(; it != validator->validStringValues()->end(); ++it){
     XMLObject stringTag(getStringTagName());
     stringTag.addAttribute(getStringValueAttributeName(), *it);
@@ -143,7 +153,8 @@ XMLObject StringValidatorXMLConverter::convertValidator(
 
 
 #ifdef HAVE_TEUCHOS_DEBUG
-RCP<const ParameterEntryValidator> StringValidatorXMLConverter::getDummyValidator() const{
+RCP<const ParameterEntryValidator> 
+StringValidatorXMLConverter::getDummyValidator() const{
   return DummyObjectGetter<StringValidator>::getDummyObject();
 }
 #endif

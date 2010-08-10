@@ -72,8 +72,8 @@ public:
    */
   virtual RCP<Dependency> convertXML(
     const XMLObject& xmlObj, 
-    const ParameterParentMap& dependees, 
-    const ParameterParentMap& dependents) const=0;
+    const Dependency::ConstParameterEntryList dependees,
+    const Dependency::ParameterEntryList dependets) const = 0
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
@@ -117,19 +117,11 @@ public:
   }
 
   /**
-   * \brief Returns the string to be used for the ParameterName attribute.
+   * \brief Returns the string to be used for the ParameterID attribute.
    */
-  static const std::string& getParameterNameAttributeName(){
-    static const std::string parameterNameAttributeName = "parametername";
-    return parameterNameAttributeName;
-  }
-
-  /**
-   * \brief Returns the string to be used for the ParentList attribute.
-   */
-  static const std::string& getParentListAttributeName(){
-    static const std::string parentListAttributeName = "parentlist";
-    return parentListAttributeName;
+  static const std::string& getParameterIDAttributeName(){
+    static const std::string parameterIDAtrributeName = "parameterID";
+    return parameterIDAtrributeName;
   }
  
   /**

@@ -34,65 +34,43 @@
 namespace Teuchos{
 
 
-DependencySheet::DependencySheet(RCP<ParameterList> rootList):
+DependencySheet::DependencySheet():
   name_("DEP_ANONYMOUS")
+{}
 
 DependencySheet::DependencySheet(const std::string &name):
   name_(name)
+{}
 
-bool DependencySheet::addDependency(RCP<Dependency> dependency){
-  bool successfulAdd = true;
-  Dependency::ParameterParentMap dependees = dependency->getDependees();
-  for(Dependency::ParameterParentMap::iterator it  = dependees.begin(); it != dependees.end(); ++it){
-    if(!dependencies_[it->second->getEntryPtr(it->first)].insert(dependency).second){
-      successfulAdd = false;
-    }
+void DependencySheet::addDependency(RCP<Dependency> dependency){
+  Dependency::ConstParameterEntryList dependees = dependency->getDependees();
+  for(
+    Dependency::ConstParameterEntryList::iterator it  = dependees.begin();
+    it != dependees.end();
+    ++it)
+  {
+    dependenciesMap_[*it].insert(dependency);     
   }
-  return successfulAdd;
+  dependencies_.insert(dependency);
 }
 
-bool DependencySheet::removeDependency(RCP<Dependency> dependency){
-  bool succesfulRemove = true;  
-  Dependency::ParameterParentMap dependees = dependency->getDependees();
-  for(Dependency::ParameterParentMap::iterator it  = dependees.begin(); it != dependees.end(); ++it){
-    bool successFullCurrentRemove = false;
-    ParameterEntry* currentDependee = it->second->getEntryPtr(it->first);
-    for(
-      DepSet::iterator it2 = dependencies_[currentDependee].begin(); 
-      it2 != dependencies_[currentDependee].end(); 
-    ++it2)
-    {
-      if((*it2) == dependency){
-        dependencies_[currentDependee].erase(it2);
-        successFullCurrentRemove = true;
-        break;
-      }
-    }
-    if(!successFullCurrentRemove){
-      succesfulRemove = false;
-    }
+void DependencySheet::removeDependency(RCP<Dependency> dependency){
+  Dependency::ConstParameterEntryList dependees = dependency->getDependees();
+  for(
+    Dependency::ConstParameterEntryList::iterator it  = dependees.begin();
+    it != dependees.end();
+    ++it)
+  {
+    dependenciesMap_[*it].erase(dependency);     
   }
-  return succesfulRemove;
+  dependencies_.erase(dependency);
 }
+
 
 void DependencySheet::printDeps(){
   std::cout << "Dependency Sheet: " << name_ << "\n\n";
-  for(DepMap::iterator it = depBegin(); it != depEnd(); ++it){
-    const ParameterEntry* dependee = it->first;
-    for(DepSet::iterator it2 = dependencies_.find(dependee)->second.begin(); it2 != dependencies_.find(dependee)->second.end(); ++it2){
-      std::set<std::string> dependeeNames = (*it2)->getDependeeNames();
-      std::cout << "Dependees: \n";
-      for(std::set<std::string>::iterator it3 = dependeeNames.begin(); it3 != dependeeNames.end(); ++it3){
-        std::cout << "\t" << *it3 << "\n";
-      }
-      std::set<std::string> dependentNames = (*it2)->getDependentNames();
-      std::cout << "Dependents: \n";
-      for(std::set<std::string>::iterator it3 = dependentNames.begin(); it3 != dependentNames.end(); ++it3){
-        std::cout << "\t" << *it3 << "\n";
-      }
-      std::cout << "\n";
-      std::cout << "Type: " << (*it2)->getType() << "\n\n";
-    }
+  for(DepSet::iterator it = depBegin(); it != depEnd(); ++it){
+    (*it)->print();
   }
 }
 

@@ -78,8 +78,8 @@ ValidatorXMLConverterDB::getConverter(const ParameterEntryValidator& validator)
 RCP<const ValidatorXMLConverter>
 ValidatorXMLConverterDB::getConverter(const XMLObject& xmlObject)
 { 
-  std::string parameterType = xmlObject.getTag();
-  ConverterMap::const_iterator it = getConverterMap().find(parameterType);
+  std::string validatorType = xmlObject.getTag();
+  ConverterMap::const_iterator it = getConverterMap().find(validatorType);
   TEST_FOR_EXCEPTION(it != getConverterMap().end(),
     CantFindValidatorConverterException,
     "Could not find a ValidatorXMLConverter for a validator"

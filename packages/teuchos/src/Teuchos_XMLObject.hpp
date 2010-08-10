@@ -129,7 +129,7 @@ public:
   /** \brief returns the first child found with the given tag name 
    * Returns null if no child is found.
    */
-  const XMLObject& findFirstChild(std::string tagName) const;
+  XMLObject findFirstChild(std::string tagName) const;
 
   //! Return the number of lines of character content stored in this node 
   int numContentLines() const;

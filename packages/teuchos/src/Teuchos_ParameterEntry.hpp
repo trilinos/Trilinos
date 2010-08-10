@@ -55,7 +55,10 @@ class TEUCHOS_LIB_DLL_EXPORT ParameterEntry {
 public:
   /** \name Public Types */
   //@{
+
   typedef unsigned int ParameterEntryID;
+
+  //@}
 
   //! @name Constructors/Destructor 
   //@{
@@ -73,6 +76,17 @@ public:
     const std::string &docString = "",
     RCP<const ParameterEntryValidator> const& validator = null
     );
+
+  /** \brief Templated constructor which allows for direct setting of the
+   * ParameterID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT YOU'RE DOING!
+   */
+  template<typename T>
+  explicit ParameterEntry(
+    T value, bool isDefault = false, bool isList = false,
+    const std::string &docString = "",
+    RCP<const ParameterEntryValidator> const& validator = null
+    );
+
 
   //! Destructor
   ~ParameterEntry();
@@ -238,11 +252,17 @@ private:
 #pragma warning(pop)
 #endif
 
-  typedef std::map< RCP<ParameterEntry> , ParameterEntryID, RCP::rcpcomp > 
+  typedef std::map< RCP<ParameterEntry> , ParameterEntryID, RCPComp > 
     ParameterEntryToIDMap;
+
+  typedef std::pair<RCP<ParameterEntry>, ParameterEntryID>
+    ParameterEntryIDPair;
 
   typedef std::map<ParameterEntryID, RCP<ParameterEntry> > 
     IDToParameterEntryMap;
+
+  typedef std::pair<ParameterEntryID, RCP<ParameterEntry> >
+    IDParameterEntryPair;
 
   typedef std::vector<ParameterEntryID> FreeIDsVector;
 
@@ -257,9 +277,9 @@ private:
 
   static FreeIDsVector masterFreeIDs;
 
-  static void addParameterEntryToIDMap(ParameterEntry* entryToAdd);
+  static void addParameterEntryToMasterMaps(ParameterEntry* entryToAdd);
 
-  static void addParameterEntryToIDMap(
+  static void addParameterEntryToMasterMaps(
     ParameterEntry* entryToAdd, ParameterEntryID idToUse);
 
   static void removeParameterEntryFromMasterMaps(
@@ -331,6 +351,26 @@ ParameterEntry::ParameterEntry(
     docString_(docString_in),
     validator_(validator_in)
 {}
+
+template<typename T>
+inline
+ParameterEntry::ParameterEntry(
+  T value_in,
+  bool isDefault_in,
+  bool /*isList_in*/, // 2007/11/26: rabartl: ToDo: This arg is ignored and should be removed!
+  const std::string &docString_in,
+  RCP<const ParameterEntryValidator> const& validator_in
+  ParameterEntryID paramID
+  )
+  : val_(value_in),
+    isUsed_(false),
+    isDefault_(isDefault_in),
+    docString_(docString_in),
+    validator_(validator_in)
+{
+  addParameterEntryToMasterMaps(this, paramID);
+}
+
 
 inline
 ParameterEntry::~ParameterEntry()

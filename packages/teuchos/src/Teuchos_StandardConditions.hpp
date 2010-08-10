@@ -40,13 +40,6 @@
 
 namespace Teuchos{
 
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BinaryLogicalCondition>{
-public:
-  static std::string name(){ return "BinaryLogicalCondition"; }
-  static std::string concreteName(const BinaryLogicalCondition&){ return name(); }
-};
-
 /**
  * \brief An abstract parent class for all Binary Logic Conditions.
  *
@@ -67,7 +60,7 @@ public:
    *
    * \param conditions The conditions to be evaluated.
    */
-  BinaryLogicalCondition(ConditionList& conditions);
+  BinaryLogicalCondition(ConstConditionList& conditions);
 
   //@}
 
@@ -89,7 +82,7 @@ public:
    * \param toAdd The condition to be added to the list of
    * conditions this Binary Logic Condition will evaluate.
    */
-  void addCondition(RCP<Condition> toAdd);
+  void addCondition(RCP<const Condition> toAdd);
 
   //@}
 
@@ -112,7 +105,7 @@ public:
    * BinaryLogicalCondition/
    */
   inline
-  const ConditionList& getConditions() const{
+  const ConstConditionList& getConditions() const{
     return conditions_;
   }
 
@@ -128,7 +121,7 @@ public:
   bool containsAtLeasteOneParameter() const;
 
   /** \brief . */
-  Dependency::ParameterParentMap getAllParameters() const;
+  Dependency::ConstParameterEntryList getAllParameters() const;
 
   //@}
 
@@ -140,17 +133,10 @@ private:
   /*
    * \brief A list of conditions on which to perform some logic operation.
    */
-  ConditionList conditions_;
+  ConstConditionList conditions_;
 
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<OrCondition>{
-public:
-  static std::string name(){ return "OrCondition"; }
-  static std::string concreteName(const OrCondition&){ return name(); }
 };
 
 /**
@@ -169,13 +155,22 @@ public:
    *
    * @param conditions The conditions to be evaluated.
    */
-  OrCondition(ConditionList& conditions);
+  OrCondition(ConstConditionList& conditions);
 
   /**
    * \brief Deconstructs an Or Condition.
    */
   virtual ~OrCondition(){}
 
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  std::string getTypeAttributeValue() const{
+    return "orCondition";
+  }
+  
   //@}
 
   /** \name Overridden from BinaryLogicalCondition */
@@ -186,13 +181,6 @@ public:
   
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<AndCondition>{
-public:
-  static std::string name(){ return "AndCondition"; }
-  static std::string concreteName(const AndCondition&){ return name(); }
 };
 
 /**
@@ -211,7 +199,7 @@ public:
    *
    * @param conditions The conditions to be evaluated.
    */
-  AndCondition(ConditionList& conditions);
+  AndCondition(ConstConditionList& conditions);
 
   /**
    * \brief Deconstructs an And Condition.
@@ -219,6 +207,16 @@ public:
   virtual ~AndCondition(){}
   
   //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  std::string getTypeAttributeValue() const{
+    return "andCondition";
+  }
+  
+  //@}
+
 
   /** \name Overridden from BinaryLogicalCondition */
   //@{
@@ -228,13 +226,6 @@ public:
   
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<EqualsCondition>{
-public:
-  static std::string name(){ return "EqualsCondition"; }
-  static std::string concreteName(const EqualsCondition&){ return name(); }
 };
 
 /**
@@ -253,7 +244,7 @@ public:
    *
    * @param conditions The conditions to be evaluated.
    */
-  EqualsCondition(ConditionList& conditions);
+  EqualsCondition(ConstConditionList& conditions);
 
   /**
    * \brief Deconstructs an Equals Condition.
@@ -265,18 +256,20 @@ public:
   /** \name Overridden from Condition */
   //@{
 
+  std::string getTypeAttributeValue() const{
+    return "equalsCondition";
+  }
+  
+  //@}
+
+  /** \name Overridden from BinaryLogicalCondition */
+  //@{
+
   /** \brief . */
   bool applyOperator(bool op1, bool op2) const;
   
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NotCondition>{
-public:
-  static std::string name(){ return "NotCondition"; }
-  static std::string concreteName(const NotCondition&){ return name(); }
 };
 
 /**
@@ -296,7 +289,7 @@ public:
    *
    * @param condition The condition to be evaluated.
    */
-  NotCondition(RCP<Condition> condition);
+  NotCondition(RCP<const Condition> condition);
 
   /**
    * \brief Deconstructs a Not Condition.
@@ -325,8 +318,12 @@ public:
   bool containsAtLeasteOneParameter() const;
 
   /** \brief . */
-  Dependency::ParameterParentMap getAllParameters() const;
+  Dependency::ConstParameterEntryList getAllParameters() const;
 
+  std::string getTypeAttributeValue() const{
+    return "notCondition";
+  }
+  
   //@}
 
 private:
@@ -337,18 +334,11 @@ private:
   /**
    * The condition on which to perfrom the logical NOT.
    */
-  RCP<Condition> childCondition_;
+  RCP<const Condition> childCondition_;
   
   //@}
 
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ParameterCondition>{
-public:
-  static std::string name(){ return "ParameterCondition"; }
-  static std::string concreteName(const ParameterCondition&){ return name(); }
 };
 
 /**
@@ -368,14 +358,17 @@ public:
   /**
    * \brief Constructs a Parameter Condition.
    *
-   * @param parameterName The name of the parameter to be evaluated.
-   * @param parentList The parent Parameter List of the parameter to be evaluated.
-   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-   * results in a true or when the evaluation results in a false. When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. If set to false if the parameter
+   * @param Parameter The parameter to be evaluated.
+   * @param whenParamEqualsValue Indicates whether the condition 
+   * should be true when the evaluation
+   * results in a true or when the evaluation results in a false. 
+   * When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. If 
+   * set to false if the parameter
    * evaluates to false, then the condition will evaluate to true.
    */
-  ParameterCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue);
+  ParameterCondition(
+    RCP<ParameterEntry> parameter, bool whenParamEqualsValue);
 
   virtual ~ParameterCondition(){}
   
@@ -396,20 +389,8 @@ public:
   /** \brief Gets a const pointer to the Parameter being
    *  evaluated by this ParameterCondition
    */
-  inline const ParameterEntry* getParameter() const{
-    return parameter_;
-  }
-
-  /** \brief Gets the parameter name */
-  inline
-  const std::string& getParameterName() const{
-    return parameterName_;
-  }
-
-  /** \brief Gets the parent parameter list */
-  inline
-  const RCP<const ParameterList> getParentList() const{
-    return parentList_;
+  inline RCP<const ParameterEntry> getParameter() const{
+    return parameterEntry_.getConst();
   }
 
   /** \brief Gets the WhenParamEqualsValue */
@@ -439,7 +420,7 @@ public:
     return true;
   }
 
-  Dependency::ParameterParentMap getAllParameters() const;
+  Dependency::ConstParameterEntryList getAllParameters() const;                
   
   //@}
 
@@ -449,34 +430,19 @@ private:
   //@{
   
   /**
-   * Name of parameter to be evaluated.
+   * Parameter to be evaluated.
    */
-  std::string parameterName_;
+  RCP<ParameterEntry> parameterEntry_;
+
 
   /**
-   * Parent List of the parameter to be evaluated.
-   */
-  RCP<ParameterList> parentList_;
-
-  /**
-   * Wether or not the condition should evaluate to true if the parameter evaluated to true.
+   * Wether or not the condition should evaluate to 
+   * true if the parameter evaluated to true.
    */
   bool whenParamEqualsValue_;
 
-  /**
-   * A pointer to the actual parameter to be evaluated.
-   */
-  ParameterEntry* parameter_;
-  
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<StringCondition>{
-public:
-  static std::string name(){ return "StringCondition"; }
-  static std::string concreteName(const StringCondition&){ return name(); }
 };
 
 /**
@@ -504,30 +470,50 @@ public:
   /**
    * \brief Constructs a String Condition.
    *
-   * @param parameterName The name of the parameter to be evaluated.
-   * @param parentList The parent Parameter List of the parameter to be evaluated.
+   * @param parameter The parameter to be evaluated.
+   * be evaluated.
    * @param value The value to compare the parameter's value against.
-   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-   * results in a true or when the evaluation results in a false. When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. If set to false if the parameter
+   * @param whenParamEqualsValue Indicates whether the condition 
+   * should be true when the evaluation
+   * results in a true or when the evaluation results in a false. 
+   * When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true.
+   * If set to false if the parameter
    * evaluates to false, then the condition will evaluate to true.
    */
-  StringCondition(std::string parameterName, RCP<ParameterList> parentList, std::string value, bool whenParamEqualsValue=true);
+  StringCondition(
+   RCP<ParameterEntry> parameter,
+   std::string value, 
+   bool whenParamEqualsValue=true);
 
   /**
    * \brief Constructs a String Condition.
    *
-   * @param parameterName The name of the parameter to be evaluated.
-   * @param parentList The parent Parameter List of the parameter to be evaluated.
+   * @param parameter The parameter to be evaluated.
    * @param values The values to compare the parameter's value against.
-   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-   * results in a true or when the evaluation results in a false. When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. If seet to false if the parameter
+   * @param whenParamEqualsValue Indicates 
+   * whether the condition should be true when the evaluation
+   * results in a true or when the evaluation results in a false.
+   * When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. If set
+   * to false if the parameter
    * evaluates to false, then the condition will evaluate to true.
    */
-  StringCondition(std::string parameterName, RCP<ParameterList> parentList, ValueList values, bool whenParamEqualsValue=true);
+  StringCondition(
+    RCP<ParameterEntry> parameter, 
+    ValueList values, 
+    bool whenParamEqualsValue=true);
 
   virtual ~StringCondition(){}
+  
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  std::string getTypeAttributeValue() const{
+    return "stringCondition";
+  }
   
   //@}
 
@@ -536,6 +522,16 @@ public:
 
   bool evaluateParameter() const;
   
+  //@}
+
+  /** \name Attribute/Query Functions */
+  //@{
+
+    /** \brief Returns the value list being used with this StringCondition. */
+    const ValueList& getValueList() const{
+      return values_;
+    }
+
   //@}
 
 private:
@@ -550,13 +546,6 @@ private:
   
   //@}
   
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<NumberCondition>{
-public:
-  static std::string name(){ return "NumberCondition"; }
-  static std::string concreteName(const NumberCondition&){ return name(); }
 };
 
 /**
@@ -579,42 +568,37 @@ public:
    * \brief Constructs a Number Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
-   * @param parentList The parent Parameter List of the parameter to be evaluated.
-   * @param func A function to run the value of the parameter through. If the function returns a value
-   * greater than 0, this will be interperted as the condition being "true". If the 
-   * function returns a value of 0 or less, this will be interperted as the condition being false.
-   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-   * results in a true or when the evaluation results in a false. When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. If seet to false if the parameter
+   * @param func A function to run the value of the parameter through. 
+   * If the function returns a value
+   * greater than 0, this will be interperted as the condition being "true". 
+   * If the function returns a value of 0 or less, this will be interperted 
+   * as the condition being false.
+   * @param whenParamEqualsValue Indicates whether the condition should be 
+   * true when the evaluation results in a true or when the evaluation results 
+   * in a false. When set to true, if the parameter evaluates to true then 
+   * the condition will evaluate to true. If seet to false if the parameter
    * evaluates to false, then the condition will evaluate to true.
    */
-  NumberCondition(std::string parameterName, RCP<ParameterList> parentList, T (*func)(T)=0, bool whenParamEqualsValue=true):
-    ParameterCondition(parameterName, parentList, whenParamEqualsValue), func_(func)
-  {
-    checkForNumberType();
-  }
-    
-  /**
-   * Constructs a Number Condition.
-   *
-   * @param parameterName The name of the parameter to be evaluated.
-   * @param parentList The parent Parameter List of the parameter to be evaluated.
-   * @param func A function to run the value of the parameter through. If the function returns a value
-   * greater than 0, this will be interperted as the parameter's current state being "true". If the 
-   * function returns a value of 0 or less, this will be interperted as the parameter's current state
-   * being "false".
-   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-   * results in a true or when the evaluation results in a fals. When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. If seet to false if the parameter
-   * evaluates to false, then the condition will evaluate to true.
-   */
-  NumberCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue=true):
-    ParameterCondition(parameterName, parentList, whenParamEqualsValue), func_(0)
+  NumberCondition(
+    RCP<ParameterEntry> parameter,
+    T (*func)(T)=0, 
+    bool whenParamEqualsValue=true):
+    ParameterCondition(parameter, whenParamEqualsValue), 
+    func_(func)
   {
     checkForNumberType();
   }
 
   virtual ~NumberCondition(){}
+  
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  std::string getTypeAttributeValue() const{
+    return TypeNameTraits<T>::name() + "NumberCondition";
+  }
   
   //@}
 
@@ -652,7 +636,7 @@ private:
    * number type
    */
   void checkForNumberType() const{
-  const ParameterEntry* toCheck = getParameter();
+  RCP<const ParameterEntry> toCheck = getParameter();
     TEST_FOR_EXCEPTION(
       !toCheck->isType<int>() &&
       !toCheck->isType<short>() &&
@@ -666,13 +650,6 @@ private:
   
   //@}
 
-};
-
-template<>
-class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<BoolCondition>{
-public:
-  static std::string name(){ return "BoolCondition"; }
-  static std::string concreteName(const BoolCondition&){ return name(); }
 };
 
 /**
@@ -690,15 +667,28 @@ public:
    * \brief Constructs a Bool Condition.
    *
    * @param parameterName The name of the parameter to be evaluated.
-   * @param parentList The parent Parameter List of the parameter to be evaluated.
-   * @param whenParamEqualsValue Indicates whether the condition should be true when the evaluation
-   * results in a true or when the evaluation results in a false. When set to true, if the parameter
-   * evaluates to true then the condition will evaluate to true. If set to false if the parameter
+   * @param whenParamEqualsValue Indicates whether the condition 
+   * should be true when the evaluation
+   * results in a true or when the evaluation results in a false. 
+   * When set to true, if the parameter
+   * evaluates to true then the condition will evaluate to true. 
+   * If set to false if the parameter
    * evaluates to false, then the condition will evaluate to true.
    */
-  BoolCondition(std::string parameterName, RCP<ParameterList> parentList, bool whenParamEqualsValue=true);
+  BoolCondition(
+    RCP<ParameterEntry>,
+    bool whenParamEqualsValue=true);
 
   virtual ~BoolCondition(){}
+  
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  std::string getTypeAttributeValue() const{
+    return "boolCondition";
+  }
   
   //@}
 

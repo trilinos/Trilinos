@@ -240,6 +240,7 @@ APPEND_SET(SOURCES
 IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
 
   APPEND_SET(HEADERS
+    Teuchos_CondtionXMLConverter.hpp
     Teuchos_ExpatHandlerAdapter.hpp
     Teuchos_FileInputSource.hpp
     Teuchos_FileInputStream.hpp
@@ -250,6 +251,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_ParameterXMLFileReader.hpp
     Teuchos_ParameterEntryXMLConverter.hpp
     Teuchos_ParameterEntryXMLConverterDB.hpp
+    Teuchos_StandardConditionXMLConverters.hpp
     Teuchos_StandardParameterEntryXMLConverters.hpp
     Teuchos_StandardValidatorXMLConverters.hpp
     Teuchos_StringInputSource.hpp
@@ -271,6 +273,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     )
 
   APPEND_SET(SOURCES
+    Teuchos_ConditionXMLConverter.cpp
     Teuchos_ExpatHandlerAdapter.cpp
     Teuchos_FileInputSource.cpp
     Teuchos_FileInputStream.cpp
@@ -280,6 +283,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_ParameterEntryXMLConverter.cpp
     Teuchos_StandardParameterEntryXMLConverters.cpp
     Teuchos_StandardValidatorXMLConverters.cpp
+    Teuchos_StandardConditionXMLConverters.cpp
     Teuchos_StrUtils.cpp
     Teuchos_StringInputSource.cpp
     Teuchos_StringInputStream.cpp
