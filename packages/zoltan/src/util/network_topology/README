@@ -1,0 +1,28 @@
+August 10, 2010
+lriesen@sandia.gov
+
+topologyVis.c:
+  This MPI program discovers the network topology using the MPI extensions defined
+by Sandia's IAA project (add a reference here).  It assigns a part number to each
+process based on where it exists within the hierarchy, so that processes on the same
+"node" or "socket" (for example) have contigous part numbers.  It lists the part number 
+assigned to each MPI process, and then the parts in each group at each level in the hierarchy.
+
+topologyVis-Glory.txt:
+  The output of topologyVis on a 64 process run on Glory.
+
+topologyTest.c:
+  This MPI program does the same discovery that is done in topologyVis.c, then stores
+the topology/part information in a global data structure.  So all processes know
+what parts are in what group at each level of the hierarchy, and all processes 
+can map a part number to a process rank and vice versa.  Redundant levels of
+the hierarchy or levels at which group size is 1 are omitted.  Then a ping-pong
+test is done within a group at a level in the hierarchy and between groups at a
+level in the hierarchy.
+
+The TLCC machine Glory at Sandia National Laboratories in Albuquerque has the IAA
+MPI version installed.  To set the modules to use this version of MPI:
+
+module use /home/bwbarre/Software/modules
+module unload mpi
+module load mpi/openmpi-1.4.1-iaa_intel-11.1-f064-c064
