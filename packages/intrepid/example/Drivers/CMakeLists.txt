@@ -144,5 +144,5 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
 #    NUM_MPI_PROCS 1
 #    PASS_REGULAR_EXPRESSION "TEST PASSED"
 #    ADD_DIR_TO_NAME
-    )
+#    )
 ENDIF()
