@@ -1,4 +1,5 @@
-// @HEADER // ***********************************************************************
+// @HEADER 
+// ***********************************************************************
 // 
 //         Optika: A Tool For Developing Parameter Obtaining GUIs
 //                Copyright (2009) Sandia Corporation
