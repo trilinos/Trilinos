@@ -51,8 +51,6 @@ static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 
 
-extern int my_rank;
-
 extern int Zoltan_Order_Test(struct Zoltan_Struct *zz, int *num_gid_entries,  int *num_lid_entries,
   int num_obj,  ZOLTAN_ID_PTR global_ids,  ZOLTAN_ID_PTR local_ids,  int *rank,  int *iperm);
 
@@ -991,7 +989,6 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
-int ii;
   START_CALLBACK_TIMER;
 
 
@@ -1001,10 +998,6 @@ int ii;
     *ierr = ZOLTAN_FATAL;
     return;
   }
-
-MPI_Barrier(MPI_COMM_WORLD);
-for (ii=0; ii < 2; ii++){
-if (my_rank == ii){
 
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
@@ -1030,10 +1023,6 @@ if (my_rank == ii){
     }
     idx++;
   }
-}
-MPI_Barrier(MPI_COMM_WORLD);
-}
-MPI_Barrier(MPI_COMM_WORLD);
 
   STOP_CALLBACK_TIMER;
 }

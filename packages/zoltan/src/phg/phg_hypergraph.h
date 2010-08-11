@@ -176,8 +176,8 @@ struct Zoltan_HGraph {
   int nPins;                /* total number of pins in listed edges */
   ZOLTAN_GNO_TYPE globalPins;  /* global number of pins */
 
-  ZOLTAN_GNO_TYPE nRecv_GNOs;           /* Number of GNOs in Recv_GNOs. */
-  ZOLTAN_GNO_TYPE *Recv_GNOs;           /* Vertex GNOs of vtxs in 2D decomposition
+  int nRecv_GNOs;              /* Number of GNOs in Recv_GNOs. */
+  ZOLTAN_GNO_TYPE *Recv_GNOs;  /* Vertex GNOs of vtxs in 2D decomposition
                                received from other processors in row.
                                Used to fill buffer for Comm_Do_Reverse
                                with VtxPlan in building return lists. */

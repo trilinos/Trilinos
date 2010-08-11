@@ -22,4 +22,4 @@
 
 ZDRIVE=/home/lriesen/projects/zoltan_gid_64/Trilinos/packages/zoltan/build/src/driver/zdrive.exe
 
-test_zoltan -no_rcb -no_rib -no_hsfc -no_reftree -no_oct -no_color -no_hier -no_parmetis -no_scotch -logfile test_zoltan.log -exe $ZDRIVE -arch generic  | tee test_zoltan_output.txt
+test_zoltan -failure_detail -no_rcb -no_rib -no_hsfc -no_reftree -no_oct -no_color -no_hier -no_parmetis -no_scotch -logfile test_zoltan.log -exe $ZDRIVE -arch generic  | tee test_zoltan_output.txt

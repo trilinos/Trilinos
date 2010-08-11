@@ -48,9 +48,9 @@ ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
 ## to link with that library.
 ##
 
-TPL_LIB_DIR=-L/home/lafisk/software/ParMetis-3.1
-TPL_INCLUDE=-L/home/lafisk/software/ParMetis-3.1
-TPL_LIBS=-lparmetis -lmetis
+#TPL_LIB_DIR=-L/home/lafisk/software/ParMetis-3.1
+#TPL_INCLUDE=-L/home/lafisk/software/ParMetis-3.1
+#TPL_LIBS=-lparmetis -lmetis
 
 CC=mpicc
 

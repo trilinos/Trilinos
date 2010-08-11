@@ -432,6 +432,10 @@ int **exp_to_part )         /* list of partitions to which exported objs
         /* call main V cycle routine */
         err = Zoltan_PHG_Partition(zz, hg, p,
                                    hgp.part_sizes, parts, &hgp);
+
+MPI_Barrier(MPI_COMM_WORLD);
+fprintf(stderr,"Back from PHG_Partition %d\n",zz->Proc);
+MPI_Barrier(MPI_COMM_WORLD);
         if (err != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
           goto End;

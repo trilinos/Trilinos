@@ -36,7 +36,7 @@ static double mbytes=0;
  * two billion vertices.  Defining this when we do have more
  * than two billion vertices breaks the test.
  */
-/*#define GID_BASE  0x100000000*/
+#define GID_BASE  0x100000000
 /*************************************************************/
 
 static ZOLTAN_GNO_TYPE numGlobalVertices;
@@ -562,7 +562,7 @@ static int create_a_graph()
   if ((numGlobalVertices/2) > GID_BASE){
     /* half of the vertex gids should be below GID_BASE, the other half at or above */
     if (myRank == 0){
-      printf("ERROR: When GID_BASE is defined in the code, the global number of vertices must be < %" ZOLTAN_ID_SPECIFIER "\n",
+      printf("ERROR: When GID_BASE is defined in the code, the global number of vertices must be < %ld\n",
                  (GID_BASE)*2);
     }
     MPI_Finalize();
