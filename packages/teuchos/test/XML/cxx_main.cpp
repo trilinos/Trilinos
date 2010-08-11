@@ -66,8 +66,17 @@ int main(int argc, char** argv)
 
       problem.addChild(solver);
 
-      TEST_EQUALITY(&(problem.findFirstChild("Solver")), &solver);
-      TEST_ASSERT(problem.findFirstChild("NON EXSISTENT CHILD") == null);
+      if(&(problem.getChild((problem.findFirstChild("Solver")))) != &solver){
+        return -1;
+        std::cerr << "Find child didn't find the Solver tag!"
+          <<std::endl << std::endl;
+      }
+
+      if(problem.findFirstChild("NON EXSISTENT CHILD") != -1){
+        std::cerr << "First first child didn't return -1 when it was "
+          "suppose to!" <<std::endl << std::endl;
+        return -1;
+      }
 
       std::string str = problem.toString();
       std::cerr << str << std::endl;

@@ -34,11 +34,10 @@ TEUCHOS_UNIT_TEST( Array, stringToArray )
 {
 
   {
-	std::string arrayString="{}"
-	std::istringstream arrayStream;
-	arrayStream << arrayString;
+	  std::string arrayString="{}";
+	  std::istringstream arrayStream(arrayString);
     Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
-	Array<std::string> arrayStreamVal;
+	  Array<std::string> arrayStreamVal;
     arrayStream >> arrayStreamVal;
     Array<std::string> arrayVal_exp;
     TEST_EQUALITY(arrayVal, arrayVal_exp);
@@ -47,10 +46,9 @@ TEUCHOS_UNIT_TEST( Array, stringToArray )
 
   {
     std::string arrayString = "{ a, b, c, d }";
-	std::istringstream arrayStream;
-	arrayStream << arrayString;
+	  std::istringstream arrayStream(arrayString);
     Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
-	Array<std::string> arrayStreamVal;
+	  Array<std::string> arrayStreamVal;
     arrayStream >> arrayStreamVal;
     Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("a", "b", "c", "d" );
     TEST_EQUALITY(arrayVal, arrayVal_exp);
@@ -59,10 +57,9 @@ TEUCHOS_UNIT_TEST( Array, stringToArray )
 
   {
     std::string arrayString = "{ (a), b, c, (d) }";
-	std::istringstream arrayStream;
-	arrayStream << arrayString;
+	  std::istringstream arrayStream(arrayString);
     Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
-	Array<std::string> arrayStreamVal;
+	  Array<std::string> arrayStreamVal;
     arrayStream >> arrayStreamVal;
     Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("(a)", "b", "c", "(d)" );
     TEST_EQUALITY(arrayVal, arrayVal_exp);
@@ -71,10 +68,9 @@ TEUCHOS_UNIT_TEST( Array, stringToArray )
 
   {
     std::string arrayString = "{ (a ), b, c, (d ) }";
-	std::istringstream arrayStream;
-	arrayStream << arrayString;
+	  std::istringstream arrayStream(arrayString);
     Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
-	Array<std::string> arrayStreamVal;
+	  Array<std::string> arrayStreamVal;
     arrayStream >> arrayStreamVal;
     Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("(a )", "b", "c", "(d )" );
     TEST_EQUALITY(arrayVal, arrayVal_exp);

@@ -33,6 +33,7 @@
 #define TEUCHOS_DUMMYOBJECTGETTER_HPP
 
 
+
 namespace Teuchos{
 
 
@@ -44,14 +45,12 @@ public:
 
 /** \brief Retrieves a dummy object of type T. */
 static RCP<T> getDummyObject(){
+  static RCP<T> dummyObject;
   if(dummyObject.is_null()){
     dummyObject = rcp(new T);
   }
-  return dummyObject;
+  return dummyObject();
 }
-
-private:
-  static RCP<T> dummyObject;
 
 };
 

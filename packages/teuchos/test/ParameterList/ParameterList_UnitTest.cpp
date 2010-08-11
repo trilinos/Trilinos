@@ -34,25 +34,36 @@
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_as.hpp"
-
+#include "Teuchos_XMLParameterListExceptions.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_ParameterEntryXMLConverterDB.hpp"
+#include "Teuchos_StandardValidatorXMLConverters.hpp"
+#include "Teuchos_StringInputStream.hpp"
+#include "Teuchos_XMLParser.hpp"
 
 namespace Teuchos {
+
 
 class UNDEFINED_PARAMETERENTRY_VALIDATOR : public ParameterEntryValidator
 {
   
   public:
 
-  void printDoc(const std::string& docString, std::ostream& out){}
+  void printDoc(const std::string& docString, std::ostream& out) const {}
 
   ValidStringsList validStringValues() const{
-    return rcp(new tuple<std::string>(""));
+    return rcp(new Array<std::string>(1,""));
+  }
   
   void validate(
     ParameterEntry  const& entry,
     std::string const& paramName,
     std::string const& sublistName
     ) const {}
+
+  const std::string getXMLTagName() const{
+    return "UNDEFINEDTYPE";
+  }
 
 };
 
@@ -252,19 +263,17 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, converterExceptions)
   StandardTemplatedParameterConverter<int> intConverter;
   StandardTemplatedParameterConverter<float> floatConverter;
   ParameterEntry floatParameter("float", (float)3.0);
-  TEST_THROW(intConverter.fromParameterEntryToXML(doubleParameter, "blah"), BadParameterEntryXMLConverterTypeExecption);
+  TEST_THROW(intConverter.fromParameterEntrytoXML(floatParameter, "blah"), BadParameterEntryXMLConverterTypeException);
 
-  XMLObject floatXML = floatConverter.fromParameterEntryToXML(floatParameter, "float");
-  TEST_THROW(intConverter.fromXMLtoParameterEntry(floatXML), BadParameterEntryXMLConverterTypeExecption);
+  XMLObject floatXML = floatConverter.fromParameterEntrytoXML(floatParameter, "float");
+  TEST_THROW(intConverter.fromXMLtoParameterEntry(floatXML), BadParameterEntryXMLConverterTypeException);
 
-  IDtoValidatorMap dummyIDtoVMap;
-  ValidatortoIDMap dummyVtoIDMap;
   StringValidatorXMLConverter stringConverter;
   AnyNumberValidatorXMLConverter anyNumberConverter;
-  AnyNumberParameterEntryValidator anyNumberValidator;
-  TEST_THROW(stringConverter.fromValidatortoXML(anyNumberValidator, dummyIDtoVMap), BadValidatorXMLConverterException);
-  XMLObject anyNumberXML = anyNumberConverter(anyNumberValidator);
-  TEST_THROW(stringConverter.fromXMLtoValidator(anyNumberXML, dummyVtoIDMap), BadValidatorXMLConverterException);
+  RCP<AnyNumberParameterEntryValidator> anyNumberValidator;
+  TEST_THROW(stringConverter.fromValidatortoXML(anyNumberValidator), BadValidatorXMLConverterException);
+  XMLObject anyNumberXML = anyNumberConverter.fromValidatortoXML(anyNumberValidator);
+  TEST_THROW(stringConverter.fromXMLtoValidator(anyNumberXML), BadValidatorXMLConverterException);
   #endif
 
 }
@@ -613,8 +622,10 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, existingPrototypeTest){
   XMLObject plXMLIn = xmlParser.parse();
   XMLParameterListReader plReader;
   ParameterList plIn = plReader.toParameterList(plXMLIn);
-  RCP<ArrayValidator<StringValidator, std::string> > inArrayValidator = rpc_dynamic_cast(plIn.getEntry("string array param").validator());
-  TEST_ASSERT(*(plIn.getEntry().validator()) == *(inArrayValidator->getPrototype()));
+  RCP<const ArrayValidator<StringValidator, std::string> > inArrayValidator = 
+    rcp_dynamic_cast<const ArrayValidator<StringValidator, std::string> >(
+      plIn.getEntry("string array param").validator());
+  TEST_ASSERT(plIn.getEntry("string param").validator() == inArrayValidator->getPrototype());
 }
 
 

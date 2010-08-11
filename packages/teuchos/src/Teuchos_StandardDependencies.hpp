@@ -387,7 +387,7 @@ class DummyObjectGetter<StringVisualDependency>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -396,7 +396,8 @@ public:
   static RCP<StringVisualDependency >
     getDummyObject()
   {
-    if(dummyObject.is_null()){
+    static RCP<StringVisualDependency > dummyObject;
+     if(dummyObject.is_null()){
       dummyObject = rcp(new StringVisualDependency(
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
@@ -404,16 +405,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<StringVisualDependency > 
-    dummyObject;
   
   //@}
   
@@ -508,7 +499,7 @@ class DummyObjectGetter<BoolVisualDependency>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -517,6 +508,7 @@ public:
   static RCP<BoolVisualDependency >
     getDummyObject()
   {
+    static RCP<BoolVisualDependency > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new BoolVisualDependency(
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
@@ -524,16 +516,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<BoolVisualDependency > 
-    dummyObject;
   
   //@}
   
@@ -647,7 +629,7 @@ class DummyObjectGetter<ConditionVisualDependency>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -656,6 +638,7 @@ public:
   static RCP<ConditionVisualDependency >
     getDummyObject()
   {
+    static RCP<ConditionVisualDependency> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new ConditionVisualDependency(
       DummyObjectGetter<NotCondition>::getDummyObject(),
@@ -663,16 +646,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<ConditionVisualDependency> 
-    dummyObject;
   
   //@}
   
@@ -830,7 +803,7 @@ class DummyObjectGetter<NumberVisualDependency<T> >{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -839,6 +812,7 @@ public:
   static RCP<NumberVisualDependency<T> >
     getDummyObject()
   {
+    static RCP<NumberVisualDependency<T> > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new NumberVisualDependency<T>(
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
@@ -846,16 +820,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<NumberVisualDependency<T> > 
-    dummyObject;
   
   //@}
   
@@ -1150,7 +1114,7 @@ class DummyObjectGetter<NumberValidatorAspectDependency<T> >{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -1159,6 +1123,7 @@ public:
   static RCP<NumberValidatorAspectDependency<T> >
     getDummyObject()
   {
+    static RCP<NumberValidatorAspectDependency<T> > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new NumberValidatorAspectDependency<T>(
         DummyObjectGetter<ParameterEntry>::getDummyObject().getConst(),
@@ -1168,16 +1133,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<NumberValidatorAspectDependency<T> > 
-    dummyObject;
   
   //@}
   
@@ -1298,7 +1253,7 @@ class DummyObjectGetter<NumberArrayLengthDependency>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -1307,6 +1262,7 @@ public:
   static RCP<NumberArrayLengthDependency >
     getDummyObject()
   {
+    static RCP<NumberArrayLengthDependency> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new NumberArrayLengthDependency(
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
@@ -1314,16 +1270,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<NumberArrayLengthDependency> 
-    dummyObject;
   
   //@}
   
@@ -1479,7 +1425,7 @@ class DummyObjectGetter<StringValidatorDependency>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -1488,6 +1434,7 @@ public:
   static RCP<StringValidatorDependency >
     getDummyObject()
   {
+    static RCP<StringValidatorDependency> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new StringValidatorDependency(
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
@@ -1496,16 +1443,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<StringValidatorDependency> 
-    dummyObject;
   
   //@}
   
@@ -1631,7 +1568,7 @@ class DummyObjectGetter<BoolValidatorDependency>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -1640,6 +1577,7 @@ public:
   static RCP<BoolValidatorDependency >
     getDummyObject()
   {
+    static RCP<BoolValidatorDependency > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new BoolValidatorDependency(
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
@@ -1648,16 +1586,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<BoolValidatorDependency > 
-    dummyObject;
   
   //@}
   
@@ -1868,7 +1796,7 @@ class DummyObjectGetter<RangeValidatorDependency<T> >{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name GetterFunctions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -1877,6 +1805,7 @@ public:
   static RCP<RangeValidatorDependency<T> >
     getDummyObject()
   {
+    static RCP<RangeValidatorDependency<T> > dummyObject;
     if(dummyObject.is_null()){
       typename RangeValidatorDependency<T>::RangeToValidatorMap dummyMap;
       dummyObject = rcp(new RangeValidatorDependency<T>(
@@ -1886,16 +1815,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<RangeValidatorDependency<T> > 
-    dummyObject;
   
   //@}
   

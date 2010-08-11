@@ -37,7 +37,6 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
-#include "Teuchos_DummyObjectGetter.hpp"
 
 namespace Teuchos {
 
@@ -496,7 +495,7 @@ class DummyObjectGetter<StringToIntegralParameterEntryValidator<IntegralType> >{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -505,6 +504,8 @@ public:
   static RCP<StringToIntegralParameterEntryValidator<IntegralType> >
     getDummyObject()
   {
+    static RCP<StringToIntegralParameterEntryValidator<IntegralType> > 
+      dummyObject;
     if(dummyObject.is_null()){
       dummyObject = stringToIntegralParameterEntryValidator<IntegralType>(
         tuple<std::string>(""), tuple<std::string>(""), tuple<IntegralType>(1), "",
@@ -514,17 +515,6 @@ public:
   }
   
   //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<StringToIntegralParameterEntryValidator<IntegralType> > 
-    dummyObject;
-  
-  //@}
-  
 };
 
 
@@ -955,7 +945,7 @@ class DummyObjectGetter<AnyNumberParameterEntryValidator>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -964,6 +954,8 @@ public:
   static RCP<AnyNumberParameterEntryValidator >
     getDummyObject()
   {
+    static RCP<AnyNumberParameterEntryValidator > 
+      dummyObject;
     if(dummyObject.is_null()){
       dummyObject = anyNumberParameterEntryValidator(
         AnyNumberParameterEntryValidator::PREFER_INT, 
@@ -972,16 +964,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<AnyNumberParameterEntryValidator > 
-    dummyObject;
   
   //@}
   
@@ -1433,7 +1415,7 @@ class DummyObjectGetter<EnhancedNumberValidator<T> >{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -1442,6 +1424,7 @@ public:
   static RCP<EnhancedNumberValidator<T> >
     getDummyObject()
   {
+  static RCP<EnhancedNumberValidator<T> > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new EnhancedNumberValidator<T>(
         OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
@@ -1450,17 +1433,6 @@ public:
   }
   
   //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<EnhancedNumberValidator<T> > 
-    dummyObject;
-  
-  //@}
-  
 };
 
 /** \brief Validate a file name entry.
@@ -1576,15 +1548,16 @@ class DummyObjectGetter<FileNameValidator>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
   * FileNameValidator.
   */
-  static RCP<FileNameValidator >
+  static RCP<FileNameValidator>
     getDummyObject()
   {
+    static RCP<FileNameValidator> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new FileNameValidator(
         false,
@@ -1592,16 +1565,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<FileNameValidator> 
-    dummyObject;
   
   //@}
   
@@ -1697,7 +1660,7 @@ class DummyObjectGetter<StringValidator>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -1706,6 +1669,7 @@ public:
   static RCP<StringValidator>
     getDummyObject()
   {
+    static RCP<StringValidator> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new StringValidator(
         tuple<std::string>(""),
@@ -1713,16 +1677,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<StringValidator> 
-    dummyObject;
   
   //@}
   
@@ -1873,7 +1827,7 @@ class DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
@@ -1882,6 +1836,7 @@ public:
   static RCP<ArrayValidator<ValidatorType, EntryType> >
     getDummyObject()
   {
+    static RCP<ArrayValidator<ValidatorType, EntryType> > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new ArrayValidator<ValidatorType, EntryType>(
         DummyObjectGetter<ValidatorType>::getDummyObject(),
@@ -1889,16 +1844,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<ArrayValidator<ValidatorType, EntryType> > 
-    dummyObject;
   
   //@}
   

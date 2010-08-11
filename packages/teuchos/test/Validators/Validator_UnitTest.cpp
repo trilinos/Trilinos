@@ -156,20 +156,22 @@ TEUCHOS_UNIT_TEST(Teuchos_Validators, numberValidators)
  */
 TEUCHOS_UNIT_TEST(Teuchos_Validators, stringValidator)
 {
-	bool success = true;
 	RCP<ParameterList> stringList = rcp(new ParameterList("String List"));
 	Array<std::string> stringVals = tuple<std::string>("str1", "str2", "str3");
 	RCP<StringValidator> stringVali = rcp(new StringValidator(stringVals));
 	RCP<const Array<std::string> > valiVals = stringVali->validStringValues();
-	for(int i=0;i<stringVals.size(); i++){
-		TEST_ARRAY_ELE_EQUALITY(*valiVals, i, stringVals[i]);
-	}
+  /*bool local_success = true;
+  for(int i =0; i<valiVals.size() ++i){
+	  TEST_ARRAY_ELE_EQUALITY(*valiVals, i, stringVals[i]);
+  }
+  if (local_success) out << "passed\n";
+  else success = false;*/
+  TEST_COMPARE_ARRAYS(*valiVals, stringVals);
 	TEST_NOTHROW(stringList->set("String param1", "str1", "a string parameter", stringVali));
 	TEST_THROW(stringList->set("String param2", "not in list", "a string parameter", stringVali),
     Exceptions::InvalidParameterValue);
 	TEST_THROW(stringList->set("int param", 5, "a int parameter", stringVali),
     Exceptions::InvalidParameterType);
-
 }
 
 

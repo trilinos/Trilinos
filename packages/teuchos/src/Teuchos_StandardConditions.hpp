@@ -260,31 +260,20 @@ class DummyObjectGetter<StringCondition>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
   * StringCondition.
   */
-  static RCP<StringCondition >
-    getDummyObject()
-  {
+  static RCP<StringCondition > getDummyObject() {
+    static RCP<StringCondition> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new StringCondition(
         DummyObjectGetter<ParameterEntry>::getDummyObject(),""));
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<StringCondition> 
-    dummyObject;
   
   //@}
   
@@ -406,31 +395,20 @@ class DummyObjectGetter<NumberCondition<T> >{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
   * NumberCondition.
   */
-  static RCP<NumberCondition<T> >
-    getDummyObject()
-  {
+  static RCP<NumberCondition<T> > getDummyObject(){
+    static RCP<NumberCondition<T> > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new NumberCondition<T>(
         DummyObjectGetter<ParameterEntry>::getDummyObject()));
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<NumberCondition<T> > 
-    dummyObject;
   
   //@}
   
@@ -496,31 +474,20 @@ class DummyObjectGetter<BoolCondition>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
   * BoolCondition.
   */
-  static RCP<BoolCondition >
-    getDummyObject()
-  {
+  static RCP<BoolCondition > getDummyObject(){
+    static RCP<BoolCondition> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new BoolCondition(
         DummyObjectGetter<ParameterEntry>::getDummyObject()));
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<BoolCondition> 
-    dummyObject;
   
   //@}
   
@@ -681,15 +648,14 @@ class DummyObjectGetter<OrCondition>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
   * OrCondition.
   */
-  static RCP<OrCondition >
-    getDummyObject()
-  {
+  static RCP<OrCondition > getDummyObject(){
+    static RCP<OrCondition> dummyObject;
     if(dummyObject.is_null()){
       Condition::ConstConditionList dummyList;
       dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
@@ -697,16 +663,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<OrCondition> 
-    dummyObject;
   
   //@}
   
@@ -769,15 +725,14 @@ class DummyObjectGetter<AndCondition>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
   * AndCondition.
   */
-  static RCP<AndCondition >
-    getDummyObject()
-  {
+  static RCP<AndCondition > getDummyObject(){
+    static RCP<AndCondition> dummyObject;
     if(dummyObject.is_null()){
       Condition::ConstConditionList dummyList;
       dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
@@ -785,16 +740,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<AndCondition> 
-    dummyObject;
   
   //@}
   
@@ -856,15 +801,14 @@ class DummyObjectGetter<EqualsCondition>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
   * EqualsCondition.
   */
-  static RCP<EqualsCondition >
-    getDummyObject()
-  {
+  static RCP<EqualsCondition > getDummyObject(){
+    static RCP<EqualsCondition> dummyObject;
     if(dummyObject.is_null()){
       Condition::ConstConditionList dummyList;
       dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
@@ -872,16 +816,6 @@ public:
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<EqualsCondition> 
-    dummyObject;
   
   //@}
   
@@ -967,31 +901,20 @@ class DummyObjectGetter<NotCondition>{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Getter Functions */
   //@{
 
   /** \brief Retrieves a dummy object of type
   * NotCondition.
   */
-  static RCP<NotCondition >
-    getDummyObject()
-  {
+  static RCP<NotCondition > getDummyObject(){
+    static RCP<NotCondition> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new NotCondition(
         DummyObjectGetter<BoolCondition>::getDummyObject()));
     }
     return dummyObject;
   }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<NotCondition> 
-    dummyObject;
   
   //@}
   
