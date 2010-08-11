@@ -199,6 +199,7 @@ APPEND_SET(SOURCES
   Teuchos_MPISession.cpp
   Teuchos_Object.cpp
   Teuchos_ParameterEntry.cpp
+  Teuchos_ParameterEntryValidator.cpp
   Teuchos_ParameterList.cpp
   Teuchos_ParameterListAcceptorHelpers.cpp
   Teuchos_ParameterListAcceptor.cpp

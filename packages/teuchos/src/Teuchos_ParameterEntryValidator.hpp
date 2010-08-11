@@ -66,9 +66,7 @@ public:
   ParameterEntryValidator(ValidatorID id);
 
   /** \brief . */
-  ~ParameterEntryValidator(){
-    removeValidatorFromMasterMaps(this);
-  }
+  ~ParameterEntryValidator();
 
   /** \brief Get a string that should be used as a tag for this validator
    * when serializing it to XML.
@@ -166,16 +164,25 @@ private:
 
   typedef std::vector<ValidatorID> FreeIDsVector;
 
-  static ValidatorToIDMap masterValidatorMap;
+  static ValidatorToIDMap& getMasterValidatorMap(){
+    static ValidatorToIDMap masterValidatorMap;
+    return masterValidatorMap;
+  }
 
-  static IDToValidatorMap masterIDMap;
+  static IDToValidatorMap& getMasterIDMap(){
+    static IDToValidatorMap masterIDMap;
+    return masterIDMap;
+  }
   
   static ValidatorID& getMasterIDCounter(){
     static ValidatorID masterCounter = 1000;
     return masterCounter;
   }
 
-  static FreeIDsVector masterFreeIDs;
+  static FreeIDsVector& getMasterFreeIDs(){
+    static FreeIDsVector masterFreeIDs;
+    return masterFreeIDs;
+  }
 
   static void addValidatorToMasterMaps(
     ParameterEntryValidator* validatorToAdd);

@@ -269,16 +269,25 @@ private:
 
   typedef std::vector<ParameterEntryID> FreeIDsVector;
 
-  static ParameterEntryToIDMap masterParameterEntryMap;
+  static ParameterEntryToIDMap& getMasterParameterEntryMap(){
+    static ParameterEntryToIDMap masterParameterEntryMap;
+    return masterParameterEntryMap;
+  }
 
-  static IDToParameterEntryMap masterIDMap;
+  static IDToParameterEntryMap& getMasterIDMap(){
+    static IDToParameterEntryMap masterIDMap;
+    return masterIDMap;
+  }
   
   static ParameterEntryID& getMasterIDCounter(){
     static ParameterEntryID masterCounter = 1000;
     return masterCounter;
   }
 
-  static FreeIDsVector masterFreeIDs;
+  static FreeIDsVector& getMasterFreeIDs(){
+    static FreeIDsVector masterFreeIDs;
+    return masterFreeIDs;
+  }
 
   static void addParameterEntryToMasterMaps(ParameterEntry* entryToAdd);
 

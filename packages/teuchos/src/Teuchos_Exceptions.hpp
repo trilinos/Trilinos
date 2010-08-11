@@ -123,6 +123,19 @@ public:
     
 };
 
+/** \brief Thrown when a ParameterEntryValidatorID that 
+ * is already being used is attempted to be reused again.
+ * 
+ * \relates ParameterEntryValidator
+ */
+class DuplicateValidatorIDException : public ExceptionBase {
+
+public:
+  DuplicateValidatorIDException(const std::string& what_arg):
+    ExceptionBase(what_arg){}
+    
+};
+
 
 } // end namespace Teuchos
 

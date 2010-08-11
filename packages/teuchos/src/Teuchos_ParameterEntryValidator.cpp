@@ -34,26 +34,33 @@
 namespace Teuchos {
 
 ParameterEntryValidator::ParameterEntryValidator(){
-  addValidatorToMasterMaps(*this);
+  addValidatorToMasterMaps(this);
 }
 
 ParameterEntryValidator::ParameterEntryValidator(ValidatorID validatorID){
   if(validatorID != OrdinalTraits<ValidatorID>::invalid()){
-    addValidatorToMasterMaps(*this, validatorID);
+    addValidatorToMasterMaps(this, validatorID);
   }
 }
 
+ParameterEntryValidator::~ParameterEntryValidator(){
+  removeValidatorFromMasterMaps(this);
+}
 
-RCP<ParameterEntryValidator> ParameterEntryValidator::getValidator(ValidatorID id){
-  IDToValidatorMap::iterator result = masterIDMap.find(id);
-  return result != masterIDMap.end() ? result->second : null;
+RCP<ParameterEntryValidator> 
+ParameterEntryValidator::getValidator(ValidatorID id)
+{
+  IDToValidatorMap::iterator result = getMasterIDMap().find(id);
+  return result != getMasterIDMap().end() ? result->second : null;
 }
 
 ParameterEntryValidator::ValidatorID
-ParameterEntryValidator::getValidatorID(RCP<ParameterEntryValidator> entry)
+ParameterEntryValidator::getValidatorID(
+  RCP<const ParameterEntryValidator> validator)
 {
-  ValidatorToIDMap::iterator result = masterValidatorMap.find(entry);
-  return result != masterValidatorMap.end() ? 
+  ValidatorToIDMap::iterator result =
+    getMasterValidatorMap().find(validator);
+  return result != getMasterValidatorMap().end() ? 
     result->second : OrdinalTraits<ValidatorID>::invalid();
 }
 
@@ -61,16 +68,16 @@ ParameterEntryValidator::getValidatorID(RCP<ParameterEntryValidator> entry)
 
 void ParameterEntryValidator::incrementMasterCounter(){
   getMasterIDCounter()++;
-  if(masterIDMap.find(getMasterIDCounter()) != masterIDMap.end()){
+  if(getMasterIDMap().find(getMasterIDCounter()) != getMasterIDMap().end()){
     incrementMasterCounter();
   }
 }
 
 ParameterEntryValidator::ValidatorID ParameterEntryValidator::getAvailableID(){
   ValidatorID toReturn;
-  if(masterFreeIDs.size() != 0){
-    toReturn = masterFreeIDs.back();
-    masterFreeIDs.pop_back();
+  if(getMasterFreeIDs().size() != 0){
+    toReturn = getMasterFreeIDs().back();
+    getMasterFreeIDs().pop_back();
     return toReturn;
   }
   else{
@@ -87,9 +94,9 @@ void ParameterEntryValidator::addValidatorToMasterMaps(
 
   ValidatorID insertionID = getAvailableID();
 
-  masterIDMap.insert(
+  getMasterIDMap().insert(
     IDValidatorPair(insertionID, toInsert));
-  masterValidatorMap.insert(
+  getMasterValidatorMap().insert(
     ValidatorIDPair(toInsert.getConst(), insertionID));
 }
 
@@ -97,27 +104,27 @@ void ParameterEntryValidator::addValidatorToMasterMaps(
   ParameterEntryValidator* entry, ValidatorID idToUse)
 {
   TEST_FOR_EXCEPTION(
-  masterIDMap.find(idToUse)
+  getMasterIDMap().find(idToUse)
   !=
-  masterIDMap.end(),
+  getMasterIDMap().end(),
   DuplicateValidatorIDException,
   "Error: can't create a ParameterEntryValidator with the ID" <<
   idToUse << ". That ID is already being used to track another " <<
   "ParameterEntryValidator!" << std::endl << std::endl);
-  masterValidatorMap.insert(
+  getMasterValidatorMap().insert(
     ValidatorIDPair(rcp(entry, false).getConst(), idToUse));
-  masterIDMap.insert(IDValidatorPair(idToUse, rcp(entry, false)));
+  getMasterIDMap().insert(IDValidatorPair(idToUse, rcp(entry, false)));
 }
 
 void ParameterEntryValidator::removeValidatorFromMasterMaps(
   ParameterEntryValidator* validatorToRemove)
 {
   ValidatorToIDMap::iterator toRemove = 
-    masterValidatorMap.find(rcp(validatorToRemove, false));
+    getMasterValidatorMap().find(rcp(validatorToRemove, false));
   ValidatorID idToFree = toRemove->second;
-  masterValidatorMap.erase(toRemove);
-  masterIDMap.erase(idToFree);
-  masterFreeIDs.push_back(idToFree);
+  getMasterValidatorMap().erase(toRemove);
+  getMasterIDMap().erase(idToFree);
+  getMasterFreeIDs().push_back(idToFree);
 }
 
 
