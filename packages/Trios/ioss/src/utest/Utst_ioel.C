@@ -69,6 +69,9 @@ int main(int argc, char *argv[])
   Ioss::Initializer  initialize_topologies;
 
   int err_count = test_all_elements();
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   OUTPUT << "\n" << argv[0];;
   if (err_count == 0) {
     OUTPUT << "\nSIERRA execution successful." << std::endl;
