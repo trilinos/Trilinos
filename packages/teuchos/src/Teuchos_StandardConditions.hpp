@@ -107,7 +107,7 @@ public:
 
   bool isConditionTrue() const{
     if((whenParamEqualsValue_ && evaluateParameter()) || 
-      (!whenParamEqualsValue_ && evaluateParameter()))
+      (!whenParamEqualsValue_ && !evaluateParameter()))
     {
       return true;
     }

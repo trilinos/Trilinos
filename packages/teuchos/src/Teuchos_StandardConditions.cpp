@@ -191,7 +191,7 @@ StringCondition::StringCondition(
 }
 
 bool StringCondition::evaluateParameter() const{
-  return find(
+  return  find(
     values_.begin(), values_.end(), 
     getValue<std::string>(*getParameter())) != values_.end();
 }

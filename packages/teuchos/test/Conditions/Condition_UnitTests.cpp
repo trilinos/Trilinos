@@ -59,7 +59,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testConditions){
 	TEST_ASSERT(!stringCon1->isConditionTrue());
 	testingList->set("string param", "coke");
 	TEST_ASSERT(stringCon1->isConditionTrue());
-	RCP<StringCondition> stringCon2 = rcp( new StringCondition(testingList->getEntryRCP("string param"), conValues1, false));
+	RCP<StringCondition> stringCon2 = rcp( 
+    new StringCondition(
+      testingList->getEntryRCP("string param"), conValues1, false));
 	testingList->set("string param", "fanta");
 	TEST_ASSERT(stringCon2->isConditionTrue());
 	testingList->set("string param", "coke");
