@@ -85,13 +85,15 @@ void QuadFixture::generate_mesh() {
 
 void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_processor) {
 
-  //sort and unique the input elements
-  std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
-  std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
+  {
+    //sort and unique the input elements
+    std::vector<EntityId>::iterator ib = element_ids_on_this_processor.begin();
+    std::vector<EntityId>::iterator ie = element_ids_on_this_processor.end();
 
-  std::sort( ib, ie);
-  ib = std::unique( ib, ie);
-  element_ids_on_this_processor.erase(ib, ie);
+    std::sort( ib, ie);
+    ib = std::unique( ib, ie);
+    element_ids_on_this_processor.erase(ib, ie);
+  }
 
   bulk_data.modification_begin();
 
