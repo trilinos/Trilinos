@@ -177,19 +177,19 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   set (CMAKE_MODULE_PATH_SAVE ${CMAKE_MODULE_PATH})
   set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/TSQR/cmake)
 
-  if (${TSQR_ENABLE_Complex})
+  if (TSQR_ENABLE_Complex)
     set (HAVE_TSQR_COMPLEX BOOL TRUE)
   else ()
     set (HAVE_TSQR_COMPLEX BOOL FALSE)
   endif ()
 
-  if (${TSQR_ENABLE_Fortran})
+  if (TSQR_ENABLE_Fortran)
     set (HAVE_TSQR_FORTRAN BOOL TRUE)
   else ()
     set (HAVE_TSQR_FORTRAN BOOL FALSE)
   endif ()
 
-  if (${TSQR_ENABLE_Intel_TBB})
+  if (TSQR_ENABLE_Intel_TBB)
     set (HAVE_TSQR_INTEL_TBB BOOL TRUE)
   else ()
     set (HAVE_TSQR_INTEL_TBB BOOL FALSE)
@@ -213,7 +213,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     APPEND_SET(SOURCES
       ${TSQR_FORTRAN_MODULE_FILENAME}
       TSQR/Tsqr_CombineFortran.f90
-      ${CMAKE_CURRENT_BINARY_DIR}/Tsqr_CombineFortran.cpp)
+      TSQR/Tsqr_CombineFortran.cpp)
     APPEND_SET(HEADERS 
       TSQR/Tsqr_CombineFortran.hpp
       ${CMAKE_CURRENT_BINARY_DIR}/Tsqr_FortranCInterface.hpp)
