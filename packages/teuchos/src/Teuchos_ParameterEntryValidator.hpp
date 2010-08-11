@@ -63,11 +63,11 @@ public:
   /** \brief Constructor allowing for direct setting of the ValidatorID.
    * DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT YOU'RE DOING!
    */
-  ParameterEntryValidtor(ValidatorID id);
+  ParameterEntryValidator(ValidatorID id);
 
   /** \brief . */
   ~ParameterEntryValidator(){
-     removeValidatorFromMasterMaps(*this);
+    removeValidatorFromMasterMaps(this);
   }
 
   /** \brief Get a string that should be used as a tag for this validator
@@ -78,15 +78,21 @@ public:
    */
   virtual const std::string getXMLTagName() const=0;
 
+  static RCP<ParameterEntryValidator> getValidator(ValidatorID id);
+
+  static ValidatorID 
+    getValidatorID(RCP<const ParameterEntryValidator> validator);
+
   /** \brief Print documentation for this parameter.
    *
    * \param docString [in] (Multi-line) documentation std::string.
    *
    * \param out [out] The std::ostream used for the output
    *
-   * The purpose of this function is to augment what is in <tt>docString</tt>
-   * with some description of what valid values this parameter validator will
-   * accept.
+   * The purpose of this function is to augment what is 
+   * in <tt>docString</tt>
+   * with some description of what valid values this parameter 
+   * validator will accept.
    */
   virtual void printDoc(
     std::string const& docString,
@@ -145,10 +151,11 @@ public:
 
 private:
   
-  typedef std::map< RCP<ParameterEntryValidator> , ValidatorID, RCPComp > 
-    ValidatorToIDMap;
+  typedef std::map<RCP<const ParameterEntryValidator>, 
+    ValidatorID, RCPConstComp> 
+      ValidatorToIDMap;
 
-  typedef std::pair<RCP<ParameterEntryValidator>, ValidatorID>
+  typedef std::pair<RCP<const ParameterEntryValidator>, ValidatorID>
     ValidatorIDPair;
 
   typedef std::map<ValidatorID, RCP<ParameterEntryValidator> > 
@@ -164,19 +171,20 @@ private:
   static IDToValidatorMap masterIDMap;
   
   static ValidatorID& getMasterIDCounter(){
-    static ValidatorID masterCounter = 0;
+    static ValidatorID masterCounter = 1000;
     return masterCounter;
   }
 
   static FreeIDsVector masterFreeIDs;
 
-  static void addValidatorToMasterMaps(ParameterEntryValidator* entryToAdd);
+  static void addValidatorToMasterMaps(
+    ParameterEntryValidator* validatorToAdd);
 
   static void addValidatorToMasterMaps(
-    ParameterEntryValidator* entryToAdd, ValidatorID idToUse);
+    ParameterEntryValidator* validatorToAdd, ValidatorID idToUse);
 
   static void removeValidatorFromMasterMaps(
-    ParameterEntryValidator* entryToRemove);
+    ParameterEntryValidator* validatorToRemove);
 
   static ValidatorID getAvailableID();
 

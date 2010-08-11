@@ -29,7 +29,6 @@
 #include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
-#include "Teuchos_ValidatorMaps.hpp"
 #include "Teuchos_XMLParameterListExceptions.hpp"
 
 
@@ -42,39 +41,33 @@ XMLParameterListWriter::XMLParameterListWriter()
 
 XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
 {
-  ValidatortoIDMap validatorIDMap;
-  XMLObject validators = convertValidators(p, validatorIDMap);
-  XMLObject toReturn = convertParameterList(p, validatorIDMap);
+  XMLObject validators = convertValidators(p);
+  XMLObject toReturn = convertParameterList(p);
   toReturn.addChild(validators);
   return toReturn;
 }
 
 
 XMLObject XMLParameterListWriter::convertValidators(
-  const ParameterList& p, ValidatortoIDMap& validatorIDMap) const
+  const ParameterList& p) const
 {
   XMLObject validators(getValidatorsTagName());
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i) {
     const ParameterEntry& entry = p.entry(i);
     if(entry.isList()){
-      convertValidators(getValue<ParameterList>(entry), validatorIDMap);
+      convertValidators(getValue<ParameterList>(entry));
     }
-    else if(!entry.validator().is_null()){
-      validatorIDMap.insertValidator(entry.validator());
+    else if(nonnull(entry.validator())){
+      validators.addChild(
+        ValidatorXMLConverterDB::convertValidator(entry.validator()));
     }
-  }
-  ValidatortoIDMap::const_iterator it = validatorIDMap.begin();
-  for (; it != validatorIDMap.end(); ++it) {
-    validators.addChild(
-    ValidatorXMLConverterDB::convertValidator(it->first, validatorIDMap));
   }
   return validators;
 }
 
 
 XMLObject XMLParameterListWriter::convertParameterList(
-  const ParameterList& p,
-  ValidatortoIDMap& validatorIDMap) const
+  const ParameterList& p) const
 {
   XMLObject rtn(getParameterListTagName());
   rtn.addAttribute(getNameAttributeName(), p.name());
@@ -82,11 +75,11 @@ XMLObject XMLParameterListWriter::convertParameterList(
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i){
     const ParameterEntry& entry = p.entry(i);
     if(entry.isList()){
-      rtn.addChild(convertParameterList(getValue<ParameterList>(entry), validatorIDMap));
+      rtn.addChild(convertParameterList(getValue<ParameterList>(entry)));
     }
     else{
       rtn.addChild(ParameterEntryXMLConverterDB::convertEntry(
-        entry, p.name(i), validatorIDMap));
+        entry, p.name(i)));
     }
   }
   return rtn;

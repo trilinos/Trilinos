@@ -34,28 +34,33 @@
 
 namespace Teuchos {
 
+#define ADD_NUMBERTYPECONVERTERS(T) \
+  ADD_STRINGTOINTEGRALCONVERTER( T ); \
+  ADD_ENHANCEDNUMBERCONVERTER( T ); \
+  ADD_ARRAYCONVERTER(EnhancedNumberValidator< T >, T );
 
-#define ADD_STRINGTOINTEGRALCONVERTER(INTEGRALTYPE, PREFIXNAME) \
+#define ADD_STRINGTOINTEGRALCONVERTER(INTEGRALTYPE) \
   \
-  StringToIntegralParameterEntryValidator< INTEGRALTYPE > \
-  sti##PREFIXNAME##Validator(dummyStringArray, dummyDefaultName); \
-  masterMap.insert(ConverterPair(sti##PREFIXNAME##Validator.getXMLTagName(), \
-      rcp(new StringToIntegralValidatorXMLConverter< INTEGRALTYPE >)));
+  masterMap.insert(ConverterPair( \
+    DummyObjectGetter<StringToIntegralParameterEntryValidator< INTEGRALTYPE > >:: \
+      getDummyObject()->getXMLTagName(), \
+    rcp(new StringToIntegralValidatorXMLConverter< INTEGRALTYPE >)));
 
 
-#define ADD_ENHANCEDNUMBERCONVERTER(T, PREFIXNAME) \
+#define ADD_ENHANCEDNUMBERCONVERTER(T) \
   \
-  EnhancedNumberValidator< T > en##PREFIXNAME##Validator; \
-  masterMap.insert(ConverterPair(en##PREFIXNAME##Validator.getXMLTagName(), \
-      rcp(new EnhancedNumberValidatorXMLConverter< T >)));
+  masterMap.insert(ConverterPair( \
+    DummyObjectGetter<EnhancedNumberValidator< T > >:: \
+      getDummyObject()->getXMLTagName(), \
+    rcp(new EnhancedNumberValidatorXMLConverter< T >)));
 
 
-#define ADD_ARRAYCONVERTER(VALIDATORTYPE, ENTRYTYPE, PREFIXNAME) \
+#define ADD_ARRAYCONVERTER( VALIDATORTYPE, ENTRYTYPE ) \
   \
-  ArrayValidator< VALIDATORTYPE , ENTRYTYPE > \
-  array##PREFIXNAME##Validator(rcp(new VALIDATORTYPE)); \
-  masterMap.insert(ConverterPair(array##PREFIXNAME##Validator.getXMLTagName(), \
-      rcp(new ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >)));
+  masterMap.insert(ConverterPair( \
+    DummyObjectGetter<ArrayValidator< VALIDATORTYPE , ENTRYTYPE > >:: \
+      getDummyObject()->getXMLTagName(), \
+    rcp(new ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >)));
 
 void ValidatorXMLConverterDB::addConverter(ParameterEntryValidator& validator,
   RCP<ValidatorXMLConverter> converterToAdd){
@@ -88,18 +93,16 @@ ValidatorXMLConverterDB::getConverter(const XMLObject& xmlObject)
 }
 
 XMLObject ValidatorXMLConverterDB::convertValidator(
-  RCP<const ParameterEntryValidator> validator,
-  const ValidatortoIDMap& validatorIDMap)
+  RCP<const ParameterEntryValidator> validator)
 {
-  return getConverter(*validator)->fromValidatortoXML(validator, validatorIDMap);
+  return getConverter(*validator)->fromValidatortoXML(validator);
 }
  
 RCP<ParameterEntryValidator> ValidatorXMLConverterDB::convertXML(
-  const XMLObject& xmlObject, 
-  IDtoValidatorMap& idValidatorMap)
+  const XMLObject& xmlObject)
 {
-  return ValidatorXMLConverterDB::getConverter(xmlObject)->fromXMLtoValidator(xmlObject,
-    idValidatorMap);
+  return ValidatorXMLConverterDB::
+    getConverter(xmlObject)->fromXMLtoValidator(xmlObject);
 }
 
 ValidatorXMLConverterDB::ConverterMap&
@@ -107,61 +110,42 @@ ValidatorXMLConverterDB::getConverterMap()
 {
   static ConverterMap masterMap;
   if(masterMap.size() == 0){
-    std::string dummyDefaultName = "";
-    Array<std::string> dummyStringArray;
-    ADD_STRINGTOINTEGRALCONVERTER(int, Int);
-    ADD_STRINGTOINTEGRALCONVERTER(unsigned int, UnsignedInt);
-    ADD_STRINGTOINTEGRALCONVERTER(short int, Short);
-    ADD_STRINGTOINTEGRALCONVERTER(unsigned short int, UnsignedShort);
-    ADD_STRINGTOINTEGRALCONVERTER(long int, Long);
-    ADD_STRINGTOINTEGRALCONVERTER(unsigned long int, UnsignedLong);
-    ADD_STRINGTOINTEGRALCONVERTER(double, Double);
-    ADD_STRINGTOINTEGRALCONVERTER(float, Float);
+    ADD_NUMBERTYPECONVERTERS(int);
+    ADD_NUMBERTYPECONVERTERS(unsigned int);
+    ADD_NUMBERTYPECONVERTERS(short int);
+    ADD_NUMBERTYPECONVERTERS(unsigned short int);
+    ADD_NUMBERTYPECONVERTERS(long int);
+    ADD_NUMBERTYPECONVERTERS(unsigned long int);
 
-    ADD_ENHANCEDNUMBERCONVERTER(int, Int);
-    ADD_ENHANCEDNUMBERCONVERTER(unsigned int, UnsignedInt);
-    ADD_ENHANCEDNUMBERCONVERTER(short int, Short);
-    ADD_ENHANCEDNUMBERCONVERTER(unsigned short int, UnsignedShort);
-    ADD_ENHANCEDNUMBERCONVERTER(long int, Long);
-    ADD_ENHANCEDNUMBERCONVERTER(unsigned long int, UnsignedLong);
-    ADD_ENHANCEDNUMBERCONVERTER(double, Double);
-    ADD_ENHANCEDNUMBERCONVERTER(float, Float);
+    ADD_ENHANCEDNUMBERCONVERTER(double);
+    ADD_ENHANCEDNUMBERCONVERTER(float);
 
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<int>, int, Int);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<unsigned int>, unsigned int, UnsignedInt);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<short int>, short int, Short);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<unsigned short int>, unsigned short int,
-      UnsignedShort);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<long int>, long int, Long);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<unsigned long int>, unsigned long int,
-      UnsignedLong);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<double>, double, Double);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<float>, float, Float);
+    ADD_ARRAYCONVERTER(EnhancedNumberValidator<double>, double);
+    ADD_ARRAYCONVERTER(EnhancedNumberValidator<float>, float);
 
-    ADD_ARRAYCONVERTER(FileNameValidator, std::string, fileName);
-    ADD_ARRAYCONVERTER(StringValidator, std::string, string);
+    ADD_ARRAYCONVERTER(FileNameValidator, std::string);
+    ADD_ARRAYCONVERTER(StringValidator, std::string);
 
     #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-    ADD_STRINGTOINTEGRALCONVERTER(long long int, LongLong);
-    ADD_STRINGTOINTEGRALCONVERTER(unsigned long long int, UnsignedLongLong);
-    ADD_ENHANCEDNUMBERCONVERTER(long long int, LongLong);
-    ADD_ENHANCEDNUMBERCONVERTER(unsigned long long int, UnsignedLongLong);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<long long int>, long long int, LongLong);
-    ADD_ARRAYCONVERTER(EnhancedNumberValidator<unsigned long long int>,
-      unsigned long long int, UnsignedLongLong);
+    ADD_NUMBERTYPECONVERTERS(long long int);
+    ADD_NUMBERTYPECONVERTERS(unsigned long long int);
     #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-    FileNameValidator fileNameValidator;
     masterMap.insert(
-      ConverterPair(fileNameValidator.getXMLTagName(), rcp(new FileNameValidatorXMLConverter)));
+      ConverterPair(
+        DummyObjectGetter<FileNameValidator>::getDummyObject()->getXMLTagName(), 
+        rcp(new FileNameValidatorXMLConverter)));
 
-    StringValidator stringValidator;
     masterMap.insert(
-      ConverterPair(stringValidator.getXMLTagName(), rcp(new StringValidatorXMLConverter)));
+      ConverterPair(
+        DummyObjectGetter<StringValidator>::getDummyObject()->getXMLTagName(), 
+        rcp(new StringValidatorXMLConverter)));
 
-    AnyNumberParameterEntryValidator anyNumberValidator;
     masterMap.insert(
-      ConverterPair(anyNumberValidator.getXMLTagName(), rcp(new AnyNumberValidatorXMLConverter)));
+      ConverterPair(
+        DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject()->getXMLTagName(), 
+        rcp(new AnyNumberValidatorXMLConverter)));
+
   }
   return masterMap;
 }

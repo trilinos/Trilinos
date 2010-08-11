@@ -35,9 +35,9 @@
 */
 
 #include "Teuchos_XMLObject.hpp"
-#include "Teuchos_ValidatorMaps.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_XMLParameterListExceptions.hpp"
+#include "Teuchos_ParameterEntryValidator.hpp"
 
 
 namespace Teuchos {
@@ -68,7 +68,7 @@ public:
       ". Expected a " << dummyValidator->getXMLTagName() <<
       " tag but got a " << xmlObj.getTag() << "tag");
     #endif
-    ParameterEntryID::ValidatorID validatorID = 
+    ParameterEntryValidator::ValidatorID validatorID = 
       xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
         getIdAttributeName());
     RCP<ParameterEntryValidator> toReturn = convertXML(xmlObj, validatorID);
@@ -83,7 +83,7 @@ public:
    */
   virtual RCP<ParameterEntryValidator> 
     convertXML(const XMLObject& xmlObj, 
-    ParameterEntryValidator::validatorID validatorID) const=0;
+    ParameterEntryValidator::ValidatorID validatorID) const=0;
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
@@ -95,7 +95,7 @@ public:
   {
     XMLObject toReturn = convertValidator(validator);
     toReturn.addAttribute(getIdAttributeName(),
-      ParameterEntryValidator::getValidatorID(*validator));
+      ParameterEntryValidator::getValidatorID(validator));
     return toReturn;
   }
 

@@ -36,7 +36,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
-#include "Teuchos_ValidatorMaps.hpp"
 
 
 namespace Teuchos {
@@ -64,11 +63,10 @@ private:
   /** \brief Write the given XML object to a parameter list along with the
    * validators located in the given map.
    */
-  ParameterList convertParameterList(const XMLObject& xml,
-    const IDtoValidatorMap& validatorMap) const;
+  ParameterList convertParameterList(const XMLObject& xml) const;
 
   /** \brief Write the given XML object to appropriate validators. */
-  void convertValidators(const XMLObject& xml, IDtoValidatorMap& validatorMap) const;
+  void convertValidators(const XMLObject& xml) const;
 
   };
 

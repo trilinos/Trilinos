@@ -67,7 +67,7 @@ public:
    * \returns An XMLObject representing the parameter entry.
    */
   XMLObject fromParameterEntrytoXML(const ParameterEntry &entry,
-    const std::string &name, const ValidatortoIDMap& validatorIDMap) const;
+    const std::string &name) const;
   
   /** \brief sets the value  */
   virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj,

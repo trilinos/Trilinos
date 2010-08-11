@@ -38,25 +38,28 @@ ParameterEntryValidator::ParameterEntryValidator(){
 }
 
 ParameterEntryValidator::ParameterEntryValidator(ValidatorID validatorID){
-  addValidatorToMasterMaps(*this, validatorID);
+  if(validatorID != OrdinalTraits<ValidatorID>::invalid()){
+    addValidatorToMasterMaps(*this, validatorID);
+  }
 }
 
-RCP<ParameterEntryValidator> ParameterEntry::getParameterEntry(ValidatorID id){
+
+RCP<ParameterEntryValidator> ParameterEntryValidator::getValidator(ValidatorID id){
   IDToValidatorMap::iterator result = masterIDMap.find(id);
   return result != masterIDMap.end() ? result->second : null;
 }
 
 ParameterEntryValidator::ValidatorID
-ParameterEntryValidator::getParameterEntryID(RCP<ParameterEntryValidator> entry)
+ParameterEntryValidator::getValidatorID(RCP<ParameterEntryValidator> entry)
 {
-  ValidatorToIDMap::iterator result = masterParameterEntryMap.find(entry);
-  return result != masterParameterEntryMap.end() ? 
+  ValidatorToIDMap::iterator result = masterValidatorMap.find(entry);
+  return result != masterValidatorMap.end() ? 
     result->second : OrdinalTraits<ValidatorID>::invalid();
 }
 
 //private 
 
-void ParameterEntry::incrementMasterCounter(){
+void ParameterEntryValidator::incrementMasterCounter(){
   getMasterIDCounter()++;
   if(masterIDMap.find(getMasterIDCounter()) != masterIDMap.end()){
     incrementMasterCounter();
@@ -87,7 +90,7 @@ void ParameterEntryValidator::addValidatorToMasterMaps(
   masterIDMap.insert(
     IDValidatorPair(insertionID, toInsert));
   masterValidatorMap.insert(
-    ValidatorIDPair(toInsert, insertionID));
+    ValidatorIDPair(toInsert.getConst(), insertionID));
 }
 
 void ParameterEntryValidator::addValidatorToMasterMaps(
@@ -102,15 +105,15 @@ void ParameterEntryValidator::addValidatorToMasterMaps(
   idToUse << ". That ID is already being used to track another " <<
   "ParameterEntryValidator!" << std::endl << std::endl);
   masterValidatorMap.insert(
-    ValidatorIDPair(rcp(entry, false), idToUse));
+    ValidatorIDPair(rcp(entry, false).getConst(), idToUse));
   masterIDMap.insert(IDValidatorPair(idToUse, rcp(entry, false)));
 }
 
 void ParameterEntryValidator::removeValidatorFromMasterMaps(
-  ParameterEntryValidator* entryToRemove)
+  ParameterEntryValidator* validatorToRemove)
 {
   ValidatorToIDMap::iterator toRemove = 
-    masterValidatorMap.find(rcp(entryToRemove, false));
+    masterValidatorMap.find(rcp(validatorToRemove, false));
   ValidatorID idToFree = toRemove->second;
   masterValidatorMap.erase(toRemove);
   masterIDMap.erase(idToFree);

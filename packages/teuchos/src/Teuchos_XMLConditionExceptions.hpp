@@ -55,6 +55,22 @@ public:
 
 };
 
+/** \brief Thrown when an appropriate Condition Converter can't be found */
+class CantFindConditionConverterException : public std::logic_error{
+
+public:
+
+  /**
+   * \brief Constructs an CantFindConditionConverterException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  CantFindConditionConverterException(const std::string& what_arg):
+    std::logic_error(what_arg){}
+
+};
+
+
 
 } // namespace Teuchos
 #endif //TEUCHOS_XMLCONDITIONEXCEPTIONS_HPP_

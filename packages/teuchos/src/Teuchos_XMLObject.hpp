@@ -126,10 +126,10 @@ public:
   //! Return the i-th child node 
   const XMLObject& getChild(int i) const;
 
-  /** \brief returns the first child found with the given tag name 
-   * Returns null if no child is found.
+  /** \brief returns the index of the first child found with the given tag name 
+   * Returns -1 if no child is found.
    */
-  XMLObject findFirstChild(std::string tagName) const;
+  int findFirstChild(std::string tagName) const;
 
   //! Return the number of lines of character content stored in this node 
   int numContentLines() const;

@@ -26,20 +26,25 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Teuchos_DependencyXMLConverter.hpp"
+#include "Teuchos_XMLDependencyExceptions.hpp"
+
+
 namespace Teuchos{
+
 
 RCP<Dependency>
 DependencyXMLConverter::fromXMLtoDependency(const XMLObject &xmlObj) const
 {
-  Dependency::ParameterParentMap dependees;
-  Dependency::ParameterParentMap dependents;
+  Dependency::ConstParameterEntryList dependees;
+  Dependency::ParameterEntryList dependents;
 
-  TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependeeTagName()) == null,
+  TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependeeTagName()) == -1,
     MissingDependeesException,
     "Could not find any dependees for a dependency!" 
     <<std::endl <<std::endl);
 
-  TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependentTagName()) == null,
+  TEST_FOR_EXCEPTION(xmlObj.findFirstChild(getDependentTagName()) == -1,
     MissingDependentsException,
     "Could not find any dependents for a dependency!" 
     <<std::endl <<std::endl);
@@ -48,13 +53,15 @@ DependencyXMLConverter::fromXMLtoDependency(const XMLObject &xmlObj) const
     XMLObject child = xmlObj.getChild(i);
     if(child.getTag() == getDependeeTagName()){
       ParameterEntry::ParameterEntryID dependeeID = 
-        child.getAttribute(getParameterIDAttributeName());
+        child.getRequired<ParameterEntry::ParameterEntryID>(
+          getParameterIDAttributeName());
 
       dependees.insert(ParameterEntry::getParameterEntry(dependeeID));
     }
     else if(child.getTag() == getDependentTagName()){
       ParameterEntry::ParameterEntryID dependentID = 
-        child.getAttribute(getParameterIDAttributeName());
+        child.getRequired<ParameterEntry::ParameterEntryID>(
+          getParameterIDAttributeName());
 
       dependents.insert(ParameterEntry::getParameterEntry(dependentID));
     }
@@ -64,31 +71,32 @@ DependencyXMLConverter::fromXMLtoDependency(const XMLObject &xmlObj) const
 }
 
 XMLObject
-DependencyXMLConverter::fromDependencytoXML(const RCP<const Dependency> dependency) const
+DependencyXMLConverter::fromDependencytoXML(
+  const RCP<const Dependency> dependency) const
 {
   XMLObject toReturn(Dependency::getXMLTagName());
 
   toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
 
-  Dependency::ParameterParentMap::const_iterator it =
+  Dependency::ConstParameterEntryList::iterator it =
     dependency->getDependees().begin();
 
-  for(;it != dependency.getDependees().end(): ++it){
+  for(;it != dependency->getDependees().end(); ++it){
     XMLObject currentDependee(getDependeeTagName());
-    currentDependee.setAttribute(getParameterIDAttributeName(), 
-      ParameterEntry::getParameterID(*it));
+    currentDependee.addAttribute(getParameterIDAttributeName(), 
+      ParameterEntry::getParameterEntryID(*it));
     toReturn.addChild(currentDependee);
   }
 
   it = dependency->getDependents().begin();
   for(; it != dependency->getDependents().end(); ++it){
     XMLObject currentDependent(getDependentTagName());
-    currentDependent.setAttribute(getParameterIDAttributeName(), 
-      ParameterEntry::getParameterID(*it));
+    currentDependent.addAttribute(getParameterIDAttributeName(), 
+      ParameterEntry::getParameterEntryID(*it));
     toReturn.addChild(currentDependent);
   }
 
-  convertDependency(dependency, XMLObject);
+  convertDependency(dependency, toReturn);
 
   return toReturn;
 }

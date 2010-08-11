@@ -26,37 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Teuchos_DummyObjectGetter.hpp
-*/
+#include "Teuchos_UnitTestRepository.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
-#ifndef TEUCHOS_DUMMYOBJECTGETTER_HPP
-#define TEUCHOS_DUMMYOBJECTGETTER_HPP
-
-
-namespace Teuchos{
-
-
-/** \brief Class for retrieving a dummy object of type T.*/
-template<class T>
-class DummyObjectGetter{
-
-public:
-
-/** \brief Retrieves a dummy object of type T. */
-static RCP<T> getDummyObject(){
-  if(dummyObject.is_null()){
-    dummyObject = rcp(new T);
-  }
-  return dummyObject;
+int main( int argc, char* argv[] ) {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
-
-private:
-  static RCP<T> dummyObject;
-
-};
-
-
-} // namespace Teuchos
-
-
-#endif // TEUCHOS_DUMMYOBJECTGETTER_HPP

@@ -38,7 +38,7 @@ namespace Teuchos {
 
 RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    ParameterEntryValidator::ValidatorID validatorID) const
 {
 
   AnyNumberParameterEntryValidator::AcceptedTypes acceptedTypes;
@@ -82,7 +82,7 @@ AnyNumberValidatorXMLConverter::getDummyValidator() const{
 
 RCP<ParameterEntryValidator> FileNameValidatorXMLConverter::convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    ParameterEntryValidator::ValidatorID validatorID) const
 {
   return rcp(
     new FileNameValidator(
@@ -118,7 +118,7 @@ FileNameValidatorXMLConverter::getDummyValidator() const{
 
 RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    ParameterEntryValidator::ValidatorID validatorID) const
 {
   Array<std::string> strings(xmlObj.numChildren());
   if(xmlObj.numChildren()!=0){
@@ -131,7 +131,7 @@ RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
         strings[i] = (currentChild.getRequired(getStringValueAttributeName()));
     }
   }
-  return rcp(new StringValidator(strings, ValidatorID));
+  return rcp(new StringValidator(strings, validatorID));
 }
 
 

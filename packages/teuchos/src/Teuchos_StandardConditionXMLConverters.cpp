@@ -27,14 +27,15 @@
 // @HEADER
 
 #include "Teuchos_StandardConditionXMLConverters.hpp"
-#include "Teuchos_ConditionXMLConveterDB.hpp"
+#include "Teuchos_ConditionXMLConverterDB.hpp"
+#include "Teuchos_XMLConditionExceptions.hpp"
 
 namespace Teuchos{
 
 RCP<Condition> BinaryLogicalConditionConverter::convertXML(
     const XMLObject& xmlObj) const
 {
-  Condtion::CondtionList conditions;
+  Condition::ConstConditionList conditions;
   for(int i = 0; i < xmlObj.numChildren(); ++i){
     conditions.push_back(
       ConditionXMLConverterDB::convertXML(xmlObj.getChild(i)));
@@ -48,9 +49,9 @@ void BinaryLogicalConditionConverter::convertCondition(
   RCP<const BinaryLogicalCondition> castedCon = 
     rcp_dynamic_cast<const BinaryLogicalCondition>(condition, true);
 
-  const Condition::ConditionList conditions = castedCon->getConditions();
+  const Condition::ConstConditionList conditions = castedCon->getConditions();
   for(
-    Condition::ConditionList::const_iterator it = conditions.begin();
+    Condition::ConstConditionList::const_iterator it = conditions.begin();
     it != conditions.end();
     ++it)
   {
@@ -60,21 +61,21 @@ void BinaryLogicalConditionConverter::convertCondition(
 
 RCP<BinaryLogicalCondition> 
 OrConditionConverter::getSpecificBinaryLogicalCondition(
-  Condition::ConditionList& conditions) const
+  Condition::ConstConditionList& conditions) const
 {
   return rcp( new OrCondition(conditions));    
 }
 
 RCP<BinaryLogicalCondition> 
 AndConditionConverter::getSpecificBinaryLogicalCondition(
-  Condition::ConditionList& conditions) const
+  Condition::ConstConditionList& conditions) const
 {
   return rcp( new AndCondition(conditions));    
 }
 
 RCP<BinaryLogicalCondition> 
 EqualsConditionConverter::getSpecificBinaryLogicalCondition(
-  Condition::ConditionList& conditions) const
+  Condition::ConstConditionList& conditions) const
 {
   return rcp( new EqualsCondition(conditions));    
 }
@@ -92,7 +93,7 @@ void NotConditionConverter::convertCondition(
 {
   RCP<const NotCondition> castedCondition =
     rcp_dynamic_cast<const NotCondition>(condition);
-  XMLObject.addChild(ConditionXMLConverterDB::convertCondition(
+  xmlObj.addChild(ConditionXMLConverterDB::convertCondition(
     castedCondition->getChildCondition()));
 }
 
@@ -100,9 +101,10 @@ RCP<Condition> ParameterConditionConverter::convertXML(
   const XMLObject& xmlObj) const
 {
   ParameterEntry::ParameterEntryID paramID = 
-    xmlObj.getRequired(getParameterNameAttributeName());
+    xmlObj.getRequired<ParameterEntry::ParameterEntryID>(
+      getParameterEntryIDAttributeName());
   bool whenParamEqualsValue = 
-    xmlObj.getRequired(getWhenParamEqualsValueAttributeName());
+    xmlObj.getRequiredBool(getWhenParamEqualsValueAttributeName());
   return getSpecificParameterCondition(
     xmlObj, paramID, whenParamEqualsValue);
 }
@@ -111,8 +113,8 @@ void ParameterConditionConverter::convertCondition(
   const RCP<const Condition> condition, 
   XMLObject& xmlObj) const
 {
-  RCP<const ParameterCondtion> castedCondition = 
-    rcp_dynamic_cast<const ParameterCondtion>(condition, true);
+  RCP<const ParameterCondition> castedCondition = 
+    rcp_dynamic_cast<const ParameterCondition>(condition, true);
 
   xmlObj.addAttribute(
     getParameterEntryIDAttributeName(),
@@ -127,17 +129,20 @@ void ParameterConditionConverter::convertCondition(
 
 RCP<ParameterCondition> 
 StringConditionConverter::getSpecificParameterCondition(
-  XMLObject& xmlObj,
+  const XMLObject& xmlObj,
   ParameterEntry::ParameterEntryID paramID,
   bool whenParamEqualsValue) const
 {
   StringCondition::ValueList values;
-  XMLObject valuesTag = xmlObj.findFirstChild(getValuesTagName());
-  TEST_FOR_EXCEPTION(valuesTag == NULL,
+  int result = xmlObj.findFirstChild(getValuesTagName());
+  TEST_FOR_EXCEPTION(result == -1,
     MissingValuesTagException,
     "A StringCondtion must have a tag with the name " <<
     getValuesTagName() << " as one of it's children!");
+
+  XMLObject valuesTag = xmlObj.getChild(result);
   for(int i=0; i< valuesTag.numChildren(); ++i){
+    XMLObject child = valuesTag.getChild(i);
     if(child.getTag() == getStringTagName()){
       values.append(child.getRequired(getStringValueAttributeName()));
     }
@@ -149,22 +154,24 @@ StringConditionConverter::getSpecificParameterCondition(
 void StringConditionConverter::addSpecificXMLTraits(
   RCP<const ParameterCondition> condition, XMLObject& xmlObj) const             
 {
+  RCP<const StringCondition> castedCon =
+    rcp_dynamic_cast<const StringCondition>(condition, true);
   XMLObject valueTag(getValuesTagName());
   for(
     StringCondition::ValueList::const_iterator it =
-      condition->getValueList()->begin();
-    it != condition->getValueList()->end();
+      castedCon->getValueList().begin();
+    it != castedCon->getValueList().end();
     ++it)
   {
     XMLObject stringTag(getStringTagName());
-    stringTag.addAttribute(getStringValueAttributeName(), *it):
+    stringTag.addAttribute(getStringValueAttributeName(), *it);
     valueTag.addChild(stringTag);
   }
 }
  
 RCP<ParameterCondition> 
 BoolConditionConverter::getSpecificParameterCondition(
-  XMLObject& xmlObj,
+  const XMLObject& xmlObj,
   ParameterEntry::ParameterEntryID paramID,
   bool whenParamEqualsValue) const
 {

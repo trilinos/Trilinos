@@ -65,6 +65,11 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
   return *this;
 }
 
+ParameterEntry::~ParameterEntry()
+{
+  removeParameterEntryFromMasterMaps(this);
+}
+
 
 void ParameterEntry::setAnyValue(
   const any &value_in, bool isDefault_in
@@ -130,7 +135,7 @@ RCP<ParameterEntry> ParameterEntry::getParameterEntry(ParameterEntryID id){
 }
 
 ParameterEntry::ParameterEntryID 
-ParameterEntry::getParameterEntryID(RCP<ParameterEntry> entry){
+ParameterEntry::getParameterEntryID(RCP<const ParameterEntry> entry){
   ParameterEntryToIDMap::iterator result = masterParameterEntryMap.find(entry);
   return result != masterParameterEntryMap.end() ? 
     result->second : OrdinalTraits<ParameterEntryID>::invalid();
@@ -175,7 +180,7 @@ void ParameterEntry::addParameterEntryToMasterMaps(ParameterEntry* entryToAdd){
   masterIDMap.insert(
     IDParameterEntryPair(insertionID, toInsert));
   masterParameterEntryMap.insert(
-    ParameterEntryIDPair(toInsert, insertionID));
+    ParameterEntryIDPair(toInsert.getConst(), insertionID));
 }
 
 void ParameterEntry::addParameterEntryToMasterMaps(
@@ -190,7 +195,7 @@ void ParameterEntry::addParameterEntryToMasterMaps(
   idToUse << ". That ID is already being used to track another " <<
   "ParameterEntry!" << std::endl << std::endl);
   masterParameterEntryMap.insert(
-    ParameterEntryIDPair(rcp(entry, false), idToUse));
+    ParameterEntryIDPair(rcp(entry, false).getConst(), idToUse));
   masterIDMap.insert(IDParameterEntryPair(idToUse, rcp(entry, false)));
 }
 
@@ -207,4 +212,5 @@ void ParameterEntry::removeParameterEntryFromMasterMaps(
 
 
 } // namespace Teuchos
+
 

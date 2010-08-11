@@ -34,6 +34,7 @@
  * and Dependencies.
 */
 
+#include "Teuchos_Dependency.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Describable.hpp"
 
@@ -59,7 +60,7 @@ public:
    * @return The converted Dependency.
    */
   RCP<Dependency>
-  fromXMLtoDependency(const XMLObject& xmlObj, RCP<ParameterList> rootParameterList) const;
+  fromXMLtoDependency(const XMLObject& xmlObj) const;
 
   /** \brief Preforms any and all special xml conversion that is specific to a
    * particular Dependency.
@@ -73,14 +74,14 @@ public:
   virtual RCP<Dependency> convertXML(
     const XMLObject& xmlObj, 
     const Dependency::ConstParameterEntryList dependees,
-    const Dependency::ParameterEntryList dependets) const = 0
+    const Dependency::ParameterEntryList dependets) const = 0;
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param dependency The Dependency to be converted to XML.
    * @return An XML representation of the given Dependency.
    */
-  XMLObject fromDependencytoXML(const RCP<const Dependency> dependency);
+  XMLObject fromDependencytoXML(const RCP<const Dependency> dependency) const;
   
   /** \brief Preforms any and all special dependency conversion that is
    * specific to a particlar Dependency.
@@ -98,7 +99,7 @@ public:
   //@{
 
   /** \brief gets the value to be used for the type attribute. */
-  const std::string& getTypeAttributeValue() const = 0;
+  virtual std::string getTypeAttributeValue() const = 0;
 
   /**
    * \brief Returns the string to be used for the dependee tag.

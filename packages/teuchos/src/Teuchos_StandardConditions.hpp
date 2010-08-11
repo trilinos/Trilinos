@@ -38,308 +38,9 @@
 #include "Teuchos_InvalidConditionException.hpp"
 #include "Teuchos_ParameterList.hpp"
 
+
 namespace Teuchos{
 
-/**
- * \brief An abstract parent class for all Binary Logic Conditions.
- *
- * Binary Logic Conditions return the result of performing some
- * Logical operation on a set of conditions. Note that although the
- * name implies the evaluation of two conditions, Binary Logic Conditions
- * can actually evaluate and arbiturary number of conditions.
- */
-class BinaryLogicalCondition : public Condition{
-
-public:
-
-  /** \name Constructors/Destructor */
-  //@{
-
-  /**
-   * \brief Constructs a BinaryLogicCondition
-   *
-   * \param conditions The conditions to be evaluated.
-   */
-  BinaryLogicalCondition(ConstConditionList& conditions);
-
-  //@}
-
-  /**
-   * \brief Deconstructor for a BinaryLogicCondition
-   */
-  virtual ~BinaryLogicalCondition(){}
-
-  //@}
-  
-  /** \name Modifier Functions */
-
-  //@{
-
-  /**
-   * \brief Adds a Condition to the list of conditions that will
-   * be evaluated by this Binary Logical Condition.
-   *
-   * \param toAdd The condition to be added to the list of
-   * conditions this Binary Logic Condition will evaluate.
-   */
-  void addCondition(RCP<const Condition> toAdd);
-
-  //@}
-
-  //! @name Attribute/Query Methods 
-  //@{
-
-  /**
-   * \brief Applies a Binary Logic operator to two operands and returns the
-   * result.
-   *
-   * \param op1 The first operand.
-   * \param op2 The second operand.
-   * \return The result of applying a binary logical operator to
-   * the two operands.
-   */
-  virtual bool applyOperator(bool op1, bool op2) const = 0;
-
-  /**
-   * \brief Gets a list of all conditions that are a part of this 
-   * BinaryLogicalCondition/
-   */
-  inline
-  const ConstConditionList& getConditions() const{
-    return conditions_;
-  }
-
-  //@}
-
-  /** \name Overridden from Condition */
-  //@{
-
-  /** \brief . */
-  virtual bool isConditionTrue() const;
-
-  /** \brief . */
-  bool containsAtLeasteOneParameter() const;
-
-  /** \brief . */
-  Dependency::ConstParameterEntryList getAllParameters() const;
-
-  //@}
-
-private:
-
-  /** \name Private Members */
-  //@{
-  
-  /*
-   * \brief A list of conditions on which to perform some logic operation.
-   */
-  ConstConditionList conditions_;
-
-  //@}
-
-};
-
-/**
- * \brief A Binary Logic Condition that returns the result
- * or perfroming a logical OR on the conditions.
- */
-class OrCondition : public BinaryLogicalCondition{
-
-public:
-
-  /** \name Constructors/Destructor */
-  //@{
-
-  /**
-   * \brief Constructs an Or Condition
-   *
-   * @param conditions The conditions to be evaluated.
-   */
-  OrCondition(ConstConditionList& conditions);
-
-  /**
-   * \brief Deconstructs an Or Condition.
-   */
-  virtual ~OrCondition(){}
-
-  //@}
-
-  /** \name Overridden from Condition */
-  //@{
-
-  std::string getTypeAttributeValue() const{
-    return "orCondition";
-  }
-  
-  //@}
-
-  /** \name Overridden from BinaryLogicalCondition */
-  //@{
-
-  /** \brief . */
-  bool applyOperator(bool op1, bool op2) const;
-  
-  //@}
-
-};
-
-/**
- * \brief A Binary Logic Condition that returns the result
- * or perfroming a logical AND on the conditions.
- */
-class AndCondition : public BinaryLogicalCondition{
-
-public:
-
-  /** \name Constructors/Destructor */
-  //@{
-
-  /**
-   * \brief Constructs an And Condition
-   *
-   * @param conditions The conditions to be evaluated.
-   */
-  AndCondition(ConstConditionList& conditions);
-
-  /**
-   * \brief Deconstructs an And Condition.
-   */
-  virtual ~AndCondition(){}
-  
-  //@}
-
-  /** \name Overridden from Condition */
-  //@{
-
-  std::string getTypeAttributeValue() const{
-    return "andCondition";
-  }
-  
-  //@}
-
-
-  /** \name Overridden from BinaryLogicalCondition */
-  //@{
-
-  /** \brief . */
-  bool applyOperator(bool op1, bool op2) const;
-  
-  //@}
-
-};
-
-/**
- * \brief A Binary Logic Condition that returns the result
- * or perfroming a logical EQUALS on the conditions.
- */
-class EqualsCondition : public BinaryLogicalCondition{
-
-public:
-
-  /** \name Constructors/Destructor */
-  //@{
-
-  /**
-   * \brief Constructs an Equals Condition
-   *
-   * @param conditions The conditions to be evaluated.
-   */
-  EqualsCondition(ConstConditionList& conditions);
-
-  /**
-   * \brief Deconstructs an Equals Condition.
-   */
-  virtual ~EqualsCondition(){}
-  
-  //@}
-
-  /** \name Overridden from Condition */
-  //@{
-
-  std::string getTypeAttributeValue() const{
-    return "equalsCondition";
-  }
-  
-  //@}
-
-  /** \name Overridden from BinaryLogicalCondition */
-  //@{
-
-  /** \brief . */
-  bool applyOperator(bool op1, bool op2) const;
-  
-  //@}
-
-};
-
-/**
- * \brief A Not condition returns the result of
- * performing a logical NOT on a given
- * condition.
- */
-class NotCondition : public Condition{
-
-public:
-
-  /** \name Constructors/Destructor */
-  //@{
-
-  /**
-   * \brief Constructs a Not Condition
-   *
-   * @param condition The condition to be evaluated.
-   */
-  NotCondition(RCP<const Condition> condition);
-
-  /**
-   * \brief Deconstructs a Not Condition.
-   */
-  virtual ~NotCondition(){}
-  
-  //@}
-
-  /** \name Attribute/Query Functions */
-  //@{
-
-  /** \brief Retrieve the child condition */
-  RCP<const Condition> getChildCondition(){
-    return childCondition_;
-  }
-  
-  //@}
-
-  /** \name Overridden from Condition */
-  //@{
-
-  /** \brief . */
-  bool isConditionTrue() const;
-
-  /** \brief . */
-  bool containsAtLeasteOneParameter() const;
-
-  /** \brief . */
-  Dependency::ConstParameterEntryList getAllParameters() const;
-
-  std::string getTypeAttributeValue() const{
-    return "notCondition";
-  }
-  
-  //@}
-
-private:
-
-  /** \name Private Members */
-  //@{
-  
-  /**
-   * The condition on which to perfrom the logical NOT.
-   */
-  RCP<const Condition> childCondition_;
-  
-  //@}
-
-
-};
 
 /**
  * \brief An Abstract Base class for all ParameterConditions.
@@ -548,6 +249,48 @@ private:
   
 };
 
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * StringCondition.
+ *
+ * \relates StringCondition
+ */
+template<>
+class DummyObjectGetter<StringCondition>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * StringCondition.
+  */
+  static RCP<StringCondition >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new StringCondition(
+        DummyObjectGetter<ParameterEntry>::getDummyObject(),""));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<StringCondition> 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
 /**
  * \brief A Number Condition is a Parameter Condition that evaluates
  * whether or not a number parameter is greater 0. 
@@ -652,6 +395,47 @@ private:
 
 };
 
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * NumberCondition.
+ *
+ * \relates NumberCondition
+ */
+template<class T>
+class DummyObjectGetter<NumberCondition<T> >{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberCondition.
+  */
+  static RCP<NumberCondition<T> >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new NumberCondition<T>(
+        DummyObjectGetter<ParameterEntry>::getDummyObject()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<NumberCondition<T> > 
+    dummyObject;
+  
+  //@}
+  
+};
+
 /**
  * \brief A Bool Condition is a Parameter Condition that evaluates
  * whether or not a Boolean parameter is ture.
@@ -701,6 +485,517 @@ public:
 
 };
 
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * BoolCondition.
+ *
+ * \relates BoolCondition
+ */
+template<>
+class DummyObjectGetter<BoolCondition>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * BoolCondition.
+  */
+  static RCP<BoolCondition >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new BoolCondition(
+        DummyObjectGetter<ParameterEntry>::getDummyObject()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<BoolCondition> 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
+/**
+ * \brief An abstract parent class for all Binary Logic Conditions.
+ *
+ * Binary Logic Conditions return the result of performing some
+ * Logical operation on a set of conditions. Note that although the
+ * name implies the evaluation of two conditions, Binary Logic Conditions
+ * can actually evaluate and arbiturary number of conditions.
+ */
+class BinaryLogicalCondition : public Condition{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a BinaryLogicCondition
+   *
+   * \param conditions The conditions to be evaluated.
+   */
+  BinaryLogicalCondition(ConstConditionList& conditions);
+
+  //@}
+
+  /**
+   * \brief Deconstructor for a BinaryLogicCondition
+   */
+  virtual ~BinaryLogicalCondition(){}
+
+  //@}
+  
+  /** \name Modifier Functions */
+
+  //@{
+
+  /**
+   * \brief Adds a Condition to the list of conditions that will
+   * be evaluated by this Binary Logical Condition.
+   *
+   * \param toAdd The condition to be added to the list of
+   * conditions this Binary Logic Condition will evaluate.
+   */
+  void addCondition(RCP<const Condition> toAdd);
+
+  //@}
+
+  //! @name Attribute/Query Methods 
+  //@{
+
+  /**
+   * \brief Applies a Binary Logic operator to two operands and returns the
+   * result.
+   *
+   * \param op1 The first operand.
+   * \param op2 The second operand.
+   * \return The result of applying a binary logical operator to
+   * the two operands.
+   */
+  virtual bool applyOperator(bool op1, bool op2) const = 0;
+
+  /**
+   * \brief Gets a list of all conditions that are a part of this 
+   * BinaryLogicalCondition/
+   */
+  inline
+  const ConstConditionList& getConditions() const{
+    return conditions_;
+  }
+
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  /** \brief . */
+  virtual bool isConditionTrue() const;
+
+  /** \brief . */
+  bool containsAtLeasteOneParameter() const;
+
+  /** \brief . */
+  Dependency::ConstParameterEntryList getAllParameters() const;
+
+  //@}
+
+private:
+
+  /** \name Private Members */
+  //@{
+  
+  /*
+   * \brief A list of conditions on which to perform some logic operation.
+   */
+  ConstConditionList conditions_;
+
+  //@}
+
+};
+
+/**
+ * \brief A Binary Logic Condition that returns the result
+ * or perfroming a logical OR on the conditions.
+ */
+class OrCondition : public BinaryLogicalCondition{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs an Or Condition
+   *
+   * @param conditions The conditions to be evaluated.
+   */
+  OrCondition(ConstConditionList& conditions);
+
+  /**
+   * \brief Deconstructs an Or Condition.
+   */
+  virtual ~OrCondition(){}
+
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  std::string getTypeAttributeValue() const{
+    return "orCondition";
+  }
+  
+  //@}
+
+  /** \name Overridden from BinaryLogicalCondition */
+  //@{
+
+  /** \brief . */
+  bool applyOperator(bool op1, bool op2) const;
+  
+  //@}
+
+};
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * OrCondition.
+ *
+ * \relates OrCondition
+ */
+template<>
+class DummyObjectGetter<OrCondition>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * OrCondition.
+  */
+  static RCP<OrCondition >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      Condition::ConstConditionList dummyList;
+      dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
+      dummyObject = rcp(new OrCondition(dummyList));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<OrCondition> 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
+/**
+ * \brief A Binary Logic Condition that returns the result
+ * or perfroming a logical AND on the conditions.
+ */
+class AndCondition : public BinaryLogicalCondition{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs an And Condition
+   *
+   * @param conditions The conditions to be evaluated.
+   */
+  AndCondition(ConstConditionList& conditions);
+
+  /**
+   * \brief Deconstructs an And Condition.
+   */
+  virtual ~AndCondition(){}
+  
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  std::string getTypeAttributeValue() const{
+    return "andCondition";
+  }
+  
+  //@}
+
+
+  /** \name Overridden from BinaryLogicalCondition */
+  //@{
+
+  /** \brief . */
+  bool applyOperator(bool op1, bool op2) const;
+  
+  //@}
+
+};
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * AndCondition.
+ *
+ * \relates AndCondition
+ */
+template<>
+class DummyObjectGetter<AndCondition>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * AndCondition.
+  */
+  static RCP<AndCondition >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      Condition::ConstConditionList dummyList;
+      dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
+      dummyObject = rcp(new AndCondition(dummyList));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<AndCondition> 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
+/**
+ * \brief A Binary Logic Condition that returns the result
+ * or perfroming a logical EQUALS on the conditions.
+ */
+class EqualsCondition : public BinaryLogicalCondition{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs an Equals Condition
+   *
+   * @param conditions The conditions to be evaluated.
+   */
+  EqualsCondition(ConstConditionList& conditions);
+
+  /**
+   * \brief Deconstructs an Equals Condition.
+   */
+  virtual ~EqualsCondition(){}
+  
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  std::string getTypeAttributeValue() const{
+    return "equalsCondition";
+  }
+  
+  //@}
+
+  /** \name Overridden from BinaryLogicalCondition */
+  //@{
+
+  /** \brief . */
+  bool applyOperator(bool op1, bool op2) const;
+  
+  //@}
+
+};
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * EqualsCondition.
+ *
+ * \relates EqualsCondition
+ */
+template<>
+class DummyObjectGetter<EqualsCondition>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * EqualsCondition.
+  */
+  static RCP<EqualsCondition >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      Condition::ConstConditionList dummyList;
+      dummyList.append(DummyObjectGetter<BoolCondition>::getDummyObject());
+      dummyObject = rcp(new EqualsCondition(dummyList));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<EqualsCondition> 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
+/**
+ * \brief A Not condition returns the result of
+ * performing a logical NOT on a given
+ * condition.
+ */
+class NotCondition : public Condition{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /**
+   * \brief Constructs a Not Condition
+   *
+   * @param condition The condition to be evaluated.
+   */
+  NotCondition(RCP<const Condition> condition);
+
+  /**
+   * \brief Deconstructs a Not Condition.
+   */
+  virtual ~NotCondition(){}
+  
+  //@}
+
+  /** \name Attribute/Query Functions */
+  //@{
+
+  /** \brief Retrieve the child condition */
+  RCP<const Condition> getChildCondition() const{
+    return childCondition_;
+  }
+  
+  //@}
+
+  /** \name Overridden from Condition */
+  //@{
+
+  /** \brief . */
+  bool isConditionTrue() const;
+
+  /** \brief . */
+  bool containsAtLeasteOneParameter() const;
+
+  /** \brief . */
+  Dependency::ConstParameterEntryList getAllParameters() const;
+
+  std::string getTypeAttributeValue() const{
+    return "notCondition";
+  }
+  
+  //@}
+
+private:
+
+  /** \name Private Members */
+  //@{
+  
+  /**
+   * The condition on which to perfrom the logical NOT.
+   */
+  RCP<const Condition> childCondition_;
+  
+  //@}
+
+};
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * NotCondition.
+ *
+ * \relates NotCondition
+ */
+template<>
+class DummyObjectGetter<NotCondition>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NotCondition.
+  */
+  static RCP<NotCondition >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new NotCondition(
+        DummyObjectGetter<BoolCondition>::getDummyObject()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<NotCondition> 
+    dummyObject;
+  
+  //@}
+  
+};
 
 } //namespace Teuchos
 

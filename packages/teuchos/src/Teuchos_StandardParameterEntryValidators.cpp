@@ -389,7 +389,7 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
   const std::string &entryName = entry.getAny(false).typeName();
   any anyValue = entry.getAny(true);
   TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string) ),
-    InvalidParameterType,
+    Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
     "\" sublist didn't quite work out.\n" <<
@@ -400,14 +400,14 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
     "Parameter: " << paramName << "\n" << 
     "Type specified: " << entryName << "\n" <<
     "Type accepted: " << typeid(std::string).name() << "\n");
-  }
   if(mustAlreadyExist_){
     std::string fileName = getValue<std::string>(entry);
     TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
       Exceptions::InvalidParameterValue,
-      "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-      " parameter in the \"" << sublistName << "\" sublist didn't quite work "
-      "out.\n" <<
+      "Aww shoot! Sorry bud, but it looks like the \"" 
+      << paramName << "\"" <<
+      " parameter in the \"" << sublistName << 
+      "\" sublist didn't quite work out.\n" <<
       "No need to fret though. I'm sure it's just a small mistake. " <<
       "Maybe the information below "<<
       "can help you figure out what went wrong.\n\n"
@@ -471,7 +471,7 @@ void StringValidator::validate(
   any anyValue = entry.getAny(true);
   const std::string &entryName = entry.getAny(false).typeName();
   TEST_FOR_EXCEPTION(!(anyValue.type() == typeid(std::string)) ,
-    InvalidParameterType,
+    Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
     "\" sublist didn't quite work out.\n" <<
@@ -487,8 +487,9 @@ void StringValidator::validate(
       it = std::find(validStrings_->begin(),
       validStrings_->end(), getValue<std::string>(entry));
     TEST_FOR_EXCEPTION(it == validStrings_->end(),
-      InvalidParameterValue,
-      "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+      Exceptions::InvalidParameterValue,
+      "Aww shoot! Sorry bud, but it looks like the \""
+      << paramName << "\"" <<
       " parameter in the \"" << sublistName << 
       "\" sublist didn't quite work out.\n" <<
       "No need to fret though. I'm sure it's just a small mistake. "
@@ -539,8 +540,8 @@ Teuchos::anyNumberParameterEntryValidator(
 Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
 Teuchos::anyNumberParameterEntryValidator(
   AnyNumberParameterEntryValidator::EPreferredType const preferredType,
-  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
-  ValidatorID validatorID
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes,
+  ParameterEntryValidator::ValidatorID validatorID
   )
 {
   return rcp(

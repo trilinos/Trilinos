@@ -37,7 +37,7 @@
 
 #include "Teuchos_Dependency.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_Condition.hpp"
+#include "Teuchos_StandardConditions.hpp"
 
 
 namespace Teuchos{
@@ -376,6 +376,50 @@ private:
   
 };
 
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * StringVisualDependency.
+ *
+ * \relates StringVisualDependency
+ */
+template<>
+class DummyObjectGetter<StringVisualDependency>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * StringVisualDependency.
+  */
+  static RCP<StringVisualDependency >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new StringVisualDependency(
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      "i'm a dummy"));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<StringVisualDependency > 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
 /**
  * \brief A bool visual dependency says the following about the 
  * relationship between two elements in a Parameter List:
@@ -451,6 +495,48 @@ protected:
   
   //@}
 
+};
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * BoolVisualDependency.
+ *
+ * \relates BoolVisualDependency
+ */
+template<>
+class DummyObjectGetter<BoolVisualDependency>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * BoolVisualDependency.
+  */
+  static RCP<BoolVisualDependency >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new BoolVisualDependency(
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      DummyObjectGetter<ParameterEntry>::getDummyObject()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<BoolVisualDependency > 
+    dummyObject;
+  
+  //@}
+  
 };
 
 /**
@@ -550,6 +636,49 @@ private:
 
 };
 
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * ConditionVisualDependency.
+ *
+ * \relates ConditionVisualDependency
+ */
+template<>
+class DummyObjectGetter<ConditionVisualDependency>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * ConditionVisualDependency.
+  */
+  static RCP<ConditionVisualDependency >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new ConditionVisualDependency(
+      DummyObjectGetter<NotCondition>::getDummyObject(),
+      DummyObjectGetter<ParameterEntry>::getDummyObject()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<ConditionVisualDependency> 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
 /**
  * \brief A number visual dependency says the following about 
  * the relationship between two elements in a Parameter List:
@@ -644,7 +773,7 @@ protected:
 
   /** \brief . */
   void validateDep() const{
-    const ParameterEntry* dependee = getFirstDependee();
+    RCP<const ParameterEntry> dependee = getFirstDependee();
     TEST_FOR_EXCEPTION(
       !dependee->isType<int>()
       && !dependee->isType<short>()
@@ -688,6 +817,48 @@ private:
   
   //@}
   //
+};
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * NumberVisualDependency.
+ *
+ * \relates NumberVisualDependency
+ */
+template<class T>
+class DummyObjectGetter<NumberVisualDependency<T> >{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberVisualDependency.
+  */
+  static RCP<NumberVisualDependency<T> >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new NumberVisualDependency<T>(
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      DummyObjectGetter<ParameterEntry>::getDummyObject()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<NumberVisualDependency<T> > 
+    dummyObject;
+  
+  //@}
+  
 };
 
 /**
@@ -743,6 +914,7 @@ public:
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
    * @param aspect The aspect of the validator that should change.
+   * @param validator The validator to be modified.
    * @param func A function specifying how the value of the validators
    * aspect should be calculated from the dependees value.
    */
@@ -750,10 +922,11 @@ public:
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     ValidatorAspect aspect, 
+    RCP<EnhancedNumberValidator<T> > validator,
     T (*func)(T) =0)
     :Dependency(dependee, dependent),
     aspect_(aspect),
-    validator_(dependent->validator()),
+    validator_(validator),
     func_(func)
   {
     validateDep();
@@ -765,6 +938,7 @@ public:
    * @param dependee The dependee parameter.
    * @param dependents The dependents
    * @param aspect The aspect of the validator that should change.
+   * @param validator The validator to be modified.
    * @param func A function specifying how the value of the validators
    * aspect should be calculated from the dependees value.
    */
@@ -772,10 +946,11 @@ public:
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents,
     ValidatorAspect aspect, 
+    RCP<EnhancedNumberValidator<T> > validator,
     T (*func)(T) =0)
     :Dependency(dependee, dependents),
     aspect_(aspect),
-    validator_((*dependents.begin())->validator()),
+    validator_(validator),
     func_(func)
   {
     validateDep();
@@ -854,7 +1029,7 @@ public:
     }
     //Should never get here. 
     //This code is here so that a warning is not generated.
-    return (EPreferredType)-1;  
+    return (ValidatorAspect)-1;  
   }
   
   /** \name Overridden from Dependency */
@@ -876,7 +1051,7 @@ protected:
   /** \brief . */
   void validateDep() const{
 
-    const ParameterEntry* dependee = getFirstDependee();
+    RCP<const ParameterEntry> dependee = getFirstDependee();
     TEST_FOR_EXCEPTION(typeid(T) != dependee->getAny().type(),
       InvalidDependencyException,
       "The dependee type and EnhancedNumberValidator "
@@ -885,24 +1060,22 @@ protected:
       "Dependee Type: " << dependee->getAny().typeName() << "\n"
       "Validator Template Type: " << typeid(T).name());
 
-    typename ParameterEntryList::const_iterator it;
-    RCP<const ParameterEntry> currentDependent;
-    for(it = getDependents().begin(); it != getDependents().end(); ++it){ 
-      currentDependent = *it;
+    ConstParameterEntryList::iterator it = getDependents().begin();
+    for(; it != getDependents().end(); ++it){ 
 
-      TEST_FOR_EXCEPTION(typeid(T) != currentDependent->getAny().type(),
+      TEST_FOR_EXCEPTION(typeid(T) != (*it)->getAny().type(),
         InvalidDependencyException,
         "The dependent type and EnhancedNumberValidator "
         "template type must all be the same for a Number Validator "
         "Aspect Dependency.\n"
-        "Dependent Type: " << currentDependent->getAny().typeName() << 
+        "Dependent Type: " << (*it)->getAny().typeName() << 
         "\n"
         "Validator Template Type: " << typeid(T).name());
      
       TEST_FOR_EXCEPTION( 
         validator_.get() 
         != 
-        currentDependent->validator().get(),
+        (*it)->validator().get(),
         InvalidDependencyException,
         "Error! All dependents in a NumberValidatorAspectDependency "
         "must have the same validator!");
@@ -947,23 +1120,67 @@ private:
       return argument;
   }  
   
-  static cosnt std::string& getMinEnumString(){
+  static const std::string& getMinEnumString(){
     static const std::string minEnumString = "min";
     return minEnumString;
   }
 
-  static cosnt std::string& getMaxEnumString(){
+  static const std::string& getMaxEnumString(){
     static const std::string maxEnumString = "max";
     return maxEnumString;
   }
 
-  static cosnt std::string& getStepEnumString(){
+  static const std::string& getStepEnumString(){
     static const std::string stepEnumString = "step";
     return stepEnumString;
   }
 
   //@}
 
+};
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * NumberValidatorAspectDependency.
+ *
+ * \relates NumberValidatorAspectDependency
+ */
+template<class T>
+class DummyObjectGetter<NumberValidatorAspectDependency<T> >{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberValidatorAspectDependency.
+  */
+  static RCP<NumberValidatorAspectDependency<T> >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new NumberValidatorAspectDependency<T>(
+        DummyObjectGetter<ParameterEntry>::getDummyObject().getConst(),
+        DummyObjectGetter<ParameterEntry>::getDummyObject(),
+        NumberValidatorAspectDependency<T>::Min,
+        null));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<NumberValidatorAspectDependency<T> > 
+    dummyObject;
+  
+  //@}
+  
 };
 
 /**
@@ -1065,6 +1282,48 @@ private:
   template <class T>
   void modifyArrayLength(
     int newLength, RCP<ParameterEntry> dependentToModify);
+  
+  //@}
+  
+};
+
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * NumberArrayLengthDependency.
+ *
+ * \relates NumberArrayLengthDependency
+ */
+template<>
+class DummyObjectGetter<NumberArrayLengthDependency>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberArrayLengthDependency.
+  */
+  static RCP<NumberArrayLengthDependency >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new NumberArrayLengthDependency(
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      DummyObjectGetter<ParameterEntry>::getDummyObject()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<NumberArrayLengthDependency> 
+    dummyObject;
   
   //@}
   
@@ -1209,6 +1468,49 @@ private:
   
 };
 
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * StringValidatorDependency.
+ *
+ * \relates StringValidatorDependency
+ */
+template<>
+class DummyObjectGetter<StringValidatorDependency>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * StringValidatorDependency.
+  */
+  static RCP<StringValidatorDependency >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new StringValidatorDependency(
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      StringValidatorDependency::ValueToValidatorMap()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<StringValidatorDependency> 
+    dummyObject;
+  
+  //@}
+  
+};
+
 /**
  * \brief A BoolValidatorDependency says the following about the 
  * relationship between two parameters:
@@ -1319,6 +1621,48 @@ private:
 
 };
 
+/** \brief Speicialized class for retrieving a dummy object of type
+ * BoolValidatorDependency.
+ *
+ * \relates BoolValidatorDependency
+ */
+template<>
+class DummyObjectGetter<BoolValidatorDependency>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * BoolValidatorDependency.
+  */
+  static RCP<BoolValidatorDependency >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new BoolValidatorDependency(
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      null, null));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<BoolValidatorDependency > 
+    dummyObject;
+  
+  //@}
+  
+};
+
 /**
  * \brief A RangeValidatorDependency says the following about the
  * relationship between two parameters:
@@ -1414,7 +1758,9 @@ public:
 
   /** \name Getters */
   //@{
-  const RangeToValidatorMap& getRangeToValidatorMap(){
+
+  /** \brief . */
+  const RangeToValidatorMap& getRangeToValidatorMap() const{
     return rangesAndValidators_;
   }
   
@@ -1475,9 +1821,9 @@ protected:
 
     typename RangeToValidatorMap::const_iterator it = 
       rangesAndValidators_.begin();
-    std::type_info firstValidatorType = typeid(it->second);
+    RCP<const ParameterEntryValidator> firstValidator = it->second;
     for(; it!=rangesAndValidators_.end(); ++it){
-      TEST_FOR_EXCEPTION( firstValidatorType != typeid(it->second),
+      TEST_FOR_EXCEPTION( typeid(firstValidator) != typeid(it->second),
        InvalidDependencyException,
        "Ay no! All of the validators in a RangeValidatorDependency "
        "must have the same type.");
@@ -1497,9 +1843,8 @@ private:
    */
   RangeToValidatorMap rangesAndValidators_;
   
-  void setDependentsToValidator(RCP<ParameterEntryValidator> toSet){
+  void setDependentsToValidator(RCP<const ParameterEntryValidator> toSet){
     typename ParameterEntryList::const_iterator it;
-    ParameterEntry *currentDependent;
     for(
       it = getDependents().begin(); 
       it != getDependents().end(); 
@@ -1511,6 +1856,49 @@ private:
 
   //@}
 
+};
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * RangeValidatorDependency.
+ *
+ * \relates RangeValidatorDependency
+ */
+template<class T>
+class DummyObjectGetter<RangeValidatorDependency<T> >{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * RangeValidatorDependency.
+  */
+  static RCP<RangeValidatorDependency<T> >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      typename RangeValidatorDependency<T>::RangeToValidatorMap dummyMap;
+      dummyObject = rcp(new RangeValidatorDependency<T>(
+        DummyObjectGetter<ParameterEntry>::getDummyObject(),
+        DummyObjectGetter<ParameterEntry>::getDummyObject(),
+        dummyMap));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<RangeValidatorDependency<T> > 
+    dummyObject;
+  
+  //@}
+  
 };
 
 

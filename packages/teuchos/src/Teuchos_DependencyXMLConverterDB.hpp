@@ -84,7 +84,7 @@ public:
    * \return XML representation of the dependency.
    */
   static XMLObject convertDependency(
-    RCP<const ParameterEntryDependency> dependency); 
+    RCP<const Dependency> dependency); 
 
   /**
    * \brief Given an XMLObject converts the XMLObject 
@@ -92,7 +92,7 @@ public:
    *
    * \return A Dependency that was represented by the XML.
    */
-  static RCP<ParameterEntryDependency> 
+  static RCP<Dependency> 
     convertXML(const XMLObject& xmlObject);
   
   //@}

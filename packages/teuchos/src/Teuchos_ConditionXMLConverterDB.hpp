@@ -28,7 +28,7 @@
 
 
 #ifndef TEUCHOS_CONDITIONXMLCONVERTERDB_HPP
-#define TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
+#define TEUCHOS_CONDITIONXMLCONVERTERDB_HPP
 
 /*! \file Teuchos_ConditionXMLConverterDB.hpp
  * \brief A database for ConditionXMLConverters.
@@ -84,7 +84,7 @@ public:
    *
    * \return XML representation of the condition.
    */
-  static XMLObject convertCondition(RCP<const EntryCondition> condition);
+  static XMLObject convertCondition(const RCP<const Condition> condition);
 
   /**
    * \brief Given an XMLObject and IDtoConditionMap, converts the XMLObject 
@@ -92,7 +92,7 @@ public:
    *
    * \return A ParameterEntryCondition that was represented by the XML.
    */
-  static RCP<ParameterEntryCondition> 
+  static RCP<Condition> 
     convertXML(const XMLObject& xmlObject);
   
   //@}
@@ -142,4 +142,4 @@ private:
 } // end namespace Teuchos
 
 
-#endif // TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
+#endif // TEUCHOS_CONDITIONXMLCONVERTERDB_HPP

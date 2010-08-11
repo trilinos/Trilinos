@@ -36,6 +36,7 @@
 
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_Condition.hpp"
 
 
 namespace Teuchos {
@@ -74,7 +75,7 @@ public:
    * @param condition The Condition to be converted to XML.
    * @return An XML representation of the given Condition.
    */
-  XMLObject fromConditiontoXML(const RCP<const Condition> condition);
+  XMLObject fromConditiontoXML(const RCP<const Condition> condition) const;
   
   /** \brief Preforms any and all special condition conversion that is
    * specific to a particlar Condition.

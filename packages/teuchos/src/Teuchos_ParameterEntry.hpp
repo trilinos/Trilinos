@@ -38,6 +38,8 @@
 #include "Teuchos_any.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterEntryValidator.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
+#include "Teuchos_DummyObjectGetter.hpp"
 
 namespace Teuchos {
 
@@ -82,9 +84,10 @@ public:
    */
   template<typename T>
   explicit ParameterEntry(
-    T value, bool isDefault = false, bool isList = false,
-    const std::string &docString = "",
-    RCP<const ParameterEntryValidator> const& validator = null
+    T value, bool isDefault, bool isList,
+    const std::string &docString,
+    RCP<const ParameterEntryValidator> const& validator,
+    ParameterEntryID paramID
     );
 
 
@@ -167,7 +170,7 @@ public:
 
   static RCP<ParameterEntry> getParameterEntry(ParameterEntryID id);
 
-  static ParameterEntryID getParameterEntryID(RCP<ParameterEntry> entry);
+  static ParameterEntryID getParameterEntryID(RCP<const ParameterEntry> entry);
 
   //@}
 
@@ -252,10 +255,10 @@ private:
 #pragma warning(pop)
 #endif
 
-  typedef std::map< RCP<ParameterEntry> , ParameterEntryID, RCPComp > 
+  typedef std::map< RCP<const ParameterEntry> , ParameterEntryID, RCPConstComp>
     ParameterEntryToIDMap;
 
-  typedef std::pair<RCP<ParameterEntry>, ParameterEntryID>
+  typedef std::pair<RCP<const ParameterEntry>, ParameterEntryID>
     ParameterEntryIDPair;
 
   typedef std::map<ParameterEntryID, RCP<ParameterEntry> > 
@@ -271,7 +274,7 @@ private:
   static IDToParameterEntryMap masterIDMap;
   
   static ParameterEntryID& getMasterIDCounter(){
-    static ParameterEntryID masterCounter = 0;
+    static ParameterEntryID masterCounter = 1000;
     return masterCounter;
   }
 
@@ -359,7 +362,7 @@ ParameterEntry::ParameterEntry(
   bool isDefault_in,
   bool /*isList_in*/, // 2007/11/26: rabartl: ToDo: This arg is ignored and should be removed!
   const std::string &docString_in,
-  RCP<const ParameterEntryValidator> const& validator_in
+  RCP<const ParameterEntryValidator> const& validator_in,
   ParameterEntryID paramID
   )
   : val_(value_in),
@@ -368,15 +371,11 @@ ParameterEntry::ParameterEntry(
     docString_(docString_in),
     validator_(validator_in)
 {
-  addParameterEntryToMasterMaps(this, paramID);
+  if(paramID != OrdinalTraits<ParameterEntryID>::invalid()){
+    addParameterEntryToMasterMaps(this, paramID);
+  }
 }
 
-
-inline
-ParameterEntry::~ParameterEntry()
-{
-  removeParameterEntryFromMasterMaps(this);
-}
 
 // Set Methods
 
@@ -451,6 +450,50 @@ RCP<const ParameterEntryValidator>
 ParameterEntry::validator() const
 { return validator_; }
 
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * ParameterEntry.
+ *
+ * \relates ParameterEntry
+ */
+template<>
+class DummyObjectGetter<ParameterEntry>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * ParameterEntry.
+  */
+  static RCP<ParameterEntry>
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      std::string docstring = "";
+      dummyObject = rcp(new ParameterEntry(any(), false, false, docstring, null,
+        OrdinalTraits<ParameterEntry::ParameterEntryID>::invalid()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<ParameterEntry> 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
 } // namespace Teuchos
+
 
 #endif

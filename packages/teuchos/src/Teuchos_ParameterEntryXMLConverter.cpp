@@ -90,7 +90,7 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
 
 XMLObject
 ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry,
-  const std::string &name, const ValidatortoIDMap& validatorIDMap) const
+  const std::string &name) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(entry.getAny().typeName() != getTypeAttributeValue(),
@@ -109,8 +109,8 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry,
   toReturn.addBool(getDefaultAttributeName(), entry.isDefault());
   toReturn.addBool(getUsedAttributeName(), entry.isUsed());
   if(nonnull(entry.validator())){
-    ValidatortoIDMap::const_iterator result = validatorIDMap.getID(entry.validator());
-    toReturn.addInt(ValidatorXMLConverter::getIdAttributeName(), result->second);  
+    toReturn.addAttribute(
+      ValidatorXMLConverter::getIdAttributeName(), entry.validator());  
   }
   return toReturn;
 }

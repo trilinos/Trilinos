@@ -36,45 +36,47 @@ namespace Teuchos {
 
 
 #define ADD_TEMPLATED_NUMBER_DEPS(T) \
-  ADD_NUMBER_VISUAL_DEP(T) \
-  ADD_RANGE_VALIDATOR_DEP(T) \
-  ADD_VALIDATOR_ASPECT_DEP(T)
+  ADD_NUMBER_VISUAL_DEP(T); \
+  ADD_RANGE_VALIDATOR_DEP(T); \
+  ADD_VALIDATOR_ASPECT_DEP(T);
 
 #define ADD_NUMBER_VISUAL_DEP(T) \
   \
-  NumberDependency< T > ##T##NumberVisualDependency; \
   masterMap.insert( \
-    ConverterPair(##T##NumberVisualDependency.getTypeAttributeValue(), \
-      rcp(new NumberVisualDependencyXMLConverter< T >)));
+    ConverterPair( \
+      DummyObjectGetter<NumberVisualDependency< T > >:: \
+      getDummyObject()->getTypeAttributeValue(), \
+      rcp(new NumberVisualDependencyConverter< T >)));
 
 #define ADD_RANGE_VALIDATOR_DEP(T) \
   \
-  RangeValidatorDependency< T > ##T##RangeValidatorDependency; \
   masterMap.insert( \
-    ConverterPair(##T##RangeValidatorDependency.getTypeAttributeValue(), \
-      rcp(new RangeValidatorDependencyXMLConverter< T >)));
+    ConverterPair( \
+      DummyObjectGetter<RangeValidatorDependency< T > >:: \
+        getDummyObject()->getTypeAttributeValue(), \
+      rcp(new RangeValidatorDependencyConverter< T >)));
 
 #define ADD_VALIDATOR_ASPECT_DEP(T) \
   \
-  NumberValidatorAspectDependency< T > \
-  ##T##NumberValidatorAspectDependency; \
-  \
   masterMap.insert( \
     ConverterPair( \
-      ##T##NumberValidatorAspectDependency.getTypeAttributeValue(), \
+      DummyObjectGetter<NumberValidatorAspectDependency< T > >:: \
+        getDummyObject()->getTypeAttributeValue(), \
       rcp(new NumberValidatorAspectDependencyConverter< T >)));
 
 
 void DependencyXMLConverterDB::addConverter(
   Dependency& dependency,
-  RCP<DependencyXMLConverter> converterToAdd){
+  RCP<DependencyXMLConverter> converterToAdd)
+{
   getConverterMap().insert(
     ConverterPair(dependency.getTypeAttributeValue(), converterToAdd));
 }
 
 
 RCP<const DependencyXMLConverter>
-DependencyXMLConverterDB::getConverter(const Dependency& dependency){
+DependencyXMLConverterDB::getConverter(const Dependency& dependency)
+{
   ConverterMap::const_iterator it = 
     getConverterMap().find(dependency.getTypeAttributeValue());
   TEST_FOR_EXCEPTION(it != getConverterMap().end(),
@@ -104,7 +106,7 @@ XMLObject DependencyXMLConverterDB::convertDependency(
   return getConverter(*dependency)->fromDependencytoXML(dependency);
 }
  
-RCP<ParameterEntryDependency> DependencyXMLConverterDB::convertXML(
+RCP<Dependency> DependencyXMLConverterDB::convertXML(
   const XMLObject& xmlObject)
 {
   return DependencyXMLConverterDB::getConverter(xmlObject)->
@@ -118,49 +120,47 @@ DependencyXMLConverterDB::getConverterMap()
   if(masterMap.size() == 0){
 
     ADD_TEMPLATED_NUMBER_DEPS(int);
-    typedef unsigned int uint;
-    ADD_TEMPLATED_NUMBER_DEPS(uint);
-    typedef short int sint;
-    ADD_TEMPLATED_NUMBER_DEPS(sint);
-    typedef unsigned short int usint;
-    ADD_TEMPLATED_NUMBER_DEPS(usint);
-    typedef long int lint;
-    ADD_TEMPLATED_NUMBER_DEPS(lint);
-    typedef unsigned long int ulint;
-    ADD_TEMPLATED_NUMBER_DEPS(ulint);
+    ADD_TEMPLATED_NUMBER_DEPS(unsigned int);
+    ADD_TEMPLATED_NUMBER_DEPS(short int);
+    ADD_TEMPLATED_NUMBER_DEPS(unsigned short int);
+    ADD_TEMPLATED_NUMBER_DEPS(long int);
+    ADD_TEMPLATED_NUMBER_DEPS(unsigned long int);
     ADD_TEMPLATED_NUMBER_DEPS(double);
     ADD_TEMPLATED_NUMBER_DEPS(float);
 
     #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-    typedef long long int llint;
-    ADD_TEMPLATED_NUMBER_DEPS(llint);
-    typedef unsigned long long int ullint;
-    ADD_TEMPLATED_NUMBER_DEPS(ullint);
+    ADD_TEMPLATED_NUMBER_DEPS(long long int);
+    ADD_TEMPLATED_NUMBER_DEPS(unsigned long long int);
     #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-    StringValidatorDependency stringValidatorDependency;
     masterMap.insert(
-      ConverterPair(stringValidatorDependency.getTypeAttributeValue(), 
-        rcp(new StringValidatorDependencyXMLConverter)));
+      ConverterPair(
+        DummyObjectGetter<StringValidatorDependency>::
+          getDummyObject()->getTypeAttributeValue(), 
+        rcp(new StringValidatorDependencyConverter)));
 
-    StringVisualDependency stringVisualDependency;
     masterMap.insert(
-      ConverterPair(stringVisualDependency.getTypeAttributeValue(), 
-        rcp(new StringVisualDependencyXMLConverter)));
+      ConverterPair(
+        DummyObjectGetter<StringVisualDependency>::
+          getDummyObject()->getTypeAttributeValue(), 
+        rcp(new StringVisualDependencyConverter)));
 
-    BoolVisualDependency boolVisualDependency;
     masterMap.insert(
-      ConverterPair(boolVisualDependency.getTypeAttributeValue(), 
-        rcp(new BoolVisualDependencyXMLConverter)));
+      ConverterPair(
+        DummyObjectGetter<BoolValidatorDependency>::
+          getDummyObject()->getTypeAttributeValue(), 
+        rcp(new BoolValidatorDependencyConverter)));
 
-    BoolValidatorDependency boolValidatorDependency;
     masterMap.insert(
-      ConverterPair(boolValidatorDependency.getTypeAttributeValue(), 
-        rcp(new BoolValidatorDependencyXMLConverter)));
+      ConverterPair(
+        DummyObjectGetter<BoolVisualDependency>::
+          getDummyObject()->getTypeAttributeValue(), 
+        rcp(new BoolVisualDependencyConverter)));
 
-    NumberArrayLengthDependency numberArrayLengthDependency;
     masterMap.insert(
-      ConverterPair(numberArrayLengthDependency.getTypeAttributeValue(),
+      ConverterPair(
+        DummyObjectGetter<NumberArrayLengthDependency>::
+          getDummyObject()->getTypeAttributeValue(),
         rcp(new NumberArrayLengthDependencyConverter)));
 
   }

@@ -163,15 +163,15 @@ const XMLObject& XMLObject::getChild(int i) const
   return ptr_->getChild(i);
 }
 
-XMLObject XMLObject::findFirstChild(std::string name) const{
+int XMLObject::findFirstChild(std::string name) const{
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::getChild: XMLObject is empty");
   for(int i = 0; i<numChildren(); ++i){
     if(getChild(i).getTag() == name){
-      return getChild(i);
+      return i;
     }
   }
-  return NULL;
+  return -1;
 }
 
 int XMLObject::numContentLines() const

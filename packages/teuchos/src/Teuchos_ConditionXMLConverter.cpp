@@ -26,7 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Teuchos_ConditionXMLConverter.hpp"
+
+
 namespace Teuchos{
+
 
 RCP<Condition>
 ConditionXMLConverter::fromXMLtoCondition(const XMLObject &xmlObj) const

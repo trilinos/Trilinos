@@ -28,7 +28,9 @@
 
 #include "Teuchos_StandardDependencyXMLConverters.hpp"
 
+
 namespace Teuchos{
+
 
 RCP<Dependency> VisualDependencyConverter::convertXML(
     const XMLObject& xmlObj, 
@@ -209,8 +211,15 @@ StringValidatorDependencyConverter::convertSpecialValidatorAttributes(
     valueValidatorMap.insert(
       StringValidatorDependency::ValueToValidatorPair(value, validator));
   }
+
+  RCP<ParameterEntryValidator> defaultValidator = null;
+  if(xmlObj.hasAttribute(getDefaultValidatorIDAttributeName())){
+    defaultValidator = ParameterEntryValidator::getValidator(
+      xmlObj.getRequired(getDefaultValidatorIDAttributeName()));
+  }
+
   return rcp(new StringValidatorDependency(
-    dependee, dependents, valueValidatorMap));
+    dependee, dependents, valueValidatorMap, defaultValidator));
 }
 
 void

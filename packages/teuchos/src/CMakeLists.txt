@@ -264,6 +264,8 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_TreeBuildingXMLHandler.hpp
     Teuchos_ValidatorXMLConverter.hpp
     Teuchos_ValidatorXMLConverterDB.hpp
+    Teuchos_XMLConditionExceptions.hpp
+    Teuchos_XMLDependencyExceptions.hpp
     Teuchos_XMLInputSource.hpp
     Teuchos_XMLInputStream.hpp
     Teuchos_XMLObject.hpp

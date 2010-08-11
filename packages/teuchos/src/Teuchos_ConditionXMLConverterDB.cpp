@@ -29,22 +29,24 @@
 #include "Teuchos_ConditionXMLConverterDB.hpp"
 #include "Teuchos_StandardConditionXMLConverters.hpp"
 #include "Teuchos_StandardConditions.hpp"
+#include "Teuchos_XMLConditionExceptions.hpp"
 
 
 
 namespace Teuchos {
 
 
-#define ADD_NUMBERCONDITION(T) \
+#define ADD_NUMBERCONVERTER(T) \
   \
-  NumberCondition< T > ##T##NumberCondition; \
-  masterMap.insert( \
-    ConverterPair(##T##NumberCondition.getTypeAttributeValue(), \
-      rcp(new NumberConditionXMLConverter< T >)));
+  masterMap.insert(ConverterPair( \
+    DummyObjectGetter<NumberCondition< T > >:: \
+      getDummyObject()->getTypeAttributeValue(), \
+    rcp(new NumberConditionConverter< T >)));
+
 
 
 void ConditionXMLConverterDB::addConverter(
-  ParameterEntryValidator& condition,
+  Condition& condition,
   RCP<ConditionXMLConverter> converterToAdd){
   getConverterMap().insert(
     ConverterPair(condition.getTypeAttributeValue(), converterToAdd));
@@ -82,7 +84,7 @@ XMLObject ConditionXMLConverterDB::convertCondition(
   return getConverter(*condition)->fromConditiontoXML(condition);
 }
  
-RCP<ParameterEntryCondition> ConditionXMLConverterDB::convertXML(
+RCP<Condition> ConditionXMLConverterDB::convertXML(
   const XMLObject& xmlObject)
 {
   return ConditionXMLConverterDB::getConverter(xmlObject)->
@@ -96,55 +98,49 @@ ConditionXMLConverterDB::getConverterMap()
   if(masterMap.size() == 0){
 
     ADD_NUMBERCONVERTER(int);
-    typedef unsigned int uint;
-    ADD_NUMBERCONVERTER(uint);
-    typedef short int sint;
-    ADD_NUMBERCONVERTER(sint);
-    typedef unsigned short int usint;
-    ADD_NUMBERCONVERTER(usint);
-    typedef long int lint;
-    ADD_NUMBERCONVERTER(lint);
-    typedef unsigned long int ulint;
-    ADD_NUMBERCONVERTER(ulint);
+    ADD_NUMBERCONVERTER(unsigned int);
+    ADD_NUMBERCONVERTER(short int);
+    ADD_NUMBERCONVERTER(unsigned short int);
+    ADD_NUMBERCONVERTER(long int);
+    ADD_NUMBERCONVERTER(unsigned long int);
     ADD_NUMBERCONVERTER(double);
     ADD_NUMBERCONVERTER(float);
 
     #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-    typedef long long int llint;
-    ADD_NUMBERCONVERTER(llint);
-    typedef unsigned long long int ullint;
-    ADD_NUMBERCONVERTER(ullint);
+    ADD_NUMBERCONVERTER(long long int);
+    ADD_NUMBERCONVERTER(unsigned long long int);
     #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-    StringCondition stringCondition;
-    masterMap.insert(
-      ConverterPair(stringCondition.getTypeAttributeValue(), 
-        rcp(new StringConditionXMLConverter)));
+    masterMap.insert(ConverterPair(
+      DummyObjectGetter<StringCondition>::
+        getDummyObject()->getTypeAttributeValue(),
+      rcp(new StringConditionConverter)));
 
-    BoolCondition boolCondition;
-    masterMap.insert(
-      ConverterPair(boolCondition.getTypeAttributeValue(), 
-        rcp(new BoolConditionXMLConverter)));
+    masterMap.insert(ConverterPair(
+      DummyObjectGetter<BoolCondition>::
+        getDummyObject()->getTypeAttributeValue(),
+      rcp(new BoolConditionConverter)));
 
-    OrCondition orCondition;
-    masterMap.insert(
-      ConverterPair(orCondition.getTypeAttributeValue(), 
-        rcp(new OrConditionXMLConverter)));
+    masterMap.insert(ConverterPair(
+      DummyObjectGetter<OrCondition>::
+        getDummyObject()->getTypeAttributeValue(),
+      rcp(new OrConditionConverter)));
 
-    AndCondition andCondition;
-    masterMap.insert(
-      ConverterPair(andCondition.getTypeAttributeValue(), 
-        rcp(new AndConditionXMLConverter)));
+    masterMap.insert(ConverterPair(
+      DummyObjectGetter<AndCondition>::
+        getDummyObject()->getTypeAttributeValue(),
+      rcp(new AndConditionConverter)));
 
-    EqualsCondition equalsCondition;
-    masterMap.insert(
-      ConverterPair(equalsCondition.getTypeAttributeValue(), 
-        rcp(new EqualsConditionXMLConverter)));
+    masterMap.insert(ConverterPair(
+      DummyObjectGetter<EqualsCondition>::
+        getDummyObject()->getTypeAttributeValue(),
+      rcp(new EqualsConditionConverter)));
 
-    NotCondition notCondition;
-    masterMap.insert(
-      ConverterPair(notCondition.getTypeAttributeValue(), 
-        rcp(new NotConditionXMLConverter)));
+    masterMap.insert(ConverterPair(
+      DummyObjectGetter<NotCondition>::
+        getDummyObject()->getTypeAttributeValue(),
+      rcp(new NotConditionConverter)));
+
 
   }
   return masterMap;
@@ -152,3 +148,4 @@ ConditionXMLConverterDB::getConverterMap()
 
 
 } // namespace Teuchos
+

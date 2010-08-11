@@ -144,7 +144,7 @@ public:
     ArrayView<const std::string> const& strings,
     ArrayView<const std::string> const& stringsDocs,
     ArrayView<const IntegralType> const& integralValues, 
-    std::string const& defaultParameterName
+    std::string const& defaultParameterName,
     ValidatorID validatorID
     );
 
@@ -297,7 +297,10 @@ private:
   StringToIntegralParameterEntryValidator();
 
   /** \brief Common setup shared between the two big constructors */
-  commonSetup();
+  void commonSetup(
+    ArrayView<const std::string> strings, 
+    ArrayView<const std::string> stringsDocs, 
+    ArrayView<const IntegralType> integralValues);
 
 };
 
@@ -350,8 +353,8 @@ stringToIntegralParameterEntryValidator(
   ArrayView<const std::string> const& strings,
   ArrayView<const std::string> const& stringsDocs,
   ArrayView<const IntegralType> const& integralValues, 
-  std::string const& defaultParameterName
-  ValidatorID validatorID
+  std::string const& defaultParameterName,
+  ParameterEntryValidator::ValidatorID validatorID
   );
 
 
@@ -499,12 +502,13 @@ public:
   /** \brief Retrieves a dummy object of type
   * StringToIntegralParameterEntryValidator<IntegralType>.
   */
-  static RCP<const StringToIntegralParameterEntryValidator<IntegralType> >
+  static RCP<StringToIntegralParameterEntryValidator<IntegralType> >
     getDummyObject()
   {
     if(dummyObject.is_null()){
-      dummyObject = stringToIntegralParameterEntryValidator<IntegralType>
-      (tuple<std::string>(""), "").getConst();
+      dummyObject = stringToIntegralParameterEntryValidator<IntegralType>(
+        tuple<std::string>(""), tuple<std::string>(""), tuple<IntegralType>(1), "",
+        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid());
     }
     return dummyObject;
   }
@@ -516,7 +520,7 @@ private:
   /** \name Private Members */
   //@{
   
-  static RCP<const StringToIntegralParameterEntryValidator<IntegralType> > 
+  static RCP<StringToIntegralParameterEntryValidator<IntegralType> > 
     dummyObject;
   
   //@}
@@ -617,7 +621,7 @@ public:
    */
   AnyNumberParameterEntryValidator(
     EPreferredType const preferredType,
-    AcceptedTypes const& acceptedTypes
+    AcceptedTypes const& acceptedTypes,
     ValidatorID validatorID
     );
 
@@ -835,8 +839,8 @@ anyNumberParameterEntryValidator(
 TEUCHOS_LIB_DLL_EXPORT RCP<AnyNumberParameterEntryValidator>
 anyNumberParameterEntryValidator(
   AnyNumberParameterEntryValidator::EPreferredType const preferredType,
-  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
-  ValidatorID validatorID
+  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes,
+  ParameterEntryValidator::ValidatorID validatorID
   );
 
 
@@ -940,6 +944,48 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
   ParameterList const& paramList,
   std::string const& paramName
   );
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * AnyNumberParameterEntryValidator.
+ *
+ * \relates AnyNumberParameterEntryValidator
+ */
+template<>
+class DummyObjectGetter<AnyNumberParameterEntryValidator>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * AnyNumberParameterEntryValidator.
+  */
+  static RCP<AnyNumberParameterEntryValidator >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = anyNumberParameterEntryValidator(
+        AnyNumberParameterEntryValidator::PREFER_INT, 
+        AnyNumberParameterEntryValidator::AcceptedTypes(),
+        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid());
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<AnyNumberParameterEntryValidator > 
+    dummyObject;
+  
+  //@}
+  
+};
 
 
 /** \brief Default structure used by EnhancedNumberTraits<T> to produce a
@@ -1340,9 +1386,11 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
     any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal
       ? isValueInRange = true : isValueInRange=false;
     TEST_FOR_EXCEPTION(!(isValueInRange),
-      InvalidParameterValue,
-      "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-      " parameter in the \"" << sublistName << "\" sublist didn't quite work "
+      Exceptions::InvalidParameterValue,
+      "Aww shoot! Sorry bud, but it looks like the \"" << 
+      paramName << "\"" <<
+      " parameter in the \"" << sublistName << 
+      "\" sublist didn't quite work "
       "out.\n" <<
       "No need to fret though. I'm sure it's just a small mistake. "
       "Maybe the information below "<<
@@ -1352,8 +1400,8 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
       "Parameter: " << paramName << "\n" <<
       "Min: " << minVal << "\n" <<
       "Max: " << maxVal << "\n" <<
-      "Value entered: " << (any_cast<T>(anyValue)) << std::endl << std::endl);
-    }  
+      "Value entered: " << 
+      (any_cast<T>(anyValue)) << std::endl << std::endl);
   }
   else{
     const std::string &entryName = entry.getAny(false).typeName();
@@ -1374,6 +1422,46 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
     throw Exceptions::InvalidParameterType(msg);
   }
 }
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * EnhancedNumberValidator<T>.
+ *
+ * \relates EnhancedNumberValidator<T>
+ */
+template<class T>
+class DummyObjectGetter<EnhancedNumberValidator<T> >{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * EnhancedNumberValidator<T>.
+  */
+  static RCP<EnhancedNumberValidator<T> >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new EnhancedNumberValidator<T>(
+        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<EnhancedNumberValidator<T> > 
+    dummyObject;
+  
+  //@}
+  
+};
 
 /** \brief Validate a file name entry.
  *
@@ -1412,7 +1500,7 @@ public:
    * @param validatorID The id to be assigned to the validator.
    */
   FileNameValidator(
-    bool mustAlreadyExist = mustAlreadyExistDefault(),
+    bool mustAlreadyExist,
     ValidatorID validatorID);
   
   //@}
@@ -1478,6 +1566,46 @@ private:
 
 };
 
+/** \brief Speicialized class for retrieving a dummy object of type
+ * FileNameValidator.
+ *
+ * \relates FileNameValidator
+ */
+template<>
+class DummyObjectGetter<FileNameValidator>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * FileNameValidator.
+  */
+  static RCP<FileNameValidator >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new FileNameValidator(
+        false,
+        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<FileNameValidator> 
+    dummyObject;
+  
+  //@}
+  
+};
 
 /** \brief A simple validator that only allows certain string values to be
  * choosen or simply enforces that a particular parameter have a std::string
@@ -1557,6 +1685,47 @@ private:
   
   //@}
 
+};
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * StringValidator.
+ *
+ * \relates StringValidator
+ */
+template<>
+class DummyObjectGetter<StringValidator>{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * StringValidator.
+  */
+  static RCP<StringValidator>
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new StringValidator(
+        tuple<std::string>(""),
+        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<StringValidator> 
+    dummyObject;
+  
+  //@}
+  
 };
 
 
@@ -1694,6 +1863,48 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
   }
 }
 
+/** \brief Speicialized class for retrieving a dummy object of type
+ * ArrayValidator.
+ *
+ * \relates ArrayValidator
+ */
+template<class ValidatorType, class EntryType>
+class DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >{
+
+public:
+
+  /** \name Constructors/Destructor */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * ArrayValidator<ValidatorType, EntryType>.
+  */
+  static RCP<ArrayValidator<ValidatorType, EntryType> >
+    getDummyObject()
+  {
+    if(dummyObject.is_null()){
+      dummyObject = rcp(new ArrayValidator<ValidatorType, EntryType>(
+        DummyObjectGetter<ValidatorType>::getDummyObject(),
+        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
+    }
+    return dummyObject;
+  }
+  
+  //@}
+  
+private:
+  
+  /** \name Private Members */
+  //@{
+  
+  static RCP<ArrayValidator<ValidatorType, EntryType> > 
+    dummyObject;
+  
+  //@}
+  
+};
+
+
 
 /** \brief Convience class for StringValidators that are to be applied to
  * arays.
@@ -1766,48 +1977,6 @@ public:
   
 };
 
-/** \brief Speicialized class for retrieving a dummy object of type
- * ArrayValidator<ValidatorType, EntryType>.
- *
- * \relates ArrayValidator
- */
-template<class ValidatorType, class EntryType>
-class DummyObjectGetter<ArrayValidator<ValidatorType, EntryType> >{
-
-public:
-
-  /** \name Getter Functions */
-  //@{
-
-  /** \brief Retrieves a dummy object of type
-  * ArrayValidator<ValidatorType, EntryType>.
-  */
-  static RCP<const ArrayValidator<ValidatorType, EntryType> >
-    getDummyObject()
-  {
-    if(dummyObject.is_null()){
-      RCP<const ValidatorType> dummyPrototype =
-        DummyObjectGetter<ValidatorType>::getDummyObject();
-        dummyObject = 
-          rcp(new ArrayValidator<ValidatorType, EntryType>(dummyPrototype));
-    }
-    return dummyObject;
-  }
-  
-  //@}
-
-private:
-
-  /** \name Private Members */
-  //@{
-  
-  static RCP<const ArrayValidator<ValidatorType, EntryType> > dummyObject;
-  
-  //@}
-
-};
-
-
 
 // ///////////////////////////
 // Implementations
@@ -1825,7 +1994,7 @@ template<class IntegralType>
 StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
   ArrayView<const std::string> const& strings, std::string const& defaultParameterName
   ):
-  ParameterEntryValidator(validatorID),
+  ParameterEntryValidator(),
   defaultParameterName_(defaultParameterName)
 {
   typedef typename map_t::value_type val_t;
@@ -1846,7 +2015,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   ArrayView<const std::string> const& strings, ArrayView<const IntegralType> const& integralValues 
   ,std::string const& defaultParameterName
   ):
-  ParameterEntryValidator(validatorID),
+  ParameterEntryValidator(),
   defaultParameterName_(defaultParameterName)
 {
 #ifdef TEUCHOS_DEBUG
@@ -1879,7 +2048,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   ParameterEntryValidator(),
   defaultParameterName_(defaultParameterName)
 {
-  commonSetup();
+  commonSetup(strings, stringsDocs, integralValues);
 }
 
 template<class IntegralType>
@@ -1887,13 +2056,13 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   ArrayView<const std::string>    const& strings
   ,ArrayView<const std::string>   const& stringsDocs
   ,ArrayView<const IntegralType>  const& integralValues 
-  ,std::string          const& defaultParameterName
-  ValidatorID validatorID,
+  ,std::string          const& defaultParameterName,
+  ValidatorID validatorID
   ):
   ParameterEntryValidator(validatorID),
   defaultParameterName_(defaultParameterName)
 {
-  commonSetup();
+  commonSetup(strings, stringsDocs, integralValues);
 }
 
 
@@ -2065,7 +2234,11 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 // private
 
 template<class IntegralType>
-StringToIntegralParameterEntryValidator<IntegralType>::commonSetup(){
+void StringToIntegralParameterEntryValidator<IntegralType>::commonSetup(
+    ArrayView<const std::string> strings, 
+    ArrayView<const std::string> stringsDocs, 
+    ArrayView<const IntegralType> integralValues)
+{
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY( strings.size(), stringsDocs.size() );
   TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
@@ -2179,8 +2352,8 @@ Teuchos::stringToIntegralParameterEntryValidator(
   ArrayView<const std::string> const& strings,
   ArrayView<const std::string> const& stringsDocs,
   ArrayView<const IntegralType> const& integralValues, 
-  std::string const& defaultParameterName
-  ValidatorID validatorID
+  std::string const& defaultParameterName,
+  ParameterEntryValidator::ValidatorID validatorID
   )
 {
   return rcp(

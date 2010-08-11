@@ -105,7 +105,7 @@ public:
 
   /** \brief . */
   static const std::string& getXMLTagName(){
-    static const xmlTagName = "Condition";
+    static const std::string xmlTagName = "Condition";
     return xmlTagName;
   }
 

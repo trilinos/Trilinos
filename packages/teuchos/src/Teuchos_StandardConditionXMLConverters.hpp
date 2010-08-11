@@ -58,7 +58,7 @@ public:
    * that is being converted.
    */
   virtual RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
-    Condition::ConditionList& conditions) const = 0;
+    Condition::ConstConditionList& conditions) const = 0;
  
   //@}
 
@@ -88,7 +88,7 @@ public:
 
   /** \brief . */
   RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
-    Condition::ConditionList& conditions);
+    Condition::ConstConditionList& conditions) const;
  
   //@}
 
@@ -105,7 +105,7 @@ public:
 
   /** \brief . */
   RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
-    Condition::ConditionList& conditions);
+    Condition::ConstConditionList& conditions) const;
  
   //@}
 
@@ -123,7 +123,7 @@ public:
 
   /** \brief . */
   RCP<BinaryLogicalCondition> getSpecificBinaryLogicalCondition(
-    Condition::ConditionList& conditions);
+    Condition::ConstConditionList& conditions) const;
  
   //@}
 
@@ -169,8 +169,8 @@ public:
    * ParameterCondition to be created
    */
   virtual RCP<ParameterCondition> getSpecificParameterCondition(
-    XMLObject& xmlObj,
-    ParameterEntryID paramID,
+    const XMLObject& xmlObj,
+    ParameterEntry::ParameterEntryID paramID,
     bool whenParamEqualsValue) const = 0;
   
   /** \brief Adds specific xml traits to the xmlObj for a particular
@@ -204,12 +204,12 @@ private:
   //@{
  
   static const std::string& getParameterEntryIDAttributeName(){
-    const std::string parameterNameAttributeName = "id";
+    static const std::string parameterNameAttributeName = "id";
     return parameterNameAttributeName;
   }
 
   static const std::string& getWhenParamEqualsValueAttributeName(){
-    const std::string whenParamEqualsValueAttributeName = 
+    static const std::string whenParamEqualsValueAttributeName = 
       "whenParamEqualsValue";
     return whenParamEqualsValueAttributeName;
   }
@@ -230,7 +230,7 @@ public:
 
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
-    XMLObject& xmlObj,
+    const XMLObject& xmlObj,
     ParameterEntry::ParameterEntryID paramID,
     bool whenParamEqualsValue) const;
  
@@ -270,9 +270,8 @@ public:
 
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
-    XMLObject& xmlObj,
-    const std::string& parameterName, 
-    RCP<ParameterList> parentList,
+    const XMLObject& xmlObj,
+    ParameterEntry::ParameterEntryID paramID,
     bool whenParamEqualsValue) const;
  
   /** \brief . */
@@ -297,9 +296,8 @@ public:
 
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
-    XMLObject& xmlObj,
-    const std::string& parameterName, 
-    RCP<ParameterList> parentList,
+    const XMLObject& xmlObj,
+    ParameterEntry::ParameterEntryID paramID,
     bool whenParamEqualsValue) const
   {
     return rcp(new NumberCondition<T>(

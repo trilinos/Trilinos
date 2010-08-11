@@ -159,6 +159,21 @@ public:
 
 };
 
+/** \brief Thrown when an appropriate Dependency Converter can't be found. */
+class CantFindDependencyConverterException : public std::logic_error{
+
+public:
+
+  /**
+   * \brief Constructs an CantFindDependencyConverterException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  CantFindDependencyConverterException(
+    const std::string& what_arg):std::logic_error(what_arg){}
+
+};
+
 
 
 } // namespace Teuchos

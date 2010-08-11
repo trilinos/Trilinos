@@ -136,8 +136,10 @@ public:
   /**
    * \brief Converts the given ParameterEntry to XML.
    */
-  static XMLObject convertEntry(const ParameterEntry& entry, const std::string& name, const ValidatortoIDMap& validatorIDMap){
-    return getConverter(entry)->fromParameterEntrytoXML(entry, name, validatorIDMap);
+  static XMLObject convertEntry(
+    const ParameterEntry& entry, const std::string& name)
+  {
+    return getConverter(entry)->fromParameterEntrytoXML(entry, name);
   }
 
   /**
