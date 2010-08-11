@@ -162,14 +162,6 @@ public:
   
   //@}
   
-private:
-
-  /** \name Private Members */
-  //@{
-  
-
-  //@}
-  
 };
 
 /** \brief An xml converter for StringVisualDepenencies
@@ -747,14 +739,6 @@ public:
   
   //@}
 
-private:
-
-  /** \name Private Members */
-  //@{
-  
-
-  //@}
-  
 };
 
 

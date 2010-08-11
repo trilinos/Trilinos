@@ -105,16 +105,7 @@ public:
    *
    * \param out Stream to which tags should be printed.
    */
-  static void printKnownConverters(std::ostream& out){
-    out << "Known ValidatorXMLConverters: " << std::endl;
-    for(
-      ConverterMap::const_iterator it = getConverterMap().begin();
-      it != getConverterMap().end();
-      ++it)
-    {
-      out << "\t" << it->first <<std::endl;
-    }
-  }
+  static void printKnownConverters(std::ostream& out);
   
   //@}
 

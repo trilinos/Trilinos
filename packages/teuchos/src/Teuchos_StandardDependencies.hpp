@@ -393,9 +393,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * StringVisualDependency.
   */
-  static RCP<StringVisualDependency >
-    getDummyObject()
-  {
+  static RCP<StringVisualDependency> getDummyObject(){
     static RCP<StringVisualDependency > dummyObject;
      if(dummyObject.is_null()){
       dummyObject = rcp(new StringVisualDependency(
@@ -505,9 +503,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * BoolVisualDependency.
   */
-  static RCP<BoolVisualDependency >
-    getDummyObject()
-  {
+  static RCP<BoolVisualDependency> getDummyObject(){
     static RCP<BoolVisualDependency > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new BoolVisualDependency(
@@ -635,9 +631,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * ConditionVisualDependency.
   */
-  static RCP<ConditionVisualDependency >
-    getDummyObject()
-  {
+  static RCP<ConditionVisualDependency> getDummyObject(){
     static RCP<ConditionVisualDependency> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new ConditionVisualDependency(
@@ -745,18 +739,7 @@ protected:
   //@{
 
   /** \brief . */
-  void validateDep() const{
-    RCP<const ParameterEntry> dependee = getFirstDependee();
-    TEST_FOR_EXCEPTION(
-      !dependee->isType<int>()
-      && !dependee->isType<short>()
-      && !dependee->isType<double>()
-      && !dependee->isType<float>(),
-      InvalidDependencyException,
-      "The dependee of a "
-      "Number Visual Dependency must be of a supported number type!\n"
-      "Type Encountered: " << dependee->getAny().typeName() << "\n");
-  }
+  void validateDep() const;
   
   //@}
   
@@ -792,6 +775,20 @@ private:
   //
 };
 
+template<class T>
+void NumberVisualDependency<T>::validateDep() const{
+  RCP<const ParameterEntry> dependee = getFirstDependee();
+  TEST_FOR_EXCEPTION(
+    !dependee->isType<int>()
+    && !dependee->isType<short>()
+    && !dependee->isType<double>()
+    && !dependee->isType<float>(),
+    InvalidDependencyException,
+    "The dependee of a "
+    "Number Visual Dependency must be of a supported number type!\n"
+    "Type Encountered: " << dependee->getAny().typeName() << "\n");
+}
+  
 
 /** \brief Speicialized class for retrieving a dummy object of type
  * NumberVisualDependency.

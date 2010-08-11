@@ -150,5 +150,16 @@ ValidatorXMLConverterDB::getConverterMap()
   return masterMap;
 }
 
+void ValidatorXMLConverterDB::printKnownConverters(std::ostream& out){
+  out << "Known ValidatorXMLConverters: " << std::endl;
+  for(
+    ConverterMap::const_iterator it = getConverterMap().begin();
+    it != getConverterMap().end();
+    ++it)
+  {
+    out << "\t" << it->first <<std::endl;
+  }
+}
+  
 
 } // namespace Teuchos

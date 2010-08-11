@@ -59,21 +59,7 @@ public:
    * @return The converted ParameterEntryValidator.
    */
   RCP<ParameterEntryValidator>
-  fromXMLtoValidator(const XMLObject& xmlObj) const {
-    #ifdef HAVE_TEUCHOS_DEBUG
-    RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
-    TEST_FOR_EXCEPTION(xmlObj.getTag() != dummyValidator->getXMLTagName(), 
-      BadValidatorXMLConverterException, 
-      "Cannot convert xmlObject " << 
-      ". Expected a " << dummyValidator->getXMLTagName() <<
-      " tag but got a " << xmlObj.getTag() << "tag");
-    #endif
-    ParameterEntryValidator::ValidatorID validatorID = 
-      xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-        getIdAttributeName());
-    RCP<ParameterEntryValidator> toReturn = convertXML(xmlObj, validatorID);
-    return toReturn;
-  }
+  fromXMLtoValidator(const XMLObject& xmlObj) const;
 
   /** \brief Preforms any and all special xml conversion that is specific to a
    * particular ParameterEntryValidator.
@@ -90,20 +76,9 @@ public:
    * @param validator The ParameterEntryValidator to be converted to XML.
    * @return An XML representation of the given ParameterEntryValidator.
    */
-  XMLObject 
-    fromValidatortoXML(const RCP<const ParameterEntryValidator> validator) const
-  {
-    XMLObject toReturn = convertValidator(validator);
-    toReturn.addAttribute(getIdAttributeName(),
-      ParameterEntryValidator::getValidatorID(validator));
-    return toReturn;
-  }
+  XMLObject fromValidatortoXML(
+    const RCP<const ParameterEntryValidator> validator) const;
 
-
-  // 2010/07/30: rabartl: ToDo: Move the above function bodies into the *.cpp
-  // file!
-
-  
   /** \brief Preforms any and all special validator conversion that is
    * specific to a particlar ParameterEntryValidator
    *
