@@ -462,10 +462,10 @@ int main(int argc, char *argv[]) {
   *outStream << "Time to assemble global matrix from local matrices: " << insertionTime << "\n";
   *outStream << "Total construction time: " << localConstructTime + insertionTime << "\n";
 
-  Epetra_Time applyTimer(Comm);
-  StiffMatrix.Apply(u,Ku);
-  const double multTime = applyTimer.ElapsedTime();
-  *outStream << "Time to multiply onto a vector: " << multTime << "\n";
+//   Epetra_Time applyTimer(Comm);
+//   StiffMatrix.Apply(u,Ku);
+//   const double multTime = applyTimer.ElapsedTime();
+//   *outStream << "Time to multiply onto a vector: " << multTime << "\n";
 
   *outStream << "End Result: TEST PASSED\n";
   
