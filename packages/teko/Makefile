@@ -2,7 +2,7 @@
 
 include ./make.include
 
-all: subdirs $(Teko_DIR)/lib/libteko.a
+all: doc
 
 $(Teko_DIR)/lib/libteko.a:
 	mkdir -p lib

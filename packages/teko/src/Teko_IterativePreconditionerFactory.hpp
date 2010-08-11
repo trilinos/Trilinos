@@ -82,6 +82,16 @@ namespace Teko {
   * This factory takes a preconditioner (or inverse) factory and
   * constructs \f$P^{-1}\f$, and then applies it, as outlined above,
   * a user specified number of times.
+  *
+  * Similar to the other preconditioner in Teko this class can be 
+  * constructed through an XML file. For example:
+  \code
+    <ParameterList name="Iterative Solve">
+      <Parameter name="Type" type="string" value="Iterative Preconditioner"/>
+      <Parameter name="Preconditioner Type" type="string" value="ML"/>
+      <Parameter name="Iteration Count" type="int" value="3"/>
+    </ParameterList>
+  \endcode
   */
 class IterativePreconditionerFactory 
    : public virtual Teko::PreconditionerFactory {

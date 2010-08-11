@@ -48,8 +48,6 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teko_Utilities.hpp"
 
-#define Teko_DEBUG_INT 11
-
 namespace Teko {
 namespace NS {
 
