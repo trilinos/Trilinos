@@ -29,6 +29,7 @@
 #ifndef __TSQR_Test_SeqTest_hpp
 #define __TSQR_Test_SeqTest_hpp
 
+#include <Tsqr_Config.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_nodeTestProblem.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
@@ -130,7 +131,8 @@ namespace TSQR {
     /// matrix (using the given cache block size (in bytes)), and
     /// print the results to stdout.
     void
-    verifySeqTsqr (const int nrows, 
+    verifySeqTsqr (std::ostream& out,
+		   const int nrows, 
 		   const int ncols, 
 		   const size_t cache_block_size,
 		   const bool test_complex_arithmetic,
@@ -149,6 +151,126 @@ namespace TSQR {
 		  const bool human_readable,
 		  const bool b_debug = false);
         
+    
+    /// \class SeqTsqrBenchmarker
+    /// \brief Template version of SequentialTsqr benchmark
+    ///
+    /// SequentialTsqr benchmark, templated on Ordinal, Scalar, and
+    /// TimerType.
+    template< class Ordinal, class Scalar, class TimerType >
+    class SeqTsqrBenchmarker {
+    public:
+      typedef Ordinal ordinal_type;
+      typedef Scalar scalar_type;
+
+      /// \brief Constructor
+      ///
+      /// \param out [out] Reference to the output stream (e.g.,
+      ///   std::cout) to which to write benchmark results.
+      SeqTsqrBenchmarker (const std::string& scalarTypeName,
+			  std::ostream& out = std::cout,
+			  const bool humanReadable = false) : 
+	scalarTypeName_ (scalarTypeName),
+	out_ (out), 
+	humanReadable_ (humanReadable)
+      {
+	TSQR::Test::verifyTimerConcept< TimerType >();
+      }
+
+      void 
+      benchmark (const int numTrials,
+		 const Ordinal numRows,
+		 const Ordinal numCols,
+		 const size_t cacheBlockSize,
+		 const bool contiguousCacheBlocks)
+      {
+	SequentialTsqr< Ordinal, Scalar > actor (cacheBlockSize);
+
+	Matrix< Ordinal, Scalar > A (numRows, numCols);
+	Matrix< Ordinal, Scalar > A_copy (numRows, numCols);
+	Matrix< Ordinal, Scalar > Q (numRows, numCols);
+	Matrix< Ordinal, Scalar > R (numCols, numCols);
+	const Ordinal lda = numRows;
+	const Ordinal ldq = numRows;
+
+	// Create a test problem
+	nodeTestProblem (generator, numRows, numCols, A.get(), lda, false);
+
+	// Copy A into A_copy, since TSQR overwrites the input
+	A_copy.copy (A);
+
+	// Benchmark sequential TSQR for ntrials trials.
+	//
+	// Name of timer doesn't matter here; we only need the timing.
+	TimerType timer("SeqTSQR");
+	timer.start();
+	for (int trialNum = 0; trialNum < numTrials; ++trialNum)
+	  {
+	    // Factor the matrix and extract the resulting R factor
+	    typedef typename SequentialTsqr< Ordinal, Scalar >::FactorOutput 
+	      factor_output_type;
+	    factor_output_type factorOutput = 
+	      actor.factor (numRows, numCols, A_copy.get(), lda, 
+			    R.get(), R.lda(), contiguousCacheBlocks);
+	    // Compute the explicit Q factor.  Unlike with LAPACK QR,
+	    // this doesn't happen in place: the implicit Q factor is
+	    // stored in A_copy, and the explicit Q factor is written to
+	    // Q.
+	    actor.explicit_Q (numRows, numCols, A_copy.get(), lda, factorOutput, 
+			      numCols, Q.get(), ldq, contiguousCacheBlocks);
+	  }
+	const double seqTsqrTiming = timer.stop();
+	reportResults (numTrials, numRows, numCols, actor.cache_block_size(),
+		       contiguousCacheBlocks, seqTsqrTiming);
+      }
+
+
+    private:
+      /// Pseudorandom normal(0,1) generator.  Default seed is OK,
+      /// because this is a benchmark, not an accuracy test.
+      TSQR::Random::NormalGenerator gen_;
+      
+      /// Output stream to which to print benchmark results.
+      ///
+      std::ostream& out_;
+
+      /// Human-readable string representation of the Scalar type 
+      ///
+      std::string scalarTypeName_;
+
+      /// \brief Report benchmark results to out_
+      ///
+      void 
+      reportResults (const int numTrials,
+		     const Ordinal numRows,
+		     const Ordinal numCols,
+		     const size_t actualCacheBlockSize,
+		     const bool contiguousCacheBlocks,
+		     const double seqTsqrTiming)
+      {
+	using std::endl;
+	if (humanReadable_)
+	  out_ << "Sequential (cache-blocked) TSQR:" << endl
+	       << "Scalar type = " << scalarTypeName_ << endl
+	       << "# rows = " << numRows << endl
+	       << "# columns = " << numCols << endl
+	       << "cache block # bytes = " << actualCacheBlockSize << endl
+	       << "contiguous cache blocks? " << contiguousCacheBlocks << endl
+	       << "# trials = " << numTrials << endl
+	       << "Total time (s) = " << seqTsqrTiming << endl 
+	       << endl;
+	else
+	  out_ << "SeqTSQR" 
+	       << "," << scalarTypeName_
+	       << "," << numRows
+	       << "," << numCols
+	       << "," << actualCacheBlockSize
+	       << "," << contiguousCacheBlocks
+	       << "," << numTrials << "," 
+	       << seqTsqrTiming << endl;
+      }
+    };
+
 
     /// Test the runtime (over ntrials trials) of sequential TSQR, on
     /// an nrows by ncols matrix (using the given cache block size (in
@@ -158,76 +280,60 @@ namespace TSQR {
     /// results to stdout in human-readable format.  Otherwise, print
     /// them as two rows of comma-delimited ASCII, in an abbreviated
     /// format suitable for automatic processing.
-    template< class Ordinal, class Scalar, class Generator, class TimerType >
+    template< TimerType >
     void
-    benchmarkSeqTsqr (Generator& generator,
-		      const Ordinal ntrials,
-		      const Ordinal nrows, 
-		      const Ordinal ncols, 
-		      const size_t cache_block_size,
-		      const bool contiguous_cache_blocks,
-		      const bool human_readable)
+    benchmarkSeqTsqr (std::ostream& out,
+		      const int numRows,
+		      const int numCols,
+		      const int numTrials,
+		      const size_t cacheBlockSize,
+		      const bool contiguousCacheBlocks,
+		      const bool testComplex,
+		      const bool humanReadable)
     {
-      using std::cerr;
-      using std::cout;
-      using std::endl;
+      const bool testReal = true;
+      using std::string;
 
-      TSQR::Test::verifyTimerConcept< TimerType >();
-
-      SequentialTsqr< Ordinal, Scalar > actor (cache_block_size);
-
-      Matrix< Ordinal, Scalar > A (nrows, ncols);
-      Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
-      Matrix< Ordinal, Scalar > Q (nrows, ncols);
-      Matrix< Ordinal, Scalar > R (ncols, ncols);
-      const Ordinal lda = nrows;
-      const Ordinal ldq = nrows;
-
-      // Create a test problem
-      nodeTestProblem (generator, nrows, ncols, A.get(), lda, false);
-
-      // Copy A into A_copy, since TSQR overwrites the input
-      A_copy.copy (A);
-
-      // Benchmark sequential TSQR for ntrials trials.
-      //
-      // Name of timer doesn't matter here; we only need the timing.
-      TimerType timer("SeqTSQR");
-      timer.start();
-      for (int trial_num = 0; trial_num < ntrials; ++trial_num)
+      if (testReal)
 	{
-	  // Factor the matrix and extract the resulting R factor
-	  typedef typename SequentialTsqr< Ordinal, Scalar >::FactorOutput factor_output_type;
-	  factor_output_type factor_output = 
-	    actor.factor (nrows, ncols, A_copy.get(), lda, R.get(), R.lda(),
-			  contiguous_cache_blocks);
-	  // Compute the explicit Q factor.  Unlike with LAPACK QR,
-	  // this doesn't happen in place: the implicit Q factor is
-	  // stored in A_copy, and the explicit Q factor is written to
-	  // Q.
-	  actor.explicit_Q (nrows, ncols, A_copy.get(), lda, factor_output, 
-			    ncols, Q.get(), ldq, contiguous_cache_blocks);
+	  { // Scalar=float
+	    typedef SeqTsqrBenchmarker< int, float, TimerType > benchmark_type;
+	    string scalarTypeName ("float");
+	    benchmark_type widget (scalarTypeName, out, humanReadable);
+	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+			      contiguousCacheBlocks);
+	  }
+	  { // Scalar=double
+	    typedef SeqTsqrBenchmarker< int, double, TimerType > benchmark_type;
+	    string scalarTypeName ("double");
+	    benchmark_type widget (scalarTypeName, out, humanReadable);
+	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+			      contiguousCacheBlocks);
+	  }
 	}
-      const double seq_tsqr_timing = timer.stop();
 
-      // Print the results  
-      if (human_readable)
-	cout << "Sequential (cache-blocked) TSQR:" << endl
-	     << "# rows = " << nrows << endl
-	     << "# columns = " << ncols << endl
-	     << "cache block # bytes = " << actor.cache_block_size() << endl
-	     << "contiguous cache blocks? " << contiguous_cache_blocks << endl
-	     << "# trials = " << ntrials << endl
-	     << "Total time (s) = " << seq_tsqr_timing << endl 
-	     << endl;
-      else
-	cout << "SeqTSQR" 
-	     << "," << nrows 
-	     << "," << ncols 
-	     << "," << actor.cache_block_size()
-	     << "," << contiguous_cache_blocks
-	     << "," << ntrials << "," 
-	     << seq_tsqr_timing << endl;
+      if (testComplex)
+	{
+#ifdef HAVE_TSQR_COMPLEX
+	  using std::complex;
+	  { // Scalar=complex<float>
+	    typedef SeqTsqrBenchmarker< int, complex<float>, TimerType > benchmark_type;
+	    string scalarTypeName ("complex<float>");
+	    benchmark_type widget (scalarTypeName, out, humanReadable);
+	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+			      contiguousCacheBlocks);
+	  }
+	  { // Scalar=complex<double>
+	    typedef SeqTsqrBenchmarker< int, complex<double>, TimerType > benchmark_type;
+	    string scalarTypeName ("complex<double>");
+	    benchmark_type widget (scalarTypeName, out, humanReadable);
+	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+			      contiguousCacheBlocks);
+	  }
+#else // Don't HAVE_TSQR_COMPLEX
+	  throw std::logic_error("TSQR not built with complex arithmetic support");
+#endif // HAVE_TSQR_COMPLEX
+	}
     }
 
 

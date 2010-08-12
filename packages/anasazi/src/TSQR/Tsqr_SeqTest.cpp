@@ -26,7 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Tsqr_SeqTest.hpp"
+#include <Tsqr_Config.hpp>
+#include <Tsqr_SeqTest.hpp>
 
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_nodeTestProblem.hpp>
@@ -61,7 +62,8 @@ namespace TSQR {
     /// print the results to stdout.
     template< class Ordinal, class Scalar >
     static void
-    verifySeqTsqrTemplate (TSQR::Random::NormalGenerator< Ordinal, Scalar >& generator,
+    verifySeqTsqrTemplate (std::ostream& out,
+			   TSQR::Random::NormalGenerator< Ordinal, Scalar >& generator,
 			   const std::string& datatype,
 			   const std::string& shortDatatype,
 			   const Ordinal nrows, 
@@ -74,7 +76,6 @@ namespace TSQR {
     {
       typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       using std::cerr;
-      using std::cout;
       using std::endl;
       using std::pair;
       using std::string;
@@ -171,8 +172,9 @@ namespace TSQR {
 	     << numCacheBlocks << endl << endl;
 
       // Factor the matrix and compute the explicit Q factor
-      typedef typename SequentialTsqr< Ordinal, Scalar >::FactorOutput factor_output_type;
-      factor_output_type factor_output = 
+      typedef typename SequentialTsqr< Ordinal, Scalar >::FactorOutput 
+	factor_output_type;
+      factor_output_type factorOutput = 
 	actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(), 
 		      R.get(), R.lda(), contiguous_cache_blocks);
       if (b_debug)
@@ -188,7 +190,7 @@ namespace TSQR {
 	  out.close();
 	}
 
-      actor.explicit_Q (nrows, ncols, A_copy.get(), lda, factor_output,
+      actor.explicit_Q (nrows, ncols, A_copy.get(), lda, factorOutput,
 			ncols, Q.get(), Q.lda(), contiguous_cache_blocks);
       if (b_debug)
 	cerr << "-- Finished SequentialTsqr::explicit_Q" << endl;
@@ -231,27 +233,28 @@ namespace TSQR {
 
       // Print the results
       if (human_readable)
-	cout << "Sequential (cache-blocked) TSQR:" << endl
-	     << "Datatype: " << datatype << endl
-	     << "Relative residual: " << results.first << endl
-	     << "Relative orthogonality: " << results.second 
-	     << endl << endl;
+	out << "Sequential (cache-blocked) TSQR:" << endl
+	    << "Datatype: " << datatype << endl
+	    << "Relative residual: " << results.first << endl
+	    << "Relative orthogonality: " << results.second 
+	    << endl << endl;
       else
-	cout << "SeqTSQR"
-	     << "," << datatype
-	     << "," << nrows
-	     << "," << ncols
-	     << "," << actor.cache_block_size()
-	     << "," << numCacheBlocks
-	     << "," << contiguous_cache_blocks 
-	     << "," << results.first 
-	     << "," << results.second
-	     << endl;
+	out << "SeqTSQR"
+	    << "," << datatype
+	    << "," << nrows
+	    << "," << ncols
+	    << "," << actor.cache_block_size()
+	    << "," << numCacheBlocks
+	    << "," << contiguous_cache_blocks 
+	    << "," << results.first 
+	    << "," << results.second
+	    << endl;
     }
 
 
     void
-    verifySeqTsqr (const int nrows, 
+    verifySeqTsqr (std::ostream& out,
+		   const int nrows, 
 		   const int ncols, 
 		   const size_t cache_block_size,
 		   const bool test_complex_arithmetic,
@@ -283,7 +286,7 @@ namespace TSQR {
       NormalGenerator< int, float > normgenS;
       datatype = "float";
       shortDatatype = "S";
-      verifySeqTsqrTemplate (normgenS, datatype, shortDatatype, nrows, ncols, 
+      verifySeqTsqrTemplate (out, normgenS, datatype, shortDatatype, nrows, ncols, 
 			     cache_block_size, contiguous_cache_blocks, 
 			     save_matrices, human_readable, b_debug);
       // Fetch the pseudorandom seed from the previous test.
@@ -292,7 +295,7 @@ namespace TSQR {
       // Next test.
       datatype = "double";
       shortDatatype = "D";
-      verifySeqTsqrTemplate (normgenD, datatype, shortDatatype, nrows, ncols, 
+      verifySeqTsqrTemplate (out, normgenD, datatype, shortDatatype, nrows, ncols, 
 			     cache_block_size, contiguous_cache_blocks, 
 			     save_matrices, human_readable, b_debug);
 
@@ -302,14 +305,14 @@ namespace TSQR {
 	  NormalGenerator< int, complex<float> > normgenC (iseed);
 	  datatype = "complex<float>";
 	  shortDatatype = "C";
-	  verifySeqTsqrTemplate (normgenC, datatype, shortDatatype, nrows, ncols, 
+	  verifySeqTsqrTemplate (out, normgenC, datatype, shortDatatype, nrows, ncols, 
 				 cache_block_size, contiguous_cache_blocks, 
 				 save_matrices, human_readable, b_debug);
 	  normgenC.getSeed (iseed);
 	  NormalGenerator< int, complex<double> > normgenZ (iseed);
 	  datatype = "complex<double>";
 	  shortDatatype = "Z";
-	  verifySeqTsqrTemplate (normgenZ, datatype, shortDatatype, nrows, ncols, 
+	  verifySeqTsqrTemplate (out, normgenZ, datatype, shortDatatype, nrows, ncols, 
 				 cache_block_size, contiguous_cache_blocks, 
 				 save_matrices, human_readable, b_debug);
 	}

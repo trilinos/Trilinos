@@ -95,34 +95,6 @@ namespace TSQR {
 	bool contiguous_cache_blocks, human_readable, tpetra;
       };
 
-      static void
-      benchmarkCombineAlone (RCP< const Teuchos::Comm<int> > comm,
-			     std::ostream& out,
-			     const TsqrTestParameters& params)
-      {
-	typedef Teuchos::Time timer_type;
-	using TSQR::Test::benchmarkCombine;
-	typedef int ordinal_type;
-
-	if (comm->rank() == 0)
-	  {
-	    const ordinal_type numRows = params.nrows;
-	    const ordinal_type numCols = params.ncols;
-	    const ordinal_type numTrials = params.ntrials;
-#ifdef HAVE_ANASAZI_COMPLEX
-	    const bool testComplex = params.test_complex_arithmetic;
-#else
-	    const bool testComplex = false;
-#endif // HAVE_ANASAZI_COMPLEX
-
-	    std::vector<int> seed(4);
-	    const bool useSeedValues = false;
-	    benchmarkCombine< timer_type > (out, numRows, numCols, numTrials,
-					    seed, useSeedValues, testComplex);
-	  }
-	comm->barrier();
-      }
-
       template< class Scalar >
       static void
       verifyTsqrAlone (RCP< const Teuchos::Comm<int> > comm,

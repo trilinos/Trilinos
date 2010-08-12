@@ -29,9 +29,6 @@ PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
 # Teuchos_ENABLE_COMPLEX, because most of Anasazi's complex-arithmetic
 # tests depend heavily on Teuchos' complex arithmetic support.
 
-# mfh 04 Aug 2010: This makes CMake complain about "ON"
-#  SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT ${Teuchos_ENABLE_COMPLEX})
-
 IF (Teuchos_ENABLE_COMPLEX)
   SET(${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT BOOL TRUE)
 ELSE ()
@@ -43,6 +40,22 @@ ADD_OPTION_AND_DEFINE(
   HAVE_ANASAZI_COMPLEX
   "Enable Anasazi features for complex data types."
   ${${PACKAGE_NAME}_ENABLE_COMPLEX_DEFAULT} )
+
+# Anasazi includes an implementation of the Tall Skinny QR (TSQR)
+# factorization.  TSQR is used to implement an OrthoManager
+# (Anasazi::TsqrOrthoManager) and a MatOrthoManager (which only uses
+# TSQR in the Euclidean-inner-product case).  TSQR is disabled by
+# default.  Set Anasazi_ENABLE_TSQR to enable TSQR.  If
+# Anasazi_ENABLE_COMPLEX is enabled, TSQR is built with complex
+# arithmetic support.
+
+SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT BOOL FALSE)
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_TSQR
+  HAVE_ANASAZI_TSQR
+  "Enable TSQR (Tall Skinny QR factorization) support in Anasazi."
+  ${${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT} )
 
 #
 # C) Add the libraries, tests, and examples
