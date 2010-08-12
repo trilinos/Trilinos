@@ -70,8 +70,8 @@ void assert_valid_relation( const char method[] ,
   const bool error_mesh_from = & mesh != & e_from.bucket().mesh();
   const bool error_mesh_to   = & mesh != & e_to.bucket().mesh();
   const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
-  const bool error_nil_from  = e_from.marked_for_destruction();
-  const bool error_nil_to    = e_to.marked_for_destruction();
+  const bool error_nil_from  = EntityLogDeleted == e_from.log_query();
+  const bool error_nil_to    = EntityLogDeleted == e_to.log_query();
 
   if ( error_mesh_from || error_mesh_to || error_type ||
        error_nil_from || error_nil_to ) {
@@ -145,7 +145,7 @@ void BulkData::declare_relation( Entity & e_from ,
 
   assert_valid_relation( method , *this , e_from , e_to );
 
-  impl::EntityImpl::declare_relation( e_from, e_to, local_id, m_sync_count);
+  m_entity_repo.declare_relation( e_from, e_to, local_id, m_sync_count);
 
 
   PartVector add , empty ;
@@ -239,7 +239,7 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
   }
 
   //delete relations from the entities
-  impl::EntityImpl::destroy_relation( e_from, e_to);
+  m_entity_repo.destroy_relation( e_from, e_to);
 
 }
 

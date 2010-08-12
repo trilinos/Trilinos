@@ -85,10 +85,10 @@ TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
 
     *out << "TriKota:: Setting initial guess from Model Evaluator to Dakota " << std::endl;
     const Thyra::ConstDetachedVectorView<double> my_pinit(App->getNominalValues().get_p(0));
-    for (int i=0; i<numParameters; i++) my_p[i] = my_pinit[i];
+    for (unsigned int i=0; i<numParameters; i++) my_p[i] = my_pinit[i];
 
     Model& first_model = *(problem_db_.model_list().begin());
-    int num_dakota_vars =  first_model.acv();
+    unsigned int num_dakota_vars =  first_model.acv();
     Dakota::RealVector drv(num_dakota_vars);
 
     TEST_FOR_EXCEPTION(num_dakota_vars > numParameters, std::logic_error,
@@ -96,7 +96,7 @@ TriKota::ThyraDirectApplicInterface::ThyraDirectApplicInterface(
                        <<  numParameters << "\n is less then the number of continuous variables\n"
                        << " specified in the dakota.in input file " << num_dakota_vars << "\n" );
 
-    for (int i=0; i<num_dakota_vars; i++) drv[i] = my_p[i];
+    for (unsigned int i=0; i<num_dakota_vars; i++) drv[i] = my_p[i];
     first_model.continuous_variables(drv);
 
   }
@@ -129,7 +129,7 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
     // Load parameters from Dakota to ModelEval data structure
     {
       Thyra::DetachedVectorView<double> my_p(model_p);
-      for (int i=0; i<numVars; i++) my_p[i]=xC[i];
+      for (unsigned int i=0; i<numVars; i++) my_p[i]=xC[i];
     }
 
     // Evaluate model
@@ -140,21 +140,21 @@ int TriKota::ThyraDirectApplicInterface::derived_map_ac(const Dakota::String& ac
     App->evalModel(inArgs, outArgs);
 
     Thyra::DetachedVectorView<double> my_g(model_g);
-    for (int j=0; j<numFns; j++) fnVals[j]= my_g[j];
+    for (unsigned int j=0; j<numFns; j++) fnVals[j]= my_g[j];
 
     if (gradFlag) {
       if (orientation == MEB::DERIV_MV_BY_COL) {
-        for (int j=0; j<numVars; j++) {
+        for (unsigned int j=0; j<numVars; j++) {
           Thyra::DetachedVectorView<double>
              my_dgdp_j(model_dgdp->col(j));
-          for (int i=0; i<numFns; i++)  fnGrads[i][j]= my_dgdp_j[i];
+          for (unsigned int i=0; i<numFns; i++)  fnGrads[i][j]= my_dgdp_j[i];
         }
       }
       else {
-        for (int j=0; j<numFns; j++) {
+        for (unsigned int j=0; j<numFns; j++) {
           Thyra::DetachedVectorView<double>
              my_dgdp_j(model_dgdp->col(j));
-          for (int i=0; i<numVars; i++) fnGrads[j][i]= my_dgdp_j[i]; 
+          for (unsigned int i=0; i<numVars; i++) fnGrads[j][i]= my_dgdp_j[i]; 
         }
       }
     }

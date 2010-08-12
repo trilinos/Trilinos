@@ -27,6 +27,20 @@
       <Regression address="teuchos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
+  <Package name="Trios" dir="Trios">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
+    <LIB_OPTIONAL_DEP_TPLS value="XDMF,HDF5"/>
+    <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="trios-checkins@software.sandia.gov"/>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
   <Package name="ThreadPool" dir="ThreadPool">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -425,26 +439,12 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,Amesos,AztecOO,Belos"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="TBB"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Checkin address="anasazi-checkins@software.sandia.gov"/>
       <Regression address="anasazi-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
-  <Package name="Teko" dir="teko">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,EpetraExt,Stratimikos,AztecOO,Anasazi,ML,Ifpack,Amesos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Isorropia"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="teko-checkins@software.sandia.gov"/>
-      <Regression address="teko-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="RBGen" dir="rbgen">
@@ -476,7 +476,7 @@
     </EmailAddresses>
   </Package>
   <Package name="STK" dir="stk">
-    <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos,FEI,AztecOO,ThreadPool"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Trios,Shards,Teuchos,FEI,AztecOO,ThreadPool"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -505,11 +505,11 @@
   </Package>
   <Package name="Phalanx" dir="phalanx">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Kokkos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Belos,Epetra,Ifpack,Intrepid,ML,Amesos"/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="CUDA,Thrust"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="TVMET"/>
     <EmailAddresses>
@@ -644,8 +644,8 @@
     </EmailAddresses>
   </Package>
   <Package name="Sundance" dir="Sundance">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Anasazi,Belos,Stratimikos,NOX,Intrepid,Stokhos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="MOOCHO"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Anasazi,Belos,Stratimikos,NOX,Intrepid"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="MOOCHO,Stokhos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -767,48 +767,6 @@
     <EmailAddresses>
       <Checkin address="mesquite-checkins@software.sandia.gov"/>
       <Regression address="mesquite-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
-  <Package name="Stalix" dir="stalix">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado,Tpetra,Thyra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Boost"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="stalix-checkins@software.sandia.gov"/>
-      <Regression address="stalix-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
-  <Package name="Lyno" dir="lyno">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Anasazi,Amesos,Belos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="AztecOO,ML,Ifpack,Optika"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="lyno-checkins@software.sandia.gov"/>
-      <Regression address="lyno-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
-  <Package name="Trios" dir="Trios">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="STK"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="trios-checkins@software.sandia.gov"/>
-      <Regression address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="FEApp" dir="../demos/FEApp">

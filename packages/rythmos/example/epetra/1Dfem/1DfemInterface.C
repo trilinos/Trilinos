@@ -148,7 +148,7 @@ bool Interface::computeF(const Epetra_Vector& x,
 }
 
 bool Interface::computeJacobian(const Epetra_Vector& x,
-				Epetra_Operator& Jac)
+				Epetra_Operator& my_Jac)
 {
   return evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0);
 }
@@ -158,7 +158,7 @@ bool Interface::computePrecMatrix(const Epetra_Vector& x)
   return evaluate(NOX::Epetra::Interface::Required::Prec, &x, 0, 0);
 }
 bool Interface::computePreconditioner(const Epetra_Vector& x,
-				      Epetra_Operator& Prec,
+				      Epetra_Operator& my_Prec,
 				      Teuchos::ParameterList* precParams)
 {
   cout << "ERROR: Interface::preconditionVector() - "
@@ -370,6 +370,8 @@ bool Interface::initializeSoln()
 
 // Constructor
 Basis::Basis() {
+  eta = -1.0;
+  wt = -1.0;
   phi = new double[2];
   dphide = new double[2];
 }

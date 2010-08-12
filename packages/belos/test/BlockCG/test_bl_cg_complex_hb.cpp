@@ -103,8 +103,6 @@ int main(int argc, char *argv[]) {
   int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 1;
   int numrhs = 1;
-  int maxrestarts = 15;
-  int length = 50;
   std::string filename("mhd1280b.cua");
   MT tol = 1.0e-5;  // relative residual tolerance
 
@@ -114,9 +112,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("num-restarts",&maxrestarts,"Maximum number of restarts allowed for the CG solver.");
   cmdp.setOption("blocksize",&blocksize,"Block size used by CG .");
-  cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by CG solver.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -167,10 +163,8 @@ int main(int argc, char *argv[]) {
   int maxits = dim/blocksize; // maximum number of iterations to run
   //
   ParameterList belosList;
-  belosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov factorization
   belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
-  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
@@ -260,4 +254,4 @@ int main(int argc, char *argv[]) {
   return 0;
 
   //
-} // end test_bl_gmres_complex_hb.cpp
+} // end test_bl_cg_complex_hb.cpp

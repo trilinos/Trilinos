@@ -86,11 +86,9 @@ PACKAGE_ADD_TEST(
 	ne_test
 	NAME ne_test
 	NUM_MPI_PROCS 1
-	COMM serial
 )
 
 PACKAGE_ADD_EXECUTABLE(
  ne_test
  SOURCES ne_test.c
- COMM serial
 )

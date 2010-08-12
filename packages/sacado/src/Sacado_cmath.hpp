@@ -34,8 +34,10 @@
 
 #include <cmath>        // for most math functions
 #include <algorithm>	// for std::min and std::max
+#include "Sacado_ConfigDefs.h"
 
 // Define some math functions that aren't usually in cmath
+#ifndef HAS_C99_TR1_CMATH
 namespace std {
   inline float acosh(float x) { 
     return std::log(x + std::sqrt(x*x - float(1.0))); }
@@ -51,5 +53,6 @@ namespace std {
   inline double atanh(double x) { 
     return double(0.5)*std::log((double(1.0)+x)/(double(1.0)-x)); }
 }
+#endif // HAS_C99_TR1_CMATH
 
 #endif // SACADO_CMATH_HPP

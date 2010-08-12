@@ -43,7 +43,7 @@ echo
 echo "Doing continuous mpi optimized development shared library build: `date`"
 echo
 
-time ${CTEST_EXE} -j 14 -S $DRIVER_SCRIPT_DIR/ctest_linux_continuous_mpi_opt_shared_trilinos-test2.cmake -VV &> "CONTINUOUS_MPI_OPT_DEV_SHARED_$DATE.log"
+time ${CTEST_EXE} -j 14 -S $DRIVER_SCRIPT_DIR/ctest_linux_continuous_mpi_opt_shared_trilinos-test2.cmake &> "CONTINUOUS_MPI_OPT_DEV_SHARED_$DATE.log"
 
 
 echo

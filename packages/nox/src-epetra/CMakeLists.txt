@@ -28,6 +28,7 @@ APPEND_SET(HEADERS
   NOX_Epetra_ModelEvaluatorInterface.H
   NOX_Epetra_LinearSystem_Amesos.H
   NOX_Epetra_LinearSystem_Stratimikos.H
+  NOX_Epetra_Observer.H
   )
 
 APPEND_SET(SOURCES

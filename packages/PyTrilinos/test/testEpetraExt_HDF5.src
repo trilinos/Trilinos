@@ -174,7 +174,8 @@ class HDF5TestCase(unittest.TestCase):
         start = self.comm.MyPID()*9
         stop  = start + 9
         data = numpy.arange(start, stop)
-        iv = Epetra.IntVector(self.map, data)
+        iv = Epetra.IntVector(self.map)
+        iv[:] = data
         self.hdf5.Create(self.name)
         group = "IntVector"
         self.hdf5.Write(group, iv)

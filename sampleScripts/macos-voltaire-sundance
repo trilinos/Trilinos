@@ -26,6 +26,7 @@
 ENABLE_MEROS=OFF
 
 
+
 # ----------------------------------------------------------------------------
 # Set the location of the compilers and libraries. On a simple out-of-the-box
 # Linux system, COMPILER_ROOT will probably be someplace like /usr/local. 
@@ -56,10 +57,10 @@ BUILD_SHARED=OFF
 ENABLE_MPI=OFF
 # Whether to build optimized or debug. Default=debug. Set to RELEASE or leave
 # blank to enable an optimized build.
-BUILD_TYPE=DEBUG
+BUILD_TYPE=RELEASE
 # Whether to enable a paranoid level of compiler warnings. This can cause
 # problems with Python. Default: on. 
-PARANOID_COMPILER=ON
+PARANOID_COMPILER=OFF
 
 # ----------------------------------------------------------------------------
 # Set variables controlling which third-party libraries are available and
@@ -83,58 +84,9 @@ TRILINOS_SRC_DIR=${HOME}/Code/Trilinos
 # cannot be found, these tests will be disabled.
 TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 
-# ---------------------------------------------------------------------------
-#
-# At this point, all variables have been assigned default values. We now
-# parse the command line to see if any values are overridden.
-#
-# ---------------------------------------------------------------------------
-# Argument parsing logic.
-TEMP=`getopt -o x --long help,mpi,serial,shared,static,debug,opt,exodus,no-exodus,meros,lax,src:,data:,prefix:: -- "$@"`
 
-eval set -- "$TEMP"
-
-while true ; do
-  case "$1" in 
-      --mpi) ENABLE_MPI=ON; shift ;;
-      --serial) ENABLE_MPI=OFF; shift ;;
-      --shared) BUILD_SHARED=ON; shift;;
-      --static) BUILD_SHARED=OFF; shift;;
-      --debug) BUILD_TYPE=DEBUG; shift;;
-      --opt) BUILD_TYPE=RELEASE; shift;;
-      --lax) PARANOID_COMPILER=OFF; shift;;
-      --exodus) HAVE_EXODUS=ON; shift;;
-      --no-exodus) HAVE_EXODUS=OFF; shift;;
-      --meros) ENABLE_MEROS=ON; shift;;
-      --src)
-            TRILINOS_SRC_DIR="$2"; shift 2;;
-      --data)
-            TRILINOS_DATA_DIR="$2"; shift 2;;
-      --prefix)
-            INSTALL_PREFIX="$2"; shift 2;;
-      --help)
-            echo "Command-line arguments:"
-            echo "--help           help"
-            echo "--mpi            enable MPI (default: off)"
-            echo "--serial         turn off MPI"
-            echo "--shared         build shared libraries (default: on)"
-            echo "--static         build static libraries (default: off)"
-            echo "--debug          turn on debugging features (default: on)"
-            echo "--opt            turn on optimized compilation (default: off)"
-            echo "--lax            turn off paranoid compiler flags (necessary for python wrappers)"
-            echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
-            echo "--no-exodus      disable ExodusII readers"
-            echo "--meros          enable Meros block preconditioners (default: off)"
-            echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
-            echo "--data <dir>     set location of Trilinos data (default: \${HOME}/Code/TrilinosData)"
-            echo "--prefix <dir>   set installation directory (default: \${PWD})"
-            echo " ";
-            exit 0;
-            shift
-            ;;
-      --) shift; break;;
-  esac
-done
+PYTHON_INC_PATH=${INC_PATH}/python2.6
+PYTHON_INC_STRING="-I${PYTHON_INC_PATH}"
 
 # ---------------------------------------------------------------------------
 #
@@ -146,6 +98,8 @@ cmake \
 -D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
 -D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="$LIB_PATH" \
 -D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
+ -D CMAKE_CXX_FLAGS:STRING="${PYTHON_INC_STRING} ${OPT_STRING} ${EXTRA_CXX_FLAGS}" \
+-D CMAKE_C_FLAGS:STRING="${PYTHON_INC_STRING} ${EXTRA_C_FLAGS}" \
 -D BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED} \
 -D TPL_ENABLE_ExodusII:BOOL=${HAVE_EXODUS} \
 -D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
@@ -156,6 +110,9 @@ cmake \
 -D Trilinos_ENABLE_Sundance:BOOL=ON \
 -D Trilinos_ENABLE_Meros:BOOL=${ENABLE_MEROS} \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
+-D Sundance_ENABLE_Python:BOOL=OFF \
+-D Trilinos_ENABLE_Stokhos:BOOL=ON \
+-D Trilinos_ENABLE_Sacado:BOOL=ON \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
 -D NOX_ENABLE_LOCA:BOOL=OFF \
 -D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \

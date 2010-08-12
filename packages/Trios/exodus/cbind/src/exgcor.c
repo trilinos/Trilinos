@@ -197,8 +197,8 @@ int ex_get_coord (int exoid,
     /* write out the coordinates  */
     for (i=0; i<num_dim; i++)
       {
-        void *coor;
-        char *which;
+        void *coor = NULL;
+        char *which = NULL;
        
         if (i == 0) {
           coor = x_coor;

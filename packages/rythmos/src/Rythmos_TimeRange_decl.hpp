@@ -123,7 +123,7 @@ private:
  * \relates TimeRange
  */
 template<class TimeType>
-TimeRange<TimeType> timeRange(const TimeType lower, const TimeType upper);
+TimeRange<TimeType> timeRange(const TimeType my_lower, const TimeType my_upper);
 
 
 /** \brief Nonmember constructor.
@@ -197,8 +197,8 @@ public:
     :TimeRange<TimeType>(tr)
     {
     }
-  TimeRange_cc( const TimeType &lower, const TimeType &upper )
-    :TimeRange<TimeType>(lower,upper) 
+  TimeRange_cc( const TimeType &my_lower, const TimeType &my_upper )
+    :TimeRange<TimeType>(my_lower,my_upper) 
     {
     }
   bool isInRange ( const TimeType &t ) const
@@ -215,8 +215,8 @@ public:
     :TimeRange<TimeType>(tr)
     {
     }
-  TimeRange_co( const TimeType &lower, const TimeType &upper )
-    :TimeRange<TimeType>(lower,upper) 
+  TimeRange_co( const TimeType &my_lower, const TimeType &my_upper )
+    :TimeRange<TimeType>(my_lower,my_upper) 
     {
     }
   bool isInRange ( const TimeType &t ) const
@@ -233,8 +233,8 @@ public:
     :TimeRange<TimeType>(tr)
     {
     }
-  TimeRange_oo( const TimeType &lower, const TimeType &upper )
-    :TimeRange<TimeType>(lower,upper) 
+  TimeRange_oo( const TimeType &my_lower, const TimeType &my_upper )
+    :TimeRange<TimeType>(my_lower,my_upper) 
     {
     }
   bool isInRange ( const TimeType &t ) const
@@ -251,8 +251,8 @@ public:
     :TimeRange<TimeType>(tr)
     {
     }
-  TimeRange_oc( const TimeType &lower, const TimeType &upper )
-    :TimeRange<TimeType>(lower,upper) 
+  TimeRange_oc( const TimeType &my_lower, const TimeType &my_upper )
+    :TimeRange<TimeType>(my_lower,my_upper) 
     {
     }
   bool isInRange ( const TimeType &t ) const

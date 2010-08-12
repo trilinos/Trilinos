@@ -260,9 +260,9 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
   time_ = initialCondition.get_t();
   // Generate vectors for use in calculations
   x_dot_base_ = createMember(xpn0_->space());
-  V_S(&*x_dot_base_,ST::zero());
+  V_S(x_dot_base_.ptr(),ST::zero());
   ee_ = createMember(xn0_->space());
-  V_S(&*ee_,ST::zero());
+  V_S(ee_.ptr(),ST::zero());
   // x history
   xHistory_.clear();
   xHistory_.push_back(xn0_->clone_v());
@@ -329,9 +329,9 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     if (numberOfSteps_ == 0) {
       psi_[0] = hh_;
       if (nef_ == 0) {
-        Vt_S(&*xHistory_[1],hh_);
+        Vt_S(xHistory_[1].ptr(),hh_);
       } else {
-        Vt_S(&*xHistory_[1],hh_/hh_old);
+        Vt_S(xHistory_[1].ptr(),hh_/hh_old);
       }
     }
     this->updateCoeffs_();
@@ -350,7 +350,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     //   t_base = tn+dt
     //
     Scalar coeff_x_dot = Scalar(-ST::one())*alpha_s_/hh_;
-    V_StVpStV( &*x_dot_base_, ST::one(), *xpn0_, alpha_s_/hh_, *xn0_ );
+    V_StVpStV( x_dot_base_.ptr(), ST::one(), *xpn0_, alpha_s_/hh_, *xn0_ );
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
       *out << "model_ = " << std::endl;
       model_->describe(*out,verbLevel);
@@ -818,15 +818,15 @@ void ImplicitBDFStepper<Scalar>::obtainPredictor_()
   
   // prepare history array for prediction
   for (int i=nscsco_;i<=currentOrder_;++i) {
-    Vt_S(&*xHistory_[i],beta_[i]);
+    Vt_S(xHistory_[i].ptr(),beta_[i]);
   }
   
   // evaluate predictor
-  V_V(&*xn0_,*xHistory_[0]);
-  V_S(&*xpn0_,ST::zero());
+  V_V(xn0_.ptr(),*xHistory_[0]);
+  V_S(xpn0_.ptr(),ST::zero());
   for (int i=1;i<=currentOrder_;++i) {
-    Vp_V(&*xn0_,*xHistory_[i]);
-    Vp_StV(&*xpn0_,gamma_[i],*xHistory_[i]);
+    Vp_V(xn0_.ptr(),*xHistory_[i]);
+    Vp_StV(xpn0_.ptr(),gamma_[i],*xHistory_[i]);
   }
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "xn0_ = " << std::endl;
@@ -870,8 +870,8 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution_(
   }
 
   // Initialize interploation
-  Thyra::V_V(x_ptr,*xHistory_[0]);
-  Thyra::V_S(xdot_ptr,ST::zero());
+  Thyra::V_V(ptr(x_ptr),*xHistory_[0]);
+  Thyra::V_S(ptr(xdot_ptr),ST::zero());
   
   // Add history array contributions
   const Scalar delt = timepoint - tn;
@@ -882,8 +882,8 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution_(
     d = d*gam + c/psi_[j-1];
     c = c*gam;
     gam = (delt + psi_[j-1])/psi_[j];
-    Thyra::Vp_StV(x_ptr,c,*xHistory_[j]);
-    Thyra::Vp_StV(xdot_ptr,d,*xHistory_[j]);
+    Thyra::Vp_StV(ptr(x_ptr),c,*xHistory_[j]);
+    Thyra::Vp_StV(ptr(xdot_ptr),d,*xHistory_[j]);
   }
 
   // Set approximate accuracy
@@ -902,12 +902,12 @@ void ImplicitBDFStepper<Scalar>::updateHistory_()
 
   // Save Newton correction for potential order increase on next step.
   if (usedOrder_ < maxOrder_)  {
-    assign( &*xHistory_[usedOrder_+1], *ee_ );
+    assign( xHistory_[usedOrder_+1].ptr(), *ee_ );
   }
   // Update history arrays
-  Vp_V( &*xHistory_[usedOrder_], *ee_ );
+  Vp_V( xHistory_[usedOrder_].ptr(), *ee_ );
   for (int j=usedOrder_-1;j>=0;j--) {
-    Vp_V( &*xHistory_[j], *xHistory_[j+1] );
+    Vp_V( xHistory_[j].ptr(), *xHistory_[j+1] );
   }
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -931,7 +931,7 @@ void ImplicitBDFStepper<Scalar>::restoreHistory_()
 
   // undo preparation of history array for prediction
   for (int i=nscsco_;i<=currentOrder_;++i) {
-    Vt_S( &*xHistory_[i], ST::one()/beta_[i] );
+    Vt_S( xHistory_[i].ptr(), ST::one()/beta_[i] );
   }
   for (int i=1;i<=currentOrder_;++i) {
     psi_[i-1] = psi_[i] - hh_;
@@ -1088,7 +1088,7 @@ void ImplicitBDFStepper<Scalar>::initialize_()
   // Store maxOrder_+1 vectors
   for (int i=2 ; i<=maxOrder_ ; ++i) {
     xHistory_.push_back(createMember(xn0_->space())); 
-    V_S(&*xHistory_[i],zero);
+    V_S(xHistory_[i].ptr(),zero);
   }
 
   isInitialized_ = true;

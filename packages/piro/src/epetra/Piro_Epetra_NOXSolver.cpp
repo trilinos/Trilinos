@@ -35,7 +35,7 @@
 
 Piro::Epetra::NOXSolver::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams_,
 			   Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
-			   Teuchos::RCP<Piro::Epetra::NOXObserver> observer_
+			   Teuchos::RCP<NOX::Epetra::Observer> observer_
 ) :
   piroParams(piroParams_),
   model(model_),
@@ -242,6 +242,7 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
     utils.out() << "Step Converged" << endl;
   else {
     utils.out() << "Nonlinear solver failed to converge!" << endl;
+    outArgs.setFailed();
   }
 
   // Get the NOX and Epetra_Vector with the final solution from the solver

@@ -37,7 +37,7 @@ IF(NOT BUILD_SHARED_LIBS)
 ENDIF()
 
 # Set the package version number
-SET(${PACKAGE_NAME}_VERSION 4.2)
+SET(${PACKAGE_NAME}_VERSION 4.4)
 
 # Define the list of PyTrilinos packages and modules.  Packages are
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
@@ -190,6 +190,26 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 # Add the example scripts
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+
+#
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  Notes.txt
+  aclocal.m4
+  bootstrap
+  config
+  lib
+  macdist
+  shared
+  src/PyTrilinos_config.h.in
+  src/depend
+  src/setup.py
+  src-boost
+  )
 
 # Execute the package postprocessing
 PACKAGE_POSTPROCESS()

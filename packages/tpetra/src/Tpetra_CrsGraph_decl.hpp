@@ -286,6 +286,19 @@ namespace Tpetra {
        */
       Teuchos::ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const;
 
+      //! Get an ArrayRCP of the row-offsets.
+      /*! Returns Teuchos::null if optimizeStorage() hasn't been called.
+          Note also that this is a device-resident array. i.e., if GPU
+          computations are enabled, this array resides on the GPU.
+       */
+      Teuchos::ArrayRCP<const size_t> getNodeRowOffsets() const;
+
+      //! Get an ArrayRCP of the packed column-indices.
+      /*! Returns Teuchos::null if optimizeStorage() hasn't been called.
+          Note also that this is a device-resident array. i.e., if GPU
+          computations are enabled, this array resides on the GPU.
+       */
+      Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
       //@}
 
       //! @name Miscellaneous Query Methods

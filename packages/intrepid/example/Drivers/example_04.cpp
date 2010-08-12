@@ -221,6 +221,8 @@ int main(int argc, char *argv[]) {
 
   }    
     
+   std::cout << "End Result: TEST PASSED\n";
+
   std::cout.copyfmt(oldFormatState);
 
 return 0;

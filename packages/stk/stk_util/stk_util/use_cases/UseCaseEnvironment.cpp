@@ -91,7 +91,7 @@ public:
       strout << "  " << (*it).first << std::setw(14 - (*it).first.size()) << " " << (*it).second.m_description << std::endl;
     return strout.str();
   }
-  
+
   void mask(const std::string &name, const Mask mask, const std::string &description) {
     m_optionMaskNameMap.mask(name, mask, description);
   }
@@ -110,7 +110,7 @@ OptionMaskParser::parse(
 {
   if (mask) {
     const std::string mask_string(mask);
-    
+
     m_status = true;
 
     std::string::const_iterator it0 = mask_string.begin();
@@ -214,13 +214,13 @@ build_log_description(
 
   // On processor 1..n:
   //   [poutfile=path.n.r] [doutfile=path.n.r] out>pout pout>{null|poutfile} dout>{out|doutfile}
-    
+
   std::string out_path = "-";
   if (vm.count("output-log"))
     out_path = vm["output-log"].as<std::string>();
   if (out_path == "-")
     out_path = "cout";
-    
+
   std::string out_ostream;
 
   if (!stk::get_log_ostream(out_path))
@@ -256,7 +256,7 @@ build_log_description(
       s << working_directory << pout_path << "." << parallel_size << "." << parallel_rank;
       pout_path = s.str();
     }
-      
+
     if (!stk::get_log_ostream(pout_path)) {
       output_description << " poutfile=\"" << pout_path << "\"";
       pout_ostream = "poutfile";
@@ -265,7 +265,7 @@ build_log_description(
       pout_ostream = pout_path;
   }
 
-  std::string dout_ostream;    
+  std::string dout_ostream;
   if (vm.count("dout")) {
     std::string dout_path = vm["dout"].as<std::string>();
     if (!dout_path.empty() && stk::is_registered_ostream(dout_path))
@@ -305,12 +305,12 @@ bootstrap()
   dw_option_mask.mask("search", use_case::LOG_SEARCH, "log search diagnostics");
   dw_option_mask.mask("transfer", use_case::LOG_TRANSFER, "log transfer diagnostics");
   dw_option_mask.mask("timer", use_case::LOG_TIMER, "log timer diagnostics");
-  
+
   timer_option_mask.mask("mesh", use_case::TIMER_MESH, "mesh operations timers");
   timer_option_mask.mask("meshio", use_case::TIMER_MESH_IO, "mesh I/O timers");
   timer_option_mask.mask("transfer", use_case::TIMER_TRANSFER, "transfer timers");
   timer_option_mask.mask("search", use_case::TIMER_SEARCH, "search timers");
-  
+
   boost::program_options::options_description desc("Use case environment options");
   desc.add_options()
     ("help,h", "produce help message")
@@ -321,7 +321,7 @@ bootstrap()
     ("dw", boost::program_options::value<std::string>(), dw_option_mask.describe().c_str())
     ("timer", boost::program_options::value<std::string>(), timer_option_mask.describe().c_str())
     ("runtest,r", boost::program_options::value<std::string>(), "runtest pid file");
-  
+
   stk::get_options_description().add(desc);
 }
 
@@ -368,7 +368,7 @@ std::ostream &
 dwout() {
   static stk::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
   static std::ostream s_dwout(&s_dwoutStreambuf);
-  
+
   return s_dwout;
 }
 
@@ -417,7 +417,7 @@ report_handler(
 {
   if (type & stk::MSG_DEFERRED)
     pout() << "Deferred " << (message_type) type << ": " << message << std::endl;
-  
+
   else
     out() << (message_type) type << ": " << message << std::endl;
 }
@@ -443,7 +443,23 @@ stk::diag::Timer &timer() {
 UseCaseEnvironment::UseCaseEnvironment(
   int *         argc,
   char ***      argv)
-  : m_comm(stk::parallel_machine_init(argc, argv))
+  : m_comm(stk::parallel_machine_init(argc, argv)),
+    m_need_to_finalize(true)
+{
+  initialize(argc, argv);
+}
+
+UseCaseEnvironment::UseCaseEnvironment(
+  int *         argc,
+  char ***      argv,
+  stk::ParallelMachine comm)
+  : m_comm(comm),
+    m_need_to_finalize(false)
+{
+  initialize(argc, argv);
+}
+
+void UseCaseEnvironment::initialize(int* argc, char*** argv)
 {
   stk::register_log_ostream(std::cout, "cout");
   stk::register_log_ostream(std::cerr, "cerr");
@@ -458,7 +474,7 @@ UseCaseEnvironment::UseCaseEnvironment(
   stk::set_report_handler(report_handler);
 
   stk::Bootstrap::bootstrap();
-  
+
   for (int i = 0; i < *argc; ++i) {
     const std::string s((*argv)[i]);
     if (s == "-h" || s == "-help" || s == "--help") {
@@ -472,11 +488,11 @@ UseCaseEnvironment::UseCaseEnvironment(
 // Broadcast argc and argv to all processors.
   int parallel_rank = stk::parallel_machine_rank(m_comm);
   int parallel_size = stk::parallel_machine_size(m_comm);
-    
+
   stk::BroadcastArg b_arg(m_comm, *argc, *argv);
 
 // Parse broadcast arguments
-  bopt::variables_map &vm = stk::get_variables_map();  
+  bopt::variables_map &vm = stk::get_variables_map();
   try {
     bopt::store(bopt::parse_command_line(b_arg.m_argc, b_arg.m_argv, stk::get_options_description()), vm);
     bopt::notify(vm);
@@ -485,55 +501,56 @@ UseCaseEnvironment::UseCaseEnvironment(
     stk::RuntimeDoomedSymmetric() << x.what();
   }
 
-// Parse diagnostic messages to display  
+// Parse diagnostic messages to display
   if (vm.count("dw"))
     dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
 
-// Parse timer metrics and classes to display  
+// Parse timer metrics and classes to display
   stk::diag::setEnabledTimerMetricsMask(stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME);
   if (vm.count("timer"))
     timerSet().setEnabledTimerMask(timer_option_mask.parse(vm["timer"].as<std::string>().c_str()));
-  
-// Set working directory  
+
+// Set working directory
   m_workingDirectory = "./";
   if (vm.count("directory"))
     m_workingDirectory = vm["directory"].as<std::string>();
   if (m_workingDirectory.length() && m_workingDirectory[m_workingDirectory.length() - 1] != '/')
     m_workingDirectory += "/";
-    
+
   std::string output_description = build_log_description(vm, m_workingDirectory, parallel_rank, parallel_size);
-  
+
   stk::bind_output_streams(output_description);
 
   dout() << "Output log binding: " << output_description << std::endl;
 
-// Start use case root timer  
+// Start use case root timer
   timer().start();
 }
-
 
 UseCaseEnvironment::~UseCaseEnvironment()
 {
   stk::report_deferred_messages(m_comm);
-  
-// Stop use case root timer  
+
+// Stop use case root timer
   timer().stop();
 
   stk::diag::printTimersTable(out(), timer(), stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, m_comm);
 
   stk::diag::deleteRootTimer(timer());
-  
+
   static_cast<stk::indent_streambuf *>(dwout().rdbuf())->redirect(std::cout.rdbuf());
-  
+
   stk::unregister_ostream(tout());
   stk::unregister_ostream(dout());
   stk::unregister_ostream(pout());
   stk::unregister_ostream(out());
 
   stk::unregister_log_ostream(std::cerr);
-  stk::unregister_log_ostream(std::cout);  
+  stk::unregister_log_ostream(std::cout);
 
-  stk::parallel_machine_finalize();
+  if (m_need_to_finalize) {
+    stk::parallel_machine_finalize();
+  }
 }
 
 } // namespace use_case

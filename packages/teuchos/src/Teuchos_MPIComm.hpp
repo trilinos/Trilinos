@@ -64,6 +64,8 @@ namespace Teuchos
 
       //! Get an object representing MPI_COMM_WORLD 
       static MPIComm& world();
+      //! Get an object representing MPI_COMM_SELF
+      static MPIComm& self();
 
       //! Return process rank
       int getRank() const {return myRank_;}

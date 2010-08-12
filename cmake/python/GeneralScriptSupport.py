@@ -368,6 +368,10 @@ def pidStillRunning(pid):
 ######################################
      
 
+def getFilePathArray(filePathStr):
+  return filePathStr.split('/')
+
+
 def joinDirs(dirArray):
   """
   Join directories.

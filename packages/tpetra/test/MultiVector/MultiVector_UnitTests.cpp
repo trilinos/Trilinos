@@ -100,7 +100,7 @@ namespace {
 #endif
 
   bool testMpi = true;
-  double errorTolSlack = 4.0e+1;
+  double errorTolSlack = 1.0e+2;
 
   TEUCHOS_STATIC_SETUP()
   {

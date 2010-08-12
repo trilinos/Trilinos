@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <use_cases/GridFixture.hpp>
+#include <stk_mesh/fixtures/GridFixture.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -155,7 +155,7 @@ void find_lower_rank_entities_to_kill(
 bool element_death_use_case_1(stk::ParallelMachine pm)
 {
   //setup the mesh
-  GridFixture fixture(pm);
+  stk::mesh::fixtures::GridFixture fixture(pm);
 
   // Nothing happens on iteration #0,
   // so the initial mesh should pass this validation.

@@ -111,16 +111,23 @@ int main ( int argc, char * argv[] )
     printStatus(local_status);
     status = status && local_status;
   }
-
-  bool result = -1;
-  if (status) {
-    result = 0;
+  {
+    std::cout << "Use Case Skinning 1b ... ";
+    bool local_status = skinning_use_case_1b(parallel_machine);
+    printStatus(local_status);
+    status = status && local_status;
   }
-  std::cout << "End Result: TEST PASSED" << std::endl;
-  printStatus(status);
-  std::cout << std::endl;
+
+  int return_code = -1;
+  if (status) {
+    return_code = 0;
+    std::cout << "End Result: TEST PASSED" << std::endl;
+  }
+  else {
+    std::cout << "End Result: TEST FAILED" << std::endl;
+  }
 
   stk::parallel_machine_finalize();
 
-  return result;
+  return return_code;
 }

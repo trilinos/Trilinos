@@ -233,8 +233,8 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, clone ) {
     RCP<DataStore<double> > ds_clone_ptr = ds.clone();
     DataStore<double>& ds_clone = *ds_clone_ptr;
 
-    Thyra::V_S(&*v,5.0);
-    Thyra::V_S(&*v_dot,6.0);
+    Thyra::V_S(v.ptr(),5.0);
+    Thyra::V_S(v_dot.ptr(),6.0);
     TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.x),0), 3.0);
     TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.xdot),0), 4.0);
   }
@@ -249,7 +249,7 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, clone ) {
     RCP<DataStore<double> > ds_clone_ptr = ds.clone();
     DataStore<double>& ds_clone = *ds_clone_ptr;
 
-    Thyra::V_S(&*v,5.0);
+    Thyra::V_S(v.ptr(),5.0);
     TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.x),0), 3.0);
     TEST_EQUALITY_CONST( Teuchos::is_null(ds_clone.xdot), true );
   }
@@ -264,7 +264,7 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, clone ) {
     RCP<DataStore<double> > ds_clone_ptr = ds.clone();
     DataStore<double>& ds_clone = *ds_clone_ptr;
 
-    Thyra::V_S(&*v_dot,6.0);
+    Thyra::V_S(v_dot.ptr(),6.0);
     TEST_EQUALITY_CONST(Teuchos::is_null(ds_clone.x), true );
     TEST_EQUALITY_CONST(Thyra::get_ele(*(ds_clone.xdot),0), 4.0);
   }

@@ -5,32 +5,37 @@ EXTRA_ARGS=$@
 
 cmake\
           -D ForTrilinos_ENABLE_EXTENDED:BOOL=ON\
+          -D ForTrilinos_ASSERTIONS:BOOL=ON\
           -D CMAKE_BUILD_TYPE:STRING=DEBUG\
           -D CMAKE_CXX_COMPILER:FILEPATH=/usr/vacpp/bin/xlc++\
           -D CMAKE_C_COMPILER:FILEPATH=/usr/vac/bin/xlc\
-          -D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/xlf\
+          -D CMAKE_Fortran_COMPILER:FILEPATH=/opt/IBM/compilers/xlf13.1/usr/bin/xlf\
           -D Trilinos_ENABLE_DEFAULT_PACKAGES:BOOL=OFF\
           -D Trilinos_ENABLE_Epetra:BOOL=ON\
+          -D Trilinos_ENABLE_Galeri:BOOL=ON\
           -D Trilinos_ENABLE_Teuchos:BOOL=ON\
           -D Trilinos_ENABLE_CTrilinos:BOOL=ON\
           -D Trilinos_ENABLE_ForTrilinos:BOOL=ON\
           -D Trilinos_ENABLE_TESTS:BOOL=OFF\
-          -D CTrilinos_ENABLE_TESTS:BOOL=ON\
-          -D CTrilinos_ENABLE_EXAMPLES:BOOL=ON\
+          -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF\
+          -D CTrilinos_ENABLE_TESTS:BOOL=OFF\
+          -D CTrilinos_ENABLE_EXAMPLES:BOOL=OFF\
           -D ForTrilinos_ENABLE_TESTS:BOOL=ON\
           -D ForTrilinos_ENABLE_EXAMPLES:BOOL=ON\
           -D DART_TESTING_TIMEOUT:STRING=600\
           -D TPL_ENABLE_MPI:BOOL=OFF\
           -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE\
-          -D Trilinos_VERBOSE_CONFIGURE:BOOL=TRUE\
+          -D Trilinos_VERBOSE_CONFIGURE:BOOL=FALSE\
           -D BLAS_LIBRARY_DIRS:FILEPATH="/home/knmorri/lapack-3.2.1"\
           -D BLAS_LIBRARY_NAMES:STRING="blas_AIX.a"\
           -D TPL_ENABLE_LAPACK:STRING=ON\
-          -D TPL_BLAS_LIBRARIES:FILEPATH="/home/knmorri/lapack-3.2.1/blas_AIX.a;/usr/lpp/xlf/lib/libxlf90.a"\
-          -D TPL_LAPACK_LIBRARIES:FILEPATH="/home/knmorri/lapack-3.2.1/lapack_AIX.a;/usr/lpp/xlf/lib/libxlf90.a"\
+          -D TPL_BLAS_LIBRARIES:FILEPATH="/home/knmorri/lapack-3.2.1/blas_AIX.a;/opt/IBM/compilers/xlf13.1/usr/lib/libxlf90.a"\
+          -D TPL_LAPACK_LIBRARIES:FILEPATH="/home/knmorri/lapack-3.2.1/lapack_AIX.a;/opt/IBM/compilers/xlf13.1/usr/lib/libxlf90.a"\
           -D LAPACK_LIBRARY_DIRS:FILEPATH="/home/knmorri/lapack-3.2.1"\
           -D LAPACK_LIBRARY_NAMES:STRING="lapack_AIX.a"\
           -D CMAKE_CXX_FLAGS:STRING="-qrtti=all"\
           -D CMAKE_INSTALL_PREFIX="/home/knmorri/Git_Trilinos/Trilinos-10.0"\
           ${EXTRA_ARGS}\
           ${TRILINOS_PATH}
+          
+

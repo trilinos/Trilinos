@@ -335,7 +335,7 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
   }
   else {
     x_dot_ = createMember(x_->space());
-    assign(&*x_dot_,ST::zero());
+    assign(x_dot_.ptr(),ST::zero());
   }
   
   // t
@@ -408,7 +408,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
   //   f( (1/dt)* x + (-1/dt)*x_old), x, t ) = 0
   //
 
-  V_StV( &*scaled_x_old_, Scalar(-ST::one()/dt), *x_ );
+  V_StV( scaled_x_old_.ptr(), Scalar(-ST::one()/dt), *x_ );
   t_old_ = t_;
   if(!neModel_.get()) {
     neModel_ = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>());
@@ -454,11 +454,11 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
   // Update the step
   //
 
-  assign( &*x_dot_old_, *x_dot_ );
+  assign( x_dot_old_.ptr(), *x_dot_ );
 
   // x_dot = (1/dt)*x - (1/dt)*x_old 
-  V_StV( &*x_dot_, Scalar(ST::one()/dt), *x_ );
-  Vp_StV( &*x_dot_, Scalar(ST::one()), *scaled_x_old_ );
+  V_StV( x_dot_.ptr(), Scalar(ST::one()/dt), *x_ );
+  Vp_StV( x_dot_.ptr(), Scalar(ST::one()), *scaled_x_old_ );
 
   t_ += dt;
 
@@ -478,7 +478,6 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
   {
 
     typedef ScalarTraits<Scalar> ST;
-    typedef typename ST::magnitudeType ScalarMag;
     typedef ScalarTraits<ScalarMag> SMT;
     
     Teuchos::OSTab tab(out);
@@ -604,17 +603,17 @@ void BackwardEulerStepper<Scalar>::addPoints(
     int n = 0;
     t_ = time_vec[n];
     t_old_ = t_;
-    Thyra::V_V(&*x_,*x_vec[n]);
-    Thyra::V_V(&*scaled_x_old_,*x_);
+    Thyra::V_V(x_.ptr(),*x_vec[n]);
+    Thyra::V_V(scaled_x_old_.ptr(),*x_);
   }
   else {
     int n = time_vec.size()-1;
     int nm1 = time_vec.size()-2;
     t_ = time_vec[n];
     t_old_ = time_vec[nm1];
-    Thyra::V_V(&*x_,*x_vec[n]);
+    Thyra::V_V(x_.ptr(),*x_vec[n]);
     Scalar dt = t_ - t_old_;
-    Thyra::V_StV(&*scaled_x_old_,Scalar(-ST::one()/dt),*x_vec[nm1]);
+    Thyra::V_StV(scaled_x_old_.ptr(),Scalar(-ST::one()/dt),*x_vec[nm1]);
   }
 }
 
@@ -648,7 +647,7 @@ void BackwardEulerStepper<Scalar>::getPoints(
   if (compareTimeValues(t_old_,t_)!=0) {
     Scalar dt = t_ - t_old_;
     x_temp = scaled_x_old_->clone_v();
-    Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
+    Thyra::Vt_S(x_temp.ptr(),Scalar(-ST::one()*dt));  // undo the scaling
   }
   defaultGetPoints<Scalar>(
       t_old_, constOptInArg(*x_temp), constOptInArg(*x_dot_old_),

@@ -31,8 +31,41 @@ class EntityRepository {
 
     void clean_changes();
 
+    // Return a pair: the relevant entity, and whether it had to be created
+    // or not. If there was already an active entity, the second item in the
+    // will be false; otherwise it will be true (even if the Entity was present
+    // but marked as destroyed).
     std::pair<Entity*,bool>
       internal_create_entity( const EntityKey & key );
+
+    inline void set_entity_owner_rank( Entity & e, unsigned owner_rank);
+    inline void set_entity_sync_count( Entity & e, size_t count);
+
+    inline void comm_clear( Entity & e) const;
+    inline void comm_clear_ghosting( Entity & e) const;
+
+    bool erase_ghosting( Entity & e, const Ghosting & ghosts) const;
+    bool erase_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
+
+    bool insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
+
+    void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
+    Bucket * get_entity_bucket ( Entity & e ) const;
+    void destroy_later( Entity & e, Bucket* nil_bucket );
+
+    void destroy_relation( Entity & e_from, Entity & e_to);
+
+    void declare_relation( Entity & e_from,
+                           Entity & e_to,
+                           const unsigned local_id,
+                           unsigned sync_count );
+
+    // Based on our modification model, if an entity gets modified, then all
+    // entities of higher rank that depend on this entity must also be marked
+    // as modified. In other words, all entities that have modified_entity
+    // in their closure must also be marked as modified. This is the ONLY
+    // place in the code base that should call log_modified directly.
+    void modify_and_propagate( Entity & modified_entity ) const;
 
   private:
     void internal_expunge_entity( EntityMap::iterator i);
@@ -44,6 +77,26 @@ class EntityRepository {
     EntityRepository & operator =(const EntityRepository &);
 };
 
+/*---------------------------------------------------------------*/
+
+void EntityRepository::set_entity_sync_count( Entity & e, size_t count) {
+  e.m_entityImpl.set_sync_count(count);
+}
+
+void EntityRepository::set_entity_owner_rank( Entity & e, unsigned owner_rank) {
+  bool changed = e.m_entityImpl.set_owner_rank(owner_rank);
+  if ( changed ) {
+    modify_and_propagate( e );
+  }
+}
+
+void EntityRepository::comm_clear( Entity & e) const {
+  e.m_entityImpl.comm_clear();
+}
+
+void EntityRepository::comm_clear_ghosting( Entity & e) const {
+  e.m_entityImpl.comm_clear_ghosting();
+}
 
 } // namespace impl
 } // namespace mesh

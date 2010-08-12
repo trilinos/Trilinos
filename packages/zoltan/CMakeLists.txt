@@ -75,6 +75,42 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
+PACKAGE_ARCH_EXCLUDE_FILES(
+  test/ch_brack2_3
+  test/ch_bug
+  test/ch_degenerate
+  test/ch_degenerateAA
+  test/ch_drake
+  test/ch_ewgt
+  test/ch_grid20x19
+  test/ch_hammond
+  test/ch_hammond2
+  test/ch_nograph
+  test/ch_onedbug
+  test/ch_random
+  test/ch_serial
+  test/ch_slac
+  test/ch_vwgt
+  test/ch_vwgt2
+  test/hg_cage10
+  test/hg_diag500_4
+  test/hg_ewgt
+  test/hg_felix
+  test/hg_ibm03
+  test/hg_ml27
+  test/hg_nograph
+  test/hg_vwgt
+  test/nem_ti_20k
+  test/nem_ti_4k
+  test/misc_siefert
+  test/th
+  test/bin
+  doc/Zoltan_html/tu_html
+  src/ZoltanComponent
+  src/driver_old
+  src/fdriver_old
+  )
+
 #
 # D) Do standard postprocessing
 #

@@ -57,8 +57,11 @@ XCOMM Building ExodusII libraries for installation
 
 #define IHaveSubdirs
 
-#define PassDebugFlags	"CDEBUGFLAGS=$(CDEBUGFLAGS)"
-#define PassCDebugFlags	"CDEBUGFLAGS=$(CDEBUGFLAGS)"
+#define PassDebugFlags	"DEBUG=$(DEBUG)" \
+	                "CDEBUGFLAGS=$(CDEBUGFLAGS)" \
+	                "CXXDEBUGFLAGS=$(CXXDEBUGFLAGS)" \
+			"F90DEBUGFLAGS=$(F90DEBUGFLAGS)" \
+			"F77DEBUGFLAGS=$(F77DEBUGFLAGS)"
 
 #define ExtraOptions "CCOPTIONS=$(CCOPTIONS)"
 
@@ -74,9 +77,9 @@ INCLIST2 = exodusII_int.inc exodusII.inc
 SUBDIRS = cbind/include cbind/src forbind/include forbind/src cbind/test forbind/test
 
 #if Build64BitAccess == YES
-AllTarget(libexoIIv2c.a libexoIIv2for.a libexoIIv2for32.a)
+AllTarget(libexodus.a libexoIIv2for.a libexoIIv2for32.a)
 #else
-AllTarget(libexoIIv2c.a libexoIIv2for.a)
+AllTarget(libexodus.a libexoIIv2for.a)
 #endif
 
 InstallSubdirIncludeList(makeincludes,cbind/include,$(INCLIST1),$(INCDIR))
@@ -84,7 +87,7 @@ InstallSubdirIncludeList(makeincludes,cbind/include,$(INCLIST1),$(INCDIR))
 InstallSubdirIncludeList(makeincludes,forbind/include,$(INCLIST2),$(INCDIR))
 
 /* Directory for exodusII c library */
-NamedTargetSubdirs(libexoIIv2c.a,cbind/src,"making exoIIv2c ",PassDebugFlags ExtraOptions,libexoIIv2c.a)
+NamedTargetSubdirs(libexodus.a,cbind/src,"making exodus ",PassDebugFlags ExtraOptions,libexodus.a)
 
 /* Directory for exodusII fortran wrappers */
 NamedTargetSubdirs(libexoIIv2for.a,forbind/src,"making exoIIv2for ",PassDebugFlags ExtraOptions,libexoIIv2for.a)
@@ -93,15 +96,16 @@ NamedTargetSubdirs(libexoIIv2for.a,forbind/src,"making exoIIv2for ",PassDebugFla
 NamedTargetSubdirs(libexoIIv2for32.a,forbind/src,"making exoIIv2for32 ",PassDebugFlags ExtraOptions,libexoIIv2for32.a)
 #endif
 
-InstallLibrary(exoIIv2c,$(LIBDIR))
+InstallLibrary(exodus,$(LIBDIR))
 InstallLibrary(exoIIv2for,$(LIBDIR))
+InstallLibraryAlias(exodus,exoIIv2c,$(LIBDIR))
 
 #if Build64BitAccess == YES
 InstallLibrary(exoIIv2for32,$(LIBDIR))
 #endif
 
 #if Parallel
-InstallParallelLibrary(exoIIv2c,$(PLIBDIR))
+InstallParallelLibrary(exodus,$(PLIBDIR))
 InstallParallelLibrary(exoIIv2for,$(PLIBDIR))
 
 #if Build64BitAccess == YES
@@ -110,7 +114,7 @@ InstallParallelLibrary(exoIIv2for32,$(PLIBDIR))
 
 #endif
 check: test
-test:: libexoIIv2c.a libexoIIv2for.a
+test:: libexodus.a libexoIIv2for.a
 
 NamedMakeSubdirs(test,cbind/test)
 NamedMakeSubdirs(test,forbind/test)

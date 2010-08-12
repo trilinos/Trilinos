@@ -1,6 +1,6 @@
 #!/usr/bin/tcsh
 cmake \
-      -D CMAKE_INSTALL_PREFIX="/home/rppawlo/JUNK15" \
+      -D CMAKE_INSTALL_PREFIX="/home/rppawlo/trilinos_install" \
       -D Trilinos_ENABLE_DEBUG=ON \
       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
@@ -16,7 +16,7 @@ cmake \
       -D TPL_ENABLE_Boost:BOOL=ON \
       -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Libs/Boost/boost_1_43_0" \
       -D TPL_ENABLE_TVMET:BOOL=ON \
-      -D TVMET_INCLUDE_DIRS:FILEPATH="/home/rppawlo/junk/include" \
+      -D TVMET_INCLUDE_DIRS:FILEPATH="/home/rppawlo/local/include" \
       -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpiCC" \
       -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpicc" \
       -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpif77" \

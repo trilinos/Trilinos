@@ -38,11 +38,11 @@ SRCS =  exclos.c   exggvt.c   exgpa.c    exgvp.c    expfrm.c   expqa.c	 \
 
 OBJS = ${SRCS:.c=.o}
 
-all:: libexoIIv2c.a
-libexoIIv2c.a: $(OBJS)
+all:: libexodus.a
+libexodus.a: $(OBJS)
 	$(AR) $@ $?
 	$(RANLIB) $@
-	cp libexoIIv2c.a ../../
+	cp libexodus.a ../../
 
 clean::
 	rm -f *.CKP *.ln *.BAK *.bak *.o *.M *.mod core errs ,* *~ *.a .emacs_* tags TAGS make.log MakeOut   "#"*

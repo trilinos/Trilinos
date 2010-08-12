@@ -29,6 +29,8 @@
 #ifndef TPETRA_BLOCKMAP_DECL_HPP
 #define TPETRA_BLOCKMAP_DECL_HPP
 
+#include <map>
+
 #include "Tpetra_Map.hpp"
 
 /** \file Tpetra_BlockMap_decl.hpp
@@ -150,6 +152,8 @@ class BlockMap : public Teuchos::Describable {
   //@}
 
  private:
+  void setup_noncontig_mapping();
+
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > pointMap_;
   global_size_t globalNumBlocks_;
   Teuchos::Array<GlobalOrdinal> myGlobalBlockIDs_;
@@ -157,7 +161,24 @@ class BlockMap : public Teuchos::Describable {
   Teuchos::ArrayRCP<const LocalOrdinal> view_firstPointInBlock_;
   bool blockIDsAreContiguous_;
   LocalOrdinal constantBlockSize_;
+  std::map<GlobalOrdinal,LocalOrdinal> map_global_to_local_; //need to use a hash (unordered_map) here instead of a map...
 };//class BlockMap
+
+//-----------------------------------------------------------------
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+convertBlockMapToPointMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap)
+{
+  global_size_t numGlobalElems = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  GlobalOrdinal indexBase = blockMap->getPointMap()->getIndexBase();
+  const Teuchos::RCP<const Teuchos::Comm<int> >& comm = blockMap->getPointMap()->getComm();
+  const Teuchos::RCP<Node>& node = blockMap->getPointMap()->getNode();
+
+  //Create a point-entry map where each point
+  //corresponds to a block in the block-map:
+  return Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElems, blockMap->getNodeBlockIDs(), indexBase, comm, node));
+}
+
 }//namespace Tpetra
 
 #endif

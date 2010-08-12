@@ -336,9 +336,9 @@ void SingleResidualModelEvaluator<Scalar>::evalModelImpl(
   // x_dot = coeff_x_dot * x_bar + x_dot_base
 
   if (x_dot_base_.get())
-    Thyra::V_StVpV( &*x_dot_, coeff_x_dot_, x_bar, *x_dot_base_ );
+    Thyra::V_StVpV( x_dot_.ptr(), coeff_x_dot_, x_bar, *x_dot_base_ );
   else
-    Thyra::V_StV( &*x_dot_, coeff_x_dot_, x_bar);
+    Thyra::V_StV( x_dot_.ptr(), coeff_x_dot_, x_bar);
 
   if (dumpAll) {
     *out << "\nx_dot_ = coeff_x_dot_ * x_bar + x_dot_base_\n";
@@ -359,9 +359,9 @@ void SingleResidualModelEvaluator<Scalar>::evalModelImpl(
   // x = coeff_x * x_bar + x_base
 
   if (x_base_.get())
-    Thyra::V_StVpV( &*x_, coeff_x_, x_bar, *x_base_ );
+    Thyra::V_StVpV( x_.ptr(), coeff_x_, x_bar, *x_base_ );
   else
-    Thyra::V_StV( &*x_, coeff_x_, x_bar);
+    Thyra::V_StV( x_.ptr(), coeff_x_, x_bar);
 
   if (dumpAll) {
     *out << "\nx_ = coeff_x_ * x_bar + x_base_\n";

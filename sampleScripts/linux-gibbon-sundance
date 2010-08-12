@@ -20,10 +20,11 @@
 #
 #-----------------------------------------------------------------------------
 
-# Decide whether to build the Meros block preconditioning package.
-# Default is no. 
+# Decide whether to build Stokhos and Moocho.
+# Default is yes. 
 #
-ENABLE_MEROS=OFF
+ENABLE_MOOCHO=ON
+ENABLE_STOKHOS=ON
 
 
 # ----------------------------------------------------------------------------
@@ -120,7 +121,7 @@ TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,explicit,no-explicit,lax,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
+TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,moocho,stokhos,no-moocho,no-stokhos,explicit,no-explicit,lax,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -146,6 +147,10 @@ while true ; do
       --exodus) HAVE_EXODUS=ON; shift;;
       --no-exodus) HAVE_EXODUS=OFF; shift;;
       --meros) ENABLE_MEROS=ON; shift;;
+      --moocho) ENABLE_MOOCHO=ON; shift;;
+      --stokhos) ENABLE_STOKHOS=ON; shift;;
+      --no-moocho) ENABLE_MOOCHO=OFF; shift;;
+      --no-stokhos) ENABLE_STOKHOS=OFF; shift;;
       --explicit) EXPLICIT_TEMPLATES=ON; shift;;
       --no-explicit) EXPLICIT_TEMPLATES=OFF; shift;;
       --src)
@@ -179,6 +184,8 @@ while true ; do
             echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
             echo "--no-exodus      disable ExodusII readers"
             echo "--meros          enable Meros block preconditioners (default: off)"
+            echo "--sundance-moocho enable Moocho optimizer (default: on)"
+            echo "--sundance-stokhos enable Stokhos PCE (default: on)"
             echo "--explicit       enable explicit template instantiation (default: on)"
             echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
             echo "--extra-cxxflags <f>   extra C++ flags (default: none)" 
@@ -217,12 +224,15 @@ ${ECHO} cmake \
 -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=${PARANOID_COMPILER} \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=${CHECK_STL} \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=${EXPLICIT_TEMPLATES} \
 -D Trilinos_ENABLE_Sundance:BOOL=ON \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
--D Trilinos_ENABLE_Meros:BOOL=${ENABLE_MEROS} \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
+-D Sundance_ENABLE_MOOCHO:BOOL=${ENABLE_MOOCHO} \
+-D Sundance_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
 -D Sundance_ENABLE_EXTERNAL_CHACO:BOOL=${HAVE_CHACO} \
 -D Teuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \

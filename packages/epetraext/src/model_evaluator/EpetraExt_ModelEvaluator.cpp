@@ -94,7 +94,8 @@ void ModelEvaluator::InArgs::assert_l(int l) const
 
 
 ModelEvaluator::OutArgs::OutArgs()
-  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!")
+  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!"),
+  isFailed_( false )
 {
   std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false);
 }
@@ -192,6 +193,17 @@ bool ModelEvaluator::OutArgs::funcOrDerivesAreSet(EOutArgsMembers arg) const
         " the argument " << toString(arg) << "yet!");
   }
   return areSet;
+}
+
+void ModelEvaluator::OutArgs::setFailed() const
+{
+  isFailed_ = true;
+  // TODO: Set objects to NaN?
+}
+
+bool ModelEvaluator::OutArgs::isFailed() const
+{
+  return isFailed_;
 }
 
 

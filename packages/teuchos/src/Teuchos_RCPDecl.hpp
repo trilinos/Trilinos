@@ -1285,9 +1285,28 @@ rcpWithEmbeddedObj( T* p, const Embedded &embedded, bool owns_mem = true );
  *
  * NOTE: The parent can be retrieved using the function
  * <tt>getInvertedObjOwnershipParent(...)</tt>.
+ *
+ * \relates RCP
  */
 template<class T, class ParentT>
 RCP<T> rcpWithInvertedObjOwnership(const RCP<T> &child, const RCP<ParentT> &parent);
+
+
+/** \brief Allocate a new RCP object with a new RCPNode with memory pointing
+ * to the initial node.
+ *
+ * The purpose of this function is to create a new "handle" to the underlying
+ * memory with its own seprate reference count.  The new RCP object will have
+ * a new RCPNodeTmpl object that has a copy of the input RCP object embedded
+ * in it.  This maintains the correct reference counting behaviors but now
+ * gives a private count.  One would want to use rcpCloneNode(...) whenever it
+ * is important to keep a private reference count which is needed for some
+ * types of use cases.
+ *
+ * \relates RCP
+ */
+template<class T>
+RCP<T> rcpCloneNode(const RCP<T> &p);
 
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.

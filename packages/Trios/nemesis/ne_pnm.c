@@ -69,7 +69,8 @@ int ne_put_node_map(int  neid,
 {
   char  *func_name="ne_put_node_map";
 
-  int     status, varid, dimid;
+  int     status = 0;
+  int varid, dimid;
   char    ftype[2];
   size_t  start[1], count[1];
   size_t  varidx[2];

@@ -78,12 +78,10 @@ TriKota::DirectApplicInterface::DirectApplicInterface(
       }
     }
 
-    model_dgdp = Teuchos::rcp(new Epetra_MultiVector(model_p->Map(), model_g->GlobalLength() ));
-
     *out << "TriKota:: Setting initial guess from Model Evaluator to Dakota " << std::endl;
 
     Model& first_model = *(problem_db_.model_list().begin());
-    int num_dakota_vars =  first_model.acv();
+    unsigned int num_dakota_vars =  first_model.acv();
     Dakota::RealVector drv(num_dakota_vars);
 
     TEST_FOR_EXCEPTION(num_dakota_vars > numParameters, std::logic_error,
@@ -91,7 +89,7 @@ TriKota::DirectApplicInterface::DirectApplicInterface(
                        <<  numParameters << "\n is less then the number of continuous variables\n"
                        << " specified in the dakota.in input file " << num_dakota_vars << "\n" );
 
-    for (int i=0; i<num_dakota_vars; i++) drv[i] = (*model_p)[i];
+    for (unsigned int i=0; i<num_dakota_vars; i++) drv[i] = (*model_p)[i];
     first_model.continuous_variables(drv);
 
   }
@@ -127,25 +125,25 @@ int TriKota::DirectApplicInterface::derived_map_ac(const Dakota::String& ac_name
  
 
     // Load parameters from Dakota to ModelEval data structure
-    for (int i=0; i<numVars; i++) (*model_p)[i]=xC[i];
+    for (unsigned int i=0; i<numVars; i++) (*model_p)[i]=xC[i];
 
     // Evaluate model
     inArgs.set_p(0,model_p);
     outArgs.set_g(0,model_g);
-    EEME::Derivative model_dgdp_deriv(model_dgdp, orientation);
+    EEME::Derivative model_dgdp_deriv(model_dgdp, orientation); //may be null
     if (gradFlag) outArgs.set_DgDp(0,0,model_dgdp_deriv);
     App->evalModel(inArgs, outArgs);
 
-    for (int j=0; j<numFns; j++) fnVals[j]= (*model_g)[j];
+    for (unsigned int j=0; j<numFns; j++) fnVals[j]= (*model_g)[j];
 
     if (gradFlag)  {
       if (orientation == EEME::DERIV_MV_BY_COL) {
-        for (int i=0; i<numVars; i++)
-          for (int j=0; j<numFns; j++)
+        for (unsigned int i=0; i<numVars; i++)
+          for (unsigned int j=0; j<numFns; j++)
             fnGrads[j][i]= (*model_dgdp)[i][j];
       } else {
-        for (int i=0; i<numFns; i++)
-          for (int j=0; j<numVars; j++)
+        for (unsigned int i=0; i<numFns; i++)
+          for (unsigned int j=0; j<numVars; j++)
             fnGrads[i][j]= (*model_dgdp)[i][j];
       }
     }
@@ -168,7 +166,8 @@ int TriKota::DirectApplicInterface::derived_map_of(const Dakota::String& ac_name
   *out << "Finished Dakota NLS Fitting!: " << std::setprecision(5) << std::endl;
   model_p->Print(*out << "\nParameters!\n");
   model_g->Print(*out << "\nResponses!\n");
-  model_dgdp->Print(*out << "\nSensitivities!\n");
+  if (gradFlag)
+    model_dgdp->Print(*out << "\nSensitivities!\n");
 
   return 0;
 }

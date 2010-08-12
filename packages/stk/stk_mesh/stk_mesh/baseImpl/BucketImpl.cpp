@@ -19,21 +19,21 @@
 namespace stk {
 namespace mesh {
 namespace impl {
-  
+
 //----------------------------------------------------------------------
 
 namespace {
 
-void memory_copy( unsigned char * dst , unsigned char * src , unsigned n )
+void memory_copy( unsigned char * dst , const unsigned char * src , unsigned n )
 { std::memcpy( dst , src , n ); }
 
 
 void memory_zero( unsigned char * dst , unsigned n )
 { std::memset( dst , 0 , n ); }
 
-} // namespace 
+} // namespace
 
-  
+
 
 //----------------------------------------------------------------------
 BucketImpl::BucketImpl( BulkData        & arg_mesh ,
@@ -133,15 +133,15 @@ Bucket * BucketImpl::last_bucket_in_family_impl()
 
 //----------------------------------------------------------------------
 
-Bucket * BucketImpl::first_bucket_in_family() 
-{ 
-  return last_bucket_in_family_impl()->m_bucketImpl.m_bucket; 
+Bucket * BucketImpl::first_bucket_in_family()
+{
+  return last_bucket_in_family_impl()->m_bucketImpl.m_bucket;
 }
 
 //----------------------------------------------------------------------
 
 void BucketImpl::set_last_bucket_in_family( Bucket * last_bucket )
-{ 
+{
   Bucket * last = last_bucket_in_family_impl();
   Bucket * first = last->m_bucketImpl.m_bucket;
   first->m_bucketImpl.m_bucket = last_bucket;
@@ -150,8 +150,8 @@ void BucketImpl::set_last_bucket_in_family( Bucket * last_bucket )
 //----------------------------------------------------------------------
 
 void BucketImpl::set_first_bucket_in_family( Bucket * first_bucket )
-{ 
-  m_bucket = first_bucket; 
+{
+  m_bucket = first_bucket;
 }
 
 //----------------------------------------------------------------------
@@ -216,7 +216,7 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
 
 
 
-} // namespace impl 
+} // namespace impl
 } // namespace mesh
 } // namespace stk
 

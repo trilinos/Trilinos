@@ -26,4 +26,4 @@ cmake_version_release = "2.8.1" # manual_update
 
 cmake_version_rc = "2.8.2" # auto_update v2.8
 
-cmake_version_dev = "2.8.2.20100704-g538994" # auto_update vCVS
+cmake_version_dev = "2.8.2.20100713-gabed" # auto_update vCVS

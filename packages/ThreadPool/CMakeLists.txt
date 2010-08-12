@@ -41,6 +41,12 @@ IF(HAVE_PTHREAD)
 ENDIF()
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+#
 # D) Do standard postprocessing
 #
 

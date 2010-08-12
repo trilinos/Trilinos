@@ -136,6 +136,66 @@ TEUCHOS_UNIT_TEST( RCP, rcpFromUndefRef )
 }
 
 
+//
+// Test rcpCloneNode(...)
+//
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpCloneNode_null )
+{
+  ECHO(RCP<RCP<int> > rcp1 = null);
+  ECHO(RCP<RCP<int> > rcp2 = rcpCloneNode(rcp1));
+  TEST_EQUALITY(rcp2, null);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, rcpCloneNode_basic )
+{
+
+  ECHO(RCP<int> rcp1 = rcp(new int(0)));
+
+  ECHO(RCP<int> rcp2 = rcpCloneNode(rcp1));
+  TEST_ASSERT(nonnull(rcp2));
+  TEST_EQUALITY(rcp1.count(), 2);
+  TEST_EQUALITY(rcp2.count(), 1);
+
+  ECHO(RCP<int> rcp3 = rcp2);
+  TEST_EQUALITY(rcp1.count(), 2);
+  TEST_EQUALITY(rcp2.count(), 2);
+  TEST_EQUALITY(rcp3.count(), 2);
+
+  ECHO(RCP <int> rcp4 = rcp1);
+  TEST_EQUALITY(rcp1.count(), 3);
+  TEST_EQUALITY(rcp2.count(), 2);
+  TEST_EQUALITY(rcp3.count(), 2);
+
+  ECHO(rcp4 = null);
+  TEST_EQUALITY(rcp1.count(), 2);
+  TEST_EQUALITY(rcp2.count(), 2);
+  TEST_EQUALITY(rcp3.count(), 2);
+  TEST_EQUALITY(rcp4.count(), 0);
+
+  ECHO(rcp1 = null);
+  TEST_EQUALITY(rcp1.count(), 0);
+  TEST_EQUALITY(rcp2.count(), 2);
+  TEST_EQUALITY(rcp3.count(), 2);
+  TEST_EQUALITY(rcp4.count(), 0);
+
+  ECHO(rcp2 = null);
+  TEST_EQUALITY(rcp2.count(), 0);
+  TEST_EQUALITY(rcp3.count(), 1);
+
+  ECHO(rcp3 = null);
+  TEST_EQUALITY(rcp3.count(), 0);
+
+}
+
+
+//
+// Test duplicate owning RCP objects
+//
+
+
 // Test that shows that we can detect trying to create two owning RCPs
 // pointing to the same polymorphic object but having different interfaces
 // with different addresses.  This happens due to virtual base classes. Only

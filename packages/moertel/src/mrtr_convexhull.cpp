@@ -412,12 +412,21 @@ bool MOERTEL::Overlap::CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p,
   
   // the new polygon is supposed to have at least three points, otherwise its
   // no better than the old uncollapsed one and we'd rather keep the old one
+  // ^^^ this comment is inaccurate ^^^
+  // soon after this method is called, there is a check for a degenerate overlap
+  // by asking how many things are in p.  If p is less than three, the overlap
+  // is skipped, otherwise the computation continues.  After that, an area weighted
+  // sum is computed on the polygon.  If the area is 0, this generates NaNs.
+  // By commenting out this if block, the check for degeneracy will work as
+  // claimed in the comments.
+  /*
   if (pnew.size() < 3)
   {
     pnew.clear();
     collapse.clear();
     return true;
   }
+  */
 
   p.clear();
   CopyPointPolygon(pnew,p);

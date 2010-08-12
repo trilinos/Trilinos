@@ -75,6 +75,70 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc/AmesosOverview
+  doc/PARA06
+  example/RunParaklete.cpp
+  example/Thyra_AmesosLinearOpWithSolveFactory.cpp
+  example/pk.h
+  example/run_pk.c
+  example/simpleStratimikosSolve.cpp
+  example/simpleStratimikosSolve.hpp
+  example/stratimikos_example.cpp
+  src/Amesos_BTF.h
+  src/Amesos_Component.h
+  src/Amesos_Merikos.h
+  src/Amesos_BTF.h
+  src/SuiteSparse/CAMD/Source/amesos_camd_1.c
+  src/SuiteSparse/CAMD/Source/amesos_camd_aat.c
+  src/SuiteSparse/CAMD/Source/amesos_camd_control.c
+  src/SuiteSparse/CAMD/Source/amesos_camd_defaults.c
+  src/SuiteSparse/CAMD/Source/amesos_camd_dump.c
+  src/SuiteSparse/CAMD/Source/amesos_camd_info.c
+  src/SuiteSparse/CAMD/Source/amesos_camd_order.c
+  src/SuiteSparse/CAMD/Source/amesos_camd_preprocess.c
+  src/SuiteSparse/CAMD/Source/amesos_camd_valid.c
+  src/SuiteSparse/CCOLAMD/Source/amesos_ccolamd.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_amd.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_analyze.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_colamd.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_etree.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_factorize.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_postorder.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rcond.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_resymbol.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rowcolcounts.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_rowfac.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_solve.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_cholmod_spsolve.c
+  src/SuiteSparse/CHOLMOD/Cholesky/amesos_t_cholmod_rowfac.c
+  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_aat.c
+  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_add.c
+  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_band.c
+  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_change_factor.c
+  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_copy.c
+  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_dense.c
+  src/SuiteSparse/CHOLMOD/Core/amesos_cholmod_factor.c
+  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_camd.c
+  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_ccolamd.c
+  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_csymamd.c
+  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_metis.c
+  src/SuiteSparse/CHOLMOD/Partition/amesos_cholmod_nesdis.c
+  src/src-repository
+  src/stamp-h.in
+  test/TestOptions/Dummy
+  test/Test_Basic/NotQuiteDense.triU
+  test/Test_Performance/In_Test_UmfpackPerformance.csh
+  test/scripts/daily/mpi/TestBasic.sh
+  test/scripts/daily/serial/TestAmesos.sh
+  )
+
+#
 # D) Do standard postprocessing
 #
 

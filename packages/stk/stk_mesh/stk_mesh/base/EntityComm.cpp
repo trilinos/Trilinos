@@ -185,7 +185,7 @@ void unpack_entity_info(
     buf.unpack<Relation::raw_attr_type>( rel_attr );
     Entity * const entity =
       mesh.get_entity( entity_rank(rel_key), entity_id(rel_key) );
-    if ( entity && entity->bucket().capacity() ) {
+    if ( entity && EntityLogDeleted != entity->log_query() ) {
       Relation rel( rel_attr , * entity );
       relations.push_back( rel );
     }

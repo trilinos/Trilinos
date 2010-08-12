@@ -310,6 +310,12 @@ public:
   std::pair<const unsigned *, const unsigned *>
     superset_part_ordinals() const { return m_bucketImpl.superset_part_ordinals() ; }
 
+  /** \brief Equivalent buckets have the same parts
+   */
+  bool equivalent( const Bucket& b ) const {
+    return m_bucketImpl.equivalent(b.m_bucketImpl);
+  }
+
 #ifndef DOXYGEN_COMPILE
   const unsigned * key() const { return m_bucketImpl.key() ; }
 #endif /* DOXYGEN_COMPILE */

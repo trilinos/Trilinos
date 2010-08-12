@@ -7,7 +7,7 @@ INCLUDE(CombinedOption)
 # A) Define the package
 #
 
-PACKAGE(Rythmos)
+PACKAGE(Rythmos ENABLE_SHADOWING_WARNINGS CLEANED )
 
 #
 # B) Set up package-specific options
@@ -110,6 +110,12 @@ PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 ADD_SUBDIRECTORY(adapters)
+
+#
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
 
 #
 # D) Do standard postprocessing

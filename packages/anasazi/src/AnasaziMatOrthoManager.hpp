@@ -75,10 +75,10 @@ namespace Anasazi {
     //@{ 
 
     //! Set operator used for inner product.
-    void setOp( Teuchos::RCP<const OP> Op );
+    virtual void setOp( Teuchos::RCP<const OP> Op );
 
     //! Get operator used for inner product.
-    Teuchos::RCP<const OP> getOp() const;
+    virtual Teuchos::RCP<const OP> getOp() const;
 
     //! Retrieve operator counter.
     /*! This counter returns the number of applications of the operator specifying the inner 

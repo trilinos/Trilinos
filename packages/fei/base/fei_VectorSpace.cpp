@@ -624,6 +624,10 @@ int fei::VectorSpace::initComplete()
     need_to_compute_shared_ids = true;
   }
 
+  int localNeedToCompute = need_to_compute_shared_ids ? 1 : 0;
+  int globalNeedToCompute = 0;
+  CHK_ERR( fei::GlobalMin(comm_, localNeedToCompute, globalNeedToCompute) );
+  need_to_compute_shared_ids = globalNeedToCompute==1 ? true : false;
   if (need_to_compute_shared_ids) {
     compute_shared_ids();
   }

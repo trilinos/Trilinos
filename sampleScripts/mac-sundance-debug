@@ -1,0 +1,245 @@
+#!/bin/bash
+
+echo "go"
+# ----------------------------------------------------------------------------
+# Set the location of the compilers and libraries. On a simple out-of-the-box
+# Linux system, COMPILER_ROOT will probably be someplace like /usr/local. 
+# On Kevin's TTU machines, there are multiple compiler versions located
+# in directories /usr/local/${COMPILER_VERSION}, e.g., /usr/local/gcc-4.3.2.
+# If your system isn't organized this way, you can copy this script
+# and modify as per your system.
+#
+GCC_VERSION=4.4.1
+COMPILER_VERSION=gcc-${GCC_VERSION}
+COMPILER_ROOT=/usr/local
+BIN_PATH=${COMPILER_ROOT}/bin
+LIB_PATH=${COMPILER_ROOT}/lib
+INC_PATH=${COMPILER_ROOT}/include
+# Location of Python.h. Not needed unless you're building the
+# python wrappers.
+PYTHON_INC_PATH=${INC_PATH}/python2.6
+
+# ----------------------------------------------------------------------------
+# Specify directories for the Trilinos source and Trilnos data, and for
+# the installation of this build.
+
+# Set the installation path
+INSTALL_PREFIX=$PWD
+
+# Set the path to the Trilinos source distribution
+#TRILINOS_SRC_DIR=${HOME}/Software/Trilinos
+TRILINOS_SRC_DIR=${HOME}/Code/Trilinos
+
+# Set the path to the Trilinos data files. Some of the Sundance tests require
+# large mesh files stored in TrilinosData. If the TrilinosData directory
+# cannot be found, these tests will be disabled.
+#TRILINOS_DATA_DIR=${HOME}/Software/TrilinosData
+TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
+
+
+
+#source ${HOME}/Software/Trilinos/sampleScripts/krlong-linux-common
+#source ./krlong-linux-common
+
+
+# Decide whether to build Stokhos. Default is yes.
+#ENABLE_STOKHOS=ON
+ENABLE_STOKHOS=OFF
+ENABLE_MOOCHO=OFF
+
+
+# ----------------------------------------------------------------------------
+# Set the fortran library name. On older Linux systems this will 
+# need to be changed to -lg2c. 
+#
+FORTRAN_LIBS="-lgfortran"
+
+
+
+# ----------------------------------------------------------------------------
+# Set variables that control the type of build
+#
+#
+# Whether to build PySundance
+PY_SUNDANCE=OFF
+# Whether to build shared libraries. Default=no.
+BUILD_SHARED=ON
+# Whether to build with MPI. Default=yes.
+ENABLE_MPI=OFF
+# Whether to build optimized or debug. Default=debug. Set to RELEASE or leave
+# blank to enable an optimized build.
+BUILD_TYPE=DEBUG
+# Whether to enable runtime checking of STL calls. Default=no. 
+# Do NOT enable this feature unless you know what you're doing, because if any
+# other libraries were built without it the combination of enabled and
+# disabled STL checking in a single executable will cause serious problems,
+# i.e., segfaults in random places.  
+CHECK_STL=OFF
+# Whether to enable a paranoid level of compiler warnings. This can cause
+# problems with Python. Default: on. 
+PARANOID_COMPILER=ON
+# Whether to do explicit template instantiation
+EXPLICIT_TEMPLATES=ON
+# Ordinal type (should normally be int)
+ORDINAL=long
+# ----------------------------------------------------------------------------
+# Verbosity of configuration
+VERBOSE_CONFIGURE=OFF
+
+EXTRA_C_FLAGS=
+EXTRA_CXX_FLAGS=
+
+
+# ----------------------------------------------------------------------------
+# Set variables controlling which third-party libraries are available and
+# should be linked in. 
+#
+# Whether the exodus mesh database libraries are available. Default=yes.
+HAVE_EXODUS=OFF
+
+# ----------------------------------------------------------------------------
+# Specify directories for the Trilinos source and Trilnos data, and for
+# the installation of this build.
+
+# Set the installation path
+INSTALL_PREFIX=$PWD
+
+# ---------------------------------------------------------------------------
+#
+# At this point, all variables have been assigned default values. We now
+# parse the command line to see if any values are overridden.
+#
+# ---------------------------------------------------------------------------
+# Argument parsing logic.
+#TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,explicit,no-explicit,lax,ordinal:,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
+TEMP="$@ --"
+
+echo "Before eval, \$@ is $@"
+
+eval set -- "$TEMP"
+
+echo "Args before while loop: $@"
+while true ; do
+  case "$1" in 
+      --python) PY_SUNDANCE=ON; 
+                PARANOID_COMPILER=OFF; 
+                PYTHON_INC_STRING="-I${PYTHON_INC_PATH}";
+		echo "did the python thing"
+                shift ;;
+      --mpi) ENABLE_MPI=ON; shift ;;
+      --serial) ENABLE_MPI=OFF; shift ;;
+      --dryrun) ECHO=echo; shift;;
+      --verbose) VERBOSE_CONFIGURE=ON; shift;;
+      --shared) BUILD_SHARED=ON; shift;;
+      --static) BUILD_SHARED=OFF; shift;;
+      --check-stl) CHECK_STL=ON; shift;;
+      --debug) BUILD_TYPE=DEBUG; shift;;
+      --opt) BUILD_TYPE=RELEASE; 
+             OPT_STR="-finline-functions -funroll-loops"; shift;;
+      --lax) PARANOID_COMPILER=OFF; shift;;
+      --g77) FORTRAN_LIBS="-lg2c"; shift;;
+      --lib64) LIB_PATH="${COMPILER_ROOT}/lib;${COMPILER_ROOT}/lib64"; shift;;
+      --exodus) HAVE_EXODUS=ON; shift;;
+      --no-exodus) HAVE_EXODUS=OFF; shift;;
+      --meros) ENABLE_MEROS=ON; shift;;
+      --explicit) EXPLICIT_TEMPLATES=ON; shift;;
+      --no-explicit) EXPLICIT_TEMPLATES=OFF; shift;;
+      --src)
+            TRILINOS_SRC_DIR="$2"; shift 2;;
+      --extra-cxxflags)
+            EXTRA_CXX_FLAGS="$2"; shift 2;;
+      --extra-cflags)
+            EXTRA_C_FLAGS="$2"; shift 2;;
+      --extra-fflags)
+            EXTRA_F_FLAGS="$2"; shift 2;;
+      --data)
+            TRILINOS_DATA_DIR="$2"; shift 2;;
+      --ordinal)
+            ORDINAL="$2"; shift 2;;
+      --prefix)
+            INSTALL_PREFIX="$2"; shift 2;;
+      --help)
+            echo "Command-line arguments:"
+            echo "--help           help"
+            echo "--dryrun         print the command that would be used"
+            echo "--python         enables PySundance"
+            echo "--verbose        enable verbose configuration (default: off)"
+            echo "--mpi            enable MPI (default: on)"
+            echo "--serial         turn off MPI"
+            echo "--shared         build shared libraries (default: off)"
+            echo "--static         build static libraries (default: on)"
+            echo "--check-stl      turn on STL runtime checking (expert use only)"
+            echo "--debug          turn on debugging features (default: on)"
+            echo "--opt            turn on optimized compilation (default: off)"
+            echo "--lax            turn off paranoid compiler flags (necessary for python wrappers)"
+            echo "--g77            use g77 instead of gfortran (default: off)"
+            echo "--lib64          include lib64 in search path (default: off)"
+            echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
+            echo "--no-exodus      disable ExodusII readers"
+            echo "--meros          enable Meros block preconditioners (default: off)"
+            echo "--explicit       enable explicit template instantiation (default: on)"
+            echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
+            echo "--extra-cxxflags <f>   extra C++ flags (default: none)" 
+            echo "--extra-cflags <f>     extra C flags (default: none)"
+            echo "--extra-fflags <f>     extra Fortran flags (default: none)"
+            echo "--ordinal <str>  ordinal type (default: int)"
+            echo "--data <dir>     set location of Trilinos data (default: \${HOME}/Code/TrilinosData)"
+            echo "--prefix <dir>   set installation directory (default: \${PWD})"
+            echo " ";
+            exit 0;
+            shift
+            ;;
+      --) shift; break;;
+  esac
+done
+
+echo "Remaining arguments: $@"
+
+# ---------------------------------------------------------------------------
+#
+# Now run cmake!!
+#
+# ---------------------------------------------------------------------------
+
+${ECHO} cmake \
+-D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
+-D BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED} \
+-D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="${LIB_PATH}" \
+-D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="${INC_PATH}" \
+-D CMAKE_CXX_FLAGS:STRING="${PYTHON_INC_STRING} ${OPT_STRING} ${EXTRA_CXX_FLAGS}" \
+-D CMAKE_C_FLAGS:STRING="${PYTHON_INC_STRING} ${EXTRA_C_FLAGS}" \
+-D CMAKE_Fortran_FLAGS:STRING="${EXTRA_F_FLAGS}" \
+-D TPL_ENABLE_ExodusII:BOOL=${HAVE_EXODUS} \
+-D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
+-D BLAS_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
+-D LAPACK_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS} \
+-D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON \
+-D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=${PARANOID_COMPILER} \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=${CHECK_STL} \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=${EXPLICIT_TEMPLATES} \
+-D Trilinos_ENABLE_Sundance:BOOL=ON \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
+-D Sundance_ENABLE_MOOCHO:BOOL=${ENABLE_MOOCHO} \
+-D Sundance_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
+-D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
+-D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
+-D Teuchos_ORDINAL_TYPE:STRING=${ORDINAL} \
+-D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
+-D NOX_ENABLE_LOCA:BOOL=OFF \
+-D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \
+-D TPL_LAPACK_LIBRARIES="-llapack -lblas -lgfortran" \
+${TRILINOS_SRC_DIR} 
+
+#-D TPL_LAPACK_LIBRARIES=/Developer/SDKs/MacOSX10.4u.sdk/usr/lib/liblapack.dylib \
+#-D TPL_BLAS_LIBRARIES=/Developer/SDKs/MacOSX10.4u.sdk/usr/lib/libblas.dylib \
+ 
+
+echo "extra link flags: " ${FORTRAN_LIBS}
+
+
+#exit 0
+

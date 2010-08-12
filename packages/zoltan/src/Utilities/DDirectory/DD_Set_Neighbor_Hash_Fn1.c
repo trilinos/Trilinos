@@ -49,19 +49,23 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
  Zoltan_DD_Directory *dd,          /* directory state information */
  int size)                         /* number of reserved GIDs per CPU */
    {
-   char *yo = "Zoltan_DD_Set_Hash_Fn1";
-  struct dd_nh1_struct *hashdata;
+   char *yo = "Zoltan_DD_Set_Neighbor_Hash_Fn1";
+   struct dd_nh1_struct *hashdata;
 
-   if (dd == NULL || size < 1)  {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument");
-      return ZOLTAN_FATAL;
+   if (dd == NULL) {
+     ZOLTAN_PRINT_ERROR (0, yo, "NULL DDirectory pointer");
+     return ZOLTAN_FATAL;
+   }
+   if (size < 1) {
+     ZOLTAN_PRINT_WARN (0, yo, "Invalid input argument; size < 1");
+     return ZOLTAN_WARN;
    }
 
-  hashdata = (struct dd_nh1_struct*) ZOLTAN_MALLOC(sizeof(struct dd_nh1_struct));
-  if (hashdata == NULL) {
-    ZOLTAN_PRINT_ERROR (0, yo, "Memory error");
-    return ZOLTAN_FATAL;
-  }
+   hashdata = (struct dd_nh1_struct*) ZOLTAN_MALLOC(sizeof(struct dd_nh1_struct));
+   if (hashdata == NULL) {
+     ZOLTAN_PRINT_ERROR (0, yo, "Memory error");
+     return ZOLTAN_FATAL;
+   }
 
    hashdata->groupsize   = size;
    dd->hash    = (DD_Hash_fn*) &dd_nh1;

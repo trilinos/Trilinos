@@ -22,6 +22,10 @@ A common scenario (assuming working in master):
    git merge origin/master
    git push origin master
 
+To make gitk show only zoltan commits:
+-  cd Trilinos
+   gitk -- packages/zoltan
+
 Commands:
 
 -  git clone software.sandia.gov:/space/git/Trilinos
@@ -153,6 +157,8 @@ Commands:
    !! Do not rebase commits that you have pushed to a public repository. !!
    !! only rebase commits that have never been available publicly.  !!
 
+-  git checkout `git rev-list -n 1 --before="2010-06-22" master
+   Checkout a copy of the code from a given date.
 
 ---------------------------------------------------------------------------
 How I merged the trilinos-release-10-0-branch with the main trunk

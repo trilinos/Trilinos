@@ -43,7 +43,7 @@
 #include <iostream>
 #endif
 
-ExampleApplication::ExampleApplication(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr_, Teuchos::ParameterList &params)
+ExampleApplication::ExampleApplication(Teuchos::RCP<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
 {
   implicit_ = params.get<bool>( "Implicit" );
   lambda_min_ = params.get<double>( "Lambda_min" );
@@ -54,7 +54,7 @@ ExampleApplication::ExampleApplication(Teuchos::RCP<Epetra_Comm> &epetra_comm_pt
   coeff_s_ = params.get<double>( "Coeff_s" );
 
   // Construct a Map with NumElements and index base of 0
-  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_ptr_) );
+  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_ptr) );
 
   lambda_ptr_ = Teuchos::rcp(new Epetra_Vector(*epetra_map_ptr_));
   Epetra_Vector &lambda = *lambda_ptr_;
@@ -257,7 +257,6 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
   else 
   {
     Epetra_Vector &f = *outArgs.get_f();
-    int localNumElements = x.MyLength();
     for (int i=0 ; i<localNumElements ; ++i)
     {
       f[i] = lambda[i]*x[i]+evalR(t,lambda[i],coeff_s_);

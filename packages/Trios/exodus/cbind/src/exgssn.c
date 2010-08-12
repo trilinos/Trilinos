@@ -71,9 +71,13 @@ int ex_get_side_set_node_list(int exoid,
   int  num_side_sets, num_elem_blks, num_df, ndim;
   int tot_num_elem = 0, tot_num_ss_elem = 0, elem_num = 0;
   int connect_offset, side_num, node_pos;
-  int *elem_blk_ids, *connect; 
-  int *ss_elem_ndx, *ss_elem_node_ndx, *ss_parm_ndx;
-  int *side_set_elem_list, *side_set_side_list;
+  int *elem_blk_ids = NULL;
+  int *connect = NULL; 
+  int *ss_elem_ndx = NULL;
+  int *ss_elem_node_ndx = NULL;
+  int *ss_parm_ndx = NULL;
+  int *side_set_elem_list = NULL;
+  int *side_set_side_list = NULL;
   int elem_ctr, node_ctr, elem_num_pos;
   int num_elem_in_blk, num_nodes_per_elem, num_attr;
   float fdum;

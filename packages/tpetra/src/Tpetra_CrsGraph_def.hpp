@@ -1301,6 +1301,20 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::ArrayRCP<const size_t> CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeRowOffsets() const {
+    return pbuf_rowOffsets_;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodePackedIndices() const {
+    return pbuf_lclInds1D_;
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<const GlobalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getGlobalRowView(GlobalOrdinal GlobalRow) const {
     TEST_FOR_EXCEPTION(isLocallyIndexed() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::getGlobalRowView(): global indices do not exist.");

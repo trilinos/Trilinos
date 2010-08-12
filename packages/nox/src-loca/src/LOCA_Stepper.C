@@ -885,6 +885,12 @@ LOCA::Stepper::getSolver() const
   return solverPtr;
 }
 
+double
+LOCA::Stepper::getContinuationParameter() const
+{
+  return curGroupPtr->getContinuationParameter();
+}
+
 void
 LOCA::Stepper::printInitializationInfo()
 {

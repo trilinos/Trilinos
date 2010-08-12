@@ -115,6 +115,18 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 PACKAGE_ADD_TEST_DIRECTORIES(example)
 
+
+#
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc/CodingGuidelines
+  doc/TpetraDesign
+  )
+
 #
 # D) Do standard postprocessing
 #

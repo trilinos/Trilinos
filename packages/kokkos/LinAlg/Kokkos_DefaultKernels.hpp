@@ -3,14 +3,14 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultSparseOps.hpp"
-#include "Kokkos_DefaultBlockSparseMultiply.hpp"
+#include "Kokkos_DefaultBlockSparseOps.hpp"
 
 namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   struct DefaultKernels {
-    typedef Kokkos::DefaultSparseOps          <Scalar,Ordinal,Node>      SparseOps;
-    typedef Kokkos::DefaultBlockSparseMultiply<Scalar,Ordinal,Node> BlockSparseOps;
+    typedef Kokkos::DefaultSparseOps     <Scalar,Ordinal,Node>      SparseOps;
+    typedef Kokkos::DefaultBlockSparseOps<Scalar,Ordinal,Node> BlockSparseOps;
   };
 
 }

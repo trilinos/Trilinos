@@ -26,8 +26,16 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_StabilizatedADR
+    SOURCES example_StabilizedADR.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
   PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
   SOURCE_FILES Poisson.xml
+               ADR.xml
                CurlLSFEMin.xml
                CurlLSFEMblock_in_block.xml
                DivLSFEMin.xml
@@ -35,5 +43,6 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
 ENDIF()
+
 
 

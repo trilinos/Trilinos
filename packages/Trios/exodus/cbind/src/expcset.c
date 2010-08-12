@@ -76,20 +76,21 @@ int ex_put_concat_sets (int   exoid,
   const int  *sets_entry_list = set_specs->sets_entry_list;
   const int  *sets_extra_list = set_specs->sets_extra_list;
   const void *sets_dist_fact = set_specs->sets_dist_fact;
-  char *cdum;
-  int i, num_sets, cur_num_sets, dimid, varid, set_id_ndx, dims[1], *set_stat;
+  char *cdum = NULL;
+  int i, num_sets, cur_num_sets, dimid, varid, set_id_ndx, dims[1];
+  int  *set_stat = NULL;
   float fdum;
-  const float *flt_dist_fact;
-  const double *dbl_dist_fact;
+  const float *flt_dist_fact = NULL;
+  const double *dbl_dist_fact = NULL;
   char errmsg[MAX_ERR_LENGTH];
-  char* idsptr;
-  char* statptr;
-  char* numdfptr;
-  char* factptr;
-  char* elemptr;
-  char* extraptr;
+  char* idsptr = NULL;
+  char* statptr = NULL;
+  char* numdfptr = NULL;
+  char* factptr = NULL;
+  char* elemptr = NULL;
+  char* extraptr = NULL;
   ex_inquiry ex_inq_val;
-  const int *extra_list;   
+  const int *extra_list = NULL;   
 
   exerrval = 0; /* clear error code */
 

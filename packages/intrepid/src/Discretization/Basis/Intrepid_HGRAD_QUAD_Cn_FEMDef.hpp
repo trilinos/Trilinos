@@ -137,6 +137,7 @@ namespace Intrepid {
 	tags[4*tagcur+2] = current_dof_per_entity[dofdim][dofent];
 	current_dof_per_entity[dofdim][dofent]++;
 	tags[4*tagcur+3] = total_dof_per_entity[dofdim][dofent];
+	tagcur++;
       }
     }
 

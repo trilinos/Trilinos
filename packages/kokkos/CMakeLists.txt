@@ -84,6 +84,16 @@ if (Kokkos_ENABLE_LinAlg AND Kokkos_ENABLE_NodeAPI)
 ENDIF()
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc
+  )
+
+#
 # D) Do standard postprocessing
 #
 

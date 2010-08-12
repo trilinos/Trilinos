@@ -157,6 +157,9 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
 
   // EXPERIMENTAL
   PL->set("smoother: chebyshev solve normal equations",false);
+  PL->set("smoother: use ifpack crs wrapper",0);
+  PL->set("coarse: use ifpack crs wrapper",0);
+
 
   /* Coarse IFPACK Solvers - experimental */
   //PL->set("smoother: ifpack list",dummy);

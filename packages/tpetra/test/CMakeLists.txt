@@ -12,6 +12,7 @@ ADD_SUBDIRECTORIES(
   Utils
   CrsGraph
   CrsMatrix
+  BlockCrsGraph
   BlockMap
   BlockMultiVector
   VbrMatrix

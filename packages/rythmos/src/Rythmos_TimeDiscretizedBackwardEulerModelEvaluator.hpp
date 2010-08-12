@@ -341,8 +341,8 @@ void TimeDiscretizedBackwardEulerModelEvaluator<Scalar>::evalModelImpl(
     const RCP<const Thyra::VectorBase<Scalar> >
       x_i = x_bar->getVectorBlock(i),
       x_im1 = ( i==0 ? initCond_.get_x() : x_bar->getVectorBlock(i-1) );
-    V_VmV( &*x_dot_i, *x_i, *x_im1 ); // x_dot_i = 1/dt * ( x[i] - x[i-1] )
-    Vt_S( &*x_dot_i, oneOverDeltaT ); // ... 
+    V_VmV( x_dot_i.ptr(), *x_i, *x_im1 ); // x_dot_i = 1/dt * ( x[i] - x[i-1] )
+    Vt_S( x_dot_i.ptr(), oneOverDeltaT ); // ... 
     daeInArgs.set_x_dot( x_dot_i );
     daeInArgs.set_x( x_i );
     daeInArgs.set_t( t_i );

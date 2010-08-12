@@ -40,7 +40,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_BlockMap.hpp"
-#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_BlockCrsGraph.hpp"
 
 /** \file Tpetra_VbrMatrix_decl.hpp
 
@@ -54,7 +54,7 @@ The VbrMatrix class has two significant 'states', distinguished by whether or no
 storage has been optimized (packed) or not.
 
 When the matrix is in the non-optimized-storage state, internal data
-storage is in an un-packed, non-contiguous data-structure that allows for
+storage is in a non-contiguous data-structure that allows for
 convenient insertion of data.
 
 When the matrix is in the optimized-storage state, internal data is stored in
@@ -67,11 +67,11 @@ Use of the matrix as an Operator (performing matrix-vector multiplication) is
 only allowed when it is in the optimized-storage state.
 
 VbrMatrix has two constructors, one which leaves the matrix in the optimized-
-storage stage, and another which leaves the matrix in the non-optimized-storage
-stage.
+storage state, and another which leaves the matrix in the non-optimized-storage
+state.
 
-When the VbrMatrix is constructed in the non-optimized-storage state, and then
-filled using methods such as setGlobalBlockEntry etc., it can then be transformed
+When the VbrMatrix is constructed in the non-optimized-storage state, (and then
+filled using methods such as setGlobalBlockEntry etc.), it can then be transformed
 to the optimized-storage state by calling the method fillComplete().
 
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
@@ -101,32 +101,25 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
 
-  //! Constructor specifying a pre-filled graph and block-maps for range and domain.
+  //! Constructor specifying a pre-filled block-graph.
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
-      start out in the optimized-storage, isFillComplete()==true state.
-      The graph provided to this constructor must be already filled
+      start out in the optimized-storage state, i.e., isFillComplete()==true.
+      The graph provided to this constructor must be already filled.
       (If blkGraph->isFillComplete() != true, an exception is thrown.)
 
-      Entries in the input CrsGraph will correspond to block-entries in the
+      Entries in the input BlockCrsGraph correspond to block-entries in the
       VbrMatrix. In other words, the VbrMatrix will have a block-row corresponding
       to each row in the graph, and a block-entry corresponding to each column-
       index in the graph.
-
-      The block-maps provided for range and domain must be sized such that:
-      blkDomainMap->getGlobalNumBlocks() == blkGraph->getDomainMap()->getGlobalNumElements(),
-      blkRangeMap->getGlobalNumBlocks() == blkGraph->getRangeMap()->getGlobalNumElements(),
-      blkDomainMap->getNodeNumBlocks() == blkGraph->getDomainMap()->getNodeNumElements(),
-      blkRangeMap->getNodeNumBlocks() == blkGraph->getRangeMap()->getNodeNumElements().
-      If any of these conditions is not met, an exception is thrown.
   */
-  VbrMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRangeMap);
+  VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
 
   //! Destructor
   virtual ~VbrMatrix();
 
   //@}
 
-  //! @name Advanced Matrix-vector multiplication method
+  //! @name Advanced Mathematical operations
 
   //! Multiply this matrix by a MultiVector.
   /*! \c X is required to be post-imported, i.e., described by the column map
@@ -139,33 +132,59 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //@}
 
+  //! Triangular Solve -- Matrix must be triangular.
+  /*! Find X such that A*X = Y.
+      \c X is required to be post-imported, i.e., described by the column map
+      of the matrix. \c Y is required to be pre-exported, i.e., described by
+      the row map of the matrix.
+
+      Both \c X and \c Y are required to have constant stride.
+
+      Note that if the diagonal block-entries are stored, they must be triangular.
+      I.e., the matrix structure must be block-triangular, and any diagonal blocks
+      must be "point"-triangular, meaning that coefficients on the "wrong" side of the
+      point-diagonal must be zero.
+  */
+  template <class DomainScalar, class RangeScalar>
+      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+
+  //@}
+
   //! @name Operator Methods
   //@{
 
-    //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-    /*! Note that this is a point-entry map, not a block-map.
-    */
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  //! Returns the Map associated with the domain of this operator.
+  /*! Note that this is a point-entry map, not a block-map.
+  */
+  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
 
-    //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-    /*! Note that this is a point-entry map, not a block-map.
-    */
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
+  /*! Note that this is a point-entry map, not a block-map.
+  */
+  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
 
-    //! \brief Computes the operator-multivector application.
-    /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{trans}} \cdot X + \beta \cdot Y\f$. However, the details of operation
-        vary according to the values of \c alpha and \c beta. Specifically
-        - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
-        - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
-     */
-    void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-               Teuchos::ETransp trans = Teuchos::NO_TRANS,
-               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-               Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  //! \brief Computes the operator-multivector application.
+  /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{trans}} \cdot X + \beta \cdot Y\f$. However, the details of operation
+      vary according to the values of \c alpha and \c beta. Specifically
+      - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
+      - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+   */
+  void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+             MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+             Teuchos::ETransp trans = Teuchos::NO_TRANS,
+             Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+             Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
-    //! Indicates whether this operator supports applying the adjoint operator.
-    bool hasTransposeApply() const;
+  //! Triangular Solve -- Matrix must be triangular.
+  /*! Find X such that A*X = Y.
+      Both \c X and \c Y are required to have constant stride.
+  */
+  void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
+                    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                    Teuchos::ETransp trans) const;
+
+  //! Indicates whether this operator supports applying the adjoint operator.
+  bool hasTransposeApply() const;
 
   //@}
 
@@ -177,6 +196,12 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //! Returns the block-column map.
   const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockColMap() const;
+
+  //! Returns the block-domain map.
+  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockDomainMap() const;
+
+  //! Returns the block-range map.
+  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRangeMap() const;
 
   //! Returns the point-row map.
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointRowMap() const;
@@ -209,6 +234,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
 
+  //!Copy the contents of the input block-entry into the matrix.
+  /*!
+    This method will throw an exception if fillComplete() has not yet been called,
+    or if the specified block-entry doesn't already exist in the matrix.
+
+    The coefficients of the specified block-entry will be
+    over-written (replaced) by the input block-entry.
+  */
+  void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry);
+
   //!Add the contents of the input block-entry into the matrix.
   /*!
     This method will create the specified block-entry if it doesn't already exist,
@@ -220,6 +255,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     This method may be called any time (before or after fillComplete()).
   */
   void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
+
+  //!Add the contents of the input block-entry into the matrix.
+  /*!
+    This method will throw an exception if fillComplete() has not yet been called,
+    or if the specified block-entry doesn't already exist in the matrix.
+
+    The contents of the input block-entry will be added to the values that are
+    already present in the matrix.
+  */
+  void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry);
 
   //!Copy the contents of the input block-entry into the matrix.
   /*!
@@ -233,6 +278,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
 
+  //!Copy the contents of the input block-entry into the matrix.
+  /*!
+    This method will throw an exception if fillComplete() has not yet been called,
+    or if the specified block-entry doesn't already exist in the matrix.
+
+    The coefficients for the specified block-entry will be
+    over-written (replaced) by the input block-entry.
+  */
+  void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
+
   //!Add the contents of the input block-entry into the matrix.
   /*!
     This method will create the specified block-entry if it doesn't already exist,
@@ -245,13 +300,31 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
 
+  //!Add the contents of the input block-entry into the matrix.
+  /*!
+    This method will throw an exception if fillComplete() has not yet been called,
+    or if the specified block-entry doesn't already exist in the matrix.
+
+    The contents of the input block-entry will be added to the values that are
+    already present in the matrix.
+  */
+  void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
+
   //@}
 
   //! @name Transformational Methods
   //@{
 
+  //! Transition the matrix to the packed, optimized-storage state.
+  /*!
+    This method also sets the domain and range maps.
+  */
   void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap);
 
+  //! Transition the matrix to the packed, optimized-storage state.
+  /*!
+    This method internally calls fillComplete(getBlockRowMap(),getBlockRowMap()).
+  */
   void fillComplete();
   //@}
 
@@ -349,35 +422,45 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   void updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const;
   void updateExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
+  void createImporterExporter();
   void optimizeStorage();
   void fillLocalMatrix();
   void fillLocalMatVec();
 
   //private data members:
 
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkRowMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkColMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkDomainMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkRangeMap_;
+  //We hold two graph pointers, one const and the other non-const.
+  //If a BlockCrsGraph is provided at construction, it is const and VbrMatrix
+  //never changes it.
+  //If a BlockCrsGraph is not provided at construction, VbrMatrix creates one
+  //internally and fills it as the matrix is filled, up until fillComplete()
+  //is called.
+  //
+  //blkGraph_ is either the internally created graph, or is null.
+  //constBlkGraph_ is either a pointer to blkGraph_, or a pointer to the
+  //graph provided at construction time.
+  //
+  Teuchos::RCP<BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
+  Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > constBlkGraph_;
 
-  Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
   Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> lclMatrix_;
 
-  //It takes 6 arrays to adequately represent a variable-block-row
-  //matrix in packed (contiguous storage) form. For a description of these
+  //It takes 6 arrays to represent a variable-block-row matrix
+  //in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
-  //(Note that 2 of those arrays, rptr and cptr, are represented by arrays in the
-  //blkRowMap_ and blkColMap_ objects.)
+  //(2 of those arrays, rptr and cptr, are represented by arrays in the
+  //getBlockRowMap() and getBlockColMap() objects, and
+  //another two of those arrays, bptr and bindx, are represented by arrays in the
+  //BlockCrsGraph object.)
+  //This is noted in the comments for rptr,cptr,bptr,bindx below.
   //
   //These arrays are handled as if they may point to memory that resides on
   //a separate device (e.g., a GPU). In other words, when the contents of these
   //arrays are manipulated, we use views or buffers obtained from the Node object.
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
-  Teuchos::ArrayRCP<LocalOrdinal> pbuf_bptr_;
-  Teuchos::ArrayRCP<LocalOrdinal> pbuf_bindx_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
-  LocalMatOps lclMatVec_;
+  LocalMatOps lclMatOps_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
   Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;
@@ -412,21 +495,29 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 // The old Aztec manual was a great resource for this but I can't
 // find a copy of that these days...
 //
+//
+// Here is a brief description of the 6 arrays that are required to
+// represent a VBR matrix in packed (contiguous-memory-storage) format:
+//
 // rptr: length num_block_rows + 1
 //       rptr[i]: the pt-row corresponding to the i-th block-row
+//       Note: rptr is getBlockRowMap()->getNodeFirstPointInBlocks().
 //
 // cptr: length num_distinct_block_cols + 1
 //       cptr[j]: the pt-col corresponding to the j-th block-col
+//       Note: cptr is getBlockColMap()->getNodeFirstPointInBlocks().
 //
 // bptr: length num_block_rows + 1
 //       bptr[i]: location in bindx of the first nonzero block-entry
 //                of the i-th block-row
+//       Note: bptr is blkGraph_->getNodeRowOffsets();
 //
 // bindx: length num-nonzero-block-entries
 //        bindx[j]: block-col-index of j-th block-entry
+//        Note: bindx is blkGraph_->getNodePackedIndices();
 //
 // indx: length num-nonzero-block-entries + 1
-//       indx[j] location in vals of the beginning of the j-th
+//       indx[j]: location in vals of the beginning of the j-th
 //       block-entry
 //
 // vals: length num-nonzero-scalar-entries

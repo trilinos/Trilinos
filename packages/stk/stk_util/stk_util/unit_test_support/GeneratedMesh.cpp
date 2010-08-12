@@ -79,42 +79,24 @@ namespace stk {
           }
           rotmat[i][i] = 1.0;
         }
-
-        faceNodes[0][0] = 1;
-        faceNodes[0][1] = 2;
-        faceNodes[0][2] = 6;
-        faceNodes[0][3] = 5;
-
-        faceNodes[1][0] = 2;
-        faceNodes[1][1] = 3;
-        faceNodes[1][2] = 7;
-        faceNodes[1][3] = 6;
-
-        faceNodes[2][0] = 3;
-        faceNodes[2][1] = 4;
-        faceNodes[2][2] = 8;
-        faceNodes[2][3] = 7;
-
-        faceNodes[3][0] = 4;
-        faceNodes[3][1] = 1;
-        faceNodes[3][2] = 5;
-        faceNodes[3][3] = 8;
-
-        faceNodes[4][0] = 4;
-        faceNodes[4][1] = 3;
-        faceNodes[4][2] = 2;
-        faceNodes[4][3] = 1;
-
-        faceNodes[5][0] = 5;
-        faceNodes[5][1] = 6;
-        faceNodes[5][2] = 7;
-        faceNodes[5][3] = 8;
       }
 
       size_t GeneratedMesh::add_shell_block(ShellLocation loc)
       {
         shellBlocks.push_back(loc);
         return shellBlocks.size();
+      }
+
+      size_t GeneratedMesh::add_nodeset(ShellLocation loc)
+      {
+	nodesets.push_back(loc);
+	return nodesets.size();
+      }
+      
+      size_t GeneratedMesh::add_sideset(ShellLocation loc)
+      {
+	sidesets.push_back(loc);
+	return sidesets.size();
       }
 
       void GeneratedMesh::set_bbox(double xmin, double ymin, double zmin,
@@ -189,6 +171,70 @@ namespace stk {
               }
             }
           }
+	  else if (option[0] == "nodeset") {
+	    // Option of the form  "nodeset:xXyYzZ"
+	    // The argument specifies whether there is a nodeset
+	    // at the location. 'x' is minX, 'X' is maxX, etc.
+	    size_t length = option[1].size();
+	    for (size_t j=0; j < length; j++) {
+	      switch (option[1][j]) {
+	      case 'x':
+		add_nodeset(MX);
+		break;
+	      case 'X':
+		add_nodeset(PX);
+		break;
+	      case 'y':
+		add_nodeset(MY);
+		break;
+	      case 'Y':
+		add_nodeset(PY);
+		break;
+	      case 'z':
+		add_nodeset(MZ);
+		break;
+	      case 'Z':
+		add_nodeset(PZ);
+		break;
+	      default:
+		std::cerr << "ERROR: Unrecognized nodeset location option '"
+			  << option[1][j]
+			  << "'.";
+	      }
+	    }
+	  }
+	  else if (option[0] == "sideset") {
+	    // Option of the form  "sideset:xXyYzZ"
+	    // The argument specifies whether there is a sideset
+	    // at the location. 'x' is minX, 'X' is maxX, etc.
+	    size_t length = option[1].size();
+	    for (size_t j=0; j < length; j++) {
+	      switch (option[1][j]) {
+	      case 'x':
+		add_sideset(MX);
+		break;
+	      case 'X':
+		add_sideset(PX);
+		break;
+	      case 'y':
+		add_sideset(MY);
+		break;
+	      case 'Y':
+		add_sideset(PY);
+		break;
+	      case 'z':
+		add_sideset(MZ);
+		break;
+	      case 'Z':
+		add_sideset(PZ);
+		break;
+	      default:
+		std::cerr << "ERROR: Unrecognized sideset location option '"
+			  << option[1][j]
+			  << "'.";
+	      }
+	    }
+	  }
           else if (option[0] == "scale") {
             // Option of the form  "scale:xs,ys,zs
             std::vector<std::string> tokens = stk::io::util::tokenize(option[1], stk::io::util::recognize(","));
@@ -254,16 +300,18 @@ namespace stk {
           }
 
           else if (option[0] == "help") {
-            std::cerr << "\nValid Options for GeneratedMesh parameter string:\n"
-                      << "\tIxJxK -- specifies intervals; first option\n"
-                      << "\toffset:xoff, yoff, zoff\n"
-                      << "\tscale: xscl, yscl, zscl\n"
-                      << "\tzdecomp:n1,n2,n3,...,n#proc\n"
-                      << "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
-                      << "\trotate: axis,angle,axis,angle,...\n"
-                      << "\tshell:xXyYzZ\n"
-                      << "\tshow -- show mesh parameters\n"
-                      << "\thelp -- show this list\n\n";
+	    std::cerr << "\nValid Options for GeneratedMesh parameter string:\n"
+		      << "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
+		      << "\toffset:xoff, yoff, zoff\n"
+		      << "\tscale: xscl, yscl, zscl\n"
+		      << "\tzdecomp:n1,n2,n3,...,n#proc\n"
+		      << "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
+		      << "\trotate: axis,angle,axis,angle,...\n"
+		      << "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
+		      << "\tnodeset:xXyXzZ (specifies which plane to apply nodeset)\n"
+		      << "\tsideset:xXyXzZ (specifies which plane to apply sideset)\n"
+		      << "\tshow -- show mesh parameters\n"
+		      << "\thelp -- show this list\n\n";
           }
 
           else if (option[0] == "show") {
@@ -290,7 +338,9 @@ namespace stk {
 		    << "\tRange: " << offZ << " <= Z <= "  << offZ + numZ * sclZ << "\n\n"
 		    << "\tNode Count (total)    = " << std::setw(9) << node_count() << "\n"
 		    << "\tElement Count (total) = " << std::setw(9) << element_count() << "\n"
-		    << "\tBlock Count           = " << std::setw(9) << block_count() << "\n\n";
+		    << "\tBlock Count           = " << std::setw(9) << block_count() << "\n"
+		    << "\tNodeset Count         = " << std::setw(9) << nodeset_count() << "\n"
+		    << "\tSideset Count         = " << std::setw(9) << sideset_count() << "\n\n";
 	  if (doRotation) {
 	    std::cerr << "\tRotation Matrix: \n\t" << std::scientific ;
 	    for (int ii=0; ii < 3; ii++) {
@@ -317,6 +367,16 @@ namespace stk {
       size_t GeneratedMesh::block_count() const
       {
         return shellBlocks.size() + 1;
+      }
+
+      size_t GeneratedMesh::nodeset_count() const
+      {
+	return nodesets.size();
+      }
+      
+      size_t GeneratedMesh::sideset_count() const
+      {
+	return sidesets.size();
       }
 
       size_t GeneratedMesh::element_count() const
@@ -352,15 +412,15 @@ namespace stk {
       size_t GeneratedMesh::shell_element_count(ShellLocation loc) const
       {
         switch (loc) {
-          case MX:
-          case PX:
-            return numY * numZ;
-          case MY:
-          case PY:
-            return numX * numZ;
-          case MZ:
-          case PZ:
-            return numX * numY;
+	case MX:
+	case PX:
+	  return numY * numZ;
+	case MY:
+	case PY:
+	  return numX * numZ;
+	case MZ:
+	case PZ:
+	  return numX * numY;
         }
         return 0;
       }
@@ -380,24 +440,114 @@ namespace stk {
       size_t GeneratedMesh::shell_element_count_proc(ShellLocation loc) const
       {
         switch (loc) {
-          case MX:
-          case PX:
-            return numY * myNumZ;
-          case MY:
-          case PY:
-            return numX * myNumZ;
-          case MZ:
-            if (myProcessor == 0)
-              return numX * numY;
-            else
-              return 0;
-          case PZ:
-            if (myProcessor == processorCount -1)
-              return numX * numY;
-            else
-              return 0;
+	case MX:
+	case PX:
+	  return numY * myNumZ;
+	case MY:
+	case PY:
+	  return numX * myNumZ;
+	case MZ:
+	  if (myProcessor == 0)
+	    return numX * numY;
+	  else
+	    return 0;
+	case PZ:
+	  if (myProcessor == processorCount -1)
+	    return numX * numY;
+	  else
+	    return 0;
         }
         return 0;
+      }
+
+      size_t GeneratedMesh::nodeset_node_count(size_t id) const
+      {
+	// id is position in nodeset list + 1
+	assert(id > 0 && id <= nodesets.size());
+	ShellLocation loc = nodesets[id-1];
+	switch (loc) {
+	case MX:
+	case PX:
+	  return (numY+1) * (numZ+1);
+	case MY:
+	case PY:
+	  return (numX+1) * (numZ+1);
+	case MZ:
+	case PZ:
+	  return (numX+1) * (numY+1);
+	}
+	return 0;
+      }
+
+      size_t GeneratedMesh::nodeset_node_count_proc(size_t id) const
+      {
+	// id is position in nodeset list + 1
+	assert(id > 0 && id <= nodesets.size());
+	ShellLocation loc = nodesets[id-1];
+	switch (loc) {
+	case MX:
+	case PX:
+	  return (numY+1) * (myNumZ+1);
+	case MY:
+	case PY:
+	  return (numX+1) * (myNumZ+1);
+	case MZ:
+	  if (myProcessor == 0)
+	    return (numX+1) * (numY+1);
+	  else
+	    return 0;
+	case PZ:
+	  if (myProcessor == processorCount -1)
+	    return (numX+1) * (numY+1);
+	  else
+	    return 0;
+	}
+	return 0;
+      }
+
+      size_t GeneratedMesh::sideset_side_count(size_t id) const
+      {
+	// id is position in sideset list + 1
+	assert(id > 0 && id <= sidesets.size());
+	ShellLocation loc = sidesets[id-1];
+	switch (loc) {
+	case MX:
+	case PX:
+	  return numY * numZ;
+	case MY:
+	case PY:
+	  return numX * numZ;
+	case MZ:
+	case PZ:
+	  return numX * numY;
+	}
+	return 0;
+      }
+
+      size_t GeneratedMesh::sideset_side_count_proc(size_t id) const
+      {
+	// id is position in sideset list + 1
+	assert(id > 0 && id <= sidesets.size());
+	ShellLocation loc = sidesets[id-1];
+	switch (loc) {
+	case MX:
+	case PX:
+	  return numY * myNumZ;
+	case MY:
+	case PY:
+	  return numX * myNumZ;
+	case MZ:
+	  if (myProcessor == 0)
+	    return numX * numY;
+	  else
+	    return 0;
+	case PZ:
+	  if (myProcessor == processorCount -1)
+	    return numX * numY;
+	  else
+	    return 0;
+	}
+	return 0;
       }
 
       std::pair<std::string,int> GeneratedMesh::topology_type(size_t block_number) const
@@ -419,6 +569,15 @@ namespace stk {
         for (size_t i=0; i < count; i++) {
           map[i] = static_cast<int>(offset + i + 1);
         }
+      }
+
+      size_t GeneratedMesh::communication_node_count_proc() const
+      {
+	size_t count = (numX+1) * (numY+1);
+	if (myProcessor != 0 && myProcessor != processorCount-1)
+	  count *= 2;
+    
+	return count;
       }
 
       void GeneratedMesh::node_communication_map(std::vector<int> &map, std::vector<int> &proc)
@@ -447,7 +606,7 @@ namespace stk {
         }
       }
 
-      void GeneratedMesh::element_map(size_t block_number, std::vector<int> &map)
+      void GeneratedMesh::element_map(size_t block_number, std::vector<int> &map) const
       {
         assert(block_number <= block_count() && block_number > 0);
 
@@ -497,7 +656,7 @@ namespace stk {
         }
       }
 
-      void GeneratedMesh::element_map(std::vector<int> &map)
+      void GeneratedMesh::element_map(std::vector<int> &map) const
       {
         size_t count = element_count_proc();
         map.resize(count);
@@ -541,78 +700,83 @@ namespace stk {
         }
       }
 
-      void GeneratedMesh::element_surface_map(ShellLocation loc, std::vector<int> &map)
+      void GeneratedMesh::element_surface_map(ShellLocation loc, std::vector<int> &map) const
       {
-        size_t count = shell_element_count_proc(loc);
-        map.resize(2*count);
+	size_t count = shell_element_count_proc(loc);
+	map.resize(2*count);
 
-        size_t offset = 0;
+	size_t index  = 0;
+	size_t offset = 0;
 
-        switch (loc) {
-        case MX:
-          for( size_t k = 0, index = 0; k < numZ; ++k )
-            for( size_t j = 0; j < numY; ++j, ++index )
-            {
-              size_t ielem = k*numX*numY+j*numX;
-              map[2*index] = ielem + 1; // 1-based elem id
-              map[2*index+1] = 3; // 0-based local face id
-            }
-          break;
+	switch (loc) {
+	case MX:
+	  offset = myStartZ * numX * numY + 1;  // 1-based elem id
+	  for (size_t k = 0; k < myNumZ; ++k) {
+	    for (size_t j = 0; j < numY; ++j) {
+	      map[index++] = offset; 
+	      map[index++] = 3; // 0-based local face id
+	      offset += numX;
+	    }
+	  }
+	  break;
 
-        case PX:
-          offset = numX-1;
-          for( size_t k = 0, index = 0; k < numZ; ++k )
-            for( size_t j = 0; j < numY; ++j, ++index )
-            {
-              size_t ielem = offset + k*numX*numY+j*numX + 1;
-              map[2*index] = ielem;
-              map[2*index+1] = 1; // 0-based local face id
-            }
-          break;
+	case PX:
+	  offset = myStartZ * numX * numY + numX;
+	  for (size_t k = 0; k < myNumZ; ++k) {
+	    for (size_t j = 0; j < numY; ++j) {
+	      map[index++] = offset; // 1-based elem id
+	      map[index++] = 1; // 0-based local face id
+	      offset += numX;
+	    }
+	  }
+	  break;
+      
+	case MY:
+	  offset = myStartZ * numX * numY + 1;
+	  for (size_t k = 0; k < myNumZ; ++k) {
+	    for (size_t i = 0; i < numX; ++i) {
+	      map[index++] = offset++;
+	      map[index++] = 0; // 0-based local face id
+	    }
+	    offset+= numX * (numY-1);
+	  }
+	  break;
 
-        case MY:
-          for( size_t k = 0, index = 0; k < numZ; ++k )
-            for( size_t i = 0; i < numX; ++i, ++index )
-            {
-              size_t ielem = k*numX*numY+i + 1;
-              map[2*index] = ielem;
-              map[2*index+1] = 0; // 0-based local face id
-            }
-          break;
-        case PY:
-          offset = (numY-1)*numX;
-          for( size_t k = 0, index = 0; k < numZ; ++k )
-            for( size_t i = 0; i < numX; ++i, ++index )
-            {
-              size_t ielem = offset + k*numX*numY+i;
-              map[2*index] = ielem + 1;
-              map[2*index+1] = 2; // 0-based local face id
-            }
-          break;
+	case PY:
+	  offset = myStartZ * numX * numY + numX * (numY-1) +1;
+	  for (size_t k = 0; k < myNumZ; ++k) {
+	    for (size_t i = 0; i < numX; ++i) {
+	      map[index++] = offset++;
+	      map[index++] = 2; // 0-based local face id
+	    }
+	    offset+= numX * (numY-1);
+	  }
+	  break;
 
-        case MZ:
-          for( size_t j = 0; j < numY; ++j )
-            for( size_t i = 0; i < numX; ++i )
-            {
-              size_t ielem = j*numX+i;
-              size_t index = 2*ielem;
-              map[index] = ielem + 1;
-              map[index+1] = 4; // 0-based local face id
-            }
-          break;
+	case MZ:
+	  if (myProcessor == 0) {
+	    offset = 1;
+	    for (size_t i=0; i < numY; i++) {
+	      for (size_t j=0; j < numX; j++) {
+		map[index++] = offset++;
+		map[index++] = 4;
+	      }
+	    }
+	  }
+	  break;
 
-        case PZ:
-          offset = (numZ-1)*numX*numY;
-          for( size_t j = 0; j < numY; ++j )
-            for( size_t i = 0; i < numX; ++i )
-            {
-              size_t ielem = offset + j*numX+i;
-              size_t index = 2*(ielem-offset);
-              map[index] = ielem + 1;
-              map[index+1] = 5; // 0-based local face id
-            }
-          break;
-        }
+	case PZ:
+	  if (myProcessor == processorCount-1) {
+	    offset = (numZ-1)*numX*numY + 1;
+	    for (size_t i=0, k=0; i < numY; i++) {
+	      for (size_t j=0; j < numX; j++, k++) {
+		map[index++] = offset++;
+		map[index++] = 5;
+	      }
+	    }
+	  }
+	  break;
+	}
       }
 
       void GeneratedMesh::coordinates(std::vector<double> &coord) const
@@ -679,115 +843,215 @@ namespace stk {
 
       void GeneratedMesh::connectivity(size_t block_number, std::vector<int> &connect) const
       {
-        assert(block_number <= block_count());
+	assert(block_number <= block_count());
 
-        size_t xp1yp1 = (numX+1) * (numY+1);
+	size_t xp1yp1 = (numX+1) * (numY+1);
 
-        /* build connectivity array (node list) for mesh */
-        if (block_number == 1) {  // HEX Element Block
-          connect.resize(element_count_proc(block_number)*8);
+	/* build connectivity array (node list) for mesh */
+	if (block_number == 1) {  // HEX Element Block
+	  connect.resize(element_count_proc(block_number)*8);
 
-          size_t cnt = 0;
-          for (size_t m=myStartZ; m < myNumZ+myStartZ; m++) {
-            for (size_t i=0, k=0; i < numY; i++) {
-              for (size_t j=0; j < numX; j++, k++) {
-                size_t base = (m*xp1yp1) + k + i + 1 - myStartZ * xp1yp1;
-                ;
-                connect[cnt++] = static_cast<int>(base);
-                connect[cnt++] = static_cast<int>(base+1);
-                connect[cnt++] = static_cast<int>(base+numX+2);
-                connect[cnt++] = static_cast<int>(base+numX+1);
+	  size_t cnt = 0;
+	  for (size_t m=myStartZ; m < myNumZ+myStartZ; m++) {
+	    for (size_t i=0, k=0; i < numY; i++) {
+	      for (size_t j=0; j < numX; j++, k++) {
+		size_t base = (m*xp1yp1) + k + i + 1;
+		;
+		connect[cnt++] = static_cast<int>(base);
+		connect[cnt++] = static_cast<int>(base+1);
+		connect[cnt++] = static_cast<int>(base+numX+2);
+		connect[cnt++] = static_cast<int>(base+numX+1);
 
-                connect[cnt++] = static_cast<int>(xp1yp1 + base);
-                connect[cnt++] = static_cast<int>(xp1yp1 + base+1);
-                connect[cnt++] = static_cast<int>(xp1yp1 + base+numX+2);
-                connect[cnt++] = static_cast<int>(xp1yp1 + base+numX+1);
-              }
-            }
-          }
-        } else { // Shell blocks....
-          ShellLocation loc = shellBlocks[block_number-2];
-          connect.resize(element_count(block_number)*4);
+		connect[cnt++] = static_cast<int>(xp1yp1 + base);
+		connect[cnt++] = static_cast<int>(xp1yp1 + base+1);
+		connect[cnt++] = static_cast<int>(xp1yp1 + base+numX+2);
+		connect[cnt++] = static_cast<int>(xp1yp1 + base+numX+1);
+	      }
+	    }
+	  }
+	} else { // Shell blocks....
+	  ShellLocation loc = shellBlocks[block_number-2];
+	  connect.resize(element_count_proc(block_number)*4);
 
-          size_t cnt = 0;
-          switch (loc) {
-          case MX:  // Minumum X Face
-            for (size_t i=0; i < myNumZ; i++) {
-              size_t layer_off = i * xp1yp1;
-              for (size_t j=0; j < numY; j++) {
-                size_t base = layer_off + j * (numX+1) + 1;
-                connect[cnt++] = static_cast<int>(base);
-                connect[cnt++] = static_cast<int>(base + xp1yp1);
-                connect[cnt++] = static_cast<int>(base + xp1yp1 + (numX+1));
-                connect[cnt++] = static_cast<int>(base + (numX+1));
-              }
-            }
-            break;
-          case PX: // Maximum X Face
-            for (size_t i=0; i < myNumZ; i++) {
-              size_t layer_off = i * xp1yp1;
-              for (size_t j=0; j < numY; j++) {
-                size_t base = layer_off + j * (numX+1) + numX + 1;
-                connect[cnt++] = static_cast<int>(base);
-                connect[cnt++] = static_cast<int>(base + (numX+1));
-                connect[cnt++] = static_cast<int>(base + xp1yp1 + (numX+1));
-                connect[cnt++] = static_cast<int>(base + xp1yp1);
-              }
-            }
-            break;
-          case MY: // Minumum Y Face
-            for (size_t i=0; i < myNumZ; i++) {
-              size_t layer_off = i * xp1yp1;
-              for (size_t j=0; j < numX; j++) {
-                size_t base = layer_off + j + 1;
-                connect[cnt++] = static_cast<int>(base);
-                connect[cnt++] = static_cast<int>(base + 1);
-                connect[cnt++] = static_cast<int>(base + xp1yp1 + 1);
-                connect[cnt++] = static_cast<int>(base + xp1yp1);
-              }
-            }
-            break;
-          case PY: // Maximum Y Face
-            for (size_t i=0; i < myNumZ; i++) {
-              size_t layer_off = i * xp1yp1;
-              for (size_t j=0; j < numX; j++) {
-                size_t base = layer_off + (numX+1)*(numY) + j + 1;
-                connect[cnt++] = static_cast<int>(base);
-                connect[cnt++] = static_cast<int>(base + xp1yp1);
-                connect[cnt++] = static_cast<int>(base + xp1yp1 + 1);
-                connect[cnt++] = static_cast<int>(base + 1);
-              }
-            }
-            break;
-          case MZ: // Minumum Z Face
-            if (myProcessor == 0) {
-              for (size_t i=0, k=0; i < numY; i++) {
-                for (size_t j=0; j < numX; j++, k++) {
-                  size_t base = i + k + 1;
-                  connect[cnt++] = static_cast<int>(base);
-                  connect[cnt++] = static_cast<int>(base+numX+1);
-                  connect[cnt++] = static_cast<int>(base+numX+2);
-                  connect[cnt++] = static_cast<int>(base+1);
-                }
-              }
-            }
-            break;
-          case PZ: // Maximum Z Face
-            if (myProcessor == processorCount-1) {
-              for (size_t i=0, k=0; i < numY; i++) {
-                for (size_t j=0; j < numX; j++, k++) {
-                  size_t base = xp1yp1 * (numZ - myStartZ) + k + i + 1;
-                  connect[cnt++] = static_cast<int>(base);
-                  connect[cnt++] = static_cast<int>(base+1);
-                  connect[cnt++] = static_cast<int>(base+numX+2);
-                  connect[cnt++] = static_cast<int>(base+numX+1);
-                }
-              }
-            }
-            break;
-          }
-        }
-        return;
+	  size_t cnt = 0;
+	  switch (loc) {
+	  case MX:  // Minumum X Face
+	    for (size_t i=0; i < myNumZ; i++) {
+	      size_t layer_off = i * xp1yp1;
+	      for (size_t j=0; j < numY; j++) {
+		size_t base = layer_off + j * (numX+1) + 1 + myStartZ * xp1yp1;
+		connect[cnt++] = static_cast<int>(base);
+		connect[cnt++] = static_cast<int>(base + xp1yp1);
+		connect[cnt++] = static_cast<int>(base + xp1yp1 + (numX+1));
+		connect[cnt++] = static_cast<int>(base + (numX+1));
+	      }
+	    }
+	    break;
+	  case PX: // Maximum X Face
+	    for (size_t i=0; i < myNumZ; i++) {
+	      size_t layer_off = i * xp1yp1;
+	      for (size_t j=0; j < numY; j++) {
+		size_t base = layer_off + j * (numX+1) + numX + 1 + myStartZ * xp1yp1;
+		connect[cnt++] = static_cast<int>(base);
+		connect[cnt++] = static_cast<int>(base + (numX+1));
+		connect[cnt++] = static_cast<int>(base + xp1yp1 + (numX+1));
+		connect[cnt++] = static_cast<int>(base + xp1yp1);
+	      }
+	    }
+	    break;
+	  case MY: // Minumum Y Face
+	    for (size_t i=0; i < myNumZ; i++) {
+	      size_t layer_off = i * xp1yp1;
+	      for (size_t j=0; j < numX; j++) {
+		size_t base = layer_off + j + 1 + myStartZ * xp1yp1;
+		connect[cnt++] = static_cast<int>(base);
+		connect[cnt++] = static_cast<int>(base + 1);
+		connect[cnt++] = static_cast<int>(base + xp1yp1 + 1);
+		connect[cnt++] = static_cast<int>(base + xp1yp1);
+	      }
+	    }
+	    break;
+	  case PY: // Maximum Y Face
+	    for (size_t i=0; i < myNumZ; i++) {
+	      size_t layer_off = i * xp1yp1;
+	      for (size_t j=0; j < numX; j++) {
+		size_t base = layer_off + (numX+1)*(numY) + j + 1 + myStartZ * xp1yp1;
+		connect[cnt++] = static_cast<int>(base);
+		connect[cnt++] = static_cast<int>(base + xp1yp1);
+		connect[cnt++] = static_cast<int>(base + xp1yp1 + 1);
+		connect[cnt++] = static_cast<int>(base + 1);
+	      }
+	    }
+	    break;
+	  case MZ: // Minumum Z Face
+	    if (myProcessor == 0) {
+	      for (size_t i=0, k=0; i < numY; i++) {
+		for (size_t j=0; j < numX; j++, k++) {
+		  size_t base = i + k + 1 + myStartZ * xp1yp1;
+		  connect[cnt++] = static_cast<int>(base);
+		  connect[cnt++] = static_cast<int>(base+numX+1);
+		  connect[cnt++] = static_cast<int>(base+numX+2);
+		  connect[cnt++] = static_cast<int>(base+1);
+		}
+	      }
+	    }
+	    break;
+	  case PZ: // Maximum Z Face
+	    if (myProcessor == processorCount-1) {
+	      for (size_t i=0, k=0; i < numY; i++) {
+		for (size_t j=0; j < numX; j++, k++) {
+		  size_t base = xp1yp1 * (numZ - myStartZ) + k + i + 1 + myStartZ * xp1yp1;
+		  connect[cnt++] = static_cast<int>(base);
+		  connect[cnt++] = static_cast<int>(base+1);
+		  connect[cnt++] = static_cast<int>(base+numX+2);
+		  connect[cnt++] = static_cast<int>(base+numX+1);
+		}
+	      }
+	    }
+	    break;
+	  }
+	  assert(cnt == 4 * element_count_proc(block_number));
+	}
+	return;
+      }
+
+      void GeneratedMesh::nodeset_nodes(size_t id, std::vector<int> &nodes) const
+      {
+	// id is position in nodeset list + 1
+	assert(id > 0 && id <= nodesets.size());
+	ShellLocation loc = nodesets[id-1];
+	nodes.resize(nodeset_node_count_proc(id));
+
+	size_t xp1yp1 = (numX+1) * (numY+1);
+	size_t k = 0;
+
+	switch (loc) {
+	case MX:  // Minumum X Face
+	  for (size_t i=0; i < myNumZ+1; i++) {
+	    size_t layer_off = myStartZ * xp1yp1 + i * xp1yp1;
+	    for (size_t j=0; j < numY+1; j++) {
+	      nodes[k++] = layer_off + j * (numX+1) + 1;
+	    }
+	  }
+	  break;
+	case PX: // Maximum X Face
+	  for (size_t i=0; i < myNumZ+1; i++) {
+	    size_t layer_off = myStartZ * xp1yp1 + i * xp1yp1;
+	    for (size_t j=0; j < numY+1; j++) {
+	      nodes[k++] = layer_off + j * (numX+1) + numX + 1;
+	    }
+	  }
+	  break;
+	case MY: // Minumum Y Face
+	  for (size_t i=0; i < myNumZ+1; i++) {
+	    size_t layer_off = myStartZ * xp1yp1 + i * xp1yp1;
+	    for (size_t j=0; j < numX+1; j++) {
+	      nodes[k++] = layer_off + j + 1;
+	    }
+	  }
+	  break;
+	case PY: // Maximum Y Face
+	  for (size_t i=0; i < myNumZ+1; i++) {
+	    size_t layer_off = myStartZ * xp1yp1 + i * xp1yp1;
+	    for (size_t j=0; j < numX+1; j++) {
+	      nodes[k++] = layer_off + (numX+1)*(numY) + j + 1;
+	    }
+	  }
+	  break;
+	case MZ: // Minumum Z Face
+	  if (myProcessor == 0) {
+	    for (size_t i=0; i < (numY+1) * (numX+1); i++) {
+	      nodes[i] = i+1;
+	    }
+	  }
+	  break;
+	case PZ: // Maximum Z Face
+	  if (myProcessor == processorCount-1) {
+	    size_t offset = (numY+1) * (numX+1) * numZ;
+	    for (size_t i=0; i < (numY+1) * (numX+1); i++) {
+	      nodes[i] = offset + i+1;
+	    }
+	  }
+	  break;
+	}
+      }
+
+      void GeneratedMesh::sideset_elem_sides(size_t id, std::vector<int> &elem_sides) const
+      {
+	// id is position in sideset list + 1
+	assert(id > 0 && id <= sidesets.size());
+	ShellLocation loc = sidesets[id-1];
+    
+	// If there is a shell block on this face, then the sideset is
+	// applied to the shell block; if not, it is applied to the
+	// underlying hex elements.
+	bool underlying_shell = false;
+	size_t shell_block = 0;
+	for (size_t i = 0; i < shellBlocks.size(); i++) {
+	  if (shellBlocks[i] == loc) {
+	    underlying_shell = true;
+	    shell_block = i+2;
+	    break;
+	  }
+	}
+
+	if (underlying_shell) {
+	  // Get ids of shell elements at this location...
+	  element_map(shell_block, elem_sides);
+      
+	  // Insert face_ordinal in between each entry in elem_sides...
+	  // Face will be 0 for all shells...
+	  elem_sides.resize(2*sideset_side_count_proc(id));
+	  int face_ordinal = 0;
+	  int i = 2* (int)sideset_side_count_proc(id) - 1;
+	  int j =    (int)sideset_side_count_proc(id) - 1;
+	  while (i >= 0) {
+	    elem_sides[i--] = face_ordinal;
+	    elem_sides[i--] = elem_sides[j--];
+	  }
+	} else {
+	  element_surface_map(loc, elem_sides);
+	}
       }
 
       void GeneratedMesh::set_rotation(const std::string &axis, double angle_degrees)

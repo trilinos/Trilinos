@@ -154,14 +154,12 @@ void Build_Local_Contiguous_Size2_BlockMatrix(const Epetra_Comm & Comm, int NUM_
   Epetra_Map Map(-1,NUM_ROWS,0,Comm);
   MAT=new Epetra_CrsMatrix(Copy,Map,2);
   assert(MAT->NumMyRows()%2==0);
-
-  int MyPID=Comm.MyPID();
   
   NumBlocks=MAT->NumMyRows()/2;
   Blockstart_=new int [NumBlocks+1];
   Blockids_=new int [MAT->NumMyRows()];
   Blockstart_[0]=0;
-  int curr_idx=0,curr_block=0;
+  int curr_block=0;
 
   for(int i=0;i<MAT->NumMyRows();i++){
     // local contiguous blocks of constant size 2
@@ -195,13 +193,11 @@ void Build_Local_NonContiguous_Size2_BlockMatrix(const Epetra_Comm & Comm, int N
   MAT=new Epetra_CrsMatrix(Copy,Map,2);
   assert(MAT->NumMyRows()%2==0);
 
-  int MyPID=Comm.MyPID();
-  
   NumBlocks=MAT->NumMyRows()/2;
   Blockstart_=new int [NumBlocks+1];
   Blockids_=new int [MAT->NumMyRows()];
   Blockstart_[0]=0;
-  int curr_idx=0,curr_block=0;
+  int curr_block=0;
 
   for(int i=0;i<MAT->NumMyRows();i++){
     int row_in_block=(i%2)?1:0;
@@ -341,6 +337,34 @@ double Test_PTBDP(const Epetra_CrsMatrix& MAT, int NumBlocks,int* Blockstart_,in
   return norm2;
 }
 
+
+//============================================= 
+double Test_PTBDP_C(const Epetra_CrsMatrix& MAT,int BlockSize){
+  // Build the block lists
+  Teuchos::ParameterList List,Sublist;
+  List.set("contiguous block size",BlockSize);
+
+  Sublist.set("apply mode","invert");
+  //Sublist.set("apply mode","multiply");
+  List.set("blockdiagmatrix: list",Sublist);
+  
+  EpetraExt_PointToBlockDiagPermute Perm(MAT);
+  Perm.SetParameters(List);
+
+  Perm.Compute();
+  Epetra_MultiVector X(MAT.RowMap(),1);
+  Epetra_MultiVector Y(MAT.RowMap(),1);
+  Epetra_MultiVector Z(MAT.RowMap(),1);
+  X.SetSeed(24601); X.Random();  
+
+  double norm2;
+  Perm.ApplyInverse(X,Y);
+  MAT.Apply(Y,Z);
+  X.Update(1.0,Z,-1.0);
+  X.Norm2(&norm2);
+  return norm2;
+}
+
 //============================================= 
 bool TestPointToBlockDiagPermute(const Epetra_Comm & Comm){
   const int NUM_ROWS=64;
@@ -371,6 +395,14 @@ bool TestPointToBlockDiagPermute(const Epetra_Comm & Comm){
   if(!Comm.MyPID()) cout<<"P2BDP NLMat    Error = "<<norm2<<endl;
   delete MAT; delete [] Blockstart_; delete [] Blockids_;
 
+  // TEST #4 - Local, Contiguous in ContiguousMode
+  Build_Local_Contiguous_Size2_BlockMatrix(Comm,NUM_ROWS,NumBlocks,Blockstart_,Blockids_,MAT);
+  norm2=Test_PTBDP_C(*MAT,2);
+  if(norm2 > 1e-12) TestPassed=false;
+  if(!Comm.MyPID()) cout<<"P2BDP LCMAT-C  Error = "<<norm2<<endl;
+  delete MAT; delete [] Blockstart_; delete [] Blockids_;
+
+
   return TestPassed;
 }
 
@@ -385,6 +417,38 @@ double Test_Cheby(const Epetra_CrsMatrix& MAT, int NumBlocks,int* Blockstart_,in
   if(is_lid) List.set("block entry lids",Blockids_);
   else List.set("block entry gids",Blockids_);
 
+  Sublist.set("apply mode","invert");
+  List.set("blockdiagmatrix: list",Sublist);
+
+  ChebyList.set("chebyshev: use block mode",true);
+  ChebyList.set("chebyshev: block list",List);
+  ChebyList.set("chebyshev: eigenvalue autocompute ratio",30.0);//HAQ
+  ChebyList.set("chebyshev: degree",maxits);
+
+  // Build a Chebyshev
+  Ifpack_Chebyshev Cheby(&MAT);
+  Cheby.SetParameters(ChebyList);
+  Cheby.Compute();
+
+  Epetra_MultiVector X(MAT.RowMap(),1);
+  Epetra_MultiVector Y(MAT.RowMap(),1);
+  Epetra_MultiVector Z(MAT.RowMap(),1);
+  X.SetSeed(24601); X.Random();
+  MAT.Apply(X,Y);
+  Y.Norm2(&norm0);
+  
+  Cheby.ApplyInverse(Y,Z);
+  X.Update(1.0,Z,-1.0);
+  X.Norm2(&norm2);
+  return norm2 / norm0;
+}
+
+//============================================= 
+double Test_Cheby_C(const Epetra_CrsMatrix& MAT, int BlockSize,int maxits){
+  double norm2,norm0;
+  // Build the block lists  
+  Teuchos::ParameterList ChebyList,List,Sublist;
+  List.set("contiguous block size",BlockSize);
   Sublist.set("apply mode","invert");
   List.set("blockdiagmatrix: list",Sublist);
 
@@ -469,6 +533,20 @@ bool TestBlockChebyshev(const Epetra_Comm & Comm){
   if(!Comm.MyPID()) cout<<"Cheby NL-E   nrm-red = "<<norm2<<endl;
   delete MAT; delete [] Blockstart_; delete [] Blockids_;
   
+  // Test #7 - Local, Contiguous matrix w/ diagonal precond (contiguous mode)
+  Build_Local_Contiguous_Size2_BlockMatrix(Comm,NUM_ROWS,NumBlocks,Blockstart_,Blockids_,MAT);
+  norm2=Test_Cheby_C(*MAT,1,100);
+  if(norm2 > 1e-12) TestPassed=false;
+  if(!Comm.MyPID()) cout<<"Cheby LC-Dc  nrm-red = "<<norm2<<endl;
+  delete MAT; delete [] Blockstart_; delete [] Blockids_;
+
+  // Test #8 - Local, Contiguous matrix w/ exact precond (contiguous mode)
+  Build_Local_Contiguous_Size2_BlockMatrix(Comm,NUM_ROWS,NumBlocks,Blockstart_,Blockids_,MAT);
+  norm2=Test_Cheby_C(*MAT,2,1);
+  if(norm2 > 1e-12) TestPassed=false;
+  if(!Comm.MyPID()) cout<<"Cheby LC-Ec  nrm-red = "<<norm2<<endl;
+  delete MAT; delete [] Blockstart_; delete [] Blockids_;
+
   return TestPassed;
 }
 

@@ -160,18 +160,14 @@ Entity & declare_element_side( Entity & elem ,
 bool element_side_polarity( const Entity & elem ,
                             const Entity & side , int local_side_id = -1 );
 
-/** \brief  Determine the local side identifier,
- *          return -1 if the side doesn't match the element.
- */
-int element_local_side_id( const Entity & elem ,
-                           const Entity & side );
-
 
 /** \brief  Given an element and collection of nodes, return the
- *          local id of any side that contains those nodes
+ *          local id of the side that contains those nodes in the
+ *          correct orientation.
  */
 int element_local_side_id( const Entity & elem ,
-                           const std::vector<Entity*>& entity_nodes );
+                           const CellTopologyData * side_topology,
+                           const std::vector<Entity*>& side_nodes );
 
 //----------------------------------------------------------------------
 

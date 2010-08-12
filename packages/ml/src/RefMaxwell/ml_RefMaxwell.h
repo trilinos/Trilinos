@@ -35,6 +35,10 @@
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 #endif
 
+#ifdef HAVE_ML_IFPACK
+#include "Ifpack_Preconditioner.h"
+#endif
+
 namespace ML_Epetra
 {
 
@@ -237,7 +241,10 @@ namespace ML_Epetra
     //! Outer Edge Smoother(s)
     MultiLevelPreconditioner *PreEdgeSmoother;
     MultiLevelPreconditioner *PostEdgeSmoother;
-    
+#ifdef HAVE_ML_IFPACK
+    Ifpack_Preconditioner *IfSmoother;
+#endif    
+
     //! Solver mode
     string mode;
 
@@ -267,7 +274,7 @@ namespace ML_Epetra
     bool verbose_;
 
     //! Extreme Verbosity flag
-    bool very_verbose_;    
+    mutable bool very_verbose_;    //HAQ
 
     //! Print hierarchy flag
     int print_hierarchy;
@@ -278,7 +285,7 @@ namespace ML_Epetra
     //! Number of applications
     int NumApplications_;
     //! CPU time for all applications of the preconditioner
-    double ApplicationTime_;
+    mutable double ApplicationTime_;
     bool FirstApplication_;
     //@ CPU time for first application
     double FirstApplicationTime_;

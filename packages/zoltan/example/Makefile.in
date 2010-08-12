@@ -83,7 +83,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = C CPP
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -205,7 +205,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = C CPP
+@HAVE_ZOLTAN_CPPDRIVER_FALSE@SUBDIRS = C
+@HAVE_ZOLTAN_CPPDRIVER_TRUE@SUBDIRS = C CPP
 all: all-recursive
 
 .SUFFIXES:

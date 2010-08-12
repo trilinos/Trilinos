@@ -160,6 +160,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
+
 }
 
 /** \brief Verify PartD does not contain Entity5.
@@ -342,6 +343,24 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
 
 }
 
+
+/** \brief test on Selector operator for Entity
+ * 
+ */
+STKUNIT_UNIT_TEST( UnitTestSelector, entityTest )
+{
+  {
+    ExampleFixture fix ;
+    stk::mesh::Part & partA = fix.m_partA ;
+    stk::mesh::Part & partB = fix.m_partB ;
+    stk::mesh::Selector selector = partA & !partB;
+
+    const stk::mesh::Entity & pEntity = *fix.m_entity5;
+    bool result = selector(pEntity);
+    STKUNIT_EXPECT_FALSE(result);
+  }
+
+}
 
 /** \brief Verify the default constructor does not contain Entity1.
  * 

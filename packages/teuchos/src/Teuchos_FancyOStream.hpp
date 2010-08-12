@@ -722,6 +722,11 @@ typedef basic_OSTab<char> OSTab;
  */
 #define TEUCHOS_OSTAB ::Teuchos::OSTab __localThisTab = this->getOSTab()
 
+/** \brief .
+ * \ingroup teuchos_outputting_grp
+ */
+#define TEUCHOS_OSTAB_DIFF( DIFF ) ::Teuchos::OSTab DIFF ## __localThisTab = this->getOSTab()
+
 
 // ////////////////////////////////
 // Defintions

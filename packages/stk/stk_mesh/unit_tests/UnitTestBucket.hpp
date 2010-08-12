@@ -22,6 +22,7 @@ public:
   static void testTopologyHelpers ( ParallelMachine );
   static void test_get_involved_parts ( ParallelMachine );
   static void testBucket2 ( ParallelMachine );
+  static void test_EntityComm( ParallelMachine );
 
   /** Generate simple edge-loop mesh with 'nPerProc' edges
    *  on each processor.  Fill the 'node_ids' and 'edge_ids'

@@ -241,6 +241,8 @@ int main(int argc, char *argv[]) {
     for (unsigned i = 0; i < allTags.size(); i++) {
       int bfOrd  = hexBasis.getDofOrdinal(allTags[i][0], allTags[i][1], allTags[i][2]);
       
+
+
       std::vector<int> myTag = hexBasis.getDofTag(bfOrd);
        if( !( (myTag[0] == allTags[i][0]) &&
               (myTag[1] == allTags[i][1]) &&
@@ -565,7 +567,7 @@ int main(int argc, char *argv[]) {
     
 
 
-//     // Check D7 to D10 - must be zero. This basis does not cover D5 and D6
+  // Check D7 to D10 - must be zero. This basis does not cover D5 and D6
     for(EOperator op = OPERATOR_D7; op < OPERATOR_MAX; op++) {
       
       // The last dimension is the number of kth derivatives and needs to be resized for every Dk
