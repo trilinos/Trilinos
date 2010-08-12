@@ -41,6 +41,7 @@ int Zoltan_AllReduceInPlace(void *, int , MPI_Datatype , MPI_Op , MPI_Comm );
 int Zoltan_set_mpi_types();
 void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly);
 int Zoltan_get_global_id_type(char **name);
+int Zoltan_overflow_test(size_t val);
 
 /* A Zoltan_Map is like a C++ STL map.  It uses Zoltan_Hash.
  */

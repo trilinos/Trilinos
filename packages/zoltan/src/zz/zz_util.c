@@ -384,6 +384,25 @@ int Zoltan_get_global_id_type(char **name)
   return sizeof(ZOLTAN_ID_TYPE);
 }
 
+int Zoltan_overflow_test(size_t val)
+{
+ssize_t mask;
+
+  /* is value too large to store an int */
+
+  if (sizeof(size_t) <= sizeof(int))
+    return 0;
+
+  mask = 0xffffffff00000000;
+
+  if ((val & mask) != 0x0000000000000000){
+    return 1;
+  }
+
+  return 0;
+}
+
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

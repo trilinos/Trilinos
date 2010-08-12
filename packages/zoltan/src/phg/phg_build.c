@@ -205,6 +205,7 @@ float *edgeWeight = NULL;
 HGraph *phg = &(zhg->HG);
 int nProc_x, nProc_y, myProc_x, myProc_y;
 int proc_offset;
+char msg[250];
 
 float frac_x, frac_y;
 float *tmpwgts=NULL; 
@@ -325,16 +326,32 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   if (!dist_x || !dist_y) MEMORY_ERROR;
 
-  frac_x = (float) zhg->globalObj / (float) nProc_x;
+  frac_x = (float) (zhg->globalObj / (float) nProc_x);
   for (i = 1; i < nProc_x; i++)
     dist_x[i] = (ZOLTAN_GNO_TYPE) (i * frac_x);
   dist_x[nProc_x] = (ZOLTAN_GNO_TYPE)zhg->globalObj;
   
-  frac_y = (float) nGlobalEdges / (float) nProc_y;
+  frac_y = (float)nGlobalEdges / (float)nProc_y;
   for (i = 1; i < nProc_y; i++)
     dist_y[i] = (ZOLTAN_GNO_TYPE) (i * frac_y);
   dist_y[nProc_y] = (ZOLTAN_GNO_TYPE)nGlobalEdges;
-  
+
+  if (Zoltan_test_overflow(dist_x[nProc_x] - dist_x[nProc_x - 1]) ||
+      Zoltan_test_overflow(dist_y[nProc_y] - dist_y[nProc_y - 1])) {
+
+    if (zz->Proc == 0){
+      ZOLTAN_GNO_TYPE n = (zhg->globalObj > nGlobalEdges) ? zhg->globalObj : nGlobalEdges;
+      double sqrtminprocs = ((double)n / INT_MAX) + .5;
+      int minprocs = (int)sqrtminprocs * (int)sqrtminprocs;
+      sprintf(msg,
+       "At least %d processes are required to acheive the 2D deposition of the problem matrix\n",
+       minprocs);
+    }
+
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+    goto End;
+  }
+
   /* myProc_y and myProc_x can be -1 when nProc is prime and we use a 2D
    * decomposition.  One processor is excluded from the 2D communicator;
    * for it, myProc_y and myProc_x == -1. */
