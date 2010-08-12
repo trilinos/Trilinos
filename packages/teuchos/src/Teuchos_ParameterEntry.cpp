@@ -176,7 +176,7 @@ ParameterEntry::ParameterEntryID ParameterEntry::getAvailableID(){
 void ParameterEntry::addParameterEntryToMasterMaps(
   ParameterEntry* entryToAdd)
 {
-  RCP<ParameterEntry> toInsert = rcp(entryToAdd, false);
+  RCP<ParameterEntry> toInsert = rcpFromUndefRef(*entryToAdd);
 
   ParameterEntryID insertionID = getAvailableID();
 
@@ -198,17 +198,17 @@ void ParameterEntry::addParameterEntryToMasterMaps(
   idToUse << ". That ID is already being used to track another " <<
   "ParameterEntry!" << std::endl << std::endl);
   getMasterParameterEntryMap().insert(
-    ParameterEntryIDPair(rcp(entry, false).getConst(), idToUse));
-  getMasterIDMap().insert(IDParameterEntryPair(idToUse, rcp(entry, false)));
+    ParameterEntryIDPair(rcpFromUndefRef(*entry).getConst(), idToUse));
+  getMasterIDMap().insert(IDParameterEntryPair(idToUse, rcpFromUndefRef(*entry)));
 }
 
 void ParameterEntry::removeParameterEntryFromMasterMaps(
   ParameterEntry* entryToRemove)
 {
   ParameterEntryToIDMap::iterator toRemove = 
-    getMasterParameterEntryMap().find(rcp(entryToRemove, false));
+    getMasterParameterEntryMap().find(rcpFromUndefRef(*entryToRemove));
   ParameterEntryID idToFree = toRemove->second;
-  getMasterParameterEntryMap().erase(toRemove);
+  getMasterParameterEntryMap().erase(toRemove->first);
   getMasterIDMap().erase(idToFree);
   getMasterFreeIDs().push_back(idToFree);
 }

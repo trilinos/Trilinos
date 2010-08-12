@@ -280,7 +280,7 @@ private:
   }
   
   static ParameterEntryID& getMasterIDCounter(){
-    static ParameterEntryID masterCounter = 1000;
+    static ParameterEntryID masterCounter = 0;
     return masterCounter;
   }
 

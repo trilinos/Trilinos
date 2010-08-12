@@ -90,7 +90,7 @@ ParameterEntryValidator::ValidatorID ParameterEntryValidator::getAvailableID(){
 void ParameterEntryValidator::addValidatorToMasterMaps(
   ParameterEntryValidator* entryToAdd)
 {
-  RCP<ParameterEntryValidator> toInsert = rcp(entryToAdd, false);
+  RCP<ParameterEntryValidator> toInsert = rcpFromUndefRef(*entryToAdd);
 
   ValidatorID insertionID = getAvailableID();
 
@@ -112,17 +112,18 @@ void ParameterEntryValidator::addValidatorToMasterMaps(
   idToUse << ". That ID is already being used to track another " <<
   "ParameterEntryValidator!" << std::endl << std::endl);
   getMasterValidatorMap().insert(
-    ValidatorIDPair(rcp(entry, false).getConst(), idToUse));
-  getMasterIDMap().insert(IDValidatorPair(idToUse, rcp(entry, false)));
+    ValidatorIDPair(rcpFromUndefRef(*entry).getConst(), idToUse));
+  getMasterIDMap().insert(IDValidatorPair(idToUse, rcpFromUndefRef(*entry)));
 }
 
 void ParameterEntryValidator::removeValidatorFromMasterMaps(
   ParameterEntryValidator* validatorToRemove)
 {
+  RCP<ParameterEntryValidator> test = rcpFromUndefRef(*validatorToRemove);
   ValidatorToIDMap::iterator toRemove = 
-    getMasterValidatorMap().find(rcp(validatorToRemove, false));
+    getMasterValidatorMap().find(rcpFromUndefRef(*validatorToRemove));
   ValidatorID idToFree = toRemove->second;
-  getMasterValidatorMap().erase(toRemove);
+  getMasterValidatorMap().erase(toRemove->first);
   getMasterIDMap().erase(idToFree);
   getMasterFreeIDs().push_back(idToFree);
 }

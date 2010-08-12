@@ -1695,23 +1695,7 @@ public:
   //@{
 
   /** \brief . */
-  void evaluate(){
-    typename RangeToValidatorMap::const_iterator it;
-    T dependeeValue = getFirstDependeeValue<T>();
-    for(
-      it = rangesAndValidators_.begin(); 
-      it != rangesAndValidators_.end(); 
-      ++it)
-    {
-      T min = it->first.first;
-      T max = it->first.second;
-      if(dependeeValue >= min && dependeeValue <=max){
-        setDependentsToValidator(it->second);
-        return;
-      }
-    }
-    setDependentsToValidator(null); 
-  }
+  void evaluate();
   
   //@}
 
@@ -1731,29 +1715,7 @@ protected:
   //@{
   
   /** \brief . */
-  void validateDep() const{
-
-    RCP<const ParameterEntry> dependee = getFirstDependee();
-    TEST_FOR_EXCEPTION(
-    !dependee->isType<int>() 
-    && !dependee->isType<short>() 
-    && !dependee->isType<double>() 
-    && !dependee->isType<float>(),
-      InvalidDependencyException,
-      "The dependee of a "
-      "Range Validator Dependency must be of a supported number type!\n"
-      "Type encountered: " << dependee->getAny().typeName() << "\n");
-
-    typename RangeToValidatorMap::const_iterator it = 
-      rangesAndValidators_.begin();
-    RCP<const ParameterEntryValidator> firstValidator = it->second;
-    for(; it!=rangesAndValidators_.end(); ++it){
-      TEST_FOR_EXCEPTION( typeid(firstValidator) != typeid(it->second),
-       InvalidDependencyException,
-       "Ay no! All of the validators in a RangeValidatorDependency "
-       "must have the same type.");
-    }
-  }
+  void validateDep() const;
   
   //@}
 
@@ -1768,21 +1730,69 @@ private:
    */
   RangeToValidatorMap rangesAndValidators_;
   
-  void setDependentsToValidator(RCP<const ParameterEntryValidator> toSet){
-    typename ParameterEntryList::const_iterator it;
-    for(
-      it = getDependents().begin(); 
-      it != getDependents().end(); 
-      ++it)
-    {
-      (*it)->setValidator(toSet);
-    }
-  }
+  void setDependentsToValidator(RCP<const ParameterEntryValidator> toSet);
 
   //@}
 
 };
 
+template<class T>
+void RangeValidatorDependency<T>::evaluate(){
+  typename RangeToValidatorMap::const_iterator it;
+  T dependeeValue = getFirstDependeeValue<T>();
+  for(
+    it = rangesAndValidators_.begin(); 
+    it != rangesAndValidators_.end(); 
+    ++it)
+  {
+    T min = it->first.first;
+    T max = it->first.second;
+    if(dependeeValue >= min && dependeeValue <=max){
+       setDependentsToValidator(it->second);
+      return;
+    }
+  }
+  setDependentsToValidator(null); 
+}
+
+template<class T>
+void RangeValidatorDependency<T>::validateDep() const{
+
+  RCP<const ParameterEntry> dependee = getFirstDependee();
+  TEST_FOR_EXCEPTION(
+    !dependee->isType<int>() 
+    && !dependee->isType<short>() 
+    && !dependee->isType<double>() 
+    && !dependee->isType<float>(),
+    InvalidDependencyException,
+    "The dependee of a "
+    "Range Validator Dependency must be of a supported number type!\n"
+    "Type encountered: " << dependee->getAny().typeName() << "\n");
+
+  typename RangeToValidatorMap::const_iterator it = 
+    rangesAndValidators_.begin();
+  RCP<const ParameterEntryValidator> firstValidator = it->second;
+  for(; it!=rangesAndValidators_.end(); ++it){
+    TEST_FOR_EXCEPTION( typeid(*firstValidator) != typeid(*(it->second)),
+      InvalidDependencyException,
+      "Ay no! All of the validators in a RangeValidatorDependency "
+      "must have the same type.");
+  }
+}
+
+template<class T>
+void RangeValidatorDependency<T>::setDependentsToValidator(
+  RCP<const ParameterEntryValidator> toSet)
+{
+  typename ParameterEntryList::const_iterator it;
+  for(
+    it = getDependents().begin(); 
+    it != getDependents().end(); 
+    ++it)
+  {
+    (*it)->setValidator(toSet);
+  }
+}
 /** \brief Speicialized class for retrieving a dummy object of type
  * RangeValidatorDependency.
  *

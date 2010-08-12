@@ -99,10 +99,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 	testValidatorMap1["Soda"] = sodaValidator;
 	testValidatorMap1["Chips"] = chipsValidator;
 
-	ParameterList& stringValiDepList = My_deplist->sublist(
-    "String Validator Dependency", 
-     false,
-     "String Validator Dependency testing list.\nWorking June 27th 2009");
+	ParameterList stringValiDepList = My_deplist->sublist(
+    "String Validator Dependency", false, 
+    "String Validator Dependency testing list.");
 	stringValiDepList.set(
     "Food Selector", "Swiss", "select the food you want", cheeseValidator);
 	stringValiDepList.set(
@@ -112,10 +111,10 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
     stringFoodTypeValidator);
 
 	RCP<StringValidatorDependency> 
-	stringValiDep = RCP<StringValidatorDependency>(
+	stringValiDep = rcp(
 		new StringValidatorDependency(
-			My_deplist->getEntryRCP("Food Type"),
-			My_deplist->getEntryRCP("Food Selector"),
+			stringValiDepList.getEntryRCP("Food Type"),
+			stringValiDepList.getEntryRCP("Food Selector"),
 			testValidatorMap1, 
 			cheeseValidator
 		)
@@ -144,7 +143,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 	/*
 	 * Tesing some different aspects of the StringValidatorDependency
 	 */
-	ParameterList& 
+	ParameterList 
 	stringValiDepList2 = My_deplist->sublist(
 		"String Validator Dependency (other validators)",
 		false,
@@ -179,8 +178,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 	RCP<StringValidatorDependency> 
 	stringValiDep2 = RCP<StringValidatorDependency>(
 		new StringValidatorDependency(
-			My_deplist->getEntryRCP("Range selector"),
-			My_deplist->getEntryRCP("RangeValue"),
+			stringValiDepList2.getEntryRCP("Range selector"),
+			stringValiDepList2.getEntryRCP("RangeValue"),
 			rangeValidatorMap1, 
       range110Vali
 		)
@@ -208,7 +207,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 	/*
 	 * Testing the BoolValidatorDependency.
 	 */
-	ParameterList&
+	ParameterList
 	boolValidatorDepList = My_deplist->sublist(
 		"Bool Validator Dependency List", 
 		false,
@@ -227,8 +226,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 	RCP<BoolValidatorDependency> 
 	boolValiDep = RCP<BoolValidatorDependency>(
 		new BoolValidatorDependency(
-			My_deplist->getEntryRCP("Use Validator?"),
-			My_deplist->getEntryRCP("do I have a validator?"),
+			boolValidatorDepList.getEntryRCP("Use Validator?"),
+			boolValidatorDepList.getEntryRCP("do I have a validator?"),
 			basicVali, 
 			basicVali2
 		)
@@ -293,8 +292,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testValiDeps){
 	RCP<RangeValidatorDependency<double> > 
 	cheeseTempDep = RCP<RangeValidatorDependency<double> >(
 		new RangeValidatorDependency<double>(
-			My_deplist->getEntryRCP("Temperature"),
-			My_deplist->getEntryRCP("Cheese to Fondue"),
+			rangeValidatorDepList.getEntryRCP("Temperature"),
+			rangeValidatorDepList.getEntryRCP("Cheese to Fondue"),
 			tempranges
 		)
 	);
@@ -332,7 +331,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	/*
 	 * Testing the NumberVisualDependency
 	 */
-	ParameterList&
+	ParameterList
 	doubleVisualDepList = My_deplist->sublist(
 		"NumberVisual Dependency List (double)", 
 		false, 
@@ -349,8 +348,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	RCP<NumberVisualDependency<double> > fondueDep = 
 	RCP<NumberVisualDependency<double> >(
 		new NumberVisualDependency<double>(
-			My_deplist->getEntryRCP("Temperature"),
-			My_deplist->getEntryRCP("Cheese to Fondue"),
+			doubleVisualDepList.getEntryRCP("Temperature"),
+			doubleVisualDepList.getEntryRCP("Cheese to Fondue"),
 			fondueFunc
 		)
 	);
@@ -372,7 +371,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	);
 	boolVisDepList.set(
     "ShowPrecs", true, "Whether or not to should the Preciondtioner list");
-	ParameterList&
+	ParameterList
 	Prec_List0 = boolVisDepList.sublist(
     "Preconditioner",false,"Sublist that defines the preconditioner.");
 	Prec_List0.set("Type", "ILU", "The tpye of preconditioner to use");
@@ -385,8 +384,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	RCP<BoolVisualDependency> 
 	precDep1 = RCP<BoolVisualDependency>(
 		new BoolVisualDependency(
-			My_deplist->getEntryRCP("ShowPrecs"),
-			My_deplist->getEntryRCP("Preconditioner"),
+			boolVisDepList.getEntryRCP("ShowPrecs"),
+			boolVisDepList.getEntryRCP("Preconditioner"),
 			true
 		)
 	);
@@ -425,8 +424,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	RCP<StringVisualDependency> 
 	swissDep1 = RCP<StringVisualDependency>(
 		new StringVisualDependency(
-			My_deplist->getEntryRCP("Favorite Cheese"),
-			My_deplist->getEntryRCP("Swiss rating"),
+			stringVisDepList.getEntryRCP("Favorite Cheese"),
+			stringVisDepList.getEntryRCP("Swiss rating"),
 			"Swiss", 
 			true
 		)
@@ -441,8 +440,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	/*
 	 * String Visual Tester with multiple values
 	 */
-	ParameterList&
-    multiStringVisDepList = My_deplist->sublist(
+	ParameterList multiStringVisDepList = My_deplist->sublist(
 		"Multi String Visual Dependency List",
 		false
 	);
@@ -454,13 +452,16 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 		)
 	);
    
-	multiStringVisDepList.set("Favorite Cheese", "American", "Your favorite type of cheese", favCheeseValidator2);
-	multiStringVisDepList.set("Swiss rating", 0, "How you rate swiss on a scale of 1 to 10", swissValidator);
+	multiStringVisDepList.set(
+    "Favorite Cheese", "American", 
+    "Your favorite type of cheese", favCheeseValidator2);
+	multiStringVisDepList.set("Swiss rating", 0, 
+    "How you rate swiss on a scale of 1 to 10", swissValidator);
 	RCP<StringVisualDependency> 
 	swissDep2 = RCP<StringVisualDependency>(
 		new StringVisualDependency(
-			My_deplist->getEntryRCP("Favorite Cheese"),
-			My_deplist->getEntryRCP("Swiss rating"), 
+			multiStringVisDepList.getEntryRCP("Favorite Cheese"),
+			multiStringVisDepList.getEntryRCP("Swiss rating"), 
 			tuple<std::string>("Swiss", "Cheder"), 
 			true
 		)
@@ -477,7 +478,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	 */
 	int (*visfunc)(int);
 	visfunc = intVisualTester;
-	ParameterList&
+	ParameterList
     numberVisDepList = My_deplist->sublist(
 		"Number Visual Dependency List", 
 		false, 
@@ -488,8 +489,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	RCP<NumberVisualDependency<int> > 
 	iceDep = RCP<NumberVisualDependency<int> >(
 		new NumberVisualDependency<int>(
-			My_deplist->getEntryRCP("Room Temp"),
-			My_deplist->getEntryRCP("Ice"), 
+			numberVisDepList.getEntryRCP("Room Temp"),
+			numberVisDepList.getEntryRCP("Ice"), 
 			visfunc
 		)
 	);
@@ -536,7 +537,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testArrayLengthDep){
 	RCP<DependencySheet> depSheet1 = 
     RCP<DependencySheet>(new DependencySheet);
 
-	ParameterList&
+	ParameterList
 	numberArrayLengthDepList = My_deplist->sublist(
     "Number Array Length Dependency List", false,
     "Number Array Length Dependecy testing list.");
@@ -554,8 +555,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testArrayLengthDep){
 	RCP<NumberArrayLengthDependency> 
 	arrayLengthDep = RCP<NumberArrayLengthDependency>(
   		new NumberArrayLengthDependency(
-			My_deplist->getEntryRCP("Array Length"),
-			My_deplist->getEntryRCP("Variable Length Array") 
+			numberArrayLengthDepList.getEntryRCP("Array Length"),
+			numberArrayLengthDepList.getEntryRCP("Variable Length Array") 
 		)
 	);
 	depSheet1->addDependency(arrayLengthDep);
@@ -598,8 +599,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testNumberValiAspDep){
 	RCP<NumberValidatorAspectDependency<int> > 
 	intDep1 = RCP<NumberValidatorAspectDependency<int> >(
 		new NumberValidatorAspectDependency<int>(
-			My_deplist->getEntryRCP("Int dependee"),
-			My_deplist->getEntryRCP("Int"),
+			numberValiAspDepList.getEntryRCP("Int dependee"),
+			numberValiAspDepList.getEntryRCP("Int"),
 			NumberValidatorAspectDependency<int>::Max,
 			intVali2,
 			func
@@ -609,8 +610,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testNumberValiAspDep){
 	RCP<NumberValidatorAspectDependency<int> > 
 	intDep2 = RCP<NumberValidatorAspectDependency<int> >(
 		new NumberValidatorAspectDependency<int>(
-			My_deplist->getEntryRCP("Int dependee"),
-			My_deplist->getEntryRCP("Int2"),
+			numberValiAspDepList.getEntryRCP("Int dependee"),
+			numberValiAspDepList.getEntryRCP("Int2"),
 			NumberValidatorAspectDependency<int>::Max,
 			intVali2,
 			func
@@ -644,6 +645,14 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
 	Array<double> doubleArray(10,23.0);
 	list1->set("array parameter", doubleArray, "array parameter");
 	list1->set("bool parameter", true, "bool parameter");
+
+	TEST_THROW(RCP<NumberVisualDependency<int> > numValiDep = 
+    RCP<NumberVisualDependency<int> >(
+      new NumberVisualDependency<int>(
+        list1->getEntryRCP("bool parameter"),
+        list1->getEntryRCP("double parameter"), 
+        intFuncTester)), 
+    InvalidDependencyException);
 
 	/*
 	 * Testing StringVisualDepenendcy exceptions.
@@ -765,13 +774,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
         intVali)), 
     InvalidDependencyException);
 
-	TEST_THROW(RCP<NumberVisualDependency<int> > boolValiDep = 
-    RCP<NumberVisualDependency<int> >(
-      new NumberVisualDependency<int>(
-        list1->getEntryRCP("bool parameter"),
-        list1->getEntryRCP("double parameter"), 
-        intFuncTester)), 
-    InvalidDependencyException);
 
 
 	/*
@@ -896,36 +898,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
 		),
 		InvalidDependencyException
 	);
-
-
-	/*
-	 * Testing DependencySheet exceptions.
-	 */
-	RCP<DependencySheet> depSheet1 = 
-    RCP<DependencySheet>(new DependencySheet);
-	RCP<DependencySheet> depSheet2 = 
-    RCP<DependencySheet>(new DependencySheet);
-
-	list2->set("list2 double", 4.0, "a double parameter in list 2");
-	list2->set("list2 bool", true, "a bool parameter in list2");
-
-	RCP<BoolVisualDependency> boolVisDep = 
-    RCP<BoolVisualDependency>(
-      new BoolVisualDependency(
-        list1->getEntryRCP("bool parameter"),
-        list2->getEntryRCP("list2 double"), 
-        false));
-
-	TEST_THROW(depSheet2->addDependency(boolVisDep), 
-    InvalidDependencyException);
-	boolVisDep = RCP<BoolVisualDependency>(
-    new BoolVisualDependency(
-      list2->getEntryRCP("list2 bool"),
-      list1->getEntryRCP("double parameter"),
-      false));
-
-	TEST_THROW(depSheet2->addDependency(boolVisDep), 
-    InvalidDependencyException);
 }
 
 

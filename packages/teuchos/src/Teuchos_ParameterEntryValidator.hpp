@@ -175,7 +175,7 @@ private:
   }
   
   static ValidatorID& getMasterIDCounter(){
-    static ValidatorID masterCounter = 1000;
+    static ValidatorID masterCounter = 0;
     return masterCounter;
   }
 

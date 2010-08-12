@@ -106,8 +106,6 @@ public:
   //@{
 
   bool isConditionTrue() const{
-    std::cout << "when: " << whenParamEqualsValue_ << std::cout ;
-    std::cout << "evaulate: " << evaluateParameter() << std::cout;
     if((whenParamEqualsValue_ && evaluateParameter()) || 
       (!whenParamEqualsValue_ && !evaluateParameter()))
     {

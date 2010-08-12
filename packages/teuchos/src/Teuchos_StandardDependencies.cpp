@@ -393,9 +393,9 @@ void StringValidatorDependency::validateDep() const{
   RCP<const ParameterEntryValidator> firstVali = (it->second);
   ++it;
   for(; it != valuesAndValidators_.end(); ++it){
-    TEST_FOR_EXCEPTION( typeid(firstVali.get()) != typeid(it->second.get()),
+    TEST_FOR_EXCEPTION( typeid(*firstVali) != typeid(*(it->second)),
       InvalidDependencyException,
-      "Ay no! All of the validators in a StringValidatorDependency"
+      "Ay no! All of the validators in a StringValidatorDependency "
       "must have the same type.");
    }
 }
@@ -408,7 +408,9 @@ BoolValidatorDependency::BoolValidatorDependency(
   ValidatorDependency(dependee, dependent),
   trueValidator_(trueValidator),
   falseValidator_(falseValidator)
-{}
+{
+  validateDep();
+}
 
 BoolValidatorDependency::BoolValidatorDependency(
   RCP<const ParameterEntry> dependee,
@@ -418,7 +420,9 @@ BoolValidatorDependency::BoolValidatorDependency(
   ValidatorDependency(dependee, dependents),
   trueValidator_(trueValidator),
   falseValidator_(falseValidator)
-{}
+{
+  validateDep();
+}
 
 void BoolValidatorDependency::evaluate(){
   bool dependeeValue = getFirstDependeeValue<bool>();
@@ -443,7 +447,7 @@ void BoolValidatorDependency::validateDep() const{
     "Encountered type: " << getFirstDependee()->getAny().typeName() <<
     std::endl << std::endl);
 
-  TEST_FOR_EXCEPTION(typeid(falseValidator_) != typeid(trueValidator_),
+  TEST_FOR_EXCEPTION(typeid(*falseValidator_) != typeid(*trueValidator_),
     InvalidDependencyException,
     "Ay no! The true and false validators of a Bool Validator Dependency "
     "must be the same type! " <<std::endl << std::endl);
