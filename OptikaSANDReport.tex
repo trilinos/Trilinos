@@ -20,6 +20,7 @@
 \usepackage{hyperref}
 \usepackage{multicol}
 \usepackage{pslatex}
+\usepackage{paralist}
 \usepackage{mathptmx}	% Use the Postscript Times font
 \usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
 \usepackage[dvips,light,first,bottomafter]{draftcopy}
@@ -138,31 +139,7 @@
     \clearpage
     \chapter*{Nomenclature}
     \addcontentsline{toc}{chapter}{Nomenclature}
-    \begin{description}
-	\item[Dependency]
-	    A relationship ship between to parameters in which the state
-		or value of one parameter depends on the state or value of
-		another.
-	\item[Dependee]
-		The parameter upon which another parameter state or value dependes.
-	\item[Dependent]
-		A parameter whose state or value is determined by another
-		parameter.
-	\item[Parameter]
-	    An input needed for a program.
-	\item[Parameter List]
-	    A list of parameters and other parameter lists.
-	\item[RCP]
-	    Refernce counted pointer. RCPs refered to in this document reference the
-		RCP class located in the Teuchos package of Trilinos.
-	\item[Sublist]
-	    A parameter list contained within another parameter list.
-	\item[Widget]
-		A GUI element, usually used to obtain user input.
-	\item[Validator]
-		An object used to ensure a particular parameter's value is valid.
-    \end{description}
-
+	\input{OptikaNomenclature}
 
     % ---------------------------------------------------------------------- %
     % This is where the body of the report begins; usually with an Introduction

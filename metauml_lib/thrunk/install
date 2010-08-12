@@ -1,0 +1,23 @@
+#!/bin/bash
+
+echo "This script 'installs' MetaUML as a MetaPost package."
+echo "Make sure you have the rights to do this (tipically root)."
+echo "The script works for the default Fedora Core installation, and likely to work for other Linux distributions."
+echo "The script works for TeX Live 2005, installed in the default location."
+echo ""
+echo "If you're on Windows you might have to copy the metauml directory to where"
+echo "other metapost packages are and run some GUI program to notify the TeX"
+echo "environment of this."
+
+TEXMF_HOME=/usr/share/texmf
+TEXMF_HOME_TEXLIVE=/usr/local/texlive/texmf-local/
+
+CURRENT_DIR=`pwd`
+
+ln -s $CURRENT_DIR $TEXMF_HOME/metapost/metauml
+ln -s $CURRENT_DIR $TEXMF_HOME_TEXLIVE/metapost/local/metauml
+
+echo "Rehashing tex path..."
+
+texhash
+

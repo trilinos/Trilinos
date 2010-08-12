@@ -1,4 +1,4 @@
-This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2007.5.18)  19 JUL 2010 16:08
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2007.5.18)  22 JUL 2010 11:22
 entering extended mode
  %&-line parsing enabled.
 **OptikaSANDReport.tex
@@ -190,6 +190,53 @@ File: pdfmark.def 2007/02/07 v6.75r Hyperref definitions for pdfmark specials
 \pdf@defaulttoks=\toks20
 \Fld@listcount=\count103
 ))
+(/usr/local/texlive/2007/texmf-dist/tex/latex/tools/multicol.sty
+Package: multicol 2006/05/18 v1.6g multicolumn formatting (FMi)
+\c@tracingmulticols=\count104
+\mult@box=\box34
+\multicol@leftmargin=\dimen115
+\c@unbalance=\count105
+\c@collectmore=\count106
+\doublecol@number=\count107
+\multicoltolerance=\count108
+\multicolpretolerance=\count109
+\full@width=\dimen116
+\page@free=\dimen117
+\premulticols=\dimen118
+\postmulticols=\dimen119
+\multicolsep=\skip58
+\multicolbaselineskip=\skip59
+\partial@page=\box35
+\last@line=\box36
+\mult@rightbox=\box37
+\mult@grightbox=\box38
+\mult@gfirstbox=\box39
+\mult@firstbox=\box40
+\@tempa=\box41
+\@tempa=\box42
+\@tempa=\box43
+\@tempa=\box44
+\@tempa=\box45
+\@tempa=\box46
+\@tempa=\box47
+\@tempa=\box48
+\@tempa=\box49
+\@tempa=\box50
+\@tempa=\box51
+\@tempa=\box52
+\@tempa=\box53
+\@tempa=\box54
+\@tempa=\box55
+\@tempa=\box56
+\@tempa=\box57
+\c@columnbadness=\count110
+\c@finalcolumnbadness=\count111
+\last@try=\dimen120
+\multicolovershoot=\dimen121
+\multicolundershoot=\dimen122
+\mult@nat@firstbox=\box58
+\colbreak@box=\box59
+)
 (/usr/local/texlive/2007/texmf-dist/tex/latex/pslatex/pslatex.sty
 Package: pslatex 1996/07/24 v1.2 pslatex emulation (DPC)
 LaTeX Font Info:    Redeclaring symbol font `operators' on input line 65.
@@ -272,62 +319,62 @@ LaTeX Info: Redefining \hbar on input line 50.
 )
 (/usr/local/texlive/2007/texmf-dist/tex/latex/subfigure/subfigure.sty
 Package: subfigure 2002/03/15 v2.1.5 subfigure package
-\subfigtopskip=\skip58
-\subfigcapskip=\skip59
-\subfigcaptopadj=\dimen115
-\subfigbottomskip=\skip60
-\subfigcapmargin=\dimen116
-\subfiglabelskip=\skip61
-\c@subfigure=\count104
-\c@lofdepth=\count105
-\c@subtable=\count106
-\c@lotdepth=\count107
+\subfigtopskip=\skip60
+\subfigcapskip=\skip61
+\subfigcaptopadj=\dimen123
+\subfigbottomskip=\skip62
+\subfigcapmargin=\dimen124
+\subfiglabelskip=\skip63
+\c@subfigure=\count112
+\c@lofdepth=\count113
+\c@subtable=\count114
+\c@lotdepth=\count115
 
 ****************************************
 * Local config file subfigure.cfg used *
 ****************************************
 (/usr/local/texlive/2007/texmf-dist/tex/latex/subfigure/subfigure.cfg)
-\subfig@top=\skip62
-\subfig@bottom=\skip63
+\subfig@top=\skip64
+\subfig@bottom=\skip65
 )
 (/usr/local/texlive/2007/texmf-dist/tex/latex/draftcopy/draftcopy.sty
 Package: draftcopy 2002/02/25 v2.16
-\draftcopy@hour=\count108
-\draftcopy@minute=\count109
+\draftcopy@hour=\count116
+\draftcopy@minute=\count117
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/draftcopy/draftcopy.cfg)
 Prints DRAFT on pages; does not show in your DVI viewer
 )
-\SANDsupersedtempbox=\box34
-LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 80
+\SANDsupersedtempbox=\box60
+LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 81
 .
  (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 80
+LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 81
 .
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/omlztmcm.fd
 File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OMS+ztmcm on input line 80
+LaTeX Font Info:    Try loading font information for OMS+ztmcm on input line 81
 .
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/omsztmcm.fd
 File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OMX+ztmcm on input line 80
+LaTeX Font Info:    Try loading font information for OMX+ztmcm on input line 81
 .
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/omxztmcm.fd
 File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 80.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 81.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 80.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 81.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 80.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 81.
 
 
 LaTeX Warning: Unused global option(s):
@@ -336,37 +383,37 @@ LaTeX Warning: Unused global option(s):
 (./OptikaSANDReport.aux (./SANDdistribution.aux))
 \openout1 = `OptikaSANDReport.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 87.
-LaTeX Font Info:    ... okay on input line 87.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 87.
-LaTeX Font Info:    ... okay on input line 87.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 87.
-LaTeX Font Info:    ... okay on input line 87.
-LaTeX Font Info:    Checking defaults for OMS/pzccm/m/n on input line 87.
-LaTeX Font Info:    Try loading font information for OMS+pzccm on input line 87
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for OMS/pzccm/m/n on input line 88.
+LaTeX Font Info:    Try loading font information for OMS+pzccm on input line 88
 .
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/omspzccm.fd
 File: omspzccm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/pzccm.
 )
-LaTeX Font Info:    ... okay on input line 87.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 87.
-LaTeX Font Info:    ... okay on input line 87.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 87.
-LaTeX Font Info:    ... okay on input line 87.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 87.
-LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 88.
+LaTeX Font Info:    ... okay on input line 88.
 
 (/usr/local/texlive/2007/texmf-dist/tex/context/base/supp-pdf.tex
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count110
-\scratchdimen=\dimen117
-\scratchbox=\box35
-\nofMPsegments=\count111
-\nofMParguments=\count112
-\MPscratchCnt=\count113
-\MPscratchDim=\dimen118
-\MPnumerator=\count114
+\scratchcounter=\count118
+\scratchdimen=\dimen125
+\scratchbox=\box61
+\nofMPsegments=\count119
+\nofMParguments=\count120
+\MPscratchCnt=\count121
+\MPscratchDim=\dimen126
+\MPnumerator=\count122
 \everyMPtoPDFconversion=\toks21
 )
 -------------------- Geometry parameters
@@ -408,48 +455,48 @@ driver: pdftex
 \@twosidetrue \@mparswitchtrue 
 (1in=72.27pt, 1cm=28.45pt)
 -----------------------
-\SANDtitletempbox=\box36
+\SANDtitletempbox=\box62
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <20.74> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 87.
-\textwidththird=\skip64
-\topheight=\skip65
-\topleftwidth=\skip66
-\topmiddlewidth=\skip67
-\toprightwidth=\skip68
-Package hyperref Info: Link coloring OFF on input line 87.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 88.
+\textwidththird=\skip66
+\topheight=\skip67
+\topleftwidth=\skip68
+\topmiddlewidth=\skip69
+\toprightwidth=\skip70
+Package hyperref Info: Link coloring OFF on input line 88.
  (/usr/local/texlive/2007/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2006/12/27 v2.28 Cross-referencing by name of section
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/oberdiek/refcount.sty
 Package: refcount 2006/02/20 v3.0 Data extraction from references (HO)
 )
-\c@section@level=\count115
+\c@section@level=\count123
 )
-LaTeX Info: Redefining \ref on input line 87.
-LaTeX Info: Redefining \pageref on input line 87.
+LaTeX Info: Redefining \ref on input line 88.
+LaTeX Info: Redefining \pageref on input line 88.
 
 (./OptikaSANDReport.out) (./OptikaSANDReport.out)
 \@outlinefile=\write3
 \openout3 = `OptikaSANDReport.out'.
 
-\big@size=\dimen119
-\coverindent=\skip69
-\parindentsave=\skip70
+\big@size=\dimen127
+\coverindent=\skip71
+\parindentsave=\skip72
 LaTeX Font Info:    Font shape `OT1/phv/b/n' will be
-(Font)              scaled to size 16.19989pt on input line 89.
+(Font)              scaled to size 16.19989pt on input line 90.
 LaTeX Font Info:    Font shape `OT1/phv/m/n' will be
-(Font)              scaled to size 10.79993pt on input line 89.
+(Font)              scaled to size 10.79993pt on input line 90.
 LaTeX Font Info:    Font shape `OT1/phv/b/n' will be
-(Font)              scaled to size 21.59985pt on input line 89.
+(Font)              scaled to size 21.59985pt on input line 90.
 LaTeX Font Info:    Font shape `OT1/phv/m/n' will be
-(Font)              scaled to size 7.19995pt on input line 89.
+(Font)              scaled to size 7.19995pt on input line 90.
 
-Underfull \hbox (badness 10000) in paragraph at lines 89--89
+Underfull \hbox (badness 10000) in paragraph at lines 90--90
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 89--89
+Underfull \hbox (badness 10000) in paragraph at lines 90--90
 
  []
 
@@ -487,13 +534,13 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!{/usr/local/texlive/2007/texmf-var/fonts/map/pdftex/upd
 map/pdftex.map} <./snllineblk.pdf>]
-LaTeX Font Info:    Try loading font information for OT1+pnc on input line 89.
+LaTeX Font Info:    Try loading font information for OT1+pnc on input line 90.
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/ot1pnc.fd
 File: ot1pnc.fd 2001/06/04 font definitions for OT1/pnc.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 89.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 90.
 
 <DOEbwlogo.pdf, id=13, 286.06876pt x 286.06876pt>
 File: DOEbwlogo.pdf Graphic file (type pdf)
@@ -503,18 +550,18 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored! <./DOEbwlogo.pdf>]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <14.4> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 89.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 90.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10.95> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 89.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 90.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 89.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 90.
  (./OptikaAbstract.tex) [3
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <24.88> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 104.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 105.
  (./OptikaAck.tex) [4
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -606,6 +653,9 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!] (./OptikaSANDReport.lot)
 \tf@lot=\write6
 \openout6 = `OptikaSANDReport.lot'.
@@ -619,7 +669,7 @@ Non-PDF special ignored!
 
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] [8
+Non-PDF special ignored!] (./OptikaNomenclature.tex) [8
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -643,7 +693,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 LaTeX Font Info:    Font shape `OT1/phv/m/n' will be
-(Font)              scaled to size 5.39996pt on input line 176.
+(Font)              scaled to size 5.39996pt on input line 153.
  [10
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -675,7 +725,7 @@ File: graphics/spinbox.png Graphic file (type png)
 
 <use graphics/spinbox.png>
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 73.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 75.
 
 <graphics/combobox.png, id=60, 216.81pt x 39.14626pt>
 File: graphics/combobox.png Graphic file (type png)
@@ -685,6 +735,9 @@ File: graphics/combobox.png Graphic file (type png)
 File: graphics/lineedit.png Graphic file (type png)
 
 <use graphics/lineedit.png> [12
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -761,8 +814,14 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored! <./graphics/treeview.png>]
-Overfull \hbox (1.47751pt too wide) in paragraph at lines 188--189
+Overfull \hbox (1.47751pt too wide) in paragraph at lines 194--195
 []\OT1/ptm/m/n/12 Many times the state of one pa-ram-e-ter de-pends on the stat
 e of an-other. Com-mon inter-parameter
  []
@@ -774,12 +833,44 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 212.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 219.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 212.
- [16
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 219.
+
+Overfull \hbox (3.39462pt too wide) in paragraph at lines 229--230
+[]\OT1/ptm/m/n/12 Changes var-i-ous as-pects of an En-hanced-Num-
+ []
+
+[16
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -817,6 +908,24 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!] [18
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -824,65 +933,462 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!]) [19
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!] (./OptikaSANDReport.bbl [20
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] [19
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-
-
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-
-]
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]) [20
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] (./OptikaSANDReport.bbl
 Overfull \hbox (36.50938pt too wide) in paragraph at lines 4--6
 []\OT1/ptm/m/n/12 Model/View Pro-gram-ming.  [][][][]. 
  []
 
 
-Overfull \hbox (331.69179pt too wide) in paragraph at lines 12--16
+Overfull \hbox (382.43959pt too wide) in paragraph at lines 12--16
+[]\OT1/ptm/m/n/12 Opitka::AndCondition Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (397.97925pt too wide) in paragraph at lines 18--22
+[]\OT1/ptm/m/n/12 Opitka::ArrayValidator Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (492.29869pt too wide) in paragraph at lines 24--28
+[]\OT1/ptm/m/n/12 Opitka::BinaryLogicalCondition Class Ref-er-ence.  [][][][]. 
+
+ []
+
+
+Overfull \hbox (391.2354pt too wide) in paragraph at lines 30--34
+[]\OT1/ptm/m/n/12 Opitka::BoolCondition Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (508.21083pt too wide) in paragraph at lines 36--40
+[]\OT1/ptm/m/n/12 Opitka::BoolValidatorDependency Class Ref-er-ence.  [][][][].
+ 
+ []
+
+
+Overfull \hbox (476.47102pt too wide) in paragraph at lines 42--46
+[]\OT1/ptm/m/n/12 Opitka::BoolVisualDependency Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (531.74268pt too wide) in paragraph at lines 48--52
+[]\OT1/ptm/m/n/12 Opitka::ConditionVisualDependency Class Ref-er-ence.  [][][][
+]. 
+ []
+
+
+Overfull \hbox (361.31992pt too wide) in paragraph at lines 54--58
+[]\OT1/ptm/m/n/12 Opitka::Dependency Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (418.58347pt too wide) in paragraph at lines 60--64
+[]\OT1/ptm/m/n/12 Opitka::DependencySheet Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 66--70
+[]\OT1/ptm/m/n/12 Opitka::EnhnacedNumberValidator<S> Class Tem-plate Ref-er-enc
+e.
+ []
+
+
+Overfull \hbox (256.78957pt too wide) in paragraph at lines 66--70
+[][][][]\OT1/ptm/m/n/12 . 
+ []
+
+
+Overfull \hbox (412.79924pt too wide) in paragraph at lines 72--76
+[]\OT1/ptm/m/n/12 Opitka::EqualsCondition Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (437.9627pt too wide) in paragraph at lines 78--82
+[]\OT1/ptm/m/n/12 Opitka::FileName Val-ida-tor Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (379.77547pt too wide) in paragraph at lines 84--88
+[]\OT1/ptm/m/n/12 Opitka::NotCondition Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 90--94
+[]\OT1/ptm/m/n/12 Opitka::NumberArrayLengthDependency Class Ref-er-ence.
+ []
+
+
+Overfull \hbox (281.26949pt too wide) in paragraph at lines 90--94
+[][][][]\OT1/ptm/m/n/12 . 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 96--100
+[]\OT1/ptm/m/n/12 Opitka::NumberCondition<T> Tem-plate Class Ref-er-ence.
+ []
+
+
+Overfull \hbox (207.82973pt too wide) in paragraph at lines 96--100
+[][][][]\OT1/ptm/m/n/12 . 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 102--106
+[]\OT1/ptm/m/n/12 Opitka::NumberValidatorAspectDependency<S> Tem-plate Class Re
+f-er-ence.
+ []
+
+
+Overfull \hbox (305.7494pt too wide) in paragraph at lines 102--106
+[][][][]\OT1/ptm/m/n/12 . 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 108--112
+[]\OT1/ptm/m/n/12 Opitka::NumberVisualDependency<S> Tem-plate Class Ref-er-ence
+.
+ []
+
+
+Overfull \hbox (250.66959pt too wide) in paragraph at lines 108--112
+[][][][]\OT1/ptm/m/n/12 . 
+ []
+
+
+Overfull \hbox (349.39095pt too wide) in paragraph at lines 114--118
+[]\OT1/ptm/m/n/12 Opitka::OptikaGUI Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (368.31557pt too wide) in paragraph at lines 120--124
+[]\OT1/ptm/m/n/12 Opitka::OrCondition Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (446.96292pt too wide) in paragraph at lines 126--130
+[]\OT1/ptm/m/n/12 Opitka::ParameterCondition Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 132--136
+[]\OT1/ptm/m/n/12 Opitka::RangeValidatorDependency<S> Tem-plate Class Ref-er-en
+ce.
+ []
+
+
+Overfull \hbox (262.90955pt too wide) in paragraph at lines 132--136
+[][][][]\OT1/ptm/m/n/12 . 
+ []
+
+[21
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+Overfull \hbox (409.4752pt too wide) in paragraph at lines 138--142
+[]\OT1/ptm/m/n/12 Opitka::StringCondition Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (452.21854pt too wide) in paragraph at lines 144--148
+[]\OT1/ptm/m/n/12 Opitka::StringValidator Class Tem-plate Ref-er-ence.  [][][][
+]. 
+ []
+
+
+Overfull \hbox (526.45064pt too wide) in paragraph at lines 150--154
+[]\OT1/ptm/m/n/12 Opitka::StringValidatorDependency Class Ref-er-ence.  [][][][
+]. 
+ []
+
+
+Overfull \hbox (494.71083pt too wide) in paragraph at lines 156--160
+[]\OT1/ptm/m/n/12 Opitka::StringVisualDependency Class Ref-er-ence.  [][][][]. 
+
+ []
+
+
+Overfull \hbox (460.39113pt too wide) in paragraph at lines 162--166
+[]\OT1/ptm/m/n/12 Opitka::ValidatorDependency Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (428.65132pt too wide) in paragraph at lines 168--172
+[]\OT1/ptm/m/n/12 Opitka::VisualDependency Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (331.69179pt too wide) in paragraph at lines 174--178
 []\OT1/ptm/m/n/12 Optika::Delegate Class Ref-er-ence.  [][][][]. 
  []
 
 
-Overfull \hbox (332.84363pt too wide) in paragraph at lines 18--22
+Overfull \hbox (332.84363pt too wide) in paragraph at lines 180--184
 []\OT1/ptm/m/n/12 Optika::TreeItem Class Ref-er-ence.  [][][][]. 
  []
 
 
-Overfull \hbox (348.29965pt too wide) in paragraph at lines 24--28
+Overfull \hbox (348.29965pt too wide) in paragraph at lines 186--190
 []\OT1/ptm/m/n/12 Optika::TreeModel Class Ref-er-ence.  [][][][]. 
  []
 
 
-Overfull \hbox (64.9564pt too wide) in paragraph at lines 30--32
+Overfull \hbox (335.81972pt too wide) in paragraph at lines 192--196
+[]\OT1/ptm/m/n/12 Optika::TreeView Class Ref-er-ence.  [][][][]. 
+ []
+
+
+Overfull \hbox (64.9564pt too wide) in paragraph at lines 198--200
 []\OT1/ptm/m/n/12 QAbstractItemModel Class Ref-er-ence.  [][][][]. 
  []
 
 
-Overfull \hbox (34.3565pt too wide) in paragraph at lines 34--36
+Overfull \hbox (34.3565pt too wide) in paragraph at lines 202--204
 []\OT1/ptm/m/n/12 QAbstractItemModel Class Ref-er-ence.  [][][][]. 
  []
 
 
-Overfull \hbox (420.52737pt too wide) in paragraph at lines 42--46
+Overfull \hbox (420.52737pt too wide) in paragraph at lines 214--218
 []\OT1/ptm/m/n/12 Teuchos::ParameterEntry Class Ref-er-ence.  [][][][]. 
  []
 
 
-Overfull \hbox (401.08727pt too wide) in paragraph at lines 48--52
+Overfull \hbox (401.08727pt too wide) in paragraph at lines 220--224
 []\OT1/ptm/m/n/12 Teuchos::ParamterList Class Ref-er-ence.  [][][][]. 
  []
 
-) [21
+) [22
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -957,18 +1463,12 @@ Non-PDF special ignored!]
 
  (./SANDdistribution.tex
 Option "NM": Using the SNL NM default distribution list.
-) [22
+) [23
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 
-
-] [23
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
 
 ] [24
 Non-PDF special ignored!
@@ -980,7 +1480,9 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored!]
+Non-PDF special ignored!
+
+]
 File: snllineblk.pdf Graphic file (type pdf)
  <use snllineblk.pdf> [26
 Non-PDF special ignored!
@@ -988,26 +1490,27 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!] (./OptikaSANDReport.aux (./SANDdistribution.aux)) ) 
 Here is how much of TeX's memory you used:
- 4399 strings out of 94073
- 62898 string characters out of 1162984
- 132057 words of memory out of 1500000
- 7559 multiletter control sequences out of 10000+50000
+ 4516 strings out of 94073
+ 64779 string characters out of 1162984
+ 140729 words of memory out of 1500000
+ 7670 multiletter control sequences out of 10000+50000
  68828 words of font info for 127 fonts, out of 1200000 for 2000
  645 hyphenation exceptions out of 8191
- 32i,9n,45p,232b,428s stack positions out of 5000i,500n,6000p,200000b,5000s
+ 32i,9n,45p,273b,442s stack positions out of 5000i,500n,6000p,200000b,5000s
 {/
 usr/local/texlive/2007/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/texli
-ve/2007/texmf-dist/fonts/type1/bluesky/cm/cmsy10.pfb></usr/local/texlive/2007/t
-exmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2007/texmf-dis
-t/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2007/texmf-dist/fonts
-/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/
-urw/ncntrsbk/uncb8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/ncn
-trsbk/uncr8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmb
-8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></u
-sr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on OptikaSANDReport.pdf (26 pages, 196311 bytes).
+ve/2007/texmf-dist/fonts/type1/bluesky/cm/cmmi10.pfb></usr/local/texlive/2007/t
+exmf-dist/fonts/type1/bluesky/cm/cmsy10.pfb></usr/local/texlive/2007/texmf-dist
+/fonts/type1/urw/courier/ucrr8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/t
+ype1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/ur
+w/helvetic/uhvr8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/ncntr
+sbk/uncb8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/ncntrsbk/unc
+r8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></
+usr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></usr/local/
+texlive/2007/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on OptikaSANDReport.pdf (26 pages, 203363 bytes).
 PDF statistics:
- 147 PDF objects out of 1000 (max. 8388607)
+ 151 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 131072)
  31 words of extra memory for PDF output out of 10000 (max. 10000000)
 

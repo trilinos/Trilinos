@@ -1,0 +1,2863 @@
+
+\iffalse ********************************************************************\fi
+\iffalse * This is uml.sty, a package for writing UML diagrams in LaTeX. ****\fi
+\iffalse * Current version number is 0.09.***********************************\fi
+\iffalse * For documentation, see http://www.ifi.uio.no/~ellefg/uml.sty/. ***\fi
+\iffalse ********************************************************************\fi
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+
+\iffalse
+% \section{Typesetting the implementation}
+
+% I want the line numbers and the macro names to be right-aligned
+% together, close to the text.  It is important to make a virtual
+% vertical line in order to make some order in the pages.  
+
+% However, "doc.sty" contains a spurious space (in "\m@cro@", where
+% "\PrintMacroName" and where "\PrintEnvName" are used).  This space
+% shows up after the macro name.  To overcome this, I make a length
+% "\minusSpace" of length one negative space in the right font, and make
+% a "\hspace" of this length.
+\fi
+% \setlength\MacroIndent{0pt}
+% \newlength\minusSpace
+% \settowidth\minusSpace{\rmfamily\scriptsize \ }
+% \setlength\minusSpace{-\minusSpace}
+% \def\PrintMacroName#1{\strut \MacroFont \string #1\hspace*\minusSpace}
+% \def\PrintDescribeMacro#1{\strut \MacroFont \string #1\hspace*\minusSpace}
+% \def\PrintDescribeEnv#1{\strut \MacroFont #1\hspace*\minusSpace}
+% \def\PrintEnvName#1{\strut \MacroFont #1\hspace*\minusSpace}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \chapter{Implementation}
+% \label{sec:implementation}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Introductory code}
+% \label{sec:implementationIntroduction}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Identification}
+% \label{sec:impIdentification}
+
+%    \begin{macrocode}
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{uml}
+%    \end{macrocode}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Processing of options}
+% \label{sec:impOptions}
+
+\iffalse ********************************************************************\fi
+% \subsubsection{debug}
+
+% \begin{macro}{debug}
+% The option "debug" is used if you want some extra lines shown.
+% Intended for debugging of this package.
+%    \begin{macrocode}
+\DeclareOption{debug}{
+  \def\umlDebugLineStyle{dashed}
+  \def\umlDebugLength{1pt}
+  }
+\DeclareOption{nodebug}{
+  \def\umlDebugLineStyle{none}
+  \def\umlDebugLength{0pt}
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{\umlDebugLinestyle}
+% A linestyle normally none.  The linestyle of invisible leading lines.
+%    \begin{macrocode}
+\def\umlDebugLinestyle{none}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlDebugLength}
+% A length normally 0pt.  E.g., the breadth of invisible lines.
+%    \begin{macrocode}
+\def\umlDebugLength{0pt}
+%    \end{macrocode}
+% \end{macro}
+
+%\begin{nullnullni}
+\iffalse ********************************************************************\fi
+% \subsubsection{index}
+
+
+% \begin{macro}{index}
+% The option "index" makes all Stretchboxes and Features (all
+% Drawables with names make an index entry of the form
+% \meta{name}!\meta{type}.
+%    \begin{macrocode}
+\newcommand\umlIndexOn{\renewcommand\umlIndex[2]{\index{##1!##2}}}
+\newcommand\umlIndexOff{\renewcommand\umlIndex[2]{}}
+\DeclareOption{index}{\umlIndexOn}
+\DeclareOption{noindex}{\umlIndexOff}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{\umlIndex}
+% Takes two arguments: Type and Name.
+%    \begin{macrocode}
+\newcommand\umlIndex[2]{\index{#1!#2}}
+%    \end{macrocode}
+% \end{macro}
+
+%\end{nullnullni}
+
+\iffalse ********************************************************************\fi
+% \subsubsection{Processing the options}
+% \noindent{}Default is the "index"\index{nodebug option} option.
+%    \begin{macrocode}
+\ExecuteOptions{nodebug}
+\ProcessOptions
+%    \end{macrocode}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Using other packages}
+% \label{sec:impUsing}
+
+
+% \packageName{uml.sty} relies heavily on the \LaTeX{} packages
+% \index{PSTricks}
+% \packageName{pstricks} and \packageName{pst-node} [PSTricks].
+% Most of the graphics is displayed using \packageName{pstricks}.
+%    \begin{macrocode}
+\RequirePackage{pstricks, pst-node}
+%    \end{macrocode}
+
+%\noindent\packageName{keyval} [Keyval] is the package which handles
+% \index{keyval}
+% named options (like \verb§[name=Name, reference=Ref]§).
+%    \begin{macrocode}
+\RequirePackage{keyval}
+%    \end{macrocode}
+
+% \noindent\packageName{relsize} [Relsize] handles relative sizes, with
+% macros like "\Larger" and "\relsize{-1}".
+% \index{relsize}
+%    \begin{macrocode}
+\RequirePackage{relsize}
+%    \end{macrocode}
+
+% \noindent{}We also need the \packageName{color} package.  Maybe I later on should make 
+% uml.sty possible to use indepedent of color (with an option).
+% \index{color}
+%    \begin{macrocode}
+\RequirePackage{color}
+%    \end{macrocode}
+
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{General syntax}
+% \label{sec:impSyntax}
+
+% Users used to \LaTeX{} and PSTricks will recognize a lot of syntax.
+
+
+% An important implementation point is that any contents (which can
+% affect variables) is typeset after all the variables is used.  If it
+% is not,
+% the different boxes inside each other get intertwined with strange
+% results.  
+% "\umlDiagram" uses "\expandafter" to assert this.
+% \index{intertwined boxes}\index{evaluation sequence}
+
+%    \begin{macrocode}
+\def\umlTrueVariable{true}
+%    \end{macrocode}
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Lengths}
+% \label{sec:impSyntaxLengths}
+
+%    \begin{macrocode}
+\psset{xunit=1em}
+\psset{yunit=1em}
+\psset{runit=1em}
+%    \end{macrocode}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Angles}
+% \label{sec:impSyntaxAngles}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+
+% \section{Drawable}
+% \label{sec:impDrawable}
+
+% Each main "uml.sty" command (those drawn as schemas at pages
+% \pageref{fig:approachStart}--\pageref{fig:approachEnd}) is implemented
+% in the same pattern.  
+
+% \begin{macro}{\umlDrawableNull}
+% First, all the variables (in the "\umlDrawable" case, just one) are
+% set to their default values.
+%    \begin{macrocode}
+\def\umlDrawableNull{%
+   \def\umlImport{}%
+   \def\umlKind{Drawable}%
+   \gdef\umlName{DrawableNameDefault}%
+   \def\umlNameDefault{DrawableNameDefault}% 
+   %\ifx\umlName\umlNameDefault\else umlName is changed
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \subsection{Named options}
+
+% Of course, it would be more elegant to treat one variable at a time,
+% setting it to its default value and handling its named options at the
+% same place.  However, I have not found any way to do so.
+
+% Then, the named options are handled.  Most of them modify the
+% variables.  In this case, there is only one named option ("import")
+% which modify one variable ("\umlColor").  In most cases, the named
+% option and the variable has corresponding names.
+
+
+
+% \begin{nullnullni}
+% \begin{macro}{kind-}
+% The kind (type, metaclass) of the Drawable, e.g., "Class".
+%    \begin{macrocode}
+\define@key{uml}{kind}{%
+  \def\umlKind{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{name-}
+% The name of the Drawable, e.g., "Car".
+%    \begin{macrocode}
+\define@key{uml}{name}{%
+  \gdef\umlName{#1}}
+%    \end{macrocode}
+% \end{macro}
+% \end{nullnullni}
+
+% \subsection{Colors}
+
+% As said in section \ref{sec:useDrawableColors}, colors are primarily
+% handled by Drawable.  However, due to some technical obscurities in
+% \TeX{}, the implementation is done in the known subclasses
+% ("\umlElement", "\umlCompartment" and "\umlCompartmentline").
+
+% The technical obscurities in \TeX{} is this:  The brackets ("{}")
+% needed to limit the scope of colors, cannot contain table line breaks.
+% "\umlCompartmentline", which uses to be placed inside a table
+% ("\umlClassifier"), must put the line break outside the brackets.
+
+% \begin{macro}{import-}
+%    \begin{macrocode}
+\define@key{uml}{import}{%
+  \umlColorsImport}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{noimport-}
+%    \begin{macrocode}
+\define@key{uml}{noimport}{%
+  \umlColorsDefault}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{argument-}
+%    \begin{macrocode}
+\define@key{uml}{argument}{%
+  \umlColorsArgument}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{argument-}
+%    \begin{macrocode}
+\define@key{uml}{colorset}[\umlColorsDefault]{%
+  #1}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \subsection{The command}
+
+% And then the command itself.
+% \begin{macro}{\umlDrawable}
+% This command does not do much work.  It just process the nmed options.
+%    \begin{macrocode}
+\newcommand\umlDrawable[2][]{%
+%    \end{macrocode}
+% It sets its variables to default values,
+%    \begin{macrocode}
+  \umlDrawableNull%
+%    \end{macrocode}
+% process the named options
+%    \begin{macrocode}
+  \setkeys{uml}{kind=Drawable,#1}%
+%    \end{macrocode}
+% and typesets it second argument.  This argument, the contents,
+% typically uses some of the variables.
+%    \begin{macrocode}
+%    \end{macrocode}
+% and typesets it second argument.  This argument, the contents,
+% typically uses some of the variables.
+%    \begin{macrocode}
+  #2%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Element}
+% \label{sec:impElement}
+
+
+% \begin{macro}{\umlElementNull}
+% "\umlElement" follows the same pattern as "\umlDrawable" and the other
+% main commands; first, it sets its variables to the default values,
+% then handles the named options, and least define the command itself to
+% call its ``supercommand''.
+%    \begin{macrocode}
+\def\umlElementNull{%
+  \def\umlReference{refdef}%
+  \def\umlStereotype{}%
+  \def\umlSubof{}%
+  \def\umlImportedFrom{}%
+  \def\umlComment{}%
+  \def\umlAbstract{}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{reference-}
+% "ref" is provided as an short-form for "reference".
+%    \begin{macrocode}
+\define@key{uml}{reference}{\def\umlReference{#1}}
+\define@key{uml}{ref}{\def\umlReference{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+%\begin{macro}{stereotype-}
+% The \LaTeX{} variable itself sometimes contains not only the 
+% value itself, but some grahical stuff around.
+%    \begin{macrocode}
+\define@key{uml}{stereotype}{%
+  \def\umlStereotype{{\hfil\phantom{x}<<#1>>\phantom{x}\hfil}\\}}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{subof-}
+%    \begin{macrocode}
+\define@key{uml}{subof}{%
+  \def\umlSubof{{~Sub of: #1}\\}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{abstract-}
+% The "abstract" named option also affects the graphical name in "\umlStretchbox".
+%    \begin{macrocode}
+\define@key{uml}{abstract}[]{%
+  \def\umlAbstract{\emph}}%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{importedFrom-}
+%    \begin{macrocode}
+\define@key{uml}{importedFrom}{%
+  \def\umlImportedFrom{{~From: #1}\\}%
+%    \end{macrocode}
+% \begin{nullnullni}
+%    \begin{macrocode}
+  \umlColorsImport%
+%    \end{macrocode}
+% \end{nullnullni}
+%    \begin{macrocode}
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{comment-}
+%    \begin{macrocode}
+\define@key{uml}{comment}{%
+  \def\umlComment{{~#1}\\}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlElement}
+% The command itself just calls "\umlDrawable".
+%    \begin{macrocode}
+\newcommand\umlElement[2][]{%
+  \umlElementNull%
+  {\umlDrawable[kind=Element,#1]{%
+      \umlColorsAdjust%
+      #2}}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Box}
+% \label{sec:impBox}
+
+\iffalse ********************************************************************\fi
+% \subsection{Positioning}
+% \label{sec:implementationClassPositions}
+
+
+% One of the main responsibilities of "\umlBox" is to place the box in
+% the right position.  In order to achieve this, "\umlBox" uses two
+% macros, "\umlBoxPosCommand" and "\umlBoxPosDeltaCommand".  Each of
+% these, in turn, uses other macros, which ultimately are set to default
+% values.  How this happends is indicated in figure \ref{fig:impBoxPos}.
+
+% The user can modify this tree by the named options "pos", "posX",
+% "posY", "posDelta", "posDeltaX", "posDeltaY" and "refpoint".
+
+
+% \newcommand\myBox[4]{
+%    \rput(#1,#2){\rnode{#3}{
+%         \begin{tabular}{c}#4\end{tabular}}}}
+%   \begin{figure}[htbp]
+%    \begin{center}
+%      \rule{0mm}{7cm}% Why does not \pspicture make the space itself?
+%      \hspace*{-1cm}
+%     \pspicture(-3cm,-5cm)(8cm,1.5cm)
+%       \begin{small}
+%       \myBox{2.5cm}{1.5cm}{Box}{"\bslash{}umlBox"}
+%       \myBox{0cm}{0cm}{Command}{"\bslash{}umlBoxPosCommand"}
+%       \myBox{-2cm}{-2cm}{Refpoint}{"\bslash{}umlRefpoint"\\"refpoint="}
+%       \myBox{-2cm}{-4cm}{RefpointValue}{"bl"}
+%       \myBox{2cm}{-2cm}{Pos}{"\bslash{}umlPos"\\"pos="}
+%       \myBox{1cm}{-4cm}{XPos}{"\bslash{}umlPosX"\\"posX="}
+%       \myBox{3cm}{-4cm}{YPos}{"\bslash{}umlPosY"\\"posY="}
+%       \myBox{1cm}{-5cm}{XPosValue}{"(0,"{\gray "0"}")"}
+%       \myBox{3cm}{-5cm}{YPosValue}{"("{\gray "0"}",0)"}
+%       \ncline{<-}{Command}{Box}
+%       \ncline{<-}{Refpoint}{Command}
+%       \ncline{<-}{RefpointValue}{Refpoint}
+%       \ncline{<-}{Pos}{Command}
+%       \ncline{<-}{XPos}{Pos}
+%       \ncline{<-}{YPos}{Pos}
+%       \ncline{<-}{YPosValue}{YPos}
+%       \ncline{<-}{XPosValue}{XPos}
+%       \myBox{7cm}{0cm}{DCommand}{"\bslash{}umlBoxPosDeltaCommand"}
+%       \myBox{7cm}{-2cm}{PosDelta}{"\bslash{}umlPosDelta"\\"posDelta="}
+%       \myBox{6cm}{-4cm}{XPosDelta}{"\bslash{}umlPosDeltaX"\\"posDeltaX="}
+%       \myBox{8cm}{-4cm}{YPosDelta}{"\bslash{}umlPosDeltaY"\\"posDeltaY="}
+%       \myBox{6cm}{-5cm}{XPosDeltaValue}{"(0,"{\gray "0"}")"}
+%       \myBox{8cm}{-5cm}{YPosDeltaValue}{"("{\gray "0"}",0)"}
+%       \ncline{<-}{DCommand}{Box}
+%       \ncline{<-}{Refpoint}{DCommand}
+%       \ncline{<-}{RefpointValue}{Refpoint}
+%       \ncline{<-}{PosDelta}{DCommand}
+%       \ncline{<-}{XPosDelta}{PosDelta}
+%       \ncline{<-}{YPosDelta}{PosDelta}
+%       \ncline{<-}{YPosDeltaValue}{YPosDelta}
+%       \ncline{<-}{XPosDeltaValue}{XPosDelta}
+%       \end{small}
+%       \endpspicture
+%       \caption{Positioning of boxes.  The arrows here means
+%                ``calls''.  The user can affects this tree by 
+%                several named options.}
+%       \label{fig:impBoxPos}
+%     \end{center}
+%   \end{figure}
+
+% \begin{macro}{\umlBoxNullPositions}
+% First, the variables are set to their null values.  This command is
+% called from "\umlBox" via "\umlBoxNull".
+
+%    \begin{macrocode}
+\def\umlBoxNullPositions{%
+  \def\umlPosCommand{%
+    \rput[\umlRefpoint](\umlPos)}%
+  \def\umlPos{\umlPosX|\umlPosY}%
+  \def\umlPosX{0,0}%
+  \def\umlPosY{0,0}%
+  \def\umlPosDeltaCommand{%
+    \rput[\umlRefpoint](\umlPosDelta)}%
+  \def\umlPosDelta{\umlPosDeltaX|\umlPosDeltaY}%
+  \def\umlPosDeltaX{0,0}%
+  \def\umlPosDeltaY{0,0}%
+  \def\umlRefpoint{bl}%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{pos-}
+% Note that all the named options starting with "pos"
+% takes legal values as arguments.  You
+% must write "posX={1em,0}" even if he zero is ignored.
+% \label{pos}
+%
+%    \begin{macrocode}
+\define@key{uml}{pos}[0,0]{%
+  \def\umlPos{#1}}
+\define@key{uml}{posX}[0,0]{%
+  \def\umlPosX{#1}}
+\define@key{uml}{posY}[0,0]{%
+  \def\umlPosY{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{posDelta-}
+% The reference point of the box is placed at $pos + posDelta$.
+%    \begin{macrocode}
+\define@key{uml}{posDelta}[0,0]{%
+  \def\umlPosDelta{#1}}
+\define@key{uml}{posDeltaX}[0,0]{%
+  \def\umlPosDeltaX{#1}}
+\define@key{uml}{posDeltaY}[0,0]{%
+  \def\umlPosDeltaY{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{refpoint-}
+% Legal values are \emph{reference points} (sec.\ \ref{sec:useReference})
+%    \begin{macrocode}
+\define@key{uml}{refpoint}{%
+  \def\umlRefpoint{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+% \subsection{Boxes in text}
+
+
+% \begin{macro}{\umlBoxNullBoxes}
+% Normally, a box is an empty hbox.  This can be changed using 
+% the named option "box=".  It takes no values (i.e.\
+% possible values are ignored).  It makes the box taking
+% the natural size of its contents.
+%    \begin{macrocode}
+\def\umlBoxNullBoxes{%
+%    \end{macrocode}
+% This is how the box is made a zero size hbox then the "box=" named
+% option are not in effect.
+%    \begin{macrocode}
+  \def\umlBoxH{\hbox to 0cm}%
+  \def\umlBoxV{\smash}%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{box-}
+% This gives the box its natural size.
+%    \begin{macrocode}
+\define@key{uml}{box}{%
+  \def\umlBoxH{}% no \hbox to 0cm
+  \def\umlBoxV{}% no \smash anymore
+  \def\umlPosCommand{}% no \rput... anymore
+  \def\umlPosDeltaCommand{}}% Ditto
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+% \subsection{The visual appeareance}
+
+
+% \begin{macro}{\umlBoxNullVisual}
+%    \begin{macrocode}
+\def\umlBoxNullVisual{%
+  \def\umlGrayness{1}%
+  \def\umlBorder{0mm}%
+  \def\umlInnerBorder{0mm}%
+  \def\umlOuterBorder{0mm}%
+  \def\umlFillcolorCommand{umlFillcolor}%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{grayness-}
+% The grayness of the background in the box.  
+% Legal values are real numbers between 0 (black) and 1 (white).
+% Default without named option is 1.  Default with named option
+% is 0.85.
+%    \begin{macrocode}
+\define@key{uml}{grayness}[.85]{%
+  \newgray{umlFillcolor}{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{nullnullni}
+% \begin{macro}{fillcolorCommand-}
+% "\umlFillcolorCommand" returns the name of the current fill color.
+%    \begin{macrocode}
+\define@key{uml}{fillcolorCommand}[umlFillcolor]{%
+  \def\umlFillcolorCommand{#1}}
+%    \end{macrocode}
+% \end{macro}
+% \end{nullnullni}
+
+
+% \begin{macro}{border-}
+% The thickness of the outer border.  Default without named option is
+% 0~mm, with 0.4~pt.  Legal values are lengths.
+%    \begin{macrocode}
+\define@key{uml}{border}[0.4pt]{%
+  \gdef\umlBorder{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{outerBorder-}
+% The margin around the border.  
+% Default is "\umlhsep".
+%    \begin{macrocode}
+\define@key{uml}{outerBorder}[1pt]{%
+  \def\umlOuterBorder{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{innerBorder-}
+% The space left between the edge of the box and its contents.
+% Default is "\umlhsep".
+%    \begin{macrocode}
+\define@key{uml}{innerBorder}[\umlhsep]{%
+  \def\umlInnerBorder{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+% \subsection{Size}
+
+% \begin{macro}{\umlBoxNullSize}
+% The minimum size of the box (or rather, the space left for the contents).
+% Different boxes (i.e., "\umlStretchBox" and "\umlDiagram" use
+% different algorithms for sizeing the box.
+%    \begin{macrocode}
+\def\umlBoxNullSize{%
+%    \end{macrocode}
+%    \begin{macrocode}
+  \def\umlSizeX{5mm}%
+  \def\umlSizeY{7mm}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{size-}
+% Minimum values, used mostly by "\umlDiagram".  
+% Legal values are lengths.
+%    \begin{macrocode}
+\define@key{uml}{sizeX}{%
+  \def\umlSizeX{#1}}
+\define@key{uml}{sizeY}{%
+  \def\umlSizeY{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+% \subsection{Holding together all the named options}
+
+% \begin{macro}{\umlBoxNull}
+% Just to invoke the other macros.
+%    \begin{macrocode}
+\def\umlBoxNull{%
+  \umlBoxNullPositions%
+  \umlBoxNullBoxes%
+  \umlBoxNullVisual%
+  \umlBoxNullSize%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{The command}
+% \label{sec:impBoxCommand}
+
+% \begin{macro}{\umlBox}
+% A box is a rectangle with position and size.
+% "\umlBox" takes two arguments: The named options and the contents.
+%    \begin{macrocode}
+\newcommand\umlBox[2][]{\leavevmode%
+%    \end{macrocode}
+% The variables are set to default
+%    \begin{macrocode}
+  \umlBoxNull%
+%    \end{macrocode}
+% and "\umlElement" is invoked, with new contents.
+%    \begin{macrocode}
+  \umlElement[kind=Box,#1]{%
+%    \end{macrocode}
+% Determines how large hbox \LaTeX{} should think this is
+%    \begin{macrocode}
+    \umlBoxH{% \hbox to 0cm or nothing
+      \umlBoxV{% \smash or nothing
+%    \end{macrocode}
+% rputs the stuff the right place
+%    \begin{macrocode}
+        \umlPosCommand{%
+          \umlPosDeltaCommand{%
+%    \end{macrocode}
+% the box is a node
+%    \begin{macrocode}
+          \rnode{\umlReference}{%
+%    \end{macrocode}
+% with outer margin
+%    \begin{macrocode}
+              \setlength{\fboxrule}{0mm}%
+              \setlength{\fboxsep}{\umlOuterBorder}%
+              \fbox{%
+%    \end{macrocode}
+% border
+%    \begin{macrocode}
+%                 \setlength{\fboxrule}{\umlBorder}%
+%                 \setlength{\fboxsep}{0mm}%
+%                 \fbox{%
+%    \end{macrocode}
+% and some color and inner margin
+%    \begin{macrocode}
+                \psframebox[framesep=\umlInnerBorder,
+                    linewidth=\umlBorder,
+                    fillcolor=\umlFillcolorCommand, fillstyle=solid]{%
+%    \end{macrocode}
+% around the contents.
+%    \begin{macrocode}
+                    #2}%
+%                  }%
+                }% 
+              }%
+            }%
+          }%
+        }%
+      }%
+    }%
+  }
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Diagram}
+% \label{sec:impDiagram}
+
+% A diagram determines its size before typesetting the contents.  This in
+% order to be able to place the contents relative to the borders of the diagram.
+
+% \begin{macro}{\umlDiagramNull}
+% The macro "\umlDiagramNull" sets the variables to their
+% default variables.
+%    \begin{macrocode}
+\newcommand\umlDiagramNull{%
+  \def\umlGrid{}%
+  }
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{grid-}
+%    \begin{macrocode}
+\define@key{uml}{grid}[1]{%
+  \message{named option grid is deprecated and of no use}}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+% \subsection{The command}
+% \label{sec:impDiagramCommand}
+
+% \begin{macro}{\umlDiagram}
+%    \begin{macrocode}
+\newcommand\umlDiagram[2][]{%
+%    \end{macrocode}
+% First, the variables are set to their default values.
+%    \begin{macrocode}
+  \umlDiagramNull%
+%    \end{macrocode}
+% For some reason, "\umlDiagram" without the "box=" named option gives
+% an error.  I do not understand why, but it appears to be an illegal
+% paragraph break at "\umlBoxV" in "\umlBox".
+%    \begin{macrocode}
+  \umlBox[kind=Diagram, fillcolorCommand=umlDiagramFillcolor,
+          box=,#1]{%
+%    \end{macrocode}
+% \index{grayness-!default in Diagram}
+% \#2 is the contents.  The rules are to make sure the diagram is big
+% enough.  The rules are normally invisible, because "\umlDebugLength"
+% normally is 0~pt.
+
+% However, the rules must be evaluated before the contents,
+% so possible "\umlBox"es does not inflict on "\umlSizeX"
+% and "\umlSizeY".  Thus, the "\expandafter", which assert that "#2"
+% is typeset before, but expanded after, the rules.
+%    \begin{macrocode}
+      \expandafter{#2}{%
+        \rule{\umlDebugLength}{\umlSizeY}%
+        \rule{\umlSizeX}{\umlDebugLength}}%
+    }%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Stretchbox}
+% \label{sec:impStretchbox}
+%
+% "\umlStretchbox" is the first command to take three arguments: The
+% optional named options, a name and some contents.
+
+% \begin{macro}{\umlStretchboxNull}
+%    \begin{macrocode}
+\newcommand\umlStretchboxNull{%
+  \def\umlGraphicalName{StrechboxDefault{\umlAbstract\umlName}\\}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlGraphicalName}
+% "\umlGraphicalName" is a name, possibly with some graphical fuzz, to
+% be printed in the box.
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+% \begin{macro}{\umlStretchbox}
+% The macro itself just handles the name.  The reference is by default
+% set to the name.
+
+% A stretchbox first typesets its contents, 
+% and then take size depending on the contents.  
+% This as opposed to a diagram, which determine the size first.
+%    \begin{macrocode}
+\newcommand\umlStretchbox[3][]{%
+  \umlStretchboxNull%
+  \umlBox[kind=Stretchbox, name={#2}, ref={#2}, #1]{%
+    \umlIndex{\umlName}{\umlKind}%
+    \rnode{\umlReference}{#3}%
+    }%
+  }%
+%    \end{macrocode}
+% \index{reference-!default in Stretchbox}
+% \end{macro}
+
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Package}
+% \label{sec:impPackage}
+
+
+% \begin{macro}{\umlPackage}
+%    \begin{macrocode}
+\newcommand\umlPackage[3][]{%
+  % Null unneccessary
+  \def\umlName{#1}%
+  \begin{tabular}{@{}l@{}}%
+%    \end{macrocode}
+% \index{border-!default in Package}
+% The upper rectangle.  It may seem natural to make this a
+% "\umlStretchbox", but then we risk variable interference between the
+% two instances of "\umlStretchbox".  It does not work in practice either.
+%    \begin{macrocode}
+    \umlStretchbox[kind=Package, border=0.4pt,#1]{#2}{%
+      \def\umlGraphicalName{%
+        {\umlhspace\hfill\relsize{2}\textbf{\umlName}%
+          \rule{0mm}{2.3ex}\hfill\umlhspace}\\%
+        }%
+      \rnode{small\umlReference}{%
+        \begin{tabular}{@{}l@{}}%
+          \umlStereotype%
+          \umlGraphicalName%
+          \umlImportedFrom%
+          \umlComment%
+          \umlSubof%
+        \end{tabular}}}%
+%    \end{macrocode}
+% There is no need for double width border between the parts
+% of the package, so we step back a bit.
+%    \begin{macrocode}
+    \cr\noalign{\vskip -\umlBorder}%
+%    \end{macrocode}
+% The lower rectangle
+%    \begin{macrocode}
+    \umlStretchbox[kind=Package,border=0.4pt,#1]{#2}{%
+      \rnode{big\umlReference}{%
+        \begin{tabular}{@{}l@{}}%
+%    \end{macrocode}
+% Start the boxes in the lower rectangle
+%    \begin{macrocode}
+%    \end{macrocode}
+% Insert the contents
+%    \begin{macrocode}
+          #3%
+          \cr%
+%    \end{macrocode}
+% Here (in the "\cr"?), there is some vertical space.  I still have
+% some work to do to understand the vertical lengths in tabular.
+%    \begin{macrocode}
+        \end{tabular}}}% End of lower rectangle
+  \end{tabular}%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Classifier}
+% \label{sec:impClassifier}
+%
+% A classifier is a stretchbox which contains compartments.  
+% A classifier can be instanciated, or be an instance.
+
+\iffalse ********************************************************************\fi
+
+% \begin{macro}{\umlClassifierNull}
+%    \begin{macrocode}
+\newcommand\umlClassifierNull{%
+  \def\umlObject{}%
+  \umlClassifierEmptytrue%
+}
+\newif\ifumlClassifierEmpty%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{object-}
+% This makes the classifier be an instance (object).
+% Graphically, this is shown by an line under the classifier name.
+% Note that instances cannot be abstract.
+%    \begin{macrocode}
+\define@key{uml}{object}{%
+  \def\umlObject{\underbar}}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{suppress-}
+% Makes "\umlSuppressionOn" active in the classifier
+% (empty compartments are not shown).  For implementation: see
+% \vpageref{suppress}.
+% \end{macro}
+
+
+% \begin{macro}{instance-}
+% "instance" is provided as an equivalent to "object".
+%    \begin{macrocode}
+\define@key{uml}{instance}{%
+  \def\umlObject{\underbar}}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+% \begin{macro}{\umlClassifier}
+% "\umlClassifier" is implemented as a table inside a "\umlStretchbox".
+% The contents must be able to be inside a table.
+% The contents is typically "\umlCompartment"s.
+%    \begin{macrocode}
+\newcommand\umlClassifier[3][]{%
+%    \end{macrocode}
+% Variables set to default values
+%    \begin{macrocode}
+  \umlClassifierNull%
+%    \end{macrocode}
+% Names fixed.  Uses "\umlAbstract".
+%    \begin{macrocode}
+  \def\umlName{#2}%
+%    \end{macrocode}
+% Grayness and border are given default values,
+% possible to override.
+%    \begin{macrocode}
+  \umlStretchbox[kind=Classifier,border=.4pt,
+    fillcolorCommand=umlClassifierFillcolor,#1]{#2}{%
+%    \end{macrocode}
+%\index{grayness-!default in Classifier}\index{border-!default in Classifier}
+% "\umlGraphicalName" must be defined here not to be overridden by
+% "\umlStretchboxNull".
+% Note the invisible rule to make some space.
+%    \begin{macrocode}
+      \def\umlGraphicalName{%
+        \rule{0mm}{2.8ex}%
+        \umlhspace\larger\hfill\textbf{%
+          \umlAbstract{\umlObject{\umlName}}}\hfill\umlhspace\\}%
+      \begin{tabular}[tl]{@{}l@{}}%
+        \umlStereotype%
+        \umlGraphicalName%
+        \umlImportedFrom%
+        \umlComment%
+        \umlSubof%
+        #3%
+%        \ifhmode hmode\else not\fi
+%        \\\noalign{\vskip -15pt}%
+        \ifumlClassifierEmpty\\\noalign{\vskip -2.5ex}\fi
+      \end{tabular}%
+    }%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Class}
+% \label{sec:impClass}
+
+\iffalse ********************************************************************\fi
+% \begin{macro}{\umlClass}
+% A class is a classifier with the three usual compartments.
+%
+% There is not much work left for "\umlClass":
+%    \begin{macrocode}
+\newcommand\umlClass[4][]{%
+%    \end{macrocode}
+% A "\umlClassNull" is unneccessary, as there is no variables here.
+%    \begin{macrocode}
+  \umlClassifier[kind=Class,#1]{#2}{%
+    \umlCompartment[name=attributes]{#3}%
+    \umlCompartment[name=operations]{#4}%
+    }%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Schema}
+% \label{sec:impSchema}
+
+% \begin{macro}{\umlSchema}
+% A schema is a classifier with some more compartments.
+%    \begin{macrocode}
+\newcommand\umlSchema[7][]{%
+%    \end{macrocode}
+% "Null" unneccessary here too.
+%    \begin{macrocode}
+  \umlClassifier[kind=Schema,#1]{#2}{%
+    \umlCompartment[name=attributes]{#3}% Attributes
+    \umlCompartment[name=operations]{#4}% Methods
+    \umlCompartment[name=arguments]{#5}% Arguments
+    \umlCompartment[name=constraints]{#6}% Constraints
+    \umlCompartment[name=structure]{#7}% Structure
+    }%
+  }%
+%    \end{macrocode}
+
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Compartment}
+% \label{sec:impCompartment}
+
+% Classifiers (e.g., classes) are drawn as compartments (boxes) below each other.  
+
+% "\umlCompartment" takes two arguments: a optional list of named
+% options, and the contents.
+
+%\begin{nullnullni}
+% \begin{macro}{\umlCompartmentNull}
+%    \begin{macrocode}
+\newcommand\umlCompartmentNull{%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+% \begin{macro}{\ifisnull}
+% A handy command stolen from [AdvancedTeX, p.126].
+% If first argument is empty, execute the second; else execute the third.
+%    \begin{macrocode}
+\def\ifisnull#1#2#3{\def\inner{#1}%
+  \ifx\inner\empty%
+  #2\else{}#3%
+  \fi}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{last-}
+%    \begin{macrocode}
+\define@key{uml}{last}[]{%
+  \message{The named option last= is deprecated and of no use.}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \subsection{Suppression}
+% \label{suppress}
+
+%\SpecialMainIndex{\umlCompartmentSuppresstrue}
+%\SpecialMainIndex{\umlCompartmentSuppressfalse}
+% \begin{macro}{\ifumlCompartmentSuppress}
+% The boolean variable "umlCompartmentSuppress" affects whether empty
+% compartments should be suppressed or not.
+
+% You can set the variable (saying "\umlCompartmentSuppresstrue" or
+% "\umlCompartmentSuppressfalse") whenever you like.
+%    \begin{macrocode}
+\newif\ifumlCompartmentSuppress
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{suppress-}
+% You can also set it for a construct (e.g., one compartment or an
+% entire classifier) with the named option suppress.  When used, it is
+% default true.
+%    \begin{macrocode}
+\define@key{uml}{suppress}[true]{%
+  \def\arg{#1}%
+  \ifx\arg\umlTrueVariable\umlCompartmentSuppresstrue%
+  \else\umlCompartmentSuppressfalse%
+  \fi%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \subsection{Compartment names}
+
+%\SpecialMainIndex{\umlCompartmentNamesShowtrue}
+%\SpecialMainIndex{\umlCompartmentNamesShowfalse}
+% \begin{macro}{\ifumlCompartmentNamesShow}
+% The boolean variable "umlCompartmentNamesShow" affects whether
+% compartment names should be shown or not.
+
+% Compartment names are shown top centered in a distinct font in the compartment.
+
+% You can set the variable (saying "\umlCompartmentNamesShowtrue" or
+% "\umlCompartmentNamesShowfalse") when you like.
+%    \begin{macrocode}
+\newif\ifumlCompartmentNamesShow
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{showname-}
+% You may also use the named option "showname" for one compartment or
+% another construct.
+%    \begin{macrocode}
+\define@key{uml}{showname}[true]{%
+  \def\arg{#1}%
+  \ifx\arg\umlTrueVariable\umlCompartmentNamesShowtrue%
+  \else\umlCompartmentNamesShowfalse%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \subsection{The implementation}
+
+% \end{nullnullni}
+%\begin{nullnullni}
+% The implementation of "\umlCompartment" caused me some trouble.  This
+% is partly due to the many different possibilities, partly due to the
+% funny scope rules in \LaTeX{} tables (in "\halign").
+
+% In tables, it seems like every line is a scope.  A variable modified
+% with "\def" in one line gets its old value when passing a line break.
+
+% Also, we cannot place the line break inside the body of an if
+% sentence.
+
+% This is very, very odd, took me some time to detect, and destroys much
+% beauty.
+
+% In short: \TeX{} is a \english{scanalous} bad programming language,
+% but you can make absolutely everyting in it (including object oriented
+% programs :-)
+
+% A compartment composes \english{?} classifiers, and is itself composed
+% of compartment lines.  Every compartment line ends with a line break.
+% Every compartment starts with a "\hline" and ends with a line break.
+
+%\end{nullnullni}
+% \begin{macro}{\umlCompartmentCommon}
+%\begin{nullnullni}
+%     \begin{macrocode}
+\newcommand\umlCompartmentCommon[2][]{%
+%    \end{macrocode}
+% Even if every compartment should be preceded by a line break,
+% we assert this is really true.
+
+% Of couse, the following line is an ad hoc hack, but I have no 
+% better solution right now.
+%    \begin{macrocode}
+  \ifhmode \vspace*{-2.5ex}\\\fi%
+%    \end{macrocode}
+% The actual line between this and the following compartment.
+%    \begin{macrocode}
+  \hline%
+%    \end{macrocode}
+% The compartment name (if it should be shown).
+% I miss an and operator in \TeX.
+%    \begin{macrocode}
+  \ifumlCompartmentNamesShow%
+    \ifx\umlName\umlNameDefault\else%
+      \omit\hfil\textbf{\umlName}\hfil\\%
+    \fi%
+  \fi%
+%    \end{macrocode}
+% This is really not neccesary, as it is defined in "\umlCompartment".
+%    \begin{macrocode}
+  \def\umlCompartmentContents{#2}%
+%    \end{macrocode}
+% If the compartment is empty (but not suppressed),
+% It looks better to make it shorter.
+% (But why isn't this like "\hline\hline" in the first place?
+%    \begin{macrocode}
+  \ifx\umlCompartmentContents\empty%
+    \vspace*{-1.5ex}%
+  \else% There is contents
+    \umlClassifierEmptyfalse%
+    #2%
+  \fi%
+%    \end{macrocode}
+% Assuring we end with a line break.
+%    \begin{macrocode}
+  \ifhmode\\\fi%
+  }
+%    \end{macrocode}
+%\end{nullnullni}
+% \end{macro}
+% \begin{macro}{\umlCompartment}
+%\begin{nullnullni}
+% "\umlCompartment" itself mainly calls "\umlCompartmentCommon".
+%    \begin{macrocode}
+\newcommand\umlCompartment[2][]{%
+  \umlCompartmentNull%
+  \def\umlCompartmentContents{#2}%
+  \umlDrawable[kind=Compartment,#1]{%
+    \umlColorsAdjust%
+    \ifumlCompartmentSuppress%
+      \ifx\umlCompartmentContents\empty\else%
+        \umlCompartmentCommon[#1]{#2}%
+      \fi%
+    \else%
+      \umlClassifierEmptyfalse%
+      \umlCompartmentCommon[#1]{#2}%
+    \fi}}%
+%    \end{macrocode}
+% \end{nullnullni}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Compartmentline}
+% \label{sec:impCompartmentline}
+
+% A compartmentline is a line of text designed to be in a compartment.
+% Such a line should have some room before and after it, in order not
+% to touch the compartment border.
+
+% \begin{macro}{\umlhspace}
+% This make some horizontal space.
+%    \begin{macrocode}
+\def\umlhsep{.5ex}
+\newcommand\umlhspace{\hspace*{\umlhsep}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlCompartmentline}
+% This should be straight-forward\dots
+%    \begin{macrocode}
+\newcommand\umlCompartmentline[2][]{%
+  \umlDrawable[kind=Compartmentline,#1]{%
+    {\umlColorsAdjust%
+    \umlhspace{}#2{}\umlhspace}\\%
+    }}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlCompartmentText}
+% Provided for backward compatibility.
+%    \begin{macrocode}
+\newcommand\umlCompartmentText[1]{%
+  \umlhspace#1\umlhspace}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Feature}
+% \label{sec:impFeature}
+%
+% A feature is something attached  to a classifier.
+
+% \begin{macro}{\umlVisibilityLength}
+% This is the hspace in front of the attribute name, where the
+% visibility is placed.
+%    \begin{macrocode}
+\def\umlVisibilityLength{2ex}
+%    \end{macrocode}
+%\end{macro}
+
+% \begin{macro}{\umlFeatureNull}
+%    \begin{macrocode}
+\newcommand\umlFeatureNull{%
+  \def\umlVisibility{}%
+  \def\umlType{}%
+  \def\umlPropertyString{}%
+  \def\umlInitialValue{}%
+  \def\umlName{FeatureNameDefault}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{visibility-}
+%    \begin{macrocode}
+\define@key{uml}{visibility}[+]{%
+  \def\umlVisibility{\hbox to \umlVisibilityLength{#1\hfil}}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlTilde}
+% Prints a tilde.
+%    \begin{macrocode}
+\newcommand\umlTilde{\ensuremath{\sim}}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{propertyString-}
+%    \begin{macrocode}
+\define@key{uml}{propertyString}{%
+  \def\umlPropertyString{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+% \begin{macro}{type-}
+% The data type returned from the feature.
+%    \begin{macrocode}
+\define@key{uml}{type}{%
+  \def\umlType{: #1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{initialValue-}
+%    \begin{macrocode}
+\define@key{uml}{initialValue}{%
+  \def\umlInitialValue{= #1}}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+% \begin{macro}{\umlFeature}
+% "\umlFeature" is implemented as a table inside a "\umlStretchbox".
+% The contents must be able to be inside a table.
+% The contents is typically "\umlCompartment"s.
+%    \begin{macrocode}
+\newcommand\umlFeature[2][]{%
+  \umlFeatureNull%
+  \umlCompartmentline[kind=Feature, #1]{%
+    \umlIndex{\umlName}{\umlKind}%
+    #2}%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Attribute}
+% \label{sec:impAttribute}
+
+
+% \begin{macro}{\umlAttributeNull}
+%    \begin{macrocode}
+\def\umlAttributeNull{%
+  \def\umlMultiplicity{}%
+  \def\umlOrdering{}%
+  \def\umlMultiplicityOrdering{}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{default-}
+% This is provided as an alias to "initialValue" for the sake
+% of backward compatibility.  Use is deprecated.
+%    \begin{macrocode}
+\define@key{uml}{default}{%
+  \def\umlInitialValue{ = #1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{multiplicity-}
+% Examples of legal values are "{[1]}", "{[1..*]}" and "{[1..3,5..]}".
+%    \begin{macrocode}
+\define@key{uml}{multiplicity}{%
+  \def\umlMultiplicity{#1}%
+  \def\umlMultiplicityOrdering{[\umlMultiplicity{} \umlOrdering]}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{ordering-}
+% Legal values are "ordered" and "unordered".  
+% Absent value imply unordered.  Default value with named option is ordered.
+%    \begin{macrocode}
+\define@key{uml}{ordering}[ordered]{%
+  \def\umlOrdering{#1}%
+  \def\umlMultiplicityOrdering{[\umlMultiplicity{} \umlOrdering]}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlAttribute}
+%    \begin{macrocode}
+\newcommand\umlAttribute[2][]{%
+  \umlAttributeNull%
+  \umlFeature[kind=Attribute, name={#2}, #1]{%
+    \umlVisibility #2 \umlType \umlMultiplicityOrdering
+    \umlInitialValue \umlPropertyString}}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Method}
+% \label{sec:impMethod}
+
+
+% \begin{macro}{\umlMethodNull}
+%    \begin{macrocode}
+\newcommand\umlMethodNull{%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{returntype-}
+% Alias to "type=".
+%    \begin{macrocode}
+\define@key{uml}{returntype}{%
+  \def\umlType{: #1}}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{\umlMethod}
+%    \begin{macrocode}
+\newcommand\umlMethod[3][]{%
+  \umlMethodNull%
+  \def\umlName{#2}%
+  \umlFeature[kind=Method, name={#2}, #1]{%
+    \umlVisibility #2(#3) \umlType \umlPropertyString}} 
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Argument}
+% \label{sec:impArgument}
+
+
+% \begin{macro}{\umlArgumentNull}
+%    \begin{macrocode}
+\newcommand\umlArgumentNull{%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+% \begin{macro}{\umlArgument}
+%    \begin{macrocode}
+\newcommand\umlArgument[2][]{%
+  \umlArgumentNull%
+  \def\umlName{#2}%
+  \umlFeature[kind=Argument, name={#2}, #1]{%
+    \emph{#2} \umlType \umlInitialValue}}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Relation}
+% \label{sec:impRelation}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Node connection points}
+
+
+% \begin{macro}{\umlRelationNullConnection}
+%    \begin{macrocode}
+\newcommand\umlRelationNullConnection{%
+  \def\umlNodesepA{0pt}%
+  \def\umlNodesepB{0pt}%
+  \def\umlOffsetA{0pt}%
+  \def\umlOffsetB{0pt}%
+  \def\umlAngleA{}%
+  \def\umlAngleB{}%
+}%
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{angle-}
+% This is the angle at which the connector hits the node
+%    \begin{macrocode}
+\define@key{uml}{angleA}{%
+  \def\umlAngleA{#1}%
+}
+\define@key{uml}{angleB}{%
+  \def\umlAngleB{#1}%
+}
+\define@key{uml}{angle}{%
+  \def\umlAngleA{#1}%
+  \def\umlAngleB{#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{nodesep-}
+% The distance from the node to the connector end.
+% Legal values are lengths.
+%    \begin{macrocode}
+\define@key{uml}{nodesepA}{%
+  \def\umlNodesepA{#1}%
+}
+\define@key{uml}{nodesepB}{%
+  \def\umlNodesepB{#1}%
+}
+\define@key{uml}{nodesep}{%
+  \def\umlNodesepA{#1}%
+  \def\umlNodesepB{#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{offset-}
+% After the connection point is calculated, it is shift right (assumed
+% direction onto node) by this value.  Legal values are lengths.
+%    \begin{macrocode}
+\define@key{uml}{offsetA}{%
+  \def\umlOffsetA{#1}%
+}
+\define@key{uml}{offsetB}{%
+  \def\umlOffsetB{#1}%
+}
+\define@key{uml}{offset}{%
+  \def\umlOffsetA{#1}%
+  \def\umlOffsetB{#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Arm geometry}
+
+
+% \begin{macro}{\umlRelationNullArmGeometry}
+%    \begin{macrocode}
+\newcommand\umlRelationNullArmGeometry{%
+  \pssetlength\umlArmA{0pt}%
+  \pssetlength\umlArmB{0pt}%
+  \def\umlArmAngleA{0}%
+  \def\umlArmAngleB{0}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{armA-}
+% This is the lengths of the arms.
+%    \begin{macrocode}
+\newlength\umlArmA
+\newlength\umlArmB
+\define@key{uml}{armA}{%
+  \pssetlength\umlArmA{#1}}
+\define@key{uml}{armB}{%
+  \pssetlength\umlArmB{#1}}
+\define@key{uml}{arm}{%
+  \pssetlength\umlArmA{#1}%
+  \pssetlength\umlArmB{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{armAngle-}
+% This is the angle of the arm.
+%    \begin{macrocode}
+\define@key{uml}{armAngleA}{%
+  \def\umlArmAngleA{#1}%
+}
+\define@key{uml}{armAngleB}{%
+  \def\umlArmAngleB{#1}%
+}
+\define@key{uml}{armAngle}{%
+  \def\umlArmAngleA{#1}%
+  \def\umlArmAngleB{#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Visual appeareance}
+
+% \begin{macro}{\umlRelationNullVisual}
+%    \begin{macrocode}
+\newcommand\umlRelationNullVisual{%
+  \def\umlLinestyle{solid}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{linestyle-}
+% Legal values are "none", "solid", "hashed" and "dotted".
+%    \begin{macrocode}
+\define@key{uml}{linestyle}{%
+  \def\umlLinestyle{#1}
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{relationColor-}
+% The color of the line.
+%    \begin{macrocode}
+\define@key{uml}{relationColor}[black]{%
+  \psset{linecolor=#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{lineColor-}
+% Alias for "relationColor=".
+%    \begin{macrocode}
+\define@key{uml}{linecolor}{%
+  \psset{linecolor=#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+% \begin{macro}{\umlRelationNull}
+%    \begin{macrocode}
+\newcommand\umlRelationNull{%
+  \umlRelationNullConnection%
+  \umlRelationNullArmGeometry%
+  \umlRelationNullVisual%
+}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{The macro}
+
+% \begin{macro}{\umlRelation}
+% The command itself:
+%    \begin{macrocode}
+\newcommand\umlRelation[4][]{%
+  \umlRelationNull%
+%    \end{macrocode}
+% The default reference is the concatenation of the two references
+%    \begin{macrocode}
+  \umlElement[kind=Relation,ref={#2#3}, #1]{%
+%    \end{macrocode}
+% Putting the "Aa" and "Ba" nodes, default (without "angle=") first
+%    \begin{macrocode}
+  \ncline[linecolor=green, linestyle=\umlDebugLinestyle,
+          offsetA=\umlOffsetA, nodesepA=\umlNodesepA,
+          offsetB=\umlOffsetB, nodesepB=\umlNodesepB]{#2}{#3}%
+  \lput{:R}(0){\pnode{Aa\umlReference}}%
+  \lput{:R}(1){\pnode{Ba\umlReference}}%
+%    \end{macrocode}
+% Then modifying "Aa", if "angleA=" or "angle=" is used
+%    \begin{macrocode}
+  \ifx\umlAngleA\empty \else
+     \ncdiag[linestyle=\umlDebugLinestyle, linecolor=magenta, %
+             angleA=\umlAngleA,
+             offsetA=\umlOffsetA, nodesepA=\umlNodesepA,
+             offsetB=\umlOffsetB, nodesepB=\umlNodesepB
+            ]{#2}{#2}%
+     \lput{:R}(0){\pnode{Aa\umlReference}}\fi%
+%    \end{macrocode}
+% And "Ba".
+%    \begin{macrocode}
+  \ifx\umlAngleB\empty \else
+     \ncdiag[linestyle=\umlDebugLinestyle, linecolor=magenta, %
+             angleA=\umlAngleB,
+             offsetA=\umlOffsetA, nodesepA=\umlNodesepA,
+             offsetB=\umlOffsetB, nodesepB=\umlNodesepB
+            ]{#3}{#3}%
+     \lput{:R}(0){\pnode{Ba\umlReference}}\fi%
+%    \end{macrocode}
+% Now, we can draw the line, from the "Aa" to the "Ba" node.
+%    \begin{macrocode}
+    \ncdiag[linestyle=\umlLinestyle,  linecolor=umlLinecolor,
+            angleA=\umlArmAngleA, angleB=\umlArmAngleB,
+            armA=\umlArmA, armB=\umlArmB
+            ]{%
+              Aa\umlReference}{%
+              Ba\umlReference}%
+%    \end{macrocode}
+% Placing nodes "Ab" and "Bb".
+% If there is no arm A,
+%    \begin{macrocode}
+  \ifdim \umlArmA=0pt \lput{:R}(2){\pnode{Ab\umlReference}}%
+%    \end{macrocode}
+% Else, if there is 
+%    \begin{macrocode}
+  \else \lput{:R}(1){\pnode{Ab\umlReference}} \fi%
+%    \end{macrocode}
+% If there is no arm B,
+%    \begin{macrocode}
+  \ifdim \umlArmB=0pt \lput{:R}(1){\pnode{Bb\umlReference}}%
+%    \end{macrocode}
+% Else, if there is 
+%    \begin{macrocode}
+  \else \lput{:R}(2){\pnode{Bb\umlReference}} \fi%
+%    \end{macrocode}
+% Final nodes
+%    \begin{macrocode}
+   \lput{:R}(1){\pnode{Ac\umlReference}}%
+   \lput{:R}(2){\pnode{Bc\umlReference}}%
+%    \end{macrocode}
+% Other contents
+%    \begin{macrocode}
+   #4}% of \umlElement
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{About the spesific relations}
+
+% The different relations are specialized relations; they typically call
+% "\umlRelation" and "\umlSymbol" with an appropriate symbol.
+
+
+% \label{lengths}
+% \begin{macro}{\umlSymbolHeightDefault}
+% All the symbols are drawn with "0" as the upper border,
+% "-\umlSymbolHeightDefault" as the lower,
+% "-\umlSymbolWidthDefault" as the left and
+% "\umlSymbolWidthDefault" as the right one.  These lengths can
+% be changed by the user.  See, however, section \vref{sec:impInner}.
+%    \begin{macrocode}
+\newlength\umlSymbolHeightDefault
+\setlength\umlSymbolHeightDefault{1em}
+\newlength\umlSymbolWidthDefault
+\setlength\umlSymbolWidthDefault{.5em}
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Association}
+% \label{sec:impAssociation}
+
+% \label{sec:association}
+% \begin{macro}{\umlAssociation}
+% "\umlAssociation" is a relation without any other contents.
+%    \begin{macrocode}
+\newcommand\umlAssociation[3][]{%
+  \umlRelation[kind=Association, #1]{#2}{#3}{}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Subclass (generalization)}
+% \label{sec:impSubclass}
+% \label{sec:impGeneralization}
+
+
+
+
+% \begin{macro}{\umlSubclass}
+% A simple relation with a triangle as an endsymbol.
+%    \begin{macrocode}
+\newcommand\umlSubclass[3][]{%
+  \def\umlEndSymbol{%
+     \pspolygon*[linecolor=white](0,0)%
+       (-\umlSymbolWidthDefault,-\umlSymbolHeightDefault)%
+       (\umlSymbolWidthDefault,-\umlSymbolHeightDefault)%
+     \pspolygon[](0,0)% Why does not dimen=inner work?
+       (-\umlSymbolWidthDefault,-\umlSymbolHeightDefault)%
+       (\umlSymbolWidthDefault,-\umlSymbolHeightDefault)%
+      }%
+%   \def\umlEndSymbol{% Alternative \umlEndSymbol
+%     \pstriangle[dimen=inner](0,-\umlSymbolHeightDefault)%
+%     (\umlSymbolWidthDefault,\umlSymbolHeightDefault)}
+%    \end{macrocode}
+%    \begin{macrocode}
+  \umlRelation[kind=Subclass, #1]{#2}{#3}{%
+    \umlSymbol[fraction=B]{\umlReference}{\umlEndSymbol}}%
+  }
+\def\umlGeneralization{\umlSubclass}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Inner class}
+% \label{sec:impInner}
+% \label{sec:inner}
+
+% The making of this symbol gave some problems.  After experimenting
+% with different interpolations and Bézier curves, I defined it to
+% consist of two clipped wedges.  Each should of course have width $w
+% = $ "\umlWidthDefault" and height 
+% $h = $"\umlHeightDefault".
+% \index{circle}
+%  The radius of the circle is $r$, and $r
+% = v + w$.  This gives figure \vref{fig:innerSymbol}.
+% \begin{figure}[htbp]
+% This figure is drawn with an angle of 60 degrees.
+%   \begin{center}{%
+%     \psset{unit=1.5cm}
+%     \begin{pspicture}(-2,-2)(2,.25)%
+%       \psgrid(0,0)(-2,-2)(1,.25)
+%       \psline(-2,0)(2,0)
+%       \pswedge(0,-.866){1}{120}{180}
+%       \pscircle[](0,-.866){1}
+%       \psarc[linewidth=2.4pt](0,-.866){1}{120}{180}
+%       \psline(-.5,0)(-.5,-.866)
+% The symbols
+%       \psbezier(-1,-.866)(-1,-.933)(-.75,-.933)(-.75,-1)
+%       \psbezier(-.5,-.866)(-.5,-.933)(-.75,-.933)(-.75,-1)
+%       \rput[t](-.75,-1){\rput(0,-1ex){$v$}}
+%       \psbezier(-.5,-.866)(-.5,-.933)(-.25,-.933)(-.25,-1)
+%       \psbezier(-0,-.866)(-0,-.933)(-.25,-.933)(-.25,-1)
+%       \rput[t](-.25,-1){\rput(0,-1ex){$w$}}
+%       \psbezier(0,0)(0.067,0)(0.067,-.433)(0.134,-.433)
+%       \psbezier(0,-.866)(0.067,-.866)(0.067,-.433)(0.134,-.433)
+%       \rput[l](.134,-.433){~$h$}
+%     \end{pspicture}
+%     \hspace{1cm}
+%     \begin{pspicture}(-2,-2)(1,.25)%
+%       \psline(-2,0)(1,0)
+%       \psarc[linewidth=2.4pt](0,-.866){1}{120}{180}
+%       \psarc[linewidth=2.4pt](-1,-.866){1}{0}{60}
+%       \psline[linewidth=2.4pt](-1,-.866)(0,-.866)
+%       \psline[linewidth=2.4pt](-.5,-1.75)(-.5,-.866)
+%     \end{pspicture}
+%     \caption{The inner class symbol}
+%     \label{fig:innerSymbol}}
+%   \end{center}
+% \end{figure}
+
+% \index{Pythagoras}
+% We have $$r = v + w$$ and, from Pythagoras, $$r^2 = h^2 + w^2$$
+% This gives $$r=\frac{h^2}{2v} + \frac{v}{2}$$ and
+% $$w=\frac{h^2}{2v}-\frac{v}{2}$$ and we know where to locate the
+% wedge.
+
+% \index{addition!of lengths}\index{subtraction!of lengths}
+% \index{multiplication!of lengths}\index{division!of lengths}
+% However, while addition and subtraction of lengths is easy in
+% PSTricks (only stepping back and forth), multiplication  and division
+% of lengths is difficult, if not impossible.  I really haven't found a
+% good solution to this problem.
+
+% The not-so-good problem is to define $w$ and $r$ as \TeX{} lengths
+% ("\umlInnerWidthDefault" and
+% "\umlInnerRadiusDefault")
+% and then assign them values manually.  We
+% have to remember, then, that Pythagoras still should work.  
+
+% Page \pageref{lengths} assign the default values $h=1$ em, $v=.5$ em.
+% This gives
+
+% \begin{macro}{\umlInnerWidthDefault}
+% $w=0.75$ em
+%    \begin{macrocode}
+\newlength\umlInnerWidthDefault
+\setlength\umlInnerWidthDefault{0.75em}
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{\umlInnerRadiusDefault}
+%   and $r=1.25$ em.
+%    \begin{macrocode}
+\newlength\umlInnerRadiusDefault
+\setlength\umlInnerRadiusDefault{1.25em}
+%    \end{macrocode}
+% \end{macro}
+
+% If we should implement the symbol by "\umlArc", we had to know some
+% angles.  They would be easy to compute using trigonometry,
+% but that is difficult within \TeX.  Then, we use "\umlCircle" and
+% "\psclip" instead.
+
+% Maybe this could be done easily using raw  postscript?
+
+% \begin{macro}{\umlInner}
+% On some systems, the clipping makes some borders.  
+%    \begin{macrocode}
+\newcommand\umlInner[3][]{%
+  \def\umlEndSymbol{%
+     \pspolygon*[linecolor=white](0,0)%
+       (-\umlSymbolWidthDefault,-\umlSymbolHeightDefault)%
+       (\umlSymbolWidthDefault,-\umlSymbolHeightDefault)%
+    \psclip{%
+      \psframe[linewidth=0pt]%
+        (-\umlSymbolWidthDefault, -\umlSymbolHeightDefault)(0,0)}
+      \pscircle(\umlInnerWidthDefault,-\umlSymbolHeightDefault)%
+        {\umlInnerRadiusDefault}
+    \endpsclip
+    \psclip{%
+      \psframe[linewidth=0pt]%
+        (\umlSymbolWidthDefault, -\umlSymbolHeightDefault)(0,0)}
+      \pscircle(-\umlInnerWidthDefault,-\umlSymbolHeightDefault)%
+        {\umlInnerRadiusDefault}
+    \endpsclip
+    \psline(-\umlSymbolWidthDefault, -\umlSymbolHeightDefault)%
+      (\umlSymbolWidthDefault, -\umlSymbolHeightDefault)}
+  \umlRelation[kind=Inner, #1]{#2}{#3}{%
+    \umlSymbol[fraction=B]{\umlReference}{\umlEndSymbol}
+  }}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Instance}
+% \label{sec:instance}
+% \label{sec:impInstance}
+
+
+% \begin{macro}{\umlInstance}
+% The only new thing about "\umlInstance" is the addition of one named
+% option, the linestyle.
+%    \begin{macrocode}
+\newcommand\umlInstance[3][]{%
+  \def\umlEndSymbol{%
+    \psline(-\umlSymbolWidthDefault, -\umlSymbolHeightDefault)%
+      (0,0)%
+      (\umlSymbolWidthDefault, -\umlSymbolHeightDefault)}%
+  \umlRelation[kind={Instance-of}, linestyle=dashed, #1]{#2}{#3}{%
+    \umlSymbol[fraction=B]{\umlReference}{\umlEndSymbol}}
+  }
+%    \end{macrocode}
+% \index{linestyle-!dashed in Instance}
+% \end{macro}
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Aggregation}
+% \label{sec:aggregation}
+% \label{sec:impAggregation}
+
+% \begin{macro}{\umlAggregation}
+% Endpoint is a diamond.\index{diamond}
+%    \begin{macrocode}
+\newcommand\umlAggregation[3][]{%
+  \def\umlEndSymbol{%
+%    \end{macrocode}
+% Anyone said addition of lengths in PSTricks was difficult?
+%    \begin{macrocode}
+    \rput(0,-\umlSymbolHeightDefault){%
+      \psline*[linecolor=white](-\umlSymbolWidthDefault, 0)%
+        (0,-\umlSymbolHeightDefault)%
+        (\umlSymbolWidthDefault, 0)}
+    \psline*[linecolor=white]%
+      (-\umlSymbolWidthDefault, -\umlSymbolHeightDefault)%
+      (0,0)%
+      (\umlSymbolWidthDefault, -\umlSymbolHeightDefault)
+    \rput(0,-\umlSymbolHeightDefault){%
+      \psline(-\umlSymbolWidthDefault, 0)%
+        (0,-\umlSymbolHeightDefault)%
+        (\umlSymbolWidthDefault, 0)}
+    \psline(-\umlSymbolWidthDefault, -\umlSymbolHeightDefault)%
+      (0,0)%
+      (\umlSymbolWidthDefault,
+      -\umlSymbolHeightDefault)}
+  \umlRelation[kind=Aggregation, #1]{#2}{#3}{%
+    \umlSymbol[fraction=B]{\umlReference}{\umlEndSymbol}}
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Composition}
+% \label{sec:composition}
+% \label{sec:impComposition}
+
+% \begin{macro}{\umlComposition}
+% End symbol is a filled diamond. \index{diamond!filled}\index{filled diamond}
+%    \begin{macrocode}
+\newcommand\umlComposition[3][]{%
+  \def\umlEndSymbol{%
+    \rput(0,-\umlSymbolHeightDefault){%
+      \psline*(-\umlSymbolWidthDefault, 0)%
+        (0,-\umlSymbolHeightDefault)%
+        (\umlSymbolWidthDefault, 0)}
+    \psline*(-\umlSymbolWidthDefault, -\umlSymbolHeightDefault)%
+      (0,0)%
+      (\umlSymbolWidthDefault,
+      -\umlSymbolHeightDefault)}
+  \umlRelation[kind=Composition, #1]{#2}{#3}{%
+    \umlSymbol[fraction=B]{\umlReference}{\umlEndSymbol}}
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Application}
+% \label{sec:application}
+% \label{sec:impApplication}
+
+
+% \begin{macro}{\umlApplication}
+% End symbol is a filled arrow.\index{arrow!endpoint in Application}
+%    \begin{macrocode}
+\newcommand\umlApplication[3][]{%
+  \def\umlEndSymbol{%
+    \pspolygon*(-\umlSymbolWidthDefault, -\umlSymbolHeightDefault)%
+      (0,0)%
+      (\umlSymbolWidthDefault, -\umlSymbolHeightDefault)%
+      (0,-\umlSymbolWidthDefault)}%
+  \umlRelation[kind=Application, #1]{#2}{#3}{%
+    \lput(1.2){\pnode{argument\umlReference}}%
+    \umlSymbol[fraction=B]{\umlReference}{\umlEndSymbol}}
+  }
+%    \end{macrocode}
+% \end{macro}
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{ToRelation}
+% \label{sec:impToRelation}
+
+% \begin{macro}{\umlToRelationNull}
+%    \begin{macrocode}
+\newcommand\umlToRelationNull{%
+  \def\umlPosMeetLine{.5}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{posMeetLine-}
+% Where this relation shall meet the relation.
+%    \begin{macrocode}
+\define@key{uml}{posMeetLine}[.5]{%
+  \def\umlPosMeetLine{#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{\umlAssociationClass}
+% Relation from a relation to a classifier
+%    \begin{macrocode}
+\newcommand\umlToRelation[3][]{%
+  \umlToRelationNull%
+%    \end{macrocode}
+%   We have to process the "posMeetLine" option before the "\lput".
+%   This introduces some overhead, as "\setkeys" is run twice.
+%   However, I expect this to be used relatively few times.
+%    \begin{macrocode}
+  \setkeys{uml}{kind=ToRelation, #1}%
+  \ncline[linecolor=red, linestyle=\umlDebugLinestyle]{Ac#3}{Bc#3}%
+  \lput{:R}(\umlPosMeetLine){\pnode{ToRelation#3}}%
+  \umlRelation[ref={#2#3}, #1]{#2}{ToRelation#3}{}%
+  }
+%    \end{macrocode}
+% \index{reference-!default in ToRelation}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{AssociationClass and AssociationSchema}
+% \label{sec:associationClass}
+% \label{sec:impAssociationClass}
+% \label{sec:impAssociationSchema}
+
+
+% \begin{macro}{\umlAssociationClass}
+% Relation from a relation to a schema symbol.
+%\index{linestyle!dashed in AssociationClass}
+% \index{posMeetLine!AssociationClass}
+%    \begin{macrocode}
+\newcommand\umlAssociationSchema[3][]{%
+  \umlToRelation[kind=AssociationSchema,
+    posMeetLine=.5, linestyle=dashed,#1]{#2}{#3}%
+  }
+\newcommand\umlAssociationClass[3][]{%
+  \umlAssociationSchema[kind=AssociationClass,
+    #1]{#2}{#3}}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{ArgumentRelation}
+% \label{sec:argument}
+% \label{sec:impArgumentRelation}
+
+
+
+% \begin{macro}{\umlArgumentRelation}
+% Relation from an application to an argument.
+%\index{linestyle!dottedin ArgumentRelation}
+% \index{posMeetLine!ArgumentRelation}
+%    \begin{macrocode}
+\newcommand\umlArgumentRelation[3][]{%
+  \umlToRelation[kind=ArgumentRelation,
+    posMeetLine=.2,linestyle=dotted,#1]{#2}{#3}%
+  }
+%    \end{macrocode}
+% \end{macro}
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{AssociationEnd}
+% \label{sec:impAssociationEnd}
+
+% \begin{macro}{\umlAssociationEndNull}
+%    \begin{macrocode}
+\newcommand\umlAssociationEndNull{%
+  \def\umlAEOffset{\umlAEOffsetDefault}%
+  \def\umlAEOffsetDefault{0pt}%
+  \def\umlAEFraction{0}%
+  \def\umlAEFractionAngle{\umlAEFractionAngleDefault}%
+  \def\umlAEFractionAngleDefault{:U}%
+  \def\umlAEAngle{\umlAEAngleDefault}%
+  \def\umlAEAngleDefault{U}%
+  \def\umlAERefpoint{B}%
+  \def\umlAEHeight{\umlAEHeightDefault}%
+  \def\umlAEHeightDefault{0pt}%
+  \def\umlAENoderefClose{Ac}%
+  \def\umlAENoderefFar{Bc}%
+  \def\umlAEType{AssociationEnd}%
+  \def\umlAEKind{AssociationEnd}
+}
+%    \end{macrocode}  
+% \end{macro}
+
+% \begin{macro}{import-}
+%    \begin{macrocode}
+\define@key{umlAE}{import}{%
+  \def\umlAEColor{red}}
+%    \end{macrocode}  
+% \end{macro}
+
+% \begin{macro}{type-}
+%    \begin{macrocode}
+\define@key{umlAE}{type}{%
+  \def\umlType{#1}}
+%    \end{macrocode}  
+% \end{macro}
+
+
+% \begin{nullnullni}
+% \begin{macro}{kind-}
+% E.g., AssociationEnd.
+%    \begin{macrocode}
+\define@key{umlAE}{kind}{%
+  \def\umlKind{#1}}
+%    \end{macrocode}
+% \end{macro}
+% \end{nullnullni}
+
+% \begin{macro}{offset-}
+%    \begin{macrocode}
+\define@key{umlAE}{offset}{%
+  \def\umlAEOffset{#1}}
+%    \end{macrocode}  
+% \end{macro}
+
+
+% \begin{macro}{angle-}
+% Angle used to rotate the symbol itself.
+%    \begin{macrocode}
+\define@key{umlAE}{angle}{%
+  \def\umlAEAngle{#1}}
+%    \end{macrocode}  
+% \end{macro}
+
+% \begin{macro}{fractionAngle-}
+% The angle used when positioning the symbol.
+% Legal values includes angles preceded by a colon (:),
+% indicting positioning relative to the relation.
+% This is expected to be used by subcommands, but
+% seldom by users.
+%    \begin{macrocode}
+\define@key{umlAE}{fractionAngle}{%
+  \def\umlAEFractionAngle{#1}}
+%    \end{macrocode}  
+% \end{macro}
+
+% \begin{macro}{height-}
+%    \begin{macrocode}
+\define@key{umlAE}{height}{%
+  \def\umlAEHeight{#1}
+  }
+%    \end{macrocode}  
+% \end{macro}
+
+% \begin{macro}{refpoint-}
+%    \begin{macrocode}
+\define@key{umlAE}{refpoint}{%
+  \def\umlAERefpoint{#1}}
+%    \end{macrocode}  
+% \end{macro}
+
+% \begin{macro}{refpoint-}
+%    \begin{macrocode}
+\define@key{umlAE}{type}{%
+  \def\umlAEType{#1}}
+%    \end{macrocode}  
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Fraction}
+
+% \begin{macro}{fraction-}
+% This value is used by "\umlAEFixFractionLabel" and "\umlAEFixFractionSymbol".
+%    \begin{macrocode}
+\define@key{umlAE}{fraction}{%
+  \def\umlAEFraction{#1}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{\umlFromTo}
+% A handy little procedure.  If its first argument is "A" or "From", it
+% executes the second argument.  If it is "B" or "To", it executes the
+% third.  Used in the procedures like "\umlAssociationEndMakeA",
+% "\umlLabelMakeA" and "\umlSymbolMakeA".
+%    \begin{macrocode}
+\newcommand\umlFromTo[3]{%
+  \edef\umlAEFractionArgument{#1}%
+  \def\umlAEFractionTmp{From}\ifx\umlAEFractionArgument\umlAEFractionTmp{}#2\fi%
+  \def\umlAEFractionTmp{A}\ifx\umlAEFractionArgument\umlAEFractionTmp{}#2\fi%
+  \def\umlAEFractionTmp{To}\ifx\umlAEFractionArgument\umlAEFractionTmp{}#3\fi%
+  \def\umlAEFractionTmp{B}\ifx\umlAEFractionArgument\umlAEFractionTmp{}#3\fi%
+}
+
+%    \end{macrocode}  
+% \end{macro}
+
+% \begin{macro}{\umlAssociationEndUseFraction}
+% If "\umlFraction" is "A" or something (i.e., if "fraction=A" or sth),
+% adjust some other parameters.
+%    \begin{macrocode}
+\newcommand\umlAssociationEndUseFraction{%
+%    \begin{macrocode}
+  \umlFromTo{\umlAEFraction}{% If A or From
+    \def\umlAENoderefClose{Aa}%
+    \def\umlAENoderefFar{Ab}%
+    \def\umlAEFraction{0}%
+    }{%
+    \def\umlAENoderefClose{Ba}% If B or To
+    \def\umlAENoderefFar{Bb}%
+    \def\umlAEFraction{0}%
+%    \end{macrocode}
+% If this is a ``"B"'' type association end, 
+% and this is an Label type association end,
+% invert the height.
+%    \begin{macrocode}
+    \def\umlTmp{Label}%
+    \ifx\umlTmp\umlAEType% 
+      \edef\umlAEHeight{-\umlAEHeight}\fi%
+    }%
+  }
+%    \end{macrocode}  
+% \end{macro}
+
+
+
+
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{The command}
+
+% \begin{macro}{\umlAssociationEnd}
+% This places a symbol (third argument) on the \meta{From} end of 
+% the relation (indicated by the second argument).
+%    \begin{macrocode}
+\newcommand\umlAssociationEnd[3][]{%
+  \umlAssociationEndNull%
+  \setkeys{umlAE}{kind=AssociationEnd,#1}%
+  \umlAssociationEndUseFraction%
+%  AE:#2:\umlAENoderefClose:\umlAENoderefFar:
+  \ncline[linecolor=red, linestyle=\umlDebugLinestyle]{%
+    \umlAENoderefClose#2}{\umlAENoderefFar#2}%
+  {\umlColorsAdjust%
+    \lput[\umlAERefpoint]{\umlAEFractionAngle}(\umlAEFraction){%
+      \rput[\umlAERefpoint]{\umlAEAngle}(\umlAEOffset, \umlAEHeight){%
+        #3}%
+      }%
+    }%
+  }%
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Label}
+% \label{Labels}\label{sec:labels}
+% \label{sec:impLabel}
+
+
+% \begin{macro}{\umlLabel}
+% A label is a symbol with default height and offset.
+%    \begin{macrocode}
+\newcommand\umlLabel[3][]{%
+  % Null unneccesary
+  \umlAssociationEnd[kind=Label, offset=4ex, height=2ex,
+                     angle=N, #1]{%
+    #2}{%
+    #3}%
+  }
+%    \end{macrocode}
+%\end{macro}
+
+% \begin{macro}{\umlLabelA}
+% "\umlLabelA" and "\umlLabelB" are
+% provided for convenience and backward compatibility.
+%    \begin{macrocode}
+\newcommand\umlLabelA[2][]{\umlLabel[#1,fraction=A]{#2}}
+\newcommand\umlLabelB[2][]{\umlLabel[#1,fraction=B]{#2}}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Symbol}
+% \label{Symbols}\label{sec:symbols}
+% \label{sec:impSymbol}
+
+
+% \begin{macro}{\umlSymbol}
+% A symbol is a symbol with default height and offset.
+%    \begin{macrocode}
+\newcommand\umlSymbol[3][]{%
+  % Null unneccesary
+  \umlAssociationEnd[kind=Symbol,offset=0ex,height=0ex,
+                     fractionAngle=:L,refpoint=t,#1]{%
+    #2}{\umlSymbolUseFraction%
+    #3}
+  }
+%    \end{macrocode}
+%\end{macro}
+
+% \begin{macro}{\umlAssociationEndUseFraction}
+%    \begin{macrocode}
+\newcommand\umlSymbolUseFraction{%
+  \umlFromTo{\umlAEFraction}{%
+    }{%
+    }%
+  }
+%    \end{macrocode}  
+% \end{macro}
+
+% \begin{macro}{\umlSymbolA}
+% "\umlSymbolA" and "\umlSymbolB" are
+% provided for convenience and backward compatibility.
+%    \begin{macrocode}
+\newcommand\umlSymbolA[2][]{\umlSymbol[#1,fraction=A]{#2}}
+\newcommand\umlSymbolB[2][]{\umlSymbol[#1,fraction=B]{#2}}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \subsection{Navigability}
+% \label{sec:impNavigability}
+
+
+% \begin{macro}{\umlNavigability}
+% A specialized version of "\umlAssociationEnd".
+% Takes two arguments: a list of named options, and the relation reference.
+%    \begin{macrocode}
+\newcommand\umlNavigability[2][]{
+  \def\umlEndSymbol{\psline%
+    (-1ex, -1.618ex)%
+    (0,0)%
+    (1ex, -1.618ex)}%
+  \umlSymbol[kind=Navigability, #1]{#2}{\umlEndSymbol}%
+  }
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlNavigabilityA}
+% "\umlNavigabilityA" and "\umlNavigabilityB" are
+% provided for convenience and backward compatibility.
+%    \begin{macrocode}
+\newcommand\umlNavigabilityA[2][]{\umlNavigability[#1,fraction=A]{#2}}
+\newcommand\umlNavigabilityB[2][]{\umlNavigability[#1,fraction=B]{#2}}
+%    \end{macrocode}
+% \end{macro}
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+%\begin{nullnullni}
+% \section{Colors}
+% \label{sec:impColors}
+
+
+% \subsection{Colorset}
+% \label{sec:impColorset}
+
+
+% \begin{macro}{\umlColorset}
+% Every "\umlDrawable" (really, every instance of a subcommand) calls
+% "\umlColorsAdjust".  Then, the colors is set anew for the Drawable.
+% The effect then depends on the value of "\umlColorsAdjust".  This
+% value is set by "\umlColorsDefault", "\umlColorsImport" etc.
+%    \begin{macrocode}
+\newcommand\umlColorset[1]{%
+  \def\umlColorsAdjust{#1%
+  \umlColor\psset{linecolor=umlLinecolor, fillcolor=umlFillcolor}%
+  }}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlColorsDefault}
+%    \begin{macrocode}
+\newcommand\umlColorsDefault{%
+  \umlColorset{%
+    \newgray{umlColor}{0}%
+    \newgray{umlLinecolor}{0}%
+    \newgray{umlFillcolor}{1}%
+    \newgray{umlClassifierFillcolor}{0.85}%
+    \newgray{umlDiagramFillcolor}{0.95}%
+    \newgray{umlRelationColor}{0}%
+    }}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlColorsGray}
+%    \begin{macrocode}
+\newcommand\umlColorsGray{%
+  \umlColorset{%
+    \newgray{umlColor}{0.4}%
+    \newgray{umlLinecolor}{0.4}%
+    \newgray{umlFillcolor}{1}%
+    \newgray{umlClassifierFillcolor}{0.90}%
+    \newgray{umlDiagramFillcolor}{0.98}%
+    \newgray{umlRelationColor}{0.4}%
+    }}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{\umlColorsImport}
+% The import color set makes the boxes blue.
+%    \begin{macrocode}
+\newcommand\umlColorsImport{%
+  \umlColorset{%
+    \newrgbcolor{umlColor}{0 0 0.4}%
+    \newrgbcolor{umlLinecolor}{0 0 0.4}%
+    \newrgbcolor{umlFillcolor}{.8 .8 1}%
+    \newrgbcolor{umlClassifierFillcolor}{.85 .85 1}%
+    \newrgbcolor{umlDiagramFillcolor}{.95 .95 1}%
+    \newrgbcolor{umlRelationColor}{0 0 0.4}%
+    }}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlColorsArgument}
+% This color set makes the boxes green.
+%    \begin{macrocode}
+\newcommand\umlColorsArgument{%
+  \umlColorset{%
+    \newrgbcolor{umlColor}{0 0.4 0}%
+    \newrgbcolor{umlLinecolor}{0 0.4 0}%
+    \newrgbcolor{umlFillcolor}{.8 1 .8}%
+    \newrgbcolor{umlClassifierFillcolor}{.85 1 .85}%
+    \newrgbcolor{umlDiagramFillcolor}{.95 1 .95}%
+    \newrgbcolor{umlRelationColor}{0 0.7 0}%
+}}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{\umlColorsRed}
+%    \begin{macrocode}
+\newcommand\umlColorsRed{%
+  \umlColorset{%
+    \newrgbcolor{umlColor}{0.4 0 0}%
+    \newrgbcolor{umlLinecolor}{0.4 0 0}%
+    \newrgbcolor{umlFillcolor}{1 .8 .8}%
+    \newrgbcolor{umlClassifierFillcolor}{1 .85 .85}%
+    \newrgbcolor{umlDiagramFillcolor}{1 .95 .95}%
+    \newrgbcolor{umlRelationColor}{0.4 0 0}%
+    }}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlColorsSub}
+%    \begin{macrocode}
+\newcommand\umlColorsSub{%
+  \umlColorset{%
+    \newrgbcolor{umlColor}{.6 .2 .2}%
+    \newrgbcolor{umlLinecolor}{.6 .2 .2}%
+    \newrgbcolor{umlFillcolor}{.9 .8 .8}%
+    \newrgbcolor{umlClassifierFillcolor}{.9 .8 .8}%
+    \newrgbcolor{umlDiagramFillcolor}{.97 .95 .95}%
+    \newrgbcolor{umlRelationColor}{.6 .2 .2}%
+    }}
+%    \end{macrocode}
+% \end{macro}
+
+%    \begin{macrocode}
+\umlColorsDefault
+\umlColorsAdjust
+%    \end{macrocode}
+
+
+% \subsection{Using color sets}
+
+
+% \begin{macro}{\umlColors}
+%    \begin{macrocode}
+\newenvironment{umlColors}[1]{%
+  \bgroup#1}{\egroup}
+%    \end{macrocode}
+% \end{macro}
+% \end{nullnullni}
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \section{Positions}
+% \label{sec:impSyntaxPositions}
+
+
+%    \begin{macrocode}
+\SpecialCoor
+\newlength{\umlNodeSep}
+\setlength{\umlNodeSep}{1em}
+%    \end{macrocode}
+
+% A historical note here: First, "\umlBox" used to throw lots of pnodes
+% around.  However, this used huge memory space.  This way works much
+% better.  However, I have not found any way to do the corresponding
+% thing in the relations.
+
+
+\iffalse ********************************************************************\fi
+\iffalse ********************************************************************\fi
+% \begin{nullnullni}
+%\subsection{PlaceNode}
+%\label{sec:impPlaceNode}
+
+%    \begin{macrocode}
+\newlength\umlPlaceNodeX
+\newlength\umlPlaceNodeY
+%    \end{macrocode}
+
+% \begin{macro}{\umlPlaceNodeNull}
+%    \begin{macrocode}
+\newcommand\umlPlaceNodeNull{%
+  \def\umlPlaceNodeNodesepX{0pt}%
+  \def\umlPlaceNodeNodesepY{0pt}%
+  \def\umlPlaceNodeAngleX{}%
+  \def\umlPlaceNodeAngleY{}%
+  \def\umlPlaceNodeOffsetX{}%
+  \def\umlPlaceNodeOffsetY{}%
+  \setlength\umlPlaceNodeX{0pt}%
+  \setlength\umlPlaceNodeY{0pt}%
+}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+
+% \begin{macro}{leftside-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{leftside}[0pt]{%
+  \def\umlPlaceNodeAngleX{,angle=180}%
+  \def\umlPlaceNodeNodesepX{#1}}%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{rightside-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{rightside}[0pt]{%
+  \def\umlPlaceNodeAngleX{,angle=0}%
+  \def\umlPlaceNodeNodesepX{#1}}%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{up-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{top}[0pt]{%
+  \def\umlPlaceNodeAngleY{,angle=90}%
+  \def\umlPlaceNodeNodesepY{#1}}%
+%    \end{macrocode}% 
+% \end{macro}
+
+% \begin{macro}{bottom-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{bottom}[0pt]{%
+  \def\umlPlaceNodeAngleY{,angle=270}%
+  \def\umlPlaceNodeNodesepY{#1}}%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{left-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{left}[0pt]{%
+  \addtolength\umlPlaceNodeX{-#1}}%
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{right-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{right}[0pt]{%
+  \addtolength\umlPlaceNodeX{#1}}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{up-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{up}[0pt]{%
+  \addtolength\umlPlaceNodeY{#1}}
+%    \end{macrocode}% 
+% \end{macro}
+
+% \begin{macro}{down-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{down}[0pt]{%
+  \addtolength\umlPlaceNodeY{-#1}}
+%    \end{macrocode}
+% \end{macro}
+
+
+
+
+% \begin{macro}{angle-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{angle}{%
+  \def\umlPlaceNodeAngleX{,angle=#1}%
+  \def\umlPlaceNodeAngleY{,angle=#1}}%
+\define@key{umlPlaceNode}{angleX}{%
+  \def\umlPlaceNodeAngleX{,angle=#1}}%
+\define@key{umlPlaceNode}{angleY}{%
+  \def\umlPlaceNodeAngleY{,angle=#1}}%
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{offset-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{offset}{%
+  \def\umlPlaceNodeOffsetX{,offset=#1}%
+  \def\umlPlaceNodeOffsetY{,offset=#1}}%
+\define@key{umlPlaceNode}{offsetX}{%
+  \def\umlPlaceNodeOffsetX{,offset=#1}}%
+\define@key{umlPlaceNode}{offsetY}{%
+  \def\umlPlaceNodeOffsetY{,offset=#1}}%
+%    \end{macrocode}
+% \end{macro}
+% \begin{macro}{nodesep-}
+%    \begin{macrocode}
+\define@key{umlPlaceNode}{nodesep}{%
+  \def\umlPlaceNodeNodesepX{#1}%
+  \def\umlPlaceNodeNodesepY{#1}}%
+\define@key{umlPlaceNode}{nodesepX}{%
+  \def\umlPlaceNodeNodesepX{#1}}%
+\define@key{umlPlaceNode}{nodesepY}{%
+  \def\umlPlaceNodeNodesepY{#1}}%
+%    \end{macrocode}
+% \end{macro}
+
+\iffalse ********************************************************************\fi
+% \begin{macro}{\umlPlaceNode}
+%    \begin{macrocode}
+\newcommand\umlPlaceNode[3][]{%
+  \umlPlaceNodeNull%
+  \setkeys{umlPlaceNode}{#1}%
+%    \end{macrocode}
+% Placement relative to the node
+%    \begin{macrocode}
+  \rput(%
+    [nodesep=\umlPlaceNodeNodesepX\umlPlaceNodeOffsetX\umlPlaceNodeAngleX]#2|%
+    [nodesep=\umlPlaceNodeNodesepY\umlPlaceNodeOffsetY\umlPlaceNodeAngleY]#2){%
+%    \end{macrocode}
+% Placement relative to that
+%    \begin{macrocode}
+%    \rput(\umlPlaceNodeX, \umlPlaceNodeY){%
+%    \end{macrocode}
+% The new node is placed
+%    \begin{macrocode}
+      \pnode(\umlPlaceNodeX, \umlPlaceNodeY){#3}}%
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{nullnullni}
+
+% \begin{macro}{\umlRight}
+% \label{sec:impTopLeft}
+% The first coordinate commands are very simple.  
+% They takes as argument  node.
+%    \begin{macrocode}
+\newcommand\umlRight[1]{%
+  [angle=0]#1}
+\newcommand\umlTop[1]{%
+  [angle=90]#1}
+\newcommand\umlLeft[1]{%
+  [angle=180]#1}
+\newcommand\umlBottom[1]{%
+  [angle=270]#1}
+\newcommand\umlTopRight[1]{%
+  [angle=0]#1|[angle=90]#1}
+\newcommand\umlBottomRight[1]{%
+  [angle=0]#1|[angle=270]#1}
+\newcommand\umlTopLeft[1]{%
+  [angle=180]#1|[angle=90]#1}
+\newcommand\umlBottomLeft[1]{%
+  [angle=180]#1|[angle=270]#1}
+%    \end{macrocode}
+% \end{macro}
+
+
+% \begin{macro}{\umlRightSep}
+% The "Sep" coordinate commands use "\umlNodeSep" to make 
+% some space between  the nodes.
+%    \begin{macrocode}
+\newcommand\umlRightSep[1]{%
+  [angle=0, nodesep=\umlNodeSep]#1}
+\newcommand\umlTopSep[1]{%
+  [angle=90, nodesep=\umlNodeSep]#1}
+\newcommand\umlLeftSep[1]{%
+  [angle=180, nodesep=\umlNodeSep]#1}
+\newcommand\umlBottomSep[1]{%
+  [angle=270, nodesep=\umlNodeSep]#1}
+\newcommand\umlTopRightSep[1]{%
+  [angle=0, nodesep=\umlNodeSep]#1|[angle=90, nodesep=\umlNodeSep]#1}
+\newcommand\umlBottomRightSep[1]{%
+  [angle=0, nodesep=\umlNodeSep]#1|[angle=270, nodesep=\umlNodeSep]#1}
+\newcommand\umlTopLeftSep[1]{%
+  [angle=180, nodesep=\umlNodeSep]#1|[angle=90, nodesep=\umlNodeSep]#1}
+\newcommand\umlBottomLeftSep[1]{%
+  [angle=180, nodesep=\umlNodeSep]#1|[angle=270, nodesep=\umlNodeSep]#1}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlRightOpt}
+% This takes two mandatory arguments: Named options and the usual
+% node.
+%
+% Of course, it would be nice to make the first argument optional, thus
+% combining "\umlRight" and "\umlRightOpt".  However,
+% this does not work together with mandatory argument in "\umlBox".  I
+% have found no elegant solution to this (despite some nights\dots)
+%    \begin{macrocode}
+\newcommand\umlRightOpt[2]{%
+  [angle=0, #1]#2}
+\newcommand\umlTopOpt[2]{%
+  [angle=90, #1]#2}
+\newcommand\umlLeftOpt[2]{%
+  [angle=180, #1]#2}
+\newcommand\umlBottomOpt[2]{%
+  [angle=270, #1]#2}
+\newcommand\umlTopRightOpt[2]{%
+  [angle=0, #1]#2|[angle=90, #1]#2}
+\newcommand\umlBottomRightOpt[2]{%
+  [angle=0, #1]#2|[angle=270, #1]#2}
+\newcommand\umlTopLeftOpt[2]{%
+  [angle=180, #1]#2|[angle=90, #1]#2}
+\newcommand\umlBottomLeftOpt[2]{%
+  [angle=180, #1]#2|[angle=270, #1]#2}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\umlRightSep}
+%    \begin{macrocode}
+\newcommand\umlRightSepOpt[2]{%
+  [angle=0, nodesep=\umlNodeSep, #1]#2}
+\newcommand\umlTopSepOpt[2]{%
+  [angle=90, nodesep=\umlNodeSep, #1]#2}
+\newcommand\umlLeftSepOpt[2]{%
+  [angle=180, nodesep=\umlNodeSep, #1]#2}
+\newcommand\umlBottomSepOpt[2]{%
+  [angle=270, nodesep=\umlNodeSep, #1]#2}
+\newcommand\umlTopRightSepOpt[2]{%
+  [angle=0, nodesep=\umlNodeSep, #1]#2|[angle=90, nodesep=\umlNodeSep, #1]#2}
+\newcommand\umlBottomRightSepOpt[2]{%
+  [angle=0, nodesep=\umlNodeSep, #1]#2|[angle=270, nodesep=\umlNodeSep, #1]#2}
+\newcommand\umlTopLeftSepOpt[2]{%
+  [angle=180, nodesep=\umlNodeSep, #1]#2|[angle=90, nodesep=\umlNodeSep, #1]#2}
+\newcommand\umlBottomLeftSepOpt[2]{%
+  [angle=180, nodesep=\umlNodeSep, #1]#2|[angle=270, nodesep=\umlNodeSep, #1]#2}
+%    \end{macrocode}
+% \end{macro}
+

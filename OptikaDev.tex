@@ -1,22 +1,22 @@
-\section{Initial Planning}
-In Fall of 2008 Dr. Mike Heroux identified a need for
-the Trilinos framework to include some sort of GUI package. Dr. Heroux wanted 
+\section{Initial Planning and Development}
+In Fall of 2008, Dr. Mike Heroux identified a need for
+the Trilinos Framework\footnote{Optika is part of the Trilinos Project~\cite{1089021}.} to include some sort of GUI package. Dr. Heroux wanted 
 to give users of the framework the ability to easily generate GUIs for their
 programs, while still providing a good experience for the end-user. Based on
-previous GUI work done for the Tramonto project, a few initial problems were
+previous GUI work we'd done for the Tramonto project~\cite{Tramonto}, a few initial problems were
 identified:
 
 	\begin{itemize}
 		\item How would the GUI be laid out?
+		\item What GUI framework would would be used to build the GUI?
 		\item Different types of parameters require different methods of input.
 			How would the program decide how to obtain input for a particular
 			parameter?
-		\item What GUI framework would would be used to build the GUI?
 		\item How would the application developer specify parameters for the
 			GUI to obtain?
 		\item How would the application developer specify dependencies between
 		parameters. This was a crucial problem/needed-feature that was identified in
-		development of the Tramonto GUI.
+		previous development of an unsuccessful Tramonto GUI.
 	\end{itemize}
 
 After some deliberation, the following initial solutions were decided upon:
@@ -48,7 +48,16 @@ After some deliberation, the following initial solutions were decided upon:
 			\caption[GUI Layout]{The hierarchical layout of the GUI}
 			\label{paramlistFigure}
 		\end{figure}
-		\item It be required that all parameters specify their type and the
+		\item QT\footnote{For documentation on all Qt classes please visit~\cite{QtDocs}.} was chosen as the GUI framework for several reasons:
+			\begin{itemize}
+				\item It is cross-platform.
+				\item It is mature and has a comprehensive set of
+				development tools.
+				\item It has a rich feature-set.
+				\item It has been used by Sandia in the past.
+				\item The Optika lead developer was familiar with it.
+			\end{itemize}
+		\item It would be required that all parameters specify their type and the
 		following types would be accepted:
 			\begin{multicols}{2}
 			\begin{itemize}
@@ -61,12 +70,23 @@ After some deliberation, the following initial solutions were decided upon:
 				\item arrays of int, short, double, and string
 			\end{itemize}
 			\end{multicols}
-		For number types, a spin box would be used as input. If the valid
-		values for a string type were specified, a combo box would be used.
-		Otherwise a line edit would be used. For booleans, a combo box would
+		The supported data type were chosen for two main reasons:
+		\begin{inparaenum}[(a)]
+			\item The number of input widgets that need to be supported
+			is a direct function of the supported data types. By only supporting
+			a small set of basic data types, we could stick
+			to supporting only a small number of input widgets, most of which
+			were already pre-built and part of Qt.
+			\item The development team felt that these data types would be
+			adequate for 95\% of the developers who would be using Optika.
+		\end{inparaenum}
+
+		For number types, a spin box (figure~\ref{spinboxfig}) would be used as input. If the valid
+		values for a string type were specified, a combo box (figure~\ref{comboboxfig}) would be used.
+		Otherwise a line edit (figure~\ref{lineeditfig}) would be used. For booleans, a combo box (firgure~\ref{comboboxfig}) would
 		also be used. For arrays, a pop-up box containing numerous input
 		widgets would be used. The widget type would be determined by the
-		array type.
+		array type (e.g. for numerical types a series of spinboxes would be used). 
 		\begin{figure}[h]
 			\centering
 			\subfigure[A Spin Box]{
@@ -81,19 +101,10 @@ After some deliberation, the following initial solutions were decided upon:
 				\label{lineeditfig}
 				\includegraphics[scale=0.5]{graphics/lineedit}
 			}
-			\caption{Some of the various widgets used for editing data}
+			\caption{Some of the various widgets used for editing data~\cite{QtGallery}}
 			\label{editingWidgets}
 		\end{figure}
 
-		\item QT was chosen as the GUI framework for several reasons:
-			\begin{itemize}
-				\item It is cross-platform.
-				\item It is mature and has a well developed set of
-				development tools.
-				\item It has a rich feature-set.
-				\item It has been used by Sandia in the past.
-				\item The Optika lead developer was familiar with it.
-			\end{itemize}
 		\item Initially it was decided that the application developer would
 		specify parameters via an XML file. A DTD would be created specifying
 		the legal tags and namespaces.
@@ -105,13 +116,13 @@ The first several months of development were spent on creating and implementing 
 specification. The name of the XML specification went through several revisions but was
 eventually called Dependent Parameter Markup Language (DPML).
 
-After several months of development it was realized that creating an entirely new way of specifying 
-parameters might hinder adoption of Optika. It was also pointed out that Trilinos actually had
-a ParameterList~\cite{ParameterList} class in the Teuchos package. The ParameterList seemed to be better than DPML for
+After several months of development we realized that creating an entirely new way of specifying 
+parameters might hinder adoption of Optika. We also realized that Trilinos actually had
+a ParameterList class in the Teuchos~\cite{TeuchosPackage} package. The ParameterList seemed to be better than DPML for
 several reasons:
 	\begin{itemize}
 		\item It was already heavily adopted.
-		\item It had the necessary hierarchical nature.
+		\item It had the necessary hierarchical nature (like described in figure~\ref{paramlistFigure}).
 		\item It was serializable to and from XML.
 	\end{itemize}
 
@@ -121,136 +132,141 @@ outlined above, would also be compatible with any existing program using Teuchos
 
 \section{Heavy development}
 Starting in May 2009 a more heavy focus was put on development of the Trilinos GUI package.
-With the back-end data-structure of the Teuchos's ParameterList already in place, attention
-was turned to the developing the actually GUI itself. A key technology provided by Qt was it's Model/View
+With the back-end data-structure of the Teuchos ParameterList already in place, attention
+was turned to developing the actually GUI portions of the framework. A key technology provided by Qt was it's Model/View
 framework~\cite{QtModelView}. Using the Model/View paradigm, a wrapper class named TreeModel
-~\cite{TreeModel} was created around the ParameterList class by subclassing the 
-QAbstractItemModel~\cite{QAbstractItemModel}.
+was created around the ParameterList class by subclassing QAbstractItemModel.
 
 However, in subclassing the QAbstractItemModel it was realized that the ParameterList class fell short 
-in terms of providing cretain features. The main issue was that a given ParameterEntry~\cite{ParameterEntry} located within
+in terms of providing certain features. The main issue was that a given ParameterEntry located within
 a ParameterList or a given sublist located within a ParameterList was not aware of it's parent.
 This was an issue because Qt's Model/View framework requires items within a model to be aware of
-their parents. In order to circumvent this issue the TreeItem~\cite{TreeItem} class was created. Now the TreeItem class
+their parents. In order to circumvent this issue the TreeItem class was created. Now the TreeModel class
 became more than just a simple wrapper class. A TreeModel was created by giving it a ParameterList.
 It would then read in the ParameterList and create a structure of TreeItems.  Each TreeItem then contained a pointer 
-to it's corresponding ParameterEntry.
+to it's corresponding ParameterEntry. This allowed parent-child relationship data to be maintained while
+still using ParameterLists as the true backend data-structure.
 
-Once the TreeModel and TreeItem class were complete, an appropriate delegate to go between and View
-and the TreeModel was needed. A new class called Delegate~\cite{Delegate} was created to fill this
-role by subclassing QItemDelegate~\cite{QItemDelegate}. As specified above, the delegate would return
-the appropriate editing widget based on the datatype carried within a given TreeItem.
+Once the TreeModel and TreeItem class were complete, an appropriate delegate to go between a view
+and the TreeModel was needed. A new class simply called Delegate was created to fill this
+role by subclassing QItemDelegate. As specified above, the delegate would return
+the appropriate editing widget based on the data type carried within a given TreeItem.
 
 With the model and delegate classes in place, an appropriate view could be applied. At first a simple
-QTreeView~\cite{QTreeView} was applied to the model. The results was something like that in \ref{treeviewFig}.
-	\begin{figure}[h]
-		\centering
-			\subfigure[A Tree View]{
-				\label{treeviewFig}
-				\includegraphics[scale=0.5]{graphics/treeview}
-			}
-	\end{figure}
-Later, as aditional functionality was added the View class needed to perform more functions. The QTreeView class was subclassed, creating
-the TreeView~\cite{TreeView} class. Its main duties were to show and hide parameters as need and handle and bad parameter values that might
-come up during the course of the excution of the program. These features were needed due to requirement that arose from dependencies (something
+QTreeView was applied to the model. Later, as additional functionality was added the view class needed to perform more functions. 
+To fill these needs, the QTreeView class was subclassed, creating the TreeView class. 
+Its main duties were to show and hide parameters as needed and handle any bad parameter values that might
+come up during the course of the GUI execution.  These features were needed due to requirements that arose from dependencies (something
 that will be discussed later).
 
-Finally, the OptikaGUI~\cite{OptikaGUI} class was created. It had one static function, getInput. A ParameterList is passed to this function, a
-GUI is gereated, and all end-user input is stored in the ParameterList that was passed to the function. When the end-user hits the submit
-button the GUI closes and the ParameterList that was passed to the getInput function now contains all of the end-user input.
+Finally, the OptikaGUI class was created. It had one static function, getInput. A ParameterList is passed to this function, a
+GUI is generated, and all end-user input is stored in the ParameterList that was passed to the function. When the end-user hits the submit
+button the GUI closes and the ParameterList that was passed to the getInput function now contains all of the end-user input. The end result was something like that in figure \ref{treeviewFig}.
+	\begin{figure}[h]
+		\centering
+		\label{treeviewFig}
+		\includegraphics[scale=0.5]{graphics/treeview}
+		\caption{The end result of the initial Optika development}
+	\end{figure}
 
 \section{Advanced Features}
-With the basic framework in place, the development team was now able to move on to more advanced features. As these advanced features
+With the basic framework in place, we were now able to move on to more advanced features. As these advanced features
 were developed various refactorings were made to the already existing code in order to support these new features.
 
 	\subsection{Validators}
 	One of the goals of Optika is to make life easier for the end-user. It's not enough to simply give the end-user information, it must
-	be conveyed in a meaningful way. Validators are a great way of informing end-user what the valid set of values for a particular parameter are.
+	be conveyed in a meaningful way. Validators are a great way of informing an end-user what the valid set of values for a particular parameter are.
 	Teuchos ParameterLists already came with built in validator functionality, but the default validators that were available
 	were sorely lacking in capability. Three initial sets of validators were created to help deal with the short comings of
 	the available validator classes:
 	\begin{description}
-		\item[EnhancedNumberValidators] allowed for validating various number types~\cite{EnhancedNumberValidator}. It has the following abilities:
+		\item[EnhancedNumberValidators] allowed for validating various number types. EnhancedNumberValidators have the following abilities:
 			\begin{itemize}
 				\item Set min and max.
-				\item Set the step with which the number value was incremented.
-				\item Set the precision with which the number value was displayed.
+				\item Set the step with which the number value is incremented.
+				\item Set the precision with which the number value is displayed.
 			\end{itemize}
-		\item[StringValidator] allowed the specification of a particular parameter as only accepting string types 
-		and allowed for specifying a valid list of values~\cite{StringValidator}.
+		\item[StringValidator] allowed for a parameter to be designated as only accepting values of type string
+		and allowed for specifying a valid list of values.
 		\item[ArrayValidators] allowed for all validator types to be applied to an array of values. The validator
-		that is applied to each entry in the array is called the prototype validator~\cite{ArrayValidator}.
+		that is applied to each entry in the array is called the prototype validator.
 	\end{description}
-	A fourth Validator type, a FileNameValidator~\cite{FileNameValidator}, was added later. This validator designates a particular string parameter
-	as containing a file path and allows the developer to indicate that the file must already exist.
-
-	By interpreting the these validators, Optika could either put certain restrictions on the input widget for a Parameter or change the
-	type of input widget used entirely. For instance: with EnhancedNumberValidators the min, max, step, and precision of the
-	EnhancedNumberValidator are all used to directly set their corresponding values in the QSpinBox class. But with the FileNameValidator
+	A fourth Validator type, a FileNameValidator, was added later. This validator designates a particular string parameter
+	as containing a file path and allows the developer to indicate whether or not the file must already exist. Since filenames
+	are such an important type of string, it made sense that they would have their own validator.
+	
+	By interpreting these validators, Optika could either put certain restrictions on the input widget for a parameter or entirely change the
+	type of input widget used. For instance: with EnhancedNumberValidators the min, max, step, and precision of the
+	EnhancedNumberValidator are all to directly set their corresponding values in the QSpinBox class. But with the FileNameValidator
 	a QFileDialog would appear instead of the normal QComboBox or QTextEdit used for string validators.
 
 	\subsection{Dependencies}
-	Many times the state of one parameter depends on the state of another. Common inter-parameter dependencies include:
+	Many times the state of one parameter depends on the state of another. Common inter-parameter dependencies and their requirements include:
 	\begin{description}
 		\item[Visual Dependencies:] One parameter may become meaningless when another parameter takes on a particular value.
 		In this case the end-user no longer needs to be aware of the meaningless parameter and it's best to just remove it from
-		their view entirely so they don't potentially become confused. Visual dependencies allows the developer to express that "if parameter 
+		their view entirely so they don't potentially become confused. Visual dependencies should allow the developer to express that "if parameter 
 		x takes on a particular value, then don't display parameter y to the end-user anymore."
 		\item[Validator Dependencies:] Sometimes the valid set of values for one parameter changes if another parameter takes
-		on a particular value. Validator Dependencies allows the developer to express that "if parameter x takes on a particular value, change
+		on a particular value. Validator Dependencies should allow the developer to express that "if parameter x takes on a particular value, change
 		the validator on parameter y."
 		\item[Validator Aspect Dependencies:] Sometimes the developer doesn't want to change the validator on a particular parameter, but
-		rather just a certain aspect of it. Validator Aspect Dependencies allow the developer to express that "if parameter x takes on a particular value,
-		change this aspect of the validator on parameter y in such a fashion as relating to the new value of parameter x"
+		rather just a certain aspect of it. Validator Aspect Dependencies should allow the developer to express that "if parameter x takes on a particular value,
+		change this aspect of the validator on parameter y based on the new value of parameter x"
 		\item[Array Length Dependencies:] Sometimes the length of an array in a parameter changes based on the value of another parameter.
-		Array Length Dependencies allow the developer to express that "if parameter x changes its value, change the length of the array
-		in parameter y in such a fashion as relating to the new value of parameter x."
+		Array Length Dependencies should allow the developer to express that "if parameter x changes its value, change the length of the array
+		in parameter y based on the new value of parameter x."
 	\end{description}
 
-	Coming up with a way for the developer to easily express these concepts was not easy. The first problem that had to be solved was how to keep track of all the dependencies.
-	They couldn't just be stored in a ParameterList as a class memeber because of the recursive structure of ParameterLists. Eventually, it was decided that a data structure called
-	a dependency sheet~\cite{DependencySheet} would hold all the dependencies used for a certain parameter list. Each Dependency~\cite{Dependency} would at minimum specify the dependent parameter
-	and the dependee parameter. However, a complication arose. Because the development team wanted dependencies to be able to have arbitrary dependents and dependees, the development team needed
-	a way to uniquely identify the dependee and the dependent. While within a particular parameter list names of parameters are unique, names are not 
-	necessarily unique across a set of sublists. Therefore, in order to uniquely identify a parameter and allow dependencies across sublists the program would need
-	to know both the parameter name and the parent list containing it\footnote{The astute reader will notice that if there are two sublists with different parent lists 
-	and each sublist has a parameter with the same name, then the program will not be able to uniquely identify the dependent and the dependee. This is such an edge case that the development team decided
-	to ignore it and not implement any way to handle it}.
+	Coming up with a way for the developer to easily express these concepts was not a simple task. The first problem that had to be solved was how to keep track of all the dependencies.
+	They couldn't just be stored in a ParameterList as a class member because of the recursive structure of ParameterLists. Eventually, it was decided that a new data structure called
+	a DependencySheet would hold all the dependencies used for a certain ParameterList. Each Dependency would at minimum specify the dependent parameter
+	and the dependee parameter. However, a complication arose. Because we wanted dependencies to be able to have arbitrary dependents and dependees, we needed
+	a way to uniquely identify the dependee and the dependent. As the ParameterEntry class stood, there was no way of doing this and we didn't want to add this cabaility to the
+	ParameterEntry class. The Teuchos package is fundamental to the Trilinos Project and before we started changing it for our purposes we wanted Optika to have a solid footing and
+	be absolutely sure that any changes made to Teuchos were actually necessary. We needed to find another way to uniquely identify parameters within a ParameterList.
 	
+	We decided to use the name of the parameter as the identifier because the accessor functions for a ParamaeterList usually use the parameters name to identify a particular parameter. 
+	While within a ParameterList names of parameters are unique, names are not necessarily unique across a set of sublists. Therefore, in order to uniquely identify a 
+	parameter and allow dependencies across sublists Optika would need to know both the parameter name and the parent list containing it\footnote{The astute reader will notice 
+	that if there are two sublists with different parent lists and each sublist has a parameter with the same name, then Optika will not be able to uniquely identify the 
+	dependent and the dependee. Since solving this problem would most likely require a lot of refactoring of code not directly part of the Optika package, we decided to address it
+	at a later date.}.  
+
 	So it became that every dependency, along with needing the names of the dependee
-	and dependent, also needed their respective parent lists. The dependency sheet also needed the root list which contained all of the dependees and dependents.
-	This was so the program could recursively search for the parameters and their parent sublists (the only way to find them using our method of identification). 
+	and dependent, also needed their respective parent lists. The DependencySheet also needed the root list which contained all of the dependees and dependents.
+	This was so Optika could recursively search for the parameters and their parent sublists (the only way to find them using our method of identification). 
 	The following Dependency classes were created to address the use cases above (shown as a hierarchy of classes):
 	\begin{description}
-		\item[Dependency:] Parent class for all Dependencies~\cite{Dependency}.
+		\item[Dependency:] Parent class for all Dependencies.
 		\begin{description}
-			\item[NumberArrayLengthDepednency:] Changes an array's length~\cite{NumberArrayLengthDependency} .
-			\item[NumberValidatorAspectDependency$<$T$>$:] Changes various aspects of an EnhancedNumberValidator~\cite{NumberValidatorAspectDependency}.
-			\item[ValidatorDependency:] Changes the validator used for particular parameter~\cite{ValidatorDependency}.
+			\item[NumberArrayLengthDepednency:] Changes an array's length.
+			\item[NumberValidatorAspectDependency$<$T$>$:] Changes various aspects of an EnhancedNumberValidator.
+			\item[ValidatorDependency:] Changes the validator used for particular parameter.
 			\begin{description}
-				\item[BoolValidatorDependency:]Changes the validator use for a particular parameter based on a boolean value~\cite{BoolValidatorDependency}.
-				\item[RangeValidatorDependency$<$T$>$:] Changes the validator use for a particular parameter based on a number value~\cite{RangeValidatorDependency}.
-				\item[StringValidatorDependency:] Changes the validator use for a particular parameter based on a string value~\cite{StringValidatorDependency}.
+				\item[BoolValidatorDependency:]Changes the validator used for a particular parameter based on a boolean value.
+				\item[RangeValidatorDependency$<$T$>$:] Changes the validator used for a particular parameter based on a number value.
+				\item[StringValidatorDependency:] Changes the validator used for a particular parameter based on a string value.
 			\end{description}	
-			\item [VisualDependency:] Shows or hids a particular parameter~\cite{VisualDependency}.
+			\item [VisualDependency:] Shows or hides a particular parameter.
 			\begin{description}
-				\item[BoolVisualDepedency:] Shows or hides a particular parameter based on a boolean value~\cite{BoolVisualDependency}.
-				\item[NumberVisualDependency$<$T$>$:] Shows or hides a particular parameter based on a Number value~\cite{NumberVisualDependency}.
-				\item[StringVisualDependency:] Shows or hides a particular parameter based on a String value~\cite{StringVisualDependency}.
+				\item[BoolVisualDepedency:] Shows or hides a particular parameter based on a boolean value.
+				\item[NumberVisualDependency$<$T$>$:] Shows or hides a particular parameter based on a supported number type value.
+				\item[StringVisualDependency:] Shows or hides a particular parameter based on a string value.
 			\end{description}
 		\end{description}
 	\end{description}
 
-	Some of these dependencies have some sick-awesome capabilities. Namely, the NumberArrayLengthDepednency, NumberValidatorAspectDependency, and NumberVisualDependencies
+	Some of these dependencies have fairly novel and robust capabilities. Namely, the NumberArrayLengthDepednency, NumberValidatorAspectDependency, and NumberVisualDependencies
 	can all take a pointer to a function as an argument. In the case of the NumberArrayLengthDepednency, this function can be applied to the value of the dependee
 	parameter. The return value of this function is then used as the length of the array for the dependent parameter. For NumberValidatorAspectDependencies, the function
-	is used to calculate the value of the chosen validator aspect. And in the NumberVisualDepenency class, if the function returns a value greater than 0 the dependent is
-	displayed. Otherwise, the dependent is hidden. 
+	is applied to the dependee value and used to calculate the value of the chosen validator aspect. In the NumberVisualDepenency class, if the function 
+	when applied to the dependee value returns a value greater than 0 the dependent is displayed. Otherwise, the dependent is hidden. 
 
 	The algorithm for expressing dependencies in the GUI is as follows:
 	\begin{enumerate}
 		\item A parameter's value is changed by the end-user.
-		\item The Treemodel goes asks the dependency sheet associated with it if the parameter that changed has any dependents
+		\item The Treemodel queries the associated dependency sheet to see whether or not the parameter that changed has any dependents.
 		\item If the parameter does have dependents, the Treemodel requests a list of all the dependencies in which the changed
 		parameter is a dependee.
 		\item For each dependency, the evaluate function is called. The dependency makes any necessary changes to the dependent parameter
@@ -259,73 +275,110 @@ were developed various refactorings were made to the already existing code in or
 		something more appropriate.
 	\end{enumerate}
 
+The order in which dependencies are evaluated is arbitrary. We have not
+tested what happens under the conditions of conflicting dependencies or 
+circular dependencies yet. This is an area for further study.
+
 	\subsection{Custom Functions}
-	Normally, in Optika the end-user configures the parameter list, hits submit, the GUI disappears, and the program continues with execution. However,
+	Normally, in Optika the end-user configures the ParameterList, hits submit, the GUI disappears, and the program continues with execution. However,
 	an alternative to this work flow was desired. A persistent GUI was needed. The development team added the ability to specify a pointer to a function
-	that would be executed whenever the end-user hit submit. The function needed to have the signature foo(Teuchos::RCP$<$const ParameterList$>$ userParameters).
+	that would be executed whenever the end-user hit submit. The function was required to have the signature \emph{foo(Teuchos::RCP$<$const ParameterList$>$ userParameters)}.
 
 	\subsection{Various Niceties}
-	Various niceties were added to the GUI as well. The ability to save and load parameter lists was added. The Optika GUI class was expanded to allow for
-	customization of the window icon and use of Qt Style Sheets to style the GUI. Checks were also added so that if the end-user tried to exit the GUI without
-	saving they would be warned and given the option to save their work. Tooltips were added so when ever the end-user hovered over a parameter, it's documentation
-	would be displayed. Also, the ability to search for a parameter was added.
+	Various niceties were added to the GUI as well. The ability to save and load ParameterLists was added. The Optika GUI class was expanded to allow for
+	customization of the window icon and use of Qt Style Sheets to style the GUI. Checks were also added to see if the end-user was trying to exit the GUI without
+	saving. In such a case they would be warned and given the option to save their work. Tooltips were added so when ever the end-user hovered over a parameter, it's 
+	documentation string would be displayed. Also, the ability to search for a parameter was added.
 
 \section{Waiting For Copyright}
-	All of the above features were completed around the end of August 2009 and Optika was officially given its name.
-	Optika was submitted for copyright shortly after. It took Optika a little over six months to complete copyright.
-	Since it was not yet copyrighted, it could not be included in the Trilinos 10 release in October 2009. This made the primary developer extraordinarily
-	frustrated and he tried very hard to contemplate what could possibly be taking so long. During the time Optika spend in copyright limbo, 
+	All of the above features were completed around or shortly after the end of August 2009 and Optika was officially given its name.
+	Optika was then submitted for copyright. It took Optika a little over six months to complete copyright.
+	Since it was not yet copyrighted, it could not be included in the Trilinos 10 release in October 2009. During the time Optika spend in copyright limbo, 
 	little development on Optika was done. Most of development was cleaning up various pieces of code, adding examples, and adding documentation. 
 	Finally, in March 2010 Optika completed copyright and was ready to be included in Trilinos. It was released to the public with the Trilinos 10.2 release.
 
 \section{User Feedback}
-In the summer of 2010, Optika got it's first user. Dr. Laurie Frink began using Optika to create a GUI for her program Tramonto.
-Initial feedback was very positive. Dr. Frink is a C programmer and while she had some issues picking up Optika (which is C++ based)
-most were easily and quickly addressed. Her questions also lead to the creation of some great examples. For the most part Dr. Frink found Optika
-to be quite adequate for her purposes. However, Dr. Frink did have one rather major feature request: she needed the ability to 
-specify multiple dependents and in some cases even multiple dependees. This was quite a task and required a large reworking of the
-Dependency part of the framework. 
+In the summer of 2010, Optika got it's first user. Dr. Laurie Frink began using Optika to create a GUI for Tramonto.
+There had been a previous attempt to build a GUI for Tramonto, but it had been largely unsuccessful
+
+Initial feedback was very positive. Dr. Frink was very impressed with the capabilities of Optika and the ease at which should could construct a
+GUI. However, she did have some small initial issues picking up Optika. But most of them arose from the fact she is a C programer and Optika is C++ based.
+Her issues were always easily and quickly addressed. Some of her more involved questions even lead to the creation of some great examples. 
+
+For the most part Dr. Frink found Optika to be quite adequate for her purposes. However, she did have one rather major feature request: 
+she needed the ability to specify multiple dependents and in some cases even multiple dependees. This was quite a task and required a 
+large reworking of the Dependency part of the framework. 
 
 Adding support for multiple dependents was fairly trivial. Instead of specifying a single dependent to the constructor of a Dependency, a list
-of Parameters was now passed. If the developer only needs one dependent then he/she could just pass a list of length one. This simple
+of Parameters was now passed. If the developer only needed one dependent then he/she could just pass a list of length one. This simple
 list worked in the case of all the dependents having the same parent list. If they had different parent lists, then a more complex 
-data structure which mapped parent lists to parameters would be used. Convenience constructors were also made for simple cases where
-there was just one dependent was needed. The algorithm used for evaluating dependencies changed very little with these modifications. The only addition
-needed was and extra loop for evaluating each dependent in a dependency for a given dependee.
+data structure which mapped parameters to parent lists would be used. Convenience constructors were also made for simple cases where
+just one dependent was needed. The algorithm used for evaluating dependencies changed very little with these modifications. The only addition
+needed was an extra loop for evaluating each dependent in a dependency for a given dependee.
 
-Adding support for multiple dependents was much harder. There was actually only one specific use case where multiple dependents were needed/appropriate. Dr.
+Adding support for multiple dependents was much harder. There was actually only one specific use case where multiple dependents were needed or even appropriate for that matter. Dr.
 Frink needed the ability to test the condition of multiple parameters to determine whether or not a particular parameter should be displayed.
-So a new VisualDependency class was created called ConditionVisualDependency~\cite{ConditionVisualDependency}. ConditionVisualDependencies evaluated a condition object to
+So a new VisualDependency class called ConditionVisualDependency was created. ConditionVisualDependencies evaluated a condition object to
 determine the whether or not a set of dependents should be hidden or shown. The set of condition classes created are as follows (shown as a hierarchy of classes):
 \begin{description}
-	\item[ParameterCondition]: examines the value of a particular parameter and evaluates to true or false accordingly~\cite{ParameterCondition}. Types of ParameterConditions include:
+	\item[Condition]: Parent class of all conditions.
 	\begin{description}
-		\item[BoolCondition:] examines boolean parameters~\cite{BoolCondition}.
-		\item[NumberCondition$<$T$>$:] examines number parameters~\cite{NumberCondition}.
-		\item[StringCondition:] examines string parameters~\cite{StringCondition}.
+		\item[ParameterCondition]: examines the value of a particular parameter and evaluates to true or false accordingly. Types of ParameterConditions include:
+		\begin{description}
+			\item[BoolCondition:] examines boolean parameters.
+			\item[NumberCondition$<$T$>$:] examines number parameters.
+			\item[StringCondition:] examines string parameters.
+		\end{description}
+		\item[BinaryLogicalCondition:] examines the value of two or more conditions passed to it and evaluates to true or false accordingly. Types of BinaryLogicalConditions include:
+		\begin{description}
+			\item[AndCondition:] returns the equivalent of performing a logical AND on all conditions passed to it.
+			\item[EqualsCondition:] returns the equivalent of performing a logical EQUALS on all conditions passed to it.
+			\item[OrCondition:] returns the equivalent of performing a logical OR on all conditions passed to it.
+		\end{description}
+		\item[NotCondition:] examines the value of one condition passed to it and evaluates to the opposite of what ever that condition evaluates.
 	\end{description}
-	\item[BinaryLogicalCondition:] examines the value of two or more conditions passed to it and evaluates to true or false accordingly~\cite{BinaryLogicalCondition}. Types of BinaryLogicalConditions include:
-	\begin{description}
-		\item[AndCondition:] returns the equivalent of performing a logical AND on all conditions passed to it~\cite{AndCondition}.
-		\item[EqualsCondition:] returns the equivalent of performing a logical EQUALS on all conditions passed to it~\cite{EqualsCondition}.
-		\item[OrCondition:] returns the equivalent of performing a logical OR on all conditions passed to it~\cite{OrCondition}.
-	\end{description}
-	\item[NotCondition:] examines the value of one condition passed to it and evaluates to the opposite of what ever that condition evaluates~\cite{NotCondition}.
 \end{description}
-Through the recursive use of BinaryLogicalConditions the developer can now chain together an arbitrary amount of dependents together.
+Through the recursive use of BinaryLogicalConditions the developer can now chain together an arbitrary amount of dependents.
 
-ConditionVisualDependencies are the only dependencies which allow for multiple dependents. So while support was added for multiple depdents at the
-Dependency parent class level, ConditionVisualDependency is the only class which actually implements the functionality. In the case of multiple depdnents the algorithm
+ConditionVisualDependencies are the only dependencies which allow for multiple dependents. So while support was added for multiple dependents at the
+Dependency parent class level, ConditionVisualDependency is the only class which actually implements the functionality. In the case of multiple dependents the algorithm
 for evaluating dependencies didn't need to change at all.
 
 At the time of this publication, the Optika team is still waiting to hear back from Dr. Frink as to whether or not these new features meet her needs.
 
 \section{Future Development}
-There are two main development goals for Optika in the near future. The first is to be able to completely write and Optika GUI (with dependencies and validators)
-solely in XML. This requires that XML serialization for all of the validator and dependency related classes be developed. Currently,
-XML serialization for validators is almost finished after which serialization for the dependency and dependency sheet class will begin.
+There are several main development goals for Optika in the near future. 
+\begin{itemize}
+\item We would like to give users the option to completely write an Optika GUI (with dependencies and validators)
+solely in XML. Our hope is that since writing XML is simpler than writing C++ this will further ease the demands of the application developer.
+In order to achieve this goal XML serialization for all of the validator and dependency related classes must be developed. We have already started working on
+serialization this summer and currently XML serialization for validators is almost finished after which serialization for the dependency and dependency sheet class will begin.
 
-The second goal is to develop a stand-alone version of Optika. The development team believes that the potential audience for Optika is much 
-larger than just user base of Trilinos. However, creating a stand-alone version presents the problem of keeping source code consistent between
-the Optika that exists in Trilinos and the stand-alone version. No doubt python scripting will come in handy when solving this problem.
+\item We would like to develop a stand-alone version of Optika. The development team believes that the potential audience for Optika is much 
+larger than just the user base of Trilinos. However, creating a stand-alone version presents the problem of keeping source code consistent between
+the Optika that exists in Trilinos and the stand-alone version. This is an issue that we will need to make sure to address.
+
+\item We would like to create a single Optika based executable that acts as a generic ParmaterList configurator. It would take in a ParameterList in
+XML format, allow the user to configure the ParameterList, and then either output the entire ParameterList again with the new settings or output
+a ParameterList only containing the parameters that were changed. We think this will be useful because it will enable end-users to utilize
+Opitka without requiring the program their using to implement Optika support (just ParameterList support).
+
+\item An absolute and simpler way to uniquely identify dependees and dependents is needed.
+The current system right now is clunky and doesn't offer us guaranteed identification.
+
+\item Do a more thorough use case analysis. Initially, only a few people were consulted on the potential requirements
+of such a generic GUI. A broader selection of potential users would help us determine how we can make Optika
+more useful in a much boarder context.
+
+\item We need to further investigate what happens when dependencies conflict
+or become circular. Right now the behavior of Optika under such conditions
+is unknown.
+
+\end{itemize}
+
+\section{Conclusions}
+It is difficult to tell if Optika has met it's initial goals yet. As of the writing of this paper, Optika only has one user. Hopefully, by continuing to do
+further development and evangelization it's user base can grow. This will then allow us to see if we truly are meeting the needs of the scientific community.
+Based on early use of Optika by Dr. Frink we believe that Optika is indeed robust enough to meet most of the community's needs but we can't say for sure
+until we have more user testing.
 

@@ -1,0 +1,182 @@
+Version 0.2.5 
+-------------
+John's feature request: Added "vrightbase" joining method in PictureStack_layout.
+Play nice with ConTeXt: input boxes.mp only if needed.
+
+
+Version 0.2.4 [28 Mar 2005]
+-------------
+
+The macro Picture was extended to help Adriana create Picture-s with fixed pre-specified sizes, 
+in which the contents may or may not be centered within the Picture's frame --- 
+and this for each of the axes. Documented in the manual, section "Picture Macro/Fixed Size".
+
+Added support for realization in class diagrams, courtesy of Dominic.
+
+Following Achim's feature request, allowed for TeX-typeset mathematical formulae in Note-s --- experimental feature!
+
+Version 0.2.3 [19 Mar 2005]
+--------------
+
+Added macro same (e.g. same.top(A, B);)
+Added suport for FlowFinal
+Manual addition: documented forks (horizontal, vertical), object instances, the newly added macro 'same', 'FlowFinal'.
+
+Version 0.2.2 [15 Feb 2005]
+--------------
+
+Modified metauml_defaults.mp to define 
+metauml_defaultFont, metauml_defaultFontOblique, metauml_defaultFontBold, and
+metauml_defaultFontOblique.
+
+Added explicit support for Interface and AbstractClass.
+
+Version 0.2.1b [10 Jan 2005]
+--------------
+Modified Usecase to resemble Class. (Note: the code of both Usecase and Actor was not kept up to date to the latest advances in the coding strategy, that were applied only to the more intesively used Class --- but now the code is updated).
+
+Added the latest version of test_usecase to manual release (forgot in 0.2.1), and added additional customization examples for Usecase.
+
+Version 0.2.1 [10 Jan 2005]
+--------------
+Modified the internal variables of the Actor object in order to make them usable from the outside. Along this line, also modified in PictureStack the name of the group containing the pictures --- from 'myGroup' to 'group'.
+
+This changed API is used in the manual in test_usecase.mp, figures 4 to 6.
+
+Version 0.2.0 [05 Jan 2005]
+--------------
+Changed version number to 0.2.x to mark that MetaUML's API has matured into something which is actually pleasant to use.
+
+The old manual and the NTG article have been merged and expanded.
+Added syntactic sugar for object positioning (leftToRight, topToBottom).
+Added support for package diagrams (by Radu-George Radulescu).
+Added a simple "log" facility to the "util" infrastructure (log, loglevels etc.)
+
+Version 0.1.1 [19 Dec 2005]
+--------------
+Added util_positioning.mp, syntactic sugar for object positioning. Changed default font to a more portable one (more research needed on this). This version was used for the MetaUML Library of Patterns.
+
+Version 0.1.0 [08 Dec 2005]
+--------------
+Changing version number 0.1.x to mark that MetaUML has passed the status of a mere laboratory experiment: quite a few users used MetaUML for actual typesetting of their UML diagrams. Many thanks to those who have sent me feedback!
+
+* The default fonts used by MetaUML can now be changed globally, by setting metauml_defaultFont and metauml_defaultFontLight. They are defined in metauml_defaults.mp.
+
+* Added a sample "skin" for MetaUML diagrams. I hope that the future will bring to light even more customization features of MetaUML.
+
+* Added basic support for Instance (class instances).
+
+* Notes' text is now typeset in a lighter font by default
+
+Version 0.0.9b [26 Nov 2005]
+--------------
+
+* Rewritten
+dotlabel.lft(btex $A$ etex, linkStruct.pointA);
+to
+dotlabel.lft("A", linkStruct.pointA);
+
+This removes an unreplicable but annoying problem which some MetaUML users
+experience when compiling MetaUML diagrams.
+
+Version 0.0.9 [18 Oct 2005]
+-------------
+* Note that when using mptopdf, the following error might appear:
+
+>> metauml_links.mpx
+! Unable to make mpx file.
+l.54   dotlabel.lft(btex
+                        $A$ etex, linkStruct.pointA);
+
+The solution is to run mpost first on the file, and only then mptopdf:
+
+mpost test.mp; mptopdf test.mp
+
+This may be a mptopdf problem, more is needed to find the actual cause.
+
+* All the metauml files have a guard preventing double inclusion.
+
+Version 0.0.8 [20 Sept 2005]
+-------------
+TemplateClass macro gives a better positioning for the templates area (thanks Lars).
+Activity and State fore/border/shadow color management infrastructure
+changed to match that of Class (which is more elegant). A further refactoring
+of fore/border info into a configuration class (similar to ShadeInfo)
+might emerge as necessary.
+
+Version 0.0.7 [14 Sept 2005]
+-------------
+Release used for the NTG article. Class diagrams fine tuned.
+
+Version 0.0.6 [08 Sept 2005]
+-------------
+Cleaned up the customization options in Class.
+
+Version 0.0.5 [30 Aug 2005]
+-------------
+Small bug fixes and enhancements
+
+Version 0.0.4 [22 Aug 2005]
+-------------
+State machine diagram support.
+
+Version 0.0.3 [11 Jul 2005]
+-------------
+Added basic support for use case diagrams.
+
+Version 0.0.2 [08 Jul 2005]
+-------------
+Added support for activity diagrams.
+Lighter shadows.
+The arrows heads are at the level of boxes, and no longer
+"buried" at the level of the shadow. The contents of the diamond
+and the triangle are filled with white.
+
+Version 0.0.1 [04 Jul 2005]
+-------------
+Version number restarted, as the code has been completely refactored.
+boxit is no longer used for text layout because the visual result of
+aligning lines of text is appalling. In TeX lines
+are aligned so that the distance between the base of the lines is
+equal, regardless whether some characters with strokes below the base
+line (such as 'g' or 'y') are present. This can hardly be achieved with
+boxit.
+
+Suppose that we have a horizontal association and at the association
+ends we have the roles "yummy" and "cool", respectively. If we align
+these items at the bottom (and it's intuitive to do so), the label
+"yummy" will look slightly upper than "cool", because they will be
+actually aligned at the base of "y", instead of at the base of "m".
+
+When aiming at visual perfection, one might want to position the "yummy"
+box generated by boxit a little lower, but this is annoying and boring.
+The "util_" package in MetaUML provides the Picture macro which gives
+a higher level object around pictures (whether created as a text with
+infont macro or proper pictures). This Picture macro can be configured
+to make alignment at the "correct" base of the text, a feature missing
+from the boxit package.
+
+
+Version 0.2.1 [9 Nov 2004]
+--------------------------
+
+Class layout engine replaced: now boxit is used for
+laying down class features. Classes have a nicer 3D look.
+
+Version 0.2.0 [29.dec.2003]
+-------------
+Relation definition/draw engine redesigned(again).
+Any relation can be drawn following an arbitrary path.
+High level API was modified and improved.
+
+Version 0.1.0 [25.feb.2003]
+-------------
+Relation definition/draw engine redesigned. Now relations heads are "objects" with
+width and length and they have corresponding draw "methods".
+High level API unchanged from previous version
+
+Version 0.0.1
+-------------
+Activity diagrams: activities names are pictures (btex etex) instead of strings
+
+0.0.0

@@ -1,0 +1,231 @@
+\begin{thebibliography}{10}
+
+\bibitem{QtModelView}
+{Model/View Programming}.
+\newblock \url{http://doc.trolltech.com/4.6/model-view-programming.html}.
+
+\bibitem{QtWebsite}
+{Online Reference Documentation}.
+\newblock \url{http://doc.trolltech.com}.
+
+\bibitem{AndCondition}
+{Opitka::AndCondition Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1AndCondition.html}.
+
+\bibitem{ArrayValidator}
+{Opitka::ArrayValidator Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1ArrayValidator.html}.
+
+\bibitem{BinaryLogicalCondition}
+{Opitka::BinaryLogicalCondition Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1BinaryLogicalCondition.html}.
+
+\bibitem{BoolCondition}
+{Opitka::BoolCondition Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1BoolCondition.html}.
+
+\bibitem{BoolValidatorDependency}
+{Opitka::BoolValidatorDependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1BoolValidatorDependency.html}.
+
+\bibitem{BoolVisualDependency}
+{Opitka::BoolVisualDependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1BoolVisualDependency.html}.
+
+\bibitem{ConditionVisualDependency}
+{Opitka::ConditionVisualDependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1ConditionVisualDependency.html}.
+
+\bibitem{Dependency}
+{Opitka::Dependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1Dependency.html}.
+
+\bibitem{DependencySheet}
+{Opitka::DependencySheet Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1DependencySheet.html}.
+
+\bibitem{EnhancedNumberValidator}
+{Opitka::EnhnacedNumberValidator<S> Class Template Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1EnhancedNumberValidator.html}.
+
+\bibitem{EqualsCondition}
+{Opitka::EqualsCondition Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1EqualsCondition.html}.
+
+\bibitem{FileNameValidator}
+{Opitka::FileName Validator Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1FileNameValidator.html}.
+
+\bibitem{NotCondition}
+{Opitka::NotCondition Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1NotCondition.html}.
+
+\bibitem{NumberArrayLengthDependency}
+{Opitka::NumberArrayLengthDependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1NumberArrayLengthDependency.html}.
+
+\bibitem{NumberCondition}
+{Opitka::NumberCondition<T> Template Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1NumberCondition.html}.
+
+\bibitem{NumberValidatorAspectDependency}
+{Opitka::NumberValidatorAspectDependency<S> Template Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1NumberValidatorAspectDependency.html}.
+
+\bibitem{NumberVisualDependency}
+{Opitka::NumberVisualDependency<S> Template Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1NumberVisualDependency.html}.
+
+\bibitem{OptikaGUI}
+{Opitka::OptikaGUI Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1OptikaGUI.html}.
+
+\bibitem{OrCondition}
+{Opitka::OrCondition Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1OrCondition.html}.
+
+\bibitem{ParameterCondition}
+{Opitka::ParameterCondition Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1ParameterCondition.html}.
+
+\bibitem{RangeValidatorDependency}
+{Opitka::RangeValidatorDependency<S> Template Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1RangeValidatorDependency.html}.
+
+\bibitem{StringCondition}
+{Opitka::StringCondition Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1StringCondition.html}.
+
+\bibitem{StringValidator}
+{Opitka::StringValidator Class Template Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1StringValidator.html}.
+
+\bibitem{StringValidatorDependency}
+{Opitka::StringValidatorDependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1StringValidatorDependency.html}.
+
+\bibitem{StringVisualDependency}
+{Opitka::StringVisualDependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1StringVisualDependency.html}.
+
+\bibitem{ValidatorDependency}
+{Opitka::ValidatorDependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1ValidatorDependency.html}.
+
+\bibitem{VisualDependency}
+{Opitka::VisualDependency Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1VisualDependency.html}.
+
+\bibitem{Delegate}
+{Optika::Delegate Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1Delegate.html}.
+
+\bibitem{TreeItem}
+{Optika::TreeItem Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1TreeItem.html}.
+
+\bibitem{TreeModel}
+{Optika::TreeModel Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1TreeModel.html}.
+
+\bibitem{TreeView}
+{Optika::TreeView Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/optika/doc/html/%
+classOptika_1_1TreeView.html}.
+
+\bibitem{QAbstractItemModel}
+{QAbstractItemModel Class Reference}.
+\newblock \url{http://doc.trolltech.com/4.6/qabstractitemmodel.html}.
+
+\bibitem{QItemDelegate}
+{QAbstractItemModel Class Reference}.
+\newblock \url{http://doc.trolltech.com/4.6/qitemdelegate.html}.
+
+\bibitem{QtGallery}
+{Qt Widget Gallery}.
+\newblock \url{http://doc.trolltech.com/4.6/gallery.html}.
+
+\bibitem{QTreeView}
+{QTreeView Class Reference}.
+\newblock \url{http://doc.trolltech.com/4.6/qtreeview.html}.
+
+\bibitem{ParameterEntry}
+{Teuchos::ParameterEntry Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/teuchos/doc/html%
+/classTeuchos_1_1ParameterEntry.html}.
+
+\bibitem{ParameterList}
+{Teuchos::ParamterList Class Reference}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/10.4/packages/teuchos/doc/html%
+/classTeuchos_1_1ParameterList.html}.
+
+\bibitem{Sand98-0730}
+Tamara~K. Locke.
+\newblock Guide to preparing {SAND} reports.
+\newblock Technical report SAND98-0730, Sandia National Laboratories,
+  Albuquerque, New Mexico 87185 and Livermore, California 94550, May 1998.
+
+\end{thebibliography}

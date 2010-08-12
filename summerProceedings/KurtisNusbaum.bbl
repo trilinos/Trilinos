@@ -1,0 +1,38 @@
+\begin{thebibliography}{1}
+
+\bibitem{QtModelView}
+{\em {Model/View Programming}}.
+\newblock \url{http://doc.trolltech.com/4.6/model-view-programming.html}.
+
+\bibitem{QtDocs}
+{\em {Online Reference Documentation}}.
+\newblock \url{http://doc.trolltech.com}.
+
+\bibitem{OptikaPackage}
+{\em {Optika: Trilinos/packages/optika}}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/r10.4/packages/optika/doc/html%
+/index.html}.
+
+\bibitem{QtGallery}
+{\em {Qt Widget Gallery}}.
+\newblock \url{http://doc.trolltech.com/4.6/gallery.html}.
+
+\bibitem{TeuchosPackage}
+{\em {Teuchos: The Trilinos Tools Package}}.
+\newblock
+  \url{http://trilinos.sandia.gov/packages/docs/r10.4/packages/teuchos/doc/htm%
+l/index.html}.
+
+\bibitem{Tramonto}
+{\em {Tramonto Software}}.
+\newblock \url{http://software.sandia.gov/DFTfluids}.
+
+\bibitem{1089021}
+{\sc M.~A. Heroux, R.~A. Bartlett, V.~E. Howle, R.~J. Hoekstra, J.~J. Hu, T.~G.
+  Kolda, R.~B. Lehoucq, K.~R. Long, R.~P. Pawlowski, E.~T. Phipps, A.~G.
+  Salinger, H.~K. Thornquist, R.~S. Tuminaro, J.~M. Willenbring, A.~Williams,
+  and K.~S. Stanley}, {\em An overview of the trilinos project}, ACM Trans.
+  Math. Softw., 31 (2005), pp.~397--423.
+
+\end{thebibliography}

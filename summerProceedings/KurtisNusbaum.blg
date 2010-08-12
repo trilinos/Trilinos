@@ -3,82 +3,51 @@ The top-level auxiliary file: KurtisNusbaum.aux
 The style file: siam.bst
 Database file #1: KurtisNusbaum.bib
 Database file #2: ../OptikaSANDReport.bib
-Warning--to sort, need author or key in ParameterList
+Warning--to sort, need author or key in OptikaPackage
+Warning--to sort, need author or key in Tramonto
+Warning--to sort, need author or key in QtDocs
+Warning--to sort, need author or key in QtGallery
+Warning--to sort, need author or key in TeuchosPackage
 Warning--to sort, need author or key in QtModelView
-Warning--to sort, need author or key in TreeModel
-Warning--to sort, need author or key in QAbstractItemModel
-Warning--to sort, need author or key in ParameterEntry
-Warning--to sort, need author or key in TreeItem
-Warning--to sort, need author or key in Delegate
-Warning--to sort, need author or key in QItemDelegate
-Warning--to sort, need author or key in QTreeView
-Warning--to sort, need author or key in TreeView
-Warning--to sort, need author or key in OptikaGUI
-Warning--to sort, need author or key in EnhancedNumberValidator
-Warning--to sort, need author or key in StringValidator
-Warning--to sort, need author or key in ArrayValidator
-Warning--to sort, need author or key in FileNameValidator
-Warning--to sort, need author or key in DependencySheet
-Warning--to sort, need author or key in Dependency
-Warning--to sort, need author or key in NumberArrayLengthDependency
-Warning--to sort, need author or key in NumberValidatorAspectDependency
-Warning--to sort, need author or key in ValidatorDependency
-Warning--to sort, need author or key in BoolValidatorDependency
-Warning--to sort, need author or key in RangeValidatorDependency
-Warning--to sort, need author or key in StringValidatorDependency
-Warning--to sort, need author or key in VisualDependency
-Warning--to sort, need author or key in BoolVisualDependency
-Warning--to sort, need author or key in NumberVisualDependency
-Warning--to sort, need author or key in StringVisualDependency
-Warning--to sort, need author or key in ConditionVisualDependency
-Warning--to sort, need author or key in ParameterCondition
-Warning--to sort, need author or key in BoolCondition
-Warning--to sort, need author or key in NumberCondition
-Warning--to sort, need author or key in StringCondition
-Warning--to sort, need author or key in BinaryLogicalCondition
-Warning--to sort, need author or key in AndCondition
-Warning--to sort, need author or key in EqualsCondition
-Warning--to sort, need author or key in OrCondition
-Warning--to sort, need author or key in NotCondition
-You've used 37 entries,
+You've used 7 entries,
             2030 wiz_defined-function locations,
-            648 strings with 10529 characters,
-and the built_in function-call counts, 5757 in all, are:
-= -- 481
-> -- 37
+            532 strings with 4839 characters,
+and the built_in function-call counts, 1786 in all, are:
+= -- 149
+> -- 89
 < -- 0
-+ -- 37
-- -- 0
-* -- 261
-:= -- 677
-add.period$ -- 74
-call.type$ -- 37
-change.case$ -- 111
++ -- 40
+- -- 32
+* -- 130
+:= -- 258
+add.period$ -- 13
+call.type$ -- 7
+change.case$ -- 37
 chr.to.int$ -- 0
-cite$ -- 74
-duplicate$ -- 296
-empty$ -- 815
-format.name$ -- 0
-if$ -- 1370
+cite$ -- 13
+duplicate$ -- 67
+empty$ -- 162
+format.name$ -- 32
+if$ -- 382
 int.to.chr$ -- 0
-int.to.str$ -- 37
-missing$ -- 0
-newline$ -- 151
-num.names$ -- 0
-pop$ -- 259
+int.to.str$ -- 7
+missing$ -- 1
+newline$ -- 30
+num.names$ -- 2
+pop$ -- 59
 preamble$ -- 1
-purify$ -- 74
+purify$ -- 30
 quote$ -- 0
-skip$ -- 258
+skip$ -- 61
 stack$ -- 0
-substring$ -- 185
-swap$ -- 37
+substring$ -- 68
+swap$ -- 16
 text.length$ -- 0
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 148
-warning$ -- 37
-while$ -- 0
-width$ -- 39
-write$ -- 261
-(There were 37 warnings)
+type$ -- 28
+warning$ -- 6
+while$ -- 5
+width$ -- 8
+write$ -- 53
+(There were 6 warnings)
