@@ -1,5 +1,4 @@
 
-ADD_SUBDIRECTORY(util)
 
 INCLUDE(PackageLibraryMacros)
 
@@ -52,3 +51,7 @@ PACKAGE_ADD_LIBRARY(
 INSTALL(FILES ${HEADERS} DESTINATION
 ${CMAKE_INSTALL_PREFIX}/include/stk_io/)
 
+# AGS: I moved this to the bottom so that the link order was correct
+# with  -lstk_io_uti before -lstk_io.  I think the DEPLIBS added in
+# util/CMakeLists.txt should have done this, but it didn't work for me.
+ADD_SUBDIRECTORY(util)

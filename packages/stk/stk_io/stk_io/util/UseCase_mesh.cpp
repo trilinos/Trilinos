@@ -379,7 +379,9 @@ namespace stk {
 	  filename = tokens[0];
 	}
 
-	std::string out_filename = filename + "." + mesh_extension;
+	std::string out_filename = filename;
+        if (!mesh_extension.empty()) 
+ 	  out_filename += "." + mesh_extension;
 
 	// Prepend the working directory onto the mesh filename iff the
 	// directory was specified *and* the mesh filename does not
