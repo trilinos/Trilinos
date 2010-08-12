@@ -34,7 +34,7 @@
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosBlockCGSolMgr.hpp"
+#include "BelosTFQMRSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -110,9 +110,8 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by TFQMR solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("blocksize",&blocksize,"Block size used by CG .");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -163,7 +162,6 @@ int main(int argc, char *argv[]) {
   int maxits = dim/blocksize; // maximum number of iterations to run
   //
   ParameterList belosList;
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   if (verbose) {
@@ -197,10 +195,10 @@ int main(int argc, char *argv[]) {
   }
   //
   // *******************************************************************
-  // *************Start the block CG iteration***********************
+  // *************Start the TFQMR iteration***********************
   // *******************************************************************
   //
-  Belos::BlockCGSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
+  Belos::TFQMRSolMgr<ST,MV,OP> solver( problem, rcp(&belosList,false) );
 
   //
   // **********Print out information about problem*******************
@@ -210,7 +208,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Dimension of matrix: " << dim << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
     std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Max number of CG iterations: " << maxits << std::endl; 
+    std::cout << "Max number of TFQMR iterations: " << maxits << std::endl; 
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
@@ -254,4 +252,4 @@ int main(int argc, char *argv[]) {
   return 0;
 
   //
-} // end test_bl_cg_complex_hb.cpp
+} // end test_tfqmr_complex_hb.cpp
