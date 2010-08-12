@@ -38,6 +38,7 @@
 
 #include "Tsqr_SeqTest.hpp"
 #include "Tsqr_TsqrTest.hpp"
+#include "Tsqr_CombineBenchmark.hpp"
 #include "Teuchos_Time.hpp"
 
 #ifdef HAVE_ANASAZI_COMPLEX
@@ -62,18 +63,18 @@ namespace TSQR {
       TsqrTestAction TsqrTestActionValues[] = { Verify, Benchmark };
       const char* TsqrTestActionNames[] = {"verify", "benchmark"};
 
-      const int numTsqrTestRoutines = 2;
-      const char* TsqrTestRoutineNames[] = {"MpiSeqTSQR", "SeqTSQR"};
+      const int numTsqrTestRoutines = 3;
+      const char* TsqrTestRoutineNames[] = {"Combine", "MpiSeqTSQR", "SeqTSQR"};
 
       /// \class TsqrTestParameters
       /// \brief Encapsulates values of command-line parameters
       struct TsqrTestParameters {
 	TsqrTestParameters () :
-	  which ("MpiSeqTSQR"),
-	  action (Verify), 
-	  nrows (10000), 
+	  which ("Combine"),
+	  action (Benchmark), 
+	  nrows (1000), 
 	  ncols (10), 
-	  ntrials (1), 
+	  ntrials (10), 
 	  cache_block_size (0),
 	  verbose (true), 
 	  debug (false),
@@ -94,6 +95,33 @@ namespace TSQR {
 	bool contiguous_cache_blocks, human_readable, tpetra;
       };
 
+      static void
+      benchmarkCombineAlone (RCP< const Teuchos::Comm<int> > comm,
+			     std::ostream& out,
+			     const TsqrTestParameters& params)
+      {
+	typedef Teuchos::Time timer_type;
+	using TSQR::Test::benchmarkCombine;
+	typedef int ordinal_type;
+
+	if (comm->rank() == 0)
+	  {
+	    const ordinal_type numRows = params.nrows;
+	    const ordinal_type numCols = params.ncols;
+	    const ordinal_type numTrials = params.ntrials;
+#ifdef HAVE_ANASAZI_COMPLEX
+	    const bool testComplex = params.test_complex_arithmetic;
+#else
+	    const bool testComplex = false;
+#endif // HAVE_ANASAZI_COMPLEX
+
+	    std::vector<int> seed(4);
+	    const bool useSeedValues = false;
+	    benchmarkCombine< timer_type > (out, numRows, numCols, numTrials,
+					    seed, useSeedValues, testComplex);
+	  }
+	comm->barrier();
+      }
 
       template< class Scalar >
       static void
@@ -313,6 +341,11 @@ main (int argc, char *argv[])
     parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp)
     return 0;
+
+  if (allowedToPrint)
+    TSQR::Trilinos::Test::benchmarkCombineAlone (comm, std::cout, params);
+  else
+    TSQR::Trilinos::Test::benchmarkCombineAlone (comm, blackhole, params);
 
   TSQR::Trilinos::Test::verifyTsqrAlone< double > (comm, params);
   TSQR::Trilinos::Test::verifyTsqrAlone< float > (comm, params);
