@@ -56,10 +56,11 @@
 
 // Teko includes
 #include "Teko_RequestHandler.hpp"
+#include "Teko_RequestHandlerContainer.hpp"
 
 namespace Teko {
 
-class InverseLibrary {
+class InverseLibrary : public RequestHandlerContainer {
 public:
    InverseLibrary();
 

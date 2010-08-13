@@ -1308,5 +1308,13 @@ LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G,const LinearOp & Op){
 #endif
 }
 
+double norm_1(const MultiVector & v,std::size_t col)
+{
+   Teuchos::Array<double> n(v->domain()->dim());
+   Thyra::norms_1<double>(*v,n);
+
+   return n[col];
+}
+
 }
 

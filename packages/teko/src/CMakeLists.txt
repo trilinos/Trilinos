@@ -31,17 +31,20 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/NS)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Epetra)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mlutils)
 
 APPEND_GLOB(HEADERS
   *.hpp
   NS/*.hpp
   Epetra/*.hpp
+  mlutils/*.hpp
   )
 
 APPEND_GLOB(SOURCES
   *.cpp
   NS/*.cpp
   Epetra/*.cpp
+  mlutils/*.cpp
   )
 
 ######################################

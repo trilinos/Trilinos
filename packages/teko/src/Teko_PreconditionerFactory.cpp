@@ -58,6 +58,7 @@
 #include "Teko_DiagnosticPreconditionerFactory.hpp"
 #include "Teko_DiagonallyScaledPreconditionerFactory.hpp"
 #include "Teko_ProbingPreconditionerFactory.hpp"
+#include "Teko_SmootherPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 
@@ -105,6 +106,9 @@ void PreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBase<do
 
    // build the preconditioner
    const RCP<const LinearOpBase<double> > M = buildPreconditionerOperator(A,*state);
+
+   // set the request handler for the 
+   setOpRequestHandler(*this,M);
 
    // must first cast that to be initialized
    DefaultPreconditioner<double> & dPrec = Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);
@@ -176,6 +180,22 @@ RCP<const InverseLibrary> PreconditionerFactory::getInverseLibrary() const
 /////////////////////////////////////////////////////
 // Static members and methods
 /////////////////////////////////////////////////////
+
+//! If supported, set the request handler in this operator
+void PreconditionerFactory::setOpRequestHandler(const RequestHandlerContainer & rhc,const LinearOp & op)
+{
+   ModifiableLinearOp mlo = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(op);
+
+   // conditionally set the request handler
+   RCP<RequestHandlerContainer> reqHandCont = Teuchos::rcp_dynamic_cast<RequestHandlerContainer>(mlo);
+   if(reqHandCont!=Teuchos::null) {
+      reqHandCont->setRequestHandler(rhc.getRequestHandler());
+   }
+   else {
+      // is null
+   }
+   
+}
 
 //! for creating the preconditioner factories objects
 CloneFactory<PreconditionerFactory> PreconditionerFactory::precFactoryBuilder_;
@@ -285,6 +305,9 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
 
    clone = rcp(new AutoClone<DiagonallyScaledPreconditionerFactory>());
    precFactoryBuilder_.addClone("Diagonal Scaling",clone);
+
+   clone = rcp(new AutoClone<SmootherPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Smoother",clone);
 
 #ifdef Teko_ENABLE_Isorropia
    clone = rcp(new AutoClone<ProbingPreconditionerFactory>());

@@ -212,6 +212,10 @@ inline MultiVector getBlock(int i,const BlockedMultiVector & bmv)
 inline MultiVector deepcopy(const MultiVector & v)
 { return v->clone_mv(); }
 
+//! Perform a deep copy of the vector
+inline MultiVector copyAndInit(const MultiVector & v,double scalar)
+{ MultiVector mv = v->clone_mv(); Thyra::assign(mv.ptr(),scalar); return mv; }
+
 //! Perform a deep copy of the blocked vector
 inline BlockedMultiVector deepcopy(const BlockedMultiVector & v)
 { return toBlockedMultiVector(v->clone_mv()); }
@@ -773,6 +777,10 @@ std::string getDiagonalName(const DiagonalType & dt);
 DiagonalType getDiagonalType(std::string name);
 
 LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, const LinearOp & Op);
+
+/** Get the one norm of the vector
+  */
+double norm_1(const MultiVector & v,std::size_t col);
 
 } // end namespace Teko
 

@@ -61,6 +61,7 @@
 #include "Teko_CloneFactory.hpp"
 #include "Teko_PreconditionerState.hpp"
 #include "Teko_RequestHandler.hpp"
+#include "Teko_RequestHandlerContainer.hpp"
 
 namespace Teko {
 
@@ -78,7 +79,7 @@ using Thyra::DefaultPreconditioner;
   * way.
   */
 class PreconditionerFactory 
-   : public virtual Thyra::PreconditionerFactoryBase<double>
+   : public virtual Thyra::PreconditionerFactoryBase<double>, public RequestHandlerContainer
    // , public RequestHandler {
    {
 public:
@@ -238,6 +239,9 @@ protected:
 private:
    //! Inverse library to be used by this factory
    Teuchos::RCP<const InverseLibrary> inverseLibrary_;
+
+   //! If supported, set the request handler in this operator
+   static void setOpRequestHandler(const RequestHandlerContainer & rhc,const LinearOp & op);
 
 public:
 

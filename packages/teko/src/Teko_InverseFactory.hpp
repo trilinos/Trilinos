@@ -57,6 +57,7 @@
 #include "Teko_Utilities.hpp"
 #include "Teko_PreconditionerState.hpp"
 #include "Teko_RequestHandler.hpp"
+#include "Teko_RequestHandlerContainer.hpp"
 
 namespace Teko {
 
@@ -66,7 +67,7 @@ namespace Teko {
   * with a linear operator and gives you a new operator that
   * behaves like its inverse.
   */
-class InverseFactory {
+class InverseFactory : public RequestHandlerContainer {
 public:
    virtual ~InverseFactory() {}
 

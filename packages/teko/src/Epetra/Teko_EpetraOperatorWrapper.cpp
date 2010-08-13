@@ -79,8 +79,6 @@ DefaultMappingStrategy::DefaultMappingStrategy(const RCP<const Thyra::LinearOpBa
    domainSpace_ = thyraOp->domain();
    rangeSpace_ = thyraOp->range();
 
-   // domainMap_ = Teko::Epetra::thyraVSToEpetraMap(*domainSpace_,Teuchos::rcpFromRef(comm));
-   // rangeMap_ = Teko::Epetra::thyraVSToEpetraMap(*rangeSpace_,Teuchos::rcpFromRef(comm));
    domainMap_ = Teko::Epetra::thyraVSToEpetraMap(*domainSpace_,newComm);
    rangeMap_ = Teko::Epetra::thyraVSToEpetraMap(*rangeSpace_,newComm);
 }
@@ -88,14 +86,12 @@ DefaultMappingStrategy::DefaultMappingStrategy(const RCP<const Thyra::LinearOpBa
 void DefaultMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& x, const Ptr<Thyra::MultiVectorBase<double> > & thyraVec,
                                       const EpetraOperatorWrapper & eow) const
 {
-   // epetraToThyra(x,Teuchos::ptr_dynamic_cast<Thyra::VectorBase<double> >(thyraVec));
    Teko::Epetra::blockEpetraToThyra(x,thyraVec);
 }
 
 void DefaultMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraVec, Epetra_MultiVector& v,
                                       const EpetraOperatorWrapper & eow) const
 {
-   // thyraToEpetra(rcp_dynamic_cast<const Thyra::VectorBase<double> >(thyraVec), v);
    Teko::Epetra::blockThyraToEpetra(thyraVec,v);
 }
 
@@ -161,6 +157,7 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
 
        // copy epetra X into thyra X
        mapStrategy_->copyEpetraIntoThyra(X, tX.ptr(),*this);
+       mapStrategy_->copyEpetraIntoThyra(Y, tY.ptr(),*this); // if this matrix isn't block square, this probably won't work!
 
        // perform matrix vector multiplication
        thyraOp_->apply(Thyra::NOTRANS,*tX,tY.ptr(),1.0,0.0);
