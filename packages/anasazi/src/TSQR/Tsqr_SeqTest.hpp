@@ -194,7 +194,7 @@ namespace TSQR {
 	const Ordinal ldq = numRows;
 
 	// Create a test problem
-	nodeTestProblem (generator, numRows, numCols, A.get(), lda, false);
+	nodeTestProblem (gen_, numRows, numCols, A.get(), lda, false);
 
 	// Copy A into A_copy, since TSQR overwrites the input
 	A_copy.copy (A);
@@ -228,7 +228,7 @@ namespace TSQR {
     private:
       /// Pseudorandom normal(0,1) generator.  Default seed is OK,
       /// because this is a benchmark, not an accuracy test.
-      TSQR::Random::NormalGenerator gen_;
+      TSQR::Random::NormalGenerator< ordinal_type, scalar_type > gen_;
       
       /// Output stream to which to print benchmark results.
       ///
@@ -237,6 +237,10 @@ namespace TSQR {
       /// Human-readable string representation of the Scalar type 
       ///
       std::string scalarTypeName_;
+
+      /// Whether results should be printed in a human-readable way
+      /// (vs. a way easily parsed by a script).
+      bool humanReadable_;
 
       /// \brief Report benchmark results to out_
       ///
@@ -280,7 +284,7 @@ namespace TSQR {
     /// results to stdout in human-readable format.  Otherwise, print
     /// them as two rows of comma-delimited ASCII, in an abbreviated
     /// format suitable for automatic processing.
-    template< TimerType >
+    template< class TimerType >
     void
     benchmarkSeqTsqr (std::ostream& out,
 		      const int numRows,
@@ -291,20 +295,21 @@ namespace TSQR {
 		      const bool testComplex,
 		      const bool humanReadable)
     {
+      typedef TimerType timer_type;
       const bool testReal = true;
       using std::string;
 
       if (testReal)
 	{
 	  { // Scalar=float
-	    typedef SeqTsqrBenchmarker< int, float, TimerType > benchmark_type;
+	    typedef SeqTsqrBenchmarker< int, float, timer_type > benchmark_type;
 	    string scalarTypeName ("float");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
 			      contiguousCacheBlocks);
 	  }
 	  { // Scalar=double
-	    typedef SeqTsqrBenchmarker< int, double, TimerType > benchmark_type;
+	    typedef SeqTsqrBenchmarker< int, double, timer_type > benchmark_type;
 	    string scalarTypeName ("double");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
@@ -317,14 +322,14 @@ namespace TSQR {
 #ifdef HAVE_TSQR_COMPLEX
 	  using std::complex;
 	  { // Scalar=complex<float>
-	    typedef SeqTsqrBenchmarker< int, complex<float>, TimerType > benchmark_type;
+	    typedef SeqTsqrBenchmarker< int, complex<float>, timer_type > benchmark_type;
 	    string scalarTypeName ("complex<float>");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
 			      contiguousCacheBlocks);
 	  }
 	  { // Scalar=complex<double>
-	    typedef SeqTsqrBenchmarker< int, complex<double>, TimerType > benchmark_type;
+	    typedef SeqTsqrBenchmarker< int, complex<double>, timer_type > benchmark_type;
 	    string scalarTypeName ("complex<double>");
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 

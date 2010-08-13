@@ -58,48 +58,9 @@ namespace TSQR {
       using Teuchos::RCP;
       using Teuchos::Tuple;
 
-      const char docString[] = 
-"This program tests TSQR::DistTsqr, which implements the internode-\n
-parallel part of TSQR (TSQR::Tsqr).  TSQR (Tall Skinny QR) computes\n
-the QR factorization of a tall and skinny matrix (with many more rows\n
-than columns) distributed in a block row layout across one or more\n
-processes.  
-\n
-By default, TSQR::DistTsqr will only be tested with real arithmetic\n
-Scalar types (currently, float and double, corresponding to LAPACK's\n
-\"S\" resp. \"D\" data types).  If you build Trilinos with complex\n
-arithmetic support (Teuchos_ENABLE_COMPLEX), and invoke this program\n
-with the \"--complex\" option, complex arithmetic Scalar types will also\n
-be tested (currently, std::complex<float> and std::complex<double>,\n
-corresponding to LAPACK's \"C\" resp. \"Z\" data types).\n
-\n
-This program tests DistTsqr on a test matrix $A$, consisting of a\n
-stack of square numCols by numCols upper triangular matrices,\n
-distributed with one on each MPI process in MPI_COMM_WORLD.  It does\n
-the following:\n
-\n
-1. Compute the QR factorization of A, with the Q factor stored\n
-   implicitly\n
-2. Compute the explicit form of the Q factor, by applying the\n
-   implicitly stored Q factor to the first numCols columns of the
-   identity matrix (distributed across processes in the same manner\n
-   as A)\n
-\n
-That means this program is only testing applying $Q$, and not $Q^T$\n
-(or $Q^H$, the conjugate transpose, in the complex-arithmetic case).\n
-This exercises the typical use case of TSQR in iterative methods, in\n
-which the explicit $Q$ factor is desired in order to compute a rank-\n
-revealing decomposition and possibly also replace the null space basis\n
-vectors with random data.\n
-\n
-This program can test accuracy (\"--verify\") or performance\n
-(\"--benchmark\").  For accuracy tests, it computes both the\n
-orthogonality $\| I - Q^* Q \|_F$ and the residual $\| A - Q R \|_F$.\n
-For performance tests, it repeats the test with the same data for a\n
-number of trials (specified by the \"--ntrials=<n>\" command-line\n
-option).  This ensures that the test is performed with warm cache, so\n
-that kernel performance rather than memory bandwidth is being\n
-measured.";
+      const char docString[] = "This program tests TSQR::DistTsqr, which "
+	"implements the internode-parallel part of TSQR (TSQR::Tsqr).  "
+	"Accuracy and performance tests are included.";
 
       static void
       verifyDistTsqr (RCP< Teuchos::Comm<int> > comm,

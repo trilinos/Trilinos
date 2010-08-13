@@ -44,6 +44,7 @@
 #  include <complex>
 #endif // HAVE_TSQR_COMPLEX
 
+#include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -54,72 +55,16 @@
 namespace TSQR { 
   namespace Trilinos { 
     namespace Test {
+      
+      static const std::string& docStringFileName() {
+	return TSQR_TEST_COMBINE_DOC_STRING_FILENAME;
+      }
 
-      const char docString[] = "This program tests TSQR::Combine, which implements the computational\n
-kernels used to construct all TSQR variants.  TSQR (Tall Skinny QR)\n
-computes the QR factorization of a tall and skinny matrix (with many\n
-more rows than columns) distributed in a block row layout across one\n
-or more processes.  TSQR::Combine implements the following kernels:\n
-\n
-* factor_pair: compute QR factorization in place of $[R_1; R_2]$,\n
-  where $R_1$ and $R_2$ are both square upper triangular matrices\n
-\n
-* apply_pair: apply the $Q$ factor computed by factor_pair and stored\n
-  implicitly, to a matrix $C$\n
-\n
-* factor_inner: compute QR factorization in place of $[R; A]$, where\n
-  $R$ is square and upper triangular, and $A$ is a general dense\n
-  matrix\n
-\n
-* apply_inner: apply the $Q$ factor computed by factor_inner and\n
-  stored implicitly, to a matrix $C$\n
-\n
-TSQR::Combine also has the factor_first and apply_first methods, but\n
-these are just wrappers around the LAPACK routines _GEQRF(P)\n
-resp. _ORMQR.  (The underscore _ can be one of the following letters:\n
-S, D, C, Z.  It represents the type of the input Scalar data.)  This\n
-program does not test these methods.\n
-\n
-This program will test all four of the kernels mentioned above, for\n
-two different \"back-end\" implementations of TSQR::Combine:\n
-CombineNative, which is a native C++ implementation that works\n
-entirely in place, and CombineDefault, which is a wrapper around\n
-LAPACK routines and works by copying data in and out of internally\n
-allocated and maintained scratch space.  If you build Trilinos with\n
-Fortran support and enable the CMake Boolean option\n
-TSQR_ENABLE_Fortran, a third back-end implementation, CombineFortran,\n
-will also be tested.  It is a Fortran 2003 version of CombineNative.\n
-(Note that you will need a Fortran 2003 - compliant compiler in order\n
-to build CombineFortran.)\n
-\n
-By default, TSQR::Combine will only be tested with real arithmetic\n
-Scalar types (currently, float and double, corresponding to LAPACK's\n
-\"S\" resp. \"D\" data types).  If you build Trilinos with complex\n
-arithmetic support (Teuchos_ENABLE_COMPLEX), and invoke this program\n
-with the \"--complex\" option, complex arithmetic Scalar types will also\n
-be tested (currently, std::complex<float> and std::complex<double>,\n
-corresponding to LAPACK's \"C\" resp. \"Z\" data types).\n
-\n
-This program tests the four kernels in pairs: (factor_pair,\n
-apply_pair), and (factor_inner, apply_inner).  It does so by computing\n
-a QR factorization of a test problem using factor_*, and then using\n
-apply_* to compute the explicit version of the Q factor (by applying\n
-the implicitly stored $Q$ factor to columns of the identity matrix).\n
-That means it is only testing applying $Q$, and not $Q^T$ (or $Q^H$,\n
-the conjugate transpose, in the complex-arithmetic case).  This\n
-exercises the typical use case of TSQR in iterative methods, in which\n
-the explicit $Q$ factor is desired in order to compute a\n
-rank-revealing decomposition and possibly also replace the null space\n
-basis vectors with random data.\n
-\n
-This program can test accuracy (\"--verify\") or performance\n
-(\"--benchmark\").  For accuracy tests, it computes both the\n
-orthogonality $\| I - Q^* Q \|_F$ and the residual $\| A - Q R \|_F$.\n
-For performance tests, it repeats the test with the same data for a\n
-number of trials (specified by the \"--ntrials=<n>\" command-line\n
-option).  This ensures that the test is performed with warm cache, so\n
-that kernel performance rather than memory bandwidth is being\n
-measured.";
+      // mfh 12 Aug 2010: docString should not be a constant string
+      // literal if it's longer than some fixed, platform-dependent
+      // amount (e.g., 2048 bytes).
+      static const char docString[] = "This program tests TSQR::Combine.  "
+	"Accuracy and performance tests are included.";
 
       using Teuchos::RCP;
       using Teuchos::Tuple;

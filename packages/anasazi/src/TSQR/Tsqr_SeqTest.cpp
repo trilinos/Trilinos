@@ -115,9 +115,9 @@ namespace TSQR {
 	  string filename = "A_" + shortDatatype + ".txt";
 	  if (b_debug)
 	    cerr << "-- Saving test problem to \"" << filename << "\"" << endl;
-	  std::ofstream out (filename.c_str());
-	  print_local_matrix (out, nrows, ncols, A.get(), A.lda());
-	  out.close();
+	  std::ofstream fileOut (filename.c_str());
+	  print_local_matrix (fileOut, nrows, ncols, A.get(), A.lda());
+	  fileOut.close();
 	}
 
       if (b_debug)
@@ -185,9 +185,9 @@ namespace TSQR {
 	  string filename = "R_" + shortDatatype + ".txt";
 	  if (b_debug)
 	    cerr << "-- Saving R factor to \"" << filename << "\"" << endl;
-	  std::ofstream out (filename.c_str());
-	  print_local_matrix (out, ncols, ncols, R.get(), R.lda());
-	  out.close();
+	  std::ofstream fileOut (filename.c_str());
+	  print_local_matrix (fileOut, ncols, ncols, R.get(), R.lda());
+	  fileOut.close();
 	}
 
       actor.explicit_Q (nrows, ncols, A_copy.get(), lda, factorOutput,
@@ -212,9 +212,9 @@ namespace TSQR {
 	  string filename = "Q_" + shortDatatype + ".txt";
 	  if (b_debug)
 	    cerr << "-- Saving Q factor to \"" << filename << "\"" << endl;
-	  std::ofstream out (filename.c_str());
-	  print_local_matrix (out, nrows, ncols, Q.get(), Q.lda());
-	  out.close();
+	  std::ofstream fileOut (filename.c_str());
+	  print_local_matrix (fileOut, nrows, ncols, Q.get(), Q.lda());
+	  fileOut.close();
 	}
 
       // Print out the R factor

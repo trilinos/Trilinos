@@ -54,33 +54,9 @@ namespace TSQR {
   namespace Trilinos { 
     namespace Test {
 
-      const char docString[] = 
-"This program tests TSQR::SequentialTsqr, which implements the\n
-sequential cache-blocked version of TSQR.  TSQR (Tall Skinny QR)\n
-computes the QR factorization of a tall and skinny matrix (with many\n
-more rows than columns) distributed in a block row layout across one\n
-or more processes.  SequentialTsqr is built on the computational\n
-kernels implemented in TSQR::Combine.  These tests use the default\n
-back-end implementation of TSQR::Combine (which you can see as the\n
-default template parameter value in Tsqr_Combine.hpp).\n
-\n
-By default, TSQR::SequentialTsqr will only be tested with real\n
-arithmetic Scalar types (currently, float and double, corresponding to\n
-LAPACK's \"S\" resp. \"D\" data types).  If you build Trilinos with \n
-complex arithmetic support (Teuchos_ENABLE_COMPLEX), and invoke this \n
-program with the \"--complex\" option, complex arithmetic Scalar types\n
-will also be tested (currently, std::complex<float> and \n
-std::complex<double>, corresponding to LAPACK's \"C\" resp. \"Z\" data\n
-types).\n
-\n
-This program can test accuracy (\"--verify\") or performance\n
-(\"--benchmark\").  For accuracy tests, it computes both the\n
-orthogonality $\| I - Q^* Q \|_F$ and the residual $\| A - Q R \|_F$.\n
-For performance tests, it repeats the test with the same data for a\n
-number of trials (specified by the \"--ntrials=<n>\" command-line\n
-option).  The typical use case for SequentialTsqr is data sets too\n
-large to fit in cache; it will work otherwise, and efficiently too,\n
-but in that case you would be better off just testing TSQR::Combine.";
+      const char docString[] = "This program tests TSQR::SequentialTsqr, "
+	"which implements the sequential cache-blocked version of TSQR.  "
+	"Accuracy and performance tests are included.";
 
       using Teuchos::RCP;
       using Teuchos::Tuple;
