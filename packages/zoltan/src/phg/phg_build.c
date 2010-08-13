@@ -336,8 +336,8 @@ int nRepartEdge = 0, nRepartVtx = 0;
     dist_y[i] = (ZOLTAN_GNO_TYPE) (i * frac_y);
   dist_y[nProc_y] = (ZOLTAN_GNO_TYPE)nGlobalEdges;
 
-  if (Zoltan_test_overflow(dist_x[nProc_x] - dist_x[nProc_x - 1]) ||
-      Zoltan_test_overflow(dist_y[nProc_y] - dist_y[nProc_y - 1])) {
+  if (Zoltan_overflow_test(dist_x[nProc_x] - dist_x[nProc_x - 1]) ||
+      Zoltan_overflow_test(dist_y[nProc_y] - dist_y[nProc_y - 1])) {
 
     if (zz->Proc == 0){
       ZOLTAN_GNO_TYPE n = (zhg->globalObj > nGlobalEdges) ? zhg->globalObj : nGlobalEdges;
