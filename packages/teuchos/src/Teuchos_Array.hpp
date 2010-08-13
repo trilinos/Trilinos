@@ -650,9 +650,7 @@ Array<T> fromStringToArray(const std::string& arrayStr);
  */
 template<typename T>
 std::istringstream& operator>> (std::istringstream& in, Array<T>& array){
-  const std::string arrayString;
-  in.str(arrayString);
-  array = fromStringToArray<T>(arrayString);
+  array = fromStringToArray<T>(in.str());
   return in;
 }
 

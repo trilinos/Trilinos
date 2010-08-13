@@ -140,20 +140,19 @@ ParameterList XMLParameterListReader::convertParameterList(
 
         const std::string& name =
           child.getRequired(XMLParameterListWriter::getNameAttributeName());
-        ParameterEntry parameter = ParameterEntryXMLConverterDB::convertXML(child);
-        if (child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
+        ParameterEntry parameter = 
+          ParameterEntryXMLConverterDB::convertXML(child);
+        if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
           RCP<ParameterEntryValidator> result =
             ParameterEntryValidator::getValidator(
               child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName()));
-          if (result != null) {
-            parameter.setValidator(result);
-          }
-          else {
-            TEST_FOR_EXCEPTION(true, MissingValidatorDefinitionException,
-              "Could not find validator with id: "
-              << child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName()) << std::endl << 
-              "Bad Parameter: " << name << std::endl << std::endl);
-          }
+          TEST_FOR_EXCEPTION(result.is_null(), 
+            MissingValidatorDefinitionException,
+            "Could not find validator with id: "
+            << child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName())
+            << std::endl << 
+            "Bad Parameter: " << name << std::endl << std::endl);
+          parameter.setValidator(result);
         }  
         rtn.setEntry(name, parameter);
      } 

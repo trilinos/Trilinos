@@ -1,17 +1,17 @@
 <ParameterList name="ANONYMOUS">
-  <Parameter isDefault="false" isUsed="true" name="defaultsti" type="string" validatorid="0" value="value1"/>
-  <Parameter isDefault="false" isUsed="true" name="sti" type="string" validatorid="1" value="value3"/>
+  <Parameter isDefault="false" isUsed="true" name="defaultsti" type="string" validatorId="0" value="value1"/>
+  <Parameter isDefault="false" isUsed="true" name="sti" type="string" validatorId="1" value="value3"/>
   <Validators>
-    <floatstringintegralvalidator defaultparametername="sti" integralvalue="float" validatorid="0">
-      <badness integralvalue="0" stringvalue="value1"/>
-      <string integralvalue="1" stringvalue="value2"/>
-      <string integralvalue="2" stringvalue="value3"/>
-    </floatstringintegralvalidator>
-    <floatstringintegralvalidator defaultparametername="sti" integralvalue="float" validatorid="1">
-      <string integralvalue="3" stringdoc="the third value" stringvalue="value3"/>
-      <string integralvalue="4" stringdoc="the fourth value" stringvalue="value4"/>
-      <string integralvalue="5" stringdoc="the fifth value" stringvalue="value5"/>
-    </floatstringintegralvalidator>
+    <floatStringIntegralValidator defaultParameterName="sti" integralValue="float" validatorId="0">
+      <badness integralValue="0" stringValue="value1"/>
+      <String integralValue="1" stringValue="value2"/>
+      <String integralValue="2" stringValue="value3"/>
+    </floatStringIntegralValidator>
+    <floatStringIntegralValidator defaultParameterName="sti" integralValue="float" validatorId="1">
+      <String integralValue="3" stringDoc="the third value" stringValue="value3"/>
+      <String integralValue="4" stringDoc="the fourth value" stringValue="value4"/>
+      <String integralValue="5" stringDoc="the fifth value" stringValue="value5"/>
+    </floatStringIntegralValidator>
   </Validators>
 </ParameterList>
 

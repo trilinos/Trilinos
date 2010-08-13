@@ -54,7 +54,7 @@ RCP<const ParameterEntryXMLConverter>
 ParameterEntryXMLConverterDB::getConverter(const ParameterEntry& entry) {
   ConverterMap::const_iterator it = 
   getConverterMap().find(entry.getAny().typeName());
-  if(it != getConverterMap().end()){
+  if(it == getConverterMap().end()){
     return getDefaultConverter();
   }
   else{
@@ -69,14 +69,12 @@ ParameterEntryXMLConverterDB::getConverter(const XMLObject& xmlObject)
     ParameterEntryXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(parameterType);
 
-  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
-    CantFindParameterEntryConverterException,
-    "Could not find a ParameterEntryConverter" << std::endl <<
-    "Bad parameter name: " <<
-    xmlObject.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
-    std::endl << "Unkonwn Type: " << parameterType << std::endl << std::endl);
-    
-  return it->second;
+  if(it != getConverterMap().end()){
+    return it->second;
+  }
+  else{
+    return getDefaultConverter();
+  }
 }
 
 void ParameterEntryXMLConverterDB::printKnownConverters(std::ostream& out){
@@ -121,12 +119,6 @@ ParameterEntryXMLConverterDB::getConverterMap()
 
     ADD_TYPE_CONVERTER(char, char);
     ADD_TYPE_CONVERTER(bool, bool);
-
-
-    RCP<AnyParameterEntryConverter> anyConverter = 
-      rcp(new AnyParameterEntryConverter);
-    masterMap.insert(ConverterPair(anyConverter->getTypeAttributeValue(), 
-      anyConverter)); 
 
   }
   return masterMap;

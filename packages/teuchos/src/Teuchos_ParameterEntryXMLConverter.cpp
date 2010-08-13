@@ -30,6 +30,7 @@
 #include "Teuchos_XMLParameterListExceptions.hpp"
 #include "Teuchos_ValidatorXMLConverter.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 
 namespace Teuchos{
 
@@ -93,7 +94,13 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry,
   const std::string &name) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(entry.getAny().typeName() != getTypeAttributeValue(),
+  TEST_FOR_EXCEPTION(
+    (entry.getAny().typeName() != getTypeAttributeValue()) 
+    &&
+    (
+    getTypeAttributeValue() != 
+    ParameterEntryXMLConverterDB::getDefaultConverter()->getTypeAttributeValue()
+    ),
     BadParameterEntryXMLConverterTypeException,
     "Error: This converter can't convert the given ParameterEntry to XML "
     "because their types don't match." << std::endl <<

@@ -212,6 +212,7 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters)
 TEUCHOS_UNIT_TEST(Teuchos_ParameterList, converterExceptions)
 {
 
+  ParameterEntryValidator::printKnownValidators(out);
   TEST_THROW(RCP<ParameterList>
     missingValidatorList = getParametersFromXmlFile("MissingValidator.xml"),
     MissingValidatorDefinitionException);

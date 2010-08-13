@@ -1,7 +1,7 @@
 <ParameterList>
   <Validators>
-    <arrayvalidator validatorid="0" prototypeid="1"/>
-  </Validator>
+    <ArrayValidator validatorId="0" prototypeId="1"/>
+  </Validators>
   <ParameterList>
     <Parameter name="blah" value="balh" type="string"/>
   </ParameterList>

@@ -1010,38 +1010,7 @@ protected:
   //@{
 
   /** \brief . */
-  void validateDep() const{
-
-    RCP<const ParameterEntry> dependee = getFirstDependee();
-    TEST_FOR_EXCEPTION(typeid(T) != dependee->getAny().type(),
-      InvalidDependencyException,
-      "The dependee type and EnhancedNumberValidator "
-      "template type must all be the same for a Number Validator Aspect "
-      "Dependency.\n"
-      "Dependee Type: " << dependee->getAny().typeName() << "\n"
-      "Validator Template Type: " << typeid(T).name());
-
-    ConstParameterEntryList::iterator it = getDependents().begin();
-    for(; it != getDependents().end(); ++it){ 
-
-      TEST_FOR_EXCEPTION(typeid(T) != (*it)->getAny().type(),
-        InvalidDependencyException,
-        "The dependent type and EnhancedNumberValidator "
-        "template type must all be the same for a Number Validator "
-        "Aspect Dependency.\n"
-        "Dependent Type: " << (*it)->getAny().typeName() << 
-        "\n"
-        "Validator Template Type: " << typeid(T).name());
-     
-      TEST_FOR_EXCEPTION( 
-        validator_.get() 
-        != 
-        (*it)->validator().get(),
-        InvalidDependencyException,
-        "Error! All dependents in a NumberValidatorAspectDependency "
-        "must have the same validator!");
-    }
-  }
+  void validateDep() const;
   
   //@}
 
@@ -1100,6 +1069,40 @@ private:
 
 };
 
+template<class T>
+void NumberValidatorAspectDependency<T>::validateDep() const{
+
+  RCP<const ParameterEntry> dependee = getFirstDependee();
+  TEST_FOR_EXCEPTION(typeid(T) != dependee->getAny().type(),
+    InvalidDependencyException,
+    "The dependee type and EnhancedNumberValidator "
+    "template type must all be the same for a Number Validator Aspect "
+    "Dependency.\n"
+    "Dependee Type: " << dependee->getAny().typeName() << "\n"
+    "Validator Template Type: " << typeid(T).name());
+
+  ConstParameterEntryList::iterator it = getDependents().begin();
+  for(; it != getDependents().end(); ++it){ 
+
+    TEST_FOR_EXCEPTION(typeid(T) != (*it)->getAny().type(),
+      InvalidDependencyException,
+      "The dependent type and EnhancedNumberValidator "
+      "template type must all be the same for a Number Validator "
+      "Aspect Dependency.\n"
+      "Dependent Type: " << (*it)->getAny().typeName() << 
+      "\n"
+      "Validator Template Type: " << typeid(T).name());
+   
+    TEST_FOR_EXCEPTION( 
+      validator_.get() 
+      != 
+      (*it)->validator().get(),
+      InvalidDependencyException,
+      "Error! All dependents in a NumberValidatorAspectDependency "
+      "must have the same validator!");
+  }
+}
+  
 
 /** \brief Speicialized class for retrieving a dummy object of type
  * NumberValidatorAspectDependency.

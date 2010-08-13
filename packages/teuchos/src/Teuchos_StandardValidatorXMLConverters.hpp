@@ -503,7 +503,7 @@ ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
     }
     else {
       TEST_FOR_EXCEPTION(true,
-        std::runtime_error,
+        MissingValidatorDefinitionException,
         "Could not find prototype validator with id: "
         << xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
           getPrototypeIdAttributeName()) << std::endl<< std::endl);

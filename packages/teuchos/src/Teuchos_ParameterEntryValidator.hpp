@@ -147,19 +147,23 @@ public:
       this->validate(*entry,paramName,sublistName);
     }
 
+
+  /** \brief Prints a list of all the ParameterEntries currently being tracked */
+  static void printKnownValidators(std::ostream &out);
+
 private:
   
-  typedef std::map<RCP<const ParameterEntryValidator>, 
-    ValidatorID, RCPConstComp> 
+  typedef std::map<const ParameterEntryValidator*, 
+    ValidatorID> 
       ValidatorToIDMap;
 
-  typedef std::pair<RCP<const ParameterEntryValidator>, ValidatorID>
+  typedef std::pair<const ParameterEntryValidator*, ValidatorID>
     ValidatorIDPair;
 
-  typedef std::map<ValidatorID, RCP<ParameterEntryValidator> > 
+  typedef std::map<ValidatorID, ParameterEntryValidator* > 
     IDToValidatorMap;
 
-  typedef std::pair<ValidatorID, RCP<ParameterEntryValidator> >
+  typedef std::pair<ValidatorID, ParameterEntryValidator* >
     IDValidatorPair;
 
   typedef std::vector<ValidatorID> FreeIDsVector;

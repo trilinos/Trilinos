@@ -224,6 +224,8 @@ public:
       return tagName;
   }
   
+  /** \brief Prints a list of all the ParameterEntries currently being tracked */
+  static void printKnownParameterEntries(std::ostream &out);
 
   //@}
   
@@ -255,16 +257,16 @@ private:
 #pragma warning(pop)
 #endif
 
-  typedef std::map< RCP<const ParameterEntry> , ParameterEntryID, RCPConstComp>
+  typedef std::map<const ParameterEntry* , ParameterEntryID>
     ParameterEntryToIDMap;
 
-  typedef std::pair<RCP<const ParameterEntry>, ParameterEntryID>
+  typedef std::pair<const ParameterEntry*, ParameterEntryID>
     ParameterEntryIDPair;
 
-  typedef std::map<ParameterEntryID, RCP<ParameterEntry> > 
+  typedef std::map<ParameterEntryID, ParameterEntry* > 
     IDToParameterEntryMap;
 
-  typedef std::pair<ParameterEntryID, RCP<ParameterEntry> >
+  typedef std::pair<ParameterEntryID, ParameterEntry* >
     IDParameterEntryPair;
 
   typedef std::vector<ParameterEntryID> FreeIDsVector;

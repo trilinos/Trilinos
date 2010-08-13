@@ -76,6 +76,10 @@ public:
    */
   static RCP<const ParameterEntryXMLConverter> 
     getConverter(const XMLObject& xmlObject);
+
+  /** \brief Gets the default converter to be used on Parameter Entries */
+  static RCP<const ParameterEntryXMLConverter> getDefaultConverter();
+
   //@}
 
   // 2010/07/30: rabarlt: The above two functions should be moved into
@@ -125,9 +129,6 @@ private:
 
   /** \brief convience typedef */
   typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
-
-  /** \brief Gets the default converter to be used on Parameter Entries */
-  static RCP<const ParameterEntryXMLConverter> getDefaultConverter();
 
   /** \brief Gets the map containing all the converters. */
   static ConverterMap& getConverterMap();
