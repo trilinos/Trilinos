@@ -49,13 +49,11 @@ ADD_OPTION_AND_DEFINE(
 # Anasazi_ENABLE_COMPLEX is enabled, TSQR is built with complex
 # arithmetic support.
 
-SET(${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT BOOL FALSE)
-
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_ANASAZI_TSQR
   "Enable TSQR (Tall Skinny QR factorization) support in Anasazi."
-  ${${PACKAGE_NAME}_ENABLE_TSQR_DEFAULT} )
+  FALSE )
 
 #
 # C) Add the libraries, tests, and examples
