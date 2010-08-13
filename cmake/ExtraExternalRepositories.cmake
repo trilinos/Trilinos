@@ -40,4 +40,5 @@
 
 SET( Trilinos_EXTRAREPOS_DIR_GITREPOURL_CATEGORY
   preCopyrightTrilinos   software.sandia.gov:/space/git/preCopyrightTrilinos    Continuous
+  LIMEExt   software.sandia.gov:/space/git/LIMEExt    EX
   )
