@@ -13,6 +13,11 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 
+
+#include <stdlib.h>
+
+#include <iostream>
+
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -147,9 +152,16 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
   }
 
   if ( p->primary_entity_rank() != arg_rank ) {
-    std::stringstream err;
-    err << "Part of name '" << arg_name << "' of rank " << arg_rank << " already exists";
-    throw std::runtime_error ( err.str() );
+    std::ostringstream msg;
+    msg << "stk::mesh::Part[ " << arg_name ;
+    msg << ",rank(" << p->primary_entity_rank() << ")" ;
+    msg << "] : FAILED to declare part; " ;
+    msg << "Part of name '" << arg_name ;
+    msg << "' of rank " << p->primary_entity_rank() ;
+    msg << " already exists";
+    msg << " User cannot redeclare " << arg_name ;
+    msg << " with different rank, " << arg_rank ;
+    throw std::runtime_error ( msg.str() );
   }
 
   return p;
@@ -188,7 +200,6 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
   }
   else {
     const char separator[] = "^" ;
-
     // Generate a name and rank reflecting the intersection.
     // Rank is the minimum rank of the intersection members.
 
@@ -208,9 +219,7 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
 
     const PartVector & all_parts = m_universal_part->subsets();
     p = find( all_parts, p_name );
-
     if ( p == NULL ) {
-
       // Create the part:
 
       p = new Part( m_meta_data , p_name , p_rank , all_parts.size() );
