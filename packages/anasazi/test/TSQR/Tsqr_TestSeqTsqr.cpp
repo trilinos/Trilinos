@@ -71,34 +71,22 @@ namespace TSQR {
 	  numRows (1000),
 	  numCols (10),  
 	  numTrials (10),
-#ifdef HAVE_ANASAZI_COMPLEX
+#ifdef HAVE_TSQR_COMPLEX
 	  testComplex (true),
-#endif // HAVE_ANASAZI_COMPLEX
-	  cacheBlockSizeAsInt (0),
+#endif // HAVE_TSQR_COMPLEX
+	  cacheBlockSize (0),
 	  contiguousCacheBlocks (false),
 	  humanReadable (false),
 	  debug (false)
 	{}
 
-	bool benchmark, verify;
+	bool verify, benchmark;
 	int numRows, numCols, numTrials;
-#ifdef HAVE_ANASAZI_COMPLEX
+#ifdef HAVE_TSQR_COMPLEX
 	bool testComplex;
-#endif // HAVE_ANASAZI_COMPLEX
-        int cacheBlockSizeAsInt;
+#endif // HAVE_TSQR_COMPLEX
+	size_t cacheBlockSize;
 	bool contiguousCacheBlocks, humanReadable, debug;
-
-	/// We really want the cache block size as a size_t, but
-	/// Teuchos::CommandLineProcessor doesn't offer that option.
-	/// So we read it in as an int, which means negative inputs
-	/// are possible.  Here, we check for these before returning
-	/// the value cast to size_t.
-	size_t cacheBlockSize() const { 
-	  if (cacheBlockSizeAsInt < 0) 
-	    throw std::invalid_argument("Cache block size < 0 is not allowed");
-	  else 
-	    return static_cast<size_t> (cacheBlockSizeAsInt);
-	}
       };
 
       static void
@@ -115,7 +103,7 @@ namespace TSQR {
 						    params.numRows, 
 						    params.numCols, 
 						    params.numTrials, 
-						    params.cacheblockSize(),
+						    params.cacheBlockSize,
 						    params.contiguousCacheBlocks,
 						    testComplex, 
 						    params.humanReadable);
@@ -131,8 +119,8 @@ namespace TSQR {
 	const bool testComplex = false;
 #endif // HAVE_TSQR_COMPLEX
 	const bool saveMatrices = false;
-	TSQR::Test::verifySeqTsqr (params.numRows, params.numCols, 
-				   params.cacheBlockSize(), testComplex,
+	TSQR::Test::verifySeqTsqr (out, params.numRows, params.numCols, 
+				   params.cacheBlockSize, testComplex,
 				   saveMatrices, params.contiguousCacheBlocks,
 				   params.humanReadable, params.debug);
       }
@@ -160,6 +148,14 @@ namespace TSQR {
 
 	// Command-line parameters, set to their default values.
 	SeqTestParameters params;
+	/// We really want the cache block size as a size_t, but
+	/// Teuchos::CommandLineProcessor doesn't offer that option.
+	/// So we read it in as an int, which means negative inputs
+	/// are possible.  We check for those below in the input
+	/// validation phase.
+	//
+	// Fetch default value of cacheBlockSize.
+	int cacheBlockSizeAsInt = static_cast<int> (params.cacheBlockSize);
 	try {
 	  using Teuchos::CommandLineProcessor;
 
@@ -190,7 +186,7 @@ namespace TSQR {
 				 "Test complex arithmetic, as well as real");
 #endif // HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("cache-block-size", 
-				 &params.cacheBlockSizeAsInt, 
+				 &cacheBlockSizeAsInt, 
 				 "Cache block size in bytes (0 means pick a reasonable default)");
 	  cmdLineProc.setOption ("contiguous-cache-blocks",
 				 "noncontiguous-cache-blocks",
@@ -227,9 +223,13 @@ namespace TSQR {
 	  throw std::invalid_argument ("Number of rows must be >= number of columns");
 	else if (params.benchmark && params.numTrials < 1)
 	  throw std::invalid_argument ("\"--benchmark\" option requires numTrials >= 1");
-	else if (params.cacheBlockSizeAsInt < 1)
-	  throw std::invalid_argument ("Cache block size must be nonnegative");
-
+	else
+	  {
+	    if (cacheBlockSizeAsInt < 0)
+	      throw std::invalid_argument ("Cache block size must be nonnegative");
+	    else 
+	      params.cacheBlockSize = static_cast< size_t > (cacheBlockSizeAsInt);
+	  }
 	return params;
       }
 
@@ -260,11 +260,13 @@ main (int argc, char *argv[])
   // likely is, on Unix-y operating systems).
   std::ostream& out = (myRank == 0) ? std::cout : blackhole;
   // Only Rank 0 performs the tests.
-  const bool performingTests = (myRank==0);
+  const bool performingTests = (myRank == 0);
+  const bool allowedToPrint = (myRank == 0);
 
 #else // Don't HAVE_MPI: single-node test
 
   const bool performingTests = true;
+  const bool allowedToPrint = true;
   std::ostream& out = std::cout;
 #endif // HAVE_MPI
 

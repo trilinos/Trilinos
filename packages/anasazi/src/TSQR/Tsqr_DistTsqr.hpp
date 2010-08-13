@@ -160,7 +160,7 @@ namespace TSQR {
 		const FactorOutput& factor_output)
     {
       const int my_rank = messenger_->rank ();
-      fill_matrix (ncols_Q, ncols_Q, Q_mine, ldq_mine, 0.0);
+      fill_matrix (ncols_Q, ncols_Q, Q_mine, ldq_mine, Scalar(0));
       if (my_rank == 0)
 	{
 	  for (int j = 0; j < ncols_Q; j++)

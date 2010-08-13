@@ -230,13 +230,13 @@ namespace TSQR {
       /// because this is a benchmark, not an accuracy test.
       TSQR::Random::NormalGenerator< ordinal_type, scalar_type > gen_;
       
-      /// Output stream to which to print benchmark results.
-      ///
-      std::ostream& out_;
-
       /// Human-readable string representation of the Scalar type 
       ///
       std::string scalarTypeName_;
+
+      /// Output stream to which to print benchmark results.
+      ///
+      std::ostream& out_;
 
       /// Whether results should be printed in a human-readable way
       /// (vs. a way easily parsed by a script).

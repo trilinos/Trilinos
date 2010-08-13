@@ -63,7 +63,7 @@ namespace TSQR {
 	"Accuracy and performance tests are included.";
 
       static void
-      verifyDistTsqr (RCP< Teuchos::Comm<int> > comm,
+      verifyDistTsqr (RCP< const Teuchos::Comm<int> > comm,
 		      const int numCols,
 		      const bool testComplex,
 		      const bool humanReadable,
@@ -82,6 +82,7 @@ namespace TSQR {
 	    seed[3] = 1;
 	  }
 	using TSQR::Trilinos::TeuchosMessenger;
+	using TSQR::Test::DistTsqrVerifier;
 	const bool testReal = true;
 
 	if (testReal)
@@ -90,9 +91,11 @@ namespace TSQR {
 	      typedef float scalar_type;
 	      std::string scalarTypeName ("float");
 	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef ParTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier (scalarComm, seed, scalarTypeName, 
-				      humanReadable, debug, out, err);
+	      typedef MessengerBase< scalar_type > messenger_type;
+	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
+	      verifier_type verifier ((messenger_type* const) &scalarComm, 
+				      seed, scalarTypeName, humanReadable, 
+				      debug, out, err);
 	      verifier.verify (numCols);
 	      verifier.getSeed (seed);
 	    }
@@ -100,9 +103,11 @@ namespace TSQR {
 	      typedef double scalar_type;
 	      std::string scalarTypeName ("double");
 	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef ParTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier (scalarComm, seed, scalarTypeName, 
-				      humanReadable, debug, out, err);
+	      typedef MessengerBase< scalar_type > messenger_type;
+	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
+	      verifier_type verifier ((messenger_type* const) &scalarComm, 
+				      seed, scalarTypeName, humanReadable, 
+				      debug, out, err);
 	      verifier.verify (numCols);
 	      verifier.getSeed (seed);
 	    }
@@ -116,9 +121,11 @@ namespace TSQR {
 	      typedef complex<float> scalar_type;
 	      std::string scalarTypeName ("complex<float>");
 	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef ParTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier (scalarComm, seed, scalarTypeName, 
-				      humanReadable, debug, out, err);
+	      typedef MessengerBase< scalar_type > messenger_type;
+	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
+	      verifier_type verifier ((messenger_type* const) &scalarComm,
+				      seed, scalarTypeName, humanReadable, 
+				      debug, out, err);
 	      verifier.verify (numCols);
 	      verifier.getSeed (seed);
 	    }
@@ -126,9 +133,11 @@ namespace TSQR {
 	      typedef complex<double> scalar_type;
 	      std::string scalarTypeName ("complex<double>");
 	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef ParTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier (scalarComm, seed, scalarTypeName, 
-				      humanReadable, debug, out, err);
+	      typedef MessengerBase< scalar_type > messenger_type;
+	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
+	      verifier_type verifier ((messenger_type* const) &scalarComm, 
+				      seed, scalarTypeName, humanReadable, 
+				      debug, out, err);
 	      verifier.verify (numCols);
 	      verifier.getSeed (seed);
 	    }
@@ -141,7 +150,7 @@ namespace TSQR {
 
 
       static void
-      benchmarkDistTsqr (RCP< Teuchos::Comm<int> > comm,
+      benchmarkDistTsqr (RCP< const Teuchos::Comm<int> > comm,
 			 const int numCols,
 			 const int numTrials,
 			 const bool testComplex,
@@ -152,6 +161,10 @@ namespace TSQR {
 			 std::vector<int>& seed,
 			 const bool useSeed)
       {
+	using TSQR::Test::DistTsqrBenchmarker;
+	using TSQR::Trilinos::TeuchosMessenger;
+	typedef Teuchos::Time timer_type;
+
 	if (! useSeed)
 	  {
 	    seed.resize (4);
@@ -160,8 +173,6 @@ namespace TSQR {
 	    seed[2] = 0;
 	    seed[3] = 1;
 	  }
-	using TSQR::Test::ParTsqrBenchmarker;
-	using TSQR::Trilinos::TeuchosMessenger;
 	TeuchosMessenger< double > doubleComm (comm);
 	const bool testReal = true;
 
@@ -171,9 +182,9 @@ namespace TSQR {
 	      typedef float scalar_type;
 	      std::string scalarTypeName ("float");
 	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef ParTsqrBenchmarker< int, scalar_type, timer_type > 
+	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
 		benchmarker_type;
-	      benchmarker_type benchmarker (scalarComm, doubleComm, seed, 
+	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
 					    scalarTypeName, humanReadable,
 					    debug, out, err);
 	      benchmarker.benchmark (numTrials, numCols);
@@ -183,9 +194,9 @@ namespace TSQR {
 	      typedef double scalar_type;
 	      std::string scalarTypeName ("double");
 	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef ParTsqrBenchmarker< int, scalar_type, timer_type > 
+	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
 		benchmarker_type;
-	      benchmarker_type benchmarker (scalarComm, doubleComm, seed, 
+	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
 					    scalarTypeName, humanReadable,
 					    debug, out, err);
 	      benchmarker.benchmark (numTrials, numCols);
@@ -201,9 +212,9 @@ namespace TSQR {
 	      typedef complex<float> scalar_type;
 	      std::string scalarTypeName ("complex<float>");
 	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef ParTsqrBenchmarker< int, scalar_type, timer_type > 
+	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
 		benchmarker_type;
-	      benchmarker_type benchmarker (scalarComm, doubleComm, seed, 
+	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
 					    scalarTypeName, humanReadable,
 					    debug, out, err);
 	      benchmarker.benchmark (numTrials, numCols);
@@ -213,9 +224,9 @@ namespace TSQR {
 	      typedef complex<double> scalar_type;
 	      std::string scalarTypeName ("complex<double>");
 	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef ParTsqrBenchmarker< int, scalar_type, timer_type > 
+	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
 		benchmarker_type;
-	      benchmarker_type benchmarker (scalarComm, doubleComm, seed, 
+	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
 					    scalarTypeName, humanReadable,
 					    debug, out, err);
 	      benchmarker.benchmark (numTrials, numCols);

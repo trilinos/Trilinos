@@ -56,10 +56,6 @@ namespace TSQR {
   namespace Trilinos { 
     namespace Test {
       
-      static const std::string& docStringFileName() {
-	return TSQR_TEST_COMBINE_DOC_STRING_FILENAME;
-      }
-
       // mfh 12 Aug 2010: docString should not be a constant string
       // literal if it's longer than some fixed, platform-dependent
       // amount (e.g., 2048 bytes).
@@ -79,18 +75,19 @@ namespace TSQR {
 	  numRows (1000),     // Number of rows in the test matrix
 	  numCols (10),       // Number of columns in the test matrix
 	  numTrials (10),     // Number of trials (action==Benchmark only)
-	  debug (false),      // Whether to print debugging output to stderr
-#ifdef HAVE_ANASAZI_COMPLEX
+#ifdef HAVE_TSQR_COMPLEX
 	  testComplex (true), // Whether to test complex-arithmetic routines
-#endif // HAVE_ANASAZI_COMPLEX
+#endif // HAVE_TSQR_COMPLEX
+	  verbose (true), 
+	  debug (false)       // Whether to print debugging output to stderr
 	{}
 
-	bool benchmark, verify;
+	bool verify, benchmark;
 	int numRows, numCols, numTrials;
-	bool verbose, debug;
-#ifdef HAVE_ANASAZI_COMPLEX
+#ifdef HAVE_TSQR_COMPLEX
 	bool testComplex;
-#endif // HAVE_ANASAZI_COMPLEX
+#endif // HAVE_TSQR_COMPLEX
+	bool verbose, debug;
       };
 
       /// \brief Benchmark TSQR::Combine
@@ -115,11 +112,11 @@ namespace TSQR {
 	const ordinal_type numRows = params.numRows;
 	const ordinal_type numCols = params.numCols;
 	const ordinal_type numTrials = params.numTrials;
-#ifdef HAVE_ANASAZI_COMPLEX
+#ifdef HAVE_TSQR_COMPLEX
 	const bool testComplex = params.testComplex;
 #else
 	const bool testComplex = false;
-#endif // HAVE_ANASAZI_COMPLEX
+#endif // HAVE_TSQR_COMPLEX
 
 	std::vector<int> seed(4);
 	const bool useSeedValues = false;
@@ -148,12 +145,11 @@ namespace TSQR {
 
 	const ordinal_type numRows = params.numRows;
 	const ordinal_type numCols = params.numCols;
-	const ordinal_type numTrials = params.numTrials;
-#ifdef HAVE_ANASAZI_COMPLEX
+#ifdef HAVE_TSQR_COMPLEX
 	const bool testComplex = params.testComplex;
 #else
 	const bool testComplex = false;
-#endif // HAVE_ANASAZI_COMPLEX
+#endif // HAVE_TSQR_COMPLEX
 	const bool simulateSequentialTsqr = false;
 	const bool debug = false;
 	TSQR::Test::verifyCombine (numRows, numCols, testComplex, 
@@ -210,12 +206,12 @@ namespace TSQR {
 	  cmdLineProc.setOption ("ntrials", 
 				 &params.numTrials, 
 				 "Number of trials (only used when \"--benchmark\"");
-#ifdef HAVE_ANASAZI_COMPLEX
+#ifdef HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("complex", 
 				 "nocomplex",
 				 &params.testComplex,
 				 "Test complex arithmetic, as well as real");
-#endif // HAVE_ANASAZI_COMPLEX
+#endif // HAVE_TSQR_COMPLEX
 	  cmdLineProc.parse (argc, argv);
 	} 
 	catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
@@ -269,13 +265,17 @@ main (int argc, char *argv[])
   // likely is, on Unix-y operating systems).
   std::ostream& out = (myRank == 0) ? std::cout : blackhole;
   // Only Rank 0 performs the tests.
-  const bool performingTests = (myRank==0);
+  const bool performingTests = (myRank == 0);
+  const bool allowedToPrint = (myRank == 0);
 
 #else // Don't HAVE_MPI: single-node test
 
   const bool performingTests = true;
+  const bool allowedToPrint = true;
   std::ostream& out = std::cout;
 #endif // HAVE_MPI
+
+
 
   // Fetch command-line parameters.
   bool printedHelp = false;

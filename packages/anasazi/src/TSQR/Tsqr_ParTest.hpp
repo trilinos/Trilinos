@@ -54,10 +54,10 @@ namespace TSQR {
     ///
     template< class Ordinal, class Scalar >
     class DistTsqrVerifier {
+      TSQR::Random::NormalGenerator< Ordinal, Scalar > gen_;
       MessengerBase< Scalar >* const scalarComm_;
-      TSQR::Random::NormalGenerator gen_;
-      const bool debug_, humanReadable_;
       std::string scalarTypeName_;
+      const bool humanReadable_, debug_;
       std::ostream& out_;
       std::ostream& err_;
 
@@ -65,7 +65,7 @@ namespace TSQR {
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
       typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
-      typedef typename std::pair< magnitude_type, magnitude_type result_type;
+      typedef typename std::pair< magnitude_type, magnitude_type > result_type;
 
       /// \brief Constructor, with custom seed value
       ///
@@ -83,16 +83,16 @@ namespace TSQR {
       /// \param out [out] Output stream to which to write results
       /// \param err [out] Output stream to which to write any
       ///   debugging outputs (if applicable) or errors
-      ParTsqrVerifier (MessengerBase< Scalar >* const scalarComm,
-		       const std::vector<int>& seed,
-		       const std::string& scalarTypeName,
-		       const bool humanReadable = true,
-		       const bool debug = false,
-		       std::ostream& out = std::cout,
-		       std::ostream& err = std::cerr) :
+      DistTsqrVerifier (MessengerBase< Scalar >* const scalarComm,
+			const std::vector<int>& seed,
+			const std::string& scalarTypeName,
+			const bool humanReadable = true,
+			const bool debug = false,
+			std::ostream& out = std::cout,
+			std::ostream& err = std::cerr) :
+	gen_ (seed), 
 	scalarComm_ (scalarComm),
 	scalarTypeName_ (scalarTypeName), 
-	gen_ (seed), 
 	humanReadable_ (humanReadable), 
 	debug_ (debug), 
 	out_ (out), 
@@ -116,12 +116,12 @@ namespace TSQR {
       /// \param out [out] Output stream to which to write results
       /// \param err [out] Output stream to which to write any
       ///   debugging outputs (if applicable) or errors
-      ParTsqrVerifier (MessengerBase< Scalar >* const scalarComm,
-		       const std::string& scalarTypeName,
-		       const bool humanReadable = true,
-		       const bool debug = false,
-		       std::ostream& out = std::cout,
-		       std::ostream& err = std::cerr) :
+      DistTsqrVerifier (MessengerBase< Scalar >* const scalarComm,
+			const std::string& scalarTypeName,
+			const bool humanReadable = true,
+			const bool debug = false,
+			std::ostream& out = std::cout,
+			std::ostream& err = std::cerr) :
 	scalarComm_ (scalarComm),
 	scalarTypeName_ (scalarTypeName), 
 	humanReadable_ (humanReadable), 
@@ -146,7 +146,7 @@ namespace TSQR {
 	using std::endl;
 
 	const bool extraDebug = false;
-	const int myRank = scalarComm->rank();
+	const int myRank = scalarComm_->rank();
 	if (debug_)
 	  {
 	    scalarComm_->barrier();
@@ -162,7 +162,7 @@ namespace TSQR {
 	Matrix< Ordinal, Scalar > A_local, A_global;
 	// This modifies A_local on all procs, and A_global as well on
 	// Proc 0.
-	par_tsqr_test_problem (generator, A_local, A_global, numCols, scalarComm_);
+	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
 
 	if (debug_)
 	  {
@@ -282,11 +282,11 @@ namespace TSQR {
     ///
     template< class Ordinal, class Scalar, class TimerType >
     class DistTsqrBenchmarker {
+      TSQR::Random::NormalGenerator< Ordinal, Scalar > gen_;
       MessengerBase< Scalar >* const scalarComm_;
       MessengerBase< double >* const doubleComm_; 
-      TSQR::Random::NormalGenerator gen_;
-      const bool debug_, humanReadable_;
       std::string scalarTypeName_;
+      const bool humanReadable_, debug_;
       std::ostream& out_;
       std::ostream& err_;
 
@@ -315,18 +315,18 @@ namespace TSQR {
       /// \param out [out] Output stream to which to write results
       /// \param err [out] Output stream to which to write any
       ///   debugging outputs (if applicable) or errors
-      ParTsqrBenchmarker (MessengerBase< Scalar >* const scalarComm,
-			  MessengerBase< double >* const doubleComm,
-			  const std::vector<int>& seed,
-			  const std::string& scalarTypeName,
-			  const bool humanReadable = true,
-			  const bool debug = false,
-			  std::ostream& out = std::cout,
-			  std::ostream& err = std::cerr) :
+      DistTsqrBenchmarker (MessengerBase< Scalar >* const scalarComm,
+			   MessengerBase< double >* const doubleComm,
+			   const std::vector<int>& seed,
+			   const std::string& scalarTypeName,
+			   const bool humanReadable = true,
+			   const bool debug = false,
+			   std::ostream& out = std::cout,
+			   std::ostream& err = std::cerr) :
+	gen_ (seed), 
 	scalarComm_ (scalarComm),
 	doubleComm_ (doubleComm),
 	scalarTypeName_ (scalarTypeName), 
-	gen_ (seed), 
 	humanReadable_ (humanReadable), 
 	debug_ (debug), 
 	out_ (out), err_ (err)
@@ -354,13 +354,13 @@ namespace TSQR {
       /// \param out [out] Output stream to which to write results
       /// \param err [out] Output stream to which to write any
       ///   debugging outputs (if applicable) or errors
-      ParTsqrBenchmarker (MessengerBase< Scalar >* const scalarComm,
-			  MessengerBase< double >* const doubleComm,
-			  const std::string& scalarTypeName,
-			  const bool humanReadable = true,
-			  const bool debug = false,
-			  std::ostream& out = std::cout,
-			  std::ostream& err = std::cerr) :
+      DistTsqrBenchmarker (MessengerBase< Scalar >* const scalarComm,
+			   MessengerBase< double >* const doubleComm,
+			   const std::string& scalarTypeName,
+			   const bool humanReadable = true,
+			   const bool debug = false,
+			   std::ostream& out = std::cout,
+			   std::ostream& err = std::cerr) :
 	scalarComm_ (scalarComm),
 	doubleComm_ (doubleComm),
 	scalarTypeName_ (scalarTypeName), 
@@ -397,8 +397,7 @@ namespace TSQR {
 	Matrix< Ordinal, Scalar > A_local, A_global;
 	// This modifies A_local on all procs, and A_global as well on
 	// Proc 0.
-	par_tsqr_test_problem (generator, A_local, A_global, 
-			       numCols, scalarComm_);
+	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
 	// Copy the test problem input into R, since the factorization will
 	// overwrite it place with the final R factor.
 	Matrix< Ordinal, Scalar > R (numCols, numCols);

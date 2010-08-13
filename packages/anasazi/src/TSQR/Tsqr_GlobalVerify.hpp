@@ -43,13 +43,89 @@
 
 namespace TSQR {
 
+  // Unfortunately, you need c++0x support to have default template
+  // arguments of template functions.  Otherwise we would make this a
+  // template function and set the default value of isComplex to
+  // ScalarTraits< Scalar >::is_complex.  Also, C++ doesn't like
+  // partial specialization of template functions, for no good reason.
+  // So we have to make this a class.
+  template< class Scalar, bool isComplex = ScalarTraits< Scalar >::is_complex >
+  class GlobalSummer {
+  public:
+    typedef Scalar scalar_type;
+    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+
+    static magnitude_type
+    sum (const Scalar& localSum,
+	 MessengerBase< Scalar >* const messenger);
+  };
+
+  // Complex-arithmetic "forward declaration"
+  template< class Scalar >
+  class GlobalSummer< Scalar, true > {
+  public:
+    typedef Scalar scalar_type;
+    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+
+    static magnitude_type
+    sum (const Scalar& localSum,
+	 MessengerBase< Scalar >* const messenger);
+  };
+
+  // Real-arithmetic "forward declaration"
+  template< class Scalar >
+  class GlobalSummer< Scalar, false > {
+  public:
+    typedef Scalar scalar_type;
+    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+
+    static magnitude_type
+    sum (const Scalar& localSum,
+	 MessengerBase< Scalar >* const messenger);
+  };
+
+  // Complex-arithmetic case
+  template< class Scalar >
+  typename ScalarTraits< Scalar >::magnitude_type
+  GlobalSummer< Scalar, true >::sum (const Scalar& localSum,
+				     MessengerBase< Scalar >* const messenger)
+  {
+    // In order to use a MessengerBase<Scalar> on magnitude_type
+    // values, we have to convert local_result to a Scalar, and then
+    // convert back the result.  We convert by setting the real
+    // component of the Scalar to the magnitude_type.  This isn't
+    // guaranteed to work if magnitude_type has a greater dynamic
+    // range than Scalar.  That's possible, but that's not how we do
+    // things with ScalarTraits< std::complex< T > >, and that's not
+    // how LAPACK does it either, so it's fair to assume that
+    // magnitude_type and the individual components of Scalar have the
+    // same dynamic range.
+    const magnitude_type localSumAbs = ScalarTraits< Scalar >::abs (localSum);
+    const Scalar localSumAsScalar (localSumAbs, magnitude_type(0));
+    const Scalar globalSumAsScalar = messenger->globalSum (localSumAsScalar);
+    const magnitude_type globalSum = ScalarTraits< Scalar >::abs (globalSumAsScalar);
+    return globalSum;
+  }
+
+  // Real-arithmetic case
+  template< class Scalar >
+  typename ScalarTraits< Scalar >::magnitude_type
+  GlobalSummer< Scalar, false >::sum (const Scalar& localSum,
+				      MessengerBase< Scalar >* const messenger)
+  {
+    const Scalar localSumAsScalar (localSum);
+    const Scalar globalSumAsScalar = messenger->globalSum (localSumAsScalar);
+    const magnitude_type globalSum = ScalarTraits< Scalar >::abs (globalSumAsScalar);
+    return globalSum;
+  }
+
   template< class LocalOrdinal, class Scalar >
   typename ScalarTraits< Scalar >::magnitude_type
   global_frobenius_norm (const LocalOrdinal nrows_local, 
 			 const LocalOrdinal ncols,
 			 const Scalar A_local[],
 			 const LocalOrdinal lda_local,
-			 MessengerBase< Scalar >* messenger)
+			 MessengerBase< Scalar >* const messenger)
   {
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
 
@@ -69,8 +145,13 @@ namespace TSQR {
 	    local_result = local_result + abs_xi * abs_xi;
 	  }
       }
-    magnitude_type global_result = messenger->globalSum (local_result);
-    return sqrt (global_result);
+    // GlobalSummmer() is a hack to let us use a Scalar - type
+    // MessengerBase with magnitude_type inputs and outputs.
+    // Otherwise we would need to carry around a MessengerBase<
+    // magnitude_type > object as well.
+    const magnitude_type globalResult = 
+      GlobalSummer< Scalar, ScalarTraits< Scalar >::is_complex >::sum (local_result, messenger);
+    return sqrt (globalResult);
   }
 
   template< class LocalOrdinal, class Scalar >
@@ -83,7 +164,7 @@ namespace TSQR {
 		 const LocalOrdinal ldq_local,
 		 const Scalar R[],
 		 const LocalOrdinal ldr,
-		 MessengerBase< Scalar >* messenger)
+		 MessengerBase< Scalar >* const messenger)
   {
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
     using std::make_pair;
