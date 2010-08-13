@@ -199,7 +199,7 @@ namespace TSQR {
 	// Copy A into A_copy, since TSQR overwrites the input
 	A_copy.copy (A);
 
-	// Benchmark sequential TSQR for ntrials trials.
+	// Benchmark sequential TSQR for numTrials trials.
 	//
 	// Name of timer doesn't matter here; we only need the timing.
 	TimerType timer("SeqTSQR");

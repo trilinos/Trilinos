@@ -207,12 +207,12 @@ but in that case you would be better off just testing TSQR::Combine.";
 	  cmdLineProc.setOption ("ntrials", 
 				 &params.numTrials, 
 				 "Number of trials (only used when \"--benchmark\"");
-#ifdef HAVE_ANASAZI_COMPLEX
+#ifdef HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("complex", 
 				 "nocomplex",
 				 &params.testComplex,
 				 "Test complex arithmetic, as well as real");
-#endif // HAVE_ANASAZI_COMPLEX
+#endif // HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("cache-block-size", 
 				 &params.cacheBlockSizeAsInt, 
 				 "Cache block size in bytes (0 means pick a reasonable default)");

@@ -60,7 +60,7 @@ namespace TSQR {
       ///   seed.  See documentation of _LARNV.  In particular, the
       ///   array elements must be in [0,4095], and the last element
       ///   (iseed[3]) must be odd.
-      NormalGenerator (const std::vector<int> iseed,
+      NormalGenerator (const std::vector<int>& iseed,
 		       const int buffer_length = defaultBufferLength) :
 	iseed_ (4),
 	buffer_ (buffer_length),
