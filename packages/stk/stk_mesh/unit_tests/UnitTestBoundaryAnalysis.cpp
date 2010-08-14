@@ -75,8 +75,10 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   stk::mesh::boundary_analysis(bulk_data, closure, stk::mesh::Face, boundary);
   STKUNIT_EXPECT_TRUE(!boundary.empty());
 
-  std::vector<std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> > > results;
-  std::vector<std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> > > expected_results;
+  std::vector<std::pair<std::pair<unsigned, unsigned>,
+                        std::pair<unsigned, unsigned> > > results;
+  std::vector<std::pair<std::pair<unsigned, unsigned>,
+                        std::pair<unsigned, unsigned> > > expected_results;
 
   {
     std::pair<unsigned, unsigned> inside(6, 0);
@@ -100,6 +102,13 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   }
 
   {
+    std::pair<unsigned, unsigned> inside(7, 2);
+    std::pair<unsigned, unsigned> outside(43, 0);
+    expected_results.push_back(
+      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
+  }
+
+  {
     std::pair<unsigned, unsigned> inside(7, 3);
     std::pair<unsigned, unsigned> outside(3, 1);
     expected_results.push_back(
@@ -116,6 +125,13 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   {
     std::pair<unsigned, unsigned> inside(11, 2);
     std::pair<unsigned, unsigned> outside(12, 0);
+    expected_results.push_back(
+      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
+  }
+
+  {
+    std::pair<unsigned, unsigned> inside(11, 2);
+    std::pair<unsigned, unsigned> outside(44, 0);
     expected_results.push_back(
       std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
   }
@@ -148,6 +164,14 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
       std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
   }
 
+  {
+    std::pair<unsigned, unsigned> inside(15, 2);
+    std::pair<unsigned, unsigned> outside(45, 0);
+    expected_results.push_back(
+      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
+  }
+
+
   for (stk::mesh::EntitySideVector::iterator itr = boundary.begin(); itr != boundary.end(); ++itr)
   {
     stk::mesh::EntitySide& side = *itr;
@@ -162,7 +186,6 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
     std::pair<unsigned, unsigned> outside(outside_id, outside_side);
     results.push_back(std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
   }
-
   STKUNIT_EXPECT_TRUE(results == expected_results);
 }
 

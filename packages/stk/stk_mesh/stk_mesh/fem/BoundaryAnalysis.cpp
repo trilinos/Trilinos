@@ -158,7 +158,11 @@ void get_adjacent_entities( const Entity & entity ,
   // some relationship to nodes (we know it is a higher-order entity
   // than Node).
 
-  // Get the node entities for the nodes that make up the side
+  // Get the node entities for the nodes that make up the side. We put these
+  // in in reverse order so that it has the correct orientation with respect
+  // the potential adjacent entities we are evaluating. The relations are
+  // right-hand-rule ordered for the owning entity, but we need something
+  // that's compatible w/ the adjacent entities.
   std::vector<Entity*> side_node_entities;
   {
     PairIterRelation relations = entity.relations(Node);
@@ -169,13 +173,14 @@ void get_adjacent_entities( const Entity & entity ,
   }
 
   // Get the node entities for the nodes that make up the entity
-  std::set<Entity*> entity_node_set;
+  std::vector<Entity*> entity_nodes;
   {
     PairIterRelation irel = entity.relations(Node);
     for ( ; !irel.empty(); ++irel ) {
-      entity_node_set.insert(irel->entity());
+      entity_nodes.push_back(irel->entity());
     }
   }
+  std::sort(entity_nodes.begin(), entity_nodes.end());
 
   // Given the nodes related to the side, find all entities
   // of similar rank that have some relation to one or more of these nodes
@@ -191,16 +196,13 @@ void get_adjacent_entities( const Entity & entity ,
     Entity * current_entity = *itr;
     PairIterRelation relations = current_entity->relations(Node);
 
-    std::set<Entity*> current_node_set;
+    std::vector<Entity*> current_nodes;
     for ( ; relations.first != relations.second; ++relations.first ) {
-      current_node_set.insert(relations.first->entity());
+      current_nodes.push_back(relations.first->entity());
     }
+    std::sort(current_nodes.begin(), current_nodes.end());
 
-    bool entities_are_superimposed = std::includes(entity_node_set.begin(),
-                                                   entity_node_set.end(),
-                                                   current_node_set.begin(),
-                                                   current_node_set.end());
-
+    bool entities_are_superimposed = entity_nodes == current_nodes;
     if (entities_are_superimposed) {
       elements.erase(itr);
     }

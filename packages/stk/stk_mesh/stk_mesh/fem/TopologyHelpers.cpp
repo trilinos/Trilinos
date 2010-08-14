@@ -344,7 +344,9 @@ int element_local_side_id( const Entity & elem ,
     if (side_topology == curr_side_topology) {
 
       // Taking all positive permutations into account, check if this side
-      // has the same nodes as the side_nodes argument
+      // has the same nodes as the side_nodes argument. Note that this
+      // implementation preserves the node-order so that we can take
+      // entity-orientation into account.
       for (int p = 0; p < num_permutations; ++p) {
 
         if (curr_side_topology->permutation[p].polarity ==

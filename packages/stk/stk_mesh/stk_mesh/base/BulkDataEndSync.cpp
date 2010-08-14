@@ -318,6 +318,8 @@ void BulkData::internal_resolve_shared_modify_delete()
     communicate_entity_modification( *this , communicate_shared , remote_mod );
   }
 
+  // We iterate backwards over remote_mod to ensure that we hit the
+  // higher-ranking entities first.
   for ( std::vector<EntityProcState>::iterator
         i = remote_mod.end(); i != remote_mod.begin() ; ) {
 
@@ -439,6 +441,10 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
   std::vector< int > ghosting_change_flags( ghosting_count , 0 );
 
+  // We iterate backwards over remote_mod to ensure that we hit the
+  // higher-ranking entities first. This is important because higher-ranking
+  // entities like element must be deleted before the nodes they have are
+  // deleted.
   for ( std::vector<EntityProcState>::iterator
         i = remote_mod.end(); i != remote_mod.begin() ; ) {
 

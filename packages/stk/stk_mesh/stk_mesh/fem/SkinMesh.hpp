@@ -16,7 +16,9 @@ namespace mesh {
 class BulkData;
 class Part;
 
-void skin_mesh( BulkData & mesh, unsigned closure_rank, Part * part = NULL );
+void skin_mesh( BulkData & mesh,
+                unsigned closure_rank,
+                Part * skin_part = NULL );
 
 }
 }
