@@ -486,6 +486,32 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const
+{
+  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& rowmap = getBlockRowMap();
+  TEST_FOR_EXCEPTION(diag.getMap()->isSameAs(*(rowmap->getPointMap())) != true,
+    std::runtime_error, "Tpetra::VbrMatrix::getLocalDiagCopy ERROR, vector must be distributed the same as this matrix' row-map.");
+
+  Teuchos::ArrayRCP<Scalar> diag_view = diag.get1dViewNonConst();
+  Teuchos::ArrayView<const GlobalOrdinal> blockIDs = rowmap->getNodeBlockIDs();
+  size_t offset = 0;
+  typedef typename Teuchos::ArrayView<const GlobalOrdinal>::size_type Tsize_t;
+  for(Tsize_t i=0; i<blockIDs.size(); ++i) {
+    LocalOrdinal localBlockID = rowmap->getLocalBlockID(blockIDs[i]);
+    LocalOrdinal blockSize = rowmap->getLocalBlockSize(localBlockID);
+    Teuchos::ArrayRCP<const Scalar> blockEntry;
+    getGlobalBlockEntryView(blockIDs[i], blockIDs[i], blockSize, blockSize, blockEntry);
+
+    for(LocalOrdinal j=0; j<blockSize; ++j) {
+      diag_view[offset++] = blockEntry[j*blockSize+j];
+    }
+  }
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntryView(
       LocalOrdinal localBlockRow,
       LocalOrdinal localBlockCol,

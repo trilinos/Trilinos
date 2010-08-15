@@ -403,6 +403,13 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
                                       LocalOrdinal& numPtCols,
                                       Teuchos::ArrayRCP<Scalar>& blockEntry);
 
+  //! Return a copy of the (point-entry) diagonal values.
+  /*!
+    Throws an exception if the input-vector's map is not the same as
+    getBlockRowMap()->getPointMap().
+  */
+  void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const;
+
   //@}
 
   //! @name Overridden from Teuchos::Describable
