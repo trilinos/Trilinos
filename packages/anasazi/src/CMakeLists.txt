@@ -11,6 +11,7 @@ IF(Thyra_ENABLE_Epetra)
   SET(HAVE_EPETRA_THYRA 1)
 ENDIF()
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
 IF(${PACKAGE_NAME}_ENABLE_TSQR)
   SET(HAVE_ANASAZI_TSQR 1)
 ENDIF()
@@ -146,14 +147,28 @@ ENDIF()
 ## BEGIN TSQR setup
 ######################################################################
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
 IF(${PACKAGE_NAME}_ENABLE_TSQR)
 
-  if (${PACKAGE_NAME}_ENABLE_COMPLEX)
-    set(TSQR_ENABLE_Complex BOOL TRUE)
-  else ()
-    set(TSQR_ENABLE_Complex BOOL FALSE)
-  endif ()
+  ADD_OPTION_AND_DEFINE(
+    TSQR_ENABLE_Complex
+    HAVE_TSQR_COMPLEX
+    "For TSQR in Anasazi: enable complex arithmetic (std::complex<T>) support"
+    "${${PACKAGE_NAME}_ENABLE_COMPLEX}" )
 
+  ADD_OPTION_AND_DEFINE(
+    TSQR_ENABLE_Fortran
+    HAVE_TSQR_FORTRAN
+    "For TSQR in Anasazi: enable the TSQR::CombineFortran backend.  Your Fortran compiler must support the Fortran 2003 standard in order for this to work."
+    OFF )
+
+  ADD_OPTION_AND_DEFINE(
+    TSQR_ENABLE_Intel_TBB
+    HAVE_TSQR_INTEL_TBB
+    "For TSQR in Anasazi: enable Intel Threading Building Blocks support."
+    OFF )
+
+  ASSERT_DEFINED(TSQR_ENABLE_Fortran)
   if (TSQR_ENABLE_Fortran)
     # TSQR has an optional Fortran dependency.  Fortran is used to
     # build Tsqr_Combine.f90, which is the back end of
@@ -177,24 +192,6 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   set (CMAKE_MODULE_PATH_SAVE ${CMAKE_MODULE_PATH})
   set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/TSQR/cmake)
 
-  if (TSQR_ENABLE_Complex)
-    set (HAVE_TSQR_COMPLEX BOOL TRUE)
-  else ()
-    set (HAVE_TSQR_COMPLEX BOOL FALSE)
-  endif ()
-
-  if (TSQR_ENABLE_Fortran)
-    set (HAVE_TSQR_FORTRAN BOOL TRUE)
-  else ()
-    set (HAVE_TSQR_FORTRAN BOOL FALSE)
-  endif ()
-
-  if (TSQR_ENABLE_Intel_TBB)
-    set (HAVE_TSQR_INTEL_TBB BOOL TRUE)
-  else ()
-    set (HAVE_TSQR_INTEL_TBB BOOL FALSE)
-  endif ()
-
   include (TsqrBlasAndLapack)
   include (TsqrCheckLapackRoutine)
   include (TsqrTestLapack)
@@ -204,6 +201,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   # the CMAKE_MODULE_PATH above.
   configure_file ("TSQR/Tsqr_Config.hpp.in" "${CMAKE_CURRENT_BINARY_DIR}/Tsqr_Config.hpp")
 
+  ASSERT_DEFINED(TSQR_ENABLE_Fortran)
   if (TSQR_ENABLE_Fortran)
     # Generate LAPACK wrapper routines for _LARF(G)(P) used by
     # Tsqr_CombineFortran.f90.  The wrappers are written to
