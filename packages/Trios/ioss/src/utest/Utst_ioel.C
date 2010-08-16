@@ -75,9 +75,6 @@ int main(int argc, char *argv[])
   OUTPUT << "\n" << argv[0];;
   if (err_count == 0) {
     OUTPUT << "\nSIERRA execution successful." << std::endl;
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
     return EXIT_SUCCESS;
   } else {
     OUTPUT << "\nSIERRA execution failed." << std::endl;
