@@ -137,7 +137,29 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
   Entity &cell2 = *(bulk2.buckets (3)[0]->begin());
   Entity &node2 = *(bulk2.buckets (0)[0]->begin());
 
+
   STKUNIT_ASSERT_THROW ( Relation r ( Relation::attribute( 2 , 0 ) , cell ) , std::invalid_argument );
+
+  {
+      int ok = 0 ;
+    try {
+
+  unsigned id = 10000*(~(0u));
+
+  Relation r (Relation::attribute( 0 , id ), cell );
+
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitRelation CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestRelation FAILED to catch error for Relation::attribute");
+    }
+  } 
 
   STKUNIT_ASSERT_THROW ( bulk.declare_relation ( node , cell , 0 ) , std::runtime_error );
   STKUNIT_ASSERT_THROW ( bulk.declare_relation ( cell , node2 , 0 ) , std::runtime_error );
