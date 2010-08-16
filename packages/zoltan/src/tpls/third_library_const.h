@@ -22,6 +22,8 @@ extern "C" {
 
 #include "zoltan_util.h"
 
+#include "stdint.h"
+
 #ifdef indextype
 #undef indextype
 #endif
