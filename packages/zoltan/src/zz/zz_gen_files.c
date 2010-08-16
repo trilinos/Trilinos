@@ -73,25 +73,29 @@ int gen_geom, int gen_graph, int gen_hg)
  */
 
   int error=ZOLTAN_OK;
-  ZOLTAN_ID_PTR local_ids = NULL;
-  ZOLTAN_ID_PTR global_ids = NULL;
+
   FILE *fp;
   char full_fname[256];
-  int *xadj;
-  ZOLTAN_GNO_TYPE *vtxdist, *adjncy;
-  int *part, *adjproc, *edgeSize;
-  float *float_vwgt, *ewgts, *eWgts, *wptr;
-  double *xyz;
+  int *xadj, *part, *adjproc, *edgeSize;
+
   int i, j, k, num_obj, num_geom, num_edges, reduce;
-  ZOLTAN_GNO_TYPE glob_nvtxs, glob_edges=0, glob_hedges=0, glob_pins, glob_ewgts;
-  ZOLTAN_GNO_TYPE minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
-  ZOLTAN_GNO_TYPE tmp_gno;
   int numPins, edgeOffset=0, vtxOffset=0;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   int have_pin_callbacks=0;
   int nEdges=0, nEwgts=0;
-  ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
   int lenGID = zz->Num_GID;
+
+  ZOLTAN_ID_PTR local_ids=NULL, global_ids=NULL;
+  ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
+  ZOLTAN_ID_TYPE minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
+
+  ZOLTAN_GNO_TYPE *vtxdist, *adjncy;
+  ZOLTAN_GNO_TYPE glob_edges=0, glob_hedges=0;
+  ZOLTAN_GNO_TYPE glob_nvtxs, glob_pins, glob_ewgts;
+  ZOLTAN_GNO_TYPE gno_val;
+
+  float *float_vwgt, *ewgts, *eWgts, *wptr;
+  double *xyz;
 
   char *yo = "Zoltan_Generate_Files";
 
@@ -135,8 +139,8 @@ int gen_geom, int gen_graph, int gen_hg)
   }
   else{
     /* Compute global number of vertices. */
-    tmp_gno = (ZOLTAN_GNO_TYPE)num_obj;
-    MPI_Allreduce(&tmp_gno, &glob_nvtxs, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);  
+    gno_val = (ZOLTAN_GNO_TYPE)num_obj;
+    MPI_Allreduce(&gno_val, &glob_nvtxs, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);  
   }
 
   /* Local number of edges. */
@@ -144,9 +148,10 @@ int gen_geom, int gen_graph, int gen_hg)
     num_edges = 0;
   else
     num_edges = xadj[num_obj];
+
   /* Compute global number of edges. */
-  tmp_gno = (ZOLTAN_GNO_TYPE)num_edges;
-  MPI_Reduce(&num_edges, &glob_edges, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, zz->Communicator);  
+  gno_val = (ZOLTAN_GNO_TYPE)num_edges;
+  MPI_Reduce(&gno_val, &glob_edges, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, zz->Communicator);  
   /* Assume no self-edges! */
   glob_edges /= 2;
 
@@ -186,36 +191,37 @@ int gen_geom, int gen_graph, int gen_hg)
 
       /* Get the global number of pins for process 0. 
        */
-      MPI_Reduce(&numPins, &glob_pins, 1, MPI_INT, MPI_SUM, 0, 
-          zz->Communicator);  
+      gno_val = (ZOLTAN_GNO_TYPE)numPins;
+      MPI_Reduce(&gno_val, &glob_pins, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, zz->Communicator);
 
       /* Get the global number of edges that weights were
        * provided for.  More than one process may supply
        * weights for a given edge.
        */
-      MPI_Reduce(&nEwgts, &glob_ewgts, 1, MPI_INT, MPI_SUM, 0, 
-          zz->Communicator);  
+      gno_val = (ZOLTAN_GNO_TYPE)nEwgts;
+      MPI_Reduce(&nEwgts, &glob_ewgts, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, zz->Communicator);
 
       /* We assume the Edge IDs and Vertex IDs are integers and
        * are contiguous.  Figure out what the lowest ID is.
        * Matrix Market files are one-based so we may adjust IDs.
        */
-      minid = glob_hedges * 10;
+      minid = glob_hedges;
       maxid = 0;
       for (i=0; i<nEdges; i++){
         if (edgeIds[i*lenGID] < minid) minid = edgeIds[i*lenGID];
         if (edgeIds[i*lenGID] > maxid) maxid = edgeIds[i*lenGID];
       }
-      MPI_Allreduce(&minid, &minEdgeId, 1, MPI_INT, MPI_MIN, zz->Communicator);  
-      MPI_Allreduce(&maxid, &maxEdgeId, 1, MPI_INT, MPI_MAX, zz->Communicator);  
-      minid = glob_nvtxs * 10;
+      MPI_Allreduce(&minid, &minEdgeId, 1, ZOLTAN_ID_MPI_TYPE, MPI_MIN, zz->Communicator);
+      MPI_Allreduce(&maxid, &maxEdgeId, 1, ZOLTAN_ID_MPI_TYPE, MPI_MAX, zz->Communicator);
+
+      minid = glob_nvtxs;
       maxid = 0;
       for (i=0; i<num_obj; i++){
         if (global_ids[i*lenGID] < minid) minid = global_ids[i*lenGID];
         if (global_ids[i*lenGID] > maxid) maxid = global_ids[i*lenGID];
       }
-      MPI_Allreduce(&minid, &minVtxId, 1, MPI_INT, MPI_MIN, zz->Communicator);  
-      MPI_Allreduce(&maxid, &maxVtxId, 1, MPI_INT, MPI_MAX, zz->Communicator);  
+      MPI_Allreduce(&minid, &minVtxId, 1, ZOLTAN_ID_MPI_TYPE, MPI_MIN, zz->Communicator);
+      MPI_Allreduce(&maxid, &maxVtxId, 1, ZOLTAN_ID_MPI_TYPE, MPI_MAX, zz->Communicator);
 
       if ( ((maxVtxId - minVtxId + 1) != glob_nvtxs) ||
            ((maxEdgeId - minEdgeId + 1) != glob_hedges)){
@@ -225,8 +231,8 @@ int gen_geom, int gen_graph, int gen_hg)
         goto End;
       }
 
-      edgeOffset = 1 - minEdgeId;
-      vtxOffset = 1 - minVtxId;
+      edgeOffset = 1 - (int)minEdgeId;
+      vtxOffset = 1 - (int)minVtxId;
     }
   }
 
@@ -278,9 +284,9 @@ int gen_geom, int gen_graph, int gen_hg)
     error = ZOLTAN_FATAL;
     goto End;
   }
+
   for (i=0; i<num_obj; i++)
     fprintf(fp, "%d\n", part[i]);
-    /* fprintf(fp, "%d\n", zz->Proc); */
   fclose(fp);
 
   /* Write geometry to file, if applicable. */
