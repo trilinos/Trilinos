@@ -273,6 +273,8 @@ STKUNIT_UNIT_TEST( UnitTestPartCellTopologyMap , bucket )
 {
   stk::ParallelMachine machine = MPI_COMM_WORLD ;
 
+  const CellTopologyData * const top_tet4 = shards::getCellTopologyData< shards::Tetrahedron<4> >();
+
   const unsigned spatial_dimension = 3 ;
 
   stk::mesh::FiniteElementMesh<> mesh( spatial_dimension , machine );
@@ -283,14 +285,19 @@ STKUNIT_UNIT_TEST( UnitTestPartCellTopologyMap , bucket )
 
   mesh.bulkData.modification_begin();
 
-  int node_ids[4] = { 1 , 2 , 3 , 4 };
+  stk::mesh::Entity * element = NULL ;
 
-  stk::mesh::Entity & element =
-    declare_element( mesh.bulkData , block , 1 , node_ids );
+  if ( mesh.bulkData.parallel_rank() == 0 ) {
+    int node_ids[4] = { 1 , 2 , 3 , 4 };
+
+    element = & declare_element( mesh.bulkData , block , 1 , node_ids );
+  }
 
   mesh.bulkData.modification_end();
 
-  get_cell_topology( element );
+  if ( element ) {
+    STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::get_cell_topology( *element ) );
+  }
 }
 
 //----------------------------------------------------------------------------
