@@ -359,8 +359,9 @@ void ILUT<MatrixType>::compute() {
     // Alter the diagonal according to the absolute-threshold and
     // relative-threshold values. If not set, those values default
     // to zero and one respectively.
+    const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rthresh = getRelativeThreshold();
     const Scalar& v = cur_row[row_i];
-    cur_row[row_i] = getAbsoluteThreshold()*TIFPACK_SGN(v) + getRelativeThreshold()*v;
+    cur_row[row_i] = (Scalar)(getAbsoluteThreshold()*TIFPACK_SGN(v)) + rthresh*v;
 
     Tsize_t orig_U_len = U_cols.size();
     RowNnz = L_cols_heap.size() + orig_U_len;

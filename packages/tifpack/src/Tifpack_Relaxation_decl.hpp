@@ -345,7 +345,7 @@ private:
   //! Minimum diagonal value
   Scalar MinDiagonalValue_;
   //! Damping factor.
-  double DampingFactor_;
+  Scalar DampingFactor_;
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.
