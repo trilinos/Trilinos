@@ -603,9 +603,9 @@
   </Package>
   <Package name="Aristos" dir="aristos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Amesos,AztecOO,Ifpack,ML"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,ML"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Ifpack,AztecOO,EpetraExt"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
