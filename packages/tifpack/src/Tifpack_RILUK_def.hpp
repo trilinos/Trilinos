@@ -361,12 +361,12 @@ void RILUK<MatrixType>::compute() {
       // current_madds++;
     }
 
-    if (Teuchos::ScalarTraits<Scalar>::magnitude(DV[i]) > MaxDiagonalValue) {
-      if (DV[i] < 0) DV[i] = - MinDiagonalValue;
+    if (Teuchos::ScalarTraits<Scalar>::magnitude(DV[i]) > Teuchos::ScalarTraits<Scalar>::magnitude(MaxDiagonalValue)) {
+      if (Teuchos::ScalarTraits<Scalar>::real(DV[i]) < 0) DV[i] = - MinDiagonalValue;
       else DV[i] = MinDiagonalValue;
     }
     else
-      DV[i] = 1.0/DV[i]; // Invert diagonal value
+      DV[i] = Teuchos::ScalarTraits<Scalar>::one()/DV[i]; // Invert diagonal value
 
     for (size_t j=0; j<NumU; j++) InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
 

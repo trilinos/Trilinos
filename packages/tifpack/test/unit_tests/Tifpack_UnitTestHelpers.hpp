@@ -110,7 +110,8 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   Teuchos::Array<GlobalOrdinal> col(1);
   Teuchos::Array<Scalar> coef(1);
 
-  const Scalar two = 2*Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar two = one + one;
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
   for(GlobalOrdinal g_row = rowmap->getMinLocalIndex(); g_row<=rowmap->getMaxLocalIndex(); ++g_row) {
@@ -157,9 +158,13 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   Teuchos::Array<GlobalOrdinal> col(1);
   Teuchos::Array<Scalar> coef(1);
 
-  const Scalar ten = 10*Teuchos::ScalarTraits<Scalar>::one();
-  const Scalar two = 2*Teuchos::ScalarTraits<Scalar>::one();
-  const Scalar onetenth = Teuchos::ScalarTraits<Scalar>::one() / ten;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude;
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  magnitude mag_one = Teuchos::ScalarTraits<Scalar>::magnitude(one);
+  magnitude mag_two = mag_one*2.0;
+  magnitude mag_ten = mag_one*10.0;
+  Scalar two = one*mag_two;
+  const Scalar onetenth = one / mag_ten;
 
   for(GlobalOrdinal g_row = rowmap->getMinLocalIndex(); g_row<=rowmap->getMaxLocalIndex(); ++g_row) {
     if (g_row == rowmap->getMinGlobalIndex()) {

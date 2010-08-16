@@ -31,39 +31,17 @@
 #define _TIFPACK_CONFIGDEFS_HPP_
 
 #include <Tifpack_config.h>
+#include <Teuchos_ScalarTraits.hpp>
 
-/* sign function stolen from epetra. Perhaps this will need to
- be a template function which uses Teuchos::ScalarTraits...
-*/
-#define TIFPACK_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)
-
-#ifdef HAVE_TIFPACK_MPI
-
-#endif
-
-// prints out an error message if variable is not zero,
-// and returns this value.
-#define TIFPACK_CHK_ERR(ifpack_err) \
-{ if (ifpack_err < 0) { \
-  std::cerr << "TIFPACK ERROR " << ifpack_err << ", " \
-    << __FILE__ << ", line " << __LINE__ << std::endl; \
-    return(ifpack_err);  } }
-
-// prints out an error message if variable is not zero,
-// and returns void
-#define TIFPACK_CHK_ERRV(ifpack_err) \
-{ if (ifpack_err < 0) { \
-  std::cerr << "TIFPACK ERROR " << ifpack_err << ", " \
-    << __FILE__ << ", line " << __LINE__ << std::endl; \
-    return;  } }
-// prints out an error message and returns
-#define TIFPACK_RETURN(ifpack_err) \
-{ if (ifpack_err < 0) { \
-  std::cerr << "TIFPACK ERROR " << ifpack_err << ", " \
-    << __FILE__ << ", line " << __LINE__ << std::endl; \
-		       } return(ifpack_err); }
-
-#define TIFPACK_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
+//The sgn function isn't well defined for complex.
+//Is it correct to operate on the real part of x as is done below?
+template<class Scalar>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+TIFPACK_SGN(const Scalar& x)
+{
+  static const typename Teuchos::ScalarTraits<Scalar>::magnitudeType one = Teuchos::ScalarTraits<Scalar>::magnitude(Teuchos::ScalarTraits<Scalar>::one());
+  return Teuchos::ScalarTraits<Scalar>::real(x) > 0.0 ? -one : one;
+}
 
 #include <Tpetra_ConfigDefs.hpp>
 namespace Tifpack {

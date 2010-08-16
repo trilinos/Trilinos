@@ -274,7 +274,7 @@ private:
   //! Contains the degree of Chebyshev polynomial.
   int PolyDegree_;
   //! The ratio such that [LambdaMax_ / EigRatio_, LambdaMax_], the interval of interest for the Chebyshev polynomial.
-  Scalar EigRatio_;
+  magnitudeType EigRatio_;
   //! An approximation to the smallest eigenvalue.
   Scalar LambdaMin_;
   //! An approximation to the largest eigenvalue.

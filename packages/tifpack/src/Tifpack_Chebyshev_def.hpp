@@ -251,6 +251,7 @@ void Chebyshev<MatrixType>::apply(
   Scalar beta_cheby = 1.1 * LambdaMax_;
   Scalar delta = 2.0 / (beta_cheby - alpha_cheby);
   Scalar theta = 0.5 * (beta_cheby + alpha_cheby);
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
   Scalar s1 = theta * delta;
 
   //--- Define vectors
@@ -318,9 +319,9 @@ void Chebyshev<MatrixType>::apply(
   int degreeMinusOne = PolyDegree_ - 1;
   for (int deg = 0; deg < degreeMinusOne; ++deg) {
     A_->apply(Y, V);
-    rhokp1 = 1.0 / (2.0*s1 - rhok);
+    rhokp1 = one / (2*s1 - rhok);
     dtemp1 = rhokp1 * rhok;
-    dtemp2 = 2.0 * rhokp1 * delta;
+    dtemp2 = 2 * rhokp1 * delta;
     rhok = rhokp1;
     // compute W = dtemp1 * W
     W.scale(dtemp1);
@@ -405,7 +406,7 @@ void Chebyshev<MatrixType>::compute()
     Teuchos::ArrayRCP<Scalar> diagvals = InvDiagonal_->get1dViewNonConst();
     for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
       Scalar& diag = diagvals[i];
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < MinDiagonalValue_)
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < Teuchos::ScalarTraits<Scalar>::magnitude(MinDiagonalValue_))
         diag = MinDiagonalValue_;
       else
         diag = 1.0 / diag;
@@ -435,7 +436,8 @@ PowerMethod(const Tpetra::Operator<typename MatrixType::scalar_type, typename Ma
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(Operator.getDomainMap());
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> y(Operator.getRangeMap());
   x.randomize();
-  Teuchos::Array<Scalar> norms(x.getNumVectors());
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  Teuchos::Array<magnitudeType> norms(x.getNumVectors());
   x.norm2(norms());
 
   x.scale(1.0 / norms[0]);
@@ -537,8 +539,8 @@ void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::
     Scalar myMinVal = DiagView[0];
     Scalar myMaxVal = DiagView[0];
     for(typename Teuchos::ArrayRCP<Scalar>::size_type i=1; i<DiagView.size(); ++i) {
-      if (myMinVal > DiagView[i]) myMinVal = DiagView[i];
-      if (myMaxVal < DiagView[i]) myMaxVal = DiagView[i];
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMinVal) > Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMinVal = DiagView[i];
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMaxVal) < Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMaxVal = DiagView[i];
     }
     Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);
     Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MAX, 1, &myMaxVal, &MaxVal);

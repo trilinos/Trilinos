@@ -42,7 +42,8 @@ struct greater_indirect {
   ~greater_indirect(){}
 
   bool operator()(const Ordinal& lhs, const Ordinal& rhs) const
-  { return m_vals[lhs] > m_vals[rhs]; }
+  { return Teuchos::ScalarTraits<Scalar>::magnitude(m_vals[lhs]) >
+           Teuchos::ScalarTraits<Scalar>::magnitude(m_vals[rhs]); }
 
 private:
   const Teuchos::Array<Scalar>& m_vals;
