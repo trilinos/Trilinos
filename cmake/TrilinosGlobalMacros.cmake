@@ -149,7 +149,6 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     ".*.pyc"
     /Trilinos/cmake/CMakeKitwareBacklog.txt
     /Trilinos/cmake/TODO
-    /Trilinos/packages/ForTrilinos
     /Trilinos/packages/ITAPS
     /Trilinos/packages/aristos
     /Trilinos/packages/claps
