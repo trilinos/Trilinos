@@ -1,3 +1,6 @@
+
+#include <iostream>
+
 #include <use_cases/UseCase_Skinning.hpp>
 
 #include <Shards_BasicTopologies.hpp>
