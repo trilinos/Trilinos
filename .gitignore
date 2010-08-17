@@ -10,6 +10,7 @@ doxygen_objdb_*.tmp
 /TAGS
 /preCopyrightTrilinos/
 /LIMEExt/
+/TerminalApplication/
 
 # Ignore gtags generated files
 /GPATH
