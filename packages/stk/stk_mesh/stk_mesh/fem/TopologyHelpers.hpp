@@ -101,8 +101,13 @@ Entity & declare_element( BulkData & mesh ,
   Entity & elem = mesh.declare_entity( Element, elem_id, add );
 
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
-    Entity & node = mesh.declare_entity( Node, node_id[i], empty );
-    mesh.declare_relation( elem , node , i );
+    //declare node if it doesn't already exist
+    Entity * node = mesh.get_entity( Node , node_id[i]);
+    if ( NULL == node) {
+      node = & mesh.declare_entity( Node , node_id[i], empty );
+    }
+
+    mesh.declare_relation( elem , *node , i );
   }
   return elem ;
 }

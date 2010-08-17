@@ -18,6 +18,8 @@
 
 bool skinning_use_case_1(stk::ParallelMachine pm);
 bool skinning_use_case_1b(stk::ParallelMachine pm);
+bool skinning_use_case_2(stk::ParallelMachine pm);
+
 
 void separate_and_skin_mesh(
     stk::mesh::MetaData & meta,

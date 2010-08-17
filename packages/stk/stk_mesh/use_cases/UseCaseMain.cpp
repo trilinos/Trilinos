@@ -117,6 +117,12 @@ int main ( int argc, char * argv[] )
     printStatus(local_status);
     status = status && local_status;
   }
+  {
+    std::cout << "Use Case Skinning 2 ... ";
+    bool local_status = skinning_use_case_2(parallel_machine);
+    printStatus(local_status);
+    status = status && local_status;
+  }
 
   int return_code = -1;
   if (status) {

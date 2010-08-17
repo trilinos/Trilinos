@@ -14,7 +14,6 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
-#include <assert.h>
 
 #include <stk_mesh/base/GetEntities.hpp>
 
