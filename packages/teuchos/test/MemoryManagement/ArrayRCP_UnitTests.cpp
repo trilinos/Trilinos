@@ -81,6 +81,13 @@ TEUCHOS_UNIT_TEST( ArrayRCP, implicit_ArrayRCP_const )
 }
 
 
+TEUCHOS_UNIT_TEST( ArrayRCP, ArrayRCP_void_throws )
+{
+  TEST_THROW( const ArrayRCP<      void>  v_arcp, std::logic_error );
+  TEST_THROW( const ArrayRCP<const void> cv_arcp, std::logic_error );
+}
+
+
 TEUCHOS_UNIT_TEST( ArrayRCP, release )
 {
   ArrayRCP<A> a_arcp = arcp<A>(1);

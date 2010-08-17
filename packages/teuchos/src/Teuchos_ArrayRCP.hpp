@@ -101,7 +101,6 @@ private:
 
 // Constructors/Destructors/Initializers 
 
-
 template<class T> inline
 ArrayRCP<T>::ArrayRCP( ENull )
   : ptr_(NULL), lowerOffset_(0), upperOffset_(-1)
@@ -733,6 +732,20 @@ template<class T> inline
 const RCPNodeHandle& ArrayRCP<T>::access_private_node() const
 {
   return node_;
+}
+
+// Array<void> and Array<const void> specializations
+
+
+ArrayRCP<void>::ArrayRCP()
+{
+  TEST_FOR_EXCEPT(true);
+}
+
+
+ArrayRCP<const void>::ArrayRCP()
+{
+  TEST_FOR_EXCEPT(true);
 }
 
 
