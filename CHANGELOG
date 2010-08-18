@@ -1,0 +1,12 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 10.4 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 10.4.1 August 18, 2010
+
+1. ForTrilinos - Added new package ForTrilinos
+
+2. Zoltan - Minor fixes to autotools build
+

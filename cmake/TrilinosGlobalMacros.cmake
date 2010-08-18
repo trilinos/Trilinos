@@ -347,7 +347,6 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /Trilinos/packages/ifpack/src/Ifpack_OverlapFactor.*
     /Trilinos/packages/ifpack/src/Ifpack_OverlapSolveObject..*
     /Trilinos/packages/ifpack/src/Ifpack_PerturbedMatrix.h
-    /Trilinos/packages/ifpack/src/Ifpack_SPARSKIT.cpp
     /Trilinos/packages/ifpack/src/az_ifpack.*
     /Trilinos/packages/ifpack/src/ifp_Block
     /Trilinos/packages/ifpack/src/ifp_DenseMat.*
