@@ -8,14 +8,15 @@
 
 
 #include <sstream>
-#include <unit_tests/UnitTestFixture.hpp>
+#include <stk_mesh/fixtures/SelectorFixture.hpp>
 
-namespace sunit {
+namespace stk {
+namespace mesh {
+namespace fixtures {
 
+  SelectorFixture::~SelectorFixture() {}
 
-  ExampleFixture::~ExampleFixture() {}
-
-  ExampleFixture::ExampleFixture()
+  SelectorFixture::SelectorFixture()
     : m_MetaData( std::vector<std::string>(1, std::string("MyEntityRank")) )
     , m_BulkData( m_MetaData , MPI_COMM_WORLD )
     , m_partA( m_MetaData.declare_part( "PartA" , 0 ) )
@@ -77,9 +78,9 @@ namespace sunit {
 
   //--------------------------------------------------------------------------
 
-  VariableSizeFixture::~VariableSizeFixture() {}
+  VariableSelectorFixture::~VariableSelectorFixture() {}
 
-  VariableSizeFixture::VariableSizeFixture(int NumParts)
+  VariableSelectorFixture::VariableSelectorFixture(int NumParts)
     : m_MetaData( std::vector<std::string>(1, std::string("MyEntityRank")) )
     , m_BulkData( m_MetaData , MPI_COMM_WORLD )
     , m_declared_part_vector()
@@ -119,6 +120,7 @@ namespace sunit {
     m_BulkData.modification_end();
   }
 
-
-} // namespace sunit
+} // fixtures
+} // mesh
+} // stk
 

@@ -6,14 +6,16 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_mesh_unit_tests_UnitTestFixture_hpp
-#define stk_mesh_unit_tests_UnitTestFixture_hpp
+#ifndef stk_mesh_unit_tests_SelectorFixture_hpp
+#define stk_mesh_unit_tests_SelectorFixture_hpp
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Types.hpp>
 
-namespace sunit {
+namespace stk {
+namespace mesh {
+namespace fixtures {
 
   // Example Mesh primarily used for testing Selectors:
   //
@@ -36,10 +38,10 @@ namespace sunit {
   // |----------|--|-------|--|----------|    |-------------|
   //
 
-  class ExampleFixture {
+  class SelectorFixture {
   public:
-    ExampleFixture();
-    ~ExampleFixture();
+    SelectorFixture();
+    ~SelectorFixture();
 
     const stk::mesh::MetaData & get_MetaData() const { return m_MetaData ; }
     stk::mesh::MetaData       & get_NonconstMetaData() { return m_MetaData ; }
@@ -62,14 +64,14 @@ namespace sunit {
     stk::mesh::Entity * m_entity5 ;
 
   private:
-    ExampleFixture( const ExampleFixture & );
-    ExampleFixture & operator = ( const ExampleFixture & );
+    SelectorFixture( const SelectorFixture & );
+    SelectorFixture & operator = ( const SelectorFixture & );
   };
 
-  class VariableSizeFixture {
+  class VariableSelectorFixture {
   public:
-    VariableSizeFixture(int NumParts);
-    ~VariableSizeFixture();
+    VariableSelectorFixture(int NumParts);
+    ~VariableSelectorFixture();
 
     stk::mesh::MetaData m_MetaData ;
     stk::mesh::BulkData m_BulkData ;
@@ -78,12 +80,14 @@ namespace sunit {
     std::vector<stk::mesh::Entity*> m_entities ;
 
   private:
-    VariableSizeFixture( const VariableSizeFixture & );
-    VariableSizeFixture & operator = ( const VariableSizeFixture & );
+    VariableSelectorFixture( const VariableSelectorFixture & );
+    VariableSelectorFixture & operator = ( const VariableSelectorFixture & );
   };
 
 
-} // namespace sunit
 
+} // fixtures
+} // mesh
+} // stk
 
 #endif // stk_mesh_unit_tests_UnitTestFixture_hpp
