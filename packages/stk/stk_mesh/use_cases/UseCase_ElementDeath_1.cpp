@@ -19,6 +19,7 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
+#include <stk_mesh/fem/SkinMesh.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -154,16 +155,24 @@ void find_lower_rank_entities_to_kill(
 
 bool element_death_use_case_1(stk::ParallelMachine pm)
 {
-  //setup the mesh
+  //set up the mesh
   stk::mesh::fixtures::GridFixture fixture(pm);
+
+  stk::mesh::BulkData& mesh = fixture.bulk_data();
+  stk::mesh::MetaData& meta_data = fixture.meta_data();
+
+  meta_data.commit();
+
+  mesh.modification_begin();
+  fixture.generate_grid();
+  mesh.modification_end();
+
+  stk::mesh::skin_mesh(mesh, stk::mesh::Face);
 
   // Nothing happens on iteration #0,
   // so the initial mesh should pass this validation.
 
   if ( ! validate_iteration( pm, fixture, 0) ) { return false ; }
-
-  stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::MetaData& meta_data = fixture.meta_data();
 
   stk::mesh::Part & dead_part = *fixture.dead_part();
 

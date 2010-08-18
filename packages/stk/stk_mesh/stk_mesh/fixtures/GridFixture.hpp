@@ -31,9 +31,9 @@ public:
   Part* quad_part() const { return & m_quad_part; }
   Part* dead_part() const { return & m_dead_part; }
 
-private:
   void generate_grid();
 
+private:
   MetaData  m_meta_data;
   BulkData  m_bulk_data;
   Part    & m_quad_part;

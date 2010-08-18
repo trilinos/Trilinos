@@ -20,9 +20,6 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
-
-#include <stk_mesh/fem/SkinMesh.hpp>
-
 /*
 The following fixture creates the mesh below
 1-16 Quadrilateral<4>
@@ -51,10 +48,6 @@ GridFixture::GridFixture(stk::ParallelMachine pm)
   , m_dead_part( m_meta_data.declare_part("dead_part"))
 {
   set_cell_topology<shards::Quadrilateral<4> >(m_quad_part);
-
-  m_meta_data.commit();
-
-  generate_grid();
 }
 
 GridFixture::~GridFixture()
@@ -62,8 +55,6 @@ GridFixture::~GridFixture()
 
 void GridFixture::generate_grid()
 {
-  m_bulk_data.modification_begin();
-
   const unsigned num_nodes = 25;
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
@@ -116,10 +107,6 @@ void GridFixture::generate_grid()
       }
     }
   }
-
-  m_bulk_data.modification_end();
-
-  skin_mesh(m_bulk_data, Face);
 }
 
 } // fixtures
