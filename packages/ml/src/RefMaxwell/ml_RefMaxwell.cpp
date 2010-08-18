@@ -508,7 +508,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   int NumGlobalNNZ=SM_Matrix_->NumGlobalNonzeros();
   if(verbose_ && !Comm_->MyPID()) {
     char msg[80];
-    sprintf(msg,"Smoother: (refmaxwell top) :");
+    sprintf(msg,"%s","Smoother: (refmaxwell top) :");
     printf("%s # global rows = %d, # estim. global nnz = %d\n",msg,NumGlobalRows,NumGlobalNNZ);
     if(smoother=="Hiptmair")
       printf("%s %s %d (e=%d/n=%d)\n",msg,smoother.c_str(),smoother_sweeps,edge_sweeps,node_sweeps);
