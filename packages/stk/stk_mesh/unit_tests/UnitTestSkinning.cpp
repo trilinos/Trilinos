@@ -21,8 +21,9 @@
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
 
-#include <unit_tests/UnitTestGridMeshWithShellFixture.hpp>
+#include <stk_mesh/fixtures/GridFixture.hpp>
 
 #include <iomanip>
 #include <algorithm>
@@ -59,17 +60,71 @@ void UnitTestStkMeshSkinning::test_skinning()
     return;
   }
 
-  GridMeshWithShellFixture grid_mesh(MPI_COMM_WORLD);
+  stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
+  stk::mesh::MetaData& meta_data = grid_mesh.meta_data();
 
-  // Create a part for the skin
-  stk::mesh::Part & skin_part =
-    grid_mesh.meta_data().declare_part("skin_part");
-  grid_mesh.meta_data().commit();
+  // Create a part for the skin and the shells
+  stk::mesh::Part & skin_part = meta_data.declare_part("skin_part");
+  stk::mesh::Part & shell_part = meta_data.declare_part("shell_part",
+                                                        stk::mesh::Face);
+  stk::mesh::set_cell_topology<shards::ShellLine<2> >(shell_part);
+  meta_data.commit();
 
+  // Begin modification cycle
   grid_mesh.bulk_data().modification_begin();
+
+  // Generate the plain grid
   grid_mesh.generate_grid();
+
+  // Add the shells
+  std::vector<unsigned> count;
+  stk::mesh::Selector locally_owned(meta_data.locally_owned_part());
+  stk::mesh::count_entities(locally_owned, bulk_data, count);
+  const unsigned num_shell_1_faces = 4;
+  const unsigned num_shell_2_faces = 2;
+  const unsigned num_shell_faces = num_shell_1_faces + num_shell_2_faces;
+  const unsigned num_entities = count[stk::mesh::Node] +
+                                count[stk::mesh::Face];
+
+  stk::mesh::PartVector shell_parts;
+  shell_parts.push_back(&shell_part);
+
+  std::vector<stk::mesh::Entity*> shell_faces;
+  for (unsigned i = 1; i <= num_shell_faces; ++i) {
+    stk::mesh::Entity& new_shell = bulk_data.declare_entity(stk::mesh::Face,
+                                                            num_entities + i,
+                                                            shell_parts);
+    shell_faces.push_back(&new_shell);
+  }
+
+  // Set up relationships for shells
+
+  // declare shell relationships for first shell
+  unsigned node_list_1[5] = {21, 26, 31, 36, 41};
+  for (unsigned i = 0; i < num_shell_1_faces; ++i) {
+    stk::mesh::Entity& shell = *(shell_faces[i]);
+    stk::mesh::Entity& node1 =
+      *(bulk_data.get_entity(stk::mesh::Node, node_list_1[i]));
+    stk::mesh::Entity& node2 =
+      *(bulk_data.get_entity(stk::mesh::Node, node_list_1[i+1]));
+    bulk_data.declare_relation(shell, node1, 0);
+    bulk_data.declare_relation(shell, node2, 1);
+  }
+
+  // declare shell relationships for second shell
+  unsigned node_list_2[3] = {31, 36, 41};
+  for (unsigned i = 0; i < num_shell_2_faces; ++i) {
+    stk::mesh::Entity& shell = *(shell_faces[i + num_shell_1_faces]);
+    stk::mesh::Entity& node1 =
+      *(bulk_data.get_entity(stk::mesh::Node, node_list_2[i]));
+    stk::mesh::Entity& node2 =
+      *(bulk_data.get_entity(stk::mesh::Node, node_list_2[i+1]));
+    bulk_data.declare_relation(shell, node1, 0);
+    bulk_data.declare_relation(shell, node2, 1);
+  }
+
   grid_mesh.bulk_data().modification_end();
 
   // skin the boundary

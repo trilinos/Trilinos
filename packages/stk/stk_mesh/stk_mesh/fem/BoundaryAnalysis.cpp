@@ -30,10 +30,11 @@ void boundary_analysis(const BulkData& bulk_data,
 
   // find an iterator that points to the last item in the closure that is of a
   // lower-order than the closure_rank
-  std::vector<Entity*>::const_iterator itr = std::lower_bound(entities_closure.begin(),
-                                                              entities_closure.end(),
-                                                              EntityKey(closure_rank, 0),
-                                                              EntityLess());
+  std::vector<Entity*>::const_iterator itr =
+    std::lower_bound(entities_closure.begin(),
+                     entities_closure.end(),
+                     EntityKey(closure_rank, 0),
+                     EntityLess());
 
   // iterate over all the entities in the closure up to the iterator we computed above
   for ( ; itr != entities_closure.end() && (*itr)->entity_rank() == closure_rank; ++itr) {
