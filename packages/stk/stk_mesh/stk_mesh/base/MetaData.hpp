@@ -228,6 +228,25 @@ public:
 
   /** \} */
   //------------------------------------
+
+  template<class T>
+  const T * get_attribute() const ;
+
+  /** \brief  Declare an attribute on the meta data.
+   *          Return the attribute of that type,
+   *          which may be an already existing value.
+   */
+  template<class T>
+  const T * declare_attribute_with_delete( const T * );
+
+  template<class T>
+  const T * declare_attribute_no_delete( const T * );
+
+  template<class T>
+  bool remove_attribute( const T * );
+
+  //------------------------------------
+  /** \} */
   /** \name  Declare and query properties associated with parts
    *  \{
    */
@@ -329,6 +348,7 @@ private:
 
   bool   m_commit ;
   impl::PartRepository m_part_repo ;
+  CSet   m_attributes ;
 
   Part * m_universal_part ;
   Part * m_owns_part ;
@@ -667,6 +687,38 @@ field_type & put_field( field_type &field ,
     declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
+}
+
+template<class T>
+inline
+const T *
+MetaData::declare_attribute_with_delete( const T * a )
+{
+  assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
+  return m_attributes.insert_with_delete( a );
+}
+
+template<class T>
+inline
+const T *
+MetaData::get_attribute() const
+{ return m_attributes.get<T>(); }
+
+template<class T>
+inline
+const T *
+MetaData::declare_attribute_no_delete( const T * a )
+{
+  assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
+  return m_attributes.insert_no_delete( a );
+}
+
+template<class T>
+inline
+bool
+MetaData::remove_attribute( const T * a )
+{
+  return m_attributes.remove( a );
 }
 
 template<class T>
