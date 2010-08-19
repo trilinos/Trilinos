@@ -21,6 +21,15 @@ A) Prioritized Backlog Items:
 A.1) Prioritized Backlog Items that require changes to CMake/CTest/CDash:
 -------------------------------------------------------------------------
 
+(*) [CDash] [P2] Submissions to the nightly dashboard sometimes get stuck
+while being inserted into the mysql database.  To fix this, analyze how long
+it takes to submit typically, set a threshhold sufficiently longer than that
+and reset the submission process if the threshhold time is reached without
+progress.  It would also be useful to list the number of pending submissions
+on the CDash site.  Finally, we need to be notified if the submission process
+gets stuck so we can fix it, without having to discover for ourselves that
+things have stalled.
+
 
 (*) [CTest, CDash] [P2] Append update results to every subproject build and
 send out emails to users who checked in code: Currently, CDash will only send
