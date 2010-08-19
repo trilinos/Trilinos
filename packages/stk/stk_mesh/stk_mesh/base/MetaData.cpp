@@ -79,6 +79,7 @@ void MetaData::assert_entity_rank( const char * method ,
 MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
   : m_commit( false ),
     m_part_repo( this ),
+    m_attributes(),
     m_universal_part( NULL ),
     m_owns_part( NULL ),
     m_shares_part( NULL ),
