@@ -9,16 +9,26 @@
 #ifndef stk_mesh_SkinMesh_hpp
 #define stk_mesh_SkinMesh_hpp
 
+#include <vector>
 
 namespace stk {
 namespace mesh {
 
 class BulkData;
 class Part;
+class Entity;
+
+typedef std::vector<Entity *> EntityVector;
 
 void skin_mesh( BulkData & mesh,
-                unsigned closure_rank,
+                unsigned element_rank,
                 Part * skin_part = NULL );
+
+
+void skin_mesh( BulkData & mesh,
+                unsigned element_rank,
+                EntityVector & owned_elements,
+                Part * skin_part);
 
 }
 }

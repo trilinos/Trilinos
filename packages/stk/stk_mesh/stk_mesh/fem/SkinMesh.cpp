@@ -1,4 +1,6 @@
 
+#include <map>
+
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -11,54 +13,91 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
+#include <stk_mesh/fem/SkinMesh.hpp>
 
 namespace stk {
 namespace mesh {
 
 namespace {
 
-// Note that we will return the related entites in a sorted by pointer
-// address.
-void get_related_entities( unsigned type, const Entity& entity,
-                           std::vector<Entity*>& related_entities )
+typedef std::multimap< std::vector<EntityId>, EntitySideComponent>  BoundaryMap;
+typedef std::pair< std::vector<EntityId>, EntitySideComponent>  BoundaryValue;
+
+
+void get_elem_side_nodes( const Entity & elem,
+                          unsigned side_ordinal,
+                          std::vector<EntityId> & nodes
+                        )
 {
-  PairIterRelation irel = entity.relations(type);
-  for ( ; !irel.empty(); ++irel ) {
-    related_entities.push_back(irel->entity());
+  const CellTopologyData * const elem_top = get_cell_topology( elem );
+
+  if (elem_top == NULL) {
+    std::ostringstream msg ;
+    msg << "skin_mesh" ;
+    msg << "( Element[" << elem.identifier() << "] has no defined topology" ;
+    throw std::runtime_error( msg.str() );
   }
-  std::sort(related_entities.begin(), related_entities.end());
+
+  const CellTopologyData * const side_top = elem_top->side[ side_ordinal ].topology;
+
+  if (side_top == NULL) {
+    std::ostringstream msg ;
+    msg << "skin_mesh" ;
+    msg << "( Element[" << elem.identifier() << "]" ;
+    msg << " , side_ordinal = " << side_ordinal << " ) FAILED: " ;
+    msg << " Side has no defined topology" ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
+
+  PairIterRelation rel = elem.relations( Node );
+  nodes.reserve(side_top->node_count);
+  for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
+    Entity * node = rel[ side_node_map[i] ].entity();
+    nodes.push_back(node->identifier());
+  }
+
+  std::sort(nodes.begin(), nodes.end());
 }
 
 }
 
-void skin_mesh( BulkData & mesh, unsigned mesh_rank, Part * skin_part) {
+void skin_mesh( BulkData & mesh, unsigned element_rank, Part * skin_part) {
   if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
     throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
   }
 
-  if (0 == mesh_rank) {
-    return;
-  }
-
-  std::vector<Entity *> entities, entities_closure;
+  EntityVector owned_elements;
 
   // select owned
   Selector owned = mesh.mesh_meta_data().locally_owned_part();
   get_selected_entities( owned,
-                         mesh.buckets(fem_entity_rank(mesh_rank)),
-                         entities);
+                         mesh.buckets(fem_entity_rank(element_rank)),
+                         owned_elements);
+
+  skin_mesh(mesh, element_rank, owned_elements, skin_part);
+}
+
+void skin_mesh( BulkData & mesh, unsigned element_rank, EntityVector & owned_elements, Part * skin_part) {
+  if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
+    throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
+  }
+
+  EntityVector elements_closure;
 
   // compute owned closure
-  find_closure( mesh, entities, entities_closure );
+  find_closure( mesh, owned_elements, elements_closure );
 
   // compute boundary
   EntitySideVector boundary;
-  boundary_analysis( mesh, entities_closure, mesh_rank, boundary);
+  boundary_analysis( mesh, elements_closure, element_rank, boundary);
 
-  // find the sides that need to be created to make a skin. The vector below
-  // maps a side index to a vector of entities that will be sharing that side
-  std::vector<std::vector<EntitySideComponent> > skin;
+  // find the sides that need to be created to make a skin. The map below
+  // maps sorted EntityVectors of nodes to EntitySideComponents
+  BoundaryMap skin;
 
+  int num_new_sides = 0;
   for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
        itr != boundary.end(); ++itr) {
     const EntitySideComponent & inside = itr->inside;
@@ -72,7 +111,7 @@ void skin_mesh( BulkData & mesh, unsigned mesh_rank, Part * skin_part) {
     if ( inside_entity.owner_rank() == mesh.parallel_rank() &&
          outside.entity == NULL ) {
       // search through existing sides
-      PairIterRelation existing_sides = inside_entity.relations(mesh_rank -1);
+      PairIterRelation existing_sides = inside_entity.relations(element_rank -1);
       for (; existing_sides.first != existing_sides.second &&
              existing_sides.first->identifier() != side_ordinal ;
              ++existing_sides.first);
@@ -81,47 +120,17 @@ void skin_mesh( BulkData & mesh, unsigned mesh_rank, Part * skin_part) {
       // we may need to create it
       if (existing_sides.first == existing_sides.second) {
         // Get the nodes for the inside entity
-        std::vector<Entity*> inside_entity_nodes;
-        get_related_entities(Node, inside_entity, inside_entity_nodes);
+        std::vector<EntityId> inside_key;
+        get_elem_side_nodes(inside_entity, side_ordinal, inside_key);
 
-        // We need to be very careful not to create multiple skins on
-        // the same boundary. This is easy to do when you have multiple shells
-        // on the boundary that are superimposed on each other. To avoid
-        // this problem, we need to see if any of the Entities we have already
-        // registered with the skin are coincident with this Entity.
-
-        bool need_to_create_additional_side = true;
-        for ( size_t i = 0; i < skin.size(); ++i) {
-          for ( size_t j = 0; j < skin[i].size(); ++j ) {
-            // Get the nodes for the skinned entity
-            Entity & skinned_entity = *(skin[i][j].entity);
-            std::vector<Entity*> skinned_entity_nodes;
-            get_related_entities(Node, skinned_entity, skinned_entity_nodes);
-
-            if ( &skinned_entity == &inside_entity) {
-              continue;
-            }
-
-            // Check if either entity is coicident with the other
-            bool entities_are_superimposed =
-              skinned_entity_nodes == inside_entity_nodes;
-
-            // If superimposed, we do not want to create an additional side
-            // entity but we need to make sure that the side entity that is
-            // already being created gets attached to this entity.
-            if (entities_are_superimposed) {
-              skin[i].push_back(inside);
-              need_to_create_additional_side = false;
-              break;
-            }
-          }
+        //if a side for these nodes is not present in the map already increment the
+        //number of side we need to create
+        if (skin.count(inside_key) == 0) {
+          ++num_new_sides;
         }
 
-        if (need_to_create_additional_side) {
-          std::vector<EntitySideComponent> new_side_vec;
-          new_side_vec.push_back(inside);
-          skin.push_back(new_side_vec);
-        }
+        skin.insert( BoundaryValue(inside_key, inside));
+
       }
     }
   }
@@ -130,26 +139,29 @@ void skin_mesh( BulkData & mesh, unsigned mesh_rank, Part * skin_part) {
 
   // formulate request ids for the new sides
   std::vector<size_t> requests(mesh.mesh_meta_data().entity_rank_count(), 0);
-  requests[mesh_rank -1] = skin.size();
+  requests[element_rank -1] = num_new_sides;
 
   // create the new sides
-  std::vector<Entity *> requested_entities;
-  mesh.generate_new_entities(requests, requested_entities);
+  EntityVector requested_sides;
+  mesh.generate_new_entities(requests, requested_sides);
 
-  // Attach the sides (skin) to the appropriate entities
-  for ( size_t i = 0; i < skin.size(); ++i ) {
-    Entity & side = *(requested_entities[i]);
-    for ( size_t j = 0; j < skin[i].size(); ++j ) {
-      Entity & entity              = *(skin[i][j].entity);
-      const unsigned side_ordinal  = skin[i][j].side_ordinal;
+  std::vector<EntityId> previous_key;
+  size_t current_side = 0;
+  for ( BoundaryMap::const_iterator i = skin.begin(); i!= skin.end(); ++i) {
+    const std::vector<EntityId> & key = i->first;
+    Entity & entity = *(i->second.entity);
+    const unsigned side_ordinal = i->second.side_ordinal;
 
-      if (j == 0) {
-        declare_element_side(entity, side, side_ordinal, skin_part);
-      }
-      else {
-        // declare relation between entity and side
-        mesh.declare_relation(entity, side, side_ordinal);
-      }
+    if (key != previous_key) {
+      Entity & side = *(requested_sides[current_side]);
+      declare_element_side(entity, side, side_ordinal, skin_part);
+
+      previous_key = key;
+      ++current_side;
+    }
+    else {
+      Entity & side = *(requested_sides[current_side-1]);
+      mesh.declare_relation(entity, side, side_ordinal);
     }
   }
 
