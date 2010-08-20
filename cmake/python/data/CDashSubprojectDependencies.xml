@@ -546,13 +546,23 @@
   </SubProject>
   <SubProject name="Aristos">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ITO"/>
+    <Dependency name="RTOp" type="ITO"/>
+    <Dependency name="Kokkos" type="ITO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="ITO"/>
+    <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="Thyra" type="TO"/>
+    <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="TO"/>
+    <Dependency name="Galeri" type="ITO"/>
     <Dependency name="Amesos" type="TO"/>
     <Dependency name="Ifpack" type="TO"/>
+    <Dependency name="ML" type="ITO"/>
+    <Dependency name="Belos" type="ITO"/>
+    <Dependency name="Stratimikos" type="TO"/>
     <EmailAddresses>
       <Email address="aristos-regression@software.sandia.gov"/>
     </EmailAddresses>
