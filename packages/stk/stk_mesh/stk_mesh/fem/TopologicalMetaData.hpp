@@ -15,33 +15,6 @@
 namespace stk {
 namespace mesh {
 
-/** \brief  Query the cell topology associated with a mesh part.
- *
- *          If the input part does not have an associated topology
- *          then the supersets of the part are queried.
- *          If there is exactly one cell topology then it is returned,
- *          otherwise NULL is returned.
- */
-const CellTopologyData * get_cell_topology( const Part & , const char * required_by = 0 );
-
-/** \brief  Query the cell topology associated with a bucket.
- *
- *          The bucket's superset mesh parts of the bucket's entity rank
- *          are queried for their associated cell topology.
- *
- *          If no cell topology is found and required_by is zero then
- *          zero is returned, otherwise an exception is thrown with the
- *          required_by string in the message.
- *
- *          If there is exactly one cell topology then it is returned.
- *
- *          If more than one cell topology is found then an exception
- *          is thrown.
- */
-const CellTopologyData * get_cell_topology( const Bucket & , const char * required_by = 0 );
-
-const CellTopologyData * get_cell_topology( const Entity & , const char * required_by = 0 );
-
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 /** \brief  Augment mesh meta data with topological meta data including
@@ -70,6 +43,7 @@ public:
 
   const unsigned spatial_dimension ; ///< Spatial dimension
 
+  //change to EntityRank
   const unsigned node_rank ;    ///< Rank of nodes (always zero)
   const unsigned edge_rank ;    ///< Rank of edges (1 for 2D and 3D)
   const unsigned side_rank ;    ///< Rank of sides (1 for 2D, 2 for 3D)
@@ -82,7 +56,20 @@ public:
    */
   static const CellTopologyData * get_cell_topology( const Part & part , const char * required_by = 0 );
 
-  /** \brief  Get the cell topology associated with a mesh bucket. */
+/** \brief  Query the cell topology associated with a bucket.
+ *
+ *          The bucket's superset mesh parts of the bucket's entity rank
+ *          are queried for their associated cell topology.
+ *
+ *          If no cell topology is found and required_by is zero then
+ *          zero is returned, otherwise an exception is thrown with the
+ *          required_by string in the message.
+ *
+ *          If there is exactly one cell topology then it is returned.
+ *
+ *          If more than one cell topology is found then an exception
+ *          is thrown.
+ */
   static const CellTopologyData * get_cell_topology( const Bucket & bucket , const char * required_by = 0 );
 
   //--------------------------------------------------------------------------
@@ -106,9 +93,10 @@ public:
    */
   void declare_cell_topology( const CellTopologyData * , unsigned entity_rank );
 
+  //change to EntityRank throw if not found
   int get_entity_rank( const CellTopologyData * ) const ;
 
-private: 
+private:
 
   // Base meta data to which this topological meta data is attached.
   MetaData & m_meta_data ;

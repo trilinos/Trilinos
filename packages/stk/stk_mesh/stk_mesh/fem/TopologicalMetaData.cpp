@@ -272,7 +272,7 @@ void TopologicalMetaData::throw_ambiguous( const Part & part ) const
   msg << method << "( Part[" << part.name()
       << "] ) has ambiguous cell topology {" ;
 
-  for ( PartVector::const_iterator 
+  for ( PartVector::const_iterator
         j = supersets.begin(); j != supersets.end() ; ++j ) {
 
     const CellTopologyData * const top =
@@ -434,19 +434,6 @@ TopologicalMetaData::get_cell_topology( const Bucket & bucket ,
 
   return cell_top ;
 }
-
-const CellTopologyData *
-get_cell_topology( const Entity & entity , const char * required_by )
-{ return TopologicalMetaData::get_cell_topology( entity.bucket() ); }
-
-const CellTopologyData *
-get_cell_topology( const Part & part , const char * required_by )
-{ return TopologicalMetaData::get_cell_topology( part ); }
-
-const CellTopologyData *
-get_cell_topology( const Bucket & bucket , const char * required_by )
-{ return TopologicalMetaData::get_cell_topology( bucket ); }
-
 
 }
 }
