@@ -863,11 +863,16 @@ namespace Tpetra {
       // then go ahead and create views; this is our one chance to do it efficiently (i.e., WriteOnly)
       view_lclInds2D_ = Kokkos::ArrayOfViewsHelper<Node>::template getArrayOfNonConstViews<LocalOrdinal>(node, Kokkos::WriteOnly, pbuf_lclInds2D_);
     }
-    ArrayRCP<LocalOrdinal> old_alloc;
+    // it is possible that pbuf_lclInds2D_ and view_lclInds2D_ point to the same space; in this case, we must get view_lclInds2D_ before modifying pbuf_lclInds2D_
+    ArrayRCP<LocalOrdinal> old_alloc, old_view;
     old_alloc = pbuf_lclInds2D_[lrow];
+    if (view_lclInds2D_ != Teuchos::null) {
+      old_view = view_lclInds2D_[lrow];
+    }
+    // allocate new space
     pbuf_lclInds2D_[lrow] = node->template allocBuffer<LocalOrdinal>(allocSize);
-    if (view_lclInds2D_ == Teuchos::null) {
-      // no views
+    if (old_view == Teuchos::null) {
+      // no view; copy on the device
       if (rnnz) {
         KOKKOS_NODE_TRACE("CrsGraph::updateLocalAllocation()")
         node->template copyBuffers<LocalOrdinal>(rnnz, old_alloc, pbuf_lclInds2D_[lrow]);
@@ -875,15 +880,13 @@ namespace Tpetra {
       old_alloc = Teuchos::null;
     }
     else {
-      // delete the buffer early, this will prevent a copy back that we neither need nor want to pay for
-      old_alloc = Teuchos::null;
-      // use views
-      ArrayRCP<LocalOrdinal> old_view;
-      old_view = view_lclInds2D_[lrow];
+      // copy the old values to the new allocation via the views
       KOKKOS_NODE_TRACE("CrsGraph::updateLocalAllocation()")
       view_lclInds2D_[lrow] = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, allocSize, pbuf_lclInds2D_[lrow]);
       std::copy( old_view.begin(), old_view.begin() + rnnz, view_lclInds2D_[lrow].begin() );
-      old_view = Teuchos::null;
+      // delete the buffer early, this will prevent a copy back that we neither need nor want to pay for
+      old_alloc = Teuchos::null;
+      old_view  = Teuchos::null;
     }
     nodeNumAllocated_ += (allocSize - curNA);
     if (numEntriesPerRow_ == Teuchos::null) {
@@ -921,11 +924,16 @@ namespace Tpetra {
       // go ahead and create views; this is our one chance to do it efficiently (i.e., WriteOnly)
       view_gblInds2D_ = Kokkos::ArrayOfViewsHelper<Node>::template getArrayOfNonConstViews<GlobalOrdinal>(node, Kokkos::WriteOnly, pbuf_gblInds2D_);
     }
-    ArrayRCP<GlobalOrdinal> old_alloc;
+    // it is possible that pbuf_gblInds2D_ and view_gblInds2D_ point to the same space; in this case, we must get view_gblInds2D_ before modifying pbuf_gblInds2D_
+    ArrayRCP<GlobalOrdinal> old_alloc, old_view;
     old_alloc = pbuf_gblInds2D_[lrow];
+    if (view_gblInds2D_ != Teuchos::null) {
+      old_view = view_gblInds2D_[lrow];
+    }
+    // allocate new space
     pbuf_gblInds2D_[lrow] = node->template allocBuffer<GlobalOrdinal>(allocSize);
-    if (view_gblInds2D_ == Teuchos::null) {
-      // no views
+    if (old_view == Teuchos::null) {
+      // no view; copy on the device
       if (rnnz) {
         KOKKOS_NODE_TRACE("CrsGraph::updateGlobalAllocation()")
         node->template copyBuffers<GlobalOrdinal>(rnnz, old_alloc, pbuf_gblInds2D_[lrow]);
@@ -933,14 +941,12 @@ namespace Tpetra {
       old_alloc = Teuchos::null;
     }
     else {
-      // delete the buffer early, this will prevent a copy back that we neither need nor want to pay for
-      old_alloc = Teuchos::null;
-      // use views
-      ArrayRCP<GlobalOrdinal> old_view;
-      old_view = view_gblInds2D_[lrow];
+      // copy the old values to the new allocation via the views
       KOKKOS_NODE_TRACE("CrsGraph::updateGlobalAllocation()")
       view_gblInds2D_[lrow] = node->template viewBufferNonConst<GlobalOrdinal>(Kokkos::WriteOnly, allocSize, pbuf_gblInds2D_[lrow]);
       std::copy( old_view.begin(), old_view.begin() + rnnz, view_gblInds2D_[lrow].begin() );
+      // delete the buffer early, this will prevent a copy back that we neither need nor want to pay for
+      old_alloc = Teuchos::null;
       old_view = Teuchos::null;
     }
     nodeNumAllocated_ += (allocSize - curNA);
