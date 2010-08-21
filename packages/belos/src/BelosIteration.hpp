@@ -65,17 +65,6 @@ class Iteration {
   //! Default Constructor.
   Iteration() {};
 
-  //! Basic Constructor.
-  /*! This constructor, implemented by all Belos iterations, takes an Belos::LinearProblem,
-    Belos::OrthoManager, Belos::OutputManager, and Teuchos::ParameterList as input.  
-    These four arguments are sufficient enough for constructing any Belos::Iteration object.
-  */
-  Iteration( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, 
-	     const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-	     const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-	     const Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > &ortho,
-	     Teuchos::ParameterList &params );
-
   //! Destructor.
   virtual ~Iteration() {};
   //@}

@@ -31,9 +31,25 @@
 
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
+#include "Teuchos_toString.hpp"
 
 
 namespace Thyra {
+
+
+/** \brief Assert that a LOWSB object supports a particular solve type.
+ *
+ * This function will throw an excetion with a very good error message if the
+ * requested solve type is not supported.
+ *
+ * \ingroup thyra_operator_solve_support_LOWSF_subclass_helpers_grp
+ */
+template<class Scalar>
+void assertSolveSupports(
+  const LinearOpWithSolveBase<Scalar> &lows,
+  const EOpTransp M_trans,
+  const Ptr<const SolveCriteria<Scalar> > solveCriteria = Teuchos::null
+  );
 
 
 /** \brief Assert that a LOWSB object supports a particular solve type.
@@ -49,6 +65,7 @@ void assertSupportsSolveMeasureType(
   const EOpTransp M_trans,
   const SolveMeasureType &solveMeasureType
   );
+// 2010/08/22: rabartl: ToDo: Remove this once bug 4915 is finished!
 
 
 } // namespace Thyra
@@ -57,6 +74,28 @@ void assertSupportsSolveMeasureType(
 //
 // Implementations
 //
+
+
+template<class Scalar>
+void Thyra::assertSolveSupports(
+  const LinearOpWithSolveBase<Scalar> &lows,
+  const EOpTransp M_trans,
+  const Ptr<const SolveCriteria<Scalar> > solveCriteria
+  )
+{
+  using Teuchos::toString;
+  TEST_FOR_EXCEPTION(
+    !lows.solveSupports(M_trans, solveCriteria),
+    std::logic_error,
+    "Error, the LinearOpWithSolve object \"" << lows.description() << "\"\n"
+    "for M_trans = " << toString(M_trans) << " does not support the solve"
+    " criteria = "
+    << ( nonnull(solveCriteria) ? toString(*solveCriteria) : std::string("null") )
+    << "!"
+    );
+}
+// 2010/08/22: rabartl: Bug 4915 ToDo: Move the above into the NIV function
+// solve(...).
 
 
 template<class Scalar>
