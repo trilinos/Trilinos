@@ -65,15 +65,15 @@ namespace Thyra {
     A X = B 
   \f]
  
- * and/or a transpose solve operation (using <tt>solveTranspose()</tt>) of the
+ * and/or a transpose solve operation (using <tt>A_trans==TRANS</tt>) of the
  * form:
 
   \f[
     A^T X = B 
   \f]
 
- * and/or an adjoint solve operation (using <tt>solveTranspose()</tt>) of the
- * form:
+ * and/or an adjoint solve operation (using <tt>A_trans==CONJTRANS()</tt>) of
+ * the form:
 
   \f[
     A^H X = B 
@@ -306,8 +306,20 @@ public:
    * The default implementation returns <tt>true</tt> for non-transposed,
    * non-conjugate solves..
    */
-  bool solveSupports(EOpTransp transp) const
-    { return solveSupportsImpl(transp); }
+  bool solveSupports(EOpTransp transp,
+    const Ptr<const SolveCriteria<Scalar> > solveCriteria = Teuchos::null
+    ) const
+    {
+      bool rtn = true;
+      rtn = rtn && solveSupportsImpl(transp);
+      if (nonnull(solveCriteria)) {
+        rtn = rtn && solveSupportsSolveMeasureTypeImpl(transp, solveCriteria->solveMeasureType);
+      }
+      return rtn;
+      // 2010/08/21: rabartl: ToDo: Add solveCriteria to
+      // solveSupportsImpl(...) and remove call to
+      // solveSupportsSolveMeasureType(...).
+    }
 
   /** \brief Return if <tt>solve()</tt> supports the given the solve measure
    * type.
@@ -319,6 +331,8 @@ public:
     const SolveMeasureType& solveMeasureType
     ) const
     { return solveSupportsSolveMeasureTypeImpl(transp, solveMeasureType); }
+  // 2010/08/21: rabartl: ToDo: Remove this function and just use
+  // solveSupports(...) above!
 
   /** \brief Request the solution of a block linear system.
    *
@@ -342,9 +356,9 @@ public:
    *
    * <b>Preconditions:</b><ul>
    *
-   * <li><tt>this->solveSupports(transp)==true</tt>
+   * <li><tt>this->solveSupports(transp, solveCriteria)==true</tt>
    *
-   * <li><tt>X!=NULL</tt>
+   * <li><tt>nonnull(X)==true</tt>
    *
    * <li><tt>op(this)->range()->isCompatible(*B.range())==true</tt>
    *
@@ -471,10 +485,11 @@ template<class Scalar>
 inline
 bool solveSupports(
   const LinearOpWithSolveBase<Scalar> &A,
-  const EOpTransp transp
+  const EOpTransp transp,
+  const Ptr<const SolveCriteria<Scalar> > solveCriteria = Teuchos::null
   )
 {
-  return A.solveSupports(transp);
+  return A.solveSupports(transp, solveCriteria);
 }
 
 
@@ -493,6 +508,8 @@ bool solveSupportsSolveMeasureType(
 {
   return A.solveSupportsSolveMeasureType(transp, solveMeasureType);
 }
+// 2010/08/21: rabartl: ToDo: Remove this function and just use
+// solveSupports(...) above!
 
 
 /** \brief Call <tt>solve()</tt> as a non-member function
