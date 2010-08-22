@@ -3,6 +3,9 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
+
 
 int main(int argc, char* argv[])
 {
@@ -11,6 +14,8 @@ int main(int argc, char* argv[])
 
   bool success = true;
   bool verbose = true;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -96,14 +101,7 @@ int main(int argc, char* argv[])
         );
 
   }
-  catch( const std::exception &excpt ) {
-    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    std::cerr << "*** Caught an unknown exception\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success)
   
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";

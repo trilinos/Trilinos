@@ -29,7 +29,8 @@ PACKAGE_ADD_TEST(
     --show-all-tests --num-rhs=8 --block-size=8 --gmres-krylov-length=300
     --max-fwd-error=1e-13 --max-resid=1e-13 --max-iters=1000 --max-solution-error=1e-6
     --matrix-file=nos1.mtx
-  COMM serial
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   )
 
 ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
