@@ -39,7 +39,9 @@
 #  include "Epetra_SerialComm.h"
 #endif
 
+
 namespace {
+
 
 // Helper function to compute a single norm for a vector
 double epetraNorm2( const Epetra_Vector &v )
@@ -49,7 +51,9 @@ double epetraNorm2( const Epetra_Vector &v )
   return norm[0];
 }
 
+
 } // namespace
+
 
 int main(int argc, char* argv[])
 {
@@ -278,7 +282,7 @@ int main(int argc, char* argv[])
     if(!passed) success = false;
     
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success)
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success)
   
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
