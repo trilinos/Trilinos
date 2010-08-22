@@ -633,15 +633,14 @@ int main( int argc, char* argv[] )
     if(verbose) *out << "\n*** (B.9) Testing Multi-vector views with Epetra operator\n";
 
     const Thyra::Range1D col_rng(0,1);
-    const int numCols = 2;
-    const int cols[] = { 2, 3 };
+    const Teuchos::Tuple<int, 2> cols = Teuchos::tuple<int>(2, 3);
 
     RCP<const Thyra::MultiVectorBase<Scalar> >
       eV1_v1  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(eV1)->subView(col_rng),
-      eV1_v2  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(eV1)->subView(numCols,cols);
+      eV1_v2  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(eV1)->subView(cols);
     RCP<const Thyra::MultiVectorBase<Scalar> >
       neV1_v1  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(neV1)->subView(col_rng),
-      neV1_v2  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(neV1)->subView(numCols,cols);
+      neV1_v2  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(neV1)->subView(cols);
     if(verbose && dumpAll) {
       *out << "\neV1_v1=\n" << *eV1_v1;
       *out << "\neV1_v2=\n" << *eV1_v2;
@@ -659,11 +658,11 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eY_v2 = 2*Op*eV1_v2 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *eV1_v2, eY->subView(numCols,cols).ptr(), 2.0 );
+    apply( *Op, NOTRANS, *eV1_v2, eY->subView(cols).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(numCols,cols);
-    if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(numCols,cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(cols);
+    if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming neY_v1 = 2*Op*eV1_v1 ...\n";
     timer.start(true);
@@ -682,19 +681,19 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming neY_v2 = 2*Op*eV1_v2 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *eV1_v2, neY->subView(numCols,cols).ptr(), 2.0 );
+    apply( *Op, NOTRANS, *eV1_v2, neY->subView(cols).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(numCols,cols);
-    if(!testRelErr("Thyra::norm_1(neY_v2)",Thyra::norm_1(*neY->subView(numCols,cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(cols);
+    if(!testRelErr("Thyra::norm_1(neY_v2)",Thyra::norm_1(*neY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming eY_v2 = 2*Op*neV1_v2 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *neV1_v2, eY->subView(numCols,cols).ptr(), 2.0 );
+    apply( *Op, NOTRANS, *neV1_v2, eY->subView(cols).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
-    if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(numCols,cols);
-    if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(numCols,cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
+    if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(cols);
+    if(!testRelErr("Thyra::norm_1(eY_v2)",Thyra::norm_1(*eY->subView(cols)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
 
     if(verbose) *out << "\n*** (B.10) Testing Vector and MultiVector view creation functions\n";
