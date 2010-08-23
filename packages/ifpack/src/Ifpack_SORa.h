@@ -48,6 +48,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Time.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "EpetraExt_Transpose_RowMatrix.h"
 
 
 namespace Teuchos {
@@ -200,6 +201,12 @@ public:
     return(*A_);
   }
 
+  //! Returns the estimate for the maximum eigenvalue
+  virtual double GetLambdaMax() const{return LambdaMax_;}
+  
+  //! Returns the damping parameter, omega
+  virtual double GetOmega() const{if(UseGlobalDamping_) return 12.0/(11.0*LambdaMax_); else return 1.0;}
+
   //! Prints on stream basic information about \c this object.
   virtual ostream& Print(ostream& os) const;
 
@@ -300,6 +307,13 @@ private:
   //! Returns the number of local matrix columns.
   int NumMyCols() const {return(A_->NumMyCols());};
   
+  //! Construction method for arbitrary alpha
+  int Compute_Arbitrary_Alpha();
+
+  //! Power method for global damping
+  int PowerMethod(const int MaximumIterations,  double& lambda_max);
+
+
   //! Returns a reference to the matrix.
   /*  Epetra_RowMatrix& Matrix()
   {
@@ -310,10 +324,11 @@ private:
   // @{ Internal data
   
   //! Pointer to the Epetra_RowMatrix to factorize
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> Acrs_;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
   Teuchos::RefCountPtr<Epetra_CrsMatrix> W_; // Strict lower triangle
   Teuchos::RefCountPtr<Epetra_Vector>    Wdiag_;
-
+  Teuchos::RefCountPtr<EpetraExt::RowMatrix_Transpose> transposer2_;
   Teuchos::ParameterList List_;  
   
   bool UseTranspose_;
@@ -343,6 +358,10 @@ private:
   bool HaveOAZBoundaries_;
   //! Should we use additional interprocessor damping?
   bool UseInterprocDamping_;
+  //! Should we use additional global damping?
+  bool UseGlobalDamping_;
+  //! Maximum eigenvalue of iteration matrix for global damping
+  double LambdaMax_;
 
   //! Contains the number of successful call to ApplyInverse().
   mutable int NumApplyInverse_;
@@ -361,7 +380,5 @@ private:
 
 };
 #else
-#warning "No EpetraEXT"
-
 #endif
 #endif /* IFPACK_SORa_H */
