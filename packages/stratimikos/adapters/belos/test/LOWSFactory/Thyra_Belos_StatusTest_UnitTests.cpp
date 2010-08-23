@@ -7,6 +7,7 @@
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_toString.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
 
@@ -117,6 +118,7 @@ void runGeneralSolveCriteriaBelosStatusTestCase(
 {
 
   using Teuchos::describe; using Teuchos::optInArg; using Teuchos::rcpFromRef;
+  using Teuchos::toString;
 
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
@@ -137,28 +139,36 @@ void runGeneralSolveCriteriaBelosStatusTestCase(
 
   // C) Solve the system with the given SolveCriteria object
 
+  const int convergenceTestFrequency = 10;
+
   const RCP<ParameterList> pl = Teuchos::getParametersFromXmlString(
     "<ParameterList name=\"Belos\">"
     "  <Parameter name=\"Solver Type\" type=\"string\" value=\"Pseudo Block GMRES\"/>"
-    "  <Parameter name=\"Convergence Test Frequency\" type=\"int\" value=\"10\"/>"
+    "  <Parameter name=\"Convergence Test Frequency\" type=\"int\" value=\""+toString(convergenceTestFrequency)+"\"/>"
     "  <ParameterList name=\"Solver Types\">"
-    "    <ParameterList name=\"Block GMRES\">"
+    "    <ParameterList name=\"Pseudo Block GMRES\">"
     "      <Parameter name=\"Block Size\" type=\"int\" value=\"1\"/>"
     "      <Parameter name=\"Convergence Tolerance\" type=\"double\" value=\"1e-13\"/>"
-    "      <Parameter name=\"Num Blocks\" type=\"int\" value=\"300\"/>"
-    "      <Parameter name=\"Output Frequency\" type=\"int\" value=\"1\"/>"
+    "      <Parameter name=\"Output Frequency\" type=\"int\" value=\""+toString(convergenceTestFrequency)+"\"/>"
     "      <Parameter name=\"Show Maximum Residual Norm Only\" type=\"bool\" value=\"1\"/>"
     "      <Parameter name=\"Maximum Iterations\" type=\"int\" value=\"400\"/>"
-    "      <Parameter name=\"Verbosity\" type=\"int\" value=\"100\"/>"
+    "      <Parameter name=\"Verbosity\" type=\"int\" value=\"1\"/>"
     "    </ParameterList>"
     "  </ParameterList>"
     "</ParameterList>"
     );
+  out << "\n\npl:\n" << *pl;
 
   Thyra::BelosLinearOpWithSolveFactory<Scalar> lowsFactory;
   lowsFactory.setParameterList(pl);
   lowsFactory.setOStream(rcpFromRef(out));
+  //lowsFactory.setVerbLevel(Teuchos::VERB_MEDIUM);
   lowsFactory.setVerbLevel(Teuchos::VERB_HIGH);
+
+  // NOTE: To get Belos ouptut to be quite, turn down the Belos "Verbosity"
+  // option above.  To get just the StatusTest VerboseObject output, turn up
+  // lowsFactory output level.
+
 
   const RCP<LinearOpWithSolveBase<Scalar> > lows = linearOpWithSolve<Scalar>(
     lowsFactory, fwdOp);
