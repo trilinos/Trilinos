@@ -72,7 +72,8 @@ private:
   Array<ScalarMag> b_nrm_;
   Array<ScalarMag> lastNumerator_;
   Array<ScalarMag> lastDenominator_;
-  Array<ScalarMag> achievedTol_;
+  Array<ScalarMag> lastAchievedTol_;
+  int lastCurrIter_;
   Belos::StatusType lastRtnStatus_;
 
   // Private member functions
@@ -82,6 +83,9 @@ private:
     const Ptr<const VectorBase<Scalar> > &x,
     const Ptr<const VectorBase<Scalar> > &r
     ) const;
+
+  void printRhsStatus(const int currIter, const int j, std::ostream &out,
+    int indent = 0) const;
 
 };
 

@@ -25,6 +25,7 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::GeneralSolveCriteriaBelosStatusTest
   :convergenceTestFrequency_(-1),
    compute_x_(false),
    compute_r_(false),
+   lastCurrIter_(-1),
    lastRtnStatus_(Belos::Undefined)
 {
   GeneralSolveCriteriaBelosStatusTest<Scalar>::reset();
@@ -67,7 +68,7 @@ template<class Scalar>
 ArrayView<const typename ScalarTraits<Scalar>::magnitudeType>
 GeneralSolveCriteriaBelosStatusTest<Scalar>::achievedTol() const
 {
-  return achievedTol_;
+  return lastAchievedTol_;
 }
 
 
@@ -133,7 +134,6 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::checkStatus(
   for (int j = 0; j < numRhs; ++j) {
     const RCP<const VectorBase<Scalar> > x_j = (nonnull(X) ? X->col(j) : null);
     const RCP<const VectorBase<Scalar> > r_j = (nonnull(R) ? R->col(j) : null);
-
     lastNumerator_[j] = computeReductionFunctional(
       solveCriteria_.solveMeasureType.numerator,
       solveCriteria_.numeratorReductionFunc.ptr(),
@@ -147,20 +147,14 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::checkStatus(
   // Determine if convRatio <= requestedTol
 
   bool systemsAreConverged = true;
-  achievedTol_.resize(numRhs);
+  lastAchievedTol_.resize(numRhs);
 
   for (int j = 0; j < numRhs; ++j) {
     const ScalarMag convRatio = lastNumerator_[j] / lastDenominator_[j]; 
-    achievedTol_[j] = convRatio;
+    lastAchievedTol_[j] = convRatio;
     const bool sys_converged_j = (convRatio <= solveCriteria_.requestedTol);
     if (includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM)) {
-      *out
-        << "["<<currIter<<"] "
-        << "gN(vN("<<j<<"))/gD(vD("<<j<<")) = "
-        << lastNumerator_[j] << "/" << lastDenominator_[j] << " = "
-        << convRatio << " <= " << solveCriteria_.requestedTol << " : "
-        << (sys_converged_j ? " true" : "false")
-        << "\n";
+      printRhsStatus(currIter, j, *out);
     }
     if (!sys_converged_j) {
       systemsAreConverged = false;
@@ -168,6 +162,7 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::checkStatus(
   }
   
   lastRtnStatus_ = (systemsAreConverged ? Belos::Passed : Belos::Failed);
+  lastCurrIter_ = currIter;
 
   return lastRtnStatus_;
 
@@ -188,7 +183,9 @@ void GeneralSolveCriteriaBelosStatusTest<Scalar>::reset()
   b_nrm_.clear();
   lastNumerator_.clear();
   lastDenominator_.clear();
-  achievedTol_.clear();
+  lastAchievedTol_.clear();
+  lastCurrIter_ = -1;
+  lastRtnStatus_ = Belos::Undefined;
 }
 
 
@@ -199,14 +196,7 @@ void GeneralSolveCriteriaBelosStatusTest<Scalar>::print(
 {
   const int numRhs = lastNumerator_.size();
   for (int j = 0; j < numRhs; ++j) {
-    const ScalarMag convRatio = lastNumerator_[j] / lastDenominator_[j]; 
-    const bool sys_converged_j = (convRatio <= solveCriteria_.requestedTol);
-    for (int i = 0; i < indent; ++i) { os << " "; }
-    os << "gN(vN("<<j<<"))/gD(vD("<<j<<")) = "
-       << lastNumerator_[j] << "/" << lastDenominator_[j] << " = "
-       << convRatio << " <= " << solveCriteria_.requestedTol
-       << (sys_converged_j ? " true" : "false")
-       << "\n";
+    printRhsStatus(lastCurrIter_, j, os, indent);
   }
 }
 
@@ -257,6 +247,26 @@ GeneralSolveCriteriaBelosStatusTest<Scalar>::computeReductionFunctional(
   }
   TEUCHOS_IF_ELSE_DEBUG_ASSERT();
   return rtn;
+}
+
+
+template <class Scalar>
+void
+GeneralSolveCriteriaBelosStatusTest<Scalar>::printRhsStatus(
+  const int currIter, const int j, std::ostream &out,
+  int indent
+  ) const
+{
+  const ScalarMag convRatio = lastNumerator_[j] / lastDenominator_[j]; 
+  const bool sys_converged_j = (convRatio <= solveCriteria_.requestedTol);
+  for (int i = 0; i < indent; ++i) { out << " "; }
+  out
+    << "["<<currIter<<"] "
+    << "gN(vN("<<j<<"))/gD(vD("<<j<<")) = "
+    << lastNumerator_[j] << "/" << lastDenominator_[j] << " = "
+    << convRatio << " <= " << solveCriteria_.requestedTol << " : "
+    << (sys_converged_j ? " true" : "false")
+    << "\n";
 }
 
 
