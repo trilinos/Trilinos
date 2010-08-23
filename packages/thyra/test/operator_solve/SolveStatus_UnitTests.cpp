@@ -53,7 +53,8 @@ protected:
   virtual typename ScalarTraits<Scalar>::magnitudeType
   reduceImpl(const VectorBase<Scalar> &v) const
     {
-      return ScalarTraits<Scalar>::squareroot(space_->scalarProd(v, v));
+      typedef ScalarTraits<Scalar> ST;
+      return norm<Scalar>(v);
     }
 
   /** \brief . */
