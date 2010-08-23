@@ -76,10 +76,10 @@ void skin_mesh( BulkData & mesh, unsigned element_rank, Part * skin_part) {
                          mesh.buckets(fem_entity_rank(element_rank)),
                          owned_elements);
 
-  skin_mesh(mesh, element_rank, owned_elements, skin_part);
+  reskin_mesh(mesh, element_rank, owned_elements, skin_part);
 }
 
-void skin_mesh( BulkData & mesh, unsigned element_rank, EntityVector & owned_elements, Part * skin_part) {
+void reskin_mesh( BulkData & mesh, unsigned element_rank, EntityVector & owned_elements, Part * skin_part) {
   if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
     throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
   }

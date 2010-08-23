@@ -87,7 +87,8 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part) {
   }
 
 
-  stk::mesh::skin_mesh(mesh, stk::mesh::Element, modified_elements, skin_part);
+  stk::mesh::reskin_mesh(mesh, stk::mesh::Element,
+                         modified_elements, skin_part);
 }
 
 void find_owned_nodes_with_relations_outside_closure(

@@ -20,15 +20,20 @@ class Entity;
 
 typedef std::vector<Entity *> EntityVector;
 
+/**
+ * Skin the entire mesh.
+ */
 void skin_mesh( BulkData & mesh,
                 unsigned element_rank,
                 Part * skin_part = NULL );
 
-
-void skin_mesh( BulkData & mesh,
-                unsigned element_rank,
-                EntityVector & owned_elements,
-                Part * skin_part);
+/**
+ * Given a vector of modified/created elements, update the skin.
+ */
+void reskin_mesh( BulkData & mesh,
+                  unsigned element_rank,
+                  EntityVector & owned_modified_elements,
+                  Part * skin_part = NULL );
 
 }
 }
