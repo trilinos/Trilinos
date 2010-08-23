@@ -521,7 +521,9 @@ protected:
 
 private:
 
-  THYRA_DEPRECATED
+  // Deprecated.  NOTE: I could not mark with THYRA_DEPRECATED because newer
+  // versions of g++ give warnings when deprecated code calls other
+  // depreciated code.
   static Ptr<const SolveCriteria<Scalar> >
   convertBlockSolveCriteriaToSolveCritiera(
     const int numBlocks,
