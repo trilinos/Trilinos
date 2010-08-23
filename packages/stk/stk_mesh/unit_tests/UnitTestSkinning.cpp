@@ -140,46 +140,69 @@ void UnitTestStkMeshSkinning::test_skinning()
   unsigned num_expected_skin_entites = 16;
   STKUNIT_EXPECT_EQUAL(num_expected_skin_entites, skin_entities.size());
 
-  std::vector<std::pair<unsigned, unsigned> > results;
-  std::vector<std::pair<unsigned, unsigned> > expected_results;
+  // Map the element id to the number of skins associated with that element
 
-  // first item is the edge id of the skin entity, second is the id of the face
-  // it's related to.
-  expected_results.push_back(std::pair<unsigned, unsigned>(1, 1));
-  expected_results.push_back(std::pair<unsigned, unsigned>(2, 1));
-  expected_results.push_back(std::pair<unsigned, unsigned>(3, 2));
-  expected_results.push_back(std::pair<unsigned, unsigned>(4, 3));
-  expected_results.push_back(std::pair<unsigned, unsigned>(5, 4));
-  expected_results.push_back(std::pair<unsigned, unsigned>(6, 5));
-  expected_results.push_back(std::pair<unsigned, unsigned>(7, 9));
-  expected_results.push_back(std::pair<unsigned, unsigned>(8, 13));
-  expected_results.push_back(std::pair<unsigned, unsigned>(9, 13));
-  expected_results.push_back(std::pair<unsigned, unsigned>(10, 14));
-  expected_results.push_back(std::pair<unsigned, unsigned>(11, 15));
-  expected_results.push_back(std::pair<unsigned, unsigned>(12, 16));
-  expected_results.push_back(std::pair<unsigned, unsigned>(13, 42));
-  expected_results.push_back(std::pair<unsigned, unsigned>(14, 43));
-  expected_results.push_back(std::pair<unsigned, unsigned>(15, 44));
-  expected_results.push_back(std::pair<unsigned, unsigned>(15, 46));
-  expected_results.push_back(std::pair<unsigned, unsigned>(16, 45));
-  expected_results.push_back(std::pair<unsigned, unsigned>(16, 47));
+  std::map<unsigned, unsigned> results;
+  std::map<unsigned, unsigned> expected_results;
 
+  expected_results[1] = 2;
+  expected_results[2] = 1;
+  expected_results[3] = 1;
+  expected_results[4] = 1;
+  expected_results[5] = 1;
+  expected_results[9] = 1;
+  expected_results[13] = 2;
+  expected_results[14] = 1;
+  expected_results[15] = 1;
+  expected_results[16] = 1;
+  expected_results[42] = 1;
+  expected_results[43] = 1;
+  expected_results[44] = 1;
+  expected_results[45] = 1;
+  expected_results[46] = 1;
+  expected_results[47] = 1;
+
+  // Vector of of vector of entities (shells) that are expected to share a skin
+
+  std::set<std::set<unsigned> > sharing;
+  std::set<std::set<unsigned> > expected_sharing;
+
+  std::set<unsigned> temp;
+  temp.insert(44);
+  temp.insert(46);
+  expected_sharing.insert(temp);
+
+  temp.clear();
+  temp.insert(45);
+  temp.insert(47);
+  expected_sharing.insert(temp);
+
+  // map skin-id to ids of elements it is attached to; we will use this to
+  // compute sharing
   for (std::vector<stk::mesh::Entity*>::const_iterator
        itr = skin_entities.begin(); itr != skin_entities.end(); ++itr) {
     stk::mesh::PairIterRelation upward_relation_itr =
       (*itr)->relations(stk::mesh::Face);
+    bool has_multiple = upward_relation_itr.size() > 1;
+    std::set<unsigned> sharing_elements;
     for ( ; !upward_relation_itr.empty() ; ++upward_relation_itr ) {
-      results.push_back(std::pair<unsigned, unsigned>
-                        ((*itr)->identifier(),
-                         upward_relation_itr->entity()->identifier()));
+      unsigned elem_id = upward_relation_itr->entity()->identifier();
+      if (results.find(elem_id) != results.end()) {
+        ++results[elem_id];
+      }
+      else {
+        results[elem_id] = 1;
+      }
+
+      if (has_multiple) {
+        sharing_elements.insert(elem_id);
+      }
+    }
+    if (has_multiple) {
+      sharing.insert(sharing_elements);
     }
   }
 
-  for (size_t i =0; i < num_expected_skin_entites; ++i) {
-    std::cout << "expected: " << expected_results[i].first << ", " << expected_results[i].second << '\t';
-    std::cout << "actual: " << results[i].first << ", " << results[i].second << std::endl;
-  }
-  //TODO fix test to not depend on order that skins are added
-  //to the mesh
-  //STKUNIT_EXPECT_TRUE(results == expected_results);
+  STKUNIT_EXPECT_TRUE(results == expected_results);
+  STKUNIT_EXPECT_TRUE(sharing == expected_sharing);
 }
