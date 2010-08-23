@@ -338,7 +338,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 
   //------------------------------
   {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
     ring_mesh.m_meta_data.commit();
     ring_mesh.generate_mesh( false /* no aura */ );
 
@@ -372,7 +372,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test shift starting with ghosting but not regenerated ghosting.
   {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
     ring_mesh.m_meta_data.commit();
     ring_mesh.generate_mesh( true /* with aura */ );
 
@@ -410,7 +410,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test shift starting with ghosting and regenerating ghosting.
   {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
     ring_mesh.m_meta_data.commit();
     ring_mesh.generate_mesh( true /* with aura */ );
 
@@ -448,7 +448,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test bad owner change catching:
   if ( 1 < p_size ) {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
     ring_mesh.m_meta_data.commit();
     ring_mesh.generate_mesh( true /* with aura */ );
 
@@ -498,7 +498,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   // Test move one element with initial ghosting but not regenerated ghosting:
   // last processor give its shared node to P0
   if ( 1 < p_size ) {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
     ring_mesh.m_meta_data.commit();
     ring_mesh.generate_mesh( true /* with aura */ );
 
@@ -757,7 +757,7 @@ void UnitTestBulkData::testModifyPropagation( ParallelMachine pm )
   if (p_size > 1) return;
 
   // Make a ring_mesh and add an extra part
-  RingMeshFixture ring_mesh( pm , nPerProc, false /* don't use edge parts */);
+  UnitTestRingMeshFixture ring_mesh( pm , nPerProc, false /* don't use edge parts */);
   stk::mesh::Part& special_part =
     ring_mesh.m_meta_data.declare_part( "special_node_part", stk::mesh::Node );
   ring_mesh.m_meta_data.commit();

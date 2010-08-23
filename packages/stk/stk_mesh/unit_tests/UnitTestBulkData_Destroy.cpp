@@ -136,7 +136,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   { // No ghosting
     const bool aura_flag = false ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
     mesh.m_meta_data.commit();
     mesh.generate_mesh( aura_flag );
 
@@ -187,7 +187,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
     mesh.m_meta_data.commit();
     mesh.generate_mesh( aura_flag );
 
@@ -230,7 +230,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
     mesh.m_meta_data.commit();
     mesh.generate_mesh( aura_flag );
 

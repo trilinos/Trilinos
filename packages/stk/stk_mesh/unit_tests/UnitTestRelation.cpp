@@ -198,7 +198,7 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
   { // No ghosting
 
     const bool aura_flag = false ;
-    RingMeshFixture mesh2( pm , nPerProc , false /* No edge parts */ );
+    UnitTestRingMeshFixture mesh2( pm , nPerProc , false /* No edge parts */ );
     mesh2.m_meta_data.commit();
     mesh2.generate_mesh( aura_flag );
 
@@ -227,7 +227,7 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
 
-    RingMeshFixture mesh3( pm , nPerProc , false /* No edge parts */ );
+    UnitTestRingMeshFixture mesh3( pm , nPerProc , false /* No edge parts */ );
     mesh3.m_meta_data.commit();
     mesh3.generate_mesh( aura_flag );
     const unsigned nNotOwned = nPerProc * p_rank ;
