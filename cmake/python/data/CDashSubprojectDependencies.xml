@@ -714,20 +714,29 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="WebTrilinos">
-    <Dependency name="Teuchos" type="ITR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
-    <Dependency name="Kokkos" type="ITO"/>
-    <Dependency name="Epetra" type="TR"/>
-    <Dependency name="Zoltan" type="ITO"/>
-    <Dependency name="Triutils" type="ITR"/>
-    <Dependency name="Tpetra" type="ITO"/>
-    <Dependency name="EpetraExt" type="ITO"/>
-    <Dependency name="Isorropia" type="ITO"/>
-    <Dependency name="AztecOO" type="TR"/>
-    <Dependency name="Galeri" type="ITO"/>
-    <Dependency name="Amesos" type="TR"/>
-    <Dependency name="Ifpack" type="TR"/>
-    <Dependency name="ML" type="TR"/>
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILR"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="Thyra" type="ILO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="Pliris" type="ILO"/>
+    <Dependency name="AztecOO" type="LR"/>
+    <Dependency name="Galeri" type="LR"/>
+    <Dependency name="Amesos" type="LR"/>
+    <Dependency name="Ifpack" type="LR"/>
+    <Dependency name="Komplex" type="ILO"/>
+    <Dependency name="ML" type="LR"/>
+    <Dependency name="Belos" type="ILO"/>
+    <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="NOX" type="ILO"/>
+    <Dependency name="PyTrilinos" type="LR"/>
     <EmailAddresses>
       <Email address="webtrilinos-regression@software.sandia.gov"/>
     </EmailAddresses>

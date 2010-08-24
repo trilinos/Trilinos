@@ -700,9 +700,9 @@
     </EmailAddresses>
   </Package>
   <Package name="WebTrilinos" dir="WebTrilinos">
-    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,EpetraExt,Amesos,AztecOO,Galeri,Ifpack,ML,PyTrilinos,Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Epetra,Amesos,AztecOO,Ifpack,ML"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Epetra,EpetraExt,Amesos,AztecOO,Galeri,Ifpack,ML,PyTrilinos,Teuchos"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
