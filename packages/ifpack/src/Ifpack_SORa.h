@@ -307,9 +307,6 @@ private:
   //! Returns the number of local matrix columns.
   int NumMyCols() const {return(A_->NumMyCols());};
   
-  //! Construction method for arbitrary alpha
-  int Compute_Arbitrary_Alpha();
-
   //! Power method for global damping
   int PowerMethod(const int MaximumIterations,  double& lambda_max);
 

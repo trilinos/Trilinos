@@ -20,6 +20,8 @@ using Teuchos::rcp;
 
 
 #define ABS(x) ((x)>=0?(x):-(x))
+#define MIN(x,y) ((x)<(y)?(x):(y))
+#define MAX(x,y) ((x)>(y)?(x):(y))
 
 // Useful functions horked from ML
 int* FindLocalDiricheltRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, int &numBCRows);
@@ -79,26 +81,13 @@ int Ifpack_SORa::SetParameters(Teuchos::ParameterList& parameterlist){
 
 int Ifpack_SORa::Compute(){
   if(!IsInitialized_) Initialize();
-  int rv=0;
-  rv=Compute_Arbitrary_Alpha();
-
-  // Counters
-  IsComputed_=true;
-  NumCompute_++;
-  ComputeTime_ += Time_.ElapsedTime();
-  return rv;
-}
-
-
-
-
-int Ifpack_SORa::Compute_Arbitrary_Alpha(){
   Epetra_Map *RowMap=const_cast<Epetra_Map*>(&A_->RowMatrixRowMap());
   Epetra_Vector Adiag(*RowMap);
   Epetra_CrsMatrix *Askew2=0, *Aherm2=0,*W=0;
   int *rowptr_s,*colind_s,*rowptr_h,*colind_h;
   double *vals_s,*vals_h;
   bool RowMatrixMode=(Acrs_==Teuchos::null);
+
   // Label
   sprintf(Label_, "IFPACK SORa (alpha=%5.2f gamma=%5.2f)",Alpha_,Gamma_); 
 
@@ -211,6 +200,9 @@ int Ifpack_SORa::Compute_Arbitrary_Alpha(){
   W_=rcp(W);
   Wdiag_=rcp(Wdiag);
 
+  // Mark as computed
+  IsComputed_=true;
+
   // Global damping, if wanted
   if(UseGlobalDamping_) {
     PowerMethod(10,LambdaMax_);
@@ -226,6 +218,10 @@ int Ifpack_SORa::Compute_Arbitrary_Alpha(){
     Acrs_=Teuchos::null;
     transposer2_=Teuchos::null;
   }
+
+  // Counters
+  NumCompute_++;
+  ComputeTime_ += Time_.ElapsedTime();
   return 0;
 }
 
@@ -325,8 +321,6 @@ double Ifpack_SORa::Condest(const Ifpack_CondestType CT,
                              Epetra_RowMatrix* Matrix_in){
   return -1.0;
 }
-
-
 
 
 
@@ -432,6 +426,11 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
 
   x.Scale(1.0 / norm);
 
+  // Only do 1 sweep per PM step, turn off global damping
+  int NumSweepsBackup=NumSweeps_;
+  bool UseGlobalDampingBackup=UseGlobalDamping_;
+  NumSweeps_=1;UseGlobalDamping_=false;
+
   for (int iter = 0; iter < MaximumIterations; ++iter)
   {
     y.PutScalar(0.0);
@@ -439,13 +438,23 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
     ApplyInverse(z,y);
     y.Update(1.0,x,-1.0);
 
+    // Compute the Rayleigh Quotient
     y.Dot(x, &RQ_top);
     x.Dot(x, &RQ_bottom);
-    lambda_max = RQ_top / RQ_bottom;
+    lambda_max = RQ_top / RQ_bottom;   
     y.Norm2(&norm);
     if (norm == 0.0) IFPACK_CHK_ERR(-1);
     x.Update(1.0 / norm, y, 0.0);
+
   }
+
+  // Enable if we want to prevent over-relaxation
+  //  lambda_max=MAX(lambda_max,1.0);
+
+  // Reset parameters
+  NumSweeps_=NumSweepsBackup;
+  UseGlobalDamping_=UseGlobalDampingBackup;
+
   return(0);
 }
 
