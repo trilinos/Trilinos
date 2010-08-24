@@ -56,6 +56,7 @@ namespace Ioss {
     VariableTypeMap::iterator find(const std::string &type) {return m_registry.find(type);}
 
     ~Registry();
+    std::map<const std::string, const std::string> customFieldTypes;
   private:
     Ioss::VariableTypeMap m_registry;
     std::vector<Ioss::VariableType*> m_deleteThese;
@@ -77,6 +78,9 @@ namespace Ioss {
 
     static void alias(const std::string& base, const std::string& syn);
     static int describe(NameList *names);
+    static bool create_named_suffix_field_type(const std::string &type_name, std::vector<std::string> &suffices);
+    static bool get_field_type_mapping(const std::string &field, std::string *type);
+    static bool add_field_type_mapping(const std::string &field, const std::string &type);
 
     virtual ~VariableType();
     int component_count() const;

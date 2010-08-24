@@ -35,6 +35,7 @@
 #include <Ioss_Utils.h>
 #include <Ioss_CompositeVariableType.h>
 #include <Ioss_ConstructedVariableType.h>
+#include <Ioss_NamedSuffixVariableType.h>
 
 #include <string>
 #include <cstring>
@@ -107,6 +108,51 @@ int Ioss::VariableType::describe(NameList *names)
     count++;
   }
   return count;
+}
+
+bool Ioss::VariableType::add_field_type_mapping(const std::string &field, const std::string &type)
+{
+  // See if storage type 'type' exists...
+  if (registry().find(type) == registry().end())
+    return false;
+
+  // Add mapping.
+  if (registry().customFieldTypes.insert(std::make_pair(field, type)).second)
+    return true;
+  else
+    return false;
+}
+
+bool Ioss::VariableType::create_named_suffix_field_type(const std::string &type_name, std::vector<std::string> &suffices)
+{
+  size_t count = suffices.size();
+  if (count < 1)
+    return false;
+
+  // See if the variable already exists...
+  if (registry().find(type_name) != registry().end())
+    return false;
+  
+  // Create the variable.  Note that the 'true' argument means Ioss will delete the pointer.
+  Ioss::NamedSuffixVariableType *var_type = new Ioss::NamedSuffixVariableType(type_name, count, true);
+
+  for (size_t i=0; i < count; i++) {
+    var_type->add_suffix(i+1, suffices[i]);
+  }
+  return true;
+}
+
+bool Ioss::VariableType::get_field_type_mapping(const std::string &field, std::string *type)
+{
+  // Returns true if a mapping exists, 'type' contains the mapped type.
+  // Returns false if no custom mapping exists for this field.
+  if (registry().customFieldTypes.find(field) == registry().customFieldTypes.end()) {
+    return false;
+  }
+  else {
+    *type = registry().customFieldTypes.find(field)->second;
+    return true;
+  }
 }
 
 const Ioss::VariableType* Ioss::VariableType::factory(const std::string& name, int copies)
