@@ -94,14 +94,11 @@ namespace TSQR {
     ///   final R factor of the QR factorization of all nodes' different
     ///   R_mine inputs.  The final R factor is replicated over all nodes.
     ///
-    /// \param comm [in] MPI communicator object for all nodes participating
-    ///   in the factorization.
-    ///
     /// \return Two arrays with the same number of elements: first, an
     ///   array of "local Q factors," and second, an array of "local tau
     ///   arrays."  These together form an implicit representation of
     ///   the Q factor.  They should be passed into the apply() and
-    ///   explicit_Q() functions as the "factor_output" parameter.
+    ///   explicit_Q() functions as the "factorOutput" parameter.
     FactorOutput
     factor (MatView< LocalOrdinal, Scalar > R_mine)
     {
@@ -163,8 +160,8 @@ namespace TSQR {
       fill_matrix (ncols_Q, ncols_Q, Q_mine, ldq_mine, Scalar(0));
       if (my_rank == 0)
 	{
-	  for (int j = 0; j < ncols_Q; j++)
-	    Q_mine[j + j*ldq_mine] = 1.0;
+	  for (LocalOrdinal j = 0; j < ncols_Q; ++j)
+	    Q_mine[j + j*ldq_mine] = Scalar (1);
 	}
       apply (ApplyType::NoTranspose, ncols_Q, ncols_Q, 
 	     Q_mine, ldq_mine, factor_output);

@@ -149,6 +149,9 @@ ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
 IF(${PACKAGE_NAME}_ENABLE_TSQR)
+  #
+  # Check for TSQR configuration options.
+  #
 
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_Complex
@@ -165,8 +168,27 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_Intel_TBB
     HAVE_TSQR_INTEL_TBB
-    "For TSQR in Anasazi: enable Intel Threading Building Blocks support."
+    "For TSQR in Anasazi: enable Intel Threading Building Blocks support.  This is used for intranode parallelism in TSQR."
     OFF )
+
+  ADD_OPTION_AND_DEFINE(
+    TSQR_ENABLE_NEW_MPI_COMMUNICATORS
+    HAVE_TSQR_NEW_MPI_COMMUNICATORS
+    "For TSQR in Anasazi: enable support for MPI_COMM_NETWORK and MPI_COMM_NODE.  These are used to reduce network traffic in TSQR, which may improve performance if there are many MPI ranks per node."
+    OFF )
+
+  #
+  # Configure TSQR, based on the configuration options.
+  #
+
+  ASSERT_DEFINED(TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+  if (TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+    include (TsqrCheckMpiComm)
+    # Check whether MPI_COMM_NETWORK and / or MPI_COMM_NODE are
+    # defined in mpi.h.  If so, define HAVE_MPI_NETWORK
+    # resp. HAVE_MPI_NODE in Tsqr_Config.hpp.
+    TSQR_CHECK_MPI_COMM_SUBSETS ()
+  endif ()
 
   ASSERT_DEFINED(TSQR_ENABLE_Fortran)
   if (TSQR_ENABLE_Fortran)
@@ -292,6 +314,9 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/TsqrFactory.hpp
     TSQR/TsqrFactory_SequentialTsqr.hpp
     )
+  # Epetra adaptors for TSQR aren't ready yet, which is why I've
+  # commented out the stuff below.
+
   #IF (Anasazi_ENABLE_Epetra)
   #  APPEND_SET(HEADERS
   #    TsqrAdaptor_Epetra_MultiVector.hpp
