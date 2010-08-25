@@ -1,0 +1,41 @@
+This program tests TSQR::DistTsqr, which implements the internode-
+parallel part of TSQR (TSQR::Tsqr).  TSQR (Tall Skinny QR) computes
+the QR factorization of a tall and skinny matrix (with many more rows
+than columns) distributed in a block row layout across one or more
+processes.
+
+By default, TSQR::DistTsqr will only be tested with real arithmetic
+Scalar types (currently, float and double, corresponding to LAPACK's
+"S" resp. "D" data types).  If you build Trilinos with complex
+arithmetic support (Teuchos_ENABLE_COMPLEX), and invoke this program
+with the "--complex" option, complex arithmetic Scalar types will also
+be tested (currently, std::complex<float> and std::complex<double>,
+corresponding to LAPACK's "C" resp. "Z" data types).
+
+This program tests DistTsqr on a test matrix $A$, consisting of a
+stack of square numCols by numCols upper triangular matrices,
+distributed with one on each MPI process in MPI_COMM_WORLD.  It does
+the following:
+
+1. Compute the QR factorization of A, with the Q factor stored
+   implicitly
+2. Compute the explicit form of the Q factor, by applying the
+   implicitly stored Q factor to the first numCols columns of the
+   identity matrix (distributed across processes in the same manner
+   as A)
+
+That means this program is only testing applying $Q$, and not $Q^T$
+(or $Q^H$, the conjugate transpose, in the complex-arithmetic case).
+This exercises the typical use case of TSQR in iterative methods, in
+which the explicit $Q$ factor is desired in order to compute a rank-
+revealing decomposition and possibly also replace the null space basis
+vectors with random data.
+
+This program can test accuracy ("--verify") or performance
+("--benchmark").  For accuracy tests, it computes both the
+orthogonality $\| I - Q^* Q \|_F$ and the residual $\| A - Q R \|_F$.
+For performance tests, it repeats the test with the same data for a
+number of trials (specified by the "--ntrials=<n>" command-line
+option).  This ensures that the test is performed with warm cache, so
+that kernel performance rather than memory bandwidth is being
+measured.

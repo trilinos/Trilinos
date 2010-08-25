@@ -208,8 +208,8 @@ DiagonalTransientModel::getExactSensSolution(
   Epetra_Vector& gamma = *gamma_;
   int myN = dxds_star.MyLength();
   for ( int i=0 ; i<myN ; ++i ) {
-    const int coeff_s_idx = this->coeff_s_idx(i);
-    (*dxds_star(coeff_s_idx))[i] = dxds_exact( t, gamma[i], coeff_s(i) );
+    const int coeff_s_idx_i = this->coeff_s_idx(i);
+    (*dxds_star(coeff_s_idx_i))[i] = dxds_exact( t, gamma[i], coeff_s(i) );
     // Note: Above, at least the column access will be validated in debug mode
     // but the row index i will not ever be.  Perhaps we can augment Epetra to
     // fix this?

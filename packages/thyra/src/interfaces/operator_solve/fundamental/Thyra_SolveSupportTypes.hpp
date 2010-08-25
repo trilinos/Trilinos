@@ -32,6 +32,7 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_Describable.hpp"
 
 
 namespace Thyra {
@@ -44,11 +45,16 @@ namespace Thyra {
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 enum ESolveMeasureNormType {
-  SOLVE_MEASURE_ONE                   ///< No solve measure (i.e. same as 1.0)
-  ,SOLVE_MEASURE_NORM_RESIDUAL        ///< Norm of the current residual vector (i.e. <tt>||A*x-b||</tt>)
-  ,SOLVE_MEASURE_NORM_SOLUTION        ///< Norm of the current solution vector (i.e. <tt>||x||</tt>)
-  ,SOLVE_MEASURE_NORM_INIT_RESIDUAL   ///< Norm of the initial residual vector given a non-zero guess (i.e. <tt>||A*xo-b||</tt>)
-  ,SOLVE_MEASURE_NORM_RHS             ///< Norm of the Right-hand side (i.e. <tt>||b||</tt>)
+  /// No solve measure (i.e. same as 1.0)
+  SOLVE_MEASURE_ONE,
+  /// Norm of the current residual vector (i.e. <tt>||A*x-b||</tt>)
+  SOLVE_MEASURE_NORM_RESIDUAL,
+  /// Norm of the current solution vector (i.e. <tt>||x||</tt>)
+  SOLVE_MEASURE_NORM_SOLUTION,
+  /// Norm of the initial residual vector given a non-zero guess (i.e. <tt>||A*xo-b||</tt>)
+  SOLVE_MEASURE_NORM_INIT_RESIDUAL,
+  /// Norm of the right-hand side (i.e. <tt>||b||</tt>)
+  SOLVE_MEASURE_NORM_RHS
 };
 
 
@@ -106,29 +112,186 @@ struct SolveMeasureType {
   /** \brief . */
   void set(ESolveMeasureNormType _numerator, ESolveMeasureNormType _denominator)
     { numerator = _numerator; denominator = _denominator; }
-  /** \brief . */
+  /** \brief Return if this is a default solve measure (default
+   * constructed).
+   */
   bool useDefault() const
     { return ( numerator==SOLVE_MEASURE_ONE && denominator==SOLVE_MEASURE_ONE ); }
-  /** \brief . */
-  bool operator()(ESolveMeasureNormType _numerator, ESolveMeasureNormType _denominator) const
-    { return ( numerator==_numerator && denominator==_denominator ); }
+  /** \brief Return if (numerator,denominataor) matches this. */
+  bool operator()(ESolveMeasureNormType numerator_in,
+    ESolveMeasureNormType denominator_in
+    ) const
+    { return ( numerator==numerator_in && denominator==denominator_in ); }
+  /** \breif Return if single measure matches numerator or denominator. */
+  bool contains(ESolveMeasureNormType measure) const
+    { return ( numerator==measure || denominator==measure ); }
 };
 
 
-/** \brief .
+/** \brief Output operator.
  *
- * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
+ * \relates SolveMeasureType
  */
 inline
-std::string toString(const SolveMeasureType& solveMeasureType)
+std::ostream& operator<<(std::ostream &out, const SolveMeasureType &solveMeasureType)
 {
-  std::ostringstream oss;
-  oss << "("<<toString(solveMeasureType.numerator)<<")/("<<solveMeasureType.denominator<<")";
-  return oss.str();
+  out << "("<<toString(solveMeasureType.numerator)
+      << "/"<<toString(solveMeasureType.denominator)<<")";
+  return out;
 }
 
 
+/** \brief A general reduction functional to be used in specialized solve
+ * convergence criteria.
+ */
+template<class Scalar>
+class ReductionFunctional : public Teuchos::Describable {
+public:
+
+  /** \name Public non-virtual functions. */
+  //@{
+
+  /** \brief Compute the reduction over a vector.
+   *
+   * \param v [in] The vector being reduced into a Scalar.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>this->isCompatible(v) == true</tt>
+   * </ul>
+   */
+  typename ScalarTraits<Scalar>::magnitudeType
+  reduce( const VectorBase<Scalar> &v ) const
+    {
+#ifdef THYRA_DEBUG
+      TEST_FOR_EXCEPTION(!isCompatible(v), Exceptions::IncompatibleVectorSpaces,
+        "Error, the vector v="<<v.description()<<" is not compatiable with"
+        " *this="<<this->description()<<"!");
+#endif
+      return reduceImpl(v);
+    }      
+
+  /** \brief Returns <tt>true</tt> if <tt>v</tt> is compatible with
+   * <tt>*this</tt>.
+   */
+  bool isCompatible( const VectorBase<Scalar> &v ) const
+    { return isCompatibleImpl(v); }
+
+  //@}
+
+protected:
+
+  /** \name Protected virtual functions. */
+  //@{
+
+  /** \brief . */
+  virtual typename ScalarTraits<Scalar>::magnitudeType
+  reduceImpl( const VectorBase<Scalar> &v ) const = 0;
+
+  /** \brief . */
+  virtual bool isCompatibleImpl( const VectorBase<Scalar> &v ) const = 0;
+
+  //@}
+
+};
+
+
 /** \brief Simple struct that defines the requested solution criteria for a solve.
+ *
+ * A solve criteria defines the solution to a linear (or nonlinear) system of
+ * equations in terms of purely mathematical entities.  The form of the linear
+ * system is:
+
+ \verbatim
+
+  A * x = b
+
+  r = b - A * x
+
+ \endverbatim
+
+ * with <tt>x0</tt> defining the initial guess for the solution and:
+
+ \verbatim
+
+  r0 = b - A * x0
+
+ \endverbatim
+
+ * The mathematical representation of the solve criteria takes the form:
+
+ \verbatim
+
+    gN(vN) / gD(vD) <= requestedTol
+
+ \endverbatim
+
+ * where <tt>gN(vN)</tt> and <tt>gD(vD)</tt> are defined as <tt>g(v)=</tt>
+ * <table>
+ * <tr><td><tt>||r||</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_NORM_RESIDUAL && reductionFunc==null</tt></td></tr>
+ * <tr><td><tt>reductionFunc.reduce(r)</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_NORM_RESIDUAL && reductionFunc!=null</tt></td></tr>
+ * <tr><td><tt>||x||</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_NORM_SOLUTION && reductionFunc==null</tt></td></tr>
+ * <tr><td><tt>reductionFunc.reduce(x)</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_NORM_SOLUTION && reductionFunc!=null</tt></td></tr>
+ * <tr><td><tt>||r0||</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_NORM_INIT_RESIDUAL && reductionFunc==null</tt></td></tr>
+ * <tr><td><tt>reductionFunc.reduce(r0)</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_NORM_INIT_RESIDUAL && reductionFunc!=null</tt></td></tr>
+ * <tr><td><tt>||b||</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_NORM_RHS && reductionFunc==null</tt></td></tr>
+ * <tr><td><tt>reductionFunc.reduce(b)</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_NORM_RHS && reductionFunc!=null</tt></td></tr>
+ * <tr><td><tt>1</tt></td>
+ *   <td>: if <tt>solveMeasureValue==SOLVE_MEASURE_ONE</tt></td></tr>
+ * </table>
+ *
+ * where <tt>solveMeasureValue = solveMeasure.numerator</tt> and
+ * <tt>reductionFunc = numeratorReductionFunc</tt> for <tt>gN(vN)</tt> while
+ * <tt>solveMeasureValue = solveMeasure.denominator</tt> and <tt>reductionFunc
+ * = denominatorReductionFunc</tt> for <tt>gD(vD)</tt>.
+ *
+ * For example, for
+ * <tt>solveMeasure.numerator==SOLVE_MEASURE_NORM_RESIDUAL</tt> and
+ * <tt>solveMeasure.denominator==SOLVE_MEASURE_ONE</tt> we have the solve
+ * convergence criteria:
+ *
+
+ \verbatim
+
+    ||r|| / 1 <= requestedTol
+
+ \endverbatim
+
+ * For <tt>solveMeasure.numerator==SOLVE_MEASURE_NORM_RESIDUAL</tt> and
+ * <tt>solveMeasure.denominator==SOLVE_MEASURE_NORM_INIT_RESIDUAL</tt> we have
+ * the solve convergence criteria:
+ *
+
+ \verbatim
+
+    ||r|| / ||r0|| <= requestedTol
+
+ \endverbatim
+
+ * The objects <tt>numeratorReductionFunc</tt> and
+ * <tt>denominatorReductionFunc</tt> basically override the use of the natural
+ * norm <tt>||.||</tt> for the given vector.  This is needed to implement some
+ * unusual convergence criteria needed for certain types of nonlinear ANAs
+ * (such as the optimization solvers in the Aristos package).
+ *
+ * There are several reasons for the structure of the solve convergence
+ * criteria shown above.  First, we want to give the solver implementation as
+ * much information as we can as to the nature of the solve convergence
+ * criteria.  That way, the solver implementation can compute the different
+ * quantities more efficiently in many cases..  For example, with GMRES no
+ * direct estimate of the residual vector <tt>r</tt> is cheaply available but
+ * a cheap estimate of the natural norm <tt>||r||</tt> is readily available.
+ * Also, while the vectors <tt>r0</tt> and <tt>b</tt> could be computed by the
+ * client before the solve, it is potentially more efficient to let the solver
+ * do it since it may compute theses quantities as a natural byproduct of the
+ * solve process.
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
@@ -137,30 +300,68 @@ struct SolveCriteria {
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
   /** \brief . */
-  static ScalarMag unspecifiedTolerance() { return ScalarMag(-1); }
+  static ScalarMag unspecifiedTolerance() { return ScalarMag(-1.0); }
   /** \brief The type of solve tolerance requested as given in
    * <tt>this->requestedTol</tt>. */
   SolveMeasureType solveMeasureType;
   /** \brief The requested solve tolerance (what the client would like to see).
    * Only significant if <tt>!this->solveMeasureType.useDefault()</tt> */
   ScalarMag requestedTol;
-  /** \brief Any extra control parameters.
-   * Note that the contents of this parameter list is totally undefined
-   * and any client that uses this does so at their own peril! */
-  Teuchos::RCP<Teuchos::ParameterList> extraParameters;
+  /** \brief Any extra control parameters (e.g. max iterations).
+   *
+   * Note that the contents of this parameter list is totally undefined and
+   * any client that uses this does so at their own peril!
+   */
+  RCP<ParameterList> extraParameters;
+  /** \brief Reduction function to be used in place of the natural norm of the
+   * numerator. */
+  RCP<const ReductionFunctional<Scalar> > numeratorReductionFunc;
+  /** \brief Reduction function to be used in place of the natural norm of the
+   * numerator. */
+  RCP<const ReductionFunctional<Scalar> > denominatorReductionFunc;
   /** \brief Default construction to use default solve criteria. */
   SolveCriteria()
-    :solveMeasureType()
-    ,requestedTol(unspecifiedTolerance())
+    : requestedTol(unspecifiedTolerance())
     {}
   /** \brief Construct with a specified solve criteria. */
   SolveCriteria(
-    SolveMeasureType _solveMeasureType, ScalarMag _requestedTol
-    ,const Teuchos::RCP<Teuchos::ParameterList> &_extraParameters = Teuchos::null
+    SolveMeasureType solveMeasureType_in,
+    ScalarMag requestedTol_in,
+    const RCP<ParameterList> &extraParameters_in = Teuchos::null,
+    const RCP<ReductionFunctional<Scalar> > &numeratorReductionFunc_in = Teuchos::null,
+    const RCP<ReductionFunctional<Scalar> > &denominatorReductionFunc_in = Teuchos::null
     )
-    :solveMeasureType(_solveMeasureType),requestedTol(_requestedTol),extraParameters(_extraParameters)
+    : solveMeasureType(solveMeasureType_in),
+      requestedTol(requestedTol_in), 
+      extraParameters(extraParameters_in),
+      numeratorReductionFunc(numeratorReductionFunc_in),
+      denominatorReductionFunc(denominatorReductionFunc_in)
     {}
 };
+
+
+/** \brief Output operator.
+ *
+ * \relates SolveCriteria
+ */
+template<class Scalar>
+std::ostream& operator<<(std::ostream &out, const SolveCriteria<Scalar> &solveCriteria)
+{
+  out << typeName(solveCriteria) << "{";
+  out << "solveMeasureType="<<solveCriteria.solveMeasureType;
+  out << ", requestedTol="<<solveCriteria.requestedTol;
+  if (nonnull(solveCriteria.extraParameters)) {
+    out << ", extraParameters="<<solveCriteria.extraParameters;
+  }
+  if (nonnull(solveCriteria.numeratorReductionFunc)) {
+    out << ", numeratorReductionFunc="<<solveCriteria.numeratorReductionFunc->description();
+  }
+  if (nonnull(solveCriteria.denominatorReductionFunc)) {
+    out << ", denominatorReductionFunc="<<solveCriteria.denominatorReductionFunc->description();
+  }
+  out << "}";
+  return out;
+}
 
 
 /** \brief Deprecated.
@@ -242,7 +443,7 @@ struct SolveStatus {
   std::string message;
   /** \brief Any extra status parameters.
    * Note that the contents of this parameter list is totally undefined. */
-  Teuchos::RCP<Teuchos::ParameterList> extraParameters;
+  RCP<ParameterList> extraParameters;
   /** \brief . */
   SolveStatus()
     :solveStatus(SOLVE_STATUS_UNKNOWN), achievedTol(unknownTolerance())
@@ -264,7 +465,7 @@ struct SolveStatus {
 template <class Scalar>
 std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solveStatus )
 {
-  Teuchos::RCP<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg,false));
   Teuchos::OSTab tab(out);
   *out

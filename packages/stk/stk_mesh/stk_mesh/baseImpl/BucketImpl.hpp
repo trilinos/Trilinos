@@ -103,6 +103,9 @@ class BucketImpl {
   void replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src );
   void set_bucket_family_pointer( Bucket * bucket ) { m_bucket = bucket; }
   const Bucket * get_bucket_family_pointer() const { return m_bucket; }
+  bool equivalent( const BucketImpl& other_bucket ) const {
+    return m_bucket == other_bucket.m_bucket;
+  }
 
   private:
   BucketImpl();

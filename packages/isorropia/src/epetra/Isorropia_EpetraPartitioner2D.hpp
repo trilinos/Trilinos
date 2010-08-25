@@ -85,8 +85,8 @@ public:
         this constructor returns.
   */
   Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-              const Teuchos::ParameterList& paramlist,
-              bool compute_partitioning_now=true);
+		const Teuchos::ParameterList& paramlist = Teuchos::ParameterList("EmptyParameterList"),
+                bool compute_partitioning_now=true);
 
   /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
         API function create_partitioner().
@@ -116,7 +116,7 @@ public:
   */
   Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               Teuchos::RCP<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist = Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /**
@@ -144,7 +144,7 @@ public:
         this constructor returns.
   */
   Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist = Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /**
@@ -176,18 +176,12 @@ public:
   */
   Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
               Teuchos::RCP<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist = Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
 
 
   //  MMW: Missing the following constructors that are in Partitioner
-  //
-  //  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-  //            bool compute_partitioning_now=true);
-  //
-  //  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-  //            bool compute_partitioning_now=true);
   //
   //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
   //            bool compute_partitioning_now=true);

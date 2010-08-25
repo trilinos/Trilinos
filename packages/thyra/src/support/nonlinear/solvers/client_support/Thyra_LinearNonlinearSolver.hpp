@@ -259,22 +259,22 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
   if(out.get() && showTrace)
     *out << "\nSolving the system J*dx = -f ...\n";
   VOTSLOWSB J_outputTempState(J_,out,incrVerbLevel(verbLevel,-1));
-  assign( &*dx, ST::zero() );
+  assign( dx.ptr(), ST::zero() );
   Thyra::SolveStatus<Scalar>
-    linearSolveStatus = Thyra::solve( *J_, NOTRANS, *f, &*dx );
+    linearSolveStatus = J_->solve(NOTRANS, *f, dx.ptr() );
   if(out.get() && showTrace)
     *out << "\nLinear solve status:\n" << linearSolveStatus;
-  Vt_S( &*dx, Scalar(-ST::one()) );
+  Vt_S( dx.ptr(), Scalar(-ST::one()) );
   if(out.get() && dumpAll)
     *out << "\ndx = " << Teuchos::describe(*dx,verbLevel);
   if (delta != NULL) {
-    Thyra::assign( delta, *dx );
+    Thyra::assign( ptr(delta), *dx );
     if(out.get() && dumpAll)
       *out << "\ndelta = " << Teuchos::describe(*delta,verbLevel);
   }
 
   // Update the solution: x += dx
-  Vp_V( x, *dx );
+  Vp_V( ptr(x), *dx );
   if(out.get() && dumpAll)
     *out << "\nUpdated solution x = " << Teuchos::describe(*x,verbLevel);
   

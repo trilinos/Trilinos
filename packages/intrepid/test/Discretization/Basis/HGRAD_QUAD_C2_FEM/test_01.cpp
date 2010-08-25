@@ -679,9 +679,65 @@ int main(int argc, char *argv[]) {
       }
     }    
   }
-  
   // Catch unexpected errors
   catch (std::logic_error err) {
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  };
+
+
+  *outStream \
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 4: correctness of DoF locations                                        |\n"\
+    << "===============================================================================\n";
+
+  try{
+    Teuchos::RCP<Basis<double, FieldContainer<double> > > basis =
+      Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM<double, FieldContainer<double> >);
+    Teuchos::RCP<DofCoordsInterface<FieldContainer<double> > > coord_iface =
+      Teuchos::rcp_dynamic_cast<DofCoordsInterface<FieldContainer<double> > >(basis);
+
+    FieldContainer<double> cvals;
+    FieldContainer<double> bvals(basis->getCardinality(), basis->getCardinality());
+
+    // Check exceptions.
+#ifdef HAVE_INTREPID_DEBUG
+    cvals.resize(1,2,3);
+    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
+    cvals.resize(8,2);
+    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
+    cvals.resize(9,1);
+    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException );
+#endif
+    cvals.resize(9,2);
+    INTREPID_TEST_COMMAND( coord_iface->getDofCoords(cvals), throwCounter, nException ); nException--;
+    // Check if number of thrown exceptions matches the one we expect
+    if (throwCounter != nException) {
+      errorFlag++;
+      *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+    }
+
+    // Check mathematical correctness.
+    basis->getValues(bvals, cvals, OPERATOR_VALUE);
+    char buffer[120];
+    for (int i=0; i<bvals.dimension(0); i++) {
+      for (int j=0; j<bvals.dimension(1); j++) {
+        if ((i != j) && (std::abs(bvals(i,j) - 0.0) > INTREPID_TOL)) {
+          errorFlag++;
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), bvals(i,j), 0.0);
+          *outStream << buffer;
+        }
+        else if ((i == j) && (std::abs(bvals(i,j) - 1.0) > INTREPID_TOL)) {
+          errorFlag++;
+          sprintf(buffer, "\nValue of basis function %d at (%6.4e, %6.4e) is %6.4e but should be %6.4e!\n", i, cvals(i,0), cvals(i,1), bvals(i,j), 1.0);
+          *outStream << buffer;
+        }
+      }
+    }
+
+  }
+  catch (std::logic_error err){
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };

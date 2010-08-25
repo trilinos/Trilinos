@@ -229,8 +229,10 @@ void FieldBaseImpl::verify_and_clean_restrictions(
   }
 
   // Clean out redundant entries:
-
-  for ( j = i = rMap.begin() ; j != rMap.end() ; ++j ) {
+  // NOTE: test for 'i != rMap.end()' not needed since i is
+  //       incremented no more than j and j is checked. Keeping check in
+  //       silences klocwork and guards against future change...
+  for ( j = i = rMap.begin() ; j != rMap.end() && i != rMap.end(); ++j ) {
     if ( j->key != invalid_key ) {
       if ( i->key == invalid_key ) {
         *i = *j ;
@@ -312,18 +314,19 @@ std::ostream & operator << ( std::ostream & s , const FieldBaseImpl & field )
 
 std::ostream & print( std::ostream & s ,
                       const char * const b ,
-                      const FieldBaseImpl & field )
+                      const FieldBase & field )
 {
-  const PartVector & all_parts = field.meta_data().get_parts();
-  const FieldRestrictionVector & rMap = field.restrictions();
-  s << field ;
+  const PartVector & all_parts = field.mesh_meta_data().get_parts();
+  const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
+  s << field.name() ;
   s << " {" ;
-  for ( FieldRestrictionVector::const_iterator
+  for ( FieldBase::RestrictionVector::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
     print_restriction( s, entity_rank( i->key ),
                        * all_parts[ entity_id( i->key ) ],
-                       field.rank(), i->stride);
+	               field.rank(), i->stride);
+    s << std::endl;
   }
   s << std::endl << b << "}" ;
   return s ;

@@ -13,6 +13,11 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 
+
+#include <stdlib.h>
+
+#include <iostream>
+
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -80,6 +85,20 @@ void assert_not_same( const Part & part ,
   }
 }
 
+void assert_same( const Part & part ,
+                      const char * method ,
+                      const Part & arg_part )
+{
+  if ( & part != & arg_part ) {
+    std::string msg ;
+    append_part_method( msg , part , method );
+    msg.append( "(...) FAILED Requirement that Part[" );
+    msg.append( arg_part.name() );
+    msg.append( "] is the same" );
+    throw std::runtime_error(msg);
+  }
+}
+
 void assert_not_superset( const Part & part ,
                           const char * method ,
                           const Part & arg_part )
@@ -129,13 +148,20 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
   Part * p = find( all_parts, arg_name );
 
   if ( p == NULL ) {
-    p = declare_part( m_meta_data, arg_name, arg_rank );
+    p = declare_part_impl( arg_name, arg_rank );
   }
 
   if ( p->primary_entity_rank() != arg_rank ) {
-    std::stringstream err;
-    err << "Part of name '" << arg_name << "' of rank " << arg_rank << " already exists";
-    throw std::runtime_error ( err.str() );
+    std::ostringstream msg;
+    msg << "stk::mesh::Part[ " << arg_name ;
+    msg << ",rank(" << p->primary_entity_rank() << ")" ;
+    msg << "] : FAILED to declare part; " ;
+    msg << "Part of name '" << arg_name ;
+    msg << "' of rank " << p->primary_entity_rank() ;
+    msg << " already exists";
+    msg << " User cannot redeclare " << arg_name ;
+    msg << " with different rank, " << arg_rank ;
+    throw std::runtime_error ( msg.str() );
   }
 
   return p;
@@ -174,7 +200,6 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
   }
   else {
     const char separator[] = "^" ;
-
     // Generate a name and rank reflecting the intersection.
     // Rank is the minimum rank of the intersection members.
 
@@ -194,9 +219,7 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
 
     const PartVector & all_parts = m_universal_part->subsets();
     p = find( all_parts, p_name );
-
     if ( p == NULL ) {
-
       // Create the part:
 
       p = new Part( m_meta_data , p_name , p_rank , all_parts.size() );
@@ -224,10 +247,10 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
 }
 
 
-Part * PartRepository::declare_part( MetaData * meta, const std::string & name, EntityRank rank)
+Part * PartRepository::declare_part_impl( const std::string & name, EntityRank rank)
 {
   size_t ordinal = m_universal_part->subsets().size();
-  Part * part = new Part(meta,name,rank,ordinal);
+  Part * part = new Part(m_meta_data,name,rank,ordinal);
   declare_subset_impl(*m_universal_part, *part);
   return part;
 }
@@ -298,6 +321,8 @@ void PartRepository::declare_part_relation( Part & root_part, PartRelation relat
 
   assert_not_same( root_part , method , target_part );
   assert_same_universe( root_part, method, target_part );
+  assert_same( root_part, method, *relation.m_root );
+  assert_same( target_part, method, *relation.m_target );
 
   root_part.m_partImpl.add_relation( relation );
   target_part.m_partImpl.add_relation( relation );

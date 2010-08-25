@@ -442,7 +442,7 @@ int read_exo_mesh (char *file_name, int rank, int *num_dim, int num_domains,
   struct stat  file_status;  
   size_t glob_file_size;
   size_t glob_raw_data_vol;
-  size_t raw_data_vol;
+  size_t raw_data_vol = 0;
 
   float version;
   realtyp *globals = NULL;
@@ -763,13 +763,13 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
   int IO_word_size  = sizeof(realtyp);
   int j, t, npd, err, num_elem_blk, num_node_sets, num_side_sets;
   int iter;
-  int *elem_var_tab;
+  int *elem_var_tab = NULL;
   size_t file_size;
 
   struct stat  file_status; 
   size_t glob_file_size;
   size_t glob_raw_data_vol;
-  size_t raw_data_vol;
+  size_t raw_data_vol = 0;
 
   realtyp *globals = NULL;
 
@@ -787,9 +787,9 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
   
   char tmp_name[MAX_STRING_LEN];
   char base_name[MAX_STRING_LEN];
-  char **gvar_name;
-  char **nvar_name;
-  char **evar_name;
+  char **gvar_name = NULL;
+  char **nvar_name = NULL;
+  char **evar_name = NULL;
 
   int *exoid = NULL;
   exoid = malloc(files_per_domain * sizeof(int));

@@ -360,7 +360,7 @@ void Relaxation<MatrixType>::compute()
   Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
   for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
     Scalar& diag = DiagView[i];
-    if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < MinDiagonalValue_)
+    if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < Teuchos::ScalarTraits<Scalar>::magnitude(MinDiagonalValue_))
       diag = MinDiagonalValue_;
     if (diag != Teuchos::ScalarTraits<Scalar>::zero())
       diag = Teuchos::ScalarTraits<Scalar>::one() / diag;
@@ -672,7 +672,7 @@ void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
 
       for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-        Scalar dtemp = 0.0;
+        Scalar dtemp = Teuchos::ScalarTraits<Scalar>::zero();
         for (size_t k = 0 ; k < NumEntries ; ++k) {
           LocalOrdinal col = Indices[k];
           dtemp += Values[k] * y2_ptr[m][col];
@@ -731,7 +731,7 @@ void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
 
       for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-        Scalar dtemp = 0.0;
+        Scalar dtemp = Teuchos::ScalarTraits<Scalar>::zero();
 
         for (size_t k = 0; k < NumEntries; ++k) {
 
@@ -752,7 +752,7 @@ void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
 
       for (size_t m = 0 ; m < NumVectors ; ++m) {
 
-        Scalar dtemp = 0.0;
+        Scalar dtemp = Teuchos::ScalarTraits<Scalar>::zero();
         for (size_t k = 0; k < NumEntries; ++k) {
 
           LocalOrdinal col = Indices[k];
@@ -825,8 +825,8 @@ void Relaxation<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos:
     Scalar myMinVal = DiagView[0];
     Scalar myMaxVal = DiagView[0];
     for(typename Teuchos::ArrayRCP<Scalar>::size_type i=0; i<DiagView.size(); ++i) {
-      if (myMinVal > DiagView[i]) myMinVal = DiagView[i];
-      if (myMaxVal < DiagView[i]) myMaxVal = DiagView[i];
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMinVal) > Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMinVal = DiagView[i];
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(myMaxVal) < Teuchos::ScalarTraits<Scalar>::magnitude(DiagView[i])) myMaxVal = DiagView[i];
     }
 
     Teuchos::reduceAll(*Comm_, Teuchos::REDUCE_MIN, 1, &myMinVal, &MinVal);

@@ -52,6 +52,11 @@
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
+/* Define if want to build with TSQR support (depends on
+   Anasazi_ENABLE_TSQR CMake configuration variable, to which the
+   CMake files refer as ${PACKAGE_NAME}_ENABLE_TSQR) */
+#cmakedefine HAVE_ANASAZI_TSQR
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus

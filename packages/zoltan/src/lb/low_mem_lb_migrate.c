@@ -416,7 +416,7 @@ ZOLTAN_ID_PTR tmp_id;
   }
 
   for (i=0; i < actual_num_exp; i++){
-     ierr = Zoltan_Map_Add(zz, destProcMap, actual_exp_procs + i, &dummyVal);
+     ierr = Zoltan_Map_Add(zz, destProcMap, actual_exp_procs + i, dummyVal);
      if (ierr != ZOLTAN_OK){
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to add proc to first map.");
        goto End;
@@ -462,11 +462,11 @@ ZOLTAN_ID_PTR tmp_id;
         goto End;
       }
       
-      if (dummyPtr){
+      if (*dummyPtr != ZOLTAN_NOT_FOUND){
         (*dummyPtr)++;
       }
       else{
-        ierr = Zoltan_Map_Add(zz, destProcMap, actual_exp_procs + i, numGIDs + n);
+        ierr = Zoltan_Map_Add(zz, destProcMap, actual_exp_procs + i, numGIDs[n]);
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to add proc to second map.");
           goto End;
@@ -518,7 +518,7 @@ ZOLTAN_ID_PTR tmp_id;
       goto End;
     }
 
-    if (dummyPtr != NULL){
+    if (*dummyPtr != ZOLTAN_NOT_FOUND) {
       /* 
        * send myself objects that are going to a different partition on my process 
        */
@@ -552,7 +552,7 @@ ZOLTAN_ID_PTR tmp_id;
       goto End;
     }
 
-    if (dummyPtr != NULL){   /* "right" was found in the map */
+    if (*dummyPtr != ZOLTAN_NOT_FOUND){   /* "right" was found in the map */
       outCount = *dummyPtr;  /* number of objects I send to "right" */
 
       if (need_export_lists){

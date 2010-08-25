@@ -32,8 +32,20 @@
 #ifdef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
 #include "Tifpack_RILUK_def.hpp"
 #include "Tifpack_ExplicitInstantiationHelpers.hpp"
+
 namespace Tifpack {
-TIFPACK_INSTANT_CRSMATRIX_FLOAT_DOUBLE_DEFAULTS(RILUK)
+#ifdef HAVE_TPETRA_INST_FLOAT
+TIFPACK_INST(RILUK,float,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+TIFPACK_INST(RILUK,double,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+TIFPACK_INST(RILUK,std::complex<float>,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+TIFPACK_INST(RILUK,std::complex<double>,int,int);
+#endif
 }
 
 #endif

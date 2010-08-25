@@ -35,7 +35,12 @@
 #include "Tifpack_ExplicitInstantiationHelpers.hpp"
 
 namespace Tifpack {
-TIFPACK_INSTANT_CRSMATRIX_FLOAT_DOUBLE_DEFAULTS(Chebyshev)
+#ifdef HAVE_TPETRA_INST_FLOAT
+TIFPACK_INST(Chebyshev,float,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+TIFPACK_INST(Chebyshev,double,int,int);
+#endif
 }
 
 #endif

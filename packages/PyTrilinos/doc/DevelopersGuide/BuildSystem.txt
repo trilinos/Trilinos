@@ -115,8 +115,8 @@ Package-Specific Configuration Options
 --------------------------------------
 
 If you need package-specific configuration options set, they should be
-done so in ``src/CMakeLists.txt`` prior tothe call the call to
-``PACKAGE_CONFIGURE_FILE()``.  Currently, the following variable are
+done so in ``src/CMakeLists.txt`` prior to the call to
+``PACKAGE_CONFIGURE_FILE()``.  Currently, the following variables are
 set depending upon the top-level Trilinos configuration::
 
     HAVE_EPETRA

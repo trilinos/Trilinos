@@ -204,6 +204,22 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isFillComplete() const
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 bool
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isUpperTriangular() const
+{
+  return ptGraph_->isUpperTriangular();
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+bool
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isLowerTriangular() const
+{
+  return ptGraph_->isLowerTriangular();
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+bool
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::isLocallyIndexed() const
 {
   return ptGraph_->isLocallyIndexed();
@@ -223,6 +239,14 @@ size_t
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumRows() const
 {
   return ptGraph_->getNodeNumRows();
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+size_t
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumDiags() const
+{
+  return ptGraph_->getNodeNumDiags();
 }
 
 //-------------------------------------------------------------------

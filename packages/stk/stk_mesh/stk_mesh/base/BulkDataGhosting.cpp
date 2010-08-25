@@ -17,7 +17,6 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
-#include <assert.h>
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -126,12 +125,12 @@ void BulkData::destroy_all_ghosting()
     Entity * entity = *--ie ;
 
     if ( in_receive_ghost( *entity ) ) {
-      entity->m_entityImpl.comm_clear();
+      m_entity_repo.comm_clear( *entity );
       destroy_entity( entity );
       *ie = NULL ;
     }
     else {
-      entity->m_entityImpl.comm_clear_ghosting();
+      m_entity_repo.comm_clear_ghosting( * entity);
       if ( entity->comm().empty() ) {
         *ie = NULL ;
       }
@@ -342,12 +341,12 @@ void BulkData::internal_change_ghosting(
         const EntityCommInfo tmp = comm_ghost.back();
 
         if ( 0 == new_send.count( EntityProc( entity , tmp.proc ) ) ) {
-          entity->m_entityImpl.erase( tmp );
+          m_entity_repo.erase_comm_info( *entity, tmp );
         }
       }
     }
     else if ( remove_recv ) {
-      entity->m_entityImpl.erase( ghosts );
+      m_entity_repo.erase_ghosting( *entity, ghosts );
     }
 
     if ( entity->comm().empty() ) {
@@ -407,7 +406,7 @@ void BulkData::internal_change_ghosting(
         pack_entity_info(  buf , entity );
         pack_field_values( buf , entity );
 
-        entity.m_entityImpl.insert( EntityCommInfo(ghosts.ordinal(),j->second) );
+        m_entity_repo.insert_comm_info( entity, EntityCommInfo(ghosts.ordinal(),j->second) );
 
         m_entity_comm.push_back( & entity );
       }
@@ -446,11 +445,14 @@ void BulkData::internal_change_ghosting(
           remove( parts , meta.locally_owned_part() );
           remove( parts , meta.globally_shared_part() );
 
-          std::pair<Entity*,bool> result = m_entity_repo.internal_create_entity( key );
+          std::pair<Entity*,bool> result =
+            m_entity_repo.internal_create_entity( key );
 
-          if ( result.second                          /* Created */ ||
-               result.first->marked_for_destruction() /* Re-created */ ) {
-            result.first->m_entityImpl.set_owner_rank( owner );
+          const bool created   = result.second ;
+          const bool recreated = EntityLogDeleted == result.first->log_query();
+
+          if ( created || recreated ) {
+            m_entity_repo.set_entity_owner_rank( *(result.first), owner);
           }
 
           assert_entity_owner( method , * result.first , owner );
@@ -465,7 +467,7 @@ void BulkData::internal_change_ghosting(
 
           const EntityCommInfo tmp( ghosts.ordinal() , owner );
 
-          if ( result.first->m_entityImpl.insert( tmp ) ) {
+          if ( m_entity_repo.insert_comm_info( *(result.first), tmp ) ) {
             m_entity_comm.push_back( result.first );
           }
         }

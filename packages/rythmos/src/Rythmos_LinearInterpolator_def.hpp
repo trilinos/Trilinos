@@ -198,14 +198,14 @@ void LinearInterpolator<Scalar>::interpolate(
           RCP<Thyra::VectorBase<Scalar> > x;
           if (!is_null(xi) && !is_null(xip1)) {
             x = createMember(xi->space());
-            Thyra::V_StVpStV(&*x,dt_over_h,*xip1,one_minus_dt_over_h,*xi);
+            Thyra::V_StVpStV(x.ptr(),dt_over_h,*xip1,one_minus_dt_over_h,*xi);
           }
           DS.x = x;
           // x = dt/h * xdotip1 + (1-dt/h) * xdoti
           RCP<Thyra::VectorBase<Scalar> > xdot;
           if (!is_null(xdoti) && !is_null(xdotip1)) {
             xdot = createMember(xdoti->space());
-            Thyra::V_StVpStV(&*xdot,dt_over_h,*xdotip1,one_minus_dt_over_h,*xdoti);
+            Thyra::V_StVpStV(xdot.ptr(),dt_over_h,*xdotip1,one_minus_dt_over_h,*xdoti);
           }
           DS.xdot = xdot;
           // Estimate our accuracy ???

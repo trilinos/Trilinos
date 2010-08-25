@@ -103,9 +103,9 @@ namespace Belos {
     { 
       int numvecs = index.size();
       // create the new multivector
-      Teuchos::RCP< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
+      Teuchos::RCP<TMVB> cc = Thyra::createMembers( mv.range(), numvecs );
       // create a view to the relevant part of the source multivector
-      Teuchos::RCP< const TMVB > view = mv.subView( numvecs, &(index[0]) );
+      Teuchos::RCP<const TMVB> view = mv.subView(index);
       // copy the data from the relevant view to the new multivector
       Thyra::assign(&*cc, *view);
       return cc;
@@ -146,7 +146,7 @@ namespace Belos {
       }
       else {
         // create an indexed view to the relevant part of the source multivector
-        cc = mv.subView( numvecs, &(index[0]) );
+        cc = mv.subView(index);
       }
       return cc;
     }
@@ -186,7 +186,7 @@ namespace Belos {
       }
       else {
         // create an indexed view to the relevant part of the source multivector
-        cc = mv.subView( numvecs, &(index[0]) );
+        cc = mv.subView(index);
       }
       return cc;
     }
@@ -327,9 +327,9 @@ namespace Belos {
         indexA.resize( numAcols );
       }
       // create a view to the relevant part of the source multivector
-      Teuchos::RCP< const TMVB > relsource = A.subView( numAcols, &(indexA[0]) );
+      Teuchos::RCP< const TMVB > relsource = A.subView(indexA);
       // create a view to the relevant part of the destination multivector
-      Teuchos::RCP< TMVB > reldest = mv.subView( numvecs, &(index[0]) );
+      Teuchos::RCP< TMVB > reldest = mv.subView(index);
       // copy the data to the destination multivector subview
       Thyra::assign(&*reldest, *relsource);
     }

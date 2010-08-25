@@ -26,7 +26,7 @@
 using namespace stk;
 using namespace stk::mesh;
 
-RingMeshFixture::RingMeshFixture(
+UnitTestRingMeshFixture::UnitTestRingMeshFixture(
   ParallelMachine pm ,
   unsigned        num_edge_per_proc ,
   bool            use_edge_parts )
@@ -46,15 +46,18 @@ RingMeshFixture::RingMeshFixture(
       m_edge_parts[i] = & m_meta_data.declare_part( name.str() , Edge );
     }
   }
-
-  m_meta_data.commit();
 }
 
-RingMeshFixture::~RingMeshFixture()
+UnitTestRingMeshFixture::~UnitTestRingMeshFixture()
 {}
 
-void RingMeshFixture::generate_loop( bool generate_aura )
+void UnitTestRingMeshFixture::generate_mesh( bool generate_aura )
 {
+  //if ( ! m_meta_data.is_commit() ) {
+  //  throw std::runtime_error("Please commit meta-data before calling "
+  //                           "generate_mesh");
+  //}
+
   const unsigned p_rank     = m_bulk_data.parallel_rank();
   const unsigned p_size     = m_bulk_data.parallel_size();
   const unsigned nPerProc   = m_num_edge_per_proc ;
@@ -183,7 +186,7 @@ void RingMeshFixture::generate_loop( bool generate_aura )
 }
 
 
-void RingMeshFixture::test_shift_loop( bool generate_aura )
+void UnitTestRingMeshFixture::test_shift_loop( bool generate_aura )
 {
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();

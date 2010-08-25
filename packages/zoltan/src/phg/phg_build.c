@@ -824,8 +824,7 @@ int *outparts = NULL;            /* received partition info for pins */
 int num_parts, max_parts;
 int msg_tag = 23132;
 
-int *indexptr = NULL;
-long int index;
+int index;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -852,20 +851,18 @@ long int index;
     if (map == NULL) goto End;
 
     for (i=0; i < zhg->nObj; i++){
-      indexptr = (int *)(i+1);
-      ierr = Zoltan_Map_Add(zz, map, myObjGNO + i, indexptr);
+      index = i;
+      ierr = Zoltan_Map_Add(zz, map, myObjGNO + i, index);
       if (ierr != ZOLTAN_OK) goto End;
     }
     
     for (i = 0; i < nrecv; i++) {
-      ierr = Zoltan_Map_Find(zz, map, recvpins + i, (void*)&indexptr);
+      ierr = Zoltan_Map_Find(zz, map, recvpins + i, &index);
       if (ierr != ZOLTAN_OK) goto End;
-      if (indexptr == NULL){
+      if (index == ZOLTAN_NOT_FOUND) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in pin map.");
          goto End;
       }
-
-      index = (long int)indexptr - 1;
       outparts[i] = zhg->Output_Parts[index];
     }
     Zoltan_Map_Destroy(zz, &map);

@@ -39,6 +39,8 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockCG_name = "Pseudo Block CG";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
 
 
 // Constructors/initializers/accessors
@@ -46,7 +48,8 @@ const std::string BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
 
 template<class Scalar>
 BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory()
-  :solverType_(SOLVER_TYPE_PSEUDO_BLOCK_GMRES)
+  :solverType_(SOLVER_TYPE_PSEUDO_BLOCK_GMRES),
+   convergenceTestFrequency_(1)
 {
   updateThisValidParamList();
 }
@@ -234,9 +237,12 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(
   )
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParametersAndSetDefaults(*this->getValidParameters(),1);
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 1);
   paramList_ = paramList;
-  solverType_ = Teuchos::getIntegralValue<ESolverType>(*paramList_,SolverType_name);
+  solverType_ =
+    Teuchos::getIntegralValue<ESolverType>(*paramList_, SolverType_name);
+  convergenceTestFrequency_ =
+    Teuchos::getParameter<int>(*paramList_, ConvergenceTestFrequency_name);
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
 }
 
@@ -297,6 +303,7 @@ template<class Scalar>
 RCP<const Teuchos::ParameterList>
 BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 {
+  using Teuchos::as;
   using Teuchos::tuple;
   using Teuchos::setStringToIntegralParameter;
   typedef MultiVectorBase<Scalar> MV_t;
@@ -341,6 +348,9 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
         ),
       &*validParamList
       );
+    validParamList->set(ConvergenceTestFrequency_name, as<int>(1),
+      "Number of linear solver iterations to skip betwee applying"
+      " user-defined convergence test.");
     Teuchos::ParameterList
       &solverTypesSL = validParamList->sublist(SolverTypes_name);
     {
@@ -659,8 +669,9 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   //
 
   belosOp->initialize(
-    lp,solverPL,iterativeSolver,
-    fwdOpSrc,prec,myPrec.get()==NULL,approxFwdOpSrc,supportSolveUse
+    lp, solverPL, iterativeSolver,
+    fwdOpSrc, prec, myPrec.get()==NULL, approxFwdOpSrc,
+    supportSolveUse, convergenceTestFrequency_
     );
   belosOp->setOStream(out);
   belosOp->setVerbLevel(verbLevel);

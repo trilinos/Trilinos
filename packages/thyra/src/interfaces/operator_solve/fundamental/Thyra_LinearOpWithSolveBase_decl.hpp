@@ -65,15 +65,15 @@ namespace Thyra {
     A X = B 
   \f]
  
- * and/or a transpose solve operation (using <tt>solveTranspose()</tt>) of the
+ * and/or a transpose solve operation (using <tt>A_trans==TRANS</tt>) of the
  * form:
 
   \f[
     A^T X = B 
   \f]
 
- * and/or an adjoint solve operation (using <tt>solveTranspose()</tt>) of the
- * form:
+ * and/or an adjoint solve operation (using <tt>A_trans==CONJTRANS()</tt>) of
+ * the form:
 
   \f[
     A^H X = B 
@@ -301,6 +301,64 @@ public:
   /** \name Public interface funtions. */
   //@{
 
+  // 2010/08/22: rabartl: To properly handle the new SolveCriteria struct with
+  // redution functionals (bug 4915) the function solveSupports() must be
+  // refactored.  Here is how this refactoring can be done incrementally and
+  // safely:
+  //
+  // (*) Create new override solveSupports(transp, solveCriteria) that calls
+  // virtual solveSupportsNewImpl(transp, solveCriteria).
+  //
+  // (*) One by one, refactor existing LOWSB subclasses to implement
+  // solveSupportsNewImpl(transp, solveCriteria).  This can be done by
+  // basically copying the existing solveSupportsSolveMeasureTypeImpl()
+  // override.  Then have each of the existing
+  // solveSupportsSolveMeasureTypeImpl() overrides call
+  // solveSupportsNewImpl(transp, solveCriteria) to make sure that
+  // solveSupportsNewImpl() is getting tested right away.  Also, have the
+  // existing solveSupportsImpl(...) overrides call
+  // solveSupportsNewImpl(transp, null).  This will make sure that all
+  // functionality is now going through solveSupportsNewImpl(...) and is
+  // getting tested.
+  //
+  // (*) Refactor Teko software.
+  //
+  // (*) Once all LOWSB subclasses implement solveSupportsNewImpl(transp,
+  // solveCriteria), finish off the refactoring in one shot:
+  //
+  //   (-) Remove the function solveSupports(transp), give solveCriteria a
+  //   default null in solveSupports(transp, solveCriteria).
+  //
+  //   (-) Run all tests.
+  //
+  //   (-) Remove all of the solveSupportsImpl(transp) overrides, rename solve
+  //   solveSupportsNewImpl() to solveSupportsImpl(), and make
+  //   solveSupportsImpl(...) pure virtual.
+  //
+  //   (-) Run all tests.
+  //
+  //   (-) Change solveSupportsSolveMeasureType(transp, solveMeasureType) to
+  //   call solveSupportsImpl(transp, solveCriteria) by setting
+  //   solveMeasureType on a temp SolveCriteria object.  Also, deprecate the
+  //   function solveSupportsSolveMeasureType(...).
+  //
+  //   (-) Run all tests.
+  //
+  //   (-) Remove all of the eixsting solveSupportsSolveMeasureTypeImpl()
+  //   overrides.
+  //
+  //   (-) Run all tests.
+  //
+  //   (-) Clean up all deprecated working about calling
+  //   solveSupportsSolveMeasureType() and instead have them call
+  //   solveSupports(...) with a SolveCritera object.
+  //
+  // (*) Enter an item about this breaking backward compatiblilty for existing
+  // subclasses of LOWSB.
+  //
+  // This refactoring will be done by and by has bug 4915 is implemented.
+  // 
+
   /** \brief Return if <tt>solve()</tt> supports the argument <tt>transp</tt>.
    *
    * The default implementation returns <tt>true</tt> for non-transposed,
@@ -308,6 +366,14 @@ public:
    */
   bool solveSupports(EOpTransp transp) const
     { return solveSupportsImpl(transp); }
+
+  /** \brief Return if <tt>solve()</tt> supports a given transpose and solve
+   * criteria specification.
+   *
+   */
+  bool solveSupports(EOpTransp transp,
+    const Ptr<const SolveCriteria<Scalar> > solveCriteria) const
+    { return solveSupportsNewImpl(transp, solveCriteria); }
 
   /** \brief Return if <tt>solve()</tt> supports the given the solve measure
    * type.
@@ -342,9 +408,9 @@ public:
    *
    * <b>Preconditions:</b><ul>
    *
-   * <li><tt>this->solveSupports(transp)==true</tt>
+   * <li><tt>this->solveSupports(transp, solveCriteria)==true</tt>
    *
-   * <li><tt>X!=NULL</tt>
+   * <li><tt>nonnull(X)==true</tt>
    *
    * <li><tt>op(this)->range()->isCompatible(*B.range())==true</tt>
    *
@@ -431,6 +497,15 @@ protected:
   /** \brief Virtual implementation for solveSupports(). */
   virtual bool solveSupportsImpl(EOpTransp transp) const;
 
+  /** \brief Virtual implementation of <tt>solveSupports()</tt>. */
+  virtual bool solveSupportsNewImpl(EOpTransp transp,
+    const Ptr<const SolveCriteria<Scalar> > solveCriteria
+    ) const
+    {
+      TEST_FOR_EXCEPT(true);
+      return(false);
+    }
+
   /** \brief Virtual implementation for solveSupportsSolveMeasureType(). */
   virtual bool solveSupportsSolveMeasureTypeImpl(EOpTransp transp,
     const SolveMeasureType& solveMeasureType) const;
@@ -447,7 +522,9 @@ protected:
 
 private:
 
-  THYRA_DEPRECATED
+  // Deprecated.  NOTE: I could not mark with THYRA_DEPRECATED because newer
+  // versions of g++ give warnings when deprecated code calls other
+  // depreciated code.
   static Ptr<const SolveCriteria<Scalar> >
   convertBlockSolveCriteriaToSolveCritiera(
     const int numBlocks,
@@ -469,12 +546,25 @@ private:
  */
 template<class Scalar>
 inline
-bool solveSupports(
-  const LinearOpWithSolveBase<Scalar> &A,
-  const EOpTransp transp
-  )
+bool solveSupports(const LinearOpWithSolveBase<Scalar> &A, const EOpTransp transp)
 {
   return A.solveSupports(transp);
+}
+
+
+/** \brief Call <tt>solveSupports()</tt> as a non-member function.
+ *
+ * \relates_LinearOpWithSolveBase
+ */
+template<class Scalar>
+inline
+bool solveSupports(
+  const LinearOpWithSolveBase<Scalar> &A,
+  const EOpTransp transp,
+  const Ptr<const SolveCriteria<Scalar> > solveCriteria
+  )
+{
+  return A.solveSupports(transp, solveCriteria);
 }
 
 

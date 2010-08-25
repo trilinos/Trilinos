@@ -1,32 +1,42 @@
-# ReStructured Text
-RST2HTML = rst2html.py
-RFLAGS = --generator --time --no-xml-declaration
+# ReStructured Text conversion utilities
+RST2HTML  = rst2html.py
+RST2LATEX = rst2latex.py
 
-# Web pages that need to be made
-WEB_PAGES = AddingModules.html BuildSystem.html Documentation.html \
-	    ExceptionHandling.html Testing.html
+HTML_FLAGS = --generator --time --section-numbering --no-xml-declaration
+TEX_FLAGS  = --generator --time --section-numbering --use-latex-toc --use-latex-docinfo
 
-# List all of the subdirectories here for recursive make
-SUBDIRS = 
+# LaTeX
+LATEX = pdflatex
+
+# ReStructured Text main source file
+SRC_FILE = DevelopersGuide.txt
+
+# Web page to be made
+WEB_PAGE = $(SRC_FILE:txt=html)
+
+# PDF file generation
+TEX_FILE = $(SRC_FILE:txt=tex)
+PDF_FILE = $(TEX_FILE:tex=pdf)
+
+AUX_FILES = $(TEX_FILE:tex=aux) \
+	    $(TEX_FILE:tex=out) \
+	    $(TEX_FILE:tex=log) \
+	    $(TEX_FILE:tex=toc)
 
 # Default target depends on all of the recursive subdirectories
-all: $(WEB_PAGES) $(SUBDIRS)
+all: $(WEB_PAGE) $(PDF_FILE)
 
 %.html: %.txt
-	$(RST2HTML) $(RFLAGS) $< $@
+	$(RST2HTML) $(HTML_FLAGS) $< $@
+
+%.tex: %.txt
+	$(RST2LATEX) $(TEX_FLAGS) $< $@
+
+%.pdf: %.tex
+	$(LATEX) $<
+	$(LATEX) $<
 
 clean:
-	@for dir in $(SUBDIRS); do  \
-	    echo Entering $$dir;    \
-	    cd $$dir && make clean; \
-	    echo Leaving $$dir;     \
-	    cd ..;                  \
-	 done
+	$(RM) $(WEB_PAGE) $(TEX_FILE) $(PDF_FILE) $(AUX_FILES) *~
 
-# Each recursive make directory needs its own target
-#development:
-#	cd $@ && $(MAKE)
-
-# The subdirectories are not actually "made", but they do exist, so
-# they need to be declared phony targets
-.PHONY : $(SUBDIRS) clean
+.PHONY : clean

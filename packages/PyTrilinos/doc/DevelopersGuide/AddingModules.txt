@@ -57,7 +57,7 @@ here are the necessary steps.
    For a package that supports nested namespaces, the primary SWIG
    interface file will be named::
 
-      ``PACKAGE/__init__.i``
+      ``PACKAGE___init__.i``
 
    In both cases, of course, ``PACKAGE`` will be replaced with your
    package name.

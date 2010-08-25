@@ -154,7 +154,7 @@ SET(DAKOTA_LIBS
     ddace fsudace jega opt
     psuade newmat ncsuopt sparsegrid coliny colin
     pebbl utilib 3po nappspack appspack conveyor
-    shared cdd cport amplsolver lhs
+    shared cdd cport amplsolver lhs nidr
   )
 
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib)

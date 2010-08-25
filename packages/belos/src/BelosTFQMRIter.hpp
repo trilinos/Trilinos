@@ -543,7 +543,8 @@ namespace Belos {
       //
       MVT::MvNorm( *W_, theta_ );     // theta = ||w|| / tau
       theta_[0] /= tau_[0];
-      cs_[0] = MTone / SCT::squareroot(STone + theta_[0]*theta_[0]);  // cs = 1.0 / sqrt(1.0 + theta^2)
+      // cs = 1.0 / sqrt(1.0 + theta^2)
+      cs_[0] = MTone / Teuchos::ScalarTraits<MagnitudeType>::squareroot(MTone + theta_[0]*theta_[0]);  
       tau_[0] *= theta_[0]*cs_[0];     // tau = tau * theta * cs
       eta = cs_[0]*cs_[0]*alpha_(0,0);     // eta = cs^2 * alpha
       

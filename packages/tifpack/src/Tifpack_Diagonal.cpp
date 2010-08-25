@@ -35,7 +35,18 @@
 #include "Tifpack_ExplicitInstantiationHelpers.hpp"
 
 namespace Tifpack {
-TIFPACK_INSTANT_CRSMATRIX_FLOAT_DOUBLE_DEFAULTS(Diagonal)
+#ifdef HAVE_TPETRA_INST_FLOAT
+TIFPACK_INST(Diagonal,float,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_DOUBLE
+TIFPACK_INST(Diagonal,double,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
+TIFPACK_INST(Diagonal,std::complex<float>,int,int);
+#endif
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
+TIFPACK_INST(Diagonal,std::complex<double>,int,int);
+#endif
 }
 
 #endif

@@ -34,6 +34,18 @@
 #include "Teuchos_AbstractFactory.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 
+// Include these to make all of the helpful decls appear
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
+#include "Thyra_PreconditionerFactoryHelpers.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultPreconditioner.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_VectorBase.hpp"
+
 
 namespace Teuchos { class CommandLineProcessor; }
 

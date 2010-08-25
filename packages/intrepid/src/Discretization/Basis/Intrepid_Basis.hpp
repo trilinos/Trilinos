@@ -331,6 +331,29 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
                           const int                    basisCard);
 
 
+/** \brief  This is an interface class for bases whose degrees of freedom
+            can be associated with spatial locations in a reference element
+            (typically interpolation points for interpolatory bases).
+*/
+template<class ArrayScalar>
+class DofCoordsInterface {
+public:
+   /** \brief Pure virtual destructor (gives warnings if not included).
+     *        Following "Effective C++: 3rd Ed." item 7 the implementation
+     *        is included in the definition file. 
+     */
+   virtual ~DofCoordsInterface() = 0;
+
+  /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
+              <strong>reference cell</strong>; defined for interpolatory bases.
+
+      \param  DofCoords      [out] - array with the coordinates of degrees of freedom,
+                                     dimensioned (F,D)
+   */
+   virtual void getDofCoords(ArrayScalar & DofCoords) const = 0;
+};
+
+
 // include templated definitions
 #include <Intrepid_BasisDef.hpp>
   

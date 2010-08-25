@@ -23,7 +23,7 @@ set GCXX="/usr/bin/g++346"
 -D CMAKE_CXX_FLAGS:STRING="-best-effort -follow-child-processes=yes -cache-dir=/tmp/purify -chain-length=20 $GCXX -m64 -g $MPICXXEXTRACOMP" \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING="$MPIEXTRALINK" \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
--D MPIEXEC_MAX_NUMPROCS:STRING=11 \
+-D MPI_EXEC_MAX_NUMPROCS:STRING=11 \
 -D Trilinos_ENABLE_Fortran:BOOL=OFF \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
 -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \

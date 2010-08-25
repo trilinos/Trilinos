@@ -48,6 +48,8 @@ public:
   static const std::string  PseudoBlockCG_name;
   /** \brief . */
   static const std::string  GCRODR_name;
+  /** \brief . */
+  static const std::string  ConvergenceTestFrequency_name;
 
   //@}
 
@@ -166,6 +168,7 @@ private:
   Teuchos::RCP<Teuchos::ParameterList>              thisValidParamList_;
   Teuchos::RCP<Teuchos::ParameterList>              paramList_;
   ESolverType solverType_;
+  int convergenceTestFrequency_;
 
   // /////////////////////////
   // Private member functions

@@ -236,23 +236,23 @@ class BackwardEuler_RKBT :
   public:
   BackwardEuler_RKBT() 
   {
-    std::ostringstream description;
-    description << RKBT_BackwardEuler_name() << "\n"
+    std::ostringstream myDescription;
+    myDescription << RKBT_BackwardEuler_name() << "\n"
                 << "c = [ 1 ]'\n"
                 << "A = [ 1 ]\n"
                 << "b = [ 1 ]'" << std::endl;
     typedef ScalarTraits<Scalar> ST;
-    Teuchos::SerialDenseMatrix<int,Scalar> A(1,1);
-    A(0,0) = ST::one();
-    Teuchos::SerialDenseVector<int,Scalar> b(1);
-    b(0) = ST::one();
-    Teuchos::SerialDenseVector<int,Scalar> c(1);
-    c(0) = ST::one();
+    Teuchos::SerialDenseMatrix<int,Scalar> myA(1,1);
+    myA(0,0) = ST::one();
+    Teuchos::SerialDenseVector<int,Scalar> myb(1);
+    myb(0) = ST::one();
+    Teuchos::SerialDenseVector<int,Scalar> myc(1);
+    myc(0) = ST::one();
 
-    this->setMyDescription(description.str());
-    this->setMy_A(A);
-    this->setMy_b(b);
-    this->setMy_c(c);
+    this->setMyDescription(myDescription.str());
+    this->setMy_A(myA);
+    this->setMy_b(myb);
+    this->setMy_c(myc);
     this->setMy_order(1);
   }
 };
@@ -267,21 +267,21 @@ class ForwardEuler_RKBT :
 
     ForwardEuler_RKBT()
     {
-      std::ostringstream description;
-      description << RKBT_ForwardEuler_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << RKBT_ForwardEuler_name() << "\n"
                   << "c = [ 0 ]'\n"
                   << "A = [ 0 ]\n"
                   << "b = [ 1 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(1,1);
-      Teuchos::SerialDenseVector<int,Scalar> b(1);
-      b(0) = ST::one();
-      Teuchos::SerialDenseVector<int,Scalar> c(1);
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(1,1);
+      Teuchos::SerialDenseVector<int,Scalar> myb(1);
+      myb(0) = ST::one();
+      Teuchos::SerialDenseVector<int,Scalar> myc(1);
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(1);
     }
 };
@@ -294,8 +294,8 @@ class Explicit4Stage4thOrder_RKBT :
   public:
     Explicit4Stage4thOrder_RKBT() 
     {
-      std::ostringstream description;
-      description << Explicit4Stage_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Explicit4Stage_name() << "\n"
                   << "\"The\" Runge-Kutta Method (explicit):\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
@@ -313,48 +313,48 @@ class Explicit4Stage4thOrder_RKBT :
       Scalar onesixth = ST::one()/(6*ST::one());
       Scalar onethird = ST::one()/(3*ST::one());
 
-      int numStages = 4;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 4;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
 
       // Fill A:
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(0,2) = zero;
-      A(0,3) = zero;
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
+      myA(0,3) = zero;
 
-      A(1,0) = onehalf;
-      A(1,1) = zero;
-      A(1,2) = zero;
-      A(1,3) = zero;
+      myA(1,0) = onehalf;
+      myA(1,1) = zero;
+      myA(1,2) = zero;
+      myA(1,3) = zero;
 
-      A(2,0) = zero;
-      A(2,1) = onehalf;
-      A(2,2) = zero;
-      A(2,3) = zero;
+      myA(2,0) = zero;
+      myA(2,1) = onehalf;
+      myA(2,2) = zero;
+      myA(2,3) = zero;
 
-      A(3,0) = zero;
-      A(3,1) = zero;
-      A(3,2) = one;
-      A(3,3) = zero;
+      myA(3,0) = zero;
+      myA(3,1) = zero;
+      myA(3,2) = one;
+      myA(3,3) = zero;
 
-      // Fill b:
-      b(0) = onesixth;
-      b(1) = onethird;
-      b(2) = onethird;
-      b(3) = onesixth;
+      // Fill myb:
+      myb(0) = onesixth;
+      myb(1) = onethird;
+      myb(2) = onethird;
+      myb(3) = onesixth;
       
       // fill b_c_
-      c(0) = zero;
-      c(1) = onehalf;
-      c(2) = onehalf;
-      c(3) = one;
+      myc(0) = zero;
+      myc(1) = onehalf;
+      myc(2) = onehalf;
+      myc(3) = one;
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };
@@ -368,8 +368,8 @@ class Explicit3_8Rule_RKBT :
     Explicit3_8Rule_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Explicit3_8Rule_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Explicit3_8Rule_name() << "\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.2, pg 138\n"
@@ -380,10 +380,10 @@ class Explicit3_8Rule_RKBT :
                   << "    [  1  -1   1   0  ]\n"
                   << "b = [ 1/8 3/8 3/8 1/8 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 4;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 4;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
 
       Scalar one = ST::one();
       Scalar zero = ST::zero();
@@ -392,43 +392,43 @@ class Explicit3_8Rule_RKBT :
       Scalar one_eighth   = as<Scalar>(ST::one()/(8*ST::one()));
       Scalar three_eighth = as<Scalar>(3*ST::one()/(8*ST::one()));
 
-      // Fill A:
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(0,2) = zero;
-      A(0,3) = zero;
+      // Fill myA:
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
+      myA(0,3) = zero;
 
-      A(1,0) = one_third;
-      A(1,1) = zero;
-      A(1,2) = zero;
-      A(1,3) = zero;
+      myA(1,0) = one_third;
+      myA(1,1) = zero;
+      myA(1,2) = zero;
+      myA(1,3) = zero;
 
-      A(2,0) = as<Scalar>(-one_third);
-      A(2,1) = one;
-      A(2,2) = zero;
-      A(2,3) = zero;
+      myA(2,0) = as<Scalar>(-one_third);
+      myA(2,1) = one;
+      myA(2,2) = zero;
+      myA(2,3) = zero;
 
-      A(3,0) = one;
-      A(3,1) = as<Scalar>(-one);
-      A(3,2) = one;
-      A(3,3) = zero;
+      myA(3,0) = one;
+      myA(3,1) = as<Scalar>(-one);
+      myA(3,2) = one;
+      myA(3,3) = zero;
 
-      // Fill b:
-      b(0) = one_eighth;
-      b(1) = three_eighth;
-      b(2) = three_eighth;
-      b(3) = one_eighth;
+      // Fill myb:
+      myb(0) = one_eighth;
+      myb(1) = three_eighth;
+      myb(2) = three_eighth;
+      myb(3) = one_eighth;
       
-      // Fill c:
-      c(0) = zero;
-      c(1) = one_third;
-      c(2) = two_third;
-      c(3) = one;
+      // Fill myc:
+      myc(0) = zero;
+      myc(1) = one_third;
+      myc(2) = two_third;
+      myc(3) = one;
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };
@@ -442,8 +442,8 @@ class Explicit4Stage3rdOrderRunge_RKBT :
     Explicit4Stage3rdOrderRunge_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Explicit4Stage3rdOrderRunge_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Explicit4Stage3rdOrderRunge_name() << "\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
@@ -454,10 +454,10 @@ class Explicit4Stage3rdOrderRunge_RKBT :
                   << "    [  0   0   1   0  ]\n"
                   << "b = [ 1/6 2/3  0  1/6 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 4;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 4;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
 
       Scalar one = ST::one();
       Scalar onehalf = ST::one()/(2*ST::one());
@@ -466,42 +466,42 @@ class Explicit4Stage3rdOrderRunge_RKBT :
       Scalar zero = ST::zero();
 
       // Fill A:
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(0,2) = zero;
-      A(0,3) = zero;
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
+      myA(0,3) = zero;
 
-      A(1,0) = onehalf;
-      A(1,1) = zero;
-      A(1,2) = zero;
-      A(1,3) = zero;
+      myA(1,0) = onehalf;
+      myA(1,1) = zero;
+      myA(1,2) = zero;
+      myA(1,3) = zero;
 
-      A(2,0) = zero;
-      A(2,1) = one;
-      A(2,2) = zero;
-      A(2,3) = zero;
+      myA(2,0) = zero;
+      myA(2,1) = one;
+      myA(2,2) = zero;
+      myA(2,3) = zero;
 
-      A(3,0) = zero;
-      A(3,1) = zero;
-      A(3,2) = one;
-      A(3,3) = zero;
+      myA(3,0) = zero;
+      myA(3,1) = zero;
+      myA(3,2) = one;
+      myA(3,3) = zero;
 
       // Fill b:
-      b(0) = onesixth;
-      b(1) = twothirds;
-      b(2) = zero;
-      b(3) = onesixth;
+      myb(0) = onesixth;
+      myb(1) = twothirds;
+      myb(2) = zero;
+      myb(3) = onesixth;
       
-      // Fill c:
-      c(0) = zero;
-      c(1) = onehalf;
-      c(2) = one;
-      c(3) = one;
+      // Fill myc:
+      myc(0) = zero;
+      myc(1) = onehalf;
+      myc(2) = one;
+      myc(3) = one;
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(3);
     }
 };
@@ -515,8 +515,8 @@ class Explicit3Stage3rdOrder_RKBT :
     Explicit3Stage3rdOrder_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Explicit3Stage3rdOrder_name() << "\n" 
+      std::ostringstream myDescription;
+      myDescription << Explicit3Stage3rdOrder_name() << "\n" 
                   << "c = [  0  1/2  1  ]'\n"
                   << "A = [  0          ]\n"
                   << "    [ 1/2  0      ]\n"
@@ -530,38 +530,38 @@ class Explicit3Stage3rdOrder_RKBT :
       Scalar onesixth = ST::one()/(6*ST::one());
       Scalar foursixth = 4*ST::one()/(6*ST::one());
 
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
 
-      // Fill A:
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(0,2) = zero;
+      // Fill myA:
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
 
-      A(1,0) = onehalf;
-      A(1,1) = zero;
-      A(1,2) = zero;
+      myA(1,0) = onehalf;
+      myA(1,1) = zero;
+      myA(1,2) = zero;
 
-      A(2,0) = -one;
-      A(2,1) = two;
-      A(2,2) = zero;
+      myA(2,0) = -one;
+      myA(2,1) = two;
+      myA(2,2) = zero;
 
-      // Fill b:
-      b(0) = onesixth;
-      b(1) = foursixth;
-      b(2) = onesixth;
+      // Fill myb:
+      myb(0) = onesixth;
+      myb(1) = foursixth;
+      myb(2) = onesixth;
       
       // fill b_c_
-      c(0) = zero;
-      c(1) = onehalf;
-      c(2) = one;
+      myc(0) = zero;
+      myc(1) = onehalf;
+      myc(2) = one;
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(3);
     }
 };
@@ -574,8 +574,8 @@ class Explicit3Stage3rdOrderHeun_RKBT :
   public:
     Explicit3Stage3rdOrderHeun_RKBT()
     { 
-      std::ostringstream description;
-      description << Explicit3Stage3rdOrderHeun_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Explicit3Stage3rdOrderHeun_name() << "\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
@@ -592,38 +592,38 @@ class Explicit3Stage3rdOrderHeun_RKBT :
       Scalar onefourth = one/(4*one);
       Scalar threefourths = 3*one/(4*one);
 
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
 
-      // Fill A:
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(0,2) = zero;
+      // Fill myA:
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
 
-      A(1,0) = onethird;
-      A(1,1) = zero;
-      A(1,2) = zero;
+      myA(1,0) = onethird;
+      myA(1,1) = zero;
+      myA(1,2) = zero;
 
-      A(2,0) = zero;
-      A(2,1) = twothirds;
-      A(2,2) = zero;
+      myA(2,0) = zero;
+      myA(2,1) = twothirds;
+      myA(2,2) = zero;
 
-      // Fill b:
-      b(0) = onefourth;
-      b(1) = zero;
-      b(2) = threefourths;
+      // Fill myb:
+      myb(0) = onefourth;
+      myb(1) = zero;
+      myb(2) = threefourths;
       
       // fill b_c_
-      c(0) = zero;
-      c(1) = onethird;
-      c(2) = twothirds;
+      myc(0) = zero;
+      myc(1) = onethird;
+      myc(2) = twothirds;
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(3);
     }
 };
@@ -636,8 +636,8 @@ class Explicit2Stage2ndOrderRunge_RKBT :
   public:
     Explicit2Stage2ndOrderRunge_RKBT()
     { 
-      std::ostringstream description;
-      description << Explicit2Stage2ndOrderRunge_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Explicit2Stage2ndOrderRunge_name() << "\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
                   << "E. Hairer, S.P. Norsett, G. Wanner\n"
                   << "Table 1.1, pg 135\n"
@@ -650,30 +650,30 @@ class Explicit2Stage2ndOrderRunge_RKBT :
       Scalar zero = ST::zero();
       Scalar onehalf = ST::one()/(2*ST::one());
 
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
 
-      // Fill A:
-      A(0,0) = zero;
-      A(0,1) = zero;
+      // Fill myA:
+      myA(0,0) = zero;
+      myA(0,1) = zero;
 
-      A(1,0) = onehalf;
-      A(1,1) = zero;
+      myA(1,0) = onehalf;
+      myA(1,1) = zero;
 
-      // Fill b:
-      b(0) = zero;
-      b(1) = one;
+      // Fill myb:
+      myb(0) = zero;
+      myb(1) = one;
       
       // fill b_c_
-      c(0) = zero;
-      c(1) = onehalf;
+      myc(0) = zero;
+      myc(1) = onehalf;
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(2);
     }
 };
@@ -688,8 +688,8 @@ class SDIRK2Stage3rdOrder_RKBT :
   public:
     SDIRK2Stage3rdOrder_RKBT()
     { 
-      std::ostringstream description;
-      description << SDIRK2Stage3rdOrder_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << SDIRK2Stage3rdOrder_name() << "\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.2, pg 207\n"
@@ -699,7 +699,7 @@ class SDIRK2Stage3rdOrder_RKBT :
                   << "    [ 1-2*gamma  gamma    ]\n"
                   << "b = [ 1/2        1/2      ]'" << std::endl;
 
-      this->setMyDescription(description.str());
+      this->setMyDescription(myDescription.str());
       gamma_coeff_default_ = 1;
       gamma_coeff_ = gamma_coeff_default_;
       this->setupData();
@@ -713,25 +713,25 @@ class SDIRK2Stage3rdOrder_RKBT :
     void setupData() 
     {
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
       Scalar zero = ST::zero();
       Scalar gamma = as<Scalar>( (3*one + as<Scalar>(gamma_coeff_)*ST::squareroot(3*one))/(6*one) );
-      A(0,0) = gamma;
-      A(0,1) = zero;
-      A(1,0) = as<Scalar>( one - 2*gamma );
-      A(1,1) = gamma;
-      b(0) = as<Scalar>( one/(2*one) );
-      b(1) = as<Scalar>( one/(2*one) );
-      c(0) = gamma;
-      c(1) = as<Scalar>( one - gamma );
+      myA(0,0) = gamma;
+      myA(0,1) = zero;
+      myA(1,0) = as<Scalar>( one - 2*gamma );
+      myA(1,1) = gamma;
+      myb(0) = as<Scalar>( one/(2*one) );
+      myb(1) = as<Scalar>( one/(2*one) );
+      myc(0) = gamma;
+      myc(1) = as<Scalar>( one - gamma );
 
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(3);
     }
     void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
@@ -757,8 +757,8 @@ class DIRK2Stage3rdOrder_RKBT :
     DIRK2Stage3rdOrder_RKBT()
     { 
 
-      std::ostringstream description;
-      description << DIRK2Stage3rdOrder_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << DIRK2Stage3rdOrder_name() << "\n"
                   << "Hammer & Hollingsworth method\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
@@ -768,24 +768,24 @@ class DIRK2Stage3rdOrder_RKBT :
                   << "    [ 1/3  1/3 ]\n"
                   << "b = [ 1/4  3/4 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
       Scalar zero = ST::zero();
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(1,0) = as<Scalar>( one/(3*one) );
-      A(1,1) = as<Scalar>( one/(3*one) );
-      b(0) = as<Scalar>( one/(4*one) );
-      b(1) = as<Scalar>( 3*one/(4*one) );
-      c(0) = zero;
-      c(1) = as<Scalar>( 2*one/(3*one) );
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(1,0) = as<Scalar>( one/(3*one) );
+      myA(1,1) = as<Scalar>( one/(3*one) );
+      myb(0) = as<Scalar>( one/(4*one) );
+      myb(1) = as<Scalar>( 3*one/(4*one) );
+      myc(0) = zero;
+      myc(1) = as<Scalar>( 2*one/(3*one) );
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(3);
     }
 };
@@ -799,8 +799,8 @@ class Implicit3Stage6thOrderKuntzmannButcher_RKBT :
     Implicit3Stage6thOrderKuntzmannButcher_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit3Stage6thOrderKuntzmannButcher_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit3Stage6thOrderKuntzmannButcher_name() << "\n"
                   << "Kuntzmann & Butcher method\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
@@ -811,30 +811,30 @@ class Implicit3Stage6thOrderKuntzmannButcher_RKBT :
                   << "    [ 5/36+sqrt(15)/30  2/9+sqrt(15)/15  5/36             ]\n"
                   << "b = [ 5/18              4/9              5/18             ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( 5*one/(36*one) );
-      A(0,1) = as<Scalar>( 2*one/(9*one) - ST::squareroot(15*one)/(15*one) );
-      A(0,2) = as<Scalar>( 5*one/(36*one) - ST::squareroot(15*one)/(30*one) );
-      A(1,0) = as<Scalar>( 5*one/(36*one) + ST::squareroot(15*one)/(24*one) );
-      A(1,1) = as<Scalar>( 2*one/(9*one) );
-      A(1,2) = as<Scalar>( 5*one/(36*one) - ST::squareroot(15*one)/(24*one) );
-      A(2,0) = as<Scalar>( 5*one/(36*one) + ST::squareroot(15*one)/(30*one) );
-      A(2,1) = as<Scalar>( 2*one/(9*one) + ST::squareroot(15*one)/(15*one) );
-      A(2,2) = as<Scalar>( 5*one/(36*one) );
-      b(0) = as<Scalar>( 5*one/(18*one) );
-      b(1) = as<Scalar>( 4*one/(9*one) );
-      b(2) = as<Scalar>( 5*one/(18*one) );
-      c(0) = as<Scalar>( one/(2*one)-ST::squareroot(15*one)/(10*one) );
-      c(1) = as<Scalar>( one/(2*one) );
-      c(2) = as<Scalar>( one/(2*one)+ST::squareroot(15*one)/(10*one) );
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( 5*one/(36*one) );
+      myA(0,1) = as<Scalar>( 2*one/(9*one) - ST::squareroot(15*one)/(15*one) );
+      myA(0,2) = as<Scalar>( 5*one/(36*one) - ST::squareroot(15*one)/(30*one) );
+      myA(1,0) = as<Scalar>( 5*one/(36*one) + ST::squareroot(15*one)/(24*one) );
+      myA(1,1) = as<Scalar>( 2*one/(9*one) );
+      myA(1,2) = as<Scalar>( 5*one/(36*one) - ST::squareroot(15*one)/(24*one) );
+      myA(2,0) = as<Scalar>( 5*one/(36*one) + ST::squareroot(15*one)/(30*one) );
+      myA(2,1) = as<Scalar>( 2*one/(9*one) + ST::squareroot(15*one)/(15*one) );
+      myA(2,2) = as<Scalar>( 5*one/(36*one) );
+      myb(0) = as<Scalar>( 5*one/(18*one) );
+      myb(1) = as<Scalar>( 4*one/(9*one) );
+      myb(2) = as<Scalar>( 5*one/(18*one) );
+      myc(0) = as<Scalar>( one/(2*one)-ST::squareroot(15*one)/(10*one) );
+      myc(1) = as<Scalar>( one/(2*one) );
+      myc(2) = as<Scalar>( one/(2*one)+ST::squareroot(15*one)/(10*one) );
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(6);
     }
 };
@@ -848,8 +848,8 @@ class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
     Implicit4Stage8thOrderKuntzmannButcher_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit4Stage8thOrderKuntzmannButcher_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit4Stage8thOrderKuntzmannButcher_name() << "\n"
                   << "Kuntzmann & Butcher method\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
@@ -871,10 +871,10 @@ class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
                   << "w4p = w2*(1/21-5*sqrt(30)/168)\n"
                   << "w5p = w2p-2*w3p" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 4;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 4;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
       Scalar onehalf = as<Scalar>( one/(2*one) );
       Scalar w1 = as<Scalar>( one/(8*one) - ST::squareroot(30*one)/(144*one) );
@@ -887,34 +887,34 @@ class Implicit4Stage8thOrderKuntzmannButcher_RKBT :
       Scalar w3p = as<Scalar>( w2p*(one/(6*one)-ST::squareroot(30*one)/(24*one)) );
       Scalar w4p = as<Scalar>( w2p*(one/(21*one)-5*one*ST::squareroot(30*one)/(168*one)) );
       Scalar w5p = as<Scalar>( w2p-2*w3p );
-      A(0,0) = w1;
-      A(0,1) = w1p-w3+w4p;
-      A(0,2) = w1p-w3-w4p;
-      A(0,3) = w1-w5;
-      A(1,0) = w1-w3p+w4;
-      A(1,1) = w1p;
-      A(1,2) = w1p-w5p;
-      A(1,3) = w1-w3p-w4;
-      A(2,0) = w1+w3p+w4;
-      A(2,1) = w1p+w5p;
-      A(2,2) = w1p;
-      A(2,3) = w1+w3p-w4;
-      A(3,0) = w1+w5;
-      A(3,1) = w1p+w3+w4p;
-      A(3,2) = w1p+w3-w4p;
-      A(3,3) = w1;
-      b(0) = 2*w1;
-      b(1) = 2*w1p;
-      b(2) = 2*w1p;
-      b(3) = 2*w1; 
-      c(0) = onehalf - w2;
-      c(1) = onehalf - w2p;
-      c(2) = onehalf + w2p;
-      c(3) = onehalf + w2;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = w1;
+      myA(0,1) = w1p-w3+w4p;
+      myA(0,2) = w1p-w3-w4p;
+      myA(0,3) = w1-w5;
+      myA(1,0) = w1-w3p+w4;
+      myA(1,1) = w1p;
+      myA(1,2) = w1p-w5p;
+      myA(1,3) = w1-w3p-w4;
+      myA(2,0) = w1+w3p+w4;
+      myA(2,1) = w1p+w5p;
+      myA(2,2) = w1p;
+      myA(2,3) = w1+w3p-w4;
+      myA(3,0) = w1+w5;
+      myA(3,1) = w1p+w3+w4p;
+      myA(3,2) = w1p+w3-w4p;
+      myA(3,3) = w1;
+      myb(0) = 2*w1;
+      myb(1) = 2*w1p;
+      myb(2) = 2*w1p;
+      myb(3) = 2*w1; 
+      myc(0) = onehalf - w2;
+      myc(1) = onehalf - w2p;
+      myc(2) = onehalf + w2p;
+      myc(3) = onehalf + w2;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(8);
     }
 };
@@ -928,8 +928,8 @@ class Implicit2Stage4thOrderHammerHollingsworth_RKBT :
     Implicit2Stage4thOrderHammerHollingsworth_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit2Stage4thOrderHammerHollingsworth_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit2Stage4thOrderHammerHollingsworth_name() << "\n"
                   << "Hammer & Hollingsworth method\n"
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
@@ -939,25 +939,25 @@ class Implicit2Stage4thOrderHammerHollingsworth_RKBT :
                   << "    [ 1/4+sqrt(3)/6  1/4           ]\n"
                   << "b = [ 1/2            1/2           ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
       Scalar onequarter = as<Scalar>( one/(4*one) );
       Scalar onehalf = as<Scalar>( one/(2*one) );
-      A(0,0) = onequarter;
-      A(0,1) = as<Scalar>( onequarter-ST::squareroot(3*one)/(6*one) );
-      A(1,0) = as<Scalar>( onequarter+ST::squareroot(3*one)/(6*one) );
-      A(1,1) = onequarter;
-      b(0) = onehalf;
-      b(1) = onehalf;
-      c(0) = as<Scalar>( onehalf - ST::squareroot(3*one)/(6*one) );
-      c(1) = as<Scalar>( onehalf + ST::squareroot(3*one)/(6*one) );
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = onequarter;
+      myA(0,1) = as<Scalar>( onequarter-ST::squareroot(3*one)/(6*one) );
+      myA(1,0) = as<Scalar>( onequarter+ST::squareroot(3*one)/(6*one) );
+      myA(1,1) = onequarter;
+      myb(0) = onehalf;
+      myb(1) = onehalf;
+      myc(0) = as<Scalar>( onehalf - ST::squareroot(3*one)/(6*one) );
+      myc(1) = as<Scalar>( onehalf + ST::squareroot(3*one)/(6*one) );
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };
@@ -971,8 +971,8 @@ class Implicit1Stage2ndOrderGauss_RKBT :
     Implicit1Stage2ndOrderGauss_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit1Stage2ndOrderGauss_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit1Stage2ndOrderGauss_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -985,19 +985,19 @@ class Implicit1Stage2ndOrderGauss_RKBT :
                   << "A = [ 1/2 ]\n"
                   << "b = [  1  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 1;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 1;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar onehalf = ST::one()/(2*ST::one());
       Scalar one = ST::one();
-      A(0,0) = onehalf;
-      b(0) = one;
-      c(0) = onehalf;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = onehalf;
+      myb(0) = one;
+      myc(0) = onehalf;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(2);
     }
 };
@@ -1011,8 +1011,8 @@ class Implicit2Stage4thOrderGauss_RKBT :
     Implicit2Stage4thOrderGauss_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit2Stage4thOrderGauss_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit2Stage4thOrderGauss_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1022,10 +1022,10 @@ class Implicit2Stage4thOrderGauss_RKBT :
                   << "    [ 1/4+sqrt(3)/6  1/4           ]\n"
                   << "b = [ 1/2            1/2 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
       Scalar onehalf = as<Scalar>(one/(2*one));
       Scalar three = as<Scalar>(3*one);
@@ -1033,18 +1033,18 @@ class Implicit2Stage4thOrderGauss_RKBT :
       Scalar onefourth = as<Scalar>(one/(4*one));
       Scalar alpha = ST::squareroot(three)/six;
 
-      A(0,0) = onefourth;
-      A(0,1) = onefourth-alpha;
-      A(1,0) = onefourth+alpha;
-      A(1,1) = onefourth;
-      b(0) = onehalf;
-      b(1) = onehalf;
-      c(0) = onehalf-alpha;
-      c(1) = onehalf+alpha;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = onefourth;
+      myA(0,1) = onefourth-alpha;
+      myA(1,0) = onefourth+alpha;
+      myA(1,1) = onefourth;
+      myb(0) = onehalf;
+      myb(1) = onehalf;
+      myc(0) = onehalf-alpha;
+      myc(1) = onehalf+alpha;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };
@@ -1058,8 +1058,8 @@ class Implicit3Stage6thOrderGauss_RKBT :
     Implicit3Stage6thOrderGauss_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit3Stage6thOrderGauss_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit3Stage6thOrderGauss_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1070,10 +1070,10 @@ class Implicit3Stage6thOrderGauss_RKBT :
                   << "    [ 5/36+sqrt(15)/30  2/9+sqrt(15)/15  5/36             ]\n"
                   << "b = [ 5/18              4/9              5/18             ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
       Scalar ten = as<Scalar>(10*one);
       Scalar fifteen = as<Scalar>(15*one);
@@ -1084,25 +1084,25 @@ class Implicit3Stage6thOrderGauss_RKBT :
       Scalar sqrt15over24 = as<Scalar>(ST::squareroot(fifteen)/twentyfour);
       Scalar sqrt15over30 = as<Scalar>(ST::squareroot(fifteen)/thirty);
 
-      A(0,0) = as<Scalar>(5*one/(36*one));
-      A(0,1) = as<Scalar>(2*one/(9*one))-sqrt15over15;
-      A(0,2) = as<Scalar>(5*one/(36*one))-sqrt15over30;
-      A(1,0) = as<Scalar>(5*one/(36*one))+sqrt15over24;
-      A(1,1) = as<Scalar>(2*one/(9*one));
-      A(1,2) = as<Scalar>(5*one/(36*one))-sqrt15over24;
-      A(2,0) = as<Scalar>(5*one/(36*one))+sqrt15over30;
-      A(2,1) = as<Scalar>(2*one/(9*one))+sqrt15over15;
-      A(2,2) = as<Scalar>(5*one/(36*one));
-      b(0) = as<Scalar>(5*one/(18*one));
-      b(1) = as<Scalar>(4*one/(9*one));
-      b(2) = as<Scalar>(5*one/(18*one));
-      c(0) = as<Scalar>(one/(2*one))-sqrt15over10;
-      c(1) = as<Scalar>(one/(2*one));
-      c(2) = as<Scalar>(one/(2*one))+sqrt15over10;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>(5*one/(36*one));
+      myA(0,1) = as<Scalar>(2*one/(9*one))-sqrt15over15;
+      myA(0,2) = as<Scalar>(5*one/(36*one))-sqrt15over30;
+      myA(1,0) = as<Scalar>(5*one/(36*one))+sqrt15over24;
+      myA(1,1) = as<Scalar>(2*one/(9*one));
+      myA(1,2) = as<Scalar>(5*one/(36*one))-sqrt15over24;
+      myA(2,0) = as<Scalar>(5*one/(36*one))+sqrt15over30;
+      myA(2,1) = as<Scalar>(2*one/(9*one))+sqrt15over15;
+      myA(2,2) = as<Scalar>(5*one/(36*one));
+      myb(0) = as<Scalar>(5*one/(18*one));
+      myb(1) = as<Scalar>(4*one/(9*one));
+      myb(2) = as<Scalar>(5*one/(18*one));
+      myc(0) = as<Scalar>(one/(2*one))-sqrt15over10;
+      myc(1) = as<Scalar>(one/(2*one));
+      myc(2) = as<Scalar>(one/(2*one))+sqrt15over10;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(6);
     }
 };
@@ -1116,8 +1116,8 @@ class Implicit1Stage1stOrderRadauA_RKBT :
     Implicit1Stage1stOrderRadauA_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit1Stage1stOrderRadauA_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit1Stage1stOrderRadauA_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1126,19 +1126,19 @@ class Implicit1Stage1stOrderRadauA_RKBT :
                   << "A = [ 1 ]\n"
                   << "b = [ 1 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 1;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 1;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
       Scalar zero = ST::zero();
-      A(0,0) = one;
-      b(0) = one;
-      c(0) = zero;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = one;
+      myb(0) = one;
+      myc(0) = zero;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(1);
     }
 };
@@ -1152,8 +1152,8 @@ class Implicit2Stage3rdOrderRadauA_RKBT :
     Implicit2Stage3rdOrderRadauA_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit2Stage3rdOrderRadauA_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit2Stage3rdOrderRadauA_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1163,24 +1163,24 @@ class Implicit2Stage3rdOrderRadauA_RKBT :
                   << "    [ 1/4  5/12 ]\n"
                   << "b = [ 1/4  3/4  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>(one/(4*one));
-      A(0,1) = as<Scalar>(-one/(4*one));
-      A(1,0) = as<Scalar>(one/(4*one));
-      A(1,1) = as<Scalar>(5*one/(12*one));
-      b(0) = as<Scalar>(one/(4*one));
-      b(1) = as<Scalar>(3*one/(4*one));
-      c(0) = zero;
-      c(1) = as<Scalar>(2*one/(3*one));
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>(one/(4*one));
+      myA(0,1) = as<Scalar>(-one/(4*one));
+      myA(1,0) = as<Scalar>(one/(4*one));
+      myA(1,1) = as<Scalar>(5*one/(12*one));
+      myb(0) = as<Scalar>(one/(4*one));
+      myb(1) = as<Scalar>(3*one/(4*one));
+      myc(0) = zero;
+      myc(1) = as<Scalar>(2*one/(3*one));
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(3);
     }
 };
@@ -1194,8 +1194,8 @@ class Implicit3Stage5thOrderRadauA_RKBT :
     Implicit3Stage5thOrderRadauA_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit3Stage5thOrderRadauA_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit3Stage5thOrderRadauA_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1206,31 +1206,31 @@ class Implicit3Stage5thOrderRadauA_RKBT :
                   << "    [ 1/9  (88+43*sqrt(6))/360  (88-7*sqrt(6))/360  ]\n"
                   << "b = [ 1/9  (16+sqrt(6))/36      (16-sqrt(6))/36     ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>(one/(9*one));
-      A(0,1) = as<Scalar>( (-one-ST::squareroot(6*one))/(18*one) );
-      A(0,2) = as<Scalar>( (-one+ST::squareroot(6*one))/(18*one) );
-      A(1,0) = as<Scalar>(one/(9*one));
-      A(1,1) = as<Scalar>( (88*one+7*one*ST::squareroot(6*one))/(360*one) );
-      A(1,2) = as<Scalar>( (88*one-43*one*ST::squareroot(6*one))/(360*one) );
-      A(2,0) = as<Scalar>(one/(9*one));
-      A(2,1) = as<Scalar>( (88*one+43*one*ST::squareroot(6*one))/(360*one) );
-      A(2,2) = as<Scalar>( (88*one-7*one*ST::squareroot(6*one))/(360*one) );
-      b(0) = as<Scalar>(one/(9*one));
-      b(1) = as<Scalar>( (16*one+ST::squareroot(6*one))/(36*one) );
-      b(2) = as<Scalar>( (16*one-ST::squareroot(6*one))/(36*one) );
-      c(0) = zero;
-      c(1) = as<Scalar>( (6*one-ST::squareroot(6*one))/(10*one) );
-      c(2) = as<Scalar>( (6*one+ST::squareroot(6*one))/(10*one) );
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>(one/(9*one));
+      myA(0,1) = as<Scalar>( (-one-ST::squareroot(6*one))/(18*one) );
+      myA(0,2) = as<Scalar>( (-one+ST::squareroot(6*one))/(18*one) );
+      myA(1,0) = as<Scalar>(one/(9*one));
+      myA(1,1) = as<Scalar>( (88*one+7*one*ST::squareroot(6*one))/(360*one) );
+      myA(1,2) = as<Scalar>( (88*one-43*one*ST::squareroot(6*one))/(360*one) );
+      myA(2,0) = as<Scalar>(one/(9*one));
+      myA(2,1) = as<Scalar>( (88*one+43*one*ST::squareroot(6*one))/(360*one) );
+      myA(2,2) = as<Scalar>( (88*one-7*one*ST::squareroot(6*one))/(360*one) );
+      myb(0) = as<Scalar>(one/(9*one));
+      myb(1) = as<Scalar>( (16*one+ST::squareroot(6*one))/(36*one) );
+      myb(2) = as<Scalar>( (16*one-ST::squareroot(6*one))/(36*one) );
+      myc(0) = zero;
+      myc(1) = as<Scalar>( (6*one-ST::squareroot(6*one))/(10*one) );
+      myc(2) = as<Scalar>( (6*one+ST::squareroot(6*one))/(10*one) );
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(5);
     }
 };
@@ -1244,8 +1244,8 @@ class Implicit1Stage1stOrderRadauB_RKBT :
     Implicit1Stage1stOrderRadauB_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit1Stage1stOrderRadauB_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit1Stage1stOrderRadauB_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1254,18 +1254,18 @@ class Implicit1Stage1stOrderRadauB_RKBT :
                   << "A = [ 1 ]\n"
                   << "b = [ 1 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 1;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 1;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
-      A(0,0) = one;
-      b(0) = one;
-      c(0) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = one;
+      myb(0) = one;
+      myc(0) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(1);
     }
 };
@@ -1279,8 +1279,8 @@ class Implicit2Stage3rdOrderRadauB_RKBT :
     Implicit2Stage3rdOrderRadauB_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit2Stage3rdOrderRadauB_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit2Stage3rdOrderRadauB_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1290,23 +1290,23 @@ class Implicit2Stage3rdOrderRadauB_RKBT :
                   << "    [ 3/4    1/4  ]\n"
                   << "b = [ 3/4    1/4  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( 5*one/(12*one) );
-      A(0,1) = as<Scalar>( -one/(12*one) );
-      A(1,0) = as<Scalar>( 3*one/(4*one) );
-      A(1,1) = as<Scalar>( one/(4*one) );
-      b(0) = as<Scalar>( 3*one/(4*one) );
-      b(1) = as<Scalar>( one/(4*one) );
-      c(0) = as<Scalar>( one/(3*one) );
-      c(1) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( 5*one/(12*one) );
+      myA(0,1) = as<Scalar>( -one/(12*one) );
+      myA(1,0) = as<Scalar>( 3*one/(4*one) );
+      myA(1,1) = as<Scalar>( one/(4*one) );
+      myb(0) = as<Scalar>( 3*one/(4*one) );
+      myb(1) = as<Scalar>( one/(4*one) );
+      myc(0) = as<Scalar>( one/(3*one) );
+      myc(1) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(3);
     }
 };
@@ -1320,8 +1320,8 @@ class Implicit3Stage5thOrderRadauB_RKBT :
     Implicit3Stage5thOrderRadauB_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit3Stage5thOrderRadauB_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit3Stage5thOrderRadauB_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1332,30 +1332,30 @@ class Implicit3Stage5thOrderRadauB_RKBT :
                   << "    [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9                 ]\n"
                   << "b = [ (16-sqrt(6))/36         (16+sqrt(6))/36         1/9                 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( (88*one-7*one*ST::squareroot(6*one))/(360*one) );
-      A(0,1) = as<Scalar>( (296*one-169*one*ST::squareroot(6*one))/(1800*one) );
-      A(0,2) = as<Scalar>( (-2*one+3*one*ST::squareroot(6*one))/(225*one) );
-      A(1,0) = as<Scalar>( (296*one+169*one*ST::squareroot(6*one))/(1800*one) );
-      A(1,1) = as<Scalar>( (88*one+7*one*ST::squareroot(6*one))/(360*one) );
-      A(1,2) = as<Scalar>( (-2*one-3*one*ST::squareroot(6*one))/(225*one) );
-      A(2,0) = as<Scalar>( (16*one-ST::squareroot(6*one))/(36*one) );
-      A(2,1) = as<Scalar>( (16*one+ST::squareroot(6*one))/(36*one) );
-      A(2,2) = as<Scalar>( one/(9*one) );
-      b(0) = as<Scalar>( (16*one-ST::squareroot(6*one))/(36*one) );
-      b(1) = as<Scalar>( (16*one+ST::squareroot(6*one))/(36*one) );
-      b(2) = as<Scalar>( one/(9*one) );
-      c(0) = as<Scalar>( (4*one-ST::squareroot(6*one))/(10*one) );
-      c(1) = as<Scalar>( (4*one+ST::squareroot(6*one))/(10*one) );
-      c(2) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( (88*one-7*one*ST::squareroot(6*one))/(360*one) );
+      myA(0,1) = as<Scalar>( (296*one-169*one*ST::squareroot(6*one))/(1800*one) );
+      myA(0,2) = as<Scalar>( (-2*one+3*one*ST::squareroot(6*one))/(225*one) );
+      myA(1,0) = as<Scalar>( (296*one+169*one*ST::squareroot(6*one))/(1800*one) );
+      myA(1,1) = as<Scalar>( (88*one+7*one*ST::squareroot(6*one))/(360*one) );
+      myA(1,2) = as<Scalar>( (-2*one-3*one*ST::squareroot(6*one))/(225*one) );
+      myA(2,0) = as<Scalar>( (16*one-ST::squareroot(6*one))/(36*one) );
+      myA(2,1) = as<Scalar>( (16*one+ST::squareroot(6*one))/(36*one) );
+      myA(2,2) = as<Scalar>( one/(9*one) );
+      myb(0) = as<Scalar>( (16*one-ST::squareroot(6*one))/(36*one) );
+      myb(1) = as<Scalar>( (16*one+ST::squareroot(6*one))/(36*one) );
+      myb(2) = as<Scalar>( one/(9*one) );
+      myc(0) = as<Scalar>( (4*one-ST::squareroot(6*one))/(10*one) );
+      myc(1) = as<Scalar>( (4*one+ST::squareroot(6*one))/(10*one) );
+      myc(2) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(5);
     }
 };
@@ -1369,8 +1369,8 @@ class Implicit2Stage2ndOrderLobattoA_RKBT :
     Implicit2Stage2ndOrderLobattoA_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit2Stage2ndOrderLobattoA_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit2Stage2ndOrderLobattoA_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1380,24 +1380,24 @@ class Implicit2Stage2ndOrderLobattoA_RKBT :
                   << "    [ 1/2  1/2  ]\n"
                   << "b = [ 1/2  1/2  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(1,0) = as<Scalar>( one/(2*one) );
-      A(1,1) = as<Scalar>( one/(2*one) );
-      b(0) = as<Scalar>( one/(2*one) );
-      b(1) = as<Scalar>( one/(2*one) );
-      c(0) = zero;
-      c(1) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(1,0) = as<Scalar>( one/(2*one) );
+      myA(1,1) = as<Scalar>( one/(2*one) );
+      myb(0) = as<Scalar>( one/(2*one) );
+      myb(1) = as<Scalar>( one/(2*one) );
+      myc(0) = zero;
+      myc(1) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(2);
     }
 };
@@ -1411,8 +1411,8 @@ class Implicit3Stage4thOrderLobattoA_RKBT :
     Implicit3Stage4thOrderLobattoA_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit3Stage4thOrderLobattoA_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit3Stage4thOrderLobattoA_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1423,31 +1423,31 @@ class Implicit3Stage4thOrderLobattoA_RKBT :
                   << "    [ 1/6   2/3   1/6   ]\n"
                   << "b = [ 1/6   2/3   1/6   ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(0,2) = zero;
-      A(1,0) = as<Scalar>( (5*one)/(24*one) );
-      A(1,1) = as<Scalar>( (one)/(3*one) );
-      A(1,2) = as<Scalar>( (-one)/(24*one) );
-      A(2,0) = as<Scalar>( (one)/(6*one) );
-      A(2,1) = as<Scalar>( (2*one)/(3*one) );
-      A(2,2) = as<Scalar>( (1*one)/(6*one) );
-      b(0) = as<Scalar>( (one)/(6*one) );
-      b(1) = as<Scalar>( (2*one)/(3*one) );
-      b(2) = as<Scalar>( (1*one)/(6*one) );
-      c(0) = zero;
-      c(1) = as<Scalar>( one/(2*one) );
-      c(2) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
+      myA(1,0) = as<Scalar>( (5*one)/(24*one) );
+      myA(1,1) = as<Scalar>( (one)/(3*one) );
+      myA(1,2) = as<Scalar>( (-one)/(24*one) );
+      myA(2,0) = as<Scalar>( (one)/(6*one) );
+      myA(2,1) = as<Scalar>( (2*one)/(3*one) );
+      myA(2,2) = as<Scalar>( (1*one)/(6*one) );
+      myb(0) = as<Scalar>( (one)/(6*one) );
+      myb(1) = as<Scalar>( (2*one)/(3*one) );
+      myb(2) = as<Scalar>( (1*one)/(6*one) );
+      myc(0) = zero;
+      myc(1) = as<Scalar>( one/(2*one) );
+      myc(2) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };
@@ -1464,8 +1464,8 @@ class Implicit4Stage6thOrderLobattoA_RKBT :
       using Teuchos::as;
       typedef Teuchos::ScalarTraits<Scalar> ST;
 
-      std::ostringstream description;
-      description << Implicit4Stage6thOrderLobattoA_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit4Stage6thOrderLobattoA_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1477,40 +1477,40 @@ class Implicit4Stage6thOrderLobattoA_RKBT :
                   << "    [ 1/12            5/12                 5/12                 1/12              ]\n"
                   << "b = [ 1/12            5/12                 5/12                 1/12              ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 4;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 4;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = zero;
-      A(0,1) = zero;
-      A(0,2) = zero;
-      A(0,3) = zero;
-      A(1,0) = as<Scalar>( (11*one+ST::squareroot(5*one))/(120*one) );
-      A(1,1) = as<Scalar>( (25*one-ST::squareroot(5*one))/(120*one) );
-      A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5*one))/(120*one) );
-      A(1,3) = as<Scalar>( (-one+ST::squareroot(5*one))/(120*one) );
-      A(2,0) = as<Scalar>( (11*one-ST::squareroot(5*one))/(120*one) );
-      A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5*one))/(120*one) );
-      A(2,2) = as<Scalar>( (25*one+ST::squareroot(5*one))/(120*one) );
-      A(2,3) = as<Scalar>( (-one-ST::squareroot(5*one))/(120*one) );
-      A(3,0) = as<Scalar>( one/(12*one) );
-      A(3,1) = as<Scalar>( 5*one/(12*one) );
-      A(3,2) = as<Scalar>( 5*one/(12*one) );
-      A(3,3) = as<Scalar>( one/(12*one) );
-      b(0) = as<Scalar>( one/(12*one) );
-      b(1) = as<Scalar>( 5*one/(12*one) );
-      b(2) = as<Scalar>( 5*one/(12*one) );
-      b(3) = as<Scalar>( one/(12*one) );
-      c(0) = zero;
-      c(1) = as<Scalar>( (5*one-ST::squareroot(5))/(10*one) );
-      c(2) = as<Scalar>( (5*one+ST::squareroot(5))/(10*one) );
-      c(3) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = zero;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
+      myA(0,3) = zero;
+      myA(1,0) = as<Scalar>( (11*one+ST::squareroot(5*one))/(120*one) );
+      myA(1,1) = as<Scalar>( (25*one-ST::squareroot(5*one))/(120*one) );
+      myA(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5*one))/(120*one) );
+      myA(1,3) = as<Scalar>( (-one+ST::squareroot(5*one))/(120*one) );
+      myA(2,0) = as<Scalar>( (11*one-ST::squareroot(5*one))/(120*one) );
+      myA(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5*one))/(120*one) );
+      myA(2,2) = as<Scalar>( (25*one+ST::squareroot(5*one))/(120*one) );
+      myA(2,3) = as<Scalar>( (-one-ST::squareroot(5*one))/(120*one) );
+      myA(3,0) = as<Scalar>( one/(12*one) );
+      myA(3,1) = as<Scalar>( 5*one/(12*one) );
+      myA(3,2) = as<Scalar>( 5*one/(12*one) );
+      myA(3,3) = as<Scalar>( one/(12*one) );
+      myb(0) = as<Scalar>( one/(12*one) );
+      myb(1) = as<Scalar>( 5*one/(12*one) );
+      myb(2) = as<Scalar>( 5*one/(12*one) );
+      myb(3) = as<Scalar>( one/(12*one) );
+      myc(0) = zero;
+      myc(1) = as<Scalar>( (5*one-ST::squareroot(5))/(10*one) );
+      myc(2) = as<Scalar>( (5*one+ST::squareroot(5))/(10*one) );
+      myc(3) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(6);
     }
 };
@@ -1524,8 +1524,8 @@ class Implicit2Stage2ndOrderLobattoB_RKBT :
     Implicit2Stage2ndOrderLobattoB_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit2Stage2ndOrderLobattoB_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit2Stage2ndOrderLobattoB_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1535,24 +1535,24 @@ class Implicit2Stage2ndOrderLobattoB_RKBT :
                   << "    [ 1/2   0   ]\n"
                   << "b = [ 1/2  1/2  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( one/(2*one) );
-      A(0,1) = zero;
-      A(1,0) = as<Scalar>( one/(2*one) );
-      A(1,1) = zero;
-      b(0) = as<Scalar>( one/(2*one) );
-      b(1) = as<Scalar>( one/(2*one) );
-      c(0) = zero;
-      c(1) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( one/(2*one) );
+      myA(0,1) = zero;
+      myA(1,0) = as<Scalar>( one/(2*one) );
+      myA(1,1) = zero;
+      myb(0) = as<Scalar>( one/(2*one) );
+      myb(1) = as<Scalar>( one/(2*one) );
+      myc(0) = zero;
+      myc(1) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(2);
     }
 };
@@ -1566,8 +1566,8 @@ class Implicit3Stage4thOrderLobattoB_RKBT :
     Implicit3Stage4thOrderLobattoB_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit3Stage4thOrderLobattoB_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit3Stage4thOrderLobattoB_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1578,31 +1578,31 @@ class Implicit3Stage4thOrderLobattoB_RKBT :
                   << "    [ 1/6   5/6    0   ]\n"
                   << "b = [ 1/6   2/3   1/6  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( one/(6*one) );
-      A(0,1) = as<Scalar>( -one/(6*one) );
-      A(0,2) = zero;
-      A(1,0) = as<Scalar>( one/(6*one) );
-      A(1,1) = as<Scalar>( one/(3*one) );
-      A(1,2) = zero;
-      A(2,0) = as<Scalar>( one/(6*one) );
-      A(2,1) = as<Scalar>( 5*one/(6*one) );
-      A(2,2) = zero;
-      b(0) = as<Scalar>( one/(6*one) );
-      b(1) = as<Scalar>( 2*one/(3*one) );
-      b(2) = as<Scalar>( one/(6*one) );
-      c(0) = zero;
-      c(1) = as<Scalar>( one/(2*one) );
-      c(2) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( one/(6*one) );
+      myA(0,1) = as<Scalar>( -one/(6*one) );
+      myA(0,2) = zero;
+      myA(1,0) = as<Scalar>( one/(6*one) );
+      myA(1,1) = as<Scalar>( one/(3*one) );
+      myA(1,2) = zero;
+      myA(2,0) = as<Scalar>( one/(6*one) );
+      myA(2,1) = as<Scalar>( 5*one/(6*one) );
+      myA(2,2) = zero;
+      myb(0) = as<Scalar>( one/(6*one) );
+      myb(1) = as<Scalar>( 2*one/(3*one) );
+      myb(2) = as<Scalar>( one/(6*one) );
+      myc(0) = zero;
+      myc(1) = as<Scalar>( one/(2*one) );
+      myc(2) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };
@@ -1616,8 +1616,8 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
     Implicit4Stage6thOrderLobattoB_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit4Stage6thOrderLobattoB_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit4Stage6thOrderLobattoB_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1629,40 +1629,40 @@ class Implicit4Stage6thOrderLobattoB_RKBT :
                   << "    [ 1/12  (11-sqrt(5))/24      (11+sqrt(5))/24      0     ]\n"
                   << "b = [ 1/12  5/12                 5/12                 1/12  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 4;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 4;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( one/(12*one) );
-      A(0,1) = as<Scalar>( (-one-ST::squareroot(5))/(24*one) );
-      A(0,2) = as<Scalar>( (-one+ST::squareroot(5))/(24*one) );
-      A(0,3) = zero;
-      A(1,0) = as<Scalar>( one/(12*one) );
-      A(1,1) = as<Scalar>( (25*one+ST::squareroot(5))/(120*one) );
-      A(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5))/(120*one) );
-      A(1,3) = zero;
-      A(2,0) = as<Scalar>( one/(12*one) );
-      A(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5))/(120*one) );
-      A(2,2) = as<Scalar>( (25*one-ST::squareroot(5))/(120*one) );
-      A(2,3) = zero;
-      A(3,0) = as<Scalar>( one/(12*one) );
-      A(3,1) = as<Scalar>( (11*one-ST::squareroot(5*one))/(24*one) );
-      A(3,2) = as<Scalar>( (11*one+ST::squareroot(5*one))/(24*one) );
-      A(3,3) = zero;
-      b(0) = as<Scalar>( one/(12*one) );
-      b(1) = as<Scalar>( 5*one/(12*one) );
-      b(2) = as<Scalar>( 5*one/(12*one) );
-      b(3) = as<Scalar>( one/(12*one) );
-      c(0) = zero;
-      c(1) = as<Scalar>( (5*one-ST::squareroot(5*one))/(10*one) );
-      c(2) = as<Scalar>( (5*one+ST::squareroot(5*one))/(10*one) );
-      c(3) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( one/(12*one) );
+      myA(0,1) = as<Scalar>( (-one-ST::squareroot(5))/(24*one) );
+      myA(0,2) = as<Scalar>( (-one+ST::squareroot(5))/(24*one) );
+      myA(0,3) = zero;
+      myA(1,0) = as<Scalar>( one/(12*one) );
+      myA(1,1) = as<Scalar>( (25*one+ST::squareroot(5))/(120*one) );
+      myA(1,2) = as<Scalar>( (25*one-13*one*ST::squareroot(5))/(120*one) );
+      myA(1,3) = zero;
+      myA(2,0) = as<Scalar>( one/(12*one) );
+      myA(2,1) = as<Scalar>( (25*one+13*one*ST::squareroot(5))/(120*one) );
+      myA(2,2) = as<Scalar>( (25*one-ST::squareroot(5))/(120*one) );
+      myA(2,3) = zero;
+      myA(3,0) = as<Scalar>( one/(12*one) );
+      myA(3,1) = as<Scalar>( (11*one-ST::squareroot(5*one))/(24*one) );
+      myA(3,2) = as<Scalar>( (11*one+ST::squareroot(5*one))/(24*one) );
+      myA(3,3) = zero;
+      myb(0) = as<Scalar>( one/(12*one) );
+      myb(1) = as<Scalar>( 5*one/(12*one) );
+      myb(2) = as<Scalar>( 5*one/(12*one) );
+      myb(3) = as<Scalar>( one/(12*one) );
+      myc(0) = zero;
+      myc(1) = as<Scalar>( (5*one-ST::squareroot(5*one))/(10*one) );
+      myc(2) = as<Scalar>( (5*one+ST::squareroot(5*one))/(10*one) );
+      myc(3) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(6);
     }
 };
@@ -1676,8 +1676,8 @@ class Implicit2Stage2ndOrderLobattoC_RKBT :
     Implicit2Stage2ndOrderLobattoC_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit2Stage2ndOrderLobattoC_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit2Stage2ndOrderLobattoC_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1687,24 +1687,24 @@ class Implicit2Stage2ndOrderLobattoC_RKBT :
                   << "    [ 1/2  1/2  ]\n"
                   << "b = [ 1/2  1/2  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 2;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 2;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( one/(2*one) );
-      A(0,1) = as<Scalar>( -one/(2*one) );
-      A(1,0) = as<Scalar>( one/(2*one) );
-      A(1,1) = as<Scalar>( one/(2*one) );
-      b(0) = as<Scalar>( one/(2*one) );
-      b(1) = as<Scalar>( one/(2*one) );
-      c(0) = zero;
-      c(1) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( one/(2*one) );
+      myA(0,1) = as<Scalar>( -one/(2*one) );
+      myA(1,0) = as<Scalar>( one/(2*one) );
+      myA(1,1) = as<Scalar>( one/(2*one) );
+      myb(0) = as<Scalar>( one/(2*one) );
+      myb(1) = as<Scalar>( one/(2*one) );
+      myc(0) = zero;
+      myc(1) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(2);
     }
 };
@@ -1718,8 +1718,8 @@ class Implicit3Stage4thOrderLobattoC_RKBT :
     Implicit3Stage4thOrderLobattoC_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit3Stage4thOrderLobattoC_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit3Stage4thOrderLobattoC_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1730,31 +1730,31 @@ class Implicit3Stage4thOrderLobattoC_RKBT :
                   << "    [ 1/6   2/3   1/6  ]\n"
                   << "b = [ 1/6   2/3   1/6  ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( one/(6*one) );
-      A(0,1) = as<Scalar>( -one/(3*one) );
-      A(0,2) = as<Scalar>( one/(6*one) );
-      A(1,0) = as<Scalar>( one/(6*one) );
-      A(1,1) = as<Scalar>( 5*one/(12*one) );
-      A(1,2) = as<Scalar>( -one/(12*one) );
-      A(2,0) = as<Scalar>( one/(6*one) );
-      A(2,1) = as<Scalar>( 2*one/(3*one) );
-      A(2,2) = as<Scalar>( one/(6*one) );
-      b(0) = as<Scalar>( one/(6*one) );
-      b(1) = as<Scalar>( 2*one/(3*one) );
-      b(2) = as<Scalar>( one/(6*one) );
-      c(0) = zero;
-      c(1) = as<Scalar>( one/(2*one) );
-      c(2) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( one/(6*one) );
+      myA(0,1) = as<Scalar>( -one/(3*one) );
+      myA(0,2) = as<Scalar>( one/(6*one) );
+      myA(1,0) = as<Scalar>( one/(6*one) );
+      myA(1,1) = as<Scalar>( 5*one/(12*one) );
+      myA(1,2) = as<Scalar>( -one/(12*one) );
+      myA(2,0) = as<Scalar>( one/(6*one) );
+      myA(2,1) = as<Scalar>( 2*one/(3*one) );
+      myA(2,2) = as<Scalar>( one/(6*one) );
+      myb(0) = as<Scalar>( one/(6*one) );
+      myb(1) = as<Scalar>( 2*one/(3*one) );
+      myb(2) = as<Scalar>( one/(6*one) );
+      myc(0) = zero;
+      myc(1) = as<Scalar>( one/(2*one) );
+      myc(2) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };
@@ -1768,8 +1768,8 @@ class Implicit4Stage6thOrderLobattoC_RKBT :
     Implicit4Stage6thOrderLobattoC_RKBT()
     { 
 
-      std::ostringstream description;
-      description << Implicit4Stage6thOrderLobattoC_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << Implicit4Stage6thOrderLobattoC_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -1781,40 +1781,40 @@ class Implicit4Stage6thOrderLobattoC_RKBT :
                   << "    [ 1/12  5/12                 5/12                 1/12       ]\n"
                   << "b = [ 1/12  5/12                 5/12                 1/12       ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 4;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 4;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      A(0,0) = as<Scalar>( one/(12*one) );
-      A(0,1) = as<Scalar>( -ST::squareroot(5*one)/(12*one) );
-      A(0,2) = as<Scalar>( ST::squareroot(5*one)/(12*one) );
-      A(0,3) = as<Scalar>( -one/(12*one) );
-      A(1,0) = as<Scalar>( one/(12*one) );
-      A(1,1) = as<Scalar>( one/(4*one) );
-      A(1,2) = as<Scalar>( (10*one-7*one*ST::squareroot(5*one))/(60*one) );
-      A(1,3) = as<Scalar>( ST::squareroot(5*one)/(60*one) );
-      A(2,0) = as<Scalar>( one/(12*one) );
-      A(2,1) = as<Scalar>( (10*one+7*one*ST::squareroot(5*one))/(60*one) );
-      A(2,2) = as<Scalar>( one/(4*one) );
-      A(2,3) = as<Scalar>( -ST::squareroot(5*one)/(60*one) );
-      A(3,0) = as<Scalar>( one/(12*one) );
-      A(3,1) = as<Scalar>( 5*one/(12*one) );
-      A(3,2) = as<Scalar>( 5*one/(12*one) );
-      A(3,3) = as<Scalar>( one/(12*one) );
-      b(0) = as<Scalar>( one/(12*one) );
-      b(1) = as<Scalar>( 5*one/(12*one) );
-      b(2) = as<Scalar>( 5*one/(12*one) );
-      b(3) = as<Scalar>( one/(12*one) );
-      c(0) = zero;
-      c(1) = as<Scalar>( (5*one-ST::squareroot(5*one))/(10*one) );
-      c(2) = as<Scalar>( (5*one+ST::squareroot(5*one))/(10*one) );
-      c(3) = one;
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      myA(0,0) = as<Scalar>( one/(12*one) );
+      myA(0,1) = as<Scalar>( -ST::squareroot(5*one)/(12*one) );
+      myA(0,2) = as<Scalar>( ST::squareroot(5*one)/(12*one) );
+      myA(0,3) = as<Scalar>( -one/(12*one) );
+      myA(1,0) = as<Scalar>( one/(12*one) );
+      myA(1,1) = as<Scalar>( one/(4*one) );
+      myA(1,2) = as<Scalar>( (10*one-7*one*ST::squareroot(5*one))/(60*one) );
+      myA(1,3) = as<Scalar>( ST::squareroot(5*one)/(60*one) );
+      myA(2,0) = as<Scalar>( one/(12*one) );
+      myA(2,1) = as<Scalar>( (10*one+7*one*ST::squareroot(5*one))/(60*one) );
+      myA(2,2) = as<Scalar>( one/(4*one) );
+      myA(2,3) = as<Scalar>( -ST::squareroot(5*one)/(60*one) );
+      myA(3,0) = as<Scalar>( one/(12*one) );
+      myA(3,1) = as<Scalar>( 5*one/(12*one) );
+      myA(3,2) = as<Scalar>( 5*one/(12*one) );
+      myA(3,3) = as<Scalar>( one/(12*one) );
+      myb(0) = as<Scalar>( one/(12*one) );
+      myb(1) = as<Scalar>( 5*one/(12*one) );
+      myb(2) = as<Scalar>( 5*one/(12*one) );
+      myb(3) = as<Scalar>( one/(12*one) );
+      myc(0) = zero;
+      myc(1) = as<Scalar>( (5*one-ST::squareroot(5*one))/(10*one) );
+      myc(2) = as<Scalar>( (5*one+ST::squareroot(5*one))/(10*one) );
+      myc(3) = one;
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(6);
     }
 };
@@ -1829,8 +1829,8 @@ class SDIRK5Stage5thOrder_RKBT :
     SDIRK5Stage5thOrder_RKBT()
     { 
 
-      std::ostringstream description;
-      description << SDIRK5Stage5thOrder_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << SDIRK5Stage5thOrder_name() << "\n"
         << "A-stable\n"
         << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
         << "E. Hairer and G. Wanner\n"
@@ -1843,60 +1843,60 @@ class SDIRK5Stage5thOrder_RKBT :
         << "    [ (-32583+14638*sqrt(6))/71250  (-17199+364*sqrt(6))/142500  (1329-544*sqrt(6))/2500  (-96+131*sqrt(6))/625  (6-sqrt(6))/10  ]\n"
         << "b = [ 0                             0                            1/9                      (16-sqrt(6))/36        (16+sqrt(6))/36 ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 5;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 5;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
       Scalar sqrt6 = ST::squareroot(as<Scalar>(6*one));
       Scalar gamma = as<Scalar>( (6*one - sqrt6) / (10*one) ); // diagonal
-      A(0,0) = gamma;
-      A(0,1) = zero;
-      A(0,2) = zero;
-      A(0,3) = zero;
-      A(0,4) = zero;
+      myA(0,0) = gamma;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
+      myA(0,3) = zero;
+      myA(0,4) = zero;
 
-      A(1,0) = as<Scalar>( (-6*one+5*one*sqrt6)/(14*one) );
-      A(1,1) = gamma;
-      A(1,2) = zero;
-      A(1,3) = zero;
-      A(1,4) = zero;
+      myA(1,0) = as<Scalar>( (-6*one+5*one*sqrt6)/(14*one) );
+      myA(1,1) = gamma;
+      myA(1,2) = zero;
+      myA(1,3) = zero;
+      myA(1,4) = zero;
 
-      A(2,0) = as<Scalar>( (888*one+607*one*sqrt6)/(2850*one) );
-      A(2,1) = as<Scalar>( (126*one-161*one*sqrt6)/(1425*one) );
-      A(2,2) = gamma;
-      A(2,3) = zero;
-      A(2,4) = zero;
+      myA(2,0) = as<Scalar>( (888*one+607*one*sqrt6)/(2850*one) );
+      myA(2,1) = as<Scalar>( (126*one-161*one*sqrt6)/(1425*one) );
+      myA(2,2) = gamma;
+      myA(2,3) = zero;
+      myA(2,4) = zero;
 
-      A(3,0) = as<Scalar>( (3153*one-3082*one*sqrt6)/(14250*one) );
-      A(3,1) = as<Scalar>( (3213*one+1148*one*sqrt6)/(28500*one) );
-      A(3,2) = as<Scalar>( (-267*one+88*one*sqrt6)/(500*one) );
-      A(3,3) = gamma;
-      A(3,4) = zero;
+      myA(3,0) = as<Scalar>( (3153*one-3082*one*sqrt6)/(14250*one) );
+      myA(3,1) = as<Scalar>( (3213*one+1148*one*sqrt6)/(28500*one) );
+      myA(3,2) = as<Scalar>( (-267*one+88*one*sqrt6)/(500*one) );
+      myA(3,3) = gamma;
+      myA(3,4) = zero;
 
-      A(4,0) = as<Scalar>( (-32583*one+14638*one*sqrt6)/(71250*one) );
-      A(4,1) = as<Scalar>( (-17199*one+364*one*sqrt6)/(142500*one) );
-      A(4,2) = as<Scalar>( (1329*one-544*one*sqrt6)/(2500*one) );
-      A(4,3) = as<Scalar>( (-96*one+131*sqrt6)/(625*one) );
-      A(4,4) = gamma;
+      myA(4,0) = as<Scalar>( (-32583*one+14638*one*sqrt6)/(71250*one) );
+      myA(4,1) = as<Scalar>( (-17199*one+364*one*sqrt6)/(142500*one) );
+      myA(4,2) = as<Scalar>( (1329*one-544*one*sqrt6)/(2500*one) );
+      myA(4,3) = as<Scalar>( (-96*one+131*sqrt6)/(625*one) );
+      myA(4,4) = gamma;
 
-      b(0) = zero;
-      b(1) = zero;
-      b(2) = as<Scalar>( one/(9*one) );
-      b(3) = as<Scalar>( (16*one-sqrt6)/(36*one) );
-      b(4) = as<Scalar>( (16*one+sqrt6)/(36*one) );
+      myb(0) = zero;
+      myb(1) = zero;
+      myb(2) = as<Scalar>( one/(9*one) );
+      myb(3) = as<Scalar>( (16*one-sqrt6)/(36*one) );
+      myb(4) = as<Scalar>( (16*one+sqrt6)/(36*one) );
 
-      c(0) = gamma;
-      c(1) = as<Scalar>( (6*one+9*one*sqrt6)/(35*one) );
-      c(2) = one;
-      c(3) = as<Scalar>( (4*one-sqrt6)/(10*one) );
-      c(4) = as<Scalar>( (4*one+sqrt6)/(10*one) );
+      myc(0) = gamma;
+      myc(1) = as<Scalar>( (6*one+9*one*sqrt6)/(35*one) );
+      myc(2) = one;
+      myc(3) = as<Scalar>( (4*one-sqrt6)/(10*one) );
+      myc(4) = as<Scalar>( (4*one+sqrt6)/(10*one) );
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(5);
     }
 };
@@ -1910,8 +1910,8 @@ class SDIRK5Stage4thOrder_RKBT :
     SDIRK5Stage4thOrder_RKBT()
     { 
 
-      std::ostringstream description;
-      description << SDIRK5Stage4thOrder_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << SDIRK5Stage4thOrder_name() << "\n"
         << "L-stable\n"
         << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
         << "E. Hairer and G. Wanner\n"
@@ -1925,67 +1925,67 @@ class SDIRK5Stage4thOrder_RKBT :
         << "b  = [ 25/24     -49/48     125/16  -85/12  1/4 ]'\n"
         << "b' = [ 59/48     -17/96     225/32  -85/12  0   ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 5;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 5;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
       Scalar onequarter = as<Scalar>( one/(4*one) );
-      A(0,0) = onequarter;
-      A(0,1) = zero;
-      A(0,2) = zero;
-      A(0,3) = zero;
-      A(0,4) = zero;
+      myA(0,0) = onequarter;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
+      myA(0,3) = zero;
+      myA(0,4) = zero;
 
-      A(1,0) = as<Scalar>( one / (2*one) );
-      A(1,1) = onequarter;
-      A(1,2) = zero;
-      A(1,3) = zero;
-      A(1,4) = zero;
+      myA(1,0) = as<Scalar>( one / (2*one) );
+      myA(1,1) = onequarter;
+      myA(1,2) = zero;
+      myA(1,3) = zero;
+      myA(1,4) = zero;
 
-      A(2,0) = as<Scalar>( 17*one/(50*one) );
-      A(2,1) = as<Scalar>( -one/(25*one) );
-      A(2,2) = onequarter;
-      A(2,3) = zero;
-      A(2,4) = zero;
+      myA(2,0) = as<Scalar>( 17*one/(50*one) );
+      myA(2,1) = as<Scalar>( -one/(25*one) );
+      myA(2,2) = onequarter;
+      myA(2,3) = zero;
+      myA(2,4) = zero;
 
-      A(3,0) = as<Scalar>( 371*one/(1360*one) );
-      A(3,1) = as<Scalar>( -137*one/(2720*one) );
-      A(3,2) = as<Scalar>( 15*one/(544*one) );
-      A(3,3) = onequarter;
-      A(3,4) = zero;
+      myA(3,0) = as<Scalar>( 371*one/(1360*one) );
+      myA(3,1) = as<Scalar>( -137*one/(2720*one) );
+      myA(3,2) = as<Scalar>( 15*one/(544*one) );
+      myA(3,3) = onequarter;
+      myA(3,4) = zero;
 
-      A(4,0) = as<Scalar>( 25*one/(24*one) );
-      A(4,1) = as<Scalar>( -49*one/(48*one) );
-      A(4,2) = as<Scalar>( 125*one/(16*one) );
-      A(4,3) = as<Scalar>( -85*one/(12*one) );
-      A(4,4) = onequarter;
+      myA(4,0) = as<Scalar>( 25*one/(24*one) );
+      myA(4,1) = as<Scalar>( -49*one/(48*one) );
+      myA(4,2) = as<Scalar>( 125*one/(16*one) );
+      myA(4,3) = as<Scalar>( -85*one/(12*one) );
+      myA(4,4) = onequarter;
 
-      b(0) = as<Scalar>( 25*one/(24*one) );
-      b(1) = as<Scalar>( -49*one/(48*one) );
-      b(2) = as<Scalar>( 125*one/(16*one) );
-      b(3) = as<Scalar>( -85*one/(12*one) );
-      b(4) = onequarter;
+      myb(0) = as<Scalar>( 25*one/(24*one) );
+      myb(1) = as<Scalar>( -49*one/(48*one) );
+      myb(2) = as<Scalar>( 125*one/(16*one) );
+      myb(3) = as<Scalar>( -85*one/(12*one) );
+      myb(4) = onequarter;
 
       /*
       // Alternate version 
-      b(0) = as<Scalar>( 59*one/(48*one) );
-      b(1) = as<Scalar>( -17*one/(96*one) );
-      b(2) = as<Scalar>( 225*one/(32*one) );
-      b(3) = as<Scalar>( -85*one/(12*one) );
-      b(4) = zero;
+      myb(0) = as<Scalar>( 59*one/(48*one) );
+      myb(1) = as<Scalar>( -17*one/(96*one) );
+      myb(2) = as<Scalar>( 225*one/(32*one) );
+      myb(3) = as<Scalar>( -85*one/(12*one) );
+      myb(4) = zero;
       */
-      c(0) = onequarter;
-      c(1) = as<Scalar>( 3*one/(4*one) );
-      c(2) = as<Scalar>( 11*one/(20*one) );
-      c(3) = as<Scalar>( one/(2*one) );
-      c(4) = one;
+      myc(0) = onequarter;
+      myc(1) = as<Scalar>( 3*one/(4*one) );
+      myc(2) = as<Scalar>( 11*one/(20*one) );
+      myc(3) = as<Scalar>( one/(2*one) );
+      myc(4) = one;
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };
@@ -1999,8 +1999,8 @@ class SDIRK3Stage4thOrder_RKBT :
     SDIRK3Stage4thOrder_RKBT()
     { 
 
-      std::ostringstream description;
-      description << SDIRK3Stage4thOrder_name() << "\n"
+      std::ostringstream myDescription;
+      myDescription << SDIRK3Stage4thOrder_name() << "\n"
                   << "A-stable\n"
                   << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
                   << "E. Hairer and G. Wanner\n"
@@ -2013,39 +2013,39 @@ class SDIRK3Stage4thOrder_RKBT :
                   << "    [ 2*gamma    1-4*gamma  gamma   ]\n"
                   << "b = [ delta      1-2*delta  delta   ]'" << std::endl;
       typedef ScalarTraits<Scalar> ST;
-      int numStages = 3;
-      Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
-      Teuchos::SerialDenseVector<int,Scalar> b(numStages);
-      Teuchos::SerialDenseVector<int,Scalar> c(numStages);
+      int myNumStages = 3;
+      Teuchos::SerialDenseMatrix<int,Scalar> myA(myNumStages,myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myb(myNumStages);
+      Teuchos::SerialDenseVector<int,Scalar> myc(myNumStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
       Scalar pi = as<Scalar>(4*one)*std::atan(one);
       Scalar gamma = as<Scalar>( one/ST::squareroot(3*one)*std::cos(pi/(18*one))+one/(2*one) );
       Scalar delta = as<Scalar>( one/(6*one*std::pow(2*gamma-one,2*one)) );
-      A(0,0) = gamma;
-      A(0,1) = zero;
-      A(0,2) = zero;
+      myA(0,0) = gamma;
+      myA(0,1) = zero;
+      myA(0,2) = zero;
 
-      A(1,0) = as<Scalar>( one/(2*one) - gamma );
-      A(1,1) = gamma;
-      A(1,2) = zero;
+      myA(1,0) = as<Scalar>( one/(2*one) - gamma );
+      myA(1,1) = gamma;
+      myA(1,2) = zero;
 
-      A(2,0) = as<Scalar>( 2*gamma );
-      A(2,1) = as<Scalar>( one - 4*gamma );
-      A(2,2) = gamma;
+      myA(2,0) = as<Scalar>( 2*gamma );
+      myA(2,1) = as<Scalar>( one - 4*gamma );
+      myA(2,2) = gamma;
 
-      b(0) = delta;
-      b(1) = as<Scalar>( one-2*delta );
-      b(2) = delta;
+      myb(0) = delta;
+      myb(1) = as<Scalar>( one-2*delta );
+      myb(2) = delta;
 
-      c(0) = gamma;
-      c(1) = as<Scalar>( one/(2*one) );
-      c(2) = as<Scalar>( one - gamma );
+      myc(0) = gamma;
+      myc(1) = as<Scalar>( one/(2*one) );
+      myc(2) = as<Scalar>( one - gamma );
 
-      this->setMyDescription(description.str());
-      this->setMy_A(A);
-      this->setMy_b(b);
-      this->setMy_c(c);
+      this->setMyDescription(myDescription.str());
+      this->setMy_A(myA);
+      this->setMy_b(myb);
+      this->setMy_c(myc);
       this->setMy_order(4);
     }
 };

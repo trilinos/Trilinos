@@ -66,6 +66,7 @@ APPEND_SET(HEADERS
   Teuchos_ConstNonconstObjectContainer.hpp
   Teuchos_ConstTypeTraits.hpp
   Teuchos_DataAccess.hpp
+  Teuchos_DebugDefaultAsserts.hpp
   Teuchos_DefaultComm.hpp
   Teuchos_DefaultSerialComm.hpp
   Teuchos_Dependency.hpp

@@ -136,9 +136,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   { // No ghosting
     const bool aura_flag = false ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
-
-    mesh.generate_loop( aura_flag );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    mesh.m_meta_data.commit();
+    mesh.generate_mesh( aura_flag );
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node
@@ -187,9 +187,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
-
-    mesh.generate_loop( aura_flag );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    mesh.m_meta_data.commit();
+    mesh.generate_mesh( aura_flag );
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
@@ -222,14 +222,17 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     assert_is_destroyed( mesh.m_bulk_data.get_entity(0, mesh.m_node_ids[nNotOwned] ) );
     assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[0] ) );
     assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[1] ) );
+
+    // assert that no entities are shared or ghosted
+    STKUNIT_ASSERT( mesh.m_bulk_data.entity_comm().empty() );
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
-
-    mesh.generate_loop( aura_flag );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    mesh.m_meta_data.commit();
+    mesh.generate_mesh( aura_flag );
 
     // The owned shared entity:
     const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % mesh.m_node_ids.size();
@@ -271,6 +274,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     assert_is_destroyed( mesh.m_bulk_data.get_entity(0, mesh.m_node_ids[ nOwned ] ) );
     assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[0] ) );
     assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[1] ) );
+
+    // assert that no entities are shared or ghosted
+    STKUNIT_ASSERT( mesh.m_bulk_data.entity_comm().empty() );
   }
 }
 

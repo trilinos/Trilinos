@@ -118,8 +118,18 @@ void verify_declare_element_side(
     ? elem_top->side[ local_side_id ].topology : NULL ;
 
   bool different_bulk_data =  &mesh != & (elem.bucket().mesh());
-  bool no_elem_top = NULL == side_top;
-  bool bad_side_id = elem_top && local_side_id >= elem_top->side_count;
+
+  bool no_elem_top = NULL;
+  if(side_top == NULL){
+    no_elem_top = 1;
+  }else {
+    no_elem_top = 0;
+  }
+
+  bool bad_side_id = NULL;
+  if( elem_top && local_side_id >= elem_top->side_count){
+      bad_side_id = 1;
+  }
 
 
   if ( different_bulk_data || no_elem_top || bad_side_id ) {
@@ -131,11 +141,14 @@ void verify_declare_element_side(
          << " ) FAILED" ;
      if ( different_bulk_data ) {
        msg << " Bulkdata for 'elem' and 'side' are different" ;
-     } else if ( no_elem_top) {
+     } else if (no_elem_top && !bad_side_id ){
        msg << " No element topology found" ;
-     }
-     else { // bad_side_id
-       msg << " Cell side id exceeds " ;
+
+     } else if ( no_elem_top && bad_side_id ){
+       msg << " No element topology found and " ;
+       msg << " cell side id ";
+       msg << local_side_id ;
+       msg << " exceeds " ;
        msg << elem_top->name ;
        msg << ".side_count = " ;
        msg << elem_top->side_count ;
@@ -154,13 +167,31 @@ Entity & declare_element_side(
   const unsigned local_side_id ,
   Part * part )
 {
+  static const char method[] = "stk::mesh::declare_element_side" ;
 
   BulkData & mesh = side.bucket().mesh();
 
   verify_declare_element_side(mesh, elem, local_side_id);
 
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+
+  if (elem_top == NULL) {
+    std::ostringstream msg ;
+    msg << method ;
+    msg << "( Element[" << elem.identifier() << "] has no defined topology" ;
+    throw std::runtime_error( msg.str() );
+  }
+
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
+
+  if (side_top == NULL) {
+    std::ostringstream msg ;
+    msg << method ;
+    msg << "( Element[" << elem.identifier() << "]" ;
+    msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
+    msg << " Side has no defined topology" ;
+    throw std::runtime_error( msg.str() );
+  }
 
   const unsigned * const side_node_map = elem_top->side[ local_side_id ].node ;
 
@@ -196,10 +227,30 @@ Entity & declare_element_side(
   const unsigned local_side_id ,
   Part * part )
 {
+  static const char method[] = "stk::mesh::declare_element_side" ;
   verify_declare_element_side(mesh, elem, local_side_id);
 
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+
+  if (elem_top == NULL) {
+    std::ostringstream msg ;
+    msg << method ;
+    msg << "( Element[" << elem.identifier() << "] has no defined topology" ;
+    throw std::runtime_error( msg.str() );
+  }
+
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
+
+  if (side_top == NULL) {
+    std::ostringstream msg ;
+    msg << method ;
+    msg << "( Element[" << elem.identifier() << "]" ;
+    msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
+    msg << " Side has no defined topology" ;
+    throw std::runtime_error( msg.str() );
+  }
+
+
   PartVector empty_parts ;
 
   Entity & side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
@@ -260,47 +311,68 @@ bool element_side_polarity( const Entity & elem ,
 
 
 int element_local_side_id( const Entity & elem ,
-                           const Entity & side )
+                           const CellTopologyData * side_topology,
+                           const std::vector<Entity*>& side_nodes )
 {
-  return -1;
-}
-
-int element_local_side_id( const Entity & elem ,
-                           const std::vector<Entity*>& entity_nodes )
-{
-  // sort the input nodes
-  std::vector<Entity*> sorted_entity_nodes(entity_nodes);
-  std::sort(sorted_entity_nodes.begin(), sorted_entity_nodes.end(), EntityLess());
 
   // get topology of elem
-  const CellTopologyData* celltopology = get_cell_topology(elem);
-  if (celltopology == NULL) {
+  const CellTopologyData* elem_topology = get_cell_topology(elem);
+  if (elem_topology == NULL) {
     return -1;
   }
 
-  // get nodal relations
+  // get nodal relations for elem
   PairIterRelation relations = elem.relations(Node);
 
-  const unsigned subcell_rank = celltopology->dimension - 1;
+  const unsigned subcell_rank = elem_topology->dimension - 1;
 
-  // Iterate over the subcells of elem
-  for (unsigned itr = 0; itr < celltopology->subcell_count[subcell_rank]; ++itr) {
-    // get the nodes for this subcell
-    const unsigned* nodes = celltopology->subcell[subcell_rank][itr].node;
-    unsigned num_nodes = celltopology->subcell[subcell_rank][itr].topology->node_count;
+  const int num_permutations = side_topology->permutation_count;
 
-    // Get the nodes in the subcell ???
-    std::vector<Entity*> node_entities;
-    for (unsigned nitr = 0; nitr < num_nodes; ++nitr) {
-      node_entities.push_back(relations[nodes[nitr]].entity());
-    }
+  // Iterate over the subcells of elem...
+  for (unsigned itr = 0;
+       itr < elem_topology->subcell_count[subcell_rank];
+       ++itr) {
 
-    // check to see if this subcell exactly contains the nodes that were passed in
-    std::sort(node_entities.begin(), node_entities.end(), EntityLess());
-    if (node_entities == sorted_entity_nodes) {
-      return itr;
+    // get topological data for this side
+    const CellTopologyData* curr_side_topology =
+      elem_topology->subcell[subcell_rank][itr].topology;
+    unsigned num_nodes =
+      elem_topology->subcell[subcell_rank][itr].topology->node_count;
+    const unsigned* const side_node_map = elem_topology->side[itr].node;
+
+    // If topologies are not the same, there is no way the sides are the same
+    if (side_topology == curr_side_topology) {
+
+      // Taking all positive permutations into account, check if this side
+      // has the same nodes as the side_nodes argument. Note that this
+      // implementation preserves the node-order so that we can take
+      // entity-orientation into account.
+      for (int p = 0; p < num_permutations; ++p) {
+
+        if (curr_side_topology->permutation[p].polarity ==
+            CELL_PERMUTATION_POLARITY_POSITIVE) {
+
+          const unsigned * const perm_node =
+            curr_side_topology->permutation[p].node ;
+
+          bool all_match = true;
+          for (unsigned j = 0 ; j < num_nodes; ++j ) {
+            if (side_nodes[j] !=
+                relations[side_node_map[perm_node[j]]].entity()) {
+              all_match = false;
+              break;
+            }
+          }
+
+          // all nodes were the same, we have a match
+          if ( all_match ) {
+            return itr ;
+          }
+        }
+      }
     }
   }
+
   return -1;
 }
 

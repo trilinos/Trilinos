@@ -1,8 +1,17 @@
 #
-# Define the list of TPLs and their classification
+# Define the list of TPLs, their find module names, and their classification
+#
+# TPL_NAME:
+#
+#   The name of the TPL used in the CMake cache variables TPL_ENABLE_${TPL_NAME}
+#
+# TPL_FINDMOD:
+#
+#   The name of the find module under Trilinos/cmake/TPLs that is used to get the
+#   names of the TPLs.  If left empty '', it will just be set to FindTPL${TPL_NAME}.
 #
 #
-# TPL classifications are:
+# TPL_CLASSIFICATION:
 #
 #   PS: Primary Stable TPL
 #
@@ -24,8 +33,8 @@
 #
 #     Tertiary Stable TPLs are those TPLs that are supported TPLs but can not
 #     be included in the set of SS TPLs because they may conflicit with other
-#     SS Code.  For example, METIS is listed as a TS package because it
-#     conflicts with ParMETIS which is declared as a SS TPL.
+#     SS Code.  For example, METIS is listed as a TS TPL because it conflicts
+#     with ParMETIS which is declared as a SS TPL.
 #
 #   EX: Experimental TPL
 #
@@ -39,57 +48,57 @@
 # The idea is that the enabling of the TPL will be done by the package and
 # other enables that the user has to set.
 #
-#
 # NOTE: The TPLs must be listed in the order of increasing dependencies (if
 # such dependencies exist).
 #
 
-SET(Trilinos_TPLS_AND_CLASSIFICATIONS
-  Peano          EX
-  CUDA           EX
-  Thrust         EX
-  TBB            EX
-  Pthread        SS
-  ARPREC         SS
-  QD             SS
-  MPI            PS
-  BLAS           PS
-  LAPACK         PS
-  Boost          SS
-  Scotch         SS
-  METIS          TS
-  ParMETIS       SS
-  PaToH          SS
-  CppUnit        SS
-  ADOLC          SS
-  ADIC           EX
-  TVMET          SS
-  MF             SS
-  ExodusII       SS
-  Nemesis        SS
-  Netcdf         SS
-  y12m           SS
-  SuperLUDist    SS
-  SuperLU        SS
-  Zlib		 SS
-  UMFPACK        SS
-  MA28           TS
-  AMD            TS
-  PETSC          SS
-  HYPRE          EX
-  BLACS          SS
-  SCALAPACK      SS
-  MUMPS          SS
-  Oski           SS
-  TAUCS          SS
-  ForUQTK	 EX
-  Dakota	 EX
-  HIPS           EX
-  HDF5           EX
-  MATLAB         EX
-  CASK           EX
-  SPARSKIT       SS
-  QT             SS
+SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
+  Peano           ""    EX
+  CUDA            ""    EX
+  Thrust          ""    EX
+  TBB             ""    EX
+  Pthread         ""    SS
+  ARPREC          ""    SS
+  QD              ""    SS
+  MPI             ""    PS
+  BLAS            ""    PS
+  LAPACK          ""    PS
+  Boost           ""    SS
+  Scotch          ""    SS
+  METIS           ""    TS
+  ParMETIS        ""    SS
+  PaToH           ""    SS
+  CppUnit         ""    SS
+  ADOLC           ""    SS
+  ADIC            ""    EX
+  TVMET           ""    SS
+  MF              ""    SS
+  ExodusII        ""    SS
+  Nemesis         ""    SS
+  XDMF            ""    TS
+  Netcdf          ""    SS
+  y12m            ""    SS
+  SuperLUDist     ""    SS
+  SuperLU         ""    SS
+  Zlib            ""    SS
+  UMFPACK         ""    SS
+  MA28            ""    TS
+  AMD             ""    TS
+  PETSC           ""    SS
+  HYPRE           ""    EX
+  BLACS           ""    SS
+  SCALAPACK       ""    SS
+  MUMPS           ""    SS
+  Oski            ""    SS
+  TAUCS           ""    SS
+  ForUQTK         ""    EX
+  Dakota          ""    EX
+  HIPS            ""    EX
+  HDF5            ""    EX
+  MATLAB          ""    EX
+  CASK            ""    EX
+  SPARSKIT        ""    SS
+  QT              ""    SS
   )
 
 # NOTES:

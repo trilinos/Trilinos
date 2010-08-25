@@ -67,8 +67,6 @@ void TimeMonitor::summarize(
   )
 {
 
-  // 2007/08/17: rabartl: ToDo: Update this function to not print zero timers!
-  
   Array<std::string> localNames(counters().length());
   Array<double> localTimings(counters().length());
   Array<double> localCallCounts(counters().length());
@@ -88,8 +86,23 @@ void TimeMonitor::summarize(
     tuple(localTimings, localCallCounts),
     names, data);
   
-  const Array<double>& timings = data[0];
-  const Array<double>& calls = data[1];
+  Array<double>& timings = data[0];
+  Array<double>& calls = data[1];
+
+  // Remove zero rows
+  if (!writeZeroTimers) {
+    Teuchos::Array<std::string>::iterator nms=names.end();
+    Teuchos::Array<double>::iterator tms=timings.end();
+    Teuchos::Array<double>::iterator cls=calls.end();
+    for (int i=names.length()-1; i>=0; i--)  {
+      cls--; nms--; tms--;
+      if (calls[i]<0.1) {
+        calls.erase(cls);
+        names.erase(nms);
+        timings.erase(tms);
+      }
+    }
+  }
   
   // Form the table data
   MPIComm comm = MPIComm::world();
@@ -109,82 +122,82 @@ void TimeMonitor::summarize(
   columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
       nameCol));
 
-  if (np==1 || alwaysWriteLocal)
-  {
-    TableColumn timeAndCalls(timings, calls, precision, true);
-    titles.append("Local time (num calls)");
-    columnsToWrite.append(timeAndCalls);
-    columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
-        timeAndCalls));
-  }
-  
-  if (np > 1 && writeGlobalStats)
-  {
+	  if (np==1 || alwaysWriteLocal)
+	  {
+	    TableColumn timeAndCalls(timings, calls, precision, true);
+	    titles.append("Local time (num calls)");
+	    columnsToWrite.append(timeAndCalls);
+	    columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+		timeAndCalls));
+	  }
+	  
+	  if (np > 1 && writeGlobalStats)
+	  {
 
-    titles.append("Min over procs");
-      
-    Array<double> minTimings;
-    PerformanceMonitorUtils::reduce(comm, EMin, timings, minTimings);
-      
-    Array<double> minCalls;
-    PerformanceMonitorUtils::reduce(comm, EMin, calls, minCalls);
+	    titles.append("Min over procs");
+	      
+	    Array<double> minTimings;
+	    PerformanceMonitorUtils::reduce(comm, EMin, timings, minTimings);
+	      
+	    Array<double> minCalls;
+	    PerformanceMonitorUtils::reduce(comm, EMin, calls, minCalls);
 
-    TableColumn timeAndCalls(minTimings, minCalls, precision, true);
-    columnsToWrite.append(timeAndCalls);
-      
-    columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
-        timeAndCalls));
+	    TableColumn timeAndCalls(minTimings, minCalls, precision, true);
+	    columnsToWrite.append(timeAndCalls);
+	      
+	    columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+		timeAndCalls));
 
-  }
-  
-  if (np > 1 && writeGlobalStats)
-  {
+	  }
+	  
+	  if (np > 1 && writeGlobalStats)
+	  {
 
-    titles.append("Avg over procs");
-      
-    Array<double> avgTimings;
-    PerformanceMonitorUtils::reduce(comm, EAvg, timings, avgTimings);
-      
-    Array<double> avgCalls;
-    PerformanceMonitorUtils::reduce(comm, EAvg, calls, avgCalls);
+	    titles.append("Avg over procs");
+	      
+	    Array<double> avgTimings;
+	    PerformanceMonitorUtils::reduce(comm, EAvg, timings, avgTimings);
+	      
+	    Array<double> avgCalls;
+	    PerformanceMonitorUtils::reduce(comm, EAvg, calls, avgCalls);
 
-    TableColumn timeAndCalls(avgTimings, avgCalls, precision, true);
-    columnsToWrite.append(timeAndCalls);
-      
-    columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
-        timeAndCalls));
+	    TableColumn timeAndCalls(avgTimings, avgCalls, precision, true);
+	    columnsToWrite.append(timeAndCalls);
+	      
+	    columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+		timeAndCalls));
 
-  }
-  
-  if (np > 1 && writeGlobalStats)
-  {
+	  }
+	  
+	  if (np > 1 && writeGlobalStats)
+	  {
 
-    titles.append("Max over procs");
-      
-    Array<double> maxTimings;
-    PerformanceMonitorUtils::reduce(comm, EMax, timings, maxTimings);
-      
-    Array<double> maxCalls;
-    PerformanceMonitorUtils::reduce(comm, EMax, calls, maxCalls);
+	    titles.append("Max over procs");
+	      
+	    Array<double> maxTimings;
+	    PerformanceMonitorUtils::reduce(comm, EMax, timings, maxTimings);
+	      
+	    Array<double> maxCalls;
+	    PerformanceMonitorUtils::reduce(comm, EMax, calls, maxCalls);
 
-    TableColumn timeAndCalls(maxTimings, maxCalls, precision, true);
-    columnsToWrite.append(timeAndCalls);
-      
-    columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
-        timeAndCalls));
+	    TableColumn timeAndCalls(maxTimings, maxCalls, precision, true);
+	    columnsToWrite.append(timeAndCalls);
+	      
+	    columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+		timeAndCalls));
 
-  }
+	  }
 
-  format().setColumnWidths(columnWidths);
+	  format().setColumnWidths(columnWidths);
 
-  const bool writeOnThisProcessor = ( comm.getRank()==0 || alwaysWriteLocal );
-  if (writeOnThisProcessor)
-  {
-    format().writeWholeTable(out, "TimeMonitor Results",
-      titles, columnsToWrite);
-  }
+	  const bool writeOnThisProcessor = ( comm.getRank()==0 || alwaysWriteLocal );
+	  if (writeOnThisProcessor)
+	  {
+	    format().writeWholeTable(out, "TimeMonitor Results",
+	      titles, columnsToWrite);
+	  }
 
-}
+	}
 
 
-} // namespace Tuechos
+	} // namespace Tuechos

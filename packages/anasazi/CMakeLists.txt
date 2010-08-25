@@ -15,7 +15,39 @@ PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
 # B) Set up package-specific options
 #
 
-# ...
+# Anasazi includes tests that may require complex arithmetic in order
+# to build.  These include especially (but not exclusively) the
+# Tpetra-specific tests, since Tpetra objects are templated on the
+# Scalar data type.  We don't want to build tests that depend on
+# complex arithmetic if the rest of Trilinos (esp. Teuchos, since we
+# need e.g., Teuchos::ScalarTraits< Scalar >) was not built with
+# complex arithmetic support.  Thus, we define an appropriate package
+# configuration variable ${PACKAGE_NAME}_ENABLE_COMPLEX, which we can
+# use to decide whether or not to build particular tests.
+#
+# The default value of this config variable should be the same as
+# Teuchos_ENABLE_COMPLEX, because most of Anasazi's complex-arithmetic
+# tests depend heavily on Teuchos' complex arithmetic support.
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_COMPLEX
+  HAVE_ANASAZI_COMPLEX
+  "Enable Anasazi features for complex data types."
+  "${Teuchos_ENABLE_COMPLEX}" )
+
+# Anasazi includes an implementation of the Tall Skinny QR (TSQR)
+# factorization.  TSQR is used to implement an OrthoManager
+# (Anasazi::TsqrOrthoManager) and a MatOrthoManager (which only uses
+# TSQR in the Euclidean-inner-product case).  TSQR is disabled by
+# default.  Set Anasazi_ENABLE_TSQR to enable TSQR.  If
+# Anasazi_ENABLE_COMPLEX is enabled, TSQR is built with complex
+# arithmetic support.
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_TSQR
+  HAVE_ANASAZI_TSQR
+  "Enable TSQR (Tall Skinny QR factorization) support in Anasazi."
+  OFF )
 
 #
 # C) Add the libraries, tests, and examples
@@ -38,6 +70,19 @@ ENDIF()
 IF (Anasazi_ENABLE_Tpetra)
   ADD_SUBDIRECTORY(tpetra)
 ENDIF()
+
+#
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc/TOMS
+  doc/OrthoStudy
+  doc/ThyraPerf
+  src/ModalAnalysisSolvers
+  )
 
 #
 # D) Do standard postprocessing

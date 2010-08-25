@@ -82,8 +82,9 @@ STKUNIT_UNIT_TEST( UnitTestParallelConsistency , testUnit )
 
 void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
 {
-  RingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.generate_loop( true /* with aura */ );
+  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.m_meta_data.commit();
+  ring_mesh.generate_mesh( true /* with aura */ );
 
   stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
@@ -96,8 +97,9 @@ void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
 
 void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities()
 {
-  RingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.generate_loop( true /* with aura */ );
+  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.m_meta_data.commit();
+  ring_mesh.generate_mesh( true /* with aura */ );
 
   stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
@@ -119,8 +121,9 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 
 void UnitTestStkMeshBulkModification::test_all_local_nodes()
 {
-  RingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.generate_loop( true /* with aura */ );
+  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.m_meta_data.commit();
+  ring_mesh.generate_mesh( true /* with aura */ );
 
   stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
@@ -194,8 +197,9 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 
 void UnitTestStkMeshBulkModification::test_all_local_edges()
 {
-  RingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.generate_loop( true /* with aura */ );
+  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.m_meta_data.commit();
+  ring_mesh.generate_mesh( true /* with aura */ );
 
   stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
@@ -274,8 +278,9 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
 
 void UnitTestStkMeshBulkModification::test_parallel_consistency()
 {
-  RingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.generate_loop( true /* with aura */ );
+  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.m_meta_data.commit();
+  ring_mesh.generate_mesh( true /* with aura */ );
 
   stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 

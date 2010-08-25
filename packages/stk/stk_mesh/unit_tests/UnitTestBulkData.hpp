@@ -27,6 +27,7 @@ public:
   static void testChangeOwner_box( ParallelMachine );
   static void testChangeParts( ParallelMachine );
   static void testChangeParts_loop( ParallelMachine );
+  static void testModifyPropagation( ParallelMachine );
   static void testDestroy_nodes( ParallelMachine );
   static void testDestroy_loop( ParallelMachine );
 

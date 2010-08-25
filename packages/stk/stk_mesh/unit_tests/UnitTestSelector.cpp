@@ -19,14 +19,13 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
-#include <unit_tests/UnitTestFixture.hpp>
+#include <stk_mesh/fixtures/SelectorFixture.hpp>
 
 // Unit test the Selector in isolation
 
 namespace {
 
-  using sunit::ExampleFixture ;
-  using sunit::VariableSizeFixture ;
+  using stk::mesh::fixtures::SelectorFixture ;
 
 /** \defgroup stk_mesh_selector_unit "stk::mesh::Selector Unit Testing"
   * \addtogroup stk_mesh_selector_unit
@@ -44,15 +43,15 @@ namespace {
   * PartC contains Entity3, Entity4 <br>
   * PartD contains no entities <br>
   * Entity5 is not contained in any Part <br>
-  * 
-  * <PRE> 
-  * |----------|--|-------|--|----------|    |-------------|  
-  * |<--PartA---->|       |<--PartC---->|    |   PartD     |  
-  * |          |<---PartB--->|          |    |             |  
-  * |  1       |2 |       |3 |       4  | 5  |             |  
-  * |          |  |       |  |          |    |             |  
-  * |          |  |       |  |          |    |             |  
-  * |----------|--|-------|--|----------|    |-------------|  
+  *
+  * <PRE>
+  * |----------|--|-------|--|----------|    |-------------|
+  * |<--PartA---->|       |<--PartC---->|    |   PartD     |
+  * |          |<---PartB--->|          |    |             |
+  * |  1       |2 |       |3 |       4  | 5  |             |
+  * |          |  |       |  |          |    |             |
+  * |          |  |       |  |          |    |             |
+  * |----------|--|-------|--|----------|    |-------------|
   * </PRE>
   *
   * Note:  The unit test names use the convention of "i" for
@@ -60,26 +59,26 @@ namespace {
   *
   * */
 
-/** \brief Verify we can construct the selector unit testing fixture. 
- * 
+/** \brief Verify we can construct the selector unit testing fixture.
+ *
  * */
 STKUNIT_UNIT_TEST( UnitTestSelector, one_SelectorFixture )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   STKUNIT_EXPECT_TRUE(true);
 }
 
 
-/** \brief Verify we can construct two selector unit testing fixtures one after another. 
- * 
+/** \brief Verify we can construct two selector unit testing fixtures one after another.
+ *
  * */
 STKUNIT_UNIT_TEST( UnitTestSelector, two_SelectorFixture )
 {
   {
-    ExampleFixture fix ;
+    SelectorFixture fix ;
   }
   {
-    ExampleFixture fix ;
+    SelectorFixture fix ;
   }
   STKUNIT_EXPECT_TRUE(true);
 }
@@ -87,13 +86,13 @@ STKUNIT_UNIT_TEST( UnitTestSelector, two_SelectorFixture )
 
 
 /** \brief Test containment directly.
- * 
+ *
  * Verify PartA contains Entity1 and Entity2, and does not contain
  * Entity3, Entity4, or Entity5.
  * */
 STKUNIT_UNIT_TEST( UnitTestSelector, A_12345 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Selector selector( fix.m_partA );
   //std::cout << "Selector = " << selector << std::endl;
 
@@ -125,13 +124,13 @@ STKUNIT_UNIT_TEST( UnitTestSelector, A_12345 )
 }
 
 /** \brief Test containment with the complement.
- * 
+ *
  * Verify !PartA does not contain Entity1 and Entity2, and does
  * contain Entity3, Entity4, and Entity5.
  ** */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Selector selector = ! fix.m_partA ;
   //std::cout << "Selector = " << selector << std::endl;
 
@@ -160,14 +159,15 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
+
 }
 
 /** \brief Verify PartD does not contain Entity5.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, D_5 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Selector selector( fix.m_partD );
 
   const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
@@ -177,14 +177,14 @@ STKUNIT_UNIT_TEST( UnitTestSelector, D_5 )
 }
 
 /** \brief Verify PartA.complement contains Entity1 and Entity5.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ac_15 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
 
-  stk::mesh::Selector selector(partA); 
+  stk::mesh::Selector selector(partA);
   selector.complement();
   //std::cout << "Selector = " << selector << std::endl;
 
@@ -202,11 +202,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_15 )
 
 /** \brief Verify (PartA AND PartB) does not contain Entity1 and does
  * contain Entity2.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AiB_12 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
 
@@ -227,11 +227,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiB_12 )
 
 
 /** \brief Verify (PartA OR PartB) contains Entity1 but not Entity4
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AuB_14 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
 
@@ -252,11 +252,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuB_14 )
 
 
 /** \brief Verify !(PartA AND PartB) contains Entity1 but not Entity2.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AiBc_12 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
 
@@ -277,11 +277,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiBc_12 )
 
 
 /** \brief Verify !(PartA OR PartB) contains Entity1 but not Entity3.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AuBc_13 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
 
@@ -304,11 +304,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBc_13 )
 // plus copy constructor
 /** \brief Verify (PartA AND !(PartB OR PartC)) contains Entity1 but
  * not Entity2.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -343,12 +343,30 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
 }
 
 
+/** \brief test on Selector operator for Entity
+ *
+ */
+STKUNIT_UNIT_TEST( UnitTestSelector, entityTest )
+{
+  {
+    SelectorFixture fix ;
+    stk::mesh::Part & partA = fix.m_partA ;
+    stk::mesh::Part & partB = fix.m_partB ;
+    stk::mesh::Selector selector = partA & !partB;
+
+    const stk::mesh::Entity & pEntity = *fix.m_entity5;
+    bool result = selector(pEntity);
+    STKUNIT_EXPECT_FALSE(result);
+  }
+
+}
+
 /** \brief Verify the default constructor does not contain Entity1.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, defaultConstructor )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Selector selector;
   //std::cout << "Selector = " << selector << std::endl;
 
@@ -365,11 +383,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, defaultConstructor )
  * Verify !(PartA OR PartB) does not contain Entity1, Entity2,
  * or Entity3, and does contain Entity4.  Then check that !!(PartA OR
  * PartB) does contain Entity1, Entity2, and Entity3, and not Entity4.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Selector notOrSelector = partA | partB;
@@ -427,11 +445,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
  * Verify !(PartA AND PartB) does not contain Entity2, and does
  * contain Entity1, Entity3, and Entity4.
  * Then check that !!(PartA AND PartB) does contain Entity2, but not Entity1, Entity3, or Entity4.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Selector notAndSelector = partA & partB;
@@ -488,10 +506,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
  * works.
  * () does not contain Entity1.
  * !() contains Entity1.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, complementEmpty ) {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Selector selector;
   {
     const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
@@ -509,11 +527,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complementEmpty ) {
 
 /** \brief Verify the fancy output for (PartA OR PartB OR PartC OR
  * PartD).
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -527,11 +545,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
 
 
 /** \brief Verify the fancy output for (PartA AND PartB AND PartC).
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AiBiC )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -544,11 +562,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiBiC )
 
 
 /** \brief Verify the fancy output for a complex expression.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -563,11 +581,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
 
 /** \brief Verify \ref stk::mesh::selectIntersection
  * "selectIntersection" works correctly.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, selectIntersection )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::PartVector parts ;
   parts.push_back( & fix.m_partA );
   parts.push_back( & fix.m_partB );
@@ -607,11 +625,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectIntersection )
 
 /** \brief Verify \ref stk::mesh::selectUnion "selectUnion" works
  * correctly.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::PartVector parts ;
   parts.push_back( & fix.m_partA );
   parts.push_back( & fix.m_partB );
@@ -655,11 +673,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
 /** \brief Verify order of operations works correctly.
  * (PartA OR PartB AND PartC) = (PartA OR (PartB AND PartC)).
  * (PartB AND PartC OR PartA) = ((PartB AND PartC) OR PartA).
- * 
+ *
  */
-//STKUNIT_UNIT_TEST( UnitTestSelector, orderOfOperations ) 
+//STKUNIT_UNIT_TEST( UnitTestSelector, orderOfOperations )
 //{
-//  ExampleFixture fix ;
+//  SelectorFixture fix ;
 //  stk::mesh::Part & partA = fix.m_partA ;
 //  stk::mesh::Part & partB = fix.m_partB ;
 //  stk::mesh::Part & partC = fix.m_partC ;
@@ -722,12 +740,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
 
 /** \brief Verify unions and intersections of default constructors and
  * their complements.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuZero ) {
-  ExampleFixture fix ;
-  stk::mesh::Selector selectNone; 
-  stk::mesh::Selector selectAll; 
+  SelectorFixture fix ;
+  stk::mesh::Selector selectNone;
+  stk::mesh::Selector selectAll;
   selectAll.complement();
   {
     stk::mesh::Selector selector = selectNone & selectAll;
@@ -748,12 +766,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuZero ) {
 /** \brief Verify that \ref stk::mesh::Part "mesh parts" from
  * different \ref stk::mesh::MetaData "meta data" objects will throw
  * an exception if combined in an intersection selector.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AibA )
 {
-  ExampleFixture fix ;
-  ExampleFixture fixHat ;
+  SelectorFixture fix ;
+  SelectorFixture fixHat ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partAhat = fixHat.m_partA ;
   stk::mesh::Selector selector(partA);
@@ -767,12 +785,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AibA )
 /** \brief Verify that \ref stk::mesh::Part "mesh parts" from
  * different \ref stk::mesh::MetaData "meta data" objects will throw
  * an exception if combined in a union selector.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AubA )
 {
-  ExampleFixture fix ;
-  ExampleFixture fixHat ;
+  SelectorFixture fix ;
+  SelectorFixture fixHat ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partAhat = fixHat.m_partA ;
   stk::mesh::Selector selector(partA);
@@ -788,14 +806,14 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AubA )
  * from a \ref stk::mesh::BulkData "bulk data" that has a different
  * \ref stk::mesh::MetaData "meta data" than was used to create the
  * \ref stk::mesh::Part "mesh part" will throw.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ab1 )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Selector selector = partA;
-  ExampleFixture fixHat ;
+  SelectorFixture fixHat ;
   const stk::mesh::Bucket & bucketHat = fixHat.m_entity1->bucket();
   bool result;
   STKUNIT_ASSERT_THROW(
@@ -807,16 +825,16 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ab1 )
 
 /** \brief Verify default \ref stk::mesh::Selector "selectors" work
  * well with \ref stk::mesh::Part "mesh part" instantiated \ref
- * stk::mesh::Selector "selectors".  
+ * stk::mesh::Selector "selectors".
  *
  * In particular, check that (() OR
  * PartA) contains Entity1 and (!() AND PartA) contains Entity1.
- * 
+ *
  */
 
 STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Selector selectNone;
   stk::mesh::Selector selectAll;
@@ -838,11 +856,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
 
 
 /** \brief Verify copy constructed \ref stk::mesh::Selector "selector" creates same pretty print output.
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, copyConstructor )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -860,7 +878,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, copyConstructor )
  * complements works well.
  * In particular !() AND !() and (!() OR !()) == !(() AND ()).
  *
- * 
+ *
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AlliuAll )
 {
@@ -883,59 +901,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AlliuAll )
     STKUNIT_EXPECT_EQUAL( "!(())", description.str() );
   }
 }
-
 /** \} */
 
-STKUNIT_UNIT_TEST( PerformanceTestSelector, start)
-{
-  size_t N = 5;
-  VariableSizeFixture fix(N);
-  stk::mesh::Selector selectUnion;
-  for (size_t part_i = 0 ; part_i<N ; ++part_i) {
-    selectUnion |= *fix.m_declared_part_vector[part_i];
-  }
-  std::vector<stk::mesh::Bucket*> buckets_out;
-  unsigned entity_rank = 0;
-  get_buckets(selectUnion, fix.m_BulkData.buckets(entity_rank), buckets_out);
-  STKUNIT_ASSERT_EQUAL( buckets_out.size(), N );
-  // Construct once for large N
-  // Graph time for get_buckets against 1..N
-}
 
-STKUNIT_UNIT_TEST( PerformanceTestSelector, timings)
-{
-  // Construction
-  size_t N = 10000;
-  VariableSizeFixture fix(N);
-
-  std::vector<double> selector_creation(N/2);
-  std::vector<double> get_buckets_usage(N/2);
-  double start_time = stk::wall_time();
-  size_t timing_index = 0;
-  for (size_t n = 1 ; n<N; n*=2) {
-    // Selector creation
-    stk::mesh::Selector selectUnion;
-    for (size_t part_i = 0 ; part_i<n ; ++part_i) {
-      selectUnion |= *fix.m_declared_part_vector[part_i];
-    }
-    selector_creation[timing_index] = stk::wall_dtime(start_time);
-    
-    // Selector usage:
-    std::vector<stk::mesh::Bucket*> buckets_out;
-    unsigned entity_rank = 0;
-    get_buckets(selectUnion, fix.m_BulkData.buckets(entity_rank), buckets_out);
-    get_buckets_usage[timing_index] = stk::wall_dtime(start_time);
-    ++timing_index;
-  }
-
-  // Print out table
-  std::cout << "\"N\" \"selector_creation_time\" \"get_buckets_time\" " << std::endl;
-  timing_index = 0;
-  for (size_t n = 1 ; n<N; n*=2) {
-    std::cout << n << " " << selector_creation[timing_index] << " " << get_buckets_usage[timing_index] << std::endl;
-    ++timing_index;
-  }
-  STKUNIT_EXPECT_TRUE(true);
-}
-
-} // namespace 
+} // namespace

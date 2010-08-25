@@ -6,6 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <vector>
+#include <set>
 #include <algorithm>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
@@ -28,10 +30,11 @@ void boundary_analysis(const BulkData& bulk_data,
 
   // find an iterator that points to the last item in the closure that is of a
   // lower-order than the closure_rank
-  std::vector<Entity*>::const_iterator itr = std::lower_bound(entities_closure.begin(),
-                                                              entities_closure.end(),
-                                                              EntityKey(closure_rank, 0),
-                                                              EntityLess());
+  std::vector<Entity*>::const_iterator itr =
+    std::lower_bound(entities_closure.begin(),
+                     entities_closure.end(),
+                     EntityKey(closure_rank, 0),
+                     EntityLess());
 
   // iterate over all the entities in the closure up to the iterator we computed above
   for ( ; itr != entities_closure.end() && (*itr)->entity_rank() == closure_rank; ++itr) {
@@ -74,14 +77,22 @@ void boundary_analysis(const BulkData& bulk_data,
       }
 
       // iterate over adjacent entities (our neighbors)
-      for (std::vector<EntitySideComponent >::const_iterator adj_itr = adjacent_entities.begin(); adj_itr != adjacent_entities.end(); ++adj_itr) {
+      for (std::vector<EntitySideComponent >::const_iterator
+          adj_itr = adjacent_entities.begin();
+          adj_itr != adjacent_entities.end(); ++adj_itr) {
         // grab a reference to this neighbor for clarity
         const Entity& neighbor = *(adj_itr->entity);
 
         // see if this neighbor is in the closure, if so, not a keeper
-        std::vector<Entity*>::const_iterator search_itr = std::lower_bound(entities_closure.begin(), entities_closure.end(), neighbor, EntityLess());
+        std::vector<Entity*>::const_iterator search_itr =
+          std::lower_bound(entities_closure.begin(),
+                           entities_closure.end(),
+                           neighbor,
+                           EntityLess());
+
         EntityEqual eq;
-        if (search_itr != entities_closure.end() && eq(**search_itr, neighbor)) {
+        if (search_itr != entities_closure.end() &&
+            eq(**search_itr, neighbor)) {
           continue;
         }
 
@@ -136,46 +147,77 @@ void get_adjacent_entities( const Entity & entity ,
   }
 
   // For the potentially common subcell, get it's nodes and num_nodes
-  const unsigned* nodes = celltopology->subcell[subcell_rank][subcell_identifier].node;
-  unsigned num_nodes = celltopology->subcell[subcell_rank][subcell_identifier].topology->node_count;
+  const unsigned* side_node_local_ids =
+    celltopology->subcell[subcell_rank][subcell_identifier].node;
+
+  const CellTopologyData * side_topology =
+    celltopology->subcell[subcell_rank][subcell_identifier].topology;
+  int num_nodes_in_side = side_topology->node_count;
 
   // Get all the nodal relationships for this entity. We are guaranteed
   // that, if we make it this far, the entity is guaranteed to have
   // some relationship to nodes (we know it is a higher-order entity
   // than Node).
-  PairIterRelation relations = entity.relations(Node);
 
-  // Get the node entities that are related to entity
-  std::vector<Entity*> node_entities;
-  for (unsigned itr = 0; itr < num_nodes; ++itr) {
-    node_entities.push_back(relations[nodes[itr]].entity());
-  }
-
-  // Given the nodes related to the original entity, find all entities
-  // of similar rank that have some relation to one or more of these nodes
-  std::vector<Entity*> elements;
-  get_entities_through_relations(node_entities, entity.entity_rank(), elements);
-
-  // Make sure to remove the original entity from the list
-  bool found = false;
-  for (std::vector<Entity*>::iterator itr = elements.begin();
-       itr != elements.end(); ++itr) {
-    if (*itr == &entity) {
-      elements.erase(itr);
-      found = true;
-      break;
+  // Get the node entities for the nodes that make up the side. We put these
+  // in in reverse order so that it has the correct orientation with respect
+  // the potential adjacent entities we are evaluating. The relations are
+  // right-hand-rule ordered for the owning entity, but we need something
+  // that's compatible w/ the adjacent entities.
+  std::vector<Entity*> side_node_entities;
+  {
+    PairIterRelation relations = entity.relations(Node);
+    for (int itr = num_nodes_in_side; itr > 0; ) {
+      --itr;
+      side_node_entities.push_back(relations[side_node_local_ids[itr]].entity());
     }
   }
-  // The original entity should be related to the nodes of its subcells
-  if (! found) {
-    throw std::logic_error( "stk::mesh::get_adjacent_entities");
+
+  // Get the node entities for the nodes that make up the entity
+  std::vector<Entity*> entity_nodes;
+  {
+    PairIterRelation irel = entity.relations(Node);
+    for ( ; !irel.empty(); ++irel ) {
+      entity_nodes.push_back(irel->entity());
+    }
+  }
+  std::sort(entity_nodes.begin(), entity_nodes.end());
+
+  // Given the nodes related to the side, find all entities
+  // of similar rank that have some relation to one or more of these nodes
+  std::vector<Entity*> elements;
+  get_entities_through_relations(side_node_entities,
+                                 entity.entity_rank(),
+                                 elements);
+
+  // Make sure to remove the all superimposed entities from the list
+  for (std::vector<Entity*>::iterator itr = elements.end();
+       itr != elements.begin(); ) {
+    --itr;
+    Entity * current_entity = *itr;
+    PairIterRelation relations = current_entity->relations(Node);
+
+    std::vector<Entity*> current_nodes;
+    for ( ; relations.first != relations.second; ++relations.first ) {
+      current_nodes.push_back(relations.first->entity());
+    }
+    std::sort(current_nodes.begin(), current_nodes.end());
+
+    bool entities_are_superimposed = entity_nodes == current_nodes;
+    if (entities_are_superimposed) {
+      elements.erase(itr);
+    }
   }
 
   // Add the local ids, from the POV of the adj entitiy, to the return value
   for (std::vector<Entity*>::const_iterator itr = elements.begin();
        itr != elements.end(); ++itr) {
-    unsigned local_side_num = element_local_side_id(**itr, node_entities);
-    adjacent_entities.push_back(EntitySideComponent(*itr, local_side_num));
+    int local_side_num = element_local_side_id(**itr,
+                                               side_topology,
+                                               side_node_entities);
+    if ( local_side_num != -1) {
+      adjacent_entities.push_back(EntitySideComponent(*itr, local_side_num));
+    }
   }
 }
 

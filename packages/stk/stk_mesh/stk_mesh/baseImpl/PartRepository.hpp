@@ -33,7 +33,6 @@ public:
 
   Part * declare_part( const std::string & arg_name , EntityRank arg_rank );
   Part * declare_part( const PartVector & part_intersect );
-  Part * declare_part( MetaData * meta, const std::string & name, EntityRank rank);
   void declare_subset( Part & superset, Part & subset );
   void declare_part_relation( Part & root_part, PartRelation relation, Part & target_part );
 
@@ -47,6 +46,7 @@ private:
   PartRepository(const PartRepository & );
   PartRepository & operator = ( const PartRepository & );
   
+  Part * declare_part_impl( const std::string & name, EntityRank rank);
   void declare_subset_impl( Part & superset, Part & subset );
 
   MetaData * m_meta_data;

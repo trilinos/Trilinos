@@ -294,9 +294,9 @@ void UnitTestBulkData::testChangeParts_loop( ParallelMachine pm )
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
 
-  RingMeshFixture ring_mesh( pm , nPerProc , true /* generate parts */ );
-
-  ring_mesh.generate_loop( false /* no aura */ );
+  UnitTestRingMeshFixture ring_mesh( pm , nPerProc , true /* generate parts */ );
+  ring_mesh.m_meta_data.commit();
+  ring_mesh.generate_mesh( false /* no aura */ );
 
   Part & part_owns = ring_mesh.m_meta_data.locally_owned_part();
   Part & part_univ = ring_mesh.m_meta_data.universal_part();

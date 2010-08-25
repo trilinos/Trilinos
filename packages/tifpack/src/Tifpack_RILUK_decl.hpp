@@ -208,10 +208,10 @@ class RILUK: public virtual Tifpack::Preconditioner<typename MatrixType::scalar_
   void SetRelaxValue( double RelaxValue) {RelaxValue_ = RelaxValue;}
 
   //! Set absolute threshold value
-  void SetAbsoluteThreshold( double Athresh) {Athresh_ = Athresh;}
+  void SetAbsoluteThreshold( magnitudeType Athresh) {Athresh_ = Athresh;}
 
   //! Set relative threshold value
-  void SetRelativeThreshold( double Rthresh) {Rthresh_ = Rthresh;}
+  void SetRelativeThreshold( magnitudeType Rthresh) {Rthresh_ = Rthresh;}
 
   //! Set overlap mode type
   void SetOverlapMode( Tpetra::CombineMode OverlapMode) {OverlapMode_ = OverlapMode;}
@@ -323,10 +323,10 @@ Not currently supported.
   double GetRelaxValue() const {return RelaxValue_;}
 
   //! Get absolute threshold value
-  double getAbsoluteThreshold() const {return Athresh_;}
+  magnitudeType getAbsoluteThreshold() const {return Athresh_;}
 
   //! Get relative threshold value
-  double getRelativeThreshold() const {return Rthresh_;}
+  magnitudeType getRelativeThreshold() const {return Rthresh_;}
 
   int getLevelOfFill() const { return LevelOfFill_; }
 
@@ -394,9 +394,9 @@ Not currently supported.
   mutable int numCompute_;
   mutable int numApply_;
   bool Factored_;
-  double RelaxValue_;
-  double Athresh_;
-  double Rthresh_;
+  magnitudeType RelaxValue_;
+  magnitudeType Athresh_;
+  magnitudeType Rthresh_;
   mutable magnitudeType Condest_;
 
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapX_;

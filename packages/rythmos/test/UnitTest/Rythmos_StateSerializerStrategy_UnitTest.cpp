@@ -352,12 +352,12 @@ TEUCHOS_UNIT_TEST( Rythmos_StateSerializerStrategy, all ) {
       Thyra::DetachedVectorView<double> vec1_view( *vec1 );
       Thyra::DetachedVectorView<double> vec2_view( *vec2 );
       Thyra::DetachedVectorView<double> vec3_view( *vec3 );
-      for (int i=0 ; i<12 ; ++i) {
-        vec1_view[i] = i*1.0;
+      for (int k=0 ; k<12 ; ++k) {
+        vec1_view[k] = k*1.0;
       }
-      for (int i=0 ; i<9 ; ++i) {
-        vec2_view[i] = i*2.0;
-        vec3_view[i] = i*3.0;
+      for (int k=0 ; k<9 ; ++k) {
+        vec2_view[k] = k*2.0;
+        vec3_view[k] = k*3.0;
       }
     }
 
@@ -402,8 +402,8 @@ TEUCHOS_UNIT_TEST( Rythmos_StateSerializerStrategy, all ) {
       ss.deSerializeVectorBase(outArg(*vec),iss);
       {
         Thyra::DetachedVectorView<double> vec_view( *vec );
-        for (int i=0 ; i<12 ; ++i) {
-          TEST_EQUALITY_CONST( vec_view[i], i*1.0 );
+        for (int k=0 ; k<12 ; ++k) {
+          TEST_EQUALITY_CONST( vec_view[k], k*1.0 );
         }
       }
     }
@@ -412,8 +412,8 @@ TEUCHOS_UNIT_TEST( Rythmos_StateSerializerStrategy, all ) {
       ss.deSerializeVectorBase(outArg(*vec),iss);
       {
         Thyra::DetachedVectorView<double> vec_view( *vec );
-        for (int i=0 ; i<9 ; ++i) {
-          TEST_EQUALITY_CONST( vec_view[i], i*2.0 );
+        for (int k=0 ; k<9 ; ++k) {
+          TEST_EQUALITY_CONST( vec_view[k], k*2.0 );
         }
       }
     }
@@ -429,8 +429,8 @@ TEUCHOS_UNIT_TEST( Rythmos_StateSerializerStrategy, all ) {
       ss.deSerializeVectorBase(outArg(*vec),iss);
       {
         Thyra::DetachedVectorView<double> vec_view( *vec );
-        for (int i=0 ; i<9 ; ++i) {
-          TEST_EQUALITY_CONST( vec_view[i], i*3.0 );
+        for (int k=0 ; k<9 ; ++k) {
+          TEST_EQUALITY_CONST( vec_view[k], k*3.0 );
         }
       }
     }

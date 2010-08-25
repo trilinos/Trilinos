@@ -4,61 +4,52 @@
                          Trilinos CMake Quickstart
 ------------------------------------------------------------------------------
 
-<ul>
-<li>\ref Getting_started
-<li>\ref Getting_help
-<li>\ref Configuring
-<li>\ref Building
-<li>\ref Testing
-<li>\ref Installing
-<li>\ref Packaging
-<li>\ref Dashboard
-</ul>
 
 Section A: Getting Started
-    --  Installing CMake from binary
-    --  Installing CMake from source
+  --  Installing a binary release of CMake
+  --  Installing CMake from source
 Section B: Getting Help
     --  CMake website
     --  Local CMake help
 Section C: Configuring Trilinos
-    --  Setting up a build directory
-    --  Basic configuration
-    --  Selecting packages to enable
-    --  Selecting compiler and linker options.
-    --  Disabling Fortran
-    --  Runtime Debug support
-    --  Configuring MPI support
-    --  Building shared libraries
-    --  Configuring with third party libraries (TPLS)
-    --  Getting verbose output
-    --  Enabling/disabling deprecated warnings
-    --  Disable update of package dependency information
-    --  Enable coverage testing
-    --  Viewing configure options and documentation
-    --  Reconfiguring from scratch
-    --  Viewing configure errors
+  --  Setting up a build directory
+  --  Basic configuration
+  --  Selecting packages to enable
+  --  Selecting compiler and linker options.
+  --  Disabling Fortran
+  --  Runtime Debug support
+  --  Configuring MPI support
+  --  Building shared libraries
+  --  Configuring with third party libraries (TPLS)
+  --  Getting verbose output
+  --  Enabling/disabling deprecated warnings
+  --  Disable update of package dependency information
+  --  Enable coverage testing
+  --  Viewing configure options and documentation
+  --  Enabling extra external repositories with add-on packages
+  --  Reconfiguring from scratch
+  --  Viewing configure errors
 Section D: Building
-    --  Building everything
-    --  Building all the libraries for a package
-    --  Building a single object
+  --  Building everything
+  --  Building all the libraries for a package
+  --  Building a single object
 Section E: Testing
-    --  Using ctest
-    --  Running tests for a single package
-    --  Running a single test with output
-    --  Running memory testing
+  --  Using ctest
+  --  Running tests for a single package
+  --  Running a single test with output
+  --  Running memory testing
 Section F: Installing
-    --  Setting the install prefix
-    --  How to install
+  --  Setting the install prefix
+  --  How to install
 Section G: Packaging
-    --  Creating a tarball package
+  --  Creating a tarball package
 Section H: Dashboard testing
-    --  Submitting an experimental build
-    --  Environment variables for controlling the build
-    --  Dashboard submission notes
+  --  Submitting an experimental build
+  --  Environment variables for controlling the build
+  --  Dashboard submission notes
 
 
-\section Getting_started A) Getting set up to use CMake
+A) Getting set up to use CMake
 ------------------------------
 
 
@@ -87,7 +78,7 @@ Section H: Dashboard testing
 
 
 
-\section Getting_help B) Getting Help
+B) Getting Help
 ---------------
 
 
@@ -104,7 +95,7 @@ Section H: Dashboard testing
 
 
 
-\section Configuring C) Configuring (Makefile Generator)
+C) Configuring (Makefile Generator)
 -----------------------------------
 
 
@@ -668,6 +659,27 @@ Section H: Dashboard testing
   
     or just examine and grep the file CMakeCache.txt.
 
+
+(*) Enabling extra external repositories with add-on packages:
+
+    -DTrilinos_EXTRA_REPOSITORIES:STRING=<EXTRAREPO>
+
+  Here, <EXTRAREPO> is the name of an extra external repository that has been
+  cloned under the main 'Trilinos' source directory as:
+
+    Trilinos/<EXTRAREPO>
+
+  For example, to enable <EXTRAREPO> = preCopyrightTrilinos you would:
+
+    $ cd $TRILINOS_HOME_DIR
+    $ eg clone software.sandia.gov:/space/git/preCopyrightTrilinos
+    $ cd $BUILD_DIR
+    $ ./do-configure -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
+
+  After that, all of the extra packages defined in <EXTRAREPO> will appear in
+  the list of official Trilinos packages and you are free to enable any that
+  you would like just like any other Trilinos package.
+
   
 (*) Reconfiguring from scratch
   
@@ -680,7 +692,7 @@ Section H: Dashboard testing
     itself.
 
 
-(*) Viewing configure errors
+(*) Viewing configure errors:
 
   Configure time errors are shown in the file:
 
@@ -688,7 +700,7 @@ Section H: Dashboard testing
 
 
 
-\section Building D) Building (Makefile generator)
+D) Building (Makefile generator)
 --------------------------------
 
 (*) Building all targets:
@@ -772,7 +784,7 @@ Section H: Dashboard testing
 
 
 
-\section Testing E) Testing with CTest
+E) Testing with CTest
 ---------------------
 
 
@@ -838,7 +850,7 @@ Section H: Dashboard testing
 
 
 
-\section Installing F) Installing
+F) Installing
 -------------
 
 
@@ -864,7 +876,7 @@ Section H: Dashboard testing
 
 
 
-\section Packaging G) Packaging
+G) Packaging
 ------------
 
 
@@ -882,7 +894,7 @@ Section H: Dashboard testing
    variable CPACK_SOURCE_IGNORE_FILES when configuring with CMake.
 
 
-\section Dashboard H) Dashboard submissions
+H) Dashboard submissions
 ------------------------
 
 You can use the extended CTest scripting system in Trilinos to submit

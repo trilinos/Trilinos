@@ -166,12 +166,14 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, validInitialize ) {
     // Call setTimeStepPoint with product vector and check that it throws an exception
     // setTimeStepPoint is supposed to get a vector from the underlying DAE model
     // vector space, NOT a product vector.
-    RCP<const ProductVectorSpaceBase<double> > large_pvs = 
-      Thyra::productVectorSpace( x_pspace->getBlock(0), numStages+1 );
-    RCP<VectorBase<double> > x_old = createMember( *large_pvs );
-    double t_old = numStages + 0.123;
-    double delta_t = numStages + 0.321;
-    TEST_THROW( irkME->setTimeStepPoint( x_old, t_old, delta_t ), std::logic_error );
+    {
+      RCP<const ProductVectorSpaceBase<double> > large_pvs = 
+        Thyra::productVectorSpace( x_pspace->getBlock(0), numStages+1 );
+      RCP<VectorBase<double> > x_old = createMember( *large_pvs );
+      double t_old = numStages + 0.123;
+      double delta_t = numStages + 0.321;
+      TEST_THROW( irkME->setTimeStepPoint( x_old, t_old, delta_t ), std::logic_error );
+    }
     if (numStages > 2) { // numStages = 2 means one less is the correct size vector space.
       RCP<const ProductVectorSpaceBase<double> > large_pvs = 
         Thyra::productVectorSpace( x_pspace->getBlock(0), numStages-1 );
@@ -190,10 +192,10 @@ RCP<ImplicitRKModelEvaluator<double> > getImplicitRKModelEvaluator(int numStages
   // create a valid base point
   Thyra::ModelEvaluatorBase::InArgs<double> basePoint = model->createInArgs();
   RCP<VectorBase<double> > base_x = Thyra::createMember(model->get_x_space());
-  V_S(&*base_x,2.0);
+  V_S(base_x.ptr(),2.0);
   basePoint.set_x(base_x);
   RCP<VectorBase<double> > base_x_dot = Thyra::createMember(model->get_x_space());
-  V_S(&*base_x_dot,3.0);
+  V_S(base_x_dot.ptr(),3.0);
   basePoint.set_x_dot(base_x_dot);
   double base_t = 4.0;
   basePoint.set_t(base_t);
@@ -995,10 +997,10 @@ RCP<DiagonalImplicitRKModelEvaluator<double> > getDiagonalImplicitRKModelEvaluat
   // create a valid base point
   Thyra::ModelEvaluatorBase::InArgs<double> basePoint = model->createInArgs();
   RCP<VectorBase<double> > base_x = Thyra::createMember(model->get_x_space());
-  V_S(&*base_x,2.0);
+  V_S(base_x.ptr(),2.0);
   basePoint.set_x(base_x);
   RCP<VectorBase<double> > base_x_dot = Thyra::createMember(model->get_x_space());
-  V_S(&*base_x_dot,3.0);
+  V_S(base_x_dot.ptr(),3.0);
   basePoint.set_x_dot(base_x_dot);
   double base_t = 4.0;
   basePoint.set_t(base_t);

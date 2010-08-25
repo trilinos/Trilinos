@@ -85,9 +85,7 @@ void insert_closure_send(
   const EntityProc                  send_entry ,
   std::set<EntityProc,EntityLess> & send_list )
 {
-  const bool is_destroyed = send_entry.first->marked_for_destruction() ;
-
-  if ( is_destroyed ) {
+  if ( EntityLogDeleted == send_entry.first->log_query() ) {
     throw std::logic_error( std::string("Cannot send destroyed entity") );
   }
 
@@ -173,7 +171,7 @@ void clean_and_verify_parallel_change(
     // 4) Cannot grant to two different owners
 
     const bool bad_null   = NULL == entity ;
-    const bool bad_delete = ! bad_null && entity->marked_for_destruction();
+    const bool bad_delete = ! bad_null && EntityLogDeleted == entity->log_query();
     const bool bad_entity = ! bad_null && entity->owner_rank() != p_rank ;
     const bool bad_owner  = p_size <= new_owner ;
     const bool bad_dup    = ! bad_null && i != local_change.end() && entity == i->first ;
@@ -394,12 +392,13 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       // Giving ownership, change the parts first and then
       // the owner rank to pass the ownership test.
       change_entity_parts( * i->first , PartVector() , owned );
-      i->first->m_entityImpl.set_owner_rank( i->second );
+
+      m_entity_repo.set_entity_owner_rank( *(i->first), i->second);
     }
 
     for ( std::vector<EntityProc>::iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
-      i->first->m_entityImpl.set_owner_rank( i->second );
+      m_entity_repo.set_entity_owner_rank( *(i->first), i->second);
       if ( p_rank == i->second ) { // I receive ownership
         change_entity_parts( * i->first , owned , PartVector() );
       }
@@ -462,7 +461,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
         std::pair<Entity*,bool> result =
           m_entity_repo.internal_create_entity( key );
 
-        result.first->m_entityImpl.set_owner_rank( owner );
+        m_entity_repo.set_entity_owner_rank( *(result.first), owner);
 
         internal_change_entity_parts( *result.first , parts , PartVector() );
 

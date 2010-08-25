@@ -66,7 +66,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
    lclMatrix_(blkRowMap->getNodeNumBlocks(), blkRowMap->getPointMap()->getNode()),
    pbuf_values1D_(),
    pbuf_indx_(),
-   lclMatVec_(blkRowMap->getPointMap()->getNode()),
+   lclMatOps_(blkRowMap->getPointMap()->getNode()),
    importer_(),
    exporter_(),
    importedVec_(),
@@ -91,7 +91,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
               blkGraph->getBlockRowMap()->getPointMap()->getNode()),
    pbuf_values1D_(),
    pbuf_indx_(),
-   lclMatVec_(blkGraph->getBlockRowMap()->getPointMap()->getNode()),
+   lclMatOps_(blkGraph->getBlockRowMap()->getPointMap()->getNode()),
    importer_(),
    exporter_(),
    importedVec_(),
@@ -161,7 +161,31 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multiply(const Mu
   const Kokkos::MultiVector<Scalar,Node> *lclX = &X.getLocalMV();
   Kokkos::MultiVector<Scalar,Node>        *lclY = &Y.getLocalMVNonConst();
 
-  lclMatVec_.template multiply<Scalar,Scalar>(trans,alpha,*lclX,beta,*lclY);
+  lclMatOps_.template multiply<Scalar,Scalar>(trans,alpha,*lclX,beta,*lclY);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class DomainScalar, class RangeScalar>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, Teuchos::ETransp trans) const
+{
+  TEST_FOR_EXCEPTION(X.isConstantStride() == false || Y.isConstantStride() == false, std::runtime_error,
+        "Tpetra::VbrMatrix::solve(X,Y): X and Y must be constant stride.");
+
+  TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
+    "Tpetra::VbrMatrix::solve ERROR, solve may only be called after fillComplete has been called.");
+
+  TEST_FOR_EXCEPTION(constBlkGraph_->isUpperTriangular()==false && constBlkGraph_->isLowerTriangular()==false, std::runtime_error,
+    "Tpetra::VbrMatrix::solve ERROR, matrix must be either upper or lower triangular.");
+
+  const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
+  Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
+
+  Teuchos::EUplo triang = constBlkGraph_->isUpperTriangular() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI;
+  Teuchos::EDiag diag = (constBlkGraph_->getNodeNumDiags() < constBlkGraph_->getNodeNumRows()) ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
+
+  lclMatOps_.template solve<DomainScalar,RangeScalar>(trans,triang,diag, *lclY,*lclX);
 }
 
 //-------------------------------------------------------------------
@@ -213,6 +237,29 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(
     this->template multiply<Scalar,Scalar>(X, Yref, trans, alpha, beta);
     if (importedVec_ != Teuchos::null) {
       Y.doExport(*importedVec_, *importer_, ADD);
+    }
+  }
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse(
+         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+               Teuchos::ETransp trans) const
+{
+  if (trans == Teuchos::NO_TRANS) {
+    updateImport(Y);
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xref = importedVec_ == Teuchos::null ? X : *importedVec_;
+    this->template solve<Scalar,Scalar>(Y, Xref, trans);
+  }
+  else if (trans == Teuchos::TRANS || trans == Teuchos::CONJ_TRANS) {
+    updateImport(Y);
+    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yref = importedVec_ == Teuchos::null ? Y : *importedVec_;
+    this->template solve<Scalar,Scalar>(Yref, X, trans);
+    if (importedVec_ != Teuchos::null) {
+      X.doExport(*importedVec_, *importer_, ADD);
     }
   }
 }
@@ -439,6 +486,32 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const
+{
+  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& rowmap = getBlockRowMap();
+  TEST_FOR_EXCEPTION(diag.getMap()->isSameAs(*(rowmap->getPointMap())) != true,
+    std::runtime_error, "Tpetra::VbrMatrix::getLocalDiagCopy ERROR, vector must be distributed the same as this matrix' row-map.");
+
+  Teuchos::ArrayRCP<Scalar> diag_view = diag.get1dViewNonConst();
+  Teuchos::ArrayView<const GlobalOrdinal> blockIDs = rowmap->getNodeBlockIDs();
+  size_t offset = 0;
+  typedef typename Teuchos::ArrayView<const GlobalOrdinal>::size_type Tsize_t;
+  for(Tsize_t i=0; i<blockIDs.size(); ++i) {
+    LocalOrdinal localBlockID = rowmap->getLocalBlockID(blockIDs[i]);
+    LocalOrdinal blockSize = rowmap->getLocalBlockSize(localBlockID);
+    Teuchos::ArrayRCP<const Scalar> blockEntry;
+    getGlobalBlockEntryView(blockIDs[i], blockIDs[i], blockSize, blockSize, blockEntry);
+
+    for(LocalOrdinal j=0; j<blockSize; ++j) {
+      diag_view[offset++] = blockEntry[j*blockSize+j];
+    }
+  }
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntryView(
       LocalOrdinal localBlockRow,
       LocalOrdinal localBlockCol,
@@ -557,6 +630,22 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEnt
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  LocalOrdinal blkRowSize = blockEntry.numRows();
+  LocalOrdinal blkColSize = blockEntry.numCols();
+  getLocalBlockEntryViewNonConst(localBlockRow,localBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  //now copy the incoming block-entry into internal storage:
+  const Scalar* inputvalues = blockEntry.values();
+  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), REPLACE);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
@@ -564,6 +653,22 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBloc
   LocalOrdinal blkRowSize = blockEntry.numRows();
   LocalOrdinal blkColSize = blockEntry.numCols();
   getGlobalBlockEntryViewNonConst(globalBlockRow,globalBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  //now sum (add) the incoming block-entry into internal storage:
+  const Scalar* inputvalues = blockEntry.values();
+  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), ADD);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  LocalOrdinal blkRowSize = blockEntry.numRows();
+  LocalOrdinal blkColSize = blockEntry.numCols();
+  getLocalBlockEntryViewNonConst(localBlockRow,localBlockCol, blkRowSize, blkColSize, internalBlockEntry);
 
   //now sum (add) the incoming block-entry into internal storage:
   const Scalar* inputvalues = blockEntry.values();
@@ -590,6 +695,23 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEnt
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  getLocalBlockEntryViewNonConst(localBlockRow,localBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  LocalOrdinal blk_size = blockEntry.size();
+  TEST_FOR_EXCEPTION(blkColSize*LDA > blk_size, std::runtime_error,
+    "Tpetra::VbrMatrix::setLocalBlockEntry ERROR, inconsistent block-entry sizes.");
+
+  //copy the incoming block-entry into internal storage:
+  set_array_values(internalBlockEntry, blockEntry, blkRowSize, blkColSize, LDA, REPLACE);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
@@ -599,6 +721,23 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBloc
   LocalOrdinal blk_size = blockEntry.size();
   TEST_FOR_EXCEPTION(blkColSize*LDA > blk_size, std::runtime_error,
     "Tpetra::VbrMatrix::setGlobalBlockEntry ERROR, inconsistent block-entry sizes.");
+
+  //copy the incoming block-entry into internal storage:
+  set_array_values(internalBlockEntry, blockEntry, blkRowSize, blkColSize, LDA, ADD);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  getLocalBlockEntryViewNonConst(localBlockRow,localBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  LocalOrdinal blk_size = blockEntry.size();
+  TEST_FOR_EXCEPTION(blkColSize*LDA > blk_size, std::runtime_error,
+    "Tpetra::VbrMatrix::setLocalBlockEntry ERROR, inconsistent block-entry sizes.");
 
   //copy the incoming block-entry into internal storage:
   set_array_values(internalBlockEntry, blockEntry, blkRowSize, blkColSize, LDA, ADD);
@@ -730,7 +869,7 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMat
   TEST_FOR_EXCEPTION(is_storage_optimized_ != true, std::runtime_error,
     "Tpetra::VbrMatrix::fillLocalMatrix ERROR, optimizeStorage is required to have already been called.");
 
-  lclMatVec_.initializeValues(lclMatrix_);
+  lclMatOps_.initializeValues(lclMatrix_);
 }
 
 //-------------------------------------------------------------------

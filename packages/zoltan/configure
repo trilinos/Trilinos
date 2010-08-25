@@ -4874,7 +4874,7 @@ ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_fc_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in gfortran f90 xlf90 f95
+  for ac_prog in FC gfortran f90 xlf90 f95
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -4918,7 +4918,7 @@ fi
 fi
 if test -z "$FC"; then
   ac_ct_FC=$FC
-  for ac_prog in gfortran f90 xlf90 f95
+  for ac_prog in FC gfortran f90 xlf90 f95
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -5136,7 +5136,7 @@ ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_fc_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in gfortran f90 xlf90 f95
+  for ac_prog in FC gfortran f90 xlf90 f95
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -5180,7 +5180,7 @@ fi
 fi
 if test -z "$FC"; then
   ac_ct_FC=$FC
-  for ac_prog in gfortran f90 xlf90 f95
+  for ac_prog in FC gfortran f90 xlf90 f95
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -8435,9 +8435,6 @@ ac_config_files="$ac_config_files Makefile src/Makefile src/driver/Makefile src/
 #		example/C/sparse_matrix/Makefile
 #		example/CPP/Makefile
 #		Utilities/Makefile
-#		ZoltanComponent/Makefile
-#		ZoltanComponent/CCA_Wrapper/Makefile
-#		ZoltanComponent/TestComponents/Makefile
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

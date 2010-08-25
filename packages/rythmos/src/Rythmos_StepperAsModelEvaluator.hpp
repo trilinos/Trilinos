@@ -316,7 +316,7 @@ void StepperAsModelEvaluator<Scalar>::evalModelImpl(
     Array<RCP<const Thyra::VectorBase<Scalar> > > x_vec;
     integrator_->getFwdPoints( time_vec, &x_vec, 0, 0 );
     
-    Thyra::V_V( &*g_out, *x_vec[0] );
+    Thyra::V_V( g_out.ptr(), *x_vec[0] );
 
   }
 

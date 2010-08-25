@@ -14,7 +14,7 @@ PACKAGE_ADD_ADVANCED_TEST( XmlHtmlCDashOutputTest
   OVERALL_WORKING_DIRECTORY TEST_NAME
   TEST_0 CMND ${CMAKE_COMMAND}
     ARGS
-      -D Trilinos_PACKAGES_FILE:STRING=DependencyUnitTests/TrilinosPackagesForUnitTests
+      -DTrilinos_DEPS_HOME_DIR:PATH=${TRILINOS_HOME_DIR}/cmake/DependencyUnitTests/MockTrilinos
       -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON
       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
       -D Trilinos_DEPS_XML_OUTPUT_FILE:STRING=TrilinosPackageDependencies.xml

@@ -26,6 +26,10 @@ SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 MESSAGE("-- " "TRILINOS_HOME_DIR = ${TRILINOS_HOME_DIR}")
 MESSAGE("-- " "TRILINOS_BUILD_DIR = ${TRILINOS_BUILD_DIR}")
 
+IF (NOT ${PROJECT_NAME}_DEPS_HOME_DIR)
+  SET(${PROJECT_NAME}_DEPS_HOME_DIR "${TRILINOS_HOME_DIR}")
+ENDIF()
+
 SET( CMAKE_MODULE_PATH
    ${TRILINOS_HOME_DIR}
    ${TRILINOS_HOME_DIR}/cmake
@@ -103,48 +107,16 @@ ADVANCED_OPTION(Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST
 
 SET(TRILINOS_BUILD_SHARED_LIBS "@BUILD_SHARED_LIBS@")
 
+
 #
-# C) Define the list of all Trilinos packages and TPLs
+# C) Read in Trilinos packages and TPLs and process dependencies
 #
 
-# C.1) Packages
-
-IF (NOT Trilinos_PACKAGES_FILE) # Allow testing override
-  SET(Trilinos_PACKAGES_FILE "TrilinosPackages")
-ENDIF()
-
-MESSAGE("")
-MESSAGE("Reading the list of packages from ${Trilinos_PACKAGES_FILE}.cmake ... ")
-MESSAGE("")
-
-INCLUDE(${Trilinos_PACKAGES_FILE})
-
-PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
-
-# C.2) TPLs
-
-IF (NOT Trilinos_TPLS_FILE) # Allow testing override
-  SET(Trilinos_TPLS_FILE "TrilinosTPLs")
-ENDIF()
-
-MESSAGE("")
-MESSAGE("Reading the list of TPLs from ${Trilinos_TPLS_FILE}.cmake ... ")
-MESSAGE("")
-
-INCLUDE(${Trilinos_TPLS_FILE})
-
-PACKAGE_ARCH_PROCESS_TPLS_LISTS()
+PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
 
 
 #
-# D) Process the package and TPL dependencies
-#
-
-PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
-
-
-#
-# E) Apply logic to enable Trilinos packages and tests
+# D) Apply logic to enable Trilinos packages and tests
 #
 
 IF (NOT Trilinos_ENABLE_Fortran)
@@ -157,37 +129,11 @@ IF (NOT Trilinos_ENABLE_Fortran)
   SET(Trilinos_ENABLE_ForTrilinos OFF)
 ENDIF()
 
-PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nExplicitly enabled packages on input (by user)" ON FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nExplicitly disabled packages on input (by user or by default)" OFF FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nExplicitly enabled TPLs on input (by user)" ON FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nExplicitly disabled TPLs on input (by user or by default)" OFF FALSE)
-
-SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
-PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES(TRUE)
-
-PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nFinal set of enabled packages" ON FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nFinal set of non-enabled packages" OFF TRUE)
-PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nFinal set of enabled TPLs" ON FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nFinal set of non-enabled TPLs" OFF TRUE)
+PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
 
 
 #
-# F) Write the XML dependency files
-#
-
-PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
-
-
-#
-# G) Stop if asked
+# E) Stop if asked
 #
 
 IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
@@ -196,15 +142,19 @@ IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
   RETURN()
 ENDIF()
 
-#
-# H) Add the 'dashboard' target
-#
-
-PACKAGE_ARCH_ADD_DASHBOARD_TARGET()
+# ToDo: rabartl: Remove the above once the unit tests have been refactored to
+# just run macros and not the entire system.
 
 
 #
-# I) Set up the environment on this computer
+# F) Add the 'dashboard' target
+#
+
+TRILINOS_ADD_DASHBOARD_TARGET()
+
+
+#
+# G) Set up the environment on this computer
 #
 
 MESSAGE("")
@@ -219,7 +169,7 @@ PACKAGE_ARCH_POST_SETUP_ENV()
 
 
 #
-# J) Go get the information for all enabled TPLS
+# H) Go get the information for all enabled TPLS
 #
 
 MESSAGE("")
@@ -233,8 +183,10 @@ PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
 
 OPTION(Trilinos_ENABLE_OpenMP
       "Build with OpenMP support." OFF)
+
+
 #
-# K) Set up for testing with CTest and Trilinos test harness
+# I) Set up for testing with CTest and Trilinos test harness
 #
 
 MESSAGE("")
@@ -247,14 +199,14 @@ TRILINOS_SETUP_TESTING_SUPPORT()
 
 
 #
-# L) Setup for packaging and distribution
+# J) Setup for packaging and distribution
 #
 
 TRILINOS_DEFINE_PACKAGING()
 
 
 #
-# M) Configure individual packages
+# K) Configure individual packages
 # 
 
 MESSAGE("")
@@ -265,13 +217,14 @@ PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
 
 
 #
-# N) Install-related commands
+# L) Install-related commands
 #
 
 PACKAGE_ARCH_WRITE_CONFIG_FILE()
 
+
 #
-# O) Export the library dependencies. This will let client projects
+# M) Export the library dependencies. This will let client projects
 # refer to all TPLs used by Trilinos. (KRL, 26 Nov 2009)
 #
 

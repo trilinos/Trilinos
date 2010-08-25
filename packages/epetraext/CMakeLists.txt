@@ -124,6 +124,56 @@ ADD_SUBDIRECTORY(src)
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc/UserGuide
+  doc/inout
+  doc/matlab.README
+  example/MapColoring/sample_map
+  example/MapColoring/sample_matrix
+  example/inout/build
+  example/model_evaluator/GLpApp/Parallel2DMeshGeneratorFormat.pdf
+  example/model_evaluator/GLpApp/README
+  example/model_evaluator/GLpApp/data/square/generate-serial-meshes-1-2.sh
+  example/model_evaluator/GLpApp/data/square/generate-serial-meshes-1-2.sh.out
+  example/model_evaluator/GLpApp/data/square/square.1.2
+  example/model_evaluator/GLpApp/data/square/square.1.2.000
+  example/model_evaluator/GLpApp/data/square/square.1.2.001
+  example/model_evaluator/GLpApp/data/square/square.1.2.edge
+  example/model_evaluator/GLpApp/data/square/square.1.2.ele
+  example/model_evaluator/GLpApp/data/square/square.1.2.epart.2
+  example/model_evaluator/GLpApp/data/square/square.1.2.node
+  example/model_evaluator/GLpApp/data/square/square.1.2.npart.2
+  example/model_evaluator/GLpApp/data/square/square.1.2.poly
+  example/model_evaluator/GLpApp/data/square/square.1.edge
+  example/model_evaluator/GLpApp/data/square/square.1.ele
+  example/model_evaluator/GLpApp/data/square/square.1.node
+  example/model_evaluator/GLpApp/data/square/square.1.poly
+  example/model_evaluator/GLpApp/data/square/square.2.edge
+  example/model_evaluator/GLpApp/data/square/square.2.ele
+  example/model_evaluator/GLpApp/data/square/square.2.node
+  example/model_evaluator/GLpApp/data/square/square.2.poly
+  example/model_evaluator/GLpApp/data/square/square.poly
+  example/model_evaluator/GLpApp/from-triangle-to-serial-input-mesh.pl
+  src/btf/pothen/btf_notes
+  src/btf/pothen/main.f
+  src/distdir
+  src/transform/EpetraExt_Dirichlet_.*
+  src/transform/EpetraExt_StaticCondensation_LinearProblem..*
+  src/transform/EpetraExt_SubCopy_CrsMatrix..*
+  src/zoltan/EpetraExt_ZoltanMpi.*
+  test/Copy
+  test/Makefile.template
+  test/Zoltan/Dummy
+  test/inout/build
+  test/testAll.*
+  )
+
+#
 # D) Do standard postprocessing
 #
 

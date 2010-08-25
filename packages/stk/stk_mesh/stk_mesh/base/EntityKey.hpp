@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <limits>
 
+#include <stk_mesh/base/Types.hpp>
+
 namespace stk {
 namespace mesh {
 

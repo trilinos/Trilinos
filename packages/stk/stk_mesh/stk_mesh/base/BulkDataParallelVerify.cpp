@@ -16,7 +16,6 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
-#include <assert.h>
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -130,36 +129,79 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
         const bool     send_ghost = in_send_ghost( entity );
         const bool     owned_closure = in_owned_closure( entity , p_rank );
 
-        if ( ! ordered ) { this_result = false ; }
+        if ( ! ordered ) {
+          error_log << "Problem is unordered" << std::endl;
+          this_result = false ;
+        }
 
         // Owner consistency:
 
-        if (   has_owns_part && p_owner != p_rank ) { this_result = false ; }
-        if ( ! has_owns_part && p_owner == p_rank ) { this_result = false ; }
+        if (   has_owns_part && p_owner != p_rank ) {
+          error_log << "problem is owner-consistency check 1: "
+                    << "has_owns_part: " << has_owns_part << ", "
+                    << "p_owner: " << p_owner << ", "
+                    << "p_rank: " << p_rank << std::endl;
+          this_result = false ;
+        }
 
-        if ( has_shares_part != shares ) { this_result = false ; }
+        if ( ! has_owns_part && p_owner == p_rank ) {
+          error_log << "problem is owner-consistency check 2: "
+                    << "has_owns_part: " << has_owns_part << ", "
+                    << "p_owner: " << p_owner << ", "
+                    << "p_rank: " << p_rank << std::endl;
+          this_result = false ;
+        }
+
+        if ( has_shares_part != shares ) {
+          error_log << "problem is owner-consistency check 3: "
+                    << "has_shares_part: " << has_shares_part << ", "
+                    << "shares: " << shares << std::endl;
+          this_result = false ;
+        }
 
         // Definition of 'closure'
 
         if ( ( has_owns_part || has_shares_part ) != owned_closure ) {
+          error_log << "problem is closure check 1: "
+                    << "has_owns_part: " << has_owns_part << ", "
+                    << "has_shares_part: " << has_shares_part << ", "
+                    << "owned_closure: " << owned_closure << std::endl;
           this_result = false ;
         }
 
         // Must be either owned_closure or recv_ghost but not both.
 
-        if (   owned_closure &&   recv_ghost ) { this_result = false ; }
-        if ( ! owned_closure && ! recv_ghost ) { this_result = false ; }
+        if (   owned_closure &&   recv_ghost ) {
+          error_log << "problem is recv ghost check 1: "
+                    << "owned_closure: " << owned_closure << ", "
+                    << "recv_ghost: " << recv_ghost << std::endl;
+          this_result = false ;
+        }
+        if ( ! owned_closure && ! recv_ghost ) {
+          error_log << "problem is recv ghost check 2: "
+                    << "owned_closure: " << owned_closure << ", "
+                    << "recv_ghost: " << recv_ghost << std::endl;
+          this_result = false ;
+        }
 
         // If sending as a ghost then I must own it
 
-        if ( ! has_owns_part && send_ghost ) { this_result = false ; }
+        if ( ! has_owns_part && send_ghost ) {
+          error_log << "problem is send ghost check 1: "
+                    << "has_owns_part: " << has_owns_part << ", "
+                    << "send_ghost: " << send_ghost << std::endl;
+          this_result = false ;
+        }
 
         // If shared then I am owner or owner is in the shared list
 
         if ( shares && p_owner != p_rank ) {
           PairIterEntityComm ip = entity.sharing();
           for ( ; ! ip.empty() && p_owner != ip->proc ; ++ip );
-          if ( ip.empty() ) { this_result = false ; }
+          if ( ip.empty() ) {
+            error_log << "problem is shared check 1" << std::endl;
+            this_result = false ;
+          }
         }
 
         if ( shares || recv_ghost || send_ghost ) { ++comm_count ; }

@@ -52,6 +52,7 @@ INCLUDE(PackageListHelpers)
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   TrilinosFramework     ../cmake                       PS # Only tests, no libraries/capabilities!
   Teuchos               teuchos                        PS
+  Trios                 Trios                          SS # Depends on netcdf, optionally hdf5, xdmf
   ThreadPool            ThreadPool                     PS # Depends on ptheads system library
   Sacado                sacado                         PS
   RTOp                  rtop                           PS
@@ -81,13 +82,12 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Meros                 meros                          SS
   FEI                   fei                            PS
   Anasazi               anasazi                        PS
-  Teko                  teko                           SS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
   STK                   stk                            SS # Depends on boost
   Intrepid              intrepid                       PS
   Phalanx               phalanx                        SS
-  Phdmesh               phdmesh                        SS # to be replaced by STK
+  Phdmesh               phdmesh                        EX # to be replaced by STK
   NOX                   nox                            PS
   Moertel               moertel                        PS
   TrilinosCouplings     trilinoscouplings              SS
@@ -97,7 +97,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Stokhos               stokhos                        SS
   Piro                  piro                           SS
   Sundance              Sundance                       SS # Could be PS based on deps (BUG: 4669)
-  CTrilinos             CTrilinos                      PS
+  CTrilinos             CTrilinos                      SS # Switched to SS to speed up checkin testing
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
   WebTrilinos           WebTrilinos                    EX # Should be SS
@@ -105,9 +105,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   NewPackage            new_package                    EX # Should be SS
   Optika		optika			       SS
   Mesquite              mesquite                       PS
-  Stalix                stalix                         EX
-  Lyno                  lyno                           EX
-  Trios                 Trios                          EX # Depends on netcdf, optionally hdf5, xdmf
   FEApp                 ../demos/FEApp                 SS # Capability demonstration package
   )
 
@@ -129,9 +126,8 @@ PACKAGE_DISABLE_ON_PLATFORMS(Tpetra Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Tifpack Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(FEI Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)

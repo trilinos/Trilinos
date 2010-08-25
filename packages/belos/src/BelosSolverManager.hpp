@@ -49,6 +49,11 @@
 
 namespace Belos {
 
+
+template <class ScalarType, class MV, class OP>
+class StatusTest;
+
+
 template<class ScalarType, class MV, class OP>
 class SolverManager : virtual public Teuchos::Describable {
     
@@ -94,6 +99,15 @@ class SolverManager : virtual public Teuchos::Describable {
 
   //! Set the parameters the solver manager should use to solve the linear problem.
   virtual void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) = 0;
+
+  //! Set user-defined convergence status test.1
+  virtual void setUserConvStatusTest(
+    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
+    )
+    {
+      TEST_FOR_EXCEPT_MSG(true, "Error, the function setUserConvStatusTest() has not been"
+        << " overridden for the class" << this->description() << " yet!");
+    }
 
   //@}
 

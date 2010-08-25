@@ -53,9 +53,11 @@
 // I/O for Harwell-Boeing files
 #include <iohb.h>
 
+#include <complex>
+
 using namespace Anasazi;
 using namespace Teuchos;
-using Tpetra::Platform;
+
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
@@ -65,12 +67,12 @@ using std::endl;
 using std::vector;
 
 typedef std::complex<double>                ST;
-typedef ScalarTraits<ST>                   SCT;
+typedef ScalarTraits< ST >                 SCT;
 typedef SCT::magnitudeType                  MT;
-typedef MultiVector<ST,int>                 MV;
-typedef Operator<ST,int>                    OP;
-typedef MultiVecTraits<ST,MV>              MVT;
-typedef OperatorTraits<ST,MV,OP>           OPT;
+typedef MultiVector< ST, int >              MV;
+typedef Operator< ST, int >                 OP;
+typedef MultiVecTraits< ST, MV >           MVT;
+typedef OperatorTraits< ST, MV, OP >       OPT;
 
 // this is the tolerance that all tests are performed against
 const MT TOL = 1.0e-12;
@@ -95,8 +97,8 @@ int main(int argc, char *argv[])
   int info = 0;
   int MyPID = 0;
 
-  RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<const Comm<int> > comm = platform->getComm();
+  RCP< const Teuchos::Comm<int> > comm = 
+    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   MyPID = rank(*comm);
 
@@ -176,7 +178,7 @@ int main(int argc, char *argv[])
       }
       // create map
       map = rcp(new Map<int>(dim,0,comm));
-      M = rcp(new CrsMatrix<ST,int>(*map,rnnzmax));
+      M = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
       if (MyPID == 0) {
         // Convert interleaved doubles to complex values
         // HB format is compressed column. CrsMatrix is compressed row.
@@ -218,7 +220,7 @@ int main(int argc, char *argv[])
     }
 
     // multivector to spawn off of
-    RCP<MV> S = rcp( new MultiVector<ST,int>(*map, sizeS) );
+    RCP<MV> S = rcp( new MultiVector<ST,int>(map, sizeS) );
 
     // create X1, X2
     // they must be M-orthonormal and mutually M-orthogonal
@@ -304,7 +306,7 @@ int main(int argc, char *argv[])
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
-        RCP<MV> Si = MVT::CloneView(*S,ind);
+        RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
 
@@ -362,7 +364,7 @@ int main(int argc, char *argv[])
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
-        RCP<MV> Si = MVT::CloneView(*S,ind);
+        RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
 
@@ -516,7 +518,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         for (int i=0; i<ret; i++) {
           ind[i] = i;
         }
-        S_outs.push_back( MVT::CloneView(*Scopy,ind) );
+        S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
         B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*B,ret,sizeS) ) );
       }
       else {
@@ -564,7 +566,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           for (int i=0; i<ret; i++) {
             ind[i] = i;
           }
-          S_outs.push_back( MVT::CloneView(*Scopy,ind) );
+          S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
           B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*B,ret,sizeS) ) );
         }
         else {
@@ -711,7 +713,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
         for (int i=0; i<ret; i++) {
           ind[i] = i;
         }
-        Scopy = MVT::CloneView(*Scopy,ind);
+        Scopy = MVT::CloneViewNonConst(*Scopy,ind);
         B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,*B,ret,sizeS) );
       }
 

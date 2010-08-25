@@ -191,7 +191,15 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   aggregate_with_sigma= List_.get("refmaxwell: aggregate with sigma",false);  
   
   /* Nuke everything if we've done this already */
-   if(IsComputePreconditionerOK_) DestroyPreconditioner();
+  if(IsComputePreconditionerOK_) DestroyPreconditioner();
+
+  /* Output Header */
+  if(verbose_ && !Comm_->MyPID()) {
+    printf("------------------------------------------------------------------------------\n");
+    printf("***\n");
+    printf("*** ML_Epetra::RefMaxwellPreconditioner [%s]\n",Label());
+    printf("***\n");
+  }
 
   /* Find the Dirichlet Rows (using SM_Matrix_) and columns (using D0_Clean_Matrix_) */
   BCrows=FindLocalDiricheltAndInflowRowsFromOnesAndZeros(*SM_Matrix_,numBCrows);
@@ -384,6 +392,11 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
     LocalNodalSolver=new MultiLevelPreconditioner(*LocalNodalMatrix,ListN);
   }
   
+  /* Output footer */
+  if(verbose_ && !Comm_->MyPID()) {
+    printf("------------------------------------------------------------------------------\n");
+  }
+
   IsComputePreconditionerOK_=true;
   return 0;
 }/*end ComputePreconditioner*/
@@ -490,6 +503,33 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
   int node_sweeps=List.get("subsmoother: node sweeps",2);  
   int output=List.get("ML output",0);
 
+  /* Smoother info output */
+  int NumGlobalRows=SM_Matrix_->NumGlobalRows();
+  int NumGlobalNNZ=SM_Matrix_->NumGlobalNonzeros();
+  if(verbose_ && !Comm_->MyPID()) {
+    char msg[80];
+    sprintf(msg,"%s","Smoother: (refmaxwell top) :");
+    printf("%s # global rows = %d, # estim. global nnz = %d\n",msg,NumGlobalRows,NumGlobalNNZ);
+    if(smoother=="Hiptmair")
+      printf("%s %s %d (e=%d/n=%d)\n",msg,smoother.c_str(),smoother_sweeps,edge_sweeps,node_sweeps);
+    else if(smoother=="IFPACK"){
+      string MyIfpackType = List.get("smoother: ifpack type","SORa");     
+      Teuchos::ParameterList & IfpackList=List.sublist("smoother: ifpack list");
+      if(MyIfpackType == "SORa"){
+	printf("%s IFPACK/SORa(%3.1f,%3.1f), sweeps = %d\n",msg,IfpackList.get("sora: alpha",1.5),IfpackList.get("sora: gamma",1.0),IfpackList.get("sora: sweeps",1));
+	if(IfpackList.get("sora: oaz boundaries",false))
+	  printf("%s oaz boundary handling enabled\n",msg);
+	if(IfpackList.get("sora: use interproc damping",false))
+	  printf("%s interproc damping enabled\n",msg);
+      }
+      else
+	printf("%s %s %d\n",msg,MyIfpackType.c_str(),smoother_sweeps);	
+    }
+    else 
+      printf("%s %s %d\n",msg,smoother.c_str(),smoother_sweeps);
+  }/*end if*/
+
+
   if(smoother == "Hiptmair"){
     /* Setup Teuchos Lists - Hiptmair */
     Teuchos::ParameterList PreList;
@@ -595,14 +635,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
     PostEdgeSmoother  = new MultiLevelPreconditioner(*SM_Matrix_,PreList);
   }/*end else*/
-
-
-  /* Smoother info output */
-  if(verbose_ && !Comm_->MyPID()) {
-    if(smoother=="Hiptmair") printf("RefMaxwell: Fine Smoother %s %d (e=%d/n=%d)\n",smoother.c_str(),smoother_sweeps,edge_sweeps,node_sweeps);
-    else printf("RefMaxwell: Fine Smoother %s %d\n",smoother.c_str(),smoother_sweeps);
-  }/*end if*/
-    
+         
   return 0;
 }/*end SetEdgeSmoother*/
 

@@ -17,6 +17,7 @@
 
 #include "zz_const.h"
 #include "zoltan_types.h"
+#include <limits.h>
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -45,7 +46,7 @@ int Zoltan_AllReduceInPlace(void *, int , MPI_Datatype , MPI_Op , MPI_Comm );
 
 struct Zoltan_Map_Entry{
   int *key;          /* a copy of or a pointer to callers key */
-  void *data;        /* a pointer provided by caller */
+  int data;          /* an integer provided by caller */
   struct Zoltan_Map_Entry *next;
 };
 
@@ -79,12 +80,14 @@ typedef struct Zoltan_Map_List ZOLTAN_MAP;
 
 ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz, int hash_range, int num_id_entries, int store_keys, int num_entries);
 int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP **map);
-int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, int *key, void *data);
-int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, int *key, void **data);
-int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **dataout);
+int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, int *key, int data);
+int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, int *key, int *data);
+int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, int datain, int *dataout);
 int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP *map);
-int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, int **key, void **data);
-int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, int **key, void **data);
+int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, int **key, int *data);
+int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, int **key, int *data);
+
+#define ZOLTAN_NOT_FOUND INT_MIN
 
 /*****************************************************************************/
 /*****************************************************************************/

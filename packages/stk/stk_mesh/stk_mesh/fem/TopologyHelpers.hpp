@@ -101,8 +101,13 @@ Entity & declare_element( BulkData & mesh ,
   Entity & elem = mesh.declare_entity( Element, elem_id, add );
 
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
-    Entity & node = mesh.declare_entity( Node, node_id[i], empty );
-    mesh.declare_relation( elem , node , i );
+    //declare node if it doesn't already exist
+    Entity * node = mesh.get_entity( Node , node_id[i]);
+    if ( NULL == node) {
+      node = & mesh.declare_entity( Node , node_id[i], empty );
+    }
+
+    mesh.declare_relation( elem , *node , i );
   }
   return elem ;
 }
@@ -160,18 +165,14 @@ Entity & declare_element_side( Entity & elem ,
 bool element_side_polarity( const Entity & elem ,
                             const Entity & side , int local_side_id = -1 );
 
-/** \brief  Determine the local side identifier,
- *          return -1 if the side doesn't match the element.
- */
-int element_local_side_id( const Entity & elem ,
-                           const Entity & side );
-
 
 /** \brief  Given an element and collection of nodes, return the
- *          local id of any side that contains those nodes
+ *          local id of the side that contains those nodes in the
+ *          correct orientation.
  */
 int element_local_side_id( const Entity & elem ,
-                           const std::vector<Entity*>& entity_nodes );
+                           const CellTopologyData * side_topology,
+                           const std::vector<Entity*>& side_nodes );
 
 //----------------------------------------------------------------------
 

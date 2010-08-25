@@ -659,21 +659,32 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       IfpackList.set("fact: absolute threshold", MyIfpackAT);
 
       if( verbose_ ) {
-        cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
-             << msg << MyPreOrPostSmoother
-             << ",overlap=" << MyIfpackOverlap << endl;
-        if (MyIfpackType != "Amesos") {
-          if (MyIfpackType == "ILU" || MyIfpackType == "IC") {
-            int myLof = IfpackList.get("fact: level-of-fill", (int) lof);
-            cout << msg << "level-of-fill=" << myLof;
-          }
-          else {
+	// SORa needs special handling
+	if(MyIfpackType == "SORa"){
+	  cout << msg << "IFPACK/SORa("<<IfpackList.get("sora: alpha",1.5)<<","<<IfpackList.get("sora: gamma",1.0)<<")"
+	       << ", sweeps = " <<IfpackList.get("sora: sweeps",1)<<endl;
+	  if(IfpackList.get("sora: oaz boundaries",false))
+	    cout << msg << "oaz boundary handling enabled"<<endl;
+	  if(IfpackList.get("sora: use interproc damping",false))
+	    cout << msg << "interproc damping enabled"<<endl;
+	}
+	else{
+	  cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
+	       << msg << MyPreOrPostSmoother
+	       << ",overlap=" << MyIfpackOverlap << endl;
+	  if (MyIfpackType != "Amesos") {
+	    if (MyIfpackType == "ILU" || MyIfpackType == "IC") {
+	      int myLof = IfpackList.get("fact: level-of-fill", (int) lof);
+	      cout << msg << "level-of-fill=" << myLof;
+	    }
+	    else {
             double myLof = IfpackList.get("fact: level-of-fill", (int) lof);
             cout << msg << "level-of-fill=" << myLof;
-          }
-          cout << ",rel. threshold=" << MyIfpackRT
-               << ",abs. threshold=" << MyIfpackAT << endl;
-        }
+	    }
+	    cout << ",rel. threshold=" << MyIfpackRT
+		 << ",abs. threshold=" << MyIfpackAT << endl;
+	  }
+	}
       }
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                              MyIfpackOverlap, currentLevel, pre_or_post,

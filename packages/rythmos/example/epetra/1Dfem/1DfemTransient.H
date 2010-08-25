@@ -98,9 +98,9 @@ public:
   // ---------------------------
   // --------------- Constructor ------
   // ---------------------------
-  TransientInterface(int NumGlobalElements, Epetra_Comm& Comm, 
-                     double xmin = 0.0, double xmax = 1.0) :
-    Interface(NumGlobalElements, Comm, xmin, xmax),
+  TransientInterface(int my_NumGlobalElements, Epetra_Comm& my_Comm, 
+                     double my_xmin = 0.0, double my_xmax = 1.0) :
+    Interface(my_NumGlobalElements, my_Comm, my_xmin, my_xmax),
     oldSolution(0),
     exactSolution(0)
     {
@@ -122,6 +122,9 @@ public:
   // ---------------------------
   // --------------- Matrix and Residual Fills
   // ---------------------------
+  // Remove shadow warning:
+  bool evaluate(NOX::Epetra::Interface::Required::FillType, const Epetra_Vector*, Epetra_Vector*, Epetra_RowMatrix*) {return false;}
+  // New function:
   bool evaluate(NOX::Epetra::Interface::Required::FillType flag, 
                 const Epetra_Vector* soln, 
                 const Epetra_Vector* solndot, // 09/21/05 tscoffe
@@ -131,7 +134,7 @@ public:
   		Epetra_RowMatrix* tmp_matrix)
   {
 
-    Epetra_CrsMatrix* jacout;
+    Epetra_CrsMatrix* jacout = NULL;
     
     //Determine what to fill (F or Jacobian)
     bool fillF = false;

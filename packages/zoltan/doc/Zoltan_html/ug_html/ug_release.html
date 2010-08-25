@@ -34,6 +34,7 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release3.3">Zoltan Release v3.3</a><br>
   <a href="#Release3.2">Zoltan Release v3.2</a><br>
   <a href="#Release3.1">Zoltan Release v3.1</a><br>
   <a href="#Release3.0">Zoltan Release v3.0</a><br>
@@ -51,6 +52,27 @@ releases of Zoltan:
   <br>
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
+<hr>
+<h2><a name="Release3.3">Zoltan Release Notes v3.3: July 31, 2010</a></h2>
+
+Features:
+<ul>
+<li>
+New <a href="ug_order_local_hsfc.html">local ordering method based on 
+space-filling curves</a> to improve 
+memory and cache locality within a processor.
+</li>
+<li>
+Ability to call graph partitioning algorithms using hypergraph callback
+functions; this capability is useful applications with, say, block-structured
+matrix distributions (e.g., SuperLU), where all information about a matrix
+row or column is not available on a single processor.
+</li>
+<li>
+Improved execution time of parallel hypergraph partitioning.
+</li>
+</ul>
+
 <hr>
 <h2><a name="Release3.2">Zoltan Release Notes v3.2: September 24, 2009</a></h2>
 

@@ -70,24 +70,15 @@ def isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
   return False
 
 
-def getFilePathArray(filePathStr):
-  return filePathStr.split('/')
-
-
 def getPackageStructFromPath(trilinosDependencies, fullPath):
-  fullPathArray = getFilePathArray(fullPath)
-  if fullPathArray[0] == "packages":
-    packageDir = fullPathArray[1]
-  else:
-    packageDir = "../"+fullPathArray[0]
-  return trilinosDependencies.getPackageByDir(packageDir)
+  packageName = getPackageNameFromPath(trilinosDependencies, fullPath)
+  if packageName:
+    return trilinosDependencies.getPackageByName(packageName)
+  return None
 
 
-def getPackageNameFromPath(trilinosDependencies, fullPath):
-  packageStruct = getPackageStructFromPath(trilinosDependencies, fullPath)
-  if packageStruct:
-    return packageStruct.packageName
-  return u""
+def getPackageNameFromPath(trilinosDependencies, fullPath, prefixPath="packages"):
+  return trilinosDependencies.getPackageNameFromPath(fullPath, prefixPath)
 
 
 def extractFilesListMatchingPattern(fileList_in, reMatachingPattern):

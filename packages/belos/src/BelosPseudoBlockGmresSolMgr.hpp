@@ -178,6 +178,11 @@ namespace Belos {
    
     //! Set the parameters the solver manager should use to solve the linear problem. 
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+
+    /** \brief. */
+    virtual void setUserConvStatusTest(
+      const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
+      );
     
     //@}
 
@@ -250,6 +255,7 @@ namespace Belos {
     Teuchos::RCP<std::ostream> outputStream_;
 
     // Status test.
+    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > userConvStatusTest_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
     Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
     Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
@@ -691,6 +697,16 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     
 template<class ScalarType, class MV, class OP>
+void 
+PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setUserConvStatusTest(
+  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &userConvStatusTest
+  )
+{
+  userConvStatusTest_ = userConvStatusTest;
+}
+
+    
+template<class ScalarType, class MV, class OP>
 Teuchos::RCP<const Teuchos::ParameterList>
 PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
 {
@@ -798,6 +814,14 @@ bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::checkStatusTest() {
     // Set the explicit and total convergence test to this implicit test that checks for accuracy loss.
     expConvTest_ = impConvTest_;
     convTest_ = impConvTest_;
+  }
+
+  if (nonnull(userConvStatusTest_) ) {
+    // Override the overall convergence test with the users convergence test
+    convTest_ = Teuchos::rcp(
+      new StatusTestCombo_t( StatusTestCombo_t::SEQ, convTest_, userConvStatusTest_ ) );
+    // NOTE: Above, you have to run the other convergence tests also because
+    // the logic in this class depends on it.  This is very unfortunate.
   }
 
   sTest_ = Teuchos::rcp( new StatusTestCombo_t( StatusTestCombo_t::OR, maxIterTest_, convTest_ ) );
@@ -1104,12 +1128,19 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       
       // Compute the current solution.
       // Update the linear problem.
-      if ( !Teuchos::is_null(expConvTest_->getSolution()) ) {
+      if (nonnull(userConvStatusTest_)) {
+        //std::cout << "\nnonnull(userConvStatusTest_)\n";
+        Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
+        problem_->updateSolution( update, true );
+      }
+      else if (nonnull(expConvTest_->getSolution())) {
+        //std::cout << "\nexpConvTest_->getSolution()\n";
         Teuchos::RCP<MV> newX = expConvTest_->getSolution();
         Teuchos::RCP<MV> curX = problem_->getCurrLHSVec();
         MVT::MvAddMv( 0.0, *newX, 1.0, *newX, *curX );
       }
       else {
+        //std::cout << "\nblock_gmres_iter->getCurrentUpdate()\n";
         Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
         problem_->updateSolution( update, true );
       }

@@ -282,6 +282,30 @@ void Basis_HGRAD_HEX_C1_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
                       ">>> ERROR (Basis_HGRAD_HEX_C1_FEM): FEM Basis calling an FVD member function");
                                                             }
 
+template<class Scalar, class ArrayScalar>
+void Basis_HGRAD_HEX_C1_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const {
+#ifdef HAVE_INTREPID_DEBUG
+  // Verify rank of output array.
+  TEST_FOR_EXCEPTION( !(DofCoords.rank() == 2), std::invalid_argument,
+                      ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C1_FEM::getDofCoords) rank = 2 required for DofCoords array");
+  // Verify 0th dimension of output array.
+  TEST_FOR_EXCEPTION( !( DofCoords.dimension(0) == this -> basisCardinality_ ), std::invalid_argument,
+                      ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C1_FEM::getDofCoords) mismatch in number of DoF and 0th dimension of DofCoords array");
+  // Verify 1st dimension of output array.
+  TEST_FOR_EXCEPTION( !( DofCoords.dimension(1) == (int)(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
+                      ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C1_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
+#endif
+
+  DofCoords(0,0) = -1.0;   DofCoords(0,1) = -1.0; DofCoords(0,2) = -1.0;  
+  DofCoords(1,0) =  1.0;   DofCoords(1,1) = -1.0; DofCoords(1,2) = -1.0;  
+  DofCoords(2,0) =  1.0;   DofCoords(2,1) =  1.0; DofCoords(2,2) = -1.0;  
+  DofCoords(3,0) = -1.0;   DofCoords(3,1) =  1.0; DofCoords(3,2) = -1.0;  
+  DofCoords(4,0) = -1.0;   DofCoords(4,1) = -1.0; DofCoords(4,2) =  1.0;  
+  DofCoords(5,0) =  1.0;   DofCoords(5,1) = -1.0; DofCoords(5,2) =  1.0;  
+  DofCoords(6,0) =  1.0;   DofCoords(6,1) =  1.0; DofCoords(6,2) =  1.0;  
+  DofCoords(7,0) = -1.0;   DofCoords(7,1) =  1.0; DofCoords(7,2) =  1.0;  
+}
+
 }// namespace Intrepid
 
 #endif

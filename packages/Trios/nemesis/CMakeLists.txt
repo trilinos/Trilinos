@@ -82,15 +82,17 @@ PACKAGE_ADD_LIBRARY(
 	DEPLIBS exodus
 )
 
-PACKAGE_ADD_TEST(
-	ne_test
-	NAME ne_test
-	NUM_MPI_PROCS 1
-	COMM serial
-)
+IF (Trios_ENABLE_TESTS)
 
-PACKAGE_ADD_EXECUTABLE(
- ne_test
- SOURCES ne_test.c
- COMM serial
-)
+  PACKAGE_ADD_TEST(
+  	  ne_test
+	  NAME ne_test
+	  NUM_MPI_PROCS 1
+  )
+
+  PACKAGE_ADD_EXECUTABLE(
+   ne_test
+   SOURCES ne_test.c
+  )
+
+ENDIF()

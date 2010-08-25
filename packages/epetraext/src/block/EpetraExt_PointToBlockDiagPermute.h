@@ -149,6 +149,7 @@ public:
   //@{ 
   //! Print method
   virtual void Print(ostream& os) const;
+
   //@}
 
 
@@ -259,6 +260,10 @@ private:
   //! Pulls the block diagonal of the matrix and then builds the BDMat_
   int ExtractBlockDiagonal();
 
+  //! Setup/Cleanup for Contiguous Mode
+  int SetupContiguousMode();
+  int CleanupContiguousMode();
+
   // Copied from Epetra_CrsMatrix
   void UpdateImportVector(int NumVectors) const;
   void UpdateExportVector(int NumVectors) const;
@@ -266,6 +271,11 @@ private:
   Teuchos::ParameterList List_;
   const Epetra_CrsMatrix* Matrix_;  
   bool PurelyLocalMode_;  
+
+  // For contiguous blocking only
+  bool ContiguousBlockMode_;
+  int ContiguousBlockSize_;
+
   int NumBlocks_;
   int *Blockstart_;
   int *Blockids_;

@@ -122,8 +122,17 @@ class BlockCrsGraph : public Teuchos::Describable {
   //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
   bool isLocallyIndexed() const;
 
+  //! \brief true if graph is upper-triangular.
+  bool isUpperTriangular() const;
+
+  //! \brief true if graph is lower-triangular.
+  bool isLowerTriangular() const;
+
   //! Returns the number of rows owned on the calling node.
   size_t getNodeNumRows() const;
+
+  //! Returns the number of diagonal entries on the calling node.
+  size_t getNodeNumDiags() const;
 
   //! Returns the local number of entries in the graph.
   size_t getNodeNumEntries() const;
