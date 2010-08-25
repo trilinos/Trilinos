@@ -48,7 +48,7 @@ int main(int argc, char** argv)
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   try
-    {
+   {
       /* create an XML object */
       XMLObject problem("Problem");
       XMLObject solver("Solver");
@@ -66,10 +66,21 @@ int main(int argc, char** argv)
 
       problem.addChild(solver);
 
-      if(&(problem.getChild((problem.findFirstChild("Solver")))) != &solver){
-        return -1;
-        std::cerr << "Find child didn't find the Solver tag!"
+      int foundIndex  = problem.findFirstChild("Solver");
+      if(foundIndex == -1)
+      {
+        std::cerr << "Find child didn't find the child!"
           <<std::endl << std::endl;
+        return -1;
+      }
+
+      const XMLObject foundChild = problem.getChild(foundIndex);
+      if(foundChild.getTag() != solver.getTag())
+      {
+        std::cerr << "Find child found the wrong tag!" << std::endl <<
+          "Found index was: " << foundIndex << std::endl <<
+          std::endl << std::endl;
+        return -1;
       }
 
       if(problem.findFirstChild("NON EXSISTENT CHILD") != -1){

@@ -34,12 +34,17 @@ const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
   return "any";
 }
 
-const std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
-  return toString(entry.getAny(false));
+const std::string AnyParameterEntryConverter::getValueAttributeValue(
+  RCP<const ParameterEntry> entry) const
+{
+  return toString(entry->getAny(false));
 }
 
-void AnyParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
-  entry.setValue<std::string>(xmlObj.getRequired(getValueAttributeName()), isDefault);
+void AnyParameterEntryConverter::setEntryValue(
+  RCP<ParameterEntry> entry, const XMLObject &xmlObj, bool isDefault) const
+{
+  entry->setValue<std::string>(
+    xmlObj.getRequired(getValueAttributeName()), isDefault);
 }
 
 } //namespace Teuchos

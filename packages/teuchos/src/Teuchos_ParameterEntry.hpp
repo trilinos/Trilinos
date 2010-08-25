@@ -317,6 +317,17 @@ inline T& getValue( const ParameterEntry &entry )
 }
 
 /*! \relates ParameterEntry 
+    \brief A templated helper function for returning the value of type \c T held in the ParameterEntry object,
+    where the type \c T can be specified in the call.  This is an easier way to call the getValue method
+    in the ParameterEntry class, since the user does not have to pass in a pointer of type \c T.
+*/
+template<typename T>
+inline T& getValue(RCP<const ParameterEntry> entry)
+{
+  return entry->getValue((T*)NULL);
+}
+
+/*! \relates ParameterEntry 
     \brief Returns true if two ParameterEntry objects are equal.
 */
 inline bool operator==(const ParameterEntry& e1, const ParameterEntry& e2) 

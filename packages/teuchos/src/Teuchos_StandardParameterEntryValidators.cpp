@@ -243,9 +243,9 @@ AnyNumberParameterEntryValidator::getPreferredType() const
 // Overridden from ParameterEntryValidator
 
 
-const std::string AnyNumberParameterEntryValidator::getXMLTagName() const
+const std::string AnyNumberParameterEntryValidator::getXMLTypeName() const
 {
-  return "anynumbervalidator";
+  return "anynumberValidator";
 }
 
 
@@ -419,9 +419,9 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
 }
 
 
-const std::string FileNameValidator::getXMLTagName() const
+const std::string FileNameValidator::getXMLTypeName() const
 {
-  return "filenamevalidator";
+  return "filenameValidator";
 }
 
 
@@ -504,9 +504,9 @@ void StringValidator::validate(
 }
 
 
-const std::string StringValidator::getXMLTagName() const
+const std::string StringValidator::getXMLTypeName() const
 {
-  return "stringvalidator";
+  return "stringValidator";
 }
 
 
@@ -523,6 +523,13 @@ void StringValidator::printDoc(std::string const &docString,
 
 
 // Nonmmeber helper functions
+
+Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
+Teuchos::anyNumberParameterEntryValidator()
+{
+  return rcp(new AnyNumberParameterEntryValidator());
+}
+
 
 Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
 Teuchos::anyNumberParameterEntryValidator(

@@ -31,29 +31,47 @@
 namespace Teuchos{
 
 RCP<ParameterEntryValidator>
-ValidatorXMLConverter::fromXMLtoValidator(const XMLObject& xmlObj) const {
+ValidatorXMLConverter::fromXMLtoValidator(
+  const XMLObject& xmlObj,
+  const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+{
   #ifdef HAVE_TEUCHOS_DEBUG
   RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
-  TEST_FOR_EXCEPTION(xmlObj.getTag() != dummyValidator->getXMLTagName(), 
+  TEST_FOR_EXCEPTION(
+    xmlObj.getRequired(getTypeAttributeName())
+    !=
+    dummyValidator->getXMLTypeName(), 
     BadValidatorXMLConverterException, 
     "Cannot convert xmlObject " << 
-    ". Expected a " << dummyValidator->getXMLTagName() <<
-    " tag but got a " << xmlObj.getTag() << "tag");
+    ". Expected a " << dummyValidator->getXMLTypeName() <<
+    " tag but got a " << xmlObj.getRequired(getTypeAttributeName()) << "type");
   #endif
-  ParameterEntryValidator::ValidatorID validatorID = 
-    xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-      getIdAttributeName());
-  RCP<ParameterEntryValidator> toReturn = convertXML(xmlObj, validatorID);
+  RCP<ParameterEntryValidator> toReturn = 
+    convertXML(xmlObj, validatorIDsMap);
   return toReturn;
 }
 
 XMLObject 
 ValidatorXMLConverter::fromValidatortoXML(
-  const RCP<const ParameterEntryValidator> validator) const
+  const RCP<const ParameterEntryValidator> validator,
+  const XMLParameterListWriter::ValidatorSet& validatorSet) const
 {
-  XMLObject toReturn = convertValidator(validator);
+  #ifdef HAVE_TEUCHOS_DEBUG
+  RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
+  TEST_FOR_EXCEPTION(
+    validator->getXMLTypeName() 
+    !=
+    dummyValidator->getXMLTypeName(), 
+    BadValidatorXMLConverterException, 
+    "Cannot convert Validator " << 
+    ". Expected a " << dummyValidator->getXMLTypeName() <<
+    " validator but got a " << validator->getXMLTypeName() << "type");
+  #endif
+  XMLObject toReturn(getValidatorTagName());
+  toReturn.addAttribute(getTypeAttributeName(), validator->getXMLTypeName());
   toReturn.addAttribute(getIdAttributeName(),
     ParameterEntryValidator::getValidatorID(validator));
+  convertValidator(validator, toReturn, validatorSet);
   return toReturn;
 }
 

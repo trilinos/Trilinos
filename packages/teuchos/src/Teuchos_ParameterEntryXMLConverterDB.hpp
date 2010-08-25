@@ -68,7 +68,7 @@ public:
    * \param entry The ParameterEntry for which a converter is desired.
    */
   static RCP<const ParameterEntryXMLConverter> 
-    getConverter(const ParameterEntry& entry);
+    getConverter(RCP<const ParameterEntry> entry);
 
   /** \brief Get an appropriate ParameterEntryXMLConverter given a XMLObject.
    *
@@ -94,7 +94,7 @@ public:
    * \brief Converts the given ParameterEntry to XML.
    */
   static XMLObject convertEntry(
-    const ParameterEntry& entry, const std::string& name)
+    RCP<const ParameterEntry> entry, const std::string& name)
   {
     return getConverter(entry)->fromParameterEntrytoXML(entry, name);
   }
@@ -102,7 +102,7 @@ public:
   /**
    * \brief Converts XML to a ParameterEntry.
    */
-  static ParameterEntry convertXML(const XMLObject& xmlObj){
+  static RCP<ParameterEntry> convertXML(const XMLObject& xmlObj){
     return getConverter(xmlObj)->fromXMLtoParameterEntry(xmlObj);
   }
   

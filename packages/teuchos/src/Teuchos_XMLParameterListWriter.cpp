@@ -47,20 +47,37 @@ XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
   return toReturn;
 }
 
+void XMLParameterListWriter::buildValidatorSet(
+  const ParameterList& p,
+  ValidatorSet& validatorSet) const
+{
+  for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i) {
+    const ParameterEntry& entry = p.entry(i);
+    if(entry.isList()){
+      buildValidatorSet(
+        getValue<ParameterList>(entry),
+        validatorSet);
+    }
+    else if(nonnull(entry.validator())){
+      validatorSet.insert(entry.validator());
+    }
+  }
+}
+
 
 XMLObject XMLParameterListWriter::convertValidators(
   const ParameterList& p) const
 {
   XMLObject validators(getValidatorsTagName());
-  for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i) {
-    const ParameterEntry& entry = p.entry(i);
-    if(entry.isList()){
-      convertValidators(getValue<ParameterList>(entry));
-    }
-    else if(nonnull(entry.validator())){
-      validators.addChild(
-        ValidatorXMLConverterDB::convertValidator(entry.validator()));
-    }
+  ValidatorSet validatorSet;
+  buildValidatorSet(p, validatorSet);
+  for(
+    ValidatorSet::const_iterator it = validatorSet.begin();
+    it != validatorSet.end();
+    ++it)
+  {
+    validators.addChild(
+      ValidatorXMLConverterDB::convertValidator(*it, validatorSet));
   }
   return validators;
 }
@@ -73,8 +90,8 @@ XMLObject XMLParameterListWriter::convertParameterList(
   rtn.addAttribute(getNameAttributeName(), p.name());
   
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i){
-    const ParameterEntry& entry = p.entry(i);
-    if(entry.isList()){
+    RCP<const ParameterEntry> entry = p.getEntryRCP(i->first);
+    if(entry->isList()){
       rtn.addChild(convertParameterList(getValue<ParameterList>(entry)));
     }
     else{

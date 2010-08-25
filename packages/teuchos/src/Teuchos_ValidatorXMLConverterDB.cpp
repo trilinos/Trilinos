@@ -43,7 +43,7 @@ namespace Teuchos {
   \
   masterMap.insert(ConverterPair( \
     DummyObjectGetter<StringToIntegralParameterEntryValidator< INTEGRALTYPE > >:: \
-      getDummyObject()->getXMLTagName(), \
+      getDummyObject()->getXMLTypeName(), \
     rcp(new StringToIntegralValidatorXMLConverter< INTEGRALTYPE >)));
 
 
@@ -51,7 +51,7 @@ namespace Teuchos {
   \
   masterMap.insert(ConverterPair( \
     DummyObjectGetter<EnhancedNumberValidator< T > >:: \
-      getDummyObject()->getXMLTagName(), \
+      getDummyObject()->getXMLTypeName(), \
     rcp(new EnhancedNumberValidatorXMLConverter< T >)));
 
 
@@ -59,22 +59,23 @@ namespace Teuchos {
   \
   masterMap.insert(ConverterPair( \
     DummyObjectGetter<ArrayValidator< VALIDATORTYPE , ENTRYTYPE > >:: \
-      getDummyObject()->getXMLTagName(), \
+      getDummyObject()->getXMLTypeName(), \
     rcp(new ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >)));
 
 void ValidatorXMLConverterDB::addConverter(ParameterEntryValidator& validator,
   RCP<ValidatorXMLConverter> converterToAdd){
-  getConverterMap().insert(ConverterPair(validator.getXMLTagName(), converterToAdd));
+  getConverterMap().insert(ConverterPair(validator.getXMLTypeName(), converterToAdd));
 }
 
 
 RCP<const ValidatorXMLConverter>
 ValidatorXMLConverterDB::getConverter(const ParameterEntryValidator& validator)
 {
-  ConverterMap::const_iterator it = getConverterMap().find(validator.getXMLTagName());
-  TEST_FOR_EXCEPTION(it != getConverterMap().end(),
+  ConverterMap::const_iterator it = getConverterMap().find(validator.getXMLTypeName());
+  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindValidatorConverterException,
-    "Could not find a ValidatorXMLConverter for a validator"
+    "Could not find a ValidatorXMLConverter for validator type " <<
+     validator.getXMLTypeName() << std::endl << std::endl
   )
   return it->second;
 }
@@ -83,26 +84,31 @@ ValidatorXMLConverterDB::getConverter(const ParameterEntryValidator& validator)
 RCP<const ValidatorXMLConverter>
 ValidatorXMLConverterDB::getConverter(const XMLObject& xmlObject)
 { 
-  std::string validatorType = xmlObject.getTag();
+  std::string validatorType = xmlObject.getRequired(
+    ValidatorXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(validatorType);
-  TEST_FOR_EXCEPTION(it != getConverterMap().end(),
+  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindValidatorConverterException,
-    "Could not find a ValidatorXMLConverter for a validator"
+    "Could not find a ValidatorXMLConverter for type " << validatorType <<
+    std::endl << std::endl
   )
   return it->second;
 }
 
 XMLObject ValidatorXMLConverterDB::convertValidator(
-  RCP<const ParameterEntryValidator> validator)
+  RCP<const ParameterEntryValidator> validator,
+  const XMLParameterListWriter::ValidatorSet& validatorSet)
 {
-  return getConverter(*validator)->fromValidatortoXML(validator);
+  return getConverter(*validator)->fromValidatortoXML(
+    validator, validatorSet);
 }
  
 RCP<ParameterEntryValidator> ValidatorXMLConverterDB::convertXML(
-  const XMLObject& xmlObject)
+  const XMLObject& xmlObject,
+  const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap)
 {
   return ValidatorXMLConverterDB::
-    getConverter(xmlObject)->fromXMLtoValidator(xmlObject);
+    getConverter(xmlObject)->fromXMLtoValidator(xmlObject, validatorIDsMap);
 }
 
 ValidatorXMLConverterDB::ConverterMap&
@@ -131,19 +137,20 @@ ValidatorXMLConverterDB::getConverterMap()
     ADD_NUMBERTYPECONVERTERS(unsigned long long int);
     #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+
     masterMap.insert(
       ConverterPair(
-        DummyObjectGetter<FileNameValidator>::getDummyObject()->getXMLTagName(), 
+        DummyObjectGetter<FileNameValidator>::getDummyObject()->getXMLTypeName(), 
         rcp(new FileNameValidatorXMLConverter)));
 
     masterMap.insert(
       ConverterPair(
-        DummyObjectGetter<StringValidator>::getDummyObject()->getXMLTagName(), 
+        DummyObjectGetter<StringValidator>::getDummyObject()->getXMLTypeName(), 
         rcp(new StringValidatorXMLConverter)));
 
     masterMap.insert(
       ConverterPair(
-        DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject()->getXMLTagName(), 
+        DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject()->getXMLTypeName(), 
         rcp(new AnyNumberValidatorXMLConverter)));
 
   }

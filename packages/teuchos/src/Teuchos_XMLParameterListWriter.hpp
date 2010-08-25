@@ -50,6 +50,11 @@ class TEUCHOS_LIB_DLL_EXPORT XMLParameterListWriter {
 
 public:
 
+  /** \brief Convienence typedef */
+  typedef std::set<RCP<const ParameterEntryValidator>, RCPConstComp> 
+    ValidatorSet;
+
+
   //! @name Constructors 
   //@{
   /** Construct a writer */
@@ -80,11 +85,14 @@ public:
 private:
 
   /** \brief Write the given list to an XML object.  */
-  XMLObject convertParameterList( const ParameterList& p) const;
+  XMLObject convertParameterList(const ParameterList& p) const;
 
   /** \brief Convert all the validators. */
   XMLObject convertValidators(const ParameterList& p) const;
 
+  void buildValidatorSet(
+    const ParameterList& p,
+    ValidatorSet& validatorSet) const;
 };
 
 

@@ -49,6 +49,15 @@ class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader{
 
 public:
   
+  /** \name Public Types */
+  //@{
+
+  /** \brief Convenience typedef */
+  typedef std::map<ParameterEntryValidator::ValidatorID,
+    RCP<ParameterEntryValidator> > ValidatorIDsMap;
+
+  //@}
+
   //! @name Constructors 
   //@{
   /** \brief . */
@@ -60,15 +69,32 @@ public:
 
 private:
 
+  /** \name Private Types */
+  //@{
+  
+  /** \brief Convenience typedef */
+  typedef std::map<ParameterEntry::ParameterEntryID,
+    ParameterEntry::ParameterEntryID> EntryIDsMap;
+
+  
+  //@}
+
   /** \brief Write the given XML object to a parameter list along with the
    * validators located in the given map.
    */
-  ParameterList convertParameterList(const XMLObject& xml) const;
+  ParameterList convertParameterList(const XMLObject& xml,
+    EntryIDsMap& entryIDsMap, const ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief Write the given XML object to appropriate validators. */
-  void convertValidators(const XMLObject& xml) const;
+  void convertValidators(
+    const XMLObject& xml, ValidatorIDsMap& validatorIDsMap) const;
 
-  };
+  /** \brief Tests to see if there are duplicate validator IDs */
+  void testForDuplicateValidatorIDs(
+    ParameterEntryValidator::ValidatorID potentialNewID,
+    const ValidatorIDsMap& currentMap) const;
+
+};
 
 
 } // namespace Teuchos

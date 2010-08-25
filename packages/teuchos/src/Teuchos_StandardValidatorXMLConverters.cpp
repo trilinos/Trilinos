@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Teuchos_StandardValidatorXMLConverters.hpp"
-
+#include "Teuchos_RCP.hpp"
 
 /*! \file Teuchos_StandardValidatorXMLConverters.hpp
 */
@@ -37,8 +37,8 @@ namespace Teuchos {
 
 
 RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
-    const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const
+  const XMLObject& xmlObj,
+  const XMLParameterListReader::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
 
   AnyNumberParameterEntryValidator::AcceptedTypes acceptedTypes;
@@ -50,27 +50,26 @@ RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
   return anyNumberParameterEntryValidator(
       AnyNumberParameterEntryValidator::getPrefferedTypeStringEnum(
         xmlObj.getRequired(getPrefferedTypeAttributeName())), 
-      acceptedTypes,
-      validatorID);
+      acceptedTypes);
 }
 
 
-XMLObject AnyNumberValidatorXMLConverter::convertValidator(
-  const RCP<const ParameterEntryValidator> validator) const
+void AnyNumberValidatorXMLConverter::convertValidator(
+  const RCP<const ParameterEntryValidator> validator,
+  XMLObject& xmlObj,
+  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
 {
   RCP<const AnyNumberParameterEntryValidator> castedValidator = 
     rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(validator, true);
-  XMLObject toReturn(validator->getXMLTagName());
-  toReturn.addBool(
+  xmlObj.addBool(
     getAllowIntAttributeName(), castedValidator->isIntAllowed());
-  toReturn.addBool(
+  xmlObj.addBool(
     getAllowDoubleAttributeName(), castedValidator->isDoubleAllowed());
-  toReturn.addBool(
+  xmlObj.addBool(
     getAllowStringAttributeName(), castedValidator->isStringAllowed());
-  toReturn.addAttribute(getPrefferedTypeAttributeName(),
+  xmlObj.addAttribute(getPrefferedTypeAttributeName(),
     castedValidator->getPrefferedTypeString(
       castedValidator->getPreferredType()));
-  return toReturn;
 }
 
 #ifdef HAVE_TEUCHOS_DEBUG
@@ -81,30 +80,29 @@ AnyNumberValidatorXMLConverter::getDummyValidator() const{
 #endif
 
 RCP<ParameterEntryValidator> FileNameValidatorXMLConverter::convertXML(
-    const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const
+  const XMLObject& xmlObj,
+  const XMLParameterListReader::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   return rcp(
     new FileNameValidator(
       xmlObj.getWithDefault<bool>(
         getFileMustExistAttributeName(),
         FileNameValidator::mustAlreadyExistDefault()
-        ),
-      validatorID
+        )
       )
     );
 }
 
 
-XMLObject FileNameValidatorXMLConverter::convertValidator(
-  const RCP<const ParameterEntryValidator> validator) const
+void FileNameValidatorXMLConverter::convertValidator(
+  const RCP<const ParameterEntryValidator> validator,
+  XMLObject& xmlObj,
+  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
 {
   RCP<const FileNameValidator> castedValidator =
     rcp_dynamic_cast<const FileNameValidator>(validator);
-  XMLObject toReturn(validator->getXMLTagName());
-  toReturn.addBool(
+  xmlObj.addBool(
     getFileMustExistAttributeName(), castedValidator->fileMustExist());
-  return toReturn;
 }
 
 
@@ -117,8 +115,8 @@ FileNameValidatorXMLConverter::getDummyValidator() const{
 
 
 RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
-    const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const
+  const XMLObject& xmlObj,
+  const XMLParameterListReader::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   Array<std::string> strings(xmlObj.numChildren());
   if(xmlObj.numChildren()!=0){
@@ -131,24 +129,27 @@ RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
         strings[i] = (currentChild.getRequired(getStringValueAttributeName()));
     }
   }
-  return rcp(new StringValidator(strings, validatorID));
+  return rcp(new StringValidator(strings));
 }
 
 
-XMLObject StringValidatorXMLConverter::convertValidator(
-  const RCP<const ParameterEntryValidator> validator) const
+void StringValidatorXMLConverter::convertValidator(
+  const RCP<const ParameterEntryValidator> validator,
+  XMLObject& xmlObj,
+  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
 {
   RCP<const StringValidator> castedValidator = 
     rcp_dynamic_cast<const StringValidator>(validator);
-  XMLObject toReturn(validator->getXMLTagName());
-  Array<std::string>::const_iterator it = 
-    validator->validStringValues()->begin();
-  for(; it != validator->validStringValues()->end(); ++it){
-    XMLObject stringTag(getStringTagName());
-    stringTag.addAttribute(getStringValueAttributeName(), *it);
-    toReturn.addChild(stringTag);
+
+  if(!is_null(validator->validStringValues())){
+    Array<std::string>::const_iterator it = 
+     validator->validStringValues()->begin();
+    for(; it != validator->validStringValues()->end(); ++it){
+      XMLObject stringTag(getStringTagName());
+      stringTag.addAttribute(getStringValueAttributeName(), *it);
+      xmlObj.addChild(stringTag);
+    }
   }
-  return toReturn;
 }
 
 

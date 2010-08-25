@@ -84,7 +84,8 @@ public:
    * \return XML representation of the validator.
    */
   static XMLObject convertValidator(
-    RCP<const ParameterEntryValidator> validator); 
+    RCP<const ParameterEntryValidator> validator,
+    const XMLParameterListWriter::ValidatorSet& validatorSet); 
 
   /**
    * \brief Given an XMLObject converts the XMLObject 
@@ -93,7 +94,9 @@ public:
    * \return A ParameterEntryValidator that was represented by the XML.
    */
   static RCP<ParameterEntryValidator> 
-    convertXML(const XMLObject& xmlObject);
+    convertXML(
+      const XMLObject& xmlObject,
+      const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap);
   
   //@}
 

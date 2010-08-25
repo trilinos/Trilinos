@@ -1,3 +1,4 @@
+
 // @HEADER
 // ***********************************************************************
 // 
@@ -51,9 +52,10 @@ namespace Teuchos{
   ADD_ARRAYTYPE_CONVERTER(T,PREFIXNAME);
 
 RCP<const ParameterEntryXMLConverter> 
-ParameterEntryXMLConverterDB::getConverter(const ParameterEntry& entry) {
+ParameterEntryXMLConverterDB::getConverter(RCP<const ParameterEntry> entry) 
+{
   ConverterMap::const_iterator it = 
-  getConverterMap().find(entry.getAny().typeName());
+  getConverterMap().find(entry->getAny().typeName());
   if(it == getConverterMap().end()){
     return getDefaultConverter();
   }
@@ -65,16 +67,27 @@ ParameterEntryXMLConverterDB::getConverter(const ParameterEntry& entry) {
 RCP<const ParameterEntryXMLConverter> 
 ParameterEntryXMLConverterDB::getConverter(const XMLObject& xmlObject)
 { 
+  TEST_FOR_EXCEPTION(
+    !xmlObject.hasAttribute(ParameterEntryXMLConverter::getTypeAttributeName()), 
+    NoTypeAttributeExecption,
+    ParameterEntry::getTagName() <<" tags must "
+    "have a " << ParameterEntryXMLConverter::getTypeAttributeName() << 
+    " attribute." << std::endl <<
+    "Bad Parameter: " << 
+    xmlObject.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
+    std::endl << std::endl);
+ 
   std::string parameterType = xmlObject.getRequired(
     ParameterEntryXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(parameterType);
 
-  if(it != getConverterMap().end()){
-    return it->second;
-  }
-  else{
-    return getDefaultConverter();
-  }
+  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
+    CantFindParameterEntryConverterException,
+    "Can't find converter for parameter entry of type: " <<
+    xmlObject.getRequired(ParameterEntryXMLConverter::getTypeAttributeName()) <<
+    std::endl << std::endl);
+
+  return it->second;
 }
 
 void ParameterEntryXMLConverterDB::printKnownConverters(std::ostream& out){
@@ -119,6 +132,11 @@ ParameterEntryXMLConverterDB::getConverterMap()
 
     ADD_TYPE_CONVERTER(char, char);
     ADD_TYPE_CONVERTER(bool, bool);
+
+    RCP<AnyParameterEntryConverter > anyConverter = 
+      rcp(new AnyParameterEntryConverter); 
+    masterMap.insert(ConverterPair(anyConverter->getTypeAttributeValue(), 
+      anyConverter)); 
 
   }
   return masterMap;

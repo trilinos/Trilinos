@@ -68,13 +68,13 @@ public:
   /** \brief . */
   ~ParameterEntryValidator();
 
-  /** \brief Get a string that should be used as a tag for this validator
+  /** \brief Get a string that should be used as a value of the type attribute
    * when serializing it to XML.
    *
    * \return a string that should be used as a tag for this validator
    * when serializing it to XML.
    */
-  virtual const std::string getXMLTagName() const=0;
+  virtual const std::string getXMLTypeName() const=0;
 
   static RCP<ParameterEntryValidator> getValidator(ValidatorID id);
 
@@ -148,7 +148,8 @@ public:
     }
 
 
-  /** \brief Prints a list of all the ParameterEntries currently being tracked */
+  /** \brief Prints a list of all the ParameterEntryValidators
+   * currently being tracked */
   static void printKnownValidators(std::ostream &out);
 
 private:

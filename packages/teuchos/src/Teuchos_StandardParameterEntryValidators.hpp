@@ -257,7 +257,7 @@ public:
   //@{
 
   /** \brief . */
-  const std::string getXMLTagName() const;
+  const std::string getXMLTypeName() const;
 
   /** \brief . */
   void printDoc(
@@ -726,7 +726,7 @@ public:
   //@{
 
   /** \brief . */
-  const std::string getXMLTagName() const;
+  const std::string getXMLTypeName() const;
 
   /** \brief . */
   void printDoc(
@@ -807,6 +807,14 @@ private:
 
 
 // Nonmember helper functions
+
+
+/** \brief Nonmember constructor AnyNumberParameterEntryValidator.
+ *
+ * \relates AnyNumberParameterEntryValidator
+ */
+TEUCHOS_LIB_DLL_EXPORT RCP<AnyNumberParameterEntryValidator>
+anyNumberParameterEntryValidator();
 
 
 /** \brief Nonmember constructor AnyNumberParameterEntryValidator.
@@ -1308,7 +1316,7 @@ public:
     std::string const &sublistName) const;
 
   /** \brief . */
-  const std::string getXMLTagName() const{
+  const std::string getXMLTypeName() const{
     return StrUtils::removeAllSpaces(TypeNameTraits<T>::name()) + "EnhancedNumberValidator";
   }
 
@@ -1517,7 +1525,7 @@ public:
     std::string const &sublistName) const;
 
   /** \brief . */
-  const std::string getXMLTagName() const;
+  const std::string getXMLTypeName() const;
 
   /** \brief . */
   void printDoc(std::string const &docString, std::ostream &out) const;
@@ -1630,7 +1638,7 @@ public:
     std::string const &sublistName) const;
 
   /** \brief . */
-  const std::string getXMLTagName() const;
+  const std::string getXMLTypeName() const;
 
   /** \brief . */
   void printDoc(std::string const &docString, std::ostream &out) const;
@@ -1744,8 +1752,10 @@ public:
     std::string const &sublistName) const;
 
   /** \brief . */
-  const std::string getXMLTagName() const{
-    return "ArrayValidator";
+  const std::string getXMLTypeName() const{
+    return "arrayValidator<" + 
+      prototypeValidator_->getXMLTypeName() + "," +
+      TypeNameTraits<EntryType>::name() + ">";
   }
 
   /** \brief . */
@@ -2128,7 +2138,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
 
 template<class IntegralType>
 const std::string 
-StringToIntegralParameterEntryValidator<IntegralType>::getXMLTagName() const{
+StringToIntegralParameterEntryValidator<IntegralType>::getXMLTypeName() const{
   return StrUtils::removeAllSpaces(TypeNameTraits<IntegralType>::name()) +
     "StringIntegralValidator";
 }

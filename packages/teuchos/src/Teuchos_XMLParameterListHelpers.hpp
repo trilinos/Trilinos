@@ -129,6 +129,17 @@ TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlFile(
   );
 
 
+/** \brief Write a parameter list to xml and then read that xml back in via
+ * a string. The intent of this function is to be used for testing purposes.
+ *
+ * \param paramList [in] Contains the parameters and sublists that will be
+ * written out and then read back in.
+ *
+ * \return The read in parameter list.
+ * \ingroup XML
+ */
+  RCP<ParameterList> writeThenReadPL(ParameterList& myList);
+
 } // namespace Teuchos
 
 

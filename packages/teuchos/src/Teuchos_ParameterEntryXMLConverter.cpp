@@ -34,7 +34,7 @@
 
 namespace Teuchos{
 
-ParameterEntry
+RCP<ParameterEntry>
 ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
@@ -49,24 +49,15 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
   #endif
 
   TEST_FOR_EXCEPTION(
-    !xmlObj.hasAttribute(getTypeAttributeName()), 
-    NoNameAttributeExecption,
-    ParameterEntry::getTagName() <<" tags must "
-    "have a " << getTypeAttributeName() << " attribute." << std::endl <<
-    "Bad Parameter: " << 
-    xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
-    std::endl << std::endl);
-
-  TEST_FOR_EXCEPTION(
     !xmlObj.hasAttribute(getValueAttributeName()), 
-    NoNameAttributeExecption,
+    NoValueAttributeExecption,
     ParameterEntry::getTagName() <<" tags must "
     "have a " << getValueAttributeName() << " attribute" << std::endl <<
     "Bad Parameter: " << 
     xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
     std::endl << std::endl);
 
-  ParameterEntry toReturn;
+  RCP<ParameterEntry> toReturn = rcp(new ParameterEntry);
   bool isDefault = false;
   bool isUsed = false;
 
@@ -82,7 +73,7 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
   setEntryValue(toReturn, xmlObj, isDefault);
   
   if(isUsed){
-    toReturn.getAny();
+    toReturn->getAny();
   }
   
   return toReturn;
@@ -90,34 +81,39 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
 
 
 XMLObject
-ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry,
-  const std::string &name) const
+ParameterEntryXMLConverter::fromParameterEntrytoXML(
+  RCP<const ParameterEntry> entry, const std::string &name) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
-    (entry.getAny().typeName() != getTypeAttributeValue()) 
+    (entry->getAny().typeName() != getTypeAttributeValue()) 
     &&
     (
-    getTypeAttributeValue() != 
-    ParameterEntryXMLConverterDB::getDefaultConverter()->getTypeAttributeValue()
+      getTypeAttributeValue() != 
+      ParameterEntryXMLConverterDB::getDefaultConverter()->getTypeAttributeValue()
     ),
     BadParameterEntryXMLConverterTypeException,
     "Error: This converter can't convert the given ParameterEntry to XML "
     "because their types don't match." << std::endl <<
     "Parameter name: " << name << std::endl <<
-    "Parameter type: " << entry.getAny().typeName() << std::endl <<
+    "Parameter type: " << entry->getAny().typeName() << std::endl <<
     "Converter type: " << getTypeAttributeValue() << std::endl << std::endl);
   #endif
 
   XMLObject toReturn(ParameterEntry::getTagName());
-  toReturn.addAttribute(XMLParameterListWriter::getNameAttributeName(), name);
+  toReturn.addAttribute(
+    XMLParameterListWriter::getNameAttributeName(), name);
   toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
-  toReturn.addAttribute(getValueAttributeName(), getValueAttributeValue(entry));
-  toReturn.addBool(getDefaultAttributeName(), entry.isDefault());
-  toReturn.addBool(getUsedAttributeName(), entry.isUsed());
-  if(nonnull(entry.validator())){
+  toReturn.addAttribute(getIdAttributeName(), 
+    ParameterEntry::getParameterEntryID(entry));
+  toReturn.addAttribute(
+    getValueAttributeName(), getValueAttributeValue(entry));
+  toReturn.addBool(getDefaultAttributeName(), entry->isDefault());
+  toReturn.addBool(getUsedAttributeName(), entry->isUsed());
+  if(nonnull(entry->validator())){
     toReturn.addAttribute(
-      ValidatorXMLConverter::getIdAttributeName(), entry.validator());  
+      ValidatorXMLConverter::getIdAttributeName(), 
+      ParameterEntryValidator::getValidatorID(entry->validator()));
   }
   return toReturn;
 }

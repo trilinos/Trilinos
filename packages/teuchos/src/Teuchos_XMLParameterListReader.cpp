@@ -40,25 +40,35 @@ XMLParameterListReader::XMLParameterListReader()
 {;}
 
 
-ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) const
+ParameterList 
+XMLParameterListReader::toParameterList(const XMLObject& xml) const
 {
-  TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
+  TEST_FOR_EXCEPTION(
+    xml.getTag() 
+    != 
+    XMLParameterListWriter::getParameterListTagName(), 
     BadXMLParameterListRootElementException,
-    "XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListTagName()
+    "XMLParameterListReader expected tag " << 
+    XMLParameterListWriter::getParameterListTagName()
     <<", found " << xml.getTag());
   ParameterList rtn;
-  for(int i =0; i<xml.numChildren(); ++i){
-    if(xml.getChild(i).getTag() == XMLParameterListWriter::getValidatorsTagName()){
-      convertValidators(xml.getChild(i));
-    }
+  ValidatorIDsMap validatorIDsMap;
+  int validatorsIndex = 
+    xml.findFirstChild(XMLParameterListWriter::getValidatorsTagName());
+  if(validatorsIndex != -1){
+    convertValidators(xml.getChild(validatorsIndex), validatorIDsMap);
   }
-
-  rtn = convertParameterList(xml);
+  EntryIDsMap entryIDsMap; 
+  rtn = convertParameterList(xml, entryIDsMap, validatorIDsMap);
+  if(xml.hasAttribute(XMLParameterListWriter::getNameAttributeName())){
+    rtn.setName(xml.getAttribute(XMLParameterListWriter::getNameAttributeName()));
+  }
   return rtn;
 }
 
 
-void XMLParameterListReader::convertValidators(const XMLObject& xml) const
+void XMLParameterListReader::convertValidators(
+  const XMLObject& xml, ValidatorIDsMap& validatorIDsMap) const
 {
   std::set<const XMLObject*> validatorsWithPrototypes;
   for (int i=0; i<xml.numChildren(); ++i){
@@ -68,29 +78,54 @@ void XMLParameterListReader::convertValidators(const XMLObject& xml) const
       validatorsWithPrototypes.insert(&xml.getChild(i));
     }
     else{
-      ValidatorXMLConverterDB::convertXML(xml.getChild(i));
+      RCP<ParameterEntryValidator> insertedValidator = 
+        ValidatorXMLConverterDB::convertXML(
+          xml.getChild(i), validatorIDsMap);
+      ParameterEntryValidator::ValidatorID xmlID = 
+        xml.getChild(i).getRequired<ParameterEntryValidator::ValidatorID>(
+        ValidatorXMLConverter::getIdAttributeName());
+      testForDuplicateValidatorIDs(xmlID, validatorIDsMap);
+      validatorIDsMap.insert(ValidatorIDsMap::value_type(
+       xmlID,
+       insertedValidator));
     }
   }
+
   for (
     std::set<const XMLObject*>::const_iterator it = validatorsWithPrototypes.begin();
     it!=validatorsWithPrototypes.end();
     ++it)
   {
-    ValidatorXMLConverterDB::convertXML(*(*it));
+    RCP<ParameterEntryValidator> insertedValidator =
+      ValidatorXMLConverterDB::convertXML(*(*it), validatorIDsMap);
+    ParameterEntryValidator::ValidatorID xmlID = 
+      (*it)->getRequired<ParameterEntryValidator::ValidatorID>(
+         ValidatorXMLConverter::getIdAttributeName());
+    testForDuplicateValidatorIDs(xmlID, validatorIDsMap);
+    validatorIDsMap.insert(ValidatorIDsMap::value_type(
+      xmlID, insertedValidator));
   }
 }
 
       
-ParameterList XMLParameterListReader::convertParameterList(
-  const XMLObject& xml) const
+ParameterList 
+XMLParameterListReader::convertParameterList(const XMLObject& xml,
+  EntryIDsMap& entryIDsMap, const ValidatorIDsMap& validatorIDsMap) const
 {
-  TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
+  TEST_FOR_EXCEPTION(
+    xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
     BadParameterListElementException,
-    "XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListTagName()
+    "XMLParameterListReader expected tag " << 
+    XMLParameterListWriter::getParameterListTagName()
     <<", found the tag "
     << xml.getTag());
 
   ParameterList rtn;
+  std::string currentPLName = "No name specified";
+  if(xml.hasAttribute(XMLParameterListWriter::getNameAttributeName())){
+    currentPLName = xml.getRequired(
+      XMLParameterListWriter::getNameAttributeName());
+  }
 
   for (int i=0; i<xml.numChildren(); i++) {
 
@@ -111,17 +146,18 @@ ParameterList XMLParameterListReader::convertParameterList(
         << child.getTag() << " tag.");
       
       if (child.getTag()==XMLParameterListWriter::getParameterListTagName()) {
-        TEST_FOR_EXCEPTION(
+        /*TEST_FOR_EXCEPTION(
           !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()), 
           NoNameAttributeExecption,
           XMLParameterListWriter::getParameterListTagName() <<" tags must "
           "have a " << XMLParameterListWriter::getNameAttributeName() << " attribute"
-          << child.getTag());
+          << child.getTag());*/
         
         const std::string& name =
           child.getRequired(XMLParameterListWriter::getNameAttributeName());
 
-        ParameterList sublist = convertParameterList(child);
+        ParameterList sublist =
+          convertParameterList(child, entryIDsMap, validatorIDsMap);
         sublist.setName(name);
 
         rtn.set(name, sublist);
@@ -129,37 +165,57 @@ ParameterList XMLParameterListReader::convertParameterList(
       else if (child.getTag() == ParameterEntry::getTagName()) {
 
         TEST_FOR_EXCEPTION(
-          !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()), 
+          !child.hasAttribute(
+            XMLParameterListWriter::getNameAttributeName()), 
           NoNameAttributeExecption,
           ParameterEntry::getTagName() <<" tags must " <<
           "have a " << 
           XMLParameterListWriter::getNameAttributeName() << 
-          " attribute" << std::endl << "Bad Parameter: " << 
-          child.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
-          std::endl << std::endl);
+          " attribute" << std::endl << "Bad Parameter in list: " << 
+          currentPLName << std::endl << std::endl);
 
         const std::string& name =
           child.getRequired(XMLParameterListWriter::getNameAttributeName());
-        ParameterEntry parameter = 
+        RCP<ParameterEntry> parameter = 
           ParameterEntryXMLConverterDB::convertXML(child);
+        if(child.hasAttribute(
+          ParameterEntryXMLConverter::getIdAttributeName()))
+        {
+          entryIDsMap.insert(EntryIDsMap::value_type(
+            child.getRequired<ParameterEntry::ParameterEntryID>(
+              ParameterEntryXMLConverter::getIdAttributeName()),
+            ParameterEntry::getParameterEntryID(parameter)
+            )
+          );
+        }
         if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
-          RCP<ParameterEntryValidator> result =
-            ParameterEntryValidator::getValidator(
-              child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName()));
-          TEST_FOR_EXCEPTION(result.is_null(), 
+          ValidatorIDsMap::const_iterator result = validatorIDsMap.find(
+            child.getRequired<ParameterEntryValidator::ValidatorID>(
+              ValidatorXMLConverter::getIdAttributeName()));
+          TEST_FOR_EXCEPTION(result == validatorIDsMap.end(), 
             MissingValidatorDefinitionException,
             "Could not find validator with id: "
-            << child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName())
+            << child.getRequired(
+              ValidatorXMLConverter::getIdAttributeName())
             << std::endl << 
             "Bad Parameter: " << name << std::endl << std::endl);
-          parameter.setValidator(result);
+          parameter->setValidator(result->second);
         }  
-        rtn.setEntry(name, parameter);
+        rtn.setEntry(name, *parameter);
      } 
   }
   return rtn;
 }
 
+void XMLParameterListReader::testForDuplicateValidatorIDs(
+  ParameterEntryValidator::ValidatorID potentialNewID,
+  const ValidatorIDsMap& currentMap) const
+{
+  TEST_FOR_EXCEPTION(currentMap.find(potentialNewID) != currentMap.end(),
+  DuplicateValidatorIDsException,
+  "Validators with duplicate ids found!" << std::endl <<
+  "Bad ID: " << potentialNewID);
+}
 
 } // namespace Teuchos
 

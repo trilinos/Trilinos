@@ -59,11 +59,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief . */
-  XMLObject convertValidator(
-    const RCP<const ParameterEntryValidator> validator) const;
+  void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -125,8 +127,8 @@ private:
 template<class IntegralType>
 RCP<ParameterEntryValidator>
 StringToIntegralValidatorXMLConverter<IntegralType>::convertXML(
-    const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const
+  const XMLObject& xmlObj,
+  const XMLParameterListReader::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   Array<std::string> strings;
   Array<std::string> stringDocs;
@@ -152,22 +154,32 @@ StringToIntegralValidatorXMLConverter<IntegralType>::convertXML(
   std::string defaultParameterName = 
     xmlObj.getRequired(getDefaultParameterAttributeName());
 
-  return stringToIntegralParameterEntryValidator<IntegralType>(
-    strings, stringDocs, integralValues, defaultParameterName, validatorID);
+  if(stringDocs.size() != 0 && integralValues.size() != 0){
+    return stringToIntegralParameterEntryValidator<IntegralType>(
+      strings, stringDocs, integralValues, defaultParameterName);
+  }
+  else if(integralValues.size() != 0){
+    return stringToIntegralParameterEntryValidator<IntegralType>(
+      strings, integralValues, defaultParameterName);
+  }
+  else{
+    return stringToIntegralParameterEntryValidator<IntegralType>(
+      strings, defaultParameterName);
+  }
 }
 
 
 template<class IntegralType>
-XMLObject StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
-  const RCP<const ParameterEntryValidator> validator) const
+void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
+  const RCP<const ParameterEntryValidator> validator,
+  XMLObject& xmlObj,
+  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
 {
   RCP<const StringToIntegralParameterEntryValidator<IntegralType> > 
     castedValidator =
     rcp_dynamic_cast<
       const StringToIntegralParameterEntryValidator<IntegralType> >(
         validator, true);
-
-  XMLObject toReturn(validator->getXMLTagName());
 
   RCP<const Array<std::string> > stringValues =
     castedValidator->validStringValues();
@@ -185,13 +197,12 @@ XMLObject StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
       stringTag.addAttribute(
         getStringDocAttributeName(), (*stringDocValues)[i]);
     }
-    toReturn.addChild(stringTag);
+    xmlObj.addChild(stringTag);
   }
-  toReturn.addAttribute(getDefaultParameterAttributeName(),
+  xmlObj.addAttribute(getDefaultParameterAttributeName(),
     castedValidator->getDefaultParameterName());
-  toReturn.addAttribute(getIntegralValueAttributeName(),
+  xmlObj.addAttribute(getIntegralValueAttributeName(),
     TypeNameTraits<IntegralType>::name());
-  return toReturn;
 }
 
 /*
@@ -208,11 +219,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief . */
-  XMLObject convertValidator(
-   const RCP<const ParameterEntryValidator> validator) const;
+  void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -269,11 +282,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief . */
-  XMLObject convertValidator(
-    const RCP<const ParameterEntryValidator> validator)const;
+  void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
 
 #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -319,12 +334,13 @@ private:
 
 
 template<class T>
-RCP<ParameterEntryValidator> EnhancedNumberValidatorXMLConverter<T>::convertXML(
-    const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const
+RCP<ParameterEntryValidator> 
+EnhancedNumberValidatorXMLConverter<T>::convertXML(
+  const XMLObject& xmlObj,
+  const XMLParameterListReader::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   RCP<EnhancedNumberValidator<T> > toReturn = 
-    rcp(new EnhancedNumberValidator<T>(validatorID));
+    rcp(new EnhancedNumberValidator<T>);
   xmlObj.getWithDefault(
     getStepAttributeName(), EnhancedNumberTraits<T>::defaultStep()),
   xmlObj.getWithDefault(getPrecisionAttributeName(),
@@ -340,22 +356,22 @@ RCP<ParameterEntryValidator> EnhancedNumberValidatorXMLConverter<T>::convertXML(
 
 
 template<class T>
-XMLObject EnhancedNumberValidatorXMLConverter<T>::convertValidator(
-  const RCP<const ParameterEntryValidator > validator) const
+void EnhancedNumberValidatorXMLConverter<T>::convertValidator(
+  const RCP<const ParameterEntryValidator > validator,
+  XMLObject& xmlObj,
+  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
 {
   RCP<const EnhancedNumberValidator<T> > castedValidator =
     rcp_dynamic_cast<const EnhancedNumberValidator<T> >(validator, true);
-  XMLObject toReturn(castedValidator->getXMLTagName());
   if (castedValidator->hasMin()) {
-    toReturn.addAttribute<T>(getMinAttributeName(), castedValidator->getMin());
+    xmlObj.addAttribute<T>(getMinAttributeName(), castedValidator->getMin());
   }
   if (castedValidator->hasMax()) {
-    toReturn.addAttribute<T>(getMaxAttributeName(), castedValidator->getMax());
+    xmlObj.addAttribute<T>(getMaxAttributeName(), castedValidator->getMax());
   }
-  toReturn.addAttribute<T>(getStepAttributeName(), castedValidator->getStep());
-  toReturn.addAttribute<T>(
+  xmlObj.addAttribute<T>(getStepAttributeName(), castedValidator->getStep());
+  xmlObj.addAttribute<T>(
     getPrecisionAttributeName(), castedValidator->getPrecision());
-  return toReturn;
 }
 
 
@@ -373,11 +389,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief . */
-  XMLObject convertValidator(
-    const RCP<const ParameterEntryValidator> validator) const;
+  void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -416,11 +434,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief . */
-  XMLObject convertValidator(
-    const RCP<const ParameterEntryValidator> validator) const;
+  void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -466,11 +486,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const;
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief . */
-  XMLObject convertValidator(
-    const RCP<const ParameterEntryValidator> validator) const;
+  void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
 
 #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -489,17 +511,19 @@ template<class ValidatorType, class EntryType>
 RCP<ParameterEntryValidator>
 ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
     const XMLObject& xmlObj,
-    ParameterEntryValidator::ValidatorID validatorID) const
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
 {
   RCP<ValidatorType> prototypeValidator;
-  if (xmlObj.hasAttribute(getPrototypeIdAttributeName())) {
-    RCP<ParameterEntryValidator> result =
-      ParameterEntryValidator::getValidator(
+  if(xmlObj.hasAttribute(
+    ValidatorXMLConverter::getPrototypeIdAttributeName()))
+  {
+    XMLParameterListReader::ValidatorIDsMap::const_iterator result =
+      validatorIDsMap.find(
         xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
           getPrototypeIdAttributeName()));
-    if (result != null) {
+    if (result != validatorIDsMap.end() ) {
       prototypeValidator = 
-        rcp_dynamic_cast<ValidatorType>(result, true);
+        rcp_dynamic_cast<ValidatorType>(result->second, true);
     }
     else {
       TEST_FOR_EXCEPTION(true,
@@ -511,36 +535,37 @@ ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
   }
   else {
     prototypeValidator = rcp_dynamic_cast<ValidatorType>(
-      ValidatorXMLConverterDB::convertXML(xmlObj.getChild(0)), true);
+      ValidatorXMLConverterDB::convertXML(
+        xmlObj.getChild(0), validatorIDsMap), true);
   }
   return rcp(new ArrayValidator<ValidatorType, EntryType>(prototypeValidator));
 }
 
 
 template<class ValidatorType, class EntryType>
-XMLObject 
+void 
 ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
-  const RCP<const ParameterEntryValidator> validator) const
+  const RCP<const ParameterEntryValidator> validator,
+  XMLObject& xmlObj,
+  const XMLParameterListWriter::ValidatorSet& validatorSet) const
 {
-  XMLObject toReturn(validator->getXMLTagName());
   RCP<const ArrayValidator<ValidatorType, EntryType> > castedValidator = 
     rcp_dynamic_cast<const ArrayValidator<ValidatorType, EntryType> >(
       validator, true);
-  ParameterEntryValidator::ValidatorID prototypeID = 
-    ParameterEntryValidator::getValidatorID(castedValidator->getPrototype());
-  if (
-    prototypeID
-    != 
-    OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid())
+  if(validatorSet.find(castedValidator->getPrototype()) 
+    == validatorSet.end())
   {
-    toReturn.addAttribute<ParameterEntryValidator::ValidatorID>(
+    xmlObj.addChild(ValidatorXMLConverterDB::convertValidator(
+      castedValidator->getPrototype(), validatorSet));
+  }
+  else{
+    ParameterEntryValidator::ValidatorID prototypeID = 
+      ParameterEntryValidator::getValidatorID(
+        castedValidator->getPrototype());
+  
+    xmlObj.addAttribute<ParameterEntryValidator::ValidatorID>(
       getPrototypeIdAttributeName(), prototypeID);
   }
-  else {
-    toReturn.addChild(
-    ValidatorXMLConverterDB::convertValidator(castedValidator->getPrototype()));
-  }
-  return toReturn;
 }
 
 } // namespace Teuchos

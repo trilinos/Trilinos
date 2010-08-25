@@ -38,6 +38,8 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_XMLParameterListExceptions.hpp"
 #include "Teuchos_ParameterEntryValidator.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
 
 
 namespace Teuchos {
@@ -59,9 +61,12 @@ public:
    * @return The converted ParameterEntryValidator.
    */
   RCP<ParameterEntryValidator>
-  fromXMLtoValidator(const XMLObject& xmlObj) const;
+  fromXMLtoValidator(
+    const XMLObject& xmlObj,
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
 
-  /** \brief Preforms any and all special xml conversion that is specific to a
+  /** \brief Preforms any and all special xml conversion that 
+   * is specific to a
    * particular ParameterEntryValidator.
    *
    * @param xmlObj The xml to be converted.
@@ -69,7 +74,7 @@ public:
    */
   virtual RCP<ParameterEntryValidator> 
     convertXML(const XMLObject& xmlObj, 
-    ParameterEntryValidator::ValidatorID validatorID) const=0;
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const=0;
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
@@ -77,17 +82,20 @@ public:
    * @return An XML representation of the given ParameterEntryValidator.
    */
   XMLObject fromValidatortoXML(
-    const RCP<const ParameterEntryValidator> validator) const;
+    const RCP<const ParameterEntryValidator> validator,
+    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
 
   /** \brief Preforms any and all special validator conversion that is
    * specific to a particlar ParameterEntryValidator
    *
    * @param validator The validator to be converted.
-   * @param validatorMap The validator map storing all validators that are
+   * @param xmlObj The XMLObject to store all serialization in.
    * being converted.
    */
-  virtual XMLObject convertValidator(
-    const RCP<const ParameterEntryValidator> validator) const = 0;
+  virtual void convertValidator(
+    const RCP<const ParameterEntryValidator> validator,
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::ValidatorSet& validatorSet) const = 0;
   
   //@}
 
@@ -121,6 +129,17 @@ public:
     return prototypeIdAttributeName;
   }
   
+  /** \brief . */
+  static const std::string& getTypeAttributeName(){
+    static const std::string typeAttributeName = "type";
+    return typeAttributeName;
+  }
+
+  /** \brief . */
+  static const std::string& getValidatorTagName(){
+    static const std::string validatorTagName = "Validator";
+    return validatorTagName;
+  }
   //@}
 
 };

@@ -58,7 +58,7 @@ public:
    * \param xmlObj The xml to be converted to a parameter entry.
    * \returns A ParameterEntry with the aspects specified by the xml.
    */
-  ParameterEntry fromXMLtoParameterEntry(const XMLObject &xmlObj) const;
+  RCP<ParameterEntry> fromXMLtoParameterEntry(const XMLObject &xmlObj) const;
 
   /** \brief Converts the given parameter entry to xml.
    *
@@ -66,11 +66,14 @@ public:
    * \param name The name associated with the parameter entry.
    * \returns An XMLObject representing the parameter entry.
    */
-  XMLObject fromParameterEntrytoXML(const ParameterEntry &entry,
+  XMLObject fromParameterEntrytoXML(
+    RCP<const ParameterEntry> entry,
     const std::string &name) const;
   
   /** \brief sets the value  */
-  virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj,
+  virtual void setEntryValue(
+    RCP<ParameterEntry> entry, 
+    const XMLObject &xmlObj,
     bool isDefault) const=0;
 
   //@}
@@ -94,12 +97,19 @@ public:
    * \returns The value to be assigned to the "value" attribute when
    * converting the parameter entry to xml.
    */
-  virtual const std::string getValueAttributeValue(const ParameterEntry &entry) const=0;
+  virtual const std::string getValueAttributeValue(
+    RCP<const ParameterEntry > entry) const=0;
   
   /** \brief . */
   static const std::string& getTypeAttributeName() {
     static const std::string typeAttributeName_ = "type";
     return typeAttributeName_;
+  }
+
+  /** \brief . */
+  static const std::string& getIdAttributeName() {
+    static const std::string idAttributeName_ = "id";
+    return idAttributeName_;
   }
 
   /** \brief . */

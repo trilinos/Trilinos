@@ -56,10 +56,14 @@ public:
   const std::string getTypeAttributeValue() const;
 
   /** \brief . */
-  const std::string getValueAttributeValue(const ParameterEntry &entry) const;
+  const std::string getValueAttributeValue(
+    RCP<const ParameterEntry> entry) const;
 
   /** \brief . */
-  void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
+  void setEntryValue(
+    RCP<ParameterEntry> entry,
+    const XMLObject &xmlObj,
+    bool isDefault) const;
   
   //@}
 
@@ -84,16 +88,19 @@ public:
   }
 
   /** \brief . */
-  virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const {
-    return toString(any_cast<T>(entry.getAny(false)));
+  virtual const std::string getValueAttributeValue(
+    RCP<const ParameterEntry> entry) const {
+    return toString(any_cast<T>(entry->getAny(false)));
   }
 
   /** \brief . */
-  virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj,
+  virtual void setEntryValue(
+    RCP<ParameterEntry> entry, 
+    const XMLObject& xmlObj,
     bool isDefault) const
-    {
-      entry.setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
-    }
+  {
+    entry->setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
+  }
   
   //@}
 
@@ -105,7 +112,9 @@ public:
  * This converter is appropriate for most array data types.
  */
 template<class T>
-class ArrayTemplatedParameterConverter : public StandardTemplatedParameterConverter<Array<T> > {
+class ArrayTemplatedParameterConverter : 
+  public StandardTemplatedParameterConverter<Array<T> >
+{
 
 public:
 
@@ -113,18 +122,25 @@ public:
   //@{
 
   /** \brief . */
-  virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj,
-    bool isDefault) const
-    {
-      std::string arrayString = xmlObj.getRequired(ParameterEntryXMLConverter::getValueAttributeName());
-      Array<T> convertedArray = fromStringToArray<T>(arrayString);
-      entry.setValue<Array<T> >(convertedArray, isDefault);
-    }
+  virtual void setEntryValue(
+    RCP<ParameterEntry> entry,
+    const XMLObject& xmlObj,
+    bool isDefault) const;
   
   //@}
 
 };
 
+template<class T>
+void 
+ArrayTemplatedParameterConverter<T>::setEntryValue(RCP<ParameterEntry> entry, 
+  const XMLObject& xmlObj, bool isDefault) const
+{
+  std::string arrayString = xmlObj.getRequired(
+    ParameterEntryXMLConverter::getValueAttributeName());
+  Array<T> convertedArray = fromStringToArray<T>(arrayString);
+  entry->setValue<Array<T> >(convertedArray, isDefault);
+}
 
 } // namespace Teuchos
 

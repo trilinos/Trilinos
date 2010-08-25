@@ -70,8 +70,9 @@ void ParameterEntryValidator::printKnownValidators(std::ostream &out){
     it != getMasterIDMap().end();
     ++it)
   {
-    out << it->first; 
+    out << it->first << std::endl;
   }
+  out << std::endl;
 }
 
 //private 
@@ -117,7 +118,7 @@ void ParameterEntryValidator::addValidatorToMasterMaps(
   !=
   getMasterIDMap().end(),
   DuplicateValidatorIDException,
-  "Error: can't create a ParameterEntryValidator with the ID" <<
+  "Error: can't create a ParameterEntryValidator with the ID " <<
   idToUse << ". That ID is already being used to track another " <<
   "ParameterEntryValidator!" << std::endl << std::endl);
   getMasterValidatorMap().insert(

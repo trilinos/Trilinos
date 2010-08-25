@@ -137,8 +137,9 @@ void ParameterEntry::printKnownParameterEntries(std::ostream &out){
     it != getMasterIDMap().end();
     ++it)
   {
-    out << it->first; 
+    out << it->first << std::endl;
   }
+  out << std::endl;
 }
 
 RCP<ParameterEntry> ParameterEntry::getParameterEntry(ParameterEntryID id){
