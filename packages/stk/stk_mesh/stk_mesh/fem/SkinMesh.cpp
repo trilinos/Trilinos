@@ -23,7 +23,7 @@ namespace {
 typedef std::multimap< std::vector<EntityId>, EntitySideComponent>  BoundaryMap;
 typedef std::pair< std::vector<EntityId>, EntitySideComponent>  BoundaryValue;
 
-
+// \TODO Without the sorting, this would be a good general utility for 'fem'
 void get_elem_side_nodes( const Entity & elem,
                           unsigned side_ordinal,
                           std::vector<EntityId> & nodes

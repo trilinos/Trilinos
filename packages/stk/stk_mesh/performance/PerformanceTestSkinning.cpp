@@ -297,6 +297,8 @@ void separate_and_skin_mesh(
 
 }//end unnamped namespace
 
+// \TODO Idea: ADD scaling test over mesh size and compute the slope.
+// \TODO Idea: ADD different partitioning such that the reskinning spans more than one process.
 
 STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 {
