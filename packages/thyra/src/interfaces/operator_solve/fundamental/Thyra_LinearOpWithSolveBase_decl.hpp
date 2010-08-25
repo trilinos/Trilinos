@@ -503,6 +503,7 @@ protected:
     ) const
     {
       TEST_FOR_EXCEPT(true);
+      return(false);
     }
 
   /** \brief Virtual implementation for solveSupportsSolveMeasureType(). */
