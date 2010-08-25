@@ -188,7 +188,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
     }
   }
 
-  // Now copy values and global indices into newly create transpose storage
+  // Now copy values and global indices into newly created transpose storage
 
   for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0; // Reset transpose NumNz counter
   for (i=0; i<NumMyRows_; i++) {

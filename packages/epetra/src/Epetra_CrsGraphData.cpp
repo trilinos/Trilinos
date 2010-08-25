@@ -46,9 +46,11 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     HaveColMap_(false),
     Filled_(false),
     Allocated_(false),
-    Sorted_(false),
+    // for non-static profile, we insert always into sorted lists, so the
+    // graph will always be sorted. The same holds for the redundancies.
+    Sorted_(!StaticProfile),
     StorageOptimized_(false),
-    NoRedundancies_(false),
+    NoRedundancies_(!StaticProfile),
     IndicesAreGlobal_(false),
     IndicesAreLocal_(false),
     IndicesAreContiguous_(false),
@@ -86,6 +88,9 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_Bloc
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
     Indices_(new int *[NumMyBlockRows_]),
+    SortedEntries_(StaticProfile ? 0 : NumMyBlockRows_),
+    TempColIndices_(NULL),
+    NumTempColIndices_(0),
     NumAllocatedIndicesPerRow_(0),
     NumIndicesPerRow_(0),
     IndexOffset_(0),
@@ -111,9 +116,9 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     HaveColMap_(true),
     Filled_(false),
     Allocated_(false),
-    Sorted_(false),
+    Sorted_(!StaticProfile),
     StorageOptimized_(false),
-    NoRedundancies_(false),
+    NoRedundancies_(!StaticProfile),
     IndicesAreGlobal_(false),
     IndicesAreLocal_(false),
     IndicesAreContiguous_(false),
@@ -150,6 +155,9 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
     MaxNumIndices_(0),
     GlobalMaxNumIndices_(0),
     Indices_(new int *[NumMyBlockRows_]),
+    SortedEntries_(StaticProfile ? 0 : NumMyBlockRows_),
+    TempColIndices_(NULL),
+    NumTempColIndices_(0),
     NumAllocatedIndicesPerRow_(0),
     NumIndicesPerRow_(0),
     IndexOffset_(0),
@@ -164,12 +172,15 @@ Epetra_CrsGraphData::~Epetra_CrsGraphData() {
 
   if(Indices_ != 0 && !StorageOptimized_) {
     for (int i=0; i<NumMyBlockRows_; i++) {
-      if (Indices_[i]!=0 && CV_==Copy && !StaticProfile_) 
-	delete [] Indices_[i]; 
       Indices_[i] = 0;
     } 
     delete[] Indices_;
     Indices_ = 0;
+  }
+
+  if (TempColIndices_ != 0) {
+    delete [] TempColIndices_;
+    TempColIndices_ = 0;
   }
 
   if(Importer_ != 0) {
@@ -304,4 +315,136 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
   }
 	
   os << "***** End CrsGraphData *****" << endl;
+}
+
+
+//==========================================================================
+void
+Epetra_CrsGraphData::EntriesInOneRow::AddEntry (const int Col)
+{
+  // first check the last element (or if line is still empty)
+  if ( (entries_.size()==0) || ( entries_.back() < Col) )
+    {
+      entries_.push_back(Col);
+      return;
+    }
+ 
+  // do a binary search to find the place where to insert:
+  std::vector<int>::iterator it = std::lower_bound(entries_.begin(),
+                entries_.end(),
+                Col);
+ 
+  // If this entry is a duplicate, exit immediately
+  if (*it == Col)
+    return;
+ 
+  // Insert at the right place in the vector. Vector grows automatically to
+  // fit elements. Always doubles its size.
+  entries_.insert(it, Col);
+}
+
+
+//==========================================================================
+void
+Epetra_CrsGraphData::EntriesInOneRow::AddEntries (const int  numCols,
+             const int *Indices)
+{
+  if (numCols == 0)
+    return;
+
+  // Check whether the indices are sorted. Can do more efficient then.
+  bool indicesAreSorted = true;
+  for (int i=1; i<numCols; ++i)
+    if (Indices[i] <= Indices[i-1]) {
+      indicesAreSorted = false;
+      break;
+    }
+
+  if (indicesAreSorted && numCols > 3) {
+    const int * curInput = &Indices[0];
+    int col = *curInput;
+    const int * endInput = &Indices[numCols];
+
+    // easy case: list of entries is empty or all entries are smaller than
+    // the ones to be inserted
+    if (entries_.size() == 0 || entries_.back() < col)
+    {
+      entries_.insert(entries_.end(), &Indices[0], &Indices[numCols]);
+      return;
+    }
+
+    // find a possible insertion point for the first entry. check whether
+    // the first entry is a duplicate before actually doing something.
+    std::vector<int>::iterator it = 
+      std::lower_bound(entries_.begin(), entries_.end(), col);
+    while (*it == col) {
+      ++curInput;
+      if (curInput == endInput)
+        break;
+      col = *curInput;
+
+      // check the very next entry in the current array
+      ++it;
+      if (it == entries_.end())
+        break;
+      if (*it > col)
+        break;
+      if (*it == col)
+        continue;
+
+      // ok, it wasn't the very next one, do a binary search to find the
+      // insert point
+      it = std::lower_bound(it, entries_.end(), col);
+      if (it == entries_.end())
+        break;
+    }
+
+    // all input entries were duplicates.
+    if (curInput == endInput)
+      return;
+
+    // Resize vector by just inserting the list at the correct point. Note
+    // that the list will not yet be sorted, but rather have the insert
+    // indices in the middle and the old indices from the list on the
+    // end. Next we will have to merge the two lists.
+    const int pos1 = it - entries_.begin();
+    entries_.insert (it, curInput, endInput);
+    it = entries_.begin() + pos1;
+
+    // Now merge the two lists...
+    std::vector<int>::iterator it2 = it + (endInput - curInput);
+
+    // As long as there are indices both in the end of the entries list and
+    // in the input list, always continue with the smaller index.
+    while (curInput != endInput && it2 != entries_.end())
+    {
+      if (*curInput < *it2)
+        *it++ = *curInput++;
+      else if (*curInput == *it2)
+      {
+        *it++ = *it2++;
+        ++curInput;
+      }
+      else
+        *it++ = *it2++;
+    }
+    // in case there are indices left in the input list or in the end of
+    // entries, we have to use the entries that are left. Only one of the
+    // two while loops will actually be entered.
+    while (curInput != endInput)
+      *it++ = *curInput++;
+
+    while (it2 != entries_.end())
+      *it++ = *it2++;
+
+    // resize and return
+    const int new_size = it - entries_.begin();
+    entries_.resize (new_size);
+    return;
+  }
+
+  // for unsorted or just a few indices, go to the one-by-one entry
+  // function.
+  for (int i=0; i<numCols; ++i)
+    AddEntry(Indices[i]);
 }

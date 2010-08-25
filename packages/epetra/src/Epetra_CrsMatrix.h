@@ -1278,6 +1278,7 @@ or if the number of entries in this row exceed the Length parameter.
   bool StorageOptimized_;
 
   double** Values_;
+  int* Values_alloc_lengths_;
   double* All_Values_;
   mutable double NormInf_;
   mutable double NormOne_;

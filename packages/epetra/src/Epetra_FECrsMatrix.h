@@ -36,6 +36,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_Map;
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseMatrix;
+class Epetra_FECrsGraph;
 
 /** Epetra Finite-Element CrsMatrix. This class provides the ability to
     input finite-element style sub-matrix data, including sub-matrices with
@@ -126,6 +127,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    Epetra_FECrsMatrix(Epetra_DataAccess CV,
 		      const Epetra_CrsGraph& Graph,
 		      bool ignoreNonLocalEntries=false);
+
+   /** Constructor. */
+   Epetra_FECrsMatrix(Epetra_DataAccess CV,
+         const Epetra_FECrsGraph& Graph,
+         bool ignoreNonLocalEntries=false);
 
    /** Copy Constructor. */
    Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src);
@@ -586,6 +592,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    double* workData_;
    int workDataLength_;
+
+   bool useNonlocalMatrix_;
+   Epetra_CrsMatrix* nonlocalMatrix_;
 };//class Epetra_FECrsMatrix
 
 #endif /* EPETRA_FECRSMATRIX_H */

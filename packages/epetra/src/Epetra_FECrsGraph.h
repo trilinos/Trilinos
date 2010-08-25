@@ -34,6 +34,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 
+#include <map>
+
 /**
   Epetra Finite-Element CrsGraph. This class provides the ability to insert
   indices into a matrix-graph, where the indices represent dense submatrices
@@ -47,33 +49,39 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
   processor is a processor which has the row in its row-map).
  */
 class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
+  friend class Epetra_FECrsMatrix;
+
   public:
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
 		    const Epetra_BlockMap& RowMap,
 		    int* NumIndicesPerRow,
-		    bool ignoreNonLocalEntries=false);
+		    bool ignoreNonLocalEntries=false,
+        bool buildNonlocalGraph=false);
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
 		    const Epetra_BlockMap& RowMap,
 		    int NumIndicesPerRow,
-		    bool ignoreNonLocalEntries=false);
+		    bool ignoreNonLocalEntries=false,
+        bool buildNonlocalGraph=false);
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
 		    const Epetra_BlockMap& RowMap, 
 		    const Epetra_BlockMap& ColMap,
 		    int* NumIndicesPerRow,
-		    bool ignoreNonLocalEntries=false);
+		    bool ignoreNonLocalEntries=false,
+        bool buildNonlocalGraph=false);
 
   /** Constructor */
   Epetra_FECrsGraph(Epetra_DataAccess CV,
 		    const Epetra_BlockMap& RowMap, 
 		    const Epetra_BlockMap& ColMap,
 		    int NumIndicesPerRow,
-		    bool ignoreNonLocalEntries=false);
+		    bool ignoreNonLocalEntries=false,
+        bool buildNonlocalGraph=false);
 
   /** Constructor */
   Epetra_FECrsGraph(const Epetra_FECrsGraph& Graph);
@@ -149,7 +157,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
                      const Epetra_Map& range_map,
                      bool callFillComplete=true);
 
- private:
+  bool UseNonlocalGraph () const {return buildNonlocalGraph_; };
+
+ private:     
   void DeleteMemory();
   int InsertNonlocalRow(int row, int offset);
   int InputNonlocalIndices(int row,
@@ -162,14 +172,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
   int myNumRows_;
   bool ignoreNonLocalEntries_;
 
-  int numNonlocalRows_;
-  int* nonlocalRows_;
-  int* nonlocalRowLengths_;
-  int* nonlocalRowAllocLengths_;
-  int** nonlocalCols_;
+  /**
+   * This STL map holds all non-local data in format of Entries in the
+   * individual rows together with the row number.
+   */
+  std::map<int,Epetra_CrsGraphData::EntriesInOneRow> nonlocalRowData_;
+
+  /**
+   * A CrsGraph holding non-local data in case the respective flag is set in
+   * the constructor.
+   */
+  Epetra_CrsGraph* nonlocalGraph_;
+  bool buildNonlocalGraph_;
 
   Epetra_FECrsGraph & operator=(const Epetra_FECrsGraph& Graph);
-
+     
 
 };//class Epetra_FECrsGraph
 

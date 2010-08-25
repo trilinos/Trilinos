@@ -45,16 +45,14 @@
 Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
 				     const Epetra_BlockMap& RowMap,
 				     int* NumIndicesPerRow,
-				     bool ignoreNonLocalEntries)
+				     bool ignoreNonLocalEntries,
+             bool buildNonlocalGraph)
   : Epetra_CrsGraph(CV, RowMap, NumIndicesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL)
+    nonlocalGraph_ (NULL),
+    buildNonlocalGraph_ (buildNonlocalGraph)
 {
 }
 
@@ -62,16 +60,14 @@ Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
 Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
 				     const Epetra_BlockMap& RowMap,
 				     int NumIndicesPerRow,
-				     bool ignoreNonLocalEntries)
+				     bool ignoreNonLocalEntries,
+             bool buildNonlocalGraph)
   : Epetra_CrsGraph(CV, RowMap, NumIndicesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL)
+    nonlocalGraph_ (NULL),
+    buildNonlocalGraph_ (buildNonlocalGraph)
 {
   myFirstRow_ = RowMap.MinMyGID();
   myNumRows_ = RowMap.NumMyElements();
@@ -82,16 +78,14 @@ Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
 				     const Epetra_BlockMap& RowMap,
 				     const Epetra_BlockMap& ColMap,
 				     int* NumIndicesPerRow,
-				     bool ignoreNonLocalEntries)
+				     bool ignoreNonLocalEntries,
+             bool buildNonlocalGraph)
   : Epetra_CrsGraph(CV, RowMap, ColMap, NumIndicesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL)
+    nonlocalGraph_ (NULL),
+    buildNonlocalGraph_ (buildNonlocalGraph)
 {
   myFirstRow_ = RowMap.MinMyGID();
   myNumRows_ = RowMap.NumMyElements();
@@ -102,16 +96,14 @@ Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV,
 				     const Epetra_BlockMap& RowMap,
 				     const Epetra_BlockMap& ColMap,
 				     int NumIndicesPerRow,
-				     bool ignoreNonLocalEntries)
+				     bool ignoreNonLocalEntries,
+             bool buildNonlocalGraph)
   : Epetra_CrsGraph(CV, RowMap, ColMap, NumIndicesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
-    numNonlocalRows_(0),
-    nonlocalRows_(NULL),
-    nonlocalRowLengths_(NULL),
-    nonlocalRowAllocLengths_(NULL),
-    nonlocalCols_(NULL)
+    nonlocalGraph_ (NULL),
+    buildNonlocalGraph_ (buildNonlocalGraph)
 {
   myFirstRow_ = RowMap.MinMyGID();
   myNumRows_ = RowMap.NumMyElements();
@@ -126,16 +118,10 @@ Epetra_FECrsGraph::~Epetra_FECrsGraph()
 //----------------------------------------------------------------------------
 void Epetra_FECrsGraph::DeleteMemory()
 {
-  if (numNonlocalRows_ > 0) {
-    for(int i=0; i<numNonlocalRows_; ++i) {
-      delete [] nonlocalCols_[i];
-    }
-    delete [] nonlocalCols_;
-    delete [] nonlocalRows_;
-    delete [] nonlocalRowLengths_;
-    delete [] nonlocalRowAllocLengths_;
-    numNonlocalRows_ = 0;
-  }
+  if (nonlocalGraph_ != 0)
+    delete nonlocalGraph_;
+  // nothing else to do here, since the STL map has an appropriate
+  // destructor
 }
 
 //----------------------------------------------------------------------------
@@ -148,210 +134,29 @@ int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const int* rows,
   Epetra_CrsGraph* thisgraph = static_cast<Epetra_CrsGraph*>(this);
 
   for(int i=0; i<numRows; ++i) {
-    if (Map().MyGID(rows[i])) {
-      err = thisgraph->InsertGlobalIndices(rows[i], numCols, (int*)cols);
+    const int LID = thisgraph->LRID(rows[i]);
+    if (LID > -1) {
+      thisgraph->SetIndicesAreGlobal(true);
+      err = thisgraph->InsertIndicesIntoSorted(LID, numCols,
+          const_cast<int*>(cols));
     }
     else {
-      err = InputNonlocalIndices(rows[i], numCols, cols);
+      nonlocalRowData_[rows[i]].AddEntries(numCols,cols);
     }
 
-    if (err<0) return(err);
-    if (err>0) returncode = err;
+    if (err < 0) return (err);
+    if (err > 0) returncode = err;
   }
 
   return(returncode);
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FECrsGraph::InsertNonlocalRow(int row, int offset)
-{
-  int alloc_len = numNonlocalRows_;
-  EPETRA_CHK_ERR( Epetra_Util_insert(row, offset, nonlocalRows_, numNonlocalRows_,
-				     alloc_len, 1) );
-
-  int tmp1 = numNonlocalRows_-1;
-  int tmp2 = alloc_len-1;
-
-  EPETRA_CHK_ERR( Epetra_Util_insert(0, offset, nonlocalRowLengths_,
-				     tmp1, tmp2, 1) );
-
-  --tmp1;
-  --tmp2;
-  int initialAllocLen = 16;
-  EPETRA_CHK_ERR( Epetra_Util_insert(initialAllocLen, offset,
-				     nonlocalRowAllocLengths_,
-				     tmp1, tmp2, 1) );
-
-  int** newCols = new int*[numNonlocalRows_];
-
-  newCols[offset] = new int[initialAllocLen];
-
-  int index = 0;
-  for(int i=0; i<numNonlocalRows_-1; ++i) {
-    if (i == offset) {
-      ++index;
-    }
-
-    newCols[index++] = nonlocalCols_[i];
-  }
-
-  delete [] nonlocalCols_;
-
-  nonlocalCols_ = newCols;
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
-int Epetra_FECrsGraph::InputNonlocalIndices(int row,
-					    int numCols,
-					    const int* cols)
-{
-  int insertPoint = -1;
-
-  //find offset of this row in our list of nonlocal rows.
-  int rowoffset = Epetra_Util_binary_search(row, nonlocalRows_, numNonlocalRows_,
-					    insertPoint);
-
-  if (rowoffset < 0) {
-    EPETRA_CHK_ERR( InsertNonlocalRow(row, insertPoint) );
-    rowoffset = insertPoint;
-  }
-
-  for(int i=0; i<numCols; ++i) {
-    EPETRA_CHK_ERR( InputNonlocalIndex(rowoffset, cols[i]) );
-  }
-
-  return(0); 
-}
-
-//----------------------------------------------------------------------------
-int Epetra_FECrsGraph::InputNonlocalIndex(int rowoffset,
-					  int col)
-{
-  int*& colIndices = nonlocalCols_[rowoffset];
-
-  int insertPoint = -1;
-  int coloffset = Epetra_Util_binary_search(col, colIndices,
-					    nonlocalRowLengths_[rowoffset],
-					    insertPoint);
-
-  if (coloffset < 0) {
-    //  insert col in colIndices
-    EPETRA_CHK_ERR( Epetra_Util_insert(col, insertPoint, colIndices,
-				       nonlocalRowLengths_[rowoffset],
-				       nonlocalRowAllocLengths_[rowoffset]));
-  }
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
 int Epetra_FECrsGraph::GlobalAssemble(bool callFillComplete)
 {
-  if (Map().Comm().NumProc() < 2 || ignoreNonLocalEntries_) {
-    if (callFillComplete) {
-      EPETRA_CHK_ERR( FillComplete() );
-    }
-    return(0);
-  }
-
-  int i, j;
-
-  //In this method we need to gather all the non-local (overlapping) data
-  //that's been input on each processor, into the
-  //non-overlapping distribution defined by the map that 'this' graph was
-  //constructed with.
-
-  //First build a map that describes our nonlocal data.
-  //We'll use the arbitrary distribution constructor of Map.
-
-  Epetra_Map* sourceMap = new Epetra_Map(-1, numNonlocalRows_, nonlocalRows_,
-					 Map().IndexBase(), Map().Comm());
-
-  //If sourceMap has global size 0, then no nonlocal data exists and we can
-  //skip most of this function.
-  if (sourceMap->NumGlobalElements() < 1) {
-    if (callFillComplete) {
-      EPETRA_CHK_ERR( FillComplete() );
-    }
-    delete sourceMap;
-    return(0);
-  }
-
-  //We also need to build a column-map, containing the columns in our
-  //nonlocal data. To do that, create a list of all column-indices that
-  //occur in our nonlocal rows.
-
-  int numCols = 0, allocLen = 0;
-  int* cols = NULL;
-  int insertPoint = -1;
-
-  for(i=0; i<numNonlocalRows_; ++i) {
-    for(j=0; j<nonlocalRowLengths_[i]; ++j) {
-      int col = nonlocalCols_[i][j];
-      int offset = Epetra_Util_binary_search(col, cols, numCols, insertPoint);
-      if (offset < 0) {
-	EPETRA_CHK_ERR( Epetra_Util_insert(col, insertPoint, cols,
-					   numCols, allocLen) );
-      }
-    }
-  }
-
-  Epetra_Map* colMap = new Epetra_Map(-1, numCols, cols,
-				      Map().IndexBase(), Map().Comm());
-
-  delete [] cols;
-  numCols = 0;
-  allocLen = 0;
-
-  //now we need to create a graph with sourceMap and colMap, and fill it with
-  //our nonlocal data so we can then export it to the correct owning processors.
-
-  Epetra_CrsGraph* tempGrph = new Epetra_CrsGraph(Copy, *sourceMap, *colMap,
-						  nonlocalRowLengths_);
-
-
-  //Next we need to make sure the 'indices-are-global' attribute of tempGrph
-  //is set to true, in case this processor doesn't end up calling the
-  //InsertGlobalIndices method...
-
-  tempGrph->SetIndicesAreGlobal(true);
-
-  for(i=0; i<numNonlocalRows_; ++i) {
-    EPETRA_CHK_ERR( tempGrph->InsertGlobalIndices(nonlocalRows_[i],
-						  nonlocalRowLengths_[i],
-						  nonlocalCols_[i]) );
-  }
-
-  //Now we need to call FillComplete on our temp graph. We need to
-  //pass a DomainMap and RangeMap, which are not the same as the RowMap
-  //and ColMap that we constructed the graph with.
-
-  EPETRA_CHK_ERR(tempGrph->FillComplete(RowMap(), *sourceMap));
-
-  Epetra_Export* exporter = new Epetra_Export(*sourceMap, RowMap());
-
-  EPETRA_CHK_ERR(Export(*tempGrph, *exporter, Add));
-
-  if(callFillComplete) {
-    EPETRA_CHK_ERR(FillComplete());
-  }
-
-  //now reset the values in our nonlocal data
-  for(i=0; i<numNonlocalRows_; ++i) {
-    for(j=0; j<nonlocalRowLengths_[i]; ++j) {
-      nonlocalCols_[i][j] = 0;
-    }
-    nonlocalRowLengths_[i] = 0;
-  }
-
-  delete exporter;
-  delete tempGrph;
-  delete sourceMap;
-  delete colMap;
-
-  return(0);
+  return GlobalAssemble (static_cast<Epetra_Map&>(this->CrsGraphData_->RowMap_), 
+      static_cast<Epetra_Map&>(this->CrsGraphData_->RowMap_),
+      callFillComplete);
 }
 
 //----------------------------------------------------------------------------
@@ -366,17 +171,24 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
     return(0);
   }
 
-  int i, j;
-
   //In this method we need to gather all the non-local (overlapping) data
   //that's been input on each processor, into the
   //non-overlapping distribution defined by the map that 'this' graph was
   //constructed with.
 
-  //First build a map that describes our nonlocal data.
-  //We'll use the arbitrary distribution constructor of Map.
+  // First build a map that describes our nonlocal data.
+  // We'll use the arbitrary distribution constructor of Map.
+  // Start by extracting the column numbers from the STL map.
 
-  Epetra_Map* sourceMap = new Epetra_Map(-1, numNonlocalRows_, nonlocalRows_,
+  const int numRows = nonlocalRowData_.size();
+  int * presentRowIndices = new int[numRows];
+  std::map<int,Epetra_CrsGraphData::EntriesInOneRow>::iterator nonlocalRows 
+    = nonlocalRowData_.begin();
+  for (int i=0 ; nonlocalRows != nonlocalRowData_.end(); ++nonlocalRows, ++i)
+    presentRowIndices[i] = nonlocalRows->first;
+
+  Epetra_Map* sourceMap = new Epetra_Map(-1, nonlocalRowData_.size(),
+          presentRowIndices,
                                          Map().IndexBase(), Map().Comm());
 
   //If sourceMap has global size 0, then no nonlocal data exists and we can
@@ -385,41 +197,43 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
     if (callFillComplete) {
       EPETRA_CHK_ERR( FillComplete(domain_map, range_map) );
     }
+    delete [] presentRowIndices;
     delete sourceMap;
     return(0);
   }
 
   //We also need to build a column-map, containing the columns in our
   //nonlocal data. To do that, create a list of all column-indices that
-  //occur in our nonlocal rows.
+  //occur in our nonlocal rows. This is most easily done using the
+  //EntriesInOneRow struct, since that is sorted.
+  Epetra_CrsGraphData::EntriesInOneRow allColumns;
+  for (nonlocalRows = nonlocalRowData_.begin(); 
+       nonlocalRows != nonlocalRowData_.end(); ++nonlocalRows)
+    allColumns.AddEntries(nonlocalRows->second.entries_.size(),
+       &nonlocalRows->second.entries_[0]);
 
-  int numCols = 0, allocLen = 0;
-  int* cols = NULL;
-  int insertPoint = -1;
-
-  for(i=0; i<numNonlocalRows_; ++i) {
-    for(j=0; j<nonlocalRowLengths_[i]; ++j) {
-      int col = nonlocalCols_[i][j];
-      int offset = Epetra_Util_binary_search(col, cols, numCols, insertPoint);
-      if (offset < 0) {
-        EPETRA_CHK_ERR( Epetra_Util_insert(col, insertPoint, cols,
-                                           numCols, allocLen) );
-      }
-    }
-  }
-
-  Epetra_Map* colMap = new Epetra_Map(-1, numCols, cols,
+  Epetra_Map* colMap = new Epetra_Map(-1, allColumns.entries_.size(),
+             &allColumns.entries_[0],
                                       Map().IndexBase(), Map().Comm());
-
-  delete [] cols;
-  numCols = 0;
-  allocLen = 0;
 
   //now we need to create a graph with sourceMap and colMap, and fill it with
   //our nonlocal data so we can then export it to the correct owning processors
 
-  Epetra_CrsGraph* tempGrph = new Epetra_CrsGraph(Copy, *sourceMap, *colMap,
-                                                  nonlocalRowLengths_);
+  int * rowLengths = new int[numRows];
+  {
+    int i = 0;
+    for (nonlocalRows = nonlocalRowData_.begin(); 
+  nonlocalRows != nonlocalRowData_.end() ; ++nonlocalRows, ++i)
+      rowLengths[i] = nonlocalRows->second.entries_.size();
+  }
+
+  Epetra_CrsGraph* tempGrph = NULL;
+  if (buildNonlocalGraph_) {
+    nonlocalGraph_ = new Epetra_CrsGraph(Copy, *sourceMap, *colMap, rowLengths);
+    tempGrph = nonlocalGraph_;
+  }
+  else
+    tempGrph = new Epetra_CrsGraph(Copy, *sourceMap, *colMap, rowLengths);
 
   //Next we need to make sure the 'indices-are-global' attribute of tempGrph
   //is set to true, in case this processor doesn't end up calling the
@@ -427,16 +241,20 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
 
   tempGrph->SetIndicesAreGlobal(true);
 
-  for(i=0; i<numNonlocalRows_; ++i) {
-    EPETRA_CHK_ERR( tempGrph->InsertGlobalIndices(nonlocalRows_[i],
-                                                  nonlocalRowLengths_[i],
-                                                  nonlocalCols_[i]) );
-  }
+  for (nonlocalRows = nonlocalRowData_.begin(); 
+       nonlocalRows != nonlocalRowData_.end(); ++nonlocalRows)
+    EPETRA_CHK_ERR( tempGrph->InsertGlobalIndices(nonlocalRows->first,
+             nonlocalRows->second.entries_.size(),
+             &nonlocalRows->second.entries_[0]) );
+
 
   //Now we need to call FillComplete on our temp graph. We need to
   //pass a DomainMap and RangeMap.
 
   EPETRA_CHK_ERR(tempGrph->FillComplete(domain_map, range_map));
+
+  if (buildNonlocalGraph_)
+    tempGrph->OptimizeStorage();
 
   Epetra_Export* exporter = new Epetra_Export(*sourceMap, RowMap());
 
@@ -447,15 +265,16 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   }
 
   //now reset the values in our nonlocal data
-  for(i=0; i<numNonlocalRows_; ++i) {
-    for(j=0; j<nonlocalRowLengths_[i]; ++j) {
-      nonlocalCols_[i][j] = 0;
-    }
-    nonlocalRowLengths_[i] = 0;
-  }
+  for (nonlocalRows = nonlocalRowData_.begin(); 
+       nonlocalRows != nonlocalRowData_.end(); ++nonlocalRows)
+    nonlocalRows->second.entries_.clear();
+  nonlocalRowData_.clear();
 
+  delete [] rowLengths;
+  delete [] presentRowIndices;
   delete exporter;
-  delete tempGrph;
+  if (!buildNonlocalGraph_)
+    delete tempGrph;
   delete sourceMap;
   delete colMap;
 

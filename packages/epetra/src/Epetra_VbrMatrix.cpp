@@ -716,45 +716,50 @@ int Epetra_VbrMatrix::EndInsertValues()
 
     for ( j = 0; j < CurNumBlockEntries_; ++j ) {
       bool myID = CurIndicesAreLocal_ ?
-	map.MyLID(CurBlockIndices_[j]) : map.MyGID(CurBlockIndices_[j]);
+        map.MyLID(CurBlockIndices_[j]) : map.MyGID(CurBlockIndices_[j]);
 
       if( myID ) {
-	ValidBlockIndices[ NumValidBlockIndices++ ] = j;
+        ValidBlockIndices[ NumValidBlockIndices++ ] = j;
       }
       else ierr=2; // Discarding a Block not found in ColMap
     }
   }
 
-  int start = NumBlockEntriesPerRow_[CurBlockRow_];
+  int oldNumBlocks = NumBlockEntriesPerRow_[CurBlockRow_];
+  int oldNumAllocBlocks = NumAllocatedBlockEntriesPerRow_[CurBlockRow_];
+
+  // Update graph
+  ierr = Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_);
+
+  int newNumAllocBlocks = NumAllocatedBlockEntriesPerRow_[CurBlockRow_];
+
+  if (newNumAllocBlocks > oldNumAllocBlocks) {
+    ierr = 3;//positive warning code indicates we expanded allocated memory
+    Epetra_SerialDenseMatrix** tmp_Entries = new Epetra_SerialDenseMatrix*[newNumAllocBlocks];
+    for(j=0; j<oldNumBlocks; ++j) tmp_Entries[j] = Entries_[CurBlockRow_][j];
+    delete [] Entries_[CurBlockRow_];
+    Entries_[CurBlockRow_] = tmp_Entries;
+  }
+
+  int start = oldNumBlocks;
   int stop = start + NumValidBlockIndices;
   int NumAllocatedEntries = NumAllocatedBlockEntriesPerRow_[CurBlockRow_];
 
-  if (stop > NumAllocatedEntries) {
-    if (NumAllocatedEntries==0) { // BlockRow was never allocated, so do it
-      Entries_[CurBlockRow_] = new Epetra_SerialDenseMatrix*[NumValidBlockIndices];
-    }
-    else {
-      ierr = 1; // Out of room.  Must delete and allocate more space...
-      Epetra_SerialDenseMatrix ** tmp_Entries =
-	new Epetra_SerialDenseMatrix*[stop];
-      for (j=0; j< start; j++) {
-	tmp_Entries[j] = Entries_[CurBlockRow_][j]; // Copy existing entries
-      }
-      delete [] Entries_[CurBlockRow_]; // Delete old storage
-
-      Entries_[CurBlockRow_] = tmp_Entries; // Set pointer to new storage
+  if (stop <= NumAllocatedEntries) {
+    for (j=start; j<stop; j++) {
+      Epetra_SerialDenseMatrix& mat =
+        *(TempEntries_[ValidBlockIndices[j-start]]);
+  
+      Entries_[CurBlockRow_][j] = new Epetra_SerialDenseMatrix(CV_, mat.A(),
+          mat.LDA(),
+          mat.M(),
+          mat.N());
     }
   }
-
-  for (j=start; j<stop; j++) {
-    Epetra_SerialDenseMatrix& mat =
-      *(TempEntries_[ValidBlockIndices[j-start]]);
-
-    Entries_[CurBlockRow_][j] = new Epetra_SerialDenseMatrix(CV_, mat.A(),
-							     mat.LDA(),
-							     mat.M(),
-							     mat.N());
+  else {
+    ierr = -4;
   }
+
 
   delete [] ValidBlockIndices;
 
@@ -762,8 +767,6 @@ int Epetra_VbrMatrix::EndInsertValues()
     delete TempEntries_[j];
   }
 
-  // Update graph
-  EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_));
   EPETRA_CHK_ERR(ierr);
 
   return(0);

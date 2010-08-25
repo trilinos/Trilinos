@@ -29,8 +29,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 */
 //@HEADER
 
-#ifndef EPETRA_CRSMATRIXTRANSPOSER_H
-#define EPETRA_CRSMATRIXTRANSPOSER_H
+#ifndef EPETRA_ROWMATRIXTRANSPOSER_H
+#define EPETRA_ROWMATRIXTRANSPOSER_H
 #include <Epetra_Object.h>
 class Epetra_RowMatrix;
 class Epetra_CrsMatrix;
@@ -151,4 +151,4 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
 
 };
 
-#endif /* EPETRA_CRSMATRIXTRANSPOSER_H */
+#endif /* EPETRA_ROWMATRIXTRANSPOSER_H */

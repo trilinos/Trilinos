@@ -36,6 +36,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_DataAccess.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_IntSerialDenseVector.h"
+
+// include STL vector
+#include <vector>
 class Epetra_Import;
 class Epetra_Export;
 
@@ -47,6 +50,7 @@ class Epetra_Export;
 
 class Epetra_CrsGraphData : public Epetra_Data {
   friend class Epetra_CrsGraph;
+  friend class Epetra_FECrsGraph;
 
  private:
 
@@ -81,6 +85,39 @@ class Epetra_CrsGraphData : public Epetra_Data {
   
   //! @name Helper methods called in CrsGraph. Mainly memory allocations and deallocations.
   //@{ 
+                                      /**
+                                       * Store some data for each row
+                                       * describing which entries of
+                                       * this row are nonzero. Data is
+                                       * stored sorted in the @p
+                                       * entries std::vector which is
+                                       * kept sorted and without
+                                       * duplicates.  The vector of
+                                       * indices per row is dynamically
+                                       * growing upon insertion.
+                                       */
+  struct EntriesInOneRow
+  {
+    public:
+                /**
+           * Storage for the column indices of
+           * this row. This array is always
+           * kept sorted.
+           */
+      std::vector<int> entries_;
+       
+                /**
+           * Add the given column number to
+           * this line.
+           */
+      void AddEntry (const int col_num);
+
+              /**
+         * Add many entries to one row.
+         */
+      void AddEntries (const int  n_cols,
+          const int *col_nums);
+  };
   
   //! called by FillComplete (and TransformToLocal)
   int MakeImportExport();
@@ -146,6 +183,10 @@ class Epetra_CrsGraphData : public Epetra_Data {
   int GlobalMaxNumIndices_;
   
   int** Indices_;
+  std::vector<EntriesInOneRow> SortedEntries_;
+
+  int* TempColIndices_;
+  int NumTempColIndices_;
   Epetra_IntSerialDenseVector NumAllocatedIndicesPerRow_;
   Epetra_IntSerialDenseVector NumIndicesPerRow_;
   Epetra_IntSerialDenseVector IndexOffset_;
@@ -153,5 +194,7 @@ class Epetra_CrsGraphData : public Epetra_Data {
   Epetra_DataAccess CV_;
   
 };
+
+
 
 #endif /* EPETRA_CRSGRAPHDATA_H */

@@ -881,6 +881,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
 	bool FindMyIndexLoc(int LocalRow, int Index, int Start, int& Loc) const;
 	bool FindMyIndexLoc(int NumIndices, const int* Indices, int Index, int Start, int& Loc) const;
 	int InsertIndices(int Row, int NumIndices, int* Indices);
+  int InsertIndicesIntoSorted(int Row, int NumIndices, int* Indices);
 	int MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
 	void SetIndicesAreLocal(bool Flag) {CrsGraphData_->IndicesAreLocal_ = Flag;}
 	void SetIndicesAreGlobal(bool Flag) {CrsGraphData_->IndicesAreGlobal_ = Flag;}
