@@ -189,8 +189,8 @@ getValidAztecOOParameters()
   setStringToIntegralParameter<int>(
     AztecSolver_name, "GMRES",
     "Type of linear solver algorithm to use.",
-    tuple<std::string>("CG","GMRES","CGS","TFQMR","BiCGStab","LU"),
-    tuple<int>(AZ_cg,AZ_gmres,AZ_cgs,AZ_tfqmr,AZ_bicgstab,AZ_lu),
+    tuple<std::string>("CG","GMRES","CGS","TFQMR","BiCGStab","LU","GMRESR"),
+    tuple<int>(AZ_cg,AZ_gmres,AZ_cgs,AZ_tfqmr,AZ_bicgstab,AZ_lu,AZ_GMRESR),
     &*pl
     );
   setStringToIntegralParameter<EAztecPreconditioner>(
