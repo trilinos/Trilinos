@@ -1,0 +1,59 @@
+Running on rs1351
+mpiexec -np 8 numa_wrapper -ppn 8 ./bind
+
+1 Machine:
+  cpu set mask 0x000000ff,  total memory   12368012KB, local memory          0KB, ( MPI ranks 0 1 2 3 4 5 6 7 )
+
+2 NUMANodes:
+  cpu set mask 0x0000000f,  total memory    6162572KB, local memory    6162572KB, ( MPI ranks 4 5 6 7 )
+  cpu set mask 0x000000f0,  total memory    6205440KB, local memory    6205440KB, ( MPI ranks 0 1 2 3 )
+
+2 Sockets:
+  cpu set mask 0x0000000f,  total memory          0KB, local memory          0KB, ( MPI ranks 4 5 6 7 )
+  cpu set mask 0x000000f0,  total memory          0KB, local memory          0KB, ( MPI ranks 0 1 2 3 )
+
+2 L3Caches:
+  cpu set mask 0x0000000f,  total memory          0KB, local memory          0KB, ( MPI ranks 4 5 6 7 )
+  cpu set mask 0x000000f0,  total memory          0KB, local memory          0KB, ( MPI ranks 0 1 2 3 )
+
+8 L2Caches:
+  cpu set mask 0x00000001,  total memory          0KB, local memory          0KB, ( MPI ranks 4 )
+  cpu set mask 0x00000002,  total memory          0KB, local memory          0KB, ( MPI ranks 5 )
+  cpu set mask 0x00000004,  total memory          0KB, local memory          0KB, ( MPI ranks 6 )
+  cpu set mask 0x00000008,  total memory          0KB, local memory          0KB, ( MPI ranks 7 )
+  cpu set mask 0x00000010,  total memory          0KB, local memory          0KB, ( MPI ranks 0 )
+  cpu set mask 0x00000020,  total memory          0KB, local memory          0KB, ( MPI ranks 1 )
+  cpu set mask 0x00000040,  total memory          0KB, local memory          0KB, ( MPI ranks 2 )
+  cpu set mask 0x00000080,  total memory          0KB, local memory          0KB, ( MPI ranks 3 )
+
+8 L1Caches:
+  cpu set mask 0x00000001,  total memory          0KB, local memory          0KB, ( MPI ranks 4 )
+  cpu set mask 0x00000002,  total memory          0KB, local memory          0KB, ( MPI ranks 5 )
+  cpu set mask 0x00000004,  total memory          0KB, local memory          0KB, ( MPI ranks 6 )
+  cpu set mask 0x00000008,  total memory          0KB, local memory          0KB, ( MPI ranks 7 )
+  cpu set mask 0x00000010,  total memory          0KB, local memory          0KB, ( MPI ranks 0 )
+  cpu set mask 0x00000020,  total memory          0KB, local memory          0KB, ( MPI ranks 1 )
+  cpu set mask 0x00000040,  total memory          0KB, local memory          0KB, ( MPI ranks 2 )
+  cpu set mask 0x00000080,  total memory          0KB, local memory          0KB, ( MPI ranks 3 )
+
+8 Cores:
+  cpu set mask 0x00000001,  total memory          0KB, local memory          0KB, ( MPI ranks 4 )
+  cpu set mask 0x00000002,  total memory          0KB, local memory          0KB, ( MPI ranks 5 )
+  cpu set mask 0x00000004,  total memory          0KB, local memory          0KB, ( MPI ranks 6 )
+  cpu set mask 0x00000008,  total memory          0KB, local memory          0KB, ( MPI ranks 7 )
+  cpu set mask 0x00000010,  total memory          0KB, local memory          0KB, ( MPI ranks 0 )
+  cpu set mask 0x00000020,  total memory          0KB, local memory          0KB, ( MPI ranks 1 )
+  cpu set mask 0x00000040,  total memory          0KB, local memory          0KB, ( MPI ranks 2 )
+  cpu set mask 0x00000080,  total memory          0KB, local memory          0KB, ( MPI ranks 3 )
+
+8 PUs:
+  cpu set mask 0x00000001,  total memory          0KB, local memory          0KB, ( MPI ranks 4 )
+  cpu set mask 0x00000002,  total memory          0KB, local memory          0KB, ( MPI ranks 5 )
+  cpu set mask 0x00000004,  total memory          0KB, local memory          0KB, ( MPI ranks 6 )
+  cpu set mask 0x00000008,  total memory          0KB, local memory          0KB, ( MPI ranks 7 )
+  cpu set mask 0x00000010,  total memory          0KB, local memory          0KB, ( MPI ranks 0 )
+  cpu set mask 0x00000020,  total memory          0KB, local memory          0KB, ( MPI ranks 1 )
+  cpu set mask 0x00000040,  total memory          0KB, local memory          0KB, ( MPI ranks 2 )
+  cpu set mask 0x00000080,  total memory          0KB, local memory          0KB, ( MPI ranks 3 )
+
+Open MPI 1 4 2
