@@ -94,8 +94,6 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
     fixture.generate_mesh();
 
-    // Query element from this simple grid fixture via the (i,j,k) indices.
-    stk::mesh::Entity * elem_to_kill = fixture.elem( 0 , 0 , 0 );
 
     fixture.bulk_data.modification_begin();
 
@@ -136,8 +134,10 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
       }
     }
 
-    fixture.bulk_data.modification_begin();
 
+    // Kill element on the "left" of the shell:
+    fixture.bulk_data.modification_begin();
+    stk::mesh::Entity * elem_to_kill = fixture.elem( 0 , 0 , 0 ); // (i,j,k) indices
     if ( elem_to_kill != NULL && p_rank == elem_to_kill->owner_rank() ) {
       // Destroy element and its sides and nodes
       // that are not in the closure of another element.

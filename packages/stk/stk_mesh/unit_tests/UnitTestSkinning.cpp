@@ -25,6 +25,8 @@
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
 
+#include <stk_util/parallel/ParallelReduce.hpp>
+
 #include <iomanip>
 #include <algorithm>
 
@@ -49,6 +51,58 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testUnit )
 {
   UnitTestStkMeshSkinning unit(MPI_COMM_WORLD);
   unit.test_skinning();
+}
+
+STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSingleShell )
+{
+  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD );
+
+  const unsigned p_rank = bulk_data.parallel_rank();
+
+  stk::mesh::Part & skin_part = meta_data.declare_part("skin_part");
+
+  stk::mesh::Part & shell_part = meta_data.declare_part("shell_part", stk::mesh::Element);
+  stk::mesh::set_cell_topology<shards::ShellQuadrilateral<4> >(shell_part);
+
+  meta_data.commit();
+
+  bulk_data.modification_begin();
+
+  if ( p_rank == 0 ) {
+
+    stk::mesh::EntityId elem_node[4] ;
+
+    // Query nodes from this simple grid fixture via the (i,j,k) indices.
+    elem_node[0] = 1;
+    elem_node[1] = 2;
+    elem_node[2] = 3;
+    elem_node[3] = 4;
+
+    stk::mesh::EntityId elem_id = 1;
+
+    stk::mesh::declare_element( bulk_data, shell_part, elem_id, elem_node);
+
+  }
+  bulk_data.modification_end();
+
+
+  stk::mesh::skin_mesh( bulk_data, stk::mesh::Element, &skin_part);
+
+  {
+    const unsigned mesh_rank = stk::mesh::Element;
+    const stk::mesh::MetaData & meta = bulk_data.mesh_meta_data();
+    stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
+    const std::vector<stk::mesh::Bucket*>& buckets = bulk_data.buckets( mesh_rank -1);
+    int num_skin_entities = stk::mesh::count_selected_entities( select_skin, buckets);
+
+
+    stk::all_reduce(MPI_COMM_WORLD, stk::ReduceSum<1>(&num_skin_entities));
+
+    // Verify that the correct 6 sides are present.
+
+    STKUNIT_ASSERT_EQUAL( num_skin_entities, 2 );
+  }
 }
 
 } //end namespace

@@ -51,14 +51,45 @@ void get_elem_side_nodes( const Entity & elem,
 
   const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
 
-  PairIterRelation rel = elem.relations( Node );
+  PairIterRelation relations = elem.relations( Node );
+
+  // Find positive polarity permutation that starts with lowest entity id:
+  // We're using this as the unique key in a map for a side.
+  const int num_permutations = side_top->permutation_count;
+  int lowest_entity_id_permutation = 0;
+  for (int p = 0; p < num_permutations; ++p) {
+
+    if (side_top->permutation[p].polarity ==
+        CELL_PERMUTATION_POLARITY_POSITIVE) {
+     
+      const unsigned * const pot_lowest_perm_node =
+        side_top->permutation[p].node ;
+
+      const unsigned * const curr_lowest_perm_node = 
+        side_top->permutation[lowest_entity_id_permutation].node;
+
+      unsigned first_node_index = 0;
+
+      unsigned current_lowest_entity_id = 
+        relations[side_node_map[curr_lowest_perm_node[first_node_index]]].entity()->identifier();
+
+      unsigned potential_lowest_entity_id = 
+        relations[side_node_map[pot_lowest_perm_node[first_node_index]]].entity()->identifier();
+
+      if ( potential_lowest_entity_id < current_lowest_entity_id ) {
+        lowest_entity_id_permutation = p;
+      }
+    }
+  }
+  const unsigned * const perm_node = 
+    side_top->permutation[lowest_entity_id_permutation].node;
+
   nodes.reserve(side_top->node_count);
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
-    Entity * node = rel[ side_node_map[i] ].entity();
-    nodes.push_back(node->identifier());
+    unsigned node_id = relations[side_node_map[perm_node[i]]].entity()->identifier(); 
+    nodes.push_back(node_id);
   }
 
-  std::sort(nodes.begin(), nodes.end());
 }
 
 }
