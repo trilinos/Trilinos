@@ -47,18 +47,25 @@ namespace {
   void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity * entity) {
 
     stk::mesh::PairIterRelation relations = entity->relations();
-    stk::mesh::EntityRank rank = entity->entity_rank();
+    stk::mesh::EntityRank entity_rank = entity->entity_rank();
 
-    for (; !relations.empty();) {
-      --relations.second;
-      stk::mesh::Entity * current_entity = (relations.second->entity());
+    if ( !relations.empty() && relations.back().entity()->entity_rank() > entity_rank) {
+      throw std::runtime_error("Unable to destroy and entity with upward relations");
+    }
 
-      mesh.destroy_relation( *entity, *current_entity);
+    for (; !entity->relations().empty();) {
+      stk::mesh::Entity * related_entity = (entity->relations().back().entity());
+      stk::mesh::EntityRank related_entity_rank = related_entity->entity_rank();
 
-      // \TODO Only destroy if there are no upward relations
-      
-      if ( current_entity->relations(rank).empty()) {
-        mesh.destroy_entity(current_entity);
+      mesh.destroy_relation( *entity, *related_entity);
+
+      stk::mesh::PairIterRelation related_entity_relations = related_entity->relations();
+
+      //  Only destroy if there are no upward relations
+      if ( related_entity_relations.empty() ||
+          related_entity_relations.back().entity()->entity_rank() < related_entity_rank )
+      {
+        destroy_entity_closure(mesh,related_entity);
       }
     }
 
