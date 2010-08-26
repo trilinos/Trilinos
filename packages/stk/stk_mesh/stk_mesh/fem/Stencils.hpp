@@ -61,6 +61,40 @@ int element_node_stencil( unsigned from_type ,
 }
 
 template< class TopologyTraits >
+int entity_node_stencil( unsigned , unsigned , unsigned );
+
+template<>
+int entity_node_stencil<void>( unsigned from_entity_rank ,
+                               unsigned to_entity_rank ,
+                               unsigned identifier )
+{
+  int ordinal = -1 ;
+
+  if ( Node == to_entity_rank ) {
+    ordinal = static_cast<int>(identifier);
+  }
+
+  return ordinal ;
+}
+
+template< class TopologyTraits >
+int entity_node_stencil( unsigned from_entity_rank ,
+                         unsigned to_entity_rank ,
+                         unsigned   identifier )
+{
+  enum { number_node = TopologyTraits::node_count };
+
+  int ordinal = -1 ;
+
+  if ( Node    == to_entity_rank &&
+       identifier < number_node ) {
+    ordinal = static_cast<int>(identifier);
+  }
+
+  return ordinal ;
+}
+
+template< class TopologyTraits >
 int element_node_lock_stencil( unsigned , unsigned , unsigned );
 
 template<>
