@@ -144,7 +144,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     RCP<LinearOpWithSolveBase<double> >
       nsA = lowsFactory->createOp();
 
-    Thyra::initializeOp<double>(*lowsFactory, A, &*nsA );
+    Thyra::initializeOp<double>(*lowsFactory, A, nsA.ptr());
 
     if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 
@@ -189,24 +189,26 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     if(out.get()) *out << "\nF) Uninitialize nsA, create precondtioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
 
     // Scale the diagonal of the matrix and then create the preconditioner for it
-    Thyra::uninitializeOp<double>(*lowsFactory,&*nsA); // Not required but a good idea since we are changing the matrix
+    Thyra::uninitializeOp<double>(*lowsFactory, nsA.ptr());
+    // Above is not required but a good idea since we are changing the matrix
     {
       Epetra_Vector diag(epetra_A->RowMap());
       epetra_A->ExtractDiagonalCopy(diag);
       diag.Scale(0.5);
       epetra_A->ReplaceDiagonalValues(diag);
     }
-    Thyra::initializeOp<double>(*lowsFactory,A,&*nsA);
+    Thyra::initializeOp<double>(*lowsFactory, A, nsA.ptr());
 
     // Scale the matrix back again and then reuse the preconditioner
-    Thyra::uninitializeOp<double>(*lowsFactory,&*nsA); // Not required but a good idea since we are changing the matrix
+    Thyra::uninitializeOp<double>(*lowsFactory, nsA.ptr());
+    // Above is not required but a good idea since we are changing the matrix
     {
       Epetra_Vector diag(epetra_A->RowMap());
       epetra_A->ExtractDiagonalCopy(diag);
       diag.Scale(1.0/0.5);
       epetra_A->ReplaceDiagonalValues(diag);
     }
-    initializeAndReuseOp<double>(*lowsFactory,A,&*nsA);
+    initializeAndReuseOp<double>(*lowsFactory, A, nsA.ptr());
 
     if(out.get()) *out << "\nG) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
@@ -218,7 +220,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
       if(out.get()) *out << "\nH) Reinitialize (A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX) => nsA ...\n";
       
-      initializeApproxPreconditionedOp<double>(*lowsFactory,A,A,&*nsA);
+      initializeApproxPreconditionedOp<double>(*lowsFactory, A, A, nsA.ptr());
 
       if(out.get()) *out << "\nI) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       
@@ -324,9 +326,10 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     if(out.get()) *out << "\nM) Scale the epetra_A object by 2.5, and then reinitialize nsA with epetra_A ...\n";
 
-    Thyra::uninitializeOp<double>(*lowsFactory,&*nsA); // Not required but a good idea since we are changing the matrix
+    Thyra::uninitializeOp<double>(*lowsFactory, nsA.ptr());
+    // Not required but a good idea since we are changing the matrix
     epetra_A->Scale(2.5);
-    initializeOp<double>(*lowsFactory,A,&*nsA);
+    initializeOp<double>(*lowsFactory, A, nsA.ptr());
 
     if(out.get()) *out << "\nN) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
@@ -341,7 +344,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     epetra_A2->Scale(2.5);
     RCP<const LinearOpBase<double> >
       A2 = Thyra::epetraLinearOp(epetra_A2);
-    initializeOp<double>(*lowsFactory,A2,&*nsA);
+    initializeOp<double>(*lowsFactory, A2, nsA.ptr());
     // Note that it was okay not to uninitialize nsA first here since A, which
     // was used to initialize nsA last, was not changed and therefore the
     // state of nsA was fine throughout
@@ -392,7 +395,6 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     externallyPreconditionedLinearSolveUseCases(
       *A,*lowsFactory,*precFactory,false,true,*out
       );
-
   }
 
 #else // SUN_CXX

@@ -119,7 +119,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   RCP<LinearOpWithSolveBase<double> >
     nsA = lowsFactory->createOp();
 
-  initializeOp<double>( *lowsFactory, A, &*nsA );
+  initializeOp<double>(*lowsFactory, A, nsA.ptr());
 
   bool testTranspose = testTranspose_in;
   if (testTranspose_in && !Thyra::solveSupports(*nsA, Thyra::CONJTRANS)) {
@@ -174,15 +174,15 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out.get()) *out << "\nF) Uninitialize the matrix object nsA, scale the epetra_A object by 2.5, and then refactor nsA with epetra_A ...\n";
 
-  uninitializeOp<double>(*lowsFactory,&*nsA); // Optional call but a good idea if changing the operator
+  uninitializeOp<double>(*lowsFactory, nsA.ptr()); // Optional call but a good idea if changing the operator
   epetra_A->Scale(2.5);
-  initializeOp<double>(*lowsFactory,A,&*nsA);
+  initializeOp<double>(*lowsFactory, A, nsA.ptr());
   
   if(out.get()) *out << "\nG) Testing the LinearOpBase interface of nsA ...\n";
 
   Thyra::seed_randomize<double>(0);
 
-  result = linearOpTester.check(*nsA,out.get());
+  result = linearOpTester.check(*nsA, out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nH) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -197,13 +197,13 @@ bool Thyra::test_single_amesos_thyra_solver(
   epetra_A2->Scale(2.5);
   RCP<const LinearOpBase<double> >
     A2 = Thyra::epetraLinearOp(epetra_A2);
-  initializeOp<double>(*lowsFactory,A2,&*nsA);
+  initializeOp<double>(*lowsFactory, A2, nsA.ptr());
   
   if(out.get()) *out << "\nJ) Testing the LinearOpBase interface of nsA ...\n";
 
   Thyra::seed_randomize<double>(0);
 
-  result = linearOpTester.check(*nsA,out.get());
+  result = linearOpTester.check(*nsA, out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nK) Testing the LinearOpWithSolveBase interface of nsA ...\n";

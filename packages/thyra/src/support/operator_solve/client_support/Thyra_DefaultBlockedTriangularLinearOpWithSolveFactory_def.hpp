@@ -269,7 +269,7 @@ DefaultBlockedTriangularLinearOpWithSolveFactory<Scalar>::initializeOp(
       // reuse precreated structure and storage.
       RCP<LinearOpWithSolveBase<Scalar> >
         invOp_k = btlows.getNonconstLOWSBlock(k,k).assert_not_null();
-      Thyra::initializeOp<Scalar>(*lowsf_.getConstObj(),fwdOp_k,&*invOp_k);
+      Thyra::initializeOp<Scalar>(*lowsf_.getConstObj(), fwdOp_k, invOp_k.ptr());
     }
   }
 

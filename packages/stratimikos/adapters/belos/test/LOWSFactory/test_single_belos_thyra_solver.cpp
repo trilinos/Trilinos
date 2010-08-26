@@ -118,10 +118,8 @@ bool Thyra::test_single_belos_thyra_solver(
 
     if(out.get()) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
 
-    Teuchos::RCP<LinearOpWithSolveBase<double> >
-      nsA = lowsFactory->createOp();
-
-    Thyra::initializeOp<double>( *lowsFactory,  A, &*nsA );
+    Teuchos::RCP<LinearOpWithSolveBase<double> > nsA = lowsFactory->createOp();
+    Thyra::initializeOp<double>(*lowsFactory,  A, nsA.ptr());
 
     if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 

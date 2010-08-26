@@ -542,7 +542,7 @@ private:
 
 /** \brief Call <tt>solveSupports()</tt> as a non-member function.
  *
- * \relates_LinearOpWithSolveBase
+ * \relates LinearOpWithSolveBase
  */
 template<class Scalar>
 inline
@@ -554,7 +554,7 @@ bool solveSupports(const LinearOpWithSolveBase<Scalar> &A, const EOpTransp trans
 
 /** \brief Call <tt>solveSupports()</tt> as a non-member function.
  *
- * \relates_LinearOpWithSolveBase
+ * \relates LinearOpWithSolveBase
  */
 template<class Scalar>
 inline
@@ -568,26 +568,9 @@ bool solveSupports(
 }
 
 
-/** \brief Call <tt>solveSupportsSolveMeasureType()</tt> as a non-member
- * function.
- *
- * \relates_LinearOpWithSolveBase
- */
-template<class Scalar>
-inline
-bool solveSupportsSolveMeasureType(
-  const LinearOpWithSolveBase<Scalar> &A,
-  const EOpTransp transp,
-  const SolveMeasureType &solveMeasureType
-  )
-{
-  return A.solveSupportsSolveMeasureType(transp, solveMeasureType);
-}
-
-
 /** \brief Call <tt>solve()</tt> as a non-member function
  *
- * \relates_LinearOpWithSolveBase
+ * \relates LinearOpWithSolveBase
  */
 template<class Scalar>
 inline
@@ -606,9 +589,26 @@ SolveStatus<Scalar> solve(
 // Deprecated
 
 
+/** \brief Call <tt>solveSupportsSolveMeasureType()</tt> as a non-member
+ * function.
+ *
+ * \defgroup Thyra_deprecated_grp
+ */
+template<class Scalar>
+inline
+bool solveSupportsSolveMeasureType(
+  const LinearOpWithSolveBase<Scalar> &A,
+  const EOpTransp transp,
+  const SolveMeasureType &solveMeasureType
+  )
+{
+  return A.solveSupportsSolveMeasureType(transp, solveMeasureType);
+}
+
+
 /** \brief Deprecated.
  *
- * \relates_LinearOpWithSolveBase
+ * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -635,7 +635,7 @@ void solve(
 
 /** \brief Deprecated.
  *
- * \relates_LinearOpWithSolveBase
+ * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -657,7 +657,7 @@ SolveStatus<Scalar> solve(
  *
  * See the implementation of this function for details.
  *
- * \relates_LinearOpWithSolveBase
+ * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -693,7 +693,7 @@ solve(
  *
  * See the implementation of this function for details.
  *
- * \relates_LinearOpWithSolveBase
+ * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -729,7 +729,7 @@ solveTranspose(
  *
  * See the implementation of this function for details.
  *
- * \relates_LinearOpWithSolveBase
+ * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
@@ -752,7 +752,7 @@ void solve(
  *
  * See the implementation of this function for details.
  *
- * \relates_LinearOpWithSolveBase
+ * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
 THYRA_DEPRECATED
