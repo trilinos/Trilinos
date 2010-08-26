@@ -90,12 +90,12 @@ namespace TSQR {
       {
 	using TSQR::Random::randomGlobalMatrix;
 	using Teuchos::ArrayRCP;
-	typedef MatView< local_ordinal_type, scalar_type > mat_view_type;
+	typedef MatView< local_ordinal_type, scalar_type > matview_type;
 
 	local_ordinal_type nrowsLocal, ncols, LDA;
 	fetchDims (A, nrowsLocal, ncols, LDA);
 	ArrayRCP< scalar_type > A_ptr = fetchNonConstView (A);
-	mat_view_type A_view (nrowsLocal, ncols, A_ptr.get(), LDA);
+	matview_type A_view (nrowsLocal, ncols, A_ptr.get(), LDA);
 
 	randomGlobalMatrix (pGen_.get(), A_view, singularValues,
 			    pOrdinalMessenger_.get(), pScalarMessenger_.get());

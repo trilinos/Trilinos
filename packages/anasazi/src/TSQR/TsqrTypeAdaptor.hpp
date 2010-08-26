@@ -76,21 +76,27 @@ namespace TSQR {
       typedef MV multivector_type;
 
       ///
-      /// Type representing the intranode part of TSQR
+      /// Type representing the intranode part of TSQR.
+      /// Defaults to sequential, cache-blocked TSQR.
       ///
       typedef TSQR::SequentialTsqr< LO, S > node_tsqr_type;
 
       ///
       /// Type representing the internode part of TSQR.
-      /// Depends on node_tsqr_type.
       ///
-      typedef TSQR::Tsqr< LO, S, node_tsqr_type > tsqr_type;
+      typedef TSQR::DistTsqr< LO, S > dist_tsqr_type;
+
+      ///
+      /// Type representing the whole TSQR method.
+      /// Depends on node_tsqr_type and dist_tsqr_type.
+      ///
+      typedef TSQR::Tsqr< LO, S, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
       ///
       /// Type of the TsqrFactory object that knows how to construct
-      /// node_tsqr_type and tsqr_type objects.
+      /// node_tsqr_type and dist_tsqr_type objects.
       ///
-      typedef TsqrFactory< LO, S, node_tsqr_type, tsqr_type > factory_type;
+      typedef TsqrFactory< LO, S, node_tsqr_type, dist_tsqr_type > factory_type;
 
       ///
       /// Type of the (raw) communicator object used by the given

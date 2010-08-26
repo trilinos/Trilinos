@@ -40,6 +40,8 @@
 #include <Tsqr_printGlobalMatrix.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
 
+#include <Teuchos_RCP.hpp>
+
 #include <algorithm>
 #include <sstream>
 #include <limits>
@@ -73,7 +75,7 @@ namespace TSQR {
     template< class MgsBase >
     static void
     do_mgs_verify (MgsBase& orthogonalizer,
-		   MessengerBase< typename MgsBase::scalar_type >* const messenger,
+		   const Teuchos::RCP< MessengerBase< typename MgsBase::scalar_type > >& messenger,
 		   Matrix< typename MgsBase::ordinal_type, typename MgsBase::scalar_type >& Q_local,
 		   Matrix< typename MgsBase::ordinal_type, typename MgsBase::scalar_type >& R,
 		   const bool b_debug = false)
@@ -100,8 +102,8 @@ namespace TSQR {
 	       Generator& generator,
 	       const Ordinal nrows_global,
 	       const Ordinal ncols,
-	       MessengerBase< Ordinal >* const ordinalComm,
-	       MessengerBase< Scalar >* const scalarComm,
+	       const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
+	       const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 	       const int num_cores,
 	       const bool human_readable,
 	       const bool b_debug)
@@ -130,7 +132,7 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
 
       // Generate the test problem.
-      distributedTestProblem (generator, A_local, ordinalComm, scalarComm);
+      distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -145,7 +147,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << "Test matrix A:" << endl;
 	  scalarComm->barrier();
-	  printGlobalMatrix (cerr, A_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier();
 	}
 
@@ -188,7 +190,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << endl << "Q factor:" << endl;
 	  scalarComm->barrier ();
-	  printGlobalMatrix (cerr, A_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier ();
 	  if (my_rank == 0)
 	    {
@@ -203,7 +205,7 @@ namespace TSQR {
       std::pair< magnitude_type, magnitude_type > result = 
 	global_verify (nrows_local, ncols, A_local.get(), A_local.lda(),
 		       Q_local.get(), Q_local.lda(), R.get(), R.lda(), 
-		       scalarComm);
+		       scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -297,8 +299,8 @@ namespace TSQR {
 		  const int ntrials,
 		  const Ordinal nrows_global,
 		  const Ordinal ncols,
-		  MessengerBase< Ordinal >* const ordinalComm,
-		  MessengerBase< Scalar >* const scalarComm,
+		  const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
+		  const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 		  const int num_cores,
 		  const bool human_readable,
 		  const bool b_debug)
@@ -329,7 +331,7 @@ namespace TSQR {
       Matrix<Ordinal, Scalar> R (ncols, ncols, Scalar(0));
 
       // Generate the test problem.
-      distributedTestProblem (generator, A_local, ordinalComm, scalarComm);
+      distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -344,7 +346,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << "Test matrix A:" << endl;
 	  scalarComm->barrier ();
-	  printGlobalMatrix (cerr, A_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier ();
 	}
 

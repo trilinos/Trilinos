@@ -147,9 +147,7 @@ namespace TSQR {
     
   public:
     typedef Scalar scalar_type;
-    typedef Scalar value_type; // deprecated
     typedef Ordinal ordinal_type;
-    typedef Ordinal index_type; // deprecated
     typedef Scalar* pointer_type;
 
     Matrix (const Ordinal num_rows, 

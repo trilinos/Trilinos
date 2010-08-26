@@ -33,6 +33,8 @@
 #include <Tsqr_DistTsqrHelper.hpp>
 #include <Tsqr_ScalarTraits.hpp>
 
+#include <Teuchos_RCP.hpp>
+
 #include <algorithm> // std::min, std::max
 #include <stdexcept>
 #include <string>
@@ -51,19 +53,23 @@ namespace TSQR {
   template< class LocalOrdinal, class Scalar >
   class DistTsqr {
   public:
-    typedef Scalar value_type;
+    typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
     typedef std::vector< std::vector< Scalar > > VecVec;
     typedef std::pair< VecVec, VecVec > FactorOutput;
+    typedef int rank_type;
 
     /// Constructor
     ///
     /// \param messenger [in/out] Encapsulation of communication
     ///   operations.  Not owned by *this (delete NOT called in
     ///   ~DistTsqr()).
-    DistTsqr (MessengerBase< Scalar >* const messenger) :
+    DistTsqr (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) :
       messenger_ (messenger) 
     {}
+
+    rank_type rank() const { return messenger_->rank(); }
+    rank_type size() const { return messenger_->size(); }
 
     ///
     /// Destructor (does nothing)
@@ -144,7 +150,7 @@ namespace TSQR {
 
       // assert (Q_factors.size() == tau_arrays.size());
       const int cur_pos = Q_factors.size() - 1;
-      DistTsqrHelper< LocalOrdinal, Scalar > helper;
+      DistTsqrHelper< ordinal_type, scalar_type > helper;
       helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine, 
 			   &C_other[0], my_rank, 0, P-1, first_tag, messenger_, 
 			   Q_factors, tau_arrays, cur_pos, work);
@@ -168,7 +174,7 @@ namespace TSQR {
     }
 
   private:
-    MessengerBase< Scalar >* const messenger_;
+    Teuchos::RCP< MessengerBase< Scalar > > messenger_;
   };
 
 } // namespace TSQR

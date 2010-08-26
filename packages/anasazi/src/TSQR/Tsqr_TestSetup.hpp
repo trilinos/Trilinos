@@ -34,6 +34,8 @@
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_ScalarTraits.hpp>
 
+#include <Teuchos_RCP.hpp>
+
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,7 +90,7 @@ namespace TSQR {
 	  // participate, but only Proc 0 generates the (pseudo)random
 	  // numbers.
 	  TSQR::Random::randomGlobalMatrix (&generator, A_local, 
-					    &singular_values[0], ordinalComm, 
+					    &singular_values[0], ordinalComm,
 					    scalarComm);
 	}
       else
@@ -100,7 +102,7 @@ namespace TSQR {
 	  // All MPI processes participate in the distribution of the
 	  // test matrix.
 	  TSQR::Random::randomGlobalMatrix (&generator, A_local, 
-					    &singular_values[0], ordinalComm, 
+					    &singular_values[0], ordinalComm,
 					    scalarComm);
 	}
     }

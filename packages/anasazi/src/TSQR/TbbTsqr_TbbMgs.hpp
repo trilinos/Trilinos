@@ -39,6 +39,8 @@
 #include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 
+#include <Teuchos_RCP.hpp>
+
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_reduce.h>
@@ -64,8 +66,11 @@ namespace TSQR {
       typedef Scalar scalar_type;
       typedef LocalOrdinal ordinal_type;
       typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
+      typedef MessengerBase< Scalar > messenger_type;
+      typedef Teuchos::RCP< messenger_type > messenger_ptr;
 
-      TbbMgs (MessengerBase< Scalar >* const messenger) : messenger_ (messenger) {}
+      TbbMgs (const messenger_ptr& messenger) :
+	messenger_ (messenger) {}
     
       void 
       mgs (const LocalOrdinal nrows_local, 
@@ -76,7 +81,7 @@ namespace TSQR {
 	   const LocalOrdinal ldr);
 
     private:
-      MessengerBase< Scalar >* messenger_;
+      messenger_ptr messenger_;
     };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -237,10 +242,12 @@ namespace TSQR {
       class TbbMgsOps {
       private:
 	typedef tbb::blocked_range< LocalOrdinal > range_type;
-	MessengerBase< Scalar >* const messenger_;
 
       public:
-	TbbMgsOps (MessengerBase< Scalar >* const messenger) : 
+	typedef MessengerBase< Scalar > messenger_type;
+	typedef Teuchos::RCP< messenger_type > messenger_ptr;
+
+	TbbMgsOps (const messenger_ptr& messenger) :
 	  messenger_ (messenger) {}
 
 	void
@@ -335,6 +342,9 @@ namespace TSQR {
 	  this->axpy (nrows_local, -coeff, q_local, v_local);
 	  return coeff;
 	}
+
+      private:
+	messenger_ptr messenger_;
       };
     } // namespace details
 

@@ -55,7 +55,7 @@ namespace TSQR {
     template< class Ordinal, class Scalar >
     class DistTsqrVerifier {
       TSQR::Random::NormalGenerator< Ordinal, Scalar > gen_;
-      MessengerBase< Scalar >* const scalarComm_;
+      Teuchos::RCP< MessengerBase< Scalar > > const scalarComm_;
       std::string scalarTypeName_;
       const bool humanReadable_, debug_;
       std::ostream& out_;
@@ -83,7 +83,7 @@ namespace TSQR {
       /// \param out [out] Output stream to which to write results
       /// \param err [out] Output stream to which to write any
       ///   debugging outputs (if applicable) or errors
-      DistTsqrVerifier (MessengerBase< Scalar >* const scalarComm,
+      DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 			const std::vector<int>& seed,
 			const std::string& scalarTypeName,
 			const bool humanReadable = true,
@@ -116,7 +116,7 @@ namespace TSQR {
       /// \param out [out] Output stream to which to write results
       /// \param err [out] Output stream to which to write any
       ///   debugging outputs (if applicable) or errors
-      DistTsqrVerifier (MessengerBase< Scalar >* const scalarComm,
+      DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 			const std::string& scalarTypeName,
 			const bool humanReadable = true,
 			const bool debug = false,
@@ -162,7 +162,7 @@ namespace TSQR {
 	Matrix< Ordinal, Scalar > A_local, A_global;
 	// This modifies A_local on all procs, and A_global as well on
 	// Proc 0.
-	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
+	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_.get());
 
 	if (debug_)
 	  {
@@ -225,7 +225,7 @@ namespace TSQR {
 	result_type result = 
 	  global_verify (numRowsLocal, numCols, A_local.get(), A_local.lda(),
 			 Q_local.get(), Q_local.lda(), R.get(), R.lda(), 
-			 scalarComm_);
+			 scalarComm_.get());
 	if (debug_)
 	  {
 	    scalarComm_->barrier();
@@ -283,8 +283,8 @@ namespace TSQR {
     template< class Ordinal, class Scalar, class TimerType >
     class DistTsqrBenchmarker {
       TSQR::Random::NormalGenerator< Ordinal, Scalar > gen_;
-      MessengerBase< Scalar >* const scalarComm_;
-      MessengerBase< double >* const doubleComm_; 
+      Teuchos::RCP< MessengerBase< Scalar > > scalarComm_;
+      Teuchos::RCP< MessengerBase< double > > doubleComm_; 
       std::string scalarTypeName_;
       const bool humanReadable_, debug_;
       std::ostream& out_;
@@ -315,8 +315,8 @@ namespace TSQR {
       /// \param out [out] Output stream to which to write results
       /// \param err [out] Output stream to which to write any
       ///   debugging outputs (if applicable) or errors
-      DistTsqrBenchmarker (MessengerBase< Scalar >* const scalarComm,
-			   MessengerBase< double >* const doubleComm,
+      DistTsqrBenchmarker (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
+			   const Teuchos::RCP< MessengerBase< double > >& doubleComm,
 			   const std::vector<int>& seed,
 			   const std::string& scalarTypeName,
 			   const bool humanReadable = true,
@@ -354,8 +354,8 @@ namespace TSQR {
       /// \param out [out] Output stream to which to write results
       /// \param err [out] Output stream to which to write any
       ///   debugging outputs (if applicable) or errors
-      DistTsqrBenchmarker (MessengerBase< Scalar >* const scalarComm,
-			   MessengerBase< double >* const doubleComm,
+      DistTsqrBenchmarker (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
+			   const Teuchos::RCP< MessengerBase< double > >& doubleComm,
 			   const std::string& scalarTypeName,
 			   const bool humanReadable = true,
 			   const bool debug = false,
@@ -397,7 +397,7 @@ namespace TSQR {
 	Matrix< Ordinal, Scalar > A_local, A_global;
 	// This modifies A_local on all procs, and A_global as well on
 	// Proc 0.
-	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
+	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_.get());
 	// Copy the test problem input into R, since the factorization will
 	// overwrite it place with the final R factor.
 	Matrix< Ordinal, Scalar > R (numCols, numCols);
@@ -408,7 +408,7 @@ namespace TSQR {
 	Matrix< Ordinal, Scalar > Q_local (numRowsLocal, numCols);
 
 	// Set up TSQR.
-	DistTsqr< Ordinal, Scalar > par (scalarComm_);
+	DistTsqr< Ordinal, Scalar > par (scalarComm_.get();
 
 	// Benchmark DistTsqr for numTrials trials.
 	//

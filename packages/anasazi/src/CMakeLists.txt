@@ -182,7 +182,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   #
 
   ASSERT_DEFINED(TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
-  if (TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+  if (TPL_ENABLE_MPI AND TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
     include (TsqrCheckMpiComm)
     # Check whether MPI_COMM_NETWORK and / or MPI_COMM_NODE are
     # defined in mpi.h.  If so, define HAVE_MPI_NETWORK
@@ -237,6 +237,17 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     APPEND_SET(HEADERS 
       TSQR/Tsqr_CombineFortran.hpp
       ${CMAKE_CURRENT_BINARY_DIR}/Tsqr_FortranCInterface.hpp)
+  endif ()
+
+  ASSERT_DEFINED(TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+  if (TPL_ENABLE_MPI AND TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+    APPEND_SET(SOURCES
+      TSQR/Tsqr_MpiDatatype.cpp)
+    APPEND_SET(HEADERS
+      TSQR/Tsqr_MpiCommFactory.hpp
+      TSQR/Tsqr_MpiDatatype.hpp
+      TSQR/Tsqr_MpiMessenger.hpp
+      TSQR/Tsqr_TwoLevelDistTsqr.hpp)
   endif ()
 
   # Include headers and source files for Trilinos -> TSQR adaptors.

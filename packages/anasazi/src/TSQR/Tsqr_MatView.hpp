@@ -130,9 +130,7 @@ namespace TSQR {
   class MatView {
   public:
     typedef Scalar scalar_type;
-    typedef Scalar value_type; // deprecated
     typedef Ordinal ordinal_type;
-    typedef Ordinal index_type; // deprecated
     typedef Scalar* pointer_type;
 
     /// \note g++ with -Wall wants A_ to be initialized after lda_,
@@ -384,9 +382,7 @@ namespace TSQR {
   class ConstMatView {
   public:
     typedef Scalar scalar_type;
-    typedef Scalar value_type; // deprecated
     typedef Ordinal ordinal_type;
-    typedef Ordinal index_type; // deprecated
     typedef const Scalar* pointer_type;
 
     ConstMatView () : nrows_(0), ncols_(0), lda_(0), A_(NULL) {}

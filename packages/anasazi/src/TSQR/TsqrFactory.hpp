@@ -60,20 +60,29 @@ namespace TSQR {
     /// \note If you have implemented a new intranode TSQR
     /// factorization type, you'll need to create a subclass of
     /// TsqrFactory that knows how to instantiate that intranode TSQR
+    /// class.  
+    ///
+    /// \note If you have implemented a new internode TSQR
+    /// factorization type, you'll need to create a subclass of
+    /// TsqrFactors that knows how to instantiate that internode TSQR
     /// class.
     ///
     /// \note If you want to change which TSQR implementation is
     /// invoked for a particular multivector (MV) class, change the
     /// factory_type typedef in the specialization of TsqrTypeAdaptor
     /// for MV.
-    template< class LO, class S, class NodeTsqrType, class TsqrType >
+    template< class LO, class S, class NodeTsqrType, class DistTsqrType >
     class TsqrFactory {
     public:
-      typedef Teuchos::RCP< MessengerBase< S > >       scalar_messenger_ptr;
       typedef NodeTsqrType                             node_tsqr_type;
-      typedef TsqrType                                 tsqr_type;
       typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
-      typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
+
+      typedef Teuchos::RCP< MessengerBase< S > >       scalar_messenger_ptr;
+      typedef DistTsqrType                             dist_tsqr_type;
+      typedef Teuchos::RCP< dist_tsqr_type >           dist_tsqr_ptr;
+
+      typedef Tsqr< LO, S, node_tsqr_type, dist_tsqr_type > tsqr_type;
+      typedef Teuchos::RCP< tsqr_type >                     tsqr_ptr;
 
       /// \brief Instantiate and return TSQR implementation
       ///
@@ -95,11 +104,11 @@ namespace TSQR {
       virtual void
       makeTsqr (const Teuchos::ParameterList& plist,
 		const scalar_messenger_ptr& messenger,
-		node_tsqr_ptr& node_tsqr,
 		tsqr_ptr& tsqr) const
       {
-	node_tsqr = makeNodeTsqr (plist);
-	tsqr = tsqr_ptr (new tsqr_type (*node_tsqr, messenger.get()));
+	node_tsqr_ptr nodeTsqr = makeNodeTsqr (plist);
+	dist_tsqr_ptr distTsqr = makeDistTsqr (messenger, plist);
+	tsqr = Teuchos::rcp (new tsqr_type (nodeTsqr, distTsqr));
       }
 
       TsqrFactory () {}
@@ -126,6 +135,10 @@ namespace TSQR {
       ///   interface.
       virtual node_tsqr_ptr
       makeNodeTsqr (const Teuchos::ParameterList& plist) const = 0;
+
+      virtual dist_tsqr_ptr
+      makeDistTsqr (const scalar_messenger_ptr& messenger,
+		    const Teuchos::ParameterList& plist) const = 0;
     };
   } // namespace Trilinos
 } // namespace TSQR
