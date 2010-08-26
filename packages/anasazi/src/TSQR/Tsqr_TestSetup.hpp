@@ -34,8 +34,6 @@
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_ScalarTraits.hpp>
 
-#include <Teuchos_RCP.hpp>
-
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////

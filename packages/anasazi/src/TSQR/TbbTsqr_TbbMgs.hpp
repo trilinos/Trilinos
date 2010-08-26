@@ -287,6 +287,11 @@ namespace TSQR {
 	  Scalar local_result (0);
 	  if (true)
 	    {
+	      // FIXME (mfh 26 Aug 2010) I'm not sure why I did this
+	      // (i.e., why I wrote "if (true)" here).  Certainly the
+	      // branch that is currently enabled should produce
+	      // correct behavior.  I suspect the nonenabled branch
+	      // will not.
 	      if (true)
 		{
 		  TbbDot< LocalOrdinal, Scalar > dotter (x_local, y_local);
@@ -371,7 +376,8 @@ namespace TSQR {
 	      R[i + j*ldr] = ops.project (nrows_local, q, v);
 #ifdef TBB_MGS_DEBUG
 	      if (my_rank == 0)
-		cerr << "(i,j) = (" << i << "," << j << "): coeff = " << R[i + j*ldr] << endl;
+		cerr << "(i,j) = (" << i << "," << j << "): coeff = " 
+		     << R[i + j*ldr] << endl;
 #endif // TBB_MGS_DEBUG
 	    }
 	  const magnitude_type denom = ops.norm2 (nrows_local, v);

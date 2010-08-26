@@ -57,6 +57,7 @@ namespace TSQR {
       // Pull in the typedefs from the base class.  C++ doesn't do
       // this when both the base and the derived classes are
       // templated.
+      typedef typename base_type::scalar_messenger_ptr scalar_messenger_ptr;
       typedef typename base_type::node_tsqr_type node_tsqr_type;
       typedef typename base_type::node_tsqr_ptr  node_tsqr_ptr;
       typedef typename base_type::dist_tsqr_type dist_tsqr_type;

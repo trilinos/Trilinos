@@ -51,9 +51,11 @@ namespace TSQR {
   public:
     typedef Scalar scalar_type;
     typedef Ordinal ordinal_type;
+    typedef MessengerBase< Scalar > messenger_type;
+    typedef Teuchos::RCP< messenger_type > messenger_ptr;
 
     /// \brief Constructor
-    RMessenger (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) :
+    RMessenger (const messenger_ptr& messenger) :
       messenger_ (messenger) {}
 
     template< class ConstMatrixViewType >
@@ -107,7 +109,7 @@ namespace TSQR {
 
 
   private:
-    Teuchos::RCP< MessengerBase< Scalar > > messenger_;
+    messenger_ptr messenger_;
     std::vector< Scalar > buffer_;
 
     // Default construction doesn't make sense, so we forbid it.

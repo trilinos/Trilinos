@@ -34,6 +34,7 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
 
 #include "Tsqr_Config.hpp"
@@ -47,6 +48,56 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+
+
+#define TSQR_TEST_DIST_TSQR( theType, typeString )			\
+do {							         	\
+  using Teuchos::RCP;							\
+  using Teuchos::rcp;							\
+  using Teuchos::rcp_implicit_cast;					\
+  typedef theType scalar_type;					        \
+  typedef MessengerBase< scalar_type > base_messenger_type;	        \
+  typedef RCP< base_messenger_type > base_messenger_ptr;		\
+  typedef TeuchosMessenger< scalar_type > derived_messenger_type;       \
+  typedef RCP< derived_messenger_type > derived_messenger_ptr;		\
+  typedef DistTsqrVerifier< int, scalar_type > verifier_type;		\
+									\
+  std::string scalarTypeName (typeString);				\
+  derived_messenger_ptr scalarCommDerived (new derived_messenger_type (comm)); \
+  base_messenger_ptr scalarComm =					\
+    rcp_implicit_cast< base_messenger_type > (scalarCommDerived);	\
+  verifier_type verifier (scalarComm, seed, scalarTypeName,		\
+			  humanReadable, debug, out, err);		\
+  verifier.verify (numCols);						\
+  verifier.getSeed (seed);						\
+} while(false)
+
+
+#define TSQR_BENCHMARK_DIST_TSQR( theType, typeString )			\
+do {									\
+  using Teuchos::RCP;							\
+  using Teuchos::rcp;							\
+  using Teuchos::rcp_implicit_cast;					\
+  typedef theType scalar_type;						\
+  typedef MessengerBase< scalar_type > base_messenger_type;	        \
+  typedef RCP< base_messenger_type > base_messenger_ptr;		\
+  typedef TeuchosMessenger< scalar_type > derived_messenger_type;       \
+  typedef RCP< derived_messenger_type > derived_messenger_ptr;		\
+  typedef DistTsqrBenchmarker< int, scalar_type, timer_type >		\
+    benchmarker_type;							\
+									\
+  std::string scalarTypeName (typeString);				\
+  derived_messenger_ptr scalarCommDerived (new derived_messenger_type (comm)); \
+  base_messenger_ptr scalarComm =					\
+    rcp_implicit_cast< base_messenger_type > (scalarCommDerived);	\
+  benchmarker_type benchmarker (scalarComm, doubleComm, seed,		\
+				scalarTypeName, humanReadable,		\
+				debug, out, err);			\
+  benchmarker.benchmark (numTrials, numCols);				\
+  benchmarker.getSeed (seed);						\
+} while(false)
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,60 +138,18 @@ namespace TSQR {
 
 	if (testReal)
 	  {
-	    {
-	      typedef float scalar_type;
-	      std::string scalarTypeName ("float");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef MessengerBase< scalar_type > messenger_type;
-	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier ((messenger_type* const) &scalarComm, 
-				      seed, scalarTypeName, humanReadable, 
-				      debug, out, err);
-	      verifier.verify (numCols);
-	      verifier.getSeed (seed);
-	    }
-	    {
-	      typedef double scalar_type;
-	      std::string scalarTypeName ("double");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef MessengerBase< scalar_type > messenger_type;
-	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier ((messenger_type* const) &scalarComm, 
-				      seed, scalarTypeName, humanReadable, 
-				      debug, out, err);
-	      verifier.verify (numCols);
-	      verifier.getSeed (seed);
-	    }
+	    TSQR_TEST_DIST_TSQR( float, "float" );
+	    TSQR_TEST_DIST_TSQR( double, "double" );
 	  }
 	
 	if (testComplex)
 	  {
 #ifdef HAVE_TSQR_COMPLEX
 	    using std::complex;
-	    {
-	      typedef complex<float> scalar_type;
-	      std::string scalarTypeName ("complex<float>");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef MessengerBase< scalar_type > messenger_type;
-	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier ((messenger_type* const) &scalarComm,
-				      seed, scalarTypeName, humanReadable, 
-				      debug, out, err);
-	      verifier.verify (numCols);
-	      verifier.getSeed (seed);
-	    }
-	    {
-	      typedef complex<double> scalar_type;
-	      std::string scalarTypeName ("complex<double>");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef MessengerBase< scalar_type > messenger_type;
-	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier ((messenger_type* const) &scalarComm, 
-				      seed, scalarTypeName, humanReadable, 
-				      debug, out, err);
-	      verifier.verify (numCols);
-	      verifier.getSeed (seed);
-	    }
+
+	    TSQR_TEST_DIST_TSQR( complex<float>, "complex<float>" );
+	    TSQR_TEST_DIST_TSQR( complex<double>, "complex<double>" );
+
 #else // Don't HAVE_TSQR_COMPLEX
 	    throw std::logic_error("TSQR was not built with complex "
 				   "arithmetic support");
@@ -173,65 +182,24 @@ namespace TSQR {
 	    seed[2] = 0;
 	    seed[3] = 1;
 	  }
-	TeuchosMessenger< double > doubleComm (comm);
+	Teuchos::RCP< MessengerBase< double > > doubleComm = 
+	  Teuchos::rcp_implicit_cast< MessengerBase< double > > (Teuchos::RCP< TeuchosMessenger< double > > (new TeuchosMessenger< double > (comm)));
 	const bool testReal = true;
 
 	if (testReal)
 	  {
-	    {
-	      typedef float scalar_type;
-	      std::string scalarTypeName ("float");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
-		benchmarker_type;
-	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
-					    scalarTypeName, humanReadable,
-					    debug, out, err);
-	      benchmarker.benchmark (numTrials, numCols);
-	      benchmarker.getSeed (seed);
-	    }
-	    {
-	      typedef double scalar_type;
-	      std::string scalarTypeName ("double");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
-		benchmarker_type;
-	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
-					    scalarTypeName, humanReadable,
-					    debug, out, err);
-	      benchmarker.benchmark (numTrials, numCols);
-	      benchmarker.getSeed (seed);
-	    }
+	    TSQR_BENCHMARK_DIST_TSQR( float, "float" );
+	    TSQR_BENCHMARK_DIST_TSQR( double, "double" );
 	  }
 	
 	if (testComplex)
 	  {
 #ifdef HAVE_TSQR_COMPLEX
 	    using std::complex;
-	    {
-	      typedef complex<float> scalar_type;
-	      std::string scalarTypeName ("complex<float>");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
-		benchmarker_type;
-	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
-					    scalarTypeName, humanReadable,
-					    debug, out, err);
-	      benchmarker.benchmark (numTrials, numCols);
-	      benchmarker.getSeed (seed);
-	    }
-	    {
-	      typedef complex<double> scalar_type;
-	      std::string scalarTypeName ("complex<double>");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
-		benchmarker_type;
-	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
-					    scalarTypeName, humanReadable,
-					    debug, out, err);
-	      benchmarker.benchmark (numTrials, numCols);
-	      benchmarker.getSeed (seed);
-	    }
+
+	    TSQR_BENCHMARK_DIST_TSQR( complex<float>, "complex<float>" );
+	    TSQR_BENCHMARK_DIST_TSQR( complex<double>, "complex<double>" );
+
 #else // Don't HAVE_TSQR_COMPLEX
 	    throw std::logic_error("TSQR was not built with complex "
 				   "arithmetic support");

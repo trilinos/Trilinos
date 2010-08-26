@@ -51,84 +51,92 @@
 namespace TSQR {
   namespace Test {
 
-    template< class TsqrBase >
-    static void
-    do_tsqr_verify (TsqrBase& tsqr, 
-		    const Teuchos::RCP< MessengerBase< typename TsqrBase::scalar_type > >& scalarComm,
-		    const Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_local,
-		    Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_copy,
-		    Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& Q_local,
-		    Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& R,
-		    const bool contiguousCacheBlocks,
-		    const bool b_debug = false)
-    {
-      typedef typename TsqrBase::ordinal_type ordinal_type;
-      typedef typename TsqrBase::scalar_type scalar_type;
-      typedef typename TsqrBase::FactorOutput factor_output_type;
-      using std::cerr;
-      using std::endl;
+    template< class TsqrType >
+    class TsqrVerifier {
+    public:
+      typedef TsqrType tsqr_type;
+      typedef typename tsqr_type::scalar_type scalar_type;
+      typedef typename tsqr_type::ordinal_type ordinal_type;
+      typedef Matrix< ordinal_type, scalar_type > matrix_type;
+      typedef typename tsqr_type::FactorOutput factor_output_type;
+      typedef MessengerBase< scalar_type > messenger_type;
+      typedef Teuchos::RCP< messenger_type > messenger_ptr;
 
-      const ordinal_type nrows_local = A_local.nrows();
-      const ordinal_type ncols = A_local.ncols();
+      static void
+      verify (tsqr_type& tsqr,
+	      const messenger_ptr& scalarComm,
+	      const matrix_type& A_local,
+	      matrix_type& A_copy,
+	      matrix_type& Q_local,
+	      matrix_type& R,
+	      const bool contiguousCacheBlocks,
+	      const bool b_debug = false)
+      {
+	using std::cerr;
+	using std::endl;
 
-      // If specified, rearrange cache blocks in the copy.
-      if (contiguousCacheBlocks)
-	{
-	  tsqr.cache_block (nrows_local, ncols, A_copy.get(), 
-			    A_local.get(), A_local.lda());
-	  if (b_debug)
-	    {
-	      scalarComm->barrier();
-	      if (scalarComm->rank() == 0)
-		cerr << "-- Cache-blocked input matrix to factor." << endl;
-	    }
-	}
-      else
-	A_copy.copy (A_local);
+	const ordinal_type nrows_local = A_local.nrows();
+	const ordinal_type ncols = A_local.ncols();
 
-      // Factor the (copy of the) matrix.
-      factor_output_type factor_output = 
-	tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
-		     R.get(), R.lda(), contiguousCacheBlocks);
-      if (b_debug)
-	{
-	  scalarComm->barrier();
-	  if (scalarComm->rank() == 0)
-	    cerr << "-- Finished Tsqr::factor" << endl;
-	}
+	// If specified, rearrange cache blocks in the copy.
+	if (contiguousCacheBlocks)
+	  {
+	    tsqr.cache_block (nrows_local, ncols, A_copy.get(), 
+			      A_local.get(), A_local.lda());
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Cache-blocked input matrix to factor." << endl;
+	      }
+	  }
+	else
+	  A_copy.copy (A_local);
 
-      // Compute the explicit Q factor in Q_local
-      tsqr.explicit_Q (nrows_local, 
-		       ncols, A_copy.get(), A_copy.lda(), factor_output, 
-		       ncols, Q_local.get(), Q_local.lda(), 
-		       contiguousCacheBlocks);
-      if (b_debug)
-	{
-	  scalarComm->barrier();
-	  if (scalarComm->rank() == 0)
-	    cerr << "-- Finished Tsqr::explicit_Q" << endl;
-	}
+	// Factor the (copy of the) matrix.
+	factor_output_type factorOutput = 
+	  tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
+		       R.get(), R.lda(), contiguousCacheBlocks);
+	if (b_debug)
+	  {
+	    scalarComm->barrier();
+	    if (scalarComm->rank() == 0)
+	      cerr << "-- Finished Tsqr::factor" << endl;
+	  }
 
-      // "Un"-cache-block the output, if contiguous cache blocks were
-      // used.  This is only necessary because global_verify() doesn't
-      // currently support contiguous cache blocks.
-      if (contiguousCacheBlocks)
-	{
-	  // We can use A_copy as scratch space for un-cache-blocking
-	  // Q_local, since we're done using A_copy for other things.
-	  tsqr.un_cache_block (nrows_local, ncols, A_copy.get(), 
-			       A_copy.lda(), Q_local.get());
-	  // Overwrite Q_local with the un-cache-blocked Q factor.
-	  Q_local.copy (A_copy);
+	// Compute the explicit Q factor in Q_local
+	tsqr.explicit_Q (nrows_local, 
+			 ncols, A_copy.get(), A_copy.lda(), factorOutput, 
+			 ncols, Q_local.get(), Q_local.lda(), 
+			 contiguousCacheBlocks);
+	if (b_debug)
+	  {
+	    scalarComm->barrier();
+	    if (scalarComm->rank() == 0)
+	      cerr << "-- Finished Tsqr::explicit_Q" << endl;
+	  }
 
-	  if (b_debug)
-	    {
-	      scalarComm->barrier();
-	      if (scalarComm->rank() == 0)
-		cerr << "-- Un-cache-blocked output Q factor" << endl;
-	    }
-	}
-    }
+	// "Un"-cache-block the output, if contiguous cache blocks were
+	// used.  This is only necessary because global_verify() doesn't
+	// currently support contiguous cache blocks.
+	if (contiguousCacheBlocks)
+	  {
+	    // We can use A_copy as scratch space for un-cache-blocking
+	    // Q_local, since we're done using A_copy for other things.
+	    tsqr.un_cache_block (nrows_local, ncols, A_copy.get(), 
+				 A_copy.lda(), Q_local.get());
+	    // Overwrite Q_local with the un-cache-blocked Q factor.
+	    Q_local.copy (A_copy);
+
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Un-cache-blocked output Q factor" << endl;
+	      }
+	  }
+      }
+    };
 
     /// \function verifyTsqr
     /// \brief Test and print to stdout the accuracy of parallel TSQR
@@ -255,8 +263,9 @@ namespace TSQR {
 	  tsqr_type tsqr (node_tsqr, dist_tsqr);
 	  
 	  // Compute the factorization and explicit Q factor.
-	  do_tsqr_verify< tsqr_type > (tsqr, scalarComm, A_local, A_copy, Q_local, 
-				       R, contiguousCacheBlocks, b_debug);
+	  TsqrVerifier< tsqr_type >::verify (tsqr, scalarComm, A_local, A_copy, 
+					     Q_local, R, contiguousCacheBlocks, 
+					     b_debug);
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
 #else
@@ -275,8 +284,9 @@ namespace TSQR {
 	  tsqr_type tsqr (node_tsqr, dist_tsqr);
 	  
 	  // Compute the factorization and explicit Q factor.
-	  do_tsqr_verify< tsqr_type > (tsqr, scalarComm, A_local, A_copy, Q_local, 
-				       R, contiguousCacheBlocks, b_debug);
+	  TsqrVerifier< tsqr_type >::verify (tsqr, scalarComm, A_local, A_copy, 
+					     Q_local, R, contiguousCacheBlocks, 
+					     b_debug);
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
 	}

@@ -146,8 +146,8 @@ namespace TSQR {
     MatrixViewType
     split_top_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
     {
-      typedef typename MatrixViewType::index_type index_type;
-      const index_type nrows_top = 
+      typedef typename MatrixViewType::ordinal_type ordinal_type;
+      const ordinal_type nrows_top = 
 	strategy_.top_block_split_nrows (A.nrows(), ncols(), 
 					 nrows_cache_block());
       // split_top() modifies A
@@ -160,8 +160,8 @@ namespace TSQR {
     MatrixViewType
     top_block (const MatrixViewType& A, const bool contiguous_cache_blocks) const
     {
-      typedef typename MatrixViewType::index_type index_type;
-      const index_type nrows_top = 
+      typedef typename MatrixViewType::ordinal_type ordinal_type;
+      const ordinal_type nrows_top = 
 	strategy_.top_block_split_nrows (A.nrows(), ncols(), 
 					 nrows_cache_block());
       MatrixViewType A_copy (A);
@@ -172,8 +172,8 @@ namespace TSQR {
     MatrixViewType
     split_bottom_block (MatrixViewType& A, const bool contiguous_cache_blocks) const
     {
-      typedef typename MatrixViewType::index_type index_type;
-      const index_type nrows_bottom = 
+      typedef typename MatrixViewType::ordinal_type ordinal_type;
+      const ordinal_type nrows_bottom = 
 	strategy_.bottom_block_split_nrows (A.nrows(), ncols(), 
 					    nrows_cache_block());
       // split_bottom() modifies A

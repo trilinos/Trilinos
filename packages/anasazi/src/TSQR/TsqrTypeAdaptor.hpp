@@ -79,18 +79,21 @@ namespace TSQR {
       /// Type representing the intranode part of TSQR.
       /// Defaults to sequential, cache-blocked TSQR.
       ///
-      typedef TSQR::SequentialTsqr< LO, S > node_tsqr_type;
+      typedef TSQR::SequentialTsqr< LO, S >  node_tsqr_type;
+      typedef Teuchos::RCP< node_tsqr_type > node_tsqr_ptr;
 
       ///
       /// Type representing the internode part of TSQR.
       ///
-      typedef TSQR::DistTsqr< LO, S > dist_tsqr_type;
+      typedef TSQR::DistTsqr< LO, S >        dist_tsqr_type;
+      typedef Teuchos::RCP< dist_tsqr_type > dist_tsqr_ptr;
 
       ///
       /// Type representing the whole TSQR method.
       /// Depends on node_tsqr_type and dist_tsqr_type.
       ///
       typedef TSQR::Tsqr< LO, S, node_tsqr_type, dist_tsqr_type > tsqr_type;
+      typedef Teuchos::RCP< tsqr_type >                           tsqr_ptr;
 
       ///
       /// Type of the TsqrFactory object that knows how to construct

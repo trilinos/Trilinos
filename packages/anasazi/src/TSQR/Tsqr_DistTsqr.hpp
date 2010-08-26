@@ -120,7 +120,7 @@ namespace TSQR {
       const int first_tag = 0;
       std::vector< Scalar > work (ncols);
       helper.factor_helper (ncols, R_local, my_rank, 0, P-1, first_tag, 
-			    messenger_, Q_factors, tau_arrays, work);
+			    messenger_.get(), Q_factors, tau_arrays, work);
       copy_matrix (ncols, ncols, R_mine.get(), R_mine.lda(), &R_local[0], ncols);
       return std::make_pair (Q_factors, tau_arrays);
     }
@@ -152,8 +152,9 @@ namespace TSQR {
       const int cur_pos = Q_factors.size() - 1;
       DistTsqrHelper< ordinal_type, scalar_type > helper;
       helper.apply_helper (apply_type, ncols_C, ncols_Q, C_mine, ldc_mine, 
-			   &C_other[0], my_rank, 0, P-1, first_tag, messenger_, 
-			   Q_factors, tau_arrays, cur_pos, work);
+			   &C_other[0], my_rank, 0, P-1, first_tag, 
+			   messenger_.get(), Q_factors, tau_arrays, cur_pos, 
+			   work);
     }
 
     void

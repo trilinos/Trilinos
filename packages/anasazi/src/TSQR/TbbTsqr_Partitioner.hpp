@@ -84,29 +84,29 @@ namespace TSQR {
 	     const size_t P_last,
 	     const bool contiguous_cache_blocks) const
       {
-	typedef typename MatrixViewType::index_type index_type;
+	typedef typename MatrixViewType::ordinal_type ordinal_type;
 	typedef typename MatrixViewType::pointer_type pointer_type;
 
 	const size_t num_partitions_top = P_mid - P_first + 1;
 	//const size_t num_partitions_bottom = P_last - P_mid;
 	const size_t num_partitions = P_last - P_first + 1;
-	const index_type nrows = A.nrows();
-	const index_type ncols = A.ncols();
+	const ordinal_type nrows = A.nrows();
+	const ordinal_type ncols = A.ncols();
 	
 	if (! should_split (nrows, ncols, num_partitions))
 	  return std::make_pair (MatrixViewType(A), MatrixViewType());
 	else
 	  {
-	    const index_type num_rows_partition = nrows / num_partitions;
-	    const index_type remainder = nrows % num_partitions;
+	    const ordinal_type num_rows_partition = nrows / num_partitions;
+	    const ordinal_type remainder = nrows % num_partitions;
 	    
 	    // Top partition gets the remainder rows.  Doing the
 	    // multiplication before the division might make it more
 	    // likely to avoid truncating the fraction, but may cause
-	    // overflow of index_type.  
-	    const index_type num_rows_top = 
+	    // overflow of ordinal_type.  
+	    const ordinal_type num_rows_top = 
 	      num_rows_partition * num_partitions_top + remainder;
-	    const index_type num_rows_bot = nrows - num_rows_top;
+	    const ordinal_type num_rows_bot = nrows - num_rows_top;
 
 	    // We don't call (Const)MatView::split_top(), because that
 	    // is for splitting off a single cache block.  Each half

@@ -81,11 +81,11 @@ namespace TSQR {
     /// (MV) type must create a subclass of that type, using e.g.,
     /// TsqrTpetraAdaptor as a model.  They must then create a new
     /// TsqrTypeAdaptor specialization (with the appropriate
-    /// typedefs), and a new TsqrCommFactory subclass (which gets the
-    /// underlying communicator object (e.g., Teuchos::Comm<int>) from
-    /// a "prototype" multivector and turns it into
-    /// TSQR::MessengerBase< S > and TSQR::MessengerBase< LO > objects
-    /// for TSQR.
+    /// typedefs), and a new TsqrCommFactory subclass.  The
+    /// TsqrCommFactory subclass gets the underlying communicator
+    /// object (e.g., Teuchos::Comm<int>) from a "prototype"
+    /// multivector and wraps it into TSQR::MessengerBase< S > and
+    /// TSQR::MessengerBase< LO > objects for TSQR.
     ///
     /// Implementers who wish to change which TSQR implementation is
     /// used for a particular MultiVector type (for which a
@@ -115,16 +115,16 @@ namespace TSQR {
       typedef typename type_adaptor::factory_type   factory_type;
 
       typedef typename type_adaptor::node_tsqr_type node_tsqr_type;
-      typedef Teuchos::RCP< node_tsqr_type >        node_tsqr_ptr;
+      typedef typename type_adaptor::node_tsqr_ptr  node_tsqr_ptr;
 
       typedef typename type_adaptor::comm_type      comm_type;
       typedef typename type_adaptor::comm_ptr       comm_ptr;
 
       typedef typename type_adaptor::dist_tsqr_type dist_tsqr_type;
-      typedef Teuchos::RCP< dist_tsqr_type >        dist_tsqr_ptr;
+      typedef typename type_adaptor::dist_tsqr_ptr  dist_tsqr_ptr;
 
       typedef typename type_adaptor::tsqr_type      tsqr_type;
-      typedef Teuchos::RCP< tsqr_type >             tsqr_ptr;
+      typedef typename type_adaptor::tsqr_ptr       tsqr_ptr;
 
       typedef typename tsqr_type::FactorOutput      factor_output_type;
       typedef Teuchos::SerialDenseMatrix< LO, S >   dense_matrix_type;

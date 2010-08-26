@@ -162,7 +162,7 @@ namespace TSQR {
 	Matrix< Ordinal, Scalar > A_local, A_global;
 	// This modifies A_local on all procs, and A_global as well on
 	// Proc 0.
-	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_.get());
+	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
 
 	if (debug_)
 	  {
@@ -397,7 +397,7 @@ namespace TSQR {
 	Matrix< Ordinal, Scalar > A_local, A_global;
 	// This modifies A_local on all procs, and A_global as well on
 	// Proc 0.
-	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_.get());
+	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
 	// Copy the test problem input into R, since the factorization will
 	// overwrite it place with the final R factor.
 	Matrix< Ordinal, Scalar > R (numCols, numCols);
@@ -408,7 +408,7 @@ namespace TSQR {
 	Matrix< Ordinal, Scalar > Q_local (numRowsLocal, numCols);
 
 	// Set up TSQR.
-	DistTsqr< Ordinal, Scalar > par (scalarComm_.get();
+	DistTsqr< Ordinal, Scalar > par (scalarComm_);
 
 	// Benchmark DistTsqr for numTrials trials.
 	//

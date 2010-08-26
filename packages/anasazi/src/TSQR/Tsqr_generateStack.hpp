@@ -99,7 +99,7 @@ namespace TSQR {
 			   Matrix< Ordinal, Scalar >& A_local,
 			   Matrix< Ordinal, Scalar >& A_global, 
 			   const Ordinal ncols,
-			   MessengerBase< Scalar >* const messenger)
+			   const Teuchos::RCP< MessengerBase< Scalar > >& messenger)
     {
       const int nprocs = messenger->size();
       const int my_rank = messenger->rank();

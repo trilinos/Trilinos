@@ -42,11 +42,16 @@
 
 namespace TSQR {
 
-  /// \class TSQR factorization, in parallel for a tall skinny matrix
+  /// \class Tsqr
+  /// \brief Parallel Tall Skinny QR (TSQR) factorization
+  /// 
+  /// Parallel Tall Skinny QR (TSQR) factorization of a matrix
   /// distributed in block rows across one or more MPI processes.
   ///
-  /// \note TSQR only needs to know about the local ordinal type, not
-  /// about the global ordinal type.
+  /// \note TSQR only needs to know about the local ordinal type (used
+  ///   to index matrix entries on a single node), not about the
+  ///   global ordinal type (used to index matrix entries globally,
+  ///   i.e., over all nodes).
   ///
   /// LocalOrdinal: index type that can address all elements of a
   /// matrix (when treated as a 1-D array, so for A[i + LDA*j], the
@@ -54,20 +59,26 @@ namespace TSQR {
   ///
   /// Scalar: the type of the matrix entries.
   ///
-  /// NodeTsqr: how Tsqr does computations on a single node.  Defaults
-  /// to sequential (cache-blocked) TSQR.  TbbTsqr< LocalOrdinal,
-  /// Scalar > is also valid.  We provide NodeTsqr.hpp as a model of
-  /// the "node TSQR" concept, but it is not necessary that NodeTsqr
-  /// here derive from that abstract base class.  (This is
-  /// compile-time polymorphism.)
+  /// NodeTsqrType: the intranode (single-node) part of Tsqr.
+  /// Defaults to sequential cache-blocked TSQR.  Any class
+  /// implementing the same compile-time interface is valid.  We
+  /// provide NodeTsqr.hpp as an archetype of the "NodeTsqrType"
+  /// concept, but it is not necessary that NodeTsqrType derive from
+  /// that abstract base class.
+  ///
+  /// DistTsqrType: the internode (across nodes) part of Tsqr.  Any
+  /// class implementing the same compile-time interface as the
+  /// default template parameter class is valid.
+  ///
   template< class LocalOrdinal, 
 	    class Scalar, 
-	    class NodeTsqrTsqr = SequentialTsqr< LocalOrdinal, Scalar >,
+	    class NodeTsqrType = SequentialTsqr< LocalOrdinal, Scalar >,
 	    class DistTsqrType = DistTsqr< LocalOrdinal, Scalar > >
   class Tsqr {
   private:
     typedef MatView< LocalOrdinal, Scalar > matview_type;
     typedef ConstMatView< LocalOrdinal, Scalar > const_matview_type;
+    typedef Matrix< LocalOrdinal, Scalar > matrix_type;
 
   public:
     typedef Scalar scalar_type;
@@ -240,7 +251,7 @@ namespace TSQR {
 	{
 	  // C_top (small compact storage) gets a deep copy of the top
 	  // ncols_C by ncols_C block of C_local.
-      	  Matrix< LocalOrdinal, Scalar > C_top (C_top_view);
+      	  matrix_type C_top (C_top_view);
 
 	  // Compute in place on all processors' C_top blocks.
 	  distTsqr_->apply (applyType, C_top.ncols(), ncols_Q, C_top.get(), 
@@ -268,7 +279,7 @@ namespace TSQR {
 
 	  // C_top (small compact storage) gets a deep copy of the top
 	  // ncols_C by ncols_C block of C_local.
-      	  Matrix< LocalOrdinal, Scalar > C_top (C_top_view);
+      	  matrix_type C_top (C_top_view);
 
 	  // Compute in place on all processors' C_top blocks.
 	  distTsqr_->apply (applyType, ncols_C, ncols_Q, C_top.get(), 
@@ -434,7 +445,7 @@ namespace TSQR {
       // redundantly, and hope that all the returned rank values are
       // the same.
       //
-      Matrix< ordinal_type, scalar_type > U (ncols, ncols, Scalar(0));
+      matrix_type U (ncols, ncols, Scalar(0));
       const ordinal_type rank = 
 	reveal_R_rank (ncols, R, ldr, U.get(), U.lda(), tol);
       
