@@ -52,6 +52,9 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& Map,
     nonlocalCoefs_(NULL),
     numNonlocalCoefs_(0),
     numNonlocalCoefsAlloc_(0),
+    nonlocalMap_(NULL),
+    exporter_(NULL),
+    nonlocalVector_(NULL),
     ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
   myFirstID_ = Map.MinMyGID();
@@ -71,6 +74,9 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector& source)
     numNonlocalIDsAlloc_(0),
     nonlocalCoefs_(NULL),
     numNonlocalCoefsAlloc_(0),
+    nonlocalMap_(NULL),
+    exporter_(NULL),
+    nonlocalVector_(NULL),
     ignoreNonLocalEntries_(source.ignoreNonLocalEntries_)
 {
   *this = source;
@@ -80,6 +86,7 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_FEVector& source)
 Epetra_FEVector::~Epetra_FEVector()
 {
   destroyNonlocalData();
+  destroyNonlocalMapAndExporter();
 
   delete [] nonlocalCoefs_;
   nonlocalCoefs_ = NULL;
@@ -160,8 +167,8 @@ int Epetra_FEVector::inputValues(int numIDs,
     }
     else {
       if (!ignoreNonLocalEntries_) {
-	EPETRA_CHK_ERR( inputNonlocalValue(GIDs[i], values[i], suminto,
-                                           vectorIndex) );
+        EPETRA_CHK_ERR( inputNonlocalValue(GIDs[i], values[i], suminto,
+              vectorIndex) );
       }
     }
   }
@@ -351,7 +358,8 @@ int Epetra_FEVector::inputNonlocalValues(int GID, int numValues,
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode)
+int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode,
+                                    bool reuse_map_and_exporter)
 {
   //In this method we need to gather all the non-local (overlapping) data
   //that's been input on each processor, into the (probably) non-overlapping
@@ -363,35 +371,49 @@ int Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode)
     return(0);
   }
 
-  //First build a map that describes the data in nonlocalIDs_/nonlocalCoefs_.
-  //We'll use the arbitrary distribution constructor of Map.
+  if (nonlocalMap_ == NULL || !reuse_map_and_exporter) {
+    createNonlocalMapAndExporter();
+  }
 
-  Epetra_BlockMap sourceMap(-1, numNonlocalIDs_,
-                            nonlocalIDs_, nonlocalElementSize_,
-			    Map().IndexBase(), Map().Comm());
+  Epetra_MultiVector& nonlocalVector = *nonlocalVector_;
+  nonlocalVector.PutScalar(0.0);
 
-  //Now build a vector to hold our nonlocalCoefs_, and to act as the source-
-  //vector for our import operation.
-  Epetra_MultiVector nonlocalVector(sourceMap, NumVectors());
-
-  int i,j;
   int elemSize = Map().MaxElementSize();
   for(int vi=0; vi<NumVectors(); ++vi) {
-    for(i=0; i<numNonlocalIDs_; ++i) {
-      for(j=0; j<nonlocalElementSize_[i]; ++j) {
+    for(int i=0; i<numNonlocalIDs_; ++i) {
+      for(int j=0; j<nonlocalElementSize_[i]; ++j) {
         nonlocalVector.ReplaceGlobalValue(nonlocalIDs_[i], j, vi,
                                           nonlocalCoefs_[vi][i*elemSize+j]);
       }
     }
   }
 
-  Epetra_Export exporter(sourceMap, Map());
+  EPETRA_CHK_ERR( Export(nonlocalVector, *exporter_, mode) );
 
-  EPETRA_CHK_ERR( Export(nonlocalVector, exporter, mode) );
-
-  destroyNonlocalData();
+  zeroNonlocalData();
 
   return(0);
+}
+
+//----------------------------------------------------------------------------
+void Epetra_FEVector::createNonlocalMapAndExporter()
+{
+  delete nonlocalMap_;
+  nonlocalMap_ = new Epetra_BlockMap(-1, numNonlocalIDs_, nonlocalIDs_,
+                               nonlocalElementSize_, Map().IndexBase(), Map().Comm());
+  delete exporter_;
+  exporter_ = new Epetra_Export(*nonlocalMap_, Map());
+
+  delete nonlocalVector_;
+  nonlocalVector_ = new Epetra_MultiVector(*nonlocalMap_, NumVectors());
+}
+
+//----------------------------------------------------------------------------
+void Epetra_FEVector::destroyNonlocalMapAndExporter()
+{
+  delete nonlocalMap_;
+  delete exporter_;
+  delete nonlocalVector_;
 }
 
 //----------------------------------------------------------------------------
@@ -438,6 +460,22 @@ Epetra_FEVector& Epetra_FEVector::operator=(const Epetra_FEVector& source)
 }
 
 //----------------------------------------------------------------------------
+void Epetra_FEVector::zeroNonlocalData()
+{
+  if (numNonlocalCoefsAlloc_ > 0) {
+    int maxelemSize = Map().MaxElementSize();
+    for(int vi=0; vi<NumVectors(); ++vi) {
+      for(int i=0; i<numNonlocalIDs_; ++i) {
+        int elemSize = nonlocalElementSize_[i];
+        for(int j=0; j<elemSize; ++j) {
+          nonlocalCoefs_[vi][i*maxelemSize+j] = 0.0;
+        }
+      }
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
 void Epetra_FEVector::destroyNonlocalData()
 {
   if (numNonlocalIDsAlloc_ > 0) {
@@ -458,7 +496,5 @@ void Epetra_FEVector::destroyNonlocalData()
     numNonlocalCoefs_ = 0;
     numNonlocalCoefsAlloc_ = 0;
   }
-
-  return;
 }
 

@@ -136,8 +136,19 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
       with a "sumInto" or accumulate operation.
       This is a collective method -- every processor must enter it before any
       will complete it.
+
+      Optimization for power-users:
+      The optional parameter 'reuse_map_and_exporter' defaults to false.
+      By default, a map that describes the non-local data is re-created at
+      each call to GlobalAssemble, along with an exporter used to do the
+      communication.
+      This is expensive. If you know that the layout of your nonlocal data has
+      not changed since your previous call to GlobalAssemble, you can set this
+      flag to true and it will reuse the previously created map and exporter
+      rather than creating new ones.
    */
-   int GlobalAssemble(Epetra_CombineMode mode = Add);
+   int GlobalAssemble(Epetra_CombineMode mode = Add,
+                      bool reuse_map_and_exporter = false);
 
    /** Set whether or not non-local data values should be ignored.
     */
@@ -165,6 +176,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   int inputNonlocalValues(int GID, int numValues, const double* values,
 			  bool suminto, int vectorIndex);
 
+  void createNonlocalMapAndExporter();
+
+  void destroyNonlocalMapAndExporter();
+
+  void zeroNonlocalData();
   void destroyNonlocalData();
 
   int myFirstID_;
@@ -177,6 +193,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
   double** nonlocalCoefs_;
   int numNonlocalCoefs_;
   int numNonlocalCoefsAlloc_;
+  Epetra_BlockMap* nonlocalMap_;
+  Epetra_Export* exporter_;
+  Epetra_MultiVector* nonlocalVector_;
 
   bool ignoreNonLocalEntries_;
 };
