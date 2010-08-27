@@ -855,7 +855,10 @@ void epetra_shellsort(int* list, int length)
       }
     }
 
-    step = step>>1;
+    if (step == 2)
+      step = 1;
+    else
+      step = (int) (step / 2.2);
   }
 }
 
