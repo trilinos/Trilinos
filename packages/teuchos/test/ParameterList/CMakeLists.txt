@@ -4,7 +4,8 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 SET(SerializationFiles 
     BadRootElement.xml BadParameterListElement.xml
     NoNameAttribute.xml NoTypeAttribute.xml NoValueAttribute.xml 
-	  CantFindParameterEntryConverter.xml )
+	  CantFindParameterEntryConverter.xml 
+    DuplicateParameterIDs.xml )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ParameterList_test 

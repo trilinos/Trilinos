@@ -38,6 +38,8 @@
 #include "Teuchos_Dependency.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_StandardConditions.hpp"
+#include "Teuchos_StandardFunctionObjects.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 
 namespace Teuchos{
@@ -681,7 +683,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    T (*func)(T) =0)
+    RCP<SingleArguementFunctionObject<T,T> > func=null)
     :VisualDependency(dependee, dependent),
     func_(func)
   {
@@ -705,7 +707,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents,
-    T (*func)(T) =0)
+    RCP<SingleArguementFunctionObject<T,T> > func=null)
     :VisualDependency(dependee, dependents),
     func_(func)
   {
@@ -718,7 +720,11 @@ public:
   //@{
 
   inline bool getDependeeState() const{
-    return runFunction(getFirstDependeeValue<T>()) > 0 ? true : false;
+    if(!func_.is_null()){
+      func_->setParameterValue(getFirstDependeeValue<T>());
+      return func_->runFunction() > ScalarTraits<T>::zero() ? true : false;
+    }
+    return getFirstDependeeValue<T>();
   }
   
   //@}
@@ -728,9 +734,25 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() + "NumberVisualDependency";
+    return TypeNameTraits<T>::name() + " NumberVisualDependency";
   }
   
+  //@}
+  
+  /** \name Getter Functions */
+  //@{
+  
+  /** \brief Gets the function associated with this dependency. */
+  RCP<SingleArguementFunctionObject<T,T> > getFunctionObject(){
+    return func_;
+  }
+
+  /** \brief Const version of function getter. */
+  RCP<const SingleArguementFunctionObject<T,T> > getFunctionObject() const{
+    return func_.getConst();
+  }
+
+
   //@}
 
 protected:
@@ -752,24 +774,7 @@ private:
    * \brief the function used to determine the
    * visibility of the dependent.
    */
-  T (*func_)(T);
-
-  /**
-   * \brief Run the function on the argument and returns 
-   * the value of the fucntion. If no function is specified,
-   * the argument is simple returned.
-   *
-   * @param argument the value to use as an argument for the function.
-   * @return the result of running the function with the value. If 
-   * no function is specified,
-   * the argument is simple returned.
-   */
-  T runFunction(T argument) const{
-    if(func_ !=0)
-      return (*func_)(argument);
-    else
-      return argument;
-  }  
+    RCP<SingleArguementFunctionObject<T,T> > func_;
   
   //@}
   //
@@ -823,322 +828,6 @@ public:
 };
 
 /**
- * \brief A NumberValidatorAspectDependency says the following about the 
- * relationship between two parameters in a dependent parameter list:
- * depending of the value of the dependee a particular aspect of the 
- * dependents validator will have a certain value.
- *
- * A NumberValidatorAspectDependency must have the 
- * following characteristics:
- *
- *   \li The dependee must be of a number type and can't be an array.
- *
- *   \li The template type, dependee type, and dependent type must 
- *   all be the same.
- *
- *   \li If multiple dependents are specified, they must all have the
- *   same validator.
- *
- * This dependency can have an interesting effect on your program. 
- * The class will modifies
- * dependents validator. If that same validator is used more than once, 
- * every other 
- * parameter that used that validator will also see the change. 
- * Make sure that you are aware of this when making your validators.
- */
-template <class T>
-class NumberValidatorAspectDependency : public Dependency{
-
-public:
-
-  /** \name Public types */
-  //@{
-
-  /**
-   * \brief An enum specifying the aspect of the
-   * validator that should be modified
-   */
-  enum ValidatorAspect{
-    Min,
-    Max,
-    Step
-  };
-  
-  //@}
-
-  /** \name Constructors/Destructor */
-  //@{
-
-  /**
-   * \brief Constructs a NumberValidatorDependency
-   *
-   * @param dependee The dependee parameter.
-   * @param dependent The dependent parameter.
-   * @param aspect The aspect of the validator that should change.
-   * @param validator The validator to be modified.
-   * @param func A function specifying how the value of the validators
-   * aspect should be calculated from the dependees value.
-   */
-  NumberValidatorAspectDependency(
-    RCP<const ParameterEntry> dependee,
-    RCP<ParameterEntry> dependent,
-    ValidatorAspect aspect, 
-    RCP<EnhancedNumberValidator<T> > validator,
-    T (*func)(T) =0)
-    :Dependency(dependee, dependent),
-    aspect_(aspect),
-    validator_(validator),
-    func_(func)
-  {
-    validateDep();
-  }
-
-  /**
-   * \brief Constructs a NumberValidatorDependency
-   *
-   * @param dependee The dependee parameter.
-   * @param dependents The dependents
-   * @param aspect The aspect of the validator that should change.
-   * @param validator The validator to be modified.
-   * @param func A function specifying how the value of the validators
-   * aspect should be calculated from the dependees value.
-   */
-  NumberValidatorAspectDependency(
-    RCP<const ParameterEntry> dependee,
-    ParameterEntryList dependents,
-    ValidatorAspect aspect, 
-    RCP<EnhancedNumberValidator<T> > validator,
-    T (*func)(T) =0)
-    :Dependency(dependee, dependents),
-    aspect_(aspect),
-    validator_(validator),
-    func_(func)
-  {
-    validateDep();
-  }
-  
-  //@}
-
-  /** \name Overridden from Dependency */
-  //@{
-
-  /** \brief . */
-  void evaluate(){
-    T newAspectValue = runFunction(getFirstDependeeValue<T>());
-    switch(aspect_){
-      case NumberValidatorAspectDependency<T>::Min:
-        validator_->setMin(newAspectValue);
-        break;
-      case NumberValidatorAspectDependency<T>::Max:
-        validator_->setMax(newAspectValue);
-        break;
-      case NumberValidatorAspectDependency<T>::Step:
-        validator_->setStep(newAspectValue);
-        break;
-    }
-  }
-  
-  //@}
-  
-  /** \name Getters */
-  //@{
-  ValidatorAspect getAspect() const{
-    return aspect_;
-  }
-
-  /** \brief Gets the string representation 
-   * of a given preferred type enum. */
-  static const std::string& 
-    getAspectString(ValidatorAspect enumValue)
-  {
-    switch(enumValue){
-      case Min:
-        return getMinEnumString();
-        break;
-      case Max:
-        return getMaxEnumString();
-        break;
-      case Step:
-        return getStepEnumString();
-        break;
-      default:
-        throw std::runtime_error("Cannot convert enumValue: " 
-        + toString(enumValue) + " to a string");
-    }
-    //Should never get here. 
-    //This code is here so that a warning is not generated.
-    static const std::string& emptyString("");
-    return emptyString;
-  }
-
-  /** \brief Gets the preferred type enum associated with a give string. */
-  static ValidatorAspect 
-    getAspectStringEnum(const std::string& enumString)
-  {
-    if(enumString == getMinEnumString()){
-      return Min;
-    }
-    else if(enumString == getMaxEnumString()){
-      return Max;
-    }
-    else if(enumString == getStepEnumString()){
-      return Step;
-    }
-    else{
-      throw std::runtime_error("Cannot convert enumString: " 
-      + enumString + " to an enum");
-    }
-    //Should never get here. 
-    //This code is here so that a warning is not generated.
-    return (ValidatorAspect)-1;  
-  }
-  
-  /** \name Overridden from Dependency */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() +"NumberValidatorAspectDependency";
-  }
-  
-  //@}
-
-
-protected:
-
-  /** \name Overridden from Dependency */
-  //@{
-
-  /** \brief . */
-  void validateDep() const;
-  
-  //@}
-
-private:
-
-  /** \name Private Members */
-  //@{
-  
-  /**
-   * \brief The aspect of the validator to be modified.
-   */
-  ValidatorAspect aspect_;
-
-  /**
-   * \brief The validator to be modified.
-   */
-  RCP<EnhancedNumberValidator<T> > validator_;
-
-  /**
-   * \brief The function used to calculate the new value of the
-   * aspect of the validator.
-   */
-  T (*func_)(T);
-  
-  /**
-   * \brief Runs the dependency's function on the given argument 
-   * and returns
-   * the value that function returns.
-   *
-   * @param The value to run the function on.
-   * @return The value the function returned.
-   */
-  T runFunction(T argument) const{
-    if(func_ !=0)
-      return (*func_)(argument);
-    else
-      return argument;
-  }  
-  
-  static const std::string& getMinEnumString(){
-    static const std::string minEnumString = "min";
-    return minEnumString;
-  }
-
-  static const std::string& getMaxEnumString(){
-    static const std::string maxEnumString = "max";
-    return maxEnumString;
-  }
-
-  static const std::string& getStepEnumString(){
-    static const std::string stepEnumString = "step";
-    return stepEnumString;
-  }
-
-  //@}
-
-};
-
-template<class T>
-void NumberValidatorAspectDependency<T>::validateDep() const{
-
-  RCP<const ParameterEntry> dependee = getFirstDependee();
-  TEST_FOR_EXCEPTION(typeid(T) != dependee->getAny().type(),
-    InvalidDependencyException,
-    "The dependee type and EnhancedNumberValidator "
-    "template type must all be the same for a Number Validator Aspect "
-    "Dependency.\n"
-    "Dependee Type: " << dependee->getAny().typeName() << "\n"
-    "Validator Template Type: " << typeid(T).name());
-
-  ConstParameterEntryList::iterator it = getDependents().begin();
-  for(; it != getDependents().end(); ++it){ 
-
-    TEST_FOR_EXCEPTION(typeid(T) != (*it)->getAny().type(),
-      InvalidDependencyException,
-      "The dependent type and EnhancedNumberValidator "
-      "template type must all be the same for a Number Validator "
-      "Aspect Dependency.\n"
-      "Dependent Type: " << (*it)->getAny().typeName() << 
-      "\n"
-      "Validator Template Type: " << typeid(T).name());
-   
-    TEST_FOR_EXCEPTION( 
-      validator_.get() 
-      != 
-      (*it)->validator().get(),
-      InvalidDependencyException,
-      "Error! All dependents in a NumberValidatorAspectDependency "
-      "must have the same validator!");
-  }
-}
-  
-
-/** \brief Speicialized class for retrieving a dummy object of type
- * NumberValidatorAspectDependency.
- *
- * \relates NumberValidatorAspectDependency
- */
-template<class T>
-class DummyObjectGetter<NumberValidatorAspectDependency<T> >{
-
-public:
-
-  /** \name GetterFunctions */
-  //@{
-
-  /** \brief Retrieves a dummy object of type
-  * NumberValidatorAspectDependency.
-  */
-  static RCP<NumberValidatorAspectDependency<T> >
-    getDummyObject()
-  {
-    static RCP<NumberValidatorAspectDependency<T> > dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new NumberValidatorAspectDependency<T>(
-        DummyObjectGetter<ParameterEntry>::getDummyObject().getConst(),
-        DummyObjectGetter<ParameterEntry>::getDummyObject(),
-        NumberValidatorAspectDependency<T>::Min,
-        null));
-    }
-    return dummyObject;
-  }
-  
-  //@}
-  
-};
-
-/**
  * \brief A NumberArrayLengthDependency says the following about the 
  * relationship between two parameters:
  * The length of the dependent's array depends on the value 
@@ -1151,6 +840,7 @@ public:
  *   \li The dependent must be an array.
  *
  */
+template<class DependeeType, class DependentType>
 class NumberArrayLengthDependency : public Dependency{
 
 public:
@@ -1169,7 +859,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    int (*func)(int) = 0);
+    RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func=null);
 
   /**
    * \brief Constructs a NumberArrayLengthDependency.
@@ -1182,21 +872,42 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependent,
-    int (*func)(int) = 0);
+    RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func=null);
 
-  /** \brief . */
-  void evaluate();
-  
   //@}
 
   /** \name Overridden from Dependency */
   //@{
 
   /** \brief . */
+  void evaluate();
+  
+  /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "numberArrayLengthDependency";
+    return "numberArrayLengthDependency<" +
+      TypeNameTraits<DependeeType>::name() + ", " +
+      TypeNameTraits<DependentType>::name() +">";
   }
   
+  //@}
+
+  /** \name Getters */
+  //@{
+
+  /** \brief Gets the function associated with this dependency. */
+  RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> >
+    getFunctionObject()
+  {
+    return func_;
+  }
+
+  /** \brief Const version of function getter. */
+  RCP<const SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > 
+    getFunctionObject() const
+  {
+    return func_.getConst();
+  }
+
   //@}
 
 protected:
@@ -1217,26 +928,16 @@ private:
    * \brief The function used to calculate the new value of the
    * arrays length.
    */
-  int (*func_)(int);
+    RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func_;
   
-  /**
-   * \brief Runs the dependency's function on the given argument and returns
-   * the value that function returns.
-   *
-   * @param The value to run the function on.
-   * @return The value the function returned.
-   */
-  int runFunction(int argument) const;
-
   /**
    * \brief Modifies the length of an array.
    *
    * @param newLength The new length the array should be.
    * @param dependentValue The index of the dependent array that is going to be changed.
    */
-  template <class T>
   void modifyArrayLength(
-    int newLength, RCP<ParameterEntry> dependentToModify);
+    Teuchos_Ordinal newLength, RCP<ParameterEntry> dependentToModify);
   
   //@}
   
@@ -1248,8 +949,8 @@ private:
  *
  * \relates NumberArrayLengthDependency
  */
-template<>
-class DummyObjectGetter<NumberArrayLengthDependency>{
+template<class DependeeType, class DependentType>
+class DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >{
 
 public:
 
@@ -1259,14 +960,16 @@ public:
   /** \brief Retrieves a dummy object of type
   * NumberArrayLengthDependency.
   */
-  static RCP<NumberArrayLengthDependency >
+  static RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
     getDummyObject()
   {
-    static RCP<NumberArrayLengthDependency> dummyObject;
+    static RCP<NumberArrayLengthDependency<DependeeType, DependentType> > 
+      dummyObject;
     if(dummyObject.is_null()){
-      dummyObject = rcp(new NumberArrayLengthDependency(
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
-      DummyObjectGetter<ParameterEntry>::getDummyObject()));
+      dummyObject = rcp(
+        new NumberArrayLengthDependency<DependeeType, DependentType>(
+        DummyObjectGetter<ParameterEntry>::getDummyObject(),
+        DummyObjectGetter<ParameterEntry>::getDummyObject()));
     }
     return dummyObject;
   }
@@ -1274,6 +977,104 @@ public:
   //@}
   
 };
+
+template<class DependeeType, class DependentType>
+NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func):
+  Dependency(dependee, dependent),
+  func_(func)
+{
+  validateDep();
+}
+
+template<class DependeeType, class DependentType>
+NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
+  RCP<const ParameterEntry> dependee,
+  ParameterEntryList dependents,
+  RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func):
+  Dependency(dependee, dependents),
+  func_(func)
+{
+  validateDep();
+}
+
+template <class DependeeType, class DependentType>
+void 
+NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
+  Teuchos_Ordinal newLength, RCP<ParameterEntry> dependentToModify)
+{
+  const Array<DependentType> originalArray = 
+    any_cast<Array<DependentType> >(dependentToModify->getAny()); 
+  Array<DependentType> newArray(newLength);
+  Teuchos_Ordinal i;
+  for(i=OrdinalTraits<Teuchos_Ordinal>::zero(); i<originalArray.size() && i<newLength; ++i){
+    newArray[i] = originalArray[i];
+  }
+
+  dependentToModify->setValue(newArray,
+    false, dependentToModify->docString(), dependentToModify->validator());
+}
+
+template<class DependeeType, class DependentType>
+void 
+NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
+  Teuchos_Ordinal newLength;
+  if(!func_.is_null()){
+    func_->setParameterValue(getFirstDependeeValue<DependeeType>());
+    newLength = func_->runFunction();
+  }
+  else{
+    newLength = getFirstDependeeValue<DependeeType>();
+  }
+
+  TEST_FOR_EXCEPTION(newLength < OrdinalTraits<Teuchos_Ordinal>::zero(),
+    Exceptions::InvalidParameterValue,
+    "Ruh Roh Shaggy! Looks like a dependency tried to set the length "
+    "of the Array(s) to a negative number. Silly. You can't have "
+    "an Array with a negative length!\n\n" <<
+    "Error:\n" <<
+    "An attempt was made to set the length of an Array to a negative "
+    "number by a NumberArrayLengthDependency\n");
+  for(
+    ParameterEntryList::iterator it = getDependents().begin(); 
+    it != getDependents().end(); 
+    ++it)
+  {
+    modifyArrayLength(newLength, *it);
+  }
+}
+
+template<class DependeeType, class DependentType>
+void 
+NumberArrayLengthDependency<DependeeType, DependentType>::validateDep() 
+  const
+{
+  TEST_FOR_EXCEPTION(
+    typeid(DependeeType) != getFirstDependee()->getAny().type(),
+    InvalidDependencyException,
+    "Ay no! The dependee parameter types don't match." << std::endl <<
+    "Dependee Template Type: " << TypeNameTraits<DependeeType>::name() <<
+    std::endl <<
+    "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
+    << std::endl << std::endl);
+
+  for(
+    ConstParameterEntryList::const_iterator it = getDependents().begin(); 
+    it != getDependents().end(); 
+    ++it)
+  {
+    TEST_FOR_EXCEPTION(
+      typeid(Teuchos::Array<DependentType>) != (*it)->getAny().type(),
+        InvalidDependencyException,
+        "Ay no! The dependent parameter types don't match." << std::endl <<
+        "Dependent Template Type: " << 
+        TypeNameTraits<DependentType>::name() << std::endl <<
+        "Dependent Parameter Type: " << 
+        (*it)->getAny().typeName() << std::endl << std::endl);
+  }
+}
 
 /**
  * \brief A StringValidatorDependency says the following about 
@@ -1598,7 +1399,7 @@ public:
  * use a particular validator from a given set of validators.
  *
  * A RangeValidatorDependency achieves this by associating ranges of 
- * numerical values with validators.
+ * values with validators.
  * If the dependees value falls within the one of the ranges, 
  * the validator associated with the range is
  * used on the dependent. If the value doesn't fall within
@@ -1607,7 +1408,7 @@ public:
  *
  * A RangeValidatorDependency must have the following characterisitics:
  *
- *   \li The dependee must be a number type
+ *   \li The dependee type must be the same as the template type.
  *
  *   \li All the validators in the rangesAndValidators_ map must be
  *   the same type.
@@ -1707,7 +1508,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() + "RangeValidatorDependency";
+    return TypeNameTraits<T>::name() + " RangeValidatorDependency";
   }
   
   //@}
@@ -1760,17 +1561,13 @@ void RangeValidatorDependency<T>::evaluate(){
 
 template<class T>
 void RangeValidatorDependency<T>::validateDep() const{
-
   RCP<const ParameterEntry> dependee = getFirstDependee();
-  TEST_FOR_EXCEPTION(
-    !dependee->isType<int>() 
-    && !dependee->isType<short>() 
-    && !dependee->isType<double>() 
-    && !dependee->isType<float>(),
+  TEST_FOR_EXCEPTION(dependee->getAny().type() != typeid(T),
     InvalidDependencyException,
-    "The dependee of a "
-    "Range Validator Dependency must be of a supported number type!\n"
-    "Type encountered: " << dependee->getAny().typeName() << "\n");
+    "The dependee of a RangeValidatorDependency must be the same type as " <<
+    "The RangeValidatorDependency template type!" << std::endl <<
+    "Dependee Type: " << dependee->getAny().typeName() << std::endl <<
+    "Templated Type: " << TypeNameTraits<T>::name() << std::endl << std::endl);
 
   typename RangeToValidatorMap::const_iterator it = 
     rangesAndValidators_.begin();

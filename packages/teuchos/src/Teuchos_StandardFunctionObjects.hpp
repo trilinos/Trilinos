@@ -26,31 +26,38 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Teuchos_DummyObjectGetter.hpp
+#ifndef Teuchos_STANDARD_FUNCTION_OBJECTS_H
+#define Teuchos_STANDARD_FUNCTION_OBJECTS_H
+
+/*! \file Teuchos_FunctionObject.hpp
+    \brief An object representation of a function
 */
 
-#ifndef TEUCHOS_DUMMYOBJECTGETTER_HPP
-#define TEUCHOS_DUMMYOBJECTGETTER_HPP
-
+#include "Teuchos_FunctionObject.hpp"
 
 
 namespace Teuchos{
 
 
-/** \brief Class for retrieving a dummy object of type T.*/
-template<class T>
-class DummyObjectGetter{
+template<class ArgType, class ReturnType>
+class SingleArguementFunctionObject : public FunctionObject<ReturnType>{
 
 public:
 
-/** \brief Retrieves a dummy object of type T. */
-static RCP<T> getDummyObject(){
-  static RCP<T> dummyObject;
-  if(dummyObject.is_null()){
-    dummyObject = rcp(new T);
+  SingleArguementFunctionObject(const ArgType parameterValue = 0):
+    parameterValue_(parameterValue){}
+
+  inline ArgType getParameterValue() const{
+    return parameterValue_;
   }
-  return dummyObject;
-}
+
+  inline void setParameterValue(ArgType parameterValue){
+    parameterValue_ = parameterValue;
+  }
+
+private:
+
+  ArgType parameterValue_;
 
 };
 
@@ -58,4 +65,4 @@ static RCP<T> getDummyObject(){
 } // namespace Teuchos
 
 
-#endif // TEUCHOS_DUMMYOBJECTGETTER_HPP
+#endif

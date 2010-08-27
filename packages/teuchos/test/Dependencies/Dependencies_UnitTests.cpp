@@ -33,12 +33,14 @@
 #include "Teuchos_StandardConditions.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 
-int intFuncTester(int argument){
-	return argument+10;
-}
+class IntVisualTester : public Teuchos::SingleArguementFunctionObject<int, int>{
 
-int intVisualTester(int argument){
-	if(argument <= 32){
+public:
+  int runFunction() const;
+};
+
+int IntVisualTester::runFunction() const{
+	if(getParameterValue() <= 32){
 		return 1;
 	}
 	else{
@@ -46,8 +48,24 @@ int intVisualTester(int argument){
 	}
 }
 
-double fondueTempTester(double argument){
-	return argument-100.0;
+class IntFuncTester : public Teuchos::SingleArguementFunctionObject<int, int>{
+
+public:
+  int runFunction() const;
+};
+
+int IntFuncTester::runFunction() const{
+  return getParameterValue() + 10;
+}
+
+class FondueTempTester : public Teuchos::SingleArguementFunctionObject<double, double>{
+
+public:
+  double runFunction() const;
+};
+
+double FondueTempTester::runFunction() const{
+	return getParameterValue()-100;
 }
 
 namespace Teuchos{
@@ -342,8 +360,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
     "Temperature",101.0, "The temperature of the fondue");
 	doubleVisualDepList.set(
     "Cheese to Fondue", "Swiss", "The cheese to fondue");
-	double (*fondueFunc)(double);
-	fondueFunc = fondueTempTester;
+	RCP<FondueTempTester> fondueFunc(new FondueTempTester);
 
 	RCP<NumberVisualDependency<double> > fondueDep = 
 	RCP<NumberVisualDependency<double> >(
@@ -476,8 +493,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	/*
 	 * Another test of the NumberVisualDependency.
 	 */
-	int (*visfunc)(int);
-	visfunc = intVisualTester;
+	RCP<IntVisualTester> intVisualTester(new IntVisualTester());
 	ParameterList
     numberVisDepList = My_deplist->sublist(
 		"Number Visual Dependency List", 
@@ -486,12 +502,13 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	);
 	numberVisDepList.set("Ice", 50, "Ice stuff");
 	numberVisDepList.set("Room Temp", 10, "Room temperature");
+  RCP<IntVisualTester> visFunc = rcp(new IntVisualTester);
 	RCP<NumberVisualDependency<int> > 
 	iceDep = RCP<NumberVisualDependency<int> >(
 		new NumberVisualDependency<int>(
 			numberVisDepList.getEntryRCP("Room Temp"),
 			numberVisDepList.getEntryRCP("Ice"), 
-			visfunc
+			visFunc
 		)
 	);
 	depSheet1->addDependency(iceDep);
@@ -511,7 +528,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testVisualDeps){
 	conVisDepList->set("string param", "blah", "a string parameter");
 	RCP<NumberCondition<double> > numberCon = 
     rcp( new NumberCondition<double>(
-      conVisDepList->getEntryRCP("double param"), 0, true));
+      conVisDepList->getEntryRCP("double param"), null, true));
 	RCP<BoolCondition> boolCon = 
     rcp(new BoolCondition(conVisDepList->getEntryRCP("bool param")));
 	Condition::ConstConditionList conList = 
@@ -552,9 +569,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testArrayLengthDep){
 	  RCP<ArrayNumberValidator<double> >(
       new ArrayNumberValidator<double>(varLengthArrayVali)));
 
-	RCP<NumberArrayLengthDependency> 
-	arrayLengthDep = RCP<NumberArrayLengthDependency>(
-  		new NumberArrayLengthDependency(
+	RCP<NumberArrayLengthDependency<int, double> >
+	  arrayLengthDep(
+  		new NumberArrayLengthDependency<int, double>(
 			numberArrayLengthDepList.getEntryRCP("Array Length"),
 			numberArrayLengthDepList.getEntryRCP("Variable Length Array") 
 		)
@@ -567,69 +584,11 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testArrayLengthDep){
 	arrayLengthDep()->evaluate();
   curArray = 
     numberArrayLengthDepList.get<Array<double> >("Variable Length Array");
+  out << curArray.length() << std::endl;
 	TEST_ASSERT(curArray.length() ==12);
 	numberArrayLengthDepList.set("Array Length", -1);
 	TEST_THROW(arrayLengthDep()->evaluate(), 
     Exceptions::InvalidParameterValue);
-}
-
-/**
- * Test the NumberValidatorAspectDependency.
- */
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testNumberValiAspDep){
-	RCP<ParameterList> My_deplist = RCP<ParameterList>(new ParameterList);
-	RCP<DependencySheet> depSheet1 = 
-    RCP<DependencySheet>(new DependencySheet);
-
-	ParameterList&
-	numberValiAspDepList = My_deplist->sublist(
-		"Number Validator Aspect Dependency List",
-		false,
-		"Number Validator Aspect Dependency testing list."
-	);
-	RCP<EnhancedNumberValidator<int> > intVali2 = 
-	rcp(new EnhancedNumberValidator<int>(0,20));
-	numberValiAspDepList.set("Int", 8, "Int tester", intVali2);
-	numberValiAspDepList.set("Int2", 8, "int2 tester", intVali2);
-	numberValiAspDepList.set("Int dependee", 1, "Int dependee");
-
-	int (*func)(int);
-	func = intFuncTester;
-
-	RCP<NumberValidatorAspectDependency<int> > 
-	intDep1 = RCP<NumberValidatorAspectDependency<int> >(
-		new NumberValidatorAspectDependency<int>(
-			numberValiAspDepList.getEntryRCP("Int dependee"),
-			numberValiAspDepList.getEntryRCP("Int"),
-			NumberValidatorAspectDependency<int>::Max,
-			intVali2,
-			func
-		)
-	);
-	
-	RCP<NumberValidatorAspectDependency<int> > 
-	intDep2 = RCP<NumberValidatorAspectDependency<int> >(
-		new NumberValidatorAspectDependency<int>(
-			numberValiAspDepList.getEntryRCP("Int dependee"),
-			numberValiAspDepList.getEntryRCP("Int2"),
-			NumberValidatorAspectDependency<int>::Max,
-			intVali2,
-			func
-		)
-	);
-
-	depSheet1->addDependency(intDep1);
-	depSheet1->addDependency(intDep2);
-
-	TEST_ASSERT(rcp_dynamic_cast<const EnhancedNumberValidator<int> >(
-    numberValiAspDepList.getEntry("Int").validator())->getMax() == 20);
-	TEST_ASSERT(rcp_dynamic_cast<const EnhancedNumberValidator<int> >(
-    numberValiAspDepList.getEntry("Int2").validator())->getMax() == 20);
-	intDep1->evaluate();
-	TEST_ASSERT(rcp_dynamic_cast<const EnhancedNumberValidator<int> >(
-    numberValiAspDepList.getEntry("Int").validator())->getMax() == 11);
-	TEST_ASSERT(rcp_dynamic_cast<const EnhancedNumberValidator<int> >(
-    numberValiAspDepList.getEntry("Int2").validator())->getMax() == 11);
 }
 
 /**
@@ -646,8 +605,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
 	list1->set("array parameter", doubleArray, "array parameter");
 	list1->set("bool parameter", true, "bool parameter");
 
+  RCP<IntFuncTester> intFuncTester(new IntFuncTester());
 	TEST_THROW(RCP<NumberVisualDependency<int> > numValiDep = 
-    RCP<NumberVisualDependency<int> >(
+    rcp(
       new NumberVisualDependency<int>(
         list1->getEntryRCP("bool parameter"),
         list1->getEntryRCP("double parameter"), 
@@ -665,24 +625,28 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
       "cheese", true)), 
     InvalidDependencyException);
 
+	/*
+	 * Testing BoolVisualDependency exceptions.
+	 */
 	TEST_THROW(RCP<BoolVisualDependency> boolVisDep = 
     RCP<BoolVisualDependency>(new BoolVisualDependency(
       list1->getEntryRCP("int parameter"), 
       list1->getEntryRCP("double parameter"), false)),
       InvalidDependencyException);
 
-	TEST_THROW(RCP<NumberArrayLengthDependency> numArrayLengthDep = 
-    RCP<NumberArrayLengthDependency>(
-      new NumberArrayLengthDependency(
+  /**
+   * Tesint NumberArrayLengthDependency excpetions */
+  RCP<NumberArrayLengthDependency<int, double> > numArrayLengthDep;
+	TEST_THROW(numArrayLengthDep = 
+      rcp(new NumberArrayLengthDependency<int, double>(
         list1->getEntryRCP("double parameter"), 
         list1->getEntryRCP("array parameter"))), 
       InvalidDependencyException);
 
-	TEST_THROW(RCP<NumberArrayLengthDependency> numArrayLengthDep = 
-    RCP<NumberArrayLengthDependency>(
-      new NumberArrayLengthDependency(
-        list1->getEntryRCP("int parameter"),
-        list1->getEntryRCP("double parameter"))),
+	TEST_THROW(numArrayLengthDep = 
+      rcp(new NumberArrayLengthDependency<int, double>(
+        list1->getEntryRCP("int parameter"), 
+        list1->getEntryRCP("double parameter"))), 
       InvalidDependencyException);
 
 	/*
@@ -773,79 +737,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, testDepExceptions){
         doubleVali1, 
         intVali)), 
     InvalidDependencyException);
-
-
-
-	/*
-	 * Testing NumberValidatorAspectDependency exceptions.
-	 */
-	list1->set("int 2 parameter", 6, "int 2 parameter");
-	TEST_THROW(RCP<NumberValidatorAspectDependency<int> > 
-		intDep1 = RCP<NumberValidatorAspectDependency<int> >(
-			new NumberValidatorAspectDependency<int>(
-				list1->getEntryRCP("int parameter"),
-				list1->getEntryRCP("int 2 parameter"),
-				NumberValidatorAspectDependency<int>::Max,
-				intVali,
-				intFuncTester
-			)
-		),
-		InvalidDependencyException
-	);
-
-	list1->set("int 2 parameter", 6, "int 2 parameter", intVali);
-	TEST_THROW(RCP<NumberValidatorAspectDependency<int> > 
-		intDep1 = RCP<NumberValidatorAspectDependency<int> >(
-			new NumberValidatorAspectDependency<int>(
-				list1->getEntryRCP("string parameter"),
-				list1->getEntryRCP("int 2 parameter"),
-				NumberValidatorAspectDependency<int>::Max,
-				intVali,
-				intFuncTester
-			)
-		),
-		InvalidDependencyException
-	);
-	RCP<EnhancedNumberValidator<int> > intVali2 =
-    rcp(new EnhancedNumberValidator<int>(5,20));
-	TEST_THROW(RCP<NumberValidatorAspectDependency<int> > 
-		intDep1 = RCP<NumberValidatorAspectDependency<int> >(
-			new NumberValidatorAspectDependency<int>(
-				list1->getEntryRCP("int parameter"),
-				list1->getEntryRCP("int 2 parameter"),
-				NumberValidatorAspectDependency<int>::Max,
-				intVali2,
-				intFuncTester
-			)
-		),
-		InvalidDependencyException
-	);
-
-	TEST_THROW(RCP<NumberValidatorAspectDependency<int> > 
-		intDep1 = RCP<NumberValidatorAspectDependency<int> >(
-			new NumberValidatorAspectDependency<int>(
-				list1->getEntryRCP("int parameter"),
-				list1->getEntryRCP("double parameter"),
-				NumberValidatorAspectDependency<int>::Max,
-				intVali,
-				intFuncTester
-			)
-		),
-		InvalidDependencyException
-	);
-
-	TEST_THROW(RCP<NumberValidatorAspectDependency<int> > 
-		intDep1 = RCP<NumberValidatorAspectDependency<int> >(
-			new NumberValidatorAspectDependency<int>(
-				list1->getEntryRCP("double parameter"),
-				list1->getEntryRCP("int parameter"),
-				NumberValidatorAspectDependency<int>::Max,
-				intVali,
-				intFuncTester
-			)
-		),
-		InvalidDependencyException
-	);
 
 	/*
 	 * Testing RangeValidatorDependency exceptions.

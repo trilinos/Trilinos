@@ -192,7 +192,8 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "stringVisual";
+    return 
+      DummyObjectGetter<StringValidatorDependency>::getDummyObject()->getTypeAttributeValue();
   }
   
   //@}
@@ -249,7 +250,8 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "boolVisual";
+    return 
+      DummyObjectGetter<BoolVisualDependency>::getDummyObject()->getTypeAttributeValue();
   }
   
   //@}
@@ -285,7 +287,8 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() + "NumberVisual";
+    return 
+      DummyObjectGetter<NumberVisualDependency<T> >::getDummyObject()->getTypeAttributeValue();
   }
   
   //@}
@@ -344,7 +347,8 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "conditionVisual";
+    return 
+      DummyObjectGetter<ConditionVisualDependency>::getDummyObject()->getTypeAttributeValue();
   }
   
   //@}
@@ -379,7 +383,8 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "stringValidator";
+    return 
+      DummyObjectGetter<StringValidatorDependency>::getDummyObject()->getTypeAttributeValue();
   }
   
   //@}
@@ -449,7 +454,8 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "boolValidator";
+    return 
+      DummyObjectGetter<BoolValidatorDependency>::getDummyObject()->getTypeAttributeValue();
   }
   
   //@}
@@ -505,7 +511,8 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() + "RangeVisual";
+    return 
+      DummyObjectGetter<RangeValidatorDependency<T> >::getDummyObject()->getTypeAttributeValue();
   }
   
   //@}
@@ -615,100 +622,9 @@ RangeValidatorDependencyConverter<T>::convertSpecialValidatorAttributes(
     dependee, dependents, rangesAndValidators));
 }
 
-
-/** \brief An xml converter for NumberValidatorAspectDependencies.
- */
-template<class T>
-class NumberValidatorAspectDependencyConverter : 
-  public DependencyXMLConverter{
-
-public:
-
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  RCP<Dependency> convertXML(
-    const XMLObject& xmlObj, 
-    const Dependency::ConstParameterEntryList dependees,
-    const Dependency::ParameterEntryList dependents) const;
-
-  /** \brief . */
-  void convertDependency(
-    const RCP<const Dependency> dependency, 
-    XMLObject& xmlObj) const;
-  
-  //@}
-  
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() + "NumberValidatorAspect";
-  }
-  
-  //@}
-
-private:
-
-  /** \name Private Members */
-  //@{
-  static const std::string& getAspectAttributeName(){
-    static const std::string aspectAttributeName = "aspect";
-    return aspectAttributeName;
-  }
-
-  static const std::string& getValidatorIDAttributeName(){
-    static const std::string aspectAttributeName = "validatorID";
-    return aspectAttributeName;
-  }
-
-  //@}
-  
-};
-
-template<class T>
-RCP<Dependency> NumberValidatorAspectDependencyConverter<T>::convertXML(
-  const XMLObject& xmlObj, 
-  const Dependency::ConstParameterEntryList dependees,
-  const Dependency::ParameterEntryList dependents) const
-{
-  TEST_FOR_EXCEPTION(dependees.size() > 1,
-    TooManyDependeesException,
-    "A NumberValidatorAspectDependency can only have 1 dependee!" <<
-    std::endl << std::endl);
-
-  typename NumberValidatorAspectDependency<T>::ValidatorAspect aspect = 
-    NumberValidatorAspectDependency<T>::getAspectStringEnum(
-      xmlObj.getAttribute(getAspectAttributeName()));
-
-  RCP<EnhancedNumberValidator<T> > validator = 
-    rcp_dynamic_cast<EnhancedNumberValidator<T> >(
-      ParameterEntryValidator::getValidator(
-        xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-          getValidatorIDAttributeName())), true);
-  return rcp(new NumberValidatorAspectDependency<T>(
-    *(dependees.begin()), dependents, aspect, validator)); 
-}
-
-template<class T>
-void 
-NumberValidatorAspectDependencyConverter<T>::convertDependency(
-  const RCP<const Dependency> dependency, 
-  XMLObject& xmlObj) const
-{
-  RCP<const NumberValidatorAspectDependency<T> > castedDependency = 
-    rcp_dynamic_cast<const NumberValidatorAspectDependency<T> >(
-      dependency, true);
-  std::string aspectString = 
-    NumberValidatorAspectDependency<T>::getAspectString(
-      castedDependency->getAspect());
-  xmlObj.addAttribute(getAspectAttributeName(), aspectString);
-}
-
 /** \brief An xml converter for NumberArrayLengthDependencies.
  */
+template<class DependentType, class DependeeType>
 class NumberArrayLengthDependencyConverter : public DependencyXMLConverter{
 
 public:
@@ -734,13 +650,38 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "NumberArrayLength";
+    return 
+      DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >::getDummyObject()->getTypeAttributeValue();
   }
   
   //@}
 
 };
 
+template<class DependeeType, class DependentType>
+RCP<Dependency> 
+NumberArrayLengthDependencyConverter<DependeeType, DependentType>::convertXML(
+  const XMLObject& xmlObj, 
+  const Dependency::ConstParameterEntryList dependees,
+  const Dependency::ParameterEntryList dependents) const
+{
+  TEST_FOR_EXCEPTION(dependees.size() > 1,
+    TooManyDependeesException,
+    "A NumberArrayLengthDependency can only have 1 dependee!" <<
+    std::endl << std::endl);
+  
+  return rcp(
+    new NumberArrayLengthDependency<DependeeType, DependentType>(
+      *(dependees.begin()), dependents));
+}
+
+template<class DependeeType, class DependentType>
+void NumberArrayLengthDependencyConverter<DependeeType, DependentType>::convertDependency(
+  const RCP<const Dependency> dependency, 
+  XMLObject& xmlObj) const
+{
+  
+}
 
 
 } // namespace Teuchos

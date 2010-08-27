@@ -74,6 +74,22 @@ public:
 };
 
 /**
+ * \brief Thrown when two parameters in an XML file have the same ID.
+ */
+class DuplicateParameterIDsException : public std::logic_error{
+
+public: 
+
+  /**
+   * \brief Constructs an DuplicateParameterIDsException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  DuplicateParameterIDsException(const std::string& what_arg):std::logic_error(what_arg){}
+
+};
+
+/**
  * \brief Thrown when a bad validator xml converter is used.
  */
 class BadValidatorXMLConverterException : public std::logic_error{

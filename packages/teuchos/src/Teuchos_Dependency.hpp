@@ -163,7 +163,7 @@ public:
    * @return The first dependee in the list of dependees.
    */
   template<class S>
-  inline const S getFirstDependeeValue() const{
+  inline S getFirstDependeeValue() const{
     return getValue<S>(*(*(dependees_.begin())));
   }
 

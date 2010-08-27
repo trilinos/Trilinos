@@ -26,36 +26,25 @@
 // ***********************************************************************
 // @HEADER
 
-/*! \file Teuchos_DummyObjectGetter.hpp
+#ifndef Teuchos_FUNCTION_OBJECT_H
+#define Teuchos_FUNCTION_OBJECT_H
+
+/*! \file Teuchos_FunctionObject.hpp
+    \brief An object representation of a function
 */
-
-#ifndef TEUCHOS_DUMMYOBJECTGETTER_HPP
-#define TEUCHOS_DUMMYOBJECTGETTER_HPP
-
 
 
 namespace Teuchos{
 
-
-/** \brief Class for retrieving a dummy object of type T.*/
-template<class T>
-class DummyObjectGetter{
+template<class ReturnType>
+class FunctionObject{
 
 public:
-
-/** \brief Retrieves a dummy object of type T. */
-static RCP<T> getDummyObject(){
-  static RCP<T> dummyObject;
-  if(dummyObject.is_null()){
-    dummyObject = rcp(new T);
-  }
-  return dummyObject;
-}
+  virtual ReturnType runFunction() const=0;
 
 };
-
 
 } // namespace Teuchos
 
 
-#endif // TEUCHOS_DUMMYOBJECTGETTER_HPP
+#endif

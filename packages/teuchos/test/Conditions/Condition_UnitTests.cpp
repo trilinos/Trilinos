@@ -35,9 +35,12 @@
 
 namespace Teuchos{
 
-double doubleTesterFunc(double argument){
-	return argument-100.0;
-}
+class DoubleTesterFunc : public SingleArguementFunctionObject<double, double>{
+public:
+  double runFunction() const{
+    return getParameterValue() - 100.0;
+  }
+};
 
 /**
  * Test all the conditions
@@ -72,12 +75,15 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testConditions){
 	 */
 	testingList->set("double param", 5.0, "parameter for testing number conditions");
 
-	RCP<NumberCondition<double> > numberCon1 = rcp( new NumberCondition<double>(testingList->getEntryRCP("double param"), NULL, true));
+	RCP<NumberCondition<double> > numberCon1 = 
+    rcp( new NumberCondition<double>(testingList->getEntryRCP("double param"), null, true));
 	TEST_ASSERT(numberCon1->isConditionTrue());
 	testingList->set("double param", -1.0);
 	TEST_ASSERT(!numberCon1->isConditionTrue());
 
-	RCP<NumberCondition<double> > numberCon2 = rcp( new NumberCondition<double>(testingList->getEntryRCP("double param"), doubleTesterFunc, false));
+  RCP<DoubleTesterFunc> doubleTesterFunc = rcp( new DoubleTesterFunc());
+	RCP<NumberCondition<double> > numberCon2 = 
+    rcp( new NumberCondition<double>(testingList->getEntryRCP("double param"), doubleTesterFunc, false));
 	TEST_ASSERT(numberCon2->isConditionTrue());
 	testingList->set("double param", 101.0);
 	TEST_ASSERT(!numberCon2->isConditionTrue());

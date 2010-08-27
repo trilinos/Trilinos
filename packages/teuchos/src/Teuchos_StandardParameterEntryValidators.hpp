@@ -1317,7 +1317,7 @@ public:
 
   /** \brief . */
   const std::string getXMLTypeName() const{
-    return StrUtils::removeAllSpaces(TypeNameTraits<T>::name()) + "EnhancedNumberValidator";
+    return  "EnhancedNumberValidator<" + TypeNameTraits<T>::name()+ ">"; 
   }
 
   /** \brief . */
@@ -1753,8 +1753,8 @@ public:
 
   /** \brief . */
   const std::string getXMLTypeName() const{
-    return "arrayValidator<" + 
-      prototypeValidator_->getXMLTypeName() + "," +
+    return "ArrayValidator<" + 
+      prototypeValidator_->getXMLTypeName() + ", " +
       TypeNameTraits<EntryType>::name() + ">";
   }
 
@@ -2139,8 +2139,9 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
 template<class IntegralType>
 const std::string 
 StringToIntegralParameterEntryValidator<IntegralType>::getXMLTypeName() const{
-  return StrUtils::removeAllSpaces(TypeNameTraits<IntegralType>::name()) +
-    "StringIntegralValidator";
+  return "StringIntegralValidator<" +
+    TypeNameTraits<IntegralType>::name() +
+    ">";
 }
 
 template<class IntegralType>

@@ -256,26 +256,6 @@ BoolValidatorDependencyConverter::convertSpecialValidatorAttributes(
     dependee, dependents, falseValidator, trueValidator));
 }
 
-RCP<Dependency> NumberArrayLengthDependencyConverter::convertXML(
-  const XMLObject& xmlObj, 
-  const Dependency::ConstParameterEntryList dependees,
-  const Dependency::ParameterEntryList dependents) const
-{
-  TEST_FOR_EXCEPTION(dependees.size() > 1,
-    TooManyDependeesException,
-    "A NumberArrayLengthDependency can only have 1 dependee!" <<
-    std::endl << std::endl);
-  
-  return rcp(new NumberArrayLengthDependency(
-    *(dependees.begin()), dependents));
-}
-
-void convertDependency(
-  const RCP<const Dependency> dependency, 
-  XMLObject& xmlObj) const
-{
-  
-}
 
 
 } //namespace Teuchos

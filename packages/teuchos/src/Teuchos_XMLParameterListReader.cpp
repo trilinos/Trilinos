@@ -181,9 +181,14 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
         if(child.hasAttribute(
           ParameterEntryXMLConverter::getIdAttributeName()))
         {
+          ParameterEntry::ParameterEntryID xmlID = child.getRequired<ParameterEntry::ParameterEntryID>(
+              ParameterEntryXMLConverter::getIdAttributeName());
+          TEST_FOR_EXCEPTION(entryIDsMap.find(xmlID) != entryIDsMap.end(),
+            DuplicateParameterIDsException,
+            "Parameters with duplicate ids found!" << std::endl <<
+            "Bad ID: " << xmlID << std::endl << std::endl);
           entryIDsMap.insert(EntryIDsMap::value_type(
-            child.getRequired<ParameterEntry::ParameterEntryID>(
-              ParameterEntryXMLConverter::getIdAttributeName()),
+            xmlID,
             ParameterEntry::getParameterEntryID(parameter)
             )
           );

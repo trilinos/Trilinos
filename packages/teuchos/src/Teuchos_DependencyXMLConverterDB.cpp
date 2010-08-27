@@ -38,7 +38,7 @@ namespace Teuchos {
 #define ADD_TEMPLATED_NUMBER_DEPS(T) \
   ADD_NUMBER_VISUAL_DEP(T); \
   ADD_RANGE_VALIDATOR_DEP(T); \
-  ADD_VALIDATOR_ASPECT_DEP(T);
+  ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(T);
 
 #define ADD_NUMBER_VISUAL_DEP(T) \
   \
@@ -56,14 +56,39 @@ namespace Teuchos {
         getDummyObject()->getTypeAttributeValue(), \
       rcp(new RangeValidatorDependencyConverter< T >)));
 
-#define ADD_VALIDATOR_ASPECT_DEP(T) \
-  \
+#define ADD_NUMBER_ARRAY_LENGTH_DEP(DEPENDEE_TYPE, DEPENDENT_TYPE) \
   masterMap.insert( \
     ConverterPair( \
-      DummyObjectGetter<NumberValidatorAspectDependency< T > >:: \
-        getDummyObject()->getTypeAttributeValue(), \
-      rcp(new NumberValidatorAspectDependencyConverter< T >)));
+      DummyObjectGetter<NumberArrayLengthDependencyConverter< \
+        DEPENDEE_TYPE , DEPENDENT_TYPE > >::getDummyObject()->getTypeAttributeValue(), \
+        rcp(new NumberArrayLengthDependencyConverter< \
+        DEPENDEE_TYPE , DEPENDENT_TYPE >)));
 
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#define ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(DEPENDEE_TYPE) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , short int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned short int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , long int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned long int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , long long int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned long long int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , double) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , float) 
+#else
+#define ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(DEPENDEE_TYPE) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , short int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned short int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , long int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned long int) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , double) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , float) 
+#endif
+
+  
 
 void DependencyXMLConverterDB::addConverter(
   Dependency& dependency,
@@ -156,12 +181,6 @@ DependencyXMLConverterDB::getConverterMap()
         DummyObjectGetter<BoolVisualDependency>::
           getDummyObject()->getTypeAttributeValue(), 
         rcp(new BoolVisualDependencyConverter)));
-
-    masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<NumberArrayLengthDependency>::
-          getDummyObject()->getTypeAttributeValue(),
-        rcp(new NumberArrayLengthDependencyConverter)));
 
   }
   return masterMap;

@@ -37,6 +37,7 @@
 #include "Teuchos_Condition.hpp"
 #include "Teuchos_InvalidConditionException.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardFunctionObjects.hpp"
 
 
 namespace Teuchos{
@@ -313,7 +314,7 @@ public:
    */
   NumberCondition(
     RCP<ParameterEntry> parameter,
-    T (*func)(T)=0, 
+    RCP<SingleArguementFunctionObject<T,T> > func=null,
     bool whenParamEqualsValue=true):
     ParameterCondition(parameter, whenParamEqualsValue), 
     func_(func)
@@ -338,7 +339,13 @@ public:
   //@{
 
   bool evaluateParameter() const{
-    return (runFunction(getValue<T>(*getParameter())) > 0);
+    if(!func_.is_null()){
+      func_->setParameterValue(getValue<T>(*getParameter()));
+      return func_->runFunction() > 0;
+    }
+    else{
+      return getValue<T>(*getParameter()) > 0;
+    }
   }
   
   //@}
@@ -349,7 +356,7 @@ private:
   //@{
   
   /** \brief . */
-  T (*func_)(T);   
+  RCP<SingleArguementFunctionObject<T,T> > func_;
 
   /**
    * \brief Runs the function associated with this condition and

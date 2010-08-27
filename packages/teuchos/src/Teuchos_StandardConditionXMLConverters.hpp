@@ -301,7 +301,7 @@ public:
     bool whenParamEqualsValue) const
   {
     return rcp(new NumberCondition<T>(
-      ParameterEntry::getParameterEntry(paramID), 0, whenParamEqualsValue));
+      ParameterEntry::getParameterEntry(paramID), null, whenParamEqualsValue));
   }
 
   /** \brief . */

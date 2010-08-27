@@ -115,8 +115,13 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryConverterExceptions)
     NoValueAttributeExecption);
 
   TEST_THROW(RCP<ParameterList>
+    badIdsList = getParametersFromXmlFile("DuplicateParameterIDs.xml"),
+    DuplicateParameterIDsException);
+
+  TEST_THROW(RCP<ParameterList>
     badParameterEntryConverterList = getParametersFromXmlFile("CantFindParameterEntryConverter.xml"),
-	CantFindParameterEntryConverterException);
+	  CantFindParameterEntryConverterException);
+
 
   #ifdef HAVE_TEUCHOS_DEBUG
 

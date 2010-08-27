@@ -75,7 +75,7 @@ ValidatorXMLConverterDB::getConverter(const ParameterEntryValidator& validator)
   TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindValidatorConverterException,
     "Could not find a ValidatorXMLConverter for validator type " <<
-     validator.getXMLTypeName() << std::endl << std::endl
+     validator.getXMLTypeName() << std::endl 
   )
   return it->second;
 }

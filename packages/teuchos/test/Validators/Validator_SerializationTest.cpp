@@ -70,6 +70,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, exceptionTests)
     missingValidatorList = getParametersFromXmlFile("MissingValidator.xml"),
     MissingValidatorDefinitionException);
  
+  ValidatorXMLConverterDB::printKnownConverters(out);
   TEST_THROW(RCP<ParameterList>
     missingPrototypeList = getParametersFromXmlFile("MissingPrototypeValidator.xml"),
 	MissingValidatorDefinitionException);
