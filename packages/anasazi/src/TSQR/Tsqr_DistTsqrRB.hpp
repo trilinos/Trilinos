@@ -43,6 +43,12 @@ namespace TSQR {
       messenger_ (messenger)
     {}
 
+    /// Whether or not all diagonal entries of the R factor computed
+    /// by the QR factorization are guaranteed to be nonnegative.
+    bool QR_produces_R_factor_with_nonnegative_diagonal () const {
+      return Combine< LocalOrdinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal();
+    }
+
     /// \brief Internode TSQR with explicit Q factor
     ///
     /// \param R_mine [in/out] View of a matrix with at least as many

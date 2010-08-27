@@ -49,7 +49,15 @@ namespace TSQR {
   /// \brief Internode part of TSQR
   ///
   /// This class combines the ncols by ncols R factors computed by the
-  /// node TSQR factorization on individual MPI processes.
+  /// intranode TSQR factorization on individual MPI processes.  It is
+  /// a model as well as the default for Tsqr's DistTsqrType template
+  /// parameter.
+  ///
+  /// LocalOrdinal: index type for dense matrices of Scalar. Known to
+  /// work with int.
+  ///
+  /// Scalar: value type for matrices to factor. Known to work with
+  /// float, double, std::complex<float>, std::complex<double>.
   template< class LocalOrdinal, class Scalar >
   class DistTsqr {
   public:
@@ -61,25 +69,58 @@ namespace TSQR {
 
     /// Constructor
     ///
-    /// \param messenger [in/out] Encapsulation of communication
-    ///   operations.  Not owned by *this (delete NOT called in
-    ///   ~DistTsqr()).
+    /// \param messenger [in/out] Wrapper of communication operations
+    ///   between MPI processes.
     DistTsqr (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) :
-      messenger_ (messenger) 
+      messenger_ (messenger),
+      reduceBroadcastImpl_ (messenger)
     {}
 
+    /// Rank of this MPI process (via MPI_Comm_rank())
+    ///
     rank_type rank() const { return messenger_->rank(); }
+
+    /// Total number of MPI processes in this communicator (via
+    /// MPI_Comm_size())
     rank_type size() const { return messenger_->size(); }
 
+    /// \brief Destructor
     ///
-    /// Destructor (does nothing)
-    ///
+    /// The destructor doesn't need to do anything, thanks to smart
+    /// pointers.
     ~DistTsqr () {}
 
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      return Combine< LocalOrdinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal();
+      typedef Combine< LocalOrdinal, Scalar > combine_type;
+      return combine_type::QR_produces_R_factor_with_nonnegative_diagonal() &&
+	reduceBroadcastImpl_.QR_produces_R_factor_with_nonnegative_diagonal();
+    }
+
+    /// \brief Internode TSQR with explicit Q factor
+    ///
+    /// Call this routine (instead of factor() and explicit_Q()) if
+    /// you want to compute the QR factorization and only want the Q
+    /// factor in explicit form (i.e., as a matrix).
+    ///
+    /// \param R_mine [in/out] View of a matrix with at least as many
+    ///   rows as columns.  On input: upper triangular matrix (R
+    ///   factor from intranode TSQR); different on each process..  On
+    ///   output: R factor from intranode QR factorization; bitwise
+    ///   identical on all processes, since it is effectively
+    ///   broadcast from Proc 0.
+    ///
+    /// \param Q_mine [out] View of a matrix with the same number of
+    ///   rows as R_mine has columns.  On output: this process'
+    ///   component of the internode Q factor.  (Write into the top
+    ///   block of this process' entire Q factor, fill the rest of Q
+    ///   with zeros, and call intranode TSQR's apply() on it, to get
+    ///   the final explicit Q factor.)
+    void
+    factorExplicit (matview_type& R_mine, matview_type& Q_mine)
+    {
+      reduceBroadcastImpl_.factorExplicit (R_mine, Q_mine);
     }
 
     /// \brief Compute QR factorization of R factors, one per MPI process
@@ -176,6 +217,7 @@ namespace TSQR {
 
   private:
     Teuchos::RCP< MessengerBase< Scalar > > messenger_;
+    DistTsqrRB reduceBroadcastImpl_;
   };
 
 } // namespace TSQR

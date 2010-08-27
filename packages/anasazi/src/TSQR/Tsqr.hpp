@@ -46,12 +46,11 @@ namespace TSQR {
   /// \brief Parallel Tall Skinny QR (TSQR) factorization
   /// 
   /// Parallel Tall Skinny QR (TSQR) factorization of a matrix
-  /// distributed in block rows across one or more MPI processes.
-  ///
-  /// \note TSQR only needs to know about the local ordinal type (used
-  ///   to index matrix entries on a single node), not about the
-  ///   global ordinal type (used to index matrix entries globally,
-  ///   i.e., over all nodes).
+  /// distributed in block rows across one or more MPI processes.  The
+  /// parallel critical path length for TSQR is independent of the
+  /// number of columns in the matrix, unlike ScaLAPACK's comparable
+  /// QR factorization (P_GEQR2), Modified Gram-Schmidt, or Classical
+  /// Gram-Schmidt.
   ///
   /// LocalOrdinal: index type that can address all elements of a
   /// matrix (when treated as a 1-D array, so for A[i + LDA*j], the
@@ -70,17 +69,21 @@ namespace TSQR {
   /// class implementing the same compile-time interface as the
   /// default template parameter class is valid.
   ///
+  /// \note TSQR only needs to know about the local ordinal type (used
+  ///   to index matrix entries on a single node), not about the
+  ///   global ordinal type (used to index matrix entries globally,
+  ///   i.e., over all nodes).
+  ///
   template< class LocalOrdinal, 
 	    class Scalar, 
 	    class NodeTsqrType = SequentialTsqr< LocalOrdinal, Scalar >,
 	    class DistTsqrType = DistTsqr< LocalOrdinal, Scalar > >
   class Tsqr {
-  private:
+  public:
     typedef MatView< LocalOrdinal, Scalar > matview_type;
     typedef ConstMatView< LocalOrdinal, Scalar > const_matview_type;
     typedef Matrix< LocalOrdinal, Scalar > matrix_type;
 
-  public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
     typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
@@ -89,27 +92,31 @@ namespace TSQR {
     typedef DistTsqrType dist_tsqr_type;
     typedef typename Teuchos::RCP< node_tsqr_type > node_tsqr_ptr;
     typedef typename Teuchos::RCP< dist_tsqr_type > dist_tsqr_ptr;
-
-    typedef typename DistTsqrType::rank_type rank_type;
+    typedef typename dist_tsqr_type::rank_type rank_type;
 
     typedef typename node_tsqr_type::FactorOutput NodeOutput;
     typedef typename dist_tsqr_type::FactorOutput DistOutput;
     typedef std::pair< NodeOutput, DistOutput > FactorOutput;
 
-    /// TSQR constructor; sets up tuning parameters
+    /// Constructor
     ///
     /// \param nodeTsqr [in/out] Previously initialized NodeTsqrType
-    ///   object.
+    ///   object.  This takes care of the intranode part of TSQR.
     ///
     /// \param distTsqr [in/out] Previously initialized DistTsqrType
-    ///   object.
-    ///
+    ///   object.  This takes care of the internode part of TSQR.
     Tsqr (const node_tsqr_ptr& nodeTsqr, const dist_tsqr_ptr& distTsqr) :
       nodeTsqr_ (nodeTsqr), distTsqr_ (distTsqr)
     {}
 
-    /// Cache block size (in bytes) used by the underlying per-node
-    /// TSQR implementation.
+    /// \brief Cache block size in bytes
+    ///
+    /// Cache block size (in bytes) used by the underlying intranode
+    /// TSQR implementation.  
+    ///
+    /// \note This value may differ from the cache block size given to
+    ///   the constructor of the NodeTsqrType object, since that
+    ///   constructor input is merely a suggestion.
     size_t cache_block_size() const { return nodeTsqr_->cache_block_size(); }
 
     /// Whether or not all diagonal entries of the R factor computed
@@ -123,11 +130,52 @@ namespace TSQR {
 	distTsqr_->QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
+
+    void
+    factorExplicit (matview_type& A, 
+		    matview_type& Q, 
+		    matview_type& R, 
+		    const bool contiguousCacheBlocks = false)
+    {
+      // Sanity checks for matrix dimensions
+      if (A.nrows() < A.ncols())
+	throw std::logic_error ("A must have at least as many rows as columns");
+      else if (A.nrows() != Q.nrows())
+	throw std::logic_error ("A and Q must have same number of rows");
+      else if (R.nrows() < R.ncols())
+	throw std::logic_error ("R must have at least as many rows as columns");
+      else if (A.ncols() != R.ncols())
+	throw std::logic_error ("A and R must have the same number of columns");
+
+      // Checks for quick exit, based on matrix dimensions
+      if (Q.ncols() == ordinal_type(0))
+	return;
+
+      R.fill (scalar_type (0));
+      NodeOutput nodeResults = 
+	nodeTsqr_->factor (A.nrows(), A.ncols(), A.get(), A.lda(), 
+			   R.get(), R.lda(), contiguousCacheBlocks);
+      nodeTsqr_->fill_with_zeros (Q.nrows(), Q.ncols(), Q.get(), Q.lda(), 
+				  contiguousCacheBlocks);
+      matview_type Q_top_block = 
+	nodeTsqr_->top_block (Q, contiguousCacheBlocks);
+      if (Q_top_block.nrows() < R.ncols())
+	throw std::logic_error("Q has too few rows");
+      matview_type Q_top (R.ncols(), Q.ncols(), 
+			  Q_top_block.get(), Q_top_block.lda());
+      distTsqr_->factorExplicit (R, Q_top);
+      nodeTsqr_->apply (ApplyType::NoTranspose, 
+			A.nrows(), A.ncols(), A.get(), A.lda(), nodeResults,
+			Q.ncols(), Q.get(), Q.lda(), contiguousCacheBlocks);
+    }
+
+
     /// \brief Compute QR factorization of the global dense matrix A
     ///
-    /// Compute the QR factorization of the dense matrix A, consisting
-    /// of consisting of all nodes' A_local matrices stacked on top of
-    /// each other.
+    /// Compute the QR factorization of the tall and skinny dense
+    /// matrix A.  The matrix A is distributed in a row block layout
+    /// over all the MPI processes.  A_local contains the matrix data
+    /// for this process.
     ///
     /// \param nrows_local [in] Number of rows of this node's local
     ///   component (A_local) of the matrix.  May differ on different
@@ -151,9 +199,20 @@ namespace TSQR {
     ///
     /// \param ldr [in] Leading dimension of the matrix R.
     ///
-    /// \return (intranode TSQR results, internode TSQR results).
-    ///   This factor output should be passed into apply() or
-    ///   explicit_Q() as the "factorOutput" parameter.
+    /// \param contiguousCacheBlocks [in] Whether or not cache blocks
+    ///   of A_local are stored contiguously.  The default value of
+    ///   false means that A_local uses ordinary column-major
+    ///   (Fortran-style) order.  Otherwise, the details of the format
+    ///   depend on the specific NodeTsqrType.  Tsqr's cache_block()
+    ///   and un_cache_block() methods may be used to convert between
+    ///   cache-blocked and non-cache-blocked (column-major order)
+    ///   formats.
+    ///
+    /// \return Part of the representation of the implicitly stored Q
+    ///   factor.  It should be passed into apply() or explicit_Q() as
+    ///   the "factorOutput" parameter.  The other part of the
+    ///   implicitly stored Q factor is stored in A_local (the input
+    ///   is overwritten).  Both parts go together.
     FactorOutput
     factor (const LocalOrdinal nrows_local,
 	    const LocalOrdinal ncols, 
