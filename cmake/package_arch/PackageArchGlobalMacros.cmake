@@ -896,17 +896,17 @@ ENDMACRO()
 MACRO(PACKAGE_ARCH_EXCLUDE_FILES)
   SET(FILES_TO_EXCLUDE ${ARGN})
   
-  #need to add "/<project name>/packages/<package name>/" to each file this is to prevent
+  #need to add "/<project source dir>/packages/<package name>/" to each file this is to prevent
   #someone from trying to exclude a file like "readme" and having it 
   #inadvertently exclude a file matching that name in another package.
   SET(MODIFIED_FILES_TO_EXCLUDE "")
   FOREACH(FILE ${FILES_TO_EXCLUDE})
     #Ensure that if the full path was specified for the file that we don't add
-    #"/<project name>/packages/<package name>/" again.
-    SET(MATCH_STRING "${PROJECT_NAME}/packages/${PACKAGE_DIR}")
+    #"/<project source dir>/packages/<package name>/" again.
+    SET(MATCH_STRING "${${PROJECT_NAME}_SOURCE_DIR}/packages/${PACKAGE_DIR}")
     STRING(REGEX MATCH ${MATCH_STRING} MATCHED ${FILE} )
     IF(NOT MATCHED)
-      LIST(APPEND MODIFIED_FILES_TO_EXCLUDE /${PROJECT_NAME}/packages/${PACKAGE_DIR}/${FILE})
+      LIST(APPEND MODIFIED_FILES_TO_EXCLUDE ${${PROJECT_NAME}_SOURCE_DIR}/packages/${PACKAGE_DIR}/${FILE})
     ELSE()
       LIST(APPEND MODIFIED_FILES_TO_EXCLUDE ${FILE})
     ENDIF()

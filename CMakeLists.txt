@@ -199,14 +199,7 @@ TRILINOS_SETUP_TESTING_SUPPORT()
 
 
 #
-# J) Setup for packaging and distribution
-#
-
-TRILINOS_DEFINE_PACKAGING()
-
-
-#
-# K) Configure individual packages
+# J) Configure individual packages
 # 
 
 MESSAGE("")
@@ -214,6 +207,13 @@ MESSAGE("Configuring individual enabled Trilinos packages ...")
 MESSAGE("")
 
 PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
+
+
+#
+# K) Setup for packaging and distribution
+#
+
+TRILINOS_DEFINE_PACKAGING()
 
 
 #

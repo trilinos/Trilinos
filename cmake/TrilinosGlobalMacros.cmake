@@ -143,49 +143,50 @@ ENDMACRO()
 MACRO(TRILINOS_DEFINE_PACKAGING)
 
   SET(CPACK_SOURCE_IGNORE_FILES
+    ${CPACK_SOURCE_IGNORE_FILES}
     /.git/
     ".gitignore"
     classicMakefile
     ".*.pyc"
-    /Trilinos/cmake/CMakeKitwareBacklog.txt
-    /Trilinos/cmake/TODO
-    /Trilinos/packages/ITAPS
-    /Trilinos/packages/aristos
-    /Trilinos/packages/claps
-    /Trilinos/packages/external
-    /Trilinos/packages/jpetra
-    /Trilinos/packages/new_package
-    /Trilinos/packages/rbgen
-    /Trilinos/packages/WebTrilinos
-    /Trilinos/packages/cmmlib
-    /Trilinos/packages/Trios
-    /Trilinos/demos/FEApp
-    /Trilinos/packages/configure.ac
-    /Trilinos/packages/configure
-    /Trilinos/packages/Makefile.am
-    /Trilinos/packages/Makefile.in
-    /Trilinos/doc/[^b]
-    /Trilinos/README_old
-    /Trilinos/sampleScripts/old_autotools
-    /Trilinos/sampleScripts/git-profiles
-    /Trilinos/SIERRA/
-    /Trilinos/commonTools/test/coverage
-    /Trilinos/commonTools/test/harness
-    /Trilinos/commonTools/test/utilities/README
-    /Trilinos/commonTools/test/utilities/dependencies
-    /Trilinos/commonTools/test/utilities/packages
-    /Trilinos/commonTools/test/utilities/r.*
-    /Trilinos/commonTools/scripts
-    /Trilinos/commonTools/git
-    /Trilinos/packages/common/DoxyfilePackageTemplate
-    /Trilinos/stamp-h.in
-    /Trilinos/configure.ac
-    /Trilinos/aclocal.m4
-    /Trilinos/configure
-    /Trilinos/Makefile.am
-    /Trilinos/Makefile.in
-    /Trilinos/bootstrap
-    /Trilinos/config
+    ${Trilinos_SOURCE_DIR}/cmake/CMakeKitwareBacklog.txt
+    ${Trilinos_SOURCE_DIR}/cmake/TODO
+    ${Trilinos_SOURCE_DIR}/packages/ITAPS
+    ${Trilinos_SOURCE_DIR}/packages/aristos
+    ${Trilinos_SOURCE_DIR}/packages/claps
+    ${Trilinos_SOURCE_DIR}/packages/external
+    ${Trilinos_SOURCE_DIR}/packages/jpetra
+    ${Trilinos_SOURCE_DIR}/packages/new_package
+    ${Trilinos_SOURCE_DIR}/packages/rbgen
+    ${Trilinos_SOURCE_DIR}/packages/WebTrilinos
+    ${Trilinos_SOURCE_DIR}/packages/cmmlib
+    ${Trilinos_SOURCE_DIR}/packages/Trios
+    ${Trilinos_SOURCE_DIR}/demos/FEApp
+    ${Trilinos_SOURCE_DIR}/packages/configure.ac
+    ${Trilinos_SOURCE_DIR}/packages/configure
+    ${Trilinos_SOURCE_DIR}/packages/Makefile.am
+    ${Trilinos_SOURCE_DIR}/packages/Makefile.in
+    ${Trilinos_SOURCE_DIR}/doc/[^b]
+    ${Trilinos_SOURCE_DIR}/README_old
+    ${Trilinos_SOURCE_DIR}/sampleScripts/old_autotools
+    ${Trilinos_SOURCE_DIR}/sampleScripts/git-profiles
+    ${Trilinos_SOURCE_DIR}/SIERRA/
+    ${Trilinos_SOURCE_DIR}/commonTools/test/coverage
+    ${Trilinos_SOURCE_DIR}/commonTools/test/harness
+    ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/README
+    ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/dependencies
+    ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/packages
+    ${Trilinos_SOURCE_DIR}/commonTools/test/utilities/r.*
+    ${Trilinos_SOURCE_DIR}/commonTools/scripts
+    ${Trilinos_SOURCE_DIR}/commonTools/git
+    ${Trilinos_SOURCE_DIR}/packages/common/DoxyfilePackageTemplate
+    ${Trilinos_SOURCE_DIR}/stamp-h.in
+    ${Trilinos_SOURCE_DIR}/configure.ac
+    ${Trilinos_SOURCE_DIR}/aclocal.m4
+    ${Trilinos_SOURCE_DIR}/configure
+    ${Trilinos_SOURCE_DIR}/Makefile.am
+    ${Trilinos_SOURCE_DIR}/Makefile.in
+    ${Trilinos_SOURCE_DIR}/bootstrap
+    ${Trilinos_SOURCE_DIR}/config
   )
 
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
