@@ -156,17 +156,12 @@ public:
   virtual void compute(bool forceRecomputing=false);
 
 
-  /** An internal method which returns the number of elements in a given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
+  /**
   */
   int numElemsInPart(int part) const;
 
 
-  /** An internal method which fills caller-allocated list (of length len) with the
-      global element ids to be located in the given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
+  /**      global element ids to be located in the given partition.
   */
   void elemsInPart(int part, int* elementList, int len) const;
 
