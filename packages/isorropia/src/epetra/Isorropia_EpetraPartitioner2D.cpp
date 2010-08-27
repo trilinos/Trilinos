@@ -32,7 +32,6 @@ USA
 #include <Isorropia_EpetraZoltanLib.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
-#include <Isorropia_EpetraCostDescriber.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
@@ -88,43 +87,6 @@ Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
     partition(true);
 }
 
-  /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
-        API function create_partitioner().
-
-     \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RCP is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param costs CostDescriber object which allows for user-specified
-       weights of varying types to be provided to the partitioner.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
-Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-			 Teuchos::RCP<CostDescriber> costs,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (input_graph, costs, paramlist, 0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-
   /**
      Constructor that accepts an Epetra_RowMatrix object, called by
        API function create_partitioner().
@@ -153,44 +115,6 @@ Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, paramlist, 0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-
-  /**
-     Constructor that accepts an Epetra_RowMatrix object and a
-     CostDescriber, called by API function create_partitioner(). 
-
-     \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RCP is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param costs CostDescriber object which allows for user-specified
-       weights of varying types to be provided to the partitioner.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
-Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-			 Teuchos::RCP<CostDescriber> costs,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (input_matrix, costs, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
