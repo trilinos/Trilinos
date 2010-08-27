@@ -166,9 +166,9 @@ partition(bool force_repartitioning)
     throw Isorropia::Exception("PARTITIONING_METHOD parameter must be specified.");
   }
 
-  if(partitioning_method != "HGRAPH2D_FINEGRAIN")
+  if(partitioning_method != "HYPERGRAPH2D")
   {
-    throw Isorropia::Exception("PARTITIONING_METHOD parameter must be HGRAPH2D_FINEGRAIN.");
+    throw Isorropia::Exception("PARTITIONING_METHOD parameter must be HYPERGRAPH2D.");
   }
 
   if (alreadyComputed() && !force_repartitioning)
