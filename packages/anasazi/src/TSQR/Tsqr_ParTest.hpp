@@ -33,11 +33,9 @@
 #include <Tsqr_Random_NormalGenerator.hpp>
 
 #include <Tsqr_generateStack.hpp>
-#include <Tsqr_MessengerBase.hpp>
 #include <Tsqr_DistTsqr.hpp>
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
 
 #include <iostream>
@@ -172,6 +170,10 @@ namespace TSQR {
 	    scalarComm_->barrier();
 	  }
 
+	// Space for this MPI process' local component of the explicit
+	// Q factor.
+	Matrix< Ordinal, Scalar > Q_local (numRowsLocal, numCols);
+
 	// Copy the test problem input into R, since the factorization will
 	// overwrite it place with the final R factor.
 	Matrix< Ordinal, Scalar > R (numCols, numCols);
@@ -194,31 +196,40 @@ namespace TSQR {
 		"DistTsqr object." << endl << endl;
 	  }
 
-	// Factor the matrix A (copied into R, which will be
-	// overwritten on output)
-	typedef typename DistTsqr< Ordinal, Scalar >::FactorOutput 
-	  factor_output_type;
-	factor_output_type factorOutput = par.factor (R.view());
-
-	if (debug_)
+	const bool testFactorExplicit = true;
+	if (testFactorExplicit)
 	  {
-	    scalarComm_->barrier();
-	    if (myRank == 0)
-	      err_ << "-- Finished DistTsqr::factor" << endl;
+	    // Factor the matrix and compute the explicit Q factor, both
+	    // in a single operation.
+	    par.factorExplicit (R.view(), Q_local.view());
+	    if (debug_)
+	      {
+		scalarComm_->barrier();
+		if (myRank == 0)
+		  err_ << "-- Finished DistTsqr::factorExplicit" << endl;
+	      }
 	  }
-
-	// Prepare space in which to construct the explicit Q factor
-	// (local component on this processor)
-	Matrix< Ordinal, Scalar > Q_local (numRowsLocal, numCols);
-
-	// Compute the explicit Q factor
-	par.explicit_Q (numCols, Q_local.get(), Q_local.lda(), factorOutput);
-
-	if (debug_)
+	else
 	  {
-	    scalarComm_->barrier();
-	    if (myRank == 0)
-	      err_ << "-- Finished DistTsqr::explicit_Q" << endl;
+	    // Factor the matrix A (copied into R, which will be
+	    // overwritten on output)
+	    typedef typename DistTsqr< Ordinal, Scalar >::FactorOutput 
+	      factor_output_type;
+	    factor_output_type factorOutput = par.factor (R.view());
+	    if (debug_)
+	      {
+		scalarComm_->barrier();
+		if (myRank == 0)
+		  err_ << "-- Finished DistTsqr::factor" << endl;
+	      }
+	    // Compute the explicit Q factor
+	    par.explicit_Q (numCols, Q_local.get(), Q_local.lda(), factorOutput);
+	    if (debug_)
+	      {
+		scalarComm_->barrier();
+		if (myRank == 0)
+		  err_ << "-- Finished DistTsqr::explicit_Q" << endl;
+	      }
 	  }
 
 	// Verify the factorization
