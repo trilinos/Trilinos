@@ -58,7 +58,7 @@ namespace TSQR {
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
     typedef MatView< ordinal_type, scalar_type > matview_type;
-    typedef std::vector< std::vector< Scalar > > VecVec;
+    typedef std::vector< std::vector< scalar_type > > VecVec;
     typedef std::pair< VecVec, VecVec > FactorOutput;
     typedef int rank_type;
 
@@ -66,7 +66,7 @@ namespace TSQR {
     ///
     /// \param messenger [in/out] Wrapper of communication operations
     ///   between MPI processes.
-    DistTsqr (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) :
+    DistTsqr (const Teuchos::RCP< MessengerBase< scalar_type > >& messenger) :
       messenger_ (messenger),
       reduceBroadcastImpl_ (messenger)
     {}
@@ -88,7 +88,7 @@ namespace TSQR {
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      typedef Combine< LocalOrdinal, Scalar > combine_type;
+      typedef Combine< ordinal_type, scalar_type > combine_type;
       return combine_type::QR_produces_R_factor_with_nonnegative_diagonal() &&
 	reduceBroadcastImpl_.QR_produces_R_factor_with_nonnegative_diagonal();
     }
@@ -113,7 +113,7 @@ namespace TSQR {
     ///   with zeros, and call intranode TSQR's apply() on it, to get
     ///   the final explicit Q factor.)
     void
-    factorExplicit (matview_type& R_mine, matview_type& Q_mine)
+    factorExplicit (matview_type R_mine, matview_type Q_mine)
     {
       reduceBroadcastImpl_.factorExplicit (R_mine, Q_mine);
     }
@@ -145,16 +145,16 @@ namespace TSQR {
     factor (matview_type R_mine)
     {
       VecVec Q_factors, tau_arrays;
-      DistTsqrHelper< LocalOrdinal, Scalar > helper;
-      const LocalOrdinal ncols = R_mine.ncols();
+      DistTsqrHelper< ordinal_type, scalar_type > helper;
+      const ordinal_type ncols = R_mine.ncols();
 
-      std::vector< Scalar > R_local (ncols*ncols);
+      std::vector< scalar_type > R_local (ncols*ncols);
       copy_matrix (ncols, ncols, &R_local[0], ncols, R_mine.get(), R_mine.lda());
 
       const int P = messenger_->size();
       const int my_rank = messenger_->rank();
       const int first_tag = 0;
-      std::vector< Scalar > work (ncols);
+      std::vector< scalar_type > work (ncols);
       helper.factor_helper (ncols, R_local, my_rank, 0, P-1, first_tag, 
 			    messenger_.get(), Q_factors, tau_arrays, work);
       copy_matrix (ncols, ncols, R_mine.get(), R_mine.lda(), &R_local[0], ncols);
@@ -163,10 +163,10 @@ namespace TSQR {
 
     void
     apply (const ApplyType& apply_type,
-	   const LocalOrdinal ncols_C,
-	   const LocalOrdinal ncols_Q,
-	   Scalar C_mine[],
-	   const LocalOrdinal ldc_mine,
+	   const ordinal_type ncols_C,
+	   const ordinal_type ncols_Q,
+	   scalar_type C_mine[],
+	   const ordinal_type ldc_mine,
 	   const FactorOutput& factor_output)
     {
       const bool transposed = apply_type.transposed();
@@ -178,8 +178,8 @@ namespace TSQR {
       const int P = messenger_->size();
       const int my_rank = messenger_->rank();
       const int first_tag = 0;
-      std::vector< Scalar > C_other (ncols_C * ncols_C);
-      std::vector< Scalar > work (ncols_C);
+      std::vector< scalar_type > C_other (ncols_C * ncols_C);
+      std::vector< scalar_type > work (ncols_C);
   
       const VecVec& Q_factors = factor_output.first;
       const VecVec& tau_arrays = factor_output.second;
@@ -194,16 +194,16 @@ namespace TSQR {
     }
 
     void
-    explicit_Q (const LocalOrdinal ncols_Q,
-		Scalar Q_mine[],
-		const LocalOrdinal ldq_mine,
+    explicit_Q (const ordinal_type ncols_Q,
+		scalar_type Q_mine[],
+		const ordinal_type ldq_mine,
 		const FactorOutput& factor_output)
     {
       const int my_rank = messenger_->rank ();
       fill_matrix (ncols_Q, ncols_Q, Q_mine, ldq_mine, Scalar(0));
       if (my_rank == 0)
 	{
-	  for (LocalOrdinal j = 0; j < ncols_Q; ++j)
+	  for (ordinal_type j = 0; j < ncols_Q; ++j)
 	    Q_mine[j + j*ldq_mine] = Scalar (1);
 	}
       apply (ApplyType::NoTranspose, ncols_Q, ncols_Q, 
@@ -211,8 +211,8 @@ namespace TSQR {
     }
 
   private:
-    Teuchos::RCP< MessengerBase< Scalar > > messenger_;
-    DistTsqrRB< LocalOrdinal, Scalar > reduceBroadcastImpl_;
+    Teuchos::RCP< MessengerBase< scalar_type > > messenger_;
+    DistTsqrRB< ordinal_type, scalar_type > reduceBroadcastImpl_;
   };
 
 } // namespace TSQR

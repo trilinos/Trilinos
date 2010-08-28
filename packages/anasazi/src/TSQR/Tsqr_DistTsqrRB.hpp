@@ -29,24 +29,24 @@ namespace TSQR {
   public:
     typedef LocalOrdinal ordinal_type;
     typedef Scalar scalar_type;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
-    typedef MatView< LocalOrdinal, Scalar > matview_type;
-    typedef Matrix< LocalOrdinal, Scalar > matrix_type;
+    typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
+    typedef MatView< ordinal_type, scalar_type > matview_type;
+    typedef Matrix< ordinal_type, scalar_type > matrix_type;
     typedef int rank_type;
-    typedef Combine< LocalOrdinal, Scalar > combine_type;
+    typedef Combine< ordinal_type, scalar_type > combine_type;
 
     /// Constructor
     ///
     /// \param messenger [in/out] Smart pointer to a wrapper handling
     /// communication between MPI process(es).
-    DistTsqrRB (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) :
+    DistTsqrRB (const Teuchos::RCP< MessengerBase< scalar_type > >& messenger) :
       messenger_ (messenger)
     {}
 
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      return Combine< LocalOrdinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal();
+      return combine_type::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     /// \brief Internode TSQR with explicit Q factor
@@ -64,8 +64,9 @@ namespace TSQR {
     ///   block of this process' entire Q factor, fill the rest of Q
     ///   with zeros, and call intranode TSQR's apply() on it, to get
     ///   the final explicit Q factor.)
+    ///
     void
-    factorExplicit (matview_type& R_mine, matview_type& Q_mine)
+    factorExplicit (matview_type R_mine, matview_type Q_mine)
     {
       // Dimension sanity checks.  R_mine should have at least as many
       // rows as columns (since we will be working on the upper
@@ -148,7 +149,7 @@ namespace TSQR {
   private:
 
     void
-    factorReduce (matview_type& R_mine,
+    factorReduce (matview_type R_mine,
 		  const rank_type P_mine, 
 		  const rank_type P_first,
 		  const rank_type P_last,
@@ -202,13 +203,13 @@ namespace TSQR {
 	    {
 	      const ordinal_type numCols = R_mine.ncols();
 	      matrix_type R_other (numCols, numCols);
-	      recv_R (R_other.view(), P_mid);
+	      recv_R (R_other, P_mid);
 
 	      std::vector< scalar_type > tau (numCols);
 	      // Don't shrink the workspace array; doing so may
 	      // require expensive reallocation every time we send /
 	      // receive data.
-	      work_.resize (std::max (work_.size(), numCols));
+	      resizeWork (numCols);
 	      combine_.factor_pair (numCols, R_mine.get(), R_mine.lda(), 
 				    R_other.get(), R_other.lda(), 
 				    &tau[0], &work_[0]);
@@ -221,9 +222,9 @@ namespace TSQR {
     }
 
     void
-    explicitQBroadcast (matview_type& R_mine,
-			matview_type& Q_mine,
-			matview_type& Q_other, // workspace
+    explicitQBroadcast (matview_type R_mine,
+			matview_type Q_mine,
+			matview_type Q_other, // workspace
 			const rank_type P_mine, 
 			const rank_type P_first,
 			const rank_type P_last,
@@ -253,7 +254,7 @@ namespace TSQR {
 	{
 	  // Adding 1 and integer division works like "ceiling."
 	  const rank_type P_mid = (P_first + P_last + 1) / 2;
-
+	  rank_type newpos = curpos;
 	  if (P_mine == P_first)
 	    {
 	      if (curpos < 0)
@@ -280,25 +281,29 @@ namespace TSQR {
 				   Q_other.get(), Q_other.lda(), &work_[0]);
 	      // Send the resulting Q_other, and the final R factor, to P_mid.
 	      send_Q_R (Q_other, R_mine, P_mid);
+	      newpos = curpos - 1;
 	    }
 	  else if (P_mine == P_mid)
 	    // P_first computed my explicit Q factor component.
 	    // Receive it, and the final R factor, from P_first.
-	    receive_Q_R (Q_mine, R_mine, P_first);
+	    recv_Q_R (Q_mine, R_mine, P_first);
 
 	  if (P_mine < P_mid) // Interval [P_first, P_mid-1]
 	    explicitQBroadcast (R_mine, Q_mine, Q_other, 
 				P_mine, P_first, P_mid - 1,
-				curpos - 1, QFactors, tauArrays);
+				newpos, QFactors, tauArrays);
 	  else // Interval [P_mid, P_last]
 	    explicitQBroadcast (R_mine, Q_mine, Q_other, 
 				P_mine, P_mid, P_last,
-				curpos - 1, QFactors, tauArrays);
+				newpos, QFactors, tauArrays);
 	}
     }
 
+    template< class ConstMatrixType1, class ConstMatrixType2 >
     void
-    send_C_R (const matview_type& Q, const matview_type& R, const rank_type destProc) 
+    send_Q_R (const ConstMatrixType1& Q,
+	      const ConstMatrixType2& R,
+	      const rank_type destProc) 
     {
       const ordinal_type R_numCols = R.ncols();
       const ordinal_type Q_size = Q.nrows() * Q.ncols();
@@ -308,7 +313,7 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      work_.resize (std::max (work_.size(), numElts));
+      resizeWork (numElts);
 
       // Pack the Q data into the workspace array.
       matview_type Q_contig (Q.nrows(), Q.ncols(), &work_[0], Q.nrows());
@@ -318,8 +323,11 @@ namespace TSQR {
       messenger_->send (&work_[0], numElts, destProc, 0);
     }
 
+    template< class MatrixType1, class MatrixType2 >
     void
-    recv_Q_R (matview_type& Q, matview_type& R, const rank_type srcProc)
+    recv_Q_R (MatrixType1& Q, 
+	      MatrixType2& R, 
+	      const rank_type srcProc)
     {
       const ordinal_type R_numCols = R.ncols();
       const ordinal_type Q_size = Q.nrows() * Q.ncols();
@@ -329,7 +337,7 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      work_.resize (std::max (work_.size(), numElts));
+      resizeWork (numElts);
       messenger_->recv (&work_[0], numElts, srcProc, 0);
 
       // Unpack the C data from the workspace array.
@@ -338,8 +346,9 @@ namespace TSQR {
       unpack_R (R, &work_[Q_size]);
     }
 
+    template< class ConstMatrixType >
     void
-    send_R (const matrix_type& R, const rank_type destProc)
+    send_R (const ConstMatrixType& R, const rank_type destProc)
     {
       const ordinal_type numCols = R.ncols();
       const ordinal_type numElts = (numCols * (numCols+1)) / 2;
@@ -347,14 +356,15 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      work_.resize (std::max (work_.size(), numElts));
+      resizeWork (numElts);
       // Pack the R data into the workspace array.
       pack_R (R, &work_[0]);
       messenger_->send (&work_[0], numElts, destProc, 0);
     }
 
+    template< class MatrixType >
     void
-    recv_R (matrix_type& R, const rank_type srcProc)
+    recv_R (MatrixType& R, const rank_type srcProc)
     {
       const ordinal_type numCols = R.ncols();
       const ordinal_type numElts = (numCols * (numCols+1)) / 2;
@@ -362,34 +372,43 @@ namespace TSQR {
       // Don't shrink the workspace array; doing so would still be
       // correct, but may require reallocation of data when it needs
       // to grow again.
-      work_.resize (std::max (work_.size(), numElts));
+      resizeWork (numElts);
       messenger_->recv (&work_[0], numElts, srcProc, 0);
       // Unpack the R data from the workspace array.
       unpack_R (R, &work_[0]);
     }
 
+    template< class MatrixType >
     static void 
-    unpack_R (matrix_type& R, const scalar_type buf[])
-    {
-      ordinal_type curpos = 0;
-      for (ordinal_type j = 0; j < R.ncols(); ++j)
-	{
-	  const scalar_type* const R_j = &R(0, j);
-	  for (ordinal_type i = 0; i <= j; ++i)
-	    R_j[i] = buf[curpos++];
-	}
-    }
-
-    static void 
-    pack_R (const matrix_type& R, scalar_type buf[])
+    unpack_R (MatrixType& R, const scalar_type buf[])
     {
       ordinal_type curpos = 0;
       for (ordinal_type j = 0; j < R.ncols(); ++j)
 	{
 	  scalar_type* const R_j = &R(0, j);
 	  for (ordinal_type i = 0; i <= j; ++i)
+	    R_j[i] = buf[curpos++];
+	}
+    }
+
+    template< class ConstMatrixType >
+    static void 
+    pack_R (const ConstMatrixType& R, scalar_type buf[])
+    {
+      ordinal_type curpos = 0;
+      for (ordinal_type j = 0; j < R.ncols(); ++j)
+	{
+	  const scalar_type* const R_j = &R(0, j);
+	  for (ordinal_type i = 0; i <= j; ++i)
 	    buf[curpos++] = R_j[i];
 	}
+    }
+
+    void
+    resizeWork (const ordinal_type numElts)
+    {
+      typedef typename std::vector< scalar_type >::size_type vec_size_type;
+      work_.resize (std::max (work_.size(), static_cast< vec_size_type >(numElts)));
     }
 
   private:

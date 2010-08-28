@@ -46,6 +46,24 @@
 
 namespace TSQR {
 
+  template< class MatrixViewType1, class MatrixViewType2 >
+  void
+  matrixCopy (MatrixViewType1& A, const MatrixViewType2& B)
+  {
+    const typename MatrixViewType1::ordinal_type A_nrows = A.nrows();
+    const typename MatrixViewType1::ordinal_type A_ncols = A.ncols();
+    if (A_nrows != B.nrows() || A_ncols != B.ncols())
+      throw std::invalid_argument("Dimensions of A and B are not compatible");
+
+    for (typename MatrixViewType1::ordinal_type j = 0; j < A_ncols; ++j)
+      {
+	typename MatrixViewType1::scalar_type* const A_j = &A(0,j);
+	const typename MatrixViewType2::scalar_type* const B_j = &B(0,j);
+	for (typename MatrixViewType1::ordinal_type i = 0; i < A_nrows; ++i)
+	  A_j[i] = B_j[i];
+      }
+  }
+
   template< class FirstMatrixViewType, class SecondMatrixViewType >
   bool
   matrix_equal (FirstMatrixViewType& A, SecondMatrixViewType& B)
@@ -122,6 +140,14 @@ namespace TSQR {
   };
 #endif // TSQR_MATVIEW_DEBUG
 
+
+  // Forward declaration
+  template< class Ordinal, class Scalar >
+  class ConstMatView;
+
+  // Forward declaration
+  template< class Ordinal, class Scalar >
+  class Matrix;
 
   /// \class MatView
   /// 
@@ -321,38 +347,32 @@ namespace TSQR {
     }
 
     void
-    fill (const Scalar value) {
-      const Ordinal num_rows = nrows();
-      const Ordinal num_cols = ncols();
-      const Ordinal stride = lda();
+    fill (const scalar_type& value) 
+    {
+      const ordinal_type num_rows = nrows();
+      const ordinal_type num_cols = ncols();
+      const ordinal_type stride = lda();
 
-      Scalar* A_j = get();
-      for (Ordinal j = 0; j < num_cols; ++j, A_j += stride)
-	for (Ordinal i = 0; i < num_rows; ++i)
+      scalar_type* A_j = get();
+      for (ordinal_type j = 0; j < num_cols; ++j, A_j += stride)
+	for (ordinal_type i = 0; i < num_rows; ++i)
 	  A_j[i] = value;
     }
 
     /// Deep copy (A := B)
     ///
-    /// \note Assumes that B and *this have the same dimensions, that
-    ///   their index types are compatible, etc.  See also the
-    ///   "generic copy constructor" discussion in Matrix.hpp.
-    template< class MatrixViewType >
+    /// \note Assumes that B and *this have the same dimensions
     void
-    copy (MatrixViewType& B) {
-      const ordinal_type num_rows = nrows();
-      const ordinal_type num_cols = ncols();
-      const ordinal_type A_lda = lda();
-      const typename MatrixViewType::ordinal_type B_lda = B.lda();
-
-      if (B.nrows() != num_rows || B.ncols() != num_cols)
-	throw std::invalid_argument("Dimensions of input matrix B "
-				    "are not compatible with *this");
-      scalar_type* A_j = get();
-      typename MatrixViewType::pointer_type B_j = B.get();
-      for (ordinal_type j = 0; j < num_cols; ++j, A_j += A_lda, B_j += B_lda)
-	for (ordinal_type i = 0; i < num_rows; ++i)
-	  A_j[i] = B_j[i];
+    copy (const MatView< ordinal_type, scalar_type >& B) {
+      matrixCopy (*this, B);
+    }
+    void
+    copy (const ConstMatView< ordinal_type, scalar_type >& B) {
+      matrixCopy (*this, B);
+    }
+    void
+    copy (const Matrix< ordinal_type, scalar_type >& B) {
+      matrixCopy (*this, B);
     }
 
     bool operator== (const MatView& rhs) const {

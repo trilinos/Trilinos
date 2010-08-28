@@ -276,12 +276,13 @@ namespace TSQR {
 	      }
 	    else
 	      {
-		out_ << "DistTsqr" << endl
-		     << "," << scalarTypeName_ << endl
-		     << "," << numCols << endl
-		     << "," << numProcs << endl
-		     << "," << result.first << endl
-		     << "," << result.second << endl;
+		out_ << "DistTsqr"
+		     << "," << scalarTypeName_
+		     << "," << numCols
+		     << "," << numProcs
+		     << "," << result.first
+		     << "," << result.second
+		     << endl;
 	      }
 	  }
       }

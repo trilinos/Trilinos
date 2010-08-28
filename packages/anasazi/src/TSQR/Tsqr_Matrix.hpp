@@ -226,6 +226,10 @@ namespace TSQR {
       return A_[i + j*lda()];
     }
 
+    const Scalar& operator() (const Ordinal i, const Ordinal j) const {
+      return A_[i + j*lda()];
+    }
+
     /// 1-D std::vector - style access
     Scalar& operator[] (const Ordinal i) {
       return A_[i];
