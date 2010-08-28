@@ -93,27 +93,42 @@ namespace TSQR {
 	else
 	  A_copy.copy (A_local);
 
-	// Factor the (copy of the) matrix.
-	factor_output_type factorOutput = 
-	  tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
-		       R.get(), R.lda(), contiguousCacheBlocks);
-	if (b_debug)
+	const bool testFactorExplicit = true;
+	if (testFactorExplicit)
 	  {
-	    scalarComm->barrier();
-	    if (scalarComm->rank() == 0)
-	      cerr << "-- Finished Tsqr::factor" << endl;
+	    tsqr.factorExplicit (A_copy.view(), Q_local.view(), R.view(), 
+				 contiguousCacheBlocks);
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Finished Tsqr::factorExplicit" << endl;
+	      }
 	  }
-
-	// Compute the explicit Q factor in Q_local
-	tsqr.explicit_Q (nrows_local, 
-			 ncols, A_copy.get(), A_copy.lda(), factorOutput, 
-			 ncols, Q_local.get(), Q_local.lda(), 
-			 contiguousCacheBlocks);
-	if (b_debug)
+	else
 	  {
-	    scalarComm->barrier();
-	    if (scalarComm->rank() == 0)
-	      cerr << "-- Finished Tsqr::explicit_Q" << endl;
+	    // Factor the (copy of the) matrix.
+	    factor_output_type factorOutput = 
+	      tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
+			   R.get(), R.lda(), contiguousCacheBlocks);
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Finished Tsqr::factor" << endl;
+	      }
+
+	    // Compute the explicit Q factor in Q_local
+	    tsqr.explicit_Q (nrows_local, 
+			     ncols, A_copy.get(), A_copy.lda(), factorOutput, 
+			     ncols, Q_local.get(), Q_local.lda(), 
+			     contiguousCacheBlocks);
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Finished Tsqr::explicit_Q" << endl;
+	      }
 	  }
 
 	// "Un"-cache-block the output, if contiguous cache blocks were
