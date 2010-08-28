@@ -29,7 +29,7 @@ namespace TSQR {
   public:
     typedef LocalOrdinal ordinal_type;
     typedef Scalar scalar_type;
-    typedef ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
     typedef MatView< LocalOrdinal, Scalar > matview_type;
     typedef Matrix< LocalOrdinal, Scalar > matrix_type;
     typedef int rank_type;
@@ -273,12 +273,13 @@ namespace TSQR {
 	      // where Q_other = zeros(Q_mine.nrows(), Q_mine.ncols()).
 	      // Overwrite both Q_mine and Q_other with the result.
 	      Q_other.fill (scalar_type (0));
-	      combine_.apply_pair (applyType, Q_mine.ncols(), Q_impl.ncols(),
+	      combine_.apply_pair (ApplyType::NoTranspose, 
+				   Q_mine.ncols(), Q_impl.ncols(),
 				   Q_impl.get(), Q_impl.lda(), &tau[0],
 				   Q_mine.get(), Q_mine.lda(),
 				   Q_other.get(), Q_other.lda(), &work_[0]);
 	      // Send the resulting Q_other, and the final R factor, to P_mid.
-	      send_Q_R (Q_other, R_mine, P_mid)
+	      send_Q_R (Q_other, R_mine, P_mid);
 	    }
 	  else if (P_mine == P_mid)
 	    // P_first computed my explicit Q factor component.
@@ -329,7 +330,7 @@ namespace TSQR {
       // correct, but may require reallocation of data when it needs
       // to grow again.
       work_.resize (std::max (work_.size(), numElts));
-      messenger_->recv (&work_[0], numElts, destProc, 0);
+      messenger_->recv (&work_[0], numElts, srcProc, 0);
 
       // Unpack the C data from the workspace array.
       Q.copy (matview_type (Q.nrows(), Q.ncols(), &work_[0], Q.nrows()));

@@ -29,15 +29,9 @@
 #ifndef __TSQR_Tsqr_DistTsqr_hpp
 #define __TSQR_Tsqr_DistTsqr_hpp
 
-#include <Tsqr_ApplyType.hpp>
 #include <Tsqr_DistTsqrHelper.hpp>
-#include <Tsqr_ScalarTraits.hpp>
+#include <Tsqr_DistTsqrRB.hpp>
 
-#include <Teuchos_RCP.hpp>
-
-#include <algorithm> // std::min, std::max
-#include <stdexcept>
-#include <string>
 #include <utility> // std::pair
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,6 +57,7 @@ namespace TSQR {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
+    typedef MatView< ordinal_type, scalar_type > matview_type;
     typedef std::vector< std::vector< Scalar > > VecVec;
     typedef std::pair< VecVec, VecVec > FactorOutput;
     typedef int rank_type;
@@ -147,7 +142,7 @@ namespace TSQR {
     ///   the Q factor.  They should be passed into the apply() and
     ///   explicit_Q() functions as the "factorOutput" parameter.
     FactorOutput
-    factor (MatView< LocalOrdinal, Scalar > R_mine)
+    factor (matview_type R_mine)
     {
       VecVec Q_factors, tau_arrays;
       DistTsqrHelper< LocalOrdinal, Scalar > helper;
@@ -217,7 +212,7 @@ namespace TSQR {
 
   private:
     Teuchos::RCP< MessengerBase< Scalar > > messenger_;
-    DistTsqrRB reduceBroadcastImpl_;
+    DistTsqrRB< LocalOrdinal, Scalar > reduceBroadcastImpl_;
   };
 
 } // namespace TSQR
