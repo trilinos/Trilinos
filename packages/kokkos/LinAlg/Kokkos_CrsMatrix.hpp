@@ -74,7 +74,7 @@ namespace Kokkos {
     CrsMatrixHostCompute(const CrsGraphHostCompute<Ordinal,Node,LocalMatOps> &graph);
 
     //! CrsMatrixHostCompute Destructor
-    ~CrsMatrixHostCompute();
+    virtual ~CrsMatrixHostCompute();
 
     //@}
 

@@ -65,7 +65,7 @@ namespace Kokkos {
     CrsGraphHostCompute(size_t numRows, const RCP<Node> &node);
 
     //! CrsGraphHostCompute Destructor
-    ~CrsGraphHostCompute();
+    virtual ~CrsGraphHostCompute();
 
     //@}
 
