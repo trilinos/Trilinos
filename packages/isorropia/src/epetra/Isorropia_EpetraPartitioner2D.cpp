@@ -252,57 +252,31 @@ void Partitioner2D::elemsInPart(int partition, int* elementList, int len) const
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int
-Partitioner2D::createNewMaps(Teuchos::RCP<Epetra_Map> domainMap, 
-			     Teuchos::RCP<Epetra_Map> rangeMap) 
+int Partitioner2D::createDomainAndRangeMaps(Epetra_Map *domainMap, 
+			                    Epetra_Map *rangeMap) 
 {
-  //MMW
-  std::cout << "MMW::NEED to reimplement" << std::endl;
+  std::cout << "MMW::NEED to implement" << std::endl;
 
-  /*
-  if (!alreadyComputed()) {
-    partition();
-  }
-
-  //Generate New Element List
-  int myPID = input_map_->Comm().MyPID();
-  int numMyElements = input_map_->NumMyElements();
-  std::vector<int> elementList( numMyElements );
-  input_map_->MyGlobalElements( &elementList[0] );
-
-  std::vector<int> myNewGID (numMyElements - exportsSize_);
-  std::vector<int>::iterator newElemsIter;
-  std::vector<int>::const_iterator elemsIter;
-
-  for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
-       elemsIter != properties_.end() ; elemsIter ++) 
-  {
-    if ((*elemsIter) == myPID) 
-    {
-      (*newElemsIter) = elementList[elemsIter - properties_.begin()];
-      newElemsIter ++;
-    }
-  }
-  //Add imports to end of list
-  myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
-
-  Teuchos::RCP<Epetra_Map> target_map =
-    Teuchos::rcp(new Epetra_Map(-1, myNewGID.size(), &myNewGID[0], 0, input_map_->Comm()));
-
-  return(target_map);
-
-  */
   return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int
-Partitioner2D::partitionVectors() 
+int Partitioner2D::createColumnMap(Epetra_Map *colMap) 
 {
-  //MMW
   std::cout << "MMW::NEED to implement" << std::endl;
+
+  return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int Partitioner2D::createRowMap(Epetra_Map *rowMap) 
+{
+  std::cout << "MMW::NEED to implement" << std::endl;
+
   return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////

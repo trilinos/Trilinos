@@ -115,22 +115,6 @@ public:
               bool compute_partitioning_now=true);
 
 
-  //  MMW: Missing the following constructors that are in Partitioner
-  //
-  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-  //            bool compute_partitioning_now=true);
-  //
-  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-  //            const Teuchos::ParameterList& paramlist,
-  //            bool compute_partitioning_now=true);
-  //
-  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-  //            Teuchos::RCP<const Epetra_MultiVector> weights,
-  //            const Teuchos::ParameterList& paramlist,
-  //            bool compute_partitioning_now=true);
-  
-
-
 
   /** Destructor */
   virtual ~Partitioner2D();
@@ -166,22 +150,15 @@ public:
   void elemsInPart(int part, int* elementList, int len) const;
 
 
-  /** Create a new @c Epetra_Map corresponding to the new partition.
+  // Should add RCP versions of the below
 
-      This method is essentially used by the
-      Isorropia::Epetra::Redistributor object.
+  int createDomainAndRangeMaps(Epetra_Map *domainMap, 
+		               Epetra_Map *rangeMap);
 
-      \return @c Epetra_Map that contains the new distribution of elements.
+  // perhaps pass parameter lists to these?
+  int createColumnMap(Epetra_Map* colMap); 
+  int createRowMap(Epetra_Map* rowMap); 
 
-      \pre The number of parts might be the same or lower than the
-      number of processors.
-  */
-  Teuchos::RCP<Epetra_Map> createNewMap();
-
-  int createNewMaps(Teuchos::RCP<Epetra_Map> domainMap, 
-		    Teuchos::RCP<Epetra_Map> rangeMap);
-
-  int partitionVectors();
 
 
 
