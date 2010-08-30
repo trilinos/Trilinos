@@ -7,31 +7,34 @@
 
 namespace Kokkos {
 
-class SerialNode : public StandardNodeMemoryModel {
-  public:
-    SerialNode(Teuchos::ParameterList &pl) {}
-
-    template <class WDP>
-    static void parallel_for(int beg, int end, WDP wd) {
-      for (int i=beg; i != end; ++i) {
-        wd.execute(i);
+  /** \brief %Kokkos node interface for a serial, CPU node.
+      \ingroup kokkos_node_api
+   */
+  class SerialNode : public StandardNodeMemoryModel {
+    public:
+      SerialNode(Teuchos::ParameterList &pl) {}
+  
+      template <class WDP>
+      static void parallel_for(int beg, int end, WDP wd) {
+        for (int i=beg; i != end; ++i) {
+          wd.execute(i);
+        }
       }
-    }
-
-    template <class WDP>
-    static typename WDP::ReductionType
-    parallel_reduce(int begin, int end, WDP wd) {
-      typename WDP::ReductionType result = wd.identity();
-      for (int i=begin; i != end; ++i) {
-        result = wd.reduce( result, wd.generate(i) );
+  
+      template <class WDP>
+      static typename WDP::ReductionType
+      parallel_reduce(int begin, int end, WDP wd) {
+        typename WDP::ReductionType result = wd.identity();
+        for (int i=begin; i != end; ++i) {
+          result = wd.reduce( result, wd.generate(i) );
+        }
+        return result;
       }
-      return result;
-    }
+  
+  };
+  
+  template <> class ArrayOfViewsHelper<SerialNode> : public ArrayOfViewsHelperTrivialImpl<SerialNode> {};
 
-};
-
-template <> class ArrayOfViewsHelper<SerialNode> : public ArrayOfViewsHelperTrivialImpl<SerialNode> {};
-
-}
+} // end of Kokkos namespace
 
 #endif

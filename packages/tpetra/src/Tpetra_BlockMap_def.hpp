@@ -30,8 +30,6 @@
 #define TPETRA_BLOCKMAP_DEF_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_CommHelpers.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
 #include "Tpetra_BlockMap_decl.hpp"

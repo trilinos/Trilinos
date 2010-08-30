@@ -166,6 +166,8 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
 
   bool ReplaceValues = (L_->isStaticGraph() || L_->isLocallyIndexed()); // Check if values should be inserted or replaced
 
+  L_->resumeFill();
+  U_->resumeFill();
   if (ReplaceValues) {
     L_->setAllToScalar(0.0); // Zero out L and U matrices
     U_->setAllToScalar(0.0);
@@ -173,7 +175,6 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
 
   D_->putScalar(0.0); // Set diagonal values to zero
   Teuchos::ArrayRCP<Scalar> DV = D_->get1dViewNonConst(); // Get view of diagonal
-    
 
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap =
     L_->getRowMap();
@@ -244,14 +245,12 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
 
   }
 
-  if (!ReplaceValues) {
-    // The domain of L and the range of U are exactly their own row maps (there is no communication).
-    // The domain of U and the range of L must be the same as those of the original matrix,
-    // However if the original matrix is a VbrMatrix, these two latter maps are translation from
-    // a block map to a point map.
-    L_->fillComplete(L_->getColMap(), A_->getRangeMap());
-    U_->fillComplete(A_->getDomainMap(), U_->getRowMap());
-  }
+  // The domain of L and the range of U are exactly their own row maps (there is no communication).
+  // The domain of U and the range of L must be the same as those of the original matrix,
+  // However if the original matrix is a VbrMatrix, these two latter maps are translation from
+  // a block map to a point map.
+  L_->fillComplete(L_->getColMap(), A_->getRangeMap());
+  U_->fillComplete(A_->getDomainMap(), U_->getRowMap());
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D
 
@@ -270,6 +269,9 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
 //==========================================================================
 template<class MatrixType>
 void RILUK<MatrixType>::compute() {
+
+  L_->resumeFill();
+  U_->resumeFill();
 
   TEST_FOR_EXCEPTION(!isInitialized(), std::runtime_error,
       "Tifpack::RILUK::compute() ERROR: isInitialized() must be true.");
@@ -377,6 +379,9 @@ void RILUK<MatrixType>::compute() {
     // Reset column flags
     for (size_t j=0; j<NumIn; j++) colflag[InI[j]] = -1;
   }
+
+  L_->fillComplete(L_->getColMap(), A_->getRangeMap());
+  U_->fillComplete(A_->getDomainMap(), U_->getRowMap());
 
   // Validate that the L and U factors are actually lower and upper triangular
 

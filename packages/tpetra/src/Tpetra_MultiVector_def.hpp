@@ -33,11 +33,6 @@
 
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_as.hpp>
-#include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_Ptr.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 
 #include "Tpetra_Vector.hpp"
 

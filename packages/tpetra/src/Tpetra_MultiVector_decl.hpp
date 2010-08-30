@@ -30,9 +30,6 @@
 #define TPETRA_MULTIVECTOR_DECL_HPP
 
 #include <Teuchos_LabeledObject.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
 #include <Teuchos_BLAS_types.hpp>
 #include <Teuchos_Range1D.hpp>
@@ -95,15 +92,23 @@ namespace Tpetra {
     //@{ 
 
     //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
+    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
+      */
     void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value);
 
     //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
+    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
+      */
     void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value);
 
     //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
+    /** \pre \c localRow must be a valid local element on this node, according to the row map.
+      */
     void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value);
 
     //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
+    /** \pre \c localRow must be a valid local element on this node, according to the row map.
+      */
     void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value);
 
     //! Initialize all values in a multi-vector with specified value.

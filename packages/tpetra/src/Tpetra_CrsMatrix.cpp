@@ -16,6 +16,7 @@
 #endif
 
 #include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_CrsGraph_def.hpp"
 
 namespace Tpetra {
 

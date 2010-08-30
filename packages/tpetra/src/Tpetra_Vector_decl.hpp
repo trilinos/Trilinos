@@ -69,15 +69,23 @@ namespace Tpetra {
     //@{ 
 
     //! Replace current value at the specified location with specified value.
+    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
+      */
     void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value);
 
     //! Adds specified value to existing value at the specified location.
+    /** \pre \c globalRow must be a valid global element on this node, according to the row map.
+      */
     void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value);
 
     //! Replace current value at the specified location with specified values.
+    /** \pre \c localRow must be a valid local element on this node, according to the row map.
+      */
     void replaceLocalValue(LocalOrdinal myRow, const Scalar &value);
 
     //! Adds specified value to existing value at the specified location.
+    /** \pre \c localRow must be a valid local element on this node, according to the row map.
+      */
     void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value);
 
     //@}

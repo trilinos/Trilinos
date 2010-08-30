@@ -146,7 +146,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1  1    2  2 ]
     // [ 1  1    2  2 ]
@@ -243,7 +242,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1   1  2  2 ]
     // 
@@ -341,7 +339,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1  2    2  3 ]
     // [ 1  1    2  2 ]
@@ -439,7 +436,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1    2  2  3 ]
     //
@@ -537,7 +533,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x3 block matrix:
     // [ 1    2  2  3   4 ]
     //
@@ -640,7 +635,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 0  1    2  2 ]
     // [ 0  0    2  2 ]
@@ -715,7 +709,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1  1    2  2 ]
     // [ 0  1    2  2 ]
@@ -790,7 +783,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1  1    2  2 ]
     // [ 0  2    2  2 ]
@@ -865,7 +857,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1  1    2  2 ]
     // [ 0  2    2  2 ]
@@ -940,7 +931,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 0  0         ]
     // [ 1  0         ]
@@ -1015,7 +1005,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1  0         ]
     // [ 1  1         ]
@@ -1090,7 +1079,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1  0         ]
     // [ 1  2         ]
@@ -1165,7 +1153,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
     typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
     // generate small 2x2 block matrix:
     // [ 1  0         ]
     // [ 1  2         ]

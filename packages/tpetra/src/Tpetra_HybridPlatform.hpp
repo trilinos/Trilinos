@@ -30,10 +30,7 @@
 #define TPETRA_HYBRIDPLATFORM_HPP
 
 #include <Teuchos_Describable.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
-#include <Teuchos_Comm.hpp> 
-#include <Teuchos_TypeNameTraits.hpp>
 #include <string>
 #include <cstdio> // for std::sscanf
 

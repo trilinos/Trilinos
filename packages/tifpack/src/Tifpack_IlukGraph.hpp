@@ -270,6 +270,8 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
     Teuchos::RCP<const TpetraMapType> U_RangeMap = OverlapGraph_->getRowMap();
     L_Graph_->fillComplete(L_DomainMap, L_RangeMap, Tpetra::DoNotOptimizeStorage);
     U_Graph_->fillComplete(U_DomainMap, U_RangeMap, Tpetra::DoNotOptimizeStorage);
+    L_Graph_->resumeFill();
+    U_Graph_->resumeFill();
     
     // At this point L_Graph and U_Graph are filled with the pattern of input graph, 
     // sorted and have redundant indices (if any) removed.  Indices are zero based.

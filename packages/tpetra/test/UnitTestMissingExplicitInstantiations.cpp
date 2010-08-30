@@ -10,6 +10,7 @@
 #include "Tpetra_MultiVector_def.hpp"
 #include "Tpetra_Vector_def.hpp"
 #include "Tpetra_CrsMatrix_def.hpp"
+#include "Tpetra_CrsGraph_def.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
 #include "Tpetra_CrsMatrixSolveOp_def.hpp"
 // nodes

@@ -31,9 +31,6 @@
 #ifndef TPETRA_MAP_DEF_HPP
 #define TPETRA_MAP_DEF_HPP
 
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
 #include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Util.hpp"

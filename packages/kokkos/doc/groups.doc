@@ -1,0 +1,306 @@
+/*! \namespace Kokkos
+ *  \brief Namespace %Kokkos contains the nodes, helpers, linear algebra objects and kernels that constitute the %Kokkos package.
+ */
+
+/*! @defgroup kokkos_cuda_support Kokkos CUDA Support
+
+    %Kokkos provides support for NVIDIA graphics processing units (GPUs) via
+    %the <a href="http://www.nvidia.com/object/cuda_home_new.html">NVIDIA CUDA
+    %platform</a> and the <a href="http://code.google.com/p/thrust/">Thrust</a> CUDA library. Therefore, to utilize a GPU 
+    in %Kokkos, you will need the following:
+    - a CUDA-capable GPU. See <a href="http://www.nvidia.com/object/cuda_gpus.html">this page</a>.
+    - the CUDA developer environment, available <a href="http://developer.nvidia.com/object/cuda_downloads.html">here</a>. %Kokkos is currently tested against CUDA 3.1.
+    - the Thrust library, available <a href="http://code.google.com/p/thrust/downloads/list">here</a>. %Kokkos is currently tested against Thrust 1.2.1.
+
+    CUDA and Thrust are registered third-party libraries (TPLs) which need to be activated in the Trilinos build. The relevant CMake build options are:
+    - TPL_ENABLE_CUDA:BOOL=ON
+    - TPL_ENABLE_Thrust:BOOL=ON
+    - Thrust_INCLUDE_DIRS=/path/above/thrust/directory
+    .
+    At this point, the Trilinos build system should look for the NVIDIA CUDA compiler and libraries in the default paths, depending on your system.
+
+    After this, the main thing that needs to be done is to specify the use of the ThrustGPUNode type in your Kokkos (and Tpetra, etc.) objects.
+*/
+
+/*! @defgroup kokkos_node_api Kokkos Node API
+
+  \section kokkos_node_api_intro Introduction to the Node API
+
+  The %Kokkos Node API is intended to provide a generic interface for programming shared-memory parallel nodes. Generic programming 
+  of an arbitrary shared-memory node is difficult for a number of reasons, particularly: 
+  - the fact that the shared-memory node may employ a memory pool distinct from that of the host thread (for example, on some GPU-based platforms); and
+  - the need to program to a particular node-specific API for parallel execution of user kernels.
+
+  Along these lines, the %Kokkos Node API is broken into two orthogonal components:
+  - The Node API Memory Model<br>
+    This describes the methods necessary for allocating and using memory on a shared-memory node, including
+    - allocation and deallocation of parallel memory segments
+    - copying data to/from (potentially distinct) parallel memory segments
+    - efficiently extracting read-only and modifiable views to parallel memory segments
+    - preparing parallel memory for execution
+  - The Node API Compute Model<br>
+    This descries the interface for executing parallel kernels on a shared-memory node.
+
+  
+  \section kokkos_node_api_memory_model Node API Memory Model
+
+   The following describes the methods on a node object required to support the node API memory model, for some sample node \c SomeNode:
+   \code
+   class SomeNode {
+   public:
+     // isHostNode == true indicates that memory allocated by the node may be safely accessed on the host thread
+     static const bool isHostNode = ...
+
+     // Allocate a segment of memory for use in parallel kernels (a <i><b>parallel compute buffer</b></i>)
+     template <class T>
+     ArrayRCP<T> allocBuffer(size_t size)
+
+     // Copy data to the host from a parallel compute buffer.
+     template <class T>
+     void copyFromBuffer(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayView<T> &hostDest)
+
+     // Copy data from the host to a parallel compute buffer.
+     template <class T>
+     void copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest)
+
+     // Copy data from one parallel compute buffer to another.
+     template <class T>
+     void copyBuffers(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayRCP<T> &buffDest)
+
+     // Return a read-only view of a parallel compute buffer for use on the host thread.
+     template <class T>
+     ArrayRCP<const T> viewBuffer(size_t size, ArrayRCP<const T> buff)
+
+     // Return a modifiable view of a parallel compute compute for use on the host thread.
+     template <class T>
+     ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff)
+
+     // Prepare a set of parallel compute buffers for use in a parallel kernel.
+     void readyBuffers(ArrayView<ArrayRCP<const char> > buffers, ArrayView<ArrayRCP<char> > ncBuffers)
+   };
+   \endcode
+
+   The distinction made between views and copies is significant. On a GPU-based
+   parallel platform, parallel compute buffers may not be accessible from the
+   host thread. However, on a CPU-based platform, they are. It is preferably to
+   devise an access model which enables generic code to run on the GPU
+   platform, without incurring unnecessary memory costs on the CPU platform. By
+   requiring the user to explicitly distinguish between a copy to/from parallel
+   memory and some artibtrary host access of the parallel memory, we allow
+   optimal efficiency in either case. Furthermore, by providing the
+   compile-time <tt>Node::isHostNode</tt> flag for each \c Node class, we allow
+   the users to forgoe generic code in the cases where greater efficiency can
+   be achieved otherwise.
+  
+   The \c readyBuffers method is technically required to be called for a set of
+   buffers before their use in a parallel kernel. However, the current node
+   implementations in %Kokkos only perform debugging in this method, and
+   therefore neglecting to call this method (especially in a non-debug mode)
+   does not effect the correctness of the code. Future node implementations,
+   however, may require that this method is called (for example, a device-based
+   node which swaps out parallel buffers due to limited memory.) The class
+   ReadyBufferHelper assists in calling this method.
+
+   For example, consider the sample code below, templated on the generic node \c SomeNode:
+   \code
+   template <class SomeNode>
+   void initializeNodeMemory(RCP<SomeNode> node)
+   {
+     // alloc a buffer of ten integers "on the node"
+     ArrayRCP<int> buffA  = node->allocBuffer<int>( 10 );
+
+     // get a view to the allocated buffer, that we can access on the host
+     // * on a CPU node, this will result in viewA == buffA
+     // * on a GPU node, this is not the case; however, the WriteOnly flag will 
+     //   not initiate a copy to the host; the initial contents of viewA are undefined.
+     ArrayRCP<int> viewA = node->viewBufferNonConst<int>( Kokkos::WriteOnly, 10, buffA );
+     for (int i=0; i < 10; ++i) {
+       viewA[i] = someFunction(i); // initialize the view on the host
+     }
+     // free the view. the changes to the view are realized in the buffer only after all references 
+     // to the view have been freed and its deallocator has been called.
+     // the contents of buffA are undefined while the view is active.
+     viewA = Teuchos::null; 
+     // at this point, the entries of buffA are initialized as follows:
+     //   buffA[i] = someFunction(i)
+     
+     // allocate another buffer
+     ArrayRCP<int> buffB = node->allocBuffer<int>( 3 );
+     // copy the last three entries of buffA into buffB
+     // after this is finished, buffB[i] = buffA[7+i], for i=0:2
+     node->copyBuffers<int>( 3, buffA+7, buffB );
+
+     // get a view of buffB, verify that its entries were properly set
+     // this view is const and cannot change buffB. the availability of buffB
+     // for computation is not affected by the existence of viewB.
+     // * on a GPU-based node, this requires a copy of these entries to the host
+     // * on a CPU-based node, there is no copy, and viewB == buffB == buffA+7 (except that the first of these is const)
+     ArrayRCP<const int> viewB = node->viewBuffer<int>( 3, buffB );
+     for (int i=0; i<3; ++i) {
+       assert( viewB[i] == someFunction(i+7) );
+     }
+     // free the view. there were no changes, so even for a device platform with distinct
+     // memory, there will be no copy back to device memory.
+     viewB = Teuchos::null;
+   }
+   \endcode
+   
+   For a host-based compute node (i.e., one where <tt>SomeNode::isHostNode == true</tt>), the above code will:
+   -# allocate ten integers (buffA) and initialize them
+   -# allocate three integers (buffB)
+   -# copy the last three of buffA to buffB
+   -# verify the contents of buffB
+
+   However, on a device-based compute node with distinct memory (like many GPU platforms), the above code will:
+   -# allocated ten integers (buffA) on the device
+   -# allocated ten integers (viewA) on the host and initialize them
+   -# copy these from the host (viewA) to the device (buffA) and free the host allocation (viewA)
+   -# allocate three integers on the device (buffB)
+   -# copy three integers from the device to the device (buffA to buffB)
+   -# allocate three integers on the host (viewB) 
+   -# copy three integers from the device (buffB) to the host (viewB)
+   -# verify the contents of viewB
+   -# release the host allocation (viewB)
+
+   The distinction between these is entirely due to the specific implementation of the methods of the specific node class.
+
+  \section kokkos_node_api_compute_model Node API Compute Model
+
+  The Node API compute model specifies the parallel primitives available for a
+  generic %Kokkos node, as well as the interface by which user kernels are
+  submitted for execution. Currently, the compute model specifies two parallel primitive:
+  - parallel_for: execute a parallel for loop with a user-specified loop body
+  - parallel_reduce: execute a parallel reduction of user-specified elements, using a user-specified reduction operation
+
+  Below is the interface for these methods, for some sample node \c SomeNode:
+  \code 
+  class SomeNode {
+  public:
+    template <class ForLoopBody>
+    void 
+    parallel_for(int begin, int end, ForLoopBody body);
+
+    template <class ReductionKernel>
+    typename ReductionKernel::ReductionType 
+    parallel_reduce(int begin, int end, ReductionKernel rd);
+  };
+  \endcode
+
+  \subsection kokkos_node_api_parallel_for Parallel For
+
+  The \c ForLoopBody object is required to provide the following:
+  \code
+  class ForLoopBody {
+  public:
+    KERNEL_PREFIX void execute(int iter);
+  };
+  \endcode
+  This method executes iteration number \c iter of the for loop. Optionally
+  (and typically), the data members of the class will contain the data
+  necessary to execute the for loop.
+
+  The KERNEL_PREFIX macro is required to be inserted before all methods that
+  are called by a parallel kernel. This is typically an empty macro, but it may
+  contain helpful or necessary function specifiers on some platforms (for example, on CUDA platforms, 
+  it resolves to "__global__ __device__").
+
+  This class is combine with the \c parallel_for method as follows:
+  \code
+  ForLoopBody body(...);
+  SomeNode<ForLoopBody>( beg, end, body );
+  \endcode
+  The semantics of this call imply that:
+  - <tt>body::execute(iter)</tt> will be called exactly \f$(end - beg)\f$ times, with values of \f$iter \in [beg,end)\f$.
+  - The calls to \c execute may occur in parallel and in any order.
+
+  \subsection kokkos_node_api_parallel_reduce Parallel Reduce
+
+  The \c ReductionKernel object is a little larger, requiring to provide the
+  following, in addtion to any user-specified data member necessary to
+  implement the reduction:
+  \code
+  class ReductionKernel {
+  public:
+    typedef ... ReductionType;
+    KERNEL_PREFIX ReductionType identity() const;
+    KERNEL_PREFIX ReductionType generate(int element);
+    KERNEL_PREFIX ReductionType reduce(ReductionType a, ReductionType b) const;
+  };
+  \endcode
+
+  This class is combined with the \c parallel_reduce method as follows:
+  \code
+  ReductionKernel kern(...);
+  ReductionKernel::ReductionType result = SomeNode<ReductionKernel>( beg, end, kern );
+  \endcode
+  The semantics of this call imply that:
+  - <tt>kern::generate(elem)</tt> is called exactly \f$(end - beg)\f$ times, with the values of \f$elem \in [beg,end)\f$. This permits the method to effect predicatble side-effects.
+  - \c identity and \c reduce are required to satisfy <tt>reduce( a, identity() ) == reduce( identity(), a ) == a</tt>, for any <tt>ReductionType a</tt>
+  - The product \c result is the reduction of the entries generated by \c generate, up to any finite-precision effects inherent in \c reduce.
+
+  \section kokkos_node_api_simple_example Simple Node API Example
+  
+  The following example illustrates the parallel initialization of a vector and a reduction of its data. This example is located at kokkos/NodeAPI/examples/SimpleNodeExample.cpp.
+
+  \include SimpleNodeExample.cpp
+
+  This example makes use of the kernels and methods from the following code, located at kokkos/NodeAPI/examples/Kokkos_NodeExampleKernels.hpp
+
+  \include Kokkos_NodeExampleKernels.hpp
+
+*/
+
+/*! @defgroup kokkos_crs_ops Kokkos Compresssed-Row Sparse API
+
+  In order to facilitate the substitution of sparse matrix kernels in classes
+  such as Tpetra::CrsMatrix, %Kokkos separates the data structure interface for
+  a compressed-sparse-row (CRS) matrix from the kernel for implemeneting sparse
+  matrix-vector multiplication and solves. However, the appropriate implementation 
+  of these kernels for a particular platform may dictate some of the design of the 
+  storage classes. Furthermore, for efficiency reasons, these decisions must be
+  implemented statically. The approach that Tpetra employs is to template 
+  the distributed Tpetra::CrsMatrix objects on the type of the local matrix kernels.
+  This decision permeates down to the level of the CRS objects in the %Kokkos linear 
+  algebra library.
+
+  The primary object in this discussion is the class providing the sparse
+  matrix kernels. The simplest way to modify the operation of the Tpetra
+  objects is to first create a new sparse kernels class and then to template
+  the Tpetra::CrsMatrix and Tpetra::CrsGraph objects on this kernel class.
+
+  \note It may seem strange that the Kokkos and Tpetra CRS graph objects are
+  templated on the sparse kernels class, as the graph object does not provide
+  multiplication and solve methods. However, because the sparse kernels may
+  dictate the storage, they must have some input into the design of the sparse
+  graph class, in addition to their obvious significant to the matrix class.
+
+  The following simplified code demonstrates the relationship between these objects and their typical usage:
+  \code
+    Graph<          int, SparseKernels > G;
+    Matrix< double, int, SparseKernels > M(G);
+    SparseKernels ops;
+    ops.submitData( M );
+    ops.multiply( x, y );
+    ops.solve( b, x );
+  \endcode
+  In this example, we instantiate a graph and a matrix. Note, the sparse kernel object \c SparseKernels is a template parameter of the 
+  \c CrsGraph and \c CrsMatrix objects. By parametrizing these classes in this way, we can effect the design of these classes according to 
+  the sparse kernels that we are interested in using, for example, by specializing these classes. After creating the sparse graph and sparse matrix objets,
+  we instantiate a \c SparseKernel object and submit the data. Finally, the sparse kernel object can be used to apply the sparse matrix mutiply and solve routines.
+
+  The sparse kernel class must obviously provide the functionality for matrix-vector multiply and matrix-vector solve. Some other functionality is required of this class as well.
+  - The sparse kernel object must have an interface by which we can specify the matrix and graph that we are applying.
+  - The templated nature of the Tpetra::CrsMatrix class requires that we have the ability to create sparse kernel objects for different scalar fields.
+
+  The code below illustrates these use cases for a sparse kernel provider, as they appear in Tpetra and other Kokkos-enabled linear algebra packages. This example is located at kokkos/LinAlg/examples/DummySparseKernelDriver.cpp.
+
+  \include DummySparseKernelDriver.cpp
+  
+  This example makes use of the sparse kernel provider stubbed in the class
+  KokkosExamples::DummySparseKernel, located in the file
+  kokkos/LinAlg/examples/Kokkos_DummySparseKernelClass.hpp. This file, along
+  with the unit test
+  kokkos/LinAlg/test/CrsMatrix/CrsMatrix_DefaultMultiply.cpp, demonstrate the
+  implementation requirements for a sparse kernel provider.
+
+*/

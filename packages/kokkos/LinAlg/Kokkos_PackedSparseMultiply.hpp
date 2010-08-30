@@ -36,32 +36,32 @@
 
 namespace Kokkos {
 
-//! Kokkos::PackedSparseMultiply: A reference class for computing sparse matrix multiplication operations.
+//! PackedSparseMultiply: A reference class for computing sparse matrix multiplication operations.
 
-/*! The Kokkos::PackedSparseMultiply provide basic functionality for computing sparse matrix times vector, or
+/*! The PackedSparseMultiply provide basic functionality for computing sparse matrix times vector, or
     sparse matrix times multivector operations.  This class is templated on the ordinal (integer) and scalar (floating
     point) types, so it can compute using any reasonable data type.
 
-  <b>Constructing Kokkos::PackedSparseMultiply objects</b>
+  <b>Constructing PackedSparseMultiply objects</b>
 
-  Constructing Kokkos::PackedSparseMultiply objects is a multi-step process.  The basic steps are as follows:
+  Constructing PackedSparseMultiply objects is a multi-step process.  The basic steps are as follows:
   <ol>
-  <li> Create Kokkos::PackedSparseMultiply instance:  The constructor takes no arguments.
-  <li> Register the structure of a Kokkos::CisMatrix object using initializeStructure(): 
+  <li> Create PackedSparseMultiply instance:  The constructor takes no arguments.
+  <li> Register the structure of a CisMatrix object using initializeStructure(): 
        We provide this method so that derived implementations can
        take advantage of multiple problems that have the same structure.  In this situation, initializeStructure() would
        be called once and then initializeValues() would be called repeatedly, amortizing the cost of setting up the structure.
        This method may be called only once.
-  <li> Register the values of a Kokkos::CisMatrix object using initializeValues(): This method is used to pass values to the
+  <li> Register the values of a CisMatrix object using initializeValues(): This method is used to pass values to the
        multiply class.  It can be called repeatedly if multiple matrices have the same structure.
   </ol>
 
   <b> Counting Floating Point Operations </b>
 
-  Each Kokkos::PackedSparseMultiply object keeps track of the number
+  Each PackedSparseMultiply object keeps track of the number
   of floating point operations performed using the specified object as the \e this argument
   to the function.  The getFlops() function returns this number as a double precision number.  Using this 
-  information, in conjunction with the Kokkos::Time class, one can get accurate  performance
+  information, in conjunction with the Time class, one can get accurate  performance
   numbers.  The resetFlops() function resets the floating point counter.
 
 */    
@@ -83,14 +83,14 @@ namespace Kokkos {
     //! PackedSparseMultiply Destructor
     virtual ~PackedSparseMultiply();
     //@}
-    //! @name Abstract Kokkos::CisMatrix Interface Initialization Methods
+    //! @name Abstract CisMatrix Interface Initialization Methods
 
     //@{
  
     //! Initialize structure of matrix
     /*!
-      This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
-      \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
+      This interface supports matrices that implement the CisMatrix matrix interface.
+      \param A (In)  An instance of a class that implements the CisMatrix.  All necessary information
       about the matrix can be obtained via this interface.
       \param willKeepStructure (In) This argument is unused by this implementation of the BaseSparseMultiply
              class since structure and values will be copied.
@@ -100,8 +100,8 @@ namespace Kokkos {
  
     //! Initialize values of matrix
     /*!
-      This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
-      \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
+      This interface supports matrices that implement the CisMatrix matrix interface.
+      \param A (In)  An instance of a class that implements the CisMatrix.  All necessary information
       about the matrix can be obtained via this interface.
       \param willKeepValues (In) This argument is unused by this implementation of the BaseSparseMultiply
              class since structure and values will be copied.
@@ -121,8 +121,8 @@ namespace Kokkos {
 	
     //! Returns the result of a Kokkos_PackedSparseMultiply multiplied by multiple vectors in x, results in y.
     /*! 
-      \param x (In) A Kokkos::MultiVector to multiply by.
-      \param y (Out) A Kokkos::MultiVector containing results.
+      \param x (In) A MultiVector to multiply by.
+      \param y (Out) A MultiVector containing results.
       \param transA (In) If true, multiply by the transpose of matrix, otherwise just use matrix.
       \param conjA (In) If true, multiply by the conjugate of matrix values, otherwise just use matrix values.
 		
@@ -146,7 +146,7 @@ namespace Kokkos {
     */
     virtual bool getCanUseValues() const {return(false);};
 
-    //! Returns a reference to the most recent Kokkos::CisMatrix that was passed into the \e this object.
+    //! Returns a reference to the most recent CisMatrix that was passed into the \e this object.
     virtual const CisMatrix<OrdinalType, ScalarType> & getMatrix() const {
       if (matrixForValues_==0) return(*matrixForStructure_);
       else return(*matrixForValues_);

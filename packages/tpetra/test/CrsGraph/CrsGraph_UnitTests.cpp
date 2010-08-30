@@ -249,6 +249,8 @@ namespace {
       graph.fillComplete(DoOptimizeStorage);
     }
   }
+
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, insert_remove_LIDs, LO, GO )
   {
@@ -396,14 +398,14 @@ namespace {
       OptimizeOption os  = ( (T & 2) == 2 ) ? DoOptimizeStorage : DoNotOptimizeStorage;
       GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
       Array<GO> GCopy(4); Array<LO> LCopy(4);
-      ArrayRCP<const GO> GView; 
-      ArrayRCP<const LO> LView;
+      ArrayView<const GO> GView; 
+      ArrayView<const LO> LView;
       size_t numindices;
       // at this point, there are no global or local indices, but views and copies should succeed
       trigraph.getLocalRowCopy(0,LCopy,numindices);
-      LView = trigraph.getLocalRowView(0);
+      trigraph.getLocalRowView(0,LView);
       trigraph.getGlobalRowCopy(myrowind,GCopy,numindices);
-      GView = trigraph.getGlobalRowView(myrowind);
+      trigraph.getGlobalRowView(myrowind,GView);
       // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
       for (Array_size_type j=0; j < ginds.size(); ++j) {
         trigraph.insertGlobalIndices(myrowind,ginds(j,1));
@@ -420,10 +422,10 @@ namespace {
         TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
       }
       // check for throws and no-throws/values
-      TEST_THROW( GView = trigraph.getGlobalRowView(myrowind), std::runtime_error );
+      TEST_THROW( trigraph.getGlobalRowView(myrowind,GView), std::runtime_error );
       TEST_THROW( trigraph.getLocalRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
       TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
-      TEST_NOTHROW( LView = trigraph.getLocalRowView(0) );
+      TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
       TEST_COMPARE_ARRAYS( LView, linds );
       TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
       TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
@@ -644,10 +646,10 @@ namespace {
         GRAPH ddgraph(map,toalloc,pftype);
         ddgraph.insertGlobalIndices(mymiddle, tuple<GO>(mymiddle));
         // before globalAssemble(), there should be one local entry on middle, none on the others
-        ArrayRCP<const GO> myrow_gbl;
-        myrow_gbl = ddgraph.getGlobalRowView(mymiddle-1); TEST_EQUALITY( myrow_gbl.size(), 0 );
-        myrow_gbl = ddgraph.getGlobalRowView(mymiddle  ); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
-        myrow_gbl = ddgraph.getGlobalRowView(mymiddle+1); TEST_EQUALITY( myrow_gbl.size(), 0 );
+        ArrayView<const GO> myrow_gbl;
+        ddgraph.getGlobalRowView(mymiddle-1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
+        ddgraph.getGlobalRowView(mymiddle  ,myrow_gbl); TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(mymiddle) );
+        ddgraph.getGlobalRowView(mymiddle+1,myrow_gbl); TEST_EQUALITY( myrow_gbl.size(), 0 );
         if (pftype == StaticProfile) { // no room for more, on any row
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle-1,tuple<GO>(mymiddle)), std::runtime_error );
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,tuple<GO>(mymiddle)), std::runtime_error );
@@ -655,10 +657,10 @@ namespace {
         }
         ddgraph.fillComplete(os);
         // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
-        ArrayRCP<const LO> myrow_lcl;
+        ArrayView<const LO> myrow_lcl;
         TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(0), 0 );
         TEST_EQUALITY_CONST( ddgraph.getNumEntriesInLocalRow(2), 0 );
-        myrow_lcl = ddgraph.getLocalRowView(1);
+        ddgraph.getLocalRowView(1,myrow_lcl);
         TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
         if (myrow_lcl.size() == 1) {
           TEST_EQUALITY( ddgraph.getColMap()->getGlobalElement(myrow_lcl[0]), mymiddle );
@@ -705,17 +707,19 @@ namespace {
         }
         diaggraph.insertGlobalIndices(grow, tuple<GO>(grow));
         // before globalAssemble(), there should be no local entries if numImages > 1
-        ArrayRCP<const GO> myrow_gbl = diaggraph.getGlobalRowView(myrowind);
+        ArrayView<const GO> myrow_gbl; 
+        diaggraph.getGlobalRowView(myrowind, myrow_gbl);
         TEST_EQUALITY( myrow_gbl.size(), (numImages == 1 ? 1 : 0) );
         diaggraph.globalAssemble();   // after globalAssemble(), there should be one local entry per row, corresponding to the diagonal
-        myrow_gbl = diaggraph.getGlobalRowView(myrowind);
+        diaggraph.getGlobalRowView(myrowind,myrow_gbl);
         TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(myrowind) );
         if (pftype == StaticProfile) { // no room for more
           TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)), std::runtime_error );
         }
         diaggraph.fillComplete(os);
         // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal
-        ArrayRCP<const LO> myrow_lcl = diaggraph.getLocalRowView(0);
+        ArrayView<const LO> myrow_lcl; 
+        diaggraph.getLocalRowView(0, myrow_lcl);
         TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
         if (myrow_lcl.size() == 1) {
           TEST_EQUALITY( diaggraph.getColMap()->getGlobalElement(myrow_lcl[0]), myrowind );
@@ -742,7 +746,8 @@ namespace {
         ngraph.insertGlobalIndices(grows[1],tuple<GO>(myImageID)); // add me to the graph for my neighbors
         ngraph.insertGlobalIndices(grows[2],tuple<GO>(myImageID)); // vvvvvvvvvvvvvvvvvvvvvvv
         // before globalAssemble(), there should be a single local entry on parallel runs, three on serial runs
-        ArrayRCP<const GO> myrow_gbl = ngraph.getGlobalRowView(myrowind);
+        ArrayView<const GO> myrow_gbl; 
+        ngraph.getGlobalRowView(myrowind, myrow_gbl);
         TEST_EQUALITY_CONST( myrow_gbl.size(), (numImages == 1 ? 3 : 1) );
         ngraph.globalAssemble();    // after globalAssemble(), storage should be maxed out
         TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0), ngraph.getNumAllocatedEntriesInLocalRow(0) );
@@ -751,7 +756,8 @@ namespace {
         }
         ngraph.fillComplete(os);
         // after fillComplete(), there should be entries for me and my neighbors on my row
-        ArrayRCP<const LO> myrow_lcl = ngraph.getLocalRowView(0);
+        ArrayView<const LO> myrow_lcl; 
+        ngraph.getLocalRowView(0, myrow_lcl);
         {
           // check indices on my row
           typename Array<GO>::iterator glast;
@@ -836,6 +842,51 @@ namespace {
   }
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, ActiveFill, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const GO INVALID = OrdinalTraits<GO>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int myImageID = comm->getRank();
+    // create Map
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,1,comm);
+    {
+      GRAPH graph(map,map,0,DynamicProfile);
+      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
+      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
+      graph.insertLocalIndices( 0, tuple<LO>(0) );
+      //
+      graph.fillComplete(DoNotOptimizeStorage);
+      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
+      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
+      TEST_THROW( graph.insertLocalIndices( 0, tuple<LO>(0) ), std::runtime_error );
+      TEST_THROW( graph.removeLocalIndices( 0 ),               std::runtime_error );
+      TEST_THROW( graph.globalAssemble(),                      std::runtime_error );
+      TEST_THROW( graph.fillComplete(),                        std::runtime_error );
+    }
+    {
+      GRAPH graph(map,map,0,DynamicProfile);
+      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
+      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
+      graph.insertLocalIndices( 0, tuple<LO>(0) );
+      //
+      graph.fillComplete(DoNotOptimizeStorage);
+      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
+      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
+      //
+      graph.resumeFill();
+      TEST_EQUALITY_CONST( graph.isFillActive(),   true );
+      TEST_EQUALITY_CONST( graph.isFillComplete(), false );
+      TEST_NOTHROW( graph.insertLocalIndices( 0, tuple<LO>(0) ) );
+      //
+      TEST_NOTHROW( graph.fillComplete()                        );
+      TEST_EQUALITY_CONST( graph.isFillActive(),   false );
+      TEST_EQUALITY_CONST( graph.isFillComplete(), true );
+    }
+  }
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, Typedefs, LO, GO )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
@@ -870,7 +921,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyFillComplete, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Bug20100622K  , LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Bug20100622K  , LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, ActiveFill    , LO, GO )
 
      UNIT_TEST_GROUP_LO_GO(int,int)
 // #ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD

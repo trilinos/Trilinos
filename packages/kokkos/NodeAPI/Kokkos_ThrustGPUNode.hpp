@@ -6,6 +6,10 @@
 
 namespace Kokkos {
 
+/** \brief %Kokkos node interface to the Thrust library for NVIDIA CUDA-capable GPUs.
+    \ingroup kokkos_node_api
+    \ingroup kokkos_cuda_support
+ */
 class ThrustGPUNode : public CUDANodeMemoryModel {
   public:
 

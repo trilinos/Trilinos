@@ -57,7 +57,8 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
   struct DefaultSparseSolveOp1 {
     // mat data
-    const size_t  *offsets;
+    const size_t  *begs;
+    const size_t  *ends;
     const Ordinal *inds;
     const Scalar  *vals;
     size_t numRows;
@@ -82,7 +83,7 @@ namespace Kokkos {
         xj[numRows-1] = (DomainScalar)yj[numRows-1];
         for (size_t r=2; r < numRows+1; ++r) {
           const size_t row = numRows - r; // for row=numRows-2 to 0 step -1
-          const size_t begin = offsets[row], end = offsets[row+1];
+          const size_t begin = begs[row], end = ends[row];
           xj[row] = (DomainScalar)yj[row];
           for (size_t c=begin; c != end; ++c) {
             xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
@@ -91,10 +92,10 @@ namespace Kokkos {
       }
       else if (upper && !unitDiag) {
         // upper + non-unit
-        xj[numRows-1] = (DomainScalar)( yj[numRows-1] / (RangeScalar)vals[offsets[numRows-1]] );
+        xj[numRows-1] = (DomainScalar)( yj[numRows-1] / (RangeScalar)vals[begs[numRows-1]] );
         for (size_t r=2; r < numRows+1; ++r) {
           const size_t row = numRows - r; // for row=numRows-2 to 0 step -1
-          const size_t diag = offsets[row], end = offsets[row+1];
+          const size_t diag = begs[row], end = ends[row];
           const DomainScalar dval = (DomainScalar)vals[diag];
           xj[row] = (DomainScalar)yj[row];
           for (size_t c=diag+1; c != end; ++c) {
@@ -107,7 +108,7 @@ namespace Kokkos {
         // lower + unit
         xj[0] = (DomainScalar)yj[0];
         for (size_t row=1; row < numRows; ++row) {
-          const size_t begin = offsets[row], end = offsets[row+1];
+          const size_t begin = begs[row], end = ends[row];
           xj[row] = (DomainScalar)yj[row];
           for (size_t c=begin; c != end; ++c) {
             xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
@@ -118,7 +119,7 @@ namespace Kokkos {
         // lower + non-unit
         xj[0] = (DomainScalar)( yj[0] / (RangeScalar)vals[0] );
         for (size_t row=1; row < numRows; ++row) {
-          const size_t begin = offsets[row], diag = offsets[row+1]-1;
+          const size_t begin = begs[row], diag = ends[row]-1;
           const DomainScalar dval = vals[diag];
           xj[row] = (DomainScalar)yj[row];
           for (size_t c=begin; c != diag; ++c) {
@@ -243,7 +244,8 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
   struct DefaultSparseTransposeSolveOp1 {
     // mat data
-    const size_t  *offsets;
+    const size_t  *begs;
+    const size_t  *ends;
     const Ordinal *inds;
     const Scalar  *vals;
     size_t numRows;
@@ -271,8 +273,8 @@ namespace Kokkos {
         // upper + unit
         size_t beg, endplusone;
         for (size_t row=0; row < numRows-1; ++row) {
-          beg = offsets[row]; 
-          endplusone = offsets[row+1];
+          beg = begs[row]; 
+          endplusone = ends[row];
           for (size_t j=beg; j < endplusone; ++j) {
             xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
           }
@@ -283,22 +285,22 @@ namespace Kokkos {
         size_t diag, endplusone;
         DomainScalar dval;
         for (size_t row=0; row < numRows-1; ++row) {
-          diag = offsets[row]; 
-          endplusone = offsets[row+1];
+          diag = begs[row]; 
+          endplusone = ends[row];
           dval = (DomainScalar)vals[diag];
           xj[row] /= dval;
           for (size_t j=diag+1; j < endplusone; ++j) {
             xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
           }
         }
-        diag = offsets[numRows-1];
+        diag = begs[numRows-1];
         dval = (DomainScalar)vals[diag];
         xj[numRows-1] /= dval;
       }
       else if (!upper && unitDiag) {
         // lower + unit
         for (size_t row=numRows-1; row > 0; --row) {
-          size_t beg = offsets[row], endplusone = offsets[row+1];
+          size_t beg = begs[row], endplusone = ends[row];
           for (size_t j=beg; j < endplusone; ++j) {
             xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
           }
@@ -308,7 +310,7 @@ namespace Kokkos {
         // lower + non-unit; diag is last element in row
         DomainScalar dval;
         for (size_t row=numRows-1; row > 0; --row) {
-          size_t beg = offsets[row], diag = offsets[row+1]-1;
+          size_t beg = begs[row], diag = ends[row]-1;
           dval = (DomainScalar)vals[diag];
           xj[row] /= dval;
           for (size_t j=beg; j < diag; ++j) {

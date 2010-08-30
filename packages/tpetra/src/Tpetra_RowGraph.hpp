@@ -30,8 +30,6 @@
 #define TPETRA_ROWGRAPH_HPP
 
 #include <Teuchos_Describable.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"

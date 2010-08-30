@@ -103,6 +103,26 @@ namespace Tpetra {
   #define TPETRA_PRINTS_ABUSE_WARNINGS 0
 #endif
 
+#include <functional>
+
+#ifndef __CUDACC__
+// mem management
+#include <Teuchos_ArrayView.hpp>
+#include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_Array.hpp>
+#include <Teuchos_RCP.hpp>
+// traits classes
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_NullIteratorTraits.hpp>
+#include <Teuchos_SerializationTraits.hpp>
+// comm
+#include <Teuchos_Comm.hpp>
+#include <Teuchos_CommHelpers.hpp>
+#endif
+
+//! Namespace for Tpetra classes and methods
 namespace Tpetra {
   /** \brief Global size_t object. 
   
@@ -154,6 +174,54 @@ namespace Tpetra {
 		REPLACE /*!< Existing values will be replaced with new values. */
 	};
 
+  // import Teuchos memory management classes into Tpetra
+#ifndef __CUDACC__
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::Array;
+  using Teuchos::OrdinalTraits;
+  using Teuchos::ScalarTraits;
+  using Teuchos::RCP;
+  using Teuchos::Comm;
+  using Teuchos::null;
+
+  using Teuchos::outArg;
+  using Teuchos::tuple;
+  using Teuchos::arcp;
+  using Teuchos::rcp;
+  using Teuchos::rcpFromRef;
+  using Teuchos::av_reinterpret_cast;
+  using Teuchos::arcp_reinterpret_cast;
+
+  using Teuchos::typeName;
+#endif
+
+  // Tpetra functor objects
+  // inspired by SGI-specific project2nd, project1st
+  template <class Arg1, class Arg2>
+  class firstArg : std::binary_function<Arg1,Arg2,Arg1> {
+    public:
+    typedef Arg1 first_argument_type;
+    typedef Arg2 second_argument_type;
+    typedef Arg1 result_type;
+    inline Arg1 operator()(const Arg1 &arg1, const Arg2 &arg2) {return arg1;}
+  };
+
+  template <class Arg1, class Arg2>
+  class secondArg : std::binary_function<Arg1,Arg2,Arg2> {
+    public:
+    typedef Arg1 first_argument_type;
+    typedef Arg2 second_argument_type;
+    typedef Arg2 result_type;
+    inline Arg2 operator()(const Arg1 &arg1, const Arg2 &arg2) {return arg2;}
+  };
+
+} // end of Tpetra namespace
+
+
+//! Namespace for Tpetra example classes and methods
+namespace TpetraExamples {
 }
+
 
 #endif // TPETRA_CONFIGDEFS_HPP

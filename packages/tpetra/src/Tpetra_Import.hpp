@@ -32,10 +32,6 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_as.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_ImportExportData.hpp"

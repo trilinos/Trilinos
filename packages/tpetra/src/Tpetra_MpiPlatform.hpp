@@ -30,8 +30,6 @@
 #define TPETRA_MPIPLATFORM_HPP
 
 #include <Teuchos_DefaultMpiComm.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_DefaultNode.hpp>
 

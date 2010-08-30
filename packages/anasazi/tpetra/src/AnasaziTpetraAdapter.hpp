@@ -154,7 +154,8 @@ namespace Anasazi {
                                  Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
       // create local map
-      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, A.getMap()->getComm(), Tpetra::LocallyReplicated, A.getMap()->getNode());
+      Teuchos::SerialComm<int> scomm;
+      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Tpetra::LocallyReplicated, A.getMap()->getNode());
       // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
       Teuchos::ArrayView<const Scalar> Bvalues(B.values(),B.stride()*B.numCols());
       // create locally replicated MultiVector with a copy of this data
@@ -176,16 +177,49 @@ namespace Anasazi {
 
     static void MvTransMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Teuchos::SerialDenseMatrix<int,Scalar>& B)
     { 
-      // create local map
-      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, A.getMap()->getComm(), Tpetra::LocallyReplicated, mv.getMap()->getNode());
+      // form alpha * A^H * B, then copy into SDM
+      // we will create a multivector C_mv from a a local map
+      // this map has a serial comm, the purpose being to short-circuit the MultiVector::reduce() call at the end of MultiVector::multiply()
+      // otherwise, the reduced multivector data would be copied back to the GPU, only to turn around and have to get it back here.
+      // this saves us a round trip for this data.
+      const int numRowsC = C.numRows(),
+                numColsC = C.numCols(),
+                strideC  = C.stride();
+      Teuchos::SerialComm<int> scomm;
+      // create local map with serial comm
+      Tpetra::Map<LO,GO,Node> LocalMap(numRowsC, 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Tpetra::LocallyReplicated, A.getMap()->getNode());
       // create local multivector to hold the result
-      Tpetra::MultiVector<Scalar,LO,GO,Node> B_mv(Teuchos::rcpFromRef(LocalMap),B.numCols(),true);
+      const bool INIT_TO_ZERO = true;
+      Tpetra::MultiVector<Scalar,LO,GO,Node> C_mv(Teuchos::rcpFromRef(LocalMap),numColsC, INIT_TO_ZERO);
       // multiply result into local multivector
-      B_mv.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,alpha,A,mv,Teuchos::ScalarTraits<Scalar>::zero());
+      C_mv.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,alpha,A,B,Teuchos::ScalarTraits<Scalar>::zero());
+      // get comm
+      Teuchos::RCP< const Teuchos::Comm<int> > pcomm = A.getMap()->getComm();
       // create arrayview encapsulating the Teuchos::SerialDenseMatrix
-      Teuchos::ArrayView<Scalar> av(B.values(),B.stride()*B.numCols());
-      // extract a copy of the result into the array view (and therefore, the SerialDenseMatrix)
-      B_mv.get1dCopy(av,B.stride());
+      Teuchos::ArrayView<Scalar> C_view(C.values(),strideC*numColsC);
+      if (pcomm->getSize() == 1) {
+        // no accumulation to do; simply extract the multivector data into C
+        // extract a copy of the result into the array view (and therefore, the SerialDenseMatrix)
+        C_mv.get1dCopy(C_view,strideC);
+      }  
+      else {
+        // get a const host view of the data in C_mv
+        Teuchos::ArrayRCP<const Scalar> C_mv_view = C_mv.get1dView();
+        if (strideC == numRowsC) {
+          // sumall into C
+          Teuchos::reduceAll<int,Scalar>(*pcomm,Teuchos::REDUCE_SUM,numColsC*numRowsC,C_mv_view.getRawPtr(),C_view.getRawPtr());
+        }
+        else {
+          // sumall into temp, copy into C
+          Teuchos::Array<Scalar> destBuff(numColsC*numRowsC);
+          Teuchos::reduceAll<int,Scalar>(*pcomm,Teuchos::REDUCE_SUM,numColsC*numRowsC,C_mv_view.getRawPtr(),destBuff.getRawPtr());
+          for (int j=0; j < numColsC; ++j) {
+            for (int i=0; i < numRowsC; ++i) {
+              C_view[strideC*j+i] = destBuff[numRowsC*j+i];
+            }
+          }
+        }
+      }
     }
 
     static void MvDot( const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
@@ -228,7 +262,9 @@ namespace Anasazi {
     }
 
     static void MvRandom( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
-    { mv.randomize(); }
+    { 
+      mv.randomize(); 
+    }
 
     static void MvInit( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero() )
     { mv.putScalar(alpha); }
