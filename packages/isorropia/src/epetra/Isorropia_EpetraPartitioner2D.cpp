@@ -251,6 +251,109 @@ void Partitioner2D::elemsInPart(int partition, int* elementList, int len) const
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
+  /** Returns indx for nonzero A(i,j) assuming this nonzero is located on this
+      processor.  This is useful in getting a part number for this nonzero since
+      the [] operator needs this index.  Returns -1 if nonzero not found locally.
+  */
+////////////////////////////////////////////////////////////////////////////////
+int Partitioner2D::getNZIndx(int row, int column) const 
+{
+
+
+  if (input_graph_.get() != 0) // Graph
+  {
+    const Epetra_BlockMap *rowMap_ = &(input_graph_->RowMap());
+    const Epetra_BlockMap *colMap_ = &(input_graph_->ColMap());
+    int numRows = rowMap_->NumMyElements();
+
+    int nzIndx = 0;
+
+    for (int rowNum=0; rowNum<numRows; rowNum++)
+    {
+      int rowSize;
+      rowSize = input_graph_->NumMyIndices(rowNum);
+
+      if(row == rowNum)
+      {
+        int *tmprowCols = new int[rowSize];
+        int numEntries;
+
+        input_graph_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowCols);
+
+        for(int colIndx=0;colIndx<rowSize;colIndx++)
+	{
+
+          if (column == colMap_->GID(tmprowCols[colIndx]))
+	  {
+            return nzIndx;
+	  }
+          else
+	  {
+	    nzIndx++;
+          }
+	}
+
+        delete [] tmprowCols;
+      }
+      else
+      {
+        nzIndx += rowSize;
+      }
+
+
+    }
+
+
+
+  }
+  else  // matrix
+  {
+
+    const Epetra_BlockMap *rowMap_ = &(input_matrix_->RowMatrixRowMap());
+    const Epetra_BlockMap *colMap_ = &(input_matrix_->RowMatrixColMap());
+    int numRows = rowMap_->NumMyElements();
+
+    int nzIndx = 0;
+    for (int rowNum=0; rowNum<numRows; rowNum++)
+    {
+      int rowSize;
+      input_matrix_->NumMyRowEntries(rowNum,rowSize);
+
+      if(row == rowNum)
+      {
+        int *tmprowCols = new int[rowSize];
+        double *tmprowVals = new double[rowSize];
+        int numEntries;
+
+        input_matrix_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowVals, tmprowCols);
+
+        for(int colIndx=0; colIndx<rowSize; colIndx++)
+	{
+          if (column == colMap_->GID(tmprowCols[colIndx]))
+	  {
+            return nzIndx;
+	  }
+          else
+	  {
+	    nzIndx++;
+          }
+	}
+	delete [] tmprowCols;
+        delete [] tmprowVals;
+      }
+      else
+      {
+        nzIndx += rowSize;
+      }
+    }
+  }
+
+  return -1;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 int Partitioner2D::createDomainAndRangeMaps(Epetra_Map *domainMap, 
 			                    Epetra_Map *rangeMap) 

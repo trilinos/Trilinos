@@ -145,6 +145,11 @@ public:
   int numElemsInPart(int part) const;
 
 
+  /**
+  */
+  int getNZIndx(int row, int column) const;
+
+
   /**      global element ids to be located in the given partition.
   */
   void elemsInPart(int part, int* elementList, int len) const;
