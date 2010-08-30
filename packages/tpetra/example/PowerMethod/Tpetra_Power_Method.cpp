@@ -33,7 +33,6 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
   Teuchos::RCP<Node>             node = platform.getNode();
   const int myRank = comm->getRank();
-  const int numProc = comm->getSize();
 
   //
   // Get example parameters from command-line processor
@@ -76,7 +75,7 @@ int main(int argc, char *argv[]) {
   // We are building a tridiagonal matrix where each row has (-1 2 -1)
   // So we need 2 off-diagonal terms (except for the first and last equation)
   for (size_t i=0; i < numMyElements; ++i) {
-    if (myGlobalElements[i] == 0 || static_cast<global_size_t>(myGlobalElements[i]) == numGlobalElements-1) {
+    if (myGlobalElements[i] == 0 || myGlobalElements[i] == numGlobalElements-1) {
       // boundary
       NumNz[i] = 2;
     }
@@ -99,7 +98,7 @@ int main(int argc, char *argv[]) {
                              Teuchos::tuple<Ordinal>( myGlobalElements[i], myGlobalElements[i]+1 ),
                              Teuchos::tuple<Scalar> ( two, negOne ) );
     }
-    else if (static_cast<global_size_t>(myGlobalElements[i]) == numGlobalElements-1) {
+    else if (myGlobalElements[i] == numGlobalElements-1) {
       A->insertGlobalValues( myGlobalElements[i],
                              Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i] ),
                              Teuchos::tuple<Scalar> ( negOne, two ) );
