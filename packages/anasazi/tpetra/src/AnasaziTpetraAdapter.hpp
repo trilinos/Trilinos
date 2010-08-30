@@ -29,6 +29,8 @@
 #ifndef ANASAZI_TPETRA_ADAPTER_HPP
 #define ANASAZI_TPETRA_ADAPTER_HPP
 
+#include <Kokkos_NodeTrace.hpp>
+
 /*! \file AnasaziTpetraAdapter.hpp
   \brief Specializaitons of Anasazi multi-vector and operator traits classes for the Tpetra MultiVector and Operator classes.
 */
@@ -40,10 +42,13 @@
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_DefaultSerialComm.hpp>
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "AnasaziMultiVecTraits.hpp"
+#include "AnasaziOperatorTraits.hpp"
+#include <Kokkos_NodeAPIConfigDefs.hpp>
 
 #ifdef HAVE_ANASAZI_TSQR
 #  include "AnasaziTsqrAdaptor.hpp" 
@@ -51,7 +56,6 @@
 #include "TsqrRandomizer_Tpetra_MultiVector.hpp" 
 #endif // HAVE_ANASAZI_TSQR
 
-#include "AnasaziOperatorTraits.hpp"
 
 namespace Anasazi {
 
@@ -69,6 +73,9 @@ namespace Anasazi {
   class MultiVecTraits<Scalar, Tpetra::MultiVector<Scalar,LO,GO,Node> >
   {
   public:
+#ifdef HAVE_ANASAZI_TPETRA_TIMERS
+    static Teuchos::RCP<Teuchos::Time> mvTimesMatAddMvTimer_, mvTransMvTimer_;
+#endif
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > Clone( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const int numvecs )
     { 
@@ -77,11 +84,13 @@ namespace Anasazi {
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
+      KOKKOS_NODE_TRACE("Anasazi::MVT::CloneCopy(MV)")
       return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>( mv ) ); 
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     { 
+      KOKKOS_NODE_TRACE("Anasazi::MVT::CloneCopy(MV,ind)")
       TEST_FOR_EXCEPTION(index.size() == 0,std::runtime_error,
           "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::Clone(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_TPETRA_DEBUG
@@ -153,6 +162,10 @@ namespace Anasazi {
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
+      KOKKOS_NODE_TRACE("Anasazi::MVT::MvTimesMatAddMv()")
+#ifdef HAVE_ANASAZI_TPETRA_TIMERS
+      Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
+#endif
       // create local map
       Teuchos::SerialComm<int> scomm;
       Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, Teuchos::rcpFromRef< const Teuchos::Comm<int> >(scomm), Tpetra::LocallyReplicated, A.getMap()->getNode());
@@ -175,8 +188,12 @@ namespace Anasazi {
     static void MvScale ( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<Scalar>& alphas )
     { mv.scale(alphas); }
 
-    static void MvTransMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Teuchos::SerialDenseMatrix<int,Scalar>& B)
+    static void MvTransMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
     { 
+      KOKKOS_NODE_TRACE("Anasazi::MVT::MvTransMv()")
+#ifdef HAVE_ANASAZI_TPETRA_TIMERS
+      Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
+#endif
       // form alpha * A^H * B, then copy into SDM
       // we will create a multivector C_mv from a a local map
       // this map has a serial comm, the purpose being to short-circuit the MultiVector::reduce() call at the end of MultiVector::multiply()
@@ -225,7 +242,7 @@ namespace Anasazi {
     static void MvDot( const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& B, std::vector<Scalar> &dots)
     {
       TEST_FOR_EXCEPTION(A.getNumVectors() != B.getNumVectors(),std::invalid_argument,
-          "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvDot(A,B,dots): A and B must have the same number of vectors.");
+          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvDot(A,B,dots): A and B must have the same number of vectors.");
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION(dots.size() < (typename std::vector<int>::size_type)A.getNumVectors(),std::invalid_argument,
           "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::MvDot(A,B,dots): dots must have room for all dot products.");
@@ -246,6 +263,7 @@ namespace Anasazi {
 
     static void SetBlock( const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
+      KOKKOS_NODE_TRACE("Anasazi::MVT::SetBlock()")
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
           "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
@@ -263,6 +281,7 @@ namespace Anasazi {
 
     static void MvRandom( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { 
+      KOKKOS_NODE_TRACE("Anasazi::MVT::randomize()")
       mv.randomize(); 
     }
 

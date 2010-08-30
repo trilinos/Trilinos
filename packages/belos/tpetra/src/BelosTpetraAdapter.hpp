@@ -77,13 +77,13 @@ namespace Belos {
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
-      KOKKOS_NODE_TRACE("MVT::CloneCopy(MV)")
+      KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV)")
       return Teuchos::rcp( new Tpetra::MultiVector<Scalar,LO,GO,Node>( mv ) ); 
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     { 
-      KOKKOS_NODE_TRACE("MVT::CloneCopy(MV,ind)")
+      KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
       TEST_FOR_EXCEPTION(index.size() == 0,std::runtime_error,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneCopy(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_TPETRA_DEBUG
@@ -124,7 +124,7 @@ namespace Belos {
       return mv.subViewNonConst(Teuchos::Range1D(index.front(),index.back()));
     }
 
-    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneView( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
@@ -155,7 +155,7 @@ namespace Belos {
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
-      KOKKOS_NODE_TRACE("MVT::MvTimesMatAddMv()")
+      KOKKOS_NODE_TRACE("Belos::MVT::MvTimesMatAddMv()")
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTimesMatAddMvTimer_);
 #endif
@@ -183,7 +183,7 @@ namespace Belos {
 
     static void MvTransMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& B, Teuchos::SerialDenseMatrix<int,Scalar>& C)
     { 
-      KOKKOS_NODE_TRACE("MVT::MvTransMv()")
+      KOKKOS_NODE_TRACE("Belos::MVT::MvTransMv()")
 #ifdef HAVE_BELOS_TPETRA_TIMERS
       Teuchos::TimeMonitor lcltimer(*mvTransMvTimer_);
 #endif
@@ -266,7 +266,7 @@ namespace Belos {
 
     static void SetBlock( const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const std::vector<int>& index, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
-      KOKKOS_NODE_TRACE("MVT::SetBlock()")
+      KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
@@ -284,7 +284,7 @@ namespace Belos {
 
     static void MvRandom( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { 
-      KOKKOS_NODE_TRACE("MVT::randomize()")
+      KOKKOS_NODE_TRACE("Belos::MVT::randomize()")
       mv.randomize(); 
     }
 
