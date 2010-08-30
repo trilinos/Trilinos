@@ -1786,7 +1786,6 @@ namespace {
     const GO INVALID = OrdinalTraits<GO>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = comm->getRank();
     // create Map
     RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,1,comm,node);
     const Scalar SZERO = ScalarTraits<Scalar>::zero();
