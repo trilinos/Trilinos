@@ -146,7 +146,7 @@ int Epetra_CrsGraph::Allocate(const int* NumIndicesPerRow, int Inc, bool StaticP
     // yet.
     CrsGraphData_->SortedEntries_[i].entries_.resize(NumIndices,
                  indexBaseMinusOne);
-    CrsGraphData_->Indices_[i] = &CrsGraphData_->SortedEntries_[i].entries_[0];
+    CrsGraphData_->Indices_[i] = NumIndices > 0 ? &CrsGraphData_->SortedEntries_[i].entries_[0]: NULL;
     CrsGraphData_->SortedEntries_[i].entries_.resize(0);
 	}
       }
@@ -312,7 +312,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
       if (current_numAllocIndices > 0 && stop > current_numAllocIndices)
         ierr = 3;
       CrsGraphData_->SortedEntries_[Row].entries_.resize(stop, IndexBase() - 1);
-      CrsGraphData_->Indices_[Row] = &CrsGraphData_->SortedEntries_[Row].entries_[0];
+      CrsGraphData_->Indices_[Row] = stop>0 ? &CrsGraphData_->SortedEntries_[Row].entries_[0] : NULL;
 
       current_numAllocIndices =  CrsGraphData_->SortedEntries_[Row].entries_.capacity();    
     }
@@ -396,7 +396,7 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
   current_numIndices = CrsGraphData_->SortedEntries_[Row].entries_.size();
   current_numAllocIndices = CrsGraphData_->SortedEntries_[Row].entries_.capacity();
   // reset the pointer to the respective data
-  CrsGraphData_->Indices_[Row] = &CrsGraphData_->SortedEntries_[Row].entries_[0];
+  CrsGraphData_->Indices_[Row] = current_numIndices > 0 ? &CrsGraphData_->SortedEntries_[Row].entries_[0] : NULL;
 
   if (CrsGraphData_->MaxNumIndices_ < current_numIndices) {
     CrsGraphData_->MaxNumIndices_ = current_numIndices;
@@ -436,13 +436,13 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* Indices) 
     int Index = Indices[j];
     if(FindGlobalIndexLoc(Row,Index,j,Loc)) {
       for(k = Loc+1; k < NumCurrentIndices; k++) 
-	CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
+        CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
       NumCurrentIndices--;
       CrsGraphData_->NumIndicesPerRow_[Row]--;
       if (!CrsGraphData_->StaticProfile_)
- CrsGraphData_->SortedEntries_[Row].entries_.pop_back();
+        CrsGraphData_->SortedEntries_[Row].entries_.pop_back();
       else
- CrsGraphData_->Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
+        CrsGraphData_->Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
     }
   }
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -476,18 +476,18 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row, int NumIndices, int* Indices) {
     EPETRA_CHK_ERR(-1); // Not in Row range
     
   int NumCurrentIndices = CrsGraphData_->NumIndicesPerRow_[Row];
-  
+
   for(j = 0; j < NumIndices; j++) {
     int Index = Indices[j];
     if(FindMyIndexLoc(Row,Index,j,Loc)) {
       for(k = Loc + 1; k < NumCurrentIndices; k++) 
-	CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
+        CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
       NumCurrentIndices--;
       CrsGraphData_->NumIndicesPerRow_[Row]--;
       if (!CrsGraphData_->StaticProfile_)
- CrsGraphData_->SortedEntries_[Row].entries_.pop_back();
+        CrsGraphData_->SortedEntries_[Row].entries_.pop_back();
       else
- CrsGraphData_->Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
+        CrsGraphData_->Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
     }
   }
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -996,7 +996,12 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
     // update vector size and address in memory
     if (!CrsGraphData_->StaticProfile_) {
       CrsGraphData_->SortedEntries_[i].entries_.assign(Indices, Indices+numIndicesPerRow[i]);
-      CrsGraphData_->Indices_[i] = &CrsGraphData_->SortedEntries_[i].entries_[0];
+      if (numIndicesPerRow[i] > 0) {
+        CrsGraphData_->Indices_[i] = &CrsGraphData_->SortedEntries_[i].entries_[0];
+      }
+      else {
+        CrsGraphData_->Indices_[i] = NULL;
+      }
     }
 
     nnz += numIndicesPerRow[i];
