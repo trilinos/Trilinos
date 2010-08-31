@@ -1502,9 +1502,9 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 1);
+  solver.SetAztecOption(AZ_output, 10);
 
-  solver.Iterate(200, 1e-10);
+  solver.Iterate(500, 1e-10);
   
   delete MLPrec;
 
@@ -1826,7 +1826,7 @@ void getPamgenMesh(FieldContainer<Scalar>    & localNodeCoordsFC,
   }
   delete [] sideSetIds;
   
-  if(!Comm.MyPID() == 0 && verbose) {
+  if(!Comm.MyPID() && verbose) {
     std::cout << "Processing Boundary Conditions: " << Time.ElapsedTime() << " sec.\n"; 
     Time.ResetStartTime();
   }
