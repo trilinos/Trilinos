@@ -185,7 +185,7 @@ namespace Tpetra
 
         \pre isLocallyIndexed()==false
        */
-      virtual Teuchos::ArrayRCP<const GlobalOrdinal> getGlobalRowView(GlobalOrdinal GlobalRow) const = 0;
+      TPETRA_DEPRECATED virtual Teuchos::ArrayRCP<const GlobalOrdinal> getGlobalRowView(GlobalOrdinal GlobalRow) const = 0;
 
       //! Get a persisting const view of the entries in a specified local row of the graph.
       /*!
@@ -195,7 +195,7 @@ namespace Tpetra
 
         \pre isGloballyIndexed()==false
        */
-      virtual Teuchos::ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const = 0;
+      TPETRA_DEPRECATED virtual Teuchos::ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const = 0;
 
       //@}
 

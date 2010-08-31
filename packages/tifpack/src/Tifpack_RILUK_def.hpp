@@ -302,8 +302,8 @@ void RILUK<MatrixType>::compute() {
 
   // Need some integer workspace and pointers
   size_t NumUU; 
-  Teuchos::ArrayRCP<const LocalOrdinal> UUI;
-  Teuchos::ArrayRCP<const Scalar> UUV;
+  Teuchos::ArrayView<const LocalOrdinal> UUI;
+  Teuchos::ArrayView<const Scalar> UUV;
   for (size_t j=0; j<num_cols; j++) colflag[j] = - 1;
 
   for(size_t i=0; i<L_->getNodeNumRows(); i++) {

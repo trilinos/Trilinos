@@ -2645,7 +2645,7 @@ namespace Tpetra {
   // DEPRECATED
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TPETRA_DEPRECATED ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalRowView(LocalOrdinal localRow) const 
+  ArrayRCP<const LocalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalRowView(LocalOrdinal localRow) const 
   {
     TEST_FOR_EXCEPTION(isGloballyIndexed() == true, std::runtime_error,
         typeName(*this) << "::getLocalRowView(): local indices do not exist.");
@@ -2667,7 +2667,7 @@ namespace Tpetra {
   // DEPRECATED
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TPETRA_DEPRECATED ArrayRCP<const GlobalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalRowView(GlobalOrdinal globalRow) const 
+  ArrayRCP<const GlobalOrdinal> CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalRowView(GlobalOrdinal globalRow) const 
   {
     TEST_FOR_EXCEPTION(isLocallyIndexed() == true, std::runtime_error,
         typeName(*this) << "::getGlobalRowView(): global indices do not exist.");
@@ -2690,7 +2690,7 @@ namespace Tpetra {
   // DEPRECATED
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TPETRA_DEPRECATED void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage() 
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage() 
   {
     // provided only for backwards compatibility
     // previous semantics required that fillComplete() had been called.

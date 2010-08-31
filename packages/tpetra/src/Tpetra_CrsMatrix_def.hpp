@@ -2057,7 +2057,7 @@ namespace Tpetra {
   // DEPRECATED
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TPETRA_DEPRECATED void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalRowView(
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalRowView(
                                 GlobalOrdinal globalRow, 
                                 ArrayRCP<const GlobalOrdinal> &indices,
                                 ArrayRCP<const Scalar>        &values) const 
@@ -2084,7 +2084,7 @@ namespace Tpetra {
   // DEPRECATED
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TPETRA_DEPRECATED void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalRowView(
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalRowView(
                                 LocalOrdinal localRow, 
                                 ArrayRCP<const LocalOrdinal> &indices,
                                 ArrayRCP<const Scalar>        &values) const 
@@ -2109,7 +2109,7 @@ namespace Tpetra {
   // DEPRECATED
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  TPETRA_DEPRECATED void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage() {
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage() {
     // provided only for backwards compatibility
     // previous semantics required that fillComplete() had been called.
     TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error, 

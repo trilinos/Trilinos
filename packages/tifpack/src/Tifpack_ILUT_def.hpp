@@ -269,11 +269,12 @@ void ILUT<MatrixType>::compute() {
   const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
 
-  // We will store ArrayRCP objects that are views of the rows of U, so that
+  // CGB: note, this caching approach may not be necessary anymore
+  // We will store ArrayView objects that are views of the rows of U, so that
   // we don't have to repeatedly retrieve the view for each row. These will
   // be populated row by row as the factorization proceeds.
-  Teuchos::Array<Teuchos::ArrayRCP<const LocalOrdinal> > Uindices(NumMyRows_);
-  Teuchos::Array<Teuchos::ArrayRCP<const Scalar> >       Ucoefs(NumMyRows_);
+  Teuchos::Array<Teuchos::ArrayView<const LocalOrdinal> > Uindices(NumMyRows_);
+  Teuchos::Array<Teuchos::ArrayView<const Scalar> >       Ucoefs(NumMyRows_);
 
   // If this macro is defined, files containing the L and U factors
   // will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
@@ -327,8 +328,8 @@ void ILUT<MatrixType>::compute() {
   // =================== //
 
   for (LocalOrdinal row_i = 0 ; row_i < NumMyRows_ ; ++row_i) {
-    Teuchos::ArrayRCP<const LocalOrdinal> ColIndicesA;
-    Teuchos::ArrayRCP<const Scalar> ColValuesA;
+    Teuchos::ArrayView<const LocalOrdinal> ColIndicesA;
+    Teuchos::ArrayView<const Scalar> ColValuesA;
 
     A_->getLocalRowView(row_i, ColIndicesA, ColValuesA);
     size_t RowNnz = ColIndicesA.size();
@@ -399,8 +400,8 @@ void ILUT<MatrixType>::compute() {
 
       /* Reduce current row */
 
-      Teuchos::ArrayRCP<const LocalOrdinal>& ColIndicesU = Uindices[row_k];
-      Teuchos::ArrayRCP<const Scalar>& ColValuesU = Ucoefs[row_k];
+      Teuchos::ArrayView<const LocalOrdinal>& ColIndicesU = Uindices[row_k];
+      Teuchos::ArrayView<const Scalar>& ColValuesU = Ucoefs[row_k];
       Tsize_t ColNnzU = ColIndicesU.size();
 
       for(Tsize_t j=0; j<ColNnzU; ++j) {

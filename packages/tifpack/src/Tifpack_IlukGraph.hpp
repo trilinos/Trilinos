@@ -221,7 +221,8 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
 
   for (int i=0; i< NumMyRows; i++) {
  
-    Teuchos::ArrayRCP<const LocalOrdinal> my_indices = OverlapGraph_->getLocalRowView(i);
+    Teuchos::ArrayView<const LocalOrdinal> my_indices;
+    OverlapGraph_->getLocalRowView(i,my_indices);
  
     // Split into L and U (we don't assume that indices are ordered).
     
@@ -324,7 +325,8 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
         int NextInList = LinkList[Next];
         int RowU = Next;
         // Get Indices for this row of U
-        Teuchos::ArrayRCP<const LocalOrdinal> IndicesU = U_Graph_->getLocalRowView(RowU);
+        Teuchos::ArrayView<const LocalOrdinal> IndicesU;
+        U_Graph_->getLocalRowView(RowU,IndicesU);
         int LengthRowU = IndicesU.size();
         
         int ii;

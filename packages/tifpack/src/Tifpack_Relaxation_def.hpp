@@ -519,8 +519,8 @@ void Relaxation<MatrixType>::ApplyInverseGS_CrsMatrix(
 {
   size_t NumVectors = X.getNumVectors();
 
-  Teuchos::ArrayRCP<const LocalOrdinal> Indices;
-  Teuchos::ArrayRCP<const Scalar> Values;
+  Teuchos::ArrayView<const LocalOrdinal> Indices;
+  Teuchos::ArrayView<const Scalar> Values;
 
   Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
   if (IsParallel_) {
@@ -701,8 +701,8 @@ void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
 {
   size_t NumVectors = X.getNumVectors();
 
-  Teuchos::ArrayRCP<const LocalOrdinal> Indices;
-  Teuchos::ArrayRCP<const Scalar> Values;
+  Teuchos::ArrayView<const LocalOrdinal> Indices;
+  Teuchos::ArrayView<const Scalar> Values;
 
   Teuchos::RCP< Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y2;
   if (IsParallel_) {
