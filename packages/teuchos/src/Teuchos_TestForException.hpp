@@ -29,6 +29,8 @@
 #ifndef TEUCHOS_TEST_FOR_EXCEPTION_H
 #define TEUCHOS_TEST_FOR_EXCEPTION_H
 
+#include <Teuchos_TypeNameTraits.hpp>
+
 /*! \file Teuchos_TestForException.hpp
 \brief Macro for throwing an exception with breakpointing to ease debugging.
 */
@@ -133,6 +135,48 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
       throw Exception(omsgstr); \
     } \
 }
+
+
+/** \brief Macro for throwing an exception from within a class method with breakpointing to ease debugging
+ *
+ * \param throw_exception_test [in] Test for when to throw the exception.
+ * This can and should be an expression that may mean something to the user.
+ * The text verbatim of this expression is included in the formed error
+ * string.
+ *
+ * \param Exception [in] This should be the name of an exception class.  The
+ * only requirement for this class is that it have a constructor that accepts
+ * an std::string object (as all of the standard exception classes do).
+ *
+ * \param msg [in] This is any expression that can be included in an output
+ * stream operation.  This is useful when buinding error messages on the fly.
+ * Note that the code in this argument only gets evaluated if
+ * <tt>throw_exception_test</tt> evaluates to <tt>true</tt> when an exception
+ * is throw.
+ *
+ * \param tfecfFuncName [implicit] This is a variable in the current scope that is 
+ * required to exist and assumed to contain the name of the current class method. 
+ * 
+ * \param this [implicit] This is the variable (*this), used for printing the typename
+ * of the enclosing class.
+ * 
+ * The way that this macro is intended to be used is to call it from a member of
+ * of a class. It is used similarly to TEST_FOR_EXCEPTION, except that it assumes that the 
+ * (above) variables \c this and \tfecfFuncName exist and are properly defined. Example
+ * usage is: 
+ \verbatim 
+   std::string tfecfFuncName("someMethod");
+   TEST_FOR_EXCEPTION_CLASS_FUNC( test, std::runtime_error, ": can't call this method in that way.");
+ \endverbtim
+ * 
+ * \related TEST_FOR_EXCEPTION
+ */
+#define TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg) \
+{ \
+   TEST_FOR_EXCEPTION( (throw_exception_test), Exception, \
+   typeName(*this) << "::" << tfecfFuncName << msg ) \
+}
+
 
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
  *
