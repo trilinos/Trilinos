@@ -33,6 +33,7 @@
 
 #include <Kokkos_NodeTrace.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_NullIteratorTraits.hpp>
 #include <algorithm>
 
 #ifdef DOXYGEN_USE_ONLY
@@ -1074,7 +1075,7 @@ namespace Tpetra {
     bool found = true;
     // get a view of the row, if it wasn't passed by the caller
     ArrayView<const LocalOrdinal> rowinds = getLocalView(rowinfo);
-    IT rptr, locptr;
+    IT rptr, locptr = Teuchos::NullIteratorTraits<IT>::getNull();
     rptr = rowinds.begin();
     if (isSorted()) {
       // binary search
