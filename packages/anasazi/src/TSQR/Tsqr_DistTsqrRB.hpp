@@ -5,12 +5,13 @@
 #include <Tsqr_Combine.hpp>
 #include <Tsqr_Matrix.hpp>
 #include <Tsqr_ScalarTraits.hpp>
-
-#include <Teuchos_RCP.hpp>
+#include <Tsqr_StatTimeMonitor.hpp>
 
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,10 +39,46 @@ namespace TSQR {
     /// Constructor
     ///
     /// \param messenger [in/out] Smart pointer to a wrapper handling
-    /// communication between MPI process(es).
+    ///   communication between MPI process(es).
     DistTsqrRB (const Teuchos::RCP< MessengerBase< scalar_type > >& messenger) :
-      messenger_ (messenger)
+      messenger_ (messenger),
+      totalTime_ (Teuchos::TimeMonitor::getNewTimer ("factorExplicit() total time")),
+      reduceCommTime_ (Teuchos::TimeMonitor::getNewTimer ("factorReduce() communication time")),
+      reduceTime_ (Teuchos::TimeMonitor::getNewTimer ("factorReduce() total time")),
+      bcastCommTime_ (Teuchos::TimeMonitor::getNewTimer ("explicitQBroadcast() communication time")),
+      bcastTime_ (Teuchos::TimeMonitor::getNewTimer ("explicitQBroadcast() total time"))
     {}
+
+    /// Fill in the timings vector with cumulative timings from
+    /// factorExplicit().  The vector gets resized to fit all the
+    /// timings.
+    void
+    getTimings (std::vector< TimeStats >& timings) 
+    {
+      const int numTimers = 5;
+      timings.resize (std::max (timings.size(), static_cast<size_t>(numTimers)));
+
+      timings[0] = totalStats_;
+      timings[1] = reduceCommStats_;
+      timings[2] = reduceStats_;
+      timings[3] = bcastCommStats_;
+      timings[4] = bcastStats_;
+    }
+
+    /// Fill in the labels vector with the string labels for the
+    /// timings.  The vector gets resized to fit all the labels.
+    void
+    getTimingLabels (std::vector< std::string >& labels)
+    {
+      const int numTimers = 5;
+      labels.resize (std::max (labels.size(), static_cast<size_t>(numTimers)));
+
+      labels[0] = totalTime_->name();
+      labels[1] = reduceCommTime_->name();
+      labels[2] = reduceTime_->name();
+      labels[3] = bcastCommTime_->name();
+      labels[4] = bcastTime_->name();
+    }
 
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
@@ -68,6 +105,8 @@ namespace TSQR {
     void
     factorExplicit (matview_type R_mine, matview_type Q_mine)
     {
+      StatTimeMonitor totalMonitor (*totalTime_, totalStats_);
+
       // Dimension sanity checks.  R_mine should have at least as many
       // rows as columns (since we will be working on the upper
       // triangle).  Q_mine should have the same number of rows as
@@ -121,7 +160,12 @@ namespace TSQR {
       // (butterfly).
       std::vector< matrix_type > QFactors;
       std::vector< std::vector< scalar_type > > tauArrays;
-      factorReduce (R_mine, P_mine, P_first, P_last, QFactors, tauArrays);
+
+      {
+	StatTimeMonitor reduceMonitor (*reduceTime_, reduceStats_);
+	factorReduce (R_mine, P_mine, P_first, P_last, QFactors, tauArrays);
+      }
+
       if (QFactors.size() != tauArrays.size())
 	{
 	  std::ostringstream os;
@@ -141,9 +185,13 @@ namespace TSQR {
       // Scratch space for computing results to send to other processors.
       matrix_type Q_other (Q_mine.nrows(), Q_mine.ncols(), scalar_type (0));
       const rank_type numSteps = QFactors.size() - 1;
-      explicitQBroadcast (R_mine, Q_mine, Q_other.view(), 
-			  P_mine, P_first, P_last,
-			  numSteps, QFactors, tauArrays);
+
+      {
+	StatTimeMonitor bcastMonitor (*bcastTime_, bcastStats_);
+	explicitQBroadcast (R_mine, Q_mine, Q_other.view(), 
+			    P_mine, P_first, P_last,
+			    numSteps, QFactors, tauArrays);
+      }
     }
 
   private:
@@ -305,6 +353,8 @@ namespace TSQR {
 	      const ConstMatrixType2& R,
 	      const rank_type destProc) 
     {
+      StatTimeMonitor bcastCommMonitor (*bcastCommTime_, bcastCommStats_);
+
       const ordinal_type R_numCols = R.ncols();
       const ordinal_type Q_size = Q.nrows() * Q.ncols();
       const ordinal_type R_size = (R_numCols * (R_numCols + 1)) / 2;
@@ -329,6 +379,8 @@ namespace TSQR {
 	      MatrixType2& R, 
 	      const rank_type srcProc)
     {
+      StatTimeMonitor bcastCommMonitor (*bcastCommTime_, bcastCommStats_);
+
       const ordinal_type R_numCols = R.ncols();
       const ordinal_type Q_size = Q.nrows() * Q.ncols();
       const ordinal_type R_size = (R_numCols * (R_numCols + 1)) / 2;
@@ -338,6 +390,7 @@ namespace TSQR {
       // correct, but may require reallocation of data when it needs
       // to grow again.
       resizeWork (numElts);
+
       messenger_->recv (&work_[0], numElts, srcProc, 0);
 
       // Unpack the C data from the workspace array.
@@ -350,6 +403,8 @@ namespace TSQR {
     void
     send_R (const ConstMatrixType& R, const rank_type destProc)
     {
+      StatTimeMonitor reduceCommMonitor (*reduceCommTime_, reduceCommStats_);
+
       const ordinal_type numCols = R.ncols();
       const ordinal_type numElts = (numCols * (numCols+1)) / 2;
 
@@ -366,6 +421,8 @@ namespace TSQR {
     void
     recv_R (MatrixType& R, const rank_type srcProc)
     {
+      StatTimeMonitor reduceCommMonitor (*reduceCommTime_, reduceCommStats_);
+
       const ordinal_type numCols = R.ncols();
       const ordinal_type numElts = (numCols * (numCols+1)) / 2;
 
@@ -415,6 +472,16 @@ namespace TSQR {
     combine_type combine_;
     Teuchos::RCP< MessengerBase< scalar_type > > messenger_;
     std::vector< scalar_type > work_;
+
+    // Timers for various phases of the factorization.  Time is
+    // cumulative over all calls of factorExplicit().
+    Teuchos::RCP< Teuchos::Time > totalTime_;
+    Teuchos::RCP< Teuchos::Time > reduceCommTime_;
+    Teuchos::RCP< Teuchos::Time > reduceTime_;
+    Teuchos::RCP< Teuchos::Time > bcastCommTime_;
+    Teuchos::RCP< Teuchos::Time > bcastTime_;
+
+    TimeStats totalStats_, reduceCommStats_, reduceStats_, bcastCommStats_, bcastStats_;
   };
 
 } // namespace TSQR

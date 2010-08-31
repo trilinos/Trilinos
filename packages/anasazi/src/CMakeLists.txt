@@ -305,8 +305,10 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_SeqTest.hpp
     TSQR/Tsqr_SequentialCholeskyQR.hpp
     TSQR/Tsqr_SequentialTsqr.hpp
+    TSQR/Tsqr_StatTimeMonitor.hpp
     TSQR/Tsqr_TbbTest.hpp
     TSQR/Tsqr_TestSetup.hpp
+    TSQR/Tsqr_TimeStats.hpp
     TSQR/Tsqr_TsqrTest.hpp
     TSQR/Tsqr_Util.hpp
     TSQR/Tsqr_verifyTimerConcept.hpp
@@ -318,8 +320,10 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_DLapack.cpp
     TSQR/Tsqr_SLapack.cpp
     TSQR/Tsqr_ZLapack.cpp
-    TSQR/Tsqr_SeqTest.cpp
     TSQR/Tsqr_CombineTest.cpp
+    TSQR/Tsqr_SeqTest.cpp
+    TSQR/Tsqr_StatTimeMonitor.cpp
+    TSQR/Tsqr_TimeStats.cpp
     )
   APPEND_SET(HEADERS
     TSQR/TsqrFactory.hpp

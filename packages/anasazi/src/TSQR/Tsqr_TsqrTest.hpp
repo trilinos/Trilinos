@@ -446,32 +446,47 @@ namespace TSQR {
       // Name of timer doesn't matter here; we only need the timing.
       TSQR::Test::verifyTimerConcept< TimerType >();
       TimerType timer (which);
-      timer.start();
-      for (int trial_num = 0; trial_num < ntrials; ++trial_num)
+
+
+      const bool testFactorExplicit = true;
+      double tsqr_timing;
+      if (testFactorExplicit)
 	{
-	  // Factor the matrix and compute the explicit Q factor.
-	  // Don't worry about the fact that we're overwriting the
-	  // input; this is a benchmark, not a numerical verification
-	  // test.  (We have the latter implemented as tsqr_verify()
-	  // in this file.)  For the same reason, don't worry about
-	  // un-cache-blocking the output (when cache blocks are
-	  // stored contiguously).
-	  factor_output_type factor_output = 
-	    tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
-			 R.get(), R.lda(), contiguousCacheBlocks);
-	  tsqr.explicit_Q (nrows_local, 
-			   ncols, A_copy.get(), A_copy.lda(), factor_output, 
-			   ncols, Q_local.get(), Q_local.lda(), 
-			   contiguousCacheBlocks);
-	  // Timings in debug mode likely won't make sense, because
-	  // Proc 0 is outputting the debug messages to cerr.
-	  // Nevertheless, we don't put any "if(b_debug)" calls in the
-	  // timing loop.
+	  timer.start();
+	  for (int trial_num = 0; trial_num < ntrials; ++trial_num)
+	    tsqr.factorExplicit (A_copy.view(), Q_local.view(), R.view(), 
+				 contiguousCacheBlocks);
+	  tsqr_timing = timer.stop();
 	}
-      // Compute the resulting total time (in seconds) to execute
-      // ntrials runs of Tsqr::factor() and Tsqr::explicit_Q().  The
-      // time may differ on different MPI processes.
-      double tsqr_timing = timer.stop();
+      else
+	{
+	  timer.start();
+	  for (int trial_num = 0; trial_num < ntrials; ++trial_num)
+	    {
+	      // Factor the matrix and compute the explicit Q factor.
+	      // Don't worry about the fact that we're overwriting the
+	      // input; this is a benchmark, not a numerical verification
+	      // test.  (We have the latter implemented as tsqr_verify()
+	      // in this file.)  For the same reason, don't worry about
+	      // un-cache-blocking the output (when cache blocks are
+	      // stored contiguously).
+	      factor_output_type factor_output = 
+		tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
+			     R.get(), R.lda(), contiguousCacheBlocks);
+	      tsqr.explicit_Q (nrows_local, 
+			       ncols, A_copy.get(), A_copy.lda(), factor_output, 
+			       ncols, Q_local.get(), Q_local.lda(), 
+			       contiguousCacheBlocks);
+	      // Timings in debug mode likely won't make sense, because
+	      // Proc 0 is outputting the debug messages to cerr.
+	      // Nevertheless, we don't put any "if(b_debug)" calls in the
+	      // timing loop.
+	    }
+	  // Compute the resulting total time (in seconds) to execute
+	  // ntrials runs of Tsqr::factor() and Tsqr::explicit_Q().  The
+	  // time may differ on different MPI processes.
+	  tsqr_timing = timer.stop();
+	}
 
       if (b_debug)
 	{
