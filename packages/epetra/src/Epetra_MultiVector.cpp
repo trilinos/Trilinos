@@ -2298,7 +2298,7 @@ void Epetra_MultiVector::Print(ostream& os) const {
       int NumMyElements1 =Map(). NumMyElements();
       int MaxElementSize1 = Map().MaxElementSize();
       int * MyGlobalElements1 = Map().MyGlobalElements();
-      int * FirstPointInElementList1;
+      int * FirstPointInElementList1 = NULL;
       if (MaxElementSize1!=1) FirstPointInElementList1 = Map().FirstPointInElementList();
       double ** A_Pointers = Pointers();
 
