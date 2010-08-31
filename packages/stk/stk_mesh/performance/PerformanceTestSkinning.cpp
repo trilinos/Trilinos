@@ -28,9 +28,9 @@
 
 namespace {
 
-unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
+size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
 
-  const unsigned mesh_rank = stk::mesh::Element;
+  const size_t mesh_rank = stk::mesh::Element;
 
   const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
@@ -43,7 +43,7 @@ unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin
 
 void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
 
-  const unsigned mesh_rank = stk::mesh::Element;
+  const size_t mesh_rank = stk::mesh::Element;
 
   const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
@@ -147,7 +147,7 @@ void copy_nodes_and_break_relations( stk::mesh::BulkData     & mesh,
     for (; relations_pair.first != relations_pair.second;) {
       --relations_pair.second;
       stk::mesh::Entity * current_entity = (relations_pair.second->entity());
-      unsigned side_ordinal = relations_pair.second->identifier();
+      size_t side_ordinal = relations_pair.second->identifier();
 
       if (stk::mesh::in_receive_ghost(*current_entity)) {
         // TODO deleteing the ghost triggers a logic error at the
@@ -209,7 +209,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 
-      unsigned proc = entity_comm.first->proc;
+      size_t proc = entity_comm.first->proc;
       comm.send_buffer(proc).pack<stk::mesh::EntityKey>(node.key())
         .pack<stk::mesh::EntityKey>(new_node.key());
 
@@ -226,7 +226,7 @@ void communicate_and_create_shared_nodes( stk::mesh::BulkData & mesh,
 
     for (; entity_comm.first != entity_comm.second; ++entity_comm.first) {
 
-      unsigned proc = entity_comm.first->proc;
+      size_t proc = entity_comm.first->proc;
       comm.send_buffer(proc).pack<stk::mesh::EntityKey>(node.key())
         .pack<stk::mesh::EntityKey>(new_node.key());
 
@@ -304,10 +304,12 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
-  const unsigned p_size = stk::parallel_machine_size(pm);
-  const unsigned p_rank = stk::parallel_machine_rank(pm);
+  const size_t p_size = stk::parallel_machine_size(pm);
+  const size_t p_rank = stk::parallel_machine_rank(pm);
 
-  const int NX = p_size*30, NY = 30, NZ = 30;
+  // Every processor will be involved in detachment and skin-update up to 500 processors.
+  // This puts 5000 elements on each processor
+  const size_t NX = p_size*10, NY = 20, NZ = 25;
 
   /* timings[0] = create mesh
    * timings[1] = intial skin mesh
@@ -345,21 +347,24 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
     if ( test_run < 2) {
       //detach 1/3 of the mesh
-      for (int ix=NX/3; ix < 2*NX/3; ++ix) {
-      for (int iy=0; iy < NY; ++iy) {
-      for (int iz=0; iz < NZ; ++iz) {
+      size_t num_detached_this_proc = 0;
+      for (size_t ix=NX/3; ix < 2*NX/3; ++ix) {
+      for (size_t iy=0; iy < NY; ++iy) {
+      for (size_t iz=0; iz < NZ; ++iz) {
         stk::mesh::Entity * element = fixture.elem(ix,iy,iz);
         if (element != NULL && element->owner_rank() == mesh.parallel_rank()) {
           entities_to_separate.push_back(element);
+          num_detached_this_proc++;
         }
       }
       }
       }
+      STKUNIT_EXPECT_TRUE( num_detached_this_proc > 0u );
     } else {
       //detach middle of the mesh
-      for (int ix=NX/2; ix < NX/2+1; ++ix) {
-      for (int iy=NY/2; iy < NY/2+1; ++iy) {
-      for (int iz=NZ/2; iz < NZ/2+1; ++iz) {
+      for (size_t ix=NX/2; ix < NX/2+1; ++ix) {
+      for (size_t iy=NY/2; iy < NY/2+1; ++iy) {
+      for (size_t iz=NZ/2; iz < NZ/2+1; ++iz) {
         stk::mesh::Entity * element = fixture.elem(ix,iy,iz);
         if (element != NULL && element->owner_rank() == mesh.parallel_rank()) {
           entities_to_separate.push_back(element);
@@ -433,14 +438,14 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
       std::cout << "\n\n";
     }
 
-    unsigned num_skin_entities = count_skin_entities(mesh, skin_part);
+    size_t num_skin_entities = count_skin_entities(mesh, skin_part);
 
     stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
-    unsigned expected_num_skin;
+    size_t expected_num_skin;
 
     if ( test_run < 2) {
-      expected_num_skin = 3*2*(NX/3*NY + NX/3*NZ + NY*NZ);
+      expected_num_skin = 2*(NX*NY + NX*NZ + 3*NY*NZ);
     } else {
       expected_num_skin = 2*(NX*NY + NX*NZ + NY*NZ) + 12;
     }
