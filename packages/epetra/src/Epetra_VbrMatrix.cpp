@@ -334,7 +334,7 @@ int Epetra_VbrMatrix::Allocate() {
     if (NumAllocatedBlockEntries > 0) {
       Entries_[i] = new Epetra_SerialDenseMatrix*[NumAllocatedBlockEntries];
       for (j=0; j < NumAllocatedBlockEntries; j++) {
-	Entries_[i][j] = 0;
+        Entries_[i][j] = 0;
       }
     }
     else {
@@ -355,46 +355,36 @@ void Epetra_VbrMatrix::DeleteMemory()
 {
   int i;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
-
   for (i=0; i<NumMyBlockRows_; i++) {
     int NumAllocatedBlockEntries = NumAllocatedBlockEntriesPerRow_[i];
-    
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
+
     if (NumAllocatedBlockEntries >0) {
-  
-      // cout << __FILE__ << " i=" << i << " linje =" << __LINE__ << endl ; 
+
       for (int j=0; j < NumAllocatedBlockEntries; j++) {
-	if (Entries_[i][j]!=0) {
-	  delete Entries_[i][j];
-	}
+        if (Entries_[i][j]!=0) {
+          delete Entries_[i][j];
+        }
       }
       delete [] Entries_[i];
     }
   }
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (All_Values_Orig_!=0)   delete [] All_Values_Orig_;
   All_Values_Orig_ = 0;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (Entries_!=0)       delete [] Entries_;
   Entries_ = 0;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (ImportVector_!=0) delete ImportVector_;
   ImportVector_ = 0;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   NumMyBlockRows_ = 0;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (LenTemps_>0) {
     delete [] TempRowDims_;
     delete [] TempEntries_;
   }
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   // Delete any objects related to supporting the RowMatrix and Operator interfaces
   if (HavePointObjects_) {
 #if 1
@@ -412,21 +402,16 @@ void Epetra_VbrMatrix::DeleteMemory()
     HavePointObjects_ = false;
   }
 	
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (OperatorX_!=0) {
     delete OperatorX_;
     delete OperatorY_;
   }
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   InitializeDefaults(); // Reset all basic pointers to zero
   Allocated_ = false;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   delete Graph_; // We created the graph, so must delete it.
   Graph_ = 0;
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
-
 }
 
 //==============================================================================
@@ -737,6 +722,7 @@ int Epetra_VbrMatrix::EndInsertValues()
     ierr = 3;//positive warning code indicates we expanded allocated memory
     Epetra_SerialDenseMatrix** tmp_Entries = new Epetra_SerialDenseMatrix*[newNumAllocBlocks];
     for(j=0; j<oldNumBlocks; ++j) tmp_Entries[j] = Entries_[CurBlockRow_][j];
+    for(j=oldNumBlocks; j<newNumAllocBlocks; ++j) tmp_Entries[j] = NULL;
     delete [] Entries_[CurBlockRow_];
     Entries_[CurBlockRow_] = tmp_Entries;
   }
