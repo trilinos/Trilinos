@@ -82,6 +82,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Meros                 meros                          SS
   FEI                   fei                            PS
   Anasazi               anasazi                        PS
+  Teko                  teko                           SS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
   STK                   stk                            SS # Depends on boost
@@ -131,3 +132,4 @@ PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
