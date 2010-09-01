@@ -30,6 +30,8 @@
 #define __TSQR_TbbTsqr_hpp
 
 #include <TbbTsqr_TbbParallelTsqr.hpp>
+#include <Tsqr_TimeStats.hpp>
+#include <Teuchos_Time.hpp>
 // #include <TbbRecursiveTsqr.hpp>
 
 #include <stdexcept>
@@ -42,15 +44,6 @@
 
 namespace TSQR {
   namespace TBB {
-
-    /// \class TrivialTimer
-    /// \brief Satisfies TimerType concept trivially
-    class TrivialTimer {
-    public:
-      TrivialTimer (const std::string& name = std::string("NoName")) {}
-      void start() {}
-      double stop() { return double(0); }
-    };
 
     /// \class TbbTsqr
     /// \brief Intranode TSQR, parallelized with Intel TBB
@@ -65,7 +58,7 @@ namespace TSQR {
     ///   TrivialTimer; it times the divide-and-conquer base cases
     ///   (the operations on each CPU core within the thread-parallel
     ///   implementation).
-    template< class LocalOrdinal, class Scalar, class TimerType = TrivialTimer >
+    template< class LocalOrdinal, class Scalar, class TimerType = Teuchos::Time >
     class TbbTsqr {
     private:
       // Note: this is NOT a use of the pImpl idiom.  TbbRecursiveTsqr
@@ -76,6 +69,12 @@ namespace TSQR {
       //
       //TbbRecursiveTsqr< LocalOrdinal, Scalar > impl_;
       TbbParallelTsqr< LocalOrdinal, Scalar, TimerType > impl_;
+
+      // Collected running statistcs on various computations
+      TimeStats factorStats_, applyStats_, explicitQStats_, cacheBlockStats_, unCacheBlockStats_;
+
+      // Timers for various computations
+      TimerType factorTimer_, applyTimer_, explicitQTimer_, cacheBlockTimer_, unCacheBlockTimer_;
 
     public:
       typedef Scalar scalar_type;
@@ -104,7 +103,12 @@ namespace TSQR {
       ///   which may or may not give good performance on your platform.
       TbbTsqr (const size_t numCores,
 	       const size_t cacheBlockSize = 0) :
-	impl_ (numCores, cacheBlockSize)
+	impl_ (numCores, cacheBlockSize),
+	factorTimer_ ("TbbTsqr::factor"),
+	applyTimer_ ("TbbTsqr::apply"),
+	explicitQTimer_ ("TbbTsqr::explicit_Q"),
+	cacheBlockTimer_ ("TbbTsqr::cache_block"),
+	unCacheBlockTimer_ ("TbbTsqr::un_cache_block")
       {}
 
       /// Whether or not this QR factorization produces an R factor
@@ -121,7 +125,9 @@ namespace TSQR {
 		   const Scalar A_in[],
 		   const LocalOrdinal lda_in) const
       {
+	cacheBlockTimer_.start(true);
 	impl_.cache_block (nrows, ncols, A_out, A_in, lda_in);
+	cacheBlockStats_.update (cacheBlockTimer_.stop());
       }
 
       void
@@ -131,7 +137,9 @@ namespace TSQR {
 		      const LocalOrdinal lda_out,		    
 		      const Scalar A_in[]) const
       {
+	unCacheBlockTimer_.start(true);
 	impl_.un_cache_block (nrows, ncols, A_out, lda_out, A_in);
+	unCacheBlockStats_.update (unCacheBlockTimer_.stop());
       }
 
       void
@@ -196,7 +204,9 @@ namespace TSQR {
 	      const LocalOrdinal ldr,
 	      const bool contiguous_cache_blocks = false)
       {
+	factorTimer_.start(true);
 	return impl_.factor (nrows, ncols, A, lda, R, ldr, contiguous_cache_blocks);
+	factorStats_.update (factorTimer_.stop());
       }
 
       /// \brief Apply Q factor to the global dense matrix C
@@ -244,8 +254,10 @@ namespace TSQR {
 	     const LocalOrdinal ldc,
 	     const bool contiguous_cache_blocks = false)
       {
+	applyTimer_.start(true);
 	impl_.apply (apply_type, nrows, ncols_Q, Q, ldq, factor_output, 
 		     ncols_C, C, ldc, contiguous_cache_blocks);
+	applyStats_.update (applyTimer_.stop());
       }
 
       /// \brief Compute the explicit Q factor from factor()
@@ -285,8 +297,10 @@ namespace TSQR {
 		  const LocalOrdinal ldq_out,
 		  const bool contiguous_cache_blocks = false)
       {
+	explicitQTimer_.start(true);
 	impl_.explicit_Q (nrows, ncols_Q_in, Q_in, ldq_in, factor_output,
 			  ncols_Q_out, Q_out, ldq_out, contiguous_cache_blocks);
+	explicitQStats_.update (explicitQTimer_.stop());
       }
 
       /// \brief Compute Q*B
@@ -356,6 +370,26 @@ namespace TSQR {
       min_seq_apply_timing () const { return impl_.min_seq_apply_timing(); }
       double
       max_seq_apply_timing () const { return impl_.max_seq_apply_timing(); }
+
+      void getStats (std::vector< TimeStats >& stats) {
+	const int numStats = 5;
+	stats.resize (numStats);
+	stats[0] = factorStats_;
+	stats[1] = applyStats_;
+	stats[2] = explicitQStats_;
+	stats[3] = cacheBlockStats_;
+	stats[4] = unCacheBlockStats_;
+      }
+
+      void getStatsLabels (std::vector< std::string >& labels) {
+	const int numStats = 5;
+	labels.resize (numStats);
+	labels[0] = factorTimer_.name();
+	labels[1] = applyTimer_.name();
+	labels[2] = explicitQTimer_.name();
+	labels[3] = cacheBlockTimer_.name();
+	labels[4] = unCacheBlockTimer_.name();
+      }
 
     }; // class TbbTsqr
 

@@ -1,12 +1,18 @@
 #ifndef __TSQR_TimeStats_hpp
 #define __TSQR_TimeStats_hpp
 
-#include <cstddef> // size_t
+// #include <cstddef> // size_t
+#include <ostream>
+#include <stdexcept>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
+
+  // Forward declaration
+  template< class Scalar >
+  class MessengerBase;
 
   /// \class TimeStats
   /// \brief Collect running statistics
@@ -27,6 +33,12 @@ namespace TSQR {
     ///
     void update (const double curTime);
 
+    /// Print to out
+    ///
+    void 
+    print (std::ostream& out, 
+	   const bool humanReadable) const;
+
     /// Minimum value seen thus far (+Inf if no data has been
     /// collected)
     double min() const { return min_; }
@@ -45,12 +57,20 @@ namespace TSQR {
 
     /// Count of data points collected thus far
     ///
-    size_t count() const { return count_; }
+    int count() const { return count_; }
+
+    /// Produce global time statistics out of all the local ones.
+    ///
+    static TimeStats
+    globalTimeStats (MessengerBase< double >* const comm,
+		     const TimeStats& localStats);
 
   private:
     double min_, max_, mean_, total_;
-    size_t count_;
+    int count_;
   };
+
+  
 
 } // namespace TSQR
 

@@ -42,33 +42,34 @@ namespace TSQR {
     ///   communication between MPI process(es).
     DistTsqrRB (const Teuchos::RCP< MessengerBase< scalar_type > >& messenger) :
       messenger_ (messenger),
-      totalTime_ (Teuchos::TimeMonitor::getNewTimer ("factorExplicit() total time")),
-      reduceCommTime_ (Teuchos::TimeMonitor::getNewTimer ("factorReduce() communication time")),
-      reduceTime_ (Teuchos::TimeMonitor::getNewTimer ("factorReduce() total time")),
-      bcastCommTime_ (Teuchos::TimeMonitor::getNewTimer ("explicitQBroadcast() communication time")),
-      bcastTime_ (Teuchos::TimeMonitor::getNewTimer ("explicitQBroadcast() total time"))
+      totalTime_ (Teuchos::TimeMonitor::getNewTimer ("DistTsqrRB::factorExplicit() total time")),
+      reduceCommTime_ (Teuchos::TimeMonitor::getNewTimer ("DistTsqrRB::factorReduce() communication time")),
+      reduceTime_ (Teuchos::TimeMonitor::getNewTimer ("DistTsqrRB::factorReduce() total time")),
+      bcastCommTime_ (Teuchos::TimeMonitor::getNewTimer ("DistTsqrRB::explicitQBroadcast() communication time")),
+      bcastTime_ (Teuchos::TimeMonitor::getNewTimer ("DistTsqrRB::explicitQBroadcast() total time"))
     {}
 
     /// Fill in the timings vector with cumulative timings from
     /// factorExplicit().  The vector gets resized to fit all the
     /// timings.
     void
-    getTimings (std::vector< TimeStats >& timings) 
+    getStats (std::vector< TimeStats >& stats) const
     {
       const int numTimers = 5;
-      timings.resize (std::max (timings.size(), static_cast<size_t>(numTimers)));
+      stats.resize (std::max (stats.size(), static_cast<size_t>(numTimers)));
 
-      timings[0] = totalStats_;
-      timings[1] = reduceCommStats_;
-      timings[2] = reduceStats_;
-      timings[3] = bcastCommStats_;
-      timings[4] = bcastStats_;
+      stats[0] = totalStats_;
+      stats[1] = reduceCommStats_;
+      stats[2] = reduceStats_;
+      stats[3] = bcastCommStats_;
+      stats[4] = bcastStats_;
     }
 
     /// Fill in the labels vector with the string labels for the
-    /// timings.  The vector gets resized to fit all the labels.
+    /// timings from factorExplicit().  The vector gets resized to fit
+    /// all the labels.
     void
-    getTimingLabels (std::vector< std::string >& labels)
+    getStatsLabels (std::vector< std::string >& labels) const
     {
       const int numTimers = 5;
       labels.resize (std::max (labels.size(), static_cast<size_t>(numTimers)));

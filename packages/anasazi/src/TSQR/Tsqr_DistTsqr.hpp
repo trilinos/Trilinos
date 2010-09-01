@@ -118,6 +118,24 @@ namespace TSQR {
       reduceBroadcastImpl_.factorExplicit (R_mine, Q_mine);
     }
 
+    /// Fill in the timings vector with cumulative timings from
+    /// factorExplicit().  The vector gets resized to fit all the
+    /// timings.
+    void 
+    getFactorExplicitTimings (std::vector< TimeStats >& stats) const
+    {
+      reduceBroadcastImpl_.getStats (stats);
+    }
+
+    /// Fill in the labels vector with the string labels for the
+    /// timings from factorExplicit().  The vector gets resized to fit
+    /// all the labels.
+    void
+    getFactorExplicitTimingLabels (std::vector< std::string >& labels) const
+    {
+      reduceBroadcastImpl_.getStatsLabels (labels);
+    }
+
     /// \brief Compute QR factorization of R factors, one per MPI process
     ///
     /// Compute the QR factorization of the P*ncols by ncols matrix

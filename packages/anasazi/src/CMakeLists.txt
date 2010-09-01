@@ -153,24 +153,45 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   # Check for TSQR configuration options.
   #
 
+  # Whether to enable TSQR's complex arithmetic (std::complex<T>)
+  # support.
+  #
+  # Enabled by default (unless disabled explicitly at the command
+  # line) if Anasazi is built with complex arithmetic support.
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_Complex
     HAVE_TSQR_COMPLEX
     "For TSQR in Anasazi: enable complex arithmetic (std::complex<T>) support"
     "${${PACKAGE_NAME}_ENABLE_COMPLEX}" )
 
+  # Whether to enable TSQR's Fortran backend (TSQR::CombineFortran).
+  #
+  # Defaults to off, even if Trilinos is built with Fortran support.
+  # This is because TSQR's Fortran backend must support the Fortran
+  # 2003 language standard.
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_Fortran
     HAVE_TSQR_FORTRAN
     "For TSQR in Anasazi: enable the TSQR::CombineFortran backend.  Your Fortran compiler must support the Fortran 2003 standard in order for this to work."
     OFF )
 
+  # Whether to build TbbTsqr and related classes.
+  #
+  # Enabled by default (unless disabled explicitly at the command
+  # line) if Trilinos is built with the TBB (Intel's Threading
+  # Building Blocks) TPL (third-party library) enabled.
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_Intel_TBB
     HAVE_TSQR_INTEL_TBB
     "For TSQR in Anasazi: enable Intel Threading Building Blocks support.  This is used for intranode parallelism in TSQR."
-    OFF )
+    "${TPL_ENABLE_TBB}" )
 
+  # Whether to build TSQR with support for MPI_COMM_NETWORK and
+  # MPI_COMM_NODE.
+  #
+  # Defaults to off, since as of writing this comment (summer 2010),
+  # these features are not yet in the MPI standard and are being
+  # prototyped in the source tree of OpenMPI.
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_NEW_MPI_COMMUNICATORS
     HAVE_TSQR_NEW_MPI_COMMUNICATORS
@@ -309,6 +330,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_TbbTest.hpp
     TSQR/Tsqr_TestSetup.hpp
     TSQR/Tsqr_TimeStats.hpp
+    TSQR/Tsqr_TrivialTimer.hpp
     TSQR/Tsqr_TsqrTest.hpp
     TSQR/Tsqr_Util.hpp
     TSQR/Tsqr_verifyTimerConcept.hpp
@@ -324,6 +346,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_SeqTest.cpp
     TSQR/Tsqr_StatTimeMonitor.cpp
     TSQR/Tsqr_TimeStats.cpp
+    TSQR/Tsqr_TrivialTimer.cpp
     )
   APPEND_SET(HEADERS
     TSQR/TsqrFactory.hpp

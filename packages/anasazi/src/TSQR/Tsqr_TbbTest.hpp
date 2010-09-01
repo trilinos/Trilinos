@@ -31,6 +31,7 @@
 
 #include <Tsqr_nodeTestProblem.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
+#include <Tsqr_Random_NormalGenerator.hpp>
 
 #include <Tsqr_Blas.hpp>
 #include <Tsqr_Lapack.hpp>
@@ -65,9 +66,9 @@ namespace TSQR {
     /// Test the accuracy of Intel TBB TSQR on an nrows by ncols
     /// matrix (using the given number of cores and the given cache
     /// block size (in bytes)), and print the results to stdout.
-    template< class Ordinal, class Scalar, class Generator >
+    template< class Ordinal, class Scalar >
     void
-    verifyTbbTsqr (Generator& generator,
+    verifyTbbTsqr (TSQR::Random::NormalGenerator< Ordinal, Scalar >& generator,
 		   const Ordinal nrows, 
 		   const Ordinal ncols, 
 		   const int num_cores,
@@ -224,10 +225,9 @@ namespace TSQR {
 
     /// Benchmark Intel TBB TSQR vs. LAPACK's QR, and print the
     /// results to stdout.
-    template< class Ordinal, class Scalar, class Generator, class TimerType >
+    template< class Ordinal, class Scalar, class TimerType >
     void
-    benchmarkTbbTsqr (Generator& generator,
-		      const int ntrials,
+    benchmarkTbbTsqr (const int ntrials,
 		      const Ordinal nrows, 
 		      const Ordinal ncols, 
 		      const int num_cores,
@@ -240,9 +240,13 @@ namespace TSQR {
       using std::cerr;
       using std::cout;
       using std::endl;
-
       TSQR::Test::verifyTimerConcept< TimerType >();
 
+      // Pseudorandom normal(0,1) generator.  Default seed is OK,
+      // because this is a benchmark, not an accuracy test.
+      TSQR::Random::NormalGenerator< ordinal_type, scalar_type > generator;
+
+      // Set up TSQR implementation.
       TbbTsqr< Ordinal, Scalar, TimerType > actor (num_cores, cache_block_size);
 
       Matrix< Ordinal, Scalar > A (nrows, ncols);
@@ -291,7 +295,7 @@ namespace TSQR {
       // Print the results
       if (human_readable)
 	{
-	  cout << "(Intel TBB / cache-blocked) TSQR:" << endl
+	  cout << "(Intel TBB / cache-blocked) TSQR cumulative timings:" << endl
 	       << "# rows = " << nrows << endl
 	       << "# columns = " << ncols << endl
 	       << "# cores: " << num_cores << endl
@@ -308,21 +312,35 @@ namespace TSQR {
 	       << "Total time (s) in apply() (max over all tasks): " 
 	       << (ntrials * actor.max_seq_apply_timing()) << endl
 	       << endl << endl;
+	  cout << "(Intel TBB / cache-blocked) TSQR per-invocation timings:" << endl;
+	  
+	  std::vector< TimeStats > stats;
+	  actor.getStats (stats);
+	  std::vector< std::string> labels;
+	  actor.getStatsLabels (stats);
+
+	  for (std::vector< std::string >::size_type k = 0; k < labels.size(); ++k)
+	    {
+	      cout << "  " << labels[k] << endl;
+	      stats[k].print (count, human_readable);
+	    }
 	}
       else
-	// We don't include {min,max}_seq_apply_timing() here, because
-	// those times don't benefit from the accuracy of benchmarking
-	// for ntrials > 1.  Thus, it's misleading to include them
-	// with tbb_tsqr_timing, the total time over ntrials trials.
-	cout << "TbbTSQR"
-	     << "," << nrows
-	     << "," << ncols
-	     << "," << num_cores
-	     << "," << actor.cache_block_size()
-	     << "," << contiguous_cache_blocks 
-	     << "," << ntrials
-	     << "," << tbb_tsqr_timing 
-	     << endl;
+	{
+	  // We don't include {min,max}_seq_apply_timing() here, because
+	  // those times don't benefit from the accuracy of benchmarking
+	  // for ntrials > 1.  Thus, it's misleading to include them
+	  // with tbb_tsqr_timing, the total time over ntrials trials.
+	  cout << "TbbTsqr"
+	       << "," << nrows
+	       << "," << ncols
+	       << "," << num_cores
+	       << "," << actor.cache_block_size()
+	       << "," << contiguous_cache_blocks 
+	       << "," << ntrials
+	       << "," << tbb_tsqr_timing 
+	       << endl;
+	}
     }
   } // namespace Test
 } // namespace TSQR
