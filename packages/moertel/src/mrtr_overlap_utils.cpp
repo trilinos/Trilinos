@@ -43,14 +43,14 @@
 /*----------------------------------------------------------------------*
  |  copy a polygon of points (private)                       mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::CopyPointPolygon(map<int,RefCountPtr<MOERTEL::Point> >& from, map<int,RefCountPtr<MOERTEL::Point> >& to)
+bool MOERTEL::Overlap::CopyPointPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& from, std::map<int,Teuchos::RCP<MOERTEL::Point> >& to)
 {
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=from.begin(); pcurr != from.end(); ++pcurr)
-    if (pcurr->second != null)
+    if (pcurr->second != Teuchos::null)
     {
-      RefCountPtr<MOERTEL::Point> tmp = rcp(new MOERTEL::Point(pcurr->second->Id(),pcurr->second->Xi(),pcurr->second->OutLevel()));
-      to.insert(pair<int,RefCountPtr<MOERTEL::Point> >(tmp->Id(),tmp));
+	  Teuchos::RCP<MOERTEL::Point> tmp = Teuchos::rcp(new MOERTEL::Point(pcurr->second->Id(),pcurr->second->Xi(),pcurr->second->OutLevel()));
+      to.insert(std::pair<int,Teuchos::RCP<MOERTEL::Point> >(tmp->Id(),tmp));
     }
   return true;
 }
@@ -129,8 +129,8 @@ double MOERTEL::Overlap::Clip_ParameterPointOnLine(const double* P0,const double
  *----------------------------------------------------------------------*/
 bool MOERTEL::Overlap::AddSegment(int id, MOERTEL::Segment* seg)
 {
-  RefCountPtr<MOERTEL::Segment> tmp = rcp(seg);
-  s_.insert(pair<int,RefCountPtr<MOERTEL::Segment> >(id,tmp));
+  Teuchos::RCP<MOERTEL::Segment> tmp = Teuchos::rcp(seg);
+  s_.insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(id,tmp));
   return true;
 }
 
@@ -140,7 +140,7 @@ bool MOERTEL::Overlap::AddSegment(int id, MOERTEL::Segment* seg)
 bool MOERTEL::Overlap::AddPointtoPolygon(const int id,const double* P)
 {
   // check whether this point is already in there
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = p_.find(id);
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = p_.find(id);
   // it's there
   if (curr != p_.end())
     curr->second->SetXi(P);
@@ -148,8 +148,8 @@ bool MOERTEL::Overlap::AddPointtoPolygon(const int id,const double* P)
   {
     //cout << "OVERLAP Clip_AddPointtoPolygon: added point " << id 
     //     << " xi=" << P[0] << "/" << P[1] << endl;
-    RefCountPtr<MOERTEL::Point> p = rcp(new MOERTEL::Point(id,P,OutLevel()));
-    p_.insert(pair<int,RefCountPtr<MOERTEL::Point> >(id,p));
+	Teuchos::RCP<MOERTEL::Point> p = Teuchos::rcp(new MOERTEL::Point(id,P,OutLevel()));
+    p_.insert(std::pair<int,Teuchos::RCP<MOERTEL::Point> >(id,p));
   }
   return true;
 }
@@ -157,10 +157,10 @@ bool MOERTEL::Overlap::AddPointtoPolygon(const int id,const double* P)
 /*----------------------------------------------------------------------*
  |  add point (private)                                      mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::AddPointtoPolygon(map<int,RefCountPtr<MOERTEL::Point> >& p,const int id,const double* P)
+bool MOERTEL::Overlap::AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,const int id,const double* P)
 {
-  RefCountPtr<MOERTEL::Point> point = rcp(new MOERTEL::Point(id,P,OutLevel()));
-  p.insert(pair<int,RefCountPtr<MOERTEL::Point> >(id,point));
+  Teuchos::RCP<MOERTEL::Point> point = Teuchos::rcp(new MOERTEL::Point(id,P,OutLevel()));
+  p.insert(std::pair<int,Teuchos::RCP<MOERTEL::Point> >(id,point));
   return true;
 }
 
@@ -170,10 +170,10 @@ bool MOERTEL::Overlap::AddPointtoPolygon(map<int,RefCountPtr<MOERTEL::Point> >& 
 bool MOERTEL::Overlap::RemovePointfromPolygon(const int id,const double* P)
 {
   // check whether this point is in there
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = p_.find(id);
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = p_.find(id);
   if (curr != p_.end())
   {
-    curr->second = null;
+    curr->second = Teuchos::null;
     p_.erase(id);
     // cout << "OVERLAP Clip_RemovePointfromPolygon: removed point " << id << endl;
     return true;
@@ -188,14 +188,14 @@ bool MOERTEL::Overlap::RemovePointfromPolygon(const int id,const double* P)
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::PointView(vector<RefCountPtr<MOERTEL::Point> >& points)
+void MOERTEL::Overlap::PointView(std::vector<Teuchos::RCP<MOERTEL::Point> >& points)
 {
   // allocate vector of ptrs
   points.resize(SizePointPolygon());
   
   // get the point views
   int count=0;
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=p_.begin(); pcurr != p_.end(); ++pcurr)
   {
     points[count] = pcurr->second;
@@ -214,14 +214,14 @@ void MOERTEL::Overlap::PointView(vector<RefCountPtr<MOERTEL::Point> >& points)
 /*----------------------------------------------------------------------*
  |  get segment view (protected)                             mwgee 11/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::SegmentView(vector<RefCountPtr<MOERTEL::Segment> >& segs)
+void MOERTEL::Overlap::SegmentView(std::vector<Teuchos::RCP<MOERTEL::Segment> >& segs)
 {
   // allocate vector of ptrs
   segs.resize(Nseg());
   
   // get the segment views
   int count=0;
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator curr;
   for (curr=s_.begin(); curr != s_.end(); ++curr)
   {
     segs[count] = curr->second;
@@ -240,8 +240,8 @@ void MOERTEL::Overlap::SegmentView(vector<RefCountPtr<MOERTEL::Segment> >& segs)
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::PointView(map<int,RefCountPtr<MOERTEL::Point> >& p,
-                                       vector<RefCountPtr<MOERTEL::Point> >& points)
+void MOERTEL::Overlap::PointView(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
+                                       std::vector<Teuchos::RCP<MOERTEL::Point> >& points)
 {
   // allocate vector of ptrs
   int np = p.size();
@@ -249,7 +249,7 @@ void MOERTEL::Overlap::PointView(map<int,RefCountPtr<MOERTEL::Point> >& p,
   
   // get the point views
   int count=0;
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=p.begin(); pcurr != p.end(); ++pcurr)
   {
     points[count] = pcurr->second;
@@ -268,13 +268,13 @@ void MOERTEL::Overlap::PointView(map<int,RefCountPtr<MOERTEL::Point> >& p,
 /*----------------------------------------------------------------------*
  |  get point view (private)                                 mwgee 11/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::PointView(vector<MOERTEL::Point*>& p,const int* nodeids,const int np)
+void MOERTEL::Overlap::PointView(std::vector<MOERTEL::Point*>& p,const int* nodeids,const int np)
 {
   p.resize(np);
   
   for (int i=0; i<np; ++i)
   {
-    map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr = p_.find(nodeids[i]);
+	std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator pcurr = p_.find(nodeids[i]);
     if (pcurr==p_.end())
     {
       cout << "***ERR*** MOERTEL::Overlap::PointView:\n"
@@ -459,7 +459,7 @@ bool MOERTEL::Overlap::QuickOverlapTest()
  *----------------------------------------------------------------------*/
 bool MOERTEL::Overlap::Centroid(
                       double xi[], 
-                      const vector<RefCountPtr<MOERTEL::Point> >& points, 
+                      const std::vector<Teuchos::RCP<MOERTEL::Point> >& points, 
                       const int np)
 {
   xi[0] = xi[1] = 0.0;

@@ -10,6 +10,7 @@
 #
 # 3. Type "make" should build the examples
 #
+# Note that this test requires Trilinos built with MPI and will only run on two PE
 
 TRILINOS_HOME = /Users/hansga/root/usr/local/trilinos-10.2/OSX_BIN
 
@@ -18,7 +19,7 @@ TRILINOS_HOME = /Users/hansga/root/usr/local/trilinos-10.2/OSX_BIN
 ## in environment variables.
 
 
-include $(TRILINOS_HOME)/include/Makefile.export.Moertel
+include $(TRILINOS_HOME)/Makefile.export.Moertel
 
 #MOERTEL_CXX_FLAGS = -g 
 #MOERTEL_CXX_FLAGS = -O3 
@@ -43,22 +44,13 @@ LINK_FLAGS = -L$(TRILINOS_HOME)/lib $(MOERTEL_LIBRARIES) $(MOERTEL_TPL_LIBRARIES
 ## Build application code
 ##
 
-# Note that if you define exodus_output below, you must have compiled in exodusII support using the
-# appropriate TPLs in Trilinos
-
 CXX=$(MOERTEL_CXX_COMPILER)
-CPPFLAGS=$(COMPILE_FLAGS) -DEXODUS_OUTPUT # -DMPICH_IGNORE_CXX_SEEK
+CPPFLAGS=$(COMPILE_FLAGS) # -DMPICH_IGNORE_CXX_SEEK
 
-all: TwoSquares Hex_3D test1
-
-TwoSquares: TwoSquares.cpp 
-	$(CXX) $(CPPFLAGS) -o $@ $< $(LINK_FLAGS)
-
-Hex_3D: Hex_3D.cpp
-	$(CXX) $(CPPFLAGS) -o $@ $< $(LINK_FLAGS)
+all: test1
 
 test1: test1.cpp
 	$(CXX) $(CPPFLAGS) -o $@ $< $(LINK_FLAGS)
 
 clean:
-	rm -f *.o TwoSquares Hex_3D test1
+	rm -f *.o test1

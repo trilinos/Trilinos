@@ -1,0 +1,55 @@
+# This is a standalone makefile that provides an example of how to build
+# the Moertel examples outside the distribution. 
+#
+# Instructions:
+#
+# 1. Copy the contents of this directory (this makefile and the .cpp files) 
+#    to a clean directory
+#
+# 2. Set TRILINOS_HOME below to the root of your installed Trilinos tree.
+#
+# 3. Type "make" should build the examples
+#
+
+TRILINOS_HOME = /Users/hansga/root/usr/local/trilinos-10.2/OSX_BIN
+
+## Put all macros needed below are found in Makefile.export.Moertel
+## Note some of these may be defined
+## in environment variables.
+
+
+include $(TRILINOS_HOME)/Makefile.export.Moertel
+
+#MOERTEL_CXX_FLAGS = -g 
+#MOERTEL_CXX_FLAGS = -O3 
+
+##
+## Build compiler flags
+##
+#
+#
+#
+COMPILE_FLAGS = $(Moertel_CXX_FLAGS) $(Moertel_TPL_INCLUDE_DIRS) \
+	$(Moertel_INCLUDE_DIRS) -I.. -DHAVE_MOERTEL_EXODUS
+
+##
+## Build linker flags
+
+LINK_FLAGS = $(Moertel_LIBRARY_DIRS) $(Moertel_LIBRARIES) $(Moertel_TPL_LIBRARIES) -lifpack -lgaleri
+
+
+
+##
+## Build application code
+##
+
+CXX=$(Moertel_CXX_COMPILER)
+CPPFLAGS=$(COMPILE_FLAGS) # -DMPICH_IGNORE_CXX_SEEK
+
+all: TwoSquares
+
+TwoSquares: TwoSquares.cpp 
+	$(CXX) $(CPPFLAGS) -o $@ $< $(LINK_FLAGS)
+
+clean:
+	rm -f *.o TwoSquares 

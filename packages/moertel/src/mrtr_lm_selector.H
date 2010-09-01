@@ -3,7 +3,7 @@
 # ************************************************************************
 #
 #                          Moertel FE Package
-#                 Copyright (2006) Sandia Corporation
+#                 Copyright (2010) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -32,20 +32,20 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 /*!
- * \file mrtr_function.H
+ * \file mrtr_lm_selector.H
  *
- * \class MOERTEL::Function
+ * \class MOERTEL::Lmselector
  *
- * \brief A virtual class to form a shape function of some type
+ * \brief A virtual class that supports user activation of LMs
  *
- * \date Last update do Doxygen: 20-March-06
+ * \date Last update do Doxygen: 6-Aug-10
  *
  */
-#ifndef MOERTEL_FUNCTION_H
-#define MOERTEL_FUNCTION_H
+#ifndef MOERTEL_LMSELECTOR_H
+#define MOERTEL_LMSELECTOR_H
 
-#include <ctime>
-#include <iostream>
+#include "Teuchos_RefCountPtr.hpp"
+#include "mrtr_node.H"
 
 /*!
 \brief MOERTEL: namespace of the Moertel package
@@ -67,46 +67,20 @@ Use at least the following lines in the configure of Trilinos:<br>
 namespace MOERTEL
 {
 
-class Segment;
-
 /*!
-\class Function
+\class Lmselector
 
-\brief <b> A virtual class to form a shape function of some type </b>
+\brief <b> A virtual class that supports user activation of LMs </b>
 
 
 
 \author Glen Hansen (Glen.Hansen@inl.gov)
 
 */
-class Function 
+class Lmselector
 {
 public:
 
-  /*!
-  \brief Type of function
-  
-  \param func_none : default value
-  \param func_Constant1D : Constant function on a 1D Segment
-  \param func_Linear1D : Linear function on a 1D Segment
-  \param func_DualLinear1D : Dual linear function on a 1D Segment
-  \param func_LinearTri : Linear function on a 3-noded triangle
-  \param func_DualLinearTri : Dual linear function on a 3-noded triangle
-  \param func_ConstantTri : Constant function on a 3-noded triangle
-  */
-  enum FunctionType
-  {
-    func_none,
-    func_Constant1D,
-    func_Linear1D,
-    func_DualLinear1D,
-    func_LinearTri,
-    func_DualLinearTri,
-    func_ConstantTri,
-    func_BiLinearQuad,
-    func_DualBiLinearQuad
-  };
-  
   // @{ \name Constructors and destructors
 
   /*!
@@ -114,13 +88,8 @@ public:
   
   Constructs an instance of this base class.<br>
   
-  \param outlevel : Level of output information written to stdout ( 0 - 10 )
-  \param type : Function type
   */
-  Function(int outlevel,MOERTEL::Function::FunctionType type) : 
-  type_(type),
-  outputlevel_(outlevel) 
-  {};
+  Lmselector(){}
   
   /*!
   \brief Copy-Constructor
@@ -129,58 +98,59 @@ public:
   
   \param old : Instance to be copied
   */
-  Function(const MOERTEL::Function& old) :
-  type_(old.type_),
-  outputlevel_(old.outputlevel_)
-  {}
+  Lmselector(const MOERTEL::Lmselector& old){}
   
   /*!
   \brief Destructor
   */
-  virtual ~Function() {}
-
-  /*!
-  \brief Clone method
-  
-  The derived class implementing this virtual method is supposed to make a
-  deep copy of itself and return a pointer to the copy.
-  
-  */
-  virtual MOERTEL::Function* Clone() const = 0;
-
+  virtual ~Lmselector() {}
 
   //@}
   // @{ \name Public members
 
   /*!
-  \brief Return the level of output written to stdout ( 0 - 10 )
+  \brief Function that determines if the LMs should be active for this node and dof
   
+  \param node (in) : the node hosting the LM
+  \param LMDof (in) : the DOF of the LM in question
+
+  \return bool : true if the M and D values of this node should be accumulated into the rhs, false if not.
   */
-  int OutLevel() { return outputlevel_; }
-  
+
+  virtual bool EvaluateLM(Teuchos::RCP<MOERTEL::Node> node, const int LMDof) = 0;
+
   /*!
-  \brief Return the function type
+  \brief Functions that accumulate values into the RHS depending on the state of the contact problem
   
+  \param node (in) : the slave or master node of interest
+  \param rhs (out) : the JFNK residual vector
+  \param soln (in) : the current state vector
+
+  Note that this class can (and should) be used to accumulate particular values of the LM into rhs using soln. Further,
+  there are two functions, one for the slave interface nodes (that host the LMs) and one for the master interface
+  nodes.
   */
-  MOERTEL::Function::FunctionType Type() const { return type_;}
-  
+
+  virtual void AccumulateSRHS(Teuchos::RCP<MOERTEL::Node> node) = 0;
+
+  virtual void AccumulateMRHS(Teuchos::RCP<MOERTEL::Node> node) = 0;
+
   /*!
-  \brief Evaluate the function and derivatives at a given local coordinate
+  \brief Functions that accumulate values into the RHS depending on the state of the contact problem
   
-  \param xi (in) : Local coordinate where to evaluate the function
-  \param val (out) : Function values at xi
-  \param valdim (in) : Dimension of val
-  \param deriv (out) : Derivative of functions at xi
+  \param row (in) : Row number of the D (or M) matrix to assemble
+  \param col (in) : Column number of the D (or M) matrix to assemble
+  \param val (in) : value of D (or M) to assemble
+
+  This function is used to accumulate values of D and M into the JFNK rhs using soln. 
   */
-  virtual bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
-                                double* val, const int valdim,double* deriv) = 0;
+
+  virtual void AssembleNodeVal(int row, int col, double val) = 0;
+
 
   //@}
 
 protected:
-
-  MOERTEL::Function::FunctionType type_;
-  int                             outputlevel_;
 
   // Note that this base class does not hold any data.
   // If Your derived class needs to hold data, make sure it's carefully
@@ -192,4 +162,4 @@ protected:
 } // namespace MOERTEL
 
 
-#endif // MOERTEL_FUNCTION_H
+#endif // MOERTEL_LMSELECTOR_H

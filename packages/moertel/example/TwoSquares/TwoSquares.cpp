@@ -50,7 +50,8 @@
 #include "Galeri_Utils.h"
 #include "Galeri_FiniteElements.h"
 
-#ifdef EXODUS_OUTPUT
+//#if defined(HAVE_TRIOS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
+#ifdef HAVE_MOERTEL_EXODUS
 #include "ExodusInterface.h"
 #endif
 
@@ -361,8 +362,8 @@ int main(int argc, char *argv[])
     // Note that if "SaddleSystem" was chosen as system of equations
     // ML/AztecOO doesn't work
     // ------------------------------------------------------------- //
-    //list.set("Solver","Amesos");
-    list.set("Solver","ML/Aztec");
+    list.set("Solver","Amesos");
+    //list.set("Solver","ML/Aztec");
     
     // ------------------------------------------------------------- //
     // create sublists for packages Amesos, ML, AztecOO. they will be
@@ -457,8 +458,9 @@ int main(int argc, char *argv[])
     //LHS.PutScalar(0.0);
     //manager.SetInputMatrix(&A,false);
     //manager.Solve(list,LHS,RHS);
-
-#ifdef EXODUS_OUTPUT
+	
+//#if defined(HAVE_TRIOS_EXODUS) || defined(HAVE_MOERTEL_EXODUS)
+#ifdef HAVE_MOERTEL_EXODUS
 
     // ==================    //
     // Output using ExodusII //

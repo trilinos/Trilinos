@@ -48,7 +48,7 @@ oneD_(oneD),
 isComplete_(false),
 isIntegrated_(false),
 gcomm_(comm),
-lcomm_(null),
+lcomm_(Teuchos::null),
 mortarside_(-1),
 ptype_(MOERTEL::Interface::proj_continousnormalfield),
 primal_(MOERTEL::Function::func_none),
@@ -76,30 +76,30 @@ dual_(old.dual_)
   for (int i=0; i<2; ++i)
   {
     // the local segment map
-    map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator seg_curr;
+	std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator seg_curr;
     for (seg_curr=old.seg_[i].begin(); seg_curr != old.seg_[i].end(); ++seg_curr)
     {
-      RefCountPtr<MOERTEL::Segment>  tmpseg = rcp(seg_curr->second->Clone());
-      seg_[i].insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmpseg->Id(),tmpseg));
+	  Teuchos::RCP<MOERTEL::Segment>  tmpseg = Teuchos::rcp(seg_curr->second->Clone());
+      seg_[i].insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmpseg->Id(),tmpseg));
     }
     // the global segment map
     for (seg_curr=old.rseg_[i].begin(); seg_curr != old.rseg_[i].end(); ++seg_curr)
     {
-      RefCountPtr<MOERTEL::Segment> tmpseg = rcp(seg_curr->second->Clone());
-      rseg_[i].insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmpseg->Id(),tmpseg));
+	  Teuchos::RCP<MOERTEL::Segment> tmpseg = Teuchos::rcp(seg_curr->second->Clone());
+      rseg_[i].insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmpseg->Id(),tmpseg));
     }
     // the local node map
-    map<int,RefCountPtr<MOERTEL::Node> >::const_iterator node_curr;
+	std::map<int,Teuchos::RCP<MOERTEL::Node> >::const_iterator node_curr;
     for (node_curr=old.node_[i].begin(); node_curr != old.node_[i].end(); ++node_curr)
     {
-      RefCountPtr<MOERTEL::Node> tmpnode = rcp( new MOERTEL::Node(*(node_curr->second)));
-      node_[i].insert(pair<int,RefCountPtr<MOERTEL::Node> >(tmpnode->Id(),tmpnode));
+	  Teuchos::RCP<MOERTEL::Node> tmpnode = Teuchos::rcp( new MOERTEL::Node(*(node_curr->second)));
+      node_[i].insert(std::pair<int,Teuchos::RCP<MOERTEL::Node> >(tmpnode->Id(),tmpnode));
     }
     // the global node map
     for (node_curr=old.rnode_[i].begin(); node_curr != old.rnode_[i].end(); ++node_curr)
     {
-      RefCountPtr<MOERTEL::Node> tmpnode = rcp(new MOERTEL::Node(*(node_curr->second)));
-      rnode_[i].insert(pair<int,RefCountPtr<MOERTEL::Node> >(tmpnode->Id(),tmpnode));
+	  Teuchos::RCP<MOERTEL::Node> tmpnode = Teuchos::rcp(new MOERTEL::Node(*(node_curr->second)));
+      rnode_[i].insert(std::pair<int,Teuchos::RCP<MOERTEL::Node> >(tmpnode->Id(),tmpnode));
     }
   }
   // copy the PID maps
@@ -144,7 +144,7 @@ bool MOERTEL::Interface::PrintSegments() const
 { 
   if (!lComm()) return true;
   
-  map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
   for (int j=0; j<2; ++j) 
   {
     for (int k=0; k<lComm()->NumProc(); ++k) 
@@ -155,10 +155,10 @@ bool MOERTEL::Interface::PrintSegments() const
              << ":\t Segments Side " << j << endl;
         for (curr=rseg_[j].begin(); curr!=rseg_[j].end(); ++curr)
         {
-          RefCountPtr<MOERTEL::Segment> seg = curr->second;
+		  Teuchos::RCP<MOERTEL::Segment> seg = curr->second;
           if (SegPID(seg->Id()) == k)
           {
-            if (seg == null)
+            if (seg == Teuchos::null)
             {
               cout << "***ERR*** MOERTEL::Interface::PrintSegments:\n"
                    << "***ERR*** found NULL entry in map of segments\n"
@@ -183,7 +183,7 @@ bool MOERTEL::Interface::PrintNodes() const
 { 
   if (!lComm()) return true;
   
-  map<int,RefCountPtr<MOERTEL::Node> >::const_iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::const_iterator curr;
   
   for (int j=0; j<2; ++j)
   {
@@ -195,10 +195,10 @@ bool MOERTEL::Interface::PrintNodes() const
              << ":\t Nodes Side " << j << endl;
         for (curr=rnode_[j].begin(); curr!=rnode_[j].end(); ++curr)
         {
-          RefCountPtr<MOERTEL::Node> node = curr->second;
+		  Teuchos::RCP<MOERTEL::Node> node = curr->second;
           if (NodePID(node->Id()) == k)
           {
-            if (node == null)
+            if (node == Teuchos::null)
             {
               cout << "***ERR*** MOERTEL::Interface::PrintNodes:\n"
                    << "***ERR*** found NULL entry in map of nodes\n"
@@ -321,34 +321,34 @@ bool MOERTEL::Interface::AddSegment(MOERTEL::Segment& seg, int side)
     ids2[2] = seg.NodeIds()[3];
 
     // create 2 triangles, give second one the negative id
-    RefCountPtr<MOERTEL::Segment> tmp1 = rcp( new MOERTEL::Segment_BiLinearTri(seg.Id(),3,ids1,seg.OutLevel()));
-    RefCountPtr<MOERTEL::Segment> tmp2 = rcp( new MOERTEL::Segment_BiLinearTri(-seg.Id(),3,ids2,seg.OutLevel()));
+	Teuchos::RCP<MOERTEL::Segment> tmp1 = Teuchos::rcp( new MOERTEL::Segment_BiLinearTri(seg.Id(),3,ids1,seg.OutLevel()));
+	Teuchos::RCP<MOERTEL::Segment> tmp2 = Teuchos::rcp( new MOERTEL::Segment_BiLinearTri(-seg.Id(),3,ids2,seg.OutLevel()));
     
     // add 2 triangles
-    map<int,RefCountPtr<MOERTEL::Segment> >* s = 0;
+	std::map<int,Teuchos::RCP<MOERTEL::Segment> >* s = 0;
     if (side==0) s = &(seg_[0]);
     else         s = &(seg_[1]);
-    s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp1->Id(),tmp1));    
-    s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp2->Id(),tmp2));    
+    s->insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmp1->Id(),tmp1));    
+    s->insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmp2->Id(),tmp2));    
 #else // using a real quad
     // copy the segment
-    RefCountPtr<MOERTEL::Segment> tmp = rcp( seg.Clone());
+	Teuchos::RCP<MOERTEL::Segment> tmp = Teuchos::rcp( seg.Clone());
     // add segment
-    map<int,RefCountPtr<MOERTEL::Segment> >* s = 0;
+	std::map<int,Teuchos::RCP<MOERTEL::Segment> >* s = 0;
     if (side==0) s = &(seg_[0]);
     else         s = &(seg_[1]);
-    s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp->Id(),tmp));
+    s->insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmp->Id(),tmp));
 #endif
   }
   else // all other types of segments
   {
     // copy the segment
-    RefCountPtr<MOERTEL::Segment> tmp = rcp( seg.Clone());
+	Teuchos::RCP<MOERTEL::Segment> tmp = Teuchos::rcp( seg.Clone());
     // add segment
-    map<int,RefCountPtr<MOERTEL::Segment> >* s = 0;
+	std::map<int,Teuchos::RCP<MOERTEL::Segment> >* s = 0;
     if (side==0) s = &(seg_[0]);
     else         s = &(seg_[1]);
-    s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp->Id(),tmp));
+    s->insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmp->Id(),tmp));
   }
 
   return true;
@@ -380,13 +380,13 @@ bool MOERTEL::Interface::AddNode(MOERTEL::Node& node, int side)
   }
   
   // copy the node
-  RefCountPtr<MOERTEL::Node>  tmp = rcp( new MOERTEL::Node(node));
+  Teuchos::RCP<MOERTEL::Node>  tmp = Teuchos::rcp( new MOERTEL::Node(node));
   
   // add node
-  map<int,RefCountPtr<MOERTEL::Node> >* n = 0;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >* n = 0;
   if (side==0) n = &(node_[0]);
   else         n = &(node_[1]);
-  n->insert(pair<int,RefCountPtr<MOERTEL::Node> >(tmp->Id(),tmp));
+  n->insert(std::pair<int,Teuchos::RCP<MOERTEL::Node> >(tmp->Id(),tmp));
 
   return true;
 }
@@ -424,7 +424,7 @@ bool MOERTEL::Interface::SetFunctionAllSegmentsSide(int side,
   }
   
   // set the function to my own segments
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator scurr;
   for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
     scurr->second->SetFunction(id,func);
 
@@ -593,7 +593,7 @@ int MOERTEL::Interface::NodePID(int nid) const
     return (-1);
   }
   
-  map<int,int>::const_iterator curr = nodePID_.find(nid);
+  std::map<int,int>::const_iterator curr = nodePID_.find(nid);
   if (curr != nodePID_.end())
     return(curr->second);
   else
@@ -626,7 +626,7 @@ int MOERTEL::Interface::SegPID(int sid) const
     return (-1);
   }
   
-  map<int,int>::const_iterator curr = segPID_.find(sid);
+  std::map<int,int>::const_iterator curr = segPID_.find(sid);
   if (curr != segPID_.end())
     return(curr->second);
   else
@@ -658,21 +658,21 @@ int MOERTEL::Interface::OtherSide(int side) const
  |  get view of a local node with node id nid                           |
  |  if sid is not a local node will return NULL                         |
  *----------------------------------------------------------------------*/
-RefCountPtr<MOERTEL::Node> MOERTEL::Interface::GetNodeViewLocal(int nid)
+Teuchos::RCP<MOERTEL::Node> MOERTEL::Interface::GetNodeViewLocal(int nid)
 { 
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = node_[0].find(nid);
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr = node_[0].find(nid);
   if (curr != node_[0].end())
     return(curr->second);
   curr = node_[1].find(nid);
   if (curr != node_[1].end())
     return(curr->second);
-  return (null);
+  return (Teuchos::null);
 }
 
 /*----------------------------------------------------------------------*
  |  get view of a node with node id nid                                 |
  *----------------------------------------------------------------------*/
-RefCountPtr<MOERTEL::Node> MOERTEL::Interface::GetNodeView(int nid)
+Teuchos::RCP<MOERTEL::Node> MOERTEL::Interface::GetNodeView(int nid)
 { 
   if (!IsComplete())
   {
@@ -681,22 +681,22 @@ RefCountPtr<MOERTEL::Node> MOERTEL::Interface::GetNodeView(int nid)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  if (!lComm()) return null;
+  if (!lComm()) return Teuchos::null;
   
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = rnode_[0].find(nid);
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr = rnode_[0].find(nid);
   if (curr != rnode_[0].end())
     return(curr->second);
   curr = rnode_[1].find(nid);
   if (curr != rnode_[1].end())
     return(curr->second);
-  return (null);
+  return (Teuchos::null);
 }
 
 /*----------------------------------------------------------------------*
  |  get view of ALL nodes on this interface                             |
- |  method allocates a ptr vector the calling methos is in charge of    |
+ |  method allocates a ptr vector. The calling method is in charge of    |
  | destroying it                                                        |
- | returns NULL if proc is not art of the local communicator            |
+ | returns NULL if proc is not part of the local communicator            |
  *----------------------------------------------------------------------*/
 MOERTEL::Node** MOERTEL::Interface::GetNodeView()
 { 
@@ -711,7 +711,7 @@ MOERTEL::Node** MOERTEL::Interface::GetNodeView()
   
   MOERTEL::Node** view = new MOERTEL::Node*[GlobalNnode()];
   int count=0;
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
   for (int i=0; i<2; ++i)
     for (curr=rnode_[i].begin(); curr != rnode_[i].end(); ++curr)
     {
@@ -724,7 +724,7 @@ MOERTEL::Node** MOERTEL::Interface::GetNodeView()
 /*----------------------------------------------------------------------*
  |  get view of ALL nodes on this interface                             |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::GetNodeView(vector<MOERTEL::Node*>& nodes)
+bool MOERTEL::Interface::GetNodeView(std::vector<MOERTEL::Node*>& nodes)
 { 
   if (!IsComplete())
   {
@@ -737,7 +737,7 @@ bool MOERTEL::Interface::GetNodeView(vector<MOERTEL::Node*>& nodes)
   
   nodes.resize(GlobalNnode());
   int count=0;
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
   for (int i=0; i<2; ++i)
     for (curr=rnode_[i].begin(); curr != rnode_[i].end(); ++curr)
     {
@@ -750,7 +750,7 @@ bool MOERTEL::Interface::GetNodeView(vector<MOERTEL::Node*>& nodes)
 /*----------------------------------------------------------------------*
  |  get view of a local segment with id sid                             |
  *----------------------------------------------------------------------*/
-RefCountPtr<MOERTEL::Segment>  MOERTEL::Interface::GetSegmentView(int sid)
+Teuchos::RCP<MOERTEL::Segment>  MOERTEL::Interface::GetSegmentView(int sid)
 { 
   if (!IsComplete())
   {
@@ -759,15 +759,15 @@ RefCountPtr<MOERTEL::Segment>  MOERTEL::Interface::GetSegmentView(int sid)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  if (!lComm()) return null;
+  if (!lComm()) return Teuchos::null;
   
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr = rseg_[0].find(sid);
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator curr = rseg_[0].find(sid);
   if (curr != rseg_[0].end())
     return(curr->second);
   curr = rseg_[1].find(sid);
   if (curr != rseg_[1].end())
     return(curr->second);
-  return (null);
+  return (Teuchos::null);
 }
 
 /*----------------------------------------------------------------------*
@@ -787,7 +787,7 @@ MOERTEL::Segment** MOERTEL::Interface::GetSegmentView()
   if (!lComm()) return NULL;
   
   MOERTEL::Segment** segs = new MOERTEL::Segment*[GlobalNsegment()];
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator curr;
   int count=0;
   for (int i=0; i<2; ++i)
     for (curr=rseg_[i].begin(); curr != rseg_[i].end(); ++curr)
@@ -819,7 +819,7 @@ int MOERTEL::Interface::GetSide(MOERTEL::Segment* seg)
          << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator curr = rseg_[0].find(seg->Id());
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator curr = rseg_[0].find(seg->Id());
   if (curr != rseg_[0].end())
     return(0);
   curr = rseg_[1].find(seg->Id());
@@ -848,7 +848,7 @@ int MOERTEL::Interface::GetSide(MOERTEL::Node* node)
          << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = rnode_[0].find(node->Id());
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr = rnode_[0].find(node->Id());
   if (curr != rnode_[0].end())
     return(0);
   curr = rnode_[1].find(node->Id());
@@ -877,7 +877,7 @@ int MOERTEL::Interface::GetSide(int nodeid)
          << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return -1;
   }
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr = rnode_[0].find(nodeid);
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr = rnode_[0].find(nodeid);
   if (curr != rnode_[0].end())
     return(0);
   curr = rnode_[1].find(nodeid);
@@ -915,19 +915,19 @@ bool MOERTEL::Interface::RedundantSegments(int side)
   if (!lComm())
     return true;
   
-  map<int,RefCountPtr<MOERTEL::Segment> >* rmap = &(rseg_[side]);
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >* rmap = &(rseg_[side]);
   // check whether redundant map has been build before
   if (rmap->size() != 0)
     return true;
 
   // add my own segments to the redundant map
-  map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
   for (curr=seg_[side].begin(); curr != seg_[side].end(); ++curr)
   {
     //MOERTEL::Segment* tmp = curr->second->Clone();
     // FIXME: is this ok? it's not a deep copy anymore.....
-    RefCountPtr<MOERTEL::Segment> tmp = curr->second;
-    rmap->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(curr->first,tmp));
+	Teuchos::RCP<MOERTEL::Segment> tmp = curr->second;
+    rmap->insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(curr->first,tmp));
   }
   
   // loop over all procs and broadcast proc's segments
@@ -939,7 +939,7 @@ bool MOERTEL::Interface::RedundantSegments(int side)
     lcomm_->Broadcast(&nseg,1,proc);
 
     int  bsize = nseg*12;
-    vector<int> bcast; 
+	std::vector<int> bcast; 
     
     // pack proc's segments
     if (proc==lcomm_->MyPID())
@@ -977,9 +977,9 @@ bool MOERTEL::Interface::RedundantSegments(int side)
         // the type of segment is stored second in the pack
 	MOERTEL::Segment* tmp = AllocateSegment(bcast[count+1],OutLevel());
         tmp->UnPack(&(bcast[count]));
-        RefCountPtr<MOERTEL::Segment> tmp2 = rcp(tmp);
+		Teuchos::RCP<MOERTEL::Segment> tmp2 = Teuchos::rcp(tmp);
         count += bcast[count];
-        rmap->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp2->Id(),tmp2));
+        rmap->insert(std::pair<int,Teuchos::RCP<MOERTEL::Segment> >(tmp2->Id(),tmp2));
       }
     }
     bcast.clear();
@@ -1017,19 +1017,19 @@ bool MOERTEL::Interface::RedundantNodes(int side)
   if (!lComm())
     return true;
 
-  map<int,RefCountPtr<MOERTEL::Node> >* rmap = &(rnode_[side]);
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >* rmap = &(rnode_[side]);
   // check whether redundant map has been build before
   if (rmap->size() != 0)
     return true;
 
   // add my own nodes to the redundant map
-  map<int,RefCountPtr<MOERTEL::Node> >::const_iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::const_iterator curr;
   for (curr=node_[side].begin(); curr != node_[side].end(); ++curr)
   {
     //MOERTEL::Node* tmp = new MOERTEL::Node(*(curr->second));
     //FIXME: this is not a deep copy anymore. Is this ok?
-    RefCountPtr<MOERTEL::Node> tmp = curr->second;
-    rmap->insert(pair<int,RefCountPtr<MOERTEL::Node> >(curr->first,tmp));
+	Teuchos::RCP<MOERTEL::Node> tmp = curr->second;
+    rmap->insert(std::pair<int,Teuchos::RCP<MOERTEL::Node> >(curr->first,tmp));
   }
   
   // loop all procs and broadcast proc's nodes
@@ -1041,7 +1041,7 @@ bool MOERTEL::Interface::RedundantNodes(int side)
     lcomm_->Broadcast(&nnode,1,proc);
     
     int bsize = nnode*3;
-    vector<double> bcast;
+	std::vector<double> bcast;
     
     // pack proc's nodes
     if (proc==lcomm_->MyPID())
@@ -1076,10 +1076,10 @@ bool MOERTEL::Interface::RedundantNodes(int side)
       int count=0;
       for (int i=0; i<nnode; ++i)
       {
-        RefCountPtr<MOERTEL::Node> tmp = rcp(new MOERTEL::Node(OutLevel()));
+		Teuchos::RCP<MOERTEL::Node> tmp = Teuchos::rcp(new MOERTEL::Node(OutLevel()));
         tmp->UnPack(&(bcast[count]));
         count += (int)bcast[count];
-        rmap->insert(pair<int,RefCountPtr<MOERTEL::Node> >(tmp->Id(),tmp));
+        rmap->insert(std::pair<int,Teuchos::RCP<MOERTEL::Node> >(tmp->Id(),tmp));
       }
     }    
     bcast.clear();
@@ -1105,7 +1105,7 @@ bool MOERTEL::Interface::BuildNodeSegmentTopology()
   if (!lComm()) return true;
   
   // loop nodes and find their adjacent segments
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator ncurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator ncurr;
   for (int side=0; side<2; ++side)
   {
     for (ncurr=rnode_[side].begin(); ncurr != rnode_[side].end(); ++ncurr)
@@ -1113,7 +1113,7 @@ bool MOERTEL::Interface::BuildNodeSegmentTopology()
   }
   
   // loop segments and find their adjacent nodes
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator scurr;
   for (int side=0; side<2; ++side)
   {
     for (scurr=rseg_[side].begin(); scurr != rseg_[side].end(); ++scurr)
@@ -1145,13 +1145,13 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
     int sside = OtherSide(mside);
     
     // create redundant flags
-    vector<int> lhavelm(rnode_[sside].size());
-    vector<int> ghavelm(rnode_[sside].size());
+	std::vector<int> lhavelm(rnode_[sside].size());
+	std::vector<int> ghavelm(rnode_[sside].size());
     for (int i=0; i<(int)rnode_[sside].size(); ++i) lhavelm[i] = 0;
     
     // loop through redundant nodes and add my flags
     int count=0;
-    map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+	std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
     for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
     {
       if (NodePID(curr->second->Id()) != lComm()->MyPID())
@@ -1159,10 +1159,10 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
         ++count;
         continue;
       }
-      RefCountPtr<map<int,double> > D = curr->second->GetD();
-      if (D==null)
+	  Teuchos::RCP<std::map<int,double> > D = curr->second->GetD();
+      if (D==Teuchos::null)
       {
-        if (curr->second->GetM() != null)
+        if (curr->second->GetM() != Teuchos::null)
           cout << *curr->second << "has no D but has M!!!\n";
         ++count;
         continue;
@@ -1200,8 +1200,8 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
       for (int i=0; i<ndof; ++i)
       {
         curr->second->SetLagrangeMultiplierId(minLMGID+i);
-        RefCountPtr<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
-        if (pnode!=null)
+		Teuchos::RCP<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
+        if (pnode!=Teuchos::null)
           pnode->SetLagrangeMultiplierId(minLMGID+i);
       }
       minLMGID += ndof;
@@ -1249,12 +1249,12 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
     if (IsOneDimensional())
     {
       // loop nodes on slave side and set LMdofs for those who have a projection
-      map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+	  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
       for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
       {
         // check whether this node has a projection
-        RefCountPtr<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
-        if (pnode==null) continue;
+		Teuchos::RCP<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
+        if (pnode==Teuchos::null) continue;
         
         
         // get number of dofs on this node to choose the same number of dofs
@@ -1273,13 +1273,13 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
     else
     {
       // create redundant flags
-      vector<int> lhavelm(rnode_[sside].size());
-      vector<int> ghavelm(rnode_[sside].size());
+	  std::vector<int> lhavelm(rnode_[sside].size());
+	  std::vector<int> ghavelm(rnode_[sside].size());
       for (int i=0; i<(int)rnode_[sside].size(); ++i) lhavelm[i] = 0;
       
       // loop through redundant nodes and add my flags
       int count=0;
-      map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+	  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
       for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
       {
         if (NodePID(curr->second->Id()) != lComm()->MyPID())
@@ -1287,10 +1287,10 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
           ++count;
           continue;
         }
-        RefCountPtr<map<int,double> > D = curr->second->GetD();
-        if (D==null)
+		Teuchos::RCP<std::map<int,double> > D = curr->second->GetD();
+        if (D==Teuchos::null)
         {
-          if (curr->second->GetM() != null)
+          if (curr->second->GetM() != Teuchos::null)
             cout << *curr->second << "has no D but has M!!!\n";
           ++count;
           continue;
@@ -1328,8 +1328,8 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
         for (int i=0; i<ndof; ++i)
         {
           curr->second->SetLagrangeMultiplierId(minLMGID+i);
-          RefCountPtr<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
-          if (pnode!=null)
+		  Teuchos::RCP<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
+          if (pnode!=Teuchos::null)
             pnode->SetLagrangeMultiplierId(minLMGID+i);
         }
         minLMGID += ndof;
@@ -1355,7 +1355,7 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
  | retrieve a vector containing a list of lm ids owned by this processor|
  | The calling routine is responsible for destroying this list          |
  *----------------------------------------------------------------------*/
-vector<int>* MOERTEL::Interface::MyLMIds()
+std::vector<int>* MOERTEL::Interface::MyLMIds()
 { 
   if (!IsComplete())
   {
@@ -1369,7 +1369,7 @@ vector<int>* MOERTEL::Interface::MyLMIds()
   int sside = OtherSide(mside);
 
   // allocate a vector with a guess
-  vector<int>* lmids = new vector<int>;
+  std::vector<int>* lmids = new std::vector<int>;
   
   // procs not in intra-comm return an empty vector
   if (!lComm())
@@ -1381,10 +1381,10 @@ vector<int>* MOERTEL::Interface::MyLMIds()
   lmids->resize(rnode_[sside].size()*10);
   int count=0;
     
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
   for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
   {
-    RefCountPtr<MOERTEL::Node> node = curr->second;
+	Teuchos::RCP<MOERTEL::Node> node = curr->second;
     if (NodePID(node->Id()) != lComm()->MyPID()) 
       continue;
     int  nlmdof = node->Nlmdof();
@@ -1455,14 +1455,14 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_2D()
   */
   
   // loop all nodes on the slave side and find those with only one segment
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator curr;
   for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
   {
-    RefCountPtr<MOERTEL::Node> node = curr->second;
+	Teuchos::RCP<MOERTEL::Node> node = curr->second;
     bool foundit = false;
     if (node->Nseg()<2)
       foundit = true;
-    if (node->GetProjectedNode() != null)
+    if (node->GetProjectedNode() != Teuchos::null)
       if (!(node->GetProjectedNode()->Segment()))
         foundit = true;
     if (!foundit)
@@ -1536,7 +1536,7 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_2D()
   // A node attached to only one element AND on the boundary is
   // considered a corner node and is member of ONE support set
   // It is in the modified support psi tilde of the closest internal node
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator ncurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator ncurr;
   for (ncurr=rnode_[sside].begin(); ncurr != rnode_[sside].end(); ++ncurr)
   {
     if (!(ncurr->second->IsOnBoundary())) continue;
@@ -1608,7 +1608,7 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_3D()
   // See B.Wohlmuth:"Discretization Methods and Iterative Solvers
   //                 Based on Domain Decomposition", pp 33/34, Springer 2001.
 
-  map<int,RefCountPtr<MOERTEL::Node> >::iterator ncurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >::iterator ncurr;
 
   // do 1
   for (ncurr=rnode_[sside].begin(); ncurr != rnode_[sside].end(); ++ncurr)

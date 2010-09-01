@@ -52,8 +52,6 @@
 #include "mrtr_functions.H"
 #include "mrtr_utils.H"
 
-using namespace std;
-
 /*!
 \brief MOERTEL: namespace of the Moertel package
 

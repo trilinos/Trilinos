@@ -96,7 +96,7 @@ int* MOERTEL::Segment_Linear1D::Pack(int* size)
     pack[count++] = nodeId_[i];
   pack[count++] = Nfunctions();
   
-  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr;
+  std::map<int,Teuchos::RCP<MOERTEL::Function> >::iterator curr;
   for (curr = functions_.begin(); curr != functions_.end(); ++curr)
   {
     pack[count++] = curr->first;
@@ -135,8 +135,8 @@ bool MOERTEL::Segment_Linear1D::UnPack(int* pack)
     int id   = pack[count++];
     int type = pack[count++];
     MOERTEL::Function* func = MOERTEL::AllocateFunction((MOERTEL::Function::FunctionType)type,OutLevel());
-    RefCountPtr<MOERTEL::Function> rcptrfunc = rcp(func);
-    functions_.insert(pair<int,RefCountPtr<MOERTEL::Function> >(id,rcptrfunc));
+	Teuchos::RCP<MOERTEL::Function> rcptrfunc = Teuchos::rcp(func);
+    functions_.insert(std::pair<int,Teuchos::RCP<MOERTEL::Function> >(id,rcptrfunc));
   }
   
   if (count != size)

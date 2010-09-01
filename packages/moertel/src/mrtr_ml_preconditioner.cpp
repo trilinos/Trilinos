@@ -37,12 +37,12 @@
  |  ctor (public)                                            m.gee 03/06|
  *----------------------------------------------------------------------*/
 MOERTEL::Mortar_ML_Preconditioner::Mortar_ML_Preconditioner(
-                                    RefCountPtr<Epetra_CrsMatrix> Atilde,
-                                    RefCountPtr<Epetra_CrsMatrix> A,
-                                    RefCountPtr<Epetra_CrsMatrix> WT,
-                                    RefCountPtr<Epetra_CrsMatrix> B,
-                                    RefCountPtr<Epetra_Map>       Annmap,
-                                    ParameterList& mlparams,
+                                    Teuchos::RCP<Epetra_CrsMatrix> Atilde,
+                                    Teuchos::RCP<Epetra_CrsMatrix> A,
+                                    Teuchos::RCP<Epetra_CrsMatrix> WT,
+                                    Teuchos::RCP<Epetra_CrsMatrix> B,
+                                    Teuchos::RCP<Epetra_Map>       Annmap,
+                                    Teuchos::ParameterList& mlparams,
                                     bool constructnow) :
 iscomputed_(false),
 mlparams_(mlparams),
@@ -93,12 +93,12 @@ int MOERTEL::Mortar_ML_Preconditioner::ApplyInverse(
 
   // create a Space
   const Epetra_BlockMap& bmap = X.Map();
-  Space space;
+  MLAPI::Space space;
   space.Reshape(bmap.NumGlobalElements(),bmap.NumMyElements(),bmap.MyGlobalElements());
   
   // create input/output mlapi multivectors
-  MultiVector b_f(space,1,false);
-  MultiVector x_f(space,1,false);
+  MLAPI::MultiVector b_f(space,1,false);
+  MLAPI::MultiVector x_f(space,1,false);
   const int nele = X.Map().NumMyElements();
   for (int i=0; i<nele; ++i)
   {
@@ -136,8 +136,8 @@ int MOERTEL::Mortar_ML_Preconditioner::ApplyInverse(
  |  apply multigrid linear preconditioner (private)          m.gee 03/06|
  *----------------------------------------------------------------------*/
 int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
-                                            const MultiVector& b_f,
-                                                  MultiVector& x_f, int level) const 
+                                            const MLAPI::MultiVector& b_f,
+                                                  MLAPI::MultiVector& x_f, int level) const 
 {
   if (level == maxlevels_-1)
   {
@@ -146,9 +146,9 @@ int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
     return 0;
   }
   
-  MultiVector r_f(P(level).GetRangeSpace(),1,false);
-  MultiVector r_c(P(level).GetDomainSpace(),1,false);
-  MultiVector z_c(P(level).GetDomainSpace(),1,true);
+  MLAPI::MultiVector r_f(P(level).GetRangeSpace(),1,false);
+  MLAPI::MultiVector r_c(P(level).GetDomainSpace(),1,false);
+  MLAPI::MultiVector z_c(P(level).GetDomainSpace(),1,true);
   
   // pre-smoothing
   x_f = 0;
@@ -183,6 +183,8 @@ int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
 bool MOERTEL::Mortar_ML_Preconditioner::Compute()
 {
 
+  using namespace MLAPI;
+
   iscomputed_ = false;
   
   MLAPI::Init();
@@ -199,19 +201,19 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
   string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
-  Space space(A_->RowMatrixRowMap());
-  Operator mlapiA(space,space,A_.get(),false);
-  Operator mlapiAtilde(space,space,Atilde_.get(),false);
+  MLAPI::Space space(A_->RowMatrixRowMap());
+  MLAPI::Operator mlapiA(space,space,A_.get(),false);
+  MLAPI::Operator mlapiAtilde(space,space,Atilde_.get(),false);
   
   // make the multiplication of BWT
-  RefCountPtr<Epetra_CrsMatrix> BWT = rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,0));
-  RefCountPtr<Epetra_CrsMatrix> tmp = rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
+  Teuchos::RCP<Epetra_CrsMatrix> BWT = Teuchos::rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,0));
+  Teuchos::RCP<Epetra_CrsMatrix> tmp = Teuchos::rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
   MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*tmp,1.0);
   tmp->FillComplete(BWT->DomainMap(),BWT->RangeMap());
   BWT = tmp;
-  tmp = null;
+  tmp = Teuchos::null;
 
-  Operator mlapiBWT(space,space,BWT.get(),false);
+  MLAPI::Operator mlapiBWT(space,space,BWT.get(),false);
   
   mlapiImBWT_.resize(maxlevels);                       
   mlapiImWBT_.resize(maxlevels);                       
@@ -221,8 +223,8 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   mlapiS_.resize(maxlevels);
   
   // build nullspace;
-  MultiVector NS;
-  MultiVector NextNS;
+  MLAPI::MultiVector NS;
+  MLAPI::MultiVector NextNS;
   
   NS.Reshape(mlapiA.GetRangeSpace(),nsdim);
   if (nullspace)
@@ -245,19 +247,19 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   }
 
   double lambdamax;
-  Operator Ptent;
-  Operator P;
-  Operator Rtent;
-  Operator R;
-  Operator IminusA;
-  Operator C;
+  MLAPI::Operator Ptent;
+  MLAPI::Operator P;
+  MLAPI::Operator Rtent;
+  MLAPI::Operator R;
+  MLAPI::Operator IminusA;
+  MLAPI::Operator C;
 
-  Operator Pmod;
-  Operator Rmod;
-  Operator ImBWTfine;
-  Operator ImBWTcoarse;
-  Operator mlapiBWTcoarse;
-  InverseOperator S;
+  MLAPI::Operator Pmod;
+  MLAPI::Operator Rmod;
+  MLAPI::Operator ImBWTfine;
+  MLAPI::Operator ImBWTcoarse;
+  MLAPI::Operator mlapiBWTcoarse;
+  MLAPI::InverseOperator S;
 
   mlapiAtilde_[0] = mlapiAtilde;
 
@@ -513,19 +515,19 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   // create the 2 rowmaps
-  Arrmap_ = rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
-  RefCountPtr<Epetra_Map> map1 = Arrmap_;
-  RefCountPtr<Epetra_Map> map2 = Annmap_;
+  Arrmap_ = Teuchos::rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
+  Teuchos::RCP<Epetra_Map> map1 = Arrmap_;
+  Teuchos::RCP<Epetra_Map> map2 = Annmap_;
 
   // split Atilde
   //
   //  Atilde11 Atilde12
   //  Atilde21 Atilde22
   //
-  RefCountPtr<Epetra_CrsMatrix> Atilde11;
-  RefCountPtr<Epetra_CrsMatrix> Atilde12;
-  RefCountPtr<Epetra_CrsMatrix> Atilde21;
-  RefCountPtr<Epetra_CrsMatrix> Atilde22;
+  Teuchos::RCP<Epetra_CrsMatrix> Atilde11;
+  Teuchos::RCP<Epetra_CrsMatrix> Atilde12;
+  Teuchos::RCP<Epetra_CrsMatrix> Atilde21;
+  Teuchos::RCP<Epetra_CrsMatrix> Atilde22;
   MOERTEL::SplitMatrix2x2(Atilde_,map1,map2,Atilde11,Atilde12,Atilde21,Atilde22);
   Atilde11_ = Atilde11;
   
@@ -534,33 +536,33 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   //  0   Mr Dinv
   //  0    I
   //
-  RefCountPtr<Epetra_CrsMatrix> BWT = rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,0));
-  RefCountPtr<Epetra_CrsMatrix> tmp = rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
+  Teuchos::RCP<Epetra_CrsMatrix> BWT = Teuchos::rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,0));
+  Teuchos::RCP<Epetra_CrsMatrix> tmp = Teuchos::rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
   MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*tmp,0.0);
   tmp->FillComplete(BWT->DomainMap(),BWT->RangeMap());
   BWT = tmp;
-  tmp = null;
+  tmp = Teuchos::null;
   
   // split BWT to obtain M = Mr Dinv
-  RefCountPtr<Epetra_CrsMatrix> Zero11;
-  RefCountPtr<Epetra_CrsMatrix> M;
-  RefCountPtr<Epetra_CrsMatrix> Zero21;
-  RefCountPtr<Epetra_CrsMatrix> I22;
+  Teuchos::RCP<Epetra_CrsMatrix> Zero11;
+  Teuchos::RCP<Epetra_CrsMatrix> M;
+  Teuchos::RCP<Epetra_CrsMatrix> Zero21;
+  Teuchos::RCP<Epetra_CrsMatrix> I22;
   MOERTEL::SplitMatrix2x2(BWT,map1,map2,Zero11,M,Zero21,I22);
   M_ = M;
   
   // transpose BWT to get WBT and split again
-  tmp = rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
+  tmp = Teuchos::rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
   MOERTEL::MatrixMatrixAdd(*BWT,true,1.0,*tmp,0.0);
   tmp->FillComplete();
-  RefCountPtr<Epetra_CrsMatrix> Zero12;
+  Teuchos::RCP<Epetra_CrsMatrix> Zero12;
   MOERTEL::SplitMatrix2x2(tmp,map1,map2,Zero11,Zero12,MT_,I22);
   
   // build matrix Ahat11 = Atilde11 + M Atilde22 M^T    
-  RefCountPtr<Epetra_CrsMatrix> Ahat11 = rcp(new Epetra_CrsMatrix(Copy,*map1,50,false));
+  Teuchos::RCP<Epetra_CrsMatrix> Ahat11 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*map1,50,false));
   MOERTEL::MatrixMatrixAdd(*Atilde11,false,1.0,*Ahat11,0.0);
-  RefCountPtr<Epetra_CrsMatrix> tmp1 = rcp(MOERTEL::MatMatMult(*Atilde22,false,*M,true,0));
-  RefCountPtr<Epetra_CrsMatrix> tmp2 = rcp(MOERTEL::MatMatMult(*M,false,*tmp1,false,0));
+  Teuchos::RCP<Epetra_CrsMatrix> tmp1 = Teuchos::rcp(MOERTEL::MatMatMult(*Atilde22,false,*M,true,0));
+  Teuchos::RCP<Epetra_CrsMatrix> tmp2 = Teuchos::rcp(MOERTEL::MatMatMult(*M,false,*tmp1,false,0));
   MOERTEL::MatrixMatrixAdd(*tmp2,false,-1.0,*Ahat11,1.0);
   Ahat11->FillComplete();
   Ahat11->OptimizeStorage();
@@ -728,19 +730,19 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   // create the missing rowmap Arrmap_ 
-  Arrmap_ = rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
-  RefCountPtr<Epetra_Map> map1 = Arrmap_;
-  RefCountPtr<Epetra_Map> map2 = Annmap_;
+  Arrmap_ = Teuchos::rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
+  Teuchos::RCP<Epetra_Map> map1 = Arrmap_;
+  Teuchos::RCP<Epetra_Map> map2 = Annmap_;
 
   // split Atilde
   //
   //  Atilde11 Atilde12
   //  Atilde21 Atilde22
   //
-  RefCountPtr<Epetra_CrsMatrix> Atilde11;
-  RefCountPtr<Epetra_CrsMatrix> Atilde12;
-  RefCountPtr<Epetra_CrsMatrix> Atilde21;
-  RefCountPtr<Epetra_CrsMatrix> Atilde22;
+  Teuchos::RCP<Epetra_CrsMatrix> Atilde11;
+  Teuchos::RCP<Epetra_CrsMatrix> Atilde12;
+  Teuchos::RCP<Epetra_CrsMatrix> Atilde21;
+  Teuchos::RCP<Epetra_CrsMatrix> Atilde22;
   MOERTEL::SplitMatrix2x2(Atilde_,map1,map2,Atilde11,Atilde12,Atilde21,Atilde22);
   
   // build Atildesplit
@@ -748,9 +750,9 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   //  Atilde11  0
   //  0         I
   //
-  Atildesplit_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMap(),50,false));
+  Atildesplit_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A_->RowMap(),50,false));
   MOERTEL::MatrixMatrixAdd(*Atilde11,false,1.0,*Atildesplit_,0.0);
-  RefCountPtr<Epetra_CrsMatrix> tmp = rcp(MOERTEL::PaddedMatrix(*map2,1.0,1));
+  Teuchos::RCP<Epetra_CrsMatrix> tmp = Teuchos::rcp(MOERTEL::PaddedMatrix(*map2,1.0,1));
   tmp->FillComplete();
   MOERTEL::MatrixMatrixAdd(*tmp,false,1.0,*Atildesplit_,1.0);
   Atildesplit_->FillComplete();
@@ -761,10 +763,10 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   //  A11 A12
   //  A21 A22
   //
-  RefCountPtr<Epetra_CrsMatrix> A11;
-  RefCountPtr<Epetra_CrsMatrix> A12;
-  RefCountPtr<Epetra_CrsMatrix> A21;
-  RefCountPtr<Epetra_CrsMatrix> A22;
+  Teuchos::RCP<Epetra_CrsMatrix> A11;
+  Teuchos::RCP<Epetra_CrsMatrix> A12;
+  Teuchos::RCP<Epetra_CrsMatrix> A21;
+  Teuchos::RCP<Epetra_CrsMatrix> A22;
   MOERTEL::SplitMatrix2x2(A_,map1,map2,A11,A12,A21,A22);
   
   // build Asplit_
@@ -772,7 +774,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   //  A11  0
   //  0    A22
   //
-  Asplit_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMap(),50,false));
+  Asplit_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A_->RowMap(),50,false));
   MOERTEL::MatrixMatrixAdd(*A11,false,1.0,*Asplit_,0.0);
   MOERTEL::MatrixMatrixAdd(*A22,false,1.0,*Asplit_,1.0);
   Asplit_->FillComplete();
@@ -783,26 +785,26 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   //  0   Mr Dinv
   //  0    I
   //
-  RefCountPtr<Epetra_CrsMatrix> BWT = rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,10));
-                                tmp = rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
+  Teuchos::RCP<Epetra_CrsMatrix> BWT = Teuchos::rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,10));
+                                tmp = Teuchos::rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
   MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*tmp,0.0);
   tmp->FillComplete(BWT->DomainMap(),BWT->RangeMap());
   BWT = tmp;
-  tmp = null;
+  tmp = Teuchos::null;
   
   // split BWT to obtain M = Mr Dinv
-  RefCountPtr<Epetra_CrsMatrix> Zero11;
-  RefCountPtr<Epetra_CrsMatrix> M;
-  RefCountPtr<Epetra_CrsMatrix> Zero21;
-  RefCountPtr<Epetra_CrsMatrix> I22;
+  Teuchos::RCP<Epetra_CrsMatrix> Zero11;
+  Teuchos::RCP<Epetra_CrsMatrix> M;
+  Teuchos::RCP<Epetra_CrsMatrix> Zero21;
+  Teuchos::RCP<Epetra_CrsMatrix> I22;
   MOERTEL::SplitMatrix2x2(BWT,map1,map2,Zero11,M,Zero21,I22);
   
   
   // build matrix Ahat11 = Atilde11 - M Atilde22 M^T    
-  RefCountPtr<Epetra_CrsMatrix> Ahat11 = rcp(new Epetra_CrsMatrix(Copy,*map1,50,false));
+  Teuchos::RCP<Epetra_CrsMatrix> Ahat11 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*map1,50,false));
   MOERTEL::MatrixMatrixAdd(*Atilde11,false,1.0,*Ahat11,0.0);
-  RefCountPtr<Epetra_CrsMatrix> tmp1 = rcp(MOERTEL::MatMatMult(*Atilde22,false,*M,true,10));
-  RefCountPtr<Epetra_CrsMatrix> tmp2 = rcp(MOERTEL::MatMatMult(*M,false,*tmp1,false,10));
+  Teuchos::RCP<Epetra_CrsMatrix> tmp1 = Teuchos::rcp(MOERTEL::MatMatMult(*Atilde22,false,*M,true,10));
+  Teuchos::RCP<Epetra_CrsMatrix> tmp2 = Teuchos::rcp(MOERTEL::MatMatMult(*M,false,*tmp1,false,10));
   MOERTEL::MatrixMatrixAdd(*tmp2,false,-1.0,*Ahat11,1.0);
   Ahat11->FillComplete();
   Ahat11->OptimizeStorage();
@@ -812,7 +814,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   //  Ahat11   0   =   Atilde11 - M Atilde22 M^T   0
   //  0        0       0                           0
   //
-  Ahat_ = rcp(MOERTEL::PaddedMatrix(A_->RowMap(),0.0,25));
+  Ahat_ = Teuchos::rcp(MOERTEL::PaddedMatrix(A_->RowMap(),0.0,25));
   MOERTEL::MatrixMatrixAdd(*Ahat11,false,1.0,*Ahat_,0.0);
   Ahat_->FillComplete();
   Ahat_->OptimizeStorage();

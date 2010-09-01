@@ -47,7 +47,6 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_MPI
   int i, MyPID, NumProc, nedge, side=0, nnode, ScanSum;
-  bool berr;
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
   MyPID = Comm.MyPID();
@@ -55,7 +54,7 @@ int main(int argc, char *argv[])
   if (NumProc != 2)
   {
     cout << "test1.exe needs to be run on 2 processors\n";
-    exit(0);
+	return 1;
   }
   // ------------------------------------------------------------- //
   // create an empty MOERTEL::Interface, in this example just one
@@ -87,8 +86,10 @@ int main(int argc, char *argv[])
     coord[1] = i*L;
     nodeid[i] = ScanSum - nnode + i;
     MOERTEL::Node node(nodeid[i], coord, 1, &nodeid[i], false, printlevel);
-    berr = interface.AddNode(node, side);
-    assert(berr == true);
+    if(!interface.AddNode(node, side)){
+    	cout << "interface AddNode returned false\n";
+    	return 1;
+	}
   }
   //
   // segments on interface
@@ -109,7 +110,10 @@ int main(int argc, char *argv[])
     }
     seg_id = ScanSum - nedge + i + 1;
     MOERTEL::Segment_Linear1D segment(seg_id, 2, econ, printlevel);
-    interface.AddSegment(segment, side);
+    if(!interface.AddSegment(segment, side)){
+    	cout << "interface AddSegment returned false\n";
+		return 1;
+	}
   }
   //
   // mortar (master) side is 0
@@ -119,7 +123,7 @@ int main(int argc, char *argv[])
 			     MOERTEL::Function::func_DualLinear1D);  // dual mortar space (recommended)
   if (!interface.Complete()) {
     cout << "Interface completion returned false\n";
-    exit(EXIT_FAILURE);
+	return -1;
   }
   // ------------------------------------------------------------- //
   // create an empty MOERTEL::Manager for 2D problems
@@ -179,9 +183,13 @@ int main(int argc, char *argv[])
   cout << constraints;
         
   MPI_Finalize();
+
+  cout << "\nTest passed!" << endl;
+
+  return 0;
+
 #else
 
-  return -1;
   return -1;
 
 #endif

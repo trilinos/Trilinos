@@ -44,7 +44,7 @@ outputlevel_(out)
 {
   xi_[0] = xi[0];
   xi_[1] = xi[1];
-  node_ = null;
+  node_ = Teuchos::null;
   vals_[0].clear();
   vals_[1].clear();
   vals_[2].clear();
@@ -73,7 +73,7 @@ ostream& operator << (ostream& os, const MOERTEL::Point& point)
 void MOERTEL::Point::Print() const
 {
   cout << "Point " << id_ << " xi[0]/[1] = " << xi_[0] << " / " << xi_[1] << endl;
-  if (node_ != null)
+  if (node_ != Teuchos::null)
     cout << *node_;
   return;
 }

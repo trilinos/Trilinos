@@ -41,16 +41,16 @@
 /*----------------------------------------------------------------------*
  |  create a convexhull of a set of points (private)         mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
+bool MOERTEL::Overlap::ConvexHull(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p)
 {
   // # points
   int np = p.size();
 
   // sort points by xi[0] coordinate
-  vector<RefCountPtr<MOERTEL::Point> > points; PointView(p,points);
-  vector<double> dlistx(np);
-  vector<double> dlisty(np);
-  vector<int> list2(np);
+  std::vector<Teuchos::RCP<MOERTEL::Point> > points; PointView(p,points);
+  std::vector<double> dlistx(np);
+  std::vector<double> dlisty(np);
+  std::vector<int> list2(np);
   for (int i=0; i<np; ++i)
   {
     dlistx[i] = points[i]->Xi()[0];
@@ -73,11 +73,11 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
       }  
   
   // create a new polygon and put points in in sorted order
-  map<int,RefCountPtr<MOERTEL::Point> > newp;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> > newp;
   for (int i=0; i<np; ++i)
   {
-    RefCountPtr<MOERTEL::Point> tmp = rcp(new MOERTEL::Point(i,points[list2[i]]->Xi(),OutLevel()));
-    newp.insert(pair<int,RefCountPtr<MOERTEL::Point> >(i,tmp));
+	Teuchos::RCP<MOERTEL::Point> tmp = Teuchos::rcp(new MOERTEL::Point(i,points[list2[i]]->Xi(),OutLevel()));
+    newp.insert(std::pair<int,Teuchos::RCP<MOERTEL::Point> >(i,tmp));
   }
   
   // delete the old one
@@ -89,19 +89,19 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
   
   points.clear();
 
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator pcurr;
 
 #if 0
   // printout the polygon
   cout << "Input polygon:\n";
   for (pcurr=p.begin(); pcurr != p.end(); ++pcurr)
-    if (pcurr->second != null)
+    if (pcurr->second != Teuchos::null)
       cout << *(pcurr->second);
 #endif  
 
   //===========================================================================
   // build the upper hull
-  map<int,RefCountPtr<MOERTEL::Point> > upper;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> > upper;
   PointView(p,points);
   // put in the first 2 points
   AddPointtoPolygon(upper,0,points[0]->Xi()); //cout << *points[0];
@@ -117,7 +117,7 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
       RemovePointBefore(i,upper);
 #if 0
   // printout the current upper hull
-  map<int,MOERTEL::Point*>::iterator pcurr;
+  std::map<int,MOERTEL::Point*>::iterator pcurr;
   for (pcurr=upper.begin(); pcurr != upper.end(); ++pcurr)
     if (pcurr->second)
       cout << *(pcurr->second);
@@ -126,7 +126,7 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
 
   //===========================================================================
   // build the lower hull
-  map<int,RefCountPtr<MOERTEL::Point> > lower;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> > lower;
   // put in the first 2 points
   AddPointtoPolygon(lower,np-1,points[np-1]->Xi()); //cout << *points[np-1];
   AddPointtoPolygon(lower,np-2,points[np-2]->Xi()); //cout << *points[np-2];
@@ -141,7 +141,7 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
       RemovePointAfter(i,lower);
 #if 0
   // printout the current lower hull
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator pcurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator pcurr;
   for (pcurr=lower.begin(); pcurr != lower.end(); ++pcurr)
     if (pcurr->second)
       cout << *(pcurr->second);
@@ -155,7 +155,7 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
   //===========================================================================
   // join upper and lower hull
   // note not to put in duplicate start and end point
-  map<int,RefCountPtr<MOERTEL::Point> > finalp;
+  std::map<int,Teuchos::RCP<MOERTEL::Point> > finalp;
   
   // put upper hull in
   int i=0;
@@ -181,7 +181,7 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
   cout << "--------------------------------------------\n";
   cout << "Final polygon:\n";
   for (pcurr=finalp.begin(); pcurr != finalp.end(); ++pcurr)
-    if (pcurr->second != null)
+    if (pcurr->second != Teuchos::null)
       cout << *(pcurr->second);
 #endif  
 
@@ -209,13 +209,13 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::MakeRightTurnUpper(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull)
+bool MOERTEL::Overlap::MakeRightTurnUpper(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 and i-2 do not necessary have ids i-1 and i-2, they 
   // are just the 2 point BEFORE i (could have any id < i)
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = hull.find(i);
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
     cout << "MOERTEL: ***ERR*** MOERTEL::Overlap::MakeRightTurn:\n"
@@ -223,11 +223,11 @@ bool MOERTEL::Overlap::MakeRightTurnUpper(int i,map<int,RefCountPtr<MOERTEL::Poi
          << "MOERTEL: ***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  RefCountPtr<MOERTEL::Point> point = curr->second; //cout << *point;
+  Teuchos::RCP<MOERTEL::Point> point = curr->second; //cout << *point;
   curr--;
-  RefCountPtr<MOERTEL::Point> pointm1 = curr->second; //cout << *pointm1;
+  Teuchos::RCP<MOERTEL::Point> pointm1 = curr->second; //cout << *pointm1;
   curr--;
-  RefCountPtr<MOERTEL::Point> pointm2 = curr->second; //cout << *pointm2;
+  Teuchos::RCP<MOERTEL::Point> pointm2 = curr->second; //cout << *pointm2;
   double N[2];
   N[0] =  pointm1->Xi()[1] - pointm2->Xi()[1];
   N[1] = -(pointm1->Xi()[0] - pointm2->Xi()[0]);
@@ -251,13 +251,13 @@ bool MOERTEL::Overlap::MakeRightTurnUpper(int i,map<int,RefCountPtr<MOERTEL::Poi
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::MakeRightTurnLower(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull)
+bool MOERTEL::Overlap::MakeRightTurnLower(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 and i-2 do not necessary have ids i-1 and i-2, they 
   // are just the 2 point BEFORE i (could have any id < i)
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = hull.find(i);
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
     cout << "***ERR*** MOERTEL::Overlap::MakeRightTurn:\n"
@@ -265,11 +265,11 @@ bool MOERTEL::Overlap::MakeRightTurnLower(int i,map<int,RefCountPtr<MOERTEL::Poi
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  RefCountPtr<MOERTEL::Point> point = curr->second; //cout << *point;
+  Teuchos::RCP<MOERTEL::Point> point = curr->second; //cout << *point;
   curr++;
-  RefCountPtr<MOERTEL::Point> pointm1 = curr->second; //cout << *pointm1;
+  Teuchos::RCP<MOERTEL::Point> pointm1 = curr->second; //cout << *pointm1;
   curr++;
-  RefCountPtr<MOERTEL::Point> pointm2 = curr->second; //cout << *pointm2;
+  Teuchos::RCP<MOERTEL::Point> pointm2 = curr->second; //cout << *pointm2;
   double N[2];
   N[0] =  pointm1->Xi()[1] - pointm2->Xi()[1];
   N[1] = -(pointm1->Xi()[0] - pointm2->Xi()[0]);
@@ -293,12 +293,12 @@ bool MOERTEL::Overlap::MakeRightTurnLower(int i,map<int,RefCountPtr<MOERTEL::Poi
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::RemovePointBefore(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull)
+void MOERTEL::Overlap::RemovePointBefore(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 does not necessary have id i-1  
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = hull.find(i);
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
     cout << "***ERR*** MOERTEL::Overlap::RemovePointBefore:\n"
@@ -315,12 +315,12 @@ void MOERTEL::Overlap::RemovePointBefore(int i,map<int,RefCountPtr<MOERTEL::Poin
 /*----------------------------------------------------------------------*
  |  test whether three points make a right turn (private)    mwgee 10/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Overlap::RemovePointAfter(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull)
+void MOERTEL::Overlap::RemovePointAfter(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull)
 {
   // note:
   // point i for sure exists as it was added as last point
   // the points i-1 does not necessary have id i-1  
-  map<int,RefCountPtr<MOERTEL::Point> >::iterator curr = hull.find(i);
+  std::map<int,Teuchos::RCP<MOERTEL::Point> >::iterator curr = hull.find(i);
   if (curr==hull.end())
   {
     cout << "***ERR*** MOERTEL::Overlap::RemovePointBefore:\n"
@@ -338,7 +338,7 @@ void MOERTEL::Overlap::RemovePointAfter(int i,map<int,RefCountPtr<MOERTEL::Point
 /*----------------------------------------------------------------------*
  |  collapse points that are really close to one point       mwgee 11/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Overlap::CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p,
+bool MOERTEL::Overlap::CollapsePoints(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p,
                                    const double eps)
 {
   // we don't want to collapse on a polygon that has just three or less points
@@ -349,19 +349,19 @@ bool MOERTEL::Overlap::CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p,
   int np = p.size();
 
   // get a view of all points
-  vector<RefCountPtr<MOERTEL::Point> > points; 
+  std::vector<Teuchos::RCP<MOERTEL::Point> > points; 
   PointView(p,points);
 
-  // create a new map for collapsed points
-  map<int,RefCountPtr<MOERTEL::Point> > pnew;
+  // create a new std::map for collapsed points
+  std::map<int,Teuchos::RCP<MOERTEL::Point> > pnew;
 
   // create  vector holding points to collapse
-  vector<RefCountPtr<MOERTEL::Point> > collapse(points.size());
+  std::vector<Teuchos::RCP<MOERTEL::Point> > collapse(points.size());
 
   // loop points and compare coords
   for (int i=0; i<np; ++i)
   {
-    if (points[i] == null)
+    if (points[i] == Teuchos::null)
       continue;
     
     // put point i into vector with collapse points
@@ -371,7 +371,7 @@ bool MOERTEL::Overlap::CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p,
     
     for (int j=i+1; j<np; ++j)
     {
-      if (points[j] == null)
+      if (points[j] == Teuchos::null)
         continue;
       double xi1xi2[2];
       xi1xi2[0] = points[j]->Xi()[0] - points[i]->Xi()[0];
@@ -384,7 +384,7 @@ bool MOERTEL::Overlap::CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p,
         // add point2 to collapse vector
         collapse[count] = points[j];
         ++count;
-        points[j] = null;
+        points[j] = Teuchos::null;
       }
     }
     
