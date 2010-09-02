@@ -16,7 +16,7 @@ namespace TSQR {
     ///
     /// \param name [in] Timer label
     /// \param doStart [in] Whether to start timer on instantiation
-    TrivialTimer (const std::string& name, bool doStart = false);
+    TrivialTimer (const std::string& theName, bool doStart = false);
 
     /// Start the timer (this implementation doesn't actually do
     /// anything).

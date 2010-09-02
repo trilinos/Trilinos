@@ -29,6 +29,7 @@
 #include "AnasaziConfigDefs.hpp"
 
 #include "Teuchos_ConfigDefs.hpp" // HAVE_MPI
+#include "Teuchos_Tuple.hpp"
 #ifdef HAVE_MPI
 #  include "Teuchos_GlobalMPISession.hpp"
 #  include "Teuchos_oblackholestream.hpp"

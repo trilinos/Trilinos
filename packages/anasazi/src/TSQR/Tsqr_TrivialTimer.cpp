@@ -6,8 +6,8 @@
 
 namespace TSQR {
 
-  TrivialTimer::TrivialTimer (const std::string& name, bool doStart) :
-    name_ (name), isRunning_ (false)
+  TrivialTimer::TrivialTimer (const std::string& theName, bool doStart) :
+    name_ (theName), isRunning_ (false)
   {
     if (doStart)
       start();
