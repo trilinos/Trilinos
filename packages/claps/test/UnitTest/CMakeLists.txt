@@ -4,13 +4,15 @@ INCLUDE(PackageAddExecutableAndTest)
 ASSERT_DEFINED(PACKAGE_SOURCE_DIR CMAKE_CURRENT_SOURCE_DIR)
 
 IF (TPL_ENABLE_MPI)
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      Instantiation_UnitTest
-      SOURCES Claps_Instantiation_UnitTest.cpp Claps_UnitTest.cpp 
-      DEPLIBS claps
-      NUM_MPI_PROCS 1
-      STANDARD_PASS_OUTPUT
-      )
+  IF (HAVE_SCLAPS)
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+        Instantiation_UnitTest
+        SOURCES Claps_Instantiation_UnitTest.cpp Claps_UnitTest.cpp 
+        DEPLIBS claps
+        NUM_MPI_PROCS 1
+        STANDARD_PASS_OUTPUT
+        )
+  ENDIF()
 ENDIF()
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
