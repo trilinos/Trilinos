@@ -27,7 +27,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TSQR_DistTsqr_Accuracy
   SOURCES Tsqr_TestDistTsqr.cpp
   COMM serial mpi
-  ARGS "--verify --ncols=5 --explicit --implicit --real --nocomplex"
+  ARGS "--verify --ncols=5 --explicit --implicit --real"
   STANDARD_PASS_OUTPUT
 )
 
