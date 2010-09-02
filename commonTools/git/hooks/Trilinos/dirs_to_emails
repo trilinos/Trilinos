@@ -64,4 +64,4 @@ packages/teko teko-checkins@software.sandia.gov
 doc/Thyra thyra-checkins@software.sandia.gov
 doc/RefCountPtr teuchos-checkins@software.sandia.gov
 #cmake framework-checkins@software.sandia.gov
-^ trilinos-checkins@software.sandia.gov
+.+ trilinos-checkins@software.sandia.gov
