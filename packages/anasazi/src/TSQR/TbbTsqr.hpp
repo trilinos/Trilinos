@@ -71,10 +71,10 @@ namespace TSQR {
       TbbParallelTsqr< LocalOrdinal, Scalar, TimerType > impl_;
 
       // Collected running statistcs on various computations
-      TimeStats factorStats_, applyStats_, explicitQStats_, cacheBlockStats_, unCacheBlockStats_;
+      mutable TimeStats factorStats_, applyStats_, explicitQStats_, cacheBlockStats_, unCacheBlockStats_;
 
       // Timers for various computations
-      TimerType factorTimer_, applyTimer_, explicitQTimer_, cacheBlockTimer_, unCacheBlockTimer_;
+      mutable TimerType factorTimer_, applyTimer_, explicitQTimer_, cacheBlockTimer_, unCacheBlockTimer_;
 
     public:
       typedef Scalar scalar_type;

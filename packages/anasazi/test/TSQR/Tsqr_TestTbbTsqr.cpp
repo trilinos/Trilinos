@@ -99,37 +99,37 @@ namespace TSQR {
 	using std::complex;
 #endif // HAVE_TSQR_COMPLEX
 
-	benchmarkTbbTsqr< int, float, timer_type > (params.numTrials, 
-						    params.numRows, 
-						    params.numCols, 
-						    params.numCores,
-						    params.cacheBlockSize,
-						    params.contiguousCacheBlocks,
-						    params.humanReadable);
-	benchmarkTbbTsqr< int, double, timer_type > (params.numTrials, 
+	benchmarkTbbTsqr< int, float > (params.numTrials, 
+					params.numRows, 
+					params.numCols, 
+					params.numCores,
+					params.cacheBlockSize,
+					params.contiguousCacheBlocks,
+					params.humanReadable);
+	benchmarkTbbTsqr< int, double > (params.numTrials, 
+					 params.numRows, 
+					 params.numCols, 
+					 params.numCores,
+					 params.cacheBlockSize,
+					 params.contiguousCacheBlocks,
+					 params.humanReadable);
+#ifdef HAVE_TSQR_COMPLEX
+	if (params.testComplex)
+	  {
+	    benchmarkTbbTsqr< int, complex<float> > (params.numTrials, 
 						     params.numRows, 
 						     params.numCols, 
 						     params.numCores,
 						     params.cacheBlockSize,
 						     params.contiguousCacheBlocks,
 						     params.humanReadable);
-#ifdef HAVE_TSQR_COMPLEX
-	if (params.testComplex)
-	  {
-	    benchmarkTbbTsqr< int, complex<float>, timer_type > (params.numTrials, 
-								 params.numRows, 
-								 params.numCols, 
-								 params.numCores,
-								 params.cacheBlockSize,
-								 params.contiguousCacheBlocks,
-								 params.humanReadable);
-	    benchmarkTbbTsqr< int, complex<double>, timer_type > (params.numTrials, 
-								  params.numRows, 
-								  params.numCols, 
-								  params.numCores,
-								  params.cacheBlockSize,
-								  params.contiguousCacheBlocks,
-								  params.humanReadable);
+	    benchmarkTbbTsqr< int, complex<double> > (params.numTrials, 
+						      params.numRows, 
+						      params.numCols, 
+						      params.numCores,
+						      params.cacheBlockSize,
+						      params.contiguousCacheBlocks,
+						      params.humanReadable);
 	  }
 #endif // HAVE_TSQR_COMPLEX
       }
@@ -361,10 +361,10 @@ main (int argc, char *argv[])
       using std::endl;
 
       if (params.benchmark)
-	TSQR::Trilinos::Test::benchmarkSeqTsqr (params);
+	TSQR::Trilinos::Test::benchmark (params);
       // We allow the same run to do both benchmark and verify.
       if (params.verify)
-	TSQR::Trilinos::Test::verifySeqTsqr (params);
+	TSQR::Trilinos::Test::verify (params);
 
       // The Trilinos test framework expects a message like this.
       // Obviously we haven't tested anything, but eventually we

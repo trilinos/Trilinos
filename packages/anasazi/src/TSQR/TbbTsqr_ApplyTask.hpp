@@ -89,7 +89,7 @@ namespace TSQR {
 	  return NULL;
 	else if (P_first_ == P_last_)
 	  {
-	    TimerType timer;
+	    TimerType timer("");
 	    timer.start();
 	    const std::vector< SeqOutput >& seq_outputs = factor_output_.first;
 	    seq_.apply (apply_type_, Q_.nrows(), Q_.ncols(), 

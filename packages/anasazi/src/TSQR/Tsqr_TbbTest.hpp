@@ -41,6 +41,8 @@
 #include <Tsqr_ScalarTraits.hpp>
 #include <TbbTsqr.hpp>
 
+#include <Teuchos_Time.hpp>
+
 #include <algorithm>
 #include <cstring> // size_t definition
 //#include <iomanip>
@@ -77,12 +79,8 @@ namespace TSQR {
 		   const bool human_readable,
 		   const bool b_debug = false)
     {
-      // Need c++0x to have a default template parameter argument for
-      // a template function, otherwise we would have templated this
-      // function on TimerType and made TrivialTimer the default.
-      // TimerType is only used instead of TbbTsqr.
-      typedef TSQR::TBB::TrivialTimer TimerType; 
-      typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, TimerType > node_tsqr_type;
+      typedef Teuchos::Time timer_type;
+      typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, timer_type > node_tsqr_type;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       using std::cerr;
@@ -225,7 +223,12 @@ namespace TSQR {
 
     /// Benchmark Intel TBB TSQR vs. LAPACK's QR, and print the
     /// results to stdout.
-    template< class Ordinal, class Scalar, class TimerType >
+    ///
+    /// \note c++0x support is need in order to have a default
+    /// template parameter argument for a template function, otherwise
+    /// we would have templated this function on TimerType and made
+    /// Teuchos::Time the default.
+    template< class Ordinal, class Scalar >
     void
     benchmarkTbbTsqr (const int ntrials,
 		      const Ordinal nrows, 
@@ -235,28 +238,33 @@ namespace TSQR {
 		      const bool contiguous_cache_blocks,
 		      const bool human_readable)
     {
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       using TSQR::TBB::TbbTsqr;
       using std::cerr;
       using std::cout;
       using std::endl;
-      TSQR::Test::verifyTimerConcept< TimerType >();
+
+      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef Teuchos::Time timer_type;
+      typedef Ordinal ordinal_type;
+      typedef Scalar scalar_type;
+      typedef Matrix< ordinal_type, scalar_type > matrix_type;
+      typedef TbbTsqr< ordinal_type, scalar_type, timer_type > node_tsqr_type;
 
       // Pseudorandom normal(0,1) generator.  Default seed is OK,
       // because this is a benchmark, not an accuracy test.
       TSQR::Random::NormalGenerator< ordinal_type, scalar_type > generator;
 
       // Set up TSQR implementation.
-      TbbTsqr< Ordinal, Scalar, TimerType > actor (num_cores, cache_block_size);
+      node_tsqr_type actor (num_cores, cache_block_size);
 
-      Matrix< Ordinal, Scalar > A (nrows, ncols);
-      Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
-      Matrix< Ordinal, Scalar > Q (nrows, ncols);
-      Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
+      matrix_type A (nrows, ncols);
+      matrix_type A_copy (nrows, ncols);
+      matrix_type Q (nrows, ncols);
+      matrix_type R (ncols, ncols, scalar_type(0));
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (Scalar(0));
+      R.fill (scalar_type(0));
 
       // Create a test problem
       nodeTestProblem (generator, nrows, ncols, A.get(), A.lda(), false);
@@ -272,13 +280,13 @@ namespace TSQR {
       // Benchmark TBB-based TSQR for ntrials trials.
       //
       // Name of timer doesn't matter here; we only need the timing.
-      TimerType timer("TbbTSQR");
+      timer_type timer("TbbTsqr");
       timer.start();
       for (int trial_num = 0; trial_num < ntrials; ++trial_num)
 	{
 	  // Factor the matrix in-place in A_copy, and extract the
 	  // resulting R factor into R.
-	  typedef typename TbbTsqr< Ordinal, Scalar, TimerType >::FactorOutput factor_output_type;
+	  typedef typename node_tsqr_type::FactorOutput factor_output_type;
 	  factor_output_type factor_output = 
 	    actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(), 
 			  R.get(), R.lda(), contiguous_cache_blocks);
@@ -317,12 +325,12 @@ namespace TSQR {
 	  std::vector< TimeStats > stats;
 	  actor.getStats (stats);
 	  std::vector< std::string> labels;
-	  actor.getStatsLabels (stats);
+	  actor.getStatsLabels (labels);
 
 	  for (std::vector< std::string >::size_type k = 0; k < labels.size(); ++k)
 	    {
 	      cout << "  " << labels[k] << endl;
-	      stats[k].print (count, human_readable);
+	      stats[k].print (cout, human_readable);
 	    }
 	}
       else

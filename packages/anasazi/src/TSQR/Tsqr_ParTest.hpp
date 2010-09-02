@@ -31,12 +31,12 @@
 
 #include <Tsqr_Config.hpp>
 #include <Tsqr_Random_NormalGenerator.hpp>
+#include <Tsqr_verifyTimerConcept.hpp>
 
 #include <Tsqr_generateStack.hpp>
 #include <Tsqr_DistTsqr.hpp>
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
-#include <Tsqr_verifyTimerConcept.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -76,29 +76,35 @@ namespace TSQR {
       ///   restrictions on the set of valid seeds)
       /// \param scalarTypeName [in] Human-readable name of the Scalar
       ///   template type parameter
+      /// \param out [out] Output stream to which to write results
+      /// \param err [out] Output stream to which to write any
+      ///   debugging outputs (if applicable) or errors
+      /// \param testFactorExplicit [in] Whether to test 
+      ///   DistTsqr::factorExplicit()
+      /// \param testFactorImplicit [in] Whether to test 
+      ///   DistTsqr::factor() and DistTsqr::explicit_Q()
       /// \param humanReadable [in] Whether printed results should be
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      /// \param out [out] Output stream to which to write results
-      /// \param err [out] Output stream to which to write any
-      ///   debugging outputs (if applicable) or errors
       DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 			const std::vector<int>& seed,
 			const std::string& scalarTypeName,
-			const bool humanReadable = true,
-			const bool debug = false,
-			std::ostream& out = std::cout,
-			std::ostream& err = std::cerr) :
+			std::ostream& out,
+			std::ostream& err,
+			const bool testFactorExplicit,
+			const bool testFactorImplicit,
+			const bool humanReadable,
+			const bool debug) :
 	gen_ (seed), 
 	scalarComm_ (scalarComm),
 	scalarTypeName_ (scalarTypeName), 
-	humanReadable_ (humanReadable), 
-	debug_ (debug), 
 	out_ (out), 
 	err_ (err),
-	testFactorExplicit_ (true),
-	testFactorImplicit_ (true)
+	testFactorExplicit_ (testFactorExplicit),
+	testFactorImplicit_ (testFactorImplicit),
+	humanReadable_ (humanReadable), 
+	debug_ (debug)
       {}
 
       /// \brief Constructor, with default seed value
@@ -111,25 +117,33 @@ namespace TSQR {
       ///   test.
       /// \param scalarTypeName [in] Human-readable name of the Scalar
       ///   template type parameter
+      /// \param out [out] Output stream to which to write results
+      /// \param err [out] Output stream to which to write any
+      ///   debugging outputs (if applicable) or errors
+      /// \param testFactorExplicit [in] Whether to test 
+      ///   DistTsqr::factorExplicit()
+      /// \param testFactorImplicit [in] Whether to test 
+      ///   DistTsqr::factor() and DistTsqr::explicit_Q()
       /// \param humanReadable [in] Whether printed results should be
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      /// \param out [out] Output stream to which to write results
-      /// \param err [out] Output stream to which to write any
-      ///   debugging outputs (if applicable) or errors
       DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 			const std::string& scalarTypeName,
-			const bool humanReadable = true,
-			const bool debug = false,
-			std::ostream& out = std::cout,
-			std::ostream& err = std::cerr) :
+			std::ostream& out,
+			std::ostream& err,
+			const bool testFactorExplicit,
+			const bool testFactorImplicit,
+			const bool humanReadable,
+			const bool debug) :
 	scalarComm_ (scalarComm),
 	scalarTypeName_ (scalarTypeName), 
-	humanReadable_ (humanReadable), 
-	debug_ (debug), 
 	out_ (out), 
-	err_ (err)
+	err_ (err),
+	testFactorExplicit_ (testFactorExplicit),
+	testFactorImplicit_ (testFactorImplicit),
+	humanReadable_ (humanReadable), 
+	debug_ (debug)
       {}
 
       void 
@@ -312,7 +326,6 @@ namespace TSQR {
 	Q_local.reshape (numRowsLocal, numCols);
 	Q_local.fill (Scalar(0));
       }
-
     };
 
 
@@ -348,33 +361,38 @@ namespace TSQR {
       ///   restrictions on the set of valid seeds)
       /// \param scalarTypeName [in] Human-readable name of the Scalar
       ///   template type parameter
+      /// \param out [out] Output stream to which to write results
+      /// \param err [out] Output stream to which to write any
+      ///   debugging outputs (if applicable) or errors
+      /// \param testFactorExplicit [in] Whether to test 
+      ///   DistTsqr::factorExplicit()
+      /// \param testFactorImplicit [in] Whether to test 
+      ///   DistTsqr::factor() and DistTsqr::explicit_Q()
       /// \param humanReadable [in] Whether printed results should be
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      /// \param out [out] Output stream to which to write results
-      /// \param err [out] Output stream to which to write any
-      ///   debugging outputs (if applicable) or errors
       DistTsqrBenchmarker (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 			   const Teuchos::RCP< MessengerBase< double > >& doubleComm,
 			   const std::vector<int>& seed,
 			   const std::string& scalarTypeName,
-			   const bool humanReadable = true,
-			   const bool debug = false,
-			   std::ostream& out = std::cout,
-			   std::ostream& err = std::cerr) :
+			   std::ostream& out,
+			   std::ostream& err,
+			   const bool testFactorExplicit,
+			   const bool testFactorImplicit,
+			   const bool humanReadable,
+			   const bool debug) :
 	gen_ (seed), 
 	scalarComm_ (scalarComm),
 	doubleComm_ (doubleComm),
 	scalarTypeName_ (scalarTypeName), 
-	humanReadable_ (humanReadable), 
-	debug_ (debug), 
 	out_ (out), 
 	err_ (err),
-	testFactorExplicit_ (true),
-	testFactorImplicit_ (true)
+	testFactorExplicit_ (testFactorExplicit),
+	testFactorImplicit_ (testFactorImplicit),
+	humanReadable_ (humanReadable), 
+	debug_ (debug)
       {
-	verifyTimerConcept< timer_type >();
       }
 
       /// \brief Constructor, with default seed value
@@ -390,29 +408,36 @@ namespace TSQR {
       ///   all the MPI processes.
       /// \param scalarTypeName [in] Human-readable name of the Scalar
       ///   template type parameter
+      /// \param out [out] Output stream to which to write results
+      /// \param err [out] Output stream to which to write any
+      ///   debugging outputs (if applicable) or errors
+      /// \param testFactorExplicit [in] Whether to test 
+      ///   DistTsqr::factorExplicit()
+      /// \param testFactorImplicit [in] Whether to test 
+      ///   DistTsqr::factor() and DistTsqr::explicit_Q()
       /// \param humanReadable [in] Whether printed results should be
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      /// \param out [out] Output stream to which to write results
-      /// \param err [out] Output stream to which to write any
-      ///   debugging outputs (if applicable) or errors
       DistTsqrBenchmarker (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 			   const Teuchos::RCP< MessengerBase< double > >& doubleComm,
 			   const std::string& scalarTypeName,
-			   const bool humanReadable = true,
-			   const bool debug = false,
-			   std::ostream& out = std::cout,
-			   std::ostream& err = std::cerr) :
+			   std::ostream& out,
+			   std::ostream& err,
+			   const bool testFactorExplicit,
+			   const bool testFactorImplicit,
+			   const bool humanReadable,
+			   const bool debug) :
 	scalarComm_ (scalarComm),
 	doubleComm_ (doubleComm),
 	scalarTypeName_ (scalarTypeName), 
-	humanReadable_ (humanReadable), 
-	debug_ (debug), 
 	out_ (out), 
-	err_ (err)
+	err_ (err),
+	testFactorExplicit_ (testFactorExplicit),
+	testFactorImplicit_ (testFactorImplicit),
+	humanReadable_ (humanReadable), 
+	debug_ (debug)
       {
-	verifyTimerConcept< timer_type >();
       }
 
       void 
@@ -591,6 +616,14 @@ namespace TSQR {
 	// (local component on this processor)
 	Q_local.reshape (numRowsLocal, numCols);
 	Q_local.fill (Scalar(0));
+      }
+
+      /// Make sure that timer_type satisfies the TimerType concept.
+      ///
+      static void
+      conceptChecks () 
+      {
+	verifyTimerConcept< timer_type >();
       }
     };
 

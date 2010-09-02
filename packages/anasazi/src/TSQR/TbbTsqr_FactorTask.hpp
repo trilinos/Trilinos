@@ -178,7 +178,7 @@ namespace TSQR {
       void
       execute_base_case () 
       {
-	TimerType timer;
+	TimerType timer("");
 	timer.start();
 	seq_outputs_[P_first_] = 
 	  seq_.factor (A_.nrows(), A_.ncols(), A_.get(), 
