@@ -127,12 +127,13 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryConverterExceptions)
 
   StandardTemplatedParameterConverter<int> intConverter;
   StandardTemplatedParameterConverter<float> floatConverter;
+  XMLParameterListWriter::ValidatorIDsMap dummmyValidatorMap;
   RCP<ParameterEntry> floatParameter = rcp(
     new ParameterEntry((float)3.0));
-  TEST_THROW(intConverter.fromParameterEntrytoXML(floatParameter, "blah"), 
+  TEST_THROW(intConverter.fromParameterEntrytoXML(floatParameter, "blah", 1, dummmyValidatorMap), 
     BadParameterEntryXMLConverterTypeException);
 
-  XMLObject floatXML = floatConverter.fromParameterEntrytoXML(floatParameter, "float");
+  XMLObject floatXML = floatConverter.fromParameterEntrytoXML(floatParameter, "float", 1, dummmyValidatorMap);
   TEST_THROW(intConverter.fromXMLtoParameterEntry(floatXML), 
     BadParameterEntryXMLConverterTypeException);
 

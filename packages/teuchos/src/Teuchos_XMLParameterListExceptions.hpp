@@ -208,8 +208,7 @@ public:
 };
 
 /**
- * \brief Thrown when the xml tag for a parameter entry has a reference to
- * a non-existant validator.
+ * \brief Thrown when a referenced validator can't be found.
  */
 class MissingValidatorDefinitionException : public std::logic_error{
 public: 
@@ -218,7 +217,22 @@ public:
    *
    * @param what_arg The error message to be associated with this error.
    */
-  MissingValidatorDefinitionException(const std::string& what_arg):std::logic_error(what_arg){}
+  MissingValidatorDefinitionException(
+    const std::string& what_arg):std::logic_error(what_arg){}
+};
+
+/**
+ * \brief Thrown when a referenced ParameterEntry can't be found.
+ */
+class MissingParameterEntryDefinitionException : public std::logic_error{
+public: 
+  /**
+   * \brief Constructs a MissingParameterEntryDefinitionException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  MissingParameterEntryDefinitionException(
+    const std::string& what_arg):std::logic_error(what_arg){}
 };
 
 /**

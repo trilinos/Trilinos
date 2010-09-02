@@ -38,6 +38,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_DependencySheet.hpp"
 
 
 namespace Teuchos {
@@ -50,10 +51,18 @@ class TEUCHOS_LIB_DLL_EXPORT XMLParameterListWriter {
 
 public:
 
-  /** \brief Convienence typedef */
-  typedef std::set<RCP<const ParameterEntryValidator>, RCPConstComp> 
-    ValidatorSet;
+  /** \name Public Types */
+  //@{
 
+  /** \breif . */
+  typedef std::map<RCP<const ParameterEntryValidator>, 
+    ParameterEntryValidator::ValidatorID, RCPConstComp> ValidatorIDsMap;
+
+  /** \breif . */
+  typedef std::map<RCP<const ParameterEntry>,
+    ParameterEntry::ParameterEntryID, RCPConstComp> EntryIDsMap;
+  
+  //@}
 
   //! @name Constructors 
   //@{
@@ -62,7 +71,9 @@ public:
   //@}
 
   /** Write the given list to an XML object */
-  XMLObject toXML(const ParameterList& p) const ;
+  XMLObject toXML(
+    const ParameterList& p, 
+    RCP<const DependencySheet> depSheet = null) const;
 
   /** \brief */
   static const std::string& getParameterListTagName(){
@@ -82,17 +93,36 @@ public:
     return validatorsTagName;
   }
 
+  static const std::string& getDependenciesTagName(){
+    static const std::string dependenciesTagName = "Dependencies";
+    return dependenciesTagName;
+  }
+
 private:
 
   /** \brief Write the given list to an XML object.  */
-  XMLObject convertParameterList(const ParameterList& p) const;
+  XMLObject convertParameterList(
+      const ParameterList& p, 
+      ParameterEntry::ParameterEntryID& idCounter, 
+      EntryIDsMap& entryIDsMap,
+      const ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief Convert all the validators. */
-  XMLObject convertValidators(const ParameterList& p) const;
+  XMLObject convertValidators(
+    const ParameterList& p, 
+    ValidatorIDsMap& validatorIDsMap) const;
 
-  void buildValidatorSet(
+  /** \brief Convert all the dependencies. */
+  XMLObject convertDependencies(
+    RCP<const DependencySheet> depSheet,
+    const EntryIDsMap& entryIDsMap, 
+    const ValidatorIDsMap& validatorIDsMap) const;
+
+  /** \brief Builds up the list of validators to be converted */
+  void buildValidatorMap(
     const ParameterList& p,
-    ValidatorSet& validatorSet) const;
+    ValidatorIDsMap& validatorIDsMap,
+    ParameterEntryValidator::ValidatorID& idCounter) const;
 };
 
 

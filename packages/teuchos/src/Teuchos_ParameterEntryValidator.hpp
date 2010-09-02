@@ -41,7 +41,6 @@ namespace Teuchos {
 class ParameterEntry;
 #endif
 
-
 /** \brief Abstract interface for an object that can validate a
  *  ParameterEntry's value.
  *
@@ -51,22 +50,19 @@ class ParameterEntry;
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator {
 public:
 
+  /** \name Public types */
+  //@{
+  
+  /** \brief .. */
+  typedef unsigned int ValidatorID;
+  
   /** \brief . */
   typedef RCP<const Array<std::string> > ValidStringsList;
 
-  /** \brief . */
-  typedef unsigned int ValidatorID;
+  //@}
 
   /** \brief Default Constructor */
-  ParameterEntryValidator();
-
-  /** \brief Constructor allowing for direct setting of the ValidatorID.
-   * DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT YOU'RE DOING!
-   */
-  ParameterEntryValidator(ValidatorID id);
-
-  /** \brief . */
-  ~ParameterEntryValidator();
+  ParameterEntryValidator() {}
 
   /** \brief Get a string that should be used as a value of the type attribute
    * when serializing it to XML.
@@ -75,11 +71,6 @@ public:
    * when serializing it to XML.
    */
   virtual const std::string getXMLTypeName() const=0;
-
-  static RCP<ParameterEntryValidator> getValidator(ValidatorID id);
-
-  static ValidatorID 
-    getValidatorID(RCP<const ParameterEntryValidator> validator);
 
   /** \brief Print documentation for this parameter.
    *
@@ -146,63 +137,6 @@ public:
       TEST_FOR_EXCEPT(0==entry);
       this->validate(*entry,paramName,sublistName);
     }
-
-
-  /** \brief Prints a list of all the ParameterEntryValidators
-   * currently being tracked */
-  static void printKnownValidators(std::ostream &out);
-
-private:
-  
-  typedef std::map<const ParameterEntryValidator*, 
-    ValidatorID> 
-      ValidatorToIDMap;
-
-  typedef std::pair<const ParameterEntryValidator*, ValidatorID>
-    ValidatorIDPair;
-
-  typedef std::map<ValidatorID, ParameterEntryValidator* > 
-    IDToValidatorMap;
-
-  typedef std::pair<ValidatorID, ParameterEntryValidator* >
-    IDValidatorPair;
-
-  typedef std::vector<ValidatorID> FreeIDsVector;
-
-  static ValidatorToIDMap& getMasterValidatorMap(){
-    static ValidatorToIDMap masterValidatorMap;
-    return masterValidatorMap;
-  }
-
-  static IDToValidatorMap& getMasterIDMap(){
-    static IDToValidatorMap masterIDMap;
-    return masterIDMap;
-  }
-  
-  static ValidatorID& getMasterIDCounter(){
-    static ValidatorID masterCounter = 0;
-    return masterCounter;
-  }
-
-  static FreeIDsVector& getMasterFreeIDs(){
-    static FreeIDsVector masterFreeIDs;
-    return masterFreeIDs;
-  }
-
-  static void addValidatorToMasterMaps(
-    ParameterEntryValidator* validatorToAdd);
-
-  static void addValidatorToMasterMaps(
-    ParameterEntryValidator* validatorToAdd, ValidatorID idToUse);
-
-  static void removeValidatorFromMasterMaps(
-    ParameterEntryValidator* validatorToRemove);
-
-  static ValidatorID getAvailableID();
-
-  static void incrementMasterCounter();
-
-  
 };
 
 

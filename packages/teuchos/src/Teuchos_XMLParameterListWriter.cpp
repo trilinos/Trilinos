@@ -30,6 +30,7 @@
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 #include "Teuchos_XMLParameterListExceptions.hpp"
+#include "Teuchos_DependencyXMLConverterDB.hpp"
 
 
 namespace Teuchos{
@@ -39,68 +40,120 @@ XMLParameterListWriter::XMLParameterListWriter()
 {;}
 
 
-XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
+XMLObject 
+XMLParameterListWriter::toXML(
+  const ParameterList& p, 
+  RCP<const DependencySheet> depSheet) const
 {
-  XMLObject validators = convertValidators(p);
-  XMLObject toReturn = convertParameterList(p);
+  EntryIDsMap entryIDsMap;
+  ValidatorIDsMap validatorIDsMap;
+  ParameterEntry::ParameterEntryID peIDCounter =0;
+  XMLObject validators = convertValidators(p, validatorIDsMap);
+
+  XMLObject toReturn = 
+    convertParameterList(p, peIDCounter, entryIDsMap, validatorIDsMap);
+  toReturn.addAttribute(getNameAttributeName(), p.name());
   toReturn.addChild(validators);
+
+  if(!depSheet.is_null()){
+    XMLObject deps = 
+      convertDependencies(depSheet, entryIDsMap, validatorIDsMap);
+    toReturn.addChild(deps);
+  }
+
   return toReturn;
 }
 
-void XMLParameterListWriter::buildValidatorSet(
+void XMLParameterListWriter::buildValidatorMap(
   const ParameterList& p,
-  ValidatorSet& validatorSet) const
+  ValidatorIDsMap& validatorIDsMap,
+  ParameterEntryValidator::ValidatorID& idCounter) const
 {
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i) {
     const ParameterEntry& entry = p.entry(i);
     if(entry.isList()){
-      buildValidatorSet(
+      buildValidatorMap(
         getValue<ParameterList>(entry),
-        validatorSet);
+        validatorIDsMap,
+        idCounter);
     }
     else if(nonnull(entry.validator())){
-      validatorSet.insert(entry.validator());
+      validatorIDsMap.insert(ValidatorIDsMap::value_type(
+        entry.validator(), idCounter));
+        idCounter++;
     }
   }
 }
 
 
 XMLObject XMLParameterListWriter::convertValidators(
-  const ParameterList& p) const
+  const ParameterList& p, ValidatorIDsMap& validatorIDsMap) const
 {
   XMLObject validators(getValidatorsTagName());
-  ValidatorSet validatorSet;
-  buildValidatorSet(p, validatorSet);
+  ParameterEntryValidator::ValidatorID idCounter = 0;
+  buildValidatorMap(p, validatorIDsMap, idCounter);
   for(
-    ValidatorSet::const_iterator it = validatorSet.begin();
-    it != validatorSet.end();
+    ValidatorIDsMap::const_iterator it = validatorIDsMap.begin();
+    it != validatorIDsMap.end();
     ++it)
   {
     validators.addChild(
-      ValidatorXMLConverterDB::convertValidator(*it, validatorSet));
+      ValidatorXMLConverterDB::convertValidator(it->first, validatorIDsMap));
   }
   return validators;
 }
 
 
 XMLObject XMLParameterListWriter::convertParameterList(
-  const ParameterList& p) const
+  const ParameterList& p,
+  ParameterEntry::ParameterEntryID& idCounter,
+  EntryIDsMap& entryIDsMap,
+  const ValidatorIDsMap& validatorIDsMap) const
 {
   XMLObject rtn(getParameterListTagName());
-  rtn.addAttribute(getNameAttributeName(), p.name());
   
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i){
     RCP<const ParameterEntry> entry = p.getEntryRCP(i->first);
     if(entry->isList()){
-      rtn.addChild(convertParameterList(getValue<ParameterList>(entry)));
+      XMLObject newPL = convertParameterList(
+        getValue<ParameterList>(entry), 
+        idCounter, 
+        entryIDsMap,
+        validatorIDsMap);
+      newPL.addAttribute(getNameAttributeName(), getValue<ParameterList>(*entry).name());
+      newPL.addAttribute(ParameterEntryXMLConverter::getIdAttributeName(), idCounter);
+      entryIDsMap.insert(EntryIDsMap::value_type(entry, idCounter));
+      rtn.addChild(newPL);
+      ++idCounter;
     }
     else{
       rtn.addChild(ParameterEntryXMLConverterDB::convertEntry(
-        entry, p.name(i)));
+        entry, p.name(i), idCounter, validatorIDsMap));
+      entryIDsMap.insert(EntryIDsMap::value_type(entry, idCounter));
+      ++idCounter;
     }
   }
   return rtn;
 }
 
+XMLObject 
+XMLParameterListWriter::convertDependencies(
+  RCP<const DependencySheet> depSheet,
+  const EntryIDsMap& entryIDsMap,
+  const ValidatorIDsMap& validatorIDsMap) const
+{
+  XMLObject toReturn(getDependenciesTagName());
+  for(
+    DependencySheet::DepSet::const_iterator it = depSheet->depBegin();
+    it != depSheet->depEnd();
+    ++it)
+  {
+    toReturn.addChild(DependencyXMLConverterDB::convertDependency(
+      *it, entryIDsMap, validatorIDsMap));
+  }
+  return toReturn;
+}
+
 
 } // namespace Teuchos
+

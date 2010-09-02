@@ -39,6 +39,40 @@
 
 namespace Teuchos {
 
+/** \brief Thrown when no dependes of a dependency can't be found 
+ * when converting the dependency to or from XML.
+ */
+class MissingDependeeException : public std::logic_error{
+
+public:
+
+  /**
+   * \brief Constructs an MissingDependeeException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  MissingDependeeException(
+    const std::string& what_arg):std::logic_error(what_arg){}
+
+};
+
+/** \brief Thrown when a dependent of a dependency cant be found 
+ * when converting the dependency to or from XML.
+ */
+class MissingDependentException : public std::logic_error{
+
+public:
+
+  /**
+   * \brief Constructs an MissingDependentException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  MissingDependentException(
+    const std::string& what_arg):std::logic_error(what_arg){}
+
+};
+
 /** \brief Thrown when no dependess of a dependency are specified
  * when converting the dependency from XML.
  */
@@ -158,6 +192,24 @@ public:
     const std::string& what_arg):std::logic_error(what_arg){}
 
 };
+
+/** \brief Thrown when converting a dependency that has validaotrs to 
+ * and from XML. This excetpion indicates that a specified validator
+ * could not be found*/
+class MissingValidatorException : public std::logic_error{
+
+public:
+
+  /**
+   * \brief Constructs an MissingValidatorException.
+   *
+   * @param what_arg The error message to be associated with this error.
+   */
+  MissingValidatorException(
+    const std::string& what_arg):std::logic_error(what_arg){}
+
+};
+
 
 /** \brief Thrown when an appropriate Dependency Converter can't be found. */
 class CantFindDependencyConverterException : public std::logic_error{

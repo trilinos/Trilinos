@@ -57,7 +57,7 @@ RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
 void AnyNumberValidatorXMLConverter::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
+  const XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   RCP<const AnyNumberParameterEntryValidator> castedValidator = 
     rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(validator, true);
@@ -97,7 +97,7 @@ RCP<ParameterEntryValidator> FileNameValidatorXMLConverter::convertXML(
 void FileNameValidatorXMLConverter::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
+  const XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   RCP<const FileNameValidator> castedValidator =
     rcp_dynamic_cast<const FileNameValidator>(validator);
@@ -136,7 +136,7 @@ RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
 void StringValidatorXMLConverter::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
+  const XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   RCP<const StringValidator> castedValidator = 
     rcp_dynamic_cast<const StringValidator>(validator);

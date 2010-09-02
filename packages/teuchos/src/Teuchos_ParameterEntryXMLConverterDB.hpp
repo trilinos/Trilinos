@@ -32,6 +32,7 @@
 
 #include "Teuchos_StandardParameterEntryXMLConverters.hpp"
 #include "Teuchos_XMLParameterListExceptions.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
 
 
 /*! \file Teuchos_ParameterEntryXMLCoverterDB.hpp
@@ -94,9 +95,13 @@ public:
    * \brief Converts the given ParameterEntry to XML.
    */
   static XMLObject convertEntry(
-    RCP<const ParameterEntry> entry, const std::string& name)
+    RCP<const ParameterEntry> entry, 
+    const std::string& name,
+    const ParameterEntry::ParameterEntryID& id,
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap)
   {
-    return getConverter(entry)->fromParameterEntrytoXML(entry, name);
+    return getConverter(entry)->fromParameterEntrytoXML(
+      entry, name, id, validatorIDsMap);
   }
 
   /**

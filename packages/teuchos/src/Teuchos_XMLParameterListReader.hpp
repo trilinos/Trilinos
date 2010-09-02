@@ -36,6 +36,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_DependencySheet.hpp"
 
 
 namespace Teuchos {
@@ -56,6 +57,10 @@ public:
   typedef std::map<ParameterEntryValidator::ValidatorID,
     RCP<ParameterEntryValidator> > ValidatorIDsMap;
 
+  /** \brief Convenience typedef */
+  typedef std::map<ParameterEntry::ParameterEntryID,
+    RCP<ParameterEntry> > EntryIDsMap;
+
   //@}
 
   //! @name Constructors 
@@ -65,16 +70,14 @@ public:
   //@}
 
   /** Write the given XML object to a parameter list */
-  ParameterList toParameterList(const XMLObject& xml) const ;
+  ParameterList toParameterList(
+    const XMLObject& xml, RCP<DependencySheet> depSheet = null) const ;
 
 private:
 
   /** \name Private Types */
   //@{
   
-  /** \brief Convenience typedef */
-  typedef std::map<ParameterEntry::ParameterEntryID,
-    ParameterEntry::ParameterEntryID> EntryIDsMap;
 
   
   //@}
@@ -88,6 +91,13 @@ private:
   /** \brief Write the given XML object to appropriate validators. */
   void convertValidators(
     const XMLObject& xml, ValidatorIDsMap& validatorIDsMap) const;
+
+  /** \brief Write the given XML object to appropriate dependencies. */
+  void convertDependencies(
+    RCP<DependencySheet> depSheet, 
+    const XMLObject& xml, 
+    const EntryIDsMap& entryIDsMap,
+    const ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief Tests to see if there are duplicate validator IDs */
   void testForDuplicateValidatorIDs(

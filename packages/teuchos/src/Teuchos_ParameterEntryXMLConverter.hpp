@@ -38,11 +38,10 @@
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
 
 
 namespace Teuchos {
-
-class ValidatortoIDMap;
 
 /** \brief A class used to convert parameter entries to xml and vice versa.
  */
@@ -68,7 +67,9 @@ public:
    */
   XMLObject fromParameterEntrytoXML(
     RCP<const ParameterEntry> entry,
-    const std::string &name) const;
+    const std::string &name,
+    const ParameterEntry::ParameterEntryID& id,
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
   
   /** \brief sets the value  */
   virtual void setEntryValue(

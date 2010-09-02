@@ -54,7 +54,8 @@ ValidatorXMLConverter::fromXMLtoValidator(
 XMLObject 
 ValidatorXMLConverter::fromValidatortoXML(
   const RCP<const ParameterEntryValidator> validator,
-  const XMLParameterListWriter::ValidatorSet& validatorSet) const
+  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap,
+  bool assignID) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
@@ -69,9 +70,16 @@ ValidatorXMLConverter::fromValidatortoXML(
   #endif
   XMLObject toReturn(getValidatorTagName());
   toReturn.addAttribute(getTypeAttributeName(), validator->getXMLTypeName());
-  toReturn.addAttribute(getIdAttributeName(),
-    ParameterEntryValidator::getValidatorID(validator));
-  convertValidator(validator, toReturn, validatorSet);
+  if(assignID){
+    TEST_FOR_EXCEPTION(validatorIDsMap.find(validator) == validatorIDsMap.end(),
+      MissingValidatorDefinitionException,
+      "Could not find an id associated with the validator in the "
+      "given validatorIDsMap to use when " <<
+      "writing it to XML!" << std::endl << std::endl);
+    toReturn.addAttribute(getIdAttributeName(),
+      validatorIDsMap.find(validator)->second);
+  }
+  convertValidator(validator, toReturn, validatorIDsMap);
   return toReturn;
 }
 

@@ -79,16 +79,18 @@ ConditionXMLConverterDB::getConverter(const XMLObject& xmlObject)
 }
 
 XMLObject ConditionXMLConverterDB::convertCondition(
-  RCP<const Condition> condition)
+  RCP<const Condition> condition,
+  const XMLParameterListWriter::EntryIDsMap& entryIDsMap)
 {
-  return getConverter(*condition)->fromConditiontoXML(condition);
+  return getConverter(*condition)->fromConditiontoXML(condition, entryIDsMap);
 }
  
 RCP<Condition> ConditionXMLConverterDB::convertXML(
-  const XMLObject& xmlObject)
+  const XMLObject& xmlObject,
+  const XMLParameterListReader::EntryIDsMap& entryIDsMap)
 {
   return ConditionXMLConverterDB::getConverter(xmlObject)->
-    fromXMLtoCondition(xmlObject);
+    fromXMLtoCondition(xmlObject, entryIDsMap);
 }
 
 ConditionXMLConverterDB::ConverterMap&

@@ -82,7 +82,10 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
 
 XMLObject
 ParameterEntryXMLConverter::fromParameterEntrytoXML(
-  RCP<const ParameterEntry> entry, const std::string &name) const
+  RCP<const ParameterEntry> entry, 
+  const std::string &name,
+  const ParameterEntry::ParameterEntryID& id,
+  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
@@ -104,16 +107,20 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(
   toReturn.addAttribute(
     XMLParameterListWriter::getNameAttributeName(), name);
   toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
-  toReturn.addAttribute(getIdAttributeName(), 
-    ParameterEntry::getParameterEntryID(entry));
+  toReturn.addAttribute(getIdAttributeName(), id);
   toReturn.addAttribute(
     getValueAttributeName(), getValueAttributeValue(entry));
   toReturn.addBool(getDefaultAttributeName(), entry->isDefault());
   toReturn.addBool(getUsedAttributeName(), entry->isUsed());
   if(nonnull(entry->validator())){
+    TEST_FOR_EXCEPTION(
+      validatorIDsMap.find(entry->validator()) == validatorIDsMap.end(),
+      MissingValidatorDefinitionException,
+      "Could not find validator in given ValidatorIDsMap! " << 
+      std::endl << std::endl);
     toReturn.addAttribute(
       ValidatorXMLConverter::getIdAttributeName(), 
-      ParameterEntryValidator::getValidatorID(entry->validator()));
+      validatorIDsMap.find(entry->validator())->second);
   }
   return toReturn;
 }

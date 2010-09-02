@@ -571,6 +571,14 @@ public:
     bool showIf=true);
   
   //@}
+  
+  /** \name Getter Functions */
+  //@{
+  
+  /** \brief Gets the condition being used in this dependency */
+  inline RCP<const Condition> getCondition() const{
+    return condition_;
+  }
 
   /** \name Overridden from VisualDependency */
   //@{
@@ -1163,7 +1171,7 @@ public:
 
   /** \brief retrieve a const reference to the ValueToValidator map being 
    * used by this StringValidatorDependency */
-  const ValueToValidatorMap& getValuesAndValidators(){
+  const ValueToValidatorMap& getValuesAndValidators() const{
     return valuesAndValidators_;
   }
   /** \name Overridden from Dependency */
@@ -1314,12 +1322,12 @@ public:
   //@{
     
   /** \brief Gets the true validator */
-  RCP<const ParameterEntryValidator> getTrueValidator(){
+  inline RCP<const ParameterEntryValidator> getTrueValidator() const{
     return trueValidator_;
   }
 
   /** \brief Gets the false validator */
-  RCP<const ParameterEntryValidator> getFalseValidator(){
+  inline RCP<const ParameterEntryValidator> getFalseValidator() const{
     return falseValidator_;
   }
   

@@ -37,6 +37,8 @@
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_Condition.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
 
 
 namespace Teuchos {
@@ -58,7 +60,9 @@ public:
    * @return The converted Condition.
    */
   RCP<Condition>
-  fromXMLtoCondition(const XMLObject& xmlObj) const;
+  fromXMLtoCondition(
+    const XMLObject& xmlObj,
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
 
   /** \brief Preforms any and all special xml conversion that is specific to a
    * particular Condition.
@@ -68,14 +72,17 @@ public:
    * @return The converted Condition.
    */
   virtual RCP<Condition> convertXML(
-    const XMLObject& xmlObj) const=0;
+    const XMLObject& xmlObj,
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap) const=0;
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param condition The Condition to be converted to XML.
    * @return An XML representation of the given Condition.
    */
-  XMLObject fromConditiontoXML(const RCP<const Condition> condition) const;
+  XMLObject fromConditiontoXML(
+    const RCP<const Condition> condition,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const;
   
   /** \brief Preforms any and all special condition conversion that is
    * specific to a particlar Condition.
@@ -85,7 +92,8 @@ public:
    */
   virtual void convertCondition(
     const RCP<const Condition> condition, 
-    XMLObject& xmlObj) const = 0;
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const = 0;
   
   //@}
 

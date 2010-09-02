@@ -31,6 +31,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_DependencyXMLConverterDB.hpp"
 
 
 namespace Teuchos {
@@ -41,7 +42,8 @@ XMLParameterListReader::XMLParameterListReader()
 
 
 ParameterList 
-XMLParameterListReader::toParameterList(const XMLObject& xml) const
+XMLParameterListReader::toParameterList(
+  const XMLObject& xml, RCP<DependencySheet> depSheet) const
 {
   TEST_FOR_EXCEPTION(
     xml.getTag() 
@@ -62,6 +64,14 @@ XMLParameterListReader::toParameterList(const XMLObject& xml) const
   rtn = convertParameterList(xml, entryIDsMap, validatorIDsMap);
   if(xml.hasAttribute(XMLParameterListWriter::getNameAttributeName())){
     rtn.setName(xml.getAttribute(XMLParameterListWriter::getNameAttributeName()));
+  }
+
+  if(!depSheet.is_null()){
+    int dependencyIndex = xml.findFirstChild(
+      XMLParameterListWriter::getDependenciesTagName());
+    if(dependencyIndex != -1){
+      convertDependencies(depSheet, xml.getChild(dependencyIndex), entryIDsMap, validatorIDsMap);
+    }
   }
   return rtn;
 }
@@ -187,11 +197,7 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
             DuplicateParameterIDsException,
             "Parameters with duplicate ids found!" << std::endl <<
             "Bad ID: " << xmlID << std::endl << std::endl);
-          entryIDsMap.insert(EntryIDsMap::value_type(
-            xmlID,
-            ParameterEntry::getParameterEntryID(parameter)
-            )
-          );
+          entryIDsMap.insert(EntryIDsMap::value_type(xmlID, parameter));
         }
         if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
           ValidatorIDsMap::const_iterator result = validatorIDsMap.find(
@@ -220,6 +226,18 @@ void XMLParameterListReader::testForDuplicateValidatorIDs(
   DuplicateValidatorIDsException,
   "Validators with duplicate ids found!" << std::endl <<
   "Bad ID: " << potentialNewID);
+}
+
+void XMLParameterListReader::convertDependencies(
+  RCP<DependencySheet> depSheet, 
+  const XMLObject& xml, 
+  const EntryIDsMap& entryIDsMap,
+  const ValidatorIDsMap& validatorIDsMap) const
+{
+  for(int i = 0; i < xml.numChildren(); ++i){
+    depSheet->addDependency(
+      DependencyXMLConverterDB::convertXML(xml.getChild(i), entryIDsMap, validatorIDsMap));
+  }
 }
 
 } // namespace Teuchos

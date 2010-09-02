@@ -46,7 +46,7 @@ namespace Teuchos {
     ConverterPair( \
       DummyObjectGetter<NumberVisualDependency< T > >:: \
       getDummyObject()->getTypeAttributeValue(), \
-      rcp(new NumberVisualDependencyConverter< T >)));
+      rcp(new NumberVisualDependencyXMLConverter< T >)));
 
 #define ADD_RANGE_VALIDATOR_DEP(T) \
   \
@@ -54,14 +54,14 @@ namespace Teuchos {
     ConverterPair( \
       DummyObjectGetter<RangeValidatorDependency< T > >:: \
         getDummyObject()->getTypeAttributeValue(), \
-      rcp(new RangeValidatorDependencyConverter< T >)));
+      rcp(new RangeValidatorDependencyXMLConverter< T >)));
 
 #define ADD_NUMBER_ARRAY_LENGTH_DEP(DEPENDEE_TYPE, DEPENDENT_TYPE) \
   masterMap.insert( \
     ConverterPair( \
-      DummyObjectGetter<NumberArrayLengthDependencyConverter< \
+      DummyObjectGetter<NumberArrayLengthDependencyXMLConverter< \
         DEPENDEE_TYPE , DEPENDENT_TYPE > >::getDummyObject()->getTypeAttributeValue(), \
-        rcp(new NumberArrayLengthDependencyConverter< \
+        rcp(new NumberArrayLengthDependencyXMLConverter< \
         DEPENDEE_TYPE , DEPENDENT_TYPE >)));
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
@@ -126,16 +126,21 @@ DependencyXMLConverterDB::getConverter(const XMLObject& xmlObject)
 }
 
 XMLObject DependencyXMLConverterDB::convertDependency(
-  RCP<const Dependency> dependency)
+  RCP<const Dependency> dependency,
+  const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
+  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap)
 {
-  return getConverter(*dependency)->fromDependencytoXML(dependency);
+  return getConverter(*dependency)->fromDependencytoXML(
+    dependency, entryIDsMap, validatorIDsMap);
 }
  
 RCP<Dependency> DependencyXMLConverterDB::convertXML(
-  const XMLObject& xmlObject)
+    const XMLObject& xmlObject, 
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap,
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap)
 {
   return DependencyXMLConverterDB::getConverter(xmlObject)->
-    fromXMLtoDependency(xmlObject);
+    fromXMLtoDependency(xmlObject, entryIDsMap, validatorIDsMap);
 }
 
 DependencyXMLConverterDB::ConverterMap&
@@ -162,25 +167,25 @@ DependencyXMLConverterDB::getConverterMap()
       ConverterPair(
         DummyObjectGetter<StringValidatorDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new StringValidatorDependencyConverter)));
+        rcp(new StringValidatorDependencyXMLConverter)));
 
     masterMap.insert(
       ConverterPair(
         DummyObjectGetter<StringVisualDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new StringVisualDependencyConverter)));
+        rcp(new StringVisualDependencyXMLConverter)));
 
     masterMap.insert(
       ConverterPair(
         DummyObjectGetter<BoolValidatorDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new BoolValidatorDependencyConverter)));
+        rcp(new BoolValidatorDependencyXMLConverter)));
 
     masterMap.insert(
       ConverterPair(
         DummyObjectGetter<BoolVisualDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new BoolVisualDependencyConverter)));
+        rcp(new BoolVisualDependencyXMLConverter)));
 
   }
   return masterMap;

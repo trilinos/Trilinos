@@ -36,6 +36,8 @@
 
 #include "Teuchos_Dependency.hpp"
 #include "Teuchos_XMLObject.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_Describable.hpp"
 
 
@@ -59,8 +61,10 @@ public:
    * in which this resulting dependency will be inserted.
    * @return The converted Dependency.
    */
-  RCP<Dependency>
-  fromXMLtoDependency(const XMLObject& xmlObj) const;
+  RCP<Dependency> fromXMLtoDependency(
+    const XMLObject& xmlObj,
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap,
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief Preforms any and all special xml conversion that is specific to a
    * particular Dependency.
@@ -74,14 +78,19 @@ public:
   virtual RCP<Dependency> convertXML(
     const XMLObject& xmlObj, 
     const Dependency::ConstParameterEntryList dependees,
-    const Dependency::ParameterEntryList dependets) const = 0;
+    const Dependency::ParameterEntryList dependets,
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap,
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const = 0;
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param dependency The Dependency to be converted to XML.
    * @return An XML representation of the given Dependency.
    */
-  XMLObject fromDependencytoXML(const RCP<const Dependency> dependency) const;
+  XMLObject fromDependencytoXML(
+    const RCP<const Dependency> dependency,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
   
   /** \brief Preforms any and all special dependency conversion that is
    * specific to a particlar Dependency.
@@ -91,7 +100,9 @@ public:
    */
   virtual void convertDependency(
     const RCP<const Dependency> dependency, 
-    XMLObject& xmlObj) const = 0;
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const = 0;
   
   //@}
 

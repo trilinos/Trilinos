@@ -66,12 +66,15 @@ public:
   //@{
 
   /** \brief . */
-  RCP<Condition> convertXML(const XMLObject& xmlObj) const;
+  virtual RCP<Condition> convertXML(
+    const XMLObject& xmlObj,
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
 
   /** \brief . */
   void convertCondition(
     const RCP<const Condition> condition, 
-    XMLObject& xmlObj) const;
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const;
   
   //@}
 
@@ -139,12 +142,15 @@ public:
   //@{
 
   /** \brief . */
-  RCP<Condition> convertXML(const XMLObject& xmlObj) const;
+  virtual RCP<Condition> convertXML(
+    const XMLObject& xmlObj,
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
 
   /** \brief . */
   void convertCondition(
     const RCP<const Condition> condition, 
-    XMLObject& xmlObj) const;
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const;
 
   //@}
 
@@ -170,7 +176,7 @@ public:
    */
   virtual RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
-    ParameterEntry::ParameterEntryID paramID,
+    RCP<ParameterEntry> parameterEntry,
     bool whenParamEqualsValue) const = 0;
   
   /** \brief Adds specific xml traits to the xmlObj for a particular
@@ -189,12 +195,15 @@ public:
   //@{
 
   /** \brief . */
-  RCP<Condition> convertXML(const XMLObject& xmlObj) const;
+  virtual RCP<Condition> convertXML(
+    const XMLObject& xmlObj,
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
 
   /** \brief . */
   void convertCondition(
     const RCP<const Condition> condition, 
-    XMLObject& xmlObj) const;
+    XMLObject& xmlObj,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap) const;
   
   //@}
  
@@ -231,7 +240,7 @@ public:
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
-    ParameterEntry::ParameterEntryID paramID,
+    RCP<ParameterEntry> parameterEntry,
     bool whenParamEqualsValue) const;
  
   /** \brief . */
@@ -271,7 +280,7 @@ public:
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
-    ParameterEntry::ParameterEntryID paramID,
+    RCP<ParameterEntry> parameterEntry,
     bool whenParamEqualsValue) const;
  
   /** \brief . */
@@ -297,11 +306,11 @@ public:
   /** \brief . */
   RCP<ParameterCondition> getSpecificParameterCondition(
     const XMLObject& xmlObj,
-    ParameterEntry::ParameterEntryID paramID,
+    RCP<ParameterEntry> parameterEntry,
     bool whenParamEqualsValue) const
   {
     return rcp(new NumberCondition<T>(
-      ParameterEntry::getParameterEntry(paramID), null, whenParamEqualsValue));
+      parameterEntry, null, whenParamEqualsValue));
   }
 
   /** \brief . */

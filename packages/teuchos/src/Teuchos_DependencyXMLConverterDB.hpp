@@ -35,6 +35,7 @@
 */
 
 #include "Teuchos_DependencyXMLConverter.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
 
 
 namespace Teuchos {
@@ -84,7 +85,9 @@ public:
    * \return XML representation of the dependency.
    */
   static XMLObject convertDependency(
-    RCP<const Dependency> dependency); 
+    RCP<const Dependency> dependency,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap); 
 
   /**
    * \brief Given an XMLObject converts the XMLObject 
@@ -92,8 +95,10 @@ public:
    *
    * \return A Dependency that was represented by the XML.
    */
-  static RCP<Dependency> 
-    convertXML(const XMLObject& xmlObject);
+  static RCP<Dependency> convertXML(
+    const XMLObject& xmlObject, 
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap,
+    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap); 
   
   //@}
 

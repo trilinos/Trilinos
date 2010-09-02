@@ -83,7 +83,8 @@ public:
    */
   XMLObject fromValidatortoXML(
     const RCP<const ParameterEntryValidator> validator,
-    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap,
+    bool assigneID=true) const;
 
   /** \brief Preforms any and all special validator conversion that is
    * specific to a particlar ParameterEntryValidator
@@ -95,7 +96,7 @@ public:
   virtual void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorSet& validatorSet) const = 0;
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const = 0;
   
   //@}
 

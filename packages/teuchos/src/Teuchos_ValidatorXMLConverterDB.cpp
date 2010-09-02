@@ -97,10 +97,11 @@ ValidatorXMLConverterDB::getConverter(const XMLObject& xmlObject)
 
 XMLObject ValidatorXMLConverterDB::convertValidator(
   RCP<const ParameterEntryValidator> validator,
-  const XMLParameterListWriter::ValidatorSet& validatorSet)
+  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap,
+  bool assignID)
 {
   return getConverter(*validator)->fromValidatortoXML(
-    validator, validatorSet);
+    validator, validatorIDsMap, assignID);
 }
  
 RCP<ParameterEntryValidator> ValidatorXMLConverterDB::convertXML(

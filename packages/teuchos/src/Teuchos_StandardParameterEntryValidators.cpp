@@ -116,17 +116,6 @@ AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
 {
   finishInitialization();
 }
-AnyNumberParameterEntryValidator::AnyNumberParameterEntryValidator(
-  EPreferredType const preferredType, AcceptedTypes const& acceptedTypes,
-  ValidatorID validatorID
-  )
-  : ParameterEntryValidator(validatorID), preferredType_(preferredType), 
-  acceptedTypes_(acceptedTypes)
-{
-  finishInitialization();
-}
-
-
 
 //  Local non-virtual validated lookup functions
 
@@ -357,12 +346,6 @@ FileNameValidator::FileNameValidator(bool mustAlreadyExist)
   : ParameterEntryValidator(), mustAlreadyExist_(mustAlreadyExist)
 {}
 
-FileNameValidator::FileNameValidator(
-  bool mustAlreadyExist, 
-  ValidatorID validatorID):
-  ParameterEntryValidator(validatorID), mustAlreadyExist_(mustAlreadyExist)
-{}
-
 bool FileNameValidator::fileMustExist() const
 {
   return mustAlreadyExist_;
@@ -441,13 +424,6 @@ StringValidator::StringValidator(const Array<std::string>& validStrings):
   ParameterEntryValidator(),
   validStrings_(rcp(new Array<std::string>(validStrings)))
 {}
-
-StringValidator::StringValidator(
-  const Array<std::string>& validStrings, ValidatorID validatorID):
-  ParameterEntryValidator(validatorID),
-  validStrings_(rcp(new Array<std::string>(validStrings)))
-{}
-
 
 ParameterEntryValidator::ValidStringsList
 StringValidator::setValidStrings(const Array<std::string>& validStrings)
@@ -543,21 +519,6 @@ Teuchos::anyNumberParameterEntryValidator(
       )
     );
 }
-
-Teuchos::RCP<Teuchos::AnyNumberParameterEntryValidator>
-Teuchos::anyNumberParameterEntryValidator(
-  AnyNumberParameterEntryValidator::EPreferredType const preferredType,
-  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes,
-  ParameterEntryValidator::ValidatorID validatorID
-  )
-{
-  return rcp(
-    new AnyNumberParameterEntryValidator(
-      preferredType, acceptedTypes, validatorID
-      )
-    );
-}
-
 
 void Teuchos::setIntParameter(
   std::string const& paramName,

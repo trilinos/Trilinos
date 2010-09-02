@@ -38,9 +38,7 @@ namespace Teuchos {
 ParameterEntry::ParameterEntry() : 
   isUsed_(false),
   isDefault_(false)
-{
-  addParameterEntryToMasterMaps(this);
-}
+{}
 
 
 ParameterEntry::ParameterEntry(const ParameterEntry& source)
@@ -60,16 +58,8 @@ ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
   docString_ = source.docString_;
   validator_ = source.validator_;
 
-  addParameterEntryToMasterMaps(this);
-
   return *this;
 }
-
-ParameterEntry::~ParameterEntry()
-{
-  removeParameterEntryFromMasterMaps(this);
-}
-
 
 void ParameterEntry::setAnyValue(
   const any &value_in, bool isDefault_in
@@ -129,32 +119,6 @@ std::ostream& ParameterEntry::leftshift(std::ostream& os, bool printFlags) const
   return os;
 }
 
-void ParameterEntry::printKnownParameterEntries(std::ostream &out){
-  out << "Tracking Parameters With The Following IDs: "
-    <<std::endl;
-  for(
-    IDToParameterEntryMap::iterator it = getMasterIDMap().begin();
-    it != getMasterIDMap().end();
-    ++it)
-  {
-    out << it->first << std::endl;
-  }
-  out << std::endl;
-}
-
-RCP<ParameterEntry> ParameterEntry::getParameterEntry(ParameterEntryID id){
-  IDToParameterEntryMap::iterator result = getMasterIDMap().find(id);
-  return result != getMasterIDMap().end() ? rcpFromRef(*(result->second)) : null;
-}
-
-ParameterEntry::ParameterEntryID 
-ParameterEntry::getParameterEntryID(RCP<const ParameterEntry> entry){
-  ParameterEntryToIDMap::iterator result =
-    getMasterParameterEntryMap().find(entry.get());
-  return result != getMasterParameterEntryMap().end() ? 
-    result->second : OrdinalTraits<ParameterEntryID>::invalid();
-}
-
 // private
 
 
@@ -163,66 +127,6 @@ void ParameterEntry::reset()
   //delete val_;
   isUsed_ = false;
   isDefault_ = false;
-}
-
-void ParameterEntry::incrementMasterCounter(){
-  getMasterIDCounter()++;
-  if(getMasterIDMap().find(getMasterIDCounter()) != getMasterIDMap().end()){
-    incrementMasterCounter();
-  }
-}
-
-ParameterEntry::ParameterEntryID ParameterEntry::getAvailableID(){
-  ParameterEntryID toReturn;
-  if(getMasterFreeIDs().size() != 0){
-    toReturn = getMasterFreeIDs().back();
-    getMasterFreeIDs().pop_back();
-    return toReturn;
-  }
-  else{
-    toReturn = getMasterIDCounter();
-    incrementMasterCounter();
-  }
-  return toReturn;
-}
-
-void ParameterEntry::addParameterEntryToMasterMaps(
-  ParameterEntry* entryToAdd)
-{
-
-  ParameterEntryID insertionID = getAvailableID();
-
-  getMasterIDMap().insert(
-    IDParameterEntryPair(insertionID, entryToAdd));
-  getMasterParameterEntryMap().insert(
-    ParameterEntryIDPair(entryToAdd, insertionID));
-}
-
-void ParameterEntry::addParameterEntryToMasterMaps(
-  ParameterEntry* entry, ParameterEntryID idToUse)
-{
-  TEST_FOR_EXCEPTION(
-  getMasterIDMap().find(idToUse)
-  !=
-  getMasterIDMap().end(),
-  DuplicateParameterEntryIDException,
-  "Error: can't create a ParameterEntry with the ID" <<
-  idToUse << ". That ID is already being used to track another " <<
-  "ParameterEntry!" << std::endl << std::endl);
-  getMasterParameterEntryMap().insert(
-    ParameterEntryIDPair(entry, idToUse));
-  getMasterIDMap().insert(IDParameterEntryPair(idToUse, entry));
-}
-
-void ParameterEntry::removeParameterEntryFromMasterMaps(
-  ParameterEntry* entryToRemove)
-{
-  ParameterEntryToIDMap::iterator toRemove = 
-    getMasterParameterEntryMap().find(entryToRemove);
-  ParameterEntryID idToFree = toRemove->second;
-  getMasterParameterEntryMap().erase(toRemove->first);
-  getMasterIDMap().erase(idToFree);
-  getMasterFreeIDs().push_back(idToFree);
 }
 
 

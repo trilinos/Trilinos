@@ -84,7 +84,9 @@ public:
    *
    * \return XML representation of the condition.
    */
-  static XMLObject convertCondition(const RCP<const Condition> condition);
+  static XMLObject convertCondition(
+    const RCP<const Condition> condition,
+    const XMLParameterListWriter::EntryIDsMap& entryIDsMap);
 
   /**
    * \brief Given an XMLObject and IDtoConditionMap, converts the XMLObject 
@@ -92,8 +94,9 @@ public:
    *
    * \return A ParameterEntryCondition that was represented by the XML.
    */
-  static RCP<Condition> 
-    convertXML(const XMLObject& xmlObject);
+  static RCP<Condition> convertXML(
+    const XMLObject& xmlObject,
+    const XMLParameterListReader::EntryIDsMap& entryIDsMap);
   
   //@}
 

@@ -202,7 +202,6 @@ APPEND_SET(SOURCES
   Teuchos_MPISession.cpp
   Teuchos_Object.cpp
   Teuchos_ParameterEntry.cpp
-  Teuchos_ParameterEntryValidator.cpp
   Teuchos_ParameterList.cpp
   Teuchos_ParameterListAcceptorHelpers.cpp
   Teuchos_ParameterListAcceptor.cpp
@@ -293,6 +292,7 @@ APPEND_SET(HEADERS
     Teuchos_ParameterXMLFileReader.cpp
     Teuchos_ParameterEntryXMLConverter.cpp
     Teuchos_ParameterEntryXMLConverterDB.cpp
+    Teuchos_StandardDependencyXMLConverters.cpp
     Teuchos_StandardParameterEntryXMLConverters.cpp
     Teuchos_StandardValidatorXMLConverters.cpp
     Teuchos_StandardConditionXMLConverters.cpp

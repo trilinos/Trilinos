@@ -39,7 +39,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterEntryValidator.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
-#include "Teuchos_DummyObjectGetter.hpp"
 
 namespace Teuchos {
 
@@ -54,12 +53,15 @@ class ParameterList; // another parameter type (forward declaration)
     templated Set/Get methods.
 */
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntry {
+
 public:
-  /** \name Public Types */
+
+  /** \name Public types */
   //@{
-
+  
+  /** \brief .. */
   typedef unsigned int ParameterEntryID;
-
+  
   //@}
 
   //! @name Constructors/Destructor 
@@ -78,21 +80,6 @@ public:
     const std::string &docString = "",
     RCP<const ParameterEntryValidator> const& validator = null
     );
-
-  /** \brief Templated constructor which allows for direct setting of the
-   * ParameterID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT YOU'RE DOING!
-   */
-  template<typename T>
-  explicit ParameterEntry(
-    T value, bool isDefault, bool isList,
-    const std::string &docString,
-    RCP<const ParameterEntryValidator> const& validator,
-    ParameterEntryID paramID
-    );
-
-
-  //! Destructor
-  ~ParameterEntry();
 
   //@}
 
@@ -168,10 +155,6 @@ public:
   inline
   const any& getAny(bool activeQry = true) const;
 
-  static RCP<ParameterEntry> getParameterEntry(ParameterEntryID id);
-
-  static ParameterEntryID getParameterEntryID(RCP<const ParameterEntry> entry);
-
   //@}
 
   //! @name Attribute/Query Methods 
@@ -224,9 +207,6 @@ public:
       return tagName;
   }
   
-  /** \brief Prints a list of all the ParameterEntries currently being tracked */
-  static void printKnownParameterEntries(std::ostream &out);
-
   //@}
   
 private:
@@ -256,52 +236,6 @@ private:
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
-
-  typedef std::map<const ParameterEntry* , ParameterEntryID>
-    ParameterEntryToIDMap;
-
-  typedef std::pair<const ParameterEntry*, ParameterEntryID>
-    ParameterEntryIDPair;
-
-  typedef std::map<ParameterEntryID, ParameterEntry* > 
-    IDToParameterEntryMap;
-
-  typedef std::pair<ParameterEntryID, ParameterEntry* >
-    IDParameterEntryPair;
-
-  typedef std::vector<ParameterEntryID> FreeIDsVector;
-
-  static ParameterEntryToIDMap& getMasterParameterEntryMap(){
-    static ParameterEntryToIDMap masterParameterEntryMap;
-    return masterParameterEntryMap;
-  }
-
-  static IDToParameterEntryMap& getMasterIDMap(){
-    static IDToParameterEntryMap masterIDMap;
-    return masterIDMap;
-  }
-  
-  static ParameterEntryID& getMasterIDCounter(){
-    static ParameterEntryID masterCounter = 0;
-    return masterCounter;
-  }
-
-  static FreeIDsVector& getMasterFreeIDs(){
-    static FreeIDsVector masterFreeIDs;
-    return masterFreeIDs;
-  }
-
-  static void addParameterEntryToMasterMaps(ParameterEntry* entryToAdd);
-
-  static void addParameterEntryToMasterMaps(
-    ParameterEntry* entryToAdd, ParameterEntryID idToUse);
-
-  static void removeParameterEntryFromMasterMaps(
-    ParameterEntry* entryToRemove);
-
-  static ParameterEntryID getAvailableID();
-
-  static void incrementMasterCounter();
 
 };
 
@@ -377,28 +311,6 @@ ParameterEntry::ParameterEntry(
     validator_(validator_in)
 {}
 
-template<typename T>
-inline
-ParameterEntry::ParameterEntry(
-  T value_in,
-  bool isDefault_in,
-  bool /*isList_in*/, // 2007/11/26: rabartl: ToDo: This arg is ignored and should be removed!
-  const std::string &docString_in,
-  RCP<const ParameterEntryValidator> const& validator_in,
-  ParameterEntryID paramID
-  )
-  : val_(value_in),
-    isUsed_(false),
-    isDefault_(isDefault_in),
-    docString_(docString_in),
-    validator_(validator_in)
-{
-  if(paramID != OrdinalTraits<ParameterEntryID>::invalid()){
-    addParameterEntryToMasterMaps(this, paramID);
-  }
-}
-
-
 // Set Methods
 
 template<typename T>
@@ -471,48 +383,6 @@ inline
 RCP<const ParameterEntryValidator>
 ParameterEntry::validator() const
 { return validator_; }
-
-
-/** \brief Speicialized class for retrieving a dummy object of type
- * ParameterEntry.
- *
- * \relates ParameterEntry
- */
-template<>
-class DummyObjectGetter<ParameterEntry>{
-
-public:
-
-  /** \name Constructors/Destructor */
-  //@{
-
-  /** \brief Retrieves a dummy object of type
-  * ParameterEntry.
-  */
-  static RCP<ParameterEntry>
-    getDummyObject()
-  {
-    if(dummyObject.is_null()){
-      std::string docstring = "";
-      dummyObject = rcp(new ParameterEntry(any(), false, false, docstring, null,
-        OrdinalTraits<ParameterEntry::ParameterEntryID>::invalid()));
-    }
-    return dummyObject;
-  }
-  
-  //@}
-  
-private:
-  
-  /** \name Private Members */
-  //@{
-  
-  static RCP<ParameterEntry> 
-    dummyObject;
-  
-  //@}
-  
-};
 
 
 } // namespace Teuchos

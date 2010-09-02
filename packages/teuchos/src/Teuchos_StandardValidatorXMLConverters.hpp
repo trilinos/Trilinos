@@ -65,7 +65,7 @@ public:
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -173,7 +173,7 @@ template<class IntegralType>
 void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
+  const XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   RCP<const StringToIntegralParameterEntryValidator<IntegralType> > 
     castedValidator =
@@ -225,7 +225,7 @@ public:
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -288,7 +288,7 @@ public:
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
 
 #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -359,7 +359,7 @@ template<class T>
 void EnhancedNumberValidatorXMLConverter<T>::convertValidator(
   const RCP<const ParameterEntryValidator > validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorSet& /*validatorSet*/) const
+  const XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   RCP<const EnhancedNumberValidator<T> > castedValidator =
     rcp_dynamic_cast<const EnhancedNumberValidator<T> >(validator, true);
@@ -395,7 +395,7 @@ public:
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -440,7 +440,7 @@ public:
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -492,7 +492,7 @@ public:
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorSet& validatorSet) const;
+    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
 
 #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -547,21 +547,20 @@ void
 ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorSet& validatorSet) const
+  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
 {
   RCP<const ArrayValidator<ValidatorType, EntryType> > castedValidator = 
     rcp_dynamic_cast<const ArrayValidator<ValidatorType, EntryType> >(
       validator, true);
-  if(validatorSet.find(castedValidator->getPrototype()) 
-    == validatorSet.end())
+  if(validatorIDsMap.find(castedValidator->getPrototype()) 
+    == validatorIDsMap.end())
   {
     xmlObj.addChild(ValidatorXMLConverterDB::convertValidator(
-      castedValidator->getPrototype(), validatorSet));
+      castedValidator->getPrototype(), validatorIDsMap, false));
   }
   else{
     ParameterEntryValidator::ValidatorID prototypeID = 
-      ParameterEntryValidator::getValidatorID(
-        castedValidator->getPrototype());
+      validatorIDsMap.find(castedValidator->getPrototype())->second;
   
     xmlObj.addAttribute<ParameterEntryValidator::ValidatorID>(
       getPrototypeIdAttributeName(), prototypeID);

@@ -37,6 +37,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_DummyObjectGetter.hpp"
 
 namespace Teuchos {
 
@@ -114,37 +115,6 @@ public:
     ArrayView<const std::string> const& stringsDocs,
     ArrayView<const IntegralType> const& integralValues, 
     std::string const& defaultParameterName
-    );
-
-  /** \brief Construct with a mapping from strings (with documentation) to
-   * aribitrary typed integral values. Also allows for direct setting
-   * of the ValidatorsID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT
-   * YOU'RE DOING.
-   *
-   * \param strings [in] Array of unique std::string names.
-   *
-   * \param stringsDocs [in] Array of documentation strings for each
-   * std::string value.
-   *
-   * \param integralValues [in] Array that gives the integral values
-   * associated with <tt>strings[]</tt>
-   *
-   * \param defaultParameterName [in] The default name of the parameter (used
-   * in error messages)
-   *
-   * \param validatorID [in] The validator ID to assign to this validator.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li> <tt>strings.size() == stringDocs.size()</tt>
-   * <li> <tt>strings.size() == integralValues.size()</tt>
-   * </ul>
-   */
-  StringToIntegralParameterEntryValidator(
-    ArrayView<const std::string> const& strings,
-    ArrayView<const std::string> const& stringsDocs,
-    ArrayView<const IntegralType> const& integralValues, 
-    std::string const& defaultParameterName,
-    ValidatorID validatorID
     );
 
   //@}
@@ -295,12 +265,6 @@ private:
   // Not defined and not to be called.
   StringToIntegralParameterEntryValidator();
 
-  /** \brief Common setup shared between the two big constructors */
-  void commonSetup(
-    ArrayView<const std::string> strings, 
-    ArrayView<const std::string> stringsDocs, 
-    ArrayView<const IntegralType> integralValues);
-
 };
 
 
@@ -341,21 +305,6 @@ stringToIntegralParameterEntryValidator(
   ArrayView<const IntegralType> const& integralValues, 
   std::string const& defaultParameterName
   );
-
-/** \brief Nonmember constructor (see implementation).
- *
- * \relates StringToIntegralParameterEntryValidator
- */
-template<class IntegralType>
-RCP<StringToIntegralParameterEntryValidator<IntegralType> >
-stringToIntegralParameterEntryValidator(
-  ArrayView<const std::string> const& strings,
-  ArrayView<const std::string> const& stringsDocs,
-  ArrayView<const IntegralType> const& integralValues, 
-  std::string const& defaultParameterName,
-  ParameterEntryValidator::ValidatorID validatorID
-  );
-
 
 /** \brief Set up a std::string parameter that will use an embedded validator
  * to allow the extraction of an integral value.
@@ -508,8 +457,8 @@ public:
       dummyObject;
     if(dummyObject.is_null()){
       dummyObject = stringToIntegralParameterEntryValidator<IntegralType>(
-        tuple<std::string>(""), tuple<std::string>(""), tuple<IntegralType>(1), "",
-        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid());
+        tuple<std::string>(""), tuple<std::string>(""), 
+        tuple<IntegralType>(1), "");
     }
     return dummyObject;
   }
@@ -594,27 +543,6 @@ public:
     EPreferredType const preferredType,
     AcceptedTypes const& acceptedTypes
     );
-
-  /** \brief Construct with allowed input and output types and the preferred
-   * type. Also allows for direct setting
-   * of the ValidatorsID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT
-   * YOU'RE DOING.
-   *
-   * \param preferredType [in] Determines the preferred type.  This enum value
-   * is used to set the default value in the override
-   * <tt>validateAndModify()</tt>.
-   *
-   * \param acceptedType [in] Determines the types that are allowed in the
-   * parameter list.
-   *
-   * \param validatorID [in] The id to assign to this validator
-   */
-  AnyNumberParameterEntryValidator(
-    EPreferredType const preferredType,
-    AcceptedTypes const& acceptedTypes,
-    ValidatorID validatorID
-    );
-
 
   //@}
 
@@ -827,21 +755,6 @@ anyNumberParameterEntryValidator(
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
   );
 
-/** \brief Nonmember constructor AnyNumberParameterEntryValidator.
- * Also allows for direct setting
- * of the ValidatorsID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT
- * YOU'RE DOING.
- *
- * \relates AnyNumberParameterEntryValidator
- */
-TEUCHOS_LIB_DLL_EXPORT RCP<AnyNumberParameterEntryValidator>
-anyNumberParameterEntryValidator(
-  AnyNumberParameterEntryValidator::EPreferredType const preferredType,
-  AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes,
-  ParameterEntryValidator::ValidatorID validatorID
-  );
-
-
 /** \brief Set an integer parameter that allows for (nearly) any input
  * parameter type that is convertible to an int.
  *
@@ -967,8 +880,7 @@ public:
     if(dummyObject.is_null()){
       dummyObject = anyNumberParameterEntryValidator(
         AnyNumberParameterEntryValidator::PREFER_INT, 
-        AnyNumberParameterEntryValidator::AcceptedTypes(),
-        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid());
+        AnyNumberParameterEntryValidator::AcceptedTypes());
     }
     return dummyObject;
   }
@@ -1186,23 +1098,6 @@ public:
     precision_(EnhancedNumberTraits<T>::defaultPrecision()),
     containsMin(false),
     containsMax(false){}
-
-  /** \brief Constructs a EnhancedNumberValidator without an explicit minimum
-   * or maximum. Also allows for direct setting
-   * of the ValidatorsID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT
-   * YOU'RE DOING.
-   *
-   * @param validatorID The ID to be assigned to the validator.
-   */
-  EnhancedNumberValidator(ValidatorID validatorID):
-    ParameterEntryValidator(validatorID),
-    minVal(EnhancedNumberTraits<T>::min()),
-    maxVal(EnhancedNumberTraits<T>::max()),
-    step_(EnhancedNumberTraits<T>::defaultStep()),
-    precision_(EnhancedNumberTraits<T>::defaultPrecision()),
-    containsMin(false),
-    containsMax(false){}
-  
   
   //@}
     
@@ -1434,8 +1329,7 @@ public:
   {
   static RCP<EnhancedNumberValidator<T> > dummyObject;
     if(dummyObject.is_null()){
-      dummyObject = rcp(new EnhancedNumberValidator<T>(
-        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
+      dummyObject = rcp(new EnhancedNumberValidator<T>);
     }
     return dummyObject;
   }
@@ -1470,18 +1364,6 @@ public:
    * already exists, false otherwise.
    */
   FileNameValidator(bool mustAlreadyExist = mustAlreadyExistDefault());
-  
-  /** \brief Constructs a FileNameValidator. Also allows for direct setting
-   * of the ValidatorsID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT
-   * YOU'RE DOING.
-   *
-   * @param mustAlreadyExist True if the file the user specifies should
-   * already exists, false otherwise.
-   * @param validatorID The id to be assigned to the validator.
-   */
-  FileNameValidator(
-    bool mustAlreadyExist,
-    ValidatorID validatorID);
   
   //@}
 
@@ -1567,9 +1449,7 @@ public:
   {
     static RCP<FileNameValidator> dummyObject;
     if(dummyObject.is_null()){
-      dummyObject = rcp(new FileNameValidator(
-        false,
-        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
+      dummyObject = rcp(new FileNameValidator(false));
     }
     return dummyObject;
   }
@@ -1598,17 +1478,6 @@ public:
    * @param validStrings A list of valid string values for this validator.
    */
   StringValidator(const Teuchos::Array<std::string> &validStrings);
-
-  /** \brief Constructs a StringValidator. Also allows for direct setting
-   * of the ValidatorsID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT
-   * YOU'RE DOING.
-   *
-   * @param validStrings A list of valid string values for this validator.
-   * @param validatorID The id to be assigned to the validator.
-   */
-  StringValidator(
-    const Teuchos::Array<std::string> &validStrings,
-     ValidatorID validatorID);
 
   //@}
 
@@ -1680,8 +1549,7 @@ public:
     static RCP<StringValidator> dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new StringValidator(
-        tuple<std::string>(""),
-        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
+        tuple<std::string>("")));
     }
     return dummyObject;
   }
@@ -1713,19 +1581,6 @@ public:
   ArrayValidator(RCP<const ValidatorType> prototypeValidator):
     ParameterEntryValidator(),
       prototypeValidator_(prototypeValidator){}
-  
-  /** \brief Constructs a ArrayValidator. Also allows for direct setting
-   * of the ValidatorsID. DON'T USE THIS CONSTRUCTOR UNLESS YOU KNOW WHAT
-   * YOU'RE DOING.
-   *
-   * @param prototypeValidator The validator to be used on each
-   * entry in the array.
-   */
-  ArrayValidator(
-    RCP<const ValidatorType> prototypeValidator,
-    ValidatorID validatorID):
-    ParameterEntryValidator(validatorID),
-    prototypeValidator_(prototypeValidator){}
   
   //@}
 
@@ -1849,8 +1704,7 @@ public:
     static RCP<ArrayValidator<ValidatorType, EntryType> > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new ArrayValidator<ValidatorType, EntryType>(
-        DummyObjectGetter<ValidatorType>::getDummyObject(),
-        OrdinalTraits<ParameterEntryValidator::ValidatorID>::invalid()));
+        DummyObjectGetter<ValidatorType>::getDummyObject()));
     }
     return dummyObject;
   }
@@ -2003,23 +1857,31 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   ParameterEntryValidator(),
   defaultParameterName_(defaultParameterName)
 {
-  commonSetup(strings, stringsDocs, integralValues);
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY( strings.size(), stringsDocs.size() );
+  TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
+#endif
+  TEST_FOR_EXCEPTION(
+    strings.size() != integralValues.size(),
+  std::logic_error,
+  "Error, strings and integraValues must be of the same length."
+  );
+  TEST_FOR_EXCEPTION(
+    strings.size() != stringsDocs.size(),
+  std::logic_error,
+  "Error, strings and stringsDocs must be of the same length."
+  );
+  typedef typename map_t::value_type val_t;
+  for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
+    const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
+    TEST_FOR_EXCEPTION(
+      !unique, std::logic_error
+      ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""
+      << defaultParameterName_ << "\""
+      );
+  }
+  setValidValues(strings,&stringsDocs);
 }
-
-template<class IntegralType>
-StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
-  ArrayView<const std::string>    const& strings
-  ,ArrayView<const std::string>   const& stringsDocs
-  ,ArrayView<const IntegralType>  const& integralValues 
-  ,std::string          const& defaultParameterName,
-  ValidatorID validatorID
-  ):
-  ParameterEntryValidator(validatorID),
-  defaultParameterName_(defaultParameterName)
-{
-  commonSetup(strings, stringsDocs, integralValues);
-}
-
 
 // Lookup functions
 
@@ -2190,39 +2052,6 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 // private
 
 template<class IntegralType>
-void StringToIntegralParameterEntryValidator<IntegralType>::commonSetup(
-    ArrayView<const std::string> strings, 
-    ArrayView<const std::string> stringsDocs, 
-    ArrayView<const IntegralType> integralValues)
-{
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY( strings.size(), stringsDocs.size() );
-  TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
-#endif
-  TEST_FOR_EXCEPTION(
-    strings.size() != integralValues.size(),
-  std::logic_error,
-  "Error, strings and integraValues must be of the same length."
-  );
-  TEST_FOR_EXCEPTION(
-    strings.size() != stringsDocs.size(),
-  std::logic_error,
-  "Error, strings and stringsDocs must be of the same length."
-  );
-  typedef typename map_t::value_type val_t;
-  for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
-    const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
-    TEST_FOR_EXCEPTION(
-      !unique, std::logic_error
-      ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""
-      << defaultParameterName_ << "\""
-      );
-  }
-  setValidValues(strings,&stringsDocs);
-}
-
-
-template<class IntegralType>
 void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
   ArrayView<const std::string>   const& strings
   ,ArrayView<const std::string>  const* stringsDocs
@@ -2300,25 +2129,6 @@ Teuchos::stringToIntegralParameterEntryValidator(
       )
     );
 }
-
-template<class IntegralType>
-inline
-Teuchos::RCP< Teuchos::StringToIntegralParameterEntryValidator<IntegralType> >
-Teuchos::stringToIntegralParameterEntryValidator(
-  ArrayView<const std::string> const& strings,
-  ArrayView<const std::string> const& stringsDocs,
-  ArrayView<const IntegralType> const& integralValues, 
-  std::string const& defaultParameterName,
-  ParameterEntryValidator::ValidatorID validatorID
-  )
-{
-  return rcp(
-    new StringToIntegralParameterEntryValidator<IntegralType>(
-      strings, stringsDocs, integralValues, defaultParameterName, validatorID
-      )
-    );
-}
-
 
 template<class IntegralType>
 void Teuchos::setStringToIntegralParameter(

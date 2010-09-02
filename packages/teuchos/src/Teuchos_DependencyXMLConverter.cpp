@@ -34,7 +34,10 @@ namespace Teuchos{
 
 
 RCP<Dependency>
-DependencyXMLConverter::fromXMLtoDependency(const XMLObject &xmlObj) const
+DependencyXMLConverter::fromXMLtoDependency(
+  const XMLObject& xmlObj,
+  const XMLParameterListReader::EntryIDsMap& entryIDsMap,
+  const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
 {
   Dependency::ConstParameterEntryList dependees;
   Dependency::ParameterEntryList dependents;
@@ -56,47 +59,68 @@ DependencyXMLConverter::fromXMLtoDependency(const XMLObject &xmlObj) const
         child.getRequired<ParameterEntry::ParameterEntryID>(
           getParameterIDAttributeName());
 
-      dependees.insert(ParameterEntry::getParameterEntry(dependeeID));
+      TEST_FOR_EXCEPTION(entryIDsMap.find(dependeeID) == entryIDsMap.end(),
+        MissingDependeeException,
+        "Can't find a Dependee ParameterEntry associated with the ID: " <<
+        dependeeID << std::endl << std::endl);
+      dependees.insert(entryIDsMap.find(dependeeID)->second);
     }
     else if(child.getTag() == getDependentTagName()){
       ParameterEntry::ParameterEntryID dependentID = 
         child.getRequired<ParameterEntry::ParameterEntryID>(
           getParameterIDAttributeName());
 
-      dependents.insert(ParameterEntry::getParameterEntry(dependentID));
+      TEST_FOR_EXCEPTION(entryIDsMap.find(dependentID) == entryIDsMap.end(),
+        MissingDependentException,
+        "Can't find a Dependent ParameterEntry associated with the ID: " <<
+        dependentID << std::endl << std::endl);
+      dependents.insert(entryIDsMap.find(dependentID)->second);
     }
   }
 
-  return convertXML(xmlObj, dependees, dependents);
+  return convertXML(
+    xmlObj, dependees, dependents, entryIDsMap, validatorIDsMap);
 }
 
 XMLObject
 DependencyXMLConverter::fromDependencytoXML(
-  const RCP<const Dependency> dependency) const
+  const RCP<const Dependency> dependency,
+  const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
+  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
 {
   XMLObject toReturn(Dependency::getXMLTagName());
 
   toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
 
-  Dependency::ConstParameterEntryList::iterator it =
+  Dependency::ConstParameterEntryList::const_iterator it =
     dependency->getDependees().begin();
 
   for(;it != dependency->getDependees().end(); ++it){
     XMLObject currentDependee(getDependeeTagName());
-    currentDependee.addAttribute(getParameterIDAttributeName(), 
-      ParameterEntry::getParameterEntryID(*it));
+    TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
+      MissingDependeeException,
+      "Can't find the Dependee of a dependency in the given " <<
+      "ValidatordIDsMap.. Occured when converting " <<
+      "to XML" << std::endl << std::endl);
+    currentDependee.addAttribute<ParameterEntry::ParameterEntryID>(
+      getParameterIDAttributeName(), entryIDsMap.find(*it)->second);
     toReturn.addChild(currentDependee);
   }
 
   it = dependency->getDependents().begin();
   for(; it != dependency->getDependents().end(); ++it){
     XMLObject currentDependent(getDependentTagName());
-    currentDependent.addAttribute(getParameterIDAttributeName(), 
-      ParameterEntry::getParameterEntryID(*it));
+    TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
+      MissingDependentException,
+      "Can't find the Dependent of a dependency in the given " <<
+      "ValidatordIDsMap.. Occured when converting " <<
+      "to XML" << std::endl << std::endl);
+    currentDependent.addAttribute<ParameterEntry::ParameterEntryID>(
+      getParameterIDAttributeName(), entryIDsMap.find(*it)->second);
     toReturn.addChild(currentDependent);
   }
 
-  convertDependency(dependency, toReturn);
+  convertDependency(dependency, toReturn, entryIDsMap, validatorIDsMap);
 
   return toReturn;
 }

@@ -63,6 +63,9 @@ class UNDEFINED_PARAMETERENTRY_VALIDATOR : public ParameterEntryValidator
 
 TEUCHOS_UNIT_TEST(Teuchos_Validator, exceptionTests)
 {
+  ValidatorXMLConverterDB::printKnownConverters(out);
+  out << std::endl;
+
   UNDEFINED_PARAMETERENTRY_VALIDATOR badValidator;
   TEST_THROW(ValidatorXMLConverterDB::getConverter(badValidator), CantFindValidatorConverterException);
 
@@ -70,7 +73,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, exceptionTests)
     missingValidatorList = getParametersFromXmlFile("MissingValidator.xml"),
     MissingValidatorDefinitionException);
  
-  ValidatorXMLConverterDB::printKnownConverters(out);
   TEST_THROW(RCP<ParameterList>
     missingPrototypeList = getParametersFromXmlFile("MissingPrototypeValidator.xml"),
 	MissingValidatorDefinitionException);
@@ -91,17 +93,19 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, exceptionTests)
 
   StringValidatorXMLConverter stringConverter;
   AnyNumberValidatorXMLConverter anyNumberConverter;
-  XMLParameterListReader::ValidatorIDsMap dummyMap;
-  XMLParameterListWriter::ValidatorSet dummySet;
+  XMLParameterListWriter::ValidatorIDsMap writerDummyMap;
+  XMLParameterListReader::ValidatorIDsMap readerDummyMap;
   RCP<AnyNumberParameterEntryValidator> anyNumberValidator = 
     anyNumberParameterEntryValidator();
+  writerDummyMap.insert(XMLParameterListWriter::ValidatorIDsMap::value_type(
+    anyNumberValidator, 0));
   TEST_THROW(
-    stringConverter.fromValidatortoXML(anyNumberValidator, dummySet), 
+    stringConverter.fromValidatortoXML(anyNumberValidator, writerDummyMap), 
     BadValidatorXMLConverterException);
   XMLObject anyNumberXML = 
-    anyNumberConverter.fromValidatortoXML(anyNumberValidator, dummySet);
+    anyNumberConverter.fromValidatortoXML(anyNumberValidator, writerDummyMap);
   TEST_THROW(
-    stringConverter.fromXMLtoValidator(anyNumberXML, dummyMap), 
+    stringConverter.fromXMLtoValidator(anyNumberXML, readerDummyMap), 
     BadValidatorXMLConverterException);
 
   #endif

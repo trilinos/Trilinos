@@ -38,6 +38,7 @@
 #include "Teuchos_InvalidConditionException.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardFunctionObjects.hpp"
+#include "Teuchos_DummyObjectGetter.hpp"
 
 
 namespace Teuchos{
