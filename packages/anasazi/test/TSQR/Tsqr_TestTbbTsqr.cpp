@@ -66,7 +66,7 @@ namespace TSQR {
       ///
       struct TbbTestParameters {
 	TbbTestParameters () :
-	  verify (true),
+	  verify (false),
 	  benchmark (false),
 	  numCores (1),
 	  numRows (1000),
@@ -362,6 +362,7 @@ main (int argc, char *argv[])
 
       if (params.benchmark)
 	TSQR::Trilinos::Test::benchmark (params);
+
       // We allow the same run to do both benchmark and verify.
       if (params.verify)
 	TSQR::Trilinos::Test::verify (params);

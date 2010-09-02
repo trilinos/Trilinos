@@ -210,7 +210,7 @@ namespace TSQR {
 	     << results.second << endl
 	     << endl;
       else
-	cout << "TbbTSQR"
+	cout << "TbbTsqr"
 	     << "," << nrows
 	     << "," << ncols
 	     << "," << num_cores
@@ -330,7 +330,8 @@ namespace TSQR {
 	  for (std::vector< std::string >::size_type k = 0; k < labels.size(); ++k)
 	    {
 	      cout << "  " << labels[k] << endl;
-	      stats[k].print (cout, human_readable);
+	      if (stats[k].count() > 0)
+		stats[k].print (cout, human_readable);
 	    }
 	}
       else
