@@ -1,0 +1,10 @@
+<ParameterList>
+  <ParameterList name="Problem">
+    <Parameter name="Name" type="string" value="Heat 1D"/>
+    <Parameter name="Left BC" type="double" value="2.0"/>
+    <Parameter name="Right BC" type="double" value="0.1"/>
+    <Parameter name="Transient" type="bool" value="false"/>
+    <Parameter name="Phalanx Graph Visualization Detail" type="int" value="1"/>
+  </ParameterList>
+</ParameterList>
+

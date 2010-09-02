@@ -36,6 +36,7 @@
 
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Comm.hpp"
 
 
 namespace Teuchos {
@@ -59,6 +60,28 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
   Teuchos::ParameterList *paramList
   );
 
+/** \brief On processor rank = 0, reads XML parameters from a file 
+ * and broadcasts them to all other processors. Then updates the 
+ * given parameter list with these values.
+ *
+ * \param xmlFileName [in] The file name containing XML parameter list
+ * specification.
+ *
+ * \param paramList [in/out] On input, <tt>*paramList</tt> may be empty or
+ * contain some parameters and sublists. On output, parameters and sublist
+ * from the file <tt>xmlFileName</tt> will be set or overide those in
+ * <tt>*paramList</tt>.
+ *
+ * \param comm [in] A Teuchos::Comm object used to broadcast the xml.
+ *
+ * \ingroup XML
+ */
+
+TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFileAndBroadcast(
+  const std::string &xmlFileName,
+  Teuchos::ParameterList *paramList,
+  const Teuchos::Comm<int> &comm
+  );
 
 /** \brief Reads XML parameters from a file and return them in a new parameter list.
  *

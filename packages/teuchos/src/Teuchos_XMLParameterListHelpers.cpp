@@ -31,6 +31,7 @@
 #include "Teuchos_StringInputSource.hpp"
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 
 void Teuchos::updateParametersFromXmlFile(
@@ -46,6 +47,38 @@ void Teuchos::updateParametersFromXmlFile(
 }
 
 
+void Teuchos::updateParametersFromXmlFileAndBroadcast(
+  const std::string &xmlFileName,
+  Teuchos::ParameterList *paramList,
+  const Teuchos::Comm<int> &comm
+  )
+{
+  TEST_FOR_EXCEPT(paramList==NULL);
+  if (comm.getSize()==1)
+    updateParametersFromXmlFile(xmlFileName,paramList);
+  else {
+    if (comm.getRank()==0) {
+      Teuchos::XMLParameterListReader xmlPLReader;
+      Teuchos::FileInputSource xmlFile(xmlFileName);
+      Teuchos::XMLObject xmlParams = xmlFile.getObject();
+      std::string xmlString = Teuchos::toString(xmlParams);
+      int strsize = xmlString.size();
+      broadcast<int, int>(comm, 0, &strsize);
+      broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
+      Teuchos::updateParametersFromXmlString(xmlString, paramList);
+    }
+    else {
+      int strsize;
+      broadcast<int, int>(comm, 0, &strsize);
+      std::string xmlString;
+      xmlString.resize(strsize);
+      broadcast<int, char>(comm, 0, strsize, &xmlString[0]);
+      Teuchos::updateParametersFromXmlString(xmlString, paramList);
+    }
+  }
+}
+
+
 Teuchos::RCP<Teuchos::ParameterList>
 Teuchos::getParametersFromXmlFile( const std::string &xmlFileName )
 {
@@ -53,6 +86,7 @@ Teuchos::getParametersFromXmlFile( const std::string &xmlFileName )
   updateParametersFromXmlFile( xmlFileName, &*pl );
   return pl;
 }
+
 
 void Teuchos::updateParametersFromXmlString(
   const std::string &xmlStr,
