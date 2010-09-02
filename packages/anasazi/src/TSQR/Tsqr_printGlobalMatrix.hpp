@@ -42,6 +42,9 @@
 
 namespace TSQR {
 
+  /// \fn printGlobalMatrix
+  /// \brief Print a dense matrix distributed among all MPI processes
+  ///
   template< class ConstMatrixViewType >
   void
   printGlobalMatrix (std::ostream& out,

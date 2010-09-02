@@ -62,22 +62,43 @@ using Teuchos::Tuple;
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#define TSQR_TEST_DIST_TSQR( theType, typeString )			\
+
+template< class Ordinal, class Scalar >
+class MessengerPairMaker {
+public:
+  typedef int ordinal_type;
+  typedef Scalar scalar_type;
+
+  typedef std::pair< RCP< MessengerBase< ordinal_type > >, RCP< MessengerBase< scalar_type > > > pair_type;
+
+  static pair_type
+  makePair (const RCP< const Teuchos::Comm<int> >& comm)
+  {
+    RCP< TeuchosMessenger< ordinal_type > > derivedOrdinalComm (new TeuchosMessenger< ordinal_type > (comm));
+    RCP< MessengerBase< ordinal_type > > ordinalComm = rcp_implicit_cast< MessengerBase< ordinal_type > > (derivedOrdinalComm);
+
+    RCP< TeuchosMessenger< scalar_type > > derivedScalarComm (new TeuchosMessenger< scalar_type > (comm));
+    RCP< MessengerBase< scalar_type > > scalarComm = rcp_implicit_cast< MessengerBase < scalar_type > > (derivedScalarComm);
+
+    return std::make_pair (ordinalComm, scalarComm);
+  }
+};
+
+
+
+#define TSQR_TEST_DIST_TSQR( ScalarType, typeString )			\
 do {							         	\
-  typedef theType scalar_type;					        \
-  typedef MessengerBase< scalar_type > base_messenger_type;	        \
-  typedef RCP< base_messenger_type > base_messenger_ptr;		\
-  typedef TeuchosMessenger< scalar_type > derived_messenger_type;       \
-  typedef RCP< derived_messenger_type > derived_messenger_ptr;		\
+  typedef int ordinal_type;						\
+  typedef ScalarType scalar_type;					\
+  typedef MessengerPairMaker< ordinal_type, scalar_type >::pair_type pair_type; \
   typedef DistTsqrVerifier< int, scalar_type > verifier_type;		\
 									\
   std::string scalarTypeName (typeString);				\
-  derived_messenger_ptr scalarCommDerived (new derived_messenger_type (comm)); \
-  base_messenger_ptr scalarComm =					\
-    rcp_implicit_cast< base_messenger_type > (scalarCommDerived);	\
-  verifier_type verifier (scalarComm, seed, scalarTypeName,		\
-			  out, err, testFactorExplicit,			\
-			  testFactorImplicit, humanReadable, debug);	\
+  pair_type messPair = MessengerPairMaker< ordinal_type, scalar_type >::makePair (comm); \
+  verifier_type verifier (messPair.first, messPair.second, seed,	\
+			  scalarTypeName, out, err, 			\
+			  testFactorExplicit, testFactorImplicit,	\
+			  humanReadable, printMatrices, debug);		\
   verifier.verify (numCols);						\
   verifier.getSeed (seed);						\
 } while(false)
@@ -123,7 +144,7 @@ struct DistTsqrTestParameters {
 #endif // HAVE_TSQR_COMPLEX
   bool verify, benchmark;
   bool testFactorExplicit, testFactorImplicit;
-  bool humanReadable, debug;
+  bool humanReadable, printMatrices, debug;
 
   DistTsqrTestParameters () :
     numCols (10), 
@@ -136,6 +157,7 @@ struct DistTsqrTestParameters {
     testFactorExplicit (true),
     testFactorImplicit (true),
     humanReadable (false),
+    printMatrices (false),
     debug (false)
   {}
 };
@@ -158,6 +180,7 @@ verify (RCP< const Teuchos::Comm<int> > comm,
   const bool testFactorExplicit = params.testFactorExplicit;
   const bool testFactorImplicit = params.testFactorImplicit;
   const bool humanReadable = params.humanReadable;
+  const bool printMatrices = params.printMatrices;
   const bool debug = params.debug;
 
   if (! useSeed)
@@ -292,6 +315,10 @@ parseOptions (int argc,
 			   "noexplicit",
 			   &params.testFactorExplicit,
 			   "Test DistTsqr\'s factorExplicit()");
+    cmdLineProc.setOption ("print-matrices", 
+			   "no-print-matrices", 
+			   &params.printMatrices, 
+			   "Print global test matrices and computed results to stderr");
     cmdLineProc.setOption ("debug", 
 			   "nodebug", 
 			   &params.debug, 

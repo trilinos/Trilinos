@@ -54,19 +54,21 @@ namespace TSQR {
     template< class Ordinal, class Scalar >
     class DistTsqrVerifier {
       TSQR::Random::NormalGenerator< Ordinal, Scalar > gen_;
+      Teuchos::RCP< MessengerBase< Ordinal > > const ordinalComm_;
       Teuchos::RCP< MessengerBase< Scalar > > const scalarComm_;
       std::string scalarTypeName_;
-      const bool humanReadable_, debug_;
       std::ostream& out_;
       std::ostream& err_;
-      bool testFactorExplicit_, testFactorImplicit_;
+      const bool testFactorExplicit_, testFactorImplicit_;
+      const bool humanReadable_, printMatrices_, debug_;
 
     public:
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
       typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
       typedef typename std::pair< magnitude_type, magnitude_type > result_type;
-
+      typedef Matrix< ordinal_type, scalar_type > matrix_type;
+      
       /// \brief Constructor, with custom seed value
       ///
       /// \param scalarComm [in/out] Communicator object over which to
@@ -87,7 +89,8 @@ namespace TSQR {
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
+      DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
+			const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 			const std::vector<int>& seed,
 			const std::string& scalarTypeName,
 			std::ostream& out,
@@ -95,8 +98,10 @@ namespace TSQR {
 			const bool testFactorExplicit,
 			const bool testFactorImplicit,
 			const bool humanReadable,
+			const bool printMatrices,
 			const bool debug) :
 	gen_ (seed), 
+	ordinalComm_ (ordinalComm),
 	scalarComm_ (scalarComm),
 	scalarTypeName_ (scalarTypeName), 
 	out_ (out), 
@@ -104,6 +109,7 @@ namespace TSQR {
 	testFactorExplicit_ (testFactorExplicit),
 	testFactorImplicit_ (testFactorImplicit),
 	humanReadable_ (humanReadable), 
+	printMatrices_ (printMatrices),
 	debug_ (debug)
       {}
 
@@ -128,14 +134,17 @@ namespace TSQR {
       ///   easy for humans to read (vs. easy for parsers to parse)
       /// \param debug [in] Whether to write verbose debug output to
       ///   err
-      DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
+      DistTsqrVerifier (const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
+			const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 			const std::string& scalarTypeName,
 			std::ostream& out,
 			std::ostream& err,
 			const bool testFactorExplicit,
 			const bool testFactorImplicit,
 			const bool humanReadable,
+			const bool printMatrices,
 			const bool debug) :
+	ordinalComm_ (ordinalComm),
 	scalarComm_ (scalarComm),
 	scalarTypeName_ (scalarTypeName), 
 	out_ (out), 
@@ -143,9 +152,16 @@ namespace TSQR {
 	testFactorExplicit_ (testFactorExplicit),
 	testFactorImplicit_ (testFactorImplicit),
 	humanReadable_ (humanReadable), 
+	printMatrices_ (printMatrices),
 	debug_ (debug)
       {}
 
+      /// \brief Get seed vector for pseudorandom number generator
+      ///
+      /// Fill seed (changing size of vector as necessary) with the
+      /// seed vector used by the pseudorandom number generator.  You
+      /// can use this to resume the pseudorandom number stream from
+      /// where you last were.
       void 
       getSeed (std::vector<int>& seed) const
       {
@@ -161,7 +177,6 @@ namespace TSQR {
       {
 	using std::endl;
 
-	const bool extraDebug = false;
 	const int myRank = scalarComm_->rank();
 	if (debug_)
 	  {
@@ -184,12 +199,11 @@ namespace TSQR {
 
 	// Set up TSQR implementation.
 	DistTsqr< Ordinal, Scalar > par (scalarComm_);
-	if (extraDebug && debug_)
+	if (debug_)
 	  {
 	    scalarComm_->barrier();
 	    if (myRank == 0)
-	      err_ << "-- All MPI process(es) have initialized their "
-		"DistTsqr object." << endl << endl;
+	      err_ << "-- DistTsqr object initialized" << endl << endl;
 	  }
 
 	// Test DistTsqr::factor() and DistTsqr::explicit_Q().
@@ -240,6 +254,20 @@ namespace TSQR {
 		if (myRank == 0)
 		  err_ << "-- Finished DistTsqr::factorExplicit" << endl;
 	      }
+
+	    if (printMatrices_)
+	      {
+		if (myRank == 0)
+		  err_ << std::endl << "Computed Q factor:" << std::endl;
+		printGlobalMatrix (err_, Q_local, scalarComm_.get(), ordinalComm_.get());
+		if (myRank == 0)
+		  {
+		    err_ << std::endl << "Computed R factor:" << std::endl;
+		    print_local_matrix (err_, R.nrows(), R.ncols(), R.get(), R.lda());
+		    err_ << std::endl;
+		  }
+	      }
+
 	    // Verify the factorization
 	    result_type result = 
 	      global_verify (numCols, numCols, A_local.get(), A_local.lda(),
@@ -270,9 +298,9 @@ namespace TSQR {
 	using std::endl;
 
 	const int numProcs = scalarComm_->size();
-	const bool printResults = (scalarComm_->rank() == 0);
+	const int myRank = scalarComm_->rank();
 
-	if (printResults)
+	if (myRank == 0)
 	  {
 	    if (humanReadable_)
 	      {
@@ -315,10 +343,22 @@ namespace TSQR {
 
 	// This modifies A_local on all procs, and A_global on Proc 0.
 	par_tsqr_test_problem (gen_, A_local, A_global, numCols, scalarComm_);
+	
+	if (printMatrices_)
+	  {
+	    const int myRank = scalarComm_->rank();
+
+	    if (myRank == 0)
+	      err_ << "Input matrix A:" << std::endl;
+	    printGlobalMatrix (err_, A_local, scalarComm_.get(), ordinalComm_.get());
+	    if (myRank == 0)
+	      err_ << std::endl;
+	  }
 
 	// Copy the test problem input into R, since the factorization
 	// will overwrite it in place with the final R factor.
 	R.reshape (numCols, numCols);
+	R.fill (Scalar(0));
 	R.copy (A_local);
 
 	// Prepare space in which to construct the explicit Q factor
@@ -338,10 +378,11 @@ namespace TSQR {
       Teuchos::RCP< MessengerBase< Scalar > > scalarComm_;
       Teuchos::RCP< MessengerBase< double > > doubleComm_; 
       std::string scalarTypeName_;
-      const bool humanReadable_, debug_;
+
       std::ostream& out_;
       std::ostream& err_;
-      bool testFactorExplicit_,	testFactorImplicit_;
+      const bool testFactorExplicit_, testFactorImplicit_;
+      const bool humanReadable_, debug_;
 
     public:
       typedef Ordinal ordinal_type;
@@ -392,8 +433,7 @@ namespace TSQR {
 	testFactorImplicit_ (testFactorImplicit),
 	humanReadable_ (humanReadable), 
 	debug_ (debug)
-      {
-      }
+      {}
 
       /// \brief Constructor, with default seed value
       ///
@@ -437,9 +477,14 @@ namespace TSQR {
 	testFactorImplicit_ (testFactorImplicit),
 	humanReadable_ (humanReadable), 
 	debug_ (debug)
-      {
-      }
+      {}
 
+      /// \brief Get seed vector for pseudorandom number generator
+      ///
+      /// Fill seed (changing size of vector as necessary) with the
+      /// seed vector used by the pseudorandom number generator.  You
+      /// can use this to resume the pseudorandom number stream from
+      /// where you last were.
       void 
       getSeed (std::vector<int>& seed) const
       {
