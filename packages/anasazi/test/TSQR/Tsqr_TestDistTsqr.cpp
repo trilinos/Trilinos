@@ -139,6 +139,7 @@ const char docString[] = "This program tests TSQR::DistTsqr, which "
 ///
 struct DistTsqrTestParameters {
   int numCols, numTrials;
+  bool testReal;
 #ifdef HAVE_TSQR_COMPLEX
   bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
@@ -149,6 +150,7 @@ struct DistTsqrTestParameters {
   DistTsqrTestParameters () :
     numCols (10), 
     numTrials (10), 
+    testReal (true),
 #ifdef HAVE_TSQR_COMPLEX
     testComplex (true),
 #endif // HAVE_TSQR_COMPLEX
@@ -170,6 +172,7 @@ verify (RCP< const Teuchos::Comm<int> > comm,
 	std::vector<int>& seed,
 	const bool useSeed)
 {
+  const bool testReal = params.testReal;
 #ifdef HAVE_TSQR_COMPLEX
   const bool testComplex = params.testComplex;
 #else // Don't HAVE_TSQR_COMPLEX
@@ -191,14 +194,11 @@ verify (RCP< const Teuchos::Comm<int> > comm,
       seed[2] = 0;
       seed[3] = 1;
     }
-  const bool testReal = true;
-
   if (testReal)
     {
       TSQR_TEST_DIST_TSQR( float, "float" );
       TSQR_TEST_DIST_TSQR( double, "double" );
     }
-	
   if (testComplex)
     {
 #ifdef HAVE_TSQR_COMPLEX
@@ -225,6 +225,7 @@ benchmark (RCP< const Teuchos::Comm<int> > comm,
 {
   typedef Teuchos::Time timer_type;
 
+  const bool testReal = params.testReal;
 #ifdef HAVE_TSQR_COMPLEX
   const bool testComplex = params.testComplex;
 #else // Don't HAVE_TSQR_COMPLEX
@@ -248,14 +249,12 @@ benchmark (RCP< const Teuchos::Comm<int> > comm,
     }
   RCP< MessengerBase< double > > doubleComm = 
     rcp_implicit_cast< MessengerBase< double > > (RCP< TeuchosMessenger< double > > (new TeuchosMessenger< double > (comm)));
-  const bool testReal = true;
 
   if (testReal)
     {
       TSQR_BENCHMARK_DIST_TSQR( float, "float" );
       TSQR_BENCHMARK_DIST_TSQR( double, "double" );
     }
-	
   if (testComplex)
     {
 #ifdef HAVE_TSQR_COMPLEX
@@ -334,11 +333,15 @@ parseOptions (int argc,
     cmdLineProc.setOption ("ntrials", 
 			   &params.numTrials, 
 			   "Number of trials (only used when \"--benchmark\"");
+    cmdLineProc.setOption ("real", 
+			   "noreal",
+			   &params.testReal,
+			   "Test real arithmetic routines");
 #ifdef HAVE_TSQR_COMPLEX
     cmdLineProc.setOption ("complex", 
 			   "nocomplex",
 			   &params.testComplex,
-			   "Test complex arithmetic, as well as real");
+			   "Test complex arithmetic routines");
 #endif // HAVE_TSQR_COMPLEX
     cmdLineProc.parse (argc, argv);
   } 
@@ -402,7 +405,6 @@ main (int argc, char *argv[])
 
       verify (comm, params, out, err, seed, useSeed);
     }
-  
   if (params.benchmark)
     {
       std::vector<int> seed(4);
@@ -410,7 +412,6 @@ main (int argc, char *argv[])
 
       benchmark (comm, params, out, err, seed, useSeed);
     }
-
   if (allowedToPrint)
     out << "\nEnd Result: TEST PASSED" << std::endl;
   return 0;
