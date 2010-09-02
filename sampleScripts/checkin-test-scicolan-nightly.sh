@@ -25,6 +25,7 @@ echo "
 -D Trios_ENABLE_XDMF:BOOL=OFF
 -D TPL_ENABLE_XMDF:BOOL=OFF
 -D TPL_ENABLE_HDF5:BOOL=OFF
+-D Claps_ENABLE_SClaps:BOOL=ON
 " > COMMON.config
 #-D CMAKE_BUILD_DEBUG:BOOL=ON
 #-D Netcdf_INCLUDE_DIRS:PATH=/projects/seacas/current/include

@@ -134,6 +134,7 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="Claps">
+    <Dependency name="Teuchos" type="TR"/>
     <Dependency name="Epetra" type="LR"/>
     <EmailAddresses>
       <Email address="claps-regression@software.sandia.gov"/>
