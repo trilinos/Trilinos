@@ -1,0 +1,19 @@
+#!/bin/bash
+# Edit path to where Trilinos is installed
+#  (CMAKE_INSTALL_PREFIX in Trilinos configure)
+#
+# The ".."  at the end is the path to the top level CMakeLists.txt file
+# which needs to be changed if this is not in a subdir
+
+rm CMakeCache.txt
+
+cmake \
+ -D MYAPP_TRILINOS_DIR:FILEPATH=/home/turing/Trilinos/LINUX_DEBUG \
+ -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+ ..
+
+
+#  Other Cmake options can be added:
+#
+# -D CMAKE_CXX_FLAGS:STRING="-DENABLE_HACKS" \
+
