@@ -201,17 +201,22 @@ void RCPNode::set_extra_data(
     extra_data_map_ = new extra_data_map_t;
   }
   const std::string type_and_name( extra_data.typeName() + std::string(":") + name );
-  if( !extra_data_map_->empty() && force_unique ) {
-    extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
+  extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
-      itr != extra_data_map_->end(), std::invalid_argument
-      ,"Error, the type:name pair \'" << type_and_name
-      << "\' already exists and force_unique==true!" );
+  TEST_FOR_EXCEPTION(
+    (itr != extra_data_map_->end() && force_unique), std::invalid_argument
+    ,"Error, the type:name pair \'" << type_and_name
+    << "\' already exists and force_unique==true!" );
 #endif
+  if (itr != extra_data_map_->end()) {
+    // Change existing extra data
+    itr->second = extra_data_entry_t(extra_data,destroy_when);
   }
-  (*extra_data_map_)[type_and_name] =
-    extra_data_entry_t(extra_data,destroy_when); // This may add or replace!
+  else {
+    // Insert new extra data
+    (*extra_data_map_)[type_and_name] =
+      extra_data_entry_t(extra_data,destroy_when);
+  }
 }
 
 
