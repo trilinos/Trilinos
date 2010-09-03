@@ -29,7 +29,9 @@
 #ifndef TEUCHOS_OPAQUE_WRAPPER_HPP
 #define TEUCHOS_OPAQUE_WRAPPER_HPP
 
+
 #include "Teuchos_RCP.hpp"
+
 
 //#define TEUCHOS_OPAQUE_WRAPPER_ANNOUNCE_FREE
 
@@ -37,7 +39,9 @@
 #  include "Teuchos_VerboseObject.hpp"
 #endif // TEUCHOS_OPAQUE_WRAPPER_ANNOUNCE_FREE
 
+
 namespace Teuchos {
+
 
 /** \brief Base class for wrapped opaque objects.
  *
@@ -164,6 +168,7 @@ private:
   OpaqueWrapperWithFree& operator=(const OpaqueWrapperWithFree&); // Not defined
 }; 
 
+
 /** \brief Helper function created a new <tt>OpaqueWrapper</tt> object without
  * a free function.
  *
@@ -176,6 +181,7 @@ opaqueWrapper( Opaque opaque)
 {
   return rcp(new OpaqueWrapper<Opaque>(opaque));
 }
+
 
 /** \brief Helper function created a new <tt>OpaqueWrapper</tt> object with a
  * free function.
@@ -190,6 +196,8 @@ opaqueWrapper( Opaque opaque, OpaqueFree opaqueFree)
   return rcp(new OpaqueWrapperWithFree<Opaque,OpaqueFree>(opaque,opaqueFree));
 }
 
+
 } // namespace Teuchos
+
 
 #endif	// TEUCHOS_OPAQUE_WRAPPER_HPP

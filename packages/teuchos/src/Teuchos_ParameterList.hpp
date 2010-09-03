@@ -577,7 +577,10 @@ private: // Data members
 };
 
 
-/** \brief Nonmember constructor. */
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
 inline
 RCP<ParameterList> parameterList()
 {
@@ -585,20 +588,26 @@ RCP<ParameterList> parameterList()
 }
 
 
-/** \brief Nonmember constructor. */
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
 inline
 RCP<ParameterList> parameterList(const std::string &name)
 {
   return rcp(new ParameterList(name));
 }
   
-/** \brief Nonmember constructor. */
+
+/** \brief Nonmember constructor.
+ *
+ * \relates ParameterList
+ */
 inline
 RCP<ParameterList> parameterList(const ParameterList& source)
 {
   return rcp(new ParameterList(source));
 }
-
 
 
 /** \brief Traits specialization.
@@ -639,8 +648,10 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
  */
 TEUCHOS_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
 
+
 // /////////////////////////////////////////////////////
 // Inline and Template Function Definitions
+
 
 inline
 ParameterList& ParameterList::setName( const std::string &name_in )

@@ -53,7 +53,7 @@ namespace Teuchos {
  * from the file <tt>xmlFileName</tt> will be set or overide those in
  * <tt>*paramList</tt>.
  *
- * \ingroup XML
+ * \relates ParameterList
  */
 TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
   const std::string &xmlFileName,
@@ -74,7 +74,7 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
  *
  * \param comm [in] A Teuchos::Comm object used to broadcast the xml.
  *
- * \ingroup XML
+ * \relates ParameterList
  */
 
 TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFileAndBroadcast(
@@ -88,7 +88,7 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFileAndBroadcast(
  * \param xmlFileName [in] The file name containing XML parameter list
  * specification.
  *
- * \ingroup XML
+ * \relates ParameterList
  */
 RCP<ParameterList> getParametersFromXmlFile( const std::string &xmlFileName );
 
@@ -103,7 +103,7 @@ RCP<ParameterList> getParametersFromXmlFile( const std::string &xmlFileName );
  * from the file <tt>xmlStr</tt> will be set or overide those in
  * <tt>*paramList</tt>.
  *
- * \ingroup XML
+ * \relates ParameterList
  */
 TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlString(
   const std::string &xmlStr,
@@ -116,7 +116,7 @@ TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlString(
  *
  * \param xmlStr [in] String containing XML parameter list specification.
  *
- * \ingroup XML
+ * \relates ParameterList
  */
 RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr );
 
@@ -128,7 +128,7 @@ RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr );
  *
  * \param xmlOut [in] The stream that will get the XML output.
  *
- * \ingroup XML
+ * \relates ParameterList
  */
 TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlOStream(
   const Teuchos::ParameterList &paramList,
@@ -144,7 +144,7 @@ TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlOStream(
  * \param xmlFileName [in] The file name that will be create to contain the
  * XML version of the parameter list specification.
  *
- * \ingroup XML
+ * \relates ParameterList
  */
 TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlFile(
   const Teuchos::ParameterList &paramList,

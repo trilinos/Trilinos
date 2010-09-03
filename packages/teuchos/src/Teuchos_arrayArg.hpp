@@ -29,17 +29,18 @@
 #ifndef TEUCHOS_ARRAY_ARG_HPP
 #define TEUCHOS_ARRAY_ARG_HPP
 
-/*! \file Teuchos_arrayArg.hpp
-    \brief Utility that allows arrays to be passed into argument list
-*/
 
 #include "Teuchos_TestForException.hpp"
 
+
 namespace Teuchos {
 
-/** \defgroup Teuchos_Array_Arguments Utility functions for passing arrays into argument lists.
 
-\brief The purpose of this utility is to make passing arrays into argument lists easier.
+/** \defgroup Teuchos_Array_Arguments Utility functions for passing arrays into argument lists [Deprecated].
+
+\brief The purpose of this utility is to make passing arrays into argument lists easier [Deprecated].
+
+\ingroup Teuchos_Depreicated_grp
 
 Declaring arrays outside of a function just to pass a (small) list of
 values into a function can be tiresome. The templated function
@@ -153,8 +154,6 @@ copy constructor being called which is almost never a desirable situation.
 
 The <tt>arrayArg()</tt> function is overloaded to accept 1, 2, 3, 4, 5 and 6 
 arguments.  If more elements are needed, then more overrides are easy to add.
-
-\ingroup teuchos_language_support_grp
 
 */
 
