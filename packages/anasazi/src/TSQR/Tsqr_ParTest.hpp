@@ -206,6 +206,10 @@ namespace TSQR {
 	      err_ << "-- DistTsqr object initialized" << endl << endl;
 	  }
 
+	// Whether we've printed column headers yet (only matters for
+	// non-humanReadable output).
+	bool printedHeaders = false;
+
 	// Test DistTsqr::factor() and DistTsqr::explicit_Q().
 	if (testFactorImplicit_)
 	  {
@@ -239,7 +243,9 @@ namespace TSQR {
 		if (myRank == 0)
 		  err_ << "-- Finished global_verify" << endl;
 	      }
-	    reportResults ("DistTsqr", numCols, result);
+	    reportResults ("DistTsqr", numCols, result, (! printedHeaders));
+	    if (! printedHeaders)
+	      printedHeaders = true;
 	  }
 
 	// Test DistTsqr::factorExplicit()
@@ -279,7 +285,9 @@ namespace TSQR {
 		if (myRank == 0)
 		  err_ << "-- Finished global_verify" << endl;
 	      }
-	    reportResults ("DistTsqrRB", numCols, result, true);
+	    reportResults ("DistTsqrRB", numCols, result, (! printedHeaders));
+	    if (! printedHeaders)
+	      printedHeaders = true;
 	  }
       }
 
@@ -513,6 +521,10 @@ namespace TSQR {
 	// Set up TSQR implementation.
 	DistTsqr< Ordinal, Scalar > par (scalarComm_);
 
+	// Whether we've printed column headers yet (only matters for
+	// non-humanReadable output).
+	bool printedHeaders = false;
+
 	if (testFactorImplicit_)
 	  {
 	    std::string timerName ("DistTsqr");
@@ -538,7 +550,10 @@ namespace TSQR {
 
 	    // reportResults() must be called on all processes, since this
 	    // figures out the min and max timings over all processes.
-	    reportResults (timerName, numTrials, numCols, localCumulativeTiming);
+	    reportResults (timerName, numTrials, numCols, localCumulativeTiming, 
+			   (! printedHeaders));
+	    if (! printedHeaders)
+	      printedHeaders = true;
 	  }
 
 	if (testFactorExplicit_)
@@ -575,14 +590,15 @@ namespace TSQR {
 	      {
 		// Only print column headers once
 		const bool printHeaders = (k == 0);
-		globalTimings[k].print (out_, humanReadable_, timingsLabels[k], printHeaders);
+		globalTimings[k].print (out_, humanReadable_, timingLabels[k], printHeaders);
 	      }
 
 	    // Report cumulative (not per-invocation) timing results
-	    reportResults (timerName, numTrials, numCols, localCumulativeTiming, true);
+	    reportResults (timerName, numTrials, numCols, 
+			   localCumulativeTiming, (! printedHeaders));
+	    if (! printedHeaders)
+	      printedHeaders = true;
 	  }
-
-
       }
 
     private:

@@ -329,9 +329,9 @@ namespace TSQR {
 
 	  for (std::vector< std::string >::size_type k = 0; k < labels.size(); ++k)
 	    {
-	      cout << "  " << labels[k] << endl;
+	      const bool printHeaders = (k == 0);
 	      if (stats[k].count() > 0)
-		stats[k].print (cout, human_readable);
+		stats[k].print (cout, human_readable, labels[k], printHeaders);
 	    }
 	}
       else

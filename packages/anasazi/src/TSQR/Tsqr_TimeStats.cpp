@@ -46,6 +46,7 @@ namespace TSQR {
     if (humanReadable)
       {
 	const char prefix[] = "-- ";
+	out << label << ":" << endl;
 	if (count() == 0)
 	  out << prefix << "No values collected" << endl;
 	else if (count() == 1)
