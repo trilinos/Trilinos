@@ -327,11 +327,12 @@ namespace TSQR {
 	  std::vector< std::string> labels;
 	  actor.getStatsLabels (labels);
 
+	  const std::string labelLabel ("label");
 	  for (std::vector< std::string >::size_type k = 0; k < labels.size(); ++k)
 	    {
 	      const bool printHeaders = (k == 0);
 	      if (stats[k].count() > 0)
-		stats[k].print (cout, human_readable, labels[k], printHeaders);
+		stats[k].print (cout, human_readable, labels[k], labelLabel, printHeaders);
 	    }
 	}
       else

@@ -39,6 +39,7 @@ namespace TSQR {
   TimeStats::print (std::ostream& out, 
 		    const bool humanReadable,
 		    const std::string& label,
+		    const std::string& labelLabel,
 		    const bool printHeaders) const
   {
     using std::endl;
@@ -67,7 +68,7 @@ namespace TSQR {
 	// values on the next line.
 	if (printHeaders)
 	  {
-	    out << "%" << "label"
+	    out << "%" << labelLabel
 		<< "," << "count"
 		<< "," << "min"
 		<< "," << "mean"

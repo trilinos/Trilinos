@@ -39,6 +39,7 @@
 #include <Tsqr_printGlobalMatrix.hpp>
 
 #include <algorithm>
+#include <iomanip>
 #include <iostream>
 #include <vector>
 
@@ -324,6 +325,9 @@ namespace TSQR {
 	      }
 	    else
 	      {
+		// Use scientific notation for floating-point numbers
+		out_ << std::scientific;
+
 		if (printHeaders)
 		  out_ << "%method,scalarType,numCols,numProcs,relResid,relOrthog" << endl;
 
@@ -571,10 +575,17 @@ namespace TSQR {
 	    // "Cumulative" means the elapsed time of numTrials executions.
 	    const double localCumulativeTiming = timer.stop();
 
-	    // Per-invocation timings.  localTimings were computed on
-	    // this MPI process; globalTimings are statistical
-	    // summaries of those over all MPI processes.  We only
-	    // collect that data for factorExplicit().
+	    // Report cumulative (not per-invocation) timing results
+	    reportResults (timerName, numTrials, numCols, 
+			   localCumulativeTiming, (! printedHeaders));
+	    if (! printedHeaders)
+	      printedHeaders = true;
+
+	    // Per-invocation timings (for factorExplicit() benchmark
+	    // only).  localTimings were computed on this MPI process;
+	    // globalTimings are statistical summaries of those over
+	    // all MPI processes.  We only collect that data for
+	    // factorExplicit().
 	    std::vector< TimeStats > localTimings;
 	    std::vector< TimeStats > globalTimings;
 	    par.getFactorExplicitTimings (localTimings);
@@ -586,18 +597,15 @@ namespace TSQR {
 	    if (humanReadable_)
 	      out_ << timerName << " per-invocation benchmark results:" << endl;
 
+	    const std::string labelLabel ("label,scalarType");
 	    for (std::vector< std::string >::size_type k = 0; k < timingLabels.size(); ++k)
 	      {
 		// Only print column headers once
 		const bool printHeaders = (k == 0);
-		globalTimings[k].print (out_, humanReadable_, timingLabels[k], printHeaders);
+		globalTimings[k].print (out_, humanReadable_, 
+					timingLabels[k] + "," + scalarTypeName_, 
+					labelLabel, printHeaders);
 	      }
-
-	    // Report cumulative (not per-invocation) timing results
-	    reportResults (timerName, numTrials, numCols, 
-			   localCumulativeTiming, (! printedHeaders));
-	    if (! printedHeaders)
-	      printedHeaders = true;
 	  }
       }
 
@@ -647,10 +655,13 @@ namespace TSQR {
 	      }
 	    else
 	      {
+		// Use scientific notation for floating-point numbers
+		out_ << std::scientific;
+
 		if (printHeaders)
 		  out_ << "%method,scalarType,numCols,numProcs,numTrials,min,mean,max" << endl;
 
-		out_ << method << endl
+		out_ << method
 		     << "," << scalarTypeName_
 		     << "," << numCols
 		     << "," << numProcs

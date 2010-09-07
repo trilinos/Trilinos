@@ -40,13 +40,16 @@ namespace TSQR {
     ///   for humans to read, or easy for automatic parsing
     /// \param label [in] If not humanReadable, then print this string
     ///   as a row identifier at the beginning of the row
+    /// \param labelLabel [in] If not humanReadable, then use this
+    ///   as the column header for the "label" (first) column
     /// \param printHeaders [in] If not humanReadable, then print
     ///   column headers, preceded by a "%" so that the parser will
     ///   ignore the line
-    void 
+    void
     print (std::ostream& out, 
 	   const bool humanReadable,
 	   const std::string& label,
+	   const std::string& labelLabel,
 	   const bool printHeaders) const;
 
     /// Minimum value seen thus far (+Inf if no data has been
