@@ -30,9 +30,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(Amesos2_SimpleSolve_File
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockCG
-  SOURCE_FILES bcsstk14.hb
-  SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/amesos2/example
   SOURCE_FILES amesos_test_mat.hb
-  EXEDEPS SimpleSolveFileExample
+               bcsstk14.hb
   )

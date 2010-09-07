@@ -63,9 +63,9 @@ ASSERT_DEFINED(PROJECT_SOURCE_DIR)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-  ${PROJECT_SOURCE_DIR}/Trilinos_version.h
-  )
+#APPEND_SET(HEADERS
+#${PROJECT_SOURCE_DIR}/Trilinos_version.h
+#)
 
 # Set headers (for IDEs and installing)
 
