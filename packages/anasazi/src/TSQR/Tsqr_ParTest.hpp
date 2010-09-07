@@ -279,7 +279,7 @@ namespace TSQR {
 		if (myRank == 0)
 		  err_ << "-- Finished global_verify" << endl;
 	      }
-	    reportResults ("DistTsqrRB", numCols, result);
+	    reportResults ("DistTsqrRB", numCols, result, true);
 	  }
       }
 
@@ -293,7 +293,8 @@ namespace TSQR {
       void 
       reportResults (const std::string& method, 
 		     const Ordinal numCols, 
-		     const result_type& result)
+		     const result_type& result,
+		     const bool printHeaders)
       {
 	using std::endl;
 
@@ -315,6 +316,9 @@ namespace TSQR {
 	      }
 	    else
 	      {
+		if (printHeaders)
+		  out_ << "%method,scalarType,numCols,numProcs,relResid,relOrthog" << endl;
+
 		out_ << method
 		     << "," << scalarTypeName_
 		     << "," << numCols
