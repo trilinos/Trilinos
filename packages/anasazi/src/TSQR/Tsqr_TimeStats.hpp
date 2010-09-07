@@ -34,10 +34,20 @@ namespace TSQR {
     void update (const double curTime);
 
     /// Print to out
-    ///
+    /// 
+    /// \param out [in/out] Output stream to which to print
+    /// \param humanReadable [in] Whether to print in a format easy
+    ///   for humans to read, or easy for automatic parsing
+    /// \param label [in] If not humanReadable, then print this string
+    ///   as a row identifier at the beginning of the row
+    /// \param printHeaders [in] If not humanReadable, then print
+    ///   column headers, preceded by a "%" so that the parser will
+    ///   ignore the line
     void 
     print (std::ostream& out, 
-	   const bool humanReadable) const;
+	   const bool humanReadable,
+	   const std::string& label,
+	   const bool printHeaders) const;
 
     /// Minimum value seen thus far (+Inf if no data has been
     /// collected)

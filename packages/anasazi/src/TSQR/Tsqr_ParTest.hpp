@@ -569,18 +569,20 @@ namespace TSQR {
 
 	    for (std::vector< std::string >::size_type k = 0; k < timingLabels.size(); ++k)
 	      {
-		out_ << "  " << timingLabels[k] << endl;
-		globalTimings[k].print (out_, humanReadable_);
+		// Only print column headers once
+		const bool printHeaders = (k == 0);
+		globalTimings[k].print (out_, humanReadable_, timingsLabels[k], printHeaders);
 	      }
 
-	    reportResults (timerName, numTrials, numCols, localCumulativeTiming);
+	    // Report cumulative (not per-invocation) timing results
+	    reportResults (timerName, numTrials, numCols, localCumulativeTiming, true);
 	  }
 
 
       }
 
     private:
-      /// Report results to the output stream.
+      /// Report timing results to the given output stream
       ///
       /// \param method [in] String to print before reporting results
       /// \param numTrials [in] Number of times to repeat the computation
@@ -596,7 +598,8 @@ namespace TSQR {
       reportResults (const std::string& method,
 		     const int numTrials,
 		     const ordinal_type numCols,
-		     const double localTiming)
+		     const double localTiming,
+		     const bool printHeaders)
       {
 	using std::endl;
 
@@ -609,27 +612,33 @@ namespace TSQR {
 	const bool printResults = (doubleComm_->rank() == 0);
 	if (printResults)
 	  {
+	    const int numProcs = doubleComm_->size();
 	    if (humanReadable_)
 	      {
 		out_ << method << " cumulative benchmark results (total time over all trials):" << endl
 		     << "Scalar type = " << scalarTypeName_ << endl
 		     << "Number of columns = " << numCols << endl
-		     << "Number of (MPI) processes = " << doubleComm_->size() << endl
+		     << "Number of (MPI) processes = " << numProcs << endl
 		     << "Number of trials = " << numTrials << endl
 		     << "Min timing (in seconds) = " << globalStats.min() << endl
 		     << "Mean timing (in seconds) = " << globalStats.mean() << endl
-		     << "Max timing (in seconds) = " << globalStats.max() << endl;
+		     << "Max timing (in seconds) = " << globalStats.max() << endl
+		     << endl;
 	      }
 	    else
 	      {
+		if (printHeaders)
+		  out_ << "%method,scalarType,numCols,numProcs,numTrials,min,mean,max" << endl;
+
 		out_ << method << endl
-		     << "," << scalarTypeName_ << endl
-		     << "," << numCols << endl
-		     << "," << doubleComm_->size() << endl
-		     << "," << numTrials << endl
-		     << "," << globalStats.min() << endl
-		     << "," << globalStats.mean() << endl
-		     << "," << globalStats.max() << endl;
+		     << "," << scalarTypeName_
+		     << "," << numCols
+		     << "," << numProcs
+		     << "," << numTrials
+		     << "," << globalStats.min()
+		     << "," << globalStats.mean()
+		     << "," << globalStats.max()
+		     << endl;
 	      }
 	  }
       }

@@ -37,31 +37,45 @@ namespace TSQR {
 
   void
   TimeStats::print (std::ostream& out, 
-		    const bool humanReadable) const
+		    const bool humanReadable,
+		    const std::string& label,
+		    const bool printHeaders) const
   {
     using std::endl;
 
     if (humanReadable)
       {
 	const char prefix[] = "-- ";
-	out << prefix << "Count: " << count() << endl
-	    << prefix << "Min:   " << min() << endl
-	    << prefix << "Mean:  " << mean() << endl
-	    << prefix << "Max:   " << max() << endl
-	    << prefix << "Total: " << total() << endl;
+	if (count() == 0)
+	  out << prefix << "No values collected" << endl;
+	else if (count() == 1)
+	  out << prefix << "One value collected: " << min() << endl;
+	else
+	  {
+	    out << prefix << "Count: " << count() << endl
+		<< prefix << "Min:   " << min() << endl
+		<< prefix << "Mean:  " << mean() << endl
+		<< prefix << "Max:   " << max() << endl
+		<< prefix << "Total: " << total() << endl;
+	  }
       }
     else
       {
 	// "%" identifies this line as a "comment" line to filter out.
 	// First print field labels on one line, then print field
 	// values on the next line.
-	out << "%" << "count"
-	    << "," << "min"
-	    << "," << "mean"
-	    << "," << "max"
-	    << "," << "total" 
-	    << endl;
-	out << count() 
+	if (printHeaders)
+	  {
+	    out << "%" << "label"
+		<< "," << "count"
+		<< "," << "min"
+		<< "," << "mean"
+		<< "," << "max"
+		<< "," << "total" 
+		<< endl;
+	  }
+	out << label
+	    << "," << count() 
 	    << "," << min() 
 	    << "," << mean()
 	    << "," << max()
