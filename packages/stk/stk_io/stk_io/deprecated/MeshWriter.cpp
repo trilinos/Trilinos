@@ -25,7 +25,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
-#include <stk_io/MeshWriter.hpp>
+#include <stk_io/deprecated/MeshWriter.hpp>
 #include <stk_io/IossBridge.hpp>
 
 namespace stk {

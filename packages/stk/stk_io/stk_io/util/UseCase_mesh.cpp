@@ -366,7 +366,8 @@ namespace stk {
 				       stk::mesh::BulkData &bulk_data,
 				       const Ioss::Region *in_region,
 				       stk::mesh::MetaData &meta_data,
-				       bool add_transient)
+				       bool add_transient,
+				       bool add_all_fields)
       {
 	std::string filename = mesh_filename;
 	if (filename.empty()) {
@@ -411,7 +412,7 @@ namespace stk {
 	  // Special processing for nodeblock (all nodes in model)...
 	  stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::Node,
 				   out_region->get_node_blocks()[0],
-				   Ioss::Field::TRANSIENT, true);
+				   Ioss::Field::TRANSIENT, add_all_fields);
 
 	  const stk::mesh::PartVector & all_parts = meta_data.get_parts();
 	  for ( stk::mesh::PartVector::const_iterator
@@ -426,7 +427,7 @@ namespace stk {
 	      if (entity != NULL) {
 		if (entity->type() == Ioss::ELEMENTBLOCK) {
 		  stk::io::ioss_add_fields(*part, stk::mesh::fem_entity_rank( part->primary_entity_rank()),
-					   entity, Ioss::Field::TRANSIENT, true);
+					   entity, Ioss::Field::TRANSIENT, add_all_fields);
 		}
 	      }
 	    }
@@ -699,14 +700,15 @@ namespace stk {
 
       void process_output_request(Ioss::Region &region,
 				  stk::mesh::BulkData &bulk,
-				  int step)
+				  int step, bool output_all_fields)
       {
 	region.begin_state(step);
 	// Special processing for nodeblock (all nodes in model)...
 	const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
 
 	put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
-		       region.get_node_blocks()[0], Ioss::Field::Field::TRANSIENT, true); // Add ALL Fields...
+		       region.get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
+		       output_all_fields);
 
 	const stk::mesh::PartVector & all_parts = meta.get_parts();
 	for ( stk::mesh::PartVector::const_iterator
@@ -721,7 +723,8 @@ namespace stk {
 	    if (entity != NULL) {
 	      if (entity->type() == Ioss::ELEMENTBLOCK) {
 		put_field_data(bulk, *part, stk::mesh::fem_entity_rank( part->primary_entity_rank()),
-			       entity, Ioss::Field::Field::TRANSIENT, true);
+			       entity, Ioss::Field::Field::TRANSIENT,
+			       output_all_fields);
 	      }
 	    }
 	  }

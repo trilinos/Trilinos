@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 
-#include <stk_util/parallel/Parallel.hpp>
+#include <mpi.h>
 
 namespace stk {
 namespace common {

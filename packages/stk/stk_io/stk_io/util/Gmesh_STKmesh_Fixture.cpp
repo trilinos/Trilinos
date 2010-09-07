@@ -49,7 +49,7 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(MPI_Comm comm,
   m_num_y = database->get_generated_mesh()->get_num_y();
   m_num_z = database->get_generated_mesh()->get_num_z();
 
-  // get face parts names; need to convert these to sierra strings
+  // get face parts names; need to convert these to strings
   const std::vector<std::string> faceset_names = database->get_faceset_names();
 
   for (std::vector<std::string>::const_iterator itr = faceset_names.begin();

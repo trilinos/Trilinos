@@ -25,7 +25,7 @@
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
-#include <stk_io/MeshReader.hpp>
+#include <stk_io/deprecated/MeshReader.hpp>
 #include <stk_io/IossBridge.hpp>
 
 namespace stk {
