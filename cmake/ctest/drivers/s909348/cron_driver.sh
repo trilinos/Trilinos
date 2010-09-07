@@ -13,13 +13,13 @@ export TDD_PARALLEL_LEVEL=2
 # Trilinos settings:
 #
 
-export CTEST_TEST_TYPE=Experimental
+#export CTEST_TEST_TYPE=Experimental
 
 #export CTEST_DO_SUBMIT=FALSE
 
 #export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
 
-export Trilinos_PACKAGES=Teuchos
+#export Trilinos_PACKAGES=Teuchos
 
 # Machine specific environment:
 #
