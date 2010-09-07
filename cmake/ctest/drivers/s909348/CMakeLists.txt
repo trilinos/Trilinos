@@ -1,16 +1,34 @@
 TRILINOS_DRIVER_SETUP()
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT
-  ctest_mac_nightly_mpi_opt_s909348.cmake
-  TIMEOUT_MINUTES 240
-)
+IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+  #This build is run on s903186
+  #TRILINOS_DRIVER_ADD_DASHBOARD(
+  #  MPI_OPT
+  #  ctest_mac_nightly_mpi_opt_s909348.cmake
+  #  TIMEOUT_MINUTES 240
+  #)
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  SERIAL_DEBUG
-  ctest_mac_nightly_serial_debug_s909348.cmake
-  RUN_SERIAL
-  TIMEOUT_MINUTES 240
-)
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG
+    ctest_mac_nightly_serial_debug_s909348.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
+  )
+ELSE()
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_RELEASE_${Trilinos_VERSION}
+    ctest_mac_nightly_mpi_release_s909348.cmake
+    TIMEOUT_MINUTES 240
+  )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_RELEASE_${Trilinos_VERSION}
+    ctest_mac_nightly_serial_release_s909348.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
+  )
+  
+ENDIF()
+
 
 TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
