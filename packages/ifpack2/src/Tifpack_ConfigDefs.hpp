@@ -30,7 +30,7 @@
 #ifndef _TIFPACK_CONFIGDEFS_HPP_
 #define _TIFPACK_CONFIGDEFS_HPP_
 
-#include <Tifpack_config.h>
+#include <Ifpack2_config.h>
 #include <Teuchos_ScalarTraits.hpp>
 
 //The sgn function isn't well defined for complex.

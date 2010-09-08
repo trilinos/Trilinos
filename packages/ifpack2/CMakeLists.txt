@@ -6,7 +6,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE( ifpack2 )
+PACKAGE( Ifpack2 )
 
 #
 # B) Set up package-specific options
