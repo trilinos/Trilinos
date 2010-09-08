@@ -119,16 +119,11 @@ void verify_declare_element_side(
 
   bool different_bulk_data =  &mesh != & (elem.bucket().mesh());
 
-  bool no_elem_top = NULL;
-  if(side_top == NULL){
-    no_elem_top = 1;
-  }else {
-    no_elem_top = 0;
-  }
+  bool no_elem_top = (side_top == NULL);
 
-  bool bad_side_id = NULL;
+  bool bad_side_id = false;
   if( elem_top && local_side_id >= elem_top->side_count){
-      bad_side_id = 1;
+      bad_side_id = true;
   }
 
 
