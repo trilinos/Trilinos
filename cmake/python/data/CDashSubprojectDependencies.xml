@@ -242,7 +242,7 @@
     <Dependency name="Tpetra" type="LR"/>
     <Dependency name="Belos" type="TR"/>
     <EmailAddresses>
-      <Email address="tifpack-regression@software.sandia.gov"/>
+      <Email address="ifpack2-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Stratimikos">
