@@ -10,8 +10,8 @@
     <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
-  <Parameter name="Tifpack::Preconditioner" type="string" value="ILUT"/>
-  <ParameterList name="Tifpack">
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="ILUT"/>
+  <ParameterList name="Ifpack2">
     <Parameter name="fact: ilut level-of-fill" type="double" value="1.0"/>
     <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
   </ParameterList>

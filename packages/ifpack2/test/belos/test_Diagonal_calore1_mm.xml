@@ -8,8 +8,8 @@
     <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
-  <Parameter name="Tifpack::Preconditioner" type="string" value="DIAGONAL"/>
-  <ParameterList name="Tifpack">
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="DIAGONAL"/>
+  <ParameterList name="Ifpack2">
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="78"/>

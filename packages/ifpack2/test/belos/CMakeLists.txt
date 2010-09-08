@@ -28,7 +28,7 @@ PACKAGE_ADD_EXECUTABLE(
   DEPLIBS belos tpetra kokkos teuchos
 )
 
-IF(Tifpack_ENABLE_QD)
+IF(Ifpack2_ENABLE_QD)
   PACKAGE_ADD_EXECUTABLE(
     tif_extprec_belos
     SOURCES belos_extprec_solve.cpp
@@ -36,7 +36,7 @@ IF(Tifpack_ENABLE_QD)
   )
 ENDIF()
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   DEST_FILES
   test_ILUT_calore1_mm.xml test_Jacobi_calore1_mm.xml test_GS_calore1_mm.xml
   test_RILUK_calore1_mm.xml test_Cheby_calore1_mm.xml
@@ -58,7 +58,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME small_gmres_belos
   ARGS "--xml_file=test_gmres_small_sym_mm.xml"
   COMM serial mpi
@@ -67,7 +67,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME small_pseudoblkcg_belos
   ARGS "--xml_file=test_pseudoblockcg_small_sym_mm.xml"
   COMM serial mpi
@@ -76,7 +76,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME Diagonal_belos
   ARGS "--xml_file=test_Diagonal_calore1_mm.xml"
   COMM serial mpi
@@ -85,7 +85,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME Jac_sm_belos
   ARGS "--xml_file=test_Jacobi_small_sym_mm.xml"
   COMM serial mpi
@@ -94,7 +94,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME Jacobi_belos
   ARGS "--xml_file=test_Jacobi_calore1_mm.xml"
   COMM serial mpi
@@ -103,7 +103,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME Jacobi_hb_belos
   ARGS "--xml_file=test_Jacobi_nos1_hb.xml"
   COMM serial mpi
@@ -112,7 +112,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME Jacobi_hb_belos
   ARGS "--xml_file=test_2_Jacobi_nos1_hb.xml"
   COMM serial mpi
@@ -121,7 +121,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME ILUT_hb_belos
   ARGS "--xml_file=test_2_ILUT_nos1_hb.xml"
   COMM serial mpi
@@ -130,7 +130,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME ILUT_hb_belos
   ARGS "--xml_file=test_4_ILUT_nos1_hb.xml"
   COMM serial mpi
@@ -139,7 +139,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME RILUK_hb_belos
   ARGS "--xml_file=test_2_RILUK_nos1_hb.xml"
   COMM serial mpi
@@ -148,7 +148,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME RILUK_hb_belos
   ARGS "--xml_file=test_4_RILUK_nos1_hb.xml"
   COMM serial mpi
@@ -156,9 +156,9 @@ PACKAGE_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-IF(Tifpack_ENABLE_QD)
+IF(Ifpack2_ENABLE_QD)
   PACKAGE_ADD_TEST(
-    tif_extprec_belos TifpackBelosCopyFiles
+    tif_extprec_belos Ifpack2BelosCopyFiles
     NAME small_qd_tfqmr_belos
     ARGS "--xml_file=test_tfqmr_small_sym_mm.xml"
     COMM serial mpi
@@ -167,9 +167,9 @@ IF(Tifpack_ENABLE_QD)
   )
 ENDIF()
 
-IF(Tifpack_ENABLE_QD)
+IF(Ifpack2_ENABLE_QD)
   PACKAGE_ADD_TEST(
-    tif_extprec_belos TifpackBelosCopyFiles
+    tif_extprec_belos Ifpack2BelosCopyFiles
     NAME small_qd_GS_tfqmr_belos
     ARGS "--xml_file=test_GS_tfqmr_small_sym_mm.xml"
     COMM serial mpi
@@ -178,9 +178,9 @@ IF(Tifpack_ENABLE_QD)
   )
 ENDIF()
 
-IF(Tifpack_ENABLE_QD)
+IF(Ifpack2_ENABLE_QD)
   PACKAGE_ADD_TEST(
-    tif_extprec_belos TifpackBelosCopyFiles
+    tif_extprec_belos Ifpack2BelosCopyFiles
     NAME small_qd_ILUT_tfqmr_belos
     ARGS "--xml_file=test_ILUT_tfqmr_small_sym_mm.xml"
     COMM serial mpi
@@ -189,9 +189,9 @@ IF(Tifpack_ENABLE_QD)
   )
 ENDIF()
 
-IF(Tifpack_ENABLE_QD)
+IF(Ifpack2_ENABLE_QD)
   PACKAGE_ADD_TEST(
-    tif_extprec_belos TifpackBelosCopyFiles
+    tif_extprec_belos Ifpack2BelosCopyFiles
     NAME qd_ILUT_tfqmr_belos
     ARGS "--xml_file=test_ILUT_tfqmr_calore1_mm.xml"
     COMM serial mpi
@@ -200,9 +200,9 @@ IF(Tifpack_ENABLE_QD)
   )
 ENDIF()
 
-IF(Tifpack_ENABLE_QD)
+IF(Ifpack2_ENABLE_QD)
   PACKAGE_ADD_TEST(
-    tif_extprec_belos TifpackBelosCopyFiles
+    tif_extprec_belos Ifpack2BelosCopyFiles
     NAME qd_ILUT_pbgmres_belos
     ARGS "--xml_file=5w_bel_tif_ILUT.xml"
     COMM serial mpi
@@ -212,7 +212,7 @@ IF(Tifpack_ENABLE_QD)
 ENDIF()
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME ILUT_5w_2
   ARGS "--xml_file=5w_bel_tif_ILUT.xml"
   COMM serial mpi
@@ -221,7 +221,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME ILUT_5w_no_diag
   ARGS "--xml_file=5w_missing_diag_ILUT.xml"
   COMM serial mpi
@@ -230,7 +230,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME RILUK_5w_0
   ARGS "--xml_file=5w_bel_tif_RILUK_0.xml"
   COMM serial mpi
@@ -239,7 +239,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME RILUK_5w_1
   ARGS "--xml_file=5w_bel_tif_RILUK_1.xml"
   COMM serial mpi
@@ -248,7 +248,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME RILUK_small_belos
   ARGS "--xml_file=test_RILUK_tfqmr_small_sym_mm.xml"
   COMM serial mpi
@@ -257,7 +257,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME Cheby_belos
   ARGS "--xml_file=test_Cheby_calore1_mm.xml"
   COMM serial mpi
@@ -266,7 +266,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME GS_belos
   ARGS "--xml_file=test_GS_calore1_mm.xml"
   COMM serial mpi
@@ -275,7 +275,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME SGS_belos
   ARGS "--xml_file=test_SGS_calore1_mm.xml"
   COMM serial mpi
@@ -284,7 +284,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME ILUT_belos
   ARGS "--xml_file=test_ILUT_calore1_mm.xml"
   COMM serial mpi
@@ -293,7 +293,7 @@ PACKAGE_ADD_TEST(
 )
 
 PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
+  tif_belos Ifpack2BelosCopyFiles
   NAME RILUK_belos
   ARGS "--xml_file=test_RILUK_calore1_mm.xml"
   COMM serial mpi

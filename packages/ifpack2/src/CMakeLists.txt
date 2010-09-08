@@ -27,44 +27,44 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
-  Tifpack_Chebyshev.hpp
-  Tifpack_Chebyshev_decl.hpp
-  Tifpack_Chebyshev_def.hpp
-  Tifpack_Condest.hpp
-  Tifpack_CondestType.hpp
-  Tifpack_ConfigDefs.hpp
-  Tifpack_CreateOverlapGraph.hpp
-  Tifpack_Diagonal.hpp
-  Tifpack_Diagonal_decl.hpp
-  Tifpack_Diagonal_def.hpp
-  Tifpack_ExplicitInstantiationHelpers.hpp
-  Tifpack_Factory.hpp
-  Tifpack_Heap.hpp
-  Tifpack_ILUT.hpp
-  Tifpack_ILUT_decl.hpp
-  Tifpack_ILUT_def.hpp
-  Tifpack_IlukGraph.hpp
-  Tifpack_OverlapGraph.hpp
-  Tifpack_Parameters.hpp
-  Tifpack_Preconditioner.hpp
-  Tifpack_Relaxation.hpp
-  Tifpack_Relaxation_decl.hpp
-  Tifpack_Relaxation_def.hpp
-  Tifpack_RILUK.hpp
-  Tifpack_RILUK_decl.hpp
-  Tifpack_RILUK_def.hpp
-  Tifpack_ScalingType.hpp
-  Tifpack_Version.hpp
+  Ifpack2_Chebyshev.hpp
+  Ifpack2_Chebyshev_decl.hpp
+  Ifpack2_Chebyshev_def.hpp
+  Ifpack2_Condest.hpp
+  Ifpack2_CondestType.hpp
+  Ifpack2_ConfigDefs.hpp
+  Ifpack2_CreateOverlapGraph.hpp
+  Ifpack2_Diagonal.hpp
+  Ifpack2_Diagonal_decl.hpp
+  Ifpack2_Diagonal_def.hpp
+  Ifpack2_ExplicitInstantiationHelpers.hpp
+  Ifpack2_Factory.hpp
+  Ifpack2_Heap.hpp
+  Ifpack2_ILUT.hpp
+  Ifpack2_ILUT_decl.hpp
+  Ifpack2_ILUT_def.hpp
+  Ifpack2_IlukGraph.hpp
+  Ifpack2_OverlapGraph.hpp
+  Ifpack2_Parameters.hpp
+  Ifpack2_Preconditioner.hpp
+  Ifpack2_Relaxation.hpp
+  Ifpack2_Relaxation_decl.hpp
+  Ifpack2_Relaxation_def.hpp
+  Ifpack2_RILUK.hpp
+  Ifpack2_RILUK_decl.hpp
+  Ifpack2_RILUK_def.hpp
+  Ifpack2_ScalingType.hpp
+  Ifpack2_Version.hpp
   )
 
 SET(SOURCES ${SOURCES}
-  Tifpack_Chebyshev.cpp
-  Tifpack_Diagonal.cpp
-  Tifpack_Factory.cpp
-  Tifpack_ILUT.cpp
-  Tifpack_Parameters.cpp
-  Tifpack_Relaxation.cpp
-  Tifpack_RILUK.cpp
+  Ifpack2_Chebyshev.cpp
+  Ifpack2_Diagonal.cpp
+  Ifpack2_Factory.cpp
+  Ifpack2_ILUT.cpp
+  Ifpack2_Parameters.cpp
+  Ifpack2_Relaxation.cpp
+  Ifpack2_RILUK.cpp
   )
 
 #
@@ -72,7 +72,7 @@ SET(SOURCES ${SOURCES}
 #
 
 PACKAGE_ADD_LIBRARY(
-  tifpack
+  ifpack2
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

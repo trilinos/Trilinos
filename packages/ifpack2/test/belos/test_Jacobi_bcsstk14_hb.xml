@@ -10,8 +10,8 @@
     <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
-  <Parameter name="Tifpack::Preconditioner" type="string" value="RELAXATION"/>
-  <ParameterList name="Tifpack">
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="RELAXATION"/>
+  <ParameterList name="Ifpack2">
     <Parameter name="relaxation: type" type="string" value="Jacobi"/>
   </ParameterList>
 

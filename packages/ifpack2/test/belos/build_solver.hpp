@@ -23,7 +23,7 @@ build_solver(Teuchos::ParameterList& test_params,
   Teuchos::RCP<Teuchos::ParameterList> rcpparams = Teuchos::rcp(&bparams,false);
 
   std::string solver_type("not specified");
-  Tifpack::getParameter(test_params, "solver_type", solver_type);
+  Ifpack2::getParameter(test_params, "solver_type", solver_type);
   if (solver_type == "PseudoBlockCG") {
     solver = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
@@ -42,7 +42,7 @@ build_solver(Teuchos::ParameterList& test_params,
   else {
     std::ostringstream os;
     os << "Error in build_solver: solver_type ("<<solver_type<<") not recognized.";
-    os << "\nTifpack's test-driver recognizes these solvers: PseudoBlockCG, PesudoBlockGmres, BlockGmres, TFQMR.";
+    os << "\nIfpack2's test-driver recognizes these solvers: PseudoBlockCG, PesudoBlockGmres, BlockGmres, TFQMR.";
     std::string str = os.str();
     throw std::runtime_error(str);
   }

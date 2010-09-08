@@ -1,7 +1,7 @@
 /*@HEADER
 // ***********************************************************************
 //
-//       Tifpack: Tempated Object-Oriented Algebraic Preconditioner Package
+//       Ifpack2: Tempated Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -27,7 +27,7 @@
 //@HEADER
 */
 
-#include "Tifpack_ConfigDefs.hpp"
+#include "Ifpack2_ConfigDefs.hpp"
 
 #ifdef HAVE_IFPACK2_QD
 
@@ -39,7 +39,7 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
-#include "Tifpack_Parameters.hpp"
+#include "Ifpack2_Parameters.hpp"
 
 #include "Tpetra_DefaultPlatform.hpp"
 
@@ -80,8 +80,8 @@ int main(int argc, char*argv[])
 
   //Read the contents of the xml file into a ParameterList. That parameter list
   //should specify a matrix-file and optionally which Belos solver to use, and
-  //which Tifpack preconditioner to use, etc. If there are sublists of parameters
-  //for Belos and Tifpack, those will be passed to the respective destinations
+  //which Ifpack2 preconditioner to use, etc. If there are sublists of parameters
+  //for Belos and Ifpack2, those will be passed to the respective destinations
   //from within the build_problem and build_solver functions.
 
   std::cout << "Every proc reading parameters from xml_file: "
@@ -125,7 +125,7 @@ int main(int argc, char*argv[])
 
   if (test_params.isParameter("expectNumIters")) {
     int expected_iters = 0;
-    Tifpack::getParameter(test_params, "expectNumIters", expected_iters);
+    Ifpack2::getParameter(test_params, "expectNumIters", expected_iters);
     int actual_iters = solver->getNumIters();
     if (ret == Belos::Converged && actual_iters == expected_iters && norms[0] < 1.e-7) {
       if (comm->getRank() == 0) {

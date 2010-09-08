@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "Tifpack_Factory.hpp"
+#include "Ifpack2_Factory.hpp"
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatOps>
 Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
@@ -12,21 +12,21 @@ build_precond(Teuchos::ParameterList& test_params,
 {
   Teuchos::Time timer("precond");
 
-  typedef Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
+  typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
   Teuchos::RCP<Tprec> prec;
-  Tifpack::Factory factory;
+  Ifpack2::Factory factory;
 
   std::string prec_name("not specified");
-  Tifpack::getParameter(test_params, "Tifpack::Preconditioner", prec_name);
+  Ifpack2::getParameter(test_params, "Ifpack2::Preconditioner", prec_name);
   prec = factory.create(prec_name, A);
 
   Teuchos::ParameterList tif_params;
-  if (test_params.isSublist("Tifpack")) {
-    tif_params = test_params.sublist("Tifpack");
+  if (test_params.isSublist("Ifpack2")) {
+    tif_params = test_params.sublist("Ifpack2");
   }
 
   if (A->getRowMap()->getComm()->getRank() == 0) {
-    std::cout << "Configuring/Initializing/Computing Tifpack preconditioner..."
+    std::cout << "Configuring/Initializing/Computing Ifpack2 preconditioner..."
        << std::endl;
   }
 
@@ -37,12 +37,12 @@ build_precond(Teuchos::ParameterList& test_params,
   timer.stop();
 
   if (A->getRowMap()->getComm()->getRank() == 0) {
-    std::cout << "... Finished Computing Tifpack preconditioner (time: "<<timer.totalElapsedTime() << "s)"
+    std::cout << "... Finished Computing Ifpack2 preconditioner (time: "<<timer.totalElapsedTime() << "s)"
        << std::endl;
   }
 
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  magnitudeType condest = prec->computeCondEst(Tifpack::Cheap);
+  magnitudeType condest = prec->computeCondEst(Ifpack2::Cheap);
   if (A->getRowMap()->getComm()->getRank() == 0) {
     std::cout << "Condition estimate(cheap) for preconditioner on proc 0: "
               << condest << std::endl;

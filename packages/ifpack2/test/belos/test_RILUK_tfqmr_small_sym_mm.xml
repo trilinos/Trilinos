@@ -8,8 +8,8 @@
     <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
-  <Parameter name="Tifpack::Preconditioner" type="string" value="RILUK"/>
-  <ParameterList name="Tifpack">
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="RILUK"/>
+  <ParameterList name="Ifpack2">
     <Parameter name="fact: iluk level-of-fill" type="double" value="1"/>
     <Parameter name="fact: iluk level-of-overlap" type="double" value="0"/>
   </ParameterList>

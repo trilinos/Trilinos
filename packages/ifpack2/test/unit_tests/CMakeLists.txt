@@ -19,19 +19,19 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(SOURCES "")
 
 APPEND_SET(SOURCES
-Tifpack_UnitTestMain.cpp
-Tifpack_UnitTestTemplate.cpp
-Tifpack_UnitTestChebyshev.cpp
-Tifpack_UnitTestCreateOverlapGraph.cpp
-Tifpack_UnitTestDiagonal.cpp
-Tifpack_UnitTestRILUK.cpp
-Tifpack_UnitTestHeap.cpp
-Tifpack_UnitTestOverlapGraph.cpp
-Tifpack_UnitTestParameters.cpp
-Tifpack_UnitTestIlukGraph.cpp
-Tifpack_UnitTestILUT.cpp
-Tifpack_UnitTestFactory.cpp
-Tifpack_UnitTestRelaxation.cpp
+Ifpack2_UnitTestMain.cpp
+Ifpack2_UnitTestTemplate.cpp
+Ifpack2_UnitTestChebyshev.cpp
+Ifpack2_UnitTestCreateOverlapGraph.cpp
+Ifpack2_UnitTestDiagonal.cpp
+Ifpack2_UnitTestRILUK.cpp
+Ifpack2_UnitTestHeap.cpp
+Ifpack2_UnitTestOverlapGraph.cpp
+Ifpack2_UnitTestParameters.cpp
+Ifpack2_UnitTestIlukGraph.cpp
+Ifpack2_UnitTestILUT.cpp
+Ifpack2_UnitTestFactory.cpp
+Ifpack2_UnitTestRelaxation.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
