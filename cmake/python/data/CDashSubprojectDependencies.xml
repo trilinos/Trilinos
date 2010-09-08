@@ -233,7 +233,7 @@
       <Email address="belos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="Tifpack">
+  <SubProject name="Ifpack2">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Kokkos" type="LR"/>
