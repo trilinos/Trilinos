@@ -59,6 +59,9 @@
 
 #include "Amesos2_Factory.hpp"
 #include "Amesos2_Util_is_same.hpp"
+#include "Amesos2_Superlu.hpp"
+#include "Amesos2_MatrixAdapter.hpp"
+#include "Amesos2_MultiVecAdapter.hpp"
 
 namespace {
 

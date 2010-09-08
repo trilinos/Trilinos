@@ -324,7 +324,7 @@ void MultiVecAdapter<Epetra_MultiVector>::get2dCopy(
 
   for( ; it != end; ++it ){
     inner_iterator inner_it = (*it).begin(), inner_end = (*it).end();
-    for( ; inner_it != inner_end; inner_it.operator++() ){
+    for( ; inner_it != inner_end; inner_it++ ){
       *inner_it = ptr_ptr[count][inner_count++];
     }
     ++count;
