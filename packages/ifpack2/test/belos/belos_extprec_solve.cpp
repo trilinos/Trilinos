@@ -29,7 +29,7 @@
 
 #include "Tifpack_ConfigDefs.hpp"
 
-#ifdef HAVE_TIFPACK_QD
+#ifdef HAVE_IFPACK2_QD
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -162,7 +162,7 @@ void process_command_line(int argc, char*argv[], std::string& xml_file)
 }
 
 #else
-//else HAVE_TIFPACK_QD is not defined:
+//else HAVE_IFPACK2_QD is not defined:
 
 #include <iostream>
 int main(int argc, char*argv[])

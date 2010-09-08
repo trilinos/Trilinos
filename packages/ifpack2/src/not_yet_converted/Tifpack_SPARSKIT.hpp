@@ -31,7 +31,7 @@
 #define TIFPACK_SPARSKIT_HPP
 
 #include "Tifpack_ConfigDefs.hpp"
-#ifdef HAVE_TIFPACK_SPARSKIT
+#ifdef HAVE_IFPACK2_SPARSKIT
 #include "Tifpack_CondestType.hpp"
 #include "Tifpack_ScalingType.hpp"
 #include "Tifpack_Preconditioner.hpp"
@@ -288,5 +288,5 @@ private:
 
 };
 
-#endif // HAVE_TIFPACK_SPARSKIT
+#endif // HAVE_IFPACK2_SPARSKIT
 #endif /* TIFPACK_SPARSKIT_HPP */

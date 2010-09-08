@@ -466,7 +466,7 @@ CG(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator,
    const int MaximumIterations, 
    Scalar& lambda_min, Scalar& lambda_max)
 {
-#ifdef HAVE_TIFPACK_AZTECOO
+#ifdef HAVE_IFPACK2_AZTECOO
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(Operator.getDomainMap());
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> y(Operator.getRangeMap());
   x.Random();

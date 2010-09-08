@@ -1,14 +1,14 @@
 /* Tifpack_config.h.in is preprocessed by cmake to create Tifpack_config.h. */
 
 /* Define if we want to build tifpack-debug */
-#cmakedefine HAVE_TIFPACK_DEBUG
+#cmakedefine HAVE_IFPACK2_DEBUG
 
 /* Define if we have MPI */
-#cmakedefine HAVE_TIFPACK_MPI
+#cmakedefine HAVE_IFPACK2_MPI
 
 /* Define if we have the QD extended-precision TPL */
-#cmakedefine HAVE_TIFPACK_QD
+#cmakedefine HAVE_IFPACK2_QD
 
 /* Define if explicit instantiation is enabled. */
-#cmakedefine HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+#cmakedefine HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 

@@ -28,7 +28,7 @@
 */
 
 #include "Tifpack_ConfigDefs.hpp"
-#ifdef HAVE_TIFPACK_SPARSKIT
+#ifdef HAVE_IFPACK2_SPARSKIT
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_SPARSKIT.hpp"
 #include "Tifpack_Condest.hpp"
@@ -332,4 +332,4 @@ Tifpack_SPARSKIT::Print(std::ostream& os) const
   return(os);
 } 
 
-#endif // HAVE_TIFPACK_SPARSKIT
+#endif // HAVE_IFPACK2_SPARSKIT

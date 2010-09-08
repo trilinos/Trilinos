@@ -33,7 +33,7 @@
 //declaration:
 #include "Tifpack_Chebyshev_decl.hpp"
 
-#ifndef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 //definition:
 #include "Tifpack_Chebyshev_def.hpp"
 #endif

@@ -40,7 +40,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 typedef int idxtype;
-#ifdef HAVE_TIFPACK_METIS
+#ifdef HAVE_IFPACK2_METIS
 extern "C" {
   void METIS_NodeND(int *n, idxtype *xadj, idxtype *adjncy, 
 		    int *numflag, int *options, int *perm, int *iperm);
@@ -85,7 +85,7 @@ int Tifpack_METISReordering::Compute(const Tifpack_Graph& Graph)
   options.resize(8);
   options[0] = 0; // default values
 
-#ifdef HAVE_TIFPACK_METIS  
+#ifdef HAVE_IFPACK2_METIS  
   int numflag = 0; // C style
 #endif
 
@@ -147,7 +147,7 @@ int Tifpack_METISReordering::Compute(const Tifpack_Graph& Graph)
     count2++;
   }
 
-#ifdef HAVE_TIFPACK_METIS
+#ifdef HAVE_IFPACK2_METIS
   // vectors from METIS. The second last is `perm', the last is `iperm'.
   // They store the fill-reducing permutation and inverse-permutation.
   // Let A be the original matrix and A' the permuted matrix. The

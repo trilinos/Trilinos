@@ -41,7 +41,7 @@
 
 // may need to change this for wierd installations
 typedef int idxtype;
-#ifdef HAVE_TIFPACK_METIS
+#ifdef HAVE_IFPACK2_METIS
 extern "C" {
   void METIS_EstimateMemory(int *, idxtype *, idxtype *, int *, int *, int *);
   void METIS_PartGraphKway(int *, idxtype *, idxtype *, idxtype *, 
@@ -64,7 +64,7 @@ int Tifpack_METISPartitioner::ComputePartitions()
 {
 
   int ierr;
-#ifdef HAVE_TIFPACK_METIS
+#ifdef HAVE_IFPACK2_METIS
   int nbytes = 0;
   int edgecut;
 #endif
@@ -183,7 +183,7 @@ int Tifpack_METISPartitioner::ComputePartitions()
       for (int i = 0 ; i < NumMyRows() ; ++i) 
 	Partition_[i] = -1;
     
-#ifdef HAVE_TIFPACK_METIS
+#ifdef HAVE_IFPACK2_METIS
       int j = NumMyRows();
       if (NumLocalParts_ < 8) {
 

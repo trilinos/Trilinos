@@ -37,7 +37,7 @@
 #include <Tifpack_Version.hpp>
 #include <iostream>
 
-#ifdef HAVE_TIFPACK_QD
+#ifdef HAVE_IFPACK2_QD
 #include <qd/dd_real.h>
 #endif
 
@@ -148,11 +148,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test1, Scalar, LocalOrdinal, Glob
 //typedef std::complex<double> ComplexDouble;
 //UNIT_TEST_GROUP_SCALAR_ORDINAL(ComplexDouble, int, int)
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-#ifndef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
 #endif
 
-#ifdef HAVE_TIFPACK_QD
+#ifdef HAVE_IFPACK2_QD
 UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
 #endif
 

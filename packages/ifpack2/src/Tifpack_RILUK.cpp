@@ -29,7 +29,7 @@
 
 #include "Tifpack_RILUK_decl.hpp"
 
-#ifdef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 #include "Tifpack_RILUK_def.hpp"
 #include "Tifpack_ExplicitInstantiationHelpers.hpp"
 

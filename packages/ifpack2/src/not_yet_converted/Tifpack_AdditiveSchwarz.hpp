@@ -57,7 +57,7 @@
 #include "EpetraExt_BlockMapOut.hpp"
 #endif
 
-#ifdef HAVE_TIFPACK_AMESOS
+#ifdef HAVE_IFPACK2_AMESOS
   #include "Tifpack_AMDReordering.hpp"
 #endif
 
@@ -551,7 +551,7 @@ int Tifpack_AdditiveSchwarz<T>::Setup()
       Reordering_ = Teuchos::rcp( new Tifpack_RCMReordering() );
     else if (ReorderingType_ == "metis")
       Reordering_ = Teuchos::rcp( new Tifpack_METISReordering() );
-#ifdef HAVE_TIFPACK_AMESOS	
+#ifdef HAVE_IFPACK2_AMESOS	
     else if (ReorderingType_ == "amd" )
       Reordering_ = Teuchos::rcp( new Tifpack_AMDReordering() );
 #endif

@@ -6,7 +6,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE( Tifpack )
+PACKAGE( ifpack2 )
 
 #
 # B) Set up package-specific options
@@ -21,7 +21,7 @@ ADD_OPTION_AND_DEFINE(
 
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_DEBUG
-  HAVE_TIFPACK_DEBUG
+  HAVE_${PACKAGE_NAME}_DEBUG
   "Enable runtime debug checking."
   ${Trilinos_ENABLE_DEBUG}
   )
@@ -31,7 +31,7 @@ PACKAGE_ADD_EXPLICIT_INSTANTIATION_OPTION()
 IF (TPL_ENABLE_QD)
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_QD
-  HAVE_TIFPACK_QD
+  HAVE_${PACKAGE_NAME}_QD
   "Enable use of the QD TPL."
   ${TPL_ENABLE_QD}
   )
@@ -40,7 +40,7 @@ ENDIF()
 IF (Trilinos_ENABLE_MPI)
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_MPI
-  HAVE_TIFPACK_MPI
+  HAVE_${PACKAGE_NAME}_MPI
   "Enable use of the MPI TPL."
   ${Trilinos_ENABLE_MPI}
   )

@@ -65,7 +65,7 @@ Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& T
   }
   else if (CT == Tifpack::CG) {
 
-#ifdef HAVE_TIFPACK_AZTECOO
+#ifdef HAVE_IFPACK2_AZTECOO
 this code not yet converted!!!
     Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> LHS(IFP.getDomainMap());
     LHS.PutScalar(0.0);
@@ -87,7 +87,7 @@ this code not yet converted!!!
 
   } else if (CT == Tifpack::GMRES) {
 
-#ifdef HAVE_TIFPACK_AZTECOO
+#ifdef HAVE_IFPACK2_AZTECOO
 this code not yet converted!!!
     Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> LHS(IFP.getDomainMap());
     LHS.PutScalar(0.0);

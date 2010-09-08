@@ -107,7 +107,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackFactory, Test0, Scalar, LocalOrdinal, G
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackFactory, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
-#ifndef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, short, int)
 #endif
 

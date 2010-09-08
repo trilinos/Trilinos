@@ -41,7 +41,7 @@
 //declaration:
 #include "Tifpack_ILUT_decl.hpp"
 
-#ifndef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 //definition:
 #include "Tifpack_ILUT_def.hpp"
 #endif
