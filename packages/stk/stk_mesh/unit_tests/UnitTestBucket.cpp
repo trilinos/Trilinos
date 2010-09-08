@@ -14,6 +14,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -45,7 +46,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testUnit)
 {
   MPI_Barrier( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::testBucket ( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBucket::testTopologyHelpers( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::test_get_involved_parts( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::testBucket2( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::test_EntityComm( MPI_COMM_WORLD );
@@ -168,342 +168,263 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   }
 }
 
-void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
+
+class TopologyHelpersTestingFixture
 {
-  // Tests to complete coverage of TopologyHelpers.cpp - C.Brickley - 12 May 2010
+  public:
+    TopologyHelpersTestingFixture(ParallelMachine pm);
+    ~TopologyHelpersTestingFixture() {}
 
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+    MetaData meta;
+    BulkData bulk;
+    Part & generic_element_part;
+    Part & element_tet_part;
+    Part & element_wedge_part;
+    Part & element_quad_part;
+    Part & another_generic_element_part;
+    EntityId entity_id;
 
-  stk::mesh::Part &new_part4 = meta.declare_part ( "another part");
+    Entity & create_entity( EntityRank rank, Part& part_membership)
+    { 
+      PartVector part_intersection;
+      part_intersection.push_back ( &part_membership );
+      return bulk.declare_entity(rank, ++entity_id, part_intersection); 
+    }
 
-  stk::mesh::Part & partLeft_1 = meta.declare_part( "block_left_1", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_1 );
-
-  stk::mesh::Part & partLeft_2 = meta.declare_part( "block_left_2", Element );
-  stk::mesh::set_cell_topology< shards::Wedge<15>  >( partLeft_2 );
-
-  stk::mesh::Part & partLeft_3 = meta.declare_part( "block_left_3", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_3 );
-
-  stk::mesh::Part & part_A_3 = meta.declare_part( "A_3", Element);
-  stk::mesh::set_cell_topology< shards::Quadrilateral<4>  >( part_A_3 );
-
-  stk::mesh::Part & part_B_3 = meta.declare_part( "B_3", Element);
+};
 
 
+TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
+  : meta( fem_entity_rank_names() )
+  , bulk( meta, pm, 100 )
+  , generic_element_part( meta.declare_part("another part", Element) ) 
+  , element_tet_part( meta.declare_part("block_left_1", Element ) )
+  , element_wedge_part( meta.declare_part("block_left_2", Element ) )
+  , element_quad_part( meta.declare_part("A_3", Element) )
+  , another_generic_element_part( meta.declare_part("B_3", Element) )
+  , entity_id(0u)
+{
+  set_cell_topology< shards::Tetrahedron<4>  >( element_tet_part );
+  set_cell_topology< shards::Wedge<15>  >( element_wedge_part );
+  set_cell_topology< shards::Quadrilateral<4>  >( element_quad_part );
   meta.commit();
+}
+ 
 
-  stk::mesh::BulkData bulk ( meta , pm , 100 );
-  std::vector<stk::mesh::Part *>  add_part4;
-  add_part4.push_back ( &new_part4 );
+STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_based_on_part)
+{
+  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+  Part & generic_element_part = fix.generic_element_part;
+  Part & element_quad_part = fix.element_quad_part;
+  Part & another_generic_element_part = fix.another_generic_element_part;
+  fix.bulk.modification_begin();
+  Entity & elem1  = fix.create_entity( Element , generic_element_part );
 
-  int  size , rank;
-  rank = stk::parallel_machine_rank( pm );
-  size = stk::parallel_machine_size( pm );
   PartVector tmp(1);
+  tmp[0] = & element_quad_part;
+  fix.bulk.change_entity_parts ( elem1 , tmp );
+  STKUNIT_ASSERT_EQUAL( get_cell_topology(elem1), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  fix.bulk.change_entity_parts ( elem1 , tmp );
+  STKUNIT_ASSERT_EQUAL( get_cell_topology(elem1), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  tmp[0] = & another_generic_element_part;
+  fix.bulk.change_entity_parts ( elem1 , tmp );
+  STKUNIT_ASSERT_EQUAL( get_cell_topology(elem1), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  STKUNIT_ASSERT_NE( get_cell_topology( elem1) , shards::getCellTopologyData< shards::Wedge<15> >() );
 
-  bulk.modification_begin();
+  fix.bulk.modification_end();
+}
 
-  int id_base = 0;
-  for ( id_base = 0 ; id_base < 92 ; ++id_base )
-  {
-    int new_id = size * id_base + rank;
-    bulk.declare_entity( 0 , new_id+1 , add_part4 );
-  }
 
-  int new_id = size * (++id_base) + rank;
-  Entity & elem  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
 
-  new_id = size * (++id_base) + rank;
-  Entity & elem1  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
-
-  new_id = size * (++id_base) + rank;
-  Entity & elem2  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
-
-  new_id = size * (++id_base) + rank;
-  Entity & elem3  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
-
-  new_id = size * (++id_base) + rank;
-  Entity & elem4  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
-
-  new_id = size * (++id_base) + rank;
-  Entity & element2  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
-
-  new_id = size * (++id_base) + rank;
-  Entity & element3  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
-
-  // Coverage for get_cell_topology in TopologyHelpers.cpp
-
-  tmp[0] = & part_A_3;
-  bulk.change_entity_parts ( elem1 , tmp );
-  bulk.change_entity_parts ( elem1 , tmp );
-  tmp[0] = & part_B_3;
-  bulk.change_entity_parts ( elem1 , tmp );
-
-  const CellTopologyData * elem1_topology = stk::mesh::get_cell_topology( elem1 );
-
-  {
-    bool result = true;
-    if (elem1_topology != shards::getCellTopologyData< shards::Wedge<15> >()) {
-      result = false;
-    }
-
-    STKUNIT_ASSERT_EQUAL(result, false);
-  }
-
+STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
+{
   // Coverage for get_cell_topology in TopologyHelpers.cpp; (FAILED WITH MULTIPLE LOCAL TOPOLOGIES)
+  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+  fix.bulk.modification_begin();
+  Entity & elem  = fix.create_entity( Element , fix.generic_element_part );
 
-  {
-    int ok = 0 ;
-    try {
-      //assign 3 different parts with different topologies:
+  PartVector add_parts;
+  add_parts.push_back( &fix.element_quad_part );
+  add_parts.push_back( &fix.element_tet_part );
+  add_parts.push_back( &fix.element_wedge_part );
+  fix.bulk.change_entity_parts( elem, add_parts );
+  fix.bulk.modification_end();
+  STKUNIT_ASSERT_THROW( get_cell_topology( elem ), std::runtime_error );
 
-      tmp[0] = & part_A_3;
-      bulk.change_entity_parts ( elem , tmp );
+}
 
-      tmp[0] = & partLeft_1;
-      bulk.change_entity_parts ( elem , tmp );
 
-      tmp[0] = & partLeft_2;
-      bulk.change_entity_parts ( elem , tmp );
 
-      const CellTopologyData * elem_topology = stk::mesh::get_cell_topology( elem );
-
-      {
-        bool result = true;
-        if (elem_topology != shards::getCellTopologyData< shards::Triangle<3> >()) {
-          result = false;
-        }
-
-        STKUNIT_ASSERT_EQUAL(result, false);
-      }
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for Element, elem");
-    }
-  }
-
-  // Coverage for get_adjacent_entities in TopologyHelpers.cpp (get_adjacent_entities(..))
+STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_trivial )
+{
   // Element, elem2, has NULL topology
+  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+  fix.bulk.modification_begin();
+  Entity & elem2  = fix.create_entity( Element , fix.generic_element_part );
+  fix.bulk.modification_end();
 
   std::vector<EntitySideComponent> adjacent_entities;
-  get_adjacent_entities( elem2 , 3, 1, adjacent_entities);
+  const EntityRank subcell_rank = Element;
+  const EntityId subcell_identifier = 1;
+  get_adjacent_entities( elem2 , subcell_rank, subcell_identifier, adjacent_entities);
+  STKUNIT_ASSERT_TRUE( true );
+}
 
-  // More Coverage for get_adjacent_entities in TopologyHelpers.cpp
-  // Element has Quadrilateral topology
 
+STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_invalid )
+{
+  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+  fix.bulk.modification_begin();
+  Entity & elem3  = fix.create_entity( Element , fix.generic_element_part );
+
+  PartVector add_parts;
+  add_parts.push_back( & fix.element_quad_part );
+  fix.bulk.change_entity_parts ( elem3 , add_parts );
+  fix.bulk.modification_end();
+  std::vector<EntitySideComponent> adjacent_entities2;
   {
-    int ok = 0 ;
-    try {
-      //assign a Quadrilateral part
-      tmp[0] = & part_A_3;
-      bulk.change_entity_parts ( elem3 , tmp );
-
-      std::vector<EntitySideComponent> adjacent_entities2;
-
-      //use 4 as subcell_rank - an incorrect value
-      get_adjacent_entities( elem3 , 4, 0, adjacent_entities2);
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for get_adjacent_entities, elem3");
-    }
+    const EntityRank invalid_subcell_rank = 4;
+    const EntityId valid_subcell_identifier = 0;
+    STKUNIT_ASSERT_THROW( 
+        get_adjacent_entities( elem3 , invalid_subcell_rank, valid_subcell_identifier, adjacent_entities2),
+        std::runtime_error
+        );
   }
-
-  // More Coverage for get_adjacent_entities in TopologyHelpers.cpp
-  // Element has Quadrilateral topology
-
   {
-    int ok = 0 ;
-    try {
-      std::vector<EntitySideComponent> adjacent_entities3;
-
-      //use 8 as subcell_identifier - an incorrect value
-      get_adjacent_entities( elem3 , 1, 8, adjacent_entities3);
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for get_adjacent_entities, elem3");
-    }
+    const EntityRank valid_subcell_rank = 1;
+    const EntityId invalid_subcell_identifier = 8;
+    STKUNIT_ASSERT_THROW( 
+        get_adjacent_entities( elem3 , valid_subcell_rank, invalid_subcell_identifier, adjacent_entities2),
+        std::runtime_error
+        );
   }
+}
 
+
+STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology )
+{
   // Coverage for declare_element_side - TopologyHelpers.cpp - "Cannot discern element topology"
-  {
-    int ok = 0 ;
-    try {
-      new_id = size * (++id_base) + rank;
-      stk::mesh::Entity &face = stk::mesh::declare_element_side( bulk, 3, elem4, new_id+1, &partLeft_2);
-      stk::mesh::PairIterRelation rel = face.relations(stk::mesh::Node);
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
+  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+  fix.bulk.modification_begin();
+  Entity & elem4  = fix.create_entity( Element , fix.generic_element_part );
+  STKUNIT_ASSERT_THROW(
+      declare_element_side( fix.bulk, Element, elem4, ++fix.entity_id, &fix.element_wedge_part ),
+      std::runtime_error
+      );
+  fix.bulk.modification_end();
+}
 
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for declare_element_side, elem4");
-    }
-  }
-  std::cout << "UnitTestBucket before - BulkData for elem" << std::endl;
+
+STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_wrong_bulk_data)
+{
   // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "BulkData for 'elem' and 'side' are different"
+  TopologyHelpersTestingFixture fix1(MPI_COMM_WORLD);
+  fix1.bulk.modification_begin();
 
-  {
-    int ok = 0 ;
-    try {
-      stk::mesh::MetaData meta2 (stk::unit_test::get_entity_rank_names ( 3 ));
-      stk::mesh::BulkData bulk2 ( meta2 , pm , 100 );
-      new_id = size * (++id_base) + rank;
-      stk::mesh::Entity &face = stk::mesh::declare_element_side( bulk2, 3, elem4, new_id+1, &partLeft_2 );
-      stk::mesh::PairIterRelation rel = face.relations(stk::mesh::Node);
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
+  TopologyHelpersTestingFixture fix2(MPI_COMM_WORLD);
+  fix2.bulk.modification_begin();
+  Entity & elem4_2  = fix2.create_entity( Element , fix2.generic_element_part );
+  fix2.bulk.modification_end();
 
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for verify_declare_element_side, elem4");
-    }
-  }
-  std::cout << "line before vdes" << std::endl ;
+  STKUNIT_ASSERT_THROW(
+      declare_element_side( fix1.bulk, Element, elem4_2, ++fix1.entity_id, &fix1.element_wedge_part),
+      std::runtime_error
+      );
+  fix1.bulk.modification_end();
+}
+
+
+STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
+{
   // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "No element topology found and cell side id exceeds..."
-
-   {
-    int ok = 0 ;
-    try {
-
-      stk::mesh::EntityId elem_node[4];
-
-      elem_node[0] = 1;
-      elem_node[1] = 2;
-      elem_node[2] = 3 ;
-      elem_node[3] = 4 ;
-
-      stk::mesh::EntityId elem_id(size * (++id_base) + rank + 1);
-      stk::mesh::Entity& element = stk::mesh::declare_element(bulk, part_A_3, elem_id, elem_node );
-
-      new_id = size * (++id_base) + rank;
-
-      const CellTopologyData * const elem_top = get_cell_topology( element );
-
-      const unsigned nSideCount = elem_top->side_count + 10 ;
-
-      stk::mesh::Entity &face2 = stk::mesh::declare_element_side( bulk, new_id+1, element, nSideCount, &part_A_3 );
-
-      stk::mesh::PairIterRelation rel2 = face2.relations(stk::mesh::Node);
-
-   }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for verify_declare_element_side, element4");
-    }
-    }
-
-  // Go all way the through declare_element_side - use new element
+  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+  fix.bulk.modification_begin();
 
   stk::mesh::EntityId elem_node[4];
-
   elem_node[0] = 1;
   elem_node[1] = 2;
-  elem_node[2] = 3 ;
-  elem_node[3] = 4 ;
+  elem_node[2] = 3;
+  elem_node[3] = 4;
+  Entity & element  = declare_element(fix.bulk, fix.element_quad_part, ++fix.entity_id, elem_node);
+  const CellTopologyData * const elem_top = get_cell_topology( element );
+  const EntityId nSideCount = elem_top->side_count + 10 ;
+  STKUNIT_ASSERT_THROW( 
+      declare_element_side( fix.bulk, ++fix.entity_id, element, nSideCount, &fix.element_quad_part ),
+      std::runtime_error
+      ); 
+  fix.bulk.modification_end();
+}
 
-  stk::mesh::EntityId elem_id(size * (++id_base) + rank + 1);
-  stk::mesh::Entity& element = stk::mesh::declare_element(bulk, part_A_3, elem_id, elem_node );
 
-  new_id = size * (++id_base) + rank;
-  stk::mesh::Entity &face2 = stk::mesh::declare_element_side( bulk, new_id+1, element, 0);
+STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_full )
+{
+  // Go all way the through declare_element_side - use new element
+  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+  fix.bulk.modification_begin();
+
+  EntityId elem_node[4];
+  elem_node[0] = 1;
+  elem_node[1] = 2;
+  elem_node[2] = 3;
+  elem_node[3] = 4;
+
+  Entity& element = declare_element(fix.bulk, fix.element_quad_part, ++fix.entity_id, elem_node );
+
+  const EntityId zero_side_count = 0;
+  Entity& face2 = declare_element_side( fix.bulk, ++fix.entity_id, element, zero_side_count);
+  fix.bulk.modification_end();
 
   stk::mesh::PairIterRelation rel2 = face2.relations(stk::mesh::Node);
 
+  STKUNIT_ASSERT_TRUE( true );
+}
+
+
+STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity )
+{
   // Coverage of element_side_polarity in TopologyHelpers.cpp 168-181 and 200-215
+  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
+  fix.bulk.modification_begin();
 
-  bool state = false;
+  EntityId elem_node[4];
+  elem_node[0] = 1;
+  elem_node[1] = 2;
+  elem_node[2] = 3;
+  elem_node[3] = 4;
 
-  {
-    bool result = true;
-    if (state != element_side_polarity( element, face2, 0) ) {
-      result = false;
-    }
-
-    STKUNIT_ASSERT_EQUAL(result, false);
-  }
+  Entity & element = declare_element(fix.bulk, fix.element_quad_part, ++fix.entity_id, elem_node );
+  Entity & element2  = fix.create_entity( Element , fix.generic_element_part );
+  Entity & element3  = fix.create_entity( Element , fix.generic_element_part );
+  
+  const EntityId zero_side_count = 0;
+  Entity& face2 = declare_element_side( fix.bulk, ++fix.entity_id, element, zero_side_count);
+  const int local_side_id = 0;
+  STKUNIT_ASSERT_TRUE( element_side_polarity( element, face2, local_side_id) );
 
   // Coverage of element_side_polarity in TopologyHelpers.cpp
-
   {
-    int ok = 0 ;
-    try {
-      tmp[0] = & part_A_3;
-      bulk.change_entity_parts ( element2 , tmp );
-
-      element_side_polarity( element2, face2, -1);
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for element_side_polarity");
-    }
+    PartVector add_parts;
+    add_parts.push_back( & fix.element_quad_part );
+    fix.bulk.change_entity_parts ( element2 , add_parts );
+    const int another_local_side_id = -1;
+    STKUNIT_ASSERT_THROW(
+        element_side_polarity( element2, face2, another_local_side_id),
+        std::runtime_error
+        );
   }
 
   // Coverage of element_side_polarity in TopologyHelpers.cpp - NULL = elem_top
-
   {
-    int ok = 0 ;
-    try {
-      tmp[0] = & part_B_3;
-      bulk.change_entity_parts ( element3 , tmp );
-
-      element_side_polarity( element3, face2, 0);
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for element_side_polarity");
-    }
+    PartVector add_parts;
+    add_parts.push_back( & fix.another_generic_element_part );
+    fix.bulk.change_entity_parts ( element3 , add_parts );
+    STKUNIT_ASSERT_THROW(
+      element_side_polarity( element3, face2, 0),
+      std::runtime_error
+      );
   }
+  fix.bulk.modification_end();
 
-
-  bulk.modification_end();
 }
 
 //----------------------------------------------------------------------
