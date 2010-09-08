@@ -21,7 +21,7 @@
 using namespace stk::common;
 
 ///////////////////////////////////////////////////////////////////////////////
-Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(MPI_Comm comm,
+Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
                                              const std::string& gmesh_spec)
 ///////////////////////////////////////////////////////////////////////////////
   : m_meta_data(stk::mesh::fem_entity_rank_names()),
