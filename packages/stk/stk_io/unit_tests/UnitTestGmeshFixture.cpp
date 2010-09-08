@@ -15,8 +15,6 @@
 #include <Shards_BasicTopologies.hpp>
 #include <Shards_CellTopologyData.h>
 
-#include <mpi.h>
-
 #include <assert.h>
 
 enum { SpaceDim = 3 };
