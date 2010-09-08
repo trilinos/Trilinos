@@ -5,8 +5,6 @@
 /*  Export of this program may require a license from the                 */
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
-#include <gtest/gtest.h>
-
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
