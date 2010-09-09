@@ -77,6 +77,9 @@ SET_DEFAULT_AND_FROM_ENV( TDD_DO_SUBMIT TRUE )
 # Dashboard model : Nightly, Experimental, Continuous
 SET_DEFAULT_AND_FROM_ENV( TDD_CTEST_TEST_TYPE Experimental )
 
+# set this to ON if you need to test something before committing.
+SET_DEFAULT_AND_FROM_ENV( TDD_IN_TESTING_MODE OFF )
+
 get_filename_component(CTEST_SOURCE_DIRECTORY
   "${CTEST_SCRIPT_DIRECTORY}" ABSOLUTE)
 
@@ -122,7 +125,11 @@ ctest_start("${TDD_CTEST_TEST_TYPE}")
 message("\nB) Update ${CTEST_UPDATE_DIRECTORY} ...")
 message("      CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
 message("      CTEST_UPDATE_TYPE='${CTEST_UPDATE_TYPE}'")
-ctest_update(SOURCE "${CTEST_UPDATE_DIRECTORY}")
+if(NOT TDD_IN_TESTING_MODE)
+  ctest_update(SOURCE "${CTEST_UPDATE_DIRECTORY}")
+else()
+  message("In testing mode no update will be performed.")
+endif()
 
 message("\nC) Configure ${CTEST_BINARY_DIRECTORY} ...")
 ctest_configure(BUILD "${CTEST_BINARY_DIRECTORY}")
