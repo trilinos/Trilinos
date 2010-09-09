@@ -58,6 +58,11 @@ namespace Tpetra {
     size_t offset1D;
   };
 
+  enum ELocalGlobal {
+    LocalIndices,
+    GlobalIndices
+  };
+
   //! \brief A class for constructing and using sparse compressed graphs with row access.
   /*!
    * This class allows the construction of sparse graphs with row-access. 
@@ -489,11 +494,6 @@ namespace Tpetra {
       // operator= disabled
       CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & operator=(const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &rhs);
     protected:
-      // Enums
-      enum ELocalGlobal {
-        LocalIndices,
-        GlobalIndices
-      };
       // these structs are conveniences, to cut down on the number of argument to some of the methods below.
       struct SLocalGlobalViews {
         ArrayView<const GlobalOrdinal> ginds;

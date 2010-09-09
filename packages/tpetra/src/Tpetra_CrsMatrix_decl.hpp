@@ -574,7 +574,7 @@ namespace Tpetra {
         GraphNotYetAllocated
       };
       // Allocation
-      void allocateValues(typename Graph::ELocalGlobal lg, GraphAllocationStatus gas);
+      void allocateValues(ELocalGlobal lg, GraphAllocationStatus gas);
       // Sorting and merging
       void sortEntries();
       void mergeRedundantEntries();

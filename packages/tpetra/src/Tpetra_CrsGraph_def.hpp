@@ -554,7 +554,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::ELocalGlobal lg>
+  template <ELocalGlobal lg>
   RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::updateAlloc(RowInfo rowinfo, size_t newAllocSize) 
   {
 #ifdef HAVE_TPETRA_DEBUG
@@ -587,7 +587,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::ELocalGlobal lg, class T>
+  template <ELocalGlobal lg, class T>
   RowInfo CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::updateAllocAndValues(RowInfo rowinfo, size_t newAllocSize, ArrayRCP<T> &rowVals) 
   {
 #ifdef HAVE_TPETRA_DEBUG
@@ -772,7 +772,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::ELocalGlobal lg>
+  template <ELocalGlobal lg>
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::filterIndices(const SLocalGlobalNCViews &inds) const
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = *colMap_;
@@ -822,7 +822,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::ELocalGlobal lg, class T>
+  template <ELocalGlobal lg, class T>
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::filterIndicesAndValues(const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node> &cmap = *colMap_;
@@ -880,7 +880,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::ELocalGlobal lg>
+  template <ELocalGlobal lg>
   size_t CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::insertIndices(RowInfo rowinfo, const SLocalGlobalViews &newInds)
   {
     Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg; (void)cta_lg;
@@ -913,7 +913,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::ELocalGlobal lg, class IterO, class IterN>
+  template <ELocalGlobal lg, class IterO, class IterN>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::insertIndicesAndValues(RowInfo rowinfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals)
   {
     size_t numNewInds = insertIndices<lg>(rowinfo,newInds);
@@ -924,7 +924,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  template <typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::ELocalGlobal lg, class IterO, class IterN, class BinaryFunction>
+  template <ELocalGlobal lg, class IterO, class IterN, class BinaryFunction>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::transformValues(RowInfo rowinfo, const SLocalGlobalViews &inds, IterO rowVals, IterN newVals, BinaryFunction f) const
   {
     Teuchos::CompileTimeAssert<lg != GlobalIndices && lg != LocalIndices> cta_lg; (void)cta_lg;

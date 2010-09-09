@@ -206,7 +206,7 @@ namespace Tpetra {
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar>( rcp(this,false).getConst() );
     // the graph has entries, and the matrix should have entries as well, set to zero. no need or point in lazy allocating in this case.
     // first argument doesn't actually matter, because the graph is allocated.
-    allocateValues( Graph::LocalIndices, GraphAlreadyAllocated );
+    allocateValues( LocalIndices, GraphAlreadyAllocated );
     resumeFill();
     //
     checkInternalState();
@@ -432,7 +432,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::allocateValues(typename Graph::ELocalGlobal lg, GraphAllocationStatus gas) {
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::allocateValues(ELocalGlobal lg, GraphAllocationStatus gas) {
     // allocate values and, optionally, ask graph to allocate indices
 #ifdef HAVE_TPETRA_DEBUG
     // if the graph is already allocated, then gas should be GraphAlreadyAllocated
@@ -544,14 +544,14 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(getRowMap()->isNodeLocalElement(localRow) == false, std::runtime_error,
         typeName(*this) << "::insertLocalValues(): row does not belong to this node.");
     if (myGraph_->indicesAreAllocated() == false) {
-      allocateValues(Graph::LocalIndices, GraphNotYetAllocated);
+      allocateValues(LocalIndices, GraphNotYetAllocated);
     }
     // use column map to filter the entries:
     Array<LocalOrdinal> f_inds(indices);
     Array<Scalar>       f_vals(values);
     typename Graph::SLocalGlobalNCViews inds_ncview;
     inds_ncview.linds = f_inds();
-    const size_t numFilteredEntries = myGraph_->template filterIndicesAndValues<Graph::LocalIndices,Scalar>(inds_ncview, f_vals());
+    const size_t numFilteredEntries = myGraph_->template filterIndicesAndValues<LocalIndices,Scalar>(inds_ncview, f_vals());
     if (numFilteredEntries > 0) {
       RowInfo rowInfo = myGraph_->getRowInfo(localRow);
       const size_t curNumEntries = rowInfo.numEntries;
@@ -562,11 +562,11 @@ namespace Tpetra {
         TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
             "::insertLocalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
         // update allocation only as much as necessary
-        rowInfo = myGraph_->template updateAllocAndValues<Graph::LocalIndices,Scalar>(rowInfo, newNumEntries, values2D_[localRow]);
+        rowInfo = myGraph_->template updateAllocAndValues<LocalIndices,Scalar>(rowInfo, newNumEntries, values2D_[localRow]);
       }
       typename Graph::SLocalGlobalViews inds_view;
       inds_view.linds = f_inds(0,numFilteredEntries);
-      myGraph_->template insertIndicesAndValues<Graph::LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), f_vals.begin());
+      myGraph_->template insertIndicesAndValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), f_vals.begin());
 #ifdef HAVE_TPETRA_DEBUG
       {
         const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow(localRow);
@@ -597,7 +597,7 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
         typeName(*this) << "::insertGlobalValues(): values.size() must equal indices.size().");
     if (myGraph_->indicesAreAllocated() == false) {
-      allocateValues(Graph::GlobalIndices, GraphNotYetAllocated);
+      allocateValues(GlobalIndices, GraphNotYetAllocated);
     }
     const LocalOrdinal lrow = getRowMap()->getLocalElement(globalRow);
     typename Graph::SLocalGlobalViews         inds_view;
@@ -613,7 +613,7 @@ namespace Tpetra {
         filtered_indices.assign(indices.begin(), indices.end());
         filtered_values.assign(values.begin(), values.end());
         inds_ncview.ginds = filtered_indices();
-        const size_t numFilteredEntries = myGraph_->template filterIndicesAndValues<Graph::GlobalIndices,Scalar>(inds_ncview,filtered_values());
+        const size_t numFilteredEntries = myGraph_->template filterIndicesAndValues<GlobalIndices,Scalar>(inds_ncview,filtered_values());
         inds_view.ginds = filtered_indices(0,numFilteredEntries);
         vals_view       = filtered_values(0,numFilteredEntries);
       }
@@ -633,9 +633,9 @@ namespace Tpetra {
           TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
               "::insertGlobalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
           // update allocation only as much as necessary
-          rowInfo = myGraph_->template updateAllocAndValues<Graph::GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
+          rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
         }
-        myGraph_->template insertIndicesAndValues<Graph::GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
+        myGraph_->template insertIndicesAndValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
 #ifdef HAVE_TPETRA_DEBUG
         {
           const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow(lrow);
@@ -686,7 +686,7 @@ namespace Tpetra {
       if (isLocallyIndexed() == true) {
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.linds = indices;
-        staticGraph_->template transformValues<Graph::LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
+        staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
       }
       else if (isGloballyIndexed() == true) {
         // must convert to global indices
@@ -700,7 +700,7 @@ namespace Tpetra {
         }
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.ginds = gindices();
-        staticGraph_->template transformValues<Graph::GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
+        staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
       }
     }
   }
@@ -737,12 +737,12 @@ namespace Tpetra {
         }
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.linds = lindices();
-        staticGraph_->template transformValues<Graph::LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
+        staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
       }
       else if (isGloballyIndexed() == true) {
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.ginds = indices;
-        staticGraph_->template transformValues<Graph::GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
+        staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), secondArg<Scalar,Scalar>());
       }
     }
   }
@@ -779,12 +779,12 @@ namespace Tpetra {
         }
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.linds = lindices();
-        staticGraph_->template transformValues<Graph::LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
+        staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
       }
       else if (isGloballyIndexed() == true) {
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.ginds = indices;
-        staticGraph_->template transformValues<Graph::GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
+        staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
       }
     }
   }
@@ -822,12 +822,12 @@ namespace Tpetra {
         }
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.ginds = gindices();
-        staticGraph_->template transformValues<Graph::GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
+        staticGraph_->template transformValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
       }
       else if (isLocallyIndexed() == true) {
         typename Graph::SLocalGlobalViews inds_view;
         inds_view.linds = indices;
-        staticGraph_->template transformValues<Graph::LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
+        staticGraph_->template transformValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), values.begin(), std::plus<Scalar>());
       }
     }
   }
@@ -1412,7 +1412,7 @@ namespace Tpetra {
     // allocate if unallocated
     if (getCrsGraph()->indicesAreAllocated() == false) {
       // allocate global, in case we do not have a column map
-      allocateValues( Graph::GlobalIndices, GraphNotYetAllocated );
+      allocateValues( GlobalIndices, GraphNotYetAllocated );
     }
     // global assemble
     if (getComm()->getSize() > 1) {
