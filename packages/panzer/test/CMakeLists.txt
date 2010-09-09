@@ -1,2 +1,2 @@
-
 ADD_SUBDIRECTORY(simple_test)
+ADD_SUBDIRECTORY(dofmngr_test)
