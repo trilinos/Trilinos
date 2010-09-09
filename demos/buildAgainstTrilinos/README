@@ -10,10 +10,10 @@ This example also demonstrates ctest.
 To run this example: 
 
 (1) Trilinos needs to be configured using  PREFIX, e.g.:
-    -DCMAKE_INSTALL_PREFIX:path=/home/turing/Trilinos/LINUX_DEBUG \
+    -DCMAKE_INSTALL_PREFIX:path=/home/turing/InstalledTrilinos10_6 \
 
 (2) "make; make install"  of Trilinos
-    (This should create a file in the <CMAKE_INSTALL_PREFIX>
+    (This will put a file in the ${CMAKE_INSTALL_PREFIX}/include
       directory called "TrilinosConfig.cmake")
 
 (3) For this demo, the file build/do-cmake needs to be

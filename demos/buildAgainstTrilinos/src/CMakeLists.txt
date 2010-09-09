@@ -1,5 +1,5 @@
 # This demo builds all sources into a library, and then compiles
-# links main against the library.
+# and links  main  against the library and all Trilinos libraries.
 
 SET(SOURCES
 	src_file.cpp 
@@ -9,11 +9,10 @@ SET(HEADERS
 	src_file.hpp
   )
 
-INCLUDE_DIRECTORIES (${MYAPP_TRILINOS_DIR}/include 
-                     ./  ./src_subdirTBD
-                     ${Trilinos_TPL_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES ( ./  ./src_subdirTBD
+                     ${Trilinos_INCLUDE_DIRS} ${Trilinos_TPL_INCLUDE_DIRS})
 
-LINK_DIRECTORIES (${MYAPP_TRILINOS_DIR}/lib ${Trilinos_TPL_LIBRARY_DIRS})
+LINK_DIRECTORIES (${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS})
 
 ADD_LIBRARY(myappLib ${SOURCES} ${HEADERS})
 
