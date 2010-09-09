@@ -18,13 +18,16 @@
 
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 STKUNIT_UNIT_TEST( UnitTestStkMeshGenerateNewEntities , testUnit ) {
 
   stk::ParallelMachine pm(MPI_COMM_WORLD);
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta_data( stk::mesh::TopologicalMetaData::entity_rank_names(spatial_dimension) );
   stk::mesh::BulkData bulk_data( meta_data , pm );
+  stk::mesh::TopologicalMetaData top_data( meta_data, spatial_dimension );
 
 
   meta_data.commit();
@@ -34,7 +37,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshGenerateNewEntities , testUnit ) {
 
   bulk_data.modification_begin();
 
-  bulk_data.declare_entity(stk::mesh::Node, bulk_data.parallel_rank() + 1, no_parts);
+  bulk_data.declare_entity(top_data.node_rank, bulk_data.parallel_rank() + 1, no_parts);
 
   bulk_data.modification_end();
 

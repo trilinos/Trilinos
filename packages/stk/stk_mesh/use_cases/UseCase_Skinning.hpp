@@ -25,7 +25,8 @@ void separate_and_skin_mesh(
     stk::mesh::MetaData & meta,
     stk::mesh::BulkData & mesh,
     stk::mesh::Part     & skin_part,
-    std::vector< stk::mesh::EntityId > elements_to_separate
+    std::vector< stk::mesh::EntityId > elements_to_separate,
+    const stk::mesh::EntityRank rank_of_element
     );
 
 #endif

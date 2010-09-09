@@ -28,28 +28,24 @@
 
 namespace {
 
-size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
-
-  const size_t mesh_rank = stk::mesh::Element;
+size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank ) {
 
   const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
   stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
-  const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( mesh_rank -1);
+  const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
 
   return count_selected_entities( select_skin, buckets);
 }
 
-void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
-
-  const size_t mesh_rank = stk::mesh::Element;
+void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank ) {
 
   const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
   stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
-  const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( mesh_rank -1);
+  const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
 
   stk::mesh::EntityVector skin_entities;
 
@@ -66,14 +62,14 @@ void delete_skin( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
 
 }
 
-void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part) {
+void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part, stk::mesh::EntityRank element_rank ) {
 
   stk::mesh::EntityVector owned_elements, modified_elements;
 
   // select owned
   stk::mesh::Selector owned = mesh.mesh_meta_data().locally_owned_part();
   stk::mesh::get_selected_entities( owned,
-                         mesh.buckets(fem_entity_rank(stk::mesh::Element)),
+                         mesh.buckets(element_rank),
                          owned_elements);
 
   for( stk::mesh::EntityVector::iterator i = owned_elements.begin();
@@ -87,7 +83,7 @@ void update_skin( stk::mesh::BulkData & mesh, stk::mesh::Part *skin_part) {
   }
 
 
-  stk::mesh::reskin_mesh(mesh, stk::mesh::Element,
+  stk::mesh::reskin_mesh(mesh, element_rank,
                          modified_elements, skin_part);
 }
 
@@ -99,9 +95,10 @@ void find_owned_nodes_with_relations_outside_closure(
   nodes.clear();
 
   //the closure is a sorted unique vector
+  const stk::mesh::EntityRank upward_rank = stk::mesh::BaseEntityRank + 1;
   stk::mesh::EntityVector::iterator node_end = std::lower_bound(closure.begin(),
       closure.end(),
-      stk::mesh::EntityKey(stk::mesh::Edge, 0),
+      stk::mesh::EntityKey(upward_rank, 0),
       stk::mesh::EntityLess());
 
   for (stk::mesh::EntityVector::iterator itr = closure.begin(); itr != node_end; ++itr) {
@@ -276,7 +273,7 @@ void separate_and_skin_mesh(
 
   //ask for new nodes to represent the copies
   std::vector<size_t> requests(meta.entity_rank_count(), 0);
-  requests[stk::mesh::Node] = nodes.size();
+  requests[stk::mesh::BaseEntityRank] = nodes.size();
 
   mesh.modification_begin();
 
@@ -336,6 +333,7 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
     stk::mesh::MetaData & meta = fixture.meta_data;
     stk::mesh::BulkData & mesh = fixture.bulk_data;
+    stk::mesh::TopologicalMetaData & top = fixture.top_data;
 
 
     stk::mesh::Part & skin_part = meta.declare_part("skin_part");
@@ -346,7 +344,7 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
     //intial skin of the mesh
     start_time = stk::wall_time();
-    stk::mesh::skin_mesh(mesh, stk::mesh::Element, &skin_part);
+    stk::mesh::skin_mesh(mesh, top.element_rank, &skin_part);
     timings[1] = stk::wall_dtime(start_time);
 
     stk::mesh::EntityVector entities_to_separate;
@@ -391,12 +389,12 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
     if (test_run%2 == 0) { // delete the skin
       start_time = stk::wall_time();
-      delete_skin( mesh, skin_part);
+      delete_skin( mesh, skin_part, top.side_rank );
       timings[3] = stk::wall_dtime(start_time);
 
       //reskin the entire mesh
       start_time = stk::wall_time();
-      stk::mesh::skin_mesh( mesh, stk::mesh::Element, &skin_part);
+      stk::mesh::skin_mesh( mesh, top.element_rank, &skin_part);
       timings[4] = stk::wall_dtime(start_time);
     }
     else { //update the skin
@@ -404,7 +402,7 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
       //update the skin of the mesh
       start_time = stk::wall_time();
-      update_skin( mesh, &skin_part);
+      update_skin( mesh, &skin_part, top.element_rank);
       timings[4] = stk::wall_dtime(start_time);
     }
 
@@ -444,7 +442,7 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
       std::cout << "\n\n";
     }
 
-    size_t num_skin_entities = count_skin_entities(mesh, skin_part);
+    size_t num_skin_entities = count_skin_entities(mesh, skin_part, top.side_rank );
 
     stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 

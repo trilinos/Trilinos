@@ -29,7 +29,7 @@ void get_elem_side_nodes( const Entity & elem,
                           std::vector<EntityId> & nodes
                         )
 {
-  const CellTopologyData * const elem_top = get_cell_topology( elem );
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
 
   if (elem_top == NULL) {
     std::ostringstream msg ;
@@ -51,7 +51,7 @@ void get_elem_side_nodes( const Entity & elem,
 
   const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
 
-  PairIterRelation relations = elem.relations( Node );
+  PairIterRelation relations = elem.relations( BaseEntityRank );
 
   // Find positive polarity permutation that starts with lowest entity id:
   // We're using this as the unique key in a map for a side.
@@ -94,7 +94,7 @@ void get_elem_side_nodes( const Entity & elem,
 
 }
 
-void skin_mesh( BulkData & mesh, unsigned element_rank, Part * skin_part) {
+void skin_mesh( BulkData & mesh, EntityRank element_rank, Part * skin_part) {
   if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
     throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
   }
@@ -104,13 +104,13 @@ void skin_mesh( BulkData & mesh, unsigned element_rank, Part * skin_part) {
   // select owned
   Selector owned = mesh.mesh_meta_data().locally_owned_part();
   get_selected_entities( owned,
-                         mesh.buckets(fem_entity_rank(element_rank)),
+                         mesh.buckets(element_rank),
                          owned_elements);
 
   reskin_mesh(mesh, element_rank, owned_elements, skin_part);
 }
 
-void reskin_mesh( BulkData & mesh, unsigned element_rank, EntityVector & owned_elements, Part * skin_part) {
+void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned_elements, Part * skin_part) {
   if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
     throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
   }

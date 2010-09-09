@@ -24,6 +24,7 @@
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 /** stk_mesh Use Case 3 */
 
@@ -49,8 +50,10 @@ public:
 
   void populate();
 
+  const int m_spatial_dimension;
   stk::mesh::MetaData m_metaData;
   stk::mesh::BulkData m_bulkData;
+  stk::mesh::TopologicalMetaData m_topData;
 
   stk::mesh::Part & m_block_hex;
   stk::mesh::Part & m_block_wedge;

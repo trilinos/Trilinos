@@ -41,13 +41,14 @@ namespace mesh {
 namespace use_cases {
 
 UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm )
-  : m_metaData( fem_entity_rank_names() )
+  : m_spatial_dimension(3)
+  , m_metaData( TopologicalMetaData::entity_rank_names(m_spatial_dimension) )
   , m_bulkData( m_metaData , comm )
-
-  , m_block_hex20(       m_metaData.declare_part( "block_1", Element ))
-  , m_block_wedge15(     m_metaData.declare_part( "block_2", Element ))
-  , m_part_vertex_nodes( m_metaData.declare_part( "vertex_nodes", Node ))
-  , m_side_part(         m_metaData.declare_part( "sideset_1", Face ))
+  , m_topData( m_metaData, m_spatial_dimension )
+  , m_block_hex20(       m_topData.declare_part<shards::Hexahedron<20> >( "block_1" ))
+  , m_block_wedge15(     m_topData.declare_part<shards::Wedge<15> >( "block_2" ))
+  , m_part_vertex_nodes( m_metaData.declare_part( "vertex_nodes", m_topData.node_rank ))
+  , m_side_part(         m_metaData.declare_part( "sideset_1", m_topData.side_rank ))
 
   , m_coordinates_field(m_metaData.declare_field< VectorFieldType >( "coordinates" ))
   , m_velocity_field(m_metaData.declare_field< VectorFieldType >( "velocity" ))
@@ -57,10 +58,6 @@ UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm )
   , m_boundary_field(m_metaData.declare_field< VectorFieldType >( "boundary" ))
   , m_element_node_coordinates_field(m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ) )
 {
-  // Attach appropriate element topology to element block parts:
-  set_cell_topology< shards::Hexahedron<20> >( m_block_hex20 );
-  set_cell_topology< shards::Wedge<15>      >( m_block_wedge15 );
-
   //--------------------------------
   // The vertex nodes of the hex and wedge elements are members
   // of the vertex part; however, the mid-edge nodes are not.
@@ -86,16 +83,16 @@ UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm )
   // Where fields exist on the mesh:
   Part & universal = m_metaData.universal_part();
 
-  put_field( m_coordinates_field , Node , universal );
-  put_field( m_velocity_field , Node , universal );
-  put_field( m_centroid_field , Element , universal );
-  put_field( m_temperature_field, Node, universal );
+  put_field( m_coordinates_field , m_topData.node_rank , universal );
+  put_field( m_velocity_field , m_topData.node_rank , universal );
+  put_field( m_centroid_field , m_topData.element_rank , universal );
+  put_field( m_temperature_field, m_topData.node_rank, universal );
 
   // The pressure field only exists on the vertex nodes:
-  put_field( m_pressure_field, Node, m_part_vertex_nodes );
+  put_field( m_pressure_field, m_topData.node_rank, m_part_vertex_nodes );
 
   // The boundary field only exists on nodes in the sideset part
-  put_field( m_boundary_field, Node, m_side_part );
+  put_field( m_boundary_field, m_topData.node_rank, m_side_part );
 
   m_metaData.declare_field_relation(
     m_element_node_coordinates_field ,
@@ -103,8 +100,8 @@ UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm )
     m_coordinates_field
     );
 
-  put_field( m_element_node_coordinates_field, Element, m_block_hex20, shards::Hexahedron<20> ::node_count );
-  put_field( m_element_node_coordinates_field, Element, m_block_wedge15, shards::Wedge<15> ::node_count );
+  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_hex20, shards::Hexahedron<20> ::node_count );
+  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_wedge15, shards::Wedge<15> ::node_count );
 
   m_metaData.commit();
 }
@@ -209,7 +206,7 @@ void UseCase_4_Mesh::populate()
   }
 
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = m_bulkData.get_entity( Node, i + 1 );
+    Entity * const node = m_bulkData.get_entity( m_topData.node_rank, i + 1 );
 
     if ( node != NULL ) {
       double * const coord = field_data( m_coordinates_field , *node );
@@ -228,6 +225,7 @@ void UseCase_4_Mesh::populate()
 void runAlgorithms( const UseCase_4_Mesh & mesh )
 {
   const BulkData & bulkData = mesh.m_bulkData ;
+  const TopologicalMetaData & topData = mesh.m_topData;
   VectorFieldType & centroid_field = mesh.m_centroid_field ;
   ElementNodePointerFieldType & elem_node_coord = mesh.m_element_node_coordinates_field ;
   Part & block_hex20 = mesh.m_block_hex20 ;
@@ -237,13 +235,15 @@ void runAlgorithms( const UseCase_4_Mesh & mesh )
   centroid_algorithm< shards::Hexahedron<20> >( bulkData ,
                                         centroid_field ,
                                         elem_node_coord ,
-                                        block_hex20 );
+                                        block_hex20,
+                                        topData.element_rank );
 
   // Run the centroid algorithm on the wedges:
   centroid_algorithm< shards::Wedge<15> >( bulkData ,
                                    centroid_field ,
                                    elem_node_coord ,
-                                   block_wedge15 );
+                                   block_wedge15,
+                                   topData.element_rank );
 
 }
 
@@ -259,7 +259,7 @@ bool verify_elem_node_coord_4(
   const unsigned node_count )
 {
   bool result = true;
-  PairIterRelation rel = elem.relations( Node );
+  PairIterRelation rel = elem.relations( BaseEntityRank );
 
   if ( (unsigned) rel.size() != node_count ) {
     std::cerr << "Error!" << std::endl;
@@ -344,7 +344,7 @@ bool verify_elem_side_node( const stk::mesh::EntityId * const elem_nodes ,
   const CellTopologyData * const side_top = elem_top->side[ local_side ].topology ;
   const unsigned         * const side_node_map = elem_top->side[ local_side ].node ;
 
-  const mesh::PairIterRelation rel = side.relations( mesh::Node );
+  const mesh::PairIterRelation rel = side.relations( BaseEntityRank );
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
 
@@ -366,7 +366,7 @@ bool verify_boundary_field_data( const BulkData & mesh ,
 
   unsigned num_side_nodes = 0 ;
 
-  const std::vector<Bucket*> & buckets = mesh.buckets( Node );
+  const std::vector<Bucket*> & buckets = mesh.buckets( BaseEntityRank );
 
   for ( std::vector<Bucket*>::const_iterator
       k = buckets.begin() ; k != buckets.end() ; ++k ) {
@@ -407,7 +407,8 @@ bool verify_pressure_velocity_stencil(
   const Part     & element_part ,
   const Part     & linear_node_part ,
   const PressureField  & pressure ,
-  const VelocityField  & velocity )
+  const VelocityField  & velocity,
+  EntityRank             element_rank )
 {
   typedef Traits_Full   element_traits ;
   typedef Traits_Linear element_linear_traits ;
@@ -435,7 +436,7 @@ bool verify_pressure_velocity_stencil(
     result = false;
   }
 
-  const std::vector<Bucket*> & buckets = M.buckets( Element );
+  const std::vector<Bucket*> & buckets = M.buckets( element_rank );
 
   for ( std::vector<Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
@@ -447,7 +448,7 @@ bool verify_pressure_velocity_stencil(
             i = bucket.begin() ; i != bucket.end() ; ++i ) {
         Entity & elem = *i ;
 
-        PairIterRelation rel = elem.relations( Node );
+        PairIterRelation rel = elem.relations( BaseEntityRank );
 
         if ( (unsigned) rel.size() != (unsigned) element_traits::node_count ) {
           std::cerr << "Error!" << std::endl;
@@ -505,8 +506,9 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
 {
   bool result = true;
   const BulkData& bulk_data = mesh.m_bulkData ;
+  const TopologicalMetaData& top_data = mesh.m_topData;
 
-  std::vector<Bucket *> element_buckets = bulk_data.buckets( Element );
+  std::vector<Bucket *> element_buckets = bulk_data.buckets( mesh.m_topData.element_rank );
 
   // Verify the element node coordinates and side nodes:
   // block_hex20:
@@ -522,7 +524,7 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
         20
         );
   // Verify element side node:
-  const std::vector<Bucket *> face_buckets = bulk_data.buckets( Face );
+  const std::vector<Bucket *> face_buckets = bulk_data.buckets( top_data.side_rank );
   Part & side_part = mesh.m_side_part ;
   {
     Selector selector = block_hex20 & side_part;
@@ -563,11 +565,11 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
   const VectorFieldType & centroid_field = mesh.m_centroid_field ;
   result = result &&
     centroid_algorithm_unit_test_dimensions< shards::Hexahedron<20> >(
-        bulk_data , centroid_field , elem_node_coord , block_hex20 );
+        bulk_data , centroid_field , elem_node_coord , block_hex20, top_data.element_rank );
 
   result = result &&
     centroid_algorithm_unit_test_dimensions< shards::Wedge<15> >(
-        bulk_data , centroid_field , elem_node_coord , block_wedge15 );
+        bulk_data , centroid_field , elem_node_coord , block_wedge15, top_data.element_rank );
 
   // Verify boundary field data
   const VectorFieldType & boundary_field = mesh.m_boundary_field ;
@@ -584,14 +586,14 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
     verify_pressure_velocity_stencil
     < shards::Hexahedron<20> , shards::Hexahedron<8>  >
     ( bulk_data , block_hex20 , part_vertex_nodes ,
-      pressure_field , velocity_field );
+      pressure_field , velocity_field, top_data.element_rank );
 
   // Verify pressure velocity stencil for block_wedge15
   result = result &&
     verify_pressure_velocity_stencil
     < shards::Wedge<15> , shards::Wedge<6>  >
     ( bulk_data , block_wedge15 , part_vertex_nodes ,
-      pressure_field , velocity_field );
+      pressure_field , velocity_field, top_data.element_rank );
 
 
 

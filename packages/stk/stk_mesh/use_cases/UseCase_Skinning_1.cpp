@@ -28,15 +28,13 @@
 
 namespace {
 
-  unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
-
-    const unsigned mesh_rank = stk::mesh::Element;
+  unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank ) {
 
     const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
     stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
-    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( mesh_rank -1);
+    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
 
     return count_selected_entities( select_skin, buckets);
   }
@@ -53,13 +51,14 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     stk::mesh::MetaData & meta = fixture.meta_data;
     stk::mesh::BulkData & mesh = fixture.bulk_data;
+    stk::mesh::TopologicalMetaData & top = fixture.top_data;
 
     stk::mesh::Part & skin_part = meta.declare_part("skin_part");
     meta.commit();
 
     fixture.generate_mesh();
 
-    skin_mesh(mesh, stk::mesh::Element, &skin_part);
+    skin_mesh(mesh, top.element_rank, &skin_part);
 
 
 
@@ -72,14 +71,15 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
         meta,
         mesh,
         skin_part,
-        elements_to_separate
+        elements_to_separate,
+        top.element_rank
         );
 
 
     // pointer to middle_element after mesh modification.
-    stk::mesh::Entity * middle_element = mesh.get_entity(stk::mesh::Element,fixture.elem_id(1,1,1));
+    stk::mesh::Entity * middle_element = mesh.get_entity(top.element_rank,fixture.elem_id(1,1,1));
 
-    unsigned num_skin_entities = count_skin_entities(mesh, skin_part);
+    unsigned num_skin_entities = count_skin_entities(mesh, skin_part, top.side_rank);
 
     stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
@@ -95,7 +95,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //should have relations.size() == 4 and comm.size() == 0
     if (middle_element != NULL && middle_element->owner_rank() == mesh.parallel_rank()) {
 
-      stk::mesh::PairIterRelation relations = middle_element->relations(stk::mesh::Node);
+      stk::mesh::PairIterRelation relations = middle_element->relations(top.node_rank);
 
       for (; relations.first != relations.second; ++relations.first) {
         stk::mesh::Entity * current_node = (relations.first->entity());
@@ -116,13 +116,14 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
     stk::mesh::MetaData & meta = fixture.meta_data;
     stk::mesh::BulkData & mesh = fixture.bulk_data;
+    stk::mesh::TopologicalMetaData & top = fixture.top_data;
 
     stk::mesh::Part & skin_part = meta.declare_part("skin_part");
     meta.commit();
 
     fixture.generate_mesh();
 
-    skin_mesh(mesh, stk::mesh::Element, &skin_part);
+    skin_mesh(mesh, top.element_rank, &skin_part);
 
 
 
@@ -143,12 +144,13 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
         meta,
         mesh,
         skin_part,
-        elements_to_separate
+        elements_to_separate,
+        top.element_rank
         );
 
 
     // pointer to middle_element after mesh modification.
-    unsigned num_skin_entities = count_skin_entities(mesh, skin_part);
+    unsigned num_skin_entities = count_skin_entities(mesh, skin_part, top.side_rank);
 
     stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 

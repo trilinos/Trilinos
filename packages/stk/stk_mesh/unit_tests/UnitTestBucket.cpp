@@ -27,14 +27,11 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/BoundaryAnalysis.hpp>
-
 #include <unit_tests/UnitTestBucket.hpp>
 #include <unit_tests/UnitTestMesh.hpp>
 
 #include <Shards_BasicTopologies.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
@@ -42,20 +39,41 @@
 #include <stk_mesh/baseImpl/BucketImpl.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 
+using stk::unit_test::UnitTestBucket;
+
+using stk::mesh::MetaData;
+using stk::mesh::BulkData;
+using stk::mesh::Part;
+using stk::mesh::PartVector;
+using stk::mesh::EntityRank;
+using stk::mesh::EntityId;
+using stk::mesh::PairIterEntityComm;
+using stk::mesh::Entity;
+using stk::mesh::Bucket;
+using stk::mesh::BucketIterator;
+using stk::mesh::Selector;
+using stk::mesh::Field;
+using stk::mesh::FieldBase;
+using stk::mesh::put_field;
+using stk::mesh::TopologicalMetaData;
+
+using stk::ParallelMachine;
+using std::cout;
+using std::endl;
+
+
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testUnit)
 {
   MPI_Barrier( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBucket::testBucket ( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBucket::test_get_involved_parts( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBucket::testBucket2( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBucket::test_EntityComm( MPI_COMM_WORLD );
+  UnitTestBucket::testBucket ( MPI_COMM_WORLD );
+  UnitTestBucket::test_get_involved_parts( MPI_COMM_WORLD );
+  UnitTestBucket::testBucket2( MPI_COMM_WORLD );
+  UnitTestBucket::test_EntityComm( MPI_COMM_WORLD );
 }
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-namespace stk {
-namespace mesh {
 
 
 // Unit test the Part functionality in isolation:
@@ -66,7 +84,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
  // static const char method[] = "stk::mesh::UnitTestBucket" ;
 
  // Create a mesh for testing buckets
-  std::cout << std::endl ;
+  cout << endl ;
 
   std::vector<std::string> entity_names(10);
   for ( size_t i = 0 ; i < 10 ; ++i ) {
@@ -77,14 +95,16 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
 
   MetaData meta( entity_names );
   BulkData bulk( meta , pm , 4 );
+  const int spatial_dimension = 3;
+  TopologicalMetaData top(meta,spatial_dimension);
 
   ScalarFieldType & temperature =
        meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
   ScalarFieldType & volume =
        meta.declare_field < ScalarFieldType > ( "volume" , 4 );
   Part  & universal     = meta.universal_part ();
-  put_field ( temperature , Node , universal );
-  put_field ( volume , Element , universal );
+  put_field ( temperature , top.node_rank , universal );
+  put_field ( volume , top.element_rank , universal );
   meta.commit();
 
 
@@ -133,7 +153,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
     STKUNIT_ASSERT_THROW(field_data_valid ( *field_bases[0] , *bulk.buckets(3)[0] , 99 , "error" ) , std::runtime_error);
 
 
-    stk::mesh::MetaData meta2 ( entity_names );
+    MetaData meta2 ( entity_names );
     BulkData bulk2( meta2 , pm , 4 );
 
     ScalarFieldType & temperature2 =
@@ -141,8 +161,8 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
     ScalarFieldType & volume2 =
        meta2.declare_field < ScalarFieldType > ( "volume2" , 4 );
     Part  & universal2     = meta2.universal_part ();
-    put_field ( temperature2 , Node , universal2 );
-    put_field ( volume2 , Element , universal2 );
+    put_field ( temperature2 , top.node_rank , universal2 );
+    put_field ( volume2 , top.element_rank, universal2 );
     meta2.commit();
 
     //Cover line containing messsage for wrong MetaData used
@@ -168,425 +188,6 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   }
 }
 
-
-class TopologyHelpersTestingFixture
-{
-  public:
-    TopologyHelpersTestingFixture(ParallelMachine pm);
-    ~TopologyHelpersTestingFixture() {}
-
-    MetaData meta;
-    BulkData bulk;
-    Part & generic_element_part;
-    Part & element_tet_part;
-    Part & element_wedge_part;
-    Part & element_quad_part;
-    Part & another_generic_element_part;
-
-    EntityId nextEntityId() 
-    { return psize*(++entity_id)+prank; }
-
-    Entity & create_entity( EntityRank rank, Part& part_membership)
-    { 
-      PartVector part_intersection;
-      part_intersection.push_back ( &part_membership );
-      return bulk.declare_entity(rank, nextEntityId(), part_intersection); 
-    }
-
-  private:
-    EntityId entity_id;
-    const int psize;
-    const int prank;
-
-};
-
-
-TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
-  : meta( fem_entity_rank_names() )
-  , bulk( meta, pm, 100 )
-  , generic_element_part( meta.declare_part("another part", Element) ) 
-  , element_tet_part( meta.declare_part("block_left_1", Element ) )
-  , element_wedge_part( meta.declare_part("block_left_2", Element ) )
-  , element_quad_part( meta.declare_part("A_3", Element) )
-  , another_generic_element_part( meta.declare_part("B_3", Element) )
-  , entity_id(0u)
-  , psize(bulk.parallel_size())
-  , prank(bulk.parallel_rank())
-{
-  set_cell_topology< shards::Tetrahedron<4>  >( element_tet_part );
-  set_cell_topology< shards::Wedge<15>  >( element_wedge_part );
-  set_cell_topology< shards::Quadrilateral<4>  >( element_quad_part );
-  meta.commit();
-}
- 
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_based_on_part)
-{
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-
-  if ( 1 == fix.bulk.parallel_size() ) {
-    Part & generic_element_part = fix.generic_element_part;
-    Part & element_quad_part = fix.element_quad_part;
-    Part & another_generic_element_part = fix.another_generic_element_part;
-    fix.bulk.modification_begin();
-
-    Entity & elem1  = fix.create_entity( Element , generic_element_part );
-
-    PartVector tmp(1);
-    tmp[0] = & element_quad_part;
-    fix.bulk.change_entity_parts ( elem1 , tmp );
-    STKUNIT_ASSERT_EQUAL( get_cell_topology(elem1), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
-    fix.bulk.change_entity_parts ( elem1 , tmp );
-    STKUNIT_ASSERT_EQUAL( get_cell_topology(elem1), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
-    tmp[0] = & another_generic_element_part;
-    fix.bulk.change_entity_parts ( elem1 , tmp );
-    STKUNIT_ASSERT_EQUAL( get_cell_topology(elem1), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
-    STKUNIT_ASSERT_NE( get_cell_topology( elem1) , shards::getCellTopologyData< shards::Wedge<15> >() );
-
-    fix.bulk.modification_end();
-  }
-}
-
-
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
-{
-  // Coverage for get_cell_topology in TopologyHelpers.cpp; (FAILED WITH MULTIPLE LOCAL TOPOLOGIES)
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-
-  if ( 1 == fix.bulk.parallel_size() ) {
-
-    fix.bulk.modification_begin();
-    Entity & elem  = fix.create_entity( Element , fix.generic_element_part );
-
-    PartVector add_parts;
-    add_parts.push_back( &fix.element_quad_part );
-    add_parts.push_back( &fix.element_tet_part );
-    add_parts.push_back( &fix.element_wedge_part );
-    fix.bulk.change_entity_parts( elem, add_parts );
-    fix.bulk.modification_end();
-    STKUNIT_ASSERT_THROW( get_cell_topology( elem ), std::runtime_error );
-  }
-}
-
-
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_trivial )
-{
-  // Element, elem2, has NULL topology
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-
-  if ( 1 == fix.bulk.parallel_size() ) {
-
-    fix.bulk.modification_begin();
-    Entity & elem2  = fix.create_entity( Element , fix.generic_element_part );
-    fix.bulk.modification_end();
-
-    std::vector<EntitySideComponent> adjacent_entities;
-    const EntityRank subcell_rank = Element;
-    const EntityId subcell_identifier = 1;
-    get_adjacent_entities( elem2 , subcell_rank, subcell_identifier, adjacent_entities);
-    STKUNIT_ASSERT_TRUE( true );
-  }
-}
-
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_invalid )
-{
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-  if ( 1 == fix.bulk.parallel_size() ) {
-    fix.bulk.modification_begin();
-    Entity & elem3  = fix.create_entity( Element , fix.generic_element_part );
-
-    PartVector add_parts;
-    add_parts.push_back( & fix.element_quad_part );
-    fix.bulk.change_entity_parts ( elem3 , add_parts );
-    fix.bulk.modification_end();
-    std::vector<EntitySideComponent> adjacent_entities2;
-    {
-      const EntityRank invalid_subcell_rank = 4;
-      const EntityId valid_subcell_identifier = 0;
-      STKUNIT_ASSERT_THROW( 
-        get_adjacent_entities( elem3 , invalid_subcell_rank, valid_subcell_identifier, adjacent_entities2),
-        std::runtime_error
-        );
-    }
-    {
-      const EntityRank valid_subcell_rank = 1;
-      const EntityId invalid_subcell_identifier = 8;
-      STKUNIT_ASSERT_THROW( 
-        get_adjacent_entities( elem3 , valid_subcell_rank, invalid_subcell_identifier, adjacent_entities2),
-        std::runtime_error
-        );
-    }
-  }
-}
-
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology )
-{
-  // Coverage for declare_element_side - TopologyHelpers.cpp - "Cannot discern element topology"
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-
-  fix.bulk.modification_begin();
-  Entity & elem4  = fix.create_entity( Element , fix.generic_element_part );
-  STKUNIT_ASSERT_THROW(
-      declare_element_side( fix.bulk, Element, elem4, fix.nextEntityId(), &fix.element_wedge_part ),
-      std::runtime_error
-      );
-    fix.bulk.modification_end();
-}
-
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_wrong_bulk_data)
-{
-  // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "BulkData for 'elem' and 'side' are different"
-  TopologyHelpersTestingFixture fix1(MPI_COMM_WORLD);
-
-  fix1.bulk.modification_begin();
-
-  TopologyHelpersTestingFixture fix2(MPI_COMM_WORLD);
-  fix2.bulk.modification_begin();
-  Entity & elem4_2  = fix2.create_entity( Element , fix2.generic_element_part );
-  fix2.bulk.modification_end();
-
-  STKUNIT_ASSERT_THROW(
-      declare_element_side( fix1.bulk, Element, elem4_2, fix1.nextEntityId(), &fix1.element_wedge_part),
-      std::runtime_error
-      );
-    fix1.bulk.modification_end();
-}
-
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
-{
-  // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "No element topology found and cell side id exceeds..."
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-  fix.bulk.modification_begin();
-
-  stk::mesh::EntityId elem_node[4];
-  elem_node[0] = 1;
-  elem_node[1] = 2;
-  elem_node[2] = 3;
-  elem_node[3] = 4;
-  Entity & element  = declare_element(fix.bulk, fix.element_quad_part, fix.nextEntityId(), elem_node);
-  const CellTopologyData * const elem_top = get_cell_topology( element );
-  const EntityId nSideCount = elem_top->side_count + 10 ;
-  STKUNIT_ASSERT_THROW( 
-      declare_element_side( fix.bulk, fix.nextEntityId(), element, nSideCount, &fix.element_quad_part ),
-      std::runtime_error
-      ); 
-  fix.bulk.modification_end();
-}
-
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_full )
-{
-  // Go all way the through declare_element_side - use new element
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-
-  fix.bulk.modification_begin();
-
-  EntityId elem_node[4];
-  elem_node[0] = 1;
-  elem_node[1] = 2;
-  elem_node[2] = 3;
-  elem_node[3] = 4;
-
-  Entity& element = declare_element(fix.bulk, fix.element_quad_part, fix.nextEntityId(), elem_node );
-
-  const EntityId zero_side_count = 0;
-  Entity& face2 = declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
-  fix.bulk.modification_end();
-
-  stk::mesh::PairIterRelation rel2 = face2.relations(stk::mesh::Node);
-
-  STKUNIT_ASSERT_TRUE( true );
-}
-
-
-STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity )
-{
-  // Coverage of element_side_polarity in TopologyHelpers.cpp 168-181 and 200-215
-  TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
-
-
-  fix.bulk.modification_begin();
-
-  EntityId elem_node[4];
-  elem_node[0] = 1;
-  elem_node[1] = 2;
-  elem_node[2] = 3;
-  elem_node[3] = 4;
-
-  Entity & element = declare_element(fix.bulk, fix.element_quad_part, fix.nextEntityId(), elem_node );
-  Entity & element2  = fix.create_entity( Element , fix.generic_element_part );
-  Entity & element3  = fix.create_entity( Element , fix.generic_element_part );
-  
-  const EntityId zero_side_count = 0;
-  Entity& face2 = declare_element_side( fix.bulk, fix.nextEntityId(), element, zero_side_count);
-  const int local_side_id = 0;
-  STKUNIT_ASSERT_TRUE( element_side_polarity( element, face2, local_side_id) );
-
-  // Coverage of element_side_polarity in TopologyHelpers.cpp
-  {
-    PartVector add_parts;
-    add_parts.push_back( & fix.element_quad_part );
-    fix.bulk.change_entity_parts ( element2 , add_parts );
-    const int another_local_side_id = -1;
-    STKUNIT_ASSERT_THROW(
-        element_side_polarity( element2, face2, another_local_side_id),
-        std::runtime_error
-        );
-  }
-
-  // Coverage of element_side_polarity in TopologyHelpers.cpp - NULL = elem_top
-  {
-    PartVector add_parts;
-    add_parts.push_back( & fix.another_generic_element_part );
-    fix.bulk.change_entity_parts ( element3 , add_parts );
-    STKUNIT_ASSERT_THROW(
-        element_side_polarity( element3, face2, 0),
-        std::runtime_error
-        );
-  }
-  fix.bulk.modification_end();
-}
-
-//----------------------------------------------------------------------
-// Testing for a simple loop of mesh entities.
-// node_key[i] : edge_key[i] : node_key[ ( i + 1 ) % node_key.size() ]
-
-void UnitTestBucket::generate_loop(
-  BulkData & mesh ,
-  const PartVector      & edge_parts ,
-  const bool              generate_aura ,
-  const unsigned          nPerProc ,
-  std::vector<EntityId> & node_ids ,
-  std::vector<EntityId> & edge_ids )
-{
-  const unsigned p_rank = mesh.parallel_rank();
-  const unsigned p_size = mesh.parallel_size();
-  const unsigned id_total = nPerProc * p_size ;
-  const unsigned id_begin = nPerProc * p_rank ;
-  const unsigned id_end   = nPerProc * ( p_rank + 1 );
-  const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
-  const unsigned nLocalEdge = nPerProc ;
-  const unsigned n_extra = generate_aura && 1 < p_size ? 2 : 0 ;
-
-  node_ids.resize( id_total );
-  edge_ids.resize( id_total );
-  std::vector<unsigned> local_count ;
-
-  for ( unsigned i = 0 ; i < id_total ; ++i ) {
-    node_ids[i] = i + 1;
-    edge_ids[i] = i + 1;
-  }
-
-  // Create a loop of edges:
-  {
-    const PartVector no_parts ;
-    PartVector add_parts ;
-
-    if ( ! edge_parts.empty() ) { add_parts.resize(1); }
-
-    for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-      const unsigned n0 = i ;
-      const unsigned n1 = ( i + 1 ) % id_total ;
-      if ( ! edge_parts.empty() ) {
-        add_parts[0] = edge_parts[ i % edge_parts.size() ];
-      }
-      Entity & e_node_0 = mesh.declare_entity( 0 , node_ids[n0] , no_parts );
-      Entity & e_node_1 = mesh.declare_entity( 0 , node_ids[n1] , no_parts );
-      Entity & e_edge   = mesh.declare_entity( 1 , edge_ids[i] , add_parts );
-      mesh.declare_relation( e_edge , e_node_0 , 0 );
-      mesh.declare_relation( e_edge , e_node_1 , 1 );
-    }
-  }
-
-  Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
-  Selector select_used = select_owned | mesh.mesh_meta_data().globally_shared_part();
-  Selector select_all(  mesh.mesh_meta_data().universal_part() );
-
-  count_entities( select_used , mesh , local_count );
-  STKUNIT_ASSERT( local_count[stk::mesh::Node] == nLocalNode );
-  STKUNIT_ASSERT( local_count[stk::mesh::Edge] == nLocalEdge );
-
-  std::vector<Entity*> all_nodes;
-  get_entities(mesh, stk::mesh::Node, all_nodes);
-
-  unsigned num_selected_nodes =
-      count_selected_entities( select_used, mesh.buckets(stk::mesh::Node) );
-  STKUNIT_ASSERT( num_selected_nodes == local_count[stk::mesh::Node] );
-
-  std::vector<Entity*> universal_nodes;
-  get_selected_entities( select_all, mesh.buckets(stk::mesh::Node), universal_nodes );
-  STKUNIT_ASSERT( universal_nodes.size() == all_nodes.size() );
-
-  mesh.modification_end();
-
-  // Verify declarations and sharing two end nodes:
-
-  count_entities( select_used , mesh , local_count );
-  STKUNIT_ASSERT( local_count[0] == nLocalNode );
-  STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-  if ( 1 < p_size ) {
-    const unsigned n0 = id_end < id_total ? id_begin : 0 ;
-    const unsigned n1 = id_end < id_total ? id_end : id_begin ;
-
-    Entity * const node0 = mesh.get_entity( Node , node_ids[n0] );
-    Entity * const node1 = mesh.get_entity( Node , node_ids[n1] );
-
-    STKUNIT_ASSERT( node0 != NULL );
-    STKUNIT_ASSERT( node1 != NULL );
-
-    STKUNIT_ASSERT_EQUAL( node0->sharing().size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( node1->sharing().size() , size_t(1) );
-  }
-
-  // Test no-op first:
-
-  std::vector<EntityProc> change ;
-
-  STKUNIT_ASSERT( mesh.modification_begin() );
-  mesh.change_entity_owner( change );
-  mesh.modification_end();
-
-  count_entities( select_used , mesh , local_count );
-  STKUNIT_ASSERT( local_count[0] == nLocalNode );
-  STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-  count_entities( select_all , mesh , local_count );
-  STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
-  STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
-
-  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
-  if ( 1 < p_size ) {
-    Entity * const e_node_0 = mesh.get_entity( 0 , node_ids[id_begin] );
-    if ( p_rank == e_node_0->owner_rank() ) {
-      EntityProc entry ;
-      entry.first = e_node_0 ;
-      entry.second = ( p_rank + p_size - 1 ) % p_size ;
-      change.push_back( entry );
-    }
-    STKUNIT_ASSERT( mesh.modification_begin() );
-    mesh.change_entity_owner( change );
-    mesh.modification_end();
-
-    count_entities( select_all , mesh , local_count );
-    STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
-
-    count_entities( select_used , mesh , local_count );
-    STKUNIT_ASSERT( local_count[0] == nLocalNode );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-    count_entities( select_owned , mesh , local_count );
-    STKUNIT_ASSERT( local_count[0] == nPerProc );
-    STKUNIT_ASSERT( local_count[1] == nPerProc );
-  }
-}
 
 //----------------------------------------------------------------------
 
@@ -663,7 +264,7 @@ void UnitTestBucket::generate_boxes(
 
   if ( 0 == p_rank ) {
     std::cout << "Global box = " << ngx << " x " << ngy << " x " << ngz
-              << std::endl ;
+              << endl ;
   }
 
   BOX * const p_box = new BOX[ p_size ];
@@ -813,20 +414,17 @@ void UnitTestBucket::test_get_involved_parts(ParallelMachine pm)
 
   // Tests to cover get_involved_parts for GetBuckets.cpp - C.Brickley - 12 May 2010
 
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+  const int spatial_dimension = 3;
+  MetaData meta ( TopologicalMetaData::entity_rank_names ( spatial_dimension ) );
+  TopologicalMetaData top( meta, spatial_dimension );
 
   PartVector involved_parts(2) ;
   involved_parts[0] = & meta.universal_part();
   involved_parts[1] = & meta.locally_owned_part();
 
-  stk::mesh::Part & partLeft_1 = meta.declare_part( "block_left_1", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_1 );
+  Part & partLeft_1 = top.declare_part<shards::Tetrahedron<4> >( "block_left_1" );
 
-  stk::mesh::Part & partLeft_2 = meta.declare_part( "block_left_2", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_2 );
-
-  stk::mesh::Part & partLeft_3 = meta.declare_part( "block_left_3", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_3 );
+  Part & partLeft_2 = top.declare_part<shards::Tetrahedron<4> >( "block_left_2" );
 
   meta.commit();
 
@@ -847,30 +445,30 @@ void UnitTestBucket::test_get_involved_parts(ParallelMachine pm)
   {
     int new_id = size * id_base + rank + 1;
     bulk.declare_entity( 3 , new_id , add_part4 );
-    bulk.declare_entity( Node , new_id , no_part );
+    bulk.declare_entity( top.node_rank , new_id , no_part );
   }
 
   bulk.modification_end();
 
-  const std::vector<Bucket*> & buckets = bulk.buckets( Element );
+  const std::vector<Bucket*> & buckets = bulk.buckets( top.element_rank );
 
   std::vector<Bucket*>::const_iterator k;
 
   k = buckets.begin();
 
   //test 1 covers aecond section of "if" statement in while loop
-  stk::mesh::get_involved_parts( union_parts, **k, involved_parts);
+  get_involved_parts( union_parts, **k, involved_parts);
 
   //test 2 covers union_parts.size() = 0
   PartVector union_parts2(0) ;
-  stk::mesh::get_involved_parts( union_parts2, **k, involved_parts);
+  get_involved_parts( union_parts2, **k, involved_parts);
 
   //test 3 covers first section of "if" statement in while loop
-  const std::vector<Bucket*> & buckets2 = bulk.buckets( Node );
+  const std::vector<Bucket*> & buckets2 = bulk.buckets( top.node_rank );
   std::vector<Bucket*>::const_iterator k2;
 
   k2 = buckets2.begin();
-  stk::mesh::get_involved_parts( union_parts, **k2, involved_parts);
+  get_involved_parts( union_parts, **k2, involved_parts);
 
   // tests on throw_error and BucketIterator in bucket.cpp/hpp
 
@@ -882,7 +480,7 @@ void UnitTestBucket::test_get_involved_parts(ParallelMachine pm)
   }
   typedef Field<double>  ScalarFieldType;
 
-  stk::mesh::MetaData meta2 ( entity_names );
+  MetaData meta2 ( entity_names );
   BulkData bulk2( meta2 , pm , 4 );
 
   ScalarFieldType & temperature2 =
@@ -890,25 +488,25 @@ void UnitTestBucket::test_get_involved_parts(ParallelMachine pm)
   ScalarFieldType & volume2 =
      meta2.declare_field < ScalarFieldType > ( "volume2" , 4 );
   Part  & universal     = meta2.universal_part ();
-  put_field ( temperature2 , Node , universal );
-  put_field ( volume2 , Element , universal );
+  put_field ( temperature2 , top.node_rank , universal );
+  put_field ( volume2 , top.element_rank , universal );
   meta2.commit();
 
   bulk2.modification_begin();
-  bulk2.declare_entity( Edge , rank+1 , no_part );
+  bulk2.declare_entity( top.edge_rank, rank+1 , no_part );
   bulk2.modification_end();
 
-  const std::vector<Bucket*> & buckets3 = bulk2.buckets( Edge );
+  const std::vector<Bucket*> & buckets3 = bulk2.buckets( top.edge_rank );
 
   std::vector<Bucket*>::const_iterator k3;
 
   k3 = buckets3.begin();
 
-  stk::mesh::Bucket& b3 = **k3;
-  stk::mesh::BucketIterator bitr3 = b3.begin();
+  Bucket& b3 = **k3;
+  BucketIterator bitr3 = b3.begin();
 
-  stk::mesh::Bucket& b2 = **k2;
-  stk::mesh::BucketIterator bitr2 = b2.begin();
+  Bucket& b2 = **k2;
+  BucketIterator bitr2 = b2.begin();
 
   //tests operator != given iterator from different bucket - bucket.hpp
 
@@ -923,9 +521,9 @@ void UnitTestBucket::test_get_involved_parts(ParallelMachine pm)
     }
     catch( const std::exception & x ) {
       ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
+      cout << "UnitTestBucket CORRECTLY caught error for : "
                 << x.what()
-                << std::endl ;
+                << endl ;
     }
 
     if ( ! ok ) {
@@ -946,9 +544,9 @@ void UnitTestBucket::test_get_involved_parts(ParallelMachine pm)
     }
     catch( const std::exception & x ) {
       ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
+      cout << "UnitTestBucket CORRECTLY caught error for : "
                 << x.what()
-                << std::endl ;
+                << endl ;
     }
 
     if ( ! ok ) {
@@ -964,24 +562,22 @@ void UnitTestBucket::testBucket2(ParallelMachine pm)
 
   // Tests to cover print, has_superset and BucketLess::operator() for Buckets.cpp - C.Brickley - 2nd June 2010
 
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+  const int spatial_dimension = 3;
+  MetaData meta ( TopologicalMetaData::entity_rank_names ( spatial_dimension ) );
+  TopologicalMetaData top( meta, spatial_dimension );
 
   PartVector involved_parts(2) ;
   involved_parts[0] = & meta.universal_part();
   involved_parts[1] = & meta.locally_owned_part();
 
-  stk::mesh::Part & partLeft_1 = meta.declare_part( "block_left_1", Element );
+  Part & partLeft_1 = meta.declare_part( "block_left_1", top.element_rank );
 
-  stk::mesh::Part & partLeft_2 = meta.declare_part( "block_left_2", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_2 );
-
-  stk::mesh::Part & partLeft_3 = meta.declare_part( "block_left_3", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_3 );
+  Part & partLeft_3 = top.declare_part<shards::Tetrahedron<4> >( "block_left_3" );
 
   meta.commit();
 
   BulkData bulk( meta , pm , 100 );
-  std::vector<stk::mesh::Part *>  add_part4;
+  std::vector<Part *>  add_part4;
   add_part4.push_back ( &partLeft_1 );
 
   bulk.modification_begin();
@@ -997,14 +593,14 @@ void UnitTestBucket::testBucket2(ParallelMachine pm)
 
   bulk.modification_end();
 
-  const std::vector<Bucket*> & buckets2 = bulk.buckets( Element );
+  const std::vector<Bucket*> & buckets2 = bulk.buckets( top.element_rank );
 
   std::vector<Bucket*>::const_iterator k2;
 
   k2 = buckets2.begin();
 
-  stk::mesh::Bucket& b2 = **k2;
-  stk::mesh::BucketIterator bitr2 = b2.begin();
+  Bucket& b2 = **k2;
+  BucketIterator bitr2 = b2.begin();
 
   //define a new meta and bulkdata
   std::vector<std::string> entity_names(10);
@@ -1017,7 +613,7 @@ void UnitTestBucket::testBucket2(ParallelMachine pm)
 
   typedef Field<double>  ScalarFieldType;
 
-  stk::mesh::MetaData meta2 ( entity_names );
+  MetaData meta2 ( entity_names );
   BulkData bulk2( meta2 , pm , 4 );
 
   ScalarFieldType & temperature2 =
@@ -1025,8 +621,8 @@ void UnitTestBucket::testBucket2(ParallelMachine pm)
   ScalarFieldType & volume2 =
        meta2.declare_field < ScalarFieldType > ( "volume2" , 4 );
   Part  & universal     = meta2.universal_part ();
-  put_field ( temperature2 , Node , universal );
-  put_field ( volume2 , Element , universal );
+  put_field ( temperature2 , top.node_rank , universal );
+  put_field ( volume2 , top.element_rank , universal );
 
   typedef Field<double>  VectorFieldType;
   typedef Field<double>  ElementNodePointerFieldType;
@@ -1034,8 +630,8 @@ void UnitTestBucket::testBucket2(ParallelMachine pm)
   meta2.commit();
 
   //Test to cover print function in Bucket.cpp
-  std::cout << std::endl << "Bucket test" << std::endl ;
-  stk::mesh::print(std::cout, "  ", b2);
+  cout << endl << "Bucket test" << endl ;
+  print(cout, "  ", b2);
 
   //Test to cover has_superset function in Bucket.cpp
   STKUNIT_ASSERT_EQUAL ( has_superset ( b2 , partLeft_3 ) , false );
@@ -1081,15 +677,16 @@ void UnitTestBucket::testBucket2(ParallelMachine pm)
 
 void UnitTestBucket::test_EntityComm( ParallelMachine pm )
 {
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+  const int spatial_dimension = 3;
+  MetaData meta ( TopologicalMetaData::entity_rank_names ( spatial_dimension ) );
+  TopologicalMetaData top( meta, spatial_dimension );
 
-  stk::mesh::BulkData bulk ( meta , pm , 100 );
-  std::vector<stk::mesh::Part *>  add_part4;
+  BulkData bulk ( meta , pm , 100 );
+  std::vector<Part *>  add_part4;
 
-  std::cout << std::endl << "Bucket test line 0.1" << std::endl ;
-  stk::mesh::Part & partLeft_1 = meta.declare_part( "block_left_1", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_1 );
-  std::cout << std::endl << "Bucket test line 0.2" << std::endl;
+  cout << endl << "Bucket test line 0.1" << endl ;
+  Part & partLeft_1 = top.declare_part<shards::Tetrahedron<4> >( "block_left_1" );
+  cout << endl << "Bucket test line 0.2" << endl;
   meta.commit();
 
   add_part4.push_back ( &partLeft_1 );
@@ -1100,7 +697,7 @@ void UnitTestBucket::test_EntityComm( ParallelMachine pm )
   PartVector tmp(1);
 
   bulk.modification_begin();
-  std::cout << std::endl << "Bucket test line 1" << std::endl ;
+  cout << endl << "Bucket test line 1" << endl ;
   //int id_base = 0;
   //int new_id = size * id_base + rank;
   //  for ( id_base = 0 ; id_base < 93 ; ++id_base )
@@ -1111,12 +708,12 @@ void UnitTestBucket::test_EntityComm( ParallelMachine pm )
 
   bulk.modification_end();
 
-  /*  std::cout << std::endl << "Bucket test line 3" << std::endl ;
+  /*  cout << endl << "Bucket test line 3" << endl ;
   bool result = in_shared(elem);
   if( result) {
      STKUNIT_ASSERT_EQUAL( result , true );
   }
-  std::cout << std::endl << "Bucket test line 4" << std::endl ;
+  cout << endl << "Bucket test line 4" << endl ;
 
   result = in_receive_ghost(elem);
   if( result) {
@@ -1124,19 +721,19 @@ void UnitTestBucket::test_EntityComm( ParallelMachine pm )
   }
 
     for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
-      std::cout << std::endl << "in relation h and p =" << p << std::endl ;
+      cout << endl << "in relation h and p =" << p << endl ;
 
       STKUNIT_ASSERT_EQUAL( in_send_ghost( *elem , p ), false );
-      std::cout << std::endl << "in relation ii =" << std::endl
+      cout << endl << "in relation ii =" << endl
    }
 
-  std::cout << std::endl << "Bucket test line 5" << std::endl ;
+  cout << endl << "Bucket test line 5" << endl ;
   result = in_send_ghost(elem);
   if( result) {
      STKUNIT_ASSERT_EQUAL( result , true );
      }
 
-  std::cout << std::endl << "Bucket test line 6" << std::endl ;
+  cout << endl << "Bucket test line 6" << endl ;
 
   unsigned proc = rank;
   unsigned procnew = rank+10;
@@ -1145,11 +742,10 @@ void UnitTestBucket::test_EntityComm( ParallelMachine pm )
   if( result) {
      STKUNIT_ASSERT_EQUAL( result , true );
   }
-  std::cout << std::endl << "Bucket test line 7" << std::endl ;  */
+  cout << endl << "Bucket test line 7" << endl ;  */
 }
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-} // namespace mesh
-} // namespace stk
+

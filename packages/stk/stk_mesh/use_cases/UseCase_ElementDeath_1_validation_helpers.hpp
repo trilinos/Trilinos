@@ -28,7 +28,11 @@ namespace fixtures {
 }
 
 //Generates a vector of entities to be killed in this iteration
-std::vector<stk::mesh::Entity *> entities_to_be_killed( const stk::mesh::BulkData & mesh, int iteration);
+std::vector<stk::mesh::Entity *> entities_to_be_killed( 
+    const stk::mesh::BulkData & mesh, 
+    int iteration, 
+    stk::mesh::EntityRank entity_rank
+    );
 
 //Validates that the correct entites were killed in this iteration
 bool validate_iteration(

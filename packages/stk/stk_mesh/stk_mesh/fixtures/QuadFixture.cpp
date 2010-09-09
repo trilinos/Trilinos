@@ -29,9 +29,11 @@ QuadFixture::~QuadFixture()
 
 QuadFixture::QuadFixture( stk::ParallelMachine pm ,
                         unsigned nx , unsigned ny )
-  : meta_data( stk::mesh::fem_entity_rank_names() ),
+  : spatial_dimension(2),
+    meta_data( TopologicalMetaData::entity_rank_names(spatial_dimension) ),
     bulk_data( meta_data , pm ),
-    quad_part( meta_data.declare_part("quad_part", stk::mesh::Element) ),
+    top_data( meta_data, spatial_dimension ),
+    quad_part( top_data.declare_part<shards::Quadrilateral<4> >("quad_part" ) ),
     coord_field( meta_data.declare_field<CoordFieldType>("Coordinates") ),
     coord_gather_field( meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
     NX( nx ),
@@ -41,13 +43,10 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   enum { SpatialDim = 2 };
   enum { NodesPerElem = Quad4::node_count };
 
-  // Set topology of the element block part
-  stk::mesh::set_cell_topology< Quad4 >(quad_part);
-
   //put coord-field on all nodes:
   put_field(
       coord_field,
-      Node,
+      top_data.node_rank,
       meta_data.universal_part(),
       SpatialDim
       );
@@ -55,7 +54,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   //put coord-gather-field on all elements:
   put_field(
       coord_gather_field,
-      Element,
+      top_data.element_rank,
       meta_data.universal_part(),
       NodesPerElem
       );
@@ -115,7 +114,7 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
       stk::mesh::declare_element( bulk_data, quad_part, elem_id( ix , iy ) , elem_node);
       for (unsigned i = 0; i<4; ++i) {
         stk::mesh::Entity * const node =
-          bulk_data.get_entity( stk::mesh::Node , elem_node[i] );
+          bulk_data.get_entity( top_data.node_rank , elem_node[i] );
 
         if ( node != NULL) {
 

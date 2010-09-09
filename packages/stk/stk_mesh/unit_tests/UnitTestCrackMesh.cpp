@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
     const stk::mesh::PartVector no_parts;
 
     stk::mesh::Entity & new_node =
-      mesh.declare_entity(stk::mesh::Node, new_node_id, no_parts);
+      mesh.declare_entity(fixture.top_data.node_rank, new_node_id, no_parts);
 
     mesh.destroy_relation(*right_element, *old_node);
     mesh.declare_relation(*right_element, new_node, right_ordinal);

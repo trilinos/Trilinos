@@ -386,7 +386,7 @@ void verify_parallel_consistency( const MetaData & , ParallelMachine );
  */
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_rank ,
+                        EntityRank  entity_rank ,
                         const Part & part );
 
 /** \brief  Declare a  field to exist
@@ -394,20 +394,20 @@ field_type & put_field( field_type & field ,
  */
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_rank ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 );
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_rank ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 );
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_rank ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -415,7 +415,7 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_rank ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -424,7 +424,7 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_rank ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -434,7 +434,7 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_rank ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -445,7 +445,7 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_rank ,
+                        EntityRank  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -512,7 +512,7 @@ template< class field_type >
 inline
 field_type & put_field(
   field_type & field ,
-  unsigned entity_rank ,
+  EntityRank entity_rank ,
   const Part & part )
 {
   typedef FieldTraits< field_type > Traits ;
@@ -531,7 +531,7 @@ field_type & put_field(
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_rank ,
+                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 )
 {
@@ -551,7 +551,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_rank ,
+                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 )
@@ -572,7 +572,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_rank ,
+                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -594,7 +594,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_rank ,
+                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -617,7 +617,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_rank ,
+                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -641,7 +641,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_rank ,
+                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -666,7 +666,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_rank ,
+                        EntityRank entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,

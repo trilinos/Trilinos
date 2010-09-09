@@ -17,6 +17,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
@@ -292,38 +293,23 @@ void UnitTestMetaData::testPart()
 
   //Test to cover assert_contain in PartRepository - Part is not a subset
   {
-    int ok = 0 ;
-    try {
-      impl::PartRepository partRepo2(m);
+    const int spatial_dimension = 1;
+    std::vector< std::string > dummy_names(spatial_dimension);
+    dummy_names[0].assign("dummy");
 
-      PartVector intersection2 ;
-      std::vector< std::string > dummy_names(1);
-      dummy_names[0].assign("dummy");
+    stk::mesh::MetaData meta( dummy_names );
 
-      stk::mesh::MetaData meta( dummy_names );
+    stk::mesh::Part &new_part4 = meta.declare_part ( "another part");
+    meta.commit();
 
-      stk::mesh::Part &new_part4 = meta.declare_part ( "another part");
-      meta.commit();
+    PartVector intersection2 ;
+    intersection2.push_back( &new_part4 );
 
-      intersection2.push_back( &new_part4 );
-      intersection2.push_back( &new_part4 );
-      intersection2.push_back( &new_part4 );
-      intersection2.push_back( &new_part4 );
-      intersection2.push_back( &new_part4 );
-
-      Part &partP = * partRepo2.declare_part(intersection2);
-      stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partP );
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for assert_contain in PartRepository");
-    }
+    impl::PartRepository partRepo2(m);
+    STKUNIT_ASSERT_THROW(
+        partRepo2.declare_part(intersection2), 
+        std::runtime_error
+        );
   }
 
   //Test to cover assert_same_universe in PartRepository - Part is not in the same universe
@@ -1161,9 +1147,8 @@ namespace mesh {
 
 void UnitTestMetaData::testMetaData()
 {
-  const std::vector<std::string> & type_names = fem_entity_rank_names();
-
-  STKUNIT_ASSERT_EQUAL( type_names.size() , (size_t) EntityRankEnd );
+  const int spatial_dimension = 3;
+  const std::vector<std::string> & type_names = TopologicalMetaData::entity_rank_names(spatial_dimension);
 
   MetaData metadata2( type_names );
   MetaData metadata3( type_names );
@@ -1222,16 +1207,11 @@ void UnitTestMetaData::testMetaData()
 
   STKUNIT_ASSERT( i_name2 == type_names[i] );
 
-  i = EntityRankEnd;
-  bool caught_throw = false;
-  try {
-    metadata2.entity_rank_name( i );
-  }
-  catch(...) {
-    caught_throw = true;
-  }
-
-  STKUNIT_ASSERT_EQUAL(caught_throw, true);
+  EntityRank one_rank_higher_than_defined = type_names.size();
+  STKUNIT_ASSERT_THROW( 
+    metadata2.entity_rank_name( one_rank_higher_than_defined ),
+    std::runtime_error
+    );
 }
 
 void UnitTestMetaData::testEntityRepository()

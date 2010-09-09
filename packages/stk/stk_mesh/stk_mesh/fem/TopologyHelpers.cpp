@@ -30,78 +30,6 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-const CellTopologyData * get_cell_topology( const Part & p )
-{ return p.attribute<CellTopologyData>(); }
-
-void set_cell_topology( Part & p , const CellTopologyData * singleton )
-{
-  static const char method[] = "stk::mesh::set_cell_topology" ;
-
-  MetaData & m = p.mesh_meta_data();
-
-  const CellTopologyData * t = NULL ;
-
-  if ( p.mesh_meta_data().entity_rank_count() <= p.primary_entity_rank() ||
-       singleton == NULL ||
-       singleton != ( t = m.declare_attribute_no_delete(p,singleton) ) ) {
-    std::ostringstream msg ;
-    msg << method << "( " << p.name();
-    msg << " entity_rank(" << p.primary_entity_rank() << ") , " ;
-    if ( singleton ) { msg << singleton->name ; }
-    else             { msg << "NULL" ; }
-    msg << " ) ERROR" ;
-    if ( t ) { msg << "Existing topology = " << t->name ; }
-    throw std::runtime_error( msg.str() );
-  }
-}
-
-//----------------------------------------------------------------------
-
-
-const CellTopologyData * get_cell_topology( const Bucket & bucket )
-{
-  const CellTopologyData * top = NULL ;
-  PartVector parts ;
-  bucket.supersets( parts );
-
-  PartVector::iterator i = parts.begin() ;
-
-  for ( ; NULL == top && i != parts.end() ; ++i ) {
-    if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
-      top = get_cell_topology( **i );
-    }
-  }
-
-  bool ok = true ;
-
-  for ( ; ok && i != parts.end() ; ++i ) {
-    if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
-      const CellTopologyData * const tmp = get_cell_topology( **i );
-      ok = ((tmp == NULL) || (tmp == top)) ;
-    }
-  }
-
-  if ( ! ok ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::get_cell_topology( Bucket[" ;
-    for ( i = parts.begin() ; i != parts.end() ; ++i ) {
-      if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
-        const CellTopologyData * const tmp = get_cell_topology( **i );
-        msg << " " << (*i)->name();
-        if ( tmp ) { msg << "->" << tmp->name ; }
-        msg << " ] ) FAILED WITH MULTIPLE LOCAL TOPOLOGIES" ;
-        throw std::runtime_error( msg.str() );
-      }
-    }
-  }
-  return top ;
-}
-
-const CellTopologyData * get_cell_topology( const Entity & entity )
-{ return get_cell_topology( entity.bucket() ); }
-
-//----------------------------------------------------------------------
-
 namespace {
 
 void verify_declare_element_side(
@@ -190,20 +118,15 @@ Entity & declare_element_side(
 
   const unsigned * const side_node_map = elem_top->side[ local_side_id ].node ;
 
-  // This is dangerous if the unsigned enums are changed. Try to catch at compile time...
-  enum { DimensionMappingAssumption_OK =
-           StaticAssert< stk::mesh::Edge == 1 && stk::mesh::Face == 2 >::OK };
-
   PartVector add_parts ;
 
   if ( part ) { add_parts.push_back( part ); }
 
-  //\TODO refactor: is 'dimension' the right thing to use for EntityRank here???
   mesh.change_entity_parts(side, add_parts);
 
   mesh.declare_relation( elem , side , local_side_id );
 
-  PairIterRelation rel = elem.relations( Node );
+  PairIterRelation rel = elem.relations( BaseEntityRank );
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
     Entity & node = * rel[ side_node_map[i] ].entity();
@@ -259,7 +182,11 @@ bool element_side_polarity( const Entity & elem ,
 {
   static const char method[] = "stk::mesh::element_side_polarity" ;
 
-  const bool is_side = side.entity_rank() != Edge ;
+  // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
+  // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a TopologicalMetaData off of MetaData or we need to take one on input.
+  //const TopologicalMetaData& top_data = *elem.bucket().mesh().mesh_meta_data().get_attribute<TopologicalMetaData>();
+  //const bool is_side = side.entity_rank() != top_data.edge_rank;
+  const bool is_side = side.entity_rank() != Edge;
 
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 
@@ -294,8 +221,8 @@ bool element_side_polarity( const Entity & elem ,
     is_side ? elem_top->side[ local_side_id ].node
             : elem_top->edge[ local_side_id ].node ;
 
-  const PairIterRelation elem_nodes = elem.relations( Node );
-  const PairIterRelation side_nodes = side.relations( Node );
+  const PairIterRelation elem_nodes = elem.relations( BaseEntityRank );
+  const PairIterRelation side_nodes = side.relations( BaseEntityRank );
 
   bool good = true ;
   for ( unsigned j = 0 ; good && j < side_top->node_count ; ++j ) {
@@ -317,7 +244,7 @@ int element_local_side_id( const Entity & elem ,
   }
 
   // get nodal relations for elem
-  PairIterRelation relations = elem.relations(Node);
+  PairIterRelation relations = elem.relations(BaseEntityRank);
 
   const unsigned subcell_rank = elem_topology->dimension - 1;
 

@@ -22,6 +22,7 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -38,8 +39,10 @@ public:
 
   ~QuadFixture();
 
+  const unsigned         spatial_dimension;
   stk::mesh::MetaData    meta_data ;
   stk::mesh::BulkData    bulk_data ;
+  stk::mesh::TopologicalMetaData top_data;
   stk::mesh::Part      & quad_part ;
   CoordFieldType       & coord_field ;
   CoordGatherFieldType & coord_gather_field ;
@@ -53,7 +56,7 @@ public:
     { return 1 + ix + NX * iy ; }
 
   stk::mesh::Entity * node( unsigned ix , unsigned iy ) const
-    { return bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy) ); }
+    { return bulk_data.get_entity( top_data.node_rank , node_id(ix,iy) ); }
 
   void node_ix_iy( EntityId entity_id, unsigned &ix , unsigned &iy ) const  {
     entity_id -= 1;
@@ -74,7 +77,7 @@ public:
   }
 
   stk::mesh::Entity * elem( unsigned ix , unsigned iy ) const
-    { return bulk_data.get_entity( stk::mesh::Element , elem_id(ix,iy) ); }
+    { return bulk_data.get_entity( top_data.element_rank , elem_id(ix,iy) ); }
 
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
 

@@ -33,6 +33,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 /*class UnitTestingOfRelation : public ::CppUnit::TestCase {
 private:
@@ -89,6 +90,9 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
 
   MetaData meta( entity_names );
   MetaData meta2 ( entity_names );
+  const int spatial_dimension = 3;
+  TopologicalMetaData top( meta, spatial_dimension );
+  TopologicalMetaData top2( meta2, spatial_dimension );
 
   BulkData bulk( meta , pm , 4 );
   BulkData bulk2( meta2 , pm , 4 );
@@ -106,11 +110,11 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
   Part  & universal2    = meta2.universal_part ();
   Part  & owned         = meta.locally_owned_part ();
 
-  put_field ( temperature , Node , universal );
-  put_field ( volume , Element , universal );
+  put_field ( temperature , top.node_rank , universal );
+  put_field ( volume , top.element_rank , universal );
   meta.commit();
-  put_field ( temperature2 , Node , universal2 );
-  put_field ( volume2 , Element , universal2 );
+  put_field ( temperature2 , top2.node_rank , universal2 );
+  put_field ( volume2 , top2.element_rank , universal2 );
   meta2.commit();
 
 
@@ -182,7 +186,7 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
 
 
   const unsigned nLocalEdge = nPerProc ;
-  MetaData meta3( fem_entity_rank_names() );
+  MetaData meta3( TopologicalMetaData::entity_rank_names(spatial_dimension) );
 
   meta3.commit();
 
@@ -267,123 +271,123 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
 // Testing for a simple loop of mesh entities.
 // node_key[i] : edge_key[i] : node_key[ ( i + 1 ) % node_key.size() ]
 
-void UnitTestRelation::generate_loop(
-  BulkData & mesh ,
-  const PartVector      & edge_parts ,
-  const bool              generate_aura ,
-  const unsigned          nPerProc ,
-  std::vector<EntityId> & node_ids ,
-  std::vector<EntityId> & edge_ids )
-{
-  const unsigned p_rank = mesh.parallel_rank();
-  const unsigned p_size = mesh.parallel_size();
-  const unsigned id_total = nPerProc * p_size ;
-  const unsigned id_begin = nPerProc * p_rank ;
-  const unsigned id_end   = nPerProc * ( p_rank + 1 );
-  const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
-  const unsigned nLocalEdge = nPerProc ;
-  const unsigned n_extra = generate_aura && 1 < p_size ? 2 : 0 ;
-
-  node_ids.resize( id_total );
-  edge_ids.resize( id_total );
-  std::vector<unsigned> local_count ;
-
-  for ( unsigned i = 0 ; i < id_total ; ++i ) {
-    node_ids[i] = i + 1;
-    edge_ids[i] = i + 1;
-  }
-
-  // Create a loop of edges:
-  {
-    const PartVector no_parts ;
-    PartVector add_parts ;
-
-    if ( ! edge_parts.empty() ) { add_parts.resize(1); }
-
-    for ( unsigned i = id_begin ; i < id_end ; ++i ) {
-      const unsigned n0 = i ;
-      const unsigned n1 = ( i + 1 ) % id_total ;
-      if ( ! edge_parts.empty() ) {
-        add_parts[0] = edge_parts[ i % edge_parts.size() ];
-      }
-      Entity & e_node_0 = mesh.declare_entity( 0 , node_ids[n0] , no_parts );
-      Entity & e_node_1 = mesh.declare_entity( 0 , node_ids[n1] , no_parts );
-      Entity & e_edge   = mesh.declare_entity( 1 , edge_ids[i] , add_parts );
-      mesh.declare_relation( e_edge , e_node_0 , 0 );
-      mesh.declare_relation( e_edge , e_node_1 , 1 );
-    }
-  }
-
-  Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
-  Selector select_used = mesh.mesh_meta_data().locally_owned_part() |
-                         mesh.mesh_meta_data().globally_shared_part();
-  Selector select_all(  mesh.mesh_meta_data().universal_part() );
-
-  count_entities( select_used , mesh , local_count );
-  STKUNIT_ASSERT( local_count[stk::mesh::Node] == nLocalNode );
-  STKUNIT_ASSERT( local_count[stk::mesh::Edge] == nLocalEdge );
-
-  std::vector<Entity*> all_nodes;
-  get_entities(mesh, stk::mesh::Node, all_nodes);
-
-  unsigned num_selected_nodes =
-      count_selected_entities( select_used, mesh.buckets(stk::mesh::Node) );
-  STKUNIT_ASSERT( num_selected_nodes == local_count[stk::mesh::Node] );
-
-  std::vector<Entity*> universal_nodes;
-  get_selected_entities( select_all, mesh.buckets(stk::mesh::Node), universal_nodes );
-  STKUNIT_ASSERT( universal_nodes.size() == all_nodes.size() );
-
-  mesh.modification_end();
-
-  // Verify declarations and sharing two end nodes:
-
-  count_entities( select_used , mesh , local_count );
-  STKUNIT_ASSERT( local_count[0] == nLocalNode );
-  STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-  // Test no-op first:
-
-  std::vector<EntityProc> change ;
-
-  STKUNIT_ASSERT( mesh.modification_begin() );
-  mesh.change_entity_owner( change );
-  mesh.modification_end();
-
-  count_entities( select_used , mesh , local_count );
-  STKUNIT_ASSERT( local_count[0] == nLocalNode );
-  STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-  count_entities( select_all , mesh , local_count );
-  STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
-  STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
-
-  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
-  if ( 1 < p_size ) {
-    Entity * const e_node_0 = mesh.get_entity( 0 , node_ids[id_begin] );
-    if ( p_rank == e_node_0->owner_rank() ) {
-      EntityProc entry ;
-      entry.first = e_node_0 ;
-      entry.second = ( p_rank + p_size - 1 ) % p_size ;
-      change.push_back( entry );
-    }
-    STKUNIT_ASSERT( mesh.modification_begin() );
-    mesh.change_entity_owner( change );
-    mesh.modification_end();
-
-    count_entities( select_all , mesh , local_count );
-    STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
-
-    count_entities( select_used , mesh , local_count );
-    STKUNIT_ASSERT( local_count[0] == nLocalNode );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-    count_entities( select_owned , mesh , local_count );
-    STKUNIT_ASSERT( local_count[0] == nPerProc );
-    STKUNIT_ASSERT( local_count[1] == nPerProc );
-  }
-}
+//void UnitTestRelation::generate_loop(
+//  BulkData & mesh ,
+//  const PartVector      & edge_parts ,
+//  const bool              generate_aura ,
+//  const unsigned          nPerProc ,
+//  std::vector<EntityId> & node_ids ,
+//  std::vector<EntityId> & edge_ids )
+//{
+//  const unsigned p_rank = mesh.parallel_rank();
+//  const unsigned p_size = mesh.parallel_size();
+//  const unsigned id_total = nPerProc * p_size ;
+//  const unsigned id_begin = nPerProc * p_rank ;
+//  const unsigned id_end   = nPerProc * ( p_rank + 1 );
+//  const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
+//  const unsigned nLocalEdge = nPerProc ;
+//  const unsigned n_extra = generate_aura && 1 < p_size ? 2 : 0 ;
+//
+//  node_ids.resize( id_total );
+//  edge_ids.resize( id_total );
+//  std::vector<unsigned> local_count ;
+//
+//  for ( unsigned i = 0 ; i < id_total ; ++i ) {
+//    node_ids[i] = i + 1;
+//    edge_ids[i] = i + 1;
+//  }
+//
+//  // Create a loop of edges:
+//  {
+//    const PartVector no_parts ;
+//    PartVector add_parts ;
+//
+//    if ( ! edge_parts.empty() ) { add_parts.resize(1); }
+//
+//    for ( unsigned i = id_begin ; i < id_end ; ++i ) {
+//      const unsigned n0 = i ;
+//      const unsigned n1 = ( i + 1 ) % id_total ;
+//      if ( ! edge_parts.empty() ) {
+//        add_parts[0] = edge_parts[ i % edge_parts.size() ];
+//      }
+//      Entity & e_node_0 = mesh.declare_entity( 0 , node_ids[n0] , no_parts );
+//      Entity & e_node_1 = mesh.declare_entity( 0 , node_ids[n1] , no_parts );
+//      Entity & e_edge   = mesh.declare_entity( 1 , edge_ids[i] , add_parts );
+//      mesh.declare_relation( e_edge , e_node_0 , 0 );
+//      mesh.declare_relation( e_edge , e_node_1 , 1 );
+//    }
+//  }
+//
+//  Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
+//  Selector select_used = mesh.mesh_meta_data().locally_owned_part() |
+//                         mesh.mesh_meta_data().globally_shared_part();
+//  Selector select_all(  mesh.mesh_meta_data().universal_part() );
+//
+//  count_entities( select_used , mesh , local_count );
+//  STKUNIT_ASSERT( local_count[stk::mesh::Node] == nLocalNode );
+//  STKUNIT_ASSERT( local_count[stk::mesh::Edge] == nLocalEdge );
+//
+//  std::vector<Entity*> all_nodes;
+//  get_entities(mesh, stk::mesh::Node, all_nodes);
+//
+//  unsigned num_selected_nodes =
+//      count_selected_entities( select_used, mesh.buckets(stk::mesh::Node) );
+//  STKUNIT_ASSERT( num_selected_nodes == local_count[stk::mesh::Node] );
+//
+//  std::vector<Entity*> universal_nodes;
+//  get_selected_entities( select_all, mesh.buckets(stk::mesh::Node), universal_nodes );
+//  STKUNIT_ASSERT( universal_nodes.size() == all_nodes.size() );
+//
+//  mesh.modification_end();
+//
+//  // Verify declarations and sharing two end nodes:
+//
+//  count_entities( select_used , mesh , local_count );
+//  STKUNIT_ASSERT( local_count[0] == nLocalNode );
+//  STKUNIT_ASSERT( local_count[1] == nLocalEdge );
+//
+//  // Test no-op first:
+//
+//  std::vector<EntityProc> change ;
+//
+//  STKUNIT_ASSERT( mesh.modification_begin() );
+//  mesh.change_entity_owner( change );
+//  mesh.modification_end();
+//
+//  count_entities( select_used , mesh , local_count );
+//  STKUNIT_ASSERT( local_count[0] == nLocalNode );
+//  STKUNIT_ASSERT( local_count[1] == nLocalEdge );
+//
+//  count_entities( select_all , mesh , local_count );
+//  STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
+//  STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
+//
+//  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
+//  if ( 1 < p_size ) {
+//    Entity * const e_node_0 = mesh.get_entity( 0 , node_ids[id_begin] );
+//    if ( p_rank == e_node_0->owner_rank() ) {
+//      EntityProc entry ;
+//      entry.first = e_node_0 ;
+//      entry.second = ( p_rank + p_size - 1 ) % p_size ;
+//      change.push_back( entry );
+//    }
+//    STKUNIT_ASSERT( mesh.modification_begin() );
+//    mesh.change_entity_owner( change );
+//    mesh.modification_end();
+//
+//    count_entities( select_all , mesh , local_count );
+//    STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
+//    STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
+//
+//    count_entities( select_used , mesh , local_count );
+//    STKUNIT_ASSERT( local_count[0] == nLocalNode );
+//    STKUNIT_ASSERT( local_count[1] == nLocalEdge );
+//
+//    count_entities( select_owned , mesh , local_count );
+//    STKUNIT_ASSERT( local_count[0] == nPerProc );
+//    STKUNIT_ASSERT( local_count[1] == nPerProc );
+//  }
+//}
 
 //----------------------------------------------------------------------
 

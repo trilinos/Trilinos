@@ -15,6 +15,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 /** stk_mesh Use Case 2
  * Note, the basic layout of the mesh is the same as Use Case 1, with
@@ -71,8 +72,10 @@ public:
 
   void populate( unsigned nleft , unsigned nright );
 
+  const int           m_spatial_dimension;
   stk::mesh::MetaData m_metaData;
   stk::mesh::BulkData m_bulkData;
+  stk::mesh::TopologicalMetaData m_topData;
   stk::mesh::Part   & m_partLeft;
   stk::mesh::Part   & m_partRight;
   VectorFieldType   & m_coordinates_field;

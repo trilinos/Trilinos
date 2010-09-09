@@ -8,6 +8,7 @@
 #include <use_cases/UseCase_Skinning.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -15,6 +16,7 @@
 
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <stk_mesh/fem/SkinMesh.hpp>
 
@@ -31,11 +33,13 @@ void destroy_entity_and_create_particles(
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
 
   fixture.bulk_data.modification_begin();
+  stk::mesh::TopologicalMetaData& top_data = fixture.top_data;
+  const stk::mesh::EntityRank particle_rank = top_data.patch_rank;
 
   // forumlate request for 8 particles on owning process
   std::vector<size_t> requests(fixture.meta_data.entity_rank_count(), 0);
   if ( elem != NULL && p_rank == elem->owner_rank() ) {
-    requests[stk::mesh::Particle] = 8;
+    requests[particle_rank] = 8;
   }
 
   // create the particles
@@ -80,7 +84,7 @@ void destroy_entity_and_create_particles(
         itr != downward_relations.end(); ++itr) {
       stk::mesh::Entity * current_entity = *itr;
 
-      if (current_entity->relations(stk::mesh::Element).empty()) {
+      if (current_entity->relations(top_data.element_rank).empty()) {
         fixture.bulk_data.destroy_entity( current_entity );
       }
     }
@@ -88,7 +92,7 @@ void destroy_entity_and_create_particles(
 
   fixture.bulk_data.modification_end();
 
-  stk::mesh::skin_mesh( fixture.bulk_data, stk::mesh::Element, &skin_part);
+  stk::mesh::skin_mesh( fixture.bulk_data, top_data.element_rank, &skin_part);
 }
 
 }
@@ -106,11 +110,14 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
       stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
+      stk::mesh::TopologicalMetaData& top_data = fixture.top_data;
+      const stk::mesh::EntityRank particle_rank = top_data.patch_rank;
+
       stk::mesh::Part & skin_part =
         fixture.meta_data.declare_part("skin_part");
 
       stk::mesh::put_field( fixture.coord_field,
-                            stk::mesh::Particle,
+                            particle_rank,
                             fixture.meta_data.universal_part(),
                             3 );
 
@@ -118,7 +125,7 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
 
       fixture.generate_mesh();
 
-      stk::mesh::skin_mesh(fixture.bulk_data, stk::mesh::Element, &skin_part);
+      stk::mesh::skin_mesh(fixture.bulk_data, top_data.element_rank, &skin_part);
 
       stk::mesh::Entity * elem = fixture.elem(ix , iy , iz);
 

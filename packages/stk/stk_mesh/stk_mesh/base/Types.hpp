@@ -17,7 +17,6 @@
 #include <vector>
 
 #include <stk_util/util/PairIter.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
 #include <stk_util/util/NamedPair.hpp>
 
 namespace stk {
@@ -85,6 +84,11 @@ template< class FieldType > struct FieldTraits ;
 
 typedef unsigned EntityRank ;
 typedef uint64_t EntityId ;
+
+
+typedef unsigned Ordinal;
+typedef Ordinal PartOrdinal;
+typedef Ordinal FieldOrdinal;
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel

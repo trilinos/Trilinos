@@ -10,10 +10,19 @@
 #define stk_mesh_TopologicalMetaData_hpp
 
 #include <Shards_CellTopologyData.h>
+#include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
 namespace stk {
 namespace mesh {
+
+// Base Entity Rank (also known as "Node") 
+// This identifier is used without a TopologicalMetaData at times and so it
+// needs to be accessible here.
+// Note:  This BaseEntityRank can be considered the leaf of a tree and it
+// represents the furthest out you can go in downward relations.
+enum { BaseEntityRank = EntityRank(0) };
+
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -70,6 +79,7 @@ public:
  *          is thrown.
  */
   static const CellTopologyData * get_cell_topology( const Bucket & bucket , const char * required_by = 0 );
+  static const CellTopologyData * get_cell_topology( const Entity & entity , const char * required_by = 0 );
 
   //--------------------------------------------------------------------------
   /** \brief  Declare part of a given name and associated cell topology.
@@ -94,6 +104,13 @@ public:
 
   //throws if not found
   EntityRank get_entity_rank( const CellTopologyData * ) const ;
+
+  // TODO:  Move to private block after refactoring is finished.
+  void internal_set_cell_topology( 
+      Part & part, 
+      unsigned entity_rank, 
+      const CellTopologyData * top
+      );
 
 private:
 

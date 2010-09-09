@@ -9,6 +9,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 /*----------------------------------------------------------------------------
 
@@ -37,8 +38,10 @@ public:
 
   Grid2D_Fixture( stk::ParallelMachine );
 
+  unsigned                 m_spatial_dimension;
   stk::mesh::MetaData      m_meta_data ;
   stk::mesh::BulkData      m_bulk_data ;
+  stk::mesh::TopologicalMetaData m_top_data;
   stk::mesh::Part        & m_quad_part ;
   VectorField & m_coord_field ;
 

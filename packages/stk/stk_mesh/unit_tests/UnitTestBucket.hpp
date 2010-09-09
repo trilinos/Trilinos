@@ -14,7 +14,12 @@
 //----------------------------------------------------------------------
 
 namespace stk {
-namespace mesh {
+namespace unit_test {
+
+using mesh::EntityId;
+using mesh::Part;
+using mesh::PartVector;
+using mesh::BulkData;
 
 class UnitTestBucket {
 public:
@@ -31,12 +36,12 @@ public:
    *
    *    edge_ids[ nPerProc * p_rank .. nPerProc * ( p_rank + 1 ) - 1 ]
    */
-  static void generate_loop( BulkData & mesh ,
-                             const PartVector      & edge_parts , 
-                             const bool              generate_aura , 
-                             const unsigned          nPerProc ,
-                             std::vector<EntityId> & node_ids ,
-                             std::vector<EntityId> & edge_ids );
+  //static void generate_loop( BulkData & mesh ,
+  //                           const PartVector      & edge_parts , 
+  //                           const bool              generate_aura , 
+  //                           const unsigned          nPerProc ,
+  //                           std::vector<EntityId> & node_ids ,
+  //                           std::vector<EntityId> & edge_ids );
 
   /** Generate a box mesh which is globally ( ngx X ngy X ngz )
    *  elements where:

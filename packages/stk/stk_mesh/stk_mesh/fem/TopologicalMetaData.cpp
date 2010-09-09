@@ -208,9 +208,7 @@ void TopologicalMetaData::declare_cell_topology(
 Part & TopologicalMetaData::declare_part(
   const std::string & name , const CellTopologyData * top )
 {
-  static const char method[] = "stk::mesh::TopologicalMetaData::declare_part" ;
-
-  typedef std::pair< unsigned , const CellTopologyData * > ValueType ;
+  //static const char method[] = "stk::mesh::TopologicalMetaData::declare_part" ;
 
   EntityRank entity_rank;
   try {
@@ -223,6 +221,20 @@ Part & TopologicalMetaData::declare_part(
 
   Part & part = m_meta_data.declare_part( name , entity_rank );
 
+  internal_set_cell_topology(part, entity_rank, top);
+  return part ;
+}
+
+//----------------------------------------------------------------------------
+
+void TopologicalMetaData::internal_set_cell_topology( 
+    Part & part, 
+    unsigned entity_rank, 
+    const CellTopologyData * top
+    ) 
+{
+  static const char method[] = "stk::mesh::TopologicalMetaData::internal_set_cell_topology" ;
+  typedef std::pair< PartOrdinal , const CellTopologyData * > ValueType ;
   ValueType value( part.mesh_meta_data_ordinal() , top );
 
   std::vector< ValueType >::iterator
@@ -251,15 +263,14 @@ Part & TopologicalMetaData::declare_part(
     m_part_top_map.insert( i , value );
   }
 
-  return part ;
 }
 
 //----------------------------------------------------------------------------
 
 const CellTopologyData *
-TopologicalMetaData::internal_get_cell_topology( unsigned part_ordinal ) const
+TopologicalMetaData::internal_get_cell_topology( PartOrdinal part_ordinal ) const
 {
-  typedef std::pair< unsigned , const CellTopologyData * > ValueType ;
+  typedef std::pair< PartOrdinal , const CellTopologyData * > ValueType ;
 
   ValueType tmp( part_ordinal , NULL );
 
@@ -443,6 +454,15 @@ TopologicalMetaData::get_cell_topology( const Bucket & bucket ,
   }
 
   return cell_top ;
+}
+
+//----------------------------------------------------------------------------
+
+const CellTopologyData *
+TopologicalMetaData::get_cell_topology( const Entity & entity ,
+                                        const char * required_by )
+{
+  return get_cell_topology( entity.bucket(), required_by );
 }
 
 }

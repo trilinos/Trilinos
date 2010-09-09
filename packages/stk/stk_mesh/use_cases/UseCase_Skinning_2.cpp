@@ -26,15 +26,13 @@
 
 namespace {
 
-  unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part) {
-
-    const unsigned mesh_rank = stk::mesh::Element;
+  unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank) {
 
     const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
     stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
-    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( mesh_rank -1);
+    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
 
     return count_selected_entities( select_skin, buckets);
   }
@@ -88,14 +86,14 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
   //number of faces  and particles exist.
   try {
     stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
+    stk::mesh::TopologicalMetaData & top_data = fixture.top_data;
 
     const unsigned p_rank = fixture.bulk_data.parallel_rank();
     const unsigned p_size = fixture.bulk_data.parallel_size();
 
     stk::mesh::Part & skin_part = fixture.meta_data.declare_part("skin_part");
 
-    stk::mesh::Part & shell_part = fixture.meta_data.declare_part("shell_part", stk::mesh::Element);
-    stk::mesh::set_cell_topology<shards::ShellQuadrilateral<4> >(shell_part);
+    stk::mesh::Part & shell_part = top_data.declare_part<shards::ShellQuadrilateral<4> >("shell_part");
 
     fixture.meta_data.commit();
 
@@ -123,14 +121,14 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
     }
     fixture.bulk_data.modification_end();
 
-    stk::mesh::skin_mesh(fixture.bulk_data, stk::mesh::Element, &skin_part);
+    stk::mesh::skin_mesh(fixture.bulk_data, top_data.element_rank, &skin_part);
 
     //----------------------------------------------------------------------
     //Actual usecase
     //----------------------------------------------------------------------
 
     {
-      int num_skin_entities = count_skin_entities( fixture.bulk_data, skin_part);
+      int num_skin_entities = count_skin_entities( fixture.bulk_data, skin_part, top_data.side_rank);
 
       stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
@@ -153,10 +151,10 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
     fixture.bulk_data.modification_end();
 
-    stk::mesh::skin_mesh( fixture.bulk_data, stk::mesh::Element, &skin_part);
+    stk::mesh::skin_mesh( fixture.bulk_data, top_data.element_rank, &skin_part);
 
     {
-      int num_skin_entities = count_skin_entities( fixture.bulk_data, skin_part);
+      int num_skin_entities = count_skin_entities( fixture.bulk_data, skin_part, top_data.side_rank);
 
       stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 

@@ -37,9 +37,11 @@ namespace {
     nodes.clear();
 
     //the closure is a sorted unique vector
+    const stk::mesh::EntityRank upward_rank = stk::mesh::BaseEntityRank + 1;
+    const stk::mesh::EntityId base_id = 0;
     stk::mesh::EntityVector::iterator node_end = std::lower_bound(closure.begin(),
         closure.end(),
-        stk::mesh::EntityKey(stk::mesh::Edge, 0),
+        stk::mesh::EntityKey(upward_rank, base_id),
         stk::mesh::EntityLess());
 
     for (stk::mesh::EntityVector::iterator itr = closure.begin(); itr != node_end; ++itr) {
@@ -200,7 +202,8 @@ void separate_and_skin_mesh(
     stk::mesh::MetaData & meta,
     stk::mesh::BulkData & mesh,
     stk::mesh::Part     & skin_part,
-    std::vector< stk::mesh::EntityId > elements_to_separate
+    std::vector< stk::mesh::EntityId > elements_to_separate,
+    const stk::mesh::EntityRank rank_of_element
     )
 {
   stk::mesh::EntityVector entities_to_separate;
@@ -209,7 +212,7 @@ void separate_and_skin_mesh(
   for (std::vector< stk::mesh::EntityId>::const_iterator itr = elements_to_separate.begin();
       itr != elements_to_separate.end(); ++itr)
   {
-    stk::mesh::Entity * element = mesh.get_entity(stk::mesh::Element, *itr);
+    stk::mesh::Entity * element = mesh.get_entity(rank_of_element, *itr);
     if (element != NULL && element->owner_rank() == mesh.parallel_rank()) {
       entities_to_separate.push_back(element);
     }
@@ -227,7 +230,7 @@ void separate_and_skin_mesh(
 
   //ask for new nodes to represent the copies
   std::vector<size_t> requests(meta.entity_rank_count(), 0);
-  requests[stk::mesh::Node] = nodes.size();
+  requests[stk::mesh::BaseEntityRank] = nodes.size();
 
   mesh.modification_begin();
 
@@ -242,7 +245,7 @@ void separate_and_skin_mesh(
 
   mesh.modification_end();
 
-  skin_mesh( mesh, stk::mesh::Element, &skin_part);
+  skin_mesh( mesh, rank_of_element, &skin_part);
 
   return;
 }
