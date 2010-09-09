@@ -156,6 +156,12 @@ public:
     return lhs_key < rhs.key() ;
   }
 
+  bool operator()(const Entity& lhs, const Entity* rhs) const
+  {
+    const EntityKey rhs_key = rhs ? rhs->key() : EntityKey();
+    return lhs.key() < rhs_key ;
+  }
+
   bool operator()(const Entity* lhs, const EntityKey & rhs) const
   {
     const EntityKey lhs_key = lhs ? lhs->key() : EntityKey() ;

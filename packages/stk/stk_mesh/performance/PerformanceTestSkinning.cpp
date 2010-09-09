@@ -308,7 +308,7 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
   const size_t p_rank = stk::parallel_machine_rank(pm);
 
   // Every processor will be involved in detachment and skin-update up to 500 processors.
-  // This puts 5000 elements on each processor
+  // This puts 5000 elements on each process
   const size_t NX = p_size*10, NY = 20, NZ = 25;
 
   /* timings[0] = create mesh
@@ -383,12 +383,12 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
         );
     timings[2] = stk::wall_dtime(start_time);
 
-    if (test_run%2 == 0) { //delete the skin
+    if (test_run%2 == 0) { // delete the skin
       start_time = stk::wall_time();
       delete_skin( mesh, skin_part);
       timings[3] = stk::wall_dtime(start_time);
 
-      //update the skin of the mesh
+      //reskin the entire mesh
       start_time = stk::wall_time();
       stk::mesh::skin_mesh( mesh, stk::mesh::Element, &skin_part);
       timings[4] = stk::wall_dtime(start_time);
@@ -414,16 +414,16 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
       std::cout << "\n\n";
       switch (test_run) {
         case 0:
-          std::cout << "Recreate skin update after detaching 1/3 of the mesh:\n";
+          std::cout << "Recreate entire skin after detaching 1/3 of the mesh:\n";
           break;
         case 1:
-          std::cout << "Update skin update after detaching 1/3 of the mesh:\n";
+          std::cout << "Update skin after detaching 1/3 of the mesh:\n";
           break;
         case 2:
-          std::cout << "Recreate skin update after detaching middle of the mesh:\n";
+          std::cout << "Recreate entire skin after detaching middle of the mesh:\n";
           break;
         case 3:
-          std::cout << "Update skin update after detaching middle of the mesh:\n";
+          std::cout << "Update skin after detaching middle of the mesh:\n";
           break;
       }
 

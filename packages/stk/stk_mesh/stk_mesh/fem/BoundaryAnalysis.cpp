@@ -78,21 +78,19 @@ void boundary_analysis(const BulkData& bulk_data,
 
       // iterate over adjacent entities (our neighbors)
       for (std::vector<EntitySideComponent >::const_iterator
-          adj_itr = adjacent_entities.begin();
-          adj_itr != adjacent_entities.end(); ++adj_itr) {
+           adj_itr = adjacent_entities.begin();
+           adj_itr != adjacent_entities.end(); ++adj_itr) {
         // grab a reference to this neighbor for clarity
         const Entity& neighbor = *(adj_itr->entity);
 
         // see if this neighbor is in the closure, if so, not a keeper
-        std::vector<Entity*>::const_iterator search_itr =
-          std::lower_bound(entities_closure.begin(),
-                           entities_closure.end(),
-                           neighbor,
-                           EntityLess());
+        bool neighbor_is_in_closure =
+          std::binary_search(entities_closure.begin(),
+                             entities_closure.end(),
+                             neighbor,
+                             EntityLess());
 
-        EntityEqual eq;
-        if (search_itr != entities_closure.end() &&
-            eq(**search_itr, neighbor)) {
+        if (neighbor_is_in_closure) {
           continue;
         }
 
@@ -165,11 +163,12 @@ void get_adjacent_entities( const Entity & entity ,
   // right-hand-rule ordered for the owning entity, but we need something
   // that's compatible w/ the adjacent entities.
   std::vector<Entity*> side_node_entities;
+  side_node_entities.reserve(num_nodes_in_side);
   {
-    PairIterRelation relations = entity.relations(Node);
+    PairIterRelation irel = entity.relations(Node);
     for (int itr = num_nodes_in_side; itr > 0; ) {
       --itr;
-      side_node_entities.push_back(relations[side_node_local_ids[itr]].entity());
+      side_node_entities.push_back(irel[side_node_local_ids[itr]].entity());
     }
   }
 
@@ -177,6 +176,7 @@ void get_adjacent_entities( const Entity & entity ,
   std::vector<Entity*> entity_nodes;
   {
     PairIterRelation irel = entity.relations(Node);
+    entity_nodes.reserve(irel.size());
     for ( ; !irel.empty(); ++irel ) {
       entity_nodes.push_back(irel->entity());
     }
@@ -186,26 +186,42 @@ void get_adjacent_entities( const Entity & entity ,
   // Given the nodes related to the side, find all entities
   // of similar rank that have some relation to one or more of these nodes
   std::vector<Entity*> elements;
+  elements.reserve(8); //big enough that resizing should be rare
   get_entities_through_relations(side_node_entities,
                                  entity.entity_rank(),
                                  elements);
 
   // Make sure to remove the all superimposed entities from the list
+
+  unsigned num_nodes_in_orig_entity = entity_nodes.size();
+  std::vector<Entity*> current_nodes;
+  current_nodes.resize(num_nodes_in_orig_entity);
   for (std::vector<Entity*>::iterator itr = elements.end();
        itr != elements.begin(); ) {
     --itr;
     Entity * current_entity = *itr;
     PairIterRelation relations = current_entity->relations(Node);
 
-    std::vector<Entity*> current_nodes;
-    for ( ; relations.first != relations.second; ++relations.first ) {
-      current_nodes.push_back(relations.first->entity());
-    }
-    std::sort(current_nodes.begin(), current_nodes.end());
-
-    bool entities_are_superimposed = entity_nodes == current_nodes;
-    if (entities_are_superimposed) {
+    if (current_entity == &entity) {
+      // We do not want to be adjacent to ourself
       elements.erase(itr);
+    }
+    else if (relations.size() != num_nodes_in_orig_entity) {
+      // current_entity has a different number of nodes than entity, they
+      // cannot be superimposed
+      continue;
+    }
+    else {
+      for (unsigned i = 0; relations.first != relations.second;
+           ++relations.first, ++i ) {
+        current_nodes[i] = relations.first->entity();
+      }
+      std::sort(current_nodes.begin(), current_nodes.end());
+
+      bool entities_are_superimposed = entity_nodes == current_nodes;
+      if (entities_are_superimposed) {
+        elements.erase(itr);
+      }
     }
   }
 
