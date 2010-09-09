@@ -122,7 +122,7 @@ void DiagnosticLinearOp::implicitApply(const MultiVector & x, MultiVector & y,
       // print out residual norms
       (*outputStream_) << "DiagnosticLinearOp \"" << diagString_ << "\": residual = [";
       for(std::size_t i=0;i<norms.size();++i) 
-         (*outputStream_) << " " << norms[i]/rhsNorms[i]; 
+	(*outputStream_) << " " << std::scientific << std::setprecision(4) << norms[i]/rhsNorms[i];// << " (" <<rhsNorms[i]<<") ";
       (*outputStream_) << " ]" << std::endl;
    }
 }
