@@ -136,42 +136,44 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( triBasis.getDofTag(3), throwCounter, nException );
     // exception #7
     INTREPID_TEST_COMMAND( triBasis.getDofTag(-1), throwCounter, nException );
+    // exception #8
+    INTREPID_TEST_COMMAND( triBasis.getDofOrdinal(2,0,0), throwCounter, nException );
 
 #ifdef HAVE_INTREPID_DEBUG
-    // Exceptions 8-15 test exception handling with incorrectly dimensioned input/output arrays
-    // exception #8: input points array must be of rank-2
+    // Exceptions 9-16 test exception handling with incorrectly dimensioned input/output arrays
+    // exception #9: input points array must be of rank-2
     FieldContainer<double> badPoints1(4, 5, 3);
     INTREPID_TEST_COMMAND( triBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
     
-    // exception #9 dimension 1 in the input point array must equal space dimension of the cell
+    // exception #10 dimension 1 in the input point array must equal space dimension of the cell
     FieldContainer<double> badPoints2(4, triBasis.getBaseCellTopology().getDimension() + 1);
     INTREPID_TEST_COMMAND( triBasis.getValues(vals, badPoints2, OPERATOR_VALUE), throwCounter, nException );
     
-    // exception #10 output values must be of rank-3 for OPERATOR_VALUE
+    // exception #11 output values must be of rank-3 for OPERATOR_VALUE
     FieldContainer<double> badVals1(4, 3);
     INTREPID_TEST_COMMAND( triBasis.getValues(badVals1, triNodes, OPERATOR_VALUE), throwCounter, nException );
  
-    // exception #11 output values must be of rank-2 for OPERATOR_DIV
+    // exception #12 output values must be of rank-2 for OPERATOR_DIV
     FieldContainer<double> badVals2(4, 3, 1);
     INTREPID_TEST_COMMAND( triBasis.getValues(badVals2, triNodes, OPERATOR_VALUE), throwCounter, nException );
 
-    // exception #12 incorrect 0th dimension of output array for OPERATOR_VALUE (must equal number of basis functions)
+    // exception #13 incorrect 0th dimension of output array for OPERATOR_VALUE (must equal number of basis functions)
     FieldContainer<double> badVals3(triBasis.getCardinality() + 1, triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension());
     INTREPID_TEST_COMMAND( triBasis.getValues(badVals3, triNodes, OPERATOR_VALUE), throwCounter, nException );
 
-    // exception #13 incorrect 0th dimension of output array for OPERATOR_DIV (must equal number of basis functions)
+    // exception #14 incorrect 0th dimension of output array for OPERATOR_DIV (must equal number of basis functions)
     FieldContainer<double> badVals4(triBasis.getCardinality() + 1, triNodes.dimension(0));
     INTREPID_TEST_COMMAND( triBasis.getValues(badVals4, triNodes, OPERATOR_DIV), throwCounter, nException );
 
-    // exception #14 incorrect 1st dimension of output array (must equal number of points)
+    // exception #15 incorrect 1st dimension of output array (must equal number of points)
     FieldContainer<double> badVals5(triBasis.getCardinality(), triNodes.dimension(0) + 1, triBasis.getBaseCellTopology().getDimension());
     INTREPID_TEST_COMMAND( triBasis.getValues(badVals5, triNodes, OPERATOR_VALUE), throwCounter, nException );
 
-    // exception #15 incorrect 1st dimension of output array (must equal number of points)
+    // exception #16 incorrect 1st dimension of output array (must equal number of points)
     FieldContainer<double> badVals6(triBasis.getCardinality(), triNodes.dimension(0) + 1);
     INTREPID_TEST_COMMAND( triBasis.getValues(badVals6, triNodes, OPERATOR_DIV), throwCounter, nException );
 
-    // exception #16: incorrect 2nd dimension of output array (must equal the space dimension)
+    // exception #17: incorrect 2nd dimension of output array (must equal the space dimension)
     FieldContainer<double> badVals7(triBasis.getCardinality(), triNodes.dimension(0), triBasis.getBaseCellTopology().getDimension() + 1);
     INTREPID_TEST_COMMAND( triBasis.getValues(badVals7, triNodes, OPERATOR_VALUE), throwCounter, nException );
 #endif
