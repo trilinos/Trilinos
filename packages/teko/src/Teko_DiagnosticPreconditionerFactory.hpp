@@ -65,6 +65,7 @@ namespace Teko {
        <Parameter name="Type" type="string" value="Diagnostic Inverse"/>
        <Parameter name="Inverse Factory" type="string" value="<Some Inverse Factory>"/>
        <Parameter name="Descriptive Label" type="string" value="<Some Label>"/>
+       <Parameter name="Print Residual" type="bool" value="false"/>
   \endcode
   */
 class DiagnosticPreconditionerFactory 
