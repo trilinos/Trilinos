@@ -62,6 +62,9 @@ XMLParameterListReader::toParameterList(
   }
   EntryIDsMap entryIDsMap; 
   rtn = convertParameterList(xml, entryIDsMap, validatorIDsMap);
+
+  RCP<ParameterEntry> firstParam = entryIDsMap.begin()->second;
+  firstParam->isType<std::string>();
   if(xml.hasAttribute(XMLParameterListWriter::getNameAttributeName())){
     rtn.setName(
       xml.getAttribute(XMLParameterListWriter::getNameAttributeName()));
