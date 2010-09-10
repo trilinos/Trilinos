@@ -138,7 +138,11 @@ RCP<VisualDependency> StringVisualDependencyXMLConverter::convertSpecialVisualAt
   }
 
   return rcp(
-    new StringVisualDependency(*(dependees.begin()), dependents, valueList, showIf));
+    new StringVisualDependency(
+      *(dependees.begin()), 
+      dependents, 
+      valueList, 
+      showIf));
 }
   
 void BoolVisualDependencyXMLConverter::convertSpecialVisualAttributes(

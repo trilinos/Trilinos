@@ -118,17 +118,15 @@ public:
   }
 
   /**
-   * \brief Returns a set of all the dependencies associated with a particular dependee.
+   * \brief Returns a set of all the dependencies associated with a 
+   * particular dependee. If no dependencies with the given dependee have
+   * ever been enetered into the sheet then a null reference is returned.
    *
    * @param dependee The parameter whose dependencies are sought. 
    * @return A set of all dependencies associated with the dependee parameter.
    * */
-  inline
-  const DepSet& getDependenciesForParameter(
-    RCP<const ParameterEntry> dependee) const
-  {
-    return dependenciesMap_.find(dependee)->second;
-  }
+  RCP<const DepSet> getDependenciesForParameter(
+    RCP<const ParameterEntry> dependee) const;
 
   /**
    * \brief Gets the name of the dependency sheet.
@@ -143,7 +141,8 @@ public:
   //@{
 
   /**
-   * \brief Returns an iterator to the beginning of all the dependees in the sheet.
+   * \brief Returns an iterator to the beginning of all 
+   * the dependees in the sheet.
    */
   inline DepSet::iterator depBegin(){
     return dependencies_.begin();
@@ -162,15 +161,15 @@ public:
    * \brief Returns a const iterator to the beginning of all the dependees in the sheet.
    */
   inline DepSet::const_iterator depBegin() const{
-    return depBegin();
+    return dependencies_.begin();
   }
     
   /**
    * \brief Returns a const iterator to the end of all of the dependees in the sheet.
    */
   inline DepSet::const_iterator depEnd() const{
-     return depEnd();
-   }
+    return dependencies_.end();
+  }
   
   //@}
 
@@ -180,7 +179,7 @@ public:
   /**
    * \brief Prints out a list of the dependencies in the DependencySheet
    */
-  void printDeps();
+  void printDeps(std::ostream& out) const;
 
   //@}
 

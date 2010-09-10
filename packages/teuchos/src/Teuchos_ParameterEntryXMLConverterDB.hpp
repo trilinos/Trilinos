@@ -107,7 +107,8 @@ public:
   /**
    * \brief Converts XML to a ParameterEntry.
    */
-  static RCP<ParameterEntry> convertXML(const XMLObject& xmlObj){
+  static ParameterEntry convertXML(const XMLObject& xmlObj)
+  {
     return getConverter(xmlObj)->fromXMLtoParameterEntry(xmlObj);
   }
   

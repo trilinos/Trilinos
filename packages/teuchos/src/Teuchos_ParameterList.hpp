@@ -316,13 +316,11 @@ public:
 
   /*! \brief Retrieves the RCP for an entry with the name <tt>name</tt> if
    *  it exists. */
-  inline
-  RCP<ParameterEntry> getEntryRCP(const std::string& name);  
+  inline RCP<ParameterEntry> getEntryRCP(const std::string& name);  
   
   /*! \brief Retrieves the RCP for a constant entry with the name <tt>name</tt> if
    *  it exists. */
-  inline
-  RCP<const ParameterEntry> getEntryRCP(const std::string& name) const;  
+  inline RCP<const ParameterEntry> getEntryRCP(const std::string& name) const;
 
   //@}
 
@@ -809,18 +807,22 @@ ParameterList::getEntryPtr(const std::string& name_in) const
   return &entry(i);
 }
 
-inline
-RCP<ParameterEntry>
+inline RCP<ParameterEntry>
 ParameterList::getEntryRCP(const std::string& name_in)
 {
-  return rcp(getEntryPtr(name_in), false);
+  Iterator i = params_.find(name_in);
+  if ( i == params_.end() )
+    return null;
+  return rcpFromRef(entry(i));
 }
 
-inline
-RCP<const ParameterEntry>
+inline RCP<const ParameterEntry>
 ParameterList::getEntryRCP(const std::string& name_in) const
 {
-  return rcp(getEntryPtr(name_in), false);
+  ConstIterator i = params_.find(name_in);
+  if ( i == params_.end() )
+    return null;
+  return rcpFromRef(entry(i));
 }
 
 // Attribute Functions

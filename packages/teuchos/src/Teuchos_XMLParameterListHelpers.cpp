@@ -37,43 +37,49 @@ namespace Teuchos{
 
 void updateParametersFromXmlFile(
   const std::string &xmlFileName,
-  ParameterList *paramList
+  ParameterList *paramList,
+  RCP<DependencySheet> depSheet
   )
 {
   TEST_FOR_EXCEPT(paramList==NULL);
   XMLParameterListReader xmlPLReader;
   FileInputSource xmlFile(xmlFileName);
   XMLObject xmlParams = xmlFile.getObject();
-  paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
+  paramList->setParameters(xmlPLReader.toParameterList(xmlParams, depSheet));
 }
 
 
 RCP<ParameterList>
-getParametersFromXmlFile( const std::string &xmlFileName )
+getParametersFromXmlFile( 
+  const std::string &xmlFileName,
+  RCP<DependencySheet> depSheet)
 {
   RCP<ParameterList> pl = parameterList();
-  updateParametersFromXmlFile( xmlFileName, &*pl );
+  updateParametersFromXmlFile( xmlFileName, &*pl, depSheet);
   return pl;
 }
 
 void updateParametersFromXmlString(
   const std::string &xmlStr,
-  ParameterList *paramList
+  ParameterList *paramList,
+  RCP<DependencySheet> depSheet
   )
 {
   TEST_FOR_EXCEPT(paramList==NULL);
   XMLParameterListReader xmlPLReader;
   StringInputSource xmlStrSrc(xmlStr);
   XMLObject xmlParams = xmlStrSrc.getObject();
-  paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
+  paramList->setParameters(xmlPLReader.toParameterList(xmlParams, depSheet));
 }
 
 
 RCP<ParameterList>
-getParametersFromXmlString( const std::string &xmlStr )
+getParametersFromXmlString(
+  const std::string &xmlStr,
+  RCP<DependencySheet> depSheet)
 {
   RCP<ParameterList> pl = parameterList();
-  updateParametersFromXmlString( xmlStr, &*pl );
+  updateParametersFromXmlString( xmlStr, &*pl, depSheet );
   return pl;
 }
 
@@ -83,25 +89,54 @@ void writeParameterListToXmlOStream(
   std::ostream &xmlOut
   )
 {
-  XMLParameterListWriter plWriter;
-  XMLObject xml = plWriter.toXML(paramList);
-  xmlOut << xml << std::endl;
+  writeParameterListToXmlOStream(paramList, null, xmlOut);
 }
 
+void writeParameterListToXmlOStream(
+  const ParameterList &paramList,
+  RCP<const DependencySheet> depSheet,
+  std::ostream &xmlOut
+  )
+{
+  XMLParameterListWriter plWriter;
+  XMLObject xml = plWriter.toXML(paramList, depSheet);
+  xmlOut << xml << std::endl;
+}
 
 void writeParameterListToXmlFile(
   const ParameterList &paramList,
   const std::string &xmlFileName
   )
 {
-  std::ofstream ofs(xmlFileName.c_str());
-  writeParameterListToXmlOStream(paramList,ofs);
+  writeParameterListToXmlFile(paramList, null, xmlFileName);
 }
 
-RCP<ParameterList> writeThenReadPL(ParameterList& myList) {
+TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlFile(
+  const ParameterList &paramList,
+  RCP<const DependencySheet> depSheet,
+  const std::string &xmlFileName
+ )
+{
+  std::ofstream ofs(xmlFileName.c_str());
+  writeParameterListToXmlOStream(paramList, depSheet, ofs);
+}
+
+RCP<ParameterList> writeThenReadPL(
+  ParameterList& myList)
+{
   std::ostringstream xmlOut;
   writeParameterListToXmlOStream(myList, xmlOut);
   return getParametersFromXmlString(xmlOut.str());
+}
+
+RCP<ParameterList> writeThenReadPL(
+  ParameterList& myList,
+  RCP<DependencySheet> depSheetIn,
+  RCP<DependencySheet> depSheetOut)
+{
+  std::ostringstream xmlOut;
+  writeParameterListToXmlOStream(myList, depSheetIn, xmlOut);
+  return getParametersFromXmlString(xmlOut.str(), depSheetOut);
 }
 
 

@@ -34,8 +34,10 @@
 
 namespace Teuchos{
 
-RCP<ParameterEntry>
-ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) const
+
+ParameterEntry
+ParameterEntryXMLConverter::fromXMLtoParameterEntry(
+  const XMLObject &xmlObj) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(),
@@ -57,7 +59,7 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
     xmlObj.getAttribute(XMLParameterListWriter::getNameAttributeName()) <<
     std::endl << std::endl);
 
-  RCP<ParameterEntry> toReturn = rcp(new ParameterEntry);
+  ParameterEntry toReturn;
   bool isDefault = false;
   bool isUsed = false;
 
@@ -73,7 +75,7 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) con
   setEntryValue(toReturn, xmlObj, isDefault);
   
   if(isUsed){
-    toReturn->getAny();
+    toReturn.getAny();
   }
   
   return toReturn;

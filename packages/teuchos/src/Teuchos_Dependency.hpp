@@ -198,7 +198,7 @@ public:
   //@{
 
   /** \brief prints out information about the dependency. */
-  virtual void print(){}
+  virtual void print(std::ostream& out) const;
 
   //@}
 
@@ -245,6 +245,11 @@ protected:
    * \brief creates a const version of the dependent parameters.
    */
   void createConstDependents();
+
+  /**
+   * \brief makes sure the none of the dependess and dependets are null.
+   */
+  void checkDependeesAndDependents();
 
   //@}
 

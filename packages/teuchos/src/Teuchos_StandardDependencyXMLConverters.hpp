@@ -201,17 +201,6 @@ public:
   
   //@}
 
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return 
-      DummyObjectGetter<StringValidatorDependency>::getDummyObject()->getTypeAttributeValue();
-  }
-  
-  //@}
-
 private:
 
   /** \name Private Members */
@@ -261,17 +250,6 @@ public:
 
   //@}
 
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return 
-      DummyObjectGetter<BoolVisualDependency>::getDummyObject()->getTypeAttributeValue();
-  }
-  
-  //@}
-
 };
 
 /** \brief An xml converter for NumberVisualDependencies
@@ -297,17 +275,6 @@ public:
     const Dependency::ParameterEntryList dependets,
     bool showIf,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
-  
-  //@}
-
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return 
-      DummyObjectGetter<NumberVisualDependency<T> >::getDummyObject()->getTypeAttributeValue();
-  }
   
   //@}
 
@@ -364,17 +331,6 @@ public:
   
   //@}
 
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return 
-      DummyObjectGetter<ConditionVisualDependency>::getDummyObject()->getTypeAttributeValue();
-  }
-  
-  //@}
-
 };
 
 
@@ -400,17 +356,6 @@ public:
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
     const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
-  
-  //@}
-
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return 
-      DummyObjectGetter<StringValidatorDependency>::getDummyObject()->getTypeAttributeValue();
-  }
   
   //@}
 
@@ -476,17 +421,6 @@ public:
   
   //@}
 
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return 
-      DummyObjectGetter<BoolValidatorDependency>::getDummyObject()->getTypeAttributeValue();
-  }
-  
-  //@}
-
 private:
 
   /** \name Private Members */
@@ -533,17 +467,6 @@ public:
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
     const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
-  
-  //@}
-
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return 
-      DummyObjectGetter<RangeValidatorDependency<T> >::getDummyObject()->getTypeAttributeValue();
-  }
   
   //@}
 
@@ -669,7 +592,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
 
 /** \brief An xml converter for NumberArrayLengthDependencies.
  */
-template<class DependentType, class DependeeType>
+template<class DependeeType, class DependentType>
 class NumberArrayLengthDependencyXMLConverter : public DependencyXMLConverter{
 
 public:
@@ -691,17 +614,6 @@ public:
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
     const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
-  
-  //@}
-  
-  /** \name Overridden from DependencyXMLConverter */
-  //@{
-
-  /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return 
-      DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >::getDummyObject()->getTypeAttributeValue();
-  }
   
   //@}
 

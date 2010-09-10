@@ -37,6 +37,7 @@ ConstParameterEntryList dependees,
 ParameterEntryList dependents):
   dependees_(dependees), dependents_(dependents)
 {
+  checkDependeesAndDependents();
   createConstDependents();
 }
 
@@ -46,6 +47,7 @@ Dependency::Dependency(
   dependees_(dependees), 
   dependents_(ParameterEntryList(&dependent, &dependent+1))
 {
+  checkDependeesAndDependents();
   createConstDependents();
 }
 
@@ -56,6 +58,7 @@ Dependency::Dependency(
   dependees_(ConstParameterEntryList(&dependee, &dependee+1)),
   dependents_(dependents)
 {
+  checkDependeesAndDependents();
   createConstDependents();
 }
   
@@ -65,6 +68,7 @@ Dependency::Dependency(
   dependees_(ConstParameterEntryList(&dependee, &dependee+1)),
   dependents_(ParameterEntryList(&dependent, &dependent+1))
 {
+  checkDependeesAndDependents();
   createConstDependents();
 }
 
@@ -76,6 +80,29 @@ void Dependency::createConstDependents(){
     ++it)
   {
     constDependents_.insert(it->getConst());
+  }
+}
+
+void Dependency::print(std::ostream& out) const{
+  out << "Type: " << getTypeAttributeValue() << std::endl;
+  out << "Number of dependees: " << dependees_.size() << std::endl;
+  out << "Number of dependents: " << dependents_.size() << std::endl;
+
+}
+
+void Dependency::checkDependeesAndDependents(){
+  ConstParameterEntryList::iterator it1 = dependees_.begin(); 
+  for(; it1 != dependees_.end(); ++it1){
+    TEST_FOR_EXCEPTION((*it1).is_null(),
+      InvalidDependencyException,
+      "Cannot have a null dependee!" << std::endl << std::endl);
+   }
+
+  ParameterEntryList::iterator it2 = dependents_.begin(); 
+  for(; it2 != dependents_.end(); ++it2){
+    TEST_FOR_EXCEPTION((*it2).is_null(),
+      InvalidDependencyException,
+      "Cannot have a null dependent!" << std::endl << std::endl);
   }
 }
 

@@ -57,7 +57,7 @@ public:
    * \param xmlObj The xml to be converted to a parameter entry.
    * \returns A ParameterEntry with the aspects specified by the xml.
    */
-  RCP<ParameterEntry> fromXMLtoParameterEntry(const XMLObject &xmlObj) const;
+  ParameterEntry fromXMLtoParameterEntry(const XMLObject &xmlObj) const;
 
   /** \brief Converts the given parameter entry to xml.
    *
@@ -73,7 +73,7 @@ public:
   
   /** \brief sets the value  */
   virtual void setEntryValue(
-    RCP<ParameterEntry> entry, 
+    ParameterEntry& entry, 
     const XMLObject &xmlObj,
     bool isDefault) const=0;
 

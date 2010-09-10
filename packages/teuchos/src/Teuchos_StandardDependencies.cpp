@@ -238,6 +238,11 @@ void StringValidatorDependency::validateDep() const{
     "Type Encountered: " << getFirstDependee()->getAny().typeName() <<
     std::endl << std::endl);
 
+  TEST_FOR_EXCEPTION(
+    valuesAndValidators_.size() < 1,
+    InvalidDependencyException,
+    "The valuesAndValidatord map for a string validator dependency must "
+    "have at least one entry!" << std::endl << std::endl);
   ValueToValidatorMap::const_iterator it = valuesAndValidators_.begin();
   RCP<const ParameterEntryValidator> firstVali = (it->second);
   ++it;
@@ -296,10 +301,12 @@ void BoolValidatorDependency::validateDep() const{
     "Encountered type: " << getFirstDependee()->getAny().typeName() <<
     std::endl << std::endl);
 
-  TEST_FOR_EXCEPTION(typeid(*falseValidator_) != typeid(*trueValidator_),
-    InvalidDependencyException,
-    "Ay no! The true and false validators of a Bool Validator Dependency "
-    "must be the same type! " <<std::endl << std::endl);
+  if(!falseValidator_.is_null() && !trueValidator_.is_null()){
+    TEST_FOR_EXCEPTION(typeid(*falseValidator_) != typeid(*trueValidator_),
+      InvalidDependencyException,
+      "Ay no! The true and false validators of a Bool Validator Dependency "
+      "must be the same type! " <<std::endl << std::endl);
+  }
   
 }
 

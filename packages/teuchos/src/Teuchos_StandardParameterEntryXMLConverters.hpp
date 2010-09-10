@@ -61,8 +61,8 @@ public:
 
   /** \brief . */
   void setEntryValue(
-    RCP<ParameterEntry> entry,
-    const XMLObject &xmlObj,
+    ParameterEntry& entry,
+    const XMLObject& xmlObj,
     bool isDefault) const;
   
   //@}
@@ -95,11 +95,12 @@ public:
 
   /** \brief . */
   virtual void setEntryValue(
-    RCP<ParameterEntry> entry, 
+    ParameterEntry& entry, 
     const XMLObject& xmlObj,
     bool isDefault) const
   {
-    entry->setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
+    entry.setValue<T>(
+      xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
   }
   
   //@}
@@ -107,40 +108,6 @@ public:
 };
 
 
-/** \brief A standard ParameterEntryXMLConverter for array data types.
- *
- * This converter is appropriate for most array data types.
- */
-template<class T>
-class ArrayTemplatedParameterConverter : 
-  public StandardTemplatedParameterConverter<Array<T> >
-{
-
-public:
-
-  /** \name Overridden from StandardTemplatedParameterConverter */
-  //@{
-
-  /** \brief . */
-  virtual void setEntryValue(
-    RCP<ParameterEntry> entry,
-    const XMLObject& xmlObj,
-    bool isDefault) const;
-  
-  //@}
-
-};
-
-template<class T>
-void 
-ArrayTemplatedParameterConverter<T>::setEntryValue(RCP<ParameterEntry> entry, 
-  const XMLObject& xmlObj, bool isDefault) const
-{
-  std::string arrayString = xmlObj.getRequired(
-    ParameterEntryXMLConverter::getValueAttributeName());
-  Array<T> convertedArray = fromStringToArray<T>(arrayString);
-  entry->setValue<Array<T> >(convertedArray, isDefault);
-}
 
 } // namespace Teuchos
 

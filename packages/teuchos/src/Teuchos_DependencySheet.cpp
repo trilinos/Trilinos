@@ -66,11 +66,19 @@ void DependencySheet::removeDependency(RCP<Dependency> dependency){
   dependencies_.erase(dependency);
 }
 
+RCP<const DependencySheet::DepSet> DependencySheet::getDependenciesForParameter(
+  RCP<const ParameterEntry> dependee) const
+{
+  if(dependenciesMap_.find(dependee) != dependenciesMap_.end()){
+    return rcpFromRef(dependenciesMap_.find(dependee)->second);
+  }
+  return null;
+}
 
-void DependencySheet::printDeps(){
-  std::cout << "Dependency Sheet: " << name_ << "\n\n";
+void DependencySheet::printDeps(std::ostream& out) const {
+  out << "Dependency Sheet: " << name_ << "\n\n";
   for(DepSet::iterator it = depBegin(); it != depEnd(); ++it){
-    (*it)->print();
+    (*it)->print(out);
   }
 }
 

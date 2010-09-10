@@ -90,7 +90,8 @@ DependencyXMLConverter::fromDependencytoXML(
 {
   XMLObject toReturn(Dependency::getXMLTagName());
 
-  toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
+  toReturn.addAttribute(getTypeAttributeName(), 
+    dependency->getTypeAttributeValue());
 
   Dependency::ConstParameterEntryList::const_iterator it =
     dependency->getDependees().begin();

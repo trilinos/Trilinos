@@ -109,9 +109,6 @@ public:
   //! \name Attribute/Query Functions
   //@{
 
-  /** \brief gets the value to be used for the type attribute. */
-  virtual std::string getTypeAttributeValue() const = 0;
-
   /**
    * \brief Returns the string to be used for the dependee tag.
    */

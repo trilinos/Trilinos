@@ -56,16 +56,17 @@ namespace Teuchos {
         getDummyObject()->getTypeAttributeValue(), \
       rcp(new RangeValidatorDependencyXMLConverter< T >)));
 
-#define ADD_NUMBER_ARRAY_LENGTH_DEP(DEPENDEE_TYPE, DEPENDENT_TYPE) \
+#define ADD_NUMBER_ARRAY_LENGTH_DEP(DEPENDEE_TYPE , DEPENDENT_TYPE) \
   masterMap.insert( \
     ConverterPair( \
-      DummyObjectGetter<NumberArrayLengthDependencyXMLConverter< \
+      DummyObjectGetter<NumberArrayLengthDependency< \
         DEPENDEE_TYPE , DEPENDENT_TYPE > >::getDummyObject()->getTypeAttributeValue(), \
         rcp(new NumberArrayLengthDependencyXMLConverter< \
         DEPENDEE_TYPE , DEPENDENT_TYPE >)));
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 #define ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(DEPENDEE_TYPE) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , std::string) \
   ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
   ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned int) \
   ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , short int) \
@@ -78,6 +79,7 @@ namespace Teuchos {
   ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , float) 
 #else
 #define ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(DEPENDEE_TYPE) \
+  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , std::string) \
   ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
   ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , unsigned int) \
   ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , short int) \
@@ -104,10 +106,11 @@ DependencyXMLConverterDB::getConverter(const Dependency& dependency)
 {
   ConverterMap::const_iterator it = 
     getConverterMap().find(dependency.getTypeAttributeValue());
-  TEST_FOR_EXCEPTION(it != getConverterMap().end(),
+  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindDependencyConverterException,
-    "Could not find a DependencyXMLConverter for a dependency"
-  )
+    "Could not find a DependencyXMLConverter for a dependency with "
+    "attribute tag " << dependency.getTypeAttributeValue() << 
+    "!" << std::endl << std::endl);
   return it->second;
 }
 
@@ -118,10 +121,10 @@ DependencyXMLConverterDB::getConverter(const XMLObject& xmlObject)
   std::string dependencyType = xmlObject.getRequired(
     DependencyXMLConverter::getTypeAttributeName());
   ConverterMap::const_iterator it = getConverterMap().find(dependencyType);
-  TEST_FOR_EXCEPTION(it != getConverterMap().end(),
+  TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindDependencyConverterException,
-    "Could not find a DependencyXMLConverter for a dependency"
-  )
+    "Could not find a DependencyXMLConverter for a dependency of type " <<
+    dependencyType << "!" << std::endl << std::endl);
   return it->second;
 }
 
@@ -148,7 +151,6 @@ DependencyXMLConverterDB::getConverterMap()
 {
   static ConverterMap masterMap;
   if(masterMap.size() == 0){
-
     ADD_TEMPLATED_NUMBER_DEPS(int);
     ADD_TEMPLATED_NUMBER_DEPS(unsigned int);
     ADD_TEMPLATED_NUMBER_DEPS(short int);
@@ -186,7 +188,6 @@ DependencyXMLConverterDB::getConverterMap()
         DummyObjectGetter<BoolVisualDependency>::
           getDummyObject()->getTypeAttributeValue(), 
         rcp(new BoolVisualDependencyXMLConverter)));
-
   }
   return masterMap;
 }

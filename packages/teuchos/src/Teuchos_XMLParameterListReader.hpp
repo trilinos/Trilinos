@@ -75,13 +75,6 @@ public:
 
 private:
 
-  /** \name Private Types */
-  //@{
-  
-
-  
-  //@}
-
   /** \brief Write the given XML object to a parameter list along with the
    * validators located in the given map.
    */
@@ -104,7 +97,14 @@ private:
     ParameterEntryValidator::ValidatorID potentialNewID,
     const ValidatorIDsMap& currentMap) const;
 
+  /** \brief .. */
+  void insertEntryIntoMap(
+    const XMLObject& xmlObj,
+    RCP<ParameterEntry> entryToInsert,
+    EntryIDsMap& entryIDsMap) const;
+
 };
+
 
 
 } // namespace Teuchos

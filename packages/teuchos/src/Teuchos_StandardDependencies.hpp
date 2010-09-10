@@ -349,7 +349,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "stringVisualDependency";
+    return "StringVisualDependency";
   }
   
   //@}
@@ -397,9 +397,10 @@ public:
   */
   static RCP<StringVisualDependency> getDummyObject(){
     static RCP<StringVisualDependency > dummyObject;
+    static std::string blahString = "blah";
      if(dummyObject.is_null()){
       dummyObject = rcp(new StringVisualDependency(
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      rcp(new ParameterEntry(blahString)),
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
       "i'm a dummy"));
     }
@@ -471,7 +472,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "boolVisualDependency";
+    return "BoolVisualDependency";
   }
   
   //@}
@@ -509,7 +510,7 @@ public:
     static RCP<BoolVisualDependency > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new BoolVisualDependency(
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      rcp(new ParameterEntry(true)),
       DummyObjectGetter<ParameterEntry>::getDummyObject()));
     }
     return dummyObject;
@@ -594,7 +595,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "conditionVisualDependency";
+    return "ConditionVisualDependency";
   }
   
   //@}
@@ -742,7 +743,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() + " NumberVisualDependency";
+    return "NumberVisualDependency<" + TypeNameTraits<T>::name() + ">";
   }
   
   //@}
@@ -792,14 +793,14 @@ template<class T>
 void NumberVisualDependency<T>::validateDep() const{
   RCP<const ParameterEntry> dependee = getFirstDependee();
   TEST_FOR_EXCEPTION(
-    !dependee->isType<int>()
-    && !dependee->isType<short>()
-    && !dependee->isType<double>()
-    && !dependee->isType<float>(),
+    !dependee->isType<T>(),
     InvalidDependencyException,
-    "The dependee of a "
-    "Number Visual Dependency must be of a supported number type!\n"
-    "Type Encountered: " << dependee->getAny().typeName() << "\n");
+    "The dependee of a " <<
+    "Number Visual Dependency must the same type as the dependency's " <<
+    "template type!" << std::endl <<
+    "Type Encountered: " << dependee->getAny().typeName() << std::endl <<
+    "Template Type: " << TypeNameTraits<T>::name() << std::endl <<
+    std::endl);
 }
   
 
@@ -825,7 +826,7 @@ public:
     static RCP<NumberVisualDependency<T> > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new NumberVisualDependency<T>(
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      rcp(new ParameterEntry(ScalarTraits<T>::zero())),
       DummyObjectGetter<ParameterEntry>::getDummyObject()));
     }
     return dummyObject;
@@ -892,7 +893,7 @@ public:
   
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "numberArrayLengthDependency<" +
+    return "NumberArrayLengthDependency<" +
       TypeNameTraits<DependeeType>::name() + ", " +
       TypeNameTraits<DependentType>::name() +">";
   }
@@ -976,8 +977,8 @@ public:
     if(dummyObject.is_null()){
       dummyObject = rcp(
         new NumberArrayLengthDependency<DependeeType, DependentType>(
-        DummyObjectGetter<ParameterEntry>::getDummyObject(),
-        DummyObjectGetter<ParameterEntry>::getDummyObject()));
+        rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
+        rcp(new ParameterEntry(Array<DependentType>(1)))));
     }
     return dummyObject;
   }
@@ -1187,7 +1188,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "stringValidatorDependency";
+    return "StringValidatorDependency";
   }
   
   //@}
@@ -1244,11 +1245,15 @@ public:
     getDummyObject()
   {
     static RCP<StringValidatorDependency> dummyObject;
+    static std::string blahString = "blah";
+    StringValidatorDependency::ValueToValidatorMap dummyMap;
+    dummyMap.insert(StringValidatorDependency::ValueToValidatorPair("blah",
+      DummyObjectGetter<FileNameValidator>::getDummyObject()));
     if(dummyObject.is_null()){
       dummyObject = rcp(new StringValidatorDependency(
+      rcp(new ParameterEntry(blahString)),
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
-      StringValidatorDependency::ValueToValidatorMap()));
+      dummyMap));
     }
     return dummyObject;
   }
@@ -1338,7 +1343,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return "boolValidatorDependency";
+    return "BoolValidatorDependency";
   }
   
   //@}
@@ -1389,7 +1394,7 @@ public:
     static RCP<BoolValidatorDependency > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new BoolValidatorDependency(
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      rcp(new ParameterEntry(true)),
       DummyObjectGetter<ParameterEntry>::getDummyObject(),
       null, null));
     }
@@ -1516,7 +1521,7 @@ public:
 
   /** \brief . */
   std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() + " RangeValidatorDependency";
+    return "RangeValidatorDependency<" + TypeNameTraits<T>::name() + ">";
   }
   
   //@}
@@ -1576,10 +1581,17 @@ void RangeValidatorDependency<T>::validateDep() const{
     "The RangeValidatorDependency template type!" << std::endl <<
     "Dependee Type: " << dependee->getAny().typeName() << std::endl <<
     "Templated Type: " << TypeNameTraits<T>::name() << std::endl << std::endl);
+  
+  TEST_FOR_EXCEPTION(
+    rangesAndValidators_.size() < 1,
+    InvalidDependencyException,
+    "The rangesAndValidators map RangeValidatorDependency "
+    "must have at least one entry!" << std::endl << std::endl);
 
   typename RangeToValidatorMap::const_iterator it = 
     rangesAndValidators_.begin();
   RCP<const ParameterEntryValidator> firstValidator = it->second;
+  ++it;
   for(; it!=rangesAndValidators_.end(); ++it){
     TEST_FOR_EXCEPTION( typeid(*firstValidator) != typeid(*(it->second)),
       InvalidDependencyException,
@@ -1617,14 +1629,19 @@ public:
   /** \brief Retrieves a dummy object of type
   * RangeValidatorDependency.
   */
-  static RCP<RangeValidatorDependency<T> >
-    getDummyObject()
+  static RCP<RangeValidatorDependency<T> > getDummyObject()
   {
     static RCP<RangeValidatorDependency<T> > dummyObject;
     if(dummyObject.is_null()){
       typename RangeValidatorDependency<T>::RangeToValidatorMap dummyMap;
+      typename RangeValidatorDependency<T>::Range dummyRange(
+        ScalarTraits<T>::zero(), ScalarTraits<T>::one());
+      RCP<FileNameValidator> dummyValidator = 
+        DummyObjectGetter<FileNameValidator>::getDummyObject();
+      dummyMap.insert(typename RangeValidatorDependency<T>::RangeValidatorPair(
+        dummyRange, dummyValidator));
       dummyObject = rcp(new RangeValidatorDependency<T>(
-        DummyObjectGetter<ParameterEntry>::getDummyObject(),
+        rcp(new ParameterEntry(ScalarTraits<T>::zero())),
         DummyObjectGetter<ParameterEntry>::getDummyObject(),
         dummyMap));
     }

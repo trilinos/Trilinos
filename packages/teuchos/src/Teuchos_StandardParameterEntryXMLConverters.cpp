@@ -41,9 +41,9 @@ const std::string AnyParameterEntryConverter::getValueAttributeValue(
 }
 
 void AnyParameterEntryConverter::setEntryValue(
-  RCP<ParameterEntry> entry, const XMLObject &xmlObj, bool isDefault) const
+  ParameterEntry& entry, const XMLObject& xmlObj, bool isDefault) const
 {
-  entry->setValue<std::string>(
+  entry.setValue<std::string>(
     xmlObj.getRequired(getValueAttributeName()), isDefault);
 }
 

@@ -33,23 +33,23 @@
 namespace Teuchos{
 
 
-#define ADD_TYPE_CONVERTER(T,PREFIXNAME) \
+#define ADD_TYPE_CONVERTER(T) \
   \
-  RCP<StandardTemplatedParameterConverter< T > > PREFIXNAME##Converter = \
+  RCP<StandardTemplatedParameterConverter< T > > T##Converter = \
     rcp(new StandardTemplatedParameterConverter< T >); \
-  masterMap.insert(ConverterPair(PREFIXNAME##Converter->getTypeAttributeValue(), \
-      PREFIXNAME##Converter)); 
+  masterMap.insert(ConverterPair(T##Converter->getTypeAttributeValue(), \
+      T##Converter)); 
 
-#define ADD_ARRAYTYPE_CONVERTER(T,PREFIXNAME) \
-  RCP<ArrayTemplatedParameterConverter< T > > PREFIXNAME##ArrayConverter = \
-    rcp(new ArrayTemplatedParameterConverter< T >); \
-  masterMap.insert(ConverterPair(PREFIXNAME##ArrayConverter->getTypeAttributeValue(), \
-      PREFIXNAME##ArrayConverter)); 
+#define ADD_ARRAYTYPE_CONVERTER(T) \
+  RCP<StandardTemplatedParameterConverter< Array< T > > > T##ArrayConverter = \
+    rcp(new StandardTemplatedParameterConverter< Array< T > >); \
+  masterMap.insert(ConverterPair(T##ArrayConverter->getTypeAttributeValue(), \
+      T##ArrayConverter)); 
 
-#define ADD_TYPE_AND_ARRAYTYPE_CONVERTER(T , PREFIXNAME) \
+#define ADD_TYPE_AND_ARRAYTYPE_CONVERTER(T) \
   \
-  ADD_TYPE_CONVERTER(T, PREFIXNAME); \
-  ADD_ARRAYTYPE_CONVERTER(T,PREFIXNAME);
+  ADD_TYPE_CONVERTER(T); \
+  ADD_ARRAYTYPE_CONVERTER(T);
 
 RCP<const ParameterEntryXMLConverter> 
 ParameterEntryXMLConverterDB::getConverter(RCP<const ParameterEntry> entry) 
@@ -115,23 +115,28 @@ ParameterEntryXMLConverterDB::getConverterMap()
 {
   static ConverterMap masterMap;
   if(masterMap.size() == 0){
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(int, int);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(unsigned int, unsignedInt);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(short int, short);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(unsigned short int, unsignedShortInt);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(long int, long);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(unsigned long int, unsignedLongInt);
+    typedef unsigned int uint;
+    typedef unsigned short int ushort;
+    typedef unsigned long ulong;
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(int);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(uint);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(short);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ushort);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(long);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ulong);
     #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(long long int, longlong);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(unsigned long long int, unsignedShortInt);
+    typedef long long int llint;
+    typedef unsigned long long int ullint;
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(llint);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ulling);
     #endif //HAVE_TEUCHOS_LONG_LONG_INT
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(double, double);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(float, float);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(double);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(float);
 
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(string, string);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(string);
 
-    ADD_TYPE_CONVERTER(char, char);
-    ADD_TYPE_CONVERTER(bool, bool);
+    ADD_TYPE_CONVERTER(char);
+    ADD_TYPE_CONVERTER(bool);
 
     RCP<AnyParameterEntryConverter > anyConverter = 
       rcp(new AnyParameterEntryConverter); 
