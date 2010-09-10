@@ -117,6 +117,9 @@ public:
    */
   void log_resurrect();
 
+  /** \brief  Log that this entity was created as a parallel copy. */
+  void log_created_parallel_copy();
+
   bool marked_for_destruction() const;
 
  private:

@@ -47,6 +47,7 @@ public:
 
 bool test_change_owner_with_constraint( stk::ParallelMachine pm );
 bool test_change_owner_2( stk::ParallelMachine pm );
+bool test_change_owner_3( stk::ParallelMachine pm );
 
 #endif
 

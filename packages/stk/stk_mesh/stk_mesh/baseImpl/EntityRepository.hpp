@@ -38,6 +38,11 @@ class EntityRepository {
     std::pair<Entity*,bool>
       internal_create_entity( const EntityKey & key );
 
+    /** \brief Log that this entity was created as a parallel copy
+      *        of an existing entity.
+      */
+    void log_created_parallel_copy( Entity & e );
+
     inline void set_entity_owner_rank( Entity & e, unsigned owner_rank);
     inline void set_entity_sync_count( Entity & e, size_t count);
 

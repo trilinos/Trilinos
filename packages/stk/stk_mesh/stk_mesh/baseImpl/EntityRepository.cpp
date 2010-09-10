@@ -84,6 +84,11 @@ EntityRepository::internal_create_entity( const EntityKey & key )
   return result ;
 }
 
+void EntityRepository::log_created_parallel_copy( Entity & entity )
+{
+  entity.m_entityImpl.log_created_parallel_copy();
+}
+
 Entity * EntityRepository::get_entity(const EntityKey &key) const
 {
   const bool valid_key = entity_key_valid( key );

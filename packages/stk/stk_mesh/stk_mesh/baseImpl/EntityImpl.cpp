@@ -189,6 +189,13 @@ void EntityImpl::log_resurrect()
   m_bucket = NULL;
 }
 
+void EntityImpl::log_created_parallel_copy()
+{
+  if ( EntityLogCreated == m_mod_log ) {
+    m_mod_log = EntityLogModified ;
+  }
+}
+
 bool EntityImpl::destroy_relation( Entity& e_to )
 {
   bool destroyed_relations = false;
