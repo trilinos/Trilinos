@@ -48,6 +48,7 @@ void TestForException_break( const std::string &errorMsg )
 {
   int break_on_me;
   break_on_me = errorMsg.length(); // Use errMsg to avoid compiler warning.
+  (void)break_on_me;
   // Above is just some statement for the debugger to break on.  Note: now is
   // a good time to examine the stack trace and look at the error message in
   // 'errorMsg' to see what happened.  In GDB just type 'where' or you can go
