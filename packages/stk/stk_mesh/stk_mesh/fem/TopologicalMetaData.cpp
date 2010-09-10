@@ -175,9 +175,13 @@ void TopologicalMetaData::declare_cell_topology(
 
   typedef std::pair< const CellTopologyData * , EntityRank > ValueType ;
 
-  const int existing_rank = get_entity_rank( top );
-  const bool duplicate    = 0 <= existing_rank ;
-  const bool error_change = duplicate && existing_rank != (int) rank ;
+  std::vector< ValueType >::const_iterator i = m_top_rank.begin() ;
+  for ( ; i != m_top_rank.end() && top != i->first ; ++i );
+
+  const bool       duplicate     = i != m_top_rank.end();
+  const EntityRank existing_rank = duplicate ? i->second : 0 ;
+
+  const bool error_change = duplicate && existing_rank != rank ;
   const bool error_rank   = spatial_dimension < rank ;
 
   if ( error_rank || error_change ) {
