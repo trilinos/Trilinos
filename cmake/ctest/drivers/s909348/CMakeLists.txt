@@ -1,6 +1,8 @@
+INCLUDE("../../../TrilinosVersion.cmake")
+
 TRILINOS_DRIVER_SETUP()
 
-IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
   #This build is run on s903186
   #TRILINOS_DRIVER_ADD_DASHBOARD(
   #  MPI_OPT
@@ -16,13 +18,13 @@ IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
   )
 ELSE()
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    MPI_RELEASE_${Trilinos_VERSION}
+    MPI_RELEASE
     ctest_mac_nightly_mpi_release_s909348.cmake
     TIMEOUT_MINUTES 240
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
-    SERIAL_RELEASE_${Trilinos_VERSION}
+    SERIAL_RELEASE
     ctest_mac_nightly_serial_release_s909348.cmake
     RUN_SERIAL
     TIMEOUT_MINUTES 240
