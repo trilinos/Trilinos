@@ -104,6 +104,10 @@ void DiagnosticLinearOp::implicitApply(const MultiVector & x, MultiVector & y,
    // start timer on construction, end on destruction
    Teuchos::TimeMonitor monitor(timer_,false);  
 
+   MultiVector z; // for temporary storage dealing with nozero beta
+   if(beta!=0.0);
+      z = deepcopy(y);
+
    wrapOpA_->apply(Thyra::NOTRANS,*x,y.ptr(),alpha,beta);
 
    // print residual if there is a fwd Op
@@ -111,7 +115,11 @@ void DiagnosticLinearOp::implicitApply(const MultiVector & x, MultiVector & y,
    if(printResidual) {
       // compute residual
       MultiVector residual = Teko::deepcopy(x);
-      fwdOp_->apply(Thyra::NOTRANS,*y,residual.ptr(),-1.0,1.0);
+      // fwdOp_->apply(Thyra::NOTRANS,*y,residual.ptr(),-1.0,1.0);
+          
+      fwdOp_->apply(Thyra::NOTRANS,*y,residual.ptr(),-1.0,alpha);
+      if(beta!=0.0)
+         fwdOp_->apply(Thyra::NOTRANS,*z,residual.ptr(),beta,1.0);
 
       // calculate norms
       std::vector<double> norms(y->domain()->dim());    // size of column count
@@ -124,6 +132,8 @@ void DiagnosticLinearOp::implicitApply(const MultiVector & x, MultiVector & y,
       for(std::size_t i=0;i<norms.size();++i) 
 	(*outputStream_) << " " << std::scientific << std::setprecision(4) << norms[i]/rhsNorms[i];// << " (" <<rhsNorms[i]<<") ";
       (*outputStream_) << " ]" << std::endl;
+
+      residualNorm_ = norms[0];
    }
 }
 

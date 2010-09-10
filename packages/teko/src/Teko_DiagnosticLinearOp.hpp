@@ -123,6 +123,11 @@ public:
  
    void setForwardOp(const Teko::LinearOp & lo)
    { fwdOp_ = lo; }
+ 
+   /* Get the residual norm.  Used purely for testing.
+    */
+   double getResidualNorm() const
+   { return residualNorm_; }
 
 protected:
    // fundamental operators to use
@@ -130,7 +135,8 @@ protected:
    ModifiableLinearOp wrapOpA_;      ///< inverse of \f$ S \f$
    Teko::LinearOp fwdOp_;      ///< inverse of \f$ S \f$
    std::string diagString_;
- 
+
+   mutable double residualNorm_; // for testing purposes
    mutable Teuchos::Time timer_;
 
 private:

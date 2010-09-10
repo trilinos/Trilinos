@@ -1316,5 +1316,12 @@ double norm_1(const MultiVector & v,std::size_t col)
    return n[col];
 }
 
+double norm_2(const MultiVector & v,std::size_t col)
+{
+   Teuchos::Array<double> n(v->domain()->dim());
+   Thyra::norms_2<double>(*v,n);
+
+   return n[col];
 }
 
+}

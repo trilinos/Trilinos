@@ -782,6 +782,10 @@ LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, const LinearOp & Op);
   */
 double norm_1(const MultiVector & v,std::size_t col);
 
+/** Get the two norm of the vector
+  */
+double norm_2(const MultiVector & v,std::size_t col);
+
 } // end namespace Teko
 
 #endif

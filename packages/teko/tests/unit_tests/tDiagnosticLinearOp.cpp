@@ -226,3 +226,63 @@ TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test)
    // TEST_FLOATING_EQUALITY(dpf.totalRebuildTime(),
    //                        rebuildTime.totalElapsedTime(),0.05);  // within 5% should be good enough 
 }
+
+TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, residual_test)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Epetra_MpiComm Comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm Comm;
+   #endif
+
+   RCP<Teko::InverseLibrary> invLibrary = Teko::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseFactory> invFact = invLibrary->getInverseFactory("Amesos");
+   Teko::LinearOp A = buildSystem(Comm,10000);
+   Teko::ModifiableLinearOp invA = Teko::buildInverse(*invFact,A);
+
+   Teuchos::RCP<std::ostream> rcp_out = Teuchos::rcpFromRef(out);
+   Teuchos::RCP<Teko::DiagnosticLinearOp> diag_invA = rcp(new Teko::DiagnosticLinearOp(rcp_out,A,invA,"descriptive_label"));
+   Teko::LinearOp diag_invAlo = diag_invA;
+
+   // simple default value
+   {
+      Teko::MultiVector x = Thyra::createMember(invA->domain());
+      Teko::MultiVector y = Thyra::createMember(invA->range());
+      Thyra::randomize(-1.0,1.0,x.ptr());
+
+      Teko::MultiVector residual = Teko::deepcopy(x);
+
+      Teko::applyOp(diag_invAlo,x,y);
+      Teko::applyOp(A,y,residual,-1.0,1.0);
+
+      double myresid = Teko::norm_2(residual,0);
+     
+      TEST_FLOATING_EQUALITY(myresid,diag_invA->getResidualNorm(),1e-14);
+   }
+
+   // arbitrary alpha and beta
+   {
+      double alpha = 3.141; 
+      double beta  = 1.618;
+      Teko::MultiVector x = Thyra::createMember(invA->domain());
+      Teko::MultiVector y = Thyra::createMember(invA->range());
+      Thyra::randomize(-1.0,1.0,x.ptr());
+      Thyra::randomize(-1.0,1.0,y.ptr());
+
+      Teko::MultiVector residual = Teko::deepcopy(x);
+      Teko::MultiVector z = Teko::deepcopy(y);
+
+      Teko::applyOp(diag_invAlo,x,z,alpha,beta);
+
+      Teko::applyOp(A,z,residual,-1.0,alpha);
+      // alpha x - A z
+
+      Teko::applyOp(A,y,residual,beta,1.0);
+      // alpha (x - A z) - beta A y
+
+      double myresid = Teko::norm_2(residual,0);
+     
+      TEST_FLOATING_EQUALITY(myresid,diag_invA->getResidualNorm(),1e-14);
+   }
+}
