@@ -454,9 +454,9 @@ void UnitTestMetaData::testPart()
 
       std::cout << "UnitTestMetaData name of partB is " << partB.name()  << std::endl ;
 
-      Part & pint_4_6_7 = * partRepo2.declare_part( intersection2 );
+      Part & pintersect_4_6_7 = * partRepo2.declare_part( intersection2 );
 
-      std::cout << "UnitTestMetaData name of intersection part, pint_4_6_7 is " << pint_4_6_7.name()  << std::endl ;
+      std::cout << "UnitTestMetaData name of intersection part, pintersect_4_6_7 is " << pintersect_4_6_7.name()  << std::endl ;
     }
     catch( const std::exception & x ) {
       ok = 1 ;

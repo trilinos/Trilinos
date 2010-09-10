@@ -43,12 +43,11 @@ public:
 
   const unsigned spatial_dimension ; ///< Spatial dimension
 
-  //change to EntityRank
-  const unsigned node_rank ;    ///< Rank of nodes (always zero)
-  const unsigned edge_rank ;    ///< Rank of edges (1 for 2D and 3D)
-  const unsigned side_rank ;    ///< Rank of sides (1 for 2D, 2 for 3D)
-  const unsigned element_rank ; ///< Rank of elements (spatial_dimension)
-  const unsigned patch_rank ;   ///< Rank of arbitrary patches (element+1)
+  const EntityRank node_rank ;    ///< Rank of nodes (always zero)
+  const EntityRank edge_rank ;    ///< Rank of edges (1 for 2D and 3D)
+  const EntityRank side_rank ;    ///< Rank of sides (1 for 2D, 2 for 3D)
+  const EntityRank element_rank ; ///< Rank of elements (spatial_dimension)
+  const EntityRank patch_rank ;   ///< Rank of arbitrary patches (element+1)
 
   //--------------------------------------------------------------------------
   /** \brief  Get the cell topology associated with a mesh part.
@@ -91,10 +90,10 @@ public:
   /** \brief  Extend the list of defined cell topologies for
    *          mesh entities of the given rank.
    */
-  void declare_cell_topology( const CellTopologyData * , unsigned entity_rank );
+  void declare_cell_topology( const CellTopologyData * , EntityRank entity_rank );
 
-  //change to EntityRank throw if not found
-  int get_entity_rank( const CellTopologyData * ) const ;
+  //throws if not found
+  EntityRank get_entity_rank( const CellTopologyData * ) const ;
 
 private:
 
@@ -102,16 +101,16 @@ private:
   MetaData & m_meta_data ;
 
   // Defined cell topologies and associated mesh entity rank.
-  std::vector< std::pair< const CellTopologyData * , unsigned > > m_top_rank ;
+  std::vector< std::pair< const CellTopologyData * , EntityRank > > m_top_rank ;
 
   // Map part meta data ordinals to cell topologies.
   std::vector< std::pair< unsigned , const CellTopologyData * > > m_part_top_map ;
 
   static const TopologicalMetaData * internal_get( const MetaData & );
 
-  const CellTopologyData * internal_get_cell_topology( unsigned ) const ;
+  const CellTopologyData * internal_get_cell_topology( unsigned part_ordinal) const ;
 
-  void internal_set_entity_rank( const CellTopologyData * , unsigned );
+  void internal_set_entity_rank( const CellTopologyData * , EntityRank );
 
   void throw_ambiguous( const Part & ) const ;
   void throw_ambiguous( const Bucket & ) const ;

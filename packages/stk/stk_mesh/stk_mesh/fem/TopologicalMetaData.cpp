@@ -144,20 +144,24 @@ TopologicalMetaData::TopologicalMetaData(
 
 //----------------------------------------------------------------------------
 
-int TopologicalMetaData::get_entity_rank( const CellTopologyData * top ) const
+EntityRank TopologicalMetaData::get_entity_rank( const CellTopologyData * top ) const
 {
-  typedef std::pair< const CellTopologyData * , unsigned > ValueType ;
+  typedef std::pair< const CellTopologyData * , EntityRank > ValueType ;
 
   std::vector< ValueType >::const_iterator i ;
 
   for ( i = m_top_rank.begin() ; i != m_top_rank.end() && top != i->first ; ++i );
 
-  return i != m_top_rank.end() ? i->second : -1 ;
+  if (i == m_top_rank.end()) {
+    throw std::runtime_error("stk::mesh::TopologicalMetaData::get_entity_rank ERROR, topology not found.");
+  }
+
+  return i->second ;
 }
 
-void TopologicalMetaData::internal_set_entity_rank( const CellTopologyData * top , unsigned rank )
+void TopologicalMetaData::internal_set_entity_rank( const CellTopologyData * top , EntityRank rank )
 {
-  typedef std::pair< const CellTopologyData * , unsigned > ValueType ;
+  typedef std::pair< const CellTopologyData * , EntityRank > ValueType ;
 
   m_top_rank.push_back( ValueType( top , rank ) );
 }
@@ -165,11 +169,11 @@ void TopologicalMetaData::internal_set_entity_rank( const CellTopologyData * top
 //----------------------------------------------------------------------------
 
 void TopologicalMetaData::declare_cell_topology(
-  const CellTopologyData * top , unsigned rank )
+  const CellTopologyData * top , EntityRank rank )
 {
   static const char method[] = "stk::mesh::TopologicalMetaData::declare_cell_topology" ;
 
-  typedef std::pair< const CellTopologyData * , unsigned > ValueType ;
+  typedef std::pair< const CellTopologyData * , EntityRank > ValueType ;
 
   const int existing_rank = get_entity_rank( top );
   const bool duplicate    = 0 <= existing_rank ;
@@ -204,14 +208,16 @@ Part & TopologicalMetaData::declare_part(
 
   typedef std::pair< unsigned , const CellTopologyData * > ValueType ;
 
-  int entity_rank = get_entity_rank( top );
-
-  if ( entity_rank < 0 ) {
+  EntityRank entity_rank;
+  try {
+    entity_rank = get_entity_rank( top );
+  }
+  catch(std::runtime_error& /*x*/) {
     internal_set_entity_rank( top , top->dimension );
     entity_rank = top->dimension ;
   }
 
-  Part & part = m_meta_data.declare_part( name , (unsigned) entity_rank );
+  Part & part = m_meta_data.declare_part( name , entity_rank );
 
   ValueType value( part.mesh_meta_data_ordinal() , top );
 
@@ -219,7 +225,7 @@ Part & TopologicalMetaData::declare_part(
     i = std::lower_bound( m_part_top_map.begin() , m_part_top_map.end() , value );
 
   const bool duplicate  = i != m_part_top_map.end() && i->first == value.first ;
-  const bool error_rank = part.primary_entity_rank() != (unsigned) entity_rank ;
+  const bool error_rank = part.primary_entity_rank() != entity_rank ;
   const bool error_top  = duplicate && i->second != value.second ;
 
   if ( error_rank || error_top ) {
@@ -247,16 +253,16 @@ Part & TopologicalMetaData::declare_part(
 //----------------------------------------------------------------------------
 
 const CellTopologyData *
-TopologicalMetaData::internal_get_cell_topology( unsigned val ) const
+TopologicalMetaData::internal_get_cell_topology( unsigned part_ordinal ) const
 {
   typedef std::pair< unsigned , const CellTopologyData * > ValueType ;
 
-  ValueType tmp( val , NULL );
+  ValueType tmp( part_ordinal , NULL );
 
   std::vector< ValueType >::const_iterator
     i = std::lower_bound( m_part_top_map.begin() , m_part_top_map.end() , tmp );
 
-  return i != m_part_top_map.end() && i->first == val ? i->second : NULL ;
+  return i != m_part_top_map.end() && i->first == part_ordinal ? i->second : NULL ;
 }
 
 //----------------------------------------------------------------------------
