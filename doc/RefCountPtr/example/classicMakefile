@@ -2,7 +2,11 @@
 TEUCHOS_BUILD_BASE=$(TRILINOS_BUILD)/packages/teuchos/src
 TEUCHOS_SRC_BASE=../../../packages/teuchos/src
 
-COMMON = -DHAVE_CONFIG_H -I$(TEUCHOS_SRC_BASE) -I$(TEUCHOS_BUILD_BASE) $(TEUCHOS_SRC_BASE)/Teuchos_TestForException.cpp $(TEUCHOS_SRC_BASE)/Teuchos_RefCountPtr.cpp
+COMMON = -DHAVE_CONFIG_H -I$(TEUCHOS_SRC_BASE) -I$(TEUCHOS_BUILD_BASE) \
+  $(TEUCHOS_SRC_BASE)/Teuchos_TestForException.cpp \
+  $(TEUCHOS_SRC_BASE)/Teuchos_RCPNode.cpp \
+  $(TEUCHOS_SRC_BASE)/Teuchos_Ptr.cpp \
+  $(TEUCHOS_SRC_BASE)/Teuchos_TypeNameTraits.cpp
 
 all : example_raw_cpp_pointers.exe example_ref_count_ptr.exe
 
