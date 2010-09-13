@@ -196,20 +196,19 @@ void get_adjacent_entities( const Entity & entity ,
   unsigned num_nodes_in_orig_entity = entity_nodes.size();
   std::vector<Entity*> current_nodes;
   current_nodes.resize(num_nodes_in_orig_entity);
-  for (std::vector<Entity*>::iterator itr = elements.end();
-       itr != elements.begin(); ) {
-    --itr;
+  std::vector<Entity*>::iterator itr = elements.begin();
+  while ( itr != elements.end() ) {
     Entity * current_entity = *itr;
     PairIterRelation relations = current_entity->relations(Node);
 
     if (current_entity == &entity) {
       // We do not want to be adjacent to ourself
-      elements.erase(itr);
+      itr = elements.erase(itr);
     }
     else if (relations.size() != num_nodes_in_orig_entity) {
       // current_entity has a different number of nodes than entity, they
       // cannot be superimposed
-      continue;
+      ++itr;
     }
     else {
       for (unsigned i = 0; relations.first != relations.second;
@@ -220,7 +219,10 @@ void get_adjacent_entities( const Entity & entity ,
 
       bool entities_are_superimposed = entity_nodes == current_nodes;
       if (entities_are_superimposed) {
-        elements.erase(itr);
+        itr = elements.erase(itr);
+      }
+      else {
+        ++itr;
       }
     }
   }
