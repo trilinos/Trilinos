@@ -29,6 +29,7 @@ APPEND_SET(HEADERS
   dofmngr_v2/Panzer_FieldPattern.hpp
   dofmngr_v2/Panzer_IntrepidFieldPattern.hpp
   dofmngr_v2/Panzer_GeometricAggFieldPattern.hpp
+  dofmngr_v2/Panzer_FieldAggPattern.hpp
   ) 
 
 APPEND_SET(SOURCES
@@ -36,6 +37,7 @@ APPEND_SET(SOURCES
   dofmngr_v2/Panzer_FieldPattern.cpp
   dofmngr_v2/Panzer_IntrepidFieldPattern.cpp
   dofmngr_v2/Panzer_GeometricAggFieldPattern.cpp
+  dofmngr_v2/Panzer_FieldAggPattern.cpp
   )
 
 #
