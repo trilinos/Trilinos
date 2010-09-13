@@ -43,13 +43,13 @@ namespace Teuchos{
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
   std::string dependee1 = "string param";
-  /*std::string dependee2 = "string param2";
+  std::string dependee2 = "string param2";
   std::string dependent1 = "dependent param1";
-  std::string dependent2 = "dependent param2";*/
+  std::string dependent2 = "dependent param2";
   ParameterList myDepList("String Visual Dep List");
-  //RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
   myDepList.set(dependee1, "val1");
-  /*myDepList.set(dependee2, "val2");
+  myDepList.set(dependee2, "val2");
   myDepList.set(dependent1, 1.0);
   myDepList.set(dependent2, 1.0);
 
@@ -76,15 +76,14 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
 
   RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
 
-*/
- /* RCP<ParameterList> readInList = 
-    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); */
+
   RCP<ParameterList> readInList = 
-    writeThenReadPL(myDepList);
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
+
  
 
-  //TEST_ASSERT(
-    //readInDepSheet->hasDependents(readInList->getEntryRCP(dependee1)));
+  TEST_ASSERT(
+    readInDepSheet->hasDependents(readInList->getEntryRCP(dependee1)));
 
 }
 

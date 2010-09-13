@@ -70,15 +70,19 @@ public:
   //@}
 
   /** Write the given XML object to a parameter list */
-  ParameterList toParameterList(
-    const XMLObject& xml, RCP<DependencySheet> depSheet = null) const ;
+  RCP<ParameterList> toParameterList(
+    const XMLObject& xml, RCP<DependencySheet> depSheet) const;
+
+  ParameterList toParameterList(const XMLObject& xml) const;
+
 
 private:
 
   /** \brief Write the given XML object to a parameter list along with the
    * validators located in the given map.
    */
-  ParameterList convertParameterList(const XMLObject& xml,
+  void convertParameterList(const XMLObject& xml,
+    RCP<ParameterList> parentList,
     EntryIDsMap& entryIDsMap, const ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief Write the given XML object to appropriate validators. */

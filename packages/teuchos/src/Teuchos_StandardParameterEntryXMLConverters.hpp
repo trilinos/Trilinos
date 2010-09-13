@@ -60,11 +60,7 @@ public:
     RCP<const ParameterEntry> entry) const;
 
   /** \brief . */
-  void setEntryValue(
-    ParameterEntry& entry,
-    const XMLObject& xmlObj,
-    bool isDefault) const;
-  
+  any getAny(const XMLObject& xmlObj) const; 
   //@}
 
 };
@@ -94,13 +90,8 @@ public:
   }
 
   /** \brief . */
-  virtual void setEntryValue(
-    ParameterEntry& entry, 
-    const XMLObject& xmlObj,
-    bool isDefault) const
-  {
-    entry.setValue<T>(
-      xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
+  any getAny(const XMLObject& xmlObj) const{
+    return any(xmlObj.getRequired<T>(getValueAttributeName()));
   }
   
   //@}

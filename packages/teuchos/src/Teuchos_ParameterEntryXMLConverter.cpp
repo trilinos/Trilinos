@@ -40,14 +40,17 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(
   const XMLObject &xmlObj) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(),
-    BadParameterEntryXMLConverterTypeException,
-    "Error: this Parameter Entry XML tag has a type different than "
-    "the XMLConverter being used to convert it." <<std::endl <<
-    "Parameter name: " << xmlObj.getRequired(
-    XMLParameterListWriter::getNameAttributeName()) << std::endl << 
-    "XML Parameter Entry type: " << xmlObj.getRequired(getTypeAttributeName()) << std::endl << 
-    "XMLConverter type: " << getTypeAttributeValue() << std::endl <<std::endl);
+    TEST_FOR_EXCEPTION(
+      xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(),
+      BadParameterEntryXMLConverterTypeException,
+      "Error: this Parameter Entry XML tag has a type different than "
+      "the XMLConverter being used to convert it." <<std::endl <<
+      "Parameter name: " << xmlObj.getRequired(
+      XMLParameterListWriter::getNameAttributeName()) << std::endl << 
+      "XML Parameter Entry type: " << 
+      xmlObj.getRequired(getTypeAttributeName()) << std::endl << 
+      "XMLConverter type: " << getTypeAttributeValue() << 
+      std::endl <<std::endl);
   #endif
 
   TEST_FOR_EXCEPTION(
@@ -62,6 +65,7 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(
   ParameterEntry toReturn;
   bool isDefault = false;
   bool isUsed = false;
+  std::string docString = "";
 
 
   if(xmlObj.hasAttribute(getDefaultAttributeName())){
@@ -72,7 +76,12 @@ ParameterEntryXMLConverter::fromXMLtoParameterEntry(
     isUsed = xmlObj.getRequiredBool(getUsedAttributeName());
   }
 
-  setEntryValue(toReturn, xmlObj, isDefault);
+  if(xmlObj.hasAttribute(getDocStringAttributeName())){
+    docString = xmlObj.getRequired(getDocStringAttributeName());
+  }
+
+  toReturn.setAnyValue(getAny(xmlObj), isDefault);
+  toReturn.setDocString(docString);
   
   if(isUsed){
     toReturn.getAny();
@@ -109,6 +118,7 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(
   toReturn.addAttribute(
     XMLParameterListWriter::getNameAttributeName(), name);
   toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
+  toReturn.addAttribute(getDocStringAttributeName(), entry->docString());
   toReturn.addAttribute(getIdAttributeName(), id);
   toReturn.addAttribute(
     getValueAttributeName(), getValueAttributeValue(entry));

@@ -30,6 +30,7 @@
 
 namespace Teuchos{
 
+
 const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
   return "any";
 }
@@ -40,12 +41,10 @@ const std::string AnyParameterEntryConverter::getValueAttributeValue(
   return toString(entry->getAny(false));
 }
 
-void AnyParameterEntryConverter::setEntryValue(
-  ParameterEntry& entry, const XMLObject& xmlObj, bool isDefault) const
-{
-  entry.setValue<std::string>(
-    xmlObj.getRequired(getValueAttributeName()), isDefault);
+any AnyParameterEntryConverter::getAny(const XMLObject& xmlObj) const {
+  return any(xmlObj.getRequired(getValueAttributeName()));
 }
+
 
 } //namespace Teuchos
 

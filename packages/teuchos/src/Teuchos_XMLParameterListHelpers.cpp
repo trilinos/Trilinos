@@ -45,7 +45,13 @@ void updateParametersFromXmlFile(
   XMLParameterListReader xmlPLReader;
   FileInputSource xmlFile(xmlFileName);
   XMLObject xmlParams = xmlFile.getObject();
-  paramList->setParameters(xmlPLReader.toParameterList(xmlParams, depSheet));
+  if(nonnull(depSheet)){
+    paramList->setParameters(
+      *(xmlPLReader.toParameterList(xmlParams, depSheet)));
+  }
+  else{
+    paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
+  }
 }
 
 
@@ -69,7 +75,13 @@ void updateParametersFromXmlString(
   XMLParameterListReader xmlPLReader;
   StringInputSource xmlStrSrc(xmlStr);
   XMLObject xmlParams = xmlStrSrc.getObject();
-  paramList->setParameters(xmlPLReader.toParameterList(xmlParams, depSheet));
+  if(nonnull(depSheet)){
+    paramList->setParameters(
+      *(xmlPLReader.toParameterList(xmlParams, depSheet)));
+  }
+  else{
+    paramList->setParameters(xmlPLReader.toParameterList(xmlParams));
+  }
 }
 
 

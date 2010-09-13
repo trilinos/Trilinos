@@ -71,11 +71,7 @@ public:
     const ParameterEntry::ParameterEntryID& id,
     const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
   
-  /** \brief sets the value  */
-  virtual void setEntryValue(
-    ParameterEntry& entry, 
-    const XMLObject &xmlObj,
-    bool isDefault) const=0;
+  virtual any getAny(const XMLObject& xmlObj) const=0;
 
   //@}
 
@@ -136,6 +132,12 @@ private:
   static const std::string& getUsedAttributeName() {
     static const std::string usedAttributeName_ = "isUsed";
     return usedAttributeName_;
+  }
+  
+  /** \brief . */
+  static const std::string& getDocStringAttributeName() {
+    static const std::string docStringAttributeName_ = "docString";
+    return docStringAttributeName_;
   }
   
   //@}
