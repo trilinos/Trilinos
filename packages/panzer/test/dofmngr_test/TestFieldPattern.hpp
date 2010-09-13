@@ -1,7 +1,7 @@
 #ifndef __TestFieldPattern_hpp__
 #define __TestFieldPattern_hpp__
 
-#include "dofmngr_v2/Panzer_FieldPattern.hpp"
+#include "dofmngr/Panzer_FieldPattern.hpp"
 
 #include "Teuchos_RCP.hpp"
 

@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 
-#include "dofmngr_v2/Panzer_IntrepidFieldPattern.hpp"
+#include "dofmngr/Panzer_IntrepidFieldPattern.hpp"
 
 // include some intrepid basis functions
 // 2D basis 

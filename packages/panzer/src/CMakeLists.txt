@@ -26,18 +26,18 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   Panzer_Version.hpp
   Panzer_ConfigDefs.hpp
-  dofmngr_v2/Panzer_FieldPattern.hpp
-  dofmngr_v2/Panzer_IntrepidFieldPattern.hpp
-  dofmngr_v2/Panzer_GeometricAggFieldPattern.hpp
-  dofmngr_v2/Panzer_FieldAggPattern.hpp
+  dofmngr/Panzer_FieldPattern.hpp
+  dofmngr/Panzer_IntrepidFieldPattern.hpp
+  dofmngr/Panzer_GeometricAggFieldPattern.hpp
+  dofmngr/Panzer_FieldAggPattern.hpp
   ) 
 
 APPEND_SET(SOURCES
   Panzer_Version.cpp
-  dofmngr_v2/Panzer_FieldPattern.cpp
-  dofmngr_v2/Panzer_IntrepidFieldPattern.cpp
-  dofmngr_v2/Panzer_GeometricAggFieldPattern.cpp
-  dofmngr_v2/Panzer_FieldAggPattern.cpp
+  dofmngr/Panzer_FieldPattern.cpp
+  dofmngr/Panzer_IntrepidFieldPattern.cpp
+  dofmngr/Panzer_GeometricAggFieldPattern.cpp
+  dofmngr/Panzer_FieldAggPattern.cpp
   )
 
 #
