@@ -10,10 +10,15 @@ namespace panzer {
 
 class FieldPattern; // from DOFManager
 
+/** Pure abstract base class templated on the
+  * global and local ordinal types. It is assumed
+  * that element blocks are number by a GlobalOrdinal
+  * and local element IDs use the LocalOrdinal.
+  */
+template <typename LocalOrdinal,typename GlobalOrdinal>
 class ConnManager {
 public:
    virtual ~ConnManager() {}
-
 
    /** Tell the connection manager to build the connectivity assuming
      * a particular field pattern.
@@ -29,7 +34,7 @@ public:
      * \returns Pointer to beginning of indices, with total size
      *          equal to <code>getConnectivitySize(localElmtId)</code>
      */
-   virtual const int * getConnectivity(int localElmtId) const = 0;
+   virtual const GlobalOrdinal * getConnectivity(LocalOrdinal localElmtId) const = 0;
 
    /** How many mesh IDs are associated with this element?
      *
@@ -37,17 +42,17 @@ public:
      *
      * \returns Number of mesh IDs that are associated with this element.
      */
-   virtual int getConnectivitySize(int localElmtId) const = 0;
+   virtual int getConnectivitySize(LocalOrdinal localElmtId) const = 0;
 
    /** Get the block ID for a particular element.
      *
      * \param[in] localElmtId Local element ID
      */
-   virtual int getBlockId(int localElmtId) const = 0;
+   virtual GlobalOrdinal getBlockId(LocalOrdinal localElmtId) const = 0;
 
    /** How many element blocks in this mesh?
      */
-   virtual int numElementBlocks() const = 0;
+   virtual GlobalOrdinal numElementBlocks() const = 0;
 
    /** Get the local element IDs for a paricular element
      * block.
@@ -56,7 +61,7 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<int> & getElementBlock(int blockID) const = 0;
+   virtual const std::vector<LocalOrdinal> & getElementBlock(GlobalOrdinal blockID) const = 0;
 };
 
 };
