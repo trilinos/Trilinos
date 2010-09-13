@@ -36,6 +36,12 @@ public:
      */
    GeometricAggFieldPattern(std::vector<Teuchos::RCP<const FieldPattern> > & patterns);
 
+   /** Construct the geometric version of this pattern, this automatically calls 
+     * <code>buildPattern()</code> and is equivalent to calling the
+     * default constructor and then <code>buildPattern()</code>.
+     */
+   GeometricAggFieldPattern(const Teuchos::RCP<const FieldPattern> & pattern);
+
    virtual ~GeometricAggFieldPattern() {}
 
    /** Construct the underlying data for this object.
@@ -48,6 +54,11 @@ public:
      *       state is constructed.
      */
    virtual void buildPattern(const std::vector<Teuchos::RCP<const FieldPattern> > & patterns);
+   
+   /** Convenience function, simply builds a vector and calls the vectorized
+     * form of <code>buildPattern</code>.
+     */
+   virtual void buildPattern(const Teuchos::RCP<const FieldPattern> & patterns);
 
    /** Returns the sub cell count (see <code>FieldPattern</code>) if 
      * <code>buildPattern</code> has been called. Otherwise it will throw an exception.

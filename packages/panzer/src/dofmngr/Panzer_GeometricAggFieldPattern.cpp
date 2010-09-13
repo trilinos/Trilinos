@@ -14,6 +14,12 @@ GeometricAggFieldPattern::GeometricAggFieldPattern(std::vector<Teuchos::RCP<cons
    buildPattern(patterns); 
 }
 
+GeometricAggFieldPattern::GeometricAggFieldPattern(const Teuchos::RCP<const FieldPattern> & pattern) 
+   : patternBuilt_(false), dimension_(0)
+{ 
+   buildPattern(pattern); 
+}
+
 void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const FieldPattern> > & patterns)
 {
    std::size_t numPat = patterns.size();
@@ -62,6 +68,13 @@ void GeometricAggFieldPattern::buildPattern(const std::vector<Teuchos::RCP<const
 
    // record that the pattern has been built
    patternBuilt_ = true;
+}
+
+void GeometricAggFieldPattern::buildPattern(const Teuchos::RCP<const FieldPattern> & pattern)
+{
+   std::vector<Teuchos::RCP<const FieldPattern> > patterns;
+   patterns.push_back(pattern);
+   buildPattern(patterns);
 }
 
 int GeometricAggFieldPattern::getSubcellCount(int dim) const

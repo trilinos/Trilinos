@@ -71,6 +71,27 @@ public:
 
    //@}
 
+   //! \defgroup LOCALOFFSET Functions for indexing into a GID array ordered according to this pattern
+   //@{ 
+
+   /** This function produces a map between the ordering specified by
+     * this pattern and an ordering required by the pattern associated with
+     * <code>fieldId</code>. 
+     *
+     * For instance if you have a vector called <code>GIDs</code>
+     * of length <code>this->numberIds()</code> and you want the GIDs
+     * associated with <code>fieldId = 0 </code>. Simply take the <code>offsets</code>
+     * vector and index it into the <code>GIDs</code> vector:
+     * <code>GIDs[offsets[*]]</code>.
+     *
+     * \param[in] fieldId Field to look up
+     *
+     * \returns offsets Offsets into global IDs vector.
+     */
+   const std::vector<int> & localOffsets(int fieldId) const;
+    
+   //@}
+
 protected:
    typedef Teuchos::RCP<const FieldPattern> FPPtr; // for convenience
 
@@ -100,6 +121,10 @@ protected:
    /** Build Pattern data vectors.
      */
    void buildFieldPatternData();
+
+   /** Helper function that builds the local offsets for this field.
+     */
+   void localOffsets_build(int fieldId,std::vector<int> & offsets) const;
    
    std::size_t dimension_;
    Teuchos::RCP<const FieldPattern> geomAggPattern_;
@@ -115,9 +140,11 @@ protected:
    std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns_;
    std::map<int,int> fieldIdToPatternIdx_;
 
-   struct LessThan  
-   { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
-   mutable std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> fieldSubCellOffsets_;
+//   struct LessThan  
+//   { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
+//   mutable std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> fieldSubCellOffsets_;
+
+   mutable std::map<int, std::vector<int> > fieldOffsets_;
 };
 
 }

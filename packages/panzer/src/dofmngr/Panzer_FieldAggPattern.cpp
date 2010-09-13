@@ -73,6 +73,32 @@ void FieldAggPattern::getSubcellClosureIndices(int, int, std::vector<int> &) con
 void FieldAggPattern::print(std::ostream & os) const
 {
    FieldPattern::print(os);
+
+   os << "FieldPattern: FieldAggPattern" << std::endl;
+   os << "FieldPattern:    |numFields| = " << numFields_.size() << std::endl;
+   os << "FieldPattern:    numFields = [ ";
+   int total=0;
+   for(std::size_t i=0;i<numFields_.size();i++)  {
+      os << numFields_[i] << " ";
+      total += numFields_[i]; 
+   }
+   os << "]" << std::endl;
+   os << "FieldPattern:    |fieldIds| = " << fieldIds_.size() << " (" << total << ")" << std::endl;
+   os << "FieldPattern:    fieldIds = [ ";
+   for(std::size_t i=0;i<fieldIds_.size();i++) 
+      os << fieldIds_[i] << " ";
+   os << "]" << std::endl;
+   os << "FieldPattern:    local offsets\n";
+
+   std::map<int,int>::const_iterator itr;
+   for(itr=fieldIdToPatternIdx_.begin();itr!=fieldIdToPatternIdx_.end();++itr) {
+      int fieldId = itr->first;
+      const std::vector<int> & offsets = localOffsets(fieldId);
+      os << "FieldPattern:       field " << itr->first << " = [ ";
+      for(std::size_t i=0;i<offsets.size();i++)
+         os << offsets[i] << " ";
+      os << "]" << std::endl;
+   }
 }
 
 Teuchos::RCP<const FieldPattern> FieldAggPattern::getFieldPattern(int fieldId) const
@@ -159,6 +185,66 @@ void FieldAggPattern::buildFieldPatternData()
                patternData_[d][sc].push_back(nextIndex);
          }
       }
+   }
+}
+
+const std::vector<int> & FieldAggPattern::localOffsets(int fieldId) const
+{
+   // lazy evaluation
+   std::map<int,std::vector<int> >::const_iterator itr = fieldOffsets_.find(fieldId);
+   if(itr!=fieldOffsets_.end())
+      return itr->second;
+
+   std::vector<int> & offsets = fieldOffsets_[fieldId];
+   localOffsets_build(fieldId,offsets); 
+   return offsets;
+}
+
+void FieldAggPattern::localOffsets_build(int fieldId,std::vector<int> & offsets) const
+{
+   // This function makes the assumption that if there are multiple indices
+   // shared by a subcell then the GeometricAggFieldPattern reflects this.
+   // This is a fine assumption on edges and faces because the symmetries require
+   // extra information about ordering. However, on nodes and "volumes" the
+   // assumption appears to be stupid. For consistency we will make it.
+   //
+   // This code needs to be tested with a basis that has multple IDs at
+   // a node or "volume" sub cell.
+
+   FPPtr fieldPattern = getFieldPattern(fieldId);
+
+   offsets.clear();
+   offsets.resize(fieldPattern->numberIds(),-111111); // fill with some negative number
+                                                     // for testing
+
+   // this will offsets for all IDs associated with the field
+   // but using a geometric ordering
+   std::vector<int> fieldIdsGeomOrder;
+   for(std::size_t i=0;i<fieldIds_.size();++i) {
+      if(fieldIds_[i]==fieldId) 
+         fieldIdsGeomOrder.push_back(i);
+   }
+   TEUCHOS_ASSERT((int) fieldIdsGeomOrder.size()==fieldPattern->numberIds());
+
+   // built geometric ordering for this pattern: will index into fieldIdsGeomOrder
+   GeometricAggFieldPattern geomPattern(fieldPattern);
+   TEUCHOS_ASSERT((int) fieldIdsGeomOrder.size()==geomPattern.numberIds());
+    
+   for(int dim=0;dim<geomPattern.getDimension()+1;dim++) {
+      for(int sc=0;sc<geomPattern.getSubcellCount(dim);sc++) {
+         const std::vector<int> & gIndices = geomPattern.getSubcellIndices(dim,sc);
+         const std::vector<int> & fIndices = fieldPattern->getSubcellIndices(dim,sc);
+
+         TEUCHOS_ASSERT(gIndices.size()==fIndices.size());
+         for(std::size_t i=0;i<gIndices.size();i++) { 
+            offsets[fIndices[i]] = fieldIdsGeomOrder[gIndices[i]];
+         }
+      }
+   }
+
+   // check for failure/bug
+   for(std::size_t i=0;i<offsets.size();i++) {
+      TEUCHOS_ASSERT(offsets[i]>=0);
    }
 }
 

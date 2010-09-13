@@ -20,6 +20,9 @@
 // 3D basis 
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_Cn_FEM.hpp"
+#include "Intrepid_HDIV_HEX_I1_FEM.hpp"
+#include "Intrepid_HCURL_HEX_I1_FEM.hpp"
 
 #include "Intrepid_HDIV_TRI_I1_FEM.hpp"
 
@@ -252,6 +255,181 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testB)
          const std::vector<int> & indices = agg.getSubcellIndices(dimension,cells);
          TEST_EQUALITY((int) indices.size(),0);
       }
+   }
+}
+
+// tests:
+//    - localOffsets --> different and same geometries
+TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
+{
+   out << note << std::endl;
+
+   // basis to build patterns from
+
+   {
+      RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new Intrepid::Basis_HGRAD_TRI_C2_FEM<double,FieldContainer>);
+      RCP<const FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_pair(3,pattern));
+
+      FieldAggPattern agg(patternM);
+      agg.print(out);
+      TEUCHOS_ASSERT(agg.equals(*pattern));
+
+      TEST_THROW(agg.localOffsets(7),std::logic_error); // check for failure if ID does not exist
+ 
+      std::vector<int> v = agg.localOffsets(3);
+      for(std::size_t i=0;i<v.size();i++)
+         TEST_EQUALITY(v[i],(int) i);
+   }
+
+   {
+      RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new Intrepid::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+      RCP<const FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_pair(3,pattern));
+
+      FieldAggPattern agg(patternM);
+      agg.print(out);
+
+      TEST_THROW(agg.localOffsets(7),std::logic_error); // check for failure if ID does not exist
+
+      std::vector<int> v_true(27);
+      // nodes
+      v_true[0] = 0; v_true[1] = 1; v_true[2] = 2; v_true[3] = 3;
+      v_true[4] = 4; v_true[5] = 5; v_true[6] = 6; v_true[7] = 7;
+ 
+      // edges     
+      v_true[8]  = 8; v_true[9]  = 9; v_true[10] = 10; v_true[11] = 11;
+      v_true[12] = 16; v_true[13] = 17; v_true[14] = 18 ;v_true[15] = 19;
+      v_true[16] = 12; v_true[17] = 13; v_true[18] = 14; v_true[19] = 15;
+
+      // volume
+      v_true[20] = 26;
+
+      // faces
+      v_true[21] = 24; v_true[22] = 25; v_true[23] = 23; 
+      v_true[24] = 21; v_true[25] = 20; v_true[26] = 22;
+ 
+      std::vector<int> v = agg.localOffsets(3);
+      for(std::size_t i=0;i<v.size();i++)
+         TEST_EQUALITY(v[i],v_true[i]);
+   }
+
+   {
+      RCP<Intrepid::Basis<double,FieldContainer> > basisC1 = rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+      RCP<Intrepid::Basis<double,FieldContainer> > basisC2 = rcp(new Intrepid::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+      RCP<const FieldPattern> patternC1 = rcp(new IntrepidFieldPattern(basisC1));
+      RCP<const FieldPattern> patternC2 = rcp(new IntrepidFieldPattern(basisC2));
+      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_pair(0,patternC2));
+      patternM.push_back(std::make_pair(1,patternC2));
+      patternM.push_back(std::make_pair(2,patternC2));
+      patternM.push_back(std::make_pair(3,patternC1));
+
+      FieldAggPattern agg(patternM);
+      agg.print(out);
+
+      TEST_THROW(agg.localOffsets(7),std::logic_error); // check for failure if ID does not exist
+
+      {
+         out << "\nTesting Q2-Q1 NS: Pressure" << std::endl;
+         std::vector<int> v_true(8);
+         v_true[0] = 3; v_true[1] = 7; v_true[2] = 11; v_true[3] = 15;
+         v_true[4] = 19; v_true[5] = 23; v_true[6] = 27; v_true[7] = 31;
+         std::vector<int> v = agg.localOffsets(3);
+         for(std::size_t i=0;i<v.size();i++)
+            TEST_EQUALITY(v[i],v_true[i]);
+      }
+
+      for(int d=0;d<3;d++) {
+         out << "\nTesting Q2-Q1 NS: Velocity d=" << d << std::endl;
+         std::vector<int> v_true(27);
+
+         // nodes
+         v_true[0] = 4*0+0; v_true[1] = 4*1+0; v_true[2] = 4*2+0; v_true[3] = 4*3+0;
+         v_true[4] = 4*4+0; v_true[5] = 4*5+0; v_true[6] = 4*6+0; v_true[7] = 4*7+0;
+    
+         // edges     
+         v_true[8]  = 3*0+32; v_true[9]  = 3*1+32; v_true[10] = 3*2+32; v_true[11] = 3*3+32;
+         v_true[12] = 3*8+32; v_true[13] = 3*9+32; v_true[14] = 3*10+32; v_true[15] = 3*11+32;
+         v_true[16] = 3*4+32; v_true[17] = 3*5+32; v_true[18] = 3*6+32; v_true[19] = 3*7+32;
+   
+         // volume
+         v_true[20] = 86;
+   
+         // faces
+         v_true[21] = 3*4+68; v_true[22] = 3*5+68; v_true[23] = 3*3+68; 
+         v_true[24] = 3*1+68; v_true[25] = 3*0+68; v_true[26] = 3*2+68;
+
+         std::vector<int> v = agg.localOffsets(d);
+         for(std::size_t i=0;i<v.size();i++)
+            TEST_EQUALITY(v[i],v_true[i]+d);
+      }
+   }
+
+   {
+      out << "Crazy HEX basis test" << std::endl;
+ 
+      RCP<Intrepid::Basis<double,FieldContainer> > basisC1 = rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+      RCP<Intrepid::Basis<double,FieldContainer> > basisDivI1 = rcp(new Intrepid::Basis_HDIV_HEX_I1_FEM<double,FieldContainer>);
+      RCP<Intrepid::Basis<double,FieldContainer> > basisCurlI1 = rcp(new Intrepid::Basis_HCURL_HEX_I1_FEM<double,FieldContainer>);
+      RCP<const FieldPattern> patternC1 = rcp(new IntrepidFieldPattern(basisC1));
+      RCP<const FieldPattern> patternDivI1 = rcp(new IntrepidFieldPattern(basisDivI1));
+      RCP<const FieldPattern> patternCurlI1 = rcp(new IntrepidFieldPattern(basisCurlI1));
+      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_pair(3,patternC1));
+      patternM.push_back(std::make_pair(9,patternDivI1));
+      patternM.push_back(std::make_pair(1,patternCurlI1));
+
+      FieldAggPattern agg(patternM);
+      agg.print(out);
+
+      TEST_THROW(agg.localOffsets(7),std::logic_error); // check for failure if ID does not exist
+
+      {
+         out << "\nTesting C1" << std::endl;
+         std::vector<int> v = agg.localOffsets(3);
+         for(std::size_t i=0;i<v.size();i++)
+            TEST_EQUALITY(v[i],(int) i);
+      }
+
+      {
+         out << "\nTesting Div-I1" << std::endl;
+         std::vector<int> v = agg.localOffsets(9);
+         for(std::size_t i=0;i<v.size();i++)
+            TEST_EQUALITY(v[i],(int) i+20);
+      }
+
+      {
+         out << "\nTesting Curl-I1" << std::endl;
+         std::vector<int> v = agg.localOffsets(1);
+         for(std::size_t i=0;i<v.size();i++)
+            TEST_EQUALITY(v[i],(int) i+8);
+      }
+   }
+
+   {
+      out << "Highorder HEX basis test: FAILS!!!! DISABLED FOR NOW!!!!!" << std::endl;
+ 
+/*
+      RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new Intrepid::Basis_HGRAD_HEX_Cn_FEM<double,FieldContainer>(4,Intrepid::POINTTYPE_EQUISPACED));
+      RCP<const FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_pair(3,pattern));
+
+      FieldAggPattern agg(patternM);
+      out << "4th order hex" << std::endl;
+      pattern->print(out);
+
+      out << "Aggregated hex" << std::endl;
+      agg.print(out);
+
+      out << "Geometric hex" << std::endl;
+      agg.getGeometricAggFieldPattern()->print(out);
+
+      TEST_THROW(agg.localOffsets(7),std::logic_error); // check for failure if ID does not exist
+*/
    }
 }
 
