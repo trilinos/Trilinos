@@ -53,23 +53,26 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
   myDepList.set(dependent1, 1.0);
   myDepList.set(dependent2, 1.0);
 
+  StringVisualDependency::ValueList valList1 = tuple<std::string>("val1");
+
   RCP<StringVisualDependency> basicStringVisDep = rcp(
     new StringVisualDependency(
       myDepList.getEntryRCP(dependee1),
       myDepList.getEntryRCP(dependent1),
-      "val1"));
+      valList1));
 
   Dependency::ParameterEntryList dependentList;
   dependentList.insert(myDepList.getEntryRCP(dependent1));
   dependentList.insert(myDepList.getEntryRCP(dependent2));
-  StringVisualDependency::ValueList valList = 
+  StringVisualDependency::ValueList valList2 = 
     tuple<std::string>("val1", "val2");
 
   RCP<StringVisualDependency> complexStringVisDep = rcp(
     new StringVisualDependency(
       myDepList.getEntryRCP(dependee2),
       dependentList,
-      valList));
+      valList2,
+      false));
 
   myDepSheet->addDependency(basicStringVisDep);
   myDepSheet->addDependency(complexStringVisDep);
@@ -83,8 +86,53 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
   RCP<ParameterList> readInList = 
     writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
 
+  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1);
+  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1);
+  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2);
+  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2);
+  
+  RCP<Dependency> readinDep1 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
+
+  RCP<Dependency> readinDep2 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
+
+  std::string stringVisXMLTag = 
+    DummyObjectGetter<StringVisualDependency>::getDummyObject()->getTypeAttributeValue();
+
+  TEST_ASSERT(readinDep1->getTypeAttributeValue() == stringVisXMLTag);
+  TEST_ASSERT(readinDep2->getTypeAttributeValue() == stringVisXMLTag);
+
+  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
+  TEST_ASSERT(readinDep1->getDependents().size() == 1);
+  TEST_ASSERT((*readinDep1->getDependents().begin()).get() == readinDependent1.get());
+
+  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
+  TEST_ASSERT(readinDep2->getDependents().size() == 2);
   TEST_ASSERT(
-    readInDepSheet->hasDependents(readInList->getEntryRCP(dependee1)));
+    readinDep2->getDependents().find(readinDependent1) 
+    !=
+    readinDep2->getDependents().end()
+  );
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent2)
+    !=
+    readinDep2->getDependents().end()
+  );
+    
+  RCP<StringVisualDependency> castedDep1 =
+    rcp_dynamic_cast<StringVisualDependency>(readinDep1);
+  RCP<StringVisualDependency> castedDep2 =
+    rcp_dynamic_cast<StringVisualDependency>(readinDep2);
+
+  TEST_COMPARE_ARRAYS(
+    castedDep1->getValues(), basicStringVisDep->getValues());
+  TEST_COMPARE_ARRAYS(
+    castedDep2->getValues(), complexStringVisDep->getValues());
+
+  TEST_EQUALITY(castedDep1->getShowIf(), basicStringVisDep->getShowIf());
+  TEST_EQUALITY(castedDep2->getShowIf(), complexStringVisDep->getShowIf());
+  
 
 }
 
