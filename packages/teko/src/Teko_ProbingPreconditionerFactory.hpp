@@ -59,11 +59,9 @@
 
 namespace Teko {
 
-/** \brief Preconditioner factory that for (block) diagonals of explicit operators.
+/** \brief Preconditioner factory that builds a probing approximation to an operator and then "inverts" it as requested.
   *
-  * Preconditioner factory that for (block) diagonals of explicit operators.
-  * These operators need to be Epetra_CrsMatrices under the hood or this will bomb.
-  * Uses EpetraExt_PointToBlockDiagPermute.
+  * NOTE: You need to set the probing Graph or GraphOperator for probing to know what to do
   */
 class ProbingPreconditionerFactory 
    : public virtual Teko::PreconditionerFactory {
