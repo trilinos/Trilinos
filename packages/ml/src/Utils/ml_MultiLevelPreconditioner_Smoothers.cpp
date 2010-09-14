@@ -669,7 +669,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 	    cout << msg << "interproc damping enabled"<<endl;
 	  if(IfpackList.get("sora: use global damping",false))
 	    cout << msg << "global damping enabled"<<endl;
-      }
 	}
 	else{
 	  cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
