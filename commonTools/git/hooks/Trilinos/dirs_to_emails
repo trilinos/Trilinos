@@ -10,7 +10,7 @@ packages/komplex komplex-checkins@software.sandia.gov
 packages/ml ml-checkins@software.sandia.gov
 packages/nox nox-checkins@software.sandia.gov
 packages/Sundance sundance-checkins@software.sandia.gov
-packages/tifpack tifpack-checkins@software.sandia.gov
+packages/ifpack2 tifpack-checkins@software.sandia.gov
 packages/tpetra tpetra-checkins@software.sandia.gov
 packages/triutils triutils-checkins@software.sandia.gov
 packages/TSFCore tsfcore-checkins@software.sandia.gov
