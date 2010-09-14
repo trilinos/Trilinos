@@ -64,11 +64,11 @@ RCP<ParameterList> XMLParameterListReader::toParameterList(
   int dependencyIndex = xml.findFirstChild(
     XMLParameterListWriter::getDependenciesTagName());
   if(dependencyIndex != -1){
-      convertDependencies(
-        depSheet, 
-        xml.getChild(dependencyIndex), 
-        entryIDsMap,
-        validatorIDsMap);
+    convertDependencies(
+      depSheet, 
+      xml.getChild(dependencyIndex), 
+      entryIDsMap,
+      validatorIDsMap);
   }
   return rtn;
 }
@@ -191,7 +191,8 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
             convertParameterList(child, newList, entryIDsMap, validatorIDsMap);
         }
         else if (child.getTag() == ParameterEntry::getTagName()) {
-          parentList->setEntry(name, ParameterEntryXMLConverterDB::convertXML(child));
+          parentList->setEntry(
+            name, ParameterEntryXMLConverterDB::convertXML(child));
           if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
             ValidatorIDsMap::const_iterator result = validatorIDsMap.find(
               child.getRequired<ParameterEntryValidator::ValidatorID>(
@@ -230,11 +231,11 @@ void XMLParameterListReader::convertDependencies(
   const ValidatorIDsMap& validatorIDsMap) const
 {
   for(int i = 0; i < xml.numChildren(); ++i){
-    depSheet->addDependency(
-      DependencyXMLConverterDB::convertXML(
-        xml.getChild(i), 
-        entryIDsMap, 
-        validatorIDsMap));
+    RCP<Dependency> currentDep = DependencyXMLConverterDB::convertXML(
+      xml.getChild(i), 
+      entryIDsMap, 
+      validatorIDsMap);
+    depSheet->addDependency(currentDep);
   }
 }
 
@@ -253,6 +254,8 @@ void XMLParameterListReader::insertEntryIntoMap(
        "Parameters/ParameterList with duplicate ids found!" << std::endl <<
        "Bad ID: " << xmlID << std::endl << std::endl);
      entryIDsMap.insert(EntryIDsMap::value_type(xmlID, entryToInsert));
+     std::cerr << "Inserted Address: " << entryToInsert.get() << std::endl;
+     std::cerr << "Inserting with ID: " << xmlID << std::endl;
   }
 }
 
