@@ -24,6 +24,7 @@ extern "C" {
 #include "zoltan_comm.h"
 
 #include <stdlib.h>
+#include <ctype.h>
 
 static char *make_platform_name_string();
 static void view_hierarchy_specification(zoltan_platform_specification *spec, int rank,
@@ -70,8 +71,8 @@ static zoltan_platform_specification platform_specs[LAST_PLATFORM]={
 
 static int Zoltan_Hier_Assist_Num_Levels(void *data, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
   zoltan_platform_specification *spec = (zoltan_platform_specification *)data;
+  *ierr = ZOLTAN_OK;
 
   if (spec == NULL){
     *ierr = ZOLTAN_FATAL;
@@ -84,8 +85,8 @@ static int Zoltan_Hier_Assist_Num_Levels(void *data, int *ierr)
 
 static int Zoltan_Hier_Assist_Part_Number(void *data, int level, int *ierr)
 {
-  *ierr = ZOLTAN_OK;
   zoltan_platform_specification *spec = (zoltan_platform_specification *)data;
+  *ierr = ZOLTAN_OK;
 
   return spec->my_part[level];
 }
