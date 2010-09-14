@@ -91,6 +91,7 @@ void ProbingPreconditionerFactory::initializeFromParameterList(const Teuchos::Pa
    const std::string inverse_type = "Inverse Type";
    const std::string probing_graph_operator = "Probing Graph Operator";
    const std::string probing_graph = "Probing Graph";
+   const std::string user_graph = "User Will Set Probing Graph";
 
    // get string specifying default inverse
    std::string invStr ="Amesos"; 
@@ -101,6 +102,9 @@ void ProbingPreconditionerFactory::initializeFromParameterList(const Teuchos::Pa
       setGraphOperator(pl.get<Teko::LinearOp>(probing_graph_operator));
    else if(pl.isParameter(probing_graph))
       setGraph(pl.get<RCP<const Epetra_CrsGraph> >(probing_graph));
+   else if(pl.isParameter(user_graph) && pl.get<bool>("User Will Set Probing Graph")){
+     //noop
+   }	  
    else {
       Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
       rh->preRequest<RCP<const Epetra_CrsGraph> >(Teko::RequestMesg("Probing Graph"));
