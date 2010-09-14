@@ -667,6 +667,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 	    cout << msg << "oaz boundary handling enabled"<<endl;
 	  if(IfpackList.get("sora: use interproc damping",false))
 	    cout << msg << "interproc damping enabled"<<endl;
+	  if(IfpackList.get("sora: use global damping",false))
+	    cout << msg << "global damping enabled"<<endl;
+      }
 	}
 	else{
 	  cout << msg << "IFPACK, type=`" << MyIfpackType << "'," << endl
