@@ -112,8 +112,11 @@ Commands:
 -  git push origin --tags
    Have to explicitly push tags to origin; they don't go with normal "git push"
 
+-  git push origin origin:refs/heads/HMC_Clinic_2010_Partitioning
+   create branch HMC_Clinic_2010_Partitioning at HEAD of origin in global repo
+
 -  git branch <branchname>
-   create a branch
+   create a branch in local repo
 
 -  git branch -d <branchname>
    delete a branch.
