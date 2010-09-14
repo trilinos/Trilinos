@@ -15,9 +15,12 @@ class FieldPattern; // from DOFManager
   * that element blocks are number by a GlobalOrdinal
   * and local element IDs use the LocalOrdinal.
   */
-template <typename LocalOrdinal,typename GlobalOrdinal>
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class ConnManager {
 public:
+   typedef GlobalOrdinalT GlobalOrdinal;
+   typedef LocalOrdinalT LocalOrdinal;
+
    virtual ~ConnManager() {}
 
    /** Tell the connection manager to build the connectivity assuming
@@ -64,6 +67,6 @@ public:
    virtual const std::vector<LocalOrdinal> & getElementBlock(GlobalOrdinal blockID) const = 0;
 };
 
-};
+}
 
 #endif
