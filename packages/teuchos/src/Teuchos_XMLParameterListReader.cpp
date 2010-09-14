@@ -124,7 +124,8 @@ void XMLParameterListReader::convertValidators(
   }
 
   for (
-    std::set<const XMLObject*>::const_iterator it = validatorsWithPrototypes.begin();
+    std::set<const XMLObject*>::const_iterator it = 
+      validatorsWithPrototypes.begin();
     it!=validatorsWithPrototypes.end();
     ++it)
   {
@@ -152,11 +153,11 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
     XMLParameterListWriter::getParameterListTagName()
     <<", found the tag "
     << xml.getTag());
-
-  const std::string& parentListName =
-    xml.getRequired(XMLParameterListWriter::getNameAttributeName());
         
-  parentList->setName(parentListName);
+  if(xml.hasAttribute(XMLParameterListWriter::getNameAttributeName())){
+    parentList->setName(
+      xml.getRequired(XMLParameterListWriter::getNameAttributeName()));
+  }
 
   for (int i=0; i<xml.numChildren(); i++) {
 
@@ -183,6 +184,12 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
         child.getTag() == ParameterEntry::getTagName()
         )
       {
+        TEST_FOR_EXCEPTION(
+          !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()),
+          NoNameAttributeExecption,
+          "All child nodes of a ParameterList must have a name attribute!" <<
+          std::endl << std::endl);
+
         const std::string& name =
           child.getRequired(XMLParameterListWriter::getNameAttributeName());
         
@@ -254,8 +261,6 @@ void XMLParameterListReader::insertEntryIntoMap(
        "Parameters/ParameterList with duplicate ids found!" << std::endl <<
        "Bad ID: " << xmlID << std::endl << std::endl);
      entryIDsMap.insert(EntryIDsMap::value_type(xmlID, entryToInsert));
-     std::cerr << "Inserted Address: " << entryToInsert.get() << std::endl;
-     std::cerr << "Inserting with ID: " << xmlID << std::endl;
   }
 }
 

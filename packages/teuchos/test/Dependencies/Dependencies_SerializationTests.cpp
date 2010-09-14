@@ -78,25 +78,10 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
 
   XMLParameterListWriter plWriter;
   XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
-  //out << xmlOut.toString();
+  out << xmlOut.toString();
 
   RCP<ParameterList> readInList = 
     writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
-
-  for(DependencySheet::DepSet::iterator it = readInDepSheet->depBegin();
-    it != readInDepSheet->depEnd();
-    ++it)
-  {
-    (*it)->print(out);
-    out << "Dependee address: " << ((*it)->getFirstDependee()).get() <<
-      std::endl;
-  }
-
-  out << "Dependee 1 address:  " << readInList->getEntryRCP(dependee1).get() <<
-    std::endl;
-  out << "Dependee 1 value:  " << getValue<std::string>(
-    readInList->getEntry(dependee1)) <<
-    std::endl;
 
   TEST_ASSERT(
     readInDepSheet->hasDependents(readInList->getEntryRCP(dependee1)));
