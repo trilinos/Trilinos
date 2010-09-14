@@ -477,8 +477,6 @@ void GCRODRSolMgr<ScalarType,MV,OP>::init() {
   expResScale_ = expResScale_default_;
   label_ = label_default_;
   isSet_ = false;
-  numBlocks_ = 0;
-  recycledBlocks_ = 0;
   keff = 0;
   r_ = Teuchos::null;
   V_ = Teuchos::null;
