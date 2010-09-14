@@ -82,6 +82,7 @@ A packages/nox/src/dummy.C
 P packages/stratimikos/dummy.blah
 M packages/thyra/src/Thyra_ConfigDefs.hpp
 M packages/thyra/CMakeLists.txt
+M packages/ifpack2/CMakeLists.txt
 M demos/FEApp/src/CMakeLists.txt
 """
 
@@ -115,6 +116,12 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
       'FEApp' )
 
 
+  def test_getPackageNameFromPath_05(self):
+    self.assertEqual(
+      getPackageNameFromPath( trilinosDependencies, 'packages/ifpack2/CMakeLists.txt' ),
+      'Ifpack2' )
+
+
   def test_getPackageNameFromPath_noMatch(self):
     self.assertEqual(
       getPackageNameFromPath( trilinosDependencies, 'packages/blob/blob' ), '' )
@@ -133,6 +140,7 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
         "packages/nox/src/dummy.C",
         "packages/thyra/src/Thyra_ConfigDefs.hpp",
         "packages/thyra/CMakeLists.txt",
+        "packages/ifpack2/CMakeLists.txt",
         "demos/FEApp/src/CMakeLists.txt",
       ]
 
@@ -147,7 +155,7 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
     packagesList = getPackagesListFromFilePathsList( trilinosDependencies, filesList )
 
     packagesList_expected = \
-      [u"TrilinosFramework", u"NOX", u"Stratimikos", u"Thyra", u"FEApp"]
+      [u"TrilinosFramework", u"NOX", u"Stratimikos", u"Thyra", u"Ifpack2", u"FEApp"]
 
     self.assertEqual( packagesList, packagesList_expected )
 
@@ -166,6 +174,7 @@ class testTrilinosPackageFilePathUtils(unittest.TestCase):
       u"nox-checkins@software.sandia.gov",
       u"stratimikos-checkins@software.sandia.gov",
       u"thyra-checkins@software.sandia.gov",
+      u"ifpack2-checkins@software.sandia.gov",
       u"feapp-checkins@software.sandia.gov",
       ]
 
