@@ -26,7 +26,6 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
-#include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 

@@ -14,7 +14,6 @@
 #include <stk_mesh/base/EntityComm.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/FieldTraits.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -50,7 +49,7 @@ Grid2D_Fixture::Grid2D_Fixture( stk::ParallelMachine comm )
   : m_meta_data( stk::mesh::fem_entity_rank_names() ),
     m_bulk_data( m_meta_data , comm , 100 ),
     m_quad_part( m_meta_data.declare_part( "quad" , stk::mesh::Element ) ),
-    m_coord_field( m_meta_data.declare_field< stk::mesh::VectorField >( "coordinates" ) )
+    m_coord_field( m_meta_data.declare_field< VectorField >( "coordinates" ) )
 {
   stk::mesh::put_field( m_coord_field , stk::mesh::Node , m_meta_data.universal_part() );
   stk::mesh::set_cell_topology< shards::Quadrilateral<4> >( m_quad_part );
@@ -227,8 +226,13 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
 
   stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
 
-  stk::mesh::VectorField * coordinates_field =
-    & stk::mesh::declare_vector_field_on_all_nodes( meta_data, "coordinates", 3 );
+  VectorField * coordinates_field =
+    & stk::mesh::put_field(
+        meta_data.declare_field<VectorField>("coordinates"),
+          0,
+          meta_data.universal_part(),
+          3);
+    //& stk::mesh::declare_vector_field_on_all_nodes( meta_data, "coordinates", 3 );
 
   stk::mesh::Part & owned_part = meta_data.locally_owned_part();
   stk::mesh::Part & quad_part  = meta_data.declare_part( "quad" , stk::mesh::Element );
@@ -362,8 +366,13 @@ bool test_change_owner_2( stk::ParallelMachine pm )
 
   stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
 
-  stk::mesh::VectorField * coordinates_field =
-    & stk::mesh::declare_vector_field_on_all_nodes( meta_data, "coordinates", 3 );
+  VectorField * coordinates_field =
+    & stk::mesh::put_field(
+        meta_data.declare_field<VectorField>("coordinates"),
+          0,
+          meta_data.universal_part(),
+          3);
+  //  & stk::mesh::declare_vector_field_on_all_nodes( meta_data, "coordinates", 3 );
 
   stk::mesh::Part & quad_part  = meta_data.declare_part( "quad" , stk::mesh::Element );
 
@@ -483,8 +492,13 @@ bool test_change_owner_3( stk::ParallelMachine pm )
 
   stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
 
-  stk::mesh::VectorField * coordinates_field =
-    & stk::mesh::declare_vector_field_on_all_nodes( meta_data, "coordinates", 3 );
+  VectorField * coordinates_field =
+    & stk::mesh::put_field(
+        meta_data.declare_field<VectorField>("coordinates"),
+          0,
+          meta_data.universal_part(),
+          3);
+   // & stk::mesh::declare_vector_field_on_all_nodes( meta_data, "coordinates", 3 );
 
   stk::mesh::Part & quad_part  = meta_data.declare_part( "quad" , stk::mesh::Element );
 

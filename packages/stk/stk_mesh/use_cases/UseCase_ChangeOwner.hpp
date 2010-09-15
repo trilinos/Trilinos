@@ -9,7 +9,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
 
 /*----------------------------------------------------------------------------
 
@@ -31,6 +30,8 @@ C. Move Elements { 1 , 2 } and Nodes { 1 , 2 , 3 } to process #1
 
 ----------------------------------------------------------------------------*/
 
+typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorField ;
+
 class Grid2D_Fixture {
 public:
 
@@ -39,7 +40,7 @@ public:
   stk::mesh::MetaData      m_meta_data ;
   stk::mesh::BulkData      m_bulk_data ;
   stk::mesh::Part        & m_quad_part ;
-  stk::mesh::VectorField & m_coord_field ;
+  VectorField & m_coord_field ;
 
   bool test_change_owner( unsigned nx , unsigned ny );
 

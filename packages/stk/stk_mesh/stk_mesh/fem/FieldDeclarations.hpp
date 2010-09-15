@@ -5,7 +5,6 @@
 /*  Export of this program may require a license from the                 */
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
-
 #ifndef stk_mesh_FieldDeclarations_hpp
 #define stk_mesh_FieldDeclarations_hpp
 
@@ -392,4 +391,3 @@ declare_symmetric_tensor_field_on_all_elements(
 }
 
 #endif
-
