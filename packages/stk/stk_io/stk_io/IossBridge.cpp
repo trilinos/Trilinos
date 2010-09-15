@@ -12,7 +12,7 @@
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
-#include <stk_util/unit_test_support/tokenize.hpp>
+#include <stk_util/util/tokenize.hpp>
 #include <stk_io/IossBridge.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
@@ -789,7 +789,7 @@ namespace stk {
 	// Get faceblock parent element topology quantities...
 	// Try to decode from part name...
 	std::vector<std::string> tokens;
-        stk::io::util::tokenize(part.name(), "_", tokens);
+        stk::util::tokenize(part.name(), "_", tokens);
 	if (tokens.size() >= 4) {
 	  // Name of form: "name_eltopo_facetopo_id" or
 	  //               "name_block_id_facetopo_id"

@@ -1,11 +1,7 @@
 #include "tokenize.hpp"
 
-namespace stk {
-namespace io {
-namespace util {
-
-void tokenize(const std::string& str, const std::string& separators,
-              std::vector<std::string>& tokens)
+void stk::util::tokenize(const std::string& str, const std::string& separators,
+			 std::vector<std::string>& tokens)
 {
   std::string curr_token = "";
   for (size_t i = 0; i < str.length(); ++i) {
@@ -32,8 +28,4 @@ void tokenize(const std::string& str, const std::string& separators,
   if (curr_token != "") {
     tokens.push_back(curr_token);
   }
-}
-
-}
-}
 }

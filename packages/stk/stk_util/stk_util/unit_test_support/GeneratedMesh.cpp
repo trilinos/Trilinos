@@ -7,7 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/unit_test_support/GeneratedMesh.hpp>
-#include <stk_util/unit_test_support/tokenize.hpp>
+#include <stk_util/util/tokenize.hpp>
 
 #include <cmath>
 #include <cstring>
@@ -42,11 +42,11 @@ namespace stk {
         doRotation(false)
       {
         std::vector<std::string> groups;
-        stk::io::util::tokenize(parameters, "|+", groups);
+        stk::util::tokenize(parameters, "|+", groups);
 
         // First 'group' is the interval specification -- IxJxK
         std::vector<std::string> tokens;
-        stk::io::util::tokenize(groups[0], "x", tokens);
+        stk::util::tokenize(groups[0], "x", tokens);
         assert(tokens.size() == 3);
         numX = std::strtol(tokens[0].c_str(), NULL, 10);
         numY = std::strtol(tokens[1].c_str(), NULL, 10);
@@ -140,7 +140,7 @@ namespace stk {
       {
         for (size_t i=1; i < groups.size(); i++) {
           std::vector<std::string> option;
-          stk::io::util::tokenize(groups[i], ":", option);
+          stk::util::tokenize(groups[i], ":", option);
           // option[0] is the type of the option and option[1] is the argument to the option.
 
           if (option[0] == "shell") {
@@ -242,7 +242,7 @@ namespace stk {
           else if (option[0] == "scale") {
             // Option of the form  "scale:xs,ys,zs
             std::vector<std::string> tokens;
-            stk::io::util::tokenize(option[1], ",", tokens);
+            stk::util::tokenize(option[1], ",", tokens);
             assert(tokens.size() == 3);
             sclX = std::strtod(tokens[0].c_str(), NULL);
             sclY = std::strtod(tokens[1].c_str(), NULL);
@@ -252,7 +252,7 @@ namespace stk {
           else if (option[0] == "offset") {
             // Option of the form  "offset:xo,yo,zo
             std::vector<std::string> tokens;
-            stk::io::util::tokenize(option[1], ",", tokens);
+            stk::util::tokenize(option[1], ",", tokens);
             assert(tokens.size() == 3);
             offX = std::strtod(tokens[0].c_str(), NULL);
             offY = std::strtod(tokens[1].c_str(), NULL);
@@ -266,7 +266,7 @@ namespace stk {
             // the number of processors.  Note that the new numZ will
             // be the sum of the intervals specified in this command.
             std::vector<std::string> tokens;
-            stk::io::util::tokenize(option[1], ",", tokens);
+            stk::util::tokenize(option[1], ",", tokens);
             assert(tokens.size() == processorCount);
             std::vector<size_t> Zs;
             numZ = 0;
@@ -284,7 +284,7 @@ namespace stk {
           else if (option[0] == "bbox") {
             // Bounding-Box Option of the form  "bbox:xmin,ymin,zmin,xmax,ymax,zmaxo
             std::vector<std::string> tokens;
-            stk::io::util::tokenize(option[1], ",", tokens);
+            stk::util::tokenize(option[1], ",", tokens);
             assert(tokens.size() == 6);
             double xmin = std::strtod(tokens[0].c_str(), NULL);
             double ymin = std::strtod(tokens[1].c_str(), NULL);
@@ -299,7 +299,7 @@ namespace stk {
           else if (option[0] == "rotate") {
             // Rotate Option of the form  "rotate:axis,angle,axis,angle,...
             std::vector<std::string> tokens;
-            stk::io::util::tokenize(option[1], ",", tokens);
+            stk::util::tokenize(option[1], ",", tokens);
             assert(tokens.size() %2 == 0);
             for (size_t ir=0; ir < tokens.size();) {
               std::string axis = tokens[ir++];

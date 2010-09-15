@@ -1,11 +1,10 @@
-#ifndef STK_IO_UTIL_TOKENIZE_H
-#define STK_IO_UTIL_TOKENIZE_H
+#ifndef STK_UTIL_UTIL_TOKENIZE_H
+#define STK_UTIL_UTIL_TOKENIZE_H
 
 #include <string>
 #include <vector>
 
 namespace stk {
-namespace io {
 namespace util {
 
 /**
@@ -15,7 +14,6 @@ namespace util {
 void tokenize(const std::string& str, const std::string& separators,
               std::vector<std::string>& tokens);
 
-}
 }
 }
 
