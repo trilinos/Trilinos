@@ -14,40 +14,40 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 /** stk_mesh Use Case 2
  * Note, the basic layout of the mesh is the same as Use Case 1, with
  * the addition of fields.
  *
  * Assume the following mesh of 4 hex8 elements.
- * 
+ *
  *  Global node and element numbering
  * <PRE>
- *      3       7      11      15      19         
- *      +-------+-------+-------+-------+        
- *     /       /       /       /       /|       
- *   4/      8/     12/     16/     20/ |       
- *   +-------+-------+-------+-------+  |       
+ *      3       7      11      15      19
+ *      +-------+-------+-------+-------+
+ *     /       /       /       /       /|
+ *   4/      8/     12/     16/     20/ |
+ *   +-------+-------+-------+-------+  |
  *   |       |       |       |       |  +18        Z  Y
  *   |  e1   |  e2   |  e3   |  e4   | /           | /
  *   |       |       |       |       |/            |/
  *   +-------+-------+-------+-------+             *--X
- *   1       5      9       13      17          
+ *   1       5      9       13      17
  * </PRE>
- * 
+ *
  *  Local node numbering
  * <PRE>
  *      8       7
  *      +-------+
- *     /       /| 
- *   5/      6/ | 
+ *     /       /|
+ *   5/      6/ |
  *   +-------+  |
- *   |       |  +3 
+ *   |       |  +3
  *   |  e1   | /
- *   |       |/ 
+ *   |       |/
  *   +-------+
- *   1       2  
+ *   1       2
  * </PRE>
  */
 
@@ -58,8 +58,8 @@ namespace use_cases {
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
 typedef stk::mesh::Field<double>                      ScalarFieldType ;
 
-// Two part MetaData with four entity types:  
-// Node, Edge, Face, Element 
+// Two part MetaData with four entity types:
+// Node, Edge, Face, Element
 // and two parts (partLeft and partRight)
 // and three fields (coordinates, temperature, and volume)
 class UseCase_2_Mesh
@@ -88,9 +88,9 @@ bool verifyEntityCounts( const UseCase_2_Mesh & mesh, unsigned nleft, unsigned n
 bool verifyRelations( const UseCase_2_Mesh & mesh, unsigned nleft, unsigned nright );
 bool verifyFields( const UseCase_2_Mesh & mesh );
 
-} //namespace use_cases 
-} //namespace mesh 
-} //namespace stk 
+} //namespace use_cases
+} //namespace mesh
+} //namespace stk
 
 #endif // Stk_Mesh_Use_Cases_UseCase_2_hpp
 

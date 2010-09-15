@@ -16,6 +16,7 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 
 namespace stk {
@@ -205,8 +206,8 @@ bool centroid_algorithm_unit_test_dimensions(
   return result;
 }
 
-} // namespace use_cases 
-} // namespace mesh 
-} // namespace stk 
+} // namespace use_cases
+} // namespace mesh
+} // namespace stk
 
 #endif // centroid_algorithm_hpp

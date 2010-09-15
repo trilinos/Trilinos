@@ -8,6 +8,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 
 /*----------------------------------------------------------------------------

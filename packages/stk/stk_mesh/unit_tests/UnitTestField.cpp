@@ -17,7 +17,7 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 namespace {
 void testCartesian();

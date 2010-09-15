@@ -12,7 +12,7 @@
 #include <string>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>

@@ -11,7 +11,7 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 namespace stk {
 namespace mesh {

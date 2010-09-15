@@ -20,7 +20,7 @@
 #include <stk_mesh/base/DataTraits.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 namespace stk {

@@ -15,7 +15,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <stk_util/util/string_case_compare.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 namespace stk {
 namespace mesh {
