@@ -376,7 +376,8 @@ namespace stk {
 	  // These filenames may be coming from the generated or gears options which
 	  // may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
 	  // Strip the name at the first "+:|," character:
-	  std::vector<std::string> tokens = stk::io::util::tokenize(filename, stk::io::util::recognize("+|:,"));
+	  std::vector<std::string> tokens;
+          stk::io::util::tokenize(filename, "+|:,", tokens);
 	  filename = tokens[0];
 	}
 
@@ -773,10 +774,12 @@ namespace {
     // Each "|" or "+" separated section of the parameters is a "group"
     // Each group is then split into options and params
 
-    std::vector<std::string> groups = stk::io::util::tokenize(parameters, stk::io::util::recognize("|+"));
+    std::vector<std::string> groups;
+    stk::io::util::tokenize(parameters, "|+", groups);
 
     // First 'group' is the interval specification -- IxJxK
-    std::vector<std::string> ijktokens = stk::io::util::tokenize(groups[0], stk::io::util::recognize("x"));
+    std::vector<std::string> ijktokens;
+    stk::io::util::tokenize(groups[0], "x", ijktokens);
     assert(ijktokens.size() == 3);
 
     size_t max_end = std::numeric_limits<size_t>::max();
@@ -812,11 +815,13 @@ namespace {
     double elem_h = 0.10 ;
 
     for (size_t i=1; i < groups.size(); i++) {
-      std::vector<std::string> option = stk::io::util::tokenize(groups[i], stk::io::util::recognize(":"));
+      std::vector<std::string> option;
+      stk::io::util::tokenize(groups[i], ":", option);
       // option[0] is the type of the option and option[1] is the argument to the option.
 
       if (option[0] == "radius") {
-	std::vector<std::string> tokens = stk::io::util::tokenize(option[1], stk::io::util::recognize(","));
+	std::vector<std::string> tokens;
+        stk::io::util::tokenize(option[1], ",", tokens);
 	assert(tokens.size() == 2);
 	rad_min = std::strtod(tokens[0].c_str(), NULL);
 	rad_max = std::strtod(tokens[1].c_str(), NULL);
@@ -824,7 +829,8 @@ namespace {
       }
 
       else if (option[0] == "height") {
-	std::vector<std::string> tokens = stk::io::util::tokenize(option[1], stk::io::util::recognize(","));
+	std::vector<std::string> tokens;
+        stk::io::util::tokenize(option[1], ",", tokens);
 	assert(tokens.size() == 2);
 	z_min = std::strtod(tokens[0].c_str(), NULL);
 	z_max = std::strtod(tokens[1].c_str(), NULL);
