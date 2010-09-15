@@ -789,7 +789,7 @@ namespace stk {
 	// Get faceblock parent element topology quantities...
 	// Try to decode from part name...
 	std::vector<std::string> tokens;
-        stk::util::tokenize(part.name(), "_", tokens);
+        stk::io::util::tokenize(part.name(), "_", tokens);
 	if (tokens.size() >= 4) {
 	  // Name of form: "name_eltopo_facetopo_id" or
 	  //               "name_block_id_facetopo_id"
