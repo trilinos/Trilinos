@@ -165,7 +165,8 @@ public:
    //! \defgroup FieldAssembly_Indices Methods to access the global indices
    //{@
 
-   /** \brief Get the global IDs for a particular element.
+   /** \brief Get the global IDs for a particular element. This function
+     * overwrites the <code>gids</code> variable.
      *
      * \notes Should this use an int* instead?
      */
