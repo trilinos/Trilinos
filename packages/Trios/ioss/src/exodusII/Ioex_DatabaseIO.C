@@ -5885,12 +5885,12 @@ namespace {
       // single suffix lc_cam_x, lc_cam_y, lc_sfarea.
       for (int i = index+1; i < num_names; i++) {
 	char *tst_name = names[i];
-	std::vector<std::string> tokens;
-	Ioss::tokenize(tst_name,suffix,tokens);
+	std::vector<std::string> subtokens;
+	Ioss::tokenize(tst_name,suffix,subtokens);
 	if ((truth_table == NULL || truth_table[i] == 1) &&  // Defined on this entity
 	    std::strlen(tst_name) == length &&              // names must be same length
 	    std::strncmp(name, tst_name, bn_len) == 0 &&   // base portion must match
-	    tokens.size() == num_tokens) {
+	    subtokens.size() == num_tokens) {
 	  which_names.push_back(i);
 	}
       }
