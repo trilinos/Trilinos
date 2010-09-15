@@ -970,8 +970,6 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
 {
   int i, ig, jl, jl_0, jl_n, insertPoint;
 
-  if(NoRedundancies()) 
-    return(0);
   if(!Sorted())
     EPETRA_CHK_ERR(-1);  // Must have sorted index set
   if(IndicesAreGlobal()) 
@@ -985,29 +983,33 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
   int** graph_indices = CrsGraphData_->Indices_;
 
-  for(i=0; i<numMyBlockRows; ++i) {
-    int NumIndices = numIndicesPerRow[i];
-    int* const Indices = graph_indices[i];
-
-    if(NumIndices > 1) {
-      epetra_crsgraph_compress_out_duplicates(NumIndices, Indices,
-                                              numIndicesPerRow[i]);
-    }
-    // update vector size and address in memory
-    if (!CrsGraphData_->StaticProfile_) {
-      CrsGraphData_->SortedEntries_[i].entries_.assign(Indices, Indices+numIndicesPerRow[i]);
-      if (numIndicesPerRow[i] > 0) {
-        CrsGraphData_->Indices_[i] = &CrsGraphData_->SortedEntries_[i].entries_[0];
+  if(NoRedundancies() == false) {
+    for(i=0; i<numMyBlockRows; ++i) {
+      int NumIndices = numIndicesPerRow[i];
+      int* const Indices = graph_indices[i];
+  
+      if(NumIndices > 1) {
+        epetra_crsgraph_compress_out_duplicates(NumIndices, Indices,
+                                                numIndicesPerRow[i]);
       }
-      else {
-        CrsGraphData_->Indices_[i] = NULL;
+      // update vector size and address in memory
+      if (!CrsGraphData_->StaticProfile_) {
+        CrsGraphData_->SortedEntries_[i].entries_.assign(Indices, Indices+numIndicesPerRow[i]);
+        if (numIndicesPerRow[i] > 0) {
+          CrsGraphData_->Indices_[i] = &CrsGraphData_->SortedEntries_[i].entries_[0];
+        }
+        else {
+          CrsGraphData_->Indices_[i] = NULL;
+        }
       }
+  
+      nnz += numIndicesPerRow[i];
     }
-
-    nnz += numIndicesPerRow[i];
   }
 
-  // Also, determine if graph is upper or lower triangular or has no diagonal
+  SetNoRedundancies(true);
+
+  // determine if graph is upper or lower triangular or has no diagonal
   
   CrsGraphData_->NumMyDiagonals_ = 0;
   CrsGraphData_->NumMyBlockDiagonals_ = 0;
@@ -1016,13 +1018,13 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   const Epetra_BlockMap& colMap = ColMap();
 
   for(i = 0; i < numMyBlockRows; i++) {
-    int NumIndices = numIndicesPerRow[i];
+    int NumIndices = NumMyIndices(i);
     if(NumIndices > 0) {
       ig = rowMap.GID(i);
-      int* const Indices = graph_indices[i];
+      int* const col_indices = Indices(i);
 
-      jl_0 = Indices[0];
-      jl_n = Indices[NumIndices-1];
+      jl_0 = col_indices[0];
+      jl_n = col_indices[NumIndices-1];
 
       if(jl_n > i) CrsGraphData_->LowerTriangular_ = false;
       if(jl_0 < i) CrsGraphData_->UpperTriangular_ = false;
@@ -1031,16 +1033,14 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
       //want to search for.
       jl = colMap.LID(ig);
 
-      if (Epetra_Util_binary_search(jl, Indices, NumIndices, insertPoint)>-1) {
-	CrsGraphData_->NumMyBlockDiagonals_++;
-	CrsGraphData_->NumMyDiagonals_ += rowMap.ElementSize(i);
+      if (Epetra_Util_binary_search(jl, col_indices, NumIndices, insertPoint)>-1) {
+        CrsGraphData_->NumMyBlockDiagonals_++;
+        CrsGraphData_->NumMyDiagonals_ += rowMap.ElementSize(i);
       }
     }
   }
 
   CrsGraphData_->NoDiagonal_ = (CrsGraphData_->NumMyBlockDiagonals_ == 0);
-
-  SetNoRedundancies(true);
 
   if(CrsGraphData_->ReferenceCount() > 1)
     return(1);

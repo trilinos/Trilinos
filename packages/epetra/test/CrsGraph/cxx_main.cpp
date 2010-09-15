@@ -171,6 +171,18 @@ int main(int argc, char *argv[]) {
   EPETRA_TEST_ERR(A.UpperTriangular(),ierr);
   EPETRA_TEST_ERR(A.LowerTriangular(),ierr);
 
+  if (ierr != 0) cout << "tests FAILED" << std::endl;
+
+  EPETRA_TEST_ERR(A.NumMyDiagonals()-NumMyEquations,ierr);
+  if (ierr != 0) cout << "tests FAILED" << std::endl;
+  EPETRA_TEST_ERR(A.NumMyBlockDiagonals()-NumMyEquations,ierr);
+  if (ierr != 0) cout << "tests FAILED" << std::endl;
+
+  EPETRA_TEST_ERR(A.NumGlobalDiagonals()-NumGlobalEquations,ierr);
+  if (ierr != 0) cout << "tests FAILED" << std::endl;
+  EPETRA_TEST_ERR(A.NumGlobalBlockDiagonals()-NumGlobalEquations,ierr);
+  if (ierr != 0) cout << "tests FAILED" << std::endl;
+
   if(verbose) cout << "\n*****Testing variable entry constructor\n" << endl;
 
   int NumMyNonzeros = 3 * NumMyEquations;
