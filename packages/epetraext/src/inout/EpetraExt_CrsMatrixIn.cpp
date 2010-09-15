@@ -158,7 +158,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   const int headerlineLength = 257;
   const int lineLength = 81;
   const int tokenLength = 35;
-  char line[lineLength];
+  char line[headerlineLength];
   char token1[tokenLength];
   char token2[tokenLength];
   char token3[tokenLength];
