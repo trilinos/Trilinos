@@ -1131,7 +1131,8 @@ namespace Ioex {
 	// an empty type which is invalid and will throw an
 	// exception in the ElementBlock constructor. Try to discern
 	// the correct element type based on the block_name.
-	std::vector<std::string> tokens = tokenize(block_name,recognize("_"));
+	std::vector<std::string> tokens;
+	Ioss::tokenize(block_name, "_", tokens);
 	if (tokens.size() >= 2) {
 	  // Check whether last token names an element topology type...
 	  const Ioss::ElementTopology *topology = Ioss::ElementTopology::factory(tokens[tokens.size()-1], true);
@@ -1660,7 +1661,8 @@ namespace Ioex {
 	    topo_map[std::make_pair(std::string("unknown"),mixed_topo)] = number_sides;
 
 	  } else if (in_fs_map) {
-	    std::vector<std::string> tokens = tokenize(ef_set_name, recognize("_"));
+	    std::vector<std::string> tokens;
+	    Ioss::tokenize(ef_set_name, "_", tokens);
 	    assert(tokens.size() >= 4);
 	    // The sideset should have only a single topology which is
 	    // given by the sideset name...
@@ -5714,7 +5716,8 @@ namespace {
     suffix[0] = suffix_separator;
     suffix[1] = 0;
 
-    std::vector<std::string> tokens = tokenize(names[which_names[which_names.size()-1]] ,recognize(suffix));
+    std::vector<std::string> tokens;
+    Ioss::tokenize(names[which_names[which_names.size()-1]] ,suffix, tokens);
 
     if (tokens.size() <= 2)
       return NULL;
@@ -5732,7 +5735,8 @@ namespace {
     // Gather the first 'inner_ccomp' inner field suffices...
     std::vector<Ioss::Suffix> suffices;
     for (size_t i=0; i < inner_comp; i++) {
-      std::vector<std::string> ltokens = tokenize(names[which_names[i]] ,recognize(suffix));
+      std::vector<std::string> ltokens;
+      Ioss::tokenize(names[which_names[i]], suffix, ltokens);
       // The second-last token is the suffix for this component...
       Ioss::Suffix tmp(ltokens[inner_token]);
       suffices.push_back(tmp);
@@ -5743,7 +5747,8 @@ namespace {
     size_t j = inner_comp;
     for (size_t copy = 1; copy < N; copy++) {
       for (size_t i=0; i < inner_comp; i++) {
-	std::vector<std::string> ltokens = tokenize(names[which_names[j++]] ,recognize(suffix));
+	std::vector<std::string> ltokens;
+	Ioss::tokenize(names[which_names[j++]], suffix, ltokens);
 	// The second-last token is the suffix for this component...
 	if (suffices[i] != ltokens[inner_token]) {
 	  return NULL;
@@ -5772,7 +5777,8 @@ namespace {
     suffix[1] = 0;
 
     for (size_t i=0; i < which_names.size(); i++) {
-      std::vector<std::string> tokens = tokenize(names[which_names[i]] ,recognize(suffix));
+      std::vector<std::string> tokens;
+      Ioss::tokenize(names[which_names[i]], suffix, tokens);
       size_t num_tokens = tokens.size();
       // The last token is the suffix for this component...
       Ioss::Suffix tmp(tokens[num_tokens-1]);
@@ -5825,7 +5831,8 @@ namespace {
     char suffix[2];
     suffix[0] = suffix_separator;
     suffix[1] = 0;
-    std::vector<std::string> tokens = tokenize(name,recognize(suffix));
+    std::vector<std::string> tokens;
+    Ioss::tokenize(name, suffix, tokens);
     size_t num_tokens = tokens.size();
     
     // Check that separator is not first or last character of the name...
@@ -5878,11 +5885,12 @@ namespace {
       // single suffix lc_cam_x, lc_cam_y, lc_sfarea.
       for (int i = index+1; i < num_names; i++) {
 	char *tst_name = names[i];
-
+	std::vector<std::string> tokens;
+	Ioss::tokenize(tst_name,suffix,tokens);
 	if ((truth_table == NULL || truth_table[i] == 1) &&  // Defined on this entity
 	    std::strlen(tst_name) == length &&              // names must be same length
 	    std::strncmp(name, tst_name, bn_len) == 0 &&   // base portion must match
-	    tokenize(tst_name,recognize(suffix)).size() == num_tokens) {
+	    tokens.size() == num_tokens) {
 	  which_names.push_back(i);
 	}
       }
@@ -6082,7 +6090,8 @@ namespace {
 
   void decode_surface_name(Ioex::FaceSetMap &fs_map, Ioex::FaceSetSet &fs_set, const std::string &name)
   {
-    std::vector<std::string> tokens = tokenize(name,recognize("_"));
+    std::vector<std::string> tokens;
+    Ioss::tokenize(name, "_", tokens);
     if (tokens.size() >= 4) {
       // Name of form: "name_eltopo_facetopo_id" or
       // "name_block_id_facetopo_id" "name" is typically "surface".
@@ -6145,7 +6154,8 @@ bool set_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::Entit
 // If not of this form, return 0;
 int extract_id(const std::string &name_id)
 {
-  std::vector<std::string> tokens = tokenize(name_id,recognize("_"));
+  std::vector<std::string> tokens;
+  Ioss::tokenize(name_id,"_",tokens);
   
   if (tokens.size() == 1)
     return 0;
