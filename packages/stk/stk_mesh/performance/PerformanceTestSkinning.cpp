@@ -308,8 +308,14 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
   const size_t p_rank = stk::parallel_machine_rank(pm);
 
   // Every processor will be involved in detachment and skin-update up to 500 processors.
-  // This puts 5000 elements on each process
+  // This puts 5000 elements on each process unless we are running with STL
+  // in debug mode in which case we shrink the problem down in order
+  // to keep things running in a reasonable amount of time.
+#ifdef _GLIBCXX_DEBUG
+  const size_t NX = p_size*10, NY = 4, NZ = 5;
+#else
   const size_t NX = p_size*10, NY = 20, NZ = 25;
+#endif
 
   /* timings[0] = create mesh
    * timings[1] = intial skin mesh
