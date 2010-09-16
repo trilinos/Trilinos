@@ -968,8 +968,6 @@ void epetra_crsgraph_compress_out_duplicates(int len, int* list, int& newlen)
 //==============================================================================
 int Epetra_CrsGraph::RemoveRedundantIndices()
 {
-  int i, ig, jl, jl_0, jl_n, insertPoint;
-
   if(!Sorted())
     EPETRA_CHK_ERR(-1);  // Must have sorted index set
   if(IndicesAreGlobal()) 
@@ -979,22 +977,20 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   // For each row, remove column indices that are repeated.
 
   const int numMyBlockRows = NumMyBlockRows();
-  int nnz = 0;
-  int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
-  int** graph_indices = CrsGraphData_->Indices_;
 
   if(NoRedundancies() == false) {
-    for(i=0; i<numMyBlockRows; ++i) {
+    int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
+    for(int i=0; i<numMyBlockRows; ++i) {
       int NumIndices = numIndicesPerRow[i];
-      int* const Indices = graph_indices[i];
+      int* const col_indices = Indices(i);
   
       if(NumIndices > 1) {
-        epetra_crsgraph_compress_out_duplicates(NumIndices, Indices,
+        epetra_crsgraph_compress_out_duplicates(NumIndices, col_indices,
                                                 numIndicesPerRow[i]);
       }
       // update vector size and address in memory
       if (!CrsGraphData_->StaticProfile_) {
-        CrsGraphData_->SortedEntries_[i].entries_.assign(Indices, Indices+numIndicesPerRow[i]);
+        CrsGraphData_->SortedEntries_[i].entries_.assign(col_indices, col_indices+numIndicesPerRow[i]);
         if (numIndicesPerRow[i] > 0) {
           CrsGraphData_->Indices_[i] = &CrsGraphData_->SortedEntries_[i].entries_[0];
         }
@@ -1002,8 +998,6 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
           CrsGraphData_->Indices_[i] = NULL;
         }
       }
-  
-      nnz += numIndicesPerRow[i];
     }
   }
 
@@ -1017,22 +1011,23 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   const Epetra_BlockMap& rowMap = RowMap();
   const Epetra_BlockMap& colMap = ColMap();
 
-  for(i = 0; i < numMyBlockRows; i++) {
+  for(int i = 0; i < numMyBlockRows; i++) {
     int NumIndices = NumMyIndices(i);
     if(NumIndices > 0) {
-      ig = rowMap.GID(i);
+      int ig = rowMap.GID(i);
       int* const col_indices = Indices(i);
 
-      jl_0 = col_indices[0];
-      jl_n = col_indices[NumIndices-1];
+      int jl_0 = col_indices[0];
+      int jl_n = col_indices[NumIndices-1];
 
       if(jl_n > i) CrsGraphData_->LowerTriangular_ = false;
       if(jl_0 < i) CrsGraphData_->UpperTriangular_ = false;
 
       //jl will be the local-index for the diagonal that we
       //want to search for.
-      jl = colMap.LID(ig);
+      int jl = colMap.LID(ig);
 
+      int insertPoint = -1;
       if (Epetra_Util_binary_search(jl, col_indices, NumIndices, insertPoint)>-1) {
         CrsGraphData_->NumMyBlockDiagonals_++;
         CrsGraphData_->NumMyDiagonals_ += rowMap.ElementSize(i);
