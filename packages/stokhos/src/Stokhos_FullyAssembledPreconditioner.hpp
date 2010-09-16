@@ -28,45 +28,45 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_KRONECKER_PRODUCT_EPETRA_OP_HPP
-#define STOKHOS_KRONECKER_PRODUCT_EPETRA_OP_HPP
+#ifndef STOKHOS_FULLY_ASSEMBLED_PRECONDITIONER_HPP
+#define STOKHOS_FULLY_ASSEMBLED_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
 
-#include "Stokhos.hpp"
-
-#include "Epetra_Operator.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
-
-#include "Ifpack.h"
+#include "Stokhos_SGPreconditioner.hpp"
+#include "Stokhos_PreconditionerFactory.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing applying the mean in a block
-   * stochastic Galerkin expansion.
+   * \brief A stochastic preconditioner based on applying a preconditioner
+   * to the fully assembled operator.
    */
-  class KroneckerProductEpetraOp : public Epetra_Operator {
+  class FullyAssembledPreconditioner : public Stokhos::SGPreconditioner {
       
   public:
 
     //! Constructor 
-    KroneckerProductEpetraOp(const Teuchos::RCP<const Epetra_Map>& base_map,
-          const Teuchos::RCP<const Epetra_Map>& sg_map,
-          unsigned int num_blocks,
-          const Teuchos::RCP<Epetra_Operator>& mean_op,
-          const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
-          const Teuchos::RCP<Epetra_Operator>& J);
+    FullyAssembledPreconditioner(
+      const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     
     //! Destructor
-    virtual ~KroneckerProductEpetraOp();
+    virtual ~FullyAssembledPreconditioner();
 
-    // Set mean operator
-    void setMeanOperator(const Teuchos::RCP<Epetra_Operator>& op);
+    /** \name Stokhos::SGPreconditioner methods */
+    //@{
 
-    //! Get mean operator
-    Teuchos::RCP<Epetra_Operator> getMeanOperator();
+    //! Setup preconditioner
+    virtual void 
+    setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
+			const Epetra_Vector& x);
+
+    //@}
+
+    /** \name Epetra_Operator methods */
+    //@{
     
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -118,61 +118,29 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    //@}
+
   private:
     
     //! Private to prohibit copying
-    KroneckerProductEpetraOp(const KroneckerProductEpetraOp&);
+    FullyAssembledPreconditioner(const FullyAssembledPreconditioner&);
     
     //! Private to prohibit copying
-    KroneckerProductEpetraOp& operator=(const KroneckerProductEpetraOp&);
+    FullyAssembledPreconditioner& operator=(const FullyAssembledPreconditioner&);
     
   protected:
     
     //! Label for operator
     std::string label;
-    
-    //! Stores base map
-    Teuchos::RCP<const Epetra_Map> base_map;
 
-    //! Stores SG map
-    Teuchos::RCP<const Epetra_Map> sg_map;
+    //! Stores factory for building preconditioner
+    Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory;
 
-    //! Stores mean operator
-    Teuchos::RCP<Epetra_Operator> mean_op;
+    //! Stores preconditioner
+    Teuchos::RCP<Epetra_Operator> prec;
 
-    //! Flag indicating whether transpose was selected
-    bool useTranspose;
-
-    //! Number of blocks
-    unsigned int num_blocks;
-
-    //! Pointer to Cijk
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
-
-    //! Pointer to the Stokhos matrixfree epetra operator.
-    Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> stokhos_op;
-
-    //! Pointer to the PCE expansion of Jacobian.
-    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_J_poly;
-
-    //! Pointer to PC basis
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis;
-
-    //! Pointer to CrsMatrix A0
-    Teuchos::RCP<Epetra_CrsMatrix> matA0;
- 
-    //! Pointer to CrsMatrix G
-    Teuchos::RCP<Epetra_CrsMatrix> G;
-
-    //! ILU precondtioner to G
-    Teuchos::RCP<Ifpack_Preconditioner> Prec;
-
-    //! Compute trace of matrix A'B.
-    double MatrixTrace(Teuchos::RCP<Epetra_CrsMatrix>& ,Teuchos::RCP<Epetra_CrsMatrix>& ) const;
-
-
-  }; // class KroneckerProductEpetraOp
+  }; // class FullyAssembledPreconditioner
   
 } // namespace Stokhos
 
-#endif // STOKHOS_KRONECKER_PRODUCT_EPETRA_OP_HPP
+#endif // STOKHOS_FULLY_ASSEMBLED_PRECONDITIONER_HPP

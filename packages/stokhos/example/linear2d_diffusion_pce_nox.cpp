@@ -54,7 +54,7 @@
 #include "NOX_Epetra.H"
 
 // Stokhos Stochastic Galerkin
-#include "Stokhos.hpp"
+#include "Stokhos_Epetra.hpp"
 
 // Timing utilities
 #include "Teuchos_TimeMonitor.hpp"
@@ -64,9 +64,8 @@ int main(int argc, char *argv[]) {
   int num_KL = 2; 
   int p = 5;
   bool full_expansion = false;
-
   bool matrix_free = true;
-//  bool write_linear_system = false;
+  bool write_linear_system = false;
 
 // Initialize MPI
 #ifdef HAVE_MPI
@@ -126,33 +125,42 @@ int main(int argc, char *argv[]) {
 						       *(model->get_x_map())));
     sg_x_init->init(0.0);
     
-    
     // Setup stochastic Galerkin algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::ParameterList& sgOpParams = 
+      sgParams->sublist("SG Operator");
+    Teuchos::ParameterList& sgPrecParams = 
+      sgParams->sublist("SG Preconditioner");
     if (!full_expansion) {
       sgParams->set("Parameter Expansion Type", "Linear");
       sgParams->set("Jacobian Expansion Type", "Linear");
     }
-    sgParams->set("Jacobian Method", "Matrix Free");
-    sgParams->set("Mean Preconditioner Type", "ML");
-    Teuchos::ParameterList& precParams =
-      sgParams->sublist("Preconditioner Parameters");
-    precParams.set("default values", "SA");
-    precParams.set("ML output", 10);
-    precParams.set("max levels",5);
-    precParams.set("increasing or decreasing","increasing");
-    precParams.set("aggregation: type", "Uncoupled");
-    precParams.set("smoother: type","ML symmetric Gauss-Seidel");
-    precParams.set("smoother: sweeps",1);
-    precParams.set("smoother: pre or post", "both");
-    precParams.set("coarse: max size", 200);
+    if (matrix_free) {
+      sgOpParams.set("Operator Method", "Matrix Free");
+      sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
+      sgPrecParams.set("Mean Preconditioner Type", "ML");
+      Teuchos::ParameterList& precParams = 
+      	sgPrecParams.sublist("Mean Preconditioner Parameters");
+      precParams.set("default values", "SA");
+      precParams.set("ML output", 10);
+      precParams.set("max levels",5);
+      precParams.set("increasing or decreasing","increasing");
+      precParams.set("aggregation: type", "Uncoupled");
+      precParams.set("smoother: type","ML symmetric Gauss-Seidel");
+      precParams.set("smoother: sweeps",2);
+      precParams.set("smoother: pre or post", "both");
+      precParams.set("coarse: max size", 200);
 #ifdef HAVE_ML_AMESOS
-    precParams.set("coarse: type","Amesos-KLU");
+      precParams.set("coarse: type","Amesos-KLU");
 #else
-    precParams.set("coarse: type","Jacobi");
+      precParams.set("coarse: type","Jacobi");
 #endif
-
+    }
+    else {
+      sgOpParams.set("Operator Method", "Fully Assembled");
+      sgPrecParams.set("Preconditioner Method", "None");
+    }
 
    // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
@@ -161,8 +169,6 @@ int main(int argc, char *argv[]) {
                                                  Comm, sg_x_init, sg_p_init));
 
     // Set up NOX parameters
-//    Teuchos::RCP<Teuchos::ParameterList> noxParams =
-  //    Teuchos::rcp(sg_model->sublist("NOX"),false);
     Teuchos::RCP<Teuchos::ParameterList> noxParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
@@ -178,8 +184,6 @@ int main(int argc, char *argv[]) {
                     NOX::Utils::OuterIteration + 
                     NOX::Utils::OuterIterationStatusTest + 
                     NOX::Utils::InnerIteration +
-                    //NOX::Utils::Parameters + 
-                    //NOX::Utils::Details + 
                     NOX::Utils::LinearSolverDetails +
                     NOX::Utils::Warning + 
                     NOX::Utils::Error);
@@ -204,11 +208,15 @@ int main(int argc, char *argv[]) {
     lsParams.set("Size of Krylov Subspace", 100);
     lsParams.set("Tolerance", 1e-12); 
     lsParams.set("Output Frequency", 10);
-//    lsParams.set("Preconditioner", "ML");
-//    Teuchos::ParameterList& precParams = 
-//      lsParams.sublist("ML");
-//    ML_Epetra::SetDefaults("DD", precParams);
-//    lsParams.set("Write Linear System", write_linear_system);
+    if (matrix_free)
+      lsParams.set("Preconditioner", "User Defined");
+    else {
+      lsParams.set("Preconditioner", "ML");
+      Teuchos::ParameterList& precParams = 
+	lsParams.sublist("ML");
+      ML_Epetra::SetDefaults("DD", precParams);
+      lsParams.set("Write Linear System", write_linear_system);
+    }
 
     // Sublist for convergence tests
     Teuchos::ParameterList& statusParams = noxParams->sublist("Status Tests");
@@ -236,7 +244,6 @@ int main(int argc, char *argv[]) {
     if (matrix_free) {
       Teuchos::RCP<Epetra_Operator> M = sg_model->create_WPrec()->PrecOp;
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = nox_interface;
-      lsParams.set("Preconditioner", "User Defined");
       linsys = 
 	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 							  iJac, A, iPrec, M,
@@ -269,10 +276,9 @@ int main(int argc, char *argv[]) {
       dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-
-    std::cout << "finalSolution" << finalSolution <<std::endl;
       
-/*    // Evaluate SG responses at SG parameters
+    /*
+    // Evaluate SG responses at SG parameters
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
       sg_model->createOutArgs();
@@ -296,7 +302,8 @@ int main(int argc, char *argv[]) {
     sg_g_poly.print(std::cout);
     std::cout << "\nResponse Mean =      " << std::endl << mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << std_dev << std::endl;
-*/      
+    */
+
     if (status == NOX::StatusTest::Converged) 
       utils.out() << "Test Passed!" << std::endl;
 

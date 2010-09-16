@@ -28,13 +28,16 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MEAN_EPETRA_OP_HPP
-#define STOKHOS_MEAN_EPETRA_OP_HPP
+#ifndef STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP
+#define STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
 
-#include "Epetra_Operator.h"
+#include "Stokhos_SGPreconditioner.hpp"
 #include "Epetra_Map.h"
+#include "NOX_Epetra_LinearSystem.H"
+#include "Teuchos_ParameterList.hpp"
+#include "EpetraExt_BlockMultiVector.h"
 
 namespace Stokhos {
     
@@ -42,25 +45,33 @@ namespace Stokhos {
    * \brief An Epetra operator representing applying the mean in a block
    * stochastic Galerkin expansion.
    */
-  class MeanEpetraOp : public Epetra_Operator {
+  class GaussSeidelPreconditioner : public Stokhos::SGPreconditioner {
       
   public:
 
     //! Constructor 
-    MeanEpetraOp(const Teuchos::RCP<const Epetra_Map>& base_map,
-                 const Teuchos::RCP<const Epetra_Map>& sg_map,
-                 unsigned int num_blocks,
-                 const Teuchos::RCP<Epetra_Operator>& mean_op);
+  GaussSeidelPreconditioner(
+    const Teuchos::RCP<const Epetra_Map>& base_map,
+    const Teuchos::RCP<const Epetra_Map>& sg_map,
+    const Teuchos::RCP<NOX::Epetra::LinearSystem>& det_solver,
+    const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
-    virtual ~MeanEpetraOp();
+    virtual ~GaussSeidelPreconditioner();
 
-    // Set mean operator
-    void setMeanOperator(const Teuchos::RCP<Epetra_Operator>& op);
+    /** \name Stokhos::SGPreconditioner methods */
+    //@{
 
-    //! Get mean operator
-    Teuchos::RCP<Epetra_Operator> getMeanOperator();
-    
+    //! Setup preconditioner
+    virtual void 
+    setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
+			const Epetra_Vector& x);
+
+    //@}
+
+    /** \name Epetra_Operator methods */
+    //@{
+
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
     
@@ -111,13 +122,15 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    //@}
+
   private:
     
     //! Private to prohibit copying
-    MeanEpetraOp(const MeanEpetraOp&);
+    GaussSeidelPreconditioner(const GaussSeidelPreconditioner&);
     
     //! Private to prohibit copying
-    MeanEpetraOp& operator=(const MeanEpetraOp&);
+    GaussSeidelPreconditioner& operator=(const GaussSeidelPreconditioner&);
     
   protected:
     
@@ -130,17 +143,35 @@ namespace Stokhos {
     //! Stores SG map
     Teuchos::RCP<const Epetra_Map> sg_map;
 
-    //! Stores mean operator
-    Teuchos::RCP<Epetra_Operator> mean_op;
+    //! Deterministic solver
+    Teuchos::RCP<NOX::Epetra::LinearSystem> det_solver;
+
+    //! Preconditioner and solver parameters
+    Teuchos::RCP<Teuchos::ParameterList> params;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Number of blocks
-    unsigned int num_blocks;
+    //! Pointer to the SG operator.
+    Teuchos::RCP<Stokhos::SGOperator> sg_op;
 
-  }; // class MeanEpetraOp
+    //! Pointer to the PCE expansion of Jacobian.
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
+
+    //! Pointer to triple product
+    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+
+    //! Temporary vector used in Gauss-Seidel iteration
+    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_df_block;
+
+    //! Temporary vector used in Gauss-Seidel iteration
+    mutable Teuchos::RCP<Epetra_MultiVector> kx;
+
+    //! Temporary vector used in Gauss-Seidel iteration
+    mutable std::vector< std::vector< Teuchos::RCP< Epetra_MultiVector> > > Kx_table;
+
+  }; // class GaussSeidelPreconditioner
   
 } // namespace Stokhos
 
-#endif // STOKHOS_MEAN_EPETRA_OP_HPP
+#endif // STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP

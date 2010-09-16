@@ -28,63 +28,87 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_MatrixFreeOperator.hpp"
 #include "Epetra_config.h"
 #include "EpetraExt_BlockMultiVector.h"
-#include "Stokhos_MatrixFreeEpetraOp.hpp"
 
-Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
- const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
- const Teuchos::RCP<const Epetra_Map>& range_base_map_,
- const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
- const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
- const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
- const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
- const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops_, 
- bool scaleOP_) 
-  : label("Stokhos Matrix Free Operator"),
-    domain_base_map(domain_base_map_),
-    range_base_map(range_base_map_),
-    domain_sg_map(domain_sg_map_),
-    range_sg_map(range_sg_map_),
-    sg_basis(sg_basis_),
-    Cijk(Cijk_),
-    block_ops(ops_),
-    scaleOP(scaleOP_),
-    useTranspose(false),
-    expansion_size(sg_basis->size()),
-    num_blocks(block_ops->size()),
-    input_block(expansion_size),
-    result_block(expansion_size),
-    tmp(),
-    tmp_trans()
+Stokhos::MatrixFreeOperator::
+MatrixFreeOperator(const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
+		   const Teuchos::RCP<const Epetra_Map>& range_base_map_,
+		   const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
+		   const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
+		   const Teuchos::RCP<Teuchos::ParameterList>& params) : 
+  label("Stokhos Matrix Free Operator"),
+  domain_base_map(domain_base_map_),
+  range_base_map(range_base_map_),
+  domain_sg_map(domain_sg_map_),
+  range_sg_map(range_sg_map_),
+  Cijk(),
+  block_ops(),
+  scale_op(true),
+  include_mean(true),
+  only_use_linear(false),
+  useTranspose(false),
+  expansion_size(0),
+  num_blocks(0),
+  input_block(),
+  result_block(),
+  tmp(),
+  tmp_trans()
 {
+  if (params != Teuchos::null) {
+    scale_op = params->get("Scale Operator by Inverse Basis Norms", true);
+    include_mean = params->get("Include Mean", true);
+    only_use_linear = params->get("Only Use Linear Terms", false);
+  }
 }
 
-Stokhos::MatrixFreeEpetraOp::~MatrixFreeEpetraOp()
+Stokhos::MatrixFreeOperator::
+~MatrixFreeOperator()
 {
 }
 
 void 
-Stokhos::MatrixFreeEpetraOp::reset(
-   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
+Stokhos::MatrixFreeOperator::
+setupOperator(
+   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops,
+   const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_)
 {
   block_ops = ops;
+  Cijk = Cijk_;
+  sg_basis = block_ops->basis();
+  expansion_size = sg_basis->size();
+  num_blocks = block_ops->size();
+  if (input_block.size() != expansion_size)
+    input_block.resize(expansion_size);
+  if (result_block.size() != expansion_size)
+    result_block.resize(expansion_size);
 }
 
-Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> >
-Stokhos::MatrixFreeEpetraOp::getOperatorBlocks() const
+Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Stokhos::MatrixFreeOperator::
+getSGPolynomial()
 {
   return block_ops;
 }
 
-Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >
-Stokhos::MatrixFreeEpetraOp::getOperatorBlocks()
+Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+Stokhos::MatrixFreeOperator::
+getSGPolynomial() const
 {
   return block_ops;
+}
+
+Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
+Stokhos::MatrixFreeOperator::
+getTripleProduct() const
+{
+  return Cijk;
 }
 
 int 
-Stokhos::MatrixFreeEpetraOp::SetUseTranspose(bool UseTranspose) 
+Stokhos::MatrixFreeOperator::
+SetUseTranspose(bool UseTranspose) 
 {
   useTranspose = UseTranspose;
   for (int i=0; i<num_blocks; i++)
@@ -94,14 +118,14 @@ Stokhos::MatrixFreeEpetraOp::SetUseTranspose(bool UseTranspose)
 }
 
 int 
-Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input, 
-				   Epetra_MultiVector& Result) const
+Stokhos::MatrixFreeOperator::
+Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
   // We have to be careful if Input and Result are the same vector.
   // If this is the case, the only possible solution is to make a copy
   const Epetra_MultiVector *input = &Input;
   bool made_copy = false;
-  if (&Input == &Result) {
+  if (Input.Values() == Result.Values()) {
     input = new Epetra_MultiVector(Input);
     made_copy = true;
   }
@@ -148,34 +172,39 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
   // for i=0,...,P where P = expansion_size, L = num_blocks, w_j is the jth 
   // input block, w_i is the ith result block, and J_k is the kth block operator
   const Teuchos::Array<double>& norms = sg_basis->norm_squared();
-  for (int k=0; k<num_blocks; k++) {
+  int k_begin = 0;
+  if (!include_mean)
+    k_begin = 1;
+  int k_end = num_blocks;
+  int dim = sg_basis->dimension();
+  if (only_use_linear && num_blocks > dim+1)
+    k_end = dim + 1;
+  for (int k=k_begin; k<k_end; k++) {
     int nj = Cijk->num_j(k);
-    const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
-    Teuchos::Array<double*> j_ptr(nj*m);
-    Teuchos::Array<int> mj_indices(nj*m);
-    for (int l=0; l<nj; l++) {
-      for (int mm=0; mm<m; mm++) {
-	j_ptr[l*m+mm] = input_block[j_indices[l]]->Values()+mm*N;
-	mj_indices[l*m+mm] = j_indices[l]*m+mm;
+    if (nj > 0) {
+      const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
+      Teuchos::Array<double*> j_ptr(nj*m);
+      Teuchos::Array<int> mj_indices(nj*m);
+      for (int l=0; l<nj; l++) {
+	for (int mm=0; mm<m; mm++) {
+	  j_ptr[l*m+mm] = input_block[j_indices[l]]->Values()+mm*N;
+	  mj_indices[l*m+mm] = j_indices[l]*m+mm;
+	}
       }
-    }
-    Epetra_MultiVector input_tmp(View, *input_base_map, &j_ptr[0], nj*m);
-    Epetra_MultiVector result_tmp(View, *tmp_result, &mj_indices[0], nj*m);
-    (*block_ops)[k].Apply(input_tmp, result_tmp);
-    for (int l=0; l<nj; l++) {
-      const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,l);
-      const Teuchos::Array<double>& c_values = Cijk->values(k,l);
-      for (int i=0; i<i_indices.size(); i++) {
-  	int ii = i_indices[i];
-	for (int mm=0; mm<m; mm++)
-          if (scaleOP) { // \sum_j \sum_k \frac{<\psi_i \psi_j \psi_k>}{<\psi_i^2>}K_k u_j
-	  (*result_block[ii])(mm)->Update(c_values[i]/norms[ii], 
-					  *result_tmp(l*m+mm), 1.0);
-          } 
-          else { // \sum_j \sum_k \frac{<\psi_i \psi_j \psi_k>} K_k u_j
-	  (*result_block[ii])(mm)->Update(c_values[i], 
-					  *result_tmp(l*m+mm), 1.0);
-          }
+      Epetra_MultiVector input_tmp(View, *input_base_map, &j_ptr[0], nj*m);
+      Epetra_MultiVector result_tmp(View, *tmp_result, &mj_indices[0], nj*m);
+      (*block_ops)[k].Apply(input_tmp, result_tmp);
+      for (int l=0; l<nj; l++) {
+	const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,l);
+	const Teuchos::Array<double>& c_values = Cijk->values(k,l);
+	for (int i=0; i<i_indices.size(); i++) {
+	  int ii = i_indices[i];
+	  double c = c_values[i];
+	  if (scale_op)
+	    c /= norms[ii];
+	  for (int mm=0; mm<m; mm++)
+	    (*result_block[ii])(mm)->Update(c, *result_tmp(l*m+mm), 1.0);
+	}
       }
     }
   }
@@ -193,51 +222,51 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
 }
 
 int 
-Stokhos::MatrixFreeEpetraOp::ApplyInverse(const Epetra_MultiVector& Input, 
+Stokhos::MatrixFreeOperator::ApplyInverse(const Epetra_MultiVector& Input, 
 					  Epetra_MultiVector& Result) const
 {
-  throw "MatrixFreeEpetraOp::ApplyInverse not defined!";
+  throw "MatrixFreeOperator::ApplyInverse not defined!";
   return -1;
 }
 
 double 
-Stokhos::MatrixFreeEpetraOp::NormInf() const
+Stokhos::MatrixFreeOperator::NormInf() const
 {
   return 1.0;
 }
 
 
 const char* 
-Stokhos::MatrixFreeEpetraOp::Label () const
+Stokhos::MatrixFreeOperator::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
   
 bool 
-Stokhos::MatrixFreeEpetraOp::UseTranspose() const
+Stokhos::MatrixFreeOperator::UseTranspose() const
 {
   return useTranspose;
 }
 
 bool 
-Stokhos::MatrixFreeEpetraOp::HasNormInf() const
+Stokhos::MatrixFreeOperator::HasNormInf() const
 {
   return false;
 }
 
 const Epetra_Comm & 
-Stokhos::MatrixFreeEpetraOp::Comm() const
+Stokhos::MatrixFreeOperator::Comm() const
 {
   return domain_base_map->Comm();
 }
 const Epetra_Map& 
-Stokhos::MatrixFreeEpetraOp::OperatorDomainMap() const
+Stokhos::MatrixFreeOperator::OperatorDomainMap() const
 {
   return *domain_sg_map;
 }
 
 const Epetra_Map& 
-Stokhos::MatrixFreeEpetraOp::OperatorRangeMap() const
+Stokhos::MatrixFreeOperator::OperatorRangeMap() const
 {
   return *range_sg_map;
 }

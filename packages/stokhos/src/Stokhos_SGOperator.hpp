@@ -28,30 +28,49 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_PRECONDITIONER_FACTORY_HPP
-#define STOKHOS_PRECONDITIONER_FACTORY_HPP
+#ifndef STOKHOS_SG_OPERATOR_HPP
+#define STOKHOS_SG_OPERATOR_HPP
 
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Operator.h"
+#include "Stokhos_VectorOrthogPoly.hpp"
+#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_Sparse3Tensor.hpp"
 
 namespace Stokhos {
 
-  //! An abstract class to represent a generic preconditioner factory.
-  class PreconditionerFactory {
+  /*! 
+   * \brief An abstract class to represent a generic stochastic Galerkin 
+   * operator as an Epetra_Operator.
+   */
+  class SGOperator : public virtual Epetra_Operator {
   public:
 
     //! Constructor
-    PreconditionerFactory() {}
+    SGOperator() {}
 
     //! Destructor
-    virtual ~PreconditionerFactory() {}
+    virtual ~SGOperator() {}
 
-    //! Compute preconditioner operator
-    virtual Teuchos::RCP<Epetra_Operator> 
-    compute(const Teuchos::RCP<Epetra_Operator>& mat) = 0;
+    //! Setup operator
+    virtual void setupOperator(
+      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly,
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk) = 0;
 
-  }; // class PreconditionerFactory
+    //! Get SG polynomial
+    virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    getSGPolynomial() = 0;
+
+    //! Get SG polynomial
+    virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    getSGPolynomial() const = 0;
+
+    //! Get triple product tensor
+    virtual Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
+    getTripleProduct() const = 0;
+
+  }; // class SGOperator
 
 } // namespace Stokhos
 
-#endif // STOKHOS_PRECONDITIONER_FACTORY_HPP
+#endif // STOKHOS_SG_OPERATOR_HPP

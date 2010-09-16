@@ -28,30 +28,34 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_PRECONDITIONER_FACTORY_HPP
-#define STOKHOS_PRECONDITIONER_FACTORY_HPP
+#ifndef STOKHOS_EPETRA_HPP
+#define STOKHOS_EPETRA_HPP
 
-#include "Teuchos_RCP.hpp"
-#include "Epetra_Operator.h"
+#include "Stokhos.hpp"
 
-namespace Stokhos {
+#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_Sparse3TensorUtilities.hpp"
 
-  //! An abstract class to represent a generic preconditioner factory.
-  class PreconditionerFactory {
-  public:
+// SG Operators
+#include "Stokhos_MLPrecOp.hpp"
+#include "Stokhos_MatrixFreeOperator.hpp"
+#include "Stokhos_KLMatrixFreeOperator.hpp"
+#include "Stokhos_KLReducedMatrixFreeOperator.hpp"
+#include "Stokhos_FullyAssembledOperator.hpp"
+#include "Stokhos_SGOperatorFactory.hpp"
 
-    //! Constructor
-    PreconditionerFactory() {}
+// SG Preconditioners
+#include "Stokhos_MeanBasedPreconditioner.hpp"
+#include "Stokhos_GaussSeidelPreconditioner.hpp"
+#include "Stokhos_ApproxGaussSeidelPreconditioner.hpp"
+#include "Stokhos_ApproxJacobiPreconditioner.hpp"
+#include "Stokhos_KroneckerProductPreconditioner.hpp"
+#include "Stokhos_FullyAssembledPreconditioner.hpp"
+#include "Stokhos_SGPreconditionerFactory.hpp"
 
-    //! Destructor
-    virtual ~PreconditionerFactory() {}
+// SG Model Evaluators
+#include "Stokhos_SGModelEvaluator.hpp"
+#include "Stokhos_SGQuadModelEvaluator.hpp"
+#include "Stokhos_SGInverseModelEvaluator.hpp"
 
-    //! Compute preconditioner operator
-    virtual Teuchos::RCP<Epetra_Operator> 
-    compute(const Teuchos::RCP<Epetra_Operator>& mat) = 0;
-
-  }; // class PreconditionerFactory
-
-} // namespace Stokhos
-
-#endif // STOKHOS_PRECONDITIONER_FACTORY_HPP
+#endif // STOKHOS_EPETRA_HPP 

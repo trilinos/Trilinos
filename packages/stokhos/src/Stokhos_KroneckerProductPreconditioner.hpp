@@ -1,3 +1,5 @@
+// $Id$ 
+// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -26,44 +28,49 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_PCE_COVARIANCE_OP_HPP
-#define STOKHOS_PCE_COVARIANCE_OP_HPP
+#ifndef STOKHOS_KRONECKER_PRODUCT_PRECONDITIONER_HPP
+#define STOKHOS_KRONECKER_PRODUCT_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
-#include "Epetra_Operator.h"
-#include "EpetraExt_BlockVector.h"
-#include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+
+#include "Stokhos_SGPreconditioner.hpp"
+#include "Epetra_Map.h"
+#include "Stokhos_PreconditionerFactory.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing the covariance operator of a
-   * polynomial chaos expansion.
+   * \brief An Epetra operator representing applying the mean in a block
+   * stochastic Galerkin expansion.
    */
-  /*!
-   * If X is the matrix whose columns are the coefficients of a given
-   * polynomial chaos expansion, starting at order 1 (not including mean term),
-   * and S is a diagonal matrix whose entries are given by the norm-squared
-   * of the basis polynomials, then the covariance operator is A = X*S*X^T.
-   */
-  class PCECovarianceOp : public Epetra_Operator {
+  class KroneckerProductPreconditioner : public Stokhos::SGPreconditioner {
+      
   public:
 
-    //! Constructor with polynomial X
-    PCECovarianceOp(const Stokhos::VectorOrthogPoly<Epetra_Vector>& X_poly);
-
-    //! Constructor with block-vector X
-    PCECovarianceOp(const Teuchos::RCP<const EpetraExt::BlockVector>& X,
-		    const Stokhos::OrthogPolyBasis<int,double>& basis);
-
-    //! Constructor with multi-vector X
-    PCECovarianceOp(const Teuchos::RCP<const Epetra_MultiVector>& X,
-		    const Stokhos::OrthogPolyBasis<int,double>& basis);
+    //! Constructor 
+    KroneckerProductPreconditioner(
+      const Teuchos::RCP<const Epetra_Map>& base_map,
+      const Teuchos::RCP<const Epetra_Map>& sg_map,
+      const Teuchos::RCP<Stokhos::PreconditionerFactory>& mean_prec_factory,
+      const Teuchos::RCP<Stokhos::PreconditionerFactory>& G_prec_factory,
+      const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
-    virtual ~PCECovarianceOp();
+    virtual ~KroneckerProductPreconditioner();
+
+    /** \name Stokhos::SGPreconditioner methods */
+    //@{
+
+    //! Setup preconditioner
+    virtual void 
+    setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
+			const Epetra_Vector& x);
+
+    //@}
+
+    /** \name Epetra_Operator methods */
+    //@{
     
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -115,39 +122,70 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
-    //! Returns PCE coefficient map
-    const Epetra_BlockMap& CoeffMap() const;
+    //@}
+
+  protected:
+
+    //! Compute trace of matrix A'B.
+    double MatrixTrace(const Epetra_CrsMatrix& A,
+		       const Epetra_CrsMatrix& B) const;
 
   private:
     
     //! Private to prohibit copying
-    PCECovarianceOp(const PCECovarianceOp&);
+    KroneckerProductPreconditioner(const KroneckerProductPreconditioner&);
     
     //! Private to prohibit copying
-    PCECovarianceOp& operator=(const PCECovarianceOp&);
+    KroneckerProductPreconditioner& operator=(const KroneckerProductPreconditioner&);
     
   protected:
     
     //! Label for operator
-    string label;
+    std::string label;
+    
+    //! Stores base map
+    Teuchos::RCP<const Epetra_Map> base_map;
 
-    //! Multivector X defining A = X*S*X^T
-    Teuchos::RCP<const Epetra_MultiVector> X;
+    //! Stores SG map
+    Teuchos::RCP<const Epetra_Map> sg_map;
 
-    //! Scaling vector in A = X*S*X^T
-    Teuchos::Array<double> s;
+    //! Stores factory for building mean preconditioner
+    Teuchos::RCP<Stokhos::PreconditionerFactory> mean_prec_factory;
+
+    //! Stores factory for building G preconditioner
+    Teuchos::RCP<Stokhos::PreconditionerFactory> G_prec_factory;
+
+    //! Preconditioner parameters
+    Teuchos::RCP<Teuchos::ParameterList> params;
+
+    //! Stores mean preconditioner
+    Teuchos::RCP<Epetra_Operator> mean_prec;
+
+    //! Stores G preconditioner
+    Teuchos::RCP<Epetra_Operator> G_prec;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Map needed for temporary vector
-    Teuchos::RCP<Epetra_Map> tmp_map;
+    //! Pointer to the SG operator.
+    Teuchos::RCP<Stokhos::SGOperator> sg_op;
 
-    //! Temporary vector needed for apply
-    mutable Teuchos::RCP<Epetra_MultiVector> tmp;
+    //! Pointer to the PCE expansion of Jacobian.
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
 
-  }; // class PCECovarianceOp
+    //! Pointer to triple product
+    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+ 
+    //! Pointer to CrsMatrix G
+    Teuchos::RCP<Epetra_CrsMatrix> G;
+
+    //! Limit construction of G to linear terms
+    bool only_use_linear;
+
+    mutable Teuchos::RCP<Epetra_MultiVector> result_MVT;
+
+  }; // class KroneckerProductPreconditioner
   
 } // namespace Stokhos
 
-#endif // STOKHOS_PCE_COVARIANCE_OP_HPP
+#endif // STOKHOS_KRONECKER_PRODUCT_PRECONDITIONER_HPP

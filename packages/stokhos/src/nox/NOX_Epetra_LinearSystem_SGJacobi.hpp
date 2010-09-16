@@ -7,7 +7,10 @@
 #include "NOX_Utils.H"                  // class data element
 #include "Epetra_Time.h"                // class data element
 #include "Epetra_LinearProblem.h"
-#include "Stokhos.hpp"
+#include "Stokhos_VectorOrthogPoly.hpp"
+#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_SGOperator.hpp"
+#include "Stokhos_Sparse3Tensor.hpp"
 
 namespace NOX {
   namespace Epetra {
@@ -178,7 +181,7 @@ class LinearSystemSGJacobi : public virtual NOX::Epetra::LinearSystem {
     mutable Teuchos::RCP<Epetra_Operator> jacPtr;
 
     //! Pointer to the Stokhos matrixfree epetra operator.
-    mutable Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> stokhos_op;
+    mutable Teuchos::RCP<Stokhos::SGOperator> stokhos_op;
 
     //! Pointer to the PCE expansion of Jacobian.
     mutable Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_J_poly;

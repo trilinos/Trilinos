@@ -56,10 +56,11 @@
 #include "NOX_Epetra_LinearSystem_SGJacobi.hpp"
 
 // Stokhos Stochastic Galerkin
-#include "Stokhos.hpp"
+#include "Stokhos_Epetra.hpp"
 
 // Timing utilities
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_TestForException.hpp"
 
 //The probability distribution of the random variables.
 double uniform_weight(const double& x){
@@ -142,12 +143,13 @@ TotalTimer.start();
     sigma = .1;
     mean = .2;
     weightCut = 1;   // Support for distribution is +-weightCut
-    solve_method = "SG_GMRES";
+    //solve_method = "SG_GMRES";
+    solve_method = "SG_GS";
     precMethod = "Mean-based";
     //precMethod = "Gauss-Seidel";
     //precMethod = "Approx-Gauss-Seidel";
-    //randField = "UNIFORM";
-    randField = "LOG-NORMAL";
+    randField = "UNIFORM";
+    //randField = "LOG-NORMAL";
   }else{
     n = atoi(argv[1]);
     p = atoi(argv[2]);
@@ -218,7 +220,7 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
                     NOX::Utils::OuterIteration + 
                     NOX::Utils::OuterIterationStatusTest + 
                     NOX::Utils::InnerIteration +
-		    NOX::Utils::Parameters + 
+		    //NOX::Utils::Parameters + 
 		    NOX::Utils::Details + 
 		    NOX::Utils::LinearSolverDetails +
                     NOX::Utils::Warning + 
@@ -346,53 +348,69 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     // Setup stochastic Galerkin algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::ParameterList& sgOpParams = 
+      sgParams->sublist("SG Operator");
+    Teuchos::ParameterList& sgPrecParams = 
+      sgParams->sublist("SG Preconditioner");
 
     if (!full_expansion) {
       sgParams->set("Parameter Expansion Type", "Linear");
       sgParams->set("Jacobian Expansion Type", "Linear");
     }
-    sgParams->set("Jacobian Method", "Matrix Free");
+    sgOpParams.set("Operator Method", "Matrix Free");
     if (precMethod == "Mean-based")  {
-      sgParams->set("Preconditioner Method", "Mean-based");
-      sgParams->set("Mean Preconditioner Type", "ML");
+      sgPrecParams.set("Preconditioner Method", "Mean-based");
+      sgPrecParams.set("Mean Preconditioner Type", "ML");
       Teuchos::ParameterList& precParams =
-	sgParams->sublist("Preconditioner Parameters");
+	sgPrecParams.sublist("Mean Preconditioner Parameters");
       precParams = det_ML;
     }
     else if(precMethod == "Gauss-Seidel") {
-      sgParams->set("Preconditioner Method", "Gauss-Seidel");
-      Teuchos::ParameterList& GS_params = sgParams->sublist("Gauss-Seidel");
-      GS_params.sublist("Deterministic Krylov Solver") = det_lsParams;
-      GS_params.set("Deterministic Solver", det_linsys);
-      GS_params.set("Max Iterations", 2);
-      GS_params.set("Tolerance", 3e-13);
-      GS_params.set("Save MatVec Table", true);
+      sgPrecParams.set("Preconditioner Method", "Gauss-Seidel");
+      sgPrecParams.sublist("Deterministic Solver Parameters") = det_lsParams;
+      sgPrecParams.set("Deterministic Solver", det_linsys);
+      sgPrecParams.set("Max Iterations", 1);
+      sgPrecParams.set("Tolerance", 1e-12);
+      sgPrecParams.set("Save MatVec Table", true);
     }
     else if (precMethod == "Approx-Gauss-Seidel")  {
-      sgParams->set("Preconditioner Method", "Approximate Gauss-Seidel");
-      sgParams->set("Symmetric Gauss-Seidel", false);
-      sgParams->set("Mean Preconditioner Type", "ML");
+      sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
+      sgPrecParams.set("Symmetric Gauss-Seidel", false);
+      sgPrecParams.set("Mean Preconditioner Type", "ML");
       Teuchos::ParameterList& precParams =
-	sgParams->sublist("Preconditioner Parameters");
+	sgPrecParams.sublist("Mean Preconditioner Parameters");
       precParams = det_ML;
     }
     else if (precMethod == "Approx-Jacobi")  {
-      sgParams->set("Preconditioner Method", "Approximate Jacobi");
-      sgParams->set("Symmetric Gauss-Seidel", false);
-      sgParams->set("Mean Preconditioner Type", "ML");
+      sgPrecParams.set("Preconditioner Method", "Approximate Jacobi");
+      sgPrecParams.set("Mean Preconditioner Type", "ML");
       Teuchos::ParameterList& precParams =
-        sgParams->sublist("Preconditioner Parameters");
+        sgPrecParams.sublist("Mean Preconditioner Parameters");
       precParams = det_ML;
+      Teuchos::ParameterList& jacobiOpParams =
+	sgPrecParams.sublist("Jacobi SG Operator");
+      jacobiOpParams.set("Only Use Linear Terms", true);
     }
     else if (precMethod == "Kronecker-Product")  {
-      sgParams->set("Preconditioner Method", "Kronecker Product");
-      sgParams->set("Mean Preconditioner Type", "ML");
-      Teuchos::ParameterList& precParams =
-        sgParams->sublist("Preconditioner Parameters");
-      precParams = det_ML;
+      sgPrecParams.set("Preconditioner Method", "Kronecker Product");
+      sgPrecParams.set("Only Use Linear Terms", true);
+      sgPrecParams.set("Mean Preconditioner Type", "ML");
+      Teuchos::ParameterList& meanPrecParams =
+        sgPrecParams.sublist("Mean Preconditioner Parameters");
+      meanPrecParams = det_ML;
+      sgPrecParams.set("G Preconditioner Type", "Ifpack");
+      Teuchos::ParameterList& GPrecParams =
+        sgPrecParams.sublist("G Preconditioner Parameters");
+      GPrecParams.set("Ifpack Preconditioner", "ILUT");
+      GPrecParams.set("Overlap", 1);
+      GPrecParams.set("fact: drop tolerance", 1e-16);
+      GPrecParams.set("fact: ilut level-of-fill", 10.0);
+      GPrecParams.set("schwarz: combine mode", "Add");
     }
     else
-      sgParams->set("Preconditioner Method", "Jacobi");
+      TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Error!  Unknown preconditioner method " << precMethod
+			 << "." << std::endl);
 
    // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
@@ -446,7 +464,7 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
    }
   else if (solve_method=="SG_GS") {
     det_lsParams.set("Tolerance", 3e-13); 
-    lsParams.sublist("Deterministic Krylov Solver") = det_lsParams;
+    lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
     Teuchos::RCP<NOX::Epetra::LinearSystemSGGS> linsys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemSGGS(printParams, lsParams,
                                                          det_linsys, Cijk,
@@ -456,7 +474,7 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
   }
   else {
     det_lsParams.set("Tolerance", 3e-13); 
-    lsParams.sublist("Deterministic Krylov Solver") = det_lsParams;
+    lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
     Teuchos::RCP<NOX::Epetra::LinearSystemSGJacobi> linsys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemSGJacobi(printParams, lsParams,
                                                          det_linsys, Cijk,
@@ -464,10 +482,6 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
     std::cout << "Solver is SG JACOBI " << std::endl;
  }
-
-//    // Build NOX group
-//    Teuchos::RCP<NOX::Epetra::Group> grp = 
-//      Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
 
     // Create the Solver convergence test
     Teuchos::RCP<NOX::StatusTest::Generic> statusTests =
@@ -488,6 +502,8 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
       dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+
+    sgParams->print(std::cout);
 
 //    std::cout << "finalSolution" << finalSolution <<std::endl;
 

@@ -28,43 +28,60 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP
-#define STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP
+#ifndef STOKHOS_MATRIX_FREE_OPERATOR_HPP
+#define STOKHOS_MATRIX_FREE_OPERATOR_HPP
 
-#include "Teuchos_RCP.hpp"
-
-#include "NOX_Epetra_LinearSystem.H"    // base class
-#include "Stokhos.hpp"
-
-#include "Epetra_Operator.h"
+#include "Stokhos_SGOperator.hpp"
 #include "Epetra_Map.h"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing applying the mean in a block
-   * stochastic Galerkin expansion.
+   * \brief An Epetra operator representing the block stochastic Galerkin
+   * operator.
    */
-  class GaussSeidelEpetraOp : public Epetra_Operator {
+  class MatrixFreeOperator : public Stokhos::SGOperator {
       
   public:
 
     //! Constructor 
-  GaussSeidelEpetraOp(
-  const Teuchos::RCP<const Epetra_Map>& base_map_,
-  const Teuchos::RCP<const Epetra_Map>& sg_map_,
-  unsigned int num_blocks_,
-  Teuchos::ParameterList& linearSolverParams,
-  const Teuchos::RCP<NOX::Epetra::LinearSystem>& detsolve_,
-  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
-  const Teuchos::RCP<Epetra_Operator>& J);
+    MatrixFreeOperator(
+      const Teuchos::RCP<const Epetra_Map>& domain_base_map,
+      const Teuchos::RCP<const Epetra_Map>& range_base_map,
+      const Teuchos::RCP<const Epetra_Map>& domain_sg_map,
+      const Teuchos::RCP<const Epetra_Map>& range_sg_map,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     
     //! Destructor
-    virtual ~GaussSeidelEpetraOp();
+    virtual ~MatrixFreeOperator();
 
-    void setOperatorAndConstructPreconditioner(
-      const Teuchos::RCP<Epetra_Operator>& J, const Epetra_Vector& x);
+    /** \name Stokhos::SGOperator methods */
+    //@{
 
+    //! Setup operator
+    virtual void setupOperator(
+      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly,
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk);
+
+    //! Get SG polynomial
+    virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    getSGPolynomial();
+
+    //! Get SG polynomial
+    virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    getSGPolynomial() const;
+
+    //! Get triple product tensor
+    virtual Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
+    getTripleProduct() const;
+
+    //@}
+
+    /** \name Epetra_Operator methods */
+    //@{
+    
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
     
@@ -115,54 +132,74 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    //@}
+
   private:
     
     //! Private to prohibit copying
-    GaussSeidelEpetraOp(const GaussSeidelEpetraOp&);
+    MatrixFreeOperator(const MatrixFreeOperator&);
     
     //! Private to prohibit copying
-    GaussSeidelEpetraOp& operator=(const GaussSeidelEpetraOp&);
+    MatrixFreeOperator& operator=(const MatrixFreeOperator&);
     
   protected:
     
     //! Label for operator
     std::string label;
     
-    //! Stores base map
-    Teuchos::RCP<const Epetra_Map> base_map;
+    //! Stores domain base map
+    Teuchos::RCP<const Epetra_Map> domain_base_map;
 
-    //! Stores SG map
-    Teuchos::RCP<const Epetra_Map> sg_map;
+    //! Stores range base map
+    Teuchos::RCP<const Epetra_Map> range_base_map;
+
+    //! Stores domain SG map
+    Teuchos::RCP<const Epetra_Map> domain_sg_map;
+
+    //! Stores range SG map
+    Teuchos::RCP<const Epetra_Map> range_sg_map;
+
+    //! Stochastic Galerking basis
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+
+    //! Stores triple product tensor
+    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+
+    //! Stores operators
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
+
+    //! Flag indicating whether operator be scaled with <\psi_i^2>
+    bool scale_op;
+
+    //! Flag indicating whether to include mean term
+    bool include_mean;
+    
+    //! Flag indicating whether to only use linear terms
+    bool only_use_linear;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Number of blocks
-    unsigned int num_blocks;
-  
-    //! Pointer to deterministic solver
-    Teuchos::RCP<NOX::Epetra::LinearSystem> detsolve;
+    //! Number of terms in expansion
+    int expansion_size;
 
-    //! Pointer to Cijk
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+    //! Number of Jacobian blocks (not necessarily equal to expansion_size)
+    int num_blocks;
 
-    //! Pointer to the Jacobian operator.
-    mutable Teuchos::RCP<Epetra_Operator> jacPtr;
+    //! MultiVectors for each block for Apply() input
+    mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
 
-    //! Pointer to the Stokhos matrixfree epetra operator.
-    mutable Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> stokhos_op;
+    //! MultiVectors for each block for Apply() result
+    mutable Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > result_block;   
 
-    //! Pointer to the PCE expansion of Jacobian.
-    mutable Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_J_poly;
+    //! Temporary multivector used in Apply()
+    mutable Teuchos::RCP<Epetra_MultiVector> tmp;
 
-    //! Pointer to the deterministic vector 
-    Teuchos::RCP<Epetra_Vector> detvec;
+    //! Temporary multivector used in Apply() for transpose
+    mutable Teuchos::RCP<Epetra_MultiVector> tmp_trans;
 
-   //! Parameter list
-   Teuchos::ParameterList& params;
-
-  }; // class GaussSeidelEpetraOp
+  }; // class MatrixFreeOperator
   
 } // namespace Stokhos
 
-#endif // STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP
+#endif // STOKHOS_MATRIX_FREE_OPERATOR_HPP

@@ -54,6 +54,7 @@
 #include <Teuchos_Time.hpp>
 #include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_TimedEpetraOperator.hpp>
+#include "EpetraExt_RowMatrixOut.h"
 
 
 #ifndef PI

@@ -29,7 +29,7 @@
 // @HEADER
 
 #include "twoD_diffusion_ME.hpp"
-#include "Stokhos.hpp"
+#include "Stokhos_Epetra.hpp"
 #include "twoD_diffusion_inputs.h"
 #include "twoD_diffusion_utility_functions.h"
 #include <EpetraExt_MatrixMatrix.h>
@@ -44,15 +44,7 @@
 #include "EpetraExt_BlockUtility.h"
 #include "EpetraExt_BlockCrsMatrix.h"
 #include "EpetraExt_BlockMultiVector.h"
-#include "Stokhos_MatrixFreeEpetraOp.hpp"
-#include "Stokhos_KLMatrixFreeEpetraOp.hpp"
-#include "Stokhos_KLReducedMatrixFreeEpetraOp.hpp"
-#include "Stokhos_MeanEpetraOp.hpp"
-#include "Stokhos_IfpackPreconditionerFactory.hpp"
-#include "Stokhos_MLPreconditionerFactory.hpp"
 #include "Stokhos_EpetraMultiVectorOperator.hpp"
-
-//#include "Stokhos.hpp"
 
 double xyLeft = -.5;
 double xyRight = .5;
@@ -95,8 +87,6 @@ omega = Teuchos::Array<double>(d);
 xind = Teuchos::Array<int>(d);
 yind = Teuchos::Array<int>(d);
 generateExponentialRF(d, 1, lambda, alpha, omega, xind, yind);
-
-std::cout << "lambda = " << lambda << std::endl;
 
   // Solution vector map
   x_map = Teuchos::rcp(new Epetra_Map(n*n, 0, *comm));

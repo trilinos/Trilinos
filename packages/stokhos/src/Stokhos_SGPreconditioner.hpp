@@ -28,30 +28,36 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_PRECONDITIONER_FACTORY_HPP
-#define STOKHOS_PRECONDITIONER_FACTORY_HPP
+#ifndef STOKHOS_SG_PRECONDITIONER_HPP
+#define STOKHOS_SG_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Operator.h"
+#include "Stokhos_SGOperator.hpp"
+#include "Epetra_Vector.h"
 
 namespace Stokhos {
 
-  //! An abstract class to represent a generic preconditioner factory.
-  class PreconditionerFactory {
+  /*! 
+   * \brief An abstract class to represent a generic stochastic Galerkin 
+   * preconditioner as an Epetra_Operator.
+   */
+  class SGPreconditioner : public virtual Epetra_Operator {
   public:
 
     //! Constructor
-    PreconditionerFactory() {}
+    SGPreconditioner() {}
 
     //! Destructor
-    virtual ~PreconditionerFactory() {}
+    virtual ~SGPreconditioner() {}
 
-    //! Compute preconditioner operator
-    virtual Teuchos::RCP<Epetra_Operator> 
-    compute(const Teuchos::RCP<Epetra_Operator>& mat) = 0;
+    //! Setup preconditioner
+    virtual void 
+    setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
+			const Epetra_Vector& x) = 0;
 
-  }; // class PreconditionerFactory
+  }; // class SGPreconditioner
 
 } // namespace Stokhos
 
-#endif // STOKHOS_PRECONDITIONER_FACTORY_HPP
+#endif // STOKHOS_SG_PRECONDITIONER_HPP

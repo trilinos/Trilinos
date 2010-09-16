@@ -28,61 +28,56 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_ApproxGaussSeidelPreconditioner.hpp"
 #include "Epetra_config.h"
-#include "EpetraExt_BlockMultiVector.h"
-#include "Stokhos_ApproxGaussSeidelEpetraOp.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
-Stokhos::ApproxGaussSeidelEpetraOp::ApproxGaussSeidelEpetraOp(
+Stokhos::ApproxGaussSeidelPreconditioner::
+ApproxGaussSeidelPreconditioner(
   const Teuchos::RCP<const Epetra_Map>& base_map_,
   const Teuchos::RCP<const Epetra_Map>& sg_map_,
-  unsigned int num_blocks_,
-  const Teuchos::RCP<Epetra_Operator>& mean_prec_op_,
-  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
-  const Teuchos::RCP<Epetra_Operator>& J,
-  bool symmetric_):
+  const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory_,
+  const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   label("Stokhos Approximate Gauss-Seidel Preconditioner"),
   base_map(base_map_),
   sg_map(sg_map_),
+  prec_factory(prec_factory_),
+  mean_prec(),
   useTranspose(false),
-  num_blocks(num_blocks_),
-  mean_prec_op(mean_prec_op_),
-  Cijk(Cijk_),
-  symmetric(symmetric_),
-  mat_vec_tmp()
+  sg_op(),
+  sg_poly(),
+  Cijk(),
+  symmetric(false),
+  only_use_linear(true),
+  mat_vec_tmp(),
+  rhs_block()
 {
-  stokhos_op = Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(J, true);
-  sg_J_poly = stokhos_op->getOperatorBlocks();
-
-  if (mean_prec_op != Teuchos::null)
-    label = std::string("Stokhos Approximate Gauss-Seidel Preconditioner:\n") + 
-      std::string("		***** ") + 
-      std::string(mean_prec_op->Label());
+  symmetric = params_->get("Symmetric Gauss-Seidel", false);
+  only_use_linear = params_->get("Only Use Linear Terms", true);
 }
 
-Stokhos::ApproxGaussSeidelEpetraOp::~ApproxGaussSeidelEpetraOp()
+Stokhos::ApproxGaussSeidelPreconditioner::
+~ApproxGaussSeidelPreconditioner()
 {
-}
-
-void
-Stokhos::ApproxGaussSeidelEpetraOp::setOperator(
-  const Teuchos::RCP<Epetra_Operator>& J) 
-{
-  stokhos_op = Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(J, true);
-  sg_J_poly = stokhos_op->getOperatorBlocks();
 }
 
 void
-Stokhos::ApproxGaussSeidelEpetraOp::setPrecOperator(
-  const Teuchos::RCP<Epetra_Operator>& M) 
+Stokhos::ApproxGaussSeidelPreconditioner::
+setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op_, 
+		    const Epetra_Vector& x)
 {
-  mean_prec_op = M;
+  sg_op = sg_op_;
+  sg_poly = sg_op->getSGPolynomial();
+  mean_prec = prec_factory->compute(sg_poly->getCoeffPtr(0));
   label = std::string("Stokhos Approximate Gauss-Seidel Preconditioner:\n") + 
-      std::string("		***** ") + 
-      std::string(mean_prec_op->Label());
+    std::string("		***** ") + 
+    std::string(mean_prec->Label());
+  Cijk = sg_op->getTripleProduct();
 }
 
 int 
-Stokhos::ApproxGaussSeidelEpetraOp::SetUseTranspose(bool UseTranspose) 
+Stokhos::ApproxGaussSeidelPreconditioner::
+SetUseTranspose(bool UseTranspose) 
 {
   useTranspose = UseTranspose;
 
@@ -90,16 +85,15 @@ Stokhos::ApproxGaussSeidelEpetraOp::SetUseTranspose(bool UseTranspose)
 }
 
 int 
-Stokhos::ApproxGaussSeidelEpetraOp::Apply(const Epetra_MultiVector& Input, 
-					  Epetra_MultiVector& Result) const
+Stokhos::ApproxGaussSeidelPreconditioner::
+Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
-  return stokhos_op->Apply(Input,Result);
+  return sg_op->Apply(Input, Result);
 }
 
 int 
-Stokhos::ApproxGaussSeidelEpetraOp::ApplyInverse(
-  const Epetra_MultiVector& Input, 
-  Epetra_MultiVector& Result) const
+Stokhos::ApproxGaussSeidelPreconditioner::
+ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
   TEUCHOS_FUNC_TIME_MONITOR("Total Approximate Gauss-Seidel Time");
 
@@ -115,59 +109,62 @@ Stokhos::ApproxGaussSeidelEpetraOp::ApplyInverse(
   int m = input->NumVectors();
   if (mat_vec_tmp == Teuchos::null || mat_vec_tmp->NumVectors() != m)
     mat_vec_tmp = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
+  if (rhs_block == Teuchos::null || rhs_block->NumVectors() != m)
+    rhs_block = 
+      Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
   
   // Extract blocks
   EpetraExt::BlockMultiVector input_block(View, *base_map, *input);
   EpetraExt::BlockMultiVector result_block(View, *base_map, Result);
-  EpetraExt::BlockMultiVector rhs_block(*base_map, *sg_map, m);
 
   result_block.PutScalar(0.0);
 
-  int sz = sg_J_poly->basis()->size();
-  int numKL = sg_J_poly->basis()->dimension();
-  const Teuchos::Array<double>& norms = sg_J_poly->basis()->norm_squared();
+  int sz = sg_poly->basis()->size();
+  int i_limit = sg_poly->size();
+  if (only_use_linear)
+    i_limit = sg_poly->basis()->dimension() + 1;
+  const Teuchos::Array<double>& norms = sg_poly->basis()->norm_squared();
   int i,j,nl;
   double c;
 
-  rhs_block.Update(1.0, input_block, 0.0);
+  rhs_block->Update(1.0, input_block, 0.0);
   for (int k=0; k<sz; k++) {
     nl = Cijk->num_values(k);
     for (int l=0; l<nl; l++) {
       Cijk->value(k,l,i,j,c); 
-      if (i!=0 && i<=numKL+1) {
-	(*sg_J_poly)[i].Apply(*(result_block.GetBlock(j)), *mat_vec_tmp);
-	rhs_block.GetBlock(k)->Update(-1.0*c/norms[k], *mat_vec_tmp, 1.0);
+      if (i!=0 && i<i_limit) {
+	(*sg_poly)[i].Apply(*(result_block.GetBlock(j)), *mat_vec_tmp);
+	rhs_block->GetBlock(k)->Update(-1.0*c/norms[k], *mat_vec_tmp, 1.0);
       }
     }
       
-    result_block.GetBlock(k)->PutScalar(0.0);
     {
       // Apply deterministic preconditioner
-      TEUCHOS_FUNC_TIME_MONITOR("Total Deterministic Solve Time");
-      mean_prec_op->ApplyInverse(*(rhs_block.GetBlock(k)), 
-				 *(result_block.GetBlock(k)));
+      TEUCHOS_FUNC_TIME_MONITOR("Total AGS Deterministic Preconditioner Time");
+      mean_prec->ApplyInverse(*(rhs_block->GetBlock(k)), 
+			      *(result_block.GetBlock(k)));
     }
   }
 
   // For symmetric Gauss-Seidel
   if (symmetric) {
     
-    rhs_block.Update(1.0, input_block, 0.0);
+    rhs_block->Update(1.0, input_block, 0.0);
     for (int k=sz-1; k>=0; k--) {
       nl = Cijk->num_values(k);
       for (int l=0; l<nl; l++) {
 	Cijk->value(k,l,i,j,c); 
-	if (i!=0 && i<=numKL+1) {
-	  (*sg_J_poly)[i].Apply(*(result_block.GetBlock(j)), *mat_vec_tmp);
-	  rhs_block.GetBlock(k)->Update(-1.0*c/norms[k], *mat_vec_tmp, 1.0);
+	if (i!=0 && i<i_limit) {
+	  (*sg_poly)[i].Apply(*(result_block.GetBlock(j)), *mat_vec_tmp);
+	  rhs_block->GetBlock(k)->Update(-1.0*c/norms[k], *mat_vec_tmp, 1.0);
 	}
       }
       
       {
 	// Apply deterministic preconditioner
-	TEUCHOS_FUNC_TIME_MONITOR("Total Deterministic Solve Time");
-	mean_prec_op->ApplyInverse(*(rhs_block.GetBlock(k)), 
-				   *(result_block.GetBlock(k)));
+	TEUCHOS_FUNC_TIME_MONITOR("Total AGS Deterministic Preconditioner Time");
+	mean_prec->ApplyInverse(*(rhs_block->GetBlock(k)), 
+				*(result_block.GetBlock(k)));
       }
     
     }
@@ -180,43 +177,50 @@ Stokhos::ApproxGaussSeidelEpetraOp::ApplyInverse(
 }
 
 double 
-Stokhos::ApproxGaussSeidelEpetraOp::NormInf() const
+Stokhos::ApproxGaussSeidelPreconditioner::
+NormInf() const
 {
-  return stokhos_op->NormInf();
+  return sg_op->NormInf();
 }
 
 
 const char* 
-Stokhos::ApproxGaussSeidelEpetraOp::Label () const
+Stokhos::ApproxGaussSeidelPreconditioner::
+Label() const
 {
   return const_cast<char*>(label.c_str());
 }
   
 bool 
-Stokhos::ApproxGaussSeidelEpetraOp::UseTranspose() const
+Stokhos::ApproxGaussSeidelPreconditioner::
+UseTranspose() const
 {
   return useTranspose;
 }
 
 bool 
-Stokhos::ApproxGaussSeidelEpetraOp::HasNormInf() const
+Stokhos::ApproxGaussSeidelPreconditioner::
+HasNormInf() const
 {
-  return stokhos_op->HasNormInf();
+  return sg_op->HasNormInf();
 }
 
 const Epetra_Comm & 
-Stokhos::ApproxGaussSeidelEpetraOp::Comm() const
+Stokhos::ApproxGaussSeidelPreconditioner::
+Comm() const
 {
   return base_map->Comm();
 }
 const Epetra_Map& 
-Stokhos::ApproxGaussSeidelEpetraOp::OperatorDomainMap() const
+Stokhos::ApproxGaussSeidelPreconditioner::
+OperatorDomainMap() const
 {
   return *sg_map;
 }
 
 const Epetra_Map& 
-Stokhos::ApproxGaussSeidelEpetraOp::OperatorRangeMap() const
+Stokhos::ApproxGaussSeidelPreconditioner::
+OperatorRangeMap() const
 {
   return *sg_map;
 }

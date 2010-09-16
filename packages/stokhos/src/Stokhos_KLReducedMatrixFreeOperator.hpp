@@ -1,5 +1,5 @@
-// $Id$ 
-// $Source$ 
+// $Id: Stokhos_MatrixFreeEpetraOp.hpp,v 1.7 2009/09/14 18:35:48 etphipp Exp $ 
+// $Source: /space/CVS/Trilinos/packages/stokhos/src/Stokhos_MatrixFreeEpetraOp.hpp,v $ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -23,25 +23,25 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Christopher W. Miller(cmiller@math.umd.edu).
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_KLMATRIX_FREE_EPETRA_OP_HPP
-#define STOKHOS_KLMATRIX_FREE_EPETRA_OP_HPP
+#ifndef STOKHOS_KL_REDUCED_MATRIX_FREE_OPERATOR_HPP
+#define STOKHOS_KL_REDUCED_MATRIX_FREE_OPERATOR_HPP
 
-#include "Teuchos_RCP.hpp"
+#include "Stokhos_SGOperator.hpp"
+#include "Epetra_Map.h"
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
-#include "Epetra_Operator.h"
-#include "Epetra_Map.h"
-#include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_MatrixFreeOperator.hpp"
 
 namespace Stokhos {
     
@@ -49,28 +49,45 @@ namespace Stokhos {
    * \brief An Epetra operator representing the block stochastic Galerkin
    * operator.
    */
-  class KLMatrixFreeEpetraOp : public Epetra_Operator {
+  class KLReducedMatrixFreeOperator : public Stokhos::SGOperator {
       
   public:
 
     //! Constructor 
-    KLMatrixFreeEpetraOp(
-     const Teuchos::RCP<const Epetra_Map>& base_map,
-     const Teuchos::RCP<const Epetra_Map>& sg_map,
-     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
-     const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
-     const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >& ops);
+    KLReducedMatrixFreeOperator(
+     const Teuchos::RCP<const Epetra_Map>& domain_base_map,
+     const Teuchos::RCP<const Epetra_Map>& range_base_map,
+     const Teuchos::RCP<const Epetra_Map>& domain_sg_map,
+     const Teuchos::RCP<const Epetra_Map>& range_sg_map,
+     const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
-    virtual ~KLMatrixFreeEpetraOp();
+    virtual ~KLReducedMatrixFreeOperator();
 
-    //! Reset operator blocks
-    virtual void 
-    reset(const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >& ops);
+    /** \name Stokhos::SGOperator methods */
+    //@{
 
-    //! Get operator blocks
-    virtual const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >&
-    getOperatorBlocks();
+    //! Setup operator
+    virtual void setupOperator(
+      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly,
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk);
+
+    //! Get SG polynomial
+    virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    getSGPolynomial();
+
+    //! Get SG polynomial
+    virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
+    getSGPolynomial() const;
+
+    //! Get triple product tensor
+    virtual Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
+    getTripleProduct() const;
+
+    //@}
+
+    /** \name Epetra_Operator methods */
+    //@{
     
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -122,25 +139,37 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    //@}
+
+  protected:
+
+    //! Setup KL blocks
+    void setup();
 
   private:
     
     //! Private to prohibit copying
-    KLMatrixFreeEpetraOp(const KLMatrixFreeEpetraOp&);
+    KLReducedMatrixFreeOperator(const KLReducedMatrixFreeOperator&);
     
     //! Private to prohibit copying
-    KLMatrixFreeEpetraOp& operator=(const KLMatrixFreeEpetraOp&);
+    KLReducedMatrixFreeOperator& operator=(const KLReducedMatrixFreeOperator&);
     
   protected:
     
     //! Label for operator
-    string label;
+    std::string label;
     
-    //! Stores base map
-    Teuchos::RCP<const Epetra_Map> base_map;
+   //! Stores domain base map
+    Teuchos::RCP<const Epetra_Map> domain_base_map;
 
-    //! Stores SG map
-    Teuchos::RCP<const Epetra_Map> sg_map;
+    //! Stores range base map
+    Teuchos::RCP<const Epetra_Map> range_base_map;
+
+    //! Stores domain SG map
+    Teuchos::RCP<const Epetra_Map> domain_sg_map;
+
+    //! Stores range SG map
+    Teuchos::RCP<const Epetra_Map> range_sg_map;
 
     //! Stochastic Galerking basis
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
@@ -149,25 +178,58 @@ namespace Stokhos {
     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
 
     //! Stores operators
-    Teuchos::Array<Teuchos::RCP<Epetra_Operator> > block_ops;
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
+
+    //! Algorithmic parameters
+    Teuchos::RCP<Teuchos::ParameterList> params;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
+    //! Number of terms in expansion
+    int expansion_size;
+
     //! Number of blocks
-    unsigned int num_blocks;
+    int num_blocks;
 
-    //! MultiVectors for each block for Apply() input
-    mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
+    //! Number of KL terms
+    int num_KL;
 
-    //! MultiVectors for each block for Apply() result
-    mutable Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > result_block;
+    //! Number of computed KL terms
+    int num_KL_computed;
 
-    //! Temporary multivector
-    mutable Teuchos::RCP<Epetra_MultiVector> tmp;
+    //! Mean block
+    Teuchos::RCP<Epetra_CrsMatrix> mean;
 
-  }; // class KLMatrixFreeEpetraOp
+    //! Block map for vectorized-matrices
+    Teuchos::RCP<Epetra_Map> block_vec_map;
+
+    //! Polynomial sorting vectorized matrix coefficients
+    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > block_vec_poly;
+
+    //! Dot products of KL eigenvectors and Jacobian blocks
+    Teuchos::Array< Teuchos::Array<double> > dot_products;
+
+    //! Sparse KL coefficients
+    Teuchos::RCP< Stokhos::Sparse3Tensor<int,double> > sparse_kl_coeffs;
+
+    //! KL blocks
+    Teuchos::Array< Teuchos::RCP<Epetra_CrsMatrix> > kl_blocks;
+
+    //! KL blocks as operators
+    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > kl_ops;
+
+    //! Matrix-Free operator using KL operators
+    Teuchos::RCP< Stokhos::MatrixFreeOperator > kl_mat_free_op;
+
+    //! Tolerance for dropping entries in sparse 3 tensor
+    double drop_tolerance;
+
+    //! Whether to do KL error tests (can be expensive)
+    bool do_error_tests;
+
+  }; // class KLReducedMatrixFreeOperator
   
 } // namespace Stokhos
 
-#endif // STOKHOS_KLMATRIX_FREE_EPETRA_OP_HPP
+#endif // STOKHOS_KL_REDUCED_MATRIX_FREE_OPERATOR_HPP

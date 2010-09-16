@@ -98,13 +98,20 @@ SET(HEADERS ${HEADERS}
   Stokhos_ExpansionFactoryImp.hpp
   Stokhos_StieltjesGramSchmidtBuilder.hpp
   Stokhos_StieltjesGramSchmidtBuilderImp.hpp
-  Stokhos_MatrixFreeEpetraOp.hpp
-  Stokhos_KLMatrixFreeEpetraOp.hpp
-  Stokhos_MeanEpetraOp.hpp
-  Stokhos_GaussSeidelEpetraOp.hpp
-  Stokhos_ApproxGaussSeidelEpetraOp.hpp
-  Stokhos_ApproxJacobiEpetraOp.hpp
-  Stokhos_KroneckerProductEpetraOp.hpp
+  Stokhos_SGOperator.hpp
+  Stokhos_MatrixFreeOperator.hpp
+  Stokhos_KLMatrixFreeOperator.hpp
+  Stokhos_KLReducedMatrixFreeOperator.hpp
+  Stokhos_FullyAssembledOperator.hpp
+  Stokhos_SGOperatorFactory.hpp
+  Stokhos_SGPreconditioner.hpp
+  Stokhos_MeanBasedPreconditioner.hpp
+  Stokhos_ApproxGaussSeidelPreconditioner.hpp
+  Stokhos_ApproxJacobiPreconditioner.hpp
+  Stokhos_GaussSeidelPreconditioner.hpp
+  Stokhos_KroneckerProductPreconditioner.hpp
+  Stokhos_FullyAssembledPreconditioner.hpp
+  Stokhos_SGPreconditionerFactory.hpp
   Stokhos_PreconditionerFactory.hpp
   Stokhos_IfpackPreconditionerFactory.hpp
   Stokhos_MLPreconditionerFactory.hpp
@@ -125,7 +132,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_KL_OneDExponentialCovarianceFunctionImp.hpp
   Stokhos_KL_ExponentialRandomField.hpp
   Stokhos_KL_ExponentialRandomFieldImp.hpp
-  Stokhos_KLReducedMatrixFreeEpetraOp.hpp
   Stokhos_EpetraMultiVectorOperator.hpp
   )
 
@@ -133,13 +139,18 @@ SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
   Stokhos_SparseGridQuadrature.cpp
   Stokhos_AnisoSparseGridQuadrature.cpp
-  Stokhos_MatrixFreeEpetraOp.cpp
-  Stokhos_KLMatrixFreeEpetraOp.cpp
-  Stokhos_MeanEpetraOp.cpp
-  Stokhos_GaussSeidelEpetraOp.cpp
-  Stokhos_ApproxGaussSeidelEpetraOp.cpp
-  Stokhos_ApproxJacobiEpetraOp.cpp
-  Stokhos_KroneckerProductEpetraOp.cpp
+  Stokhos_MatrixFreeOperator.cpp
+  Stokhos_KLMatrixFreeOperator.cpp
+  Stokhos_KLReducedMatrixFreeOperator.cpp
+  Stokhos_FullyAssembledOperator.cpp
+  Stokhos_SGOperatorFactory.cpp
+  Stokhos_MeanBasedPreconditioner.cpp
+  Stokhos_ApproxGaussSeidelPreconditioner.cpp
+  Stokhos_ApproxJacobiPreconditioner.cpp
+  Stokhos_GaussSeidelPreconditioner.cpp
+  Stokhos_KroneckerProductPreconditioner.cpp
+  Stokhos_FullyAssembledPreconditioner.cpp
+  Stokhos_SGPreconditionerFactory.cpp
   Stokhos_IfpackPreconditionerFactory.cpp
   Stokhos_MLPreconditionerFactory.cpp
   Stokhos_MLPrecOp.cpp
@@ -150,7 +161,6 @@ SET(SOURCES ${SOURCES}
   Stokhos_SGInverseModelEvaluator.cpp
   Stokhos_PCECovarianceOp.cpp
   Stokhos_PCEAnasaziKL.cpp
-  Stokhos_KLReducedMatrixFreeEpetraOp.cpp
   Stokhos_EpetraMultiVectorOperator.cpp
   )
 

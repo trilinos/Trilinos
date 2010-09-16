@@ -51,7 +51,7 @@
 #include <fstream>
 
 #include "Teuchos_RCP.hpp"
-#include "Stokhos.hpp"
+#include "Stokhos_Epetra.hpp"
 #include "AztecOO.h"
 #include "Epetra_ConfigDefs.h"
 #ifdef HAVE_MPI
@@ -147,8 +147,6 @@ for (int i = 0; i< d; i++){
   ///bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&weight,-weightCut,weightCut,true));
   bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
 }
-
-std::cout << *bases[0] << std::endl;
 
 Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
   Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
@@ -268,16 +266,15 @@ for(int k=1; k<=d; k++) {
 B_k[0]->Scale(1.0/psi_0[0]);
 
 //Construct the implicit operator.
-// Teuchos::RCP<Stokhos::KLMatrixFreeEpetraOp> MatFreeOp = 
-//   Teuchos::rcp(new Stokhos::KLMatrixFreeEpetraOp(BaseMap, StochMap, basis, Cijk, A_k_op.getCoefficients())); 
-Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> MatFreeOp = 
-  Teuchos::rcp(new Stokhos::MatrixFreeEpetraOp(BaseMap, BaseMap, StochMap, StochMap, basis, Cijk, Teuchos::rcp(&A_k_op,false))); 
+Teuchos::RCP<Stokhos::SGOperator> MatFreeOp = 
+//   Teuchos::rcp(new Stokhos::KLMatrixFreeOperator(BaseMap, BaseMap, StochMap, StochMap));
+  Teuchos::rcp(new Stokhos::KLMatrixFreeOperator(BaseMap, BaseMap, StochMap, StochMap));
+MatFreeOp->setupOperator(Teuchos::rcp(&A_k_op,false), Cijk);
 EpetraExt::Epetra_Timed_Operator system(MatFreeOp);
 
 //Construct the RHS vector.
 Epetra_Vector b(*StochMap,true);
 generateRHS(&RHS_function_PC, x, b,basis);
-b.Print(std::cout);
 
 ///////////////////////////////////////////////////////////////////////
 //Construct the mean based preconditioner
@@ -301,7 +298,7 @@ MLList.set("coarse: max size", 200);
 Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec = 
   Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner((*A_k[0]), MLList));
 MLPrec->PrintUnused(0);
-Stokhos::MeanEpetraOp MeanAMGPrecon(BaseMap, StochMap, basis->size(), MLPrec);
+Stokhos::MeanBasedPreconditioner MeanAMGPrecon(BaseMap, StochMap, basis->size(), MLPrec);
 
 //////////////////////////////////////////////////
 //Solve the Linear System.

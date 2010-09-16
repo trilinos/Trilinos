@@ -5,6 +5,8 @@
 #include "Epetra_CrsMatrix.h"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "EpetraExt_BlockVector.h"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 NOX::Epetra::LinearSystemSGJacobi::
 LinearSystemSGJacobi(
@@ -29,8 +31,8 @@ LinearSystemSGJacobi(
   timer(cloneVector.getEpetraVector().Comm()),
   utils(printingParams)
 {
-  stokhos_op = Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(jacPtr, true);
-  sg_J_poly = stokhos_op->getOperatorBlocks();
+  stokhos_op = Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(jacPtr, true);
+  sg_J_poly = stokhos_op->getSGPolynomial();
 }
 
 NOX::Epetra::LinearSystemSGJacobi::
@@ -209,7 +211,7 @@ computeJacobian(const NOX::Epetra::Vector& x)
 {
   bool success = jacInterfacePtr->computeJacobian(x.getEpetraVector(), 
 						  *jacPtr);
-  sg_J_poly = stokhos_op->getOperatorBlocks();
+  sg_J_poly = stokhos_op->getSGPolynomial();
   detsolve->setJacobianOperatorForSolve(sg_J_poly->getCoeffPtr(0));
   return success;
 }
@@ -292,8 +294,8 @@ setJacobianOperatorForSolve(const
       	 Teuchos::RCP<const Epetra_Operator>& solveJacOp)
 {
   jacPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
-  stokhos_op = Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(jacPtr, true);
-  sg_J_poly = stokhos_op->getOperatorBlocks();
+  stokhos_op = Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(jacPtr, true);
+  sg_J_poly = stokhos_op->getSGPolynomial();
   return;
 }
 

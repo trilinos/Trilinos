@@ -53,7 +53,7 @@
 #include "AztecOO.h"
 
 // Stokhos Stochastic Galerkin
-#include "Stokhos.hpp"
+#include "Stokhos_Epetra.hpp"
 
 // Timing utilities
 #include "Teuchos_TimeMonitor.hpp"
@@ -125,21 +125,26 @@ int main(int argc, char *argv[]) {
     // Setup stochastic Galerkin algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::ParameterList& sgOpParams = 
+      sgParams->sublist("SG Operator");
+    Teuchos::ParameterList& sgPrecParams = 
+      sgParams->sublist("SG Preconditioner");
     if (!full_expansion) {
       sgParams->set("Parameter Expansion Type", "Linear");
       sgParams->set("Jacobian Expansion Type", "Linear");
     }
-    sgParams->set("Jacobian Method", "Matrix Free");
-    sgParams->set("Mean Preconditioner Type", "ML");
+    sgOpParams.set("Operator Method", "Matrix Free");
+    sgPrecParams.set("Preconditioner Method", "Mean-based");
+    sgPrecParams.set("Mean Preconditioner Type", "ML");
     Teuchos::ParameterList& precParams = 
-      sgParams->sublist("Preconditioner Parameters");
+      sgPrecParams.sublist("Mean Preconditioner Parameters");
     precParams.set("default values", "SA");
     precParams.set("ML output", 10);
     precParams.set("max levels",5);
     precParams.set("increasing or decreasing","increasing");
     precParams.set("aggregation: type", "Uncoupled");
     precParams.set("smoother: type","ML symmetric Gauss-Seidel");
-    precParams.set("smoother: sweeps",1);
+    precParams.set("smoother: sweeps",2);
     precParams.set("smoother: pre or post", "both");
     precParams.set("coarse: max size", 200);
 #ifdef HAVE_ML_AMESOS
@@ -157,8 +162,6 @@ int main(int argc, char *argv[]) {
     // Create vectors and operators
     Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(1);
     Teuchos::RCP<Epetra_Vector> sg_x = 
-      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_x_map())));
-    Teuchos::RCP<Epetra_Vector> sg_jx = 
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_x_map())));
     *sg_x = *(sg_model->get_x_init());
     Teuchos::RCP<Epetra_Vector> sg_f = 
@@ -188,7 +191,7 @@ int main(int argc, char *argv[]) {
 
     // Setup AztecOO solver
     AztecOO aztec;
-    aztec.SetAztecOption(AZ_solver, AZ_cg);
+    aztec.SetAztecOption(AZ_solver, AZ_gmres);
     aztec.SetAztecOption(AZ_precond, AZ_none);
     aztec.SetAztecOption(AZ_kspace, 20);
     aztec.SetAztecOption(AZ_conv, AZ_r0);
@@ -203,9 +206,6 @@ int main(int argc, char *argv[]) {
 
     // Update x
     sg_x->Update(-1.0, *sg_dx, 1.0);
-   
-    //sg_J->Apply(*sg_x,*sg_jx);
-    std::cout << "sg_x" <<*sg_x << std::endl;
 
     // Compute new residual & response function
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs2 = sg_model->createOutArgs();
@@ -216,60 +216,6 @@ int main(int argc, char *argv[]) {
     // Print initial residual norm
     sg_f->Norm2(&norm_f);
     std::cout << "\nFinal residual norm = " << norm_f << std::endl;
-
-/*
-    Teuchos::RCP<const Epetra_Vector> p = model->get_p_init(0);
-    Teuchos::RCP<Epetra_Vector> x = 
-      Teuchos::rcp(new Epetra_Vector(*(model->get_x_map())));
-    x->PutScalar(0.0);
-    Teuchos::RCP<Epetra_Vector> f = 
-      Teuchos::rcp(new Epetra_Vector(*(model->get_f_map())));
-    Teuchos::RCP<Epetra_Vector> dx = 
-      Teuchos::rcp(new Epetra_Vector(*(model->get_x_map())));
-    Teuchos::RCP<Epetra_Operator> J = model->create_W();
- 
-    EpetraExt::ModelEvaluator::InArgs inArgs = model->createInArgs();
-    EpetraExt::ModelEvaluator::OutArgs outArgs = model->createOutArgs();
-    inArgs.set_p(0, p);
-    inArgs.set_x(x);
-    outArgs.set_f(f);
-    outArgs.set_W(J);
-
-    // Evaluate model
-    model->evalModel(inArgs, outArgs);
-
-    // Print initial residual norm
-    double norm_f;
-    f->Norm2(&norm_f);
-    std::cout << "\nInitial residual norm = " << norm_f << std::endl;
-
-    // Setup AztecOO solver
-    AztecOO aztec;
-    aztec.SetAztecOption(AZ_solver, AZ_cg);
-    aztec.SetAztecOption(AZ_precond, AZ_none);
-    aztec.SetAztecOption(AZ_kspace, 20);
-    aztec.SetAztecOption(AZ_conv, AZ_r0);
-    aztec.SetAztecOption(AZ_output, 1);
-    aztec.SetUserOperator(J.get());
-    //aztec.SetPrecOperator(sg_M.get());
-    aztec.SetLHS(dx.get());
-    aztec.SetRHS(f.get());
-
-    // Solve linear system
-    aztec.Iterate(100, 1e-12);
-
-    // Update x
-    x->Update(-1.0, *dx, 1.0);
-
-    // Compute new residual & response function
-    EpetraExt::ModelEvaluator::OutArgs outArgs2 = model->createOutArgs();
-    outArgs2.set_f(f);
-    model->evalModel(inArgs, outArgs2);
-
-    // Print initial residual norm
-    f->Norm2(&norm_f);
-    std::cout << "\nFinal residual norm = " << norm_f << std::endl;
-  */  
 
     if (norm_f < 1.0e-10)
       std::cout << "Test Passed!" << std::endl;

@@ -28,41 +28,50 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_APPROX_GAUSS_SEIDEL_EPETRA_OP_HPP
-#define STOKHOS_APPROX_GAUSS_SEIDEL_EPETRA_OP_HPP
+#ifndef STOKHOS_APPROX_JACOBI_PRECONDITIONER_HPP
+#define STOKHOS_APPROX_JACOBI_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
 
-#include "Stokhos.hpp"
-
-#include "Epetra_Operator.h"
+#include "Stokhos_SGPreconditioner.hpp"
 #include "Epetra_Map.h"
+#include "Stokhos_PreconditionerFactory.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Stokhos_SGOperator.hpp"
+#include "EpetraExt_BlockMultiVector.h"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing applying one iteration of
-   * approximate Gauss-Seidel.
+   * \brief A stochastic preconditioner based on applying two iterations of
+   * approximate Jacobi.
    */
-  class ApproxGaussSeidelEpetraOp : public Epetra_Operator {
+  class ApproxJacobiPreconditioner : public Stokhos::SGPreconditioner {
       
   public:
 
     //! Constructor 
-  ApproxGaussSeidelEpetraOp(
-    const Teuchos::RCP<const Epetra_Map>& base_map_,
-    const Teuchos::RCP<const Epetra_Map>& sg_map_,
-    unsigned int num_blocks_,
-    const Teuchos::RCP<Epetra_Operator>& mean_prec_op_,
-    const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
-    const Teuchos::RCP<Epetra_Operator>& J,
-    bool symmetric_);
+  ApproxJacobiPreconditioner(
+    const Teuchos::RCP<const Epetra_Map>& base_map,
+    const Teuchos::RCP<const Epetra_Map>& sg_map,
+    const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory,
+    const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
-    virtual ~ApproxGaussSeidelEpetraOp();
+    virtual ~ApproxJacobiPreconditioner();
 
-    void setOperator(const Teuchos::RCP<Epetra_Operator>& J);
-    void setPrecOperator(const Teuchos::RCP<Epetra_Operator>& M);
+    /** \name Stokhos::SGPreconditioner methods */
+    //@{
+
+    //! Setup preconditioner
+    virtual void 
+    setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
+			const Epetra_Vector& x);
+
+    //@}
+
+    /** \name Epetra_Operator methods */
+    //@{
 
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -114,13 +123,15 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    //@}
+
   private:
     
     //! Private to prohibit copying
-    ApproxGaussSeidelEpetraOp(const ApproxGaussSeidelEpetraOp&);
+    ApproxJacobiPreconditioner(const ApproxJacobiPreconditioner&);
     
     //! Private to prohibit copying
-    ApproxGaussSeidelEpetraOp& operator=(const ApproxGaussSeidelEpetraOp&);
+    ApproxJacobiPreconditioner& operator=(const ApproxJacobiPreconditioner&);
     
   protected:
     
@@ -133,32 +144,35 @@ namespace Stokhos {
     //! Stores SG map
     Teuchos::RCP<const Epetra_Map> sg_map;
 
+    //! Stores factory for building mean preconditioner
+    Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory;
+
+    //! Stores mean preconditioner
+    Teuchos::RCP<Epetra_Operator> mean_prec;
+
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Number of blocks
-    unsigned int num_blocks;
+    //! Number of Jacobi iterations
+    int num_iter;
 
-    //! Stores mean preconditioner operator
-    Teuchos::RCP<Epetra_Operator> mean_prec_op;
-
-    //! Pointer to Cijk
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
-
-    //! Use symmetric Gauss-Seidel
-    bool symmetric;
-
-    //! Pointer to the Stokhos matrixfree epetra operator.
-    Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> stokhos_op;
+    //! Pointer to the SG operator.
+    Teuchos::RCP<Stokhos::SGOperator> sg_op;
 
     //! Pointer to the PCE expansion of Jacobian.
-    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_J_poly;
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
 
-    //! Temporary vector for storing matrix-vector products
-    mutable Teuchos::RCP<Epetra_MultiVector> mat_vec_tmp;
+    //! Pointer to triple product
+    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
 
-  }; // class ApproxGaussSeidelEpetraOp
+    //! SG operator to implement SG mat-vec
+    Teuchos::RCP<Stokhos::SGOperator> mat_free_op;
+
+    //! Temporary vector for storing rhs in Gauss-Seidel loop
+    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> rhs_block;
+
+  }; // class ApproxJacobiPreconditioner
   
 } // namespace Stokhos
 
-#endif // STOKHOS_APPROX_GAUSS_SEIDEL_EPETRA_OP_HPP
+#endif // STOKHOS_APPROX_JACOBI_PRECONDITIONER_HPP

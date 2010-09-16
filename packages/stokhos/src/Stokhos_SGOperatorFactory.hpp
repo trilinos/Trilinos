@@ -28,30 +28,49 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_PRECONDITIONER_FACTORY_HPP
-#define STOKHOS_PRECONDITIONER_FACTORY_HPP
+#ifndef STOKHOS_SG_OPERATOR_FACTORY_HPP
+#define STOKHOS_SG_OPERATOR_FACTORY_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "Epetra_Operator.h"
+#include "Teuchos_ParameterList.hpp"
+#include "Stokhos_SGOperator.hpp"
+#include "Epetra_Map.h"
 
 namespace Stokhos {
 
-  //! An abstract class to represent a generic preconditioner factory.
-  class PreconditionerFactory {
+  //! Factory for generating stochastic Galerkin preconditioners
+  class SGOperatorFactory {
   public:
 
     //! Constructor
-    PreconditionerFactory() {}
+    SGOperatorFactory(
+      const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Destructor
-    virtual ~PreconditionerFactory() {}
+    virtual ~SGOperatorFactory() {}
 
-    //! Compute preconditioner operator
-    virtual Teuchos::RCP<Epetra_Operator> 
-    compute(const Teuchos::RCP<Epetra_Operator>& mat) = 0;
+    //! Build preconditioner operator
+    virtual Teuchos::RCP<Stokhos::SGOperator> 
+    build(const Teuchos::RCP<const Epetra_Map>& domain_base_map,
+	  const Teuchos::RCP<const Epetra_Map>& range_base_map,
+	  const Teuchos::RCP<const Epetra_Map>& domain_sg_map,
+	  const Teuchos::RCP<const Epetra_Map>& range_sg_map);
 
-  }; // class PreconditionerFactory
+  private:
+    
+    //! Private to prohibit copying
+    SGOperatorFactory(const SGOperatorFactory&);
+    
+    //! Private to prohibit copying
+    SGOperatorFactory& operator=(const SGOperatorFactory&);
+
+  protected:
+
+    //! Operator parameters
+    Teuchos::RCP<Teuchos::ParameterList> params;
+
+  }; // class SGOperatorFactory
 
 } // namespace Stokhos
 
-#endif // STOKHOS_PRECONDITIONER_FACTORY_HPP
+#endif // STOKHOS_SG_OPERATOR_FACTORY_HPP
