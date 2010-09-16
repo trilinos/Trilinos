@@ -159,6 +159,18 @@ int main(int argc, char *argv[]) {
 	//A.PrintGraphData(cout);
   delete[] Indices;
   
+  int gRID = A.GRID(0);
+  int numIndices = A.NumGlobalIndices(gRID);
+  std::vector<int> indices_vec(numIndices);
+  A.ExtractGlobalRowCopy(gRID, numIndices, numIndices, &indices_vec[0]);
+  A.RemoveGlobalIndices(gRID);
+  EPETRA_TEST_ERR(!(A.NumGlobalIndices(gRID)==0),ierr);
+  if (ierr != 0) cout << "tests FAILED" << std::endl;
+
+  A.InsertGlobalIndices(gRID, numIndices, &indices_vec[0]);
+  EPETRA_TEST_ERR(!(A.NumGlobalIndices(gRID)==numIndices),ierr);
+  if (ierr != 0) cout << "tests FAILED" << std::endl;
+
   // Finish up
   EPETRA_TEST_ERR(!(A.IndicesAreGlobal()),ierr);
   EPETRA_TEST_ERR(!(A.FillComplete()==0),ierr);
@@ -402,6 +414,17 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 	EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
 	if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
+
+	// RemoveMyIndices (#0)
+	if(verbose) cout << "RemoveMyIndices(#0)..." << endl;
+	soleOutput = SoleOwner->RemoveMyIndices(0);
+	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
+
+  EPETRA_TEST_ERR(!(SoleOwner->NumMyIndices(0)==0),ierr);
+  if (ierr != 0) cout << "tests FAILED" << std::endl;
+
+	soleOutput = SoleOwner->InsertMyIndices(0, 2, array1.Values());
+	EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 
 	// SortIndices
 	//if(verbose) cout << "SortIndices..." << endl;

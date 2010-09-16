@@ -565,6 +565,8 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row)
   else
     CrsGraphData_->SortedEntries_[Row].entries_.resize(0);
 
+  CrsGraphData_->NumIndicesPerRow_[Row] = 0;
+
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
   EPETRA_CHK_ERR(ierr);
 
