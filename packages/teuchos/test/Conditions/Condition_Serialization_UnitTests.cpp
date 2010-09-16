@@ -39,7 +39,7 @@ namespace Teuchos{
 /**
  * Test all the conditions
  */
-TEUCHOS_UNIT_TEST(Teuchos_Conditions, testStringCondition){
+TEUCHOS_UNIT_TEST(Teuchos_Conditions, StringConditionSerialization){
   ConditionXMLConverterDB::printKnownConverters(out);
   std::string paramName1 = "string param";
   std::string paramName2 = "string param2";
@@ -73,6 +73,8 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testStringCondition){
   RCP<DependencySheet> depSheet1 = rcp(new DependencySheet);
   depSheet1->addDependency(simpleConDep);
   depSheet1->addDependency(complexConDep);
+
+  writeParameterListToXmlOStream(testList, out, depSheet1);
 
   RCP<DependencySheet> depSheetIn = rcp(new DependencySheet);
   RCP<ParameterList> readinList = 
@@ -114,7 +116,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testStringCondition){
     complexStringCon->getWhenParamEqualsValue());
 }
 
-TEUCHOS_UNIT_TEST(Teuchos_Conditions, testBoolCondition){
+TEUCHOS_UNIT_TEST(Teuchos_Conditions, BoolConditionSerialization){
   ConditionXMLConverterDB::printKnownConverters(out);
   std::string paramName1 = "bool param";
   std::string dependent1Name = "dependent1";
@@ -154,5 +156,66 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testBoolCondition){
     boolCon->getWhenParamEqualsValue());
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Conditions, NumberConditionSerialization, T){
+  ConditionXMLConverterDB::printKnownConverters(out);
+  std::string paramName1 = "bool param";
+  std::string dependent1Name = "dependent1";
+  T paramValue = ScalarTraits< T >::one();
+  std::string dependentValue = "hi there!";
+  ParameterList testList("Condition Test List");
+  testList.set(paramName1, paramValue); 
+  testList.set(dependent1Name, dependentValue);
+  RCP<NumberCondition< T > > numberCon = 
+    rcp(new NumberCondition< T >(testList.getEntryRCP(paramName1)));
+  
+  RCP<ConditionVisualDependency> numberConDep = 
+    rcp(new ConditionVisualDependency(
+      numberCon, 
+      testList.getEntryRCP(dependent1Name)));
+
+  RCP<DependencySheet> depSheet1 = rcp(new DependencySheet);
+  depSheet1->addDependency(numberConDep);
+
+  RCP<DependencySheet> depSheetIn = rcp(new DependencySheet);
+  RCP<ParameterList> readinList = 
+    writeThenReadPL(testList, depSheet1, depSheetIn);
+  
+  RCP<ParameterEntry> readInDependee1 = readinList->getEntryRCP(paramName1);
+
+  RCP<ConditionVisualDependency> simpleReadInDep = 
+    rcp_dynamic_cast<ConditionVisualDependency>(
+      *(depSheetIn->getDependenciesForParameter(readInDependee1)->begin()));
+  TEST_EQUALITY(
+    simpleReadInDep->getCondition()->getTypeAttributeValue(),
+    DummyObjectGetter<NumberCondition< T > >::getDummyObject()->getTypeAttributeValue());
+  RCP<const NumberCondition< T > > simpleReadInCon = 
+    rcp_dynamic_cast<const NumberCondition< T > >(simpleReadInDep->getCondition());
+
+  TEST_EQUALITY(
+    simpleReadInCon->getWhenParamEqualsValue(), 
+    numberCon->getWhenParamEqualsValue());
+}
+
+#define NUMBER_PARAM_TYPE_TEST( T ) \
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Conditions, NumberConditionSerialization, T )
+
+typedef unsigned int uint;
+typedef unsigned short ushort;
+typedef unsigned long ulong;
+
+NUMBER_PARAM_TYPE_TEST(int)
+NUMBER_PARAM_TYPE_TEST(uint)
+NUMBER_PARAM_TYPE_TEST(short)
+NUMBER_PARAM_TYPE_TEST(ushort)
+NUMBER_PARAM_TYPE_TEST(long)
+NUMBER_PARAM_TYPE_TEST(ulong)
+NUMBER_PARAM_TYPE_TEST(float)
+NUMBER_PARAM_TYPE_TEST(double)
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+typedef long long int llint;
+typedef unsigned long long int ullint;
+NUMBER_PARAM_TYPE_TEST(llint)
+NUMBER_PARAM_TYPE_TEST(ullint)
+#endif
 
 } // namespace Teuchos

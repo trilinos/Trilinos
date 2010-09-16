@@ -213,7 +213,7 @@ private:
   //@{
  
   static const std::string& getParameterEntryIDAttributeName(){
-    static const std::string parameterNameAttributeName = "id";
+    static const std::string parameterNameAttributeName = "parameterId";
     return parameterNameAttributeName;
   }
 
