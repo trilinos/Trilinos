@@ -251,7 +251,15 @@ own.
 (*) [CMake] [P4] Improve BLAS library detection.  Brad said there is a BLAS
 finding macro that we are currently not using.  It would also be nice if the
 BLAS finding capability could handle finding library dependencies of BLAS
-(e.g. -lgfortran for static Atlas installations).  
+(e.g. -lgfortran for static Atlas installations).  It would also be nice if we
+could automatically detect the name mangling for the BLAS and LAPACK libraries
+independently from the detection of name mangling for the configured Fortran
+compiler.  Bascially, you would use the same strategy as with the Fortran
+compiler name mangling detection which is to just try out a bunch of
+combinations until you find something that works.  To be really safe, you
+should also try to run a test problem that calls a BLAS and LAPACK routine to
+see if it worked.  Also, really BLAS and LAPACK can be seprate libraries so we
+should have seprate logic for each.  What a pain.
 
 
 
