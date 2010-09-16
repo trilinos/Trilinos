@@ -115,6 +115,43 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testStringCondition){
 }
 
 TEUCHOS_UNIT_TEST(Teuchos_Conditions, testBoolCondition){
+  ConditionXMLConverterDB::printKnownConverters(out);
+  std::string paramName1 = "bool param";
+  std::string dependent1Name = "dependent1";
+  bool paramValue = true;
+  std::string dependentValue = "hi there!";
+  ParameterList testList("Condition Test List");
+  testList.set(paramName1, paramValue); 
+  testList.set(dependent1Name, dependentValue);
+  RCP<BoolCondition> boolCon = 
+    rcp(new BoolCondition(testList.getEntryRCP(paramName1)));
+  
+  RCP<ConditionVisualDependency> boolConDep = 
+    rcp(new ConditionVisualDependency(
+      boolCon, 
+      testList.getEntryRCP(dependent1Name)));
+
+  RCP<DependencySheet> depSheet1 = rcp(new DependencySheet);
+  depSheet1->addDependency(boolConDep);
+
+  RCP<DependencySheet> depSheetIn = rcp(new DependencySheet);
+  RCP<ParameterList> readinList = 
+    writeThenReadPL(testList, depSheet1, depSheetIn);
+  
+  RCP<ParameterEntry> readInDependee1 = readinList->getEntryRCP(paramName1);
+
+  RCP<ConditionVisualDependency> simpleReadInDep = 
+    rcp_dynamic_cast<ConditionVisualDependency>(
+      *(depSheetIn->getDependenciesForParameter(readInDependee1)->begin()));
+  TEST_EQUALITY(
+    simpleReadInDep->getCondition()->getTypeAttributeValue(),
+    DummyObjectGetter<BoolCondition>::getDummyObject()->getTypeAttributeValue());
+  RCP<const BoolCondition> simpleReadInCon = 
+    rcp_dynamic_cast<const BoolCondition>(simpleReadInDep->getCondition());
+
+  TEST_EQUALITY(
+    simpleReadInCon->getWhenParamEqualsValue(), 
+    boolCon->getWhenParamEqualsValue());
 }
 
 
