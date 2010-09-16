@@ -85,6 +85,11 @@ template< class FieldType > struct FieldTraits ;
 typedef unsigned EntityRank ;
 typedef uint64_t EntityId ;
 
+// Base Entity Rank 
+// Note:  This BaseEntityRank can be considered the leaf of a tree and it
+// represents the furthest out you can go in downward relations.
+enum { BaseEntityRank = EntityRank(0) };
+
 
 typedef unsigned Ordinal;
 typedef Ordinal PartOrdinal;

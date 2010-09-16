@@ -26,6 +26,7 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
+#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 
@@ -200,7 +201,7 @@ bool verify_elem_node_coord_3(
   const unsigned node_count )
 {
   bool result = true;
-  mesh::PairIterRelation rel = elem.relations( BaseEntityRank );
+  mesh::PairIterRelation rel = elem.relations( NodeRank );
 
   if( (unsigned) rel.size() != node_count ) {
     std::cerr << "Error!  relation size == " << rel.size() << " != "

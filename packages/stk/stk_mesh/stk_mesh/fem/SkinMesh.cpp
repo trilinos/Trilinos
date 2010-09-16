@@ -9,6 +9,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Types.hpp>
 
+#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -51,7 +52,7 @@ void get_elem_side_nodes( const Entity & elem,
 
   const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
 
-  PairIterRelation relations = elem.relations( BaseEntityRank );
+  PairIterRelation relations = elem.relations( NodeRank );
 
   // Find positive polarity permutation that starts with lowest entity id:
   // We're using this as the unique key in a map for a side.

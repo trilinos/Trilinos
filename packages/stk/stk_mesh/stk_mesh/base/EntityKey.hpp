@@ -17,6 +17,9 @@
 namespace stk {
 namespace mesh {
 
+
+// Note:  EntityRank and EntityId typedefs are defined in Types.hpp
+
 /** \addtogroup stk_mesh_module
  * \{
  */

@@ -22,6 +22,7 @@
 #include <stk_mesh/base/EntityComm.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
@@ -95,7 +96,7 @@ void find_owned_nodes_with_relations_outside_closure(
   nodes.clear();
 
   //the closure is a sorted unique vector
-  const stk::mesh::EntityRank upward_rank = stk::mesh::BaseEntityRank + 1;
+  const stk::mesh::EntityRank upward_rank = stk::mesh::NodeRank + 1;
   stk::mesh::EntityVector::iterator node_end = std::lower_bound(closure.begin(),
       closure.end(),
       stk::mesh::EntityKey(upward_rank, 0),
@@ -273,7 +274,7 @@ void separate_and_skin_mesh(
 
   //ask for new nodes to represent the copies
   std::vector<size_t> requests(meta.entity_rank_count(), 0);
-  requests[stk::mesh::BaseEntityRank] = nodes.size();
+  requests[stk::mesh::NodeRank] = nodes.size();
 
   mesh.modification_begin();
 

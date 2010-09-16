@@ -25,6 +25,7 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
+#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 
@@ -259,7 +260,7 @@ bool verify_elem_node_coord_4(
   const unsigned node_count )
 {
   bool result = true;
-  PairIterRelation rel = elem.relations( BaseEntityRank );
+  PairIterRelation rel = elem.relations( NodeRank );
 
   if ( (unsigned) rel.size() != node_count ) {
     std::cerr << "Error!" << std::endl;
@@ -344,7 +345,7 @@ bool verify_elem_side_node( const stk::mesh::EntityId * const elem_nodes ,
   const CellTopologyData * const side_top = elem_top->side[ local_side ].topology ;
   const unsigned         * const side_node_map = elem_top->side[ local_side ].node ;
 
-  const mesh::PairIterRelation rel = side.relations( BaseEntityRank );
+  const mesh::PairIterRelation rel = side.relations( NodeRank );
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
 
@@ -366,7 +367,7 @@ bool verify_boundary_field_data( const BulkData & mesh ,
 
   unsigned num_side_nodes = 0 ;
 
-  const std::vector<Bucket*> & buckets = mesh.buckets( BaseEntityRank );
+  const std::vector<Bucket*> & buckets = mesh.buckets( NodeRank );
 
   for ( std::vector<Bucket*>::const_iterator
       k = buckets.begin() ; k != buckets.end() ; ++k ) {
@@ -448,7 +449,7 @@ bool verify_pressure_velocity_stencil(
             i = bucket.begin() ; i != bucket.end() ; ++i ) {
         Entity & elem = *i ;
 
-        PairIterRelation rel = elem.relations( BaseEntityRank );
+        PairIterRelation rel = elem.relations( NodeRank );
 
         if ( (unsigned) rel.size() != (unsigned) element_traits::node_count ) {
           std::cerr << "Error!" << std::endl;

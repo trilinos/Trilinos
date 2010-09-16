@@ -15,6 +15,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
 
@@ -48,7 +49,7 @@ void boundary_analysis(const BulkData& bulk_data,
     }
 
     unsigned subcell_rank = closure_rank - 1;
-    PairIterRelation relations = curr_entity.relations(BaseEntityRank);
+    PairIterRelation relations = curr_entity.relations(NodeRank);
 
     // iterate over the subcells of the current entity
     for (unsigned nitr = 0; nitr < celltopology->subcell_count[subcell_rank]; ++nitr) {
@@ -166,7 +167,7 @@ void get_adjacent_entities( const Entity & entity ,
   std::vector<Entity*> side_node_entities;
   side_node_entities.reserve(num_nodes_in_side);
   {
-    PairIterRelation irel = entity.relations(BaseEntityRank);
+    PairIterRelation irel = entity.relations(NodeRank);
     for (int itr = num_nodes_in_side; itr > 0; ) {
       --itr;
       side_node_entities.push_back(irel[side_node_local_ids[itr]].entity());
@@ -176,7 +177,7 @@ void get_adjacent_entities( const Entity & entity ,
   // Get the node entities for the nodes that make up the entity
   std::vector<Entity*> entity_nodes;
   {
-    PairIterRelation irel = entity.relations(BaseEntityRank);
+    PairIterRelation irel = entity.relations(NodeRank);
     entity_nodes.reserve(irel.size());
     for ( ; !irel.empty(); ++irel ) {
       entity_nodes.push_back(irel->entity());
@@ -200,7 +201,7 @@ void get_adjacent_entities( const Entity & entity ,
   std::vector<Entity*>::iterator itr = elements.begin();
   while ( itr != elements.end() ) {
     Entity * current_entity = *itr;
-    PairIterRelation relations = current_entity->relations(BaseEntityRank);
+    PairIterRelation relations = current_entity->relations(NodeRank);
 
     if (current_entity == &entity) {
       // We do not want to be adjacent to ourself

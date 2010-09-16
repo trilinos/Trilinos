@@ -20,6 +20,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
@@ -39,7 +40,11 @@ void verify_declare_element_side(
     )
 {
   static const char method[] = "stk::mesh::declare_element_side" ;
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   const CellTopologyData * const side_top =
     ( elem_top && local_side_id < elem_top->side_count )
@@ -96,7 +101,11 @@ Entity & declare_element_side(
 
   verify_declare_element_side(mesh, elem, local_side_id);
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if (elem_top == NULL) {
     std::ostringstream msg ;
@@ -126,7 +135,7 @@ Entity & declare_element_side(
 
   mesh.declare_relation( elem , side , local_side_id );
 
-  PairIterRelation rel = elem.relations( BaseEntityRank );
+  PairIterRelation rel = elem.relations( NodeRank );
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
     Entity & node = * rel[ side_node_map[i] ].entity();
@@ -148,7 +157,11 @@ Entity & declare_element_side(
   static const char method[] = "stk::mesh::declare_element_side" ;
   verify_declare_element_side(mesh, elem, local_side_id);
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if (elem_top == NULL) {
     std::ostringstream msg ;
@@ -184,11 +197,14 @@ bool element_side_polarity( const Entity & elem ,
 
   // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
   // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a TopologicalMetaData off of MetaData or we need to take one on input.
-  //const TopologicalMetaData& top_data = *elem.bucket().mesh().mesh_meta_data().get_attribute<TopologicalMetaData>();
-  //const bool is_side = side.entity_rank() != top_data.edge_rank;
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const bool is_side = side.entity_rank() != Edge;
-
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const TopologicalMetaData& top_data = *elem.bucket().mesh().mesh_meta_data().get_attribute<TopologicalMetaData>();
+  const bool is_side = side.entity_rank() != top_data.edge_rank;
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   const unsigned side_count = ! elem_top ? 0 : (
                                 is_side ? elem_top->side_count
@@ -221,8 +237,8 @@ bool element_side_polarity( const Entity & elem ,
     is_side ? elem_top->side[ local_side_id ].node
             : elem_top->edge[ local_side_id ].node ;
 
-  const PairIterRelation elem_nodes = elem.relations( BaseEntityRank );
-  const PairIterRelation side_nodes = side.relations( BaseEntityRank );
+  const PairIterRelation elem_nodes = elem.relations( NodeRank );
+  const PairIterRelation side_nodes = side.relations( NodeRank );
 
   bool good = true ;
   for ( unsigned j = 0 ; good && j < side_top->node_count ; ++j ) {
@@ -238,13 +254,17 @@ int element_local_side_id( const Entity & elem ,
 {
 
   // get topology of elem
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData* elem_topology = get_cell_topology(elem);
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData* elem_topology = TopologicalMetaData::get_cell_topology(elem);
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   if (elem_topology == NULL) {
     return -1;
   }
 
   // get nodal relations for elem
-  PairIterRelation relations = elem.relations(BaseEntityRank);
+  PairIterRelation relations = elem.relations(NodeRank);
 
   const unsigned subcell_rank = elem_topology->dimension - 1;
 

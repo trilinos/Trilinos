@@ -12,16 +12,10 @@
 #include <Shards_CellTopologyData.h>
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/FEMTypes.hpp>
 
 namespace stk {
 namespace mesh {
-
-// Base Entity Rank (also known as "Node") 
-// This identifier is used without a TopologicalMetaData at times and so it
-// needs to be accessible here.
-// Note:  This BaseEntityRank can be considered the leaf of a tree and it
-// represents the furthest out you can go in downward relations.
-enum { BaseEntityRank = EntityRank(0) };
 
 
 //----------------------------------------------------------------------------
@@ -105,15 +99,8 @@ public:
   //throws if not found
   EntityRank get_entity_rank( const CellTopologyData * ) const ;
 
-  // TODO:  Move to private block after refactoring is finished.
-  void internal_set_cell_topology( 
-      Part & part, 
-      unsigned entity_rank, 
-      const CellTopologyData * top
-      );
-
 private:
-
+ 
   // Base meta data to which this topological meta data is attached.
   MetaData & m_meta_data ;
 
@@ -128,6 +115,14 @@ private:
   const CellTopologyData * internal_get_cell_topology( unsigned part_ordinal) const ;
 
   void internal_set_entity_rank( const CellTopologyData * , EntityRank );
+  
+  // Set sell topology internally, to be used only from declare_part
+  void internal_set_cell_topology( 
+      Part & part, 
+      unsigned entity_rank, 
+      const CellTopologyData * top
+      );
+
 
   void throw_ambiguous( const Part & ) const ;
   void throw_ambiguous( const Bucket & ) const ;

@@ -10,6 +10,8 @@
  * @author H. Carter Edwards
  */
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
 #include <algorithm>
 #include <stdexcept>
 #include <sstream>
@@ -150,3 +152,4 @@ const CellTopologyData * get_cell_topology( const Entity & entity )
 }// namespace mesh
 }// namespace stk
 
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS

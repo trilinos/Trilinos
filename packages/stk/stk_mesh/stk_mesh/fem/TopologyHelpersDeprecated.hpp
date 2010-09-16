@@ -9,6 +9,60 @@
 #ifndef stk_mesh_TopologyHelpersDeprecated_hpp
 #define stk_mesh_TopologyHelpersDeprecated_hpp
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
+// Migration to new Finite Element Mesh Cell Topology
+//
+// To turn off all the deprecated code:
+//   *  Enable the following ifdef: SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+//   *  This can be enabled in Sierra with the following bake command:
+//      bake stk_mesh -- cxxflags="-DSKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS"
+//
+// Wherever you call set_cell_topology:
+//   *  #include<stk_mesh/fem/TopologicalMetaData.hpp>
+//   *  Instantiate a TopologicalMetaData with MetaData and the spatial dimension
+//   *  Call TopologicalMetaData.declare_part<shards::CELL_TOPOLOGY>("name")
+//      which will declare the part and set the cell topology.
+// Wherever you call get_cell_topology(...):
+//   *  Call the static function:  TopologicalMetaData::get_cell_topology(...)
+// Wherever you #include<stk_mesh/fem/FieldDeclarations.hpp>,
+//   *  Copy these functions out into your own application and stop #including this file
+// Wherever you #include<stk_mesh/fem/FieldTraits.hpp> (note:  fem, NOT base):
+//   *  Change the #include to #include<stk_mesh/fem/CoordinateSystems.hpp>
+//
+
+// Note the following information about the changes:
+//   *  EntityRank has been changed from a compile time enum to a runtime
+//      value.
+//   *  Part rank consistency with cell topology dimension is now enforced at
+//      construction.
+//   *  TopologyHelpers used to provide set_cell_topology and
+//      get_cell_topology.  These are now provided by TopologicalMetaData.
+//   *  The mechanism for storing cell topology on parts has changed.
+//      Previously, the cell topology was stored on each part.  Now it is stored
+//      as a map in the TopologicalMetaData which is stored as an attribute on
+//      MetaData.
+//   *  Previously, get_cell_topology was a free function, it is now a static
+//      function on TopologicalMetaData.
+//   *  Previously, set_cell_topology was a free function, it is now a regular
+//      member function on TopologicalMetaData, which means you'll have to create
+//      one of these objects in order to set cell topology on a part.
+//   *  Previously, cell topologies were set on parts after the part was
+//      declared.  Now, you must construct a part with a cell topology through
+//      TopologicalMetaData.
+//   *  stk_mesh/fem/FieldDeclarations.hpp is now deprecated due to its tight
+//      coupling to specific application domains.  If you use any of these
+//      functions, we advise you to copy them out into your own application
+//      namespace.  They are very simple convenience wrappers around
+//      stk::mesh::put_field.
+//   *  stk_mesh/fem/FieldTraits.hpp is changing name to
+//      stk_mesh/fem/CoordinateSystems.hpp and the FieldTraits file will remain
+//      for one Trilinos release.
+//   *  Note:  The Trilinos release after 10.6, presumably 10.8, mark when we
+//      will delete the deprecated functionality.
+//      stk_mesh/fem/FieldDeclarations.hpp and stk_mesh/fem/FieldTraits.hpp will
+//      also be removed at this time.
+
 #include <sstream>
 #include <stdexcept>
 #include <Shards_CellTopologyTraits.hpp>
@@ -17,8 +71,10 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
 
+
 namespace stk {
 namespace mesh {
+
 
 /** \addtogroup stk_mesh_bulk_data_element
  *  \{
@@ -73,8 +129,11 @@ EntityRank element_rank_deprecated(const MetaData & meta)
 
 /** \} */
 
+
 }//namespace mesh
 }//namespace stk
+
+#endif //  SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
 #endif // stk_mesh_TopologyHelpersDeprecated_hpp
 

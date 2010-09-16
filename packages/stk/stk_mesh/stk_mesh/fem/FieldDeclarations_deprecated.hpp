@@ -8,6 +8,8 @@
 #ifndef stk_mesh_FieldDeclarations_deprecated_hpp
 #define stk_mesh_FieldDeclarations_deprecated_hpp
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
@@ -390,4 +392,6 @@ declare_symmetric_tensor_field_on_all_elements(
 } // namespace mesh
 }
 
-#endif
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
+#endif // stk_mesh_FieldDeclarations_deprecated_hpp
