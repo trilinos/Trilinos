@@ -73,8 +73,9 @@ namespace TSQR {
 	  numRows (1000),
 	  numCols (10),  
 	  numTrials (10),
+	  testReal (true),
 #ifdef HAVE_TSQR_COMPLEX
-	  testComplex (true),
+	  testComplex (false),
 #endif // HAVE_TSQR_COMPLEX
 	  cacheBlockSize (0),
 	  contiguousCacheBlocks (false),
@@ -84,6 +85,7 @@ namespace TSQR {
 
 	bool verify, benchmark;
 	int numCores, numRows, numCols, numTrials;
+	bool testReal;
 #ifdef HAVE_TSQR_COMPLEX
 	bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
@@ -100,20 +102,23 @@ namespace TSQR {
 	using std::complex;
 #endif // HAVE_TSQR_COMPLEX
 
-	benchmarkTbbTsqr< int, float > (params.numTrials, 
-					params.numRows, 
-					params.numCols, 
-					params.numCores,
-					params.cacheBlockSize,
-					params.contiguousCacheBlocks,
-					params.humanReadable);
-	benchmarkTbbTsqr< int, double > (params.numTrials, 
-					 params.numRows, 
-					 params.numCols, 
-					 params.numCores,
-					 params.cacheBlockSize,
-					 params.contiguousCacheBlocks,
-					 params.humanReadable);
+	if (params.testReal)
+	  {
+	    benchmarkTbbTsqr< int, float > (params.numTrials, 
+					    params.numRows, 
+					    params.numCols, 
+					    params.numCores,
+					    params.cacheBlockSize,
+					    params.contiguousCacheBlocks,
+					    params.humanReadable);
+	    benchmarkTbbTsqr< int, double > (params.numTrials, 
+					     params.numRows, 
+					     params.numCols, 
+					     params.numCores,
+					     params.cacheBlockSize,
+					     params.contiguousCacheBlocks,
+					     params.humanReadable);
+	  }
 #ifdef HAVE_TSQR_COMPLEX
 	if (params.testComplex)
 	  {
@@ -145,35 +150,43 @@ namespace TSQR {
 #endif // HAVE_TSQR_COMPLEX
 
 	std::vector<int> seed(4);
-	{
-	  TSQR::Random::NormalGenerator< int, float > gen;
-	  verifyTbbTsqr< int, float > (gen, 
-				       params.numRows, 
-				       params.numCols, 
-				       params.numCores, 
-				       params.cacheBlockSize,
-				       params.contiguousCacheBlocks,
-				       params.humanReadable,
-				       params.debug);
-	  gen.getSeed (seed);
-	}
-	{
-	  TSQR::Random::NormalGenerator< int, double > gen (seed);
-	  verifyTbbTsqr< int, double > (gen, 
-					params.numRows, 
-					params.numCols, 
-					params.numCores, 
-					params.cacheBlockSize,
-					params.contiguousCacheBlocks,
-					params.humanReadable,
-					params.debug);
-	  gen.getSeed (seed);
-	}
+	seed[0] = 0;
+	seed[1] = 0;
+	seed[2] = 0;
+	seed[3] = 1;
+
+	if (params.testReal)
+	  {
+	    {
+	      TSQR::Random::NormalGenerator< int, float > gen (seed);
+	      verifyTbbTsqr< int, float > (gen, 
+					   params.numRows, 
+					   params.numCols, 
+					   params.numCores, 
+					   params.cacheBlockSize,
+					   params.contiguousCacheBlocks,
+					   params.humanReadable,
+					   params.debug);
+	      gen.getSeed (seed);
+	    }
+	    {
+	      TSQR::Random::NormalGenerator< int, double > gen (seed);
+	      verifyTbbTsqr< int, double > (gen, 
+					    params.numRows, 
+					    params.numCols, 
+					    params.numCores, 
+					    params.cacheBlockSize,
+					    params.contiguousCacheBlocks,
+					    params.humanReadable,
+					    params.debug);
+	      gen.getSeed (seed);
+	    }
+	  } // if (params.testReal)
 #ifdef HAVE_TSQR_COMPLEX
 	if (params.testComplex)
 	  {
 	    {
-	      TSQR::Random::NormalGenerator< int, complex<float> > gen;
+	      TSQR::Random::NormalGenerator< int, complex<float> > gen (seed);
 	      verifyTbbTsqr< int, complex<float> > (gen, 
 						    params.numRows, 
 						    params.numCols, 
@@ -254,11 +267,15 @@ namespace TSQR {
 	  cmdLineProc.setOption ("ntrials", 
 				 &params.numTrials, 
 				 "Number of trials (only used when \"--benchmark\"");
+	  cmdLineProc.setOption ("real", 
+				 "noreal",
+				 &params.testReal,
+				 "Test real arithmetic");
 #ifdef HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("complex", 
 				 "nocomplex",
 				 &params.testComplex,
-				 "Test complex arithmetic, as well as real");
+				 "Test complex arithmetic");
 #endif // HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("ncores", 
 				 &params.numCores,
@@ -361,12 +378,11 @@ main (int argc, char *argv[])
     {
       using std::endl;
 
-      if (params.benchmark)
-	TSQR::Trilinos::Test::benchmark (params);
-
       // We allow the same run to do both benchmark and verify.
       if (params.verify)
 	TSQR::Trilinos::Test::verify (params);
+      if (params.benchmark)
+	TSQR::Trilinos::Test::benchmark (params);
 
       // The Trilinos test framework expects a message like this.
       // Obviously we haven't tested anything, but eventually we
