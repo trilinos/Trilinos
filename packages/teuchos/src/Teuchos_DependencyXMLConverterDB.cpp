@@ -188,6 +188,12 @@ DependencyXMLConverterDB::getConverterMap()
         DummyObjectGetter<BoolVisualDependency>::
           getDummyObject()->getTypeAttributeValue(), 
         rcp(new BoolVisualDependencyXMLConverter)));
+
+    masterMap.insert(
+      ConverterPair(
+        DummyObjectGetter<ConditionVisualDependency>::
+          getDummyObject()->getTypeAttributeValue(), 
+        rcp(new ConditionVisualDependencyXMLConverter)));
   }
   return masterMap;
 }

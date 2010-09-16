@@ -39,6 +39,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StandardFunctionObjects.hpp"
 #include "Teuchos_DummyObjectGetter.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 
 namespace Teuchos{
@@ -270,9 +271,10 @@ public:
   */
   static RCP<StringCondition > getDummyObject() {
     static RCP<StringCondition> dummyObject;
+    static std::string dummyString = "";
     if(dummyObject.is_null()){
       dummyObject = rcp(new StringCondition(
-        DummyObjectGetter<ParameterEntry>::getDummyObject(),""));
+        rcp(new ParameterEntry(dummyString)),""));
     }
     return dummyObject;
   }
@@ -319,9 +321,7 @@ public:
     bool whenParamEqualsValue=true):
     ParameterCondition(parameter, whenParamEqualsValue), 
     func_(func)
-  {
-    checkForNumberType();
-  }
+  {}
 
   virtual ~NumberCondition(){}
   
@@ -331,7 +331,7 @@ public:
   //@{
 
   std::string getTypeAttributeValue() const{
-    return TypeNameTraits<T>::name() + "NumberCondition";
+    return "NumberCondition<" + TypeNameTraits<T>::name() + ">";
   }
   
   //@}
@@ -371,22 +371,6 @@ private:
     else
       return argument;
   }  
-
-  /** \brief Checks to make sure the given parameter is a 
-   * number type
-   */
-  void checkForNumberType() const{
-  RCP<const ParameterEntry> toCheck = getParameter();
-    TEST_FOR_EXCEPTION(
-      !toCheck->isType<int>() &&
-      !toCheck->isType<short>() &&
-      !toCheck->isType<double>() &&
-      !toCheck->isType<float>(),
-      InvalidConditionException,
-      "The parameter of a Number Condition "
-      "must be of a supported number type!" << std::endl <<
-      "Actual Parameter type: " << getParameter()->getAny().typeName() );
-  }
   
   //@}
 
@@ -413,7 +397,7 @@ public:
     static RCP<NumberCondition<T> > dummyObject;
     if(dummyObject.is_null()){
       dummyObject = rcp(new NumberCondition<T>(
-        DummyObjectGetter<ParameterEntry>::getDummyObject()));
+        rcp(new ParameterEntry(ScalarTraits<T>::zero()))));
     }
     return dummyObject;
   }
@@ -491,8 +475,7 @@ public:
   static RCP<BoolCondition > getDummyObject(){
     static RCP<BoolCondition> dummyObject;
     if(dummyObject.is_null()){
-      dummyObject = rcp(new BoolCondition(
-        DummyObjectGetter<ParameterEntry>::getDummyObject()));
+      dummyObject = rcp(new BoolCondition(rcp(new ParameterEntry(true))));
     }
     return dummyObject;
   }

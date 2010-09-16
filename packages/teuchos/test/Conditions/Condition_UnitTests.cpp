@@ -241,7 +241,6 @@ TEUCHOS_UNIT_TEST(Teuchos_Conditions, testConditionException){
 
 	TEST_THROW(BoolCondition boolCon1(testingList->getEntryRCP("bool param")), InvalidConditionException);
 	TEST_THROW(StringCondition stringCon1(testingList->getEntryRCP("double param"), "coke"), InvalidConditionException);
-	TEST_THROW(NumberCondition<double> doubleCon1(testingList->getEntryRCP("string param")), InvalidConditionException);
 	TEST_THROW(BoolCondition boolCon1(testingList->getEntryRCP("double param")), InvalidConditionException);
 	Condition::ConstConditionList conList1;
 	TEST_THROW(AndCondition andCon1(conList1), InvalidConditionException);

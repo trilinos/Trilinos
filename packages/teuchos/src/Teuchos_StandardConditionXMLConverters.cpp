@@ -185,6 +185,7 @@ void StringConditionConverter::addSpecificXMLTraits(
     stringTag.addAttribute(getStringValueAttributeName(), *it);
     valueTag.addChild(stringTag);
   }
+  xmlObj.addChild(valueTag);
 }
  
 RCP<ParameterCondition> 
