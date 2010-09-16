@@ -902,6 +902,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
   */
   int RemoveRedundantIndices();
+  int DetermineTriangular();
 
   //! If RemoveRedundantIndices() has been called, this query returns true, otherwise it returns false.
   bool NoRedundancies() const {return(CrsGraphData_->NoRedundancies_);}

@@ -718,6 +718,7 @@ int Epetra_CrsGraph::FillComplete(const Epetra_BlockMap& DomainMap, const Epetra
   MakeIndicesLocal(DomainMap, RangeMap); // Convert indices to zero based on each processor
   SortIndices();  // Sort column entries from smallest to largest
   RemoveRedundantIndices(); // Get rid of any redundant index values
+  DetermineTriangular(); //determine if lower/upper triangular
   CrsGraphData_->MakeImportExport(); // Build Import or Export objects
   ComputeGlobalConstants(); // Compute constants that require communication
   SetFilled(true);
@@ -982,7 +983,7 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
     int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
     for(int i=0; i<numMyBlockRows; ++i) {
       int NumIndices = numIndicesPerRow[i];
-      int* const col_indices = Indices(i);
+      int* col_indices = this->Indices(i);
   
       if(NumIndices > 1) {
         epetra_crsgraph_compress_out_duplicates(NumIndices, col_indices,
@@ -992,7 +993,7 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
       if (!CrsGraphData_->StaticProfile_) {
         CrsGraphData_->SortedEntries_[i].entries_.assign(col_indices, col_indices+numIndicesPerRow[i]);
         if (numIndicesPerRow[i] > 0) {
-          CrsGraphData_->Indices_[i] = &CrsGraphData_->SortedEntries_[i].entries_[0];
+          CrsGraphData_->Indices_[i] = &(CrsGraphData_->SortedEntries_[i].entries_[0]);
         }
         else {
           CrsGraphData_->Indices_[i] = NULL;
@@ -1002,20 +1003,31 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   }
 
   SetNoRedundancies(true);
+  return 0;
+}
 
+int Epetra_CrsGraph::DetermineTriangular()
+{
   // determine if graph is upper or lower triangular or has no diagonal
   
+  if(!Sorted())
+    EPETRA_CHK_ERR(-1);  // Must have sorted index set
+  if(IndicesAreGlobal()) 
+    EPETRA_CHK_ERR(-2); // Indices must be local
+
   CrsGraphData_->NumMyDiagonals_ = 0;
   CrsGraphData_->NumMyBlockDiagonals_ = 0;
 
   const Epetra_BlockMap& rowMap = RowMap();
   const Epetra_BlockMap& colMap = ColMap();
 
+  const int numMyBlockRows = NumMyBlockRows();
+
   for(int i = 0; i < numMyBlockRows; i++) {
     int NumIndices = NumMyIndices(i);
     if(NumIndices > 0) {
       int ig = rowMap.GID(i);
-      int* const col_indices = Indices(i);
+      int* col_indices = this->Indices(i);
 
       int jl_0 = col_indices[0];
       int jl_n = col_indices[NumIndices-1];
