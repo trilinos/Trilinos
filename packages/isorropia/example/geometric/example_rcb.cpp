@@ -39,6 +39,9 @@
 //
 // There are a few other coordinate files in the test/geometric directory.
 
+#include <sys/types.h>
+#include <unistd.h>
+
 #include <Isorropia_ConfigDefs.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
