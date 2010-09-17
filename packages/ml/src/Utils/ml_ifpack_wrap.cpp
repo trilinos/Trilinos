@@ -33,14 +33,14 @@ static map<void*, bool> MemoryManager;
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
                   Teuchos::ParameterList& List, 
                   const Epetra_Comm& Comm, 
-                  Ifpack_Handle_Type ** Ifpack_Handle, int force_crs);
+                  Ifpack_Handle_Type ** Ifpack_Handle);
 
 // ====================================================================== 
 // MS // This does not work yet with ML_ALL_LEVELS
 int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
                            int nl, int pre_or_post,
                            void *iList,
-                           void *iComm, int force_crs)
+                           void *iComm)
 {
 
    int (*fun)(ML_Smoother *, int, double *, int, double *);
@@ -59,7 +59,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
 
    /* Creates IFPACK objects */
    Ifpack_Handle = (Ifpack_Handle_Type *) ML_allocate(sizeof(Ifpack_Handle_Type));
-   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle,force_crs); 
+   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle); 
    assert (status == 0); 
 
    /* This is only used to control the factorization sweeps. I believe */
@@ -115,7 +115,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
                   Teuchos::ParameterList& List, 
                   const Epetra_Comm& Comm, 
-                  Ifpack_Handle_Type ** Ifpack_Handle, int force_crs)
+                  Ifpack_Handle_Type ** Ifpack_Handle)
 {
 # ifdef ML_MPI
   MPI_Comm  ifpackComm;
@@ -124,6 +124,7 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 # endif
   ML_Operator *Ke = &(ml->Amat[curr_level]);
   int hasRows=1;
+  bool use_crs=false;
 
 
   Epetra_RowMatrix* Ifpack_Matrix;
@@ -135,6 +136,8 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
   force_crs=1;
 #endif
 
+  printf("Building preconditioner %s on level %d\n",Type,curr_level);
+  fflush(stdout);//CMS
 
   (*Ifpack_Handle)->freeMpiComm = 0;
 
@@ -166,8 +169,15 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
     MPI_Comm_split(Ke->comm->USR_comm,hasRows,Ke->comm->ML_mypid,&ifpackComm);
     if (hasRows == 1) (*Ifpack_Handle)->freeMpiComm = 1;
 #   endif //ifdef ML_MPI
+    
+    // Do I have CRS storage?
+    // Note: MSR keeps everything in cols, so if rowptr isn't null, we're in CRS
+    struct ML_CSR_MSRdata* M_= (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(Ke);
+    if(M_ && M_->rowptr) use_crs=true;
+
+
     if (hasRows == 1) {
-      if(!force_crs){
+      if(!use_crs){
 	// RowMatrix wrapper
 	Ifpack_Matrix = new RowMatrix(Ke, 0, false, ifpackComm );
 	assert (Ifpack_Matrix != 0);

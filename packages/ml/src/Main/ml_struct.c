@@ -73,7 +73,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
    (*ml_ptr)->LargestMinMaxRatio_repartition = -1.;
    (*ml_ptr)->use_repartitioning = 0;
    (*ml_ptr)->repartitionStartLevel = -1;
-
+   (*ml_ptr)->RAP_storage_type=ML_MSR_MATRIX;
 
    ML_Comm_Create( &((*ml_ptr)->comm) );
    if (global_comm == NULL)
@@ -2712,11 +2712,18 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
 {
    ML_Operator *Amat, *Rmat, *Pmat;
    int i, output_level;
+   int storage_type = ml->RAP_storage_type;
 
 #ifdef ML_TIMING
    double t0;
    t0 = GetClock();
 #endif
+
+#ifdef IFPACK_NODE_AWARE_CODE
+   storage_type = ML_CSR_MATRIX;
+#endif
+  
+
 
    output_level = ml->output_level;
    i   = parent_level;
@@ -2798,28 +2805,19 @@ fflush(stdout);
 /*ML_Operator_Print(&(ml->Pmat[child_level]),"Pn");*/
 #ifdef  MB_MODIF_QR
 {
-#ifdef IFPACK_NODE_AWARE_CODE
-   int    CoarseMtxType = ML_CSR_MATRIX;
-#else
-   int    CoarseMtxType = ML_MSR_MATRIX;
-#endif
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
-          CoarseMtxType);
+          storage_type);
 /* The fixing of coarse matrix only works if it is in MSR format */
    ML_fixCoarseMtx(
           &(ml->Amat[child_level]),/* -up- coarse mtx                        */
-          CoarseMtxType            /* -in- storage type for coarse-lev mtx   */
+          storage_type            /* -in- storage type for coarse-lev mtx   */
    );
 }
 #else /*MB_MODIF_QR*/
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
-#ifdef IFPACK_NODE_AWARE_CODE
-          ML_CSR_MATRIX);
-#else
-          ML_MSR_MATRIX);
-#endif
+	  storage_type);
 #endif/*MB_MODIF_QR*/
 
 #ifdef ML_TIMING
