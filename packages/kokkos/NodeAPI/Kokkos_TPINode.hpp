@@ -132,6 +132,9 @@ namespace Kokkos {
         return result;
       }
 
+      //! \begin No-op for TPINode.
+      inline void sync() const {};
+
     private:
       int curNumThreads_;
   };

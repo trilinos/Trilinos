@@ -65,7 +65,7 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NodeAPI, MemoryInitTest, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( UnitTest, MemoryInitTest, NODE )
   {
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     ArrayRCP<int> x, y;
@@ -135,7 +135,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( NodeAPI, TestAndTime, SCALAR, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Timing, TestAndTime, SCALAR, NODE )
   {
     using std::endl;
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
@@ -162,6 +162,7 @@ namespace {
         rbh.end();
         node->parallel_for(0,N,wdp);
       }
+      node->sync();
     }
     // 
     // test partial sum of x[i], i=1:N-2
@@ -187,6 +188,7 @@ namespace {
         rbh.end();
         result = node->parallel_reduce(0,N,wdp);
       }
+      node->sync();
     }
     expectedResult = (SCALAR)(N);
     TEST_EQUALITY(result, expectedResult);
@@ -203,23 +205,23 @@ namespace {
     ////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////
     out << "Timing results for " << Teuchos::TypeNameTraits<NODE>::name() << endl
-        << "  allocBuffer   time: " << std::scientific << std::setprecision(2) << tAlloc.totalElapsedTime()          << endl
-        << "  freeBuffer    time: " << std::scientific << std::setprecision(2) << tFree.totalElapsedTime()           << endl
-        << "  Kokkos InitOp time: " << std::scientific << std::setprecision(2) << tInit.totalElapsedTime()/numIters  << endl
-        << "  Native init   time: " << std::scientific << std::setprecision(2) <<             ntimes.first/numIters  << endl
-        << "  Kokkos SumOp  time: " << std::scientific << std::setprecision(2) <<  tSum.totalElapsedTime()/numIters  << endl
-        << "  Native sum    time: " << std::scientific << std::setprecision(2) <<            ntimes.second/numIters  << endl;
+        << "  allocBuffer    time: " << std::scientific << std::setprecision(2) << tAlloc.totalElapsedTime()          << endl
+        << "  freeBuffer     time: " << std::scientific << std::setprecision(2) << tFree.totalElapsedTime()           << endl
+        << "  Kokkos<InitOp> time: " << std::scientific << std::setprecision(2) << tInit.totalElapsedTime()/numIters  << endl
+        << "  Native init    time: " << std::scientific << std::setprecision(2) <<             ntimes.first/numIters  << endl
+        << "  Kokkos<SumOp>  time: " << std::scientific << std::setprecision(2) <<  tSum.totalElapsedTime()/numIters  << endl
+        << "  Native sum     time: " << std::scientific << std::setprecision(2) <<            ntimes.second/numIters  << endl;
   }
 
   // 
   // INSTANTIATIONS
   //
 
-  #define TEST_NODE(NODE) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( AAAAA_Is_First, InitNode,    NODE ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest,     NODE ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( NodeAPI, TestAndTime, int,   NODE ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( NodeAPI, TestAndTime, float, NODE )
+  #define TEST_NODE( NODE ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( AAAAA_Is_First, InitNode, NODE ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( UnitTest, MemoryInitTest,     NODE ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Timing, TestAndTime, int,   NODE ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Timing, TestAndTime, float, NODE )
 
 }
 

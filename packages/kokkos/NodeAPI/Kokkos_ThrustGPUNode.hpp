@@ -38,6 +38,9 @@ class ThrustGPUNode : public CUDANodeMemoryModel {
     static typename WDP::ReductionType
     parallel_reduce(int begin, int end, WDP wd);
 
+    //! \begin Block until all node work is complete. Aids in accurate timing of multiple kernels.
+    void sync() const;
+
     //@} 
 
   private:

@@ -1,6 +1,7 @@
 #include "Kokkos_ThrustGPUNode.hpp"
 #include <Teuchos_TestForException.hpp>
 #include <iostream>
+#include "Kokkos_CUDA_util_inline_runtime.h"
 
 namespace Kokkos {
 
@@ -46,5 +47,9 @@ namespace Kokkos {
   } 
 
   ThrustGPUNode::~ThrustGPUNode() {}
+
+  void ThrustGPUNode::sync() const {
+    cutilSafeThreadSync();
+  }
 
 }

@@ -85,6 +85,9 @@ namespace Kokkos {
         tbb::parallel_reduce(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner());
         return tbb_wd.result;
       }
+
+      //! \begin No-op for TBBNode.
+      inline void sync() const {};
   
     private:
       bool alreadyInit_;
