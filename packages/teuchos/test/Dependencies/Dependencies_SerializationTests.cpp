@@ -50,7 +50,7 @@ typedef unsigned long long int ullint;
 #endif
 
 
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringVisualDepSerialization){
   std::string dependee1 = "string param";
   std::string dependee2 = "string param2";
   std::string dependent1 = "dependent param1";
@@ -141,11 +141,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
 
   TEST_EQUALITY(castedDep1->getShowIf(), basicStringVisDep->getShowIf());
   TEST_EQUALITY(castedDep2->getShowIf(), complexStringVisDep->getShowIf());
-  
-
 }
 
-TEUCHOS_UNIT_TEST(Teuchos_Dependencies, boolVisualDepTest){
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolVisualDepSerialization){
   std::string dependee1 = "bool param";
   std::string dependee2 = "bool param2";
   std::string dependent1 = "dependent param1";
@@ -225,11 +223,13 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, boolVisualDepTest){
 
   TEST_EQUALITY(castedDep1->getShowIf(), trueBoolVisDep->getShowIf());
   TEST_EQUALITY(castedDep2->getShowIf(), falseBoolVisDep->getShowIf());
-  
-
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Dependencies, numberVisualDepTest, T){
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
+  Teuchos_Dependencies, 
+  NumberVisualDepSerialization, 
+  T)
+{
   std::string dependee1 = "num param";
   std::string dependee2 = "num param2";
   std::string dependent1 = "dependent param1";
@@ -308,12 +308,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Dependencies, numberVisualDepTest, T){
 
   TEST_EQUALITY(castedDep1->getShowIf(), simpleNumVisDep->getShowIf());
   TEST_EQUALITY(castedDep2->getShowIf(), complexNumVisDep->getShowIf());
-  
-
 }
 
 #define NUMBER_VIS_TEST(T) \
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Dependencies, numberVisualDepTest, T)
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( \
+  Teuchos_Dependencies, NumberVisualDepSerialization, T)
 
 NUMBER_VIS_TEST(int)
 NUMBER_VIS_TEST(uint)
@@ -327,6 +326,131 @@ NUMBER_VIS_TEST(double)
 NUMBER_VIS_TEST(llint)
 NUMBER_VIS_TEST(ullint)
 #endif
+
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
+  std::string dependee1 = "string param";
+  std::string dependee2 = "bool param";
+  std::string dependee3 = "int param";
+  std::string dependent1 = "dependent param1";
+  std::string dependent2 = "dependent param2";
+  std::string dependent3 = "dependent param3";
+  ParameterList myDepList("String Visual Dep List");
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
+  myDepList.set(dependee1, "val1");
+  myDepList.set(dependee2, true);
+  myDepList.set(dependee3, 1);
+  myDepList.set(dependent1, 1.0);
+  myDepList.set(dependent2, 1.0);
+  myDepList.set(dependent3, (float)1.0);
+
+  StringCondition::ValueList conditionVal1 = 
+    tuple<std::string>("steve", "blah", "your face");
+  RCP<StringCondition> stringCon = 
+    rcp(new StringCondition(
+      myDepList.getEntryRCP(dependee1), conditionVal1, false));
+
+  RCP<BoolCondition> boolCon = 
+    rcp(new BoolCondition(myDepList.getEntryRCP(dependee2)));
+
+  RCP<NumberCondition<int> > numberCon = 
+    rcp(new NumberCondition<int>(myDepList.getEntryRCP(dependee3)));
+
+  Condition::ConstConditionList conList = 
+    tuple<RCP<const Condition> >(boolCon, numberCon);
+
+  RCP<AndCondition> andCon = rcp(new AndCondition(conList));
+
+  RCP<ConditionVisualDependency> simpleConVisDep = rcp(
+    new ConditionVisualDependency(
+      stringCon,
+      myDepList.getEntryRCP(dependent1)));
+
+  Dependency::ParameterEntryList dependentList;
+  dependentList.insert(myDepList.getEntryRCP(dependent2));
+  dependentList.insert(myDepList.getEntryRCP(dependent3));
+
+  RCP<ConditionVisualDependency> complexConVisDep = rcp(
+    new ConditionVisualDependency(
+      andCon,
+      dependentList,
+      false));
+
+  myDepSheet->addDependency(simpleConVisDep);
+  myDepSheet->addDependency(complexConVisDep);
+
+  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
+
+  XMLParameterListWriter plWriter;
+  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
+  out << xmlOut.toString();
+
+  RCP<ParameterList> readInList = 
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
+
+  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1);
+  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1);
+  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2);
+  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2);
+  RCP<ParameterEntry> readinDependee3 = readInList->getEntryRCP(dependee3);
+  RCP<ParameterEntry> readinDependent3 = readInList->getEntryRCP(dependent3);
+  
+  RCP<Dependency> readinDep1 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
+
+  RCP<Dependency> readinDep2 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
+
+  RCP<Dependency> readinDep3 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee3)->begin());
+
+  std::string conVisXMLTag = 
+    DummyObjectGetter<ConditionVisualDependency>::getDummyObject()->getTypeAttributeValue();
+
+  TEST_ASSERT(readinDep1->getTypeAttributeValue() == conVisXMLTag);
+  TEST_ASSERT(readinDep2->getTypeAttributeValue() == conVisXMLTag);
+  TEST_ASSERT(readinDep3->getTypeAttributeValue() == conVisXMLTag);
+
+  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
+  TEST_ASSERT(readinDep1->getDependents().size() == 1);
+  TEST_ASSERT((*readinDep1->getDependents().begin()).get() 
+    == readinDependent1.get());
+
+  TEST_ASSERT(readinDep2.get() == readinDep3.get());
+  TEST_ASSERT(readinDep2->getDependees().size() == 2);
+  TEST_ASSERT(
+    readinDep2->getDependees().find(readinDependee2) 
+    !=
+    readinDep2->getDependees().end());
+  TEST_ASSERT(
+    readinDep2->getDependees().find(readinDependee3) 
+    !=
+    readinDep2->getDependees().end());
+
+  TEST_ASSERT(readinDep2->getDependents().size() == 2);
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent2) 
+    !=
+    readinDep2->getDependents().end()
+  );
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent3)
+    !=
+    readinDep2->getDependents().end()
+  );
+    
+  RCP<ConditionVisualDependency> castedDep1 =
+    rcp_dynamic_cast<ConditionVisualDependency>(readinDep1);
+  RCP<ConditionVisualDependency> castedDep2 =
+    rcp_dynamic_cast<ConditionVisualDependency>(readinDep2);
+
+  TEST_EQUALITY(castedDep1->getShowIf(), simpleConVisDep->getShowIf());
+  TEST_EQUALITY(castedDep2->getShowIf(), complexConVisDep->getShowIf());
+
+  TEST_EQUALITY(castedDep1->getCondition()->getTypeAttributeValue(),
+    simpleConVisDep->getCondition()->getTypeAttributeValue());
+  TEST_EQUALITY(castedDep2->getCondition()->getTypeAttributeValue(), 
+    complexConVisDep->getCondition()->getTypeAttributeValue());
+}
 
 } //namespace Teuchos
 
