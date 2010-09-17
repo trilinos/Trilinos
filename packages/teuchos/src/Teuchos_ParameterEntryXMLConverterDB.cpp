@@ -128,7 +128,7 @@ ParameterEntryXMLConverterDB::getConverterMap()
     typedef long long int llint;
     typedef unsigned long long int ullint;
     ADD_TYPE_AND_ARRAYTYPE_CONVERTER(llint);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ulling);
+    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ullint);
     #endif //HAVE_TEUCHOS_LONG_LONG_INT
     ADD_TYPE_AND_ARRAYTYPE_CONVERTER(double);
     ADD_TYPE_AND_ARRAYTYPE_CONVERTER(float);

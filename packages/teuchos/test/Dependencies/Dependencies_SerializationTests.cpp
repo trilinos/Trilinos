@@ -41,6 +41,15 @@
 namespace Teuchos{
 
 
+typedef unsigned short int ushort;
+typedef unsigned int uint;
+typedef unsigned long int ulong;
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+typedef long long int llint;
+typedef unsigned long long int ullint;
+#endif
+
+
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
   std::string dependee1 = "string param";
   std::string dependee2 = "string param2";
@@ -220,7 +229,104 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, boolVisualDepTest){
 
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_Dependencies, numberVisualDepTest, T){
+  std::string dependee1 = "num param";
+  std::string dependee2 = "num param2";
+  std::string dependent1 = "dependent param1";
+  std::string dependent2 = "dependent param2";
+  ParameterList myDepList("Number Visual Dep List");
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
+  myDepList.set(dependee1, ScalarTraits<T>::one());
+  myDepList.set(dependee2, ScalarTraits<T>::one());
+  myDepList.set(dependent1, true);
+  myDepList.set(dependent2, "vale");
 
+  RCP<NumberVisualDependency< T > > simpleNumVisDep = rcp(
+    new NumberVisualDependency< T >(
+      myDepList.getEntryRCP(dependee1),
+      myDepList.getEntryRCP(dependent1)));
+
+  Dependency::ParameterEntryList dependentList;
+  dependentList.insert(myDepList.getEntryRCP(dependent1));
+  dependentList.insert(myDepList.getEntryRCP(dependent2));
+
+  RCP<NumberVisualDependency< T > > complexNumVisDep = rcp(
+    new NumberVisualDependency< T >(
+      myDepList.getEntryRCP(dependee2),
+      dependentList));
+
+  myDepSheet->addDependency(simpleNumVisDep);
+  myDepSheet->addDependency(complexNumVisDep);
+
+  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
+
+  XMLParameterListWriter plWriter;
+  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
+  out << xmlOut.toString();
+
+  RCP<ParameterList> readInList = 
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
+
+  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1);
+  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1);
+  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2);
+  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2);
+  
+  RCP<Dependency> readinDep1 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
+
+  RCP<Dependency> readinDep2 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
+
+  std::string numVisXMLTag = 
+    DummyObjectGetter<NumberVisualDependency<T> >::getDummyObject()->getTypeAttributeValue();
+
+  TEST_ASSERT(readinDep1->getTypeAttributeValue() == numVisXMLTag);
+  TEST_ASSERT(readinDep2->getTypeAttributeValue() == numVisXMLTag);
+
+  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
+  TEST_ASSERT(readinDep1->getDependents().size() == 1);
+  TEST_ASSERT((*readinDep1->getDependents().begin()).get() == readinDependent1.get());
+
+  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
+  TEST_ASSERT(readinDep2->getDependents().size() == 2);
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent1) 
+    !=
+    readinDep2->getDependents().end()
+  );
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent2)
+    !=
+    readinDep2->getDependents().end()
+  );
+    
+  RCP<NumberVisualDependency<T> > castedDep1 =
+    rcp_dynamic_cast<NumberVisualDependency<T> >(readinDep1);
+  RCP<NumberVisualDependency<T> > castedDep2 =
+    rcp_dynamic_cast<NumberVisualDependency<T> >(readinDep2);
+
+  TEST_EQUALITY(castedDep1->getShowIf(), simpleNumVisDep->getShowIf());
+  TEST_EQUALITY(castedDep2->getShowIf(), complexNumVisDep->getShowIf());
+  
+
+}
+
+#define NUMBER_VIS_TEST(T) \
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_Dependencies, numberVisualDepTest, T)
+
+NUMBER_VIS_TEST(int)
+NUMBER_VIS_TEST(uint)
+NUMBER_VIS_TEST(short)
+NUMBER_VIS_TEST(ushort)
+NUMBER_VIS_TEST(long)
+NUMBER_VIS_TEST(ulong)
+NUMBER_VIS_TEST(float)
+NUMBER_VIS_TEST(double)
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+NUMBER_VIS_TEST(llint)
+NUMBER_VIS_TEST(ullint)
+#endif
 
 } //namespace Teuchos
 
