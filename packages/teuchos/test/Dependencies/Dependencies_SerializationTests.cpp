@@ -136,6 +136,91 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, stringVisualDepTest){
 
 }
 
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, boolVisualDepTest){
+  std::string dependee1 = "bool param";
+  std::string dependee2 = "bool param2";
+  std::string dependent1 = "dependent param1";
+  std::string dependent2 = "dependent param2";
+  ParameterList myDepList("Bool Visual Dep List");
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
+  myDepList.set(dependee1, true);
+  myDepList.set(dependee2, true);
+  myDepList.set(dependent1, 1.0);
+  myDepList.set(dependent2, 1.0);
+
+  RCP<BoolVisualDependency> trueBoolVisDep = rcp(
+    new BoolVisualDependency(
+      myDepList.getEntryRCP(dependee1),
+      myDepList.getEntryRCP(dependent1)));
+
+  Dependency::ParameterEntryList dependentList;
+  dependentList.insert(myDepList.getEntryRCP(dependent1));
+  dependentList.insert(myDepList.getEntryRCP(dependent2));
+
+  RCP<BoolVisualDependency> falseBoolVisDep = rcp(
+    new BoolVisualDependency(
+      myDepList.getEntryRCP(dependee2),
+      dependentList,
+      false));
+
+  myDepSheet->addDependency(trueBoolVisDep);
+  myDepSheet->addDependency(falseBoolVisDep);
+
+  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
+
+  XMLParameterListWriter plWriter;
+  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
+  out << xmlOut.toString();
+
+  RCP<ParameterList> readInList = 
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
+
+  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1);
+  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1);
+  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2);
+  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2);
+  
+  RCP<Dependency> readinDep1 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
+
+  RCP<Dependency> readinDep2 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
+
+  std::string boolVisXMLTag = 
+    DummyObjectGetter<BoolVisualDependency>::getDummyObject()->getTypeAttributeValue();
+
+  TEST_ASSERT(readinDep1->getTypeAttributeValue() == boolVisXMLTag);
+  TEST_ASSERT(readinDep2->getTypeAttributeValue() == boolVisXMLTag);
+
+  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
+  TEST_ASSERT(readinDep1->getDependents().size() == 1);
+  TEST_ASSERT((*readinDep1->getDependents().begin()).get() == readinDependent1.get());
+
+  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
+  TEST_ASSERT(readinDep2->getDependents().size() == 2);
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent1) 
+    !=
+    readinDep2->getDependents().end()
+  );
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent2)
+    !=
+    readinDep2->getDependents().end()
+  );
+    
+  RCP<BoolVisualDependency> castedDep1 =
+    rcp_dynamic_cast<BoolVisualDependency>(readinDep1);
+  RCP<BoolVisualDependency> castedDep2 =
+    rcp_dynamic_cast<BoolVisualDependency>(readinDep2);
+
+  TEST_EQUALITY(castedDep1->getShowIf(), trueBoolVisDep->getShowIf());
+  TEST_EQUALITY(castedDep2->getShowIf(), falseBoolVisDep->getShowIf());
+  
+
+}
+
+
 
 } //namespace Teuchos
 
