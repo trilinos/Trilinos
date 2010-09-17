@@ -4,10 +4,8 @@ C
 C               Epetra: Linear Algebra Services Package 
 C                 Copyright 2001 Sandia Corporation
 C 
-C Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-C license for use of this work by or on behalf of the U.S. Government.
-C Export of this program may require a license from the United States
-C Government.
+C Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+C the U.S. Government retains certain rights in this software.
 C
 C Redistribution and use in source and binary forms, with or without
 C modification, are permitted provided that the following conditions are
