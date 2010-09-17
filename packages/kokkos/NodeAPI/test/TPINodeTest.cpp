@@ -30,19 +30,17 @@ namespace {
     unsigned int N;
     static void work( TPI_Work * work ) {
       struct TPIInit<T> * const w = (TPIInit<T> *) work->info ;
-      unsigned int begin , length;
+      unsigned int begin;
       const unsigned int max = ( w->N + work->count - 1 ) / work->count ;
       const unsigned int end = w->N - max * ( work->count - ( work->rank + 1 ) );
       if ( work->rank ) {
         begin  = end - max ;
-        length = max ;
       }
       else {
         begin  = 0 ;
-        length = end ;
       }
       T * const my_x = w->x;
-      for (int i=begin; i != length; ++i) {my_x[i] = Teuchos::ScalarTraits<T>::one();}
+      for (int i=begin; i != end; ++i) {my_x[i] = Teuchos::ScalarTraits<T>::one();}
     }
   };
 
@@ -54,19 +52,17 @@ namespace {
     static void work( TPI_Work * work ) {
       struct TPIInit<T> * const w = (TPIInit<T> *) work->info ;
       T * const dst = (T *) work->reduce;
-      unsigned int begin , length;
+      unsigned int begin;
       const unsigned int max = ( w->N + work->count - 1 ) / work->count ;
       const unsigned int end = w->N - max * ( work->count - ( work->rank + 1 ) );
       if ( work->rank ) {
         begin  = end - max ;
-        length = max ;
       }
       else {
         begin  = 0 ;
-        length = end ;
       }
       T * const my_x = w->x;
-      for (int i=begin; i != length; ++i) {*dst += my_x[i];}
+      for (int i=begin; i != end; ++i) {*dst += my_x[i];}
     }
     // initialization
     static void init( TPI_Work * work ) {
