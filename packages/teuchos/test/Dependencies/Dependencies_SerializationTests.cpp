@@ -44,6 +44,7 @@ namespace Teuchos{
 typedef unsigned short int ushort;
 typedef unsigned int uint;
 typedef unsigned long int ulong;
+typedef std::string myString_t;
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long int llint;
 typedef unsigned long long int ullint;
@@ -130,9 +131,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringVisualDepSerialization){
   );
     
   RCP<StringVisualDependency> castedDep1 =
-    rcp_dynamic_cast<StringVisualDependency>(readinDep1);
+    rcp_dynamic_cast<StringVisualDependency>(readinDep1, true);
   RCP<StringVisualDependency> castedDep2 =
-    rcp_dynamic_cast<StringVisualDependency>(readinDep2);
+    rcp_dynamic_cast<StringVisualDependency>(readinDep2, true);
 
   TEST_COMPARE_ARRAYS(
     castedDep1->getValues(), basicStringVisDep->getValues());
@@ -217,9 +218,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolVisualDepSerialization){
   );
     
   RCP<BoolVisualDependency> castedDep1 =
-    rcp_dynamic_cast<BoolVisualDependency>(readinDep1);
+    rcp_dynamic_cast<BoolVisualDependency>(readinDep1, true);
   RCP<BoolVisualDependency> castedDep2 =
-    rcp_dynamic_cast<BoolVisualDependency>(readinDep2);
+    rcp_dynamic_cast<BoolVisualDependency>(readinDep2, true);
 
   TEST_EQUALITY(castedDep1->getShowIf(), trueBoolVisDep->getShowIf());
   TEST_EQUALITY(castedDep2->getShowIf(), falseBoolVisDep->getShowIf());
@@ -241,8 +242,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   myDepList.set(dependent1, true);
   myDepList.set(dependent2, "vale");
 
-  RCP<NumberVisualDependency< T > > simpleNumVisDep = rcp(
-    new NumberVisualDependency< T >(
+  RCP<NumberVisualDependency<T> > simpleNumVisDep = rcp(
+    new NumberVisualDependency<T>(
       myDepList.getEntryRCP(dependee1),
       myDepList.getEntryRCP(dependent1)));
 
@@ -250,8 +251,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   dependentList.insert(myDepList.getEntryRCP(dependent1));
   dependentList.insert(myDepList.getEntryRCP(dependent2));
 
-  RCP<NumberVisualDependency< T > > complexNumVisDep = rcp(
-    new NumberVisualDependency< T >(
+  RCP<NumberVisualDependency<T> > complexNumVisDep = rcp(
+    new NumberVisualDependency<T>(
       myDepList.getEntryRCP(dependee2),
       dependentList));
 
@@ -302,9 +303,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   );
     
   RCP<NumberVisualDependency<T> > castedDep1 =
-    rcp_dynamic_cast<NumberVisualDependency<T> >(readinDep1);
+    rcp_dynamic_cast<NumberVisualDependency<T> >(readinDep1, true);
   RCP<NumberVisualDependency<T> > castedDep2 =
-    rcp_dynamic_cast<NumberVisualDependency<T> >(readinDep2);
+    rcp_dynamic_cast<NumberVisualDependency<T> >(readinDep2, true);
 
   TEST_EQUALITY(castedDep1->getShowIf(), simpleNumVisDep->getShowIf());
   TEST_EQUALITY(castedDep2->getShowIf(), complexNumVisDep->getShowIf());
@@ -334,7 +335,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
   std::string dependent1 = "dependent param1";
   std::string dependent2 = "dependent param2";
   std::string dependent3 = "dependent param3";
-  ParameterList myDepList("String Visual Dep List");
+  ParameterList myDepList("Condition Visual Dep List");
   RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
   myDepList.set(dependee1, "val1");
   myDepList.set(dependee2, true);
@@ -439,9 +440,9 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
   );
     
   RCP<ConditionVisualDependency> castedDep1 =
-    rcp_dynamic_cast<ConditionVisualDependency>(readinDep1);
+    rcp_dynamic_cast<ConditionVisualDependency>(readinDep1, true);
   RCP<ConditionVisualDependency> castedDep2 =
-    rcp_dynamic_cast<ConditionVisualDependency>(readinDep2);
+    rcp_dynamic_cast<ConditionVisualDependency>(readinDep2, true);
 
   TEST_EQUALITY(castedDep1->getShowIf(), simpleConVisDep->getShowIf());
   TEST_EQUALITY(castedDep2->getShowIf(), complexConVisDep->getShowIf());
@@ -451,6 +452,114 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
   TEST_EQUALITY(castedDep2->getCondition()->getTypeAttributeValue(), 
     complexConVisDep->getCondition()->getTypeAttributeValue());
 }
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
+  Teuchos_Dependencies, 
+  NumberArrayLengthDepSerialization, 
+  DependeeType,
+  DependentType)
+{
+  std::string dependee1 = "dependee param";
+  std::string dependee2 = "dependee param2";
+  std::string dependent1 = "dependent param1";
+  std::string dependent2 = "dependent param2";
+  ParameterList myDepList("Number Array LenthDep List");
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
+  myDepList.set(dependee1, ScalarTraits<DependeeType>::one());
+  myDepList.set(dependee2, ScalarTraits<DependeeType>::one());
+  myDepList.set(dependent1, Array<DependentType>(8));
+  myDepList.set(dependent2, Array<DependentType>(5));
+
+
+  RCP<NumberArrayLengthDependency<DependeeType, DependentType> > basicArrayDep =
+    rcp(new NumberArrayLengthDependency<DependeeType, DependentType>(
+      myDepList.getEntryRCP(dependee1),
+      myDepList.getEntryRCP(dependent1)));
+
+  myDepSheet->addDependency(basicArrayDep);
+
+  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
+
+  XMLParameterListWriter plWriter;
+  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
+  out << xmlOut.toString();
+
+  RCP<ParameterList> readInList = 
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
+
+  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1);
+  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1);
+  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2);
+  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2);
+  
+  RCP<Dependency> readinDep1 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
+
+  std::string arrayLengthXMLTag = 
+    DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >::getDummyObject()->getTypeAttributeValue();
+
+  TEST_ASSERT(readinDep1->getTypeAttributeValue() == arrayLengthXMLTag);
+
+  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
+  TEST_ASSERT(readinDep1->getDependents().size() == 1);
+  TEST_ASSERT((*readinDep1->getDependents().begin()).get() == readinDependent1.get());
+
+  RCP<NumberArrayLengthDependency<DependeeType, DependentType> > castedDep1 =
+    rcp_dynamic_cast<NumberArrayLengthDependency<DependeeType, DependentType> >(
+      readinDep1, true);
+}
+
+#define NUM_ARRAY_LENGTH_TEST(DependeeType, DependentType) \
+TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
+  Teuchos_Dependencies, \
+  NumberArrayLengthDepSerialization, \
+  DependeeType, \
+  DependentType) \
+
+// Need to fix array serialization so we can test this with
+// a dependent type of strings. Right now an array of emptyr strings does not
+// seralize correctly
+// KLN 09.17/2010
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#define NUM_ARRAY_LENGTH_TEST_GROUP(DependeeType) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, int) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, short) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, uint) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, ushort) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, long) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, ulong) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, float) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, llint) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, ullint)
+#else
+#define NUMBER_VIS_TEST_GROUP(DependeeType) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, int) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, short) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, uint) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, ushort) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, long) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, ulong) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, float)
+#endif
+
+NUM_ARRAY_LENGTH_TEST_GROUP(int)
+NUM_ARRAY_LENGTH_TEST_GROUP(short)
+NUM_ARRAY_LENGTH_TEST_GROUP(uint)
+NUM_ARRAY_LENGTH_TEST_GROUP(ushort)
+NUM_ARRAY_LENGTH_TEST_GROUP(long)
+NUM_ARRAY_LENGTH_TEST_GROUP(ulong)
+NUM_ARRAY_LENGTH_TEST_GROUP(double)
+NUM_ARRAY_LENGTH_TEST_GROUP(float)
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+NUM_ARRAY_LENGTH_TEST_GROUP(llint)
+NUM_ARRAY_LENGTH_TEST_GROUP(ullint)
+#endif
+
+
+
+
 
 } //namespace Teuchos
 
