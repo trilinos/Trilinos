@@ -22,6 +22,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NodeAPI_UnitTests
   SOURCES 
     NodeTest
+    TBBNodeTest
+    SerialNodeTest
+    TPINodeTest
+    ThrustGPUNodeTest
     ${CUDA_FILES}
     ${source_files}
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp

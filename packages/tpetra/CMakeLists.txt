@@ -37,6 +37,13 @@ ADD_OPTION_AND_DEFINE(
   )
 
 ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_BUGTESTS
+  HAVE_TPETRA_BUGTESTS
+  "Enabling testing of previous Tpetra bugs."
+  NO
+  )
+
+ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field float."

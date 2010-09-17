@@ -894,7 +894,7 @@ namespace Kokkos {
     return;
   }
 
-  /** \example CrsMatrix_DefaultMultiply.cpp 
+  /** \example CrsMatrix_DefaultMultiplyTests.hpp 
     * This is an example that unit tests and demonstrates the implementation requirements for the DefaultSparseOps class.
     */
 
