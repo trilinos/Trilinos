@@ -137,8 +137,10 @@ void StringVisualDependency::validateDep() const{
   TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
-    "String Visual Dependency must be of type string.\n"
-    "Type encountered: " << getFirstDependee()->getAny().typeName() << "\n");
+    "String Visual Dependency must be of type " 
+    << TypeNameTraits<std::string>::name() << std::endl <<
+    "Type encountered: " << getFirstDependee()->getAny().typeName() << 
+    std::endl << std::endl);
 }
 
 BoolVisualDependency::BoolVisualDependency(
@@ -163,8 +165,10 @@ void BoolVisualDependency::validateDep() const{
   TEST_FOR_EXCEPTION(!getFirstDependee()->isType<bool>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
-    "Bool Visual Dependency must be of type bool.\n"
-    "Encountered type: " << getFirstDependee()->getAny().typeName() << "\n");
+    "Bool Visual Dependency must be of type " << 
+    TypeNameTraits<bool>::name() << std::endl <<
+    "Encountered type: " << getFirstDependee()->getAny().typeName() << 
+    std::endl << std::endl);
 }
 
 ConditionVisualDependency::ConditionVisualDependency(
@@ -234,7 +238,8 @@ void StringValidatorDependency::validateDep() const{
   TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
-    "String Validator Dependency must be of type string.\n"
+    "String Validator Dependency must be of type " <<
+    TypeNameTraits<std::string>::name() << std::endl <<
     "Type Encountered: " << getFirstDependee()->getAny().typeName() <<
     std::endl << std::endl);
 
@@ -297,7 +302,8 @@ void BoolValidatorDependency::validateDep() const{
   TEST_FOR_EXCEPTION(!getFirstDependee()->isType<bool>(),
     InvalidDependencyException,
     "Ay no! The dependee of a "
-    "Bool Validator Dependency must be of type boolean.\n"
+    "Bool Validator Dependency must be of type " <<
+    TypeNameTraits<bool>::name() << std::endl <<
     "Encountered type: " << getFirstDependee()->getAny().typeName() <<
     std::endl << std::endl);
 

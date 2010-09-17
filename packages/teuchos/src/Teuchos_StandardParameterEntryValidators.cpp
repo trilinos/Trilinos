@@ -375,14 +375,15 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
-    "\" sublist didn't quite work out.\n" <<
+    "\" sublist didn't quite work out." << std::endl << std::endl <<
     "No need to fret though. I'm sure it's just a small mistake. "
-    "Maybe the information below "<<
-    "can help you figure out what went wrong.\n\n"
-    "Error: The value that you entered was the wrong type.\n" <<
-    "Parameter: " << paramName << "\n" << 
-    "Type specified: " << entryName << "\n" <<
-    "Type accepted: " << typeid(std::string).name() << "\n");
+    "Maybe the information below "
+    "can help you figure out what went wrong." << std::endl << std::endl <<
+    "Error: The value that you entered was the wrong type." << std::endl <<
+    "Parameter: " << paramName << std::endl << 
+    "Type specified: " << entryName << std::endl <<
+    "Type accepted: " << typeid(std::string).name() << 
+    std::endl << std::endl);
   if(mustAlreadyExist_){
     std::string fileName = getValue<std::string>(entry);
     TEST_FOR_EXCEPTION(!std::ifstream(fileName.c_str()),
@@ -390,14 +391,15 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
       "Aww shoot! Sorry bud, but it looks like the \"" 
       << paramName << "\"" <<
       " parameter in the \"" << sublistName << 
-      "\" sublist didn't quite work out.\n" <<
+      "\" sublist didn't quite work out." << std::endl << 
       "No need to fret though. I'm sure it's just a small mistake. " <<
       "Maybe the information below "<<
-      "can help you figure out what went wrong.\n\n"
+      "can help you figure out what went wrong." << 
+      std::endl << std::endl <<
       "Error: The file must already exists. The value you entered does " <<
-      "not corresspond to an existing file name.\n" <<
-      "Parameter: " << paramName << "\n" << 
-      "File name specified: " << fileName << "\n");
+      "not corresspond to an existing file name." << std::endl <<
+      "Parameter: " << paramName << std::endl <<
+      "File name specified: " << fileName << std::endl << std::endl);
   }
 }
 
@@ -412,8 +414,8 @@ void FileNameValidator::printDoc(
   std::string const &docString, std::ostream &out) const
 {
   StrUtils::printLines(out,"# ",docString);
-  out << "#  Validator Used: \n";
-  out << "#  FileName Validator\n";
+  out << "#  Validator Used: " << std::endl;
+  out << "#  FileName Validator" << std::endl;
 }
 
 StringValidator::StringValidator()
@@ -450,14 +452,15 @@ void StringValidator::validate(
     Exceptions::InvalidParameterType,
     "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
     " parameter in the \"" << sublistName << 
-    "\" sublist didn't quite work out.\n" <<
+    "\" sublist didn't quite work out." << std::endl <<
     "No need to fret though. I'm sure it's just a small mistake. " <<
     "Maybe the information below "<<
-    "can help you figure out what went wrong.\n\n"
+    "can help you figure out what went wrong." << std::endl << std::endl <<
     "Error: The value that you entered was the wrong type." <<
-    "Parameter: " << paramName << "\n" << 
-    "Type specified: " << entryName << "\n" <<
-    "Type accepted: " << Teuchos::TypeNameTraits<std::string>::name() << "\n");
+    "Parameter: " << paramName << std::endl <<
+    "Type specified: " << entryName << std::endl <<
+    "Type accepted: " << Teuchos::TypeNameTraits<std::string>::name() <<
+    std::endl);
   if(!validStrings_.is_null()){
     Array<std::string>::const_iterator
       it = std::find(validStrings_->begin(),
@@ -467,15 +470,17 @@ void StringValidator::validate(
       "Aww shoot! Sorry bud, but it looks like the \""
       << paramName << "\"" <<
       " parameter in the \"" << sublistName << 
-      "\" sublist didn't quite work out.\n" <<
+      "\" sublist didn't quite work out." << std::endl <<
       "No need to fret though. I'm sure it's just a small mistake. "
       "Maybe the information below "
-      "can help you figure out what went wrong.\n\n"
+      "can help you figure out what went wrong." <<
+      std::endl << std::endl <<
       "Error: The value that was entered doesn't fall with in "
       "the range set by the validator." <<
-      "Parameter: " << paramName << "\n" <<
-      "Acceptable Values: " << validStrings_ << "\n" <<
-      "Value entered: " << getValue<std::string>(entry) << "\n");
+      "Parameter: " << paramName << std::endl <<
+      "Acceptable Values: " << validStrings_ << std::endl <<
+      "Value entered: " << getValue<std::string>(entry) << std::endl <<
+      std::endl);
   }
 }
 
@@ -490,8 +495,8 @@ void StringValidator::printDoc(std::string const &docString,
   std::ostream &out) const
 {
   Teuchos::StrUtils::printLines(out,"# ",docString);
-  out << "#  Validator Used: \n";
-  out << "#  String Validator\n";
+  out << "#  Validator Used: " << std::endl;
+  out << "#  String Validator" << std::endl;
 }
 
 

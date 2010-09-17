@@ -64,7 +64,7 @@ BinaryLogicalCondition::BinaryLogicalCondition(ConstConditionList& conditions):
     "chalk it up a silly little mistake though. Take a look over your "
     "conditions again and make sure "
     "you don't ever give any of your BinaryLogicConditions and empty "
-    "condition list.\n\n"
+    "condition list." << std::endl << std::endl <<
     "Error: Empty condition list given to a BinaryLogicalCondition "
     "constructor.");
 }
@@ -144,7 +144,7 @@ NotCondition::NotCondition(RCP<const Condition> childCondition):
     "That's a no no. Go back and "
     "checkout your not conditions and make sure you didn't "
     "give any of them a null pointer "
-    "as an argument to the constructor.\n\n"
+    "as an argument to the constructor." << std::endl << std::endl <<
     "Error: Null pointer given to NotCondition constructor.");
 }
 
@@ -167,12 +167,7 @@ StringCondition::StringCondition(
   ParameterCondition(parameter, whenParamEqualsValue), 
   values_(ValueList(1,value))
 {
-  TEST_FOR_EXCEPTION(!getParameter()->isType<std::string>(),
-    InvalidConditionException,
-    "The parameter of a String Condition "
-    "must be of type string. \n"
-    "Expected type: std::string\n"
-    "Actual type: " << getParameter()->getAny().typeName() << "\n");
+  checkParameterType();
 }
 
 StringCondition::StringCondition(
@@ -182,13 +177,19 @@ StringCondition::StringCondition(
   ParameterCondition(parameter, whenParamEqualsValue), 
   values_(values)
 {
+  checkParameterType();
+}
+
+void StringCondition::checkParameterType(){
   TEST_FOR_EXCEPTION(!getParameter()->isType<std::string>(),
     InvalidConditionException,
     "The parameter of a String Condition "
-    "must be of type string. \n"
-    "Expected type: std::string\n"
-    "Actual type: " << getParameter()->getAny().typeName() << "\n");
+    "must be of type string." << std::endl << 
+    "Expected type: " << TypeNameTraits<std::string>::name() << std::endl <<
+    "Actual type: " << getParameter()->getAny().typeName() << 
+    std::endl << std::endl);
 }
+  
 
 bool StringCondition::evaluateParameter() const{
   return  find(
@@ -204,9 +205,10 @@ BoolCondition::BoolCondition(
   TEST_FOR_EXCEPTION(!getParameter()->isType<bool>(),
     InvalidConditionException,
     "The parameter of a Bool Condition "
-    "must be of type Bool. \n"
-    "Expected type: Bool\n"
-    "Actual type: " << getParameter()->getAny().typeName() << "\n");
+    "must be of type " << TypeNameTraits<bool>::name() << std::endl <<
+    "Expected type: Bool" << std::endl <<
+    "Actual type: " << getParameter()->getAny().typeName() <<
+    std::endl << std::endl);
 }
 
 bool BoolCondition::evaluateParameter() const{

@@ -1218,11 +1218,12 @@ public:
   /** \brief . */
   void printDoc(std::string const &docString, std::ostream &out) const{
     StrUtils::printLines(out,"# ",docString);
-    out << "#  Validator Used: \n";
-    out << "#    Number Validator\n";
-    out << "#    Type: " << Teuchos::TypeNameTraits<T>::name() << "\n";
-    out << "#    Min (inclusive): " << minVal << "\n";
-    out << "#    Max (inclusive): " << maxVal << "\n";
+    out << "#\tValidator Used: " << std::endl;
+    out << "#\t\tNumber Validator" << std::endl;
+    out << "#\t\tType: " << Teuchos::TypeNameTraits<T>::name() << 
+      std::endl;
+    out << "#\t\tMin (inclusive): " << minVal << std::endl;
+    out << "#\t\tMax (inclusive): " << maxVal << std::endl;
   }
   
   //@}
@@ -1266,46 +1267,43 @@ void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::stri
   std::string const &sublistName) const
 {
   any anyValue = entry.getAny(true);
-  if(anyValue.type() == typeid(T) ){
-    bool isValueInRange; 
-    any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal
-      ? isValueInRange = true : isValueInRange=false;
-    TEST_FOR_EXCEPTION(!(isValueInRange),
-      Exceptions::InvalidParameterValue,
-      "Aww shoot! Sorry bud, but it looks like the \"" << 
-      paramName << "\"" <<
-      " parameter in the \"" << sublistName << 
-      "\" sublist didn't quite work "
-      "out.\n" <<
-      "No need to fret though. I'm sure it's just a small mistake. "
-      "Maybe the information below "<<
-      "can help you figure out what went wrong.\n\n"
-      "Error: The value that was entered doesn't fall with in " <<
-      "the range set by the validator.\n" <<
-      "Parameter: " << paramName << "\n" <<
-      "Min: " << minVal << "\n" <<
-      "Max: " << maxVal << "\n" <<
-      "Value entered: " << 
-      (any_cast<T>(anyValue)) << std::endl << std::endl);
-  }
-  else{
-    const std::string &entryName = entry.getAny(false).typeName();
-    std::stringstream oss;
-    std::string msg;
-    oss << "Aww shoot! Sorry bud, but it looks like the \"" << 
+  const std::string &entryName = entry.getAny(false).typeName();
+
+  TEST_FOR_EXCEPTION(anyValue.type() != typeid(T),
+    Exceptions::InvalidParameterType,
+    "Aww shoot! Sorry bud, but it looks like the \"" << 
     paramName << "\"" <<
     " parameter in the \"" << sublistName 
-    << "\" sublist didn't quite work out.\n" <<
+    << "\" sublist didn't quite work out." << std::endl <<
     "No need to fret though. I'm sure it's just a small mistake. "
     "Maybe the information below "<<
-    "can help you figure out what went wrong.\n\n"
-    "Error: The value that you entered was the wrong type.\n" <<
-    "Parameter: " << paramName << "\n" <<
-    "Type specified: " << entryName << "\n" <<
-    "Type accepted: " << Teuchos::TypeNameTraits<T>::name() << "\n";
-    msg = oss.str();
-    throw Exceptions::InvalidParameterType(msg);
-  }
+    "can help you figure out what went wrong." << std::endl << std::endl <<
+    "Error: The value that you entered was the wrong type." << std::endl <<
+    "Parameter: " << paramName << std::endl <<
+    "Type specified: " << entryName << std::endl <<
+    "Type accepted: " << Teuchos::TypeNameTraits<T>::name() << std::endl);
+
+  bool isValueInRange; 
+  any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal
+    ? isValueInRange = true : isValueInRange=false;
+  TEST_FOR_EXCEPTION(!(isValueInRange),
+    Exceptions::InvalidParameterValue,
+    "Aww shoot! Sorry bud, but it looks like the \"" << 
+    paramName << "\"" <<
+    " parameter in the \"" << sublistName << 
+    "\" sublist didn't quite work "
+    "out." << std::endl <<
+    "No need to fret though. I'm sure it's just a small mistake. "
+    "Maybe the information below "<<
+    "can help you figure out what went wrong." << std::endl << 
+    std::endl <<
+    "Error: The value that was entered doesn't fall with in " <<
+    "the range set by the validator" << std::endl <<
+    "Parameter: " << paramName  << std::endl <<
+    "Min: " << minVal << std::endl <<
+    "Max: " << maxVal << std::endl <<
+    "Value entered: " << 
+    (any_cast<T>(anyValue)) << std::endl << std::endl);
 }
 
 /** \brief Speicialized class for retrieving a dummy object of type
@@ -1646,39 +1644,38 @@ void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &en
   std::string const &sublistName) const
 {
   any anyValue = entry.getAny(true);
-  if(anyValue.type() == typeid(Array<EntryType>)){
-    Array<EntryType> extracted = getValue<Teuchos::Array<EntryType> >(entry);
-    for(int i = 0; i<extracted.size(); ++i){
-      ParameterEntry dummyParameter;
-      dummyParameter.setValue(extracted[i]);
-      try{
-        prototypeValidator_->validate(dummyParameter, paramName, sublistName);
-      }
-      catch(Exceptions::InvalidParameterValue& e){
-        std::stringstream oss;
-        oss << "Array Validator Exception: \n" << "Bad Index: " << i << 
-        "\n" << e.what();
-        throw Exceptions::InvalidParameterValue(oss.str());
-      }
+  const std::string &entryName = entry.getAny(false).typeName();
+  TEST_FOR_EXCEPTION(anyValue.type() != typeid(Array<EntryType>),
+    Exceptions::InvalidParameterType,
+    "Aww shoot! Sorry bud, but it looks like the \"" <<
+    paramName << "\"" <<
+    " parameter in the \"" << sublistName << 
+    "\" sublist didn't quite work out." << std::endl <<
+    "No need to fret though. I'm sure it's just a small mistake. "
+    "Maybe the information below "<<
+    "can help you figure out what went wrong." << std::endl << 
+    std::endl <<
+    "Error: The value you entered was the wrong type." << std::endl <<
+    "Parameter: " << paramName << std::endl <<
+    "Type specified: " << entryName << std::endl <<
+    "Type accepted: " << TypeNameTraits<Array<std::string> >::name() <<
+    std::endl << std::endl);
+
+  Array<EntryType> extracted = 
+    getValue<Teuchos::Array<EntryType> >(entry);
+  for(int i = 0; i<extracted.size(); ++i){
+    ParameterEntry dummyParameter;
+    dummyParameter.setValue(extracted[i]);
+    try{
+      prototypeValidator_->validate(
+        dummyParameter, paramName, sublistName);
     }
-  }
-  else{
-    const std::string &entryName = entry.getAny(false).typeName();
-    std::stringstream oss;
-    std::string msg;
-    oss << "Aww shoot! Sorry bud, but it looks like the \"" <<
-      paramName << "\"" <<
-      " parameter in the \"" << sublistName << 
-      "\" sublist didn't quite work out.\n" <<
-      "No need to fret though. I'm sure it's just a small mistake. "
-      "Maybe the information below "<<
-      "can help you figure out what went wrong.\n\n"
-      "Error: The value you entered was the wrong type.\n" <<
-      "Parameter: " << paramName << "\n" <<
-      "Type specified: " << entryName << "\n" <<
-      "Type accepted: " << TypeNameTraits<Array<std::string> >::name() << "\n";
-    msg = oss.str();
-    throw Exceptions::InvalidParameterType(msg);
+    catch(Exceptions::InvalidParameterValue& e){
+      std::stringstream oss;
+      oss << "Array Validator Exception:" << std::endl <<
+      "Bad Index: " << i << std::endl << e.what();
+      throw Exceptions::InvalidParameterValue(oss.str());
+    }
   }
 }
 

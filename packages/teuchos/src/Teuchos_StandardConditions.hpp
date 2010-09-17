@@ -247,6 +247,8 @@ private:
    * A list of values against which to evaluate the parameter's value.
    */
   ValueList values_;
+
+  void checkParameterType();
   
   //@}
   

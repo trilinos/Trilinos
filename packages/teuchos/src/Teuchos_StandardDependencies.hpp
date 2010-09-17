@@ -1042,10 +1042,10 @@ NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
     Exceptions::InvalidParameterValue,
     "Ruh Roh Shaggy! Looks like a dependency tried to set the length "
     "of the Array(s) to a negative number. Silly. You can't have "
-    "an Array with a negative length!\n\n" <<
-    "Error:\n" <<
+    "an Array with a negative length!" << std::endl << std::endl <<
+    "Error:" << std::endl <<
     "An attempt was made to set the length of an Array to a negative "
-    "number by a NumberArrayLengthDependency\n");
+    "number by a NumberArrayLengthDependency" << std::endl << std::endl);
   for(
     ParameterEntryList::iterator it = getDependents().begin(); 
     it != getDependents().end(); 
