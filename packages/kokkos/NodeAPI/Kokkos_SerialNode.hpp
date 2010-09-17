@@ -34,6 +34,9 @@ namespace Kokkos {
         return result;
       }
 
+      //! \begin No-op for SerialNode.
+      inline void sync() const {};
+
   };
 
   template <> class ArrayOfViewsHelper<SerialNode> : public ArrayOfViewsHelperTrivialImpl<SerialNode> {};

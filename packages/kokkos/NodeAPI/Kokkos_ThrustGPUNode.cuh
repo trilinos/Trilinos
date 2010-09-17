@@ -59,6 +59,7 @@ namespace Kokkos {
                                                             eit(end);
     thrust::for_each( bit, eit, body );
 #ifdef HAVE_KOKKOS_DEBUG
+
     cutilCheckMsg(__FUNCTION__);
 #endif
   };

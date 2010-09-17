@@ -172,6 +172,10 @@
   - parallel_for: execute a parallel for loop with a user-specified loop body
   - parallel_reduce: execute a parallel reduction of user-specified elements, using a user-specified reduction operation
 
+  The Node API specifies one additional routine. Each node is required to provide a sync() method, which blocks until any outstanding
+  memory or computational operations are complete. This is only significant for nodes that support asynchronous computation or memory transfer (e.g., CUDA-based nodes). For
+  other nodes, this will typically be a no-op.
+
   Below is the interface for these methods, for some sample node \c SomeNode:
   \code 
   class SomeNode {
