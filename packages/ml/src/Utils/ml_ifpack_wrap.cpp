@@ -136,9 +136,6 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
   force_crs=1;
 #endif
 
-  printf("Building preconditioner %s on level %d\n",Type,curr_level);
-  fflush(stdout);//CMS
-
   (*Ifpack_Handle)->freeMpiComm = 0;
 
   if (Ke->type == ML_TYPE_ROW_MATRIX)
