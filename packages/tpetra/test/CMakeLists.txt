@@ -18,6 +18,10 @@ ADD_SUBDIRECTORIES(
   VbrMatrix
   )
 
+IF (Tpetra_ENABLE_BUGTESTS)
+  ADD_SUBDIRECTORY(BugTests)
+ENDIF()
+
 PACKAGE_ADD_LIBRARY(
   tpetratestlib
   SOURCES UnitTestMissingExplicitInstantiations.cpp

@@ -12,15 +12,18 @@ namespace Kokkos {
    */
   class SerialNode : public StandardNodeMemoryModel {
     public:
+      /*! \brief Default constructor, accepts a parameter list but reads no parameters. */
       SerialNode(Teuchos::ParameterList &pl) {}
-  
+
+      //! \begin parallel for skeleton, with a trivial serial implementation. See \ref kokkos_node_api "Kokkos Node API"
       template <class WDP>
       static void parallel_for(int beg, int end, WDP wd) {
         for (int i=beg; i != end; ++i) {
           wd.execute(i);
         }
       }
-  
+
+      //! \begin parallel reduction skeleton, with a trivial serial implementation. See \ref kokkos_node_api "Kokkos Node API"
       template <class WDP>
       static typename WDP::ReductionType
       parallel_reduce(int begin, int end, WDP wd) {
@@ -30,9 +33,9 @@ namespace Kokkos {
         }
         return result;
       }
-  
+
   };
-  
+
   template <> class ArrayOfViewsHelper<SerialNode> : public ArrayOfViewsHelperTrivialImpl<SerialNode> {};
 
 } // end of Kokkos namespace

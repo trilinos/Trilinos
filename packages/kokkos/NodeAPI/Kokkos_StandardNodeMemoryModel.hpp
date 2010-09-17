@@ -105,6 +105,7 @@ namespace Kokkos {
         std::copy(av_src.begin(),av_src.end(),av_dst.begin());
       }
 
+      //! \brief Return a const view of a buffer for use on the host.
       template <class T> inline
       ArrayRCP<const T> viewBuffer(size_t size, ArrayRCP<const T> buff) {
         if (isHostNode == false) {
@@ -113,6 +114,7 @@ namespace Kokkos {
         return buff.persistingView(0,size);
       }
 
+      //! \brief Return a non-const view of a buffer for use on the host.
       template <class T> inline
       ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff) {
         if (isHostNode == false) {
