@@ -1169,7 +1169,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   SetFinestLevelMatrix();
 
   /* Set the RAP storage type */
-  if(List_.get("use crs matrix storage",true)) ml_->RAP_storage_type=ML_CSR_MATRIX;
+  if(List_.get("use crs matrix storage",false)) ml_->RAP_storage_type=ML_CSR_MATRIX;
   else ml_->RAP_storage_type=ML_MSR_MATRIX;
 
   if (verbose_) {
