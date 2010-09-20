@@ -45,6 +45,11 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 
+/**
+  \example LocalMatOpExample.cpp
+  An example using a different sparse mat-vec with Tpetra::CrsMatrix and Tpetra::CrsGraph.
+ */
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
   // struct for i,j,v triplets
