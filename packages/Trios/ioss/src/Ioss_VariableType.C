@@ -48,6 +48,7 @@
 
 namespace {
   std::string uppercase(const std::string &name);
+  std::string lowercase(const std::string &name);
 
   class Deleter {
   public:
@@ -74,7 +75,8 @@ Ioss::VariableType::~VariableType() {}
 Ioss::VariableType::VariableType(const std::string& type, int comp_count, bool delete_me)
   : name_(type), componentCount(comp_count)
 {
-  registry().insert(Ioss::VTM_ValuePair(type, this), delete_me);
+  std::string low_type = lowercase(type);
+  registry().insert(Ioss::VTM_ValuePair(low_type, this), delete_me);
 
   // Register uppercase version also
   std::string up_type = uppercase(type);
@@ -84,7 +86,7 @@ Ioss::VariableType::VariableType(const std::string& type, int comp_count, bool d
 
 void Ioss::VariableType::alias(const std::string& base, const std::string& syn)
 {
-  registry().insert(Ioss::VTM_ValuePair(syn,
+  registry().insert(Ioss::VTM_ValuePair(lowercase(syn),
 					(Ioss::VariableType*)factory(base)), false);
   // Register uppercase version also
   std::string up_type = uppercase(syn);
@@ -110,9 +112,11 @@ int Ioss::VariableType::describe(NameList *names)
   return count;
 }
 
-bool Ioss::VariableType::add_field_type_mapping(const std::string &field, const std::string &type)
+bool Ioss::VariableType::add_field_type_mapping(const std::string &raw_field, const std::string &raw_type)
 {
   // See if storage type 'type' exists...
+  std::string field = lowercase(raw_field);
+  std::string type  = lowercase(raw_type);
   if (registry().find(type) == registry().end())
     return false;
 
@@ -129,12 +133,13 @@ bool Ioss::VariableType::create_named_suffix_field_type(const std::string &type_
   if (count < 1)
     return false;
 
+  std::string low_name = lowercase(type_name);
   // See if the variable already exists...
-  if (registry().find(type_name) != registry().end())
+  if (registry().find(low_name) != registry().end())
     return false;
   
   // Create the variable.  Note that the 'true' argument means Ioss will delete the pointer.
-  Ioss::NamedSuffixVariableType *var_type = new Ioss::NamedSuffixVariableType(type_name, count, true);
+  Ioss::NamedSuffixVariableType *var_type = new Ioss::NamedSuffixVariableType(low_name, count, true);
 
   for (size_t i=0; i < count; i++) {
     var_type->add_suffix(i+1, suffices[i]);
@@ -146,18 +151,21 @@ bool Ioss::VariableType::get_field_type_mapping(const std::string &field, std::s
 {
   // Returns true if a mapping exists, 'type' contains the mapped type.
   // Returns false if no custom mapping exists for this field.
-  if (registry().customFieldTypes.find(field) == registry().customFieldTypes.end()) {
+  std::string low_field = lowercase(field);
+  
+  if (registry().customFieldTypes.find(low_field) == registry().customFieldTypes.end()) {
     return false;
   }
   else {
-    *type = registry().customFieldTypes.find(field)->second;
+    *type = registry().customFieldTypes.find(low_field)->second;
     return true;
   }
 }
 
-const Ioss::VariableType* Ioss::VariableType::factory(const std::string& name, int copies)
+const Ioss::VariableType* Ioss::VariableType::factory(const std::string& raw_name, int copies)
 {
   Ioss::VariableType* inst = NULL;
+  std::string name = lowercase(raw_name);
   Ioss::VariableTypeMap::iterator iter = registry().find(name);
   if (iter == registry().end()) {
     bool can_construct = build_variable_type(name);
@@ -167,7 +175,7 @@ const Ioss::VariableType* Ioss::VariableType::factory(const std::string& name, i
       inst = (*iter).second;
     } else {
       std::ostringstream errmsg;
-      errmsg << "FATAL: The variable type '" << name << "' is not supported.\n";
+      errmsg << "FATAL: The variable type '" << raw_name << "' is not supported.\n";
       IOSS_ERROR(errmsg);
     }
   } else {
@@ -280,12 +288,14 @@ std::string Ioss::VariableType::label_name(const std::string& base, int which,
   return my_name;
 }
 
-bool Ioss::VariableType::build_variable_type(const std::string& type)
+bool Ioss::VariableType::build_variable_type(const std::string& raw_type)
 {
   // See if this is a multi-component instance of a base type.
   // An example would be REAL[2] which is a basic real type with
   // two components.  The suffices would be .0 and .1
 
+  std::string type = lowercase(raw_type);
+  
   // Step 0:
   // See if the type contains '[' and ']'
   char const *typestr = type.c_str();
@@ -358,6 +368,12 @@ namespace {
   {
     std::string s(name);
     std::transform(s.begin(), s.end(), s.begin(), toupper);
+    return s;
+  }
+  std::string lowercase(const std::string &name)
+  {
+    std::string s(name);
+    std::transform(s.begin(), s.end(), s.begin(), tolower);
     return s;
   }
 }
