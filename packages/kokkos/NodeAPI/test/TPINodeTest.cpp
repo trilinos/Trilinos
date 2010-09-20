@@ -40,7 +40,7 @@ namespace {
         begin  = 0 ;
       }
       T * const my_x = w->x;
-      for (int i=begin; i != end; ++i) {my_x[i] = Teuchos::ScalarTraits<T>::one();}
+      for (unsigned int i=begin; i != end; ++i) {my_x[i] = Teuchos::ScalarTraits<T>::one();}
     }
   };
 
@@ -62,18 +62,16 @@ namespace {
         begin  = 0 ;
       }
       T * const my_x = w->x;
-      for (int i=begin; i != end; ++i) {*dst += my_x[i];}
+      for (unsigned int i=begin; i != end; ++i) {*dst += my_x[i];}
     }
     // initialization
     static void init( TPI_Work * work ) {
-      struct TPIInit<T> * const w = (TPIInit<T> *) work->info ;
       T * const dst = (T *) work->reduce ;
       (*dst) = Teuchos::ScalarTraits<T>::zero();
     }
     // combination
     static void join( TPI_Work * work , const void * arg_src ) {
-      struct TPIInit<T> * const w = (TPIInit<T> *) work->info ;
-            T * const dst = (T *) work->reduce ;
+      T * const dst = (T *) work->reduce ;
       const T * const src = (const T *) arg_src ;
       (*dst) += (*src);
     }
@@ -141,7 +139,7 @@ namespace {
     return ret;
   }
 
-  TEST_NODE(TPINode);
+  TEST_NODE(TPINode)
 
 }
 

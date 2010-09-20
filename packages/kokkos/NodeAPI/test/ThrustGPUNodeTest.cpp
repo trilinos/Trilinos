@@ -81,7 +81,7 @@ namespace {
     return ret;
   }
 
-  TEST_NODE(ThrustGPUNode);
+  TEST_NODE(ThrustGPUNode)
 }
 
 #endif

@@ -79,6 +79,6 @@ namespace {
     return ret;
   }
 
-  TEST_NODE(SerialNode);
+  TEST_NODE(SerialNode)
 
 }
