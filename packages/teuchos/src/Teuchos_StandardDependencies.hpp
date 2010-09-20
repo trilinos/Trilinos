@@ -1175,6 +1175,13 @@ public:
   const ValueToValidatorMap& getValuesAndValidators() const{
     return valuesAndValidators_;
   }
+
+  RCP<const ParameterEntryValidator> getDefaultValidator() const{
+    return defaultValidator_;
+  }
+
+  //@}
+  
   /** \name Overridden from Dependency */
   //@{
 

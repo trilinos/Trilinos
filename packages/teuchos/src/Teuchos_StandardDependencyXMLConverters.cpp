@@ -53,7 +53,7 @@ void VisualDependencyXMLConverter::convertDependency(
   const RCP<const Dependency> dependency, 
   XMLObject& xmlObj,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-  const XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
+  XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
 {
   RCP<const VisualDependency> castedDep = 
     rcp_dynamic_cast<const VisualDependency>(dependency, true);
@@ -81,7 +81,7 @@ void ValidatorDependencyXMLConverter::convertDependency(
   const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& /*entryIDsMap*/,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
 {
   RCP<const ValidatorDependency> castedDep = 
     rcp_dynamic_cast<const ValidatorDependency>(dependency, true);

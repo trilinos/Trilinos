@@ -47,13 +47,16 @@ XMLParameterListWriter::toXML(
 {
   EntryIDsMap entryIDsMap;
   ValidatorIDsMap validatorIDsMap;
-  ParameterEntry::ParameterEntryID peIDCounter =0;
-  XMLObject validators = convertValidators(p, validatorIDsMap);
+  ParameterEntry::ParameterEntryID peIDCounter = 0;
+  ParameterEntryValidator::ValidatorID vIDCounter = 0;
+
+  //We build an initial map full of validators that are located in the 
+  //parameter list. That way we can convert the parameter entries.
+  buildInitialValidatorMap(p, validatorIDsMap, vIDCounter);
 
   XMLObject toReturn = 
     convertParameterList(p, peIDCounter, entryIDsMap, validatorIDsMap);
   toReturn.addAttribute(getNameAttributeName(), p.name());
-  toReturn.addChild(validators);
 
   if(!depSheet.is_null()){
     XMLObject deps = 
@@ -61,10 +64,15 @@ XMLParameterListWriter::toXML(
     toReturn.addChild(deps);
   }
 
+  //Validators must be done after depencneies because dependencies might add
+  //entries to the validator map. KLN 09/20/2010
+  XMLObject validators = convertValidators(p, validatorIDsMap);
+  toReturn.addChild(validators);
+
   return toReturn;
 }
 
-void XMLParameterListWriter::buildValidatorMap(
+void XMLParameterListWriter::buildInitialValidatorMap(
   const ParameterList& p,
   ValidatorIDsMap& validatorIDsMap,
   ParameterEntryValidator::ValidatorID& idCounter) const
@@ -90,8 +98,6 @@ XMLObject XMLParameterListWriter::convertValidators(
   const ParameterList& p, ValidatorIDsMap& validatorIDsMap) const
 {
   XMLObject validators(getValidatorsTagName());
-  ParameterEntryValidator::ValidatorID idCounter = 0;
-  buildValidatorMap(p, validatorIDsMap, idCounter);
   for(
     ValidatorIDsMap::const_iterator it = validatorIDsMap.begin();
     it != validatorIDsMap.end();
@@ -140,7 +146,7 @@ XMLObject
 XMLParameterListWriter::convertDependencies(
   RCP<const DependencySheet> depSheet,
   const EntryIDsMap& entryIDsMap,
-  const ValidatorIDsMap& validatorIDsMap) const
+  ValidatorIDsMap& validatorIDsMap) const
 {
   XMLObject toReturn(getDependenciesTagName());
   for(

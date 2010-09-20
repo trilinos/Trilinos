@@ -86,7 +86,7 @@ XMLObject
 DependencyXMLConverter::fromDependencytoXML(
   const RCP<const Dependency> dependency,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+  XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
 {
   XMLObject toReturn(Dependency::getXMLTagName());
 

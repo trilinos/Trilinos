@@ -119,7 +119,7 @@ private:
     const ValidatorIDsMap& validatorIDsMap) const;
 
   /** \brief Builds up the list of validators to be converted */
-  void buildValidatorMap(
+  void buildInitialValidatorMap(
     const ParameterList& p,
     ValidatorIDsMap& validatorIDsMap,
     ParameterEntryValidator::ValidatorID& idCounter) const;

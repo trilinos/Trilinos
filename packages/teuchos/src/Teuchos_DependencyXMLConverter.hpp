@@ -90,7 +90,7 @@ public:
   XMLObject fromDependencytoXML(
     const RCP<const Dependency> dependency,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
   
   /** \brief Preforms any and all special dependency conversion that is
    * specific to a particlar Dependency.
@@ -102,7 +102,7 @@ public:
     const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const = 0;
+    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const = 0;
   
   //@}
 
