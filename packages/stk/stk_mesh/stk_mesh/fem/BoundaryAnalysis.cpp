@@ -194,37 +194,38 @@ void get_adjacent_entities( const Entity & entity ,
                                  elements);
 
   // Make sure to remove the all superimposed entities from the list
+  {
+    unsigned num_nodes_in_orig_entity = entity_nodes.size();
+    std::vector<Entity*> current_nodes;
+    current_nodes.resize(num_nodes_in_orig_entity);
+    std::vector<Entity*>::iterator itr = elements.begin();
+    while ( itr != elements.end() ) {
+      Entity * current_entity = *itr;
+      PairIterRelation relations = current_entity->relations(NodeRank);
 
-  unsigned num_nodes_in_orig_entity = entity_nodes.size();
-  std::vector<Entity*> current_nodes;
-  current_nodes.resize(num_nodes_in_orig_entity);
-  std::vector<Entity*>::iterator itr = elements.begin();
-  while ( itr != elements.end() ) {
-    Entity * current_entity = *itr;
-    PairIterRelation relations = current_entity->relations(NodeRank);
-
-    if (current_entity == &entity) {
-      // We do not want to be adjacent to ourself
-      itr = elements.erase(itr);
-    }
-    else if (relations.size() != num_nodes_in_orig_entity) {
-      // current_entity has a different number of nodes than entity, they
-      // cannot be superimposed
-      ++itr;
-    }
-    else {
-      for (unsigned i = 0; relations.first != relations.second;
-           ++relations.first, ++i ) {
-        current_nodes[i] = relations.first->entity();
-      }
-      std::sort(current_nodes.begin(), current_nodes.end());
-
-      bool entities_are_superimposed = entity_nodes == current_nodes;
-      if (entities_are_superimposed) {
+      if (current_entity == &entity) {
+        // We do not want to be adjacent to ourself
         itr = elements.erase(itr);
       }
-      else {
+      else if (relations.size() != num_nodes_in_orig_entity) {
+        // current_entity has a different number of nodes than entity, they
+        // cannot be superimposed
         ++itr;
+      }
+      else {
+        for (unsigned i = 0; relations.first != relations.second;
+             ++relations.first, ++i ) {
+          current_nodes[i] = relations.first->entity();
+        }
+        std::sort(current_nodes.begin(), current_nodes.end());
+
+        bool entities_are_superimposed = entity_nodes == current_nodes;
+        if (entities_are_superimposed) {
+          itr = elements.erase(itr);
+        }
+        else {
+          ++itr;
+        }
       }
     }
   }
