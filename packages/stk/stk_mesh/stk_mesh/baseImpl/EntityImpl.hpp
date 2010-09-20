@@ -39,7 +39,7 @@ public:
   EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
   EntityId identifier() const { return stk::mesh::entity_id( m_key ); }
   const EntityKey & key() const { return m_key ; }
-  PairIterRelation relations() const { return PairIterRelation( m_relation ); }
+  PairIterRelation relations() const { return PairIterRelation(m_relation); }
   PairIterRelation relations( unsigned type ) const ;
   PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
   PairIterEntityComm sharing() const ;
@@ -97,16 +97,6 @@ public:
     m_mod_log = EntityLogNoChange;
   }
 
-  /**
-   * Only changes from EntityLogNoChange to EntityLogModified
-   * No change if Entity is in created or deleted state
-   */
-  void log_modified() {
-    if ( EntityLogNoChange == m_mod_log ) {
-      m_mod_log = EntityLogModified;
-    }
-  }
-
   void log_deleted() {
     m_mod_log = EntityLogDeleted;
   }
@@ -116,6 +106,15 @@ public:
    * takes an entity in the deleted state and changes it to modified.
    */
   void log_resurrect();
+
+  /**
+   * Mark this entity as modified (only changes from EntityLogNoChange
+   * to EntityLogModified). Propagates the modification to higher-ranking
+   * entities related to this entity. In other words, based on our
+   * modification model, all entities that have modified_entity in their
+   * closure must also be marked as modified.
+   */
+  void log_modified_and_propagate();
 
   /** \brief  Log that this entity was created as a parallel copy. */
   void log_created_parallel_copy();
@@ -131,13 +130,12 @@ public:
   unsigned                m_bucket_ord ; ///< Ordinal within the bucket
   unsigned                m_owner_rank ; ///< Owner processors' rank
   size_t                  m_sync_count ; ///< Last membership change
-  EntityModificationLog         m_mod_log ;
+  EntityModificationLog   m_mod_log ;
 
 private:
   EntityImpl();
   EntityImpl( const EntityImpl & ); ///< Copy constructor not allowed
   EntityImpl & operator = ( const EntityImpl & ); ///< Assignment operator not allowed
-
 };
 
 //----------------------------------------------------------------------

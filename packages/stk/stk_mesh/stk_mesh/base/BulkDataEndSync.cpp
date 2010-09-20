@@ -335,7 +335,7 @@ void BulkData::internal_resolve_shared_modify_delete()
     // status is applied to all related higher ranking entities.
 
     if ( ! locally_destroyed ) {
-      m_entity_repo.modify_and_propagate( *entity );
+      m_entity_repo.log_modified( *entity );
     }
 
     // A shared entity is being deleted on the remote process.

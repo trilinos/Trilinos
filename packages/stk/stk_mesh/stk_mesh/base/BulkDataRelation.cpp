@@ -151,8 +151,7 @@ void BulkData::declare_relation( Entity & e_from ,
 
   // Deduce and set new part memberships:
 
-  induced_part_membership( e_from, empty,
-      e_to.entity_rank(), local_id, add );
+  induced_part_membership( e_from, empty, e_to.entity_rank(), local_id, add );
 
   internal_change_entity_parts( e_to , add , empty );
 

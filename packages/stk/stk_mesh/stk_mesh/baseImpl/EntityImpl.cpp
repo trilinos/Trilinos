@@ -189,6 +189,31 @@ void EntityImpl::log_resurrect()
   m_bucket = NULL;
 }
 
+void EntityImpl::log_modified_and_propagate()
+{
+  // If already in modified state, return
+  if (m_mod_log != EntityLogNoChange) {
+    return;
+  }
+
+  // mark this entity as modified
+  m_mod_log = EntityLogModified;
+
+  // recurse on related entities w/ higher rank
+  EntityRank rank_of_original_entity = entity_rank();
+  for ( PairIterRelation irel = relations() ; irel.first != irel.second ; ) {
+    --irel.second;
+    Entity & entity = *(irel.second->entity());
+    if ( rank_of_original_entity >= entity.entity_rank() ) {
+      break; //we're done
+    }
+    else if ( entity.log_query() == EntityLogNoChange ) {
+      entity.m_entityImpl.log_modified_and_propagate();
+    }
+  }
+
+}
+
 void EntityImpl::log_created_parallel_copy()
 {
   if ( EntityLogCreated == m_mod_log ) {

@@ -86,7 +86,8 @@ public:
 
   //------------------------------------
   /** \brief  All \ref stk::mesh::Relation "Entity relations"
-   *          for which this entity is a member.
+   *          for which this entity is a member. The relations are ordered
+   *          from lowest entity-rank to highest entity-rank.
    */
   PairIterRelation relations() const { return m_entityImpl.relations(); }
 
