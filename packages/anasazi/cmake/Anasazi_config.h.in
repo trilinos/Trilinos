@@ -1,53 +1,55 @@
 /* src/Anasazi_config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if want to build with anasazi enabled */
+/* Define if want to build with amesos enabled */
 #cmakedefine HAVE_ANASAZI_AMESOS
 
-/* Define if want to build with anasazi enabled */
+/* Define if want to build with aztecoo enabled */
 #cmakedefine HAVE_ANASAZI_AZTECOO
 
-/* Define if want to build with anasazi enabled */
+/* Define if want to build with ifpack enabled */
+#cmakedefine HAVE_ANASAZI_IFPACK
+
+/* Define if want to build with belos enabled */
 #cmakedefine HAVE_ANASAZI_BELOS
 
-/* Define if want to build with anasazi enabled */
+/* Define if want to build with epetra enabled */
 #cmakedefine HAVE_ANASAZI_EPETRA
 
-/* Define if want to build with anasazi enabled */
+/* Define if want to build with epetraext enabled */
 #cmakedefine HAVE_ANASAZI_EPETRAEXT
-
-/* Define if want to build anasazi-examples */
-#cmakedefine HAVE_ANASAZI_EXAMPLES
 
 /* Define if want to build anasazi-experimental */
 #cmakedefine HAVE_ANASAZI_EXPERIMENTAL
 
-/* Define if want to build with anasazi enabled */
-#cmakedefine HAVE_ANASAZI_IFPACK
-
-/* Define if want to build anasazi-tests */
-#cmakedefine HAVE_ANASAZI_TESTS
-
-/* Define if want to build with anasazi enabled */
-#cmakedefine HAVE_ANASAZI_THYRA
-
-/* Define if want to build with anasazi enabled */
+/* Define if want to build with tpetra enabled */
 #cmakedefine HAVE_ANASAZI_TPETRA
 
-/* Define if want to build with anasazi enabled */
+/* Define whether we have Tpetra MultiVector timers */
+#cmakedefine HAVE_ANASAZI_TPETRA_TIMERS
+
+/* Define if want to build with thyra enabled */
+#cmakedefine HAVE_ANASAZI_THYRA
+
+/* Define if want to build with triutils enabled */
 #cmakedefine HAVE_ANASAZI_TRIUTILS
 
 /* Define if want to build with epetra enabled */
 #cmakedefine HAVE_EPETRA_THYRA @HAVE_EPETRA_THYRA@
 
+/* Define if want to build anasazi-examples */
+#cmakedefine HAVE_ANASAZI_EXAMPLES
+
 /* Define if want to build examples */
 #cmakedefine HAVE_EXAMPLES
 
-/* Define if you want to build export makefiles. */
-/* define if we want to use MPI */
-#cmakedefine HAVE_MPI
+/* Define if want to build anasazi-tests */
+#cmakedefine HAVE_ANASAZI_TESTS
 
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
 
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX

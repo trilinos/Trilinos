@@ -49,6 +49,13 @@ ADD_OPTION_AND_DEFINE(
   "Enable TSQR (Tall Skinny QR factorization) support in Anasazi."
   OFF )
 
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_Tpetra_Timers
+  HAVE_ANASAZI_TPETRA_TIMERS
+  "Add timers to Anasazi::MultiVecTraits for Tpetra multivectors."
+  NO
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #
