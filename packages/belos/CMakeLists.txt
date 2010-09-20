@@ -47,6 +47,14 @@ IF (Belos_ENABLE_Tpetra)
   ADD_SUBDIRECTORY(tpetra)
 ENDIF()
 
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_Tpetra_Timers
+  HAVE_BELOS_TPETRA_TIMERS
+  "Add timers to Belos::MultiVecTraits for Tpetra multivectors."
+  NO
+  )
+
+
 #
 # Exclude files for source package.
 #

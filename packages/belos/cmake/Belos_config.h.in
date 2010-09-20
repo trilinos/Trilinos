@@ -1,26 +1,45 @@
-/* Define if want to build with belos enabled */
+/* Define if want to build with epetraext enabled */
 #cmakedefine HAVE_BELOS_EPETRAEXT
+
+/* Define if want to build with amesos enabled */
+#cmakedefine HAVE_BELOS_AMESOS
+
+/* Define if want to build with ifpack enabled */
+#cmakedefine HAVE_BELOS_IFPACK
+
+/* Define if want to build with epetra enabled */
+#cmakedefine HAVE_ANASAZI_EPETRA
+
+/* Define if want to build with epetraext enabled */
+#cmakedefine HAVE_ANASAZI_EPETRAEXT
+
+/* Define if want to build with ml enabled */
+#cmakedefine HAVE_BELOS_ML
+
+/* Define if want to build with tpetra enabled */
+#cmakedefine HAVE_BELOS_TPETRA
+
+/* Define whether we have Tpetra MultiVector timers */
+#cmakedefine HAVE_BELOS_TPETRA_TIMERS
+
+/* Define if want to build with thyra enabled */
+#cmakedefine HAVE_ANASAZI_THYRA
+
+/* Define if want to build with triutils enabled */
+#cmakedefine HAVE_BELOS_TRIUTILS
+
 
 /* Define if want to build belos-examples */
 #cmakedefine HAVE_BELOS_EXAMPLES
 
-/* Define if want to build with belos enabled */
-#cmakedefine HAVE_BELOS_IFPACK
-
-/* Define if want to build with belos enabled */
-#cmakedefine HAVE_BELOS_ML
+/* Define if want to build examples */
+#cmakedefine HAVE_EXAMPLES
 
 /* Define if want to build belos-tests */
 #cmakedefine HAVE_BELOS_TESTS
 
-/* Define if want to build with belos enabled */
-#cmakedefine HAVE_BELOS_TPETRA
-
-/* Define if want to build with belos enabled */
-#cmakedefine HAVE_BELOS_TRIUTILS
-
-/* Define if want to build examples */
-#cmakedefine HAVE_EXAMPLES
+/* Define if want to build tests */
+#cmakedefine HAVE_TESTS
 
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
@@ -42,5 +61,5 @@
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
-#undef inline
+#cmakedefine inline
 #endif
