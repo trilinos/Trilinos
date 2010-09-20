@@ -58,14 +58,14 @@ if(RUN_COVERAGE_TESTS)
     SERIAL_DEBUG_COVERAGE
     ctest_linux_nightly_serial_debug_coverage_godel.cmake
     RUN_SERIAL
-    TIMEOUT_MINUTES 240
+    TIMEOUT_MINUTES 300
   )
 
   TRILINOS_DRIVER_ADD_DASHBOARD(
     MPI_DEBUG_COVERAGE
     ctest_linux_nightly_mpi_debug_coverage_godel.cmake
     RUN_SERIAL
-    TIMEOUT_MINUTES 240
+    TIMEOUT_MINUTES 300
   )
   
 endif()
