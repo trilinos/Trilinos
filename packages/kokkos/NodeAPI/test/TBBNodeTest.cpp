@@ -27,8 +27,6 @@ namespace {
     tbbNode_ = rcp(new TBBNode(plist));
   }
 
-  TEST_NODE(TBBNode);
-
   template <class T>
   class TBBNodeTestInit {
   private:
@@ -111,6 +109,8 @@ namespace {
     ret.second = sTime.totalElapsedTime(); 
     return ret;
   }
+
+  TEST_NODE(TBBNode)
 
 }
 
