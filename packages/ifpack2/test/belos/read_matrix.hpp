@@ -114,9 +114,9 @@ read_matrix_mm(const std::string& mm_file,
   if (my_proc == 0) {
     std::cout << "Proc 0: Opening Matrix Market sparse matrix file \"" + mm_file + "\"" << std::endl;
     infile = new std::ifstream (mm_file.c_str());
-    std::cout << "-- infile pointer: " << infile << std::endl;
     std::ifstream& in = *infile;
     if (! in) {
+      // e.g. file not included in PACKAGE_COPY_FILES_TO_BINARY_DIR
       throw std::runtime_error("Failed to open Matrix Market file \"" + mm_file + "\"");
     }
 
@@ -198,8 +198,7 @@ read_matrix_mm(const std::string& mm_file,
       std::istringstream isstr(line);
       isstr >> irow >> icol >> val;
 
-      //std::cout << "Alarmingly this line is never executed"  << std::endl;
-      std::cout << "Matrix(" << irow << ","  << icol << ")= " << val << std::endl;
+      //std::cout << "Matrix(" << irow << ","  << icol << ")= " << val << std::endl;
  
       if (isstr.fail()) 
 	{

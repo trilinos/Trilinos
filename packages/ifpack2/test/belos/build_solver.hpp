@@ -4,9 +4,11 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
 
 template<class Scalar,class MV, class OP>
 Teuchos::RCP<Belos::SolverManager<Scalar,MV,OP> >
@@ -27,6 +29,9 @@ build_solver(Teuchos::ParameterList& test_params,
   if (solver_type == "PseudoBlockCG") {
     solver = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
+  else if (solver_type == "BlockCG") {
+    solver = Teuchos::rcp(new Belos::BlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
+  }
   else if (solver_type == "PseudoBlockGmres") {
     solver = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
@@ -42,7 +47,7 @@ build_solver(Teuchos::ParameterList& test_params,
   else {
     std::ostringstream os;
     os << "Error in build_solver: solver_type ("<<solver_type<<") not recognized.";
-    os << "\nIfpack2's test-driver recognizes these solvers: PseudoBlockCG, PesudoBlockGmres, BlockGmres, TFQMR.";
+    os << "\nIfpack2's test-driver recognizes these solvers: PseudoBlockCG, BlockCG, PesudoBlockGmres, BlockGmres, TFQMR.";
     std::string str = os.str();
     throw std::runtime_error(str);
   }

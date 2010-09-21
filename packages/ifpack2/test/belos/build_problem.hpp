@@ -72,9 +72,11 @@ Teuchos::RCP<
 
   Teuchos::RCP<const TCRS> A;
   Teuchos::RCP<TMV> b = Teuchos::null;
+  Teuchos::RCP<TMV> nullVec = Teuchos::null;
 
   std::string mm_file("not specified");
   std::string rhs_mm_file("not specified");
+  std::string nullMvec_mm_file("not specified");
   Ifpack2::getParameter(test_params, "mm_file", mm_file);
   Ifpack2::getParameter(test_params, "rhs_mm_file", rhs_mm_file);
   std::string hb_file("not specified");
@@ -92,6 +94,14 @@ Teuchos::RCP<
       }
       b = read_vector_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rhs_mm_file, comm);
     }
+
+    if (nullMvec_mm_file != "not specified") {
+      if (comm->getRank() == 0) {
+        std::cout << "null multivector Matrix-Market file: " << nullMvec_mm_file << std::endl;
+      }
+      nullVec = read_vector_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rhs_mm_file, comm);
+    }
+
   }
   else if (hb_file != "not specified") {
     if (comm->getRank() == 0) {

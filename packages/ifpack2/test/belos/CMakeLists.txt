@@ -52,6 +52,9 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(Ifpack2BelosCopyFiles
   5w_missing_diag.mtx 5w_missing_diag_ILUT.xml
   5w_bel_tif_RILUK_0.xml 5w_bel_tif_RILUK_1.xml
   test_RILUK_tfqmr_small_sym_mm.xml
+  test_bordered_DIAG_small.xml small_sym_sing.mtx consist_rhs.vec small_null.vec
+
+
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   EXEDEPS tif_belos
@@ -300,3 +303,13 @@ PACKAGE_ADD_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
 )
+
+PACKAGE_ADD_TEST(
+  tif_belos Ifpack2BelosCopyFiles
+  NAME Bordered_belos
+  ARGS "--xml_file=test_bordered_DIAG_small.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
