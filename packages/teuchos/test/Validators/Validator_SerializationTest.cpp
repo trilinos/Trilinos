@@ -93,12 +93,11 @@ TEUCHOS_UNIT_TEST(Teuchos_Validator, exceptionTests)
 
   StringValidatorXMLConverter stringConverter;
   AnyNumberValidatorXMLConverter anyNumberConverter;
-  XMLParameterListWriter::ValidatorIDsMap writerDummyMap;
-  XMLParameterListReader::ValidatorIDsMap readerDummyMap;
+  ValidatortoIDMap writerDummyMap;
+  IDtoValidatorMap readerDummyMap;
   RCP<AnyNumberParameterEntryValidator> anyNumberValidator = 
     anyNumberParameterEntryValidator();
-  writerDummyMap.insert(XMLParameterListWriter::ValidatorIDsMap::value_type(
-    anyNumberValidator, 0));
+  writerDummyMap.insert(anyNumberValidator);
   TEST_THROW(
     stringConverter.fromValidatortoXML(anyNumberValidator, writerDummyMap), 
     BadValidatorXMLConverterException);

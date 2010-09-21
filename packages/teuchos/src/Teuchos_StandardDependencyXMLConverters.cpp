@@ -297,23 +297,31 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   RCP<const BoolValidatorDependency> castedDependency = 
     rcp_dynamic_cast<const BoolValidatorDependency>(dependency, true);  
 
-  if(validatorIDsMap.find(castedDependency->getFalseValidator()) == 
-    validatorIDsMap.end()){
-    validatorIDsMap.insert(castedDependency->getFalseValidator());
+  RCP<const ParameterEntryValidator> trueVali = 
+    castedDependency->getTrueValidator();
+  RCP<const ParameterEntryValidator> falseVali = 
+    castedDependency->getFalseValidator();
+
+  if(nonnull(trueVali)){
+    if(validatorIDsMap.find(castedDependency->getTrueValidator()) == 
+      validatorIDsMap.end()){
+      validatorIDsMap.insert(castedDependency->getTrueValidator());
+    }
+    xmlObj.addAttribute(
+      getTrueValidatorIDAttributeName(),
+      validatorIDsMap.find(castedDependency->getTrueValidator())->second);
   }
 
-  xmlObj.addAttribute(
-    getFalseValidatorIDAttributeName(),
-    validatorIDsMap.find(castedDependency->getFalseValidator())->second);
-
-  if(validatorIDsMap.find(castedDependency->getTrueValidator()) == 
-    validatorIDsMap.end()){
-    validatorIDsMap.insert(castedDependency->getTrueValidator());
+  if(nonnull(falseVali)){
+    if(validatorIDsMap.find(falseVali) == 
+      validatorIDsMap.end()){
+      validatorIDsMap.insert(falseVali);
+    }
+    xmlObj.addAttribute(
+      getFalseValidatorIDAttributeName(),
+      validatorIDsMap.find(falseVali)->second);
   }
 
-  xmlObj.addAttribute(
-    getTrueValidatorIDAttributeName(),
-    validatorIDsMap.find(castedDependency->getTrueValidator())->second);
 }
 
 RCP<ValidatorDependency> 
@@ -324,38 +332,49 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   const IDtoValidatorMap& validatorIDsMap) const
 {
 
-  ParameterEntryValidator::ValidatorID falseID = 
-    xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-      getFalseValidatorIDAttributeName());
-  ParameterEntryValidator::ValidatorID trueID = 
-    xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
-      getTrueValidatorIDAttributeName());
-  TEST_FOR_EXCEPTION(
-    validatorIDsMap.find(falseID)
-    == 
-    validatorIDsMap.end(),
-    MissingValidatorException,
-    "Could not find a Validator for the False validator " <<
-    "with ID " << falseID <<
-    " in the given validatorIDsMap!" << std::endl << std::endl);
+  RCP<ParameterEntryValidator> trueValidator = null;
+  RCP<ParameterEntryValidator> falseValidator = null;
 
-  TEST_FOR_EXCEPTION(
-    validatorIDsMap.find(trueID)
-    == 
-    validatorIDsMap.end(),
-    MissingValidatorException,
-    "Could not find a Validator for the True validator " <<
-    "with ID " << trueID <<
-    " in the given validatorIDsMap!" << std::endl << std::endl);
+  if(xmlObj.hasAttribute(getTrueValidatorIDAttributeName())){
 
-  RCP<ParameterEntryValidator> falseValidator = 
-    validatorIDsMap.find(falseID)->second;
-    
-  RCP<ParameterEntryValidator> trueValidator = 
-    validatorIDsMap.find(trueID)->second;
+    ParameterEntryValidator::ValidatorID trueID = 
+      xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
+        getTrueValidatorIDAttributeName());
+  
+    TEST_FOR_EXCEPTION(
+      validatorIDsMap.find(trueID)
+      == 
+      validatorIDsMap.end(),
+      MissingValidatorException,
+      "Could not find a Validator for the True validator " <<
+      "with ID " << trueID <<
+      " in the given validatorIDsMap!" << std::endl << std::endl);
+  
+    trueValidator = 
+      validatorIDsMap.find(trueID)->second;
+  }
+
+
+  if(xmlObj.hasAttribute(getFalseValidatorIDAttributeName())){
+    ParameterEntryValidator::ValidatorID falseID = 
+      xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
+        getFalseValidatorIDAttributeName());
+  
+    TEST_FOR_EXCEPTION(
+      validatorIDsMap.find(falseID)
+      == 
+      validatorIDsMap.end(),
+      MissingValidatorException,
+      "Could not find a Validator for the False validator " <<
+      "with ID " << falseID <<
+      " in the given validatorIDsMap!" << std::endl << std::endl);
+  
+    falseValidator = 
+      validatorIDsMap.find(falseID)->second;
+  }
 
   return rcp(new BoolValidatorDependency(
-    dependee, dependents, falseValidator, trueValidator));
+    dependee, dependents, trueValidator, falseValidator));
 }
 
 

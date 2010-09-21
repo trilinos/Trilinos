@@ -658,6 +658,104 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringValidatorDepSerialization){
 
 }
 
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolValidatorDepSerialization){
+  std::string dependee1 = "bool param";
+  std::string dependee2 = "bool param2";
+  std::string dependent1 = "dependent param1";
+  std::string dependent2 = "dependent param2";
+  ParameterList myDepList("String Vali Dep List");
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
+  myDepList.set(dependee1, true);
+  myDepList.set(dependee2, false);
+  myDepList.set(dependent1, 2.0);
+  myDepList.set(dependent2, 3.0);
+
+	RCP<EnhancedNumberValidator<double> > true1Vali =
+    rcp(new EnhancedNumberValidator<double>(0,10));
+
+	RCP<EnhancedNumberValidator<double> > false1Vali =
+    rcp(new EnhancedNumberValidator<double>(0,30));
+
+	RCP<EnhancedNumberValidator<double> > true2Vali =
+    rcp(new EnhancedNumberValidator<double>(4,90));
+
+
+  RCP<BoolValidatorDependency> simpleBoolValiDep = rcp(
+    new BoolValidatorDependency(
+      myDepList.getEntryRCP(dependee1),
+      myDepList.getEntryRCP(dependent1),
+      true1Vali,
+      false1Vali));
+
+  Dependency::ParameterEntryList dependentList;
+  dependentList.insert(myDepList.getEntryRCP(dependent1));
+  dependentList.insert(myDepList.getEntryRCP(dependent2));
+
+  RCP<BoolValidatorDependency> complexBoolValiDep = rcp(
+    new BoolValidatorDependency(
+      myDepList.getEntryRCP(dependee2),
+      dependentList,
+      true2Vali));
+
+  myDepSheet->addDependency(simpleBoolValiDep);
+  myDepSheet->addDependency(complexBoolValiDep);
+
+  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
+
+  XMLParameterListWriter plWriter;
+  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
+  out << xmlOut.toString();
+
+  RCP<ParameterList> readInList = 
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
+
+  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1);
+  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1);
+  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2);
+  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2);
+  
+  RCP<Dependency> readinDep1 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
+
+  RCP<Dependency> readinDep2 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
+
+  std::string boolValiXMLTag = 
+    DummyObjectGetter<BoolValidatorDependency>::getDummyObject()->getTypeAttributeValue();
+
+  TEST_ASSERT(readinDep1->getTypeAttributeValue() == boolValiXMLTag);
+  TEST_ASSERT(readinDep2->getTypeAttributeValue() == boolValiXMLTag);
+
+  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
+  TEST_ASSERT(readinDep1->getDependents().size() == 1);
+  TEST_ASSERT((*readinDep1->getDependents().begin()).get() 
+    == readinDependent1.get());
+
+  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
+  TEST_ASSERT(readinDep2->getDependents().size() == 2);
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent1) 
+    !=
+    readinDep2->getDependents().end()
+  );
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent2)
+    !=
+    readinDep2->getDependents().end()
+  );
+    
+  RCP<BoolValidatorDependency> castedDep1 =
+    rcp_dynamic_cast<BoolValidatorDependency>(readinDep1, true);
+  RCP<BoolValidatorDependency> castedDep2 =
+    rcp_dynamic_cast<BoolValidatorDependency>(readinDep2, true);
+
+  TEST_ASSERT(nonnull(castedDep1->getTrueValidator()));
+  TEST_ASSERT(nonnull(castedDep1->getFalseValidator()));
+  TEST_ASSERT(nonnull(castedDep2->getTrueValidator()));
+  TEST_ASSERT(castedDep2->getFalseValidator().is_null());
+
+}
+
 
 
 

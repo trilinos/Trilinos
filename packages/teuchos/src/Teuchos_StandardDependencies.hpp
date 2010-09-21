@@ -1303,7 +1303,7 @@ public:
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
     RCP<const ParameterEntryValidator> trueValidator,
-    RCP<const ParameterEntryValidator> falseValidator);
+    RCP<const ParameterEntryValidator> falseValidator=null);
 
   /**
    * \brief Constructs a BoolValidatorDependency.
@@ -1319,7 +1319,7 @@ public:
     RCP<const ParameterEntry> dependee,
     Dependency::ParameterEntryList dependents,
     RCP<const ParameterEntryValidator> trueValidator,
-    RCP<const ParameterEntryValidator> falseValidator);
+    RCP<const ParameterEntryValidator> falseValidator=null);
 
   //@}
 
