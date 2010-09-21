@@ -12,14 +12,14 @@
 #include "Tpetra_MatrixIO.hpp"
 
 
-/// \brief Is the given character c a white space character?
+/// \brief Is the given character c not a white space character?
 ///
-/// Is the given character c a white space character?  Here that means
-/// a space or tab.
+/// Is the given character c not a white space character?  Here "white
+/// space" means a space or tab.
 static bool
-whiteSpaceCharacter (const char c)
+notWhiteSpaceCharacter (const char c)
 {
-  return c == ' ' || c == '\t';
+  return c != ' ' && c != '\t';
 }
 
 /// Is the given line a line of white space (or an empty line)?
@@ -33,7 +33,9 @@ isWhiteSpace (const std::string& line)
     return true; // An empty line is "white space" too
   else 
     {
-      if (std::find_if (line.begin(), line.end(), whiteSpaceCharacter) != line.end())
+      // If the line does _not_ contain a _non_-whitespace character,
+      // it is a white space line.  Sorry about the double negative...
+      if (std::find_if (line.begin(), line.end(), notWhiteSpaceCharacter) == line.end())
 	return true;
       else
 	return false;
@@ -83,6 +85,14 @@ read_matrix_hb(const std::string& hb_file,
 ///   Matrix Market file claims that it's using symmetric storage,
 ///   you'll only get the data that's in the file (which could be
 ///   either the upper or lower triangle).
+///
+/// \note The fact that Ifpack2 is under development becomes apparent
+///   to new users when attempting to input a Matrix Market format
+///   matrix.  A design principle of Tpetra and Ifpack2 is to avoid
+///   coupling to Epetra and EpetraExt.  Certain Epetra* components
+///   will be reimplemented in Tpetra*, a task that has not yet begun.
+///   The input files and this parser are coupled.
+///
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 read_matrix_mm(const std::string& mm_file,
@@ -102,7 +112,9 @@ read_matrix_mm(const std::string& mm_file,
   // infile will only be non-NULL on Proc 0.
   std::ifstream* infile = NULL;
   if (my_proc == 0) {
+    std::cout << "Proc 0: Opening Matrix Market sparse matrix file \"" + mm_file + "\"" << std::endl;
     infile = new std::ifstream (mm_file.c_str());
+    std::cout << "-- infile pointer: " << infile << std::endl;
     std::ifstream& in = *infile;
     if (! in) {
       throw std::runtime_error("Failed to open Matrix Market file \"" + mm_file + "\"");
@@ -141,6 +153,7 @@ read_matrix_mm(const std::string& mm_file,
       infile = NULL;
       throw std::runtime_error("Failed to parse header of Matrix Market file \"" + mm_file + "\"");
     }
+    std::cout << "numRow  " <<  numrows << " numCol "  << numcols << " numNz  " << nnz << std::endl;
 
     num_global_rows = numrows;
     nnz_per_row = nnz/numrows;
@@ -184,6 +197,9 @@ read_matrix_mm(const std::string& mm_file,
       // matrix.
       std::istringstream isstr(line);
       isstr >> irow >> icol >> val;
+
+      //std::cout << "Alarmingly this line is never executed"  << std::endl;
+      std::cout << "Matrix(" << irow << ","  << icol << ")= " << val << std::endl;
  
       if (isstr.fail()) 
 	{
@@ -230,7 +246,7 @@ read_matrix_mm(const std::string& mm_file,
   A->fillComplete();
 
   timer.stop();
-  if (my_proc == 0) {
+  if (my_proc==0) {
     std::cout << "Proc 0: Time to read the Matrix Market - format sparse "
       "matrix and finish fillComplete(): " << 
       timer.totalElapsedTime() << std::endl;
@@ -257,6 +273,9 @@ read_vector_mm(const std::string& mm_file,
   std::ifstream* infile = NULL;
   if (my_proc == 0) {
     infile = new std::ifstream(mm_file.c_str());
+
+
+
     if (infile == NULL || !*infile) {
       throw std::runtime_error("Failed to open file "+mm_file);
     }
