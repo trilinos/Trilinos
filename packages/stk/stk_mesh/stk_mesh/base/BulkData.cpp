@@ -261,6 +261,30 @@ Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
 
 namespace {
 
+// Returns false if there is a problem. It is expected that
+// verify_change_parts will be called if quick_verify_change_part detects
+// a problem, therefore we leave the generation of an exception to
+// verify_change_parts. We want this function to be as fast as
+// possible.
+inline bool quick_verify_change_part(const Entity& entity,
+                                     const Part* part,
+                                     const unsigned entity_rank,
+                                     const unsigned undef_rank)
+{
+  const unsigned part_rank = part->primary_entity_rank();
+
+  // The code below is coupled with the code in verify_change_parts. If we
+  // change what it means for a part to be valid, code will need to be
+  // changed in both places unfortunately.
+  const bool intersection_ok = part->intersection_of().empty();
+  const bool rel_target_ok   = ( part->relations().empty() ||
+                                 part != part->relations().begin()->m_target );
+  const bool rank_ok         = ( entity_rank == part_rank ||
+                                 undef_rank  == part_rank );
+
+  return intersection_ok && rel_target_ok && rank_ok;
+}
+
 // Do not allow any of the induced part memberships to explicitly
 // appear in the add or remove parts lists.
 // 1) Intersection part
@@ -285,6 +309,9 @@ void verify_change_parts( const char * method ,
     const Part * const p = *i ;
     const unsigned part_rank = p->primary_entity_rank();
 
+    // The code below is coupled with the code in quick_verify_change_part.
+    // If we change what it means for a part to be valid, code will need to be
+    // changed in both places unfortunately.
     const bool error_intersection = ! p->intersection_of().empty();
     const bool error_rel_target   = ! p->relations().empty() &&
                                     p == p->relations().begin()->m_target ;
@@ -336,15 +363,21 @@ void BulkData::change_entity_parts(
 
   assert_entity_owner( method , e , m_parallel_rank );
 
+  const unsigned entity_rank = e.entity_rank();
+  const unsigned undef_rank  = std::numeric_limits<unsigned>::max();
+
   // Transitive addition and removal:
   // 1) Include supersets of add_parts
   // 2) Do not include a remove_part if it appears in the add_parts
   // 3) Include subsets of remove_parts
 
   PartVector a_parts( add_parts );
+  bool quick_verify_check = true;
 
   for ( PartVector::const_iterator
         ia = add_parts.begin(); ia != add_parts.end() ; ++ia ) {
+    quick_verify_check = quick_verify_check &&
+      quick_verify_change_part(e, *ia, entity_rank, undef_rank);
     a_parts.insert( a_parts.end(), (*ia)->supersets().begin(),
                                    (*ia)->supersets().end() );
   }
@@ -370,6 +403,9 @@ void BulkData::change_entity_parts(
       throw std::runtime_error ( "Cannot remove entity from globally shared part" );
     */
 
+    quick_verify_check = quick_verify_check &&
+      quick_verify_change_part(e, *ir, entity_rank, undef_rank);
+
     if ( ! contain( a_parts , **ir ) ) {
       r_parts.push_back( *ir );
       for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
@@ -382,8 +418,20 @@ void BulkData::change_entity_parts(
 
   order( r_parts );
 
-  verify_change_parts( method , m_mesh_meta_data , e , a_parts );
-  verify_change_parts( method , m_mesh_meta_data , e , r_parts );
+  // If it looks like we have a problem, run the full check and we should
+  // expect to see an exception thrown; otherwise, only do the full check in
+  // debug mode because it incurs significant overhead.
+  if ( ! quick_verify_check ) {
+    verify_change_parts( method , m_mesh_meta_data , e , a_parts );
+    verify_change_parts( method , m_mesh_meta_data , e , r_parts );
+    throw std::logic_error("Expected throw from verify methods above.");
+  }
+  else {
+#ifndef NDEBUG
+    verify_change_parts( method , m_mesh_meta_data , e , a_parts );
+    verify_change_parts( method , m_mesh_meta_data , e , r_parts );
+#endif
+  }
 
   internal_change_entity_parts( e , a_parts , r_parts );
 
