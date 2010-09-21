@@ -16,7 +16,7 @@ SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
 #disabling Mesquite because of a build error when shared libs is turned on.
-SET(EXTRA_EXCLUDE_PACKAGES Mesquite STK)
+SET(EXTRA_EXCLUDE_PACKAGES Mesquite STK Claps)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
