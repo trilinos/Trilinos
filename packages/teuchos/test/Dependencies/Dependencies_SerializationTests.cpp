@@ -545,16 +545,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
 #endif
 
 NUM_ARRAY_LENGTH_TEST_GROUP(int)
-NUM_ARRAY_LENGTH_TEST_GROUP(short)
-NUM_ARRAY_LENGTH_TEST_GROUP(uint)
-NUM_ARRAY_LENGTH_TEST_GROUP(ushort)
-NUM_ARRAY_LENGTH_TEST_GROUP(long)
-NUM_ARRAY_LENGTH_TEST_GROUP(ulong)
 NUM_ARRAY_LENGTH_TEST_GROUP(double)
 NUM_ARRAY_LENGTH_TEST_GROUP(float)
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 NUM_ARRAY_LENGTH_TEST_GROUP(llint)
-NUM_ARRAY_LENGTH_TEST_GROUP(ullint)
 #endif
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringValidatorDepSerialization){
@@ -656,6 +650,29 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringValidatorDepSerialization){
   TEST_ASSERT(castedDep1->getDefaultValidator().is_null());
   TEST_ASSERT(nonnull(castedDep2->getDefaultValidator()));
 
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep1->getValuesAndValidators().find("val1")->second)->getMax(),
+    double1Vali->getMax());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep2->getValuesAndValidators().find("val1")->second)->getMax(),
+    double1Vali->getMax());
+
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep1->getValuesAndValidators().find("val2")->second)->getMax(),
+    double2Vali->getMax());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep2->getValuesAndValidators().find("val2")->second)->getMax(),
+    double2Vali->getMax());
+
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep2->getDefaultValidator())->getMax(),
+    defaultVali->getMax());
+
 }
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolValidatorDepSerialization){
@@ -663,7 +680,7 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolValidatorDepSerialization){
   std::string dependee2 = "bool param2";
   std::string dependent1 = "dependent param1";
   std::string dependent2 = "dependent param2";
-  ParameterList myDepList("String Vali Dep List");
+  ParameterList myDepList("Bool Vali Dep List");
   RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
   myDepList.set(dependee1, true);
   myDepList.set(dependee2, false);
@@ -753,9 +770,143 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolValidatorDepSerialization){
   TEST_ASSERT(nonnull(castedDep1->getFalseValidator()));
   TEST_ASSERT(nonnull(castedDep2->getTrueValidator()));
   TEST_ASSERT(castedDep2->getFalseValidator().is_null());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep1->getTrueValidator())->getMax(),
+    true1Vali->getMax());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep1->getFalseValidator())->getMax(),
+    false1Vali->getMax());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      castedDep2->getTrueValidator())->getMax(),
+    true2Vali->getMax());
 
 }
 
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
+  Teuchos_Dependencies, RangeValidatorDepSerialization, T)
+{
+  std::string dependee1 = "dependee param";
+  std::string dependee2 = "dependee param2";
+  std::string dependent1 = "dependent param1";
+  std::string dependent2 = "dependent param2";
+  ParameterList myDepList("Range Vali Dep List");
+  RCP<DependencySheet> myDepSheet = rcp(new DependencySheet);
+  myDepList.set(dependee1, ScalarTraits<T>::one());
+  myDepList.set(dependee2, ScalarTraits<T>::one());
+  myDepList.set(dependent1, 2.0);
+  myDepList.set(dependent2, 3.0);
+
+	RCP<EnhancedNumberValidator<double> > double1Vali =
+    rcp(new EnhancedNumberValidator<double>(0,10));
+
+	RCP<EnhancedNumberValidator<double> > double2Vali =
+    rcp(new EnhancedNumberValidator<double>(0,30));
+
+  typename RangeValidatorDependency<T>::Range range1(0,10);
+  typename RangeValidatorDependency<T>::Range range2(11,50);
+
+  typename RangeValidatorDependency<T>::RangeToValidatorMap rangeValiMap;
+  rangeValiMap[range1] = double1Vali;
+  rangeValiMap[range2] = double2Vali;
+
+  RCP<RangeValidatorDependency<T> > simpleRangeValiDep = rcp(
+    new RangeValidatorDependency<T> (
+      myDepList.getEntryRCP(dependee1),
+      myDepList.getEntryRCP(dependent1),
+      rangeValiMap));
+
+  Dependency::ParameterEntryList dependentList;
+  dependentList.insert(myDepList.getEntryRCP(dependent1));
+  dependentList.insert(myDepList.getEntryRCP(dependent2));
+
+  RCP<RangeValidatorDependency<T> > complexRangeValiDep = rcp(
+    new RangeValidatorDependency<T> (
+      myDepList.getEntryRCP(dependee2),
+      dependentList,
+      rangeValiMap));
+
+  myDepSheet->addDependency(simpleRangeValiDep);
+  myDepSheet->addDependency(complexRangeValiDep);
+
+  RCP<DependencySheet> readInDepSheet = rcp(new DependencySheet);
+
+  XMLParameterListWriter plWriter;
+  XMLObject xmlOut = plWriter.toXML(myDepList, myDepSheet);
+  out << xmlOut.toString();
+
+  RCP<ParameterList> readInList = 
+    writeThenReadPL(myDepList, myDepSheet, readInDepSheet); 
+
+  RCP<ParameterEntry> readinDependee1 = readInList->getEntryRCP(dependee1);
+  RCP<ParameterEntry> readinDependent1 = readInList->getEntryRCP(dependent1);
+  RCP<ParameterEntry> readinDependee2 = readInList->getEntryRCP(dependee2);
+  RCP<ParameterEntry> readinDependent2 = readInList->getEntryRCP(dependent2);
+  
+  RCP<Dependency> readinDep1 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
+
+  RCP<Dependency> readinDep2 =
+    *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
+
+  std::string rangeValiXMLTag = 
+    DummyObjectGetter<RangeValidatorDependency<T> >::getDummyObject()->getTypeAttributeValue();
+
+  TEST_ASSERT(readinDep1->getTypeAttributeValue() == rangeValiXMLTag);
+  TEST_ASSERT(readinDep2->getTypeAttributeValue() == rangeValiXMLTag);
+
+  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
+  TEST_ASSERT(readinDep1->getDependents().size() == 1);
+  TEST_ASSERT((*readinDep1->getDependents().begin()).get() 
+    == readinDependent1.get());
+
+  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
+  TEST_ASSERT(readinDep2->getDependents().size() == 2);
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent1) 
+    !=
+    readinDep2->getDependents().end()
+  );
+  TEST_ASSERT(
+    readinDep2->getDependents().find(readinDependent2)
+    !=
+    readinDep2->getDependents().end()
+  );
+    
+  RCP<RangeValidatorDependency<T> > castedDep1 =
+    rcp_dynamic_cast<RangeValidatorDependency<T> >(readinDep1, true);
+  RCP<RangeValidatorDependency<T> > castedDep2 =
+    rcp_dynamic_cast<RangeValidatorDependency<T> >(readinDep2, true);
+
+  typename RangeValidatorDependency<T>::RangeToValidatorMap readinMap1 = 
+    castedDep1->getRangeToValidatorMap();
+  TEST_ASSERT(readinMap1.find(range1) != readinMap1.end());
+  TEST_ASSERT(readinMap1.find(range2) != readinMap1.end());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<EnhancedNumberValidator<double> >(
+      readinMap1.find(range1)->second)->getMax(),
+    double1Vali->getMax());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<EnhancedNumberValidator<double> >(
+      readinMap1.find(range2)->second)->getMax(),
+    double2Vali->getMax());
+
+  typename RangeValidatorDependency<T>::RangeToValidatorMap readinMap2 = 
+    castedDep2->getRangeToValidatorMap();
+  TEST_ASSERT(readinMap2.find(range1) != readinMap2.end());
+  TEST_ASSERT(readinMap2.find(range2) != readinMap2.end());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<EnhancedNumberValidator<double> >(
+      readinMap2.find(range1)->second)->getMax(),
+    double1Vali->getMax());
+  TEST_EQUALITY(
+    rcp_dynamic_cast<EnhancedNumberValidator<double> >(
+      readinMap2.find(range2)->second)->getMax(),
+    double2Vali->getMax());
+}
 
 
 
