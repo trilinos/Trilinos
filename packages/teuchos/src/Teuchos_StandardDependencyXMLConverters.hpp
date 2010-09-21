@@ -567,7 +567,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
   for(int i = 0 ; i < rangesAndValidatorsTag.numChildren(); ++i){
     XMLObject child = rangesAndValidatorsTag.getChild(i);
     T min = child.getRequired<T>(getMinAttributeName());
-    T max = child.getRequired<T>(getMinAttributeName());
+    T max = child.getRequired<T>(getMaxAttributeName());
     ParameterEntryValidator::ValidatorID currentID =
       child.getRequired<ParameterEntryValidator::ValidatorID>(
           getValidatorIDAttributeName());

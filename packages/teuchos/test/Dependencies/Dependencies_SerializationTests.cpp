@@ -50,6 +50,56 @@ typedef long long int llint;
 typedef unsigned long long int ullint;
 #endif
 
+#define BASIC_DEPENDENCY_TEST( \
+  DEPENDENCY, DEPTYPE,  NUM_DEPENDEES, NUM_DEPENDENTS) \
+  std::string depXMLTag##DEPENDENCY = \
+    DummyObjectGetter< DEPTYPE >::getDummyObject()->getTypeAttributeValue(); \
+\
+  TEST_ASSERT(DEPENDENCY->getTypeAttributeValue() == depXMLTag##DEPENDENCY ); \
+  TEST_ASSERT(DEPENDENCY->getDependents().size() == NUM_DEPENDENTS); \
+  TEST_ASSERT(DEPENDENCY->getDependees().size() == NUM_DEPENDEES);
+
+#define VERIFY_DEPENDENT(DEPENDENCY, DEPENDENT) \
+  TEST_ASSERT( \
+    DEPENDENCY->getDependents().find(DEPENDENT)  \
+    != \
+    DEPENDENCY->getDependents().end() \
+  );
+
+  
+#define VERIFY_DEPENDEE(DEPENDENCY, DEPENDEE) \
+  TEST_ASSERT( \
+    DEPENDENCY->getDependees().find(DEPENDEE)  \
+    != \
+    DEPENDENCY->getDependees().end());
+
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, SerializationTestMacros){
+  RCP<ParameterEntry> dependee1 = rcp(new ParameterEntry(true));
+  RCP<ParameterEntry> dependee2 = rcp(new ParameterEntry(true));
+  RCP<ParameterEntry> dependent1 = rcp(new ParameterEntry("blah"));
+  RCP<ParameterEntry> dependent2 = rcp(new ParameterEntry("blah"));
+  RCP<BoolVisualDependency> simpleDep = 
+    rcp(new BoolVisualDependency(dependee1, dependent1));
+
+
+  Dependency::ParameterEntryList dependentList;
+  dependentList.insert(dependent1);
+  dependentList.insert(dependent2);
+
+  RCP<BoolVisualDependency> complexDep = 
+    rcp(new BoolVisualDependency(dependee2, dependentList));
+
+  BASIC_DEPENDENCY_TEST(simpleDep, BoolVisualDependency, 1, 1);
+  VERIFY_DEPENDEE(simpleDep, dependee1);
+  VERIFY_DEPENDENT(simpleDep, dependent1);
+
+  BASIC_DEPENDENCY_TEST(complexDep, BoolVisualDependency, 1, 2);
+  VERIFY_DEPENDEE(complexDep, dependee2);
+  VERIFY_DEPENDENT(complexDep, dependent1);
+  VERIFY_DEPENDENT(complexDep, dependent2);
+
+}
+
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringVisualDepSerialization){
   std::string dependee1 = "string param";
@@ -107,28 +157,14 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringVisualDepSerialization){
   RCP<Dependency> readinDep2 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
 
-  std::string stringVisXMLTag = 
-    DummyObjectGetter<StringVisualDependency>::getDummyObject()->getTypeAttributeValue();
+  BASIC_DEPENDENCY_TEST(readinDep1, StringVisualDependency, 1, 1);
+  VERIFY_DEPENDEE(readinDep1, readinDependee1);
+  VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
-  TEST_ASSERT(readinDep1->getTypeAttributeValue() == stringVisXMLTag);
-  TEST_ASSERT(readinDep2->getTypeAttributeValue() == stringVisXMLTag);
-
-  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
-  TEST_ASSERT(readinDep1->getDependents().size() == 1);
-  TEST_ASSERT((*readinDep1->getDependents().begin()).get() == readinDependent1.get());
-
-  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
-  TEST_ASSERT(readinDep2->getDependents().size() == 2);
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent1) 
-    !=
-    readinDep2->getDependents().end()
-  );
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent2)
-    !=
-    readinDep2->getDependents().end()
-  );
+  BASIC_DEPENDENCY_TEST(readinDep2, StringVisualDependency, 1, 2);
+  VERIFY_DEPENDEE(readinDep2, readinDependee2);
+  VERIFY_DEPENDENT(readinDep2, readinDependent1);
+  VERIFY_DEPENDENT(readinDep2, readinDependent2);
     
   RCP<StringVisualDependency> castedDep1 =
     rcp_dynamic_cast<StringVisualDependency>(readinDep1, true);
@@ -194,28 +230,15 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolVisualDepSerialization){
   RCP<Dependency> readinDep2 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
 
-  std::string boolVisXMLTag = 
-    DummyObjectGetter<BoolVisualDependency>::getDummyObject()->getTypeAttributeValue();
+  BASIC_DEPENDENCY_TEST(readinDep1, BoolVisualDependency, 1, 1);
+  VERIFY_DEPENDEE(readinDep1, readinDependee1);
+  VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
-  TEST_ASSERT(readinDep1->getTypeAttributeValue() == boolVisXMLTag);
-  TEST_ASSERT(readinDep2->getTypeAttributeValue() == boolVisXMLTag);
-
-  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
-  TEST_ASSERT(readinDep1->getDependents().size() == 1);
-  TEST_ASSERT((*readinDep1->getDependents().begin()).get() == readinDependent1.get());
-
-  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
-  TEST_ASSERT(readinDep2->getDependents().size() == 2);
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent1) 
-    !=
-    readinDep2->getDependents().end()
-  );
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent2)
-    !=
-    readinDep2->getDependents().end()
-  );
+  BASIC_DEPENDENCY_TEST(readinDep2, BoolVisualDependency, 1, 2);
+  VERIFY_DEPENDEE(readinDep2, readinDependee2);
+  VERIFY_DEPENDENT(readinDep2, readinDependent1);
+  VERIFY_DEPENDENT(readinDep2, readinDependent2);
+    
     
   RCP<BoolVisualDependency> castedDep1 =
     rcp_dynamic_cast<BoolVisualDependency>(readinDep1, true);
@@ -279,28 +302,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   RCP<Dependency> readinDep2 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
 
-  std::string numVisXMLTag = 
-    DummyObjectGetter<NumberVisualDependency<T> >::getDummyObject()->getTypeAttributeValue();
+  BASIC_DEPENDENCY_TEST(readinDep1, NumberVisualDependency<T>, 1, 1);
+  VERIFY_DEPENDEE(readinDep1, readinDependee1);
+  VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
-  TEST_ASSERT(readinDep1->getTypeAttributeValue() == numVisXMLTag);
-  TEST_ASSERT(readinDep2->getTypeAttributeValue() == numVisXMLTag);
-
-  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
-  TEST_ASSERT(readinDep1->getDependents().size() == 1);
-  TEST_ASSERT((*readinDep1->getDependents().begin()).get() == readinDependent1.get());
-
-  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
-  TEST_ASSERT(readinDep2->getDependents().size() == 2);
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent1) 
-    !=
-    readinDep2->getDependents().end()
-  );
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent2)
-    !=
-    readinDep2->getDependents().end()
-  );
+  BASIC_DEPENDENCY_TEST(readinDep2, NumberVisualDependency<T>, 1, 2);
+  VERIFY_DEPENDEE(readinDep2, readinDependee2);
+  VERIFY_DEPENDENT(readinDep2, readinDependent1);
+  VERIFY_DEPENDENT(readinDep2, readinDependent2);
+    
     
   RCP<NumberVisualDependency<T> > castedDep1 =
     rcp_dynamic_cast<NumberVisualDependency<T> >(readinDep1, true);
@@ -316,16 +326,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( \
   Teuchos_Dependencies, NumberVisualDepSerialization, T)
 
 NUMBER_VIS_TEST(int)
-NUMBER_VIS_TEST(uint)
-NUMBER_VIS_TEST(short)
-NUMBER_VIS_TEST(ushort)
-NUMBER_VIS_TEST(long)
-NUMBER_VIS_TEST(ulong)
-NUMBER_VIS_TEST(float)
 NUMBER_VIS_TEST(double)
+NUMBER_VIS_TEST(float)
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 NUMBER_VIS_TEST(llint)
-NUMBER_VIS_TEST(ullint)
 #endif
 
 TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
@@ -404,40 +408,17 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, ConditionVisualDepSerialization){
   RCP<Dependency> readinDep3 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee3)->begin());
 
-  std::string conVisXMLTag = 
-    DummyObjectGetter<ConditionVisualDependency>::getDummyObject()->getTypeAttributeValue();
-
-  TEST_ASSERT(readinDep1->getTypeAttributeValue() == conVisXMLTag);
-  TEST_ASSERT(readinDep2->getTypeAttributeValue() == conVisXMLTag);
-  TEST_ASSERT(readinDep3->getTypeAttributeValue() == conVisXMLTag);
-
-  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
-  TEST_ASSERT(readinDep1->getDependents().size() == 1);
-  TEST_ASSERT((*readinDep1->getDependents().begin()).get() 
-    == readinDependent1.get());
+  BASIC_DEPENDENCY_TEST(readinDep1, ConditionVisualDependency, 1, 1);
+  VERIFY_DEPENDEE(readinDep1, readinDependee1);
+  VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
   TEST_ASSERT(readinDep2.get() == readinDep3.get());
-  TEST_ASSERT(readinDep2->getDependees().size() == 2);
-  TEST_ASSERT(
-    readinDep2->getDependees().find(readinDependee2) 
-    !=
-    readinDep2->getDependees().end());
-  TEST_ASSERT(
-    readinDep2->getDependees().find(readinDependee3) 
-    !=
-    readinDep2->getDependees().end());
 
-  TEST_ASSERT(readinDep2->getDependents().size() == 2);
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent2) 
-    !=
-    readinDep2->getDependents().end()
-  );
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent3)
-    !=
-    readinDep2->getDependents().end()
-  );
+  BASIC_DEPENDENCY_TEST(readinDep2, ConditionVisualDependency, 2, 2);
+  VERIFY_DEPENDEE(readinDep2, readinDependee2);
+  VERIFY_DEPENDEE(readinDep2, readinDependee3);
+  VERIFY_DEPENDENT(readinDep2, readinDependent2);
+  VERIFY_DEPENDENT(readinDep2, readinDependent3);
     
   RCP<ConditionVisualDependency> castedDep1 =
     rcp_dynamic_cast<ConditionVisualDependency>(readinDep1, true);
@@ -495,14 +476,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
   RCP<Dependency> readinDep1 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee1)->begin());
 
-  std::string arrayLengthXMLTag = 
-    DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >::getDummyObject()->getTypeAttributeValue();
-
-  TEST_ASSERT(readinDep1->getTypeAttributeValue() == arrayLengthXMLTag);
-
-  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
-  TEST_ASSERT(readinDep1->getDependents().size() == 1);
-  TEST_ASSERT((*readinDep1->getDependents().begin()).get() == readinDependent1.get());
+  typedef NumberArrayLengthDependency<DependeeType, DependentType> deptype;
+  BASIC_DEPENDENCY_TEST(readinDep1, deptype, 1, 1);
+  VERIFY_DEPENDEE(readinDep1, readinDependee1);
+  VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
   RCP<NumberArrayLengthDependency<DependeeType, DependentType> > castedDep1 =
     rcp_dynamic_cast<NumberArrayLengthDependency<DependeeType, DependentType> >(
@@ -514,7 +491,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
   Teuchos_Dependencies, \
   NumberArrayLengthDepSerialization, \
   DependeeType, \
-  DependentType) \
+  DependentType) 
 
 // Need to fix array serialization so we can test this with
 // a dependent type of strings. Right now an array of emptyr strings does not
@@ -523,30 +500,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 #define NUM_ARRAY_LENGTH_TEST_GROUP(DependeeType) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, int) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, short) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, uint) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, ushort) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, long) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, ulong) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, float) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, llint) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, ullint)
+  NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
+  NUM_ARRAY_LENGTH_TEST(DependeeType, llint) 
 #else
 #define NUMBER_VIS_TEST_GROUP(DependeeType) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, int) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, short) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, uint) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, ushort) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, long) \
-  NUM_ARRAY_LENGTH_TEST(DependeeType, ulong) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, float)
 #endif
 
 NUM_ARRAY_LENGTH_TEST_GROUP(int)
 NUM_ARRAY_LENGTH_TEST_GROUP(double)
-NUM_ARRAY_LENGTH_TEST_GROUP(float)
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 NUM_ARRAY_LENGTH_TEST_GROUP(llint)
 #endif
@@ -616,29 +581,15 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringValidatorDepSerialization){
   RCP<Dependency> readinDep2 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
 
-  std::string stringValiXMLTag = 
-    DummyObjectGetter<StringValidatorDependency>::getDummyObject()->getTypeAttributeValue();
+  BASIC_DEPENDENCY_TEST(readinDep1, StringValidatorDependency, 1, 1);
+  VERIFY_DEPENDEE(readinDep1, readinDependee1);
+  VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
-  TEST_ASSERT(readinDep1->getTypeAttributeValue() == stringValiXMLTag);
-  TEST_ASSERT(readinDep2->getTypeAttributeValue() == stringValiXMLTag);
-
-  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
-  TEST_ASSERT(readinDep1->getDependents().size() == 1);
-  TEST_ASSERT((*readinDep1->getDependents().begin()).get() 
-    == readinDependent1.get());
-
-  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
-  TEST_ASSERT(readinDep2->getDependents().size() == 2);
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent1) 
-    !=
-    readinDep2->getDependents().end()
-  );
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent2)
-    !=
-    readinDep2->getDependents().end()
-  );
+  BASIC_DEPENDENCY_TEST(readinDep2, StringValidatorDependency, 1, 2);
+  VERIFY_DEPENDEE(readinDep2, readinDependee2);
+  VERIFY_DEPENDENT(readinDep2, readinDependent1);
+  VERIFY_DEPENDENT(readinDep2, readinDependent2);
+    
     
   RCP<StringValidatorDependency> castedDep1 =
     rcp_dynamic_cast<StringValidatorDependency>(readinDep1, true);
@@ -652,25 +603,25 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, StringValidatorDepSerialization){
 
   TEST_EQUALITY(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
-      castedDep1->getValuesAndValidators().find("val1")->second)->getMax(),
+      castedDep1->getValuesAndValidators().find("val1")->second, true)->getMax(),
     double1Vali->getMax());
   TEST_EQUALITY(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
-      castedDep2->getValuesAndValidators().find("val1")->second)->getMax(),
+      castedDep2->getValuesAndValidators().find("val1")->second, true)->getMax(),
     double1Vali->getMax());
 
   TEST_EQUALITY(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
-      castedDep1->getValuesAndValidators().find("val2")->second)->getMax(),
+      castedDep1->getValuesAndValidators().find("val2")->second, true)->getMax(),
     double2Vali->getMax());
   TEST_EQUALITY(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
-      castedDep2->getValuesAndValidators().find("val2")->second)->getMax(),
+      castedDep2->getValuesAndValidators().find("val2")->second, true)->getMax(),
     double2Vali->getMax());
 
   TEST_EQUALITY(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
-      castedDep2->getDefaultValidator())->getMax(),
+      castedDep2->getDefaultValidator(), true)->getMax(),
     defaultVali->getMax());
 
 }
@@ -737,29 +688,15 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolValidatorDepSerialization){
   RCP<Dependency> readinDep2 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
 
-  std::string boolValiXMLTag = 
-    DummyObjectGetter<BoolValidatorDependency>::getDummyObject()->getTypeAttributeValue();
+  BASIC_DEPENDENCY_TEST(readinDep1, BoolValidatorDependency, 1, 1);
+  VERIFY_DEPENDEE(readinDep1, readinDependee1);
+  VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
-  TEST_ASSERT(readinDep1->getTypeAttributeValue() == boolValiXMLTag);
-  TEST_ASSERT(readinDep2->getTypeAttributeValue() == boolValiXMLTag);
-
-  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
-  TEST_ASSERT(readinDep1->getDependents().size() == 1);
-  TEST_ASSERT((*readinDep1->getDependents().begin()).get() 
-    == readinDependent1.get());
-
-  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
-  TEST_ASSERT(readinDep2->getDependents().size() == 2);
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent1) 
-    !=
-    readinDep2->getDependents().end()
-  );
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent2)
-    !=
-    readinDep2->getDependents().end()
-  );
+  BASIC_DEPENDENCY_TEST(readinDep2, BoolValidatorDependency, 1, 2);
+  VERIFY_DEPENDEE(readinDep2, readinDependee2);
+  VERIFY_DEPENDENT(readinDep2, readinDependent1);
+  VERIFY_DEPENDENT(readinDep2, readinDependent2);
+    
     
   RCP<BoolValidatorDependency> castedDep1 =
     rcp_dynamic_cast<BoolValidatorDependency>(readinDep1, true);
@@ -772,15 +709,15 @@ TEUCHOS_UNIT_TEST(Teuchos_Dependencies, BoolValidatorDepSerialization){
   TEST_ASSERT(castedDep2->getFalseValidator().is_null());
   TEST_EQUALITY(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
-      castedDep1->getTrueValidator())->getMax(),
+      castedDep1->getTrueValidator(), true)->getMax(),
     true1Vali->getMax());
   TEST_EQUALITY(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
-      castedDep1->getFalseValidator())->getMax(),
+      castedDep1->getFalseValidator(), true)->getMax(),
     false1Vali->getMax());
   TEST_EQUALITY(
     rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
-      castedDep2->getTrueValidator())->getMax(),
+      castedDep2->getTrueValidator(), true)->getMax(),
     true2Vali->getMax());
 
 }
@@ -852,29 +789,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   RCP<Dependency> readinDep2 =
     *(readInDepSheet->getDependenciesForParameter(readinDependee2)->begin());
 
-  std::string rangeValiXMLTag = 
-    DummyObjectGetter<RangeValidatorDependency<T> >::getDummyObject()->getTypeAttributeValue();
+  BASIC_DEPENDENCY_TEST(readinDep1, RangeValidatorDependency<T>, 1, 1);
+  VERIFY_DEPENDEE(readinDep1, readinDependee1);
+  VERIFY_DEPENDENT(readinDep1, readinDependent1);
 
-  TEST_ASSERT(readinDep1->getTypeAttributeValue() == rangeValiXMLTag);
-  TEST_ASSERT(readinDep2->getTypeAttributeValue() == rangeValiXMLTag);
-
-  TEST_ASSERT(readinDep1->getFirstDependee().get() == readinDependee1.get());
-  TEST_ASSERT(readinDep1->getDependents().size() == 1);
-  TEST_ASSERT((*readinDep1->getDependents().begin()).get() 
-    == readinDependent1.get());
-
-  TEST_ASSERT(readinDep2->getFirstDependee().get() == readinDependee2.get());
-  TEST_ASSERT(readinDep2->getDependents().size() == 2);
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent1) 
-    !=
-    readinDep2->getDependents().end()
-  );
-  TEST_ASSERT(
-    readinDep2->getDependents().find(readinDependent2)
-    !=
-    readinDep2->getDependents().end()
-  );
+  BASIC_DEPENDENCY_TEST(readinDep2, RangeValidatorDependency<T>, 1, 2);
+  VERIFY_DEPENDEE(readinDep2, readinDependee2);
+  VERIFY_DEPENDENT(readinDep2, readinDependent1);
+  VERIFY_DEPENDENT(readinDep2, readinDependent2);
+    
     
   RCP<RangeValidatorDependency<T> > castedDep1 =
     rcp_dynamic_cast<RangeValidatorDependency<T> >(readinDep1, true);
@@ -883,30 +806,59 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 
   typename RangeValidatorDependency<T>::RangeToValidatorMap readinMap1 = 
     castedDep1->getRangeToValidatorMap();
-  TEST_ASSERT(readinMap1.find(range1) != readinMap1.end());
-  TEST_ASSERT(readinMap1.find(range2) != readinMap1.end());
+  TEST_EQUALITY(readinMap1.size(), 2);
+  typename RangeValidatorDependency<T>::RangeToValidatorMap::const_iterator it =
+    readinMap1.begin();
+  TEST_EQUALITY(it->first.first, 0);
+  TEST_EQUALITY(it->first.second, 10);
+  it++;
+  TEST_EQUALITY(it->first.first, 11);
+  TEST_EQUALITY(it->first.second, 50);
+
+    
+  RCP<const ParameterEntryValidator> range1Vali = 
+    readinMap1.find(range1)->second;
+  RCP<const ParameterEntryValidator> range2Vali = 
+    readinMap1.find(range2)->second;
   TEST_EQUALITY(
-    rcp_dynamic_cast<EnhancedNumberValidator<double> >(
-      readinMap1.find(range1)->second)->getMax(),
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      range1Vali, true)->getMax(),
     double1Vali->getMax());
   TEST_EQUALITY(
-    rcp_dynamic_cast<EnhancedNumberValidator<double> >(
-      readinMap1.find(range2)->second)->getMax(),
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      range2Vali, true)->getMax(),
     double2Vali->getMax());
 
   typename RangeValidatorDependency<T>::RangeToValidatorMap readinMap2 = 
     castedDep2->getRangeToValidatorMap();
-  TEST_ASSERT(readinMap2.find(range1) != readinMap2.end());
-  TEST_ASSERT(readinMap2.find(range2) != readinMap2.end());
+  it = readinMap2.begin();
+  TEST_EQUALITY(it->first.first, 0);
+  TEST_EQUALITY(it->first.second, 10);
+  it++;
+  TEST_EQUALITY(it->first.first, 11);
+  TEST_EQUALITY(it->first.second, 50);
+
   TEST_EQUALITY(
-    rcp_dynamic_cast<EnhancedNumberValidator<double> >(
-      readinMap2.find(range1)->second)->getMax(),
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      readinMap2.find(range1)->second, true)->getMax(),
     double1Vali->getMax());
   TEST_EQUALITY(
-    rcp_dynamic_cast<EnhancedNumberValidator<double> >(
-      readinMap2.find(range2)->second)->getMax(),
+    rcp_dynamic_cast<const EnhancedNumberValidator<double> >(
+      readinMap2.find(range2)->second, true)->getMax(),
     double2Vali->getMax());
 }
+
+
+#define RANGE_VALIDATOR_TEST(T) \
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( \
+  Teuchos_Dependencies, RangeValidatorDepSerialization, T)
+  
+RANGE_VALIDATOR_TEST(int)
+RANGE_VALIDATOR_TEST(double)
+RANGE_VALIDATOR_TEST(float)
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+RANGE_VALIDATOR_TEST(llint)
+#endif
 
 
 
