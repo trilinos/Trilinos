@@ -118,7 +118,8 @@ void get_adjacent_entities( const Entity & entity ,
   adjacent_entities.clear();
 
   // get cell topology
-  const CellTopologyData* celltopology = TopologicalMetaData::get_cell_topology(entity);
+  const CellTopologyData* celltopology =
+    TopologicalMetaData::get_cell_topology(entity);
   if (celltopology == NULL) {
     return;
   }
@@ -166,22 +167,17 @@ void get_adjacent_entities( const Entity & entity ,
   // that's compatible w/ the adjacent entities.
   std::vector<Entity*> side_node_entities;
   side_node_entities.reserve(num_nodes_in_side);
-  {
-    PairIterRelation irel = entity.relations(NodeRank);
-    for (int itr = num_nodes_in_side; itr > 0; ) {
-      --itr;
-      side_node_entities.push_back(irel[side_node_local_ids[itr]].entity());
-    }
+  PairIterRelation irel = entity.relations(NodeRank);
+  for (int itr = num_nodes_in_side; itr > 0; ) {
+    --itr;
+    side_node_entities.push_back(irel[side_node_local_ids[itr]].entity());
   }
 
   // Get the node entities for the nodes that make up the entity
   std::vector<Entity*> entity_nodes;
-  {
-    PairIterRelation irel = entity.relations(NodeRank);
-    entity_nodes.reserve(irel.size());
-    for ( ; !irel.empty(); ++irel ) {
-      entity_nodes.push_back(irel->entity());
-    }
+  entity_nodes.reserve(irel.size());
+  for ( ; !irel.empty(); ++irel ) {
+    entity_nodes.push_back(irel->entity());
   }
   std::sort(entity_nodes.begin(), entity_nodes.end());
 
@@ -194,50 +190,48 @@ void get_adjacent_entities( const Entity & entity ,
                                  elements);
 
   // Make sure to remove the all superimposed entities from the list
-  {
-    unsigned num_nodes_in_orig_entity = entity_nodes.size();
-    std::vector<Entity*> current_nodes;
-    current_nodes.resize(num_nodes_in_orig_entity);
-    std::vector<Entity*>::iterator itr = elements.begin();
-    while ( itr != elements.end() ) {
-      Entity * current_entity = *itr;
-      PairIterRelation relations = current_entity->relations(NodeRank);
+  unsigned num_nodes_in_orig_entity = entity_nodes.size();
+  std::vector<Entity*> current_nodes;
+  current_nodes.resize(num_nodes_in_orig_entity);
+  std::vector<Entity*>::iterator itr = elements.begin();
+  while ( itr != elements.end() ) {
+    Entity * current_entity = *itr;
+    PairIterRelation relations = current_entity->relations(NodeRank);
 
-      if (current_entity == &entity) {
-        // We do not want to be adjacent to ourself
+    if (current_entity == &entity) {
+      // We do not want to be adjacent to ourself
+      itr = elements.erase(itr);
+    }
+    else if (relations.size() != num_nodes_in_orig_entity) {
+      // current_entity has a different number of nodes than entity, they
+      // cannot be superimposed
+      ++itr;
+    }
+    else {
+      for (unsigned i = 0; relations.first != relations.second;
+           ++relations.first, ++i ) {
+        current_nodes[i] = relations.first->entity();
+      }
+      std::sort(current_nodes.begin(), current_nodes.end());
+
+      bool entities_are_superimposed = entity_nodes == current_nodes;
+      if (entities_are_superimposed) {
         itr = elements.erase(itr);
       }
-      else if (relations.size() != num_nodes_in_orig_entity) {
-        // current_entity has a different number of nodes than entity, they
-        // cannot be superimposed
-        ++itr;
-      }
       else {
-        for (unsigned i = 0; relations.first != relations.second;
-             ++relations.first, ++i ) {
-          current_nodes[i] = relations.first->entity();
-        }
-        std::sort(current_nodes.begin(), current_nodes.end());
-
-        bool entities_are_superimposed = entity_nodes == current_nodes;
-        if (entities_are_superimposed) {
-          itr = elements.erase(itr);
-        }
-        else {
-          ++itr;
-        }
+        ++itr;
       }
     }
   }
 
   // Add the local ids, from the POV of the adj entitiy, to the return value
-  for (std::vector<Entity*>::const_iterator itr = elements.begin();
-       itr != elements.end(); ++itr) {
-    int local_side_num = element_local_side_id(**itr,
+  for (std::vector<Entity*>::const_iterator eitr = elements.begin();
+       eitr != elements.end(); ++eitr) {
+    int local_side_num = element_local_side_id(**eitr,
                                                side_topology,
                                                side_node_entities);
     if ( local_side_num != -1) {
-      adjacent_entities.push_back(EntitySideComponent(*itr, local_side_num));
+      adjacent_entities.push_back(EntitySideComponent(*eitr, local_side_num));
     }
   }
 }
