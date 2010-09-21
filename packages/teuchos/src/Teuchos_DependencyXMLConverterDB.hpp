@@ -87,7 +87,7 @@ public:
   static XMLObject convertDependency(
     RCP<const Dependency> dependency,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap); 
+    ValidatortoIDMap& validatorIDsMap); 
 
   /**
    * \brief Given an XMLObject converts the XMLObject 
@@ -98,7 +98,7 @@ public:
   static RCP<Dependency> convertXML(
     const XMLObject& xmlObject, 
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap); 
+    const IDtoValidatorMap& validatorIDsMap); 
   
   //@}
 

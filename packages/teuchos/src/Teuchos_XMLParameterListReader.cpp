@@ -52,7 +52,7 @@ RCP<ParameterList> XMLParameterListReader::toParameterList(
     XMLParameterListWriter::getParameterListTagName()
     <<", found " << xml.getTag());
   RCP<ParameterList> rtn = rcp(new ParameterList);
-  ValidatorIDsMap validatorIDsMap;
+  IDtoValidatorMap validatorIDsMap;
   int validatorsIndex = 
     xml.findFirstChild(XMLParameterListWriter::getValidatorsTagName());
   if(validatorsIndex != -1){
@@ -86,7 +86,7 @@ XMLParameterListReader::toParameterList(const XMLObject& xml) const
     XMLParameterListWriter::getParameterListTagName()
     <<", found " << xml.getTag());
   RCP<ParameterList> rtn = rcp(new ParameterList);
-  ValidatorIDsMap validatorIDsMap;
+  IDtoValidatorMap validatorIDsMap;
   int validatorsIndex = 
     xml.findFirstChild(XMLParameterListWriter::getValidatorsTagName());
   if(validatorsIndex != -1){
@@ -100,7 +100,7 @@ XMLParameterListReader::toParameterList(const XMLObject& xml) const
 
 
 void XMLParameterListReader::convertValidators(
-  const XMLObject& xml, ValidatorIDsMap& validatorIDsMap) const
+  const XMLObject& xml, IDtoValidatorMap& validatorIDsMap) const
 {
   std::set<const XMLObject*> validatorsWithPrototypes;
   for (int i=0; i<xml.numChildren(); ++i){
@@ -117,7 +117,7 @@ void XMLParameterListReader::convertValidators(
         xml.getChild(i).getRequired<ParameterEntryValidator::ValidatorID>(
         ValidatorXMLConverter::getIdAttributeName());
       testForDuplicateValidatorIDs(xmlID, validatorIDsMap);
-      validatorIDsMap.insert(ValidatorIDsMap::value_type(
+      validatorIDsMap.insert(IDtoValidatorMap::IDValidatorPair(
        xmlID,
        insertedValidator));
     }
@@ -135,7 +135,7 @@ void XMLParameterListReader::convertValidators(
       (*it)->getRequired<ParameterEntryValidator::ValidatorID>(
          ValidatorXMLConverter::getIdAttributeName());
     testForDuplicateValidatorIDs(xmlID, validatorIDsMap);
-    validatorIDsMap.insert(ValidatorIDsMap::value_type(
+    validatorIDsMap.insert(IDtoValidatorMap::IDValidatorPair(
       xmlID, insertedValidator));
   }
 }
@@ -144,7 +144,7 @@ void XMLParameterListReader::convertValidators(
 void
 XMLParameterListReader::convertParameterList(const XMLObject& xml, 
   RCP<ParameterList> parentList,
-  EntryIDsMap& entryIDsMap, const ValidatorIDsMap& validatorIDsMap) const
+  EntryIDsMap& entryIDsMap, const IDtoValidatorMap& validatorIDsMap) const
 {
   TEST_FOR_EXCEPTION(
     xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
@@ -201,7 +201,7 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
           parentList->setEntry(
             name, ParameterEntryXMLConverterDB::convertXML(child));
           if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
-            ValidatorIDsMap::const_iterator result = validatorIDsMap.find(
+            IDtoValidatorMap::const_iterator result = validatorIDsMap.find(
               child.getRequired<ParameterEntryValidator::ValidatorID>(
                 ValidatorXMLConverter::getIdAttributeName()));
             TEST_FOR_EXCEPTION(result == validatorIDsMap.end(), 
@@ -223,7 +223,7 @@ XMLParameterListReader::convertParameterList(const XMLObject& xml,
 
 void XMLParameterListReader::testForDuplicateValidatorIDs(
   ParameterEntryValidator::ValidatorID potentialNewID,
-  const ValidatorIDsMap& currentMap) const
+  const IDtoValidatorMap& currentMap) const
 {
   TEST_FOR_EXCEPTION(currentMap.find(potentialNewID) != currentMap.end(),
   DuplicateValidatorIDsException,
@@ -235,7 +235,7 @@ void XMLParameterListReader::convertDependencies(
   RCP<DependencySheet> depSheet, 
   const XMLObject& xml, 
   const EntryIDsMap& entryIDsMap,
-  const ValidatorIDsMap& validatorIDsMap) const
+  const IDtoValidatorMap& validatorIDsMap) const
 {
   for(int i = 0; i < xml.numChildren(); ++i){
     RCP<Dependency> currentDep = DependencyXMLConverterDB::convertXML(

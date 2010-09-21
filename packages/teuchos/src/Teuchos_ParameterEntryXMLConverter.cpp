@@ -96,7 +96,7 @@ ParameterEntryXMLConverter::fromParameterEntrytoXML(
   RCP<const ParameterEntry> entry, 
   const std::string &name,
   const ParameterEntry::ParameterEntryID& id,
-  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+  const ValidatortoIDMap& validatorIDsMap) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(

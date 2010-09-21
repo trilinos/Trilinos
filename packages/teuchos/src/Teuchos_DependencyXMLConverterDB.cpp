@@ -131,7 +131,7 @@ DependencyXMLConverterDB::getConverter(const XMLObject& xmlObject)
 XMLObject DependencyXMLConverterDB::convertDependency(
   RCP<const Dependency> dependency,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-  XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap)
+  ValidatortoIDMap& validatorIDsMap)
 {
   return getConverter(*dependency)->fromDependencytoXML(
     dependency, entryIDsMap, validatorIDsMap);
@@ -140,7 +140,7 @@ XMLObject DependencyXMLConverterDB::convertDependency(
 RCP<Dependency> DependencyXMLConverterDB::convertXML(
     const XMLObject& xmlObject, 
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap)
+    const IDtoValidatorMap& validatorIDsMap)
 {
   return DependencyXMLConverterDB::getConverter(xmlObject)->
     fromXMLtoDependency(xmlObject, entryIDsMap, validatorIDsMap);

@@ -85,7 +85,7 @@ public:
    */
   static XMLObject convertValidator(
     RCP<const ParameterEntryValidator> validator,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap,
+    const ValidatortoIDMap& validatorIDsMap,
     bool assignID=true); 
 
   /**
@@ -97,7 +97,7 @@ public:
   static RCP<ParameterEntryValidator> 
     convertXML(
       const XMLObject& xmlObject,
-      const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap);
+      const IDtoValidatorMap& validatorIDsMap);
   
   //@}
 

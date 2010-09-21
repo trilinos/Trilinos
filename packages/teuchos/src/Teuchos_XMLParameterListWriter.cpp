@@ -46,13 +46,12 @@ XMLParameterListWriter::toXML(
   RCP<const DependencySheet> depSheet) const
 {
   EntryIDsMap entryIDsMap;
-  ValidatorIDsMap validatorIDsMap;
+  ValidatortoIDMap validatorIDsMap;
   ParameterEntry::ParameterEntryID peIDCounter = 0;
-  ParameterEntryValidator::ValidatorID vIDCounter = 0;
 
   //We build an initial map full of validators that are located in the 
   //parameter list. That way we can convert the parameter entries.
-  buildInitialValidatorMap(p, validatorIDsMap, vIDCounter);
+  buildInitialValidatorMap(p, validatorIDsMap);
 
   XMLObject toReturn = 
     convertParameterList(p, peIDCounter, entryIDsMap, validatorIDsMap);
@@ -74,32 +73,28 @@ XMLParameterListWriter::toXML(
 
 void XMLParameterListWriter::buildInitialValidatorMap(
   const ParameterList& p,
-  ValidatorIDsMap& validatorIDsMap,
-  ParameterEntryValidator::ValidatorID& idCounter) const
+  ValidatortoIDMap& validatorIDsMap) const
 {
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i) {
     const ParameterEntry& entry = p.entry(i);
     if(entry.isList()){
-      buildValidatorMap(
+      buildInitialValidatorMap(
         getValue<ParameterList>(entry),
-        validatorIDsMap,
-        idCounter);
+        validatorIDsMap);
     }
     else if(nonnull(entry.validator())){
-      validatorIDsMap.insert(ValidatorIDsMap::value_type(
-        entry.validator(), idCounter));
-        idCounter++;
+      validatorIDsMap.insert(entry.validator());
     }
   }
 }
 
 
 XMLObject XMLParameterListWriter::convertValidators(
-  const ParameterList& p, ValidatorIDsMap& validatorIDsMap) const
+  const ParameterList& p, ValidatortoIDMap& validatorIDsMap) const
 {
   XMLObject validators(getValidatorsTagName());
   for(
-    ValidatorIDsMap::const_iterator it = validatorIDsMap.begin();
+    ValidatortoIDMap::const_iterator it = validatorIDsMap.begin();
     it != validatorIDsMap.end();
     ++it)
   {
@@ -114,7 +109,7 @@ XMLObject XMLParameterListWriter::convertParameterList(
   const ParameterList& p,
   ParameterEntry::ParameterEntryID& idCounter,
   EntryIDsMap& entryIDsMap,
-  const ValidatorIDsMap& validatorIDsMap) const
+  const ValidatortoIDMap& validatorIDsMap) const
 {
   XMLObject rtn(getParameterListTagName());
   
@@ -126,8 +121,10 @@ XMLObject XMLParameterListWriter::convertParameterList(
         idCounter, 
         entryIDsMap,
         validatorIDsMap);
-      newPL.addAttribute(getNameAttributeName(), getValue<ParameterList>(*entry).name());
-      newPL.addAttribute(ParameterEntryXMLConverter::getIdAttributeName(), idCounter);
+      newPL.addAttribute(
+        getNameAttributeName(), getValue<ParameterList>(*entry).name());
+      newPL.addAttribute(
+        ParameterEntryXMLConverter::getIdAttributeName(), idCounter);
       entryIDsMap.insert(EntryIDsMap::value_type(entry, idCounter));
       rtn.addChild(newPL);
       ++idCounter;
@@ -146,7 +143,7 @@ XMLObject
 XMLParameterListWriter::convertDependencies(
   RCP<const DependencySheet> depSheet,
   const EntryIDsMap& entryIDsMap,
-  ValidatorIDsMap& validatorIDsMap) const
+  ValidatortoIDMap& validatorIDsMap) const
 {
   XMLObject toReturn(getDependenciesTagName());
   for(

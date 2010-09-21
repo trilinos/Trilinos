@@ -264,6 +264,7 @@ APPEND_SET(HEADERS
     Teuchos_StringInputStream.hpp
     Teuchos_StrUtils.hpp
     Teuchos_TreeBuildingXMLHandler.hpp
+    Teuchos_ValidatorMaps.hpp
     Teuchos_ValidatorXMLConverter.hpp
     Teuchos_ValidatorXMLConverterDB.hpp
     Teuchos_XMLConditionExceptions.hpp
@@ -300,6 +301,7 @@ APPEND_SET(HEADERS
     Teuchos_StringInputSource.cpp
     Teuchos_StringInputStream.cpp
     Teuchos_TreeBuildingXMLHandler.cpp
+    Teuchos_ValidatorMaps.cpp
     Teuchos_ValidatorXMLConverter.cpp
     Teuchos_ValidatorXMLConverterDB.cpp
     Teuchos_XMLInputSource.cpp

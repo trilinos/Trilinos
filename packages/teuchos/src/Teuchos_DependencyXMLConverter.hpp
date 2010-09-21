@@ -64,7 +64,7 @@ public:
   RCP<Dependency> fromXMLtoDependency(
     const XMLObject& xmlObj,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief Preforms any and all special xml conversion that is specific to a
    * particular Dependency.
@@ -80,7 +80,7 @@ public:
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependets,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const = 0;
+    const IDtoValidatorMap& validatorIDsMap) const = 0;
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
@@ -90,7 +90,7 @@ public:
   XMLObject fromDependencytoXML(
     const RCP<const Dependency> dependency,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
   
   /** \brief Preforms any and all special dependency conversion that is
    * specific to a particlar Dependency.
@@ -102,7 +102,7 @@ public:
     const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const = 0;
+    ValidatortoIDMap& validatorIDsMap) const = 0;
   
   //@}
 

@@ -37,6 +37,7 @@
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_DependencySheet.hpp"
+#include "Teuchos_ValidatorMaps.hpp"
 
 
 namespace Teuchos {
@@ -52,10 +53,6 @@ public:
   
   /** \name Public Types */
   //@{
-
-  /** \brief Convenience typedef */
-  typedef std::map<ParameterEntryValidator::ValidatorID,
-    RCP<ParameterEntryValidator> > ValidatorIDsMap;
 
   /** \brief Convenience typedef */
   typedef std::map<ParameterEntry::ParameterEntryID,
@@ -83,23 +80,23 @@ private:
    */
   void convertParameterList(const XMLObject& xml,
     RCP<ParameterList> parentList,
-    EntryIDsMap& entryIDsMap, const ValidatorIDsMap& validatorIDsMap) const;
+    EntryIDsMap& entryIDsMap, const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief Write the given XML object to appropriate validators. */
   void convertValidators(
-    const XMLObject& xml, ValidatorIDsMap& validatorIDsMap) const;
+    const XMLObject& xml, IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief Write the given XML object to appropriate dependencies. */
   void convertDependencies(
     RCP<DependencySheet> depSheet, 
     const XMLObject& xml, 
     const EntryIDsMap& entryIDsMap,
-    const ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief Tests to see if there are duplicate validator IDs */
   void testForDuplicateValidatorIDs(
     ParameterEntryValidator::ValidatorID potentialNewID,
-    const ValidatorIDsMap& currentMap) const;
+    const IDtoValidatorMap& currentMap) const;
 
   /** \brief .. */
   void insertEntryIntoMap(

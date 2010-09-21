@@ -39,6 +39,7 @@
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
 #include "Teuchos_DependencySheet.hpp"
+#include "Teuchos_ValidatorMaps.hpp"
 
 
 namespace Teuchos {
@@ -53,10 +54,6 @@ public:
 
   /** \name Public Types */
   //@{
-
-  /** \breif . */
-  typedef std::map<RCP<const ParameterEntryValidator>, 
-    ParameterEntryValidator::ValidatorID, RCPConstComp> ValidatorIDsMap;
 
   /** \breif . */
   typedef std::map<RCP<const ParameterEntry>,
@@ -105,24 +102,23 @@ private:
       const ParameterList& p, 
       ParameterEntry::ParameterEntryID& idCounter, 
       EntryIDsMap& entryIDsMap,
-      const ValidatorIDsMap& validatorIDsMap) const;
+      const ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief Convert all the validators. */
   XMLObject convertValidators(
     const ParameterList& p, 
-    ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief Convert all the dependencies. */
   XMLObject convertDependencies(
     RCP<const DependencySheet> depSheet,
     const EntryIDsMap& entryIDsMap, 
-    const ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief Builds up the list of validators to be converted */
   void buildInitialValidatorMap(
     const ParameterList& p,
-    ValidatorIDsMap& validatorIDsMap,
-    ParameterEntryValidator::ValidatorID& idCounter) const;
+    ValidatortoIDMap& validatorIDsMap) const;
 };
 
 

@@ -98,7 +98,7 @@ public:
     RCP<const ParameterEntry> entry, 
     const std::string& name,
     const ParameterEntry::ParameterEntryID& id,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap)
+    const ValidatortoIDMap& validatorIDsMap)
   {
     return getConverter(entry)->fromParameterEntrytoXML(
       entry, name, id, validatorIDsMap);

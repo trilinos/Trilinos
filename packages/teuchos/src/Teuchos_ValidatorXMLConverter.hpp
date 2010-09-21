@@ -63,7 +63,7 @@ public:
   RCP<ParameterEntryValidator>
   fromXMLtoValidator(
     const XMLObject& xmlObj,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief Preforms any and all special xml conversion that 
    * is specific to a
@@ -74,7 +74,7 @@ public:
    */
   virtual RCP<ParameterEntryValidator> 
     convertXML(const XMLObject& xmlObj, 
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const=0;
+    const IDtoValidatorMap& validatorIDsMap) const=0;
 
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
@@ -83,7 +83,7 @@ public:
    */
   XMLObject fromValidatortoXML(
     const RCP<const ParameterEntryValidator> validator,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap,
+    const ValidatortoIDMap& validatorIDsMap,
     bool assigneID=true) const;
 
   /** \brief Preforms any and all special validator conversion that is
@@ -96,7 +96,7 @@ public:
   virtual void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const = 0;
+    const ValidatortoIDMap& validatorIDsMap) const = 0;
   
   //@}
 

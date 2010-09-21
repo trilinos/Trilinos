@@ -37,7 +37,7 @@ RCP<Dependency>
 DependencyXMLConverter::fromXMLtoDependency(
   const XMLObject& xmlObj,
   const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-  const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+  const IDtoValidatorMap& validatorIDsMap) const
 {
   Dependency::ConstParameterEntryList dependees;
   Dependency::ParameterEntryList dependents;
@@ -86,7 +86,7 @@ XMLObject
 DependencyXMLConverter::fromDependencytoXML(
   const RCP<const Dependency> dependency,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-  XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+  ValidatortoIDMap& validatorIDsMap) const
 {
   XMLObject toReturn(Dependency::getXMLTagName());
 

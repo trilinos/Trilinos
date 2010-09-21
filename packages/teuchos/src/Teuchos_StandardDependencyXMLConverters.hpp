@@ -91,14 +91,14 @@ public:
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependets,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertDependency(
     const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
   
   //@}
   
@@ -136,7 +136,7 @@ public:
   virtual void convertSpecialValidatorAttributes(
     RCP<const ValidatorDependency> dependency,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const = 0;
+    ValidatortoIDMap& validatorIDsMap) const = 0;
 
   /** \brief Converts any special aspects of a
    * specific validator dependency from xml.
@@ -150,7 +150,7 @@ public:
     const XMLObject& xmlObj,
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const = 0;
+    const IDtoValidatorMap& validatorIDsMap) const = 0;
   
   //@}
 
@@ -163,14 +163,14 @@ public:
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependets,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertDependency(
     const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
   
   //@}
   
@@ -348,14 +348,14 @@ public:
   void convertSpecialValidatorAttributes(
     RCP<const ValidatorDependency> dependency,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief . */
   RCP<ValidatorDependency> convertSpecialValidatorAttributes(
     const XMLObject& xmlObj,
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
   
   //@}
 
@@ -411,14 +411,14 @@ public:
   void convertSpecialValidatorAttributes(
     RCP<const ValidatorDependency> dependency,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief . */
   RCP<ValidatorDependency> convertSpecialValidatorAttributes(
     const XMLObject& xmlObj,
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
   
   //@}
 
@@ -460,14 +460,14 @@ public:
   void convertSpecialValidatorAttributes(
     RCP<const ValidatorDependency> dependency,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
 
   /** \brief . */
   RCP<ValidatorDependency> convertSpecialValidatorAttributes(
     const XMLObject& xmlObj,
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
   
   //@}
 
@@ -515,7 +515,7 @@ void
 RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
   RCP<const ValidatorDependency> dependency,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+  ValidatortoIDMap& validatorIDsMap) const
 {
   RCP<const RangeValidatorDependency<T> > castedDependency = 
     rcp_dynamic_cast<const RangeValidatorDependency<T> >(dependency, true);
@@ -531,13 +531,9 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
   {
     T min = it->first.first;
     T max = it->first.second;
-    TEST_FOR_EXCEPTION(
-      validatorIDsMap.find(it->second) == validatorIDsMap.end(),
-      MissingValidatorException,
-      "Could not find validator in given ValidatorIDsMap " <<
-      std::endl << std::endl);
     if(validatorIDsMap.find(it->second) == validatorIDsMap.end()){
-      
+      validatorIDsMap.insert(it->second);
+    }
     ParameterEntryValidator::ValidatorID validatorID = 
       validatorIDsMap.find(it->second)->second;
     XMLObject pairTag(getPairTag());
@@ -555,7 +551,7 @@ RangeValidatorDependencyXMLConverter<T>::convertSpecialValidatorAttributes(
   const XMLObject& xmlObj,
   RCP<const ParameterEntry> dependee,
   const Dependency::ParameterEntryList dependents,
-  const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+  const IDtoValidatorMap& validatorIDsMap) const
 {
 
   int result = xmlObj.findFirstChild(getRangesAndValidatorsTag()); 
@@ -609,14 +605,14 @@ public:
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependets,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertDependency(
     const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    ValidatortoIDMap& validatorIDsMap) const;
   
   //@}
 
@@ -629,7 +625,7 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertXML
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,
   const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-  const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+  const IDtoValidatorMap& validatorIDsMap) const
 {
   TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
@@ -647,7 +643,7 @@ NumberArrayLengthDependencyXMLConverter<DependeeType, DependentType>::convertDep
     const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+    ValidatortoIDMap& validatorIDsMap) const
 {
   
 }

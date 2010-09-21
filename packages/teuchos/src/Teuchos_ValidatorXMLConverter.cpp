@@ -33,7 +33,7 @@ namespace Teuchos{
 RCP<ParameterEntryValidator>
 ValidatorXMLConverter::fromXMLtoValidator(
   const XMLObject& xmlObj,
-  const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+  const IDtoValidatorMap& validatorIDsMap) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG
   RCP<const ParameterEntryValidator> dummyValidator = getDummyValidator();
@@ -54,7 +54,7 @@ ValidatorXMLConverter::fromXMLtoValidator(
 XMLObject 
 ValidatorXMLConverter::fromValidatortoXML(
   const RCP<const ParameterEntryValidator> validator,
-  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap,
+  const ValidatortoIDMap& validatorIDsMap,
   bool assignID) const
 {
   #ifdef HAVE_TEUCHOS_DEBUG

@@ -69,7 +69,7 @@ public:
     RCP<const ParameterEntry> entry,
     const std::string &name,
     const ParameterEntry::ParameterEntryID& id,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    const ValidatortoIDMap& validatorIDsMap) const;
   
   virtual any getAny(const XMLObject& xmlObj) const=0;
 

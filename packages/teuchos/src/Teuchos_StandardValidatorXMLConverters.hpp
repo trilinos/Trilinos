@@ -59,13 +59,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    const ValidatortoIDMap& validatorIDsMap) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -128,7 +128,7 @@ template<class IntegralType>
 RCP<ParameterEntryValidator>
 StringToIntegralValidatorXMLConverter<IntegralType>::convertXML(
   const XMLObject& xmlObj,
-  const XMLParameterListReader::ValidatorIDsMap& /*validatorIDsMap*/) const
+  const IDtoValidatorMap& /*validatorIDsMap*/) const
 {
   Array<std::string> strings;
   Array<std::string> stringDocs;
@@ -173,7 +173,7 @@ template<class IntegralType>
 void StringToIntegralValidatorXMLConverter<IntegralType>::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
+  const ValidatortoIDMap& /*validatorIDsMap*/) const
 {
   RCP<const StringToIntegralParameterEntryValidator<IntegralType> > 
     castedValidator =
@@ -219,13 +219,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    const ValidatortoIDMap& validatorIDsMap) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -282,13 +282,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    const ValidatortoIDMap& validatorIDsMap) const;
 
 #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -337,7 +337,7 @@ template<class T>
 RCP<ParameterEntryValidator> 
 EnhancedNumberValidatorXMLConverter<T>::convertXML(
   const XMLObject& xmlObj,
-  const XMLParameterListReader::ValidatorIDsMap& /*validatorIDsMap*/) const
+  const IDtoValidatorMap& /*validatorIDsMap*/) const
 {
   RCP<EnhancedNumberValidator<T> > toReturn = 
     rcp(new EnhancedNumberValidator<T>);
@@ -359,7 +359,7 @@ template<class T>
 void EnhancedNumberValidatorXMLConverter<T>::convertValidator(
   const RCP<const ParameterEntryValidator > validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
+  const ValidatortoIDMap& /*validatorIDsMap*/) const
 {
   RCP<const EnhancedNumberValidator<T> > castedValidator =
     rcp_dynamic_cast<const EnhancedNumberValidator<T> >(validator, true);
@@ -389,13 +389,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    const ValidatortoIDMap& validatorIDsMap) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -434,13 +434,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    const ValidatortoIDMap& validatorIDsMap) const;
 
   #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -486,13 +486,13 @@ public:
   /** \brief . */
   RCP<ParameterEntryValidator> convertXML(
     const XMLObject& xmlObj,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const;
+    const IDtoValidatorMap& validatorIDsMap) const;
 
   /** \brief . */
   void convertValidator(
     const RCP<const ParameterEntryValidator> validator,
     XMLObject& xmlObj,
-    const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const;
+    const ValidatortoIDMap& validatorIDsMap) const;
 
 #ifdef HAVE_TEUCHOS_DEBUG
   /** \brief . */
@@ -511,13 +511,13 @@ template<class ValidatorType, class EntryType>
 RCP<ParameterEntryValidator>
 ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertXML(
     const XMLObject& xmlObj,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+    const IDtoValidatorMap& validatorIDsMap) const
 {
   RCP<ValidatorType> prototypeValidator;
   if(xmlObj.hasAttribute(
     ValidatorXMLConverter::getPrototypeIdAttributeName()))
   {
-    XMLParameterListReader::ValidatorIDsMap::const_iterator result =
+    IDtoValidatorMap::const_iterator result =
       validatorIDsMap.find(
         xmlObj.getRequired<ParameterEntryValidator::ValidatorID>(
           getPrototypeIdAttributeName()));
@@ -547,7 +547,7 @@ void
 ArrayValidatorXMLConverter<ValidatorType, EntryType>::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+  const ValidatortoIDMap& validatorIDsMap) const
 {
   RCP<const ArrayValidator<ValidatorType, EntryType> > castedValidator = 
     rcp_dynamic_cast<const ArrayValidator<ValidatorType, EntryType> >(

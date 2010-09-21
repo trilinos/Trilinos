@@ -38,7 +38,7 @@ RCP<Dependency> VisualDependencyXMLConverter::convertXML(
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,
   const XMLParameterListReader::EntryIDsMap& entryIDsMap,
-  const XMLParameterListReader::ValidatorIDsMap& /*validatorIDsMap*/) const
+  const IDtoValidatorMap& /*validatorIDsMap*/) const
 {
   bool showIf = xmlObj.getWithDefault(getShowIfAttributeName(), true);
   return convertSpecialVisualAttributes(
@@ -53,7 +53,7 @@ void VisualDependencyXMLConverter::convertDependency(
   const RCP<const Dependency> dependency, 
   XMLObject& xmlObj,
   const XMLParameterListWriter::EntryIDsMap& entryIDsMap,
-  XMLParameterListWriter::ValidatorIDsMap& /*validatorIDsMap*/) const
+  ValidatortoIDMap& /*validatorIDsMap*/) const
 {
   RCP<const VisualDependency> castedDep = 
     rcp_dynamic_cast<const VisualDependency>(dependency, true);
@@ -67,7 +67,7 @@ RCP<Dependency> ValidatorDependencyXMLConverter::convertXML(
     const Dependency::ConstParameterEntryList dependees,
     const Dependency::ParameterEntryList dependents,
     const XMLParameterListReader::EntryIDsMap& /*entryIDsMap*/,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+    const IDtoValidatorMap& validatorIDsMap) const
 {
   TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
@@ -81,7 +81,7 @@ void ValidatorDependencyXMLConverter::convertDependency(
   const RCP<const Dependency> dependency, 
     XMLObject& xmlObj,
     const XMLParameterListWriter::EntryIDsMap& /*entryIDsMap*/,
-    XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+    ValidatortoIDMap& validatorIDsMap) const
 {
   RCP<const ValidatorDependency> castedDep = 
     rcp_dynamic_cast<const ValidatorDependency>(dependency, true);
@@ -161,7 +161,7 @@ BoolVisualDependencyXMLConverter::convertSpecialVisualAttributes(
 {
   TEST_FOR_EXCEPTION(dependees.size() > 1,
     TooManyDependeesException,
-    "A StringVisualDependency can only have 1 dependee!" <<
+    "A BoolVisualDependency can only have 1 dependee!" <<
     std::endl << std::endl);
   return rcp(new BoolVisualDependency(
     *(dependees.begin()), dependents, showIf));
@@ -202,7 +202,7 @@ void
 StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   RCP<const ValidatorDependency> dependency,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+  ValidatortoIDMap& validatorIDsMap) const
 {
   RCP<const StringValidatorDependency> castedDependency = 
     rcp_dynamic_cast<const StringValidatorDependency>(dependency, true);  
@@ -217,15 +217,24 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   {
     XMLObject pairTag(getPairTag());
     pairTag.addAttribute(getValueAttributeName(), it->first);
-    TEST_FOR_EXCEPTION(
-      validatorIDsMap.find(it->second) == validatorIDsMap.end(),
-      MissingValidatorException,
-      "Could not find an ID for a validator that is going to be inserted " <<
-      "into a ValueToValidatorMap!" << std::endl << std::endl);
+    if(validatorIDsMap.find(it->second) == validatorIDsMap.end()){
+      validatorIDsMap.insert(it->second);
+    }
     pairTag.addAttribute(getValidatorIDAttributeName(), 
       validatorIDsMap.find(it->second)->second);
     valueMapTag.addChild(pairTag);
   }  
+  xmlObj.addChild(valueMapTag);
+  RCP<const ParameterEntryValidator> defaultVali = 
+    castedDependency->getDefaultValidator();
+  if(nonnull(defaultVali)){
+    if(validatorIDsMap.find(defaultVali) == validatorIDsMap.end()){
+      validatorIDsMap.insert(defaultVali);
+    }
+    xmlObj.addAttribute(
+      getDefaultValidatorIDAttributeName(),
+      validatorIDsMap.find(defaultVali)->second);
+  }
 }
 
 RCP<ValidatorDependency> 
@@ -233,10 +242,11 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
     const XMLObject& xmlObj,
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
-    const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+    const IDtoValidatorMap& validatorIDsMap) const
 {
   StringValidatorDependency::ValueToValidatorMap valueValidatorMap;
-  int valuesAndValidatorIndex = xmlObj.findFirstChild(getValuesAndValidatorsTag()); 
+  int valuesAndValidatorIndex = 
+    xmlObj.findFirstChild(getValuesAndValidatorsTag()); 
     
   TEST_FOR_EXCEPTION(valuesAndValidatorIndex < 0,
     MissingValuesAndValidatorsTagException,
@@ -254,7 +264,8 @@ StringValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
       MissingValidatorException,
       "Could not find a validator corresponding to the ID " << valiID <<
       " in the given validatorIDsMap!" << std::endl << std::endl);
-    RCP<ParameterEntryValidator> validator = validatorIDsMap.find(valiID)->second;
+    RCP<ParameterEntryValidator> validator = 
+      validatorIDsMap.find(valiID)->second;
     valueValidatorMap.insert(
       StringValidatorDependency::ValueToValidatorPair(value, validator));
   }
@@ -281,30 +292,24 @@ void
 BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   RCP<const ValidatorDependency> dependency,
   XMLObject& xmlObj,
-  const XMLParameterListWriter::ValidatorIDsMap& validatorIDsMap) const
+  ValidatortoIDMap& validatorIDsMap) const
 {
   RCP<const BoolValidatorDependency> castedDependency = 
     rcp_dynamic_cast<const BoolValidatorDependency>(dependency, true);  
 
-  TEST_FOR_EXCEPTION(
-    validatorIDsMap.find(castedDependency->getFalseValidator())
-    == 
-    validatorIDsMap.end(),
-    MissingValidatorException,
-    "Could not find an ID for the false validator" <<
-    " in the given validatorIDsMap!" << std::endl << std::endl);
+  if(validatorIDsMap.find(castedDependency->getFalseValidator()) == 
+    validatorIDsMap.end()){
+    validatorIDsMap.insert(castedDependency->getFalseValidator());
+  }
 
   xmlObj.addAttribute(
     getFalseValidatorIDAttributeName(),
     validatorIDsMap.find(castedDependency->getFalseValidator())->second);
 
-  TEST_FOR_EXCEPTION(
-    validatorIDsMap.find(castedDependency->getFalseValidator())
-    == 
-    validatorIDsMap.end(),
-    MissingValidatorException,
-    "Could not find an ID for the true validator" <<
-    " in the given validatorIDsMap!" << std::endl << std::endl);
+  if(validatorIDsMap.find(castedDependency->getTrueValidator()) == 
+    validatorIDsMap.end()){
+    validatorIDsMap.insert(castedDependency->getTrueValidator());
+  }
 
   xmlObj.addAttribute(
     getTrueValidatorIDAttributeName(),
@@ -316,7 +321,7 @@ BoolValidatorDependencyXMLConverter::convertSpecialValidatorAttributes(
   const XMLObject& xmlObj,
   RCP<const ParameterEntry> dependee,
   const Dependency::ParameterEntryList dependents,
-  const XMLParameterListReader::ValidatorIDsMap& validatorIDsMap) const
+  const IDtoValidatorMap& validatorIDsMap) const
 {
 
   ParameterEntryValidator::ValidatorID falseID = 
