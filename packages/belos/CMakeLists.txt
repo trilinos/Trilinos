@@ -29,6 +29,13 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
   "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_Tpetra_Timers
+  HAVE_BELOS_TPETRA_TIMERS
+  "Add timers to Belos::MultiVecTraits for Tpetra multivectors."
+  NO
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #
@@ -46,13 +53,6 @@ ENDIF()
 IF (Belos_ENABLE_Tpetra)
   ADD_SUBDIRECTORY(tpetra)
 ENDIF()
-
-ADD_OPTION_AND_DEFINE(
-  ${PACKAGE_NAME}_Tpetra_Timers
-  HAVE_BELOS_TPETRA_TIMERS
-  "Add timers to Belos::MultiVecTraits for Tpetra multivectors."
-  NO
-  )
 
 
 #

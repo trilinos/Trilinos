@@ -1,5 +1,6 @@
 INCLUDE(PackageAddExecutableAndTest)
 
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NodeAPI_DefaultNodeTest
   SOURCES 
@@ -22,6 +23,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkosnodeapi
   )
+SET(TIMING_INSTALLS Kokkos_SerialNodeTestAndTiming)
 
 IF (Kokkos_ENABLE_TBB)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -35,6 +37,7 @@ IF (Kokkos_ENABLE_TBB)
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkosnodeapi
     )
+  APPEND_SET(TIMING_INSTALLS Kokkos_TBBNodeTestAndTiming)
 ENDIF()
 
 IF (Kokkos_ENABLE_ThreadPool)
@@ -49,6 +52,7 @@ IF (Kokkos_ENABLE_ThreadPool)
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkosnodeapi
     )
+  APPEND_SET(TIMING_INSTALLS Kokkos_TPINodeTestAndTiming)
 ENDIF()
 
 IF (Kokkos_ENABLE_Thrust)
@@ -69,4 +73,8 @@ IF (Kokkos_ENABLE_Thrust)
     STANDARD_PASS_OUTPUT
     DEPLIBS kokkosnodeapi
     )
+  APPEND_SET(TIMING_INSTALLS Kokkos_ThrustGPUNodeTestAndTiming)
 ENDIF()
+
+INSTALL(TARGETS ${TIMING_INSTALLS}
+        RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
