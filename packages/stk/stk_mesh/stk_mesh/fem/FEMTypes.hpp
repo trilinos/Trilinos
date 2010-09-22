@@ -14,7 +14,7 @@
 namespace stk {
 namespace mesh {
 
-enum { NodeRank = EntityRank(BaseEntityRank) };
+static const EntityRank NodeRank = BaseEntityRank;
 
 }//namespace mesh
 }//namespace stk
