@@ -476,7 +476,7 @@ void write_exo_mesh(
     exoid = ex_create (temporary_name, EX_CLOBBER, &CPU_word_size, &IO_word_size);
 
     if (exoid < 0) {
-      fprintf(stderr, "after ex_create, error = %d\n", err);
+      fprintf(stderr, "after ex_create, error = %d\n", exoid);
       exit(-1);
     }
 
