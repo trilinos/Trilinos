@@ -434,12 +434,12 @@ STKUNIT_UNIT_TEST( PerformanceTestSkinning, large_cube)
 
       std::cout << "Num procs: " << p_size << "\n";
       std::cout << "Mesh size: " << NX << 'x' << NY << 'x' << NZ << " = " << NX*NY*NZ << " elements\n";
-      std::cout << "Total time: " << timings[5] << "\n";
-      std::cout << "\tCreate mesh: " << timings[0] << "\n";
-      std::cout << "\tIntial skin: " << timings[1] << "\n";
-      std::cout << "\tDetach mesh: " << timings[2] << "\n";
-      std::cout << "\tDelete skin: " << timings[3] << "\n";
-      std::cout << "\tReskin:      " << timings[4] << "\n";
+      std::cout << "Total time: "     << timings[5] << "\n";
+      std::cout << "\tCreate mesh: "  << timings[0] << "\n";
+      std::cout << "\tInitial skin: " << timings[1] << "\n";
+      std::cout << "\tDetach mesh: "  << timings[2] << "\n";
+      std::cout << "\tDelete skin: "  << timings[3] << "\n";
+      std::cout << "\tReskin:      "  << timings[4] << "\n";
       std::cout << "\n\n";
     }
 
