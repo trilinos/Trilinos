@@ -2025,6 +2025,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   int (*matvec)(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]) = NULL;
   ML_Aggregate_Viz_Stats *Agrid_info;
   ML_Aggregate_Viz_Stats *Cgrid_info;
+  int oldPDEs=Amat->num_PDEs;
 
   if (PDEs != 1)
   {
@@ -2082,7 +2083,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
       ML_CommInfoOP_Compute_TotalRcvLength(Cmat->getrow->pre_comm);
     Nghost = Cmat->getrow->pre_comm->total_rcv_length;
   }
-  
+
   size_old = Rmat->invec_leng;
   size_new = Rmat->outvec_leng + Nghost;
   tmp_old = (double*) ML_allocate(sizeof(double) * (size_old + 1));
@@ -2095,8 +2096,10 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   for (i = 0 ; i < size_old ; ++i)
     tmp_old[i] = 0.0;
 
-  for (i = 0 ; i < size_old ; i += PDEs)
-    tmp_old[i] = 1.0;
+  /*  for (i = 0 ; i < size_old ; i += PDEs)
+      tmp_old[i] = 1.0;*/
+  for (i = 0 ; i < size_old ; i += oldPDEs)
+      tmp_old[i] = 1.0;
 
   ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, aggr_sizes);
 
@@ -2108,8 +2111,9 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   Cgrid_info = (ML_Aggregate_Viz_Stats *) Cmat->to->Grid->Grid;
   if (Agrid_info->x!= NULL) 
   {
-    for (i = 0 ; i < size_old ; i+=PDEs)
-      tmp_old[i] = Agrid_info->x[i / PDEs];
+    for (i = 0 ; i < size_old ; i+=oldPDEs)
+      tmp_old[i] = Agrid_info->x[i / oldPDEs];
+      /*      tmp_old[i] = Agrid_info->x[i / PDEs];*/
 
     ML_Operator_Apply(Rmat, size_old, tmp_old, Rmat->outvec_leng, tmp_new);
 
@@ -2140,8 +2144,11 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
 
   if (Agrid_info->y != NULL) 
   {
-    for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
-      tmp_old[i] = Agrid_info->y[i / PDEs];
+    for (i = 0 ; i < size_old ; i+=oldPDEs)
+      tmp_old[i] = Agrid_info->y[i / oldPDEs];
+
+    /*    for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
+          tmp_old[i] = Agrid_info->y[i / PDEs];*/
 
     ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
 
@@ -2160,8 +2167,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
           char msg[240];
           sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
                   Cmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
-          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
-                    msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",                    msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
         }
       }
     }
@@ -2172,8 +2178,11 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
 
   if (Agrid_info->z != NULL) 
   {
-    for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
-      tmp_old[i] = Agrid_info->z[i / PDEs];
+    for (i = 0 ; i < size_old ; i+=oldPDEs)
+      tmp_old[i] = Agrid_info->z[i / oldPDEs];
+
+    /*    for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
+	  tmp_old[i] = Agrid_info->z[i / PDEs];*/
 
     ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
 
