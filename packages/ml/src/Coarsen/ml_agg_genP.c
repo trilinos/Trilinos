@@ -2374,6 +2374,8 @@ static void ML_Init_Aux(ML* ml, int level)
   ML_free(columns);
   ML_free(values);
 
+  ML_free(LaplacianDiag);
+
   ML_Operator_UnAmalgamateAndDropWeak(A, num_PDEs, 0.0);
 
   A->aux_data->aux_func_ptr  = A->getrow->func_ptr;
