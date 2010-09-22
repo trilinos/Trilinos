@@ -180,7 +180,7 @@ public:
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array. This version lets you specify the sub
-     *        cell you are interested in.
+     *        cell you are interested in. 
      *
      * \param[in] blockId
      * \param[in] fieldNum
@@ -190,6 +190,21 @@ public:
    const std::vector<int> & getGIDFieldOffsets(int blockId,int fieldNum,int subCellDim,int subCellId) const
    // { return feiAggPattern_.find(blockId)->second->fieldLocalOffsets(fieldNum,subCellDim,subCellId); }
    { TEUCHOS_ASSERT(false); } 
+
+   /** \brief Use the field pattern so that you can find a particular
+     *        field in the GIDs array. This version lets you specify the sub
+     *        cell you are interested in and gets the closure. Meaning all the
+     *        IDs of equal or lesser sub cell dimension that are contained within
+     *        the specified sub cell. For instance for an edge, this function would
+     *        return offsets for the edge and the nodes on that edge.
+     *
+     * \param[in] blockId
+     * \param[in] fieldNum
+     * \param[in] subcellDim
+     * \param[in] subcellId
+     */
+   const std::vector<int> & getGIDFieldOffsets_closure(int blockId,int fieldNum,int subcellDim,int subcellId) const
+   { return fieldAggPattern_.find(blockId)->second->localOffsets_closure(fieldNum,subcellDim,subcellId); }
 
    //@}
 

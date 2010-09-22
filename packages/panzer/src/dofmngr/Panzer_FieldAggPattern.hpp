@@ -90,6 +90,8 @@ public:
      */
    const std::vector<int> & localOffsets(int fieldId) const;
     
+   const std::vector<int> & localOffsets_closure(int fieldId,int subcellDim,int subcellId) const;
+
    //@}
 
 protected:
@@ -140,11 +142,11 @@ protected:
    std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns_;
    std::map<int,int> fieldIdToPatternIdx_;
 
-//   struct LessThan  
-//   { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
-//   mutable std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> fieldSubCellOffsets_;
-
    mutable std::map<int, std::vector<int> > fieldOffsets_;
+
+   struct LessThan  
+   { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
+   mutable std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> fieldSubcellOffsets_closure_;
 };
 
 }

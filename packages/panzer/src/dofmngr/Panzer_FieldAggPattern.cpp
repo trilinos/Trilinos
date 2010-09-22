@@ -200,6 +200,42 @@ const std::vector<int> & FieldAggPattern::localOffsets(int fieldId) const
    return offsets;
 }
 
+bool FieldAggPattern::LessThan::operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const 
+{
+   return true;
+}
+
+const std::vector<int> & FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) const
+{
+   // lazy evaluation
+   typedef std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> OffsetMap;
+
+   Teuchos::Tuple<int,3> subcellTuple = Teuchos::tuple<int>(fieldId,subcellDim,subcellId);
+
+   OffsetMap::const_iterator itr
+         = fieldSubcellOffsets_closure_.find(subcellTuple);
+   if(itr!=fieldSubcellOffsets_closure_.end())
+      return itr->second;
+
+   // build vector for sub cell closure indices
+   ///////////////////////////////////////////////
+  
+   // grab field offsets
+   const std::vector<int> & fieldOffsets = localOffsets(fieldId);
+
+   // get offsets into field offsets for the closure indices (from field pattern)
+   std::vector<int> closureOffsets; 
+   FPPtr fieldPattern = getFieldPattern(fieldId);
+   fieldPattern->getSubcellClosureIndices(subcellDim,subcellId,closureOffsets);
+
+   // build closure indices into the correct location in lazy evaluation map.
+   std::vector<int> & closureIndices = fieldSubcellOffsets_closure_[subcellTuple];
+   for(std::size_t i=0;i<closureOffsets.size();i++)
+      closureIndices.push_back(fieldOffsets[closureIndices[i]]);
+
+   return fieldSubcellOffsets_closure_[subcellTuple];
+}
+
 void FieldAggPattern::localOffsets_build(int fieldId,std::vector<int> & offsets) const
 {
    // This function makes the assumption that if there are multiple indices
