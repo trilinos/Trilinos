@@ -18,6 +18,9 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #disabling Mesquite because of a build error when shared libs is turned on.
 SET(EXTRA_EXCLUDE_PACKAGES Mesquite STK Claps)
 
+# Enable LIME only on trilinos-test2
+SET(Trilinos_ADDITIONAL_PACKAGES LIME)
+
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
@@ -27,6 +30,10 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/include"
+  "-DTPL_ENABLE_Expat:BOOL=ON"
+  "-DTPL_ENABLE_LAMMPS:BOOL=ON"
+  "-DTPL_ENABLE_couple:BOOL=ON"
+  "-DTPL_ENABLE_SPPARKS:BOOL=ON"
   )
 
 # 2009/11/26: rabartl: Do we really want to be pointing to Trilinos_DATA_DIR?
