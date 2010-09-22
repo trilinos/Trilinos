@@ -127,6 +127,9 @@ namespace Kokkos {
 
       //! \brief Print some statistics regarding node allocation and memory transfer.
       void printStatistics(const RCP< Teuchos::FancyOStream > &os) const;
+      
+      //! \brief Clear all statistics on memory transfer.
+      void clearStatistics();
 
       //@}
 

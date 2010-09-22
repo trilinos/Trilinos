@@ -100,6 +100,7 @@ namespace Kokkos {
   struct NodeGEMM<Scalar,TPINode> {
     public:
       static void GEMM(Teuchos::ETransp transA, Teuchos::ETransp transB, Scalar alpha, const MultiVector<Scalar,TPINode> &A, const MultiVector<Scalar,TPINode> &B, Scalar beta, MultiVector<Scalar,TPINode> &C) {
+        TPI_Block();
         Teuchos::BLAS<int,Scalar> blas;
         const int m = Teuchos::as<int>(C.getNumRows()),
                   n = Teuchos::as<int>(C.getNumCols()),
@@ -108,6 +109,7 @@ namespace Kokkos {
                   ldb = Teuchos::as<int>(B.getStride()),
                   ldc = Teuchos::as<int>(C.getStride());
         blas.GEMM(transA, transB, m, n, k, alpha, A.getValues().getRawPtr(), lda, B.getValues().getRawPtr(), ldb, beta, C.getValuesNonConst().getRawPtr(), ldc);
+        TPI_Unblock();
       }
   };
 #endif
