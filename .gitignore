@@ -9,6 +9,7 @@ doxygen_objdb_*.tmp
 /flat_headers/
 /TAGS
 /preCopyrightTrilinos/
+/Panzer/
 /LIMEExt/
 /TerminalApplication/
 
