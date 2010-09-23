@@ -1,0 +1,13 @@
+<ParameterList>
+  <Parameter name="blah" value="3" id="1" type="int"/>
+  <Parameter name="string param" value="vale" id="2" type="string"/>
+  <Parameter name="bool param" value="true" id="3" type="bool"/>
+  <Dependencies>
+    <Dependency type="ConditionVisualDependency">
+      <Dependee parameterID="3"/>
+      <Condition parameterID="3" type="boolCondition"/>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+  
+    
