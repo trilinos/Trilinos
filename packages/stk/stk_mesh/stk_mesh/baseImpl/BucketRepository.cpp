@@ -608,6 +608,11 @@ void BucketRepository::internal_sort_bucket_entities()
 
 void BucketRepository::remove_entity( Bucket * k , unsigned i )
 {
+
+  if ( k == m_nil_bucket) {
+    throw std::logic_error("BucketRepository::remove_entity: Cannot remove entity from nil_bucket");
+  }
+
   const unsigned entity_rank = k->entity_rank();
 
   // Last bucket in the family of buckets with the same parts.

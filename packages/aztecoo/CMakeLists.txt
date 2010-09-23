@@ -31,6 +31,51 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc/AZ_capture_matrix_howto.txt
+  doc/Aztec2.0
+  doc/Aztec2.1
+  doc/Managing_conditioning_howto.txt
+  doc/UserGuide
+  doc/azteclogo.gif
+  doc/read_captured_matrix.c
+  example/AztecOO_RecursiveCall
+  example/Epetra_MsrMatrix_AztecOO
+  example/Epetra_MsrMatrix_PowerMethod
+  example/IfpackIctAztecOO
+  example/IfpackAztecOO
+  example/IfpackVbrAztecOO
+  example/MLAztecOO
+  example/azoo_iterate_hb
+  example/aztec_app
+  example/aztec_hb
+  example/AztecOO/adapt_main.mk
+  example/AztecOO/vbr_main.mk
+  example/AztecOO_MatlabInput/A.dat
+  example/AztecOO_MatlabInput/Ainv.dat
+  src/AztecOO_string_maps.txt
+  src/AztecOO_string_maps_builder.pl
+  src/az_comm_.*
+  src/md_timer_intel.c
+  src/md_timer_ncube.c
+  src/md_timer_sol.c
+  src/md_timer_sp2.c
+  src/md_timer_sun.c
+  src/md_timer_win2000.c
+  src/md_wrap_intel_c.c
+  src/md_wrap_ncube_c.c
+  src/md_wrap_puma_c.c
+  src/md_wrap_sp2_c.c
+  src/stamp-h.in
+  test/scripts/daily/serial/Ex_AztecOO_UserOpUserMat
+  )
+
+#
 # D) Do standard postprocessing
 #
 

@@ -1,0 +1,12 @@
+Running on rs1351
+mpiexec -np 8 numa_wrapper -ppn 8 ./bind2
+A Machine with 8 CPUs has:
+  2 NUMANodes/Sockets/L3Caches (4 total CPUs) each with
+  4 L2Caches/L1Caches/Cores (1 total CPUs) with
+  1 PU
+
+Total memory (for all children), Local memory (for object at level)
+Memory at level Machine: (12368012.00000010.0KB, 0.00000010.0KB)
+Memory at level NUMANodes/Sockets/L3Caches: (6162572.00000010.0KB, 6162572.00000010.0KB)
+Memory at level L2Caches/L1Caches/Cores: (0.00000010.0KB, 0.00000010.0KB)
+Memory at level PU: (0.00000010.0KB, 0.00000010.0KB)

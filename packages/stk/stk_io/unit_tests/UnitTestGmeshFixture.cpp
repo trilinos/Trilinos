@@ -5,8 +5,6 @@
 /*  Export of this program may require a license from the                 */
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -37,8 +35,10 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
   const std::vector<std::string> & faceset_names = fixture.getFacesetNames();
   STKUNIT_ASSERT_EQUAL( num_surf, faceset_names.size() );
 
-  for( size_t i = 0; i < num_surf; ++i )
-    STKUNIT_ASSERT_EQUAL( (std::string)"surface_" + Ioss::Utils::to_string(i+1), faceset_names[i] );
+  for( size_t i = 0; i < num_surf; ++i ) {
+    std::string surf_name =  (std::string)"surface_" + Ioss::Utils::to_string(i+1);
+    STKUNIT_ASSERT(surf_name == faceset_names[i]);
+  }
 
   std::vector<size_t> num_surf_elem(3);
   num_surf_elem[0] = num_y * num_z;
@@ -87,21 +87,22 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
       stk::mesh::Entity & face = *entities[i] ;
 
       const CellTopologyData * cell_topology = stk::mesh::get_cell_topology(face);
+      STKUNIT_ASSERT( cell_topology );
 
       stk::mesh::PairIterRelation rel = face.relations( stk::mesh::Node );
 
       STKUNIT_ASSERT_EQUAL( cell_topology->node_count, rel.size() );
 
-      // Need to get this active by augmenting unit test macros
-      //for ( unsigned j = 0 ; j < cell_topology->node_count ; ++j ) 
-      //{
-      //  stk::mesh::Entity & rel_node = *rel[j].entity();
-      //  double * coords = stk::mesh::field_data(*coord_field, rel_node);
-      //  //std::cerr << "( " << coords[0] << ", " << coords[1] << ", " << coords[2] << ")" << std::endl;
+      for ( unsigned j = 0 ; j < cell_topology->node_count ; ++j ) 
+      {
+        stk::mesh::Entity & rel_node = *rel[j].entity();
+        double * coords = stk::mesh::field_data(*coord_field, rel_node);
+	STKUNIT_ASSERT( coords );
+        //std::cerr << "( " << coords[0] << ", " << coords[1] << ", " << coords[2] << ")" << std::endl;
 
-      //  //ASSERT_DOUBLE_EQ(expected.second, coords[expected.first]);
-      //}
-      ////std::cerr << std::endl;
+        STKUNIT_ASSERT_DOUBLE_EQ(expected.second, coords[expected.first]);
+      }
+      //std::cerr << std::endl;
     }
   }
 }

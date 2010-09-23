@@ -269,8 +269,8 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::getLOWSBlock(
   ) const
 {
   assertBlockFillIsActive(false);
-  assertBlockRowCol(i,j);
-  if (i!=j)
+  assertBlockRowCol(i, j);
+  if (i != j)
     return Teuchos::null;
   return diagonalBlocks_[i].getConstObj();
 }

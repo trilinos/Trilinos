@@ -46,15 +46,18 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc ../src ../LinAlg ../NodeAPI
+INPUT                  = index.doc groups.doc ../src ../LinAlg ../NodeAPI ../LinAlg/examples ../LinAlg/test/CrsMatrix ../NodeAPI/examples
 FILE_PATTERNS          = *.hpp *.cpp *.cuh
 RECURSIVE              = NO
 EXCLUDE                = ../NodeAPI/Kokkos_CUDA_util_inline_runtime.h \
                          ../NodeAPI/Kokkos_CUDA_util_sharedmem.cuh \
                          ../NodeAPI/Kokkos_CUDANode.cpp ../NodeAPI/Kokkos_CUDANode.hpp ../NodeAPI/Kokoks_CUDANode.cuh
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = 
-EXAMPLE_PATTERNS       = 
+EXAMPLE_PATH           = ../NodeAPI/examples/SimpleNodeExample.cpp \
+                         ../NodeAPI/examples/Kokkos_NodeExampleKernels.hpp \
+                         ../LinAlg/examples/DummySparseKernelDriver.cpp \
+                         ../LinAlg/test/CrsMatrix/CrsMatrix_DefaultMultiply.cpp
+EXAMPLE_PATTERNS       = *.cpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES

@@ -57,9 +57,6 @@
 #include "mrtr_point.H"
 
 
-using namespace std;
-using namespace Teuchos;
-
 // ----------   User Defined Includes   ----------
 
 /*!
@@ -193,17 +190,17 @@ private:
 
   // -------------------------------------finding a convex hull for the polygon
   // create a convex hull of a set of given points in 2D
-  bool ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p);
-  bool MakeRightTurnUpper(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
-  bool MakeRightTurnLower(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
-  void RemovePointBefore(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
-  void RemovePointAfter(int i,map<int,RefCountPtr<MOERTEL::Point> >& hull);
+  bool ConvexHull(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p);
+  bool MakeRightTurnUpper(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull);
+  bool MakeRightTurnLower(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull);
+  void RemovePointBefore(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull);
+  void RemovePointAfter(int i,std::map<int,Teuchos::RCP<MOERTEL::Point> >& hull);
 
   //-------------------------------------------make triangulization of polygon
   bool Triangulation();
   
   //-----------------------------------------------------------collapse points
-  bool CollapsePoints(map<int,RefCountPtr<MOERTEL::Point> >& p, const double eps);
+  bool CollapsePoints(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p, const double eps);
   
 protected:
   // @{ \name Methods to construct triangulation of overlap region
@@ -213,25 +210,25 @@ protected:
   // return # segments the overlap was discretized with
   int Nseg() { return s_.size(); }
   // get view of segments in triangulation map
-  void SegmentView(vector<RefCountPtr<MOERTEL::Segment> >& segs);
+  void SegmentView(std::vector<Teuchos::RCP<MOERTEL::Segment> >& segs);
 
   // @{ \name Methods to construct an overlap polygon
 
   // add a point to the polygon
   bool AddPointtoPolygon(const int id, const double* P);
-  bool AddPointtoPolygon(map<int,RefCountPtr<MOERTEL::Point> >& p, const int id, const double* P);
+  bool AddPointtoPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p, const int id, const double* P);
   // remove a point from the polygon
   bool RemovePointfromPolygon(const int id,const double* P);
   // get the size of the nodal polygon
   int SizePointPolygon() { return p_.size(); }
   // get view of point in polygon, calling routine is responsible for freeing
-  void PointView(vector<RefCountPtr<MOERTEL::Point> >& points);
-  void PointView(map<int,RefCountPtr<MOERTEL::Point> >& p, vector<RefCountPtr<MOERTEL::Point> >& points);
-  void PointView(vector<MOERTEL::Point*>& p,const int* nodeids,const int np);
+  void PointView(std::vector<Teuchos::RCP<MOERTEL::Point> >& points);
+  void PointView(std::map<int,Teuchos::RCP<MOERTEL::Point> >& p, std::vector<Teuchos::RCP<MOERTEL::Point> >& points);
+  void PointView(std::vector<MOERTEL::Point*>& p,const int* nodeids,const int np);
   // copy a point polygon to another polygon
-  bool CopyPointPolygon(map<int,RefCountPtr<MOERTEL::Point> >& from, map<int,RefCountPtr<MOERTEL::Point> >& to);
+  bool CopyPointPolygon(std::map<int,Teuchos::RCP<MOERTEL::Point> >& from, std::map<int,Teuchos::RCP<MOERTEL::Point> >& to);
   // compute the centroid of a polygon (which is defined anti-clockwise)
-  bool Centroid(double xi[], const vector<RefCountPtr<MOERTEL::Point> >& points, const int np);
+  bool Centroid(double xi[], const std::vector<Teuchos::RCP<MOERTEL::Point> >& points, const int np);
 
 
   //@}
@@ -268,8 +265,8 @@ bool                                 havelinem_;   // flag indicating built of l
 
 bool                                 exactvalues_ ; // use exact function values at gauss points
 
-map<int,RefCountPtr<MOERTEL::Point> >   p_;       // map holding polygon points and later points of triangulation
-map<int,RefCountPtr<MOERTEL::Segment> > s_;       // map holding segments of polygon triangulation
+std::map<int,Teuchos::RCP<MOERTEL::Point> >   p_;       // map holding polygon points and later points of triangulation
+std::map<int,Teuchos::RCP<MOERTEL::Segment> > s_;       // map holding segments of polygon triangulation
 
 
 }; // class Overlap

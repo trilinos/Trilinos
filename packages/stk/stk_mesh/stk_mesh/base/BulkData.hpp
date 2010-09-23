@@ -411,16 +411,13 @@ private:
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<Entity*> & remove_receive );
 
-  void internal_update_distributed_index( std::vector<Entity*> & shared_new );
-
-  void internal_resolve_parallel_modify_delete(
-    const std::vector<Entity*> & del_or_mod_entities );
-
-  void internal_resolve_parallel_create();
-
-  void internal_resolve_shared_membership();
-
   bool internal_modification_end( bool regenerate_aura );
+    void internal_resolve_shared_modify_delete();
+    void internal_resolve_ghosted_modify_delete();
+    void internal_resolve_parallel_create();
+    void internal_resolve_shared_membership();
+
+  void internal_update_distributed_index( std::vector<Entity*> & shared_new );
 
   /** \brief  Put owned entity in send list for off-process
    *          parallel index, shared, and ghosted.

@@ -39,6 +39,12 @@ ADD_SUBDIRECTORY(src)
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(examples)
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+#
 # D) Do standard postprocessing
 #
 

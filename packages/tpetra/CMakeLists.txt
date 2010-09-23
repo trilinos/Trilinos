@@ -21,6 +21,8 @@ PACKAGE_ADD_EXPLICIT_INSTANTIATION_OPTION()
 
 PACKAGE_ADD_DEBUG_OPTION()
 
+PACKAGE_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
 #
 # B) Set up package-specific options
 #
@@ -114,6 +116,18 @@ ADD_SUBDIRECTORY(inout)
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 PACKAGE_ADD_TEST_DIRECTORIES(example)
+
+
+#
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  doc/CodingGuidelines
+  doc/TpetraDesign
+  )
 
 #
 # D) Do standard postprocessing

@@ -3,29 +3,43 @@ C @HEADER
 C ************************************************************************
 C 
 C               Epetra: Linear Algebra Services Package 
-C                 Copyright (2001) Sandia Corporation
+C                 Copyright 2001 Sandia Corporation
 C 
-C Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-C license for use of this work by or on behalf of the U.S. Government.
-C 
-C This library is free software; you can redistribute it and/or modify
-C it under the terms of the GNU Lesser General Public License as
-C published by the Free Software Foundation; either version 2.1 of the
-C License, or (at your option) any later version.
-C  
-C This library is distributed in the hope that it will be useful, but
-C WITHOUT ANY WARRANTY; without even the implied warranty of
-C MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-C Lesser General Public License for more details.
-C  
-C You should have received a copy of the GNU Lesser General Public
-C License along with this library; if not, write to the Free Software
-C Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-C USA
+C Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+C the U.S. Government retains certain rights in this software.
+C
+C Redistribution and use in source and binary forms, with or without
+C modification, are permitted provided that the following conditions are
+C met:
+C
+C 1. Redistributions of source code must retain the above copyright
+C notice, this list of conditions and the following disclaimer.
+C
+C 2. Redistributions in binary form must reproduce the above copyright
+C notice, this list of conditions and the following disclaimer in the
+C documentation and/or other materials provided with the distribution.
+C
+C 3. Neither the name of the Corporation nor the names of the
+C contributors may be used to endorse or promote products derived from
+C this software without specific prior written permission.
+C
+C THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+C EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+C IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+C PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+C CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+C EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+C PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+C PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+C LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+C NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+C SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C
 C Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 C 
 C ************************************************************************
 C @HEADER
+
        program main
 C
 C---------------------------------------------------------------

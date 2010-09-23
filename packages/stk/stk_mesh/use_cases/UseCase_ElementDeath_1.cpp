@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <use_cases/GridFixture.hpp>
+#include <stk_mesh/fixtures/GridFixture.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
@@ -19,6 +19,7 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
+#include <stk_mesh/fem/SkinMesh.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -154,16 +155,25 @@ void find_lower_rank_entities_to_kill(
 
 bool element_death_use_case_1(stk::ParallelMachine pm)
 {
-  //setup the mesh
-  GridFixture fixture(pm);
+  //set up the mesh
+  stk::mesh::fixtures::GridFixture fixture(pm);
+
+  stk::mesh::BulkData& mesh = fixture.bulk_data();
+  stk::mesh::MetaData& meta_data = fixture.meta_data();
+  stk::mesh::TopologicalMetaData& top_data = fixture.top_data();
+
+  meta_data.commit();
+
+  mesh.modification_begin();
+  fixture.generate_grid();
+  mesh.modification_end();
+
+  stk::mesh::skin_mesh(mesh, top_data.element_rank);
 
   // Nothing happens on iteration #0,
   // so the initial mesh should pass this validation.
 
   if ( ! validate_iteration( pm, fixture, 0) ) { return false ; }
-
-  stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::MetaData& meta_data = fixture.meta_data();
 
   stk::mesh::Part & dead_part = *fixture.dead_part();
 
@@ -172,11 +182,11 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
   bool passed = true;
 
-  unsigned mesh_rank = stk::mesh::Face;
+  unsigned mesh_rank = top_data.element_rank;
 
   for (int iteration = 0; iteration <NUM_ITERATIONS; ++iteration) {
     //find the entities to kill in this iteration
-    stk::mesh::EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration);
+    stk::mesh::EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration, top_data.element_rank);
 
     // find the parallel-consistent closure of the entities to be killed
     // The closure of an entity includes the entity and any lower ranked

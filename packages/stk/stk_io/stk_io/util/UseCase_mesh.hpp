@@ -61,7 +61,8 @@ namespace stk {
 				       stk::mesh::BulkData &bulk_data,
 				       const Ioss::Region *in_region,
 				       stk::mesh::MetaData &meta_data,
-				       bool add_transient = true);
+				       bool add_transient = true,
+				       bool add_all_fields = false);
 
       void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta);
       void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk);
@@ -86,7 +87,8 @@ namespace stk {
 			  bool add_all = false);
       void process_output_request(Ioss::Region &region,
 				  stk::mesh::BulkData &bulk,
-				  int step);
+				  int step,
+				  bool add_all_fields = false);
 
       void populate_bulk_data(stk::mesh::BulkData &bulk_data,
 			      stk::io::util::MeshData &mesh_data,

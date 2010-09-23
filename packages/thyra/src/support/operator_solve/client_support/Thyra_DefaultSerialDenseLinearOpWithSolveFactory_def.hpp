@@ -32,6 +32,8 @@
 
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory_decl.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolve.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 
 
@@ -131,7 +133,11 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializeOp(
   TEST_FOR_EXCEPT(0==Op);
 #endif
 
-  const RCP<const LinearOpBase<Scalar> > fwdOp = fwdOpSrc->getOp();
+  const RCP<const LinearOpBase<Scalar> > tmpFwdOp = fwdOpSrc->getOp();
+  RCP<const LinearOpBase<Scalar> > fwdOp;
+  Scalar fwdOp_scalar = 0.0;
+  EOpTransp fwdOp_transp;
+  unwrap<Scalar>(tmpFwdOp, &fwdOp_scalar, &fwdOp_transp, &fwdOp);
 
   const RCP<const MultiVectorBase<Scalar> > fwdMv =
     rcp_dynamic_cast<const MultiVectorBase<Scalar> >(fwdOp, true);
@@ -147,7 +153,7 @@ void DefaultSerialDenseLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
   LinearOpWithSolveBase<Scalar> *Op
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  initializeOp(fwdOpSrc, Op, SUPPORT_SOLVE_UNSPECIFIED);
 }
 
 

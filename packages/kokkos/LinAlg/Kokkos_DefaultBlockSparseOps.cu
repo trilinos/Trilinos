@@ -2,15 +2,19 @@
 #include "Kokkos_ThrustGPUNode.cuh"
 
 // includes for all ops
-#include "Kokkos_DefaultBlockSparseMultiplyKernelOps.hpp"
+#include "Kokkos_DefaultBlockSparseKernelOps.hpp"
 
 #define INSTANTIATE_BLOCKSPARSEMULTIPLY_ORDINAL_SCALAR(ORDINAL, SCALAR) \
   template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseMultiplyOp1         <SCALAR, ORDINAL, SCALAR, SCALAR> >(int, int, Kokkos::DefaultBlockSparseMultiplyOp1         <SCALAR, ORDINAL, SCALAR, SCALAR>); \
-  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseMultiplyOp1Transpose<SCALAR, ORDINAL, SCALAR, SCALAR> >(int, int, Kokkos::DefaultBlockSparseMultiplyOp1Transpose<SCALAR, ORDINAL, SCALAR, SCALAR>);
+  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseMultiplyOp1Transpose<SCALAR, ORDINAL, SCALAR, SCALAR> >(int, int, Kokkos::DefaultBlockSparseMultiplyOp1Transpose<SCALAR, ORDINAL, SCALAR, SCALAR>); \
+  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseSolveOp1            <SCALAR, ORDINAL, SCALAR, SCALAR> >(int, int, Kokkos::DefaultBlockSparseSolveOp1            <SCALAR, ORDINAL, SCALAR, SCALAR>); \
+  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseTransposeSolveOp1   <SCALAR, ORDINAL, SCALAR, SCALAR> >(int, int, Kokkos::DefaultBlockSparseTransposeSolveOp1   <SCALAR, ORDINAL, SCALAR, SCALAR>);
 
 #define INSTANTIATE_BLOCKSPARSEMULTIPLY_ORDINAL_SCALAR_SCALAR(ORDINAL, SCALAR, DRSCALAR) \
   template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseMultiplyOp1         <SCALAR, ORDINAL, DRSCALAR, DRSCALAR> >(int, int, Kokkos::DefaultBlockSparseMultiplyOp1         <SCALAR, ORDINAL, DRSCALAR, DRSCALAR>); \
-  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseMultiplyOp1Transpose<SCALAR, ORDINAL, DRSCALAR, DRSCALAR> >(int, int, Kokkos::DefaultBlockSparseMultiplyOp1Transpose<SCALAR, ORDINAL, DRSCALAR, DRSCALAR>);
+  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseMultiplyOp1Transpose<SCALAR, ORDINAL, DRSCALAR, DRSCALAR> >(int, int, Kokkos::DefaultBlockSparseMultiplyOp1Transpose<SCALAR, ORDINAL, DRSCALAR, DRSCALAR>); \
+  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseSolveOp1            <SCALAR, ORDINAL, DRSCALAR, DRSCALAR> >(int, int, Kokkos::DefaultBlockSparseSolveOp1            <SCALAR, ORDINAL, DRSCALAR, DRSCALAR>); \
+  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultBlockSparseTransposeSolveOp1   <SCALAR, ORDINAL, DRSCALAR, DRSCALAR> >(int, int, Kokkos::DefaultBlockSparseTransposeSolveOp1   <SCALAR, ORDINAL, DRSCALAR, DRSCALAR>);
 
 typedef short int ShortInt; 
 #ifdef HAVE_KOKKOS_CUDA_FLOAT

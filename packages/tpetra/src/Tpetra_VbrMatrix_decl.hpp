@@ -33,10 +33,6 @@
 #include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_VbrMatrix.hpp>
 
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_SerializationTraits.hpp>
-
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_BlockMap.hpp"
@@ -402,6 +398,13 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
                                       LocalOrdinal& numPtRows,
                                       LocalOrdinal& numPtCols,
                                       Teuchos::ArrayRCP<Scalar>& blockEntry);
+
+  //! Return a copy of the (point-entry) diagonal values.
+  /*!
+    Throws an exception if the input-vector's map is not the same as
+    getBlockRowMap()->getPointMap().
+  */
+  void getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const;
 
   //@}
 

@@ -239,10 +239,10 @@ namespace Intrepid {
               outputValues(i,j,0) = 0.0;
               outputValues(i,j,1) = 0.0;
               for (int k=0;k<this->getCardinality();k++) {
-                outputValues(i,j,0) -= this->Vinv(k,i) * phisCur(k,j,1);
+                outputValues(i,j,0) = this->Vinv(k,i) * phisCur(k,j,1);
               }
               for (int k=0;k<this->getCardinality();k++) {
-                outputValues(i,j,1) += this->Vinv(k,i) * phisCur(k,j,0);
+                outputValues(i,j,1) -= this->Vinv(k,i) * phisCur(k,j,0);
               }
             }
           }

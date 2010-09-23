@@ -38,7 +38,7 @@
  *
  * \brief A class to construct a projection of a node on some segment
  *
- * \date Last update do Doxygen: 20-March-06
+ * \date Last update do Doxygen: 10-July-2010
  *
  */
 #ifndef MOERTEL_PROJECTNODE_H
@@ -50,8 +50,6 @@
 
 
 #include "mrtr_node.H"
-
-using namespace std;
 
 // ----------   User Defined Includes   ----------
 
@@ -93,7 +91,7 @@ class  ProjectedNode : public MOERTEL::Node
 {
 public:
   
-  // @{ \name Constructors and destructors
+  // @{ \name Constructors and destructor
 
   /*!
   \brief Constructor
@@ -116,9 +114,10 @@ public:
   \param basenode : the node this class is the projection of
   \param xi : local coordinates of the projection in the segment its projected onto
   \param pseg : Segment this projection is located in 
-  \param orthseg : id of segment this projection is orthogonal to whic might be different from pseg
+  \param orthseg : id of segment this projection is orthogonal to which might be different from pseg
   */
-  explicit ProjectedNode(const MOERTEL::Node& basenode, const double* xi, MOERTEL::Segment* pseg, int orthseg);
+  explicit ProjectedNode(const MOERTEL::Node& basenode, const double* xi, 
+				  MOERTEL::Segment* pseg, int orthseg);
   
   /*!
   \brief Copy-Constructor
@@ -146,9 +145,9 @@ public:
   
   */
   double* Xi() { return xi_; }
-  
+
   /*!
-  \brief Return pointer to segment this pojrection is in
+  \brief Return pointer to segment this projection is in
   
   */
   MOERTEL::Segment* Segment() { return pseg_; }
@@ -176,6 +175,6 @@ protected:
 } // namespace MOERTEL
 
 // << operator
-std::ostream& operator << (ostream& os, const MOERTEL::ProjectedNode& pnode);
+std::ostream& operator << (std::ostream& os, const MOERTEL::ProjectedNode& pnode);
 
 #endif // MOERTEL_PROJECTNODE_H

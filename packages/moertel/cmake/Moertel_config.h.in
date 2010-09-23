@@ -15,5 +15,14 @@
 /* Define if want to build moertel-examples */
 #cmakedefine HAVE_MOERTEL_EXAMPLES
 
+/* Define if we have Exodus as a TPL */
+#cmakedefine HAVE_MOERTEL_EXODUS
+
+/* Define if we have Nemesis as a TPL */
+#cmakedefine HAVE_MOERTEL_NEMESIS
+
+/* Define if we want to use Trios (ExodusII/Nemesis) */
+#cmakedefine HAVE_MOERTEL_TRIOS
+
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI

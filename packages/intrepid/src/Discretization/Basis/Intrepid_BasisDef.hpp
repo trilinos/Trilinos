@@ -381,3 +381,9 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
                       std::invalid_argument,
                       ">>> ERROR: (Intrepid::getValues_HDIV_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
 }
+
+// Pure virtual destructor (gives warnings if not included).
+// Following "Effective C++: 3rd Ed." item 7 the implementation
+// is included in the definition file.
+template<class ArrayScalar>
+DofCoordsInterface<ArrayScalar>::~DofCoordsInterface() {}

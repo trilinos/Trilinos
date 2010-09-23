@@ -26,8 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// @HEADER
-
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Handle.hpp"

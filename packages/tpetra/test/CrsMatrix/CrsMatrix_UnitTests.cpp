@@ -145,8 +145,8 @@ namespace {
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
     ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
-    ArrayRCP<const LO> loview; \
-    ArrayRCP<const Scalar> sview; \
+    ArrayView<const LO> loview; \
+    ArrayView<const Scalar> sview; \
     size_t STMAX = 0; \
     for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
@@ -329,28 +329,6 @@ namespace {
       CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
       // A pre-constructed graph must be fill complete before being used to construct a CrsMatrix
       TEST_THROW( MAT matrix(rcpFromRef(diaggraph)), std::runtime_error );
-    }
-    {
-      // create a simple diagonal graph
-      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
-      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
-        diaggraph.insertGlobalIndices(r,tuple(r));
-      }
-      diaggraph.fillComplete(DoNotOptimizeStorage);
-      TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
-      TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), false );
-      // fillComplete(), but do not optimizeStorage()
-      // matrix constructed with non-optimized-storage graph
-      MAT mat1(rcpFromRef(diaggraph));
-      // optimizeStorage() the graph, and test that the matrix notices this change and throws a warning/fails to fillComplete()
-      diaggraph.optimizeStorage();
-      TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), true );
-#ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
-        TEST_THROW( mat1.fillComplete(DoNotOptimizeStorage), std::runtime_error )
-#else
-        mat1.fillComplete(DoNotOptimizeStorage);
-#endif
-      TEST_EQUALITY_CONST( mat1.isFillComplete(), false );
     }
     {
       // create a simple diagonal graph
@@ -746,9 +724,10 @@ namespace {
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
       TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
       // now there is room for more
+      matrix.resumeFill();
       for (LO r=0; r<static_cast<LO>(numLocal); ++r) 
       {
-        TEST_NOTHROW( matrix.insertLocalValues(r,tuple(r),tuple(ST::one())) );
+        matrix.insertLocalValues(r,tuple(r),tuple(ST::one()));
       }
       TEST_NOTHROW( matrix.fillComplete(DoOptimizeStorage) );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
@@ -759,8 +738,8 @@ namespace {
       TEST_EQUALITY( matrix.getGlobalNumEntries(), numLocal*numImages );
       TEST_EQUALITY( matrix.getNodeNumEntries(), numLocal );
       for (LO r=0; r<static_cast<LO>(numLocal); ++r) {
-        ArrayRCP<const LO> inds;
-        ArrayRCP<const Scalar> vals;
+        ArrayView<const LO> inds;
+        ArrayView<const Scalar> vals;
         TEST_NOTHROW( matrix.getLocalRowView(r,inds,vals) );
         TEST_COMPARE_ARRAYS( inds, tuple<LO>(r) );
         TEST_COMPARE_ARRAYS( vals, tuple<Scalar>(static_cast<Scalar>(3.0)) );
@@ -816,7 +795,7 @@ namespace {
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
-      ArrayRCP<const GO> CGView; ArrayRCP<const LO> CLView; ArrayRCP<const Scalar> CSView;
+      ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
       size_t numentries;
       // at this point, the graph has not allocated data as global or local, so we can do views/copies for either local or global
       matrix.getLocalRowCopy(0,LCopy,SCopy,numentries);
@@ -835,8 +814,10 @@ namespace {
       matrix.fillComplete(os);
       // check that inserting global entries throws (inserting local entries is still allowed)
       {
+        matrix.resumeFill();
         Array<GO> zero(0); Array<Scalar> vzero(0);
         TEST_THROW( matrix.insertGlobalValues(0,zero,vzero), std::runtime_error );
+        matrix.fillComplete(os);
       }
       // check for throws and no-throws/values
       TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
@@ -1797,6 +1778,60 @@ namespace {
     TEST_EQUALITY_CONST( (is_same< node_type           , Node   >::value) == true, true );
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ActiveFill, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    const GO INVALID = OrdinalTraits<GO>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create Map
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,1,comm,node);
+    const Scalar SZERO = ScalarTraits<Scalar>::zero();
+    {
+      MAT matrix(map,map,0,DynamicProfile);
+      TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
+      TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
+      matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
+      //
+      matrix.fillComplete(DoNotOptimizeStorage);
+      TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
+      TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
+      TEST_THROW( matrix.insertLocalValues ( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      TEST_THROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      TEST_THROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ), std::runtime_error );
+      TEST_THROW( matrix.setAllToScalar(SZERO),                                   std::runtime_error );
+      TEST_THROW( matrix.scale(SZERO),                                            std::runtime_error );  
+      TEST_THROW( matrix.globalAssemble(),                                        std::runtime_error );
+      TEST_THROW( matrix.fillComplete(),                                          std::runtime_error );
+    }
+    {
+      MAT matrix(map,map,0,DynamicProfile);
+      TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
+      TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
+      matrix.insertLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) );
+      //
+      matrix.fillComplete(DoNotOptimizeStorage);
+      TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
+      TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
+      //
+      matrix.resumeFill();
+      TEST_EQUALITY_CONST( matrix.isFillActive(),   true );
+      TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
+      TEST_NOTHROW( matrix.insertLocalValues ( 0, tuple<LO>(0), tuple<Scalar>(0) ) );
+      TEST_NOTHROW( matrix.replaceLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ) );
+      TEST_NOTHROW( matrix.sumIntoLocalValues( 0, tuple<LO>(0), tuple<Scalar>(0) ) );
+      TEST_NOTHROW( matrix.setAllToScalar(SZERO)                                   );
+      TEST_NOTHROW( matrix.scale(SZERO)                                            );
+      TEST_NOTHROW( matrix.globalAssemble()                                        );
+      //
+      TEST_NOTHROW( matrix.fillComplete()                        );
+      TEST_EQUALITY_CONST( matrix.isFillActive(),   false );
+      TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
+    }
+  }
+
 
 // 
 // INSTANTIATIONS
@@ -1832,6 +1867,7 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AlphaBetaMultiply, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultiplyOp, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ActiveFill, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE )
 
 

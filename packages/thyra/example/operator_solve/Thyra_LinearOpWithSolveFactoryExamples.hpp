@@ -64,7 +64,7 @@ public:
   /** \brief . */
   virtual ~LinearOpChanger() {}
   /** \brief . */
-  virtual void changeOp( LinearOpBase<Scalar> *op ) const = 0;
+  virtual void changeOp( const Teuchos::Ptr<LinearOpBase<Scalar> > &op ) const = 0;
 };
 
 /** \brief No-op changer.
@@ -74,7 +74,7 @@ template<class Scalar>
 class NullLinearOpChanger : public LinearOpChanger<Scalar> {
 public:
   /** \brief . */
-  void changeOp( LinearOpBase<Scalar> *op ) const {}
+  void changeOp( const Teuchos::Ptr<LinearOpBase<Scalar> > &op ) const {}
 };
 
 
@@ -95,20 +95,21 @@ void singleLinearSolve(
   const Thyra::LinearOpBase<Scalar> &A,
   const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
   const Thyra::VectorBase<Scalar> &b,
-  Thyra::VectorBase<Scalar> *x,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x,
   Teuchos::FancyOStream &out
   )
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST; using Teuchos::ptr;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Teuchos::rcpFromRef;
   Teuchos::OSTab tab(out);
   out << "\nPerforming a single linear solve ...\n";
   // Create the LOWSB object that will be used to solve the linear system
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = Thyra::linearOpWithSolve(lowsFactory,Teuchos::rcp(&A,false));
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    Thyra::linearOpWithSolve(lowsFactory, rcpFromRef(A));
   // Solve the system using a default solve criteria using a non-member helper function 
-  assign(ptr(x), ST::zero()); // Must initialize to a guess before solve!
+  assign(x, ST::zero()); // Must initialize to a guess before solve!
   Thyra::SolveStatus<Scalar> 
-    status = Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b, ptr(x));
+    status = Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b, x);
   out << "\nSolve status:\n" << status;
 } // end singleLinearSolve
 
@@ -130,10 +131,10 @@ createScaledAdjointLinearOpWithSolve(
   Teuchos::OSTab tab(out);
   out << "\nCreating a scaled adjoint LinearOpWithSolveBase object ...\n";
   // Create the LOWSB object that will be used to solve the linear system
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleAdjointA
-    = Thyra::linearOpWithSolve(lowsFactory,scale(scalar,adjoint(A)));
-  out << "\nCreated LOWSB object:\n" << describe(*invertibleAdjointA,Teuchos::VERB_MEDIUM);
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleAdjointA =
+    Thyra::linearOpWithSolve(lowsFactory,scale(scalar,adjoint(A)));
+  out << "\nCreated LOWSB object:\n" << describe(*invertibleAdjointA,
+    Teuchos::VERB_MEDIUM);
   return invertibleAdjointA;
 } // end createScaledAdjointLinearOpWithSolve
 
@@ -145,45 +146,44 @@ createScaledAdjointLinearOpWithSolve(
  */
 template<class Scalar>
 void solveNumericalChangeSolve(
-  Thyra::LinearOpBase<Scalar> *A,
+  const Teuchos::Ptr<Thyra::LinearOpBase<Scalar> > &A,
   const Thyra::LinearOpChanger<Scalar> &opChanger,
   const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
   const Thyra::VectorBase<Scalar> &b1,
-  Thyra::VectorBase<Scalar> *x1,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x1,
   const Thyra::VectorBase<Scalar> &b2,
-  Thyra::VectorBase<Scalar> *x2,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x2,
   Teuchos::FancyOStream &out
   )
 {
-  using Teuchos::as;
-  using Teuchos::ptr;
+  using Teuchos::as; using Teuchos::ptr; using Teuchos::rcpFromPtr;
   Teuchos::OSTab tab(out);
-  out << "\nPerforming a solve, changing the operator, then performing another solve ...\n";
+  out << "\nPerforming a solve, changing the operator, then performing another"
+      << " solve ...\n";
   // Get a local non-owned RCP to A to be used by lowsFactory
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
-    rcpA = Teuchos::rcp(A,false); // Note: This is the right way to do this!
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > rcpA = rcpFromPtr(A);
   // Create the LOWSB object that will be used to solve the linear system
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
   // Initialize the invertible linear operator given the forward operator
-  Thyra::initializeOp<Scalar>(lowsFactory,rcpA,&*invertibleA);
+  Thyra::initializeOp<Scalar>(lowsFactory, rcpA, invertibleA.ptr());
   // Solve the system using a default solve criteria using a non-member helper function
-  Thyra::assign(ptr(x1), as<Scalar>(0.0));
-  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b1, ptr(x1));
+  Thyra::assign(x1, as<Scalar>(0.0));
+  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b1, x1);
   // Before the forward operator A is changed it is recommended that you
   // uninitialize *invertibleA first to avoid accidental use of *invertiableA
   // while it may be in an inconsistent state from the time between *A changes
   // and *invertibleA is explicitly updated. However, this step is not
   // required!
-  Thyra::uninitializeOp<Scalar>(lowsFactory, &*invertibleA);
+  Thyra::uninitializeOp<Scalar>(lowsFactory, invertibleA.ptr());
   // Change the operator and reinitialize the invertible operator
   opChanger.changeOp(A);
-  Thyra::initializeOp<Scalar>(lowsFactory, rcpA, &*invertibleA);
+  Thyra::initializeOp<Scalar>(lowsFactory, rcpA, invertibleA.ptr());
   // Note that above will reuse any factorization structures that may have been
   // created in the first call to initializeOp(...).
   // Finally, solve another linear system with new values of A
-  Thyra::assign<Scalar>(ptr(x2), as<Scalar>(0.0));
-  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b2, ptr(x2));
+  Thyra::assign<Scalar>(x2, as<Scalar>(0.0));
+  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b2, x2);
 } // end solveNumericalChangeSolve
 
 
@@ -195,43 +195,43 @@ void solveNumericalChangeSolve(
  */
 template<class Scalar>
 void solveSmallNumericalChangeSolve(
-  Thyra::LinearOpBase<Scalar> *A,
+  const Teuchos::Ptr<Thyra::LinearOpBase<Scalar> > &A,
   const Thyra::LinearOpChanger<Scalar> &opSmallChanger,
   const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
   const Thyra::VectorBase<Scalar> &b1,
-  Thyra::VectorBase<Scalar> *x1,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x1,
   const Thyra::VectorBase<Scalar> &b2,
-  Thyra::VectorBase<Scalar> *x2,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x2,
   Teuchos::FancyOStream &out
   )
 {
-  using Teuchos::ptr; using Teuchos::as;
+  using Teuchos::ptr; using Teuchos::as; using Teuchos::rcpFromPtr;
   Teuchos::OSTab tab(out);
-  out << "\nPerforming a solve, changing the operator in a very small way, then performing another solve ...\n";
+  out << "\nPerforming a solve, changing the operator in a very small way,"
+      << " then performing another solve ...\n";
   // Get a local non-owned RCP to A to be used by lowsFactory
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
-    rcpA = Teuchos::rcp(A,false); // Note: This is the right way to do this!
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > rcpA = rcpFromPtr(A);
   // Create the LOWSB object that will be used to solve the linear system
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
   // Initialize the invertible linear operator given the forward operator
-  Thyra::initializeOp<Scalar>(lowsFactory,rcpA,&*invertibleA);
+  Thyra::initializeOp<Scalar>(lowsFactory, rcpA, invertibleA.ptr());
   // Solve the system using a default solve criteria using a non-member helper function
-  Thyra::assign(ptr(x1), as<Scalar>(0.0));
-  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b1, ptr(x1));
+  Thyra::assign(x1, as<Scalar>(0.0));
+  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b1, x1);
   // Before the forward operator A is changed it is recommended that you
   // uninitialize *invertibleA first to avoid accidental use of *invertiableA
   // while it may be in an inconsistent state from the time between *A changes
   // and *invertibleA is explicitly updated. However, this step is not
   // required!
-  Thyra::uninitializeOp<Scalar>(lowsFactory, &*invertibleA);
+  Thyra::uninitializeOp<Scalar>(lowsFactory, invertibleA.ptr());
   // Change the operator and reinitialize the invertible operator
   opSmallChanger.changeOp(A);
-  Thyra::initializeAndReuseOp<Scalar>(lowsFactory, rcpA, &*invertibleA);
+  Thyra::initializeAndReuseOp<Scalar>(lowsFactory, rcpA, invertibleA.ptr());
   // Note that above a maximum amount of reuse will be achieved, such as
   // keeping the same precondtioner.
-  Thyra::assign(ptr(x2), as<Scalar>(0.0));
-  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b2, ptr(x2));
+  Thyra::assign(x2, as<Scalar>(0.0));
+  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b2, x2);
 } // end solveSmallNumericalChangeSolve
 
 
@@ -243,44 +243,44 @@ void solveSmallNumericalChangeSolve(
  */
 template<class Scalar>
 void solveMajorChangeSolve(
-  Thyra::LinearOpBase<Scalar> *A,
+  const Teuchos::Ptr<Thyra::LinearOpBase<Scalar> > &A,
   const Thyra::LinearOpChanger<Scalar> &opMajorChanger,
   const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
   const Thyra::VectorBase<Scalar> &b1,
-  Thyra::VectorBase<Scalar> *x1,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x1,
   const Thyra::VectorBase<Scalar> &b2,
-  Thyra::VectorBase<Scalar> *x2,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x2,
   Teuchos::FancyOStream &out
   )
 {
-  using Teuchos::ptr; using Teuchos::as;
+  using Teuchos::as; using Teuchos::rcpFromPtr;
   Teuchos::OSTab tab(out);
-  out << "\nPerforming a solve, changing the operator in a major way, then performing another solve ...\n";
+  out << "\nPerforming a solve, changing the operator in a major way, then performing"
+      << " another solve ...\n";
   // Get a local non-owned RCP to A to be used by lowsFactory
-  Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
-    rcpA = Teuchos::rcp(A,false); // Note: This is the right way to do this!
+  Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > rcpA = rcpFromPtr(A);
   // Create the LOWSB object that will be used to solve the linear system
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
   // Initialize the invertible linear operator given the forward operator
-  Thyra::initializeOp<Scalar>(lowsFactory, rcpA, &*invertibleA);
+  Thyra::initializeOp<Scalar>(lowsFactory, rcpA, invertibleA.ptr());
   // Solve the system using a default solve criteria using a non-member helper function
-  Thyra::assign(ptr(x1), as<Scalar>(0.0));
-  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b1, ptr(x1));
+  Thyra::assign(x1, as<Scalar>(0.0));
+  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b1, x1);
   // Before the forward operator A is changed it is recommended that you
   // uninitialize *invertibleA first to avoid accidental use of *invertiableA
   // while it may be in an inconsistent state from the time between *A changes
   // and *invertibleA is explicitly updated. However, this step is not
   // required!
-  Thyra::uninitializeOp<Scalar>(lowsFactory, &*invertibleA);
+  Thyra::uninitializeOp<Scalar>(lowsFactory, invertibleA.ptr());
   // Change the operator in some major way (perhaps even changing its structure)
   opMajorChanger.changeOp(A);
   // Recreate the LOWSB object and initialize it from scratch
   invertibleA = lowsFactory.createOp();
-  Thyra::initializeOp<Scalar>(lowsFactory, rcpA, &*invertibleA);
+  Thyra::initializeOp<Scalar>(lowsFactory, rcpA, invertibleA.ptr());
   // Solve another set of linear systems
-  Thyra::assign(ptr(x2), as<Scalar>(0.0));
-  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b2, ptr(x2));
+  Thyra::assign(x2, as<Scalar>(0.0));
+  Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b2, x2);
 } // end solveMajorChangeSolve
 
 
@@ -306,10 +306,10 @@ createGeneralPreconditionedLinearOpWithSolve(
 {
   Teuchos::OSTab tab(out);
   out << "\nCreating an externally preconditioned LinearOpWithSolveBase object ...\n";
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
-  Thyra::initializePreconditionedOp<Scalar>(lowsFactory,A,P,&*invertibleA);
-  out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
+  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, invertibleA.ptr());
+  out << "\nCreated LOWSB object:\n" << describe(*invertibleA, Teuchos::VERB_MEDIUM);
   return invertibleA;
 } // end createGeneralPreconditionedLinearOpWithSolve
 
@@ -330,16 +330,15 @@ createUnspecifiedPreconditionedLinearOpWithSolve(
   )
 {
   Teuchos::OSTab tab(out);
-  out << "\nCreating an LinearOpWithSolveBase object given a preconditioner operator not targeted to the left or right ...\n";
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
-  Thyra::initializePreconditionedOp<Scalar>(
-    lowsFactory, A, Thyra::unspecifiedPrec<Scalar>(P_op),
-    &*invertibleA
-    );
+  out << "\nCreating an LinearOpWithSolveBase object given a preconditioner operator"
+      << " not targeted to the left or right ...\n";
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
+  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A,
+    Thyra::unspecifiedPrec<Scalar>(P_op), invertibleA.ptr());
   // Above, the lowsFactory object will decide whether to apply the single
   // preconditioner operator on the left or on the right.
-  out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
+  out << "\nCreated LOWSB object:\n" << describe(*invertibleA, Teuchos::VERB_MEDIUM);
   return invertibleA;
 } // end createUnspecifiedPreconditionedLinearOpWithSolve
 
@@ -362,13 +361,11 @@ createLeftPreconditionedLinearOpWithSolve(
   Teuchos::OSTab tab(out);
   out << "\nCreating an LinearOpWithSolveBase object given a left preconditioner"
       << " operator ...\n";
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
-  Thyra::initializePreconditionedOp<Scalar>(
-    lowsFactory,A,Thyra::leftPrec<Scalar>(P_op_left)
-    ,&*invertibleA
-    );
-  out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
+  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A,
+    Thyra::leftPrec<Scalar>(P_op_left), invertibleA.ptr());
+  out << "\nCreated LOWSB object:\n" << describe(*invertibleA, Teuchos::VERB_MEDIUM);
   return invertibleA;
 } // end createLeftPreconditionedLinearOpWithSolve
 
@@ -389,14 +386,13 @@ createRightPreconditionedLinearOpWithSolve(
   )
 {
   Teuchos::OSTab tab(out);
-  out << "\nCreating an LinearOpWithSolveBase object given a right preconditioner operator ...\n";
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
-  Thyra::initializePreconditionedOp<Scalar>(
-    lowsFactory,A,Thyra::rightPrec<Scalar>(P_op_right)
-    ,&*invertibleA
-    );
-  out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
+  out << "\nCreating an LinearOpWithSolveBase object given a right"
+      << " preconditioner operator ...\n";
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
+  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A,
+    Thyra::rightPrec<Scalar>(P_op_right), invertibleA.ptr());
+  out << "\nCreated LOWSB object:\n" << describe(*invertibleA, Teuchos::VERB_MEDIUM);
   return invertibleA;
 } // end createRightPreconditionedLinearOpWithSolve
 
@@ -420,13 +416,11 @@ createLeftRightPreconditionedLinearOpWithSolve(
   Teuchos::OSTab tab(out);
   out << "\nCreating an LinearOpWithSolveBase object given a left and"
       << "right preconditioner operator ...\n";
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
-  Thyra::initializePreconditionedOp<Scalar>(
-    lowsFactory,A,Thyra::splitPrec<Scalar>(P_op_left,P_op_right)
-    ,&*invertibleA
-    );
-  out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
+  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A,
+    Thyra::splitPrec<Scalar>(P_op_left, P_op_right), invertibleA.ptr());
+  out << "\nCreated LOWSB object:\n" << describe(*invertibleA, Teuchos::VERB_MEDIUM);
   return invertibleA;
 } // end createLeftRightPreconditionedLinearOpWithSolve
 
@@ -449,10 +443,11 @@ createMatrixPreconditionedLinearOpWithSolve(
   Teuchos::OSTab tab(out);
   out << "\nCreating a LinearOpWithSolveBase object given an approximate forward"
       << " operator to define the preconditioner ...\n";
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
-  Thyra::initializeApproxPreconditionedOp<Scalar>(lowsFactory,A,A_approx,&*invertibleA);
-  out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
+  Thyra::initializeApproxPreconditionedOp<Scalar>(lowsFactory, A, A_approx,
+    invertibleA.ptr());
+  out << "\nCreated LOWSB object:\n" << describe(*invertibleA, Teuchos::VERB_MEDIUM);
   return invertibleA;
 } // end createMatrixPreconditionedLinearOpWithSolve
 
@@ -463,37 +458,37 @@ createMatrixPreconditionedLinearOpWithSolve(
  */
 template<class Scalar>
 void externalPreconditionerReuseWithSolves(
-  Thyra::LinearOpBase<Scalar> *A_inout,
+  const Teuchos::Ptr<Thyra::LinearOpBase<Scalar> > &A_inout,
   const Thyra::LinearOpChanger<Scalar> &opChanger,
   const Thyra::LinearOpWithSolveFactoryBase<Scalar> &lowsFactory,
   const Thyra::PreconditionerFactoryBase<Scalar> &precFactory,
   const Thyra::VectorBase<Scalar> &b1,
-  Thyra::VectorBase<Scalar> *x1,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x1,
   const Thyra::VectorBase<Scalar> &b2,
-  Thyra::VectorBase<Scalar> *x2,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x2,
   Teuchos::FancyOStream &out
   )
 {
-  using Teuchos::tab; typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Teuchos::tab; using Teuchos::rcpFromPtr;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   Teuchos::OSTab tab2(out);
   out << "\nShowing resuse of the preconditioner ...\n";
-  Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
-    A = rcp(A_inout,false);
+  Teuchos::RCP<Thyra::LinearOpBase<Scalar> > A = rcpFromPtr(A_inout);
   // Create the initial preconditioner for the input forward operator
-  Teuchos::RCP<Thyra::PreconditionerBase<Scalar> >
-    P = precFactory.createPrec();
-  Thyra::initializePrec<Scalar>(precFactory,A,&*P);
+  Teuchos::RCP<Thyra::PreconditionerBase<Scalar> > P =
+    precFactory.createPrec();
+  Thyra::initializePrec<Scalar>(precFactory, A, P.ptr());
   // Create the invertible LOWS object given the preconditioner
-  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleA = lowsFactory.createOp();
-  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, &*invertibleA);
+  Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > invertibleA =
+    lowsFactory.createOp();
+  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, invertibleA.ptr());
   // Solve the first linear system
-  assign(ptr(x1), ST::zero());
-  Thyra::SolveStatus<Scalar>
-    status1 = Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b1, ptr(x1));
+  assign(x1, ST::zero());
+  Thyra::SolveStatus<Scalar> status1 = Thyra::solve<Scalar>(*invertibleA,
+    Thyra::NOTRANS, b1, x1);
   out << "\nSolve status:\n" << status1;
   // Change the forward linear operator without changing the preconditioner
-  opChanger.changeOp(&*A);
+  opChanger.changeOp(A.ptr());
   // Warning! After the above change the integrity of the preconditioner
   // linear operators in P is undefined. For some implementations of the
   // preconditioner, its behavior will remain unchanged (e.g. ILU) which in
@@ -504,11 +499,11 @@ void externalPreconditionerReuseWithSolves(
   //
   // Reinitialize the LOWS object given the updated forward operator A and the
   // old preconditioner P.
-  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, &*invertibleA);
+  Thyra::initializePreconditionedOp<Scalar>(lowsFactory, A, P, invertibleA.ptr());
   // Solve the second linear system
-  assign(ptr(x2), ST::zero());
-  Thyra::SolveStatus<Scalar>
-    status2 = Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b2, ptr(x2));
+  assign(x2, ST::zero());
+  Thyra::SolveStatus<Scalar>status2 = Thyra::solve<Scalar>(*invertibleA,
+    Thyra::NOTRANS, b2, x2);
   out << "\nSolve status:\n" << status2;
 } // end externalPreconditionerReuseWithSolves
 
@@ -531,45 +526,45 @@ void nonExternallyPreconditionedLinearSolveUseCases(
   Teuchos::FancyOStream &out
   )
 {
-  using Teuchos::ptr;
+  using Teuchos::as;
   Teuchos::OSTab tab(out);
   out << "\nRunning example use cases for a LinearOpWithSolveFactoryBase object ...\n";
+  // Create a non-const A object (don't worry, it will not be changed)
+  const Teuchos::Ptr<Thyra::LinearOpBase<Scalar> > A_nonconst =
+    Teuchos::ptrFromRef(const_cast<Thyra::LinearOpBase<Scalar>&>(A));
   // Create the RHS (which is just a random set of coefficients)
   Teuchos::RCP<Thyra::VectorBase<Scalar> >
     b1 = Thyra::createMember(A.range()),
     b2 = Thyra::createMember(A.range());
-  Thyra::randomize( Scalar(-1.0), Scalar(+1.0), b1.ptr() );
-  Thyra::randomize( Scalar(-1.0), Scalar(+1.0), b2.ptr() );
+  Thyra::randomize( as<Scalar>(-1.0), as<Scalar>(+1.0), b1.ptr() );
+  Thyra::randomize( as<Scalar>(-1.0), as<Scalar>(+1.0), b2.ptr() );
   // Create the LHS for the linear solve
   Teuchos::RCP<Thyra::VectorBase<Scalar> >
     x1 = Thyra::createMember(A.domain()),
     x2 = Thyra::createMember(A.domain());
   // Perform a single, non-adjoint, linear solve
-  singleLinearSolve(A, lowsFactory, *b1, &*x1, out);
+  singleLinearSolve(A, lowsFactory, *b1, x1.ptr(), out);
   // Creating a scaled adjoint LinearOpWithSolveBase object
   if(supportsAdjoints) {
     Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> >
       invertibleAdjointA = createScaledAdjointLinearOpWithSolve(
-        Teuchos::rcp(&A,false),Scalar(2.0),lowsFactory,out);
+        Teuchos::rcp(&A,false),as<Scalar>(2.0),lowsFactory,out);
   }
   // Perform a solve, change the operator, and then solve again.
-  solveNumericalChangeSolve(
-    const_cast<Thyra::LinearOpBase<Scalar>*>(&A) // Don't worry, it will not be changed!
-    ,Thyra::NullLinearOpChanger<Scalar>() // This object will not really change A!
-    ,lowsFactory,*b1,&*x1,*b2,&*x1,out
-    );
+  solveNumericalChangeSolve<Scalar>(
+    A_nonconst,                            // Don't worry, it will not be changed!
+    Thyra::NullLinearOpChanger<Scalar>(),  // This object will not really change A!
+    lowsFactory, *b1, x1.ptr(), *b2, x1.ptr(), out );
   // Perform a solve, change the operator in a very small way, and then solve again.
-  solveSmallNumericalChangeSolve(
-    const_cast<Thyra::LinearOpBase<Scalar>*>(&A) // Don't worry, it will not be changed!
-    ,Thyra::NullLinearOpChanger<Scalar>() // This object will not really change A!
-    ,lowsFactory,*b1,&*x1,*b2,&*x1,out
-    );
+  solveSmallNumericalChangeSolve<Scalar>(
+    A_nonconst,                            // Don't worry, it will not be changed!
+    Thyra::NullLinearOpChanger<Scalar>(),  // This object will not really change A!
+    lowsFactory, *b1, x1.ptr(), *b2, x1.ptr(), out );
   // Perform a solve, change the operator in a major way, and then solve again.
-  solveMajorChangeSolve(
-    const_cast<Thyra::LinearOpBase<Scalar>*>(&A) // Don't worry, it will not be changed!
-    ,Thyra::NullLinearOpChanger<Scalar>() // This object will not really change A!
-    ,lowsFactory,*b1,&*x1,*b2,&*x1,out
-    );
+  solveMajorChangeSolve<Scalar>(
+    A_nonconst,                            // Don't worry, it will not be changed!
+    Thyra::NullLinearOpChanger<Scalar>(),  // This object will not really change A!
+    lowsFactory, *b1, x1.ptr(), *b2, x1.ptr(), out );
 }
 
 
@@ -588,15 +583,19 @@ void externallyPreconditionedLinearSolveUseCases(
   Teuchos::FancyOStream &out
   )
 {
+  using Teuchos::rcpFromRef; using Teuchos::as;
   Teuchos::OSTab tab(out);
   out << "\nRunning example use cases with an externally defined"
       << " preconditioner with a LinearOpWithSolveFactoryBase object ...\n";
+  // Create a non-const A object (don't worry, it will not be changed)
+  const Teuchos::Ptr<Thyra::LinearOpBase<Scalar> > A_nonconst =
+    Teuchos::ptrFromRef(const_cast<Thyra::LinearOpBase<Scalar>&>(A));
   // Create the RHS (which is just a random set of coefficients)
   Teuchos::RCP<Thyra::VectorBase<Scalar> >
     b1 = Thyra::createMember(A.range()),
     b2 = Thyra::createMember(A.range());
-  Thyra::randomize( Scalar(-1.0), Scalar(+1.0), b1.ptr() );
-  Thyra::randomize( Scalar(-1.0), Scalar(+1.0), b2.ptr() );
+  Thyra::randomize( as<Scalar>(-1.0), as<Scalar>(+1.0), b1.ptr() );
+  Thyra::randomize( as<Scalar>(-1.0), as<Scalar>(+1.0), b2.ptr() );
   // Create the LHS for the linear solve
   Teuchos::RCP<Thyra::VectorBase<Scalar> >
     x1 = Thyra::createMember(A.domain()),
@@ -604,7 +603,7 @@ void externallyPreconditionedLinearSolveUseCases(
   // Create a preconditioner for the input forward operator
   Teuchos::RCP<Thyra::PreconditionerBase<Scalar> >
     P = precFactory.createPrec();
-  Thyra::initializePrec<Scalar>(precFactory,Teuchos::rcp(&A,false),&*P);
+  Thyra::initializePrec<Scalar>(precFactory, rcpFromRef(A), P.ptr());
   // Above, we don't really know the nature of the preconditioner. It could a
   // single linear operator to be applied on the left or the right or it could
   // be a split preconditioner with different linear operators to be applied
@@ -617,39 +616,38 @@ void externallyPreconditionedLinearSolveUseCases(
       Teuchos::rcp(&A, false), P.getConst(), lowsFactory, out);
   // Grab a preconditioner operator out of the preconditioner object
   Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > P_op;
-  if((P_op=P->getUnspecifiedPrecOp()).get());
-  else if((P_op=P->getLeftPrecOp()).get());
-  else if((P_op=P->getRightPrecOp()).get());
+  if (nonnull(P_op=P->getUnspecifiedPrecOp()));
+  else if (nonnull(P_op=P->getLeftPrecOp()));
+  else if (nonnull(P_op=P->getRightPrecOp()));
   // Create a LOWSB object given an unspecified preconditioner operator
   invertibleA = createUnspecifiedPreconditionedLinearOpWithSolve(
-    Teuchos::rcp(&A,false),P_op,lowsFactory,out);
+    rcpFromRef(A), P_op, lowsFactory, out);
   // Create a LOWSB object given a left preconditioner operator
   if(supportsLeftPrec) {
     invertibleA = createLeftPreconditionedLinearOpWithSolve(
-      Teuchos::rcp(&A,false),P_op,lowsFactory,out);
+      rcpFromRef(A), P_op, lowsFactory,out);
   }
   // Create a LOWSB object given a right preconditioner operator
   if(supportsRightPrec) {
     invertibleA = createRightPreconditionedLinearOpWithSolve(
-      Teuchos::rcp(&A,false),P_op,lowsFactory,out);
+      rcpFromRef(A), P_op, lowsFactory, out);
   }
   // Create a LOWSB object given (bad set of) left and right preconditioner
   // operators
   if( supportsLeftPrec && supportsRightPrec ) {
     invertibleA = createLeftRightPreconditionedLinearOpWithSolve(
-      Teuchos::rcp(&A,false),P_op,P_op,lowsFactory,out);
+      rcpFromRef(A), P_op, P_op, lowsFactory, out);
   }
   // Create a LOWSB object given a (very good) approximate forward linear
   // operator to construct the preconditoner from..
   invertibleA = createMatrixPreconditionedLinearOpWithSolve<Scalar>(
-    Teuchos::rcp(&A,false),Teuchos::rcp(&A,false),lowsFactory,out);
+    rcpFromRef(A), rcpFromRef(A), lowsFactory,out);
   // Preconditioner reuse example
-  externalPreconditionerReuseWithSolves(
-    const_cast<Thyra::LinearOpBase<Scalar>*>(&A) // Don't worry, it will not be changed!
-    ,Thyra::NullLinearOpChanger<Scalar>() // This object will not really change A!
-    ,lowsFactory,precFactory
-    ,*b1,&*x1,*b2,&*x2,out
-    );
+  externalPreconditionerReuseWithSolves<Scalar>(
+    A_nonconst,                            // Don't worry, it will not be changed!
+    Thyra::NullLinearOpChanger<Scalar>(),  // This object will not really change A!
+    lowsFactory, precFactory,
+    *b1, x1.ptr(), *b2, x2.ptr(), out );
 }
 
 

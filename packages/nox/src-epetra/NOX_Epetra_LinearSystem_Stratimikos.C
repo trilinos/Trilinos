@@ -308,10 +308,10 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
   // Set the linear Op and  precomputed prec on this lows
   if (precObj == Teuchos::null) 
-    Thyra::initializeOp(*lowsFactory, linearOp, &*lows);
+    Thyra::initializeOp(*lowsFactory, linearOp, lows.ptr());
   else 
     Thyra::initializePreconditionedOp<double>(
-      *lowsFactory, linearOp, precObj ,&*lows);
+      *lowsFactory, linearOp, precObj, lows.ptr());
 
   Teuchos::RCP<Epetra_Vector> resultRCP =
     Teuchos::rcp(&result.getEpetraVector(), false);

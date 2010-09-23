@@ -17,7 +17,6 @@
 #include <vector>
 
 #include <stk_util/util/PairIter.hpp>
-#include <stk_mesh/base/EntityKey.hpp>
 #include <stk_util/util/NamedPair.hpp>
 
 namespace stk {
@@ -85,6 +84,16 @@ template< class FieldType > struct FieldTraits ;
 
 typedef unsigned EntityRank ;
 typedef uint64_t EntityId ;
+
+// Base Entity Rank
+// Note:  This BaseEntityRank can be considered the leaf of a tree and it
+// represents the furthest out you can go in downward relations.
+static const EntityRank BaseEntityRank = 0;
+
+
+typedef unsigned Ordinal;
+typedef Ordinal PartOrdinal;
+typedef Ordinal FieldOrdinal;
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel

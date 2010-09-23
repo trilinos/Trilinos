@@ -18,6 +18,7 @@ namespace {
   using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
   using Teuchos::rcp;
   using Tpetra::DefaultPlatform;
   using Tpetra::global_size_t;
@@ -111,7 +112,8 @@ namespace {
       //Now loop through tgt_graph and make sure it is diagonal:
       row = 0;
       for (size_t i=0; i<tgt_map->getNodeNumElements(); ++i, ++row) {
-        ArrayRCP<const Ordinal> rowview = tgt_graph->getLocalRowView(row);
+        ArrayView<const Ordinal> rowview; 
+        tgt_graph->getLocalRowView( row, rowview );
         TEST_EQUALITY(rowview.size(), 1);
         TEST_EQUALITY(rowview[0], row);
       }
@@ -162,7 +164,8 @@ namespace {
       for (Ordinal globalrow=tgt_map->getMinGlobalIndex(); globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow)
       {
         Ordinal localrow = tgt_map->getLocalElement(globalrow);
-        ArrayRCP<const Ordinal> rowview = tgt_graph->getLocalRowView(localrow);
+        ArrayView<const Ordinal> rowview; 
+        tgt_graph->getLocalRowView( localrow, rowview );
         TEST_EQUALITY(rowview.size(), globalrow+1);
         for (Ordinal j=0; j<globalrow+1; ++j) {
           TEST_EQUALITY(colmap->getGlobalElement(rowview[j]), j);
@@ -212,8 +215,8 @@ namespace {
       // Now loop through tgt_mat and make sure it is diagonal:
       for (Ordinal localrow = tgt_map->getMinLocalIndex(); localrow <= tgt_map->getMaxLocalIndex(); ++localrow) 
       {
-        ArrayRCP<const Ordinal> rowinds;
-        ArrayRCP<const Scalar>  rowvals;
+        ArrayView<const Ordinal> rowinds;
+        ArrayView<const Scalar>  rowvals;
         tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
         TEST_EQUALITY_CONST(rowinds.size(), 1);
         TEST_EQUALITY(rowinds[0], as<Ordinal>(localrow));
@@ -267,8 +270,8 @@ namespace {
       for (Ordinal globalrow=tgt_map->getMinGlobalIndex(); globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow)
       {
         Ordinal localrow = tgt_map->getLocalElement(globalrow);
-        ArrayRCP<const Ordinal> rowinds;
-        ArrayRCP<const Scalar> rowvals;
+        ArrayView<const Ordinal> rowinds;
+        ArrayView<const Scalar> rowvals;
         tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
         TEST_EQUALITY(rowinds.size(), globalrow);
         TEST_EQUALITY(rowvals.size(), globalrow);

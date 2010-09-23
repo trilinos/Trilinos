@@ -38,6 +38,19 @@ class EntityRepository {
     std::pair<Entity*,bool>
       internal_create_entity( const EntityKey & key );
 
+    /** \brief Log that this entity was created as a parallel copy
+      *        of an existing entity.
+      */
+    void log_created_parallel_copy( Entity & e );
+
+    /**
+     * The client knows that this entity should be marked as modified. In
+     * general clients shouldn't need to call this because EntityRepository
+     * knows when it performs operations that modify entities. BulkData should
+     * be the only caller of this method.
+     */
+    inline void log_modified(Entity & e) const;
+
     inline void set_entity_owner_rank( Entity & e, unsigned owner_rank);
     inline void set_entity_sync_count( Entity & e, size_t count);
 
@@ -77,7 +90,10 @@ void EntityRepository::set_entity_sync_count( Entity & e, size_t count) {
 }
 
 void EntityRepository::set_entity_owner_rank( Entity & e, unsigned owner_rank) {
-  e.m_entityImpl.set_owner_rank(owner_rank);
+  bool changed = e.m_entityImpl.set_owner_rank(owner_rank);
+  if ( changed ) {
+    e.m_entityImpl.log_modified_and_propagate();
+  }
 }
 
 void EntityRepository::comm_clear( Entity & e) const {
@@ -86,6 +102,10 @@ void EntityRepository::comm_clear( Entity & e) const {
 
 void EntityRepository::comm_clear_ghosting( Entity & e) const {
   e.m_entityImpl.comm_clear_ghosting();
+}
+
+void EntityRepository::log_modified( Entity & e ) const {
+  e.m_entityImpl.log_modified_and_propagate();
 }
 
 } // namespace impl

@@ -17,12 +17,12 @@
 namespace stk {
 namespace mesh {
 
+
+// Note:  EntityRank and EntityId typedefs are defined in Types.hpp
+
 /** \addtogroup stk_mesh_module
  * \{
  */
-
-typedef unsigned EntityRank ;
-typedef uint64_t EntityId ;
 
 //----------------------------------------------------------------------
 /** \brief  Integer type for the entity keys, which is an encoding
@@ -111,13 +111,13 @@ public:
    * If entity_rank or entity_id lie outside these ranges an exception will
    * be thrown.
    */
-  EntityKey( unsigned entity_rank, raw_key_type entity_id );
+  EntityKey( EntityRank entity_rank, raw_key_type entity_id );
 
   raw_key_type id() const { return key & id_mask ; }
 
-  unsigned rank() const { return key >> id_digits ; }
+  EntityRank rank() const { return key >> id_digits ; }
 
-  unsigned type() const { return rank(); }
+  EntityRank type() const { return rank(); }
 
   bool operator==(const EntityKey &rhs) const {
     return key == rhs.key;

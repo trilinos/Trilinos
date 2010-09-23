@@ -77,17 +77,18 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Komplex               komplex                        PS
   ML                    ml                             PS
   Belos                 belos                          PS
-  Tifpack               tifpack                        PS
+  Ifpack2               ifpack2                        PS
   Stratimikos           stratimikos                    PS
   Meros                 meros                          SS
   FEI                   fei                            PS
   Anasazi               anasazi                        PS
+  Teko                  teko                           SS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
   STK                   stk                            SS # Depends on boost
   Intrepid              intrepid                       PS
   Phalanx               phalanx                        SS
-  Phdmesh               phdmesh                        SS # to be replaced by STK
+  Phdmesh               phdmesh                        EX # to be replaced by STK
   NOX                   nox                            PS
   Moertel               moertel                        PS
   TrilinosCouplings     trilinoscouplings              SS
@@ -123,12 +124,12 @@ PACKAGE_DISABLE_ON_PLATFORMS(Phdmesh Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(PyTrilinos Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Sundance Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Tpetra Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Tifpack Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(Ifpack2 Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(FEI Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)

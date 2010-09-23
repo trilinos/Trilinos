@@ -57,9 +57,12 @@ void Basis_HDIV_TRI_I1_FEM<Scalar, ArrayScalar>::initializeTags() {
 
   // An array with local DoF tags assigned to basis functions, in the order of their local enumeration 
   int tags[]  = {
-                  2, 0, 0, 1,
-                  2, 1, 0, 1,
-                  2, 2, 0, 1
+                  1, 0, 0, 1,
+                  1, 1, 0, 1,
+                  1, 2, 0, 1
+                  // 2, 0, 0, 1,
+                  // 2, 1, 0, 1,
+                  // 2, 2, 0, 1
                 };
   
   // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:

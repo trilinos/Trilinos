@@ -338,6 +338,12 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
 template<class ArrayScalar>
 class DofCoordsInterface {
 public:
+   /** \brief Pure virtual destructor (gives warnings if not included).
+     *        Following "Effective C++: 3rd Ed." item 7 the implementation
+     *        is included in the definition file. 
+     */
+   virtual ~DofCoordsInterface() = 0;
+
   /** \brief  Returns spatial locations (coordinates) of degrees of freedom on a
               <strong>reference cell</strong>; defined for interpolatory bases.
 

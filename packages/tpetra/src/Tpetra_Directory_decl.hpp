@@ -30,7 +30,6 @@
 #define TPETRA_DIRECTORY_DECL_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map_decl.hpp"

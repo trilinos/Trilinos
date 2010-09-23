@@ -17,7 +17,6 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
-#include <assert.h>
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -446,10 +445,14 @@ void BulkData::internal_change_ghosting(
           remove( parts , meta.locally_owned_part() );
           remove( parts , meta.globally_shared_part() );
 
-          std::pair<Entity*,bool> result = m_entity_repo.internal_create_entity( key );
+          std::pair<Entity*,bool> result =
+            m_entity_repo.internal_create_entity( key );
 
-          if ( result.second                          /* Created */ ||
-               result.first->marked_for_destruction() /* Re-created */ ) {
+          const bool created   = result.second ;
+          const bool recreated = EntityLogDeleted == result.first->log_query();
+
+          if ( created || recreated ) {
+            m_entity_repo.log_created_parallel_copy( *(result.first) );
             m_entity_repo.set_entity_owner_rank( *(result.first), owner);
           }
 

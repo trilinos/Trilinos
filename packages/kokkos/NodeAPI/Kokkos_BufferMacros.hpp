@@ -14,7 +14,7 @@
   }
 #define CHECK_COMPUTE_BUFFER(buff) \
   { \
-    TEST_FOR_EXCEPTION( Teuchos::get_extra_data<std::string>(buffSrc, "BufferType") != "compute", std::logic_error, \
+    TEST_FOR_EXCEPTION( Teuchos::get_extra_data<std::string>(buff, "BufferType") != "compute", std::logic_error, \
         Teuchos::typeName(*this) << ": argument buffer is not a compute buffer as expected." ); \
   }
 #else

@@ -52,7 +52,7 @@ int main (int argc, char **argv)
    int num_face_in_block[10], num_total_faces_per_blk[10];
    int num_node_sets, error;
    int i, j, *connect;
-   int bids, nnpe[10];
+   int bids, nnpe[20];
    int  num_qa_rec, num_info;
    int CPU_word_size,IO_word_size;
 

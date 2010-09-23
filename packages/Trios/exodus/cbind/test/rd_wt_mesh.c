@@ -138,12 +138,12 @@ int main( int argc, char **argv )
   int rank, num_domains;
   int quit=FALSE;
   int loc_num_nodes, loc_num_elems;
-  int *loc_connect;
+  int *loc_connect = NULL;
 
 #ifdef HAVE_PARALLEL
   MPI_Info     mpi_info_object = MPI_INFO_NULL;				/* Copy of MPI Info object.		*/
 #endif
-  int         *elem_map;
+  int         *elem_map                   = NULL;
   int          exodus =                     TRUE;			/* TRUE, perform EXODUS benchmark; FALSE don't */
   int          close_files = FALSE;
   char         file_name[MAX_STRING_LEN] =  DEFAULT_FILE_NAME;		/* Input file name.				*/
@@ -177,9 +177,9 @@ int main( int argc, char **argv )
   char         value[MAX_STRING_LEN];					/* Value of a key/value pair in a MPI Info	*/
 #endif
   /* object.					*/
-  realtyp       *x_coords;
-  realtyp       *y_coords;
-  realtyp       *z_coords;
+  realtyp       *x_coords = NULL;
+  realtyp       *y_coords = NULL;
+  realtyp       *z_coords = NULL;
   int         ndim;
 #ifdef HAVE_PARALLEL
   MPI_Info    new_mpi_info_object;	
@@ -297,7 +297,7 @@ int main( int argc, char **argv )
   }
 
   if ( exodus ) {
-    int         *node_map;
+    int *node_map = NULL;
     if (0 == read_exo_mesh(file_name, rank, &ndim, num_domains, 
 			   &num_nodal_fields, &num_global_fields, &num_element_fields,
 			   &num_timesteps, sleep_time, num_iterations,

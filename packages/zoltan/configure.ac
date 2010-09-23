@@ -141,11 +141,11 @@ AC_PROG_CXX(CC g++ c++ cxx)
 #fi
 
 if test "X$ac_cv_use_fortran90" = "Xyes"; then
-AC_PROG_FC(gfortran f90 xlf90 f95)
+AC_PROG_FC(FC gfortran f90 xlf90 f95)
 fi
 
 if test "X$ac_cv_use_fortran" = "Xyes"; then
-AC_PROG_FC(gfortran f90 xlf90 f95)
+AC_PROG_FC(FC gfortran f90 xlf90 f95)
 fi
 
 AC_PROG_RANLIB
@@ -213,12 +213,8 @@ else
   PARMETIS_DEFAULT=no
 fi
 
-
 TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support.], PARMETIS, [$PARMETIS_DEFAULT])
 
-
-
-TAC_ARG_WITH_PACKAGE(scotch, [Enable Scotch support.], SCOTCH, no)
 AM_CONDITIONAL(BUILD_SCOTCH, [test "X$ac_cv_use_scotch" != "Xno"])
 TAC_ARG_WITH_3PL_SUB(scotch, libdir, [Specify where the Scotch library is located.  Ex. /path/to/library])
 if test "X$tac_with_scotch_libdir" != "Xno"; then
@@ -233,6 +229,14 @@ fi
 if test "X$tac_with_parmetis_incdir" != "Xno"; then
   CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
 fi
+
+if test "X$tac_with_scotch_libdir" != "Xno" || test "X$tac_with_scotch_incdir" != "Xno" ; then
+  SCOTCH_DEFAULT=yes
+else
+  SCOTCH_DEFAULT=no
+fi
+
+TAC_ARG_WITH_PACKAGE(scotch, [Enable Scotch support.], SCOTCH, [$SCOTCH_DEFAULT])
 
 TAC_ARG_WITH_PACKAGE(patoh, [Enable Patoh support.], PATOH, no)
 TAC_ARG_WITH_3PL_SUB(patoh, libdir, [Specify where the Patoh library is located.  Ex. /path/to/library])

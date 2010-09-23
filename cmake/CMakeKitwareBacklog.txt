@@ -21,19 +21,14 @@ A) Prioritized Backlog Items:
 A.1) Prioritized Backlog Items that require changes to CMake/CTest/CDash:
 -------------------------------------------------------------------------
 
-
-(*) [CDash] [P2] Some submissions to the nightly dashboard are failing.
-These failed submissions should be prevented in most cases, and should be
-logged by the TrilinosDriver dashboard in all cases where the tests are
-running through the TrilinosDriver scripts.
-
-
-(*) [CDash] [P2] (4/14/2010) Not all of the Trilinos subprojects (packages)
-are being displayed on
-http://trilinos.sandia.gov/cdash/index.php?project=Trilinos.  For example, the
-row for STK is empty but if you click on 'STK' you go to
-http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&subproject=STK you
-see that it is being tested. 
+(*) [CDash] [P2] Submissions to the nightly dashboard sometimes get stuck
+while being inserted into the mysql database.  To fix this, analyze how long
+it takes to submit typically, set a threshhold sufficiently longer than that
+and reset the submission process if the threshhold time is reached without
+progress.  It would also be useful to list the number of pending submissions
+on the CDash site.  Finally, we need to be notified if the submission process
+gets stuck so we can fix it, without having to discover for ourselves that
+things have stalled.
 
 
 (*) [CTest, CDash] [P2] Append update results to every subproject build and
@@ -256,7 +251,15 @@ own.
 (*) [CMake] [P4] Improve BLAS library detection.  Brad said there is a BLAS
 finding macro that we are currently not using.  It would also be nice if the
 BLAS finding capability could handle finding library dependencies of BLAS
-(e.g. -lgfortran for static Atlas installations).  
+(e.g. -lgfortran for static Atlas installations).  It would also be nice if we
+could automatically detect the name mangling for the BLAS and LAPACK libraries
+independently from the detection of name mangling for the configured Fortran
+compiler.  Bascially, you would use the same strategy as with the Fortran
+compiler name mangling detection which is to just try out a bunch of
+combinations until you find something that works.  To be really safe, you
+should also try to run a test problem that calls a BLAS and LAPACK routine to
+see if it worked.  Also, really BLAS and LAPACK can be seprate libraries so we
+should have seprate logic for each.  What a pain.
 
 
 
@@ -651,6 +654,20 @@ packages (i.e. Labels) in a build sequence need to show the updated files.
 
 (*) [CTest] [P2] Use set_pgroups to allow killing all children that get run.
 This will allow reliably killing timed-out tests.
+
+
+(*) [CDash] [P2] Some submissions to the nightly dashboard are failing.
+These failed submissions should be prevented in most cases, and should be
+logged by the TrilinosDriver dashboard in all cases where the tests are
+running through the TrilinosDriver scripts.
+
+
+(*) [CDash] [P2] (4/14/2010) Not all of the Trilinos subprojects (packages)
+are being displayed on
+http://trilinos.sandia.gov/cdash/index.php?project=Trilinos.  For example, the
+row for STK is empty but if you click on 'STK' you go to
+http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&subproject=STK you
+see that it is being tested. 
 
 
 (*) [CTest] [P3] Define the number of processors to be used when

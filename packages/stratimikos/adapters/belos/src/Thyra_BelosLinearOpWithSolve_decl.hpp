@@ -40,18 +40,6 @@ public:
   /// Construct to unintialize.
   BelosLinearOpWithSolve();
 
-  /// Calls <tt>initialize()</tt>
-  BelosLinearOpWithSolve(
-    const RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> > &lp,
-    const RCP<Teuchos::ParameterList> &solverPL,
-    const RCP<Belos::SolverManager<Scalar,MV_t,LO_t> > &iterativeSolver,
-    const RCP<const LinearOpSourceBase<Scalar> > &fwdOpSrc,
-    const RCP<const PreconditionerBase<Scalar> > &prec,
-    const bool isExternalPrec,
-    const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-    const ESupportSolveUse &supportSolveUse
-    );
-
   /** \brief Initializes given precreated solver objects.
    *
    * \param lp [in] The linear problem that was used to initialize the
@@ -99,7 +87,8 @@ public:
     const RCP<const PreconditionerBase<Scalar> > &prec,
     const bool isExternalPrec,
     const RCP<const LinearOpSourceBase<Scalar> > &approxFwdOpSrc,
-    const ESupportSolveUse &supportSolveUse
+    const ESupportSolveUse &supportSolveUse,
+    const int convergenceTestFrequency
     );
 
   /** \brief . */
@@ -192,11 +181,14 @@ protected:
   /** \brief . */
   virtual bool solveSupportsImpl(EOpTransp M_trans) const;
   /** \brief . */
+  virtual bool solveSupportsNewImpl(EOpTransp transp,
+    const Ptr<const SolveCriteria<Scalar> > solveCriteria) const;
+  /** \brief . */
   virtual bool solveSupportsSolveMeasureTypeImpl(
     EOpTransp M_trans, const SolveMeasureType& solveMeasureType
     ) const;
   /** \brief . */
-  SolveStatus<Scalar> solveImpl(
+  virtual SolveStatus<Scalar> solveImpl(
     const EOpTransp transp,
     const MultiVectorBase<Scalar> &B,
     const Ptr<MultiVectorBase<Scalar> > &X,
@@ -213,6 +205,7 @@ private:
   RCP<Belos::LinearProblem<Scalar,MV_t,LO_t> > lp_;
   RCP<Teuchos::ParameterList> solverPL_;
   RCP<Belos::SolverManager<Scalar,MV_t,LO_t> > iterativeSolver_;
+  int convergenceTestFrequency_;
 
   RCP<const LinearOpSourceBase<Scalar> > fwdOpSrc_;
   RCP<const PreconditionerBase<Scalar> > prec_;

@@ -55,10 +55,10 @@ MOERTEL::Projector::~Projector()
 
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
+ |    modded by gah 07/2010                                             |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
-                                                       MOERTEL::Segment& seg, 
-						       double xi[])
+                 MOERTEL::Segment& seg, double xi[], double &gap)
 {
   bool ok = true;
   // 2D version of the problem
@@ -78,7 +78,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
     double F=0.0,dF=0.0,deta=0.0;
     for (i=0; i<10; ++i)
     {
-      F    = evaluate_F_2D_NodalNormal(node,seg,eta);
+      F    = evaluate_F_2D_NodalNormal(node,seg,eta,gap);
       if (abs(F) < 1.0e-10) break;
       dF   = evaluate_gradF_2D_NodalNormal(node,seg,eta);
       deta = (-F)/dF;
@@ -91,7 +91,8 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
       cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
       	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
       	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
-      	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
+      	   << "MOERTEL: ***WRN*** F(eta) = " << F << " gradF(eta) = " 
+		   << dF << " eta = " << eta << " delta(eta) = " << deta << "\n"
            << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     }
 #if 0
@@ -124,7 +125,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
     double eps;
     for (i=0; i<30; ++i)
     {
-      evaluate_FgradF_3D_NodalNormal(F,dF,node,seg,eta,alpha);
+      evaluate_FgradF_3D_NodalNormal(F,dF,node,seg,eta,alpha,gap);
       eps = MOERTEL::dot(F,F,3);
       if (eps < 1.0e-10) break;
       // cout << eps << endl;
@@ -156,6 +157,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
 
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
+ |                                                   modded gah 07/2010 |
  | 2D case:                                                             |
  | this function evaluates the function                                 |
  | F(eta) = ( Ni * xim - xs ) cross ns ,                                |
@@ -165,8 +167,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
  |      ns  outward normal of node (slave side)                         |
  *----------------------------------------------------------------------*/
 double MOERTEL::Projector::evaluate_F_2D_NodalNormal(MOERTEL::Node& node,
-                                                  MOERTEL::Segment& seg, 
-	      					  double eta)
+          MOERTEL::Segment& seg, double eta, double &gap)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
@@ -195,24 +196,39 @@ double MOERTEL::Projector::evaluate_F_2D_NodalNormal(MOERTEL::Node& node,
     	 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
+
+  // Here, Nx[0] and Nx[1] are the coordinates of the guess at the root
+  
   for (int i=0; i<nmnode; ++i)
   {
     const double* X = mnodes[i]->X();
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
   }
-  node.SetProjCoords(Nx[0], Nx[1]);
   
-  // subtract xs
+  // subtract xs (Coordinates of the slave node)
   const double* X = node.X();
   Nx[0] -= X[0];
   Nx[1] -= X[1];
-  
+
   // get the normal of node
   const double* n = node.N();
   
   // calculate F
   double F = Nx[0]*n[1] - Nx[1]*n[0];
+
+  gap = Nx[0] * n[0] + Nx[1] * n[1];
+
+  // Do we need to divide by the length of the normal???  GAH
+  //
+//  gap = (Nx[0] * n[0] + Nx[1] * n[1])
+//		  / sqrt(n[0] * n[0] + n[1] * n[1]);  // ||gap|| cos theta
+#if 0
+  cout << "node " << node.Id() << " seg " << seg.Id() << " n[0] " << n[0] << " n[1] " << n[1] << endl;
+  cout << "X[0] " << X[0] << " X[1] " << X[1] << endl;
+  cout << "Nx[0] " << Nx[0] << " Nx[1] " << Nx[1] << " gap " << gap << endl;
+  cout << "norm " << sqrt(n[0] * n[0] + n[1] * n[1]) << endl;
+#endif
   
   return F;
 }
@@ -279,7 +295,8 @@ double MOERTEL::Projector::evaluate_gradF_2D_NodalNormal(MOERTEL::Node& node,
  *----------------------------------------------------------------------*/
 bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
                                                          MOERTEL::Segment& seg, 
-						         double xi[])
+                                                         double xi[],
+														 double &gap)
 {
 #if 0
   cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
@@ -294,7 +311,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
     double F=0.0,dF=0.0,deta=0.0;
     for (i=0; i<10; ++i)
     {
-      F = evaluate_F_2D_SegmentNormal(node,seg,eta);
+      F = evaluate_F_2D_SegmentNormal(node,seg,eta,gap);
       if (abs(F) < 1.0e-10) break;
       dF   = evaluate_gradF_2D_SegmentNormal(node,seg,eta);
       deta = (-F)/dF;
@@ -339,7 +356,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
     double eps;
     for (i=0; i<30; ++i)
     {
-      evaluate_FgradF_3D_SegmentNormal(F,dF,node,seg,eta,alpha);
+      evaluate_FgradF_3D_SegmentNormal(F,dF,node,seg,eta,alpha,gap);
       eps = MOERTEL::dot(F,F,3);
       if (eps < 1.0e-10) break;
       //cout << eps << endl;
@@ -380,7 +397,8 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
  *----------------------------------------------------------------------*/
 double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(MOERTEL::Node& node,
                                                     MOERTEL::Segment& seg, 
-	      					    double eta)
+                                                    double eta,
+													double &gap)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
@@ -429,6 +447,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(MOERTEL::Node& node,
   // calculate F
   double F = Nx[0]*NN[1] - Nx[1]*NN[0];
 
+  gap = (Nx[0] * NN[0] + Nx[1] * NN[1]);
+
+//  gap = ((Nx[0] - X[0]) * NN[0] + (Nx[1] - X[1]) * NN[1])
+//		  / sqrt(NN[0] * NN[0] + NN[1] * NN[1]);  // ||gap|| cos theta
+  
   return F;
 }
 
@@ -449,7 +472,7 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(MOERTEL::Node& node,
  *----------------------------------------------------------------------*/
 double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node,
                                                         MOERTEL::Segment& seg, 
-	      				                double eta)
+                                                        double eta)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
@@ -515,7 +538,8 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node,
  *----------------------------------------------------------------------*/
 bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& node,
                                                              MOERTEL::Segment& seg, 
-						             double xi[])
+                                                             double xi[],
+															 double &gap)
 {
 #if 0
   cout << "----- Projector: Node " << node.Id() << " Segment " << seg.Id() << endl;
@@ -529,7 +553,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& n
     double F=0.0,dF=0.0,deta=0.0;
     for (i=0; i<10; ++i)
     {
-      F = evaluate_F_2D_SegmentOrthogonal(node,seg,eta);
+      F = evaluate_F_2D_SegmentOrthogonal(node,seg,eta,gap);
       if (abs(F) < 1.0e-10) break;
       dF   = evaluate_gradF_2D_SegmentOrthogonal(node,seg,eta);
       deta = (-F)/dF;
@@ -572,7 +596,8 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& n
  *----------------------------------------------------------------------*/
 double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node,
                                                         MOERTEL::Segment& seg, 
-	      					        double eta)
+                                                        double eta,
+														double &gap)
 {
   // check the type of function on the segment
   // Here, we need 1D functions set as function id 0
@@ -619,6 +644,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node,
 
   // calculate F
   double F = Nx[0]*g[0] + Nx[1]*g[1];
+
+  gap = (Nx[0] * g[0] + Nx[1] * g[1]);
+		  //
+//  gap = ((Nx[0] - X[0]) * g[0] + (Nx[1] - X[1]) * g[1])
+//		  / sqrt(g[0] * g[0] + g[1] * g[1]);  // ||gap|| cos theta
 
   return F;
 }
@@ -685,7 +715,8 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal(
 bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
                                                              MOERTEL::Node& snode,
                                                              MOERTEL::Segment& seg, 
-						             double xi[],
+                                                             double xi[],
+															 double &gap,
                                                              MOERTEL::Segment& sseg)
 {
 #if 0
@@ -719,7 +750,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
     double F=0.0,dF=0.0,deta=0.0;
     for (i=0; i<10; ++i)
     {
-      F = evaluate_F_2D_SegmentOrthogonal_to_g(snode,seg,eta,g);
+      F = evaluate_F_2D_SegmentOrthogonal_to_g(snode,seg,eta,gap,g);
       if (abs(F) < 1.0e-10) break;
       dF   = evaluate_gradF_2D_SegmentOrthogonal_to_g(snode,seg,eta,g);
       deta = (-F)/dF;
@@ -762,7 +793,8 @@ bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
  *----------------------------------------------------------------------*/
 double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& node,
                                                              MOERTEL::Segment& seg, 
-	      					             double eta,
+                                                             double eta,
+															 double &gap,
                                                              double* g)
 {
   // check the type of function on the segment
@@ -806,6 +838,11 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& n
   
   // calculate F
   double F = Nx[0]*g[0] + Nx[1]*g[1];
+
+  gap = (Nx[0] * g[0] + Nx[1] * g[1]);
+
+//  gap = ((Nx[0] - X[0]) * g[0] + (Nx[1] - X[1]) * g[1])
+//		  / sqrt(g[0] * g[0] + g[1] * g[1]);  // ||gap|| cos theta
 
   return F;
 }

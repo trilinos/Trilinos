@@ -401,8 +401,8 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
   //Loop over Aprime's rows and sum into
   int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
   int NumEntries;
-  vector<int>    Indices(MaxNumEntries);
-  vector<double> Values(MaxNumEntries);
+  std::vector<int>    Indices(MaxNumEntries);
+  std::vector<double> Values(MaxNumEntries);
 
   int NumMyRows = Aprime->NumMyRows();
   int Row, err;
@@ -836,26 +836,26 @@ bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
 /*----------------------------------------------------------------------*
  | split matrix into 2x2 block system with given rowmap A22rowmap  06/06|
  *----------------------------------------------------------------------*/
-bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
-                             RefCountPtr<Epetra_Map>& A11rowmap,
-                             RefCountPtr<Epetra_Map>& A22rowmap,
-                             RefCountPtr<Epetra_CrsMatrix>& A11,
-                             RefCountPtr<Epetra_CrsMatrix>& A12,
-                             RefCountPtr<Epetra_CrsMatrix>& A21,
-                             RefCountPtr<Epetra_CrsMatrix>& A22)
+bool MOERTEL::SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
+                             Teuchos::RCP<Epetra_Map>& A11rowmap,
+                             Teuchos::RCP<Epetra_Map>& A22rowmap,
+                             Teuchos::RCP<Epetra_CrsMatrix>& A11,
+                             Teuchos::RCP<Epetra_CrsMatrix>& A12,
+                             Teuchos::RCP<Epetra_CrsMatrix>& A21,
+                             Teuchos::RCP<Epetra_CrsMatrix>& A22)
 {
-  if (A==null)
+  if (A==Teuchos::null)
   {
     cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
          << "***ERR*** A == null on entry\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-  if (A11rowmap==null && A22rowmap != null)
-    A11rowmap = rcp(MOERTEL::SplitMap(A->RowMap(),*A22rowmap));
-  else if (A11rowmap != null && A22rowmap != null);
-  else if (A11rowmap != null && A22rowmap == null)
-    A22rowmap = rcp(MOERTEL::SplitMap(A->RowMap(),*A11rowmap));
+  if (A11rowmap==Teuchos::null && A22rowmap != Teuchos::null)
+    A11rowmap = Teuchos::rcp(MOERTEL::SplitMap(A->RowMap(),*A22rowmap));
+  else if (A11rowmap != Teuchos::null && A22rowmap != Teuchos::null);
+  else if (A11rowmap != Teuchos::null && A22rowmap == Teuchos::null)
+    A22rowmap = Teuchos::rcp(MOERTEL::SplitMap(A->RowMap(),*A11rowmap));
   else
   {
     cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
@@ -869,9 +869,9 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
   const Epetra_Map&  A11map = *(A11rowmap.get());
   
   //----------------------------- create a parallel redundant map of A22map
-  map<int,int> a22gmap;
+  std::map<int,int> a22gmap;
   {
-    vector<int> a22global(A22map.NumGlobalElements());
+	std::vector<int> a22global(A22map.NumGlobalElements());
     int count=0;
     for (int proc=0; proc<Comm.NumProc(); ++proc)
     {
@@ -902,10 +902,10 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
   }
   
   //--------------------------------------------------- create matrix A22
-  A22 = rcp(new Epetra_CrsMatrix(Copy,A22map,100));
+  A22 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A22map,100));
   {
-    vector<int>    a22gcindices(100);
-    vector<double> a22values(100);
+	std::vector<int>    a22gcindices(100);
+	std::vector<double> a22values(100);
     for (int i=0; i<A->NumMyRows(); ++i)
     {
       const int grid = A->GRID(i);
@@ -933,7 +933,7 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
       {
         const int gcid = A->ColMap().GID(cindices[j]);
         // see whether we have gcid in a22gmap
-        map<int,int>::iterator curr = a22gmap.find(gcid);
+		std::map<int,int>::iterator curr = a22gmap.find(gcid);
         if (curr==a22gmap.end()) continue;
         //cout << gcid << " ";
         a22gcindices[count] = gcid;
@@ -958,10 +958,10 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
   A22->OptimizeStorage();
 
   //----------------------------------------------------- create matrix A11
-  A11 = rcp(new Epetra_CrsMatrix(Copy,A11map,100));
+  A11 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A11map,100));
   {
-    vector<int>    a11gcindices(100);
-    vector<double> a11values(100);
+	std::vector<int>    a11gcindices(100);
+	std::vector<double> a11values(100);
     for (int i=0; i<A->NumMyRows(); ++i)
     {
       const int grid = A->GRID(i);
@@ -987,7 +987,7 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
       {
         const int gcid = A->ColMap().GID(cindices[j]);
         // see whether we have gcid as part of a22gmap
-        map<int,int>::iterator curr = a22gmap.find(gcid);
+		std::map<int,int>::iterator curr = a22gmap.find(gcid);
         if (curr!=a22gmap.end()) continue;
         a11gcindices[count] = gcid;
         a11values[count] = values[j];
@@ -1009,10 +1009,10 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
   A11->OptimizeStorage();
   
   //---------------------------------------------------- create matrix A12
-  A12 = rcp(new Epetra_CrsMatrix(Copy,A11map,100));
+  A12 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A11map,100));
   {
-    vector<int>    a12gcindices(100);
-    vector<double> a12values(100);
+	std::vector<int>    a12gcindices(100);
+	std::vector<double> a12values(100);
     for (int i=0; i<A->NumMyRows(); ++i)
     {
       const int grid = A->GRID(i);
@@ -1038,7 +1038,7 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
       {
         const int gcid = A->ColMap().GID(cindices[j]);
         // see whether we have gcid as part of a22gmap
-        map<int,int>::iterator curr = a22gmap.find(gcid);
+		std::map<int,int>::iterator curr = a22gmap.find(gcid);
         if (curr==a22gmap.end()) continue;
         a12gcindices[count] = gcid;
         a12values[count] = values[j];
@@ -1060,10 +1060,10 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
   A12->OptimizeStorage();
 
   //----------------------------------------------------------- create A21  
-  A21 = rcp(new Epetra_CrsMatrix(Copy,A22map,100));
+  A21 = Teuchos::rcp(new Epetra_CrsMatrix(Copy,A22map,100));
   {
-    vector<int>    a21gcindices(100);
-    vector<double> a21values(100);
+	std::vector<int>    a21gcindices(100);
+	std::vector<double> a21values(100);
     for (int i=0; i<A->NumMyRows(); ++i)
     {
       const int grid = A->GRID(i);
@@ -1089,7 +1089,7 @@ bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
       {
         const int gcid = A->ColMap().GID(cindices[j]);
         // see whether we have gcid as part of a22gmap
-        map<int,int>::iterator curr = a22gmap.find(gcid);
+		std::map<int,int>::iterator curr = a22gmap.find(gcid);
         if (curr!=a22gmap.end()) continue;
         a21gcindices[count] = gcid;
         a21values[count] = values[j];
@@ -1126,7 +1126,7 @@ Epetra_Map* MOERTEL::SplitMap(const Epetra_Map& Amap,
   const Epetra_Map&  Ag = Agiven;
   
   int count=0;
-  vector<int> myaugids(Amap.NumMyElements());
+  std::vector<int> myaugids(Amap.NumMyElements());
   for (int i=0; i<Amap.NumMyElements(); ++i)
   {
     const int gid = Amap.GID(i);

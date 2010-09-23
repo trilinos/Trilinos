@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 #include <use_cases/UseCase_Skinning.hpp>
-#include <use_cases/HexFixture.hpp>
+#include <stk_mesh/fixtures/HexFixture.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -22,24 +22,19 @@
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
 
-
 #include <stk_util/parallel/ParallelReduce.hpp>
 
 #include <stk_mesh/fem/SkinMesh.hpp>
 
 namespace {
 
-  unsigned count_skin_entities( HexFixture3x3x3 & fixture) {
+  unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank ) {
 
-    const unsigned mesh_rank = stk::mesh::Element;
-
-    stk::mesh::BulkData & mesh = fixture.m_bulk_data;
-    stk::mesh::MetaData & meta = fixture.m_meta_data;
-    stk::mesh::Part & skin_part = fixture.m_skin_part;
+    const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
 
     stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
-    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( mesh_rank -1);
+    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
 
     return count_selected_entities( select_skin, buckets);
   }
@@ -48,53 +43,59 @@ namespace {
 
 bool skinning_use_case_1(stk::ParallelMachine pm)
 {
-  // TODO This test should be able to run with up to 27
-  // processes, but it fails with corrupt communication
-  // with 10 or more processes
-  const unsigned p_size = stk::parallel_machine_size( pm );
-  if ( 4 < p_size ) { return true; }
 
-  //setup the mesh
-  HexFixture3x3x3 fixture(pm);
+  bool passed = true;
+  {
+    //setup the mesh
+    stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
 
-  stk::mesh::MetaData& meta = fixture.m_meta_data;
-  stk::mesh::BulkData& mesh = fixture.m_bulk_data;
+    stk::mesh::MetaData & meta = fixture.meta_data;
+    stk::mesh::BulkData & mesh = fixture.bulk_data;
+    stk::mesh::TopologicalMetaData & top = fixture.top_data;
 
-  stk::mesh::Part & skin_part = fixture.m_skin_part;
+    stk::mesh::Part & skin_part = meta.declare_part("skin_part");
+    meta.commit();
 
-  std::vector< stk::mesh::EntityId > elements_to_separate;
+    fixture.generate_mesh();
 
-  //separate out the middle element
-  elements_to_separate.push_back(fixture.m_elems_id[1][1][1]);
-
-  separate_and_skin_mesh(
-      meta,
-      mesh,
-      skin_part,
-      elements_to_separate
-      );
+    skin_mesh(mesh, top.element_rank, &skin_part);
 
 
-  // pointer to middle_element after mesh modification.
-  stk::mesh::Entity * middle_element = mesh.get_entity(stk::mesh::Element,fixture.m_elems_id[1][1][1]);
 
-  unsigned num_skin_entities = count_skin_entities(fixture);
+    std::vector< stk::mesh::EntityId > elements_to_separate;
 
-  stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
+    //separate out the middle element
+    elements_to_separate.push_back(fixture.elem_id(1,1,1));
 
-  //there should be 66 faces in the skin part
-  //54 on the outside
-  //6 on the inside attached to the entire mesh
-  //6 on the inside attected to the element that was detached
-  bool correct_skin = ( num_skin_entities == 66 );
-  bool correct_relations = true;
-  bool correct_comm = true;
+    separate_and_skin_mesh(
+        meta,
+        mesh,
+        skin_part,
+        elements_to_separate,
+        top.element_rank
+        );
 
-  //all nodes connected to the single element that has been broken off
-  //should have relations.size() == 4 and comm.size() == 0
-  if (middle_element != NULL && middle_element->owner_rank() == mesh.parallel_rank()) {
 
-      stk::mesh::PairIterRelation relations = middle_element->relations(stk::mesh::Node);
+    // pointer to middle_element after mesh modification.
+    stk::mesh::Entity * middle_element = mesh.get_entity(top.element_rank,fixture.elem_id(1,1,1));
+
+    unsigned num_skin_entities = count_skin_entities(mesh, skin_part, top.side_rank);
+
+    stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
+
+    //there should be 66 faces in the skin part
+    //54 on the outside
+    //6 on the inside attached to the entire mesh
+    //6 on the inside attected to the element that was detached
+    bool correct_skin = ( num_skin_entities == 66 );
+    bool correct_relations = true;
+    bool correct_comm = true;
+
+    //all nodes connected to the single element that has been broken off
+    //should have relations.size() == 4 and comm.size() == 0
+    if (middle_element != NULL && middle_element->owner_rank() == mesh.parallel_rank()) {
+
+      stk::mesh::PairIterRelation relations = middle_element->relations(top.node_rank);
 
       for (; relations.first != relations.second; ++relations.first) {
         stk::mesh::Entity * current_node = (relations.first->entity());
@@ -103,7 +104,63 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
         //the entire closure of the element should exist on a single process
         correct_comm      &= ( current_node->comm().size() == 0 );
       }
+    }
+   passed &= (correct_skin && correct_relations && correct_comm);
+
   }
 
-  return (correct_skin && correct_relations && correct_comm);
+  //seperate the entire middle layer of the mesh
+  {
+    //setup the mesh
+    stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
+
+    stk::mesh::MetaData & meta = fixture.meta_data;
+    stk::mesh::BulkData & mesh = fixture.bulk_data;
+    stk::mesh::TopologicalMetaData & top = fixture.top_data;
+
+    stk::mesh::Part & skin_part = meta.declare_part("skin_part");
+    meta.commit();
+
+    fixture.generate_mesh();
+
+    skin_mesh(mesh, top.element_rank, &skin_part);
+
+
+
+    std::vector< stk::mesh::EntityId > elements_to_separate;
+
+    //separate out the middle level
+    elements_to_separate.push_back(fixture.elem_id(1,0,0));
+    elements_to_separate.push_back(fixture.elem_id(1,0,1));
+    elements_to_separate.push_back(fixture.elem_id(1,0,2));
+    elements_to_separate.push_back(fixture.elem_id(1,1,0));
+    elements_to_separate.push_back(fixture.elem_id(1,1,1));
+    elements_to_separate.push_back(fixture.elem_id(1,1,2));
+    elements_to_separate.push_back(fixture.elem_id(1,2,0));
+    elements_to_separate.push_back(fixture.elem_id(1,2,1));
+    elements_to_separate.push_back(fixture.elem_id(1,2,2));
+
+    separate_and_skin_mesh(
+        meta,
+        mesh,
+        skin_part,
+        elements_to_separate,
+        top.element_rank
+        );
+
+
+    // pointer to middle_element after mesh modification.
+    unsigned num_skin_entities = count_skin_entities(mesh, skin_part, top.side_rank);
+
+    stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
+
+    //there should be 90 faces in the skin part
+    //30 attached to each level of the mesh
+    bool correct_skin = ( num_skin_entities == 90 );
+
+   passed &= correct_skin;
+
+  }
+
+  return passed;
 }

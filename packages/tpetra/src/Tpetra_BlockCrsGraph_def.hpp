@@ -30,8 +30,6 @@
 #define TPETRA_BLOCKCRSGRAPH_DEF_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Vector.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
@@ -127,18 +125,10 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::insertGlobalIndices(GlobalOrdina
 
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-Teuchos::ArrayRCP<const LocalOrdinal>
-BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalRowView(LocalOrdinal LocalRow) const
-{
-  return ptGraph_->getLocalRowView(LocalRow);
-}
-
-//-------------------------------------------------------------------
-template<class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::ArrayRCP<const size_t>
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeRowOffsets() const
 {
-  return ptGraph_->getNodeRowOffsets();
+  return ptGraph_->getNodeRowBegs();
 }
 
 //-------------------------------------------------------------------
@@ -190,7 +180,10 @@ template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::optimizeStorage()
 {
-  ptGraph_->optimizeStorage();
+  if (ptGraph_->isFillComplete()) {
+    ptGraph_->resumeFill();
+  }
+  ptGraph_->fillComplete(DoOptimizeStorage);
 }
 
 //-------------------------------------------------------------------

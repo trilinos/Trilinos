@@ -17,7 +17,12 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 #include <Shards_BasicTopologies.hpp>
+#include <stk_mesh/baseImpl/PartRepository.hpp>
+#include <stk_mesh/baseImpl/EntityRepository.hpp>
+#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
+#include <unit_tests/UnitTestMesh.hpp>
 
 namespace stk {
 namespace mesh {
@@ -33,6 +38,7 @@ public:
   void testFieldRestriction();
   void testMetaData();
   void testProperty();
+  void testEntityRepository();
 };
 
 }//namespace mesh
@@ -80,6 +86,12 @@ STKUNIT_UNIT_TEST(UnitTestProperty, testUnit)
 {
   stk::mesh::UnitTestMetaData umeta;
   umeta.testProperty();
+}
+
+STKUNIT_UNIT_TEST(UnitTestEntityRepository, testUnit)
+{
+  stk::mesh::UnitTestMetaData umeta;
+  umeta.testEntityRepository();
 }
 
 }//namespace <anonymous>
@@ -162,11 +174,12 @@ void UnitTestMetaData::testPart()
 
   parts[0] = & universal ;
 
-  for ( int i = 1 ; i < NPARTS ; ++i ) {
+  for ( int i = 1 ; i < NPARTS-1 ; ++i ) {
     std::ostringstream name ;
     name << "Part_" << i ;
     parts[i] = partRepo.declare_part( name.str() , 0 );
   }
+  parts[99] = partRepo.declare_part( "Part_99" , 1 );
 
   STKUNIT_ASSERT( universal.supersets().empty() );
   STKUNIT_ASSERT( NPARTS == universal.subsets().size() );
@@ -261,6 +274,7 @@ void UnitTestMetaData::testPart()
   partRepo.declare_subset( * parts[7], * parts[11] );
   STKUNIT_ASSERT( ! contain( pint_4_6_7.subsets() , * parts[11] ) );
 
+
   partRepo.declare_subset( * parts[6], * parts[11] );
   STKUNIT_ASSERT( ! contain( pint_4_6_7.subsets() , * parts[11] ) );
 
@@ -274,6 +288,173 @@ void UnitTestMetaData::testPart()
   print( std::cout , "  " , pint_4_6_7 );
   print( std::cout , "  " , * parts[10] );
   print( std::cout , "  " , * parts[11] );
+
+  std::cout << std::endl ;
+
+  //Test to cover assert_contain in PartRepository - Part is not a subset
+  {
+    const int spatial_dimension = 1;
+    std::vector< std::string > dummy_names(spatial_dimension);
+    dummy_names[0].assign("dummy");
+
+    stk::mesh::MetaData meta( dummy_names );
+
+    stk::mesh::Part &new_part4 = meta.declare_part ( "another part");
+    meta.commit();
+
+    PartVector intersection2 ;
+    intersection2.push_back( &new_part4 );
+
+    impl::PartRepository partRepo2(m);
+    STKUNIT_ASSERT_THROW(
+        partRepo2.declare_part(intersection2), 
+        std::runtime_error
+        );
+  }
+
+  //Test to cover assert_same_universe in PartRepository - Part is not in the same universe
+  {
+    int ok = 0 ;
+    try {
+      impl::PartRepository partRepo2(m);
+
+      PartVector intersection2 ;
+      std::vector< std::string > dummy_names(1);
+      dummy_names[0].assign("dummy");
+
+      stk::mesh::MetaData meta2( dummy_names );
+
+      stk::mesh::Part &new_part4 = meta2.declare_part ( "another part");
+      meta2.commit();
+
+      intersection2.push_back( &new_part4 );
+
+      PartVector::const_iterator i = intersection2.begin() ;
+      Part * const p = *i ;
+      partRepo2.declare_subset(*parts[5], *p);
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestMetaData FAILED to catch error for assert_same_universe in PartRepository");
+    }
+  }
+
+  //Test to cover assert_not_superset in PartRepository - parts[11] is not a superset of parts[7]
+  {
+    int ok = 0 ;
+    try {
+      partRepo.declare_subset(*parts[11], *parts[7] );
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestMetaData FAILED to catch error for assert_not_superset in PartRepository");
+    }
+  }
+
+  //Test to cover assert_not_superset in PartRepository - parts[99] is not the same rank of parts[11]
+  {
+    int ok = 0 ;
+    try {
+      partRepo.declare_subset(*parts[11], *parts[99] );
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestMetaData FAILED to catch error for assert_rank_ordering in PartRepository");
+    }
+  }
+
+  //Test to cover declare_part(arg_name, arg_rank) - Part_99 of rank 1 already exists..
+  {
+    int ok = 0 ;
+    try {
+      partRepo.declare_part("Part_99", 0 );
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestMetaData FAILED to catch error for declare_part in PartRepository");
+    }
+  }
+
+  //Test to cover declare_part(const PartVector & part_intersect) in PartRepository - failed from malicious abuse
+  {
+    int ok = 0 ;
+    try {
+      //create part with intersection
+
+      // Test declaration of an intersection part
+
+      impl::PartRepository partRepo2(m);
+
+      enum { NPARTS = 100 };
+
+      Part * parts2[ NPARTS ] ;
+
+      parts2[0] = & universal ;
+
+      for ( int i = 1 ; i < NPARTS-1 ; ++i ) {
+        std::ostringstream name ;
+        name << "Part_" << i ;
+        parts2[i] = partRepo2.declare_part( name.str() , 0 );
+      }
+
+      partRepo2.declare_subset( * parts2[3], * parts2[4] );
+      partRepo2.declare_subset( * parts2[4], * parts2[5] );
+
+      partRepo2.declare_subset( * parts2[1], * parts2[2] );
+      // 1 and 2 pick up 4 and 5 via transitive relationship:
+      partRepo2.declare_subset( * parts2[2], * parts2[3] );
+
+      PartVector intersection2 ;
+      intersection2.push_back( parts2[1] );
+      intersection2.push_back( parts2[2] );
+      intersection2.push_back( parts2[3] );
+      intersection2.push_back( parts2[4] ); // Smallest subset of 1..4
+      intersection2.push_back( parts2[6] );
+      intersection2.push_back( parts2[7] );
+
+      Part & partB = * partRepo2.declare_part("{Part_4^Part_6^Part_7}", 0);
+
+      std::cout << "UnitTestMetaData name of partB is " << partB.name()  << std::endl ;
+
+      Part & pintersect_4_6_7 = * partRepo2.declare_part( intersection2 );
+
+      std::cout << "UnitTestMetaData name of intersection part, pintersect_4_6_7 is " << pintersect_4_6_7.name()  << std::endl ;
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      ///     throw std::runtime_error("UnitTestMetaData FAILED to catch error for declare_part in PartRepository");
+    }
+  }
 
   //--------------------------------------------------------------------
   // Test error trapping:
@@ -337,37 +518,6 @@ void UnitTestMetaData::testPart()
 //    generated_exception = true ;
 //  }
 //  STKUNIT_ASSERT( generated_exception );
-
-  //--------------------------------------------------------------------
-
-//  {
-//    Part bad_universal( m );
-//    Part & badA = m.declare_part( std::string("badA") , 0 );
-//
-//    generated_exception = false ;
-//    const size_t part_0_nsub = parts[1]->subsets().size();
-//    try {
-//      parts[1]->declare_subset( badA );
-//    }
-//    catch( const std::exception & x ) {
-//      std::cout << "Part: correctly caught " << x.what() << std::endl ;
-//      generated_exception = true ;
-//    }
-//    STKUNIT_ASSERT( generated_exception );
-//    STKUNIT_ASSERT_EQUAL( part_0_nsub , parts[1]->subsets().size() );
-//
-//    generated_exception = false ;
-//    try {
-//      bad_universal.declare_part( intersection );
-//    }
-//    catch( const std::exception & x ) {
-//      std::cout << "Part: correctly caught " << x.what() << std::endl ;
-//      generated_exception = true ;
-//    }
-//    STKUNIT_ASSERT( generated_exception );
-//  }
-
-  std::cout << std::endl ;
 
   //--------------------------------------------------------------------
 
@@ -840,6 +990,51 @@ void UnitTestMetaData::testFieldRestriction()
     STKUNIT_ASSERT( caught );
   }
 
+  //Test to cover print function in FieldBaseImpl.cpp
+  {
+    //Create a new field with MetaData m and two restrictions
+
+    FieldBase * const f4 =
+      field_repo.declare_field( std::string("F4"),
+                                data_traits<int>(),
+                                3         /* # ranks */ ,
+                                dim_tags  /* dimension tags */ ,
+                                2         /* # states */ ,
+                                &m );
+
+    partRepo.declare_subset( pD, pA );
+    partRepo.declare_subset( pC, pB );
+
+    f4->m_impl.insert_restriction( method , 0 , pA , stride );
+    f4->m_impl.insert_restriction( method , 1 , pB , stride + 1 );
+    stk::mesh::impl::print(std::cout, "Field f4", *f4);
+  }
+
+  //Coverage for error from print_restriction in FieldBaseImpl.cpp when there is no stride (!stride[i])
+  //Call print_restriction from insert_restriction
+  {
+    int ok = 0 ;
+    try {
+      unsigned arg_stride[2];
+
+      arg_stride[0] = 1;
+      arg_stride[1] = 0;
+
+      f2->m_impl.insert_restriction(method, 0, pA, arg_stride);
+
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestMetaData FAILED to catch error for iterator from print_restriction inFieldBaseImpl.cpp");
+    }
+  }
+
   std::cout << std::endl ;
 }
 
@@ -875,7 +1070,6 @@ void UnitTestMetaData::testProperty()
 
   STKUNIT_ASSERT( stk::mesh::property_data( pi , meta_data.locally_owned_part() ) != NULL);
   STKUNIT_ASSERT( ! stk::mesh::property_data( px , meta_data.locally_owned_part() ) );
-  
 
   stk::mesh::Property<int> * property();
 
@@ -887,14 +1081,13 @@ void UnitTestMetaData::testProperty()
   const std::string& str = "my_i";
   const std::string& str2 = "my_d";
 
- 
   stk::mesh::Property<int> * const pProp = meta_data.get_property<int>( str );
   STKUNIT_ASSERT( (*pProp).type_is<int>() );
 
   {
     int ok = 0 ;
     try {
-      meta_data.get_property<double>( str );    
+      meta_data.get_property<double>( str );
     }
     catch( const std::exception & x ) {
       ok = 1 ;
@@ -908,11 +1101,10 @@ void UnitTestMetaData::testProperty()
     }
   }
 
-
   {
     int ok = 0 ;
     try {
-    meta_data.get_property<int>( str2 );
+      meta_data.get_property<int>( str2 );
     }
     catch( const std::exception & x ) {
       ok = 1 ;
@@ -932,8 +1124,6 @@ void UnitTestMetaData::testProperty()
 
   //More coverage of Property.hpp
   STKUNIT_ASSERT( stk::mesh::property_data( pi , meta_data2.locally_owned_part() ));
- 
-
 }
 
 }
@@ -942,25 +1132,23 @@ void UnitTestMetaData::testProperty()
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-namespace{
+namespace {
 int stencil_test_function( unsigned  from_type ,
-                                        unsigned  to_type ,
-                                        unsigned  identifier )
+                           unsigned  to_type ,
+                           unsigned  identifier )
 {
   return 0;
 }
 
 }
 
-
 namespace stk {
 namespace mesh {
 
 void UnitTestMetaData::testMetaData()
 {
-  const std::vector<std::string> & type_names = fem_entity_rank_names();
-
-  STKUNIT_ASSERT_EQUAL( type_names.size() , (size_t) EntityRankEnd );
+  const int spatial_dimension = 3;
+  const std::vector<std::string> & type_names = TopologicalMetaData::entity_rank_names(spatial_dimension);
 
   MetaData metadata2( type_names );
   MetaData metadata3( type_names );
@@ -1001,8 +1189,6 @@ void UnitTestMetaData::testMetaData()
   STKUNIT_ASSERT_THROW( metadata4.declare_part_relation(*pg,stencil_test_function,*ph), std::runtime_error);
   STKUNIT_ASSERT_THROW( metadata4.declare_part_relation(*pe,NULL,*pe), std::runtime_error);
 
-
-
   {
     bool caught_throw = false;
       try {
@@ -1015,23 +1201,97 @@ void UnitTestMetaData::testMetaData()
     STKUNIT_ASSERT_EQUAL(caught_throw, true);
   }
 
-
   int i = 2;
 
   const std::string& i_name2 = metadata2.entity_rank_name( i );
 
   STKUNIT_ASSERT( i_name2 == type_names[i] );
 
-  i = EntityRankEnd;
-  bool caught_throw = false;
-  try {
-    metadata2.entity_rank_name( i );
-  }
-  catch(...) {
-    caught_throw = true;
+  EntityRank one_rank_higher_than_defined = type_names.size();
+  STKUNIT_ASSERT_THROW( 
+    metadata2.entity_rank_name( one_rank_higher_than_defined ),
+    std::runtime_error
+    );
+}
+
+void UnitTestMetaData::testEntityRepository()
+{
+  //Test Entity repository - covering EntityRepository.cpp/hpp
+
+  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+  stk::mesh::Part & part = meta.declare_part( "another part");
+
+  meta.commit();
+
+  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD , 100 );
+  std::vector<stk::mesh::Part *>  add_part;
+  add_part.push_back ( &part );
+
+  int  size , rank;
+  rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  size = stk::parallel_machine_size( MPI_COMM_WORLD );
+  PartVector tmp(1);
+
+  bulk.modification_begin();
+
+  int id_base = 0;
+  for ( id_base = 0 ; id_base < 97 ; ++id_base )
+  {
+    int new_id = size * id_base + rank;
+    bulk.declare_entity( 0 , new_id+1 , add_part );
   }
 
-  STKUNIT_ASSERT_EQUAL(caught_throw, true);
+  int new_id = size * (++id_base) + rank;
+  stk::mesh::Entity & elem  = bulk.declare_entity( 3 , new_id+1 , add_part );
+
+  //new_id = size * (++id_base) + rank;
+  // stk::mesh::Entity & elem2  = bulk.declare_entity( 3 , new_id+1 , add_part );
+
+  stk::mesh::impl::EntityRepository e;
+
+  e.comm_clear( elem );
+
+  e.comm_clear_ghosting( elem );
+
+  const stk::mesh::Ghosting & ghost = bulk.shared_aura();
+
+  bulk.modification_end();
+
+  STKUNIT_ASSERT_FALSE(e.erase_ghosting(elem, ghost));
+
+  const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
+
+  STKUNIT_ASSERT_FALSE(e.erase_comm_info(elem, comm_info));
+
+  STKUNIT_ASSERT(e.insert_comm_info(elem, comm_info));
+
+  //Checking internal_create_entity
+
+  e.internal_create_entity( stk::mesh::EntityKey( 3, 2 ));
+  e.internal_create_entity( stk::mesh::EntityKey( 3, 5 ));
+  e.internal_create_entity( stk::mesh::EntityKey( 3, 7 ));
+
+  //Checking get_entity with invalid key - no rank or id
+  {
+    int ok = 0 ;
+    try {
+
+      stk::mesh::Entity * elem3 = e.get_entity(stk::mesh::EntityKey());
+      if(elem3){
+        // CAROL FIXME
+      }
+
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestMetaData FAILED to catch error for get_entity - invalid key");
+    }
+  }
 }
 
 //----------------------------------------------------------------------

@@ -73,10 +73,13 @@ int main (int argc, char **argv)
   int *node_ind, *elem_ind, *df_ind, num_qa_rec, num_info;
   int num_glo_vars, num_nod_vars, num_ele_vars;
   int *truth_tab;
-  int *node_varid, *elem_varid;
+  int *node_varid = NULL;
+  int *elem_varid = NULL;
   
   int num_time_steps;
-  int *num_elem_in_block, *num_nodes_per_elem, *num_attr;
+  int *num_elem_in_block = NULL;
+  int *num_nodes_per_elem = NULL;
+  int *num_attr = NULL;
   int num_nodes_in_set, num_elem_in_set;
   int num_sides_in_set, num_df_in_set;
   int list_len, elem_list_len, node_list_len, df_list_len;

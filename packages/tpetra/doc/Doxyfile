@@ -46,14 +46,15 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc ../src
+INPUT                  = index.doc ../src ../example/PowerMethod
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = NO
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
                          ../src/Tpetra_ExplicitInstantiationHelpers.hpp 
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           =  ../example/PowerMethod/Tpetra_Power_Method.cpp \
-                          ../example/PowerMethod/Tpetra_Power_Method_From_File.cpp
+                          ../example/PowerMethod/Tpetra_Power_Method_From_File.cpp \
+                          ../example/PowerMethod/Tpetra_Power_Method.hpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 

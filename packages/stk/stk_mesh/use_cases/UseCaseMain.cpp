@@ -83,19 +83,28 @@ int main ( int argc, char * argv[] )
   {
     std::cout << "Use Case Change Owner ... ";
     Grid2D_Fixture test( parallel_machine );
-    const bool result = test.test_change_owner();
-    printStatus(result);
+    const bool local_status = test.test_change_owner();
+    printStatus(local_status);
+    status = status && local_status;
   }
 
   {
     std::cout << "Use Case Change Owner with constraint ... ";
-    const bool result = test_change_owner_with_constraint( parallel_machine );
-    printStatus(result);
+    const bool local_status = test_change_owner_with_constraint( parallel_machine );
+    printStatus(local_status);
+    status = status && local_status;
   }
 
   {
     std::cout << "Use Case Change Owner #2 ... ";
-    const bool result = test_change_owner_2( parallel_machine );
+    const bool local_status = test_change_owner_2( parallel_machine );
+    printStatus(local_status);
+    status = status && local_status;
+  }
+
+  {
+    std::cout << "Use Case Change Owner #3 ... ";
+    const bool result = test_change_owner_3( parallel_machine );
     printStatus(result);
   }
 
@@ -108,6 +117,18 @@ int main ( int argc, char * argv[] )
   {
     std::cout << "Use Case Skinning 1 ... ";
     bool local_status = skinning_use_case_1(parallel_machine);
+    printStatus(local_status);
+    status = status && local_status;
+  }
+  {
+    std::cout << "Use Case Skinning 1b ... ";
+    bool local_status = skinning_use_case_1b(parallel_machine);
+    printStatus(local_status);
+    status = status && local_status;
+  }
+  {
+    std::cout << "Use Case Skinning 2 ... ";
+    bool local_status = skinning_use_case_2(parallel_machine);
     printStatus(local_status);
     status = status && local_status;
   }

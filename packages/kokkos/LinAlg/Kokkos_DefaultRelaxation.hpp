@@ -37,6 +37,7 @@
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_DefaultKernels.hpp"
 #include "Kokkos_CrsMatrix.hpp" 
 #include "Kokkos_CrsGraph.hpp" 
 #include "Kokkos_MultiVector.hpp"
@@ -65,7 +66,7 @@ namespace Kokkos {
     //@{
 
     //! DefaultRelaxation constuctor 
-    DefaultRelaxation(const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
+    DefaultRelaxation(const RCP<Node> &node = DefaultNode::getDefaultNode());
 
     //! DefaultRelaxation Destructor
     ~DefaultRelaxation();
@@ -76,7 +77,7 @@ namespace Kokkos {
     //@{ 
     
     //! Node accessor.
-    Teuchos::RCP<Node> getNode() const;
+    RCP<Node> getNode() const;
 
     //@}
 
@@ -92,13 +93,15 @@ namespace Kokkos {
     template <class MATRIX>
     Teuchos::DataAccess initializeValues(MATRIX &matrix, Teuchos::DataAccess cv);
 
-    //! Initialize structure of the matrix, using Kokkos::CrsGraph
-    Teuchos::DataAccess initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv);
+    //! Initialize structure of the matrix, using CrsGraph
+    template <class SparseOps>
+    Teuchos::DataAccess initializeStructure(CrsGraph<Ordinal,Node,SparseOps> &graph, Teuchos::DataAccess cv);
 
-    //! Initialize values of the matrix, using Kokkos::CrsMatrix
-    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv);
+    //! Initialize values of the matrix, using CrsMatrix
+    template <class SparseOps>
+    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Ordinal,Node,SparseOps> &matrix, Teuchos::DataAccess cv);
 
-    //! Sets the diagonal inverted for relaxation using a Kokkos::MultiVector
+    //! Sets the diagonal inverted for relaxation using a MultiVector
     void setDiagonal(MultiVector<Scalar,Node> & diag);    
 
     //! Clear all matrix structure and values.
@@ -142,28 +145,28 @@ namespace Kokkos {
     bool UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const;
 
     // My node
-    Teuchos::RCP<Node> node_;
+    RCP<Node> node_;
 
     // we do this one of two ways: 
     // 1D/packed: array of offsets, pointer for ordinals, pointer for values. obviously the smallest footprint.
-    Teuchos::ArrayRCP<const Ordinal> pbuf_inds1D_;
-    Teuchos::ArrayRCP<const size_t>  pbuf_offsets1D_;
-    Teuchos::ArrayRCP<const Scalar>  pbuf_vals1D_;
+    ArrayRCP<const Ordinal> pbuf_inds1D_;
+    ArrayRCP<const size_t>  pbuf_offsets1D_;
+    ArrayRCP<const Scalar>  pbuf_vals1D_;
     // 2D: array of pointers
-    Teuchos::ArrayRCP<const Ordinal *> pbuf_inds2D_;
-    Teuchos::ArrayRCP<const Scalar  *> pbuf_vals2D_;
-    Teuchos::ArrayRCP<size_t>          pbuf_numEntries_;
+    ArrayRCP<const Ordinal *> pbuf_inds2D_;
+    ArrayRCP<const Scalar  *> pbuf_vals2D_;
+    ArrayRCP<size_t>          pbuf_numEntries_;
     
     // Array containing matrix diagonal for easy access
-    Teuchos::ArrayRCP<Scalar> diagonal_;
+    ArrayRCP<Scalar> diagonal_;
 
     // Array containing a temp vector for Jacobi
-    mutable Teuchos::ArrayRCP<Scalar> tempJacobiVector_;
+    mutable ArrayRCP<Scalar> tempJacobiVector_;
     mutable size_t lastNumJacobiVectors_;
 
     // Arrays containing temp vectors for Chebyshev
-    mutable Teuchos::ArrayRCP<Scalar> tempChebyVectorX_;
-    mutable Teuchos::ArrayRCP<Scalar> tempChebyVectorW_;
+    mutable ArrayRCP<Scalar> tempChebyVectorX_;
+    mutable ArrayRCP<Scalar> tempChebyVectorW_;
     mutable size_t lastNumChebyVectors_;
     mutable bool cheby_setup_done_;
     mutable bool first_cheby_iteration_;
@@ -178,7 +181,7 @@ namespace Kokkos {
 
   /**********************************************************************/
   template<class Scalar, class Ordinal, class Node>
-  DefaultRelaxation<Scalar,Ordinal,Node>::DefaultRelaxation(const Teuchos::RCP<Node> &node)
+  DefaultRelaxation<Scalar,Ordinal,Node>::DefaultRelaxation(const RCP<Node> &node)
   : node_(node)
   , lastNumJacobiVectors_(0)
   , lastNumChebyVectors_(0)
@@ -199,7 +202,7 @@ namespace Kokkos {
   }
 
   /**********************************************************************/
-  template<class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node>
   template <class GRAPH>
   Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse graphs
@@ -207,7 +210,7 @@ namespace Kokkos {
   }
 
   /**********************************************************************/
-  template<class Scalar, class Ordinal, class Node>
+  template <class Scalar, class Ordinal, class Node>
   template <class MATRIX>
   Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(MATRIX &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse matrices
@@ -216,8 +219,8 @@ namespace Kokkos {
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv) {
-    using Teuchos::ArrayRCP;
+  template <class SparseOps>
+  Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node,SparseOps> &graph, Teuchos::DataAccess cv) {
     TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeStructure(): requires View access.");
     TEST_FOR_EXCEPTION(indsInit_ == true, std::runtime_error, 
@@ -241,7 +244,7 @@ namespace Kokkos {
       ArrayRCP<         size_t> numEntview = node_->template viewBufferNonConst<         size_t>(WriteOnly, numRows_, pbuf_numEntries_);
       for (size_t r=0; r < numRows_; ++r) {
         ArrayRCP<const Ordinal> rowinds = graph.get2DIndices(r);
-        if (rowinds != Teuchos::null) {
+        if (rowinds != null) {
           inds2Dview[r] = rowinds.getRawPtr();
           numEntview[r] = rowinds.size();
         }
@@ -257,8 +260,8 @@ namespace Kokkos {
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv) {
-    using Teuchos::ArrayRCP;
+  template <class SparseOps>
+  Teuchos::DataAccess DefaultRelaxation<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Ordinal,Node,SparseOps> &matrix, Teuchos::DataAccess cv) {
     TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): requires View access.");
     TEST_FOR_EXCEPTION(valsInit_ == true, std::runtime_error, 
@@ -278,7 +281,7 @@ namespace Kokkos {
       ArrayRCP<const Scalar *> vals2Dview = node_->template viewBufferNonConst<const Scalar *>(WriteOnly, numRows_, pbuf_vals2D_);
       for (size_t r=0; r < numRows_; ++r) {
         ArrayRCP<const Scalar> rowvals = matrix.get2DValues(r);
-        if (rowvals != Teuchos::null) {
+        if (rowvals != null) {
           vals2Dview[r] = rowvals.getRawPtr();
         }
         else {
@@ -294,23 +297,23 @@ namespace Kokkos {
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::RCP<Node> DefaultRelaxation<Scalar,Ordinal,Node>::getNode() const { 
+  RCP<Node> DefaultRelaxation<Scalar,Ordinal,Node>::getNode() const { 
     return node_; 
   }
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::clear() {
-    pbuf_inds1D_      = Teuchos::null;
-    pbuf_offsets1D_   = Teuchos::null;
-    pbuf_vals1D_      = Teuchos::null;
-    pbuf_inds2D_      = Teuchos::null;
-    pbuf_vals2D_      = Teuchos::null;
-    pbuf_numEntries_  = Teuchos::null;
-    diagonal_         = Teuchos::null;
-    tempJacobiVector_ = Teuchos::null;
-    tempChebyVectorW_ = Teuchos::null;
-    tempChebyVectorX_ = Teuchos::null;
+    pbuf_inds1D_      = null;
+    pbuf_offsets1D_   = null;
+    pbuf_vals1D_      = null;
+    pbuf_inds2D_      = null;
+    pbuf_vals2D_      = null;
+    pbuf_numEntries_  = null;
+    diagonal_         = null;
+    tempJacobiVector_ = null;
+    tempChebyVectorW_ = null;
+    tempChebyVectorX_ = null;
     indsInit_ = false;
     valsInit_ = false;
     isPacked_ = false;
@@ -320,7 +323,7 @@ namespace Kokkos {
   }
 
   /**********************************************************************/
-  // Sets the diagonal inverted for relaxation using a Kokkos::MultiVector
+  // Sets the diagonal inverted for relaxation using a MultiVector
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::setDiagonal(MultiVector<Scalar,Node> & diag){
     // Allocate space for diagonal
@@ -335,14 +338,13 @@ namespace Kokkos {
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::ExtractDiagonal(){    
-    using Teuchos::ArrayRCP;
     TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error, 
         Teuchos::typeName(*this) << "::ExtractDiagonal(): initializeValues() hasn't been called.");
 
     // Allocate space for diagonal
     diagonal_ = node_->template allocBuffer<Scalar>(numRows_);    
       
-    if (pbuf_vals1D_ != Teuchos::null){
+    if (pbuf_vals1D_ != null){
       // Extract the diagonal for Type 1 storage
       typedef ExtractDiagonalOp1<Scalar,Ordinal>  Op1D;
       ReadyBufferHelper<Node> rbh(node_);
@@ -378,7 +380,7 @@ namespace Kokkos {
   bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateJacobiTemp(size_t num_vectors, size_t vec_leng) const{
     // Re-allocate memory if needed
     if(num_vectors > lastNumJacobiVectors_){
-      tempJacobiVector_=Teuchos::null;
+      tempJacobiVector_= null;
       lastNumJacobiVectors_=num_vectors;
       tempJacobiVector_ = node_->template allocBuffer<Scalar>(vec_leng*lastNumJacobiVectors_); 
       return true;
@@ -391,8 +393,8 @@ namespace Kokkos {
   bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const{
     // Re-allocate memory if needed
     if(num_vectors > lastNumChebyVectors_){
-      tempChebyVectorW_=Teuchos::null;
-      tempChebyVectorX_=Teuchos::null;
+      tempChebyVectorW_= null;
+      tempChebyVectorX_= null;
       lastNumChebyVectors_=num_vectors;
       tempChebyVectorW_ = node_->template allocBuffer<Scalar>(numRows_*lastNumChebyVectors_);
       tempChebyVectorX_ = node_->template allocBuffer<Scalar>(vec_leng*lastNumChebyVectors_); 

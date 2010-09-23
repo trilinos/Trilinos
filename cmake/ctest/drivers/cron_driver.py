@@ -30,6 +30,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(
 
 TOOLS_DIR = BASE_DIR + "/tools"
 
+REPO_DIR = os.path.dirname(os.path.dirname(os.path.dirname(SCRIPT_DIR)))
+
 # Make sure tools directory exists:
 #
 if not os.path.exists(TOOLS_DIR):
@@ -44,6 +46,7 @@ os.chdir(BASE_DIR)
 print "SCRIPT_DIR: +" + SCRIPT_DIR + "+"
 print "BASE_DIR: +" + BASE_DIR + "+"
 print "TOOLS_DIR: +" + TOOLS_DIR + "+"
+print "REPO_DIR: +" + REPO_DIR + "+"
 
 # Download and install CMake/CTest 'release' build
 #
@@ -86,7 +89,7 @@ if installMasterCMake:
     shutil.rmtree(CMAKE_DIR)
 
   cmnd =  sys.executable + " " \
-    + BASE_DIR+"/Trilinos/cmake/python/download-cmake.py" \
+    + REPO_DIR+"/cmake/python/download-cmake.py" \
     + " --skip-detect" \
     + " --install-dir="+CMAKE_DIR \
     + " --installer-type="+TDD_CMAKE_INSTALLER_TYPE

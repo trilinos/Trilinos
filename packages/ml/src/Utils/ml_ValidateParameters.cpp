@@ -157,8 +157,7 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
 
   // EXPERIMENTAL
   PL->set("smoother: chebyshev solve normal equations",false);
-  PL->set("smoother: use ifpack crs wrapper",0);
-  PL->set("coarse: use ifpack crs wrapper",0);
+  PL->set("use crs matrix storage",false);
 
 
   /* Coarse IFPACK Solvers - experimental */
@@ -415,7 +414,7 @@ bool ML_Epetra::ValidateRefMaxwellParameters(const Teuchos::ParameterList &inLis
 
 
 Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
-  Teuchos::ParameterList dummy;
+  Teuchos::ParameterList dummy,List11;
   ParameterList * PL = GetValidMLPParameters();
 
   /* RefMaxwell Options */
@@ -423,8 +422,14 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   setStringToIntegralParameter<int>("refmaxwell: 22solver","multilevel","(2,2) Block Solver",tuple<string>("multilevel"),PL);
   setStringToIntegralParameter<int>("refmaxwell: mode","additive","Mode for RefMaxwell",tuple<string>("additive","212","121"),PL);
   PL->set("edge matrix free: coarse",dummy);
-  PL->set("refmaxwell: 11list",dummy);
+  List11.set("aggregation: aux: user matrix",(Epetra_CrsMatrix*)0);
+  PL->set("refmaxwell: 11list",List11);
   PL->set("refmaxwell: 22list",dummy);
+
+
+  // HAQ - clobber the smoother list to avoid validation.  MUST FIX LATER
+  PL->set("smoother: type","IFPACK");
+
 
   /* RefMaxwell Options - Unsupported */
   PL->set("refmaxwell: aggregate with sigma",false);
@@ -435,7 +440,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: local nodal list",dummy);
   PL->set("refmaxwell: enable local nodal solver",false);
   PL->set("refmaxwell: global to local nodal transfer matrix",(Epetra_CrsMatrix*)0);  
-  
+  PL->set("refmaxwell: drop nodal correction",false);//HAQ
   return PL;
 }
 

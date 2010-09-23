@@ -8,7 +8,8 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
-#include <stk_mesh/fem/FieldDeclarations.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 /*----------------------------------------------------------------------------
 
@@ -30,15 +31,19 @@ C. Move Elements { 1 , 2 } and Nodes { 1 , 2 , 3 } to process #1
 
 ----------------------------------------------------------------------------*/
 
+typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorField ;
+
 class Grid2D_Fixture {
 public:
 
   Grid2D_Fixture( stk::ParallelMachine );
 
+  unsigned                 m_spatial_dimension;
   stk::mesh::MetaData      m_meta_data ;
   stk::mesh::BulkData      m_bulk_data ;
+  stk::mesh::TopologicalMetaData m_top_data;
   stk::mesh::Part        & m_quad_part ;
-  stk::mesh::VectorField & m_coord_field ;
+  VectorField & m_coord_field ;
 
   bool test_change_owner( unsigned nx , unsigned ny );
 
@@ -47,6 +52,7 @@ public:
 
 bool test_change_owner_with_constraint( stk::ParallelMachine pm );
 bool test_change_owner_2( stk::ParallelMachine pm );
+bool test_change_owner_3( stk::ParallelMachine pm );
 
 #endif
 

@@ -19,15 +19,15 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 
-#include <unit_tests/UnitTestFixture.hpp>
+#include <stk_mesh/fixtures/SelectorFixture.hpp>
 
 namespace {
 
-  using sunit::ExampleFixture;
+  using stk::mesh::fixtures::SelectorFixture ;
 
 STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
 {
-  ExampleFixture fix ;
+  SelectorFixture fix ;
 
   {
     const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
@@ -71,5 +71,5 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
 
 }
 
-} // namespace 
+} // namespace
 

@@ -87,6 +87,9 @@ namespace Kokkos {
     *(static_cast<ReductionType*>(work->reduce)) = WDP::identity();
   }
 
+  /** \brief %Kokkos node interface to the ThreadPool threading library.
+      \ingroup kokkos_node_api
+   */
   class TPINode : public StandardNodeMemoryModel {
     public:
   

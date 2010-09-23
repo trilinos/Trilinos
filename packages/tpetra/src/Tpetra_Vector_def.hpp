@@ -31,11 +31,6 @@
 
 #include <Kokkos_NodeTrace.hpp>
 
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_Tuple.hpp>
-
 #include "Tpetra_MultiVector.hpp"
 
 #ifdef DOXYGEN_USE_ONLY

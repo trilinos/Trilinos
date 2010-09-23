@@ -1043,4 +1043,50 @@ void Basis_HGRAD_HEX_C2_FEM<Scalar, ArrayScalar>::getValues(ArrayScalar&        
                       ">>> ERROR (Basis_HGRAD_HEX_C2_FEM): FEM Basis calling an FVD member function");
                                                             }
 
+template<class Scalar, class ArrayScalar>
+void Basis_HGRAD_HEX_C2_FEM<Scalar, ArrayScalar>::getDofCoords(ArrayScalar & DofCoords) const {
+#ifdef HAVE_INTREPID_DEBUG
+  // Verify rank of output array.
+  TEST_FOR_EXCEPTION( !(DofCoords.rank() == 2), std::invalid_argument,
+                      ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C2_FEM::getDofCoords) rank = 2 required for DofCoords array");
+  // Verify 0th dimension of output array.
+  TEST_FOR_EXCEPTION( !( DofCoords.dimension(0) == this -> basisCardinality_ ), std::invalid_argument,
+                      ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C2_FEM::getDofCoords) mismatch in number of DoF and 0th dimension of DofCoords array");
+  // Verify 1st dimension of output array.
+  TEST_FOR_EXCEPTION( !( DofCoords.dimension(1) == (int)(this -> basisCellTopology_.getDimension()) ), std::invalid_argument,
+                      ">>> ERROR: (Intrepid::Basis_HGRAD_HEX_C2_FEM::getDofCoords) incorrect reference cell (1st) dimension in DofCoords array");
+#endif
+
+  DofCoords(0,0) = -1.0;   DofCoords(0,1) = -1.0; DofCoords(0,2) = -1.0;  
+  DofCoords(1,0) =  1.0;   DofCoords(1,1) = -1.0; DofCoords(1,2) = -1.0;  
+  DofCoords(2,0) =  1.0;   DofCoords(2,1) =  1.0; DofCoords(2,2) = -1.0;  
+  DofCoords(3,0) = -1.0;   DofCoords(3,1) =  1.0; DofCoords(3,2) = -1.0;  
+  DofCoords(4,0) = -1.0;   DofCoords(4,1) = -1.0; DofCoords(4,2) =  1.0;  
+  DofCoords(5,0) =  1.0;   DofCoords(5,1) = -1.0; DofCoords(5,2) =  1.0;  
+  DofCoords(6,0) =  1.0;   DofCoords(6,1) =  1.0; DofCoords(6,2) =  1.0;  
+  DofCoords(7,0) = -1.0;   DofCoords(7,1) =  1.0; DofCoords(7,2) =  1.0;  
+
+  DofCoords(8,0) =   0.0;   DofCoords(8,1) =  -1.0; DofCoords(8,2) =  -1.0;  
+  DofCoords(9,0) =   1.0;   DofCoords(9,1) =   0.0; DofCoords(9,2) =  -1.0;  
+  DofCoords(10,0) =  0.0;   DofCoords(10,1) =  1.0; DofCoords(10,2) = -1.0;  
+  DofCoords(11,0) = -1.0;   DofCoords(11,1) =  0.0; DofCoords(11,2) = -1.0;  
+  DofCoords(12,0) = -1.0;   DofCoords(12,1) = -1.0; DofCoords(12,2) =  0.0;  
+  DofCoords(13,0) =  1.0;   DofCoords(13,1) = -1.0; DofCoords(13,2) =  0.0;  
+  DofCoords(14,0) =  1.0;   DofCoords(14,1) =  1.0; DofCoords(14,2) =  0.0;  
+  DofCoords(15,0) = -1.0;   DofCoords(15,1) =  1.0; DofCoords(15,2) =  0.0;  
+  DofCoords(16,0) =  0.0;   DofCoords(16,1) = -1.0; DofCoords(16,2) =  1.0;  
+  DofCoords(17,0) =  1.0;   DofCoords(17,1) =  0.0; DofCoords(17,2) =  1.0;  
+  DofCoords(18,0) =  0.0;   DofCoords(18,1) =  1.0; DofCoords(18,2) =  1.0;  
+  DofCoords(19,0) = -1.0;   DofCoords(19,1) =  0.0; DofCoords(19,2) =  1.0;  
+
+  DofCoords(20,0) =  0.0;   DofCoords(20,1) =  0.0; DofCoords(20,2) =  0.0;  
+
+  DofCoords(21,0) =  0.0;   DofCoords(21,1) =  0.0; DofCoords(21,2) = -1.0;  
+  DofCoords(22,0) =  0.0;   DofCoords(22,1) =  0.0; DofCoords(22,2) =  1.0;  
+  DofCoords(23,0) = -1.0;   DofCoords(23,1) =  0.0; DofCoords(23,2) =  0.0;  
+  DofCoords(24,0) =  1.0;   DofCoords(24,1) =  0.0; DofCoords(24,2) =  0.0;  
+  DofCoords(25,0) =  0.0;   DofCoords(25,1) = -1.0; DofCoords(25,2) =  0.0;  
+  DofCoords(26,0) =  0.0;   DofCoords(26,1) =  1.0; DofCoords(26,2) =  0.0;  
+}
+
 }// namespace Intrepid

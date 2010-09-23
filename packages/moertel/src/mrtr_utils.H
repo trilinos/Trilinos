@@ -70,9 +70,6 @@
 #include "mrtr_node.H"
 #include "mrtr_point.H"
 
-using namespace std;
-using namespace Teuchos;
-
 /*!
 \brief MOERTEL: namespace of the Moertel package
 
@@ -291,13 +288,13 @@ Matrix blocks are FillComplete() on exit.
 \param A21       : on exit matrix block A21 
 \param A22       : on exit matrix block A22 
 */
-bool SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
-                    RefCountPtr<Epetra_Map>& A11rowmap,
-                    RefCountPtr<Epetra_Map>& A22rowmap,
-                    RefCountPtr<Epetra_CrsMatrix>& A11,
-                    RefCountPtr<Epetra_CrsMatrix>& A12,
-                    RefCountPtr<Epetra_CrsMatrix>& A21,
-                    RefCountPtr<Epetra_CrsMatrix>& A22);
+bool SplitMatrix2x2(Teuchos::RCP<Epetra_CrsMatrix> A,
+                    Teuchos::RCP<Epetra_Map>& A11rowmap,
+                    Teuchos::RCP<Epetra_Map>& A22rowmap,
+                    Teuchos::RCP<Epetra_CrsMatrix>& A11,
+                    Teuchos::RCP<Epetra_CrsMatrix>& A12,
+                    Teuchos::RCP<Epetra_CrsMatrix>& A21,
+                    Teuchos::RCP<Epetra_CrsMatrix>& A22);
 
 /*!
 \brief split a rowmap of matrix A

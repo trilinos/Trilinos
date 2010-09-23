@@ -248,7 +248,7 @@ namespace {
     RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     TEST_THROW(MV mvec(map,0),  std::invalid_argument);
     if (std::numeric_limits<size_t>::is_signed) {
-      TEST_THROW(MV mvec(map,-1), std::invalid_argument);
+      TEST_THROW(MV mvec(map,INVALID), std::invalid_argument);
     }
   }
 

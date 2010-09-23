@@ -946,7 +946,7 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
   {
 
     if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
-      Thyra::uninitializeOp<double>(*W_factory_,&*W,&fwdW);
+      Thyra::uninitializeOp<double>(*W_factory_, W.ptr(), Teuchos::outArg(fwdW));
       if(fwdW.get()) {
         efwdW = rcp_const_cast<EpetraLinearOp>(
           rcp_dynamic_cast<const EpetraLinearOp>(fwdW,true));
@@ -1205,7 +1205,7 @@ void EpetraModelEvaluator::finishConvertingOutArgsFromEpetraToThyra(
   }
   
   if( W.get() ) {
-    Thyra::initializeOp<double>(*W_factory_,fwdW,&*W);
+    Thyra::initializeOp<double>(*W_factory_, fwdW, W.ptr());
     W->setOStream(this->getOStream());
   }
 

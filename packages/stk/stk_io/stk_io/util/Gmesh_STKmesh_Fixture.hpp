@@ -1,6 +1,7 @@
 #ifndef stk_common_Gmesh_STKmesh_Fixture_hpp
 #define stk_common_Gmesh_STKmesh_Fixture_hpp
 
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -8,8 +9,6 @@
 
 #include <vector>
 #include <string>
-
-#include <stk_util/parallel/Parallel.hpp>
 
 namespace stk {
 namespace common {
@@ -31,7 +30,7 @@ class Gmesh_STKmesh_Fixture
    * @param gmesh_spec The specification for the mesh. See Iogn::GeneratedMesh
    * for documentation on how to specify meshes.
    */
-  Gmesh_STKmesh_Fixture(MPI_Comm comm, const std::string& gmesh_spec);
+  Gmesh_STKmesh_Fixture(stk::ParallelMachine comm, const std::string& gmesh_spec);
 
   /**
    * Commits the meta-data of the mesh and populates the bulk-data. Don't call

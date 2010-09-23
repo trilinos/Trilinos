@@ -490,6 +490,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
   ) const
 {
 
+  using Teuchos::outArg;
   typedef ModelEvaluatorBase MEB;
 
   lazyInitializeDefaultBase();
@@ -644,7 +645,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
           W_factory = this->get_W_factory();
         // Extract the underlying W_op object (if it exists)
         RCP<const LinearOpBase<Scalar> > W_op_const;
-        uninitializeOp<Scalar>( *W_factory, &*W, &W_op_const );
+        uninitializeOp<Scalar>(*W_factory, W.ptr(), outArg(W_op_const));
         RCP<LinearOpBase<Scalar> > W_op;
         if (!is_null(W_op_const)) {
           // Here we remove the const.  This is perfectly safe since
@@ -690,7 +691,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
         W_factory = this->get_W_factory();
       W_factory->setOStream(this->getOStream());
       W_factory->setVerbLevel(this->getVerbLevel());
-      initializeOp<Scalar>(*W_factory, outArgsImpl.get_W_op().getConst(), &*W );
+      initializeOp<Scalar>(*W_factory, outArgsImpl.get_W_op().getConst(), W.ptr());
     }
   }
   

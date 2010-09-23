@@ -29,13 +29,19 @@ ADD_SUBDIRECTORY(stk_util)
 
 ADD_SUBDIRECTORY(stk_mesh)
 
-ADD_SUBDIRECTORY(stk_io)
+IF( STK_ENABLE_Trios )
+  ADD_SUBDIRECTORY(stk_io)
+ENDIF()
 
-ADD_SUBDIRECTORY(stk_linsys)
+IF( STK_ENABLE_FEI AND STK_ENABLE_AztecOO )
+  ADD_SUBDIRECTORY(stk_linsys)
+ENDIF()
 
 ADD_SUBDIRECTORY(stk_transfer)
 
-ADD_SUBDIRECTORY(stk_search)
+IF( STK_ENABLE_ThreadPool )
+  ADD_SUBDIRECTORY(stk_search)
+ENDIF()
 
 #
 # D) Do standard postprocessing

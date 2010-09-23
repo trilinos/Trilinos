@@ -9,6 +9,8 @@ eg config --global alias.log-local "log --pretty=format:'%Cgreen%h%Creset \"%s\"
 # Summarizing changes locally and remotely
 eg config --global alias.local-stat "!git status ; echo ; echo 'Commits in local repo not yet pushed to origin/master:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%ar)' --name-status HEAD ^origin/master"
 eg config --global alias.remote-stat "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%ar)' --name-status ^HEAD origin/master"
+eg config --global alias.local-stat-short "!git status ; echo ; echo 'Commits in local repo not yet pushed to origin/master:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%ar)' --shortstat --dirstat=0 HEAD ^origin/master"
+eg config --global alias.remote-stat-short "!git status ; echo ; echo 'Commits in origin/master not in local repo:' ; echo ; git log --pretty=format:'%Cgreen%h%Creset \"%s\" <%ae> [%ad] (%ar)' --shortstat --dirstat=0 ^HEAD origin/master"
 
 # Diffing text files like latex (undocumented option --color-words)
 eg config --global alias.wlog "log --color-words"

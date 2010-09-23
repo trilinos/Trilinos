@@ -1,0 +1,19 @@
+<ParameterList name="test_params">
+  <Parameter name="hb_file" type="string" value="nos1.rsa"/>
+
+  <Parameter name="solver_type" type="string" value="BlockGmres"/>
+  <ParameterList name="Belos">
+    <Parameter name="Num Blocks" type="int" value="300"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Ifpack2::Preconditioner" type="string" value="ILUT"/>
+  <ParameterList name="Ifpack2">
+    <Parameter name="fact: ilut level-of-fill" type="double" value="2.0"/>
+    <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="20"/>
+</ParameterList>

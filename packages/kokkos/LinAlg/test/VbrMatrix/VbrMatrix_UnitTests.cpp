@@ -60,7 +60,6 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( VbrMatrix, PackedData, Scalar, Ordinal )
   {
     const size_t N = 10;
-    typedef typename Node::size_t size;
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     // test non-empty
     {

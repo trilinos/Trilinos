@@ -14,6 +14,9 @@
 
 namespace Kokkos {
 
+  /** \brief Class to specify %Kokkos default node type and instantiate the default node.
+      \ingroup kokkos_node_api
+    */
   class DefaultNode {
     public:
 #ifdef HAVE_KOKKOS_THREADPOOL
@@ -22,14 +25,16 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOS_TBB
       typedef TBBNode DefaultNodeType;
 #else
+      //! Typedef specifying the default node type.
       typedef SerialNode DefaultNodeType;
 #endif
 #endif
 
-      static Teuchos::RCP<DefaultNodeType> getDefaultNode();
+      //! \brief Return a pointer to the default node.
+      static RCP<DefaultNodeType> getDefaultNode();
 
     private:
-      static Teuchos::RCP<DefaultNodeType> node_;
+      static RCP<DefaultNodeType> node_;
   };
 
 }

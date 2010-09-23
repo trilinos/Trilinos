@@ -1,28 +1,28 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                    Teuchos: Common Tools Package
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -37,7 +37,6 @@
 
 
 namespace Teuchos {
-
 
 /** \brief Array reference-counted pointer class.
  *
@@ -785,6 +784,97 @@ public:
 
 };  // end class ArrayRCP<...>
 
+
+/** \brief Dummy specialization of ArrayRCP<void>.
+ *
+ * ArrayRCP<void> cannot be parsed because of reference and const_reference
+ * typedefs resolving to "void &" and "const void &".  This full template
+ * specialization ArrayRCP<void> neglects these. This will be mentioned in the
+ * context of Kokkos::DefaultSparseOps<void>.  However, DefaultSparseOps<void>
+ * is never instantiated, and until there is a need (and the semantics have
+ * been decided), ArrayRCP<void> may not be instantiated either.
+ */
+template<>
+class ArrayRCP<void> {
+public:
+
+  //! @name Public types 
+  //@{
+
+  /** \brief. */
+  typedef Teuchos_Ordinal Ordinal;
+
+  /** \brief . */
+  typedef Ordinal size_type;
+  /** \brief . */
+  typedef Ordinal difference_type;
+  /** \brief . */
+  typedef std::random_access_iterator_tag iterator_category;
+  /** \brief . */
+  typedef  void* iterator_type;
+  /** \brief . */
+  typedef  void value_type;
+  /** \brief . */
+  // typedef T& reference;              // these are not valid
+  /** \brief . */
+  // typedef const T& const_reference;  // these are not valid
+  /** \brief . */
+  typedef void* pointer;
+  /** \brief . */
+  typedef void* const_pointer;
+  /** \brief . */
+  typedef void  element_type;
+
+  /** \brief Default constructor, thows an exception.
+   */
+  inline ArrayRCP( );
+
+  //@}
+
+};  // end class ArrayRCP<void>
+
+/** \brief Dummy specialization of ArrayRCP<const void>.
+ *
+ * See ArrayRCP<void> for details.
+ */
+template<>
+class ArrayRCP<const void> {
+public:
+
+  //! @name Public types 
+  //@{
+
+  /** \brief. */
+  typedef Teuchos_Ordinal Ordinal;
+
+  /** \brief . */
+  typedef Ordinal size_type;
+  /** \brief . */
+  typedef Ordinal difference_type;
+  /** \brief . */
+  typedef std::random_access_iterator_tag iterator_category;
+  /** \brief . */
+  typedef  const void* iterator_type;
+  /** \brief . */
+  typedef  const void value_type;
+  /** \brief . */
+  // typedef T& reference;              // these are not valid
+  /** \brief . */
+  // typedef const T& const_reference;  // these are not valid
+  /** \brief . */
+  typedef const void* pointer;
+  /** \brief . */
+  typedef const void* const_pointer;
+  /** \brief . */
+  typedef const void  element_type;
+
+  /** \brief Default constructor, thows an exception.
+   */
+  inline ArrayRCP( );
+
+  //@}
+
+};  // end class ArrayRCP<void>
 
 // 2008/09/22: rabartl: NOTE: I removed the TypeNameTraits<ArrayRCP<T> >
 // specialization since I want to be able to print the type name of an

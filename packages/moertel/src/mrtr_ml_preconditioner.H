@@ -83,10 +83,6 @@
 
 #include "mrtr_utils.H"
 
-using namespace std;
-using namespace Teuchos;
-using namespace MLAPI;
-
 /*!
 \brief MOERTEL: namespace of the Moertel package
 
@@ -135,12 +131,12 @@ public:
    \param params (In) : ML parameters 
    \param constructnow (In) : If true, the preconditioner is constructed immediately 
   */
-  explicit Mortar_ML_Preconditioner(RefCountPtr<Epetra_CrsMatrix> Atilde,
-                                    RefCountPtr<Epetra_CrsMatrix> A,
-                                    RefCountPtr<Epetra_CrsMatrix> WT,
-                                    RefCountPtr<Epetra_CrsMatrix> B,
-                                    RefCountPtr<Epetra_Map>       Annmap,
-                                    ParameterList& mlparams,
+  explicit Mortar_ML_Preconditioner(Teuchos::RCP<Epetra_CrsMatrix> Atilde,
+                                    Teuchos::RCP<Epetra_CrsMatrix> A,
+                                    Teuchos::RCP<Epetra_CrsMatrix> WT,
+                                    Teuchos::RCP<Epetra_CrsMatrix> B,
+                                    Teuchos::RCP<Epetra_Map>       Annmap,
+                                    Teuchos::ParameterList& mlparams,
                                     bool constructnow = true);
 
   
@@ -247,7 +243,7 @@ private:
   
   // the v-cycle
 #if 1 // old working version
-  int MultiLevelSA(const MultiVector& b_f,MultiVector& x_f, int level) const;
+  int MultiLevelSA(const MLAPI::MultiVector& b_f, MLAPI::MultiVector& x_f, int level) const;
 #endif
 #if 0 // experimental version I
   int MultiLevelSA(const MultiVector& b1_f,
@@ -261,38 +257,38 @@ private:
 #endif
 
   // some helpers
-  inline const Operator& P(const int i) const { return (mlapiPmod_[i]); }
-  inline const Operator& R(const int i) const { return (mlapiRmod_[i]); }
-  inline const Operator& A(const int i) const { return (mlapiAtilde_[i]); }
-  inline const Operator& ImBWT(const int i) const { return (mlapiImBWT_[i]); }
-  inline const Operator& ImWBT(const int i) const { return (mlapiImWBT_[i]); }
-  inline const InverseOperator& S(const int i) const { return (mlapiS_[i]); }
+  inline const MLAPI::Operator& P(const int i) const { return (mlapiPmod_[i]); }
+  inline const MLAPI::Operator& R(const int i) const { return (mlapiRmod_[i]); }
+  inline const MLAPI::Operator& A(const int i) const { return (mlapiAtilde_[i]); }
+  inline const MLAPI::Operator& ImBWT(const int i) const { return (mlapiImBWT_[i]); }
+  inline const MLAPI::Operator& ImWBT(const int i) const { return (mlapiImWBT_[i]); }
+  inline const MLAPI::InverseOperator& S(const int i) const { return (mlapiS_[i]); }
 
   const char*                    label_;       // the label of this class
   bool                           iscomputed_;  // flag indicating whether preconditioner is ready for use
-  ParameterList&                 mlparams_;    // ML parameter list
+  Teuchos::ParameterList&                 mlparams_;    // ML parameter list
   int                            maxlevels_;   // number of levels
 
-  RefCountPtr<Epetra_CrsMatrix>  Atilde_;      // mortar modified spd system
-  RefCountPtr<Epetra_CrsMatrix>  A_;           // original uncoupled system
-  RefCountPtr<Epetra_CrsMatrix>  WT_;          // mortar scaling
-  RefCountPtr<Epetra_CrsMatrix>  B_;           // mortar constraints
+  Teuchos::RCP<Epetra_CrsMatrix>  Atilde_;      // mortar modified spd system
+  Teuchos::RCP<Epetra_CrsMatrix>  A_;           // original uncoupled system
+  Teuchos::RCP<Epetra_CrsMatrix>  WT_;          // mortar scaling
+  Teuchos::RCP<Epetra_CrsMatrix>  B_;           // mortar constraints
 
-  RefCountPtr<Epetra_Map>        Annmap_;      // row map of Ann
+  Teuchos::RCP<Epetra_Map>        Annmap_;      // row map of Ann
 
-  vector<Operator>               mlapiImBWT_;  // operator I - B * W^TT on each grid                     
-  vector<Operator>               mlapiImWBT_;  // operator I - W * B^T on each grid                     
-  vector<Operator>               mlapiRmod_;   // modified restriction                     
-  vector<Operator>               mlapiPmod_;   // modified prolongation                    
-  vector<Operator>               mlapiAtilde_; // operator Atilde on each grid                       
-  vector<InverseOperator>        mlapiS_;      // smoother on each grid
+  std::vector<MLAPI::Operator>               mlapiImBWT_;  // operator I - B * W^TT on each grid                     
+  std::vector<MLAPI::Operator>               mlapiImWBT_;  // operator I - W * B^T on each grid                     
+  std::vector<MLAPI::Operator>               mlapiRmod_;   // modified restriction                     
+  std::vector<MLAPI::Operator>               mlapiPmod_;   // modified prolongation                    
+  std::vector<MLAPI::Operator>               mlapiAtilde_; // operator Atilde on each grid                       
+  std::vector<MLAPI::InverseOperator>        mlapiS_;      // smoother on each grid
 
 #if 0 // additional data for experimental version I 
-  RefCountPtr<Epetra_Map>        Arrmap_;      // row map of Arr
-  RefCountPtr<Epetra_CrsMatrix>  Atilde11_;
-  RefCountPtr<Epetra_CrsMatrix>  Ahat11_;
-  RefCountPtr<Epetra_CrsMatrix>  M_;
-  RefCountPtr<Epetra_CrsMatrix>  MT_;
+  Teuchos::RCP<Epetra_Map>        Arrmap_;      // row map of Arr
+  Teuchos::RCP<Epetra_CrsMatrix>  Atilde11_;
+  Teuchos::RCP<Epetra_CrsMatrix>  Ahat11_;
+  Teuchos::RCP<Epetra_CrsMatrix>  M_;
+  Teuchos::RCP<Epetra_CrsMatrix>  MT_;
   Operator                       mlapiAtilde11_;
   Operator                       mlapiAhat11_;
   Operator                       mlapiM_;
@@ -301,12 +297,12 @@ private:
 #endif  
 
 #if 0 // additional data for experimental version II
-  RefCountPtr<Epetra_Map>        Arrmap_;      // row map of Arr
-  RefCountPtr<Epetra_CrsMatrix>  Asplit_;      // uncoupled version of A
-  RefCountPtr<Epetra_CrsMatrix>  Atildesplit_; // uncoupled modified version of Atilde
-  RefCountPtr<Epetra_CrsMatrix>  Ahat_;        
-  vector<Operator>               mlapiAtildesplit_;  
-  vector<Operator>               mlapiAhat_;  
+  Teuchos::RCP<Epetra_Map>        Arrmap_;      // row map of Arr
+  Teuchos::RCP<Epetra_CrsMatrix>  Asplit_;      // uncoupled version of A
+  Teuchos::RCP<Epetra_CrsMatrix>  Atildesplit_; // uncoupled modified version of Atilde
+  Teuchos::RCP<Epetra_CrsMatrix>  Ahat_;        
+  std::vector<Operator>               mlapiAtildesplit_;  
+  std::vector<Operator>               mlapiAhat_;  
   inline const Operator& Ahat(const int i) const { return (mlapiAhat_[i]); }
 #endif  
 

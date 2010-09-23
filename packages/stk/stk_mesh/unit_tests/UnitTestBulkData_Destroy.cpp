@@ -15,7 +15,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <unit_tests/UnitTestBulkData.hpp>
 #include <unit_tests/UnitTestRingMeshFixture.hpp>
@@ -38,7 +38,8 @@ void UnitTestBulkData::testDestroy_nodes( ParallelMachine pm )
   const unsigned id_begin = nPerProc * p_rank ;
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
-  MetaData meta( fem_entity_rank_names() );
+  const int spatial_dimension = 3;
+  MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
 
   const PartVector no_parts ;
 
@@ -120,7 +121,8 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   // const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
 
-  MetaData meta( fem_entity_rank_names() );
+  const int spatial_dimension = 3;
+  MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
 
   meta.commit();
 
@@ -136,9 +138,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   { // No ghosting
     const bool aura_flag = false ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
-
-    mesh.generate_loop( aura_flag );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    mesh.m_meta_data.commit();
+    mesh.generate_mesh( aura_flag );
 
     // This process' first element in the loop
     // if a parallel mesh has a shared node
@@ -187,9 +189,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
-
-    mesh.generate_loop( aura_flag );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    mesh.m_meta_data.commit();
+    mesh.generate_mesh( aura_flag );
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
@@ -230,9 +232,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
 
-    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
-
-    mesh.generate_loop( aura_flag );
+    UnitTestRingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+    mesh.m_meta_data.commit();
+    mesh.generate_mesh( aura_flag );
 
     // The owned shared entity:
     const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % mesh.m_node_ids.size();

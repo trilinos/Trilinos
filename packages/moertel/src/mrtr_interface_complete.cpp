@@ -53,10 +53,10 @@ bool MOERTEL::Interface::Complete()
   bool ok = true;
   for (int i=0; i<2; ++i)
   {
-    map<int,RefCountPtr<MOERTEL::Node> >::const_iterator curr;
+	std::map<int,Teuchos::RCP<MOERTEL::Node> >::const_iterator curr;
     for (curr=node_[i].begin(); curr!=node_[i].end(); ++curr)
     {
-      if (curr->second == null)
+      if (curr->second == Teuchos::null)
       {
         cout << "***ERR*** MOERTEL::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
@@ -68,10 +68,10 @@ bool MOERTEL::Interface::Complete()
   }
   for (int i=0; i<2; ++i)
   {
-    map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
+	std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
     for (curr=seg_[i].begin(); curr!=seg_[i].end(); ++curr)
     {
-      if (curr->second == null)
+      if (curr->second == Teuchos::null)
       {
         cout << "***ERR*** MOERTEL::Interface::Complete:\n"
              << "***ERR*** Interface # " << Id_ << ":\n"
@@ -102,17 +102,17 @@ bool MOERTEL::Interface::Complete()
         int sendsize =  0;
         if (proc==gcomm_.MyPID())
         {
-          map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
+		  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
             sendsize += curr->second->Nnode();
         }
         gcomm_.Broadcast(&sendsize,1,proc);
         
         // create list of all nodes adjacent to segments on proc
-        vector<int> ids(sendsize);
+		std::vector<int> ids(sendsize);
         if (proc==gcomm_.MyPID())
         {
-          map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
+		  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
           int counter=0;
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
           {
@@ -124,8 +124,8 @@ bool MOERTEL::Interface::Complete()
         gcomm_.Broadcast(&ids[0],sendsize,proc);
         
         // check on all processors for nodes in ids
-        vector<int> foundit(sendsize);
-        vector<int> gfoundit(sendsize);
+		std::vector<int> foundit(sendsize);
+		std::vector<int> gfoundit(sendsize);
         for (int i=0; i<sendsize; ++i) 
         {
           foundit[i] = 0;
@@ -165,8 +165,8 @@ bool MOERTEL::Interface::Complete()
   // interface so the interface will not block all other procs
   {
 #ifdef EPETRA_MPI
-    vector<int> lin(gcomm_.NumProc());
-    vector<int> gin(gcomm_.NumProc());
+	std::vector<int> lin(gcomm_.NumProc());
+	std::vector<int> gin(gcomm_.NumProc());
     for (int i=0; i<gcomm_.NumProc(); ++i) lin[i] = 0;
     
     // check ownership of any segments
@@ -216,9 +216,9 @@ bool MOERTEL::Interface::Complete()
 
     // create the new Epetra_MpiComm
     if (*mpi_local_comm == MPI_COMM_NULL)
-      lcomm_ = null;
+      lcomm_ = Teuchos::null;
     else
-      lcomm_ = rcp(new Epetra_MpiComm(*mpi_local_comm)); // FIXME: who destroys the MPI_Comm inside?
+      lcomm_ = Teuchos::rcp(new Epetra_MpiComm(*mpi_local_comm)); // FIXME: who destroys the MPI_Comm inside?
 
 #if 0
     // test this stuff on the mpi level
@@ -256,7 +256,7 @@ bool MOERTEL::Interface::Complete()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
     }
-    lcomm_ = rcp(new Epetra_SerialComm(*serialcomm));
+    lcomm_ = Teuchos::rcp(new Epetra_SerialComm(*serialcomm));
 #endif // end of #ifdef PARALLEL    
   }
   
@@ -269,10 +269,10 @@ bool MOERTEL::Interface::Complete()
       if (proc==lcomm_->MyPID())
         lnnodes = node_[0].size() + node_[1].size();
       lcomm_->Broadcast(&lnnodes,1,proc);
-      vector<int> ids(lnnodes);
+	  std::vector<int> ids(lnnodes);
       if (proc==lcomm_->MyPID())
       {
-        map<int,RefCountPtr<MOERTEL::Node> >::const_iterator curr;
+		std::map<int,Teuchos::RCP<MOERTEL::Node> >::const_iterator curr;
         int counter=0;
         for (int side=0; side<2; ++side)
           for (curr=node_[side].begin(); curr!=node_[side].end(); ++curr)
@@ -280,7 +280,7 @@ bool MOERTEL::Interface::Complete()
       }
       lcomm_->Broadcast(&ids[0],lnnodes,proc);
       for (int i=0; i<lnnodes; ++i)
-        nodePID_.insert(pair<int,int>(ids[i],proc));
+        nodePID_.insert(std::pair<int,int>(ids[i],proc));
       ids.clear();
     }
   
@@ -293,10 +293,10 @@ bool MOERTEL::Interface::Complete()
       if (proc==lcomm_->MyPID())
         lnsegs = seg_[0].size() + seg_[1].size();
       lcomm_->Broadcast(&lnsegs,1,proc);
-      vector<int> ids(lnsegs);
+	  std::vector<int> ids(lnsegs);
       if (proc==lcomm_->MyPID())
       {
-        map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator curr;
+		std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator curr;
         int counter=0;
         for (int side=0; side<2; ++side)
           for (curr=seg_[side].begin(); curr!=seg_[side].end(); ++curr)
@@ -304,7 +304,7 @@ bool MOERTEL::Interface::Complete()
       }
       lcomm_->Broadcast(&ids[0],lnsegs,proc);
       for (int i=0; i<lnsegs; ++i)
-        segPID_.insert(pair<int,int>(ids[i],proc));
+        segPID_.insert(std::pair<int,int>(ids[i],proc));
       ids.clear();
     }
   
@@ -323,7 +323,7 @@ bool MOERTEL::Interface::Complete()
     int gmaxnnode = 0;
     for (int side=0; side<2; ++side)
     {
-      map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator scurr;
+	  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator scurr;
       for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
         if (lmaxnnode < scurr->second->Nnode())
           lmaxnnode = scurr->second->Nnode();
@@ -342,7 +342,7 @@ bool MOERTEL::Interface::Complete()
       // allocate vector to hold adjacency
       int offset = gmaxnnode+2;
       int size   = lnseg*offset;
-      vector<int> adj(size);
+	  std::vector<int> adj(size);
       
       // proc fills adjacency vector adj and broadcasts
       if (proc==lcomm_->MyPID())
@@ -350,10 +350,10 @@ bool MOERTEL::Interface::Complete()
         int count = 0;
         for (int side=0; side<2; ++side)
         {
-          map<int,RefCountPtr<MOERTEL::Segment> >::const_iterator scurr;
+		  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::const_iterator scurr;
           for (scurr=seg_[side].begin(); scurr!=seg_[side].end(); ++scurr)
           {
-            RefCountPtr<MOERTEL::Segment> seg = scurr->second;
+			Teuchos::RCP<MOERTEL::Segment> seg = scurr->second;
             adj[count]   = seg->Id();
             adj[count+1] = seg->Nnode();
             const int* ids = seg->NodeIds();
@@ -377,8 +377,8 @@ bool MOERTEL::Interface::Complete()
           if (lcomm_->MyPID() == NodePID(nid))
           {
             // I own this node, so set the segment segid in it
-            RefCountPtr<MOERTEL::Node> node = GetNodeViewLocal(nid);
-            if (node == null)
+			Teuchos::RCP<MOERTEL::Node> node = GetNodeViewLocal(nid);
+            if (node == Teuchos::null)
             {
               cout << "***ERR*** MOERTEL::Interface::Complete:\n"
                    << "***ERR*** cannot find node " << nid << endl

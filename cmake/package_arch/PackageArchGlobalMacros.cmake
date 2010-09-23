@@ -247,55 +247,97 @@ ENDMACRO()
 
 MACRO(PACKAGE_ARCH_PROCESS_TPLS_LISTS)
 
-  LIST(LENGTH ${PROJECT_NAME}_TPLS_AND_CLASSIFICATIONS ${PROJECT_NAME}_NUM_TPLS_2)
-  MATH(EXPR ${PROJECT_NAME}_NUM_TPLS "${${PROJECT_NAME}_NUM_TPLS_2}/2")
-  PRINT_VAR(${PROJECT_NAME}_NUM_TPLS)
-  MATH(EXPR ${PROJECT_NAME}_LAST_TPL_IDX "${${PROJECT_NAME}_NUM_TPLS}-1")
+  SET(TPL_NAME_OFFSET 0)
+  SET(TPL_FINDMOD_OFFSET 1)
+  SET(TPL_CLASSIFICATION_OFFSET 2)
+  SET(TPL_NUM_COLUMNS 3)
+
+  LIST(LENGTH ${PROJECT_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+    ${PROJECT_NAME}_CURR_NUM_TPLS_FULL)
+  MATH(EXPR ${PROJECT_NAME}_CURR_NUM_TPLS
+    "${${PROJECT_NAME}_CURR_NUM_TPLS_FULL}/${TPL_NUM_COLUMNS}")
+
+  IF (${PROJECT_NAME}_CURR_NUM_TPLS GREATER 0)
+
+    MATH(EXPR ${PROJECT_NAME}_LAST_TPL_IDX
+      "${${PROJECT_NAME}_CURR_NUM_TPLS}-1")
+    
+    IF (NOT APPEND_TO_TPLS_LIST)
+      SET(${PROJECT_NAME}_TPLS)
+    ENDIF()
   
-  # 2010/07/28: rabartl: ToDo: You need to allow a mode where this can be
-  # appended to support the addition of extra TPLs defined in extra repos (bug 4877).
-  SET(${PROJECT_NAME}_TPLS)
+    FOREACH(TPL_IDX RANGE ${${PROJECT_NAME}_LAST_TPL_IDX})
+  
+      # Get fields for this TPL
+  
+      MATH(EXPR TPL_NAME_IDX
+        "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_NAME_OFFSET}")
+      LIST(GET ${PROJECT_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_NAME_IDX}
+        TPL_NAME)
+  
+      MATH(EXPR TPL_FINDMOD_IDX
+        "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_FINDMOD_OFFSET}")
+      LIST(GET ${PROJECT_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_FINDMOD_IDX}
+        TPL_FINDMOD)
+  
+      MATH(EXPR TPL_CLASSIFICATION_IDX
+        "${TPL_IDX}*${TPL_NUM_COLUMNS}+${TPL_CLASSIFICATION_OFFSET}")
+      LIST(GET ${PROJECT_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${TPL_CLASSIFICATION_IDX}
+        TPL_CLASSIFICATION)
+  
+      # Update TPLS list
+  
+      LIST(APPEND ${PROJECT_NAME}_TPLS ${TPL_NAME})
+  
+      # Set ${TPL_NAME}_CLASSIFICATION
+  
+      IF (TPL_CLASSIFICATION STREQUAL PS
+        OR TPL_CLASSIFICATION STREQUAL SS
+        OR TPL_CLASSIFICATION STREQUAL TS
+        OR TPL_CLASSIFICATION STREQUAL EX
+        )
+      ELSE()
+        MESSAGE(FATAL_ERROR "Error the TPL classification '${TPL_CLASSIFICATION}'"
+          " for the TPL ${TPL_NAME} is not a valid classification." )
+      ENDIF()
+  
+      IF (NOT ${TPL_NAME}_CLASSIFICATION) # Allow for testing override
+        SET(${TPL_NAME}_CLASSIFICATION ${TPL_CLASSIFICATION})
+      ENDIF()
+  
+      # Set ${TPL_NAME}_FINDMOD
+  
+      IF (TPL_FINDMOD)
+        SET(${TPL_NAME}_FINDMOD ${TPL_FINDMOD})
+      ELSE()
+        SET(${TPL_NAME}_FINDMOD FindTPL${TPL_NAME})
+      ENDIF()
+  
+      # Set the enable cache variable for ${TPL_NAME}
+  
+      MULTILINE_SET(DOCSTR
+        "Enable support for the TPL ${TPL_NAME} in all supported ${PROJECT_NAME} packages."
+        "  This can be set to 'ON', 'OFF', or left empty ''."
+        )
+      SET_CACHE_ON_OFF_EMPTY( TPL_ENABLE_${TPL_NAME} "" ${DOCSTR} )
+  
+      # 2008/11/25: rabartl: Above, we use the prefix TPL_ instead of
+      # ${PROJECT_NAME}_ in order to make it clear that external TPLs are
+      # different from packages so users don't get confused and
+      # think that the project actually includes some TPL when it does not!
+  
+    ENDFOREACH()
 
-  FOREACH(TPL_IDX RANGE ${${PROJECT_NAME}_LAST_TPL_IDX})
-
-    MATH(EXPR TPL_NAME_IDX "${TPL_IDX}*2")
-    MATH(EXPR TPL_ENABLED_IDX "${TPL_IDX}*2+1")
-
-    LIST(GET ${PROJECT_NAME}_TPLS_AND_CLASSIFICATIONS ${TPL_NAME_IDX} TPL)
-    LIST(GET ${PROJECT_NAME}_TPLS_AND_CLASSIFICATIONS ${TPL_ENABLED_IDX} TPL_CLASSIFICATION)
-
-    LIST(APPEND ${PROJECT_NAME}_TPLS ${TPL})
-
-    IF (TPL_CLASSIFICATION STREQUAL PS
-      OR TPL_CLASSIFICATION STREQUAL SS
-      OR TPL_CLASSIFICATION STREQUAL TS
-      OR TPL_CLASSIFICATION STREQUAL EX
-      )
-    ELSE()
-      MESSAGE(FATAL_ERROR "Error the TPL classification '${TPL_CLASSIFICATION}'"
-        " for the TPL ${TPL} is not a valid classification." )
-    ENDIF()
-
-    IF (NOT ${TPL}_CLASSIFICATION) # Allow for testing override
-      SET(${TPL}_CLASSIFICATION ${TPL_CLASSIFICATION})
-    ENDIF()
-
-    MULTILINE_SET(DOCSTR
-      "Enable support for the TPL ${TPL} in all supported ${PROJECT_NAME} packages."
-      "  This can be set to 'ON', 'OFF', or left empty ''."
-      )
-    SET_CACHE_ON_OFF_EMPTY( TPL_ENABLE_${TPL} "" ${DOCSTR} )
-
-    # 2008/11/25: rabartl: Above, we use the prefix TPL_ instead of
-    # ${PROJECT_NAME}_ in order to make it clear that external TPLs are
-    # different from packages so users don't get confused and
-    # think that the project actually includes some TPL when it does not!
-
-  ENDFOREACH()
+  ENDIF()
   
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     PRINT_VAR(${PROJECT_NAME}_TPLS)
   ENDIF()
+
+  # Get the final length
+
+  LIST(LENGTH ${PROJECT_NAME}_TPLS ${PROJECT_NAME}_NUM_TPLS)
+  PRINT_VAR(${PROJECT_NAME}_NUM_TPLS)
   
   # Create a reverse list for later use
   
@@ -474,7 +516,8 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   
   # 1.a) Read the core ${PROJECT_NAME} packages
 
-  SET(${PROJECT_NAME}_PACKAGES_FILE "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
+  SET(${PROJECT_NAME}_PACKAGES_FILE
+    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
 
   MESSAGE("")
   MESSAGE("Reading the list of packages from ${${PROJECT_NAME}_PACKAGES_FILE}")
@@ -486,12 +529,9 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
   
   # 1.b) Read the core TPLs dependencies
-  
-  # 2010/07/28: rabartl: ToDo: read this from under
-  # ${PROJECT_NAME}_DEPS_HOME_DIR/cmake (bug 4877)
-  IF (NOT ${PROJECT_NAME}_TPLS_FILE) # Allow testing override
-    SET(${PROJECT_NAME}_TPLS_FILE "${PROJECT_NAME}TPLs")
-  ENDIF()
+
+  SET(${PROJECT_NAME}_TPLS_FILE
+    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_TPLS_FILE_NAME}")
   
   MESSAGE("")
   MESSAGE("Reading the list of TPLs from ${${PROJECT_NAME}_TPLS_FILE}.cmake")
@@ -516,7 +556,7 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   ENDIF()
 
   #
-  # 4) Read in the list of externally defined packages in external
+  # 4) Read in the list of externally defined packages and TPLs in external
   # repositories
   #
 
@@ -525,26 +565,50 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
 
   FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+
     #PRINT_VAR(EXTRA_REPO)
-    SET(EXTRAREPO_FILE
+
+    # Read in the add-on packages from the extra repo
+
+    SET(EXTRAREPO_PACKAGES_FILE
       "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
+
     MESSAGE("")
-    MESSAGE("Reading a list of extra packages from ${EXTRAREPO_FILE} ... ")
+    MESSAGE("Reading a list of extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
     MESSAGE("")
-    IF (NOT EXISTS "${EXTRAREPO_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+
+    IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
       MESSAGE(
         "\n***"
-        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_FILE}' on request!"
+        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_PACKAGES_FILE}' on request!"
         "\n***\n")
     ELSE()
-      INCLUDE("${EXTRAREPO_FILE}")
+      INCLUDE("${EXTRAREPO_PACKAGES_FILE}")  # Writes the variable ???
       SET(APPEND_TO_PACKAGES_LIST TRUE)
-      PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
+      PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()  # Reads the variable ???
     ENDIF()
-  ENDFOREACH()
 
-  # 2010/07/28: rabartl: ToDo: Above, you need to also read in extra TPLs as
-  # well to extend the system (bug 4877).
+    # Read in the add-on TPLs from the extra repo
+
+    SET(EXTRAREPO_TPLS_FILE
+      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
+
+    MESSAGE("")
+    MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
+    MESSAGE("")
+
+    IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+      MESSAGE(
+        "\n***"
+        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_TPLS_FILE}' on request!"
+        "\n***\n")
+    ELSE()
+      INCLUDE("${EXTRAREPO_TPLS_FILE}")  # Writes the varaible ???
+      SET(APPEND_TO_TPLS_LIST TRUE)
+      PACKAGE_ARCH_PROCESS_TPLS_LISTS()  # Reads the variable ???
+    ENDIF()
+
+  ENDFOREACH()
 
   #
   # 5) Read in the package dependencies again to now pick up all of the
@@ -582,6 +646,12 @@ ENDMACRO()
 #
 # Adjust package enable logic and print out before and after state
 #
+# On output sets:
+#
+#    ${PROJECT_NAME}_NUM_ENABLED_PACKAGES: Number of enabled packages (local variable)
+#    ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}: Enable status of PACKAGE_NAME (local variable)
+#    ToDo: Fill in others as well!
+#
 
 MACRO(PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES)
 
@@ -606,6 +676,9 @@ MACRO(PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES)
   PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
     "\nFinal set of non-enabled TPLs" OFF TRUE)
 
+  PACKAGE_ARCH_GET_ENABLED_LIST( ${PROJECT_NAME}_PACKAGES ${PROJECT_NAME} ON FALSE
+    ${PROJECT_NAME}_ENABLED_PACKAGES ${PROJECT_NAME}_NUM_ENABLED_PACKAGES )
+
 ENDMACRO()
 
 
@@ -614,17 +687,13 @@ ENDMACRO()
 #
 
 MACRO(PACKAGE_ARCH_PROCESS_ENABLED_TPLS)
-  FOREACH(TPL ${${PROJECT_NAME}_TPLS})
-    IF (TPL_ENABLE_${TPL})
-      MESSAGE(STATUS "Processing enabled TPL: ${TPL}")
-      # 2010/07/28: rabartl: ToDo: Change this you will need to add a file
-      # name 'FindTPL<TPL>.cmake' explicitly so that you can put in
-      # '../../someExtraRepo/cmake/TPLs/FindTPL<TP>.cmake' when reading
-      # extra TPLs from extra repos (bug 4877)
-      INCLUDE(TPLs/FindTPL${TPL})
-      ASSERT_DEFINED(TPL_${TPL}_INCLUDE_DIRS)
-      ASSERT_DEFINED(TPL_${TPL}_LIBRARIES)
-      ASSERT_DEFINED(TPL_${TPL}_LIBRARY_DIRS)
+  FOREACH(TPL_NAME ${${PROJECT_NAME}_TPLS})
+    IF (TPL_ENABLE_${TPL_NAME})
+      MESSAGE(STATUS "Processing enabled TPL: ${TPL_NAME}")
+      INCLUDE(TPLs/${${TPL_NAME}_FINDMOD})
+      ASSERT_DEFINED(TPL_${TPL_NAME}_INCLUDE_DIRS)
+      ASSERT_DEFINED(TPL_${TPL_NAME}_LIBRARIES)
+      ASSERT_DEFINED(TPL_${TPL_NAME}_LIBRARY_DIRS)
     ENDIF()
   ENDFOREACH()
 ENDMACRO()
@@ -754,7 +823,11 @@ MACRO(PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES)
       IF (NOT EXISTS ${PROJECT_SOURCE_DIR}/packages/${PACKAGE_DIR}/CMakeLists.txt)
         MESSAGE(FATAL_ERROR "Error, the file ${PACKAGE_DIR}/CMakeLists.txt does not exist!")
       ENDIF()
-      ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
+      IF(${PACKAGE}_SPECIFIED_BUILD_DIR)
+        ADD_SUBDIRECTORY(packages/${PACKAGE_DIR} ${${PACKAGE}_SPECIFIED_BUILD_DIR})
+      ELSE()
+        ADD_SUBDIRECTORY(packages/${PACKAGE_DIR})
+      ENDIF()
       LIST(APPEND ENABLED_PACKAGE_LIBS_TARGETS ${PACKAGE}_libs)
       LIST(APPEND ${PROJECT_NAME}_INCLUDE_DIRS ${${PACKAGE}_INCLUDE_DIRS})
       LIST(APPEND ${PROJECT_NAME}_LIBRARY_DIRS ${${PACKAGE}_LIBRARY_DIRS})
@@ -822,4 +895,64 @@ MACRO(PACKAGE_ARCH_SET_SS_FOR_DEV_MODE OUTPUT_VAR)
   ELSE()
     SET(${OUTPUT_VAR} ON)
   ENDIF()
+ENDMACRO()
+
+MACRO(PACKAGE_ARCH_EXCLUDE_FILES)
+  SET(FILES_TO_EXCLUDE ${ARGN})
+  
+  #need to add "/<project source dir>/packages/<package name>/" to each file this is to prevent
+  #someone from trying to exclude a file like "readme" and having it 
+  #inadvertently exclude a file matching that name in another package.
+  SET(MODIFIED_FILES_TO_EXCLUDE "")
+  FOREACH(FILE ${FILES_TO_EXCLUDE})
+    #Ensure that if the full path was specified for the file that we don't add
+    #"/<project source dir>/packages/<package name>/" again.
+    SET(MATCH_STRING "${${PROJECT_NAME}_SOURCE_DIR}/packages/${PACKAGE_DIR}")
+    STRING(REGEX MATCH ${MATCH_STRING} MATCHED ${FILE} )
+    IF(NOT MATCHED)
+      LIST(APPEND MODIFIED_FILES_TO_EXCLUDE ${${PROJECT_NAME}_SOURCE_DIR}/packages/${PACKAGE_DIR}/${FILE})
+    ELSE()
+      LIST(APPEND MODIFIED_FILES_TO_EXCLUDE ${FILE})
+    ENDIF()
+  ENDFOREACH()
+ 
+#Leaving in for debugging purposes
+#  MESSAGE("List of files being excluded for package ${PACKAGE_NAME}")
+#  FOREACH(NEW_FILE ${MODIFIED_FILES_TO_EXCLUDE})
+#    MESSAGE(${NEW_FILE})
+#  ENDFOREACH()
+
+  LIST(APPEND CPACK_SOURCE_IGNORE_FILES ${MODIFIED_FILES_TO_EXCLUDE})
+  SET(CPACK_SOURCE_IGNORE_FILES ${CPACK_SOURCE_IGNORE_FILES} PARENT_SCOPE)
+
+ENDMACRO()
+
+
+#
+#  macro for helping set up exclude files only for the packages
+#  that will not be supporting autotools.
+#  Returns a list of the autotools files that shoudl be excluded for
+#  the package.
+#
+#  example: PACKAGE_APPLY_TO_NO_AUTOTOOLS_PACKAGES("configure.ac" list)
+#    assuming that the packages epetra and teuchos are not supporting 
+#    autotools anymore then the return value would be:
+#    "epetra/configure.ac;teuchos/configure.ac"
+#
+#
+
+MACRO(PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
+  SET(AUTOTOOLS_FILES 
+    configure.ac
+    configure
+    Makefile.am
+    Makefile.in
+    .*.m4
+    bootstrap
+    config/
+    )
+
+  FOREACH(FILE ${AUTOTOOLS_FILES})
+    PACKAGE_ARCH_EXCLUDE_FILES(${FILE} \(.*/\)*${FILE}) 
+  ENDFOREACH()
 ENDMACRO()

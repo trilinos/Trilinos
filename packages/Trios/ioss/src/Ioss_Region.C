@@ -1,10 +1,34 @@
-/*--------------------------------------------------------------------*/
-/*    Copyright 2000 Sandia Corporation.                              */
-/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
-/*    non-exclusive license for use of this work by or on behalf      */
-/*    of the U.S. Government.  Export of this program may require     */
-/*    a license from the United States Government.                    */
-/*--------------------------------------------------------------------*/
+// Copyright(C) 1999-2010
+// Sandia Corporation. Under the terms of Contract
+// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+// certain rights in this software.
+//         
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Region.h>
 
@@ -30,6 +54,7 @@
 #include <Ioss_Utils.h>
 
 namespace {
+  const std::string id_str()           { return std::string("id");}
   const std::string orig_elem_str()    { return std::string("original_element_type");}
   const std::string orig_block_order() { return std::string("original_block_order");}
 
@@ -552,7 +577,31 @@ const CommSetContainer&  Region::get_commsets() const
 
 bool Region::add_alias(const GroupingEntity *ge)
 {
+  // Seeif an entity with this name already exists...
   std::string db_name = ge->name();
+  const GroupingEntity *old_ge = get_entity(db_name);
+  if (old_ge != NULL && ge != old_ge) {
+    if (!((old_ge->type() == FACEBLOCK &&     ge->type() == FACESET) ||
+	  (    ge->type() == FACEBLOCK && old_ge->type() == FACESET) ||
+	  (    ge->type() == EDGEBLOCK && old_ge->type() == EDGESET) ||
+	  (old_ge->type() == EDGEBLOCK &&     ge->type() == EDGESET))) {
+      int old_id = -1;
+      int new_id = -1;
+      if (old_ge->property_exists(id_str())) {
+	old_id = old_ge->get_property(id_str()).get_int();
+      }
+      if (ge->property_exists(id_str())) {
+	new_id = ge->get_property(id_str()).get_int();
+      }
+      
+      std::ostringstream errmsg;
+      errmsg << "\n\nERROR: Duplicate names detected.\n       The name '" << db_name << "' was found for both "
+	     << old_ge->type_string() << " " << old_id << " and "
+	     << ge->type_string() << " " << new_id
+	     << ".\n       Names must be unique over all types in a finite element model.\n\n";
+      IOSS_ERROR(errmsg);
+    }
+  }
   return add_alias(db_name, db_name);
 }
 
@@ -937,8 +986,6 @@ void Region::synchronize_id_and_name(const Region *from)
   AliasMap::const_iterator I  = aliases_.begin();
   AliasMap::const_iterator IE = aliases_.end();
 
-  const std::string id_str = std::string("id");
-
   while (I != IE) {
     std::string alias = (*I).first;
     std::string base  = (*I).second;
@@ -961,15 +1008,15 @@ void Region::synchronize_id_and_name(const Region *from)
 	}
 
 	// See if there is an 'id' property...
-	if (ge->property_exists(id_str)) {
-	  int id = ge->get_property(id_str).get_int();
+	if (ge->property_exists(id_str())) {
+	  int id = ge->get_property(id_str()).get_int();
 
-	  if (this_ge->property_exists(id_str)) {
+	  if (this_ge->property_exists(id_str())) {
 	    // Remove the old property...
-	    this_ge->property_erase(id_str);
+	    this_ge->property_erase(id_str());
 	  }
 	  // Set the new property
-	  this_ge->property_add(Property(id_str, id));
+	  this_ge->property_add(Property(id_str(), id));
 	} else {
 	  // No id, make sure the base name matches in both databases...
 	  // There is always a 'name' property on an entity

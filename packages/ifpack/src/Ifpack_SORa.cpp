@@ -11,13 +11,17 @@ using Teuchos::RefCountPtr;
 using Teuchos::rcp;
 
 
+
 #ifdef HAVE_IFPACK_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_Transpose_RowMatrix.h"
 
 
 #define ABS(x) ((x)>=0?(x):-(x))
+#define MIN(x,y) ((x)<(y)?(x):(y))
+#define MAX(x,y) ((x)>(y)?(x):(y))
 
 // Useful functions horked from ML
 int* FindLocalDiricheltRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, int &numBCRows);
@@ -33,11 +37,14 @@ Ifpack_SORa::Ifpack_SORa(Epetra_RowMatrix* A):
   NumSweeps_(1),
   IsParallel_(false),
   HaveOAZBoundaries_(false),
+  UseInterprocDamping_(false),
+  UseGlobalDamping_(false),
+  LambdaMax_(-1.0),
   Time_(A->Comm())
 {
   Epetra_CrsMatrix *Acrs=dynamic_cast<Epetra_CrsMatrix*>(A);
-  TEST_FOR_EXCEPT(!Acrs) 
-  A_=rcp(Acrs,false);
+  if(Acrs) Acrs_=rcp(Acrs,false);
+  A_=rcp(A,false);
 }
 
 void Ifpack_SORa::Destroy(){
@@ -50,9 +57,15 @@ int Ifpack_SORa::Initialize(){
   Gamma_            = List_.get("sora: gamma",Gamma_);
   NumSweeps_        = List_.get("sora: sweeps",NumSweeps_);
   HaveOAZBoundaries_= List_.get("sora: oaz boundaries", HaveOAZBoundaries_);
+  UseInterprocDamping_ = List_.get("sora: use interproc damping",UseInterprocDamping_);
+  UseGlobalDamping_ = List_.get("sora: use global damping",UseGlobalDamping_);
 
   if (A_->Comm().NumProc() != 1) IsParallel_ = true;
-  else IsParallel_ = false;
+  else {
+    IsParallel_ = false;    
+    // Don't use interproc damping, for obvious reasons
+    UseInterprocDamping_=false;
+  }
 
   // Counters
   IsInitialized_=true;
@@ -68,27 +81,51 @@ int Ifpack_SORa::SetParameters(Teuchos::ParameterList& parameterlist){
 
 int Ifpack_SORa::Compute(){
   if(!IsInitialized_) Initialize();
-
-  
+  Epetra_Map *RowMap=const_cast<Epetra_Map*>(&A_->RowMatrixRowMap());
+  Epetra_Vector Adiag(*RowMap);
   Epetra_CrsMatrix *Askew2=0, *Aherm2=0,*W=0;
   int *rowptr_s,*colind_s,*rowptr_h,*colind_h;
   double *vals_s,*vals_h;
-  Epetra_Vector Adiag(A_->RowMap());
+  bool RowMatrixMode=(Acrs_==Teuchos::null);
 
   // Label
   sprintf(Label_, "IFPACK SORa (alpha=%5.2f gamma=%5.2f)",Alpha_,Gamma_); 
 
+  if(RowMatrixMode){
+    if(!A_->Comm().MyPID()) cout<<"SORa: RowMatrix mode enabled"<<endl;
+    // RowMatrix mode, build Acrs_ the hard way.
+    Epetra_RowMatrix *Arow=&*A_;
+    Epetra_Map *ColMap=const_cast<Epetra_Map*>(&A_->RowMatrixColMap());
+
+    int Nmax=A_->MaxNumEntries();
+    int length;
+    vector<int> indices(Nmax);
+    vector<double> values(Nmax); 
+    Epetra_CrsMatrix *Acrs=new Epetra_CrsMatrix(Copy,*RowMap,Nmax);
+
+    for(int i=0;i<Arow->NumMyRows();i++){
+      Arow->ExtractMyRowCopy(i,Nmax,length,&values[0],&indices[0]);
+      for(int j=0;j<length;j++)
+	indices[j]=ColMap->GID(indices[j]);
+      Acrs->InsertGlobalValues(RowMap->GID(i),length,&values[0],&indices[0]);
+    }
+    Acrs->FillComplete(A_->OperatorDomainMap(),A_->OperatorRangeMap());
+    Acrs_=rcp(Acrs,true);
+  }
+
   // Create Askew2
   // Note: Here I let EpetraExt do the thinking for me.  Since it gets all the maps correct for the E + F^T stencil.
   // There are probably more efficient ways to do this but this method has the bonus of allowing code reuse.
-  IFPACK_CHK_ERR(EpetraExt::MatrixMatrix::Add(*A_,false,1,*A_,true,-1,Askew2));
+  IFPACK_CHK_ERR(EpetraExt::MatrixMatrix::Add(*Acrs_,false,1,*Acrs_,true,-1,Askew2));
   Askew2->FillComplete();
+  
+  // Create Aherm2
+  IFPACK_CHK_ERR(EpetraExt::MatrixMatrix::Add(*Acrs_,false,1,*Acrs_,true,1,Aherm2));
+  Aherm2->FillComplete();
+
   int nnz2=Askew2->NumMyNonzeros();
   int N=Askew2->NumMyRows();
 
-  // Create Aherm2
-  IFPACK_CHK_ERR(EpetraExt::MatrixMatrix::Add(*A_,false,1,*A_,true,1,Aherm2));
-  Aherm2->FillComplete();
 
   // Grab pointers
   IFPACK_CHK_ERR(Askew2->ExtractCrsDataPointers(rowptr_s,colind_s,vals_s));
@@ -107,7 +144,7 @@ int Ifpack_SORa::Compute(){
   // Note: Relies on Aherm2/Askew2 having identical sparsity patterns (see sanity check above)
   if(HaveOAZBoundaries_){ 
     int numBCRows;
-    int* dirRows=FindLocalDiricheltRowsFromOnesAndZeros(*A_,numBCRows);
+    int* dirRows=FindLocalDiricheltRowsFromOnesAndZeros(*Acrs_,numBCRows);
     Epetra_IntVector* dirCols=FindLocalDirichletColumnsFromRows(dirRows,numBCRows,*Aherm2);
     Apply_BCsToMatrixRowsAndColumns(dirRows,numBCRows,*dirCols,*Aherm2);
     Apply_BCsToMatrixRowsAndColumns(dirRows,numBCRows,*dirCols,*Askew2);
@@ -119,51 +156,74 @@ int Ifpack_SORa::Compute(){
   A_->ExtractDiagonalCopy(Adiag);
 
   // Allocate the diagonal for W
-  Epetra_Vector *Wdiag = new Epetra_Vector(A_->RowMap());
+  Epetra_Vector *Wdiag = new Epetra_Vector(*RowMap);
 
   // Build the W matrix (lower triangle only)
   // Note: Relies on EpetraExt giving me identical sparsity patterns for both Askew2 and Aherm2 (see sanity check above)
   int maxentries=Askew2->MaxNumEntries();
   int* gids=new int [maxentries];
   double* newvals=new double[maxentries];
-  W=new Epetra_CrsMatrix(Copy,A_->RowMap(),0);
+  W=new Epetra_CrsMatrix(Copy,*RowMap,0);
   for(int i=0;i<N;i++){
     // Build the - (1+alpha)/2 E - (1-alpha)/2 F part of the W matrix
-    int rowgid=A_->GRID(i);
+    int rowgid=Acrs_->GRID(i);
     double c_data=0.0;
+    double ipdamp=0.0;
     int idx=0;
+
     for(int j=rowptr_s[i];j<rowptr_s[i+1];j++){      
       int colgid=Askew2->GCID(colind_s[j]);
       c_data+=fabs(vals_s[j]);
       if(rowgid>colgid){
-	gids[idx]=colgid;
-	newvals[idx]=vals_h[j]/2 + Alpha_ * vals_s[j]/2;
-	idx++;
-      }
+	// Rely on the fact that off-diagonal entries are always numbered last, dropping the entry entirely.
+	if(colind_s[j] < N) {       
+	  gids[idx]=colgid;
+	  newvals[idx]=vals_h[j]/2 + Alpha_ * vals_s[j]/2;
+	  idx++;
+	}
+	else{
+	  ipdamp+=fabs(vals_h[j]/2 + Alpha_ * vals_s[j]/2);
+	}
+      }   
     }
-    IFPACK_CHK_ERR(W->InsertGlobalValues(rowgid,idx,newvals,gids));
+    if(idx>0)
+      IFPACK_CHK_ERR(W->InsertGlobalValues(rowgid,idx,newvals,gids));
 
     // Do the diagonal
-    double w_val= c_data*Alpha_*Gamma_/4 + Adiag[A_->LRID(rowgid)];
+    double w_val= c_data*Alpha_*Gamma_/4 + Adiag[Acrs_->LRID(rowgid)];
+    if(UseInterprocDamping_) w_val+=ipdamp;
+
     W->InsertGlobalValues(rowgid,1,&w_val,&rowgid);
     IFPACK_CHK_ERR(Wdiag->ReplaceGlobalValues(1,&w_val,&rowgid));
   }
-  W->FillComplete(A_->DomainMap(),A_->RangeMap());      
+  W->FillComplete(A_->OperatorDomainMap(),A_->OperatorRangeMap());      
   W_=rcp(W);
   Wdiag_=rcp(Wdiag);
+
+  // Mark as computed
+  IsComputed_=true;
+
+  // Global damping, if wanted
+  if(UseGlobalDamping_) {
+    PowerMethod(10,LambdaMax_);
+    if(!A_->Comm().MyPID()) printf("SORa: Global damping parameter = %6.4e (lmax=%6.4e)\n",GetOmega(),LambdaMax_);
+  }
 
   // Cleanup
   delete [] gids;
   delete [] newvals;
   delete Aherm2;
   delete Askew2;
+  if(RowMatrixMode) {
+    Acrs_=Teuchos::null;
+  }
 
   // Counters
-  IsComputed_=true;
   NumCompute_++;
   ComputeTime_ += Time_.ElapsedTime();
   return 0;
 }
+
 
 
 int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{  
@@ -172,7 +232,9 @@ int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
   bool initial_guess_is_zero=false;  
   int NumMyRows=W_->NumMyRows();
   int NumVectors = X.NumVectors();
-  Epetra_MultiVector Temp(A_->RowMap(),NumVectors);
+  Epetra_MultiVector Temp(A_->RowMatrixRowMap(),NumVectors);
+
+  double omega=GetOmega();
 
   // need to create an auxiliary vector, Xcopy
   Teuchos::RefCountPtr<const Epetra_MultiVector> Xcopy;
@@ -191,8 +253,8 @@ int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
   // Note: This is the lazy man's version sacrificing a few extra flops for avoiding if statements to determine 
   // if things are on or off processor.
   // Note: T2 must be zero'd out
-  if (IsParallel_)  T2 = Teuchos::rcp( new Epetra_MultiVector(W_->Importer()->TargetMap(),NumVectors,true));
-  else T2 = Teuchos::rcp( new Epetra_MultiVector(A_->RowMap(),NumVectors,true));
+  if (IsParallel_ && W_->Importer())  T2 = Teuchos::rcp( new Epetra_MultiVector(W_->Importer()->TargetMap(),NumVectors,true));
+  else T2 = Teuchos::rcp( new Epetra_MultiVector(A_->RowMatrixRowMap(),NumVectors,true));
 
   // Pointer grabs
   int* rowptr,*colind;
@@ -231,7 +293,7 @@ int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
 	}
 	// Yes, we need to update both of these.
 	t2_ptr[m][j] = (t_ptr[m][j]- dtmp)/diag;     
-	y_ptr[m][j] += t2_ptr[m][j];
+	y_ptr[m][j] += omega*t2_ptr[m][j];
       }
     }
   }
@@ -258,8 +320,6 @@ double Ifpack_SORa::Condest(const Ifpack_CondestType CT,
                              Epetra_RowMatrix* Matrix_in){
   return -1.0;
 }
-
-
 
 
 
@@ -330,7 +390,7 @@ inline void Apply_BCsToMatrixRowsAndColumns(const int *dirichletRows, int numBCR
   for(int i=0;i<numBCRows;i++){
     int numEntries, *cols;
     double *vals;
-    int ierr = Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
+    Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
     for (int j=0; j<numEntries; j++) vals[j]=0.0; 
   }/*end for*/
 
@@ -345,5 +405,56 @@ inline void Apply_BCsToMatrixRowsAndColumns(const int *dirichletRows, int numBCR
     }/*end for*/
   }/*end for*/
 }/* end Apply_BCsToMatrixColumns */
+
+
+
+
+
+int Ifpack_SORa::
+PowerMethod(const int MaximumIterations,  double& lambda_max)
+{
+  // this is a simple power method
+  lambda_max = 0.0;
+  double RQ_top, RQ_bottom, norm;
+  Epetra_Vector x(A_->OperatorDomainMap());
+  Epetra_Vector y(A_->OperatorRangeMap());
+  Epetra_Vector z(A_->OperatorRangeMap());
+  x.Random();
+  x.Norm2(&norm);
+  if (norm == 0.0) IFPACK_CHK_ERR(-1);
+
+  x.Scale(1.0 / norm);
+
+  // Only do 1 sweep per PM step, turn off global damping
+  int NumSweepsBackup=NumSweeps_;
+  bool UseGlobalDampingBackup=UseGlobalDamping_;
+  NumSweeps_=1;UseGlobalDamping_=false;
+
+  for (int iter = 0; iter < MaximumIterations; ++iter)
+  {
+    y.PutScalar(0.0);
+    A_->Apply(x, z);
+    ApplyInverse(z,y);
+    y.Update(1.0,x,-1.0);
+
+    // Compute the Rayleigh Quotient
+    y.Dot(x, &RQ_top);
+    x.Dot(x, &RQ_bottom);
+    lambda_max = RQ_top / RQ_bottom;   
+    y.Norm2(&norm);
+    if (norm == 0.0) IFPACK_CHK_ERR(-1);
+    x.Update(1.0 / norm, y, 0.0);
+
+  }
+
+  // Enable if we want to prevent over-relaxation
+  //  lambda_max=MAX(lambda_max,1.0);
+
+  // Reset parameters
+  NumSweeps_=NumSweepsBackup;
+  UseGlobalDamping_=UseGlobalDampingBackup;
+
+  return(0);
+}
 
 #endif

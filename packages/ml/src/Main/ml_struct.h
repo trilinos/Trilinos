@@ -81,6 +81,7 @@ struct ML_Struct {
                                      coarsest.  Internally, the fine level's
                                      array index is LevelID[0], and the coarse
                                      level L's array index is LevelID[L]. */
+   int            RAP_storage_type; /* ML_MSR_MATRIX or ML_CSR_MATRIX*/
    int            symmetrize_matrix;
    int            output_level;
    int            res_output_freq;

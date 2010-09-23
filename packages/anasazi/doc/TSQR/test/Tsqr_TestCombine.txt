@@ -1,0 +1,65 @@
+This program tests TSQR::Combine, which implements the computational
+kernels used to construct all TSQR variants.  TSQR (Tall Skinny QR)
+computes the QR factorization of a tall and skinny matrix (with many
+more rows than columns) distributed in a block row layout across one
+or more processes.  TSQR::Combine implements the following kernels:
+
+* factor_pair: compute QR factorization in place of $[R_1; R_2]$,
+  where $R_1$ and $R_2$ are both square upper triangular matrices
+
+* apply_pair: apply the $Q$ factor computed by factor_pair and stored
+  implicitly, to a matrix $C$
+
+* factor_inner: compute QR factorization in place of $[R; A]$, where
+  $R$ is square and upper triangular, and $A$ is a general dense
+  matrix
+
+* apply_inner: apply the $Q$ factor computed by factor_inner and
+  stored implicitly, to a matrix $C$
+
+TSQR::Combine also has the factor_first and apply_first methods, but
+these are just wrappers around the LAPACK routines _GEQRF(P) resp.
+_ORMQR.  (The underscore _ can be one of the following letters: S, D,
+C, Z.  It represents the type of the input Scalar data.)  This program
+does not test these methods.
+
+This program will test all four of the kernels mentioned above, for
+two different "back-end" implementations of TSQR::Combine:
+CombineNative, which is a native C++ implementation that works
+entirely in place, and CombineDefault, which is a wrapper around
+LAPACK routines and works by copying data in and out of internally
+allocated and maintained scratch space.  If you build Trilinos with
+Fortran support and enable the CMake Boolean option
+TSQR_ENABLE_Fortran, a third back-end implementation, CombineFortran,
+will also be tested.  It is a Fortran 2003 version of CombineNative.
+(Note that you will need a Fortran 2003 - compliant compiler in order
+to build CombineFortran.)
+
+By default, TSQR::Combine will only be tested with real arithmetic
+Scalar types (currently, float and double, corresponding to LAPACK's
+"S" resp. "D" data types).  If you build Trilinos with complex
+arithmetic support (Teuchos_ENABLE_COMPLEX), and invoke this program
+with the "--complex" option, complex arithmetic Scalar types will also
+be tested (currently, std::complex<float> and std::complex<double>,
+corresponding to LAPACK's "C" resp. "Z" data types).
+
+This program tests the four kernels in pairs: (factor_pair,
+apply_pair), and (factor_inner, apply_inner).  It does so by computing
+a QR factorization of a test problem using factor_*, and then using
+apply_* to compute the explicit version of the Q factor (by applying
+the implicitly stored $Q$ factor to columns of the identity matrix).
+That means it is only testing applying $Q$, and not $Q^T$ (or $Q^H$,
+the conjugate transpose, in the complex-arithmetic case).  This
+exercises the typical use case of TSQR in iterative methods, in which
+the explicit $Q$ factor is desired in order to compute a
+rank-revealing decomposition and possibly also replace the null space
+basis vectors with random data.
+
+This program can test accuracy ("--verify") or performance
+("--benchmark").  For accuracy tests, it computes both the
+orthogonality $\| I - Q^* Q \|_F$ and the residual $\| A - Q R \|_F$.
+For performance tests, it repeats the test with the same data for a
+number of trials (specified by the "--ntrials=<n>" command-line
+option).  This ensures that the test is performed with warm cache, so
+that kernel performance rather than memory bandwidth is being
+measured.

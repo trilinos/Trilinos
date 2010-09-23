@@ -227,6 +227,64 @@ int main(int argc, char *argv[])
 
     cout << "Passed!" << endl;
 
+
+    // ************
+    // Timings
+    // ************
+    const bool do_timing_comparison = false;
+    if (do_timing_comparison) {
+      RCP<Time> raw_time = TimeMonitor::getNewTimer("Raw Pointer Time");
+      RCP<Time> expr_time = TimeMonitor::getNewTimer("Expression Time");
+
+
+      const int my_size = 50000000;
+      ExprArray<std::size_t,double> ea1(my_size);
+      ExprArray<std::size_t,double> ea2(my_size);
+      ExprArray<std::size_t,double> ea4(my_size);
+      ExprArray<std::size_t,double> result(my_size);
+      for (int i=0; i < my_size; ++i) {
+	result[i] = 0.0;
+	ea1[i] = 1.0;
+	ea2[i] = 1.0;
+      }
+
+      ArrayRCP<double> raw_result = arcp<double>(my_size);
+      ArrayRCP<double> raw_ea1 = arcp<double>(my_size);
+      ArrayRCP<double> raw_ea2 = arcp<double>(my_size);
+      for (int i=0; i < my_size; ++i) {
+	raw_result[i] = 0.0;
+	raw_ea1[i] = 1.0;
+	raw_ea2[i] = 1.0;
+      }
+
+      double* r_ptr = raw_result.get();
+      double* ea1_ptr = raw_ea1.get();
+      double* ea2_ptr = raw_ea2.get();
+
+      const int num_loops = 5;
+      for (int loops = 0; loops < num_loops; ++loops) {
+	
+	{
+	  TimeMonitor tm(*expr_time);
+	  result = 4.0 * ea1 + 3.0 * ea2; 
+	}
+	
+	{
+	  TimeMonitor tm(*raw_time);
+	  for (int i=0; i < my_size; ++i)
+	    r_ptr[i] = 4.0 * ea1_ptr[i] + 3.0 * ea2_ptr[i];
+	  	  
+	}
+      }
+
+      const double t_expr = expr_time->totalElapsedTime();
+      const double t_raw = raw_time->totalElapsedTime();
+      cout << "\nt_expr / t_raw = "
+	   << t_expr / t_raw << "% overhead!" << endl;
+    }
+
+
+
     // *********************************************************************
     // *********************************************************************
     std::cout << "\nTest passed!\n" << std::endl; 

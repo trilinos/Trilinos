@@ -1,31 +1,45 @@
-
+/*
 //@HEADER
 // ************************************************************************
 // 
 //               Epetra: Linear Algebra Services Package 
-//                 Copyright (2001) Sandia Corporation
+//                 Copyright 2001 Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
+*/
 
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Import.h"
@@ -42,7 +56,9 @@
 #include "Epetra_OffsetIndex.h"
 
 //==============================================================================
-Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, const int* NumIndicesPerRow, bool StaticProfile) 
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, 
+        const Epetra_BlockMap& RowMap, 
+        const int* NumIndicesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
     CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, StaticProfile))
 {
@@ -50,7 +66,9 @@ Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& Ro
 }
 
 //==============================================================================
-Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int NumIndicesPerRow, bool StaticProfile) 
+Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, 
+        const Epetra_BlockMap& RowMap, 
+        int NumIndicesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsGraph"),
     CrsGraphData_(new Epetra_CrsGraphData(CV, RowMap, StaticProfile))
 {
@@ -111,7 +129,6 @@ int Epetra_CrsGraph::Allocate(const int* NumIndicesPerRow, int Inc, bool StaticP
     if (NumIndicesPerRow != 0) {
       for(i = 0; i < numMyBlockRows; i++) {
 	int nnzr = NumIndicesPerRow[i*Inc];
-        CrsGraphData_->NumAllocatedIndicesPerRow_[i] = nnzr;
 	nnz += nnzr;
       }
     }
@@ -127,15 +144,24 @@ int Epetra_CrsGraph::Allocate(const int* NumIndicesPerRow, int Inc, bool StaticP
     int * All_Indices = CrsGraphData_->All_Indices_.Values(); // First address of contiguous buffer
     for(i = 0; i < numMyBlockRows; i++) {
       const int NumIndices = NumIndicesPerRow==0 ? 0 :NumIndicesPerRow[i*Inc];
+      const int indexBaseMinusOne = IndexBase() - 1;
 
       if(NumIndices > 0) {
 	if (StaticProfile) {
 	  CrsGraphData_->Indices_[i] = All_Indices;
 	  All_Indices += NumIndices;
+    int* ColIndices = CrsGraphData_->Indices_[i];
+    for(int j = 0; j < NumIndices; j++) 
+      ColIndices[j] = indexBaseMinusOne; // Fill column indices with out-of-range values
 	}
 	else {
-	  int * temp = new int[NumIndices];
-	  CrsGraphData_->Indices_[i] = temp;
+    // reserve memory in the STL vector, and then resize it to zero
+    // again in order to signal the program that no data is in there
+    // yet.
+    CrsGraphData_->SortedEntries_[i].entries_.resize(NumIndices,
+                 indexBaseMinusOne);
+    CrsGraphData_->Indices_[i] = NumIndices > 0 ? &CrsGraphData_->SortedEntries_[i].entries_[0]: NULL;
+    CrsGraphData_->SortedEntries_[i].entries_.resize(0);
 	}
       }
       else {
@@ -143,11 +169,6 @@ int Epetra_CrsGraph::Allocate(const int* NumIndicesPerRow, int Inc, bool StaticP
       }
 
       CrsGraphData_->NumAllocatedIndicesPerRow_[i] = NumIndices;
-      const int indexBaseMinusOne = IndexBase() - 1;
-      int* ColIndices = CrsGraphData_->Indices_[i];
-      for(int j = 0; j < NumIndices; j++) {
-	ColIndices[j] = indexBaseMinusOne; // Fill column indices with out-of-range values
-      }
     }
     if (StaticProfile) assert(CrsGraphData_->All_Indices_.Values()+nnz==All_Indices); // Sanity check
   }	 
@@ -201,7 +222,7 @@ int Epetra_CrsGraph::InsertGlobalIndices(int Row, int NumIndices, int* Indices) 
   SetIndicesAreGlobal(true);
   Row = LRID(Row); // Find local row number for this global row index
 
-  EPETRA_CHK_ERR(InsertIndices(Row, NumIndices, Indices));
+  EPETRA_CHK_ERR(InsertIndicesIntoSorted(Row, NumIndices, Indices));
 
   if(CrsGraphData_->ReferenceCount() > 1)
     return(1);
@@ -227,7 +248,7 @@ int Epetra_CrsGraph::InsertMyIndices(int Row, int NumIndices, int* Indices) {
      }
   }
 
-  EPETRA_CHK_ERR(InsertIndices(Row, NumIndices, Indices));
+  EPETRA_CHK_ERR(InsertIndicesIntoSorted(Row, NumIndices, Indices));
 
   if(CrsGraphData_->ReferenceCount() > 1)
     return(1);
@@ -243,6 +264,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
   if (StorageOptimized()) EPETRA_CHK_ERR(-1); // Cannot insert into an optimized graph
 
   SetSorted(false); // No longer in sorted state.
+  CrsGraphData_->NoRedundancies_ = false; // Redundancies possible.
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
 
   int j;
@@ -267,54 +289,53 @@ int Epetra_CrsGraph::InsertIndices(int Row,
     // new array. If HaveColMap_ is false, nothing is done. This way,
     // the same UserIndices pointer can be used later on regardless of whether
     // changes were made.
-    int* tempIndices = NULL;
     if(CrsGraphData_->HaveColMap_) { //only insert indices in col map if defined
-      tempIndices = new int[NumIndices];
+      if (CrsGraphData_->NumTempColIndices_ < NumIndices) {
+        delete [] CrsGraphData_->TempColIndices_;
+        CrsGraphData_->TempColIndices_ = new int[NumIndices];
+        CrsGraphData_->NumTempColIndices_ = NumIndices;
+      }
+      int * tempIndices = CrsGraphData_->TempColIndices_;
       int loc = 0;
       if(IndicesAreLocal()) {
         for(j = 0; j < NumIndices; ++j)
           if(CrsGraphData_->ColMap_.MyLID(UserIndices[j])) 
-	    tempIndices[loc++] = UserIndices[j];
+            tempIndices[loc++] = UserIndices[j];
       }
       else {
-        for(j = 0; j < NumIndices; ++j)
-          if(CrsGraphData_->ColMap_.MyGID(UserIndices[j])) 
-	    tempIndices[loc++] = UserIndices[j];
+        for(j = 0; j < NumIndices; ++j) {
+          const int Index = CrsGraphData_->ColMap_.LID(UserIndices[j]);
+          if (Index > -1)
+            tempIndices[loc++] = Index;
+        }
+
       }
       if(loc != NumIndices) 
-	ierr = 2; //Some columns excluded
+        ierr = 2; //Some columns excluded
       NumIndices = loc;
       UserIndices = tempIndices;
     }
 
     int start = current_numIndices;
     int stop = start + NumIndices;
-    if(stop > current_numAllocIndices) {
-      if (CrsGraphData_->StaticProfile_) {
-	EPETRA_CHK_ERR(-2); // Cannot reallocate storage if graph created using StaticProfile
-      }
-      if(current_numAllocIndices == 0) {
-	int * temp = new int[NumIndices];
-	CrsGraphData_->Indices_[Row] = temp;
-      }
-      else {
-	ierr = 3; // Out of room.  Must allocate more space, copy and delete... 
-	int * temp = new int[stop];
-	int* RowIndices = CrsGraphData_->Indices_[Row];
-	for (j=0; j<start; ++j) temp[j] = RowIndices[j];
-	delete [] CrsGraphData_->Indices_[Row];
-	CrsGraphData_->Indices_[Row] = temp;
-      }
-      current_numAllocIndices = stop;
+    if (CrsGraphData_->StaticProfile_) {
+      if(stop > current_numAllocIndices)
+        EPETRA_CHK_ERR(-2); // Cannot reallocate storage if graph created using StaticProfile
     }
-    
+    else {
+      if (current_numAllocIndices > 0 && stop > current_numAllocIndices)
+        ierr = 3;
+      CrsGraphData_->SortedEntries_[Row].entries_.resize(stop, IndexBase() - 1);
+      CrsGraphData_->Indices_[Row] = stop>0 ? &CrsGraphData_->SortedEntries_[Row].entries_[0] : NULL;
+
+      current_numAllocIndices =  CrsGraphData_->SortedEntries_[Row].entries_.capacity();    
+    }
+
     current_numIndices = stop;
     int* RowIndices = CrsGraphData_->Indices_[Row]+start;
     for(j = 0; j < NumIndices; j++) {
       RowIndices[j] = UserIndices[j];
     }
-
-    if (tempIndices != NULL) delete [] tempIndices;
   }
 
   if (CrsGraphData_->MaxNumIndices_ < current_numIndices) {
@@ -322,6 +343,79 @@ int Epetra_CrsGraph::InsertIndices(int Row,
   }
   EPETRA_CHK_ERR(ierr);
 
+
+  if(CrsGraphData_->ReferenceCount() > 1)
+    return(1); // return 1 if data is shared
+  else
+    return(0);
+}
+
+// =========================================================================
+int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
+              int NumIndices,
+              int* UserIndices)
+{
+  // This function is only valid for COPY mode with non-static profile and
+  // sorted entries. Otherwise, go to the other function.
+  if (!CrsGraphData_->NoRedundancies_ || !CrsGraphData_->Sorted_  || 
+      CrsGraphData_->StaticProfile_ || CrsGraphData_->CV_ == View ) 
+    return InsertIndices(Row, NumIndices, UserIndices);
+
+  if (StorageOptimized()) EPETRA_CHK_ERR(-1); // Cannot insert into an optimized graph
+
+  SetGlobalConstantsComputed(false); // No longer have valid global constants.
+
+  int ierr = 0;
+
+  if(Row < 0 || Row >= NumMyBlockRows()) 
+    EPETRA_CHK_ERR(-2); // Not in Row range
+    
+  int& current_numAllocIndices = CrsGraphData_->NumAllocatedIndicesPerRow_[Row];
+  int& current_numIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+
+  // if HaveColMap_ is true, UserIndices filters out excluded indices,
+  // and then modified. The UserIndices pointer is updated to point to this 
+  // new array. If HaveColMap_ is false, nothing is done. This way,
+  // the same UserIndices pointer can be used later on regardless of whether
+  // changes were made.
+  if(CrsGraphData_->HaveColMap_) { //only insert indices in col map if defined
+    if (CrsGraphData_->NumTempColIndices_ < NumIndices) {
+      delete [] CrsGraphData_->TempColIndices_;
+      CrsGraphData_->TempColIndices_ = new int[NumIndices];
+      CrsGraphData_->NumTempColIndices_ = NumIndices;
+    }
+    int * tempIndices = CrsGraphData_->TempColIndices_;
+    int loc = 0;
+    if(IndicesAreLocal()) {
+      for(int j = 0; j < NumIndices; ++j)
+ if(CrsGraphData_->ColMap_.MyLID(UserIndices[j]))
+   tempIndices[loc++] = UserIndices[j];
+    }
+    else {
+      for(int j = 0; j < NumIndices; ++j) {
+ const int Index = CrsGraphData_->ColMap_.LID(UserIndices[j]);
+ if (Index > -1)
+   tempIndices[loc++] = Index;
+      }
+    }
+    if(loc != NumIndices) 
+      ierr = 2; //Some columns excluded
+    NumIndices = loc;
+    UserIndices = tempIndices;
+  }
+
+  // for non-static profile, directly insert into a list that we always
+  // keep sorted.
+  CrsGraphData_->SortedEntries_[Row].AddEntries(NumIndices, UserIndices);
+  current_numIndices = CrsGraphData_->SortedEntries_[Row].entries_.size();
+  current_numAllocIndices = CrsGraphData_->SortedEntries_[Row].entries_.capacity();
+  // reset the pointer to the respective data
+  CrsGraphData_->Indices_[Row] = current_numIndices > 0 ? &CrsGraphData_->SortedEntries_[Row].entries_[0] : NULL;
+
+  if (CrsGraphData_->MaxNumIndices_ < current_numIndices) {
+    CrsGraphData_->MaxNumIndices_ = current_numIndices;
+  }
+  EPETRA_CHK_ERR(ierr);
 
   if(CrsGraphData_->ReferenceCount() > 1)
     return(1); // return 1 if data is shared
@@ -356,9 +450,13 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* Indices) 
     int Index = Indices[j];
     if(FindGlobalIndexLoc(Row,Index,j,Loc)) {
       for(k = Loc+1; k < NumCurrentIndices; k++) 
-	CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
+        CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
       NumCurrentIndices--;
       CrsGraphData_->NumIndicesPerRow_[Row]--;
+      if (!CrsGraphData_->StaticProfile_)
+        CrsGraphData_->SortedEntries_[Row].entries_.pop_back();
+      else
+        CrsGraphData_->Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
     }
   }
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -392,14 +490,18 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row, int NumIndices, int* Indices) {
     EPETRA_CHK_ERR(-1); // Not in Row range
     
   int NumCurrentIndices = CrsGraphData_->NumIndicesPerRow_[Row];
-  
+
   for(j = 0; j < NumIndices; j++) {
     int Index = Indices[j];
     if(FindMyIndexLoc(Row,Index,j,Loc)) {
       for(k = Loc + 1; k < NumCurrentIndices; k++) 
-	CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
+        CrsGraphData_->Indices_[Row][k-1] = CrsGraphData_->Indices_[Row][k];
       NumCurrentIndices--;
       CrsGraphData_->NumIndicesPerRow_[Row]--;
+      if (!CrsGraphData_->StaticProfile_)
+        CrsGraphData_->SortedEntries_[Row].entries_.pop_back();
+      else
+        CrsGraphData_->Indices_[Row][NumCurrentIndices-1] = IndexBase() - 1;
     }
   }
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
@@ -429,13 +531,19 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row) {
     
   if(Row < 0 || Row >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
-    
-  int NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
-  CrsGraphData_->NumIndicesPerRow_[Row] = 0;
+
+  if (CrsGraphData_->StaticProfile_) {
+    int NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
   
-  const int indexBaseMinusOne = IndexBase() - 1;
-  for(j = 0; j < NumIndices; j++) 
-    CrsGraphData_->Indices_[Row][j] = indexBaseMinusOne; // Set to invalid 
+    const int indexBaseMinusOne = IndexBase() - 1;
+    for(j = 0; j < NumIndices; j++) 
+      CrsGraphData_->Indices_[Row][j] = indexBaseMinusOne; // Set to invalid 
+  }
+  else
+    CrsGraphData_->SortedEntries_[Row].entries_.resize(0);
+ 
+  CrsGraphData_->NumIndicesPerRow_[Row] = 0;
+
 
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
   EPETRA_CHK_ERR(ierr);
@@ -463,11 +571,15 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row)
   if(Row < 0 || Row >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
     
-  int NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+  if (CrsGraphData_->StaticProfile_) {
+    int NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+    for(int j = 0; j < NumIndices; j++) 
+      CrsGraphData_->Indices_[Row][j] = -1; // Set to invalid 
+  }
+  else
+    CrsGraphData_->SortedEntries_[Row].entries_.resize(0);
+
   CrsGraphData_->NumIndicesPerRow_[Row] = 0;
-  
-  for(int j = 0; j < NumIndices; j++) 
-    CrsGraphData_->Indices_[Row][j] = -1; // Set to invalid 
 
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
   EPETRA_CHK_ERR(ierr);
@@ -622,6 +734,7 @@ int Epetra_CrsGraph::FillComplete(const Epetra_BlockMap& DomainMap, const Epetra
   MakeIndicesLocal(DomainMap, RangeMap); // Convert indices to zero based on each processor
   SortIndices();  // Sort column entries from smallest to largest
   RemoveRedundantIndices(); // Get rid of any redundant index values
+  DetermineTriangular(); //determine if lower/upper triangular
   CrsGraphData_->MakeImportExport(); // Build Import or Export objects
   ComputeGlobalConstants(); // Compute constants that require communication
   SetFilled(true);
@@ -739,7 +852,7 @@ void epetra_shellsort(int* list, int length)
   int i, j, j2, temp, istep;
   unsigned step;
 
-  step = 3;
+  step = length/2;
   while (step > 0)
   {
     for (i=step; i < length; i++)
@@ -759,7 +872,10 @@ void epetra_shellsort(int* list, int length)
       }
     }
 
-    step = step>>1;
+    if (step == 2)
+      step = 1;
+    else
+      step = (int) (step / 2.2);
   }
 }
 
@@ -869,10 +985,6 @@ void epetra_crsgraph_compress_out_duplicates(int len, int* list, int& newlen)
 //==============================================================================
 int Epetra_CrsGraph::RemoveRedundantIndices()
 {
-  int i, ig, jl, jl_0, jl_n, insertPoint;
-
-  if(NoRedundancies()) 
-    return(0);
   if(!Sorted())
     EPETRA_CHK_ERR(-1);  // Must have sorted index set
   if(IndicesAreGlobal()) 
@@ -882,56 +994,76 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
   // For each row, remove column indices that are repeated.
 
   const int numMyBlockRows = NumMyBlockRows();
-  int nnz = 0;
-  int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
-  int** graph_indices = CrsGraphData_->Indices_;
 
-  for(i=0; i<numMyBlockRows; ++i) {
-    int NumIndices = numIndicesPerRow[i];
-    
-    if(NumIndices > 1) {
-      int* const Indices = graph_indices[i];
-      epetra_crsgraph_compress_out_duplicates(NumIndices, Indices,
-                                              numIndicesPerRow[i]);
+  if(NoRedundancies() == false) {
+    int* numIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
+    for(int i=0; i<numMyBlockRows; ++i) {
+      int NumIndices = numIndicesPerRow[i];
+      int* col_indices = this->Indices(i);
+  
+      if(NumIndices > 1) {
+        epetra_crsgraph_compress_out_duplicates(NumIndices, col_indices,
+                                                numIndicesPerRow[i]);
+      }
+      // update vector size and address in memory
+      if (!CrsGraphData_->StaticProfile_) {
+        CrsGraphData_->SortedEntries_[i].entries_.assign(col_indices, col_indices+numIndicesPerRow[i]);
+        if (numIndicesPerRow[i] > 0) {
+          CrsGraphData_->Indices_[i] = &(CrsGraphData_->SortedEntries_[i].entries_[0]);
+        }
+        else {
+          CrsGraphData_->Indices_[i] = NULL;
+        }
+      }
     }
-
-    nnz += numIndicesPerRow[i];
   }
 
-  // Also, determine if graph is upper or lower triangular or has no diagonal
+  SetNoRedundancies(true);
+  return 0;
+}
+
+int Epetra_CrsGraph::DetermineTriangular()
+{
+  // determine if graph is upper or lower triangular or has no diagonal
   
+  if(!Sorted())
+    EPETRA_CHK_ERR(-1);  // Must have sorted index set
+  if(IndicesAreGlobal()) 
+    EPETRA_CHK_ERR(-2); // Indices must be local
+
   CrsGraphData_->NumMyDiagonals_ = 0;
   CrsGraphData_->NumMyBlockDiagonals_ = 0;
 
   const Epetra_BlockMap& rowMap = RowMap();
   const Epetra_BlockMap& colMap = ColMap();
 
-  for(i = 0; i < numMyBlockRows; i++) {
-    int NumIndices = numIndicesPerRow[i];
-    if(NumIndices > 0) {
-      ig = rowMap.GID(i);
-      int* const Indices = graph_indices[i];
+  const int numMyBlockRows = NumMyBlockRows();
 
-      jl_0 = Indices[0];
-      jl_n = Indices[NumIndices-1];
+  for(int i = 0; i < numMyBlockRows; i++) {
+    int NumIndices = NumMyIndices(i);
+    if(NumIndices > 0) {
+      int ig = rowMap.GID(i);
+      int* col_indices = this->Indices(i);
+
+      int jl_0 = col_indices[0];
+      int jl_n = col_indices[NumIndices-1];
 
       if(jl_n > i) CrsGraphData_->LowerTriangular_ = false;
       if(jl_0 < i) CrsGraphData_->UpperTriangular_ = false;
 
       //jl will be the local-index for the diagonal that we
       //want to search for.
-      jl = colMap.LID(ig);
+      int jl = colMap.LID(ig);
 
-      if (Epetra_Util_binary_search(jl, Indices, NumIndices, insertPoint)>-1) {
-	CrsGraphData_->NumMyBlockDiagonals_++;
-	CrsGraphData_->NumMyDiagonals_ += rowMap.ElementSize(i);
+      int insertPoint = -1;
+      if (Epetra_Util_binary_search(jl, col_indices, NumIndices, insertPoint)>-1) {
+        CrsGraphData_->NumMyBlockDiagonals_++;
+        CrsGraphData_->NumMyDiagonals_ += rowMap.ElementSize(i);
       }
     }
   }
 
   CrsGraphData_->NoDiagonal_ = (CrsGraphData_->NumMyBlockDiagonals_ == 0);
-
-  SetNoRedundancies(true);
 
   if(CrsGraphData_->ReferenceCount() > 1)
     return(1);
@@ -1123,17 +1255,38 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
   if(IndicesAreLocal() && IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-1); // Return error: Indices must not be both local and global
 
+  if(CrsGraphData_->HaveColMap_) {
+    SetIndicesAreLocal(true);
+    SetIndicesAreGlobal(false);
+  }
+
   MakeColMap(DomainMap, RangeMap); // If user has not prescribed column map, create one from indices
   const Epetra_BlockMap& colmap = ColMap();
 
   // Store number of local columns
   CrsGraphData_->NumMyCols_ = ColMap().NumMyPoints();
   CrsGraphData_->NumMyBlockCols_ = ColMap().NumMyElements();
-  // Transform indices to local index space
 
+  // Transform indices to local index space
   const int numMyBlockRows = NumMyBlockRows();
 
   if(IndicesAreGlobal()) {
+    // Check if ColMap is monotone. If not, the list will get unsorted.
+    bool mapMonotone = true;
+    {
+      int oldGID = colmap.GID(0);
+      for (int i=1; i<colmap.NumMyElements(); ++i) {
+ if (oldGID > colmap.GID(i)) {
+   mapMonotone = false;
+   break;
+ }
+ oldGID = colmap.GID(i);
+      }
+    }
+    if (Sorted())
+      SetSorted(mapMonotone);
+
+    // now comes the actual transformation
     for(int i = 0; i < numMyBlockRows; i++) {
       const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
       int* ColIndices = CrsGraphData_->Indices_[i];
@@ -1224,7 +1377,8 @@ int Epetra_CrsGraph::OptimizeStorage() {
 	for(j = 0; j < NumIndices; j++) 
 	  tmp[j] = ColIndices[j];
       }
-      if (!(CrsGraphData_->StaticProfile_) && ColIndices!=0) delete [] ColIndices;
+      if (!(CrsGraphData_->StaticProfile_) && ColIndices!=0)
+        CrsGraphData_->SortedEntries_[i].entries_.clear();
       CrsGraphData_->Indices_[i] = 0;
       tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
     }
@@ -1246,6 +1400,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
   // Delete unneeded storage
   CrsGraphData_->NumAllocatedIndicesPerRow_.Resize(0);
   delete [] CrsGraphData_->Indices_; CrsGraphData_->Indices_=0;
+  CrsGraphData_->SortedEntries_.clear();
 
   SetIndicesAreContiguous(true); // Can no longer dynamically add or remove indices
   CrsGraphData_->StorageOptimized_ = true;

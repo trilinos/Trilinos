@@ -27,11 +27,6 @@
 // @HEADER
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
-#include "Thyra_LinearOpWithSolveHelpers.hpp"
-#include "Thyra_VectorBase.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -44,7 +39,9 @@
 #  include "Epetra_SerialComm.h"
 #endif
 
+
 namespace {
+
 
 // Helper function to compute a single norm for a vector
 double epetraNorm2( const Epetra_Vector &v )
@@ -54,7 +51,9 @@ double epetraNorm2( const Epetra_Vector &v )
   return norm[0];
 }
 
+
 } // namespace
+
 
 int main(int argc, char* argv[])
 {
@@ -114,7 +113,7 @@ int main(int argc, char* argv[])
       "To print out just the valid options use --matrix-file=\"\" --only-print-options with --print-xml-format"
       " or --print-readable-format.\n"
       "\n"
-      "To solve a linear system from a system read from a file use --matrix-file=\"SomeFile.mtx\""
+      "To solve a linear system read from a file use --matrix-file=\"SomeFile.mtx\""
       " with options read from an XML file using --linear-solver-params-file=\"SomeFile.xml\"\n"
       );
 
@@ -191,12 +190,9 @@ int main(int argc, char* argv[])
     // linear solver.
     //
 
-    RCP<const Thyra::LinearOpBase<double> >
-      A = Thyra::epetraLinearOp( epetra_A );
-    RCP<Thyra::VectorBase<double> >
-      x = Thyra::create_Vector( epetra_x, A->domain() );
-    RCP<const Thyra::VectorBase<double> >
-      b = Thyra::create_Vector( epetra_b, A->range() );
+    RCP<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp( epetra_A );
+    RCP<Thyra::VectorBase<double> > x = Thyra::create_Vector( epetra_x, A->domain() );
+    RCP<const Thyra::VectorBase<double> > b = Thyra::create_Vector( epetra_b, A->range() );
 
     // Note that above Thyra is only interacted with in the most trival of
     // ways.  For most users, Thyra will only be seen as a thin wrapper that
@@ -217,8 +213,10 @@ int main(int argc, char* argv[])
     linearSolverBuilder.readParameters(out.get());
 
     // Augment parameters if appropriate
-    if(extraParamsFile.length())
-      Teuchos::updateParametersFromXmlFile( "./"+extraParamsFile, &*linearSolverBuilder.getNonconstParameterList() );
+    if(extraParamsFile.length()) {
+      Teuchos::updateParametersFromXmlFile( "./"+extraParamsFile,
+        &*linearSolverBuilder.getNonconstParameterList() );
+    }
 
     // Create a linear solver factory given information read from the
     // parameter list.
@@ -230,7 +228,7 @@ int main(int argc, char* argv[])
     lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
     // Create a linear solver based on the forward operator A
-    RCP<Thyra::LinearOpWithSolveBase<double> > lows = 
+    RCP<Thyra::LinearOpWithSolveBase<double> > lows =
       Thyra::linearOpWithSolve(*lowsFactory, A);
 
     // Solve the linear system (note: the initial guess in 'x' is critical)
@@ -284,7 +282,7 @@ int main(int argc, char* argv[])
     if(!passed) success = false;
     
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success)
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success)
   
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";

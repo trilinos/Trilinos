@@ -114,6 +114,49 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(examples)
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  util
+  etc
+  test/tmp
+  doc/UsersGuide
+  doc/DevelopersGuide
+  doc/MLAPI
+  python
+  doc/DoxyfileWeb
+  doc/build_docs
+  doc/ml-logo.eps
+  doc/ml-logo.jpg
+  doc/sc2000.ps.gz
+  examples/Makefile-common.include
+  examples/Maxwell/ml_periodic_max.c
+  examples/Other/ml_read_complexmaxwell.c
+  examples/Other/ml_read_maxwell.c
+  examples/Other/ml_star2d.c
+  examples/Other/new_readex.c
+  examples/Other/oldml_readex.c
+  examples/Other/seg_readex.c
+  examples/README.AddingExamples
+  examples/RefMaxwell
+  examples/RefMaxwell/rpc.cpp
+  src/Coarsen/README
+  src/Main/ml_v_cycle.c
+  src/Smoother/README
+  src/Utils/jmpilib.c
+  src/Utils/jostle.h
+  src/Utils/ml_vampir.c
+  src/Utils/tumi.c
+  test/README.runtests
+  test/Zoltan/cxx_main_simple.cpp
+  test/scripts
+  test/scripts/run-tests.sh
+  )
+
+#
 # D) Do standard postprocessing
 #
 

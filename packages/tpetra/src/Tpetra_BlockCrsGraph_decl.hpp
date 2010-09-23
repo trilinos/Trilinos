@@ -68,16 +68,6 @@ class BlockCrsGraph : public Teuchos::Describable {
   //! Submit graph indices, using global IDs.
   void insertGlobalIndices(GlobalOrdinal row, const Teuchos::ArrayView<const GlobalOrdinal> &indices);
 
-  //! Get a persisting const view of the elements in a specified local row of the graph.
-  /*!
-    \param LocalRow - (In) Local row number to get indices.
-
-     Note: If \c LocalRow is not valid for this node, then returns <tt>Teuchos::null</tt>.
-
-    \pre isLocallyIndexed()==true
-   */
-  Teuchos::ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const;
-
   //! Get row-offsets. (This is the bptr array in VBR terminology.)
   /*! Returns null if optimizeStorage has not been called.
    */

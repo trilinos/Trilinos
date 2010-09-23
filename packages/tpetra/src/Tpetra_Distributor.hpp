@@ -30,15 +30,8 @@
 #define TPETRA_DISTRIBUTOR_HPP
 
 #include "Tpetra_Util.hpp"
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_as.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_CommHelpers.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayView.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 
 
 // FINISH: some of the get accessors may not be necessary anymore. clean up.

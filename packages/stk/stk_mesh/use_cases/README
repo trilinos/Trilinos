@@ -17,3 +17,55 @@ miniFE builds a mesh representing a brick-shaped domain of hexahedral elements,
 defines a coordinate field on the nodes, and assembles a finite-element
 problem, solving the steady-state conduction equation.
 
+UseCase_2:
+
+UseCase_3:
+
+UseCase_4:
+
+UseCase_ChangeOwner:
+
+UseCase_ElementDeath_1:
+  "This Use Case demonstrates iteratively removing entities from a mesh and re-skinning."
+  GridFixture (2D, 4x4 faces, 25 nodes)
+  Mesh is skinned with sides
+  Iteratively, faces are removed and the mesh is re-skinned
+  Faces are removed according to the documentation in UseCase_ElementDeath_1_validation_helpers.cpp
+
+
+UseCase_Skinning_1:
+  First example: 
+    "This Use Case demonstrates removing an interior entity from a mesh and re-skinning"
+    HexFixture (3D, 3x3x3 hex elements, standard parallel distribution)
+    Mesh is skinned with faces
+    Element in middle of mesh (entirely on the inside), is separated out 
+    Mesh is re-skinned and faces are added around interior element and around interior of mesh.
+  Second example:
+    "This Use Case demonstrates removing an interior layer from a mesh and re-skinning"
+    HexFixture (3D, 3x3x3 hex elements, standard parallel distribution)
+    Mesh is skinned with faces
+    Entire middle level (x=1) is separated out
+    Mesh is re-skinned and faces are added to middle layer and to remaining mesh
+
+UseCase_Skinning_1b:
+  "This Use Case demonstrates converting an entity into a set of particles"
+  HexFixture (3D, 3x3x3 hex elements, standard parallel distribution) 
+  Iteratively do the following (for every element in a mesh of size 3x3x3):
+    create the fixture with a skin_part and a coordinate field on particles
+    generate the mesh
+    skin the mesh
+    Select one of the elements and destroy the element and create particles in its place
+    re-skin the mesh
+
+UseCase_Skinning_2:
+  "This Use Case demonstrates skinning and element death involving shells"
+  HexFixture (3D, 2x1x1 hex elements, standard parallel distribution)
+  create skin_part and shell_part
+  Attach shards ShellQuadrilateral to the shell_part
+  generate the mesh
+  Select the element at position (0,0,0) to add a shell between it and the other element
+  Skin the mesh and verify the correct number of skin faces
+  Destroy the element at position (0,0,0)
+  Re-skin the mesh and verify the correct number of skin faces
+
+

@@ -40,6 +40,7 @@
 
 - \ref elevator_speech
 - \ref overview
+- \ref news
 - \ref user_guide
 - \ref faq
 - \ref bugs
@@ -169,6 +170,14 @@ judicous choice of field variables can alleviate this problem.
 
 Managing these trade-offs can result in application code that both
 performs well and supports rapid development and extensibility.
+
+\section news News
+
+Two new capabilities are in development, but not yet released:
+<ul>
+<li> Expression templates:  We are exploring expression templates for the field objects.
+<li> We are exploring hybrid CPU/GPU support.  
+</ul>
 
 \section bugs Reporting Bugs and Making Enhancement Requests
 

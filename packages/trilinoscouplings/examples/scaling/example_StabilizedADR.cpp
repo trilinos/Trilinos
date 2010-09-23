@@ -140,6 +140,10 @@ typedef long long                     int128;
 using namespace std;
 using namespace Intrepid;
 
+// Global physics data
+double g_advection[3]={0.,0.,0.};
+double g_reaction;
+
 
 /**************************************************************************************************
  *                                                                                                *
@@ -371,7 +375,8 @@ void getInputArguments(Teuchos::ParameterList &  inputMeshList,
                        int &                     argc,
                        char *                    argv[],
                        const Epetra_Comm &       Comm,
-                       const std::string &       inputMeshFile = "ADR.xml");
+                       const std::string &       inputMeshFile = "ADR.xml",
+                       const std::string &       intputSolverFile = "ML_nonsym.xml");
 
 
 
@@ -465,6 +470,14 @@ int main(int argc, char *argv[]) {
                         procRank,             numProcs,               Comm,               
                         Time,                 msg,                    verbose);  
   
+  // ********************************* GET PHYSICS INFORMATION ************************************
+  // Read physics info from mesh xml file if it's there.  Otherwise do nothing.
+  if(inputMeshList.isSublist("Physics Input")){
+    Teuchos::ParameterList & physicsList=inputMeshList.sublist("Physics Input");
+    g_advection[0]=physicsList.get("x advection",0.0);
+    g_advection[1]=physicsList.get("y advection",0.0);
+    g_advection[2]=physicsList.get("z advection",0.0);
+  }
   
   // *********************************** DEFINE CELL TOPOLOGY *************************************
   
@@ -949,7 +962,7 @@ int main(int argc, char *argv[]) {
 
 
   /*************************************************************************************************
-    * Step 2 - Adjust MATRIX: zeroe out Dirichlet rows and columns and add 1 to the diagonal       *
+    * Step 2 - Adjust MATRIX: zero out Dirichlet rows and columns and add 1 to the diagonal       *
     ************************************************************************************************/
 
   ML_Epetra::Apply_OAZToMatrix(myBoundaryValueDofs, numMyBoundaryValueDofs, globalOperatorMatrix);
@@ -991,7 +1004,7 @@ int main(int argc, char *argv[]) {
   }
   exactNodalVals.GlobalAssemble();
   
-  char probType[10] = "laplace";
+  char probType[10] = "conv-diff";
   
   TestMultiLevelPreconditioner(probType,             MLList, 
 			       globalOperatorMatrix,     exactNodalVals, 
@@ -1185,7 +1198,7 @@ const Scalar exactSolution(const Scalar& x, const Scalar& y, const Scalar& z) {
   return 1. + x + y + z + x*y + x*z + y*z + x*y*z;
   
   // Analytic solution with homogeneous Dirichlet boundary data
-  //return sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
+  // return sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
   
   // Analytic solution with inhomogeneous Dirichlet boundary data
   // return exp(x + y + z)/(1. + x*y + y*z + x*y*z); 
@@ -1213,15 +1226,15 @@ void diffusionTensor(Scalar diffusion[][3], const Scalar& x, const Scalar& y, co
 template<typename Scalar>
 void advectiveVector(Scalar advection[3], const Scalar& x, const Scalar& y, const Scalar& z){
   
-  advection[0] = 0.;
-  advection[1] = 0.;
-  advection[2] = 0.;
+  advection[0] = g_advection[0];
+  advection[1] = g_advection[1];
+  advection[2] = g_advection[2];
 }
 
 
 template<typename Scalar>
 const Scalar reactionTerm(const Scalar& x, const Scalar& y, const Scalar& z){
-  return 1.;
+  return g_reaction;
 }
 
 
@@ -1488,10 +1501,10 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 1);
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.SetAztecOption(AZ_output, 10);
 
-  solver.Iterate(200, 1e-10);
+  solver.Iterate(500, 1e-10);
   
   delete MLPrec;
 
@@ -1813,7 +1826,7 @@ void getPamgenMesh(FieldContainer<Scalar>    & localNodeCoordsFC,
   }
   delete [] sideSetIds;
   
-  if(!Comm.MyPID() == 0 && verbose) {
+  if(!Comm.MyPID() && verbose) {
     std::cout << "Processing Boundary Conditions: " << Time.ElapsedTime() << " sec.\n"; 
     Time.ResetStartTime();
   }
@@ -1896,7 +1909,8 @@ void getInputArguments(Teuchos::ParameterList &  inputMeshList,
                        int &                     argc,
                        char *                    argv[],
                        const Epetra_Comm &       Comm,
-                       const std::string &       inputMeshFile){
+                       const std::string &       inputMeshFile,
+                       const std::string &       inputSolverFile){
   
   // Command line for xml file, otherwise use default
   std::string   xmlMeshInFileName, xmlSolverInFileName;
@@ -1913,11 +1927,11 @@ void getInputArguments(Teuchos::ParameterList &  inputMeshList,
   
   // Solver is specified
   if(argc >= 3) xmlSolverInFileName = string(argv[2]);
-  
+  else          xmlSolverInFileName = inputSolverFile;  
+
   // Custom mesh file is specified
   if(argc >= 2) xmlMeshInFileName   = string(argv[1]);
   else          xmlMeshInFileName   = inputMeshFile;
-  
   
   if(xmlMeshInFileName.length()) {
     if (!Comm.MyPID()) {

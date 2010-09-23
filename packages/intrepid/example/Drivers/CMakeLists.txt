@@ -82,4 +82,67 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_10
+    SOURCES example_10.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10 10"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_11
+    SOURCES example_11.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10 10"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_12
+    SOURCES example_12.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10 10"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_13
+    SOURCES example_13.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10 10"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_14
+    SOURCES example_14.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10 10"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_15
+    SOURCES example_15.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10 10"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+#  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#    Example_16
+#    SOURCES example_16.cpp
+#    DEPLIBS epetra epetraext 
+#    ARGS "1 10 10 10"
+#    NUM_MPI_PROCS 1
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+#    ADD_DIR_TO_NAME
+#    )
 ENDIF()

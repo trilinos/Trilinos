@@ -254,7 +254,7 @@
   <Package name="Claps" dir="claps">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
@@ -377,7 +377,7 @@
       <Regression address="belos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Tifpack" dir="tifpack">
+  <Package name="Ifpack2" dir="ifpack2">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra,Kokkos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils"/>
@@ -387,8 +387,8 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="QD"/>
     <EmailAddresses>
-      <Checkin address="tifpack-checkins@software.sandia.gov"/>
-      <Regression address="tifpack-regression@software.sandia.gov"/>
+      <Checkin address="ifpack2-checkins@software.sandia.gov"/>
+      <Regression address="ifpack2-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="Stratimikos" dir="stratimikos">
@@ -439,12 +439,26 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,Amesos,AztecOO,Belos"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="TBB"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
       <Checkin address="anasazi-checkins@software.sandia.gov"/>
       <Regression address="anasazi-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
+  <Package name="Teko" dir="teko">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,EpetraExt,Stratimikos,AztecOO,Anasazi,ML,Ifpack,Amesos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Isorropia"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="teko-checkins@software.sandia.gov"/>
+      <Regression address="teko-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="RBGen" dir="rbgen">
@@ -476,8 +490,8 @@
     </EmailAddresses>
   </Package>
   <Package name="STK" dir="stk">
-    <LIB_REQUIRED_DEP_PACKAGES value="Trios,Shards,Teuchos,FEI,AztecOO,ThreadPool"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Trios,FEI,AztecOO,ThreadPool"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
@@ -505,11 +519,11 @@
   </Package>
   <Package name="Phalanx" dir="phalanx">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Kokkos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Belos,Epetra,Ifpack,Intrepid,ML,Amesos"/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="CUDA,Thrust"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="TVMET"/>
     <EmailAddresses>
@@ -551,9 +565,9 @@
     <TEST_REQUIRED_DEP_PACKAGES value="Galeri"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="ExodusII,Nemesis"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="ExodusII"/>
     <EmailAddresses>
       <Checkin address="moertel-checkins@software.sandia.gov"/>
       <Regression address="moertel-regression@software.sandia.gov"/>
@@ -603,9 +617,9 @@
   </Package>
   <Package name="Aristos" dir="aristos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Amesos,AztecOO,Ifpack,ML"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,ML"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Amesos,Ifpack,AztecOO,EpetraExt,Stratimikos,Thyra"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -700,9 +714,9 @@
     </EmailAddresses>
   </Package>
   <Package name="WebTrilinos" dir="WebTrilinos">
-    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,EpetraExt,Amesos,AztecOO,Galeri,Ifpack,ML,PyTrilinos,Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES value="Epetra,Amesos,AztecOO,Ifpack,ML"/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Epetra,EpetraExt,Amesos,AztecOO,Galeri,Ifpack,ML,PyTrilinos,Teuchos"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>

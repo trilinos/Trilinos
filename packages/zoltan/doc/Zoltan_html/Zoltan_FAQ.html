@@ -2,15 +2,15 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="filename" content="Zoltan.html">
-   <meta name="review" content="28 May, 1999">
-   <meta name="subject" content="Zoltan Home Page">
-   <meta name="sandia.approval_type" content="formal">
-   <meta name="sandia.approved" content="SAND99-1375">
-   <meta name="sandia.create_date" content="05/28/99">
-   <meta name="keywords" content="Zoltan, Zoltan Home Page, Zoltan dynamic load balancing library, Zoltan parallel computing">
-   <meta name="description" content="Zoltan:  Home Page for the Zoltan Library project at Sandia National Laboratories">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta NAME="filename" content="Zoltan.html">
+   <meta NAME="review" content="28 May, 1999">
+   <meta NAME="subject" content="Zoltan Home Page">
+   <meta NAME="sandia.approval_type" content="formal">
+   <meta NAME="sandia.approved" content="SAND99-1375">
+   <meta NAME="sandia.create_date" content="05/28/99">
+   <meta NAME="keywords" content="Zoltan, Zoltan Home Page, Zoltan dynamic load balancing library, Zoltan parallel computing">
+   <meta NAME="description" content="Zoltan:  Home Page for the Zoltan Library project at Sandia National Laboratories">
+   <meta NAME="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <title>Zoltan</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
@@ -273,19 +273,24 @@ Frequently Asked Questions
 <!------------  Keep them in the same order!                     ---------->
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
-<li>  <a href="#DEPFILES">What does the following message mean during 
-compilation of <i>zoltan</i>?
-<blockquote>
-Makefile:28: mem.d: No such file or directory
-</blockquote></a>
+<li>  <a href="#EMPTYPART">Zoltan's hypergraph partitioner
+is returning empty parts, that is, parts that have zero
+objects in them. Is this a bug?</a>
 <li>  <a href="#MPILEAK">On some platforms, why do Zoltan partitioning 
 methods RCB and RIB use an increasing amount of memory over multiple 
 invocations?</a>
-<li>  <a href="#ZOLTANUSERDATA">Why does compilation of the Fortran90 driver <i>zfdrive</i> fail in fdr_const.f90?</a>
+<li> <a href=#INTELF90">Why does compilation of the Fortran interface hang
+with Intel's F90 compiler?</a>
 <li>  <a href="#MPIRECVLIMIT">During runs (particularly on RedStorm), MPI 
 reports that it is out of resources or too many messages have been posted.
 What does this mean and what can I do?</a>
+<li><a href="#MPIRECVLIMIT2">On very large problems, 
+Zoltan communication routines fail in MPI_Alltoallv.
+Why does this happen and what can I do?</a>
 <li> <a href="#REALLOCBUG">Realloc fails when there is plenty of memory.  Is this a Zoltan bug?</a>
+<li>  <a href="#DEPFILES">What does the following message mean during 
+compilation of <i>zoltan</i>:  
+Makefile:28: mem.d: No such file or directory
 </ol>
 <p>
 <hr WIDTH="100%">
@@ -298,19 +303,41 @@ What does this mean and what can I do?</a>
 <!------------  Keep them in the same order as list above! ---------------->
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
-<li>  <a NAME="DEPFILES"></a>What does the following message mean during
-compilation of Zoltan?
-<blockquote>
-Makefile:28: mem.d: No such file or directory</blockquote>
-Every time Zoltan is built, gmake looks for a dependency file <i>filename</i>.d 
-for each source file <i>filename</i>.c.  The first time Zoltan is built for a 
-given platform, the dependency files do not exist.  The dependency files are
-also removed by "gmake clean."  Don't worry, though; after producing this
-warning, gmake will create the dependency files it needs and continue 
-compilation.
+<li>  <a NAME="EMPTYPART"></a>Zoltan's hypergraph partitioner
+is returning empty parts, that is, parts that have zero
+objects in them. Is this a bug?
+<p>
+The hypergraph partitioner creates partitions with up to a specified amount
+of load imbalance; the default value is 10% imbalance allowed, but the user
+can tighten the load imbalance.  Any partition that satisfies the load
+imbalance tolerance is a valid partition.  As a secondary goal, the
+hypergraph partitioner attempts to minimize interprocessor communication.
+Having a part with zero weight almost certainly reduces total communication;
+the zero-weight part would not need to communicate with any other part.
+<p>
+So in some cases, Zoltan is generating a valid partition -- one that
+satisfies the imbalance tolerance -- that happens to have lower total
+communication if one of the parts is empty.  This is a good thing, but one
+that some applications don't like because they didn't consider having zero
+weight on a processor.
+<p>
+To try to avoid this problem, lower the imbalance tolerance so that
+the partitioner is more likely to give work to all parts.  Change the value
+of Zoltan parameter
+<a href="ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>
+to a smaller value; e.g., 1.03 to allow only 3% imbalance: <br>
+<a href="ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz, "IMBALANCE_TOL", "1.03");
+<p>
+As an alternative, you may try one of Zoltan geometric methods, such as 
+<a href="ug_html/ug_alg_rcb.html">RCB</a>,
+<a href="ug_html/ug_alg_rib.html">RIB</a> or
+ <a href="ug_html/ug_alg_hsfc.html">HSFC</a>, which do not have this property.
+<p>
+We may in the future add a parameter to disallow zero-weight parts, but at
+present, we do not have that option.
 
 <hr WIDTH="100%">
-<li>  <a name="MPILEAK"></a>On some platforms, why do Zoltan partitioning 
+<li>  <a NAME="MPILEAK"></a>On some platforms, why do Zoltan partitioning 
 methods RCB and RIB use an increasing amount of memory over multiple 
 invocations?
 <p>
@@ -326,31 +353,23 @@ Zoltan is to set the TFLOPS_SPECIAL parameter to 1 (e.g.,
 implementation that doesn't use MPI_Comm_split to be invoked.
 
 <hr WIDTH="100%">
-<li>  <a name="ZOLTANUSERDATA"></a>Why does compilation of the Fortran90 driver <i>zfdrive</i> fail in fdr_const.f90?
+<li> <a NAME=INTELF90"></a>Why does compilation of the Fortran interface hang
+with Intel's F90 compiler?
 <p>
-The Fortran90 driver <i>zfdrive</i> uses user-defined data types for a mesh
-data structure.  It passes these data types to the Zoltan query functions
-through the <i>void *data</i> argument.  Strict type checking in Fortran90
-requires that the query interface have these user-defined data types compiled
-into the interface.  The solution is as follows: 
-<blockquote>
-cd Zoltan/fort<br>
-mv zoltan_user_data.f90 zoltan_user_data.f90.zoltan<br>
-ln -s ../fdriver/zoltan_user_data.f90 .<br>
-cd ..<br>
-touch fdriver/zoltan_user_data.f90 fort/zoltan_user_data.f90<br>
-gmake zfdrive<br>
-</blockquote>
-See the <a href="ug_html/ug_fortran.html#fortran ug api">Fortran90 API</a>
-description in the User's Guide 
-and <a href="dev_html/dev_driver.html">instructions for using <i>zfdrive</i></a>
-in the Developer's Guide for more details.
+There is a bug in some versions of Intel's F90 compiler.  We know
+Zoltan's Fortran interface compiles with Intel's F90 compiler versions
+10.1.015 through 11.1.056.  We know that it does not compile with
+versions 11.1.059, 11.1.069 and 11.1.072.  We reported the problem to 
+Intel, and we are told that the compiler bug is fixed in version 11.1 update 7,
+which is scheduled for release in August 2010.  See this 
+<a href="http://software.intel.com/en-us/forums/showthread.php?t=75385">Intel 
+Forum link</a> for more details.
 
 <hr WIDTH="100%">
-<li><a name="MPIRECVLIMIT"></a>During runs (particularly on RedStorm), MPI 
+<li><a NAME="MPIRECVLIMIT"></a>During runs (particularly on RedStorm), MPI 
 reports that it is out of resources or too many messages have been posted.
 What does this mean and what can I do?
-<p>
+<p>          
 Some implementations of MPI (including RedStorm's implementation) limit
 the number of message receives that can be posted simultaneously.  Some
 communications in Zoltan (including hashing of IDs to processors in the
@@ -361,33 +380,59 @@ To avoid this problem, Zoltan contains logic to use AllToAll communication
 instead of point-to-point communication when a large number
 of receives are needed.  The maximum number of simultaneous receives allowed
 can be set as a compile-time option to Zoltan.
-In the <a href="ug_html/ug_usage.html#NativeZoltanBuild">native Zoltan
-build environment</a>, add -DMPI_RECV_LIMIT=# to the
-DEFS line of zoltan/src/Utilities/Config/Config.&lt;platform>
-, where # is the maximum number of simultaneous receives allowed.
 In the <a href="ug_html/ug_usage.html#TrilinosAutotools">Autotool build
 environment</a>, option <i>--enable-mpi-recv-limit=#</i> sets the 
-maximum number of simultaneous receives allowed.  The default value is 2000.
+maximum number of simultaneous receives allowed.  The default value is 4.
 
 <hr WIDTH="100%">
-<li> <a name="REALLOCBUG"></a>Realloc fails when there is plenty of memory.  Is this a Zoltan bug?
+<li><a NAME="MPIRECVLIMIT2"></a>On very large problems, 
+Zoltan communication routines fail in MPI_Alltoallv.
+Why does this happen and what can I do?
+<p>
+For very large problems, the values in the displacement arrays needed
+by MPI_Alltoallv can exceed INT_MAX (the largest integer that can be stored
+in 32 bits).  The solution to this problem is to make Zoltan avoid using
+MPI_Alltoallv and, instead, use point-to-point sends and receives.  The 
+compile-time option 
+in the <a href="ug_html/ug_usage.html#TrilinosAutotools">Autotool build
+environment</a> is <i>--enable-mpi-recv-limit=0</i>.
+
+
+<hr WIDTH="100%">
+<li> <a NAME="REALLOCBUG"></a>Realloc fails when there is plenty of memory.  Is this a Zoltan bug?
 <p>
 This problem has been noted on different Linux clusters running parallel
-applications using different MPI libraries and C++ libraries.  Realloc fails where
-a malloc call will succeed.  The source of the error has
+applications using different MPI libraries and C++ libraries.  
+Realloc fails where a malloc call will succeed.  The source of the error has
 not been identified, but it is not a Zoltan bug.  The
-solution is to compile Zoltan with the flag <b>-DREALLOC_BUG</b>.  Zoltan will replace
+solution is to compile Zoltan with the flag <b>-DREALLOC_BUG</b>.  
+Zoltan will replace
 every realloc call with malloc followed by a memcpy and a free.
+
+<hr WIDTH="100%">
+<li>  <a NAME="DEPFILES"></a>What does the following message mean during
+compilation of Zoltan?<br>
+Makefile:28: mem.d: No such file or directory</blockquote>
+<p>
+In the old "manual" build system for Zoltan, dependency files were
+generated for each source file <i>filename</i>.c.  The first time Zoltan 
+was built for a given platform, the dependency files do not exist.  
+After producing this
+warning, gmake created the dependency files it needed and continued
+compilation.
+<p>
+Newer versions of Zoltan use autotools or cmake for builds and, thus, do
+not produce this warning.  
 </ol>
 
 <p>
 <hr WIDTH="100%">
-Updated:  $Date$
+Updated:  August 2, 2010
 
 <!------------------------------------------------------------------------->
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-Copyright (c) 2000-2007, Sandia National Laboratories. <br>
+Copyright (c) 2000-2010, Sandia National Laboratories. <br>
 The Zoltan Library and its documentation are released
 under the <a href="http://www.gnu.org/copyleft/lesser.html">GNU Lesser General Public License (LGPL)</a>.  
 See the README file in the main Zoltan directory for more information.
@@ -414,7 +459,7 @@ See the README file in the main Zoltan directory for more information.
 </tr>
 </table>
 <!--Image maps below-->
-<map name="shortMap">
+<map NAME="shortMap">
 <area shape="rect" coords="2,2,108,14"href="http://www.sandia.gov/about/index.html"></area>
 <area shape="rect" coords="2,19,108,31"href="http://www.sandia.gov/mission/ste/index.html"></area>
 <area shape="rect" coords="2,36,108,48"href="http://www.sandia.gov/mission/index.html"></area>

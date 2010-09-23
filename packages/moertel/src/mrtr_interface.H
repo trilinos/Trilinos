@@ -59,11 +59,10 @@
 #include "Teuchos_ParameterList.hpp"
 
 // mrtr includes
+#include "mrtr_lm_selector.H"
 #include "mrtr_segment.H"
 #include "mrtr_node.H"
 #include "mrtr_projector.H"
-
-using namespace std;
 
 /*!
 \brief MOERTEL: namespace of the Moertel package
@@ -90,18 +89,18 @@ namespace MOERTEL
 
 \brief <b> A class to construct a single interface </b>
 
-This class is used to construct a single conforming or non-conforming interface.
-The interface is constructed by creating an empty instance of this class and
-then filling it with nodes and segments from both sides of the interface using the methods \ref AddSegment (MOERTEL::Segment &seg, int side)
-and \ref AddNode (MOERTEL::Node &node, int side).<br>
-After all segment and all nodes of an interface are added, a call to \ref Complete() finalizes
-the construction phase of the interface.<br>
-Once the interface is constructed and \ref Complete() was called, it should be
-passed to an instance of the \ref MOERTEL::Manager to handle the integration
-phase. It is highly recommended not to call any integration methods on the interface
-directly but leave this task to the \ref MOERTEL::Manager class that takes
-care of assembly of integration results and the case were nodes appear on more
-then one interface.<br>
+This class is used to construct a single conforming or non-conforming
+interface.  The interface is constructed by creating an empty instance of this
+class and then filling it with nodes and segments from both sides of the
+interface using the methods \ref AddSegment (MOERTEL::Segment &seg, int side)
+and \ref AddNode (MOERTEL::Node &node, int side).<br> After all segment and all
+nodes of an interface are added, a call to \ref Complete() finalizes the
+construction phase of the interface.<br> Once the interface is constructed and
+\ref Complete() was called, it should be passed to an instance of the \ref
+MOERTEL::Manager to handle the integration phase. It is highly recommended not
+to call any integration methods on the interface directly but leave this task
+to the \ref MOERTEL::Manager class that takes care of assembly of integration
+results and the case were nodes appear on more then one interface.<br>
 
 <b>Aspects of Interface geometry:</b><br>
 An interface can be either 2-dimensional (for 3D problems) or 1-dimensional (for 2D problems).<br>
@@ -146,12 +145,12 @@ o-----o-----o-----o-----o-----o-----o-----o-----o-----o-----o-----o------o------
                                              <-- Interface 1 side 1 -->
                                              <-- Interface 2 side 0 -->
 </pre>
-The example above shows a perfectly legal (though rather advanced an unsusal) case.<br>
+The example above shows a perfectly legal (though rather advanced an unusual) case.<br>
 The choice of the sides 0 or 1 is arbitrary, the correct choice of the slave and mortar side 
 is sophisticated here and can be done by the \ref MOERTEL::Manager or by the user himself.
 
 <br>
-<b>Aspects of parallelity:</b><br>
+<b>Comments on parallelism:</b><br>
 The Moertel package can handle multiple interfaces in serial and in parallel. When running
 in serial, the Mortar package expects the Epetra_Comm argument in the construction of
 \rer MOERTEL::Manager and \ref MOERTEL::Interface to implement an Epetra_SerialComm. <br>
@@ -238,17 +237,17 @@ public:
   //! \brief the \ref MOERTEL::Integrator class is a friend to the interface class
   friend class Integrator;
 
-  // @{ \name Constructors and destructors
+  // @{ \name Constructors and destructor
 
   /*!
   \brief Creates an (empty) instance of this class
   
-  Constructs an empty instance of this class that is then filled buy the user with
-  information about the nodes and segments on this interface <br>
+  Constructs an empty instance of this class that must be subsequently filled in by the user with
+  information about the nodes and segments on this interface. <br>
   <b>This is a collective call for all processors associated with the
   Epetra_Comm. </b>
   
-  \param Id : A unique positive interface id. Does not need to be continous among several interfaces
+  \param Id : A unique positive interface id. Does not need to be continuous among several interfaces
   \param oneD : true if this interface is a 1D-interface of a 2D problem
   \param comm : An Epetra_Comm object handle
   \param outlevel : Level of output information written to stdout ( 0 - 10 )
@@ -307,7 +306,7 @@ public:
   /*!
   \brief Returns the unique interface id associated with this instance and chosen by the user
   
-  Note that interface ids have to be positive and unique but do not need to be continous
+  Note that interface ids have to be positive and unique but do not need to be continuous
   */
   inline int Id() const { return Id_; }
   
@@ -533,7 +532,7 @@ public:
   
   \param nid : id of node to get a view from
   */
-  RefCountPtr<MOERTEL::Node> GetNodeView(int nid);
+  Teuchos::RCP<MOERTEL::Node> GetNodeView(int nid);
 
   /*!
   \brief Get a view of all nodes on this interface
@@ -551,7 +550,7 @@ public:
 
   Returns false if calling process is not part of the intra-communicator of the interface.
   */
-  bool GetNodeView(vector<MOERTEL::Node*>& nodes);
+  bool GetNodeView(std::vector<MOERTEL::Node*>& nodes);
 
   /*!
   \brief Get a view of a MOERTEL::Segment (of either side) specifying segment id
@@ -563,7 +562,7 @@ public:
   
   \param sid : id of segment to get a view from
   */
-  RefCountPtr<MOERTEL::Segment> GetSegmentView(int sid);
+  Teuchos::RCP<MOERTEL::Segment> GetSegmentView(int sid);
   
   /*!
   \brief Get a view of all segments on this interface
@@ -583,12 +582,12 @@ public:
   /*!
   \brief Finalizes the construction of the interface instance
 
-  A call to this method is neccesary to finalize the construction of an interface.<br>
+  A call to this method is necessary to finalize the construction of an interface.<br>
   After a call to \ref Complete() no nodes or segments can be added any more.  
   
   Whether \ref Complete() has been called can be checked using \ref IsComplete()
   
-  It is also a neccessary condition for several query methods to work, such as<br>
+  It is also a necessary condition for several query methods to work, such as<br>
   \ref lComm() , \ref GetSide(MOERTEL::Segment* seg) \ref GetSide(MOERTEL::Node* node)<br>
   \ref GetSide(int nodeid) , \ref GlobalNsegment(int side) , \ref GlobalNsegment() ,<br>
   \ref GlobalNnode(int side) , \ref GlobalNnode() , \ref NodePID(int nid) const ,<br>
@@ -622,7 +621,7 @@ public:
   \param side: side of interface (0 or 1) this segment belongs to
   
   \warning The user is responsible for passing in segments only \b once and on \b one process.<br>
-           Also, each segment must have a unique, positive but not neccessarily contigous id.
+           Also, each segment must have a unique, positive but not necessarily contiguous id.
   
   
   \return True if successful, false otherwise
@@ -647,7 +646,7 @@ public:
   \param side: side of interface (0 or 1) this segment belongs to
   
   \warning The user is responsible for passing in nodes only \b once and on \b one process.<br>
-           Also, each node must have a unique, positive but not neccessarily contigous id.
+           Also, each node must have a unique, positive but not necessarily contiguous id.
 
   \return True if successful, false otherwise
   */
@@ -656,8 +655,8 @@ public:
   /*!
   \brief Choose Mortar side of the interface
 
-  It is neccessary to choose the mortar side on each interface.<br>
-  (Note that the discretization of the Lagrange mutlipliers is equal to the
+  It is necessary to choose the mortar side on each interface.<br>
+  (Note that the discretization of the Lagrange multipliers is equal to the
   non-Mortar side)
   
   Choices are:
@@ -684,11 +683,11 @@ public:
   \param side : Side of the interface (0 or 1) the function is to be attached to
   \param id : Function id. The trace space shape function has to have id=0, 
               the mortar space shape function has to have id=1.
-              Therefore, on the mortar side, only one function with id=0 is neccessary
+              Therefore, on the mortar side, only one function with id=0 is necessary
               while on the slave side (where the Lagrange multipliers 'live') 2 functions
-              with id=0 and id=1 are neccessary.
+              with id=0 and id=1 are necessary.
   \param func : \ref MOERTEL::Function derived function class to be associated with
-                the shape functions of the trace soace or the mortar space
+                the shape functions of the trace or the mortar space
 
   For future extension of this package, any number of functions can be associated 
   with one segment as long as each function has a unique positive id.<br>
@@ -700,7 +699,7 @@ public:
            In this case \ref SetFunctionTypes(MOERTEL::Function::FunctionType primal,
            MOERTEL::Function::FunctionType dual) should be used to specify 
            the types of shape functions on wishes to use. The \ref MOERTEL::Manager
-           will then associate the approbiate shape functions with the segments on the approbiate sides
+           will then associate the appropriate shape functions with the segments on the appropriate sides
            once the mortar side was chosen. This though only works when derived function classes
            and types are used that are known to the \ref MOERTEL::Manager.
            If the user want to create his/her own shae functions and use them, he/she needs
@@ -716,7 +715,7 @@ public:
 
   The method performs the integration of the mortar integral on this interface.
   the user should not call this method directly but use a \ref MOERTEL::Manager to
-  perform the integration to make sure all neccessary prerequisites are fulfilled
+  perform the integration to make sure all necessary prerequisites are fulfilled
   
   \param intparams : parameter list from the MOERTEL::Manager holding
                      integration parameters
@@ -725,14 +724,14 @@ public:
   
   \return True if successful, false otherwise
   */
-  bool Mortar_Integrate_2D(RefCountPtr<Teuchos::ParameterList> intparams);
+  bool Mortar_Integrate_2D(Teuchos::RCP<Teuchos::ParameterList> intparams);
   
   /*!
   \brief Integrate the mortar integrals on this interface (2D interface)
 
   The method performs the integration of the mortar integral on this interface.
   the user should not call this method directly but use a \ref MOERTEL::Manager to
-  control the integration to make sure all neccessary prerequisites are fulfilled
+  control the integration to make sure all necessary prerequisites are fulfilled
   
   \param intparams : parameter list from the MOERTEL::Manager holding
                      integration parameters
@@ -741,7 +740,7 @@ public:
 
   \return True if successful, false otherwise
   */
-  bool Mortar_Integrate(RefCountPtr<Teuchos::ParameterList> intparams);
+  bool Mortar_Integrate(Teuchos::RCP<Teuchos::ParameterList> intparams);
   
   /*!
   \brief Assemble coupling matrices D and M after integration
@@ -752,6 +751,8 @@ public:
   \return True if successful, false otherwise
   */
   bool Mortar_Assemble(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
+
+  bool AssembleJFNKVec(Lmselector *sel);
   
   /*!
   \brief Set type of projection to be used for the mortar projection
@@ -787,10 +788,10 @@ public:
   \brief Return vector of all Lagrange multiplier degrees of freedom on this interface
 
   */
-  vector<int>* MyLMIds();
+  std::vector<int>* MyLMIds();
   
   /*!
-  \brief Makes neccessary boundary modification for 1D and 2D interfaces
+  \brief Makes necessary boundary modification for 1D and 2D interfaces
   
   Shape functions of segments close to the boundary of a 1D or 2D interface need to
   be modified to ensure stability of the method.
@@ -834,7 +835,7 @@ public:
   
   */
   bool SetFunctionsFromFunctionTypes();
-
+  
   //@}
 
 private:  
@@ -851,7 +852,7 @@ private:
   // get a view of a MOERTEL::Node (of either side) specifying node id
   // returns NULL if node id does not exist locally
   // returns NULL after call to Complete(), because all local nodes are destroyed
-  RefCountPtr<MOERTEL::Node> GetNodeViewLocal(int nid);
+  Teuchos::RCP<MOERTEL::Node> GetNodeViewLocal(int nid);
 
   // allreduce all segments of a side and store this redundant segs in rseg_[side];
   bool RedundantSegments(int side);
@@ -898,6 +899,8 @@ private:
   // Assemble values from integration this interface (3D problem)
   bool Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
 
+
+
 private:
   
   int                                  Id_;           // the interface Id                      
@@ -906,18 +909,18 @@ private:
   bool                                 isComplete_;   // flag indicating whether InterfaceComplete() has been called
   bool                                 isIntegrated_; // flag indicating status of integration
   Epetra_Comm&                         gcomm_;        // the global communicator
-  RefCountPtr<Epetra_Comm>             lcomm_;        // the local communicator
+  Teuchos::RCP<Epetra_Comm>             lcomm_;        // the local communicator
   int                                  mortarside_;   // indicate which side (0 or 1) is mortar (master) side
   ProjectionType                       ptype_;        // type of projection used
-  RefCountPtr<Teuchos::ParameterList>  intparams_;    // parameter list holding integration parameters
+  Teuchos::RCP<Teuchos::ParameterList>  intparams_;    // parameter list holding integration parameters
   
-  map<int,RefCountPtr<MOERTEL::Segment> > seg_[2];    // local segments of interface (both sides)
-  map<int,RefCountPtr<MOERTEL::Segment> > rseg_[2];   // global segments of interface (both sides)
-  map<int,int>                            segPID_;    // maps all global seg ids to process holding segment
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> > seg_[2];    // local segments of interface (both sides)
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> > rseg_[2];   // global segments of interface (both sides)
+  std::map<int,int>                            segPID_;    // maps all global seg ids to process holding segment
   
-  map<int,RefCountPtr<MOERTEL::Node> >    node_[2];   // local nodes of interface (both sides)
-  map<int,RefCountPtr<MOERTEL::Node> >    rnode_[2];  // global nodes of interface (both sides)
-  map<int,int>                            nodePID_;   // maps all global node ids to process holding the node
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >    node_[2];   // local nodes of interface (both sides)
+  std::map<int,Teuchos::RCP<MOERTEL::Node> >    rnode_[2];  // global nodes of interface (both sides)
+  std::map<int,int>                            nodePID_;   // maps all global node ids to process holding the node
   
   MOERTEL::Function::FunctionType         primal_;    // the type of functions to be set as trace space function
   MOERTEL::Function::FunctionType         dual_;      // the type of functions to be set as LM space function

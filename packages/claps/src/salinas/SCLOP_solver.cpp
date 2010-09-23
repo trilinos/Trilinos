@@ -353,13 +353,22 @@ void SCLOP_solver::determine_ownership()
   StandardMap = new Epetra_Map(-1, ndof_mine, sub_gdof, 0, *Comm);
   ConStandard = new Epetra_CrsMatrix(Copy, *StandardMap, 0);
   ierr = ConSubdomain.FillComplete(RowMapCon, *StandardMap);  
-  assert (ierr == 0);
+  if(ierr != 0) {
+    std::cout << "ConSubdomain.FillComplete returned ierr= " << ierr << std::endl;
+  }
+
   Epetra_Export Exporter(*SubMap, *StandardMap);
   ierr = ConStandard->Export(ConSubdomain, Exporter, Add);
-  assert (ierr == 0);
+  if(ierr != 0) {
+    std::cout << "ConStandard.Export returned ierr= " << ierr << std::endl;
+  }
+
   //  ConStandard->Export(ConSubdomain, Exporter, Insert);
   ierr = ConStandard->FillComplete(RowMapCon, *StandardMap);
-  assert (ierr == 0);
+  if(ierr != 0) {
+    std::cout << "ConStandard.FillComplete returned ierr= " << ierr << std::endl;
+  }
+
   CRD_utils::scale_columns(ConStandard, 1, 1000);
   //  cout << *ConStandard << endl;
 

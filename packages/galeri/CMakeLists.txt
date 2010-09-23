@@ -28,6 +28,21 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example example-fem)
 
 #
+# Exclude files for source package.
+#
+
+PACKAGE_ARCH_EXCLUDE_AUTOTOOLS_FILES()
+
+PACKAGE_ARCH_EXCLUDE_FILES(
+  src-pfem
+  example-pfem
+  doc/AdvDiffSquare.png
+  doc/L.*.png
+  example-fem/TwoSquares.cpp
+  src-fem/Galeri_FileGrid.h
+  )
+
+#
 # D) Do standard postprocessing
 #
 

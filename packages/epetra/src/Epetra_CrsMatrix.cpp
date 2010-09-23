@@ -1,31 +1,45 @@
-
+/*
 //@HEADER
 // ************************************************************************
 // 
 //               Epetra: Linear Algebra Services Package 
-//                 Copyright (2001) Sandia Corporation
+//                 Copyright 2001 Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
 //@HEADER
+*/
 
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -71,6 +85,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
     Values_(0),
+    Values_alloc_lengths_(0),
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
@@ -98,6 +113,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
     Values_(0),
+    Values_alloc_lengths_(0),
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
@@ -125,6 +141,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
     Values_(0),
+    Values_alloc_lengths_(0),
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
@@ -153,6 +170,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
     Values_(0),
+    Values_alloc_lengths_(0),
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
@@ -179,6 +197,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& 
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
     Values_(0),
+    Values_alloc_lengths_(0),
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
@@ -207,6 +226,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix)
     matrixFillCompleteCalled_(false),
     StorageOptimized_(false),
     Values_(0),
+    Values_alloc_lengths_(0),
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
@@ -239,6 +259,7 @@ Epetra_CrsMatrix& Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix& src)
   constructedWithFilledGraph_ = src.constructedWithFilledGraph_;
   matrixFillCompleteCalled_ = src.matrixFillCompleteCalled_;
   Values_ = 0;
+  Values_alloc_lengths_ = 0;
   All_Values_ = 0;
   NormInf_ = -1.0;
   NormOne_ = -1.0;
@@ -278,6 +299,7 @@ void Epetra_CrsMatrix::InitializeDefaults() { // Initialize all attributes that 
 
   UseTranspose_ = false;
   Values_ = 0;
+  Values_alloc_lengths_ = 0;
   All_Values_ = 0;
   NormInf_ = -1.0;
   NormOne_ = -1.0;
@@ -295,31 +317,36 @@ int Epetra_CrsMatrix::Allocate() {
 
   // Allocate Values array
   Values_ = NumMyRows_ > 0 ? new double*[NumMyRows_] : NULL;
+  Values_alloc_lengths_ = NumMyRows_ > 0 ? new int[NumMyRows_] : NULL;
+  if (NumMyRows_ > 0) {
+    for(j=0; j<NumMyRows_; ++j) Values_alloc_lengths_[j] = 0;
+  }
 
   // Allocate and initialize entries if we are copying data
   if (CV_==Copy) {
-    if (Graph().StaticProfile()) {
+    if (Graph().StaticProfile() || Graph().StorageOptimized()) {
       int NumMyNonzeros = Graph().NumMyEntries();
       if (NumMyNonzeros>0) All_Values_ = new double[NumMyNonzeros];
     }
-  double * All_Values = All_Values_;
+    double * All_Values = All_Values_;
     for (i=0; i<NumMyRows_; i++) {
       int NumAllocatedEntries = Graph().NumAllocatedMyIndices(i);
-			
+
       if (NumAllocatedEntries > 0) {
-	if (Graph().StaticProfile()) {
-	  Values_[i] = All_Values;
-	  All_Values += NumAllocatedEntries;
-	}
-	else {
-	Values_[i] = new double[NumAllocatedEntries];
-	}
+        if (Graph().StaticProfile() || Graph().StorageOptimized()) {
+          Values_[i] = All_Values;
+          All_Values += NumAllocatedEntries;
+        }
+        else {
+          Values_[i] = new double[NumAllocatedEntries];
+          Values_alloc_lengths_[i] = NumAllocatedEntries;
+        }
       }
       else 
-	Values_[i] = 0;
+        Values_[i] = 0;
 
       for(j=0; j< NumAllocatedEntries; j++) 
-	Values_[i][j] = 0.0; // Fill values with zero
+        Values_[i][j] = 0.0; // Fill values with zero
     }
   }	 
   else {
@@ -346,20 +373,23 @@ void Epetra_CrsMatrix::DeleteMemory()
       delete [] All_Values_;
     else if (Values_!=0)
       for (i=0; i<NumMyRows_; i++) 
-	if (Graph().NumAllocatedMyIndices(i) >0) 
-	  delete [] Values_[i];
+        if (Graph().NumAllocatedMyIndices(i) >0) 
+          delete [] Values_[i];
   }
 
   if (ImportVector_!=0) 
     delete ImportVector_;
   ImportVector_=0;
-    
+
   if (ExportVector_!=0)
     delete ExportVector_;
   ExportVector_=0;
-    
+
   delete [] Values_;
   Values_ = 0;
+
+  delete [] Values_alloc_lengths_;
+  Values_alloc_lengths_ = 0;
 
   NumMyRows_ = 0;
 
@@ -527,12 +557,11 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 				   int* Indices)
 {
   int j;
-  double* tmp_Values = 0;
   int ierr = 0;
 
   if(Row < 0 || Row >= NumMyRows_) 
     EPETRA_CHK_ERR(-1); // Not in Row range
-    
+
   if(CV_ == View) {
     //test indices in static graph
     if(StaticGraph()) {
@@ -540,17 +569,17 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
       int* testIndices;
       int testRow = Row;
       if(IndicesAreGlobal()) 
-	testRow = Graph_.LRID( Row );
+        testRow = Graph_.LRID( Row );
       EPETRA_CHK_ERR(Graph_.ExtractMyRowView(testRow, testNumEntries, testIndices));
-			
+
       bool match = true;
       if(NumEntries != testNumEntries) 
-	match = false;
+        match = false;
       for(int i = 0; i < NumEntries; ++i)
-	match = match && (Indices[i]==testIndices[i]);
-			
+        match = match && (Indices[i]==testIndices[i]);
+
       if(!match)
-	ierr = -3;
+        ierr = -3;
     }
 
     if(Values_[Row] != 0) 
@@ -560,9 +589,9 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
   else {    
     if(StaticGraph()) 
       EPETRA_CHK_ERR(-2); // If the matrix graph is fully constructed, we cannot insert new values
-		
+
     int tmpNumEntries = NumEntries;
-		
+
     if(Graph_.HaveColMap()) { //must insert only valid indices, values
       const double* tmpValues = Values;
       Values = new double[NumEntries];
@@ -570,39 +599,43 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
       if(IndicesAreLocal()) {
         for(int i = 0; i < NumEntries; ++i)
           if(Graph_.ColMap().MyLID(Indices[i])) 
-	    Values[loc++] = tmpValues[i];
+            Values[loc++] = tmpValues[i];
       }
       else {
         for(int i = 0; i < NumEntries; ++i)
           if(Graph_.ColMap().MyGID(Indices[i])) 
-	    Values[loc++] = tmpValues[i];
+            Values[loc++] = tmpValues[i];
       }
       if(NumEntries != loc) 
-	ierr = 2; //Some columns excluded
+        ierr = 2; //Some columns excluded
       NumEntries = loc;
     } 
 
     int start = Graph().NumMyIndices(Row);
     int stop = start + NumEntries;
-    int NumAllocatedEntries = Graph().NumAllocatedMyIndices(Row);
+    int NumAllocatedEntries = Values_alloc_lengths_[Row];
     if(stop > NumAllocatedEntries) {
-      if (Graph().StaticProfile()) {
-	EPETRA_CHK_ERR(-2); // Cannot reallocate storage if graph created using StaticProfile
+      if (Graph().StaticProfile() && stop > Graph().NumAllocatedMyIndices(Row)) {
+        EPETRA_CHK_ERR(-2); // Cannot expand graph storage if graph created using StaticProfile
       }
-      if(NumAllocatedEntries == 0) 
-	Values_[Row] = new double[NumEntries]; // Row was never allocated, so do it
+      if(NumAllocatedEntries == 0) {
+        Values_[Row] = new double[NumEntries]; // Row was never allocated, so do it
+        Values_alloc_lengths_[Row] = NumEntries;
+      }
       else {
-	ierr = 1; // Out of room.  Must delete and allocate more space...
-	tmp_Values = new double[stop];
-	for(j = 0; j < start; j++) 
-	  tmp_Values[j] = Values_[Row][j]; // Copy existing entries
-	delete[] Values_[Row]; // Delete old storage
-	Values_[Row] = tmp_Values; // Set pointer to new storage
+        ierr = 1; // Out of room.  Must delete and allocate more space...
+        double* tmp_Values = new double[stop];
+        for(j = 0; j < start; j++) 
+          tmp_Values[j] = Values_[Row][j]; // Copy existing entries
+        delete[] Values_[Row]; // Delete old storage
+        Values_[Row] = tmp_Values; // Set pointer to new storage
+        Values_alloc_lengths_[Row] = stop;
       }
     }
-        
+
     for(j = start; j < stop; j++) 
       Values_[Row][j] = Values[j-start];
+
 
     NumEntries = tmpNumEntries;
     if(Graph_.HaveColMap()) 
@@ -619,7 +652,6 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 
   EPETRA_CHK_ERR(ierr);
   return(0);
-
 }
 
 //==========================================================================
@@ -725,7 +757,7 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
 {
   int j;
   int ierr = 0;
-  int Loc;
+  int Loc = 0;
 
   Row = Graph_.LRID(Row); // Normalize row range
     
@@ -737,13 +769,13 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
     EPETRA_CHK_ERR(-1);
   }
 
-  double * targValues = Values(Row);
+  double * RowValues = Values(Row);
 
   if (!StaticGraph()) {
     for (j=0; j<NumEntries; j++) {
       int Index = Indices[j];
       if (Graph_.FindGlobalIndexLoc(Row,Index,j,Loc))
-        targValues[Loc] += srcValues[j];
+        RowValues[Loc] += srcValues[j];
       else
         ierr = 2; // Value Excluded
     }
@@ -753,14 +785,33 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
     int NumColIndices = Graph_.NumMyIndices(Row);
     const int* ColIndices = Graph_.Indices(Row);
 
-    double* RowValues = Values(Row); 
-    for (j=0; j<NumEntries; j++) {
-      int Index = colmap.LID(Indices[j]);
-      if (Graph_.FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
-        RowValues[Loc] += srcValues[j];
-      else 
-        ierr = 2; // Value Excluded
+    if (Graph_.Sorted()) {
+      int insertPoint;
+      for (j=0; j<NumEntries; j++) {
+        int Index = colmap.LID(Indices[j]);
+
+        // Check whether the next added element is the subsequent element in
+        // the graph indices, then we can skip the binary search
+        if (Loc < NumColIndices && Index == ColIndices[Loc])
+          RowValues[Loc] += srcValues[j];
+        else {
+          Loc = Epetra_Util_binary_search(Index, ColIndices, NumColIndices, insertPoint);
+          if (Loc > -1)
+            RowValues[Loc] += srcValues[j];
+          else 
+            ierr = 2; // Value Excluded
+        }
+        ++Loc;
+      }
     }
+    else
+      for (j=0; j<NumEntries; j++) {
+        int Index = colmap.LID(Indices[j]);
+        if (Graph_.FindMyIndexLoc(NumColIndices,ColIndices,Index,j,Loc)) 
+          RowValues[Loc] += srcValues[j];
+        else 
+          ierr = 2; // Value Excluded
+      }
   }
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
@@ -780,19 +831,42 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, const double * sr
 
   int j;
   int ierr = 0;
-  int Loc;
+  int Loc = 0;
+  int insertPoint;
 
   if (Row < 0 || Row >= NumMyRows_) {
     EPETRA_CHK_ERR(-1); // Not in Row range
   }
 
   double* RowValues = Values(Row);
-  for (j=0; j<NumEntries; j++) {
-    int Index = Indices[j];
-    if (Graph_.FindMyIndexLoc(Row,Index,j,Loc)) 
-      RowValues[Loc] += srcValues[j];
-    else 
-      ierr = 2; // Value Excluded
+  int NumColIndices = Graph_.NumMyIndices(Row);
+  const int* ColIndices = Graph_.Indices(Row);
+  if (Graph_.Sorted()) {
+    for (j=0; j<NumEntries; j++) {
+      int Index = Indices[j];
+
+      // Check whether the next added element is the subsequent element in
+      // the graph indices.
+      if (Index == ColIndices[Loc] && Loc < NumColIndices)
+ RowValues[Loc] += srcValues[j];
+      else {
+ Loc = Epetra_Util_binary_search(Index, ColIndices, NumColIndices, insertPoint);
+ if (Loc > -1)
+   RowValues[Loc] += srcValues[j];
+ else 
+   ierr = 2; // Value Excluded
+      }
+      ++Loc;
+    }
+  }
+  else {
+    for (j=0; j<NumEntries; j++) {
+      int Index = Indices[j];
+      if (Graph_.FindMyIndexLoc(Row,Index,j,Loc)) 
+ RowValues[Loc] += srcValues[j];
+      else 
+ ierr = 2; // Value Excluded
+    }
   }
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
@@ -1008,7 +1082,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
     int NumMyNonzeros = Graph_.NumMyNonzeros();
     
     // Allocate one big array for all values
-    if (!(Graph().StaticProfile())) { // If static profile, All_Values_ is already allocated, only need to pack data
+    if (All_Values_ == 0) { // If All_Values_ is not already allocated (otherwise just pack data)
       All_Values_ = new double[NumMyNonzeros];
       if(All_Values_ == 0) 
 	throw ReportError("Error with All_Values_ allocation.", -99);
@@ -1028,13 +1102,14 @@ int Epetra_CrsMatrix::OptimizeStorage() {
         int curOffset = IndexOffset[i];
         double * Values = Values_[i];
         double * newValues = All_Values_+curOffset;
-	for (j=0; j<NumEntries; j++) newValues[j] = Values[j];
+        for (j=0; j<NumEntries; j++) newValues[j] = Values[j];
       }
 
       for (i=0;i<NumMyRows_; ++i) {
-         delete [] Values_[i]; 
+        delete [] Values_[i]; 
       }
 
+      delete [] Values_alloc_lengths_; Values_alloc_lengths_ = 0;
     }
     else { // Static Profile, so just pack into existing storage (can't be threaded)
       double * tmp = All_Values_;
@@ -1042,7 +1117,7 @@ int Epetra_CrsMatrix::OptimizeStorage() {
         int NumEntries = Graph().NumMyIndices(i);
         double * Values = Values_[i];
         if (tmp!=Values) // Copy values if not pointing to same location
-	  for (j=0; j<NumEntries; j++) tmp[j] = Values[j];
+          for (j=0; j<NumEntries; j++) tmp[j] = Values[j];
         tmp += NumEntries;
       }
     }
@@ -2704,7 +2779,7 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
        const double *val_ptr    = Values;
        const int    *colnum_ptr = Indices;
        double       * dst_ptr = y;
-       for (unsigned int row=0; row<NumMyRows_; ++row)
+       for (int row=0; row<NumMyRows_; ++row)
  	{
  	  double s = 0.;
  	  const double *const val_end_of_row = &Values[IndexOffset[row+1]];

@@ -29,10 +29,6 @@
 #ifndef TPETRA_IMPORTEXPORTDATA_HPP
 #define TPETRA_IMPORTEXPORTDATA_HPP
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Object.hpp>
 #include "Tpetra_Distributor.hpp"
 

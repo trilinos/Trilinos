@@ -1,5 +1,5 @@
 
-#include <use_cases/GridFixture.hpp>
+#include <stk_mesh/fixtures/GridFixture.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -8,6 +8,7 @@
 
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/Types.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -145,7 +146,11 @@ const int global_num_live[NUM_ITERATIONS][NUM_RANK] =
 //----------------------------------------------------------------------------------
 
 //Generates a vector of entities to be killed in this iteration
-EntityVector entities_to_be_killed( const stk::mesh::BulkData & mesh, int iteration) {
+EntityVector entities_to_be_killed( 
+    const stk::mesh::BulkData & mesh, 
+    int iteration,
+    stk::mesh::EntityRank entity_rank
+    ) {
 
   std::vector<unsigned> entity_ids_to_kill;
   switch(iteration) {
@@ -186,7 +191,7 @@ EntityVector entities_to_be_killed( const stk::mesh::BulkData & mesh, int iterat
   EntityVector entities_to_kill;
   for (std::vector<unsigned>::const_iterator itr = entity_ids_to_kill.begin();
       itr != entity_ids_to_kill.end(); ++itr) {
-    stk::mesh::Entity * temp = mesh.get_entity(stk::mesh::Face, *itr);
+    stk::mesh::Entity * temp = mesh.get_entity(entity_rank, *itr);
     //select the entity only if the current process in the owner
     if (temp != NULL && temp->owner_rank() == mesh.parallel_rank()) {
       entities_to_kill.push_back(temp);
@@ -208,7 +213,7 @@ namespace {
   };
 }
 
-bool validate_sides( GridFixture & fixture, int iteration) {
+bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration) {
 
   enum {
     LEFT   = 0,
@@ -530,6 +535,7 @@ bool validate_sides( GridFixture & fixture, int iteration) {
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
   stk::mesh::Part & dead_part = *fixture.dead_part();
+  stk::mesh::TopologicalMetaData & top = fixture.top_data();
 
   // Select live or dead from owned, shared, and ghosted
   stk::mesh::Selector select_dead = dead_part ;
@@ -538,7 +544,7 @@ bool validate_sides( GridFixture & fixture, int iteration) {
   //check live sides
   for (std::vector<entity_side>::const_iterator itr = live_sides.begin();
       itr != live_sides.end(); ++itr) {
-    stk::mesh::Entity * entity = mesh.get_entity(stk::mesh::Face, itr->entity_id);
+    stk::mesh::Entity * entity = mesh.get_entity(top.element_rank, itr->entity_id);
     if (entity != NULL) {
       //make sure the side exist
       const unsigned side_ordinal = itr->side_ordinal;
@@ -559,7 +565,7 @@ bool validate_sides( GridFixture & fixture, int iteration) {
   //check dead sides
   for (std::vector<entity_side>::const_iterator itr = dead_sides.begin();
       itr != dead_sides.end(); ++itr) {
-    stk::mesh::Entity * entity = mesh.get_entity(stk::mesh::Face, itr->entity_id);
+    stk::mesh::Entity * entity = mesh.get_entity(top.element_rank, itr->entity_id);
     //select the entity only if the current process in the owner
     // TODO fix the aura to correctly ghost the sides
     if (entity != NULL && entity->owner_rank() == mesh.parallel_rank()) {
@@ -591,7 +597,7 @@ bool validate_sides( GridFixture & fixture, int iteration) {
 
 
 //Validates that the correct entites were killed in this iteration
-bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int iteration) {
+bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixture & fixture, int iteration) {
 
   if (iteration >= NUM_ITERATIONS || iteration < 0) {
     return false;
@@ -609,7 +615,7 @@ bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int ite
   int num_live[NUM_RANK] = {0, 0, 0};
 
   for ( int i = 0; i < NUM_RANK ; ++i) {
-    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( stk::mesh::fem_entity_rank(i));
+    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( stk::mesh::EntityRank(i) );
     num_dead[i] = count_selected_entities( select_dead, buckets);
     num_live[i] = count_selected_entities( select_live, buckets);
   }

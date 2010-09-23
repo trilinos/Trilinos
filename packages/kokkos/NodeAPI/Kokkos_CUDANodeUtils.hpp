@@ -15,11 +15,11 @@ namespace Kokkos {
 
   class CUDANodeDeallocator {
     public:
-      CUDANodeDeallocator(size_t sizeInBytes, const Teuchos::RCP<CUDANodeMemoryModel> &node);
+      CUDANodeDeallocator(size_t sizeInBytes, const RCP<CUDANodeMemoryModel> &node);
       void free(void *ptr);
     private:
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
-      const Teuchos::RCP<CUDANodeMemoryModel> node_;
+      const RCP<CUDANodeMemoryModel> node_;
       const size_t allocSize_;
 #endif
   };
@@ -35,35 +35,35 @@ namespace Kokkos {
   template <class T>
   class CUDANodeCopyBackDeallocator {
     public:
-      CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer, const Teuchos::RCP<CUDANodeMemoryModel> &node);
+      CUDANodeCopyBackDeallocator(const ArrayRCP<T> &buffer, const RCP<CUDANodeMemoryModel> &node);
 
       //! Allocate the buffer, returning a Teuchos::ArrayRCP of the requested type, with a copy-back to GPU memory occurring at deallocation.
-      Teuchos::ArrayRCP<T> alloc()const ;
+      ArrayRCP<T> alloc()const ;
 
       void free(void *ptr) const;
     private:
       // we have to keep a copy of this ArrayRCP, to know whether the underlying memory was deleted
-      const Teuchos::ArrayRCP<T> devbuf_;
-      const Teuchos::RCP<CUDANodeMemoryModel> node_;
+      const ArrayRCP<T> devbuf_;
+      const RCP<CUDANodeMemoryModel> node_;
 #ifdef HAVE_KOKKOS_DEBUG
       mutable T * originalHostPtr_;
 #endif
   };
 
   template <class T>
-  CUDANodeCopyBackDeallocator<T>::CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer,   
-                                                              const Teuchos::RCP<CUDANodeMemoryModel> &node)
+  CUDANodeCopyBackDeallocator<T>::CUDANodeCopyBackDeallocator(const ArrayRCP<T> &buffer,   
+                                                              const RCP<CUDANodeMemoryModel> &node)
   : devbuf_(buffer.create_weak())
   , node_(node)
   { 
 #ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPT(node_ == Teuchos::null);
+    TEST_FOR_EXCEPT(node_ == null);
     originalHostPtr_ = NULL;
 #endif
   }
 
   template <class T>
-  Teuchos::ArrayRCP<T>
+  ArrayRCP<T>
   CUDANodeCopyBackDeallocator<T>::alloc() const {
 #ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION( originalHostPtr_ != NULL, std::runtime_error,
@@ -78,7 +78,7 @@ namespace Kokkos {
 #endif
     // create an ARCP<T> owning this memory, with a copy of *this for the deallocator
     const bool OwnsMem = true;
-    return Teuchos::arcp<T>( hostPtr, 0, devbuf_.size(), *this, OwnsMem );
+    return arcp<T>( hostPtr, 0, devbuf_.size(), *this, OwnsMem );
   }
 
   template <class T>
@@ -92,7 +92,7 @@ namespace Kokkos {
     if (devbuf_.is_valid_ptr()) {
       // create temporary ArrayView for use with copyToBuffer
       // we must disable the lookup, or a debug build of Teuchos will freak out
-      Teuchos::ArrayView<const T> tmpav((const T*)hostPtr, devbuf_.size(), Teuchos::RCP_DISABLE_NODE_LOOKUP);
+      ArrayView<const T> tmpav((const T*)hostPtr, devbuf_.size(), Teuchos::RCP_DISABLE_NODE_LOOKUP);
       node_->template copyToBuffer<T>(devbuf_.size(), tmpav, devbuf_);
     }
     cutilSafeCallNoSync( cudaFreeHost( (void**)hostPtr ) );

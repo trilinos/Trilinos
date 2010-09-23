@@ -1,0 +1,33 @@
+
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
+
+IF(TPL_ENABLE_ExodusII)
+ADD_OPTION_AND_DEFINE(TPL_ENABLE_ExodusII
+  HAVE_MOERTEL_EXODUS
+  "Enable ExodusII reader in Moertel requires ExodusII TPL)."
+  OFF )
+  INCLUDE_DIRECTORIES(${TPL_ExodusII_INCLUDE_DIRS})
+  ADD_DEFINITIONS(-DHAVE_MOERTEL_EXODUS)
+ENDIF()
+
+PRINT_VAR(HAVE_MOERTEL_EXODUS)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TwoSquares
+  NAME TwoSquares
+  SOURCES TwoSquares.cpp
+  ARGS 
+  COMM serial
+  PASS_REGULAR_EXPRESSION "Test passed!"
+  )
+
+IF(TwoSquares)
+PACKAGE_COPY_FILES_TO_BINARY_DIR(
+   TwoSquaresCopyFiles
+   SOURCE_FILES TwoSquares.grid
+   EXEDEPS TwoSquares
+   )
+ENDIF()

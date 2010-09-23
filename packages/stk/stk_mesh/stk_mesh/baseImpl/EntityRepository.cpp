@@ -75,13 +75,18 @@ EntityRepository::internal_create_entity( const EntityKey & key )
   if ( insert_result.second )  { // A new entity
     insert_result.first->second = result.first = new Entity( key );
   }
-  else if ( result.first->marked_for_destruction() ) {
+  else if ( EntityLogDeleted == result.first->log_query() ) {
     // resurrection
     result.first->m_entityImpl.log_resurrect();
     result.second = true;
   }
 
   return result ;
+}
+
+void EntityRepository::log_created_parallel_copy( Entity & entity )
+{
+  entity.m_entityImpl.log_created_parallel_copy();
 }
 
 Entity * EntityRepository::get_entity(const EntityKey &key) const
@@ -143,6 +148,13 @@ bool EntityRepository::insert_comm_info( Entity & e, const EntityCommInfo & comm
 }
 
 void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket ) {
+  if ( e.log_query() == EntityLogDeleted ) {
+    std::ostringstream msg;
+    msg << "Error: double deletion of entity: ";
+    print_entity_key( msg, nil_bucket->mesh().mesh_meta_data(), e.key() );
+    throw std::runtime_error(msg.str());
+  }
+
   change_entity_bucket( *nil_bucket, e, 0);
   e.m_entityImpl.log_deleted(); //important that this come last
 }
@@ -152,7 +164,7 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
   const bool modified_parts = ! e.m_entityImpl.is_bucket_valid() ||
                               ! b.equivalent( e.bucket() );
   if ( modified_parts ) {
-    e.m_entityImpl.log_modified();
+    e.m_entityImpl.log_modified_and_propagate();
   }
   e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
 }
@@ -185,9 +197,11 @@ void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
     }
   }
 
+  // It is critical that the modification be done AFTER the relations are
+  // changed so that the propagation can happen correctly.
   if ( caused_change_fwd ) {
-    e_to.m_entityImpl.log_modified();
-    e_from.m_entityImpl.log_modified();
+    e_to.m_entityImpl.log_modified_and_propagate();
+    e_from.m_entityImpl.log_modified_and_propagate();
   }
 }
 
@@ -224,9 +238,11 @@ void EntityRepository::declare_relation( Entity & e_from,
     }
   }
 
+  // It is critical that the modification be done AFTER the relations are
+  // added so that the propagation can happen correctly.
   if ( caused_change_fwd ) {
-    e_to.m_entityImpl.log_modified();
-    e_from.m_entityImpl.log_modified();
+    e_to.m_entityImpl.log_modified_and_propagate();
+    e_from.m_entityImpl.log_modified_and_propagate();
   }
 }
 

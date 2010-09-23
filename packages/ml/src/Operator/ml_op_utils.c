@@ -2935,6 +2935,26 @@ ML_Operator *ML_Operator_BlkMatExtract(ML_Operator *BlkMat, int Row, int Col)
   return(widget->matrix[i]);
 }
 
+/***************************************************************/
+/* Determine the number of block rows in the block operator    */
+/***************************************************************/
+int ML_Operator_BlkMatNumBlockRows(ML_Operator * BlkMat)
+{
+  struct  MLBlkMat  *widget;
+  widget = (struct MLBlkMat *) BlkMat->data;
+  return(widget->NBlockRows);
+}
+
+/***************************************************************/
+/* Determine the number of block columns in the block operator    */
+/***************************************************************/
+int ML_Operator_BlkMatNumBlockCols(ML_Operator * BlkMat)
+{
+  struct  MLBlkMat  *widget;
+  widget = (struct MLBlkMat *) BlkMat->data;
+  return(widget->NBlockCols);
+}
+
 
 /*************************************************************/
 /* Finish the block matrix definition. At this point it is   */

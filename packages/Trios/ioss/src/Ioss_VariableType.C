@@ -1,16 +1,41 @@
-/*--------------------------------------------------------------------*/
-/*    Copyright 2000, 2008 Sandia Corporation.                        */
-/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
-/*    non-exclusive license for use of this work by or on behalf      */
-/*    of the U.S. Government.  Export of this program may require     */
-/*    a license from the United States Government.                    */
-/*--------------------------------------------------------------------*/
+// Copyright(C) 1999-2010
+// Sandia Corporation. Under the terms of Contract
+// DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
+// certain rights in this software.
+//         
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+// 
+//     * Redistributions of source code must retain the above copyright
+//       notice, this list of conditions and the following disclaimer.
+// 
+//     * Redistributions in binary form must reproduce the above
+//       copyright notice, this list of conditions and the following
+//       disclaimer in the documentation and/or other materials provided
+//       with the distribution.
+//     * Neither the name of Sandia Corporation nor the names of its
+//       contributors may be used to endorse or promote products derived
+//       from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_VariableType.h>
 
 #include <Ioss_Utils.h>
 #include <Ioss_CompositeVariableType.h>
 #include <Ioss_ConstructedVariableType.h>
+#include <Ioss_NamedSuffixVariableType.h>
 
 #include <string>
 #include <cstring>
@@ -23,6 +48,7 @@
 
 namespace {
   std::string uppercase(const std::string &name);
+  std::string lowercase(const std::string &name);
 
   class Deleter {
   public:
@@ -49,7 +75,8 @@ Ioss::VariableType::~VariableType() {}
 Ioss::VariableType::VariableType(const std::string& type, int comp_count, bool delete_me)
   : name_(type), componentCount(comp_count)
 {
-  registry().insert(Ioss::VTM_ValuePair(type, this), delete_me);
+  std::string low_type = lowercase(type);
+  registry().insert(Ioss::VTM_ValuePair(low_type, this), delete_me);
 
   // Register uppercase version also
   std::string up_type = uppercase(type);
@@ -59,7 +86,7 @@ Ioss::VariableType::VariableType(const std::string& type, int comp_count, bool d
 
 void Ioss::VariableType::alias(const std::string& base, const std::string& syn)
 {
-  registry().insert(Ioss::VTM_ValuePair(syn,
+  registry().insert(Ioss::VTM_ValuePair(lowercase(syn),
 					(Ioss::VariableType*)factory(base)), false);
   // Register uppercase version also
   std::string up_type = uppercase(syn);
@@ -85,9 +112,60 @@ int Ioss::VariableType::describe(NameList *names)
   return count;
 }
 
-const Ioss::VariableType* Ioss::VariableType::factory(const std::string& name, int copies)
+bool Ioss::VariableType::add_field_type_mapping(const std::string &raw_field, const std::string &raw_type)
+{
+  // See if storage type 'type' exists...
+  std::string field = lowercase(raw_field);
+  std::string type  = lowercase(raw_type);
+  if (registry().find(type) == registry().end())
+    return false;
+
+  // Add mapping.
+  if (registry().customFieldTypes.insert(std::make_pair(field, type)).second)
+    return true;
+  else
+    return false;
+}
+
+bool Ioss::VariableType::create_named_suffix_field_type(const std::string &type_name, std::vector<std::string> &suffices)
+{
+  size_t count = suffices.size();
+  if (count < 1)
+    return false;
+
+  std::string low_name = lowercase(type_name);
+  // See if the variable already exists...
+  if (registry().find(low_name) != registry().end())
+    return false;
+  
+  // Create the variable.  Note that the 'true' argument means Ioss will delete the pointer.
+  Ioss::NamedSuffixVariableType *var_type = new Ioss::NamedSuffixVariableType(low_name, count, true);
+
+  for (size_t i=0; i < count; i++) {
+    var_type->add_suffix(i+1, suffices[i]);
+  }
+  return true;
+}
+
+bool Ioss::VariableType::get_field_type_mapping(const std::string &field, std::string *type)
+{
+  // Returns true if a mapping exists, 'type' contains the mapped type.
+  // Returns false if no custom mapping exists for this field.
+  std::string low_field = lowercase(field);
+  
+  if (registry().customFieldTypes.find(low_field) == registry().customFieldTypes.end()) {
+    return false;
+  }
+  else {
+    *type = registry().customFieldTypes.find(low_field)->second;
+    return true;
+  }
+}
+
+const Ioss::VariableType* Ioss::VariableType::factory(const std::string& raw_name, int copies)
 {
   Ioss::VariableType* inst = NULL;
+  std::string name = lowercase(raw_name);
   Ioss::VariableTypeMap::iterator iter = registry().find(name);
   if (iter == registry().end()) {
     bool can_construct = build_variable_type(name);
@@ -97,7 +175,7 @@ const Ioss::VariableType* Ioss::VariableType::factory(const std::string& name, i
       inst = (*iter).second;
     } else {
       std::ostringstream errmsg;
-      errmsg << "FATAL: The variable type '" << name << "' is not supported.\n";
+      errmsg << "FATAL: The variable type '" << raw_name << "' is not supported.\n";
       IOSS_ERROR(errmsg);
     }
   } else {
@@ -210,12 +288,14 @@ std::string Ioss::VariableType::label_name(const std::string& base, int which,
   return my_name;
 }
 
-bool Ioss::VariableType::build_variable_type(const std::string& type)
+bool Ioss::VariableType::build_variable_type(const std::string& raw_type)
 {
   // See if this is a multi-component instance of a base type.
   // An example would be REAL[2] which is a basic real type with
   // two components.  The suffices would be .0 and .1
 
+  std::string type = lowercase(raw_type);
+  
   // Step 0:
   // See if the type contains '[' and ']'
   char const *typestr = type.c_str();
@@ -288,6 +368,12 @@ namespace {
   {
     std::string s(name);
     std::transform(s.begin(), s.end(), s.begin(), toupper);
+    return s;
+  }
+  std::string lowercase(const std::string &name)
+  {
+    std::string s(name);
+    std::transform(s.begin(), s.end(), s.begin(), tolower);
     return s;
   }
 }

@@ -172,7 +172,45 @@ namespace Tpetra {
                                    const Teuchos::ArrayView<Scalar> &Values,
                                    size_t &NumEntries) const  = 0;
 
-      //! Get a persisting const view of the entries in a specified global row of this matrix.
+      //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
+      /*!
+        \param GlobalRow - (In) Global row number for which indices are desired.
+        \param Indices   - (Out) Global column indices corresponding to values.
+        \param Values    - (Out) Row values
+        \pre <tt>isLocallyIndexed() == false</tt>
+        \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
+
+         Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
+       */
+      virtual void getGlobalRowView(GlobalOrdinal GlobalRow, 
+                                    ArrayView<const GlobalOrdinal> &indices, 
+                                    ArrayView<const Scalar> &values) const = 0;
+
+      //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
+      /*!
+        \param LocalRow - (In) Local row number for which indices are desired.
+        \param Indices  - (Out) Global column indices corresponding to values.
+        \param Values   - (Out) Row values
+        \pre <tt>isGloballyIndexed() == false</tt>
+        \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
+
+         Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
+       */
+      virtual void getLocalRowView(LocalOrdinal LocalRow, 
+                                   ArrayView<const LocalOrdinal> &indices, 
+                                   ArrayView<const Scalar> &values) const = 0;
+
+      //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+      /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
+          the zero and non-zero diagonals owned by this node. */
+      virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const = 0;
+
+      //@}
+
+      //! \name Deprecated routines to be removed at some point in the future.
+      //@{
+
+      //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
       /*!
         \param GlobalRow - (In) Global row from which to retrieve matrix entries.
         \param Indices - (Out) Indices for the global row.
@@ -182,11 +220,11 @@ namespace Tpetra {
 
         \pre isLocallyIndexed()==false
        */
-      virtual void getGlobalRowView(GlobalOrdinal GlobalRow, 
-                                    Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
-                                    Teuchos::ArrayRCP<const Scalar>        &values) const = 0;
+      TPETRA_DEPRECATED virtual void getGlobalRowView(GlobalOrdinal GlobalRow, 
+                                                      Teuchos::ArrayRCP<const GlobalOrdinal> &indices,
+                                                      Teuchos::ArrayRCP<const Scalar>        &values) const = 0;
 
-      //! Get a persisting const view of the entries in a specified local row of this matrix.
+      //! Deprecated. Get a persisting const view of the entries in a specified local row of this matrix.
       /*!
         \param LocalRow - (In) Local row from which to retrieve matrix entries.
         \param Indices - (Out) Indices for the local row.
@@ -196,14 +234,9 @@ namespace Tpetra {
 
         \pre isGloballyIndexed()==false
        */
-      virtual void getLocalRowView(LocalOrdinal LocalRow,
-                                   Teuchos::ArrayRCP<const LocalOrdinal> &indices,
-                                   Teuchos::ArrayRCP<const Scalar>       &values) const = 0;
-
-      //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
-      /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
-          the zero and non-zero diagonals owned by this node. */
-      virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const = 0;
+      TPETRA_DEPRECATED virtual void getLocalRowView(LocalOrdinal LocalRow,
+                                                    Teuchos::ArrayRCP<const LocalOrdinal> &indices,
+                                                    Teuchos::ArrayRCP<const Scalar>       &values) const = 0;
 
       //@}
 

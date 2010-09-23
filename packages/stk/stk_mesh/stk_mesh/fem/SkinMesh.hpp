@@ -9,14 +9,31 @@
 #ifndef stk_mesh_SkinMesh_hpp
 #define stk_mesh_SkinMesh_hpp
 
+#include <vector>
 
 namespace stk {
 namespace mesh {
 
 class BulkData;
 class Part;
+class Entity;
 
-void skin_mesh( BulkData & mesh, unsigned closure_rank, Part * part = NULL );
+typedef std::vector<Entity *> EntityVector;
+
+/**
+ * Skin the entire mesh.
+ */
+void skin_mesh( BulkData & mesh,
+                EntityRank element_rank,
+                Part * skin_part = NULL );
+
+/**
+ * Given a vector of modified/created elements, update the skin.
+ */
+void reskin_mesh( BulkData & mesh,
+                  EntityRank element_rank,
+                  EntityVector & owned_modified_elements,
+                  Part * skin_part = NULL );
 
 }
 }

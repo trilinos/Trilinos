@@ -2,25 +2,38 @@
 // ************************************************************************
 // 
 //               Epetra: Linear Algebra Services Package 
-//                 Copyright (2001) Sandia Corporation
+//                 Copyright 2001 Sandia Corporation
 // 
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-// 
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//  
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//  
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
@@ -334,7 +347,7 @@ int Epetra_VbrMatrix::Allocate() {
     if (NumAllocatedBlockEntries > 0) {
       Entries_[i] = new Epetra_SerialDenseMatrix*[NumAllocatedBlockEntries];
       for (j=0; j < NumAllocatedBlockEntries; j++) {
-	Entries_[i][j] = 0;
+        Entries_[i][j] = 0;
       }
     }
     else {
@@ -355,46 +368,36 @@ void Epetra_VbrMatrix::DeleteMemory()
 {
   int i;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
-
   for (i=0; i<NumMyBlockRows_; i++) {
     int NumAllocatedBlockEntries = NumAllocatedBlockEntriesPerRow_[i];
-    
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
+
     if (NumAllocatedBlockEntries >0) {
-  
-      // cout << __FILE__ << " i=" << i << " linje =" << __LINE__ << endl ; 
+
       for (int j=0; j < NumAllocatedBlockEntries; j++) {
-	if (Entries_[i][j]!=0) {
-	  delete Entries_[i][j];
-	}
+        if (Entries_[i][j]!=0) {
+          delete Entries_[i][j];
+        }
       }
       delete [] Entries_[i];
     }
   }
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (All_Values_Orig_!=0)   delete [] All_Values_Orig_;
   All_Values_Orig_ = 0;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (Entries_!=0)       delete [] Entries_;
   Entries_ = 0;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (ImportVector_!=0) delete ImportVector_;
   ImportVector_ = 0;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   NumMyBlockRows_ = 0;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (LenTemps_>0) {
     delete [] TempRowDims_;
     delete [] TempEntries_;
   }
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   // Delete any objects related to supporting the RowMatrix and Operator interfaces
   if (HavePointObjects_) {
 #if 1
@@ -412,21 +415,16 @@ void Epetra_VbrMatrix::DeleteMemory()
     HavePointObjects_ = false;
   }
 	
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   if (OperatorX_!=0) {
     delete OperatorX_;
     delete OperatorY_;
   }
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   InitializeDefaults(); // Reset all basic pointers to zero
   Allocated_ = false;
 
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
   delete Graph_; // We created the graph, so must delete it.
   Graph_ = 0;
-  // cout << __FILE__ << " " << __LINE__ << endl ; 
-
 }
 
 //==============================================================================
@@ -716,45 +714,51 @@ int Epetra_VbrMatrix::EndInsertValues()
 
     for ( j = 0; j < CurNumBlockEntries_; ++j ) {
       bool myID = CurIndicesAreLocal_ ?
-	map.MyLID(CurBlockIndices_[j]) : map.MyGID(CurBlockIndices_[j]);
+        map.MyLID(CurBlockIndices_[j]) : map.MyGID(CurBlockIndices_[j]);
 
       if( myID ) {
-	ValidBlockIndices[ NumValidBlockIndices++ ] = j;
+        ValidBlockIndices[ NumValidBlockIndices++ ] = j;
       }
       else ierr=2; // Discarding a Block not found in ColMap
     }
   }
 
-  int start = NumBlockEntriesPerRow_[CurBlockRow_];
+  int oldNumBlocks = NumBlockEntriesPerRow_[CurBlockRow_];
+  int oldNumAllocBlocks = NumAllocatedBlockEntriesPerRow_[CurBlockRow_];
+
+  // Update graph
+  ierr = Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_);
+
+  int newNumAllocBlocks = NumAllocatedBlockEntriesPerRow_[CurBlockRow_];
+
+  if (newNumAllocBlocks > oldNumAllocBlocks) {
+    ierr = 3;//positive warning code indicates we expanded allocated memory
+    Epetra_SerialDenseMatrix** tmp_Entries = new Epetra_SerialDenseMatrix*[newNumAllocBlocks];
+    for(j=0; j<oldNumBlocks; ++j) tmp_Entries[j] = Entries_[CurBlockRow_][j];
+    for(j=oldNumBlocks; j<newNumAllocBlocks; ++j) tmp_Entries[j] = NULL;
+    delete [] Entries_[CurBlockRow_];
+    Entries_[CurBlockRow_] = tmp_Entries;
+  }
+
+  int start = oldNumBlocks;
   int stop = start + NumValidBlockIndices;
   int NumAllocatedEntries = NumAllocatedBlockEntriesPerRow_[CurBlockRow_];
 
-  if (stop > NumAllocatedEntries) {
-    if (NumAllocatedEntries==0) { // BlockRow was never allocated, so do it
-      Entries_[CurBlockRow_] = new Epetra_SerialDenseMatrix*[NumValidBlockIndices];
-    }
-    else {
-      ierr = 1; // Out of room.  Must delete and allocate more space...
-      Epetra_SerialDenseMatrix ** tmp_Entries =
-	new Epetra_SerialDenseMatrix*[stop];
-      for (j=0; j< start; j++) {
-	tmp_Entries[j] = Entries_[CurBlockRow_][j]; // Copy existing entries
-      }
-      delete [] Entries_[CurBlockRow_]; // Delete old storage
-
-      Entries_[CurBlockRow_] = tmp_Entries; // Set pointer to new storage
+  if (stop <= NumAllocatedEntries) {
+    for (j=start; j<stop; j++) {
+      Epetra_SerialDenseMatrix& mat =
+        *(TempEntries_[ValidBlockIndices[j-start]]);
+  
+      Entries_[CurBlockRow_][j] = new Epetra_SerialDenseMatrix(CV_, mat.A(),
+          mat.LDA(),
+          mat.M(),
+          mat.N());
     }
   }
-
-  for (j=start; j<stop; j++) {
-    Epetra_SerialDenseMatrix& mat =
-      *(TempEntries_[ValidBlockIndices[j-start]]);
-
-    Entries_[CurBlockRow_][j] = new Epetra_SerialDenseMatrix(CV_, mat.A(),
-							     mat.LDA(),
-							     mat.M(),
-							     mat.N());
+  else {
+    ierr = -4;
   }
+
 
   delete [] ValidBlockIndices;
 
@@ -762,8 +766,6 @@ int Epetra_VbrMatrix::EndInsertValues()
     delete TempEntries_[j];
   }
 
-  // Update graph
-  EPETRA_CHK_ERR(Graph_->InsertIndices(CurBlockRow_, CurNumBlockEntries_, CurBlockIndices_));
   EPETRA_CHK_ERR(ierr);
 
   return(0);

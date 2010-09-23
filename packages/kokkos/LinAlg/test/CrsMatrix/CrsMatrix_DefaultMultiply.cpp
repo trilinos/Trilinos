@@ -31,11 +31,8 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
-
-#include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
-#include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_DefaultSparseOps.hpp"
+#include "Kokkos_DefaultKernels.hpp"
 #include "Kokkos_Version.hpp"
 
 #include "Kokkos_SerialNode.hpp"
@@ -49,13 +46,17 @@
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
+/** \file CrsMatrix_DefaultMultiply.cpp
+    \brief A file unit-testing the Kokkos default sparse kernel provider.
+ */
+
 namespace {
 
   using Kokkos::MultiVector;
   using Kokkos::CrsMatrix;
   using Kokkos::CrsGraph;
   using Kokkos::DefaultArithmetic;
-  using Kokkos::DefaultSparseOps;
+  using Kokkos::DefaultKernels;
   using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
@@ -144,61 +145,58 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, SparseMultiply, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
-    typedef CrsGraph<Ordinal,Node>  GRPH;
-    typedef CrsMatrix<Scalar,Node>  MAT;
-    typedef MultiVector<Scalar,Node> MV;
-    typedef typename Node::size_t size_t;
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
+    typedef CrsGraph<Ordinal,Node,DSM>                             GRPH;
+    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>                      MAT;
+    typedef MultiVector<Scalar,Node>                                 MV;
+    typedef Teuchos::ScalarTraits<Scalar>                            ST;
+    const Scalar ONE = ST::one(),
+                ZERO = ST::zero();
     // generate tridiagonal matrix:
-    // [ 1 -1                   ]
-    // [-1  2  -1               ]
-    // [   -1   2  -1           ]
+    // [ 2 -1                   ]
+    // [-1  3  -1               ]
+    // [   -1   3  -1           ]
     // [                        ]
-    // [                -1  2 -1]
-    // [                   -1  1]
+    // [                -1  3 -1]
+    // [                   -1  2]
     if (N<2) return;
     GRPH G(N,node);
-    MAT  A(N,node);
+    MAT  A(G);
     // allocate buffers for offsets, indices and values
     const size_t totalNNZ = 3*N - 2;
-    ArrayRCP<size_t> offsets = node->template allocBuffer<size_t> (N+1);
-    ArrayRCP<Ordinal>   inds = node->template allocBuffer<Ordinal>(totalNNZ);
-    ArrayRCP<Scalar>    vals = node->template allocBuffer<Scalar >(totalNNZ);
+    ArrayRCP<size_t> offsets(N+1);
+    ArrayRCP<Ordinal>   inds(totalNNZ);
+    ArrayRCP<Scalar>    vals(totalNNZ);
     // fill the buffers on the host
     {
-      ArrayRCP<size_t>  offsets_h = node->template viewBufferNonConst<size_t> (Kokkos::WriteOnly,N+1,offsets);
-      ArrayRCP<Ordinal>    inds_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,totalNNZ,inds);
-      ArrayRCP<Scalar>     vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
       size_t NNZsofar = 0;
-      offsets_h[0] = NNZsofar;
-      inds_h[NNZsofar] = 0; inds_h[NNZsofar+1] =  1;
-      vals_h[NNZsofar] = 1; vals_h[NNZsofar+1] = -1;
+      offsets[0] = NNZsofar;
+      inds[NNZsofar] = 0; inds[NNZsofar+1] =  1;
+      vals[NNZsofar] = 2; vals[NNZsofar+1] = -1;
       NNZsofar += 2;
       for (int i=1; i != N-1; ++i) {
-        offsets_h[i] = NNZsofar;
-        inds_h[NNZsofar] = i-1; inds_h[NNZsofar+1] = i; inds_h[NNZsofar+2] = i+1;
-        vals_h[NNZsofar] =  -1; vals_h[NNZsofar+1] = 2; vals_h[NNZsofar+2] =  -1;
+        offsets[i] = NNZsofar;
+        inds[NNZsofar] = i-1; inds[NNZsofar+1] = i; inds[NNZsofar+2] = i+1;
+        vals[NNZsofar] =  -1; vals[NNZsofar+1] = 3; vals[NNZsofar+2] =  -1;
         NNZsofar += 3;
       }
-      offsets_h[N-1] = NNZsofar;
-      inds_h[NNZsofar] = N-2; inds_h[NNZsofar+1] = N-1;
-      vals_h[NNZsofar] =  -1; vals_h[NNZsofar+1] = 1;
+      offsets[N-1] = NNZsofar;
+      inds[NNZsofar] = N-2; inds[NNZsofar+1] = N-1;
+      vals[NNZsofar] =  -1; vals[NNZsofar+1] = 2;
       NNZsofar += 2;
-      offsets_h[N]   = NNZsofar;
+      offsets[N]   = NNZsofar;
       TEST_FOR_EXCEPT(NNZsofar != totalNNZ);
-      inds_h    = null;
-      vals_h    = null;
-      offsets_h = null;
     }
-    G.setPackedStructure(offsets, inds);
-    A.setPackedValues(vals);
-    DefaultSparseOps<Scalar,Ordinal,Node> dsm(node);
-    Teuchos::DataAccess cv;
-    cv = dsm.initializeStructure(G,Teuchos::View);
-    out << "DefaultSparseOps::initializeStructure<CrsGraph>(G,View) returned "
-        << (cv == Teuchos::View ? "View" : "Copy") << endl;
-    cv = dsm.initializeValues(A,Teuchos::View);
-    out << "DefaultSparseOps::initializeValues<CrsMatrix>(A,View) returned "
-        << (cv == Teuchos::View ? "View" : "Copy") << endl;
+    G.set1DStructure(inds, offsets, offsets.persistingView(1,N));
+    offsets = Teuchos::null;
+    inds    = Teuchos::null;
+    A.set1DValues(vals);
+    vals    = Teuchos::null;
+    A.finalize(true);
+    typename DSM::template rebind<Scalar>::other dsm(node);
+    out << "Testing with sparse ops: " << Teuchos::typeName(dsm) << std::endl;
+    dsm.initializeStructure(G);
+    dsm.initializeValues(A);
 
     ArrayRCP<Scalar> xdat, axdat;
     xdat  = node->template allocBuffer<Scalar>(N);
@@ -206,22 +204,87 @@ namespace {
     MV X(node), AX(node);
     X.initializeValues( N,1, xdat,N);
     AX.initializeValues(N,1,axdat,N);
-    DefaultArithmetic<MV>::Init(X,1);
-    dsm.multiply(Teuchos::NO_TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
-    ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
-    Scalar err = Teuchos::ScalarTraits<Scalar>::zero();
-    for (int i=0; i<N; ++i) {
-      err = axview[i] * axview[i];
+    DefaultArithmetic<MV>::Init( X,1);
+    dsm.multiply(Teuchos::NO_TRANS,ONE,X,AX);
+    // AX should be all ones
+    {
+      ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
+      Scalar err = ZERO;
+      for (int i=0; i<N; ++i) {
+        err += ST::magnitude(ONE - axview[i]);
+      }
+      TEST_EQUALITY_CONST(err, ZERO);
     }
-    axview = null;
-    err = Teuchos::ScalarTraits<Scalar>::squareroot(err);
-    TEST_EQUALITY_CONST(err, Teuchos::ScalarTraits<Scalar>::zero());
+    // do that same multiplication, testing alpha=-1 and beta=1 accumulation
+    dsm.multiply(Teuchos::NO_TRANS,-ONE,X,ONE,AX);
+    // AX should be zero
+    {
+      ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
+      Scalar err = ZERO;
+      for (int i=0; i<N; ++i) {
+        err += ST::magnitude(axview[i]);
+      }
+      TEST_EQUALITY_CONST(err, ZERO);
+    }
     xdat = null;
     axdat = null;
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DefaultSparseOps, NodeTest, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
+    typedef CrsGraph<Ordinal,Node,DSM>                             GRPH;
+    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>                      MAT;
+    typedef MultiVector<Scalar,Node>                                 MV;
+    typedef Teuchos::ScalarTraits<Scalar>                            ST;
+    typename DSM::template rebind<Scalar>::other dsm(node);
+    TEST_EQUALITY(dsm.getNode(), node);
+  }
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( DefaultSparseOps, ResubmitMatrix, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps DSM;
+    typedef CrsGraph<Ordinal,Node,DSM>                             GRPH;
+    typedef CrsMatrix<Scalar,Ordinal,Node,DSM>                      MAT;
+    typedef MultiVector<Scalar,Node>                                 MV;
+    typedef Teuchos::ScalarTraits<Scalar>                            ST;
+    const size_t numRows = 5;
+    GRPH G(numRows,node);
+    MAT  A(G);
+    A.finalize(true);
+    out << "\n**\n** Can't submit the values before the structure\n**\n";
+    {
+      typename DSM::template rebind<Scalar>::other dsm(node);
+      TEST_THROW( dsm.initializeValues(A), std::runtime_error );
+    }
+    out << "\n**\n** Can't submit the graph twice\n**\n";
+    {
+      typename DSM::template rebind<Scalar>::other dsm(node);
+      dsm.initializeStructure(G);
+      TEST_THROW( dsm.initializeStructure(G), std::runtime_error );
+    }
+    out << "\n**\n** Can submit the graph again after calling clear\n**\n";
+    {
+      typename DSM::template rebind<Scalar>::other dsm(node);
+      dsm.initializeStructure(G);
+      dsm.clear();
+      TEST_NOTHROW( dsm.initializeStructure(G) );
+    }
+    out << "\n**\n** Can submit the values twice\n**\n";
+    {
+      typename DSM::template rebind<Scalar>::other dsm(node);
+      dsm.initializeStructure(G);
+      dsm.initializeValues(A);
+      TEST_NOTHROW( dsm.initializeValues(A) );
+    }
+  }
+
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, SparseMultiply, ORDINAL, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix,        SparseMultiply, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, NodeTest,       ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( DefaultSparseOps, ResubmitMatrix, ORDINAL, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )

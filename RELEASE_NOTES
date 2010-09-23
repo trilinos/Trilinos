@@ -12,19 +12,44 @@ large-scale, complex multi-physics engineering and scientific problems.
 
 Packages:
 
-???
+The Trilinos 10.4 general release contains 47 packages: Amesos, Anasazi,
+AztecOO, Belos, CTrilinos*, Didasko, Epetra, EpetraExt, FEI, Galeri, GlobiPack*,
+Ifpack, Intrepid, Isorropia, Kokkos, Komplex, LOCA, Meros, Mesquite, ML,
+Moertel, MOOCHO, NOX, Optika, OptiPack*, Pamgen, Phalanx, Piro, Pliris,
+PyTrilinos, RTOp, Rythmos, Sacado, Shards, STK, Stokhos, Stratimikos, Sundance,
+Teuchos, ThreadPool, Thyra, Tifpack, Tpetra, TriKota, TrilinosCouplings,
+Triutils, Zoltan.
+
+(* denotes packages that are being released externally as a part of Trilinos
+for the first time.)
 
 Framework Release Notes:
 
 - Reduction of user CMake cache variables with CMake GUI 2.8.2 and newer
 
-Release 2.8.2 of the CMake QT-based GUI now has seprate check boxes for
-"Grouped" and "Advanced" CMake cache variables.  This, together with changes
-in the Trilinos CMake files to only set defaults for cache variables for
-Trilinos packages that are actually enabled, has made the manipulation of
-CMake varibles much more manageable for Trilinos users.
+  Release 2.8.2 of the CMake QT-based GUI now has seprate check boxes for
+  "Grouped" and "Advanced" CMake cache variables.  This, together with changes
+  in the Trilinos CMake files to only set defaults for cache variables for
+  Trilinos packages that are actually enabled, has made the manipulation of
+  CMake varibles much more manageable for Trilinos users.
 
-- ???
+- Export Makefile support added
+  
+  Similar to the find Trilinos capability for cmake-aware projects an export
+  Makefile capability is being officially released. Each package will have a
+  Makefile.export.<package> created for it that can be included in the Makefiles
+  for a project to give it access to information about what was built, which
+  compilers were used etc. Please see
+  commonTools/importing/README.Export_Makefile for more information and
+  instructions on how to use it.
+
+- Find Trilinos files moved
+
+  The installed files for finding Trilinos in a cmake-aware project have moved 
+  to the include directory instead of being at the top level. It was felt that
+  installing into the top level could be confusing when the install path was a
+  system path. 
+
  
 More information:
  
@@ -36,7 +61,160 @@ Package Release Notes:
  
 -------------------------------------------------------------------------------
 
-???
+Anasazi
+
+- Brought Anasazi/Tpetra adaptors back online (experimental)
+
+-------------------------------------------------------------------------------
+
+Belos
+
+- Replaced non-const MultiVecTraits::CloneView(MV) with explicit
+  MultiVecTraits::CloneViewNonConst(MV).
+
+  This is a non-backwards-compatible change to Belos::MultiVecTraits, requiring
+  changes through Belos solver, solver managers, and orthomanagers.  The result
+  is that it is much harder to accidentally create a non-const view when a const
+  view is sufficient. To do so requires CloneViewNonConst() be called
+  explicitly, all such calls being manually invoked during this refactorization.
+
+- Efficiency improvements for Belos/Tpetra adaptors (experimental)
+
+-------------------------------------------------------------------------------
+
+Kokkos
+
+Sparse ops:
+- Combined DefaultSparseSolve and DefaultSparseMultiply into DefaultSparseOps
+- Added new traits class, DefaultKernels, to specify default sparse and default
+  block sparse objects
+- Added new classes supporting Tpetra::VbrMatrix
+
+MultiVector ops:
+- Some methods were missing "inline" specifier. This could (should?) improve
+  performance for TPINode.
+
+CUDANodeMemoryModel:
+- Support for tracing/profiling data movement between host and GPU
+
+-------------------------------------------------------------------------------
+
+phdMesh
+
+- phdMesh has been removed from the release. STK provides replacement
+  functionality.
+
+-------------------------------------------------------------------------------
+
+PyTrilinos
+
+- The logic for determining the prefix for the install directory for PyTrilinos
+  has been improved.  Highest precedence is given to the configure variable
+  PyTrilinos_INSTALL_PREFIX.  If this is not set by the user, then next highest
+  precedence is given to CMAKE_INSTALL_PREFIX.  If this has not been set by the
+  user, then the prefix of the python interpreter that PyTrilinos is being
+  compiled against is used.
+
+-------------------------------------------------------------------------------
+
+Sundance
+
+- To compile Sundance explicit instantiation is now required. To enable explicit
+  instantiation you will need to set Trilinos_ENABLE_EXPLICIT_INSTANTIATION to
+  ON when configuring.
+
+-------------------------------------------------------------------------------
+
+Teuchos
+
+Known breaks in backward compatibility:
+
+- Changed direct constructors for ArrayRCP to take (lowerOffset, size) instead
+  of (lowerOffset, upperOffset) to be consistent with the nonmember constructors
+  like arcp(...) and ArrayView.  This was done to make these constructors
+  consistent with the non-member constructors.  As long clients were using the
+  nonmember constructors this will not break backward compatibility.  However,
+  if clients are using the direct constructors, upperOffset becomes size which
+  means that the size will actually become one less with the upperOffset
+  becoming one less.  This will therefore not result in memory access errors but
+  will result in exceptions being thrown when accessing the real last element.
+  Given the confusion that having diffrent arguments caused (that I got caught
+  with too) and the inherent safety inthe change, I think this break with strict
+  backward compatibiity is well worth the (minor) problems it might cause to
+  users.
+
+- Removed define of TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED for _AIX.  The macro
+  TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED was designed to be used only internally
+  within Teuchos (and perhaps other parts of Trilinos) but at some point all use
+  of this macro was removed (apparently in all of Trilinos).  If client code
+  used this macro for their own purposes, then this change will break client
+  code when _AIX is defined.  However, it seems unlikely that there will be such
+  client code around.
+
+-------------------------------------------------------------------------------
+
+Tpetra
+
+- Kokkos and Tpetra are in the middle of a medium refactor in order to better
+  support GPU and multicore nodes. Therefore, there has been some potential
+  regression in performance for GPU nodes; and some known issues regarding
+  multi-core CPU performance (especially  on NUMA platforms) have not been
+  addressed. The rest of this refactor is likely to happen  in the development
+  branch, and will not be released until 10.6 (estimated for September 2010). 
+
+  Users that require access to this code should contact a Trilinos developer
+  regarding access to the development branch repository. 
+
+Improvements to doxygen documentation.
+- Added ifdefs to support profiling/tracing of host-to-device memory transfers 
+  These are enable via cmake options
+  -D Kokkos_CUDA_NODE_MEMORY_PROFILING:BOOL=ON
+  -D Kokkos_CUDA_NODE_MEMORY_TRACE:BOOL=ON
+
+VBR capability (experimental)
+- Added variable-block row matrix (VbrMatrix) and underlying support classes
+  (BlockMap, BlockMultiVector)
+- Added power method example of VBR classes
+
+CrsMatrix:
+- Now implements DisbObject, allowing import/export capability with CrsMatrix
+  objects (experimental)
+- Combined LocalMatVec and LocalMatSolve objects into a single template
+  parameter (non BC). This required changes to CrsMatrixMultplyOp and
+  CrsMatrixSolveOp operators as well (non BC).
+- Access default for this type via Kokkos::DefaultKernels
+- Removed cached views of object data. this should have no effect on CPU-based
+  nodes, but will result in slower performance for GPU-based nodes. This
+  regression is a result of the release happening mid-refactor. It will not be
+  addressed in the 10.4.x sequence.
+- Bug fixes regarding complex cases involving user-specified column maps and
+  graphs.
+
+DistObject interface:
+- Added createViews(), releaseViews() methods to allow host-based objects to
+  temporarily cache views of host data during import/export procedure
+
+Map: 
+- Added new non-member constructors: createContigMap(),
+  createWeightedContigMap(), createUniformContigMap()
+- Fixed some bugs regarding use of unsigned Ordinal types
+- Fixed MPI-stalling bug in getRemoteIndexList()
+
+MultiVector:
+- Added view methods offsetView() and offsetViewNonConst() to create a
+  MultiVector view of a subset of rows
+- Added non-member constructor Tpetra::createMultiVector(map,numVecs)
+
+Vector:
+- Added non-member constructor Tpetra::createVector(map)
+
+Tpetra I/O:
+- Added Galeri-type methods for generating pedagogical matrices (currently, only
+  3D Laplacian)
+
+External adaptors (experiemental)
+- Efficiency improvements for Belos/Tpetra adaptors
+- Brought Anasazi/Tpetra adaptors back online
 
 
 

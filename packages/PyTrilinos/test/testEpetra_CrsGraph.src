@@ -254,15 +254,18 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         self.assertEqual(crsg.Filled(), True)
 
     def testOptimizeStorage(self):
-        "Test Epetra.CrsGraph OptimizeStorage method"
+        "Test Epetra.CrsGraph duplicate insertion"
         crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
         self.fillGraphGlobal(crsg,False)
         grid = crsg.GRID(0)
         numIndices = crsg.NumMyIndices(0)
-        crsg.InsertGlobalIndices(grid,[grid])  # Duplicate, thus non-optimal
-        self.assertEqual(crsg.NumMyIndices(0), numIndices+1)
+        crsg.InsertGlobalIndices(grid,[grid])  # insert Duplicate column index
+        # since CrsGraph maintains sorted/unique column-indices, numIndices
+        # should still be the same now:
+        self.assertEqual(crsg.NumMyIndices(0), numIndices)
         crsg.FillComplete()
         crsg.OptimizeStorage()
+        # ... and should still be the same now:
         self.assertEqual(crsg.NumMyIndices(0), numIndices)
 
     def testExtractGlobalRowCopy(self):

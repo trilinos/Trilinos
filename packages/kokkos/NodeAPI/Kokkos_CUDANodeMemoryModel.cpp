@@ -15,7 +15,7 @@ namespace Kokkos {
   {
   }
 
-  void CUDANodeMemoryModel::printStatistics(const Teuchos::RCP< Teuchos::FancyOStream > &os) const {
+  void CUDANodeMemoryModel::printStatistics(const RCP< Teuchos::FancyOStream > &os) const {
     using std::setw;
     using std::endl;
     *os << Teuchos::typeName(*this) << " memory transfer statistics" << endl

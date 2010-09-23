@@ -56,9 +56,6 @@
 
 #include "mrtr_overlap.H"
 
-using namespace std;
-using namespace Teuchos;
-
 // ----------   User Defined Includes   ----------
 
 /*!
@@ -260,7 +257,7 @@ public:
   \param overlap : the overlap class holds all neccessary function values
   \param eps : Threshold, skip triangles with an area < eps
   */
-  bool Integrate(RefCountPtr<MOERTEL::Segment> actseg,
+  bool Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
                  MOERTEL::Segment& sseg, 
                  MOERTEL::Segment& mseg,
                  Epetra_SerialDenseMatrix** Ddense, 
@@ -301,8 +298,8 @@ private:
   bool           oneD_;    // dimension of the integration, true if 1-dimensional
   int            ngp_;     // order of the integration
   int            outputlevel_; // output level (0-10)
-  vector<double> coords_;  // vector holding gaussian point coordinates
-  vector<double> weights_; // vector holding gaussian point weights
+  std::vector<double> coords_;  // vector holding gaussian point coordinates
+  std::vector<double> weights_; // vector holding gaussian point weights
 
 
 };

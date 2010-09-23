@@ -48,8 +48,9 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
                                                      double dF[][3],
                                                      const MOERTEL::Node& node, 
                                                      MOERTEL::Segment& seg, 
-	   					     double* eta,
-                                                     double alpha)
+                                                     double* eta,
+                                                     double alpha,
+													 double &gap)
 {
   // check the type of function on the segment
   // Here, we need a blinear triangle shape function
@@ -117,12 +118,16 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
     dF[i][2] = n[i];
   }
 
+  gap = ((Nx[0] - X[0]) * n[0] + (Nx[1] - X[1]) * n[1] + (Nx[2] - X[2]) * n[2])
+		  / sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);  // ||gap|| cos theta
+
   return true;
 }
 
 
 /*----------------------------------------------------------------------*
  |                                                           mwgee 10/05|
+ |                                                 modded by gah 7/2010 |
  | 3D case:                                                             |
  | this method evaluates the function                                   |
  | Fi(eta,alpha) = Ni*xi+alpha*Ni*ni - xm = 0                           |
@@ -133,8 +138,9 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(
                                                       double dF[][3],
                                                       const MOERTEL::Node& node, 
                                                       MOERTEL::Segment& seg, 
-	   					      double* eta,
-                                                      double alpha)
+                                                      double* eta,
+                                                      double alpha,
+													  double &gap)
 {
   // check the type of function on the segment
   // Here, we need a bilinear triangle shape function
@@ -220,6 +226,9 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(
     dF[i][1] = Nxeta2[i]+alpha*Nneta2[i];
     dF[i][2] = Nn[i];
   }
+
+  gap = ((Nx[0] - X[0]) * Nn[0] + (Nx[1] - X[1]) * Nn[1] + (Nx[2] - X[2]) * Nn[2])
+		  / sqrt(Nn[0] * Nn[0] + Nn[1] * Nn[1] + Nn[2] * Nn[2]);  // ||gap|| cos theta
 
   return true;
 }

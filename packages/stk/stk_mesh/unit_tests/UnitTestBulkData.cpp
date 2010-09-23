@@ -17,7 +17,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <unit_tests/UnitTestBulkData.hpp>
 #include <unit_tests/UnitTestRingMeshFixture.hpp>
@@ -34,6 +34,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testUnit)
   stk::mesh::UnitTestBulkData::testChangeParts_loop( MPI_COMM_WORLD );
   stk::mesh::UnitTestBulkData::testDestroy_nodes( MPI_COMM_WORLD );
   stk::mesh::UnitTestBulkData::testDestroy_loop( MPI_COMM_WORLD );
+  stk::mesh::UnitTestBulkData::testModifyPropagation( MPI_COMM_WORLD );
 }
 
 //----------------------------------------------------------------------
@@ -125,7 +126,8 @@ void UnitTestBulkData::testChangeOwner_nodes( ParallelMachine pm )
   const unsigned id_begin = nPerProc * p_rank ;
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
-  MetaData meta( fem_entity_rank_names() );
+  const int spatial_dimension = 3;
+  MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
   BulkData bulk( meta , pm , 100 );
 
   const PartVector no_parts ;
@@ -251,7 +253,8 @@ void UnitTestBulkData::testCreateMore( ParallelMachine pm )
     const unsigned id_begin = nPerProc * p_rank ;
     const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
-    MetaData meta( fem_entity_rank_names() );
+    const int spatial_dimension = 3;
+    MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
 
     const PartVector no_parts ;
 
@@ -337,9 +340,9 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 
   //------------------------------
   {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
-
-    ring_mesh.generate_loop( false /* no aura */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    ring_mesh.m_meta_data.commit();
+    ring_mesh.generate_mesh( false /* no aura */ );
 
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
                                  ring_mesh.m_meta_data.globally_shared_part() ;
@@ -371,9 +374,9 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test shift starting with ghosting but not regenerated ghosting.
   {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
-
-    ring_mesh.generate_loop( true /* with aura */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    ring_mesh.m_meta_data.commit();
+    ring_mesh.generate_mesh( true /* with aura */ );
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -409,9 +412,9 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test shift starting with ghosting and regenerating ghosting.
   {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
-
-    ring_mesh.generate_loop( true /* with aura */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    ring_mesh.m_meta_data.commit();
+    ring_mesh.generate_mesh( true /* with aura */ );
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -447,9 +450,9 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test bad owner change catching:
   if ( 1 < p_size ) {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
-
-    ring_mesh.generate_loop( true /* with aura */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    ring_mesh.m_meta_data.commit();
+    ring_mesh.generate_mesh( true /* with aura */ );
 
     std::vector<EntityProc> change ;
 
@@ -497,9 +500,9 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   // Test move one element with initial ghosting but not regenerated ghosting:
   // last processor give its shared node to P0
   if ( 1 < p_size ) {
-    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
-
-    ring_mesh.generate_loop( true /* with aura */ );
+    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    ring_mesh.m_meta_data.commit();
+    ring_mesh.generate_mesh( true /* with aura */ );
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -576,7 +579,7 @@ void donate_one_element( BulkData & mesh , bool aura )
   for ( std::vector<Entity*>::const_iterator
         i =  mesh.entity_comm().begin() ;
         i != mesh.entity_comm().end() ; ++i ) {
-    if ( in_shared( **i ) && (**i).entity_rank() == Node ) {
+    if ( in_shared( **i ) && (**i).entity_rank() == BaseEntityRank ) {
       node = *i ;
       break ;
     }
@@ -645,7 +648,7 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
   for ( std::vector<Entity*>::const_iterator
         i =  entity_comm.begin() ;
         i != entity_comm.end() &&
-        (**i).entity_rank() == Node ; ++i ) {
+        (**i).entity_rank() == BaseEntityRank ; ++i ) {
     Entity * const node = *i ;
     const PairIterEntityComm ec = node->sharing();
 
@@ -677,7 +680,8 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
   const unsigned p_rank = parallel_machine_rank( pm );
   const unsigned p_size = parallel_machine_size( pm );
 
-  MetaData meta( fem_entity_rank_names() );
+  const int spatial_dimension = 3;
+  MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
 
   meta.commit();
 
@@ -745,6 +749,46 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
             << "P" << p_rank
             << ": UnitTestBulkData::testChangeOwner_box( NP = "
             << p_size << " ) SUCCESSFULL" << std::endl ;
+}
+
+void UnitTestBulkData::testModifyPropagation( ParallelMachine pm )
+{
+  const unsigned nPerProc = 2;
+  const unsigned p_size = parallel_machine_size( pm );
+
+  // this test only needs to be run w/ one processor
+  if (p_size > 1) return;
+
+  // Make a ring_mesh and add an extra part
+  UnitTestRingMeshFixture ring_mesh( pm , nPerProc, false /* don't use edge parts */);
+  TopologicalMetaData & top_data = ring_mesh.m_top_data;
+  stk::mesh::Part& special_part =
+    ring_mesh.m_meta_data.declare_part( "special_node_part", stk::mesh::BaseEntityRank );
+  ring_mesh.m_meta_data.commit();
+  ring_mesh.generate_mesh();
+
+  // grab the first edge
+  stk::mesh::EntityVector edges;
+  stk::mesh::get_entities( ring_mesh.m_bulk_data, top_data.edge_rank, edges );
+  stk::mesh::Entity& edge = *( edges.front() );
+
+  // get one of the nodes related to this edge
+  PairIterRelation node_relations = edge.relations( stk::mesh::BaseEntityRank );
+  STKUNIT_ASSERT( !node_relations.empty() );
+  stk::mesh::Entity& node = *( node_relations.front().entity());
+  STKUNIT_ASSERT_EQUAL( node.entity_rank(), (unsigned) stk::mesh::BaseEntityRank );
+
+  // make a modification to the node by changing its parts
+  ring_mesh.m_bulk_data.modification_begin();
+  stk::mesh::PartVector parts;
+  parts.push_back( &special_part );
+  ring_mesh.m_bulk_data.change_entity_parts( node, parts );
+
+  // check that the node AND it's edge are marked as modified
+  STKUNIT_ASSERT_EQUAL ( node.log_query(), stk::mesh::EntityLogModified );
+  STKUNIT_ASSERT_EQUAL ( edge.log_query(), stk::mesh::EntityLogModified );
+
+  STKUNIT_ASSERT ( ring_mesh.m_bulk_data.modification_end() );
 }
 
 //----------------------------------------------------------------------

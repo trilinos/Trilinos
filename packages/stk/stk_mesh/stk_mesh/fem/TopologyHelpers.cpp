@@ -20,6 +20,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
@@ -27,78 +28,6 @@
 
 namespace stk {
 namespace mesh {
-
-//----------------------------------------------------------------------
-
-const CellTopologyData * get_cell_topology( const Part & p )
-{ return p.attribute<CellTopologyData>(); }
-
-void set_cell_topology( Part & p , const CellTopologyData * singleton )
-{
-  static const char method[] = "stk::mesh::set_cell_topology" ;
-
-  MetaData & m = p.mesh_meta_data();
-
-  const CellTopologyData * t = NULL ;
-
-  if ( p.mesh_meta_data().entity_rank_count() <= p.primary_entity_rank() ||
-       singleton == NULL ||
-       singleton != ( t = m.declare_attribute_no_delete(p,singleton) ) ) {
-    std::ostringstream msg ;
-    msg << method << "( " << p.name();
-    msg << " entity_rank(" << p.primary_entity_rank() << ") , " ;
-    if ( singleton ) { msg << singleton->name ; }
-    else             { msg << "NULL" ; }
-    msg << " ) ERROR" ;
-    if ( t ) { msg << "Existing topology = " << t->name ; }
-    throw std::runtime_error( msg.str() );
-  }
-}
-
-//----------------------------------------------------------------------
-
-
-const CellTopologyData * get_cell_topology( const Bucket & bucket )
-{
-  const CellTopologyData * top = NULL ;
-  PartVector parts ;
-  bucket.supersets( parts );
-
-  PartVector::iterator i = parts.begin() ;
-
-  for ( ; NULL == top && i != parts.end() ; ++i ) {
-    if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
-      top = get_cell_topology( **i );
-    }
-  }
-
-  bool ok = true ;
-
-  for ( ; ok && i != parts.end() ; ++i ) {
-    if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
-      const CellTopologyData * const tmp = get_cell_topology( **i );
-      ok = ((tmp == NULL) || (tmp == top)) ;
-    }
-  }
-
-  if ( ! ok ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::get_cell_topology( Bucket[" ;
-    for ( i = parts.begin() ; i != parts.end() ; ++i ) {
-      if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
-        const CellTopologyData * const tmp = get_cell_topology( **i );
-        msg << " " << (*i)->name();
-        if ( tmp ) { msg << "->" << tmp->name ; }
-        msg << " ] ) FAILED WITH MULTIPLE LOCAL TOPOLOGIES" ;
-        throw std::runtime_error( msg.str() );
-      }
-    }
-  }
-  return top ;
-}
-
-const CellTopologyData * get_cell_topology( const Entity & entity )
-{ return get_cell_topology( entity.bucket() ); }
 
 //----------------------------------------------------------------------
 
@@ -111,7 +40,11 @@ void verify_declare_element_side(
     )
 {
   static const char method[] = "stk::mesh::declare_element_side" ;
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   const CellTopologyData * const side_top =
     ( elem_top && local_side_id < elem_top->side_count )
@@ -119,16 +52,11 @@ void verify_declare_element_side(
 
   bool different_bulk_data =  &mesh != & (elem.bucket().mesh());
 
-  bool no_elem_top = NULL;
-  if(side_top == NULL){
-    no_elem_top = 1;
-  }else {
-    no_elem_top = 0;
-  }
+  bool no_elem_top = (side_top == NULL);
 
-  bool bad_side_id = NULL;
+  bool bad_side_id = false;
   if( elem_top && local_side_id >= elem_top->side_count){
-      bad_side_id = 1;
+      bad_side_id = true;
   }
 
 
@@ -173,7 +101,11 @@ Entity & declare_element_side(
 
   verify_declare_element_side(mesh, elem, local_side_id);
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if (elem_top == NULL) {
     std::ostringstream msg ;
@@ -195,20 +127,15 @@ Entity & declare_element_side(
 
   const unsigned * const side_node_map = elem_top->side[ local_side_id ].node ;
 
-  // This is dangerous if the unsigned enums are changed. Try to catch at compile time...
-  enum { DimensionMappingAssumption_OK =
-           StaticAssert< stk::mesh::Edge == 1 && stk::mesh::Face == 2 >::OK };
-
   PartVector add_parts ;
 
   if ( part ) { add_parts.push_back( part ); }
 
-  //\TODO refactor: is 'dimension' the right thing to use for EntityRank here???
   mesh.change_entity_parts(side, add_parts);
 
   mesh.declare_relation( elem , side , local_side_id );
 
-  PairIterRelation rel = elem.relations( Node );
+  PairIterRelation rel = elem.relations( NodeRank );
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
     Entity & node = * rel[ side_node_map[i] ].entity();
@@ -230,7 +157,11 @@ Entity & declare_element_side(
   static const char method[] = "stk::mesh::declare_element_side" ;
   verify_declare_element_side(mesh, elem, local_side_id);
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if (elem_top == NULL) {
     std::ostringstream msg ;
@@ -264,9 +195,16 @@ bool element_side_polarity( const Entity & elem ,
 {
   static const char method[] = "stk::mesh::element_side_polarity" ;
 
-  const bool is_side = side.entity_rank() != Edge ;
-
+  // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
+  // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a TopologicalMetaData off of MetaData or we need to take one on input.
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const bool is_side = side.entity_rank() != Edge;
   const CellTopologyData * const elem_top = get_cell_topology( elem );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const TopologicalMetaData& top_data = *elem.bucket().mesh().mesh_meta_data().get_attribute<TopologicalMetaData>();
+  const bool is_side = side.entity_rank() != top_data.edge_rank;
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   const unsigned side_count = ! elem_top ? 0 : (
                                 is_side ? elem_top->side_count
@@ -299,8 +237,8 @@ bool element_side_polarity( const Entity & elem ,
     is_side ? elem_top->side[ local_side_id ].node
             : elem_top->edge[ local_side_id ].node ;
 
-  const PairIterRelation elem_nodes = elem.relations( Node );
-  const PairIterRelation side_nodes = side.relations( Node );
+  const PairIterRelation elem_nodes = elem.relations( NodeRank );
+  const PairIterRelation side_nodes = side.relations( NodeRank );
 
   bool good = true ;
   for ( unsigned j = 0 ; good && j < side_top->node_count ; ++j ) {
@@ -311,47 +249,72 @@ bool element_side_polarity( const Entity & elem ,
 
 
 int element_local_side_id( const Entity & elem ,
-                           const Entity & side )
+                           const CellTopologyData * side_topology,
+                           const std::vector<Entity*>& side_nodes )
 {
-  return -1;
-}
-
-int element_local_side_id( const Entity & elem ,
-                           const std::vector<Entity*>& entity_nodes )
-{
-  // sort the input nodes
-  std::vector<Entity*> sorted_entity_nodes(entity_nodes);
-  std::sort(sorted_entity_nodes.begin(), sorted_entity_nodes.end(), EntityLess());
 
   // get topology of elem
-  const CellTopologyData* celltopology = get_cell_topology(elem);
-  if (celltopology == NULL) {
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData* elem_topology = get_cell_topology(elem);
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData* elem_topology = TopologicalMetaData::get_cell_topology(elem);
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  if (elem_topology == NULL) {
     return -1;
   }
 
-  // get nodal relations
-  PairIterRelation relations = elem.relations(Node);
+  // get nodal relations for elem
+  PairIterRelation relations = elem.relations(NodeRank);
 
-  const unsigned subcell_rank = celltopology->dimension - 1;
+  const unsigned subcell_rank = elem_topology->dimension - 1;
 
-  // Iterate over the subcells of elem
-  for (unsigned itr = 0; itr < celltopology->subcell_count[subcell_rank]; ++itr) {
-    // get the nodes for this subcell
-    const unsigned* nodes = celltopology->subcell[subcell_rank][itr].node;
-    unsigned num_nodes = celltopology->subcell[subcell_rank][itr].topology->node_count;
+  const int num_permutations = side_topology->permutation_count;
 
-    // Get the nodes in the subcell ???
-    std::vector<Entity*> node_entities;
-    for (unsigned nitr = 0; nitr < num_nodes; ++nitr) {
-      node_entities.push_back(relations[nodes[nitr]].entity());
-    }
+  // Iterate over the subcells of elem...
+  for (unsigned itr = 0;
+       itr < elem_topology->subcell_count[subcell_rank];
+       ++itr) {
 
-    // check to see if this subcell exactly contains the nodes that were passed in
-    std::sort(node_entities.begin(), node_entities.end(), EntityLess());
-    if (node_entities == sorted_entity_nodes) {
-      return itr;
+    // get topological data for this side
+    const CellTopologyData* curr_side_topology =
+      elem_topology->subcell[subcell_rank][itr].topology;
+    unsigned num_nodes =
+      elem_topology->subcell[subcell_rank][itr].topology->node_count;
+    const unsigned* const side_node_map = elem_topology->side[itr].node;
+
+    // If topologies are not the same, there is no way the sides are the same
+    if (side_topology == curr_side_topology) {
+
+      // Taking all positive permutations into account, check if this side
+      // has the same nodes as the side_nodes argument. Note that this
+      // implementation preserves the node-order so that we can take
+      // entity-orientation into account.
+      for (int p = 0; p < num_permutations; ++p) {
+
+        if (curr_side_topology->permutation[p].polarity ==
+            CELL_PERMUTATION_POLARITY_POSITIVE) {
+
+          const unsigned * const perm_node =
+            curr_side_topology->permutation[p].node ;
+
+          bool all_match = true;
+          for (unsigned j = 0 ; j < num_nodes; ++j ) {
+            if (side_nodes[j] !=
+                relations[side_node_map[perm_node[j]]].entity()) {
+              all_match = false;
+              break;
+            }
+          }
+
+          // all nodes were the same, we have a match
+          if ( all_match ) {
+            return itr ;
+          }
+        }
+      }
     }
   }
+
   return -1;
 }
 
