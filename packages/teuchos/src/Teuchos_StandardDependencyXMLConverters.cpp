@@ -110,7 +110,8 @@ void StringVisualDependencyXMLConverter::convertSpecialVisualAttributes(
   xmlObj.addChild(valuesTag);
 }
   
-RCP<VisualDependency> StringVisualDependencyXMLConverter::convertSpecialVisualAttributes(
+RCP<VisualDependency> 
+StringVisualDependencyXMLConverter::convertSpecialVisualAttributes(
   const XMLObject& xmlObj,
   const Dependency::ConstParameterEntryList dependees,
   const Dependency::ParameterEntryList dependents,

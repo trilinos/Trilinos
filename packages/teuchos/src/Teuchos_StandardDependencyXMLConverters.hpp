@@ -199,6 +199,11 @@ public:
     bool showIf,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
   
+  static const std::string& getStringValuesTagName(){
+    static const std::string stringValuesTagName = "StringValues";
+    return stringValuesTagName;
+  }
+
   //@}
 
 private:
@@ -206,11 +211,6 @@ private:
   /** \name Private Members */
   //@{
   
-  static const std::string& getStringValuesTagName(){
-    static const std::string stringValuesTagName = "StringValues";
-    return stringValuesTagName;
-  }
-
   static const std::string& getStringTagName(){
     static const std::string stringTagName = "string";
     return stringTagName;
