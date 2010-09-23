@@ -489,7 +489,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 6);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
-        bool correct_side_skinned = local_side_id < 6;
+        bool correct_side_skinned = local_side_id >= 0 && local_side_id < 6;
         STKUNIT_EXPECT_TRUE (correct_side_skinned);
         std::cout << "Hex local side id: " << local_side_id << std::endl;
       }
@@ -505,7 +505,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 2);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
-        bool correct_side_skinned = local_side_id < 2;
+        bool correct_side_skinned = local_side_id >= 0 && local_side_id < 2;
         STKUNIT_EXPECT_TRUE (correct_side_skinned);
         std::cout << "Shell local side id: " << element_side_relations->identifier() << std::endl;
       }
