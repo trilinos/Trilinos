@@ -1017,8 +1017,8 @@ void UnitTestMetaData::testFieldRestriction()
     try {
       unsigned arg_stride[2];
 
-      arg_stride[0] = 1.0;
-      arg_stride[1] = 0.1;
+      arg_stride[0] = 1;
+      arg_stride[1] = 0;
 
       f2->m_impl.insert_restriction(method, 0, pA, arg_stride);
 

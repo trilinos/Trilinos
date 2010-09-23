@@ -20,7 +20,7 @@
       fprintf( stdout, sucmsg, ival ); \
     }
 
-int obj_types[] = {
+ex_entity_type obj_types[] = {
   EX_EDGE_BLOCK,
   EX_FACE_BLOCK,
   EX_ELEM_BLOCK,
@@ -35,7 +35,7 @@ int obj_types[] = {
   EX_ELEM_MAP
 };
 
-int obj_sizes[] = {
+ex_inquiry obj_sizes[] = {
   EX_INQ_EDGE_BLK,
   EX_INQ_FACE_BLK,
   EX_INQ_ELEM_BLK,
