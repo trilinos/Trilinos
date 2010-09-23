@@ -127,7 +127,7 @@ bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x,
   }
 
   // Counters for probing diagnostics
-  double tmp,probing_error_lower_bound=0.0;
+  double tmp,probing_error_lower_bound=0.0,jc_norm=0.0;
 
   // Grab coloring info (being very careful to ignore color 0)
   int Ncolors=colors.MaxNumColors()+1;
@@ -165,6 +165,12 @@ bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x,
     // Do the subtraction to estimate the Jacobian (w/o including step length)
     Jc.Update(1.0, fp, -1.0, fo, 0.0);
 
+    // Relative error in probing
+     if(use_probing_diags){
+       Jc.Norm2(&tmp);
+       jc_norm+=tmp*tmp;
+     }
+     
     for(int i=0;i<N;i++){
       // Skip for uncolored row/columns, else update entries
       if(colors[i]==0) continue;
@@ -186,7 +192,7 @@ bool FiniteDifferenceColoringWithUpdate::differenceProbe(const Epetra_Vector& x,
   }
 
   // If diagnostics are requested, output Frobenius norm lower bound
-  if(use_probing_diags && !x.Comm().MyPID()) printf("Probing Error Lower Bound (Frobenius) = %6.4e\n",sqrt(probing_error_lower_bound));
+  if(use_probing_diags && !x.Comm().MyPID()) printf("Probing Error Lower Bound (Frobenius) abs = %6.4e rel = %6.4e\n",sqrt(probing_error_lower_bound),sqrt(probing_error_lower_bound)/sqrt(jc_norm));
 
   // Cleanup
   if(!jac.ColMap().SameAs(x.Map()))
