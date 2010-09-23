@@ -456,18 +456,11 @@ typedef unsigned long ulong;
 
 
 FULL_NUMBER_TYPE_TEST(int)
-FULL_NUMBER_TYPE_TEST(uint)
-FULL_NUMBER_TYPE_TEST(short)
-FULL_NUMBER_TYPE_TEST(ushort)
-FULL_NUMBER_TYPE_TEST(long)
-FULL_NUMBER_TYPE_TEST(ulong)
 NONINTEGRAL_NUMBER_TYPE_TEST(double)
 NONINTEGRAL_NUMBER_TYPE_TEST(float)
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 typedef long long int llint;
-typedef unsigned long long int ullint;
 FULL_NUMBER_TYPE_TEST(llint)
-FULL_NUMBER_TYPE_TEST(ullint)
 #endif
 
 

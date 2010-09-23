@@ -29,6 +29,7 @@
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 #include "Teuchos_StandardValidatorXMLConverters.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 
 
 
@@ -62,9 +63,11 @@ namespace Teuchos {
       getDummyObject()->getXMLTypeName(), \
     rcp(new ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >)));
 
-void ValidatorXMLConverterDB::addConverter(ParameterEntryValidator& validator,
+void ValidatorXMLConverterDB::addConverter(
+  RCP<ParameterEntryValidator> validator,
   RCP<ValidatorXMLConverter> converterToAdd){
-  getConverterMap().insert(ConverterPair(validator.getXMLTypeName(), converterToAdd));
+  getConverterMap().insert(ConverterPair(
+    validator->getXMLTypeName(), converterToAdd));
 }
 
 
@@ -75,7 +78,9 @@ ValidatorXMLConverterDB::getConverter(const ParameterEntryValidator& validator)
   TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindValidatorConverterException,
     "Could not find a ValidatorXMLConverter for validator type " <<
-     validator.getXMLTypeName() << std::endl 
+     validator.getXMLTypeName() << std::endl <<
+     "Try adding an appropriate converter to the ValidatorXMLConverterDB " <<
+     "in order solve this problem." << std::endl << std::endl
   )
   return it->second;
 }
@@ -90,7 +95,9 @@ ValidatorXMLConverterDB::getConverter(const XMLObject& xmlObject)
   TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindValidatorConverterException,
     "Could not find a ValidatorXMLConverter for type " << validatorType <<
-    std::endl << std::endl
+    std::endl << 
+    "Try adding an appropriate converter to the ValidatorXMLConverterDB " <<
+    "in order solve this problem." << std::endl << std::endl
   )
   return it->second;
 }
@@ -118,12 +125,6 @@ ValidatorXMLConverterDB::getConverterMap()
   static ConverterMap masterMap;
   if(masterMap.size() == 0){
     ADD_NUMBERTYPECONVERTERS(int);
-    ADD_NUMBERTYPECONVERTERS(unsigned int);
-    ADD_NUMBERTYPECONVERTERS(short int);
-    ADD_NUMBERTYPECONVERTERS(unsigned short int);
-    ADD_NUMBERTYPECONVERTERS(long int);
-    ADD_NUMBERTYPECONVERTERS(unsigned long int);
-
     ADD_ENHANCEDNUMBERCONVERTER(double);
     ADD_ENHANCEDNUMBERCONVERTER(float);
 
@@ -135,8 +136,9 @@ ValidatorXMLConverterDB::getConverterMap()
 
     #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     ADD_NUMBERTYPECONVERTERS(long long int);
-    ADD_NUMBERTYPECONVERTERS(unsigned long long int);
     #endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+    ADD_STRINGTOINTEGRALCONVERTER( EVerbosityLevel ); \
 
 
     masterMap.insert(

@@ -458,7 +458,7 @@ public:
     if(dummyObject.is_null()){
       dummyObject = stringToIntegralParameterEntryValidator<IntegralType>(
         tuple<std::string>(""), tuple<std::string>(""), 
-        tuple<IntegralType>(1), "");
+        tuple<IntegralType>((IntegralType)1), "");
     }
     return dummyObject;
   }
@@ -1805,7 +1805,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
 {
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
-    const bool unique = map_.insert( val_t( strings[i], i ) ).second;
+    const bool unique = map_.insert( val_t( strings[i], (IntegralType)i ) ).second;
     TEST_FOR_EXCEPTION(
       !unique, std::logic_error
       ,"Error, the std::string \"" << strings[i] << "\" is a duplicate for parameter \""

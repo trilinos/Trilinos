@@ -10,6 +10,24 @@ namespace Teuchos { class ParameterList; }
 
 namespace Thyra {
 
+  enum EBelosSolverType {
+    SOLVER_TYPE_BLOCK_GMRES,
+    SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
+    SOLVER_TYPE_BLOCK_CG,
+    SOLVER_TYPE_PSEUDO_BLOCK_CG,
+    SOLVER_TYPE_GCRODR
+  };
+
+  inline std::istream& operator>>(
+    std::istream& is, EBelosSolverType& sType)
+  {
+    int intval;
+    is >> intval;
+    sType = (EBelosSolverType)intval;
+    return is;
+  }
+
+
 /** \brief <tt>LinearOpWithSolveFactoryBase</tt> subclass implemented in terms
  * of <tt>Belos</tt>.
  *
@@ -152,13 +170,6 @@ private:
   // /////////////////////////
   // Private types
 
-  enum ESolverType {
-    SOLVER_TYPE_BLOCK_GMRES,
-    SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
-    SOLVER_TYPE_BLOCK_CG,
-    SOLVER_TYPE_PSEUDO_BLOCK_CG,
-    SOLVER_TYPE_GCRODR
-  };
 
   // /////////////////////////
   // Private data members
@@ -167,7 +178,7 @@ private:
   std::string                                       precFactoryName_;
   Teuchos::RCP<Teuchos::ParameterList>              thisValidParamList_;
   Teuchos::RCP<Teuchos::ParameterList>              paramList_;
-  ESolverType solverType_;
+  EBelosSolverType solverType_;
   int convergenceTestFrequency_;
 
   // /////////////////////////

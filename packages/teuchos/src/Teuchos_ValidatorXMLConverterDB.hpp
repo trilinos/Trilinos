@@ -53,7 +53,7 @@ public:
    *
    * \param convertToAdd The converter to add to the database.
    */
-  static void addConverter(ParameterEntryValidator& validator,
+  static void addConverter(RCP<ParameterEntryValidator> validator,
     RCP<ValidatorXMLConverter> converterToAdd);
   
   //@}

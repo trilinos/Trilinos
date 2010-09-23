@@ -16,6 +16,8 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_StandardValidatorXMLConverters.hpp"
 
 
 namespace Thyra {
@@ -41,7 +43,6 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
-
 
 // Constructors/initializers/accessors
 
@@ -240,7 +241,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(
   paramList->validateParametersAndSetDefaults(*this->getValidParameters(), 1);
   paramList_ = paramList;
   solverType_ =
-    Teuchos::getIntegralValue<ESolverType>(*paramList_, SolverType_name);
+    Teuchos::getIntegralValue<EBelosSolverType>(*paramList_, SolverType_name);
   convergenceTestFrequency_ =
     Teuchos::getParameter<int>(*paramList_, ConvergenceTestFrequency_name);
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
@@ -306,12 +307,19 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
   using Teuchos::as;
   using Teuchos::tuple;
   using Teuchos::setStringToIntegralParameter;
+Teuchos::ValidatorXMLConverterDB::addConverter(
+  Teuchos::DummyObjectGetter<
+    Teuchos::StringToIntegralParameterEntryValidator<EBelosSolverType> 
+  >::getDummyObject(),
+  Teuchos::DummyObjectGetter<Teuchos::StringToIntegralValidatorXMLConverter<
+    EBelosSolverType> >::getDummyObject());
+
   typedef MultiVectorBase<Scalar> MV_t;
   typedef LinearOpBase<Scalar> LO_t;
   static RCP<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
-    setStringToIntegralParameter<ESolverType>(
+    setStringToIntegralParameter<EBelosSolverType>(
       SolverType_name, SolverType_default,
       "Type of linear solver algorithm to use.",
       tuple<std::string>(
@@ -339,7 +347,7 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 
         "GMRES solver that performs subspace recycling between RHS and linear systems."
         ),
-      tuple<ESolverType>(
+      tuple<EBelosSolverType>(
         SOLVER_TYPE_BLOCK_GMRES,
         SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
         SOLVER_TYPE_BLOCK_CG,

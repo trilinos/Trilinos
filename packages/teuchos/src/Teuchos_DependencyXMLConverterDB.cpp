@@ -99,7 +99,9 @@ DependencyXMLConverterDB::getConverter(const Dependency& dependency)
     CantFindDependencyConverterException,
     "Could not find a DependencyXMLConverter for a dependency with "
     "attribute tag " << dependency.getTypeAttributeValue() << 
-    "!" << std::endl << std::endl);
+    "!" << std::endl <<
+    "Try adding an appropriate converter to the DependencyXMLConverterDB " <<
+    "in order to solve this problem." << std::endl << std::endl);
   return it->second;
 }
 
@@ -113,7 +115,9 @@ DependencyXMLConverterDB::getConverter(const XMLObject& xmlObject)
   TEST_FOR_EXCEPTION(it == getConverterMap().end(),
     CantFindDependencyConverterException,
     "Could not find a DependencyXMLConverter for a dependency of type " <<
-    dependencyType << "!" << std::endl << std::endl);
+    dependencyType << "!" << std::endl <<
+    "Try adding an appropriate converter to the DependencyXMLConverterDB " <<
+    "in order to solve this problem." << std::endl << std::endl);
   return it->second;
 }
 
