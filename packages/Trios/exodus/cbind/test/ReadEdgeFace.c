@@ -358,6 +358,8 @@ int cReadEdgeFace( int argc, char* argv[] )
         case EX_ELEM_MAP:
           num_entries = modelParams.num_elem;
           break;
+	default:
+          num_entries = 0;
         }
         if ( num_entries ) {
           fprintf( stdout, "Entries: %3d\n                :", num_entries );
