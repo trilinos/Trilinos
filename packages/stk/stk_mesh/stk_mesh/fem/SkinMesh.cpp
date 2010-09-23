@@ -1,5 +1,9 @@
 
 #include <map>
+#include <set>
+#include <algorithm>
+
+#include <stk_mesh/base/Types.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
@@ -7,7 +11,8 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/Relation.hpp>
+
 
 #include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
@@ -16,84 +21,236 @@
 
 #include <stk_mesh/fem/SkinMesh.hpp>
 
+#include <stk_util/parallel/ParallelComm.hpp>
+
 namespace stk {
 namespace mesh {
 
 namespace {
 
-typedef std::multimap< std::vector<EntityId>, EntitySideComponent>  BoundaryMap;
-typedef std::pair< std::vector<EntityId>, EntitySideComponent>  BoundaryValue;
+typedef std::pair< const CellTopologyData *, EntityVector > SideKey;
+typedef std::vector< EntitySideComponent >                  SideVector;
+typedef std::map< SideKey, SideVector>                      BoundaryMap;
 
-// \TODO Without the sorting, this would be a good general utility for 'fem'
-void get_elem_side_nodes( const Entity & elem,
-                          unsigned side_ordinal,
-                          std::vector<EntityId> & nodes
-                        )
+//Comparator class to sort EntitySideComponent
+//first by entity identifier and then by side_ordinal
+class EntitySideComponentLess {
+  public:
+    bool operator () (const EntitySideComponent & lhs, const EntitySideComponent &rhs)
+    {
+      const EntityId lhs_elem_id = lhs.entity->identifier();
+      const EntityId rhs_elem_id = rhs.entity->identifier();
+
+      return (lhs_elem_id != rhs_elem_id) ?
+        (lhs_elem_id < rhs_elem_id) :
+        (lhs.side_ordinal < rhs.side_ordinal);
+    }
+};
+
+//Convience class to help with communication.
+//sort first by element identifier and then by side_ordinal
+class ElementIdSide {
+  public:
+    EntityId        elem_id;
+    RelationIdentifier side_ordinal;
+
+    ElementIdSide() :
+      elem_id(0), side_ordinal(0) {}
+
+    ElementIdSide( EntityId id, RelationIdentifier ordinal) :
+      elem_id(id), side_ordinal(ordinal) {}
+
+    ElementIdSide( const EntitySideComponent & esc) :
+      elem_id(esc.entity->identifier()), side_ordinal(esc.side_ordinal) {}
+
+    ElementIdSide & operator = ( const ElementIdSide & rhs) {
+      elem_id      = rhs.elem_id;
+      side_ordinal = rhs.side_ordinal;
+      return *this;
+    }
+
+    //compare first by elem_id and then by side_ordinal
+    bool operator < ( const ElementIdSide & rhs) const {
+      const ElementIdSide & lhs = *this;
+
+      return (lhs.elem_id != rhs.elem_id) ?
+        (lhs.elem_id < rhs.elem_id) :
+        (lhs.side_ordinal < rhs.side_ordinal);
+    }
+};
+
+//a reverse map used in unpacking to determine what side needs
+//to be created
+typedef std::map< ElementIdSide, SideKey>   ReverseBoundaryMap;
+
+//a convience class to help with packing the comm buffer
+class SideCommHelper {
+  public:
+    unsigned       proc_to;
+    ElementIdSide  creating_elem_id_side; //used as a look up in the reverse boundary map
+    EntityId       generated_side_id;
+
+    SideCommHelper() :
+      proc_to(0), creating_elem_id_side(), generated_side_id(0) {};
+
+    SideCommHelper( unsigned p, const ElementIdSide & creating_eid, const EntityId side_id) :
+      proc_to(p), creating_elem_id_side(creating_eid), generated_side_id(side_id) {}
+
+    SideCommHelper( const SideCommHelper & sch) :
+      proc_to(sch.proc_to),
+      creating_elem_id_side(sch.creating_elem_id_side),
+      generated_side_id(sch.generated_side_id)
+  {}
+
+    SideCommHelper & operator = (const SideCommHelper & rhs) {
+      proc_to                = rhs.proc_to;
+      creating_elem_id_side  = rhs.creating_elem_id_side;
+      generated_side_id      = rhs.generated_side_id;
+      return *this;
+    }
+
+    //compare first by proc_to, then by creating elem_id
+    bool operator < ( const SideCommHelper & rhs) const {
+      const SideCommHelper & lhs = *this;
+
+      return (lhs.proc_to != rhs.proc_to) ?
+        (lhs.proc_to < rhs.proc_to) :
+        (lhs.creating_elem_id_side < rhs.creating_elem_id_side);
+    }
+};
+
+// populate the side_map with 'owned' sides that need to be created
+//
+// a side needs to be created if the outside is NULL and the element
+// does not have a current relation to a side for the side_ordinal
+void add_owned_sides_to_map(
+    const BulkData & mesh,
+    const EntityRank element_rank,
+    const EntitySideVector & boundary,
+    BoundaryMap & side_map)
 {
-  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+  for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
+      itr != boundary.end(); ++itr) {
+    const EntitySideComponent & inside = itr->inside;
+    const EntitySideComponent & outside = itr->outside;
+    const RelationIdentifier side_ordinal = inside.side_ordinal;
+    const Entity& inside_entity = *(inside.entity);
 
-  if (elem_top == NULL) {
-    std::ostringstream msg ;
-    msg << "skin_mesh" ;
-    msg << "( Element[" << elem.identifier() << "] has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+    if ( inside_entity.owner_rank() == mesh.parallel_rank() &&
+        outside.entity == NULL ) {
+      // search through existing sides
+      PairIterRelation existing_sides = inside_entity.relations(element_rank -1);
+      for (; existing_sides.first != existing_sides.second &&
+          existing_sides.first->identifier() != side_ordinal ;
+          ++existing_sides.first);
 
-  const CellTopologyData * const side_top = elem_top->side[ side_ordinal ].topology;
+      // a relation the side was not found
+      if (existing_sides.first == existing_sides.second) {
+        //create the side_key
+        //side_key.first := CellTopologyData * of the side topology
+        //side_key.second := EntityVector * of the side_nodes with the nodes in the correct
+        //                                            permutation for the side starting with
+        //                                            the node with the smallest identifier
+        SideKey side_key;
 
-  if (side_top == NULL) {
-    std::ostringstream msg ;
-    msg << "skin_mesh" ;
-    msg << "( Element[" << elem.identifier() << "]" ;
-    msg << " , side_ordinal = " << side_ordinal << " ) FAILED: " ;
-    msg << " Side has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+        side_key.first = get_elem_side_nodes(inside_entity, side_ordinal, side_key.second);
 
-  const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
-
-  PairIterRelation relations = elem.relations( NodeRank );
-
-  // Find positive polarity permutation that starts with lowest entity id:
-  // We're using this as the unique key in a map for a side.
-  const int num_permutations = side_top->permutation_count;
-  int lowest_entity_id_permutation = 0;
-  for (int p = 0; p < num_permutations; ++p) {
-
-    if (side_top->permutation[p].polarity ==
-        CELL_PERMUTATION_POLARITY_POSITIVE) {
-     
-      const unsigned * const pot_lowest_perm_node =
-        side_top->permutation[p].node ;
-
-      const unsigned * const curr_lowest_perm_node = 
-        side_top->permutation[lowest_entity_id_permutation].node;
-
-      unsigned first_node_index = 0;
-
-      unsigned current_lowest_entity_id = 
-        relations[side_node_map[curr_lowest_perm_node[first_node_index]]].entity()->identifier();
-
-      unsigned potential_lowest_entity_id = 
-        relations[side_node_map[pot_lowest_perm_node[first_node_index]]].entity()->identifier();
-
-      if ( potential_lowest_entity_id < current_lowest_entity_id ) {
-        lowest_entity_id_permutation = p;
+        //add this side to the side_map
+        side_map[side_key].push_back(inside);
       }
     }
   }
-  const unsigned * const perm_node = 
-    side_top->permutation[lowest_entity_id_permutation].node;
+}
 
-  nodes.reserve(side_top->node_count);
-  for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
-    unsigned node_id = relations[side_node_map[perm_node[i]]].entity()->identifier(); 
-    nodes.push_back(node_id);
+// populate the side_map with 'non-owned' sides that need to be created
+// who's side_key is already present in the side_map.  This process
+// may need to communicate with the process which own these elements
+//
+// a side needs to be created if the outside is NULL and the element
+// does not have a current relation to a side for the side_ordinal
+void add_non_owned_sides_to_map(
+    const BulkData & mesh,
+    const EntityRank element_rank,
+    const EntitySideVector & boundary,
+    BoundaryMap & side_map)
+{
+  for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
+      itr != boundary.end(); ++itr) {
+    const EntitySideComponent & inside = itr->inside;
+    const EntitySideComponent & outside = itr->outside;
+    const RelationIdentifier side_ordinal = inside.side_ordinal;
+    const Entity& inside_entity = *(inside.entity);
+
+    // If this process does NOT own the inside and the outside entity does not exist
+    if ( inside_entity.owner_rank() != mesh.parallel_rank() &&
+        outside.entity == NULL ) {
+      // search through existing sides
+      PairIterRelation existing_sides = inside_entity.relations(element_rank -1);
+      for (; existing_sides.first != existing_sides.second &&
+          existing_sides.first->identifier() != side_ordinal ;
+          ++existing_sides.first);
+
+      // a relation to the side was not found
+      if (existing_sides.first == existing_sides.second) {
+        // Get the nodes for the inside entity
+        SideKey side_key;
+
+        side_key.first = get_elem_side_nodes(inside_entity, side_ordinal, side_key.second);
+
+        //only add the side if the side_key currently exist in the map
+        if ( side_map.find(side_key) != side_map.end()) {
+          side_map[side_key].push_back(inside);
+        }
+      }
+    }
+  }
+}
+
+//sort the SideVector for each side_key.
+//the process who owns the element that appears
+//first is responsible for generating the identifier
+//for the side and communicating the identifier to the
+//remaining process
+//
+//the ElementIdSide of the first side
+//is enough to uniquely identify a side.
+//the reverse_map is used to find the side_key
+//from this ElementIdSide.
+//
+//return the number of sides this process
+//is responsible for creating
+size_t determine_creating_processes(
+    const BulkData & mesh,
+    BoundaryMap & side_map,
+    ReverseBoundaryMap & reverse_side_map)
+{
+  int num_sides_to_create = 0;
+  for (BoundaryMap::iterator i = side_map.begin();
+      i != side_map.end();
+      ++i)
+  {
+    const SideKey & side_key = i->first;
+    SideVector & side_vector = i->second;
+
+    //sort the side vectors base on entity identifier and side ordinal
+    std::sort( side_vector.begin(), side_vector.end(), EntitySideComponentLess() );
+
+    const EntitySideComponent & first_side = *side_vector.begin();
+
+    //does this process create the first side
+    //if so it needs to create a side_id
+    if (first_side.entity->owner_rank() == mesh.parallel_rank()) {
+      ++num_sides_to_create;
+    }
+    const ElementIdSide elem_id_side(first_side);
+
+    reverse_side_map[elem_id_side] = side_key;
   }
 
+  return num_sides_to_create;
 }
 
-}
+} //end un-named namespace
 
 void skin_mesh( BulkData & mesh, EntityRank element_rank, Part * skin_part) {
   if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
@@ -125,78 +282,152 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
   EntitySideVector boundary;
   boundary_analysis( mesh, elements_closure, element_rank, boundary);
 
-  // find the sides that need to be created to make a skin. The map below
-  // maps sorted EntityVectors of nodes to EntitySideComponents
-  BoundaryMap skin;
+  BoundaryMap side_map;
 
-  int num_new_sides = 0;
-  for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
-       itr != boundary.end(); ++itr) {
-    const EntitySideComponent & inside = itr->inside;
-    const EntitySideComponent & outside = itr->outside;
-    const unsigned side_ordinal = inside.side_ordinal;
-    Entity& inside_entity = *(inside.entity);
+  add_owned_sides_to_map(mesh, element_rank, boundary, side_map);
 
-    // If this process owns the inside and the outside entity does not exist,
-    // we need to apply a skin. This means we need to ensure that the side
-    // entity exists at this boundary.
-    if ( inside_entity.owner_rank() == mesh.parallel_rank() &&
-         outside.entity == NULL ) {
-      // search through existing sides
-      PairIterRelation existing_sides = inside_entity.relations(element_rank -1);
-      for (; existing_sides.first != existing_sides.second &&
-             existing_sides.first->identifier() != side_ordinal ;
-             ++existing_sides.first);
+  add_non_owned_sides_to_map(mesh, element_rank, boundary, side_map);
 
-      // the side we need for the skin does not exist on the inside entity,
-      // we may need to create it
-      if (existing_sides.first == existing_sides.second) {
-        // Get the nodes for the inside entity
-        std::vector<EntityId> inside_key;
-        get_elem_side_nodes(inside_entity, side_ordinal, inside_key);
+  ReverseBoundaryMap reverse_side_map;
 
-        //if a side for these nodes is not present in the map already increment the
-        //number of side we need to create
-        if (skin.count(inside_key) == 0) {
-          ++num_new_sides;
-        }
+  size_t num_sides_to_create = determine_creating_processes(mesh, side_map, reverse_side_map);
 
-        skin.insert( BoundaryValue(inside_key, inside));
-
-      }
-    }
-  }
-
+  //begin modification
   mesh.modification_begin();
 
   // formulate request ids for the new sides
   std::vector<size_t> requests(mesh.mesh_meta_data().entity_rank_count(), 0);
-  requests[element_rank -1] = num_new_sides;
+  requests[element_rank -1] = num_sides_to_create;
 
   // create the new sides
   EntityVector requested_sides;
   mesh.generate_new_entities(requests, requested_sides);
 
-  std::vector<EntityId> previous_key;
+  //set to aid comm packing
+  std::set<SideCommHelper> side_comm_helper_set;
+
+  PartVector add_parts ;
+  if (skin_part) {
+    add_parts.push_back(skin_part);
+  }
+
   size_t current_side = 0;
-  for ( BoundaryMap::const_iterator i = skin.begin(); i!= skin.end(); ++i) {
-    const std::vector<EntityId> & key = i->first;
-    Entity & entity = *(i->second.entity);
-    const unsigned side_ordinal = i->second.side_ordinal;
+  for ( BoundaryMap::iterator map_itr = side_map.begin();
+        map_itr!= side_map.end();
+        ++map_itr)
+  {
+    const SideKey & side_key    = map_itr->first;
+    SideVector    & side_vector = map_itr->second;
 
-    if (key != previous_key) {
+    // Only generated keys for sides in which this process
+    // owns the first element in the side vector
+    const EntitySideComponent & first_side = *(side_vector.begin());
+    if ( first_side.entity->owner_rank() == mesh.parallel_rank()) {
+
+      //to be used as the key in the reverse boundary map
+      //a side can be identified in two ways
+      //  1. vector of nodes in a correct permutation and a side-topology
+      //  2. element-id side-ordinal for the side
+      // the reverse boundary map is used to go from (2) to (1).
+      const ElementIdSide elem_id_side( first_side);
+
       Entity & side = *(requested_sides[current_side]);
-      declare_element_side(entity, side, side_ordinal, skin_part);
+      EntityId side_id = side.identifier();
 
-      previous_key = key;
+      //add the side to the skin part
+      mesh.change_entity_parts(side, add_parts);
+
+
+      //declare the side->node relations
+      const EntityVector & nodes = side_key.second;
+
+      for (size_t i = 0; i<nodes.size(); ++i) {
+        Entity & node = *nodes[i];
+        mesh.declare_relation( side, node, i);
+      }
+
+      //declare the elem->side relations
+      for (SideVector::iterator side_itr = side_vector.begin();
+           side_itr != side_vector.end();
+           ++side_itr)
+      {
+        Entity & elem = *(side_itr->entity);
+        //only declare relations for owned elements
+        if (elem.owner_rank() == mesh.parallel_rank()) {
+          const RelationIdentifier elem_side_ordinal = side_itr->side_ordinal;
+          mesh.declare_relation( elem, side, elem_side_ordinal);
+        }
+        else {
+          //add this side to the communication set
+          side_comm_helper_set.insert( SideCommHelper( elem.owner_rank(), elem_id_side, side_id));
+        }
+      }
       ++current_side;
-    }
-    else {
-      Entity & side = *(requested_sides[current_side-1]);
-      mesh.declare_relation(entity, side, side_ordinal);
     }
   }
 
+  CommAll comm( mesh.parallel() );
+
+  //pack send buffers
+  for (int allocation_pass=0; allocation_pass<2; ++allocation_pass) {
+    if (allocation_pass==1) {
+     comm.allocate_buffers( mesh.parallel_size() /4, 0);
+    }
+
+    for (std::set<SideCommHelper>::const_iterator i=side_comm_helper_set.begin();
+         i != side_comm_helper_set.end();
+         ++i)
+    {
+      const SideCommHelper & side_helper = *i;
+      comm.send_buffer(side_helper.proc_to)
+        .pack<EntityId>(side_helper.creating_elem_id_side.elem_id)
+        .pack<RelationIdentifier>(side_helper.creating_elem_id_side.side_ordinal)
+        .pack<EntityId>(side_helper.generated_side_id);
+    }
+  }
+
+  comm.communicate();
+
+  for ( unsigned ip = 0 ; ip < mesh.parallel_size() ; ++ip ) {
+    CommBuffer & buf = comm.recv_buffer( ip );
+    while ( buf.remaining() ) {
+      ElementIdSide creating_elem_id_side;
+      EntityId      generated_side_id;
+
+      buf.unpack<EntityId>(creating_elem_id_side.elem_id)
+         .unpack<RelationIdentifier>(creating_elem_id_side.side_ordinal)
+         .unpack<EntityId>(generated_side_id);
+
+      //find the side in the reverse boundary map
+      const SideKey & side_key = reverse_side_map[creating_elem_id_side];
+
+      //get the SideVector for the corresponding side_key
+      SideVector & side_vector = side_map[side_key];
+
+      Entity & side = mesh.declare_entity(element_rank-1,generated_side_id,add_parts);
+
+      //declare the side->node relations
+      const EntityVector & nodes = side_key.second;
+
+      for (size_t i = 0; i<nodes.size(); ++i) {
+        Entity & node = *nodes[i];
+        mesh.declare_relation( side, node, i);
+      }
+
+      //declare the elem->side relations
+      for (SideVector::iterator side_itr = side_vector.begin();
+           side_itr != side_vector.end();
+           ++side_itr)
+      {
+        Entity & elem = *(side_itr->entity);
+        //only declare relations for owned elements
+        if (elem.owner_rank() == mesh.parallel_rank()) {
+          const RelationIdentifier elem_side_ordinal = side_itr->side_ordinal;
+          mesh.declare_relation( elem, side, elem_side_ordinal);
+        }
+      }
+    }
+  }
   mesh.modification_end();
 }
 

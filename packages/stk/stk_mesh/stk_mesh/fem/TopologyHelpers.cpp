@@ -252,6 +252,13 @@ int element_local_side_id( const Entity & elem ,
                            const CellTopologyData * side_topology,
                            const std::vector<Entity*>& side_nodes )
 {
+  const int INVALID_SIDE = -1;
+
+  unsigned num_nodes = side_topology->node_count;
+
+  if (num_nodes != side_nodes.size()) {
+    return INVALID_SIDE;
+  }
 
   // get topology of elem
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -260,7 +267,7 @@ int element_local_side_id( const Entity & elem ,
   const CellTopologyData* elem_topology = TopologicalMetaData::get_cell_topology(elem);
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   if (elem_topology == NULL) {
-    return -1;
+    return INVALID_SIDE;
   }
 
   // get nodal relations for elem
@@ -270,20 +277,20 @@ int element_local_side_id( const Entity & elem ,
 
   const int num_permutations = side_topology->permutation_count;
 
+
   // Iterate over the subcells of elem...
-  for (unsigned itr = 0;
-       itr < elem_topology->subcell_count[subcell_rank];
-       ++itr) {
+  for (unsigned local_side_ordinal = 0;
+       local_side_ordinal < elem_topology->subcell_count[subcell_rank];
+       ++local_side_ordinal) {
 
     // get topological data for this side
     const CellTopologyData* curr_side_topology =
-      elem_topology->subcell[subcell_rank][itr].topology;
-    unsigned num_nodes =
-      elem_topology->subcell[subcell_rank][itr].topology->node_count;
-    const unsigned* const side_node_map = elem_topology->side[itr].node;
+      elem_topology->subcell[subcell_rank][local_side_ordinal].topology;
 
     // If topologies are not the same, there is no way the sides are the same
     if (side_topology == curr_side_topology) {
+
+      const unsigned* const side_node_map = elem_topology->side[local_side_ordinal].node;
 
       // Taking all positive permutations into account, check if this side
       // has the same nodes as the side_nodes argument. Note that this
@@ -308,18 +315,79 @@ int element_local_side_id( const Entity & elem ,
 
           // all nodes were the same, we have a match
           if ( all_match ) {
-            return itr ;
+            return local_side_ordinal ;
           }
         }
       }
     }
   }
 
-  return -1;
+  return INVALID_SIDE;
 }
 
 //----------------------------------------------------------------------
 
+const CellTopologyData * get_elem_side_nodes( const Entity & elem,
+                          RelationIdentifier side_ordinal,
+                          EntityVector & side_nodes
+                        )
+{
+  side_nodes.clear();
+
+  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+  if (elem_top == NULL) {
+    return NULL;
+  }
+
+  const CellTopologyData * const side_top = elem_top->side[ side_ordinal ].topology;
+  if (side_top == NULL) {
+    return NULL;
+  }
+
+  const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
+
+  PairIterRelation relations = elem.relations( NodeRank );
+
+  // Find positive polarity permutation that starts with lowest entity id:
+  const int num_permutations = side_top->permutation_count;
+  int lowest_entity_id_permutation = 0;
+  for (int p = 0; p < num_permutations; ++p) {
+
+    if (side_top->permutation[p].polarity ==
+        CELL_PERMUTATION_POLARITY_POSITIVE) {
+
+      const unsigned * const pot_lowest_perm_node =
+        side_top->permutation[p].node ;
+
+      const unsigned * const curr_lowest_perm_node =
+        side_top->permutation[lowest_entity_id_permutation].node;
+
+      unsigned first_node_index = 0;
+
+      unsigned current_lowest_entity_id =
+        relations[side_node_map[curr_lowest_perm_node[first_node_index]]].entity()->identifier();
+
+      unsigned potential_lowest_entity_id =
+        relations[side_node_map[pot_lowest_perm_node[first_node_index]]].entity()->identifier();
+
+      if ( potential_lowest_entity_id < current_lowest_entity_id ) {
+        lowest_entity_id_permutation = p;
+      }
+    }
+  }
+
+  const unsigned * const perm_node =
+    side_top->permutation[lowest_entity_id_permutation].node;
+
+  side_nodes.reserve(side_top->node_count);
+  for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
+    Entity * node = relations[side_node_map[perm_node[i]]].entity();
+    side_nodes.push_back(node);
+  }
+
+  return side_top;
+
+}
 }// namespace mesh
 }// namespace stk
 

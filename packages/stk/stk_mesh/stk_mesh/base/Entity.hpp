@@ -94,7 +94,7 @@ public:
   /** \brief  \ref stk::mesh::Relation "Entity relations" for which this
    *          entity is a member, the other entity is of a given type.
    */
-  PairIterRelation relations( unsigned type ) const { return m_entityImpl.relations(type); }
+  PairIterRelation relations( EntityRank type ) const { return m_entityImpl.relations(type); }
 
   //------------------------------------
   /** \brief  Parallel processor rank of the processor which owns this entity */

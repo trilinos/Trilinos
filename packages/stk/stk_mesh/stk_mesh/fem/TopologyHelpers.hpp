@@ -182,10 +182,20 @@ bool element_side_polarity( const Entity & elem ,
  */
 int element_local_side_id( const Entity & elem ,
                            const CellTopologyData * side_topology,
-                           const std::vector<Entity*>& side_nodes );
+                           const EntityVector & side_nodes );
 
 //----------------------------------------------------------------------
 
+/** \brief Given an element and a side ordinal, populate a vector of nodes that make up the side.
+ * The nodes are ordered such that the correct node ordering for the side is preserved and the node
+ * with the lowest identifier comes first
+ *
+ * return the CellTopologyData * for the given side if it exist, else return null
+ */
+const CellTopologyData * get_elem_side_nodes( const Entity & elem,
+                          RelationIdentifier side_ordinal,
+                          EntityVector & side_key_nodes
+                        );
 /** \} */
 
 }//namespace mesh
