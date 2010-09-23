@@ -37,9 +37,6 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Comm.hpp>
 
 namespace Tpetra {
 

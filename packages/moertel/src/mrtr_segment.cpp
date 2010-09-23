@@ -87,18 +87,18 @@ MOERTEL::Segment::Segment(MOERTEL::Segment& old)
   
   // copy the functions
   // this is not a deep copy but we simply copy the refcountptr
-  map< int,RefCountPtr<MOERTEL::Function> >::iterator curr;
+  std::map< int,Teuchos::RCP<MOERTEL::Function> >::iterator curr;
   for (curr = old.functions_.begin(); curr != old.functions_.end(); ++curr)
   {
-    if (curr->second == null)
+    if (curr->second == Teuchos::null)
     {
-      cout << "***ERR*** MOERTEL::Segment::BaseClone(MOERTEL::Segment& old):\n"
+	  std::cout << "***ERR*** MOERTEL::Segment::BaseClone(MOERTEL::Segment& old):\n"
            << "***ERR*** function id " << curr->first << " is null\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
     }
-    RefCountPtr<MOERTEL::Function> newfunc = curr->second;
-    functions_.insert(pair< int,RefCountPtr<MOERTEL::Function> >(curr->first,newfunc));
+	Teuchos::RCP<MOERTEL::Function> newfunc = curr->second;
+    functions_.insert(std::pair< int,Teuchos::RCP<MOERTEL::Function> >(curr->first,newfunc));
   }
   
 }
@@ -118,23 +118,23 @@ MOERTEL::Segment::~Segment()
  *----------------------------------------------------------------------*/
 bool MOERTEL::Segment::Print() const
 { 
-  cout << "Segment " << setw(6) << Id_; 
+  std::cout << "Segment " << std::setw(6) << Id_; 
   if (stype_ == MOERTEL::Segment::seg_Linear1D)
-    cout << " Typ Linear1D   ";
+    std::cout << " Typ Linear1D   ";
   if (stype_ == MOERTEL::Segment::seg_BiLinearQuad)
-    cout << " Typ BiLinearQuad ";
+    std::cout << " Typ BiLinearQuad ";
   if (stype_ == MOERTEL::Segment::seg_BiLinearTri)
-    cout << " Typ BiLinearTri";
+    std::cout << " Typ BiLinearTri";
   if (stype_ == MOERTEL::Segment::seg_none)
-    cout << " Typ NONE       ";
-  cout << " #Nodes " << nodeId_.size() << " Nodes: ";
+    std::cout << " Typ NONE       ";
+  std::cout << " #Nodes " << nodeId_.size() << " Nodes: ";
   for (int i=0; i<(int)nodeId_.size(); ++i)
-    cout << setw(6) << nodeId_[i] << "  ";
-  cout << "  #Functions " << functions_.size() << "  Types: ";
-  map<int,RefCountPtr<MOERTEL::Function> >::const_iterator curr;
+    std::cout << std::setw(6) << nodeId_[i] << "  ";
+  std::cout << "  #Functions " << functions_.size() << "  Types: ";
+  std::map<int,Teuchos::RCP<MOERTEL::Function> >::const_iterator curr;
   for (curr=functions_.begin(); curr != functions_.end(); ++curr)
-    cout << curr->second->Type() << "  ";
-  cout << endl;
+    std::cout << curr->second->Type() << "  ";
+  std::cout << endl;
   return true;
 }
 
@@ -147,29 +147,29 @@ bool MOERTEL::Segment::SetFunction(int id, MOERTEL::Function* func)
 { 
   if (id<0)
   {
-    cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
          << "***ERR*** id = " << id << " < 0 (out of range)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   if (!func)
   {
-    cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
          << "***ERR*** func = NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
   // check for existing function with this id and evtentually overwrite
-  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
+  std::map<int,Teuchos::RCP<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr != functions_.end())
   {
-    curr->second = null;
-    curr->second = rcp(func->Clone());
+    curr->second = Teuchos::null;
+    curr->second = Teuchos::rcp(func->Clone());
     return true;
   }
-  RefCountPtr<MOERTEL::Function> newfunc = rcp(func->Clone());
-  functions_.insert(pair<int,RefCountPtr<MOERTEL::Function> >(id,newfunc));
+  Teuchos::RCP<MOERTEL::Function> newfunc = Teuchos::rcp(func->Clone());
+  functions_.insert(std::pair<int,Teuchos::RCP<MOERTEL::Function> >(id,newfunc));
   return true;
 }
 
@@ -179,32 +179,32 @@ bool MOERTEL::Segment::SetFunction(int id, MOERTEL::Function* func)
  | the user is not supposed to destroy func!                            |
  | the user can set func to several segments!                           |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Segment::SetFunction(int id, RefCountPtr<MOERTEL::Function> func)
+bool MOERTEL::Segment::SetFunction(int id, Teuchos::RCP<MOERTEL::Function> func)
 { 
   if (id<0)
   {
-    cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
          << "***ERR*** id = " << id << " < 0 (out of range)\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  if (func==null)
+  if (func==Teuchos::null)
   {
-    cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Segment::SetFunction:\n"
          << "***ERR*** func = NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   
   // check for existing function with this id and evtentually overwrite
-  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
+  std::map<int,Teuchos::RCP<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr != functions_.end())
   {
     curr->second = func;
     return true;
   }
-  RefCountPtr<MOERTEL::Function> newfunc = func;
-  functions_.insert(pair<int,RefCountPtr<MOERTEL::Function> >(id,newfunc));
+  Teuchos::RCP<MOERTEL::Function> newfunc = func;
+  functions_.insert(pair<int,Teuchos::RCP<MOERTEL::Function> >(id,newfunc));
   return true;
 }
 #endif
@@ -221,10 +221,10 @@ bool MOERTEL::Segment::SetFunction(int id, RefCountPtr<MOERTEL::Function> func)
 bool MOERTEL::Segment::EvaluateFunction(int id, const double* xi, double* val, 
                                         int valdim, double* deriv)
 { 
-  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
+  std::map<int,Teuchos::RCP<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr == functions_.end())
   {
-    cout << "***ERR*** MOERTEL::Segment::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Segment::EvaluateFunction:\n"
          << "***ERR*** function id " << id << " does not exist on this segment\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -258,7 +258,7 @@ int MOERTEL::Segment::GetLocalNodeId(int nid)
     }
   if (lid<0)
   {
-    cout << "***ERR*** MOERTEL::Segment::GetLocalNodeId:\n"
+	std::cout << "***ERR*** MOERTEL::Segment::GetLocalNodeId:\n"
          << "***ERR*** cannot find node " << nid << " in segment " << this->Id() << " list of nodes\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -301,7 +301,7 @@ bool MOERTEL::Segment::GetPtrstoNodes(MOERTEL::Interface& interface)
     nodeptr_[i] = interface.GetNodeView(nodeId_[i]).get();
     if (!nodeptr_[i])
     {
-      cout << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
+	  std::cout << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
            << "***ERR*** interface " << interface.Id() << " GetNodeView failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
@@ -314,7 +314,7 @@ bool MOERTEL::Segment::GetPtrstoNodes(MOERTEL::Interface& interface)
  |                                                           mwgee 10/05|
  | construct ptrs to nodes from vector                                  |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Segment::GetPtrstoNodes(vector<MOERTEL::Node*>& nodes)
+bool MOERTEL::Segment::GetPtrstoNodes(std::vector<MOERTEL::Node*>& nodes)
 { 
   if (!nodeId_.size()) return false;
   
@@ -334,7 +334,7 @@ bool MOERTEL::Segment::GetPtrstoNodes(vector<MOERTEL::Node*>& nodes)
       }
     if (!foundit)
     {
-      cout << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
+	  std::cout << "***ERR*** MOERTEL::Segment::GetPtrstoNodes:\n"
            << "***ERR*** cannot find node " << nodeId_[i] << " in vector\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);     
@@ -350,7 +350,7 @@ bool MOERTEL::Segment::GetPtrstoNodes(vector<MOERTEL::Node*>& nodes)
 MOERTEL::Function::FunctionType MOERTEL::Segment::FunctionType(int id)
 { 
   // find the function with id id
-  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
+  std::map<int,Teuchos::RCP<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr==functions_.end()) 
     return MOERTEL::Function::func_none;
   else
@@ -365,7 +365,7 @@ MOERTEL::Function::FunctionType MOERTEL::Segment::FunctionType(int id)
 MOERTEL::Function* MOERTEL::Segment::GetFunction(int id)
 { 
   // find the function with id id
-  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
+  std::map<int,Teuchos::RCP<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr==functions_.end()) 
     return NULL;
   else

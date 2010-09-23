@@ -1,0 +1,19 @@
+INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+PACKAGE_ADD_EXECUTABLE(
+   AddMultiply_Example
+   SOURCES 
+      Driver.cpp
+   COMM mpi
+   )
+
+PACKAGE_COPY_FILES_TO_BINARY_DIR(addmultiply_example_copyfiles
+   SOURCE_FILES
+      solverparams.xml
+      lhs_test.mm
+      rhs_test.mm
+      modified.mm
+   )

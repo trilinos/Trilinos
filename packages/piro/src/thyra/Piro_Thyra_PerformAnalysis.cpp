@@ -130,7 +130,6 @@ Piro::Thyra::PerformMoochoAnalysis(
   solver.setParameterList(rcp(&moochoParams,false));
 
   // Solve the NLP
-  cout << "DGM_Moocho: Calling solver.solve()" << endl;
   const  MoochoPack::MoochoSolver::ESolutionStatus
     solution_status = solver.solve();
 
@@ -139,12 +138,10 @@ Piro::Thyra::PerformMoochoAnalysis(
   RCP<const ::Thyra::VectorBase<double> > p_final = solver.getFinalPoint().get_p(0);
   ::Thyra::copy(*p_final, p.ptr());
 
-//  cout << "\nAfter MOOCHO optimization, parameters are: " 
-//       << "\n\tp = " << Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
-
   return (int) solution_status;
 #else
- cout << "ERROR: Trilinos/Piro was not configured to include MOOCHO analysis."
+ RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+ *out << "ERROR: Trilinos/Piro was not configured to include MOOCHO analysis."
       << endl;
  return 0;  // should not fail tests
 #endif
@@ -182,12 +179,10 @@ Piro::Thyra::PerformDakotaAnalysis(
         global_p[i] = finalValues[i];
   }
 
-  cout << "\nAfter Dakota analysis, final parameters are: " 
-       << "\n\tp = " << finalValues << endl;
-
   return 0;
 #else
- cout << "ERROR: Trilinos/Piro was not configured to include Dakota analysis."
+ RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+ *out << "ERROR: Trilinos/Piro was not configured to include Dakota analysis."
       << "\nYou must enable TriKota." << endl;
  return 0;  // should not fail tests
 #endif
@@ -200,6 +195,7 @@ Piro::Thyra::PerformOptiPackAnalysis(
     Teuchos::ParameterList& globipackParams,
     RCP< ::Thyra::VectorBase<double> >& p)
 {
+   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 #ifdef Piro_ENABLE_OptiPack
   // First, Linesearch stuff
   const RCP<GlobiPack::BrentsLineSearch<double> >
@@ -208,8 +204,8 @@ Piro::Thyra::PerformOptiPackAnalysis(
   linesearch->setParameterList(lsPL);
 
   // Temporary Debug
-  cout << "\nCurrent LineSearch parameters" << endl;
-  lsPL->print(cout);
+  *out << "\nCurrent LineSearch parameters" << endl;
+  lsPL->print(*out);
 
   // Second, Optimization stuff
 
@@ -226,11 +222,8 @@ Piro::Thyra::PerformOptiPackAnalysis(
   cgSolver->setParameterList(pl);
   
   // Temporary Debug Info
-  cout << "\nCurrent nonlinearCG parameter list" << endl;
-  pl->print(cout);
-
-  cout << "\nStarting optimization parameter values  "
-       << Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
+  *out << "\nCurrent nonlinearCG parameter list" << endl;
+  pl->print(*out);
 
   // Solve the prob
   double g_opt;  // optimal value of the response
@@ -239,13 +232,9 @@ Piro::Thyra::PerformOptiPackAnalysis(
     cgSolver->doSolve( p.ptr(), outArg(g_opt),
                        null, null, null, outArg(numIters) );
 
-//  cout << "\nAfter OptiPack optimization of " << numIters 
-//       << "  iterations \n\tg = " << g_opt << "\n\tp = " << 
-//         Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
-
   return (int) solveResult;
 #else
- cout << "ERROR: Trilinos/Piro was not configured to include OptiPack analysis."
+ *out << "ERROR: Trilinos/Piro was not configured to include OptiPack analysis."
       << endl;
  return 0;  // should not fail tests
 #endif

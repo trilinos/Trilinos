@@ -160,6 +160,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
   stk::mesh::MetaData& meta_data = fixture.meta_data();
+  stk::mesh::TopologicalMetaData& top_data = fixture.top_data();
 
   meta_data.commit();
 
@@ -167,7 +168,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
   fixture.generate_grid();
   mesh.modification_end();
 
-  stk::mesh::skin_mesh(mesh, stk::mesh::Face);
+  stk::mesh::skin_mesh(mesh, top_data.element_rank);
 
   // Nothing happens on iteration #0,
   // so the initial mesh should pass this validation.
@@ -181,11 +182,11 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
   bool passed = true;
 
-  unsigned mesh_rank = stk::mesh::Face;
+  unsigned mesh_rank = top_data.element_rank;
 
   for (int iteration = 0; iteration <NUM_ITERATIONS; ++iteration) {
     //find the entities to kill in this iteration
-    stk::mesh::EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration);
+    stk::mesh::EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration, top_data.element_rank);
 
     // find the parallel-consistent closure of the entities to be killed
     // The closure of an entity includes the entity and any lower ranked

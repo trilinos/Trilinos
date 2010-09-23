@@ -20,7 +20,7 @@
 #include <stk_mesh/base/DataTraits.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 namespace stk {
@@ -39,12 +39,14 @@ public:
 
   ~HexFixture();
 
+  const int spatial_dimension;
   const unsigned NX;
   const unsigned NY;
   const unsigned NZ;
 
   MetaData  meta_data;
   BulkData  bulk_data;
+  TopologicalMetaData top_data;
 
   Part    & hex_part;
 
@@ -84,11 +86,11 @@ public:
   }
 
   Entity * node( unsigned ix , unsigned iy , unsigned iz ) const {
-    return bulk_data.get_entity( stk::mesh::Node , node_id(ix,iy,iz) );
+    return bulk_data.get_entity( top_data.node_rank , node_id(ix,iy,iz) );
   }
 
   Entity * elem( unsigned ix , unsigned iy , unsigned iz ) const {
-    return bulk_data.get_entity( stk::mesh::Element , elem_id(ix,iy,iz) );
+    return bulk_data.get_entity( top_data.element_rank , elem_id(ix,iy,iz) );
   }
 
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );

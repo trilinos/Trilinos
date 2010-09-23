@@ -1,3 +1,44 @@
+C @HEADER
+C ************************************************************************
+C
+C               Epetra: Linear Algebra Services Package 
+C                 Copyright 2001 Sandia Corporation
+C 
+C Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+C the U.S. Government retains certain rights in this software.
+C
+C Redistribution and use in source and binary forms, with or without
+C modification, are permitted provided that the following conditions are
+C met:
+C
+C 1. Redistributions of source code must retain the above copyright
+C notice, this list of conditions and the following disclaimer.
+C
+C 2. Redistributions in binary form must reproduce the above copyright
+C notice, this list of conditions and the following disclaimer in the
+C documentation and/or other materials provided with the distribution.
+C
+C 3. Neither the name of the Corporation nor the names of the
+C contributors may be used to endorse or promote products derived from
+C this software without specific prior written permission.
+C
+C THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+C EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+C IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+C PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+C CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+C EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+C PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+C PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+C LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+C NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+C SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+C
+C Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+C 
+C ************************************************************************
+C @HEADER
+
 *----------------------------------------------------------------------
 *
 *

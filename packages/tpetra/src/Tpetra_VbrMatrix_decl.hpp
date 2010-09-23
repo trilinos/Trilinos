@@ -33,10 +33,6 @@
 #include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_VbrMatrix.hpp>
 
-#include <Teuchos_ScalarTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_SerializationTraits.hpp>
-
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_BlockMap.hpp"

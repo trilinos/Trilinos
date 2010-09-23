@@ -49,6 +49,7 @@
 bool MOERTEL::Interface::Mortar_Assemble(Epetra_CrsMatrix& D, 
                                        Epetra_CrsMatrix& M)
 { 
+
   //-------------------------------------------------------------------
   // interface needs to be complete
   if (!IsComplete())
@@ -146,7 +147,7 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   // and two functions on the slave side
   int mside = MortarSide();
   int sside = OtherSide(mside);
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator scurr;
   for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 1)
     {
@@ -190,7 +191,7 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
  |  make mortar integration of this interface (2D problem)              |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::Mortar_Integrate_2D(
-                           RefCountPtr<Teuchos::ParameterList> intparams)
+                           Teuchos::RCP<Teuchos::ParameterList> intparams)
 { 
   bool ok = false;
   intparams_ = intparams;
@@ -241,7 +242,7 @@ bool MOERTEL::Interface::Mortar_Integrate_2D(
   // and two functions on the slave side
   int mside = MortarSide();
   int sside = OtherSide(mside);
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator scurr;
   for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
     if (scurr->second->Nfunctions() < 1)
     {
@@ -301,11 +302,11 @@ bool MOERTEL::Interface::Integrate_2D()
 
   
   // loop over all segments of slave side
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator scurr;
   for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
   {
     // the segment to be integrated
-    RefCountPtr<MOERTEL::Segment> actsseg = scurr->second;
+	Teuchos::RCP<MOERTEL::Segment> actsseg = scurr->second;
 
 #if 0
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
@@ -325,10 +326,10 @@ bool MOERTEL::Interface::Integrate_2D()
     if (!foundone) continue;
     
     // loop over all segments on the master side
-    map<int,RefCountPtr<MOERTEL::Segment> >::iterator mcurr;
+	std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator mcurr;
     for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
     {
-      RefCountPtr<MOERTEL::Segment> actmseg = mcurr->second;
+	  Teuchos::RCP<MOERTEL::Segment> actmseg = mcurr->second;
       
 #if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
@@ -367,11 +368,11 @@ bool MOERTEL::Interface::Integrate_2D(Epetra_CrsMatrix& M,
 
   
   // loop over all segments of slave side
-  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator scurr;
   for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
   {
     // the segment to be integrated
-    RefCountPtr<MOERTEL::Segment> actsseg = scurr->second;
+	Teuchos::RCP<MOERTEL::Segment> actsseg = scurr->second;
 
 #if 0
     cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
@@ -391,10 +392,10 @@ bool MOERTEL::Interface::Integrate_2D(Epetra_CrsMatrix& M,
     if (!foundone) continue;
     
     // loop over all segments on the master side
-    map<int,RefCountPtr<MOERTEL::Segment> >::iterator mcurr;
+	std::map<int,Teuchos::RCP<MOERTEL::Segment> >::iterator mcurr;
     for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
     {
-      RefCountPtr<MOERTEL::Segment> actmseg = mcurr->second;
+	  Teuchos::RCP<MOERTEL::Segment> actmseg = mcurr->second;
       
 #if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
@@ -421,7 +422,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   if (sseg.Type()!=MOERTEL::Segment::seg_Linear1D || mseg.Type()!=MOERTEL::Segment::seg_Linear1D)
   {
     cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
-         << "***ERR*** Integration of other then linear segments not yet implemented\n"
+         << "***ERR*** Integration of other than linear segments not yet implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
@@ -444,15 +445,17 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   // determine the overlap of the 2 segments if there is any
   MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
   // project master nodes onto slave segment
-  vector<double> mxi(mseg.Nnode());
+  std::vector<double> mxi(mseg.Nnode());
+  std::vector<double> mgap(mseg.Nnode());
   for (int i=0; i<mseg.Nnode(); ++i)
-    projector.ProjectNodetoSegment_SegmentNormal(*mnodes[i],sseg,&mxi[i]);
+    projector.ProjectNodetoSegment_SegmentNormal(*mnodes[i],sseg,&mxi[i],mgap[i]);
   //cout << mxi[0] << " " << mxi[1] << endl;
 
   // project slave nodes onto master segment
-  vector<double> sxi(sseg.Nnode());
+  std::vector<double> sxi(sseg.Nnode());
+  std::vector<double> sgap(sseg.Nnode());
   for (int i=0; i<sseg.Nnode(); ++i)
-    projector.ProjectNodetoSegment_NodalNormal(*snodes[i],mseg,&sxi[i]);
+    projector.ProjectNodetoSegment_NodalNormal(*snodes[i],mseg,&sxi[i],sgap[i]);
   //cout << sxi[0] << " " << sxi[1] << endl;
   
   // Depending on mxi and sxi decide on the overlap
@@ -460,45 +463,45 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   bool snode1 = false;
   bool mnode0 = false;
   bool mnode1 = false;
-  RefCountPtr<MOERTEL::ProjectedNode> is_spnode0 = null;
-  RefCountPtr<MOERTEL::ProjectedNode> is_spnode1 = null;
-  RefCountPtr<MOERTEL::ProjectedNode> is_mpnode0 = null;
-  RefCountPtr<MOERTEL::ProjectedNode> is_mpnode1 = null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> is_spnode0 = Teuchos::null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> is_spnode1 = Teuchos::null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> is_mpnode0 = Teuchos::null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> is_mpnode1 = Teuchos::null;
   double xi[2]; xi[0] = xi[1] = 0.0;
   if ( -1.05 <= mxi[0] && mxi[0] <= 1.05) 
   {
     mnode0 = true;
     xi[0] = mxi[0];
-    is_mpnode0 = rcp(new MOERTEL::ProjectedNode(*mnodes[0],xi,&sseg));
-    (*mnodes[0]).SetProjNode(is_mpnode0);
+    is_mpnode0 = Teuchos::rcp(new MOERTEL::ProjectedNode(*mnodes[0],xi,&sseg));
+	mnodes[0]->SetGap(mgap[0]);
   }
   if ( -1.05 <= mxi[1] && mxi[1] <= 1.05) 
   {
     mnode1 = true;
     xi[0] = mxi[1];
-    is_mpnode1 = rcp(new MOERTEL::ProjectedNode(*mnodes[1],xi,&sseg));
-    (*mnodes[1]).SetProjNode(is_mpnode1);
+    is_mpnode1 = Teuchos::rcp(new MOERTEL::ProjectedNode(*mnodes[1],xi,&sseg));
+	mnodes[1]->SetGap(mgap[1]);
   }
   if ( -1.05 <= sxi[0] && sxi[0] <= 1.05) 
   {
     snode0 = true;
     xi[0] = sxi[0];
-    is_spnode0 = rcp(new MOERTEL::ProjectedNode(*snodes[0],xi,&mseg));
-    (*snodes[0]).SetProjNode(is_spnode0);
+    is_spnode0 = Teuchos::rcp(new MOERTEL::ProjectedNode(*snodes[0],xi,&mseg));
+	snodes[0]->SetGap(sgap[0]);
   }
   if ( -1.05 <= sxi[1] && sxi[1] <= 1.05) 
   {
     snode1 = true;
     xi[0] = sxi[1];
-    is_spnode1 = rcp(new MOERTEL::ProjectedNode(*snodes[1],xi,&mseg));
-    (*snodes[1]).SetProjNode(is_spnode1);
+    is_spnode1 = Teuchos::rcp(new MOERTEL::ProjectedNode(*snodes[1],xi,&mseg));
+	snodes[1]->SetGap(sgap[1]);
   }
   //cout << mnode0 << "  " << mnode1 << "  " << snode0 << "  " << snode1 << endl;
   
   // Make decision upon overlap
   bool overlap = false;
-  RefCountPtr<MOERTEL::ProjectedNode> nstart = null;
-  RefCountPtr<MOERTEL::ProjectedNode> nend   = null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> nstart = Teuchos::null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> nend   = Teuchos::null;
   double sxia=999.0,sxib=999.0;
   double mxia=999.0,mxib=999.0;
   
@@ -771,37 +774,37 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   bool mnode0 = false;
   bool mnode1 = false;
   int foundcase =  0;
-  RefCountPtr<MOERTEL::ProjectedNode> is_spnode0 = null;
-  RefCountPtr<MOERTEL::ProjectedNode> is_spnode1 = null;
-  RefCountPtr<MOERTEL::ProjectedNode> is_mpnode0 = null;
-  RefCountPtr<MOERTEL::ProjectedNode> is_mpnode1 = null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> is_spnode0 = Teuchos::null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> is_spnode1 = Teuchos::null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> is_mpnode0 = Teuchos::null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> is_mpnode1 = Teuchos::null;
   
   // projection along continous normal field results in projection points
   // that are unique
   if (GetProjectionType() == proj_continousnormalfield)
   {  
-    if (snodes[0]->GetProjectedNode() != null)
+    if (snodes[0]->GetProjectedNode() != Teuchos::null)
       if (snodes[0]->GetProjectedNode()->Segment())
         if (snodes[0]->GetProjectedNode()->Segment()->Id() == mseg.Id())
         {
           snode0     = true;
           is_spnode0 = snodes[0]->GetProjectedNode();
         }
-    if (snodes[1]->GetProjectedNode() != null)
+    if (snodes[1]->GetProjectedNode() != Teuchos::null)
       if (snodes[1]->GetProjectedNode()->Segment())
         if (snodes[1]->GetProjectedNode()->Segment()->Id() == mseg.Id())
         {
           snode1     = true;
           is_spnode1 = snodes[1]->GetProjectedNode(); 
         }
-    if (mnodes[0]->GetProjectedNode() != null)
+    if (mnodes[0]->GetProjectedNode() != Teuchos::null)
       if (mnodes[0]->GetProjectedNode()->Segment())
         if (mnodes[0]->GetProjectedNode()->Segment()->Id() == sseg.Id())
         {
           mnode0     = true;
           is_mpnode0 = mnodes[0]->GetProjectedNode();
         }
-    if (mnodes[1]->GetProjectedNode() != null)
+    if (mnodes[1]->GetProjectedNode() != Teuchos::null)
       if (mnodes[1]->GetProjectedNode()->Segment())
         if (mnodes[1]->GetProjectedNode()->Segment()->Id() == sseg.Id())
         {
@@ -815,7 +818,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   else if (GetProjectionType() == proj_orthogonal)
   {
     int nspnode0;
-    RefCountPtr<MOERTEL::ProjectedNode>* spnode0 = snodes[0]->GetProjectedNode(nspnode0);
+	Teuchos::RCP<MOERTEL::ProjectedNode>* spnode0 = snodes[0]->GetProjectedNode(nspnode0);
     if (spnode0)
       for (int i=0; i<nspnode0; ++i)
         if (spnode0[i]->Segment())
@@ -833,7 +836,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
             }
     
     int nspnode1;
-    RefCountPtr<MOERTEL::ProjectedNode>* spnode1 = snodes[1]->GetProjectedNode(nspnode1);
+	Teuchos::RCP<MOERTEL::ProjectedNode>* spnode1 = snodes[1]->GetProjectedNode(nspnode1);
     if (spnode1)
       for (int i=0; i<nspnode1; ++i)
         if (spnode1[i]->Segment())
@@ -850,14 +853,14 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
               break;
             }
 
-    if (mnodes[0]->GetProjectedNode() != null)
+    if (mnodes[0]->GetProjectedNode() != Teuchos::null)
       if (mnodes[0]->GetProjectedNode()->Segment())
         if (mnodes[0]->GetProjectedNode()->Segment()->Id() == sseg.Id())
         {
           mnode0     = true;
           is_mpnode0 = mnodes[0]->GetProjectedNode(); 
         }
-    if (mnodes[1]->GetProjectedNode() != null)
+    if (mnodes[1]->GetProjectedNode() != Teuchos::null)
       if (mnodes[1]->GetProjectedNode()->Segment())
         if (mnodes[1]->GetProjectedNode()->Segment()->Id() == sseg.Id())
         {
@@ -867,8 +870,8 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   }
   
         
-  RefCountPtr<MOERTEL::ProjectedNode> nstart = null;
-  RefCountPtr<MOERTEL::ProjectedNode> nend   = null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> nstart = Teuchos::null;
+  Teuchos::RCP<MOERTEL::ProjectedNode> nend   = Teuchos::null;
 
   // the xi range to integrate
   double sxia=999.0,sxib=999.0;
@@ -909,8 +912,8 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
     if (sxia>0.95)
     {
       ++foundcase;
-      nstart = null;
-      nend   = null;
+      nstart = Teuchos::null;
+      nend   = Teuchos::null;
     }
     else
     {
@@ -920,7 +923,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
       // 1.) mnodes[0] projects into a neighbor of sseg
       // 2.) mnodes[0]'s projection hast to be low in xi
       nend = mnodes[0]->GetProjectedNode();
-      if (nend != null) ok = true;
+      if (nend != Teuchos::null) ok = true;
       else      ok = false;
       if (ok)
       {
@@ -949,8 +952,8 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
       }
       else // do nothing?
       {
-        nstart = null;
-        nend   = null;
+        nstart = Teuchos::null;
+        nend   = Teuchos::null;
         ++foundcase;
       }
     }
@@ -970,7 +973,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
     // (into a neighbor master segment) and whether that projection point is
     // low in xi range (should be -1.0)
     nstart = snodes[0]->GetProjectedNode(); // check whether a projection exists 
-    if (nstart == null) ok = false;
+    if (nstart == Teuchos::null) ok = false;
     if (ok) // projection nstart has to be in neighbour master element
     {
       if (!nstart->Segment()) ok = true; // nstart is virtual
@@ -999,8 +1002,8 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
     else // do nothing?
     {
       ++ foundcase;
-      nstart = null;
-      nend = null; 
+      nstart = Teuchos::null;
+      nend = Teuchos::null; 
     }
   }
 
@@ -1070,7 +1073,7 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
   }
   
   // there might be no overlap
-  if (nstart==null && nend==null)
+  if (nstart==Teuchos::null && nend==Teuchos::null)
     return true;
 
 #if 0  

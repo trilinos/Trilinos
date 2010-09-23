@@ -47,7 +47,7 @@ class CUDANode {
       and is guaranteed to have size large enough to reference \c size number of entries of type \c T.
      */
     template <class T> inline
-    Teuchos::ArrayRCP<T> allocBuffer(size_t size);
+    ArrayRCP<T> allocBuffer(size_t size);
 
     /*! \brief Copy data to host memory from a parallel buffer.
 
@@ -61,7 +61,7 @@ class CUDANode {
       \post On return, entries in the range <tt>[0 , size)</tt> of \c buffSrc have been copied to \c hostDest entries in the range <tt>[0 , size)</tt>.
      */
     template <class T> inline
-    void copyFromBuffer(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest);
+    void copyFromBuffer(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayView<T> &hostDest);
 
     /*! \brief Copy data to host memory from a parallel buffer.
 
@@ -75,7 +75,7 @@ class CUDANode {
       \post On return, entries in the range <tt>[0 , size)</tt> of \c hostSrc are allowed to be written to. The data is guaranteed to be present in \c buffDest before it is used in a parallel computation.
      */
     template <class T> inline
-    void copyToBuffer(size_t size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest);
+    void copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest);
 
     /*! \brief Copy data between buffers.
 
@@ -86,15 +86,15 @@ class CUDANode {
       \post The data is guaranteed to have been copied before any other usage of buffSrc or buffDest occurs.
      */
     template <class T> inline
-    void copyBuffers(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayRCP<T> &buffDest);
+    void copyBuffers(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayRCP<T> &buffDest);
 
     template <class T> inline
-    Teuchos::ArrayRCP<const T> viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff);
+    ArrayRCP<const T> viewBuffer(size_t size, ArrayRCP<const T> buff);
 
     template <class T> inline
-    Teuchos::ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff);
+    ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff);
 
-    void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers);
+    void readyBuffers(ArrayView<ArrayRCP<const char> > buffers, ArrayView<ArrayRCP<char> > ncBuffers);
 
     //@} 
 

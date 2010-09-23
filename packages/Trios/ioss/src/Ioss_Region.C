@@ -54,6 +54,7 @@
 #include <Ioss_Utils.h>
 
 namespace {
+  const std::string id_str()           { return std::string("id");}
   const std::string orig_elem_str()    { return std::string("original_element_type");}
   const std::string orig_block_order() { return std::string("original_block_order");}
 
@@ -576,7 +577,31 @@ const CommSetContainer&  Region::get_commsets() const
 
 bool Region::add_alias(const GroupingEntity *ge)
 {
+  // Seeif an entity with this name already exists...
   std::string db_name = ge->name();
+  const GroupingEntity *old_ge = get_entity(db_name);
+  if (old_ge != NULL && ge != old_ge) {
+    if (!((old_ge->type() == FACEBLOCK &&     ge->type() == FACESET) ||
+	  (    ge->type() == FACEBLOCK && old_ge->type() == FACESET) ||
+	  (    ge->type() == EDGEBLOCK && old_ge->type() == EDGESET) ||
+	  (old_ge->type() == EDGEBLOCK &&     ge->type() == EDGESET))) {
+      int old_id = -1;
+      int new_id = -1;
+      if (old_ge->property_exists(id_str())) {
+	old_id = old_ge->get_property(id_str()).get_int();
+      }
+      if (ge->property_exists(id_str())) {
+	new_id = ge->get_property(id_str()).get_int();
+      }
+      
+      std::ostringstream errmsg;
+      errmsg << "\n\nERROR: Duplicate names detected.\n       The name '" << db_name << "' was found for both "
+	     << old_ge->type_string() << " " << old_id << " and "
+	     << ge->type_string() << " " << new_id
+	     << ".\n       Names must be unique over all types in a finite element model.\n\n";
+      IOSS_ERROR(errmsg);
+    }
+  }
   return add_alias(db_name, db_name);
 }
 
@@ -961,8 +986,6 @@ void Region::synchronize_id_and_name(const Region *from)
   AliasMap::const_iterator I  = aliases_.begin();
   AliasMap::const_iterator IE = aliases_.end();
 
-  const std::string id_str = std::string("id");
-
   while (I != IE) {
     std::string alias = (*I).first;
     std::string base  = (*I).second;
@@ -985,15 +1008,15 @@ void Region::synchronize_id_and_name(const Region *from)
 	}
 
 	// See if there is an 'id' property...
-	if (ge->property_exists(id_str)) {
-	  int id = ge->get_property(id_str).get_int();
+	if (ge->property_exists(id_str())) {
+	  int id = ge->get_property(id_str()).get_int();
 
-	  if (this_ge->property_exists(id_str)) {
+	  if (this_ge->property_exists(id_str())) {
 	    // Remove the old property...
-	    this_ge->property_erase(id_str);
+	    this_ge->property_erase(id_str());
 	  }
 	  // Set the new property
-	  this_ge->property_add(Property(id_str, id));
+	  this_ge->property_add(Property(id_str(), id));
 	} else {
 	  // No id, make sure the base name matches in both databases...
 	  // There is always a 'name' property on an entity

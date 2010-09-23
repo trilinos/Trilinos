@@ -138,15 +138,15 @@ STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , cellTopology )
       STKUNIT_EXPECT_EQUAL( (int) spatial_dimension , test.get_entity_rank( beam3 ) );
     }
     else {
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( tri3 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( tri6 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( tri4 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( quad4 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( quad8 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( quad9 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( tri3 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( tri6 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( tri4 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( quad4 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( quad8 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( quad9 ) , std::runtime_error );
 
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( beam2 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( beam3 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( beam2 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( beam3 ) , std::runtime_error );
     }
 
     if ( 2 == spatial_dimension ) {
@@ -154,8 +154,8 @@ STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , cellTopology )
       STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( shellLine3 ) );
     }
     else {
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( shellLine2 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( shellLine3 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellLine2 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellLine3 ) , std::runtime_error );
     }
 
     if ( 2 < spatial_dimension ) {
@@ -183,28 +183,28 @@ STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , cellTopology )
       STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( shellQuad9 ) );
     }
     else {
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( tet4 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( tet10 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( tet8 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( tet4 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( tet10 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( tet8 ) , std::runtime_error );
 
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( pyr5 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( pyr13 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( pyr14 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr5 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr13 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr14 ) , std::runtime_error );
 
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( wedge6 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( wedge15 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( wedge18 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge6 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge15 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge18 ) , std::runtime_error );
 
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( hex8 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( hex20 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( hex27 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( hex8 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( hex20 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( hex27 ) , std::runtime_error );
 
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( shellTri3 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( shellTri6 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellTri3 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellTri6 ) , std::runtime_error );
 
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( shellQuad4 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( shellQuad8 ) );
-      STKUNIT_EXPECT_EQUAL( -1 , test.get_entity_rank( shellQuad9 ) );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad4 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad8 ) , std::runtime_error );
+      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad9 ) , std::runtime_error );
     }
   }
 }

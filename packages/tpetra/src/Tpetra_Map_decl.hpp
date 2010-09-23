@@ -30,10 +30,7 @@
 #define TPETRA_MAP_DECL_HPP
 
 #include <Kokkos_DefaultNode.hpp>
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Teuchos_Comm.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
 
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"

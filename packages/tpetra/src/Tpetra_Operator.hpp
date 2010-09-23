@@ -31,7 +31,6 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
-#include <Teuchos_RCP.hpp>
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 

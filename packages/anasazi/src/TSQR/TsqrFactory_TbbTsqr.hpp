@@ -49,17 +49,20 @@ namespace TSQR {
 #ifdef HAVE_KOKKOS_TBB
     template< class LO, class S >
     class TbbTsqrFactory :
-      public TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, 
-			  Tsqr< LO, S, TSQR::TBB::TbbTsqr< LO, S > > > 
+      public TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, DistTsqr< LO, S > >
     {
     public:
       // Help C++ pull in the typedefs from the base class.  C++ needs
       // help when both the base and the derived classes are
       // templated.
-      typedef TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, Tsqr< LO, S, TSQR::TBB::TbbTsqr< LO, S > > > base_type;
-
+      typedef TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, DistTsqr< LO, S > > base_type;
+      typedef typename base_type::scalar_messenger_ptr scalar_messenger_ptr;
       typedef typename base_type::node_tsqr_type node_tsqr_type;
       typedef typename base_type::node_tsqr_ptr  node_tsqr_ptr;
+      typedef typename base_type::dist_tsqr_type dist_tsqr_type;
+      typedef typename base_type::dist_tsqr_ptr  dist_tsqr_ptr;
+      typedef typename base_type::tsqr_type tsqr_type;
+      typedef typename base_type::tsqr_ptr  tsqr_ptr;
 
       TbbTsqrFactory () {}
       virtual ~TbbTsqrFactory () {}
@@ -102,8 +105,15 @@ namespace TSQR {
 	  cacheBlockSize = 0;
 	}
 
-	node_tsqr_ptr node_tsqr (new node_tsqr_type (numCores, cacheBlockSize));
-	return node_tsqr;
+	node_tsqr_ptr nodeTsqr (new node_tsqr_type (numCores, cacheBlockSize));
+	return nodeTsqr;
+      }
+
+      virtual dist_tsqr_ptr
+      makeDistTsqr (const scalar_messenger_ptr& messenger,
+		    const Teuchos::ParameterList& plist) const
+      {
+	return Teuchos::rcp (new dist_tsqr_type (messenger));
       }
     };
 #endif // HAVE_KOKKOS_TBB

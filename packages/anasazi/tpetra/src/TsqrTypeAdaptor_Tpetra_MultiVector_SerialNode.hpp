@@ -55,11 +55,19 @@ namespace TSQR {
       typedef GO global_ordinal_type;
       typedef Tpetra::MultiVector< S, LO, GO, Kokkos::SerialNode > multivector_type;
 
-      typedef TSQR::SequentialTsqr< LO, S > node_tsqr_type;
-      typedef TSQR::Tsqr< LO, S, node_tsqr_type > tsqr_type;
-      typedef SequentialTsqrFactory< local_ordinal_type, scalar_type > factory_type;
-      typedef Teuchos::Comm<int> comm_type;
+      typedef SequentialTsqr< LO, S >         node_tsqr_type;
+      typedef Teuchos::RCP< node_tsqr_type >  node_tsqr_ptr;
+
+      typedef DistTsqr< LO, S >               dist_tsqr_type;
+      typedef Teuchos::RCP< dist_tsqr_type >  dist_tsqr_ptr;
+
+      typedef Teuchos::Comm<int>              comm_type;
       typedef Teuchos::RCP< const comm_type > comm_ptr;
+
+      typedef Tsqr< LO, S, node_tsqr_type, dist_tsqr_type > tsqr_type;
+      typedef Teuchos::RCP< tsqr_type >                     tsqr_ptr;
+
+      typedef SequentialTsqrFactory< local_ordinal_type, scalar_type > factory_type;
     };
 
   } // namespace Trilinos

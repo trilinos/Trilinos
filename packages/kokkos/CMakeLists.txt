@@ -13,6 +13,8 @@ SET(${PACKAGE_NAME}_VERSION "1.3d")
 # B) Set up package-specific options
 #
 
+PACKAGE_ADD_DEBUG_OPTION()
+
 ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_NodeAPI
   HAVE_KOKKOS_NODEAPI
@@ -59,7 +61,7 @@ ADD_OPTION_AND_DEFINE(
   Kokkos_CUDA_NODE_MEMORY_PROFILING
   HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
   "Enable profiling of memory transfers for CUDA nodes."
-  OFF
+  ${${PACKAGE_NAME}_ENABLE_DEBUG}
 )
 
 ADD_OPTION_AND_DEFINE(
@@ -68,6 +70,13 @@ ADD_OPTION_AND_DEFINE(
   "Enable memory movement trace for CUDA nodes."
   OFF
 )
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_TREAT_SERIALNODE_AS_DEVICE
+  HAVE_KOKKOS_TREAT_SERIALNODE_AS_DEVICE
+  "Treat Kokkos::SerialNode as a device node instead of a host node, for kernels where there is a difference."
+  ${${PACKAGE_NAME}_ENABLE_DEBUG}
+  )
 
 #
 # C) Add the libraries, tests, and examples

@@ -48,8 +48,6 @@
 
 #include "mrtr_function.H"
 
-using namespace std;
-
 /*!
 \brief MOERTEL: namespace of the Moertel package
 

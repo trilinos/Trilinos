@@ -325,18 +325,18 @@ int main(int argc, char* argv[])
     //
 
     *out << "\nCreating inv(M11) ...\n";
-    LinearOpPtr invM11 = inverse(*M11_linsolve_strategy,M11);
+    LinearOpPtr invM11 = inverse(*M11_linsolve_strategy, M11);
     *out << "\ninvM11 = " << describe(*invM11,verbLevel) << "\n";
 
     *out << "\nCreating inv(M22) ...\n";
-    LinearOpPtr invM22 = inverse(*M22_linsolve_strategy,M22);
+    LinearOpPtr invM22 = inverse(*M22_linsolve_strategy, M22);
     *out << "\ninvM22 = " << describe(*invM22,verbLevel) << "\n";
 
     *out << "\nCreating prec(P1) ...\n";
     LinearOpPtr invP1;
     if(invertP1) {
       *out << "\nCreating prec(P1) as a full solver ...\n";
-      invP1 = inverse(*P1_linsolve_strategy,P1);
+      invP1 = inverse(*P1_linsolve_strategy, P1);
     }
     else {
       *out << "\nCreating prec(P1) as just an algebraic preconditioner ...\n";
@@ -367,13 +367,13 @@ int main(int argc, char* argv[])
     if(useP1Prec) {
       *out << "\nCreating the solver P2 using the specialized precP2Op\n";
       initializePreconditionedOp<double>( *P2_linsolve_strategy, P2,
-        unspecifiedPrec(precP2Op), &*P2_lows );
+        unspecifiedPrec(precP2Op), P2_lows.ptr());
     }
     else {
       *out << "\nCreating the solver P2 using algebraic preconditioner\n";
-      initializeOp( *P2_linsolve_strategy, P2, &*P2_lows );
+      initializeOp(*P2_linsolve_strategy, P2, P2_lows.ptr());
     }
-    *out << "\nP2_lows = " << describe(*P2_lows,verbLevel) << "\n";
+    *out << "\nP2_lows = " << describe(*P2_lows, verbLevel) << "\n";
     
     //
     *out << "\nE) Solve P2 for a random RHS ...\n";

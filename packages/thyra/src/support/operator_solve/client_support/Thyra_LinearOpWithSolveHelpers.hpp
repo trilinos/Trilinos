@@ -42,7 +42,7 @@ namespace Thyra {
  * This function will throw an excetion with a very good error message if the
  * requested solve type is not supported.
  *
- * \ingroup thyra_operator_solve_support_LOWSF_subclass_helpers_grp
+ * \relates LinearOpWithSolveBase
  */
 template<class Scalar>
 void assertSolveSupports(
@@ -57,7 +57,7 @@ void assertSolveSupports(
  * This function will throw an excetion with a very good error message if the
  * requested solve type is not supported.
  *
- * \ingroup thyra_operator_solve_support_LOWSF_subclass_helpers_grp
+ * \defgroup Thyra_deprecated_grp
  */
 template<class Scalar>
 void assertSupportsSolveMeasureType(

@@ -1,0 +1,32 @@
+******************************************************************
+*** WARNING: THIS CODE IS NOT AUTOMATICALLY TESTED IN TRILINOS ***
+***          BECAUSE IT REQUIRES AN INSTALLED TRILINOS         ***
+******************************************************************
+
+This is a small demonstration of how to build an application
+against Trilinos when both are using CMake for the build system.
+This example also demonstrates ctest.
+
+To run this example: 
+
+(1) Trilinos needs to be configured using  PREFIX, e.g.:
+    -DCMAKE_INSTALL_PREFIX:path=/home/turing/InstalledTrilinos10_6 \
+
+(2) "make; make install"  of Trilinos
+    (This will put a file in the ${CMAKE_INSTALL_PREFIX}/include
+      directory called "TrilinosConfig.cmake")
+
+(3) For this demo, the file build/do-cmake needs to be
+    edited as specified in the comments.
+
+(4) run "do-cmake" script in the build directory
+
+(5) run "make" in the build directory
+
+(6) run "ctest" in the build directory
+
+#
+# Look into comments in CMakeLists.txt files for more info.
+
+# Questions to Andy Salinger (agsalin@sandia.gov)
+#     or  trilinos-framework@software.sandia.gov

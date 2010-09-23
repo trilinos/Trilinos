@@ -30,10 +30,12 @@ UnitTestRingMeshFixture::UnitTestRingMeshFixture(
   ParallelMachine pm ,
   unsigned        num_edge_per_proc ,
   bool            use_edge_parts )
-  : m_meta_data( fem_entity_rank_names() ),
+  : m_spatial_dimension(3),
+    m_meta_data( TopologicalMetaData::entity_rank_names(m_spatial_dimension) ),
     m_bulk_data( m_meta_data, pm, 100 ),
+    m_top_data( m_meta_data, m_spatial_dimension ),
     m_edge_parts(),
-    m_edge_part_extra( m_meta_data.declare_part( "edge_extra" , Edge ) ),
+    m_edge_part_extra( m_meta_data.declare_part( "edge_extra" , m_top_data.edge_rank ) ),
     m_num_edge_per_proc( num_edge_per_proc ),
     m_node_ids(),
     m_edge_ids()
@@ -43,7 +45,7 @@ UnitTestRingMeshFixture::UnitTestRingMeshFixture(
     for ( unsigned i = 0 ; i < num_edge_per_proc ; ++i ) {
       std::ostringstream name ;
       name << "EdgePart_" << i ;
-      m_edge_parts[i] = & m_meta_data.declare_part( name.str() , Edge );
+      m_edge_parts[i] = & m_meta_data.declare_part( name.str() , m_top_data.edge_rank );
     }
   }
 }
@@ -106,18 +108,18 @@ void UnitTestRingMeshFixture::generate_mesh( bool generate_aura )
   Selector select_all(  m_bulk_data.mesh_meta_data().universal_part() );
 
   stk::mesh::count_entities( select_used , m_bulk_data , local_count );
-  STKUNIT_ASSERT( local_count[Node] == nLocalNode );
-  STKUNIT_ASSERT( local_count[Edge] == nLocalEdge );
+  STKUNIT_ASSERT( local_count[m_top_data.node_rank] == nLocalNode );
+  STKUNIT_ASSERT( local_count[m_top_data.edge_rank] == nLocalEdge );
 
   std::vector<Entity*> all_nodes;
-  get_entities( m_bulk_data, Node, all_nodes);
+  get_entities( m_bulk_data, m_top_data.node_rank, all_nodes);
 
   unsigned num_selected_nodes =
-      count_selected_entities( select_used, m_bulk_data.buckets(Node) );
-  STKUNIT_ASSERT( num_selected_nodes == local_count[Node] );
+      count_selected_entities( select_used, m_bulk_data.buckets(m_top_data.node_rank) );
+  STKUNIT_ASSERT( num_selected_nodes == local_count[m_top_data.node_rank] );
 
   std::vector<Entity*> universal_nodes;
-  get_selected_entities( select_all, m_bulk_data.buckets(Node), universal_nodes );
+  get_selected_entities( select_all, m_bulk_data.buckets(m_top_data.node_rank), universal_nodes );
   STKUNIT_ASSERT( universal_nodes.size() == all_nodes.size() );
 
   STKUNIT_ASSERT( UnitTestBulkData::modification_end( m_bulk_data , generate_aura ) );
@@ -132,8 +134,8 @@ void UnitTestRingMeshFixture::generate_mesh( bool generate_aura )
     const unsigned n0 = id_end < id_total ? id_begin : 0 ;
     const unsigned n1 = id_end < id_total ? id_end : id_begin ;
 
-    Entity * const node0 = m_bulk_data.get_entity( Node , m_node_ids[n0] );
-    Entity * const node1 = m_bulk_data.get_entity( Node , m_node_ids[n1] );
+    Entity * const node0 = m_bulk_data.get_entity( m_top_data.node_rank , m_node_ids[n0] );
+    Entity * const node1 = m_bulk_data.get_entity( m_top_data.node_rank , m_node_ids[n1] );
 
     STKUNIT_ASSERT( node0 != NULL );
     STKUNIT_ASSERT( node1 != NULL );
@@ -270,8 +272,8 @@ void UnitTestRingMeshFixture::test_shift_loop( bool generate_aura )
   STKUNIT_ASSERT( count_shared == 2u );
 
   {
-    Entity * const node_recv = m_bulk_data.get_entity( Node , m_node_ids[id_recv] );
-    Entity * const node_send = m_bulk_data.get_entity( Node , m_node_ids[id_send] );
+    Entity * const node_recv = m_bulk_data.get_entity( m_top_data.node_rank , m_node_ids[id_recv] );
+    Entity * const node_send = m_bulk_data.get_entity( m_top_data.node_rank , m_node_ids[id_send] );
 
     STKUNIT_ASSERT( node_recv->sharing().size() == 1 );
     STKUNIT_ASSERT( node_send->sharing().size() == 1 );

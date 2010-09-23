@@ -37,6 +37,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Tsqr_MessengerBase.hpp"
+#include "Tsqr.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -62,18 +63,30 @@ namespace TSQR {
     /// TsqrFactory that knows how to instantiate that intranode TSQR
     /// class.
     ///
+    /// \note If you have implemented a new internode TSQR
+    /// factorization type, you'll need to create a subclass of
+    /// TsqrFactory that knows how to instantiate that internode TSQR
+    /// class.
+    ///
     /// \note If you want to change which TSQR implementation is
-    /// invoked for a particular multivector (MV) class, change the
+    /// invoked for a particular multivector (MV) class, you don't
+    /// need to do anything with this class, as long as the
+    /// appropriate subclass of TsqrFactory for the desired
+    /// NodeTsqrType and DistTsqrType exists.  Just change the
     /// factory_type typedef in the specialization of TsqrTypeAdaptor
-    /// for MV.
-    template< class LO, class S, class NodeTsqrType, class TsqrType >
+    /// for the MV class.
+    template< class LO, class S, class NodeTsqrType, class DistTsqrType >
     class TsqrFactory {
     public:
-      typedef Teuchos::RCP< MessengerBase< S > >       scalar_messenger_ptr;
-      typedef NodeTsqrType                             node_tsqr_type;
-      typedef TsqrType                                 tsqr_type;
-      typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
-      typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
+      typedef NodeTsqrType                       node_tsqr_type;
+      typedef Teuchos::RCP< node_tsqr_type >     node_tsqr_ptr;
+
+      typedef Teuchos::RCP< MessengerBase< S > > scalar_messenger_ptr;
+      typedef DistTsqrType                       dist_tsqr_type;
+      typedef Teuchos::RCP< dist_tsqr_type >     dist_tsqr_ptr;
+
+      typedef Tsqr< LO, S, node_tsqr_type, dist_tsqr_type > tsqr_type;
+      typedef Teuchos::RCP< tsqr_type >                     tsqr_ptr;
 
       /// \brief Instantiate and return TSQR implementation
       ///
@@ -95,11 +108,11 @@ namespace TSQR {
       virtual void
       makeTsqr (const Teuchos::ParameterList& plist,
 		const scalar_messenger_ptr& messenger,
-		node_tsqr_ptr& node_tsqr,
 		tsqr_ptr& tsqr) const
       {
-	node_tsqr = makeNodeTsqr (plist);
-	tsqr = tsqr_ptr (new tsqr_type (*node_tsqr, messenger.get()));
+	node_tsqr_ptr nodeTsqr = makeNodeTsqr (plist);
+	dist_tsqr_ptr distTsqr = makeDistTsqr (messenger, plist);
+	tsqr = Teuchos::rcp (new tsqr_type (nodeTsqr, distTsqr));
       }
 
       TsqrFactory () {}
@@ -113,19 +126,38 @@ namespace TSQR {
       /// \return (Smart) pointer to the node_tsqr_type object that
       ///   TSQR will use for the intranode part of its computations
       ///
-      /// \note For implementers: this is the interesting method.
-      ///   makeTsqr() is "generic," more or less.  makeNodeTsqr() is
-      ///   the part that varies a lot for different node_tsqr_type
-      ///   types.  This is also the method that reads parameters from
-      ///   the plist.  This pattern is the compile-time polymorphism
-      ///   equivalent of the "Non-Virtual Interface" (NVI) idiom,
-      ///   where the "virtual" methods (here, the methods that vary
-      ///   for different template parameters) are private, and the
-      ///   "nonvirtual" methods (here, the methods that are the same
-      ///   for different template parameters) are part of the public
-      ///   interface.
+      /// \note For implementers: this and makeDistTsqr are the two
+      ///   interesting methods.  makeTsqr()'s implementation is
+      ///   "generic"; it does not depend on node_tsqr_type or
+      ///   dist_tsqr_type.  The implementation of makeNodeTsqr()
+      ///   varies for different node_tsqr_type types.  This pattern
+      ///   is the compile-time polymorphism equivalent of the
+      ///   "Non-Virtual Interface" (NVI) idiom, where the "virtual"
+      ///   methods (here, the methods that vary for different
+      ///   template parameters) are private, and the "nonvirtual"
+      ///   methods (here, the methods that are the same for different
+      ///   template parameters) are part of the public interface.
       virtual node_tsqr_ptr
       makeNodeTsqr (const Teuchos::ParameterList& plist) const = 0;
+
+      /// \brief Instantiate and return TSQR's internode object
+      ///
+      /// \param messenger [in] Object used by TSQR for communicating
+      ///   between MPI processes
+      ///
+      /// \param plist [in] Same as the epinonymous input of makeTsqr()
+      ///
+      /// \return (Smart) pointer to the dist_tsqr_type object that
+      ///   TSQR will use for the internode part of its computations
+      ///
+      /// \note For implementers: this and makeNodeTsqr() are the two
+      ///   interesting methods.  makeTsqr()'s implementation is
+      ///   "generic"; it does not depend on node_tsqr_type or
+      ///   dist_tsqr_type.  The implementation of makeDistTsqr()
+      ///   varies for different dist_tsqr_type types.  
+      virtual dist_tsqr_ptr
+      makeDistTsqr (const scalar_messenger_ptr& messenger,
+		    const Teuchos::ParameterList& plist) const = 0;
     };
   } // namespace Trilinos
 } // namespace TSQR

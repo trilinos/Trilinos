@@ -125,11 +125,10 @@ Ioss::Scalar::Scalar()
   : Ioss::VariableType(scalar(), 1)
 {
   // Sierra uses 'REAL' as a variable storage type
-  Ioss::VariableType::alias("scalar", "Real");
   Ioss::VariableType::alias("scalar", "real");
   // Sierra also uses 'INTEGER' as a variable storage type
-  Ioss::VariableType::alias("scalar", "INTEGER");
-  Ioss::VariableType::alias("scalar", "UNSIGNED INTEGER");
+  Ioss::VariableType::alias("scalar", "integer");
+  Ioss::VariableType::alias("scalar", "unsigned integer");
 
 }
 

@@ -86,7 +86,8 @@ public:
 
   //------------------------------------
   /** \brief  All \ref stk::mesh::Relation "Entity relations"
-   *          for which this entity is a member.
+   *          for which this entity is a member. The relations are ordered
+   *          from lowest entity-rank to highest entity-rank.
    */
   PairIterRelation relations() const { return m_entityImpl.relations(); }
 
@@ -154,6 +155,12 @@ public:
   {
     const EntityKey lhs_key = lhs ? lhs->key() : EntityKey();
     return lhs_key < rhs.key() ;
+  }
+
+  bool operator()(const Entity& lhs, const Entity* rhs) const
+  {
+    const EntityKey rhs_key = rhs ? rhs->key() : EntityKey();
+    return lhs.key() < rhs_key ;
   }
 
   bool operator()(const Entity* lhs, const EntityKey & rhs) const

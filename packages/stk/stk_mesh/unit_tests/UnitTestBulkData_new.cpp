@@ -14,6 +14,7 @@
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <stk_mesh/base/EntityComm.hpp>
 
@@ -570,17 +571,14 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   //code based on ../base/BulkDataGhosting.cpp
   //Create a simple mesh. Add nodes one element and some parts.
 
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( spatial_dimension ) );
+  stk::mesh::TopologicalMetaData top( meta, spatial_dimension );
 
-  stk::mesh::Part & part_a = meta.declare_part( "block_a", 3 );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( part_a );
-  stk::mesh::Part & part_b = meta.declare_part( "block_b", 3 );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( part_b );
+  stk::mesh::Part & part_a = top.declare_part<shards::Tetrahedron<4> >( "block_a" );
+  stk::mesh::Part & part_b = top.declare_part<shards::Tetrahedron<4> >( "block_b" );
 
-  stk::mesh::Part & part_a_0 = meta.declare_part( "block_a_0", 0 );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( part_a_0 );
-  stk::mesh::Part & part_b_0 = meta.declare_part( "block_b_0", 0 );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( part_b_0 );
+  stk::mesh::Part & part_a_0 = top.declare_part<shards::Node>( "block_a_0" );
 
   typedef stk::mesh::Field<double>  ScalarFieldType;
 

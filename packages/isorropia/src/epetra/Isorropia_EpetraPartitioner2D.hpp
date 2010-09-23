@@ -34,7 +34,6 @@ USA
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-#include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_EpetraOperator.hpp>
 #include <Isorropia_Partitioner2D.hpp>
 
@@ -52,7 +51,6 @@ class Epetra_LinearProblem;
 namespace Isorropia {
 
 namespace Epetra {
-  class CostDescriber;
 
 /** An implementation of the Partitioner interface that operates on
     Epetra matrices and linear systems.
@@ -88,37 +86,6 @@ public:
 		const Teuchos::ParameterList& paramlist = Teuchos::ParameterList("EmptyParameterList"),
                 bool compute_partitioning_now=true);
 
-  /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
-        API function create_partitioner().
-
-     \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RefCountPtr is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param costs CostDescriber object which allows for user-specified
-       weights of varying types to be provided to the partitioner.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
-  Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-              Teuchos::RCP<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist = Teuchos::ParameterList("EmptyParameterList"),
-              bool compute_partitioning_now=true);
-
   /**
      Constructor that accepts an Epetra_RowMatrix object, called by
        API function create_partitioner().
@@ -147,55 +114,6 @@ public:
               const Teuchos::ParameterList& paramlist = Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
-  /**
-     Constructor that accepts an Epetra_RowMatrix object and a
-     CostDescriber, called by API function create_partitioner(). 
-
-     \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RefCountPtr is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param costs CostDescriber object which allows for user-specified
-       weights of varying types to be provided to the partitioner.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
-  Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-              Teuchos::RCP<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist = Teuchos::ParameterList("EmptyParameterList"),
-              bool compute_partitioning_now=true);
-
-
-
-  //  MMW: Missing the following constructors that are in Partitioner
-  //
-  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-  //            bool compute_partitioning_now=true);
-  //
-  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-  //            const Teuchos::ParameterList& paramlist,
-  //            bool compute_partitioning_now=true);
-  //
-  //  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-  //            Teuchos::RCP<const Epetra_MultiVector> weights,
-  //            const Teuchos::ParameterList& paramlist,
-  //            bool compute_partitioning_now=true);
-  
-
 
 
   /** Destructor */
@@ -222,37 +140,30 @@ public:
   virtual void compute(bool forceRecomputing=false);
 
 
-  /** An internal method which returns the number of elements in a given partition.
-
-      (Currently only implemented for the case where 'partition' is local.)
+  /**
   */
   int numElemsInPart(int part) const;
 
 
-  /** An internal method which fills caller-allocated list (of length len) with the
-      global element ids to be located in the given partition.
+  /**
+  */
+  int getNZIndx(int row, int column) const;
 
-      (Currently only implemented for the case where 'partition' is local.)
+
+  /**      global element ids to be located in the given partition.
   */
   void elemsInPart(int part, int* elementList, int len) const;
 
 
-  /** Create a new @c Epetra_Map corresponding to the new partition.
+  // Should add RCP versions of the below
 
-      This method is essentially used by the
-      Isorropia::Epetra::Redistributor object.
+  int createDomainAndRangeMaps(Epetra_Map *domainMap, 
+		               Epetra_Map *rangeMap);
 
-      \return @c Epetra_Map that contains the new distribution of elements.
+  // perhaps pass parameter lists to these?
+  int createColumnMap(Epetra_Map* colMap); 
+  int createRowMap(Epetra_Map* rowMap); 
 
-      \pre The number of parts might be the same or lower than the
-      number of processors.
-  */
-  Teuchos::RCP<Epetra_Map> createNewMap();
-
-  int createNewMaps(Teuchos::RCP<Epetra_Map> domainMap, 
-		    Teuchos::RCP<Epetra_Map> rangeMap);
-
-  int partitionVectors();
 
 
 

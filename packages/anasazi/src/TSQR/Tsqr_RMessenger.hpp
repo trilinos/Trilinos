@@ -29,10 +29,13 @@
 #ifndef __TSQR_RMessenger_hpp
 #define __TSQR_RMessenger_hpp
 
+#include <Tsqr_MatView.hpp>
+#include <Tsqr_MessengerBase.hpp>
+
+#include <Teuchos_RCP.hpp>
+
 #include <algorithm>
 #include <vector>
-#include "Tsqr_MatView.hpp"
-#include "Tsqr_MessengerBase.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,9 +51,11 @@ namespace TSQR {
   public:
     typedef Scalar scalar_type;
     typedef Ordinal ordinal_type;
+    typedef MessengerBase< Scalar > messenger_type;
+    typedef Teuchos::RCP< messenger_type > messenger_ptr;
 
     /// \brief Constructor
-    RMessenger (MessengerBase< Scalar >* const messenger) :
+    RMessenger (const messenger_ptr& messenger) :
       messenger_ (messenger) {}
 
     template< class ConstMatrixViewType >
@@ -84,15 +89,31 @@ namespace TSQR {
 	unpack (R);
     }
 
+    /// Copy constructor
+    ///
+    RMessenger (const RMessenger& rhs) :
+      messenger_ (rhs.messenger_), buffer_ (0) // don't need to copy the buffer
+    {}
+
+    /// Assignment operator
+    ///
+    RMessenger& operator= (const RMessenger& rhs) {
+      if (this != &rhs)
+	{
+	  this->messenger_ = rhs.messenger_;
+	  // Don't need to do anything to this->buffer_; the various
+	  // operations such as pack() will resize it as necessary.
+	}
+      return *this;
+    }
+
+
   private:
-    MessengerBase< Scalar >* const messenger_;
+    messenger_ptr messenger_;
     std::vector< Scalar > buffer_;
 
-    // Default construction and copying don't make sense, so they are
-    // forbidden syntactically.
+    // Default construction doesn't make sense, so we forbid it.
     RMessenger ();
-    RMessenger (const RMessenger&);
-    RMessenger& operator= (const RMessenger&);
 
     /// Buffer length as a function of R factor dimension
     /// 
@@ -155,7 +176,7 @@ namespace TSQR {
   void
   scatterStack (const ConstMatrixViewType& R_stack, 
 		MatrixViewType& R_local,
-		MessengerBase< typename MatrixViewType::scalar_type >* const messenger)
+		const Teuchos::RCP< MessengerBase< typename MatrixViewType::scalar_type > >& messenger)
   {
     typedef typename MatrixViewType::ordinal_type ordinal_type;
     typedef typename MatrixViewType::scalar_type scalar_type;
@@ -198,7 +219,7 @@ namespace TSQR {
   void
   gatherStack (MatrixViewType& R_stack, 
 	       ConstMatrixViewType& R_local,
-	       MessengerBase< typename MatrixViewType::scalar_type >* const messenger)
+	       const Teuchos::RCP< MessengerBase< typename MatrixViewType::scalar_type > >& messenger)
   {
     typedef typename MatrixViewType::ordinal_type ordinal_type;
     typedef typename MatrixViewType::scalar_type scalar_type;

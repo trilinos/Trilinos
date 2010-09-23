@@ -17,7 +17,8 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 namespace {
 void testCartesian();
@@ -177,8 +178,10 @@ void testFieldDataArray( stk::ParallelMachine pm )
   const std::string name2("test_field_2");
   const std::string name3("test_field_3");
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta_data( stk::mesh::TopologicalMetaData::entity_rank_names(spatial_dimension) );
   stk::mesh::BulkData bulk_data( meta_data , pm );
+  stk::mesh::TopologicalMetaData top_data( meta_data, spatial_dimension );
 
   rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
   rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  name1 );
@@ -202,15 +205,15 @@ void testFieldDataArray( stk::ParallelMachine pm )
     }
   }
 
-  stk::mesh::Part & p0 = meta_data.declare_part("P0", stk::mesh::Node );
-  stk::mesh::Part & p1 = meta_data.declare_part("P1", stk::mesh::Node );
-  stk::mesh::Part & p2 = meta_data.declare_part("P2", stk::mesh::Node );
-  stk::mesh::Part & p3 = meta_data.declare_part("P3", stk::mesh::Node );
+  stk::mesh::Part & p0 = meta_data.declare_part("P0", top_data.node_rank );
+  stk::mesh::Part & p1 = meta_data.declare_part("P1", top_data.node_rank );
+  stk::mesh::Part & p2 = meta_data.declare_part("P2", top_data.node_rank );
+  stk::mesh::Part & p3 = meta_data.declare_part("P3", top_data.node_rank );
 
-  stk::mesh::put_field( f0 , stk::mesh::Node , p0 );
-  stk::mesh::put_field( f1 , stk::mesh::Node , p1 , 10 );
-  stk::mesh::put_field( f2 , stk::mesh::Node , p2 , 10 , 20 );
-  stk::mesh::put_field( f3 , stk::mesh::Node , p3 , 10 , 20 , 30 );
+  stk::mesh::put_field( f0 , top_data.node_rank , p0 );
+  stk::mesh::put_field( f1 , top_data.node_rank , p1 , 10 );
+  stk::mesh::put_field( f2 , top_data.node_rank , p2 , 10 , 20 );
+  stk::mesh::put_field( f3 , top_data.node_rank , p3 , 10 , 20 , 30 );
 
   stk::mesh::print( std::cout , "  " , f0 ); std::cout << std::endl ;
 
@@ -219,27 +222,27 @@ void testFieldDataArray( stk::ParallelMachine pm )
   bulk_data.modification_begin();
 
   for ( unsigned i = 1 ; i < 11 ; ++i ) {
-    bulk_data.declare_entity( stk::mesh::Node , i ,
+    bulk_data.declare_entity( top_data.node_rank , i ,
                               std::vector< stk::mesh::Part * >( 1 , & p0 ) );
   }
 
   for ( unsigned i = 11 ; i < 21 ; ++i ) {
-    bulk_data.declare_entity( stk::mesh::Node , i ,
+    bulk_data.declare_entity( top_data.node_rank , i ,
                               std::vector< stk::mesh::Part * >( 1 , & p1 ) );
   }
 
   for ( unsigned i = 21 ; i < 31 ; ++i ) {
-    bulk_data.declare_entity( stk::mesh::Node , i ,
+    bulk_data.declare_entity( top_data.node_rank , i ,
                               std::vector< stk::mesh::Part * >( 1 , & p2 ) );
   }
 
   for ( unsigned i = 31 ; i < 41 ; ++i ) {
-    bulk_data.declare_entity( stk::mesh::Node , i ,
+    bulk_data.declare_entity( top_data.node_rank , i ,
                               std::vector< stk::mesh::Part * >( 1 , & p3 ) );
   }
 
   const std::vector< stk::mesh::Bucket *> & node_buckets =
-    bulk_data.buckets( stk::mesh::Node );
+    bulk_data.buckets( top_data.node_rank );
 
   for ( std::vector< stk::mesh::Bucket *>::const_iterator
         ik = node_buckets.begin() ; ik != node_buckets.end() ; ++ik ) {

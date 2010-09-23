@@ -13,8 +13,14 @@
 #include <stdexcept>
 #include <Shards_CellTopologyTraits.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
+
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#include <stk_mesh/fem/TopologyHelpersDeprecated.hpp>
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
 namespace stk {
 namespace mesh {
@@ -26,28 +32,6 @@ namespace mesh {
 /// \todo REFACTOR: The functions in this file represent a "bridge"
 ///between the mesh and the Shards_CellTopologyData stuff. Does it
 ///belong here?
-
-//----------------------------------------------------------------------
-/** \brief Attach a CellTopology to a Part.
- *  There is at most one cell topology allowed.
- */
-void set_cell_topology( Part & , const CellTopologyData * singleton );
-
-/** \brief  Attach a CellTopology to a Part.
- *  There is at most one element topology allowed.
- */
-template< class Traits >
-void set_cell_topology( Part & p )
-{ return set_cell_topology( p , shards::getCellTopologyData<Traits>() ); }
-
-/** \brief  The the CellTopology attached to the Part, if any */
-const CellTopologyData * get_cell_topology( const Part & );
-
-/** \brief  The the CellTopology attached to at most one Part of the Bucket */
-const CellTopologyData * get_cell_topology( const Bucket & );
-
-/** \brief  The the CellTopology attached to at most one Part of the Entity */
-const CellTopologyData * get_cell_topology( const Entity & );
 
 //----------------------------------------------------------------------
 template< class Traits >
@@ -66,9 +50,15 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
 
   for(; iter!=iter_end; ++iter) {
     stk::mesh::Part* part =  *iter;
-    if (stk::mesh::get_cell_topology(*part) == topology) {
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+    if (get_cell_topology(*part) == topology) {
       parts.push_back(part);
     }
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+    if (TopologicalMetaData::get_cell_topology(*part) == topology) {
+      parts.push_back(part);
+    }
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   }
 }
 
@@ -83,7 +73,11 @@ Entity & declare_element( BulkData & mesh ,
                           const IdType elem_id ,
                           const IdType node_id[] )
 {
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const top = get_cell_topology( part );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData * const top = TopologicalMetaData::get_cell_topology( part );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if ( top == NULL ) {
     std::ostringstream msg ;
@@ -98,13 +92,19 @@ Entity & declare_element( BulkData & mesh ,
   PartVector empty ;
   PartVector add( 1 ); add[0] = & part ;
 
-  Entity & elem = mesh.declare_entity( Element, elem_id, add );
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const EntityRank entity_rank = element_rank_deprecated(part.mesh_meta_data());
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const EntityRank entity_rank = top->dimension;
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
+  Entity & elem = mesh.declare_entity( entity_rank, elem_id, add );
 
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     //declare node if it doesn't already exist
-    Entity * node = mesh.get_entity( Node , node_id[i]);
+    Entity * node = mesh.get_entity( NodeRank , node_id[i]);
     if ( NULL == node) {
-      node = & mesh.declare_entity( Node , node_id[i], empty );
+      node = & mesh.declare_entity( NodeRank , node_id[i], empty );
     }
 
     mesh.declare_relation( elem , *node , i );
@@ -121,7 +121,11 @@ Entity & declare_element( BulkData & mesh ,
                           const IdType elem_id ,
                           Entity * node[] )
 {
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const top = get_cell_topology( part );
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const CellTopologyData * const top = TopologicalMetaData::get_cell_topology( part );
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if ( top == NULL ) {
     std::ostringstream msg ;
@@ -135,7 +139,13 @@ Entity & declare_element( BulkData & mesh ,
 
   PartVector add( 1 ); add[0] = & part ;
 
-  Entity & elem = mesh.declare_entity( Element, elem_id, add );
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const EntityRank entity_rank = element_rank_deprecated(part.mesh_meta_data());
+#else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const EntityRank entity_rank = top->dimension;
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+
+  Entity & elem = mesh.declare_entity( entity_rank, elem_id, add );
 
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     mesh.declare_relation( elem , *node[i] , i );

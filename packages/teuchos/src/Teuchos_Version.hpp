@@ -1,5 +1,5 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 //
 //                    Teuchos: Common Tools Package
 //                 Copyright (2004) Sandia Corporation
@@ -23,8 +23,8 @@
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
-// ************************************************************************
-//@HEADER
+// ***********************************************************************
+// @HEADER
 
 #ifndef TEUCHOS_VERSION_HPP
 #define TEUCHOS_VERSION_HPP

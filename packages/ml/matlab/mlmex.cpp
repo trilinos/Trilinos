@@ -10,6 +10,9 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   07/31/2010 - Code cleanup, adding ability to get out AztecOO iteration counts.
+   07/22/2010 - Adding ability to handle nested parameter lists via cell arrays
+                (e.g. for sending in an ifpack list).
    05/22/2007 - Added fix for when mwIndex and int are not the same size data
                 structure (this occurs on 64 bit architectures).    
    10/12/2006 - Bug fixed for error tolerance for ISINT checks.
@@ -144,9 +147,10 @@ public:
      N       - Number of unknowns [I]
      b       - RHS vector [I]
      x       - solution vector [O]
+     iters   - number of iterations taken [O]
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  virtual int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x)=0;  
+  virtual int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters)=0;  
 public:
   int id;
   Teuchos::ParameterList *List;
@@ -182,9 +186,10 @@ public:
      N       - Number of unknowns [I]
      b       - RHS vector [I]
      x       - solution vector [O]
+     iters   - number of iterations taken [O] (NOT IMPLEMENTED)
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x);  
+  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x, int &iters);  
 
 private:
   Space * FineSpace;
@@ -220,9 +225,10 @@ public:
      N       - Number of unknowns [I]
      b       - RHS vector [I]
      x       - solution vector [O]
+     iters   - number of iterations taken [O]
      returns: IS_TRUE if sucessful, IS_FALSE otherwise.
   */
-  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x);  
+  int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x,int &iters);  
 
   /* GetPreconditioner - returns a pointer to the preconditioner */     
   MultiLevelPreconditioner* GetPreconditioner(){return Prec;}
@@ -382,9 +388,10 @@ int mlapi_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
    N       - Number of unknowns [I]
    b       - RHS vector [I]
    x       - solution vector [O]
+   iters   - number of iterations taken [O] (NOT IMPLEMENTED)
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
-int mlapi_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x){
+int mlapi_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
   int i;
   Init();   
   MultiVector LHS(A->GetDomainSpace());
@@ -409,6 +416,9 @@ int mlapi_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*
   for(i=0;i<N;i++) x[i]=LHS(i);
   
   Finalize();
+
+  iters=-1;
+
   return IS_TRUE;
 }/*end solve*/
 
@@ -498,9 +508,10 @@ int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
    N       - Number of unknowns [I]
    b       - RHS vector [I]
    x       - solution vector [O]
+   iters   - number of iterations taken [O]
    Returns: IS_TRUE if solve was succesful, IS_FALSE otherwise
 */
-int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x){
+int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, double*x,int &iters){
   int i;
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
@@ -554,6 +565,10 @@ int ml_epetra_data_pack::solve(Teuchos::ParameterList *TPL, int N, double*b, dou
 
   /* Fill Solution */
   for(i=0;i<N;i++) x[i]=LHS[i];
+  
+  /* Solver Output */
+  iters=solver.NumIters();
+
 
   return IS_TRUE;
 }/*end solve*/
@@ -748,109 +763,125 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
    prhs    - The problem inputs [I]
    Return value: Teuchos list containing all parameters passed in by the user.
 */
-Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
-  Teuchos::ParameterList* TPL=new Teuchos::ParameterList;
+void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArray *prhs);
+void parse_list_item(Teuchos::ParameterList & List,char *option_name,const mxArray *prhs){
   mxClassID cid;
   int i,M,N, *opt_int;
-  char *option_name,*opt_char;
+  char *opt_char;
   double *opt_float;
   string opt_str;  
-  for(i=0;i<nrhs;i+=2){
+  Teuchos::ParameterList sublist;
+  mxArray *cell1,*cell2;
+
+  /* Pull relevant info the the option value */
+  cid=mxGetClassID(prhs);
+  M=mxGetM(prhs);
+  N=mxGetN(prhs);
+  
+  /* Add to the Teuchos list */
+  switch(cid){
+  case mxCHAR_CLASS:
+    // String
+    opt_char=mxArrayToString(prhs);
+    opt_str=opt_char;
+    List.set(option_name, opt_str);
+    mxFree(opt_char);
+    break;
+  case mxDOUBLE_CLASS:
+  case mxSINGLE_CLASS:
+    // Single or double
+    //NTS: Does not deal with complex args
+    opt_float=mxGetPr(prhs);
+    if(M==1 && N==1 && ISINT(opt_float[0])) {     
+      List.set(option_name, (int)opt_float[0]);
+    }/*end if*/
+    else if(M==1 && N==1){
+      List.set(option_name, opt_float[0]);
+    }/*end if*/
+    else if(M==0 || N==0){
+      List.set(option_name,(double*)NULL);
+    }  
+    else{
+      List.set(option_name, opt_float);
+    }/*end else*/
+    break;
+  case mxLOGICAL_CLASS:
+    // Bool
+    if(M==1 && N==1) List.set(option_name, mxIsLogicalScalarTrue(prhs));
+    else List.set(option_name,mxGetLogicals(prhs));
+    //NTS: The else probably doesn't work.
+    break;
+  case mxINT8_CLASS:
+  case mxUINT8_CLASS:
+  case mxINT16_CLASS:
+  case mxUINT16_CLASS:
+  case mxINT32_CLASS:
+  case mxUINT32_CLASS:
+    // Integer
+    opt_int=(int*)mxGetData(prhs);
+    if(M==1 && N==1) List.set(option_name, opt_int[0]);      
+    else List.set(option_name, opt_int);      
+    break;
+    // NTS: 64-bit ints will break on a 32-bit machine.  We
+    // should probably detect machine type, or somthing, but that would
+    // involve a non-trivial quantity of autoconf kung fu.
+  case mxCELL_CLASS:
+    // Interpret a cell list as a nested teuchos list.
+    // NTS: Assuming that it's a 1D row ordered array
+    for(i=0;i<N;i+=2){
+      cell1=mxGetCell(prhs,i);
+      cell2=mxGetCell(prhs,i+1);
+      if(!mxIsChar(cell1))
+	mexErrMsgTxt("Error: Input options are not in ['parameter',value] format!\n");
+      opt_char=mxArrayToString(cell1);
+      parse_list_item(sublist,opt_char,cell2);
+      List.set(option_name,sublist);      
+      mxFree(opt_char);
+    }
+    break;
+  case mxINT64_CLASS:
+  case mxUINT64_CLASS:      
+  case mxFUNCTION_CLASS:
+  case mxUNKNOWN_CLASS:
+  case mxSTRUCT_CLASS:      
+  default:
+    mexPrintf("Error parsing input option #%d: %s [type=%d]\n",i,option_name,cid);
+    mexErrMsgTxt("Error: An input option is invalid!\n");      
+  };        
+}
+
+
+/**************************************************************/
+/**************************************************************/
+/**************************************************************/
+/* build_teuchos_list - takes the inputs (barring the solver mode and
+  matrix/rhs) and turns them into a Teuchos list for use by MLAPI.
+   Parameters:
+   nrhs    - Number of program inputs [I]
+   prhs    - The problem inputs [I]
+   Return value: Teuchos list containing all parameters passed in by the user.
+*/
+Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
+  Teuchos::ParameterList* TPL=new Teuchos::ParameterList;
+  char * option_name;
+
+  for(int i=0;i<nrhs;i+=2){
     if(i==nrhs-1 || !mxIsChar(prhs[i]))
       mexErrMsgTxt("Error: Input options are not in ['parameter',value] format!\n");
-
+    
     /* What option are we setting? */
     option_name=mxArrayToString(prhs[i]);
 
-    /* Pull relevant info the the option value */
-    cid=mxGetClassID(prhs[i+1]);
-    M=mxGetM(prhs[i+1]);
-    N=mxGetN(prhs[i+1]);
-#ifdef VERBOSE_OUTPUT
-    mexPrintf("[%d] M=%d N=%d\n",i,M,N);
-#endif
-
-    /* Add to the Teuchos list */
-    switch(cid){
-    case mxCHAR_CLASS:
-      opt_char=mxArrayToString(prhs[i+1]);
-      opt_str=opt_char;
-#ifdef VERBOSE_OUTPUT
-      mexPrintf("[%s] String Found: %s\n",option_name,opt_char);
-#endif
-      TPL->set(option_name, opt_str);
-      mxFree(opt_char);
-      break;
-    case mxDOUBLE_CLASS:
-    case mxSINGLE_CLASS:
-      //NTS: Does not deal with complex args
-      opt_float=mxGetPr(prhs[i+1]);
-      if(M==1 && N==1 && ISINT(opt_float[0])) {     
-#ifdef VERBOSE_OUTPUT
-        mexPrintf("[%s] Float(Int) Found!\n",option_name);
-#endif
-        TPL->set(option_name, (int)opt_float[0]);
-      }/*end if*/
-      else if(M==1 && N==1){
-#ifdef VERBOSE_OUTPUT
-        mexPrintf("[%s] Float Found!\n",option_name);
-#endif
-        TPL->set(option_name, opt_float[0]);
-      }/*end if*/
-      else if(M==0 || N==0){
-#ifdef VERBOSE_OUTPUT
-        mexPrintf("[%s] Float(Empty) Found!\n",option_name);
-#endif
-        TPL->set(option_name,(double*)NULL);
-      }  
-      else{
-#ifdef VERBOSE_OUTPUT
-        mexPrintf("[%s] Float Found!\n",option_name);
-#endif
-        TPL->set(option_name, opt_float);
-      }/*end else*/
-      break;
-    case mxLOGICAL_CLASS:
-#ifdef VERBOSE_OUTPUT      
-      mexPrintf("[%s] Logical Found!\n",option_name);
-#endif
-      if(M==1 && N==1) TPL->set(option_name, mxIsLogicalScalarTrue(prhs[i+1]));
-      else TPL->set(option_name,mxGetLogicals(prhs[i+1]));
-      //NTS: The else probably doesn't work.
-      break;
-    case mxINT8_CLASS:
-    case mxUINT8_CLASS:
-    case mxINT16_CLASS:
-    case mxUINT16_CLASS:
-    case mxINT32_CLASS:
-    case mxUINT32_CLASS:
-
-#ifdef VERBOSE_OUTPUT
-      mexPrintf("[%s] Int Found!\n",option_name);
-#endif
-      opt_int=(int*)mxGetData(prhs[i+1]);
-      if(M==1 && N==1) TPL->set(option_name, opt_int[0]);      
-      else TPL->set(option_name, opt_int);      
-      break;
-      // NTS: 64-bit ints will break on a 32-bit machine.  We
-      // should probably detect machine type, or somthing, but that would
-      // involve a non-trivial quantity of autoconf kung fu.
-    case mxINT64_CLASS:
-    case mxUINT64_CLASS:      
-    case mxFUNCTION_CLASS:
-    case mxUNKNOWN_CLASS:
-    case mxCELL_CLASS:
-    case mxSTRUCT_CLASS:      
-    default:
-      mexPrintf("Error parsing input option #%d: %s [type=%d]\n",i,option_name,cid);
-      mexErrMsgTxt("Error: An input option is invalid!\n");      
-    };        
+    /* Parse */
+    parse_list_item(*TPL,option_name,prhs[i+1]);
 
     /* Free memory */
     mxFree(option_name);   
-  }/*end for*/  
+  }/*end for*/
 
-  /* Return */
+  cout<<"** ParameterList **"<<endl;
+  cout<<*TPL<<endl;
+
   return TPL;
 }/*end build_teuchos_list*/
 
@@ -885,10 +916,8 @@ int* mwIndex_to_int(int N, mwIndex* mwi_array){
 /* mexFunction is the gateway routine for the MEX-file. */
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
   int i,*id,sz,rv,*rowind,*colptr, *agg;
-  double *b, *x, *vals,*opts_array;
-  int nr, nc,no;
-  bool UseDefaultNullSpace;
-  double tol,agg_thresh;
+  double *b, *x, *vals;
+  int nr, nc,iters;
   string intf;
   Teuchos::ParameterList* List;
   MODE_TYPE mode;
@@ -979,11 +1008,16 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     x=mxGetPr(plhs[0]);
     
     /* Sanity Check Matrix / RHS */
-    if(nr != nc || nr != mxGetM(prhs[2]))
+    if(nr != nc || nr != (int)mxGetM(prhs[2]))
       mexErrMsgTxt("Error: Size Mismatch in Input\n");
 
     /* Run Solver */  
-    D->solve(List,nr,b,x);
+    D->solve(List,nr,b,x,iters);
+    
+    /* Output Iteration Count */
+    if(nlhs>1){
+      plhs[1]=mxCreateDoubleScalar((double)iters);
+    }
 
     /* Cleanup */
     delete List;

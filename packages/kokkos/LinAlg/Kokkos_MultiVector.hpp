@@ -39,40 +39,15 @@
 
 namespace Kokkos {
 
-//! Kokkos::MultiVector: Kokkos default implementation of the abstract Kokkos::MultiVector.
-
-/*! The Kokkos::MultiVector provides a default implementation of Kokkos::MultiVector interface.
-
-  At this time, the primary functions provided by Kokkos::MultiVector is wrapping of a
-  set of dense vector and providing access to multivector entries.  Two basic
-  categories of data structures are supported:
-  <ol>
-  <li> MultiVector is described by an array of pointers:  In this situation, the 
-       ith entry of this array of pointers
-       is the starting address of a contiguous array of values for the ith vector 
-       in the multivector.  The storage mode
-       will be assumed if the getIsStrided() method returns false.
-  <li> MultiVector is a regular strided two-dimensional array of values:  In this situation, 
-       the increment between 
-       elements in the row and column dimensions is specified by the getRowInc() 
-       and getColInc() methods. This is
-       a very general mechanism for describing strided access.  Typical situations include:
-       <ul>
-       <li> getRowInc() = getNumCols(), getColInc() = 1 - column entries are contiguous.  
-       <li> getRowInc() = 1, getColInc() = getNumRows() - row entries are contiguous.  
-       </ul>
-       However, this mechanism also allows extraction of array subsections, real or
-       imaginary parts from 
-       complex-valued arrays.
-
-       This storage mode will be assumed if getIsStrided() returns true.  The base 
-       address for the 2D array
-       will be obtain by call getValues() with the argument equal to 0.
-
-  </ol>
-
-*/    
-
+  /** \brief Data structure for vector and multivector data.
+  
+    The primary functions provided by MultiVector is wrapping of a
+    set of dense vectors and providing access to multivector entries.
+  
+    MultiVector is a regular strided two-dimensional array of values.  The
+    increment between elements in the row and column dimensions is specified by
+    getStride().
+  */    
   template<class Scalar, class Node = DefaultNode::DefaultNodeType>
   class MultiVector {
     public:
@@ -84,7 +59,7 @@ namespace Kokkos {
       //@{
 
       //! Default constructor
-      MultiVector(Teuchos::RCP<Node> node)
+      MultiVector(RCP<Node> node)
       : node_(node)
       , numRows_(0)
       , numCols_(0)
@@ -126,7 +101,7 @@ namespace Kokkos {
         \return Integer error code, set to 0 if successful.
         */
       void initializeValues(size_t numRows, size_t numCols, 
-                            const Teuchos::ArrayRCP<Scalar> &values,
+                            const ArrayRCP<Scalar> &values,
                             size_t stride) {
         numRows_ = numRows;
         numCols_ = numCols;
@@ -141,13 +116,13 @@ namespace Kokkos {
       //@{
 
       //! Returns a copy of the ArrayRCP passed to initializeValues().
-      Teuchos::ArrayRCP<Scalar>
+      ArrayRCP<Scalar>
       getValuesNonConst() {
         return contigValues_;
       }
 
       //! Returns a copy of the ArrayRCP passed to initializeValues().
-      Teuchos::ArrayRCP<const Scalar>
+      ArrayRCP<const Scalar>
       getValues() const {
         return contigValues_;
       }
@@ -161,9 +136,9 @@ namespace Kokkos {
 
         \param i (In) The column that should be returned.
         */
-      Teuchos::ArrayRCP<Scalar>
+      ArrayRCP<Scalar>
       getValuesNonConst(size_t i) {
-        TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
+        TEST_FOR_EXCEPTION((contigValues_ == null) || // No data to return
                            i < 0 || i >= numCols_, // Out of range
                            std::runtime_error, 
                            Teuchos::typeName(*this) << "::getValuesNonConst(): index out of range or data structure not initialized.");
@@ -179,9 +154,9 @@ namespace Kokkos {
 
         \param i (In) The column that should be returned.
         */
-      Teuchos::ArrayRCP<const Scalar>
+      ArrayRCP<const Scalar>
       getValues(size_t i) const {
-        TEST_FOR_EXCEPTION((contigValues_ == Teuchos::null) || // No data to return
+        TEST_FOR_EXCEPTION((contigValues_ == null) || // No data to return
                            i < 0 || i >= numCols_, // Out of range
                            std::runtime_error, 
                            Teuchos::typeName(*this) << "::getValues(): index out of range or data structure not initialized.");
@@ -194,7 +169,7 @@ namespace Kokkos {
 
       //@{
 
-      Teuchos::RCP<Node> getNode() const {return node_;}
+      RCP<Node> getNode() const {return node_;}
 
       //! Number of rows
       size_t getNumRows() const {return(numRows_);};
@@ -208,9 +183,9 @@ namespace Kokkos {
       //@}
 
     protected:
-      Teuchos::RCP<Node> node_;
+      RCP<Node> node_;
 
-      Teuchos::ArrayRCP<Scalar> contigValues_;
+      ArrayRCP<Scalar> contigValues_;
 
       bool dataInitialized_;
       size_t numRows_, numCols_, stride_;

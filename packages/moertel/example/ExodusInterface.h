@@ -40,9 +40,7 @@
 
 // Exodus stuff
 
-extern "C" {
 #include "exodusII.h"
-}
 
 class ExodusInterface
 {
@@ -84,8 +82,6 @@ public:
     const Epetra_Map& RowMap = data.RowMap();
     const Epetra_Map& VertexMap = data.VertexMap();
 
-    Epetra_MultiVector Coord(VertexMap, 3);
-
     std::vector<double> x(data.NumMyVertices());
     std::vector<double> y(data.NumMyVertices());
     std::vector<double> z(data.NumMyVertices());
@@ -93,9 +89,6 @@ public:
     for (int i = 0 ; i < data.NumMyVertices() ; ++i)
     {
       data.VertexCoord(i, &coord[0]);
-      Coord[0][i] = coord[0];
-      Coord[1][i] = coord[1];
-      Coord[2][i] = coord[2];
       x[i] = coord[0];
       y[i] = coord[1];
       z[i] = coord[2];
@@ -106,12 +99,9 @@ public:
       n = RowMap.NumGlobalElements();
 
     Epetra_Map SingleProcMap(-1, n, 0, Field.Comm());
-    Epetra_MultiVector SingleProcCoord(SingleProcMap, 3);
     Epetra_MultiVector SingleProcField(SingleProcMap, 1);
 
-    Epetra_Import CoordImporter(SingleProcMap, VertexMap);
     Epetra_Import FieldImporter(SingleProcMap, RowMap);
-    SingleProcCoord.Import(Coord, CoordImporter, Insert);
     SingleProcField.Import(Field, FieldImporter, Insert);
 
     if (Comm().MyPID() == 0)
@@ -198,8 +188,10 @@ public:
 	  const char* var_names[] = {"u"};
       ex_err = ex_put_var_names (ex_id, "N", num_nodal_fields, (char**)var_names);
 
+//	  for(int i = 0; i < data.NumMyVertices(); i++)
+//			  field[i] = SingleProcField[0][i];
 	  for(int i = 0; i < data.NumMyVertices(); i++)
-			  field[i] = SingleProcField[0][i];
+			  field[i] = Field[0][i];
 
 	  ex_err = ex_put_nodal_var (ex_id, 1, 1, data.NumMyVertices(), &field[0]);
 

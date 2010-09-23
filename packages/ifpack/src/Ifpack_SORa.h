@@ -325,7 +325,6 @@ private:
   Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
   Teuchos::RefCountPtr<Epetra_CrsMatrix> W_; // Strict lower triangle
   Teuchos::RefCountPtr<Epetra_Vector>    Wdiag_;
-  Teuchos::RefCountPtr<EpetraExt::RowMatrix_Transpose> transposer2_;
   Teuchos::ParameterList List_;  
   
   bool UseTranspose_;

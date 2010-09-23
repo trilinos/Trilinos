@@ -35,6 +35,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <cstdlib>
 
 #include <vector>
 #include <string>
@@ -62,10 +63,12 @@ namespace Iogn {
     sclX(1), sclY(1), sclZ(1),
     doRotation(false)
   {
-    std::vector<std::string> groups = tokenize(parameters, recognize("|+"));
+    std::vector<std::string> groups;
+    Ioss::tokenize(parameters, "|+", groups);
 
     // First 'group' is the interval specification -- IxJxK
-    std::vector<std::string> tokens = tokenize(groups[0], recognize("x"));
+    std::vector<std::string> tokens;
+    Ioss::tokenize(groups[0], "x", tokens);
     assert(tokens.size() == 3);
     numX = std::strtol(tokens[0].c_str(), NULL, 10);
     numY = std::strtol(tokens[1].c_str(), NULL, 10);
@@ -158,7 +161,8 @@ namespace Iogn {
   void GeneratedMesh::parse_options(const std::vector<std::string> &groups)
   {
     for (size_t i=1; i < groups.size(); i++) {
-      std::vector<std::string> option = tokenize(groups[i], recognize(":"));
+      std::vector<std::string> option;
+      Ioss::tokenize(groups[i], ":", option);
       // option[0] is the type of the option and option[1] is the argument to the option.
 
       if (option[0] == "shell") {
@@ -259,7 +263,8 @@ namespace Iogn {
       }
       else if (option[0] == "scale") {
 	// Option of the form  "scale:xs,ys,zs
-	std::vector<std::string> tokens = tokenize(option[1], recognize(","));
+	std::vector<std::string> tokens;
+	Ioss::tokenize(option[1], ",", tokens);
 	assert(tokens.size() == 3);
 	sclX = std::strtod(tokens[0].c_str(), NULL);
 	sclY = std::strtod(tokens[1].c_str(), NULL);
@@ -268,7 +273,8 @@ namespace Iogn {
 
       else if (option[0] == "offset") {
 	// Option of the form  "offset:xo,yo,zo
-	std::vector<std::string> tokens = tokenize(option[1], recognize(","));
+	std::vector<std::string> tokens;
+	Ioss::tokenize(option[1], ",", tokens);
 	assert(tokens.size() == 3);
 	offX = std::strtod(tokens[0].c_str(), NULL);
 	offY = std::strtod(tokens[1].c_str(), NULL);
@@ -281,7 +287,8 @@ namespace Iogn {
 	// for each processor.  The number of tokens must match
 	// the number of processors.  Note that the new numZ will
 	// be the sum of the intervals specified in this command.
-	std::vector<std::string> tokens = tokenize(option[1], recognize(","));
+	std::vector<std::string> tokens;
+	Ioss::tokenize(option[1], ",", tokens);
 	assert(tokens.size() == processorCount);
 	std::vector<size_t> Zs;
 	numZ = 0;
@@ -298,7 +305,8 @@ namespace Iogn {
 
       else if (option[0] == "bbox") {
 	// Bounding-Box Option of the form  "bbox:xmin,ymin,zmin,xmax,ymax,zmaxo
-	std::vector<std::string> tokens = tokenize(option[1], recognize(","));
+	std::vector<std::string> tokens;
+	Ioss::tokenize(option[1], ",", tokens);
 	assert(tokens.size() == 6);
 	double xmin = std::strtod(tokens[0].c_str(), NULL);
 	double ymin = std::strtod(tokens[1].c_str(), NULL);
@@ -312,7 +320,8 @@ namespace Iogn {
 
       else if (option[0] == "rotate") {
 	// Rotate Option of the form  "rotate:axis,angle,axis,angle,...
-	std::vector<std::string> tokens = tokenize(option[1], recognize(","));
+	std::vector<std::string> tokens;
+	Ioss::tokenize(option[1], ",", tokens);
 	assert(tokens.size() %2 == 0);
 	for (size_t ir=0; ir < tokens.size();) {
 	  std::string axis = tokens[ir++];

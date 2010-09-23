@@ -36,7 +36,7 @@ void ML_Smoother_Clean_Ifpack(void * Ifpack_Handle);
 int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
                            int nl, int pre_or_post, 
                            void *List,
-                           void *Comm, int force_crs);
+                           void *Comm);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

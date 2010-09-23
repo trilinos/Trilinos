@@ -23,12 +23,135 @@ extern "C" {
 #include "hier.h"
 #include "zoltan_comm.h"
 
+#include <stdlib.h>
+#include <ctype.h>
+
+static char *make_platform_name_string();
+static void view_hierarchy_specification(zoltan_platform_specification *spec, int rank,
+    int verbose);
+
+/* machine name should be lower case */
+/* we're assuming a homogenous topology - every node has the same structure */
+
+/* The topology can be provided by giving a platform name in the PLATFORM_NAME
+ * parameter.  Alternatively the topology can be indicated in a string with
+ * the TOPOLOGY parameter, i.e. dual socket quad core would be "2, 4", a
+ * dual-core workstation would be "2".
+ *
+ * If you add a machine to the platform_specs, include a "1" before the
+ * topology numbers.
+ */
+
+static zoltan_platform_specification platform_specs[LAST_PLATFORM]={
+
+{"glory",         /* machine named Glory */
+  3,              /* 3-level hierarchy */
+  {1, 4, 4}},     /* 1 node, 4 sockets, 4 cpus */
+
+{"redsky",       /* machine named RedSky */
+  3,             /* 3-level hierarchy */
+  {1, 2, 4}},     /* 1 node, 2 sockets, 4 cpus */
+
+{"ctx",          /* machine named CTX */
+  3,             /* 3-level hierarchy */
+  {1, 2, 6}},    /* 1 node, 2 sockets, 6 cpus */
+
+{"odin",         /* machine named odin */
+  3,             /* 3-level hierarchy */
+  {1, 2, 4}},    /* 1 node, 2 sockets, 4 cpus */
+
+{"octopi",         /* machine named octopi */
+  3,             /* 3-level hierarchy */
+  {1, 2, 4}},    /* 1 machine , 2 sockets, 4 cpus */
+
+{"s861036",      /* machine named s861036 */
+  2,             /* 2-level hierarchy */
+  {1, 2}}        /* 1 machine, 2 cpus */
+};
+
+static int Zoltan_Hier_Assist_Num_Levels(void *data, int *ierr)
+{
+  zoltan_platform_specification *spec = (zoltan_platform_specification *)data;
+  *ierr = ZOLTAN_OK;
+
+  if (spec == NULL){
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+  else{
+    return spec->numLevels;
+  }
+}
+
+static int Zoltan_Hier_Assist_Part_Number(void *data, int level, int *ierr)
+{
+  zoltan_platform_specification *spec = (zoltan_platform_specification *)data;
+  *ierr = ZOLTAN_OK;
+
+  return spec->my_part[level];
+}
+
+static void Zoltan_Hier_Assist_Method(void *data, int level, struct Zoltan_Struct *zz, int *ierr)
+{
+  struct Zoltan_Struct *original_zz;
+  *ierr = ZOLTAN_OK;
+
+  /* Use most parameters from original structure that specified hierarchical partitioning.
+   * If graph queries exist, do graph partitioning.  If only geometric exist, do RIB or HSFC.
+   */
+
+  original_zz = (struct Zoltan_Struct *)data;
+
+  Zoltan_Copy_To(zz, original_zz);
+
+#ifdef HIER_HG
+  if (zz->Get_HG_Size_CS && zz->Get_HG_CS){
+    Zoltan_Set_Param(zz, "LB_METHOD", "HYPERGRAPH");
+    Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
+  }
+  else 
+#endif
+
+  if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
+           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) {
+
+    Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
+    Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
+#ifdef ZOLTAN_PARMETIS
+    Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
+#else
+#ifdef ZOLTAN_PTSCOTCH
+    Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "SCOTCH");
+#endif
+#endif
+  }
+  else if (zz->Get_Num_Geom != NULL &&
+      (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
+    Zoltan_Set_Param(zz, "LB_METHOD", "RIB");
+  }
+
+  return;
+}
 /*****************************************************************************/
 /* parameters for the hierarchical balancing.  Used in  */
 /* Zoltan_Hier_Set_Param and Zoltan_Hier          */
 static PARAM_VARS Hier_params[] = {
   {  "HIER_DEBUG_LEVEL", NULL, "INT", 0},
   {  "HIER_CHECKS", NULL, "INT" , 0},
+
+  {  "HIER_ASSIST", NULL, "INT", 0},  /* If "1", Zoltan determines the hierarchy */
+
+     /* If HIER_ASSIST is "1", define either PLATFORM_NAME or TOPOLOGY */
+
+  {  "PLATFORM_NAME", NULL, "STRING", 0},  /* a name from platform_specs above */
+
+     /* topology: for example
+          double socket, quad core: "2, 4"
+          dual processor work station: "2"
+          quad socket, each with 2 L3 caches, 3 cores per cache: "4,2,3" 
+      */
+  {  "TOPOLOGY", NULL, "STRING", 0},
+
   {  NULL,              NULL,  NULL, 0 }};
 
 /* prototypes for static functions: */
@@ -335,6 +458,7 @@ int Zoltan_Hier(
   hpp.dd = NULL;
   hpp.hierzz = NULL;
   hpp.hier_comm = MPI_COMM_NULL;
+  hpp.spec = NULL;
 
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||
@@ -348,15 +472,27 @@ int Zoltan_Hier(
     ZOLTAN_HIER_ERROR(ierr, "Zoltan_Hier_Initialize_Params returned error");
   }
 
-  /* Make sure we have the callbacks we need */
-  if (zz->Get_Hier_Num_Levels == NULL) {
-    ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_NUM_LEVELS_FN");
+  if (!hpp.spec){
+
+    /* Make sure we have the callbacks we need */
+
+    if (zz->Get_Hier_Num_Levels == NULL) {
+      ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_NUM_LEVELS_FN");
+    }
+    if (zz->Get_Hier_Part == NULL) {
+      ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_PART_FN");
+    }
+    if (zz->Get_Hier_Method == NULL) {
+      ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_METHOD_FN");
+    }
   }
-  if (zz->Get_Hier_Part == NULL) {
-    ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_PART_FN");
-  }
-  if (zz->Get_Hier_Method == NULL) {
-    ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, "Must register ZOLTAN_HIER_METHOD_FN");
+  else{
+
+    /* Zoltan defines the callbacks based on the network topology */
+
+    Zoltan_Set_Hier_Num_Levels_Fn(zz, Zoltan_Hier_Assist_Num_Levels, (void *)hpp.spec);
+    Zoltan_Set_Hier_Part_Fn(zz, Zoltan_Hier_Assist_Part_Number, (void *)hpp.spec);
+    Zoltan_Set_Hier_Method_Fn(zz, Zoltan_Hier_Assist_Method, (void *)zz);
   }
 
   /* do we have callbacks to get geometric and/or graph information? */
@@ -364,6 +500,22 @@ int Zoltan_Hier(
 		  (zz->Get_Geom_Multi != NULL));
   hpp.use_graph = ((zz->Get_Num_Edges != NULL) || 
 		   (zz->Get_Num_Edges_Multi != NULL));
+
+  if (!hpp.use_geom){
+    i = 0;
+#ifdef ZOLTAN_PARMETIS
+    i = 1;
+#endif
+#ifdef ZOLTAN_PTSCOTCH
+    i = 1;
+#endif
+
+    if (i == 0){
+      ZOLTAN_HIER_ERROR(ZOLTAN_FATAL, 
+         "LB_METHOD HIER requires a third party graph library "
+         "if only graph callbacks are defined.");
+    }
+  }
 
   /* Check weight dimensions */
   if (zz->Obj_Weight_Dim<0){
@@ -838,6 +990,10 @@ End:
     ZOLTAN_FREE(&hpp.migrated_in_data);
   }
 
+  if (hpp.spec && (hpp.spec->platform_name == NULL)){
+    ZOLTAN_FREE(&hpp.spec);
+  }
+
   if (hpp.dd) Zoltan_DD_Destroy(&hpp.dd);
 
   if (hpp.hierzz) Zoltan_Destroy(&hpp.hierzz);
@@ -851,14 +1007,31 @@ End:
 /* Initialize the parameter structure for hierarchical */
 static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
 
+char *yo = "Zoltan_Hier_Initialize_Params";
+int assist, i, j;
+int num_cpus, num_siblings;
+char *c;
+char platform[MAX_PARAM_STRING_LEN+1];
+char topo[MAX_PARAM_STRING_LEN+1];
+char *msg=NULL, *pnames=NULL;
+div_t result;
+
   Zoltan_Bind_Param(Hier_params, "HIER_DEBUG_LEVEL",
 		    (void *) &hpp->output_level);
   Zoltan_Bind_Param(Hier_params, "HIER_CHECKS",
 		    (void *) &hpp->checks);
+  Zoltan_Bind_Param(Hier_params, "HIER_ASSIST",  /* TODO: don't really need this */
+		    (void *) &assist);
+  Zoltan_Bind_Param(Hier_params, "PLATFORM_NAME",
+		    (void *) platform);
+  Zoltan_Bind_Param(Hier_params, "TOPOLOGY",
+		    (void *) topo);
 
   /* set default values */
   hpp->output_level = HIER_DEBUG_LIST;
   hpp->checks = 0;
+  assist = 0;
+  platform[0] = topo[0] = 0;
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, Hier_params, zz->Debug_Level, zz->Proc,
@@ -892,6 +1065,118 @@ static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
   hpp->alloc_migrated_in_gids = 0;
   hpp->migrated_in_gids = NULL;
   hpp->migrated_in_data = NULL;
+
+  hpp->spec = NULL;
+
+  if (!assist)
+    return ZOLTAN_OK;
+
+  if (platform[0]){ 
+    c = platform;
+    while (*c != 0) *c++ = tolower(*c);
+
+    for (i=0; i < LAST_PLATFORM; i++){
+      if (strcmp(platform, platform_specs[i].platform_name)) continue;
+      hpp->spec = platform_specs + i;
+      break;
+    }
+  }
+
+  if (!hpp->spec && topo[0]){
+    hpp->spec = 
+      (zoltan_platform_specification *)ZOLTAN_CALLOC(sizeof(zoltan_platform_specification), 1);
+
+    hpp->spec->platform_name = NULL; 
+    hpp->spec->num_siblings[0] = 1;   /* the node or machine itself is a singleton */
+
+    c = topo;
+    i = 1;
+    while (*c){
+      while (*c && !isdigit(*c)) c++;
+
+      if (*c){
+        if (i == PLATFORM_MAX_LEVELS){
+          ZOLTAN_FREE(&(hpp->spec)); 
+          break;
+        }
+
+        sscanf(c, "%d", hpp->spec->num_siblings +  i);
+
+        if ((hpp->spec->num_siblings[i] < 1) || (hpp->spec->num_siblings[i] > 32768)){
+          ZOLTAN_FREE(&(hpp->spec)); 
+          break;
+        }
+        i++;
+      } 
+
+      while (*c && isdigit(*c)) c++;
+    }
+
+    if (i == 1){
+      ZOLTAN_FREE(&(hpp->spec));
+    }
+    else{
+      hpp->spec->numLevels = i;
+    }
+  }
+
+  if (!hpp->spec){
+    pnames = make_platform_name_string();
+    i = strlen(pnames) + 1024;
+    msg = (char *)ZOLTAN_MALLOC(i);
+
+    sprintf(msg, "Invalid TOPOLOGY or PLATFORM_NAME parameter: \n"
+      "TOPOLOGY parameter is the number of siblings at each level in the hierarchy.\n"
+      "A dual socket quad core would be \"2, 4\".  A quad core workstation would be \"4\"."
+      "The maximum number of values in a TOPOLOGY parameter is %d.\n"
+      "The following machines can be specified in the PLATFORM_NAME parameter, making\n"
+      "the a TOPOLOGY parameter unneccesary:\n%s\n",
+       PLATFORM_MAX_LEVELS-1, pnames);
+
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+
+      ZOLTAN_FREE(&pnames);
+      ZOLTAN_FREE(&msg);
+  
+      return ZOLTAN_FATAL;
+  }
+
+  /* Compute which part my process has at each level.  We are assuming that
+   * MPI laid out the process ranks with respect to the topology.  This
+   * may not be true and eventually we want a way to determine the
+   * topological rank of each process.
+   */
+
+  for (i=0; i < hpp->spec->numLevels; i++){
+
+    /* total number of objects at this level */
+    num_siblings = hpp->spec->num_siblings[i];
+
+    /* total number of cpus within an object at this level */
+    num_cpus = 1;
+
+    for (j = hpp->spec->numLevels-1; j > i; j--)
+      num_cpus *= hpp->spec->num_siblings[j];
+
+    result = div(zz->Proc, num_cpus);
+
+    hpp->spec->my_part[i] = result.quot;
+
+    result = div(hpp->spec->my_part[i], num_siblings);
+
+    hpp->spec->my_part[i] = result.rem;
+  }
+
+  if (hpp->output_level >= HIER_DEBUG_LIST){
+    MPI_Barrier(MPI_COMM_WORLD);
+    for (i=0; i < zz->Num_Proc; i++){
+      if (i == zz->Proc){
+        view_hierarchy_specification(hpp->spec, i, (i==0));
+      }
+      MPI_Barrier(MPI_COMM_WORLD);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
 
   return ZOLTAN_OK;
 }
@@ -2448,6 +2733,58 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 
 End:
   if (dd_updates) ZOLTAN_FREE(&dd_updates);
+}
+
+static void view_hierarchy_specification(zoltan_platform_specification *spec, int rank, int verbose)
+{
+int i;
+
+  if (verbose){
+    if (spec->platform_name){
+      printf("%s\n",spec->platform_name);
+    }
+    printf("Number of siblings at each level: ");
+    for (i=0; i < spec->numLevels; i++){
+      printf("%d ",spec->num_siblings[i]);
+    }
+    printf("\n");
+  }
+
+  printf("Part for MPI rank %d at each level: ", rank);
+  for (i=0; i < spec->numLevels; i++){
+    printf("%d ",spec->my_part[i]);
+  }
+  printf("\n");
+
+  fflush(stdout);
+}
+
+static char *make_platform_name_string()
+{
+int i;
+int len;
+char *msg;
+
+
+  for (i=0, len=0; i < LAST_PLATFORM; i++){
+    len += strlen(platform_specs[i].platform_name);
+  }
+
+  len += ((LAST_PLATFORM * 3) + 64);
+
+  msg = (char *)ZOLTAN_MALLOC(len);
+  msg[0] = 0;
+
+  for (i=1; i <= LAST_PLATFORM; i++){
+    strcat(msg, platform_specs[i].platform_name);
+    strcat(msg, " ");
+    if (i % 5  == 0) strcat(msg, "\n");
+  }
+
+  if (LAST_PLATFORM % 5)
+    strcat(msg, "\n");
+
+  return msg;
 }
 
 #ifdef __cplusplus

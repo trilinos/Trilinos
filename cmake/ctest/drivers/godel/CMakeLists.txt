@@ -1,5 +1,7 @@
 # godel driver
 
+TRILINOS_DRIVER_SETUP()
+
 set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
 set(workingdir "${TrilinosDriver_BINARY_DIR}")
 
@@ -20,131 +22,75 @@ else()
   set(RUN_MEMCHECK_TESTS OFF)
 endif()
 
-#add_test(email_results /home/rabartl/mailmsg.py "Finished nightly Trilinos tests godel: http://trilinos-dev.sandia.gov/cdash/index.php?project=Trilinos")
-
 if(RUN_REGULAR_TESTS)
-  add_test(serial_performance
-    ${CTEST_EXE}
-    -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_performance_godel.cmake"
-    -VV
-    --output-log
-    "${workingdir}/ctest_linux_nightly_serial_performance_godel.out"
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_PERFORMANCE
+    ctest_linux_nightly_serial_performance_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
   )
 
-#echo
-#echo "Doing mpi optimized build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_godel.cmake -VV \
-#  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_godel.out
-#
-#echo
-#echo "Doing serial debug build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_godel.cmake -VV \
-#  &> $BASEDIR/ctest_linux_nightly_serial_debug_godel.out
-#
-#echo
-#echo "Doing mpi optimized shared library build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV \
-#  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_shared_godel.out
-
-#echo
-#echo "Doing serial optimized implicit instantiation build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV \
-#  &> $BASEDIR/ctest_linux_nightly_serial_opt_impl_instant_godel.out
-
-#echo
-#echo "Doing mpi debug build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_debug_godel.cmake -VV \
-#  &> $BASEDIR/ctest_linux_nightly_mpi_debug_godel.out
-
-  add_test(mpi_opt_zoltan_c
-    ${CTEST_EXE}
-    -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake"
-    -VV
-    --output-log
-    "${workingdir}/ctest_linux_nightly_mpi_opt_zoltan_c_godel.out"
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_OPT_ZOLTAN_C
+    ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
   )
 
-  add_test(serial_debug_icpc
-    ${CTEST_EXE}
-    -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_debug_icpc_godel.cmake"
-    -VV
-    --output-log
-    "${workingdir}/ctest_linux_nightly_serial_debug_icpc_godel.out"
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG_ICPC
+    ctest_linux_nightly_serial_debug_icpc_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
   )
 
-  add_test(serial_release
-    ${CTEST_EXE}
-    -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_release_icpc_godel.cmake"
-    -VV
-    --output-log
-    "${workingdir}/ctest_linux_nightly_serial_release_icpc_godel.out"
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_RELEASE_ICPC
+    ctest_linux_nightly_serial_release_icpc_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
   )
   
-  #set_property(TEST email_results APPEND PROPERTY DEPENDS
-    #serial_performance mpi_opt_zoltan_c serial_debug_icpc serial_release)
-endif(RUN_REGULAR_TESTS)
+endif()
 
 if(RUN_COVERAGE_TESTS)
-  add_test(serial_debug_coverage
-    ${CTEST_EXE}
-    -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_debug_coverage_godel.cmake"
-    -VV
-    --output-log
-    "${workingdir}/ctest_linux_nightly_serial_debug_coverage_godel.out"
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG_COVERAGE
+    ctest_linux_nightly_serial_debug_coverage_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 300
   )
 
-  add_test(mpi_debug_coverage
-    ${CTEST_EXE}
-    -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_debug_coverage_godel.cmake"
-    -VV
-    --output-log
-    "${workingdir}/ctest_linux_nightly_mpi_debug_coverage_godel.out"
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_DEBUG_COVERAGE
+    ctest_linux_nightly_mpi_debug_coverage_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 300
   )
   
-  #set_property(TEST email_results APPEND PROPERTY DEPENDS serial_debug_coverage mpi_debug_coverage)
-endif(RUN_COVERAGE_TESTS)
+endif()
 
 if(RUN_MEMCHECK_TESTS)
 
-  add_test(serial_debug_memcheck
-    ${CTEST_EXE}
-    -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_debug_memcheck_godel.cmake"
-    -VV
-    --output-log
-    "${workingdir}/ctest_linux_nightly_serial_debug_memcheck_godel.out"
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG_MEMCHECK
+    ctest_linux_nightly_serial_debug_memcheck_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
   )
 
-  add_test(mpi_debug_memcheck
-    ${CTEST_EXE}
-    -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake"
-    -VV
-    --output-log
-    "${workingdir}/ctest_linux_nightly_mpi_debug_memcheck_godel.out"
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_DEBUG_MEMCHECK
+    ctest_linux_nightly_mpi_debug_memcheck_godel.cmake
+    RUN_SERIAL
+    TIMEOUT_MINUTES 240
   )
-  
-  add_test(kill_memcheck_processes killall -s 9 memcheck)
-  set_property(TEST kill_memcheck_processes PROPERTY DEPENDS mpi_debug_memcheck serial_debug_memcheck)
-  #set_property(TEST email_results APPEND PROPERTY DEPENDS mpi_debug_memcheck serial_debug_memcheck)
-endif(RUN_MEMCHECK_TESTS)
+ 
+#not sure what to do with these maybe just a command? I believe that the new
+#testing system is suposed to clean up spawned processes completely.
+#  
+#  add_test(kill_memcheck_processes killall -s 9 memcheck)
+#  set_property(TEST kill_memcheck_processes PROPERTY DEPENDS mpi_debug_memcheck serial_debug_memcheck)
+endif()
 
-#forcing all files/directories to be group accessible
-#chgrp -R trilinos-dev *
-#chmod -R g+w *
+TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()

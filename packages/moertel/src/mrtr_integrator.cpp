@@ -975,9 +975,9 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
           // if slave node is on boundary
           else
           {
-            map<int,MOERTEL::Node*>& suppnodes = snodes[slave]->GetSupportedByNode();
+			std::map<int,MOERTEL::Node*>& suppnodes = snodes[slave]->GetSupportedByNode();
             double w = 1./(double)(snodes[slave]->NSupportSet());
-            map<int,MOERTEL::Node*>::iterator curr;
+			std::map<int,MOERTEL::Node*>::iterator curr;
             for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)
               curr->second->AddMmodValue(sdof,w*val,col);
           }
@@ -995,7 +995,7 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
  |  integrate a 2D triangle/quad overlap segment (public)    mwgee 11/05|
  |  contribution from the master/slave side M/D                         |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
+bool MOERTEL::Integrator::Integrate(Teuchos::RCP<MOERTEL::Segment> actseg,
                                     MOERTEL::Segment& sseg, 
                                     MOERTEL::Segment& mseg, 
                                     Epetra_SerialDenseMatrix** Ddense, 
@@ -1017,7 +1017,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   // get the points
   const int np = actseg->Nnode(); // this is an overlap segment - always a triangle
   const int* nodeid = actseg->NodeIds();
-  vector<MOERTEL::Point*> points;
+  std::vector<MOERTEL::Point*> points;
   overlap.PointView(points,nodeid,np);
 
   
@@ -1054,7 +1054,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   //========================================================================
   //========================================================================
   // interpolate values at gaussian points with shape functions from actsseg
-  vector< vector<double>* > vals;
+  std::vector< std::vector<double>* > vals;
   if (!exactvalues)
   {
     // get the function values at the points
@@ -1148,7 +1148,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
     double x[3];
     double n[3];
     int dof[3]; dof[0] = dof[1] = dof[2] = -1;
-    RefCountPtr<MOERTEL::Node> gpnode = rcp(new MOERTEL::Node(-2,x,3,dof,false,OutLevel()));
+	Teuchos::RCP<MOERTEL::Node> gpnode = Teuchos::rcp(new MOERTEL::Node(-2,x,3,dof,false,OutLevel()));
     
     // create a projector to project gaussian points
     MOERTEL::Projector projector(false,OutLevel());
@@ -1196,7 +1196,8 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
       gpnode->SetX(x);             
       gpnode->SetN(n);
       double mxi[2];
-      bool ok = projector.ProjectNodetoSegment_NodalNormal(*gpnode,mseg,mxi);
+	  double gap;
+      bool ok = projector.ProjectNodetoSegment_NodalNormal(*gpnode,mseg,mxi,gap);
       // if we have problems projecting here, we better skip this gauss point
       if (!ok)
       { 
@@ -1226,7 +1227,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
     } // for (int gp=0; gp<Ngp(); ++gp)
     
     // tidy up
-    gpnode = null;
+    gpnode = Teuchos::null;
     
   } // if (exactvalues)
 
@@ -1287,9 +1288,9 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
     // row node is a boundary node
     else
     {
-      map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
+	  std::map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
       double w = 1./(double)(snode[row]->NSupportSet());
-      map<int,MOERTEL::Node*>::iterator curr;
+	  std::map<int,MOERTEL::Node*>::iterator curr;
       for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)
         for (int col=0; col<nnode; ++col)
         { 
@@ -1351,10 +1352,10 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
         snode[row]->AddMValue((-Mdense(row,col)),mnode[col]->Id());
     else
     {
-      map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
+	  std::map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
       // note the sign change here!!!!
       double w = -1./(double)(snode[row]->NSupportSet());
-      map<int,MOERTEL::Node*>::iterator curr;
+	  std::map<int,MOERTEL::Node*>::iterator curr;
       for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)
         for (int col=0; col<nmnode; ++col)
           curr->second->AddMValue((w*Mdense(row,col)),mnode[col]->Id());

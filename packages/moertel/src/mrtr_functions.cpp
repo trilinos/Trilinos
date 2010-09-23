@@ -68,7 +68,7 @@ bool MOERTEL::Function_Constant1D::EvaluateFunction(
   // for this linear function, we get 2 values and 2 derivatives
   if (valdim<2) 
   {
-    cout << "***ERR*** MOERTEL::Function_Constant1D::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_Constant1D::EvaluateFunction:\n"
          << "***ERR*** valdim<2 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -76,7 +76,7 @@ bool MOERTEL::Function_Constant1D::EvaluateFunction(
   // check xi
   if (!xi)
   {
-    cout << "***ERR*** MOERTEL::Function_Constant1D::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_Constant1D::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -131,7 +131,7 @@ bool MOERTEL::Function_Linear1D::EvaluateFunction(const MOERTEL::Segment& seg,
   // for this linear function, we get 2 values and 2 derivatives
   if (valdim<2) 
   {
-    cout << "***ERR*** MOERTEL::Function_Linear1D::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_Linear1D::EvaluateFunction:\n"
          << "***ERR*** valdim<2 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -139,7 +139,7 @@ bool MOERTEL::Function_Linear1D::EvaluateFunction(const MOERTEL::Segment& seg,
   // check xi
   if (!xi)
   {
-    cout << "***ERR*** MOERTEL::Function_Linear1D::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_Linear1D::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -195,7 +195,7 @@ bool MOERTEL::Function_DualLinear1D::EvaluateFunction(
   // for this linear function, we get 2 values and 2 derivatives
   if (valdim<2) 
   {
-    cout << "***ERR*** MOERTEL::Function_DualLinear1D::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_DualLinear1D::EvaluateFunction:\n"
          << "***ERR*** valdim<2 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -203,7 +203,7 @@ bool MOERTEL::Function_DualLinear1D::EvaluateFunction(
   // check xi
   if (!xi)
   {
-    cout << "***ERR*** MOERTEL::Function_DualLinear1D::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_DualLinear1D::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -258,7 +258,7 @@ bool MOERTEL::Function_LinearTri::EvaluateFunction(
   // for this function, we get 3 values and six derivatives
   if (valdim<3) 
   {
-    cout << "***ERR*** MOERTEL::Function_LinearTri::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_LinearTri::EvaluateFunction:\n"
          << "***ERR*** valdim<3 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -266,7 +266,7 @@ bool MOERTEL::Function_LinearTri::EvaluateFunction(
   
   if (!xi)
   {
-    cout << "***ERR*** MOERTEL::Function_LinearTri::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_LinearTri::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -329,7 +329,7 @@ bool MOERTEL::Function_DualLinearTri::EvaluateFunction(
   // for this function, we get 3 values and six derivatives
   if (valdim<3) 
   {
-    cout << "***ERR*** MOERTEL::Function_DualLinearTri::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_DualLinearTri::EvaluateFunction:\n"
          << "***ERR*** valdim<3 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -337,7 +337,7 @@ bool MOERTEL::Function_DualLinearTri::EvaluateFunction(
   
   if (!xi)
   {
-    cout << "***ERR*** MOERTEL::Function_DualLinearTri::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_DualLinearTri::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -400,7 +400,7 @@ bool MOERTEL::Function_ConstantTri::EvaluateFunction(
   // for this function, we get 3 values and six derivatives
   if (valdim<3) 
   {
-    cout << "***ERR*** MOERTEL::Function_ConstantTri::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_ConstantTri::EvaluateFunction:\n"
          << "***ERR*** valdim<3 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -408,7 +408,7 @@ bool MOERTEL::Function_ConstantTri::EvaluateFunction(
   
   if (!xi)
   {
-    cout << "***ERR*** MOERTEL::Function_ConstantTri::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_ConstantTri::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -468,14 +468,14 @@ bool MOERTEL::Function_BiLinearQuad::EvaluateFunction(
 { 
   if (valdim<4)
   {
-    cout << "***ERR*** MOERTEL::Function_BiLinearQuad::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_BiLinearQuad::EvaluateFunction:\n"
          << "***ERR*** valdim<4 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!xi)
   {
-    cout << "***ERR*** MOERTEL::Function_BiLinearQuad::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_BiLinearQuad::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
@@ -537,14 +537,14 @@ bool MOERTEL::Function_DualBiLinearQuad::EvaluateFunction(
 { 
   if (valdim<4)
   {
-    cout << "***ERR*** MOERTEL::Function_DualBiLinearQuad::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_DualBiLinearQuad::EvaluateFunction:\n"
          << "***ERR*** valdim<4 on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
   if (!xi)
   {
-    cout << "***ERR*** MOERTEL::Function_DualBiLinearQuad::EvaluateFunction:\n"
+	std::cout << "***ERR*** MOERTEL::Function_DualBiLinearQuad::EvaluateFunction:\n"
          << "***ERR*** xi=NULL on input\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);

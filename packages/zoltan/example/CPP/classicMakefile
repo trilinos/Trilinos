@@ -38,6 +38,13 @@ PAR_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
 PAR_LIBS=-lparmetis -lmetis
 
 ##
+## Trilinos library - graphHier uses epetra
+##
+TRILINOS_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
+TRILINOS_LIBS=-ltrilinos
+
+
+##
 ## C compiler
 ##
 CC=mpicc
@@ -55,7 +62,7 @@ MPI_LIBS=
 CFLAGS=-g -Wall
 CXXFLAGS=-g -Wall
 
-CPP_EXAMPLES = exampleBLOCK 
+CPP_EXAMPLES = exampleBLOCK graphHier.cpp
 
 all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
 

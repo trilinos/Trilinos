@@ -51,84 +51,107 @@
 namespace TSQR {
   namespace Test {
 
-    template< class TsqrBase >
-    static void
-    do_tsqr_verify (TsqrBase& tsqr, 
-		    MessengerBase< typename TsqrBase::scalar_type >* const scalarComm,
-		    const Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_local,
-		    Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_copy,
-		    Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& Q_local,
-		    Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& R,
-		    const bool contiguous_cache_blocks,
-		    const bool b_debug = false)
-    {
-      typedef typename TsqrBase::ordinal_type ordinal_type;
-      typedef typename TsqrBase::scalar_type scalar_type;
-      typedef typename TsqrBase::FactorOutput factor_output_type;
-      using std::cerr;
-      using std::endl;
+    template< class TsqrType >
+    class TsqrVerifier {
+    public:
+      typedef TsqrType tsqr_type;
+      typedef typename tsqr_type::scalar_type scalar_type;
+      typedef typename tsqr_type::ordinal_type ordinal_type;
+      typedef Matrix< ordinal_type, scalar_type > matrix_type;
+      typedef typename tsqr_type::FactorOutput factor_output_type;
+      typedef MessengerBase< scalar_type > messenger_type;
+      typedef Teuchos::RCP< messenger_type > messenger_ptr;
 
-      const ordinal_type nrows_local = A_local.nrows();
-      const ordinal_type ncols = A_local.ncols();
+      static void
+      verify (tsqr_type& tsqr,
+	      const messenger_ptr& scalarComm,
+	      const matrix_type& A_local,
+	      matrix_type& A_copy,
+	      matrix_type& Q_local,
+	      matrix_type& R,
+	      const bool contiguousCacheBlocks,
+	      const bool b_debug = false)
+      {
+	using std::cerr;
+	using std::endl;
 
-      // If specified, rearrange cache blocks in the copy.
-      if (contiguous_cache_blocks)
-	{
-	  tsqr.cache_block (nrows_local, ncols, A_copy.get(), 
-			    A_local.get(), A_local.lda());
-	  if (b_debug)
-	    {
-	      scalarComm->barrier();
-	      if (scalarComm->rank() == 0)
-		cerr << "-- Cache-blocked input matrix to factor." << endl;
-	    }
-	}
-      else
-	A_copy.copy (A_local);
+	const ordinal_type nrows_local = A_local.nrows();
+	const ordinal_type ncols = A_local.ncols();
 
-      // Factor the (copy of the) matrix.
-      factor_output_type factor_output = 
-	tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
-		     R.get(), R.lda(), contiguous_cache_blocks);
-      if (b_debug)
-	{
-	  scalarComm->barrier();
-	  if (scalarComm->rank() == 0)
-	    cerr << "-- Finished Tsqr::factor" << endl;
-	}
+	// If specified, rearrange cache blocks in the copy.
+	if (contiguousCacheBlocks)
+	  {
+	    tsqr.cache_block (nrows_local, ncols, A_copy.get(), 
+			      A_local.get(), A_local.lda());
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Cache-blocked input matrix to factor." << endl;
+	      }
+	  }
+	else
+	  A_copy.copy (A_local);
 
-      // Compute the explicit Q factor in Q_local
-      tsqr.explicit_Q (nrows_local, 
-		       ncols, A_copy.get(), A_copy.lda(), factor_output, 
-		       ncols, Q_local.get(), Q_local.lda(), 
-		       contiguous_cache_blocks);
-      if (b_debug)
-	{
-	  scalarComm->barrier();
-	  if (scalarComm->rank() == 0)
-	    cerr << "-- Finished Tsqr::explicit_Q" << endl;
-	}
+	const bool testFactorExplicit = true;
+	if (testFactorExplicit)
+	  {
+	    tsqr.factorExplicit (A_copy.view(), Q_local.view(), R.view(), 
+				 contiguousCacheBlocks);
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Finished Tsqr::factorExplicit" << endl;
+	      }
+	  }
+	else
+	  {
+	    // Factor the (copy of the) matrix.
+	    factor_output_type factorOutput = 
+	      tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
+			   R.get(), R.lda(), contiguousCacheBlocks);
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Finished Tsqr::factor" << endl;
+	      }
 
-      // "Un"-cache-block the output, if contiguous cache blocks were
-      // used.  This is only necessary because global_verify() doesn't
-      // currently support contiguous cache blocks.
-      if (contiguous_cache_blocks)
-	{
-	  // We can use A_copy as scratch space for un-cache-blocking
-	  // Q_local, since we're done using A_copy for other things.
-	  tsqr.un_cache_block (nrows_local, ncols, A_copy.get(), 
-			       A_copy.lda(), Q_local.get());
-	  // Overwrite Q_local with the un-cache-blocked Q factor.
-	  Q_local.copy (A_copy);
+	    // Compute the explicit Q factor in Q_local
+	    tsqr.explicit_Q (nrows_local, 
+			     ncols, A_copy.get(), A_copy.lda(), factorOutput, 
+			     ncols, Q_local.get(), Q_local.lda(), 
+			     contiguousCacheBlocks);
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Finished Tsqr::explicit_Q" << endl;
+	      }
+	  }
 
-	  if (b_debug)
-	    {
-	      scalarComm->barrier();
-	      if (scalarComm->rank() == 0)
-		cerr << "-- Un-cache-blocked output Q factor" << endl;
-	    }
-	}
-    }
+	// "Un"-cache-block the output, if contiguous cache blocks were
+	// used.  This is only necessary because global_verify() doesn't
+	// currently support contiguous cache blocks.
+	if (contiguousCacheBlocks)
+	  {
+	    // We can use A_copy as scratch space for un-cache-blocking
+	    // Q_local, since we're done using A_copy for other things.
+	    tsqr.un_cache_block (nrows_local, ncols, A_copy.get(), 
+				 A_copy.lda(), Q_local.get());
+	    // Overwrite Q_local with the un-cache-blocked Q factor.
+	    Q_local.copy (A_copy);
+
+	    if (b_debug)
+	      {
+		scalarComm->barrier();
+		if (scalarComm->rank() == 0)
+		  cerr << "-- Un-cache-blocked output Q factor" << endl;
+	      }
+	  }
+      }
+    };
 
     /// \function verifyTsqr
     /// \brief Test and print to stdout the accuracy of parallel TSQR
@@ -161,7 +184,7 @@ namespace TSQR {
     /// \param cache_block_size [in] Cache block size (per core) in
     ///   bytes.  If zero, a sensible default is used.
     ///
-    /// \param contiguous_cache_blocks [in] Whether cache blocks
+    /// \param contiguousCacheBlocks [in] Whether cache blocks
     ///   should be stored contiguously
     ///
     /// \param human_readable [in] Whether output should be human
@@ -175,11 +198,11 @@ namespace TSQR {
 		Generator& generator,
 		const Ordinal nrows_global,
 		const Ordinal ncols,
-		MessengerBase< Ordinal >* const ordinalComm,
-		MessengerBase< Scalar >* const scalarComm,
+		const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
+		const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 		const int num_cores = 1,
 		const size_t cache_block_size = 0,
-		const bool contiguous_cache_blocks = false,
+		const bool contiguousCacheBlocks = false,
 		const bool human_readable = false,
 		const bool b_debug = false)
     {
@@ -211,7 +234,7 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
 
       // Generate the test problem.
-      distributedTestProblem (generator, A_local, ordinalComm, scalarComm);
+      distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -226,7 +249,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << "Test matrix A:" << endl;
 	  scalarComm->barrier ();
-	  printGlobalMatrix (cerr, A_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier ();
 	}
 
@@ -245,15 +268,19 @@ namespace TSQR {
       if (which == "MpiTbbTSQR")
 	{
 #ifdef HAVE_TSQR_INTEL_TBB
+	  using Teuchos::RCP;
 	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
-	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
+	  typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
+	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-	  node_tsqr_type node_tsqr (num_cores, cache_block_size);
-	  tsqr_type tsqr (node_tsqr, scalarComm);
+	  RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (num_cores, cache_block_size));
+	  RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
+	  tsqr_type tsqr (node_tsqr, dist_tsqr);
 	  
 	  // Compute the factorization and explicit Q factor.
-	  do_tsqr_verify< tsqr_type > (tsqr, scalarComm, A_local, A_copy, Q_local, 
-				       R, contiguous_cache_blocks, b_debug);
+	  TsqrVerifier< tsqr_type >::verify (tsqr, scalarComm, A_local, A_copy, 
+					     Q_local, R, contiguousCacheBlocks, 
+					     b_debug);
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
 #else
@@ -262,15 +289,19 @@ namespace TSQR {
 	}
       else if (which == "MpiSeqTSQR")
 	{
+	  using Teuchos::RCP;
 	  typedef SequentialTsqr< Ordinal, Scalar > node_tsqr_type;
-	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
+	  typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
+	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-	  node_tsqr_type node_tsqr (cache_block_size);
-	  tsqr_type tsqr (node_tsqr, scalarComm);
+	  RCP< node_tsqr_type > node_tsqr (new node_tsqr_type (cache_block_size));
+	  RCP< dist_tsqr_type > dist_tsqr (new dist_tsqr_type (scalarComm));
+	  tsqr_type tsqr (node_tsqr, dist_tsqr);
 	  
 	  // Compute the factorization and explicit Q factor.
-	  do_tsqr_verify< tsqr_type > (tsqr, scalarComm, A_local, A_copy, Q_local, 
-				       R, contiguous_cache_blocks, b_debug);
+	  TsqrVerifier< tsqr_type >::verify (tsqr, scalarComm, A_local, A_copy, 
+					     Q_local, R, contiguousCacheBlocks, 
+					     b_debug);
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
 	}
@@ -283,7 +314,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << endl << "Q factor:" << endl;
 	  scalarComm->barrier();
-	  printGlobalMatrix (cerr, Q_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, Q_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier ();
 	  if (my_rank == 0)
 	    {
@@ -298,7 +329,7 @@ namespace TSQR {
       std::pair< magnitude_type, magnitude_type > result = 
 	global_verify (nrows_local, ncols, A_local.get(), A_local.lda(),
 		       Q_local.get(), Q_local.lda(), R.get(), R.lda(), 
-		       scalarComm);
+		       scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -335,7 +366,7 @@ namespace TSQR {
 		cout << "# cores per process = " << num_cores << endl;
 #endif // HAVE_TSQR_INTEL_TBB
 	      cout << "cache block # bytes = " << actual_cache_block_size << endl
-		   << "contiguous cache blocks? " << contiguous_cache_blocks << endl
+		   << "contiguous cache blocks? " << contiguousCacheBlocks << endl
 		   << "Relative residual $\\|A - Q*R\\|_2 / \\|A\\|_2$ = " 
 		   << result.first << endl
 		   << "Relative orthogonality $\\|I - Q^T*Q\\|_2$ = " 
@@ -353,7 +384,7 @@ namespace TSQR {
 		cout << "," << num_cores << endl;
 #endif // HAVE_TSQR_INTEL_TBB
 	      cout << "," << actual_cache_block_size
-		   << "," << contiguous_cache_blocks 
+		   << "," << contiguousCacheBlocks 
 		   << "," << result.first 
 		   << "," << result.second
 		   << endl;
@@ -366,13 +397,13 @@ namespace TSQR {
     double
     do_tsqr_benchmark (const std::string& which,
 		       TsqrBase& tsqr, 
-		       MessengerBase< typename TsqrBase::scalar_type >* const messenger,
+		       const Teuchos::RCP< MessengerBase< typename TsqrBase::scalar_type > >& messenger,
 		       const Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_local,
 		       Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_copy,
 		       Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& Q_local,
 		       Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& R,
 		       const int ntrials,
-		       const bool contiguous_cache_blocks,
+		       const bool contiguousCacheBlocks,
 		       const bool human_readable,
 		       const bool b_debug = false)
     {
@@ -385,7 +416,7 @@ namespace TSQR {
       const ordinal_type nrows_local = A_local.nrows();
       const ordinal_type ncols = A_local.ncols();
 
-      if (contiguous_cache_blocks)
+      if (contiguousCacheBlocks)
 	{
 	  tsqr.cache_block (nrows_local, ncols, A_copy.get(), 
 			    A_local.get(), A_local.lda());
@@ -415,32 +446,47 @@ namespace TSQR {
       // Name of timer doesn't matter here; we only need the timing.
       TSQR::Test::verifyTimerConcept< TimerType >();
       TimerType timer (which);
-      timer.start();
-      for (int trial_num = 0; trial_num < ntrials; ++trial_num)
+
+
+      const bool testFactorExplicit = true;
+      double tsqr_timing;
+      if (testFactorExplicit)
 	{
-	  // Factor the matrix and compute the explicit Q factor.
-	  // Don't worry about the fact that we're overwriting the
-	  // input; this is a benchmark, not a numerical verification
-	  // test.  (We have the latter implemented as tsqr_verify()
-	  // in this file.)  For the same reason, don't worry about
-	  // un-cache-blocking the output (when cache blocks are
-	  // stored contiguously).
-	  factor_output_type factor_output = 
-	    tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
-			 R.get(), R.lda(), contiguous_cache_blocks);
-	  tsqr.explicit_Q (nrows_local, 
-			   ncols, A_copy.get(), A_copy.lda(), factor_output, 
-			   ncols, Q_local.get(), Q_local.lda(), 
-			   contiguous_cache_blocks);
-	  // Timings in debug mode likely won't make sense, because
-	  // Proc 0 is outputting the debug messages to cerr.
-	  // Nevertheless, we don't put any "if(b_debug)" calls in the
-	  // timing loop.
+	  timer.start();
+	  for (int trial_num = 0; trial_num < ntrials; ++trial_num)
+	    tsqr.factorExplicit (A_copy.view(), Q_local.view(), R.view(), 
+				 contiguousCacheBlocks);
+	  tsqr_timing = timer.stop();
 	}
-      // Compute the resulting total time (in seconds) to execute
-      // ntrials runs of Tsqr::factor() and Tsqr::explicit_Q().  The
-      // time may differ on different MPI processes.
-      double tsqr_timing = timer.stop();
+      else
+	{
+	  timer.start();
+	  for (int trial_num = 0; trial_num < ntrials; ++trial_num)
+	    {
+	      // Factor the matrix and compute the explicit Q factor.
+	      // Don't worry about the fact that we're overwriting the
+	      // input; this is a benchmark, not a numerical verification
+	      // test.  (We have the latter implemented as tsqr_verify()
+	      // in this file.)  For the same reason, don't worry about
+	      // un-cache-blocking the output (when cache blocks are
+	      // stored contiguously).
+	      factor_output_type factor_output = 
+		tsqr.factor (nrows_local, ncols, A_copy.get(), A_copy.lda(), 
+			     R.get(), R.lda(), contiguousCacheBlocks);
+	      tsqr.explicit_Q (nrows_local, 
+			       ncols, A_copy.get(), A_copy.lda(), factor_output, 
+			       ncols, Q_local.get(), Q_local.lda(), 
+			       contiguousCacheBlocks);
+	      // Timings in debug mode likely won't make sense, because
+	      // Proc 0 is outputting the debug messages to cerr.
+	      // Nevertheless, we don't put any "if(b_debug)" calls in the
+	      // timing loop.
+	    }
+	  // Compute the resulting total time (in seconds) to execute
+	  // ntrials runs of Tsqr::factor() and Tsqr::explicit_Q().  The
+	  // time may differ on different MPI processes.
+	  tsqr_timing = timer.stop();
+	}
 
       if (b_debug)
 	{
@@ -491,7 +537,7 @@ namespace TSQR {
     /// \param cache_block_size [in] Cache block size (per core) in
     ///   bytes.  If zero, a sensible default is used.
     ///
-    /// \param contiguous_cache_blocks [in] Whether cache blocks
+    /// \param contiguousCacheBlocks [in] Whether cache blocks
     ///   should be stored contiguously
     ///
     /// \param human_readable [in] Whether output should be human
@@ -506,11 +552,11 @@ namespace TSQR {
 		   const int ntrials,
 		   const Ordinal nrows_global,
 		   const Ordinal ncols,
-		   MessengerBase< Ordinal >* const ordinalComm,
-		   MessengerBase< Scalar >* const scalarComm,
+		   const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
+		   const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 		   const Ordinal num_cores,
 		   const size_t cache_block_size,
-		   const bool contiguous_cache_blocks,
+		   const bool contiguousCacheBlocks,
 		   const bool human_readable,
 		   const bool b_debug)
     {
@@ -542,7 +588,7 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
 
       // Generate the test problem.
-      distributedTestProblem (generator, A_local, ordinalComm, scalarComm);
+      distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -557,7 +603,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << "Test matrix A:" << endl;
 	  scalarComm->barrier ();
-	  printGlobalMatrix (cerr, A_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier ();
 	}
 
@@ -580,17 +626,20 @@ namespace TSQR {
       if (which == "MpiTbbTSQR")
 	{
 #ifdef HAVE_TSQR_INTEL_TBB
-	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, TimerType > node_tsqr_type;
-	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
+	  using Teuchos::RCP;
+	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
+	  typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
+	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
 
-	  node_tsqr_type node_tsqr (num_cores, cache_block_size);
-	  tsqr_type tsqr (node_tsqr, scalarComm);
+	  RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (num_cores, cache_block_size));
+	  RCP< dist_tsqr_type > distTsqr (new dist_tsqr_type (scalarComm));
+	  tsqr_type tsqr (nodeTsqr, distTsqr);
 
 	  // Run the benchmark.
 	  tsqr_timing = 
 	    do_tsqr_benchmark< tsqr_type, TimerType > (which, tsqr, scalarComm, A_local,
 						       A_copy, Q_local, R, ntrials, 
-						       contiguous_cache_blocks, 
+						       contiguousCacheBlocks, 
 						       human_readable, b_debug);
 
 	  // Save the "actual" cache block size
@@ -601,18 +650,21 @@ namespace TSQR {
 	}
       else if (which == "MpiSeqTSQR")
 	{
-	  // Set up TSQR.
+	  using Teuchos::RCP;
 	  typedef SequentialTsqr< Ordinal, Scalar > node_tsqr_type;
-	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
-	  
-	  node_tsqr_type node_tsqr (cache_block_size);
-	  tsqr_type tsqr (node_tsqr, scalarComm);
+	  typedef TSQR::DistTsqr< Ordinal, Scalar > dist_tsqr_type;
+	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type, dist_tsqr_type > tsqr_type;
+
+	  // Set up TSQR.
+	  RCP< node_tsqr_type > nodeTsqr (new node_tsqr_type (cache_block_size));
+	  RCP< dist_tsqr_type > distTsqr (new dist_tsqr_type (scalarComm));
+	  tsqr_type tsqr (nodeTsqr, distTsqr);
 	  
 	  // Run the benchmark.
 	  tsqr_timing = 
 	    do_tsqr_benchmark< tsqr_type, TimerType > (which, tsqr, scalarComm, A_local,
 						       A_copy, Q_local, R, ntrials, 
-						       contiguous_cache_blocks, 
+						       contiguousCacheBlocks, 
 						       human_readable, b_debug);
 	  // Save the "actual" cache block size
 	  actual_cache_block_size = tsqr.cache_block_size();
@@ -655,7 +707,7 @@ namespace TSQR {
 #endif // HAVE_TSQR_INTEL_TBB
 
 	      cout << "cache block # bytes = " << actual_cache_block_size << endl
-		   << "contiguous cache blocks? " << contiguous_cache_blocks << endl
+		   << "contiguous cache blocks? " << contiguousCacheBlocks << endl
 		   << "# trials = " << ntrials << endl
 		   << "Min total time (s) over all MPI processes = " 
 		   << min_tsqr_timing << endl
@@ -674,7 +726,7 @@ namespace TSQR {
 		cout << "," << num_cores << endl;
 #endif // HAVE_TSQR_INTEL_TBB
 	      cout << "," << actual_cache_block_size
-		   << "," << contiguous_cache_blocks
+		   << "," << contiguousCacheBlocks
 		   << "," << ntrials 
 		   << "," << min_tsqr_timing 
 		   << "," << max_tsqr_timing 

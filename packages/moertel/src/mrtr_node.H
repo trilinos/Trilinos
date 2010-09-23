@@ -52,10 +52,6 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
-using namespace std;
-using namespace Teuchos;
-
-
 /*!
 \brief MOERTEL: namespace of the Moertel package
 
@@ -109,7 +105,8 @@ public:
   \param x : ptr to vector of length 3 holding coordinates of node. In the 2D problem case x[2] has to be 0.0
   \param ndof : Number of degrees of freedom on this node, e.g. 2 in 2D and 3 in 3D
   \param dof : Pointer to vector of length ndof holding degrees of freedom on this node
-  \param isonboundary : True if node is on the boundary of a 2D interface (3D problem), ignored for 1D interfaces (2D problems)
+  \param isonboundary : True if node is on the boundary of a 2D interface (3D problem), or a 1D interface (2D problem).
+  Note that the number of lmdofs for nodes on the boundary are set to zero.
   \param out : Level of output information written to stdout ( 0 - 10 )
   */
   explicit Node(int Id, const double* x, int ndof, const int* dof, bool isonboundary, int out);
@@ -160,19 +157,29 @@ public:
   
   */
   bool Print() const;
+
+  /*!
+  \brief Reset the internal state of this node and clear integrated values
+
+  This function resets the node and prepares it to be re-integrated. In nonlinear problems, the
+  interfaces (and nodes on the interface) may move relative to each other, each Newton iteration.
+  Calling Reset() clears the state of each node in preparation for resetting the nodal coordinates, and
+  re-integration each Newton iteration.
+  
+  */
+  void Reset();
   
   /*!
-  \brief Return pointer to vector of length 3 of coordinates of this node
+  \brief Returns the view (a vector of length 3) to the current coordinates of this node
   
   */
   inline const double* X() const { return x_; }
   
   /*!
-  \brief Store a normal in this node
+  \brief Update the coordinates of this Node
   
-  This class makes a deep copy of the vector n
   
-  \param n : pointer to vector of length 3 holding an outward normal at this node to be stored (deep copy) in this instance
+  \param x : a vector of length 3 holding the new coordinates of this node
   */
   inline bool SetX(double* x) { for (int i=0; i<3; ++i) x_[i] = x[i]; return true; }
 
@@ -323,7 +330,7 @@ public:
 
   \params length : returns length of RefCountPtr<MOERTEL::ProjectedNode>*
   */
-  RefCountPtr<MOERTEL::ProjectedNode>* GetProjectedNode(int& length);
+  Teuchos::RCP<MOERTEL::ProjectedNode>* GetProjectedNode(int& length);
 
   /*!
   \brief Returns a view of the projection of this node
@@ -332,17 +339,7 @@ public:
   RefCountPtr<MOERTEL::ProjectedNode> is Teuchos::null if this Node
   does not have a projection onto an opposing segment.
   */
-  RefCountPtr<MOERTEL::ProjectedNode>  GetProjectedNode();
-
-  /*!
-  \brief Store a pointer to a projected node
-  */
-  void SetProjNode(RefCountPtr<MOERTEL::ProjectedNode> pnode);
-  
-  /*!
-  \brief Returns a view of the projection of this node
-  */
-  RefCountPtr<MOERTEL::ProjectedNode>  GetProjNode();
+  Teuchos::RCP<MOERTEL::ProjectedNode>  GetProjectedNode();
 
   /*!
   \brief Add a Lagrange multiplier id to this node's list
@@ -390,19 +387,19 @@ public:
   \brief Get view of the 'D' map of this node
   
   */
-  inline RefCountPtr<map<int,double> > GetD() { return Drow_; }
+  inline Teuchos::RCP<std::map<int,double> > GetD() { return Drow_; }
 
   /*!
   \brief Get view of the 'M' map of this node
   
   */
-  inline RefCountPtr<map<int,double> > GetM() { return Mrow_; }
+  inline Teuchos::RCP<std::map<int,double> > GetM() { return Mrow_; }
 
   /*!
   \brief Get view of the 'Mmod' map of this node
   
   */
-  inline RefCountPtr<vector<map<int,double> > > GetMmod() { return Mmodrow_; }
+  inline Teuchos::RCP<std::vector<std::map<int,double> > > GetMmod() { return Mmodrow_; }
   /*!
   \brief Set the flag indicating that node is corner node of 1D interface
   
@@ -448,22 +445,30 @@ public:
   topologically close internal nodes. This method returns the map of nodes supporting this node
   
   */
-  map<int,MOERTEL::Node*>& GetSupportedByNode() { return supportedby_; }
+  std::map<int,MOERTEL::Node*>& GetSupportedByNode() { return supportedby_; }
+
+  /*!
+  \brief Return distance between projection and source node.
+
+  Returns the gap distance between the source node and projected image on the target segment. This distance
+  is along the projection vector, and will be negative if the projected image is on the "wrong" side of the
+  interface that contains the source node.
   
+  */
+  double Gap() { return gap_; }
+
+  /*!
+  \brief Sets the distance between projection and source node.
+
+  Sets the gap distance between the source node and projected image on the target segment. This distance
+  is along the projection vector, and will be negative if the projected image is on the "wrong" side of the
+  interface that contains the source node.
+  
+  */
+  void SetGap(double gap) { gap_ = gap; }
+
   //@}
   
-  /*!
-   *
-   */
-  double *GetProjCoord() { return prcoord_; }
-
-  void SetProjCoords(double x, double y, double z = 0.0)
-  {
-    prcoord_[0] = x;
-    prcoord_[1] = y;
-    prcoord_[2] = z;
-  }
-
 protected:  
   // don't want = operator
   Node operator = (const Node& old);
@@ -471,7 +476,7 @@ protected:
 protected:
 
   int                          Id_;       // Id of this node
-  double                       x_[3];     // cordinates of this node 
+  double                       x_[3];     // coordinates of this node 
   double                       n_[3];     // a nodal outward normal
 
   int                          outputlevel_;
@@ -482,28 +487,27 @@ protected:
   bool                         isonboundary_; // flag indicating whether this node is on the boundary
                                               // of a 3D interface
                                               // Info only matters for the slave side
-  map<int,MOERTEL::Node*>      supportedby_;
+  std::map<int,MOERTEL::Node*>      supportedby_;
 
-  vector<int>                  dof_;      // dof ids on this node 
-  vector<int>                  LMdof_;    // dofs ids of LM if this is slave side
+  std::vector<int>                  dof_;      // dof ids on this node 
+  std::vector<int>                  LMdof_;    // dofs ids of LM if this is slave side
 
-  vector<int>                  seg_;      // vector of segment ids adjacent to me
-  vector<MOERTEL::Segment*>    segptr_;   // ptrs to segments length nseg_ (not in charge of destorying the ptrs))
+  std::vector<int>                  seg_;      // std::vector of segment ids adjacent to me
+  std::vector<MOERTEL::Segment*>    segptr_;   // ptrs to segments length nseg_ (not in charge of destorying the ptrs))
 
-  RefCountPtr<map<int,double> > Drow_;    // a nodal block row of D
-  RefCountPtr<map<int,double> > Mrow_;    // a nodal block row of D
-  RefCountPtr<vector<map<int,double> > > Mmodrow_; // scalar rows of Mmod
+  Teuchos::RCP<std::map<int,double> > Drow_;    // a nodal block row of D
+  Teuchos::RCP<std::map<int,double> > Mrow_;    // a nodal block row of D
+  Teuchos::RCP<std::vector<std::map<int,double> > > Mmodrow_; // scalar rows of Mmod
 
-  vector< RefCountPtr<MOERTEL::ProjectedNode> > pnode_;    // the projected node on some segment
+  std::vector< Teuchos::RCP<MOERTEL::ProjectedNode> > pnode_;    // the projected node on some segment
 
-  RefCountPtr<MOERTEL::ProjectedNode> proj_node_;		/// projection of the node
-  double prcoord_[3];			// physical coordinates of the projected node
+  double gap_;				// distance between projection and source node "the gap"
 
 };
 
 } // namespace MOERTEL
 
 // << operator
-std::ostream& operator << (ostream& os, const MOERTEL::Node& node);
+std::ostream& operator << (std::ostream& os, const MOERTEL::Node& node);
 
 #endif // MOERTEL_NODE_H

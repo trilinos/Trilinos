@@ -937,3 +937,5 @@ activity in object-oriented programming.
 \ingroup thyra_adapters_grp
 
 */
+
+/** \defgroup Thyra_deprecated_grp Thyra deprecated software */

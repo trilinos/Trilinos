@@ -1,0 +1,10 @@
+------------------------------------------
+Release Notes for Trilinos Package Anasazi
+------------------------------------------
+
+
+Trilinos 10.4:
+--------------
+
+(*) Brought Anasazi/Tpetra adaptors back online (experimental)
+

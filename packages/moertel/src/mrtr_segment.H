@@ -52,9 +52,6 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "mrtr_function.H"
 
-using namespace std;
-using namespace Teuchos;
-
 /*!
 \brief MOERTEL: namespace of the Moertel package
 
@@ -246,7 +243,7 @@ public:
   \brief Get pointers to Nodes attached to this Segment from a vector of Node pointers
   
   */
-  bool GetPtrstoNodes(vector<MOERTEL::Node*>& nodes);
+  bool GetPtrstoNodes(std::vector<MOERTEL::Node*>& nodes);
 
   /*!
   \brief Print this Segment
@@ -312,17 +309,17 @@ protected:
 
   int                                       Id_;         // this segments unique id
   int                                       outputlevel_;
-  vector<int>                               nodeId_;     // vector of unique node ids 
-  vector<MOERTEL::Node*>                    nodeptr_;    // vector with ptrs to nodes adj to me
+  std::vector<int>                               nodeId_;     // vector of unique node ids 
+  std::vector<MOERTEL::Node*>                    nodeptr_;    // vector with ptrs to nodes adj to me
 
   SegmentType                               stype_;      // segment type
-  map< int,RefCountPtr<MOERTEL::Function> > functions_;  // functions that live on this segment
+  std::map< int,Teuchos::RCP<MOERTEL::Function> > functions_;  // functions that live on this segment
 
 };
 
 } // namespace MOERTEL
 
 // << operator
-ostream& operator << (ostream& os, const MOERTEL::Segment& seg);
+std::ostream& operator << (std::ostream& os, const MOERTEL::Segment& seg);
 
 #endif // MOERTEL_SEGMENT_H

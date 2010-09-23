@@ -1,0 +1,30 @@
+Discover hardware topology using hwloc.
+Tested with hwloc 1.0.2: http://www.open-mpi.org/software/hwloc
+
+hwloc-v1.0.2.pdf
+  HWLOC user guide
+
+zoltan_get_topology.c          
+  A proposed Zoltan function that can return topology information if
+  Zoltan and the application are compiled with libhwloc.so.
+
+zoltan_get_topology_redsky.txt
+  The output of zoltan_get_topology on the redsky machine at SNL.
+
+zoltan_get_topology_glory.txt
+  The output of zoltan_get_topology on the glory machine at SNL.
+
+node_topology.c  
+  A program that prints out topology information when run on a machine.
+  It required hwloc.
+
+node_topology_redsky.txt  
+  The output of node_topology on the redsky machine at SNL.
+
+node_topology_glory.txt   
+  The output of node_topology on the glory machine at SNL.
+
+Makefile         
+  A makefile to build node_topology.c and zoltan_get_topology.c.  Set HWLOC_DIR
+  to point to your hwloc directory.
+

@@ -84,7 +84,6 @@ function varargout=ml(varargin)
 % 05/22/2006 - Teuchos-friendly version.
 % 05/16/2006 - Initial Version.
 
-
 if(nargin>=2 && strcmp(varargin{1},'setup'))
   % Setup mode
   [out,oc]=mlmex(0,varargin{2:nargin});
@@ -93,7 +92,9 @@ if(nargin>=2 && strcmp(varargin{1},'setup'))
 elseif(nargin>=3 && isnumeric(varargin{1}) && issparse(varargin{2}))
   % Solve mode
   if(size(varargin{2},1)~=length(varargin{3})), fprintf('ML: Error size mismatch between A + B\n');out=0;
-  else varargout{1}=mlmex(1,varargin{:}); end
+  else [sol,its]=mlmex(1,varargin{:}); end
+  varargout{1}=sol;
+  if(nargout==2), varargout{2}=its;end
 elseif(nargin>=1 && strcmp(varargin{1},'cleanup'))  
   % Cleanup mode
   varargout{1}=mlmex(2,varargin{2:nargin});

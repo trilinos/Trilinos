@@ -38,7 +38,7 @@
  *
  * \brief A class to perform projections of nodes onto opposing segments in 2D and 3D
  *
- * \date Last update do Doxygen: 20-March-06
+ * \date Last update do Doxygen: 10-June-2010
  *
  */
 #ifndef MOERTEL_PROJECTOR_H
@@ -47,9 +47,6 @@
 #include <ctime>
 #include <iostream>
 #include <iomanip>
-
-
-using namespace std;
 
 // ----------   User Defined Includes   ----------
 
@@ -83,18 +80,18 @@ class Node;
 
 \brief <b> A class to perform projections of nodes onto opposing segments in 2D and 3D </b>
 
-This class performs all neccessary projections of nodes onto opposing segment surfaces in 2D and 3D
+This class performs all necessary projections of nodes onto opposing segment surfaces in 2D and 3D
 applying 2 different kinds of projection techniques.<br>
 In 2D problems, the user has a choice of projecting nodes onto opposing segment surfaces
 either orthogonal to that segment surface or along a previously constructed
-C0-continous normal field of the slave side.<br>
+C0-continuous normal field of the slave side.<br>
 In both cases finding the projection of a Node on a Segment in terms of the segment's local
 coordinates of the projection point is a nonlinear operation. A local Newton iteration
-is involved and a dense solve of a 2x2 system is neccessary within the Newton iteration.<br>
+is involved and a dense solve of a 2x2 system is necessary within the Newton iteration.<br>
 
-When projecting along the C0-continous normal field, the field of normals is defined over the
+When projecting along the C0-continuous normal field, the field of normals is defined over the
 slave side discretization and is an interpolation of (weighted averaged) nodal normals of the slave side.
-Projections in both directions are performed along that same normal field making it neccessary to have
+Projections in both directions are performed along that same normal field making it necessary to have
 different methods for projecting slave to mortar and vice versa.
 
 In 3D projection is always performed along a previously constructed outward field of nodal normals.
@@ -111,7 +108,7 @@ class  Projector
 {
 public:
   
-  // @{ \name Constructors and destructors
+  // @{ \name Constructors and destructor
 
   /*!
   \brief Constructor
@@ -154,15 +151,17 @@ public:
   Used to project a Node from the slave side onto a Segment on the mortar side
   
   This method will compute the coordinates of a projection of a Node in the local coordinate system of a Segment.
-  The projection point will not neccesarily fall inside the Segment. However, if the projection point is far
+  The projection point will not necessarily fall inside the Segment. However, if the projection point is far
   outside the segment's boundaries, problems with the internal nonlinear iteration might occur and a warning is issued
   when convergence can not be achieved in a limited number of iterations.
   
   \param node (in): Node to project
   \param seg (in) : Segment to project on
   \param xi (out) : Local coordinates if projection of Node in Segment 's coordinate System
+  \param gap (out) : Gap between node and projection along projection vector.
   */
-  bool ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[],
+				  double &gap);
 
   /*!
   \brief Project a Node onto a Segment along the interpolated outward normal field of the Segment
@@ -170,15 +169,17 @@ public:
   Used to project a Node from the mortar side onto a Segment on the slave side
   
   This method will compute the coordinates of a projection of a Node in the local coordinate system of a Segment.
-  The projection point will not neccesarily fall inside the Segment. However, if the projection point is far
+  The projection point will not necessarily fall inside the Segment. However, if the projection point is far
   outside the segment's boundaries, problems with the internal nonlinear iteration might occur and a warning is issued
   when convergence can not be achieved in a limited number of iterations.
   
   \param node (in): Node to project
   \param seg (in) : Segment to project on
   \param xi (out) : Local coordinates if projection of Node in Segment 's coordinate System
+  \param gap (out) : Gap between node and projection along projection vector.
   */
-  bool ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[],
+				  double &gap);
 
   //@}
   // @{ \name Additional 2D projection methods
@@ -189,15 +190,17 @@ public:
   Used to project a Node from the mortar side onto a Segment on the slave side
   
   This method will compute the coordinates of a projection of a Node in the local coordinate system of a Segment.
-  The projection point will not neccesarily fall inside the Segment. However, if the projection point is far
+  The projection point will not necessarily fall inside the Segment. However, if the projection point is far
   outside the segment's boundaries, problems with the internal nonlinear iteration might occur and a warning is issued
   when convergence can not be achieved in a limited number of iterations.
   
   \param node (in): Node to project
   \param seg (in) : Segment to project on
   \param xi (out) : Local coordinates if projection of Node in Segment 's coordinate System
+  \param gap (out) : Gap between node and projection along projection vector.
   */
-  bool ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[],
+				  double &gap);
 
   /*!
   \brief Project a Node onto a Segment orthogonal another Segment (2D problems only)
@@ -205,16 +208,18 @@ public:
   Used to project a Node from the slave side onto a Segment on the mortar side orthogonal to some slave Segment
   
   This method will compute the coordinates of a projection of a Node in the local coordinate system of a Segment.
-  The projection point will not neccesarily fall inside the Segment. However, if the projection point is far
+  The projection point will not necessarily fall inside the Segment. However, if the projection point is far
   outside the segment's boundaries, problems with the internal nonlinear iteration might occur and a warning is issued
   when convergence can not be achieved in a limited number of iterations.
   
   \param node (in): Node to project
   \param seg (in) : Segment to project on
   \param xi (out) : Local coordinates if projection of Node in Segment 's coordinate System
+  \param gap (out) : Gap between node and projection along projection vector.
   \param sseg (in) : Segment to project orthogonal to
   */
-  bool ProjectNodetoSegment_Orthogonal_to_Slave(MOERTEL::Node& snode, MOERTEL::Segment& seg, double xi[], MOERTEL::Segment& sseg);
+  bool ProjectNodetoSegment_Orthogonal_to_Slave(MOERTEL::Node& snode, MOERTEL::Segment& seg, double xi[], 
+				  double &gap, MOERTEL::Segment& sseg);
 
   //@}
 
@@ -227,29 +232,30 @@ private:
   //====2D projection methods
   
   // evaluate F and gradF functions for ProjectNodetoSegment_NodalNormal in 2D
-  double evaluate_F_2D_NodalNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_F_2D_NodalNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double &gap);
   double evaluate_gradF_2D_NodalNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
 
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentNormal in 2D
-  double evaluate_F_2D_SegmentNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_F_2D_SegmentNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double &gap);
   double evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
 
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentOrthogonal in 2D
-  double evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double &gap);
   double evaluate_gradF_2D_SegmentOrthogonal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
   
   // evalauate F and gradF functions for ProjectNodetoSegment_Orthogonal_to_Slave in 2D
-  double evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double* g);
+  double evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double &gap,
+				  double* g);
   double evaluate_gradF_2D_SegmentOrthogonal_to_g(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double* g);
   
   //====3D projection methods
 
   // evaluate F and gradF functions for ProjectNodetoSegment_NodalNormal in 3D
   bool evaluate_FgradF_3D_NodalNormal(double* F,double dF[][3],const MOERTEL::Node& node, 
-                                      MOERTEL::Segment& seg,double* eta,double alpha);
+                                      MOERTEL::Segment& seg,double* eta,double alpha,double &gap);
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentNormal in 3D
   bool evaluate_FgradF_3D_SegmentNormal(double* F,double dF[][3],const MOERTEL::Node& node, 
-                                        MOERTEL::Segment& seg,double* eta,double alpha);
+                                        MOERTEL::Segment& seg,double* eta,double alpha,double &gap);
 
 private:
 

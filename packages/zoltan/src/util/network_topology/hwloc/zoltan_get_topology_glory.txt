@@ -1,0 +1,12 @@
+Thu Aug 26 15:11:42 MDT 2010
+A Machine with 16 CPUs has:
+  4 NUMANodes/Sockets/L3Caches (4 total CPUs) each with
+  4 L2Caches/L1Caches/Cores (1 total CPUs) with
+  1 PU
+
+Total memory (for all children), Local memory (for object at level)
+Memory at level Machine: (33077348.00000010.0KB, 0.00000010.0KB)
+Memory at level NUMANodes/Sockets/L3Caches: (8255588.00000010.0KB, 8255588.00000010.0KB)
+Memory at level L2Caches/L1Caches/Cores: (0.00000010.0KB, 0.00000010.0KB)
+Memory at level PU: (0.00000010.0KB, 0.00000010.0KB)
+Thu Aug 26 15:11:44 MDT 2010

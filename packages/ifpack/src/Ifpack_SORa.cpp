@@ -216,7 +216,6 @@ int Ifpack_SORa::Compute(){
   delete Askew2;
   if(RowMatrixMode) {
     Acrs_=Teuchos::null;
-    transposer2_=Teuchos::null;
   }
 
   // Counters

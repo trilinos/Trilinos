@@ -10,6 +10,7 @@
 #define stk_mesh_BoundaryAnalysis_hpp
 
 #include <vector>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_util/util/NamedPair.hpp>
 
 namespace stk {
@@ -41,7 +42,7 @@ typedef std::vector<EntitySide> EntitySideVector;
  */
 void boundary_analysis(const BulkData& bulk_data,
                        const std::vector< Entity *> & entities_closure,
-                       unsigned closure_rank,
+                       EntityRank closure_rank,
                        EntitySideVector& boundary);
 
 /** \brief  Get the entities adjacent to the input entity.

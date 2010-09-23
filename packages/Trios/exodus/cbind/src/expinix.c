@@ -52,6 +52,7 @@
 #include "exodusII.h"
 #include "exodusII_int.h"
 #include <string.h>
+#include <stdlib.h>
 #include <assert.h>
 
 void write_dummy_names(int exoid, ex_entity_type obj_type)

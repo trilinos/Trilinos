@@ -1,10 +1,2 @@
-
-INCLUDE(PackageAddExecutableAndTest)
-
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  TwoSquares
-  SOURCES TwoSquares.cpp
-  ARGS 
-  COMM serial
-  )
+ADD_SUBDIRECTORY(TwoPE)
+ADD_SUBDIRECTORY(TwoSquares)

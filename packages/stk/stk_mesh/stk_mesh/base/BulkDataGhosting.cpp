@@ -452,6 +452,7 @@ void BulkData::internal_change_ghosting(
           const bool recreated = EntityLogDeleted == result.first->log_query();
 
           if ( created || recreated ) {
+            m_entity_repo.log_created_parallel_copy( *(result.first) );
             m_entity_repo.set_entity_owner_rank( *(result.first), owner);
           }
 

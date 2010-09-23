@@ -16,6 +16,7 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 
 namespace stk {
@@ -87,7 +88,8 @@ void centroid_algorithm(
   const BulkData & bulkData ,
   const VectorFieldType             & elem_centroid ,
   const ElementNodePointerFieldType & elem_node_coord ,
-  Part & elem_part )
+  Part & elem_part,
+  EntityRank element_rank )
 {
   // The 'phdmesh' prototype implementation uses the
   // "homogeneous subset" concept (see the Domain Model document)
@@ -96,7 +98,7 @@ void centroid_algorithm(
 
   // Iterate the set of element buckets:
 
-  const std::vector<Bucket*> & buckets = bulkData.buckets( Element );
+  const std::vector<Bucket*> & buckets = bulkData.buckets( element_rank );
 
   for ( std::vector<Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
@@ -138,7 +140,8 @@ bool centroid_algorithm_unit_test_dimensions(
   const BulkData & bulkData ,
   const VectorFieldType             & elem_centroid ,
   const ElementNodePointerFieldType & elem_node_coord ,
-  Part & elem_part )
+  Part & elem_part,
+  EntityRank element_rank )
 {
   bool result = true;
   // The 'phdmesh' prototype implementation uses the
@@ -148,7 +151,7 @@ bool centroid_algorithm_unit_test_dimensions(
 
   // Iterate the set of element buckets:
 
-  const std::vector<Bucket*> & buckets = bulkData.buckets( Element );
+  const std::vector<Bucket*> & buckets = bulkData.buckets( element_rank );
 
   for ( std::vector<Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
@@ -205,8 +208,8 @@ bool centroid_algorithm_unit_test_dimensions(
   return result;
 }
 
-} // namespace use_cases 
-} // namespace mesh 
-} // namespace stk 
+} // namespace use_cases
+} // namespace mesh
+} // namespace stk
 
 #endif // centroid_algorithm_hpp

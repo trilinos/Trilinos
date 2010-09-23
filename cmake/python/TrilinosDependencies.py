@@ -194,8 +194,10 @@ class TrilinosDependencies:
     else:
       regexPathPrefix = ""
       pathPrefix = "../"
+    #print "regexPathPrefix = '"+regexPathPrefix+"'"
+    #print "pathPrefix = '"+pathPrefix+"'"
     for packageDep in self.__packagesList:
-      regexFilePath = regexPathPrefix+packageDep.packageDir
+      regexFilePath = regexPathPrefix+packageDep.packageDir+"/"
       ammendedFullPath = pathPrefix+fullPath 
       #print "regexFilePath="+regexFilePath
       #print "ammendedFullPath="+ammendedFullPath

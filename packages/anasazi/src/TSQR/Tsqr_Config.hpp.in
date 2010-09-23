@@ -54,5 +54,11 @@
 #cmakedefine HAVE_TSQR_COMPLEX 1
 #cmakedefine HAVE_TSQR_FORTRAN 1
 #cmakedefine HAVE_TSQR_INTEL_TBB 1
+#cmakedefine HAVE_TSQR_NEW_MPI_COMMUNICATORS 1
+
+#cmakedefine HAVE_MPI_COMM_NETWORK 1
+#cmakedefine HAVE_MPI_COMM_NODE 1
+#cmakedefine HAVE_MPI_COMM_SOCKET 1
+#cmakedefine HAVE_MPI_COMM_CACHE 1
 
 #endif // __TSQR_Tsqr_Config_hpp

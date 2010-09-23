@@ -84,6 +84,11 @@ EntityRepository::internal_create_entity( const EntityKey & key )
   return result ;
 }
 
+void EntityRepository::log_created_parallel_copy( Entity & entity )
+{
+  entity.m_entityImpl.log_created_parallel_copy();
+}
+
 Entity * EntityRepository::get_entity(const EntityKey &key) const
 {
   const bool valid_key = entity_key_valid( key );
@@ -159,7 +164,7 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
   const bool modified_parts = ! e.m_entityImpl.is_bucket_valid() ||
                               ! b.equivalent( e.bucket() );
   if ( modified_parts ) {
-    modify_and_propagate( e );
+    e.m_entityImpl.log_modified_and_propagate();
   }
   e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
 }
@@ -192,9 +197,11 @@ void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
     }
   }
 
+  // It is critical that the modification be done AFTER the relations are
+  // changed so that the propagation can happen correctly.
   if ( caused_change_fwd ) {
-    modify_and_propagate( e_to );
-    modify_and_propagate( e_from );
+    e_to.m_entityImpl.log_modified_and_propagate();
+    e_from.m_entityImpl.log_modified_and_propagate();
   }
 }
 
@@ -231,25 +238,11 @@ void EntityRepository::declare_relation( Entity & e_from,
     }
   }
 
+  // It is critical that the modification be done AFTER the relations are
+  // added so that the propagation can happen correctly.
   if ( caused_change_fwd ) {
-    modify_and_propagate( e_to );
-    modify_and_propagate( e_from );
-  }
-}
-
-void EntityRepository::modify_and_propagate( Entity & modified_entity ) const
-{
-  // mark this entity as modified
-  modified_entity.m_entityImpl.log_modified();
-
-  // recurse on related entities w/ higher rank
-  EntityRank rank_of_original_entity = modified_entity.entity_rank();
-  for ( PairIterRelation irel = modified_entity.relations();
-        !irel.empty();
-        ++irel ) {
-    if ( rank_of_original_entity < irel->entity_rank() ) {
-      modify_and_propagate( *(irel->entity()) );
-    }
+    e_to.m_entityImpl.log_modified_and_propagate();
+    e_from.m_entityImpl.log_modified_and_propagate();
   }
 }
 

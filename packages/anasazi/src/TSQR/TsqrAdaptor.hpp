@@ -56,12 +56,13 @@ namespace TSQR {
     ///
     /// Child classes of TsqrAdaptor tell TSQR how to compute a
     /// factorization of a specific Trilinos multivector class MV.
-    /// Currently, Epetra_MultiVector and Tpetra::MultiVector< S, LO,
-    /// GO, NodeType > for any NodeType are supported, via
-    /// TsqrEpetraAdaptor (see AnasaziEpetraAdaptor.hpp)
-    /// resp. TsqrTpetraAdaptor (include AnasaziTpetraAdaptor.hpp).
-    /// At the moment, the latter will only be efficient if NodeType
-    /// is not a GPU node.  
+    /// Currently, Tpetra::MultiVector< S, LO, GO, NodeType > for any
+    /// NodeType is supported, via TsqrEpetraAdaptor (see
+    /// AnasaziEpetraAdaptor.hpp) resp. TsqrTpetraAdaptor (include
+    /// AnasaziTpetraAdaptor.hpp).  At the moment, the latter will
+    /// only be efficient if NodeType is not a GPU node.  Support for
+    /// Epetra_MultiVector and Thyra multivectors may be added on
+    /// request.
     ///
     /// TsqrAdaptor uses the appropriate specialization of
     /// TsqrTypeAdaptor to figure out which variant of TSQR to use on
@@ -80,23 +81,23 @@ namespace TSQR {
     /// (MV) type must create a subclass of that type, using e.g.,
     /// TsqrTpetraAdaptor as a model.  They must then create a new
     /// TsqrTypeAdaptor specialization (with the appropriate
-    /// typedefs), and a new TsqrCommFactory subclass (which gets the
-    /// underlying communicator object (e.g., Teuchos::Comm<int>) from
-    /// a "prototype" multivector and turns it into
-    /// TSQR::MessengerBase< S > and TSQR::MessengerBase< LO > objects
-    /// for TSQR.
+    /// typedefs), and a new TsqrCommFactory subclass.  The
+    /// TsqrCommFactory subclass gets the underlying communicator
+    /// object (e.g., Teuchos::Comm<int>) from a "prototype"
+    /// multivector and wraps it into TSQR::MessengerBase< S > and
+    /// TSQR::MessengerBase< LO > objects for TSQR.
     ///
     /// Implementers who wish to change which TSQR implementation is
     /// used for a particular MultiVector type (for which a
     /// TsqrAdaptor child class exists) should change the
     /// corresponding (possibly partial) specialization of
     /// TsqrTypeAdaptor.  Certainly the node_tsqr_type (and perhaps
-    /// also the tsqr_type) typedef(s) in the TsqrTypeAdaptor
+    /// also the dist_tsqr_type) typedef(s) in the TsqrTypeAdaptor
     /// specialization must be changed.  If no corresponding
     /// TsqrFactory subclass exists for that combination of
-    /// node_tsqr_type and tsqr_type, a new TsqrFactory subclass may
-    /// also have to be created, to tell Anasazi how to instantiate
-    /// those node_tsqr_type and tsqr_type objects.
+    /// node_tsqr_type and dist_tsqr_type, a new TsqrFactory subclass
+    /// may also have to be created, to tell Anasazi how to
+    /// instantiate those node_tsqr_type and dist_tsqr_type objects.
     ///
     /// Implementers who wish to add a new TSQR factorization must
     /// create a new TsqrFactory subclass.
@@ -112,12 +113,18 @@ namespace TSQR {
 
       typedef TsqrTypeAdaptor< S, LO, GO, MV >      type_adaptor;
       typedef typename type_adaptor::factory_type   factory_type;
+
       typedef typename type_adaptor::node_tsqr_type node_tsqr_type;
-      typedef Teuchos::RCP< node_tsqr_type >        node_tsqr_ptr;
-      typedef typename type_adaptor::tsqr_type      tsqr_type;
-      typedef Teuchos::RCP< tsqr_type >             tsqr_ptr;
+      typedef typename type_adaptor::node_tsqr_ptr  node_tsqr_ptr;
+
       typedef typename type_adaptor::comm_type      comm_type;
       typedef typename type_adaptor::comm_ptr       comm_ptr;
+
+      typedef typename type_adaptor::dist_tsqr_type dist_tsqr_type;
+      typedef typename type_adaptor::dist_tsqr_ptr  dist_tsqr_ptr;
+
+      typedef typename type_adaptor::tsqr_type      tsqr_type;
+      typedef typename type_adaptor::tsqr_ptr       tsqr_ptr;
 
       typedef typename tsqr_type::FactorOutput      factor_output_type;
       typedef Teuchos::SerialDenseMatrix< LO, S >   dense_matrix_type;
@@ -404,10 +411,10 @@ namespace TSQR {
       {
 	// This is done in a multivector type - dependent way.
 	fetchMessengers (mv, pScalarMessenger_, pOrdinalMessenger_);
-	// plist and pScalarMessenger_ are inputs.
-	// Construct *pNodeTsqr_, and *pTsqr_.
+
 	factory_type factory;
-	factory.makeTsqr (plist, pScalarMessenger_, pNodeTsqr_, pTsqr_);
+	// plist and pScalarMessenger_ are inputs.  Construct *pTsqr_.
+	factory.makeTsqr (plist, pScalarMessenger_, pTsqr_);
       }
 
     private:
@@ -459,24 +466,16 @@ namespace TSQR {
 		       scalar_messenger_ptr& pScalarMessenger,
 		       ordinal_messenger_ptr& pOrdinalMessenger) const = 0;
 
-      /// Shared pointer to a wrapper around Teuchos::Comm<int>, that
-      /// knows how to send scalar_type objects.  We need to keep it
-      /// in this class because *pTsqr keeps a raw pointer to it
-      /// internally; we don't want the object to fall out of scope.
+      /// Shared pointer to an object that knows how to communicate
+      /// scalar_type objects.
       scalar_messenger_ptr pScalarMessenger_;
 
+      /// Shared pointer to an object that knows how to communicate
+      /// local_ordinal_type objects.
       ordinal_messenger_ptr pOrdinalMessenger_;
 
-      /// Shared pointer to the "(intra)node TSQR" (node_tsqr_type)
-      /// object.  It was used to construct *pTsqr_, but we keep it
-      /// here because *pTsqr_ used a raw pointer to node_tsqr_type.
-      /// This ensures that *pNodeTsqr_ stays in scope until we are
-      /// done with *pTsqr_.
-      node_tsqr_ptr pNodeTsqr_;
-
       /// Shared pointer to the Tsqr object that performs the QR
-      /// factorization.  pScalarMessenger_.get() and *pNodeTsqr_
-      /// should have been used to construct it.
+      /// factorization.
       tsqr_ptr pTsqr_;
     };
 

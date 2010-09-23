@@ -89,8 +89,6 @@ be used to communicate values of different type.
      - Tpetra::HybridPlatform is used for building applications where the appropriate node type varies from node to node and is specified by run-time options. This class is
        helpful when building applications for heterogeneous architectures, such as, e.g., those employing CPUs alongside GPUs.
 
-</ol>
-
 \subsection tpetra_trilinos Trilinos and Tpetra
 
 %Tpetra can be used mostly as a stand-alone package, with explicit dependencies on Teuchos and Kokkos. There are adapters allowing the 

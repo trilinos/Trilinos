@@ -56,7 +56,7 @@ namespace Ioss {
     VariableTypeMap::iterator find(const std::string &type) {return m_registry.find(type);}
 
     ~Registry();
-    std::map<const std::string, const std::string> customFieldTypes;
+    std::map<std::string, std::string> customFieldTypes;
   private:
     Ioss::VariableTypeMap m_registry;
     std::vector<Ioss::VariableType*> m_deleteThese;

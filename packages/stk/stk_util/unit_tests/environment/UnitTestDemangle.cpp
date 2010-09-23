@@ -39,7 +39,7 @@ utest_demangle()
 void
 UnitTestDemangle::testUnit()
 {
-#if defined(__PGIC)
+#if defined(__PGI)
   {
     std::string linux_name("ThisIsJunk");
     std::string demangled_name = stk::demangle(linux_name.c_str());
@@ -47,7 +47,7 @@ UnitTestDemangle::testUnit()
   }
 
   {
-    std::string linux_name("bool()");
+    std::string linux_name("bool ()");
     std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
     CPPUNIT_ASSERT_EQUAL(linux_name, demangled_name);
   }

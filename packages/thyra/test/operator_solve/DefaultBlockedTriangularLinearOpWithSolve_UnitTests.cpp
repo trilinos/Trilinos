@@ -24,7 +24,6 @@ namespace Thyra {
 
 using Teuchos::as;
 using Teuchos::null;
-using Teuchos::RCP;
 using Teuchos::inOutArg;
 
 

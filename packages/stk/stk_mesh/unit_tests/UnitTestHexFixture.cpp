@@ -124,10 +124,11 @@ namespace {
         hf.generate_mesh( empty_vector ) ;
       }
       stk::mesh::BulkData & mesh = hf.bulk_data;
+      stk::mesh::TopologicalMetaData & top = hf.top_data;
       // Verify element_id 1 is owned by proc 0
       // Verify element_id 2 is owned by proc 1
-      stk::mesh::Entity * entity_1 = mesh.get_entity(stk::mesh::Element,1);
-      stk::mesh::Entity * entity_2 = mesh.get_entity(stk::mesh::Element,2);
+      stk::mesh::Entity * entity_1 = mesh.get_entity(top.element_rank,1);
+      stk::mesh::Entity * entity_2 = mesh.get_entity(top.element_rank,2);
       if (p_rank <= 1) {
         STKUNIT_ASSERT_TRUE( entity_1 != NULL );
         STKUNIT_ASSERT_TRUE( entity_2 != NULL );
@@ -166,18 +167,19 @@ namespace {
       hf.meta_data.commit();
       hf.generate_mesh(parallel_distribution[p_rank]);
       stk::mesh::BulkData & mesh = hf.bulk_data;
+      stk::mesh::TopologicalMetaData & top = hf.top_data;
       if (p_rank == 0) {
-        stk::mesh::Entity * entity_1 = mesh.get_entity(stk::mesh::Element,1);
-        stk::mesh::Entity * entity_2 = mesh.get_entity(stk::mesh::Element,2);
+        stk::mesh::Entity * entity_1 = mesh.get_entity(top.element_rank,1);
+        stk::mesh::Entity * entity_2 = mesh.get_entity(top.element_rank,2);
         STKUNIT_ASSERT_TRUE( entity_1 != NULL );
         STKUNIT_ASSERT_TRUE( entity_2 != NULL );
         STKUNIT_EXPECT_TRUE( 0 == entity_1->owner_rank() );
         STKUNIT_EXPECT_TRUE( 1 == entity_2->owner_rank() );
       }
       else if (p_rank < p_size-1) {
-        stk::mesh::Entity * entity_im1 = mesh.get_entity(stk::mesh::Element,1+p_rank-1);
-        stk::mesh::Entity * entity_i = mesh.get_entity(stk::mesh::Element,1+p_rank);
-        stk::mesh::Entity * entity_ip1 = mesh.get_entity(stk::mesh::Element,1+p_rank+1);
+        stk::mesh::Entity * entity_im1 = mesh.get_entity(top.element_rank,1+p_rank-1);
+        stk::mesh::Entity * entity_i = mesh.get_entity(top.element_rank,1+p_rank);
+        stk::mesh::Entity * entity_ip1 = mesh.get_entity(top.element_rank,1+p_rank+1);
         STKUNIT_ASSERT_TRUE( entity_im1 != NULL );
         STKUNIT_ASSERT_TRUE( entity_i != NULL );
         STKUNIT_ASSERT_TRUE( entity_ip1 != NULL );
@@ -186,8 +188,8 @@ namespace {
         STKUNIT_EXPECT_TRUE( p_rank+1 == entity_ip1->owner_rank() );
       }
       else if (p_rank == p_size-1) {
-        stk::mesh::Entity * entity_im1 = mesh.get_entity(stk::mesh::Element,1+p_rank-1);
-        stk::mesh::Entity * entity_i = mesh.get_entity(stk::mesh::Element,1+p_rank);
+        stk::mesh::Entity * entity_im1 = mesh.get_entity(top.element_rank,1+p_rank-1);
+        stk::mesh::Entity * entity_i = mesh.get_entity(top.element_rank,1+p_rank);
         STKUNIT_ASSERT_TRUE( entity_im1 != NULL );
         STKUNIT_ASSERT_TRUE( entity_i != NULL );
         STKUNIT_EXPECT_TRUE( (p_rank-1) == entity_im1->owner_rank() );
@@ -242,16 +244,17 @@ namespace {
       }
 
       stk::mesh::BulkData & mesh = hf.bulk_data;
+      stk::mesh::TopologicalMetaData & top = hf.top_data;
       // Verify element_id 1 is owned by proc 0
       // Verify element_id 2 is owned by proc 1
-      stk::mesh::Entity * entity_1 = mesh.get_entity(stk::mesh::Element,1);
-      stk::mesh::Entity * entity_2 = mesh.get_entity(stk::mesh::Element,2);
-      stk::mesh::Entity * entity_3 = mesh.get_entity(stk::mesh::Element,3);
-      stk::mesh::Entity * entity_4 = mesh.get_entity(stk::mesh::Element,4);
-      stk::mesh::Entity * entity_5 = mesh.get_entity(stk::mesh::Element,5);
-      stk::mesh::Entity * entity_6 = mesh.get_entity(stk::mesh::Element,6);
-      stk::mesh::Entity * entity_7 = mesh.get_entity(stk::mesh::Element,7);
-      stk::mesh::Entity * entity_8 = mesh.get_entity(stk::mesh::Element,8);
+      stk::mesh::Entity * entity_1 = mesh.get_entity(top.element_rank,1);
+      stk::mesh::Entity * entity_2 = mesh.get_entity(top.element_rank,2);
+      stk::mesh::Entity * entity_3 = mesh.get_entity(top.element_rank,3);
+      stk::mesh::Entity * entity_4 = mesh.get_entity(top.element_rank,4);
+      stk::mesh::Entity * entity_5 = mesh.get_entity(top.element_rank,5);
+      stk::mesh::Entity * entity_6 = mesh.get_entity(top.element_rank,6);
+      stk::mesh::Entity * entity_7 = mesh.get_entity(top.element_rank,7);
+      stk::mesh::Entity * entity_8 = mesh.get_entity(top.element_rank,8);
       if (p_rank == 0) {
         STKUNIT_ASSERT_TRUE( entity_1 != NULL );
         STKUNIT_ASSERT_TRUE( entity_2 != NULL );
@@ -337,13 +340,14 @@ namespace {
       }
 
       stk::mesh::BulkData & mesh = hf.bulk_data;
+      stk::mesh::TopologicalMetaData & top = hf.top_data;
       // Verify element_id 1 is owned by proc 0
       // Verify element_id 2 is owned by proc 1
-      stk::mesh::Entity * entity_1 = mesh.get_entity(stk::mesh::Element,1);
-      stk::mesh::Entity * entity_2 = mesh.get_entity(stk::mesh::Element,2);
-      stk::mesh::Entity * entity_3 = mesh.get_entity(stk::mesh::Element,3);
-      stk::mesh::Entity * entity_4 = mesh.get_entity(stk::mesh::Element,4);
-      stk::mesh::Entity * entity_5 = mesh.get_entity(stk::mesh::Element,5);
+      stk::mesh::Entity * entity_1 = mesh.get_entity(top.element_rank,1);
+      stk::mesh::Entity * entity_2 = mesh.get_entity(top.element_rank,2);
+      stk::mesh::Entity * entity_3 = mesh.get_entity(top.element_rank,3);
+      stk::mesh::Entity * entity_4 = mesh.get_entity(top.element_rank,4);
+      stk::mesh::Entity * entity_5 = mesh.get_entity(top.element_rank,5);
       if (p_rank == 0) {
         STKUNIT_ASSERT_TRUE( entity_1 != NULL );
         STKUNIT_ASSERT_TRUE( entity_2 != NULL );

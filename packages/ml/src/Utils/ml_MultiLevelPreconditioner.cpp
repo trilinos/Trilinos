@@ -1070,6 +1070,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   ZeroStartingSolution_=List_.get("zero starting solution", true);           //
   mlpLabel_            = List_.get("ML label","not-set");                    //
   string IsIncreasing  =List_.get("increasing or decreasing", "increasing"); //
+  
                                                                              //
   if (AMGSolver_ == ML_MAXWELL) IsIncreasing = "decreasing";                 //
           // JJH increasing not supported for Maxwell. Among other problems  //
@@ -1166,6 +1167,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   SetLevelIds(Direction);
 
   SetFinestLevelMatrix();
+
+  /* Set the RAP storage type */
+  if(List_.get("use crs matrix storage",false)) ml_->RAP_storage_type=ML_CSR_MATRIX;
+  else ml_->RAP_storage_type=ML_MSR_MATRIX;
 
   if (verbose_) {
     if( List_.isParameter("default values") ){
@@ -2184,7 +2189,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   std::string PreOrPostSmoother = List_.get("coarse: pre or post","post");
   int pre_or_post;
 
-  int force_crs=List_.get("coarse: use ifpack crs wrapper",0);
   if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
   else if( PreOrPostSmoother == "both" ) pre_or_post = ML_BOTH;
   else pre_or_post = ML_POSTSMOOTHER;
@@ -2233,7 +2237,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       IfpackList.set("relaxation: damping factor", Omega);
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              0, LevelID_[NumLevels_-1], pre_or_post,
-                             (void*)(&IfpackList),(void *) Comm_,force_crs);
+                             (void*)(&IfpackList),(void *) Comm_);
     }
     else
 #endif
@@ -2264,7 +2268,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              0, LevelID_[NumLevels_-1], pre_or_post,
                              //IfpackList,*Comm_);
-                             (void*)&IfpackList,(void*)Comm_,force_crs);
+                             (void*)&IfpackList,(void*)Comm_);
     }
     else
 #endif

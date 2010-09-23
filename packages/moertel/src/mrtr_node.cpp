@@ -43,10 +43,9 @@ Id_(Id),
 outputlevel_(out),
 iscorner_(false),
 isonboundary_(isonboundary),
-Drow_(null),
-Mrow_(null),
-Mmodrow_(null),
-proj_node_(null)
+Drow_(Teuchos::null),
+Mrow_(Teuchos::null),
+Mmodrow_(Teuchos::null)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -55,7 +54,6 @@ proj_node_(null)
   {
     x_[i] = x[i];
     n_[i] = 0.0;
-    prcoord_[i] = 0.0;
   }
   
   dof_.resize(ndof);
@@ -64,6 +62,7 @@ proj_node_(null)
   LMdof_.resize(0);
   pnode_.resize(0);
   supportedby_.clear();
+  gap_ = 0.;
 }
 
 /*----------------------------------------------------------------------*
@@ -76,10 +75,9 @@ Id_(-1),
 outputlevel_(out),
 iscorner_(false),
 isonboundary_(false),
-Drow_(null),
-Mrow_(null),
-Mmodrow_(null),
-proj_node_(null)
+Drow_(Teuchos::null),
+Mrow_(Teuchos::null),
+Mmodrow_(Teuchos::null)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -91,10 +89,10 @@ proj_node_(null)
   { 
     n_[i] = 0.0;
     x_[i] = 0.0;
-    prcoord_[i] = 0.0;
   }
 
   pnode_.resize(0);
+  gap_ = 0.;
 }
 
 /*----------------------------------------------------------------------*
@@ -107,12 +105,12 @@ supportedby_(old.supportedby_)
   outputlevel_ = old.outputlevel_;
   iscorner_ = old.iscorner_;
   isonboundary_ = old.isonboundary_;
+  gap_ = old.gap_;
   
   for (int i=0; i<3; ++i) 
   {
     x_[i] = old.x_[i];
     n_[i] = old.n_[i];
-    prcoord_[i] = old.prcoord_[i];
   }
   
   if (old.dof_.size())
@@ -144,24 +142,24 @@ supportedby_(old.supportedby_)
   for (int i=0; i<(int)pnode_.size(); ++i)
     if (old.pnode_[i].get() != NULL)
     {
-      pnode_[i] = rcp(new MOERTEL::ProjectedNode(*(old.pnode_[i])));
+      pnode_[i] = Teuchos::rcp(new MOERTEL::ProjectedNode(*(old.pnode_[i])));
     }
   
-  if (old.Drow_ != null)
+  if (old.Drow_ != Teuchos::null)
   {
-    map<int,double>* tmp = new map<int,double>(*(old.Drow_));
-    Drow_ = rcp(tmp);
+	std::map<int,double>* tmp = new std::map<int,double>(*(old.Drow_));
+    Drow_ = Teuchos::rcp(tmp);
   }
   else
-    Drow_ = null;    
+    Drow_ = Teuchos::null;    
 
-  if (old.Mrow_ != null)
+  if (old.Mrow_ != Teuchos::null)
   {
-    map<int,double>* tmp = new map<int,double>(*(old.Mrow_));
-    Mrow_ = rcp(tmp);
+	std::map<int,double>* tmp = new std::map<int,double>(*(old.Mrow_));
+    Mrow_ = Teuchos::rcp(tmp);
   }
   else
-    Mrow_ = null;    
+    Mrow_ = Teuchos::null;    
 }
 
 /*----------------------------------------------------------------------*
@@ -169,8 +167,8 @@ supportedby_(old.supportedby_)
  *----------------------------------------------------------------------*/
 double* MOERTEL::Node::Pack(int* size)
 {
-  // *size = *size + Id_ + x_[3] + n_[3] + dof_.size() + ndof_*sizeof(double) + seg_.size() + nseg_*sizeof(double) + iscorner_ + isonboundary_
-     *size = 1     + 1  +  3     + 3     +  1          + dof_.size()                + 1     + seg_.size()          + 1         + 1;
+  // *size = *size + Id_ + x_[3] + n_[3] + dof_.size() + ndof_*sizeof(double) + seg_.size() + nseg_*sizeof(double) + iscorner_ + isonboundary_ + gap_
+     *size = 1     + 1  +  3     + 3     +  1          + dof_.size()                + 1     + seg_.size()          + 1         + 1 + 1;
   double* pack = new double[*size];
   int count = 0;
   
@@ -188,10 +186,11 @@ double* MOERTEL::Node::Pack(int* size)
     pack[count++] = (double)seg_[i];
   pack[count++] = (double)(iscorner_);
   pack[count++] = (double)(isonboundary_);
+  pack[count++] = gap_;
 
   if (count != *size)
   {
-    cout << "***ERR*** MOERTEL::Node::Pack:\n"
+	std::cout << "***ERR*** MOERTEL::Node::Pack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -220,10 +219,11 @@ bool MOERTEL::Node::UnPack(double* pack)
     seg_[i] = (int)pack[count++];
   iscorner_ = (bool)pack[count++];
   isonboundary_ = (bool)pack[count++];
+  gap_ = pack[count++];
     
   if (count != size)
   {
-    cout << "***ERR*** MOERTEL::Node::UnPack:\n"
+	std::cout << "***ERR*** MOERTEL::Node::UnPack:\n"
          << "***ERR*** mismatch in packing size\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
@@ -243,9 +243,26 @@ MOERTEL::Node::~Node()
   seg_.clear();
   segptr_.clear();
   pnode_.clear();
-  Drow_ = null;
-  Mrow_ = null;
-  Mmodrow_ = null;
+  Drow_ = Teuchos::null;
+  Mrow_ = Teuchos::null;
+  Mmodrow_ = Teuchos::null;
+  supportedby_.clear();
+}
+
+/*----------------------------------------------------------------------*
+ |  Reset() (public)                                           gah 07/10 |
+ | Clear internal state in preparation for re-integration                |
+ *----------------------------------------------------------------------*/
+void MOERTEL::Node::Reset()
+{
+
+  // Clear up any projected node info		
+  pnode_.clear();
+
+  // Delete internal state of M and D integration
+  Drow_ = Teuchos::null;
+  Mrow_ = Teuchos::null;
+  Mmodrow_ = Teuchos::null;
   supportedby_.clear();
 }
 
@@ -263,36 +280,36 @@ ostream& operator << (ostream& os, const MOERTEL::Node& node)
  *----------------------------------------------------------------------*/
 bool MOERTEL::Node::Print() const
 { 
-  cout << "Node " << setw(6) << Id_ << "\tCoords ";
+  std::cout << "Node " << std::setw(6) << Id_ << "\tCoords ";
   for (int i=0; i<3; ++i)
-    cout << setw(12) << x_[i] << " ";
+    std::cout << std::setw(12) << x_[i] << " ";
 
-  cout << "Normal " ;
+  std::cout << "Normal " ;
   for (int i=0; i<3; ++i)
-    cout << setw(12) << n_[i] << " ";
+    std::cout << std::setw(12) << n_[i] << " ";
 
-  cout << "#Dofs " << dof_.size() << " Dofs ";
+  std::cout << "#Dofs " << dof_.size() << " Dofs ";
   for (int i=0; i<(int)dof_.size(); ++i)
-    cout << dof_[i] << " ";
+    std::cout << dof_[i] << " ";
 
-  cout << "#LMDofs " << LMdof_.size();
+  std::cout << "#LMDofs " << LMdof_.size();
   if (LMdof_.size())
   {
-    cout << " LMDofs ";
+	std::cout << " LMDofs ";
     for (int i=0; i<(int)LMdof_.size(); ++i)
-      cout << LMdof_[i] << " ";
+      std::cout << LMdof_[i] << " ";
   }
   
   if (IsCorner())
-    cout << " is shared among 1D interfaces";
+    std::cout << " is shared among 1D interfaces";
 
   if (IsOnBoundary())
   {
-    cout << " is boundary of 2D-interface";
-    cout << ", member of " << NSupportSet() << " support sets";
+	std::cout << " is boundary of 2D-interface";
+	std::cout << ", member of " << NSupportSet() << " support sets";
   }
 
-  cout << endl;
+  std::cout << endl;
   return true;
 }
 
@@ -362,7 +379,7 @@ bool MOERTEL::Node::GetPtrstoSegments(MOERTEL::Interface& interface)
     segptr_[i] = interface.GetSegmentView(seg_[i]).get();
     if (!segptr_[i])
     {
-      cout << "***ERR*** MOERTEL::Node::GetPtrstoSegments:\n"
+	  std::cout << "***ERR*** MOERTEL::Node::GetPtrstoSegments:\n"
            << "***ERR*** Interface " << interface.Id() << ": GetSegmentView failed\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -384,7 +401,7 @@ bool MOERTEL::Node::BuildAveragedNormal()
   double weight = 0.0;
 
 #if 0
-  cout << "Building normal for node\n" << *this;
+  std::cout << "Building normal for node\n" << *this;
 #endif
   
   for (int i=0; i<nseg; ++i)
@@ -392,12 +409,12 @@ bool MOERTEL::Node::BuildAveragedNormal()
     MOERTEL::Segment* seg = segptr_[i]; 
 
 #if 0
-    cout << "Now averaging from Segment\n" << *seg;
+	std::cout << "Now averaging from Segment\n" << *seg;
 #endif    
 
     if (!seg)
     {
-      cout << "***ERR*** MOERTEL::Node::BuildAveragedNormal:\n"
+	  std::cout << "***ERR*** MOERTEL::Node::BuildAveragedNormal:\n"
            << "***ERR*** Node " << Id() << ": Segment " << sid[i] << " not found -> fatal\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       exit(EXIT_FAILURE);
@@ -418,7 +435,7 @@ bool MOERTEL::Node::BuildAveragedNormal()
   for (int i=0; i<3; ++i) n_[i] /= length;
 
 #if 0
-  cout << "Node " << Id() << ":"
+  std::cout << "Node " << Id() << ":"
        << " normal is " << setw(15) << n_[0] 
        << "   "<< setw(15) << n_[1] << "   " << setw(15) << n_[2] << endl;
 #endif
@@ -432,14 +449,14 @@ bool MOERTEL::Node::BuildAveragedNormal()
 bool MOERTEL::Node::SetProjectedNode(MOERTEL::ProjectedNode* pnode)
 { 
   pnode_.resize(pnode_.size()+1);
-  pnode_[pnode_.size()-1] = rcp(pnode);
+  pnode_[pnode_.size()-1] = Teuchos::rcp(pnode);
   return true;
 }
 
 /*----------------------------------------------------------------------*
  |  get projected nodes                                      mwgee 07/05|
  *----------------------------------------------------------------------*/
-RefCountPtr<MOERTEL::ProjectedNode>* MOERTEL::Node::GetProjectedNode(int& length)
+Teuchos::RCP<MOERTEL::ProjectedNode>* MOERTEL::Node::GetProjectedNode(int& length)
 { 
   length = pnode_.size();
   if (length)
@@ -451,29 +468,13 @@ RefCountPtr<MOERTEL::ProjectedNode>* MOERTEL::Node::GetProjectedNode(int& length
 /*----------------------------------------------------------------------*
  |  get projected node                                       mwgee 07/05|
  *----------------------------------------------------------------------*/
-RefCountPtr<MOERTEL::ProjectedNode> MOERTEL::Node::GetProjectedNode()
+Teuchos::RCP<MOERTEL::ProjectedNode> MOERTEL::Node::GetProjectedNode()
 { 
   int length = pnode_.size();
   if (length)
     return pnode_[0];
   else
-    return null;
-}
-
-/*----------------------------------------------------------------------*
- |  set a projected node                                    andrsd 05/10|
- *----------------------------------------------------------------------*/
-void MOERTEL::Node::SetProjNode(RefCountPtr<MOERTEL::ProjectedNode> pnode)
-{
-  proj_node_ = pnode;
-}
-
-/*----------------------------------------------------------------------*
- |  get projected nodes                                     andrsd 05/10|
- *----------------------------------------------------------------------*/
-RefCountPtr<MOERTEL::ProjectedNode> MOERTEL::Node::GetProjNode()
-{
-  return proj_node_;
+    return Teuchos::null;
 }
 
 /*----------------------------------------------------------------------*
@@ -481,10 +482,10 @@ RefCountPtr<MOERTEL::ProjectedNode> MOERTEL::Node::GetProjNode()
  *----------------------------------------------------------------------*/
 void MOERTEL::Node::AddDValue(double val, int col)
 { 
-  if (Drow_ == null)
-    Drow_ = rcp(new map<int,double>());
+  if (Drow_ == Teuchos::null)
+    Drow_ = Teuchos::rcp(new std::map<int,double>());
     
-  map<int,double>* Dmap = Drow_.get();
+  std::map<int,double>* Dmap = Drow_.get();
   
   (*Dmap)[col] += val;
 
@@ -496,10 +497,10 @@ void MOERTEL::Node::AddDValue(double val, int col)
  *----------------------------------------------------------------------*/
 void MOERTEL::Node::AddMValue(double val, int col)
 { 
-  if (Mrow_ == null)
-    Mrow_ = rcp(new map<int,double>());
+  if (Mrow_ == Teuchos::null)
+    Mrow_ = Teuchos::rcp(new std::map<int,double>());
     
-  map<int,double>* Mmap = Mrow_.get();
+  std::map<int,double>* Mmap = Mrow_.get();
   
   (*Mmap)[col] += val;
 
@@ -511,13 +512,13 @@ void MOERTEL::Node::AddMValue(double val, int col)
  *----------------------------------------------------------------------*/
 void MOERTEL::Node::AddMmodValue(int row, double val, int col)
 { 
-  if (Mmodrow_ == null)
-    Mmodrow_ = rcp(new vector<map<int,double> >(Ndof()));
+  if (Mmodrow_ == Teuchos::null)
+    Mmodrow_ = Teuchos::rcp(new std::vector<std::map<int,double> >(Ndof()));
 
   if ((int)Mmodrow_->size() <= row)
     Mmodrow_->resize(row+1);
     
-  map<int,double>& Mmap = (*Mmodrow_)[row];
+  std::map<int,double>& Mmap = (*Mmodrow_)[row];
   
   Mmap[col] += val;
 

@@ -254,7 +254,7 @@
   <Package name="Claps" dir="claps">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
@@ -377,7 +377,7 @@
       <Regression address="belos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Tifpack" dir="tifpack">
+  <Package name="Ifpack2" dir="ifpack2">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Tpetra,Kokkos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES value="Belos,Triutils"/>
@@ -387,8 +387,8 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="QD"/>
     <EmailAddresses>
-      <Checkin address="tifpack-checkins@software.sandia.gov"/>
-      <Regression address="tifpack-regression@software.sandia.gov"/>
+      <Checkin address="ifpack2-checkins@software.sandia.gov"/>
+      <Regression address="ifpack2-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="Stratimikos" dir="stratimikos">
@@ -447,6 +447,20 @@
       <Regression address="anasazi-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
+  <Package name="Teko" dir="teko">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,EpetraExt,Stratimikos,AztecOO,Anasazi,ML,Ifpack,Amesos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Isorropia"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="teko-checkins@software.sandia.gov"/>
+      <Regression address="teko-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
   <Package name="RBGen" dir="rbgen">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Anasazi"/>
@@ -476,8 +490,8 @@
     </EmailAddresses>
   </Package>
   <Package name="STK" dir="stk">
-    <LIB_REQUIRED_DEP_PACKAGES value="Trios,Shards,Teuchos,FEI,AztecOO,ThreadPool"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Trios,FEI,AztecOO,ThreadPool"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
@@ -551,9 +565,9 @@
     <TEST_REQUIRED_DEP_PACKAGES value="Galeri"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="ExodusII,Nemesis"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="ExodusII"/>
     <EmailAddresses>
       <Checkin address="moertel-checkins@software.sandia.gov"/>
       <Regression address="moertel-regression@software.sandia.gov"/>

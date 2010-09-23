@@ -32,7 +32,6 @@ USA
 #include <Isorropia_EpetraZoltanLib.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
-#include <Isorropia_EpetraCostDescriber.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
 
@@ -88,43 +87,6 @@ Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
     partition(true);
 }
 
-  /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber, called by
-        API function create_partitioner().
-
-     \param input_graph Matrix-graph object for which a new partitioning
-        is to be computed. A Teuchos::RCP is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param costs CostDescriber object which allows for user-specified
-       weights of varying types to be provided to the partitioner.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
-Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-			 Teuchos::RCP<CostDescriber> costs,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (input_graph, costs, paramlist, 0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-
   /**
      Constructor that accepts an Epetra_RowMatrix object, called by
        API function create_partitioner().
@@ -153,44 +115,6 @@ Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, paramlist, 0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-
-  /**
-     Constructor that accepts an Epetra_RowMatrix object and a
-     CostDescriber, called by API function create_partitioner(). 
-
-     \param input_matrix Matrix object for which a new partitioning is
-        to be computed. A Teuchos::RCP is used here because a
-        reference to the input object may be held by this object after
-        this constructor completes and returns.
-
-     \param costs CostDescriber object which allows for user-specified
-       weights of varying types to be provided to the partitioner.
-
-     \param paramlist Teuchos::ParameterList which will be copied to an
-        internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
-
-     \param compute_partitioning_now Optional argument defaults to true.
-        If true, the method compute_partitioning() will be called before
-        this constructor returns.
-  */
-Partitioner2D::Partitioner2D(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-			 Teuchos::RCP<CostDescriber> costs,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (input_matrix, costs, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -242,9 +166,9 @@ partition(bool force_repartitioning)
     throw Isorropia::Exception("PARTITIONING_METHOD parameter must be specified.");
   }
 
-  if(partitioning_method != "HGRAPH2D_FINEGRAIN")
+  if(partitioning_method != "HYPERGRAPH2D")
   {
-    throw Isorropia::Exception("PARTITIONING_METHOD parameter must be HGRAPH2D_FINEGRAIN.");
+    throw Isorropia::Exception("PARTITIONING_METHOD parameter must be HYPERGRAPH2D.");
   }
 
   if (alreadyComputed() && !force_repartitioning)
@@ -327,58 +251,135 @@ void Partitioner2D::elemsInPart(int partition, int* elementList, int len) const
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
+  /** Returns indx for nonzero A(i,j) assuming this nonzero is located on this
+      processor.  This is useful in getting a part number for this nonzero since
+      the [] operator needs this index.  Returns -1 if nonzero not found locally.
+  */
 ////////////////////////////////////////////////////////////////////////////////
-int
-Partitioner2D::createNewMaps(Teuchos::RCP<Epetra_Map> domainMap, 
-			     Teuchos::RCP<Epetra_Map> rangeMap) 
+int Partitioner2D::getNZIndx(int row, int column) const 
 {
-  //MMW
-  std::cout << "MMW::NEED to reimplement" << std::endl;
 
-  /*
-  if (!alreadyComputed()) {
-    partition();
-  }
 
-  //Generate New Element List
-  int myPID = input_map_->Comm().MyPID();
-  int numMyElements = input_map_->NumMyElements();
-  std::vector<int> elementList( numMyElements );
-  input_map_->MyGlobalElements( &elementList[0] );
-
-  std::vector<int> myNewGID (numMyElements - exportsSize_);
-  std::vector<int>::iterator newElemsIter;
-  std::vector<int>::const_iterator elemsIter;
-
-  for (elemsIter = properties_.begin(), newElemsIter= myNewGID.begin() ;
-       elemsIter != properties_.end() ; elemsIter ++) 
+  if (input_graph_.get() != 0) // Graph
   {
-    if ((*elemsIter) == myPID) 
+    const Epetra_BlockMap *rowMap_ = &(input_graph_->RowMap());
+    const Epetra_BlockMap *colMap_ = &(input_graph_->ColMap());
+    int numRows = rowMap_->NumMyElements();
+
+    int nzIndx = 0;
+
+    for (int rowNum=0; rowNum<numRows; rowNum++)
     {
-      (*newElemsIter) = elementList[elemsIter - properties_.begin()];
-      newElemsIter ++;
+      int rowSize;
+      rowSize = input_graph_->NumMyIndices(rowNum);
+
+      if(row == rowNum)
+      {
+        int *tmprowCols = new int[rowSize];
+        int numEntries;
+
+        input_graph_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowCols);
+
+        for(int colIndx=0;colIndx<rowSize;colIndx++)
+	{
+
+          if (column == colMap_->GID(tmprowCols[colIndx]))
+	  {
+            return nzIndx;
+	  }
+          else
+	  {
+	    nzIndx++;
+          }
+	}
+
+        delete [] tmprowCols;
+      }
+      else
+      {
+        nzIndx += rowSize;
+      }
+
+
+    }
+
+
+
+  }
+  else  // matrix
+  {
+
+    const Epetra_BlockMap *rowMap_ = &(input_matrix_->RowMatrixRowMap());
+    const Epetra_BlockMap *colMap_ = &(input_matrix_->RowMatrixColMap());
+    int numRows = rowMap_->NumMyElements();
+
+    int nzIndx = 0;
+    for (int rowNum=0; rowNum<numRows; rowNum++)
+    {
+      int rowSize;
+      input_matrix_->NumMyRowEntries(rowNum,rowSize);
+
+      if(row == rowNum)
+      {
+        int *tmprowCols = new int[rowSize];
+        double *tmprowVals = new double[rowSize];
+        int numEntries;
+
+        input_matrix_->ExtractMyRowCopy (rowNum, rowSize, numEntries, tmprowVals, tmprowCols);
+
+        for(int colIndx=0; colIndx<rowSize; colIndx++)
+	{
+          if (column == colMap_->GID(tmprowCols[colIndx]))
+	  {
+            return nzIndx;
+	  }
+          else
+	  {
+	    nzIndx++;
+          }
+	}
+	delete [] tmprowCols;
+        delete [] tmprowVals;
+      }
+      else
+      {
+        nzIndx += rowSize;
+      }
     }
   }
-  //Add imports to end of list
-  myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
 
-  Teuchos::RCP<Epetra_Map> target_map =
-    Teuchos::rcp(new Epetra_Map(-1, myNewGID.size(), &myNewGID[0], 0, input_map_->Comm()));
+  return -1;
+}
+////////////////////////////////////////////////////////////////////////////////
 
-  return(target_map);
 
-  */
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int Partitioner2D::createDomainAndRangeMaps(Epetra_Map *domainMap, 
+			                    Epetra_Map *rangeMap) 
+{
+  std::cout << "MMW::NEED to implement" << std::endl;
+
   return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
-int
-Partitioner2D::partitionVectors() 
+int Partitioner2D::createColumnMap(Epetra_Map *colMap) 
 {
-  //MMW
   std::cout << "MMW::NEED to implement" << std::endl;
+
+  return 0;
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int Partitioner2D::createRowMap(Epetra_Map *rowMap) 
+{
+  std::cout << "MMW::NEED to implement" << std::endl;
+
   return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////

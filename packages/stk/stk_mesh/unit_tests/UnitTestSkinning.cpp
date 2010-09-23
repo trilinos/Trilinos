@@ -25,6 +25,8 @@
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
 
+#include <stk_util/parallel/ParallelReduce.hpp>
+
 #include <iomanip>
 #include <algorithm>
 
@@ -51,6 +53,59 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testUnit )
   unit.test_skinning();
 }
 
+STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testSingleShell )
+{
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta_data( stk::mesh::TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  stk::mesh::BulkData bulk_data( meta_data, MPI_COMM_WORLD );
+  stk::mesh::TopologicalMetaData top_data( meta_data, spatial_dimension );
+
+  const unsigned p_rank = bulk_data.parallel_rank();
+
+  stk::mesh::Part & skin_part = meta_data.declare_part("skin_part");
+
+  stk::mesh::Part & shell_part = top_data.declare_part<shards::ShellQuadrilateral<4> >("shell_part");
+
+  meta_data.commit();
+
+  bulk_data.modification_begin();
+
+  if ( p_rank == 0 ) {
+
+    stk::mesh::EntityId elem_node[4] ;
+
+    // Query nodes from this simple grid fixture via the (i,j,k) indices.
+    elem_node[0] = 1;
+    elem_node[1] = 2;
+    elem_node[2] = 3;
+    elem_node[3] = 4;
+
+    stk::mesh::EntityId elem_id = 1;
+
+    stk::mesh::declare_element( bulk_data, shell_part, elem_id, elem_node);
+
+  }
+  bulk_data.modification_end();
+
+
+  stk::mesh::skin_mesh( bulk_data, top_data.element_rank, &skin_part);
+
+  {
+    const unsigned mesh_rank = top_data.element_rank;
+    const stk::mesh::MetaData & meta = bulk_data.mesh_meta_data();
+    stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
+    const std::vector<stk::mesh::Bucket*>& buckets = bulk_data.buckets( mesh_rank -1);
+    int num_skin_entities = stk::mesh::count_selected_entities( select_skin, buckets);
+
+
+    stk::all_reduce(MPI_COMM_WORLD, stk::ReduceSum<1>(&num_skin_entities));
+
+    // Verify that the correct 6 sides are present.
+
+    STKUNIT_ASSERT_EQUAL( num_skin_entities, 2 );
+  }
+}
+
 } //end namespace
 
 void UnitTestStkMeshSkinning::test_skinning()
@@ -64,12 +119,11 @@ void UnitTestStkMeshSkinning::test_skinning()
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& meta_data = grid_mesh.meta_data();
+  stk::mesh::TopologicalMetaData& top_data = grid_mesh.top_data();
 
   // Create a part for the skin and the shells
   stk::mesh::Part & skin_part = meta_data.declare_part("skin_part");
-  stk::mesh::Part & shell_part = meta_data.declare_part("shell_part",
-                                                        stk::mesh::Face);
-  stk::mesh::set_cell_topology<shards::ShellLine<2> >(shell_part);
+  stk::mesh::Part & shell_part = top_data.declare_part<shards::ShellLine<2> >("shell_part");
   meta_data.commit();
 
   // Begin modification cycle
@@ -85,15 +139,15 @@ void UnitTestStkMeshSkinning::test_skinning()
   const unsigned num_shell_1_faces = 4;
   const unsigned num_shell_2_faces = 2;
   const unsigned num_shell_faces = num_shell_1_faces + num_shell_2_faces;
-  const unsigned num_entities = count[stk::mesh::Node] +
-                                count[stk::mesh::Face];
+  const unsigned num_entities = count[top_data.node_rank] +
+                                count[top_data.element_rank];
 
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
 
   std::vector<stk::mesh::Entity*> shell_faces;
   for (unsigned i = 1; i <= num_shell_faces; ++i) {
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(stk::mesh::Face,
+    stk::mesh::Entity& new_shell = bulk_data.declare_entity(top_data.element_rank,
                                                             num_entities + i,
                                                             shell_parts);
     shell_faces.push_back(&new_shell);
@@ -106,9 +160,9 @@ void UnitTestStkMeshSkinning::test_skinning()
   for (unsigned i = 0; i < num_shell_1_faces; ++i) {
     stk::mesh::Entity& shell = *(shell_faces[i]);
     stk::mesh::Entity& node1 =
-      *(bulk_data.get_entity(stk::mesh::Node, node_list_1[i]));
+      *(bulk_data.get_entity(top_data.node_rank, node_list_1[i]));
     stk::mesh::Entity& node2 =
-      *(bulk_data.get_entity(stk::mesh::Node, node_list_1[i+1]));
+      *(bulk_data.get_entity(top_data.node_rank, node_list_1[i+1]));
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -118,9 +172,9 @@ void UnitTestStkMeshSkinning::test_skinning()
   for (unsigned i = 0; i < num_shell_2_faces; ++i) {
     stk::mesh::Entity& shell = *(shell_faces[i + num_shell_1_faces]);
     stk::mesh::Entity& node1 =
-      *(bulk_data.get_entity(stk::mesh::Node, node_list_2[i]));
+      *(bulk_data.get_entity(top_data.node_rank, node_list_2[i]));
     stk::mesh::Entity& node2 =
-      *(bulk_data.get_entity(stk::mesh::Node, node_list_2[i+1]));
+      *(bulk_data.get_entity(top_data.node_rank, node_list_2[i+1]));
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -128,12 +182,12 @@ void UnitTestStkMeshSkinning::test_skinning()
   grid_mesh.bulk_data().modification_end();
 
   // skin the boundary
-  stk::mesh::skin_mesh(bulk_data, stk::mesh::Face, &skin_part);
+  stk::mesh::skin_mesh(bulk_data, top_data.element_rank, &skin_part);
 
   // Grab the skin entities
   stk::mesh::Selector skin_selector(skin_part);
   const std::vector<stk::mesh::Bucket*>& edge_buckets =
-    bulk_data.buckets(stk::mesh::Edge);
+    bulk_data.buckets(top_data.edge_rank);
   std::vector<stk::mesh::Entity*> skin_entities;
   stk::mesh::get_selected_entities(skin_selector, edge_buckets, skin_entities);
 
@@ -182,7 +236,7 @@ void UnitTestStkMeshSkinning::test_skinning()
   for (std::vector<stk::mesh::Entity*>::const_iterator
        itr = skin_entities.begin(); itr != skin_entities.end(); ++itr) {
     stk::mesh::PairIterRelation upward_relation_itr =
-      (*itr)->relations(stk::mesh::Face);
+      (*itr)->relations(top_data.element_rank);
     bool has_multiple = upward_relation_itr.size() > 1;
     std::set<unsigned> sharing_elements;
     for ( ; !upward_relation_itr.empty() ; ++upward_relation_itr ) {

@@ -21,7 +21,7 @@
 namespace Kokkos {
 
   template <class T> inline
-  Teuchos::ArrayRCP<T> 
+  ArrayRCP<T> 
   CUDANodeMemoryModel::allocBuffer(size_t size) {
     // FINISH: if possible, check that there is room; else, boot someone
     T * devptr = NULL;
@@ -32,15 +32,15 @@ namespace Kokkos {
       allocSize_ += sizeInBytes;
 #endif
     }
-    CUDANodeDeallocator dealloc(sizeInBytes,Teuchos::rcpFromRef(*this));
+    CUDANodeDeallocator dealloc(sizeInBytes,rcpFromRef(*this));
     const bool OwnsMem = true;
-    Teuchos::ArrayRCP<T> buff = Teuchos::arcp<T>(devptr,0,size,dealloc,OwnsMem);
+    ArrayRCP<T> buff = arcp<T>(devptr,0,size,dealloc,OwnsMem);
     MARK_COMPUTE_BUFFER(buff);
     return buff;
   }
 
   template <class T> inline
-  void CUDANodeMemoryModel::copyFromBuffer(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest) {
+  void CUDANodeMemoryModel::copyFromBuffer(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayView<T> &hostDest) {
     CHECK_COMPUTE_BUFFER(buffSrc);
     TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size || (size_t)hostDest.size() < size, std::runtime_error,
         "CUDANode::copyFromBuffer: invalid copy.");
@@ -55,7 +55,7 @@ namespace Kokkos {
   }
 
   template <class T> inline
-  void CUDANodeMemoryModel::copyToBuffer(size_t size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest) {
+  void CUDANodeMemoryModel::copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest) {
     CHECK_COMPUTE_BUFFER(buffDest);
     TEST_FOR_EXCEPTION( hostSrc.size() < size, std::runtime_error, "CUDANode::copyFromBuffer: invalid copy.");
     TEST_FOR_EXCEPTION( buffDest.size() < size, std::runtime_error, "CUDANode::copyFromBuffer: invalid copy.");
@@ -70,7 +70,7 @@ namespace Kokkos {
   }
 
   template <class T> inline
-  void CUDANodeMemoryModel::copyBuffers(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayRCP<T> &buffDest) {
+  void CUDANodeMemoryModel::copyBuffers(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayRCP<T> &buffDest) {
     CHECK_COMPUTE_BUFFER(buffSrc);
     CHECK_COMPUTE_BUFFER(buffDest);
     TEST_FOR_EXCEPTION( buffSrc.size() < size || buffDest.size() < size, std::runtime_error,
@@ -86,12 +86,12 @@ namespace Kokkos {
   }
 
   template <class T> inline
-  Teuchos::ArrayRCP<const T> 
-  CUDANodeMemoryModel::viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff) {
+  ArrayRCP<const T> 
+  CUDANodeMemoryModel::viewBuffer(size_t size, ArrayRCP<const T> buff) {
     CHECK_COMPUTE_BUFFER(buff);
-    Teuchos::ArrayRCP<T> hostBuff;
+    ArrayRCP<T> hostBuff;
     if (size != 0) {
-      hostBuff = Teuchos::arcp<T>(size);
+      hostBuff = arcp<T>(size);
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
       std::cerr << "viewBuffer() -> ";
 #endif
@@ -101,13 +101,13 @@ namespace Kokkos {
   }
 
   template <class T> inline
-  Teuchos::ArrayRCP<T> 
-  CUDANodeMemoryModel::viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
+  ArrayRCP<T> 
+  CUDANodeMemoryModel::viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff) {
     CHECK_COMPUTE_BUFFER(buff);
     // create a copy-back deallocator that copies back to "buff"
-    CUDANodeCopyBackDeallocator<T> dealloc(buff.persistingView(0,size), Teuchos::rcpFromRef(*this));
+    CUDANodeCopyBackDeallocator<T> dealloc(buff.persistingView(0,size), rcpFromRef(*this));
     // it allocates a host buffer with the appropriate deallocator embedded
-    Teuchos::ArrayRCP<T> hostBuff = dealloc.alloc();
+    ArrayRCP<T> hostBuff = dealloc.alloc();
     if (rw == ReadWrite) {
 #ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
       std::cerr << "viewBufferNonConst(ReadWrite) -> ";
@@ -123,7 +123,7 @@ namespace Kokkos {
     return hostBuff;
   }
 
-  inline void CUDANodeMemoryModel::readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers) {
+  inline void CUDANodeMemoryModel::readyBuffers(ArrayView<ArrayRCP<const char> > buffers, ArrayView<ArrayRCP<char> > ncBuffers) {
 #ifdef HAVE_KOKKOS_DEBUG
     for (size_t i=0; i < buffers.size(); ++i) {
       CHECK_COMPUTE_BUFFER(buffers[i]);

@@ -4,15 +4,16 @@
 \section kokkos_intro Introduction
 
 %Kokkos provides two main capabilities for Trilinos. The first is an abstract
-programming interface (API) for handling memory and specify work for
-shared-memory parallel nodes (the %Kokkos Node API). The second is a collection
-of local (non-distributed) distributed linear algebra classes and the kernels
-needed to realized their functionality in parallel (the %Kokkos Linear Algebra kernels library).
+programming interface (API) for handling memory and specifying work for
+shared-memory parallel nodes (the \ref kokkos_node_api "Kokkos Node API"). The second is a collection
+of local (i.e., not distributed) distributed linear algebra classes and the kernels
+needed to realized their functionality in parallel (the %Kokkos Linear Algebra kernels library). In addition to providing 
+basic data structures and kernels, %Kokkos also specifies APIs for extension via user-provided kernels (see, e.g., the \ref kokkos_crs_ops "Kokkos Compressed-Row Sparse API").
 
-%Kokkos is typically not used in applications, but instead as a significant
+%Kokkos is typically not used directly in applications, but instead as a significant
 component in higher-level Trilinos packages, such as Tpetra. The functionality
 contained here-in has been put in the %Kokkos package in order to facilitate
-code re-use and ease experimentation for kernel researchers.
+code re-use between Trilinos packages and to ease experimentation for kernel researchers.
 
 \section kokkos_startup Overview of Kokkos.
 
@@ -20,47 +21,30 @@ code re-use and ease experimentation for kernel researchers.
 
 %Kokkos contains a number of classes.  They can be categorized as follows:
 
-<ul> <li> %Kokkos Node API
-
-  <ul><li> Nodes based on the Kokkos::CUDANodeMemoryModel: GPU nodes using the <a href="http://www.nvidia.com/object/cuda_home.html">NVIDIA/CUDA</a> graphic processing units (GPUs)
-     <ul><li>Kokkos::ThrustGPUNode provides parallel compute capability for  via the <a href="http://code.google.com/p/thrust/">Thrust library</a>.
-     </ul>
-  <li> Nodes based on the Kokkos::StandardNodeMemoryModel: Host-bound/CPU nodes using standard memory allocation.
-     <ul><li>Kokkos::SerialNode: provides a simple node, where all kernels are executed in serial.
-     <li>Kokkos::TBBNode: provides support for multi-core CPUs using <a href="http://www.threadingbuildingblocks.org/">Intel TBB</a> (requires third-party library TBB).
-     <li>Kokkos::TPINode: provides support for multi-core CPUs using Pthreads, via the ThreadPool package (requires ThreadPool and Pthreads TPL).
-     </ul>
-  </ul>
-
-<li> %Kokkos Linear Algebra Kernels Library
-
-  <ul><li> Data structures:
-  
-    <ol><li> Kokkos::CrsMatrix, Kokkos::CrsGraph class:  Classes providing the
+- %Kokkos Node API
+  - Nodes based on the Kokkos::CUDANodeMemoryModel: GPU nodes using the <a href="http://www.nvidia.com/object/cuda_home.html">NVIDIA/CUDA</a> graphic processing units (GPUs)
+     - Kokkos::ThrustGPUNode provides parallel compute capability for  via the <a href="http://code.google.com/p/thrust/">Thrust library</a>.
+  - Nodes based on the Kokkos::StandardNodeMemoryModel: Host-bound/CPU nodes using standard memory allocation.
+     - Kokkos::SerialNode: provides a simple node, where all kernels are executed in serial.
+     - Kokkos::TBBNode: provides support for multi-core CPUs using <a href="http://www.threadingbuildingblocks.org/">Intel TBB</a> (requires third-party library TBB).
+     - Kokkos::TPINode: provides support for multi-core CPUs using Pthreads, via the ThreadPool package (requires ThreadPool package and Pthreads TPL).
+- %Kokkos Linear Algebra Kernels Library
+  - Data structures:
+    - Kokkos::CrsMatrix, Kokkos::CrsGraph classes:  Classes providing the
     storage structure for a row-oriented sparse matrix.
-  
-    <li> Kokkos::MultiVector class: A class providing the structure of a dense
+    - Kokkos::MultiVector class: A class providing the structure of a dense
     multivector. Here, as throughout most of Trilinos, a "multivector" refers to a
-    collection of vectors, typically stored in a contiguous allocation of memory.
-  
-    </ol>
-  
-  <li> Arithmetic interfaces:
-  
-    <ol><li> Kokkos::DefaultArithmetic: Provides basic functionality for 
+    collection of vectors.
+  - Arithmetic interfaces:
+    - Kokkos::DefaultArithmetic: Provides basic functionality for 
     perfoming arithmetic of multivectors.
-  
-    <li> Kokkos::DefaultSparseMultiply, Kokkos::DefaultSparseSolve: Provides basic functionality for 
+    - Kokkos::DefaultHostSparseOps, Kokkos::DefaultDeviceSparseOps: Provides basic functionality for 
     computing multiplication and solve of a sparse matrix against a multivector.
   
-    </ol>
-  
-  </ul>
+\subsection kokkos_trilinos Building Kokkos and using it in Trilinos
 
-</ul>
+Kokkos can be used as a stand-alone package. However, its primary use case is via the functionality provided to other packages, such as Tpetra, Tifpack and Isorropia.
 
-\subsection tpetra_trilinos Trilinos and Kokkos
-
-Kokkos can be used as a stand-alone package.  However, it also provides functionality for Tpetra and Tifpack.
+See \ref kokkos_cuda_support "Kokkos CUDA Support" for instructions on building with support for NVIDIA CUDA GPUs.
 
 */

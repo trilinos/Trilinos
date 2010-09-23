@@ -73,7 +73,6 @@ PACKAGE_ARCH_EXCLUDE_FILES(
   src/Ifpack_OverlapFactor.*
   src/Ifpack_OverlapSolveObject..*
   src/Ifpack_PerturbedMatrix.h
-  src/Ifpack_SPARSKIT.cpp
   src/az_ifpack.*
   src/ifp_Block
   src/ifp_DenseMat.*

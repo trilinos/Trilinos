@@ -29,7 +29,7 @@
 #ifndef __TSQR_Test_verifyTimerConcept_hpp
 #define __TSQR_Test_verifyTimerConcept_hpp
 
-#include <string>
+#include <stdexcept>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +45,7 @@
 /// \li Construction using a const std::string& or something 
 ///     convertible to that (to name the timer).  Semantically,
 ///     the constructor should not start the timer.
-/// \li start() (returns nothing, starts the timer)
+/// \li start(bool reset=false) (returns nothing, starts the timer)
 /// \li stop() (returns a double-precision floating-point value,
 ///     which is the number of seconds elapsed since calling start())
 ///
@@ -68,9 +68,32 @@ namespace TSQR {
     verifyTimerConcept ()
     {
       TimerType timer (std::string("NameOfTimer"));
+
+      std::string timerName = timer.name();
+      if (timerName != "NameOfTimer")
+	throw std::logic_error ("TimerType does not correctly store the timer name");
+
+      // Test default argument of start()
+      if (timer.isRunning())
+	throw std::logic_error ("TimerType does not correctly initialize isRunning");
       timer.start ();
-      double result = timer.stop();
-      return result;
+      if (! timer.isRunning())
+	throw std::logic_error ("TimerType does not correctly set isRunning");
+      double result1 = timer.stop();
+      if (timer.isRunning())
+	throw std::logic_error ("TimerType does not correctly reset isRunning");
+
+      // Test nondefault argument of start()
+      if (timer.isRunning())
+	throw std::logic_error ("TimerType does not correctly initialize isRunning");
+      timer.start (true);
+      if (! timer.isRunning())
+	throw std::logic_error ("TimerType does not correctly set isRunning");
+      double result2 = timer.stop();
+      if (timer.isRunning())
+	throw std::logic_error ("TimerType does not correctly reset isRunning");
+
+      return result1 + result2;
     }
   } // namespace Test
 } // namespace TSQR

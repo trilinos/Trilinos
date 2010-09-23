@@ -150,6 +150,7 @@
   </ParameterList>
   <ParameterList name="Analysis">
     <Parameter name="Analysis Package" type="string" value="OptiPack"/>
+    <Parameter name="Output Final Parameters" type="bool" value="true"/>
     <ParameterList name="Dakota">
       <Parameter name="Input File" type="string" value="dak.in"/>
       <Parameter name="Output File" type="string" value="dak.out"/>

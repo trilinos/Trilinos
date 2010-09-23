@@ -78,9 +78,6 @@
 #include "mrtr_utils.H"
 #include "mrtr_ml_preconditioner.H"
 
-using namespace std;
-using namespace Teuchos;
-
 /*!
 \brief MOERTEL: namespace of the Moertel package
 
@@ -160,17 +157,17 @@ public:
   /*!
   \brief Set linear system
   */
-  void SetSystem(RefCountPtr<Epetra_CrsMatrix> matrix,
-                 RefCountPtr<Epetra_Vector> x,
-                 RefCountPtr<Epetra_Vector> b);
+  void SetSystem(Teuchos::RCP<Epetra_CrsMatrix> matrix,
+                 Teuchos::RCP<Epetra_Vector> x,
+                 Teuchos::RCP<Epetra_Vector> b);
 
   /*!
   \brief Solve system
   */
-  bool Solve(RefCountPtr<Teuchos::ParameterList> params,
-             RefCountPtr<Epetra_CrsMatrix> matrix,
-             RefCountPtr<Epetra_Vector> x,
-             RefCountPtr<Epetra_Vector> b,
+  bool Solve(Teuchos::RCP<Teuchos::ParameterList> params,
+             Teuchos::RCP<Epetra_CrsMatrix> matrix,
+             Teuchos::RCP<Epetra_Vector> x,
+             Teuchos::RCP<Epetra_Vector> b,
              MOERTEL::Manager& manager);
   
   //@}
@@ -178,8 +175,8 @@ public:
 private:  
 
   bool Solve();
-  bool Solve_Amesos(ParameterList& amesosparams);
-  bool Solve_MLAztec(ParameterList& mlparams, ParameterList& aztecparams);
+  bool Solve_Amesos(Teuchos::ParameterList& amesosparams);
+  bool Solve_MLAztec(Teuchos::ParameterList& mlparams, Teuchos::ParameterList& aztecparams);
 
   // don't want = operator and copy-ctor
   Solver operator = (const Solver& old);
@@ -192,23 +189,23 @@ private:
   
   Teuchos::ParameterList*                           params_;        // solution parameters
 
-  RefCountPtr<Epetra_CrsMatrix>                     matrix_;        // linear system
+  Teuchos::RCP<Epetra_CrsMatrix>                     matrix_;        // linear system
   bool                                              matrixisnew_;   // flag indicating whether system has been solved before
-  RefCountPtr<Epetra_Vector>                        x_;             // solution vector
-  RefCountPtr<Epetra_Vector>                        b_;             // rhs vector
+  Teuchos::RCP<Epetra_Vector>                        x_;             // solution vector
+  Teuchos::RCP<Epetra_Vector>                        b_;             // rhs vector
   
-  RefCountPtr<Epetra_LinearProblem>                 linearproblem_; // the linear system
-  RefCountPtr<Amesos_BaseSolver>                    amesossolver_;  // the amesos solver
-  RefCountPtr<MOERTEL::Mortar_ML_Preconditioner>    mlprec_;        // the ml preconditioner
-  //RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  mlprec_;        // the ml preconditioner
-  RefCountPtr<AztecOO>                              aztecsolver_;   // the aztec solver
+  Teuchos::RCP<Epetra_LinearProblem>                 linearproblem_; // the linear system
+  Teuchos::RCP<Amesos_BaseSolver>                    amesossolver_;  // the amesos solver
+  Teuchos::RCP<MOERTEL::Mortar_ML_Preconditioner>    mlprec_;        // the ml preconditioner
+  //Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner>  mlprec_;        // the ml preconditioner
+  Teuchos::RCP<AztecOO>                              aztecsolver_;   // the aztec solver
 
-  RefCountPtr<Epetra_CrsMatrix>                     origmatrix_;
-  RefCountPtr<Epetra_CrsMatrix>                     WT_;
-  RefCountPtr<Epetra_CrsMatrix>                     B_;
-  RefCountPtr<Epetra_CrsMatrix>                     I_;  
-  RefCountPtr<Epetra_Map>                           Annmap_;
-  RefCountPtr<map<int,int> >                        lm_to_dof_;
+  Teuchos::RCP<Epetra_CrsMatrix>                     origmatrix_;
+  Teuchos::RCP<Epetra_CrsMatrix>                     WT_;
+  Teuchos::RCP<Epetra_CrsMatrix>                     B_;
+  Teuchos::RCP<Epetra_CrsMatrix>                     I_;  
+  Teuchos::RCP<Epetra_Map>                           Annmap_;
+  Teuchos::RCP<std::map<int,int> >                        lm_to_dof_;
 };
 
 } // namespace MOERTEL

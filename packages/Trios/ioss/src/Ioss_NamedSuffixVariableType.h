@@ -16,8 +16,8 @@ namespace Ioss {
 	return suffixList[which-1];
       }
     
-    NamedSuffixVariableType(const std::string& name, int number_components, bool delete_me)
-      : Ioss::VariableType(name, number_components, delete_me)
+    NamedSuffixVariableType(const std::string& my_name, int number_components, bool delete_me)
+      : Ioss::VariableType(my_name, number_components, delete_me)
       {
 	suffixList.resize(number_components);
 	suffixList.assign(number_components, "UNSET");

@@ -26,6 +26,7 @@ INCLUDE(PackageAddTestHelpers)
 #     [STANDARD_PASS_OUTPUT
 #       | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
 #     [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
+#     [WILL_FAIL]
 #     )
 #  
 # The arguments to the function are as followes:
@@ -188,6 +189,10 @@ INCLUDE(PackageAddTestHelpers)
 #     expressions <regex1>, <regex2> etc. match the output.  Otherwise, the
 #     test will pass.
 #
+#   WILL_FAIL
+#
+#     If passed in, then the pass/fail criteria will be inverted.
+#
 
 FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
 
@@ -217,7 +222,7 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
      #lists
      "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
      #options
-     "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;ADD_DIR_TO_NAME;CREATE_WORKING_DIR"
+     "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;WILL_FAIL;ADD_DIR_TO_NAME;CREATE_WORKING_DIR"
      ${ARGN}
      )
 

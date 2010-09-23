@@ -12,16 +12,23 @@ namespace Teuchos {
   class ParameterList;
   template <typename T> class ArrayRCP;
   template <typename T> class ArrayView;
+  template <typename T> class RCP;
   template <typename CharT, typename Traits> class basic_FancyOStream;
   typedef basic_FancyOStream<char, std::char_traits<char> > FancyOStream;
 }
-
 namespace Kokkos {
 
-  /*! A default implementation of the Node memory architecture for Node with a single memory space. */
+  using Teuchos::ArrayRCP;
+  using Teuchos::ArrayView;
+  using Teuchos::RCP;
+
+  /** \brief A default implementation of the Node memory architecture for Node with a distinct device memory space allocated by the CUDA runtime.
+      \ingroup kokkos_node_api
+   */
   class CUDANodeMemoryModel {
     public:
-      typedef unsigned long int size_t;
+      //! Indicates that parallel buffers allocated by this node are not available for use on the host thread.
+      static const bool isHostNode = false;
 
       //@{ Default Constructor 
 
@@ -45,7 +52,7 @@ namespace Kokkos {
                 and is guaranteed to have size large enough to reference \c size number of entries of type \c T.
       */
       template <class T> inline
-      Teuchos::ArrayRCP<T> allocBuffer(size_t size);
+      ArrayRCP<T> allocBuffer(size_t size);
 
       /*! \brief Copy data to host memory from a parallel buffer.
 
@@ -59,7 +66,7 @@ namespace Kokkos {
           \post On return, entries in the range <tt>[0 , size)</tt> of \c buffSrc have been copied to \c hostDest entries in the range <tt>[0 , size)</tt>.
       */
       template <class T> inline
-      void copyFromBuffer(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest);
+      void copyFromBuffer(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayView<T> &hostDest);
 
       /*! \brief Copy data to host memory from a parallel buffer.
 
@@ -73,7 +80,7 @@ namespace Kokkos {
           \post On return, entries in the range <tt>[0 , size)</tt> of \c hostSrc are allowed to be written to. The data is guaranteed to be present in \c buffDest before it is used in a parallel computation.
       */
       template <class T> inline
-      void copyToBuffer(size_t size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest);
+      void copyToBuffer(size_t size, const ArrayView<const T> &hostSrc, const ArrayRCP<T> &buffDest);
 
       /*! \brief Copy data between buffers.
           
@@ -84,21 +91,21 @@ namespace Kokkos {
         \post The data is guaranteed to have been copied before any other usage of buffSrc or buffDest occurs.
       */
       template <class T> inline
-      void copyBuffers(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayRCP<T> &buffDest);
+      void copyBuffers(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayRCP<T> &buffDest);
 
       template <class T> inline
-      Teuchos::ArrayRCP<const T> viewBuffer(size_t size, Teuchos::ArrayRCP<const T> buff);
+      ArrayRCP<const T> viewBuffer(size_t size, ArrayRCP<const T> buff);
 
       template <class T> inline
-      Teuchos::ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff);
+      ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff);
 
-      inline void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers);
+      inline void readyBuffers(ArrayView<ArrayRCP<const char> > buffers, ArrayView<ArrayRCP<char> > ncBuffers);
 
       //@}
 
       //@{ Book-keeping information
 
-      void printStatistics(const Teuchos::RCP< Teuchos::FancyOStream > &os) const;
+      void printStatistics(const RCP< Teuchos::FancyOStream > &os) const;
 
       //@}
 

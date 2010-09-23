@@ -149,24 +149,67 @@ ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
 IF(${PACKAGE_NAME}_ENABLE_TSQR)
+  #
+  # Check for TSQR configuration options.
+  #
 
+  # Whether to enable TSQR's complex arithmetic (std::complex<T>)
+  # support.
+  #
+  # Enabled by default (unless disabled explicitly at the command
+  # line) if Anasazi is built with complex arithmetic support.
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_Complex
     HAVE_TSQR_COMPLEX
     "For TSQR in Anasazi: enable complex arithmetic (std::complex<T>) support"
     "${${PACKAGE_NAME}_ENABLE_COMPLEX}" )
 
+  # Whether to enable TSQR's Fortran backend (TSQR::CombineFortran).
+  #
+  # Defaults to off, even if Trilinos is built with Fortran support.
+  # This is because TSQR's Fortran backend must support the Fortran
+  # 2003 language standard.
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_Fortran
     HAVE_TSQR_FORTRAN
     "For TSQR in Anasazi: enable the TSQR::CombineFortran backend.  Your Fortran compiler must support the Fortran 2003 standard in order for this to work."
     OFF )
 
+  # Whether to build TbbTsqr and related classes.
+  #
+  # Enabled by default (unless disabled explicitly at the command
+  # line) if Trilinos is built with the TBB (Intel's Threading
+  # Building Blocks) TPL (third-party library) enabled.
   ADD_OPTION_AND_DEFINE(
     TSQR_ENABLE_Intel_TBB
     HAVE_TSQR_INTEL_TBB
-    "For TSQR in Anasazi: enable Intel Threading Building Blocks support."
+    "For TSQR in Anasazi: enable Intel Threading Building Blocks support.  This is used for intranode parallelism in TSQR."
+    "${TPL_ENABLE_TBB}" )
+
+  # Whether to build TSQR with support for MPI_COMM_NETWORK and
+  # MPI_COMM_NODE.
+  #
+  # Defaults to off, since as of writing this comment (summer 2010),
+  # these features are not yet in the MPI standard and are being
+  # prototyped in the source tree of OpenMPI.
+  ADD_OPTION_AND_DEFINE(
+    TSQR_ENABLE_NEW_MPI_COMMUNICATORS
+    HAVE_TSQR_NEW_MPI_COMMUNICATORS
+    "For TSQR in Anasazi: enable support for MPI_COMM_NETWORK and MPI_COMM_NODE.  These are used to reduce network traffic in TSQR, which may improve performance if there are many MPI ranks per node."
     OFF )
+
+  #
+  # Configure TSQR, based on the configuration options.
+  #
+
+  ASSERT_DEFINED(TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+  if (TPL_ENABLE_MPI AND TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+    include (TsqrCheckMpiComm)
+    # Check whether MPI_COMM_NETWORK and / or MPI_COMM_NODE are
+    # defined in mpi.h.  If so, define HAVE_MPI_NETWORK
+    # resp. HAVE_MPI_NODE in Tsqr_Config.hpp.
+    TSQR_CHECK_MPI_COMM_SUBSETS ()
+  endif ()
 
   ASSERT_DEFINED(TSQR_ENABLE_Fortran)
   if (TSQR_ENABLE_Fortran)
@@ -215,6 +258,17 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     APPEND_SET(HEADERS 
       TSQR/Tsqr_CombineFortran.hpp
       ${CMAKE_CURRENT_BINARY_DIR}/Tsqr_FortranCInterface.hpp)
+  endif ()
+
+  ASSERT_DEFINED(TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+  if (TPL_ENABLE_MPI AND TSQR_ENABLE_NEW_MPI_COMMUNICATORS)
+    APPEND_SET(SOURCES
+      TSQR/Tsqr_MpiDatatype.cpp)
+    APPEND_SET(HEADERS
+      TSQR/Tsqr_MpiCommFactory.hpp
+      TSQR/Tsqr_MpiDatatype.hpp
+      TSQR/Tsqr_MpiMessenger.hpp
+      TSQR/Tsqr_TwoLevelDistTsqr.hpp)
   endif ()
 
   # Include headers and source files for Trilinos -> TSQR adaptors.
@@ -272,8 +326,11 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_SeqTest.hpp
     TSQR/Tsqr_SequentialCholeskyQR.hpp
     TSQR/Tsqr_SequentialTsqr.hpp
+    TSQR/Tsqr_StatTimeMonitor.hpp
     TSQR/Tsqr_TbbTest.hpp
     TSQR/Tsqr_TestSetup.hpp
+    TSQR/Tsqr_TimeStats.hpp
+    TSQR/Tsqr_TrivialTimer.hpp
     TSQR/Tsqr_TsqrTest.hpp
     TSQR/Tsqr_Util.hpp
     TSQR/Tsqr_verifyTimerConcept.hpp
@@ -285,13 +342,19 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_DLapack.cpp
     TSQR/Tsqr_SLapack.cpp
     TSQR/Tsqr_ZLapack.cpp
-    TSQR/Tsqr_SeqTest.cpp
     TSQR/Tsqr_CombineTest.cpp
+    TSQR/Tsqr_SeqTest.cpp
+    TSQR/Tsqr_StatTimeMonitor.cpp
+    TSQR/Tsqr_TimeStats.cpp
+    TSQR/Tsqr_TrivialTimer.cpp
     )
   APPEND_SET(HEADERS
     TSQR/TsqrFactory.hpp
     TSQR/TsqrFactory_SequentialTsqr.hpp
     )
+  # Epetra adaptors for TSQR aren't ready yet, which is why I've
+  # commented out the stuff below.
+
   #IF (Anasazi_ENABLE_Epetra)
   #  APPEND_SET(HEADERS
   #    TsqrAdaptor_Epetra_MultiVector.hpp

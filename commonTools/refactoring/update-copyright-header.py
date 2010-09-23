@@ -24,6 +24,30 @@ copyright header.  A copyright header is determined by looking for beginning
 @HEADER and ending @HEADER lines.  If no such comment blocks are found, then
 the given copyright header is inserted as the very first line in the file
 enclosed in '/*' and '*/' lines so as to work also for C files.
+
+To replace the copyright header for all of the source files for a complete
+package do:
+
+  $ cd packages/SOME_PACKAGE
+  $ find . -name "*pp" -exec \
+      ../../commonTools/refactoring/update-copyright-header.py  \
+        --copyright-header=$PWD/Copyright.txt --file={} \;
+
+For example, the file packages/SOME_PACKAGE/Copyright.txt should look like:
+
+  $ cat packages/teuchos/Copyright.txt
+    // @HEADER
+    // ***********************************************************************
+    // 
+    //                    Teuchos: Common Tools Package
+    //                 Copyright (2004) Sandia Corporation
+    //
+    // ...
+    // 
+    // ***********************************************************************
+    // @HEADER
+
+See packages/teuchos/Copyright.txt for an example.
 """
 
 from optparse import OptionParser

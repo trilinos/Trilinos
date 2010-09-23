@@ -43,18 +43,18 @@
 MOERTEL::Solver::Solver(Epetra_Comm& comm, int outlevel) :
 outlevel_(outlevel),
 comm_(comm),
-matrix_(null),
+matrix_(Teuchos::null),
 matrixisnew_(true),
-x_(null),
-b_(null),
-linearproblem_(null),
-amesossolver_(null),
-mlprec_(null),
-aztecsolver_(null),
-origmatrix_(null),
-WT_(null),
-B_(null),
-I_(null)
+x_(Teuchos::null),
+b_(Teuchos::null),
+linearproblem_(Teuchos::null),
+amesossolver_(Teuchos::null),
+mlprec_(Teuchos::null),
+aztecsolver_(Teuchos::null),
+origmatrix_(Teuchos::null),
+WT_(Teuchos::null),
+B_(Teuchos::null),
+I_(Teuchos::null)
 {
 }
 
@@ -68,9 +68,9 @@ MOERTEL::Solver::~Solver()
 /*----------------------------------------------------------------------*
  |  set a linear system (public)                             mwgee 12/05|
  *----------------------------------------------------------------------*/
-void MOERTEL::Solver::SetSystem(RefCountPtr<Epetra_CrsMatrix> matrix,
-                                RefCountPtr<Epetra_Vector> x,
-                                RefCountPtr<Epetra_Vector> b)
+void MOERTEL::Solver::SetSystem(Teuchos::RCP<Epetra_CrsMatrix> matrix,
+                                Teuchos::RCP<Epetra_Vector> x,
+                                Teuchos::RCP<Epetra_Vector> b)
 {
   matrix_ = matrix;
   x_      = x;
@@ -81,10 +81,10 @@ void MOERTEL::Solver::SetSystem(RefCountPtr<Epetra_CrsMatrix> matrix,
 /*----------------------------------------------------------------------*
  |  solve a linear system (public)                           mwgee 12/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Solver::Solve(RefCountPtr<Teuchos::ParameterList> params,
-                            RefCountPtr<Epetra_CrsMatrix> matrix,
-                            RefCountPtr<Epetra_Vector> x,
-                            RefCountPtr<Epetra_Vector> b,
+bool MOERTEL::Solver::Solve(Teuchos::RCP<Teuchos::ParameterList> params,
+                            Teuchos::RCP<Epetra_CrsMatrix> matrix,
+                            Teuchos::RCP<Epetra_Vector> x,
+                            Teuchos::RCP<Epetra_Vector> b,
                             MOERTEL::Manager& manager)
 {
   SetParameters(params.get());
@@ -107,7 +107,7 @@ bool MOERTEL::Solver::Solve()
   
   //---------------------------------------------------------------------------
   // check the linear system  
-  if (x_==null || b_==null || matrix_==null)
+  if (x_==Teuchos::null || b_==Teuchos::null || matrix_==Teuchos::null)
   {
     cout << "***ERR*** MOERTEL::Solver::Solve:\n"
          << "***ERR*** matrix and/or rhs and/or solution vector are Teuchos::null\n"
@@ -127,8 +127,8 @@ bool MOERTEL::Solver::Solve()
 
   //---------------------------------------------------------------------------
   // (re)create a linear problem
-  if (linearproblem_==null)
-    linearproblem_ = rcp(new Epetra_LinearProblem());
+  if (linearproblem_==Teuchos::null)
+    linearproblem_ = Teuchos::rcp(new Epetra_LinearProblem());
 
   linearproblem_->SetLHS(x_.get());
   linearproblem_->SetRHS(b_.get());
@@ -149,7 +149,7 @@ bool MOERTEL::Solver::Solve()
   // use Amesos
   if (solver=="Amesos" || solver=="amesos" || solver=="AMESOS")
   {
-    ParameterList& amesosparams = params_->sublist("Amesos");
+	Teuchos::ParameterList& amesosparams = params_->sublist("Amesos");
     ok = Solve_Amesos(amesosparams);
     if (!ok)
     {
@@ -175,8 +175,8 @@ bool MOERTEL::Solver::Solve()
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
-    ParameterList& mlparams    = params_->sublist("ML");
-    ParameterList& aztecparams = params_->sublist("Aztec");
+	Teuchos::ParameterList& mlparams    = params_->sublist("ML");
+	Teuchos::ParameterList& aztecparams = params_->sublist("Aztec");
     ok = Solve_MLAztec(mlparams,aztecparams);
     if (!ok)
     {
@@ -211,7 +211,7 @@ bool MOERTEL::Solver::Solve()
  |  solve a linear system (private)                          mwgee 12/05|
  |  using Amesos                                                        |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Solver::Solve_Amesos(ParameterList& amesosparams)
+bool MOERTEL::Solver::Solve_Amesos(Teuchos::ParameterList& amesosparams)
 {
   int ok = 0;
 
@@ -229,9 +229,9 @@ bool MOERTEL::Solver::Solve_Amesos(ParameterList& amesosparams)
   
   //---------------------------------------------------------------------------
   // new amesos solver
-  if (matrixisnew_ || amesossolver_==null)  
+  if (matrixisnew_ || amesossolver_==Teuchos::null)  
   {
-    amesossolver_ = null;
+    amesossolver_ = Teuchos::null;
     Amesos Factory;
     if (!Factory.Query(solver))
     {
@@ -240,7 +240,7 @@ bool MOERTEL::Solver::Solve_Amesos(ParameterList& amesosparams)
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
-    amesossolver_ = rcp(Factory.Create(solver,*linearproblem_));
+    amesossolver_ = Teuchos::rcp(Factory.Create(solver,*linearproblem_));
     if (amesossolver_.get()==0)
     {
       cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
@@ -276,8 +276,8 @@ bool MOERTEL::Solver::Solve_Amesos(ParameterList& amesosparams)
  |  solve a linear system (private)                          mwgee 01/06|
  |  using ML and AztecOO                                                |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams, 
-                                    ParameterList& aztecparams)
+bool MOERTEL::Solver::Solve_MLAztec(Teuchos::ParameterList& mlparams, 
+                                    Teuchos::ParameterList& aztecparams)
 {
   
   // create ML preconditioner if aztec parameter indicates user preconditioner
@@ -304,25 +304,25 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   b_->Update(-1.0,xtmp2,1.0);
   
   if (preconditioner=="AZ_user_precond")
-    if (mlprec_==null || matrixisnew_);
+    if (mlprec_==Teuchos::null || matrixisnew_);
     {
 #if 1
-      mlprec_ = rcp(new MOERTEL::Mortar_ML_Preconditioner(matrix_,
+      mlprec_ = Teuchos::rcp(new MOERTEL::Mortar_ML_Preconditioner(matrix_,
                                                           origmatrix_,
                                                           WT_,B_,
                                                           Annmap_,
                                                           mlparams));
 #else // change mlprec_ in mrtr_solver.H as well to test black box ML
-      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams,true));
+      mlprec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams,true));
 #endif
     }
     
   // create the Aztec solver
-  aztecsolver_ = rcp(new AztecOO());  
+  aztecsolver_ = Teuchos::rcp(new AztecOO());  
   aztecsolver_->SetAztecDefaults();
   aztecsolver_->SetProblem(*linearproblem_);
   aztecsolver_->SetParameters(aztecparams,true);
-  if (mlprec_ != null)
+  if (mlprec_ != Teuchos::null)
     aztecsolver_->SetPrecOperator(mlprec_.get());
   
   // solve it

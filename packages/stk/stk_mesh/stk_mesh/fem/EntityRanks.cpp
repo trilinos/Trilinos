@@ -12,6 +12,7 @@
 namespace stk {
 namespace mesh {
 
+// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
 const std::vector<std::string> & fem_entity_rank_names()
 {
   static std::vector<std::string> names ;

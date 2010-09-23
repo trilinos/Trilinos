@@ -36,6 +36,7 @@ APPEND_SET(HEADERS
   mrtr_point.H
   mrtr_functions.H
   mrtr_integrator.H
+  mrtr_lm_selector.H
   mrtr_projector.H
   mrtr_interface.H
   mrtr_segment_bilinearquad.H

@@ -50,8 +50,6 @@
 
 #include "mrtr_node.H"
 
-using namespace std;
-
 // ----------   User Defined Includes   ----------
 
 /*!
@@ -151,7 +149,7 @@ public:
   return NULL
   
   */
-  inline const double* X() { if (node_ != null) return node_->X(); else return NULL; }
+  inline const double* X() { if (node_ != Teuchos::null) return node_->X(); else return NULL; }
 
   /*!
   \brief Return view of Node
@@ -160,7 +158,7 @@ public:
   If it does not hold a Node, it will return Teuchos::null
   
   */
-  inline RefCountPtr<MOERTEL::Node> Node() { return node_; }
+  inline Teuchos::RCP<MOERTEL::Node> Node() { return node_; }
   
   /*!
   \brief Set segment local coordinates of this point (2D) in a segment
@@ -174,7 +172,7 @@ public:
   The Point takes ownership of the Node and will destroy it 
   
   */
-  bool SetNode(MOERTEL::Node* node) { node_ = rcp(node); return true; }
+  bool SetNode(MOERTEL::Node* node) { node_ = Teuchos::rcp(node); return true; }
 
   /*!
   \brief Store finite element function values at the Point 's coordinate \ref Xi()
@@ -195,7 +193,7 @@ public:
   Returns a view of the function values that were stored in this Point using \ref StoreFunctionValues
   
   */
-  vector<double>* FunctionValues() { return vals_; }
+  std::vector<double>* FunctionValues() { return vals_; }
 
   //@}
 
@@ -212,8 +210,8 @@ private:
   int                      id_;      // id of this point
   int                      outputlevel_; 
   double                   xi_[2];   // local coords in some slave elements coord system
-  RefCountPtr<MOERTEL::Node>  node_;    // a node at this point (contains real world coords)
-  vector<double>           vals_[3]; // [0] values of shape function 0 from sseg
+  Teuchos::RCP<MOERTEL::Node>  node_;    // a node at this point (contains real world coords)
+  std::vector<double>           vals_[3]; // [0] values of shape function 0 from sseg
                                      // [1] values of shape function 1 from sseg
                                      // [2] values of shape function 0 from mseg
 }; // class Point
@@ -222,7 +220,7 @@ private:
 } // namespace MOERTEL
 
 // << operator
-std::ostream& operator << (ostream& os, const MOERTEL::Point& point);
+std::ostream& operator << (std::ostream& os, const MOERTEL::Point& point);
 
 
 #endif // MOERTEL_POINT_H

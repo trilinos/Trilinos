@@ -367,7 +367,7 @@ public:
     // mpc_method          = 1;
     rdCLOPParams();
   }
-  void rdCLOPParams();
+  void rdCLOPParams() {};
   void Echo(int flag );
 
 }; // end of CLOPPParams definition

@@ -31,6 +31,7 @@
 
 #include <Tsqr_nodeTestProblem.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
+#include <Tsqr_Random_NormalGenerator.hpp>
 
 #include <Tsqr_Blas.hpp>
 #include <Tsqr_Lapack.hpp>
@@ -39,6 +40,8 @@
 #include <Tsqr_Util.hpp>
 #include <Tsqr_ScalarTraits.hpp>
 #include <TbbTsqr.hpp>
+
+#include <Teuchos_Time.hpp>
 
 #include <algorithm>
 #include <cstring> // size_t definition
@@ -65,9 +68,9 @@ namespace TSQR {
     /// Test the accuracy of Intel TBB TSQR on an nrows by ncols
     /// matrix (using the given number of cores and the given cache
     /// block size (in bytes)), and print the results to stdout.
-    template< class Ordinal, class Scalar, class Generator >
+    template< class Ordinal, class Scalar >
     void
-    verifyTbbTsqr (Generator& generator,
+    verifyTbbTsqr (TSQR::Random::NormalGenerator< Ordinal, Scalar >& generator,
 		   const Ordinal nrows, 
 		   const Ordinal ncols, 
 		   const int num_cores,
@@ -76,12 +79,8 @@ namespace TSQR {
 		   const bool human_readable,
 		   const bool b_debug = false)
     {
-      // Need c++0x to have a default template parameter argument for
-      // a template function, otherwise we would have templated this
-      // function on TimerType and made TrivialTimer the default.
-      // TimerType is only used instead of TbbTsqr.
-      typedef TSQR::TBB::TrivialTimer TimerType; 
-      typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, TimerType > node_tsqr_type;
+      typedef Teuchos::Time timer_type;
+      typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, timer_type > node_tsqr_type;
       typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       using std::cerr;
@@ -211,7 +210,7 @@ namespace TSQR {
 	     << results.second << endl
 	     << endl;
       else
-	cout << "TbbTSQR"
+	cout << "TbbTsqr"
 	     << "," << nrows
 	     << "," << ncols
 	     << "," << num_cores
@@ -224,10 +223,14 @@ namespace TSQR {
 
     /// Benchmark Intel TBB TSQR vs. LAPACK's QR, and print the
     /// results to stdout.
-    template< class Ordinal, class Scalar, class Generator, class TimerType >
+    ///
+    /// \note c++0x support is need in order to have a default
+    /// template parameter argument for a template function, otherwise
+    /// we would have templated this function on TimerType and made
+    /// Teuchos::Time the default.
+    template< class Ordinal, class Scalar >
     void
-    benchmarkTbbTsqr (Generator& generator,
-		      const int ntrials,
+    benchmarkTbbTsqr (const int ntrials,
 		      const Ordinal nrows, 
 		      const Ordinal ncols, 
 		      const int num_cores,
@@ -235,24 +238,33 @@ namespace TSQR {
 		      const bool contiguous_cache_blocks,
 		      const bool human_readable)
     {
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       using TSQR::TBB::TbbTsqr;
       using std::cerr;
       using std::cout;
       using std::endl;
 
-      TSQR::Test::verifyTimerConcept< TimerType >();
+      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef Teuchos::Time timer_type;
+      typedef Ordinal ordinal_type;
+      typedef Scalar scalar_type;
+      typedef Matrix< ordinal_type, scalar_type > matrix_type;
+      typedef TbbTsqr< ordinal_type, scalar_type, timer_type > node_tsqr_type;
 
-      TbbTsqr< Ordinal, Scalar, TimerType > actor (num_cores, cache_block_size);
+      // Pseudorandom normal(0,1) generator.  Default seed is OK,
+      // because this is a benchmark, not an accuracy test.
+      TSQR::Random::NormalGenerator< ordinal_type, scalar_type > generator;
 
-      Matrix< Ordinal, Scalar > A (nrows, ncols);
-      Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
-      Matrix< Ordinal, Scalar > Q (nrows, ncols);
-      Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
+      // Set up TSQR implementation.
+      node_tsqr_type actor (num_cores, cache_block_size);
+
+      matrix_type A (nrows, ncols);
+      matrix_type A_copy (nrows, ncols);
+      matrix_type Q (nrows, ncols);
+      matrix_type R (ncols, ncols, scalar_type(0));
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.
-      R.fill (Scalar(0));
+      R.fill (scalar_type(0));
 
       // Create a test problem
       nodeTestProblem (generator, nrows, ncols, A.get(), A.lda(), false);
@@ -268,13 +280,13 @@ namespace TSQR {
       // Benchmark TBB-based TSQR for ntrials trials.
       //
       // Name of timer doesn't matter here; we only need the timing.
-      TimerType timer("TbbTSQR");
+      timer_type timer("TbbTsqr");
       timer.start();
       for (int trial_num = 0; trial_num < ntrials; ++trial_num)
 	{
 	  // Factor the matrix in-place in A_copy, and extract the
 	  // resulting R factor into R.
-	  typedef typename TbbTsqr< Ordinal, Scalar, TimerType >::FactorOutput factor_output_type;
+	  typedef typename node_tsqr_type::FactorOutput factor_output_type;
 	  factor_output_type factor_output = 
 	    actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(), 
 			  R.get(), R.lda(), contiguous_cache_blocks);
@@ -291,7 +303,7 @@ namespace TSQR {
       // Print the results
       if (human_readable)
 	{
-	  cout << "(Intel TBB / cache-blocked) TSQR:" << endl
+	  cout << "(Intel TBB / cache-blocked) TSQR cumulative timings:" << endl
 	       << "# rows = " << nrows << endl
 	       << "# columns = " << ncols << endl
 	       << "# cores: " << num_cores << endl
@@ -308,21 +320,37 @@ namespace TSQR {
 	       << "Total time (s) in apply() (max over all tasks): " 
 	       << (ntrials * actor.max_seq_apply_timing()) << endl
 	       << endl << endl;
+	  cout << "(Intel TBB / cache-blocked) TSQR per-invocation timings:" << endl;
+	  
+	  std::vector< TimeStats > stats;
+	  actor.getStats (stats);
+	  std::vector< std::string> labels;
+	  actor.getStatsLabels (labels);
+
+	  const std::string labelLabel ("label");
+	  for (std::vector< std::string >::size_type k = 0; k < labels.size(); ++k)
+	    {
+	      const bool printHeaders = (k == 0);
+	      if (stats[k].count() > 0)
+		stats[k].print (cout, human_readable, labels[k], labelLabel, printHeaders);
+	    }
 	}
       else
-	// We don't include {min,max}_seq_apply_timing() here, because
-	// those times don't benefit from the accuracy of benchmarking
-	// for ntrials > 1.  Thus, it's misleading to include them
-	// with tbb_tsqr_timing, the total time over ntrials trials.
-	cout << "TbbTSQR"
-	     << "," << nrows
-	     << "," << ncols
-	     << "," << num_cores
-	     << "," << actor.cache_block_size()
-	     << "," << contiguous_cache_blocks 
-	     << "," << ntrials
-	     << "," << tbb_tsqr_timing 
-	     << endl;
+	{
+	  // We don't include {min,max}_seq_apply_timing() here, because
+	  // those times don't benefit from the accuracy of benchmarking
+	  // for ntrials > 1.  Thus, it's misleading to include them
+	  // with tbb_tsqr_timing, the total time over ntrials trials.
+	  cout << "TbbTsqr"
+	       << "," << nrows
+	       << "," << ncols
+	       << "," << num_cores
+	       << "," << actor.cache_block_size()
+	       << "," << contiguous_cache_blocks 
+	       << "," << ntrials
+	       << "," << tbb_tsqr_timing 
+	       << endl;
+	}
     }
   } // namespace Test
 } // namespace TSQR

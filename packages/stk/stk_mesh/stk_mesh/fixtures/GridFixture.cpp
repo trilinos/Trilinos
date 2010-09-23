@@ -42,12 +42,13 @@ namespace fixtures {
 
 
 GridFixture::GridFixture(stk::ParallelMachine pm)
-  : m_meta_data( fem_entity_rank_names() )
+  : m_spatial_dimension(2)
+  , m_meta_data( TopologicalMetaData::entity_rank_names(m_spatial_dimension) )
   , m_bulk_data( m_meta_data , pm )
-  , m_quad_part( m_meta_data.declare_part("quad_part", Face) )
+  , m_top_data( m_meta_data, m_spatial_dimension )
+  , m_quad_part( m_top_data.declare_part<shards::Quadrilateral<4> >("quad_part" ) )
   , m_dead_part( m_meta_data.declare_part("dead_part"))
 {
-  set_cell_topology<shards::Quadrilateral<4> >(m_quad_part);
 }
 
 GridFixture::~GridFixture()
@@ -96,13 +97,13 @@ void GridFixture::generate_grid()
       unsigned face_id = quad_face_ids[i];
       unsigned row = (face_id - 1) / num_nodes_per_quad;
 
-      Entity& face = m_bulk_data.declare_entity(Face, face_id, face_parts);
+      Entity& face = m_bulk_data.declare_entity(m_top_data.element_rank, face_id, face_parts);
 
       unsigned node_id = num_quad_faces + face_id + row;
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        Entity& node = m_bulk_data.declare_entity(Node, node_id, no_parts);
+        Entity& node = m_bulk_data.declare_entity(m_top_data.node_rank, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }

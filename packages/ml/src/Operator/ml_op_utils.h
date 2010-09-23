@@ -125,6 +125,8 @@ extern int ML_Operator_BlkMatInsert(ML_Operator *BlkMat, ML_Operator *Entry,
 
 extern ML_Operator *ML_Operator_BlkMatExtract(ML_Operator *BlkMat,
                         int Row, int Col);
+extern int ML_Operator_BlkMatNumBlockRows(ML_Operator * BlkMat);
+extern int ML_Operator_BlkMatNumBlockCols(ML_Operator * BlkMat);
 extern int  ML_Operator_BlkMatFinalize(ML_Operator *BlkMat);
 
 extern int ML_Operator_BlkMatMatvec(ML_Operator *BlkMat, int ilen,

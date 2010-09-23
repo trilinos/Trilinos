@@ -29,9 +29,6 @@
 #ifndef TPETRA_DIRECTORY_HPP
 #define TPETRA_DIRECTORY_HPP
 
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Distributor.hpp"

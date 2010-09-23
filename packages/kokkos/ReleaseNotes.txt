@@ -1,0 +1,20 @@
+
+----------------------------------------
+Release Notes for Trilinos Package Belos
+----------------------------------------
+
+
+Trilinos 10.4:
+--------------
+
+(*) Change to sparse ops
+- Combined DefaultSparseSolve and DefaultSparseMultiply into DefaultSparseOps
+- Added new traits class, DefaultKernels, to specify default sparse and default block sparse objects
+- Added new classes supporting Tpetra::VbrMatrix
+
+(*) MultiVector ops
+- some methods were missing "inline" specifier. This could (should?) improve performance for TPINode.
+
+(*) CUDANodeMemoryModel
+- support for tracing/profiling data movement between host and GPU
+

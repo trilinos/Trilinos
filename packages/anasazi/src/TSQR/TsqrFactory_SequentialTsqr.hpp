@@ -49,17 +49,21 @@ namespace TSQR {
     /// SequentialTsqr for intranode TSQR.
     template< class LO, class S >
     class SequentialTsqrFactory :
-      public TsqrFactory< LO, S, SequentialTsqr< LO, S >, 
-			  Tsqr< LO, S, SequentialTsqr< LO, S > > >
+      public TsqrFactory< LO, S, SequentialTsqr< LO, S >, DistTsqr< LO, S > >
     {
     public:
-      typedef TsqrFactory< LO, S, SequentialTsqr< LO, S >, Tsqr< LO, S, SequentialTsqr< LO, S > > > base_type;
+      typedef TsqrFactory< LO, S, SequentialTsqr< LO, S >, DistTsqr< LO, S > > base_type;
 
       // Pull in the typedefs from the base class.  C++ doesn't do
       // this when both the base and the derived classes are
       // templated.
+      typedef typename base_type::scalar_messenger_ptr scalar_messenger_ptr;
       typedef typename base_type::node_tsqr_type node_tsqr_type;
       typedef typename base_type::node_tsqr_ptr  node_tsqr_ptr;
+      typedef typename base_type::dist_tsqr_type dist_tsqr_type;
+      typedef typename base_type::dist_tsqr_ptr  dist_tsqr_ptr;
+      typedef typename base_type::tsqr_type tsqr_type;
+      typedef typename base_type::tsqr_ptr  tsqr_ptr;
 
       SequentialTsqrFactory () {}
       virtual ~SequentialTsqrFactory () {}
@@ -91,6 +95,13 @@ namespace TSQR {
 	
 	node_tsqr_ptr node_tsqr (new node_tsqr_type (cacheBlockSize));
 	return node_tsqr;
+      }
+
+      virtual dist_tsqr_ptr
+      makeDistTsqr (const scalar_messenger_ptr& messenger,
+		    const Teuchos::ParameterList& plist) const
+      {
+	return Teuchos::rcp (new dist_tsqr_type (messenger));
       }
     };
 

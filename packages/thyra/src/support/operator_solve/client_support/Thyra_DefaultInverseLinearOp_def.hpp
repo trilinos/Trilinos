@@ -346,17 +346,17 @@ void DefaultInverseLinearOp<Scalar>::initializeImpl(
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::nonconstInverse(
-  const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &A,
-  const SolveCriteria<Scalar> *fwdSolveCriteria,
+  const RCP<LinearOpWithSolveBase<Scalar> > &A,
+  const Ptr<const SolveCriteria<Scalar> > &fwdSolveCriteria,
   const EThrowOnSolveFailure throwOnFwdSolveFailure,
-  const SolveCriteria<Scalar> *adjSolveCriteria,
+  const Ptr<const SolveCriteria<Scalar> > &adjSolveCriteria,
   const EThrowOnSolveFailure throwOnAdjSolveFailure
   )
 {
   return Teuchos::rcp(
     new DefaultInverseLinearOp<Scalar>(
-      A,fwdSolveCriteria,throwOnFwdSolveFailure,
-      adjSolveCriteria,throwOnAdjSolveFailure
+      A, fwdSolveCriteria.get(), throwOnFwdSolveFailure,
+      adjSolveCriteria.get(), throwOnAdjSolveFailure
       )
     );
 }
@@ -364,17 +364,17 @@ Thyra::nonconstInverse(
 template<class Scalar>
 Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
 Thyra::inverse(
-  const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &A,
-  const SolveCriteria<Scalar> *fwdSolveCriteria,
+  const RCP<const LinearOpWithSolveBase<Scalar> > &A,
+  const Ptr<const SolveCriteria<Scalar> > &fwdSolveCriteria,
   const EThrowOnSolveFailure throwOnFwdSolveFailure,
-  const SolveCriteria<Scalar> *adjSolveCriteria,
+  const Ptr<const SolveCriteria<Scalar> > &adjSolveCriteria,
   const EThrowOnSolveFailure throwOnAdjSolveFailure
   )
 {
   return Teuchos::rcp(
     new DefaultInverseLinearOp<Scalar>(
-      A,fwdSolveCriteria,throwOnFwdSolveFailure,
-      adjSolveCriteria,throwOnAdjSolveFailure
+      A, fwdSolveCriteria.get(), throwOnFwdSolveFailure,
+      adjSolveCriteria.get(), throwOnAdjSolveFailure
       )
     );
 }

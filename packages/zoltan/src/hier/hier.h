@@ -22,6 +22,26 @@
 extern "C" {
 #endif
 
+/* information about the network topology of specific platforms */
+
+#define PLATFORM_MAX_LEVELS 8
+
+enum {GLORY,
+      REDSKY,
+      CTX,
+      ODIN,
+      OCTOPI,
+      S861036,
+      LAST_PLATFORM} zoltan_platform_name;
+
+typedef struct _spec{
+  char *platform_name;
+  int numLevels;
+  int num_siblings[PLATFORM_MAX_LEVELS];
+  int my_part[PLATFORM_MAX_LEVELS];
+} zoltan_platform_specification;
+
+
 /* header file for hierarchical balancing */
 
 /* Parameters to hierarchical balancing */
@@ -82,6 +102,10 @@ struct HierPartParamsStruct {
   ZOLTAN_ID_PTR migrated_in_gids;    /* ordered array of gids migrated in */
   void **migrated_in_data;           /* data migrated in, parallel array to
 					migrated_in_gids */
+
+                                         /* If non-null, Zoltan is computing the */
+  zoltan_platform_specification *spec;   /* levels based on network topology */
+                                         
 };
 typedef struct HierPartParamsStruct HierPartParams;
 
@@ -99,7 +123,6 @@ typedef struct HierPartParamsStruct HierPartParams;
 
 /* prototype for set_param function needed by params/set_param.c */
 extern int Zoltan_Hier_Set_Param(char *name, char *val);
-
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

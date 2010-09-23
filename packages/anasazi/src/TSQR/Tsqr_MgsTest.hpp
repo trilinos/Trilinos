@@ -40,6 +40,8 @@
 #include <Tsqr_printGlobalMatrix.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
 
+#include <Teuchos_RCP.hpp>
+
 #include <algorithm>
 #include <sstream>
 #include <limits>
@@ -70,29 +72,39 @@ namespace TSQR {
 	throw std::logic_error("Unknown MGS implementation type \"" + which + "\"");
     }
 
-    template< class MgsBase >
-    static void
-    do_mgs_verify (MgsBase& orthogonalizer,
-		   MessengerBase< typename MgsBase::scalar_type >* const messenger,
-		   Matrix< typename MgsBase::ordinal_type, typename MgsBase::scalar_type >& Q_local,
-		   Matrix< typename MgsBase::ordinal_type, typename MgsBase::scalar_type >& R,
-		   const bool b_debug = false)
-    {
-      using std::cerr;
-      using std::endl;
+    template< class MgsType >
+    class MgsVerifier {
+    public:
+      typedef MgsType mgs_type;
+      typedef typename MgsType::ordinal_type ordinal_type;
+      typedef typename MgsType::scalar_type scalar_type;
+      typedef Matrix< ordinal_type, scalar_type > matrix_type;
+      typedef MessengerBase< scalar_type > messenger_type;
+      typedef Teuchos::RCP< messenger_type > messenger_ptr;
 
-      // Factor the (copy of the) matrix.  On output, the explicit Q
-      // factor (of A_local) is in Q_local and the R factor is in R.
-      orthogonalizer.mgs (Q_local.nrows(), Q_local.ncols(), 
-			  Q_local.get(), Q_local.lda(),
-			  R.get(), R.lda());
-      if (b_debug)
-	{
-	  messenger->barrier();
-	  if (messenger->rank() == 0)
-	    cerr << "-- Finished MGS::mgs" << endl;
-	}
-    }
+      static void
+      verify (mgs_type& orthogonalizer,
+	      const messenger_ptr& messenger,
+	      matrix_type& Q_local,
+	      matrix_type& R,
+	      const bool b_debug = false)
+      {
+	using std::cerr;
+	using std::endl;
+
+	// Factor the (copy of the) matrix.  On output, the explicit Q
+	// factor (of A_local) is in Q_local and the R factor is in R.
+	orthogonalizer.mgs (Q_local.nrows(), Q_local.ncols(), 
+			    Q_local.get(), Q_local.lda(),
+			    R.get(), R.lda());
+	if (b_debug)
+	  {
+	    messenger->barrier();
+	    if (messenger->rank() == 0)
+	      cerr << "-- Finished MGS::mgs" << endl;
+	  }
+      }
+    };
 
     template< class Ordinal, class Scalar, class Generator >
     void
@@ -100,8 +112,8 @@ namespace TSQR {
 	       Generator& generator,
 	       const Ordinal nrows_global,
 	       const Ordinal ncols,
-	       MessengerBase< Ordinal >* const ordinalComm,
-	       MessengerBase< Scalar >* const scalarComm,
+	       const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
+	       const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 	       const int num_cores,
 	       const bool human_readable,
 	       const bool b_debug)
@@ -130,7 +142,7 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
 
       // Generate the test problem.
-      distributedTestProblem (generator, A_local, ordinalComm, scalarComm);
+      distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -145,7 +157,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << "Test matrix A:" << endl;
 	  scalarComm->barrier();
-	  printGlobalMatrix (cerr, A_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier();
 	}
 
@@ -168,7 +180,7 @@ namespace TSQR {
 #ifdef HAVE_TSQR_INTEL_TBB
 	  typedef TSQR::TBB::TbbMgs< Ordinal, Scalar > mgs_type;
 	  mgs_type mgser (scalarComm);
-	  do_mgs_verify< mgs_type > (mgser, scalarComm, Q_local, R, b_debug);
+	  MgsVerifier< mgs_type >::verify (mgser, scalarComm, Q_local, R, b_debug);
 #else
 	  throw std::logic_error("MGS not built with Intel TBB support");
 #endif // HAVE_TSQR_INTEL_TBB
@@ -177,7 +189,7 @@ namespace TSQR {
 	{
 	  typedef MGS< Ordinal, Scalar > mgs_type;
 	  mgs_type mgser (scalarComm);
-	  do_mgs_verify< mgs_type > (mgser, scalarComm, Q_local, R, b_debug);
+	  MgsVerifier< mgs_type >::verify (mgser, scalarComm, Q_local, R, b_debug);
 	}
       else
 	throw std::logic_error ("Invalid MGS implementation type \"" + which + "\"");
@@ -188,7 +200,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << endl << "Q factor:" << endl;
 	  scalarComm->barrier ();
-	  printGlobalMatrix (cerr, A_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier ();
 	  if (my_rank == 0)
 	    {
@@ -203,7 +215,7 @@ namespace TSQR {
       std::pair< magnitude_type, magnitude_type > result = 
 	global_verify (nrows_local, ncols, A_local.get(), A_local.lda(),
 		       Q_local.get(), Q_local.lda(), R.get(), R.lda(), 
-		       scalarComm);
+		       scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -297,8 +309,8 @@ namespace TSQR {
 		  const int ntrials,
 		  const Ordinal nrows_global,
 		  const Ordinal ncols,
-		  MessengerBase< Ordinal >* const ordinalComm,
-		  MessengerBase< Scalar >* const scalarComm,
+		  const Teuchos::RCP< MessengerBase< Ordinal > >& ordinalComm,
+		  const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 		  const int num_cores,
 		  const bool human_readable,
 		  const bool b_debug)
@@ -329,7 +341,7 @@ namespace TSQR {
       Matrix<Ordinal, Scalar> R (ncols, ncols, Scalar(0));
 
       // Generate the test problem.
-      distributedTestProblem (generator, A_local, ordinalComm, scalarComm);
+      distributedTestProblem (generator, A_local, ordinalComm.get(), scalarComm.get());
       if (b_debug)
 	{
 	  scalarComm->barrier();
@@ -344,7 +356,7 @@ namespace TSQR {
 	  if (my_rank == 0)
 	    cerr << "Test matrix A:" << endl;
 	  scalarComm->barrier ();
-	  printGlobalMatrix (cerr, A_local, scalarComm, ordinalComm);
+	  printGlobalMatrix (cerr, A_local, scalarComm.get(), ordinalComm.get());
 	  scalarComm->barrier ();
 	}
 

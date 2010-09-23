@@ -30,12 +30,14 @@ HexFixture::~HexFixture()
 
 HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz)
   :
-    NX(nx)
+    spatial_dimension(3)
+  , NX(nx)
   , NY(ny)
   , NZ(nz)
-  , meta_data( fem_entity_rank_names() )
+  , meta_data( TopologicalMetaData::entity_rank_names(spatial_dimension) )
   , bulk_data( meta_data , pm )
-  , hex_part( meta_data.declare_part("hex_part", Element) )
+  , top_data( meta_data, spatial_dimension )
+  , hex_part( top_data.declare_part<shards::Hexahedron<8> >("hex_part" ) )
   , coord_field( meta_data.declare_field<CoordFieldType>("Coordinates") )
   , coord_gather_field(
         meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates")
@@ -45,13 +47,10 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
   enum { SpatialDim = 3 };
   enum { NodesPerElem = Hex8::node_count };
 
-  // Set topology of the element block part
-  set_cell_topology<shards::Hexahedron<8> >(hex_part);
-
   //put coord-field on all nodes:
   put_field(
       coord_field,
-      Node,
+      top_data.node_rank,
       meta_data.universal_part(),
       SpatialDim
       );
@@ -59,7 +58,7 @@ HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsign
   //put coord-gather-field on all elements:
   put_field(
       coord_gather_field,
-      Element,
+      top_data.element_rank,
       meta_data.universal_part(),
       NodesPerElem
       );
@@ -124,7 +123,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
       for (unsigned i = 0; i<8; ++i) {
         stk::mesh::Entity * const node =
-          bulk_data.get_entity( stk::mesh::Node , elem_node[i] );
+          bulk_data.get_entity( top_data.node_rank , elem_node[i] );
 
         if ( node != NULL) {
 

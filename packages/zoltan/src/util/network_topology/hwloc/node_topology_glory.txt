@@ -1,0 +1,98 @@
+Thu Aug 26 15:11:42 MDT 2010
+Warning: Unable to identify each MPI process with its CPU
+
+1 Machine:
+  cpu set mask 0x0000ffff,  total memory   33077348KB, local memory          0KB)
+
+4 NUMANodes:
+  cpu set mask 0x0000000f,  total memory    8255588KB, local memory    8255588KB)
+  cpu set mask 0x000000f0,  total memory    8273920KB, local memory    8273920KB)
+  cpu set mask 0x00000f00,  total memory    8273920KB, local memory    8273920KB)
+  cpu set mask 0x0000f000,  total memory    8273920KB, local memory    8273920KB)
+
+4 Sockets:
+  cpu set mask 0x0000000f,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x000000f0,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000f00,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x0000f000,  total memory          0KB, local memory          0KB)
+
+4 L3Caches:
+  cpu set mask 0x0000000f,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x000000f0,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000f00,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x0000f000,  total memory          0KB, local memory          0KB)
+
+16 L2Caches:
+  cpu set mask 0x00000001,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000002,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000004,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000008,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000010,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000020,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000040,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000080,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000100,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000200,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000400,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000800,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00001000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00002000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00004000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00008000,  total memory          0KB, local memory          0KB)
+
+16 L1Caches:
+  cpu set mask 0x00000001,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000002,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000004,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000008,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000010,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000020,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000040,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000080,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000100,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000200,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000400,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000800,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00001000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00002000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00004000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00008000,  total memory          0KB, local memory          0KB)
+
+16 Cores:
+  cpu set mask 0x00000001,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000002,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000004,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000008,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000010,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000020,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000040,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000080,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000100,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000200,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000400,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000800,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00001000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00002000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00004000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00008000,  total memory          0KB, local memory          0KB)
+
+16 PUs:
+  cpu set mask 0x00000001,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000002,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000004,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000008,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000010,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000020,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000040,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000080,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000100,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000200,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000400,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00000800,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00001000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00002000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00004000,  total memory          0KB, local memory          0KB)
+  cpu set mask 0x00008000,  total memory          0KB, local memory          0KB)
+
+Open MPI 1 4 1
+Thu Aug 26 15:11:44 MDT 2010

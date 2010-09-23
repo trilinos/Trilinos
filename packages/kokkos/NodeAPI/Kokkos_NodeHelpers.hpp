@@ -7,12 +7,14 @@
 
 namespace Kokkos {
 
-  /*! A class to assist in readying buffers via the Node::readyBuffer() method. */
+  /** \brief A class to assist in readying buffers via the Node::readyBuffer() method. 
+      \ingroup kokkos_node_api
+    */
   template <class Node>
   class ReadyBufferHelper {
     public:
       /*! The node via which buffers are being readied. */
-      ReadyBufferHelper(Teuchos::RCP<Node> node);
+      ReadyBufferHelper(RCP<Node> node);
 
       /*! Destructor. */
       virtual ~ReadyBufferHelper();
@@ -22,24 +24,24 @@ namespace Kokkos {
 
       /*! Add a const buffer. */
       template <class T>
-      const T* addConstBuffer(Teuchos::ArrayRCP<const T> buff);
+      const T* addConstBuffer(ArrayRCP<const T> buff);
 
       /*! Add a non-const buffer. */
       template <class T>
-      T* addNonConstBuffer(Teuchos::ArrayRCP<T> buff);
+      T* addNonConstBuffer(ArrayRCP<T> buff);
 
       /*! End the ready-buffer transaction. */
       void end();
 
 
     protected:
-      Teuchos::RCP<Node> node_;
-      Teuchos::Array< Teuchos::ArrayRCP<const char> >  cbufs_;
-      Teuchos::Array< Teuchos::ArrayRCP<      char> > ncbufs_;
+      RCP<Node> node_;
+      Array< ArrayRCP<const char> >  cbufs_;
+      Array< ArrayRCP<      char> > ncbufs_;
   };
 
   template <class Node>
-  ReadyBufferHelper<Node>::ReadyBufferHelper(Teuchos::RCP<Node> node)
+  ReadyBufferHelper<Node>::ReadyBufferHelper(RCP<Node> node)
   : node_(node) {
   }
 
@@ -55,15 +57,15 @@ namespace Kokkos {
 
   template <class Node>
   template <class T>
-  const T* ReadyBufferHelper<Node>::addConstBuffer(Teuchos::ArrayRCP<const T> buff) {
-    cbufs_.push_back( Teuchos::arcp_reinterpret_cast<const char>(buff) );
+  const T* ReadyBufferHelper<Node>::addConstBuffer(ArrayRCP<const T> buff) {
+    cbufs_.push_back( arcp_reinterpret_cast<const char>(buff) );
     return buff.get();
   }
 
   template <class Node>
   template <class T>
-  T* ReadyBufferHelper<Node>::addNonConstBuffer(Teuchos::ArrayRCP<T> buff) {
-    cbufs_.push_back( Teuchos::arcp_reinterpret_cast<char>(buff) );
+  T* ReadyBufferHelper<Node>::addNonConstBuffer(ArrayRCP<T> buff) {
+    cbufs_.push_back( arcp_reinterpret_cast<char>(buff) );
     return buff.get();
   }
 
@@ -72,12 +74,11 @@ namespace Kokkos {
     node_->readyBuffers(cbufs_(), ncbufs_());  
   }
 
-  /*! A class to efficient get an array of views */
   template <class Node>
   class ArrayOfViewsHelper {
     public:
       template <class T>
-      static Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > getArrayOfNonConstViews(const Teuchos::RCP<Node> &node, ReadWriteOption rw, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > &arrayOfBuffers);
+      static ArrayRCP<ArrayRCP<T> > getArrayOfNonConstViews(const RCP<Node> &node, ReadWriteOption rw, const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers);
     private:
       /*! Cannot allocate object; all static */
       ArrayOfViewsHelper();
@@ -86,12 +87,12 @@ namespace Kokkos {
 
   template <class Node>
   template <class T>
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > 
-  ArrayOfViewsHelper<Node>::getArrayOfNonConstViews(const Teuchos::RCP<Node> &node, ReadWriteOption rw, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > &arrayOfBuffers) {
-    Teuchos::ArrayRCP< Teuchos::ArrayRCP<T> > arrayofviews;
+  ArrayRCP<ArrayRCP<T> > 
+  ArrayOfViewsHelper<Node>::getArrayOfNonConstViews(const RCP<Node> &node, ReadWriteOption rw, const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers) {
+    ArrayRCP< ArrayRCP<T> > arrayofviews;
     const size_t numBufs = arrayOfBuffers.size();
     if (numBufs > 0) {
-      arrayofviews = Teuchos::arcp< Teuchos::ArrayRCP<T> >(numBufs);
+      arrayofviews = arcp< ArrayRCP<T> >(numBufs);
       for (size_t i=0; i < numBufs; ++i) {
         if (arrayOfBuffers[i].size() > 0) {
           arrayofviews[i] = node->template viewBufferNonConst<T>(rw,arrayOfBuffers[i].size(),arrayOfBuffers[i]);
@@ -106,7 +107,7 @@ namespace Kokkos {
   class ArrayOfViewsHelperTrivialImpl {
     public:
       template <class T>
-      static Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > getArrayOfNonConstViews(const Teuchos::RCP<Node> &node, ReadWriteOption rw, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > &arrayOfBuffers);
+      static ArrayRCP<ArrayRCP<T> > getArrayOfNonConstViews(const RCP<Node> &node, ReadWriteOption rw, const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers);
     private:
       /*! Cannot allocate object; all static */
       ArrayOfViewsHelperTrivialImpl();
@@ -115,8 +116,8 @@ namespace Kokkos {
 
   template <class Node>
   template <class T>
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > 
-  ArrayOfViewsHelperTrivialImpl<Node>::getArrayOfNonConstViews(const Teuchos::RCP<Node> &node, ReadWriteOption rw, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > &arrayOfBuffers) {
+  ArrayRCP<ArrayRCP<T> > 
+  ArrayOfViewsHelperTrivialImpl<Node>::getArrayOfNonConstViews(const RCP<Node> &node, ReadWriteOption rw, const ArrayRCP<ArrayRCP<T> > &arrayOfBuffers) {
     (void)node;
     (void)rw;
     return arrayOfBuffers;

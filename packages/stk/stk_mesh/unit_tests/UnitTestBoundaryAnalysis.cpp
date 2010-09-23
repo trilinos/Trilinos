@@ -21,6 +21,7 @@
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
@@ -72,11 +73,10 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& meta_data = grid_mesh.meta_data();
+  stk::mesh::TopologicalMetaData& top_data = grid_mesh.top_data();
 
   // make shell part
-  stk::mesh::Part& shell_part = meta_data.declare_part("shell_part",
-                                                       stk::mesh::Face);
-  stk::mesh::set_cell_topology<shards::ShellLine<2> >(shell_part);
+  stk::mesh::Part& shell_part = top_data.declare_part<shards::ShellLine<2> >("shell_part");
 
   meta_data.commit();
 
@@ -90,14 +90,14 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   std::vector<unsigned> count;
   stk::mesh::Selector locally_owned(meta_data.locally_owned_part());
   stk::mesh::count_entities(locally_owned, bulk_data, count);
-  const unsigned num_entities = count[stk::mesh::Node] +
-    count[stk::mesh::Face];
+  const unsigned num_entities = count[top_data.node_rank] +
+    count[top_data.element_rank];
 
   std::vector<stk::mesh::Entity*> shell_faces;
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
   for (unsigned i = 1; i <= num_shell_faces; ++i) {
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(stk::mesh::Face,
+    stk::mesh::Entity& new_shell = bulk_data.declare_entity(top_data.element_rank,
                                                             num_entities + i,
                                                             shell_parts);
     shell_faces.push_back(&new_shell);
@@ -108,9 +108,9 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   for (unsigned i = 0; i < num_shell_faces; ++i) {
     stk::mesh::Entity& shell = *(shell_faces[i]);
     stk::mesh::Entity& node1 =
-      *(bulk_data.get_entity(stk::mesh::Node, node_list[i]));
+      *(bulk_data.get_entity(top_data.node_rank, node_list[i]));
     stk::mesh::Entity& node2 =
-      *(bulk_data.get_entity(stk::mesh::Node, node_list[i+1]));
+      *(bulk_data.get_entity(top_data.node_rank, node_list[i+1]));
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -127,7 +127,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
        ++i) {
     stk::mesh::EntityRank rank_of_entity;
     if (i < num_faces_in_closure) {
-      rank_of_entity = stk::mesh::Face;
+      rank_of_entity = top_data.element_rank;
     }
     else {
       rank_of_entity = 0;
@@ -140,7 +140,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   std::sort(closure.begin(), closure.end(), stk::mesh::EntityLess());
 
   stk::mesh::EntitySideVector boundary;
-  stk::mesh::boundary_analysis(bulk_data, closure, stk::mesh::Face, boundary);
+  stk::mesh::boundary_analysis(bulk_data, closure, top_data.element_rank, boundary);
   STKUNIT_EXPECT_TRUE(!boundary.empty());
 
   std::vector<std::pair<std::pair<unsigned, unsigned>,
@@ -262,10 +262,12 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
   //test on boundary_analysis for closure with a NULL topology - coverage of lines 39-40 of BoundaryAnalysis.cpp
 
   //create new meta, bulk and boundary for this test
-  stk::mesh::MetaData meta( stk::mesh::fem_entity_rank_names() );
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta( stk::mesh::TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  stk::mesh::TopologicalMetaData top_data(meta, spatial_dimension);
 
   //declare part with topology = NULL
-  stk::mesh::Part & quad_part = meta.declare_part("quad_part", stk::mesh::Face);
+  stk::mesh::Part & quad_part = meta.declare_part("quad_part", top_data.side_rank);
   meta.commit();
 
   stk::ParallelMachine comm(MPI_COMM_WORLD);
@@ -279,11 +281,11 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
 
   bulk.modification_begin();
   if (m_rank == 0) {
-    stk::mesh::Entity & new_face = bulk.declare_entity(stk::mesh::Face, 1, face_parts);
+    stk::mesh::Entity & new_face = bulk.declare_entity(top_data.side_rank, 1, face_parts);
     newclosure.push_back(&new_face);
   }
 
-  stk::mesh::boundary_analysis(bulk, newclosure, stk::mesh::Face, boundary);
+  stk::mesh::boundary_analysis(bulk, newclosure, top_data.side_rank, boundary);
   /*
   STKUNIT_EXPECT_TRUE(!boundary.empty());
   */

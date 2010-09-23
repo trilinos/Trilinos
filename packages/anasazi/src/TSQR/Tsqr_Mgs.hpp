@@ -38,6 +38,8 @@
 #include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 
+#include <Teuchos_RCP.hpp>
+
 // #define MGS_DEBUG 1
 #ifdef MGS_DEBUG
 #  include <iostream>
@@ -57,7 +59,8 @@ namespace TSQR {
     typedef LocalOrdinal ordinal_type;
     typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
 
-    MGS (MessengerBase< Scalar >* const messenger) : messenger_ (messenger) {}
+    MGS (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) : 
+      messenger_ (messenger) {}
 
     /// Whether or not the R factor from the QR factorization has a
     /// nonnegative diagonal.
@@ -74,7 +77,7 @@ namespace TSQR {
 	 const LocalOrdinal ldr);
 
   private:
-    MessengerBase< Scalar >* messenger_;
+    Teuchos::RCP< MessengerBase< Scalar > > messenger_;
   };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +88,7 @@ namespace TSQR {
     template< class LocalOrdinal, class Scalar >
     class MgsOps {
     public:
-      MgsOps (MessengerBase< Scalar >* const messenger) : 
+      MgsOps (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) : 
 	messenger_ (messenger) {}
 
       void
@@ -177,7 +180,7 @@ namespace TSQR {
       }
 
     private:
-      MessengerBase< Scalar >* const messenger_;
+      Teuchos::RCP< MessengerBase< Scalar > > messenger_;
     };
   } // namespace details
 

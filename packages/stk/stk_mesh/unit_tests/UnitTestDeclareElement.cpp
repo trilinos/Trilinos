@@ -30,11 +30,11 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell ) {
   stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
   stk::mesh::fixtures::HexFixture fixture( pm , 2 , 1 , 1 );
+  stk::mesh::TopologicalMetaData & top_data = fixture.top_data;
 
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
 
-  stk::mesh::Part & shell_part = fixture.meta_data.declare_part("shell_part", stk::mesh::Element);
-  stk::mesh::set_cell_topology<shards::ShellQuadrilateral<4> >(shell_part);
+  stk::mesh::Part & shell_part = top_data.declare_part<shards::ShellQuadrilateral<4> >("shell_part");
 
   fixture.meta_data.commit();
 

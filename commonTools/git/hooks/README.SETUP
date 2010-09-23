@@ -28,20 +28,21 @@ Set up email notification hooks
 
 3) Create a dirs_to_emails file and fill out with mapping:
 
-  $ cd GIT_REPO_BASE_DIR
+  $ cd GIT_REPO_BASE_DIR/hooks
   $ echo "
       base_dir_1/subdir email1@somthing.com,email2@somthing.com
       base_dir_1 email3@something.com
       ...
-      ^ defaultemail@something.com
+      .+ defaultemail@something.com
       " >> dirs_to_emails
 
   NOTE: You want to sort the directories in the order that you want the
-  matches to take place with the default match '^' coming at the very end.
-  The first directory that matches will be used to select the email address.
-  Therefore, you want subdirectories to be listed before their parent
-  directories.  The default match at the end is optional and if not specified
-  then the config value hooks.mailinglist will be used instead.
+  matches to take place with the default match regex '.+' (which matches
+  everything) coming at the very end.  The first directory that matches will
+  be used to select the email address.  Therefore, you want subdirectories to
+  be listed before their parent directories.  The default match at the end is
+  optional and if not specified then the config value hooks.mailinglist will
+  be used instead.
 
   NOTE: If you only want to send to the default email address you can leave
   the dirs_to_emails file empty.
@@ -49,7 +50,7 @@ Set up email notification hooks
 4) Test the mappings:
 
   $ cd GIT_REPO_BASE_DIR
-  $ ./hooks/get_recipients.py OLD_REV NEW_REV # Prints out email list
+  $ ./hooks/get_recipients.py OLD_REV NEW_REV refs/heads/master # Prints out email list
   $ ./hooks/post-receive-email OLD_REV NEW_REV refs/heads/master  # Sends email
 
 With all of this done, your email notifications should work great.  Note that

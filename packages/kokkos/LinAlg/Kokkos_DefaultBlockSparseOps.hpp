@@ -61,7 +61,7 @@ namespace Kokkos {
     //@{
 
     //! DefaultBlockSparseOps constuctor with variable number of indices per row.
-    DefaultBlockSparseOps(const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
+    DefaultBlockSparseOps(const RCP<Node> &node = DefaultNode::getDefaultNode());
 
     //! DefaultBlockSparseOps Destructor
     ~DefaultBlockSparseOps();
@@ -72,7 +72,7 @@ namespace Kokkos {
     //@{ 
     
     //! Node accessor.
-    Teuchos::RCP<Node> getNode() const;
+    RCP<Node> getNode() const;
 
     //@}
 
@@ -80,7 +80,7 @@ namespace Kokkos {
 
     //@{
 
-    //! Initialize values of matrix, using Kokkos::VbrMatrix
+    //! Initialize values of matrix, using VbrMatrix
     void initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix);
 
     //! Clear all matrix structure and values.
@@ -111,21 +111,21 @@ namespace Kokkos {
     //! Copy constructor (protected and unimplemented)
     DefaultBlockSparseOps(const DefaultBlockSparseOps& source);
 
-    Teuchos::RCP<Node> node_;
+    RCP<Node> node_;
 
-    Teuchos::ArrayRCP<const Ordinal> pbuf_rptr_;
-    Teuchos::ArrayRCP<const Ordinal> pbuf_cptr_;
-    Teuchos::ArrayRCP<const size_t> pbuf_bptr_;
-    Teuchos::ArrayRCP<const Ordinal> pbuf_bindx_;
-    Teuchos::ArrayRCP<const Ordinal> pbuf_indx_;
-    Teuchos::ArrayRCP<const Scalar>  pbuf_vals1D_;
+    ArrayRCP<const Ordinal> pbuf_rptr_;
+    ArrayRCP<const Ordinal> pbuf_cptr_;
+    ArrayRCP<const size_t> pbuf_bptr_;
+    ArrayRCP<const Ordinal> pbuf_bindx_;
+    ArrayRCP<const Ordinal> pbuf_indx_;
+    ArrayRCP<const Scalar>  pbuf_vals1D_;
 
     size_t numBlockRows_;
     bool valsInit_, isPacked_, isEmpty_;
   };
 
   template<class Scalar, class Ordinal, class Node>
-  DefaultBlockSparseOps<Scalar,Ordinal,Node>::DefaultBlockSparseOps(const Teuchos::RCP<Node> &node)
+  DefaultBlockSparseOps<Scalar,Ordinal,Node>::DefaultBlockSparseOps(const RCP<Node> &node)
   : node_(node)
   , valsInit_(false)
   , isPacked_(false)
@@ -138,7 +138,6 @@ namespace Kokkos {
 
   template <class Scalar, class Ordinal, class Node>
   void DefaultBlockSparseOps<Scalar,Ordinal,Node>::initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix) {
-    using Teuchos::ArrayRCP;
     isEmpty_ = false;
     pbuf_vals1D_ = matrix.get_values();
     pbuf_rptr_ = matrix.get_rptr();
@@ -153,19 +152,19 @@ namespace Kokkos {
 
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::RCP<Node> DefaultBlockSparseOps<Scalar,Ordinal,Node>::getNode() const { 
+  RCP<Node> DefaultBlockSparseOps<Scalar,Ordinal,Node>::getNode() const { 
     return node_; 
   }
 
 
   template <class Scalar, class Ordinal, class Node>
   void DefaultBlockSparseOps<Scalar,Ordinal,Node>::clear() {
-    pbuf_vals1D_  = Teuchos::null;
-    pbuf_rptr_    = Teuchos::null;
-    pbuf_cptr_    = Teuchos::null;
-    pbuf_bptr_    = Teuchos::null;
-    pbuf_bindx_   = Teuchos::null;
-    pbuf_indx_    = Teuchos::null;
+    pbuf_vals1D_  = null;
+    pbuf_rptr_    = null;
+    pbuf_cptr_    = null;
+    pbuf_bptr_    = null;
+    pbuf_bindx_   = null;
+    pbuf_indx_    = null;
     valsInit_ = false;
     isPacked_ = false;
     isEmpty_  = false;

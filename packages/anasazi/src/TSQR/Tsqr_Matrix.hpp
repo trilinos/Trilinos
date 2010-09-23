@@ -147,9 +147,7 @@ namespace TSQR {
     
   public:
     typedef Scalar scalar_type;
-    typedef Scalar value_type; // deprecated
     typedef Ordinal ordinal_type;
-    typedef Ordinal index_type; // deprecated
     typedef Scalar* pointer_type;
 
     Matrix (const Ordinal num_rows, 
@@ -225,6 +223,10 @@ namespace TSQR {
     /// indexing is zero-based (C style) instead of one-based (Fortran
     /// style))
     Scalar& operator() (const Ordinal i, const Ordinal j) {
+      return A_[i + j*lda()];
+    }
+
+    const Scalar& operator() (const Ordinal i, const Ordinal j) const {
       return A_[i + j*lda()];
     }
 

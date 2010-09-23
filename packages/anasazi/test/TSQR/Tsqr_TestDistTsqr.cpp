@@ -34,6 +34,7 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_Time.hpp"
 
 #include "Tsqr_Config.hpp"
@@ -48,302 +49,320 @@
 #include <stdexcept>
 #include <vector>
 
+using TSQR::MessengerBase;
+using TSQR::Trilinos::TeuchosMessenger;
+using TSQR::Test::DistTsqrVerifier;
+using TSQR::Test::DistTsqrBenchmarker;
+
+using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcp_implicit_cast;
+using Teuchos::Tuple;
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace TSQR { 
-  namespace Trilinos { 
-    namespace Test {
 
-      using Teuchos::RCP;
-      using Teuchos::Tuple;
+template< class Ordinal, class Scalar >
+class MessengerPairMaker {
+public:
+  typedef int ordinal_type;
+  typedef Scalar scalar_type;
 
-      const char docString[] = "This program tests TSQR::DistTsqr, which "
-	"implements the internode-parallel part of TSQR (TSQR::Tsqr).  "
-	"Accuracy and performance tests are included.";
+  typedef std::pair< RCP< MessengerBase< ordinal_type > >, RCP< MessengerBase< scalar_type > > > pair_type;
 
-      static void
-      verifyDistTsqr (RCP< const Teuchos::Comm<int> > comm,
-		      const int numCols,
-		      const bool testComplex,
-		      const bool humanReadable,
-		      const bool debug,
-		      std::ostream& out,
-		      std::ostream& err,
-		      std::vector<int>& seed,
-		      const bool useSeed)
-      {
-	if (! useSeed)
-	  {
-	    seed.resize (4);
-	    seed[0] = 0;
-	    seed[1] = 0;
-	    seed[2] = 0;
-	    seed[3] = 1;
-	  }
-	using TSQR::Trilinos::TeuchosMessenger;
-	using TSQR::Test::DistTsqrVerifier;
-	const bool testReal = true;
+  static pair_type
+  makePair (const RCP< const Teuchos::Comm<int> >& comm)
+  {
+    RCP< TeuchosMessenger< ordinal_type > > derivedOrdinalComm (new TeuchosMessenger< ordinal_type > (comm));
+    RCP< MessengerBase< ordinal_type > > ordinalComm = rcp_implicit_cast< MessengerBase< ordinal_type > > (derivedOrdinalComm);
 
-	if (testReal)
-	  {
-	    {
-	      typedef float scalar_type;
-	      std::string scalarTypeName ("float");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef MessengerBase< scalar_type > messenger_type;
-	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier ((messenger_type* const) &scalarComm, 
-				      seed, scalarTypeName, humanReadable, 
-				      debug, out, err);
-	      verifier.verify (numCols);
-	      verifier.getSeed (seed);
-	    }
-	    {
-	      typedef double scalar_type;
-	      std::string scalarTypeName ("double");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef MessengerBase< scalar_type > messenger_type;
-	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier ((messenger_type* const) &scalarComm, 
-				      seed, scalarTypeName, humanReadable, 
-				      debug, out, err);
-	      verifier.verify (numCols);
-	      verifier.getSeed (seed);
-	    }
-	  }
-	
-	if (testComplex)
-	  {
+    RCP< TeuchosMessenger< scalar_type > > derivedScalarComm (new TeuchosMessenger< scalar_type > (comm));
+    RCP< MessengerBase< scalar_type > > scalarComm = rcp_implicit_cast< MessengerBase < scalar_type > > (derivedScalarComm);
+
+    return std::make_pair (ordinalComm, scalarComm);
+  }
+};
+
+
+
+#define TSQR_TEST_DIST_TSQR( ScalarType, typeString )			\
+do {							         	\
+  typedef int ordinal_type;						\
+  typedef ScalarType scalar_type;					\
+  typedef MessengerPairMaker< ordinal_type, scalar_type >::pair_type pair_type; \
+  typedef DistTsqrVerifier< int, scalar_type > verifier_type;		\
+									\
+  std::string scalarTypeName (typeString);				\
+  pair_type messPair = MessengerPairMaker< ordinal_type, scalar_type >::makePair (comm); \
+  verifier_type verifier (messPair.first, messPair.second, seed,	\
+			  scalarTypeName, out, err, 			\
+			  testFactorExplicit, testFactorImplicit,	\
+			  humanReadable, printMatrices, debug);		\
+  verifier.verify (numCols);						\
+  verifier.getSeed (seed);						\
+} while(false)
+
+
+#define TSQR_BENCHMARK_DIST_TSQR( theType, typeString )			\
+do {									\
+  typedef theType scalar_type;						\
+  typedef MessengerBase< scalar_type > base_messenger_type;	        \
+  typedef RCP< base_messenger_type > base_messenger_ptr;		\
+  typedef TeuchosMessenger< scalar_type > derived_messenger_type;       \
+  typedef RCP< derived_messenger_type > derived_messenger_ptr;		\
+  typedef DistTsqrBenchmarker< int, scalar_type, timer_type >		\
+    benchmarker_type;							\
+									\
+  std::string scalarTypeName (typeString);				\
+  derived_messenger_ptr scalarCommDerived (new derived_messenger_type (comm)); \
+  base_messenger_ptr scalarComm =					\
+    rcp_implicit_cast< base_messenger_type > (scalarCommDerived);	\
+  benchmarker_type benchmarker (scalarComm, doubleComm, seed,		\
+				scalarTypeName, out, err,		\
+				testFactorExplicit, testFactorImplicit, \
+				humanReadable, debug);			\
+  benchmarker.benchmark (numTrials, numCols);				\
+  benchmarker.getSeed (seed);						\
+} while(false)
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+const char docString[] = "This program tests TSQR::DistTsqr, which "
+  "implements the internode-parallel part of TSQR (TSQR::Tsqr).  "
+  "Accuracy and performance tests are included.";
+
+/// \class DistTsqrTestParameters
+/// \brief Encapsulates values of command-line parameters
+///
+struct DistTsqrTestParameters {
+  int numCols, numTrials;
+  bool testReal;
 #ifdef HAVE_TSQR_COMPLEX
-	    using std::complex;
-	    {
-	      typedef complex<float> scalar_type;
-	      std::string scalarTypeName ("complex<float>");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef MessengerBase< scalar_type > messenger_type;
-	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier ((messenger_type* const) &scalarComm,
-				      seed, scalarTypeName, humanReadable, 
-				      debug, out, err);
-	      verifier.verify (numCols);
-	      verifier.getSeed (seed);
-	    }
-	    {
-	      typedef complex<double> scalar_type;
-	      std::string scalarTypeName ("complex<double>");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef MessengerBase< scalar_type > messenger_type;
-	      typedef DistTsqrVerifier< int, scalar_type > verifier_type;
-	      verifier_type verifier ((messenger_type* const) &scalarComm, 
-				      seed, scalarTypeName, humanReadable, 
-				      debug, out, err);
-	      verifier.verify (numCols);
-	      verifier.getSeed (seed);
-	    }
+  bool testComplex;
+#endif // HAVE_TSQR_COMPLEX
+  bool verify, benchmark;
+  bool testFactorExplicit, testFactorImplicit;
+  bool humanReadable, printMatrices, debug;
+
+  DistTsqrTestParameters () :
+    numCols (10), 
+    numTrials (10), 
+    testReal (true),
+#ifdef HAVE_TSQR_COMPLEX
+    testComplex (true),
+#endif // HAVE_TSQR_COMPLEX
+    verify (true),
+    benchmark (false),
+    testFactorExplicit (true),
+    testFactorImplicit (true),
+    humanReadable (false),
+    printMatrices (false),
+    debug (false)
+  {}
+};
+
+static void
+verify (RCP< const Teuchos::Comm<int> > comm,
+	const DistTsqrTestParameters& params,
+	std::ostream& out,
+	std::ostream& err,
+	std::vector<int>& seed,
+	const bool useSeed)
+{
+  const bool testReal = params.testReal;
+#ifdef HAVE_TSQR_COMPLEX
+  const bool testComplex = params.testComplex;
 #else // Don't HAVE_TSQR_COMPLEX
-	    throw std::logic_error("TSQR was not built with complex "
-				   "arithmetic support");
+  const bool testComplex = false;
 #endif // HAVE_TSQR_COMPLEX
-	  }
-      }
 
+  const int numCols = params.numCols;
+  const bool testFactorExplicit = params.testFactorExplicit;
+  const bool testFactorImplicit = params.testFactorImplicit;
+  const bool humanReadable = params.humanReadable;
+  const bool printMatrices = params.printMatrices;
+  const bool debug = params.debug;
 
-      static void
-      benchmarkDistTsqr (RCP< const Teuchos::Comm<int> > comm,
-			 const int numCols,
-			 const int numTrials,
-			 const bool testComplex,
-			 const bool humanReadable,
-			 const bool debug,
-			 std::ostream& out,
-			 std::ostream& err,
-			 std::vector<int>& seed,
-			 const bool useSeed)
-      {
-	using TSQR::Test::DistTsqrBenchmarker;
-	using TSQR::Trilinos::TeuchosMessenger;
-	typedef Teuchos::Time timer_type;
-
-	if (! useSeed)
-	  {
-	    seed.resize (4);
-	    seed[0] = 0;
-	    seed[1] = 0;
-	    seed[2] = 0;
-	    seed[3] = 1;
-	  }
-	TeuchosMessenger< double > doubleComm (comm);
-	const bool testReal = true;
-
-	if (testReal)
-	  {
-	    {
-	      typedef float scalar_type;
-	      std::string scalarTypeName ("float");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
-		benchmarker_type;
-	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
-					    scalarTypeName, humanReadable,
-					    debug, out, err);
-	      benchmarker.benchmark (numTrials, numCols);
-	      benchmarker.getSeed (seed);
-	    }
-	    {
-	      typedef double scalar_type;
-	      std::string scalarTypeName ("double");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
-		benchmarker_type;
-	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
-					    scalarTypeName, humanReadable,
-					    debug, out, err);
-	      benchmarker.benchmark (numTrials, numCols);
-	      benchmarker.getSeed (seed);
-	    }
-	  }
-	
-	if (testComplex)
-	  {
+  if (! useSeed)
+    {
+      seed.resize (4);
+      seed[0] = 0;
+      seed[1] = 0;
+      seed[2] = 0;
+      seed[3] = 1;
+    }
+  if (testReal)
+    {
+      TSQR_TEST_DIST_TSQR( float, "float" );
+      TSQR_TEST_DIST_TSQR( double, "double" );
+    }
+  if (testComplex)
+    {
 #ifdef HAVE_TSQR_COMPLEX
-	    using std::complex;
-	    {
-	      typedef complex<float> scalar_type;
-	      std::string scalarTypeName ("complex<float>");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
-		benchmarker_type;
-	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
-					    scalarTypeName, humanReadable,
-					    debug, out, err);
-	      benchmarker.benchmark (numTrials, numCols);
-	      benchmarker.getSeed (seed);
-	    }
-	    {
-	      typedef complex<double> scalar_type;
-	      std::string scalarTypeName ("complex<double>");
-	      TeuchosMessenger< scalar_type > scalarComm (comm);
-	      typedef DistTsqrBenchmarker< int, scalar_type, timer_type > 
-		benchmarker_type;
-	      benchmarker_type benchmarker (&scalarComm, &doubleComm, seed, 
-					    scalarTypeName, humanReadable,
-					    debug, out, err);
-	      benchmarker.benchmark (numTrials, numCols);
-	      benchmarker.getSeed (seed);
-	    }
+      using std::complex;
+
+      TSQR_TEST_DIST_TSQR( complex<float>, "complex<float>" );
+      TSQR_TEST_DIST_TSQR( complex<double>, "complex<double>" );
+
 #else // Don't HAVE_TSQR_COMPLEX
-	    throw std::logic_error("TSQR was not built with complex "
-				   "arithmetic support");
+      throw std::logic_error("TSQR was not built with complex "
+			     "arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
-	  }
-      }
+    }
+}
 
 
-      /// \class DistTsqrTestParameters
-      /// \brief Encapsulates values of command-line parameters
-      ///
-      struct DistTsqrTestParameters {
-	DistTsqrTestParameters () :
-	  numCols (10), 
-	  numTrials (10), 
+static void
+benchmark (RCP< const Teuchos::Comm<int> > comm,
+	   const DistTsqrTestParameters& params,
+	   std::ostream& out,
+	   std::ostream& err,
+	   std::vector<int>& seed,
+	   const bool useSeed)
+{
+  typedef Teuchos::Time timer_type;
+
+  const bool testReal = params.testReal;
 #ifdef HAVE_TSQR_COMPLEX
-	  testComplex (true),
+  const bool testComplex = params.testComplex;
+#else // Don't HAVE_TSQR_COMPLEX
+  const bool testComplex = false;
 #endif // HAVE_TSQR_COMPLEX
-	  verify (true),
-	  benchmark (false),
-	  debug (false),
-	  humanReadable (false)
-	{}
 
-	int numCols, numTrials;
+  const int numCols = params.numCols;
+  const int numTrials = params.numTrials;
+  const bool testFactorExplicit = params.testFactorExplicit;
+  const bool testFactorImplicit = params.testFactorImplicit;
+  const bool humanReadable = params.humanReadable;
+  const bool debug = params.debug;
+
+  if (! useSeed)
+    {
+      seed.resize (4);
+      seed[0] = 0;
+      seed[1] = 0;
+      seed[2] = 0;
+      seed[3] = 1;
+    }
+  RCP< MessengerBase< double > > doubleComm = 
+    rcp_implicit_cast< MessengerBase< double > > (RCP< TeuchosMessenger< double > > (new TeuchosMessenger< double > (comm)));
+
+  if (testReal)
+    {
+      TSQR_BENCHMARK_DIST_TSQR( float, "float" );
+      TSQR_BENCHMARK_DIST_TSQR( double, "double" );
+    }
+  if (testComplex)
+    {
 #ifdef HAVE_TSQR_COMPLEX
-	bool testComplex;
+      using std::complex;
+
+      TSQR_BENCHMARK_DIST_TSQR( complex<float>, "complex<float>" );
+      TSQR_BENCHMARK_DIST_TSQR( complex<double>, "complex<double>" );
+
+#else // Don't HAVE_TSQR_COMPLEX
+      throw std::logic_error("TSQR was not built with complex "
+			     "arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
-	bool verify, benchmark, debug, humanReadable;
-      };
+    }
+}
 
-      /// \brief Parse command-line options for this test
-      ///
-      /// \param argc [in] As usual in C(++)
-      /// \param argv [in] As usual in C(++)
-      /// \param allowedToPrint [in] Whether this (MPI) process is allowed
-      ///   to print to stdout/stderr.  Different per (MPI) process.
-      /// \param printedHelp [out] Whether this (MPI) process printed the
-      ///   "help" display (summary of command-line options)
-      ///
-      /// \return Encapsulation of command-line options 
-      static DistTsqrTestParameters
-      parseOptions (int argc, 
-		    char* argv[], 
-		    const bool allowedToPrint, 
-		    bool& printedHelp)
-      {
-	using std::cerr;
-	using std::endl;
 
-	printedHelp = false;
+/// \brief Parse command-line options for this test
+///
+/// \param argc [in] As usual in C(++)
+/// \param argv [in] As usual in C(++)
+/// \param allowedToPrint [in] Whether this (MPI) process is allowed
+///   to print to stdout/stderr.  Different per (MPI) process.
+/// \param printedHelp [out] Whether this (MPI) process printed the
+///   "help" display (summary of command-line options)
+///
+/// \return Encapsulation of command-line options 
+static DistTsqrTestParameters
+parseOptions (int argc, 
+	      char* argv[], 
+	      const bool allowedToPrint, 
+	      bool& printedHelp)
+{
+  using std::cerr;
+  using std::endl;
 
-	// Command-line parameters, set to their default values.
-	DistTsqrTestParameters params;
-	try {
-	  Teuchos::CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true, 
-						     /* recognizeAllOptions=*/ true);
-	  cmdLineProc.setDocString (docString);
-	  cmdLineProc.setOption ("verify",
-				 "noverify",
-				 &params.verify,
-				 "Test accuracy");
-	  cmdLineProc.setOption ("benchmark",
-				 "nobenchmark",
-				 &params.benchmark,
-				 "Test performance");
-	  cmdLineProc.setOption ("debug", 
-				 "nodebug", 
-				 &params.debug, 
-				 "Print debugging information");
-	  cmdLineProc.setOption ("human-readable",
-				 "machine-readable",
-				 &params.humanReadable,
-				 "If set, make output easy to read by humans "
-				 "(but hard to parse)");
-	  cmdLineProc.setOption ("ncols", 
-				 &params.numCols, 
-				 "Number of columns in the test matrix");
-	  cmdLineProc.setOption ("ntrials", 
-				 &params.numTrials, 
-				 "Number of trials (only used when \"--benchmark\"");
+  printedHelp = false;
+
+  // Command-line parameters, set to their default values.
+  DistTsqrTestParameters params;
+  try {
+    Teuchos::CommandLineProcessor cmdLineProc (/* throwExceptions=*/ true, 
+					       /* recognizeAllOptions=*/ true);
+    cmdLineProc.setDocString (docString);
+    cmdLineProc.setOption ("verify",
+			   "noverify",
+			   &params.verify,
+			   "Test accuracy");
+    cmdLineProc.setOption ("benchmark",
+			   "nobenchmark",
+			   &params.benchmark,
+			   "Test performance");
+    cmdLineProc.setOption ("implicit",
+			   "noimplicit",
+			   &params.testFactorImplicit,
+			   "Test DistTsqr\'s factor() and explicit_Q()");
+    cmdLineProc.setOption ("explicit",
+			   "noexplicit",
+			   &params.testFactorExplicit,
+			   "Test DistTsqr\'s factorExplicit()");
+    cmdLineProc.setOption ("print-matrices", 
+			   "no-print-matrices", 
+			   &params.printMatrices, 
+			   "Print global test matrices and computed results to stderr");
+    cmdLineProc.setOption ("debug", 
+			   "nodebug", 
+			   &params.debug, 
+			   "Print debugging information");
+    cmdLineProc.setOption ("human-readable",
+			   "machine-readable",
+			   &params.humanReadable,
+			   "If set, make output easy to read by humans "
+			   "(but hard to parse)");
+    cmdLineProc.setOption ("ncols", 
+			   &params.numCols, 
+			   "Number of columns in the test matrix");
+    cmdLineProc.setOption ("ntrials", 
+			   &params.numTrials, 
+			   "Number of trials (only used when \"--benchmark\"");
+    cmdLineProc.setOption ("real", 
+			   "noreal",
+			   &params.testReal,
+			   "Test real arithmetic routines");
 #ifdef HAVE_TSQR_COMPLEX
-	  cmdLineProc.setOption ("complex", 
-				 "nocomplex",
-				 &params.testComplex,
-				 "Test complex arithmetic, as well as real");
+    cmdLineProc.setOption ("complex", 
+			   "nocomplex",
+			   &params.testComplex,
+			   "Test complex arithmetic routines");
 #endif // HAVE_TSQR_COMPLEX
-	  cmdLineProc.parse (argc, argv);
-	} 
-	catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
-	  if (allowedToPrint)
-	    cerr << "Unrecognized command-line option: " << e.what() << endl;
-	  throw e;
-	}
-	catch (Teuchos::CommandLineProcessor::HelpPrinted& e) { 
-	  printedHelp = true;
-	} 
+    cmdLineProc.parse (argc, argv);
+  } 
+  catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
+    if (allowedToPrint)
+      cerr << "Unrecognized command-line option: " << e.what() << endl;
+    throw e;
+  }
+  catch (Teuchos::CommandLineProcessor::HelpPrinted& e) { 
+    printedHelp = true;
+  } 
 
-	// Validate command-line options.  We provide default values
-	// for unset options, so we don't have to validate those.
-	if (params.numCols <= 0)
-	  throw std::invalid_argument ("Number of columns must be positive");
-	else if (params.benchmark && params.numTrials < 1)
-	  throw std::invalid_argument ("\"--benchmark\" option requires numTrials >= 1");
+  // Validate command-line options.  We provide default values
+  // for unset options, so we don't have to validate those.
+  if (params.numCols <= 0)
+    throw std::invalid_argument ("Number of columns must be positive");
+  else if (params.benchmark && params.numTrials < 1)
+    throw std::invalid_argument ("\"--benchmark\" option requires numTrials >= 1");
 
-	return params;
-      }
-
-    } // namespace Test
-  } // namespace Trilinos
-} // namespace TSQR
-
+  return params;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -351,10 +370,6 @@ namespace TSQR {
 int 
 main (int argc, char *argv[]) 
 {
-  using Teuchos::RCP;
-  using TSQR::Trilinos::Test::DistTsqrTestParameters;
-  using TSQR::Trilinos::Test::parseOptions;
-
 #ifdef HAVE_MPI
   typedef RCP< const Teuchos::Comm<int> > comm_ptr;
 
@@ -383,31 +398,20 @@ main (int argc, char *argv[])
   if (printedHelp)
     return 0;
 
-#ifdef HAVE_TSQR_COMPLEX
-  const bool testComplex = params.testComplex;
-#else // Don't HAVE_TSQR_COMPLEX
-  const bool testComplex = false;
-#endif // HAVE_TSQR_COMPLEX
-
   if (params.verify)
     {
-      using TSQR::Trilinos::Test::verifyDistTsqr;
       std::vector<int> seed(4);
       const bool useSeed = false;
-      verifyDistTsqr (comm, params.numCols, testComplex, params.humanReadable,
-		      params.debug, out, err, seed, useSeed);
+
+      verify (comm, params, out, err, seed, useSeed);
     }
-  
   if (params.benchmark)
     {
-      using TSQR::Trilinos::Test::benchmarkDistTsqr;
       std::vector<int> seed(4);
       const bool useSeed = false;
-      benchmarkDistTsqr (comm, params.numCols, params.numTrials, testComplex,
-			 params.humanReadable, params.debug, out, err, seed,
-			 useSeed);
-    }
 
+      benchmark (comm, params, out, err, seed, useSeed);
+    }
   if (allowedToPrint)
     out << "\nEnd Result: TEST PASSED" << std::endl;
   return 0;

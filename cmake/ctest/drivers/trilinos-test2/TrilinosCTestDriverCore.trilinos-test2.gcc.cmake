@@ -24,17 +24,27 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   # Only turn on PyTrilinos for shared libraries
   SET_DEFAULT( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} PyTrilinos TriKota)
   
+  SET(TPLBASEDIR /home/trilinos/tpl/gcc4.1.2)
+
   SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DCMAKE_BUILD_TYPE:STRING=RELEASE"
     "-DCOVERAGE_COMMAND:FILEPATH=/usr/bin/gcov"
     "-DMEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind"
-    "-DNetcdf_LIBRARY_DIRS=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/lib"
-    "-DNetcdf_INCLUDE_DIRS=/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/include"
+    "-DNetcdf_LIBRARY_DIRS=${TPLBASEDIR}/netcdf_4.0/lib"
+    "-DNetcdf_INCLUDE_DIRS=${TPLBASEDIR}/netcdf_4.0/include"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
     "-DMesquite_ENABLE_TESTS:BOOL=ON"
-    "-DCPPUNIT_LIBRARY:STRING=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/lib/libcppunit.a"
-    "-DCPPUNIT_INCLUDES:STRING=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/include"
+    "-DCPPUNIT_LIBRARY:FILEPATH=${TPLBASEDIR}/cppunit-1.12.1/lib/libcppunit.a"
+    "-DCPPUNIT_INCLUDES:FILEPATH=${TPLBASEDIR}/cppunit-1.12.1/include"
+    #"-DExpat_INCLUDE_DIRS:FILEPATH=/home/rppawlo/LIME_TPLs/TPLs_src/expat/lib"
+    #"-DExpat_LIBRARY_DIRS:FILEPATH=/home/rppawlo/LIME_TPLs/TPLs_src/expat/lib"
+    "-DLAMMPS_INCLUDE_DIRS:FILEPATH=${TPLBASEDIR}"
+    "-DTPL_LAMMPS_LIBRARIES:STIRNG=${TPLBASEDIR}/lammps/src/liblmp_wsblade.a"
+    "-Dcouple_INCLUDE_DIRS:FILEPATH=${TPLBASEDIR}/couple"
+    "-DTPL_couple_LIBRARIES:FILEPATH=${TPLBASEDIR}/couple/libcouple.a"
+    "-DSPPARKS_INCLUDE_DIRS:FILEPATH=${TPLBASEDIR}/spparks/src"
+    "-DTPL_SPPARKS_LIBRARIES:FILEPATH=${TPLBASEDIR}/spparks/src/libspk_wsblade.a"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")

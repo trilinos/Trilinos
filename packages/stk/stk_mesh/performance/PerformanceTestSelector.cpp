@@ -37,7 +37,16 @@ STKUNIT_UNIT_TEST( PerformanceTestSelector, start)
 STKUNIT_UNIT_TEST( PerformanceTestSelector, timings)
 {
   // Construction
+
+  // If we are running with STL in debug mode we shrink the problem
+  // down in order to keep things running in a reasonable amount of
+  // time.
+#ifdef _GLIBCXX_DEBUG
+  size_t N = 1000;
+#else
   size_t N = 10000;
+#endif
+
   VariableSelectorFixture fix(N);
 
   std::vector<double> selector_creation(N/2);

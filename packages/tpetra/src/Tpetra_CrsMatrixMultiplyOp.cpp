@@ -2,8 +2,6 @@
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
-// #include "Tpetra_ExplicitInstantiationHelpers.hpp"
-
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>

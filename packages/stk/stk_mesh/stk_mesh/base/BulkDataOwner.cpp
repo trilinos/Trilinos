@@ -407,7 +407,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
   //------------------------------
   // Send entities, along with their closure, to the new owner processes
-  // Remember what is destroyed and created to update the distributed index.
   {
     std::ostringstream error_msg ;
     int error_count = 0 ;
@@ -460,6 +459,10 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
         std::pair<Entity*,bool> result =
           m_entity_repo.internal_create_entity( key );
+
+        m_entity_repo.log_created_parallel_copy( *(result.first) );
+
+        // The entity was copied and not created.
 
         m_entity_repo.set_entity_owner_rank( *(result.first), owner);
 
