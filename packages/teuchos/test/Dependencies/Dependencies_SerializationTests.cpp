@@ -860,6 +860,309 @@ RANGE_VALIDATOR_TEST(float)
 RANGE_VALIDATOR_TEST(llint)
 #endif
 
+/* General Testing*/
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, DependencySerializationExceptions){
+  
+  RCP<DependencySheet> depSheet = rcp(new DependencySheet);
+  TEST_THROW(RCP<ParameterList> missingDependeeList = 
+    getParametersFromXmlFile("MissingDependeeTag.xml", depSheet),
+    MissingDependeesException);
+  TEST_THROW(RCP<ParameterList> missingDependentsList = 
+    getParametersFromXmlFile("MissingDependentTag.xml", depSheet),
+    MissingDependentsException);
+  TEST_THROW(RCP<ParameterList> missingDependeeList = 
+    getParametersFromXmlFile("MissingDependee.xml", depSheet),
+    MissingDependeeException);
+  TEST_THROW(RCP<ParameterList> missingDependentList = 
+    getParametersFromXmlFile("MissingDependent.xml", depSheet),
+    MissingDependentException);
+
+  RCP<ParameterEntry> dependeeParam = rcp(new ParameterEntry(true));
+  RCP<ParameterEntry> dependentParam = rcp(new ParameterEntry("blah"));
+  RCP<BoolVisualDependency> boolVisDep = 
+    rcp(new BoolVisualDependency(dependeeParam, dependentParam));
+
+  XMLParameterListWriter::EntryIDsMap entryIDsMap;
+  entryIDsMap[dependentParam] = 1;
+  ValidatortoIDMap validatorIDsMap;
+  BoolVisualDependencyXMLConverter boolVisConverter;
+  TEST_THROW(
+    boolVisConverter.fromDependencytoXML(
+    boolVisDep, entryIDsMap, validatorIDsMap),
+    MissingDependeeException);
+  entryIDsMap.erase(dependentParam);
+  entryIDsMap[dependeeParam] = 3;
+  TEST_THROW(
+    boolVisConverter.fromDependencytoXML(
+    boolVisDep, entryIDsMap, validatorIDsMap),
+    MissingDependentException);
+}
+
+/* Testing serialization exceptions for NumberVisualDependencies */
+
+
+#define TOO_MANY_DEPENDEES_TEST( \
+  NAME, \
+  DependeeDefaultValue, \
+  DependentDefaultValue, \
+  ConstructorCode, \
+  PreConstructorCode \
+  ) \
+ \
+TEUCHOS_UNIT_TEST(Teuchos_Dependencies, NAME##TooManyDependeesTest) \
+{ \
+  RCP<ParameterEntry> dependeeParam = rcp( \
+    new ParameterEntry( DependeeDefaultValue )); \
+  RCP<ParameterEntry> extraDependeeParam =  \
+    rcp(new ParameterEntry( DependeeDefaultValue )); \
+  RCP<ParameterEntry> dependentParam =  \
+    rcp(new ParameterEntry( DependentDefaultValue )); \
+ \
+  XMLParameterListWriter::EntryIDsMap writerEntryMap; \
+  writerEntryMap[dependeeParam] = 1; \
+  writerEntryMap[dependentParam] = 2; \
+  ValidatortoIDMap writerValiMap; \
+ \
+  XMLParameterListReader::EntryIDsMap readerEntryMap; \
+  readerEntryMap[1] = dependeeParam; \
+  readerEntryMap[2] = dependentParam; \
+  readerEntryMap[3] = extraDependeeParam; \
+  IDtoValidatorMap readerValiMap; \
+ \
+  PreConstructorCode \
+  RCP<Dependency> dep =  \
+    rcp(new ConstructorCode ); \
+ \
+  XMLObject depXML = DependencyXMLConverterDB::convertDependency( \
+    dep, writerEntryMap, writerValiMap); \
+ \
+  XMLObject extraDependee(DependencyXMLConverter::getDependeeTagName()); \
+  extraDependee.addAttribute<ParameterEntry::ParameterEntryID>( \
+    DependencyXMLConverter::getParameterIDAttributeName(), 3); \
+  depXML.addChild(extraDependee); \
+ \
+  TEST_THROW( \
+    DependencyXMLConverterDB::convertXML( \
+      depXML, readerEntryMap, readerValiMap), \
+    TooManyDependeesException); \
+ \
+} 
+
+TOO_MANY_DEPENDEES_TEST(
+  NumberVisualDependency,
+  4,
+  "blah",
+  NumberVisualDependency<int>(dependeeParam, dependentParam),
+  {}
+)
+
+TOO_MANY_DEPENDEES_TEST(
+  BoolVisualDependency,
+  true,
+  "blah",
+  BoolVisualDependency(dependeeParam, dependentParam),
+  {}
+)
+
+TOO_MANY_DEPENDEES_TEST(
+  StringVisualDependency,
+  std::string("blah"),
+  4,
+  StringVisualDependency(dependeeParam, dependentParam, "steve"),
+  {}
+)
+
+TOO_MANY_DEPENDEES_TEST(
+  BoolValidatorDependency,
+  true,
+  4,
+  BoolValidatorDependency(dependeeParam, dependentParam, null),
+  {}
+)
+
+TOO_MANY_DEPENDEES_TEST(
+  StringValidatorDependency,
+  std::string("blah"),
+  4,
+  StringValidatorDependency(dependeeParam, dependentParam, valiMap),
+  RCP<FileNameValidator> scrapVali = 
+    DummyObjectGetter<FileNameValidator>::getDummyObject();
+  StringValidatorDependency::ValueToValidatorMap valiMap;
+  valiMap["blah"] = scrapVali;
+  writerValiMap.insert(scrapVali);
+  readerValiMap.insert(
+    IDtoValidatorMap::IDValidatorPair(
+      writerValiMap.find(scrapVali)->second,scrapVali));
+)
+
+TOO_MANY_DEPENDEES_TEST(
+  RangeValidatorDependency,
+  4,
+  "blah",
+  RangeValidatorDependency<int>(dependeeParam, dependentParam, valiMap),
+  RCP<FileNameValidator> scrapVali = 
+    DummyObjectGetter<FileNameValidator>::getDummyObject();
+  RangeValidatorDependency<int>::RangeToValidatorMap valiMap;
+  RangeValidatorDependency<int>::Range scrapRange(2,5);
+  valiMap[scrapRange] = scrapVali;
+  writerValiMap.insert(scrapVali);
+  readerValiMap.insert(
+    IDtoValidatorMap::IDValidatorPair(
+      writerValiMap.find(scrapVali)->second,scrapVali));
+)
+
+typedef NumberArrayLengthDependency<int, double> IntDoubleArrayLengthDep;
+TOO_MANY_DEPENDEES_TEST(
+  NumberArrayLengthDependency,
+  4,
+  Array<double>(4,3.0),
+  IntDoubleArrayLengthDep(dependeeParam, dependentParam),
+  {}
+)
+
+TEUCHOS_UNIT_TEST(
+  Teuchos_Dependencies, RangeValidatorDepSerializationExceptions)
+{
+
+  RCP<ParameterEntry> dependeeParam = rcp( 
+    new ParameterEntry( 3 )); 
+  RCP<ParameterEntry> dependentParam =  
+    rcp(new ParameterEntry( "blah" )); 
+ 
+  XMLParameterListWriter::EntryIDsMap writerEntryMap; 
+  writerEntryMap[dependeeParam] = 1; 
+  writerEntryMap[dependentParam] = 2; 
+  ValidatortoIDMap writerValiMap; 
+ 
+  XMLParameterListReader::EntryIDsMap readerEntryMap; 
+  readerEntryMap[1] = dependeeParam; 
+  readerEntryMap[2] = dependentParam; 
+  IDtoValidatorMap readerValiMap; 
+
+  RCP<FileNameValidator> scrapVali = 
+    DummyObjectGetter<FileNameValidator>::getDummyObject();
+  RangeValidatorDependency<int>::RangeToValidatorMap valiMap;
+  RangeValidatorDependency<int>::Range scrapRange(2,5);
+  valiMap[scrapRange] = scrapVali;
+  writerValiMap.insert(scrapVali);
+  readerValiMap.insert(
+    IDtoValidatorMap::IDValidatorPair(
+      writerValiMap.find(scrapVali)->second,scrapVali));
+
+  RCP<Dependency> rangeDep = 
+   rcp(new RangeValidatorDependency<int>(
+    dependeeParam, dependentParam, valiMap));
+
+  XMLObject rangeDepXML = DependencyXMLConverterDB::convertDependency(
+    rangeDep, writerEntryMap, writerValiMap);
+
+  XMLObject missingRangesXML(rangeDepXML.getTag());
+  missingRangesXML.addAttribute(
+    DependencyXMLConverter::getTypeAttributeName(),
+    rangeDepXML.getAttribute(DependencyXMLConverter::getTypeAttributeName()));
+  for(int i =0; i< rangeDepXML.numChildren(); i++){
+    if(rangeDepXML.getChild(i).getTag() !=
+      RangeValidatorDependencyXMLConverter<int>::getRangesAndValidatorsTag())
+    {
+      missingRangesXML.addChild(rangeDepXML.getChild(i).deepCopy());
+    }
+  }
+
+  TEST_THROW(
+    DependencyXMLConverterDB::convertXML(
+      missingRangesXML, readerEntryMap, readerValiMap),
+    MissingRangesAndValidatorsTagException);
+
+  readerValiMap.erase(writerValiMap.find(scrapVali)->second);
+  TEST_THROW(
+    DependencyXMLConverterDB::convertXML(
+     rangeDepXML, readerEntryMap, readerValiMap),
+    MissingValidatorException);
+}
+
+TEUCHOS_UNIT_TEST(
+  Teuchos_Dependencies, StringValidatordDepSerializationExceptions)
+{
+
+
+  RCP<ParameterEntry> dependeeParam = rcp( 
+    new ParameterEntry( std::string("blah") )); 
+  RCP<ParameterEntry> dependentParam =  
+    rcp(new ParameterEntry( "blah" )); 
+ 
+  XMLParameterListWriter::EntryIDsMap writerEntryMap; 
+  writerEntryMap[dependeeParam] = 1; 
+  writerEntryMap[dependentParam] = 2; 
+  ValidatortoIDMap writerValiMap; 
+ 
+  XMLParameterListReader::EntryIDsMap readerEntryMap; 
+  readerEntryMap[1] = dependeeParam; 
+  readerEntryMap[2] = dependentParam; 
+  IDtoValidatorMap readerValiMap; 
+
+  RCP<FileNameValidator> scrapVali = 
+    DummyObjectGetter<FileNameValidator>::getDummyObject();
+  RCP<FileNameValidator> scrapVali2 = 
+    DummyObjectGetter<FileNameValidator>::getDummyObject();
+  StringValidatorDependency::ValueToValidatorMap valiMap;
+  valiMap["blah"] = scrapVali;
+  writerValiMap.insert(scrapVali);
+  writerValiMap.insert(scrapVali2);
+  readerValiMap.insert(
+    IDtoValidatorMap::IDValidatorPair(
+      writerValiMap.find(scrapVali)->second,scrapVali));
+  readerValiMap.insert(
+    IDtoValidatorMap::IDValidatorPair(
+      writerValiMap.find(scrapVali2)->second,scrapVali2));
+
+   RCP<Dependency> stringValiDep = 
+     rcp(new StringValidatorDependency(
+      dependeeParam, dependentParam, valiMap, scrapVali2));
+
+   XMLObject stringValiDepXML = DependencyXMLConverterDB::convertDependency(
+    stringValiDep, writerEntryMap, writerValiMap); 
+
+  XMLObject missingValuesXML(stringValiDepXML.getTag());
+  missingValuesXML.addAttribute(
+    DependencyXMLConverter::getTypeAttributeName(),
+    stringValiDepXML.getAttribute(
+      DependencyXMLConverter::getTypeAttributeName()));
+
+  for(int i =0; i< stringValiDepXML.numChildren(); i++){
+    if(stringValiDepXML.getChild(i).getTag() !=
+      StringValidatorDependencyXMLConverter::getValuesAndValidatorsTag())
+    {
+      missingValuesXML.addChild(stringValiDepXML.getChild(i).deepCopy());
+    }
+  }
+  TEST_THROW(
+    DependencyXMLConverterDB::convertXML(
+      missingValuesXML, readerEntryMap, readerValiMap),
+    MissingValuesAndValidatorsTagException);
+
+  readerValiMap.erase(writerValiMap.find(scrapVali)->second);
+  TEST_THROW(
+    DependencyXMLConverterDB::convertXML(
+      stringValiDepXML, readerEntryMap, readerValiMap),
+    MissingValidatorException);
+
+  readerValiMap.insert(
+    IDtoValidatorMap::IDValidatorPair(
+      writerValiMap.find(scrapVali)->second,scrapVali));
+  readerValiMap.erase(writerValiMap.find(scrapVali2)->second);
+
+  TEST_THROW(
+    DependencyXMLConverterDB::convertXML(
+      stringValiDepXML, readerEntryMap, readerValiMap),
+    MissingValidatorException);
+}
+
+TEUCHOS_UNIT_TEST(
+  Teuchos_Dependencies, ConditionVisualDepSerializationExceptions)
+{
+
+
+}
 
 
 } //namespace Teuchos

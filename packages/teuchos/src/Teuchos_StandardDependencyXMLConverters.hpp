@@ -356,6 +356,12 @@ public:
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
     const IDtoValidatorMap& validatorIDsMap) const;
+
+  /** \brief . */
+  static const std::string& getValuesAndValidatorsTag(){
+    static const std::string valuesAndValidatorsTag = "ValuesAndValidators";
+    return valuesAndValidatorsTag;
+  }
   
   //@}
 
@@ -363,12 +369,6 @@ private:
   /** \name Private Members */
   //@{
  
-  /** \brief . */
-  static const std::string& getValuesAndValidatorsTag(){
-    static const std::string valuesAndValidatorsTag = "ValuesAndValidators";
-    return valuesAndValidatorsTag;
-  }
-
   /** \brief . */
   static const std::string& getPairTag(){
     static const std::string pairTag = "Pair";
@@ -468,6 +468,12 @@ public:
     RCP<const ParameterEntry> dependee,
     const Dependency::ParameterEntryList dependents,
     const IDtoValidatorMap& validatorIDsMap) const;
+
+  /** \brief . */
+  static const std::string& getRangesAndValidatorsTag(){
+    static const std::string rangesAndValidatorsTag = "RangesAndValidators";
+    return rangesAndValidatorsTag;
+  }
   
   //@}
 
@@ -475,11 +481,6 @@ private:
   /** \name Private Members */
   //@{
  
-  /** \brief . */
-  static const std::string& getRangesAndValidatorsTag(){
-    static const std::string rangesAndValidatorsTag = "RangesAndValidators";
-    return rangesAndValidatorsTag;
-  }
 
   /** \brief . */
   static const std::string& getPairTag(){

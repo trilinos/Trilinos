@@ -44,10 +44,12 @@ class IDtoValidatorMap {
 public:
 
   /** \brief . */
-  typedef std::map<int, RCP<ParameterEntryValidator> > ValidatorMap;
+  typedef std::map<ParameterEntryValidator::ValidatorID,
+    RCP<ParameterEntryValidator> > ValidatorMap;
 
   /** \brief . */
-  typedef std::pair<int, RCP<ParameterEntryValidator> > IDValidatorPair;
+  typedef std::pair<ParameterEntryValidator::ValidatorID, 
+    RCP<ParameterEntryValidator> > IDValidatorPair;
 
   /** \brief . */
   typedef ValidatorMap::iterator iterator;
@@ -70,6 +72,11 @@ public:
 
   /** \brief Returns a const_reference to the end of the map. */
   const_iterator end() const;
+
+  inline
+  size_t erase(const ParameterEntryValidator::ValidatorID& x){
+    return validatorMap.erase(x);
+  }
 
 private:
 

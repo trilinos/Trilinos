@@ -101,7 +101,7 @@ DependencyXMLConverter::fromDependencytoXML(
     TEST_FOR_EXCEPTION(entryIDsMap.find(*it) == entryIDsMap.end(),
       MissingDependeeException,
       "Can't find the Dependee of a dependency in the given " <<
-      "ValidatordIDsMap.. Occured when converting " <<
+      "EntryIDsMap. Occured when converting " <<
       "to XML" << std::endl << std::endl);
     currentDependee.addAttribute<ParameterEntry::ParameterEntryID>(
       getParameterIDAttributeName(), entryIDsMap.find(*it)->second);
