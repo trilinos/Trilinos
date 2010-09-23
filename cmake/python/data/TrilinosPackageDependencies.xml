@@ -27,20 +27,6 @@
       <Regression address="teuchos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Trios" dir="Trios">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
-    <LIB_OPTIONAL_DEP_TPLS value="XDMF,HDF5"/>
-    <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="trios-checkins@software.sandia.gov"/>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
   <Package name="ThreadPool" dir="ThreadPool">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -319,6 +305,20 @@
     <EmailAddresses>
       <Checkin address="pamgen-checkins@software.sandia.gov"/>
       <Regression address="pamgen-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
+  <Package name="Trios" dir="Trios">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Pamgen"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="XDMF,HDF5,Netcdf"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="Netcdf"/>
+    <EmailAddresses>
+      <Checkin address="trios-checkins@software.sandia.gov"/>
+      <Regression address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="Ifpack" dir="ifpack">

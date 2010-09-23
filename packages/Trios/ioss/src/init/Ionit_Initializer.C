@@ -32,9 +32,15 @@
 
 #include <init/Ionit_Initializer.h>
 
+#if !defined(NO_EXODUS_SUPPORT)
 #include <exodusII/Ioex_IOFactory.h>
+#endif
 #include <heartbeat/Iohb_DatabaseIO.h>
 #include <generated/Iogn_DatabaseIO.h>
+#if !defined(NO_PAMGEN_SUPPORT)
+#include <pamgen/Iopg_DatabaseIO.h>
+#endif
+
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Initializer.h>
 #include <transform/Iotr_Initializer.h>
@@ -43,9 +49,14 @@ namespace Ioss {
   namespace Init {
     Initializer::Initializer()
     {
-      Ioex::IOFactory::factory();     // ExodusII
+#if !defined(NO_EXODUS_SUPPORT)
+      Ioex::IOFactory::factory();    // ExodusII
+#endif
       Iohb::IOFactory::factory();   // HeartBeat
       Iogn::IOFactory::factory();  // Generated
+#if !defined(NO_PAMGEN_SUPPORT)
+      Iopg::IOFactory::factory(); // Pamgen
+#endif
 
       Ioss::StorageInitializer();
       Ioss::Initializer();

@@ -9,11 +9,6 @@
       <Email address="teuchos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="Trios">
-    <EmailAddresses>
-      <Email address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="ThreadPool">
     <EmailAddresses>
       <Email address="threadpool-regression@software.sandia.gov"/>
@@ -172,6 +167,12 @@
   <SubProject name="Pamgen">
     <EmailAddresses>
       <Email address="pamgen-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
+  <SubProject name="Trios">
+    <Dependency name="Pamgen" type="LO"/>
+    <EmailAddresses>
+      <Email address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Ifpack">
@@ -385,7 +386,6 @@
   </SubProject>
   <SubProject name="STK">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="Trios" type="LO"/>
     <Dependency name="ThreadPool" type="LO"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
@@ -398,6 +398,8 @@
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>
+    <Dependency name="Pamgen" type="ILO"/>
+    <Dependency name="Trios" type="LO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
     <Dependency name="FEI" type="LO"/>
@@ -653,7 +655,6 @@
   </SubProject>
   <SubProject name="Sundance">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="Trios" type="LO"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="ILR"/>
     <Dependency name="RTOp" type="ILR"/>
@@ -669,6 +670,8 @@
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LR"/>
+    <Dependency name="Pamgen" type="ILO"/>
+    <Dependency name="Trios" type="LO"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="LR"/>

@@ -334,3 +334,16 @@ int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)
       return 0;
   }
 }
+
+void Ioss::Utils::fixup_name(char *name)
+{
+  // Convert 'name' to lowercase and convert spaces to '_'
+  assert(name != NULL);
+
+  size_t len = std::strlen(name);
+  for (size_t i=0; i < len; i++) {
+    name[i] = static_cast<char>(tolower(name[i]));  // guaranteed(?) to be ascii...
+    if (name[i] == ' ')
+      name[i] = '_';
+  }
+}
