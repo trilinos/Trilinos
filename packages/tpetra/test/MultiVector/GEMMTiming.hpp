@@ -26,19 +26,19 @@ void GEMMTiming(int M, int N, const Teuchos::RCP<const Teuchos::Comm<int> > &com
                               timeLocal  = Teuchos::TimeMonitor::getNewTimer("Y = X * Z_lcl");
   {
     Teuchos::TimeMonitor lcltimer(*timeReduce);
-    for (int i=0; i<3; ++i) {
+    for (int i=0; i<10; ++i) {
       Z->multiply(Teuchos::CONJ_TRANS, Teuchos::NO_TRANS, 1.0, *X, *Y, 0.0);
     }
   }
   { 
     Teuchos::TimeMonitor lcltimer(*timeLocal);
-    for (int i=0; i<3; ++i) {
+    for (int i=0; i<10; ++i) {
       Y->multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *X, *Z, 0.0);
     }
   }
   if (speak) {
-    std::cout << timeReduce->name() << ": " << timeReduce->totalElapsedTime()/3.0 << std::endl;
-    std::cout << timeLocal->name() << ": " << timeLocal->totalElapsedTime()/3.0 << std::endl;
+    std::cout << timeReduce->name() << ": " << timeReduce->totalElapsedTime()/10.0 << std::endl;
+    std::cout << timeLocal->name() << ": " << timeLocal->totalElapsedTime()/10.0 << std::endl;
   }
 }
 

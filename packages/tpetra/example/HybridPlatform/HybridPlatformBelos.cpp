@@ -35,6 +35,30 @@ namespace BelosTpetraHybridDriverTest {
   ParameterList plTestParams;
 };
 
+#ifdef HAVE_TPETRA_THREADED_MKL
+#include <mkl_service.h>
+template <class Node>
+class ThreadedBlasKiller {
+  public:
+  static void kill() {
+  }
+};
+template <>
+class ThreadedBlasKiller<Kokkos::ThrustGPUNode> {
+  public:
+  static void kill() {
+    mkl_set_dynamic(false);
+    mkl_set_num_threads(1);
+  }
+};
+#else
+template <class Node>
+class ThreadedBlasKiller {
+  public:
+  static void kill() {}
+};
+#endif
+
 template <class Node>
 class NodeDetails {
   public:
@@ -67,6 +91,8 @@ class runTest {
   public:
   static void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) {
     using std::endl;
+  
+    ThreadedBlasKiller<Node>::kill();
 
     typedef double Scalar;
     typedef int LO; //LocalOrdinal
