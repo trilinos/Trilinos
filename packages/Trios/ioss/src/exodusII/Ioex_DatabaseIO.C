@@ -2230,6 +2230,9 @@ namespace Ioex {
     std::vector<double> temp(num_entity);
 
     int step = get_region()->get_property("current_state").get_int();
+std::cout << "AGS:  Ioex_DatabaseIO, step is:  " << step << std::endl;
+
+    if (step<1) step=1;
 
     // get number of components, cycle through each component
     // and add suffix to base 'field_name'.  Look up index

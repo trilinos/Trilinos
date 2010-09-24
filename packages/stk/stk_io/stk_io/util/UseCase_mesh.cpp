@@ -480,6 +480,15 @@ namespace stk {
 	    meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
 	  stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+
+        // Transfer any nodal "transient" fields from Ioss to stk
+        Ioss::NameList names;
+        nb->field_describe(Ioss::Field::TRANSIENT, &names);
+        for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+std::cout << "AGS: getting field from Ioss named: " << *I << std::endl;
+          stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
+          stk::io::field_data_from_ioss(field, nodes, nb, *I);
+        }
       }
 
       // ========================================================================
@@ -519,13 +528,14 @@ namespace stk {
 	    size_t element_count = elem_ids.size();
 	    int nodes_per_elem = cell_topo->node_count ;
 
-	    std::vector<const stk::mesh::Entity*> elements(element_count);
+	    std::vector<stk::mesh::Entity*> elements(element_count);
 	    for(size_t i=0; i<element_count; ++i) {
 	      /// \todo REFACTOR cast from int to unsigned is unsafe and ugly.
 	      /// change function to take int[] argument.
               int *conn = &connectivity[i*nodes_per_elem];
 	      elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
 	    }
+
 	  }
 	}
       }
