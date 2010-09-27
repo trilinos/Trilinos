@@ -762,13 +762,13 @@ The __getitem__() method behaves according to the following table:
     single integer       false       >1    raise IndexError
     two integers         either      any   double
 
-You should provide global IDs as the integer indices if FillComplete()
-has been called.  If not, you should provide local IDs.  If you
+You should provide local IDs as the integer indices if FillComplete()
+has been called.  If not, you should provide global IDs.  If you
 reference a matrix element that is off-processor, __getitem__() will
 raise an IndexError.
 
 Under the covers, __getitem__() will call ExtractGlobalRowView() if
-FillComplete() has been called, or ExtractMyRowView() if it has not.
+FillComplete() has not been called, or ExtractMyRowView() if it has.
 If either of these return a non-zero return code, this is converted to
 a python RuntimeError.  The resulting data is copied to the output
 array.
@@ -1044,7 +1044,7 @@ Epetra_CrsMatrix::__getitem__;
 	  }
 	}
 
-      // If the matrix is not FillComplete()-ed, obtain the local row data
+      // If the matrix is not FillComplete()-ed, obtain the global row data
       // and column data
       }
       else
@@ -1058,7 +1058,6 @@ Epetra_CrsMatrix::__getitem__;
 	}
 	for (int i=0; i<numEntries; ++i)
 	{
-	  if (indices[i] == gcid)
 	  {
 	    result = values[i];
 	    break;
