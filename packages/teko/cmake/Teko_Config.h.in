@@ -2,3 +2,6 @@
 
 /* For enabling probing */
 #cmakedefine Teko_ENABLE_Isorropia
+
+/* For development mode */
+#cmakedefine Teko_ENABLE_DEV_MODE
