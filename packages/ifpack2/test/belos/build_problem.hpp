@@ -42,13 +42,15 @@ Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal
   }
   else x->putScalar(0);
 
+  Teuchos::RCP< BLinProb > problem;
+  Teuchos::RCP<IBOP> borderedA;
   if (nullVec == Teuchos::null) {
 
-     Teuchos::RCP<BLinProb> problem = Teuchos::rcp(new BLinProb(A,x,b));
+     problem = Teuchos::rcp(new BLinProb(A,x,b));
   } else {
-    Teuchos::RCP<IBOP> borderedA = Teuchos::rcp( new IBOP(A) );
+    borderedA = Teuchos::rcp( new IBOP(A) );
 
-    Teuchos::RCP<BLinProb> problem = Teuchos::rcp( new BLinProb(borderedA,x,b) );
+    problem = Teuchos::rcp( new BLinProb(borderedA,x,b) );
   }
 
 

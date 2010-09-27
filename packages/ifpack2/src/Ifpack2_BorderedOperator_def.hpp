@@ -36,8 +36,9 @@ namespace Ifpack2 {
 //Definitions for the BorderedOperator methods:
 
 //==============================================================================
-template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BorderedOperator(const Teuchos::RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) : 
+template< class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType >
+BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::
+BorderedOperator(const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node > >& A) : 
   A_(A)
 { 
 //  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
