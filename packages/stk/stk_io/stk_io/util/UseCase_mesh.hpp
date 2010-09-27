@@ -92,7 +92,8 @@ namespace stk {
 
       void populate_bulk_data(stk::mesh::BulkData &bulk_data,
 			      stk::io::util::MeshData &mesh_data,
-			      const std::string &mesh_type);
+			      const std::string &mesh_type,
+                              int step=-1);
     }
   }
 }
