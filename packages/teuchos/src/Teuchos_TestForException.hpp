@@ -34,6 +34,7 @@
 */
 
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_stacktrace.hpp"
 
 /*! \defgroup TestForException_grp Utility code for throwing exceptions and setting breakpoints. 
 \ingroup teuchos_language_support_grp
@@ -121,16 +122,20 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
 { \
     const bool throw_exception = (throw_exception_test); \
     if(throw_exception) { \
-      TestForException_incrThrowNumber(); \
-      std::ostringstream omsg; \
-	    omsg \
-        << __FILE__ << ":" << __LINE__ << ":\n\n" \
-        << "Throw number = " << TestForException_getThrowNumber() << "\n\n" \
-        << "Throw test that evaluated to true: "#throw_exception_test << "\n\n" \
-        << msg; \
-      const std::string &omsgstr = omsg.str(); \
-      TestForException_break(omsgstr); \
-      throw Exception(omsgstr); \
+        TestForException_incrThrowNumber(); \
+        std::ostringstream omsg; \
+        omsg \
+            << __FILE__ << ":" << __LINE__ << ":\n\n" \
+            << "Throw number = " << TestForException_getThrowNumber() \
+            << "\n\n" \
+            << "Throw test that evaluated to true: "#throw_exception_test \
+            << "\n\n" \
+            << Teuchos::get_backtrace() \
+            << "\n" \
+            << msg; \
+        const std::string &omsgstr = omsg.str(); \
+        TestForException_break(omsgstr); \
+        throw Exception(omsgstr); \
     } \
 }
 
