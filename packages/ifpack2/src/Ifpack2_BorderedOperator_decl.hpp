@@ -38,11 +38,6 @@
 #ifndef IFPACK2_BORDEREDOPERATOR_DECL_HPP
 #define IFPACK2_BORDEREDOPERATOR_DECL_HPP
 
-#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
-//definition:
-#include "Ifpack2_BorderedOperator_def.hpp"
-#endif
-
 #include "Ifpack2_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 
@@ -52,11 +47,10 @@
 #include <iostream>
 
 namespace Ifpack2 {
-
 //! Ifpack2 bordered operator
 
 /*!
-  Ifpack2::BorderedOperator is a pure virtual class
+  Ifpack2::BorderedOperator is a concrete class
 extending Tpetra::Operator and defining an interface.
 
   This class extends Tpetra::Operator, providing the additional methods:
@@ -74,7 +68,6 @@ Each time compute() is called, the object re-computes the actual values of
 the bordered operator.
 
 <b>Title of Method Description</b>
-
 */
 
 template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType >
@@ -89,28 +82,31 @@ class BorderedOperator : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Glo
     //@{
 
     //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-    virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
+    virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
 
     //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-    virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
+    virtual const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+
+
+  bool hasTransposeApply() const;
+
 
     //! Applies the effect of the bordered operator.
     virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                        Teuchos::ETransp mode = Teuchos::NO_TRANS,
                        Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                       Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
+                       Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
     //@}
 
   //! constuctor with Tpetra::Operator input.
   BorderedOperator(const Teuchos::RCP< const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node > > &A);
 
-
   private:
 
   //! reference to the operator
-  const Teuchos::RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
+  Teuchos::RCP<const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
 
 };//class BorderedOperator
 

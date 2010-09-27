@@ -36,19 +36,54 @@ namespace Ifpack2 {
 //Definitions for the BorderedOperator methods:
 
 //==============================================================================
-template< class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType >
+template< class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
 BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::
 BorderedOperator(const Teuchos::RCP<const Tpetra::Operator<Scalar, LocalOrdinal, GlobalOrdinal, Node > >& A) : 
   A_(A)
 { 
-//  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
-//      Teuchos::typeName(*this) << "::BordredOperator(): input matrix reference was null.");
+  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
+      Teuchos::typeName(*this) << "::BordredOperator(): input matrix reference was null.");
+}
+//==============================================================================
+//template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
+  //BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~BorderedOperator(){
+//}
+//==============================================================================
+template< class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
+const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::getDomainMap() const
+{
+  return A_->getDomainMap();
+}
+//==============================================================================
+template< class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
+const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& 
+BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::getRangeMap() const
+{
+  return A_->getRangeMap();
+}
+//==============================================================================
+template< class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
+bool
+BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::hasTransposeApply() const 
+{
+  return A_->hasTransposeApply();
+}
+//==============================================================================
+template< class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
+void BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::apply(
+     const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& X,
+           Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& Y,
+           Teuchos::ETransp mode, Scalar coefAx, Scalar coefY ) const 
+{
+  //bool opHasTrans = A_->hasTransposeApply();
+  //TEST_FOR_EXCEPTION( mode  &&  !opHasTrans, std::runtime_error,
+  //"Ifpack2::BorderedOperator::apply() ERROR: The operator does not implement transpose.");
+  TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
+     "Ifpack2::BorderedOperator::apply() ERROR: X.getNumVectors() != Y.getNumVectors().");
+  A_->apply(X, Y, mode, coefAx, coefY );
 }
 
-//==========================================================================
-//template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-//  BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~BorderedOperator(){
-//}
 
 }//namespace Ifpack2
 

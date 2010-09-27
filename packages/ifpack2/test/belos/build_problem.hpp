@@ -18,7 +18,7 @@
 #include "read_matrix.hpp"
 #include "build_precond.hpp"
 
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+template< class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node >
 Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > build_problem_mm(Teuchos::ParameterList& test_params, const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& b, Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullVec)
 {
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>             TOP;
@@ -125,7 +125,7 @@ Teuchos::RCP<
     throw std::runtime_error("No matrix file specified.");
   }
 
-  Teuchos::RCP<BLinProb> problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A, b);
+  Teuchos::RCP<BLinProb> problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A, b, nullVec);
 
   return problem;
 }
