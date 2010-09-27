@@ -170,6 +170,7 @@ APPEND_SET(HEADERS
   Teuchos_implicit_cast.hpp
   Teuchos_map.hpp
   Teuchos_oblackholestream.hpp
+  Teuchos_stacktrace.hpp
   Teuchos_Version.hpp
   )
 
@@ -219,6 +220,7 @@ APPEND_SET(SOURCES
   Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp
   Teuchos_Workspace.cpp
   Teuchos_dyn_cast.cpp
+  Teuchos_stacktrace.cpp
   )
 
 # Set addition headers and source based on package-specific
@@ -304,3 +306,7 @@ PACKAGE_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEFINES -DTEUCHOS_LIB_EXPORTS_MODE
   )
+
+if(HAVE_TEUCHOS_BFD)
+    target_link_libraries(teuchos bfd iberty)
+endif(HAVE_TEUCHOS_BFD)

@@ -100,6 +100,10 @@
 
 #cmakedefine HAVE_TEUCHOS_C_EXCEPTIONS
 
+#cmakedefine HAVE_TEUCHOS_LINK
+
+#cmakedefine HAVE_TEUCHOS_BFD
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H
 
