@@ -29,8 +29,6 @@
 #ifndef TEUCHOS_TEST_FOR_EXCEPTION_H
 #define TEUCHOS_TEST_FOR_EXCEPTION_H
 
-#include <Teuchos_TypeNameTraits.hpp>
-
 /*! \file Teuchos_TestForException.hpp
 \brief Macro for throwing an exception with breakpointing to ease debugging.
 */
