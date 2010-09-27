@@ -54,6 +54,7 @@ SET(HEADERS ${HEADERS}
   Ifpack2_RILUK_decl.hpp
   Ifpack2_RILUK_def.hpp
   Ifpack2_ScalingType.hpp
+  Ifpack2_BorderedOperator.hpp
   Ifpack2_Version.hpp
   )
 

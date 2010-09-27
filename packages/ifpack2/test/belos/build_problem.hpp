@@ -9,6 +9,7 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
+#include "Ifpack2_BorderedOperator.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 
 #include "BelosLinearProblem.hpp"
@@ -18,15 +19,15 @@
 #include "build_precond.hpp"
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > build_problem_mm(Teuchos::ParameterList& test_params, const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& b)
+Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > build_problem_mm(Teuchos::ParameterList& test_params, const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& b, Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& nullVec)
 {
-  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                TMap;
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  typedef Belos::OperatorTraits<Scalar,TMV,TOP>                       BOPT;
-  typedef Belos::MultiVecTraits<Scalar,TMV>                           BMVT;
-  typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
+  typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>             TOP;
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>          TMV;
+  typedef Belos::OperatorTraits<Scalar,TMV,TOP>                                BOPT;    
+  typedef Belos::MultiVecTraits<Scalar,TMV>                                    BMVT;
+  typedef Belos::LinearProblem<Scalar,TMV,TOP>                                 BLinProb;
+  typedef Ifpack2::BorderedOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    IBOP; 
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                         TMap;
 
   Teuchos::RCP<const TMap> rowmap = A->getRowMap();
 
@@ -41,7 +42,16 @@ Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal
   }
   else x->putScalar(0);
 
-  Teuchos::RCP<BLinProb> problem = Teuchos::rcp(new BLinProb(A,x,b));
+  if (nullVec == Teuchos::null) {
+
+     Teuchos::RCP<BLinProb> problem = Teuchos::rcp(new BLinProb(A,x,b));
+  } else {
+    Teuchos::RCP<IBOP> borderedA = Teuchos::rcp( new IBOP(A) );
+
+    Teuchos::RCP<BLinProb> problem = Teuchos::rcp( new BLinProb(borderedA,x,b) );
+  }
+
+
 
   std::string tifpack_precond("not specified");
   Ifpack2::getParameter(test_params, "Ifpack2::Preconditioner", tifpack_precond);
