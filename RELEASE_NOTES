@@ -37,7 +37,73 @@ Package Release Notes:
 
 -------------------------------------------------------------------------------
 
-ADD
+ForTrilinos
+
+ - This release includes 11 modules or classes of the Epetra package.
+
+ - This package is still in its experimental stage and is only supported on AIX.
+
+ - Sample configure script are provided in
+   Trilinos/sampleScripts/aix-fortrilinos-serial and
+   Trilinos/sampleScripts/aix-fortrilinos-mpif90 for serial and mpi builds
+   respectively.
+ 
+ - Because of the object-oriented features used, it requires a XL Fortran
+   compiler v13.1. The source code can be compiled using the xlf compiler
+   option.
+
+ - Required compiler flags for Fortran include:
+   -qfixed=72 -qxlines:   deals with older Fortran source code in other Trilinos
+                          packages. These flags are used for mpi builds and must
+                          be specified in the configure script.
+   -qxlf2003=polymorphic: allows for the use of polymorphism in the source code.
+   -qxlf2003=autorealloc: allows the compiler to automatically reallocate the
+                          left hand side with the shape of the right hand side
+                          when using allocatable variables in an assignment.
+   -qfree=f90:            informs the compiler that the source code is free form
+                          and conforms to Fortran 90.
+
+   These flags(-qfree=f90 -qxlf2003=polymorphic -qxlf2003=autorealloc) are
+   hardcoded in Trilinos/packages/ForTrilinos/CMakeLists.txt
+
+ - Required compiler flag for xlc++ include:
+   -qrtti=all:            this flag should be included in the configure script.
+
+ - The project is primarily user-driven; so new interfaces are developed at the
+   request of Trilinos users.
+
+-------------------------------------------------------------------------------
+  
+  Meros
+  
+  - Meros has been removed from the release. Teko provides replacement
+    Functionality.
+
+-------------------------------------------------------------------------------
+
+Teko
+
+  Teko is a library for implementation of blocked and segregated preconditioners
+  in the context of iterative solvers for linear systems. This includes a high
+  level interface for manipulating block operators and creating inverse
+  operators using solver and preconditioning capabilities in Trilinos. In
+  addition, utilities are provided that decompose large Epetra_CrsMatrix objects
+  into physically meaningful sub blocks.  A brief over view of the capabilities
+  built in Teko is
+
+  - Generic preconditioners operations: Additive, multiplicative, Neumann
+    series, block Gauss-Seidel, block Jacobi, and 2x2 block LU factorization
+
+  - Manipulation of abstract linear operators: implicit/explicit operator
+    addition and multiplication, constructing an approximate inverse operator
+    using Trilinos preconditioner and solver technology
+
+  - Deconstruction of Epetra_CrsMatrix into is physical components
+
+  - Parameter list driven interface for constructing preconditioners
+
+  NOTE: A word of caution.  The interfaces in Teko are still maturing and may
+  change substantially in the future. 
 
 ###############################################################################
 #                                                                             #
