@@ -74,10 +74,50 @@ ForTrilinos
 
 -------------------------------------------------------------------------------
   
-  Meros
+Meros
   
   - Meros has been removed from the release. Teko provides replacement
     Functionality.
+
+-------------------------------------------------------------------------------
+
+ML
+
+  User-Level functionality changes
+  
+  - Modifications to ML to allow user to specify the use of CRS storage.
+    Certain methods in Ifpack are much more efficient if the matrix is in
+    Epetra_CRS_Matrix mode.  This new switch tells ML to store things as CSR
+    instead of MSR (it's still the default).
+
+  - Modifying MLMEX so the solve mode can (optionally) return iteration
+    counts.  Only works in ML_Epetra mode, not MLAPI.
+
+  - Adding ML support for Ifpack-SuperLU(ILUTP) smoother.
+
+  - Adding a face-based least-squares finite element (LSFEM)
+    preconditioner to ML.  See TrilinosCouplings for an example.
+
+  - Adding MLMEX matlab interface to the cmake build system.
+
+  Internal changes, output changes and bugfixes
+
+  - Fixed a bug in ML_Project_Coordinates so that it works where
+    dim != numPDEs. For using auxillary aggregation for problems like linear
+    elasticity.
+
+  - Fixing a memory leak in ML_Init_Aux.
+
+  - Adding additional output to ML. This focuses on the IFPACK/SORa
+    smoother as well as improved RefMaxwell output.
+
+  - Modifications to RefMaxwell to allow direct use of Ifpack (rather
+    than via MLP).
+
+  - Removing ML's dependence on ZoltanTpl.
+
+  - Changed the output of the IFPACK-ILU smoother so that it is more
+    informative.
 
 -------------------------------------------------------------------------------
 
