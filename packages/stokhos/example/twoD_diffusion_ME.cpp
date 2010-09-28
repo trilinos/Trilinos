@@ -370,7 +370,8 @@ twoD_diffusion_ME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expn = 
     inArgs.get_sg_expansion();
 
-  Teuchos::RCP<const Stokhos::Sparse3Tensor<int, double> > Cijk;
+  typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+  Teuchos::RCP<const Cijk_type> Cijk;
   const Teuchos::Array<double> *norms;
   if (basis != Teuchos::null) {
     Cijk = expn->getTripleProduct(); 
@@ -544,24 +545,22 @@ twoD_diffusion_ME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   pc_size = basis->size(); 
   //for (int k=0; k<basis->dimension()+1; k++) {
   for (int k=0; k<pc_size; k++) {
-    int nj = Cijk->num_j(k); 
-    const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
-    for (int jj=0; jj<nj; jj++) {
-      int j = j_indices[jj];
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
+	 j_it != Cijk->j_end(k); ++j_it) {
+      int j = Stokhos::index(j_it);
       //std::cout << "full_expn = " << full_expn << std::endl;
       if(!full_expn) 
         B_k[k]->Apply((*x_sg)[j],*(sg_kx_vec_all[j]));
       else
         C_k[k]->Apply((*x_sg)[j],*(sg_kx_vec_all[j]));
     }
-    for (int jj=0; jj<nj; jj++) {
-      int j = j_indices[jj];
-      const Teuchos::Array<double>& cijk_values = Cijk->values(k,jj);
-      const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,jj);
-      int ni = i_indices.size();
-      for (int ii=0; ii<ni; ii++) {
-        int i = i_indices[ii];
-        double c = cijk_values[ii];  // C(i,j,k)
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
+	 j_it != Cijk->j_end(k); ++j_it) {
+      int j = Stokhos::index(j_it);
+      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	   i_it != Cijk->i_end(j_it); ++i_it) {
+        int i = Stokhos::index(i_it);
+	double c = Stokhos::value(i_it);  // C(i,j,k)
         (*f_sg)[i].Update(1.0*c/(*norms)[i],*(sg_kx_vec_all[j]),1.0);
       }
     }

@@ -120,29 +120,47 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   result_block.PutScalar(0.0);
 
   int sz = sg_poly->basis()->size();
-  int i_limit = sg_poly->size();
+  int k_limit = sg_poly->size();
   if (only_use_linear)
-    i_limit = sg_poly->basis()->dimension() + 1;
+    k_limit = sg_poly->basis()->dimension() + 1;
   const Teuchos::Array<double>& norms = sg_poly->basis()->norm_squared();
-  int i,j,nl;
-  double c;
 
   rhs_block->Update(1.0, input_block, 0.0);
-  for (int k=0; k<sz; k++) {
-    nl = Cijk->num_values(k);
-    for (int l=0; l<nl; l++) {
-      Cijk->value(k,l,i,j,c); 
-      if (i!=0 && i<i_limit) {
-	(*sg_poly)[i].Apply(*(result_block.GetBlock(j)), *mat_vec_tmp);
-	rhs_block->GetBlock(k)->Update(-1.0*c/norms[k], *mat_vec_tmp, 1.0);
-      }
-    }
-      
+
+  for (int i=0; i<sz; i++) {
+
+    Teuchos::RCP<Epetra_MultiVector> res_i = result_block.GetBlock(i);
     {
       // Apply deterministic preconditioner
       TEUCHOS_FUNC_TIME_MONITOR("Total AGS Deterministic Preconditioner Time");
-      mean_prec->ApplyInverse(*(rhs_block->GetBlock(k)), 
-			      *(result_block.GetBlock(k)));
+      mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
+    }
+
+    for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i);
+	 k_it != Cijk->k_end(i); ++k_it) {
+      int k = index(k_it);
+      if (k!=0 && k<k_limit) {
+	bool do_mat_vec = false;
+	for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
+	     j_it != Cijk->j_end(k_it); ++j_it) {
+	  int j = index(j_it);
+	  if (j > i) {
+	    do_mat_vec = true;
+	    break;
+	  }
+	}
+	if (do_mat_vec) {
+	  (*sg_poly)[k].Apply(*res_i, *mat_vec_tmp);
+	  for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
+	       j_it != Cijk->j_end(k_it); ++j_it) {
+	    int j = index(j_it);
+	    double c = value(j_it);
+	    if (j > i) {
+	      rhs_block->GetBlock(j)->Update(-1.0*c/norms[j], *mat_vec_tmp, 1.0);
+	    }
+	  }
+	}
+      }
     }
   }
 
@@ -150,23 +168,42 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   if (symmetric) {
     
     rhs_block->Update(1.0, input_block, 0.0);
-    for (int k=sz-1; k>=0; k--) {
-      nl = Cijk->num_values(k);
-      for (int l=0; l<nl; l++) {
-	Cijk->value(k,l,i,j,c); 
-	if (i!=0 && i<i_limit) {
-	  (*sg_poly)[i].Apply(*(result_block.GetBlock(j)), *mat_vec_tmp);
-	  rhs_block->GetBlock(k)->Update(-1.0*c/norms[k], *mat_vec_tmp, 1.0);
-	}
-      }
-      
+
+    for (int i=sz-1; i>=0; --i) {
+       
+      Teuchos::RCP<Epetra_MultiVector> res_i = result_block.GetBlock(i);
       {
 	// Apply deterministic preconditioner
 	TEUCHOS_FUNC_TIME_MONITOR("Total AGS Deterministic Preconditioner Time");
-	mean_prec->ApplyInverse(*(rhs_block->GetBlock(k)), 
-				*(result_block.GetBlock(k)));
+	mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
       }
-    
+
+      for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i);
+	   k_it != Cijk->k_end(i); ++k_it) {
+	int k = index(k_it);
+	if (k!=0 && k<k_limit) {
+	  bool do_mat_vec = false;
+	  for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
+	       j_it != Cijk->j_end(k_it); ++j_it) {
+	    int j = index(j_it);
+	    if (j > i) {
+	      do_mat_vec = true;
+	      break;
+	    }
+	  }
+	  if (do_mat_vec) {
+	    (*sg_poly)[k].Apply(*res_i, *mat_vec_tmp);
+	    for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
+		 j_it != Cijk->j_end(k_it); ++j_it) {
+	      int j = index(j_it);
+	      double c = value(j_it);
+	      if (j > i) {
+		rhs_block->GetBlock(j)->Update(-1.0*c/norms[j], *mat_vec_tmp, 1.0);
+	      }
+	    }
+	  }
+	}
+      }
     }
   }
 

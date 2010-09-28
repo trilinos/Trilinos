@@ -90,14 +90,6 @@ IF(Stokhos_ENABLE_TriKota)
       )
 
      PACKAGE_ADD_EXECUTABLE(
-       Linear2D_Diffusion_PCE_DiagOP_Example
-       SOURCES linear2d_diffusion_pce_diag_op.cpp
-               twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
-               Stokhos_DiagEpetraOp.hpp Stokhos_DiagEpetraOp.cpp
-       COMM serial mpi
-      )
-
-     PACKAGE_ADD_EXECUTABLE(
        Linear2D_Diffusion_PCE_NOX_Example
        SOURCES linear2d_diffusion_pce_nox.cpp
                twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp

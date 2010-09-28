@@ -41,8 +41,8 @@ namespace NOX {
 	const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
 	const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
 	const Teuchos::RCP<Epetra_Operator>& J,
-	const NOX::Epetra::Vector& cloneVector,
-	const NOX::Epetra::Vector& detcloneVector,
+	const Teuchos::RCP<const Epetra_Map>& base_map,
+	const Teuchos::RCP<const Epetra_Map>& sg_map,
 	const Teuchos::RCP<NOX::Epetra::Scaling> scalingObject = 
 	Teuchos::null);
 
@@ -133,8 +133,11 @@ namespace NOX {
       //! Pointer to deterministic solver
       Teuchos::RCP<NOX::Epetra::LinearSystem> det_solver;
       
-      //! Pointer to Cijk
-      Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
+      //! Short-hand for Cijk
+      typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+      
+      //! Pointer to triple product
+      Teuchos::RCP<const Cijk_type > Cijk;
       
       //! Reference to the user supplied Jacobian interface functions
       Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInterfacePtr;
@@ -145,8 +148,11 @@ namespace NOX {
       //! Pointer to the PCE expansion of Jacobian.
       mutable Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
       
-      //! Pointer to the deterministic vector 
-      Teuchos::RCP<Epetra_Vector> detvec;
+      //! Stores base map
+      Teuchos::RCP<const Epetra_Map> base_map;
+
+      //! Stores SG map
+      Teuchos::RCP<const Epetra_Map> sg_map;
       
       //! Scaling object supplied by the user
       Teuchos::RCP<NOX::Epetra::Scaling> scaling;
@@ -154,20 +160,14 @@ namespace NOX {
       //! Printing Utilities object
       NOX::Utils utils;
       
-      //! Map for deterministic vectors
-      const Epetra_BlockMap* base_map;
-      
       //! Temporary vector used in Gauss-Seidel iteration
       mutable Teuchos::RCP<EpetraExt::BlockVector> sg_df_block;
+
+      //! Temporary vector used in Gauss-Seidel iteration
+      mutable Teuchos::RCP<EpetraExt::BlockVector> sg_y_block;
       
       //! Temporary vector used in Gauss-Seidel iteration
       mutable Teuchos::RCP<Epetra_Vector> kx;
-      
-      //! Temporary vectors used in Gauss-Seidel iteration
-      mutable std::vector< std::vector< Teuchos::RCP< Epetra_Vector> > > Kx_table;
-      
-      //! Whether to save the mat-vec table
-      bool MatVecTable;
 
       //! Only use linear terms in interation
       bool only_use_linear;

@@ -1,8 +1,8 @@
 
 #include "NOX_Epetra_LinearSystem_SGGS.hpp"
 
+#include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "EpetraExt_BlockVector.h"
 #include "Teuchos_ParameterList.hpp"
@@ -17,41 +17,33 @@ LinearSystemSGGS(
   const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
   const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
   const Teuchos::RCP<Epetra_Operator>& J,
-  const NOX::Epetra::Vector& cloneVector,
-  const NOX::Epetra::Vector& detcloneVector,
+  const Teuchos::RCP<const Epetra_Map>& base_map_,
+  const Teuchos::RCP<const Epetra_Map>& sg_map_,
   const Teuchos::RCP<NOX::Epetra::Scaling> s):
   det_solver(det_solver_),
   Cijk(Cijk_),
   jacInterfacePtr(iJac),
+  base_map(base_map_),
+  sg_map(sg_map_),
   scaling(s),
   utils(printingParams)
 {
   sg_op = Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(J, true);
   sg_poly = sg_op->getSGPolynomial();
-  detvec = Teuchos::rcp(new Epetra_Vector(detcloneVector.getEpetraVector()));
-  base_map = &(detvec->Map());
-  const Epetra_BlockMap *sg_map = &(cloneVector.getEpetraVector().Map());
+  sz = sg_poly->basis()->size();
 
-  MatVecTable = linearSolverParams.get("Save MatVec Table", true);
+  sg_df_block = 
+    Teuchos::rcp(new EpetraExt::BlockVector(*base_map, *sg_map));
+  sg_y_block = 
+    Teuchos::rcp(new EpetraExt::BlockVector(*base_map, *sg_map));
+  kx = Teuchos::rcp(new Epetra_Vector(*base_map));
+
   only_use_linear = linearSolverParams.get("Only Use Linear Terms", true);
   sz = sg_poly->basis()->size();
   K_limit = sg_poly->size();
   int dim = sg_poly->basis()->dimension();
   if (only_use_linear && sg_poly->size() > dim+1)
     K_limit = dim + 1;
-
-  sg_df_block = 
-    Teuchos::rcp(new EpetraExt::BlockVector(*base_map, *sg_map));
-  kx = Teuchos::rcp(new Epetra_Vector(*base_map));
-  if (MatVecTable) {
-    Kx_table.resize(sz);
-    for (int i=0;i<sz;i++) {
-      Kx_table[i].resize(K_limit);
-      for (int j=0;j<K_limit;j++) {
-	Kx_table[i][j] = Teuchos::rcp(new Epetra_Vector(*base_map));
-      }
-    }
-  }
 }
 
 NOX::Epetra::LinearSystemSGGS::
@@ -61,11 +53,11 @@ NOX::Epetra::LinearSystemSGGS::
 
 bool NOX::Epetra::LinearSystemSGGS::
 applyJacobian(const NOX::Epetra::Vector& input, 
-      		     NOX::Epetra::Vector& result) const
+	      NOX::Epetra::Vector& result) const
 {
   sg_op->SetUseTranspose(false);
-  int status = sg_op->Apply(input.getEpetraVector(), 
-				  result.getEpetraVector());
+  int status = sg_op->Apply(input.getEpetraVector(), result.getEpetraVector());
+
   return (status == 0);
 }
 
@@ -74,8 +66,7 @@ applyJacobianTranspose(const NOX::Epetra::Vector& input,
       			      NOX::Epetra::Vector& result) const
 {
   sg_op->SetUseTranspose(true);
-  int status = sg_op->Apply(input.getEpetraVector(), 
-			    result.getEpetraVector());
+  int status = sg_op->Apply(input.getEpetraVector(), result.getEpetraVector());
   sg_op->SetUseTranspose(false);
 
   return (status == 0);
@@ -103,38 +94,19 @@ applyJacobianInverse(Teuchos::ParameterList &params,
   sg_df_block->Update(-1.0, sg_f_block, 1.0);
   sg_df_block->Norm2(&norm_df);
   
-  Teuchos::RCP<Epetra_Vector> df, dx;
+  Teuchos::RCP<Epetra_Vector> f, df, dx;
 
   int iter = 0;
   while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
     TEUCHOS_FUNC_TIME_MONITOR("Total global solve Time");
     iter++;
     
-    // Loop over Cijk entries including a non-zero in the graph at
-    // indices (i,j) if there is any k for which Cijk is non-zero
-    //  ordinal_type Cijk_size = Cijk.size();
-    for (int k=0; k<sz; k++) {
-      df = sg_df_block->GetBlock(k);
-      dx = sg_dx_block.GetBlock(k);
-      df->Update(1.0, *sg_f_block.GetBlock(k), 0.0);
-
-      int nl = Cijk->num_values(k);
-      for (int l=0; l<nl; l++) {
-	int i,j;
-	double c;
-	Cijk->value(k,l,i,j,c); 
-	if (i!=0 && i<K_limit) {
-	  if (MatVecTable) {
-	    df->Update(-1.0*c/norms[k],*(Kx_table[j][i]),1.0);      
-	  }
-	  else {
-	    (*sg_poly)[i].Apply(*(sg_dx_block.GetBlock(j)),*kx);
-	    df->Update(-1.0*c/norms[k],*kx,1.0);      
-	  }  
-	}
-      }
-      
-      (*sg_poly)[0].Apply(*dx, *kx);
+    sg_y_block->Update(1.0, sg_f_block, 0.0);
+    
+    for (int i=0; i<sz; i++) {
+      f = sg_f_block.GetBlock(i);
+      df = sg_df_block->GetBlock(i);
+      dx = sg_dx_block.GetBlock(i);
 
       dx->PutScalar(0.0);
       Teuchos::ParameterList& det_solver_params = 
@@ -147,17 +119,31 @@ applyJacobianInverse(Teuchos::ParameterList &params,
 	det_solver->applyJacobianInverse(det_solver_params, nox_df, nox_dx);
       }
 
-      df->Update(-1.0, *kx, 1.0);
+      df->Update(1.0, *f, 0.0);
       
-      if (MatVecTable) {
-	for(int i=1;i<K_limit;i++) {
-	  (*sg_poly)[i].Apply(*dx, *(Kx_table[k][i]));
+      for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i);
+	   k_it != Cijk->k_end(i); ++k_it) {
+	int k = Stokhos::index(k_it);
+	if (k!=0 && k<K_limit) {
+	  (*sg_poly)[k].Apply(*dx, *kx);
+	  for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
+	       j_it != Cijk->j_end(k_it); ++j_it) {
+	    int j = Stokhos::index(j_it);
+	    double c = Stokhos::value(j_it);
+	    sg_df_block->GetBlock(j)->Update(-1.0*c/norms[j], *kx, 1.0);
+	    sg_y_block->GetBlock(j)->Update(-1.0*c/norms[j], *kx, 1.0);
+	  }
 	}
       }
+      
+      (*sg_poly)[0].Apply(*dx, *kx);
+      sg_y_block->GetBlock(i)->Update(-1.0, *kx, 1.0);
+      
     } //End of k loop
     
-    sg_df_block->Norm2(&norm_df);
-    utils.out() << "\t Gauss-Seidel relative residual norm at iteration "<< iter <<" is " << norm_df/norm_f << std::endl;
+    sg_y_block->Norm2(&norm_df);
+    utils.out() << "\t Gauss-Seidel relative residual norm at iteration "
+		<< iter <<" is " << norm_df/norm_f << std::endl;
   } //End of iter loop
 
   //return status;
@@ -201,7 +187,7 @@ createPreconditioner(const NOX::Epetra::Vector& x,
 		     Teuchos::ParameterList& p,
 		     bool recomputeGraph) const
 {
-  EpetraExt::BlockVector sg_x_block(View, detvec->Map(), x.getEpetraVector());
+  EpetraExt::BlockVector sg_x_block(View, *base_map, x.getEpetraVector());
   bool success = 
     det_solver->createPreconditioner(*(sg_x_block.GetBlock(0)), 
 				   p.sublist("Deterministic Solver Parameters"),
@@ -220,7 +206,7 @@ bool NOX::Epetra::LinearSystemSGGS::
 recomputePreconditioner(const NOX::Epetra::Vector& x, 
       		Teuchos::ParameterList& linearSolverParams) const
 {  
-  EpetraExt::BlockVector sg_x_block(View, detvec->Map(), x.getEpetraVector());
+  EpetraExt::BlockVector sg_x_block(View, *base_map, x.getEpetraVector());
   bool success = 
     det_solver->recomputePreconditioner(
       *(sg_x_block.GetBlock(0)), 
@@ -281,7 +267,6 @@ setJacobianOperatorForSolve(const
     Teuchos::rcp_dynamic_cast<const Stokhos::SGOperator>(solveJacOp, true);
   sg_op = Teuchos::rcp_const_cast<Stokhos::SGOperator>(const_sg_op);
   sg_poly = sg_op->getSGPolynomial();
-  return;
 }
 
 void NOX::Epetra::LinearSystemSGGS::

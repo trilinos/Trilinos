@@ -462,6 +462,8 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 
     // Create NOX stochastic linear system object
     Teuchos::RCP<const Epetra_Vector> u = sg_model->get_x_init();
+    Teuchos::RCP<const Epetra_Map> base_map = model->get_x_map();
+    Teuchos::RCP<const Epetra_Map> sg_map = sg_model->get_x_map();
     Teuchos::RCP<Epetra_Operator> A = sg_model->create_W();
     Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = nox_interface;
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = nox_interface;
@@ -485,65 +487,53 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = nox_interface;
       stratLinSolParams.set("Preconditioner", "User Defined");
       linsys = 
-//	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-//							  iJac, A, iPrec, M,
-//							  *u));
-        Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams, 
-                                                              stratLinSolParams,                                                              iJac, A,
-                                                              iPrec, M, 
-                                                              *u, true));
+        Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+		       printParams, stratLinSolParams, iJac, A, iPrec, M, 
+		       *u, true));
     }
     else {
       Teuchos::RCP<Epetra_Operator> M = sg_model->create_WPrec()->PrecOp;
-      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = nox_interface;
+      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = 
+	nox_interface;
       linsys = 
-	//Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-	//						  iReq, iJac, A, 
-	//						  *u));
-        Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams, 
-                                                              stratLinSolParams,                                                              iJac, A,
-                                                              iPrec, M, 
-                                                              *u, true));
+        Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+		       printParams, stratLinSolParams, iJac, A, iPrec, M, 
+		       *u, true));
     }
     grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
     std::cout << "Solver is SG GMRES " << std::endl;
    }
-  else if (solve_method=="SG_GS") {
-    det_lsParams.set("Tolerance", 3e-13); 
-    Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-    lsParams.sublist("Deterministic Krylov Solver") = det_lsParams;
-    lsParams.set("Max Iterations",500);
-    lsParams.set("Tolerance", 1e-12);
-    lsParams.set("Save MatVec Table", true);
-    Teuchos::RCP<NOX::Epetra::LinearSystemSGGS> linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemSGGS(printParams, 
-                                                     stratLinSolParams,
-                                                     det_linsys, Cijk,
-                                                     iReq, iJac, A, 
-                                                     *u, *det_u));
-    grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
-    std::cout << "Solver is SG GS " << std::endl;
-  }
-  else {
-    det_lsParams.set("Tolerance", 3e-13); 
-    Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-    lsParams.sublist("Deterministic Krylov Solver") = det_lsParams;
-    lsParams.set("Max Iterations",100);
-    lsParams.set("Tolerance", 1e-12);
-    Teuchos::RCP<NOX::Epetra::LinearSystemSGJacobi> linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemSGJacobi(printParams, 
-                                                         stratLinSolParams,
-                                                         det_linsys, Cijk,
-                                                         iReq, iJac, A, 
-                                                         *u, *det_u));
-    grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
-    std::cout << "Solver is SG JACOBI " << std::endl;
- }
-
-//    // Build NOX group
-//    Teuchos::RCP<NOX::Epetra::Group> grp = 
-//      Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
-
+    else if (solve_method=="SG_GS") {
+      det_lsParams.set("Tolerance", 3e-13); 
+      Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+      lsParams.sublist("Deterministic Krylov Solver") = det_lsParams;
+      lsParams.set("Max Iterations",500);
+      lsParams.set("Tolerance", 1e-12);
+      lsParams.set("Save MatVec Table", true);
+      Teuchos::RCP<NOX::Epetra::LinearSystemSGGS> linsys =
+	Teuchos::rcp(new NOX::Epetra::LinearSystemSGGS(
+		       printParams, stratLinSolParams, det_linsys, Cijk,
+		       iReq, iJac, A, base_map, sg_map));
+      grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
+      std::cout << "Solver is SG GS " << std::endl;
+    }
+    else {
+      det_lsParams.set("Tolerance", 3e-13); 
+      Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+      lsParams.sublist("Deterministic Krylov Solver") = det_lsParams;
+      lsParams.set("Max Iterations",100);
+      lsParams.set("Tolerance", 1e-12);
+      Teuchos::ParameterList& jacobiOpParams =
+	lsParams.sublist("Jacobi SG Operator");
+      jacobiOpParams.set("Only Use Linear Terms", true);
+      Teuchos::RCP<NOX::Epetra::LinearSystemSGJacobi> linsys =
+	Teuchos::rcp(new NOX::Epetra::LinearSystemSGJacobi(
+		       printParams, stratLinSolParams, det_linsys, Cijk,
+		       iReq, iJac, A, base_map, sg_map));
+      grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
+      std::cout << "Solver is SG JACOBI " << std::endl;
+    }
+    
     // Create the Solver convergence test
     Teuchos::RCP<NOX::StatusTest::Generic> statusTests =
       NOX::StatusTest::buildStatusTests(statusParams, utils);
@@ -558,15 +548,11 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     NOX::StatusTest::StatusType status = solver->solve();
     SolutionTimer.stop();
 
-//    noxParams->print(std::cout);
-
     // Get final solution
     const NOX::Epetra::Group& finalGroup = 
       dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-
-//    std::cout << "finalSolution" << finalSolution <<std::endl;
 
 //////////////////////////////////////////////////////////////////////
 //Post process and output the results.

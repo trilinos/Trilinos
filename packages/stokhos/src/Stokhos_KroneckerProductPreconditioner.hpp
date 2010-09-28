@@ -173,8 +173,11 @@ namespace Stokhos {
     //! Pointer to the PCE expansion of Jacobian.
     Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
 
-    //! Pointer to triple product
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+    //! Short-hand for Cijk
+    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+
+    //! Stores triple product tensor
+    Teuchos::RCP<const Cijk_type> Cijk;
  
     //! Pointer to CrsMatrix G
     Teuchos::RCP<Epetra_CrsMatrix> G;

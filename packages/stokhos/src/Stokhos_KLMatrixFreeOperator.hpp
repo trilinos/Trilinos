@@ -162,8 +162,11 @@ namespace Stokhos {
     //! Stochastic Galerking basis
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
 
+    //! Short-hand for Cijk
+    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+
     //! Stores triple product tensor
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+    Teuchos::RCP<const Cijk_type> Cijk;
 
     //! Stores operators
     Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;

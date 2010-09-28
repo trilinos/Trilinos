@@ -248,19 +248,18 @@ setup()
   // Compute KL coefficients
   const Teuchos::Array<double>& norms = sg_basis->norm_squared();
   sparse_kl_coeffs = 
-    Teuchos::rcp(new Stokhos::Sparse3Tensor<int,double>(num_KL_computed+1));
+    //Teuchos::rcp(new Stokhos::Sparse3Tensor<int,double>(num_KL_computed+1));
+    Teuchos::rcp(new Stokhos::Sparse3Tensor<int,double>(expansion_size));
   for (int i=0; i<expansion_size; i++)
     sparse_kl_coeffs->sum_term(i, i, 0, norms[i]);
   for (int l=1; l<num_blocks; l++) {
-    int nj = Cijk->num_j(l);
-    const Teuchos::Array<int>& j_indices = Cijk->Jindices(l);
-    for (int p=0; p<nj; p++) {
-      int j = j_indices[p];
-      const Teuchos::Array<int>& i_indices = Cijk->Iindices(l,p);
-      const Teuchos::Array<double>& c_values = Cijk->values(l,p);
-      for (int ii=0; ii<i_indices.size(); ii++) {
-	int i = i_indices[ii];
-	double c  = c_values[ii];
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(l); 
+	 j_it != Cijk->j_end(l); ++j_it) {
+      int j = index(j_it);
+      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	   i_it != Cijk->i_end(j_it); ++i_it) {
+	int i = index(i_it);
+	double c  = value(i_it);
 	for (int k=1; k<num_KL_computed+1; k++) {
 	  double dp = dot_products[k-1][l-1];
 	  double v = dp*c;

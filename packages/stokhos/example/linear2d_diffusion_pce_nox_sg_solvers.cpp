@@ -143,11 +143,11 @@ TotalTimer.start();
     sigma = .1;
     mean = .2;
     weightCut = 1;   // Support for distribution is +-weightCut
-    //solve_method = "SG_GMRES";
-    solve_method = "SG_GS";
-    precMethod = "Mean-based";
+    solve_method = "SG_GMRES";
+    //solve_method = "SG_GS";
+    //precMethod = "Mean-based";
     //precMethod = "Gauss-Seidel";
-    //precMethod = "Approx-Gauss-Seidel";
+    precMethod = "Approx-Gauss-Seidel";
     randField = "UNIFORM";
     //randField = "LOG-NORMAL";
   }else{
@@ -428,6 +428,8 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 
     // Create NOX stochastic linear system object
     Teuchos::RCP<const Epetra_Vector> u = sg_model->get_x_init();
+    Teuchos::RCP<const Epetra_Map> base_map = model->get_x_map();
+    Teuchos::RCP<const Epetra_Map> sg_map = sg_model->get_x_map();
     Teuchos::RCP<Epetra_Operator> A = sg_model->create_W();
     Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = nox_interface;
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = nox_interface;
@@ -449,15 +451,13 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = nox_interface;
       lsParams.set("Preconditioner", "User Defined");
       linsys = 
-	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-							  iJac, A, iPrec, M,
-							  *u));
+	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
+		       printParams, lsParams, iJac, A, iPrec, M, *u));
     }
     else {
       linsys = 
-	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-							  iReq, iJac, A, 
-							  *u));
+	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
+		       printParams, lsParams, iReq, iJac, A, *u));
     }
     grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
     std::cout << "Solver is SG GMRES " << std::endl;
@@ -466,19 +466,22 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     det_lsParams.set("Tolerance", 3e-13); 
     lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
     Teuchos::RCP<NOX::Epetra::LinearSystemSGGS> linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemSGGS(printParams, lsParams,
-                                                         det_linsys, Cijk,
-                                                         iReq, iJac, A, *u, *det_u));
+      Teuchos::rcp(new NOX::Epetra::LinearSystemSGGS(
+		     printParams, lsParams, det_linsys, Cijk,
+		     iReq, iJac, A, base_map, sg_map));
     grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
     std::cout << "Solver is SG GS " << std::endl;
   }
   else {
     det_lsParams.set("Tolerance", 3e-13); 
     lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
+    Teuchos::ParameterList& jacobiOpParams =
+      lsParams.sublist("Jacobi SG Operator");
+    jacobiOpParams.set("Only Use Linear Terms", true);
     Teuchos::RCP<NOX::Epetra::LinearSystemSGJacobi> linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemSGJacobi(printParams, lsParams,
-                                                         det_linsys, Cijk,
-                                                          iReq, iJac, A, *u, *det_u));
+      Teuchos::rcp(new NOX::Epetra::LinearSystemSGJacobi(
+		     printParams, lsParams, det_linsys, Cijk,
+		     iReq, iJac, A, base_map, sg_map));
     grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
     std::cout << "Solver is SG JACOBI " << std::endl;
  }
@@ -504,8 +507,6 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
     sgParams->print(std::cout);
-
-//    std::cout << "finalSolution" << finalSolution <<std::endl;
 
 //////////////////////////////////////////////////////////////////////
 //Post process and output the results.

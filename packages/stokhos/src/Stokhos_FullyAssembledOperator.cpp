@@ -86,14 +86,13 @@ setupOperator(
 						  true);
     int nj = Cijk->num_j(k);
     if (nj > 0) {
-      const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
-      for (int jj=0; jj<nj; jj++) {
-	int j = j_indices[jj];
-	const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,jj);
-	const Teuchos::Array<double>& c_values = Cijk->values(k,jj);
-	for (int ii=0; ii<i_indices.size(); ii++) {
-	  int i = i_indices[ii];
-	  double c = c_values[ii];
+      for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
+	   j_it != Cijk->j_end(k); ++j_it) {
+	int j = index(j_it);
+	for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	     i_it != Cijk->i_end(j_it); ++i_it) {
+	  int i = index(i_it);
+	  double c = value(i_it);
 	  if (scale_op)
 	    c /= norms[i];
 	  this->SumIntoBlock(c, *block, i, j);

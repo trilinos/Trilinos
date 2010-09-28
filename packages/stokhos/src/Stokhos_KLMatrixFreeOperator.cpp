@@ -178,15 +178,13 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     k_begin = 1;
   for (int k=k_begin; k<=d; k++) {
     (*block_ops)[k].Apply(input_tmp, *bp); 
-    int nj = Cijk->num_j(k);
-    const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
-    for (int jj=0; jj<nj; jj++) {
-      int j = j_indices[jj];
-      const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,jj);
-      const Teuchos::Array<double>& c_values = Cijk->values(k,jj);
-      for (int ii=0; ii<i_indices.size(); ii++) {
-  	int i = i_indices[ii];
-	double c = c_values[ii];
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
+	 j_it != Cijk->j_end(k); ++j_it) {
+      int j = index(j_it);
+      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	   i_it != Cijk->i_end(j_it); ++i_it) {
+  	int i = index(i_it);
+	double c = value(i_it);
 	if (k == 0)
 	  c /= phi_0[0];
 	else {

@@ -158,17 +158,21 @@ namespace Stokhos {
     //! Pointer to the PCE expansion of Jacobian.
     Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
 
+    //! Short-hand for Cijk
+    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+
     //! Pointer to triple product
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+    Teuchos::RCP<const Cijk_type > Cijk;
 
     //! Temporary vector used in Gauss-Seidel iteration
     mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_df_block;
 
     //! Temporary vector used in Gauss-Seidel iteration
-    mutable Teuchos::RCP<Epetra_MultiVector> kx;
+    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_y_block;
 
     //! Temporary vector used in Gauss-Seidel iteration
-    mutable std::vector< std::vector< Teuchos::RCP< Epetra_MultiVector> > > Kx_table;
+    mutable Teuchos::RCP<Epetra_MultiVector> kx;
+
 
   }; // class GaussSeidelPreconditioner
   

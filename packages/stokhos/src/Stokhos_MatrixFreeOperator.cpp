@@ -179,32 +179,37 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   int dim = sg_basis->dimension();
   if (only_use_linear && num_blocks > dim+1)
     k_end = dim + 1;
-  for (int k=k_begin; k<k_end; k++) {
+  for (int k=k_begin; k<k_end; ++k) {
+    Cijk_type::kj_iterator j_begin = Cijk->j_begin(k);
+    Cijk_type::kj_iterator j_end = Cijk->j_end(k);
     int nj = Cijk->num_j(k);
     if (nj > 0) {
-      const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
       Teuchos::Array<double*> j_ptr(nj*m);
       Teuchos::Array<int> mj_indices(nj*m);
-      for (int l=0; l<nj; l++) {
+      int l = 0;
+      for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	int j = index(j_it);
 	for (int mm=0; mm<m; mm++) {
-	  j_ptr[l*m+mm] = input_block[j_indices[l]]->Values()+mm*N;
-	  mj_indices[l*m+mm] = j_indices[l]*m+mm;
+	  j_ptr[l*m+mm] = input_block[j]->Values()+mm*N;
+	  mj_indices[l*m+mm] = j*m+mm;
 	}
+	l++;
       }
       Epetra_MultiVector input_tmp(View, *input_base_map, &j_ptr[0], nj*m);
       Epetra_MultiVector result_tmp(View, *tmp_result, &mj_indices[0], nj*m);
       (*block_ops)[k].Apply(input_tmp, result_tmp);
-      for (int l=0; l<nj; l++) {
-	const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,l);
-	const Teuchos::Array<double>& c_values = Cijk->values(k,l);
-	for (int i=0; i<i_indices.size(); i++) {
-	  int ii = i_indices[i];
-	  double c = c_values[i];
+      l = 0;
+      for (Cijk_type::kj_iterator j_it = j_begin; j_it != j_end; ++j_it) {
+	for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	     i_it != Cijk->i_end(j_it); ++i_it) {
+	  int i = index(i_it);
+	  double c = value(i_it);
 	  if (scale_op)
-	    c /= norms[ii];
+	    c /= norms[i];
 	  for (int mm=0; mm<m; mm++)
-	    (*result_block[ii])(mm)->Update(c, *result_tmp(l*m+mm), 1.0);
+	    (*result_block[i])(mm)->Update(c, *result_tmp(l*m+mm), 1.0);
 	}
+	l++;
       }
     }
   }

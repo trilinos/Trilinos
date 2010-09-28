@@ -31,11 +31,11 @@
 template <typename ordinal_type, typename value_type>
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 Sparse3Tensor(ordinal_type sz) :
-  k_indices(sz),
+  i_indices(sz),
   j_indices(sz),
   Cijk_values(sz),
-  j_values(sz),
-  j_indices2(sz)
+  kji_data(sz),
+  ikj_data(sz)
 {
 }
 
@@ -48,68 +48,20 @@ Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-size() const
-{
-  return j_values.size();
-}
-
-template <typename ordinal_type, typename value_type>
-ordinal_type
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 num_values(ordinal_type i) const
 {
   return Cijk_values[i].size();
 }
 
 template <typename ordinal_type, typename value_type>
-ordinal_type
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-num_j(ordinal_type k) const
-{
-  return j_values[k].size();
-}
-
-template <typename ordinal_type, typename value_type>
 void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-value(ordinal_type i, ordinal_type l, ordinal_type& k, ordinal_type& j, 
+value(ordinal_type k, ordinal_type l, ordinal_type& i, ordinal_type& j, 
       value_type& c) const
 {
-  k = k_indices[i][l];
-  j = j_indices[i][l];
-  c = Cijk_values[i][l];
-}
-
-template <typename ordinal_type, typename value_type>
-const Teuchos::Array<ordinal_type>&
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-Jindices(ordinal_type k) const
-{
-  return j_indices2[k];
-}
-
-template <typename ordinal_type, typename value_type>
-const Teuchos::Array<ordinal_type>&
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-Iindices(ordinal_type k, ordinal_type l) const
-{
-  return j_values[k][l].i_indices;
-}
-
-template <typename ordinal_type, typename value_type>
-ordinal_type
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-j_index(ordinal_type k, ordinal_type l) const
-{
-  return j_values[k][l].j;
-}
-
-template <typename ordinal_type, typename value_type>
-const Teuchos::Array<value_type>&
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-values(ordinal_type k, ordinal_type l) const
-{
-  return j_values[k][l].c_values;
+  i = i_indices[k][l];
+  j = j_indices[k][l];
+  c = Cijk_values[k][l];
 }
 
 template <typename ordinal_type, typename value_type>
@@ -117,35 +69,12 @@ void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 add_term(ordinal_type i, ordinal_type j, ordinal_type k, const value_type& c)
 {
-  k_indices[i].push_back(k);
-  j_indices[i].push_back(j);
-  Cijk_values[i].push_back(c);
+  i_indices[k].push_back(i);
+  j_indices[k].push_back(j);
+  Cijk_values[k].push_back(c);
 
-  ordinal_type l = j_values[k].size()-1;
-  if (j_values[k].size() == 0 || j_values[k][l].j != j) {
-    j_values[k].push_back(JValues());
-    l = j_values[k].size()-1;
-    j_values[k][l].j = j;
-    j_indices2[k].push_back(j);
-  }
-  j_values[k][l].i_indices.push_back(i);
-  j_values[k][l].c_values.push_back(c);
-
-  // ordinal_type ldx;
-  // bool found = false;
-  // for (ordinal_type l=0; l<j_values[k].size(); l++) {
-  //   if (j_values[k][l].j == j) {
-  //     ldx = l;
-  //     found = true;
-  //   }
-  // }
-  // if (!found) {
-  //   j_values[k].push_back(JValues());
-  //   ldx = j_values[k].size()-1;
-  //   j_values[k][ldx].j = j;
-  // }
-  // j_values[k][ldx].i_indices.push_back(i);
-  // j_values[k][ldx].c_values.push_back(c);
+  kji_data[k][j][i] = c;
+  ikj_data[i][k][j] = c;
 }
 
 template <typename ordinal_type, typename value_type>
@@ -153,36 +82,8 @@ void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 sum_term(ordinal_type i, ordinal_type j, ordinal_type k, const value_type& c)
 {
-  ordinal_type ldx;
-  bool found_j = false;
-  for (ordinal_type l=0; l<j_values[k].size(); l++) {
-    if (j_values[k][l].j == j) {
-      ldx = l;
-      found_j = true;
-    }
-  }
-  if (!found_j) {
-    j_values[k].push_back(JValues());
-    ldx = j_values[k].size()-1;
-    j_values[k][ldx].j = j;
-    j_indices2[k].push_back(j);
-  }
-
-  ordinal_type idx;
-  bool found_i = false;
-  for (ordinal_type ii=0; ii<j_values[k][ldx].i_indices.size(); ii++) {
-    if (j_values[k][ldx].i_indices[ii] == i) {
-      idx = ii;
-      found_i = true;
-    }
-  }
-  if (!found_i) {
-    j_values[k][ldx].i_indices.push_back(i);
-    j_values[k][ldx].c_values.push_back(c);
-  }
-  else {
-    j_values[k][ldx].c_values[idx] += c;
-  }
+  kji_data[k][j][i] += c;
+  ikj_data[i][k][j] += c;
 }
 
 template <typename ordinal_type, typename value_type>
@@ -190,11 +91,11 @@ void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 print(std::ostream& os) const
 {
-  for (ordinal_type i=0; i<static_cast<ordinal_type>(Cijk_values.size()); i++)
-    for (ordinal_type l=0; l<static_cast<ordinal_type>(Cijk_values[i].size()); 
+  for (ordinal_type k=0; k<static_cast<ordinal_type>(Cijk_values.size()); k++)
+    for (ordinal_type l=0; l<static_cast<ordinal_type>(Cijk_values[k].size()); 
 	 l++)
-      os << "i = " << i << ", l = " << l 
-	 << ", k = " << k_indices[i][l] << ", j = " << j_indices[i][l]
-	 << ", Cijk = " << Cijk_values[i][l] << std::endl;
+      os << "k = " << k << ", l = " << l 
+	 << ", i = " << i_indices[k][l] << ", j = " << j_indices[k][l]
+	 << ", Cijk = " << Cijk_values[k][l] << std::endl;
 }
 

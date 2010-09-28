@@ -92,7 +92,6 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
   int max_iter = params->get("Max Iterations",100 );
   double sg_tol = params->get("Tolerance", 1e-12);
-  bool MatVecTable = params->get("Save MatVec Table", true);
   bool only_use_linear = params->get("Only Use Linear Terms", true);
   
   // We have to be careful if Input and Result are the same vector.
@@ -115,25 +114,9 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   if (sg_df_block == Teuchos::null || sg_df_block->NumVectors() != m) {
     sg_df_block = 
       Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
+    sg_y_block = 
+      Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
     kx = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
-    if (MatVecTable) {
-      Kx_table.resize(sz);
-      for (int i=0;i<sz;i++) {
-	Kx_table[i].resize(K_limit);
-	for (int j=0;j<K_limit;j++) {
-	  Kx_table[i][j] = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
-	}
-      }
-    }
-  }
-  else {
-    if (MatVecTable) {
-      for (int i=0;i<sz;i++) {
-  	for (int j=0;j<K_limit;j++) {
-  	  Kx_table[i][j]->PutScalar(0.0);
-  	}
-      }
-    }
   }
   
   // Extract blocks
@@ -148,38 +131,21 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   sg_df_block->Update(-1.0, sg_f_block, 1.0);
   sg_df_block->Norm2(&norm_df);
   
-  Teuchos::RCP<Epetra_MultiVector> df, dx;
+  Teuchos::RCP<Epetra_MultiVector> f, df, dx;
+
+  sg_df_block->Update(1.0, sg_f_block, 0.0);
 
   int iter = 0;
   while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
     TEUCHOS_FUNC_TIME_MONITOR("Total global solve Time");
     iter++;
-    
-    // Loop over Cijk entries including a non-zero in the graph at
-    // indices (i,j) if there is any k for which Cijk is non-zero
-    //  ordinal_type Cijk_size = Cijk.size();
-    for (int k=0; k<sz; k++) {
-      df = sg_df_block->GetBlock(k);
-      dx = sg_dx_block.GetBlock(k);
-      df->Update(1.0, *sg_f_block.GetBlock(k), 0.0);
 
-      int nl = Cijk->num_values(k);
-      for (int l=0; l<nl; l++) {
-	int i,j;
-	double c;
-	Cijk->value(k,l,i,j,c); 
-	if (i!=0 && i<K_limit) {
-	  if (MatVecTable) {
-	    df->Update(-1.0*c/norms[k],*(Kx_table[j][i]),1.0);      
-	  }
-	  else {
-	    (*sg_poly)[i].Apply(*(sg_dx_block.GetBlock(j)),*kx);
-	    df->Update(-1.0*c/norms[k],*kx,1.0);      
-	  }  
-	}
-      }
-      
-      (*sg_poly)[0].Apply(*dx, *kx);
+    sg_y_block->Update(1.0, sg_f_block, 0.0);
+    
+    for (int i=0; i<sz; i++) {
+      f = sg_f_block.GetBlock(i);
+      df = sg_df_block->GetBlock(i);
+      dx = sg_dx_block.GetBlock(i);
 
       dx->PutScalar(0.0);
       Teuchos::ParameterList& det_solver_params = 
@@ -196,16 +162,30 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 	}
       }
 
-      df->Update(-1.0, *kx, 1.0);
+      df->Update(1.0, *f, 0.0);
       
-      if (MatVecTable) {
-	for(int i=1;i<K_limit;i++) {
-	  (*sg_poly)[i].Apply(*dx, *(Kx_table[k][i]));
+      for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i);
+	   k_it != Cijk->k_end(i); ++k_it) {
+	int k = index(k_it);
+	if (k!=0 && k<K_limit) {
+	  (*sg_poly)[k].Apply(*dx, *kx);
+	  for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
+	       j_it != Cijk->j_end(k_it); ++j_it) {
+	    int j = index(j_it);
+	    double c = value(j_it);
+	    sg_df_block->GetBlock(j)->Update(-1.0*c/norms[j], *kx, 1.0);
+	    sg_y_block->GetBlock(j)->Update(-1.0*c/norms[j], *kx, 1.0);
+	  }
 	}
       }
+      
+      (*sg_poly)[0].Apply(*dx, *kx);
+      sg_y_block->GetBlock(i)->Update(-1.0, *kx, 1.0);
+      
     } //End of k loop
     
-    sg_df_block->Norm2(&norm_df);
+    sg_y_block->Norm2(&norm_df);
+    //std::cout << "norm_df = " << norm_df << std::endl;
   } //End of iter loop
 
   if (made_copy)

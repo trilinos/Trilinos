@@ -92,14 +92,12 @@ setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op_,
   Teuchos::RCP<Epetra_CrsGraph> graph =
     Teuchos::rcp(new Epetra_CrsGraph(Copy, G_map, 0));
   for (int k=0; k<k_end; k++) { 
-    int nj = Cijk->num_j(k);
-    const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
-    for (int jj=0; jj<nj; jj++) {
-      int j = j_indices[jj];
-      const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,jj);
-      int ni = i_indices.size();
-      for (int ii=0; ii<ni; ii++) {
-        int i = i_indices[ii];
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
+	 j_it != Cijk->j_end(k); ++j_it) {
+      int j = index(j_it);
+      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	   i_it != Cijk->i_end(j_it); ++i_it) {
+        int i = index(i_it);
         graph->InsertGlobalIndices(i, 1, &j);
       }
     }
@@ -114,23 +112,28 @@ setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op_,
     Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_poly->getCoeffPtr(0), true);
   double traceAB0 = MatrixTrace(*A0, *A0);
   int * MyGlobalElements = G_map.MyGlobalElements();
-  Teuchos::Array<double> Values;
+  Teuchos::Array<double> values;
+  Teuchos::Array<int> indices;
   for (int k=0; k<k_end; k++) {
     Teuchos::RCP<Epetra_CrsMatrix> A_k =
       Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_poly->getCoeffPtr(k), true);
     double traceAB = MatrixTrace(*A_k, *A0);
-    int nj = Cijk->num_j(k);
-    const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
-    for (int jj=0; jj<nj; jj++) {
-      int j = j_indices[jj];
-      const Teuchos::Array<double>& cijk_values = Cijk->values(k,jj);
-      const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,jj);
-      int ni = i_indices.size();
-      Values.resize(ni);
-      for (int ii=0; ii<ni; ii++) {
-	Values[ii] = cijk_values[ii]*traceAB/traceAB0;
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
+	 j_it != Cijk->j_end(k); ++j_it) {
+      int j = index(j_it);
+      int ni = Cijk->num_i(j_it);
+      indices.resize(ni);
+      values.resize(ni);
+      int ii=0;
+      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	   i_it != Cijk->i_end(j_it); ++i_it) {
+	int i = index(i_it);
+	double c = value(i_it);
+	indices[ii] = i;
+	values[ii] = c*traceAB/traceAB0;
+	ii++;
       }
-      G->SumIntoGlobalValues(MyGlobalElements[j], ni, &Values[0], &i_indices[0]);
+      G->SumIntoGlobalValues(MyGlobalElements[j], ni, &values[0], &indices[0]);
     }
   }
   G->FillComplete();
