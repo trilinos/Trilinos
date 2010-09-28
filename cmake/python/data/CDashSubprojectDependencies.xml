@@ -653,6 +653,7 @@
   </SubProject>
   <SubProject name="Sundance">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Trios" type="LO"/>
     <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Sacado" type="ILR"/>
     <Dependency name="RTOp" type="ILR"/>
