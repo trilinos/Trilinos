@@ -46,7 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // The following C headers are needed for some specific C functionality (see
 // the comments), which is not available in C++:
 
-// backtrace() function for retrieving the backtrace
+// backtrace() function for retrieving the stacktrace
 #include <execinfo.h>
 
 #ifdef HAVE_TEUCHOS_LINK
@@ -382,11 +382,11 @@ int shared_lib_callback(struct dl_phdr_info *info,
   It converts addresses to filenames, line numbers, function names and the
   line text.
 */
-std::string backtrace2str(void *const *backtrace_buffer, int backtrace_size)
+std::string stacktrace2str(void *const *stacktrace_buffer, int stacktrace_size)
 {
-    const int stack_depth = backtrace_size - 1;
+    const int stack_depth = stacktrace_size - 1;
 
-    std::string full_backtrace_str;
+    std::string full_stacktrace_str;
 
 #ifdef HAVE_TEUCHOS_BFD
     bfd_init();
@@ -396,7 +396,7 @@ std::string backtrace2str(void *const *backtrace_buffer, int backtrace_size)
         // Iterate over all loaded shared libraries (see dl_iterate_phdr(3) -
         // Linux man page for more documentation)
         struct match_data match;
-        match.addr = (bfd_vma) backtrace_buffer[i];
+        match.addr = (bfd_vma) stacktrace_buffer[i];
 #ifdef HAVE_TEUCHOS_BFD
         if (dl_iterate_phdr(shared_lib_callback, &match) == 0)
             return "dl_iterate_phdr() didn't find a match\n";
@@ -409,22 +409,22 @@ std::string backtrace2str(void *const *backtrace_buffer, int backtrace_size)
             // This happens for shared libraries (like /lib/libc.so.6, or any
             // other shared library that the project uses). 'match.filename'
             // then contains the full path to the .so library.
-            full_backtrace_str += addr2str(match.filename, match.addr_in_file);
+            full_stacktrace_str += addr2str(match.filename, match.addr_in_file);
         } else {
             // The 'addr_in_file' is from the current executable binary, that
             // one can find at '/proc/self/exe'. So we'll use that.
-            full_backtrace_str += addr2str("/proc/self/exe", match.addr_in_file);
+            full_stacktrace_str += addr2str("/proc/self/exe", match.addr_in_file);
         }
     }
 
-    return full_backtrace_str;
+    return full_stacktrace_str;
 }
 
 
 void loc_segfault_callback_print_stack(int sig_num)
 {
     std::cout << "\nSegfault caught. Printing stacktrace:\n\n";
-    Teuchos::show_backtrace();
+    Teuchos::show_stacktrace();
     std::cout << "\nDone. Exiting the program.\n";
     // Deregister our abort callback:
     signal(SIGABRT, SIG_DFL);
@@ -435,7 +435,7 @@ void loc_segfault_callback_print_stack(int sig_num)
 void loc_abort_callback_print_stack(int sig_num)
 {
     std::cout << "\nAbort caught. Printing stacktrace:\n\n";
-    Teuchos::show_backtrace();
+    Teuchos::show_stacktrace();
     std::cout << "\nDone.\n";
 }
 
@@ -446,13 +446,14 @@ void loc_abort_callback_print_stack(int sig_num)
 // Public functions
 
 
-std::string Teuchos::get_backtrace()
+std::string Teuchos::get_stacktrace()
 {
-    const int BACKTRACE_ARRAY_SIZE = 100; // 2010/09/22: rabartl: Is this large enough?
+    const int STACKTRACE_ARRAY_SIZE = 100; // 2010/09/22: rabartl: Is this large enough?
     // Obtain the list of addresses
-    void *backtrace_array[BACKTRACE_ARRAY_SIZE];
-    const size_t backtrace_size = backtrace(backtrace_array, BACKTRACE_ARRAY_SIZE);
-    const std::string strings = backtrace2str(backtrace_array, backtrace_size);
+    void *stacktrace_array[STACKTRACE_ARRAY_SIZE];
+    const size_t stacktrace_size = backtrace(stacktrace_array,
+            STACKTRACE_ARRAY_SIZE);
+    const std::string strings = stacktrace2str(stacktrace_array, stacktrace_size);
 
     // Print it in a Python like fashion:
     std::string s("Traceback (most recent call last):\n");
@@ -461,9 +462,9 @@ std::string Teuchos::get_backtrace()
 }
 
 
-void Teuchos::show_backtrace()
+void Teuchos::show_stacktrace()
 {
-    std::cout << Teuchos::get_backtrace();
+    std::cout << Teuchos::get_stacktrace();
 }
 // 2010/09/21: rabartl: Above, you should never print directly to std::cout
 // (see TCDG 1.0 GCG 17).  At the very least, we should provide a "seam" to

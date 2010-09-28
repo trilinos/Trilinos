@@ -39,13 +39,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace Teuchos {
 
 /** \brief . */
-void show_backtrace();
+void show_stacktrace();
 
 /** \brief . */
 void print_stack_on_segfault();
 
 /** \brief . */
-std::string get_backtrace();
+std::string get_stacktrace();
 
 } // end namespace Teuchos
 

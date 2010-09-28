@@ -2,7 +2,7 @@
 
 void g()
 {
-    Teuchos::show_backtrace();
+    Teuchos::show_stacktrace();
 }
 
 void f()

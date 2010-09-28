@@ -130,7 +130,7 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
             << "\n\n" \
             << "Throw test that evaluated to true: "#throw_exception_test \
             << "\n\n" \
-            << Teuchos::get_backtrace() \
+            << Teuchos::get_stacktrace() \
             << "\n" \
             << msg; \
         const std::string &omsgstr = omsg.str(); \
