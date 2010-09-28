@@ -1,5 +1,3 @@
-// $Id: Stokhos_MatrixFreeEpetraOp.hpp,v 1.7 2009/09/14 18:35:48 etphipp Exp $ 
-// $Source: /space/CVS/Trilinos/packages/stokhos/src/Stokhos_MatrixFreeEpetraOp.hpp,v $ 
 // @HEADER
 // ***********************************************************************
 // 

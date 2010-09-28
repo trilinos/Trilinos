@@ -23,55 +23,55 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Christopher W. Miller(cmiller@math.umd.edu).
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_KLMATRIX_FREE_EPETRA_OP_HPP
-#define STOKHOS_KLMATRIX_FREE_EPETRA_OP_HPP
+#ifndef STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP
+#define STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
 
-#include "Epetra_Operator.h"
+#include "Stokhos_SGPreconditioner.hpp"
 #include "Epetra_Map.h"
-#include "Epetra_Comm.h"
-#include "Epetra_MultiVector.h"
-#include "Stokhos_OrthogPolyBasis.hpp"
-#include "Stokhos_Sparse3Tensor.hpp"
-#include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "NOX_Epetra_LinearSystem.H"
+#include "Teuchos_ParameterList.hpp"
+#include "EpetraExt_BlockMultiVector.h"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing the block stochastic Galerkin
-   * operator.
+   * \brief An Epetra operator representing applying the mean in a block
+   * stochastic Galerkin expansion.
    */
-  class KLMatrixFreeEpetraOp : public Epetra_Operator {
+  class GaussSeidelPreconditioner : public Stokhos::SGPreconditioner {
       
   public:
 
     //! Constructor 
-    KLMatrixFreeEpetraOp(
-     const Teuchos::RCP<const Epetra_Map>& base_map,
-     const Teuchos::RCP<const Epetra_Map>& sg_map,
-     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
-     const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
-     const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >& ops);
+  GaussSeidelPreconditioner(
+    const Teuchos::RCP<const Epetra_Map>& base_map,
+    const Teuchos::RCP<const Epetra_Map>& sg_map,
+    const Teuchos::RCP<NOX::Epetra::LinearSystem>& det_solver,
+    const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
-    virtual ~KLMatrixFreeEpetraOp();
+    virtual ~GaussSeidelPreconditioner();
 
-    //! Reset operator blocks
+    /** \name Stokhos::SGPreconditioner methods */
+    //@{
+
+    //! Setup preconditioner
     virtual void 
-    reset(const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >& ops);
+    setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
+			const Epetra_Vector& x);
 
-    //! Get operator blocks
-    virtual const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >&
-    getOperatorBlocks();
-    
+    //@}
+
+    /** \name Epetra_Operator methods */
+    //@{
+
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
     
@@ -122,19 +122,20 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    //@}
 
   private:
     
     //! Private to prohibit copying
-    KLMatrixFreeEpetraOp(const KLMatrixFreeEpetraOp&);
+    GaussSeidelPreconditioner(const GaussSeidelPreconditioner&);
     
     //! Private to prohibit copying
-    KLMatrixFreeEpetraOp& operator=(const KLMatrixFreeEpetraOp&);
+    GaussSeidelPreconditioner& operator=(const GaussSeidelPreconditioner&);
     
   protected:
     
     //! Label for operator
-    string label;
+    std::string label;
     
     //! Stores base map
     Teuchos::RCP<const Epetra_Map> base_map;
@@ -142,32 +143,39 @@ namespace Stokhos {
     //! Stores SG map
     Teuchos::RCP<const Epetra_Map> sg_map;
 
-    //! Stochastic Galerking basis
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+    //! Deterministic solver
+    Teuchos::RCP<NOX::Epetra::LinearSystem> det_solver;
 
-    //! Stores triple product tensor
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
-
-    //! Stores operators
-    Teuchos::Array<Teuchos::RCP<Epetra_Operator> > block_ops;
+    //! Preconditioner and solver parameters
+    Teuchos::RCP<Teuchos::ParameterList> params;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Number of blocks
-    unsigned int num_blocks;
+    //! Pointer to the SG operator.
+    Teuchos::RCP<Stokhos::SGOperator> sg_op;
 
-    //! MultiVectors for each block for Apply() input
-    mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
+    //! Pointer to the PCE expansion of Jacobian.
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
 
-    //! MultiVectors for each block for Apply() result
-    mutable Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > result_block;
+    //! Short-hand for Cijk
+    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
 
-    //! Temporary multivector
-    mutable Teuchos::RCP<Epetra_MultiVector> tmp;
+    //! Pointer to triple product
+    Teuchos::RCP<const Cijk_type > Cijk;
 
-  }; // class KLMatrixFreeEpetraOp
+    //! Temporary vector used in Gauss-Seidel iteration
+    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_df_block;
+
+    //! Temporary vector used in Gauss-Seidel iteration
+    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_y_block;
+
+    //! Temporary vector used in Gauss-Seidel iteration
+    mutable Teuchos::RCP<Epetra_MultiVector> kx;
+
+
+  }; // class GaussSeidelPreconditioner
   
 } // namespace Stokhos
 
-#endif // STOKHOS_KLMATRIX_FREE_EPETRA_OP_HPP
+#endif // STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP

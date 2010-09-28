@@ -51,7 +51,7 @@
 #include <fstream>
 
 #include "Teuchos_RCP.hpp"
-#include "Stokhos.hpp"
+#include "Stokhos_Epetra.hpp"
 #include "AztecOO.h"
 #include "Epetra_ConfigDefs.h"
 #ifdef HAVE_MPI
@@ -65,6 +65,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include <EpetraExt_TimedEpetraOperator.hpp>
+#include <EpetraExt_MatrixMatrix.h>
 #include "Epetra_MultiVector.h"
 #include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -143,7 +144,8 @@ double meshSize = x[1]-x[0];
 /////////////////////////////////////////////////////////////////////////////////
 Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
 for (int i = 0; i< d; i++){
-  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&weight,-weightCut,weightCut,true));
+  ///bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&weight,-weightCut,weightCut,true));
+  bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
 }
 
 Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
@@ -169,7 +171,7 @@ generateExponentialRF(d, 1,lambda, alpha, omega, xind, yind);
 ////////////////////////////////////////////////////////////////////// 
 
 Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > A_k(d+1);
-Teuchos::Array<Teuchos::RCP<Epetra_Operator> > A_k_op(d+1);
+Stokhos::VectorOrthogPoly<Epetra_Operator> A_k_op(basis, d+1);
 const Teuchos::RCP<const Epetra_Map> StochMap = Teuchos::rcp(new Epetra_Map(n*n*basis->size(),0,Comm));
 const Teuchos::RCP<const Epetra_Map> BaseMap = Teuchos::rcp(new Epetra_Map(n*n,0,Comm));
 int NumMyElements = (*BaseMap).NumMyElements();
@@ -181,6 +183,10 @@ int *Indices = new int[4];
 double two;
 int NumEntries;
 int * bcIndices = new int[NumMyElements]; 
+
+  std::string filename;
+  std::string filename1("B");
+  std::string filename2(".mm");
 
 for(int k = 0; k<=d; k++){
   for(int i = 0; i<NumMyElements; i++){
@@ -201,7 +207,8 @@ for(int k = 0; k<=d; k++){
     }
   }
   A_k[k] = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*BaseMap,NumNz));
-  A_k_op[k] = A_k[k];
+  //A_k_op[k] = A_k[k];
+  A_k_op.setCoeffPtr(k, A_k[k]);
   for( int i=0 ; i<NumMyElements; ++i ) {
     if (bcIndices[i] == 1 && k == 0) two = 1; //Enforce BC in mean matrix
     if (bcIndices[i] == 0) {
@@ -225,11 +232,44 @@ for(int k = 0; k<=d; k++){
     if (bcIndices[i]==0 || k == 0) A_k[k]->InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i);
  }
  A_k[k]->FillComplete();
+ std::stringstream ss;
+ ss << k ;
+ std::string sstr = ss.str();
+ filename = filename1 + sstr + filename2;
+ EpetraExt::RowMatrixToMatrixMarketFile(filename.c_str(), *(A_k[k]));
 }
 
+Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > B_k(d+1);
+Stokhos::VectorOrthogPoly<Epetra_Operator> B_k_op(basis, d+1);
+Teuchos::Array<double> zero(d), one(d);
+for(int k=0; k<d; k++) {
+  zero[k] = 0.0;
+  one[k] = 1.0;
+}
+for(int k=0; k<=d; k++) {
+  B_k[k] = Teuchos::rcp(new Epetra_CrsMatrix(Copy, A_k[k]->Graph()));
+  B_k_op.setCoeffPtr(k, B_k[k]);
+}
+int sz = basis->size();
+Teuchos::Array< double > psi_0(sz), psi_1(sz);
+basis->evaluateBases(zero, psi_0);
+basis->evaluateBases(one, psi_1);
+*B_k[0] = *A_k[0];
+for(int k=1; k<=d; k++) {
+  // B_0 -= a_k/(b_k-a_k)*A_k
+  EpetraExt::MatrixMatrix::Add(*A_k[k], false, -psi_0[k]/(psi_1[k]-psi_0[k]), 
+			       *B_k[0], 1.0);
+  // B_k = 1.0/(b_k-a_k)*A_k 
+  EpetraExt::MatrixMatrix::Add(*A_k[k], false, 1.0/(psi_1[k]-psi_0[k]), 
+			       *B_k[k], 0.0);
+}
+B_k[0]->Scale(1.0/psi_0[0]);
+
 //Construct the implicit operator.
-Teuchos::RCP<Stokhos::KLMatrixFreeEpetraOp> MatFreeOp = 
-   Teuchos::rcp(new Stokhos::KLMatrixFreeEpetraOp(BaseMap, StochMap, basis, Cijk, A_k_op)); 
+Teuchos::RCP<Stokhos::SGOperator> MatFreeOp = 
+//   Teuchos::rcp(new Stokhos::KLMatrixFreeOperator(BaseMap, BaseMap, StochMap, StochMap));
+  Teuchos::rcp(new Stokhos::KLMatrixFreeOperator(BaseMap, BaseMap, StochMap, StochMap));
+MatFreeOp->setupOperator(Teuchos::rcp(&A_k_op,false), Cijk);
 EpetraExt::Epetra_Timed_Operator system(MatFreeOp);
 
 //Construct the RHS vector.
@@ -258,7 +298,7 @@ MLList.set("coarse: max size", 200);
 Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> MLPrec = 
   Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner((*A_k[0]), MLList));
 MLPrec->PrintUnused(0);
-Stokhos::MeanEpetraOp MeanAMGPrecon(BaseMap, StochMap, basis->size(), MLPrec);
+Stokhos::MeanBasedPreconditioner MeanAMGPrecon(BaseMap, StochMap, basis->size(), MLPrec);
 
 //////////////////////////////////////////////////
 //Solve the Linear System.
@@ -266,14 +306,15 @@ Stokhos::MeanEpetraOp MeanAMGPrecon(BaseMap, StochMap, basis->size(), MLPrec);
 Epetra_Vector x2(*StochMap);
 Epetra_LinearProblem problem(&system, &x2, &b);
 AztecOO aztec_solver(problem);
+aztec_solver.SetAztecOption(AZ_solver, AZ_gmres);
+aztec_solver.SetAztecOption(AZ_precond, AZ_none);
 aztec_solver.SetPrecOperator(&MeanAMGPrecon);
-aztec_solver.SetAztecOption(AZ_solver, AZ_cg);
-//aztec_solver.SetAztecOption(AZ_precond, AZ_none);
 Teuchos::Time SolutionTimer("Total Timer",false);
 SolutionTimer.start();
 aztec_solver.Iterate(1000, 1e-12);
 SolutionTimer.stop();
-
+//std::cout << "x2" <<x2 << std::endl;
+//std::cout << b << std::endl;
 //////////////////////////////////////////////////////////////////////
 //Post process and output the results.
 ////////////////////////////////////////////////////////////////////

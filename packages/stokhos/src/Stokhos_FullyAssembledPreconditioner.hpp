@@ -28,56 +28,45 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MATRIX_FREE_EPETRA_OP_HPP
-#define STOKHOS_MATRIX_FREE_EPETRA_OP_HPP
+#ifndef STOKHOS_FULLY_ASSEMBLED_PRECONDITIONER_HPP
+#define STOKHOS_FULLY_ASSEMBLED_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_Time.hpp"
 
-#include "Epetra_Operator.h"
-#include "Epetra_Map.h"
-#include "Epetra_Comm.h"
-#include "Epetra_MultiVector.h"
-#include "Stokhos_OrthogPolyBasis.hpp"
-#include "Stokhos_Sparse3Tensor.hpp"
-#include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_SGPreconditioner.hpp"
+#include "Stokhos_PreconditionerFactory.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing the block stochastic Galerkin
-   * operator.
+   * \brief A stochastic preconditioner based on applying a preconditioner
+   * to the fully assembled operator.
    */
-  class MatrixFreeEpetraOp : public Epetra_Operator {
+  class FullyAssembledPreconditioner : public Stokhos::SGPreconditioner {
       
   public:
 
     //! Constructor 
-    MatrixFreeEpetraOp(
-      const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
-      const Teuchos::RCP<const Epetra_Map>& range_base_map_,
-      const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
-      const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
-      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops);
+    FullyAssembledPreconditioner(
+      const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory,
+      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
     
     //! Destructor
-    virtual ~MatrixFreeEpetraOp();
+    virtual ~FullyAssembledPreconditioner();
 
-    //! Reset operator blocks
+    /** \name Stokhos::SGPreconditioner methods */
+    //@{
+
+    //! Setup preconditioner
     virtual void 
-    reset(const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops);
+    setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
+			const Epetra_Vector& x);
 
-    //! Get operator blocks
-    virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> >
-    getOperatorBlocks() const;
+    //@}
 
-    //! Get operator blocks
-    virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> >
-    getOperatorBlocks();
+    /** \name Epetra_Operator methods */
+    //@{
     
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -129,72 +118,29 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
-    /*!
-     * \brief Returns the time spent applying this operator
-     */
-    virtual const double ApplyTime() const{
-      return this->ApplyTimer->totalElapsedTime(false);};
+    //@}
 
   private:
     
     //! Private to prohibit copying
-    MatrixFreeEpetraOp(const MatrixFreeEpetraOp&);
+    FullyAssembledPreconditioner(const FullyAssembledPreconditioner&);
     
     //! Private to prohibit copying
-    MatrixFreeEpetraOp& operator=(const MatrixFreeEpetraOp&);
+    FullyAssembledPreconditioner& operator=(const FullyAssembledPreconditioner&);
     
   protected:
     
     //! Label for operator
     std::string label;
-    
-    //! Stores domain base map
-    Teuchos::RCP<const Epetra_Map> domain_base_map;
 
-    //! Stores range base map
-    Teuchos::RCP<const Epetra_Map> range_base_map;
+    //! Stores factory for building preconditioner
+    Teuchos::RCP<Stokhos::PreconditionerFactory> prec_factory;
 
-    //! Stores domain SG map
-    Teuchos::RCP<const Epetra_Map> domain_sg_map;
+    //! Stores preconditioner
+    Teuchos::RCP<Epetra_Operator> prec;
 
-    //! Stores range SG map
-    Teuchos::RCP<const Epetra_Map> range_sg_map;
-
-    //! Stochastic Galerking basis
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
-
-    //! Stores triple product tensor
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
-
-    //! Stores operators
-    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
-
-    //! Flag indicating whether transpose was selected
-    bool useTranspose;
-
-    //! Number of terms in expansion
-    int expansion_size;
-
-    //! Number of Jacobian blocks (not necessarily equal to expansion_size)
-    int num_blocks;
-
-    //! MultiVectors for each block for Apply() input
-    mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
-
-    //! MultiVectors for each block for Apply() result
-    mutable Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > result_block;
-
-    //! Temporary multivector used in Apply()
-    mutable Teuchos::RCP<Epetra_MultiVector> tmp;
-
-    //! Temporary multivector used in Apply() for transpose
-    mutable Teuchos::RCP<Epetra_MultiVector> tmp_trans;
-
-    //! Operation Timer
-    Teuchos::RCP<Teuchos::Time> ApplyTimer;
-
-  }; // class MatrixFreeEpetraOp
+  }; // class FullyAssembledPreconditioner
   
 } // namespace Stokhos
 
-#endif // STOKHOS_MATRIX_FREE_EPETRA_OP_HPP
+#endif // STOKHOS_FULLY_ASSEMBLED_PRECONDITIONER_HPP

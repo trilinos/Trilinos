@@ -38,6 +38,8 @@
 
 namespace Sparse3TensorUnitTest {
 
+  typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+
   // Common setup for unit tests
   template <typename OrdinalType, typename ValueType>
   struct UnitTestSetup {
@@ -45,7 +47,7 @@ namespace Sparse3TensorUnitTest {
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
-    Teuchos::RCP<Stokhos::Sparse3Tensor<OrdinalType,ValueType> > Cijk;
+    Teuchos::RCP<Cijk_type> Cijk;
     
     UnitTestSetup() {
       rtol = 1e-12;
@@ -118,25 +120,13 @@ namespace Sparse3TensorUnitTest {
 
     success = true;
     for (int k=0; k<setup.sz; k++) {
-      int nj = setup.Cijk->num_j(k);
-      const Teuchos::Array<int>& j_indices = setup.Cijk->Jindices(k);
-      bool ss = nj == static_cast<int>(j_indices.size());
-      if (!ss) {
-	out << std::endl
-	    << "Check:  Cijk->num_j(" << k 
-	    << ") == Cijk->Jindices(" << k << ").size() = "
-	    << setup.Cijk->num_j(k) << " == " << j_indices.size() 
-	    << ":  Failed!" << std::endl;
-      }
-      success = success && ss;
-      for (int l=0; l<nj; l++) {
-	int j = j_indices[l];
-	const Teuchos::Array<int>& i_indices = setup.Cijk->Iindices(k,l);
-	const Teuchos::Array<double>& cijk_values = setup.Cijk->values(k,l);
-	int ni = i_indices.size();
-	for (int m=0; m<ni; m++) {
-	  int i = i_indices[m];
-	  double c = cijk_values[m];
+      for (Cijk_type::kj_iterator j_it = setup.Cijk->j_begin(k); 
+	   j_it != setup.Cijk->j_end(k); ++j_it) {
+	int j = Stokhos::index(j_it);
+	for (Cijk_type::kji_iterator i_it = setup.Cijk->i_begin(j_it);
+	     i_it != setup.Cijk->i_end(j_it); ++i_it) {
+	  int i = Stokhos::index(i_it);
+	  double c = Stokhos::value(i_it);
 
 	  double c2 = 0.0;
 	  int nqp = weights.size();

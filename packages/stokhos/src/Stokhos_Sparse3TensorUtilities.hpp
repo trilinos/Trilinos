@@ -55,6 +55,8 @@ namespace Stokhos {
     const Stokhos::Sparse3Tensor<ordinal_type,value_type>& Cijk,
     const Epetra_Comm& comm) 
   {
+    typedef Stokhos::Sparse3Tensor<ordinal_type,value_type> Cijk_type;
+
     // Number of stochastic rows
     ordinal_type num_rows = basis.size();
 
@@ -67,16 +69,14 @@ namespace Stokhos {
     
     // Loop over Cijk entries including a non-zero in the graph at
     // indices (i,j) if there is any k for which Cijk is non-zero
-    ordinal_type Cijk_size = Cijk.size();
+    ordinal_type Cijk_size = Cijk.num_k();
     for (ordinal_type k=0; k<Cijk_size; k++) {
-      ordinal_type nj = Cijk.num_j(k);
-      const Teuchos::Array<int>& j_indices = Cijk.Jindices(k);
-      for (ordinal_type jj=0; jj<nj; jj++) {
-	ordinal_type j = j_indices[jj];
-	const Teuchos::Array<int>& i_indices = Cijk.Iindices(k,jj);
-	ordinal_type ni = i_indices.size();
-	for (ordinal_type ii=0; ii<ni; ii++) {
-	  ordinal_type i = i_indices[ii];
+      for (typename Cijk_type::kj_iterator j_it = Cijk.j_begin(k); 
+	   j_it != Cijk.j_end(k); ++j_it) {
+	ordinal_type j = index(j_it);
+	for (typename Cijk_type::kji_iterator i_it = Cijk.i_begin(j_it);
+	     i_it != Cijk.i_end(j_it); ++i_it) {
+	  ordinal_type i =index(j_it);
 	  graph->InsertGlobalIndices(i, 1, &j);
 	}
       }

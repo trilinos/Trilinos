@@ -53,7 +53,6 @@
 #include "Stokhos_DerivOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 #include "Stokhos_ExpansionFactory.hpp"
 
 // Quadrature methods
@@ -65,17 +64,5 @@
 // Tensors
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
-#include "Stokhos_Sparse3TensorUtilities.hpp"
-
-// Operators
-#include "Stokhos_MLPrecOp.hpp"
-#include "Stokhos_MatrixFreeEpetraOp.hpp"
-#include "Stokhos_MeanEpetraOp.hpp"
-#include "Stokhos_KLMatrixFreeEpetraOp.hpp"
-
-// Model Evaluators
-#include "Stokhos_SGModelEvaluator.hpp"
-#include "Stokhos_SGQuadModelEvaluator.hpp"
-#include "Stokhos_SGInverseModelEvaluator.hpp"
 
 #endif // STOKHOS_HPP 

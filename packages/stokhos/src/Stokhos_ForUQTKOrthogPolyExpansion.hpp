@@ -54,7 +54,9 @@ namespace Stokhos {
     };
 
     //! Constructor
-    ForUQTKOrthogPolyExpansion(const Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& basis,
+    ForUQTKOrthogPolyExpansion(
+      const Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& basis,
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
 			       EXPANSION_METHOD method = TAYLOR,
 			       value_type rtol = 1.0e-12);
 
@@ -67,6 +69,10 @@ namespace Stokhos {
     //! Get basis
     Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >
     getBasis() const {return basis; }
+
+    //! Get triple product
+    virtual Teuchos::RCP<const Sparse3Tensor<ordinal_type, value_type> >
+    getTripleProduct() const { return Cijk; }
  
     // Operations
     void unaryMinus(OrthogPolyApprox<ordinal_type, value_type>& c, 
@@ -212,6 +218,9 @@ namespace Stokhos {
 
     //! Basis
     Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> > basis;
+
+     //! Triple-product tensor
+    Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
 
     //! Order
     int order;

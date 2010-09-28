@@ -46,7 +46,7 @@ namespace Stokhos {
     //! Destructor
     virtual ~PreconditionerFactory() {}
 
-    //! Compute precconditioner operator
+    //! Compute preconditioner operator
     virtual Teuchos::RCP<Epetra_Operator> 
     compute(const Teuchos::RCP<Epetra_Operator>& mat) = 0;
 

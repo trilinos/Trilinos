@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Stokhos.hpp"
+#include "Stokhos_Epetra.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
