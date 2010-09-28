@@ -1,5 +1,46 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 10.6 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 10.6 general release contains 48 packages: Amesos, Anasazi,
+AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI, ForTrilinos^,
+Galeri, GlobiPack, Ifpack, Ifpack2**, Intrepid, Isorropia, Kokkos, Komplex,
+LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen, Phalanx,
+Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, Shards, STK, Stokhos,
+Stratimikos, Sundance, Teko*, Teuchos, ThreadPool, Thyra, Tpetra, TriKota,
+TrilinosCouplings, Triutils, Zoltan.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+(** Ifpack2 was previously released under the name "Tifpack".)
+
+(^ ForTrilinos was added to the external release for Trilinos 10.4.1.)
+
+More information:
+
+Trilinos website: http://trilinos.sandia.gov
+
+===============================================================================
+
+Package Release Notes:
+
+-------------------------------------------------------------------------------
+
+ADD
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 10.4 Release Notes                                         #
 #                                                                             #
 ###############################################################################
