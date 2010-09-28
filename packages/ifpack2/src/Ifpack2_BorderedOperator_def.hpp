@@ -74,7 +74,9 @@ template< class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node >
 void BorderedOperator<Scalar, LocalOrdinal, GlobalOrdinal, Node >::apply(
      const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& X,
            Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& Y,
-           Teuchos::ETransp mode, Scalar coefAx, Scalar coefY ) const 
+     Teuchos::ETransp mode, 
+     Scalar coefAx, 
+     Scalar coefY ) const 
 {
   //bool opHasTrans = A_->hasTransposeApply();
   //TEST_FOR_EXCEPTION( mode  &&  !opHasTrans, std::runtime_error,

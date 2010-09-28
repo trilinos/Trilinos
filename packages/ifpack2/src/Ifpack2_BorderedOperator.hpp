@@ -41,9 +41,9 @@
 //declaration:
 #include "Ifpack2_BorderedOperator_decl.hpp"
 
-#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+//#ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 //definition:
 #include "Ifpack2_BorderedOperator_def.hpp"
-#endif
+//#endif
 
 #endif /* IFPACK2_BORDEREDOPERATOR_HPP */

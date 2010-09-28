@@ -92,7 +92,7 @@ class BorderedOperator : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Glo
 
 
     //! Applies the effect of the bordered operator.
-    virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+    void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                        Teuchos::ETransp mode = Teuchos::NO_TRANS,
                        Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
