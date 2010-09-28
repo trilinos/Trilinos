@@ -12,5 +12,6 @@ ADD_SUBDIRECTORIES(
   RefCountPtr
   TimeMonitor
   XML
-  hilbert 
+  hilbert
+  show_stack
   )
