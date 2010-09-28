@@ -277,6 +277,26 @@ namespace TSQR {
       else
 	A_copy.copy (A);
 
+      // Do a few timing runs and throw away the results, just to warm
+      // up any libraries that do autotuning.
+      const int numWarmupRuns = 5;
+      for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
+	{
+	  // Factor the matrix in-place in A_copy, and extract the
+	  // resulting R factor into R.
+	  typedef typename node_tsqr_type::FactorOutput factor_output_type;
+	  factor_output_type factor_output = 
+	    actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(), 
+			  R.get(), R.lda(), contiguous_cache_blocks);
+	  // Compute the explicit Q factor (which was stored
+	  // implicitly in A_copy and factor_output) and store in Q.
+	  // We don't need to un-cache-block the output, because we
+	  // aren't verifying it here.
+	  actor.explicit_Q (nrows, ncols, A_copy.get(), A_copy.lda(), 
+			    factor_output, ncols, Q.get(), Q.lda(), 
+			    contiguous_cache_blocks);
+	}
+
       // Benchmark TBB-based TSQR for ntrials trials.
       //
       // Name of timer doesn't matter here; we only need the timing.

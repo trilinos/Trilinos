@@ -140,6 +140,22 @@ namespace TSQR {
 	       << " by " << numCols << endl << endl;
 
 	CombineType combiner; 
+
+	// A few warmup runs just to avoid timing anomalies
+	const int numWarmupRuns = 5;
+	for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
+	  {
+	    combiner.factor_pair (numCols, R1.get(), R1.lda(), 
+				  R2.get(), R2.lda(),
+				  &tau_R1R2[0], &work[0]);
+	    combiner.apply_pair (ApplyType("N"), numCols, numCols, 
+				 R2.get(), R2.lda(), &tau_R1R2[0], 
+				 &Q_R1R2(0, 0), Q_R1R2.lda(),
+				 &Q_R1R2(numCols, 0), Q_R1R2.lda(),
+				 &work[0]);
+	  }
+
+	// The actual benchmark timing runs
 	TimerType timer ("Combine");
 	timer.start ();
 	for (int trialNum = 0; trialNum < numTrials_; ++trialNum)
@@ -225,6 +241,21 @@ namespace TSQR {
 	       << " and A " << numRows << " by " << numCols << endl << endl;
 
 	CombineType combiner; 
+
+	// A few warmup runs just to avoid timing anomalies
+	const int numWarmupRuns = 5;
+	for (int warmupRun = 0; warmupRun < numWarmupRuns; ++warmupRun)
+	  {
+	    combiner.factor_inner (numRows, numCols, R3.get(), R3.lda(),
+				   A.get(), A.lda(), &tau_R3A[0], &work[0]);
+	    combiner.apply_inner (ApplyType("N"), numRows, numCols, numCols,
+				  A.get(), A.lda(), &tau_R3A[0], 
+				  &Q_R3A(0, 0), Q_R3A.lda(),
+				  &Q_R3A(numCols, 0), Q_R3A.lda(), 
+				  &work[0]);
+	  }
+
+	// The actual benchmark timing runs
 	TimerType timer ("Combine");
 	timer.start ();
 	for (int trialNum = 0; trialNum < numTrials_; ++trialNum)

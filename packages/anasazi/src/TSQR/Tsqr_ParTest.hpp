@@ -532,19 +532,31 @@ namespace TSQR {
 	if (testFactorImplicit_)
 	  {
 	    std::string timerName ("DistTsqr");
+	    typedef typename DistTsqr< Ordinal, Scalar >::FactorOutput 
+	      factor_output_type;
 
-	    // Benchmark DistTsqr (factor() and explicit_Q()) for
-	    // numTrials trials.
+	    // Throw away some number of runs, because some MPI libraries
+	    // (recent versions of OpenMPI at least) do autotuning for the
+	    // first few collectives calls.
+	    const int numThrowAwayRuns = 5;
+	    for (int runNum = 0; runNum < numThrowAwayRuns; ++runNum)
+	      {
+		// Factor the matrix A (copied into R, which will be
+		// overwritten on output)
+		factor_output_type factorOutput = par.factor (R.view());
+		// Compute the explicit Q factor
+		par.explicit_Q (numCols, Q_local.get(), Q_local.lda(), factorOutput);
+	      }
+
+	    // Now do the actual timing runs.  Benchmark DistTsqr
+	    // (factor() and explicit_Q()) for numTrials trials.
 	    timer_type timer (timerName);
 	    timer.start();
 	    for (int trialNum = 0; trialNum < numTrials; ++trialNum)
 	      {
 		// Factor the matrix A (copied into R, which will be
 		// overwritten on output)
-		typedef typename DistTsqr< Ordinal, Scalar >::FactorOutput 
-		  factor_output_type;
 		factor_output_type factorOutput = par.factor (R.view());
-
 		// Compute the explicit Q factor
 		par.explicit_Q (numCols, Q_local.get(), Q_local.lda(), factorOutput);
 	      }
@@ -563,6 +575,15 @@ namespace TSQR {
 	if (testFactorExplicit_)
 	  {
 	    std::string timerName ("DistTsqrRB");
+
+	    // Throw away some number of runs, because some MPI libraries
+	    // (recent versions of OpenMPI at least) do autotuning for the
+	    // first few collectives calls.
+	    const int numThrowAwayRuns = 5;
+	    for (int runNum = 0; runNum < numThrowAwayRuns; ++runNum)
+	      {
+		par.factorExplicit (R.view(), Q_local.view());
+	      }
 
 	    // Benchmark DistTsqr::factorExplicit() for numTrials trials.
 	    timer_type timer (timerName);
