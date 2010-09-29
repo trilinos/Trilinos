@@ -158,7 +158,7 @@ void MLPreconditionerFactory::initializePrec(
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
+  if(out.get() && implicit_cast<int>(verbLevel) > implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::MLPreconditionerFactory::initializePrec(...) ...\n";
 
   Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
@@ -233,7 +233,7 @@ void MLPreconditionerFactory::initializePrec(
     
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-      OSTab(out).o() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
+      OSTab(out).o() <<"> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
     // RAB: Above, I am just passing a string to ML::Create(...) in order
     // get this code written.  However, in the future, it would be good to
     // copy the contents of what is in ML::Create(...) into a local
@@ -262,7 +262,7 @@ void MLPreconditionerFactory::initializePrec(
   TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
   timer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out).o() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out).o() <<"=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
   //
   // Compute the conditioner number estimate if asked
   //
@@ -294,9 +294,9 @@ void MLPreconditionerFactory::initializePrec(
     );
   totalTimer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    *out
-      << "\nTotal time = "<<totalTimer.totalElapsedTime()<<" sec\n"
-      << "\nLeaving Thyra::MLPreconditionerFactory::initializePrec(...) ...\n";
+    *out << "\nTotal time in MLPreconditionerFactory = "<<totalTimer.totalElapsedTime()<<" sec\n";
+  if(out.get() && implicit_cast<int>(verbLevel) > implicit_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nLeaving Thyra::MLPreconditionerFactory::initializePrec(...) ...\n";
 }
 
 

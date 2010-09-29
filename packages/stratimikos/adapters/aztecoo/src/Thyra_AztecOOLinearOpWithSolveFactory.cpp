@@ -448,7 +448,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::AztecOOLinearOpWithSolveFactory::initializeOp_impl(...) ...\n";
 
   typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<double> > VOTSPF;
@@ -1070,7 +1070,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     paramList_->validateParameters(*this->getValidParameters());
 #endif
 
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nLeaving Thyra::AztecOOLinearOpWithSolveFactory::initializeOp_impl(...) ...\n";
 
 }
