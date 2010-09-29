@@ -77,26 +77,21 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
 /******************************************************************
   Compute weight balance
 ******************************************************************/
-void compute_balance(const Epetra_Vector &wgts, double myGoalWeight, 
-                              double &min, double &max, double &avg)
+int compute_balance(const Epetra_Vector &wgts, double myGoalWeight,
+                      double &min, double &max, double &avg)
 {
-  const Epetra_Comm &comm = wgts.Comm();
-  double weightTotal;
-
   if ((myGoalWeight < 0) || (myGoalWeight > 1.0)){
     std::cerr << "compute_balance: Goal weight should be in the range [0, 1]" << std::endl;
-    return;
+    return -1;
   }
 
-  /* Sum of my row weights.  
-   */
-  double weightLocal = 0.0;
+  double weightTotal;
+  wgts.Norm1(&weightTotal);
 
-  for (int i=0; i<wgts.MyLength(); i++){
+  double weightLocal = 0.0;
+  for (int i=0; i < wgts.MyLength(); i++){
     weightLocal += wgts[i];
   }
-
-  comm.SumAll(&weightLocal, &weightTotal, 1);
 
   /* My degree of imbalance. 
    * If myGoalWeight is zero, I'm in perfect balance since I got what I wanted.
@@ -111,13 +106,15 @@ void compute_balance(const Epetra_Vector &wgts, double myGoalWeight,
       imbalance += (goalWeight - weightLocal) / goalWeight;
   }
 
+  const Epetra_Comm &comm = wgts.Comm();
+
   comm.MaxAll(&imbalance, &max, 1);
   comm.MinAll(&imbalance, &min, 1);
   comm.SumAll(&imbalance, &avg, 1);
 
   avg /= comm.NumProc();
 
-  return;
+  return 0;
 }
 
 /******************************************************************
@@ -131,10 +128,9 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
 {
 
   const Epetra_Map &rmap = matrix.RowMatrixRowMap();
-
   const Epetra_Map &cmap = matrix.RowMatrixColMap();
 
-  int maxEdges = cmap.NumMyElements();
+  int maxEdges = matrix.MaxNumEntries();
 
   std::vector<std::vector<int> > myRows(rmap.NumMyElements());
 
@@ -153,6 +149,7 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
       myRows[i] = cols;
     }
     delete [] nborLID;
+    delete [] tmp;
   }
  
   return compute_graph_metrics(rmap, cmap, myRows, costs, myGoalWeight,
@@ -192,42 +189,45 @@ int compute_graph_metrics(const Epetra_CrsGraph &graph,
 
 }
 
-static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
-            const Epetra_BlockMap &colmap,
-            std::vector<std::vector<int> > &rows,
-            Isorropia::Epetra::CostDescriber &costs,
-            double &myGoalWeight,
+static int compute_graph_metrics(const Epetra_BlockMap &rowmap, const Epetra_BlockMap &colmap,
+            std::vector<std::vector<int> > &rows, 
+            Isorropia::Epetra::CostDescriber &costs, double &myGoalWeight,
             double &balance, int &numCuts, double &cutWgt, double &cutn, double &cutl)
 {
   const Epetra_Comm &comm  = rowmap.Comm();
   int myProc = comm.MyPID();
-  int myRows = rowmap.NumMyElements();
+  int myCols = colmap.NumMyElements();
   double min, avg;
-  int rc;
-  std::map<int, float> vertexWeights;  // vertex global ID -> weight
-  // vertex global ID -> map from neighbor global ID to edge weight
+  std::map<int, float> vertexWeights;
   std::map<int, std::map<int, float > > graphEdgeWeights;
-  std::map<int, float> hyperEdgeWeights; // hyperedge global ID -> weight
+  std::map<int, float> hyperEdgeWeights;
 
-  costs.getCosts(vertexWeights, graphEdgeWeights, hyperEdgeWeights);
+  costs.getCosts(vertexWeights,  // vertex global ID -> weight
+           graphEdgeWeights,    //  vertex global ID -> map from neighbor global ID to edge weight
+           hyperEdgeWeights);   // hyperedge global ID -> weight
 
   // Compute the balance
 
-  int numVWgts = vertexWeights.size();
   Epetra_Vector vwgt(rowmap);
-
-  if ((numVWgts > 0) && (numVWgts != myRows)){
-    std::cerr << numVWgts << " row weights for " << myRows << "rows" << std::endl;
-    return 1;
-  }
+  int numVWgts = vertexWeights.size();
 
   if (numVWgts > 0){
-    int v=0;
+    double *wvals = new double [numVWgts];
+    int *gids = new int [numVWgts];
+
     std::map<int, float>::iterator vnext = vertexWeights.begin();
+    int i=0;
     while (vnext != vertexWeights.end()){
-      vwgt[v++] = vnext->second;
+      wvals[i] =  vnext->second;
+      gids[i] = vnext->first;
       vnext++;
+      i++;
     }
+
+    vwgt.ReplaceGlobalValues(i, wvals, gids);
+
+    delete [] wvals;
+    delete [] gids;
   }
   else{
     vwgt.PutScalar(1.0);   // default to unit weights
@@ -241,6 +241,18 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
 
   // Compute the measures based on cut edges
 
+  int *procID = new int [myCols];
+  int *GID = new int [myCols];
+  int *tmp = new int [myCols];
+
+  for (int i=0; i < myCols; i++){
+    GID[i] = colmap.GID(i);
+  }
+
+  rowmap.RemoteIDList(myCols, GID, procID, tmp);  // matrix is square
+
+  delete [] tmp;
+
   int haveEdgeWeights = graphEdgeWeights.size();
 
   int localNumCuts = 0;
@@ -248,90 +260,37 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
   double localCutn = 0.0;
   double localCutl = 0.0;
 
-  // Get the processes owning my vertices' neighbors (matrix is square)
-
-  int numCols = colmap.NumMyElements();
-  const int *colGIDs = colmap.MyGlobalElements();
-  int *nborProc_GID = NULL;
-  int *nborRow_LID = NULL;
-
-  if (numCols > 0){
-    nborProc_GID = new int [numCols];
-    nborRow_LID = new int [numCols];
-  }
-
-  // Global operation, all process must call, even if they have no columns
-
-  rc = colmap.RemoteIDList(numCols, colGIDs, nborProc_GID, nborRow_LID);
-
-  if (rc != 0){
-    std::cerr << "Error obtaining remote process ID list";
-    std::cerr << std::endl;
-    if (numCols > 0){
-      delete [] nborProc_GID;
-      delete [] nborRow_LID;
-    }
-    return -1;
-  }
-
-  std::map<int, int> colProc;
-  std::map<int, int>::iterator procIter;
-
-  colProc.clear();
-  for (int j=0; j<numCols; j++){
-
-    // map from column GID to process owning row with that GID 
-    //   (matrix is square)
-
-    colProc.insert(std::pair<int,int>(colGIDs[j],nborProc_GID[j]));
-  }
-
-  if (numCols > 0){
-    delete [] nborProc_GID;
-    delete [] nborRow_LID;
-  }
-
   for (int i=0; i < rowmap.NumMyElements(); i++){
     int vtxGID = rowmap.GID(i);
-
-    std::map<int, std::map<int, float> >::iterator wnext;
-
-    if (haveEdgeWeights){
-      wnext = graphEdgeWeights.find(vtxGID);
-      if (wnext == graphEdgeWeights.end()){
-        std::cerr << "Graph edge weights are missing for vertex " << vtxGID;
-        std::cerr << std::endl;
-        return -1;
-      }
-    }
 
     int numEdges = rows[i].size();
 
     if (numEdges > 0){
 
-      // get processes that own my neighbors
-
-      std::set<int> nbors;
-      float heWeight = 0.0;
-
-      nbors.clear();
-      for (int j=0; j < numEdges; j++){
-
-        int nborGID = colGIDs[rows[i][j]];
-
-        if (nborGID == vtxGID) continue;  // skip self edges
-
-        procIter = colProc.find(nborGID);
-        if (procIter == colProc.end()){
-          std::cerr << "process owning column is missing";
+      std::map<int, std::map<int, float> >::iterator wnext;
+      if (haveEdgeWeights){
+        wnext = graphEdgeWeights.find(vtxGID);
+        if (wnext == graphEdgeWeights.end()){
+          std::cerr << "Graph edge weights are missing for vertex " << vtxGID;
           std::cerr << std::endl;
           return -1;
         }
-        int procNum = procIter->second;
+      }
+
+      double heWeight = 0.0;
+      std::set<int> nbors;
+
+      for (int j=0; j < numEdges; j++){
+
+        int colGID = GID[rows[i][j]];
+
+        int nborProc = procID[rows[i][j]];
+
+        if (colGID == vtxGID) continue;  // skip self edges
 
         float wgt = 1.0;
         if (haveEdgeWeights){
-          std::map<int, float>::iterator curr = (wnext->second).find(nborGID);
+          std::map<int, float>::iterator curr = (wnext->second).find(colGID);
           if (curr == (wnext->second).end()){
             std::cerr << "Graph edge weights do not match matrix";
             std::cerr << std::endl;
@@ -340,9 +299,9 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
           wgt = curr->second;
         }
 
-        if (procNum != myProc){
+        if (nborProc != myProc){
           localNumCuts++;            // number of graph edges that are cut 
-          nbors.insert(procNum);     // count number of neighboring processes
+          nbors.insert(nborProc);     // count number of neighboring processes
           localCutWgt += wgt;        // sum of weights of cut edges
         }
         heWeight += wgt;             // implied hyperedge weight, sum all edges
@@ -359,6 +318,9 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
       }
     }
   } // next vertex in my partition
+
+  delete [] GID;
+  delete [] procID;
 
   double lval[4], gval[4];
 
@@ -425,30 +387,35 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
 #endif
   int nProcs = comm.NumProc();
   int myProc = comm.MyPID();
-  int myRows = rowmap.NumMyElements();
   double min, avg;
-  std::map<int, float> vertexWeights;  // vertex global ID -> weight
-  // vertex global ID -> map from neighbor global ID to edge weight
+  std::map<int, float> vertexWeights;
   std::map<int, std::map<int, float > > graphEdgeWeights;
-  std::map<int, float> hyperEdgeWeights; // hyperedge global ID -> weight
+  std::map<int, float> hyperEdgeWeights;
 
-  costs.getCosts(vertexWeights, graphEdgeWeights, hyperEdgeWeights);
+  costs.getCosts(vertexWeights,  // vertex global ID -> weight
+           graphEdgeWeights,    //  vertex global ID -> map from neighbor global ID to edge weight
+           hyperEdgeWeights);   // hyperedge global ID -> weight
 
-  int numVWgts = vertexWeights.size();
   Epetra_Vector vwgt(rowmap);
-
-  if ((numVWgts > 0) && (numVWgts != myRows)){
-    std::cerr << numVWgts << " row weights for " << myRows << "rows" << std::endl;
-    return 1;
-  }
+  int numVWgts = vertexWeights.size();
 
   if (numVWgts > 0){
-    int v=0;
+    double *wvals = new double [numVWgts];
+    int *gids = new int [numVWgts];
+
     std::map<int, float>::iterator vnext = vertexWeights.begin();
+    int i=0;
     while (vnext != vertexWeights.end()){
-      vwgt[v++] = vnext->second;
+      wvals[i] =  vnext->second;
+      gids[i] = vnext->first;
       vnext++;
+      i++;
     }
+
+    vwgt.ReplaceGlobalValues(i, wvals, gids);
+
+    delete [] wvals;
+    delete [] gids;
   }
   else{
     vwgt.PutScalar(1.0);   // default to unit weights

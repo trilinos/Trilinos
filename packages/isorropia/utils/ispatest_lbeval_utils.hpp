@@ -85,7 +85,7 @@ namespace ispatest {
     myShare is between 0 and 1, and usually would be 1.0/numProc.
   */
 
-void compute_balance(const Epetra_Vector &wgts, double myGoalWeight,
+int compute_balance(const Epetra_Vector &wgts, double myGoalWeight,
                               double &min, double &max, double &avg);
 
 /** Compute Zoltan-style hypergraph metrics given a partitioned
