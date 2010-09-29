@@ -345,6 +345,11 @@ public:
    */
   void setParameters(const Teuchos::ParameterList& paramlist);
 
+  /** Get the cost object
+   */
+
+  Teuchos::RCP<Isorropia::Epetra::CostDescriber> & getCosts() { return costs_; }
+
   virtual void compute(bool force_compute) = 0 ;
 
   /** Query whether compute_operation() has already been called.
