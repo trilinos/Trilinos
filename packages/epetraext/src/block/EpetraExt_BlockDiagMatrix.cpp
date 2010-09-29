@@ -319,9 +319,6 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
                                            int * PermuteFromLIDs,
                                            const Epetra_OffsetIndex * Indexor){
   (void)Indexor;
-  exit(-1);
-
-  // NEEDS A FIX
 
   const EpetraExt_BlockDiagMatrix & A = dynamic_cast<const EpetraExt_BlockDiagMatrix &>(Source);
 
@@ -331,13 +328,13 @@ int EpetraExt_BlockDiagMatrix::CopyAndPermute(const Epetra_SrcDistObject& Source
   int * ToFirstPointInElementList = 0;
   int * FromFirstPointInElementList = 0;
   int * FromElementSizeList = 0;
-  int MaxElementSize = Map().MaxElementSize();
-  bool ConstantElementSize = Map().ConstantElementSize();
+  int MaxElementSize = DataMap().MaxElementSize();
+  bool ConstantElementSize = DataMap().ConstantElementSize();
 
   if (!ConstantElementSize) {
-    ToFirstPointInElementList =   Map().FirstPointInElementList();
-    FromFirstPointInElementList = A.Map().FirstPointInElementList();
-    FromElementSizeList = A.Map().ElementSizeList();
+    ToFirstPointInElementList =   DataMap().FirstPointInElementList();
+    FromFirstPointInElementList = A.DataMap().FirstPointInElementList();
+    FromElementSizeList = A.DataMap().ElementSizeList();
   }
   int j, jj, jjj, k;
   
@@ -420,20 +417,18 @@ int EpetraExt_BlockDiagMatrix::PackAndPrepare(const Epetra_SrcDistObject& Source
   (void)Distor;
   const EpetraExt_BlockDiagMatrix & A = dynamic_cast<const EpetraExt_BlockDiagMatrix &>(Source);
 
-  exit(-1);//FIX
-
   int j, jj, k;
 
   double *From=A.Values();
-  int MaxElementSize = Map().MaxElementSize();
-  bool ConstantElementSize = Map().ConstantElementSize();
+  int MaxElementSize = DataMap().MaxElementSize();
+  bool ConstantElementSize = DataMap().ConstantElementSize();
 
   int * FromFirstPointInElementList = 0;
   int * FromElementSizeList = 0;
 
   if (!ConstantElementSize) {
-    FromFirstPointInElementList = A.Map().FirstPointInElementList();
-    FromElementSizeList = A.Map().ElementSizeList();
+    FromFirstPointInElementList = A.DataMap().FirstPointInElementList();
+    FromElementSizeList = A.DataMap().ElementSizeList();
   }
 
   SizeOfPacket = MaxElementSize * (int)sizeof(double); 
@@ -494,8 +489,6 @@ int EpetraExt_BlockDiagMatrix::UnpackAndCombine(const Epetra_SrcDistObject& Sour
   (void)Distor;
   (void)Indexor;
   int j, jj, k;
-
-  exit(-1);//FIX
   
   if(    CombineMode != Add
       && CombineMode != Zero
@@ -507,15 +500,15 @@ int EpetraExt_BlockDiagMatrix::UnpackAndCombine(const Epetra_SrcDistObject& Sour
   if (NumImportIDs<=0) return(0);
 
   double * To = Values_;
-  int MaxElementSize = Map().MaxElementSize();
-  bool ConstantElementSize = Map().ConstantElementSize();
+  int MaxElementSize = DataMap().MaxElementSize();
+  bool ConstantElementSize = DataMap().ConstantElementSize();
 
   int * ToFirstPointInElementList = 0;
   int * ToElementSizeList = 0;
 
   if (!ConstantElementSize) {
-    ToFirstPointInElementList = Map().FirstPointInElementList();
-    ToElementSizeList = Map().ElementSizeList();
+    ToFirstPointInElementList = DataMap().FirstPointInElementList();
+    ToElementSizeList = DataMap().ElementSizeList();
   }
   
   double * ptr;
