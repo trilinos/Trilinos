@@ -35,18 +35,27 @@
 namespace Tpetra {
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::RowMatrixTransposer(const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix)
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::RowMatrixTransposer(const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix)
   : origMatrix_(origMatrix), comm_(origMatrix->getComm()), indexBase_(origMatrix_->getIndexBase()) {}
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
+template<class Scalar, 
+  class LocalOrdinal, 
+  class GlobalOrdinal, 
+  class Node, 
+  class SpMatOps>
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::~RowMatrixTransposer() {}
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
-void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose, 
+template<class Scalar, 
+  class LocalOrdinal,
+  class GlobalOrdinal, 
+  class Node, 
+  class SpMatOps>
+void 
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::createTranspose (const OptimizeOption optimizeTranspose, 
     Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > &transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap*/)
 {
   using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
+  using Teuchos::Array;
 
   optimizeTranspose_ = optimizeTranspose;
   const size_t LST0 = Teuchos::OrdinalTraits<size_t>::zero();
@@ -63,17 +72,18 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::c
 
   size_t numMyRows = origMatrix_->getNodeNumRows();
   size_t numMyCols = origMatrix_->getNodeNumCols();
-  ArrayRCP<size_t> transNumNz = Teuchos::arcp<size_t>(numMyCols);
+  ArrayRCP<size_t> transNumNz = Teuchos::ArrayRCP<size_t>(numMyCols);
   std::fill(transNumNz.begin(), transNumNz.end(), LST0);
-  ArrayRCP<ArrayRCP<GlobalOrdinal> > transIndices = Teuchos::arcp<ArrayRCP<LocalOrdinal> >(numMyCols);
-  ArrayRCP<ArrayRCP<Scalar>        > transValues  = Teuchos::arcp<ArrayRCP<Scalar>       >(numMyCols);
+  Array<Array<GlobalOrdinal> > transIndices(numMyCols);
+  Array<Array<Scalar> > transValues(numMyCols);
 
   // loop over all column indices, counting the number of non-zeros per column
   {
-    const RowGraph<LocalOrdinal,GlobalOrdinal,Node> &graph = *origMatrix_->getGraph();
-    ArrayRCP<const LocalOrdinal> indices;
+    const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &graph = 
+      *origMatrix_->getCrsGraph();
+    ArrayView<const LocalOrdinal> indices;
     for (LocalOrdinal r=LO0; (size_t)r<numMyRows;++r) {
-      indices = graph.getLocalRowView(r);
+      graph.getLocalRowView(r, indices);
       for (size_t j=LO0; j<(size_t)indices.size(); ++j) {
         ++transNumNz[indices[j]];
       }
@@ -84,8 +94,8 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::c
   for (LocalOrdinal c=LO0; (size_t)c<numMyCols; c++) {
     const size_t numIndices = transNumNz[c];
     if (numIndices>0) {
-      transIndices[c] = Teuchos::arcp<GlobalOrdinal>(numIndices);
-      transValues[c]  = Teuchos::arcp<Scalar       >(numIndices);
+      transIndices[c] = Teuchos::Array<GlobalOrdinal>(numIndices);
+      transValues[c]  = Teuchos::Array<Scalar>(numIndices);
     }
   }
 
@@ -95,8 +105,8 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::c
   // indices are translated to global indices
   {
     const Map<LocalOrdinal,GlobalOrdinal,Node> &rowMap = *origMatrix_->getRowMap();
-    ArrayRCP<const LocalOrdinal> indices;
-    ArrayRCP<const Scalar> values;
+    ArrayView<const LocalOrdinal> indices;
+    ArrayView<const Scalar> values;
     // clear these and use them for offsets into the current row
     std::fill( transNumNz.begin(), transNumNz.end(), 0 );
     for (LocalOrdinal lrow=LO0; (size_t)lrow<numMyRows; ++lrow) {

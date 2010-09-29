@@ -64,7 +64,7 @@ int read_matrix(
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > mat);
 */
 template<class Ordinal>
-int run_test(Teuchos::RCP<Teuchos::Comm<Ordinal> > Comm,
+int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   Teuchos::ParameterList matrixSystem,
   bool result_mtx_to_file=false,
   bool verbose=false);
@@ -171,13 +171,24 @@ int main(int argc, char* argv[]) {
     std::cout << "test_find_rows returned err=="<<err<<std::endl;
     return(err);
   } 
-  Teuchos::RCP<Teuchos::ParameterList> matrixSystems = Teuchos::getParametersFromXmlFile(matnamesFile);
-  for(Teuchos::ParameterList::ConstIterator it = matrixSystems->begin(); it != matrixSystems->end(); ++it){
-	TEST_FOR_EXCEPTION(it->second.isList(), std::runtime_error, "All top level items in the matrix "
-	"file names list must be ParameterLists! In otherwords, you always need to have matricies "
-	"encapsulated within a matrixsystem");
+  Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
+    Teuchos::getParametersFromXmlFile(matnamesFile);
+  for(
+    Teuchos::ParameterList::ConstIterator it = matrixSystems->begin();
+    it != matrixSystems->end();
+    ++it)
+  {
+	TEST_FOR_EXCEPTION(it->second.isList(), std::runtime_error,
+    "All top level items in the matrix "
+	  "file names list must be ParameterLists! In otherwords, you always "
+    "need to have matricies "
+	  "encapsulated within a matrixsystem");
       
-    run_test(comm, matrixSystems->sublist(it->first), write_result_mtx, verbose);
+    run_test<int>(
+      comm, 
+      matrixSystems->sublist(it->first), 
+      write_result_mtx, 
+      verbose);
 
   }
 /*
@@ -231,8 +242,10 @@ int test_find_rows(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm)
   int localproc = Comm->getRank();
   int numlocalrows = 2;
   Tpetra::global_size_t numglobalrows = numprocs*numlocalrows;
-  Teuchos::RCP<Tpetra::Map<int> > rowmap = Teuchos::rcp(new Tpetra::Map<int>(numlocalrows*numprocs, 0, Comm));
-  Teuchos::RCP<Tpetra::CrsMatrix<double, int> > matrix = Teuchos::rcp(new Tpetra::CrsMatrix<double, int>(rowmap, numglobalrows));
+  Teuchos::RCP<Tpetra::Map<int> > rowmap = 
+    Teuchos::rcp(new Tpetra::Map<int>(numlocalrows*numprocs, 0, Comm));
+  Teuchos::RCP<Tpetra::CrsMatrix<double, int> > matrix = 
+    Teuchos::rcp(new Tpetra::CrsMatrix<double, int>(rowmap, numglobalrows));
 
 
   Teuchos::ArrayRCP<int> cols = Teuchos::ArrayRCP<int>(numglobalrows);
@@ -244,7 +257,8 @@ int test_find_rows(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm)
   }
 
   //Epetra_Map colmap(-1, numglobalrows, cols, 0, Comm);
-  Teuchos::RCP<const Tpetra::Map<int> > colmap = Teuchos::rcp(new Tpetra::Map<int, int>(-1, cols(), 0, Comm));
+  Teuchos::RCP<const Tpetra::Map<int> > colmap = 
+    Teuchos::rcp(new Tpetra::Map<int, int>(-1, cols(), 0, Comm));
 
   for(int i=0; i<numlocalrows; ++i) {
     Teuchos::ArrayRCP<int> row(1,localproc*numlocalrows+i);
@@ -419,7 +433,7 @@ int read_input_file(Teuchos::RCP<const Teuchos::Comm<Odrinal> > Comm,
 
 template<class Ordinal>
 int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
-             Teuchos::ParameterList& matrixSystem,
+             Teuchos::ParameterList matrixSystem,
              bool result_mtx_to_file,
              bool verbose)
 {
@@ -466,7 +480,7 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
 
   Tpetra::MatrixMatrix::Add(constC, false, -1.0, C_check, 1.0);
 
-  double inf_norm = C_check->NormInf();
+  double inf_norm = C_check->getEuclideanNorm();
 
   int return_code = 0;
 

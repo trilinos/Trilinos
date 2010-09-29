@@ -2043,6 +2043,23 @@ namespace Tpetra {
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Scalar CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getEuclideanNorm() const{
+  Scalar localTotal = Teuchos::ScalarTraits<Scalar>::zero();
+  ArrayView<const LocalOrdinal> currentRowIndices;
+  ArrayView<const Scalar> currentRowValues;
+
+  for(LocalOrdinal i =0; i< getNodeNumRows(); ++i){
+    getLocalRowView(i, currentRowIndices, currentRowValues);
+    for(size_t j = 0; j<currentRowValues.size(); ++j){
+      localTotal += currentRowValues[j] * currentRowValues[j];
+    }
+  }
+  Scalar globalTotal;
+  reduceAll(getComm(), Teuchos::REDUCE_SUM, 1, &localTotal, &globalTotal);
+  return Teuchos::ScalarTraits<Scalar>::squareroot(globalTotal);
+}
+    
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////

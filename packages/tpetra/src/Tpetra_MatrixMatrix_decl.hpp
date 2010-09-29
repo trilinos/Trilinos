@@ -30,7 +30,7 @@
 #define TPETRA_MATRIXMATRIX_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_Array.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include "Tpetra_ConfigDefs.hpp"
@@ -179,8 +179,8 @@ static int Multiply(
  //double sparsedot(double* u, int* u_ind, int u_len,
 //      double* v, int* v_ind, int v_len);
 template<class Scalar, class LocalOrdinal>
-Scalar sparsedot(Teuchos::ArrayRCP<Scalar> u, Teuchos::ArrayRCP<LocalOrdinal> u_ind, 
-  Teuchos::ArrayRCP<Scalar> v, Teuchos::ArrayRCP<LocalOrdinal> v_ind);
+Scalar sparsedot(Teuchos::Array<Scalar> u, Teuchos::Array<LocalOrdinal> u_ind, 
+  Teuchos::Array<Scalar> v, Teuchos::Array<LocalOrdinal> v_ind);
 
 }
 

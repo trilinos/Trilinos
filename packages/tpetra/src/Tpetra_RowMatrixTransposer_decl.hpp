@@ -40,10 +40,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class Map;
 
-//! Tpetra_RowMatrixTransposer: A class for transposing an Tpetra_RowMatrix object.
+//! Tpetra_CrsMatrixTransposer: A class for transposing an Tpetra_CrsMatrix object.
 
 namespace Tpetra {
-/*! This class provides capabilities to construct a transpose matrix of an existing Tpetra_RowMatrix
+/*! This class provides capabilities to construct a transpose matrix of an existing Tpetra_CrsMatrix
 	  object and (optionally) redistribute it across a parallel distributed memory machine.
 */
 
@@ -58,17 +58,17 @@ class RowMatrixTransposer {
 
   //! @name Constructors/destructors
   //@{ 
-  //! Primary Tpetra_RowMatrixTransposer constructor.
+  //! Primary Tpetra_CrsMatrixTransposer constructor.
   /*!
-    \param origMatrix An existing Tpetra_RowMatrix object.  The Tpetra_RowMatrix, the LHS and RHS pointers
+    \param origMatrix An existing Tpetra_CrsMatrix object.  The Tpetra_CrsMatrix, the LHS and RHS pointers
 		       do not need to be defined before this constructor is called.
 
-    \return Pointer to a Tpetra_RowMatrixTransposer object.
+    \return Pointer to a Tpetra_CrsMatrixTransposer object.
 
   */ 
-  RowMatrixTransposer(const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix);
+  RowMatrixTransposer(const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix);
 
-  //! Tpetra_RowMatrixTransposer destructor.
+  //! Tpetra_CrsMatrixTransposer destructor.
   
   virtual ~RowMatrixTransposer();
   //@}
@@ -76,8 +76,8 @@ class RowMatrixTransposer {
   //! @name Forward transformation methods
   //@{ 
   
-  //! Generate a new Tpetra_CrsMatrix as the transpose of an Tpetra_RowMatrix passed into the constructor.
-  /*! Constructs a new Tpetra_CrsMatrix that is a copy of the Tpetra_RowMatrix passed in to the constructor.
+  //! Generate a new Tpetra_CrsMatrix as the transpose of an Tpetra_CrsMatrix passed into the constructor.
+  /*! Constructs a new Tpetra_CrsMatrix that is a copy of the Tpetra_CrsMatrix passed in to the constructor.
 		
 		\param optimizeTranspose Optimizes the storage of the newly created Transpose matrix
 		\param transposeMatrix The matrix in which the result of the tranpose operation will be put.
@@ -90,7 +90,7 @@ class RowMatrixTransposer {
 	
  private: 
 	//The original matrix to be transposed.
-	const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix_;
+	const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix_;
 	//The matrix in which the result of the tranpose is placed.
 	Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > transposeMatrix_;
 	//Whether or not to optimize the storage of the transpose matrix.

@@ -31,7 +31,7 @@
 #define TPETRA_MMHELPERS_DECL_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_Array.hpp"
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include <set>
@@ -69,10 +69,10 @@ public:
   void deleteContents();
 
   size_t numRows;
-  Teuchos::ArrayRCP<size_t> numEntriesPerRow;
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const LocalOrdinal> > indices;
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > values;
-  Teuchos::ArrayRCP<bool> remote;
+  Teuchos::Array<size_t> numEntriesPerRow;
+  Teuchos::Array<Teuchos::Array<const LocalOrdinal> > indices;
+  Teuchos::Array<Teuchos::Array<const Scalar> > values;
+  Teuchos::Array<bool> remote;
   global_size_t numRemote;
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > origRowMap;
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap;
