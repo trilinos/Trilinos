@@ -285,6 +285,9 @@ public:
   */
   void
      redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector);
+
+  Epetra_Import &get_importer() { return *importer_;}
+
 private:
   /** @ingroup partitioning_grp
       Create an importer object to be used in the redistribution
