@@ -1,7 +1,30 @@
+-----------------------------------------
+Release Notes for Trilinos Package Kokkos
+-----------------------------------------
 
-----------------------------------------
-Release Notes for Trilinos Package Belos
-----------------------------------------
+
+Trilinos 10.6:
+--------------
+
+Significant internal/external changes to both the Kokkos Node API and the
+Kokkos Linear Algebra library. Most of these changes are centered around 
+CrsGraph and CrsMatrix and their kernels. Some exciting developments regarding 
+sparse mat-vec on multi-core/GPUs did not make it in this release; look for more
+development in 10.6.1.
+
+* Lots of additional documentation, testing and examples in Kokkos.
+* Improved debugging in Kokkos Node API
+* Added isHostNode static bool to all Kokkos nodes (false for ThrustGPUNode)
+* Imported select Teuchos memory management classes/methods into the Kokkos namespace.
+* Minor bug fixes, warnings addressed.
+
+Changes breaking backwards compatbility:
+* Kokkos CRS classes (i.e., CrsGraph and CrsMatrix) are now templated on the 
+  sparse kernel operator, allowing specialization of the class data 
+  according to the implementation of the kernel.
+* Kokkos CRS classes now contain host-allocated memory, instead of node-allocated
+  memory. This means that use of these buffers by the node will, in general, require
+  a copy. 
 
 
 Trilinos 10.4:
