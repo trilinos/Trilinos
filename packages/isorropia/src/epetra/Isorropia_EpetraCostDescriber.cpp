@@ -29,7 +29,10 @@ USA
 
 #include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_Exception.hpp>
+
+#ifdef USE_UTILS
 #include "ispatest_lbeval_utils.hpp"
+#endif
 
 #ifdef HAVE_EPETRA
 #include <Epetra_BlockMap.h>
@@ -156,6 +159,7 @@ void CostDescriber::_transformWeights(const Epetra_Import &importer)
   // there is no need to transform them
 }
 
+#ifdef USE_UTILS
 int CostDescriber::compareBeforeAndAfterHypergraph(
             const Epetra_RowMatrix &in_m, const Epetra_RowMatrix &out_m,
             const Epetra_Import &importer,
@@ -312,6 +316,7 @@ int CostDescriber::compareBeforeAndAfterImbalance(const Epetra_MultiVector &mv, 
 
   return 0;
 }
+#endif
 
 void CostDescriber::setParameters(const Teuchos::ParameterList& paramlist)
 {

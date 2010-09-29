@@ -161,7 +161,7 @@ int main(int argc, char** argv) {
   double bal0, bal1, cutn0, cutn1, cutl0, cutl1;
   Isorropia::Epetra::CostDescriber default_costs;
 
-#if 0
+#if 1
   // Balance and cut quality before partitioning
 
   double goalWeight = 1.0 / (double)numProcs;

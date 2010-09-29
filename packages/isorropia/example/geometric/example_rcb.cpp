@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
 
   double min1, min2, max1, max2, avg1, avg2;
 
-#if 0
+#if 1
   double goal = 1.0 / (double)numProcs;
 
   Epetra_Vector * &w1 = (*wgts)(0);

@@ -31,8 +31,12 @@ USA
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
+
+#ifdef USE_UTILS
 #include <../../utils/ispatest_epetra_utils.hpp>
 #include <../../utils/ispatest_lbeval_utils.hpp>
+using namespace ispatest;
+#endif
 
 #include <Teuchos_RCP.hpp>
 
@@ -47,7 +51,6 @@ USA
 #include <Epetra_Comm.h>
 #endif
 
-using namespace ispatest;
 
 namespace Isorropia {
 
@@ -227,6 +230,7 @@ Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, Epetra_CrsMatri
   if (callFillComplete && (!outputMatrix->Filled()))
     outputMatrix->FillComplete(*newDomainMap,  *target_map_);
 
+#ifdef USE_UTILS
   // TODO: "PRINT ZOLTAN METRICS" should specify graph, hypergraph, or imbalance
   //     instead of just amount of output
   //     Metrics should be printed for each redistribute() method
@@ -277,6 +281,7 @@ Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, Epetra_CrsMatri
     }
     inputMatrix.Comm().Barrier();
   }
+#endif
 
   return;
 }
@@ -346,6 +351,7 @@ Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatri
       outputMatrix->FillComplete(inputMatrix.OperatorDomainMap(), *target_map_);
   }
 
+#ifdef USE_UTILS
   // TODO: "PRINT ZOLTAN METRICS" should specify graph, hypergraph, or imbalance
   //     instead of just amount of output
   //     Metrics should be printed for each redistribute() method
@@ -395,6 +401,7 @@ Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatri
     } 
     inputMatrix.Comm().Barrier();
   }
+#endif
 
   return;
 }

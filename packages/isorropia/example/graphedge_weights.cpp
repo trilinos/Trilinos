@@ -318,8 +318,7 @@ int main(int argc, char** argv) {
   double bal0, bal1, cutn0, cutn1, cutl0, cutl1, cutWgt0, cutWgt1;
   int numCuts0, numCuts1;
 
-#if 0
-#if 0
+#if 1
 
   // Balance and cut quality before partitioning
 
@@ -359,7 +358,6 @@ int main(int argc, char** argv) {
     std::cout << "                     Balance " << bal1 << " cutN " << cutn1 << " cutL " << cutl1;
     std::cout << std::endl;
   }
-#endif
 
 
 
