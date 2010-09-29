@@ -48,6 +48,36 @@ Package Release Notes:
 
 Anasazi
 
+  - Anasazi now includes a new orthogonalization kernel for multivectors, called
+    TSQR (for "Tall Skinny QR").  TSQR is faster than Modified or Classical
+    Gram-Schmidt, because it requires fewer messages between processors in
+    parallel, as well as less data movement between levels of the memory
+    hierarchy on a single node.  It also achieves accuracy comparable to
+    Householder QR.   TSQR optionally exploits node-level parallelism using
+    Intel's Threading Building Blocks, which can achieve linear speedups.  For
+    details, see LAPACK Working Note #204, or the following technical report:
+
+      @techreport{demmel2008qr, author = "James W. Demmel and Laura Grigori and
+      Mark Hoemmen and Julien Langou", title = "Communication-optimal parallel
+      and sequential {QR} factorizations:  theory and practice", institution =
+      "University of California Berkeley", number = "UCB/EECS-2008-89", year =
+      "2008" }
+
+    TSQR itself has been tested for accuracy and performance, and it accepts
+    float, double, std::complex<float>, and std::complex<double> data types. 
+    Anasazi::TsqrOrthoManager is the intended interface to TSQR for Anasazi
+    users.  It has not been tested as thoroughly as TSQR itself, so feedback is
+    welcome.  Currently only Tpetra::MultiVector is supported by TSQR as a
+    multivector type, and the only Kokkos node types supported are SerialNode
+    and TbbNode (which activates node-level parallelism using Intel TBB). 
+    Adding Epetra_MultiVector support can be done easily, if users are
+    interested. 
+
+    TSQR is not enabled by default.  To enable TSQR support in Anasazi, set the
+    CMake Anasazi_ENABLE_TSQR option to ON.  To enable Intel TBB support for
+    node-level parallelism, configure Trilinos with Intel TBB support.  Feedback
+    is welcome.
+
   - Better support for Tpetra in Anasazi.
 
 -------------------------------------------------------------------------------
