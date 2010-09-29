@@ -41,6 +41,11 @@
 #endif
 #include "ml_petsc.h"
 
+#ifdef HAVE_ML_TekoSmoothers
+extern "C"
+int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const std::string & filename, const std::string & inverse,bool isBlocked);
+#endif
+
 extern "C" {
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
                                                ML_Smoother* Smoother,
@@ -1182,7 +1187,28 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
             << endl;
       exit(EXIT_FAILURE);
 #     endif /*ifdef HAVE_PETSC*/
-
+    } else if( MySmoother == "teko" ) {
+#ifdef HAVE_ML_TekoSmoothers
+      // ======================================== //
+      // Teko smoother (for block matrices only) //
+      // ======================================== //
+      std::string tekoFilename = List_.get<std::string>("smoother: teko filename");
+      std::string tekoInverse = List_.get<std::string>("smoother: teko inverse");
+      int isBlocked = List_.get<int>("smoother: teko is blocked");
+      tekoFilename = smList.get("smoother: teko filename",tekoFilename);
+      tekoInverse = smList.get("smoother: teko inverse",tekoInverse);
+      isBlocked = smList.get("smoother: teko is blocked",isBlocked);
+ 
+      ML_Gen_Smoother_Teko(ml_, currentLevel, pre_or_post, Mynum_smoother_steps,
+                           tekoFilename,tekoInverse,isBlocked);
+#else
+      if (Comm().MyPID() == 0)
+       cerr << ErrorMsg_
+            << "You must configure ML with Teko support enabled. "
+            << "Enable flag ENABLE_TekoML and add Teko to the end of the library line"
+            << endl;
+      exit(EXIT_FAILURE);
+#endif
     } else if( MySmoother == "user-defined" || MySmoother == "user defined" ) {
 
       // ============ //

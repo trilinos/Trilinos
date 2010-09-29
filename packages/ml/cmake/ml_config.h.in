@@ -151,3 +151,6 @@
 
 /* Define to rpl_malloc if the replacement function should be used. */
 #cmakedefine malloc
+
+/* Turn on Teko smoothers, this is a circular dependency use at your own risk */
+#cmakedefine HAVE_ML_TekoSmoothers
