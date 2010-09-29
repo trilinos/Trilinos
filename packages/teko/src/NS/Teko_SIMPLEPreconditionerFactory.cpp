@@ -54,7 +54,9 @@
 
 #include "Teuchos_Time.hpp"
 #include "Epetra_FECrsGraph.h"
+#include "Epetra_FECrsMatrix.h"
 #include "EpetraExt_PointToBlockDiagPermute.h"
+#include "EpetraExt_MatrixMatrix.h"
 #include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 
@@ -127,53 +129,9 @@ LinearOp SIMPLEPreconditionerFactory
      Hfact.initializeFromParameterList(BlkDiagList_);           
      LinearOp Hop=Hfact.buildPreconditionerOperator(matF,Hstate); 
 
-     // A hacky way to get a CrsMatrix out of the BDP.
-     // NTS: Should eventually add this functionality to the BDP proper.
-
-     // Build CrsGraph
-     int ContiguousBlockSize=BlkDiagList_.get("contiguous block size",0);
-     int Nlb=BlkDiagList_.get("number of local blocks",0);
-     int *block_starts=BlkDiagList_.get("block start index",(int*)0);
-     int *block_gids=BlkDiagList_.get("block entry gids",(int*)0);
-     // NTS: Does not support PurelyLocalMode
-     TEUCHOS_ASSERT(ContiguousBlockSize || block_gids);
-
-     Epetra_FECrsGraph *G=new Epetra_FECrsGraph(Copy,Hstate.BDP_->OperatorRangeMap(),0);
-     // Manually create the block list for the contiguous case
-     if(ContiguousBlockSize){
-       // Using contiguous blocks
-       // NTS: In case of processor-crossing blocks, the lowest PID always gets the block;
-       const Epetra_Map &RowMap=Hstate.BDP_->OperatorDomainMap();
-       
-       int MinMyGID=RowMap.MinMyGID(); 
-       int MaxMyGID=RowMap.MaxMyGID(); 
-       int Base=RowMap.IndexBase();
-       
-       // Find the GID that begins my first block
-       int MyFirstBlockGID=ContiguousBlockSize*(int)ceil(((double)(MinMyGID - Base))/ContiguousBlockSize)+Base;
-       Nlb=(int)ceil((double)((MaxMyGID-MyFirstBlockGID+1.0)) / ContiguousBlockSize);
-
-       // Insert the blocks into the graph
-       std::vector<int> blist;blist.resize(ContiguousBlockSize);
-       for(int i=0,ct=0;i<Nlb;i++){
-	 for(int j=0;j<ContiguousBlockSize;j++,ct++)
-	   blist[j]=MyFirstBlockGID+ct;
-	 G->InsertGlobalIndices(ContiguousBlockSize,&blist[0],ContiguousBlockSize,&blist[0]);
-       }              
-     }
-     else{       
-       // Using custom block lists
-       for(int i=0;i<Nlb;i++){
-	 int blksize=block_starts[i+1]-block_starts[i];
-	 G->InsertGlobalIndices(blksize,&block_gids[block_starts[i]],blksize,&block_gids[block_starts[i]]);
-       }       
-     }
-     G->GlobalAssemble();
-     G->FillComplete();
-     RCP<const Epetra_CrsGraph> Gg=rcp(G);
-
-     // Probe H
-     H=probe(Gg,Hop);
+     // Get a FECrsMarix out of the BDP
+     RCP<Epetra_FECrsMatrix> Hcrs=rcp(Hstate.BDP_->CreateFECrsMatrix());
+     H=Thyra::epetraLinearOp(Hcrs);
 
      buildExplicitSchurComplement = true;//NTS: Do I need this?
    }
