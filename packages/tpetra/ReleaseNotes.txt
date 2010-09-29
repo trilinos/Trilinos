@@ -1,13 +1,32 @@
-
 -----------------------------------------
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Trilinos 10.6:
+--------------
+
+Significant internal changes in Tpetra for this release, mostly centered around
+the CrsMatrix class. Lots of new features centering around multi-core/GPUs did
+not make it in this release; look for more development in 10.6.1.
+
+* Lots of additional documentation, testing and examples in Tpetra.
+* Imported select Teuchos memory management classes/methods into the Tpetra namespace.
+* Updates to the Anasazi/Tpetra adaptors for efficiency, node-awareness and debugging.
+* Minor bug fixes, warnings addressed.
+
+Changes breaking backwards compatbility:
+* Tpetra CRS objects (i.e., CrsGraph and CrsMatrix) are required to be "fill-active" in order to be modified.
+  Furthermore, they are requried to be "fill-complete" in order to call multiply/solve.
+  The transition between these states is mediated by the methods fillComplete() and resumeFill(). 
+  This will only effect users that modify a matrix after calling fillComplete().
+
+Newly deprecated functionality:
+* CrsGraph/CrsMatrix persisting views of graph and matrix data are now
+  deprecated. New, non-persisting versions of these are provided.
+
 
 Trilinos 10.4:
 --------------
-
-Note to users:
 
 The Trilinos release 10.4 came at an unfortunate time, as we were in the middle
 of a medium refactor in Kokkos/Tpetra in order to better support GPU and
@@ -18,10 +37,6 @@ in the development branch, and will not be released until 10.6 (estimated for Se
 
 Users that require access to this code should contact a Trilinos developer regarding access to the 
 development branch repository. 
-
---------------------------------------------------
-      Tpetra
---------------------------------------------------
 
 (*) Improvements to doxygen documentation.
 - added ifdefs to support profiling/tracing of host-to-device memory transfers 

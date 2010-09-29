@@ -2,6 +2,10 @@
 Release Notes for Trilinos Package Anasazi
 ------------------------------------------
 
+Trilinos 10.6:
+--------------
+
+(*) Better support for Tpetra in Anasazi.
 
 Trilinos 10.4:
 --------------
