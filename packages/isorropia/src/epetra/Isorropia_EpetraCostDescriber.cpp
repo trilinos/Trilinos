@@ -79,13 +79,13 @@ CostDescriber::CostDescriber(const CostDescriber &costs):
 
 {
   if (costs.haveVertexWeights()){
-    Epetra_Vector *vwgts = new Epetra_Vector(*costs.vertex_weights_);
-    setVertexWeights(Teuchos::rcp(vwgts));
+    Teuchos::RCP<Epetra_Vector> vwgts = Teuchos::rcp(new Epetra_Vector(*costs.vertex_weights_));
+    setVertexWeights(vwgts);
   }
 
   if (costs.haveGraphEdgeWeights()){
-    Epetra_CrsMatrix *ewgts = new Epetra_CrsMatrix(*costs.graph_edge_weights_);
-    setGraphEdgeWeights(Teuchos::rcp(ewgts));
+    Teuchos::RCP<Epetra_CrsMatrix> ewgts = Teuchos::rcp(new Epetra_CrsMatrix(*costs.graph_edge_weights_));
+    setGraphEdgeWeights(ewgts);
   }
 
   int n = num_hg_edge_weights_;
@@ -107,10 +107,9 @@ void CostDescriber::_transformWeights(const Epetra_Import &importer)
                      target_map.MyGlobalElements(), target_map.IndexBase(), target_map.Comm());
 
   if (numGlobalVertexWeights_ > 0){
-    Epetra_Vector redistWeights(target_map);
-    redistWeights.Import(*vertex_weights_, importer, Insert);
-    Teuchos::RCP<Epetra_Vector> vecptr = Teuchos::rcp(&redistWeights);
-    setVertexWeights(vecptr);
+    Teuchos::RCP<Epetra_Vector> redistWeights = Teuchos::rcp(new Epetra_Vector(target_map));
+    redistWeights->Import(*vertex_weights_, importer, Insert);
+    setVertexWeights(redistWeights);
   }
 
   if (numGlobalGraphEdgeWeights_ > 0){
@@ -140,18 +139,17 @@ void CostDescriber::_transformWeights(const Epetra_Import &importer)
       }
     }
   
-    Epetra_CrsMatrix new_graph_edge_weights(Copy, new_map, rowSize, true);
+    Teuchos::RCP<Epetra_CrsMatrix> new_graph_edge_weights = 
+      Teuchos::rcp(new Epetra_CrsMatrix(Copy, new_map, rowSize, true));
   
     if (myNewRows)
       delete [] rowSize;
   
-    new_graph_edge_weights.Import(*graph_edge_weights_, importer, Insert);
+    new_graph_edge_weights->Import(*graph_edge_weights_, importer, Insert);
 
-    new_graph_edge_weights.FillComplete();
+    new_graph_edge_weights->FillComplete();
 
-    Teuchos::RCP<Epetra_CrsMatrix> wgtptr = Teuchos::rcp(&new_graph_edge_weights);
-
-    setGraphEdgeWeights(wgtptr);
+    setGraphEdgeWeights(new_graph_edge_weights);
   }
 
   // hg_edge_weights are independent of matrix row partitioning, so
@@ -424,6 +422,11 @@ int CostDescriber::getVertexWeights(std::map<int, float> &wgtMap) const
 {
   double *wgts;
 
+  if (Teuchos::is_null(vertex_weights_)){
+    wgtMap.clear();
+    return 0;
+  }
+
   const Epetra_BlockMap& map = vertex_weights_->Map();
   const int length = map.NumMyElements();
 
@@ -490,6 +493,8 @@ int CostDescriber::getNumGraphEdges(int vertex_global_id) const
   return n;
 }
 
+// ONLY called if graph_self_edge_ is not null
+
 int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights) const
 {
   const Epetra_Map &colmap = graph_edge_weights_->ColMap();
@@ -512,8 +517,8 @@ int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights
     self_edge = 1;
   }
 
-  int *viewIds;
-  double *viewWgts;
+  int *viewIds=NULL;
+  double *viewWgts=NULL;
   int numedges;         // including self edges
 
   int rc = graph_edge_weights_->ExtractMyRowView(vertexLID, numedges,
