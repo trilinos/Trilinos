@@ -11,3 +11,27 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DEPLIBS isorropia_test_utils
   COMM serial mpi
   )
+PACKAGE_ADD_EXECUTABLE(
+  graphedge_weights
+  SOURCES graphedge_weights.cpp
+  DEPLIBS isorropia_test_utils
+  COMM serial mpi
+  )
+PACKAGE_ADD_EXECUTABLE(
+  hgedge_weights
+  SOURCES hgedge_weights.cpp
+  DEPLIBS isorropia_test_utils
+  COMM serial mpi
+  )
+PACKAGE_ADD_EXECUTABLE(
+  part_redist
+  SOURCES part_redist.cpp
+  DEPLIBS isorropia_test_utils
+  COMM serial mpi
+  )
+PACKAGE_ADD_EXECUTABLE(
+  vert_weights
+  SOURCES vert_weights.cpp
+  DEPLIBS isorropia_test_utils
+  COMM serial mpi
+  )

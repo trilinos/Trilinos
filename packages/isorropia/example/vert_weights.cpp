@@ -106,8 +106,9 @@ int main(int argc, char** argv) {
   // sublist named "Zoltan".
   // In the sublist, we'll set parameters that we want to send to Zoltan.
 #ifdef HAVE_ISORROPIA_ZOLTAN
+  paramlist.set("PARTITIONING METHOD", "GRAPH");
+  paramlist.set("PRINT ZOLTAN_METRICS", "1");
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "GRAPH");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used.
@@ -178,12 +179,14 @@ int main(int argc, char** argv) {
 
   // Results
 
-  double goalWeight = 1.0 / (double)numProcs;
   double bal0, bal1, cutn0, cutn1, cutl0, cutl1, cutWgt0, cutWgt1;
   int numCuts0, numCuts1;
 
+#if 0
+#if 0
   // Balance and cut quality before partitioning
 
+  double goalWeight = 1.0 / (double)numProcs;
   ispatest::compute_graph_metrics(*rowmatrix, *costs, goalWeight,
                      bal0, numCuts0, cutWgt0, cutn0, cutl0);
 
@@ -195,6 +198,19 @@ int main(int argc, char** argv) {
 
   ispatest::compute_graph_metrics(*bal_matrix, new_costs, goalWeight,
                      bal1, numCuts1, cutWgt1, cutn1, cutl1);
+#else
+  std::vector<double> bal(2), cutwgt(2), cutn(2), cutl(2);
+  std::vector<int >ncuts(2);
+
+  Epetra_Import &importer = rd.get_importer();
+
+  costs->compareBeforeAndAfterGraph(*rowmatrix, *bal_matrix, importer,
+             bal, ncuts, cutwgt, cutn, cutl);
+
+  bal0 = bal[0]; cutn0 = cutn[0]; cutl0 = cutl[0]; cutWgt0 = cutwgt[0]; numCuts0 = ncuts[0];
+  bal1 = bal[1]; cutn1 = cutn[1]; cutl1 = cutl[1]; cutWgt1 = cutwgt[1]; numCuts1 = ncuts[1];
+
+#endif
 
   if (localProc == 0){
     std::cout << "Before partitioning: Number of cuts " << numCuts0 << " Cut weight " << cutWgt0 << std::endl;
@@ -206,6 +222,7 @@ int main(int argc, char** argv) {
     std::cout << std::endl;
     std::cout << std::endl;
   }
+#endif
 
   MPI_Finalize();
 
