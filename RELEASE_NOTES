@@ -27,6 +27,15 @@ first time.)
 
 (^ ForTrilinos was added to the external release for Trilinos 10.4.1.)
 
+Framework Release Notes:
+
+  - New to Trilinos 10.6 is a small functional example to be used as a template
+    for applications that use CMake and want to build against an installed
+    version of Trilinos.  The application automatically pulls required
+    information from Trilinos including compilers, include paths, and library
+    names (in the correct order).  The example can be found in
+    demos/buildAgainstTrilinos.
+
 More information:
 
 Trilinos website: http://trilinos.sandia.gov
@@ -34,6 +43,18 @@ Trilinos website: http://trilinos.sandia.gov
 ===============================================================================
 
 Package Release Notes:
+
+-------------------------------------------------------------------------------
+
+Anasazi
+
+  - Better support for Tpetra in Anasazi.
+
+-------------------------------------------------------------------------------
+
+Belos
+
+  - Minor changes in Belos/Tpetra adaptors.
 
 -------------------------------------------------------------------------------
 
@@ -71,6 +92,36 @@ ForTrilinos
 
  - The project is primarily user-driven; so new interfaces are developed at the
    request of Trilinos users.
+
+-------------------------------------------------------------------------------
+  
+Kokkos
+
+  Significant internal/external changes to both the Kokkos Node API and the
+  Kokkos Linear Algebra library. Most of these changes are centered around 
+  CrsGraph and CrsMatrix and their kernels. Some exciting developments
+  regarding  sparse mat-vec on multi-core/GPUs did not make it in this release;
+  look for more development in 10.6.1.
+
+  - Lots of additional documentation, testing and examples in Kokkos.
+
+  - Improved debugging in Kokkos Node API
+
+  - Added isHostNode static bool to all Kokkos nodes (false for ThrustGPUNode)
+
+  - Imported select Teuchos memory management classes/methods into the Kokkos
+    namespace.
+
+  - Minor bug fixes, warnings addressed.
+
+  Changes breaking backwards compatbility:
+  - Kokkos CRS classes (i.e., CrsGraph and CrsMatrix) are now templated on the 
+    sparse kernel operator, allowing specialization of the class data 
+    according to the implementation of the kernel.
+
+  - Kokkos CRS classes now contain host-allocated memory, instead of
+    node-allocated memory. This means that use of these buffers by the node
+    will, in general, require a copy. 
 
 -------------------------------------------------------------------------------
   
@@ -144,6 +195,38 @@ Teko
 
   NOTE: A word of caution.  The interfaces in Teko are still maturing and may
   change substantially in the future. 
+
+-------------------------------------------------------------------------------
+
+Tpetra
+
+  Significant internal changes in Tpetra for this release, mostly centered
+  around the CrsMatrix class. Lots of new features centering around
+  multi-core/GPUs did not make it in this release; look for more development in
+  10.6.1.
+
+  - Lots of additional documentation, testing and examples in Tpetra.
+
+  - Imported select Teuchos memory management classes/methods into the Tpetra
+    namespace.
+
+  - Updates to the Anasazi/Tpetra adaptors for efficiency, node-awareness and
+    debugging.
+
+  - Minor bug fixes, warnings addressed.
+
+  Changes breaking backwards compatbility:
+  - Tpetra CRS objects (i.e., CrsGraph and CrsMatrix) are required to be
+    "fill-active" in order to be modified. Furthermore, they are requried to be
+    "fill-complete" in order to call multiply/solve. The transition between
+    these states is mediated by the methods fillComplete() and resumeFill(). 
+    This will only effect users that modify a matrix after calling
+    fillComplete().
+
+  Newly deprecated functionality:
+  - CrsGraph/CrsMatrix persisting views of graph and matrix data are now
+    deprecated. New, non-persisting versions of these are provided.
+
 
 ###############################################################################
 #                                                                             #
