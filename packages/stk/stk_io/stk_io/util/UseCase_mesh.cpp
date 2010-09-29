@@ -359,6 +359,25 @@ namespace stk {
       }
 
       // ========================================================================
+      // Thin wrapper to hid Ioss::Region in favor of MeshData.
+      void create_output_mesh(const std::string &mesh_filename,
+				       const std::string &mesh_extension,
+				       const std::string &working_directory,
+				       stk::ParallelMachine comm,
+				       stk::mesh::BulkData &bulk_data,
+				       stk::mesh::MetaData &meta_data,
+                                       MeshData &mesh_data,
+				       bool add_transient,
+				       bool add_all_fields)
+      {
+        mesh_data.m_region = create_output_mesh(mesh_filename,
+                                       mesh_extension, working_directory,
+                                       comm, bulk_data, 
+                                       NULL, //mesh_data.m_region,
+                                       meta_data, add_transient, add_all_fields);
+      }
+      // ========================================================================
+
       Ioss::Region *create_output_mesh(const std::string &mesh_filename,
 				       const std::string &mesh_extension,
 				       const std::string &working_directory,
@@ -711,6 +730,21 @@ namespace stk {
 	    stk::io::field_data_to_ioss(f, entities, io_entity, f->name());
 	  }
 	}
+      }
+
+      int process_output_request(MeshData &mesh_data,
+				 stk::mesh::BulkData &bulk,
+				 double time, bool output_all_fields)
+      {
+        Ioss::Region &region = *(mesh_data.m_region);
+        region.begin_mode(Ioss::STATE_TRANSIENT);
+
+        int out_step = region.add_state(time);
+
+        process_output_request(region, bulk, out_step, output_all_fields);
+        region.end_mode(Ioss::STATE_TRANSIENT);
+
+        return out_step;
       }
 
       void process_output_request(Ioss::Region &region,

@@ -317,10 +317,12 @@ void EpetraLinearOp::describe(
       << "}\n";
     OSTab tab2(out);
     if (op_.get()) {
-      out << "opTrans="<<toString(opTrans_)<<"\n";
-      out << "applyAs="<<toString(applyAs_)<<"\n";
-      out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
-      out << "op="<<typeName(*op_)<<"\n";
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+        out << "opTrans="<<toString(opTrans_)<<"\n";
+        out << "applyAs="<<toString(applyAs_)<<"\n";
+        out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
+        out << "op="<<typeName(*op_)<<"\n";
+      }
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
         OSTab tab3(out);
         RCP<const Epetra_CrsMatrix>
