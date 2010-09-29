@@ -20,10 +20,10 @@
 #
 #-----------------------------------------------------------------------------
 
-# Decide whether to build the Meros block preconditioning package.
-# Default is no. 
+# Decide whether to build the Trios mesh IO package.
+# Default is yes. 
 #
-ENABLE_MEROS=OFF
+ENABLE_TRIOS=ON
 # Decide whether to build Stokhos. Default is yes.
 ENABLE_STOKHOS=ON
 
@@ -90,7 +90,7 @@ INSTALL_PREFIX=$PWD
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,explicit,no-explicit,lax,ordinal:,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
+TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,trios,explicit,no-explicit,lax,ordinal:,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -181,7 +181,6 @@ ${ECHO} cmake \
 -D CMAKE_CXX_FLAGS:STRING="${PYTHON_INC_STRING} ${OPT_STRING} ${EXTRA_CXX_FLAGS}" \
 -D CMAKE_C_FLAGS:STRING="${PYTHON_INC_STRING} ${EXTRA_C_FLAGS}" \
 -D CMAKE_Fortran_FLAGS:STRING="${EXTRA_F_FLAGS}" \
--D TPL_ENABLE_ExodusII:BOOL=${HAVE_EXODUS} \
 -D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
 -D BLAS_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
 -D LAPACK_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
@@ -193,9 +192,13 @@ ${ECHO} cmake \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=${EXPLICIT_TEMPLATES} \
 -D Trilinos_ENABLE_Sundance:BOOL=ON \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
--D Trilinos_ENABLE_Meros:BOOL=${ENABLE_MEROS} \
+-D Trilinos_ENABLE_Trios:BOOL=${ENABLE_TRIOS} \
 -D Trilinos_ENABLE_Sacado:BOOL=${ENABLE_SACADO} \
 -D Trilinos_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
+-D Stokhos_ENABLE_TESTS:BOOL=OFF \
+-D Stokhos_ENABLE_EXAMPLES:BOOL=OFF \
+-D Trios_ENABLE_TESTS:BOOL=OFF \
+-D Trios_ENABLE_EXAMPLES:BOOL=OFF \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
 -D Teuchos_ORDINAL_TYPE:STRING=${ORDINAL} \

@@ -1,5 +1,4 @@
 INCLUDE(PackageLibraryMacros)
-INCLUDE(CheckIncludeFile)
 
 SET(HEADERS "")
 SET(SOURCES "")

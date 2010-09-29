@@ -92,8 +92,8 @@ namespace TSQR {
       using std::endl;
 
       cout << "Combine"
-	   << "," << datatype
 	   << "," << "R1R2"
+	   << "," << datatype
 	   << "," << numCols
 	   << "," << numCols
 	   << "," << results[0]
@@ -112,8 +112,8 @@ namespace TSQR {
       using std::endl;
 
       cout << "Combine"
-	   << "," << datatype
 	   << "," << "R3A"
+	   << "," << datatype
 	   << "," << numRows
 	   << "," << numCols
 	   << "," << results[2]

@@ -148,6 +148,10 @@ int main(int argc, char *argv[])
       i++;
       globals.working_directory = argv[i++];
     }
+    else if (std::strcmp("--in_type", argv[i]) == 0) {
+      i++;
+      in_type = argv[i++];
+    }
     else if (std::strcmp("-Maximum_Time", argv[i]) == 0) {
       i++;
       globals.maximum_time = std::strtod(argv[i++], NULL);

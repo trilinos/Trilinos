@@ -87,8 +87,8 @@ class LSCPrecondState; // forward declaration
   * The approximation to the Schur complement is
   *
   * \f$ C - B F^{-1} B^T \approx (B \hat{Q}_u^{-1} B^T - \gamma C)^{-1}
-  *       (B \hat{Q}_u^{-1} F H B^T) (B H B^T - \gamma C)^{-1}
-  *     + \alpha D^{-1} \f$.
+  *       (B \hat{Q}_u^{-1} F H B^T+C_I) (B H B^T - \gamma C)^{-1}
+  *     + C_O \f$.
   *
   * Where \f$\hat{Q}_u\f$ is typically a diagonal approximation of the mass matrix, 
   * and \f$H\f$ is an appropriate diagonal scaling matrix (see [2] for details). 
@@ -159,6 +159,7 @@ public:
      */
    virtual LinearOp getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 
+   #if 0
    /** Get the inverse for stabilizing the whole Schur complement approximation.
      *
      * \param[in] A The linear operator to be preconditioned by LSC.
@@ -168,6 +169,31 @@ public:
      * \returns The operator to stabilize the whole Schur complement (\f$\alpha D^{-1} \f$).
      */
    virtual LinearOp getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+   #endif
+
+   /** Get the inverse to stablized stabilizing the Schur complement approximation using
+     * a placement on the ``outside''.  That is what is the value for \f$C_O\f$. This quantity
+     * may be null.
+     *
+     * \param[in] A The linear operator to be preconditioned by LSC.
+     * \param[in] state State object for storying reusable information about
+     *                  the operator A.
+     *
+     * \returns The operator to stabilize the whole Schur complement (originally \f$\alpha D^{-1} \f$).
+     */
+   virtual LinearOp getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+
+   /** Get the inverse to stablized stabilizing the Schur complement approximation using
+     * a placement on the ``inside''.  That is what is the value for \f$C_I\f$. This quantity
+     * may be null.
+     *
+     * \param[in] A The linear operator to be preconditioned by LSC.
+     * \param[in] state State object for storying reusable information about
+     *                  the operator A.
+     *
+     * \returns The operator to stabilize the whole Schur complement.
+     */
+   virtual LinearOp getInnerStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 
    /** Get the inverse mass matrix.
      *

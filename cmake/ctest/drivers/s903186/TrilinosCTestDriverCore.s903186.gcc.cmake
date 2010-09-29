@@ -26,6 +26,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
     "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/jmwille/install/boost_1_41_0"
+    "-DTPL_ENABLE_Netcdf:BOOL=ON"
     "-DNetcdf_LIBRARY_DIRS=/Users/bmpersc/lib/netcdf-4.0/lib"
     "-DNetcdf_INCLUDE_DIRS=/Users/bmpersc/lib/netcdf-4.0/include"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"

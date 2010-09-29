@@ -233,8 +233,8 @@ namespace Belos {
      *  of the iterative solver strategy.
      */
     void reset( const ResetType type ) { 
-      if ((type & Belos::Problem) && !Teuchos::is_null(problem_))  
-        problem_->setProblem();
+      if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem();
+      else if (type & Belos::RecycleSubspace) keff = 0;
     }
     //@}
  
@@ -1097,7 +1097,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	MVT::MvTransMv( one, *Ctmp, *r_, Ctr );
 
 	// Update solution ( x += U_*C_'*r_ )
-	MVT::MvTimesMatAddMv( one, *Utmp, Ctr, one, *problem_->getCurrLHSVec() );
+        RCP<MV> update = MVT::Clone( *problem_->getCurrLHSVec(), 1 );
+        MVT::MvInit( *update, 0.0 );
+        MVT::MvTimesMatAddMv( one, *Utmp, Ctr, one, *update );
+        problem_->updateSolution( update, true );
 	
 	// Update residual norm ( r -= C_*C_'*r_ )	
 	MVT::MvTimesMatAddMv( -one, *Ctmp, Ctr, one, *r_ );

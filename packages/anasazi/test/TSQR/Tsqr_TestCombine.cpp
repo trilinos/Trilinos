@@ -71,7 +71,7 @@ namespace TSQR {
       ///
       struct CombineTestParameters {
 	CombineTestParameters () :
-	  verify (true),
+	  verify (false),
 	  benchmark (false),
 	  numRows (1000),     // Number of rows in the test matrix
 	  numCols (10),       // Number of columns in the test matrix
@@ -79,6 +79,8 @@ namespace TSQR {
 #ifdef HAVE_TSQR_COMPLEX
 	  testComplex (true), // Whether to test complex-arithmetic routines
 #endif // HAVE_TSQR_COMPLEX
+	  printFieldNames (true),
+	  printTrilinosTestStuff (true),
 	  verbose (true), 
 	  debug (false)       // Whether to print debugging output to stderr
 	{}
@@ -86,9 +88,13 @@ namespace TSQR {
 	bool verify, benchmark;
 	int numRows, numCols, numTrials;
 #ifdef HAVE_TSQR_COMPLEX
+	// We don't even let this exist unless TSQR was built with
+	// complex arithmetic support.
 	bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
+	bool printFieldNames, printTrilinosTestStuff;
 	bool verbose, debug;
+	std::string additionalFieldNames, additionalData;
       };
 
       /// \brief Benchmark TSQR::Combine
@@ -104,8 +110,8 @@ namespace TSQR {
       ///   the benchmark on every MPI rank simultaneously, but only
       ///   report results on rank 0.
       static void
-      benchmarkCombine (std::ostream& out,
-			const CombineTestParameters& params)
+      benchmark (std::ostream& out,
+		 const CombineTestParameters& params)
       {
 	typedef Teuchos::Time timer_type;
 	typedef int ordinal_type;
@@ -121,8 +127,12 @@ namespace TSQR {
 
 	std::vector<int> seed(4);
 	const bool useSeedValues = false;
-	TSQR::Test::benchmarkCombine< timer_type > (out, numRows, numCols, numTrials,
-						    seed, useSeedValues, testComplex);
+	TSQR::Test::benchmarkCombine< timer_type > (out, numRows, numCols, 
+						    numTrials, seed,
+						    useSeedValues, testComplex,
+						    params.additionalFieldNames,
+						    params.additionalData,
+						    params.printFieldNames);
       }
 
       /// \brief Verify TSQR::Combine
@@ -138,8 +148,8 @@ namespace TSQR {
       ///   the verification routine on every MPI rank simultaneously,
       ///   but only report results on rank 0.
       static void 
-      verifyCombine (std::ostream& out,
-		     const CombineTestParameters& params)
+      verify (std::ostream& out,
+	      const CombineTestParameters& params)
       {
 	typedef Teuchos::Time timer_type;
 	typedef int ordinal_type;
@@ -213,6 +223,30 @@ namespace TSQR {
 				 &params.testComplex,
 				 "Test complex arithmetic, as well as real");
 #endif // HAVE_TSQR_COMPLEX
+	  cmdLineProc.setOption ("field-names", 
+				 &params.additionalFieldNames,
+				 "Any additional field name(s) (comma-delimited "
+				 "string) to add to the benchmark output.  Empty "
+				 "by default.  Good for things known when invoking "
+				 "the benchmark executable, but not (easily) known "
+				 "inside the benchmark -- e.g., environment "
+				 "variables.");
+	  cmdLineProc.setOption ("output-data", 
+				 &params.additionalData,
+				 "Any additional data to add to the output, "
+				 "corresponding to the above field name(s). "
+				 "Empty by default.");
+	  cmdLineProc.setOption ("print-field-names", 
+				 "no-print-field-names", 
+				 &params.printFieldNames, 
+				 "Print field names for benchmark output (including "
+				 "any arguments to --field-names).");
+	  cmdLineProc.setOption ("print-trilinos-test-stuff", 
+				 "no-print-trilinos-test-stuff", 
+				 &params.printTrilinosTestStuff,
+				 "Print output that makes the Trilinos test "
+				 "framework happy (but makes benchmark results "
+				 "parsing scripts unhappy)");
 	  cmdLineProc.parse (argc, argv);
 	} 
 	catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
@@ -276,8 +310,6 @@ main (int argc, char *argv[])
   std::ostream& out = std::cout;
 #endif // HAVE_MPI
 
-
-
   // Fetch command-line parameters.
   bool printedHelp = false;
   CombineTestParameters params = 
@@ -290,13 +322,14 @@ main (int argc, char *argv[])
       using std::endl;
 
       if (params.benchmark)
-	TSQR::Trilinos::Test::benchmarkCombine (out, params);
+	TSQR::Trilinos::Test::benchmark (out, params);
       // We allow the same run to do both benchmark and verify.
       if (params.verify)
-	TSQR::Trilinos::Test::verifyCombine (out, params);
+	TSQR::Trilinos::Test::verify (out, params);
 
-      // The Trilinos test framework expects a message like this.
-      out << "\nEnd Result: TEST PASSED" << endl;
+      if (params.printTrilinosTestStuff)
+	// The Trilinos test framework expects a message like this.
+	out << "\nEnd Result: TEST PASSED" << endl;
     }
 
   return 0;

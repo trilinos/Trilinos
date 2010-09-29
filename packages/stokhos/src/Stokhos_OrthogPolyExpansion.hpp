@@ -59,6 +59,10 @@ namespace Stokhos {
     //! Get basis
     virtual Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >
     getBasis() const = 0;
+
+    //! Get triple product
+    virtual Teuchos::RCP<const Sparse3Tensor<ordinal_type, value_type> >
+    getTripleProduct() const = 0;
  
     // Operations
     virtual void unaryMinus(OrthogPolyApprox<ordinal_type, value_type>& c, 

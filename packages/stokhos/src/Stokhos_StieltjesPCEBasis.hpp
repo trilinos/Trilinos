@@ -188,8 +188,11 @@ namespace Stokhos {
     //! PCE basis (needed for integral projection method)
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > basis;
 
+    //! Short-hand for triple product
+    typedef Stokhos::Sparse3Tensor<ordinal_type, value_type> Cijk_type;
+
     //! Triple product tensor (needed for integral projection method)
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
+    Teuchos::RCP<const Cijk_type> Cijk;
 
     //! Array store PC expansion of generated orthogonal polynomials
     mutable Teuchos::Array<value_type> phi_pce_coeffs;

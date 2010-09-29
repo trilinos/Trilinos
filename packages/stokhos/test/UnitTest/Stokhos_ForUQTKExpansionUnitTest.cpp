@@ -45,6 +45,7 @@ namespace ForUQTKExpansionUnitTest {
     ValueType crtol, catol;
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
     Teuchos::RCP< Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType> > exp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2, cx, cu, cu2, sx, su, su2;
@@ -66,6 +67,9 @@ namespace ForUQTKExpansionUnitTest {
 	  Teuchos::rcp(new Stokhos::LegendreBasis<OrdinalType,ValueType>(p));
       basis =
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(bases));
+
+      // Triple product tensor
+      Cijk = basis->computeTripleProductTensor(basis->size());
       
       // Tensor product quadrature
       quad = 
@@ -73,7 +77,7 @@ namespace ForUQTKExpansionUnitTest {
       
       // Quadrature expansion
       exp = 
-	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType>(basis, Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType>::INTEGRATION));
+	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk, Stokhos::ForUQTKOrthogPolyExpansion<OrdinalType,ValueType>::INTEGRATION));
       
       // Create approximation
       sz = basis->size();

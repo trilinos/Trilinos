@@ -128,7 +128,8 @@ int main(int argc, char **argv)
     PolyBasisTimer.start();
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
     for (int i=0; i<d; i++) {
-      bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("Beta",p,&weight,leftEndPt,rightEndPt,true));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
+//      bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("Beta",p,&weight,leftEndPt,rightEndPt,true));
     }
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
@@ -275,7 +276,7 @@ int main(int argc, char **argv)
     
     
     //LOOP OVER COLLOCATION POINTS.
-    
+    double coll_time = 0; 
     int iters = 0;
     SolutionTimer.start();
     for( std::size_t sp_idx = 0; sp_idx < quad_points.size(); sp_idx++){
@@ -297,16 +298,21 @@ int main(int argc, char **argv)
       //////////////////////////////////////////////////
       //Solve the Linear System.
       /////////////////////////////////////////////////
-      
+    
+      Teuchos::Time SolveTimer("Total Collocation Solve Time",false);
+      SolveTimer.start();  
       aztec_solver.Iterate(1000, 1e-12);
       iters = iters + aztec_solver.NumIters();
+      SolveTimer.stop();
+      coll_time += SolveTimer.totalElapsedTime(false);
       Eofu.Update(quad_weights[sp_idx],x2,1.0);
       x22.Multiply(1.0,x2,x2,0.0);
       Eofu2.Update(quad_weights[sp_idx], x22, 1.0);
       
     }
     SolutionTimer.stop();
-    TotalTimer.stop();    
+    TotalTimer.stop();   
+    std::cout << "Total Collocation Solve Time is =  " << coll_time << std::endl; 
     ///////////////////////////////////////////////////////////
     //Output timings and results.
     //////////////////////////////////////////////////////////

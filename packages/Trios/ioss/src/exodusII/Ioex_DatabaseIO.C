@@ -102,7 +102,6 @@ namespace {
   bool set_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::EntityIdSet *idset);
   int  get_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::EntityIdSet *idset);
   void decode_surface_name(Ioex::FaceSetMap &fs_map, Ioex::FaceSetSet &fs_set, const std::string &name);
-  void fixup_name(char* name);
   void fix_bad_name(char* name);
 
   void exodus_error(int exoid, int lineno, int /* processor */) {
@@ -226,7 +225,7 @@ namespace {
     if (error < 0)
       exodus_error(exoid, __LINE__, -1);
     if (buffer[0] != '\0') {
-      fixup_name(buffer);
+      Ioss::Utils::fixup_name(buffer);
       return (std::string(buffer));
     } else {
       return Ioss::Utils::encode_entity_name(basename, id);
@@ -1076,7 +1075,7 @@ namespace Ioex {
       Ioss::ElementBlock *block = NULL;
       std::string block_name = get_entity_name(get_file_pointer(), EX_ELEM_BLOCK, id, "block");
 
-      fixup_name(element_type); // Convert to lowercase; replace spaces with '_'
+      Ioss::Utils::fixup_name(element_type); // Convert to lowercase; replace spaces with '_'
       std::string type = std::string(element_type);
       std::string save_type = type;
 
@@ -1552,7 +1551,7 @@ namespace Ioex {
 	    exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	  }
 	  if (ss_name[0] != '\0') {
-	    fixup_name(ss_name);
+	    Ioss::Utils::fixup_name(ss_name);
 	    decode_surface_name(fs_map, fs_set, ss_name);
 	  }
 	}
@@ -2230,6 +2229,7 @@ namespace Ioex {
     std::vector<double> temp(num_entity);
 
     int step = get_region()->get_property("current_state").get_int();
+    assert(step > 0); // Without begin_state call, uninitialized to -1.
 
     // get number of components, cycle through each component
     // and add suffix to base 'field_name'.  Look up index
@@ -4766,7 +4766,7 @@ namespace Ioex {
 
 	// Convert to lowercase.
 	for (int i=0; i < nvar; i++) {
-	  fixup_name(names[i]);
+	  Ioss::Utils::fixup_name(names[i]);
 	}
 
 	// Add to VariableNameMap elementVariables, nodalVariables,
@@ -5506,7 +5506,7 @@ namespace Ioex {
       // Convert to lowercase.
       for (int i=0; i < attribute_count; i++) {
 	fix_bad_name(names[i]);
-	fixup_name(names[i]);
+	Ioss::Utils::fixup_name(names[i]);
       }
       
       if (names[0][0] != '\0' && names[0][0] != ' ' && std::isalnum(names[0][0])) {
@@ -6261,7 +6261,7 @@ bool find_displacement_field(Ioss::NameList &fields,
     std::strncpy(lc_name, name, max_string_length);
     lc_name[max_string_length] = '\0';
     
-    fixup_name(lc_name);
+    Ioss::Utils::fixup_name(lc_name);
     size_t span = match(lc_name, displace);
     if (span > max_span) {
       const Ioss::VariableType *var_type =
@@ -6274,19 +6274,6 @@ bool find_displacement_field(Ioss::NameList &fields,
     }
   }
   return max_span > 0 ? true : false;
-}
-
-void fixup_name(char* name)
-{
-  // Convert 'name' to lowercase and convert spaces to '_'
-  assert(name != NULL);
-
-  size_t len = std::strlen(name);
-  for (size_t i=0; i < len; i++) {
-    name[i] = static_cast<char>(tolower(name[i]));  // guaranteed(?) to be ascii...
-    if (name[i] == ' ')
-      name[i] = '_';
-  }
 }
 
 void fix_bad_name(char* name)
@@ -6593,7 +6580,7 @@ void add_map_fields(int exoid, Ioss::ElementBlock *block, int my_element_count)
 
   // Convert to lowercase.
   for (int i=0; i < map_count; i++) {
-    fixup_name(names[i]);
+    Ioss::Utils::fixup_name(names[i]);
   }
 
   if (map_count == 2 && std::strncmp(names[0], "skin:", 5) == 0 && std::strncmp(names[1], "skin:", 5) == 0) {

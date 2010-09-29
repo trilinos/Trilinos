@@ -60,7 +60,8 @@ namespace TSQR {
 			  const std::string& combineTypeName,
 			  const typename CombineType::ordinal_type numRows,
 			  const typename CombineType::ordinal_type numCols,
-			  const int numTrials)
+			  const int numTrials,
+			  const std::string& additionalData)
     {
       using TSQR::Random::NormalGenerator;
       using std::complex;
@@ -72,7 +73,8 @@ namespace TSQR {
       typedef typename CombineType::ordinal_type ordinal_type;
       typedef typename CombineType::scalar_type scalar_type;
       typedef typename CombineType::magnitude_type magnitude_type;
-      typedef CombineBenchmarker< ordinal_type, scalar_type, CombineType, TimerType > benchmarker_type;
+      typedef CombineBenchmarker< ordinal_type, scalar_type, CombineType, TimerType > 
+	benchmarker_type;
       typedef pair< double, double > results_type;
 
       // FIXME These two should have different seeds!!!
@@ -82,22 +84,39 @@ namespace TSQR {
       benchmarker_type benchmarker (normGen, normMagGen, numTrials);
       results_type results (benchmarker.R1R2_benchmark (numCols),
 			    benchmarker.RA_benchmark (numRows, numCols));
+
+      // Whether or not we should print the "additional data"
+      // (originally supplied at command-line invocation of this
+      // benchmark) after the benchmark results.  The additional data
+      // option makes it easier to write parsers for benchmark
+      // results, since we can include data that are known outside the
+      // benchmark (when invoking the benchmark as an executable), but
+      // not known (easily or at all) inside the benchmark.  A good
+      // example would be environment variables, like OMP_NUM_THREADS,
+      // or (for a benchmark that uses MPI, which this is not) the
+      // number of MPI processes per node ("ppn").
+      const bool printAdditionalData = (! additionalData.empty());
+
       out << combineTypeName 
+	  << "," << "R1R2"
 	  << "," << dataTypeName
-	  << "," << "R1_R2"
+	  << "," << (2*numCols)
+	  << "," << numCols
+	  << "," << numTrials
+	  << "," << results.first;
+      if (printAdditionalData)
+	out << "," << additionalData;
+      out << endl;
+      out << combineTypeName 
+	  << "," << "RA"
+	  << "," << dataTypeName
 	  << "," << numRows
 	  << "," << numCols
 	  << "," << numTrials
-	  << "," << results.first
-	  << endl;
-      out << combineTypeName 
-	  << "," << dataTypeName
-	  << "," << "R_A"
-	  << "," << numRows
-	  << "," << numCols
-	  << "," << numTrials
-	  << "," << results.second
-	  << endl;
+	  << "," << results.second;
+      if (printAdditionalData)
+	out << "," << additionalData;
+      out << endl;
     }
 
     template< class Scalar, class TimerType >
@@ -107,26 +126,45 @@ namespace TSQR {
 			      const std::string& dataTypeName,
 			      const int numRows,
 			      const int numCols,
-			      const int numTrials)
+			      const int numTrials,
+			      const std::string& additionalData)
     {
       using std::string;
 
       {
 	typedef CombineNative< int, Scalar > combine_type;
 	string combineTypeName ("Native");
-	benchmarkCombineType< combine_type, TimerType > (out, iseed, dataTypeName, combineTypeName, numRows, numCols, numTrials);
+	benchmarkCombineType< combine_type, TimerType > (out, iseed, 
+							 dataTypeName, 
+							 combineTypeName, 
+							 numRows, 
+							 numCols, 
+							 numTrials,
+							 additionalData);
       }
 #ifdef HAVE_TSQR_FORTRAN
       {
 	typedef CombineFortran< Scalar > combine_type;
 	string combineTypeName ("Fortran");
-	benchmarkCombineType< combine_type, TimerType > (out, iseed, dataTypeName, combineTypeName, numRows, numCols, numTrials);
+	benchmarkCombineType< combine_type, TimerType > (out, iseed, 
+							 dataTypeName, 
+							 combineTypeName, 
+							 numRows, 
+							 numCols, 
+							 numTrials,
+							 additionalData);
       }
 #endif // HAVE_TSQR_FORTRAN
       {
 	typedef CombineDefault< int, Scalar > combine_type;
 	string combineTypeName ("Default");
-	benchmarkCombineType< combine_type, TimerType > (out, iseed, dataTypeName, combineTypeName, numRows, numCols, numTrials);
+	benchmarkCombineType< combine_type, TimerType > (out, iseed, 
+							 dataTypeName, 
+							 combineTypeName, 
+							 numRows, 
+							 numCols, 
+							 numTrials,
+							 additionalData);
       }
     }
 
@@ -138,26 +176,44 @@ namespace TSQR {
 					const int numRows,
 					const int numCols,
 					const int numTrials,
-					const bool testComplex)
+					const bool testComplex,
+					const std::string& additionalData)
     {
       using std::complex;
       using std::string;
       string dataTypeName;
 
       dataTypeName = "float";
-      benchmarkAllCombineTypes< float, TimerType > (out, iseed, dataTypeName, numRows, numCols, numTrials);
+      benchmarkAllCombineTypes< float, TimerType > (out, iseed, 
+						    dataTypeName, 
+						    numRows, 
+						    numCols, 
+						    numTrials, 
+						    additionalData);
       dataTypeName = "double";
-      benchmarkAllCombineTypes< double, TimerType > (out, iseed, dataTypeName, numRows, numCols, numTrials);
-
+      benchmarkAllCombineTypes< double, TimerType > (out, iseed, 
+						     dataTypeName, 
+						     numRows, 
+						     numCols, 
+						     numTrials, 
+						     additionalData);
       if (testComplex)
 	{
 #ifdef HAVE_TSQR_COMPLEX
 	  dataTypeName = "complex<float>";
-	  benchmarkAllCombineTypes< complex<float>, TimerType > (out, iseed, dataTypeName, 
-								 numRows, numCols, numTrials);
+	  benchmarkAllCombineTypes< complex<float>, TimerType > (out, iseed, 
+								 dataTypeName, 
+								 numRows, 
+								 numCols, 
+								 numTrials, 
+								 additionalData);
 	  dataTypeName = "complex<double>";
-	  benchmarkAllCombineTypes< complex<double>, TimerType > (out, iseed, dataTypeName, 
-								  numRows, numCols, numTrials);
+	  benchmarkAllCombineTypes< complex<double>, TimerType > (out, iseed, 
+								  dataTypeName, 
+								  numRows, 
+								  numCols, 
+								  numTrials,
+								  additionalData);
 #else // Don't HAVE_TSQR_COMPLEX
 	  throw std::logic_error("TSQR not built with complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
@@ -173,7 +229,10 @@ namespace TSQR {
 		      const int numTrials,
 		      std::vector<int>& seed,
 		      const bool useSeedValues,
-		      const bool testComplex)
+		      const bool testComplex, 
+		      const std::string& additionalFieldNames,
+		      const std::string& additionalData,
+		      const bool printFieldNames)
     {
       if (! useSeedValues)
 	{
@@ -183,7 +242,30 @@ namespace TSQR {
 	  seed[2] = 0;
 	  seed[3] = 1;
 	}
-      benchmarkAllCombineTypesAndScalars< TimerType > (out, seed, numRows, numCols, numTrials, testComplex);
+
+      if (printFieldNames)
+	{
+	  // The row of field names begins with a '%' character, in
+	  // order to help out the benchmark results parser.
+	  out << "%" << "method"
+	      << "," << "kernel"
+	      << "," << "scalarType"
+	      << "," << "numRows"
+	      << "," << "numCols"
+	      << "," << "numTrials"
+	      << "," << "timing";
+	  if (printFieldNames && ! additionalFieldNames.empty())
+	    // The additionalFieldNames string should be a
+	    // comma-delimited list of additional field name(s).
+	    out << "," << additionalFieldNames;
+	  out << std::endl;
+	}
+      benchmarkAllCombineTypesAndScalars< TimerType > (out, seed, 
+						       numRows, 
+						       numCols, 
+						       numTrials, 
+						       testComplex, 
+						       additionalData);
     }
 
   } // namespace Test

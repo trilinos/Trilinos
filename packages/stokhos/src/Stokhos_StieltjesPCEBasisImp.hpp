@@ -287,16 +287,14 @@ integrateBasisSquaredProj(
   // Compute \int \eta phi_k^2(\eta) d\eta
   val2 = value_type(0);
   for (ordinal_type l=0; l<npc; l++) {
-    int nj = Cijk->num_j(l);
-    const Teuchos::Array<ordinal_type>& j_indices = Cijk->Jindices(l);
-    for (ordinal_type jj=0; jj<nj; jj++) {
-      ordinal_type j = j_indices[jj];
-      const Teuchos::Array<ordinal_type>& i_indices = Cijk->Iindices(l,jj);
-      const Teuchos::Array<value_type>& c_values = Cijk->values(l,jj);
-      ordinal_type ni = i_indices.size();
-      for (ordinal_type ii=0; ii<ni; ii++) {
-	ordinal_type i = i_indices[ii];
-	val2 += phi_pce_coeffs[l]*phi_pce_coeffs[i]*(*pce)[j]*c_values[ii];
+    for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
+	 j_it != Cijk->j_end(k); ++j_it) {
+      ordinal_type j = index(j_it);
+      for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	   i_it != Cijk->i_end(j_it); ++i_it) {
+	ordinal_type i = index(i_it);
+	value_type c = value(i_it);
+	val2 += phi_pce_coeffs[l]*phi_pce_coeffs[i]*(*pce)[j]*c;
       }
     }
   }

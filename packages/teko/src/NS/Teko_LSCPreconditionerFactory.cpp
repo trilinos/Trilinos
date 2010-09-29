@@ -58,6 +58,7 @@
 #include "Teko_StaticLSCStrategy.hpp"
 #include "Teko_InvLSCStrategy.hpp"
 #include "Teko_PresLaplaceLSCStrategy.hpp"
+#include "Teko_LSCSIMPLECStrategy.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
 
@@ -124,7 +125,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp invF      = invOpsStrategy_->getInvF(blockOp,state);
    LinearOp invBQBtmC = invOpsStrategy_->getInvBQBt(blockOp,state);
    LinearOp invBHBtmC = invOpsStrategy_->getInvBHBt(blockOp,state);
-   LinearOp invAlphaD = invOpsStrategy_->getInvAlphaD(blockOp,state);
+   LinearOp outerStab = invOpsStrategy_->getOuterStabilization(blockOp,state);
+   LinearOp innerStab = invOpsStrategy_->getInnerStabilization(blockOp,state);
 
    // if necessary build an identity mass matrix
    LinearOp invMass   = invOpsStrategy_->getInvMass(blockOp,state);
@@ -140,11 +142,13 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp M = 
       //          (B * inv(Mass) ) * F * (inv(Mass) * Bt)
       multiply( multiply(B,invMass), F , multiply(HScaling,Bt));
+   if(innerStab!=Teuchos::null) // deal with inner stabilization
+      M = add(M, innerStab);
       
    // now construct a linear operator schur complement
    LinearOp invPschur; 
-   if(invAlphaD!=Teuchos::null)
-      invPschur = add(multiply(invBQBtmC, M , invBHBtmC), invAlphaD);
+   if(outerStab!=Teuchos::null)
+      invPschur = add(multiply(invBQBtmC, M , invBHBtmC), outerStab);
    else
       invPschur = multiply(invBQBtmC, M , invBHBtmC);
 
@@ -304,6 +308,10 @@ void LSCPreconditionerFactory::initializeStrategyBuilder()
    // add various strategies to the factory
    clone = rcp(new AutoClone<PresLaplaceLSCStrategy>());
    strategyBuilder_.addClone("Pressure Laplace",clone);
+
+   // add various strategies to the factory
+   clone = rcp(new AutoClone<LSCSIMPLECStrategy>());
+   strategyBuilder_.addClone("SIMPLEC",clone);
 }
 
 } // end namespace NS

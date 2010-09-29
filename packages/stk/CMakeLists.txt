@@ -37,6 +37,10 @@ IF( STK_ENABLE_FEI AND STK_ENABLE_AztecOO )
   ADD_SUBDIRECTORY(stk_linsys)
 ENDIF()
 
+IF( STK_ENABLE_Zoltan )
+  ADD_SUBDIRECTORY(stk_rebalance)
+ENDIF()
+
 ADD_SUBDIRECTORY(stk_transfer)
 
 IF( STK_ENABLE_ThreadPool )

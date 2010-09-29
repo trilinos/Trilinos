@@ -28,13 +28,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MEAN_EPETRA_OP_HPP
-#define STOKHOS_MEAN_EPETRA_OP_HPP
+#ifndef STOKHOS_KRONECKER_PRODUCT_PRECONDITIONER_HPP
+#define STOKHOS_KRONECKER_PRODUCT_PRECONDITIONER_HPP
 
 #include "Teuchos_RCP.hpp"
 
-#include "Epetra_Operator.h"
+#include "Stokhos_SGPreconditioner.hpp"
 #include "Epetra_Map.h"
+#include "Stokhos_PreconditionerFactory.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
     
@@ -42,24 +44,33 @@ namespace Stokhos {
    * \brief An Epetra operator representing applying the mean in a block
    * stochastic Galerkin expansion.
    */
-  class MeanEpetraOp : public Epetra_Operator {
+  class KroneckerProductPreconditioner : public Stokhos::SGPreconditioner {
       
   public:
 
     //! Constructor 
-    MeanEpetraOp(const Teuchos::RCP<const Epetra_Map>& base_map,
-                 const Teuchos::RCP<const Epetra_Map>& sg_map,
-                 unsigned int num_blocks,
-                 const Teuchos::RCP<Epetra_Operator>& mean_op);
+    KroneckerProductPreconditioner(
+      const Teuchos::RCP<const Epetra_Map>& base_map,
+      const Teuchos::RCP<const Epetra_Map>& sg_map,
+      const Teuchos::RCP<Stokhos::PreconditionerFactory>& mean_prec_factory,
+      const Teuchos::RCP<Stokhos::PreconditionerFactory>& G_prec_factory,
+      const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
-    virtual ~MeanEpetraOp();
+    virtual ~KroneckerProductPreconditioner();
 
-    // Set mean operator
-    void setMeanOperator(const Teuchos::RCP<Epetra_Operator>& op);
+    /** \name Stokhos::SGPreconditioner methods */
+    //@{
 
-    //! Get mean operator
-    Teuchos::RCP<Epetra_Operator> getMeanOperator();
+    //! Setup preconditioner
+    virtual void 
+    setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op, 
+			const Epetra_Vector& x);
+
+    //@}
+
+    /** \name Epetra_Operator methods */
+    //@{
     
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -111,13 +122,21 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    //@}
+
+  protected:
+
+    //! Compute trace of matrix A'B.
+    double MatrixTrace(const Epetra_CrsMatrix& A,
+		       const Epetra_CrsMatrix& B) const;
+
   private:
     
     //! Private to prohibit copying
-    MeanEpetraOp(const MeanEpetraOp&);
+    KroneckerProductPreconditioner(const KroneckerProductPreconditioner&);
     
     //! Private to prohibit copying
-    MeanEpetraOp& operator=(const MeanEpetraOp&);
+    KroneckerProductPreconditioner& operator=(const KroneckerProductPreconditioner&);
     
   protected:
     
@@ -130,17 +149,46 @@ namespace Stokhos {
     //! Stores SG map
     Teuchos::RCP<const Epetra_Map> sg_map;
 
-    //! Stores mean operator
-    Teuchos::RCP<Epetra_Operator> mean_op;
+    //! Stores factory for building mean preconditioner
+    Teuchos::RCP<Stokhos::PreconditionerFactory> mean_prec_factory;
+
+    //! Stores factory for building G preconditioner
+    Teuchos::RCP<Stokhos::PreconditionerFactory> G_prec_factory;
+
+    //! Preconditioner parameters
+    Teuchos::RCP<Teuchos::ParameterList> params;
+
+    //! Stores mean preconditioner
+    Teuchos::RCP<Epetra_Operator> mean_prec;
+
+    //! Stores G preconditioner
+    Teuchos::RCP<Epetra_Operator> G_prec;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Number of blocks
-    unsigned int num_blocks;
+    //! Pointer to the SG operator.
+    Teuchos::RCP<Stokhos::SGOperator> sg_op;
 
-  }; // class MeanEpetraOp
+    //! Pointer to the PCE expansion of Jacobian.
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_poly;
+
+    //! Short-hand for Cijk
+    typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
+
+    //! Stores triple product tensor
+    Teuchos::RCP<const Cijk_type> Cijk;
+ 
+    //! Pointer to CrsMatrix G
+    Teuchos::RCP<Epetra_CrsMatrix> G;
+
+    //! Limit construction of G to linear terms
+    bool only_use_linear;
+
+    mutable Teuchos::RCP<Epetra_MultiVector> result_MVT;
+
+  }; // class KroneckerProductPreconditioner
   
 } // namespace Stokhos
 
-#endif // STOKHOS_MEAN_EPETRA_OP_HPP
+#endif // STOKHOS_KRONECKER_PRODUCT_PRECONDITIONER_HPP
