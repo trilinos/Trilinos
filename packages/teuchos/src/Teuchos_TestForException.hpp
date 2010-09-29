@@ -50,6 +50,12 @@ TEUCHOS_LIB_DLL_EXPORT int TestForException_getThrowNumber();
 /** \brief The only purpose for this function is to set a breakpoint. */
 TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
 
+#ifdef HAVE_TEUCHOS_STACKTRACE
+#  define TEUCHOS_GET_STACKTRACE() "\n\n" << Teuchos::get_stacktrace()
+#else
+#  define TEUCHOS_GET_STACKTRACE() ""
+#endif
+
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
  *
  * \param throw_exception_test [in] Test for when to throw the exception.
@@ -120,23 +126,22 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
  */
 #define TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
 { \
-    const bool throw_exception = (throw_exception_test); \
-    if(throw_exception) { \
-        TestForException_incrThrowNumber(); \
-        std::ostringstream omsg; \
-        omsg \
-            << __FILE__ << ":" << __LINE__ << ":\n\n" \
-            << "Throw number = " << TestForException_getThrowNumber() \
-            << "\n\n" \
-            << "Throw test that evaluated to true: "#throw_exception_test \
-            << "\n\n" \
-            << Teuchos::get_stacktrace() \
-            << "\n" \
-            << msg; \
-        const std::string &omsgstr = omsg.str(); \
-        TestForException_break(omsgstr); \
-        throw Exception(omsgstr); \
-    } \
+  const bool throw_exception = (throw_exception_test); \
+  if(throw_exception) { \
+    TestForException_incrThrowNumber(); \
+    std::ostringstream omsg; \
+    omsg \
+      << __FILE__ << ":" << __LINE__ << ":\n\n" \
+      << "Throw number = " << TestForException_getThrowNumber() \
+      << "\n\n" \
+      << "Throw test that evaluated to true: "#throw_exception_test \
+      << TEUCHOS_GET_STACKTRACE() \
+      << "\n" \
+      << msg; \
+    const std::string &omsgstr = omsg.str(); \
+    TestForException_break(omsgstr); \
+    throw Exception(omsgstr); \
+  } \
 }
 
 
