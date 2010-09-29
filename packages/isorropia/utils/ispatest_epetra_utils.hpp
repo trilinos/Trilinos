@@ -172,8 +172,16 @@ Epetra_MultiVector *file2multivector(const Epetra_Comm &comm, const std::string 
 /** Print out the contents of the multivector by process, with optional title.
     This is more compact the Epetra_MultiVector::Print().
   */
-int printMultiVector(const Epetra_MultiVector mv, std::ostream &os, 
+int printMultiVector(const Epetra_MultiVector &mv, std::ostream &os, 
                      const char *s, int max=1000);
+
+/** Print out the contents of a small Epetra_RowMatrix, with optional title.
+    There is no Epetra_RowMatrix::Print.
+    If m is symmetric, we can view it as a graph and show graph cuts if
+    "withGraphCuts" is true.
+  */
+int printRowMatrix(const Epetra_RowMatrix &m, std::ostream &os, 
+                     const char *s, bool withGraphCuts, int max=1000);
 
 } //namespace ispatest
 
