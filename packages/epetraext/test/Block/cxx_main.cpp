@@ -64,16 +64,18 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 
 #endif
+  double total_norm=0;
 
   int blocksize=3;
   int num_local_blocks=2;
 
   // Generate the rowmap
   Epetra_Map Map(num_local_blocks*blocksize*Comm.NumProc(),0,Comm);
+  int Nrows=Map.NumMyElements();
 
   // Generate a non-symmetric blockdiagonal matrix, where the blocks are neatly processor-aligned
   Epetra_CrsMatrix Matrix(Copy,Map,0);
-  for(int i=0;i<Map.NumMyElements();i++){
+  for(int i=0;i<Nrows;i++){
     int gid=Map.GID(i);
     int gidm1=gid-1;
     int gidp1=gid+1;
@@ -86,37 +88,80 @@ int main(int argc, char *argv[])
   }    
   Matrix.FillComplete();
 
+  // *********************************************************************
+  // Test #1:  Blocks respect initial ordering, no proc boundaries crossed
+  // *********************************************************************
+  {
+    // Build the block diagonalizer
+    Teuchos::ParameterList List;
+    List.set("contiguous block size",blocksize);
+    List.set("number of local blocks",num_local_blocks);
 
-  // Build the block diagonalizer
-  Teuchos::ParameterList List;
-  List.set("contiguous block size",blocksize);
-  List.set("number of local blocks",num_local_blocks);
+    EpetraExt_PointToBlockDiagPermute Permute(Matrix);
+    Permute.SetParameters(List);
+    Permute.Compute();
+    
+    Epetra_FECrsMatrix* Pmat=Permute.CreateFECrsMatrix();
+    
+    // Multiply matrices, compute difference
+    Epetra_CrsMatrix Res(Copy,Map,0);
+    EpetraExt::MatrixMatrix::Multiply(*Pmat,false,Matrix,false,Res);
+    EpetraExt::MatrixMatrix::Add(Matrix,false,1.0,*Pmat,-1.0);
+    total_norm+=Pmat->NormInf();
+    
+    // Cleanup
+    delete Pmat;
+  }
 
-  EpetraExt_PointToBlockDiagPermute Permute(Matrix);
-  Permute.SetParameters(List);
-  Permute.Compute();
+  // *********************************************************************
+  // Test #2:  Blocks do not respect initial ordering, no proc boundaries crossed
+  // *********************************************************************
+  {
+    // Build alternative list - just have each block reversed in place
+    int* block_lids=new int [Nrows];
+    int* block_starts=new int[num_local_blocks+1];
+    for(int i=0;i<num_local_blocks;i++){
+      block_starts[i]=i*blocksize;
+      for(int j=0;j<blocksize;j++){
+	block_lids[i*blocksize+j] = i*blocksize+(blocksize-j-1);
+      }
+      
+    }
+    block_starts[num_local_blocks]=Nrows;
+    
+    // Build the block diagonalizer
+    Teuchos::ParameterList List;
+    List.set("number of local blocks",num_local_blocks);
+    List.set("block start index",block_starts);
+    List.set("block entry lids",block_lids);
+    
+    EpetraExt_PointToBlockDiagPermute Permute(Matrix);
+    Permute.SetParameters(List);
+    Permute.Compute();
 
-  Epetra_FECrsMatrix* Pmat=Permute.CreateFECrsMatrix();
+    Epetra_FECrsMatrix* Pmat=Permute.CreateFECrsMatrix();
 
-  // Multiply matrices, compute difference
-  Epetra_CrsMatrix Res(Copy,Map,0);
-  EpetraExt::MatrixMatrix::Multiply(*Pmat,false,Matrix,false,Res);
-  EpetraExt::MatrixMatrix::Add(Matrix,false,1.0,*Pmat,-1.0);
-  double norminf=Pmat->NormInf();
+    // Multiply matrices, compute difference
+    Epetra_CrsMatrix Res(Copy,Map,0);
+    EpetraExt::MatrixMatrix::Multiply(*Pmat,false,Matrix,false,Res);
+    EpetraExt::MatrixMatrix::Add(Matrix,false,1.0,*Pmat,-1.0);
+    total_norm+=Pmat->NormInf();
+    
+    // Cleanup
+    delete Pmat;
+  }
 
-  // Cleanup
-  delete Pmat;
 
   // passing check
-  if(norminf > 1e-15){
-    if (Comm.MyPID()==0) cout << "EpetraExt:: PointToBlockDiagPermute tests FAILED." << endl;
+  if(total_norm > 1e-15){
+    if (Comm.MyPID()==0) cout << "EpetraExt:: PointToBlockDiagPermute tests FAILED (||res||="<<total_norm<<")." << endl;
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return -1;
   }
   else{
-    if (Comm.MyPID()==0) cout << "EpetraExt:: PointToBlockDiagPermute tests passed." << endl;
+    if (Comm.MyPID()==0) cout << "EpetraExt:: PointToBlockDiagPermute tests passed (||res||="<<total_norm<<")." << endl;
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
