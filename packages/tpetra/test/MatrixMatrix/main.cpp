@@ -187,13 +187,33 @@ int main(int argc, char* argv[]) {
     "Type name: " << it->second.getAny().typeName() << 
     std::endl << std::endl);
       
-    run_test<int>(
+    if( run_test<int>(
       comm, 
       matrixSystems->sublist(it->first), 
       write_result_mtx, 
-      verbose);
+      verbose) != 0)
+    {
+      err = -1;
+    }
 
   }
+
+  Teuchos::ParameterList wrongList;
+  wrongList.set("A", "wrong_m.mtx");
+  wrongList.set("B", "wrong_tce.mtx");
+  wrongList.set("C", "wrong_d.mtx");
+  wrongList.set("TransA", false);
+  wrongList.set("TransB", true);
+  if(
+    run_test<int>(
+      comm, 
+      wrongList, 
+      write_result_mtx, 
+      verbose) == 0 )
+  {
+    err = -1;
+  }
+
 /*
   for(int i=0; i<numfiles; ++i) {
     err = run_test(comm, matnamesFile, write_result_mtx, verbose);
@@ -463,7 +483,9 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   Tpetra::Utils::readMatrixMarketMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
   Tpetra::Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
 
-
+  /*Teuchos::RCP<Teuchos::basic_FancyOStream<char> > outstream = 
+    Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+  B->describe(*outstream, Teuchos::VERB_EXTREME);*/
   Teuchos::RCP<const Tpetra::Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
 
   C = Teuchos::rcp( new Tpetra::CrsMatrix<double,int>(rowmap, 1));
@@ -490,6 +512,7 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   if (euc_norm < 1.e-13) {
     if (localProc == 0 && verbose) {
       std::cout << "Test Passed" << std::endl;
+      std::cout << "euc_norm " << euc_norm << std::endl;
     }
   }
   else {
