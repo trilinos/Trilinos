@@ -135,7 +135,7 @@ void IfpackPreconditionerFactory::initializePrec(
   const Teuchos::RCP<Teuchos::FancyOStream> out       = this->getOStream();
   const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
-  if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
+  if(out.get() && implicit_cast<int>(verbLevel) > implicit_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
@@ -216,7 +216,7 @@ void IfpackPreconditionerFactory::initializePrec(
       );
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-      OSTab(out).o() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
+      OSTab(out).o() <<"=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
     // Set parameters if the list exists
     if(paramList_.get()) {
       Teuchos::ParameterList
@@ -245,7 +245,7 @@ void IfpackPreconditionerFactory::initializePrec(
     TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
     timer.stop();
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-      OSTab(out).o() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+      OSTab(out).o() <<"=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
   }
   //
   // Compute the conditioner number estimate if asked
@@ -284,9 +284,9 @@ void IfpackPreconditionerFactory::initializePrec(
     );
   totalTimer.stop();
   if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
-    *out
-      << "\nTotal time = "<<totalTimer.totalElapsedTime()<<" sec\n"
-      << "\nLeaving Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
+    *out << "\nTotal time in IfpackPreconditionerFactory = "<<totalTimer.totalElapsedTime()<<" sec\n";
+  if(out.get() && implicit_cast<int>(verbLevel) > implicit_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nLeaving Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
 }
 
 void IfpackPreconditionerFactory::uninitializePrec(

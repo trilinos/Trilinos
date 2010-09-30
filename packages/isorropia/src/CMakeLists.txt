@@ -55,6 +55,7 @@ SET(SOURCES ${SOURCES}
 #
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
+#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../utils)
 
 SET(HEADERS ${HEADERS}
   epetra/Isorropia_EpetraCostDescriber.hpp
@@ -171,9 +172,15 @@ ENDIF()
 #
 # C) Define the targets for package's library(s)
 #
-
 PACKAGE_ADD_LIBRARY(
   isorropia
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+#PACKAGE_ADD_LIBRARY(
+#  isorropia
+#  HEADERS ${HEADERS}
+#  SOURCES ${SOURCES}
+#  DEPLIBS isorropia_test_utils
+#  )

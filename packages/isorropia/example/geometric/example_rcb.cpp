@@ -46,6 +46,7 @@
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 #include <Isorropia_EpetraRedistributor.hpp>
+#include <Isorropia_CostDescriber.hpp>
 
 #define PRINTLIMIT 5000
 
@@ -159,7 +160,6 @@ int main(int argc, char** argv) {
   Epetra_MultiVector *wgts = ispatest::makeWeights(mv->Map(), &ispatest::alternateWeights);
   //Epetra_MultiVector *wgts = ispatest::makeWeights(mv->Map(), &ispatest::veeWeights);
 
-  Epetra_Vector * &w1 = (*wgts)(0);
 
   if (!wgts || ((dim = wgts->NumVectors()) != 1)){
     if (localProc == 0)
@@ -225,8 +225,6 @@ int main(int argc, char** argv) {
 
   Teuchos::RCP<Epetra_MultiVector> new_wgts = rd.redistribute(*wgts);
 
-  Epetra_Vector * &new_w1 = (*new_wgts)(0);
-
   if (verbose){
     ispatest::printMultiVector(*new_wgts, std::cout, "New Weights", PRINTLIMIT);
   }
@@ -236,18 +234,39 @@ int main(int argc, char** argv) {
   // =============================================================
 
   double min1, min2, max1, max2, avg1, avg2;
+
+#if 1
   double goal = 1.0 / (double)numProcs;
 
+  Epetra_Vector * &w1 = (*wgts)(0);
   ispatest::compute_balance(*w1, goal, min1, max1, avg1);
+
+  Epetra_Vector * &new_w1 = (*new_wgts)(0);
+  ispatest::compute_balance(*new_w1, goal, min2, max2, avg2);
+
+#else
+  std::vector<double> min(2), max(2), avg(2);
+
+  Teuchos::RCP<Epetra_Vector> wgts_copy = 
+    Teuchos::rcp(new Epetra_Vector(Copy, wgts->Map(), (*wgts)[0]));
+
+  Isorropia::Epetra::CostDescriber costs;
+
+  costs.setVertexWeights(wgts_copy);
+
+  Epetra_Import &importer = rd.get_importer();
+
+  costs.compareBeforeAndAfterImbalance(*mv, importer, min, max, avg);
+
+  min1 = min[0]; max1 = max[0]; avg1 = avg[0];
+  min2 = min[1]; max2 = max[1]; avg2 = avg[1];
+
+#endif
 
   if (localProc == 0){
     std::cout << "Balance before partitioning: min " ;
     std::cout << min1 << " max " << max1 << " average " << avg1 << std::endl;
-  }
-
-  ispatest::compute_balance(*new_w1, goal, min2, max2, avg2);
-
-  if (localProc == 0){
+  
     std::cout << "Balance after partitioning:  min ";
     std::cout << min2 << " max " << max2 << " average " << avg2 << std::endl;
   }

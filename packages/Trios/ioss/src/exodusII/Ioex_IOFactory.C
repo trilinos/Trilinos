@@ -49,8 +49,6 @@ namespace Ioex {
     Ioss::IOFactory::alias("exodusII", "exodusii");
     Ioss::IOFactory::alias("exodusII", "exodus");
     Ioss::IOFactory::alias("exodusII", "genesis");
-    Ioss::IOFactory::alias("exodusII", "exodusII_input");
-    Ioss::IOFactory::alias("exodusII", "exodusII_output");
   }
 
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,

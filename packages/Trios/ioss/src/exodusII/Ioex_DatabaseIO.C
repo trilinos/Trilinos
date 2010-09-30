@@ -2229,7 +2229,14 @@ namespace Ioex {
     std::vector<double> temp(num_entity);
 
     int step = get_region()->get_property("current_state").get_int();
-    assert(step > 0); // Without begin_state call, uninitialized to -1.
+
+    if (step <= 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: No currently active state. The calling code must call Ioss::Region::begin_state(int step)\n"
+	     << "       To set the time step from which to read the transient data.\n"
+	     << "       [" << get_filename() << "]\n";
+      IOSS_ERROR(errmsg);
+    }
 
     // get number of components, cycle through each component
     // and add suffix to base 'field_name'.  Look up index

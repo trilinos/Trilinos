@@ -71,7 +71,7 @@ Epetra_LinearProblem* create_epetra_problem(int numProcs,
 int main(int argc, char** argv) {
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-  int p, numProcs = 1;
+  int numProcs = 1;
   int localProc = 0;
 
   //first, set up our MPI environment...
@@ -158,11 +158,13 @@ int main(int argc, char** argv) {
 
   // Results
 
-  double goalWeight = 1.0 / (double)numProcs;
   double bal0, bal1, cutn0, cutn1, cutl0, cutl1;
   Isorropia::Epetra::CostDescriber default_costs;
 
+#if 1
   // Balance and cut quality before partitioning
+
+  double goalWeight = 1.0 / (double)numProcs;
 
   ispatest::compute_hypergraph_metrics(*(linprob->GetMatrix()), default_costs, goalWeight,
                      bal0, cutn0, cutl0);
@@ -171,6 +173,19 @@ int main(int argc, char** argv) {
 
   ispatest::compute_hypergraph_metrics(*bal_matrix, default_costs, goalWeight,
                      bal1, cutn1, cutl1);
+#else
+
+  std::vector<double> bal(2), cutn(2), cutl(2);
+
+  Epetra_Import &importer = rd.get_importer();
+
+  default_costs.compareBeforeAndAfterHypergraph(*(linprob->GetMatrix()), *bal_matrix, importer,
+             bal, cutn, cutl);
+
+  bal0 = bal[0]; cutn0 = cutn[0]; cutl0 = cutl[0];
+  bal1 = bal[1]; cutn1 = cutn[1]; cutl1 = cutl[1];
+#endif
+
 
   if (localProc == 0){
     std::cout << "Before partitioning: ";

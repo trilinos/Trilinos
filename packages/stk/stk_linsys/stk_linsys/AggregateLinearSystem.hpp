@@ -32,7 +32,7 @@ namespace linsys {
 class AggregateLinearSystem : public LinearSystemInterface {
  public:
   /** Constructor */
-  AggregateLinearSystem(MPI_Comm comm, fei::SharedPtr<fei::Factory> factory, size_t num_matrices, size_t num_rhsvecs);
+  AggregateLinearSystem(MPI_Comm comm, fei::SharedPtr<fei::Factory> factory, size_t num_matrices=1, size_t num_rhsvecs=1);
 
   /** Destructor */
   virtual ~AggregateLinearSystem();
@@ -93,6 +93,8 @@ class AggregateLinearSystem : public LinearSystemInterface {
   fei::SharedPtr<fei::LinearSystem> get_fei_LinearSystem();
 
   /** Solve the linear system
+   * Note that the caller is expected to have already called the method
+   * 'aggregate_system' if multiple matrices/rhs-vectors are being used.
    *
    * @param status Output flag indicating the termination condition of the
    *  underlying linear-solver. Values are solver-specific. In general, 0

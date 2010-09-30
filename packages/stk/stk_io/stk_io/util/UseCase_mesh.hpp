@@ -54,6 +54,16 @@ namespace stk {
 			     stk::io::util::MeshData &mesh_data,
 			     bool hex_only);
 
+      void create_output_mesh(const std::string &mesh_filename,
+			      const std::string &mesh_extension,
+			      const std::string &working_directory,
+			      MPI_Comm comm,
+			      stk::mesh::BulkData &bulk_data,
+			      stk::mesh::MetaData &meta_data,
+                              MeshData &mesh_data,
+			      bool add_transient = true,
+			      bool add_all_fields = false);
+
       Ioss::Region *create_output_mesh(const std::string &mesh_filename,
 				       const std::string &mesh_extension,
 				       const std::string &working_directory,
@@ -85,10 +95,15 @@ namespace stk {
 			  Ioss::GroupingEntity *io_entity,
 			  Ioss::Field::RoleType filter_role,
 			  bool add_all = false);
+
+
+      int process_output_request(MeshData &mesh_data,
+                                 stk::mesh::BulkData &bulk,
+                                 double time, bool add_all_fields = false);
+
       void process_output_request(Ioss::Region &region,
 				  stk::mesh::BulkData &bulk,
-				  int step,
-				  bool add_all_fields = false);
+				  int step, bool add_all_fields = false);
 
       void populate_bulk_data(stk::mesh::BulkData &bulk_data,
 			      stk::io::util::MeshData &mesh_data,

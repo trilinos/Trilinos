@@ -36,6 +36,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_Map.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 
 class Epetra_Comm;
@@ -144,6 +145,9 @@ public:
   //! Returns the block matrix. Only call this after calling Compute
   virtual const EpetraExt_BlockDiagMatrix & BlockMatrix(){return *BDMat_;}
   
+
+  //! Creates an Epetra_FECrsMatrix from the BlockDiagMatrix.  This is generally only useful if you want to do a matrix-matrix multiply.
+  virtual Epetra_FECrsMatrix * CreateFECrsMatrix();
 
   //! @name Miscellaneous
   //@{ 

@@ -30,11 +30,20 @@ USA
 #include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_Exception.hpp>
 
+#ifdef USE_UTILS
+#include "ispatest_lbeval_utils.hpp"
+#endif
+
 #ifdef HAVE_EPETRA
 #include <Epetra_BlockMap.h>
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_RowMatrix.h>
+#include <Epetra_MultiVector.h>
+#include <Epetra_Import.h>
+#include <Epetra_CrsGraph.h>
+#include <Epetra_Comm.h>
 
 namespace Isorropia {
 
@@ -43,6 +52,7 @@ namespace Epetra {
 CostDescriber::CostDescriber()
   : vertex_weights_(),
     graph_edge_weights_(),
+    graph_self_edges_(),
     paramlist_(),
     hg_edge_gids_(NULL),
     hg_edge_weights_(NULL),
@@ -57,6 +67,256 @@ CostDescriber::~CostDescriber()
 {
   free_hg_edge_weights_();
 }
+
+CostDescriber::CostDescriber(const CostDescriber &costs):
+  vertex_weights_(),
+  graph_edge_weights_(),
+  graph_self_edges_(costs.graph_self_edges_),
+  paramlist_(costs.paramlist_),
+  hg_edge_gids_(NULL),
+  hg_edge_weights_(NULL),
+  num_hg_edge_weights_(costs.num_hg_edge_weights_),
+  numGlobalVertexWeights_(costs.numGlobalVertexWeights_),
+  numGlobalGraphEdgeWeights_(costs.numGlobalGraphEdgeWeights_),
+  numGlobalHypergraphEdgeWeights_(costs.numGlobalHypergraphEdgeWeights_)
+
+{
+  if (costs.haveVertexWeights()){
+    Teuchos::RCP<Epetra_Vector> vwgts = Teuchos::rcp(new Epetra_Vector(*costs.vertex_weights_));
+    setVertexWeights(vwgts);
+  }
+
+  if (costs.haveGraphEdgeWeights()){
+    Teuchos::RCP<Epetra_CrsMatrix> ewgts = Teuchos::rcp(new Epetra_CrsMatrix(*costs.graph_edge_weights_));
+    setGraphEdgeWeights(ewgts);
+  }
+
+  int n = num_hg_edge_weights_;
+
+  if (n > 0){
+    allocate_hg_edge_weights_(n);
+    memcpy(hg_edge_gids_, costs.hg_edge_gids_, sizeof(int) * n);
+    memcpy(hg_edge_weights_, costs.hg_edge_weights_, sizeof(float) * n);
+  }
+}
+
+void CostDescriber::_transformWeights(const Epetra_Import &importer)
+{
+  const Epetra_BlockMap &target_map = importer.TargetMap();
+
+  // same map as a concrete type
+
+  Epetra_Map new_map(target_map.NumGlobalElements(), target_map.NumMyElements(), 
+                     target_map.MyGlobalElements(), target_map.IndexBase(), target_map.Comm());
+
+  if (numGlobalVertexWeights_ > 0){
+    Teuchos::RCP<Epetra_Vector> redistWeights = Teuchos::rcp(new Epetra_Vector(target_map));
+    redistWeights->Import(*vertex_weights_, importer, Insert);
+    setVertexWeights(redistWeights);
+  }
+
+  if (numGlobalGraphEdgeWeights_ > 0){
+
+    int myOldRows = graph_edge_weights_->NumMyRows();
+    int myNewRows = target_map.NumMyElements();
+
+    double *nnz = new double [myOldRows];
+    for (int i=0; i < myOldRows; i++){
+      nnz[i] = graph_edge_weights_->NumMyEntries(i);
+    }
+  
+    Epetra_Vector oldRowSizes(Copy, graph_edge_weights_->RowMap(), nnz);
+  
+    if (myOldRows)
+      delete [] nnz;
+
+    Epetra_Vector newRowSizes(target_map);
+  
+    newRowSizes.Import(oldRowSizes, importer, Insert);
+  
+    int *rowSize=0; 
+    if(myNewRows){
+      rowSize = new int [myNewRows];
+      for (int i=0; i< myNewRows; i++){
+        rowSize[i] = static_cast<int>(newRowSizes[i]);
+      }
+    }
+  
+    Teuchos::RCP<Epetra_CrsMatrix> new_graph_edge_weights = 
+      Teuchos::rcp(new Epetra_CrsMatrix(Copy, new_map, rowSize, true));
+  
+    if (myNewRows)
+      delete [] rowSize;
+  
+    new_graph_edge_weights->Import(*graph_edge_weights_, importer, Insert);
+
+    new_graph_edge_weights->FillComplete();
+
+    setGraphEdgeWeights(new_graph_edge_weights);
+  }
+
+  // hg_edge_weights are independent of matrix row partitioning, so
+  // there is no need to transform them
+}
+
+#ifdef USE_UTILS
+int CostDescriber::compareBeforeAndAfterHypergraph(
+            const Epetra_RowMatrix &in_m, const Epetra_RowMatrix &out_m,
+            const Epetra_Import &importer,
+            std::vector<double> &balance, std::vector<double> &cutn, std::vector<double> &cutl) const
+{
+
+  CostDescriber costs(*this);       
+
+  double goalWeight = 1.0 / in_m.Comm().NumProc();
+
+  double bal, n, l;
+
+  // Before
+
+  int rc = ispatest::compute_hypergraph_metrics(in_m, costs, goalWeight, bal, n, l);
+
+  if (rc != 0)
+    return 1;
+
+  balance[0] = bal;
+  cutn[0] = n;
+  cutl[0] = l;
+
+  // After
+
+  costs._transformWeights(importer);
+
+  rc = ispatest::compute_hypergraph_metrics(out_m, costs, goalWeight, bal, n, l);
+
+  if (rc != 0)
+    return 1;
+
+  balance[1] = bal;
+  cutn[1] = n;
+  cutl[1] = l;
+
+  return 0;
+}
+
+int CostDescriber::compareBeforeAndAfterGraph(
+            const Epetra_RowMatrix &in_m, const Epetra_RowMatrix &out_m,
+            const Epetra_Import &importer,
+            std::vector<double> &balance, std::vector<int> &numCuts, std::vector<double> &cutWgt,
+            std::vector<double> &cutn, std::vector<double> &cutl) const
+{
+  return _compareBeforeAndAfterGraph(&in_m, &out_m, NULL, NULL, importer,
+            balance, numCuts, cutWgt,
+            cutn, cutl);
+}
+
+int CostDescriber::compareBeforeAndAfterGraph(
+            const Epetra_CrsGraph &in_g, const Epetra_CrsGraph &out_g,
+            const Epetra_Import &importer,
+            std::vector<double> &balance, std::vector<int> &numCuts, std::vector<double> &cutWgt,
+            std::vector<double> &cutn, std::vector<double> &cutl) const
+{
+  return _compareBeforeAndAfterGraph(NULL, NULL, &in_g, &out_g, importer,
+            balance, numCuts, cutWgt,
+            cutn, cutl);
+}
+
+
+int CostDescriber::_compareBeforeAndAfterGraph(
+            const Epetra_RowMatrix *in_m, const Epetra_RowMatrix *out_m,
+            const Epetra_CrsGraph *in_g, const Epetra_CrsGraph *out_g,
+            const Epetra_Import &importer,
+            std::vector<double> &balance, std::vector<int> &numCuts, std::vector<double> &cutWgt,
+            std::vector<double> &cutn, std::vector<double> &cutl) const
+{
+  CostDescriber costs(*this);       
+
+  double goalWeight = 1.0 / in_m->Comm().NumProc();
+
+  double bal,wgt, n, l;
+  int ncuts, rc;
+
+  // Before
+
+  if (in_m){
+    rc = ispatest::compute_graph_metrics(*in_m, costs, goalWeight, bal, ncuts, wgt, n, l);
+  }
+  else{
+    rc = ispatest::compute_graph_metrics(*in_g, costs, goalWeight, bal, ncuts, wgt, n, l);
+  }
+
+  if (rc != 0)
+    return 1;
+
+  balance[0] = bal;
+  numCuts[0] = ncuts;
+  cutWgt[0] = wgt;
+  cutn[0] = n;
+  cutl[0] = l;
+
+  // After
+
+  costs._transformWeights(importer);
+
+  if (in_m){
+    rc = ispatest::compute_graph_metrics(*out_m, costs, goalWeight, bal, ncuts, wgt, n, l);
+  }
+  else{
+    rc = ispatest::compute_graph_metrics(*out_g, costs, goalWeight, bal, ncuts, wgt, n, l);
+  }
+
+  if (rc != 0)
+    return 1;
+
+  balance[1] = bal;
+  numCuts[1] = ncuts;
+  cutWgt[1] = wgt;
+  cutn[1] = n;
+  cutl[1] = l;
+
+  return 0;
+}
+
+int CostDescriber::compareBeforeAndAfterImbalance(const Epetra_MultiVector &mv, const Epetra_Import &importer,
+                  std::vector<double> &min, std::vector<double> &max, std::vector<double> &avg) const
+{
+  CostDescriber costs(*this);       
+  double goalWeight = 1.0 / mv.Comm().NumProc();
+  double a, b, c;
+
+  if (!costs.haveVertexWeights()){
+    Epetra_Vector unitWgts(mv.Map());
+    unitWgts.PutScalar(1.0);
+    costs.setVertexWeights(Teuchos::rcp(&unitWgts));
+  }
+
+  // Before
+
+  int rc = ispatest::compute_balance(costs.getVertexWeights(), goalWeight, a, b, c);
+
+  if (rc != 0)
+    return 1;
+
+  min[0] = a;
+  max[0] = b;
+  avg[0] = c;
+
+  // After
+
+  costs._transformWeights(importer);
+
+  rc = ispatest::compute_balance(costs.getVertexWeights(), goalWeight, a, b, c);
+
+  if (rc != 0)
+    return 1;
+
+  min[1] = a;
+  max[1] = b;
+  avg[1] = c;
+
+  return 0;
+}
+#endif
 
 void CostDescriber::setParameters(const Teuchos::ParameterList& paramlist)
 {
@@ -167,6 +427,11 @@ int CostDescriber::getVertexWeights(std::map<int, float> &wgtMap) const
 {
   double *wgts;
 
+  if (Teuchos::is_null(vertex_weights_)){
+    wgtMap.clear();
+    return 0;
+  }
+
   const Epetra_BlockMap& map = vertex_weights_->Map();
   const int length = map.NumMyElements();
 
@@ -233,6 +498,8 @@ int CostDescriber::getNumGraphEdges(int vertex_global_id) const
   return n;
 }
 
+// ONLY called if graph_self_edge_ is not null
+
 int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights) const
 {
   const Epetra_Map &colmap = graph_edge_weights_->ColMap();
@@ -255,8 +522,8 @@ int CostDescriber::getEdges(int vertexGID, int len, int *nborGID, float *weights
     self_edge = 1;
   }
 
-  int *viewIds;
-  double *viewWgts;
+  int *viewIds=NULL;
+  double *viewWgts=NULL;
   int numedges;         // including self edges
 
   int rc = graph_edge_weights_->ExtractMyRowView(vertexLID, numedges,

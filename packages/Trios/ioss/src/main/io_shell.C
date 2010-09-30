@@ -276,7 +276,7 @@ int main(int argc, char *argv[])
 namespace {
   void show_usage(const std::string &prog)
   {
-    OUTPUT << "USAGE: " << prog << " in_file out_file\n";
+    OUTPUT << "\nUSAGE: " << prog << " in_file out_file\n";
     OUTPUT << "...or: " << prog << " command_file\n";
     OUTPUT << "       version: " << version << "\n";
     OUTPUT << "Options:\n";
@@ -287,7 +287,15 @@ namespace {
     OUTPUT << "\t--debug : turn on debugging output\n";
     OUTPUT << "\t--Maximum_Time {time} : maximum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Minimum_Time {time} : minimum time from input mesh to transfer to output mesh\n";
-    OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n\n";
+    OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n";
+    Ioss::NameList db_types;
+    Ioss::IOFactory::describe(&db_types);
+    OUTPUT << "\nSupports database types:\n\t";
+    for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+      OUTPUT << *IF << "  ";
+    }
+    OUTPUT << "\n\n";
+    
   }
 
   void file_copy(const std::string& inpfile, const std::string& input_type,

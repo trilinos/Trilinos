@@ -195,8 +195,11 @@ class EpetraExt_BlockDiagMatrix : public virtual Epetra_Operator, public Epetra_
   //! PutScalar function
   void PutScalar(double value);
 
+  //! Returns the Epetra_BlockMap object with the distribution of underlying values
+  virtual const Epetra_BlockMap & DataMap() const {return *DataMap_;}   
+
   //@}
-  
+
   
 private:
   void Allocate();

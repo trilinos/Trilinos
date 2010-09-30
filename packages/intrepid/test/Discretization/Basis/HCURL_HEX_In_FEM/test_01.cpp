@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
     for (unsigned i = 0; i < allTags.size(); i++) {
       int bfOrd  = hexBasis.getDofOrdinal(allTags[i][0], allTags[i][1], allTags[i][2]);
 
-      for (unsigned j=0;j<4;j++) std::cout << allTags[i][j] << " "; std::cout << std::endl;
+//       for (unsigned j=0;j<4;j++) std::cout << allTags[i][j] << " "; std::cout << std::endl;
       
       std::vector<int> myTag = hexBasis.getDofTag(bfOrd);
        if( !( (myTag[0] == allTags[i][0]) &&
@@ -291,10 +291,10 @@ int main(int argc, char *argv[]) {
   // CURL
   
   double basisCurls[] = {   
-    0,0.5,-0.5, 0,0.5,-0.5, 0,0,-0.5, 0,0,-0.5, 0,0.5,0, 0,0.5,0, 0,0,0, 0,0,0,
-    0,0,0.5, 0,0,0.5, 0,0.5,0.5, 0,0.5,0.5, 0,0,0, 0,0,0, 0,0.5,0, 0,0.5,0,
-    0,-0.5,0, 0,-0.5,0, 0,0,0, 0,0,0, 0,-0.5,-0.5, 0,-0.5,-0.5, 0,0,-0.5, 0,0,-0.5,
-    0,0,0, 0,0,0, 0,-0.5,0, 0,-0.5,0, 0,0,0.5, 0,0,0.5, 0,-0.5,0.5, 0,-0.5,0.5,
+    0,-0.5,0.5, 0,-0.5,0.5, 0,0,0.5, 0,0,0.5, 0,-0.5,0, 0,-0.5,0, 0,0,0, 0,0,0,
+    0,0,-0.5, 0,0,-0.5, 0,-0.5,-0.5, 0,-0.5,-0.5, 0,0,0, 0,0,0, 0,-0.5,0, 0,-0.5,0,
+    0,0.5,0, 0,0.5,0, 0,0,0, 0,0,0, 0,0.5,0.5, 0,0.5,0.5, 0,0,0.5, 0,0,0.5,
+    0,0,0, 0,0,0, 0,0.5,0, 0,0.5,0, 0,0,-0.5, 0,0,-0.5, 0,0.5,-0.5, 0,0.5,-0.5,
     // y-component basis functions
     // first y-component bf is (0,1/4(1-x)(1-z),0)
     // curl is (1/4(1-x),0,-1/4(1-z))

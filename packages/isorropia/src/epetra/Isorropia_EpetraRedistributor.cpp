@@ -32,6 +32,12 @@ USA
 #include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 
+#ifdef USE_UTILS
+#include <../../utils/ispatest_epetra_utils.hpp>
+#include <../../utils/ispatest_lbeval_utils.hpp>
+using namespace ispatest;
+#endif
+
 #include <Teuchos_RCP.hpp>
 
 #ifdef HAVE_EPETRA
@@ -44,6 +50,7 @@ USA
 #include <Epetra_LinearProblem.h>
 #include <Epetra_Comm.h>
 #endif
+
 
 namespace Isorropia {
 
@@ -223,6 +230,59 @@ Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, Epetra_CrsMatri
   if (callFillComplete && (!outputMatrix->Filled()))
     outputMatrix->FillComplete(*newDomainMap,  *target_map_);
 
+#ifdef USE_UTILS
+  // TODO: "PRINT ZOLTAN METRICS" should specify graph, hypergraph, or imbalance
+  //     instead of just amount of output
+  //     Metrics should be printed for each redistribute() method
+
+  if (partitioner_->printZoltanMetrics() > 0){
+    std::vector<double> balance(2), cutWgt(2), cutn(2), cutl(2);
+    std::vector<int> numCuts(2);
+    CostDescriber *defaultCosts = NULL;
+
+    Teuchos::RCP<CostDescriber> &cptr = partitioner_->getCosts();
+
+    if (Teuchos::is_null(cptr)){
+      defaultCosts = new CostDescriber;
+      cptr = Teuchos::rcp(defaultCosts);
+    }
+
+    int fail = cptr->compareBeforeAndAfterGraph( inputMatrix, *outputMatrix, *importer_,
+                      balance, numCuts, cutWgt, cutn, cutl);
+
+    if (!fail){
+
+      if (partitioner_->printZoltanMetrics() > 1){
+        ispatest::printRowMatrix(inputMatrix, std::cout, "BEFORE:", true);
+      }
+      inputMatrix.Comm().Barrier();
+      if (inputMatrix.Comm().MyPID() == 0){
+        std::cout << "BEFORE: Imbalance " << balance[0] << ", cuts " << numCuts[0];
+        std::cout << ", cut weight " << cutWgt[0];
+        std::cout << ", CUTN " << cutn[0];
+        std::cout << ", CUTL " << cutl[0] << std::endl;
+      }
+
+      if (partitioner_->printZoltanMetrics() > 1){
+        ispatest::printRowMatrix(*outputMatrix, std::cout, "AFTER:", true);
+      }
+      inputMatrix.Comm().Barrier();
+      if (inputMatrix.Comm().MyPID() == 0){
+        std::cout << " AFTER: Imbalance " << balance[1] << ", cuts " << numCuts[1];
+        std::cout << ", cut weight " << cutWgt[1];
+        std::cout << ", CUTN " << cutn[1];
+        std::cout << ", CUTL " << cutl[1] << std::endl;
+      }
+    }
+    else{
+      if (inputMatrix.Comm().MyPID() == 0){
+        std::cout << " Error computing Zoltan quality metrics" << std::endl;
+      }
+    }
+    inputMatrix.Comm().Barrier();
+  }
+#endif
+
   return;
 }
 
@@ -237,6 +297,8 @@ Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, bool callFillCo
 void
 Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatrix * &outputMatrix, bool callFillComplete)
 {
+
+
   if (!created_importer_) {
     create_importer(inputMatrix.RowMatrixRowMap());
   }
@@ -279,7 +341,7 @@ Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatri
   // Set the new domain map such that
   // (a) if old DomainMap == old RangeMap, preserve this property,
   // (b) otherwise, use the original OperatorDomainMap
-  //if (inputMatrix.NumGlobalRows() == inputMatrix.NumGlobalCols()){
+  //if (inputMatrix.NumGlobalRows() == inputMatrix.NumGlobalCols())
   if (inputMatrix.OperatorDomainMap().SameAs(inputMatrix.OperatorRangeMap())){
     if (callFillComplete && (!outputMatrix->Filled()))
       outputMatrix->FillComplete();
@@ -288,6 +350,58 @@ Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatri
     if (callFillComplete && (!outputMatrix->Filled()))
       outputMatrix->FillComplete(inputMatrix.OperatorDomainMap(), *target_map_);
   }
+
+#ifdef USE_UTILS
+  // TODO: "PRINT ZOLTAN METRICS" should specify graph, hypergraph, or imbalance
+  //     instead of just amount of output
+  //     Metrics should be printed for each redistribute() method
+
+  if (partitioner_->printZoltanMetrics() > 0){
+    std::vector<double> balance(2), cutWgt(2), cutn(2), cutl(2);
+    std::vector<int> numCuts(2);
+    CostDescriber *defaultCosts = NULL;
+
+    Teuchos::RCP<CostDescriber> &cptr = partitioner_->getCosts();
+
+    if (Teuchos::is_null(cptr)){
+      defaultCosts = new CostDescriber;
+      cptr = Teuchos::rcp(defaultCosts);
+    }
+
+    int fail = cptr->compareBeforeAndAfterGraph( inputMatrix, *outputMatrix, *importer_,
+                      balance, numCuts, cutWgt, cutn, cutl);
+    if (!fail){
+
+      if (partitioner_->printZoltanMetrics() > 1){
+        ispatest::printRowMatrix(inputMatrix, std::cout, "BEFORE:", true);
+      } 
+      inputMatrix.Comm().Barrier();
+      if (inputMatrix.Comm().MyPID() == 0){
+        std::cout << "BEFORE: Imbalance " << balance[0] << ", cuts " << numCuts[0];
+        std::cout << ", cut weight " << cutWgt[0];
+        std::cout << ", CUTN " << cutn[0];
+        std::cout << ", CUTL " << cutl[0] << std::endl;
+      } 
+  
+      if (partitioner_->printZoltanMetrics() > 1){
+        ispatest::printRowMatrix(*outputMatrix, std::cout, "AFTER:", true);
+      } 
+      inputMatrix.Comm().Barrier();
+      if (inputMatrix.Comm().MyPID() == 0){
+        std::cout << " AFTER: Imbalance " << balance[1] << ", cuts " << numCuts[1];
+        std::cout << ", cut weight " << cutWgt[1];
+        std::cout << ", CUTN " << cutn[1];
+        std::cout << ", CUTL " << cutl[1] << std::endl;
+      } 
+    } 
+    else{
+      if (inputMatrix.Comm().MyPID() == 0){
+        std::cout << " Error computing Zoltan quality metrics" << std::endl;
+      }
+    } 
+    inputMatrix.Comm().Barrier();
+  }
+#endif
 
   return;
 }
@@ -338,15 +452,6 @@ Redistributor::redistribute(const Epetra_MultiVector& inputVector, Epetra_MultiV
 
   return;
 }
-
-
-
-
-
-
-
-
-
 
 
 // Reverse redistribute methods (for vectors). 
