@@ -199,8 +199,15 @@ int main(int argc, char *argv[])
 namespace {
   void show_usage(const std::string &prog)
   {
-    OUTPUT << "USAGE: " << prog << " input_database\n";
+    OUTPUT << "\nUSAGE: " << prog << " input_database\n";
     OUTPUT << "       version: " << version << "\n";
+    Ioss::NameList db_types;
+    Ioss::IOFactory::describe(&db_types);
+    OUTPUT << "\nSupports database types:\n\t";
+    for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+      OUTPUT << *IF << "  ";
+    }
+    OUTPUT << "\n\n";
   }
 
   void file_info(const std::string& inpfile, const std::string& input_type, Globals& globals)
