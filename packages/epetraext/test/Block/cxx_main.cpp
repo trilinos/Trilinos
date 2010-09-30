@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
   }
 
   // *********************************************************************
-  // Test #2:  Blocks do not respect initial ordering, no proc boundaries crossed
+  // Test #2:  Blocks do not respect initial ordering, lids
   // *********************************************************************
   {
     // Build alternative list - just have each block reversed in place
@@ -149,7 +149,51 @@ int main(int argc, char *argv[])
     
     // Cleanup
     delete Pmat;
+    delete [] block_lids;
+    delete [] block_starts;
   }
+
+
+  // *********************************************************************
+  // Test #3:  Blocks do not respect initial ordering, gids
+  // *********************************************************************
+  {
+    // Build alternative list - just have each block reversed in place
+    int* block_gids=new int [Nrows];
+    int* block_starts=new int[num_local_blocks+1];
+    for(int i=0;i<num_local_blocks;i++){
+      block_starts[i]=i*blocksize;
+      for(int j=0;j<blocksize;j++){
+	block_gids[i*blocksize+j] = Map.GID(i*blocksize+(blocksize-j-1));
+      }
+      
+    }
+    block_starts[num_local_blocks]=Nrows;
+    
+    // Build the block diagonalizer
+    Teuchos::ParameterList List;
+    List.set("number of local blocks",num_local_blocks);
+    List.set("block start index",block_starts);
+    List.set("block entry gids",block_gids);
+    
+    EpetraExt_PointToBlockDiagPermute Permute(Matrix);
+    Permute.SetParameters(List);
+    Permute.Compute();
+
+    Epetra_FECrsMatrix* Pmat=Permute.CreateFECrsMatrix();
+
+    // Multiply matrices, compute difference
+    Epetra_CrsMatrix Res(Copy,Map,0);
+    EpetraExt::MatrixMatrix::Multiply(*Pmat,false,Matrix,false,Res);
+    EpetraExt::MatrixMatrix::Add(Matrix,false,1.0,*Pmat,-1.0);
+    total_norm+=Pmat->NormInf();
+    
+    // Cleanup
+    delete Pmat;
+    delete [] block_gids;
+    delete [] block_starts;
+  }
+
 
 
   // passing check
