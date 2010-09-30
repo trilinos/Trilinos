@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
 
   int err = two_proc_test(comm, verbose);
   if (err != 0) {
-    std::cout << "two_proc_test returned err=="<<err<<std::endl;
+    std::cerr << "two_proc_test returned err=="<<err<<std::endl;
     return(err);
   }
 
@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
 */
   err = test_find_rows(comm);
   if (err != 0) {
-    std::cout << "test_find_rows returned err=="<<err<<std::endl;
+    std::cerr << "test_find_rows returned err=="<<err<<std::endl;
     return(err);
   } 
   Teuchos::RCP<Teuchos::ParameterList> matrixSystems = 
@@ -178,11 +178,14 @@ int main(int argc, char* argv[]) {
     it != matrixSystems->end();
     ++it)
   {
-	TEST_FOR_EXCEPTION(it->second.isList(), std::runtime_error,
+	TEST_FOR_EXCEPTION(!it->second.isList(), std::runtime_error,
     "All top level items in the matrix "
 	  "file names list must be ParameterLists! In otherwords, you always "
     "need to have matricies "
-	  "encapsulated within a matrixsystem");
+	  "encapsulated within a matrixsystem" << std::endl <<
+    "Bad tag's name: " << it->first << 
+    "Type name: " << it->second.getAny().typeName() << 
+    std::endl << std::endl);
       
     run_test<int>(
       comm, 
@@ -456,9 +459,9 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C = Teuchos::null;
   Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C_check = Teuchos::null;
 
-  Tpetra::Utils::readMatrixMarketMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A, false);
-  Tpetra::Utils::readMatrixMarketMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B, false);
-  Tpetra::Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check, false);
+  Tpetra::Utils::readMatrixMarketMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
+  Tpetra::Utils::readMatrixMarketMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
+  Tpetra::Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
 
 
   Teuchos::RCP<const Tpetra::Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
@@ -476,15 +479,15 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   //}
 
   
-  Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constC = C;
 
-  Tpetra::MatrixMatrix::Add(constC, false, -1.0, C_check, 1.0);
+  Tpetra::MatrixMatrix::Add(C, false, -1.0, C_check, 1.0);
 
-  double inf_norm = C_check->getEuclideanNorm();
+  double euc_norm = C_check->getEuclideanNorm();
 
   int return_code = 0;
 
-  if (inf_norm < 1.e-13) {
+
+  if (euc_norm < 1.e-13) {
     if (localProc == 0 && verbose) {
       std::cout << "Test Passed" << std::endl;
     }
@@ -492,7 +495,7 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   else {
     return_code = -1;
     if (localProc == 0) {
-      std::cout << "Test Failed, inf_norm = " << inf_norm << std::endl;
+      std::cout << "Test Failed, euc_norm = " << euc_norm << std::endl;
     }
   }
 

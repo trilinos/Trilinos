@@ -1,9 +1,16 @@
 <ParameterList>
 	<ParameterList name="matrixsystem1">
-		<Parameter name="A" value="cdt_m.mtx"/>
-		<Parameter name="B" value="cdt_tce.mtx"/>
-		<Parameter name="C" value="cdt_d.mtx"/>
-		<Parameter name="TransA" value="false"/>
-		<Parameter name="TransB" value="true"/>
+		<Parameter name="A" value="cdt_m.mtx" type="string"/>
+		<Parameter name="B" value="cdt_tce.mtx" type="string"/>
+		<Parameter name="C" value="cdt_d.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="true" type="bool"/>
+	</ParameterList>
+	<ParameterList name="matrixsystem1">
+		<Parameter name="A" value="wrong_m.mtx" type="string"/>
+		<Parameter name="B" value="wrong_tce.mtx" type="string"/>
+		<Parameter name="C" value="wrong_d.mtx" type="string"/>
+		<Parameter name="TransA" value="false" type="bool"/>
+		<Parameter name="TransB" value="true" type="bool"/>
 	</ParameterList>
 </ParameterList>

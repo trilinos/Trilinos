@@ -70,8 +70,8 @@ public:
 
   size_t numRows;
   Teuchos::Array<size_t> numEntriesPerRow;
-  Teuchos::Array<Teuchos::Array<const LocalOrdinal> > indices;
-  Teuchos::Array<Teuchos::Array<const Scalar> > values;
+  Teuchos::Array<Teuchos::ArrayView<const LocalOrdinal> > indices;
+  Teuchos::Array<Teuchos::ArrayView<const Scalar> > values;
   Teuchos::Array<bool> remote;
   global_size_t numRemote;
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > origRowMap;

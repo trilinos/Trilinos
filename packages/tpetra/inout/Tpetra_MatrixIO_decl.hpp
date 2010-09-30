@@ -38,14 +38,22 @@ namespace Tpetra {
                  Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
                  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null);
     
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+    template <
+      class Scalar, 
+      class LocalOrdinal, 
+      class GlobalOrdinal, 
+      class Node, 
+      class LocalMatOps>
     void
-	readMatrixMarketMatrix(const std::string &filename,
-	                       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-						   const Teuchos::RCP<Node> &node,
-                           Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
-						   const bool transpose = false,
-                           Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null);
+	  readMatrixMarketMatrix(const std::string &filename,
+	    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+		  const Teuchos::RCP<Node> &node,
+      Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
+		  const bool transpose = false,
+      Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null,
+      bool verbose = false,
+      std::ostream* outstream = &std::cout
+      );
 	  
 
   } // end of Tpetra::Utils namespace

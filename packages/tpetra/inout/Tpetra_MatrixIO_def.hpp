@@ -3,6 +3,7 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MatrixIO.hpp"
+#include <iostream>
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
@@ -225,11 +226,14 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
 Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
-                       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                       const Teuchos::RCP<Node> &node,
-                       Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
-                       const bool transpose = false,
-                       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null)
+  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+  const Teuchos::RCP<Node> &node,
+ Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
+ const bool transpose = false,
+ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null,
+ bool verbose = false,
+ std::ostream* outstream = &std::cout
+ )
 {
   const int chunk_read = 500000;  //  Modify this variable to change the
                                   //  size of the chunks read from the file.
@@ -268,7 +272,7 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
       
   FILE * handle = 0;
   if (me == 0) {
-    //if (verbose) cout << "Reading MatrixMarket file " << filename << endl;
+    if (verbose) *outstream << "Reading MatrixMarket file " << filename << std::endl;
     handle = fopen(filename.c_str(),"r");  // Open file
 	TEST_FOR_EXCEPTION(handle == 0, std::runtime_error, "Couldn't open file: " << filename <<std::endl);
 
@@ -333,7 +337,7 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
 
   // Storage for this processor's nonzeros.
   const int localblock = 100000;
-  int localsize = NZ / comm->getSize() + localblock;
+  size_t localsize = NZ / comm->getSize() + localblock;
 
   Teuchos::ArrayRCP<GlobalOrdinal> iv(localsize);
   Teuchos::ArrayRCP<GlobalOrdinal> jv(localsize);
@@ -343,9 +347,13 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
   Teuchos::RCP<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap1 = Teuchos::null;
   bool allocatedHere=false;
   if (!rowMap.is_null()) 
-    rowMap1 = const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(rowMap);
+    rowMap1 = Teuchos::rcp_const_cast<Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(rowMap);
   else {
-	rowMap1 = Teuchos::rcp(new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> >(M, Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), comm));
+	  rowMap1 = Teuchos::rcp(
+      new Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>(
+        (global_size_t)M, 
+        Teuchos::OrdinalTraits<GlobalOrdinal>::zero(), 
+        comm));
     allocatedHere = true;
   }
   GlobalOrdinal ioffset = rowMap1->getIndexBase()-Teuchos::OrdinalTraits<GlobalOrdinal>::one();
@@ -411,10 +419,10 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
     }
 
     // Status check
-    /*if (nread / 1000000 > nmillion) {
+    if (nread / 1000000 > nmillion) {
       nmillion++;
-      if (verbose && me == 0) cout << nmillion << "M ";
-    }*/
+      if (verbose && me == 0) *outstream << nmillion << "M ";
+    }
   }
 
   delete [] buffer;
@@ -422,7 +430,7 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
   if (!rowmajor) {
     // Sort into row-major order (by iv) so can insert entire rows at once.
     // Reorder jv and vv to parallel iv.
-    //if (verbose && me == 0) cout << endl << "   Sorting local nonzeros" << endl;
+    if (verbose && me == 0) *outstream << std::endl << "   Sorting local nonzeros" << std::endl;
 	sort3(iv.begin(), iv.end(), jv.begin(), vv.begin());
   }
 
@@ -431,7 +439,7 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
 
   //  Now construct the matrix.
   //  Count number of entries in each row so can use StaticProfile=2.
-  //if (verbose && me == 0) cout << endl << "   Constructing the matrix" << endl;
+  if (verbose && me == 0) *outstream << std::endl << "   Constructing the matrix" << std::endl;
   size_t numRows = rowMap1->getNodeNumElements();
   Teuchos::ArrayRCP<size_t> numNonzerosPerRow(numRows);
   for (size_t i = Teuchos::OrdinalTraits<size_t>::zero(); i < lnz; i++) 
@@ -442,21 +450,22 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
 
   // Rows are inserted in ascending global number, and the insertion uses numNonzerosPerRow.
   // Therefore numNonzerosPerRow must be permuted, as it was created in ascending local order.
-  Teuchos::ArrayView<const GlobalOrdinal> gidList = rowMap1->getNodeElementList(); 
-  sort2(gidList.begin(), gidList.end(), numNonzerosPerRow.begin());
+  //Teuchos::ArrayView<GlobalOrdinal> gidList = rowMap1->getNodeElementList(); 
+  //sort2(gidList.begin(), gidList.end(), numNonzerosPerRow.begin());
 
   //  Insert the global values into the matrix row-by-row.
-  //if (verbose && me == 0) cout << "   Inserting global values" << endl;
+  if (verbose && me == 0) *outstream << "   Inserting global values" << std::endl;
   for (size_t sum = Teuchos::OrdinalTraits<size_t>::zero(), i = Teuchos::OrdinalTraits<size_t>::zero(); i < numRows; i++) {
     if (numNonzerosPerRow[i]) {
        A->insertGlobalValues(iv[sum],  
-                             vv(sum, numNonzerosPerRow[i]), jv(sum,numNonzerosPerRow[i]));
+                             jv(sum,numNonzerosPerRow[i]),
+                             vv(sum, numNonzerosPerRow[i]));
       sum += numNonzerosPerRow[i];
     }
   }
 
-  /*if (verbose && me == 0) cout << "   Completing matrix fill" << endl;
-  if (rangeMap != 0 && domainMap != 0) {
+  if (verbose && me == 0) *outstream << "   Completing matrix fill" << std::endl;
+  /*if (rangeMap != 0 && domainMap != 0) {
     EPETRA_CHK_ERR(A->FillComplete(*domainMap, *rangeMap));
   }
   else if (M!=N) {
@@ -472,8 +481,8 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
   if (handle!=0) fclose(handle);
   timer.stop();
   double dt = timer.totalElapsedTime();
-  //if (verbose && me == 0) cout << "File Read time (secs):  " << dt << endl;
-  return(0);
+  if (verbose && me == 0) *outstream << "File Read time (secs):  " << dt << std::endl;
+  //return(0);
 
 }
 

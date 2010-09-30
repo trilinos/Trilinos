@@ -118,11 +118,11 @@ static int Multiply(
     class Node,
     class SpMatOps >
   static int Add(
-    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > A,
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > A,
     bool transposeA,
-    double scalarA,
+    Scalar scalarA,
     Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > B,
-    double scalarB );
+    Scalar scalarB );
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
 
