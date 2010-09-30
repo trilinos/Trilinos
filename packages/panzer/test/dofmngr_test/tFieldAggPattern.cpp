@@ -433,4 +433,204 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testC)
    }
 }
 
+// tests:
+//    - localOffsets_closure --> different and same geometries
+TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
+{
+   {
+      RCP<Intrepid::Basis<double,FieldContainer> > basis = rcp(new Intrepid::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+      RCP<const FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+      patternM.push_back(std::make_pair(3,pattern));
+
+      FieldAggPattern agg(patternM);
+      agg.print(out);
+
+      out << "Testing throws of localOffsets_closure" << std::endl;
+      TEST_THROW(agg.localOffsets_closure(7,0,1),std::logic_error); // check for failure if ID does not exist
+      TEST_THROW(agg.localOffsets_closure(3,2,6),std::logic_error); // check for failure if sub cell doesn't exist
+
+      std::vector<int> v_true;
+      std::vector<int> v;
+
+      // test (2,0) closure
+      out << "Testing localOffsets_closure(3,2,0) on a C2 HEX" << std::endl;
+      v_true.resize(9);
+      v = agg.localOffsets_closure(3,2,0);
+
+      // nodes
+      v_true[0] = 0; v_true[1] = 1; v_true[2] = 4; v_true[3] = 5;
+ 
+      // edges     
+      v_true[4]  = 8; v_true[5]  = 17; v_true[6] = 12; v_true[7] = 16;
+
+      // areas
+      v_true[8] = 20;
+
+      TEST_EQUALITY(v.size(),v_true.size());
+
+      std::sort(v.begin(),v.end());
+      std::sort(v_true.begin(),v_true.end());
+      for(std::size_t i=0;i<v.size();i++)
+         TEST_EQUALITY(v[i],v_true[i]);
+
+      // test (1,7) closure
+      out << "Testing localOffsets_closure(3,1,7) on a C2 HEX" << std::endl;
+      v_true.resize(3);
+      v = agg.localOffsets_closure(3,1,7);
+
+      // nodes
+      v_true[0] = 4; v_true[1] = 7;
+ 
+      // edges     
+      v_true[2]  = 15; 
+
+      TEST_EQUALITY(v.size(),v_true.size());
+
+      std::sort(v.begin(),v.end());
+      std::sort(v_true.begin(),v_true.end());
+      for(std::size_t i=0;i<v.size();i++)
+         TEST_EQUALITY(v[i],v_true[i]);
+
+      // test all dimension zero closures
+      out << "Testing localOffsets_closure(3,0,*) on a C2 HEX" << std::endl;
+      v_true.resize(1);
+      for(int i=0;i<8;i++) {
+         v = agg.localOffsets_closure(3,0,i);
+
+         // nodes
+         v_true[0] = i;
+ 
+         TEST_EQUALITY(v.size(),v_true.size());
+         TEST_EQUALITY(v[0],v_true[0]);
+      }
+   }
+
+   {
+      RCP<Intrepid::Basis<double,FieldContainer> > basisC1 = rcp(new Intrepid::Basis_HGRAD_HEX_C1_FEM<double,FieldContainer>);
+      RCP<Intrepid::Basis<double,FieldContainer> > basisC2 = rcp(new Intrepid::Basis_HGRAD_HEX_C2_FEM<double,FieldContainer>);
+      RCP<const FieldPattern> patternP = rcp(new IntrepidFieldPattern(basisC1));
+      RCP<const FieldPattern> patternU = rcp(new IntrepidFieldPattern(basisC2));
+      std::vector<std::pair<int,RCP<const FieldPattern> > > patternM;
+      int numP = 8;
+      int numU = 4;
+      patternM.push_back(std::make_pair(numP,patternP));
+      patternM.push_back(std::make_pair(numU,patternU));
+
+      FieldAggPattern agg(patternM);
+      agg.print(out);
+
+      out << "Testing throws of localOffsets_closure" << std::endl;
+      TEST_THROW(agg.localOffsets_closure(7,0,1),std::logic_error); // check for failure if ID does not exist
+      TEST_THROW(agg.localOffsets_closure(3,2,6),std::logic_error); // check for failure if sub cell doesn't exist
+
+      TEST_EQUALITY(agg.localOffsets_closure(numP,1,6).size(),2); // pressure basis only has nodes
+      TEST_EQUALITY(agg.localOffsets_closure(numP,2,1).size(),4); // pressure basis only has nodes
+
+      std::vector<int> v_true;
+      std::vector<int> v;
+
+      // test numP first
+      ///////////////////////////////////////
+
+      // test (2,2) closure
+      out << "Testing localOffsets_closure(numP,2,2) on a C2 HEX" << std::endl;
+      v_true.resize(4);
+      v = agg.localOffsets_closure(numP,2,2);
+
+      // nodes
+      v_true[0] = 2*2; v_true[1] = 2*3; v_true[2] = 2*7; v_true[3] = 2*6;
+ 
+      TEST_EQUALITY(v.size(),v_true.size());
+
+      std::sort(v.begin(),v.end());
+      std::sort(v_true.begin(),v_true.end());
+      for(std::size_t i=0;i<v.size();i++)
+         TEST_EQUALITY(v[i],v_true[i]);
+
+      // test (1,11) closure
+      out << "Testing localOffsets_closure(numP,1,11) on a C2 HEX" << std::endl;
+      v_true.resize(2);
+      v = agg.localOffsets_closure(numP,1,11);
+
+      // nodes
+      v_true[0] = 2*3; v_true[1] = 2*7;
+ 
+      TEST_EQUALITY(v.size(),v_true.size());
+
+      std::sort(v.begin(),v.end());
+      std::sort(v_true.begin(),v_true.end());
+      for(std::size_t i=0;i<v.size();i++)
+         TEST_EQUALITY(v[i],v_true[i]);
+
+      // test all dimension zero closures
+      out << "Testing localOffsets_closure(numP,0,*) on a C2 HEX" << std::endl;
+      v_true.resize(1);
+      for(int i=0;i<8;i++) {
+         v = agg.localOffsets_closure(numP,0,i);
+
+         // nodes
+         v_true[0] = 2*i;
+ 
+         TEST_EQUALITY(v.size(),v_true.size());
+         TEST_EQUALITY(v[0],v_true[0]);
+      }
+
+      // test numU second
+      ///////////////////////////////////////
+
+      // test (2,4) closure
+      out << "Testing localOffsets_closure(numU,2,4) on a C2 HEX" << std::endl;
+      v_true.resize(9);
+      v = agg.localOffsets_closure(numU,2,4);
+
+      // nodes
+      v_true[0] = 2*0+1; v_true[1] = 2*1+1; v_true[2] = 2*2+1; v_true[3] = 2*3+1;
+ 
+      // edges     
+      v_true[4]  = 16; v_true[5]  = 17; v_true[6] = 18; v_true[7] = 19;
+
+      // areas
+      v_true[8] = 32;
+
+      TEST_EQUALITY(v.size(),v_true.size());
+
+      std::sort(v.begin(),v.end());
+      std::sort(v_true.begin(),v_true.end());
+      for(std::size_t i=0;i<v.size();i++)
+         TEST_EQUALITY(v[i],v_true[i]);
+
+      // test (1,10) closure
+      out << "Testing localOffsets_closure(numU,1,10) on a C2 HEX" << std::endl;
+      v_true.resize(3);
+      v = agg.localOffsets_closure(numU,1,10);
+
+      // nodes
+      v_true[0] = 2*2+1; v_true[1] = 2*6+1;
+ 
+      // edges     
+      v_true[2]  = 26; 
+
+      TEST_EQUALITY(v.size(),v_true.size());
+
+      std::sort(v.begin(),v.end());
+      std::sort(v_true.begin(),v_true.end());
+      for(std::size_t i=0;i<v.size();i++)
+         TEST_EQUALITY(v[i],v_true[i]);
+
+      // test all dimension zero closures
+      out << "Testing localOffsets_closure(numU,0,*) on a C2 HEX" << std::endl;
+      v_true.resize(1);
+      for(int i=0;i<8;i++) {
+         v = agg.localOffsets_closure(numU,0,i);
+
+         // nodes
+         v_true[0] = 2*i+1;
+ 
+         TEST_EQUALITY(v.size(),v_true.size());
+         TEST_EQUALITY(v[0],v_true[0]);
+      }
+   }
+}
+
 }

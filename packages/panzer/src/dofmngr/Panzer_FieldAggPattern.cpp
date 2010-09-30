@@ -67,7 +67,7 @@ const std::vector<int> & FieldAggPattern::getSubcellIndices(int dimension, int s
 void FieldAggPattern::getSubcellClosureIndices(int, int, std::vector<int> &) const 
 { 
    TEST_FOR_EXCEPTION(true,std::logic_error,
-                      "FieldAggPattern::getSubcellClousreIndices should not be called"); 
+                      "FieldAggPattern::getSubcellClosureIndices should not be called"); 
 }
 
 void FieldAggPattern::print(std::ostream & os) const
@@ -202,7 +202,19 @@ const std::vector<int> & FieldAggPattern::localOffsets(int fieldId) const
 
 bool FieldAggPattern::LessThan::operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const 
 {
-   return true;
+   if(a[0] < b[0]) return true;
+   if(a[0] > b[0]) return false;
+
+   // a[0]==b[0]  
+   if(a[1] < b[1]) return true;
+   if(a[1] > b[1]) return false;
+
+   // a[1]==b[1] && a[0]==b[0] 
+   if(a[2] < b[2]) return true;
+   if(a[2] > b[2]) return false;
+
+   // a[2]==b[2] && a[1]==b[1] && a[0]==b[0]
+   return false; // these are equal to, but not less than!
 }
 
 const std::vector<int> & FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) const
@@ -216,6 +228,13 @@ const std::vector<int> & FieldAggPattern::localOffsets_closure(int fieldId,int s
          = fieldSubcellOffsets_closure_.find(subcellTuple);
    if(itr!=fieldSubcellOffsets_closure_.end())
       return itr->second;
+
+   TEST_FOR_EXCEPTION(subcellDim>=getDimension(),std::logic_error,
+                         "FieldAggPattern::localOffsets_closure precondition subcellDim<getDimension() failed");
+   TEST_FOR_EXCEPTION(subcellId<0,std::logic_error,
+                         "FieldAggPattern::localOffsets_closure precondition subcellId>=0 failed");
+   TEST_FOR_EXCEPTION(subcellId>=getSubcellCount(subcellDim),std::logic_error,
+                         "FieldAggPattern::localOffsets_closure precondition subcellId<getSubcellCount(subcellDim) failed");
 
    // build vector for sub cell closure indices
    ///////////////////////////////////////////////
@@ -231,8 +250,9 @@ const std::vector<int> & FieldAggPattern::localOffsets_closure(int fieldId,int s
    // build closure indices into the correct location in lazy evaluation map.
    std::vector<int> & closureIndices = fieldSubcellOffsets_closure_[subcellTuple];
    for(std::size_t i=0;i<closureOffsets.size();i++)
-      closureIndices.push_back(fieldOffsets[closureIndices[i]]);
+      closureIndices.push_back(fieldOffsets[closureOffsets[i]]);
 
+   TEUCHOS_ASSERT(fieldSubcellOffsets_closure_[subcellTuple].size()==closureIndices.size());
    return fieldSubcellOffsets_closure_[subcellTuple];
 }
 

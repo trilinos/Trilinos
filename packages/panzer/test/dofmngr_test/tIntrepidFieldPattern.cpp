@@ -607,6 +607,26 @@ TEUCHOS_UNIT_TEST(tIntrepidFieldPattern, test3d_hex_c2)
    TEST_ASSERT(bndryIndices.size()==bndryIndices_true.size());
    TEST_ASSERT(std::equal(bndryIndices.begin(),bndryIndices.end(),bndryIndices_true.begin()));
 
+   out << "EXPECTING NEW SUB CELL CLOSURE!" << std::endl;
+   bndryIndices.clear();
+   pattern->getSubcellClosureIndices(2,0,bndryIndices);
+   std::sort(bndryIndices.begin(),bndryIndices.end()); // sort for comparision
+
+   bndryIndices_true[0] = 0;
+   bndryIndices_true[1] = 1;
+   bndryIndices_true[2] = 4;
+   bndryIndices_true[3] = 5;
+   bndryIndices_true[4] = 8;
+   bndryIndices_true[5] = 12;
+   bndryIndices_true[6] = 13;
+   bndryIndices_true[7] = 16;
+   bndryIndices_true[8] = 25;
+   TEST_ASSERT(bndryIndices.size()==bndryIndices_true.size());
+   TEST_ASSERT(std::equal(bndryIndices.begin(),bndryIndices.end(),bndryIndices_true.begin()));
+
+   out << "BEGIN COMPARISON" << std::endl;
+   for(std::size_t i=0;i<bndryIndices_true.size();++i)
+      out << bndryIndices[i] << " ?==" << bndryIndices_true[i] << std::endl;
 //    // test cell
 //    bndryIndices_true.resize(8);
 // 

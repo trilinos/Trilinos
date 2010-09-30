@@ -86,10 +86,22 @@ public:
      *
      * \param[in] fieldId Field to look up
      *
-     * \returns offsets Offsets into global IDs vector.
+     * \returns offsets Offsets into global IDs vector. The order of this vector 
+     *                  is defined by the underlying FieldPattern defining the requested
+     *                  field. For the IntrepidFieldPattern this will correspond to the 
+     *                  required order of the basis functions
      */
    const std::vector<int> & localOffsets(int fieldId) const;
-    
+     
+   /** Returns a vector offsets for the field and subcell specified. This will be the
+     * indexing in the <code>GIDs</code> vector (see <code>localOffsets</code>). Notice
+     * that this returns the "closure".  Meaning that all offsets for a particular subcell
+     * and the IDs that are on lower dimensional sub cells will be returned. This function
+     * has no (currently) specified order. 
+     *
+     * \note You cannot depend on the order of the IDs will remain consistent in future
+     *       versions.
+     */
    const std::vector<int> & localOffsets_closure(int fieldId,int subcellDim,int subcellId) const;
 
    //@}
