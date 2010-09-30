@@ -76,6 +76,34 @@ public:
 
    void addField(int blockId,const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern);
 
+   /** Set the ordering of the fields to be used internally.  This controls
+     * to some extent the local ordering (on a node or edge) of the individual fields.
+     *
+     * \param[in] fieldOrder Vector of field IDs order in the correct way
+     *
+     * \note If no ordering is set then the default ordering is alphabetical on 
+     *       the field names (as dictated by <code>std::map<std::string,*></code>).
+     */
+   void setFieldOrder(const std::vector<int> & fieldOrder);
+
+   /** Set the ordering of the fields to be used internally.  This controls
+     * to some extent the local ordering (on a node or edge) of the individual fields.
+     *
+     * \param[in] fieldOrder Vector of field IDs order in the correct way
+     *
+     * \note If no ordering is set then the default ordering is alphabetical on 
+     *       the field names (as dictated by <code>std::map<std::string,*></code>).
+     */
+   void setFieldOrder(const std::vector<std::string> & fieldOrder);
+
+   /** Get the field order used. Return the field IDs.
+     */
+   void getFieldOrder(std::vector<int> & fieldOrder) const;
+
+   /** Get the field order used. Return the field strings.
+     */
+   void getFieldOrder(std::vector<std::string> & fieldOrder) const;
+
    /** \brief Find a field pattern stored for a particular block and field number. This will
      *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
      *
@@ -188,7 +216,6 @@ public:
      * \param[in] subCellId
      */
    const std::vector<int> & getGIDFieldOffsets(int blockId,int fieldNum,int subCellDim,int subCellId) const
-   // { return feiAggPattern_.find(blockId)->second->fieldLocalOffsets(fieldNum,subCellDim,subCellId); }
    { TEUCHOS_ASSERT(false); } 
 
    /** \brief Use the field pattern so that you can find a particular
@@ -246,6 +273,13 @@ public:
    //@}
 
 protected:
+   /** Build the default field ordering: simply uses ordering
+     * imposed by <code>fieldStrToInt_</code> (alphabetical on field name)
+     */
+   void buildDefaultFieldOrder();
+
+   std::vector<int> getOrderedBlock(int blockIndex);
+
    //! build the pattern associated with this manager
    void buildPattern(int blockId,const Teuchos::RCP<FieldPattern> & geomPattern);
 
@@ -290,6 +324,8 @@ protected:
    mutable Teuchos::RCP<Epetra_Map> overlappedMap_;
    mutable Teuchos::RCP<Epetra_CrsGraph> graph_;
    mutable Teuchos::RCP<Epetra_CrsGraph> overlappedGraph_;
+
+   std::vector<int> fieldOrder_;
 
    // counters
    int nodeType_;

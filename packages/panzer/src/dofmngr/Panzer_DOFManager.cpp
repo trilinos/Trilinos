@@ -126,6 +126,42 @@ int DOFManager::getFieldNum(const std::string & str) const
       return itr->second;
 }
 
+void DOFManager::setFieldOrder(const std::vector<int> & fieldOrder)
+{
+   fieldOrder_.clear();
+   fieldOrder_ = fieldOrder;
+}
+
+void DOFManager::setFieldOrder(const std::vector<std::string> & fieldOrder)
+{
+   // convert to vector of field IDs...call integer version of fieldOrder_
+   std::vector<int> fieldOrderInt;
+   std::vector<std::string>::const_iterator strItr; 
+   for(strItr=fieldOrder.begin();strItr!=fieldOrder.end();++strItr) {
+      fieldOrderInt.push_back(getFieldNum(*strItr));
+   }
+
+   setFieldOrder(fieldOrderInt);
+}
+
+/** Get the field order used. Return the field IDs.
+  */
+void DOFManager::getFieldOrder(std::vector<int> & fieldOrder) const
+{
+   fieldOrder = fieldOrder_; // just assign the field order
+}
+
+/** Get the field order used. Return the field strings.
+  */
+void DOFManager::getFieldOrder(std::vector<std::string> & fieldOrder) const
+{
+   // converge fieldOrder_ into a vector of strings
+   std::vector<int>::const_iterator intItr;
+   for(intItr=fieldOrder_.begin();intItr!=fieldOrder_.end();++intItr) {
+      fieldOrder.push_back(getFieldString(*intItr));
+   }
+}
+
 int DOFManager::getNumFields() const
 {
    return vectorSpace_->getNumFields();
@@ -176,20 +212,56 @@ void DOFManager::buildGlobalUnknowns()
    matrixGraph_->initComplete();
 }
 
+void DOFManager::buildDefaultFieldOrder()
+{
+   std::vector<int> fieldOrder;
+
+   // build field order int vector from the ordering of field names
+   std::map<std::string,int>::const_iterator s2iItr;
+   for(s2iItr=fieldStrToInt_.begin();s2iItr!=fieldStrToInt_.end();++s2iItr) {
+      fieldOrder.push_back(s2iItr->second);
+   }
+
+   // set the field order
+   setFieldOrder(fieldOrder);
+}
+
+std::vector<int> DOFManager::getOrderedBlock(int blockIndex)
+{
+   const std::set<int> & fieldSet = blockToField_[blockIndex];
+   std::vector<int> orderedBlock;
+
+   std::vector<int>::const_iterator itr;
+   for(itr=fieldOrder_.begin();itr!=fieldOrder_.end();++itr) {
+      // if field in in a particular block add it 
+      if(fieldSet.find(*itr)!=fieldSet.end())
+         orderedBlock.push_back(*itr);
+   }
+
+   return orderedBlock;
+}
+
 // build the pattern associated with this manager
 void DOFManager::buildPattern(int blockIndex,const RCP<FieldPattern> & geomPattern)
 {
    using Teuchos::rcp;
    using Teuchos::RCP;
 
-   const std::set<int> & fieldSet = blockToField_[blockIndex];
-   // std::map<int,Teuchos::RCP<const FieldPattern> > blockPatterns;
+   // use some generic field ordering if the current one is empty
+   if(fieldOrder_.size()==0)
+      buildDefaultFieldOrder();
+
+   // const std::set<int> & fieldSet = blockToField_[blockIndex];
+   std::vector<int> orderedBlock = getOrderedBlock(blockIndex);
    std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > blockPatterns;
 
    // get a map of field patterns
-   std::set<int>::const_iterator itr;
-   for(itr=fieldSet.begin();itr!=fieldSet.end();++itr) {
-      blockPatterns.push_back(std::make_pair(*itr,fieldIntToPattern_[std::make_pair(blockIndex,*itr)])); 
+   // std::set<int>::const_iterator itr;
+   std::vector<int>::const_iterator itr;
+   // for(itr=fieldSet.begin();itr!=fieldSet.end();++itr) {
+   for(itr=orderedBlock.begin();itr!=orderedBlock.end();++itr) {
+      Teuchos::RCP<const FieldPattern> fp = fieldIntToPattern_[std::make_pair(blockIndex,*itr)];
+      blockPatterns.push_back(std::make_pair(*itr,fp));
    }
 
    // smash together all fields...do interlacing
