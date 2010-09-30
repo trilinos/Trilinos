@@ -266,54 +266,45 @@ int test_find_rows(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm)
   int numlocalrows = 2;
   Tpetra::global_size_t numglobalrows = numprocs*numlocalrows;
   Teuchos::RCP<Tpetra::Map<int> > rowmap = 
-    Teuchos::rcp(new Tpetra::Map<int>(numlocalrows*numprocs, 0, Comm));
+    Teuchos::rcp(new Tpetra::Map<int>(numglobalrows, 0, Comm));
   Teuchos::RCP<Tpetra::CrsMatrix<double, int> > matrix = 
     Teuchos::rcp(new Tpetra::CrsMatrix<double, int>(rowmap, numglobalrows));
 
+  Teuchos::Array<int> cols(numglobalrows);
+  Teuchos::Array<double> vals(numglobalrows);
 
-  Teuchos::ArrayRCP<int> cols = Teuchos::ArrayRCP<int>(numglobalrows);
-  Teuchos::ArrayRCP<double> vals = Teuchos::ArrayRCP<double>(numglobalrows);
-
-  for(Tpetra::global_size_t j=0; j<numglobalrows; ++j) {
+  for(size_t j=0; j<numglobalrows; ++j) {
     cols[j] = j;
     vals[j] = 1.0;
   }
 
-  //Epetra_Map colmap(-1, numglobalrows, cols, 0, Comm);
-  Teuchos::RCP<const Tpetra::Map<int> > colmap = 
-    Teuchos::rcp(new Tpetra::Map<int, int>(-1, cols(), 0, Comm));
+  Teuchos::RCP<Tpetra::Map<int> > colmap = 
+    Teuchos::rcp(new Tpetra::Map<int>(-1, cols(), 0, Comm));
 
   for(int i=0; i<numlocalrows; ++i) {
-    Teuchos::ArrayRCP<int> row(1,localproc*numlocalrows+i);
-    matrix->insertGlobalValues(row[0], row(0,1), vals(i,1));
+    Teuchos::Array<int> row(1,localproc*numlocalrows+i);
+    matrix->insertGlobalValues(
+      row[0], row.view(0,1),  vals.view(i,1) );
   }
 
   matrix->fillComplete();
 
-/*  Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  Teuchos::RCP<Tpetra::Map<int, int> > targetMap;
-  if(Comm->getRank() == 0){
-    size_t numLocals = matrix->getGlobalNumRows();
-    targetMap= Teuchos::rcp(new Tpetra::Map<int, int>(matrix->getGlobalNumRows(), numLocals, matrix->getRowMap()->getIndexBase(), matrix->getComm()));
-  }
-  else{
-    targetMap = Teuchos::rcp(new Tpetra::Map<int, int>(matrix->getGlobalNumRows(), 0, matrix->getRowMap()->getIndexBase(), matrix->getComm()));
-  }
-  Teuchos::RCP<Tpetra::CrsMatrix<double,int> > importedMatrix = Teuchos::rcp(new Tpetra::CrsMatrix<double,int>(targetMap, matrix->getGlobalMaxNumRowEntries()));
-  Tpetra::Import<int,int> importer(matrix->getRowMap(), targetMap);
-  importedMatrix->doImport(*matrix, importer, Tpetra::ADD);
-  importedMatrix->fillComplete();
-  importedMatrix->describe(*out, Teuchos::VERB_EXTREME);*/
+  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
 
+  Teuchos::RCP<const Tpetra::Map<int> > map_rows = 
+    Tpetra::MatrixMatrix::find_rows_containing_cols<
+      double, 
+      int,
+      int,
+      DNode,
+      typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps
+      >(
+      matrix.getConst(), colmap);
 
-  TEST_FOR_EXCEPTION(!matrix->isFillComplete(), std::runtime_error,
-    "Error, matrix must be fill complete.");
-
-  Teuchos::RCP<const Tpetra::CrsMatrix<double, int> > constMatrix = matrix;
-  Teuchos::RCP<const Tpetra::Map<int> > map_rows = Tpetra::MatrixMatrix::find_rows_containing_cols(constMatrix, colmap);
   if (map_rows->getNodeNumElements() != numglobalrows) {
     return(-1);
   }
+
 
   return(0);
 }
