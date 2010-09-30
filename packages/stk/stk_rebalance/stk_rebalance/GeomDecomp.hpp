@@ -36,6 +36,7 @@
 #include <utility>
 
 #include <stk_rebalance/Partition.h>
+#include <stk_mesh/Types.h>
 
 namespace stk {
 namespace rebalance {
@@ -137,7 +138,7 @@ public:
                             Real max[],
                             std::vector<Int> &procs) const =0;
 
-  int point_assign_all_objs (std::vector<std::pair<unsigned, mesh::Entity *>);
+  int point_assign_all_objs (std::vector<EntityProc>);
 
 
   /**

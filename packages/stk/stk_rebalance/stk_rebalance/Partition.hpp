@@ -242,7 +242,7 @@ public:
    * mesh objects before rebalancing is performed
    * again.
    */
-  Int move_mesh_objects(std::vector<std::pair<unsigned,  mesh::Entity *> > entities_to_move);
+  Int move_mesh_objects(std::vector<EntityProc> entities_to_move);
 
 private:
 
