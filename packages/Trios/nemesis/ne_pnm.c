@@ -69,13 +69,12 @@ int ne_put_node_map(int  neid,
 {
   char  *func_name="ne_put_node_map";
 
-  int     status = 0;
-  int varid, dimid;
+  int     status, varid, dimid;
   char    ftype[2];
   size_t  start[1], count[1];
   size_t  varidx[2];
-  int  nm_int_stat, nm_bor_stat, nm_ext_stat;
-  int ptmp;
+  int  nmstat;
+
   char   errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
 
@@ -92,16 +91,35 @@ int ne_put_node_map(int  neid,
     return (EX_FATAL);
   }
 
-  ptmp = ftype[0] == 'p' ? 0 : proc_id;
-  ne_get_map_status(neid, VAR_INT_N_STAT, ptmp, &nm_int_stat);
-  ne_get_map_status(neid, VAR_BOR_N_STAT, ptmp, &nm_bor_stat);
-  ne_get_map_status(neid, VAR_EXT_N_STAT, ptmp, &nm_ext_stat);
+  /* Get the status of this node map */
+  if ((status = nc_inq_varid(neid, VAR_INT_N_STAT, &varid)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to find variable ID for \"%s\" from file ID %d",
+            VAR_INT_N_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+    return (EX_FATAL);
+  }
+
+  if (ftype[0] == 'p')
+    start[0] = 0;
+  else
+    start[0] = proc_id;
+
+  if ((status = nc_get_var1_int(neid, varid, start, &nmstat)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to get status for \"%s\" from file %d",
+            VAR_INT_N_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+    return (EX_FATAL);
+  }
 
   /* Write out the internal node-number map */
-  if (nm_int_stat == 1) {
+  if (nmstat == 1) {
     /* get the index */
     if (ne_get_idx(neid, VAR_NODE_MAP_INT_IDX, varidx, proc_id) == -1) {
-      exerrval = -1;
+      exerrval = status;
       sprintf(errmsg,
               "Error: failed to find index variable, \"%s\", in file ID %d",
               VAR_NODE_MAP_INT_IDX, neid);
@@ -154,9 +172,33 @@ int ne_put_node_map(int  neid,
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
-  } 
+  } /* End "if (nmstat == 1)" */
 
-  if (nm_bor_stat == 1) {
+  /* Get the status of this node map */
+  if ((status = nc_inq_varid(neid, VAR_BOR_N_STAT, &varid)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to find variable ID for \"%s\" from file ID %d",
+            VAR_BOR_N_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+    return (EX_FATAL);
+  }
+
+  if (ftype[0] == 'p')
+    start[0] = 0;
+  else
+    start[0] = proc_id;
+
+  if ((status = nc_get_var1_int(neid, varid, start, &nmstat)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to get status for \"%s\" from file %d",
+            VAR_BOR_N_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+    return (EX_FATAL);
+  }
+
+  if (nmstat == 1) {
     /* Write out the border node-number map */
     /* get the index */
     if (ne_get_idx(neid, VAR_NODE_MAP_BOR_IDX, varidx, proc_id) == -1) {
@@ -216,7 +258,31 @@ int ne_put_node_map(int  neid,
     }
   } /* End "if (nmstat == 1)" */
 
-  if (nm_ext_stat == 1) {
+  /* Get the status of this node map */
+  if ((status = nc_inq_varid(neid, VAR_EXT_N_STAT, &varid)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to find variable ID for \"%s\" from file ID %d",
+            VAR_EXT_N_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+    return (EX_FATAL);
+  }
+
+  if (ftype[0] == 'p')
+    start[0] = 0;
+  else
+    start[0] = proc_id;
+
+  if ((status = nc_get_var1_int(neid, varid, start, &nmstat)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to get status for \"%s\" from file %d",
+            VAR_EXT_N_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+    return (EX_FATAL);
+  }
+
+  if (nmstat == 1) {
     /* Write out the external node-number map */
     if (ne_get_idx(neid, VAR_NODE_MAP_EXT_IDX, varidx, proc_id) == -1) {
       exerrval = status;

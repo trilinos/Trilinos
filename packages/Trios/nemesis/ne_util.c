@@ -220,19 +220,10 @@ int ne_get_file_type(int neid,
   int     varid;
   int  lftype;
 
-  static int neid_sv = -1;
-  static int lftyp_sv = -1;
-  
   char    errmsg[MAX_ERR_LENGTH];
 
   exerrval = 0; /* clear error code */
 
-  if (neid_sv == neid) {
-    if (lftyp_sv == 0)       strcpy(ftype, "p");
-    else if (lftyp_sv == 1)  strcpy(ftype, "s");
-    return(EX_NOERR);
-  }
-  
   if ((status = nc_inq_varid(neid, VAR_FILE_TYPE, &varid)) != NC_NOERR) {
 
     /* If no file type is found, assume parallel */
@@ -250,9 +241,6 @@ int ne_get_file_type(int neid,
     ex_err(func_name, errmsg, exerrval);
     return (EX_FATAL);
   }
-
-  neid_sv = neid;
-  lftyp_sv = lftype;
 
   /* Set the appropriate character */
   if (lftype == 0)       strcpy(ftype, "p");
