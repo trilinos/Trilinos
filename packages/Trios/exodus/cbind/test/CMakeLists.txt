@@ -107,5 +107,6 @@ PACKAGE_ADD_ADVANCED_TEST(
 	PASS_ANY
  TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
 		       ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
+ COMM serial		      
  FINAL_PASS_REGULAR_EXPRESSION 
 )
