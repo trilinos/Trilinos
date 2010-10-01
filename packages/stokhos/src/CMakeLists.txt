@@ -121,6 +121,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_SGInverseModelEvaluator.hpp
   Stokhos_VectorOrthogPoly.hpp
   Stokhos_VectorOrthogPolyImp.hpp
+  Stokhos_Epetra.hpp
   Stokhos_VectorOrthogPolyTraitsEpetra.hpp
   Stokhos_EpetraVectorOrthogPoly.hpp
   Stokhos_EpetraMultiVectorOrthogPoly.hpp
