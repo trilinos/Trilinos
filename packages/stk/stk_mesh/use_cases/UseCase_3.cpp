@@ -36,7 +36,7 @@ namespace stk{
 namespace mesh {
 namespace use_cases {
 
-UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
+  UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit )
   : m_spatial_dimension(3)
   , m_metaData( TopologicalMetaData::entity_rank_names(m_spatial_dimension) )
   , m_bulkData( m_metaData , comm )
@@ -88,7 +88,9 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
   put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_quad_shell, shards::ShellQuadrilateral<> ::node_count);
   put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_tri_shell, shards::ShellTriangle<> ::node_count );
 
-  m_metaData.commit();
+
+  if (doCommit)
+    m_metaData.commit();
 }
 
 UseCase_3_Mesh::~UseCase_3_Mesh()
