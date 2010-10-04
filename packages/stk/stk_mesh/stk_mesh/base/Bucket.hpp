@@ -69,7 +69,7 @@ bool has_superset( const Bucket & , const PartVector & );
  *  \ref stk::mesh::Bucket "bucket" that dereferences to a
  *  \ref stk::mesh::Entity "entity" reference.
  */
-class BucketIterator : std::iterator<std::random_access_iterator_tag,Entity > {
+class BucketIterator : public std::iterator<std::random_access_iterator_tag,Entity > {
 private:
   const Bucket * m_bucket_ptr;
   size_t         m_current_entity;
