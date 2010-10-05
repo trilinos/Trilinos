@@ -138,7 +138,9 @@ using std::rand;
 using std::fabs;
 using std::atoi;
 using std::atof;
+#ifndef __IBMCPP__
 using std::abs;
+#endif
 using std::pow;
 using std::sqrt;
 using std::asin;

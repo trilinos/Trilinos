@@ -34,7 +34,7 @@ specific items to form TrilinosPlatform_config.h
 /* Define to a macro mangling the given C identifier (in lower and upper
    case), which must not contain underscores, for linking with Fortran. */
 #ifndef F77_FUNC
-#  ifndef _AIX
+#  if ! (defined(__IBMC__) || defined(__IBMCPP__))
 #    define F77_FUNC(name,NAME) name ## _
 #  else
 #    define F77_FUNC(name,NAME) name
@@ -43,7 +43,7 @@ specific items to form TrilinosPlatform_config.h
 
 /* As F77_FUNC, but for C identifiers containing underscores. */
 #ifndef F77_FUNC_
-#  ifndef _AIX
+#  if ! (defined(__IBMC__) || defined(__IBMCPP__))
 #    define F77_FUNC_(name,NAME) name ## _
 #  else
 #    define F77_FUNC_(name,NAME) name
@@ -125,9 +125,11 @@ specific items to form TrilinosPlatform_config.h
 #define INVALID_TEMPLATE_QUALIFIER 
 #define STDC_HEADERS 1
 
-#if defined(_AIX)
+#if defined(__IBMC__) || defined(__IBMCPP__)
 #  define TEMPLATE_FRIENDS_NOT_SUPPORTED
 #  define TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED
+#endif
+#ifdef _AIX
 #  define HAS_C99_TR1_CMATH
 #endif
 
