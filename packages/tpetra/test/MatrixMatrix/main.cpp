@@ -292,16 +292,22 @@ int test_find_rows(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm)
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
 
   Teuchos::RCP<const Tpetra::Map<int> > map_rows = 
-    Tpetra::MatrixMatrix::find_rows_containing_cols<
+    Tpetra::MatrixMatrix<
       double, 
       int,
       int,
       DNode,
       typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps
-      >(
+      >::find_rows_containing_cols(
       matrix.getConst(), colmap);
 
   if (map_rows->getNodeNumElements() != numglobalrows) {
+    if(localproc ==0){
+      std::cout << "Error in test_find_rows" << std::endl <<
+      "Num elements found: " << map_rows->getNodeNumElements() << 
+      std::endl <<
+      "Num global rows: " << numglobalrows << std::endl;
+    }
     return(-1);
   }
 
@@ -483,8 +489,15 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
 
   Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constA = A;
   Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constB = B;
+  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
 
-  Tpetra::MatrixMatrix::Multiply(constA, AT, constB, BT, C);
+  Tpetra::MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Multiply(constA, AT, constB, BT, C);
 
 //  std::cout << "A: " << *A << std::endl << "B: "<<*B<<std::endl<<"C: "<<*C<<std::endl;
   //if (result_mtx_to_file) {
@@ -493,7 +506,13 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
 
   
 
-  Tpetra::MatrixMatrix::Add(C, false, -1.0, C_check, 1.0);
+  Tpetra::MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Add(C, false, -1.0, C_check, 1.0);
 
   double euc_norm = C_check->getEuclideanNorm();
 
@@ -681,8 +700,15 @@ int two_proc_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
 
   Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constA = A;
   Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constB = B;
+  typedef Kokkos::DefaultNode::DefaultNodeType DNode;
 
-  Tpetra::MatrixMatrix::Multiply(constA, false, constB, true, C);
+  Tpetra::MatrixMatrix<
+    double, 
+    int,
+    int,
+    DNode,
+    typename Kokkos::DefaultKernels<double,int,DNode>::SparseOps>::
+  Multiply(constA, false, constB, true, C);
 
   //std::cout << "two_proc_test, A: "<<std::endl;
   //std::cout << A << std::endl;
