@@ -64,6 +64,8 @@ class MatrixMatrix {
 public:
 
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
+    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node, SpMatOps> 
+      CrsGraph_t;
     typedef CrsMatrix<
       Scalar, 
       LocalOrdinal,
@@ -208,7 +210,7 @@ Teuchos::RCP<const Map_t >
 create_map_from_imported_rows(
   Teuchos::RCP<const Map_t > map,
   size_t totalNumSend,
-  Teuchos::Array<GlobalOrdinal> sendRows,
+  Teuchos::ArrayRCP<GlobalOrdinal> sendRows,
   int numProcs,
   Teuchos::Array<size_t> numSendPerProc);
 

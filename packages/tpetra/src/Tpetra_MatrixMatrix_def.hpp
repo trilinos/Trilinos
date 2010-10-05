@@ -884,7 +884,7 @@ Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
 MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create_map_from_imported_rows(
   Teuchos::RCP<const Map_t > map,
   size_t totalNumSend,
-  Teuchos::Array<GlobalOrdinal> sendRows,
+  Teuchos::ArrayRCP<GlobalOrdinal> sendRows,
   int numProcs,
   Teuchos::Array<size_t> numSendPerProc)
 {
@@ -903,6 +903,7 @@ MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create_map_fr
     }
   }
 
+
   size_t numRecv = 0;
   numRecv = distributor->createFromSends(sendPIDs());
 
@@ -914,6 +915,7 @@ MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create_map_fr
   Teuchos::RCP<Map_t > import_rows = 
     Teuchos::rcp(new Map_t(
     Teuchos::OrdinalTraits<global_size_t>::invalid(), recv_rows(), map->getIndexBase(), map->getComm()));
+
 
   return( import_rows );
 }
@@ -1068,22 +1070,22 @@ MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::find_rows_con
   int** procRows = new int*[numProcs];*/
   Teuchos::Array<size_t> procNumCols(numProcs);
   Teuchos::Array<size_t> procNumRows(numProcs);
-  Teuchos::Array<GlobalOrdinal> procRows_1D(numProcs*MnumRows);
-  Teuchos::Array<Teuchos::Array<GlobalOrdinal> > procCols(numProcs);
-  Teuchos::Array<Teuchos::Array<GlobalOrdinal> > procRows(numProcs);
+  Teuchos::ArrayRCP<GlobalOrdinal> procRows_1D(numProcs*MnumRows);
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > procCols(numProcs);
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > procRows(numProcs);
   int i, err;
   //int offset = 0;
   size_t offset = Teuchos::OrdinalTraits<size_t>::zero();
   for(i=0; i<numProcs; ++i) {
     procNumCols[i] = all_proc_cols[offset];
     procCols[i] = 
-      Teuchos::Array<GlobalOrdinal>(
+      Teuchos::arcpFromArrayView<GlobalOrdinal>(
         all_proc_cols.view(offset+1, max_num_cols-1));
     offset += max_num_cols;
 
     procNumRows[i] = Teuchos::OrdinalTraits<size_t>::zero();
     procRows[i] = 
-      Teuchos::Array<GlobalOrdinal>(
+      Teuchos::arcpFromArrayView<GlobalOrdinal>(
         procRows_1D.view(i*MnumRows, MnumRows));
   }
 
@@ -1110,7 +1112,7 @@ MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::find_rows_con
         typename Teuchos::Array<GlobalOrdinal>::const_iterator result = binary_serach(procCols[p].begin(), procCols[p].end(), colGID);      
         if (result != procCols[p].end()) {
           size_t numRowsP = procNumRows[p];
-          Teuchos::Array<GlobalOrdinal> prows = procRows[p];
+          Teuchos::ArrayRCP<GlobalOrdinal> prows = procRows[p];
           if (numRowsP < Teuchos::OrdinalTraits<size_t>::one() || prows[numRowsP-Teuchos::OrdinalTraits<size_t>::one()] < globalRow) {
             prows[numRowsP] = globalRow;
             procNumRows[p]++;

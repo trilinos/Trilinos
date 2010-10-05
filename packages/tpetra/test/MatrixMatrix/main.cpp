@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
   }
 */
   err = test_find_rows(comm);
-  if (err != 0) {
+  if (err != 0 && comm->getRank() ==0) {
     std::cerr << "test_find_rows returned err=="<<err<<std::endl;
     return(err);
   } 
