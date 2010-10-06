@@ -35,7 +35,7 @@ namespace mesh {
 
 /** \brief  Print an entity key for this meta data */
 std::ostream &
-print_entity_key( std::ostream & , const MetaData & , const EntityKey & );
+print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey & key);
 
 
 //----------------------------------------------------------------------
@@ -81,7 +81,7 @@ public:
    *  with the 'required_by' text.
    */
   /// \todo REFACTOR remove required_by argument
-  Part * get_part( const std::string & ,
+  Part * get_part( const std::string & p_name,
                    const char * required_by = NULL ) const ;
 
   /** \brief  Get an existing part by its ordinal */
@@ -97,14 +97,14 @@ public:
    *  When an entity of equal rank becomes a member
    *  then all related entities of lesser rank also become members.
    */
-  Part & declare_part( const std::string & , EntityRank rank );
+  Part & declare_part( const std::string & p_name, EntityRank rank );
 
   /** \brief  Declare a part of the given name and entity rank
    *          Redeclaration returns the previously declared part.
    *
    *  This part does not have an entity type rank.
    */
-  Part & declare_part( const std::string & );
+  Part & declare_part( const std::string & p_name);
 
   /** \brief  Declare a part as the defined-intersection
    *          of the given collection of parts.
@@ -113,7 +113,7 @@ public:
    *  of the parts in the intersection, if any member has an
    *  entity type rank.
    */
-  Part & declare_part( const PartVector & );
+  Part & declare_part( const PartVector & p_name);
 
   /** \brief  Declare a superset-subset relationship between parts */
   void declare_part_subset( Part & superset , Part & subset );
@@ -138,9 +138,9 @@ public:
    *       declare_attribute( Part & , shared_ptr<const T> & );
    */
   template<class T>
-  const T * declare_attribute_with_delete( Part & , const T *);
+  const T * declare_attribute_with_delete( Part & part, const T * attribute);
   template<class T>
-  const T * declare_attribute_no_delete( Part & , const T *);
+  const T * declare_attribute_no_delete( Part & part, const T * attribute);
 
   /** \} */
   //------------------------------------
@@ -196,9 +196,9 @@ public:
    * \todo REFACTOR  Should be using a shared pointer in this interface.
    */
   template<class T>
-  const T * declare_attribute_with_delete( FieldBase & , const T *);
+  const T * declare_attribute_with_delete( FieldBase & field, const T * attribute);
   template<class T>
-  const T * declare_attribute_no_delete( FieldBase & , const T *);
+  const T * declare_attribute_no_delete( FieldBase & field, const T * attribute);
 
   /** \brief Declare a field relation.
    *
@@ -237,10 +237,10 @@ public:
    *          which may be an already existing value.
    */
   template<class T>
-  const T * declare_attribute_with_delete( const T * );
+  const T * declare_attribute_with_delete( const T * attribute);
 
   template<class T>
-  const T * declare_attribute_no_delete( const T * );
+  const T * declare_attribute_no_delete( const T * attribute);
 
   template<class T>
   bool remove_attribute( const T * );
@@ -275,7 +275,7 @@ public:
                                          unsigned size = 1 );
 
   /** \brief  Put a property on the given part */
-  void put_property( PropertyBase & , Part & );
+  void put_property( PropertyBase & property, Part & part);
 
   /** \} */
   //------------------------------------
@@ -707,10 +707,10 @@ MetaData::get_attribute() const
 template<class T>
 inline
 const T *
-MetaData::declare_attribute_no_delete( const T * a )
+MetaData::declare_attribute_no_delete( const T * attribute )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
-  return m_attributes.insert_no_delete( a );
+  return m_attributes.insert_no_delete( attribute );
 }
 
 template<class T>
@@ -724,37 +724,37 @@ MetaData::remove_attribute( const T * a )
 template<class T>
 inline
 const T *
-MetaData::declare_attribute_with_delete( Part & p , const T * a )
+MetaData::declare_attribute_with_delete( Part & part , const T * attribute )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
-  return m_part_repo.declare_attribute_with_delete( p, a );
+  return m_part_repo.declare_attribute_with_delete( part, attribute );
 }
 
 template<class T>
 inline
 const T *
-MetaData::declare_attribute_no_delete( Part & p , const T * a )
+MetaData::declare_attribute_no_delete( Part & part , const T * attribute )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
-  return m_part_repo.declare_attribute_no_delete( p, a );
+  return m_part_repo.declare_attribute_no_delete( part, attribute );
 }
 
 template<class T>
 inline
 const T *
-MetaData::declare_attribute_with_delete( FieldBase & f , const T * a )
+MetaData::declare_attribute_with_delete( FieldBase & field , const T * attribute )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
-  return m_field_repo.declare_attribute_with_delete(f, a);
+  return m_field_repo.declare_attribute_with_delete(field, attribute);
 }
 
 template<class T>
 inline
 const T *
-MetaData::declare_attribute_no_delete( FieldBase & f , const T * a )
+MetaData::declare_attribute_no_delete( FieldBase & field , const T * attribute )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
-  return m_field_repo.declare_attribute_no_delete(f, a);
+  return m_field_repo.declare_attribute_no_delete(field, attribute);
 }
 
 //----------------------------------------------------------------------
@@ -811,9 +811,9 @@ MetaData::declare_property( const std::string & name , unsigned size )
 }
 
 inline
-void MetaData::put_property( PropertyBase & prop , Part & part )
+void MetaData::put_property( PropertyBase & property , Part & part )
 {
-  prop.add_property( part.mesh_meta_data_ordinal() );
+  property.add_property( part.mesh_meta_data_ordinal() );
 }
 
 } // namespace mesh
