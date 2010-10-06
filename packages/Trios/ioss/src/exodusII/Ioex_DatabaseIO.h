@@ -195,6 +195,7 @@ namespace Ioex {
       int get_file_pointer() const; // Open file and set exodusFilePtr.
       int free_file_pointer() const; // Close file and set exodusFilePtr.
 
+      int get_current_state() const; // Get current state with error checks and usage message.
       void put_qa();
       void put_info();
       int read_nodal_coordinates();

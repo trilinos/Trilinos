@@ -75,6 +75,7 @@ namespace Ioss {
     bool exists(const std::string& field_name) const;
 
     Field get(const std::string& field_name) const;
+    const Field &getref(const std::string& field_name) const;
 
     // Returns the names of all fields
     int describe(NameList* names) const;

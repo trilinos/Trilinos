@@ -295,7 +295,6 @@ namespace {
       OUTPUT << *IF << "  ";
     }
     OUTPUT << "\n\n";
-    
   }
 
   void file_copy(const std::string& inpfile, const std::string& input_type,
