@@ -388,14 +388,14 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
     int loc = 0;
     if(IndicesAreLocal()) {
       for(int j = 0; j < NumIndices; ++j)
- if(CrsGraphData_->ColMap_.MyLID(UserIndices[j]))
-   tempIndices[loc++] = UserIndices[j];
+        if(CrsGraphData_->ColMap_.MyLID(UserIndices[j]))
+          tempIndices[loc++] = UserIndices[j];
     }
     else {
       for(int j = 0; j < NumIndices; ++j) {
- const int Index = CrsGraphData_->ColMap_.LID(UserIndices[j]);
- if (Index > -1)
-   tempIndices[loc++] = Index;
+        if (CrsGraphData_->ColMap_.MyGID(UserIndices[j])) {
+          tempIndices[loc++] = UserIndices[j];
+        }
       }
     }
     if(loc != NumIndices) 
