@@ -1,5 +1,8 @@
 ## Set the Trilinos install directory 
-TRILINOS_INSTALL_DIR = /home/jhu/Trilinos/development-clean/sandbox
+
+# Please add "export TRILINOS_INSTALL_DIR=/home/login/path-to-your-trilinos-install-dir"
+# somewhere in you local configuration or use the following line but in this case, don't commit your Makefile !
+# TRILINOS_INSTALL_DIR = 
 
 ## Include any direct Trilinos library dependencies - in this case only ML
 include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.ML

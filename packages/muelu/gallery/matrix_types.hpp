@@ -6,7 +6,6 @@
 #define  __MATRIX_TYPES_HPP__
 
 #include "Tpetra_Map.hpp"
-#include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ArrayView.hpp"

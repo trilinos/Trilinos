@@ -1,16 +1,12 @@
+# Please add "export TRILINOS_INSTALL_DIR=/home/login/path-to-your-trilinos-install-dir"
+# somewhere in you local configuration or use the following line but in this case, don't commit your Makefile !
+# TRILINOS_INSTALL_DIR = 
 
 EXE_ROOT = matrix_driver
-
-all: ${EXE_ROOT}.exe
-	@echo "done"
-
-
-TRILINOS_INSTALL_DIR = /home/jhu/Trilinos/development-clean/sandbox
 
 CLIENT_EXTRA_INCLUDES = matrix_factory.hpp matrix_types.hpp
 
 CLIENT_EXTRA_LIBS =
-
 
 #
 # Include the Trilinos export makefile from package=Tpetra
@@ -19,7 +15,6 @@ CLIENT_EXTRA_LIBS =
 # an extra "-l" appears in package foo's macro foo_TPL_LIBRARIES.
 # Reported in Trilinos bug #4946.
 include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.Tpetra
-
 
 LIB_PATH = $(TRILINOS_INSTALL_DIR)/lib
 
@@ -34,6 +29,10 @@ LIBS = $(CLIENT_EXTRA_LIBS) $(SHARED_LIB_RPATH_COMMAND)  $(Tpetra_LIBRARIES)  $(
 #
 # Rules for building executables and objects. 
 #
+
+all: ${EXE_ROOT}.exe
+	@echo "done"
+
 %.exe : %.o $(EXTRA_OBJS) $(CLIENT_EXTRA_LIBS)
 	$(CXX) -o $@ $(LDFLAGS) $(CXXFLAGS) -g -O0 -Wall $< $(EXTRA_OBJS) -L$(LIB_PATH) $(LIBS)
 
