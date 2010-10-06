@@ -6,10 +6,6 @@
 
 //usage: ./driver.exe -f A.dat -rbm rbm.dat -i options.xml
 
-#include "ml_config.h"
-
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
-
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -19,18 +15,10 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_LinearProblem.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_MultiVectorIn.h"
-#include "AztecOO.h"
-
-// includes required by ML
-#include "ml_include.h"
-#include "ml_MultiLevelPreconditioner.h"
-#include "ml_epetra.h"
-#include <fstream>
 
 #include "TumiStuff.h"
 
@@ -154,94 +142,9 @@ int main(int argc, char *argv[])
     for (int i=0; i<coordVector->NumVectors(); i++) xyz[i] = mv+i*stride;
   }
 
-  // =========================== begin of ML part ===========================
 
   MatrixVecChecker(*A);
-  MPI_Finalize();
-  return(EXIT_SUCCESS);
 
-  // create a parameter list for ML options
-  ParameterList MLList;
-
-  ML_Epetra::SetDefaults("SA", MLList);
-  //MLList.set("ML output",10);
-  MLList.set("PDE equations",numPDEs);
-  //MLList.set("smoother: type","symmetric Gauss-Seidel");
-  if (coordVector) {
-    if (xyz[0]) MLList.set("x-coordinates",xyz[0]);
-    if (xyz[1]) MLList.set("y-coordinates",xyz[1]);
-    if (coordVector->NumVectors() == 3)
-      MLList.set("z-coordinates",xyz[2]);
-    MLList.set("null space: type","from coordinates");
-  }
-  if (rbmPointer) {
-    MLList.set("null space: type","pre-computed");
-    MLList.set("null space: dimension",rbmVector->NumVectors());
-    MLList.set("null space: vectors",rbmPointer);
-  }
-
-  // Read in XML options
-  if (strncmp(xmlFile,"\0",2) != 0)
-    ML_Epetra::ReadXML(xmlFile,MLList,Comm);
-
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
-
-  // =========================== end of ML part =============================
-
-  const Epetra_Map Map = A->DomainMap();
-  if (pRHS==0) pRHS = new Epetra_Vector(Map);
-  Epetra_MultiVector RHS = *pRHS;
-
-  Epetra_MultiVector LHS(RHS);
-  //Epetra_Vector LHS(Map);
-  LHS.PutScalar(0.0);
-  double mynorm;
-  RHS.Norm2(&mynorm);
-  cout << "rhs norm = " << mynorm << std::endl;
-  /*
-  Epetra_Vector trueX(Map);
-  trueX.SetSeed(90201);
-  trueX.Random();
-  trueX.Norm2(&mynorm);
-  trueX.Scale(1.0/mynorm);
-  A->Multiply(false,trueX,RHS);
-  */
-
-  Epetra_LinearProblem Problem(A,&LHS,&RHS);
-  AztecOO solver(Problem);
-
-  solver.SetAztecOption(AZ_scaling, AZ_none);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  //solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_kspace, 50);
-  solver.SetAztecOption(AZ_output, 10);
-  solver.SetAztecOption(AZ_conv, AZ_noscaled);
-  solver.SetPrecOperator(MLPrec);
-
-  solver.Iterate(100, 1e-8);
-
-  //string finalSolFile = MLList.get("solution file","finalSol.mm");
-  //EpetraExt::MultiVectorToMatrixMarketFile(finalSolFile.c_str(), LHS, "Final solution");
-
-  //Calculate a final residual
-  Epetra_Vector workvec(Map);
-  A->Multiply(false,LHS,workvec);
-  workvec.Update(1.0,RHS,-1.0);
-  RHS.Norm2(&mynorm);
-  workvec.Scale(1./mynorm);
-  workvec.Norm2(&mynorm);
-  if (Comm.MyPID() == 0) cout << "||r||_2 = " << mynorm << endl;
-  //Calculate a relative error
-  /*
-  workvec.Update(1.0,trueX,-1.0,LHS,0.0);
-  trueX.Norm2(&mynorm);
-  workvec.Scale(1./mynorm);
-  workvec.Norm2(&mynorm);
-  if (Comm.MyPID() == 0) cout << "||x_true - x_calc||_2 / ||x_true||  = " << mynorm << endl;
-  */
-
-  // delete the preconditioner. Do it BEFORE calling MPI_Finalize
-  delete MLPrec;
   delete [] rbmPointer;
   delete rbmVector;
   delete pRHS;
@@ -307,10 +210,8 @@ void ML_Exit(int mypid, int code, char *fmt,...)
   va_end(ap);
   if (!mypid && msg != 0)
     printf("%s\n",msg);
-#ifdef ML_MPI
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
   exit(code);
 }
-
-#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) */
