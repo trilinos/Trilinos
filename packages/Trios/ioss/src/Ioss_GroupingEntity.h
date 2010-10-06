@@ -130,6 +130,7 @@ namespace Ioss {
     void field_erase(const std::string& field_name);
     bool field_exists(const std::string& field_name) const;
     Field get_field(const std::string& field_name) const;
+    const Field &get_fieldref(const std::string& field_name) const;
     int field_describe(NameList* names) const;
     int field_describe(Field::RoleType role, NameList* names) const;
     size_t field_count() const;
@@ -231,6 +232,10 @@ Ioss::GroupingEntity::field_exists(const std::string& field_name) const
 inline Ioss::Field
 Ioss::GroupingEntity::get_field(const std::string& field_name) const
 {return fields.get(field_name);}
+
+inline const Ioss::Field&
+Ioss::GroupingEntity::get_fieldref(const std::string& field_name) const
+{return fields.getref(field_name);}
 
 inline int
 Ioss::GroupingEntity::field_describe(NameList* names) const

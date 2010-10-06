@@ -362,14 +362,6 @@ namespace Ioex {
       VariableNameMap sidesetVariables;
       VariableNameMap globalVariables;
 
-      // Similar for entity attributes (currently only element blocks); however, the
-      // names are not mapped to the individual components.
-      // The other difference is that that name stored in the map is a
-      // combination of the entity-block name and the attribute name
-      // so we can use a single VariableNameMap for the region instead
-      // of one-per entity block.
-      VariableNameMap attributeNames;
-
       mutable ValueContainer  globalValues;
 
       mutable std::vector<std::vector<bool> > blockAdjacency;

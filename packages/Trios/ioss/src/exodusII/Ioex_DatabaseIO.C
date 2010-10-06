@@ -2440,10 +2440,8 @@ namespace Ioex {
 	    int attribute_count = eb->get_property("attribute_count").get_int();
 
 	    std::string att_name = eb->name() + SEP() + field.get_name();
-	    assert(attributeNames.find(att_name) != attributeNames.end());
-	    int offset = (*attributeNames.find(att_name)).second;
+	    int offset = (int)field.get_index();
 	    assert(offset > 0);
-	    assert(offset == (int)field.get_index());
 	    assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
 	    if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
 	      // Read all attributes in one big chunk...
@@ -3314,10 +3312,8 @@ namespace Ioex {
 
 	else if (role == Ioss::Field::ATTRIBUTE) {
 	  std::string att_name = eb->name() + SEP() + field.get_name();
-	  assert(attributeNames.find(att_name) != attributeNames.end());
-	  int offset = (*attributeNames.find(att_name)).second;
+	  int offset = (int)field.get_index();
 	  assert(offset > 0);
-	  assert(offset == (int)field.get_index());
 
 	  int attribute_count = eb->get_property("attribute_count").get_int();
 	  assert(offset > 0);
@@ -4607,12 +4603,10 @@ namespace Ioex {
 	Ioss::NameList::const_iterator IF;
 	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
 	  std::string field_name = *IF;
-	  const Ioss::Field field = block->get_fieldref(field_name);
+	  const Ioss::Field &field = block->get_fieldref(field_name);
 	  assert(field.get_index() != 0);
 	  
 	  if (field_name == "attribute") {
-	    assert(field.get_index() == 1);
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+field_name,1));
 	    field.set_index(1);
 	    continue;
 	  }
@@ -4620,8 +4614,6 @@ namespace Ioex {
 	  const Ioss::VariableType *type = field.raw_storage();
 	  int comp_count = type->component_count();
 	  int field_offset = field.get_index();
-	  
-	  attributeNames.insert(VNMValuePair(block_name+SEP()+field_name,field_offset));	  
 	  for (int i=0; i < comp_count; i++) {
 	    std::string var_name = type->label_name(field_name, i+1, fieldSuffixSeparator);
 	    std::strncpy(names[field_offset-1+i], var_name.c_str(), max_string_length);
@@ -5544,7 +5536,6 @@ namespace Ioex {
 	  block->field_add(field);
 	  const Ioss::Field &tmp_field = block->get_fieldref(field.get_name());
 	  tmp_field.set_index(offset);
-	  attributeNames.insert(VNMValuePair(block_name+SEP()+field.get_name(),offset));
 	  offset += field.raw_storage()->component_count();
 	}
       }
@@ -5564,12 +5555,10 @@ namespace Ioex {
 	    
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
 					 Ioss::Field::ATTRIBUTE, my_element_count, 1));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,1));	  
 	  } else {
 	    att_name = "thickness";
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
 					 Ioss::Field::ATTRIBUTE, my_element_count, 1));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,1));	  
 	    unknown_attributes = attribute_count - 1;
 	  }
 
@@ -5593,19 +5582,16 @@ namespace Ioex {
 	    size_t offset = 1;
 	    block->field_add(Ioss::Field("mass", Ioss::Field::REAL, SCALAR(),
 					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"mass",offset));
 	    offset += 1;
 
 	    // Next six attributes are moment of inertia -- symmetric tensor
 	    block->field_add(Ioss::Field("inertia", Ioss::Field::REAL, SYM_TENSOR(),
 					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"inertia",offset));
 	    offset += 6;
 
 	    // Next three attributes are offset from node to CG
 	    block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
 					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"offset",offset));	  
 	    offset += 3;
 	  }
 	}
@@ -5614,18 +5600,14 @@ namespace Ioex {
 	  att_name = "radius";
 	  size_t offset = 1;
 	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	  attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,offset));
-	  offset += 1;
+				       Ioss::Field::ATTRIBUTE, my_element_count, offset++));
 	  if (attribute_count > 1) {
 	    // Default second attribute (from sphgen3d) is "volume"
 	    // which is the volume of the cube which would surround a
 	    // sphere of the given radius.
 	    att_name = "volume";
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,offset));
-	    offset += 1;
+					 Ioss::Field::ATTRIBUTE, my_element_count, offset++));
 	  }
 	  unknown_attributes = attribute_count - 2;
 	}
@@ -5636,9 +5618,7 @@ namespace Ioex {
 	  size_t offset = 1;
 	  att_name = "area";
 	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count, offset));
-	  attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,offset));
-	  offset += 1;
+				       Ioss::Field::ATTRIBUTE, my_element_count, offset++));
 	  unknown_attributes = attribute_count - 1;
 	}
 
@@ -5646,38 +5626,29 @@ namespace Ioex {
 	  int index = 1;
 	  att_name = "area";
 	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count, index));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,index));
-	    index++;
+				       Ioss::Field::ATTRIBUTE, my_element_count, index++));
 
 	  if (spatialDimension == 2 && attribute_count >= 3) {
 	    block->field_add(Ioss::Field("i", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"i",index++));
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	    block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"j",index++));
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	  }
 	  else if (spatialDimension == 3 && attribute_count >= 7) {
 	    block->field_add(Ioss::Field("i1", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"i1",index++));
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	    block->field_add(Ioss::Field("i2", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"i2",index++));
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	    block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count, index));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"j",index++));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	    block->field_add(Ioss::Field("reference_axis", Ioss::Field::REAL, VECTOR3D(),
 					 Ioss::Field::ATTRIBUTE, my_element_count, index));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"reference_axis",index));
 	    index += 3;
 	    if (attribute_count >= 10) { 
 	      // Next three attributes would (hopefully) be offset vector...
 	      // This is typically from a NASGEN model.
 	      block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
 					   Ioss::Field::ATTRIBUTE, my_element_count, index));
-	      attributeNames.insert(VNMValuePair(block_name+SEP()+"offset",index));
 	      index += 3;
 	    }
 	  }
@@ -5707,7 +5678,6 @@ namespace Ioex {
       
       block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
 				   Ioss::Field::ATTRIBUTE, my_element_count, 1));
-      attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,1));	  
 
       // Release memory...
       delete_exodus_names(names, attribute_count);
@@ -5735,10 +5705,13 @@ namespace {
     Ioss::NameList::const_iterator IF;
     for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
       std::string field_name = *IF;
-      Ioss::Field field = block->get_field(field_name);
+      const Ioss::Field &field = block->get_fieldref(field_name);
 
       if (field_name == "attribute") {
-	assert(field.get_index() == 1);
+	field.set_index(1);
+	if (results_fields.size() == 1) {
+	  return;
+	}
 	continue;
       }
 
@@ -5808,6 +5781,7 @@ namespace {
 	const Ioss::Field &field = block->get_fieldref(field_name);
 
 	if (field_name == "attribute") {
+	  field.set_index(1);
 	  continue;
 	}
 
@@ -5841,6 +5815,7 @@ namespace {
 	const Ioss::Field &field = block->get_fieldref(field_name);
 
 	if (field_name == "attribute") {
+	  field.set_index(1);
 	  continue;
 	}
 
@@ -5862,6 +5837,7 @@ namespace {
       const Ioss::Field &field = block->get_fieldref(field_name);
 
       if (field_name == "attribute") {
+	field.set_index(1);
 	continue;
       }
 
