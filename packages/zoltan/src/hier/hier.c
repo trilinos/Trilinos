@@ -125,6 +125,8 @@ static void Zoltan_Hier_Assist_Method(void *data, int level, struct Zoltan_Struc
 #else
 #ifdef ZOLTAN_PTSCOTCH
     Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "SCOTCH");
+#else
+    Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PHG");
 #endif
 #endif
   }
@@ -1811,7 +1813,7 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
 				     int wgt_dim, float *ewgts, int *ierr) {
   HierPartParams *hpp = (HierPartParams *)data;
   ZOLTAN_ID_TYPE gid = global_id[0];
-  int local_index;
+  int local_index, offset, nadj;
   int i, j, edge, edge_proc_orig_rank, edge_proc_hier_rank, num_adj;
   indextype next_adj;
   char *yo = "Zoltan_Hier_Edge_List_Fn";
@@ -1833,15 +1835,16 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
   local_index = get_local_index(hpp, (indextype)gid);
   if (local_index != -1) {
     edge = 0;
-    for (i=0; i<hpp->xadj[local_index+1] - hpp->xadj[local_index]; i++) {
-      edge_proc_orig_rank =
-	current_proc_of_gno(hpp, hpp->adjncy[hpp->xadj[local_index]+i]);
+    offset = hpp->xadj[local_index];
+    nadj = hpp->xadj[local_index+1] - offset;
+    for (i=0; i<nadj; i++,offset++) {
+      edge_proc_orig_rank = current_proc_of_gno(hpp, hpp->adjncy[offset]);
       edge_proc_hier_rank = orig_rank_to_hier_rank(hpp, edge_proc_orig_rank);
       if (edge_proc_hier_rank != -1) {
-	nbor_global_id[edge] = (ZOLTAN_ID_TYPE)hpp->adjncy[hpp->xadj[local_index]+i];
+	nbor_global_id[edge] = (ZOLTAN_ID_TYPE)hpp->adjncy[offset];
 	nbor_procs[edge] = edge_proc_hier_rank;
 	for (j=0; j<wgt_dim; j++) {
-	  ewgts[edge*wgt_dim+j] = hpp->ewgts[local_index*wgt_dim+j];
+	  ewgts[edge*wgt_dim+j] = hpp->ewgts[offset*wgt_dim+j];
 	}
 	edge++;
       }
