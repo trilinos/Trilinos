@@ -27,7 +27,7 @@ ADD_SUBDIRECTORY(gallery)
 #PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 #JJH this exists but isn't active yet
-#PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
 # Exclude files for source package.
