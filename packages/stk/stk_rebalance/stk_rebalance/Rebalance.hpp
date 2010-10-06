@@ -19,6 +19,8 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Selector.hpp>
 
+#include <stk_rebalance/Partition.hpp>
+
 /*---------------------------------------------------------------*/
 //: Rebalance class is intended to provide an application
 //: interface, API, for Engineering Science application codes to
@@ -32,18 +34,21 @@ namespace rebalance {
 
 /** Determine if rebalancing is needed.
  */
-bool rebalance_needed(mesh::BulkData            & rebal_bulk_data ,
-                      const Real            imbalance_threshold);
+bool rebalance_needed(mesh::BulkData &    bulk_data,
+                      mesh::MetaData &    meta_data,
+                      const mesh::Field<double> & load_measure,
+                      ParallelMachine    comm,
+                      const double  imbalance_threshold);
 
 /** Rebalance with a Partition object.
  * This rebalance function will use the Partition object passed
  * to perform the rebalancing.
  */
-bool full_rebalance(mesh::BulkData & rebal_bulk_data ,
-                    const mesh::Selector & rebal_selector ,
-                    const stk::mesh::Field<double> * rebal_coord_ref ,
-                    const stk::mesh::Field<double> * rebal_elem_weight_ref,
-                    rebalance::Partition & partition);
+bool rebalance(mesh::BulkData & bulk_data ,
+               const mesh::Selector & selector ,
+               const mesh::Field<double> * coord_ref ,
+               const mesh::Field<double> * elem_weight_ref,
+               Partition & partition);
 
 }
 } // namespace stk

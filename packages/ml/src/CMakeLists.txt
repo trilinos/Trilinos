@@ -220,6 +220,7 @@ APPEND_SET(HEADERS
   MLAPI/MLAPI_Expressions.h
   MLAPI/MLAPI_Gallery.h
   MLAPI/MLAPI_InverseOperator.h
+  MLAPI/MLAPI_LoadBalanceInverseOperator.h
   MLAPI/MLAPI_Krylov.h
   MLAPI/MLAPI_MATLABStream.h
   MLAPI/MLAPI_SerialMatrix.h
@@ -230,6 +231,7 @@ APPEND_SET(HEADERS
   MLAPI/MLAPI_MultiVector_Utils.h
   MLAPI/MLAPI_Operator_Box.h
   MLAPI/MLAPI_Operator.h
+  MLAPI/MLAPI_LoadBalanceOperator.h
   MLAPI/MLAPI_Operator_Utils.h
   MLAPI/MLAPI_Space.h
   MLAPI/MLAPI_TimeObject.h
@@ -286,6 +288,7 @@ APPEND_SET(SOURCES
   MLAPI/MLAPI_Defaults.cpp
   MLAPI/MLAPI_Gallery.cpp
   MLAPI/MLAPI_InverseOperator.cpp
+  MLAPI/MLAPI_LoadBalanceInverseOperator.cpp
   MLAPI/MLAPI_Operator_Utils.cpp
   MLAPI/MLAPI_Eig.cpp
   MLAPI/MLAPI_Krylov.cpp

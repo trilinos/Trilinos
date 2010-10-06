@@ -58,8 +58,8 @@ public:
    *  - The bulk data is in the synchronized or "locked" state.
    */
   BulkData( const MetaData & mesh_meta_data ,
-            ParallelMachine parallel ,
-            unsigned bucket_max_size = 1000 );
+      ParallelMachine parallel ,
+      unsigned bucket_max_size = 1000 );
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
@@ -76,8 +76,8 @@ public:
 
   //------------------------------------
   /** \brief  Query the upper bound on the number of mesh entities
-    *         that may be associated with a single bucket.
-    */
+   *         that may be associated with a single bucket.
+   */
   unsigned bucket_capacity() const { return m_bucket_repository.bucket_capacity(); }
 
   //------------------------------------
@@ -170,7 +170,7 @@ public:
         dest.bucket_ordinal(),
         non_const_src.bucket(),
         non_const_src.bucket_ordinal()
-    );
+        );
   }
 
   //------------------------------------
@@ -189,6 +189,7 @@ public:
   Entity * get_entity( const EntityKey key ) const  {
     return m_entity_repo.get_entity(key);
   }
+
   //------------------------------------
   /** \brief  Create or retrieve a locally owned entity of a
    *          given type and id.
@@ -204,7 +205,7 @@ public:
    *  will be resolved by the call to 'modification_end'.
    */
   Entity & declare_entity( EntityRank ent_type ,
-                           EntityId ent_id , const std::vector<Part*> & parts);
+      EntityId ent_id , const std::vector<Part*> & parts);
 
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
@@ -216,9 +217,9 @@ public:
    *  processes by modification_end.
    */
   void change_entity_parts( Entity & ,
-                            const std::vector<Part*> & add_parts ,
-                            const std::vector<Part*> & remove_parts =
-                                  std::vector<Part*>() );
+      const std::vector<Part*> & add_parts ,
+      const std::vector<Part*> & remove_parts =
+      std::vector<Part*>() );
 
   /** \brief  Request the destruction an entity on the local process.
    *
@@ -267,7 +268,7 @@ public:
    *  of rank 2
    */
   void generate_new_entities(const std::vector<size_t>& requests,
-                         std::vector<Entity *>& requested_entities);
+      std::vector<Entity *>& requested_entities);
 
   //------------------------------------
   /** \brief  Declare a relation and its converse between
@@ -287,8 +288,8 @@ public:
    *     then 'e_to' has induced membership in part_rel.m_target.
    */
   void declare_relation( Entity & e_from ,
-                         Entity & e_to ,
-                         const unsigned local_id );
+      Entity & e_to ,
+      const RelationIdentifier local_id );
 
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.

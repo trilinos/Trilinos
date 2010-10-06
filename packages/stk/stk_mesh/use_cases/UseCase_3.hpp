@@ -46,7 +46,7 @@ public:
 
   ~UseCase_3_Mesh();
 
-  UseCase_3_Mesh( stk::ParallelMachine comm );
+  UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit = true);
 
   void populate();
 

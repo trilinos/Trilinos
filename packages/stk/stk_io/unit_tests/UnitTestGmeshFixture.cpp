@@ -28,7 +28,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
   std::string config_mesh = Ioss::Utils::to_string(num_x) + "x" + 
                             Ioss::Utils::to_string(num_y) + "x" +
                             Ioss::Utils::to_string(num_z) + "|sideset:xXyYzZ";
-  stk::common::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
+  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
 
   fixture.commit();
 

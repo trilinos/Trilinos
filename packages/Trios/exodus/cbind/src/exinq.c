@@ -52,6 +52,8 @@
 *****************************************************************************/
 
 #include <stdlib.h>
+#include <string.h>
+
 #include "exodusII.h"
 #include "exodusII_int.h"
 
@@ -218,17 +220,18 @@ int ex_inquire (int   exoid,
   int *stat_vals;
   char  errmsg[MAX_ERR_LENGTH];
   int status;
+  char tmp_title[2048];
   
   exerrval = 0; /* clear error code */
 
-  switch (req_info)
-    {
+  if (ret_char)  ret_char  = '\0';
+  if (ret_int)   *ret_int   = 0;
+
+  switch (req_info) {
     case EX_INQ_FILE_TYPE:
 
       /* obsolete call */
       /*returns "r" for regular EXODUS II file or "h" for history EXODUS file*/
-
-      *ret_char = '\0';
       exerrval = EX_BADPARAM;
       sprintf(errmsg,
               "Warning: file type inquire is obsolete");
@@ -272,13 +275,16 @@ int ex_inquire (int   exoid,
 
     case EX_INQ_TITLE:
       /* returns the title of the database */
-      if ((status = nc_get_att_text (exoid, NC_GLOBAL, ATT_TITLE, ret_char)) != NC_NOERR) {
+      if ((status = nc_get_att_text (exoid, NC_GLOBAL, ATT_TITLE, tmp_title)) != NC_NOERR) {
 	*ret_char = '\0';
 	exerrval = status;
 	sprintf(errmsg,
 		"Error: failed to get database title for file id %d", exoid);
 	ex_err("ex_inquire",errmsg,exerrval);
 	return (EX_FATAL);
+      } else {
+	strncpy(ret_char, tmp_title, MAX_LINE_LENGTH+1);
+	ret_char[MAX_LINE_LENGTH] = '\0';
       }
       break;
 

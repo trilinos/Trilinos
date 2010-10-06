@@ -25,7 +25,7 @@ cpu_time()
   
   return seconds + micro_seconds*1.0e-6;
 
-#elif ! defined(__PGI)
+#else
   struct rusage my_rusage;
 
   ::getrusage(RUSAGE_SELF, &my_rusage);
@@ -34,8 +34,7 @@ cpu_time()
   double micro_seconds = my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec;
   
   return seconds + micro_seconds*1.0e-6;
-#else
-  return 0.0;
+
 #endif
 }
 

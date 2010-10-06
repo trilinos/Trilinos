@@ -167,9 +167,13 @@ void get_entities_through_relations(
   const std::vector<Entity*> & entities ,
         std::vector<Entity*> & entities_related );
 
+/** \brief  Query which mesh entities have a relation
+ *          to all of the input mesh entities of the given
+ *          mesh rank.
+ */
 void get_entities_through_relations(
   const std::vector<Entity*> & entities ,
-        unsigned               entities_related_rank ,
+        EntityRank             entities_related_rank ,
         std::vector<Entity*> & entities_related );
 
 //----------------------------------------------------------------------

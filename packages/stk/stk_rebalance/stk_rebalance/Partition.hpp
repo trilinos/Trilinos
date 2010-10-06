@@ -93,7 +93,7 @@ public:
     std::vector<mesh::Entity *>   mesh_objects;
     const stk::mesh::Field<double>                 * nodal_coord_ref ;
     const stk::mesh::Field<double>                 * elem_weight_ref;
-    std::vector<UInt>             dest_proc_ids ;
+    std::vector<unsigned>             dest_proc_ids ;
 
     /** Default Constructor. */
     RegionInfo():
@@ -180,12 +180,12 @@ public:
    * and may not reflect what the actual owner is as
    * defined by the stk library.
    */
-  Int proc_owner
+  int proc_owner
   (const mesh::Entity        & mesh_obj,
-   const Int                 & index );
+   const int                 & index );
 
   /** Return the number of local ids per global ids (objects per region).*/
-  UInt num_moid() const;
+  unsigned num_moid() const;
 
   /** Various data access functions.
    * The indexes are the region id as defined by the
@@ -196,23 +196,23 @@ public:
    * MeshObjects_GlobalID() returns the result of global_id()
    * function of the indexed mesh object.
    */
-  Int globalID         (const UInt moid) const;
+  int globalID         (const unsigned moid) const;
 
   /** Return the owning processor.*/
-  UInt destination_proc(const UInt moid) const;
+  unsigned destination_proc(const unsigned moid) const;
 
   /** Return the owning processor.*/
-  Real object_weight   (const UInt moid) const;
+  double object_weight   (const unsigned moid) const;
 
   /** Set the owning processor.*/
-  void set_destination_proc(const UInt moid,
-                            const UInt proc );
+  void set_destination_proc(const unsigned moid,
+                            const unsigned proc );
 
   /** Find the local ID of a given mesh object. */
-  bool find_mesh_object(const mesh::Entity * obj, UInt & moid) const;
+  bool find_mesh_object(const mesh::Entity * obj, unsigned & moid) const;
 
   /** Return a mesh object pointer. */
-  mesh::Entity *mesh_object(const UInt moid ) const;
+  mesh::Entity *mesh_object(const unsigned moid ) const;
 
   /** Return the Field points to the object coordinates.*/
   const stk::mesh::Field<double> * object_coord_ref () const;
@@ -221,7 +221,7 @@ public:
   const stk::mesh::Field<double> * object_weight_ref () const;
 
   /** Return the total number of mesh objects in all lists. */
-  UInt num_elems() const;
+  unsigned num_elems() const;
 
   /** Determine New Partition.
    * This is where all of the real work takes place.  This
@@ -229,7 +229,7 @@ public:
    * the new partition.  RebalancingNeeded is set if the new
    * partition is different than the old one.
    */
-  virtual Int determine_new_partition(bool &RebalancingNeeded)=0;
+  virtual int determine_new_partition(bool &RebalancingNeeded)=0;
 
   /** Perform communication to create new partition.
    * Given a communication specification this
@@ -242,11 +242,11 @@ public:
    * mesh objects before rebalancing is performed
    * again.
    */
-  Int move_mesh_objects(std::vector<std::pair<unsigned,  mesh::Entity *> > entities_to_move);
+  int get_new_partition(std::vector<mesh::EntityProc> &new_partition);
 
 private:
 
-  UInt total_number_objects_;
+  unsigned total_number_objects_;
   RegionInfo  region_obj_information_;
 
 
@@ -268,8 +268,8 @@ private:
    * there is ever a need for multiple iterators.
    */
 private:
-  UInt object_iter_;
-  UInt object_iter_len_;
+  unsigned object_iter_;
+  unsigned object_iter_len_;
   bool iter_initialized_;
 public:
   /** Reset iteration to first mesh object. */
@@ -285,55 +285,18 @@ public:
   mesh::Entity *iter_mesh_object() const;
 
   /** Return current owning processor. */
-  UInt iter_destination_proc() const;
+  unsigned iter_destination_proc() const;
 
   /** Return the current element weight. */
-  Real iter_object_weight() const;
+  double iter_object_weight() const;
 
   /** Set the current owning processor. */
-  void iter_set_destination_proc (UInt id);
+  void iter_set_destination_proc (unsigned id);
 
   /** return current region index. */
-  UInt iter_current_key() const;
+  unsigned iter_current_key() const;
 
 };
-
-inline Diag::Writer &operator<<(Diag::Writer &dout, const Partition &partition) {
-  /* %TRACE[NONE]% */  /* %TRACE% */
-  return partition.verbose_print(dout);
-}
-
-inline UInt Partition::num_moid() const {
-  /* %TRACE[NONE]% */  /* %TRACE% */
-  return region_obj_information_.mesh_objects.size();
-}
-
-inline Int Partition::globalID(const UInt moid) const
-{
-  /* %TRACE[NONE]% */  /* %TRACE% */
-  ThrowAssert (moid < num_moid());
-  return region_obj_information_.mesh_objects[ moid ]->global_id();
-}
-
-inline const stk::mesh::Field<double> * Partition::object_weight_ref() const
-{
-  /* %TRACE[NONE]% */  /* %TRACE% */
-  return region_obj_information_.elem_weight_ref;
-}
-
-inline Real Partition::object_weight(const UInt moid ) const
-{
-  /* %TRACE[NONE]% */  /* %TRACE% */
-  Real mo_weight = 1.0;
-  if (object_weight_ref()) {
-    ThrowAssert(moid < num_moid());
-    mo_weight = * static_cast<Real *>
-      ( region_obj_information_.mesh_objects[ moid ]->data(stk::mesh::Field<double>Ref::state_new(object_weight_ref())));
-  }
-  return mo_weight;
-}
-
-
 
 
 }

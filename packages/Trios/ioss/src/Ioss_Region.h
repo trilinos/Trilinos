@@ -42,6 +42,7 @@
 #include <Ioss_EntityType.h>
 #include <vector>
 #include <map>
+#include <iosfwd>
 
 namespace Ioss {
 
@@ -75,6 +76,8 @@ namespace Ioss {
     std::string type_string() const {return "Region";}
     EntityType type() const {return REGION;}
 
+    void output_summary(std::ostream &strm, bool do_transient=true);
+    
     // Check capabilities of input/output database...
     bool supports_nodal_fields()    const;
     bool supports_edge_fields()     const;

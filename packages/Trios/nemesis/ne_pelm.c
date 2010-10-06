@@ -72,8 +72,7 @@ int ne_put_elem_map(int  neid,
   int     status, dimid, varid;
   size_t  start[1], count[1];
   size_t  varidx[2];
-  int  nm_int_stat, nm_bor_stat;
-  int ptmp;
+  int  nmstat;
 
   char   errmsg[MAX_ERR_LENGTH];
   /*-----------------------------Execution begins-----------------------------*/
@@ -90,17 +89,32 @@ int ne_put_elem_map(int  neid,
   }
 
   /* Get the status of the internal element map */
-  ptmp = ftype[0] == 's' ? processor : 0;
-  if ((status = ne_get_map_status(neid, VAR_INT_E_STAT, ptmp, &nm_int_stat)) != NC_NOERR) {
-    return (EX_FATAL);
-  }
-  
-  /* Get the status of the border element map */
-  if ((status = ne_get_map_status(neid, VAR_BOR_E_STAT, ptmp, &nm_bor_stat)) != NC_NOERR) {
+  if ((status = nc_inq_varid(neid, VAR_INT_E_STAT, &varid)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to find variable ID for \"%s\" in file ID %d",
+            VAR_INT_E_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+
     return (EX_FATAL);
   }
 
-  if (nm_int_stat == 1) {
+  if (ftype[0] == 's')
+    start[0] = processor;
+  else
+    start[0] = 0;
+
+  if ((status = nc_get_var1_int(neid, varid, start, &nmstat)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to get variable \"%s\" from file ID %d",
+            VAR_INT_E_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+
+    return (EX_FATAL);
+  }
+
+  if (nmstat == 1) {
     /* get the index */
     if (ne_get_idx(neid, VAR_ELEM_MAP_INT_IDX, varidx, processor) == -1) {
       exerrval = status;
@@ -157,9 +171,35 @@ int ne_put_elem_map(int  neid,
       return (EX_FATAL);
     }
 
-  } 
+  } /* End "if (nmstat == 1)" */
 
-  if (nm_bor_stat == 1) {
+  /* Get the status of the border element map */
+  if ((status = nc_inq_varid(neid, VAR_BOR_E_STAT, &varid)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to find variable ID for \"%s\" in file ID %d",
+            VAR_BOR_E_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+
+    return (EX_FATAL);
+  }
+
+  if (ftype[0] == 's')
+    start[0] = processor;
+  else
+    start[0] = 0;
+
+  if ((status = nc_get_var1_int(neid, varid, start, &nmstat)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to get status for \"%s\" from file %d",
+            VAR_BOR_E_STAT, neid);
+    ex_err(func_name, errmsg, exerrval);
+
+    return (EX_FATAL);
+  }
+
+  if (nmstat == 1) {
     /* get the index */
     if (ne_get_idx(neid, VAR_ELEM_MAP_BOR_IDX, varidx, processor) == -1) {
       exerrval = status;
@@ -215,6 +255,6 @@ int ne_put_elem_map(int  neid,
       ex_err(func_name, errmsg, exerrval);
       return (EX_FATAL);
     }
-  }
+  } /* End "if (nmstat == 1)" */
   return (EX_NOERR);
 }

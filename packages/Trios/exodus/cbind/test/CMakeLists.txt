@@ -1,5 +1,6 @@
 INCLUDE(PackageAddExecutable)
 INCLUDE(PackageAddTest)
+INCLUDE(PackageAddAdvancedTest)
 
 ADD_DEFINITIONS(-DUSING_CMAKE)
 
@@ -49,6 +50,7 @@ ENDIF()
 
 # ===============================================
 
+
 SET( cbind_OLDTESTS
   testwt
   testwtd
@@ -89,14 +91,22 @@ CONFIGURE_FILE(
   @ONLY
 )
 
+# NOTE: The "LINKER_LANGUAGE CXX" is used to workaround an issue with
+#       the trilinos cmake adding the pamgen and pamgen_extras libraries as
+#       a dependency.  These are C++ libraries and result in unresolved depedencies
+#       when built with shareable libraries on some platforms....
+
 FOREACH ( testName ${cbind_OLDTESTS} )
-  ADD_EXECUTABLE( ${testName} ${testName}.c )
-  TARGET_LINK_LIBRARIES( ${testName} exodus )
+  PACKAGE_ADD_EXECUTABLE( ${testName} NOEXEPREFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX DEPLIBS exodus)
 ENDFOREACH ( testName )
 
-ADD_CUSTOM_TARGET( check
-  COMMAND /bin/csh ${CMAKE_CURRENT_BINARY_DIR}/testall
-  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  DEPENDS ${cbind_OLDTESTS}
+PACKAGE_ADD_ADVANCED_TEST(
+ exodus_unit_tests
+ TEST_0 CMND /bin/csh ARGS ${CMAKE_CURRENT_BINARY_DIR}/testall
+	OUTPUT_FILE exodus_unit_tests.out
+	PASS_ANY
+ TEST_1 CMND diff ARGS ${CMAKE_CURRENT_SOURCE_DIR}/exodus_unit_tests.gold 
+		       ${CMAKE_CURRENT_BINARY_DIR}/exodus_unit_tests.out
+ COMM serial		      
+ FINAL_PASS_REGULAR_EXPRESSION 
 )
-

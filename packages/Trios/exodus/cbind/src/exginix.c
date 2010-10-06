@@ -50,6 +50,8 @@
 
 #include "exodusII.h"
 #include "exodusII_int.h"
+#include <stdlib.h>
+#include <string.h>
 
 /* Used to reduce repeated code below */
 #define EX_GET_DIM_VALUE(TNAME,DNAME,DIMVAR,SDIMVAL) \
@@ -94,26 +96,26 @@ int ex_get_init_ext (int   exoid,
       return (EX_FATAL);
     }
 
-  /* Check title length to avoid overrunning clients memory space;
-     include trailing null */
+  /* Check title length to avoid overrunning clients memory space; include trailing null */
   if (title_len > MAX_LINE_LENGTH+1) {
+    char *title = malloc(title_len+1);
+    if ((status = nc_get_att_text(exoid, NC_GLOBAL, ATT_TITLE, title)) == NC_NOERR) {
+      strncpy(info->title, title, MAX_LINE_LENGTH+1);
+      info->title[MAX_LINE_LENGTH] = '\0';
+    }
+    free(title);
+  } else {
+    status = nc_get_att_text(exoid, NC_GLOBAL, ATT_TITLE, info->title);
+    info->title[title_len] = '\0';
+  }
+  if (status != NC_NOERR) {
+    exerrval = status;
     sprintf(errmsg,
-            "Error: Title is too long (%d characters) in file id %d",
-            (int)title_len-1, exoid);
-    exerrval = -1;
+	    "Error: failed to get title in file id %d", exoid);
     ex_err("ex_get_init",errmsg,exerrval);
     return (EX_FATAL);
   }
-
-  if ((status = nc_get_att_text(exoid, NC_GLOBAL, ATT_TITLE, info->title)) != NC_NOERR) {
-      exerrval = status;
-      sprintf(errmsg,
-              "Error: failed to get title in file id %d", exoid);
-      ex_err("ex_get_init",errmsg,exerrval);
-      return (EX_FATAL);
-    }
-  info->title[title_len] = '\0';
-
+  
   status = ex_get_dimension(exoid, DIM_NUM_DIM, "dimensions", &lnum, &dimid, "ex_get_init");
   if (status != NC_NOERR) return status;
   info->num_dim = lnum;
