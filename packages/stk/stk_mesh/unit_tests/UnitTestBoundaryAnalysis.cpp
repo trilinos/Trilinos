@@ -63,6 +63,26 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshBoundaryAnalysis , testNullTopology )
 
 void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
 {
+  // Test the boundary_analysis algorithm in stk_mesh/fem/BoundaryAnalysis.hpp
+  // with a boundary that is both shelled and non-shelled.
+  //
+  // We will be testing the algorithm on the following 2D mesh:
+  //
+  //  17---18---19---20---21
+  //  |  1 |  2 |  3 || 4 |
+  //  22---23---24---25---26
+  //  |  5 |  6 |  7 || 8 |
+  //  27---28---29---30---31
+  //  |  9 | 10 | 11 ||12 |
+  //  32---33---34---35---36
+  //  | 13 | 14 | 15 ||16 |
+  //  37---38---39---40---41
+  //
+  // Note the shells along nodes 20-40.
+  //
+  // We will be computing the boundary of the closure of
+  // elements: 6, 7, 10, 11, 14, 15
+
   // This test will only work for np=1
   if (m_num_procs > 1) {
     return;
@@ -76,7 +96,8 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   stk::mesh::TopologicalMetaData& top_data = grid_mesh.top_data();
 
   // make shell part
-  stk::mesh::Part& shell_part = top_data.declare_part<shards::ShellLine<2> >("shell_part");
+  stk::mesh::Part& shell_part =
+    top_data.declare_part<shards::ShellLine<2> >("shell_part");
 
   meta_data.commit();
 
@@ -84,7 +105,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   grid_mesh.generate_grid();
 
   // Add some shells
-  const unsigned num_shell_faces = 4;
+  const unsigned num_shells = 4;
 
   // get a count of entities that have already been created
   std::vector<unsigned> count;
@@ -93,20 +114,21 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   const unsigned num_entities = count[top_data.node_rank] +
     count[top_data.element_rank];
 
-  std::vector<stk::mesh::Entity*> shell_faces;
+  // Declare the shell entities, placing them in the shell part
+  std::vector<stk::mesh::Entity*> shells;
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
-  for (unsigned i = 1; i <= num_shell_faces; ++i) {
+  for (unsigned i = 1; i <= num_shells; ++i) {
     stk::mesh::Entity& new_shell = bulk_data.declare_entity(top_data.element_rank,
                                                             num_entities + i,
                                                             shell_parts);
-    shell_faces.push_back(&new_shell);
+    shells.push_back(&new_shell);
   }
 
   // declare shell relationships
   unsigned node_list[5] = {20, 25, 30, 35, 40};
-  for (unsigned i = 0; i < num_shell_faces; ++i) {
-    stk::mesh::Entity& shell = *(shell_faces[i]);
+  for (unsigned i = 0; i < num_shells; ++i) {
+    stk::mesh::Entity& shell = *(shells[i]);
     stk::mesh::Entity& node1 =
       *(bulk_data.get_entity(top_data.node_rank, node_list[i]));
     stk::mesh::Entity& node2 =
@@ -119,14 +141,14 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
 
   // create the closure we want to analyze
   std::vector<stk::mesh::Entity*> closure;
-  unsigned num_faces_in_closure = 6;
-  unsigned ids_of_entities_in_closure[] =
+  unsigned num_elems_in_closure = 6;
+  stk::mesh::EntityId ids_of_entities_in_closure[] =
     {6, 7, 10, 11, 14, 15, 23, 24, 25, 28, 29, 30, 33, 34, 35, 38, 39, 40};
   for (unsigned i = 0;
-       i < sizeof(ids_of_entities_in_closure)/sizeof(unsigned);
+       i < sizeof(ids_of_entities_in_closure)/sizeof(stk::mesh::EntityId);
        ++i) {
     stk::mesh::EntityRank rank_of_entity;
-    if (i < num_faces_in_closure) {
+    if (i < num_elems_in_closure) {
       rank_of_entity = top_data.element_rank;
     }
     else {
@@ -136,111 +158,60 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
       bulk_data.get_entity(rank_of_entity, ids_of_entities_in_closure[i]);
     closure.push_back(closure_entity);
   }
-  // sort the closure
+  // sort the closure (boundary analysis expects it this way)
   std::sort(closure.begin(), closure.end(), stk::mesh::EntityLess());
 
+  // Run the bounary analysis!
   stk::mesh::EntitySideVector boundary;
   stk::mesh::boundary_analysis(bulk_data, closure, top_data.element_rank, boundary);
   STKUNIT_EXPECT_TRUE(!boundary.empty());
 
-  std::vector<std::pair<std::pair<unsigned, unsigned>,
-                        std::pair<unsigned, unsigned> > > results;
-  std::vector<std::pair<std::pair<unsigned, unsigned>,
-                        std::pair<unsigned, unsigned> > > expected_results;
+  // Prepare the expected-results as a vector of pairs of pairs representing
+  // ( inside, outside ) where
+  // inside is ( element-id, side-ordinal ) of element inside the closure
+  // outside is ( element-id, side-ordinal ) of element outside the closure
+  // and inside and outside border each other
 
-  {
-    std::pair<unsigned, unsigned> inside(6, 0);
-    std::pair<unsigned, unsigned> outside(5, 2);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+  typedef std::pair<stk::mesh::EntityId, stk::mesh::Ordinal> BoundaryItem;
+  typedef std::pair<BoundaryItem, BoundaryItem>              BoundaryPair;
 
-  {
-    std::pair<unsigned, unsigned> inside(6, 3);
-    std::pair<unsigned, unsigned> outside(2, 1);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+  // Note that certain sides of elements 7, 11, 15 have a boundary with
+  // a shell AND the adjacent element outside the closure.
 
-  {
-    std::pair<unsigned, unsigned> inside(7, 2);
-    std::pair<unsigned, unsigned> outside(8, 0);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+  BoundaryPair results[] = {
+    BoundaryPair(BoundaryItem(6,  0), BoundaryItem(5,  2)),
 
-  {
-    std::pair<unsigned, unsigned> inside(7, 2);
-    std::pair<unsigned, unsigned> outside(43, 0);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(6,  3), BoundaryItem(2,  1)),
 
-  {
-    std::pair<unsigned, unsigned> inside(7, 3);
-    std::pair<unsigned, unsigned> outside(3, 1);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(7,  2), BoundaryItem(8,  0)),
+    BoundaryPair(BoundaryItem(7,  2), BoundaryItem(43, 0)),
 
-  {
-    std::pair<unsigned, unsigned> inside(10, 0);
-    std::pair<unsigned, unsigned> outside(9, 2);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(7,  3), BoundaryItem(3,  1)),
 
-  {
-    std::pair<unsigned, unsigned> inside(11, 2);
-    std::pair<unsigned, unsigned> outside(12, 0);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(10, 0), BoundaryItem(9,  2)),
 
-  {
-    std::pair<unsigned, unsigned> inside(11, 2);
-    std::pair<unsigned, unsigned> outside(44, 0);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(11, 2), BoundaryItem(12, 0)),
+    BoundaryPair(BoundaryItem(11, 2), BoundaryItem(44, 0)),
 
-  {
-    std::pair<unsigned, unsigned> inside(14, 0);
-    std::pair<unsigned, unsigned> outside(13, 2);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(14, 0), BoundaryItem(13, 2)),
 
-  {
-    std::pair<unsigned, unsigned> inside(14, 1);
-    std::pair<unsigned, unsigned> outside(0, 0);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(14, 1), BoundaryItem(0,  0)),
 
-  {
-    std::pair<unsigned, unsigned> inside(15, 1);
-    std::pair<unsigned, unsigned> outside(0, 0);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(15, 1), BoundaryItem(0,  0)),
 
-  {
-    std::pair<unsigned, unsigned> inside(15, 2);
-    std::pair<unsigned, unsigned> outside(16, 0);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+    BoundaryPair(BoundaryItem(15, 2), BoundaryItem(16, 0)),
+    BoundaryPair(BoundaryItem(15, 2), BoundaryItem(45, 0))
+  };
 
-  {
-    std::pair<unsigned, unsigned> inside(15, 2);
-    std::pair<unsigned, unsigned> outside(45, 0);
-    expected_results.push_back(
-      std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
-  }
+  // Convert the boundary returned by boundary_analysis into a data-structure
+  // comparable to expected_results
 
+  BoundaryPair expected_results[sizeof(results)/sizeof(BoundaryPair)];
 
-  for (stk::mesh::EntitySideVector::iterator itr = boundary.begin(); itr != boundary.end(); ++itr)
+  unsigned i = 0;
+  stk::mesh::EntitySideVector::iterator itr = boundary.begin();
+
+  for (; itr != boundary.end(); ++itr, ++i)
   {
     stk::mesh::EntitySide& side = *itr;
     stk::mesh::EntitySideComponent& inside_closure = side.inside;
@@ -250,11 +221,17 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
     stk::mesh::EntityId outside_id = outside_closure.entity != NULL ? outside_closure.entity->identifier() : 0;
     stk::mesh::EntityId outside_side = outside_closure.entity != NULL ? outside_closure.side_ordinal : 0;
 
-    std::pair<unsigned, unsigned> inside(inside_id, inside_side);
-    std::pair<unsigned, unsigned> outside(outside_id, outside_side);
-    results.push_back(std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
+    expected_results[i] = BoundaryPair(BoundaryItem(inside_id, inside_side),
+                                       BoundaryItem(outside_id, outside_side));
   }
-  STKUNIT_EXPECT_TRUE(results == expected_results);
+
+  // Check that results match expected results
+
+  STKUNIT_EXPECT_EQ(sizeof(results), sizeof(expected_results));
+
+  for (i = 0; i < sizeof(results)/sizeof(BoundaryPair); ++i) {
+    STKUNIT_EXPECT_TRUE(results[i] == expected_results[i]);
+  }
 }
 
 void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
