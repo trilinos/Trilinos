@@ -1,0 +1,67 @@
+\documentclass{siamltex}
+\usepackage{graphicx,amsmath}
+\usepackage{xspace} %puts spaces after macros only when needed
+
+
+% For listing code.  Default will be C++ unless you override it with the language=BLAH option.
+\usepackage{listings}
+\lstloadlanguages{C++}
+\lstset{language=C++,breaklines=true,showstringspaces=false}
+
+\usepackage[pdftex, pdfpagemode=none, pdfstartview=FitH]{hyperref}
+\usepackage[usenames]{color}
+\definecolor{Red}{rgb}{1,0,0}
+\definecolor{RayBlue}{rgb}{0,0,1}
+\definecolor{cmsPurple}{rgb}{1,0,1}
+\definecolor{jhuGreen}{rgb}{0,.7,.4}
+
+\hypersetup{
+  pdfauthor = {Jeremie Gaidamour, Axel Gerstenberger, Jonathan J. Hu, Christopher M. Siefert, Ray S. Tuminaro},
+  pdftitle = {MueLu Developers Guide}
+  pdfkeywords = {multigrid, algebraic multigrid, AMG, energy minimization, MueLu, Trilinos},
+  colorlinks= {true},
+  citecolor = {blue},
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% New command definitions are in definition.tex.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{definitions}
+
+\title{MueLu Developers Guide}
+
+\author{J\'er\'emie Gaidamour, Axel Gerstenberger, Jonathan J. Hu,
+        Christopher M. Siefert and  Raymond S. Tuminaro}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\maketitle
+
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+
+\begin{keywords} 
+
+\end{keywords}
+
+% Page Style stuff
+\pagestyle{myheadings} \thispagestyle{plain} \markboth{Gaidamour,Gerstenberger,Hu,Siefert,Tuminaro}{\muelu Developers Guide}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}\label{sec:introduction}
+\input{introduction}
+
+\section{Naming Conventions}\label{sec:name conventions}
+\input{namingConventions}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% References
+\bibliographystyle{siam} \bibliography{devGuide}
+
+\end{document}
