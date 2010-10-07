@@ -21,16 +21,17 @@
 #include <unit_tests/stk_utest_macros.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-#include <unit_tests/UnitTestMesh.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
+#include <stk_mesh/fixtures/BoxFixture.hpp>
 
 /** \brief When a mesh bulk data is created, the transaction is placed
  * in the bulk transaction state by default.
@@ -38,7 +39,7 @@
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkOnCreate)
 {
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+  stk::mesh::MetaData meta ( stk::mesh::fem_entity_rank_names() );
   stk::mesh::Part  &new_part = meta.declare_part ( "another part" );
   meta.commit ();
 
@@ -77,8 +78,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkOnCreate)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkInsert)
 {
-  stk::unit_test::UnitTestMesh           fixture;
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::fixtures::BoxFixture fixture;
+  stk::mesh::BulkData             &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part ();
@@ -138,8 +139,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkInsert)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
 {
-  stk::unit_test::UnitTestMesh           fixture;
-  stk::mesh::BulkData    &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::fixtures::BoxFixture fixture;
+  stk::mesh::BulkData    &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part        &new_part = fixture.get_test_part();
@@ -199,9 +200,9 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkAddRelation)
 {
-  stk::unit_test::UnitTestMesh           fixture;
-  fixture.generate_boxes ();
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::fixtures::BoxFixture fixture;
+  fixture.generate_boxes();
+  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();
@@ -238,8 +239,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkAddRelation)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkDelete)
 {
-  stk::unit_test::UnitTestMesh           fixture;
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::fixtures::BoxFixture fixture;
+  stk::mesh::BulkData             &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();
@@ -311,10 +312,9 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
   return ;
 
 
-
-  stk::unit_test::UnitTestMesh           fixture;
+  stk::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();
@@ -364,8 +364,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalInsert)
 {
-  stk::unit_test::UnitTestMesh           fixture;
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::fixtures::BoxFixture fixture;
+  stk::mesh::BulkData             &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();
@@ -418,9 +418,9 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalInsert)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalModify)
 {
-  stk::unit_test::UnitTestMesh           fixture;
+  stk::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();
@@ -469,9 +469,9 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalModify)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalAddRelation)
 {
-  stk::unit_test::UnitTestMesh           fixture;
+  stk::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();
@@ -513,9 +513,9 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalAddRelation)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalDelete)
 {
-  stk::unit_test::UnitTestMesh           fixture;
+  stk::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();
@@ -554,8 +554,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalDelete)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelChangeOwnership)
 {
-  stk::unit_test::UnitTestMesh           fixture;
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::fixtures::BoxFixture fixture;
+  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();
@@ -599,8 +599,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelChangeOwnership)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
 {
-  stk::unit_test::UnitTestMesh           fixture;
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::fixtures::BoxFixture fixture;
+  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();
 
   stk::mesh::Part                       &new_part = fixture.get_test_part();

@@ -6,22 +6,37 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef STK_MESH_UNITTEST_RING_MESH_FIXTURE_HPP
-#define STK_MESH_UNITTEST_RING_MESH_FIXTURE_HPP
+#ifndef STK_MESH_FIXTURES_RING_FIXTURE_HPP
+#define STK_MESH_FIXTURES_RING_FIXTURE_HPP
 
 #include <stk_util/parallel/Parallel.hpp>
+
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
+
+#include <Shards_BasicTopologies.hpp>
+
+namespace stk {
+namespace mesh {
+namespace fixtures {
 
 /**
- * This fixture is not for public use and is only useful in the
- * context of unit-testing. That's why this fixture is located
- * in the unit-test area and should remain here.
+ * Creates a ring mesh (circular loop of edges and nodes). Note that we create
+ * a part for each locally owned edge.
  */
-class UnitTestRingMeshFixture {
-public:
+
+class RingFixture {
+ public:
   const int             m_spatial_dimension;
   stk::mesh::MetaData   m_meta_data;
   stk::mesh::BulkData   m_bulk_data;
@@ -31,23 +46,32 @@ public:
   const size_t          m_num_edge_per_proc ;
   std::vector<stk::mesh::EntityId> m_node_ids , m_edge_ids ;
 
-  UnitTestRingMeshFixture( stk::ParallelMachine pm ,
-                   unsigned num_edge_per_proc = 10 ,
-                   bool use_edge_parts = false );
+  RingFixture( stk::ParallelMachine pm ,
+               unsigned num_edge_per_proc = 10 ,
+               bool use_edge_parts = false );
 
-  ~UnitTestRingMeshFixture();
+  ~RingFixture() {}
 
-  // Testing for a simple loop of mesh entities:
-  // node[i] : edge[i] : node[ ( i + 1 ) % node.size() ]
-  void generate_mesh( bool generate_aura = true );
+  /**
+   * Generate a simple loop of mesh entities:
+   * node[i] : edge[i] : node[ ( i + 1 ) % node.size() ]
+   */
+  void generate_mesh();
 
-  void test_shift_loop( bool generate_aura );
+  /**
+   * Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
+   */
+  void fixup_node_ownership();
 
-private:
+ private:
 
-   UnitTestRingMeshFixture();
-   UnitTestRingMeshFixture( const UnitTestRingMeshFixture & );
-   UnitTestRingMeshFixture & operator = ( const UnitTestRingMeshFixture & );
+   RingFixture();
+   RingFixture( const RingFixture & );
+   RingFixture & operator = ( const RingFixture & );
 };
+
+}
+}
+}
 
 #endif

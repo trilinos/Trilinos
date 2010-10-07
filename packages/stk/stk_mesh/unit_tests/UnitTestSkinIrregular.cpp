@@ -10,8 +10,6 @@
 #include <stdexcept>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <unit_tests/UnitTestMesh.hpp>
-
 
 #include <Shards_BasicTopologies.hpp>
 
