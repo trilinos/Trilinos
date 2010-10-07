@@ -18,7 +18,7 @@ include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.Tpetra
 
 LIB_PATH = $(TRILINOS_INSTALL_DIR)/lib
 
-INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include -I./ -I../src/Def -I../src/Platform -I../src/Map
+INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include -I./ -I../src/Def -I../src/Platform -I../src/Map -I../src/Comm
 
 CXX = $(Tpetra_CXX_COMPILER)
 
