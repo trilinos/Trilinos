@@ -8,7 +8,8 @@
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Map.hpp"
 
-#include "Tpetra_Map_decl.hpp"
+//#include "Tpetra_Map_decl.hpp"
+#include "Tpetra_Map.hpp"
 
 /** \file Cthulhu_TpetraMap.hpp 
 
@@ -41,7 +42,7 @@ namespace Cthulhu {
      *   possible.
      */
     TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-              LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, indexBase, comm, lg, node))) {}
+              LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, indexBase, comm, lg, node))) {} //TODO: new?
 
     /** \brief TpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
@@ -69,8 +70,6 @@ namespace Cthulhu {
      */
 
     TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &map) : map_(map) {}
-
-    TpetraMap() {} //TODO
 
     //! TpetraMap destructor. 
     ~TpetraMap() {}
@@ -155,11 +154,32 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns true if \c map is compatible with this Map.
-    bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const { return false; } //TODOmap_->isCompatible(map); };
+    bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const { 
+      try
+	{
+          const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> & tpetraMap = dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &>(map);
+          return map_->isCompatible(*tpetraMap.getTpetra_Map()); 
+	}
+      catch (const std::bad_cast& e)
+	{
+          // Let say that a TpetraMap is not compatible with other format of Map.
+          return false;
+	}
+    };
 
     //! Returns true if \c map is identical to this Map.
-    bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const { return false; } // TODOmap_->isSameAs(map); };
-
+    bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const { 
+      try
+	{
+          const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> & tpetraMap = dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &>(map);
+          return map_->isSameAs(*tpetraMap.getTpetra_Map()); 
+	}
+      catch (const std::bad_cast& e)
+	{
+          // Let say that a TpetraMap is not compatible with other format of Map.
+          return false;
+	}
+    }
     //@}
 
     //@{ Misc. 
@@ -182,9 +202,11 @@ namespace Cthulhu {
 
     //@}
 
+    RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Map() const { return map_; }
+
   private:
 
-    const RCP< Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map_;
+    const RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > map_;
 
   }; // TpetraMap class
 
@@ -200,7 +222,9 @@ namespace Cthulhu {
     */
     template <class LocalOrdinal, class GlobalOrdinal>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
-    createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+    createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
+    }
 
     /** \brief Non-member function to create a locally replicated Map with a specified node.
 
@@ -210,7 +234,9 @@ namespace Cthulhu {
     */
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
-    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+    createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+    }
 
     /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
 
@@ -222,7 +248,6 @@ namespace Cthulhu {
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createUniformContigMapWithNode(global_size_t numElements,
                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
-
       return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
     }
 
@@ -237,11 +262,7 @@ namespace Cthulhu {
     template <class LocalOrdinal, class GlobalOrdinal>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
     createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
-
-      Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> > map_ = Tpetra::createUniformContigMap<LocalOrdinal,GlobalOrdinal>(numElements, comm);
-      Teuchos::RCP< const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> > map = rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType>());
-
-      return null;//map;
+      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createUniformContigMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
     }
 
     /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
@@ -254,7 +275,9 @@ namespace Cthulhu {
     */
     template <class LocalOrdinal, class GlobalOrdinal>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
-    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+    createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal>(Tpetra::createContigMap<LocalOrdinal,GlobalOrdinal>(numElements, comm)));
+    }
 
     /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
 
@@ -265,7 +288,9 @@ namespace Cthulhu {
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
-                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+                            const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+    }
 
     /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
 
@@ -276,7 +301,9 @@ namespace Cthulhu {
     template <class LocalOrdinal, class GlobalOrdinal, class Node>
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createWeightedContigMapWithNode(int thisNodeWeight, global_size_t numElements, 
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createUniformContigMap<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+    }
 
   } // useTpetra namespace
 
@@ -285,12 +312,17 @@ namespace Cthulhu {
 /** \brief  Returns true if \c map is identical to this map. Implemented in Cthulhu::TpetraMap::isSameAs().
     \relates Cthulhu::TpetraMap */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator== (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2);
+bool operator== (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) {
+  return map1.isSameAs(map2);
+}
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Cthulhu::TpetraMap::isSameAs().
     \relates Cthulhu::TpetraMap */
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
-bool operator!= (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2);
+bool operator!= (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map2) {
+  return !map1.isSameAs(map2);
+}
 
 #endif // CTHULHU_TPETRAMAP_HPP
 
+// NOTE: not copy constructor for Tpetra::Map ?
