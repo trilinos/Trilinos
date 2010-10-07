@@ -4,11 +4,11 @@
 #include <Teuchos_Array.hpp>
 
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Version.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
-#include "Tpetra_Vector.hpp"
-#include "Tpetra_CrsMatrix.hpp"
+// #include "Tpetra_Version.hpp"
+// #include "Tpetra_Map.hpp"
+// #include "Tpetra_MultiVector.hpp"
+// #include "Tpetra_Vector.hpp"
+// #include "Tpetra_CrsMatrix.hpp"
 
 #include "Cthulhu_DefaultPlatform.hpp"
 #include "Cthulhu_TpetraMap.hpp"
@@ -56,11 +56,15 @@ int main(int argc, char *argv[]) {
   std::cout << "Comm info: " << *comm;
 
   Teuchos::RCP<const Cthulhu::TpetraMap<Ordinal,Ordinal> > map = Cthulhu::useTpetra::createUniformContigMap<Ordinal,Ordinal>(numGlobalElements, comm);
+  Teuchos::RCP<const Cthulhu::TpetraMap<Ordinal,Ordinal> > map2 = Cthulhu::useTpetra::createUniformContigMap<Ordinal,Ordinal>(numGlobalElements, comm);
   
-  //   Get update list and number of local equations from newly created map.
-  
-  // const size_t numMyElements = map->getNodeNumElements();
-  // Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
+  bool b= (map == map2); b=false;
 
+  //   Get update list and number of local equations from newly created map.
+
+  const size_t numMyElements = map->getNodeNumElements();
+  Teuchos::ArrayView<const Ordinal> myGlobalElements = map->getNodeElementList();
+
+  int i = numMyElements; i++;
   return 0;
 }
