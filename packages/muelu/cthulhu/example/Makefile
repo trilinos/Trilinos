@@ -2,7 +2,7 @@
 # somewhere in you local configuration or use the following line but in this case, don't commit your Makefile !
 # TRILINOS_INSTALL_DIR = 
 
-EXE_ROOT = 	Cthulhu_Example_Map
+EXE_ROOT = 	Cthulhu_Example_TpetraMap
 
 CLIENT_EXTRA_INCLUDES = 
 
