@@ -34,15 +34,14 @@ using namespace rebalance;
 namespace {
 
 
-bool balance_comm_spec_domain (Partition & partition,
-                               std::vector<mesh::EntityProc> & rebal_spec)
+bool balance_comm_spec_domain( Partition & partition,
+                               std::vector<mesh::EntityProc> & rebal_spec )
 {
   bool rebalancingHasOccurred = false;
   {
     int num_elems = partition.num_elems();
     int tot_elems;
-    //all_reduce_sum(comm, &num_elems, &tot_elems, 1);
-    tot_elems = num_elems;
+    all_reduce_sum(partition.parallel(), &num_elems, &tot_elems, 1);
     
     if (tot_elems) {
       partition.determine_new_partition(rebalancingHasOccurred);
@@ -86,22 +85,22 @@ bool rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
 
   double my_load = 0.0;
 
-  mesh::EntityVector local_nodes;
+  mesh::EntityVector local_elems;
   mesh::Selector select_owned(meta_data.locally_owned_part());
   mesh::get_selected_entities(select_owned,
-                              bulk_data.buckets(mesh::Node),
-                              local_nodes);
+                              bulk_data.buckets(mesh::Element),
+                              local_elems);
 
-  for(mesh::EntityVector::iterator elem_it = local_nodes.begin(); elem_it != local_nodes.end(); ++elem_it)
+  for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
   {
     double * load_val = mesh::field_data(load_measure, **elem_it);
     my_load += *load_val;
   }
 
-  double max_load = my_load=my_load;
-  double tot_load = my_load=0;
+  double max_load = my_load;
+  double tot_load = 0;
 
-  all_reduce(comm, ReduceMax<1>(&my_load));
+  all_reduce(comm, ReduceMax<1>(&max_load));
   all_reduce_sum(comm, &my_load, &tot_load, 1);
 
   const int   proc_size = parallel_machine_size(comm);

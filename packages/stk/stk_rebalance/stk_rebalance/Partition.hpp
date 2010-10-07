@@ -90,10 +90,10 @@ public:
    */
 
   struct RegionInfo {
-    std::vector<mesh::Entity *>   mesh_objects;
-    const stk::mesh::Field<double>                 * nodal_coord_ref ;
-    const stk::mesh::Field<double>                 * elem_weight_ref;
-    std::vector<unsigned>             dest_proc_ids ;
+    std::vector<mesh::Entity *>      mesh_objects;
+    const stk::mesh::Field<double> * nodal_coord_ref ;
+    const stk::mesh::Field<double> * elem_weight_ref;
+    std::vector<unsigned>            dest_proc_ids ;
 
     /** Default Constructor. */
     RegionInfo():
@@ -113,17 +113,10 @@ public:
 
   /** Default Constructor.
    */
-  Partition():
-    total_number_objects_(0),
-    iter_initialized_(false) {}
+  Partition(ParallelMachine);
 
   /** Default Copy Constructor.  */
-  inline Partition(const Partition& P):
-    total_number_objects_(P.total_number_objects_),
-    region_obj_information_(P.region_obj_information_),
-    object_iter_(P.object_iter_),
-    object_iter_len_(P.object_iter_len_),
-    iter_initialized_(P.iter_initialized_) {}
+  Partition(const Partition& P);
 
   /** Add another list of mesh objects to the partition.
    * The list of mesh objects is unique to the processor
@@ -158,7 +151,7 @@ public:
    * This is useful if there is only one mesh segment.  Function
    * calls reset_mesh_data followed by a call to add_mesh.
    */
-  void replace_mesh ( const std::vector<mesh::Entity *> &mesh_objects,
+  virtual void replace_mesh ( const std::vector<mesh::Entity *> &mesh_objects,
                       const stk::mesh::Field<double>   * nodal_coord_ref,
                       const stk::mesh::Field<double>   * elem_weight_ref=NULL);
 
@@ -171,7 +164,11 @@ public:
   void reset_dest_proc_data ();
 
   /** Destructor. */
-  virtual ~Partition(){}
+  virtual ~Partition();
+
+  /** Return the parallel communicator for this partition object.*/
+  ParallelMachine parallel() const
+  { return comm_; }
 
   /** Given mesh object, find owning processor.
    * This does a search of the internally stored mesh
@@ -221,7 +218,7 @@ public:
   const stk::mesh::Field<double> * object_weight_ref () const;
 
   /** Return the total number of mesh objects in all lists. */
-  unsigned num_elems() const;
+  virtual unsigned num_elems() const;
 
   /** Determine New Partition.
    * This is where all of the real work takes place.  This
@@ -229,7 +226,7 @@ public:
    * the new partition.  RebalancingNeeded is set if the new
    * partition is different than the old one.
    */
-  virtual int determine_new_partition(bool &RebalancingNeeded)=0;
+  virtual int determine_new_partition(bool &RebalancingNeeded) = 0;
 
   /** Perform communication to create new partition.
    * Given a communication specification this
@@ -242,10 +239,11 @@ public:
    * mesh objects before rebalancing is performed
    * again.
    */
-  int get_new_partition(std::vector<mesh::EntityProc> &new_partition);
+  virtual int get_new_partition(std::vector<mesh::EntityProc> &new_partition) = 0;
 
-private:
+protected:
 
+  stk::ParallelMachine comm_;
   unsigned total_number_objects_;
   RegionInfo  region_obj_information_;
 
@@ -297,7 +295,6 @@ public:
   unsigned iter_current_key() const;
 
 };
-
 
 }
 } // namespace stk
