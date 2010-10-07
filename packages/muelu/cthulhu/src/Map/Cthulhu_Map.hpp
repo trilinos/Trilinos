@@ -29,46 +29,44 @@ namespace Cthulhu {
 
   public:
 
-    //! @name Constructor/Destructor Methods
-    //@{ 
+//     //! @name Constructor/Destructor Methods
+//     //@{ 
 
-    /** \brief Map constructor with Cthulhu-defined contiguous uniform distribution.
-     *   The elements are distributed among nodes so that the subsets of global elements
-     *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
-     *   possible.
-     */
-    Map(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-        LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+//     /** \brief Map constructor with Cthulhu-defined contiguous uniform distribution.
+//      *   The elements are distributed among nodes so that the subsets of global elements
+//      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
+//      *   possible.
+//      */
+//     Map(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+//         LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
-    /** \brief Map constructor with a user-defined contiguous distribution.
-     *  The elements are distributed among the nodes so that the subsets of global elements
-     *  are non-overlapping and contiguous 
-     *  
-     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
-     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-     *  If this verification fails, a std::invalid_argument exception will be thrown.
-     */
-    Map(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, 
-        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+//     /** \brief Map constructor with a user-defined contiguous distribution.
+//      *  The elements are distributed among the nodes so that the subsets of global elements
+//      *  are non-overlapping and contiguous 
+//      *  
+//      *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
+//      *  Otherwise, it must be equal to the sum of the local elements across all 
+//      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
+//      *  If this verification fails, a std::invalid_argument exception will be thrown.
+//      */
+//     Map(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, 
+//         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
         
 
-    /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
-     *  
-     *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-     *  Otherwise, it must be equal to the sum of the local elements across all 
-     *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-     *  If this verification fails, a std::invalid_argument exception will be thrown.
-     */
-    Map(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, 
-        const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+//     /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
+//      *  
+//      *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
+//      *  Otherwise, it must be equal to the sum of the local elements across all 
+//      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
+//      *  If this verification fails, a std::invalid_argument exception will be thrown.
+//      */
+//     Map(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, 
+//         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
-    Map() {} //TODO
-
-    //! Map destructor. 
+//     //! Map destructor. 
     virtual ~Map() {};
 
-    //@}
+//     //@}
 
 
     //! @name Map Attribute Methods
