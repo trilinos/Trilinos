@@ -140,7 +140,7 @@ public:
    *  All ghosts of all entities effected by the changed ownerships
    *  deleted.
    */
-  void change_entity_owner( const std::vector<EntityProc> & );
+  void change_entity_owner( const std::vector<EntityProc> & arg_change);
 
   /** \brief  Rotate the field data of multistate fields.
    *
@@ -216,7 +216,7 @@ public:
    *  the change will be propogated to the sharing or ghosting
    *  processes by modification_end.
    */
-  void change_entity_parts( Entity & ,
+  void change_entity_parts( Entity & entity,
       const std::vector<Part*> & add_parts ,
       const std::vector<Part*> & remove_parts =
       std::vector<Part*>() );
@@ -254,7 +254,7 @@ public:
    *  \return  True if the request for destruction is accepted; i.e.,
    *           if the entity is not the 'to' member of a relation.
    */
-  bool destroy_entity( Entity * & );
+  bool destroy_entity( Entity * & entity );
 
   //------------------------------------
 
@@ -294,7 +294,7 @@ public:
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
    */
-  void declare_relation( Entity & , const std::vector<Relation> & );
+  void declare_relation( Entity & entity, const std::vector<Relation> & rel);
 
   /** \brief  Remove all relations between two entities.
    *
@@ -345,7 +345,7 @@ public:
    *    mesh.change_ghosting( ghosts , std::vector<EntityProc>() ,
    *                                   ghosts.receive() );
    */
-  void change_ghosting( Ghosting & ,
+  void change_ghosting( Ghosting & ghosts,
                         const std::vector<EntityProc> & add_send ,
                         const std::vector<Entity*> & remove_receive );
 
@@ -360,11 +360,11 @@ public:
 
   //------------------------------------
   /** \brief  All non-const methods assert this */
-  void assert_ok_to_modify( const char * ) const ;
+  void assert_ok_to_modify( const char * method ) const ;
 
-  void assert_entity_owner( const char * , const Entity & , unsigned ) const ;
+  void assert_entity_owner( const char * method, const Entity & entity, unsigned owner) const ;
 
-  void assert_good_key( const char * , const EntityKey & ) const ;
+  void assert_good_key( const char * method, const EntityKey & key) const ;
 
   //------------------------------------
 private:
@@ -406,9 +406,9 @@ private:
                                      const PartVector & add_parts ,
                                      const PartVector & remove_parts );
 
-  void internal_propagate_part_changes( Entity & , const PartVector & removed );
+  void internal_propagate_part_changes( Entity & entity, const PartVector & removed );
 
-  void internal_change_ghosting( Ghosting & ,
+  void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<Entity*> & remove_receive );
 
@@ -419,11 +419,6 @@ private:
     void internal_resolve_shared_membership();
 
   void internal_update_distributed_index( std::vector<Entity*> & shared_new );
-
-  /** \brief  Put owned entity in send list for off-process
-   *          parallel index, shared, and ghosted.
-   */
-  void owner_send_to_all( Entity * , std::vector<EntityProc> & ) const ;
 
   /** \brief  Regenerate the shared-entity aura,
    *          adding and removing ghosted entities as necessary.
