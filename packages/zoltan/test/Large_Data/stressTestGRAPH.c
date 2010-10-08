@@ -12,11 +12,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
+#include <getopt.h>
 #include "zoltan.h"
 #include "zz_util_const.h"
 
 #define NUM_GLOBAL_VERTICES     2500000    /* default */
 
+static int verbose=0;
 static int myRank, numProcs, numMyPins;
 static int cylCount, cylSize, numGlobalVertices;
 static int myFirstGID, numMyVertices;
@@ -31,7 +33,8 @@ int *nborProc = NULL;
 float *edgeWgt = NULL;
 
 struct Zoltan_DD_Struct *dd=NULL;
-static void debug();
+static void debug(struct Zoltan_Struct *zz, char *s, int stop);
+static void usage();
 
 static void gid_location(int gid, int *cylID, int *ringID)
 {
@@ -136,6 +139,8 @@ static void create_a_graph()
 
   c = sqrt((float)numGlobalVertices);
 
+  c = (c < 3.0) ? 3.0 : c;
+
   cylCount = cylSize = (int)c;
 
   numGlobalVertices = cylCount * cylSize;
@@ -231,7 +236,7 @@ static void reallocate_buffers(int numNewVertices, int numNewPins)
     nborProc = ibuf; 
 
     fbuf = (float *)malloc(sizeof(float) * numNewPins);
-    memcpy(ibuf, edgeWgt, sizeof(float) * numMyPins);
+    memcpy(fbuf, edgeWgt, sizeof(float) * numMyPins);
     free(edgeWgt);
     edgeWgt = fbuf; 
   }
@@ -263,7 +268,7 @@ static void migrate_graph(int num_exports, int num_imports, int *export_lids, in
         for (j=nborIndex[i], k=0; j < nborIndex[i+1]; j++, k++){
           nborGID[nextp+k] = nborGID[j];
           edgeWgt[nextp+k] = edgeWgt[j];
-          /* skip nborProc because we don't know what it is now */
+          /* skip nborProc because we don't know what it is yet */
         }
         nborIndex[nextv+1] = nborIndex[nextv] + npins;
       }
@@ -313,6 +318,7 @@ static void migrate_graph(int num_exports, int num_imports, int *export_lids, in
 
 void time_communication(double *t)
 {
+   /* TODO - perform communication proportional to edge weights */
   *t = 0;
 }
 
@@ -382,23 +388,130 @@ int nextv, nextp, npins, p1, i, lid;
 
 int main(int argc, char *argv[])
 {
-  int rc;
+  int rc, do_hier;
   float ver;
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
+  char *platform=NULL, *node_topology=NULL, *machine_topology=NULL;
+  char *graph_package=NULL;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-  int nv=0;
-
+  struct option opts[10];
   double comm_times[10];
-
-  if (argc > 1){
-    nv = atoi(argv[1]);   /* number of vertices */ 
-  }
+  int nvert=0;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+  /* options */
+
+  opts[0].name = "platform";
+  opts[0].has_arg = 1;
+  opts[0].flag = NULL;
+  opts[0].val = 1;
+
+  opts[1].name = "node_topology";
+  opts[1].has_arg = 1;
+  opts[1].flag = NULL;
+  opts[1].val = 2;
+
+  opts[2].name = "machine_topology";
+  opts[2].has_arg = 1;
+  opts[2].flag = NULL;
+  opts[2].val = 3;
+
+  opts[3].name = "size";
+  opts[3].has_arg = 1;
+  opts[3].flag = NULL;
+  opts[3].val = 4;
+
+  opts[4].name = "verbose";
+  opts[4].has_arg = 0;
+  opts[4].flag = NULL;
+  opts[4].val = 5;
+
+  opts[5].name = "help";
+  opts[5].has_arg = 0;
+  opts[5].flag = NULL;
+  opts[5].val = 6;
+
+  opts[6].name = "graph_package";
+  opts[6].has_arg = 1;
+  opts[6].flag = NULL;
+  opts[6].val = 7;
+
+  opts[7].name = 0;
+  opts[7].has_arg = 0;
+  opts[7].flag = NULL;
+  opts[7].val = 0;
+
+  while (1){
+    rc = getopt_long_only(argc, argv, "",  opts, NULL);
+
+    if (rc == '?'){
+      MPI_Barrier(MPI_COMM_WORLD);
+      if (myRank == 0) usage();
+      MPI_Finalize();
+      exit(0);
+    }
+    else if (rc == 1){
+      platform = optarg;
+      if (myRank == 0)
+        printf( "For platform %s\n",optarg );
+    }
+    else if (rc == 2){
+      node_topology = optarg;
+      if (myRank == 0)
+        printf( "For node topology %s\n",optarg);
+    }
+    else if (rc == 3){
+      machine_topology = optarg;
+      if (myRank == 0)
+        printf( "For machine with %s cpus\n",optarg);
+    }
+    else if (rc == 7){
+      graph_package = optarg;
+      if (myRank == 0)
+        printf( "Zoltan parameter GRAPH_PACKAGE = %s\n",graph_package);
+    }
+    else if (rc == 4){
+      nvert = atoi(optarg);
+      if (nvert < 1){
+        if (myRank == 0)
+          fprintf(stderr,"ERROR: --size={approximate number of vertices}\n");
+        MPI_Finalize();
+        exit(1);
+      }
+      else{
+        if (myRank == 0){
+          printf( "Graph will have approximately %d vertices.\n",nvert);
+        }
+      }
+    }
+    else if (rc == 5){
+      verbose = 1;
+    }
+    else if (rc == 6){
+      if (myRank == 0) usage();
+      MPI_Finalize();
+      exit(0);
+    }
+    else if (rc <= 0){
+      break;
+    }
+  }
+
+  if ((platform==NULL) && (node_topology==NULL) && (machine_topology==NULL)){
+    if (myRank == 0)
+      fprintf(stderr,"No platform or topology, so we'll skip hierarchical partitioning\n");
+    do_hier = 0;
+  }
+  else{
+    do_hier = 1;
+  }
+
+  /* start */
 
   rc = Zoltan_Initialize(argc, argv, &ver);
 
@@ -410,8 +523,8 @@ int main(int argc, char *argv[])
 
   Zoltan_Memory_Debug(0);
 
-  if (nv > 0)
-    numGlobalVertices = nv;
+  if (nvert > 0)
+    numGlobalVertices = nvert;
   else
     numGlobalVertices = NUM_GLOBAL_VERTICES;
 
@@ -435,7 +548,14 @@ int main(int argc, char *argv[])
   /* GRAPH PARTITION */
 
   Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
-  Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
+  Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
+
+  if (graph_package)
+    Zoltan_Set_Param(zz, "GRAPH_PACKAGE", graph_package);
+
+  if (verbose){
+    debug(zz, "Initial graph", 0);
+  }
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
@@ -459,10 +579,11 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
-debug();
-
   migrate_graph(numExport, numImport, (int *)exportLocalGids, (int *)importGlobalGids);
 
+  if (verbose){
+    debug(zz, "After flat partitioning and migration", 0);
+  }
 
   time_communication(comm_times+1);      /* With graph partitioning */
 
@@ -471,45 +592,65 @@ debug();
   Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
                       &exportProcs, &exportToPart);
 
-  /* HIERARCHICAL PARTITION */
+  if (do_hier){
 
-  Zoltan_Set_Param(zz, "LB_METHOD", "HIER");
-  Zoltan_Set_Param(zz, "HIER_ASSIST", "1");
-  Zoltan_Set_Param(zz, "MACHINE_TOPOLOGY", "2");     /* TODO - this should be an argument */
-  Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
+    /* HIERARCHICAL PARTITION */
+  
+    Zoltan_Set_Param(zz, "LB_METHOD", "HIER");
+    Zoltan_Set_Param(zz, "HIER_DEBUG_LEVEL", "0");
+    Zoltan_Set_Param(zz, "HIER_ASSIST", "1");
 
-  rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
-        &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
-        &numGidEntries,  /* Number of integers used for a global ID */
-        &numLidEntries,  /* Number of integers used for a local ID */
-        &numImport,      /* Number of vertices to be sent to me */
-        &importGlobalGids,  /* Global IDs of vertices to be sent to me */
-        &importLocalGids,   /* Local IDs of vertices to be sent to me */
-        &importProcs,    /* Process rank for source of each incoming vertex */
-        &importToPart,   /* New partition for each incoming vertex */
-        &numExport,      /* Number of vertices I must send to other processes*/
-        &exportGlobalGids,  /* Global IDs of the vertices I must send */
-        &exportLocalGids,   /* Local IDs of the vertices I must send */
-        &exportProcs,    /* Process to which I send each of the vertices */
-        &exportToPart);  /* Partition to which each vertex will belong */
+    /* TODO: Suppose graph is not symmetric, and we request SYMMETRIZE.  Do we still get
+     *  a "good" answer when each sub-graph in the hierarchy is symmetrized?
+     */
 
-  if (rc != ZOLTAN_OK){
-    printf("sorry...\n");
-    MPI_Finalize();
-    Zoltan_Destroy(&zz);
-    exit(0);
+    if (machine_topology)
+      Zoltan_Set_Param(zz, "MACHINE_TOPOLOGY", machine_topology);
+    else if (node_topology)
+      Zoltan_Set_Param(zz, "NODE_TOPOLOGY", node_topology);
+    else if (platform)
+      Zoltan_Set_Param(zz, "PLATFORM", platform);
+  
+    rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
+          &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
+          &numGidEntries,  /* Number of integers used for a global ID */
+          &numLidEntries,  /* Number of integers used for a local ID */
+          &numImport,      /* Number of vertices to be sent to me */
+          &importGlobalGids,  /* Global IDs of vertices to be sent to me */
+          &importLocalGids,   /* Local IDs of vertices to be sent to me */
+          &importProcs,    /* Process rank for source of each incoming vertex */
+          &importToPart,   /* New partition for each incoming vertex */
+          &numExport,      /* Number of vertices I must send to other processes*/
+          &exportGlobalGids,  /* Global IDs of the vertices I must send */
+          &exportLocalGids,   /* Local IDs of the vertices I must send */
+          &exportProcs,    /* Process to which I send each of the vertices */
+          &exportToPart);  /* Partition to which each vertex will belong */
+  
+    if (rc != ZOLTAN_OK){
+      printf("sorry...\n");
+      MPI_Finalize();
+      Zoltan_Destroy(&zz);
+      exit(0);
+    }
+  
+    migrate_graph(numExport, numImport, (int *)exportLocalGids, (int *)importGlobalGids);
+  
+    if (verbose){
+      debug(zz, "After hierarchical partitioning and migration", 0);
+    }
+  
+    time_communication(comm_times+2);      /* With hierarchical graph partitioning */
+  
+    Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+                        &importProcs, &importToPart);
+    Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+                        &exportProcs, &exportToPart);
+
   }
 
-  migrate_graph(numExport, numImport, (int *)exportLocalGids, (int *)importGlobalGids);
-
-  time_communication(comm_times+2);      /* With hierarchical graph partitioning */
-
-  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
-                      &importProcs, &importToPart);
-  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
-                      &exportProcs, &exportToPart);
-
   Zoltan_Destroy(&zz);
+
+  if (dd) Zoltan_DD_Destroy(&dd);
 
   if (vtxGID) free(vtxGID);
   if (nborIndex) free(nborIndex);
@@ -517,38 +658,83 @@ debug();
   if (nborProc) free(nborProc);
   if (edgeWgt) free(edgeWgt);
 
+  MPI_Finalize();
+
   return 0;
 }
 
-static void debug()
+static void debug(struct Zoltan_Struct *zz, char *s, int stop)
 {
 int i,p,j, k, nedges;
 
   MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
-  for (p=0; p < numProcs; p++){
 
-    if (p == myRank){
+  if (s && !myRank)
+    fprintf(stdout,"\n\n%s\n",s);
 
-      if (p==0) fprintf(stderr,"%d global vertices\n",numGlobalVertices); 
-
-      fprintf(stderr,"Partition %d, %d vertices:\n",p,numMyVertices);
-      for (i=0, k=0; i < numMyVertices; i++){
-        fprintf(stderr,"%d: ",vtxGID[i]);
-        nedges = nborIndex[i+1] - nborIndex[i];
-         
-        for (j=0; j < nedges; j++,k++){
-          fprintf(stderr,"%d/%f/%d ",nborGID[k],edgeWgt[k],nborProc[k]);
+  if (numGlobalVertices <= 100){
+    MPI_Barrier(MPI_COMM_WORLD);
+    for (p=0; p < numProcs; p++){
+  
+      if (p == myRank){
+  
+        if (p==0){
+          fprintf(stdout,"%d global vertices\n",numGlobalVertices); 
         }
-        fprintf(stderr,"\n");
-      
+  
+        fprintf(stdout,"Partition %d, %d vertices:\n",p,numMyVertices);
+        for (i=0, k=0; i < numMyVertices; i++){
+          fprintf(stdout,"%d: ",vtxGID[i]);
+          nedges = nborIndex[i+1] - nborIndex[i];
+           
+          for (j=0; j < nedges; j++,k++){
+            fprintf(stdout,"%d/%f/%d ",nborGID[k],edgeWgt[k],nborProc[k]);
+          }
+          fprintf(stdout,"\n");
+        
+        }
+        fprintf(stdout,"\n");
+        fflush(stdout);
       }
-      fprintf(stderr,"\n");
-      fflush(stderr);
+      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(MPI_COMM_WORLD);
     }
     MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
   }
+
+  Zoltan_LB_Eval_Graph(zz, 1, NULL);
+
   MPI_Barrier(MPI_COMM_WORLD);
+
+  if (stop){
+    MPI_Finalize();
+    exit(0);
+  }
 }
+
+extern zoltan_platform_specification zoltan_hier_platform_specs[ZOLTAN_HIER_LAST_PLATFORM];
+
+static void usage()
+{
+  int i;
+  printf( "\nUsage: --verbose\n");
+  printf( "\n       --graph_package={parmetis|scotch|phg}\n");
+  printf( "\n       --platform=desc | --node_topology=desc | --machine_topology=desc\n");
+  printf( "\n       --size={approximate global number of vertices}\n");
+
+  printf( "\nPlatform Names that Zoltan knows about:");
+
+  for (i=0; i < ZOLTAN_HIER_LAST_PLATFORM; i++){
+    if (i%8 == 0) printf("\n");
+    printf( "  %s", zoltan_hier_platform_specs[i].platform_name );
+  }
+  printf( "\n\nA node_topology description is a list of integers, for example\n");
+  printf( "  Dual socket, quad core: 2, 4\n");
+  printf( "  Quad socket, six cores with core pairs sharing a cache: 4, 3, 2\n");
+  printf( "A machine_topology description is a list of integers (usually just 1), for example\n");
+  printf( "  Dual core workstation: 2\n\n");
+
+  printf( "The default global number of vertices is %d\n",NUM_GLOBAL_VERTICES);
+}
+
