@@ -1,0 +1,10 @@
+\muelu supports both unit and broader testing.  Unit testing relies on the \teuchos unit-testing infrastructure\footnote{As of
+October, 2010, there
+doesn't seem to be any good documentation for this.  Your best bet is to look at a package already using it, such as \ifpack2.}.
+Implementing new unit tests is straightforward.
+\be
+  \item Copy the file \cc{test/unit\_tests/Level.cpp} to a new filename of your choosing, say, \cc{foo.cpp}.
+  \item Edit \cc{foo.cpp} and put in your test.
+  \item Add \cc{foo.cpp} to the list of \cc{SOURCES} in file \cc{test/unit\_tests/CMakeLists.txt}.
+  \item Rebuild, run the unit test executable, and you should see the new test run.
+\ee
