@@ -22,16 +22,6 @@ Partition::Partition(ParallelMachine comm) :
 {
 }
 
-Partition::Partition(const Partition & p) :
-  comm_(p.comm_),
-  total_number_objects_(p.total_number_objects_),
-  region_obj_information_(p.region_obj_information_),
-  object_iter_(p.object_iter_),
-  object_iter_len_(p.object_iter_len_),
-  iter_initialized_(p.iter_initialized_)
-{
-}
-
 void 
 Partition::replace_mesh( const std::vector<mesh::Entity *> &mesh_objects,
                           const stk::mesh::Field<double>   * nodal_coord_ref,
@@ -50,5 +40,3 @@ Partition::num_elems() const
 { 
   return total_number_objects_ ; 
 }
-
-  //virtual int get_new_partition(std::vector<mesh::EntityProc> &new_partition);

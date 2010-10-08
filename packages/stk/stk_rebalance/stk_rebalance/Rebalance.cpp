@@ -22,6 +22,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 
 #include <stk_rebalance/Rebalance.hpp>
@@ -32,7 +33,6 @@ using namespace rebalance;
 
 
 namespace {
-
 
 bool balance_comm_spec_domain( Partition & partition,
                                std::vector<mesh::EntityProc> & rebal_spec )
@@ -70,7 +70,6 @@ bool full_rebalance(mesh::BulkData        & bulk_data ,
   return rebalancingHasOccurred;
 }
 
-// ----------------------------------------------------------------------------
 }
 
 // ------------------------------------------------------------------------------
@@ -85,10 +84,14 @@ bool rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
 
   double my_load = 0.0;
 
+  const mesh::TopologicalMetaData & topo_data = mesh::TopologicalMetaData::find_TopologicalMetaData(meta_data);
+
   mesh::EntityVector local_elems;
-  mesh::Selector select_owned(meta_data.locally_owned_part());
+  mesh::Selector select_owned( meta_data.locally_owned_part() );
+
+  // Determine imbalance based on current element decomposition
   mesh::get_selected_entities(select_owned,
-                              bulk_data.buckets(mesh::Element),
+                              bulk_data.buckets(topo_data.element_rank),
                               local_elems);
 
   for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
@@ -117,8 +120,9 @@ bool rebalance::rebalance(mesh::BulkData        & bulk_data  ,
 {
   mesh::EntityVector rebal_elem_ptrs;
   mesh::EntityVector entities;
+  const mesh::TopologicalMetaData & topo_data = mesh::TopologicalMetaData::find_TopologicalMetaData(bulk_data.mesh_meta_data());
   mesh::get_selected_entities(selector,
-                              bulk_data.buckets(mesh::Node),
+                              bulk_data.buckets(topo_data.element_rank),
                               entities);
 
   for (mesh::EntityVector::iterator iA = entities.begin() ; iA != entities.end() ; ++iA ) {

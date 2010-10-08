@@ -102,21 +102,11 @@ public:
 
     /** Destructor. */
     ~RegionInfo() {}
-
-    /** Copy constructor. */
-    RegionInfo( const RegionInfo & r ):
-      mesh_objects      ( r.mesh_objects    ),
-      nodal_coord_ref( r.nodal_coord_ref ),
-      elem_weight_ref( r.elem_weight_ref ),
-      dest_proc_ids  ( r.dest_proc_ids   ) {}
   };
 
   /** Default Constructor.
    */
   Partition(ParallelMachine);
-
-  /** Default Copy Constructor.  */
-  Partition(const Partition& P);
 
   /** Add another list of mesh objects to the partition.
    * The list of mesh objects is unique to the processor

@@ -190,7 +190,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
   ScalarField & weight_field( meta_data.declare_field< ScalarField >( "element_weights" ) );
 
   stk::mesh::put_field( coord_field , top_data.node_rank , meta_data.universal_part() );
-  stk::mesh::put_field( weight_field , top_data.element_rank , meta_data.universal_part() );
+  stk::mesh::put_field(weight_field , top_data.element_rank , meta_data.universal_part() );
 
   meta_data.commit();
 
@@ -219,7 +219,7 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
         stk::mesh::Entity * e = bulk_data.get_entity( top_data.element_rank, elem );
         double * const e_weight = stk::mesh::field_data( weight_field , *e );
-        *e_weight = 1;
+        *e_weight = 1.0;
       }
     }
   }
@@ -240,22 +240,39 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
   stk::mesh::Selector selector(meta_data.universal_part());
 
   partition.set_balance_step(MockPartition::FIRST);
-  double imblance_threshhold = 0.5; // TODO - make this > 1.0 and check that it works
+  // Exercise the threshhold calculation by using imblance_threshhold > 1.0
+  double imblance_threshhold = 1.5; 
   bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, meta_data, weight_field, comm, imblance_threshhold);
   if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, NULL, NULL, partition);
+  {
+    // Pick a few values as negative to exercise a check in rebalance::rebalance(...)
+    // which converts negative weights to 1.0
+    if ( p_rank == 0 ) 
+    {
+      for ( unsigned iy = 0 ; iy < ny ; ++iy ) 
+      {
+        stk::mesh::EntityId elem = 1 + iy * nx ;
+        stk::mesh::Entity * e = bulk_data.get_entity( top_data.element_rank, elem );
+        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        *e_weight = -2.0;
+      }
+    }
+    stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
+  }
 
   partition.set_balance_step(MockPartition::SECOND);
-  imblance_threshhold = 0.5; // TODO - make this > 1.0 and check that it works
+  // Force a rebalance by using imblance_threshhold < 1.0
+  imblance_threshhold = 0.5;
   do_rebal = stk::rebalance::rebalance_needed(bulk_data, meta_data, weight_field, comm, imblance_threshhold);
   if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, NULL, NULL, partition);
+    stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
 
   partition.set_balance_step(MockPartition::THIRD);
-  imblance_threshhold = 0.5; // TODO - make this > 1.0 and check that it works
+  // Force a rebalance by using imblance_threshhold < 1.0
+  imblance_threshhold = 0.5;
   do_rebal = stk::rebalance::rebalance_needed(bulk_data, meta_data, weight_field, comm, imblance_threshhold);
   if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, NULL, NULL, partition);
+    stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
 
   if ( 1 < p_size ) {
     // Only P1 has any nodes or elements
@@ -268,6 +285,4 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
       STKUNIT_ASSERT( bulk_data.buckets( top_data.element_rank ).empty() );
     }
   }
-
-  return;
 }
