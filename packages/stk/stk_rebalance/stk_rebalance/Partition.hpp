@@ -43,6 +43,8 @@
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 namespace stk {
 namespace rebalance {
@@ -71,6 +73,9 @@ class Partition {
 
 public:
 
+  typedef mesh::Field<double, mesh::Cartesian>  VectorField ;
+  typedef mesh::Field<double>                   ScalarField ;
+
   /** RegionInfo is a structure to organize the mesh object data.
    * A geometric decomposition can be constructed from one or more
    * regions; furthermore, for each region, the decomposition can
@@ -91,8 +96,8 @@ public:
 
   struct RegionInfo {
     std::vector<mesh::Entity *>      mesh_objects;
-    const stk::mesh::Field<double> * nodal_coord_ref ;
-    const stk::mesh::Field<double> * elem_weight_ref;
+    const VectorField * nodal_coord_ref ;
+    const ScalarField * elem_weight_ref;
     std::vector<unsigned>            dest_proc_ids ;
 
     /** Default Constructor. */
@@ -106,7 +111,8 @@ public:
 
   /** Default Constructor.
    */
-  Partition(ParallelMachine);
+  Partition(stk::ParallelMachine comm);
+  Partition(const Partition &p);
 
   /** Add another list of mesh objects to the partition.
    * The list of mesh objects is unique to the processor
@@ -202,15 +208,15 @@ public:
   mesh::Entity *mesh_object(const unsigned moid ) const;
 
   /** Return the Field points to the object coordinates.*/
-  const stk::mesh::Field<double> * object_coord_ref () const;
+  const VectorField * object_coord_ref () const;
 
   /** Return the Field points to the object coordinates.*/
-  const stk::mesh::Field<double> * object_weight_ref () const;
+  const ScalarField * object_weight_ref () const;
 
   /** Return the total number of mesh objects in all lists. */
   virtual unsigned num_elems() const;
 
-  /** Determine New Partition.
+  /** determine New Partition.
    * This is where all of the real work takes place.  This
    * virtual function should be specialized to determine
    * the new partition.  RebalancingNeeded is set if the new
@@ -229,7 +235,7 @@ public:
    * mesh objects before rebalancing is performed
    * again.
    */
-  virtual int get_new_partition(std::vector<mesh::EntityProc> &new_partition) = 0;
+  virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition);
 
 protected:
 

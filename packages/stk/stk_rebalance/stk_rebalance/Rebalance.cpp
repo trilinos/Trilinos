@@ -42,7 +42,7 @@ bool balance_comm_spec_domain( Partition & partition,
     int num_elems = partition.num_elems();
     int tot_elems;
     all_reduce_sum(partition.parallel(), &num_elems, &tot_elems, 1);
-    
+
     if (tot_elems) {
       partition.determine_new_partition(rebalancingHasOccurred);
     }

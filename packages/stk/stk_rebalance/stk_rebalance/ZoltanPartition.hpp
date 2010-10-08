@@ -15,7 +15,7 @@
 
 // Copyright 2001 Sandia Corporation, Albuquerque, NM.
 
-#ifndef stk_rebalance_ZoltanPartition_hpp    
+#ifndef stk_rebalance_ZoltanPartition_hpp
 #define stk_rebalance_ZoltanPartition_hpp
 
 #include <utility>
@@ -23,7 +23,8 @@
 #include <string>
 
 #include <Teuchos_ParameterList.hpp>
-#include <stk_rebalance/GeomDecomp.h>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_rebalance/GeomDecomp.hpp>
 
 //Forward declaration for pointer to a Zoltan structrue.
 struct Zoltan_Struct;
@@ -66,41 +67,38 @@ public:
                                         Teuchos::ParameterList &to);
 
   /**
-   * Register SIERRA Framework Zoltan call-back functions
-   */
-  Int register_callbacks();
+   * Register SIERRA Framework Zoltan call-back functions */
+  int register_callbacks();
 
-  virtual Int determine_new_partition (bool & RebalancingNeeded);
+  virtual int determine_new_partition (bool & RebalancingNeeded);
 
   /**
    * Evaluate the performance/quality of dynamic load rebalancing
    */
-  Int evaluate ( Int   print_stats,
-                 Int   *nobj,
-                 Real  *obj_wgt,
-                 Int   *ncuts,
-                 Real  *cut_wgt,
-                 Int   *nboundary,
-                 Int   *nadj         );
+  int evaluate ( int   print_stats,
+                 int   *nobj,
+                 double  *obj_wgt,
+                 int   *ncuts,
+                 double  *cut_wgt,
+                 int   *nboundary,
+                 int   *nadj         );
 
   /**
    * Decomposition Augmentation
    */
-  virtual Int point_assign( Real *coords,
-                            Int  *proc ) const;
+  virtual int point_assign( double    *coords,
+                            unsigned  *proc ) const;
 
-  virtual Int box_assign ( Real min[],
-                           Real max[],
-                           std::vector<Int> &procs) const;
+  virtual int box_assign ( double min[],
+                           double max[],
+                           std::vector<int> &procs) const;
 
   /**
    * Inline functions to access private data
    */
 
-  Real zoltan_version()  const;
+  double zoltan_version()  const;
   const std::string & parameter_entry_name() const;
-
-  virtual Diag::Writer &verbose_print(Diag::Writer &dout) const;
 
   Zoltan_Struct * zoltan() {
     return zoltan_id;
