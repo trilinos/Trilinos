@@ -40,9 +40,9 @@ public:
    * Constructor
    */
 
-  static Zoltan create_default(const Teuchos::ParameterList & rebal_region_parameters);
+  static Zoltan create_default(ParallelMachine pm, const Teuchos::ParameterList & rebal_region_parameters);
 
-  explicit Zoltan(const std::string &Parameters_Name=GeomDecomp::default_parameters_name());
+  explicit Zoltan(ParallelMachine pm, const std::string &Parameters_Name=GeomDecomp::default_parameters_name());
 
   void init(const std::vector< std::pair<std::string, std::string> >
             &dynamicLoadRebalancingParameters);
@@ -72,6 +72,9 @@ public:
 
   virtual int determine_new_partition (bool & RebalancingNeeded);
 
+  virtual int get_new_partition(std::vector<mesh::EntityProc> &new_partition)
+  { throw std::runtime_error("stk::rebalance::Zoltan::get_new_partition not yet implemented."); }
+
   /**
    * Evaluate the performance/quality of dynamic load rebalancing
    */
@@ -87,7 +90,7 @@ public:
    * Decomposition Augmentation
    */
   virtual int point_assign( double    *coords,
-                            unsigned  *proc ) const;
+                            int  *proc ) const;
 
   virtual int box_assign ( double min[],
                            double max[],
@@ -118,6 +121,6 @@ private:
 };
 
 }
-} // namespace sierra
+} // namespace stk
 
 #endif

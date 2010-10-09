@@ -189,7 +189,8 @@ public:
    * MeshObjects_GlobalID() returns the result of global_id()
    * function of the indexed mesh object.
    */
-  int globalID         (const unsigned moid) const;
+  int globalID         (const unsigned moid) const
+  { return region_obj_information_.mesh_objects[ moid ]->identifier(); }
 
   /** Return the owning processor.*/
   unsigned destination_proc(const unsigned moid) const;
@@ -239,7 +240,7 @@ public:
 
 protected:
 
-  stk::ParallelMachine comm_;
+  const stk::ParallelMachine comm_;
   unsigned total_number_objects_;
   RegionInfo  region_obj_information_;
 

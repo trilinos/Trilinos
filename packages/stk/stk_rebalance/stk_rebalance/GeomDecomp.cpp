@@ -74,7 +74,7 @@ int GeomDecomp::point_assign_all_objs(mesh::EntityProcVec &comm_spec)
   partition->iter_init();
   for (; !partition->at_end(); ++(*partition)) {
 
-    unsigned            proc_id;
+    int                   proc_id;
     std::vector<double> position;
 
     mesh::Entity * mesh_obj = partition->iter_mesh_object();
@@ -110,7 +110,7 @@ int  GeomDecomp::owning_proc(const VectorField  & nodal_coord_ref ,
 
   obj_to_point( mesh_obj, nodal_coord_ref, position );
 
-  unsigned proc = 0;
+  int proc = 0;
   if ( 0 != this->point_assign( &position[0], &proc ) )
     throw std::runtime_error("Point assignment failed");
 

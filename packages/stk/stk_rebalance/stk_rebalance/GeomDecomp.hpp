@@ -40,7 +40,6 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/fem/CoordinateSystems.cpp>
 
 namespace stk {
 namespace rebalance {
@@ -132,7 +131,7 @@ public:
    * proc_id is the output which is which processor the point
    * should be assigned to.
    */
-  virtual int point_assign (double *position, unsigned *proc_id) const =0;
+  virtual int point_assign (double *position, int *proc_id) const =0;
 
   /** Determine which processors contain a box.
    * The input is the extent of a box.  Output is a list

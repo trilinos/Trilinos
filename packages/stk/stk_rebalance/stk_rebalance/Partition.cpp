@@ -8,6 +8,8 @@
 
 // Copyright 2001, 2002 Sandia Corporation, Albuquerque, NM.
 
+#include <stdexcept>
+
 #include <stk_rebalance/Partition.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
@@ -174,4 +176,10 @@ double Partition::object_weight(const unsigned moid ) const
 const Partition::ScalarField * Partition::object_weight_ref() const
 {
   return region_obj_information_.elem_weight_ref;
+}
+
+unsigned 
+Partition::num_moid() const 
+{ 
+  return region_obj_information_.mesh_objects.size() ; 
 }
