@@ -36,13 +36,21 @@ class Zoltan : public GeomDecomp {
 
 public:
 
+  typedef std::map<std::string,std::string> Parameters;
+
+  static const std::string zoltan_parameters_name();
+  static const std::string default_parameters_name();
+
+  static void init_default_parameters();
+
+
   /**
    * Constructor
    */
 
-  static Zoltan create_default(ParallelMachine pm, const Teuchos::ParameterList & rebal_region_parameters);
+  static Zoltan create_default(ParallelMachine pm,  const unsigned ndim, const Teuchos::ParameterList & rebal_region_parameters);
 
-  explicit Zoltan(ParallelMachine pm, const std::string &Parameters_Name=GeomDecomp::default_parameters_name());
+  explicit Zoltan(ParallelMachine pm, const unsigned ndim, const std::string &Parameters_Name=default_parameters_name());
 
   void init(const std::vector< std::pair<std::string, std::string> >
             &dynamicLoadRebalancingParameters);
@@ -109,14 +117,23 @@ public:
   const Zoltan_Struct * zoltan() const {
     return zoltan_id;
   }
+  unsigned spatial_dimension() const {
+    return m_spatial_dimension_;
+  }
 private:
   /** Zoltan load balancing struct       */
   struct    Zoltan_Struct *zoltan_id;
 
+  const     unsigned       m_spatial_dimension_;
   /** Name that was used to initialize this Zoltan_Struct
    * if the parameter constructor was used.
    */
   std::string  parameter_entry_Name;
+
+  static const std::string zoltanparametersname;
+  static const std::string defaultparametersname;
+  Parameters               m_default_parameters_;
+
 
 };
 

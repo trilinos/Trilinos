@@ -9,6 +9,12 @@
 // Copyright 2001, 2002 Sandia Corporation, Albuquerque, NM.
 
 #include <limits>
+#include <cmath>
+#include <vector>
+#include <string>
+#include <cstdlib>
+#include <stdexcept>
+
 
 #include <stk_mesh/base/Types.hpp>
 
@@ -20,46 +26,13 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_rebalance/ZoltanPartition.hpp>
 #include <stk_rebalance/GeomDecomp.hpp>
 
 
-//zoltan header file is lbi_const.h
-// This file has to be dependent on Zoltan because
-// someone has to allocate a Zoltan object.
-#include <lbi_const.h>
-#include <cmath>
 
 namespace stk {
 namespace rebalance {
 
-const std::string GeomDecomp::zoltanparametersname="Zoltan_Parameters";
-const std::string GeomDecomp::defaultparametersname="DEFAULT";
-
-
-const std::string GeomDecomp::zoltan_parameters_name()
-{
-  return zoltanparametersname;
-}
-
-const std::string GeomDecomp::default_parameters_name()
-{
-  return defaultparametersname;
-}
-
-/** Put Default parameters on Domain.
-void GeomDecomp::init_default_parameters()
-{
-  Parameters Empty_Zoltan_Params;
-  Zoltan::merge_default_values (Empty_Zoltan_Params,
-                                m_default_parameters_);
-}
-bool GeomDecomp::confirm( const std::string &param_set)
-{
-  Parameters *domain_parameters = &m_default_parameters_;
-  return ( (domain_parameters)? 1 : 0 ) ;
-}
-*/
 //: =======================
 //: Public member functions
 //: =======================
@@ -96,7 +69,7 @@ int GeomDecomp::point_assign_all_objs(mesh::EntityProcVec &comm_spec)
     //: Transfer Point_Assign processor ID to Destination Proc
     partition->iter_set_destination_proc(proc_id);
   }
-  return(EXIT_SUCCESS);
+return(EXIT_SUCCESS);
 }/* end int GeomDecomp::point_assign */
 
 

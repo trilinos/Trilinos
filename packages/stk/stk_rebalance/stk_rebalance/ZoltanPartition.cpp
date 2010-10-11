@@ -1,6 +1,13 @@
 
+#include <vector>
+#include <string>
+#include <sstream>
+#include <cstdlib>
+
 #include <stk_rebalance/ZoltanPartition.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -8,11 +15,6 @@
 #include <lbi_const.h>
 
 #include <Teuchos_ParameterList.hpp>
-
-/* sstream to convert Zoltan double version number
-   to string.
-*/
-#include <sstream>
 
 using namespace std;
 using namespace stk;
@@ -43,217 +45,213 @@ inline unsigned wdim() {
   return n;
 }
 
-//inline void convert_param_to_string(const Parameters &from,
-//				    vector < pair<std::string, std::string> > &to)
-//{
-//  Parameters::const_iterator
-//    from_iter  = from.begin(),
-//    from_end   = from.end();
-//
-//  for (; from_iter != from_end; ++from_iter) {
-//    to.push_back(std::pair<std::string,std::string>((*from_iter).name(),
-//					  (*from_iter).get()));
-//  }
-//}
-//
-//inline void fill_parameters (const char *T[][2],
-//			     const int  i,
-//			     Parameters &Entry)
-//{
-//  for (int j=0; j<i; ++j) Entry.set(T[j][0], T[j][1]);
-//}
-//
-//void fill_name_conversion (Parameters &Name_Conversion)
-//{
-//  const char *General[][2] =
-//    {
-//      { "LOAD BALANCING METHOD"      , "LB_METHOD"  },
-//      { "ZOLTAN DEBUG LEVEL"         , "DEBUG_LEVEL" },
-//      { "DEBUG PROCESSOR NUMBER"     , "DEBUG_PROCESSOR" },
-//      { "TIMER"                      , "TIMER" },
-//      { "DETERMINISTIC DECOMPOSITION", "DETERMINISTIC" },
-//      { "DEBUG MEMORY"               , "DEBUG_MEMORY" },
-//      { "IMBALANCE TOLERANCE"        , "IMBALANCE_TOL" },
-//      { "RENUMBER PARTITIONS"        , "REMAP" },
-//      { "KEEP CUTS"                  , "KEEP_CUTS" },
-//      { "REUSE CUTS"                 , "RCB_REUSE" },
-//      { "RCB RECOMPUTE BOX"          , "RCB_RECOMPUTE_BOX" },
-//      { "CHECK GEOMETRY"             , "CHECK_GEOM" },
-//      { "LOCK RCB DIRECTIONS"        , "RCB_LOCK_DIRECTIONS" },
-//      { "SET RCB DIRECTIONS"         , "RCB_SET_DIRECTIONS" },
-//      { "RCB MAX ASPECT RATIO"       , "RCB_MAX_ASPECT_RATIO" },
-//      { "RECTILINEAR RCB BLOCKS"     , "RCB_RECTILINEAR_BLOCKS" },
-//      { "OCTREE DIMENSION"           , "OCT_DIM" },
-//      { "OCTREE METHOD"              , "OCT_METHOD" },
-//      { "OCTREE MIN OBJECTS"         , "OCT_MINOBJECTS" },
-//      { "OCTREE MAX OBJECTS"         , "OCT_MAXOBJECTS" },
-//      // These values are never changed, but must
-//      // be set so default values work correctly.
-//      { "NUMBER GLOBAL ID ENTRIES"   , "NUM_GID_ENTRIES" },
-//      { "NUMBER LOCAL ID ENTRIES"    , "NUM_LID_ENTRIES" },
-//      { "OBJECT WEIGHT DIMENSION"    , "OBJ_WEIGHT_DIM" },
-//      { "RETURN LISTS"               , "RETURN_LISTS" },
-//      { "AUTOMATIC MIGRATION"        , "AUTO_MIGRATE" },
-//      { "DISTANCE"                   , "DISTANCE" }
-//    };
-//  const char *RCB[][2] =
-//    {
-//      { "OVER ALLOCATE MEMORY"       , "RCB_OVERALLOC" },
-//      { "ALGORITHM DEBUG LEVEL"      , "RCB_OUTPUT_LEVEL" }
-//    };
-//  const char *RIB[][2] =
-//    {
-//      { "OVER ALLOCATE MEMORY"       , "RIB_OVERALLOC" },
-//      { "ALGORITHM DEBUG LEVEL"      , "RIB_OUTPUT_LEVEL" }
-//    };
-//  const char *HSFC[][2] =
-//    {
-//      { "OVER ALLOCATE MEMORY"       , "" },
-//      { "ALGORITHM DEBUG LEVEL"      , "" }
-//    };
-//  const char *OCT[][2] =
-//    {
-//      { "OVER ALLOCATE MEMORY"       , "" },
-//      { "ALGORITHM DEBUG LEVEL"      , "OCT_OUTPUT_LEVEL" }
-//    };
-//
-//  const int  Table_lens[] = {sizeof(General)/(2*sizeof(char *)),
-//			     sizeof(RCB)    /(2*sizeof(char *)),
-//			     sizeof(RIB)    /(2*sizeof(char *)),
-//			     sizeof(HSFC)   /(2*sizeof(char *)),
-//			     sizeof(OCT)    /(2*sizeof(char *))};
-//
-//  const char *Table_names[] = {"General",
-//			       "0",
-//			       "1",
-//			       "2",
-//			       "3"};
-//
-//  ThrowAssert (sizeof(Table_names)/sizeof(char *) ==
-//	  sizeof(Table_lens)/sizeof(int));
-//
-//  fill_parameters (General,
-//		   Table_lens[0],
-//		   Name_Conversion.set_nested(Table_names[0]));
-//  fill_parameters (RCB,
-//		   Table_lens[1],
-//		   Name_Conversion.set_nested(Table_names[1]));
-//  fill_parameters (RIB,
-//		   Table_lens[2],
-//		   Name_Conversion.set_nested(Table_names[2]));
-//  fill_parameters (HSFC,
-//		   Table_lens[3],
-//		   Name_Conversion.set_nested(Table_names[3]));
-//  fill_parameters (OCT,
-//		   Table_lens[4],
-//		   Name_Conversion.set_nested(Table_names[4]));
-//}
-//
-//
-//void fill_value_conversion (Parameters &Value_Conversion)
-//{
-//  const char *LB_METHOD[][2] =
-//    {
-//      { "0"   , "RCB"  },
-//      { "1"   , "RIB" },
-//      { "2"   , "HSFC" },
-//      { "3"   , "OCTPART" },
-//    };
-//  const char *TIMER[][2] =
-//    {
-//      { "0"   , "WALL"  },
-//      { "1"   , "CPU" },
-//    };
-//
-//  const int   Table_lens[]  = {sizeof(LB_METHOD)/(2*sizeof(char *)),
-//			       sizeof(TIMER)    /(2*sizeof(char *))};
+inline void convert_param_to_string(const Teuchos::ParameterList &from,
+				    vector < pair<std::string, std::string> > &to)
+{
+  Teuchos::ParameterList::ConstIterator
+    from_iter  = from.begin(),
+    from_end   = from.end();
+
+  for (; from_iter != from_end; ++from_iter) {
+    std::string s;
+    const std::string name  = from.name(from_iter);
+    const std::string entry = from.entry(from_iter).getValue(&s);
+    std::pair<std::string,std::string> p(name,entry);
+
+    to.push_back(p);
+  }
+}
+
+inline void fill_parameters (const char *T[][2],
+			     const int  i,
+			     Teuchos::ParameterList &Entry)
+{
+  for (int j=0; j<i; ++j) Entry.set(T[j][0], T[j][1]);
+}
+
+void fill_name_conversion (Teuchos::ParameterList &Name_Conversion)
+{
+  const char *General[][2] =
+    {
+      { "LOAD BALANCING METHOD"      , "LB_METHOD"  },
+      { "ZOLTAN DEBUG LEVEL"         , "DEBUG_LEVEL" },
+      { "DEBUG PROCESSOR NUMBER"     , "DEBUG_PROCESSOR" },
+      { "TIMER"                      , "TIMER" },
+      { "DETERMINISTIC DECOMPOSITION", "DETERMINISTIC" },
+      { "DEBUG MEMORY"               , "DEBUG_MEMORY" },
+      { "IMBALANCE TOLERANCE"        , "IMBALANCE_TOL" },
+      { "RENUMBER PARTITIONS"        , "REMAP" },
+      { "KEEP CUTS"                  , "KEEP_CUTS" },
+      { "REUSE CUTS"                 , "RCB_REUSE" },
+      { "RCB RECOMPUTE BOX"          , "RCB_RECOMPUTE_BOX" },
+      { "CHECK GEOMETRY"             , "CHECK_GEOM" },
+      { "LOCK RCB DIRECTIONS"        , "RCB_LOCK_DIRECTIONS" },
+      { "SET RCB DIRECTIONS"         , "RCB_SET_DIRECTIONS" },
+      { "RCB MAX ASPECT RATIO"       , "RCB_MAX_ASPECT_RATIO" },
+      { "RECTILINEAR RCB BLOCKS"     , "RCB_RECTILINEAR_BLOCKS" },
+      { "OCTREE DIMENSION"           , "OCT_DIM" },
+      { "OCTREE METHOD"              , "OCT_METHOD" },
+      { "OCTREE MIN OBJECTS"         , "OCT_MINOBJECTS" },
+      { "OCTREE MAX OBJECTS"         , "OCT_MAXOBJECTS" },
+      // These values are never changed, but must
+      // be set so default values work correctly.
+      { "NUMBER GLOBAL ID ENTRIES"   , "NUM_GID_ENTRIES" },
+      { "NUMBER LOCAL ID ENTRIES"    , "NUM_LID_ENTRIES" },
+      { "OBJECT WEIGHT DIMENSION"    , "OBJ_WEIGHT_DIM" },
+      { "RETURN LISTS"               , "RETURN_LISTS" },
+      { "AUTOMATIC MIGRATION"        , "AUTO_MIGRATE" },
+      { "DISTANCE"                   , "DISTANCE" }
+    };
+  const char *RCB[][2] =
+    {
+      { "OVER ALLOCATE MEMORY"       , "RCB_OVERALLOC" },
+      { "ALGORITHM DEBUG LEVEL"      , "RCB_OUTPUT_LEVEL" }
+    };
+  const char *RIB[][2] =
+    {
+      { "OVER ALLOCATE MEMORY"       , "RIB_OVERALLOC" },
+      { "ALGORITHM DEBUG LEVEL"      , "RIB_OUTPUT_LEVEL" }
+    };
+  const char *HSFC[][2] =
+    {
+      { "OVER ALLOCATE MEMORY"       , "" },
+      { "ALGORITHM DEBUG LEVEL"      , "" }
+    };
+  const char *OCT[][2] =
+    {
+      { "OVER ALLOCATE MEMORY"       , "" },
+      { "ALGORITHM DEBUG LEVEL"      , "OCT_OUTPUT_LEVEL" }
+    };
+
+  const int  Table_lens[] = {sizeof(General)/(2*sizeof(char *)),
+			     sizeof(RCB)    /(2*sizeof(char *)),
+			     sizeof(RIB)    /(2*sizeof(char *)),
+			     sizeof(HSFC)   /(2*sizeof(char *)),
+			     sizeof(OCT)    /(2*sizeof(char *))};
+
+  /*
+  const char *Table_names[] = {"General",
+			       "0",
+			       "1",
+			       "2",
+			       "3"};
+  */
+  fill_parameters (General,
+		   Table_lens[0],
+		   Name_Conversion); //.set_nested(Table_names[0])); todo: fix this!
+  fill_parameters (RCB,
+		   Table_lens[1],
+		   Name_Conversion);//.set_nested(Table_names[1]));
+  fill_parameters (RIB,
+		   Table_lens[2],
+		   Name_Conversion);//.set_nested(Table_names[2]));
+  fill_parameters (HSFC,
+		   Table_lens[3],
+		   Name_Conversion);//.set_nested(Table_names[3]));
+  fill_parameters (OCT,
+		   Table_lens[4],
+		   Name_Conversion);//.set_nested(Table_names[4]));
+}
+
+
+void fill_value_conversion (Teuchos::ParameterList &Value_Conversion)
+{
+  const char *LB_METHOD[][2] =
+    {
+      { "0"   , "RCB"  },
+      { "1"   , "RIB" },
+      { "2"   , "HSFC" },
+      { "3"   , "OCTPART" },
+    };
+  const char *TIMER[][2] =
+    {
+      { "0"   , "WALL"  },
+      { "1"   , "CPU" },
+    };
+
+  const int   Table_lens[]  = {sizeof(LB_METHOD)/(2*sizeof(char *)),
+			       sizeof(TIMER)    /(2*sizeof(char *))};
 //  const char *Table_names[] = {"LOAD BALANCING METHOD",
 //			       "TIMER"};
-//
-//  ThrowAssert (sizeof(Table_names)/sizeof(char *) ==
-//	  sizeof(Table_lens)/sizeof(int));
-//
-//  fill_parameters (LB_METHOD,
-//		   Table_lens[0],
-//		   Value_Conversion.set_nested(Table_names[0]));
-//  fill_parameters (TIMER,
-//		   Table_lens[1],
-//		   Value_Conversion.set_nested(Table_names[1]));
-//}
-//
-//void fill_default_value (Parameters &Default_Value)
-//{
-//  const char *General[][2] =
-//    {
-//      { "LOAD BALANCING METHOD"      , "0"  },
-//      // NOTE: "LOAD BALANCING METHOD" default
-//      // Is also hard coded in convert_names_and_values().
-//      { "RENUMBER PARTITIONS"        , "1" },
-//      { "ZOLTAN DEBUG LEVEL"         , "0" },
-//      { "TIMER"                      , "0" },
-//      { "DETERMINISTIC DECOMPOSITION", "1" },
-//      { "DEBUG MEMORY"               , "1" },
-//      { "IMBALANCE TOLERANCE"        , "1.1" },
-//      { "KEEP CUTS"                  , "1" },
-//      { "REUSE CUTS"                 , "1" },
-//      //      { "RCB RECOMPUTE BOX"          , "0" },
-//      { "OVER ALLOCATE MEMORY"       , "1.1" },
-//      { "ALGORITHM DEBUG LEVEL"      , "0" },
-//      { "OCTREE MIN OBJECTS"         , "1" },
-//      { "OCTREE MAX OBJECTS"         , "1" },
-//      // These values are never changed, but must
-//      // be set so default values work correctly.
-//      { "NUMBER GLOBAL ID ENTRIES"   , "2" },
-//      { "NUMBER LOCAL ID ENTRIES"    , "2" },
-//      { "OBJECT WEIGHT DIMENSION"    , "1" },
-//      { "RETURN LISTS"               , "EXPORT" }
-//    };
-//
-//  const int   Table_lens[]  = {sizeof(General)/(2*sizeof(char *))};
+
+  fill_parameters (LB_METHOD,
+		   Table_lens[0],
+		   Value_Conversion);// .set_nested(Table_names[0])); todo: Make Parameters=Tcuchos::ParameterList
+  fill_parameters (TIMER,
+		   Table_lens[1],
+		   Value_Conversion); //.set_nested(Table_names[1]));
+}
+
+void fill_default_value (Teuchos::ParameterList &Default_Value)
+{
+  const char *General[][2] =
+    {
+      { "LOAD BALANCING METHOD"      , "0"  },
+      // NOTE: "LOAD BALANCING METHOD" default
+      // Is also hard coded in convert_names_and_values().
+      { "RENUMBER PARTITIONS"        , "1" },
+      { "ZOLTAN DEBUG LEVEL"         , "0" },
+      { "TIMER"                      , "0" },
+      { "DETERMINISTIC DECOMPOSITION", "1" },
+      { "DEBUG MEMORY"               , "1" },
+      { "IMBALANCE TOLERANCE"        , "1.1" },
+      { "KEEP CUTS"                  , "1" },
+      { "REUSE CUTS"                 , "1" },
+      //      { "RCB RECOMPUTE BOX"          , "0" },
+      { "OVER ALLOCATE MEMORY"       , "1.1" },
+      { "ALGORITHM DEBUG LEVEL"      , "0" },
+      { "OCTREE MIN OBJECTS"         , "1" },
+      { "OCTREE MAX OBJECTS"         , "1" },
+      // These values are never changed, but must
+      // be set so default values work correctly.
+      { "NUMBER GLOBAL ID ENTRIES"   , "2" },
+      { "NUMBER LOCAL ID ENTRIES"    , "2" },
+      { "OBJECT WEIGHT DIMENSION"    , "1" },
+      { "RETURN LISTS"               , "EXPORT" }
+    };
+
+  const int   Table_lens[]  = {sizeof(General)/(2*sizeof(char *))};
 //  const char *Table_names[] = {"General"};
-//
-//  ThrowAssert (sizeof(Table_names)/sizeof(char *) ==
-//	  sizeof(Table_lens)/sizeof(int));
-//
-//  fill_parameters (General,
-//		   Table_lens[0],
-//		   Default_Value.set_nested(Table_names[0]));
-//}
-//
-//
-//
-//#if STK_GEOMDECOMP_DEBUG>=2
-//void debug_print_decomp_export(Zoltan   *zoltan,
-//			       Zoltan *zoltan_id )
-//{
-//  int i;
-//  int           num_export   = zoltan->Num_Exported();
-//  ZOLTAN_ID_PTR export_lids  = zoltan->Export_Local_IDs();
-//  ZOLTAN_ID_PTR export_gids  = zoltan->Export_Global_IDs();
-//  int*          export_procs = zoltan->Export_Proc_IDs();
-//  int           Z_LID_SIZE   = zoltan->Num_Lid_Entries();
-//  int           Z_GID_SIZE   = zoltan->Num_Gid_Entries();
-//
-//  if ( export_gids!=NULL && export_lids!=NULL && export_procs!=NULL ) {
-//    Env::output() << ": Zoltan RCB EXPORTS" << std::endl;
-//    for ( i = 0; i < num_export; i++ ) {
-//      Env::output()
-//	<< "  " << i
-//	<< ":  GID = "
-//	<< "T" << zoltan_id->Type( &export_gids[i*Z_GID_SIZE]) << "  "
-//	<< "I" << zoltan_id->Index(&export_gids[i*Z_GID_SIZE]) << "  "
-//	<< "P" << zoltan_id->Proc( &export_gids[i*Z_GID_SIZE]) << "  "
-//	<< "    LID = "
-//	<< "T" << zoltan_id->Type( &export_lids[i*Z_LID_SIZE]) << "  "
-//	<< "I" << zoltan_id->Index(&export_lids[i*Z_LID_SIZE]) << "  "
-//	<< "  EXPORT_PROC_ID = "
-//	<< export_procs[i]
-//	<< std::endl;
-//    }
-//    Env::output_flush();
-//  }
-//}
-//#endif
+
+  fill_parameters (General,
+		   Table_lens[0],
+		   Default_Value); //.set_nested(Table_names[0])); todo: fix this
+}
+
+
+
+#if STK_GEOMDECOMP_DEBUG>=2
+void debug_print_decomp_export(Zoltan   *zoltan,
+			       Zoltan *zoltan_id )
+{
+  int i;
+  int           num_export   = zoltan->Num_Exported();
+  ZOLTAN_ID_PTR export_lids  = zoltan->Export_Local_IDs();
+  ZOLTAN_ID_PTR export_gids  = zoltan->Export_Global_IDs();
+  int*          export_procs = zoltan->Export_Proc_IDs();
+  int           Z_LID_SIZE   = zoltan->Num_Lid_Entries();
+  int           Z_GID_SIZE   = zoltan->Num_Gid_Entries();
+
+  if ( export_gids!=NULL && export_lids!=NULL && export_procs!=NULL ) {
+    Env::output() << ": Zoltan RCB EXPORTS" << std::endl;
+    for ( i = 0; i < num_export; i++ ) {
+      Env::output()
+	<< "  " << i
+	<< ":  GID = "
+	<< "T" << zoltan_id->Type( &export_gids[i*Z_GID_SIZE]) << "  "
+	<< "I" << zoltan_id->Index(&export_gids[i*Z_GID_SIZE]) << "  "
+	<< "P" << zoltan_id->Proc( &export_gids[i*Z_GID_SIZE]) << "  "
+	<< "    LID = "
+	<< "T" << zoltan_id->Type( &export_lids[i*Z_LID_SIZE]) << "  "
+	<< "I" << zoltan_id->Index(&export_lids[i*Z_LID_SIZE]) << "  "
+	<< "  EXPORT_PROC_ID = "
+	<< export_procs[i]
+	<< std::endl;
+    }
+    Env::output_flush();
+  }
+}
+#endif
 
 
 
@@ -329,8 +327,6 @@ int Callback_Num_Elements( void *data, int *ierr )
 
   int ne = zdata->num_elems();
 
-  //ThrowAssert( ne > -1 );
-
   *ierr = ZOLTAN_OK;
   return ne;
 }
@@ -344,9 +340,6 @@ void Callback_Element_List( void *data,
 			    float *weights,
 			    int *ierr )
 {
-  //ThrowRequire( num_gid_entries() == static_cast<unsigned>(Num_gid_entries) );
-  //ThrowRequire( num_lid_entries() == static_cast<unsigned>(Num_lid_entries) );
-
   if (!data) {
     *ierr = ZOLTAN_FATAL;           // Set FATAL Zoltan error flag
     return;
@@ -375,8 +368,6 @@ void Callback_Element_List( void *data,
       ++l;
     }
   }
-  //ThrowRequire(2*zdata->num_elems() == k && 2*l == k);
-
   *ierr = ZOLTAN_OK;
   return;
 
@@ -392,9 +383,6 @@ int Callback_First_Element( void *data,
 			float *weight,
 			int *ierr )
 {
-
-  //ThrowAssert( 2 == Num_gid_entries );
-  //ThrowAssert( 2 == Num_lid_entries );
 
   if ( data == NULL ) {
     *ierr = ZOLTAN_FATAL;
@@ -442,9 +430,6 @@ int Callback_Next_Element( void *data,
   // ( Num_gid_entries = ZOLTAN_GID_SIZE 2 )
   // ( Num_lid_entries = ZOLTAN_LID_SIZE 2 )
 
-  //ThrowAssert( 2 == Num_gid_entries ); // global_id()'s Global meshObj ID index
-  //ThrowAssert( 2 == Num_lid_entries ); // local_id()'s  Local element ID index
-
   if (!data) {
     *ierr = ZOLTAN_FATAL;           // Set FATAL Zoltan error flag
     return 0;
@@ -460,9 +445,6 @@ int Callback_Next_Element( void *data,
 
   // Check that we are in sync with Zoltan.
   unsigned key = zdata->iter_current_key();
-  //ThrowAssert (local_id [0] == key);
-  //ThrowAssert (global_id[0] == 0);
-  //ThrowAssert (global_id[1] == (unsigned) zdata->iter_mesh_object()->global_id());
 
   // Increment local id in current region
   ++(*zdata);
@@ -498,14 +480,10 @@ int Callback_Num_Dimensions( void *data, int *ierr )
     return 0;
   }
 
-  throw std::runtime_error("Zoltan: Callback_Num_Dimensions needs to be implemented.");
-  //// Replace with possibly TopologicalMetaData::spatial_dimension
-  //int  nd = zdata->object_coord_ref()->length_deprecated(0);
-
-  //ThrowAssert( nd > 0 && nd < 4 );
+  const int  nd = zdata->spatial_dimension();
 
   *ierr = ZOLTAN_OK;
-  return 0 /* nd */;
+  return nd;
 
 }
 
@@ -517,16 +495,11 @@ void Callback_Centroid_Coord( void *data,
 				     double *geom,
 				     int *ierr )
 {
-  //int i = 0;
-
   std::vector<double> temp(3,0.0);
 
   // (from include Fmwk_Sierra_Zoltan_Defines.h:)
   // ( Num_gid_entries = ZOLTAN_GID_SIZE 2 )
   // ( Num_lid_entries = ZOLTAN_LID_SIZE 2 )
-
-  //ThrowAssert( 2 == Num_gid_entries ); // global_id()'s Region ID index
-  //ThrowAssert( 2 == Num_lid_entries ); // local_id()'s  Local element ID index
 
   if ( !data ) {
     *ierr = ZOLTAN_FATAL;
@@ -540,12 +513,11 @@ void Callback_Centroid_Coord( void *data,
     return ;
   }
 
-  //int lid = local_id[  0 ]; // Local Element ID
+  int lid = local_id[  0 ]; // Local Element ID
 
-  throw std::runtime_error("Zoltan: Callback_Centroid_Coord needs to be implemented.");
-  //const Fmwk::MeshObj & target_obj = * zdata->mesh_object( lid );
-  //const mesh::Field              & coor = * zdata->object_coord_ref();
-  //int                        nd   =   coor.length_deprecated(0);
+  const mesh::Entity & target_obj = * zdata->mesh_object( lid );
+  const GeomDecomp::VectorField              & coor = * zdata->object_coord_ref();
+  const unsigned                        nd   =  zdata->spatial_dimension();
 
   /*
    * Obtain the centroid coordinates of the element by averaging all
@@ -554,53 +526,39 @@ void Callback_Centroid_Coord( void *data,
    *
    */
 
-  //rebalance::GeomDecomp::obj_to_point( target_obj, coor, temp );
+  rebalance::GeomDecomp::obj_to_point( target_obj, coor, temp );
 
-  //for ( ; i < nd ; i++ ) geom[ i ] = (double) temp[ i ];
+  for (size_t i=0 ; i < nd ; i++ ) geom[ i ] = (double) temp[ i ];
 
   *ierr = ZOLTAN_OK;
 }
 
 
 
-//void getNeighbors( const Fmwk::MeshObj & obj,
-//                   std::set<const Fmwk::MeshObj*> & nodes ) {
-//
-//  nodes.clear();
-//
-//  const Fmwk::MeshObj::const_iterator
-//    iElemEnd = obj.end_relation(Fmwk::MeshObj::ELEMENT,
-//                                Fmwk::Relation::USED_BY);
-//  Fmwk::MeshObj::const_iterator
-//    iElem = obj.begin_relation(Fmwk::MeshObj::ELEMENT,
-//                               Fmwk::Relation::USED_BY);
-//
-//  for ( ; iElem != iElemEnd; ++iElem ) {
-//    Fmwk::MeshObj * elem = iElem->obj;
-//
-//    const Fmwk::MeshObj::const_iterator
-//      iNodeEnd = elem->end_relation(Fmwk::MeshObj::NODE,
-//                                    Fmwk::Relation::USES);
-//    Fmwk::MeshObj::const_iterator
-//      iNode = elem->begin_relation(Fmwk::MeshObj::NODE,
-//                                   Fmwk::Relation::USES);
-//
-//    for ( ; iNode != iNodeEnd; ++iNode ) {
-//      Fmwk::MeshObj * node = iNode->obj;
-//      if (&obj != node) {
-//        nodes.insert( node );
-//      }
-//    }
-//  }
-//}
+void getNeighbors( const mesh::Entity & obj,
+                   std::set<const mesh::Entity*> & nodes ) {
 
-//int numEdges( const Fmwk::MeshObj & obj ) {
-//
-//  std::set<const Fmwk::MeshObj*> nodes;
-//
-//  getNeighbors( obj, nodes );
-//  return nodes.size();
-//}
+  nodes.clear();
+
+  mesh::PairIterRelation iElem = obj.relations(mesh::Element);
+
+  for ( ; iElem.first != iElem.second; ++iElem.first ) {
+    mesh::Entity * elem = iElem.first->entity();
+    mesh::PairIterRelation iNode = elem->relations(mesh::Node);
+    for ( ; iNode.first != iNode.second; ++iNode.first ) {
+      mesh::Entity * node = iNode.first->entity();
+      if (&obj != node) nodes.insert( node );
+    }
+  }
+}
+
+int numEdges( const mesh::Entity & obj ) {
+
+  std::set<const mesh::Entity*> nodes;
+
+  getNeighbors( obj, nodes );
+  return nodes.size();
+}
 
 int Callback_Num_Edges( void *data,
                         int Num_gid_entries,
@@ -613,9 +571,6 @@ int Callback_Num_Edges( void *data,
   // ( Num_gid_entries = ZOLTAN_GID_SIZE 2 )
   // ( Num_lid_entries = ZOLTAN_LID_SIZE 2 )
 
-  //ThrowAssert( 2 == Num_gid_entries ); // global_id()'s Region ID index
-  //ThrowAssert( 2 == Num_lid_entries ); // local_id()'s  Local node ID index
-
   *ierr = ZOLTAN_OK;
 
   if ( !data ) {
@@ -630,12 +585,11 @@ int Callback_Num_Edges( void *data,
     return 0;
   }
 
-  //int lid = local_id[  0 ]; // Local Element ID
+  int lid = local_id[  0 ]; // Local Element ID
 
-  throw std::runtime_error("Zoltan: Callback_Num_Edges needs to be implemented.");
-  //const Fmwk::MeshObj & target_obj = * zdata->mesh_object( lid );
+  const mesh::Entity & target_obj = * zdata->mesh_object( lid );
 
-  return 0 /* numEdges( target_obj ) */;
+  return  numEdges( target_obj );
 
 }
 
@@ -657,9 +611,6 @@ void Callback_Edge_List( void *data,
   // ( Num_gid_entries = ZOLTAN_GID_SIZE 2 )
   // ( Num_lid_entries = ZOLTAN_LID_SIZE 2 )
 
-  //ThrowAssert( 2 == Num_gid_entries ); // global_id()'s Region ID index
-  //ThrowAssert( 2 == Num_lid_entries ); // local_id()'s  Local node ID index
-
   *ierr = ZOLTAN_OK;
 
   if ( !data ) {
@@ -674,37 +625,67 @@ void Callback_Edge_List( void *data,
     return ;
   }
 
-  //int lid = local_id[  0 ]; // Local Node ID
+  int lid = local_id[  0 ]; // Local Node ID
 
-  throw std::runtime_error("Zoltan: Callback_Edge_List needs to be implemented.");
-  //const Fmwk::MeshObj & target_obj = * zdata->mesh_object( lid );
+  const mesh::Entity & target_obj = * zdata->mesh_object( lid );
 
-  //std::set<const Fmwk::MeshObj*> nodes;
-  //getNeighbors( target_obj, nodes );
+  std::set<const mesh::Entity*> nodes;
+  getNeighbors( target_obj, nodes );
 
-  //int counter(0);
-  //for ( std::set<const Fmwk::MeshObj*>::iterator i = nodes.begin();
-  //      i != nodes.end(); ++i ) {
-  //  nbor_global_id[counter*2+0] = 0; // region_id
+  int counter(0);
+  for ( std::set<const mesh::Entity*>::iterator i = nodes.begin();
+        i != nodes.end(); ++i ) {
+    nbor_global_id[counter*2+0] = 0; // region_id
 
-  //  const Fmwk::MeshObj & n = **i;
-  //  nbor_global_id[counter*2+1] = n.global_id();
+    const mesh::Entity & n = **i;
+    nbor_global_id[counter*2+1] = n.key().id();
 
-  //  nbor_procs[counter] = n.owner_processor_rank();
+    nbor_procs[counter] = n.owner_rank();
 
-  //  if ( wgt_dim ) {
-  //    ewgts[counter] = 1;
-  //  }
-  //  ++counter;
-  //}
+    if ( wgt_dim ) {
+      ewgts[counter] = 1;
+    }
+    ++counter;
+  }
 }
 
 }
+
+
+
+const std::string Zoltan::zoltanparametersname="Zoltan_Parameters";
+const std::string Zoltan::defaultparametersname="DEFAULT";
+
+
+const std::string Zoltan::zoltan_parameters_name()
+{
+  return zoltanparametersname;
+}
+
+const std::string Zoltan::default_parameters_name()
+{
+  return defaultparametersname;
+}
+
+/** Put Default parameters on Domain.
+void Zoltan::init_default_parameters()
+{
+  Parameters Empty_Zoltan_Params;
+  Zoltan::merge_default_values (Empty_Zoltan_Params,
+                                m_default_parameters_);
+}
+bool Zoltan::confirm( const std::string &param_set)
+{
+  Parameters *domain_parameters = &m_default_parameters_;
+  return ( (domain_parameters)? 1 : 0 ) ;
+}
+*/
+
 
 static Teuchos::ParameterList *Name_Conversion =NULL;
 static Teuchos::ParameterList *Value_Conversion=NULL;
 
-double rebalance::Zoltan::zoltan_version()   const { return static_zoltan_version();  }
+double Zoltan::zoltan_version()   const { return static_zoltan_version();  }
 
 //: ===========
 //: Constructor
@@ -726,36 +707,37 @@ double rebalance::Zoltan::zoltan_version()   const { return static_zoltan_versio
 //  return dout;
 //}
 
-//namespace {
-//void Merge_Parameters(std::vector <std::pair<std::string, std::string> > &Str_Zoltan_Params,
-//		      const Teuchos::ParameterList &Zoltan_Params) {
-//  Fmwk::Teuchos::ParameterList Merged_Zoltan_Params   ;
-//  Fmwk::Teuchos::ParameterList Converted_Zoltan_Params;
-//
-//  rebalance::Zoltan::merge_default_values (Zoltan_Params,
-//				      Merged_Zoltan_Params);
-//
-//  rebalance::Zoltan::convert_names_and_values(Merged_Zoltan_Params,
-//					 Converted_Zoltan_Params);
-//
-//  convert_param_to_string (Converted_Zoltan_Params,
-//			   Str_Zoltan_Params);
-//  return;
-//}
-//}
+namespace {
+void Merge_Parameters(std::vector <std::pair<std::string, std::string> > &Str_Zoltan_Params,
+		      const Teuchos::ParameterList &Zoltan_Params) {
+  Teuchos::ParameterList Merged_Zoltan_Params   ;
+  Teuchos::ParameterList Converted_Zoltan_Params;
 
-rebalance::Zoltan rebalance::Zoltan::create_default(ParallelMachine pm, const Teuchos::ParameterList & rebal_region_parameters)
+  rebalance::Zoltan::merge_default_values (Zoltan_Params,
+				      Merged_Zoltan_Params);
+
+  rebalance::Zoltan::convert_names_and_values(Merged_Zoltan_Params,
+					 Converted_Zoltan_Params);
+
+  convert_param_to_string (Converted_Zoltan_Params,
+			   Str_Zoltan_Params);
+  return;
+}
+}
+
+Zoltan Zoltan::create_default(ParallelMachine pm, const unsigned ndim, const Teuchos::ParameterList & rebal_region_parameters)
 {
-  const std::string &param_name = stk::rebalance::GeomDecomp::zoltan_parameters_name();
+  const std::string &param_name = zoltan_parameters_name();
   const bool exist = rebal_region_parameters.isParameter(param_name);
   const std::string parameter_set = ( exist ? (rebal_region_parameters.get<const std::string>(param_name)) : "");
 
-  return rebalance::Zoltan(pm, parameter_set);
+  return rebalance::Zoltan(pm, ndim, parameter_set);
 }
 
-rebalance::Zoltan::Zoltan(ParallelMachine pm, const std::string &Parameters_Name) :
+Zoltan::Zoltan(ParallelMachine pm, const unsigned ndim, const std::string &Parameters_Name) :
   GeomDecomp(pm),
-  zoltan_id(NULL)
+  zoltan_id(NULL),
+  m_spatial_dimension_(ndim)
 {
   /* Get the default Zoltan parameter set from the Domain.
      This will be created the first time and returned every
@@ -780,7 +762,6 @@ rebalance::Zoltan::Zoltan(ParallelMachine pm, const std::string &Parameters_Name
 
   /* Save this library name for future reference. */
   //parameter_entry_Name = Zoltan_Params->nested_name();
-  //ThrowAssert (!parameter_entry_Name.empty());
 
   std::vector <std::pair<std::string, std::string> > Str_Zoltan_Params;
   //Merge_Parameters(Str_Zoltan_Params, *Zoltan_Params);
@@ -789,7 +770,7 @@ rebalance::Zoltan::Zoltan(ParallelMachine pm, const std::string &Parameters_Name
 }
 
 
-void rebalance::Zoltan::init( const vector< pair<std::string,std::string> >
+void Zoltan::init( const vector< pair<std::string,std::string> >
 		   &dynamicLoadRebalancingParameters ) {
   if (0==static_zoltan_version()) {
     const double v = init_zoltan_library();
@@ -801,17 +782,13 @@ void rebalance::Zoltan::init( const vector< pair<std::string,std::string> >
    */
 
   zoltan_id = Zoltan_Create( comm_ );
-  //if ( zoltan_id == NULL ) {
-  //  throw RuntimeError() << " P" << Env::parallel_rank()
-  //      		 << ": (FATAL ERROR) Zoltan_Create() returned NULL" << std::endl
-  //      		 << StackTrace;
-  //}
+  if ( zoltan_id == NULL ) {
+    throw runtime_error ("(FATAL ERROR) Zoltan_Create() returned NULL");
+  }
 
   /**
    * Set up dynamic load rebalancing
    */
-
-  //ThrowAssert (!dynamicLoadRebalancingParameters.empty());
 
   vector<pair<std::string,std::string> >::const_iterator
     P  =  dynamicLoadRebalancingParameters.begin(),
@@ -819,28 +796,20 @@ void rebalance::Zoltan::init( const vector< pair<std::string,std::string> >
 
   for ( ; PE != P ; P++ ) {
 
-    //char * label = const_cast<char*>( P->first.c_str() ) ;
-    //char * value = const_cast<char*>( P->second.c_str() ) ;
+    char * label = const_cast<char*>( P->first.c_str() ) ;
+    char * value = const_cast<char*>( P->second.c_str() ) ;
 
-    //if (ZOLTAN_OK != (Zoltan_Set_Param(zoltan_id,label,value)))
-    //{
-    //  throw RuntimeError() << " P" << Env::parallel_rank()
-    //    		   << ": FATAL ERROR in Zoltan_Set_Param when setting parameter "
-    //    		   << label << " to value '" << value << "'" << std::endl << StackTrace;
-    //}
-    //if (case_strcmp(label, "NUM_GID_ENTRIES") == 0)
-    //  ThrowAssert (::num_gid_entries() == (unsigned) atoi(value) );
-    //if (case_strcmp(label, "NUM_LID_ENTRIES") == 0)
-    //  ThrowAssert (::num_lid_entries() == (unsigned) atoi(value) );
-    //if (case_strcmp(label, "OBJ_WEIGHT_DIM") == 0)
-    //  ThrowRequire (::wdim() == (unsigned) atoi(value) );
+    if (ZOLTAN_OK != (Zoltan_Set_Param(zoltan_id,label,value)))
+    {
+      throw runtime_error(": FATAL ERROR returned from Zoltan_Set_Param ");
+    }
   }
 
   /**
    * Register the Zoltan/SIERRA "call-back" (querry) functions.
    */
-  //if ( ZOLTAN_OK != register_callbacks() )
-  //  throw RuntimeError() << "zoltan->Register_Callbacks, error code "<< ZOLTAN_FATAL << std::endl << StackTrace;
+  if ( ZOLTAN_OK != register_callbacks() )
+    throw runtime_error ("zoltan->Register_Callbacks error. ");
 
 #if STK_GEOMDECOMP_DEBUG>=2
   {
@@ -851,10 +820,10 @@ void rebalance::Zoltan::init( const vector< pair<std::string,std::string> >
 
 }
 
-double rebalance::Zoltan::init_zoltan_library () {
+double Zoltan::init_zoltan_library () {
   float version = 0.0;
-  //if ( Zoltan_Initialize( 0, NULL, &version) != ZOLTAN_OK )
-  //  throw std::runtime_error() << "Zoltan_Initialize() != ZOLTAN_OK " << std::endl << StackTrace;
+  if ( Zoltan_Initialize( 0, NULL, &version) != ZOLTAN_OK )
+    throw std::runtime_error("Return code from Zoltan_Initialize() != ZOLTAN_OK ");
 
   static_zoltan_version(version);
   std::ostringstream s;
@@ -871,7 +840,7 @@ double rebalance::Zoltan::init_zoltan_library () {
 //: Destructor
 //: ==========
 
-rebalance::Zoltan::~Zoltan()
+Zoltan::~Zoltan()
 {
   if ( zoltan_id != NULL ) {
     Zoltan_Destroy( &zoltan_id );
@@ -887,7 +856,7 @@ rebalance::Zoltan::~Zoltan()
   }
 }
 
-int rebalance::Zoltan::point_assign( double *position,
+int Zoltan::point_assign( double *position,
 			  int  *proc_id ) const
 {
   int status = Zoltan_LB_Point_Assign(zoltan_id, position, proc_id );
@@ -896,15 +865,11 @@ int rebalance::Zoltan::point_assign( double *position,
     throw std::runtime_error("Zoltan_LB_Point_Asssign returned status code " + status);
     return 1;
   }
-  //: Sanity check for Zoltan's point assignment Processor_ID
-
-  //ThrowAssert( ( *proc_id >= 0       ) &&
-  //        ( *proc_id <  Env::parallel_size() ));
   return 0;
 }
 
 
-int rebalance::Zoltan::box_assign(double min[],
+int Zoltan::box_assign(double min[],
 		       double max[],
 		       std::vector<int> &procs) const
 {
@@ -927,16 +892,15 @@ int rebalance::Zoltan::box_assign(double min[],
 }
 
 
-const std::string &rebalance::Zoltan::parameter_entry_name() const
+const std::string &Zoltan::parameter_entry_name() const
 {
-  //ThrowAssert (!parameter_entry_Name.empty());
   return parameter_entry_Name;
 }
 
 
 //: Load Balance calls or Load "Re-partitioning" calls
 
-int rebalance::Zoltan::register_callbacks()
+int Zoltan::register_callbacks()
 {
   /*
    * Register the Zoltan/SIERRA "call-back" (querry) functions.
@@ -997,7 +961,7 @@ int rebalance::Zoltan::register_callbacks()
 }
 
 
-int  rebalance::Zoltan::evaluate( int    print_stats,
+int  Zoltan::evaluate( int    print_stats,
 		       int*   nobj,
 		       double*  obj_wgt,
 		       int*   ncuts,
@@ -1036,7 +1000,7 @@ int  rebalance::Zoltan::evaluate( int    print_stats,
 
 }
 
-int rebalance::Zoltan::determine_new_partition (bool &RebalancingNeeded)
+int Zoltan::determine_new_partition (bool &RebalancingNeeded)
 {
   //: Transfer export global ID lists and owning processors
   //: to SIERRA Framework's data structures
@@ -1126,9 +1090,6 @@ int rebalance::Zoltan::determine_new_partition (bool &RebalancingNeeded)
     throw std::runtime_error("Zoltan_Balance() returned error code " + status);
   }
 
-  //ThrowAssert (::num_gid_entries() == (unsigned) length_gid);
-  //ThrowAssert (::num_lid_entries() == (unsigned) length_lid);
-
   //: Initialize destination processor IDs (dest_proc_ids)
   reset_dest_proc_data();
 
@@ -1139,19 +1100,11 @@ int rebalance::Zoltan::determine_new_partition (bool &RebalancingNeeded)
     for (int j=0; j < num_exported; ++j ) {
 
       //: Get exported region, local, global, and processor ids
-      //const unsigned rid = export_gids[ j*::num_gid_entries() ];  // Region ID variable
+      const unsigned rid = export_gids[ j*::num_gid_entries() ];  // Region ID variable
+      if (!rid) throw runtime_error ("Region ID variable should be non-zero.");
       const unsigned lid = export_lids[ j*::num_lid_entries() ];  // Local  ID variable
       const unsigned pid = export_procs[ j ];                     // Exported Processor ID (i.e., MPI "rank" )
 
-      //ThrowRequire(rid == 0);
-
-      //: Sanity check for exported (obj) Global_ID
-      //ThrowAssert( (int) export_gids[ j*::num_gid_entries() + 1 ] ==
-      //        globalID(lid) );
-
-      //: Sanity check for exported Processor_ID
-      //ThrowAssert( 0 <= (int) pid && (int) pid < Env::parallel_size() );
-      //: Set exported procesor_id corresponding to global_id
       if (parallel_rank != pid) {
 	++actual_exported;
 	set_destination_proc(lid, pid);
@@ -1172,92 +1125,71 @@ int rebalance::Zoltan::determine_new_partition (bool &RebalancingNeeded)
   if ( ZOLTAN_OK !=
        Zoltan_LB_Free_Data( &import_gids, &import_lids, &import_procs,
 			    &export_gids, &export_lids, &export_procs )) {
-      //throw RuntimeError() << " P" << Env::parallel_rank()
-      //  		   << ": FATAL ERROR in Zoltan_LB_Free_Data error code " << ZOLTAN_FATAL << std::endl
-      //  		   << StackTrace;
+    throw runtime_error (" FATAL ERROR in Zoltan_LB_Free_Data.");
   }
   return EXIT_SUCCESS;
 }
 
-void rebalance::Zoltan::convert_names_and_values(const Teuchos::ParameterList &from, Teuchos::ParameterList &to)
+void Zoltan::convert_names_and_values(const Teuchos::ParameterList &from, Teuchos::ParameterList &to)
 {
   /* First time through, fill the conversion tables. */
   if (!Name_Conversion) {
     Name_Conversion = new Teuchos::ParameterList;
-    //ThrowAssert (Name_Conversion);
-    //fill_name_conversion (*Name_Conversion);
+    fill_name_conversion (*Name_Conversion);
   }
   if (!Value_Conversion) {
     Value_Conversion = new Teuchos::ParameterList;
-    //ThrowAssert (Value_Conversion);
-    //fill_value_conversion(*Value_Conversion);
+    fill_value_conversion(*Value_Conversion);
   }
 
   // NOTE: "LOAD BALANCING METHOD" default
   // is also hard coded in fill_default_value();
   std::string algorithm;
-  //const ParamValue *param = from.get("LOAD BALANCING METHOD");
+  const std::string param = from.get<std::string>("LOAD BALANCING METHOD");
   const std::string keyname("LOAD BALANCING METHOD");
   if( from.isParameter(keyname) )
     algorithm = from.get<std::string>(keyname); //(const std::string &) param->get();
   else
     algorithm = "0";
 
-  //const Teuchos::ParameterList & General = Name_Conversion->sublist("General");
-  //if (!General) {
-  //  throw RuntimeError()
-  //    << "Unable to find required parameter set General, which contains the General parameters"
-  //    << std::endl << StackTrace;
-  //}
+  const Teuchos::ParameterList & General = Name_Conversion->sublist("General");
+  const Teuchos::ParameterList & Algorithm = Name_Conversion->sublist(algorithm);
 
-  //const Teuchos::ParameterList & Algorithm = Name_Conversion->sublist(algorithm);
-  //if (!Algorithm) {
-  //  throw RuntimeError() << "Unable to find required parameter set " << algorithm
-  //      		 << ", which contains the algorithm parameters"
-  //      		 << std::endl << StackTrace;
-  //}
+  Teuchos::ParameterList::ConstIterator
+    from_iter  = from.begin(),
+    from_end   = from.end();
 
-  // TODO - convert this loop to use Teuchos::ParameterList
-  //Parameters::const_iterator
-  //  from_iter  = from.begin(),
-  //  from_end   = from.end();
+  /* Iterate over all of the input parameters to find proper
+     Zoltan names and Zoltan parameter values. */
+  for (; from_iter != from_end; ++from_iter) {
+    std::string
+      from_name = from.name(from_iter),
+      to_name;
 
-  ///* Iterate over all of the input parameters to find proper
-  //   Zoltan names and Zoltan parameter values. */
-  //for (; from_iter != from_end; ++from_iter) {
-  //  std::string
-  //    from_name = (*from_iter).name(),
-  //    to_name;
+    /* Check to see if this is a general parameter name
+       and if not, check if it is an algorithm specific name. */
 
-  //  /* Check to see if this is a general parameter name
-  //     and if not, check if it is an algorithm specific name. */
-  //  const ParamValue *name = General->get(from_name);
-  //  if (name) {
-  //    to_name = (const std::string &) name->get();
-  //  } else {
-  //    name = Algorithm->get(from_name);
-  //    //if (!name) {
-  //    //  throw RuntimeError() << "Unable to find the parameter " << from_name << std::endl << StackTrace;
-  //    //}
-  //    to_name = (const std::string &) name->get();
-  //  }
+    if (General.isParameter(from_name)) {
+      to_name = General.get<std::string>(from_name);
+    } else {
+      to_name = Algorithm.get<std::string>(from_name);
+    }
 
-  //  /* Now convert the parameter value to the correct form.
-  //     Only a couple of parameters have parameter conversion.
-  //     The ones converted are nested in Value_Conversion.
-  //  */
-  //  std::string to_value = (*from_iter).get();
-  //  Teuchos::ParameterList *Value_Convert = Value_Conversion->get_nested(from_name);
-  //  if (Value_Convert) to_value = (const std::string &) Value_Convert->get(to_value)->get();
-  //  if (!to_name.empty()) to.set(to_name, to_value);
-  //}
+    /* Now convert the parameter value to the correct form.
+       Only a couple of parameters have parameter conversion.
+       The ones converted are nested in Value_Conversion.
+    */
+    std::string to_value = Teuchos::getValue<string>(from.entry(from_iter));
+    if (Value_Conversion->isParameter(from_name)) to_value = Value_Conversion->get<std::string>(to_value);
+    if (!to_name.empty()) to.set(to_name, to_value);
+  }
 }
 
-//void rebalance::Zoltan::merge_default_values(const Teuchos::ParameterList &from,
-//					Teuchos::ParameterList &to)
-//{
-//  Teuchos::ParameterList Default_Values;
-//  fill_default_value(Default_Values);
-//  to.copy_from(Default_Values.nested("General") );
-//  to.copy_from(from);
-//}
+void Zoltan::merge_default_values(const Teuchos::ParameterList &from,
+					Teuchos::ParameterList &to)
+{
+  Teuchos::ParameterList Default_Values;
+  fill_default_value(Default_Values);
+  to.setParameters(Default_Values.get<Teuchos::ParameterList>("General") );
+  to.setParameters(from);
+}

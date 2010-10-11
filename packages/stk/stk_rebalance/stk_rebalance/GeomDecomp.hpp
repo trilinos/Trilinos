@@ -57,22 +57,12 @@ namespace rebalance {
  */
 class GeomDecomp: public Partition {
 public:
-  typedef std::map<std::string,std::string> Parameters;
   typedef mesh::Field<double,mesh::Cartesian>              VectorField ;
-private:
-  static const std::string zoltanparametersname;
-  static const std::string defaultparametersname;
-  Parameters               m_default_parameters_;
 public:
 
   GeomDecomp(ParallelMachine comm): Partition(comm) {}
 
   virtual ~GeomDecomp(){}
-
-  static const std::string zoltan_parameters_name();
-  static const std::string default_parameters_name();
-
-  static void init_default_parameters();
 
   /** Convert a single mesh object to a single point.
    * This is used in the case where a mesh object is

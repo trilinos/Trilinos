@@ -94,5 +94,5 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   bulk_data.modification_end();
 
   Teuchos::ParameterList emptyList;
-  stk::rebalance::Zoltan zoltan_partition = stk::rebalance::Zoltan::create_default(comm, emptyList);
+  stk::rebalance::Zoltan zoltan_partition = stk::rebalance::Zoltan::create_default(comm, spatial_dimension, emptyList);
 }
