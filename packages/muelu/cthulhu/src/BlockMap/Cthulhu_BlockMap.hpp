@@ -1,0 +1,89 @@
+#ifndef CTHULHU_BLOCKMAP_DECL_HPP
+#define CTHULHU_BLOCKMAP_DECL_HPP
+
+/** \file Cthulhu_BlockMap.hpp
+
+  Declarations for the class Cthulhu::BlockMap.
+*/
+namespace Cthulhu {
+
+/** \brief Block-entry counterpart to Cthulhu::Map.
+
+  BlockMap doesn't inherit Cthulhu::Map
+*/
+template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+class BlockMap : public Teuchos::Describable {
+ public:
+
+  //! @name Constructor/Destructor Methods
+  //@{
+
+  //! BlockMap destructor.
+  virtual ~BlockMap(){}
+
+  //@}
+
+  //! @name Attribute Accessor Methods
+  //@{
+
+  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const =0;
+
+  global_size_t getGlobalNumBlocks() const =0;
+
+  //! Return number of blocks on the local processor.
+  size_t getNodeNumBlocks() const =0;
+
+  Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const =0;
+
+  bool isBlockSizeConstant() const =0;
+
+  //! Return ArrayRCP of first-local-point in local blocks.
+  Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks() const =0;
+
+  //! Return device-resident ArrayRCP of first-local-point in local blocks.
+  /*! This version of this method is primarily used internally by VbrMatrix
+      for passing data to the matrix-vector-product kernel.
+  */
+  Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks_Device() const =0;
+
+  //! Return the globalBlockID corresponding to the given localBlockID
+  /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+  */
+  GlobalOrdinal getGlobalBlockID(LocalOrdinal localBlockID) const =0;
+
+  //! Return the localBlockID corresponding to the given globalBlockID
+  /*! If globalBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+  */
+  LocalOrdinal getLocalBlockID(GlobalOrdinal globalBlockID) const =0;
+
+  //! Return the block-size for localBlockID
+  /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
+   * then std::runtime_error is thrown.
+   */
+  LocalOrdinal getLocalBlockSize(LocalOrdinal localBlockID) const =0;
+
+  //! Return the first local point-index corresponding to localBlockID
+  /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
+   * then std::runtime_error is thrown.
+   */
+  LocalOrdinal getFirstLocalPointInLocalBlock(LocalOrdinal localBlockID) const =0;
+
+  //! Return the first global point-index corresponding to localBlockID
+  /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
+   * then std::runtime_error is thrown.
+   */
+  GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const =0;
+
+  //@}
+
+};//class BlockMap
+
+//-----------------------------------------------------------------
+// template<class LocalOrdinal,class GlobalOrdinal,class Node>
+// Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> >
+// convertBlockMapToPointMap(const Teuchos::RCP<const Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap)
+
+}//namespace Cthulhu
+
+#endif
+
