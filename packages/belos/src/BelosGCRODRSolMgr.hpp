@@ -1491,6 +1491,9 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(RCP<GCRODRIter<ScalarTyp
   GCRODRIterState<ScalarType,MV> oldState = gcrodr_iter->getState();
   int p = oldState.curDim;
 
+  // insufficient new information to update recycle space
+  if (p<1) return;
+
   // Take the norm of the recycled vectors
   {
     index.resize(keff);
