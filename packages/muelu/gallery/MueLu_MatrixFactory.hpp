@@ -10,7 +10,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-#include "matrix_types.hpp"
+#include "MueLu_MatrixTypes.hpp"
 
 #include <iostream>
 
@@ -20,10 +20,10 @@ CreateCrsMatrix(const std::string &MatrixType,
                 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
                 Teuchos::ParameterList& List)
 {
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > returnMatrix;
   if (MatrixType == "Laplace1D") {
 
     GlobalOrdinal nx = List.get("nx", -1);
-    GlobalOrdinal ny = List.get("ny", -1);
     if (nx == -1)
     {
       GlobalOrdinal n = Map->getGlobalNumElements();
@@ -31,7 +31,8 @@ CreateCrsMatrix(const std::string &MatrixType,
       TEST_FOR_EXCEPTION(nx*nx != n, std::logic_error, "You need to specify nx.");
     }
 
-    return(TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, 2.0, -1.0, -1.0));
+    //return(TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, 2.0, -1.0, -1.0));
+    returnMatrix = TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, 2.0, -1.0, -1.0);
 
   } else if (MatrixType == "Laplace2D") {
 
@@ -45,7 +46,8 @@ CreateCrsMatrix(const std::string &MatrixType,
       TEST_FOR_EXCEPTION(nx*ny != n, std::logic_error, "You need to specify nx and ny.");
     }
 
-    return(Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0));
+    //return(Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0));
+    returnMatrix = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0);
 
   } else if (MatrixType == "Star2D") {
 
@@ -62,7 +64,8 @@ CreateCrsMatrix(const std::string &MatrixType,
     Scalar z3 = List.get("z3", -1.0);
     Scalar z4 = List.get("z4", -1.0);
 
-    return(Star2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4));
+    //return(Star2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4));
+    returnMatrix = Star2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4);
 
   } else if (MatrixType == "BigStar2D") {
 
@@ -83,7 +86,8 @@ CreateCrsMatrix(const std::string &MatrixType,
     Scalar dd = List.get("dd", 1.0);
     Scalar ee = List.get("ee", 1.0);
 
-    return(BigStar2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4, bb, cc, dd, ee));
+    //return(BigStar2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4, bb, cc, dd, ee));
+    returnMatrix = BigStar2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4, bb, cc, dd, ee);
 
   } else if (MatrixType == "Laplace3D") {
 
@@ -97,7 +101,8 @@ CreateCrsMatrix(const std::string &MatrixType,
       ny = nx; nz = nx;
       TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
     } 
-    return(Cross3D(Map, nx, ny, nz, 6.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0));
+    //return(Cross3D(Map, nx, ny, nz, 6.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0));
+    returnMatrix = Cross3D(Map, nx, ny, nz, 6.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
 
   } else if (MatrixType == "Brick3D") {
 
@@ -111,7 +116,8 @@ CreateCrsMatrix(const std::string &MatrixType,
       ny = nx; nz = nx;
       TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
     } 
-    return(Brick3D(Map, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0));
+    //return(Brick3D(Map, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0));
+    returnMatrix = Brick3D(Map, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
 
   } else {
 
@@ -121,6 +127,9 @@ CreateCrsMatrix(const std::string &MatrixType,
                         << ") in input to function CreateCrsMatrix()."
                         << "Check the documentation for a list of valid choices");
   } //if-else
+
+  returnMatrix->setObjectLabel(MatrixType);
+  return(returnMatrix);
 
 } // CreateCrsMatrix()
 

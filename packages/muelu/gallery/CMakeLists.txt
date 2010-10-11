@@ -4,9 +4,9 @@ INCLUDE(PackageAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
   
 SET(matrix_driver_SOURCES
-  matrix_driver.cpp
-  matrix_factory.hpp
-  matrix_types.hpp
+  MueLu_MatrixDriver.cpp
+  MueLu_MatrixFactory.hpp
+  MueLu_MatrixTypes.hpp
   )
   
 PACKAGE_ADD_EXECUTABLE_AND_TEST(

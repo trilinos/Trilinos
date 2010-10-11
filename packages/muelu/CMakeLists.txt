@@ -21,12 +21,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
 # C) Add the libraries, tests, and examples
 #
 
+ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(gallery)
 
-#JJH this doesn't exist yet
-#PACKAGE_ADD_TEST_DIRECTORIES(test)
+PACKAGE_ADD_TEST_DIRECTORIES(test)
 
-#JJH this exists but isn't active yet
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 #
