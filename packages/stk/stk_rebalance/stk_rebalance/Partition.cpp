@@ -37,10 +37,26 @@ Partition::Partition(const Partition & p) :
 
 void
 Partition::replace_mesh( const std::vector<mesh::Entity *> &mesh_objects,
-                          const stk::mesh::Field<double>   * nodal_coord_ref,
-                          const stk::mesh::Field<double>   * elem_weight_ref)
+                          const VectorField * nodal_coord_ref,
+                          const ScalarField * elem_weight_ref)
 {
+  RegionInfo region_info;
+
+  /* Keep track of the total number of elements. */
   total_number_objects_ = mesh_objects.size();
+
+  region_info.mesh_objects = mesh_objects;
+  region_info.nodal_coord_ref = nodal_coord_ref;
+  region_info.elem_weight_ref = elem_weight_ref;
+
+  /** Default destination for an object is the processor
+      that already owns the object, which is this processor.
+      The length of the dest_proc_ids vector is the same
+      length as the mesh_objects vector.
+  */
+  region_info.dest_proc_ids.assign(mesh_objects.size(), stk::parallel_machine_rank(comm_));
+
+  region_obj_information_ = region_info;
 }
 
 
@@ -100,7 +116,7 @@ mesh::Entity *Partition::mesh_object(const unsigned moid ) const {
 }
 
 
-const  Partition::VectorField * Partition::object_coord_ref() const
+const  VectorField * Partition::object_coord_ref() const
 {
    return region_obj_information_.nodal_coord_ref;
 }
@@ -173,7 +189,7 @@ double Partition::object_weight(const unsigned moid ) const
   return mo_weight;
 }
 
-const Partition::ScalarField * Partition::object_weight_ref() const
+const ScalarField * Partition::object_weight_ref() const
 {
   return region_obj_information_.elem_weight_ref;
 }

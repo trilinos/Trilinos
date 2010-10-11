@@ -16,7 +16,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
-//#include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
 
@@ -94,5 +93,13 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   bulk_data.modification_end();
 
   Teuchos::ParameterList emptyList;
-  stk::rebalance::Zoltan zoltan_partition = stk::rebalance::Zoltan::create_default(comm, spatial_dimension, emptyList);
+  stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
+
+  stk::mesh::Selector selector(meta_data.universal_part());
+
+  // Force a rebalance by using imblance_threshhold < 1.0
+  double imblance_threshhold = 0.5;
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, meta_data, weight_field, comm, imblance_threshhold);
+  if( do_rebal )
+    stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, zoltan_partition);
 }

@@ -46,8 +46,8 @@ bool rebalance_needed(mesh::BulkData &    bulk_data,
  */
 bool rebalance(mesh::BulkData & bulk_data ,
                const mesh::Selector & selector ,
-               const mesh::Field<double> * coord_ref ,
-               const mesh::Field<double> * elem_weight_ref,
+               const VectorField * coord_ref ,
+               const ScalarField * elem_weight_ref,
                Partition & partition);
 
 }
