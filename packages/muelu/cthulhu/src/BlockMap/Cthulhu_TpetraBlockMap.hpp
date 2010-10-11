@@ -94,30 +94,30 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
   //! Return the globalBlockID corresponding to the given localBlockID
   /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
   */
-  inline GlobalOrdinal getGlobalBlockID(LocalOrdinal localBlockID) const { return map_->getGlobalBlockID(); }
+  inline GlobalOrdinal getGlobalBlockID(LocalOrdinal localBlockID) const { return map_->getGlobalBlockID(localBlockID); }
 
   //! Return the localBlockID corresponding to the given globalBlockID
   /*! If globalBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
   */
-  inline LocalOrdinal getLocalBlockID(GlobalOrdinal globalBlockID) const { return map_->getLocalBlockID(); }
+  inline LocalOrdinal getLocalBlockID(GlobalOrdinal globalBlockID) const { return map_->getLocalBlockID(globalBlockID); }
 
   //! Return the block-size for localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline LocalOrdinal getLocalBlockSize(LocalOrdinal localBlockID) const { return map_->getLocalBlockSize(); }
+  inline LocalOrdinal getLocalBlockSize(LocalOrdinal localBlockID) const { return map_->getLocalBlockSize(localBlockID); }
 
   //! Return the first local point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline LocalOrdinal getFirstLocalPointInLocalBlock(LocalOrdinal localBlockID) const { return map_->getFirstLocalPointInLocalBlock(); }
+  inline LocalOrdinal getFirstLocalPointInLocalBlock(LocalOrdinal localBlockID) const { return map_->getFirstLocalPointInLocalBlock(localBlockID); }
 
   //! Return the first global point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const { return map_->getFirstGlobalPointInLocalBlock(); }
+  inline GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const { return map_->getFirstGlobalPointInLocalBlock(localBlockID); }
 
   //@}
 
