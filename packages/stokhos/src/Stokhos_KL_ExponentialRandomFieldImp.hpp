@@ -147,6 +147,15 @@ evaluate(const Teuchos::Array<value_type>& point,
 }
 
 template <typename value_type>
+value_type
+Stokhos::KL::ExponentialRandomField<value_type>::
+evaluate_eigenfunction(const Teuchos::Array<value_type>& point, int i) const
+{
+  return std_dev*std::sqrt(product_eig_pairs[i].eig_val)*
+    product_eig_pairs[i].evalEigenfunction(point);
+}
+
+template <typename value_type>
 const Teuchos::Array< Stokhos::KL::ProductEigenPair<value_type> >&
 Stokhos::KL::ExponentialRandomField<value_type>::
 getEigenPairs() const

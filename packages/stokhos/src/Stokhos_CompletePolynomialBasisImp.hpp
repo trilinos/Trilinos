@@ -136,7 +136,7 @@ Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 computeTripleProductTensor(ordinal_type order) const
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::CompletePolynomialBasis::computeTripleProductTensor");
+  TEUCHOS_FUNC_TIME_MONITOR("Total Triple-Product Tensor Fill Time");
 #endif
 
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >

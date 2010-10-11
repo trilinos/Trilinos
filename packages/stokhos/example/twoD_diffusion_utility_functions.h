@@ -256,6 +256,5 @@ void generateExponentialRF(const int orderKL, const double corrx, Teuchos::Array
       xind[l] = maxx;
       yind[l] = maxy;
       productEigs[maxx][maxy] = 0;
-   }  
-   
+   } 
 }

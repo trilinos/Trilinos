@@ -1,11 +1,8 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 // 
-//            NOX: An Object-Oriented Nonlinear Solver Package
-//                 Copyright (2002) Sandia Corporation
-// 
-//            LOCA: Library of Continuation Algorithms Package
-//                 Copyright (2005) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -19,27 +16,17 @@
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
-// Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
-//@HEADER
+// ***********************************************************************
+// @HEADER
 
-#include <iostream>
-#include <sstream>
-
-// FEApp is defined in Trilinos/packages/sacado/example/FEApp
+// ModelEvaluator implementing our problem
 #include "twoD_diffusion_ME.hpp"
 
 // Epetra communicator
@@ -59,13 +46,18 @@
 // Timing utilities
 #include "Teuchos_TimeMonitor.hpp"
 
+// I/O utilities
+#include "EpetraExt_VectorOut.h"
+
 int main(int argc, char *argv[]) {
-  int n = 32;
-  int num_KL = 2; 
-  int p = 5;
-  bool full_expansion = false;
-  bool matrix_free = true;
-  bool write_linear_system = false;
+  int n = 32;                        // spatial discretization (per dimension)
+  int num_KL = 2;                    // number of KL terms
+  int p = 5;                         // polynomial order
+  double mu = 0.1;                   // mean of exponential random field
+  double s = 0.2;                    // std. dev. of exponential r.f.
+  bool nonlinear_expansion = false;  // nonlinear expansion of diffusion coeff
+                                     // (e.g., log-normal)
+  bool matrix_free = true;           // use matrix-free stochastic operator
 
 // Initialize MPI
 #ifdef HAVE_MPI
@@ -97,7 +89,7 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     int sz = basis->size();
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    if (full_expansion)
+    if (nonlinear_expansion)
       Cijk = basis->computeTripleProductTensor(sz);
     else
       Cijk = basis->computeTripleProductTensor(num_KL+1);
@@ -108,7 +100,8 @@ int main(int argc, char *argv[]) {
 
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
-      Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL));
+      Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, mu, s, basis, 
+					 nonlinear_expansion));
     
     // Set up stochastic parameters
     Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
@@ -132,7 +125,7 @@ int main(int argc, char *argv[]) {
       sgParams->sublist("SG Operator");
     Teuchos::ParameterList& sgPrecParams = 
       sgParams->sublist("SG Preconditioner");
-    if (!full_expansion) {
+    if (!nonlinear_expansion) {
       sgParams->set("Parameter Expansion Type", "Linear");
       sgParams->set("Jacobian Expansion Type", "Linear");
     }
@@ -143,7 +136,7 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList& precParams = 
       	sgPrecParams.sublist("Mean Preconditioner Parameters");
       precParams.set("default values", "SA");
-      precParams.set("ML output", 10);
+      precParams.set("ML output", 0);
       precParams.set("max levels",5);
       precParams.set("increasing or decreasing","increasing");
       precParams.set("aggregation: type", "Uncoupled");
@@ -215,7 +208,7 @@ int main(int argc, char *argv[]) {
       Teuchos::ParameterList& precParams = 
 	lsParams.sublist("ML");
       ML_Epetra::SetDefaults("DD", precParams);
-      lsParams.set("Write Linear System", write_linear_system);
+      lsParams.set("Write Linear System", false);
     }
 
     // Sublist for convergence tests
@@ -276,8 +269,11 @@ int main(int argc, char *argv[]) {
       dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+
+    // Save final solution to file
+    EpetraExt::VectorToMatrixMarketFile("nox_stochastic_solution.mm", 
+					finalSolution);
       
-    /*
     // Evaluate SG responses at SG parameters
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
@@ -297,15 +293,14 @@ int main(int argc, char *argv[]) {
     Epetra_Vector std_dev(*(model->get_g_map(0)));
     sg_g_poly.computeMean(mean);
     sg_g_poly.computeStandardDeviation(std_dev);
-    std::cout << "\nResponse Expansion = " << std::endl;
-    std::cout.precision(12);
-    sg_g_poly.print(std::cout);
+    // std::cout << "\nResponse Expansion = " << std::endl;
+    // std::cout.precision(12);
+    // sg_g_poly.print(std::cout);
     std::cout << "\nResponse Mean =      " << std::endl << mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << std_dev << std::endl;
-    */
 
     if (status == NOX::StatusTest::Converged) 
-      utils.out() << "Test Passed!" << std::endl;
+      utils.out() << "Example Passed!" << std::endl;
 
     }
 

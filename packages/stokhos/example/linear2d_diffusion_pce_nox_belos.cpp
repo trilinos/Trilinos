@@ -204,11 +204,33 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 #endif
 
     MyPID = Comm->MyPID();
+
+    // Create Stochastic Galerkin basis and expansion
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
+    for (int i=0; i<num_KL; i++)
+      if (randField == "UNIFORM")
+        bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
+      else if (randField == "LOG-NORMAL")      
+        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,true));
+
+    //  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&uniform_weight,-weightCut,weightCut,true));
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
+      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+    int sz = basis->size();
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
+    if (full_expansion)
+      Cijk = basis->computeTripleProductTensor(sz);
+    else
+      Cijk = basis->computeTripleProductTensor(num_KL+1);
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
+      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
+									 Cijk));
+    std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
     
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
       Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, sigma, 
-                                         mean, full_expansion));
+                                         mean, basis, full_expansion));
 
     // Set up NOX parameters
 //    Teuchos::RCP<Teuchos::ParameterList> noxParams =
@@ -341,28 +363,6 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
                                                         det_iJac, 
                                                         det_A,
                                                         *det_u));
-
-    // Create Stochastic Galerkin basis and expansion
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
-    for (int i=0; i<num_KL; i++)
-      if (randField == "UNIFORM")
-        bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
-      else if (randField == "LOG-NORMAL")      
-        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,true));
-
-    //  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&uniform_weight,-weightCut,weightCut,true));
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-    int sz = basis->size();
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    if (full_expansion)
-      Cijk = basis->computeTripleProductTensor(sz);
-    else
-      Cijk = basis->computeTripleProductTensor(num_KL+1);
-    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
-      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
-									 Cijk));
-    std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
    
     // Set up stochastic parameters
     Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);

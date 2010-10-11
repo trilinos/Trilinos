@@ -46,6 +46,14 @@ PACKAGE_ADD_EXECUTABLE(
   SOURCES sparsity_example.cpp
   )
 
+PACKAGE_ADD_LIBRARY(
+  linear2d_diffusion
+  HEADERS twoD_diffusion_ME.hpp
+  SOURCES twoD_diffusion_ME.cpp
+  TESTONLY
+  DEPLIBS stokhos
+  )
+
 IF(Stokhos_ENABLE_TriKota)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -86,39 +94,105 @@ IF(Stokhos_ENABLE_TriKota)
        COMM serial mpi
      )
 
-     PACKAGE_ADD_EXECUTABLE(
+     PACKAGE_ADD_EXECUTABLE_AND_TEST(
        Linear2D_Diffusion_PCE_Example
        SOURCES linear2d_diffusion_pce.cpp
-               twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
        COMM serial mpi
+       DEPLIBS linear2d_diffusion
+       NUM_MPI_PROCS 4
+       PASS_REGULAR_EXPRESSION "Example Passed!"
       )
 
       IF(Stokhos_ENABLE_NOX)
 
-        PACKAGE_ADD_EXECUTABLE(
+        PACKAGE_ADD_EXECUTABLE_AND_TEST(
           Linear2D_Diffusion_PCE_NOX_Example
           SOURCES linear2d_diffusion_pce_nox.cpp
-                  twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
           COMM serial mpi
+	  DEPLIBS linear2d_diffusion
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
        PACKAGE_ADD_EXECUTABLE(
          Linear2D_Diffusion_PCE_NOX_SG_Solvers
          SOURCES linear2d_diffusion_pce_nox_sg_solvers.cpp
-                 twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
          COMM serial mpi
+	 DEPLIBS linear2d_diffusion
         )
 
-	IF(Stratimikos_ENABLE_Belos)
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_GMRES_Mean_Based"
+	  ARGS "--sg_prec_method=Mean-Based"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
 
-          PACKAGE_ADD_EXECUTABLE(
-            Linear2D_Diffusion_PCE_NOX_Belos
-            SOURCES linear2d_diffusion_pce_nox_belos.cpp
-                    twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
-            COMM serial mpi
-           )
+        PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_GMRES_AGS"
+	  ARGS "--sg_prec_method=Approx-Gauss-Seidel"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
 
-	ENDIF()
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_GMRES_GS"
+	  ARGS "--sg_prec_method=Gauss-Seidel"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
+
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_GMRES_AJ"
+	  ARGS "--sg_prec_method=Approx-Jacobi"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
+
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_GMRES_KP"
+	  ARGS "--sg_prec_method=Kronecker-Product"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
+
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_GS"
+	  ARGS "--sg_solver=Gauss-Seidel"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
+
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_GS"
+	  ARGS "--sg_solver=Jacobi"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
+
+	PACKAGE_ADD_TEST(
+	  Linear2D_Diffusion_PCE_NOX_SG_Solvers
+	  NAME "Linear2D_Diffusion_LN"
+	  ARGS "--rand_field=Log-Normal"
+	  COMM serial mpi
+	  NUM_MPI_PROCS 4
+	  PASS_REGULAR_EXPRESSION "Example Passed!"
+        )
+	  
 
      ENDIF()  
 
