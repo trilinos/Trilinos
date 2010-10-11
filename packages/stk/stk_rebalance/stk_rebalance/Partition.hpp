@@ -49,6 +49,10 @@
 namespace stk {
 namespace rebalance {
 
+typedef mesh::Field<double, mesh::Cartesian>  VectorField ;
+typedef mesh::Field<double>                   ScalarField ;
+
+
 /** Class for keeping track of a mesh object partition.
  * The class must be initialized with a list of mesh
  * objects unique to each processor.
@@ -72,9 +76,6 @@ namespace rebalance {
 class Partition {
 
 public:
-
-  typedef mesh::Field<double, mesh::Cartesian>  VectorField ;
-  typedef mesh::Field<double>                   ScalarField ;
 
   /** RegionInfo is a structure to organize the mesh object data.
    * A geometric decomposition can be constructed from one or more
@@ -148,8 +149,8 @@ public:
    * calls reset_mesh_data followed by a call to add_mesh.
    */
   virtual void replace_mesh ( const std::vector<mesh::Entity *> &mesh_objects,
-                      const stk::mesh::Field<double>   * nodal_coord_ref,
-                      const stk::mesh::Field<double>   * elem_weight_ref=NULL);
+                      const VectorField   * nodal_coord_ref,
+                      const ScalarField   * elem_weight_ref=NULL);
 
   /** Reset owning processor.
    *  Default destination for an object is the processor

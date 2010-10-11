@@ -29,7 +29,7 @@
 #include <stk_rebalance/Partition.hpp>
 
 using namespace stk;
-using namespace rebalance;
+using namespace stk::rebalance;
 
 
 namespace {
@@ -74,7 +74,7 @@ bool full_rebalance(mesh::BulkData        & bulk_data ,
 
 // ------------------------------------------------------------------------------
 
-bool rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
+bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
                                  mesh::MetaData &    meta_data,
                                  const mesh::Field<double> & load_measure,
                                  ParallelMachine    comm,
@@ -112,10 +112,10 @@ bool rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
   return ( max_load / avg_load > imbalance_threshold );
 }
 
-bool rebalance::rebalance(mesh::BulkData        & bulk_data  ,
+bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
                           const mesh::Selector  & selector ,
-                          const mesh::Field<double> * rebal_coord_ref ,
-                          const mesh::Field<double> * rebal_elem_weight_ref ,
+                          const VectorField * rebal_coord_ref ,
+                          const ScalarField * rebal_elem_weight_ref ,
                           Partition & partition)
 {
   mesh::EntityVector rebal_elem_ptrs;

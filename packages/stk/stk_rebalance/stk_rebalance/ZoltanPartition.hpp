@@ -36,21 +36,19 @@ class Zoltan : public GeomDecomp {
 
 public:
 
-  typedef std::map<std::string,std::string> Parameters;
+  typedef Teuchos::ParameterList Parameters;
 
   static const std::string zoltan_parameters_name();
   static const std::string default_parameters_name();
 
-  static void init_default_parameters();
+  void init_default_parameters();
 
 
   /**
    * Constructor
    */
 
-  static Zoltan create_default(ParallelMachine pm,  const unsigned ndim, const Teuchos::ParameterList & rebal_region_parameters);
-
-  explicit Zoltan(ParallelMachine pm, const unsigned ndim, const std::string &Parameters_Name=default_parameters_name());
+  explicit Zoltan(ParallelMachine pm, const unsigned ndim, Teuchos::ParameterList & rebal_region_parameters, std::string parameters_name=default_parameters_name());
 
   void init(const std::vector< std::pair<std::string, std::string> >
             &dynamicLoadRebalancingParameters);
