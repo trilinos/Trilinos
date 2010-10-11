@@ -32,11 +32,11 @@ struct Zoltan_Struct;
 namespace stk {
 namespace rebalance {
 
-typedef Teuchos::ParameterList Parameters;
-
 class Zoltan : public GeomDecomp {
 
 public:
+
+  typedef Teuchos::ParameterList Parameters;
 
   static const std::string zoltan_parameters_name();
   static const std::string default_parameters_name();
