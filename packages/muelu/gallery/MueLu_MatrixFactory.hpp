@@ -10,7 +10,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
-#include "matrix_types.hpp"
+#include "MueLu_MatrixTypes.hpp"
 
 #include <iostream>
 
