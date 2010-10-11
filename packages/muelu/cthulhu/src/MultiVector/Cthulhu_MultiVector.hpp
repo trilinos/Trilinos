@@ -46,39 +46,39 @@ namespace Cthulhu {
     //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
       */
-    void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) =0;
+    virtual void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) =0;
 
     //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
       */
-    void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) =0;
+    virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) =0;
 
     //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
       */
-    void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
+    virtual void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
 
     //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
       */
-    void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
+    virtual void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
 
     //! Initialize all values in a multi-vector with specified value.
-    void putScalar(const Scalar &value) =0;
+    virtual void putScalar(const Scalar &value) =0;
 
     //! Set multi-vector values to random numbers.
-    void randomize() =0;
+    virtual void randomize() =0;
 
     //! Replace the underlying Map with a compatible one.
-    void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) =0;
+    virtual void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) =0;
 
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
-    void reduce() =0;
+    virtual void reduce() =0;
 
     //! = Operator.
     /*! \param In A - Multivector to copy
      */
-    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) =0;
+    virtual MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) =0;
 
     //@}
 
@@ -93,22 +93,22 @@ namespace Cthulhu {
     //@{
 
     //! Returns a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const =0;
+    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const =0;
 
     //! Returns a MultiVector with copies of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const =0;
+    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const =0;
 
     //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const =0;
+    virtual Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const =0;
 
     //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const =0;
+    virtual Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const =0;
 
     //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng) =0;
+    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng) =0;
 
     //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols) =0;
+    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols) =0;
 
     //! \brief Returns a const MultiVector view of a subset of rows.
     /** 
@@ -119,7 +119,7 @@ namespace Cthulhu {
 
         \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
      */
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const =0;
+    virtual Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const =0;
 
     //! \brief Returns a non-const MultiVector view of a subset of rows.
     /** 
@@ -130,7 +130,7 @@ namespace Cthulhu {
 
         \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
      */
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) =0;
+    virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) =0;
 
     //! Const Vector access function.
     // Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const =0;
@@ -140,35 +140,35 @@ namespace Cthulhu {
 
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
-    Teuchos::ArrayRCP<const Scalar> getData(size_t j) const =0;
+    virtual Teuchos::ArrayRCP<const Scalar> getData(size_t j) const =0;
 
     //! Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
-    Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j) =0;
+    virtual Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j) =0;
 
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-    void get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const =0;
+    virtual void get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const =0;
 
     //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
-    void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const =0;
+    virtual void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const =0;
 
     //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
-    Teuchos::ArrayRCP<const Scalar> get1dView() const =0;
+    virtual Teuchos::ArrayRCP<const Scalar> get1dView() const =0;
 
     //! Return const persisting pointers to values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const =0;
+    virtual Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const =0;
 
     //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.  Teuchos::ArrayRCP<Scalar> get1dViewNonConst() =0;
-    Teuchos::ArrayRCP<Scalar> get1dViewNonConst() =0;
+    virtual Teuchos::ArrayRCP<Scalar> get1dViewNonConst() =0;
 
     //! Return non-const persisting pointers to values.
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst() =0;
+    virtual Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst() =0;
 
     //! Return a const reference to the underlying Kokkos::MultiVector object (advanced use only)
-    const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const =0;
+    virtual const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const =0;
 
     //! Return a non-const reference to the underlying Kokkos::MultiVector object (advanced use only)
-    Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst() =0;
+    virtual Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst() =0;
 
     //@}
 
@@ -176,46 +176,46 @@ namespace Cthulhu {
     //@{ 
 
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const =0;
+    virtual void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const =0;
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-    void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
+    virtual void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
+    virtual void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
 
     //! Scale the current values of a multi-vector, this = alpha*this.
-    void scale(const Scalar &alpha) =0;
+    virtual void scale(const Scalar &alpha) =0;
 
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-    void scale(Teuchos::ArrayView<const Scalar> alpha) =0;
+    virtual void scale(Teuchos::ArrayView<const Scalar> alpha) =0;
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
+    virtual void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) =0;
+    virtual void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) =0;
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma) =0;
+    virtual void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma) =0;
 
     //! Compute 1-norm of each vector in multi-vector.
-    void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
+    virtual void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
 
     //! Compute 2-norm of each vector in multi-vector.
-    void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
+    virtual void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
 
     //! Compute Inf-norm of each vector in multi-vector.
-    void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
+    virtual void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
+    virtual void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
 
     //! Compute mean (average) value of each vector in multi-vector.
-    void meanValue(const Teuchos::ArrayView<Scalar> &means) const =0;
+    virtual void meanValue(const Teuchos::ArrayView<Scalar> &means) const =0;
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) =0;
+    virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) =0;
 
     //! Element-wise multiply of a Vector A with a MultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
@@ -230,19 +230,19 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the number of vectors in the multi-vector.
-    size_t getNumVectors() const =0;
+    virtual size_t getNumVectors() const =0;
 
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
-    size_t getLocalLength() const =0;
+    virtual size_t getLocalLength() const =0;
 
     //! Returns the global vector length of vectors in the multi-vector.
-    global_size_t getGlobalLength() const =0;
+    virtual global_size_t getGlobalLength() const =0;
 
     //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
-    size_t getStride() const =0;
+    virtual size_t getStride() const =0;
 
     //! Returns true if this multi-vector has constant stride between vectors. WARNING: This may vary from node to node.
-    bool isConstantStride() const =0;
+    virtual bool isConstantStride() const =0;
 
     //@} 
 
@@ -250,10 +250,10 @@ namespace Cthulhu {
     //@{
 
     /** \brief Return a simple one-line description of this object. */
-    std::string description() const =0;
+    virtual std::string description() const =0;
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
+    virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
 
     //@}
 
