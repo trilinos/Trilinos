@@ -1639,6 +1639,7 @@ namespace Ioex {
 	    ef_set->property_add(Ioss::Property("id", id));
 
 	    get_region()->add_alias(ef_set_name, Ioss::Utils::encode_entity_name("surface", id));
+	    get_region()->add_alias(ef_set_name, Ioss::Utils::encode_entity_name("sideset", id));
 	  }
 
 	  //	  split_type = SPLIT_BY_ELEMENT_BLOCK;
@@ -2063,6 +2064,7 @@ namespace Ioex {
 	add_results_fields(EX_NODE_SET, nodeset, number_nodes, ins);
 
 	get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
+	get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
       }
 
     }
