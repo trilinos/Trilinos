@@ -1,0 +1,19 @@
+PACKAGE_ADD_TEST_DIRECTORIES(unit_tests)
+
+INCLUDE(PackageAddExecutableAndTest)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
+
+SET(SOURCES "")
+
+#APPEND_SET(SOURCES
+#main.cpp
+#  )
+#
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#    silly_test
+#    SOURCES ${SOURCES}
+#    ARGS ""
+#    COMM serial
+#  )
+
