@@ -2,7 +2,8 @@
 # somewhere in you local configuration or use the following line but in this case, don't commit your Makefile !
 # TRILINOS_INSTALL_DIR = 
 
-EXE_ROOT = 	Cthulhu_Example_EpetraMap
+EXE_ROOT = 	Cthulhu_Example_TpetraBlockMap
+#EXE_ROOT = 	Cthulhu_Example_EpetraMap
 #EXE_ROOT = 	Cthulhu_Example_TpetraMap
 
 CLIENT_EXTRA_INCLUDES = 
@@ -19,7 +20,7 @@ include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.Tpetra
 
 LIB_PATH = $(TRILINOS_INSTALL_DIR)/lib
 
-INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include -I./ -I../src/Def -I../src/Platform -I../src/Map -I../src/Comm
+INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include -I./ -I../src/Def -I../src/Platform -I../src/Map -I../src/BlockMap -I../src/Comm
 
 CXX = $(Tpetra_CXX_COMPILER)
 
