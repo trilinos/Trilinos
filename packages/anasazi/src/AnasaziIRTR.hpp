@@ -193,7 +193,9 @@ namespace Anasazi {
     using Teuchos::RCP;
     using Teuchos::tuple;
     using Teuchos::null;
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     using Teuchos::TimeMonitor;
+#endif
     using std::endl;
     typedef Teuchos::RCP<const MV> PCMV;
     typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PSDM;
@@ -241,7 +243,9 @@ namespace Anasazi {
     //    Hess -f(X) = -Hess f(X)
     //
     {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
       TimeMonitor lcltimer( *this->timerOrtho_ );
+#endif
       this->orthman_->projectGen(
           *this->R_,                                            // operating on R
           tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,   // P_{BV,V}, and <BV,V>_B != I
@@ -282,7 +286,9 @@ namespace Anasazi {
       for (int i=0; i<this->blockSize_; ++i) ind[i] = this->numAuxVecs_+i;
       Teuchos::RCP<MV> PBX = MVT::CloneViewNonConst(*this->PBV_,ind);
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor prectimer( *this->timerPrec_ );
+#endif
         OPT::Apply(*this->Prec_,*this->BX_,*PBX);
         this->counterPrec_ += this->blockSize_;
       }
@@ -295,12 +301,16 @@ namespace Anasazi {
     // Z = P_{BV,BV} Prec^-1 R
     if (this->hasPrec_) 
     {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
       TimeMonitor prectimer( *this->timerPrec_ );
+#endif
       OPT::Apply(*this->Prec_,*this->R_,*this->Z_);
       this->counterPrec_ += this->blockSize_;
       // the orthogonalization time counts under Ortho and under Preconditioning
       if (this->olsenPrec_) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor orthtimer( *this->timerOrtho_ );
+#endif
         this->orthman_->projectGen(
             *this->Z_,                                             // operating on Z
             tuple<PCMV>(this->PBV_),tuple<PCMV>(this->V_),false,   // P_{PBV,V}, B inner product, and <PBV,V>_B != I
@@ -308,7 +318,9 @@ namespace Anasazi {
             null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*PBV or B*Z, but do have B*V
       }
       else {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor orthtimer( *this->timerOrtho_ );
+#endif
         this->orthman_->projectGen(
             *this->Z_,                                             // operating on Z
             tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,    // P_{BV,V}, and <BV,V>_B != I
@@ -353,7 +365,9 @@ namespace Anasazi {
       }
       // apply projector
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerOrtho_ );
+#endif
         this->orthman_->projectGen(
             *Heta,                                                 // operating on Heta
             tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,    // P_{BV,V}, and <BV,V>_B != I
@@ -395,12 +409,16 @@ namespace Anasazi {
       // (B*delta)*diag(theta) can be done on the cheap
       //
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerAOp_ );
+#endif
         OPT::Apply(*this->AOp_,*this->delta_,*this->Adelta_);
         this->counterAOp_ += this->blockSize_;
       }
       if (this->hasBOp_) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerBOp_ );
+#endif
         OPT::Apply(*this->BOp_,*this->delta_,*this->Bdelta_);
         this->counterBOp_ += this->blockSize_;
       }
@@ -425,7 +443,9 @@ namespace Anasazi {
       }
       // apply projector
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerOrtho_ );
+#endif
         this->orthman_->projectGen(
             *this->Hdelta_,                                       // operating on Hdelta
             tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,   // P_{BV,V}, and <BV,V>_B != I
@@ -542,7 +562,9 @@ namespace Anasazi {
         }
         // apply projector
         {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           TimeMonitor lcltimer( *this->timerOrtho_ );
+#endif
           this->orthman_->projectGen(
               *Heta,                                                // operating on Heta
               tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,   // P_{BV,V}, and <BV,V>_B != I
@@ -586,7 +608,9 @@ namespace Anasazi {
       MVT::MvAddMv(ONE,*this->Hdelta_,ONE,*this->R_,*this->R_);
       {
         // re-tangentialize r
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerOrtho_ );
+#endif
         this->orthman_->projectGen(
             *this->R_,                                            // operating on R
             tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,   // P_{BV,V}, and <BV,V>_B != I
@@ -625,12 +649,16 @@ namespace Anasazi {
       zold_rold = z_r;
       if (this->hasPrec_)
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor prectimer( *this->timerPrec_ );
+#endif
         OPT::Apply(*this->Prec_,*this->R_,*this->Z_);
         this->counterPrec_ += this->blockSize_;
         // the orthogonalization time counts under Ortho and under Preconditioning
         if (this->olsenPrec_) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           TimeMonitor orthtimer( *this->timerOrtho_ );
+#endif
           this->orthman_->projectGen(
               *this->Z_,                                             // operating on Z
               tuple<PCMV>(this->PBV_),tuple<PCMV>(this->V_),false,   // P_{PBV,V}, B inner product, and <PBV,V>_B != I
@@ -638,7 +666,9 @@ namespace Anasazi {
               null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*PBV or B*Z, but do have B*V
         }
         else {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           TimeMonitor orthtimer( *this->timerOrtho_ );
+#endif
           this->orthman_->projectGen(
               *this->Z_,                                             // operating on Z
               tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,    // P_{BV,V}, and <BV,V>_B != I
@@ -694,7 +724,9 @@ namespace Anasazi {
     using Teuchos::RCP;
     using Teuchos::null;
     using Teuchos::tuple;
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     using Teuchos::TimeMonitor;
+#endif
     using std::endl;
     typedef Teuchos::RCP<const MV> PCMV;
     typedef Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PSDM;
@@ -758,7 +790,9 @@ namespace Anasazi {
         // compute the retraction of eta: R_X(eta) = X+eta
         // we must accept, but we will work out of delta so that we can multiply back into X below
         {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           TimeMonitor lcltimer( *this->timerLocalUpdate_ );
+#endif
           MVT::MvAddMv(ONE,*this->X_,ONE,*this->eta_,*this->delta_);
           MVT::MvAddMv(ONE,*this->AX_,ONE,*this->Aeta_,*this->Adelta_);
           if (this->hasBOp_) {
@@ -792,7 +826,9 @@ namespace Anasazi {
       int rank, ret;
       rank = AA.numRows();
       if (useSA_ == true) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerLocalProj_ );
+#endif
         Teuchos::SerialDenseMatrix<int,ScalarType> AA11(Teuchos::View,AA,this->blockSize_,this->blockSize_,0,0), 
                                                    AA12(Teuchos::View,AA,this->blockSize_,this->blockSize_,0,this->blockSize_),
                                                    AA22(Teuchos::View,AA,this->blockSize_,this->blockSize_,this->blockSize_,this->blockSize_);
@@ -807,14 +843,18 @@ namespace Anasazi {
         MVT::MvTransMv(ONE,*this->eta_,*this->Beta_,BB22);
       }
       else {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerLocalProj_ );
+#endif
         MVT::MvTransMv(ONE,*this->delta_,*this->Adelta_,AA);
         MVT::MvTransMv(ONE,*this->delta_,*this->Bdelta_,BB);
       }
       this->om_->stream(Debug) << "AA: " << std::endl << AA << std::endl;;
       this->om_->stream(Debug) << "BB: " << std::endl << BB << std::endl;;
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerDS_ );
+#endif
         ret = Utils::directSolver(AA.numRows(),AA,Teuchos::rcpFromRef(BB),S,newtheta,rank,1);
       }
       this->om_->stream(Debug) << "S: " << std::endl << S << std::endl;;
@@ -825,7 +865,9 @@ namespace Anasazi {
       // order the projected ritz values and vectors
       // this ensures that the ritz vectors produced below are ordered
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerSort_ );
+#endif
         std::vector<int> order(newtheta.size());
         // sort the values in newtheta
         this->sm_->sort(newtheta, Teuchos::rcpFromRef(order), -1);   // don't catch exception
@@ -901,7 +943,9 @@ namespace Anasazi {
           // multiply delta=(X+eta),Adelta=...,Bdelta=... 
           // by primitive Ritz vectors back into X,AX,BX
           // compute ritz vectors, A,B products into X,AX,BX
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           TimeMonitor lcltimer( *this->timerLocalUpdate_ );
+#endif
           MVT::MvTimesMatAddMv(ONE,*this->delta_,S,ZERO,*X);
           MVT::MvTimesMatAddMv(ONE,*this->Adelta_,S,ZERO,*this->AX_);
           if (this->hasBOp_) {
@@ -915,7 +959,9 @@ namespace Anasazi {
           // decompose S into [Sx;Se]
           Teuchos::SerialDenseMatrix<int,ScalarType> Sx(Teuchos::View,S,this->blockSize_,this->blockSize_,0,0),
                                                      Se(Teuchos::View,S,this->blockSize_,this->blockSize_,this->blockSize_,0);
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           TimeMonitor lcltimer( *this->timerLocalUpdate_ );
+#endif
           // X = [X eta] S = X*Sx + eta*Se
           MVT::MvTimesMatAddMv(ONE,*      X   ,Sx,ZERO,*this->delta_);
           MVT::MvTimesMatAddMv(ONE,*this->eta_,Se,ONE ,*this->delta_);
@@ -941,7 +987,9 @@ namespace Anasazi {
       //
       // update residual, R = AX - BX*theta
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         TimeMonitor lcltimer( *this->timerCompRes_ );
+#endif
         MVT::MvAddMv( ONE, *this->BX_, ZERO, *this->BX_, *this->R_ );
         std::vector<ScalarType> theta_comp(this->theta_.begin(),this->theta_.end());
         MVT::MvScale( *this->R_, theta_comp );

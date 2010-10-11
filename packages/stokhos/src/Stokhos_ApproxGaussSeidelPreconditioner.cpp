@@ -95,7 +95,9 @@ int
 Stokhos::ApproxGaussSeidelPreconditioner::
 ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Total Approximate Gauss-Seidel Time");
+#endif
 
   // We have to be careful if Input and Result are the same vector.
   // If this is the case, the only possible solution is to make a copy
@@ -132,7 +134,9 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     Teuchos::RCP<Epetra_MultiVector> res_i = result_block.GetBlock(i);
     {
       // Apply deterministic preconditioner
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
       TEUCHOS_FUNC_TIME_MONITOR("Total AGS Deterministic Preconditioner Time");
+#endif
       mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
     }
 
@@ -174,7 +178,9 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       Teuchos::RCP<Epetra_MultiVector> res_i = result_block.GetBlock(i);
       {
 	// Apply deterministic preconditioner
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
 	TEUCHOS_FUNC_TIME_MONITOR("Total AGS Deterministic Preconditioner Time");
+#endif
 	mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
       }
 

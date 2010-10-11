@@ -173,7 +173,9 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
   maxIters_(100),
   relconvtol_(true),
   numIters_(-1),
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
   _timerSolve(Teuchos::TimeMonitor::getNewTimer("RTRSolMgr::solve()")),
+#endif
   pl_(pl)
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
@@ -370,7 +372,9 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
 
   // tell the solver to iterate
   try {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*_timerSolve);
+#endif
     rtr_solver->iterate();
     numIters_ = rtr_solver->getNumIters();
   }
@@ -420,7 +424,9 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
   rtr_solver->currentStatus(printer_->stream(FinalSummary));
 
   // print timing information
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor::summarize(printer_->stream(TimingDetails));
+#endif
 
   // send the solution to the eigenproblem
   problem_->setSolution(sol);

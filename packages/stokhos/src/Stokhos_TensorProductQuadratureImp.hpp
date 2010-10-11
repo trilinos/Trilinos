@@ -33,7 +33,9 @@ template <typename ordinal_type, typename value_type>
 Stokhos::TensorProductQuadrature<ordinal_type, value_type>::
 TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis) 
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::TensorProductQuadrature -- Quad Grid Generation");
+#endif
   ordinal_type d = product_basis->dimension();
   ordinal_type sz = product_basis->size();
 
@@ -89,7 +91,9 @@ template <typename ordinal_type, typename value_type>
 Stokhos::TensorProductQuadrature<ordinal_type, value_type>::
 TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,const ordinal_type& quad_order) 
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::TensorProductQuadrature -- Quad Grid Generation");
+#endif
   ordinal_type d = product_basis->dimension();
   ordinal_type sz = product_basis->size();
 

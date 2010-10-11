@@ -90,16 +90,24 @@ namespace Belos {
         label_( label )
     {
         std::string orthoLabel = label_ + ": Orthogonalization";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+#endif
 
         std::string updateLabel = label_ + ": Ortho (Update)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+#endif
 
         std::string normLabel = label_ + ": Ortho (Norm)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+#endif
 
         std::string ipLabel = label_ + ": Ortho (Inner Product)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel); 
+#endif
     };
 
     //! Destructor
@@ -342,16 +350,24 @@ namespace Belos {
     if (label != label_) {
       label_ = label;
       std::string orthoLabel = label_ + ": Orthogonalization";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+#endif
 
       std::string updateLabel = label_ + ": Ortho (Update)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerUpdate_ = Teuchos::TimeMonitor::getNewTimer(updateLabel);
+#endif
 
       std::string normLabel = label_ + ": Ortho (Norm)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerNorm_ = Teuchos::TimeMonitor::getNewTimer(normLabel);
+#endif
 
       std::string ipLabel = label_ + ": Ortho (Inner Product)";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerInnerProd_ = Teuchos::TimeMonitor::getNewTimer(ipLabel);
+#endif
     }
   } 
 
@@ -391,7 +407,9 @@ namespace Belos {
                                     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
                                     Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+#endif
 
     ScalarType    ONE  = SCT::one();
     ScalarType    ZERO  = SCT::zero();
@@ -463,7 +481,9 @@ namespace Belos {
 
       // Normalize the new block X
       {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
         if ( B == Teuchos::null ) {
           B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
         }
@@ -529,7 +549,9 @@ namespace Belos {
                                 MV &X, Teuchos::RCP<MV> MX, 
                                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+#endif
 
     // call findBasis, with the instruction to try to generate a basis of rank numvecs(X)
     return findBasis(X, MX, B, true);
@@ -558,7 +580,9 @@ namespace Belos {
     // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
     
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+#endif
     
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
@@ -646,7 +670,9 @@ namespace Belos {
     //
     //
 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor normTimer( *timerNorm_ );
+#endif
 
     const ScalarType ONE  = SCT::one();
     const MagnitudeType ZERO = SCT::magnitude(SCT::zero());
@@ -755,14 +781,18 @@ namespace Belos {
 	  
 	  // product <- prevX^T MXj
           {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
 	    innerProd(*prevX,*Xj,MXj,P2);
           }
 	  
 	  // Xj <- Xj - prevX prevX^T MXj   
 	  //     = Xj - prevX product
           {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
 	    MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
           }
 	  
@@ -771,7 +801,9 @@ namespace Belos {
 	    // MXj <- Op*Xj_new
 	    //      = Op*(Xj_old - prevX prevX^T MXj)
 	    //      = MXj - prevMX product
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
 	    MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
 	  }
 	  
@@ -814,15 +846,21 @@ namespace Belos {
 	  //
 	  for (int num_orth=0; num_orth<max_ortho_steps_; num_orth++){
             {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
 	      innerProd(*prevX,*tempXj,tempMXj,product);
             }
             {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
 	      MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *tempXj );
             }
 	    if (this->_hasOp) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
 	      MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *tempMXj );
 	    }
 	  }
@@ -906,12 +944,16 @@ namespace Belos {
     for (int i=0; i<nq; i++) {
       // Multiply Q' with MX
       {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
         innerProd(*Q[i],X,MX,*C[i]);
       }
       // Multiply by Q and subtract the result in X
       {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
         MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
       }
 
@@ -937,12 +979,16 @@ namespace Belos {
         
 	// Apply another step of classical Gram-Schmidt
 	{
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
           innerProd(*Q[i],X,MX,C2);
         }
 	*C[i] += C2;
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
 	  MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
         }
         
@@ -992,12 +1038,16 @@ namespace Belos {
     for (int i=0; i<nq; i++) {
       // Multiply Q' with MX
       {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
         innerProd(*Q[i],X,MX,*C[i]);
       }
       // Multiply by Q and subtract the result in X
       {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
         MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
       }
       // Update MX, with the least number of applications of Op as possible
@@ -1022,12 +1072,16 @@ namespace Belos {
         
 	// Apply another step of classical Gram-Schmidt
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor innerProdTimer( *timerInnerProd_ );
+#endif
 	  innerProd(*Q[i],X,MX,C2);
         }
 	*C[i] += C2;
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor updateTimer( *timerUpdate_ );
+#endif
 	  MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
         }
         

@@ -137,7 +137,9 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 
   int iter = 0;
   while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
     TEUCHOS_FUNC_TIME_MONITOR("Total global solve Time");
+#endif
     iter++;
 
     sg_y_block->Update(1.0, sg_f_block, 0.0);
@@ -157,7 +159,9 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 				   NOX::Epetra::Vector::CreateView);
 	// Solve linear system
 	{
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
 	  TEUCHOS_FUNC_TIME_MONITOR("Total deterministic solve Time");
+#endif
 	  det_solver->applyJacobianInverse(det_solver_params, nox_df, nox_dx);
 	}
       }

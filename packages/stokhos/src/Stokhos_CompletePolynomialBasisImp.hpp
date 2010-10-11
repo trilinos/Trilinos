@@ -135,7 +135,9 @@ Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 computeTripleProductTensor(ordinal_type order) const
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::CompletePolynomialBasis::computeTripleProductTensor");
+#endif
 
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 

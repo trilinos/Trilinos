@@ -57,6 +57,8 @@
    CMake files refer as ${PACKAGE_NAME}_ENABLE_TSQR) */
 #cmakedefine HAVE_ANASAZI_TSQR
 
+#cmakedefine ANASAZI_TEUCHOS_TIME_MONITOR
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus

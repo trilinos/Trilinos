@@ -39,6 +39,11 @@ ADD_OPTION_AND_DEFINE(
   "Enable Thyra ModelEvalutor Polynomial InArgs and OutArgs."
   ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE} )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+  THYRA_TEUCHOS_TIME_MONITOR
+  "Build with Teuchos TimeMonitors enabled."
+  "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
+
 ADD_SUBDIRECTORY(src)
 
 # Add the targets for building the test library so that other packages can use

@@ -271,7 +271,9 @@ AmesosLinearOpWithSolve::solveImpl(
   Teuchos::Time totalTimer("");
   totalTimer.start(true);
 
+#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWS");
+#endif
 
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();

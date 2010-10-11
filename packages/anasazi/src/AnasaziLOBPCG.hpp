@@ -626,6 +626,7 @@ namespace Anasazi {
     tester_(tester),
     orthman_(ortho),
     // timers, counters
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     timerOp_(Teuchos::TimeMonitor::getNewTimer("LOBPCG::Operation Op*x")),
     timerMOp_(Teuchos::TimeMonitor::getNewTimer("LOBPCG::Operation M*x")),
     timerPrec_(Teuchos::TimeMonitor::getNewTimer("LOBPCG::Operation Prec*x")),
@@ -636,6 +637,7 @@ namespace Anasazi {
     timerCompRes_(Teuchos::TimeMonitor::getNewTimer("LOBPCG::Computing residuals")),
     timerOrtho_(Teuchos::TimeMonitor::getNewTimer("LOBPCG::Orthogonalization")),
     timerInit_(Teuchos::TimeMonitor::getNewTimer("LOBPCG::Initialization")),
+#endif
     count_ApplyOp_(0),
     count_ApplyM_(0),
     count_ApplyPrec_(0),
@@ -686,7 +688,9 @@ namespace Anasazi {
   void LOBPCG<ScalarType,MV,OP>::setBlockSize (int newBS) 
   {
     // time spent here counts towards timerInit_
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor lcltimer( *timerInit_ );
+#endif
 
     // This routine only allocates space; it doesn't not perform any computation
     // if size is decreased, take the first newBS vectors of all and leave state as is
@@ -958,7 +962,9 @@ namespace Anasazi {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
     // NOTE: Overall time spent in this routine is counted to timerInit_; portions will also be counted towards other primitives
 
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor inittimer( *timerInit_ );
+#endif
 
     std::vector<int> bsind(blockSize_);
     for (int i=0; i<blockSize_; i++) bsind[i] = i;
@@ -1008,7 +1014,9 @@ namespace Anasazi {
         else {
           // user didn't specify MX, compute it
           {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+#endif
             OPT::Apply(*MOp_,*X_,*MX_);
             count_ApplyM_ += blockSize_;
           }
@@ -1029,7 +1037,9 @@ namespace Anasazi {
       else {
         // user didn't specify KX, compute it
         {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor lcltimer( *timerOp_ );
+#endif
           OPT::Apply(*Op_,*X_,*KX_);
           count_ApplyOp_ += blockSize_;
         }
@@ -1079,21 +1089,27 @@ namespace Anasazi {
 
       // put data in MX
       if (hasM_) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+#endif
         OPT::Apply(*MOp_,*X_,*MX_);
         count_ApplyM_ += blockSize_;
       }
   
       // remove auxVecs from X_ and normalize it
       if (numAuxVecs_ > 0) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+#endif
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalizeMat(*X_,auxVecs_,dummy,Teuchos::null,MX_);
         TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+#endif
         int rank = orthman_->normalizeMat(*X_,Teuchos::null,MX_);
         TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
@@ -1101,7 +1117,9 @@ namespace Anasazi {
 
       // put data in KX
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOp_ );
+#endif
         OPT::Apply(*Op_,*X_,*KX_);
         count_ApplyOp_ += blockSize_;
       }
@@ -1125,7 +1143,9 @@ namespace Anasazi {
                                                  MM(blockSize_,blockSize_),
                                                   S(blockSize_,blockSize_);
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerLocalProj_ );
+#endif
         // project K
         MVT::MvTransMv(ONE,*X_,*KX_,KK);
         // project M
@@ -1135,7 +1155,9 @@ namespace Anasazi {
 
       // solve the projected problem
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
+#endif
         Utils::directSolver(blockSize_, KK, Teuchos::rcpFromRef(MM), S, theta_, nevLocal_, 1);
         TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Initial Ritz analysis did not produce enough Ritz pairs to initialize algorithm.");
@@ -1144,7 +1166,9 @@ namespace Anasazi {
       // We only have blockSize_ ritz pairs, ergo we do not need to select.
       // However, we still require them to be ordered correctly
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerSort_ );
+#endif
 
         std::vector<int> order(blockSize_);
         // 
@@ -1157,7 +1181,9 @@ namespace Anasazi {
 
       // update the solution, use R for storage
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerLocalUpdate_ );
+#endif
         // X <- X*S
         MVT::MvAddMv( ONE, *X_, ZERO, *X_, *R_ );        
         MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *X_ );
@@ -1183,7 +1209,9 @@ namespace Anasazi {
       MVT::SetBlock(*newstate.R,bsind,*R_);
     }
     else {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
+#endif
       // form R <- KX - MX*T
       MVT::MvAddMv(ZERO,*KX_,ONE,*KX_,*R_);
       Teuchos::SerialDenseMatrix<int,ScalarType> T(blockSize_,blockSize_);
@@ -1215,7 +1243,9 @@ namespace Anasazi {
         MVT::SetBlock(*newstate.KP,bsind,*KP_);
       }
       else {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOp_ );
+#endif
         OPT::Apply(*Op_,*P_,*KP_);
         count_ApplyOp_ += blockSize_;
       }
@@ -1230,7 +1260,9 @@ namespace Anasazi {
           MVT::SetBlock(*newstate.MP,bsind,*MP_);
         }
         else {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+#endif
           OPT::Apply(*MOp_,*P_,*MP_);
           count_ApplyM_ += blockSize_;
         }
@@ -1346,7 +1378,9 @@ namespace Anasazi {
 
       // Apply the preconditioner on the residuals: H <- Prec*R
       if (Prec_ != Teuchos::null) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerPrec_ );
+#endif
         OPT::Apply( *Prec_, *R_, *H_ );   // don't catch the exception
         count_ApplyPrec_ += blockSize_;
       }
@@ -1356,7 +1390,9 @@ namespace Anasazi {
 
       // Apply the mass matrix on H
       if (hasM_) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+#endif
         OPT::Apply( *MOp_, *H_, *MH_);    // don't catch the exception
         count_ApplyM_ += blockSize_;
       }
@@ -1374,7 +1410,9 @@ namespace Anasazi {
         }
       }
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+#endif
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummyC = 
           Teuchos::tuple<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null);
         int rank = orthman_->projectAndNormalizeMat(*H_,Q,dummyC,Teuchos::null,MH_);
@@ -1398,7 +1436,9 @@ namespace Anasazi {
 
       // Apply the stiffness matrix to H
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOp_ );
+#endif
         OPT::Apply( *Op_, *H_, *KH_);   // don't catch the exception
         count_ApplyOp_ += blockSize_;
       }
@@ -1502,7 +1542,9 @@ namespace Anasazi {
           M2(Teuchos::View,MM,blockSize_,nevLocal_-1*blockSize_,1*blockSize_,1*blockSize_),
           M3(Teuchos::View,MM,blockSize_,nevLocal_-2*blockSize_,2*blockSize_,2*blockSize_);
         {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor lcltimer( *timerLocalProj_ );
+#endif
           MVT::MvTransMv( ONE, *cX, *cK_XHP, K1 );
           MVT::MvTransMv( ONE, *cX, *cM_XHP, M1 );
           MVT::MvTransMv( ONE, *cH, *cK_HP , K2 );
@@ -1537,7 +1579,9 @@ namespace Anasazi {
                                                  lclMM(Teuchos::View,MM,nevLocal_,nevLocal_),
                                                   lclS(Teuchos::View, S,nevLocal_,nevLocal_);
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
+#endif
         int localSize = nevLocal_;
         Utils::directSolver(localSize, lclKK, Teuchos::rcpFromRef(lclMM), lclS, theta_, nevLocal_, 0);
         // localSize tells directSolver() how big KK,MM are
@@ -1570,7 +1614,9 @@ namespace Anasazi {
       Teuchos::LAPACK<int,ScalarType> lapack;
       Teuchos::BLAS<int,ScalarType> blas;
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerSort_ );
+#endif
 
         std::vector<int> order(nevLocal_);
         // 
@@ -1749,7 +1795,9 @@ namespace Anasazi {
       //----------------------------------------
       // Note: Use R as a temporary work space and (if full ortho) tmpMV as well
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerLocalUpdate_ );
+#endif
 
         // if full ortho, then CX and CP are dense
         // we multiply [X H P]*CX into tmpMV
@@ -1852,7 +1900,9 @@ namespace Anasazi {
       //
       // Compute the new residuals, explicitly
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
+#endif
         MVT::MvAddMv( ONE, *KX_, ZERO, *KX_, *R_ );
         Teuchos::SerialDenseMatrix<int,ScalarType> T( blockSize_, blockSize_ );
         for (int i = 0; i < blockSize_; i++) {
