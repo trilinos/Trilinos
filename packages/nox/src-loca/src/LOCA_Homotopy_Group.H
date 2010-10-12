@@ -268,6 +268,18 @@ namespace LOCA {
       //! Return homotopy Newton direction.
       virtual const NOX::Abstract::Vector& getNewton() const;
 
+      //! Return homotopy solution vector \f$x\f$.  
+      virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
+
+      //! Return homotopy residual \f$g\f$
+      virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
+
+      //! Return homotopy gradient
+      virtual Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
+
+      //! Return homotopy Newton direction.
+      virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const;
+
       //@}
 
       /*! 

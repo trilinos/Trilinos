@@ -723,6 +723,33 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNewton() const
 {
   return *newtonVec;
 }
+  
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getXPtr() const 
+{
+  return xVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getFPtr() const 
+{
+  return fVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getGradientPtr() const 
+{
+  globalData->locaErrorCheck->throwError(
+	      "LOCA::TurningPoint::MooreSpence::ExtendedGroup::getGradientPtr()",
+	      " - not implemented");
+  return getNewtonPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNewtonPtr() const 
+{
+  return newtonVec;
+}
 
 double
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() const 

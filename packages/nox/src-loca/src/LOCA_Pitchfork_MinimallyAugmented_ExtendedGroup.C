@@ -721,6 +721,34 @@ getNewton() const
 {
   return *newtonVec;
 }
+  
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
+getXPtr() const 
+{
+  return xVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
+getFPtr() const 
+{
+  return fVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
+getGradientPtr() const 
+{
+  return gradientVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
+getNewtonPtr() const 
+{
+  return newtonVec;
+}
 
 double
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::

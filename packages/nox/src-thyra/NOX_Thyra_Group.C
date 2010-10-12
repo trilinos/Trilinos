@@ -464,6 +464,26 @@ const NOX::Abstract::Vector& NOX::Thyra::Group::getGradient() const
   return *gradient_vec_;
 }
 
+Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getXPtr() const 
+{
+  return x_vec_;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getFPtr() const 
+{  
+  return f_vec_;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getNewtonPtr() const 
+{
+  return newton_vec_;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector > NOX::Thyra::Group::getGradientPtr() const 
+{ 
+  return gradient_vec_;
+}
+
 
 void NOX::Thyra::Group::print() const
 {

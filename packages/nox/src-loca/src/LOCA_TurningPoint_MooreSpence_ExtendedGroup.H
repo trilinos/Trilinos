@@ -343,6 +343,18 @@ namespace LOCA {
 	//! Return extended Newton direction.
 	virtual const NOX::Abstract::Vector& getNewton() const;
 
+	//! Return extended solution vector \f$z\f$.  
+	virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
+
+	//! Return extended equation residual \f$G(z)\f$
+	virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
+
+	//! Vector returned is not valid.
+	virtual Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
+
+	//! Return extended Newton direction.
+	virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const;
+
 	//! Return the norm of the %Newton solve residual.
 	virtual double getNormNewtonSolveResidual() const;
 

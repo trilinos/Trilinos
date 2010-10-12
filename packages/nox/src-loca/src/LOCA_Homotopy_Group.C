@@ -455,6 +455,39 @@ LOCA::Homotopy::Group::getNewton() const
   return *newtonVecPtr;
 }
 
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Homotopy::Group::getXPtr() const 
+{
+  return grpPtr->getXPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Homotopy::Group::getFPtr() const 
+{
+  return gVecPtr;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Homotopy::Group::getGradientPtr() const 
+{
+  if (gradVecPtr == Teuchos::null) {
+    globalData->locaErrorCheck->throwError(
+				      "LOCA::Homotopy::Group::getGradientPtr", 
+				      "gradVecPtr is NULL!");
+  }
+  return gradVecPtr;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Homotopy::Group::getNewtonPtr() const 
+{
+  if (newtonVecPtr == Teuchos::null) {
+    globalData->locaErrorCheck->throwError("LOCA::Homotopy::Group::getNewtonPtr", 
+					   "newtonVecPtr is NULL!");
+  }
+  return newtonVecPtr;
+}
+
 Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
 LOCA::Homotopy::Group::getUnderlyingGroup() const
 {

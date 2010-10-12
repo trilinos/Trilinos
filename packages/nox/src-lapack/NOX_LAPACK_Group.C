@@ -411,6 +411,26 @@ const NOX::Abstract::Vector& NOX::LAPACK::Group::getNewton() const
   return newtonVector;
 }
 
+Teuchos::RCP< const NOX::Abstract::Vector > NOX::LAPACK::Group::getXPtr() const 
+{
+  return Teuchos::rcp< const NOX::Abstract::Vector >(&xVector, false);
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector > NOX::LAPACK::Group::getFPtr() const 
+{  
+  return Teuchos::rcp< const NOX::Abstract::Vector >(&fVector, false);
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector > NOX::LAPACK::Group::getGradientPtr() const 
+{ 
+  return Teuchos::rcp< const NOX::Abstract::Vector >(&gradientVector, false);
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector > NOX::LAPACK::Group::getNewtonPtr() const 
+{
+  return Teuchos::rcp< const NOX::Abstract::Vector >(&newtonVector, false);
+}
+
 
 void NOX::LAPACK::Group::print() const
 {

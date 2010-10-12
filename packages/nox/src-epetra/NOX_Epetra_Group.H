@@ -250,6 +250,14 @@ in NOX::Abstract::Group
 
   virtual const NOX::Abstract::Vector& getNewton() const;
 
+  inline virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const {return xVectorPtr;};
+
+  inline virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const {return RHSVectorPtr;};
+
+  inline virtual Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const {return gradVectorPtr;};
+
+  inline virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const {return NewtonVectorPtr;};
+
   /*! 
     \brief
     Returns the 2-norm of the residual of the linear model used in the
