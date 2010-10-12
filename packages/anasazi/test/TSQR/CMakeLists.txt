@@ -24,6 +24,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TSQR_Lapack_Accuracy
+  SOURCES Tsqr_TestLapack.cpp
+  COMM serial mpi
+  ARGS "--verify --nrows=1000 --ncols=10 --ntrials=10"
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TSQR_DistTsqr_Accuracy
   SOURCES Tsqr_TestDistTsqr.cpp
   COMM mpi
