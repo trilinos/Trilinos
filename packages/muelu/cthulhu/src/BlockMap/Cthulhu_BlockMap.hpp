@@ -1,6 +1,8 @@
 #ifndef CTHULHU_BLOCKMAP_DECL_HPP
 #define CTHULHU_BLOCKMAP_DECL_HPP
 
+#include "Cthulhu_Map.hpp"
+
 /** \file Cthulhu_BlockMap.hpp
 
   Declarations for the class Cthulhu::BlockMap.
