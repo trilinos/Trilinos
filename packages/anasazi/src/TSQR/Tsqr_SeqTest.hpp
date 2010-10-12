@@ -52,6 +52,8 @@ namespace TSQR {
 		   const bool test_complex_arithmetic,
 		   const bool save_matrices,
 		   const bool contiguous_cache_blocks,
+		   const std::string& additionalFieldNames,
+		   const std::string& additionalData,
 		   const bool printFieldNames,
 		   const bool human_readable = false,
 		   const bool b_debug = false);
@@ -85,6 +87,8 @@ namespace TSQR {
 		      const size_t cacheBlockSize,
 		      const bool contiguousCacheBlocks,
 		      const bool testComplex,
+		      const std::string& additionalFieldNames,
+		      const std::string& additionalData,
 		      const bool printFieldNames,
 		      const bool humanReadable);
 

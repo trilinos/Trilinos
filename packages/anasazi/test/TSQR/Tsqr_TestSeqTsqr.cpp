@@ -77,6 +77,7 @@ namespace TSQR {
 	  cacheBlockSize (0), // choose a reasonable default
 	  contiguousCacheBlocks (false),
 	  printFieldNames (true),
+	  printTrilinosTestStuff (true),
 	  humanReadable (false),
 	  debug (false)
 	{}
@@ -87,7 +88,9 @@ namespace TSQR {
 	bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
 	size_t cacheBlockSize;
-	bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
+	bool contiguousCacheBlocks;
+	std::string additionalFieldNames, additionalData;
+	bool printFieldNames, printTrilinosTestStuff, humanReadable, debug;
       };
 
       static void
@@ -108,6 +111,8 @@ namespace TSQR {
 			  params.cacheBlockSize,
 			  params.contiguousCacheBlocks,
 			  testComplex, 
+			  params.additionalFieldNames,
+			  params.additionalData,
 			  params.printFieldNames,
 			  params.humanReadable);
       }
@@ -124,12 +129,18 @@ namespace TSQR {
 	const bool saveMatrices = false;
 
 	using TSQR::Test::verifySeqTsqr;
-	verifySeqTsqr (out, params.numRows, params.numCols, 
-		       params.cacheBlockSize, testComplex,
-		       saveMatrices, params.contiguousCacheBlocks,
-		       params.printFieldNames, params.humanReadable, 
+	verifySeqTsqr (out, 
+		       params.numRows, 
+		       params.numCols, 
+		       params.cacheBlockSize, 
+		       testComplex,
+		       saveMatrices, 
+		       params.contiguousCacheBlocks,
+		       params.additionalFieldNames,
+		       params.additionalData,
+		       params.printFieldNames, 
+		       params.humanReadable, 
 		       params.debug);
-
       }
 
       /// \brief Parse command-line options for this test
@@ -199,10 +210,29 @@ namespace TSQR {
 				 "noncontiguous-cache-blocks",
 				 &params.contiguousCacheBlocks,
 				 "Whether cache blocks should be stored contiguously");
+	  cmdLineProc.setOption ("field-names", 
+				 &params.additionalFieldNames,
+				 "Any additional field name(s) (comma-delimited "
+				 "string) to add to the benchmark output.  Empty "
+				 "by default.  Good for things known when invoking "
+				 "the benchmark executable, but not (easily) known "
+				 "inside the benchmark -- e.g., environment "
+				 "variables.");
+	  cmdLineProc.setOption ("output-data", 
+				 &params.additionalData,
+				 "Any additional data to add to the output, "
+				 "corresponding to the above field name(s). "
+				 "Empty by default.");
 	  cmdLineProc.setOption ("print-field-names",
 				 "no-print-field-names",
 				 &params.printFieldNames,
 				 "Print field names (for machine-readable output only)");
+	  cmdLineProc.setOption ("print-trilinos-test-stuff", 
+				 "no-print-trilinos-test-stuff", 
+				 &params.printTrilinosTestStuff,
+				 "Print output that makes the Trilinos test "
+				 "framework happy (but makes benchmark results "
+				 "parsing scripts unhappy)");
 	  cmdLineProc.setOption ("human-readable",
 				 "machine-readable",
 				 &params.humanReadable,
@@ -294,12 +324,14 @@ main (int argc, char *argv[])
 
       if (params.benchmark)
 	TSQR::Trilinos::Test::benchmark (out, params);
+
       // We allow the same run to do both benchmark and verify.
       if (params.verify)
 	TSQR::Trilinos::Test::verify (out, params);
 
-      // The Trilinos test framework expects a message like this.
-      out << "\nEnd Result: TEST PASSED" << endl;
+      if (params.printTrilinosTestStuff)
+	// The Trilinos test framework expects a message like this.
+	out << "\nEnd Result: TEST PASSED" << endl;
     }
 
   return 0;

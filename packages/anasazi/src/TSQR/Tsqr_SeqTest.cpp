@@ -142,6 +142,8 @@ namespace TSQR {
 			   const size_t cache_block_size,
 			   const bool contiguous_cache_blocks,
 			   const bool save_matrices,
+			   const std::string& additionalFieldNames,
+			   const std::string& additionalData,
 			   const bool printFieldNames,
 			   const bool human_readable,
 			   const bool b_debug)
@@ -330,8 +332,10 @@ namespace TSQR {
 		  << ",contiguousCacheBlocks"
 		  << ",absFrobResid"
 		  << ",absFrobOrthog"
-		  << ",frobA"
-		  << endl;
+		  << ",frobA";
+	      if (! additionalFieldNames.empty())
+		out << "," << additionalFieldNames;
+	      out << endl;
 	    }
 	  out << "SeqTSQR"
 	      << "," << datatype
@@ -341,8 +345,10 @@ namespace TSQR {
 	      << "," << contiguous_cache_blocks 
 	      << "," << results[0]
 	      << "," << results[1]
-	      << "," << results[2]
-	      << endl;
+	      << "," << results[2];
+	  if (! additionalData.empty())
+	    out << "," << additionalData;
+	  out << endl;
 	}
     }
 
@@ -355,6 +361,8 @@ namespace TSQR {
 		   const bool test_complex_arithmetic,
 		   const bool save_matrices,
 		   const bool contiguous_cache_blocks,
+		   const std::string& additionalFieldNames,
+		   const std::string& additionalData,
 		   const bool printFieldNames,
 		   const bool human_readable,
 		   const bool b_debug)
@@ -386,7 +394,8 @@ namespace TSQR {
       shortDatatype = "S";
       verifySeqTsqrTemplate (out, normgenS, datatype, shortDatatype, nrows, ncols, 
 			     cache_block_size, contiguous_cache_blocks, 
-			     save_matrices, printFieldNames, human_readable, b_debug);
+			     save_matrices, additionalFieldNames, additionalData,
+			     printFieldNames, human_readable, b_debug);
       // Fetch the pseudorandom seed from the previous test.
       normgenS.getSeed (iseed);
       NormalGenerator< int, double > normgenD (iseed);
@@ -395,7 +404,8 @@ namespace TSQR {
       shortDatatype = "D";
       verifySeqTsqrTemplate (out, normgenD, datatype, shortDatatype, nrows, ncols, 
 			     cache_block_size, contiguous_cache_blocks, 
-			     save_matrices, printFieldNames, human_readable, b_debug);
+			     save_matrices, additionalFieldNames, additionalData,
+			     printFieldNames, human_readable, b_debug);
 
       if (test_complex_arithmetic)
 	{
@@ -405,14 +415,16 @@ namespace TSQR {
 	  shortDatatype = "C";
 	  verifySeqTsqrTemplate (out, normgenC, datatype, shortDatatype, nrows, ncols, 
 				 cache_block_size, contiguous_cache_blocks, 
-				 save_matrices, printFieldNames, human_readable, b_debug);
+				 save_matrices, additionalFieldNames, additionalData,
+				 printFieldNames, human_readable, b_debug);
 	  normgenC.getSeed (iseed);
 	  NormalGenerator< int, complex<double> > normgenZ (iseed);
 	  datatype = "complex<double>";
 	  shortDatatype = "Z";
 	  verifySeqTsqrTemplate (out, normgenZ, datatype, shortDatatype, nrows, ncols, 
 				 cache_block_size, contiguous_cache_blocks, 
-				 save_matrices, printFieldNames, human_readable, b_debug);
+				 save_matrices, additionalFieldNames, additionalData,
+				 printFieldNames, human_readable, b_debug);
 	}
     }
 
@@ -529,7 +541,9 @@ namespace TSQR {
 	{
 	  if (printFieldNames)
 	    {
-	      out << "method"
+	      const char prefix[] = "%";
+	      out << prefix
+		  << "method"
 		  << ",scalarType"
 		  << ",numRows"
 		  << ",numCols"
@@ -897,6 +911,8 @@ namespace TSQR {
 		 const Ordinal numCols,
 		 const size_t cacheBlockSize,
 		 const bool contiguousCacheBlocks,
+		 const std::string& additionalFieldNames,
+		 const std::string& additionalData,
 		 const bool printFieldNames)
       {
 	SequentialTsqr< Ordinal, Scalar > actor (cacheBlockSize);
@@ -936,7 +952,8 @@ namespace TSQR {
 	  }
 	const double seqTsqrTiming = timer.stop();
 	reportResults (numTrials, numRows, numCols, actor.cache_block_size(),
-		       contiguousCacheBlocks, seqTsqrTiming, printFieldNames);
+		       contiguousCacheBlocks, seqTsqrTiming, 
+		       additionalFieldNames, additionalData, printFieldNames);
       }
 
 
@@ -966,6 +983,8 @@ namespace TSQR {
 		     const size_t actualCacheBlockSize,
 		     const bool contiguousCacheBlocks,
 		     const double seqTsqrTiming,
+		     const std::string& additionalFieldNames,
+		     const std::string& additionalData,
 		     const bool printFieldNames)
       {
 	using std::endl;
@@ -992,8 +1011,10 @@ namespace TSQR {
 		     << ",cacheBlockSize"
 		     << ",contiguousCacheBlocks"
 		     << ",numTrials"
-		     << ",timing"
-		     << endl;
+		     << ",timing";
+		if (! additionalFieldNames.empty())
+		  out_ << "," << additionalFieldNames;
+		out_ << endl;
 	      }
 	    out_ << "SeqTSQR" 
 		 << "," << scalarTypeName_
@@ -1002,8 +1023,10 @@ namespace TSQR {
 		 << "," << actualCacheBlockSize
 		 << "," << contiguousCacheBlocks
 		 << "," << numTrials 
-		 << "," << seqTsqrTiming 
-		 << endl;
+		 << "," << seqTsqrTiming;
+	    if (! additionalData.empty())
+	      out_ << "," << additionalData;
+	    out_ << endl;
 	  }
       }
     };
@@ -1017,6 +1040,8 @@ namespace TSQR {
 		      const size_t cacheBlockSize,
 		      const bool contiguousCacheBlocks,
 		      const bool testComplex,
+		      const std::string& additionalFieldNames,
+		      const std::string& additionalData,
 		      const bool printFieldNames,
 		      const bool humanReadable)
     {
@@ -1035,6 +1060,7 @@ namespace TSQR {
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
 			      contiguousCacheBlocks, 
+			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
 	    if (printFieldNames && ! printedFieldNames)
 	      printedFieldNames = true;
@@ -1045,6 +1071,7 @@ namespace TSQR {
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
 			      contiguousCacheBlocks, 
+			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
 	    if (printFieldNames && ! printedFieldNames)
 	      printedFieldNames = true;
@@ -1061,6 +1088,7 @@ namespace TSQR {
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
 			      contiguousCacheBlocks, 
+			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
 	    if (printFieldNames && ! printedFieldNames)
 	      printedFieldNames = true;
@@ -1071,6 +1099,7 @@ namespace TSQR {
 	    benchmark_type widget (scalarTypeName, out, humanReadable);
 	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
 			      contiguousCacheBlocks, 
+			      additionalFieldNames, additionalData,
 			      printFieldNames && ! printedFieldNames);
 	    if (printFieldNames && ! printedFieldNames)
 	      printedFieldNames = true;
