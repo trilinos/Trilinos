@@ -28,8 +28,9 @@
 #ifndef __TSQR_CombineNative_hpp
 #define __TSQR_CombineNative_hpp
 
+#include "Teuchos_ScalarTraits.hpp"
+
 #include "Tsqr_ApplyType.hpp"
-#include "Tsqr_ScalarTraits.hpp"
 #include "Tsqr_Blas.hpp"
 #include "Tsqr_Lapack.hpp"
 #include "Tsqr_CombineDefault.hpp"
@@ -61,12 +62,12 @@ namespace TSQR {
   /// and ZUNM2R as models), but it will take time that the author
   /// doesn't have at the moment.
   ///
-  template< class Ordinal, class Scalar, bool isComplex = ScalarTraits< Scalar >::is_complex >
+  template< class Ordinal, class Scalar, bool isComplex = Teuchos::ScalarTraits< Scalar >::isComplex >
   class CombineNative 
   {
   public:
     typedef Scalar scalar_type;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
     typedef Ordinal ordinal_type;
 
   private:
@@ -175,7 +176,7 @@ namespace TSQR {
   {
   public:
     typedef Scalar scalar_type;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
     typedef Ordinal ordinal_type;
 
   private:
@@ -276,7 +277,7 @@ namespace TSQR {
   {
   public:
     typedef Scalar scalar_type;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
     typedef Ordinal ordinal_type;
 
   private:

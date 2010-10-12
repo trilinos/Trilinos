@@ -29,9 +29,8 @@
 #ifndef __TSQR_Combine_hpp
 #define __TSQR_Combine_hpp
 
+#include <Teuchos_ScalarTraits.hpp>
 #include <Tsqr_ApplyType.hpp>
-#include <Tsqr_MatView.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_CombineNative.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +44,7 @@ namespace TSQR {
   /// This class encapsulates six computational primitives for TSQR
   /// (in which R, R_1, and R_2 each represent an n x n upper
   /// triangular matrix, A represents an m x n cache block, and C_1
-  /// and C_2 represent cache blocks with some number of columsn p):
+  /// and C_2 represent cache blocks with some number of columns p):
   ///
   /// \li Factor A (factor_first)
   /// \li Apply Q factor of A to C (apply_first)
@@ -61,7 +60,7 @@ namespace TSQR {
   ///
   template< class Ordinal, 
 	    class Scalar, 
-	    class CombineImpl = CombineNative< Ordinal, Scalar, ScalarTraits< Scalar >::is_complex > >
+	    class CombineImpl = CombineNative< Ordinal, Scalar, Teuchos::ScalarTraits< Scalar >::isComplex > >
   class Combine {
   public:
     typedef Scalar scalar_type;
