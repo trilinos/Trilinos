@@ -40,9 +40,7 @@
 
 #include "Tsqr_TbbTest.hpp"
 
-#ifdef HAVE_TSQR_COMPLEX
 #  include <complex>
-#endif // HAVE_TSQR_COMPLEX
 
 #include <sstream>
 #include <stdexcept>
@@ -74,9 +72,7 @@ namespace TSQR {
 	  numCols (10),  
 	  numTrials (10),
 	  testReal (true),
-#ifdef HAVE_TSQR_COMPLEX
 	  testComplex (false),
-#endif // HAVE_TSQR_COMPLEX
 	  cacheBlockSize (0),
 	  contiguousCacheBlocks (false),
 	  printFieldNames (true),
@@ -87,9 +83,7 @@ namespace TSQR {
 	bool verify, benchmark;
 	int numCores, numRows, numCols, numTrials;
 	bool testReal;
-#ifdef HAVE_TSQR_COMPLEX
 	bool testComplex;
-#endif // HAVE_TSQR_COMPLEX
 	size_t cacheBlockSize;
 	bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
       };
@@ -99,9 +93,7 @@ namespace TSQR {
       {
 	typedef Teuchos::Time timer_type;
 	using TSQR::Test::benchmarkTbbTsqr;
-#ifdef HAVE_TSQR_COMPLEX
 	using std::complex;
-#endif // HAVE_TSQR_COMPLEX
 
 	// Only print field names (if at all) for the first data type tested.
 	bool printedFieldNames = false;
@@ -137,7 +129,6 @@ namespace TSQR {
 		printedFieldNames = true;
 	    }
 	  }
-#ifdef HAVE_TSQR_COMPLEX
 	if (params.testComplex)
 	  {
 	    {
@@ -169,7 +160,6 @@ namespace TSQR {
 		printedFieldNames = true;
 	    }
 	  }
-#endif // HAVE_TSQR_COMPLEX
       }
 
       static void
@@ -177,9 +167,7 @@ namespace TSQR {
       {
 
 	using TSQR::Test::verifyTbbTsqr;
-#ifdef HAVE_TSQR_COMPLEX
 	using std::complex;
-#endif // HAVE_TSQR_COMPLEX
 
 	std::vector<int> seed(4);
 	seed[0] = 0;
@@ -227,7 +215,6 @@ namespace TSQR {
 	      gen.getSeed (seed);
 	    }
 	  } // if (params.testReal)
-#ifdef HAVE_TSQR_COMPLEX
 	if (params.testComplex)
 	  {
 	    {
@@ -265,7 +252,6 @@ namespace TSQR {
 	      gen.getSeed (seed);
 	    }
 	  }
-#endif // HAVE_TSQR_COMPLEX
       }
 
       /// \brief Parse command-line options for this test
@@ -326,12 +312,10 @@ namespace TSQR {
 				 "noreal",
 				 &params.testReal,
 				 "Test real arithmetic");
-#ifdef HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("complex", 
 				 "nocomplex",
 				 &params.testComplex,
 				 "Test complex arithmetic");
-#endif // HAVE_TSQR_COMPLEX
 	  cmdLineProc.setOption ("ncores", 
 				 &params.numCores,
 				 "Number of cores to use for Intel TBB");
