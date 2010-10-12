@@ -299,6 +299,14 @@ NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroup() const
   throw "NOX Error";
 }
 
+Teuchos::RCP< const NOX::Abstract::Group>
+NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroupPtr() const
+{
+  utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroupPtr - "
+                  << "Old group not available.  This method is not currently supported." << endl;
+  throw "NOX Error";
+}
+
 int NOX::Multiphysics::Solver::FixedPointBased::getNumIterations() const
 {
   return nIter;

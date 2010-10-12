@@ -122,8 +122,17 @@ public:
   //! Get number of iterations.
   virtual int getNumIterations() const = 0;
 
-  //! Return a refernece to the solver parameters.
+  //! Return a reference to the solver parameters.
   virtual const Teuchos::ParameterList& getList() const = 0;
+
+  //! Return a RCP to the solution group
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const = 0;
+
+  //! Return a RCP to the previous solution group
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const = 0;
+
+  //! Return a RCP to the solver parameters.
+  virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const = 0;
 
 };
 } // namespace Solver

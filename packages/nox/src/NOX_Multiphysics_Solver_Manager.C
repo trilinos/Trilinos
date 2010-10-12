@@ -166,10 +166,22 @@ const NOX::Abstract::Group& NOX::Multiphysics::Solver::Manager::getSolutionGroup
   return cplPtr->getSolutionGroup();
 }
 
+Teuchos::RCP< const NOX::Abstract::Group > NOX::Multiphysics::Solver::Manager::getSolutionGroupPtr() const
+{
+  checkNullPtr("getSolutionGroupPtr");
+  return cplPtr->getSolutionGroupPtr();
+}
+
 const NOX::Abstract::Group& NOX::Multiphysics::Solver::Manager::getPreviousSolutionGroup() const
 {
   checkNullPtr("getPreviousSolutionGroup");
   return cplPtr->getPreviousSolutionGroup();
+}
+
+Teuchos::RCP< const NOX::Abstract::Group > NOX::Multiphysics::Solver::Manager::getPreviousSolutionGroupPtr() const
+{
+  checkNullPtr("getPreviousSolutionGroupPtr");
+  return cplPtr->getPreviousSolutionGroupPtr();
 }
 
 int NOX::Multiphysics::Solver::Manager::getNumIterations() const
@@ -184,6 +196,12 @@ const Teuchos::ParameterList& NOX::Multiphysics::Solver::Manager::getList() cons
 {
   checkNullPtr("getList");
   return cplPtr->getList();
+}
+
+Teuchos::RCP< const Teuchos::ParameterList > NOX::Multiphysics::Solver::Manager::getListPtr() const
+{
+  checkNullPtr("getListPtr");
+  return cplPtr->getListPtr();
 }
 
 // PRIVATE
