@@ -33,6 +33,7 @@
 #include <Tsqr_Random_NormalGenerator.hpp>
 #include <Tsqr_nodeTestProblem.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
+#include <Teuchos_Time.hpp>
 
 #include <Tsqr_Blas.hpp>
 #include <Tsqr_Lapack.hpp>
@@ -138,9 +139,9 @@ namespace TSQR {
 		   const bool test_complex_arithmetic,
 		   const bool save_matrices,
 		   const bool contiguous_cache_blocks,
-		   const bool human_readable,
+		   const bool printFieldNames,
+		   const bool human_readable = false,
 		   const bool b_debug = false);
-
 
     /// Test the accuracy of LAPACK's QR factorization on an nrows by
     /// ncols matrix, and print the results to stdout.
@@ -182,7 +183,8 @@ namespace TSQR {
 		 const Ordinal numRows,
 		 const Ordinal numCols,
 		 const size_t cacheBlockSize,
-		 const bool contiguousCacheBlocks)
+		 const bool contiguousCacheBlocks,
+		 const bool printFieldNames)
       {
 	SequentialTsqr< Ordinal, Scalar > actor (cacheBlockSize);
 
@@ -221,7 +223,7 @@ namespace TSQR {
 	  }
 	const double seqTsqrTiming = timer.stop();
 	reportResults (numTrials, numRows, numCols, actor.cache_block_size(),
-		       contiguousCacheBlocks, seqTsqrTiming);
+		       contiguousCacheBlocks, seqTsqrTiming, printFieldNames);
       }
 
 
@@ -250,7 +252,8 @@ namespace TSQR {
 		     const Ordinal numCols,
 		     const size_t actualCacheBlockSize,
 		     const bool contiguousCacheBlocks,
-		     const double seqTsqrTiming)
+		     const double seqTsqrTiming,
+		     const bool printFieldNames)
       {
 	using std::endl;
 	if (humanReadable_)
@@ -264,17 +267,33 @@ namespace TSQR {
 	       << "Total time (s) = " << seqTsqrTiming << endl 
 	       << endl;
 	else
-	  out_ << "SeqTSQR" 
-	       << "," << scalarTypeName_
-	       << "," << numRows
-	       << "," << numCols
-	       << "," << actualCacheBlockSize
-	       << "," << contiguousCacheBlocks
-	       << "," << numTrials << "," 
-	       << seqTsqrTiming << endl;
+	  {
+	    if (printFieldNames)
+	      {
+		const char prefix[] = "%";
+		out_ << prefix 
+		     << "method" 
+		     << ",scalarType"
+		     << ",numRows"
+		     << ",numCols"
+		     << ",cacheBlockSize"
+		     << ",contiguousCacheBlocks"
+		     << ",numTrials"
+		     << ",timing"
+		     << endl;
+	      }
+	    out_ << "SeqTSQR" 
+		 << "," << scalarTypeName_
+		 << "," << numRows
+		 << "," << numCols
+		 << "," << actualCacheBlockSize
+		 << "," << contiguousCacheBlocks
+		 << "," << numTrials 
+		 << "," << seqTsqrTiming 
+		 << endl;
+	  }
       }
     };
-
 
     /// Test the runtime (over ntrials trials) of sequential TSQR, on
     /// an nrows by ncols matrix (using the given cache block size (in
@@ -284,7 +303,6 @@ namespace TSQR {
     /// results to stdout in human-readable format.  Otherwise, print
     /// them as two rows of comma-delimited ASCII, in an abbreviated
     /// format suitable for automatic processing.
-    template< class TimerType >
     void
     benchmarkSeqTsqr (std::ostream& out,
 		      const int numRows,
@@ -293,54 +311,8 @@ namespace TSQR {
 		      const size_t cacheBlockSize,
 		      const bool contiguousCacheBlocks,
 		      const bool testComplex,
-		      const bool humanReadable)
-    {
-      typedef TimerType timer_type;
-      const bool testReal = true;
-      using std::string;
-
-      if (testReal)
-	{
-	  { // Scalar=float
-	    typedef SeqTsqrBenchmarker< int, float, timer_type > benchmark_type;
-	    string scalarTypeName ("float");
-	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
-			      contiguousCacheBlocks);
-	  }
-	  { // Scalar=double
-	    typedef SeqTsqrBenchmarker< int, double, timer_type > benchmark_type;
-	    string scalarTypeName ("double");
-	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
-			      contiguousCacheBlocks);
-	  }
-	}
-
-      if (testComplex)
-	{
-#ifdef HAVE_TSQR_COMPLEX
-	  using std::complex;
-	  { // Scalar=complex<float>
-	    typedef SeqTsqrBenchmarker< int, complex<float>, timer_type > benchmark_type;
-	    string scalarTypeName ("complex<float>");
-	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
-			      contiguousCacheBlocks);
-	  }
-	  { // Scalar=complex<double>
-	    typedef SeqTsqrBenchmarker< int, complex<double>, timer_type > benchmark_type;
-	    string scalarTypeName ("complex<double>");
-	    benchmark_type widget (scalarTypeName, out, humanReadable);
-	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
-			      contiguousCacheBlocks);
-	  }
-#else // Don't HAVE_TSQR_COMPLEX
-	  throw std::logic_error("TSQR not built with complex arithmetic support");
-#endif // HAVE_TSQR_COMPLEX
-	}
-    }
-
+		      const bool printFieldNames,
+		      const bool humanReadable);
 
     /// Test the runtime (over ntrials trials) of LAPACK QR, on an
     /// nrows by ncols matrix, and print the results to stdout.

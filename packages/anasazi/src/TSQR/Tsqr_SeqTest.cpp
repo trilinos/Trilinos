@@ -72,13 +72,15 @@ namespace TSQR {
 			   const bool contiguous_cache_blocks,
 			   const bool save_matrices,
 			   const bool human_readable,
-			   const bool b_debug)
+			   const bool b_debug,
+			   const bool printFieldNames)
     {
       typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       using std::cerr;
       using std::endl;
       using std::pair;
       using std::string;
+      using std::vector;
 
       SequentialTsqr< Ordinal, Scalar > actor (cache_block_size);
       Ordinal numCacheBlocks;
@@ -226,29 +228,49 @@ namespace TSQR {
 	}
 
       // Validate the factorization
-      pair< magnitude_type, magnitude_type > results =
+      vector< magnitude_type > results =
 	local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq, R.get(), ldr);
       if (b_debug)
 	cerr << "-- Finished local_verify" << endl;
 
       // Print the results
       if (human_readable)
-	out << "Sequential (cache-blocked) TSQR:" << endl
+	out << "Sequential cache-blocked TSQR:" << endl
 	    << "Datatype: " << datatype << endl
-	    << "Relative residual: " << results.first << endl
-	    << "Relative orthogonality: " << results.second 
+	    << "Absolute residual $\\| A - QR \\|_F$: " << results[0] << endl
+	    << "Absolute orthogonality $\\| I - Q^* Q \\|_F$: " << results[1] << endl
+	    << "Test matrix norm $\\| A \\|_F$: " << results[2] << endl
 	    << endl << endl;
       else
-	out << "SeqTSQR"
-	    << "," << datatype
-	    << "," << nrows
-	    << "," << ncols
-	    << "," << actor.cache_block_size()
-	    << "," << numCacheBlocks
-	    << "," << contiguous_cache_blocks 
-	    << "," << results.first 
-	    << "," << results.second
-	    << endl;
+	{
+	  if (printFieldNames)
+	    {
+	      const char prefix[] = "%";
+	      out << prefix
+		  << "method"
+		  << ",scalarType"
+		  << ",numRows"
+		  << ",numCols"
+		  << ",cacheBlockSize"
+		  << ",numCacheBlocks"
+		  << ",contiguousCacheBlocks"
+		  << ",absFrobResid"
+		  << ",absFrobOrthog"
+		  << ",frobA"
+		  << endl;
+	    }
+	  out << "SeqTSQR"
+	      << "," << datatype
+	      << "," << nrows
+	      << "," << ncols
+	      << "," << actor.cache_block_size()
+	      << "," << numCacheBlocks
+	      << "," << contiguous_cache_blocks 
+	      << "," << results[0]
+	      << "," << results[1]
+	      << "," << results[2]
+	      << endl;
+	}
     }
 
 
@@ -260,6 +282,7 @@ namespace TSQR {
 		   const bool test_complex_arithmetic,
 		   const bool save_matrices,
 		   const bool contiguous_cache_blocks,
+		   const bool printFieldNames,
 		   const bool human_readable,
 		   const bool b_debug)
     {
@@ -282,13 +305,15 @@ namespace TSQR {
       // First test.  The PRNG seeds itself with a default value.
       // This will be the same each time, so if you want
       // nondeterministic behavior, you should pick the seed values
-      // yourself.
+      // yourself.  Only print field names (if at all) for the first
+      // data type tested; field names are only printed if output is
+      // not human_readable.
       NormalGenerator< int, float > normgenS;
       datatype = "float";
       shortDatatype = "S";
       verifySeqTsqrTemplate (out, normgenS, datatype, shortDatatype, nrows, ncols, 
 			     cache_block_size, contiguous_cache_blocks, 
-			     save_matrices, human_readable, b_debug);
+			     save_matrices, human_readable, b_debug, printFieldNames);
       // Fetch the pseudorandom seed from the previous test.
       normgenS.getSeed (iseed);
       NormalGenerator< int, double > normgenD (iseed);
@@ -297,7 +322,7 @@ namespace TSQR {
       shortDatatype = "D";
       verifySeqTsqrTemplate (out, normgenD, datatype, shortDatatype, nrows, ncols, 
 			     cache_block_size, contiguous_cache_blocks, 
-			     save_matrices, human_readable, b_debug);
+			     save_matrices, human_readable, b_debug, false);
 
       if (test_complex_arithmetic)
 	{
@@ -307,14 +332,14 @@ namespace TSQR {
 	  shortDatatype = "C";
 	  verifySeqTsqrTemplate (out, normgenC, datatype, shortDatatype, nrows, ncols, 
 				 cache_block_size, contiguous_cache_blocks, 
-				 save_matrices, human_readable, b_debug);
+				 save_matrices, human_readable, b_debug, false);
 	  normgenC.getSeed (iseed);
 	  NormalGenerator< int, complex<double> > normgenZ (iseed);
 	  datatype = "complex<double>";
 	  shortDatatype = "Z";
 	  verifySeqTsqrTemplate (out, normgenZ, datatype, shortDatatype, nrows, ncols, 
 				 cache_block_size, contiguous_cache_blocks, 
-				 save_matrices, human_readable, b_debug);
+				 save_matrices, human_readable, b_debug, false);
 	}
     }
 
@@ -413,15 +438,17 @@ namespace TSQR {
 	}
   
       // Validate the factorization
-      std::pair< magnitude_type, magnitude_type > results = 
+      std::vector< magnitude_type > results = 
 	local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq, R.get(), ldr);
 
       // Print the results
       if (human_readable)
 	cout << "LAPACK QR (DGEQRF and DORGQR):" << endl
 	     << "Datatype: " << datatype << endl
-	     << "Relative residual: " << results.first << endl
-	     << "Relative orthogonality: " << results.second << endl;
+	     << "Absolute residual $\\| A - QR \\|_F$: " << results[0] << endl
+	     << "Absolute orthogonality $\\| I - Q^* Q \\|_F$: " << results[1] << endl
+	     << "Test matrix norm $\\| A \\|_F$: " << results[2] << endl
+	     << endl << endl;
       else
 	cout << "LAPACK"
 	     << "," << datatype
@@ -429,8 +456,9 @@ namespace TSQR {
 	     << "," << ncols
 	     << "," << size_t(0) // cache_block_size
 	     << "," << false     // contiguous_cache_blocks 
-	     << "," << results.first 
-	     << "," << results.second
+	     << "," << results[0]
+	     << "," << results[1]
+	     << "," << results[2]
 	     << endl;
     }
 
@@ -487,6 +515,80 @@ namespace TSQR {
 				human_readable, b_debug);
 	}
     }
+
+
+    void
+    benchmarkSeqTsqr (std::ostream& out,
+		      const int numRows,
+		      const int numCols,
+		      const int numTrials,
+		      const size_t cacheBlockSize,
+		      const bool contiguousCacheBlocks,
+		      const bool testComplex,
+		      const bool printFieldNames,
+		      const bool humanReadable)
+    {
+      typedef Teuchos::Time timer_type;
+      const bool testReal = true;
+      using std::string;
+
+      // Only print field names (if at all) for the first data type tested.
+      bool printedFieldNames = false;
+
+      if (testReal)
+	{
+	  { // Scalar=float
+	    typedef SeqTsqrBenchmarker< int, float, timer_type > benchmark_type;
+	    string scalarTypeName ("float");
+	    benchmark_type widget (scalarTypeName, out, humanReadable);
+	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+			      contiguousCacheBlocks, 
+			      printFieldNames && ! printedFieldNames);
+	    if (printFieldNames && ! printedFieldNames)
+	      printedFieldNames = true;
+	  }
+	  { // Scalar=double
+	    typedef SeqTsqrBenchmarker< int, double, timer_type > benchmark_type;
+	    string scalarTypeName ("double");
+	    benchmark_type widget (scalarTypeName, out, humanReadable);
+	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+			      contiguousCacheBlocks, 
+			      printFieldNames && ! printedFieldNames);
+	    if (printFieldNames && ! printedFieldNames)
+	      printedFieldNames = true;
+	  }
+	}
+
+      if (testComplex)
+	{
+#ifdef HAVE_TSQR_COMPLEX
+	  using std::complex;
+	  { // Scalar=complex<float>
+	    typedef SeqTsqrBenchmarker< int, complex<float>, timer_type > benchmark_type;
+	    string scalarTypeName ("complex<float>");
+	    benchmark_type widget (scalarTypeName, out, humanReadable);
+	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+			      contiguousCacheBlocks, 
+			      printFieldNames && ! printedFieldNames);
+	    if (printFieldNames && ! printedFieldNames)
+	      printedFieldNames = true;
+	  }
+	  { // Scalar=complex<double>
+	    typedef SeqTsqrBenchmarker< int, complex<double>, timer_type > benchmark_type;
+	    string scalarTypeName ("complex<double>");
+	    benchmark_type widget (scalarTypeName, out, humanReadable);
+	    widget.benchmark (numTrials, numRows, numCols, cacheBlockSize, 
+			      contiguousCacheBlocks, 
+			      printFieldNames && ! printedFieldNames);
+	    if (printFieldNames && ! printedFieldNames)
+	      printedFieldNames = true;
+	  }
+#else // Don't HAVE_TSQR_COMPLEX
+	  throw std::logic_error("TSQR not built with complex arithmetic support");
+#endif // HAVE_TSQR_COMPLEX
+	}
+    }
+
 
 
   } // namespace Test

@@ -36,7 +36,6 @@
 #endif // HAVE_MPI
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_Time.hpp"
 
 #include "Tsqr_SeqTest.hpp"
 
@@ -67,7 +66,7 @@ namespace TSQR {
       ///
       struct SeqTestParameters {
 	SeqTestParameters () :
-	  verify (true),
+	  verify (false),
 	  benchmark (false),
 	  numRows (1000),
 	  numCols (10),  
@@ -75,8 +74,9 @@ namespace TSQR {
 #ifdef HAVE_TSQR_COMPLEX
 	  testComplex (true),
 #endif // HAVE_TSQR_COMPLEX
-	  cacheBlockSize (0),
+	  cacheBlockSize (0), // choose a reasonable default
 	  contiguousCacheBlocks (false),
+	  printFieldNames (true),
 	  humanReadable (false),
 	  debug (false)
 	{}
@@ -87,32 +87,34 @@ namespace TSQR {
 	bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
 	size_t cacheBlockSize;
-	bool contiguousCacheBlocks, humanReadable, debug;
+	bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
       };
 
       static void
-      benchmarkSeqTsqr (std::ostream& out,
-			const SeqTestParameters& params)
+      benchmark (std::ostream& out,
+		 const SeqTestParameters& params)
       {
-	typedef Teuchos::Time timer_type;
 #ifdef HAVE_TSQR_COMPLEX
 	const bool testComplex = params.testComplex;
 #else
 	const bool testComplex = false;
 #endif // HAVE_TSQR_COMPLEX
-	TSQR::Test::benchmarkSeqTsqr< timer_type > (out, 
-						    params.numRows, 
-						    params.numCols, 
-						    params.numTrials, 
-						    params.cacheBlockSize,
-						    params.contiguousCacheBlocks,
-						    testComplex, 
-						    params.humanReadable);
+
+	using TSQR::Test::benchmarkSeqTsqr;
+	benchmarkSeqTsqr (out, 
+			  params.numRows,
+			  params.numCols, 
+			  params.numTrials, 
+			  params.cacheBlockSize,
+			  params.contiguousCacheBlocks,
+			  testComplex, 
+			  params.printFieldNames,
+			  params.humanReadable);
       }
 
       static void
-      verifySeqTsqr (std::ostream& out,
-		     const SeqTestParameters& params)
+      verify (std::ostream& out, 
+	      const SeqTestParameters& params)
       {
 #ifdef HAVE_TSQR_COMPLEX
 	const bool testComplex = params.testComplex;
@@ -120,10 +122,14 @@ namespace TSQR {
 	const bool testComplex = false;
 #endif // HAVE_TSQR_COMPLEX
 	const bool saveMatrices = false;
-	TSQR::Test::verifySeqTsqr (out, params.numRows, params.numCols, 
-				   params.cacheBlockSize, testComplex,
-				   saveMatrices, params.contiguousCacheBlocks,
-				   params.humanReadable, params.debug);
+
+	using TSQR::Test::verifySeqTsqr;
+	verifySeqTsqr (out, params.numRows, params.numCols, 
+		       params.cacheBlockSize, testComplex,
+		       saveMatrices, params.contiguousCacheBlocks,
+		       params.printFieldNames, params.humanReadable, 
+		       params.debug);
+
       }
 
       /// \brief Parse command-line options for this test
@@ -193,6 +199,10 @@ namespace TSQR {
 				 "noncontiguous-cache-blocks",
 				 &params.contiguousCacheBlocks,
 				 "Whether cache blocks should be stored contiguously");
+	  cmdLineProc.setOption ("print-field-names",
+				 "no-print-field-names",
+				 &params.printFieldNames,
+				 "Print field names (for machine-readable output only)");
 	  cmdLineProc.setOption ("human-readable",
 				 "machine-readable",
 				 &params.humanReadable,
@@ -283,10 +293,10 @@ main (int argc, char *argv[])
       using std::endl;
 
       if (params.benchmark)
-	TSQR::Trilinos::Test::benchmarkSeqTsqr (out, params);
+	TSQR::Trilinos::Test::benchmark (out, params);
       // We allow the same run to do both benchmark and verify.
       if (params.verify)
-	TSQR::Trilinos::Test::verifySeqTsqr (out, params);
+	TSQR::Trilinos::Test::verify (out, params);
 
       // The Trilinos test framework expects a message like this.
       out << "\nEnd Result: TEST PASSED" << endl;

@@ -70,12 +70,14 @@ namespace TSQR {
     /// block size (in bytes)), and print the results to stdout.
     template< class Ordinal, class Scalar >
     void
-    verifyTbbTsqr (TSQR::Random::NormalGenerator< Ordinal, Scalar >& generator,
+    verifyTbbTsqr (const std::string& scalarTypeName,
+		   TSQR::Random::NormalGenerator< Ordinal, Scalar >& generator,
 		   const Ordinal nrows, 
 		   const Ordinal ncols, 
 		   const int num_cores,
 		   const size_t cache_block_size,
 		   const bool contiguous_cache_blocks,
+		   const bool printFieldNames,
 		   const bool human_readable,
 		   const bool b_debug = false)
     {
@@ -191,7 +193,7 @@ namespace TSQR {
 	}
 
       // Validate the factorization
-      std::pair< magnitude_type, magnitude_type > results =
+      std::vector< magnitude_type > results =
 	local_verify (nrows, ncols, A.get(), lda, Q.get(), ldq, R.get(), ldr);
       if (b_debug)
 	cerr << "-- Finished local_verify" << endl;
@@ -199,26 +201,49 @@ namespace TSQR {
       // Print the results
       if (human_readable)
 	cout << "Parallel (via Intel\'s Threading Building Blocks) / cache-blocked) TSQR:" << endl
+	     << "Scalar type: " << scalarTypeName << endl
 	     << "# rows = " << nrows << endl
 	     << "# columns = " << ncols << endl
 	     << "# cores: " << num_cores << endl
 	     << "cache block # bytes = " << actor.cache_block_size() << endl
 	     << "contiguous cache blocks? " << contiguous_cache_blocks << endl
-	     << "Relative residual $\\|A - Q*R\\|_2 / \\|A\\|_2$ = " 
-	     << results.first << endl
-	     << "Relative orthogonality $\\|I - Q^T*Q\\|_2$ = " 
-	     << results.second << endl
+	     << "Absolute residual $\\|A - Q*R\\|_2$: "
+	     << results[0] << endl
+	     << "Absolute orthogonality $\\|I - Q^T*Q\\|_2$: " 
+	     << results[1] << endl
+	     << "Test matrix norm $\\| A \\|_F$: "
+	     << results[2] << endl
 	     << endl;
       else
-	cout << "TbbTsqr"
-	     << "," << nrows
-	     << "," << ncols
-	     << "," << num_cores
-	     << "," << actor.cache_block_size()
-	     << "," << contiguous_cache_blocks 
-	     << "," << results.first 
-	     << "," << results.second
-	     << endl;
+	{
+	  if (printFieldNames)
+	    {
+	      const char prefix[] = "%";
+	      cout << prefix
+		   << "method"
+		   << ",scalarType"
+		   << ",numRows"
+		   << ",numCols"
+		   << ",numThreads"
+		   << ",cacheBlockSize"
+		   << ",contiguousCacheBlocks"
+		   << ",absFrobResid"
+		   << ",absFrobOrthog"
+		   << ",frobA"
+		   << endl;
+	    }
+	  cout << "TbbTsqr"
+	       << "," << scalarTypeName
+	       << "," << nrows
+	       << "," << ncols
+	       << "," << num_cores
+	       << "," << actor.cache_block_size()
+	       << "," << contiguous_cache_blocks 
+	       << "," << results[0]
+	       << "," << results[1]
+	       << "," << results[2]
+	       << endl;
+	}
     }
 
     /// Benchmark Intel TBB TSQR vs. LAPACK's QR, and print the
@@ -230,12 +255,14 @@ namespace TSQR {
     /// Teuchos::Time the default.
     template< class Ordinal, class Scalar >
     void
-    benchmarkTbbTsqr (const int ntrials,
+    benchmarkTbbTsqr (const std::string& scalarTypeName,
+		      const int ntrials,
 		      const Ordinal nrows, 
 		      const Ordinal ncols, 
 		      const int num_cores,
 		      const size_t cache_block_size,
 		      const bool contiguous_cache_blocks,
+		      const bool printFieldNames,
 		      const bool human_readable)
     {
       using TSQR::TBB::TbbTsqr;
@@ -243,8 +270,8 @@ namespace TSQR {
       using std::cout;
       using std::endl;
 
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       typedef Teuchos::Time timer_type;
+      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
       typedef Matrix< ordinal_type, scalar_type > matrix_type;
@@ -324,6 +351,7 @@ namespace TSQR {
       if (human_readable)
 	{
 	  cout << "(Intel TBB / cache-blocked) TSQR cumulative timings:" << endl
+	       << "Scalar type: " << scalarTypeName << endl
 	       << "# rows = " << nrows << endl
 	       << "# columns = " << ncols << endl
 	       << "# cores: " << num_cores << endl
@@ -344,7 +372,7 @@ namespace TSQR {
 	  
 	  std::vector< TimeStats > stats;
 	  actor.getStats (stats);
-	  std::vector< std::string> labels;
+	  std::vector< std::string > labels;
 	  actor.getStatsLabels (labels);
 
 	  const std::string labelLabel ("label");
@@ -357,11 +385,28 @@ namespace TSQR {
 	}
       else
 	{
+	  if (printFieldNames)
+	    {
+	      const char prefix[] = "%";
+	      cout << prefix 
+		   << "method"
+		   << ",scalarType"
+		   << ",numRows"
+		   << ",numCols"
+		   << ",numThreads"
+		   << ",cacheBlockSize"
+		   << ",contiguousCacheBlocks"
+		   << ",numTrials"
+		   << ",timing"
+		   << endl;
+	    }
+
 	  // We don't include {min,max}_seq_apply_timing() here, because
 	  // those times don't benefit from the accuracy of benchmarking
 	  // for ntrials > 1.  Thus, it's misleading to include them
 	  // with tbb_tsqr_timing, the total time over ntrials trials.
 	  cout << "TbbTsqr"
+	       << "," << scalarTypeName
 	       << "," << nrows
 	       << "," << ncols
 	       << "," << num_cores
