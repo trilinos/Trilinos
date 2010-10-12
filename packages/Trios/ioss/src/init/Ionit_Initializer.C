@@ -41,6 +41,7 @@
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
 
+#include <visualization/Iovs_IOFactory.h>
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Initializer.h>
 #include <transform/Iotr_Initializer.h>
@@ -57,6 +58,7 @@ namespace Ioss {
 #if !defined(NO_PAMGEN_SUPPORT)
       Iopg::IOFactory::factory(); // Pamgen
 #endif
+      Iovs::IOFactory::factory();   // Visualization
 
       Ioss::StorageInitializer();
       Ioss::Initializer();
