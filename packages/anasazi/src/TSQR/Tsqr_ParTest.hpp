@@ -67,7 +67,7 @@ namespace TSQR {
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
       typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
-      typedef typename std::pair< magnitude_type, magnitude_type > result_type;
+      typedef typename std::vector< magnitude_type > result_type;
       typedef Matrix< ordinal_type, scalar_type > matrix_type;
       
       /// \brief Constructor, with custom seed value
@@ -318,10 +318,12 @@ namespace TSQR {
 		     << "Scalar type = " << scalarTypeName_ << endl
 		     << "Number of columns = " << numCols << endl
 		     << "Number of (MPI) processes = " << numProcs << endl
-		     << "Relative residual $\\|A - Q*R\\|_2 / \\|A\\|_2$ = " 
-		     << result.first << endl
-		     << "Relative orthogonality $\\|I - Q^T*Q\\|_2$ = " 
-		     << result.second << endl;
+		     << "Absolute residual $\\| A - Q R \\|_2: "
+		     << result[0] << endl
+		     << "Absolute orthogonality $\\| I - Q^* Q \\|_2$: " 
+		     << result[1] << endl
+		     << "Test matrix norm $\\| A \\|_F$: "
+		     << result[2] << endl;
 	      }
 	    else
 	      {
@@ -329,14 +331,15 @@ namespace TSQR {
 		out_ << std::scientific;
 
 		if (printHeaders)
-		  out_ << "%method,scalarType,numCols,numProcs,relResid,relOrthog" << endl;
+		  out_ << "%method,scalarType,numCols,numProcs,absFrobResid,absFrobOrthog,frobA" << endl;
 
 		out_ << method
 		     << "," << scalarTypeName_
 		     << "," << numCols
 		     << "," << numProcs
-		     << "," << result.first
-		     << "," << result.second
+		     << "," << result[0]
+		     << "," << result[1]
+		     << "," << result[2]
 		     << endl;
 	      }
 	  }

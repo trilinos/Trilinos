@@ -36,16 +36,13 @@
 #endif // HAVE_MPI
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_Time.hpp"
 
-#include "Tsqr_CombineBenchmark.hpp"
-#include "Tsqr_CombineTest.hpp"
+#include "Tsqr_SeqTest.hpp"
 
 #ifdef HAVE_TSQR_COMPLEX
 #  include <complex>
 #endif // HAVE_TSQR_COMPLEX
 
-#include <fstream>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -56,118 +53,83 @@
 namespace TSQR { 
   namespace Trilinos { 
     namespace Test {
-      
-      // mfh 12 Aug 2010: docString should not be a constant string
-      // literal if it's longer than some fixed, platform-dependent
-      // amount (e.g., 2048 bytes).
-      static const char docString[] = "This program tests TSQR::Combine.  "
-	"Accuracy and performance tests are included.";
+
+      const char docString[] = "This program compares LAPACK\'s QR factorization"
+	" (with TSQR).  Accuracy and performance tests are included.";
 
       using Teuchos::RCP;
       using Teuchos::Tuple;
 
-      /// \class CombineTestParameters
+      /// \class LapackTestParameters
       /// \brief Encapsulates values of command-line parameters
       ///
-      struct CombineTestParameters {
-	CombineTestParameters () :
+      struct LapackTestParameters {
+	LapackTestParameters () :
 	  verify (false),
 	  benchmark (false),
-	  numRows (1000),     // Number of rows in the test matrix
-	  numCols (10),       // Number of columns in the test matrix
-	  numTrials (10),     // Number of trials (action==Benchmark only)
+	  numRows (1000),
+	  numCols (10),  
+	  numTrials (10),
 #ifdef HAVE_TSQR_COMPLEX
-	  testComplex (true), // Whether to test complex-arithmetic routines
+	  testComplex (true),
 #endif // HAVE_TSQR_COMPLEX
 	  printFieldNames (true),
 	  printTrilinosTestStuff (true),
-	  verbose (true), 
-	  debug (false)       // Whether to print debugging output to stderr
+	  humanReadable (false),
+	  debug (false)
 	{}
 
 	bool verify, benchmark;
 	int numRows, numCols, numTrials;
 #ifdef HAVE_TSQR_COMPLEX
-	// We don't even let this exist unless TSQR was built with
-	// complex arithmetic support.
 	bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
-	bool printFieldNames, printTrilinosTestStuff;
-	bool verbose, debug;
 	std::string additionalFieldNames, additionalData;
+	bool printFieldNames, printTrilinosTestStuff, humanReadable, debug;
       };
 
-      /// \brief Benchmark TSQR::Combine
-      ///
-      /// \param out [out] output stream for benchmark results.
-      ///   It will only be used on rank 0.
-      ///
-      /// \param params [in] test parameter struct.  This method reads
-      ///   the following field: numRows, numCols, numTrials,
-      ///   testComplex.
-      ///
-      /// \warning Call only on (MPI) rank 0.  Otherwise, you'll run
-      ///   the benchmark on every MPI rank simultaneously, but only
-      ///   report results on rank 0.
       static void
       benchmark (std::ostream& out,
-		 const CombineTestParameters& params)
+		 const LapackTestParameters& params)
       {
-	typedef Teuchos::Time timer_type;
-	typedef int ordinal_type;
-
-	const ordinal_type numRows = params.numRows;
-	const ordinal_type numCols = params.numCols;
-	const ordinal_type numTrials = params.numTrials;
 #ifdef HAVE_TSQR_COMPLEX
 	const bool testComplex = params.testComplex;
 #else
 	const bool testComplex = false;
 #endif // HAVE_TSQR_COMPLEX
 
-	std::vector<int> seed(4);
-	const bool useSeedValues = false;
-	TSQR::Test::benchmarkCombine< timer_type > (out, numRows, numCols, 
-						    numTrials, seed,
-						    useSeedValues, testComplex,
-						    params.additionalFieldNames,
-						    params.additionalData,
-						    params.printFieldNames);
+	using TSQR::Test::benchmarkLapack;
+	benchmarkLapack (out, 
+			 params.numRows,
+			 params.numCols, 
+			 params.numTrials, 
+			 testComplex, 
+			 params.additionalFieldNames,
+			 params.additionalData,
+			 params.printFieldNames,
+			 params.humanReadable);
       }
 
-      /// \brief Verify TSQR::Combine
-      ///
-      /// \param out [out] output stream for benchmark results.
-      ///   It will only be used on rank 0.
-      ///
-      /// \param params [in] test parameter struct.  This method reads
-      ///   the following field: numRows, numCols, numTrials,
-      ///   testComplex.
-      ///
-      /// \warning Call only on (MPI) rank 0.  Otherwise, you'll run
-      ///   the verification routine on every MPI rank simultaneously,
-      ///   but only report results on rank 0.
-      static void 
-      verify (std::ostream& out,
-	      const CombineTestParameters& params)
+      static void
+      verify (std::ostream& out, 
+	      const LapackTestParameters& params)
       {
-	typedef Teuchos::Time timer_type;
-	typedef int ordinal_type;
-
-	const ordinal_type numRows = params.numRows;
-	const ordinal_type numCols = params.numCols;
 #ifdef HAVE_TSQR_COMPLEX
 	const bool testComplex = params.testComplex;
 #else
 	const bool testComplex = false;
 #endif // HAVE_TSQR_COMPLEX
-	const bool printFieldNames = params.printFieldNames;
-	const bool simulateSequentialTsqr = false;
-	const bool debug = false;
 
-	using TSQR::Test::verifyCombine;
-	verifyCombine (numRows, numCols, testComplex, printFieldNames, 
-		       simulateSequentialTsqr, debug);
+	using TSQR::Test::verifyLapack;
+	verifyLapack (out, 
+		      params.numRows, 
+		      params.numCols, 
+		      testComplex,
+		      params.additionalFieldNames,
+		      params.additionalData,
+		      params.printFieldNames, 
+		      params.humanReadable, 
+		      params.debug);
       }
 
       /// \brief Parse command-line options for this test
@@ -180,7 +142,7 @@ namespace TSQR {
       ///   "help" display (summary of command-line options)
       ///
       /// \return Encapsulation of command-line options 
-      static CombineTestParameters
+      static LapackTestParameters
       parseOptions (int argc, 
 		    char* argv[], 
 		    const bool allowedToPrint, 
@@ -192,7 +154,8 @@ namespace TSQR {
 	printedHelp = false;
 
 	// Command-line parameters, set to their default values.
-	CombineTestParameters params;
+	LapackTestParameters params;
+
 	try {
 	  using Teuchos::CommandLineProcessor;
 
@@ -207,10 +170,6 @@ namespace TSQR {
 				 "nobenchmark",
 				 &params.benchmark,
 				 "Test performance");
-	  cmdLineProc.setOption ("debug", 
-				 "nodebug", 
-				 &params.debug, 
-				 "Print debugging information");
 	  cmdLineProc.setOption ("nrows", 
 				 &params.numRows, 
 				 "Number of rows in the test matrix");
@@ -250,6 +209,15 @@ namespace TSQR {
 				 "Print output that makes the Trilinos test "
 				 "framework happy (but makes benchmark results "
 				 "parsing scripts unhappy)");
+	  cmdLineProc.setOption ("human-readable",
+				 "machine-readable",
+				 &params.humanReadable,
+				 "If set, make output easy to read by humans "
+				 "(but hard to parse)");
+	  cmdLineProc.setOption ("debug", 
+				 "nodebug", 
+				 &params.debug, 
+				 "Print debugging information");
 	  cmdLineProc.parse (argc, argv);
 	} 
 	catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
@@ -262,8 +230,8 @@ namespace TSQR {
 	  return params; // Don't verify parameters in this case
 	} 
 
-	// Validate.  TODO (mfh 08 Jul 2010) Figure out how to do this with
-	// ParameterList validators.
+	// Validate command-line options.  We provide default values
+	// for unset options, so we don't have to validate those.
 	if (params.numRows <= 0)
 	  throw std::invalid_argument ("Number of rows must be positive");
 	else if (params.numCols <= 0)
@@ -271,8 +239,7 @@ namespace TSQR {
 	else if (params.numRows < params.numCols)
 	  throw std::invalid_argument ("Number of rows must be >= number of columns");
 	else if (params.benchmark && params.numTrials < 1)
-	  throw std::invalid_argument ("Benchmark requires numTrials >= 1");
-
+	  throw std::invalid_argument ("\"--benchmark\" option requires numTrials >= 1");
 	return params;
       }
 
@@ -288,8 +255,9 @@ int
 main (int argc, char *argv[]) 
 {
   using Teuchos::RCP;
-  using TSQR::Trilinos::Test::CombineTestParameters;
+  using TSQR::Trilinos::Test::LapackTestParameters;
   using TSQR::Trilinos::Test::parseOptions;
+  using std::endl;
 
 #ifdef HAVE_MPI
   typedef RCP< const Teuchos::Comm<int> > comm_ptr;
@@ -315,15 +283,13 @@ main (int argc, char *argv[])
 
   // Fetch command-line parameters.
   bool printedHelp = false;
-  CombineTestParameters params = 
+  LapackTestParameters params = 
     parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp)
     return 0;
 
   if (performingTests)
     {
-      using std::endl;
-
       if (params.benchmark)
 	TSQR::Trilinos::Test::benchmark (out, params);
 
@@ -335,7 +301,6 @@ main (int argc, char *argv[])
 	// The Trilinos test framework expects a message like this.
 	out << "\nEnd Result: TEST PASSED" << endl;
     }
-
   return 0;
 }
 
