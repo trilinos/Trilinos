@@ -83,15 +83,16 @@ class TestRowMatrix(Epetra.RowMatrix):
     """
     def __init__(self, map):
         Epetra.RowMatrix.__init__(self)
-        self.__comm = map.Comm()
-        self.__map  = map
-        self.__label = "Test Operator"
+        self.__comm   = map.Comm()
+        self.__map    = map
+        self.__label  = "Test Operator"
+        self.__import = Epetra.Import(self.__map,self.__map)
     def Label(self):             return self.__label
     def Comm(self):              return self.__comm
     def OperatorDomainMap(self): return self.__map
     def OperatorRangeMap(self):  return self.__map
     def HasNormInf(self):        return False
-    def RowMatrixImporter(self): return Epetra.Import(self.__map,self.__map)
+    def RowMatrixImporter(self): return self.__import
 
 ####################################################################
 
@@ -229,5 +230,6 @@ if __name__ == "__main__":
 
     # Exit with a code that indicates the total number of errors and failures
     errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
+    comm.Barrier()
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)
