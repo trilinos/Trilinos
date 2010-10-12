@@ -2,11 +2,16 @@
 # somewhere in you local configuration or use the following line but in this case, don't commit your Makefile !
 # TRILINOS_INSTALL_DIR = 
 
-EXE_ROOT = 	Cthulhu_Example_TpetraCrsMatrix
+#EXE_ROOT = 	Cthulhu_Example_TpetraVbrMatrix
+#EXE_ROOT = 	Cthulhu_Example_TpetraCrsMatrix
 #EXE_ROOT = 	Cthulhu_Example_TpetraMultiVector
 #EXE_ROOT = 	Cthulhu_Example_TpetraBlockMap
 #EXE_ROOT = 	Cthulhu_Example_EpetraMap
 #EXE_ROOT = 	Cthulhu_Example_TpetraMap
+
+
+EXE = Cthulhu_Example_TpetraVbrMatrix.exe Cthulhu_Example_TpetraCrsMatrix.exe Cthulhu_Example_TpetraMultiVector.exe Cthulhu_Example_TpetraBlockMap.exe Cthulhu_Example_EpetraMap.exe Cthulhu_Example_TpetraMap.exe 
+
 
 CLIENT_EXTRA_INCLUDES = 
 
@@ -22,7 +27,7 @@ include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.Tpetra
 
 LIB_PATH = $(TRILINOS_INSTALL_DIR)/lib
 
-INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include -I./ -I../src/Def -I../src/Platform -I../src/Map -I../src/BlockMap -I../src/Comm -I../src/MultiVector -I../src/CrsMatrix
+INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include -I./ -I../src/Def -I../src/Platform -I../src/Map -I../src/BlockMap -I../src/Comm -I../src/MultiVector -I../src/CrsMatrix -I../src/VbrMatrix
 
 CXX = $(Tpetra_CXX_COMPILER)
 
@@ -36,7 +41,9 @@ EXTRA_OBJS = ../src/Platform/Cthulhu_DefaultPlatform.o
 # Rules for building executables and objects. 
 #
 
-all: ${EXE_ROOT}.exe
+#all: ${EXE_ROOT}.exe
+
+all: ${EXE}
 	@echo "done"
 
 %.exe : %.o $(EXTRA_OBJS) $(CLIENT_EXTRA_LIBS)
@@ -49,4 +56,5 @@ matrix_driver.o: matrix_driver.cpp matrix_factory.hpp matrix_types.hpp
 	$(CXX) -c -o $@ $(CXXFLAGS) -g -O0 -I$(INCLUDE_PATH) $(Tpetra_TPL_INCLUDES) $<
 
 clean:
-	rm -f ${EXE_ROOT}.exe ${EXE_ROOT}.o
+#	rm -f ${EXE_ROOT}.exe ${EXE_ROOT}.o
+	rm *.exe *.o
