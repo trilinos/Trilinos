@@ -204,6 +204,17 @@ int main(int argc, char *argv[]) {
     // Save solution to file
     EpetraExt::VectorToMatrixMarketFile("stochastic_solution.mm", *sg_x);
 
+    // Save mean and variance to file
+    Stokhos::EpetraVectorOrthogPoly sg_x_poly(basis, View, 
+					      *(model->get_x_map()), 
+					      *sg_x);
+    Epetra_Vector mean(*(model->get_x_map()));
+    Epetra_Vector std_dev(*(model->get_x_map()));
+    sg_x_poly.computeMean(mean);
+    sg_x_poly.computeStandardDeviation(std_dev);
+    EpetraExt::VectorToMatrixMarketFile("mean_gal.mm", mean);
+    EpetraExt::VectorToMatrixMarketFile("std_dev_gal.mm", std_dev);
+
     // Compute new residual & response function
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs2 = sg_model->createOutArgs();
     Teuchos::RCP<Epetra_Vector> sg_g = 
@@ -217,18 +228,18 @@ int main(int argc, char *argv[]) {
     sg_f->Norm2(&norm_f);
     std::cout << "\nFinal residual norm = " << norm_f << std::endl;
 
-    // Print mean and standard deviation
+    // Print mean and standard deviation of responses
     Stokhos::EpetraVectorOrthogPoly sg_g_poly(basis, View, 
 					      *(model->get_g_map(0)), *sg_g);
-    Epetra_Vector mean(*(model->get_g_map(0)));
-    Epetra_Vector std_dev(*(model->get_g_map(0)));
-    sg_g_poly.computeMean(mean);
-    sg_g_poly.computeStandardDeviation(std_dev);
+    Epetra_Vector g_mean(*(model->get_g_map(0)));
+    Epetra_Vector g_std_dev(*(model->get_g_map(0)));
+    sg_g_poly.computeMean(g_mean);
+    sg_g_poly.computeStandardDeviation(g_std_dev);
     // std::cout << "\nResponse Expansion = " << std::endl;
     // std::cout.precision(12);
     // sg_g_poly.print(std::cout);
-    std::cout << "\nResponse Mean =      " << std::endl << mean << std::endl;
-    std::cout << "Response Std. Dev. = " << std::endl << std_dev << std::endl;
+    std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
+    std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
     if (norm_f < 1.0e-10)
       std::cout << "Example Passed!" << std::endl;

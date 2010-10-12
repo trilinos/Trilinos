@@ -104,6 +104,9 @@ public:
   
   //@}
 
+  //! Get mean matrix
+  Teuchos::RCP<Epetra_CrsMatrix> get_mean() const { return A_k[0]; }
+
 protected:
 
   //! Fill coefficient matrix given function to evaluate diffusion coefficient
@@ -160,6 +163,12 @@ protected:
 
   //! Matrix to store deterministic operator
   Teuchos::RCP<Epetra_CrsMatrix> A;
+
+  //! Array to store a point for basis evaluation
+  mutable Teuchos::Array<double> point;
+
+  //! Array to store values of basis at a point
+  mutable Teuchos::Array<double> basis_vals;
   
 };
 

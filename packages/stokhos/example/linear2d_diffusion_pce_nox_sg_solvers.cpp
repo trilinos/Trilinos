@@ -622,8 +622,8 @@ int main(int argc, char *argv[]) {
     Epetra_Vector std_dev(*(model->get_x_map()));
     sg_x_poly.computeMean(mean);
     sg_x_poly.computeStandardDeviation(std_dev);
-    EpetraExt::VectorToMatrixMarketFile("mean.mm", mean);
-    EpetraExt::VectorToMatrixMarketFile("std_dev.mm", std_dev);
+    EpetraExt::VectorToMatrixMarketFile("mean_gal.mm", mean);
+    EpetraExt::VectorToMatrixMarketFile("std_dev_gal.mm", std_dev);
       
     // Evaluate SG responses at SG parameters
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();

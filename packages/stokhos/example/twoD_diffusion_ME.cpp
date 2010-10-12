@@ -35,14 +35,14 @@
 namespace {
 
   // Functor representing a diffusion function given by a KL expansion
-  struct Stokhos_KL_Diffusion_Func {
+  struct KL_Diffusion_Func {
     double mean;
     mutable Teuchos::Array<double> point;
     Teuchos::RCP< Stokhos::KL::ExponentialRandomField<double> > rf;
     
-    Stokhos_KL_Diffusion_Func(double xyLeft, double xyRight, 
-			      double mean_, double std_dev, 
-			      double L, int num_KL) : mean(mean_), point(2)
+    KL_Diffusion_Func(double xyLeft, double xyRight, 
+		      double mean_, double std_dev, 
+		      double L, int num_KL) : mean(mean_), point(2)
     {
       Teuchos::ParameterList rfParams;
       rfParams.set("Number of KL Terms", num_KL);
@@ -227,6 +227,7 @@ twoD_diffusion_ME(
     }
   }
   graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *x_map, NumNz));
+  delete [] NumNz;
   for(int i=0; i<NumMyElements; ++i ) {
     if (bcIndices[i] == 0) {
       Indices[0] = MyGlobalElements[i]-n; //Down
@@ -242,16 +243,14 @@ twoD_diffusion_ME(
   graph->FillComplete();
   graph->OptimizeStorage();
 
-  //KL_Diffusion_Func klFunc;
-  Stokhos_KL_Diffusion_Func klFunc(xyLeft, xyRight, mu, s, 1.0, d);
-  fillMatrices(klFunc, d+1);
+  KL_Diffusion_Func klFunc(xyLeft, xyRight, mu, s, 1.0, d);
   if (!log_normal) {
     // Fill coefficients of KL expansion of operator
     if (basis == Teuchos::null) { 
       fillMatrices(klFunc, d+1);
     }
     else {
-      Normalized_KL_Diffusion_Func<Stokhos_KL_Diffusion_Func> nklFunc(klFunc, *basis);
+      Normalized_KL_Diffusion_Func<KL_Diffusion_Func> nklFunc(klFunc, *basis);
       fillMatrices(nklFunc, d+1);
     }
   }
@@ -259,8 +258,9 @@ twoD_diffusion_ME(
     // Fill coefficients of PC expansion of operator
     int sz = basis->size();
     Teuchos::RCP<const Stokhos::ProductBasis<int, double> > prodbasis =
-      Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<int, double> >(basis, true);
-    LogNormal_Diffusion_Func<Stokhos_KL_Diffusion_Func> lnFunc(mu, klFunc, prodbasis);
+      Teuchos::rcp_dynamic_cast<const Stokhos::ProductBasis<int, double> >(
+	basis, true);
+    LogNormal_Diffusion_Func<KL_Diffusion_Func> lnFunc(mu, klFunc, prodbasis);
     fillMatrices(lnFunc, sz);
   }
 
@@ -276,7 +276,10 @@ twoD_diffusion_ME(
       (*b)[i] = 1;
   }
 
-  delete [] NumNz;
+  if (basis != Teuchos::null) {
+    point.resize(d);
+    basis_vals.resize(basis->size());
+  }
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -465,9 +468,19 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   Teuchos::RCP<Epetra_Vector> f = outArgs.get_f();
   Teuchos::RCP<Epetra_Operator> W = outArgs.get_W();
   if (f != Teuchos::null || W != Teuchos::null) {
-    *A = *(A_k[0]);
-    for (int k=1;k<A_k.size();k++) {
-      EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p)[k-1], *A, 1.0);
+    if (basis != Teuchos::null) {
+      for (int i=0; i<point.size(); i++)
+    	point[i] = (*p)[i];
+      basis->evaluateBases(point, basis_vals);
+      A->PutScalar(0.0);
+      for (int k=0;k<A_k.size();k++)
+    	EpetraExt::MatrixMatrix::Add((*A_k[k]), false, basis_vals[k], *A, 
+    				     1.0);
+    }
+    else {
+      *A = *(A_k[0]);
+      for (int k=1;k<A_k.size();k++)
+	EpetraExt::MatrixMatrix::Add((*A_k[k]), false, (*p)[k-1], *A, 1.0);
     }
   }
 

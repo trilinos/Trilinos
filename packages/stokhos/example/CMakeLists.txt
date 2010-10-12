@@ -64,35 +64,25 @@ IF(Stokhos_ENABLE_TriKota)
     NUM_MPI_PROCS 1
   )
 
-  IF(Stokhos_ENABLE_ML)
+  IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
 
      PACKAGE_ADD_EXECUTABLE(
-       twoD_diffusion_galerkin_example
-       SOURCES twoD_diffusion_galerkin_example.cpp
+       Linear2D_Diffusion_Collocation_Example
+       SOURCES linear2d_diffusion_collocation.cpp
        COMM serial mpi
+       DEPLIBS linear2d_diffusion
      )
 
-     PACKAGE_ADD_EXECUTABLE(
-       twoD_diffusion_collocation_example
-       SOURCES twoD_diffusion_collocation_example.cpp
-       COMM serial mpi
-     )
-
-     IF(Stratimikos_ENABLE_Belos)
+     IF(Stokhos_ENABLE_Stratimikos)
 
        PACKAGE_ADD_EXECUTABLE(
-         twoD_diffusion_collocation_example_rcg-v2
-         SOURCES twoD_diffusion_collocation_example-rcg-v2.cpp
+         Linear2D_Diffusion_Collocation_Strat_Example
+         SOURCES linear2d_diffusion_collocation_strat.cpp
          COMM serial mpi
+         DEPLIBS linear2d_diffusion
        )
 
      ENDIF()
-
-     PACKAGE_ADD_EXECUTABLE(
-       twoD_diffusion_collocation_log-normal_example
-       SOURCES twoD_diffusion_collocation_log-normal.cpp
-       COMM serial mpi
-     )
 
      PACKAGE_ADD_EXECUTABLE_AND_TEST(
        Linear2D_Diffusion_PCE_Example

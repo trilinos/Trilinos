@@ -607,13 +607,13 @@
     <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
-    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="AztecOO" type="TO"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="ILO"/>
-    <Dependency name="Stratimikos" type="ILO"/>
+    <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="TriKota" type="LO"/>
     <Dependency name="NOX" type="LO"/>
