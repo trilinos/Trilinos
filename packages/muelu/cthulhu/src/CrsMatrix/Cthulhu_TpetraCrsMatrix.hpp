@@ -65,8 +65,7 @@ namespace Cthulhu {
 //     explicit TpetraCrsMatrix(const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph)
 //       : mtx_(rcp(Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(graph))) {}
 
-// TODO: need CrsMatrix
-//     TpetraCrsMatrix(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {}
+    TpetraCrsMatrix(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {}
 
     // !Destructor.
     virtual ~TpetraCrsMatrix();
