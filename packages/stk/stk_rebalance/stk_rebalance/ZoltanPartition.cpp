@@ -889,32 +889,18 @@ int  Zoltan::evaluate( int    print_stats,
 		       int*   nboundary,
 		       int*   nadj      )
 {
-  int
-    ierr        = 0,
-    z_nobj      = 0,
-    z_ncuts     = 0,
-    z_nboundary = 0,
-    z_nadj      = 0;
-  float
-    z_obj_wgt   = 0,
-    z_cut_wgt   = 0;
+  int ierr        = 0;
 
-  if ( Zoltan_LB_Eval( zoltan_id,
-		       print_stats,
-		       &z_nobj,
-		       &z_obj_wgt,
-		       &z_ncuts,
-		       &z_cut_wgt,
-		       &z_nboundary,
-		       &z_nadj ) != ZOLTAN_OK ) {
-    ierr = 1;
-  }
-  *nobj      = z_nobj;
-  *obj_wgt   = z_obj_wgt;
-  *ncuts     = z_ncuts;
-  *cut_wgt   = z_cut_wgt;
-  *nboundary = z_nboundary;
-  *nadj      = z_nadj;
+  ZOLTAN_BALANCE_EVAL eval  = {0};
+  ZOLTAN_GRAPH_EVAL   graph = {{0}};
+  if (Zoltan_LB_Eval_Balance( zoltan_id, print_stats, &eval)) ierr = 1; 
+  if (Zoltan_LB_Eval_Graph( zoltan_id, print_stats, &graph) ) ierr = 1; 
+  *nobj         = eval.nobj[0];
+  *obj_wgt      = eval.obj_wgt[0];
+  *ncuts        = graph.cuts[0];
+  *cut_wgt      = graph.cut_wgt[0];
+  *nboundary    = graph.num_boundary[0];
+  *nadj         = graph.nnborparts[0];
 
   return ierr;
 
