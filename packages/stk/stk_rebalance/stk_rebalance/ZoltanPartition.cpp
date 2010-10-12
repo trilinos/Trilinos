@@ -137,7 +137,7 @@ void fill_value_conversion( Parameters & value_conversion )
 
 void fill_default_values( Parameters & values )
 {
-  Parameters & default_values = values.sublist("General");
+  Parameters & default_values = values; //values.sublist("General");
 
   default_values.set("LOAD BALANCING METHOD"      , "0");
   default_values.set("RENUMBER PARTITIONS"        , "1");
@@ -1099,7 +1099,8 @@ void Zoltan::convert_names_and_values(const Parameters &from, Parameters &to)
        The ones converted are nested in Value_Conversion.
     */
     std::string to_value = Teuchos::getValue<string>(from.entry(from_iter));
-    if (Value_Conversion->isParameter(from_name)) to_value = Value_Conversion->get<std::string>(to_value);
+    //if (Value_Conversion->isParameter(from_name)) to_value = Value_Conversion->get<std::string>(to_value);
+    if (Value_Conversion->isParameter(from_name)) to_value = Value_Conversion->sublist(from_name).get<std::string>(to_value);
     if (!to_name.empty()) to.set(to_name, to_value);
   }
 }
