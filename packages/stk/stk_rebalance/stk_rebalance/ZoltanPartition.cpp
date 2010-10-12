@@ -19,7 +19,6 @@
 using namespace std;
 using namespace stk;
 using namespace stk::rebalance;
-using namespace stk::rebalance;
 
 #define STK_GEOMDECOMP_DEBUG 0
 
@@ -46,10 +45,10 @@ inline unsigned wdim() {
   return n;
 }
 
-inline void convert_param_to_string(const Teuchos::ParameterList &from,
+inline void convert_param_to_string(const Parameters &from,
 				    vector < pair<std::string, std::string> > &to)
 {
-  Teuchos::ParameterList::ConstIterator
+  Parameters::ConstIterator
     from_iter  = from.begin(),
     from_end   = from.end();
 
@@ -65,176 +64,98 @@ inline void convert_param_to_string(const Teuchos::ParameterList &from,
 
 inline void fill_parameters (const char *T[][2],
 			     const int  i,
-			     Teuchos::ParameterList &Entry)
+			     Parameters &Entry)
 {
   for (int j=0; j<i; ++j) Entry.set(T[j][0], T[j][1]);
 }
 
-void fill_name_conversion (Teuchos::ParameterList &Name_Conversion)
+void fill_name_conversion( Parameters & name_conversion )
 {
-  const char *General[][2] =
-    {
-      { "LOAD BALANCING METHOD"      , "LB_METHOD"  },
-      { "ZOLTAN DEBUG LEVEL"         , "DEBUG_LEVEL" },
-      { "DEBUG PROCESSOR NUMBER"     , "DEBUG_PROCESSOR" },
-      { "TIMER"                      , "TIMER" },
-      { "DETERMINISTIC DECOMPOSITION", "DETERMINISTIC" },
-      { "DEBUG MEMORY"               , "DEBUG_MEMORY" },
-      { "IMBALANCE TOLERANCE"        , "IMBALANCE_TOL" },
-      { "RENUMBER PARTITIONS"        , "REMAP" },
-      { "KEEP CUTS"                  , "KEEP_CUTS" },
-      { "REUSE CUTS"                 , "RCB_REUSE" },
-      { "RCB RECOMPUTE BOX"          , "RCB_RECOMPUTE_BOX" },
-      { "CHECK GEOMETRY"             , "CHECK_GEOM" },
-      { "LOCK RCB DIRECTIONS"        , "RCB_LOCK_DIRECTIONS" },
-      { "SET RCB DIRECTIONS"         , "RCB_SET_DIRECTIONS" },
-      { "RCB MAX ASPECT RATIO"       , "RCB_MAX_ASPECT_RATIO" },
-      { "RECTILINEAR RCB BLOCKS"     , "RCB_RECTILINEAR_BLOCKS" },
-      { "OCTREE DIMENSION"           , "OCT_DIM" },
-      { "OCTREE METHOD"              , "OCT_METHOD" },
-      { "OCTREE MIN OBJECTS"         , "OCT_MINOBJECTS" },
-      { "OCTREE MAX OBJECTS"         , "OCT_MAXOBJECTS" },
-      // These values are never changed, but must
-      // be set so default values work correctly.
-      { "NUMBER GLOBAL ID ENTRIES"   , "NUM_GID_ENTRIES" },
-      { "NUMBER LOCAL ID ENTRIES"    , "NUM_LID_ENTRIES" },
-      { "OBJECT WEIGHT DIMENSION"    , "OBJ_WEIGHT_DIM" },
-      { "RETURN LISTS"               , "RETURN_LISTS" },
-      { "AUTOMATIC MIGRATION"        , "AUTO_MIGRATE" },
-      { "DISTANCE"                   , "DISTANCE" }
-    };
-  const char *RCB[][2] =
-    {
-      { "OVER ALLOCATE MEMORY"       , "RCB_OVERALLOC" },
-      { "ALGORITHM DEBUG LEVEL"      , "RCB_OUTPUT_LEVEL" }
-    };
-  const char *RIB[][2] =
-    {
-      { "OVER ALLOCATE MEMORY"       , "RIB_OVERALLOC" },
-      { "ALGORITHM DEBUG LEVEL"      , "RIB_OUTPUT_LEVEL" }
-    };
-  const char *HSFC[][2] =
-    {
-      { "OVER ALLOCATE MEMORY"       , "" },
-      { "ALGORITHM DEBUG LEVEL"      , "" }
-    };
-  const char *OCT[][2] =
-    {
-      { "OVER ALLOCATE MEMORY"       , "" },
-      { "ALGORITHM DEBUG LEVEL"      , "OCT_OUTPUT_LEVEL" }
-    };
 
-  const int  Table_lens[] = {sizeof(General)/(2*sizeof(char *)),
-			     sizeof(RCB)    /(2*sizeof(char *)),
-			     sizeof(RIB)    /(2*sizeof(char *)),
-			     sizeof(HSFC)   /(2*sizeof(char *)),
-			     sizeof(OCT)    /(2*sizeof(char *))};
+  Parameters & general = name_conversion.sublist("General");
 
-  /*
-  const char *Table_names[] = {"General",
-			       "0",
-			       "1",
-			       "2",
-			       "3"};
-  */
-  fill_parameters (General,
-		   Table_lens[0],
-		   Name_Conversion); //.set_nested(Table_names[0])); todo: fix this!
-  fill_parameters (RCB,
-		   Table_lens[1],
-		   Name_Conversion);//.set_nested(Table_names[1]));
-  fill_parameters (RIB,
-		   Table_lens[2],
-		   Name_Conversion);//.set_nested(Table_names[2]));
-  fill_parameters (HSFC,
-		   Table_lens[3],
-		   Name_Conversion);//.set_nested(Table_names[3]));
-  fill_parameters (OCT,
-		   Table_lens[4],
-		   Name_Conversion);//.set_nested(Table_names[4]));
+  general.set("LOAD BALANCING METHOD"      , "LB_METHOD");
+  general.set("ZOLTAN DEBUG LEVEL"         , "DEBUG_LEVEL");
+  general.set("DEBUG PROCESSOR NUMBER"     , "DEBUG_PROCESSOR");
+  general.set("TIMER"                      , "TIMER");
+  general.set("DETERMINISTIC DECOMPOSITION", "DETERMINISTIC");
+  general.set("DEBUG MEMORY"               , "DEBUG_MEMORY");
+  general.set("IMBALANCE TOLERANCE"        , "IMBALANCE_TOL");
+  general.set("RENUMBER PARTITIONS"        , "REMAP");
+  general.set("KEEP CUTS"                  , "KEEP_CUTS");
+  general.set("REUSE CUTS"                 , "RCB_REUSE");
+  general.set("RCB RECOMPUTE BOX"          , "RCB_RECOMPUTE_BOX");
+  general.set("CHECK GEOMETRY"             , "CHECK_GEOM");
+  general.set("LOCK RCB DIRECTIONS"        , "RCB_LOCK_DIRECTIONS");
+  general.set("SET RCB DIRECTIONS"         , "RCB_SET_DIRECTIONS");
+  general.set("RCB MAX ASPECT RATIO"       , "RCB_MAX_ASPECT_RATIO");
+  general.set("RECTILINEAR RCB BLOCKS"     , "RCB_RECTILINEAR_BLOCKS");
+  general.set("OCTREE DIMENSION"           , "OCT_DIM");
+  general.set("OCTREE METHOD"              , "OCT_METHOD");
+  general.set("OCTREE MIN OBJECTS"         , "OCT_MINOBJECTS");
+  general.set("OCTREE MAX OBJECTS"         , "OCT_MAXOBJECTS");
+  // These values are never changed, but must
+  // be set so default values work correctly.
+  general.set("NUMBER GLOBAL ID ENTRIES"   , "NUM_GID_ENTRIES");
+  general.set("NUMBER LOCAL ID ENTRIES"    , "NUM_LID_ENTRIES");
+  general.set("OBJECT WEIGHT DIMENSION"    , "OBJ_WEIGHT_DIM");
+  general.set("RETURN LISTS"               , "RETURN_LISTS");
+  general.set("AUTOMATIC MIGRATION"        , "AUTO_MIGRATE");
+  general.set("DISTANCE"                   , "DISTANCE");
+
+  Parameters & rcb = name_conversion.sublist("0");
+  rcb.set("OVER ALLOCATE MEMORY"       , "RCB_OVERALLOC");
+  rcb.set("ALGORITHM DEBUG LEVEL"      , "RCB_OUTPUT_LEVEL");
+
+  Parameters & rib = name_conversion.sublist("1");
+  rib.set("OVER ALLOCATE MEMORY"       , "RIB_OVERALLOC");
+  rib.set("ALGORITHM DEBUG LEVEL"      , "RIB_OUTPUT_LEVEL");
+
+  Parameters & hsfc = name_conversion.sublist("2");
+  hsfc.set("OVER ALLOCATE MEMORY"       , "");
+  hsfc.set("ALGORITHM DEBUG LEVEL"      , "" );
+
+  Parameters & oct = name_conversion.sublist("3");
+  oct.set("OVER ALLOCATE MEMORY"       , "");
+  oct.set("ALGORITHM DEBUG LEVEL"      , "OCT_OUTPUT_LEVEL");
 }
 
 
-void fill_value_conversion (Teuchos::ParameterList &Value_Conversion)
+void fill_value_conversion( Parameters & value_conversion )
 {
-  const char *LB_METHOD[][2] =
-    {
-      { "0"   , "RCB"  },
-      { "1"   , "RIB" },
-      { "2"   , "HSFC" },
-      { "3"   , "OCTPART" },
-    };
-  const char *TIMER[][2] =
-    {
-      { "0"   , "WALL"  },
-      { "1"   , "CPU" },
-    };
+  Parameters & lb_method = value_conversion.sublist("LOAD BALANCING METHOD");
+  lb_method.set("0"   , "RCB");
+  lb_method.set("1"   , "RIB");
+  lb_method.set("2"   , "HSFC");
+  lb_method.set("3"   , "OCTPART");
 
-  const int   Table_lens[]  = {sizeof(LB_METHOD)/(2*sizeof(char *)),
-			       sizeof(TIMER)    /(2*sizeof(char *))};
-//  const char *Table_names[] = {"LOAD BALANCING METHOD",
-//			       "TIMER"};
+  Parameters & timer = value_conversion.sublist("TIMER");
+  timer.set("0"   , "WALL");
+  timer.set("1"   , "CPU");
 
-  fill_parameters (LB_METHOD,
-		   Table_lens[0],
-		   Value_Conversion);// .set_nested(Table_names[0])); todo: Make Parameters=Tcuchos::ParameterList
-  fill_parameters (TIMER,
-		   Table_lens[1],
-		   Value_Conversion); //.set_nested(Table_names[1]));
 }
 
-void fill_default_values( Zoltan::Parameters & default_values )
+void fill_default_values( Parameters & values )
 {
-      default_values.set("LOAD BALANCING METHOD"      , "0");
-      default_values.set("RENUMBER PARTITIONS"        , "1");
-      default_values.set("ZOLTAN DEBUG LEVEL"         , "0");
-      default_values.set("TIMER"                      , "0");
-      default_values.set("DETERMINISTIC DECOMPOSITION", "1");
-      default_values.set("DEBUG MEMORY"               , "1");
-      default_values.set("IMBALANCE TOLERANCE"        , "1.1");
-      default_values.set("KEEP CUTS"                  , "1");
-      default_values.set("REUSE CUTS"                 , "1");
-      default_values.set("OVER ALLOCATE MEMORY"       , "1.1");
-      default_values.set("ALGORITHM DEBUG LEVEL"      , "0");
-      default_values.set("OCTREE MIN OBJECTS"         , "1");
-      default_values.set("OCTREE MAX OBJECTS"         , "1");
-      default_values.set("NUMBER GLOBAL ID ENTRIES"   , "2");
-      default_values.set("NUMBER LOCAL ID ENTRIES"    , "2");
-      default_values.set("OBJECT WEIGHT DIMENSION"    , "1");
-      default_values.set("RETURN LISTS"               , "EXPORT");
+  Parameters & default_values = values.sublist("General");
 
-  //const char *General[][2] =
-  //  {
-  //    { "LOAD BALANCING METHOD"      , "0"  },
-  //    // NOTE: "LOAD BALANCING METHOD" default
-  //    // Is also hard coded in convert_names_and_values().
-  //    { "RENUMBER PARTITIONS"        , "1" },
-  //    { "ZOLTAN DEBUG LEVEL"         , "0" },
-  //    { "TIMER"                      , "0" },
-  //    { "DETERMINISTIC DECOMPOSITION", "1" },
-  //    { "DEBUG MEMORY"               , "1" },
-  //    { "IMBALANCE TOLERANCE"        , "1.1" },
-  //    { "KEEP CUTS"                  , "1" },
-  //    { "REUSE CUTS"                 , "1" },
-  //    //      { "RCB RECOMPUTE BOX"          , "0" },
-  //    { "OVER ALLOCATE MEMORY"       , "1.1" },
-  //    { "ALGORITHM DEBUG LEVEL"      , "0" },
-  //    { "OCTREE MIN OBJECTS"         , "1" },
-  //    { "OCTREE MAX OBJECTS"         , "1" },
-  //    // These values are never changed, but must
-  //    // be set so default values work correctly.
-  //    { "NUMBER GLOBAL ID ENTRIES"   , "2" },
-  //    { "NUMBER LOCAL ID ENTRIES"    , "2" },
-  //    { "OBJECT WEIGHT DIMENSION"    , "1" },
-  //    { "RETURN LISTS"               , "EXPORT" }
-  //  };
-
-  //const int   Table_lens[]  = {sizeof(General)/(2*sizeof(char *))};
-//  const char *Table_names[] = {"General"};
-
-//  fill_parameters (General,
-//		   Table_lens[0],
-//		   default_values); //.set_nested(Table_names[0])); todo: fix this
+  default_values.set("LOAD BALANCING METHOD"      , "0");
+  default_values.set("RENUMBER PARTITIONS"        , "1");
+  default_values.set("ZOLTAN DEBUG LEVEL"         , "0");
+  default_values.set("TIMER"                      , "0");
+  default_values.set("DETERMINISTIC DECOMPOSITION", "1");
+  default_values.set("DEBUG MEMORY"               , "1");
+  default_values.set("IMBALANCE TOLERANCE"        , "1.1");
+  default_values.set("KEEP CUTS"                  , "1");
+  default_values.set("REUSE CUTS"                 , "1");
+  default_values.set("OVER ALLOCATE MEMORY"       , "1.1");
+  default_values.set("ALGORITHM DEBUG LEVEL"      , "0");
+  default_values.set("OCTREE MIN OBJECTS"         , "1");
+  default_values.set("OCTREE MAX OBJECTS"         , "1");
+  default_values.set("NUMBER GLOBAL ID ENTRIES"   , "2");
+  default_values.set("NUMBER LOCAL ID ENTRIES"    , "2");
+  default_values.set("OBJECT WEIGHT DIMENSION"    , "1");
+  default_values.set("RETURN LISTS"               , "EXPORT");
 }
 
 
@@ -698,8 +619,8 @@ void Zoltan::init_default_parameters()
 //}
 
 
-static Teuchos::ParameterList *Name_Conversion =NULL;
-static Teuchos::ParameterList *Value_Conversion=NULL;
+static Parameters *Name_Conversion =NULL;
+static Parameters *Value_Conversion=NULL;
 
 double Zoltan::zoltan_version()   const { return static_zoltan_version();  }
 
@@ -724,10 +645,10 @@ double Zoltan::zoltan_version()   const { return static_zoltan_version();  }
 //}
 
 namespace {
-void Merge_Parameters(std::vector <std::pair<std::string, std::string> > &Str_Zoltan_Params,
-		      const Teuchos::ParameterList &Zoltan_Params) {
-  Teuchos::ParameterList Merged_Zoltan_Params   ;
-  Teuchos::ParameterList Converted_Zoltan_Params;
+void merge_parameters(std::vector <std::pair<std::string, std::string> > &str_zoltan_params,
+		      const Parameters &Zoltan_Params) {
+  Parameters Merged_Zoltan_Params   ;
+  Parameters Converted_Zoltan_Params;
 
   rebalance::Zoltan::merge_default_values (Zoltan_Params,
 				      Merged_Zoltan_Params);
@@ -736,36 +657,36 @@ void Merge_Parameters(std::vector <std::pair<std::string, std::string> > &Str_Zo
 					 Converted_Zoltan_Params);
 
   convert_param_to_string (Converted_Zoltan_Params,
-			   Str_Zoltan_Params);
+			   str_zoltan_params);
   return;
 }
 }
 
-Zoltan::Zoltan(ParallelMachine pm, const unsigned ndim, Teuchos::ParameterList & rebal_region_parameters, const std::string parameters_name) :
+Zoltan::Zoltan(ParallelMachine pm, const unsigned ndim, Parameters & rebal_region_parameters, const std::string parameters_name) :
   GeomDecomp(pm),
   zoltan_id(NULL),
   m_spatial_dimension_(ndim)
 {
   /* Determine if the default set of parameters already exists. */
   if( !rebal_region_parameters.isSublist(default_parameters_name()) )
+  {
     init_default_parameters();
+    rebal_region_parameters.sublist(default_parameters_name()) = m_default_parameters_;
+  }
 
   /* If name is empty, use default values */
-  std::string Default_Name =
+  std::string default_name =
     (parameters_name.empty()) ? default_parameters_name() : parameters_name ;
 
-  //const Teuchos::ParameterList *Zoltan_Params = domain_parameters.get_nested(Default_Name);
-  //if ( !Zoltan_Params ) {
-  //  throw RuntimeError() << "The Zoltan parameter set '" << Default_Name << "' does not exist." << std::endl << StackTrace;
-  //}
+  if( !rebal_region_parameters.isSublist(default_name) ) {
+    throw std::runtime_error("The Zoltan parameter set '" + default_name + "' does not exist.");
+  }
+  const Parameters & zoltan_params = rebal_region_parameters.sublist(default_name);
 
-  /* Save this library name for future reference. */
-  //parameter_entry_Name = Zoltan_Params->nested_name();
+  std::vector <std::pair<std::string, std::string> > str_zoltan_params;
+  merge_parameters(str_zoltan_params, zoltan_params);
 
-  std::vector <std::pair<std::string, std::string> > Str_Zoltan_Params;
-  //Merge_Parameters(Str_Zoltan_Params, *Zoltan_Params);
-
-  init(Str_Zoltan_Params);
+  init(str_zoltan_params);
 }
 
 
@@ -1129,32 +1050,31 @@ int Zoltan::determine_new_partition (bool &RebalancingNeeded)
   return EXIT_SUCCESS;
 }
 
-void Zoltan::convert_names_and_values(const Teuchos::ParameterList &from, Teuchos::ParameterList &to)
+void Zoltan::convert_names_and_values(const Parameters &from, Parameters &to)
 {
   /* First time through, fill the conversion tables. */
   if (!Name_Conversion) {
-    Name_Conversion = new Teuchos::ParameterList;
+    Name_Conversion = new Parameters;
     fill_name_conversion (*Name_Conversion);
   }
   if (!Value_Conversion) {
-    Value_Conversion = new Teuchos::ParameterList;
+    Value_Conversion = new Parameters;
     fill_value_conversion(*Value_Conversion);
   }
 
   // NOTE: "LOAD BALANCING METHOD" default
   // is also hard coded in fill_default_values();
   std::string algorithm;
-  const std::string param = from.get<std::string>("LOAD BALANCING METHOD");
   const std::string keyname("LOAD BALANCING METHOD");
   if( from.isParameter(keyname) )
-    algorithm = from.get<std::string>(keyname); //(const std::string &) param->get();
+    algorithm = from.get<std::string>(keyname);
   else
     algorithm = "0";
 
-  const Teuchos::ParameterList & General = Name_Conversion->sublist("General");
-  const Teuchos::ParameterList & Algorithm = Name_Conversion->sublist(algorithm);
+  const Parameters & General = Name_Conversion->sublist("General");
+  const Parameters & Algorithm = Name_Conversion->sublist(algorithm);
 
-  Teuchos::ParameterList::ConstIterator
+  Parameters::ConstIterator
     from_iter  = from.begin(),
     from_end   = from.end();
 
@@ -1184,11 +1104,11 @@ void Zoltan::convert_names_and_values(const Teuchos::ParameterList &from, Teucho
   }
 }
 
-void Zoltan::merge_default_values(const Teuchos::ParameterList &from,
-					Teuchos::ParameterList &to)
+void Zoltan::merge_default_values(const Parameters &from,
+					Parameters &to)
 {
   Parameters default_values;
   fill_default_values(default_values);
-  to.setParameters(default_values.get<Teuchos::ParameterList>("General") );
+  to.setParameters(default_values.sublist("General"));
   to.setParameters(from);
 }
