@@ -174,7 +174,10 @@ namespace TSQR {
       /// \param numCols [in] Number of columns in the matrix to test.
       ///   Number of rows := (# MPI processors) * ncols.
       void 
-      verify (const Ordinal numCols)
+      verify (const Ordinal numCols, 
+	      const std::string& additionalFieldNames,
+	      const std::string& additionalData,
+	      const bool printFieldNames)
       {
 	using std::endl;
 
@@ -207,9 +210,9 @@ namespace TSQR {
 	      err_ << "-- DistTsqr object initialized" << endl << endl;
 	  }
 
-	// Whether we've printed column headers yet (only matters for
-	// non-humanReadable output).
-	bool printedHeaders = false;
+	// Whether we've printed field names (i.e., column headers)
+	// yet.  Only matters for non-humanReadable output.
+	bool printedFieldNames = false;
 
 	// Test DistTsqr::factor() and DistTsqr::explicit_Q().
 	if (testFactorImplicit_)
@@ -244,9 +247,11 @@ namespace TSQR {
 		if (myRank == 0)
 		  err_ << "-- Finished global_verify" << endl;
 	      }
-	    reportResults ("DistTsqr", numCols, result, (! printedHeaders));
-	    if (! printedHeaders)
-	      printedHeaders = true;
+	    reportResults ("DistTsqr", numCols, result, 
+			   additionalFieldNames, additionalData,
+			   printFieldNames && (! printedFieldNames));
+	    if (printFieldNames && (! printedFieldNames))
+	      printedFieldNames = true;
 	  }
 
 	// Test DistTsqr::factorExplicit()
@@ -286,9 +291,11 @@ namespace TSQR {
 		if (myRank == 0)
 		  err_ << "-- Finished global_verify" << endl;
 	      }
-	    reportResults ("DistTsqrRB", numCols, result, (! printedHeaders));
-	    if (! printedHeaders)
-	      printedHeaders = true;
+	    reportResults ("DistTsqrRB", numCols, result, 
+			   additionalFieldNames, additionalData,
+			   printFieldNames && (! printedFieldNames));
+	    if (printFieldNames && (! printedFieldNames))
+	      printedFieldNames = true;
 	  }
       }
 
@@ -303,7 +310,9 @@ namespace TSQR {
       reportResults (const std::string& method, 
 		     const Ordinal numCols, 
 		     const result_type& result,
-		     const bool printHeaders)
+		     const std::string& additionalFieldNames,
+		     const std::string& additionalData,
+		     const bool printFieldNames)
       {
 	using std::endl;
 
@@ -330,8 +339,14 @@ namespace TSQR {
 		// Use scientific notation for floating-point numbers
 		out_ << std::scientific;
 
-		if (printHeaders)
-		  out_ << "%method,scalarType,numCols,numProcs,absFrobResid,absFrobOrthog,frobA" << endl;
+		if (printFieldNames)
+		  {
+		    out_ << "%method,scalarType,numCols,numProcs"
+		      ",absFrobResid,absFrobOrthog,frobA";
+		    if (! additionalFieldNames.empty())
+		      out_ << "," << additionalFieldNames;
+		    out_ << endl;
+		  }
 
 		out_ << method
 		     << "," << scalarTypeName_
@@ -339,8 +354,10 @@ namespace TSQR {
 		     << "," << numProcs
 		     << "," << result[0]
 		     << "," << result[1]
-		     << "," << result[2]
-		     << endl;
+		     << "," << result[2];
+		if (! additionalData.empty())
+		  out_ << "," << additionalData;
+		out_ << endl;
 	      }
 	  }
       }
@@ -517,7 +534,11 @@ namespace TSQR {
       /// \param numCols [in] Number of columns in the matrix to test.
       ///   Number of rows := (# MPI processors) * ncols
       void 
-      benchmark (const int numTrials, const Ordinal numCols)
+      benchmark (const int numTrials, 
+		 const Ordinal numCols,
+		 const std::string& additionalFieldNames,
+		 const std::string& additionalData,
+		 const bool printFieldNames)
       {
 	using std::endl;
 
@@ -528,9 +549,9 @@ namespace TSQR {
 	// Set up TSQR implementation.
 	DistTsqr< Ordinal, Scalar > par (scalarComm_);
 
-	// Whether we've printed column headers yet (only matters for
-	// non-humanReadable output).
-	bool printedHeaders = false;
+	// Whether we've printed field names (i.e., column headers)
+	// yet.  Only matters for non-humanReadable output.
+	bool printedFieldNames = false;
 
 	if (testFactorImplicit_)
 	  {
@@ -570,9 +591,10 @@ namespace TSQR {
 	    // reportResults() must be called on all processes, since this
 	    // figures out the min and max timings over all processes.
 	    reportResults (timerName, numTrials, numCols, localCumulativeTiming, 
-			   (! printedHeaders));
-	    if (! printedHeaders)
-	      printedHeaders = true;
+			   additionalFieldNames, additionalData,
+			   printFieldNames && (! printedFieldNames));
+	    if (printFieldNames && (! printedFieldNames))
+	      printedFieldNames = true;
 	  }
 
 	if (testFactorExplicit_)
@@ -600,10 +622,11 @@ namespace TSQR {
 	    const double localCumulativeTiming = timer.stop();
 
 	    // Report cumulative (not per-invocation) timing results
-	    reportResults (timerName, numTrials, numCols, 
-			   localCumulativeTiming, (! printedHeaders));
-	    if (! printedHeaders)
-	      printedHeaders = true;
+	    reportResults (timerName, numTrials, numCols, localCumulativeTiming, 
+			   additionalFieldNames, additionalData,
+			   printFieldNames && (! printedFieldNames));
+	    if (printFieldNames && (! printedFieldNames))
+	      printedFieldNames = true;
 
 	    // Per-invocation timings (for factorExplicit() benchmark
 	    // only).  localTimings were computed on this MPI process;
@@ -624,8 +647,8 @@ namespace TSQR {
 	    const std::string labelLabel ("label,scalarType");
 	    for (std::vector< std::string >::size_type k = 0; k < timingLabels.size(); ++k)
 	      {
-		// Only print column headers once
-		const bool printHeaders = (k == 0);
+		// Only print column headers (i.e., field names) once, if at all.
+		const bool printHeaders = (k == 0) && printFieldNames;
 		globalTimings[k].print (out_, humanReadable_, 
 					timingLabels[k] + "," + scalarTypeName_, 
 					labelLabel, printHeaders);
@@ -651,7 +674,9 @@ namespace TSQR {
 		     const int numTrials,
 		     const ordinal_type numCols,
 		     const double localTiming,
-		     const bool printHeaders)
+		     const std::string& additionalFieldNames,
+		     const std::string& additionalData,
+		     const bool printFieldNames)
       {
 	using std::endl;
 
@@ -682,8 +707,14 @@ namespace TSQR {
 		// Use scientific notation for floating-point numbers
 		out_ << std::scientific;
 
-		if (printHeaders)
-		  out_ << "%method,scalarType,numCols,numProcs,numTrials,min,mean,max" << endl;
+		if (printFieldNames)
+		  {
+		    out_ << "%method,scalarType,numCols,numProcs,numTrials"
+			 << ",minTiming,meanTiming,maxTiming";
+		    if (! additionalFieldNames.empty())
+		      out_ << "," << additionalFieldNames;
+		    out_ << endl;
+		  }
 
 		out_ << method
 		     << "," << scalarTypeName_
@@ -692,8 +723,10 @@ namespace TSQR {
 		     << "," << numTrials
 		     << "," << globalStats.min()
 		     << "," << globalStats.mean()
-		     << "," << globalStats.max()
-		     << endl;
+		     << "," << globalStats.max();
+		if (! additionalData.empty())
+		  out_ << "," << additionalData;
+		out_ << endl;
 	      }
 	  }
       }

@@ -99,7 +99,8 @@ do {							         	\
 			  scalarTypeName, out, err, 			\
 			  testFactorExplicit, testFactorImplicit,	\
 			  humanReadable, printMatrices, debug);		\
-  verifier.verify (numCols);						\
+  verifier.verify (numCols, params.additionalFieldNames,		\
+		   params.additionalData, params.printFieldNames);	\
   verifier.getSeed (seed);						\
 } while(false)
 
@@ -122,7 +123,10 @@ do {									\
 				scalarTypeName, out, err,		\
 				testFactorExplicit, testFactorImplicit, \
 				humanReadable, debug);			\
-  benchmarker.benchmark (numTrials, numCols);				\
+  benchmarker.benchmark (numTrials, numCols,				\
+			 params.additionalFieldNames,			\
+			 params.additionalData,				\
+			 params.printFieldNames);			\
   benchmarker.getSeed (seed);						\
 } while(false)
 
@@ -138,30 +142,34 @@ const char docString[] = "This program tests TSQR::DistTsqr, which "
 /// \brief Encapsulates values of command-line parameters
 ///
 struct DistTsqrTestParameters {
-  int numCols, numTrials;
-  bool testReal;
-#ifdef HAVE_TSQR_COMPLEX
-  bool testComplex;
-#endif // HAVE_TSQR_COMPLEX
-  bool verify, benchmark;
-  bool testFactorExplicit, testFactorImplicit;
-  bool humanReadable, printMatrices, debug;
-
   DistTsqrTestParameters () :
     numCols (10), 
     numTrials (10), 
+    verify (false),
+    benchmark (false),
     testReal (true),
 #ifdef HAVE_TSQR_COMPLEX
     testComplex (true),
 #endif // HAVE_TSQR_COMPLEX
-    verify (true),
-    benchmark (false),
     testFactorExplicit (true),
     testFactorImplicit (true),
+    printFieldNames (true),
+    printTrilinosTestStuff (true),
     humanReadable (false),
     printMatrices (false),
     debug (false)
   {}
+
+  std::string additionalFieldNames, additionalData;
+  int numCols, numTrials;
+  bool verify, benchmark;
+  bool testReal;
+#ifdef HAVE_TSQR_COMPLEX
+  bool testComplex;
+#endif // HAVE_TSQR_COMPLEX
+  bool testFactorExplicit, testFactorImplicit;
+  bool printFieldNames, printTrilinosTestStuff;
+  bool humanReadable, printMatrices, debug;
 };
 
 static void
@@ -314,6 +322,29 @@ parseOptions (int argc,
 			   "noexplicit",
 			   &params.testFactorExplicit,
 			   "Test DistTsqr\'s factorExplicit()");
+    cmdLineProc.setOption ("field-names", 
+			   &params.additionalFieldNames,
+			   "Any additional field name(s) (comma-delimited "
+			   "string) to add to the benchmark output.  Empty "
+			   "by default.  Good for things known when invoking "
+			   "the benchmark executable, but not (easily) known "
+			   "inside the benchmark -- e.g., environment "
+			   "variables.");
+    cmdLineProc.setOption ("output-data", 
+			   &params.additionalData,
+			   "Any additional data to add to the output, "
+			   "corresponding to the above field name(s). "
+			   "Empty by default.");
+    cmdLineProc.setOption ("print-field-names",
+			   "no-print-field-names",
+			   &params.printFieldNames,
+			   "Print field names (for machine-readable output only)");
+    cmdLineProc.setOption ("print-trilinos-test-stuff", 
+			   "no-print-trilinos-test-stuff", 
+			   &params.printTrilinosTestStuff,
+			   "Print output that makes the Trilinos test "
+			   "framework happy (but makes benchmark results "
+			   "parsing scripts unhappy)");
     cmdLineProc.setOption ("print-matrices", 
 			   "no-print-matrices", 
 			   &params.printMatrices, 
@@ -402,17 +433,18 @@ main (int argc, char *argv[])
     {
       std::vector<int> seed(4);
       const bool useSeed = false;
-
       verify (comm, params, out, err, seed, useSeed);
     }
+
   if (params.benchmark)
     {
       std::vector<int> seed(4);
       const bool useSeed = false;
-
       benchmark (comm, params, out, err, seed, useSeed);
     }
-  if (allowedToPrint)
+
+  if (allowedToPrint && params.printTrilinosTestStuff)
+    // The Trilinos test framework expects a message like this.
     out << "\nEnd Result: TEST PASSED" << std::endl;
   return 0;
 }
