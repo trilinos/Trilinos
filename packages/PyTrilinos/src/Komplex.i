@@ -50,11 +50,6 @@ following class:
 	docstring = %komplex_docstring) Komplex
 
 %{
-// System includes
-// #include <iostream>
-// #include <sstream>
-// #include <vector>
-
 // Configuration includes
 #include "PyTrilinos_config.h"
 #ifdef HAVE_INTTYPES_H
@@ -69,9 +64,11 @@ following class:
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_InvOperator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -84,9 +81,15 @@ following class:
 // Epetra python includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
+#include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 
 // Komplex includes
 #include "Komplex_Version.h"
@@ -106,12 +109,6 @@ following class:
 using std::string;
 %include "stl.i"
 
-// External Trilinos modules
-#ifdef HAVE_EPETRA
-%ignore Epetra_Version();
-%import "Epetra.i"
-#endif
-
 ///////////////////////////////////
 // Komplex configuration support //
 ///////////////////////////////////
@@ -121,6 +118,22 @@ using std::string;
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
 %include "Komplex_config.h"
+%include "PyTrilinos_config.h"
+
+// Teuchos::RCP<> support
+#ifdef TEUCHOS
+%include "Teuchos_RCP.i"
+#endif
+
+// External Trilinos modules
+#ifdef HAVE_EPETRA
+%ignore Epetra_Version();
+%import "Epetra.i"
+#endif
+
+/////////////////////////////
+// Komplex Version support //
+/////////////////////////////
 %rename(Version) Komplex_Version;
 %include "Komplex_Version.h"
 %pythoncode

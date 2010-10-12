@@ -33,6 +33,7 @@
 #include "Epetra_NumPyIntSerialDenseMatrix.h"
 #include "Epetra_NumPyIntSerialDenseVector.h"
 #include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
 #include "Epetra_NumPySerialDenseVector.h"
 
 // Epetra includes
@@ -51,13 +52,14 @@
 // off.
 %feature("compactdefaultargs", "0");
 
-//////////////
-// Typemaps //
-//////////////
-%epetra_array_typemaps(IntSerialDenseMatrix)
-%epetra_array_typemaps(IntSerialDenseVector)
-%epetra_array_typemaps(SerialDenseMatrix   )
-%epetra_array_typemaps(SerialDenseVector   )
+////////////////////////////////////////////////
+// Typemaps for Teuchos::RCP< Epetra_NumPy* > //
+////////////////////////////////////////////////
+%teuchos_rcp_epetra_numpy(IntSerialDenseMatrix)
+%teuchos_rcp_epetra_numpy(IntSerialDenseVector)
+%teuchos_rcp_epetra_numpy(SerialDenseMatrix   )
+%teuchos_rcp_epetra_numpy(SerialSymDenseMatrix)
+%teuchos_rcp_epetra_numpy(SerialDenseVector   )
 
 /////////////////////////////////////////
 // Epetra_IntSerialDenseMatrix support //
@@ -70,89 +72,6 @@
   struct IntSerialDenseMatrix{ };
 }
 %include "Epetra_IntSerialDenseMatrix.h"
-
-/////////////////////////////////////////
-// Epetra_IntSerialDenseVector support //
-/////////////////////////////////////////
-%ignore Epetra_IntSerialDenseVector::operator()(int);
-%ignore Epetra_IntSerialDenseVector::operator()(int) const;
-%inline
-{
-  struct IntSerialDenseVector{ };
-}
-%include "Epetra_IntSerialDenseVector.h"
-
-////////////////////////////////////////
-// Epetra_SerialDenseOperator support //
-////////////////////////////////////////
-%rename(SerialDenseOperator) Epetra_SerialDenseOperator;
-%include "Epetra_SerialDenseOperator.h"
-
-//////////////////////////////////////
-// Epetra_SerialDenseMatrix support //
-//////////////////////////////////////
-%ignore Epetra_SerialDenseMatrix::operator()(int,int) const;
-%ignore Epetra_SerialDenseMatrix::A() const;
-%inline
-{
-  struct SerialDenseMatrix{ };
-}
-%include "Epetra_SerialDenseMatrix.h"
-
-/////////////////////////////////////////
-// Epetra_SerialSymDenseMatrix support //
-/////////////////////////////////////////
-%rename(SerialSymDenseMatrix) Epetra_SerialSymDenseMatrix;
-%include "Epetra_SerialSymDenseMatrix.h"
-
-//////////////////////////////////////
-// Epetra_SerialDenseVector support //
-//////////////////////////////////////
-%ignore Epetra_SerialDenseVector::operator()(int);
-%ignore Epetra_SerialDenseVector::operator()(int) const;
-%inline
-{
-  struct SerialDenseVector{ };
-}
-%include "Epetra_SerialDenseVector.h"
-
-//////////////////////////////////////
-// Epetra_SerialDenseSolver support //
-//////////////////////////////////////
-%ignore Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double&);
-%rename(SerialDenseSolver) Epetra_SerialDenseSolver;
-%epetra_intarray1d_output_method(Epetra_SerialDenseSolver,IPIV,M)
-%epetra_array2d_output_method(Epetra_SerialDenseSolver,A,M,N    )
-%epetra_array2d_output_method(Epetra_SerialDenseSolver,B,N,NRHS )
-%epetra_array2d_output_method(Epetra_SerialDenseSolver,X,N,NRHS )
-%epetra_array2d_output_method(Epetra_SerialDenseSolver,AF,M,N   )
-%epetra_array1d_output_method(Epetra_SerialDenseSolver,FERR,NRHS)
-%epetra_array1d_output_method(Epetra_SerialDenseSolver,BERR,NRHS)
-%epetra_array1d_output_method(Epetra_SerialDenseSolver,R,M      )
-%epetra_array1d_output_method(Epetra_SerialDenseSolver,C,N      )
-%extend Epetra_SerialDenseSolver
-{
-  double ReciprocalConditionEstimate()
-  {
-    double value = 0.0;
-    int result = self->ReciprocalConditionEstimate(value);
-    if (result)
-    {
-      PyErr_Format(PyExc_RuntimeError,
-		   "ReciprocalConditionEstimate method returned LAPACK error code %d",
-		   result);
-      value = -1.0;
-    }
-    return value;
-  }
-}
-%include "Epetra_SerialDenseSolver.h"
-
-///////////////////////////////////
-// Epetra_SerialDenseSVD support //
-///////////////////////////////////
-%rename(SerialDenseSVD) Epetra_SerialDenseSVD;
-%include "Epetra_SerialDenseSVD.h"
 
 //////////////////////////////////////////////
 // Epetra_NumPyIntSerialDenseMatrix support //
@@ -234,6 +153,17 @@ class IntSerialDenseMatrix(UserArray,NumPyIntSerialDenseMatrix):
 _Epetra.NumPyIntSerialDenseMatrix_swigregister(IntSerialDenseMatrix)
 %}
 
+/////////////////////////////////////////
+// Epetra_IntSerialDenseVector support //
+/////////////////////////////////////////
+%ignore Epetra_IntSerialDenseVector::operator()(int);
+%ignore Epetra_IntSerialDenseVector::operator()(int) const;
+%inline
+{
+  struct IntSerialDenseVector{ };
+}
+%include "Epetra_IntSerialDenseVector.h"
+
 //////////////////////////////////////////////
 // Epetra_NumPyIntSerialDenseVector support //
 //////////////////////////////////////////////
@@ -305,6 +235,23 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
         return result
 _Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 %}
+
+////////////////////////////////////////
+// Epetra_SerialDenseOperator support //
+////////////////////////////////////////
+%rename(SerialDenseOperator) Epetra_SerialDenseOperator;
+%include "Epetra_SerialDenseOperator.h"
+
+//////////////////////////////////////
+// Epetra_SerialDenseMatrix support //
+//////////////////////////////////////
+%ignore Epetra_SerialDenseMatrix::operator()(int,int) const;
+%ignore Epetra_SerialDenseMatrix::A() const;
+%inline
+{
+  struct SerialDenseMatrix{ };
+}
+%include "Epetra_SerialDenseMatrix.h"
 
 ///////////////////////////////////////////
 // Epetra_NumPySerialDenseMatrix support //
@@ -386,6 +333,105 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
 _Epetra.NumPySerialDenseMatrix_swigregister(SerialDenseMatrix)
 %}
 
+/////////////////////////////////////////
+// Epetra_SerialSymDenseMatrix support //
+/////////////////////////////////////////
+%inline
+{
+  struct SerialSymDenseMatrix{ };
+}
+%include "Epetra_SerialSymDenseMatrix.h"
+
+///////////////////////////////////////////
+// Epetra_NumPySerialSymDenseMatrix support //
+///////////////////////////////////////////
+%rename(NumPySerialSymDenseMatrix) Epetra_NumPySerialSymDenseMatrix;
+%include "Epetra_NumPySerialSymDenseMatrix.h"
+%pythoncode
+%{
+class SerialSymDenseMatrix(UserArray,NumPySerialSymDenseMatrix):
+    def __init__(self, *args):
+      	"""
+      	__init__(self) -> SerialSymDenseMatrix
+      	__init__(self, PyObject array) -> SerialSymDenseMatrix
+      	__init__(self, SerialSymDenseMatrix source) -> SerialSymDenseMatrix
+      	"""
+        NumPySerialSymDenseMatrix.__init__(self, *args)
+        self.__initArray__()
+    def __initArray__(self):
+        self.array = self.A()
+        self.__protected = True
+    def __str__(self):
+        return str(self.array)
+    def __lt__(self,other):
+        return numpy.less(self.array,other)
+    def __le__(self,other):
+        return numpy.less_equal(self.array,other)
+    def __eq__(self,other):
+        return numpy.equal(self.array,other)
+    def __ne__(self,other):
+        return numpy.not_equal(self.array,other)
+    def __gt__(self,other):
+        return numpy.greater(self.array,other)
+    def __ge__(self,other):
+        return numpy.greater_equal(self.array,other)
+    def __getattr__(self, key):
+        # This should get called when the SerialSymDenseMatrix is accessed after
+        # not properly being initialized
+        if not "array" in self.__dict__:
+            self.__initArray__()
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return SerialSymDenseMatrix.__getattribute__(self, key)
+    def __setattr__(self, key, value):
+        "Handle 'this' attribute properly and protect the 'array' and 'shape' attributes"
+        if key == "this":
+            NumPySerialSymDenseMatrix.__setattr__(self, key, value)
+        else:
+            if key in self.__dict__:
+                if self.__protected:
+                    if key == "array":
+                        raise AttributeError, \
+                              "Cannot change Epetra.SerialSymDenseMatrix array attribute"
+                    if key == "shape":
+                        raise AttributeError, \
+                              "Cannot change Epetra.SerialSymDenseMatrix shape attribute"
+            UserArray.__setattr__(self, key, value)
+    def __getitem__(self, index):
+        """
+        __getitem__(self,int,int) -> int
+        __getitem__(self,int,slice) -> array
+        __getitem__(self,slice,int) -> array
+        __getitem__(self,slice,slice) -> array
+        """
+        return self.array[index]
+    def Shape(self,numRows,numCols):
+        "Shape(self, int numRows, int numCols) -> int"
+        result = NumPySerialSymDenseMatrix.Shape(self,numRows,numCols)
+        self.__protected = False
+        self.__initArray__()
+        return result
+    def Reshape(self,numRows,numCols):
+        "Reshape(self, int numRows, int numCols) -> int"
+        result = NumPySerialSymDenseMatrix.Reshape(self,numRows,numCols)
+        self.__protected = False
+        self.__initArray__()
+        return result
+_Epetra.NumPySerialSymDenseMatrix_swigregister(SerialSymDenseMatrix)
+%}
+
+//////////////////////////////////////
+// Epetra_SerialDenseVector support //
+//////////////////////////////////////
+%ignore Epetra_SerialDenseVector::operator()(int);
+%ignore Epetra_SerialDenseVector::operator()(int) const;
+%inline
+{
+  struct SerialDenseVector{ };
+}
+%include "Epetra_SerialDenseVector.h"
+
 ///////////////////////////////////////////
 // Epetra_NumPySerialDenseVector support //
 ///////////////////////////////////////////
@@ -457,6 +503,45 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
         return result
 _Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
 %}
+
+//////////////////////////////////////
+// Epetra_SerialDenseSolver support //
+//////////////////////////////////////
+%ignore Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double&);
+%rename(SerialDenseSolver) Epetra_SerialDenseSolver;
+%fragment("NumPy_Macros");  // These macros depend upon this fragment
+%epetra_intarray1d_output_method(Epetra_SerialDenseSolver,IPIV,M)
+%epetra_array2d_output_method(Epetra_SerialDenseSolver,A,M,N    )
+%epetra_array2d_output_method(Epetra_SerialDenseSolver,B,N,NRHS )
+%epetra_array2d_output_method(Epetra_SerialDenseSolver,X,N,NRHS )
+%epetra_array2d_output_method(Epetra_SerialDenseSolver,AF,M,N   )
+%epetra_array1d_output_method(Epetra_SerialDenseSolver,FERR,NRHS)
+%epetra_array1d_output_method(Epetra_SerialDenseSolver,BERR,NRHS)
+%epetra_array1d_output_method(Epetra_SerialDenseSolver,R,M      )
+%epetra_array1d_output_method(Epetra_SerialDenseSolver,C,N      )
+%extend Epetra_SerialDenseSolver
+{
+  double ReciprocalConditionEstimate()
+  {
+    double value = 0.0;
+    int result = self->ReciprocalConditionEstimate(value);
+    if (result)
+    {
+      PyErr_Format(PyExc_RuntimeError,
+		   "ReciprocalConditionEstimate method returned LAPACK error code %d",
+		   result);
+      value = -1.0;
+    }
+    return value;
+  }
+}
+%include "Epetra_SerialDenseSolver.h"
+
+///////////////////////////////////
+// Epetra_SerialDenseSVD support //
+///////////////////////////////////
+%rename(SerialDenseSVD) Epetra_SerialDenseSVD;
+%include "Epetra_SerialDenseSVD.h"
 
 /////////////////////////////////////////
 // Epetra_SerialSpdDenseSolver support //

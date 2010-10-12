@@ -58,6 +58,7 @@
 /////////////////////////////
 // Epetra_CrsGraph support //
 /////////////////////////////
+%teuchos_rcp_epetra(Epetra_CrsGraph)
 %feature("autodoc",
 "
 __init__(self, Epetra_DataAccess CV, BlockMap rowMap, int numIndicesPerRow,

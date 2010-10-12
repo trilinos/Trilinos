@@ -233,6 +233,9 @@ char* strtok;
 %include "Epetra_ConfigDefs.h"
 %include "Epetra_DLLExportMacro.h"
 
+// Teuchos::RCP<> support
+%include "Teuchos_RCP.i"
+
 // Include Epetra documentation
 %include "Epetra_dox.i"
 
@@ -241,6 +244,7 @@ char* strtok;
 %include "Epetra_SerialDense.i"       // SerialDense classes
 %include "Epetra_Comm.i"              // Communicator classes
 %include "Epetra_Maps.i"              // Map classes
+%include "Epetra_Dist.i"              // Distributed object support
 %include "Epetra_Vectors.i"           // Vectors and MultiVectors
 %include "Epetra_Graphs.i"            // Graph classes
 %include "Epetra_Operators.i"         // Operator and matrix classes

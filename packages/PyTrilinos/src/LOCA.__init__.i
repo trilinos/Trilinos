@@ -115,8 +115,8 @@ using Teuchos::RCP;
 // Note: Teuchos.i turns off warnings for nested classes, so we do not
 // have to do it again.
 
-%teuchos_rcp_typemaps(LOCA::GlobalData)
-%teuchos_rcp_typemaps(LOCA::DerivUtils)
+%teuchos_rcp(LOCA::GlobalData)
+%teuchos_rcp(LOCA::DerivUtils)
 
 // NOX interface file imports.
 //%import "NOX.__init__.i"
