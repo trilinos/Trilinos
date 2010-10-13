@@ -54,12 +54,22 @@ namespace TSQR {
     /// double, float, complex<double>, complex<float> -- i.e.,
     /// S,D,C,Z).
     /// 
-    /// \param numRows [in]
-    /// \param numCols [in]
+    /// \param numRows [in]  Number of rows in the cache block A, 
+    ///   used when testing [R; A]
+    /// \param numCols [in] Number of columns in the matrices to test
+    /// \param test_complex [in] Whether or not to test complex
+    ///   arithmetic routines
+    /// \param printFieldNames [in] Whether to print field names (to
+    ///   make machine parsing of results easier)
+    /// \param simulate_sequential_tsqr [in] Whether to use 
+    ///   TSQR::Combine to simulate SequentialTsqr
+    /// \param debug [in] Whether to print (possibly verbose)
+    ///   debugging output
     void
     verifyCombine (const int numRows,
 		   const int numCols, 
 		   const bool test_complex,
+		   const bool printFieldNames = true,
 		   const bool simulate_sequential_tsqr = false,
 		   const bool debug = false);
 

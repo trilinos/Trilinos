@@ -59,6 +59,34 @@ example subdirectory of the PyTrilinos package:
 	autodoc   = "1",
 	docstring = %aztecoo_docstring) AztecOO
 
+// Handle the AztecOO::MatrixData and AztecOO::OperatorData nested
+// structs by defining them exclusively for SWIG as though they were
+// not nested
+struct MatrixData
+{
+  Epetra_RowMatrix * A;
+  Epetra_Vector * X;
+  Epetra_Vector * Y;
+  Epetra_Vector * SourceVec;
+  Epetra_Vector * TargetVec;
+  MatrixData(Epetra_RowMatrix * inA = 0, Epetra_Vector * inX = 0,
+	     Epetra_Vector * inY = 0, Epetra_Vector * inSourceVec = 0,
+	     Epetra_Vector * inTargetVec = 0);
+  ~MatrixData();
+};
+%nestedworkaround AztecOO::MatrixData;
+
+struct OperatorData
+{
+  Epetra_Operator * A;
+  Epetra_Vector * X;
+  Epetra_Vector * Y;
+  OperatorData(Epetra_Operator * inA = 0, Epetra_Vector * inX = 0,
+	       Epetra_Vector * inY = 0);
+  ~OperatorData();
+};
+%nestedworkaround AztecOO::OperatorData;
+
 %{
 // System includes
 #include <iostream>
@@ -87,6 +115,8 @@ example subdirectory of the PyTrilinos package:
 #ifdef HAVE_EPETRA
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_InvOperator.h"
 #include "Epetra_BasicRowMatrix.h"
@@ -101,9 +131,15 @@ example subdirectory of the PyTrilinos package:
 // Epetra python includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
+#include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 #endif
 
 // AztecOO includes
@@ -111,10 +147,6 @@ example subdirectory of the PyTrilinos package:
 #include "AztecOO_Version.h"
 
 %}
-
-// SWIG does not support wrapping nested classes.  To suppress the
-// swig warning that would otherwise result, we use the following:
-#pragma SWIG nowarn=312
 
 // Auto-documentation feature
 %feature("autodoc", "1");
@@ -215,6 +247,13 @@ __version__ = AztecOO_Version().split()[3]
 %aztecoo_return_array(AztecOO, GetAllAztecParams,  double, NPY_DOUBLE, AZ_PARAMS_SIZE )
 %aztecoo_return_array(AztecOO, GetAztecStatus,     double, NPY_DOUBLE, AZ_STATUS_SIZE )
 %include "AztecOO.h"
+// We've fooled SWIG into thinking that MatrixData and OperatorData
+// are global structs, so now we need to trick the C++ compiler into
+// understanding these apparent global types.
+%{
+typedef AztecOO::MatrixData   MatrixData;
+typedef AztecOO::OperatorData OperatorData;
+%}
 
 // Turn off the exception handling
 %exception;

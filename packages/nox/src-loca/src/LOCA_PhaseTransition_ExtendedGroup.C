@@ -413,6 +413,31 @@ const NOX::Abstract::Vector& LOCA::PhaseTransition::ExtendedGroup::getGradient()
   return *newtonVector;
 }
 
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::PhaseTransition::ExtendedGroup::getXPtr() const 
+{
+  return xVector;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::PhaseTransition::ExtendedGroup::getFPtr() const 
+{  
+  return fVector;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::PhaseTransition::ExtendedGroup::getNewtonPtr() const 
+{
+  return newtonVector;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::PhaseTransition::ExtendedGroup::getGradientPtr() const 
+{
+  cout << "ERROR: GRADIENT VECTOR NOT CALCULATEED IN TRAMONTO_GROUP!! " << endl;
+  return newtonVector;
+}
+
 
 void LOCA::PhaseTransition::ExtendedGroup::print() const
 {

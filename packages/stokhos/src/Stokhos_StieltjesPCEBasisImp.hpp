@@ -117,7 +117,9 @@ getQuadPoints(ordinal_type quad_order,
 	      Teuchos::Array<value_type>& quad_weights,
 	      Teuchos::Array< Teuchos::Array<value_type> >& quad_values) const
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::StieltjesPCEBasis -- compute Gauss points");
+#endif
 
   // Use underlying pce's quad points, weights, values
   if (use_pce_quad_points) {
@@ -178,7 +180,9 @@ stieltjes(ordinal_type nstart,
 	  Teuchos::Array<value_type>& nrm,
 	  Teuchos::Array< Teuchos::Array<value_type> >& phi_vals) const
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::StieltjesPCEBasis -- Discretized Stieltjes Procedure");
+#endif
 
   value_type val1, val2;   
   ordinal_type start = nstart;

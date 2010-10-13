@@ -168,6 +168,14 @@ namespace NOX {
 
       const NOX::Abstract::Vector& getNewton() const;
 
+      Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
+
+      Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
+  
+      Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
+
+      Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const;
+
       //@}
 
       virtual Teuchos::RCP<NOX::Abstract::Group> 

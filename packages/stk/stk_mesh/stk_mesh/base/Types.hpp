@@ -104,6 +104,7 @@ typedef Ordinal RelationIdentifier;
 
 /** \brief  Pairing of an entity with a processor rank */
 typedef std::pair<Entity*,unsigned> EntityProc ;
+typedef std::vector<EntityProc>     EntityProcVec ;
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *

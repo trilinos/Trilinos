@@ -108,7 +108,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_MeanBasedPreconditioner.hpp
   Stokhos_ApproxGaussSeidelPreconditioner.hpp
   Stokhos_ApproxJacobiPreconditioner.hpp
-  Stokhos_GaussSeidelPreconditioner.hpp
   Stokhos_KroneckerProductPreconditioner.hpp
   Stokhos_FullyAssembledPreconditioner.hpp
   Stokhos_SGPreconditionerFactory.hpp
@@ -148,7 +147,6 @@ SET(SOURCES ${SOURCES}
   Stokhos_MeanBasedPreconditioner.cpp
   Stokhos_ApproxGaussSeidelPreconditioner.cpp
   Stokhos_ApproxJacobiPreconditioner.cpp
-  Stokhos_GaussSeidelPreconditioner.cpp
   Stokhos_KroneckerProductPreconditioner.cpp
   Stokhos_FullyAssembledPreconditioner.cpp
   Stokhos_SGPreconditionerFactory.cpp
@@ -180,10 +178,12 @@ IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
     NOX_ENABLE_EpetraExt)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/nox)
   SET(HEADERS ${HEADERS}
+    Stokhos_GaussSeidelPreconditioner.hpp
     nox/NOX_Epetra_LinearSystem_SGJacobi.hpp
     nox/NOX_Epetra_LinearSystem_SGGS.hpp
     )
   SET(SOURCES ${SOURCES}
+    Stokhos_GaussSeidelPreconditioner.cpp
     nox/NOX_Epetra_LinearSystem_SGJacobi.cpp
     nox/NOX_Epetra_LinearSystem_SGGS.cpp
     )

@@ -89,6 +89,15 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
   providerRequirements.push_back(p->dependentFields());
   providerNames.push_back(p->getName());
 
+#ifdef PHX_TEUCHOS_TIME_MONITOR
+  // Add counter to name so that all timers have unique names
+  static int count=0;
+  std::stringstream uniqueName;
+  uniqueName << "- Phalanx evaluator " << count++ <<": ";
+  evalTimers.push_back(
+     Teuchos::TimeMonitor::getNewTimer(uniqueName.str() + p->getName()));
+#endif
+
   /*!
     \todo RPP: need to add a check to make sure multiple providers
     can't supply the same variable.
@@ -306,8 +315,12 @@ template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
 evaluateFields(typename Traits::EvalData d)
 {
-  for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++)
+  for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++) {
+#ifdef PHX_TEUCHOS_TIME_MONITOR
+    Teuchos::TimeMonitor Time(*evalTimers[providerEvalOrderIndex[i]]);
+#endif
     (varProviders[providerEvalOrderIndex[i]])->evaluateFields(d);
+  }
 }
 
 //=======================================================================

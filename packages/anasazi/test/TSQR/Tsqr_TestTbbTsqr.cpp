@@ -79,6 +79,7 @@ namespace TSQR {
 #endif // HAVE_TSQR_COMPLEX
 	  cacheBlockSize (0),
 	  contiguousCacheBlocks (false),
+	  printFieldNames (true),
 	  humanReadable (false),
 	  debug (false)
 	{}
@@ -90,7 +91,7 @@ namespace TSQR {
 	bool testComplex;
 #endif // HAVE_TSQR_COMPLEX
 	size_t cacheBlockSize;
-	bool contiguousCacheBlocks, humanReadable, debug;
+	bool contiguousCacheBlocks, printFieldNames, humanReadable, debug;
       };
 
       static void
@@ -102,40 +103,71 @@ namespace TSQR {
 	using std::complex;
 #endif // HAVE_TSQR_COMPLEX
 
+	// Only print field names (if at all) for the first data type tested.
+	bool printedFieldNames = false;
+
 	if (params.testReal)
 	  {
-	    benchmarkTbbTsqr< int, float > (params.numTrials, 
-					    params.numRows, 
-					    params.numCols, 
-					    params.numCores,
-					    params.cacheBlockSize,
-					    params.contiguousCacheBlocks,
-					    params.humanReadable);
-	    benchmarkTbbTsqr< int, double > (params.numTrials, 
-					     params.numRows, 
-					     params.numCols, 
-					     params.numCores,
-					     params.cacheBlockSize,
-					     params.contiguousCacheBlocks,
-					     params.humanReadable);
+	    {
+	      std::string scalarTypeName ("float");
+	      benchmarkTbbTsqr< int, float > (scalarTypeName,
+					      params.numTrials, 
+					      params.numRows, 
+					      params.numCols, 
+					      params.numCores,
+					      params.cacheBlockSize,
+					      params.contiguousCacheBlocks,
+					      params.printFieldNames && ! printedFieldNames,
+					      params.humanReadable);
+	      if (params.printFieldNames && ! printedFieldNames)
+		printedFieldNames = true;
+	    }
+	    {
+	      std::string scalarTypeName ("double");
+	      benchmarkTbbTsqr< int, double > (scalarTypeName,
+					       params.numTrials, 
+					       params.numRows, 
+					       params.numCols, 
+					       params.numCores,
+					       params.cacheBlockSize,
+					       params.contiguousCacheBlocks,
+					       params.printFieldNames && ! printedFieldNames,
+					       params.humanReadable);
+	      if (params.printFieldNames && ! printedFieldNames)
+		printedFieldNames = true;
+	    }
 	  }
 #ifdef HAVE_TSQR_COMPLEX
 	if (params.testComplex)
 	  {
-	    benchmarkTbbTsqr< int, complex<float> > (params.numTrials, 
-						     params.numRows, 
-						     params.numCols, 
-						     params.numCores,
-						     params.cacheBlockSize,
-						     params.contiguousCacheBlocks,
-						     params.humanReadable);
-	    benchmarkTbbTsqr< int, complex<double> > (params.numTrials, 
-						      params.numRows, 
-						      params.numCols, 
-						      params.numCores,
-						      params.cacheBlockSize,
-						      params.contiguousCacheBlocks,
-						      params.humanReadable);
+	    {
+	      std::string scalarTypeName ("complex<float>");
+	      benchmarkTbbTsqr< int, complex<float> > (scalarTypeName,
+						       params.numTrials, 
+						       params.numRows, 
+						       params.numCols, 
+						       params.numCores,
+						       params.cacheBlockSize,
+						       params.contiguousCacheBlocks,
+						       params.printFieldNames && ! printedFieldNames,
+						       params.humanReadable);
+	      if (params.printFieldNames && ! printedFieldNames)
+		printedFieldNames = true;
+	    }
+	    {
+	      std::string scalarTypeName ("complex<double>");
+	      benchmarkTbbTsqr< int, complex<double> > (scalarTypeName,
+							params.numTrials, 
+							params.numRows, 
+							params.numCols, 
+							params.numCores,
+							params.cacheBlockSize,
+							params.contiguousCacheBlocks,
+							params.printFieldNames && ! printedFieldNames,
+							params.humanReadable);
+	      if (params.printFieldNames && ! printedFieldNames)
+		printedFieldNames = true;
+	    }
 	  }
 #endif // HAVE_TSQR_COMPLEX
       }
@@ -155,30 +187,43 @@ namespace TSQR {
 	seed[2] = 0;
 	seed[3] = 1;
 
+	// Only print field names (if at all) for the first data type tested.
+	bool printedFieldNames = false;
+
 	if (params.testReal)
 	  {
 	    {
 	      TSQR::Random::NormalGenerator< int, float > gen (seed);
-	      verifyTbbTsqr< int, float > (gen, 
+	      std::string scalarTypeName ("float");
+	      verifyTbbTsqr< int, float > (scalarTypeName,
+					   gen,
 					   params.numRows, 
 					   params.numCols, 
 					   params.numCores, 
 					   params.cacheBlockSize,
 					   params.contiguousCacheBlocks,
+					   params.printFieldNames && ! printedFieldNames,
 					   params.humanReadable,
 					   params.debug);
+	      if (params.printFieldNames && ! printedFieldNames)
+		printedFieldNames = true;
 	      gen.getSeed (seed);
 	    }
 	    {
 	      TSQR::Random::NormalGenerator< int, double > gen (seed);
-	      verifyTbbTsqr< int, double > (gen, 
+	      std::string scalarTypeName ("double");
+	      verifyTbbTsqr< int, double > (scalarTypeName,
+					    gen,
 					    params.numRows, 
 					    params.numCols, 
 					    params.numCores, 
 					    params.cacheBlockSize,
 					    params.contiguousCacheBlocks,
+					    params.printFieldNames && ! printedFieldNames,
 					    params.humanReadable,
 					    params.debug);
+	      if (params.printFieldNames && ! printedFieldNames)
+		printedFieldNames = true;
 	      gen.getSeed (seed);
 	    }
 	  } // if (params.testReal)
@@ -187,26 +232,36 @@ namespace TSQR {
 	  {
 	    {
 	      TSQR::Random::NormalGenerator< int, complex<float> > gen (seed);
-	      verifyTbbTsqr< int, complex<float> > (gen, 
+	      std::string scalarTypeName ("complex<float>");
+	      verifyTbbTsqr< int, complex<float> > (scalarTypeName,
+						    gen, 
 						    params.numRows, 
 						    params.numCols, 
 						    params.numCores, 
 						    params.cacheBlockSize,
 						    params.contiguousCacheBlocks,
+						    params.printFieldNames && ! printedFieldNames,
 						    params.humanReadable,
 						    params.debug);
+	      if (params.printFieldNames && ! printedFieldNames)
+		printedFieldNames = true;
 	      gen.getSeed (seed);
 	    }
 	    {
 	      TSQR::Random::NormalGenerator< int, complex<double> > gen (seed);
-	      verifyTbbTsqr< int, complex<double> > (gen, 
+	      std::string scalarTypeName ("complex<double>");
+	      verifyTbbTsqr< int, complex<double> > (scalarTypeName,
+						     gen,
 						     params.numRows, 
 						     params.numCols, 
 						     params.numCores, 
 						     params.cacheBlockSize,
 						     params.contiguousCacheBlocks,
+						     params.printFieldNames && ! printedFieldNames,
 						     params.humanReadable,
 						     params.debug);
+	      if (params.printFieldNames && ! printedFieldNames)
+		printedFieldNames = true;
 	      gen.getSeed (seed);
 	    }
 	  }
@@ -287,6 +342,10 @@ namespace TSQR {
 				 "noncontiguous-cache-blocks",
 				 &params.contiguousCacheBlocks,
 				 "Whether cache blocks should be stored contiguously");
+	  cmdLineProc.setOption ("print-field-names",
+				 "no-print-field-names",
+				 &params.printFieldNames,
+				 "Print field names (for machine-readable output only)");
 	  cmdLineProc.setOption ("human-readable",
 				 "machine-readable",
 				 &params.humanReadable,

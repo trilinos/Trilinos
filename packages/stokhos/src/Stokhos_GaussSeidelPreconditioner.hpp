@@ -31,6 +31,10 @@
 #ifndef STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP
 #define STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP
 
+#include "Stokhos_ConfigDefs.h"
+
+#ifdef HAVE_STOKHOS_NOX
+
 #include "Teuchos_RCP.hpp"
 
 #include "Stokhos_SGPreconditioner.hpp"
@@ -177,5 +181,7 @@ namespace Stokhos {
   }; // class GaussSeidelPreconditioner
   
 } // namespace Stokhos
+
+#endif
 
 #endif // STOKHOS_GAUSS_SEIDEL_PRECONDITIONER_HPP

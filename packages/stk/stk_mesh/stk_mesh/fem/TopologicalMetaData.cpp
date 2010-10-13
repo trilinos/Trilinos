@@ -58,6 +58,16 @@ TopologicalMetaData::entity_rank_names( unsigned spatial_dimension )
   return names ;
 }
 
+const TopologicalMetaData & 
+TopologicalMetaData::find_TopologicalMetaData( const MetaData & meta_data )
+{
+  const TopologicalMetaData * top_data = TopologicalMetaData::internal_get(meta_data);
+  if (NULL == top_data) {
+    throw std::runtime_error("stk::mesh::TopologicalMetaData::find_TopologicalMetaData:  ERROR, TopologicalMetaData attribute not found on MetaData.  This is probably because no TopologicalMetaData was constructed for this MetaData.");
+  }
+  return *top_data;
+}
+
 const TopologicalMetaData *
 TopologicalMetaData::internal_get( const MetaData & meta_data )
 {

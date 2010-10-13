@@ -356,9 +356,11 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
 
   using std::string;
 
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR(
     string("Thyra::DirectionalFiniteDiffCalculator<")+ST::name()+">::calcVariations(...)"
     );
+#endif
   
   using std::setw;
   using std::endl;
@@ -844,9 +846,11 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
   using std::string;
   //typedef Teuchos::ScalarTraits<Scalar> ST;
 
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR(
     string("Thyra::DirectionalFiniteDiffCalculator<")+ST::name()+">::calcDerivatives(...)"
     );
+#endif
 
   typedef ModelEvaluatorBase MEB;
   typedef RCP<VectorBase<Scalar> > VectorPtr;

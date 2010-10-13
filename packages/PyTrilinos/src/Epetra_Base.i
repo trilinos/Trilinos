@@ -38,8 +38,6 @@
 #include "Epetra_CombineMode.h"
 #include "Epetra_DataAccess.h"
 #include "Epetra_Object.h"
-#include "Epetra_SrcDistObject.h"
-#include "Epetra_DistObject.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
 #include "Epetra_LAPACK.h"
@@ -91,6 +89,13 @@ except ImportError:
 // Define the EpetraError exception
 %constant PyObject * Error = PyExc_EpetraError;  // This steals the reference
 
+// Director exception handling
+%feature("director:except") {
+    if ($error != NULL) {
+        throw Swig::DirectorMethodException();
+    }
+}
+
 // General exception handling
 %exception
 {
@@ -110,6 +115,10 @@ except ImportError:
     SWIG_fail;
   }
   SWIG_CATCH_STDEXCEPT
+  catch (Swig::DirectorException & e)
+  {
+    SWIG_fail;
+  }
   catch(...)
   {
     SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
@@ -202,53 +211,181 @@ except ImportError:
 }
 %enddef
 
+// The Epetra __str__() and Print() methods need to be referenced in
+// a couple of different places, so we define a macro to keep their
+// definitions in a single place.
+%define %epetra_output(ClassName)
+%rename(Print) ClassName::MyPrint;
+%extend ClassName
+{
+  // The __str__() method is used by the python str() operator on any
+  // object given to the python print command.
+  PyObject * __str__()
+  {
+    std::ostringstream os;
+    self->Print(os);               // Put the output in os
+    std::string s = os.str();      // Extract the string from os
+    Py_ssize_t last = s.length();  // Get the last index
+    if (s.substr(last) == "\n")
+      last-=1;                     // Ignore any trailing newline
+    return PyString_FromStringAndSize(s.c_str(),last);  // Return the string as a PyObject
+  }
+  // The ClassName::Print(ostream) method will be ignored and replaced
+  // by a MyPrint() (renamed Print()) method here that takes a python
+  // file object as its optional argument.  If no argument is given,
+  // then output is to standard out.
+  void MyPrint(PyObject*pf=NULL) const
+  {
+    if (pf == NULL)
+    {
+      self->Print(std::cout);
+    }
+    else
+    {
+      if (!PyFile_Check(pf))
+      {
+	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
+      }
+      else
+      {
+	std::FILE * f = PyFile_AsFile(pf);
+	FILEstream buffer(f);
+	std::ostream os(&buffer);
+	self->Print(os);
+	os.flush();
+      }
+    }
+  }
+}
+%enddef
+
+// Extend the definition for Teuchos::RCP<> wrapped Epetra classes to
+// include a __str__() and Print() method.
+%define %teuchos_rcp_epetra(ClassName...)
+  %teuchos_rcp(ClassName)
+  %epetra_output(ClassName)
+%enddef
+
 // Define macro for typemaps that convert arguments from
 // Epetra_*Matrix or Epetra_*Vector to the corresponding
 // Epetra_NumPy*Matrix or Epetra_NumPy*Vector.  There is additional
 // magic in the python code to convert the Epetra_NumPy*Matrix or
 // Epetra_NumPy*Vector to to an Epetra.*Matrix or Epetra.*Vector.
-%define %epetra_array_typemaps(ClassName)
-%typemap(out) Epetra_##ClassName *
+// Since all of these classes potentially represent large data
+// buffers, we want efficient memory management and so store them
+// internally with Teuchos::RCP<>.
+#ifdef HAVE_TEUCHOS
+%define %teuchos_rcp_epetra_numpy_overrides(CONST, CLASS...)
+
+// Output a plain pointer
+%typemap(out) CONST Epetra_##CLASS *
+{
+  Teuchos::RCP< CONST Epetra_NumPy##CLASS > *smartresult = 0;
+  if ($1)
+  {
+    CONST Epetra_NumPy##CLASS * npa = new CONST Epetra_NumPy##CLASS(*$1);
+    smartresult = new Teuchos::RCP< CONST Epetra_NumPy##CLASS >(npa, bool($owner));
+  }
+  %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+                                 $descriptor(Teuchos::RCP< Epetra_NumPy##CLASS > *),
+				 $owner | SWIG_POINTER_OWN));
+}
+
+// Output a plain reference
+%apply (CONST Epetra_##CLASS *) {CONST Epetra_##CLASS &}
+
+// Input/output of a reference to a pointer
+%typemap(in,numinputs=0) Epetra_##CLASS *& (Epetra_##CLASS * _object)
+{
+  $1 = &_object;
+}
+%typemap(argout) Epetra_##CLASS *&
+{
+  PyObject * obj;
+  Epetra_NumPy##CLASS * npa$argnum = new Epetra_NumPy##CLASS(**$1);
+  Teuchos::RCP< Epetra_NumPy##CLASS > *smartobj$argnum =
+    new Teuchos::RCP< Epetra_NumPy##CLASS >(npa$argnum);
+  obj = SWIG_NewPointerObj((void*)smartobj$argnum,
+			   $descriptor(Teuchos::RCP< Epetra_NumPy##CLASS > *), SWIG_POINTER_OWN);
+  $result = SWIG_Python_AppendOutput($result,obj);
+}
+
+// Director input of a plain reference
+%typemap(directorin) CONST Epetra_##CLASS & ()
+%{
+  Teuchos::RCP< CONST Epetra_NumPy##CLASS > *temp$argnum = new
+    Teuchos::RCP< CONST Epetra_NumPy##CLASS >(new Epetra_NumPy##CLASS(View,$1_name), false);
+  $input = SWIG_NewPointerObj((void*)temp$argnum,
+			      $descriptor(Teuchos::RCP< Epetra_NumPy##CLASS > *), SWIG_POINTER_OWN);
+%}
+
+%enddef
+
+#else
+// HAVE_TEUCHOS is not defined here, so provide %typemaps that assume
+// internal storage is via raw pointers.
+
+%define %teuchos_rcp_epetra_numpy_overrides(CONST, CLASS...)
+
+// Output a plain pointer
+%typemap(out) CONST Epetra_##CLASS *
 {
   if ($1 == NULL) $result = Py_BuildValue("");
   else
   {
-    Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(*$1);
-    $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##ClassName*), 1);
+    CONST Epetra_NumPy##CLASS * npa = new CONST Epetra_NumPy##CLASS(*$1);
+    $result = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy##CLASS*), $owner);
   }
 }
-%apply (Epetra_##ClassName *) {Epetra_##ClassName &}
 
-%typemap(in,numinputs=0) Epetra_##ClassName *& (Epetra_##ClassName * _object)
+// Output a plain reference
+%apply (CONST Epetra_##CLASS *) {CONST Epetra_##CLASS &}
+
+// Input/output of a reference to a pointer
+%typemap(in,numinputs=0) Epetra_##CLASS *& (Epetra_##CLASS * _object)
 {
   $1 = &_object;
 }
-%typemap(argout) Epetra_##ClassName *&
+%typemap(argout) Epetra_##CLASS *&
 {
   PyObject * obj;
-  Epetra_NumPy##ClassName * npa = new Epetra_NumPy##ClassName(**$1);
-  obj = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy##ClassName*), 1);
+  Epetra_NumPy##CLASS * npa = new Epetra_NumPy##CLASS(**$1);
+  obj = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy##CLASS*), SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 
-%typemap(directorin) Epetra_##ClassName &
+// Director input of a plain reference
+%typemap(directorin) CONST Epetra_##CLASS &
 %{
-  Epetra_NumPy##ClassName npa$argnum = Epetra_NumPy##ClassName(View,$1_name);
-  $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPy##ClassName*), 0);
+  CONST Epetra_NumPy##CLASS *npa$argnum = new CONST Epetra_NumPy##CLASS(View,$1_name);
+  $input = SWIG_NewPointerObj(npa$argnum, $descriptor(Epetra_NumPy##CLASS*), SWIG_POINTER_OWN);
 %}
+
+%enddef
+#endif
+
+// Use the %teuchos_rcp_epetra_numpy_overrides macro to define the
+// %teuchos_rcp_epetra macro
+%define %teuchos_rcp_epetra_numpy(CLASS)
+  %teuchos_rcp_epetra(Epetra_##CLASS)
+  %teuchos_rcp_epetra(Epetra_NumPy##CLASS)
+  %teuchos_rcp_epetra_numpy_overrides(SWIGEMPTYHACK, CLASS)
+  %teuchos_rcp_epetra_numpy_overrides(const, CLASS)
 %enddef
 
-// Define macro for a typemap that converts a reference to a pointer
-// to an object, into a return argument (which might be placed into a
+// Define macros for typemaps that convert a reference to a pointer to
+// an object, into a python return argument (which might be placed into a
 // tuple, if there are more than one).
-%define %epetra_argout_typemaps(ClassName)
+%define %teuchos_rcp_epetra_argout(ClassName)
 %typemap(in,numinputs=0) ClassName *& (ClassName * _object)
 {
   $1 = &_object;
 }
 %typemap(argout) ClassName *&
 {
-  PyObject * obj = SWIG_NewPointerObj((void*)(*$1), $descriptor(ClassName*), 1);
+  Teuchos::RCP< ClassName > *smartresult = new Teuchos::RCP< ClassName >(*$1, true);
+  PyObject * obj = SWIG_NewPointerObj(%as_voidptr(smartresult),
+				      $descriptor(Teuchos::RCP< ClassName >*), SWIG_POINTER_OWN);
   $result = SWIG_Python_AppendOutput($result,obj);
 }
 %enddef
@@ -256,10 +393,10 @@ except ImportError:
 ////////////////////////////
 // Epetra_Version support //
 ////////////////////////////
-%rename(Version) Epetra_Version;
 %include "Epetra_Version.h"
 %pythoncode
 %{
+Version = Epetra_Version
 __version__ = Version().split()[2]
 %}
 
@@ -298,62 +435,10 @@ processor number.  For example, do not do
 
 or it will hang your code."
 %rename(Object) Epetra_Object;
-%extend Epetra_Object
-{
-  // The __str__() method is used by the python str() operator on any
-  // object given to the python print command.
-  PyObject * __str__()
-  {
-    std::ostringstream os;
-    self->Print(os);               // Put the output in os
-    std::string s = os.str();      // Extract the string from os
-    Py_ssize_t last = s.length();  // Get the last index
-    if (s.substr(last) == "\n")
-      last-=1;                     // Ignore any trailing newline
-    return PyString_FromStringAndSize(s.c_str(),last);  // Return the string as a PyObject
-  }
-  // The Epetra_Object::Print(ostream) method will be ignored and
-  // replaced by a Print() method here that takes a python file object
-  // as its optional argument.  If no argument is given, then output
-  // is to standard out.
-  void Print(PyObject*pf=NULL) const
-  {
-    if (pf == NULL)
-    {
-      self->Print(std::cout);
-    }
-    else
-    {
-      if (!PyFile_Check(pf))
-      {
-	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
-      }
-      else
-      {
-	std::FILE * f = PyFile_AsFile(pf);
-	FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->Print(os);
-	os.flush();
-      }
-    }
-  }
-}
+%epetra_output(Epetra_Object)
 %ignore *::Print;  // Only the above Print() method will be implemented
 %ignore operator<<(ostream &, const Epetra_Object &); // From python, use __str__
 %include "Epetra_Object.h"
-
-//////////////////////////////////
-// Epetra_SrcDistObject support //
-//////////////////////////////////
-%rename(SrcDistObject) Epetra_SrcDistObject;
-%include "Epetra_SrcDistObject.h"
-
-///////////////////////////////
-// Epetra_DistObject support //
-///////////////////////////////
-%rename(DistObject) Epetra_DistObject;
-%include "Epetra_DistObject.h"
 
 ///////////////////////////////
 // Epetra_CompObject support //
@@ -446,121 +531,3 @@ or it will hang your code."
 %rename(Time) Epetra_Time;
 %include "Epetra_Time.h"
 
-/////////////////////////
-// Epetra_Util support //
-/////////////////////////
-%feature("docstring")
-Epetra_Util
-"Epetra Util Wrapper Class.
-
-The Epetra.Util class is a collection of useful functions that cut
-across a broad set of other classes.  A random number generator is
-provided, along with methods to set and retrieve the random-number
-seed.
-
-The random number generator is a multiplicative linear congruential
-generator, with multiplier 16807 and modulus 2^31 - 1. It is based on
-the algorithm described in 'Random Number Generators: Good Ones Are
-Hard To Find', S. K. Park and K. W. Miller, Communications of the ACM,
-vol. 31, no. 10, pp. 1192-1201.
-
-The C++ Sort() method is not supported in python.
-
-A static function is provided for creating a new Epetra.Map object
-with 1-to-1 ownership of entries from an existing map which may have
-entries that appear on multiple processors.
-
-Epetra.Util is a serial interface only.  This is appropriate since the
-standard utilities are only specified for serial execution (or shared
-memory parallel)."
-%ignore Epetra_Util::Sort;
-%rename(Util) Epetra_Util;
-%include "Epetra_Util.h"
-
-////////////////////////////////
-// Epetra_MapColoring support //
-////////////////////////////////
-%rename(MapColoring) Epetra_MapColoring;
-%ignore Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &, int*, const int);
-%ignore Epetra_MapColoring::operator()(int) const;
-%ignore Epetra_MapColoring::ListOfColors() const;
-%ignore Epetra_MapColoring::ColorLIDList(int) const;
-%ignore Epetra_MapColoring::ElementColors() const;
-%apply (int DIM1, int* IN_ARRAY1) {(int numColors, int* elementColors)};
-%extend Epetra_MapColoring
-{
-  Epetra_MapColoring(const Epetra_BlockMap & map,
-		     int numColors, int* elementColors,
-		     const int defaultColor=0)
-  {
-    Epetra_MapColoring * mapColoring;
-    if (numColors != map.NumMyElements())
-    {
-      PyErr_Format(PyExc_ValueError,
-		   "Epetra.BlockMap has %d elements, while elementColors has %d",
-		   map.NumMyElements(), numColors);
-      goto fail;
-    }
-    mapColoring = new Epetra_MapColoring(map, elementColors, defaultColor);
-    return mapColoring;
-  fail:
-    return NULL;
-  }
-
-  int __getitem__(int i)
-  {
-    return self->operator[](i);
-  }
-
-  void __setitem__(int i, int color)
-  {
-    self->operator[](i) = color;
-  }
-
-  PyObject * ListOfColors()
-  {
-    int      * list    = self->ListOfColors();
-    npy_intp   dims[ ] = { self->NumColors() };
-    int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
-    if (retObj == NULL) goto fail;
-    data = (int*) array_data(retObj);
-    for (int i = 0; i<dims[0]; i++) data[i] = list[i];
-    return PyArray_Return((PyArrayObject*)retObj);
-  fail:
-    Py_XDECREF(retObj);
-    return NULL;
-  }
-
-  PyObject * ColorLIDList(int color)
-  {
-    int      * list    = self->ColorLIDList(color);
-    npy_intp   dims[ ] = { self->NumElementsWithColor(color) };
-    int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
-    if (retObj == NULL) goto fail;
-    data = (int*) array_data(retObj);
-    for (int i = 0; i<dims[0]; i++) data[i] = list[i];
-    return PyArray_Return((PyArrayObject*)retObj);
-  fail:
-    Py_XDECREF(retObj);
-    return NULL;
-  }
-
-  PyObject * ElementColors()
-  {
-    int      * list    = self->ElementColors();
-    npy_intp   dims[ ] = { self->Map().NumMyElements() };
-    int      * data;
-    PyObject * retObj  = PyArray_SimpleNew(1,dims,NPY_INT);
-    if (retObj == NULL) goto fail;
-    data = (int*) array_data(retObj);
-    for (int i = 0; i<dims[0]; i++) data[i] = list[i];
-    return PyArray_Return((PyArrayObject*)retObj);
-  fail:
-    Py_XDECREF(retObj);
-    return NULL;
-  }
-}
-%include "Epetra_MapColoring.h"
-%clear (int numColors, int* elementColors);

@@ -548,4 +548,43 @@ Group::getNewton() const
   return NewtonVector;
 }
 
+Teuchos::RCP< const Abstract::Vector >
+Group::getXPtr() const 
+{
+  return Teuchos::rcp< const NOX::Abstract::Vector >(&xVector, false);
+}
+
+Teuchos::RCP< const Abstract::Vector >
+Group::getFPtr() const 
+{  
+  if (!isF()) {
+    cerr << "ERROR: NOX::Petsc::Group::getFPtr() - invalid RHS" << endl;
+    throw "NOX Error";
+  }
+    
+  return Teuchos::rcp< const NOX::Abstract::Vector >(&RHSVector, false);
+}
+
+Teuchos::RCP< const Abstract::Vector >
+Group::getGradientPtr() const 
+{ 
+  if (!isGradient()) {
+    cerr << "ERROR: NOX::Petsc::Group::getGradientPtr() - invalid gradient" << endl;
+    throw "NOX Error";
+  }
+    
+  return Teuchos::rcp< const NOX::Abstract::Vector >(&gradVector, false);
+}
+
+Teuchos::RCP< const Abstract::Vector >
+Group::getNewtonPtr() const 
+{
+  if (!isNewton()) {
+    cerr << "ERROR: NOX::Petsc::Group::getNewtonPtr() - invalid Newton vector" << endl;
+    throw "NOX Error";
+  }
+    
+  return Teuchos::rcp< const NOX::Abstract::Vector >(&NewtonVector, false);
+}
+
 

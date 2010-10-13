@@ -599,7 +599,9 @@ namespace Belos {
 	  // Apply the right preconditioner before computing the current solution.
 	  RCP<MV> TrueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
 	  {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
 	    Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
 	    OPT::Apply( *RP_, *update, *TrueUpdate ); 
 	  }
 	  MVT::MvAddMv( 1.0, *curX_, scale, *TrueUpdate, *curX_ ); 
@@ -617,7 +619,9 @@ namespace Belos {
 	  // Apply the right preconditioner before computing the current solution.
 	  RCP<MV> trueUpdate = MVT::Clone( *update, MVT::GetNumberVecs( *update ) );
 	  {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
 	    Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
 	    OPT::Apply( *RP_, *update, *trueUpdate ); 
 	  }
 	  MVT::MvAddMv( 1.0, *curX_, scale, *trueUpdate, *newSoln ); 
@@ -640,11 +644,15 @@ namespace Belos {
     // Create timers if the haven't been created yet.
     if (timerOp_ == Teuchos::null) {
       std::string opLabel = label_ + ": Operation Op*x";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerOp_ = Teuchos::TimeMonitor::getNewTimer( opLabel );
+#endif
     }
     if (timerPrec_ == Teuchos::null) {
       std::string precLabel = label_ + ": Operation Prec*x";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerPrec_ = Teuchos::TimeMonitor::getNewTimer( precLabel );
+#endif
     }
 
     // Set the linear system using the arguments newX and newB
@@ -679,7 +687,9 @@ namespace Belos {
         PR0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
       }
       {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
         OPT::Apply( *LP_, *R0_, *PR0_ );
       }
     } 
@@ -726,7 +736,9 @@ namespace Belos {
     // No preconditioning.
     // 
     if (!leftPrec && !rightPrec){ 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
       OPT::Apply( *A_, x, y );
     }
     //
@@ -735,15 +747,21 @@ namespace Belos {
     else if( leftPrec && rightPrec ) 
       {
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
 	  OPT::Apply( *RP_, x, y );   
         }
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
 	  OPT::Apply( *A_, y, *ytemp );
         }
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
 	  OPT::Apply( *LP_, *ytemp, y );
         }
       }
@@ -753,11 +771,15 @@ namespace Belos {
     else if( leftPrec ) 
       {
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
 	  OPT::Apply( *A_, x, *ytemp );
         }
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
 	  OPT::Apply( *LP_, *ytemp, y );
         }
       }
@@ -767,11 +789,15 @@ namespace Belos {
     else 
       {
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
 	  OPT::Apply( *RP_, x, *ytemp );
         }
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
       	  OPT::Apply( *A_, *ytemp, y );
         }
       }  
@@ -780,7 +806,9 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::applyOp( const MV& x, MV& y ) const {
     if (A_.get()) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
       OPT::Apply( *A_,x, y);   
     }
     else {
@@ -792,7 +820,9 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::applyLeftPrec( const MV& x, MV& y ) const {
     if (LP_!=null) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
       return ( OPT::Apply( *LP_,x, y) );
     }
     else {
@@ -804,7 +834,9 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void LinearProblem<ScalarType,MV,OP>::applyRightPrec( const MV& x, MV& y ) const {
     if (RP_!=null) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
       return ( OPT::Apply( *RP_,x, y) );
     }
     else {
@@ -823,19 +855,25 @@ namespace Belos {
 	    {
 	      RCP<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
               {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
 	        OPT::Apply( *A_, *X, *R_temp );
               }
 	      MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
               {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
 	        OPT::Apply( *LP_, *R_temp, *R );
               }
 	    }
 	  else 
 	    {
               {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
                 Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
 	        OPT::Apply( *A_, *X, *R );
               }
 	      MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
@@ -858,19 +896,25 @@ namespace Belos {
 	  {
 	    RCP<MV> R_temp = MVT::Clone( *localX, MVT::GetNumberVecs( *localX ) );
             {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
 	      OPT::Apply( *A_, *localX, *R_temp );
             }
 	    MVT::MvAddMv( -1.0, *R_temp, 1.0, *localB, *R_temp );
             {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+#endif
 	      OPT::Apply( *LP_, *R_temp, *R );
             }
 	  }
 	else 
 	  {
             {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
               Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
   	      OPT::Apply( *A_, *localX, *R );
             }
 	    MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );
@@ -887,7 +931,9 @@ namespace Belos {
       if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
 	{
           {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
 	    OPT::Apply( *A_, *X, *R );
           }
 	  MVT::MvAddMv( -1.0, *R, 1.0, *B, *R );
@@ -906,7 +952,9 @@ namespace Belos {
 	  localX = curX_;
 	  
         {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor OpTimer(*timerOp_);
+#endif
 	  OPT::Apply( *A_, *localX, *R );
         }
 	MVT::MvAddMv( -1.0, *R, 1.0, *localB, *R );

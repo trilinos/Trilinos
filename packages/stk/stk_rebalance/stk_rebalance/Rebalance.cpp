@@ -22,28 +22,27 @@
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
 
 using namespace stk;
-using namespace rebalance;
+using namespace stk::rebalance;
 
 
 namespace {
 
-
-bool balance_comm_spec_domain (Partition & partition,
-                               std::vector<mesh::EntityProc> & rebal_spec)
+bool balance_comm_spec_domain( Partition & partition,
+                               std::vector<mesh::EntityProc> & rebal_spec )
 {
   bool rebalancingHasOccurred = false;
   {
     int num_elems = partition.num_elems();
     int tot_elems;
-    //all_reduce_sum(comm, &num_elems, &tot_elems, 1);
-    tot_elems = num_elems;
-    
+    all_reduce_sum(partition.parallel(), &num_elems, &tot_elems, 1);
+
     if (tot_elems) {
       partition.determine_new_partition(rebalancingHasOccurred);
     }
@@ -71,12 +70,11 @@ bool full_rebalance(mesh::BulkData        & bulk_data ,
   return rebalancingHasOccurred;
 }
 
-// ----------------------------------------------------------------------------
 }
 
 // ------------------------------------------------------------------------------
 
-bool rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
+bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
                                  mesh::MetaData &    meta_data,
                                  const mesh::Field<double> & load_measure,
                                  ParallelMachine    comm,
@@ -86,22 +84,26 @@ bool rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
 
   double my_load = 0.0;
 
-  mesh::EntityVector local_nodes;
-  mesh::Selector select_owned(meta_data.locally_owned_part());
-  mesh::get_selected_entities(select_owned,
-                              bulk_data.buckets(mesh::Node),
-                              local_nodes);
+  const mesh::TopologicalMetaData & topo_data = mesh::TopologicalMetaData::find_TopologicalMetaData(meta_data);
 
-  for(mesh::EntityVector::iterator elem_it = local_nodes.begin(); elem_it != local_nodes.end(); ++elem_it)
+  mesh::EntityVector local_elems;
+  mesh::Selector select_owned( meta_data.locally_owned_part() );
+
+  // Determine imbalance based on current element decomposition
+  mesh::get_selected_entities(select_owned,
+                              bulk_data.buckets(topo_data.element_rank),
+                              local_elems);
+
+  for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
   {
     double * load_val = mesh::field_data(load_measure, **elem_it);
     my_load += *load_val;
   }
 
-  double max_load = my_load=my_load;
-  double tot_load = my_load=0;
+  double max_load = my_load;
+  double tot_load = 0;
 
-  all_reduce(comm, ReduceMax<1>(&my_load));
+  all_reduce(comm, ReduceMax<1>(&max_load));
   all_reduce_sum(comm, &my_load, &tot_load, 1);
 
   const int   proc_size = parallel_machine_size(comm);
@@ -110,16 +112,17 @@ bool rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
   return ( max_load / avg_load > imbalance_threshold );
 }
 
-bool rebalance::rebalance(mesh::BulkData        & bulk_data  ,
+bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
                           const mesh::Selector  & selector ,
-                          const mesh::Field<double> * rebal_coord_ref ,
-                          const mesh::Field<double> * rebal_elem_weight_ref ,
+                          const VectorField * rebal_coord_ref ,
+                          const ScalarField * rebal_elem_weight_ref ,
                           Partition & partition)
 {
   mesh::EntityVector rebal_elem_ptrs;
   mesh::EntityVector entities;
+  const mesh::TopologicalMetaData & topo_data = mesh::TopologicalMetaData::find_TopologicalMetaData(bulk_data.mesh_meta_data());
   mesh::get_selected_entities(selector,
-                              bulk_data.buckets(mesh::Node),
+                              bulk_data.buckets(topo_data.element_rank),
                               entities);
 
   for (mesh::EntityVector::iterator iA = entities.begin() ; iA != entities.end() ; ++iA ) {

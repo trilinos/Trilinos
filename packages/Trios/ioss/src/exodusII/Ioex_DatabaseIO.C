@@ -231,6 +231,8 @@ namespace {
       return Ioss::Utils::encode_entity_name(basename, id);
     }
   }
+  
+  void check_attribute_index_order(Ioss::GroupingEntity *block);
 }
 
 namespace Ioex {
@@ -589,6 +591,20 @@ namespace Ioex {
     this_region->property_add(Ioss::Property(std::string("title"), the_title));
     this_region->property_add(Ioss::Property(std::string("spatial_dimension"),
 					     spatialDimension));
+  }
+
+  int DatabaseIO::get_current_state() const
+  {
+    int step = get_region()->get_property("current_state").get_int();
+
+    if (step <= 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: No currently active state.  The calling code must call Ioss::Region::begin_state(int step)\n"
+	     << "       to set the database timestep from which to read the transient data.\n"
+	     << "       [" << get_filename() << "]\n";
+      IOSS_ERROR(errmsg);
+    }
+    return step;
   }
 
   void DatabaseIO::get_step_times()
@@ -1623,6 +1639,7 @@ namespace Ioex {
 	    ef_set->property_add(Ioss::Property("id", id));
 
 	    get_region()->add_alias(ef_set_name, Ioss::Utils::encode_entity_name("surface", id));
+	    get_region()->add_alias(ef_set_name, Ioss::Utils::encode_entity_name("sideset", id));
 	  }
 
 	  //	  split_type = SPLIT_BY_ELEMENT_BLOCK;
@@ -2047,6 +2064,7 @@ namespace Ioex {
 	add_results_fields(EX_NODE_SET, nodeset, number_nodes, ins);
 
 	get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodelist", id));
+	get_region()->add_alias(nodeset_name, Ioss::Utils::encode_entity_name("nodeset", id));
       }
 
     }
@@ -2228,15 +2246,7 @@ namespace Ioex {
     int num_entity = ge->get_property("entity_count").get_int();
     std::vector<double> temp(num_entity);
 
-    int step = get_region()->get_property("current_state").get_int();
-
-    if (step <= 0) {
-      std::ostringstream errmsg;
-      errmsg << "ERROR: No currently active state. The calling code must call Ioss::Region::begin_state(int step)\n"
-	     << "       To set the time step from which to read the transient data.\n"
-	     << "       [" << get_filename() << "]\n";
-      IOSS_ERROR(errmsg);
-    }
+    int step = get_current_state();
 
     // get number of components, cycle through each component
     // and add suffix to base 'field_name'.  Look up index
@@ -2297,7 +2307,7 @@ namespace Ioex {
     size_t side_count = is_valid_face.size();
     std::vector<double> temp(side_count);
 
-    int step = get_region()->get_property("current_state").get_int();
+    int step = get_current_state();
 
     // get number of components, cycle through each component
     // and add suffix to base 'field_name'.  Look up index
@@ -2432,8 +2442,7 @@ namespace Ioex {
 	    int attribute_count = eb->get_property("attribute_count").get_int();
 
 	    std::string att_name = eb->name() + SEP() + field.get_name();
-	    assert(attributeNames.find(att_name) != attributeNames.end());
-	    int offset = (*attributeNames.find(att_name)).second;
+	    int offset = (int)field.get_index();
 	    assert(offset > 0);
 	    assert(offset-1+field.raw_storage()->component_count() <= attribute_count);
 	    if (offset == 1 && field.raw_storage()->component_count() == attribute_count) {
@@ -3305,8 +3314,7 @@ namespace Ioex {
 
 	else if (role == Ioss::Field::ATTRIBUTE) {
 	  std::string att_name = eb->name() + SEP() + field.get_name();
-	  assert(attributeNames.find(att_name) != attributeNames.end());
-	  int offset = (*attributeNames.find(att_name)).second;
+	  int offset = (int)field.get_index();
 	  assert(offset > 0);
 
 	  int attribute_count = eb->get_property("attribute_count").get_int();
@@ -3576,7 +3584,7 @@ namespace Ioex {
     const Ioss::VariableType *var_type = field.transformed_storage();
     std::vector<double> temp(count);
 
-    int step = get_region()->get_property("current_state").get_int();
+    int step = get_current_state();
     step = get_database_step(step);
 
     // get number of components, cycle through each component
@@ -3646,7 +3654,7 @@ namespace Ioex {
     const Ioss::VariableType *var_type = field.transformed_storage();
     std::vector<double> temp(count);
 
-    int step = get_region()->get_property("current_state").get_int();
+    int step = get_current_state();
     step = get_database_step(step);
 
     int eb_offset = 0;
@@ -3834,7 +3842,7 @@ namespace Ioex {
 
   void DatabaseIO::write_reduction_fields() const
   {
-    int step = get_region()->get_property("current_state").get_int();
+    int step = get_current_state();
     step = get_database_step(step);
     size_t count = globalValues.size();
     if (count > 0) {
@@ -3847,7 +3855,7 @@ namespace Ioex {
 
   void DatabaseIO::read_reduction_fields() const
   {
-    int step = get_region()->get_property("current_state").get_int();
+    int step = get_current_state();
     size_t count = globalValues.size();
     if (count > 0) {
       int ierr = ex_get_glob_vars(get_file_pointer(), step, count,
@@ -4585,7 +4593,8 @@ namespace Ioex {
       std::string block_name = block->name();
       int attribute_count = block->get_property("attribute_count").get_int();
       if (attribute_count > 0) {
-	int field_offset = 1;
+	
+	check_attribute_index_order(block);
 	
 	char **names = get_exodus_names(attribute_count);
 
@@ -4596,21 +4605,22 @@ namespace Ioex {
 	Ioss::NameList::const_iterator IF;
 	for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
 	  std::string field_name = *IF;
+	  const Ioss::Field &field = block->get_fieldref(field_name);
+	  assert(field.get_index() != 0);
+	  
 	  if (field_name == "attribute") {
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+field_name,1));	  
+	    field.set_index(1);
 	    continue;
 	  }
-	  Ioss::Field field = block->get_field(field_name);
 
 	  const Ioss::VariableType *type = field.raw_storage();
 	  int comp_count = type->component_count();
-	  attributeNames.insert(VNMValuePair(block_name+SEP()+field_name,field_offset));	  
+	  int field_offset = field.get_index();
 	  for (int i=0; i < comp_count; i++) {
 	    std::string var_name = type->label_name(field_name, i+1, fieldSuffixSeparator);
 	    std::strncpy(names[field_offset-1+i], var_name.c_str(), max_string_length);
 	    names[field_offset-1+i][max_string_length] = '\0';
 	  }
-	  field_offset += comp_count;
 	}
 	int block_id = block->get_property("id").get_int();
 	int ierr = ex_put_attr_names(get_file_pointer(), EX_ELEM_BLOCK, block_id, names);
@@ -5526,7 +5536,8 @@ namespace Ioex {
 	for (IF = attributes.begin(); IF != attributes.end(); ++IF) {
 	  Ioss::Field field = *IF;
 	  block->field_add(field);
-	  attributeNames.insert(VNMValuePair(block_name+SEP()+field.get_name(),offset));
+	  const Ioss::Field &tmp_field = block->get_fieldref(field.get_name());
+	  tmp_field.set_index(offset);
 	  offset += field.raw_storage()->component_count();
 	}
       }
@@ -5545,13 +5556,11 @@ namespace Ioex {
 	    storage += "]";
 	    
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,1));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, 1));
 	  } else {
 	    att_name = "thickness";
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,1));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, 1));
 	    unknown_attributes = attribute_count - 1;
 	  }
 
@@ -5572,35 +5581,35 @@ namespace Ioex {
 	    }
 	  } else {
 	    // First attribute is concentrated mass...
+	    size_t offset = 1;
 	    block->field_add(Ioss::Field("mass", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"mass",1));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
+	    offset += 1;
 
 	    // Next six attributes are moment of inertia -- symmetric tensor
 	    block->field_add(Ioss::Field("inertia", Ioss::Field::REAL, SYM_TENSOR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"inertia",2));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
+	    offset += 6;
 
 	    // Next three attributes are offset from node to CG
 	    block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"offset",8));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, offset));
+	    offset += 3;
 	  }
 	}
 
 	else if (type_match(type, "circle") || type_match(type, "sphere")) {
 	  att_name = "radius";
+	  size_t offset = 1;
 	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count));
-	  attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,1));	  
+				       Ioss::Field::ATTRIBUTE, my_element_count, offset++));
 	  if (attribute_count > 1) {
 	    // Default second attribute (from sphgen3d) is "volume"
 	    // which is the volume of the cube which would surround a
 	    // sphere of the given radius.
 	    att_name = "volume";
 	    block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,2));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, offset++));
 	  }
 	  unknown_attributes = attribute_count - 2;
 	}
@@ -5608,10 +5617,10 @@ namespace Ioex {
 	else if (type_match(type, "truss") ||
 		   type_match(type, "bar")   ||
 		   type_match(type, "rod")) {
+	  size_t offset = 1;
 	  att_name = "area";
 	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count));
-	  attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,1));	  
+				       Ioss::Field::ATTRIBUTE, my_element_count, offset++));
 	  unknown_attributes = attribute_count - 1;
 	}
 
@@ -5619,38 +5628,29 @@ namespace Ioex {
 	  int index = 1;
 	  att_name = "area";
 	  block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, SCALAR(),
-				       Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,index));
-	    index++;
+				       Ioss::Field::ATTRIBUTE, my_element_count, index++));
 
 	  if (spatialDimension == 2 && attribute_count >= 3) {
 	    block->field_add(Ioss::Field("i", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"i",index++));
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	    block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"j",index++));
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	  }
 	  else if (spatialDimension == 3 && attribute_count >= 7) {
 	    block->field_add(Ioss::Field("i1", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"i1",index++));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	    block->field_add(Ioss::Field("i2", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"i2",index++));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	    block->field_add(Ioss::Field("j", Ioss::Field::REAL, SCALAR(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"j",index++));	  
+					 Ioss::Field::ATTRIBUTE, my_element_count, index++));
 	    block->field_add(Ioss::Field("reference_axis", Ioss::Field::REAL, VECTOR3D(),
-					 Ioss::Field::ATTRIBUTE, my_element_count));
-	    attributeNames.insert(VNMValuePair(block_name+SEP()+"reference_axis",index));
+					 Ioss::Field::ATTRIBUTE, my_element_count, index));
 	    index += 3;
 	    if (attribute_count >= 10) { 
 	      // Next three attributes would (hopefully) be offset vector...
 	      // This is typically from a NASGEN model.
 	      block->field_add(Ioss::Field("offset", Ioss::Field::REAL, VECTOR3D(),
-					   Ioss::Field::ATTRIBUTE, my_element_count));
-	      attributeNames.insert(VNMValuePair(block_name+SEP()+"offset",index));
+					   Ioss::Field::ATTRIBUTE, my_element_count, index));
 	      index += 3;
 	    }
 	  }
@@ -5679,8 +5679,7 @@ namespace Ioex {
       storage += "]";
       
       block->field_add(Ioss::Field(att_name, Ioss::Field::REAL, storage,
-				   Ioss::Field::ATTRIBUTE, my_element_count));
-      attributeNames.insert(VNMValuePair(block_name+SEP()+att_name,1));	  
+				   Ioss::Field::ATTRIBUTE, my_element_count, 1));
 
       // Release memory...
       delete_exodus_names(names, attribute_count);
@@ -5689,6 +5688,172 @@ namespace Ioex {
 } // End of namespace
 
 namespace {
+  void check_attribute_index_order(Ioss::GroupingEntity *block)
+  {
+    int attribute_count = block->get_property("attribute_count").get_int();
+    if (attribute_count == 0)
+      return;
+    int component_sum = 0;
+
+    std::vector<int> attributes(attribute_count+1);
+    
+    // Get the attribute fields...
+    Ioss::NameList results_fields;
+    block->field_describe(Ioss::Field::ATTRIBUTE, &results_fields);
+
+    bool all_attributes_indexed = true;
+    bool some_attributes_indexed = false;
+    
+    Ioss::NameList::const_iterator IF;
+    for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+      std::string field_name = *IF;
+      const Ioss::Field &field = block->get_fieldref(field_name);
+
+      if (field_name == "attribute") {
+	field.set_index(1);
+	if (results_fields.size() == 1) {
+	  return;
+	}
+	continue;
+      }
+
+      int field_offset = field.get_index();
+      if (field_offset == 0) {
+	all_attributes_indexed = false;
+      } else {
+	some_attributes_indexed = true;
+      }
+      
+      const Ioss::VariableType *type = field.raw_storage();
+      int comp_count = type->component_count();
+      component_sum += comp_count;
+      
+      if (field_offset == 0)
+	continue;
+      
+      if (field_offset + comp_count - 1 > attribute_count) {
+	std::ostringstream errmsg;
+	std::cerr << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
+		  << "', the indexing is incorrect.\n" 
+		  << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+	IOSS_ERROR(errmsg);
+      }
+
+      for (int i=field_offset; i < field_offset+comp_count; i++) {
+	if (attributes[i] != 0) {
+	  std::ostringstream errmsg;
+	  std::cerr << "INTERNAL ERROR: For block '" << block->name() << "', attribute '" << field_name
+		    << "', indexes into the same location as a previous attribute.\n"
+		    << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+	  IOSS_ERROR(errmsg);
+	} else {
+	  attributes[i] = 1;
+	}
+      }
+    }
+    
+    if (component_sum > attribute_count) {
+      std::ostringstream errmsg;
+      std::cerr << "INTERNAL ERROR: Block '" << block->name() << "' is supposed to have " << attribute_count
+		<< " attributes, but " << component_sum << " attributes were counted.\n"
+		<< "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+      IOSS_ERROR(errmsg);
+    }
+
+    // Take care of the easy cases first...
+    if (all_attributes_indexed) {
+      // Check that all attributes are defined.  This should have
+      // caught above in the duplicate index check.
+      for (int i=1; i <= attribute_count; i++) {
+	if (attributes[i] == 0) {
+	  std::ostringstream errmsg;
+	  std::cerr << "INTERNAL ERROR: Block '" << block->name() << "' has an incomplete set of attributes.\n"
+		    << "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+	  IOSS_ERROR(errmsg);
+	}
+      }
+      return;
+    }
+
+    if (!all_attributes_indexed && !some_attributes_indexed) {
+      // Index was not set for any of the attributes; set them all...
+      size_t offset = 1;
+      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+	std::string field_name = *IF;
+	const Ioss::Field &field = block->get_fieldref(field_name);
+
+	if (field_name == "attribute") {
+	  field.set_index(1);
+	  continue;
+	}
+
+	const Ioss::VariableType *type = field.raw_storage();
+	int comp_count = type->component_count();
+
+	assert(field.get_index() == 0);
+	field.set_index(offset);
+	offset += comp_count;
+      }
+      assert((int)offset == attribute_count+1);
+      return;
+    } 
+
+    // At this point, we have a partially indexed set of attributes.  Some have an index and some don't
+    // The easy case is if the missing indices are at the end of the list...
+    assert(!all_attributes_indexed && some_attributes_indexed);
+    int last_defined = 0;
+    for (int i=1; i < attribute_count+1; i++) {
+      if (attributes[i] != 0)
+	last_defined = i;
+    }
+    int first_undefined = attribute_count;
+    for (int i=attribute_count; i > 0; i--) {
+      if (attributes[i] == 0)
+	first_undefined = i;
+    }
+    if (last_defined < first_undefined) {
+      for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+	std::string field_name = *IF;
+	const Ioss::Field &field = block->get_fieldref(field_name);
+
+	if (field_name == "attribute") {
+	  field.set_index(1);
+	  continue;
+	}
+
+	if (field.get_index() == 0) {
+	  field.set_index(first_undefined);
+	  const Ioss::VariableType *type = field.raw_storage();
+	  int comp_count = type->component_count();
+	  first_undefined += comp_count;
+	}
+      }
+      assert(first_undefined == attribute_count+1);
+      return;
+    }
+
+    // Take the easy way out... Just reindex all attributes.
+    size_t offset = 1;
+    for (IF = results_fields.begin(); IF != results_fields.end(); ++IF) {
+      std::string field_name = *IF;
+      const Ioss::Field &field = block->get_fieldref(field_name);
+
+      if (field_name == "attribute") {
+	field.set_index(1);
+	continue;
+      }
+
+      const Ioss::VariableType *type = field.raw_storage();
+      int comp_count = type->component_count();
+      
+      assert(field.get_index() == 0);
+      field.set_index(offset);
+      offset += comp_count;
+    }
+    assert((int)offset == attribute_count+1);
+    return;
+  }
+
   size_t match(const char *name1, const char *name2)
   {
     size_t l1 = std::strlen(name1);

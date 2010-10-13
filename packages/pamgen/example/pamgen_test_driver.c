@@ -973,7 +973,8 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
   int out_id;
   int i; 
   int b;
-  
+  ex_init_params exinit;
+  int error = 0;
 
   out_id = ex_create(out_file_name, exo_access, &cpu_word_size,
 		 &io_word_size);
@@ -982,7 +983,6 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
     printf("error opening file");
   }
 
-  ex_init_params exinit;
   strncpy( exinit.title, mss.title, MAX_LINE_LENGTH-1 );
   exinit.title[MAX_LINE_LENGTH-1] = 0;
   exinit.num_dim       = mss.num_dim;
@@ -1002,8 +1002,6 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
   exinit.num_edge_maps = 0;
   exinit.num_face_maps = 0;
   exinit.num_elem_maps = 0;
-
-  int error = 0;
 
   PERROR;
 

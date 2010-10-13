@@ -109,22 +109,18 @@ public:
   
   virtual void reset(const NOX::Abstract::Vector& initialGuess,
 	             const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
-
   virtual void reset(const NOX::Abstract::Vector& initialGuess);
-
   virtual NOX::StatusTest::StatusType getStatus();
-
   virtual NOX::StatusTest::StatusType step();
-
   virtual NOX::StatusTest::StatusType solve();
-
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
-  
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
-
   virtual int getNumIterations() const;
-
   virtual const Teuchos::ParameterList& getList() const;
+
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
+  virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
 
 private:
 

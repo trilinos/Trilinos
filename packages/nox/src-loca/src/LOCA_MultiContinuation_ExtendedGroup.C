@@ -242,6 +242,30 @@ LOCA::MultiContinuation::ExtendedGroup::getNewton() const
 {
   return conGroup->getNewton();
 }
+  
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::MultiContinuation::ExtendedGroup::getXPtr() const 
+{
+  return conGroup->getXPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::MultiContinuation::ExtendedGroup::getFPtr() const 
+{
+  return conGroup->getFPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::MultiContinuation::ExtendedGroup::getGradientPtr() const 
+{
+  return conGroup->getGradientPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::MultiContinuation::ExtendedGroup::getNewtonPtr() const 
+{
+  return conGroup->getNewtonPtr();
+}
 
 double
 LOCA::MultiContinuation::ExtendedGroup::getNormNewtonSolveResidual() const 

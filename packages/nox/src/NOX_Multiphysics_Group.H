@@ -196,6 +196,14 @@ namespace Multiphysics {
   //! Return Newton direction.
   virtual const NOX::Abstract::Vector& getNewton() const;
 
+  virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
+
+  virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
+
+  virtual Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
+
+  virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const;
+
   //@{ \name Creating new Groups.
 
   /*! 

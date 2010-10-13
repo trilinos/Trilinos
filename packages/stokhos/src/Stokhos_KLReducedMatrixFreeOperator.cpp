@@ -204,7 +204,9 @@ Stokhos::KLReducedMatrixFreeOperator::
 setup()
 {
 #ifdef HAVE_STOKHOS_ANASAZI
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::KLReducedMatrixFreeOperator -- Calculation/setup of KL opeator");
+#endif
 
   mean = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(
     block_ops->getCoeffPtr(0));

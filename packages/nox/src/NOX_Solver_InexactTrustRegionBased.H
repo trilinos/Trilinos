@@ -303,6 +303,10 @@ public:
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
 
+  inline virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const {return solnPtr;};
+  inline virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const {return oldSolnPtr;};
+  inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
+
 protected:
   
   //! "Standard" trust region implementation

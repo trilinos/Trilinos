@@ -725,6 +725,30 @@ LOCA::MultiContinuation::ConstrainedGroup::getNewton() const
 {
   return *newtonVec;
 }
+  
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::MultiContinuation::ConstrainedGroup::getXPtr() const 
+{
+  return xVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::MultiContinuation::ConstrainedGroup::getFPtr() const 
+{
+  return fVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::MultiContinuation::ConstrainedGroup::getGradientPtr() const 
+{
+  return gradientVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::MultiContinuation::ConstrainedGroup::getNewtonPtr() const 
+{
+  return newtonVec;
+}
 
 double
 LOCA::MultiContinuation::ConstrainedGroup::getNormNewtonSolveResidual() const 

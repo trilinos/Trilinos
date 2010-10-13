@@ -112,6 +112,11 @@ namespace Stokhos {
       evaluate(const Teuchos::Array<value_type>& point,
 	       const Teuchos::Array<rvar_type>& random_variables) const;
 
+      //! Evaluate given eigenfunction at a point
+      value_type 
+      evaluate_eigenfunction(const Teuchos::Array<value_type>& point, 
+			     int i) const;
+
       //! Get eigenpairs
       const Teuchos::Array< ProductEigenPair<value_type> >&
       getEigenPairs() const;

@@ -15,7 +15,7 @@
 
 // Copyright 2001 Sandia Corporation, Albuquerque, NM.
 
-#ifndef stk_rebalance_ZoltanPartition_hpp    
+#ifndef stk_rebalance_ZoltanPartition_hpp
 #define stk_rebalance_ZoltanPartition_hpp
 
 #include <utility>
@@ -23,7 +23,8 @@
 #include <string>
 
 #include <Teuchos_ParameterList.hpp>
-#include <stk_rebalance/GeomDecomp.h>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_rebalance/GeomDecomp.hpp>
 
 //Forward declaration for pointer to a Zoltan structrue.
 struct Zoltan_Struct;
@@ -31,17 +32,23 @@ struct Zoltan_Struct;
 namespace stk {
 namespace rebalance {
 
+typedef Teuchos::ParameterList Parameters;
+
 class Zoltan : public GeomDecomp {
 
 public:
+
+  static const std::string zoltan_parameters_name();
+  static const std::string default_parameters_name();
+
+  void init_default_parameters();
+
 
   /**
    * Constructor
    */
 
-  static Zoltan create_default(const Teuchos::ParameterList & rebal_region_parameters);
-
-  explicit Zoltan(const std::string &Parameters_Name=GeomDecomp::default_parameters_name());
+  explicit Zoltan(ParallelMachine pm, const unsigned ndim, Teuchos::ParameterList & rebal_region_parameters, std::string parameters_name=default_parameters_name());
 
   void init(const std::vector< std::pair<std::string, std::string> >
             &dynamicLoadRebalancingParameters);
@@ -66,41 +73,41 @@ public:
                                         Teuchos::ParameterList &to);
 
   /**
-   * Register SIERRA Framework Zoltan call-back functions
-   */
-  Int register_callbacks();
+   * Register SIERRA Framework Zoltan call-back functions */
+  int register_callbacks();
 
-  virtual Int determine_new_partition (bool & RebalancingNeeded);
+  virtual int determine_new_partition (bool & RebalancingNeeded);
+
+  virtual int get_new_partition(std::vector<mesh::EntityProc> &new_partition)
+  { throw std::runtime_error("stk::rebalance::Zoltan::get_new_partition not yet implemented."); }
 
   /**
    * Evaluate the performance/quality of dynamic load rebalancing
    */
-  Int evaluate ( Int   print_stats,
-                 Int   *nobj,
-                 Real  *obj_wgt,
-                 Int   *ncuts,
-                 Real  *cut_wgt,
-                 Int   *nboundary,
-                 Int   *nadj         );
+  int evaluate ( int   print_stats,
+                 int   *nobj,
+                 double  *obj_wgt,
+                 int   *ncuts,
+                 double  *cut_wgt,
+                 int   *nboundary,
+                 int   *nadj         );
 
   /**
    * Decomposition Augmentation
    */
-  virtual Int point_assign( Real *coords,
-                            Int  *proc ) const;
+  virtual int point_assign( double    *coords,
+                            int  *proc ) const;
 
-  virtual Int box_assign ( Real min[],
-                           Real max[],
-                           std::vector<Int> &procs) const;
+  virtual int box_assign ( double min[],
+                           double max[],
+                           std::vector<int> &procs) const;
 
   /**
    * Inline functions to access private data
    */
 
-  Real zoltan_version()  const;
+  double zoltan_version()  const;
   const std::string & parameter_entry_name() const;
-
-  virtual Diag::Writer &verbose_print(Diag::Writer &dout) const;
 
   Zoltan_Struct * zoltan() {
     return zoltan_id;
@@ -108,18 +115,27 @@ public:
   const Zoltan_Struct * zoltan() const {
     return zoltan_id;
   }
+  unsigned spatial_dimension() const {
+    return m_spatial_dimension_;
+  }
 private:
   /** Zoltan load balancing struct       */
   struct    Zoltan_Struct *zoltan_id;
 
+  const     unsigned       m_spatial_dimension_;
   /** Name that was used to initialize this Zoltan_Struct
    * if the parameter constructor was used.
    */
   std::string  parameter_entry_Name;
 
+  static const std::string zoltanparametersname;
+  static const std::string defaultparametersname;
+  Parameters               m_default_parameters_;
+
+
 };
 
 }
-} // namespace sierra
+} // namespace stk
 
 #endif

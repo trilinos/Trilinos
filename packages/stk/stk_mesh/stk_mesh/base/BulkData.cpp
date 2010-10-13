@@ -115,18 +115,18 @@ void BulkData::assert_ok_to_modify( const char * method ) const
 }
 
 void BulkData::assert_entity_owner( const char * method ,
-                                    const Entity & e ,
+                                    const Entity & entity ,
                                     unsigned owner ) const
 {
-  const bool error_not_owner = owner != e.owner_rank() ;
+  const bool error_not_owner = owner != entity.owner_rank() ;
 
   if ( error_not_owner ) {
     std::ostringstream msg ;
     msg << method << "( " ;
-    print_entity_key( msg , m_mesh_meta_data , e.key() );
+    print_entity_key( msg , m_mesh_meta_data , entity.key() );
     msg << " ) FAILED" ;
 
-    msg << " : Owner( " << e.owner_rank()
+    msg << " : Owner( " << entity.owner_rank()
         << " ) != Required( " << owner << " )" ;
 
     throw std::runtime_error( msg.str() );
@@ -353,7 +353,7 @@ void verify_change_parts( const char * method ,
 }
 
 void BulkData::change_entity_parts(
-  Entity & e ,
+  Entity & entity ,
   const std::vector<Part*> & add_parts ,
   const std::vector<Part*> & remove_parts )
 {
@@ -361,9 +361,9 @@ void BulkData::change_entity_parts(
 
   assert_ok_to_modify( method );
 
-  assert_entity_owner( method , e , m_parallel_rank );
+  assert_entity_owner( method , entity , m_parallel_rank );
 
-  const unsigned entity_rank = e.entity_rank();
+  const unsigned entity_rank = entity.entity_rank();
   const unsigned undef_rank  = std::numeric_limits<unsigned>::max();
 
   // Transitive addition and removal:
@@ -377,7 +377,7 @@ void BulkData::change_entity_parts(
   for ( PartVector::const_iterator
         ia = add_parts.begin(); ia != add_parts.end() ; ++ia ) {
     quick_verify_check = quick_verify_check &&
-      quick_verify_change_part(e, *ia, entity_rank, undef_rank);
+      quick_verify_change_part(entity, *ia, entity_rank, undef_rank);
     a_parts.insert( a_parts.end(), (*ia)->supersets().begin(),
                                    (*ia)->supersets().end() );
   }
@@ -404,14 +404,14 @@ void BulkData::change_entity_parts(
     */
 
     quick_verify_check = quick_verify_check &&
-      quick_verify_change_part(e, *ir, entity_rank, undef_rank);
+      quick_verify_change_part(entity, *ir, entity_rank, undef_rank);
 
     if ( ! contain( a_parts , **ir ) ) {
       r_parts.push_back( *ir );
       for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
             cur_part != (*ir)->subsets().end() ;
             ++cur_part )
-        if ( e.bucket().member ( **cur_part ) )
+        if ( entity.bucket().member ( **cur_part ) )
           r_parts.push_back ( *cur_part );
     }
   }
@@ -422,18 +422,18 @@ void BulkData::change_entity_parts(
   // expect to see an exception thrown; otherwise, only do the full check in
   // debug mode because it incurs significant overhead.
   if ( ! quick_verify_check ) {
-    verify_change_parts( method , m_mesh_meta_data , e , a_parts );
-    verify_change_parts( method , m_mesh_meta_data , e , r_parts );
+    verify_change_parts( method , m_mesh_meta_data , entity , a_parts );
+    verify_change_parts( method , m_mesh_meta_data , entity , r_parts );
     throw std::logic_error("Expected throw from verify methods above.");
   }
   else {
 #ifndef NDEBUG
-    verify_change_parts( method , m_mesh_meta_data , e , a_parts );
-    verify_change_parts( method , m_mesh_meta_data , e , r_parts );
+    verify_change_parts( method , m_mesh_meta_data , entity , a_parts );
+    verify_change_parts( method , m_mesh_meta_data , entity , r_parts );
 #endif
   }
 
-  internal_change_entity_parts( e , a_parts , r_parts );
+  internal_change_entity_parts( entity , a_parts , r_parts );
 
   return ;
 }
@@ -494,13 +494,13 @@ void merge_in( std::vector<unsigned> & vec , const PartVector & parts )
 //  modification_end.
 
 void BulkData::internal_change_entity_parts(
-  Entity & e ,
+  Entity & entity ,
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
-  Bucket * const k_old = m_entity_repo.get_entity_bucket( e );
+  Bucket * const k_old = m_entity_repo.get_entity_bucket( entity );
 
-  const unsigned i_old = e.bucket_ordinal() ;
+  const unsigned i_old = entity.bucket_ordinal() ;
 
   if ( k_old && k_old->member_all( add_parts ) &&
               ! k_old->member_any( remove_parts ) ) {
@@ -545,7 +545,7 @@ void BulkData::internal_change_entity_parts(
 
   Bucket * k_new =
     m_bucket_repository.declare_bucket(
-        e.entity_rank(),
+        entity.entity_rank(),
         parts_total.size(),
         & parts_total[0] ,
         m_mesh_meta_data.get_fields()
@@ -561,27 +561,27 @@ void BulkData::internal_change_entity_parts(
   }
 
   // Set the new bucket
-  m_entity_repo.change_entity_bucket( *k_new, e, k_new->size() );
-  m_bucket_repository.add_entity_to_bucket( e, *k_new );
+  m_entity_repo.change_entity_bucket( *k_new, entity, k_new->size() );
+  m_bucket_repository.add_entity_to_bucket( entity, *k_new );
 
   // If changing buckets then remove the entity from the bucket,
   if ( k_old ) { m_bucket_repository.remove_entity( k_old , i_old ); }
 
   // Update the change counter to the current cycle.
-  m_entity_repo.set_entity_sync_count( e, m_sync_count );
+  m_entity_repo.set_entity_sync_count( entity, m_sync_count );
 
   // Propagate part changes through the entity's relations.
 
-  internal_propagate_part_changes( e , parts_removed );
+  internal_propagate_part_changes( entity , parts_removed );
 }
 
 //----------------------------------------------------------------------
 
-bool BulkData::destroy_entity( Entity * & e )
+bool BulkData::destroy_entity( Entity * & entity_in )
 {
   static const char method[] = "stk::mesh::BulkData::destroy_entity" ;
 
-  Entity & entity = *e ;
+  Entity & entity = *entity_in ;
 
   assert_ok_to_modify( method );
 
@@ -634,13 +634,13 @@ bool BulkData::destroy_entity( Entity * & e )
   m_bucket_repository.remove_entity( &orig_bucket , orig_bucket_ordinal );
 
   // Add destroyed entity to the transaction
-  // m_transaction_log.delete_entity ( *e );
+  // m_transaction_log.delete_entity ( *entity_in );
 
   // Set the calling entity-pointer to NULL;
   // hopefully the user-code will clean up any outstanding
   // references to this entity.
 
-  e = NULL ;
+  entity_in = NULL ;
 
   return true ;
 }

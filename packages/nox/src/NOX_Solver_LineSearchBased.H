@@ -139,9 +139,11 @@ public:
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
-
-  //! Return the line search step size from the current iteration
   virtual double getStepSize() const;
+
+  inline virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const {return solnPtr;};
+  inline virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const {return oldSolnPtr;};
+  inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
 
 protected:
   

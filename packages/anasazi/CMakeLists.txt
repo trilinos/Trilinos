@@ -49,6 +49,13 @@ ADD_OPTION_AND_DEFINE(
   "Enable TSQR (Tall Skinny QR factorization) support in Anasazi."
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+  ANASAZI_TEUCHOS_TIME_MONITOR
+  "Build with Teuchos TimeMonitors enabled."
+  "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
+
+
+
 #
 # C) Add the libraries, tests, and examples
 #

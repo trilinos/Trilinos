@@ -325,6 +325,34 @@ getNewton() const
 {
   return conGroup->getNewton();
 }
+  
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getXPtr() const 
+{
+  return conGroup->getXPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getFPtr() const 
+{
+  return conGroup->getFPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getGradientPtr() const 
+{
+  return conGroup->getGradientPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getNewtonPtr() const 
+{
+  return conGroup->getNewtonPtr();
+}
 
 double
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::

@@ -125,6 +125,7 @@ IF(PyTrilinos_ENABLE_Epetra)
     Epetra_NumPyIntVector.h
     Epetra_NumPyMultiVector.h
     Epetra_NumPySerialDenseMatrix.h
+    Epetra_NumPySerialSymDenseMatrix.h
     Epetra_NumPySerialDenseVector.h
     Epetra_NumPyVector.h
     Epetra_PyUtil.h
@@ -137,6 +138,7 @@ IF(PyTrilinos_ENABLE_Epetra)
     Epetra_NumPyIntVector.cpp
     Epetra_NumPyMultiVector.cpp
     Epetra_NumPySerialDenseMatrix.cpp
+    Epetra_NumPySerialSymDenseMatrix.cpp
     Epetra_NumPySerialDenseVector.cpp
     Epetra_NumPyVector.cpp
     Epetra_PyUtil.cpp

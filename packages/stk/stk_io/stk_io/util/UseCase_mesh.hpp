@@ -52,7 +52,7 @@ namespace stk {
 			     MPI_Comm comm,
 			     stk::mesh::MetaData &meta_data,
 			     stk::io::util::MeshData &mesh_data,
-			     bool hex_only);
+			     bool hex_only = false);
 
       void create_output_mesh(const std::string &mesh_filename,
 			      const std::string &mesh_extension,

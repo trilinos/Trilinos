@@ -89,6 +89,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_MpiComm.h"
 #endif
 #include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
@@ -102,9 +103,15 @@ example subdirectory of the PyTrilinos package:
 // Epetra python includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
+#include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 #endif
 
 // Teuchos Python utility code
@@ -196,18 +203,11 @@ example subdirectory of the PyTrilinos package:
 %include "Ifpack_ConfigDefs.h"
 
 ////////////////////////////
-// IFPACK factory support //
-////////////////////////////
-%newobject Ifpack::Create;
-%rename(Factory) Ifpack;
-%include "Ifpack.h"
-
-////////////////////////////
 // IFPACK_Version support //
 ////////////////////////////
-%rename(Version) Ifpack_Version;
 %include "Ifpack_Version.h"
 %pythoncode %{
+Version = Ifpack_Version
 __version__ = Version().split()[3]
 %}
 
@@ -223,6 +223,7 @@ __version__ = Version().split()[3]
 ///////////////////////////////////
 // IFPACK_Preconditioner support //
 ///////////////////////////////////
+%teuchos_rcp(Ifpack_Preconditioner)
 %ignore operator<<(ostream &, const Ifpack_Preconditioner &);
 %ignore Ifpack_Preconditioner::Condest() const;
 %rename(Preconditioner) Ifpack_Preconditioner;
@@ -244,6 +245,7 @@ __version__ = Version().split()[3]
 ///////////////////////
 // IFPACK_IC support //
 ///////////////////////
+%teuchos_rcp(Ifpack_IC)
 %ignore Ifpack_IC::Condest() const;
 %rename(IC) Ifpack_IC;
 %include "Ifpack_IC.h"
@@ -251,6 +253,7 @@ __version__ = Version().split()[3]
 ////////////////////////
 // IFPACK_ICT support //
 ////////////////////////
+%teuchos_rcp(Ifpack_ICT)
 %ignore Ifpack_ICT::Condest() const;
 %rename(ICT) Ifpack_ICT;
 %include "Ifpack_ICT.h"
@@ -258,6 +261,7 @@ __version__ = Version().split()[3]
 ////////////////////////
 // IFPACK_ILU support //
 ////////////////////////
+%teuchos_rcp(Ifpack_ILU)
 %ignore Ifpack_ILU::Condest() const;
 %rename(ILU) Ifpack_ILU;
 %include "Ifpack_ILU.h"
@@ -265,6 +269,7 @@ __version__ = Version().split()[3]
 /////////////////////////
 // IFPACK_ILUT support //
 /////////////////////////
+%teuchos_rcp(Ifpack_ILUT)
 %ignore Ifpack_ILUT::Condest() const;
 %rename(ILUT) Ifpack_ILUT;
 %include "Ifpack_ILUT.h"
@@ -272,6 +277,7 @@ __version__ = Version().split()[3]
 ////////////////////////////////////
 // IFPACK_PointRelaxation support //
 ////////////////////////////////////
+%teuchos_rcp(Ifpack_PointRelaxation)
 %ignore Ifpack_PointRelaxation::Condest() const;
 %rename(PointRelaxation) Ifpack_PointRelaxation;
 %include "Ifpack_PointRelaxation.h"
@@ -279,9 +285,17 @@ __version__ = Version().split()[3]
 ///////////////////////////
 // IFPACK_Amesos support //
 ///////////////////////////
+%teuchos_rcp(Ifpack_Amesos)
 %ignore Ifpack_Amesos::Condest() const;
 %rename(Amesos) Ifpack_Amesos;
 %include "Ifpack_Amesos.h"
+
+////////////////////////////
+// IFPACK factory support //
+////////////////////////////
+%newobject Ifpack::Create;
+%rename(Factory) Ifpack;
+%include "Ifpack.h"
 
 // Turn off the exception handling
 %exception;

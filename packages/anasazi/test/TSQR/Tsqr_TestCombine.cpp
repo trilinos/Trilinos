@@ -161,10 +161,13 @@ namespace TSQR {
 #else
 	const bool testComplex = false;
 #endif // HAVE_TSQR_COMPLEX
+	const bool printFieldNames = params.printFieldNames;
 	const bool simulateSequentialTsqr = false;
 	const bool debug = false;
-	TSQR::Test::verifyCombine (numRows, numCols, testComplex, 
-				   simulateSequentialTsqr, debug);
+
+	using TSQR::Test::verifyCombine;
+	verifyCombine (numRows, numCols, testComplex, printFieldNames, 
+		       simulateSequentialTsqr, debug);
       }
 
       /// \brief Parse command-line options for this test
@@ -323,6 +326,7 @@ main (int argc, char *argv[])
 
       if (params.benchmark)
 	TSQR::Trilinos::Test::benchmark (out, params);
+
       // We allow the same run to do both benchmark and verify.
       if (params.verify)
 	TSQR::Trilinos::Test::verify (out, params);

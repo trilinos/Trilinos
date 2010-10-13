@@ -193,13 +193,10 @@ using namespace NOX::Epetra;
 %import "Teuchos.i"
 
 // Support for Teuchos::RCPs
-%teuchos_rcp_typemaps(NOX::Epetra::LinearSystem)
-%teuchos_rcp_typemaps(NOX::Epetra::LinearSystemAztecOO)
-%teuchos_rcp_typemaps(NOX::Epetra::Scaling)
-%teuchos_rcp_typemaps(NOX::Epetra::VectorSpace)
-%teuchos_rcp_typemaps(Epetra_CrsGraph)
-%teuchos_rcp_typemaps(Epetra_MapColoring)
-%teuchos_rcp_typemaps(Epetra_Operator)
+%teuchos_rcp(NOX::Epetra::LinearSystem)
+%teuchos_rcp(NOX::Epetra::LinearSystemAztecOO)
+%teuchos_rcp(NOX::Epetra::Scaling)
+%teuchos_rcp(NOX::Epetra::VectorSpace)
 
 //////////////
 // Typemaps //
@@ -207,12 +204,15 @@ using namespace NOX::Epetra;
 
 // Make Epetra_Vector and NOX::Epetra::Vector input arguments
 // interchangeable
-%typemap(in) NOX::Epetra::Vector & (void* argp=0, int res=0, int new_nev=0)
+%typemap(in) NOX::Epetra::Vector &
+(void* argp=0, int res=0, Teuchos::RCP< Epetra_NumPyVector > tempshared, bool cleanup=false)
 {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
   if (!SWIG_IsOK(res))
   {
-    res = SWIG_ConvertPtr($input, &argp, $descriptor(Epetra_Vector*), %convertptr_flags);
+    int newmem = 0;
+    res = SWIG_ConvertPtrAndOwn($input, &argp, $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+				%convertptr_flags, &newmem);
     if (!SWIG_IsOK(res))
     {
       %argument_fail(res, "$type", $symname, $argnum);
@@ -221,8 +221,21 @@ using namespace NOX::Epetra;
     {
       %argument_nullref("$type", $symname, $argnum);
     }
-    $1 = new NOX::Epetra::Vector(*%reinterpret_cast( argp, Epetra_Vector*));
-    new_nev = 1;
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    {
+      tempshared = *%reinterpret_cast(argp, Teuchos::RCP< Epetra_NumPyVector > *);
+      delete %reinterpret_cast(argp, Teuchos::RCP< Epetra_NumPyVector > *);
+      $1 = new NOX::Epetra::Vector(Teuchos::rcp_dynamic_cast< Epetra_Vector >(tempshared),
+				   NOX::Epetra::Vector::CreateView);
+      cleanup = true;
+    }
+    else
+    {
+      tempshared = *%reinterpret_cast(argp, Teuchos::RCP< Epetra_NumPyVector > *);
+      $1 = new NOX::Epetra::Vector(Teuchos::rcp_dynamic_cast< Epetra_Vector >(tempshared),
+				   NOX::Epetra::Vector::CreateView);
+      cleanup = true;
+    }
   }
   else
   {
@@ -231,21 +244,20 @@ using namespace NOX::Epetra;
 }
 %typecheck(1190) NOX::Epetra::Vector &
 {
-  static void * argp = 0;
-  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags))
-    ? 1 : 0;
+  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, 0, $descriptor, 0)) ? 1 : 0;
   if (!$1)
-    $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor(Epetra_Vector*),
-                                         %convertptr_flags)) ? 1 : 0;
+    $1 = SWIG_CheckState(SWIG_ConvertPtrAndOwn($input, 0,
+					       $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+					       %convertptr_flags, 0)) ? 1 : 0;
 }
 %typemap(freearg) NOX::Epetra::Vector &
 {
-  if (new_nev$argnum) delete $1;
+  if (cleanup$argnum) delete $1;
 }
 
 // Convert NOX::Abstract::Vector return arguments to Epetra.Vectors
-%typemap(out) NOX::Abstract::Vector & (NOX::Epetra::Vector* nevResult  = NULL,
-				       Epetra_NumPyVector*  enpvResult = NULL)
+%typemap(out) NOX::Abstract::Vector &
+(NOX::Epetra::Vector* nevResult  = NULL)
 {
   nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL)
@@ -255,17 +267,21 @@ using namespace NOX::Epetra;
   }
   else
   {
-    enpvResult = new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
-    $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
+    Epetra_NumPyVector enpvResult(View, nevResult->getEpetraVector(), 0);
+    Teuchos::RCP< Epetra_NumPyVector > *smartresult = 
+      new Teuchos::RCP< Epetra_NumPyVector >(enpvResult, bool($owner));
+    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+				   $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+				   SWIG_POINTER_OWN));
   }
 }
 
-// Convert Epetra_Vector return arguments to Epetra.Vectors
-%typemap(out) Epetra_Vector & (Epetra_NumPyVector* enpvResult = NULL)
-{
-  enpvResult = new Epetra_NumPyVector(View, *$1, 0);
-  $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
-}
+// Convert Epetra_Vector return arguments to Epetra.Vectors (now provided by Epetra_Base.i)
+// %typemap(out) Epetra_Vector & (Epetra_NumPyVector* enpvResult = NULL)
+// {
+//   enpvResult = new Epetra_NumPyVector(View, *$1, 0);
+//   $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
+// }
 
 // Convert NOX::Epetra::LinearSystem objects to
 // NOX::Epetra::LinearSystemAztecOO
@@ -278,13 +294,17 @@ using namespace NOX::Epetra;
   if (nelsaResult == NULL)
   {
     //If we cannot downcast then return the NOX::Epetra::LinearSystem
-    $result = SWIG_NewPointerObj((void*)nelsPtr, $descriptor(NOX::Epetra::LinearSystem*),
-				 %convertptr_flags);
+    %set_output(SWIG_NewPointerObj(%as_voidptr(&$1),
+				   $descriptor(Teuchos::RCP< NOX::Epetra::LinearSystem > *),
+				   SWIG_POINTER_OWN));
   }
   else
   {
-    $result = SWIG_NewPointerObj((void*)nelsaResult, $descriptor(NOX::Epetra::LinearSystemAztecOO*),
-				 %convertptr_flags);
+    Teuchos::RCP< NOX::Epetra::LinearSystemAztecOO > *smartresult =
+      new Teuchos::RCP< NOX::Epetra::LinearSystemAztecOO >(nelsaResult);
+    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+				   $descriptor(Teuchos::RCP< NOX::Epetra::LinearSystemAztecOO > *),
+				   SWIG_POINTER_OWN));
   }
 }
 
@@ -297,13 +317,17 @@ using namespace NOX::Epetra;
   if (nelsaResult == NULL)
   {
     //If we cannot downcast then return the NOX::Epetra::LinearSystem
-    $result = SWIG_NewPointerObj((void*)nelsPtr, $descriptor(NOX::Epetra::LinearSystem*),
-				 %convertptr_flags);
+    %set_output(SWIG_NewPointerObj(%as_voidptr(&$1),
+				   $descriptor(Teuchos::RCP< NOX::Epetra::LinearSystem > *),
+				   SWIG_POINTER_OWN));
   }
   else
   {
-    $result = SWIG_NewPointerObj((void*)nelsaResult, $descriptor(NOX::Epetra::LinearSystemAztecOO*),
-				 %convertptr_flags);
+    Teuchos::RCP< const NOX::Epetra::LinearSystemAztecOO > *smartresult =
+      new Teuchos::RCP< const NOX::Epetra::LinearSystemAztecOO >(nelsaResult);
+    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+				   $descriptor(Teuchos::RCP< NOX::Epetra::LinearSystemAztecOO > *),
+				   SWIG_POINTER_OWN));
   }
 }
 
@@ -317,7 +341,14 @@ using namespace NOX::Epetra;
 // functionality I need without causing whatever confusion is at risk
 // here.
 %include "Epetra_Base.i"
+%teuchos_rcp_epetra_numpy(MultiVector)
+%teuchos_rcp_epetra_numpy(Vector)
+%teuchos_rcp_epetra_numpy(IntSerialDenseVector)
+%teuchos_rcp_epetra_numpy(SerialDenseVector)
+%teuchos_rcp_epetra_numpy(SerialDenseMatrix)
 %include "Epetra_Maps.i"
+%include "Epetra_Dist.i"
+%include "Epetra_Graphs.i"
 %include "Epetra_Operators.i"
 
 // EpetraExt import
@@ -333,6 +364,7 @@ using namespace NOX::Epetra;
 //////////////////////////////
 // NOX.Epetra.Group support //
 //////////////////////////////
+%teuchos_rcp(NOX::Epetra::Group)
 %rename(Group_None) NOX::Epetra::Group::None;
 %include "NOX_Epetra_Group.H"
 
@@ -346,11 +378,13 @@ using namespace NOX::Epetra;
 /////////////////////////////////////////
 // NOX.Epetra.FiniteDifference support //
 /////////////////////////////////////////
+%teuchos_rcp(NOX::Epetra::FiniteDifference)
 %include "NOX_Epetra_FiniteDifference.H"
 
 /////////////////////////////////////////////////
 // NOX.Epetra.FiniteDifferenceColoring support //
 /////////////////////////////////////////////////
+%teuchos_rcp(NOX::Epetra::FiniteDifferenceColoring)
 namespace NOX
 {
 namespace Epetra
@@ -358,35 +392,27 @@ namespace Epetra
 %extend FiniteDifferenceColoring
 {
   FiniteDifferenceColoring(Teuchos::ParameterList & printingParams,
-			   Interface::Required & i,
+			   const Teuchos::RCP< Interface::Required > & i,
 			   const NOX::Epetra::Vector & initialGuess,
-			   Epetra_CrsGraph & rawGraph,
+			   const Teuchos::RCP< Epetra_CrsGraph > & rawGraph,
 			   bool parallelColoring = false,
 			   bool distance1 = false,
-			   double beta = 1.0e-6, double alpha = 1.0e-4)
+			   double beta = 1.0e-6,
+			   double alpha = 1.0e-4)
   {
-    // Wrap the interface and CRS graph in reference counters
-    RCP<Interface::Required> i_ptr     = rcp(&i,        false);
-    RCP<Epetra_CrsGraph>     graph_ptr = rcp(&rawGraph, false);
     // Construct the coloring algorithm functor and generate the color map
-    EpetraExt::CrsGraph_MapColoring *mapColor =
-      new EpetraExt::CrsGraph_MapColoring();
-    RCP<Epetra_MapColoring> colorMap = rcp(&(*mapColor)(rawGraph));
+    EpetraExt::CrsGraph_MapColoring *mapColor = new EpetraExt::CrsGraph_MapColoring();
+    const Teuchos::RCP< Epetra_MapColoring > colorMap = Teuchos::rcp(&(*mapColor)(*rawGraph));
     // Construct the color index functor and generate the column indexes
     EpetraExt::CrsGraph_MapColoringIndex *mapColorIndex =
       new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
-    RCP<std::vector<Epetra_IntVector> > columns =
-      rcp(&(*mapColorIndex)(rawGraph));
+    const Teuchos::RCP< std::vector< Epetra_IntVector > > columns =
+      Teuchos::rcp(&(*mapColorIndex)(*rawGraph));
     // Construct the FiniteDifferenceColoring object
-    FiniteDifferenceColoring *fdc = new FiniteDifferenceColoring(printingParams,
-								 i_ptr,
-								 initialGuess,
-								 graph_ptr,
-								 colorMap, columns,
-								 parallelColoring,
-								 distance1, beta,
-								 alpha);
-    // Delete the temporary functors
+    FiniteDifferenceColoring *fdc =
+      new FiniteDifferenceColoring(printingParams, i, initialGuess, rawGraph, colorMap,
+				   columns, parallelColoring, distance1, beta, alpha);
+    // Delete temporary functors
     delete mapColor;
     delete mapColorIndex;
     // Return the pointer to FiniteDifferenceColoring object
@@ -401,6 +427,7 @@ namespace Epetra
 ///////////////////////////////////
 // NOX.Epetra.MatrixFree support //
 ///////////////////////////////////
+%teuchos_rcp(NOX::Epetra::MatrixFree)
 %include "NOX_Epetra_MatrixFree.H"
 
 ////////////////////////////////
@@ -431,6 +458,7 @@ namespace Epetra
 ////////////////////////////////////////////////
 // NOX.Epetra.ModelEvaluatorInterface support //
 ////////////////////////////////////////////////
+%teuchos_rcp(NOX::Epetra::ModelEvaluatorInterface)
 %import "EpetraExt.i"
 namespace NOX
 {
@@ -746,7 +774,7 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
 
     # Return the default Solver
     solver = PyTrilinos.NOX.Solver.buildSolver(group, statusTest, nlParams)
-    solver.group      = group        ### By adding group, statusTest and
+    #solver.group      = group        ### By adding group, statusTest and
     solver.statusTest = statusTest   ### nlParams as attributes to the Solver
     solver.nlParams   = nlParams     ### variable, we ensure that they do not
                                      ### get destroyed.  This is a workaround for

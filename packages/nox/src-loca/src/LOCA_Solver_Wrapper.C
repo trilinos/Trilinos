@@ -108,10 +108,22 @@ LOCA::Solver::Wrapper::getSolutionGroup() const
   return *solnGrpPtr;
 }
 
+Teuchos::RCP< const NOX::Abstract::Group >
+LOCA::Solver::Wrapper::getSolutionGroupPtr() const
+{
+  return solnGrpPtr;
+}
+
 const NOX::Abstract::Group& 
 LOCA::Solver::Wrapper::getPreviousSolutionGroup() const
 {
   return *oldSolnGrpPtr;
+}
+
+Teuchos::RCP< const NOX::Abstract::Group >
+LOCA::Solver::Wrapper::getPreviousSolutionGroupPtr() const
+{
+  return oldSolnGrpPtr;
 }
 
 int 
@@ -124,6 +136,12 @@ const Teuchos::ParameterList&
 LOCA::Solver::Wrapper::getList() const
 {
   return constSolverPtr->getList();
+}
+
+Teuchos::RCP< const Teuchos::ParameterList >
+LOCA::Solver::Wrapper::getListPtr() const
+{
+  return constSolverPtr->getListPtr();
 }
 
 void 

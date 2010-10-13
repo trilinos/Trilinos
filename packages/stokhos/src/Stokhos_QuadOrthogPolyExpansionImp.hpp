@@ -86,7 +86,9 @@ unary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Polynomial Evaluation");
+#endif
 
   // Evaluate input
   blas.GEMV(Teuchos::TRANS, pa, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
@@ -95,7 +97,9 @@ unary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Function Evaluation");
+#endif
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
@@ -104,7 +108,9 @@ unary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Polynomial Integration");
+#endif
 
   // Integrate
   blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
@@ -138,7 +144,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Polynomial Evaluation");
+#endif
 
   // Evaluate input
   blas.GEMV(Teuchos::TRANS, pa, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
@@ -149,7 +157,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Function Evaluation");
+#endif
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
@@ -158,7 +168,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Polynomial Integration");
+#endif
 
   // Integrate
   blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
@@ -191,7 +203,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Polynomial Evaluation");
+#endif
 
   // Evaluate input
   blas.GEMV(Teuchos::TRANS, pb, nqp, 1.0, &qv[0], sz, b.coeff(), 1, 0.0,
@@ -200,7 +214,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Function Evaluation");
+#endif
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
@@ -209,7 +225,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Polynomial Integration");
+#endif
 
   // Integrate
   blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
@@ -242,7 +260,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Polynomial Evaluation");
+#endif
 
   // Evaluate input
   blas.GEMV(Teuchos::TRANS, pa, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
@@ -251,7 +271,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Function Evaluation");
+#endif
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
@@ -260,7 +282,9 @@ binary_op(const FuncT& func,
   }
 
   {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Polynomial Integration");
+#endif
 
   // Integrate
   blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,

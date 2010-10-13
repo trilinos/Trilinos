@@ -36,8 +36,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_FECrsMatrix.h"
 
-using Teuchos::RCP;
-using Teuchos::rcp;
 using namespace MLAPI;
 
 class PyMatrix : public MLAPI::Operator
@@ -54,31 +52,31 @@ public:
     // domain map
     if (ColSpace.IsLinear())
     {
-      ColMap_ = rcp(new Epetra_Map(-1, ColSpace.GetNumMyElements(), 0,
-				   GetEpetra_Comm()));
+      ColMap_ = Teuchos::rcp(new Epetra_Map(-1, ColSpace.GetNumMyElements(), 0,
+					    GetEpetra_Comm()));
     }
     else
     {
-      RCP<Epetra_IntSerialDenseVector> IMap = ColSpace.GetRCPMyGlobalElements();
-      ColMap_ = rcp(new Epetra_Map(-1, IMap->Length(), IMap->Values(), 0, 
-				   GetEpetra_Comm()));
+      Teuchos::RCP<Epetra_IntSerialDenseVector> IMap = ColSpace.GetRCPMyGlobalElements();
+      ColMap_ = Teuchos::rcp(new Epetra_Map(-1, IMap->Length(), IMap->Values(), 0, 
+					    GetEpetra_Comm()));
     }
 
     // range map
     if (RowSpace.IsLinear())
     {
-      RowMap_ = rcp(new Epetra_Map(-1, RowSpace.GetNumMyElements(), 0,
-				   GetEpetra_Comm()));
+      RowMap_ = Teuchos::rcp(new Epetra_Map(-1, RowSpace.GetNumMyElements(), 0,
+					    GetEpetra_Comm()));
     }
     else
     {
-      RCP<Epetra_IntSerialDenseVector> IMap = RowSpace.GetRCPMyGlobalElements();
-      RowMap_ = rcp(new Epetra_Map(-1, IMap->Length(), IMap->Values(), 0, 
-				   GetEpetra_Comm()));
+      Teuchos::RCP<Epetra_IntSerialDenseVector> IMap = RowSpace.GetRCPMyGlobalElements();
+      RowMap_ = Teuchos::rcp(new Epetra_Map(-1, IMap->Length(), IMap->Values(), 0, 
+					    GetEpetra_Comm()));
     }
 
     // I suppose that RowMap == RowMatrixRowMap
-    Matrix_ = rcp(new Epetra_FECrsMatrix(Copy, *(RowMap_.get()), 0));
+    Matrix_ = Teuchos::rcp(new Epetra_FECrsMatrix(Copy, *(RowMap_.get()), 0));
     
     // It seems safer to me to add zero diagonal elements
     for (int i = 0 ; i < ColMap_->NumMyElements() ; ++i)
@@ -133,9 +131,9 @@ private:
   Space ColSpace_;
   //! Row space.
   Space RowSpace_;
-  RCP<Epetra_Map> ColMap_;
-  RCP<Epetra_Map> RowMap_;
-  RCP<Epetra_FECrsMatrix> Matrix_;
+  Teuchos::RCP<Epetra_Map> ColMap_;
+  Teuchos::RCP<Epetra_Map> RowMap_;
+  Teuchos::RCP<Epetra_FECrsMatrix> Matrix_;
 
 }; // PyMatrix
 

@@ -54,9 +54,9 @@ using Teuchos::RCP;
 
 %import "Teuchos.i"
 
-%teuchos_rcp_typemaps(LOCA::MultiContinuation::AbstractGroup)
-%teuchos_rcp_typemaps(LOCA::MultiContinuation::FiniteDifferenceGroup)
-%teuchos_rcp_typemaps(LOCA::MultiContinuation::NaturalGroup)
+%teuchos_rcp(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp(LOCA::MultiContinuation::NaturalGroup)
 
 // Import base class declarations
 %import "NOX.Abstract.i"

@@ -1,6 +1,10 @@
 #ifndef NOX_EPETRA_LINEARSYSTEMSGJACOBI_H
 #define NOX_EPETRA_LINEARSYSTEMSGJACOBI_H
 
+#include "Stokhos_ConfigDefs.h"
+
+#ifdef HAVE_STOKHOS_NOX
+
 #include "NOX_Common.H"
 
 #include "NOX_Epetra_LinearSystem.H"	// base class
@@ -173,5 +177,7 @@ namespace NOX {
     
   } // namespace Epetra
 } // namespace NOX
+
+#endif
 
 #endif

@@ -25,6 +25,15 @@ PACKAGE_ADD_EXECUTABLE(
  SOURCES ${ExoIICTests}
 )
 
+find_program (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP
+	     NAME ncdump
+	     PATHS 
+	        $ENV{ACCESS}/bin
+	        $ENV{NETCDF_DIR}/bin
+	        $ENV{NETCDF_DIR}/ncdump
+		ENV PATH
+	     )
+	     
 PACKAGE_ADD_TEST(
 	ExoIICTests
 	NAME CreateEdgeFaceWithConcats
@@ -51,6 +60,7 @@ ENDIF()
 # ===============================================
 
 
+IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
 SET( cbind_OLDTESTS
   testwt
   testwtd
@@ -110,3 +120,7 @@ PACKAGE_ADD_ADVANCED_TEST(
  COMM serial		      
  FINAL_PASS_REGULAR_EXPRESSION 
 )
+ELSE()
+  MESSAGE(STATUS
+      "WARNING: ${PACKAGE_NAME}: Exodus units tests will not be run due to failure finding ncdump executable.")
+ENDIF()

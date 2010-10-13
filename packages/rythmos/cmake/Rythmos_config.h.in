@@ -11,3 +11,7 @@
 
 /* Define for whether Sacado is available */
 #cmakedefine Rythmos_ENABLE_Sacado
+
+/* Flag to enable timings with Teuchos Timers */
+#cmakedefine  ENABLE_RYTHMOS_TIMERS
+

@@ -28,6 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Stokhos_ConfigDefs.h"
 #include "Stokhos_SGPreconditionerFactory.hpp"
 #include "Stokhos_MeanBasedPreconditioner.hpp"
 #include "Stokhos_ApproxGaussSeidelPreconditioner.hpp"
@@ -70,12 +71,14 @@ build(const Teuchos::RCP<const Epetra_Map>& base_map,
     sg_prec = Teuchos::rcp(new Stokhos::ApproxJacobiPreconditioner(
 			     base_map, sg_map, prec_factory, params));
   }
+#ifdef HAVE_STOKHOS_NOX
   else if (prec_method == "Gauss-Seidel") {
     Teuchos::RCP<NOX::Epetra::LinearSystem> det_solver = 
       params->get< Teuchos::RCP<NOX::Epetra::LinearSystem> >("Deterministic Solver");
     sg_prec = Teuchos::rcp(new Stokhos::GaussSeidelPreconditioner(
 			     base_map, sg_map, det_solver, params));
   }
+#endif
   else if (prec_method == "Kronecker Product") {
     Teuchos::RCP<Stokhos::PreconditionerFactory> mean_prec_factory = 
       buildMeanPreconditionerFactory();

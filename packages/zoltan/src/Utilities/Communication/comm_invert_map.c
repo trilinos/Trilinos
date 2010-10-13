@@ -56,10 +56,13 @@ MPI_Comm  comm)			/* communicator */
     int      *msg_count;	/* binary flag for procs I send to (nprocs) */
     int      *counts;		/* argument to Reduce_scatter */
     int       nrecvs=0;		/* number of messages I'll receive */
-    int       i;		/* loop counter */
+    int       i,j;		/* loop counter */
     MPI_Status status;		/* return MPI argument */
+    MPI_Request *req = NULL;
     int       local_out_of_mem; /* Temporary variable to work-around a compiler
                                    bug; see comments below. */
+    int max_nrecvs;
+    int *sendbuf=NULL, *recvbuf=NULL;
 
     msg_count = (int *) ZOLTAN_MALLOC(nprocs * sizeof(int));
     counts = (int *) ZOLTAN_MALLOC(nprocs * sizeof(int));
@@ -103,6 +106,15 @@ MPI_Comm  comm)			/* communicator */
     MPI_Reduce(msg_count, counts, nprocs, MPI_INT, MPI_SUM, 0, comm);
     MPI_Scatter(counts, 1, MPI_INT, &nrecvs, 1, MPI_INT, 0, comm);
 
+    max_nrecvs = 0;
+    if (my_proc == 0){
+      for (i=0; i < nprocs; i++){
+        if (counts[i] > max_nrecvs)
+          max_nrecvs = counts[i];
+      }
+    } 
+    MPI_Bcast(&max_nrecvs, 1, MPI_INT, 0, comm);
+
     ZOLTAN_FREE(&counts);
     ZOLTAN_FREE(&msg_count);
 
@@ -111,34 +123,61 @@ MPI_Comm  comm)			/* communicator */
 
     /* Note: these mallocs should never fail as prior frees are larger. */
 
-    /* TODO - should we do this with an alltoallv if we have many receives?,
-     *   spose all my receives arrive before I call MPI_Recv? 
-     */
+    if (max_nrecvs <= MPI_RECV_LIMIT){
 
-    /* Send the lengths of all my real messages to their receivers. */
-    for (i = 0; i < nsends + self_msg; i++) {
-        if (procs_to[i] != my_proc) {
-	    MPI_Send((void *) &lengths_to[i], 1, MPI_INT, procs_to[i], tag, comm);
+      req = (MPI_Request *)ZOLTAN_MALLOC(sizeof(MPI_Request) * nrecvs);
+      if (!req && nrecvs){
+        ZOLTAN_FREE(&lengths_from);
+        ZOLTAN_FREE(&procs_from);
+        return(ZOLTAN_MEMERR);
+      }
+  
+      /* Note: I'm counting on having a unique tag or some of my incoming */
+      /*       messages might get confused with others. */
+  
+      for (i=0; i < nrecvs; i++){
+        MPI_Irecv(lengths_from + i, 1, MPI_INT, MPI_ANY_SOURCE, tag, comm, req + i);
+      }
+  
+      for (i=0; i < nsends+self_msg; i++){
+        MPI_Send(lengths_to + i, 1, MPI_INT, procs_to[i], tag, comm);
+      }
+  
+      for (i=0; i < nrecvs; i++){
+        MPI_Wait(req + i, &status);
+        procs_from[i] = status.MPI_SOURCE;
+      }
+  
+      ZOLTAN_FREE(&req);
+    }
+    else{   /* some large HPC machines have a limit on number of posted receives */
+      sendbuf = (int *)ZOLTAN_CALLOC(sizeof(int) , nprocs);
+      recvbuf = (int *)ZOLTAN_MALLOC(sizeof(int) * nprocs);
+
+      if (!sendbuf || !recvbuf){
+	ZOLTAN_FREE(&lengths_from);
+	ZOLTAN_FREE(&procs_from);
+	return(ZOLTAN_MEMERR);
+      }
+
+      for (i=0; i < nsends + self_msg; i++){
+        sendbuf[procs_to[i]] = lengths_to[i];
+      }
+
+      MPI_Alltoall(sendbuf, 1,  MPI_INT, recvbuf, 1, MPI_INT, comm);
+
+      ZOLTAN_FREE(&sendbuf);
+
+      for (i=0, j=0; i < nprocs; i++){
+        if (recvbuf[i] > 0){
+          lengths_from[j] = recvbuf[i];
+          procs_from[j] = i;
+          if (++j == nrecvs) break;
         }
-	else {
-	    /* Always put self stuff at end. */
-	    lengths_from[nrecvs - 1] = lengths_to[i];
-	    procs_from[nrecvs - 1] = my_proc;
-	}
+      }
+      ZOLTAN_FREE(&recvbuf);
     }
 
-    /* Now receive the lengths of all my messages from their senders. */
-    /* Note that proc/length_from lists are ordered by sequence msgs arrive. */
-    for (i = 0; i < nrecvs - self_msg; i++) {
-	MPI_Recv((void *) &lengths_from[i], 1, MPI_INT, MPI_ANY_SOURCE, tag,
-	comm, &status);
-	procs_from[i] = status.MPI_SOURCE;
-    }
-
-    /* Note: I'm counting on having a unique tag or some of my incoming */
-    /*       messages might get confused with others. */
-
-    
     /* Sort recv lists to keep execution deterministic (e.g. for debugging) */
 
     Zoltan_Comm_Sort_Ints(procs_from, lengths_from, nrecvs);

@@ -43,6 +43,9 @@ PyObject* Finalize();
 // General ignore directive
 %ignore *::operator=;
 
+// Forward declare typemaps for Teuchos::RCP< Epetra_BlockMap >
+%teuchos_rcp(Epetra_BlockMap)
+
 /////////////////////////
 // Epetra_Comm support //
 /////////////////////////
@@ -92,6 +95,7 @@ non-zero return code is converted to an exception."
 %rename(Comm) Epetra_Comm;
 // Several of the Epetra_Comm methods require the same coding pattern
 // for their wrappers and can be collapsed into a macro
+%fragment("NumPy_Fragments"); // These following macros depend upon all the NumPy fragments
 %define %epetra_comm_reduce_method(methodName)
 PyObject* methodName(PyObject* partialObj)
 {

@@ -41,6 +41,7 @@
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_TypeStrings.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 namespace PHX {
   
@@ -139,6 +140,10 @@ namespace PHX {
     providerRequirements;
 
     std::vector<std::string> providerNames;
+
+    // Timers used when configured with Phalanx_ENABLE_TEUCHOS_TIME_MONITOR.
+    std::vector<Teuchos::RCP<Teuchos::Time> > evalTimers;
+
     //@}
 
     

@@ -42,13 +42,17 @@
 #include "Epetra_NumPyFEVector.h"
 %}
 
-//////////////
-// Typemaps //
-//////////////
-%epetra_array_typemaps(IntVector  )
-%epetra_array_typemaps(MultiVector)
-%epetra_array_typemaps(Vector     )
-%epetra_array_typemaps(FEVector   )
+// PyTrilinos configuration
+%include "PyTrilinos_config.h"
+
+///////////////////////////////////////////////////////////////////
+// Handle the following Epetra_* and Epetra_NumPy* classes using //
+// Teuchos::RCP<>                                                //
+///////////////////////////////////////////////////////////////////
+%teuchos_rcp_epetra_numpy(IntVector  )
+%teuchos_rcp_epetra_numpy(MultiVector)
+%teuchos_rcp_epetra_numpy(Vector     )
+%teuchos_rcp_epetra_numpy(FEVector   )
 
 //////////////////////////////
 // Epetra_IntVector support //
@@ -62,6 +66,7 @@
 ////////////////////////////////
 // Epetra_MultiVector support //
 ////////////////////////////////
+%ignore Epetra_MultiVector::operator()(int);
 %ignore Epetra_MultiVector::operator()(int) const;
 %ignore Epetra_MultiVector::ExtractCopy(double *, int   ) const;
 %ignore Epetra_MultiVector::ExtractCopy(double **       ) const;
@@ -138,17 +143,62 @@ Epetra_NumPyIntVector::Values
   Epetra_NumPyIntVector(PyObject * arg1)
   {
     int                     res   = 0;
-    Epetra_BlockMap       * bmap  = NULL;
     Epetra_IntVector      * eiv   = NULL;
     Epetra_NumPyIntVector * enpiv = NULL;
+    Epetra_BlockMap       * bmap  = NULL;
+
+#ifdef HAVE_TEUCHOS
+    Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
+    void * vtemp  = NULL;
+    int    newmem = 0;
+    res = SWIG_ConvertPtrAndOwn(arg1, &vtemp, SWIGTYPE_p_Teuchos__RCPT_Epetra_BlockMap_t,
+				0, &newmem);
+    if (vtemp)
+    {
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+      {
+	rcpbmap = *reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp);
+	delete reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp);
+	bmap = const_cast< Epetra_BlockMap * >(rcpbmap.get());
+      }
+      else
+      {
+	bmap = const_cast< Epetra_BlockMap * >(reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp)->get());
+      }
+    }
+#else
     res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
+#endif
+
     if (SWIG_CheckState(res))
     {
       enpiv = new Epetra_NumPyIntVector(*bmap);
     }
     else
     {
+#ifdef HAVE_TEUCHOS
+      Teuchos::RCP< const Epetra_IntVector > rcpeiv;
+      vtemp = NULL;
+      newmem = 0;
+      res = SWIG_ConvertPtrAndOwn(arg1, &vtemp, SWIGTYPE_p_Teuchos__RCPT_Epetra_IntVector_t, 
+				  0, &newmem);
+      if (vtemp)
+      {
+	if (newmem & SWIG_CAST_NEW_MEMORY) 
+	{
+	  rcpeiv = *reinterpret_cast< Teuchos::RCP< const Epetra_IntVector > * >(vtemp);
+	  delete reinterpret_cast< Teuchos::RCP< const Epetra_IntVector > * >(vtemp);
+	  eiv = const_cast< Epetra_IntVector * >(rcpeiv.get());
+	}
+	else
+	{
+	  eiv = const_cast< Epetra_IntVector * >(reinterpret_cast< Teuchos::RCP< const Epetra_IntVector > * >(vtemp)->get());
+        }
+      }
+#else
       res = SWIG_ConvertPtr(arg1, (void**)&eiv, SWIGTYPE_p_Epetra_IntVector, 0);
+#endif
+
       if (SWIG_CheckState(res))
       {
 	enpiv = new Epetra_NumPyIntVector(*eiv);
@@ -173,10 +223,33 @@ Epetra_NumPyIntVector::Values
   Epetra_NumPyIntVector(PyObject * arg1, PyObject * arg2)
   {
     int                     res     = 0;
-    Epetra_BlockMap       * bmap    = NULL;
     bool                    zeroOut = true;
     Epetra_NumPyIntVector * enpiv   = NULL;
+    Epetra_BlockMap       * bmap    = NULL;
+
+#ifdef HAVE_TEUCHOS
+    Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
+    void * vtemp  = NULL;
+    int    newmem = 0;
+    res = SWIG_ConvertPtrAndOwn(arg1, &vtemp, SWIGTYPE_p_Teuchos__RCPT_Epetra_BlockMap_t,
+				0, &newmem);
+    if (vtemp)
+    {
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+      {
+        rcpbmap = *reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp);
+        delete reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp);
+        bmap = const_cast< Epetra_BlockMap * >(rcpbmap.get());
+      }
+      else
+      {
+        bmap = const_cast< Epetra_BlockMap * >(reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp)->get());
+      }
+    }
+#else
     res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
+#endif
+
     if (SWIG_CheckState(res))
     {
       if (PyBool_Check(arg2))
@@ -623,17 +696,61 @@ Epetra_NumPyVector::SumIntoMyValues
   Epetra_NumPyVector(PyObject * arg1)
   {
     int                  res  = 0;
-    Epetra_BlockMap    * bmap = NULL;
     Epetra_Vector      * ev   = NULL;
     Epetra_NumPyVector * enpv = NULL;
+    Epetra_BlockMap    * bmap = NULL;
+
+#ifdef HAVE_TEUCHOS
+    Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
+    void * vtemp  = NULL;
+    int    newmem = 0;
+    res = SWIG_ConvertPtrAndOwn(arg1, &vtemp, SWIGTYPE_p_Teuchos__RCPT_Epetra_BlockMap_t,
+				0, &newmem);
+    if (vtemp)
+    {
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+      {
+        rcpbmap = *reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp);
+        delete reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp);
+        bmap = const_cast< Epetra_BlockMap * >(rcpbmap.get());
+      }
+      else
+      {
+        bmap = const_cast< Epetra_BlockMap * >(reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp)->get());
+      }
+    }
+#else
     res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
+#endif
+
     if (SWIG_CheckState(res))
     {
       enpv = new Epetra_NumPyVector(*bmap);
     }
     else
     {
+#ifdef HAVE_TEUCHOS
+      Teuchos::RCP< const Epetra_Vector > rcpev;
+      vtemp  = NULL;
+      newmem = 0;
+      res = SWIG_ConvertPtrAndOwn(arg1, &vtemp, SWIGTYPE_p_Teuchos__RCPT_Epetra_Vector_t,
+				  0, &newmem);
+      if (vtemp)
+      {
+	if (newmem & SWIG_CAST_NEW_MEMORY)
+	{
+	  rcpev = *reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(vtemp);
+	  delete reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(vtemp);
+	  ev = const_cast< Epetra_Vector * >(rcpev.get());
+	}
+	else
+	{
+	  ev = const_cast< Epetra_Vector * >(reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(vtemp)->get());
+	}
+      }
+#else
       res = SWIG_ConvertPtr(arg1, (void**)&ev, SWIGTYPE_p_Epetra_Vector, 0);
+#endif
       if (SWIG_CheckState(res))
       {
 	enpv = new Epetra_NumPyVector(*ev);
@@ -658,12 +775,35 @@ Epetra_NumPyVector::SumIntoMyValues
   Epetra_NumPyVector(PyObject * arg1, PyObject * arg2)
   {
     int                  res     = 0;
-    Epetra_BlockMap    * bmap    = NULL;
     bool                 zeroOut = true;
+    Epetra_BlockMap    * bmap    = NULL;
     Epetra_Vector      * ev      = NULL;
     Epetra_NumPyVector * enpv    = NULL;
     Epetra_DataAccess    cv;
+
+#ifdef HAVE_TEUCHOS
+    Teuchos::RCP< const Epetra_BlockMap > rcpbmap;
+    void * vtemp  = NULL;
+    int    newmem = 0;
+    res = SWIG_ConvertPtrAndOwn(arg1, &vtemp, SWIGTYPE_p_Teuchos__RCPT_Epetra_BlockMap_t,
+				0, &newmem);
+    if (vtemp)
+    {
+      if (newmem & SWIG_CAST_NEW_MEMORY)
+      {
+        rcpbmap = *reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp);
+        delete reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp);
+        bmap = const_cast< Epetra_BlockMap * >(rcpbmap.get());
+      }
+      else
+      {
+        bmap = const_cast< Epetra_BlockMap * >(reinterpret_cast< Teuchos::RCP< const Epetra_BlockMap > * >(vtemp)->get());
+      }
+    }
+#else
     res = SWIG_ConvertPtr(arg1, (void**)&bmap, SWIGTYPE_p_Epetra_BlockMap, 0);
+#endif
+
     if (SWIG_CheckState(res))
     {
       if (PyBool_Check(arg2))
@@ -681,7 +821,28 @@ Epetra_NumPyVector::SumIntoMyValues
       if (PyInt_Check(arg1))
       {
 	cv  = static_cast< Epetra_DataAccess >(PyInt_AsLong(arg1));
+#ifdef HAVE_TEUCHOS
+	Teuchos::RCP< const Epetra_Vector > rcpev;
+	vtemp  = NULL;
+	newmem = 0;
+	res = SWIG_ConvertPtrAndOwn(arg2, &vtemp, SWIGTYPE_p_Teuchos__RCPT_Epetra_Vector_t,
+				    0, &newmem);
+	if (vtemp)
+	{
+	  if (newmem & SWIG_CAST_NEW_MEMORY)
+	  {
+	    rcpev = *reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(vtemp);
+	    delete reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(vtemp);
+	    ev = const_cast< Epetra_Vector * >(rcpev.get());
+	  }
+	  else
+	  {
+	    ev = const_cast< Epetra_Vector * >(reinterpret_cast< Teuchos::RCP< const Epetra_Vector > * >(vtemp)->get());
+	  }
+	}
+#else
 	res = SWIG_ConvertPtr(arg2, (void**)&ev, SWIGTYPE_p_Epetra_Vector, 0);
+#endif
 	if (SWIG_CheckState(res))
 	{
 	  enpv = new Epetra_NumPyVector(cv, *ev);

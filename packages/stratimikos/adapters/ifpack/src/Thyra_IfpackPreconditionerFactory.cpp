@@ -131,7 +131,9 @@ void IfpackPreconditionerFactory::initializePrec(
   using Teuchos::implicit_cast;
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
+#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
+#endif
   const Teuchos::RCP<Teuchos::FancyOStream> out       = this->getOStream();
   const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
@@ -205,7 +207,9 @@ void IfpackPreconditionerFactory::initializePrec(
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       *out << "\nCreating the initial Ifpack_Preconditioner object of type \'"<<Ifpack::toString(precType_)<<"\' ...\n";
     timer.start(true);
+#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor creationTimeMonitor(*creationTimer);
+#endif
     // Create the initial preconditioner
     ifpack_precOp = rcp(
       ::Ifpack::Create(
@@ -240,7 +244,9 @@ void IfpackPreconditionerFactory::initializePrec(
   {
     if(out.get() && implicit_cast<int>(verbLevel) >= implicit_cast<int>(Teuchos::VERB_LOW))
       *out << "\nComputing the factorization of the preconditioner ...\n";
+#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor factorizationTimeMonitor(*factorizationTimer);
+#endif
     timer.start(true);
     TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
     timer.stop();
@@ -414,9 +420,11 @@ std::string IfpackPreconditionerFactory::description() const
 void IfpackPreconditionerFactory::initializeTimers()
 {
   if(!overallTimer.get()) {
+#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
     overallTimer       = Teuchos::TimeMonitor::getNewTimer("IfpackPF");
     creationTimer      = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Creation");
     factorizationTimer = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Factorization");
+#endif
   }
 }
 

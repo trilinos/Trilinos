@@ -74,17 +74,17 @@ namespace {
 }
 
 Ioss::Field::Field() :
-  name_(""), rawCount_(0), transCount_(0), type_(INVALID), role_(INTERNAL), 
-  rawStorage_(NULL), transStorage_(NULL), size_(0)
+  name_(""), rawCount_(0), transCount_(0), size_(0), index_(0),
+  type_(INVALID), role_(INTERNAL), rawStorage_(NULL), transStorage_(NULL)
 { rawStorage_ = transStorage_ = Ioss::VariableType::factory("invalid"); }
 
 Ioss::Field::Field(const std::string &name,
 		   const Ioss::Field::BasicType type,
 		   const std::string &storage,
 		   const Ioss::Field::RoleType role,
-		   size_t value_count) :
-  name_(name), rawCount_(value_count), transCount_(value_count),
-  type_(type), role_(role), rawStorage_(NULL), transStorage_(NULL), size_(0)
+		   size_t value_count, size_t index) :
+  name_(name), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
+  type_(type), role_(role), rawStorage_(NULL), transStorage_(NULL)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage);
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
@@ -95,9 +95,9 @@ Ioss::Field::Field(const std::string &name,
 		   const std::string &storage,
 		   int copies, 
 		   const Ioss::Field::RoleType role,
-		   size_t value_count) :
-  name_(name), rawCount_(value_count), transCount_(value_count),
-  type_(type), role_(role), rawStorage_(NULL), transStorage_(NULL), size_(0)
+		   size_t value_count, size_t index) :
+  name_(name), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
+  type_(type), role_(role), rawStorage_(NULL), transStorage_(NULL)
 {
   rawStorage_ = transStorage_ = Ioss::VariableType::factory(storage, copies);
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
@@ -107,18 +107,19 @@ Ioss::Field::Field(const std::string &name,
 		   const Ioss::Field::BasicType type,
 		   const Ioss::VariableType *storage,
 		   const Ioss::Field::RoleType role,
-		   size_t value_count) :
-  name_(name), rawCount_(value_count), transCount_(value_count),
-  type_(type), role_(role), rawStorage_(storage), transStorage_(storage), size_(0)
+		   size_t value_count, size_t index) :
+  name_(name), rawCount_(value_count), transCount_(value_count), size_(0), index_(index),
+  type_(type), role_(role), rawStorage_(storage), transStorage_(storage)
 {
   size_ = internal_get_size(type_, rawCount_, rawStorage_);
 }
 
 Ioss::Field::Field(const Ioss::Field& from)
   : name_(from.name_), rawCount_(from.rawCount_), transCount_(from.transCount_),
+    size_(from.size_), index_(from.index_),
     type_(from.type_), role_(from.role_),
     rawStorage_(from.rawStorage_), transStorage_(from.transStorage_), 
-    size_(from.size_), transforms_(from.transforms_)
+    transforms_(from.transforms_)
 {}
 
 Ioss::Field& Ioss::Field::operator=(const Field& from)
@@ -126,11 +127,12 @@ Ioss::Field& Ioss::Field::operator=(const Field& from)
   name_ = from.name_;
   rawCount_ = from.rawCount_;
   transCount_ = from.transCount_;
+  size_ = from.size_;
+  index_ = from.index_;
   type_  = from.type_;
   role_ = from.role_;
   rawStorage_ = from.rawStorage_;
   transStorage_ = from.transStorage_;
-  size_ = from.size_;
   transforms_ = from.transforms_;
   return *this;
 }

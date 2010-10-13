@@ -22,9 +22,84 @@ extern "C" {
 #include "all_allo_const.h"
 #include "hier.h"
 #include "zoltan_comm.h"
+#include "key_params.h"
 
 #include <stdlib.h>
 #include <ctype.h>
+
+static PARAM_VARS graph_type_params[] = {
+  { "GRAPH_PACKAGE", NULL, "STRING", 0 },
+  { "ORDER_TYPE", NULL, "STRING", 0 },
+  { "GRAPH_SYMMETRIZE", NULL, "STRING", 0 },
+  { "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
+  { "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
+  { "GRAPH_BUILD_TYPE", NULL, "STRING"},       
+  { "ORDER_METHOD", NULL, "STRING", 0 },
+  { "USE_ORDER_INFO", NULL, "INT", 0 },
+  {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
+  {"PHG_MULTILEVEL",                  NULL,  "INT", 0},
+  {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
+  {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
+  {"CHECK_GRAPH",                     NULL,  "INT",    0},
+  {"CHECK_HYPERGRAPH",                NULL,  "INT",    0},
+  {"PHG_NPROC_VERTEX",                NULL,  "INT",    0},
+  {"PHG_NPROC_EDGE",                  NULL,  "INT",    0},
+  {"PHG_COARSENING_LIMIT",            NULL,  "INT",    0},
+  {"PHG_COARSENING_NCANDIDATE",       NULL,  "INT",    0},
+  {"PHG_COARSENING_METHOD",           NULL,  "STRING", 0},
+  {"PHG_COARSENING_METHOD_FAST",      NULL,  "STRING", 0},
+  {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
+  {"PHG_EDGE_SCALING",                NULL,  "INT",    0},
+  {"PHG_VERTEX_SCALING",              NULL,  "INT",    0},
+  {"PHG_COARSEPARTITION_METHOD",      NULL,  "STRING", 0},
+  {"PHG_REFINEMENT_METHOD",           NULL,  "STRING", 0},
+  {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
+  {"PHG_REFINEMENT_LOOP_LIMIT",       NULL,  "INT",    0},
+  {"PHG_REFINEMENT_MAX_NEG_MOVE",     NULL,  "INT",    0},
+  {"PHG_REFINEMENT_QUALITY",          NULL,  "FLOAT",  0},
+  {"PHG_USE_TIMERS",                  NULL,  "INT",    0},
+  {"USE_TIMERS",                      NULL,  "INT",    0},
+  {"PHG_EDGE_SIZE_THRESHOLD",         NULL,  "FLOAT",  0},
+  {"PHG_MATCH_EDGE_SIZE_THRESHOLD",   NULL,  "INT",    0},
+  {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},
+  {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
+  {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
+  {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},
+  {"PHG_PROCESSOR_REDUCTION_LIMIT",   NULL,  "FLOAT",  0},
+  {"PHG_REPART_MULTIPLIER",           NULL,  "FLOAT",  0},
+  {"PATOH_ALLOC_POOL0",               NULL,  "INT",    0},
+  {"PATOH_ALLOC_POOL1",               NULL,  "INT",    0},
+  {"PHG_KEEP_TREE",                   NULL,  "INT",    0},
+  { "PARMETIS_METHOD", NULL, "STRING", 0 },
+  { "PARMETIS_OUTPUT_LEVEL", NULL, "INT", 0 },
+  { "PARMETIS_SEED", NULL, "INT", 0 },
+  { "PARMETIS_ITR", NULL, "DOUBLE", 0 },
+  { "PARMETIS_COARSE_ALG", NULL, "INT", 0 },
+  { "PARMETIS_FOLD", NULL, "INT", 0 },
+  { NULL, NULL, NULL, 0 } };
+
+static PARAM_VARS geometric_type_params[] = {
+        { "RCB_OVERALLOC", NULL, "DOUBLE", 0 },
+        { "CHECK_GEOM", NULL, "INT", 0 },
+        { "RCB_OUTPUT_LEVEL", NULL, "INT", 0 },
+        { "RCB_LOCK_DIRECTIONS", NULL, "INT", 0 },
+        { "RCB_SET_DIRECTIONS", NULL, "INT", 0 },
+        { "RCB_RECTILINEAR_BLOCKS", NULL, "INT", 0 },
+        { "OBJ_WEIGHTS_COMPARABLE", NULL, "INT", 0 },
+        { "RCB_MULTICRITERIA_NORM", NULL, "INT", 0 },
+        { "RCB_MAX_ASPECT_RATIO", NULL, "DOUBLE", 0 },
+        { "AVERAGE_CUTS", NULL, "INT", 0 },
+        { "RANDOM_PIVOTS", NULL, "INT", 0 },
+        { "RCB_RECOMPUTE_BOX", NULL, "INT", 0 },
+        { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
+        { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
+        { "RIB_OVERALLOC", NULL, "DOUBLE", 0 },
+        { "RIB_OUTPUT_LEVEL", NULL, "INT", 0 },
+        { "AVERAGE_CUTS", NULL, "INT", 0 },
+        { "REDUCE_DIMENSIONS", NULL, "INT", 0 },
+        { "DEGENERATE_RATIO", NULL, "DOUBLE", 0 },
+        {"FINAL_OUTPUT", NULL,  "INT",    0},
+        { NULL, NULL, NULL, 0 } };
 
 static char *make_platform_name_string();
 static void view_hierarchy_specification(zoltan_platform_specification *spec, int rank,
@@ -106,31 +181,37 @@ static int Zoltan_Hier_Assist_Part_Number(void *data, int level, int *ierr)
   return spec->my_part[level];
 }
 
-static void Zoltan_Hier_Assist_Method(void *data, int level, struct Zoltan_Struct *zz, int *ierr)
+static void Zoltan_Hier_Assist_Method(void *data, int level, struct Zoltan_Struct *to, int *ierr)
 {
-  struct Zoltan_Struct *original_zz;
+  struct Zoltan_Struct *from;
   *ierr = ZOLTAN_OK;
 
-  original_zz = (struct Zoltan_Struct *)data;
+  from = (struct Zoltan_Struct *)data;
 
-  Zoltan_Copy_To(zz, original_zz);
-
-  if ((original_zz->Get_Num_Edges != NULL || original_zz->Get_Num_Edges_Multi != NULL) &&
-           (original_zz->Get_Edge_List != NULL || original_zz->Get_Edge_List_Multi != NULL)) {
-
-    Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
-    Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
-#ifdef ZOLTAN_PARMETIS
-    Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "PARMETIS");
-#else
-#ifdef ZOLTAN_PTSCOTCH
-    Zoltan_Set_Param(zz, "GRAPH_PACKAGE", "SCOTCH");
-#endif
-#endif
+  if (from->LB.Imb_Tol_Len > 0){
+    memcpy(to->LB.Imbalance_Tol, from->LB.Imbalance_Tol, sizeof(float) * from->LB.Imb_Tol_Len);
   }
-  else if (original_zz->Get_Num_Geom != NULL &&
-      (original_zz->Get_Geom != NULL || original_zz->Get_Geom_Multi != NULL)) {
-    Zoltan_Set_Param(zz, "LB_METHOD", "RIB");
+
+  to->Debug_Proc = 0;
+
+  strcpy(to->LB.Approach, from->LB.Approach);
+
+  if (from->Seed > 0){
+    to->Seed = from->Seed;
+    Zoltan_Srand(from->Seed, NULL);
+  }
+
+  if ((from->Get_Num_Edges != NULL || from->Get_Num_Edges_Multi != NULL) &&
+           (from->Get_Edge_List != NULL || from->Get_Edge_List_Multi != NULL)) {
+
+    Zoltan_Filter_Params(to, from, graph_type_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Set_Param(to, "LB_METHOD", "GRAPH");
+  }
+  else if (from->Get_Num_Geom != NULL &&
+      (from->Get_Geom != NULL || from->Get_Geom_Multi != NULL)) {
+
+    Zoltan_Filter_Params(to, from, geometric_type_params, from->Debug_Level, to->Proc, 0);
+    Zoltan_Set_Param(to, "LB_METHOD", "RIB");   /* TODO figure out RIB, RCB or HSFC? */
   }
   else{
     *ierr = ZOLTAN_FATAL;
@@ -667,6 +748,14 @@ int Zoltan_Hier(
 		  MPI_MAX, hpp.hier_comm);
     hpp.num_parts++;
 
+    if (hpp.num_parts == 1){
+      if (hpp.output_level >= HIER_DEBUG_ALL) {
+        if (zz->Proc == 0)
+          printf("HIER: Level %d skipped because no partitioning required.\n",hpp.level);
+      }
+      continue;
+    }
+
     if (hpp.output_level >= HIER_DEBUG_ALL || 
 	zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
       printf("HIER: Proc %d computing part %d of %d at level %d\n",
@@ -696,6 +785,7 @@ int Zoltan_Hier(
 
     /* just copy debug level to child Zoltan_Struct, use can override
        by setting params of the hierzz in the Get_Hier_Method callback */
+
     hpp.hierzz->Debug_Level = zz->Debug_Level;
     hpp.hierzz->Timer = zz->Timer;
     hpp.hierzz->Deterministic = zz->Deterministic;
@@ -1008,7 +1098,7 @@ static int Zoltan_Hier_Initialize_Params(ZZ *zz, HierPartParams *hpp) {
 char *yo = "Zoltan_Hier_Initialize_Params";
 int assist, i, j;
 int num_cpus, num_siblings;
-char *c;
+char *c=NULL;
 char platform[MAX_PARAM_STRING_LEN+1];
 char node_desc[MAX_PARAM_STRING_LEN+1];
 char machine_desc[MAX_PARAM_STRING_LEN+1];
@@ -1811,7 +1901,7 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
 				     int wgt_dim, float *ewgts, int *ierr) {
   HierPartParams *hpp = (HierPartParams *)data;
   ZOLTAN_ID_TYPE gid = global_id[0];
-  int local_index;
+  int local_index, offset, nadj;
   int i, j, edge, edge_proc_orig_rank, edge_proc_hier_rank, num_adj;
   indextype next_adj;
   char *yo = "Zoltan_Hier_Edge_List_Fn";
@@ -1833,15 +1923,16 @@ static void Zoltan_Hier_Edge_List_Fn(void *data, int num_gid_entries,
   local_index = get_local_index(hpp, (indextype)gid);
   if (local_index != -1) {
     edge = 0;
-    for (i=0; i<hpp->xadj[local_index+1] - hpp->xadj[local_index]; i++) {
-      edge_proc_orig_rank =
-	current_proc_of_gno(hpp, hpp->adjncy[hpp->xadj[local_index]+i]);
+    offset = hpp->xadj[local_index];
+    nadj = hpp->xadj[local_index+1] - offset;
+    for (i=0; i<nadj; i++,offset++) {
+      edge_proc_orig_rank = current_proc_of_gno(hpp, hpp->adjncy[offset]);
       edge_proc_hier_rank = orig_rank_to_hier_rank(hpp, edge_proc_orig_rank);
       if (edge_proc_hier_rank != -1) {
-	nbor_global_id[edge] = (ZOLTAN_ID_TYPE)hpp->adjncy[hpp->xadj[local_index]+i];
+	nbor_global_id[edge] = (ZOLTAN_ID_TYPE)hpp->adjncy[offset];
 	nbor_procs[edge] = edge_proc_hier_rank;
 	for (j=0; j<wgt_dim; j++) {
-	  ewgts[edge*wgt_dim+j] = hpp->ewgts[local_index*wgt_dim+j];
+	  ewgts[edge*wgt_dim+j] = hpp->ewgts[offset*wgt_dim+j];
 	}
 	edge++;
       }
@@ -2822,6 +2913,10 @@ char *msg;
 
   return msg;
 }
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

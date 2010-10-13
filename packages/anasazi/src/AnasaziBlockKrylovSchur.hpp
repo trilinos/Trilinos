@@ -561,12 +561,14 @@ namespace Anasazi {
     tester_(tester),
     orthman_(ortho),
     // timers, counters
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     timerOp_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Operation Op*x")),
     timerSortRitzVal_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Sorting Ritz values")),
     timerCompSF_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Computing Schur form")),
     timerSortSF_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Sorting Schur form")),
     timerCompRitzVec_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Computing Ritz vectors")),
     timerOrtho_(Teuchos::TimeMonitor::getNewTimer("BlockKrylovSchur::Orthogonalization")),
+#endif
     count_ApplyOp_(0),
     // internal data
     blockSize_(0),
@@ -882,7 +884,9 @@ namespace Anasazi {
 
       // remove auxVecs from newV and normalize newV
       if (auxVecs_.size() > 0) {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+#endif
         
         Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalize(*newV,auxVecs_);
@@ -890,7 +894,9 @@ namespace Anasazi {
                             "Anasazi::BlockKrylovSchur::initialize(): couldn't generate initial basis of full rank." );
       }
       else {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+#endif
 
         int rank = orthman_->normalize(*newV);
         TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
@@ -986,7 +992,9 @@ namespace Anasazi {
 
       // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOp_ );
+#endif
         OPT::Apply(*Op_,*Vprev,*Vnext);
         count_ApplyOp_ += blockSize_;
       }
@@ -996,7 +1004,9 @@ namespace Anasazi {
       
       // Remove all previous Krylov-Schur basis vectors and auxVecs from Vnext
       {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+#endif
         
         // Get a view of all the previous vectors
         std::vector<int> prevind(lclDim);
@@ -1139,7 +1149,9 @@ namespace Anasazi {
         // Compute AV      
         lclAV = MVT::Clone(*V_,curDim_);
         {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor lcltimer( *timerOp_ );
+#endif
           OPT::Apply(*Op_,*lclV,*lclAV);
         }
         
@@ -1220,7 +1232,9 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>  
   void BlockKrylovSchur<ScalarType,MV,OP>::computeRitzVectors()
   {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor LocalTimer(*timerCompRitzVec_);
+#endif
 
     TEST_FOR_EXCEPTION(numRitzVecs_==0, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::computeRitzVectors(): no Ritz vectors were required from this solver.");
@@ -1383,7 +1397,9 @@ namespace Anasazi {
   void BlockKrylovSchur<ScalarType,MV,OP>::computeSchurForm( const bool sort )
   {
     // local timer
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor LocalTimer(*timerCompSF_);
+#endif
 
     // Check to see if the dimension of the factorization is greater than zero.
     if (curDim_) {
@@ -1523,7 +1539,9 @@ namespace Anasazi {
           // Sort the Ritz values.
           //
           {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
             Teuchos::TimeMonitor LocalTimer2(*timerSortRitzVal_);
+#endif
             int i=0;
             if (problem_->isHermitian()) {
               //
@@ -1586,7 +1604,9 @@ namespace Anasazi {
                                                           std::vector<int>& order ) 
   {
     // local timer
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor LocalTimer(*timerSortSF_);
+#endif
     //
     //---------------------------------------------------
     // Reorder real Schur factorization, remember to add one to the indices for the

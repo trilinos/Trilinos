@@ -156,35 +156,67 @@ using Teuchos::RCP;
   }
 }
 
+// Downcast NOX::Abstract::Group return arguments to NOX::Epetra::Group,
+// if possible
+#ifdef HAVE_NOX_EPETRA
+%typemap(out) const NOX::Abstract::Group & (NOX::Epetra::Group* negResult = NULL)
+{
+  negResult = dynamic_cast< NOX::Epetra::Group* >(const_cast< NOX::Abstract::Group* >($1));
+  if (negResult)
+  {
+    Teuchos::RCP< NOX::Epetra::Group > *smartresult = new
+      Teuchos::RCP< NOX::Epetra::Group >(negResult, bool($owner));
+    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+				   $descriptor(Teuchos::RCP< NOX::Epetra::Group > *),
+				   SWIG_POINTER_OWN));
+  }
+  else
+  {
+    // If we cannot downcast, then return the NOX::Abstract::Group
+    Teuchos::RCP< NOX::Abstract::Group > *smartresult =
+      new Teuchos::RCP< NOX::Abstract::Group >($1, bool($owner));
+    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+				   $descriptor(Teuchos::RCP< NOX::Abstract::Group > * ),
+				   SWIG_POINTER_OWN));
+  }
+}
+#endif
+
 //////////////////////////////////
 // NOX::Solver::Generic support //
 //////////////////////////////////
+%ignore *::getSolutionGroup;
+%ignore *::getPreviousSolutionGroup;
+%ignore *::getList;
+%rename(getSolutionGroup        ) *::getSolutionGroupPtr;
+%rename(getPreviousSolutionGroup) *::getPreviousSolutionGroupPtr;
+%rename(getList                 ) *::getListPtr;
+%teuchos_rcp(NOX::Solver::Generic)
 %include "NOX_Solver_Generic.H"
-%teuchos_rcp_typemaps(NOX::Solver::Generic)
 
 //////////////////////////////////////////
 // NOX::Solver::LineSearchBased support //
 //////////////////////////////////////////
+%teuchos_rcp(NOX::Solver::LineSearchBased)
 %include "NOX_Solver_LineSearchBased.H"
-%teuchos_rcp_typemaps(NOX::Solver::LineSearchBased)
 
 ///////////////////////////////////////////
 // NOX::Solver::TrustRegionBased support //
 ///////////////////////////////////////////
+%teuchos_rcp(NOX::Solver::TrustRegionBased)
 %include "NOX_Solver_TrustRegionBased.H"
-%teuchos_rcp_typemaps(NOX::Solver::TrustRegionBased)
 
 //////////////////////////////////////////////////
 // NOX::Solver::InexactTrustRegionBased support //
 //////////////////////////////////////////////////
+%teuchos_rcp(NOX::Solver::InexactTrustRegionBased)
 %include "NOX_Solver_InexactTrustRegionBased.H"
-%teuchos_rcp_typemaps(NOX::Solver::InexactTrustRegionBased)
 
 //////////////////////////////////////
 // NOX::Solver::TensorBased support //
 //////////////////////////////////////
+%teuchos_rcp(NOX::Solver::TensorBased)
 %include "NOX_Solver_TensorBased.H"
-%teuchos_rcp_typemaps(NOX::Solver::TensorBased)
 
 //////////////////////////////////////
 // NOX::Solver::buildSolver support //
@@ -200,47 +232,61 @@ using Teuchos::RCP;
 %inline
 {
   PyObject *
-    myBuildSolver(const Teuchos::RCP<NOX::Abstract::Group>     & grp,
-		  const Teuchos::RCP<NOX::StatusTest::Generic> & tests,
-		  const Teuchos::RCP<Teuchos::ParameterList>   & params)
+    myBuildSolver(const Teuchos::RCP< NOX::Abstract::Group     > & grp,
+		  const Teuchos::RCP< NOX::StatusTest::Generic > & tests,
+		  const Teuchos::RCP< Teuchos::ParameterList   > & params)
   {
     // SWIG type queries
     static swig_type_info * swig_NSLSB_ptr  =
-      SWIG_TypeQuery("NOX::Solver::LineSearchBased*");
+      SWIG_TypeQuery("Teuchos::RCP< NOX::Solver::LineSearchBased > *");
     static swig_type_info * swig_NSTRB_ptr  =
-      SWIG_TypeQuery("NOX::Solver::TrustRegionBased*");
+      SWIG_TypeQuery("Teuchos::RCP< NOX::Solver::TrustRegionBased > *");
     static swig_type_info * swig_NSITRB_ptr =
-      SWIG_TypeQuery("NOX::Solver::InexactTrustRegionBased*");
+      SWIG_TypeQuery("Teuchos::RCP< NOX::Solver::InexactTrustRegionBased > *");
     static swig_type_info * swig_NSTB_ptr   =
-      SWIG_TypeQuery("NOX::Solver::TensorBased*");
+      SWIG_TypeQuery("Teuchos::RCP< NOX::Solver::TensorBased > *");
     // Build a NOX::Solver::Generic object via the buildSolver factory
-    Teuchos::RCP<NOX::Solver::Generic> rcp_solver =
-      NOX::Solver::buildSolver(grp, tests, params);
-    Teuchos::Ptr<NOX::Solver::Generic> solver_ptr = rcp_solver.release();
+    Teuchos::RCP< NOX::Solver::Generic > rcp_solver = NOX::Solver::buildSolver(grp, tests, params);
     // Try to downcast to a derived class
     {
-      NOX::Solver::LineSearchBased * result =
-	reinterpret_cast<NOX::Solver::LineSearchBased*>(solver_ptr.get());
-      if (result)
-	return SWIG_NewPointerObj(result, swig_NSLSB_ptr, 1);
+      Teuchos::RCP< NOX::Solver::LineSearchBased > result =
+	Teuchos::rcp_dynamic_cast< NOX::Solver::LineSearchBased >(rcp_solver);
+      if (!result.is_null())
+      {
+	Teuchos::RCP< NOX::Solver::LineSearchBased > *smartresult =
+	  new Teuchos::RCP< NOX::Solver::LineSearchBased >(result);
+	return SWIG_NewPointerObj((void*)smartresult, swig_NSLSB_ptr, 1);
+      }
     }
     {
-      NOX::Solver::TrustRegionBased * result =
-	reinterpret_cast<NOX::Solver::TrustRegionBased*>(solver_ptr.get());
-      if (result)
-	return SWIG_NewPointerObj(result, swig_NSTRB_ptr, 1);
+      Teuchos::RCP< NOX::Solver::TrustRegionBased > result =
+	Teuchos::rcp_dynamic_cast< NOX::Solver::TrustRegionBased >(rcp_solver);
+      if (!result.is_null())
+      {
+	Teuchos::RCP< NOX::Solver::TrustRegionBased > *smartresult =
+	  new Teuchos::RCP< NOX::Solver::TrustRegionBased >(result);
+	return SWIG_NewPointerObj((void*)smartresult, swig_NSTRB_ptr, 1);
+      }
     }
     {
-      NOX::Solver::InexactTrustRegionBased * result =
-	reinterpret_cast<NOX::Solver::InexactTrustRegionBased*>(solver_ptr.get());
-      if (result)
-	return SWIG_NewPointerObj(result, swig_NSITRB_ptr, 1);
+      Teuchos::RCP< NOX::Solver::InexactTrustRegionBased > result =
+	Teuchos::rcp_dynamic_cast< NOX::Solver::InexactTrustRegionBased >(rcp_solver);
+      if (!result.is_null())
+      {
+	Teuchos::RCP< NOX::Solver::InexactTrustRegionBased > *smartresult =
+	  new Teuchos::RCP< NOX::Solver::InexactTrustRegionBased >(result);
+	return SWIG_NewPointerObj((void*)smartresult, swig_NSITRB_ptr, 1);
+      }
     }
     {
-      NOX::Solver::TensorBased * result =
-	reinterpret_cast<NOX::Solver::TensorBased*>(solver_ptr.get());
-      if (result)
-	return SWIG_NewPointerObj(result, swig_NSTB_ptr, 1);
+      Teuchos::RCP< NOX::Solver::TensorBased > result =
+	Teuchos::rcp_dynamic_cast< NOX::Solver::TensorBased >(rcp_solver);
+      if (!result.is_null())
+      {
+	Teuchos::RCP< NOX::Solver::TensorBased > *smartresult =
+	  new Teuchos::RCP< NOX::Solver::TensorBased >(result);
+	return SWIG_NewPointerObj((void*)smartresult, swig_NSTB_ptr, 1);
+      }
     }
     PyErr_SetString(PyExc_RuntimeError, "NOX::Solver::buildSolver returned unrecognized "
 		    "derivative of NOX::Solver::Generic");

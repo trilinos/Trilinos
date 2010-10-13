@@ -92,7 +92,9 @@ namespace Belos {
 	label_( label )
     {
         std::string orthoLabel = label_ + ": Orthogonalization";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
         timerOrtho_ = Teuchos::TimeMonitor::getNewTimer( orthoLabel );
+#endif
     }    
 
     //! Destructor
@@ -336,7 +338,9 @@ namespace Belos {
     if (label != label_) {
       label_ = label;
       std::string orthoLabel = label_ + ": Orthogonalization";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerOrtho_ = Teuchos::TimeMonitor::getNewTimer(orthoLabel);
+#endif
     }
   }
 
@@ -376,7 +380,9 @@ namespace Belos {
                                     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
                                     Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
     
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+#endif
 
     ScalarType    ONE  = SCT::one();
     ScalarType    ZERO  = SCT::zero();
@@ -487,7 +493,9 @@ namespace Belos {
                                 MV &X, Teuchos::RCP<MV> MX, 
                                 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+#endif
 
     // call findBasis, with the instruction to try to generate a basis of rank numvecs(X)
     return findBasis(X, MX, B, true);
@@ -516,7 +524,9 @@ namespace Belos {
     // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independently.
     //
 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
+#endif
 
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );

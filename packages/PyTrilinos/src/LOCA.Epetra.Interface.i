@@ -55,7 +55,6 @@ the Trilinos package LOCA:
 #include "Epetra_NumPyVector.h"
 
 // NOX include
-#include "NOX_Utils.H"
 #include "NOX_Epetra_Interface_Required.H"
 
 // LOCA::Epetra::Interface includes
@@ -75,25 +74,22 @@ the Trilinos package LOCA:
 %import "Teuchos.i"
 
 // Teuchos::RCPs typemaps
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::Required)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::MassMatrix)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependent)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependentMatrixFree)
+%teuchos_rcp(LOCA::Epetra::Interface::Required)
+%teuchos_rcp(LOCA::Epetra::Interface::MassMatrix)
+%teuchos_rcp(LOCA::Epetra::Interface::TimeDependent)
+%teuchos_rcp(LOCA::Epetra::Interface::TimeDependentMatrixFree)
 
 // Epetra_Vector directorin typemap
 %typemap(directorin) Epetra_Vector &
 %{
-  Epetra_NumPyVector npa$argnum = Epetra_NumPyVector(View,$1_name);
-  $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPyVector*), 0);
+  Epetra_NumPyVector *npa$argnum = new Epetra_NumPyVector(View,$1_name);
+  $input = SWIG_NewPointerObj((void*)npa$argnum, $descriptor(Epetra_NumPyVector*), 0);
 %}
 
 ///////////////////////
 // NOX_Utils support //
 ///////////////////////
-// The following #pragma is for nested classes in NOX_Utils.H
-#pragma SWIG nowarn=312
-%rename(_print) NOX::Utils::print;
-%import "NOX_Utils.H"
+%import "NOX_Utils.i"
 
 
 %feature("autodoc",

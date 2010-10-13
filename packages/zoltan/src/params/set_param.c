@@ -269,6 +269,63 @@ int index 			/* index for vector param; -1 for scalars */
     return (ZOLTAN_OK);
 }
 
+int      Zoltan_Filter_Params(
+struct Zoltan_Struct *to_zz,   /* add to this ... */
+struct Zoltan_Struct *from_zz, /* ... parameters of interest found here */
+PARAM_VARS * params,		/* parameters of interest */
+int debug_level,                /* level for output of debugging info     */
+int proc,                       /* processor # (controls debug printing)  */
+int print_proc                  /* processor that should perform printing */
+)
+{	
+    char     *yo = "Zoltan_Filter_Params";
+    char     *name;		/* name of parameter being reset */
+    char     *val;		/* new value for parameter       */
+    int       index;		/* index of parameter entry      */
+    int       found;		/* is name found?                */
+    int       ierr;		/* error code                    */
+    PARAM_LIST *from_list;
+    PARAM_VARS *param_ptr;      /* pointer to current param      */
+
+    ierr = ZOLTAN_OK;
+
+    from_list = from_zz->Params;
+
+    while (from_list != NULL) {
+        param_ptr = params;
+	name = from_list->name;
+	val = from_list->new_val;
+	index = from_list->index;
+
+        if (debug_level > 0 && proc == print_proc){
+          printf("From list has %s = %s\n",name,val);
+        }
+
+	found = 0;
+	while (param_ptr->name != NULL) {
+	    if (!strcmp(param_ptr->name, name)) {
+		found = 1;
+		break;
+	    }
+	    param_ptr++;
+	}
+
+	if (found) {		/* name found */
+
+          Zoltan_Set_Param_Vec(to_zz, name, val, index);
+          if (debug_level > 0 && proc == print_proc){
+            if (index >= 0)
+              printf("Copy %s[%d] = %s to sub problem\n",name,index,val);
+            else
+              printf("Copy %s = %s to sub problem\n",name,val);
+          }
+        }
+        from_list = from_list->next;
+    }
+
+
+    return ierr;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

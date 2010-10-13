@@ -60,19 +60,40 @@
 // Given a pointer to an Epetra_MultiVector, convert to a python
 // object and return the pointer.  Attempt to downcast to an
 // Epetra_NumPyMultiVector.
+#ifdef HAVE_TEUCHOS
+PyObject *
+convertEpetraMultiVectorToPython(const Teuchos::RCP< Epetra_MultiVector > *emv);
+PyObject *
+convertEpetraMultiVectorToPython(const Teuchos::RCP< const Epetra_MultiVector > *emv);
+#else
 PyObject *
 convertEpetraMultiVectorToPython(const Epetra_MultiVector * emv);
+#endif
 
 // Given a pointer to an Epetra_Vector, convert to a python object and
 // return the pointer.  Attempt to downcast to an Epetra_NumPyVector.
-PyObject * 
+#ifdef HAVE_TEUCHOS
+PyObject *
+convertEpetraVectorToPython(const Teuchos::RCP< Epetra_Vector > *ev);
+PyObject *
+convertEpetraVectorToPython(const Teuchos::RCP< const Epetra_Vector > *ev);
+#else
+PyObject *
 convertEpetraVectorToPython(const Epetra_Vector * ev);
+#endif
 
 // Given a pointer to an Epetra_Operator, convert to a python
 // object and return the pointer.  Attempt to downcast to any one of
 // the many Epetra classes that derive from Epetra_Operator.
+#ifdef HAVE_TEUCHOS
+PyObject *
+convertEpetraOperatorToPython(const Teuchos::RCP< Epetra_Operator > *eo, int cnvt_flags=0);
+PyObject *
+convertEpetraOperatorToPython(const Teuchos::RCP< const Epetra_Operator > *eo, int cnvt_flags=0);
+#else
 PyObject *
 convertEpetraOperatorToPython(const Epetra_Operator * eo, int cnvt_flags=0);
+#endif
 
 ////////////////////////////////////////////////////////////
 

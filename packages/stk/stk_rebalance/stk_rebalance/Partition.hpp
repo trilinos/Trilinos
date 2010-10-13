@@ -43,9 +43,16 @@
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/TopologyDimensions.hpp>
 
 namespace stk {
 namespace rebalance {
+
+typedef mesh::Field<double, mesh::Cartesian>  VectorField ;
+typedef mesh::Field<double>                   ScalarField ;
+
 
 /** Class for keeping track of a mesh object partition.
  * The class must be initialized with a list of mesh
@@ -90,10 +97,10 @@ public:
    */
 
   struct RegionInfo {
-    std::vector<mesh::Entity *>   mesh_objects;
-    const stk::mesh::Field<double>                 * nodal_coord_ref ;
-    const stk::mesh::Field<double>                 * elem_weight_ref;
-    std::vector<unsigned>             dest_proc_ids ;
+    std::vector<mesh::Entity *>      mesh_objects;
+    const VectorField * nodal_coord_ref ;
+    const ScalarField * elem_weight_ref;
+    std::vector<unsigned>            dest_proc_ids ;
 
     /** Default Constructor. */
     RegionInfo():
@@ -102,28 +109,12 @@ public:
 
     /** Destructor. */
     ~RegionInfo() {}
-
-    /** Copy constructor. */
-    RegionInfo( const RegionInfo & r ):
-      mesh_objects      ( r.mesh_objects    ),
-      nodal_coord_ref( r.nodal_coord_ref ),
-      elem_weight_ref( r.elem_weight_ref ),
-      dest_proc_ids  ( r.dest_proc_ids   ) {}
   };
 
   /** Default Constructor.
    */
-  Partition():
-    total_number_objects_(0),
-    iter_initialized_(false) {}
-
-  /** Default Copy Constructor.  */
-  inline Partition(const Partition& P):
-    total_number_objects_(P.total_number_objects_),
-    region_obj_information_(P.region_obj_information_),
-    object_iter_(P.object_iter_),
-    object_iter_len_(P.object_iter_len_),
-    iter_initialized_(P.iter_initialized_) {}
+  Partition(stk::ParallelMachine comm);
+  Partition(const Partition &p);
 
   /** Add another list of mesh objects to the partition.
    * The list of mesh objects is unique to the processor
@@ -158,9 +149,9 @@ public:
    * This is useful if there is only one mesh segment.  Function
    * calls reset_mesh_data followed by a call to add_mesh.
    */
-  void replace_mesh ( const std::vector<mesh::Entity *> &mesh_objects,
-                      const stk::mesh::Field<double>   * nodal_coord_ref,
-                      const stk::mesh::Field<double>   * elem_weight_ref=NULL);
+  virtual void replace_mesh ( const std::vector<mesh::Entity *> &mesh_objects,
+                      const VectorField   * nodal_coord_ref,
+                      const ScalarField   * elem_weight_ref=NULL);
 
   /** Reset owning processor.
    *  Default destination for an object is the processor
@@ -171,7 +162,11 @@ public:
   void reset_dest_proc_data ();
 
   /** Destructor. */
-  virtual ~Partition(){}
+  virtual ~Partition();
+
+  /** Return the parallel communicator for this partition object.*/
+  ParallelMachine parallel() const
+  { return comm_; }
 
   /** Given mesh object, find owning processor.
    * This does a search of the internally stored mesh
@@ -196,7 +191,8 @@ public:
    * MeshObjects_GlobalID() returns the result of global_id()
    * function of the indexed mesh object.
    */
-  int globalID         (const unsigned moid) const;
+  int globalID         (const unsigned moid) const
+  { return region_obj_information_.mesh_objects[ moid ]->identifier(); }
 
   /** Return the owning processor.*/
   unsigned destination_proc(const unsigned moid) const;
@@ -215,21 +211,21 @@ public:
   mesh::Entity *mesh_object(const unsigned moid ) const;
 
   /** Return the Field points to the object coordinates.*/
-  const stk::mesh::Field<double> * object_coord_ref () const;
+  const VectorField * object_coord_ref () const;
 
   /** Return the Field points to the object coordinates.*/
-  const stk::mesh::Field<double> * object_weight_ref () const;
+  const ScalarField * object_weight_ref () const;
 
   /** Return the total number of mesh objects in all lists. */
-  unsigned num_elems() const;
+  virtual unsigned num_elems() const;
 
-  /** Determine New Partition.
+  /** determine New Partition.
    * This is where all of the real work takes place.  This
    * virtual function should be specialized to determine
    * the new partition.  RebalancingNeeded is set if the new
    * partition is different than the old one.
    */
-  virtual int determine_new_partition(bool &RebalancingNeeded)=0;
+  virtual int determine_new_partition(bool &RebalancingNeeded) = 0;
 
   /** Perform communication to create new partition.
    * Given a communication specification this
@@ -242,10 +238,11 @@ public:
    * mesh objects before rebalancing is performed
    * again.
    */
-  int get_new_partition(std::vector<mesh::EntityProc> &new_partition);
+  virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition);
 
-private:
+protected:
 
+  const stk::ParallelMachine comm_;
   unsigned total_number_objects_;
   RegionInfo  region_obj_information_;
 
@@ -297,7 +294,6 @@ public:
   unsigned iter_current_key() const;
 
 };
-
 
 }
 } // namespace stk

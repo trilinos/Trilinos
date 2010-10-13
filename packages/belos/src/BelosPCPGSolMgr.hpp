@@ -64,7 +64,9 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
+#endif
 
 //#include <vector>              //getPermThatSorts
 //#include <algorithm>           //getPermThatSorts
@@ -481,7 +483,9 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
       label_ = tempLabel;
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": PCPGSolMgr total solve time";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+#endif
     }
   }
 
@@ -640,7 +644,9 @@ void PCPGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::Pa
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": PCPGSolMgr total solve time";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+#endif
   }
 
   // Inform the solver manager that the current parameters were set.
@@ -740,7 +746,9 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
 
   // Enter solve() iterations
   {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
+#endif
     while ( numRHS2Solve > 0 ) {  // test for quick return
       
       // Reset the status test.
@@ -1028,7 +1036,9 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
   sTest_->print( printer_->stream(FinalSummary) );
   
   // print timing information
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
+#endif
 
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();

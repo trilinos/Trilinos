@@ -495,7 +495,7 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   {
     xPtr = inArgs.get_x();
     res  = PyObject_SetAttrString(inArgsObj, "x",
-				  convertEpetraVectorToPython(xPtr.get()));
+				  convertEpetraVectorToPython(&xPtr));
     if (res < 0) goto fail;
   }
 
@@ -504,7 +504,7 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   {
     x_dotPtr = inArgs.get_x_dot();
     res      = PyObject_SetAttrString(inArgsObj, "x_dot",
-				      convertEpetraVectorToPython(x_dotPtr.get()));
+				      convertEpetraVectorToPython(&x_dotPtr));
     if (res < 0) goto fail;
   }
 
@@ -517,7 +517,7 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
     {
       pPtr = inArgs.get_p(i);
       res  = PyTuple_SetItem(obj, Py_ssize_t(i),
-			     convertEpetraVectorToPython(pPtr.get()));
+			     convertEpetraVectorToPython(&pPtr));
       if (res) goto fail;
     }
     res = PyObject_SetAttrString(inArgsObj, "p",
@@ -547,6 +547,7 @@ PyObject * convertEvaluationToPython(
   PyObject 	* evalObj         = NULL;
   Epetra_Vector * vector          = NULL;
   int             res             = 0;
+  Teuchos::RCP< Epetra_Vector > *smartarg = NULL;
 
   // Python class object
   if (!classEvaluation)
@@ -563,8 +564,10 @@ PyObject * convertEvaluationToPython(
   vector = eval.get();
   if (vector)
   {
+    smartarg = new Teuchos::RCP< Epetra_Vector>(vector, false);
     res = PyObject_SetAttrString(evalObj, "vector",
-				 convertEpetraVectorToPython(vector));
+				 convertEpetraVectorToPython(smartarg));
+    delete smartarg;
     if (res < 0) goto fail;
   }
 
@@ -670,6 +673,7 @@ PyObject * convertDerivativeMultiVectorToPython(
   PyObject * obj                        = NULL;
   PyObject * derivMVObj                 = NULL;
   int        res                        = 0;
+  Teuchos::RCP< Epetra_MultiVector > *smartarg = NULL;
 
   // Python class object
   if (!classDerivativeMultiVector)
@@ -684,8 +688,10 @@ PyObject * convertDerivativeMultiVectorToPython(
   if (!derivMVObj) goto fail;
 
   // mutiVector attribute
+  smartarg = new Teuchos::RCP< Epetra_MultiVector >(derivMV.getMultiVector());
   res = PyObject_SetAttrString(derivMVObj, "multiVector",
-			       convertEpetraMultiVectorToPython(derivMV.getMultiVector().get()));
+			       convertEpetraMultiVectorToPython(smartarg));
+  delete smartarg;
   if (res < 0) goto fail;
 
   // orientation attribute
@@ -717,15 +723,15 @@ PyObject * convertDerivativeMultiVectorToPython(
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertDerivativeToPython(
-    const EpetraExt::ModelEvaluator::Derivative & deriv)
+PyObject *
+convertDerivativeToPython(const EpetraExt::ModelEvaluator::Derivative & deriv)
 {
   static
-  PyObject 	  * classDerivative = NULL;
-  PyObject 	  * obj             = NULL;
-  PyObject 	  * derivObj        = NULL;
-  int      	    res             = 0;
-  Epetra_Operator * eo              = NULL;
+  PyObject * classDerivative = NULL;
+  PyObject * obj             = NULL;
+  PyObject * derivObj        = NULL;
+  int        res             = 0;
+  Teuchos::RCP< Epetra_Operator > eo;
   EpetraExt::ModelEvaluator::DerivativeMultiVector dmv;
 
   // Python class object
@@ -739,11 +745,11 @@ PyObject * convertDerivativeToPython(
   if (!derivObj) goto fail;
 
   // operator attribute
-  eo = deriv.getLinearOp().get();
-  if (eo)
+  eo = deriv.getLinearOp();
+  if (!eo.is_null())
   {
     res = PyObject_SetAttrString(derivObj, "operator",
-				 convertEpetraOperatorToPython(eo));
+				 convertEpetraOperatorToPython(&eo));
     if (res < 0) goto fail;
   }
 
@@ -776,7 +782,7 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   PyObject * outArgsObj   	    = NULL;
   int        res	            = 0;
   int        Ng 	            = 0;
-  Epetra_Operator * WPtr            = NULL;
+  Teuchos::RCP< Epetra_Operator > WPtr;
 
   // Python class objects
   if (!classOutArgs)
@@ -832,11 +838,11 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   // W attribute
   if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_W))
   {
-    WPtr = outArgs.get_W().get();
-    if (WPtr)
+    WPtr = outArgs.get_W();
+    if (!WPtr.is_null())
     {
       res = PyObject_SetAttrString(outArgsObj, "W",
-				   convertEpetraOperatorToPython(WPtr));
+				   convertEpetraOperatorToPython(&WPtr));
       if (res) goto fail;
     }
   }
@@ -844,7 +850,7 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   // W_properties attribute
   if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_W))
   {
-    if (WPtr)
+    if (!WPtr.is_null())
     {
       res = PyObject_SetAttrString(outArgsObj, "W_properties",
 				   convertDerivativePropertiesToPython(outArgs.get_W_properties()));

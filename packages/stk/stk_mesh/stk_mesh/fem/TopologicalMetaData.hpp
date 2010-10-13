@@ -53,6 +53,13 @@ public:
   const EntityRank patch_rank ;   ///< Rank of arbitrary patches (element+1)
 
   //--------------------------------------------------------------------------
+  /** \brief  Get the TopologicalMetaData off of a MetaData through the attribute set on MetaData.
+   * This function will throw if no TopologicalMetaData attribute is defined on MetaData
+   */
+  static const TopologicalMetaData & find_TopologicalMetaData( const MetaData & meta_data );
+  
+
+  //--------------------------------------------------------------------------
   /** \brief  Get the cell topology associated with a mesh part.
    *          The supersets of the mesh part are not checked.
    */

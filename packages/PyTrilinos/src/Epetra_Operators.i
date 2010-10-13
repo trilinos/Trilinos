@@ -40,19 +40,11 @@
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_Util.h"
 
 #include "Epetra_PyUtil.h"
 
 %}
-
-// Configuration
-%include "PyTrilinos_config.h"
-
-//////////////
-// Typemaps //
-//////////////
-%epetra_argout_typemaps(Epetra_CrsMatrix)
-%epetra_argout_typemaps(Epetra_VbrMatrix)
 
 ////////////////
 // Macro code //
@@ -241,6 +233,7 @@
 /////////////////////////////
 // Epetra_Operator support //
 /////////////////////////////
+%teuchos_rcp(Epetra_Operator)
 %feature("docstring")
 Epetra_Operator
 "
@@ -324,10 +317,50 @@ Epetra_Operator::ApplyInverse;
 %feature("director") Epetra_Operator;
 %rename(Operator)    Epetra_Operator;
 %include "Epetra_Operator.h"
+//////////////////////////////////
+// Typemaps for Epetra_Operator //
+//////////////////////////////////
+#ifdef HAVE_TEUCHOS
+%typemap(out) Teuchos::RCP< Epetra_Operator >
+{
+  if ($1 == Teuchos::null)
+  {
+    $result = Py_BuildValue("");
+  }
+  else
+  {
+    $result = convertEpetraOperatorToPython(&$1, SWIG_POINTER_OWN);
+  }
+}
+%typemap(out) Teuchos::RCP< const Epetra_Operator >
+{
+  if ($1 == Teuchos::null)
+  {
+    $result = Py_BuildValue("");
+  }
+  else
+  {
+    $result = convertEpetraOperatorToPython(&$1, SWIG_POINTER_OWN);
+  }
+}
+%typemap(directorin) Epetra_Operator &
+{
+  Teuchos::RCP< Epetra_Operator > *smartinput = new
+    Teuchos::RCP< Epetra_Operator >(&$1_name, false);
+  $input = convertEpetraOperatorToPython(smartinput, SWIG_POINTER_OWN);
+  delete smartinput;
+}
+#else
+%typemap(directorin) Epetra_Operator &
+{
+  $input = convertEpetraOperatorToPython(&$1_name, SWIG_POINTER_OWN);
+}
+#endif
 
 ////////////////////////////////
 // Epetra_InvOperator support //
 ////////////////////////////////
+%teuchos_rcp(Epetra_InvOperator)
 %warnfilter(473)     Epetra_InvOperator;
 %feature("director") Epetra_InvOperator;
 %rename(InvOperator) Epetra_InvOperator;
@@ -336,6 +369,7 @@ Epetra_Operator::ApplyInverse;
 //////////////////////////////
 // Epetra_RowMatrix support //
 //////////////////////////////
+%teuchos_rcp(Epetra_RowMatrix)
 %feature("autodoc",
 "NumMyRowEntries(int myRow, numpy.ndarray numEntries) -> int
 
@@ -445,6 +479,7 @@ Epetra_RowMatrix::RightScale;
 ///////////////////////////////////
 // Epetra_BasicRowMatrix support //
 ///////////////////////////////////
+%teuchos_rcp_epetra(Epetra_BasicRowMatrix)
 %warnfilter(473)        Epetra_BasicRowMatrix;
 %feature("director")    Epetra_BasicRowMatrix;
 %rename(BasicRowMatrix) Epetra_BasicRowMatrix;
@@ -474,6 +509,8 @@ Epetra_RowMatrix::RightScale;
 //////////////////////////////
 // Epetra_CrsMatrix support //
 //////////////////////////////
+%teuchos_rcp_epetra(Epetra_CrsMatrix)
+%teuchos_rcp_epetra_argout(Epetra_CrsMatrix)
 %feature("autodoc",
 "__init__(self, Epetra_DataAccess CV, Map rowMap, int numEntriesPerRow, 
     bool staticProfile=False) -> CrsMatrix
@@ -1099,6 +1136,7 @@ Epetra_CrsMatrix::__getitem__;
 ////////////////////////////////
 // Epetra_FECrsMatrix support //
 ////////////////////////////////
+%teuchos_rcp_epetra(Epetra_FECrsMatrix)
 %rename(FECrsMatrix) Epetra_FECrsMatrix;
 %extend Epetra_FECrsMatrix
 {
@@ -1174,6 +1212,8 @@ Epetra_CrsMatrix::__getitem__;
 //////////////////////////////
 // Epetra_VbrMatrix support //
 //////////////////////////////
+%teuchos_rcp_epetra(Epetra_VbrMatrix)
+%teuchos_rcp_epetra_argout(Epetra_VbrMatrix)
 %feature("autodoc",
 "
 __init__(self, Epetra_DataAccess CV, BlockMap rowMap, int
@@ -1297,12 +1337,14 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 ////////////////////////////////
 // Epetra_FEVbrMatrix support //
 ////////////////////////////////
+%teuchos_rcp_epetra(Epetra_FEVbrMatrix)
 %rename(FEVbrMatrix) Epetra_FEVbrMatrix;
 %include "Epetra_FEVbrMatrix.h"
 
 //////////////////////////////
 // Epetra_JadMatrix support //
 //////////////////////////////
+%teuchos_rcp_epetra(Epetra_JadMatrix)
 %ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*&,int&,int&);
 %rename(JadMatrix) Epetra_JadMatrix;
 %include "Epetra_JadMatrix.h"
@@ -1313,36 +1355,33 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 %rename(LinearProblem) Epetra_LinearProblem;
 %include "Epetra_LinearProblem.h"
 
-//////////////////////////////////
-// Typemaps for Epetra_Operator //
-//////////////////////////////////
-#ifdef HAVE_TEUCHOS
-%typemap(out) Teuchos::RCP<Epetra_Operator>
-{
-  if ($1 == Teuchos::null)
-  {
-    $result = Py_BuildValue("");
-  }
-  else
-  {
-    $result = convertEpetraOperatorToPython($1.get(), %convertptr_flags);
-  }
-}
+/////////////////////////
+// Epetra_Util support //
+/////////////////////////
+%feature("docstring")
+Epetra_Util
+"Epetra Util Wrapper Class.
 
-%typemap(out) Teuchos::RCP<const Epetra_Operator>
-{
-  if ($1 == Teuchos::null)
-  {
-    $result = Py_BuildValue("");
-  }
-  else
-  {
-    $result = convertEpetraOperatorToPython($1.get(), %convertptr_flags);
-  }
-}
-#endif
+The Epetra.Util class is a collection of useful functions that cut
+across a broad set of other classes.  A random number generator is
+provided, along with methods to set and retrieve the random-number
+seed.
 
-%typemap(directorin) Epetra_Operator &
-{
-  $input = convertEpetraOperatorToPython(&$1_name, %convertptr_flags);
-}
+The random number generator is a multiplicative linear congruential
+generator, with multiplier 16807 and modulus 2^31 - 1. It is based on
+the algorithm described in 'Random Number Generators: Good Ones Are
+Hard To Find', S. K. Park and K. W. Miller, Communications of the ACM,
+vol. 31, no. 10, pp. 1192-1201.
+
+The C++ Sort() method is not supported in python.
+
+A static function is provided for creating a new Epetra.Map object
+with 1-to-1 ownership of entries from an existing map which may have
+entries that appear on multiple processors.
+
+Epetra.Util is a serial interface only.  This is appropriate since the
+standard utilities are only specified for serial execution (or shared
+memory parallel)."
+%ignore Epetra_Util::Sort;
+%rename(Util) Epetra_Util;
+%include "Epetra_Util.h"

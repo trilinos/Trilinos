@@ -1,11 +1,8 @@
-//@HEADER
-// ************************************************************************
+// @HEADER
+// ***********************************************************************
 // 
-//            NOX: An Object-Oriented Nonlinear Solver Package
-//                 Copyright (2002) Sandia Corporation
-// 
-//            LOCA: Library of Continuation Algorithms Package
-//                 Copyright (2005) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -19,27 +16,17 @@
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-// 
+//  
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
-// Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
-// ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
-//@HEADER
+// ***********************************************************************
+// @HEADER
 
-#include <iostream>
-#include <sstream>
-
-// FEApp is defined in Trilinos/packages/sacado/example/FEApp
+// ModelEvaluator implementing our problem
 #include "twoD_diffusion_ME.hpp"
 
 // Epetra communicator
@@ -52,159 +39,223 @@
 // NOX
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "NOX_Epetra_LinearSystem_Stratimikos.H"
 #include "NOX_Epetra_LinearSystem_SGGS.hpp"
 #include "NOX_Epetra_LinearSystem_SGJacobi.hpp"
 
 // Stokhos Stochastic Galerkin
 #include "Stokhos_Epetra.hpp"
 
-// Timing utilities
+// Utilities
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TestForException.hpp"
 
+// I/O utilities
+#include "EpetraExt_VectorOut.h"
+
 //The probability distribution of the random variables.
 double uniform_weight(const double& x){
- return 1;
+  return 1;
 }
 
-//Given the computed sfem solution, computes the mean solution.
-void computeMeanSoln(const Epetra_Vector& u, Epetra_Vector& Eofu, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
+// Linear solvers
+enum Krylov_Solver { AZTECOO, BELOS };
+const int num_krylov_solver = 2;
+const Krylov_Solver krylov_solver_values[] = { AZTECOO, BELOS };
+const char *krylov_solver_names[] = { "AztecOO", "Belos" };
 
+// SG solver approaches
+enum SG_Solver { SG_KRYLOV, SG_GS, SG_JACOBI };
+const int num_sg_solver = 3;
+const SG_Solver sg_solver_values[] = { SG_KRYLOV, SG_GS, SG_JACOBI };
+const char *sg_solver_names[] = { "Krylov", "Gauss-Seidel", "Jacobi" };
 
-  const Epetra_Comm& Comm = u.Map().Comm();
+// Krylov methods
+// enum Krylov_Method { GMRES, CG, FGMRES, RGMRES };
+// const int num_krylov_method = 4;
+// const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES, RGMRES };
+// const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES", "RGMRES" };
+enum Krylov_Method { GMRES, CG, FGMRES };
+const int num_krylov_method = 3;
+const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES };
+const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES" };
 
-  //Roll up solution vector into a multivector containing deterministic components.
-  int N_x = u.MyLength()/basis->size();
-  int N_xi = basis->size();
+// Krylov preconditioning approaches
+enum SG_Prec { MEAN, GS, AGS, AJ, KP };
+const int num_sg_prec = 5;
+const SG_Prec sg_prec_values[] = { MEAN, GS, AGS, AJ, KP };
+const char *sg_prec_names[] = { "Mean-Based", 
+				"Gauss-Seidel", 
+				"Approx-Gauss-Seidel", 
+				"Approx-Jacobi", 
+				"Kronecker-Product" };
 
-  Eofu.PutScalar(0.0);
-
-  Epetra_Map Map(N_x, 0, Comm);
-  // Form x and y into block vectors.
-  Epetra_MultiVector uBlock(Map,N_xi);
-
-  //Get the triple product tensor.
-  Teuchos::RCP< const Stokhos::Sparse3Tensor<int, double> > Cijk =
-    basis->computeTripleProductTensor(basis->size());
-  double val;
-  int i, j;
-  int n = Cijk->num_values(0);
-
-  for( int l = 0; l<n; l++){
-    Cijk->value(0,l,i,j,val);
-    if(i==0 && j == 0) break;
-  }
-  std::cout << "val = " << val << "\n";
-  for(int i = 0; i< N_x; i++){
-    Eofu[i] = val*u[i];
-  }
-
-}
-
-//Given the computed SFEM solution and the mean solution, computes the variance via <u^2> - <u>^2
-void computeVarianceSoln(const Epetra_Vector& u, const Epetra_Vector& Eofu, Epetra_Vector& varOfu, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
-
-  const Epetra_Comm& Comm = u.Map().Comm();
-
-  int N_x = u.MyLength()/basis->size();
-  int N_xi = basis->size();
-
-
-  Epetra_Map Map(N_x, 0, Comm);
-  varOfu.Multiply(-1.0, Eofu, Eofu, 0.0);
-  Epetra_MultiVector uBlock(Map,N_xi);
-
-  int MyLength = uBlock.MyLength();
-  for( int c=0; c<N_xi ; c++){
-    for( int i=0; i<MyLength; i++){
-      uBlock[c][i] = (u)[c*N_x + i];
-    }
-  }
-
-  uBlock.Multiply(1.0, uBlock, uBlock, 0.0);
-  Teuchos::Array< double > norms = basis->norm_squared();
-  for(int c = 0; c<N_xi; c++){
-    varOfu.Update(norms[c],*uBlock(c),1.0);
-  }
-
-}
+// Random field types
+enum SG_RF { UNIFORM, LOGNORMAL };
+const int num_sg_rf = 2;
+const SG_RF sg_rf_values[] = { UNIFORM, LOGNORMAL };
+const char *sg_rf_names[] = { "Uniform", "Log-Normal" };
 
 int main(int argc, char *argv[]) {   
-Teuchos::Time TotalTimer("Total Timer",false);
-TotalTimer.start();
-//TotalTimer.stop();
-  int n, num_KL, p;
-  double sigma, mean, weightCut;
-  std::string solve_method, precMethod, randField;
-  if(argc < 10){
-    n = 32; //Number of mesh points
-    p = 5; //Polynomial degree
-    num_KL = 2;  //Terms in KL expansion
-    sigma = .1;
-    mean = .2;
-    weightCut = 1;   // Support for distribution is +-weightCut
-    solve_method = "SG_GMRES";
-    //solve_method = "SG_GS";
-    //precMethod = "Mean-based";
-    //precMethod = "Gauss-Seidel";
-    precMethod = "Approx-Gauss-Seidel";
-    randField = "UNIFORM";
-    //randField = "LOG-NORMAL";
-  }else{
-    n = atoi(argv[1]);
-    p = atoi(argv[2]);
-    num_KL = atoi(argv[3]);
-    sigma = atof(argv[4]);
-    mean = atof(argv[5]);
-    weightCut = atof(argv[6]);
-    solve_method = argv[7];
-    precMethod = argv[8];
-    randField = argv[9];
-  }
-std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
- 
-//  int n = 32;
-//  int num_KL = 2; 
-//int p = 5;
-  bool full_expansion;
-  if (randField == "UNIFORM")
-    full_expansion = false;
-  else if (randField == "LOG-NORMAL")
-    full_expansion = true;
-  bool matrix_free = true;
-  bool scaleOP = true; 
-//  bool write_linear_system = false;
 
 // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
 
-  int MyPID;
+  // Create a communicator for Epetra objects
+  Teuchos::RCP<Epetra_Comm> Comm;
+#ifdef HAVE_MPI
+  Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+#else
+  Comm = Teuchos::rcp(new Epetra_SerialComm);
+#endif
+
+  int MyPID = Comm->MyPID();
 
   try {
+
+    // Setup command line options
+    Teuchos::CommandLineProcessor CLP;
+    CLP.setDocString(
+      "This example runs a variety of stochastic Galerkin solvers.\n");
+
+    int n = 32;
+    CLP.setOption("num_mesh", &n, "Number of mesh points in each direction");
+
+    SG_RF randField = UNIFORM;
+    CLP.setOption("rand_field", &randField, 
+		   num_sg_rf, sg_rf_values, sg_rf_names,
+		  "Random field type");
+
+    double mean = 0.2;
+    CLP.setOption("mean", &mean, "Mean");
+
+    double sigma = 0.1;
+    CLP.setOption("std_dev", &sigma, "Standard deviation");
+
+    double weightCut = 1.0;
+    CLP.setOption("weight_cut", &weightCut, "Weight cut");
+
+    int num_KL = 2;
+    CLP.setOption("num_kl", &num_KL, "Number of KL terms");
+
+    int p = 5;
+    CLP.setOption("order", &p, "Polynomial order");
+    
+    SG_Solver solve_method = SG_KRYLOV;
+    CLP.setOption("sg_solver", &solve_method, 
+		  num_sg_solver, sg_solver_values, sg_solver_names, 
+		  "SG solver method");
+
+    Krylov_Method outer_krylov_method = GMRES;
+    CLP.setOption("outer_krylov_method", &outer_krylov_method, 
+		  num_krylov_method, krylov_method_values, krylov_method_names, 
+		  "Outer Krylov method (for Krylov-based SG solver)");
+
+    Krylov_Solver outer_krylov_solver = AZTECOO;
+    CLP.setOption("outer_krylov_solver", &outer_krylov_solver, 
+		  num_krylov_solver, krylov_solver_values, krylov_solver_names, 
+		  "Outer linear solver");
+
+    double outer_tol = 1e-12;
+    CLP.setOption("outer_tol", &outer_tol, "Outer solver tolerance");
+
+    int outer_its = 1000;
+    CLP.setOption("outer_its", &outer_its, "Maximum outer iterations");
+
+    Krylov_Method inner_krylov_method = GMRES;
+    CLP.setOption("inner_krylov_method", &inner_krylov_method, 
+		  num_krylov_method, krylov_method_values, krylov_method_names, 
+		  "Inner Krylov method (for G-S, Jacobi, etc...)");
+
+    Krylov_Solver inner_krylov_solver = AZTECOO;
+    CLP.setOption("inner_krylov_solver", &inner_krylov_solver, 
+		  num_krylov_solver, krylov_solver_values, krylov_solver_names, 
+		  "Inner linear solver");
+
+    double inner_tol = 3e-13;
+    CLP.setOption("inner_tol", &inner_tol, "Inner solver tolerance");
+
+    int inner_its = 1000;
+    CLP.setOption("inner_its", &inner_its, "Maximum inner iterations");
+
+    SG_Prec precMethod = AGS;
+    CLP.setOption("sg_prec_method", &precMethod, 
+		  num_sg_prec, sg_prec_values, sg_prec_names,
+		  "Preconditioner method");
+
+    double gs_prec_tol = 1e-1;
+    CLP.setOption("gs_prec_tol", &gs_prec_tol, "Gauss-Seidel preconditioner tolerance");
+
+    int gs_prec_its = 1;
+    CLP.setOption("gs_prec_its", &gs_prec_its, "Maximum Gauss-Seidel preconditioner iterations");
+
+    CLP.parse( argc, argv );
+
+    if (MyPID == 0) {
+      std::cout << "Summary of command line options:" << std::endl
+		<< "\tnum_mesh            = " << n << std::endl
+		<< "\trand_field          = " << sg_rf_names[randField] 
+		<< std::endl
+		<< "\tmean                = " << mean << std::endl
+		<< "\tstd_dev             = " << sigma << std::endl
+		<< "\tweight_cut          = " << weightCut << std::endl
+		<< "\tnum_kl              = " << num_KL << std::endl
+		<< "\torder               = " << p << std::endl
+		<< "\tsg_solver           = " << sg_solver_names[solve_method] 
+		<< std::endl
+		<< "\touter_krylov_method = " 
+		<< krylov_method_names[outer_krylov_method] << std::endl
+		<< "\touter_krylov_solver = " 
+		<< krylov_solver_names[outer_krylov_solver] << std::endl
+		<< "\tinner_krylov_method = " 
+		<< krylov_method_names[inner_krylov_method] << std::endl
+		<< "\tinner_krylov_solver = " 
+		<< krylov_solver_names[inner_krylov_solver] << std::endl
+		<< "\tprec_method         = " << sg_prec_names[precMethod] 
+		<< std::endl;
+    }
+
+    bool nonlinear_expansion;
+    if (randField == UNIFORM)
+      nonlinear_expansion = false;
+    else if (randField == LOGNORMAL)
+      nonlinear_expansion = true;
+    bool scaleOP = true; 
 
     {
     TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
 
-    // Create a communicator for Epetra objects
-    Teuchos::RCP<Epetra_Comm> Comm;
-#ifdef HAVE_MPI
-    Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
-    Comm = Teuchos::rcp(new Epetra_SerialComm);
-#endif
+    // Create Stochastic Galerkin basis and expansion
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
+    for (int i=0; i<num_KL; i++)
+      if (randField == UNIFORM)
+        bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
+      else if (randField == LOGNORMAL)      
+        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,true));
 
-    MyPID = Comm->MyPID();
+    //  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&uniform_weight,-weightCut,weightCut,true));
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
+      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+    int sz = basis->size();
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
+    if (nonlinear_expansion)
+      Cijk = basis->computeTripleProductTensor(sz);
+    else
+      Cijk = basis->computeTripleProductTensor(num_KL+1);
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
+      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
+									 Cijk));
+    std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
     
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
       Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, sigma, 
-                                          mean, full_expansion));
+					 mean, basis, nonlinear_expansion));
 
     // Set up NOX parameters
-//    Teuchos::RCP<Teuchos::ParameterList> noxParams =
-  //    Teuchos::rcp(sg_model->sublist("NOX"),false);
     Teuchos::RCP<Teuchos::ParameterList> noxParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
@@ -241,6 +292,15 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 
     // Sublist for linear solver for the Newton method
     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+
+    // Alternative linear solver list for Stratimikos
+    Teuchos::ParameterList& stratLinSolParams = 
+      newtonParams.sublist("Stratimikos Linear Solver");
+    // Teuchos::ParameterList& noxStratParams = 
+    //   stratLinSolParams.sublist("NOX Stratimikos Options");
+    Teuchos::ParameterList& stratParams = 
+      stratLinSolParams.sublist("Stratimikos");
+
     // Sublist for convergence tests
     Teuchos::ParameterList& statusParams = noxParams->sublist("Status Tests");
     statusParams.set("Test Type", "Combo");
@@ -248,42 +308,11 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     statusParams.set("Combo Type", "OR");
     Teuchos::ParameterList& normF = statusParams.sublist("Test 0");
     normF.set("Test Type", "NormF");
-    normF.set("Tolerance", 1e-12);
+    normF.set("Tolerance", outer_tol);
     normF.set("Scale Type", "Scaled");
     Teuchos::ParameterList& maxIters = statusParams.sublist("Test 1");
     maxIters.set("Test Type", "MaxIters");
     maxIters.set("Maximum Iterations", 1);
-
-    Teuchos::ParameterList det_lsParams;
-    det_lsParams.set("Aztec Solver", "GMRES");  
-    det_lsParams.set("Max Iterations", 5000);
-    det_lsParams.set("Size of Krylov Subspace", 100);
-    det_lsParams.set("Tolerance", 3e-13); 
-   // det_lsParams.set("Max Iterations", 1);
-  //  det_lsParams.set("Size of Krylov Subspace", 1);
-    //det_lsParams.set("Tolerance", 1e-4); 
-    det_lsParams.set("Output Frequency", 0);
-    det_lsParams.set("Preconditioner", "ML");    
-    det_lsParams.set("Zero Initial Guess", true);    
-    Teuchos::ParameterList& det_ML = 
-      det_lsParams.sublist("ML");
-    ML_Epetra::SetDefaults("SA", det_ML);
-    det_ML.set("ML output", 0);
-    det_ML.set("max levels",5);
-    det_ML.set("increasing or decreasing","increasing");
-    det_ML.set("aggregation: type", "Uncoupled");
-    det_ML.set("smoother: type","ML symmetric Gauss-Seidel");
-    det_ML.set("smoother: sweeps",2);
-    det_ML.set("smoother: pre or post", "both");
-    det_ML.set("coarse: max size", 200);
-#ifdef HAVE_ML_AMESOS
-    det_ML.set("coarse: type","Amesos-KLU");
-#else
-    det_ML.set("coarse: type","Jacobi");
-#endif
-   
-//   det_ML.set("ML output", 10);
-//    det_lsParams.set("Write Linear System", write_linear_system);
 
     // Create NOX interface
     Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> det_nox_interface = 
@@ -299,35 +328,80 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     det_printParams.set("Output Precision", 3);
     det_printParams.set("Output Processor", 0);
     det_printParams.set("Output Information", NOX::Utils::Error);
-    Teuchos::RCP<NOX::Epetra::LinearSystem> det_linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(det_printParams, 
-							det_lsParams,
-                                                        det_iReq, 
-							det_iJac, 
-							det_A,
-                                                        *det_u));
-
-    // Create Stochastic Galerkin basis and expansion
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
-    for (int i=0; i<num_KL; i++)
-      if (randField == "UNIFORM")
-        bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
-      else if (randField == "LOG-NORMAL")      
-        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,true));
-
-    //  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&uniform_weight,-weightCut,weightCut,true));
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-    int sz = basis->size();
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    if (full_expansion)
-      Cijk = basis->computeTripleProductTensor(sz);
-    else
-      Cijk = basis->computeTripleProductTensor(num_KL+1);
-    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
-      Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
-									 Cijk));
-    std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+    Teuchos::ParameterList det_lsParams, det_ML;
+    Teuchos::RCP<NOX::Epetra::LinearSystem> det_linsys;
+    ML_Epetra::SetDefaults("SA", det_ML);
+    det_ML.set("ML output", 0);
+    det_ML.set("max levels",5);
+    det_ML.set("increasing or decreasing","increasing");
+    det_ML.set("aggregation: type", "Uncoupled");
+    det_ML.set("smoother: type","ML symmetric Gauss-Seidel");
+    det_ML.set("smoother: sweeps",2);
+    det_ML.set("smoother: pre or post", "both");
+    det_ML.set("coarse: max size", 200);
+#ifdef HAVE_ML_AMESOS
+    det_ML.set("coarse: type","Amesos-KLU");
+#else
+    det_ML.set("coarse: type","Jacobi");
+#endif
+    if (inner_krylov_solver == AZTECOO) {
+      if (inner_krylov_method == GMRES)
+	det_lsParams.set("Aztec Solver", "GMRES");  
+      else if (inner_krylov_method == CG)
+	det_lsParams.set("Aztec Solver", "CG");  
+      det_lsParams.set("Max Iterations", inner_its);
+      det_lsParams.set("Size of Krylov Subspace", 100);
+      det_lsParams.set("Tolerance", inner_tol); 
+      det_lsParams.set("Output Frequency", 0);
+      det_lsParams.set("Preconditioner", "ML");    
+      det_lsParams.set("Zero Initial Guess", true);    
+      det_lsParams.sublist("ML") = det_ML;
+      det_linsys =
+	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(det_printParams, 
+							  det_lsParams,
+							  det_iReq, 
+							  det_iJac, 
+							  det_A,
+							  *det_u));
+    }
+    else if (inner_krylov_solver == BELOS) {
+      Teuchos::ParameterList& stratParams = 
+	det_lsParams.sublist("Stratimikos");
+      stratParams.set("Linear Solver Type", "Belos");
+      Teuchos::ParameterList& belosParams = 
+	stratParams.sublist("Linear Solver Types").sublist("Belos");
+      Teuchos::ParameterList* belosSolverParams;
+      if (inner_krylov_method == GMRES || inner_krylov_method == FGMRES) {
+	belosParams.set("Solver Type","Block GMRES");
+	belosSolverParams = 
+	  &(belosParams.sublist("Solver Types").sublist("Block GMRES"));
+	if (outer_krylov_method == FGMRES)
+	  belosSolverParams->set("Flexible Gmres", true);
+      }
+      else if (inner_krylov_method == CG) {
+	belosParams.set("Solver Type","Block CG");
+	belosSolverParams = 
+	  &(belosParams.sublist("Solver Types").sublist("Block CG"));
+      }
+      // else if (inner_krylov_method == RGMRES) {
+      // 	belosParams.set("Solver Type","GCRODR");
+      // 	belosSolverParams = 
+      // 	  &(belosParams.sublist("Solver Types").sublist("GCRODR"));
+      // }
+      belosSolverParams->set("Convergence Tolerance", inner_tol);
+      belosSolverParams->set("Maximum Iterations", inner_its);
+      belosSolverParams->set("Output Frequency",0);
+      belosSolverParams->set("Output Style",1);
+      belosSolverParams->set("Verbosity",0);
+      Teuchos::ParameterList& verbParams = belosParams.sublist("VerboseObject");
+      verbParams.set("Verbosity Level", "none");
+      stratParams.set("Preconditioner Type", "ML");
+      stratParams.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings") = det_ML;
+      det_linsys = 
+	Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+		       det_printParams, det_lsParams, det_iJac, 
+		       det_A, *det_u));
+    }
    
     // Set up stochastic parameters
     Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
@@ -344,7 +418,6 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 						       *(model->get_x_map())));
     sg_x_init->init(0.0);
     
-    
     // Setup stochastic Galerkin algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
@@ -353,35 +426,35 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     Teuchos::ParameterList& sgPrecParams = 
       sgParams->sublist("SG Preconditioner");
 
-    if (!full_expansion) {
+    if (!nonlinear_expansion) {
       sgParams->set("Parameter Expansion Type", "Linear");
       sgParams->set("Jacobian Expansion Type", "Linear");
     }
     sgOpParams.set("Operator Method", "Matrix Free");
-    if (precMethod == "Mean-based")  {
+    if (precMethod == MEAN)  {
       sgPrecParams.set("Preconditioner Method", "Mean-based");
       sgPrecParams.set("Mean Preconditioner Type", "ML");
       Teuchos::ParameterList& precParams =
 	sgPrecParams.sublist("Mean Preconditioner Parameters");
       precParams = det_ML;
     }
-    else if(precMethod == "Gauss-Seidel") {
+    else if(precMethod == GS) {
       sgPrecParams.set("Preconditioner Method", "Gauss-Seidel");
       sgPrecParams.sublist("Deterministic Solver Parameters") = det_lsParams;
       sgPrecParams.set("Deterministic Solver", det_linsys);
-      sgPrecParams.set("Max Iterations", 1);
-      sgPrecParams.set("Tolerance", 1e-12);
-      sgPrecParams.set("Save MatVec Table", true);
+      sgPrecParams.set("Max Iterations", gs_prec_its);
+      sgPrecParams.set("Tolerance", gs_prec_tol);
     }
-    else if (precMethod == "Approx-Gauss-Seidel")  {
+    else if (precMethod == AGS)  {
       sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
-      sgPrecParams.set("Symmetric Gauss-Seidel", false);
+      if (outer_krylov_method == CG)
+	sgPrecParams.set("Symmetric Gauss-Seidel", true);
       sgPrecParams.set("Mean Preconditioner Type", "ML");
       Teuchos::ParameterList& precParams =
 	sgPrecParams.sublist("Mean Preconditioner Parameters");
       precParams = det_ML;
     }
-    else if (precMethod == "Approx-Jacobi")  {
+    else if (precMethod == AJ)  {
       sgPrecParams.set("Preconditioner Method", "Approximate Jacobi");
       sgPrecParams.set("Mean Preconditioner Type", "ML");
       Teuchos::ParameterList& precParams =
@@ -391,7 +464,7 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 	sgPrecParams.sublist("Jacobi SG Operator");
       jacobiOpParams.set("Only Use Linear Terms", true);
     }
-    else if (precMethod == "Kronecker-Product")  {
+    else if (precMethod == KP)  {
       sgPrecParams.set("Preconditioner Method", "Kronecker Product");
       sgPrecParams.set("Only Use Linear Terms", true);
       sgPrecParams.set("Mean Preconditioner Type", "ML");
@@ -401,10 +474,13 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
       sgPrecParams.set("G Preconditioner Type", "Ifpack");
       Teuchos::ParameterList& GPrecParams =
         sgPrecParams.sublist("G Preconditioner Parameters");
-      GPrecParams.set("Ifpack Preconditioner", "ILUT");
+      if (outer_krylov_method == GMRES || outer_krylov_method == FGMRES)
+	GPrecParams.set("Ifpack Preconditioner", "ILUT");
+      if (outer_krylov_method == CG)
+	GPrecParams.set("Ifpack Preconditioner", "ICT");
       GPrecParams.set("Overlap", 1);
-      GPrecParams.set("fact: drop tolerance", 1e-16);
-      GPrecParams.set("fact: ilut level-of-fill", 10.0);
+      GPrecParams.set("fact: drop tolerance", 1e-4);
+      GPrecParams.set("fact: ilut level-of-fill", 1.0);
       GPrecParams.set("schwarz: combine mode", "Add");
     }
     else
@@ -412,19 +488,16 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
 		       "Error!  Unknown preconditioner method " << precMethod
 			 << "." << std::endl);
 
-   // Create stochastic Galerkin model evaluator
+    // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
                                                  expansion, Cijk, sgParams,
-                                                 Comm, sg_x_init, sg_p_init,scaleOP));
+                                                 Comm, sg_x_init, sg_p_init,
+						 scaleOP));
 
      // Create NOX interface
     Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> nox_interface =
        Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(sg_model));
-
-    // Parameter list for SG Jacobi iterations 
-    lsParams.set("Max Iterations", 5000);
-    lsParams.set("Tolerance", 1e-12);
 
     // Create NOX stochastic linear system object
     Teuchos::RCP<const Epetra_Vector> u = sg_model->get_x_init();
@@ -434,58 +507,88 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = nox_interface;
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = nox_interface;
 
-    // Build NOX group
-    Teuchos::RCP<NOX::Epetra::Group> grp;
- 
-    if (solve_method=="SG_GMRES") {
-      lsParams.set("Aztec Solver", "GMRES");
-      lsParams.set("Max Iterations", 5000);
-      lsParams.set("Size of Krylov Subspace", 100);
-      lsParams.set("Tolerance", 1e-12); 
-      lsParams.set("Output Frequency", 1);
-      lsParams.set("Preconditioner", "ML");
-      lsParams.set("Zero Initial Guess", true);    
-      Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys;
-    if (matrix_free) {
+    // Build linear solver
+    Teuchos::RCP<NOX::Epetra::LinearSystem> linsys;
+    if (solve_method==SG_KRYLOV) {
       Teuchos::RCP<Epetra_Operator> M = sg_model->create_WPrec()->PrecOp;
-      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = nox_interface;
-      lsParams.set("Preconditioner", "User Defined");
-      linsys = 
-	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
-		       printParams, lsParams, iJac, A, iPrec, M, *u));
+      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = 
+	nox_interface;
+      if (outer_krylov_solver == AZTECOO) {
+	if (outer_krylov_method == GMRES)
+	  lsParams.set("Aztec Solver", "GMRES");
+	else if (outer_krylov_method == CG)
+	  lsParams.set("Aztec Solver", "CG");
+	lsParams.set("Max Iterations", outer_its);
+	lsParams.set("Size of Krylov Subspace", 100);
+	lsParams.set("Tolerance", outer_tol); 
+	lsParams.set("Output Frequency", 1);
+	lsParams.set("Preconditioner", "ML");
+	lsParams.set("Zero Initial Guess", true);
+	lsParams.set("Preconditioner", "User Defined");
+	linsys = 
+	  Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
+			 printParams, lsParams, iJac, A, iPrec, M, *u));
+      }
+      else if (outer_krylov_solver == BELOS){
+	stratParams.set("Linear Solver Type", "Belos");
+	Teuchos::ParameterList& belosParams = 
+	  stratParams.sublist("Linear Solver Types").sublist("Belos");
+	Teuchos::ParameterList* belosSolverParams;
+	if (outer_krylov_method == GMRES || outer_krylov_method == FGMRES) {
+	  belosParams.set("Solver Type","Block GMRES");
+	  belosSolverParams = 
+	    &(belosParams.sublist("Solver Types").sublist("Block GMRES"));
+	  if (outer_krylov_method == FGMRES)
+	    belosSolverParams->set("Flexible Gmres", true);
+	}
+	else if (outer_krylov_method == CG) {
+	  belosParams.set("Solver Type","Block CG");
+	  belosSolverParams = 
+	    &(belosParams.sublist("Solver Types").sublist("Block CG"));
+	}
+	// else if (inner_krylov_method == RGMRES) {
+	//   belosParams.set("Solver Type","GCRODR");
+	//   belosSolverParams = 
+	//     &(belosParams.sublist("Solver Types").sublist("GCRODR"));
+	// }
+	belosSolverParams->set("Convergence Tolerance", outer_tol);
+	belosSolverParams->set("Maximum Iterations", outer_its);
+	belosSolverParams->set("Output Frequency",1);
+	belosSolverParams->set("Output Style",1);
+	belosSolverParams->set("Verbosity",33);
+	stratLinSolParams.set("Preconditioner", "User Defined");
+	linsys = 
+	  Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(
+			 printParams, stratLinSolParams, iJac, A, iPrec, M, 
+			 *u, true));
+      }
+    }
+    else if (solve_method==SG_GS) {
+      lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
+      lsParams.set("Max Iterations", outer_its);
+      lsParams.set("Tolerance", outer_tol);
+      linsys =
+	Teuchos::rcp(new NOX::Epetra::LinearSystemSGGS(
+		       printParams, lsParams, det_linsys, Cijk,
+		       iReq, iJac, A, base_map, sg_map));
     }
     else {
-      linsys = 
-	Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(
-		       printParams, lsParams, iReq, iJac, A, *u));
+      lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
+      lsParams.set("Max Iterations", outer_its);
+      lsParams.set("Tolerance", outer_tol);
+      Teuchos::ParameterList& jacobiOpParams =
+	lsParams.sublist("Jacobi SG Operator");
+      jacobiOpParams.set("Only Use Linear Terms", true);
+      linsys =
+	Teuchos::rcp(new NOX::Epetra::LinearSystemSGJacobi(
+		       printParams, lsParams, det_linsys, Cijk,
+		       iReq, iJac, A, base_map, sg_map));
     }
-    grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
-    std::cout << "Solver is SG GMRES " << std::endl;
-   }
-  else if (solve_method=="SG_GS") {
-    det_lsParams.set("Tolerance", 3e-13); 
-    lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
-    Teuchos::RCP<NOX::Epetra::LinearSystemSGGS> linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemSGGS(
-		     printParams, lsParams, det_linsys, Cijk,
-		     iReq, iJac, A, base_map, sg_map));
-    grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
-    std::cout << "Solver is SG GS " << std::endl;
-  }
-  else {
-    det_lsParams.set("Tolerance", 3e-13); 
-    lsParams.sublist("Deterministic Solver Parameters") = det_lsParams;
-    Teuchos::ParameterList& jacobiOpParams =
-      lsParams.sublist("Jacobi SG Operator");
-    jacobiOpParams.set("Only Use Linear Terms", true);
-    Teuchos::RCP<NOX::Epetra::LinearSystemSGJacobi> linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemSGJacobi(
-		     printParams, lsParams, det_linsys, Cijk,
-		     iReq, iJac, A, base_map, sg_map));
-    grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
-    std::cout << "Solver is SG JACOBI " << std::endl;
- }
 
+    // Build NOX group
+    Teuchos::RCP<NOX::Epetra::Group> grp = 
+      Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, *u, linsys));
+    
     // Create the Solver convergence test
     Teuchos::RCP<NOX::StatusTest::Generic> statusTests =
       NOX::StatusTest::buildStatusTests(statusParams, utils);
@@ -494,11 +597,12 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     Teuchos::RCP<NOX::Solver::Generic> solver = 
       NOX::Solver::buildSolver(grp, statusTests, noxParams);
 
-    Teuchos::Time SolutionTimer("Total Timer",false);
-    SolutionTimer.start();
     // Solve the system
-    NOX::StatusTest::StatusType status = solver->solve();
-    SolutionTimer.stop();
+    NOX::StatusTest::StatusType status;
+    {
+      TEUCHOS_FUNC_TIME_MONITOR("Total Solve Time");
+      status = solver->solve();
+    }
 
     // Get final solution
     const NOX::Epetra::Group& finalGroup = 
@@ -506,51 +610,22 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
-    sgParams->print(std::cout);
+    // Save final solution to file
+    EpetraExt::VectorToMatrixMarketFile("nox_solver_stochastic_solution.mm", 
+					finalSolution);
 
-//////////////////////////////////////////////////////////////////////
-//Post process and output the results.
-////////////////////////////////////////////////////////////////////
-Epetra_Vector Eofu(*(model->get_x_map()),true);
-Epetra_Vector varOfu(*(model->get_x_map()),true);
-Epetra_Vector specificSol(*(model->get_x_map()),true);
-computeMeanSoln(finalSolution, Eofu, basis);
-computeVarianceSoln(finalSolution, Eofu, varOfu, basis);
-TotalTimer.stop();
-
-std::ofstream mean;
-mean.open("mean.txt");
-Eofu.Print(mean);
-mean.close();
-
-std::ofstream var;
-var.open("var.txt");
-varOfu.Print(var);
-var.close();
-
-std::ofstream time;
-time.open("gal_time.txt");
-//Teuchos::ParameterList ML_Output = det_ML.GetOutputList();
-//double precon_time = ML_Output.get("time: total apply",-2000.0);
-time << TotalTimer.totalElapsedTime(false) << "\n";
-time << SolutionTimer.totalElapsedTime(false) << "\n";
-//time << precon_time << "\n";
-//time << system.ApplyTime()<< "\n";
-time.close();
-
-std::ofstream dof;
-dof.open("gal_dof.txt");
-dof << basis->size() << "\n";
-dof.close();
-
-/*int iters = aztec_solver.NumIters();
-std::ofstream iters_file;
-iters_file.open("gal_iters.txt");
-iters_file << iters << "\n";
-iters_file.close();
-*/
+    // Save mean and variance to file
+    Stokhos::EpetraVectorOrthogPoly sg_x_poly(basis, View, 
+					      *(model->get_x_map()), 
+					      finalSolution);
+    Epetra_Vector mean(*(model->get_x_map()));
+    Epetra_Vector std_dev(*(model->get_x_map()));
+    sg_x_poly.computeMean(mean);
+    sg_x_poly.computeStandardDeviation(std_dev);
+    EpetraExt::VectorToMatrixMarketFile("mean_gal.mm", mean);
+    EpetraExt::VectorToMatrixMarketFile("std_dev_gal.mm", std_dev);
       
-/*    // Evaluate SG responses at SG parameters
+    // Evaluate SG responses at SG parameters
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
       sg_model->createOutArgs();
@@ -562,22 +637,21 @@ iters_file.close();
     sg_outArgs.set_g(1, sg_g);
     sg_model->evalModel(sg_inArgs, sg_outArgs);
 
-    // Print mean and standard deviation
+    // Print mean and standard deviation of response
     Stokhos::EpetraVectorOrthogPoly sg_g_poly(basis, View, 
 					      *(model->get_g_map(0)), *sg_g);
-    Epetra_Vector mean(*(model->get_g_map(0)));
-    Epetra_Vector std_dev(*(model->get_g_map(0)));
-    sg_g_poly.computeMean(mean);
-    sg_g_poly.computeStandardDeviation(std_dev);
-    std::cout << "\nResponse Expansion = " << std::endl;
-    std::cout.precision(12);
-    sg_g_poly.print(std::cout);
-    std::cout << "\nResponse Mean =      " << std::endl << mean << std::endl;
-    std::cout << "Response Std. Dev. = " << std::endl << std_dev << std::endl;
-  */    
+    Epetra_Vector g_mean(*(model->get_g_map(0)));
+    Epetra_Vector g_std_dev(*(model->get_g_map(0)));
+    sg_g_poly.computeMean(g_mean);
+    sg_g_poly.computeStandardDeviation(g_std_dev);
+    // std::cout << "\nResponse Expansion = " << std::endl;
+    // std::cout.precision(12);
+    // sg_g_poly.print(std::cout);
+    std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
+    std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
     if (status == NOX::StatusTest::Converged) 
-      utils.out() << "Test Passed!" << std::endl;
+      utils.out() << "Example Passed!" << std::endl;
 
     }
 
