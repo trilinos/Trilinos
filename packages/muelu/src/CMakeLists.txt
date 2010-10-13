@@ -27,7 +27,7 @@ APPEND_SET(HEADERS
   MueCentral/MueLu_Version.hpp
   MueCentral/MueLu_ConfigDefs.hpp
   MueCentral/MueLu_Level.hpp
-  Operator/MueLu_Operator.hpp
+#  Operator/MueLu_Operator.hpp
   ) 
 
 APPEND_SET(SOURCES
