@@ -1,8 +1,10 @@
 #ifndef CTHULHU_TPETRACRSMATRIX_DECL_HPP
 #define CTHULHU_TPETRACRSMATRIX_DECL_HPP
 
-#include "Cthulhu_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_CrsMatrix_def.hpp"
+
+#include "Cthulhu_CrsMatrix.hpp"
 
 namespace Cthulhu {
 
@@ -38,408 +40,427 @@ namespace Cthulhu {
     //! @name Constructor/Destructor Methods
     //@{ 
 
-    // JG TODO: remove constructor ?
+    // JG TODO: remove constructor, create factory ?
 
     //! Constructor specifying the number of non-zeros for all rows.
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile) 
-      : mtx_(rcp(Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(rowMap, maxNumEntriesPerRow, pftype))) {}
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) {
+      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
+      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), maxNumEntriesPerRow, pftype));
+    }
 
     //! Constructor specifying the number of non-zeros for each row.
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile)
-      : mtx_(rcp(Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(rowMap, NumEntriesPerRowToAlloc, pftype))) {}
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    {
+      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
+      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), NumEntriesPerRowToAlloc, pftype));
+    }
 
     //! Constructor specifying a column map and the number of non-zeros for all rows.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile)
-      : mtx_(rcp(Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(rowMap, colMap, maxNumEntriesPerRow, pftype))) {}
-
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    {
+      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
+      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tColMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(colMap); //TODO: handle error
+      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), maxNumEntriesPerRow, pftype));
+    }
+    
     //! Constructor specifying a column map and the number of non-zeros for each row.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile)
-      : mtx_(rcp(Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(rowMap, colMap, NumEntriesPerRowToAlloc, pftype))) {}
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    {
+      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
+      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tColMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(colMap); //TODO: handle error
+      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), NumEntriesPerRowToAlloc, pftype));
+    } 
 
     //! Constructor specifying a pre-constructed graph.
-// TODO: CrsGraph
-//     explicit TpetraCrsMatrix(const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph)
-//       : mtx_(rcp(Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(graph))) {}
+    // TODO: need a CrsGraph
+    //     explicit TpetraCrsMatrix(const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph)
+    //      {}
 
     TpetraCrsMatrix(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {}
 
     // !Destructor.
-    virtual ~TpetraCrsMatrix();
+    virtual ~TpetraCrsMatrix() {}
 
-    //@}
+     //@}
 
-    //! @name Insertion/Removal Methods
-    //@{ 
+     //! @name Insertion/Removal Methods
+     //@{ 
 
-    //! Insert matrix entries, using global IDs.
-    /** All index values must be in the global space. 
-        \pre \c globalRow exists as an ID in the global row map
-        \pre <tt>isLocallyIndexed() == false</tt>
-        \pre <tt>isStorageOptimized() == false</tt>
+     //! Insert matrix entries, using global IDs.
+     /** All index values must be in the global space. 
+         \pre \c globalRow exists as an ID in the global row map
+         \pre <tt>isLocallyIndexed() == false</tt>
+         \pre <tt>isStorageOptimized() == false</tt>
 
-        \post <tt>isGloballyIndexed() == true</tt>
+         \post <tt>isGloballyIndexed() == true</tt>
 
-        \note If \c globalRow does not belong to the matrix on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local matrix. 
-        \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
-        \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
-    */
+         \note If \c globalRow does not belong to the matrix on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local matrix. 
+         \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
+         \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
+     */
     inline void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) { mtx_->insertGlobalValues(globalRow, cols, vals); }
 
-    //! Insert matrix entries, using local IDs.
-    /**
-       \pre \c localRow is a local row belonging to the matrix on this node
-       \pre <tt>isGloballyIndexed() == false</tt>
-       \pre <tt>isStorageOptimized() == false</tt>
-       \pre <tt>hasColMap() == true</tt>
+     //! Insert matrix entries, using local IDs.
+     /**
+        \pre \c localRow is a local row belonging to the matrix on this node
+        \pre <tt>isGloballyIndexed() == false</tt>
+        \pre <tt>isStorageOptimized() == false</tt>
+        \pre <tt>hasColMap() == true</tt>
 
-       \post <tt>isLocallyIndexed() == true</tt>
+        \post <tt>isLocallyIndexed() == true</tt>
 
-       \note If the matrix row already contains entries at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
-       \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
-    */
-    inline void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) { mtx_->insertLocalValues(localRow, cols, vals); }
-
-    //! \brief Replace matrix entries, using global IDs.
-    /** All index values must be in the global space. 
-
-    \pre \c globalRow is a global row belonging to the matrix on this node.
-
-    \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
-    inline void replaceGlobalValues(GlobalOrdinal globalRow, 
-                                    const ArrayView<const GlobalOrdinal> &cols,
-                                    const ArrayView<const Scalar>        &vals) { mtx_->replaceGlobalValues(globalRow, cols, vals); }
-
-    //! Replace matrix entries, using local IDs.
-    /** All index values must be in the local space. 
+        \note If the matrix row already contains entries at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
+        \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
      */
-    inline void replaceLocalValues(LocalOrdinal localRow, 
-                                   const ArrayView<const LocalOrdinal> &cols,
-                                   const ArrayView<const Scalar>       &vals) { mtx_->replaceLocalValues(localRow, cols, vals); }
+     inline void insertLocalValues(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &cols, const ArrayView<const Scalar> &vals) { mtx_->insertLocalValues(localRow, cols, vals); }
 
-    //! Sum into multiple entries, using global IDs.
-    /** All index values must be in the global space. 
+     //! \brief Replace matrix entries, using global IDs.
+     /** All index values must be in the global space. 
 
-    \pre \c globalRow is a global row belonging to the matrix on this node.
+     \pre \c globalRow is a global row belonging to the matrix on this node.
 
-    */
-    inline void sumIntoGlobalValues(GlobalOrdinal globalRow, 
-                                    const ArrayView<const GlobalOrdinal> &cols,
-                                    const ArrayView<const Scalar>        &vals) { mtx_->sumIntoGlobalValues(globalRow, cols, vals); }
+     \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
+     inline void replaceGlobalValues(GlobalOrdinal globalRow, 
+                                     const ArrayView<const GlobalOrdinal> &cols,
+                                     const ArrayView<const Scalar>        &vals) { mtx_->replaceGlobalValues(globalRow, cols, vals); }
 
+     //! Replace matrix entries, using local IDs.
+     /** All index values must be in the local space. 
+      */
+     inline void replaceLocalValues(LocalOrdinal localRow, 
+                                    const ArrayView<const LocalOrdinal> &cols,
+                                    const ArrayView<const Scalar>       &vals) { mtx_->replaceLocalValues(localRow, cols, vals); }
 
-    //! Sum into multiple entries, using local IDs.
-    /** All index values must be in the local space. 
+     //! Sum into multiple entries, using global IDs.
+     /** All index values must be in the global space. 
 
-    \pre \c localRow is a local row belonging to the matrix on this node.
+     \pre \c globalRow is a global row belonging to the matrix on this node.
 
-    */
-    inline void sumIntoLocalValues(LocalOrdinal globalRow, 
-                                   const ArrayView<const LocalOrdinal>  &cols,
-                                   const ArrayView<const Scalar>        &vals) { mtx_->sumIntoLocalValues(globalRow, cols, vals); } 
-
-    //! Set all matrix entries equal to scalarThis.
-    inline void setAllToScalar(const Scalar &alpha) { mtx_->setAllToScalar(alpha); }
-
-    //! Scale the current values of a matrix, this = alpha*this. 
-    inline void scale(const Scalar &alpha) { mtx_->scale(alpha); }
-
-    //@}
-
-    //! @name Transformational Methods
-    //@{ 
-
-    //! \brief Communicate non-local contributions to other nodes.
-    inline void globalAssemble() { mtx_->globalAssemble(); }
-
-    /*! Resume fill operations.
-      After calling fillComplete(), resumeFill() must be called before initiating any changes to the matrix.
-
-      resumeFill() may be called repeatedly. 
-
-      \post  <tt>isFillActive() == true<tt>
-      \post  <tt>isFillComplete() == false<tt>
-    */
-    inline void resumeFill() { mtx_->resumeFill(); }
-
-    /*! \brief Signal that data entry is complete, specifying domain and range maps.
-
-    Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
-
-    \pre  <tt>isFillActive() == true<tt>
-    \pre <tt>isFillComplete()() == false<tt>
-
-    \post <tt>isFillActive() == false<tt>
-    \post <tt>isFillComplete() == true<tt>
-    \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
-    */ 
-    inline void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { mtx_->fillComplete(domainMap, rangeMap, os); }
-
-    /*! \brief Signal that data entry is complete. 
-
-    Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
-
-    \note This method calls fillComplete( getRowMap(), getRowMap(), os ).
-
-    \pre  <tt>isFillActive() == true<tt>
-    \pre <tt>isFillComplete()() == false<tt>
-
-    \post <tt>isFillActive() == false<tt>
-    \post <tt>isFillComplete() == true<tt>
-    \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
-    */
-    inline void fillComplete(OptimizeOption os = DoOptimizeStorage) { mtx_->fillComplete(os); }
-
-    //@}
-
-    //! @name Methods implementing RowMatrix
-    //@{ 
-
-    //! Returns the communicator.
-    inline const RCP<const Comm<int> > & getComm() const { return mtx_->getComm(); }
-
-    //! Returns the underlying node.
-    inline RCP<Node> getNode() const { return mtx_->getNode(); }
-
-    //! Returns the Map that describes the row distribution in this matrix.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const { return mtx_->getRowMap(); }
-
-    //! \brief Returns the Map that describes the column distribution in this matrix.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const { return mtx_->getColMap(); }
-
-    //! Returns the RowGraph associated with this matrix. 
-    //TODO    inline RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const { return mtx_->getGraph(); }
-
-    //! Returns the CrsGraph associated with this matrix. 
-    //TODO    inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const { return mtx_->getCrsGraph(); }
-
-    //! Returns the number of global rows in this matrix.
-    /** Undefined if isFillActive().
      */
-    inline global_size_t getGlobalNumRows() const { return mtx_->getGlobalNumRows(); }
+     inline void sumIntoGlobalValues(GlobalOrdinal globalRow, 
+                                     const ArrayView<const GlobalOrdinal> &cols,
+                                     const ArrayView<const Scalar>        &vals) { mtx_->sumIntoGlobalValues(globalRow, cols, vals); }
 
-    //! \brief Returns the number of global columns in the matrix.
-    /** Undefined if isFillActive().
+
+     //! Sum into multiple entries, using local IDs.
+     /** All index values must be in the local space. 
+
+     \pre \c localRow is a local row belonging to the matrix on this node.
+
      */
-    inline global_size_t getGlobalNumCols() const { return mtx_->getGlobalNumCols(); }
+     inline void sumIntoLocalValues(LocalOrdinal globalRow, 
+                                    const ArrayView<const LocalOrdinal>  &cols,
+                                    const ArrayView<const Scalar>        &vals) { mtx_->sumIntoLocalValues(globalRow, cols, vals); } 
 
-    //! Returns the number of matrix rows owned on the calling node.
-    inline size_t getNodeNumRows() const { return mtx_->getNodeNumRows(); }
+     //! Set all matrix entries equal to scalarThis.
+     inline void setAllToScalar(const Scalar &alpha) { mtx_->setAllToScalar(alpha); }
 
-    //! Returns the number of columns connected to the locally owned rows of this matrix.
-    /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
+     //! Scale the current values of a matrix, this = alpha*this. 
+     inline void scale(const Scalar &alpha) { mtx_->scale(alpha); }
+
+     //@}
+
+     //! @name Transformational Methods
+     //@{ 
+
+     //! \brief Communicate non-local contributions to other nodes.
+     inline void globalAssemble() { mtx_->globalAssemble(); }
+
+     /*! Resume fill operations.
+       After calling fillComplete(), resumeFill() must be called before initiating any changes to the matrix.
+
+       resumeFill() may be called repeatedly. 
+
+       \post  <tt>isFillActive() == true<tt>
+       \post  <tt>isFillComplete() == false<tt>
      */
-    inline size_t getNodeNumCols() const { return mtx_->getNodeNumCols(); }
+     inline void resumeFill() { mtx_->resumeFill(); }
 
-    //! Returns the index base for global indices for this matrix. 
-    inline GlobalOrdinal getIndexBase() const { return mtx_->getIndexBase(); }
+     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
-    //! Returns the global number of entries in this matrix.
-    inline global_size_t getGlobalNumEntries() const { return mtx_->getGlobalNumEntries(); }
+     Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
 
-    //! Returns the local number of entries in this matrix.
-    inline size_t getNodeNumEntries() const { return mtx_->getNodeNumEntries(); }
+     \pre  <tt>isFillActive() == true<tt>
+     \pre <tt>isFillComplete()() == false<tt>
 
-    //! \brief Returns the current number of entries on this node in the specified global row.
-    /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this matrix. */
-    inline size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return mtx_->getNumEntriesInGlobalRow(); }
+     \post <tt>isFillActive() == false<tt>
+     \post <tt>isFillComplete() == true<tt>
+     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
+     */ 
+      inline void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { mtx_->fillComplete(domainMap, rangeMap, os); }
 
-    //! Returns the current number of entries on this node in the specified local row.
-    /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
-    inline size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return mtx_->getNumEntriesInLocalRow(); }
+     /*! \brief Signal that data entry is complete. 
 
-    //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
-    /** Undefined if isFillActive().
+     Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
+
+     \note This method calls fillComplete( getRowMap(), getRowMap(), os ).
+
+     \pre  <tt>isFillActive() == true<tt>
+     \pre <tt>isFillComplete()() == false<tt>
+
+     \post <tt>isFillActive() == false<tt>
+     \post <tt>isFillComplete() == true<tt>
+     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
      */
-    inline global_size_t getGlobalNumDiags() const { return mtx_->getGlobalNumDiags(); }
+//TODO: Tpetra::OptimizeOption
+    inline void fillComplete(Tpetra::OptimizeOption os = Tpetra::DoOptimizeStorage) { mtx_->fillComplete(os); }
 
-    //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
-    /** Undefined if isFillActive().
+     //@}
+
+     //! @name Methods implementing RowMatrix
+     //@{ 
+
+     //! Returns the communicator.
+     inline const RCP<const Comm<int> > & getComm() const { return mtx_->getComm(); }
+
+     //! Returns the underlying node.
+     inline RCP<Node> getNode() const { return mtx_->getNode(); }
+
+     //! Returns the Map that describes the row distribution in this matrix.
+//    TODO Tpetra::Map
+//    inline const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const { return mtx_->getRowMap(); } 
+
+     //! \brief Returns the Map that describes the column distribution in this matrix.
+//    TODO Tpetra::Map
+//    inline const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const { return mtx_->getColMap();  }
+
+     //! Returns the RowGraph associated with this matrix. 
+     //TODO    inline RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const { return mtx_->getGraph(); }
+
+     //! Returns the CrsGraph associated with this matrix. 
+     //TODO    inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const { return mtx_->getCrsGraph(); }
+
+     //! Returns the number of global rows in this matrix.
+     /** Undefined if isFillActive().
+      */
+     inline global_size_t getGlobalNumRows() const { return mtx_->getGlobalNumRows(); }
+
+     //! \brief Returns the number of global columns in the matrix.
+     /** Undefined if isFillActive().
+      */
+     inline global_size_t getGlobalNumCols() const { return mtx_->getGlobalNumCols(); }
+
+     //! Returns the number of matrix rows owned on the calling node.
+     inline size_t getNodeNumRows() const { return mtx_->getNodeNumRows(); }
+
+     //! Returns the number of columns connected to the locally owned rows of this matrix.
+     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
+      */
+     inline size_t getNodeNumCols() const { return mtx_->getNodeNumCols(); }
+
+     //! Returns the index base for global indices for this matrix. 
+     inline GlobalOrdinal getIndexBase() const { return mtx_->getIndexBase(); }
+
+     //! Returns the global number of entries in this matrix.
+     inline global_size_t getGlobalNumEntries() const { return mtx_->getGlobalNumEntries(); }
+
+     //! Returns the local number of entries in this matrix.
+     inline size_t getNodeNumEntries() const { return mtx_->getNodeNumEntries(); }
+
+     //! \brief Returns the current number of entries on this node in the specified global row.
+     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this matrix. */
+     inline size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const { return mtx_->getNumEntriesInGlobalRow(globalRow); }
+
+     //! Returns the current number of entries on this node in the specified local row.
+     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
+     inline size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const { return mtx_->getNumEntriesInLocalRow(localRow); }
+
+     //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
+     /** Undefined if isFillActive().
+      */
+     inline global_size_t getGlobalNumDiags() const { return mtx_->getGlobalNumDiags(); }
+
+     //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
+     /** Undefined if isFillActive().
+      */
+     inline size_t getNodeNumDiags() const { return mtx_->getNodeNumDiags(); }
+
+     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
+     /** Undefined if isFillActive().
+      */
+     inline size_t getGlobalMaxNumRowEntries() const { return mtx_->getGlobalMaxNumRowEntries(); }
+
+     //! \brief Returns the maximum number of entries across all rows/columns on this node.
+     /** Undefined if isFillActive().
+      */
+     inline size_t getNodeMaxNumRowEntries() const { return mtx_->getNodeMaxNumRowEntries(); }
+
+     //! \brief Indicates whether the matrix has a well-defined column map. 
+     inline bool hasColMap() const { return mtx_->hasColMap(); } 
+
+     //! \brief Indicates whether the matrix is lower triangular.
+     /** Undefined if isFillActive().
+      */
+     inline bool isLowerTriangular() const { return mtx_->isLowerTriangular(); }
+
+     //! \brief Indicates whether the matrix is upper triangular.
+     /** Undefined if isFillActive().
+      */
+     inline bool isUpperTriangular() const { return mtx_->isUpperTriangular(); }
+
+     //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
+     inline bool isLocallyIndexed() const { return mtx_->isLocallyIndexed(); }
+
+     //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
+     inline bool isGloballyIndexed() const { return mtx_->isGloballyIndexed(); }
+
+     //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
+     inline bool isFillComplete() const { return mtx_->isFillComplete(); }
+
+     //! Returns \c true if resumeFill() has been called and the matrix is in edit mode.
+     inline bool isFillActive() const { return mtx_->isFillActive(); }
+
+     //! \brief Returns \c true if storage has been optimized.
+     /**
+        Optimized storage means that the allocation of each row is equal to the
+        number of entries. The effect is that a pass through the matrix, i.e.,
+        during a mat-vec, requires minimal memory traffic. One limitation of
+        optimized storage is that no new indices can be added to the matrix.
      */
-    inline size_t getNodeNumDiags() const { return mtx_->getNodeNumDiags(); }
+     inline bool isStorageOptimized() const { return mtx_->isStorageOptimized(); }
 
-    //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
-    /** Undefined if isFillActive().
+     //! Returns \c true if the matrix was allocated with static data structures.
+    inline Tpetra::ProfileType getProfileType() const { return mtx_->getProfileType(); } // TODO Tpetra::ProfileType
+
+     //! Indicates that the graph is static, so that new entries cannot be added to this matrix. */
+     inline bool isStaticGraph() const { return mtx_->isStaticGraph(); }
+
+     //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
+     /*!
+       \param LocalRow - (In) Global row number for which indices are desired.
+       \param Indices - (Out) Global column indices corresponding to values.
+       \param Values - (Out) Matrix values.
+       \param NumEntries - (Out) Number of indices.
+
+       Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
+       with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+       returned as OrdinalTraits<size_t>::invalid().
      */
-    inline size_t getGlobalMaxNumRowEntries() const { return mtx_->getGlobalMaxNumRowEntries(); }
+     inline void getGlobalRowCopy(GlobalOrdinal GlobalRow,
+                                  const ArrayView<GlobalOrdinal> &Indices,
+                                  const ArrayView<Scalar> &Values,
+                                  size_t &NumEntries
+                                  ) const { mtx_->getGlobalRowCopy(GlobalRow, Indices, Values, NumEntries); }
 
-    //! \brief Returns the maximum number of entries across all rows/columns on this node.
-    /** Undefined if isFillActive().
+     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
+     /*!
+       \param LocalRow - (In) Local row number for which indices are desired.
+       \param Indices - (Out) Local column indices corresponding to values.
+       \param Values - (Out) Matrix values.
+       \param NumIndices - (Out) Number of indices.
+
+       Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
+       with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+       returned as OrdinalTraits<size_t>::invalid().
+
+       \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
      */
-    inline size_t getNodeMaxNumRowEntries() const { return mtx_->getNodeMaxNumRowEntries(); }
-
-    //! \brief Indicates whether the matrix has a well-defined column map. 
-    inline bool hasColMap() const { return mtx_->hasColMap(); } 
-
-    //! \brief Indicates whether the matrix is lower triangular.
-    /** Undefined if isFillActive().
-     */
-    inline bool isLowerTriangular() const { return mtx_->isLowerTriangular(); }
-
-    //! \brief Indicates whether the matrix is upper triangular.
-    /** Undefined if isFillActive().
-     */
-    inline bool isUpperTriangular() const { return mtx_->isUpperTriangular(); }
-
-    //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
-    inline bool isLocallyIndexed() const { return mtx_->isLocallyIndexed(); }
-
-    //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
-    inline bool isGloballyIndexed() const { return mtx_->isGloballyIndexed(); }
-
-    //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
-    inline bool isFillComplete() const { return mtx_->isFillComplete(); }
-
-    //! Returns \c true if resumeFill() has been called and the matrix is in edit mode.
-    inline bool isFillActive() const { return mtx_->isFillActive(); }
-
-    //! \brief Returns \c true if storage has been optimized.
-    /**
-       Optimized storage means that the allocation of each row is equal to the
-       number of entries. The effect is that a pass through the matrix, i.e.,
-       during a mat-vec, requires minimal memory traffic. One limitation of
-       optimized storage is that no new indices can be added to the matrix.
-    */
-    inline bool isStorageOptimized() const { return mtx_->isStorageOptimized(); }
-
-    //! Returns \c true if the matrix was allocated with static data structures.
-    inline ProfileType getProfileType() const { return mtx_->getProfileType(); }
-
-    //! Indicates that the graph is static, so that new entries cannot be added to this matrix. */
-    inline bool isStaticGraph() const { return mtx_->isStaticGraph(); }
-
-    //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
-    /*!
-      \param LocalRow - (In) Global row number for which indices are desired.
-      \param Indices - (Out) Global column indices corresponding to values.
-      \param Values - (Out) Matrix values.
-      \param NumEntries - (Out) Number of indices.
-
-      Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-      with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
-      returned as OrdinalTraits<size_t>::invalid().
-    */
-    inline void getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                                 const ArrayView<GlobalOrdinal> &Indices,
+     inline void getLocalRowCopy(LocalOrdinal LocalRow, 
+                                 const ArrayView<LocalOrdinal> &Indices, 
                                  const ArrayView<Scalar> &Values,
                                  size_t &NumEntries
-                                 ) const { mtx_->getGlobalRowCopy(GlobalRow, Indices, Values, NumEntries); }
+                                 ) const { mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
 
-    //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices - (Out) Local column indices corresponding to values.
-      \param Values - (Out) Matrix values.
-      \param NumIndices - (Out) Number of indices.
+     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
+     /*!
+       \param GlobalRow - (In) Global row number for which indices are desired.
+       \param Indices   - (Out) Global column indices corresponding to values.
+       \param Values    - (Out) Row values
+       \pre <tt>isLocallyIndexed() == false</tt>
+       \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
 
-      Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
-      with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
-      returned as OrdinalTraits<size_t>::invalid().
+       Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
+     */
+     inline void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const { mtx_->getGlobalRowView(GlobalRow, indices, values); }
 
-      \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
-    */
-    inline void getLocalRowCopy(LocalOrdinal LocalRow, 
-                                const ArrayView<LocalOrdinal> &Indices, 
-                                const ArrayView<Scalar> &Values,
-                                size_t &NumEntries
-                                ) const { mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
+     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
+     /*!
+       \param LocalRow - (In) Local row number for which indices are desired.
+       \param Indices  - (Out) Global column indices corresponding to values.
+       \param Values   - (Out) Row values
+       \pre <tt>isGloballyIndexed() == false</tt>
+       \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
 
-    //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
-    /*!
-      \param GlobalRow - (In) Global row number for which indices are desired.
-      \param Indices   - (Out) Global column indices corresponding to values.
-      \param Values    - (Out) Row values
-      \pre <tt>isLocallyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInGlobalRow(GlobalRow)</tt>
+       Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
+     */
+     inline void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const { mtx_->getLocalRowView(LocalRow, indices, values); }
 
-      Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
-    */
-    inline void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const { mtx_->getGlobalRowView(GlobalRow, indices, values); }
+     //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+     /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
+       the zero and non-zero diagonals owned by this node. */
+     //TODO    inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const { mtx_->getLocalDiagCopy(diag); }
 
-    //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
-    /*!
-      \param LocalRow - (In) Local row number for which indices are desired.
-      \param Indices  - (Out) Global column indices corresponding to values.
-      \param Values   - (Out) Row values
-      \pre <tt>isGloballyIndexed() == false</tt>
-      \post <tt>indices.size() == getNumEntriesInLocalRow(LocalRow)</tt>
+     //@}
 
-      Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
-    */
-    inline void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const { mtx_->getLocalRowView(LocalRow, indices, values); }
+     //! @name Advanced Matrix-vector multiplication and solve methods
+     //@{
 
-    //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
-    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
-      the zero and non-zero diagonals owned by this node. */
-    //TODO    inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const { mtx_->getLocalDiagCopy(diag); }
+     //! Multiplies this matrix by a MultiVector.
+     /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
 
-    //@}
+     Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
 
-    //! @name Advanced Matrix-vector multiplication and solve methods
-    //@{
-
-    //! Multiplies this matrix by a MultiVector.
-    /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
-
-    Both are required to have constant stride, and they are not permitted to ocupy overlapping space. No runtime checking will be performed in a non-debug build.
-
-    This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that multiply() not be called directly; instead, use the TpetraCrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
+     This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that multiply() not be called directly; instead, use the TpetraCrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
           
-    If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
-    will be accumulated into \c Y.
-    */
-    template <class DomainScalar, class RangeScalar>
-    inline void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const { mtx_->multiply(X, Y, trans, alpha, beta); }
+     If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
+     will be accumulated into \c Y.
+     */
+     template <class DomainScalar, class RangeScalar>
+     inline void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const { mtx_->multiply(X, Y, trans, alpha, beta); }
 
-    //! Solves a linear system when the underlying matrix is triangular.
-    /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
+     //! Solves a linear system when the underlying matrix is triangular.
+     /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
 
-    This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that solve() not be called directly; instead, use the TpetraCrsMatrixSolveOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
+     This method is templated on the scalar type of MultiVector objects, allowing this method to be applied to MultiVector objects of arbitrary type. However, it is recommended that solve() not be called directly; instead, use the TpetraCrsMatrixSolveOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.
           
-    Both are required to have constant stride. However, unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No runtime checking will be performed in a non-debug build.
-    */
-    template <class DomainScalar, class RangeScalar>
-    inline void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const { mtx_->solve(Y, X, trans); }
+     Both are required to have constant stride. However, unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No runtime checking will be performed in a non-debug build.
+     */
+     template <class DomainScalar, class RangeScalar>
+     inline void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const { mtx_->solve(Y, X, trans); }
           
-    //@}
+     //@}
 
-    //! @name Methods implementing Operator
-    //@{ 
+     //! @name Methods implementing Operator
+     //@{ 
 
-    //! \brief Computes the sparse matrix-multivector multiplication.
-    /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
-      - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
-    */
-    inline void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                      Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                      Scalar alpha = ScalarTraits<Scalar>::one(),
-                      Scalar beta = ScalarTraits<Scalar>::zero()) const { mtx_->apply(X, Y, mode, alpha, beta); }
+     //! \brief Computes the sparse matrix-multivector multiplication.
+     /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
+       - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
+     */
+     inline void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                       Scalar alpha = ScalarTraits<Scalar>::one(),
+                       Scalar beta = ScalarTraits<Scalar>::zero()) const { //mtx_->apply(X, Y, mode, alpha, beta);  TODO
+     }
 
-    //! Indicates whether this operator supports applying the adjoint operator.
-    inline bool hasTransposeApply() const { return mtx_->hasTransposeApply(); }
+     //! Indicates whether this operator supports applying the adjoint operator.
+     inline bool hasTransposeApply() const { return mtx_->hasTransposeApply(); }
 
-    //! \brief Returns the Map associated with the domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
+     //! \brief Returns the Map associated with the domain of this operator.
+     //! This will be <tt>null</tt> until fillComplete() is called.
+    //TODO: wrap Tpetra::Map into a Cthulhu::Map
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const { return mtx_->getDomainMap(); }
 
-    //! Returns the Map associated with the domain of this operator.
-    //! This will be <tt>null</tt> until fillComplete() is called.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const { return mtx_->getRangeMap(); }
+     //! Returns the Map associated with the domain of this operator.
+     //! This will be <tt>null</tt> until fillComplete() is called.
+    //TODO: wrap Tpetra::Map into a Cthulhu::Map
+     //inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const { return mtx_->getRangeMap(); }
 
-    //@}
+     //@}
 
-    //! @name Overridden from Teuchos::Describable 
-    //@{
+     //! @name Overridden from Teuchos::Describable 
+     //@{
 
-    /** \brief Return a simple one-line description of this object. */
+     /** \brief Return a simple one-line description of this object. */
     inline std::string description() const { return mtx_->description(); }
-
-    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    
+     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { mtx_->describe(out,verbLevel); }
-
+    
     //@}
 
     //! @name Methods implementing Cthulhu::DistObject
@@ -491,9 +512,14 @@ namespace Cthulhu {
 
     RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_CrsMatrix() const { return mtx_; }
 
+
+    /** TODO : interface of Teuchos_LabeledObject.hpp **/
+    void setObjectLabel (const std::string &objectLabel) { mtx_->setObjectLabel(objectLabel); }
+
+
   private:
     
-    const RCP< const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
+    RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_; //TODO const RCP?
 
   }; // class TpetraCrsMatrix
 

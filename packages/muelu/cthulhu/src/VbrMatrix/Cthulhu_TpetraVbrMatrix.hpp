@@ -72,7 +72,7 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
   //TODO: need BlockCrsGraph
   //  VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
 
-  TpetraVbrMatrix(const Teuchos::RCP<const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {}
+  TpetraVbrMatrix(const Teuchos::RCP<const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) {} //TODO
 
   //! Destructor
   virtual ~TpetraVbrMatrix();
@@ -384,7 +384,7 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
   //@}
 
   RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > getTpetra_VbrMatrix() const { return mtx_; }
-  
+
 private:
   
   const RCP< const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;

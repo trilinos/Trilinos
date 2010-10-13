@@ -235,7 +235,9 @@ namespace Cthulhu {
     std::string description() const { return NULL; };
 
     //! Print the object with some verbosity level to a \c FancyOStream object.
-    // TODO   void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const { map_->describe(); };
+    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { 
+      // TODOmap_->describe();
+    };
 
     //@}
 

@@ -4,6 +4,8 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
+#include "Tpetra_ConfigDefs.hpp" //Tpetra::LookupStatus
+
 // enums and defines
 #include "Cthulhu_ConfigDefs.hpp"
 
@@ -25,7 +27,7 @@ namespace Cthulhu {
    The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
   */
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-  class Map { //TODO : public Teuchos::Describable {
+  class Map : public Teuchos::Describable {
 
   public:
 
@@ -169,7 +171,7 @@ namespace Cthulhu {
     virtual std::string description() const = 0;
 
     //! Print the object with some verbosity level to a \c FancyOStream object.
-    // TODO    virtual void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = verbLevel_default) const = 0;
+    virtual void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const = 0;
 
     //@}
 
