@@ -1,5 +1,4 @@
 #include <Tsqr_TimeStats.hpp>
-#include <Tsqr_MessengerBase.hpp>
 #include <limits>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,34 +84,5 @@ namespace TSQR {
 	    << endl;
       }
   }
-
-  TimeStats
-  TimeStats::globalTimeStats (const Teuchos::RCP< MessengerBase< double > >& comm,
-			      const TimeStats& localStats)
-  {
-    TimeStats globalStats;
-
-    // Casting int to double is exact.
-    const double localCount = static_cast<double> (localStats.count());
-    const double minCount = comm->globalMin (localCount);
-    const double maxCount = comm->globalMax (localCount);
-    if (minCount != maxCount)
-      throw std::logic_error ("Global stats don\'t make sense, because counts differ");
-    globalStats.count_ = localStats.count();
-      
-    // Casting int to double is exact.
-    const double P = static_cast<double> (comm->size());
-    globalStats.mean_ = comm->globalSum (localStats.mean() / P);
-
-    globalStats.min_ = comm->globalMin (localStats.min());
-    globalStats.max_ = comm->globalMax (localStats.max());
-    // Note that this is not the sum of the totals of all the
-    // processes, but rather the "global total."  I've chosen to
-    // define that as the max of the totals.
-    globalStats.total_ = comm->globalMax (localStats.total());
-
-    return globalStats;
-  }
-
 
 } // namespace TSQR

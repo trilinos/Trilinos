@@ -35,8 +35,10 @@
 
 #include <Tsqr_generateStack.hpp>
 #include <Tsqr_DistTsqr.hpp>
+#include <Tsqr_GlobalTimeStats.hpp>
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
+
 
 #include <algorithm>
 #include <iomanip>

@@ -330,6 +330,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_TbbTest.hpp
     TSQR/Tsqr_TestSetup.hpp
     TSQR/Tsqr_TimeStats.hpp
+    TSQR/Tsqr_GlobalTimeStats.hpp
     TSQR/Tsqr_TrivialTimer.hpp
     TSQR/Tsqr_TsqrTest.hpp
     TSQR/Tsqr_Util.hpp
@@ -346,6 +347,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     TSQR/Tsqr_SeqTest.cpp
     TSQR/Tsqr_StatTimeMonitor.cpp
     TSQR/Tsqr_TimeStats.cpp
+    TSQR/Tsqr_GlobalTimeStats.cpp
     TSQR/Tsqr_TrivialTimer.cpp
     )
   APPEND_SET(HEADERS

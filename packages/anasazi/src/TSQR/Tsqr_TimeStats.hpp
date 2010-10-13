@@ -2,8 +2,6 @@
 #define __TSQR_TimeStats_hpp
 
 #include <Teuchos_RCP.hpp>
-
-// #include <cstddef> // size_t
 #include <ostream>
 #include <stdexcept>
 
@@ -12,11 +10,6 @@
 
 namespace TSQR {
 
-  // Forward declaration
-  template< class Scalar >
-  class MessengerBase;
-
-  /// \class TimeStats
   /// \brief Collect running statistics
   ///
   /// TimeStats collects running statistics on a particular timing,
@@ -74,16 +67,24 @@ namespace TSQR {
     ///
     int count() const { return count_; }
 
-    /// Produce global time statistics out of all the local ones.
+    /// Construct a TimeStats object from its constituent data.  This
+    /// is useful for computing global statistics over many MPI
+    /// processes, or for otherwise combining different TimeStats
+    /// objects.
     ///
-    /// \param comm [in] Encapsulation of the interprocess communicator
-    /// \param localStats [in] Local (to this process) time statistics
-    ///
-    /// \return Global (over all processes) time statistics
-    ///
-    static TimeStats
-    globalTimeStats (const Teuchos::RCP< MessengerBase< double > >& comm,
-		     const TimeStats& localStats);
+    /// \note This design is suboptimal, because it makes it hard for
+    ///   new statistics to be added to the class.
+    TimeStats (const int newCount, 
+	       const double newMin,
+	       const double newMax,
+	       const double newMean,
+	       const double newTotal) :
+      min_ (newMin), 
+      max_ (newMax), 
+      mean_ (newMean),
+      total_ (newTotal),
+      count_ (newCount)
+    {}
 
   private:
     double min_, max_, mean_, total_;
