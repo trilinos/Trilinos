@@ -94,6 +94,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_SeqTest.hpp
     Tsqr_SequentialCholeskyQR.hpp
     Tsqr_SequentialTsqr.hpp
+    Tsqr_StatTimeMonitor.hpp
     Tsqr_TbbTest.hpp
     Tsqr_TimeStats.hpp
     Tsqr_TrivialTimer.hpp
@@ -127,6 +128,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_ZLapack.cpp
     Tsqr_CombineTest.cpp
     Tsqr_SeqTest.cpp
+    Tsqr_StatTimeMonitor.cpp
     Tsqr_TimeStats.cpp
     Tsqr_TrivialTimer.cpp
     )
