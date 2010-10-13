@@ -37,7 +37,8 @@ template <typename ordinal_type, typename value_type>
 Stokhos::SparseGridQuadrature<ordinal_type, value_type>::
 SparseGridQuadrature(
   const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,
-  ordinal_type sparse_grid_level) :
+  ordinal_type sparse_grid_level,
+  value_type duplicate_tol) :
   coordinate_bases(product_basis->getCoordinateBases())
 {
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
@@ -90,7 +91,7 @@ SparseGridQuadrature(
   Teuchos::Array<value_type> gp(ntot*d);
 
   webbur::sgmg_unique_index(d, level, &rules[0], &compute1DPoints[0],
-			    1e-15, ntot, num_total_pts, 
+			    duplicate_tol, ntot, num_total_pts, 
 			    &growthRules[0],
 			    &sparse_unique_index[0]);
   webbur::sgmg_index(d, level, &rules[0], ntot, num_total_pts, 

@@ -193,10 +193,14 @@ namespace Stokhos {
     //! Constructor to be called by derived classes
     /*!
      * \c name is the name for the basis that will be displayed when
-     * printing the basis, \c p is the order of the basis, and \c normalize
-     * indicates whether the basis polynomials should have unit-norm.
+     * printing the basis, \c p is the order of the basis, \c normalize
+     * indicates whether the basis polynomials should have unit-norm, and
+     * \c quad_zero_tol is used to replace any quadrature point within this
+     * tolerance with zero (which can help with duplicate removal in sparse
+     * grid calculations).
      */
-    RecurrenceBasis(const std::string& name, ordinal_type p, bool normalize);
+    RecurrenceBasis(const std::string& name, ordinal_type p, bool normalize,
+		    value_type quad_zero_tol = 1.0e-14);
 
     //! Compute recurrence coefficients
     /*!
@@ -238,6 +242,9 @@ namespace Stokhos {
 
     //! Normalize basis
     bool normalize;
+
+    //! Tolerance for quadrature points near zero
+    value_type quad_zero_tol;
 
     //! Recurrence \f$\alpha\f$ coefficients
     Teuchos::Array<value_type> alpha;
