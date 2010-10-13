@@ -32,7 +32,7 @@
 #include "Tsqr_Blas.hpp"
 #include "Tsqr_Matrix.hpp"
 #include "Tsqr_Random_MatrixGenerator.hpp"
-#include "Tsqr_ScalarTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 #include "Tsqr_RMessenger.hpp"
 
 #include <algorithm>
@@ -81,13 +81,13 @@ namespace TSQR {
     void
     randomGlobalMatrix (Generator* const pGenerator, 
 			MatrixViewType& A_local,
-			const typename ScalarTraits< typename MatrixViewType::scalar_type >::magnitude_type singular_values[],
+			const typename Teuchos::ScalarTraits< typename MatrixViewType::scalar_type >::magnitudeType singular_values[],
 			MessengerBase< typename MatrixViewType::ordinal_type >* const ordinalMessenger,
 			MessengerBase< typename MatrixViewType::scalar_type >* const scalarMessenger)
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       typedef typename MatrixViewType::scalar_type scalar_type;
-      typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
       using std::vector;
 
       const bool b_local_debug = false;

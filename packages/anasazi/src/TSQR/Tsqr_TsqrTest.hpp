@@ -39,6 +39,7 @@
 #include <Tsqr_GlobalVerify.hpp>
 #include <Tsqr_printGlobalMatrix.hpp>
 #include <Tsqr_verifyTimerConcept.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <cstring> // size_t
 #include <iostream>
@@ -213,7 +214,7 @@ namespace TSQR {
 		const bool human_readable = false,
 		const bool b_debug = false)
     {
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
       using std::cerr;
       using std::cout;
       using std::endl;

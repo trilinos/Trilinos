@@ -29,9 +29,10 @@
 #ifndef __Tsqr_printGlobalMatrix_hpp
 #define __Tsqr_printGlobalMatrix_hpp
 
-#include "Tsqr_MessengerBase.hpp"
-#include "Tsqr_Util.hpp"
-#include "Tsqr_Matrix.hpp"
+#include <Tsqr_MessengerBase.hpp>
+#include <Tsqr_Util.hpp>
+#include <Tsqr_Matrix.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <limits>
 #include <ostream>
@@ -54,13 +55,14 @@ namespace TSQR {
     {
       typedef typename ConstMatrixViewType::ordinal_type LocalOrdinal;
       typedef typename ConstMatrixViewType::scalar_type Scalar;
+      typedef Teuchos::ScalarTraits< Scalar > STS;
       using std::endl;
 
       const int myRank = scalarComm->rank ();
       const int nprocs = scalarComm->size ();
       const LocalOrdinal nrowsLocal = A_local.nrows();
       const LocalOrdinal ncols = A_local.ncols();
-      const Scalar quiet_NaN = std::numeric_limits< Scalar >::quiet_NaN();
+      const Scalar quiet_NaN = STS::nan();
 
       if (myRank == 0)
 	{
@@ -82,7 +84,17 @@ namespace TSQR {
 	      LocalOrdinal dims[2];
 	      ordinalComm->recv (&dims[0], 2, srcProc, 0);
 
-	      // Make space for the remote matrix data
+	      // Make space for the remote matrix data.
+	      //
+	      // mfh 13 Oct 2010: Teuchos::OrdinalTraits does not
+	      // currently have this feature.  It's OK to use
+	      // std::numeric_limits, since ordinal types in Trilinos
+	      // are intended to be built-in types (like int or long
+	      // long int).  std::numeric_limits only promises to work
+	      // for built-in types, unless someone has defined an
+	      // appropriate specialization.  Teuchos::ScalarTraits,
+	      // in contrast, has to work for non-built-in Scalar
+	      // types, like ARPREC or QD floating-point numbers.
 	      if (std::numeric_limits< LocalOrdinal >::is_signed)
 		{
 		  if (dims[0] <= 0 || dims[1] <= 0)

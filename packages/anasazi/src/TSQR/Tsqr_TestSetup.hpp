@@ -32,7 +32,7 @@
 #include <Tsqr_MessengerBase.hpp>
 #include <Tsqr_Random_GlobalMatrix.hpp>
 #include <Tsqr_Matrix.hpp>
-#include <Tsqr_ScalarTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <vector>
 
@@ -71,7 +71,7 @@ namespace TSQR {
     {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       typedef typename MatrixViewType::scalar_type scalar_type;
-      typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
 
       const int myRank = scalarComm->rank();
       const ordinal_type ncols = A_local.ncols();
