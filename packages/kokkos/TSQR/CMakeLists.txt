@@ -94,10 +94,29 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_SeqTest.hpp
     Tsqr_SequentialCholeskyQR.hpp
     Tsqr_SequentialTsqr.hpp
+    Tsqr_TbbTest.hpp
+    Tsqr_TimeStats.hpp
     Tsqr_TrivialTimer.hpp
     Tsqr_Util.hpp
     Tsqr_verifyTimerConcept.hpp
     )
+  # Headers for TBB-enabled shared-memory parallel TSQR.
+  IF (TSQR_ENABLE_Intel_TBB)
+    APPEND_SET(HEADERS
+      TbbTsqr_ApplyTask.hpp
+      TbbTsqr_CacheBlockTask.hpp
+      TbbTsqr_ExplicitQTask.hpp
+      TbbTsqr_FactorTask.hpp
+      TbbTsqr_FillWithZerosTask.hpp
+      TbbTsqr.hpp
+      TbbTsqr_Partitioner.hpp
+      TbbTsqr_RevealRankTask.hpp
+      TbbTsqr_TbbParallelTsqr.hpp
+      TbbTsqr_TbbRecursiveTsqr_Def.hpp
+      TbbTsqr_TbbRecursiveTsqr.hpp
+      TbbTsqr_UnCacheBlockTask.hpp
+      )
+  ENDIF ()
   # Non-generated source files
   APPEND_SET(SOURCES
     Tsqr_ApplyType.cpp 
@@ -108,6 +127,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_ZLapack.cpp
     Tsqr_CombineTest.cpp
     Tsqr_SeqTest.cpp
+    Tsqr_TimeStats.cpp
     Tsqr_TrivialTimer.cpp
     )
 

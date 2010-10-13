@@ -47,15 +47,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 # Intel's Threading Building Blocks library).
 #
 # Only build TBB-enabled TSQR if (surprise!) TBB is enabled.
-#IF (TSQR_ENABLE_Intel_TBB)
-#  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#    TSQR_TbbTsqr
-#    SOURCES Tsqr_TestTbbTsqr.cpp
-#    COMM serial mpi
-#    ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
-#    STANDARD_PASS_OUTPUT
-#    NUM_MPI_PROCS 1
-#    DEPLIBS kokkos kokkostsqr
-#    )
-#ENDIF()
+IF (TSQR_ENABLE_Intel_TBB)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    TSQR_TbbTsqr
+    SOURCES Tsqr_TestTbbTsqr.cpp
+    COMM serial mpi
+    ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-bloks"
+    STANDARD_PASS_OUTPUT
+    NUM_MPI_PROCS 1
+    DEPLIBS kokkos kokkostsqr
+    )
+ENDIF()
 
