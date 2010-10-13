@@ -170,7 +170,7 @@ namespace NOX {
 
       Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
 
-      Teuchos::RCP< const NOX::Abstract::Vector > getFptr() const;
+      Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
   
       Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
 
