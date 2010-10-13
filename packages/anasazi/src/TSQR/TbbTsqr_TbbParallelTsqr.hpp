@@ -39,7 +39,7 @@
 #include <TbbTsqr_FillWithZerosTask.hpp>
 
 #include <Tsqr_ApplyType.hpp>
-#include <Tsqr_ScalarTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <algorithm>
 #include <limits>
@@ -88,7 +88,7 @@ namespace TSQR {
 
     public:
       typedef Scalar scalar_type;
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
       typedef LocalOrdinal ordinal_type;
       
       /// Whether or not this QR factorization produces an R factor

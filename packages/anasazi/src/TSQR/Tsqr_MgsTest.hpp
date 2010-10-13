@@ -118,7 +118,7 @@ namespace TSQR {
 	       const bool human_readable,
 	       const bool b_debug)
     {
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
       using std::cerr;
       using std::cout;
       using std::endl;
@@ -318,7 +318,7 @@ namespace TSQR {
 		  const bool human_readable,
 		  const bool b_debug)
     {
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
       using std::cerr;
       using std::cout;
       using std::endl;

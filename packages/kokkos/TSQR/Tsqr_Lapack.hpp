@@ -29,7 +29,7 @@
 #ifndef __TSQR_Tsqr_Lapack_hpp
 #define __TSQR_Tsqr_Lapack_hpp
 
-#include "Tsqr_ScalarTraits.hpp"
+#include <Teuchos_ScalarTraits.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -41,9 +41,10 @@ namespace TSQR {
   public:
     typedef Ordinal ordinal_type;
     typedef Scalar scalar_type;
+    typedef Teuchos::ScalarTraits< Scalar > STS;
     /// The type of the absolute value (or magnitude, if Scalar is
     /// complex) of a Scalar.
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef typename STS::magnitudeType magnitude_type;
 
     LAPACK () {}
 

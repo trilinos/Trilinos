@@ -66,7 +66,7 @@ namespace TSQR {
     public:
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
-      typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
       typedef typename std::vector< magnitude_type > result_type;
       typedef Matrix< ordinal_type, scalar_type > matrix_type;
       
@@ -423,7 +423,7 @@ namespace TSQR {
     public:
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
-      typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
       typedef TimerType timer_type;
 
       /// \brief Constructor, with custom seed value
@@ -637,7 +637,8 @@ namespace TSQR {
 	    std::vector< TimeStats > globalTimings;
 	    par.getFactorExplicitTimings (localTimings);
 	    for (std::vector< TimeStats >::size_type k = 0; k < localTimings.size(); ++k)
-	      globalTimings.push_back (TimeStats::globalTimeStats (doubleComm_.get(), localTimings[k]));
+	      globalTimings.push_back (TimeStats::globalTimeStats (doubleComm_, 
+								   localTimings[k]));
 	    std::vector< std::string > timingLabels;
 	    par.getFactorExplicitTimingLabels (timingLabels);
 
@@ -683,7 +684,7 @@ namespace TSQR {
 	// Find min and max timing over all MPI processes
 	TimeStats localStats;
 	localStats.update (localTiming);
-	TimeStats globalStats = TimeStats::globalTimeStats (doubleComm_.get(), localStats);
+	TimeStats globalStats = TimeStats::globalTimeStats (doubleComm_, localStats);
 
 	// Only Rank 0 prints the final results.
 	const bool printResults = (doubleComm_->rank() == 0);

@@ -4,8 +4,9 @@
 #include <Tsqr_ApplyType.hpp>
 #include <Tsqr_Combine.hpp>
 #include <Tsqr_Matrix.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_StatTimeMonitor.hpp>
+
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <algorithm>
 #include <sstream>
@@ -30,7 +31,7 @@ namespace TSQR {
   public:
     typedef LocalOrdinal ordinal_type;
     typedef Scalar scalar_type;
-    typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
+    typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
     typedef MatView< ordinal_type, scalar_type > matview_type;
     typedef Matrix< ordinal_type, scalar_type > matrix_type;
     typedef int rank_type;

@@ -47,32 +47,44 @@
 namespace TSQR {
   namespace Test {
 
-    /// Generate a (pseudo)random test problem consisting of nprocs
-    /// different ncols by ncols upper triangular matrices, stacked
-    /// vertically.
+    /// Generate a (pseudo)random test problem consisting of numProcs
+    /// different numRows by numCols upper triangular matrices,
+    /// stacked vertically.  The test problem will be generated and
+    /// output only on Proc 0.  Also, the generator will only be
+    /// modified on Proc 0, and the singularValues will only be read
+    /// on Proc 0.
     ///
     /// \param generator [in/out] (Pseudo)random number generator,
     ///   that generates according to a normal(0,1) distribution.
-    /// \param A_global [out] Matrix to fill.  Will set dimensions.
-    /// \param singular_values [in] ncols singular values to use
+    ///
+    /// \param A_global [out] Matrix to fill.  Should be empty on
+    ///   input.  Output will be on Proc 0 only.  We will set
+    ///   dimensions, allocate, and fill.
+    ///
+    /// \param singularValues [in] ncols singular values to use
+    ///
+    /// \param numProcs Number of (MPI) processes
+    ///
+    /// \param numCols Number of columns in the output matrix A_global
+    ///
     template< class Ordinal, class Scalar, class Generator >
     static void
     generateStack (Generator& generator,
 		   Matrix< Ordinal, Scalar >& A_global,
-		   const typename ScalarTraits< Scalar >::magnitude_type singular_values[],
-		   const int nprocs,
-		   const Ordinal ncols)
+		   const typename Teuchos::ScalarTraits< Scalar >::magnitudeType singularValues[],
+		   const int numProcs,
+		   const Ordinal numCols)
     {
       TSQR::Random::MatrixGenerator< Ordinal, Scalar, Generator > matGen (generator);
-      const Ordinal nrows = nprocs * ncols;
-      A_global.reshape (nrows, ncols);
+      const Ordinal numRows = numProcs * numCols;
+      A_global.reshape (numRows, numCols);
       A_global.fill (Scalar(0));
 
-      for (int p = 0; p < nprocs; ++p)
+      for (int p = 0; p < numProcs; ++p)
 	{
-	  Scalar* const curptr = A_global.get() + p*ncols;
-	  MatView< Ordinal, Scalar > R_cur (ncols, ncols, curptr, nrows);
-	  matGen.fill_random_R (ncols, R_cur.get(), nrows, singular_values);
+	  Scalar* const curptr = A_global.get() + p*numCols;
+	  MatView< Ordinal, Scalar > R_cur (numCols, numCols, curptr, numRows);
+	  matGen.fill_random_R (numCols, R_cur.get(), numRows, singularValues);
 	}
     }
 
@@ -107,7 +119,7 @@ namespace TSQR {
 
       if (my_rank == 0)
 	{
-	  typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+	  typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
 
 	  std::vector< magnitude_type > singular_values (ncols);
 	  singular_values[0] = magnitude_type(1);

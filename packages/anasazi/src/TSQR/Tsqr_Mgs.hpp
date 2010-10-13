@@ -35,10 +35,10 @@
 #include <utility> // std::pair
 
 #include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 // #define MGS_DEBUG 1
 #ifdef MGS_DEBUG
@@ -57,7 +57,8 @@ namespace TSQR {
   public:
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
-    typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
+    typedef Teuchos::ScalarTraits< Scalar > STS;
+    typedef typename STS::magnitudeType magnitude_type;
 
     MGS (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) : 
       messenger_ (messenger) {}
@@ -88,6 +89,9 @@ namespace TSQR {
     template< class LocalOrdinal, class Scalar >
     class MgsOps {
     public:
+      typedef Teuchos::ScalarTraits< Scalar > STS;
+      typedef typename STS::magnitudeType magnitude_type;
+
       MgsOps (const Teuchos::RCP< MessengerBase< Scalar > >& messenger) : 
 	messenger_ (messenger) {}
 
@@ -126,7 +130,7 @@ namespace TSQR {
 #endif // MGS_DEBUG
 
 	for (LocalOrdinal i = 0; i < nrows_local; ++i)
-	  local_result += x_local[i] * ScalarTraits< double >::conj (y_local[i]);
+	  local_result += x_local[i] * STS::conjugate (y_local[i]);
 
 #ifdef MGS_DEBUG
 	  // cerr << "-- Final value on this proc = " << local_result << endl;
@@ -138,21 +142,21 @@ namespace TSQR {
 	return messenger_->globalSum (local_result);
       }
 
-      typename ScalarTraits< Scalar >::magnitude_type 
+      magnitude_type
       norm2 (const LocalOrdinal nrows_local, 
 	     const Scalar x_local[])
       {
-	Scalar local_result (0);
+	Scalar localResult (0);
 
 	// Doing the right thing in the complex case requires taking
 	// an absolute value.  We want to avoid this additional cost
 	// in the real case, which is why we check is_complex.
-	if (ScalarTraits< Scalar >::is_complex) 
+	if (STS::isComplex)
 	  {
 	    for (LocalOrdinal i = 0; i < nrows_local; ++i)
 	      {
-		const Scalar xi = ScalarTraits< Scalar >::abs (x_local[i]);
-		local_result += xi * xi;
+		const Scalar xi = STS::magnitude (x_local[i]);
+		localResult += xi * xi;
 	      }
 	  }
 	else
@@ -160,13 +164,13 @@ namespace TSQR {
 	    for (LocalOrdinal i = 0; i < nrows_local; ++i)
 	      {
 		const Scalar xi = x_local[i];
-		local_result += xi * xi;
+		localResult += xi * xi;
 	      }
 	  }
-	const Scalar global_result = messenger_->globalSum (local_result);
+	const Scalar globalResult = messenger_->globalSum (localResult);
 	// sqrt doesn't make sense if the type of Scalar is complex,
 	// even if the imaginary part of global_result is zero.
-	return sqrt (ScalarTraits< Scalar >::abs (global_result));
+	return STS::squareroot (STS::magnitude (globalResult));
       }
 
       Scalar

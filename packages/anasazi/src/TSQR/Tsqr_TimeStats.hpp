@@ -1,6 +1,8 @@
 #ifndef __TSQR_TimeStats_hpp
 #define __TSQR_TimeStats_hpp
 
+#include <Teuchos_RCP.hpp>
+
 // #include <cstddef> // size_t
 #include <ostream>
 #include <stdexcept>
@@ -74,8 +76,13 @@ namespace TSQR {
 
     /// Produce global time statistics out of all the local ones.
     ///
+    /// \param comm [in] Encapsulation of the interprocess communicator
+    /// \param localStats [in] Local (to this process) time statistics
+    ///
+    /// \return Global (over all processes) time statistics
+    ///
     static TimeStats
-    globalTimeStats (MessengerBase< double >* const comm,
+    globalTimeStats (const Teuchos::RCP< MessengerBase< double > >& comm,
 		     const TimeStats& localStats);
 
   private:

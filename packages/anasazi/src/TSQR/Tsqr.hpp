@@ -34,8 +34,9 @@
 #include <Tsqr_MessengerBase.hpp>
 #include <Tsqr_DistTsqr.hpp>
 #include <Tsqr_SequentialTsqr.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
+
+#include <Teuchos_ScalarTraits.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +87,8 @@ namespace TSQR {
 
     typedef Scalar scalar_type;
     typedef LocalOrdinal ordinal_type;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef Teuchos::ScalarTraits< Scalar > STS;
+    typedef typename STS::magnitudeType magnitude_type;
 
     typedef NodeTsqrType node_tsqr_type;
     typedef DistTsqrType dist_tsqr_type;

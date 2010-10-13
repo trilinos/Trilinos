@@ -87,7 +87,7 @@ namespace TSQR {
   }
 
   TimeStats
-  TimeStats::globalTimeStats (MessengerBase< double >* const comm,
+  TimeStats::globalTimeStats (const Teuchos::RCP< MessengerBase< double > >& comm,
 			      const TimeStats& localStats)
   {
     TimeStats globalStats;

@@ -78,7 +78,7 @@ namespace TSQR {
 
     public:
       typedef Scalar scalar_type;
-      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
       typedef LocalOrdinal ordinal_type;
       // typedef typename TbbRecursiveTsqr< LocalOrdinal, Scalar >::FactorOutput FactorOutput;
       typedef typename TbbParallelTsqr< LocalOrdinal, Scalar, TimerType >::FactorOutput FactorOutput;

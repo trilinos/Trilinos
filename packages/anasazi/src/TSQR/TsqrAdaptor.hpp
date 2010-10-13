@@ -33,14 +33,14 @@
 ///
 /// \warning Anasazi users should _not_ include this file directly.
 
-#include "AnasaziConfigDefs.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
+#include <AnasaziConfigDefs.hpp>
+#include <Teuchos_SerialDenseMatrix.hpp>
 
-#include "TsqrTypeAdaptor.hpp"
-#include "TsqrCommFactory.hpp"
+#include <TsqrTypeAdaptor.hpp>
+#include <TsqrCommFactory.hpp>
 
-#include "Tsqr_GlobalVerify.hpp"
-#include "Tsqr_ScalarTraits.hpp"
+#include <Tsqr_GlobalVerify.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <stdexcept>
 #include <sstream>
@@ -109,7 +109,7 @@ namespace TSQR {
       typedef GO  global_ordinal_type;
       typedef MV  multivector_type;
 
-      typedef typename TSQR::ScalarTraits< scalar_type >::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
 
       typedef TsqrTypeAdaptor< S, LO, GO, MV >      type_adaptor;
       typedef typename type_adaptor::factory_type   factory_type;

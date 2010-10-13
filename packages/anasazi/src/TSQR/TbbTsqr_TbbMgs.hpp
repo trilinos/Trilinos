@@ -36,7 +36,7 @@
 #include <utility> // std::pair
 
 #include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_ScalarTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <Tsqr_Util.hpp>
 
 #include <Teuchos_RCP.hpp>
@@ -65,7 +65,7 @@ namespace TSQR {
     public:
       typedef Scalar scalar_type;
       typedef LocalOrdinal ordinal_type;
-      typedef typename ScalarTraits<Scalar>::magnitude_type magnitude_type;
+      typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitude_type;
       typedef MessengerBase< Scalar > messenger_type;
       typedef Teuchos::RCP< messenger_type > messenger_ptr;
 
@@ -94,7 +94,11 @@ namespace TSQR {
       template< class LocalOrdinal, class Scalar >
       class TbbDot {
       public:
-	void operator() (const tbb::blocked_range< LocalOrdinal >& r) {
+	void 
+	operator() (const tbb::blocked_range< LocalOrdinal >& r) 
+	{
+	  typedef Teuchos::ScalarTraits< Scalar > STS;
+
 	  // The TBB book likes this copying of pointers into the local routine.
 	  // It probably helps the compiler do optimizations.
 	  const Scalar* const x = x_;
@@ -109,7 +113,7 @@ namespace TSQR {
 #endif // TBB_MGS_DEBUG
 
 	  for (LocalOrdinal i = r.begin(); i != r.end(); ++i)
-	    local_result += x[i] * ScalarTraits< Scalar >::conj (y[i]);
+	    local_result += x[i] * STS::conjugate (y[i]);
 
 #ifdef TBB_MGS_DEBUG
 	  //	  cerr << "-- Final value = " << local_result << endl;
@@ -144,13 +148,16 @@ namespace TSQR {
       template< class LocalOrdinal, class Scalar >
       class TbbScale {
       public:
-	TbbScale (Scalar* const x, const Scalar& denom) : x_ (x), denom_ (denom) {}
+	TbbScale (Scalar* const x, const Scalar& denom) : 
+	  x_ (x), denom_ (denom) {}
 
 	// TBB demands that this be a "const" operator, in order for
 	// the parallel_for expression to compile.  Strictly speaking,
 	// it is const, because it does not change the address of the
 	// pointer x_ (only the values stored there).
-	void operator() (const tbb::blocked_range< LocalOrdinal >& r) const {
+	void 
+	operator() (const tbb::blocked_range< LocalOrdinal >& r) const 
+	{
 	  // TBB likes arrays to have their pointers copied like this in
 	  // the operator() method.  I suspect it has something to do
 	  // with compiler optimizations.  If C++ supported the
@@ -175,7 +182,9 @@ namespace TSQR {
 	// the parallel_for expression to compile.  Strictly speaking,
 	// it is const, because it does change the address of the
 	// pointer y_ (only the values stored there).
-	void operator() (const tbb::blocked_range< LocalOrdinal >& r) const {
+	void 
+	operator() (const tbb::blocked_range< LocalOrdinal >& r) const 
+	{
 	  const Scalar alpha = alpha_;
 	  const Scalar* const x = x_;
 	  Scalar* const y = y_;
@@ -191,13 +200,14 @@ namespace TSQR {
       template< class LocalOrdinal, class Scalar >
       class TbbNormSquared {
       public:
-	typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+	typedef Teuchos::ScalarTraits< Scalar > STS;
+	typedef typename STS::magnitudeType magnitude_type;
 
 	void operator() (const tbb::blocked_range< LocalOrdinal >& r) {
 	  // Doing the right thing in the complex case requires taking
 	  // an absolute value.  We want to avoid this additional cost
 	  // in the real case, which is why we check is_complex.
-	  if (ScalarTraits< Scalar >::is_complex) 
+	  if (STS::isComplex) 
 	    {
 	      // The TBB book favors copying array pointers into the
 	      // local routine.  It probably helps the compiler do
@@ -205,7 +215,14 @@ namespace TSQR {
 	      const Scalar* const x = x_;
 	      for (LocalOrdinal i = r.begin(); i != r.end(); ++i)
 		{
-		  const magnitude_type xi = ScalarTraits< Scalar >::abs (x[i]);
+		  // One could implement this by computing
+		  //
+		  // result_ += STS::real (x[i] * STS::conjugate(x[i]));
+		  //
+		  // However, in terms of type theory, it's much more
+		  // natural to start with a magnitude_type before
+		  // doing the multiplication.
+		  const magnitude_type xi = STS::magnitude (x[i]);
 		  result_ += xi * xi;
 		}
 	    }
@@ -242,10 +259,12 @@ namespace TSQR {
       class TbbMgsOps {
       private:
 	typedef tbb::blocked_range< LocalOrdinal > range_type;
+	typedef Teuchos::ScalarTraits< Scalar > STS;
 
       public:
 	typedef MessengerBase< Scalar > messenger_type;
 	typedef Teuchos::RCP< messenger_type > messenger_ptr;
+	typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
 
 	TbbMgsOps (const messenger_ptr& messenger) :
 	  messenger_ (messenger) {}
@@ -284,7 +303,7 @@ namespace TSQR {
 	     const Scalar x_local[], 
 	     const Scalar y_local[])
 	{
-	  Scalar local_result (0);
+	  Scalar localResult (0);
 	  if (true)
 	    {
 	      // FIXME (mfh 26 Aug 2010) I'm not sure why I did this
@@ -296,7 +315,7 @@ namespace TSQR {
 		{
 		  TbbDot< LocalOrdinal, Scalar > dotter (x_local, y_local);
 		  dotter(range_type(0, nrows_local));
-		  local_result = dotter.result();
+		  localResult = dotter.result();
 		}
 	      else
 		{
@@ -304,38 +323,40 @@ namespace TSQR {
 		  using tbb::parallel_reduce;
 
 		  TbbDot< LocalOrdinal, Scalar > dotter (x_local, y_local);
-		  parallel_reduce (range_type(0, nrows_local), dotter, auto_partitioner());
-		  local_result = dotter.result();
+		  parallel_reduce (range_type(0, nrows_local),
+				   dotter, auto_partitioner());
+		  localResult = dotter.result();
 		}
 	    }
 	  else 
 	    {
 	      for (LocalOrdinal i = 0; i != nrows_local; ++i)
-		local_result += x_local[i] * ScalarTraits< Scalar >::conj(y_local[i]);
+		localResult += x_local[i] * STS::conjugate (y_local[i]);
 	    }
     
 	  // FIXME (mfh 23 Apr 2010) Does MPI_SUM do the right thing for
 	  // complex or otherwise general MPI data types?  Perhaps an MPI_Op
 	  // should belong in the MessengerBase...
-	  return messenger_->globalSum (local_result);
+	  return messenger_->globalSum (localResult);
 	}
 
-	typename ScalarTraits< Scalar >::magnitude_type 
+	magnitude_type
 	norm2 (const LocalOrdinal nrows_local, 
 	       const Scalar x_local[])
 	{
 	  using tbb::auto_partitioner;
 	  using tbb::parallel_reduce;
-	  typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
 
 	  TbbNormSquared< LocalOrdinal, Scalar > normer (x_local);
 	  parallel_reduce (range_type(0, nrows_local), normer, auto_partitioner());
-	  const magnitude_type local_result = normer.result();
-	  const magnitude_type global_result = messenger_->globalSum (local_result);
+	  const magnitude_type localResult = normer.result();
+	  // FIXME (mfh 12 Oct 2010) This involves an implicit
+	  // typecast from Scalar to magnitude_type.
+	  const magnitude_type globalResult = messenger_->globalSum (localResult);
 	  // Make sure that sqrt's argument is a magnitude_type.  Of
 	  // course global_result should be nonnegative real, but we
 	  // want the compiler to pick up the correct sqrt function.
-	  return sqrt (magnitude_type (global_result));
+	  return Teuchos::ScalarTraits< magnitude_type >::squareroot (globalResult);
 	}
 
 	Scalar

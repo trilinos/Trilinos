@@ -121,4 +121,9 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   # Restore original CMake module path
   set (CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH_SAVE})
 
+  # Our tests test for both performance and numerical accuracy.  They
+  # also function as general benchmarks, given the right command-line
+  # arguments.
+  PACKAGE_ADD_TEST_DIRECTORIES(test)
+
 ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
