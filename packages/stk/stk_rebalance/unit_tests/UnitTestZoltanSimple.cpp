@@ -16,6 +16,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
+#include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
 
@@ -78,6 +79,17 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
         *e_weight = 1.0;
       }
     }
+
+    for ( unsigned iy = 0 ; iy < ny+1 ; ++iy ) {
+      for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
+        stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
+        stk::mesh::Entity * n = bulk_data.get_entity( top_data.node_rank, nid );
+        double * const coord = stk::mesh::field_data( coord_field , *n );
+        coord[0] = .1*ix;
+        coord[1] = .1*iy;
+        coord[2] = 0;
+      }
+    }
   }
 
   // Only P0 has any nodes or elements
@@ -101,5 +113,6 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   double imblance_threshhold = 0.5;
   bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, meta_data, weight_field, comm, imblance_threshhold);
   if( do_rebal )
-    stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, zoltan_partition);
+    stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
+
 }

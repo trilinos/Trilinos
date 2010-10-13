@@ -45,6 +45,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/TopologyDimensions.hpp>
 
 namespace stk {
 namespace rebalance {

@@ -456,7 +456,7 @@ void Callback_Centroid_Coord( void *data,
   int lid = local_id[  0 ]; // Local Element ID
 
   const mesh::Entity & target_obj = * zdata->mesh_object( lid );
-  const GeomDecomp::VectorField              & coor = * zdata->object_coord_ref();
+  const GeomDecomp::VectorField & coor = * zdata->object_coord_ref();
   const unsigned                        nd   =  zdata->spatial_dimension();
 
   /*

@@ -74,7 +74,7 @@ return(EXIT_SUCCESS);
 
 
 
-int  GeomDecomp::owning_proc(const VectorField  & nodal_coord_ref ,
+int  GeomDecomp::owning_proc(const VectorField & nodal_coord_ref ,
 			     const mesh::Entity       & mesh_obj         ) const
 {
   // if ( stk::Env::parallel_machine_size() == 1 ) return Env::parallel_rank();
@@ -102,7 +102,7 @@ int  GeomDecomp::owning_proc(const VectorField  & nodal_coord_ref ,
 //***************************************************************************
 
 void
-GeomDecomp::ghost_procs(const VectorField   & nodal_coord_ref ,
+GeomDecomp::ghost_procs(const VectorField & nodal_coord_ref ,
 			const mesh::Entity  & mesh_obj ,
 			std::vector<int>    & procs ,
 			double                box_expansion_sum ) const
@@ -150,22 +150,23 @@ std::vector<const mesh::Entity *> GeomDecomp::meshobj_coordinates(const mesh::En
     mesh_nodes.push_back(&obj);
   } else {
 
-    const unsigned ndim(field_data_size(nodal_coor, obj));
     // Loop over node relations in mesh object
     mesh::PairIterRelation nr   = obj.relations( mesh::Node );
 
-    for ( ; nr.first != nr.second; ++nr.first ) {
+    for ( ; nr.first != nr.second; ++nr.first ) 
+    {
       const mesh::Relation &rel = *nr.first;
       if (rel.entity_rank() ==  mesh::Node) { // %fixme: need to check for USES relation
-	const mesh::Entity *nobj = rel.entity();
-	double * coor = mesh::field_data(nodal_coor, *nobj);
-	if (!coor) {
-	  throw std::runtime_error("Error: The field does not exist.");
-	}
-	std::vector<double> temp(ndim);
-	for ( unsigned i = 0; i < ndim; ++i ) { temp[i] = coor[i]; }
-	coordinates.push_back(temp);
-	mesh_nodes.push_back(nobj);
+        const mesh::Entity *nobj = rel.entity();
+        const unsigned ndim(field_data_size(nodal_coor, *nobj)/sizeof(double)); // TODO - is there a better way to get this info?
+        double * coor = mesh::field_data(nodal_coor, *nobj);
+        if (!coor) {
+          throw std::runtime_error("Error: The field does not exist.");
+        }
+        std::vector<double> temp(ndim);
+        for ( unsigned i = 0; i < ndim; ++i ) { temp[i] = coor[i]; }
+        coordinates.push_back(temp);
+        mesh_nodes.push_back(nobj);
       }
     }
   }
@@ -173,7 +174,7 @@ std::vector<const mesh::Entity *> GeomDecomp::meshobj_coordinates(const mesh::En
 }
 
 std::vector<std::vector<double> > GeomDecomp::compute_obj_centroid(const mesh::Entity & obj,
-                                                                   const VectorField      & nodal_coor_ref,
+                                                                   const VectorField & nodal_coor_ref,
                                                                    std::vector<double>   & centroid)
 {
   std::vector<std::vector<double> > coordinates;
@@ -209,7 +210,7 @@ void apply_rotation (std::vector<double> &coor)
 
 
   std::vector<double> temp(coor);
-  const unsigned nd = temp.size();
+  const size_t nd = temp.size();
 
   // Apply minute transformation to the coordinate
   // to rotate the RCB axis slightly away from the model axis.
@@ -236,7 +237,7 @@ void apply_rotation (std::vector<double> &coor)
 //: Convert a mesh object to a single point
 //: in cartesian coordinates (x,y,z)
 void GeomDecomp::obj_to_point (const mesh::Entity            & obj,
-			       const VectorField       & nodeCoord,
+			       const VectorField & nodeCoord,
 			       std::vector<double>           & coor)
 {
   compute_obj_centroid(obj, nodeCoord, coor);

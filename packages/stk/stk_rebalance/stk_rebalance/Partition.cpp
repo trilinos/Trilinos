@@ -116,7 +116,7 @@ mesh::Entity *Partition::mesh_object(const unsigned moid ) const {
 }
 
 
-const  VectorField * Partition::object_coord_ref() const
+const VectorField * Partition::object_coord_ref() const
 {
    return region_obj_information_.nodal_coord_ref;
 }

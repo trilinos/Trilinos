@@ -57,7 +57,7 @@ namespace rebalance {
  */
 class GeomDecomp: public Partition {
 public:
-  typedef mesh::Field<double,mesh::Cartesian>              VectorField ;
+  typedef mesh::Field<double,mesh::Cartesian> VectorField ;
 public:
 
   GeomDecomp(ParallelMachine comm): Partition(comm) {}
@@ -87,7 +87,7 @@ public:
                                                                const VectorField   & ref,
                                                                std::vector<double> & coor);
   static void obj_to_point( const mesh::Entity     & obj,
-                            const VectorField       & ref,
+                            const VectorField & ref,
                             std::vector<double> &coor);
 
   /** Check existance of library entry name on domain library.
@@ -111,7 +111,7 @@ public:
   static void obj_to_box( const mesh::Entity & obj,
                           double                 lo[],
                           double                 hi[],
-                          const VectorField        & ref,
+                          const VectorField & ref,
                           double                 box_expansion_sum );
 
 
@@ -148,13 +148,13 @@ public:
    * INCREASED by the sum.
    */
 
-  void ghost_procs (const VectorField  & nodal_coord_ref ,
+  void ghost_procs (const VectorField & nodal_coord_ref ,
                     const mesh::Entity         & mesh_obj ,
                     std::vector<int>           & procs,
                     double                        box_expansion_sum= 0.0 ) const;
 
 
-  int owning_proc (const VectorField  & nodal_coord_ref ,
+  int owning_proc (const VectorField & nodal_coord_ref ,
                    const mesh::Entity         & mesh_obj          ) const;
 
 };
