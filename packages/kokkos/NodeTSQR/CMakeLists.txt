@@ -134,10 +134,10 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     )
 
   PACKAGE_ADD_LIBRARY(
-    kokkostsqr
+    kokkosnodetsqr
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS kokkosnodetsqr
+    DEPLIBS kokkos
     )
 
   # Restore original CMake module path
@@ -148,4 +148,4 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   # arguments.
   PACKAGE_ADD_TEST_DIRECTORIES(test)
 
-ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
+ENDIF () # ${PACKAGE_NAME}_ENABLE_TSQR
