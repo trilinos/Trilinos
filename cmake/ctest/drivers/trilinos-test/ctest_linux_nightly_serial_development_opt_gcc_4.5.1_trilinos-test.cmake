@@ -8,8 +8,8 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test.gcc.cma
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME SERIAL_OPT_DEV)
-SET(COMPILER_VERSION "GCC-4.5.0")
-SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/install/gmp-4.3.2/lib:/home/trilinos/install/mpfr2.4.2/lib:/home/trilinos/install/mpc-0.8.1/lib:/home/trilinos/gcc4.5.0/lib64:$ENV{LD_LIBRARY_PATH}")
+SET(COMPILER_VERSION "GCC-4.5.1")
+SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/install/gmp-4.3.2/lib:/home/trilinos/install/mpfr2.4.2/lib:/home/trilinos/install/mpc-0.8.1/lib:/home/trilinos/gcc4.5.1/lib64:$ENV{LD_LIBRARY_PATH}")
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
@@ -28,9 +28,9 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DNemesis_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/nemesis_3.09/include"
   "-DNemesis_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/nemesis_3.09/lib"
   "-DNOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON"
-  "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.5.0/bin/g++"
-  "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/gcc4.5.0/bin/gcc"
-  "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.5.0/bin/gfortran"
+  "-DCMAKE_CXX_COMPILER:FILEPATH=/home/trilinos/gcc4.5.1/bin/g++"
+  "-DCMAKE_C_COMPILER:FILEPATH=/home/trilinos/gcc4.5.1/bin/gcc"
+  "-DCMAKE_Fortran_COMPILER:FILEPATH=/home/trilinos/gcc4.5.1/bin/gfortran"
   "-DTrilinos_ENABLE_Stokhos:BOOL=OFF"
   )
 
