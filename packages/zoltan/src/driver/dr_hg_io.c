@@ -1610,7 +1610,7 @@ int i=0;
 int owning_proc;
 int status;
 int *new_owner=NULL;
-FILE *fp;
+FILE *fp=NULL;
 
   *mine = NULL;
   *num = 0;
@@ -1828,6 +1828,7 @@ FILE *fp;
   *num = count_mine;
 
 End:
+  if (fp) fclose(fp);
   if (new_owner) free(new_owner);
   if (inbuf) free(inbuf);
   if (outbuf && (*mine != outbuf)) free(outbuf);
