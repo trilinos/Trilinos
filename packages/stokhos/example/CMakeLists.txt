@@ -6,6 +6,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   PASS_REGULAR_EXPRESSION "Example Passed"
   NUM_MPI_PROCS 1
+  DEPLIBS stokhos
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -13,6 +14,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES exp_moment_example.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
+  DEPLIBS stokhos
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -20,6 +22,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES stieltjes_example.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
+  DEPLIBS stokhos
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -27,23 +30,27 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES gram_schmidt_example.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
+  DEPLIBS stokhos
   )
 
 PACKAGE_ADD_EXECUTABLE(
   recurrence_example
   SOURCES recurrence_example.cpp
   COMM serial mpi
+  DEPLIBS stokhos
   )
 
 PACKAGE_ADD_EXECUTABLE(
   random_field_example
   SOURCES random_field_example.cpp
   COMM serial mpi
+  DEPLIBS stokhos
   )
 
 PACKAGE_ADD_EXECUTABLE(
   sparsity_example
   SOURCES sparsity_example.cpp
+  DEPLIBS stokhos
   )
 
 PACKAGE_ADD_LIBRARY(
@@ -62,6 +69,7 @@ IF(Stokhos_ENABLE_TriKota)
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "Example Passed"
     NUM_MPI_PROCS 1
+    DEPLIBS stokhos
   )
 
   IF(Stokhos_ENABLE_AztecOO AND Stokhos_ENABLE_ML)
@@ -70,7 +78,7 @@ IF(Stokhos_ENABLE_TriKota)
        Linear2D_Diffusion_Collocation_Example
        SOURCES linear2d_diffusion_collocation.cpp
        COMM serial mpi
-       DEPLIBS linear2d_diffusion
+       DEPLIBS stokhos linear2d_diffusion
      )
 
      IF(Stokhos_ENABLE_Stratimikos)
@@ -79,7 +87,7 @@ IF(Stokhos_ENABLE_TriKota)
          Linear2D_Diffusion_Collocation_Strat_Example
          SOURCES linear2d_diffusion_collocation_strat.cpp
          COMM serial mpi
-         DEPLIBS linear2d_diffusion
+         DEPLIBS stokhos linear2d_diffusion
        )
 
      ENDIF()
@@ -88,7 +96,7 @@ IF(Stokhos_ENABLE_TriKota)
        Linear2D_Diffusion_PCE_Example
        SOURCES linear2d_diffusion_pce.cpp
        COMM serial mpi
-       DEPLIBS linear2d_diffusion
+       DEPLIBS stokhos linear2d_diffusion
        NUM_MPI_PROCS 4
        PASS_REGULAR_EXPRESSION "Example Passed!"
       )
@@ -99,7 +107,7 @@ IF(Stokhos_ENABLE_TriKota)
           Linear2D_Diffusion_PCE_NOX_Example
           SOURCES linear2d_diffusion_pce_nox.cpp
           COMM serial mpi
-	  DEPLIBS linear2d_diffusion
+	  DEPLIBS stokhos linear2d_diffusion
 	  NUM_MPI_PROCS 4
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
@@ -108,7 +116,7 @@ IF(Stokhos_ENABLE_TriKota)
          Linear2D_Diffusion_PCE_NOX_SG_Solvers
          SOURCES linear2d_diffusion_pce_nox_sg_solvers.cpp
          COMM serial mpi
-	 DEPLIBS linear2d_diffusion
+	 DEPLIBS stokhos linear2d_diffusion
         )
 
 	PACKAGE_ADD_TEST(
@@ -198,6 +206,7 @@ IF(Stokhos_ENABLE_Sacado)
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1
+    DEPLIBS stokhos
     )
 
 ENDIF() 
@@ -210,6 +219,36 @@ IF(Stokhos_ENABLE_NOX)
     ARGS -v
     COMM serial mpi
     NUM_MPI_PROCS 1
+    DEPLIBS stokhos
     )
 
 ENDIF()
+
+IF (Stokhos_ENABLE_Thrust)
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    cuda_example
+    SOURCES cuda_example.cpp
+    ARGS -v
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    DEPLIBS stokhos
+  )
+
+  IF(Stokhos_ENABLE_Sacado)
+
+    CUDA_COMPILE(CUDA_SOURCES sacado_cuda_example.cu)
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      sacado_cuda_example
+      SOURCES ${CUDA_SOURCES}
+      ARGS -v
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      DEPLIBS stokhos
+    )
+
+  ENDIF() 
+
+ENDIF()
+
+

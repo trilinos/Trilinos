@@ -47,17 +47,29 @@
 //             Trilinos/packages/stokhos/example/hermite_example.cpp
 //     using the Sacado overloaded operators.
 
+#include <iostream>
+
+#define KERNEL_PREFIX __device__ __host__
+
 #include "Stokhos_Sacado.hpp"
+#include "Stokhos_CUDAStorage.hpp"
+#include "Stokhos_CUDAQuadOrthogPolyExpansion.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 // The function to compute the polynomial chaos expansion of,
-// written as a template function
+// written as a template function.
+// Currently the constants don't work when run on a GPU
 template <class ScalarType>
-inline ScalarType simple_function(const ScalarType& u) {
-  return 1.0/(std::pow(std::log(u),2.0) + 1.0);
+ScalarType simple_function(const ScalarType& u) {
+  //return 1.0/(std::pow(std::log(u),float(2.0)) + 1.0);
+  return ScalarType(1.0)/(std::pow(std::log(u),ScalarType(2.0)) + ScalarType(1.0));
 }
 
-// Typename of PC expansion type
-typedef Sacado::ETPCE::OrthogPoly<double> pce_type;
+typedef Stokhos::StandardStorage<int,float> StdStorage;
+typedef Stokhos::CUDAStorage<int,float> Storage;
+//typedef Stokhos::StandardStorage<int,float> Storage;
+typedef Sacado::ETPCE::OrthogPoly<float,StdStorage> pce_type;
+typedef Sacado::ETPCE::OrthogPoly<float,Storage> dev_pce_type;
 
 int main(int argc, char **argv)
 {
@@ -66,28 +78,28 @@ int main(int argc, char **argv)
     // Basis of dimension 3, order 5
     const int d = 3;
     const int p = 5;
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,float> > > bases(d); 
     for (int i=0; i<d; i++) {
-      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
+      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,float>(p));
     }
-    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+    Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,float> > basis = 
+      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,float>(bases));
 
     // Quadrature method
-    Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    Teuchos::RCP<const Stokhos::Quadrature<int,float> > quad = 
+        Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,float>(basis));
 
     // Triple product tensor
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,float> > Cijk =
       basis->computeTripleProductTensor(basis->size());
 
     // Expansion method
-    Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,double> > expn = 
-      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(
-		     basis, Cijk, quad));
+    Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,float,StdStorage> > expn =
+      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,float,StdStorage>(
+		     basis, Cijk, quad, true));
 
     // Polynomial expansions
-    pce_type u(expn);
+    pce_type u(expn), v(expn);
     u.term(0,0) = 1.0;
     for (int i=0; i<d; i++) {
       u.term(i,1) = 0.4 / d;
@@ -95,8 +107,30 @@ int main(int argc, char **argv)
       u.term(i,3) = 0.002 / d;
     }
 
-    // Compute PCE expansion of function
-    pce_type v = simple_function(u);
+    // Compute expansion
+    {
+      Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,float,Storage> > 
+	expn_dev =
+	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,float,Storage>(
+		       basis, Cijk, quad, true));
+      dev_pce_type u_dev(expn_dev), v_dev(expn_dev);
+
+      {
+	TEUCHOS_FUNC_TIME_MONITOR("Host->Device transfer");
+	u_dev.init(u);
+      }
+
+      {
+	TEUCHOS_FUNC_TIME_MONITOR("Device PCE calculation");
+	v_dev = simple_function(u_dev);
+      }
+
+      {
+	TEUCHOS_FUNC_TIME_MONITOR("Device->Host transfer");
+	v_dev.load(v);
+      }
+
+    }
 
     // Print u and v
     std::cout << "v = 1.0 / (log(u)^2 + 1):" << std::endl;
@@ -106,16 +140,16 @@ int main(int argc, char **argv)
     v.print(std::cout);
 
     // Compute moments
-    double mean = v.mean();
-    double std_dev = v.standard_deviation();
+    float mean = v.mean();
+    float std_dev = v.standard_deviation();
 
     // Evaluate PCE and function at a point = 0.25 in each dimension
-    Teuchos::Array<double> pt(d); 
+    Teuchos::Array<float> pt(d); 
     for (int i=0; i<d; i++) 
       pt[i] = 0.25;
-    double up = u.evaluate(pt);
-    double vp = simple_function(up);
-    double vp2 = v.evaluate(pt);
+    float up = u.evaluate(pt);
+    float vp = simple_function(up);
+    float vp2 = v.evaluate(pt);
     
     // Print results
     std::cout << "\tv mean         = " << mean << std::endl;
@@ -126,6 +160,8 @@ int main(int argc, char **argv)
     // Check the answer
     if (std::abs(vp - vp2) < 1e-2)
       std::cout << "\nExample Passed!" << std::endl;
+
+    Teuchos::TimeMonitor::summarize(std::cout);
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

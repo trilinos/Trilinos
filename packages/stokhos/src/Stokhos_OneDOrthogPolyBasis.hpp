@@ -130,7 +130,7 @@ namespace Stokhos {
 				ordinal_type order) const = 0;
 
     //! Print basis to stream \c os
-    virtual void print(std::ostream& os) const = 0;
+    virtual void print(std::ostream& os) const {};
 
     //! Return string name of basis
     virtual const std::string& getName() const = 0;

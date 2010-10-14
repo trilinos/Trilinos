@@ -54,7 +54,8 @@ namespace Stokhos {
   class EpetraMultiVectorOrthogPoly;
   template <typename ordinal_type, typename scalar_type> class OrthogPolyBasis;
   template <typename ordinal_type, typename scalar_type> class Quadrature;
-  template <typename ordinal_type, typename scalar_type> class OrthogPolyExpansion;
+  template <typename ordinal_type, typename scalar_type> class StandardStorage;
+  template <typename ordinal_type, typename scalar_type, typename node_type> class OrthogPolyExpansion;
 }
 
 namespace EpetraExt {
@@ -157,9 +158,9 @@ public:
     /** \brief. */
     void set_sg_quadrature( const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& quad );
     /** \brief. */
-    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > get_sg_expansion() const;
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,Stokhos::StandardStorage<int,double> > > get_sg_expansion() const;
     /** \brief. */
-    void set_sg_expansion( const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& exp );
+    void set_sg_expansion( const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,Stokhos::StandardStorage<int,double> > >& exp );
     /** \brief. */
     bool supports(EInArgsMembers arg) const;
   protected:
@@ -190,7 +191,7 @@ public:
     double                                     beta_;
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis_;
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > sg_quad_;
-    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > sg_exp_;
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,Stokhos::StandardStorage<int,double> > > sg_exp_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
     // functions
     void assert_supports(EInArgsMembers arg) const;
@@ -1225,11 +1226,11 @@ ModelEvaluator::InArgs::get_sg_quadrature() const
 { assert_supports(IN_ARG_sg_quadrature); return sg_quad_; }
 
 inline
-void ModelEvaluator::InArgs::set_sg_expansion( const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& exp )
+void ModelEvaluator::InArgs::set_sg_expansion( const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,Stokhos::StandardStorage<int,double> > >& exp )
 { assert_supports(IN_ARG_sg_expansion); sg_exp_ = exp; }
 
 inline
-Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >
+Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double,Stokhos::StandardStorage<int,double> > >
 ModelEvaluator::InArgs::get_sg_expansion() const
 { assert_supports(IN_ARG_sg_expansion); return sg_exp_; }
 
