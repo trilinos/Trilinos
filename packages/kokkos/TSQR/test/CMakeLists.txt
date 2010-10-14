@@ -13,7 +13,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS "--verify --nrows=100 --ncols=5"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
-  DEPLIBS kokkos kokkostsqr
+  DEPLIBS kokkos kokkosnodetsqr
   )
 
 # Performance and accuracy test suite for TSQR::SequentialTsqr
@@ -25,7 +25,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
-  DEPLIBS kokkos kokkostsqr
+  DEPLIBS kokkos kokkosnodetsqr
   )
 
 # This test uses LAPACK's QR factorization to get a reference for
@@ -39,7 +39,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS "--verify --nrows=1000 --ncols=10 --ntrials=10"
   STANDARD_PASS_OUTPUT
   NUM_MPI_PROCS 1
-  DEPLIBS kokkos kokkostsqr
+  DEPLIBS kokkos kokkosnodetsqr
   )
 
 # Performance and accuracy test suite for TSQR::TBB::TbbTsqr
@@ -55,7 +55,7 @@ IF (TSQR_ENABLE_Intel_TBB)
     ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-bloks"
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
-    DEPLIBS kokkos kokkostsqr
+    DEPLIBS kokkos kokkosnodetsqr
     )
 ENDIF()
 

@@ -137,7 +137,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     kokkostsqr
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS kokkos
+    DEPLIBS kokkosnodetsqr
     )
 
   # Restore original CMake module path

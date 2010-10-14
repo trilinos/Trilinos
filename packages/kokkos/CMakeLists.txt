@@ -82,6 +82,8 @@ ADD_OPTION_AND_DEFINE(
 ## BEGIN TSQR options
 ######################################################################
 
+# TSQR is disabled by default, just for now.  We will make it enabled
+# by default once we are sure it's working properly inside Kokkos.
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_KOKKOS_TSQR
@@ -148,7 +150,14 @@ ENDIF()
 ######################################################################
 
 if (Kokkos_ENABLE_TSQR)
-  ADD_SUBDIRECTORY(TSQR)
+  # Intranode (shared-memory only) part of TSQR.
+  ADD_SUBDIRECTORY(NodeTSQR)
+  # Internode (distributed-memory) part of TSQR.  Depends only on
+  # Teuchos for distributed-memory communication.  We put this in
+  # Kokkos for lack of a better place: it's independent of Tpetra /
+  # Epetra and can work for both, so it shouldn't go in either
+  # package.
+  ADD_SUBDIRECTORY(DistTSQR)  
 ENDIF()
 
 ######################################################################
