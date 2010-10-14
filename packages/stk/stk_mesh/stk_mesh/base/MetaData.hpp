@@ -27,6 +27,8 @@
 namespace stk {
 namespace mesh {
 
+class UnitTestPart;
+
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -44,6 +46,7 @@ print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey
  */
 class MetaData {
 public:
+
 
   //------------------------------------
   /** \name Predefined Parts
@@ -338,6 +341,9 @@ public:
                                   const unsigned * arg_stride );
   /** \} */
 private:
+
+  friend class ::stk::mesh::UnitTestMetaData ;
+  friend class ::stk::mesh::UnitTestPart ;
 
   MetaData();                                  ///< \brief  Not allowed
   MetaData( const MetaData & );                ///< \brief  Not allowed
