@@ -14,6 +14,8 @@
 //#include "Cthulhu_MultiVector.hpp"
 #include "Cthulhu_Map.hpp"
 
+#include "Cthulhu_Debug.hpp"
+
 namespace Cthulhu {
 
 // #ifndef DOXYGEN_SHOULD_SKIP_THIS

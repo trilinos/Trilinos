@@ -6,6 +6,8 @@
 
 #include "Tpetra_BlockMap.hpp"
 
+#include "Cthulhu_Debug.hpp"
+
 /** \file Cthulhu_EpetraBlockMap.hpp
 
   Declarations for the class Cthulhu::TpetraBlockMap.
@@ -29,7 +31,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
                  LocalOrdinal blockSize,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, blockSize, indexBase, comm, node))) {}
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, blockSize, indexBase, comm, node))) { CTHULHU_DEBUG_ME;}
 
   /*! \brief TpetraBlockMap constructor specifying num global and local blocks, and constant blockSize.
    */
@@ -38,7 +40,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
                  LocalOrdinal blockSize,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, numLocalBlocks, blockSize, indexBase, comm, node))) {}
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, numLocalBlocks, blockSize, indexBase, comm, node))) { CTHULHU_DEBUG_ME;}
 
   /*! \brief TpetraBlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
    */
@@ -48,7 +50,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, comm, node))) {}
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, comm, node))) { CTHULHU_DEBUG_ME;}
   
   /*! \brief TpetraBlockMap constructor which takes a "regular" Map.
    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
@@ -59,69 +61,69 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
   TpetraBlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap,
                  const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(pointMap, myGlobalBlockIDs, myBlockSizes, node))) {}
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(pointMap, myGlobalBlockIDs, myBlockSizes, node))) { CTHULHU_DEBUG_ME;}
 
-  TpetraBlockMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > &map) : map_(map) {}
+  TpetraBlockMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > &map) : map_(map) { CTHULHU_DEBUG_ME;}
 
   //! TpetraBlockMap destructor.
-  virtual ~TpetraBlockMap(){}
+  virtual ~TpetraBlockMap(){ CTHULHU_DEBUG_ME;}
 
   //@}
 
   //! @name Attribute Accessor Methods
   //@{
 
-  inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const { return map_->getPointMap(); }
+  inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const { CTHULHU_DEBUG_ME; return map_->getPointMap(); }
 
-  inline global_size_t getGlobalNumBlocks() const { return map_->getGlobalNumBlocks(); }
+  inline global_size_t getGlobalNumBlocks() const { CTHULHU_DEBUG_ME; return map_->getGlobalNumBlocks(); }
 
   //! Return number of blocks on the local processor.
-  inline size_t getNodeNumBlocks() const { return map_->getNodeNumBlocks(); }
+  inline size_t getNodeNumBlocks() const { CTHULHU_DEBUG_ME; return map_->getNodeNumBlocks(); }
 
-  inline Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const { return map_->getNodeBlockIDs(); }
+  inline Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const { CTHULHU_DEBUG_ME; return map_->getNodeBlockIDs(); }
 
-  inline bool isBlockSizeConstant() const { return map_->isBlockSizeConstant(); }
+  inline bool isBlockSizeConstant() const { CTHULHU_DEBUG_ME; return map_->isBlockSizeConstant(); }
 
   //! Return ArrayRCP of first-local-point in local blocks.
-  inline Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks() const { return map_->getNodeFirstPointInBlocks(); }
+  inline Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks() const { CTHULHU_DEBUG_ME; return map_->getNodeFirstPointInBlocks(); }
 
   //! Return device-resident ArrayRCP of first-local-point in local blocks.
   /*! This version of this method is primarily used internally by VbrMatrix
       for passing data to the matrix-vector-product kernel.
   */
-  inline Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks_Device() const { return map_->getNodeFirstPointInBlocks_Device(); }
+  inline Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks_Device() const { CTHULHU_DEBUG_ME; return map_->getNodeFirstPointInBlocks_Device(); }
 
   //! Return the globalBlockID corresponding to the given localBlockID
   /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
   */
-  inline GlobalOrdinal getGlobalBlockID(LocalOrdinal localBlockID) const { return map_->getGlobalBlockID(localBlockID); }
+  inline GlobalOrdinal getGlobalBlockID(LocalOrdinal localBlockID) const { CTHULHU_DEBUG_ME; return map_->getGlobalBlockID(localBlockID); }
 
   //! Return the localBlockID corresponding to the given globalBlockID
   /*! If globalBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
   */
-  inline LocalOrdinal getLocalBlockID(GlobalOrdinal globalBlockID) const { return map_->getLocalBlockID(globalBlockID); }
+  inline LocalOrdinal getLocalBlockID(GlobalOrdinal globalBlockID) const { CTHULHU_DEBUG_ME; return map_->getLocalBlockID(globalBlockID); }
 
   //! Return the block-size for localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline LocalOrdinal getLocalBlockSize(LocalOrdinal localBlockID) const { return map_->getLocalBlockSize(localBlockID); }
+  inline LocalOrdinal getLocalBlockSize(LocalOrdinal localBlockID) const { CTHULHU_DEBUG_ME; return map_->getLocalBlockSize(localBlockID); }
 
   //! Return the first local point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline LocalOrdinal getFirstLocalPointInLocalBlock(LocalOrdinal localBlockID) const { return map_->getFirstLocalPointInLocalBlock(localBlockID); }
+  inline LocalOrdinal getFirstLocalPointInLocalBlock(LocalOrdinal localBlockID) const { CTHULHU_DEBUG_ME; return map_->getFirstLocalPointInLocalBlock(localBlockID); }
 
   //! Return the first global point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  inline GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const { return map_->getFirstGlobalPointInLocalBlock(localBlockID); }
+  inline GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const { CTHULHU_DEBUG_ME; return map_->getFirstGlobalPointInLocalBlock(localBlockID); }
 
   //@}
 
-  RCP< const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockMap() const { return map_; }
+  RCP< const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockMap() const { CTHULHU_DEBUG_ME; return map_; }
 
 private:
   const RCP< const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > map_;
@@ -132,7 +134,7 @@ private:
 //-----------------------------------------------------------------
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> >
-convertTpetraBlockMapToTpetraPointMap(const Teuchos::RCP<const Cthulhu::TpetraBlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap) {
+convertTpetraBlockMapToTpetraPointMap(const Teuchos::RCP<const Cthulhu::TpetraBlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap) { CTHULHU_DEBUG_ME;
   return rcp(new TpetraMap(convertTpetraBlockMapToTpetraPointMap(blockMap.getTpetra_BlockMap())));
 }
 

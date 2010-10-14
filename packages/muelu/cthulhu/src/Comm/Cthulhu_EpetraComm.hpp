@@ -9,6 +9,8 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
+#include "Cthulhu_Debug.hpp"
+
 // Convert a Teuchos_Comm into a Epetra_Comm.
 // (needed for EpetraMap constructor)
 
@@ -20,7 +22,7 @@
 // JG TODO: replace MPI_COMM_WORLD
 // JG TODO getRawMpiComm()
 
-const Teuchos::RCP<const Epetra_Comm> Teuchos_Comm2Epetra_Comm(const Teuchos::RCP< const Teuchos::Comm< int > > & comm) {
+const Teuchos::RCP<const Epetra_Comm> Teuchos_Comm2Epetra_Comm(const Teuchos::RCP< const Teuchos::Comm< int > > & comm) { CTHULHU_DEBUG_ME;
 
   if (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm< int > >(comm)  != Teuchos::null) // JG TODO: & ?
     return Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD)); // At present, the only MPI communicator in Teuchos is MPI_COMM_WORLD. 
@@ -33,7 +35,7 @@ const Teuchos::RCP<const Epetra_Comm> Teuchos_Comm2Epetra_Comm(const Teuchos::RC
 
 }
 
-const Teuchos::RCP< const Teuchos::Comm< int > > Epetra_Comm2Teuchos_Comm(Teuchos::RCP<const Epetra_Comm> & comm) {
+const Teuchos::RCP< const Teuchos::Comm< int > > Epetra_Comm2Teuchos_Comm(Teuchos::RCP<const Epetra_Comm> & comm) { CTHULHU_DEBUG_ME;
 
   if (Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>(comm) != Teuchos::null)
     return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(MPI_COMM_WORLD))); // At present, the only MPI communicator in Teuchos is MPI_COMM_WORLD. 

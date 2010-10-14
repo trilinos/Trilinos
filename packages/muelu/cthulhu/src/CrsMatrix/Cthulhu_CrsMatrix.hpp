@@ -16,8 +16,9 @@
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_MultiVector.hpp"
 
-
 #include "Tpetra_Map.hpp" //TODO TMP
+
+#include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
 
@@ -56,7 +57,7 @@ namespace Cthulhu {
       //@{ 
 
       // !Destructor.
-    virtual ~CrsMatrix() {}
+    virtual ~CrsMatrix() { CTHULHU_DEBUG_ME;}
 
       //@}
 
@@ -98,15 +99,15 @@ namespace Cthulhu {
 
           \note If (globalRow,cols[i]) corresponds to an entry that is duplicated in this matrix row (likely because it was inserted more than once and fillComplete() has not been called in the interim), the behavior of this function is not defined. */
        virtual void replaceGlobalValues(GlobalOrdinal globalRow, 
-                                const ArrayView<const GlobalOrdinal> &cols,
-                                const ArrayView<const Scalar>        &vals) =0;
+                               const ArrayView<const GlobalOrdinal> &cols,
+                               const ArrayView<const Scalar>        &vals) =0;
 
        //! Replace matrix entries, using local IDs.
        /** All index values must be in the local space. 
          */
        virtual void replaceLocalValues(LocalOrdinal localRow, 
-                               const ArrayView<const LocalOrdinal> &cols,
-                               const ArrayView<const Scalar>       &vals) =0;
+                              const ArrayView<const LocalOrdinal> &cols,
+                              const ArrayView<const Scalar>       &vals) =0;
 
        //! Sum into multiple entries, using global IDs.
        /** All index values must be in the global space. 
@@ -115,8 +116,8 @@ namespace Cthulhu {
 
          */
        virtual void sumIntoGlobalValues(GlobalOrdinal globalRow, 
-                                const ArrayView<const GlobalOrdinal> &cols,
-                                const ArrayView<const Scalar>        &vals) =0;
+                               const ArrayView<const GlobalOrdinal> &cols,
+                               const ArrayView<const Scalar>        &vals) =0;
 
 
        //! Sum into multiple entries, using local IDs.
@@ -126,8 +127,8 @@ namespace Cthulhu {
 
          */
        virtual void sumIntoLocalValues(LocalOrdinal globalRow, 
-                               const ArrayView<const LocalOrdinal>  &cols,
-                               const ArrayView<const Scalar>        &vals) =0; 
+                              const ArrayView<const LocalOrdinal>  &cols,
+                              const ArrayView<const Scalar>        &vals) =0; 
 
        //! Set all matrix entries equal to scalarThis.
        virtual void setAllToScalar(const Scalar &alpha) =0;
@@ -312,10 +313,10 @@ namespace Cthulhu {
           returned as OrdinalTraits<size_t>::invalid().
         */
        virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow,
-                             const ArrayView<GlobalOrdinal> &Indices,
-                             const ArrayView<Scalar> &Values,
-                             size_t &NumEntries
-                             ) const =0;
+                            const ArrayView<GlobalOrdinal> &Indices,
+                            const ArrayView<Scalar> &Values,
+                            size_t &NumEntries
+                            ) const =0;
 
        //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
        /*!
@@ -331,10 +332,10 @@ namespace Cthulhu {
          \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
         */
        virtual void getLocalRowCopy(LocalOrdinal LocalRow, 
-                            const ArrayView<LocalOrdinal> &Indices, 
-                            const ArrayView<Scalar> &Values,
-                            size_t &NumEntries
-                            ) const =0;
+                           const ArrayView<LocalOrdinal> &Indices, 
+                           const ArrayView<Scalar> &Values,
+                           size_t &NumEntries
+                           ) const =0;
 
        //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
        /*!
@@ -405,9 +406,9 @@ namespace Cthulhu {
            - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
         */
        virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
-                  Scalar alpha = ScalarTraits<Scalar>::one(),
-                  Scalar beta = ScalarTraits<Scalar>::zero()) const =0;
+                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                 Scalar alpha = ScalarTraits<Scalar>::one(),
+                 Scalar beta = ScalarTraits<Scalar>::zero()) const =0;
 
        //! Indicates whether this operator supports applying the adjoint operator.
        virtual bool hasTransposeApply() const =0;
@@ -440,23 +441,23 @@ namespace Cthulhu {
 //       virtual bool checkSizes(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source) =0;
 
 //       virtual void copyAndPermute(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
-//                           size_t numSameIDs,
-//                           const ArrayView<const LocalOrdinal> &permuteToLIDs,
-//                           const ArrayView<const LocalOrdinal> &permuteFromLIDs) =0;
+//                          size_t numSameIDs,
+//                          const ArrayView<const LocalOrdinal> &permuteToLIDs,
+//                          const ArrayView<const LocalOrdinal> &permuteFromLIDs) =0;
 
 //       virtual void packAndPrepare(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
-//                           const ArrayView<const LocalOrdinal> &exportLIDs,
-//                           Array<char> &exports,
-//                           const ArrayView<size_t> & numPacketsPerLID,
-//                           size_t& constantNumPackets,
-//                           Distributor &distor) =0;
+//                          const ArrayView<const LocalOrdinal> &exportLIDs,
+//                          Array<char> &exports,
+//                          const ArrayView<size_t> & numPacketsPerLID,
+//                          size_t& constantNumPackets,
+//                          Distributor &distor) =0;
 
 //       virtual void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
-//                             const ArrayView<const char> &imports,
-//                             const ArrayView<size_t> &numPacketsPerLID,
-//                             size_t constantNumPackets,
-//                             Distributor &distor,
-//                             CombineMode CM) =0;
+//                            const ArrayView<const char> &imports,
+//                            const ArrayView<size_t> &numPacketsPerLID,
+//                            size_t constantNumPackets,
+//                            Distributor &distor,
+//                            CombineMode CM) =0;
 
       //@}
 

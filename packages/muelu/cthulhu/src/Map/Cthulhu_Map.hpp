@@ -9,6 +9,8 @@
 // enums and defines
 #include "Cthulhu_ConfigDefs.hpp"
 
+#include "Cthulhu_Debug.hpp"
+
 /** \file Cthulhu_Map.hpp 
 
     The declarations for the class Cthulhu::Map and related non-member constructors.
@@ -66,10 +68,9 @@ namespace Cthulhu {
 //         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
 //     //! Map destructor. 
-    virtual ~Map() {};
+    virtual ~Map() { CTHULHU_DEBUG_ME; };
 
 //     //@}
-
 
     //! @name Map Attribute Methods
     //@{ 
@@ -116,8 +117,8 @@ namespace Cthulhu {
      */
     //TODO: LookupStatus
     virtual Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                                            const Teuchos::ArrayView<                int> & nodeIDList, 
-                                            const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const = 0;
+                                                                    const Teuchos::ArrayView<                int> & nodeIDList, 
+                                                                    const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const = 0;
 
     //! Returns the node IDs for a given list of global indices.
     /** 
@@ -125,7 +126,7 @@ namespace Cthulhu {
                Otherwise, returns AllIDsPresent.
      */
     virtual Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                                            const Teuchos::ArrayView<                int> & nodeIDList) const = 0;
+                                                                    const Teuchos::ArrayView<                int> & nodeIDList) const = 0;
 
     //! Return a list of the global indices owned by this node.
     virtual Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const = 0;

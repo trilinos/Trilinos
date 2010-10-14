@@ -8,6 +8,8 @@
 #  include "Cthulhu_MpiPlatform.hpp"
 #endif
 
+#include "Cthulhu_Debug.hpp"
+
 namespace Cthulhu {
 
 /** \brief Returns a default platform appropriate for the enviroment.
