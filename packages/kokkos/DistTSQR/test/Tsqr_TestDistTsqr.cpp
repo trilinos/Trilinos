@@ -26,20 +26,20 @@
 // ***********************************************************************
 // @HEADER
 
-#include "AnasaziConfigDefs.hpp"
+#include <Tsqr_Config.hpp>
+
 #ifdef HAVE_MPI
-#  include "Teuchos_GlobalMPISession.hpp"
-#  include "Teuchos_oblackholestream.hpp"
+#  include <Teuchos_GlobalMPISession.hpp>
+#  include <Teuchos_oblackholestream.hpp>
 #endif // HAVE_MPI
 
-#include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Time.hpp"
+#include <Teuchos_CommandLineProcessor.hpp>
+#include <Teuchos_DefaultComm.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_Time.hpp>
 
-#include "Tsqr_Config.hpp"
-#include "Tsqr_TeuchosMessenger.hpp"
-#include "Tsqr_ParTest.hpp"
+#include <Tsqr_ParTest.hpp>
+#include <Tsqr_TeuchosMessenger.hpp>
 
 #ifdef HAVE_TSQR_COMPLEX
 #  include <complex>

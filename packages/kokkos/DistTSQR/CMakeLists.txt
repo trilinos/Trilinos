@@ -10,6 +10,9 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   # Non-generated header files
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
   APPEND_SET(HEADERS
+    Tsqr_DistTsqrHelper.hpp
+    Tsqr_DistTsqr.hpp
+    Tsqr_DistTsqrRB.hpp
     Tsqr_generateStack.hpp
     Tsqr_GlobalTimeStats.hpp
     Tsqr_GlobalVerify.hpp
@@ -22,6 +25,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_Random_GlobalMatrix.hpp
     Tsqr_RMessenger.hpp
     Tsqr_TestSetup.hpp
+    Tsqr_TeuchosMessenger.hpp
     Tsqr_TsqrTest.hpp
     )
   APPEND_SET(SOURCES
