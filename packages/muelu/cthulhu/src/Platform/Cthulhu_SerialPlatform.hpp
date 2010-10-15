@@ -5,6 +5,8 @@
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
+#include "Cthulhu_Debug.hpp"
+
 namespace Cthulhu {
 
 	//! \brief A implementation of the Platform class for serial platforms.
@@ -51,22 +53,22 @@ namespace Cthulhu {
 
   template<class Node>
   SerialPlatform<Node>::SerialPlatform(const Teuchos::RCP<Node> &node) 
-  : node_(node) {
+  : node_(node) { CTHULHU_DEBUG_ME;
     comm_ = Teuchos::rcp(new Teuchos::SerialComm<int>() );
   }
 
   template<class Node>
-  SerialPlatform<Node>::~SerialPlatform() {}
+  SerialPlatform<Node>::~SerialPlatform() { CTHULHU_DEBUG_ME; }
 
   template<class Node>
   const Teuchos::RCP< const Teuchos::SerialComm<int> >
-  SerialPlatform<Node>::getComm() const {
+  SerialPlatform<Node>::getComm() const { CTHULHU_DEBUG_ME;
     return comm_;
   }
 
   template<class Node>
   const Teuchos::RCP< Node >
-  SerialPlatform<Node>::getNode() const { 
+  SerialPlatform<Node>::getNode() const { CTHULHU_DEBUG_ME;
     return node_; 
   }
 

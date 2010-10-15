@@ -13,6 +13,8 @@
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 
+#include "Cthulhu_Debug.hpp"
+
 /** \file Cthulhu_VbrMatrix.hpp
 
   Declarations for the class Cthulhu::VbrMatrix.
@@ -138,18 +140,18 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
       - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
    */
   virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                     MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-                     Teuchos::ETransp trans = Teuchos::NO_TRANS,
-                     Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-                     Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const =0;
+                    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+                    Teuchos::ETransp trans = Teuchos::NO_TRANS,
+                    Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                    Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const =0;
   
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       Both \c X and \c Y are required to have constant stride.
   */
   virtual void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
-                    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-                    Teuchos::ETransp trans) const =0;
+                   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                   Teuchos::ETransp trans) const =0;
 
   //! Indicates whether this operator supports applying the adjoint operator.
   virtual bool hasTransposeApply() const =0;
@@ -309,10 +311,10 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
     throw an exception if the specified block-entry doesn't already exist.
   */
   virtual void getGlobalBlockEntryView(GlobalOrdinal globalBlockRow,
-                               GlobalOrdinal globalBlockCol,
-                               LocalOrdinal& numPtRows,
-                               LocalOrdinal& numPtCols,
-                               Teuchos::ArrayRCP<const Scalar>& blockEntry) const =0;
+                              GlobalOrdinal globalBlockCol,
+                              LocalOrdinal& numPtRows,
+                              LocalOrdinal& numPtCols,
+                              Teuchos::ArrayRCP<const Scalar>& blockEntry) const =0;
 
   //! Returns a non-const read-write view of a block-entry.
   /*! Creates the block-entry if it doesn't already exist, and if:
@@ -326,10 +328,10 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
        or set to Teuchos::null.
   */
   virtual void getGlobalBlockEntryViewNonConst(GlobalOrdinal globalBlockRow,
-                                       GlobalOrdinal globalBlockCol,
-                                       LocalOrdinal& numPtRows,
-                                       LocalOrdinal& numPtCols,
-                                       Teuchos::ArrayRCP<Scalar>& blockEntry) =0;
+                                      GlobalOrdinal globalBlockCol,
+                                      LocalOrdinal& numPtRows,
+                                      LocalOrdinal& numPtCols,
+                                      Teuchos::ArrayRCP<Scalar>& blockEntry) =0;
 
   //! Returns a const read-only view of a block-entry.
   /*!
@@ -343,10 +345,10 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
     throw an exception if the specified block-entry doesn't already exist.
   */
   virtual void getLocalBlockEntryView(LocalOrdinal localBlockRow,
-                              LocalOrdinal localBlockCol,
-                              LocalOrdinal& numPtRows, 
-                              LocalOrdinal& numPtCols,
-                              Teuchos::ArrayRCP<const Scalar>& blockEntry) const =0;
+                             LocalOrdinal localBlockCol,
+                             LocalOrdinal& numPtRows, 
+                             LocalOrdinal& numPtCols,
+                             Teuchos::ArrayRCP<const Scalar>& blockEntry) const =0;
 
   //! Returns a non-const read-write view of a block-entry.
   /*!
@@ -366,10 +368,10 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
     throw an exception if the specified block-entry doesn't already exist.
   */
   virtual void getLocalBlockEntryViewNonConst(LocalOrdinal localBlockRow,
-                                      LocalOrdinal localBlockCol,
-                                      LocalOrdinal& numPtRows,
-                                      LocalOrdinal& numPtCols,
-                                      Teuchos::ArrayRCP<Scalar>& blockEntry) =0;
+                                     LocalOrdinal localBlockCol,
+                                     LocalOrdinal& numPtRows,
+                                     LocalOrdinal& numPtCols,
+                                     Teuchos::ArrayRCP<Scalar>& blockEntry) =0;
 
   //! Return a copy of the (point-entry) diagonal values.
   /*!
