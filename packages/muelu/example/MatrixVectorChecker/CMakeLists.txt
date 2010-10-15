@@ -8,9 +8,9 @@ SET(simple_example_SOURCES
   TumiStuff.h
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_copyfiles
-  SOURCE_FILES rgen.m
-)
+#PACKAGE_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_copyfiles
+#  SOURCE_FILES rgen.m
+#)
   
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   read_MatrixMarket
