@@ -33,6 +33,13 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 
+#ifdef HAVE_TEUCHOS_STACKTRACE
+#  define TEUCHOS_GET_STORED_STACKTRACE() "\n" << get_stored_stacktrace()
+#else
+#  define TEUCHOS_GET_STORED_STACKTRACE() ""
+#endif
+
+
 /** \brief Simple macro that catches and reports standard exceptions and other exceptions.
  *
  * \ingroup teuchos_language_support_grp
@@ -61,7 +68,8 @@
       oss \
         << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard std::exception of type \'" \
         <<Teuchos::concreteTypeName(excpt)<<"\' :\n\n"; \
-        Teuchos::OSTab(oss).o() << excpt.what() << std::endl; \
+        Teuchos::OSTab(oss).o() << excpt.what() << \
+        TEUCHOS_GET_STORED_STACKTRACE() << std::endl; \
         std::cout << std::flush; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
