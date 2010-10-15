@@ -1,17 +1,23 @@
+#ifndef __MATRIX_VECTOR_CHECKER_HPP__
+#define __MATRIX_VECTOR_CHECKER_HPP__
+
 #include <cstdlib>
 #include <iostream>
 #include <iomanip>
+
 #ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
+#include <mpi.h>
+#include <Epetra_MpiComm.h>
 #else
-#include "Epetra_SerialComm.h"
+#include <Epetra_SerialComm.h>
 #endif
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-#include "EpetraExt_MatrixMatrix.h"
-int MatrixVecChecker(const Epetra_RowMatrix & Mat) {
+
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+#include <Epetra_CrsMatrix.h>
+#include <EpetraExt_MatrixMatrix.h>
+
+int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
 // Check the matrix-vector product, getrow, and matrix-matrix
 // multiply associated with Mat by doing the following:
 //
@@ -146,4 +152,8 @@ int MatrixVecChecker(const Epetra_RowMatrix & Mat) {
   else
     if (MyPID == 0) std::cout << "not crs" << std::endl;
   return 0;
-}//MatrixVecChecker()
+
+} // MatrixVectorChecker()
+
+
+#endif

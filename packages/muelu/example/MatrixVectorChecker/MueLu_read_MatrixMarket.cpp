@@ -4,23 +4,23 @@
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
-//usage: ./driver.exe -f A.dat -rbm rbm.dat -i options.xml
+// usage: ./driver.exe -f A.dat -rbm rbm.dat -i options.xml
 
 #ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
+#include <mpi.h>
+#include <Epetra_MpiComm.h>
 #else
-#include "Epetra_SerialComm.h"
+#include <Epetra_SerialComm.h>
 #endif
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-#include "EpetraExt_CrsMatrixIn.h"
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_MultiVectorOut.h"
-#include "EpetraExt_MultiVectorIn.h"
+#include <Epetra_Map.h>
+#include <Epetra_Vector.h>
+#include <Epetra_CrsMatrix.h>
+#include <EpetraExt_CrsMatrixIn.h>
+#include <EpetraExt_RowMatrixOut.h>
+#include <EpetraExt_MultiVectorOut.h>
+#include <EpetraExt_MultiVectorIn.h>
 
-#include "TumiStuff.h"
+#include "MatrixVectorChecker.hpp"
 
 using namespace Teuchos;
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
   char matrixFile[80] = "\0";
   char rbmFile[80] = "\0";
   char coordFile[80] = "\0";
-  char xmlFile[80] = "\0";
+  // char xmlFile[80] = "\0";
   char rhsFile[80] = "\0";
   int numPDEs = 1;
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     if      (strncmp(argv[i],"-f",2) == 0) {strncpy(matrixFile,argv[i+1],80); i+=2;}
     else if (strncmp(argv[i],"-rbm",4) == 0) {strncpy(rbmFile,argv[i+1],80); i+=2;}
     else if (strncmp(argv[i],"-c",2) == 0) {strncpy(coordFile,argv[i+1],80); i+=2;}
-    else if (strncmp(argv[i],"-i",2) == 0) {strncpy(xmlFile,argv[i+1],80); i+=2;}
+    // else if (strncmp(argv[i],"-i",2) == 0) {strncpy(xmlFile,argv[i+1],80); i+=2;}
     else if (strncmp(argv[i],"-b",2) == 0) {strncpy(rhsFile,argv[i+1],80); i+=2;}
     else if (strncmp(argv[i],"-npdes",6) == 0) {numPDEs = (int) strtol(argv[i+1],NULL,10); i+=2;}
     else
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
   }
 
 
-  MatrixVecChecker(*A);
+  MatrixVectorChecker(*A);
 
   delete [] rbmPointer;
   delete rbmVector;
