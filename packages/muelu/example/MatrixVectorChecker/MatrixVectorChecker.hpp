@@ -11,7 +11,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_MatrixMatrix.h"
-int MatrixVecChecker(const Epetra_RowMatrix & Mat) {
+int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
 // Check the matrix-vector product, getrow, and matrix-matrix
 // multiply associated with Mat by doing the following:
 //

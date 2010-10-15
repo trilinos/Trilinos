@@ -20,7 +20,7 @@
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_MultiVectorIn.h"
 
-#include "TumiStuff.h"
+#include "MatrixVectorChecker.hpp"
 
 using namespace Teuchos;
 
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
   }
 
 
-  MatrixVecChecker(*A);
+  MatrixVectorChecker(*A);
 
   delete [] rbmPointer;
   delete rbmVector;

@@ -5,7 +5,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
   
 SET(simple_example_SOURCES
   MueLu_read_MatrixMarket.cpp
-  TumiStuff.h
+  MatrixVectorChecker.hpp
   )
 
 #PACKAGE_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_copyfiles
