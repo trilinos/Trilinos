@@ -383,7 +383,7 @@ std::string stacktrace2str(const StacktraceAddresses &stacktrace_addresses)
 {
     int stack_depth = stacktrace_addresses.get_size() - 1;
 
-    std::string full_stacktrace_str;
+    std::string full_stacktrace_str("Traceback (most recent call last):\n");
 
 #ifdef HAVE_TEUCHOS_BFD
     bfd_init();
@@ -453,12 +453,7 @@ RCP<StacktraceAddresses> get_stacktrace_addresses() {
 std::string Teuchos::get_stacktrace()
 {
     RCP<StacktraceAddresses> addresses = get_stacktrace_addresses();
-    const std::string strings = stacktrace2str(*addresses);
-
-    // Print it in a Python like fashion:
-    std::string s("Traceback (most recent call last):\n");
-    s += strings;
-    return s;
+    return stacktrace2str(*addresses);
 }
 
 
