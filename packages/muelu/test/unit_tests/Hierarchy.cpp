@@ -2,12 +2,12 @@
 //#include "Teuchos_ParameterList.hpp"
 #include "test_helpers.hpp"
 #include "MueLu_Version.hpp"
-#include "MueLu_Level.hpp"
+#include "MueLu_Hierarchy.hpp"
 
 namespace {
 
 //this macro declares the unit-test-class:
-TEUCHOS_UNIT_TEST(Level, Test0)
+TEUCHOS_UNIT_TEST(Hierarchy,Test0)
 {
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
@@ -24,21 +24,23 @@ TEUCHOS_UNIT_TEST(Level, Test0)
   typedef Tpetra::Vector<Scalar,LO,GO,Node>    Vector;
   typedef MueLu::Level<Scalar,LO,GO,Node>    Level;
 
+  typedef MueLu::Hierarchy<Scalar,LO,GO,Node>    Hierarchy;
+
   using namespace Teuchos;
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  Teuchos::ParameterList list;
-  list.set("nx",10);
-  LO nx = list.get("nx",10);
-  const RCP<const Map> map = MueLu_UnitTest::create_tpetra_map<LO,GO,Node>(nx);
-  RCP<Operator> A = CreateCrsMatrix<Scalar,LO,GO,Node>("Laplace1D",map,list);
+  Level levelOne;
+  levelOne.SetLevelID(1);
+  Level levelTwo;
+  levelTwo.SetLevelID(2);
 
-  out << "Testing default ctor" << std::endl;
-  Level firstLevel;
-  out << "Testing set methods" << std::endl;
-  firstLevel.SetLevelID(1);
-  firstLevel.SetA(A);
+  Hierarchy H;
+
+  H.SetLevel(levelOne);
+  H.SetLevel(levelTwo);
+
+  std::cout << H << std::endl;
 
   /* TODO
   Test set/get of R & P matrices.
@@ -50,10 +52,6 @@ TEUCHOS_UNIT_TEST(Level, Test0)
   */
 
 
-  out << firstLevel << std::endl;
-  out << "Testing copy ctor" << std::endl;
-  Level secondLevel(firstLevel);
-  out << secondLevel << std::endl;
 }
 
 }//namespace <anonymous>

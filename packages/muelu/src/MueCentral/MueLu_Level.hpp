@@ -3,6 +3,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Tpetra_CrsMatrix.hpp"    //FIXME replace with Cthulhu Operator
+#include "Tpetra_Vector.hpp"       //FIXME replace with Cthulhu Vector
 #include <iostream>
 
 /*!
@@ -16,6 +17,7 @@ template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 class Level {
 
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Operator;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
 
   //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> &level);
 
@@ -27,18 +29,20 @@ class Level {
     //TODO enable this data
     //Smoother PreSmoother_;   // smoother operator
     //Smoother PostSmoother_;  // smoother operator
-    int levelID_;                  // id number associated with level
+    mutable int levelID_;                  // id number associated with level
     // auxilliary (optional) data
     //TODO enable this data
-    //Operator AuxMatrix_;     // can be used instead of A_ to steer coarsening/sparsity pattern algorithms
+    Teuchos::RCP<Operator> AuxMatrix_;     // can be used instead of A_ to steer coarsening/sparsity pattern algorithms
+    //TODO enable this data
     //AuxMatrixFunc_; // function used to regenerate AuxMatrix from A & coords instead of via RAP
-    //Operator AuxMatP_;       // an alternative prolongator for projecting AuxMatrix
-    //Operator AuxMatR_;       // an alternative restrictor for projecting AuxMatrix
-    //Vector xcoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
-    //Vector ycoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
-    //Vector zcoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
-    //Vector coordP_;        // an alternative prolongator for projecting coordinates
-    //Vector coordR_;        // an alternative restrictor for projecting coordinates
+    Teuchos::RCP<Operator> AuxMatP_;       // an alternative prolongator for projecting AuxMatrix
+    Teuchos::RCP<Operator> AuxMatR_;       // an alternative restrictor for projecting AuxMatrix
+    Teuchos::RCP<Vector> xCoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
+    Teuchos::RCP<Vector> yCoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
+    Teuchos::RCP<Vector> zCoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
+    Teuchos::RCP<Vector> coordP_;        // an alternative prolongator for projecting coordinates
+    Teuchos::RCP<Vector> coordR_;        // an alternative restrictor for projecting coordinates
+    //TODO enable this data
     //Graph Graph_;         // saving a graph for SA
 
   public:
@@ -66,13 +70,10 @@ class Level {
     }
 
     //@{
-    //! @name Get/Set methods.
-    void SetLevelID(int i) {
-      levelID_ = i;
-    }
+    //! @name Set methods.
 
-    int GetLevelID() {
-      return levelID_;
+    void SetLevelID(int i) const {
+      levelID_ = i;
     }
 
     void SetA(Teuchos::RCP<Operator> const A) {
@@ -87,18 +88,78 @@ class Level {
       P_ = P;
     }
 
-    Teuchos::RCP<Operator> GetA() {
+    void SetAuxMatrix(Teuchos::RCP<Operator> const AuxMatrix) {
+      return AuxMatrix_;
+    }
+
+    void SetXCoords(Teuchos::RCP<Vector> x) {
+      xCoords_ = x;
+    }
+
+    void SetYCoords(Teuchos::RCP<Vector> y) {
+      yCoords_ = y;
+    }
+
+    void SetZCoords(Teuchos::RCP<Vector> z) {
+      zCoords_ = z;
+    }
+
+    void SetAuxMatTransfers(Teuchos::RCP<Operator> &altP, Teuchos::RCP<Operator> &altR) {
+      AuxMatP_ = altP;
+      AuxMatR_ = altR;
+    }
+
+    void SetCoordTransfers(Teuchos::RCP<Operator> &altP, Teuchos::RCP<Operator> &altR) {
+      coordP_ = altP;
+      coordR_ = altR;
+    }
+
+    //@}
+
+    //@{
+    //! @name Get methods.
+
+    int GetLevelID() const {
+      return levelID_;
+    }
+
+    Teuchos::RCP<Operator> GetA() const {
       return A_;
     }
 
-    Teuchos::RCP<Operator> GetR() {
+    Teuchos::RCP<Operator> GetR() const {
       return R_;
     }
 
-    Teuchos::RCP<Operator> GetP() {
+    Teuchos::RCP<Operator> GetP() const {
       return P_;
     }
 
+    Teuchos::RCP<Operator> GetAuxMatrix() {
+      return AuxMatrix_;
+    }
+
+    Teuchos::RCP<Vector> GetXCoords() {
+      return xCoords_;
+    }
+
+    Teuchos::RCP<Vector> GetYCoords() {
+      return yCoords_;
+    }
+
+    Teuchos::RCP<Vector> GetZCoords() {
+      return zCoords_;
+    }
+
+    void GetAuxMatTransfers(Teuchos::RCP<Operator> &altP, Teuchos::RCP<Operator> &altR) {
+      altP = AuxMatP_;
+      altR = AuxMatR_;
+    }
+
+    void GetCoordTransfers(Teuchos::RCP<Operator> &altP, Teuchos::RCP<Operator> &altR) {
+      altP = coordP_;
+      altR = coordR_;
+    }
 /*
     //TODO ==================================================
     //TODO The following methods still need to be implemented.
@@ -108,34 +169,21 @@ class Level {
     GetPreSmoother
     GetPostSmoother
     GetGraph
-    GetAuxMatrix
-    GetAuxMatTransfers
     GetAuxMatrixFunc
-    GetCoordTransfers
-    GetXCoords
-    GetYCoords
-    GetZCoords
     SetGraph
-    SetAuxMatrix
-    SetAuxMatTransfers
-    SetcoordTransfers
     SetAuxMatrixFunc
-    SetXCoords
-    SetYCoords
-    SetZCoords
     ProjectInterface
 */
-
-
     //@}
+
+
 
 }; //class Level
 
 //Print function.  Not a friend b/c it uses only public interfaces for data access.
 template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> &level) {
-  os << "printing a Level object" << std::endl;
-  os << "levelID = " << level.GetLevelID() << std::endl;
+std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &level) {
+  os << "Printing Level object " << level.GetLevelID() << std::endl;
   if (level.GetA() != Teuchos::null) os << *level.GetA() << std::endl;
   if (level.GetR() != Teuchos::null) os << *level.GetR() << std::endl;
   if (level.GetP() != Teuchos::null) os << *level.GetP() << std::endl;

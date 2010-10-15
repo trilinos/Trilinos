@@ -9,7 +9,7 @@
 
 namespace MueLu {
 
-std::string const Version() {
+inline std::string const Version() {
   return("MueLu development");
 }
 } //namespace MueLu

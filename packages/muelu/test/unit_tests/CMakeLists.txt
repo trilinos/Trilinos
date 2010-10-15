@@ -3,6 +3,7 @@ INCLUDE(PackageAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../src/Transfers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/)
@@ -14,7 +15,12 @@ SET(SOURCES "")
 APPEND_SET(SOURCES
 main.cpp
 Level.cpp
+Hierarchy.cpp
+RAPFactory.cpp
+SaPFactory.cpp
+TransPFactory.cpp
   )
+#CrossFactory.cpp
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     unit_tests

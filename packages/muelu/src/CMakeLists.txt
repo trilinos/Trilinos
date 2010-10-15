@@ -27,8 +27,13 @@ APPEND_SET(HEADERS
   MueCentral/MueLu_Version.hpp
   MueCentral/MueLu_ConfigDefs.hpp
   MueCentral/MueLu_Level.hpp
+  MueCentral/MueLu_Hierarchy.hpp
+  MueCentral/MueLu_BaseFactory.hpp
+  MueCentral/MueLu_RAPFactory.hpp
+  Transfers/MueLu_SaPFactory.hpp
+  Transfers/MueLu_TransPFactory.hpp
 #  Operator/MueLu_Operator.hpp
-  ) 
+  )
 
 APPEND_SET(SOURCES
   )
