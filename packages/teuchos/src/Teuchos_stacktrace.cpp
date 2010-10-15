@@ -132,29 +132,6 @@ std::string read_line_from_file(std::string filename, unsigned int line_number)
     return line;
 }
 
-
-/* Allows printf like formatting, but returns a std::string. */
-std::string format(const char *fmt, ...)
-{
-    va_list argptr;
-    va_start(argptr, fmt);
-
-    char *str;
-    vasprintf(&str, fmt, argptr);
-    std::string s=str;
-    free(str);
-
-    va_end(argptr);
-    return s;
-}
-// 2010/09/20: rabartl: Above, the function uses varargs (...) which is
-// recommended against in Item 98 "Don't use varargs (ellipsis)" in "C++
-// Coding Standards" (Sutter and Alexandrescu).  They are not typesafe in
-// general.  This function is private to this source file so I don't see that
-// this will be a big problem until someone starts changing the formatting or
-// something.
-
-
 /* Demangles the function name if needed (if the 'name' is coming from C, it
    doesn't have to be demangled, if it's coming from C++, it needs to be).
 
@@ -307,33 +284,31 @@ std::string addr2str(std::string file_name, bfd_vma addr)
     data.line_found = 0;
 #endif
 
-    std::string s;
+    std::ostringstream s;
     // Do the printing --- print as much information as we were able to
     // find out
     if (!data.line_found) {
         // If we didn't find the line, at least print the address itself
-        s = format("  File unknown, address: 0x%llx",
-            (long long unsigned int) addr);
+        s << "  File unknown, address: 0x" << (long long unsigned int) addr;
     } else {
-        std::string name=demangle_function_name(data.function_name);
+        std::string name = demangle_function_name(data.function_name);
         if (data.filename.length() > 0) {
             // Nicely format the filename + function name + line
-            s = format("  File \"%s\", line %u, in %s", data.filename.c_str(),
-                data.line, name.c_str());
+            s << "  File \"" << data.filename << "\", line "
+                << data.line << ", in " << name;
             const std::string line_text = remove_leading_whitespace(
                 read_line_from_file(data.filename, data.line));
             if (line_text != "") {
-                s += "\n    ";
-                s += line_text;
+                s << "\n    " << line_text;
             }
         } else {
             // The file is unknown (and data.line == 0 in this case), so the
             // only meaningful thing to print is the function name:
-            s = format("  File unknown, in %s", name.c_str());
+            s << "  File unknown, in " << name;
         }
     }
-    s += "\n";
-    return s;
+    s << "\n";
+    return s.str();
 }
 
 struct match_data {
