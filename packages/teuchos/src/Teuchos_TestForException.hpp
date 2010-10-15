@@ -51,9 +51,9 @@ TEUCHOS_LIB_DLL_EXPORT int TestForException_getThrowNumber();
 TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
-#  define TEUCHOS_GET_STACKTRACE() "\n\n" << Teuchos::get_stacktrace()
+#  define TEUCHOS_STORE_STACKTRACE() store_stacktrace()
 #else
-#  define TEUCHOS_GET_STACKTRACE() ""
+#  define TEUCHOS_STORE_STACKTRACE()
 #endif
 
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
@@ -135,10 +135,10 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
       << "Throw number = " << TestForException_getThrowNumber() \
       << "\n\n" \
       << "Throw test that evaluated to true: "#throw_exception_test \
-      << TEUCHOS_GET_STACKTRACE() \
-      << "\n" \
+      << "\n\n" \
       << msg; \
     const std::string &omsgstr = omsg.str(); \
+    TEUCHOS_STORE_STACKTRACE() \
     TestForException_break(omsgstr); \
     throw Exception(omsgstr); \
   } \
