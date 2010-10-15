@@ -70,6 +70,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::null;
 
 namespace {
 
@@ -444,11 +445,25 @@ RCP<StacktraceAddresses> get_stacktrace_addresses() {
     return rcp(new StacktraceAddresses(stacktrace_array, stacktrace_size));
 }
 
+RCP<StacktraceAddresses> last_stacktrace;
 
 } // Unnamed namespace
 
 
 // Public functions
+
+void Teuchos::store_stacktrace()
+{
+    last_stacktrace = get_stacktrace_addresses();
+}
+
+std::string Teuchos::get_stored_stacktrace()
+{
+    if (last_stacktrace == null)
+        return "";
+    else
+        return stacktrace2str(*last_stacktrace);
+}
 
 std::string Teuchos::get_stacktrace()
 {

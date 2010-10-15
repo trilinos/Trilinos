@@ -38,14 +38,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 namespace Teuchos {
 
-/** \brief . */
+/** Stores the current stacktrace into an internal global variable */
+void store_stacktrace();
+
+/** Returns the last stored stacktrace as a string */
+std::string get_stored_stacktrace();
+
+/** Returns the current stacktrace as a string */
+std::string get_stacktrace();
+
+/** Prints the current stacktrace to stdout */
 void show_stacktrace();
 
-/** \brief . */
+/** Prints the current stacktrace to stdout on segfault */
 void print_stack_on_segfault();
-
-/** \brief . */
-std::string get_stacktrace();
 
 } // end namespace Teuchos
 
