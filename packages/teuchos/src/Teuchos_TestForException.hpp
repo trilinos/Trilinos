@@ -51,7 +51,7 @@ TEUCHOS_LIB_DLL_EXPORT int TestForException_getThrowNumber();
 TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
-#  define TEUCHOS_STORE_STACKTRACE() store_stacktrace()
+#  define TEUCHOS_STORE_STACKTRACE() Teuchos::store_stacktrace()
 #else
 #  define TEUCHOS_STORE_STACKTRACE()
 #endif
@@ -138,7 +138,7 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
       << "\n\n" \
       << msg; \
     const std::string &omsgstr = omsg.str(); \
-    TEUCHOS_STORE_STACKTRACE() \
+    TEUCHOS_STORE_STACKTRACE(); \
     TestForException_break(omsgstr); \
     throw Exception(omsgstr); \
   } \

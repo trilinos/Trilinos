@@ -32,9 +32,10 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include "Teuchos_stacktrace.hpp"
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
-#  define TEUCHOS_GET_STORED_STACKTRACE() "\n" << get_stored_stacktrace()
+#  define TEUCHOS_GET_STORED_STACKTRACE() Teuchos::get_stored_stacktrace() << "\n"
 #else
 #  define TEUCHOS_GET_STORED_STACKTRACE() ""
 #endif
@@ -68,8 +69,7 @@
       oss \
         << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard std::exception of type \'" \
         <<Teuchos::concreteTypeName(excpt)<<"\' :\n\n"; \
-        Teuchos::OSTab(oss).o() << excpt.what() << \
-        TEUCHOS_GET_STORED_STACKTRACE() << std::endl; \
+        Teuchos::OSTab(oss).o() << TEUCHOS_GET_STORED_STACKTRACE() << excpt.what() << std::endl; \
         std::cout << std::flush; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
