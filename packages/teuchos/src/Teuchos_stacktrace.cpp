@@ -66,9 +66,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   typedef long long unsigned bfd_vma;
 #endif
 
+#include "Teuchos_RCP.hpp"
+
+using Teuchos::RCP;
+using Teuchos::rcp;
 
 namespace {
-
 
 /* This struct is used to pass information between
    addr2str() and process_section().
@@ -349,6 +352,25 @@ int shared_lib_callback(struct dl_phdr_info *info,
 
 #endif // HAVE_TEUCHOS_LINK
 
+// Class for creating a safe C++ interface to the raw void** stacktrace
+// pointers, that we get from the backtrace() libc function. We make a copy of
+// the addresses, so the caller can free the memory. We use std::vector to
+// store the addresses internally, but this can be changed.
+class StacktraceAddresses {
+    std::vector<bfd_vma> stacktrace_buffer;
+public:
+    StacktraceAddresses(void *const *_stacktrace_buffer, int _size) {
+        for (int i=0; i < _size; i++)
+            stacktrace_buffer.push_back((bfd_vma) _stacktrace_buffer[i]);
+    }
+    bfd_vma get_address(int i) const {
+        return this->stacktrace_buffer[i];
+    }
+    int get_size() const {
+        return this->stacktrace_buffer.size();
+    }
+};
+
 
 /*
   Returns a std::string with the stacktrace corresponding to the
@@ -357,9 +379,9 @@ int shared_lib_callback(struct dl_phdr_info *info,
   It converts addresses to filenames, line numbers, function names and the
   line text.
 */
-std::string stacktrace2str(void *const *stacktrace_buffer, int stacktrace_size)
+std::string stacktrace2str(const StacktraceAddresses &stacktrace_addresses)
 {
-    const int stack_depth = stacktrace_size - 1;
+    int stack_depth = stacktrace_addresses.get_size() - 1;
 
     std::string full_stacktrace_str;
 
@@ -371,7 +393,7 @@ std::string stacktrace2str(void *const *stacktrace_buffer, int stacktrace_size)
         // Iterate over all loaded shared libraries (see dl_iterate_phdr(3) -
         // Linux man page for more documentation)
         struct match_data match;
-        match.addr = (bfd_vma) stacktrace_buffer[i];
+        match.addr = stacktrace_addresses.get_address(i);
 #ifdef HAVE_TEUCHOS_BFD
         if (dl_iterate_phdr(shared_lib_callback, &match) == 0)
             return "dl_iterate_phdr() didn't find a match\n";
@@ -414,21 +436,24 @@ void loc_abort_callback_print_stack(int sig_num)
     std::cout << "\nDone.\n";
 }
 
+RCP<StacktraceAddresses> get_stacktrace_addresses() {
+    const int STACKTRACE_ARRAY_SIZE = 100; // 2010/09/22: rabartl: Is this large enough?
+    void *stacktrace_array[STACKTRACE_ARRAY_SIZE];
+    const size_t stacktrace_size = backtrace(stacktrace_array,
+            STACKTRACE_ARRAY_SIZE);
+    return rcp(new StacktraceAddresses(stacktrace_array, stacktrace_size));
+}
+
 
 } // Unnamed namespace
 
 
 // Public functions
 
-
 std::string Teuchos::get_stacktrace()
 {
-    const int STACKTRACE_ARRAY_SIZE = 100; // 2010/09/22: rabartl: Is this large enough?
-    // Obtain the list of addresses
-    void *stacktrace_array[STACKTRACE_ARRAY_SIZE];
-    const size_t stacktrace_size = backtrace(stacktrace_array,
-            STACKTRACE_ARRAY_SIZE);
-    const std::string strings = stacktrace2str(stacktrace_array, stacktrace_size);
+    RCP<StacktraceAddresses> addresses = get_stacktrace_addresses();
+    const std::string strings = stacktrace2str(*addresses);
 
     // Print it in a Python like fashion:
     std::string s("Traceback (most recent call last):\n");
