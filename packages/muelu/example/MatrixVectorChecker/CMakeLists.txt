@@ -17,3 +17,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES ${simple_example_SOURCES}
   COMM serial
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  MatrixVectorCheckerExample
+  SOURCES MatrixVectorCheckerExample.cpp MatrixVectorChecker.hpp
+  COMM serial
+  )
