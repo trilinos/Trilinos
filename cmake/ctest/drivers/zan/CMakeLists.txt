@@ -1,3 +1,5 @@
+INCLUDE("../../../TrilinosVersion.cmake")
+
 TRILINOS_DRIVER_SETUP()
 
 IF(${Trilinos_REPOSITORY_BRANCH} STREQUAL "master")
