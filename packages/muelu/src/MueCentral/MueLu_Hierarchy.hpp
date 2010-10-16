@@ -5,6 +5,7 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 namespace MueLu {
 
@@ -22,6 +23,8 @@ template<class Scalar,class LO, class GO, class Node>
 class Hierarchy {
 
   typedef MueLu::Level<Scalar,LO,GO,Node> Level;
+  typedef MueLu::OperatorFactory<Scalar,LO,GO,Node> OperatorFactory;
+  typedef MueLu::SmootherFactory<Scalar,LO,GO,Node> SmootherFactory;
 
   template<class AA, class BB, class CC, class DD>
   inline friend std::ostream& operator<<(std::ostream& os, Hierarchy<AA,BB,CC,DD> &hierarchy);
@@ -65,22 +68,62 @@ class Hierarchy {
      }
 
      //FIXME should return status
-     void FullPopulate() { std::cout << "Hierarchy::FullPopulate()" << std::endl; }
+     //FIXME also calculate complexity here
+     void FullPopulate(Teuchos::RCP<OperatorFactory> PFact,
+                       Teuchos::RCP<OperatorFactory> RFact=Teuchos::null,
+                       Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
+                       Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
+                       int startLevel=1, int numDesiredLevels=10 /*,Needs*/)
+     {
+       std::cout << "Hierarchy::FullPopulate()" << std::endl;
+       bool goodBuild=true;
+       int i = startLevel;
+       while (i < startLevel + numDesiredLevels - 1)
+       {
+         //TODO MueMat has a check for an empty level at position i+1
+         //TODO I'm not sure how this can happen, but if it does, we must insert code to handle
+         //TODO it similarly to MueMat.
+         if (PFact != Teuchos::null /*|| isempty(Levels_[i+1] */) {
+           if ((i+1) > (int) Levels_.size()) Levels_.push_back( Levels_[i].Build() );
+           Levels_[i+1].SetLevelID(i+1);
+           goodBuild = PFact->Build(Levels_[i],Levels_[i+1] /*,MySpecs*/);
+         }
+         if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right wasy to cast?
+         if (!goodBuild) /*TODO make Levels_ be length i*/;
+         if (RFact != Teuchos::null)
+           if ( !RFact->Build(Levels_[i],Levels_[i+1] /*,MySpecs*/) ) {
+             //make Levels_ be length i
+             break;
+           }
+         if (AcFact != Teuchos::null)
+           if ( !AcFact->Build(Levels_[i],Levels_[i+1] /*,MySpecs*/) ) {
+             //make Levels_ be length i
+           break;
+           }
+         if (SmooFact != Teuchos::null) {
+           Teuchos::RCP<Smoother> preSm, postSm;
+           SmooFact->Build(preSm,postSm,Levels_[i] /*,MySpecs*/);
+           if (preSm != Teuchos::null) Levels_[i].SetPreSmoother(preSm);
+           if (postSm != Teuchos::null) Levels_[i].SetPostSmoother(postSm);
+         }
+         ++i;
+       } //while
+     } //FullPopulate()
 
      //FIXME should return status
      void SetSmoothers() { std::cout << "Hierarchy::SetSmoothers()" << std::endl; }
 
      //FIXME should return status
-     void FillHierarchy(Teuchos::RCP<BaseFactory> PFact,
-                        Teuchos::RCP<BaseFactory> RFact=Teuchos::null,
-                        Teuchos::RCP<BaseFactory> AcFact=Teuchos::null,
+     void FillHierarchy(Teuchos::RCP<OperatorFactory> PFact,
+                        Teuchos::RCP<OperatorFactory> RFact=Teuchos::null,
+                        Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
                         int startLevel=1, int numDesiredLevels=10 /*,Needs*/)
      {
        if (PFact == Teuchos::null) {throw("FillHierarchy: must supply at least a Prolongator factory");}
-       if (RFact == Teuchos::null) RFact = TransPFactory();
-       if (AcFact == Teuchos::null) AcFact = RAPFactory();
+       if (RFact == Teuchos::null) RFact = Teuchos::rcp(new TransPFactory<Scalar,LO,GO,Node>());
+       if (AcFact == Teuchos::null) AcFact = Teuchos::rcp(new RAPFactory<Scalar,LO,GO,Node>());
 
-       FullPopulate();
+       FullPopulate(PFact,RFact,AcFact,Teuchos::null,startLevel,numDesiredLevels);
      }
 
      //FIXME should return solution vector

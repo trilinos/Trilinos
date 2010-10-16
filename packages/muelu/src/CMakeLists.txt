@@ -32,6 +32,8 @@ APPEND_SET(HEADERS
   MueCentral/MueLu_RAPFactory.hpp
   Transfers/MueLu_SaPFactory.hpp
   Transfers/MueLu_TransPFactory.hpp
+  Smoothers/MueLu_SmootherFactory.hpp
+  Smoothers/MueLu_Smoother.hpp
 #  Operator/MueLu_Operator.hpp
   )
 

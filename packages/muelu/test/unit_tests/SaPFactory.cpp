@@ -17,6 +17,7 @@ TEUCHOS_UNIT_TEST(SaPFactory, Test0)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef MueLu::SaPFactory<Scalar,LO,GO,Node>    SaPFactory;
 
   using namespace Teuchos;
   using namespace MueLu;

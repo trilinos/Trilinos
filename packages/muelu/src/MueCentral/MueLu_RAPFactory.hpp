@@ -2,7 +2,7 @@
 #define MUELU_RAPFACTORY_HPP
 
 #include <iostream>
-#include "MueLu_BaseFactory.hpp"
+#include "MueLu_OperatorFactory.hpp"
 
 /*!
   @class RAPFactory class.
@@ -11,9 +11,11 @@
 
 namespace MueLu {
 
-class RAPFactory : public BaseFactory {
+template<class Scalar, class LO, class GO, class Node>
+class RAPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
 
-  inline friend std::ostream& operator<<(std::ostream& os, RAPFactory &factory);
+  template<class AA, class BB, class CC, class DD>
+  inline friend std::ostream& operator<<(std::ostream& os, RAPFactory<AA,BB,CC,DD> &factory);
 
   public:
     //@{ Constructors/Destructors.
@@ -22,13 +24,15 @@ class RAPFactory : public BaseFactory {
     virtual ~RAPFactory() {}
     //@}
 
-    //@{ Set/Get methods.
+    //@{ Build methods.
+    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {std::cout << "RAPFactory: Building a coarse operator" << std::endl; return true;}
     //@}
 
 
 }; //class RAPFactory
 
-std::ostream& operator<<(std::ostream& os, RAPFactory &factory) {
+template<class Scalar, class LO, class GO, class Node>
+std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LO,GO,Node> &factory) {
   os << "Printing RAPFactory object" << std::endl;
   return os;
 }

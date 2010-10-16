@@ -17,6 +17,7 @@ TEUCHOS_UNIT_TEST(RAPFactory, Test0)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef MueLu::RAPFactory<Scalar,LO,GO,Node>    RAPFactory;
 
   using namespace Teuchos;
   using namespace MueLu;

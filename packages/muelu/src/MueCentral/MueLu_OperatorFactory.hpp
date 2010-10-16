@@ -1,20 +1,23 @@
-#ifndef MUELU_BASEFACTORY_HPP
-#define MUELU_BASEFACTORY_HPP
+#ifndef MUELU_OPERATORFACTORY_HPP
+#define MUELU_OPERATORFACTORY_HPP
 
-//#include "Teuchos_ParameterList.hpp"
+#include <iostream>
+
+#include "Teuchos_ParameterList.hpp"
+#include "MueLu_BaseFactory.hpp"
+#include "MueLu_Level.hpp"
 
 /*!
-  @class Factory base class.
-  @brief Base class for factories.
-  Maintains just 2 things:
-   - Ouput level status
-   - A list of 'Needs' for the factory. For example, a restriction factory that transposes the tentative
-     prolongator 'Needs' the prolongator factory to save this.
+  @class Base class for operator factories (e.g., R, P, and A_coarse).
+  @brief Base class for operator factories.
+  Very similar to BaseFactory, but with an additional virtual Build method.
 */
 
 namespace MueLu {
 
-class BaseFactory {
+template<class Scalar, class LO, class GO, class Node>
+class OperatorFactory : public BaseFactory {
+
   private:
     Teuchos::ParameterList Needs_;
     int outputLevel_;
@@ -22,9 +25,17 @@ class BaseFactory {
 
   public:
     //@{ Constructors/Destructors.
-    BaseFactory() {}
+    OperatorFactory() {}
 
-    virtual ~BaseFactory() {}
+    virtual ~OperatorFactory() {}
+    //@}
+
+    //@{
+    //! @name Build methods.
+
+    //! Build an object with this factory.
+    virtual bool Build(Level<Scalar, LO, GO, Node> &i,Level<Scalar, LO, GO, Node> &j) = 0;
+
     //@}
 
 /*
@@ -56,8 +67,8 @@ class BaseFactory {
     }
 */
 
-}; //class BaseFactory
+}; //class OperatorFactory
 
 } //namespace MueLu
 
-#endif //ifndef MUELU_BASEFACTORY_HPP
+#endif //ifndef MUELU_OPERATORFACTORY_HPP

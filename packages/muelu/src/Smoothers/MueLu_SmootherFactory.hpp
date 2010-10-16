@@ -1,20 +1,20 @@
-#ifndef MUELU_BASEFACTORY_HPP
-#define MUELU_BASEFACTORY_HPP
+#ifndef MUELU_SMOOTHERFACTORY_HPP
+#define MUELU_SMOOTHERFACTORY_HPP
 
-//#include "Teuchos_ParameterList.hpp"
+#include <iostream>
+
+#include "Teuchos_ParameterList.hpp"
+#include "MueLu_Level.hpp"
 
 /*!
-  @class Factory base class.
-  @brief Base class for factories.
-  Maintains just 2 things:
-   - Ouput level status
-   - A list of 'Needs' for the factory. For example, a restriction factory that transposes the tentative
-     prolongator 'Needs' the prolongator factory to save this.
+  @class Smoother factory base class.
+  @brief Base class for smoother factories.
 */
 
 namespace MueLu {
 
-class BaseFactory {
+template <class Scalar,class LO,class GO,class Node>
+class SmootherFactory : public BaseFactory {
   private:
     Teuchos::ParameterList Needs_;
     int outputLevel_;
@@ -22,9 +22,22 @@ class BaseFactory {
 
   public:
     //@{ Constructors/Destructors.
-    BaseFactory() {}
+    SmootherFactory() {}
 
-    virtual ~BaseFactory() {}
+    virtual ~SmootherFactory() {}
+    //@}
+
+    //@{
+    //! @name Build methods.
+
+    //! Build a smoother
+    bool Build(Teuchos::RCP<Smoother> &preSm,
+               Teuchos::RCP<Smoother> &postSm,
+               Level<Scalar,LO,GO,Node> &level) {
+      std::cout << "Building a pre- and post-smoother." << std::endl;
+      return true;
+    }
+
     //@}
 
 /*
@@ -56,8 +69,8 @@ class BaseFactory {
     }
 */
 
-}; //class BaseFactory
+}; //class SmootherFactory
 
 } //namespace MueLu
 
-#endif //ifndef MUELU_BASEFACTORY_HPP
+#endif //ifndef MUELU_SMOOTHERFACTORY_HPP

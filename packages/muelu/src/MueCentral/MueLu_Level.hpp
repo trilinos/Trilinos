@@ -1,10 +1,12 @@
 #ifndef MUELU_LEVEL_HPP
 #define MUELU_LEVEL_HPP
 
+#include <iostream>
+
 #include "Teuchos_RefCountPtr.hpp"
 #include "Tpetra_CrsMatrix.hpp"    //FIXME replace with Cthulhu Operator
 #include "Tpetra_Vector.hpp"       //FIXME replace with Cthulhu Vector
-#include <iostream>
+#include "MueLu_Smoother.hpp"
 
 /*!
   @class Level
@@ -49,7 +51,6 @@ class Level {
 
     //@{
     //! @name Constructors / Destructors
-    //@}
     Level() : A_(0), R_(0), P_(0), levelID_(-1) {
       std::cout << "Constructing new unitialized Level" << std::endl;
     }
@@ -62,6 +63,15 @@ class Level {
       P_ = Source.P_;
       levelID_ = Source.levelID_;
     }
+    //@}
+
+    //@{
+    //! @name Build methods
+    static Level Build() {
+      Level newLevel;
+      return newLevel;
+    }
+    //@}
 
     virtual ~Level() {}
 
@@ -160,6 +170,8 @@ class Level {
       altP = coordP_;
       altR = coordR_;
     }
+    void SetPreSmoother(Teuchos::RCP<Smoother> &preSmoo) {std::cout << "Need private data member for presmoother" << std::endl;}
+    void SetPostSmoother(Teuchos::RCP<Smoother> &postSmoo) {std::cout << "Need private data member for postsmoother" << std::endl;}
 /*
     //TODO ==================================================
     //TODO The following methods still need to be implemented.

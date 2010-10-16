@@ -17,6 +17,7 @@ TEUCHOS_UNIT_TEST(TransPFactory, Test0)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef MueLu::TransPFactory<Scalar,LO,GO,Node>    TransPFactory;
 
   using namespace Teuchos;
   using namespace MueLu;
