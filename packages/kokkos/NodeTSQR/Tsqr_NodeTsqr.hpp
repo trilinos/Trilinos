@@ -31,41 +31,48 @@
 
 #include <Tsqr_ApplyType.hpp>
 #include <Tsqr_Lapack.hpp>
-#include <Tsqr_MatView.hpp>
-#include <Tsqr_ScalarTraits.hpp>
+#include <Tsqr_Matrix.hpp>
+
+#include <Teuchos_ScalarTraits.hpp>
+
 #include <cstring> // size_t
+#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
-  template< class LocalOrdinal, class Scalar >
-  class NodeTsqrFactorOutput {
+  class TrivialNodeTsqrFactorOutput {
   public:
-    NodeTsqrFactorOutput () {}
-    virtual ~NodeTsqrFactorOutput() = 0;
+    TrivialNodeTsqrFactorOutput () {}
+    virtual ~TrivialNodeTsqrFactorOutput() = 0;
   };
 
-  template< class LocalOrdinal, class Scalar >
+  /// \class NodeTsqr
+  /// \brief Common functionality and interface for intranode TSQR
+  ///
+  /// NodeTsqrFactorOutput is the FactorOutput type for the specific
+  /// TSQR implementation.  When you inherit from this base class,
+  /// fill in the specific NodeTsqrFactorOutput type.  It's awkward,
+  /// but it gives us some flexibility in the interface.
+  template< class LocalOrdinal, 
+	    class Scalar, 
+	    class NodeTsqrFactorOutput=TrivialNodeTsqrFactorOutput >
   class NodeTsqr {
   public:
     typedef Scalar scalar_type;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
     typedef LocalOrdinal ordinal_type;
     typedef NodeTsqrFactorOutput factor_output_type;
 
-    NodeTsqr(const size_t cacheBlockSize = 0) {}
+    NodeTsqr() {}
     virtual ~NodeTsqr() {}
 
     /// Whether or not the R factor from the QR factorization has a
     /// nonnegative diagonal.
-    bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      return LAPACK< LocalOrdinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal;
-    }
-
-    virtual size_t
-    cache_block_size() const = 0;
+    virtual bool 
+    QR_produces_R_factor_with_nonnegative_diagonal () const = 0;
 
     virtual void
     cache_block (const LocalOrdinal nrows,
@@ -139,7 +146,147 @@ namespace TSQR {
 		   const LocalOrdinal ldr,
 		   Scalar U[],
 		   const LocalOrdinal ldu,
-		   const magnitude_type tol) const = 0;
+		   const magnitude_type tol) const
+    {
+      if (tol < 0)
+	{
+	  std::ostringstream os;
+	  os << "reveal_R_rank: negative tolerance tol = "
+	     << tol << " is not allowed.";
+	  throw std::logic_error (os.str());
+	}
+      else if (ncols < 0)
+	{
+	  std::ostringstream os;
+	  os << "reveal_R_rank: number of columns is negative (= " << ncols << ")";
+	  throw std::logic_error (os.str());
+	}
+      else if (ldr < ncols)
+	{
+	  std::ostringstream os;
+	  os << "reveal_R_rank: stride of R (ldr = " << ldr 
+	     << ") is less than the number of columns (ncols = " 
+	     << ncols << ")";
+	  throw std::logic_error (os.str());
+	}
+      else if (ldu < ncols)
+	{
+	  std::ostringstream os;
+	  os << "reveal_R_rank: stride of U (ldu = " << ldu
+	     << ") is less than the number of columns (ncols = " 
+	     << ncols << ")";
+	  throw std::logic_error (os.str());
+	}
+
+      // Take the easy exit if available.
+      if (ncols == 0)
+	return 0;
+
+      LAPACK< LocalOrdinal, Scalar > lapack;
+      MatView< LocalOrdinal, Scalar > R_view (ncols, ncols, R, ldr);
+      Matrix< LocalOrdinal, Scalar > B (R_view); // B := R (deep copy)
+      MatView< LocalOrdinal, Scalar > U_view (ncols, ncols, U, ldu);
+      Matrix< LocalOrdinal, Scalar > VT (ncols, ncols, Scalar(0));
+
+      std::vector< magnitude_type > svd_rwork (5*ncols);
+      std::vector< magnitude_type > singular_values (ncols);
+      LocalOrdinal svd_lwork = -1; // -1 for LWORK query; will be changed
+      int svd_info = 0;
+
+      // LAPACK LWORK query for singular value decomposition.  WORK
+      // array is always of ScalarType, even in the complex case.
+      {
+	Scalar svd_lwork_scalar = Scalar(0);
+	lapack.GESVD ("A", "A", ncols, ncols, 
+		       B.get(), B.lda(), &singular_values[0], 
+		       U_view.get(), U_view.lda(), VT.get(), VT.lda(),
+		       &svd_lwork_scalar, svd_lwork, &svd_rwork[0], &svd_info);
+	if (svd_info != 0)
+	  {
+	    std::ostringstream os;
+	    os << "reveal_R_rank: GESVD LWORK query returned nonzero INFO = "
+	       << svd_info;
+	    throw std::logic_error (os.str());
+	  }
+	svd_lwork = static_cast< LocalOrdinal > (svd_lwork_scalar);
+	// Check the LWORK cast.  LAPACK shouldn't ever return LWORK
+	// that won't fit in an OrdinalType, but it's not bad to make
+	// sure.
+	if (static_cast< Scalar > (svd_lwork) != svd_lwork_scalar)
+	  {
+	    std::ostringstream os;
+	    os << "reveal_R_rank: GESVD LWORK query returned LWORK that "
+	      "doesn\'t fit in LocalOrdinal.  As a Scalar, LWORK = "
+	       << svd_lwork_scalar << ", but cast to LocalOrdinal, "
+	      "LWORK = " << svd_lwork << ".";
+	    throw std::logic_error (os.str());
+	  }
+	// Make sure svd_lwork >= 0.
+	if (std::numeric_limits< LocalOrdinal >::is_signed && svd_lwork < 0)
+	  {
+	    std::ostringstream os;
+	    os << "reveal_R_rank: GESVD LWORK query returned negative "
+	      "LWORK = " << svd_lwork;
+	    throw std::logic_error (os.str());
+	  }
+      }
+      // Allocate workspace for SVD.
+      std::vector< Scalar > svd_work (svd_lwork);
+
+      // Compute SVD $B := U \Sigma V^*$.  B is overwritten, which is
+      // why we copied R into B (so that we don't overwrite R if R is
+      // full rank).
+      lapack.GESVD ("A", "A", ncols, ncols, 
+		    B.get(), B.lda(), &singular_values[0], 
+		    U_view.get(), U_view.lda(), VT.get(), VT.lda(),
+		    &svd_work[0], svd_lwork, &svd_rwork[0], &svd_info);
+
+      // GESVD computes singular values in decreasing order and they
+      // are all nonnegative.  We know by now that ncols > 0.  "tol"
+      // is a relative tolerance: relative to the largest singular
+      // value, which is the 2-norm of the matrix.
+      const magnitude_type absolute_tolerance = tol * singular_values[0];
+
+      // Determine rank of B, using singular values.  
+      LocalOrdinal rank = ncols;
+      for (LocalOrdinal k = 1; k < ncols; ++k)
+	// "<=" in case singular_values[0] == 0.
+	if (singular_values[k] <= absolute_tolerance)
+	  {
+	    rank = k;
+	    break;
+	  }
+
+      if (rank == ncols)
+	return rank; // Don't modify Q or R, if R is full rank.
+
+      //
+      // R is not full rank.  
+      //
+      // 1. Compute \f$R := \Sigma V^*\f$.
+      // 2. Return rank (0 <= rank < ncols).
+      //
+
+      // Compute R := \Sigma VT.  \Sigma is diagonal so we apply it
+      // column by column (normally one would think of this as row by
+      // row, but this "Hadamard product" formulation iterates more
+      // efficiently over VT).  
+      //
+      // After this computation, R may no longer be upper triangular.
+      // R may be zero if all the singular values are zero, but we
+      // don't need to check for this case; it's rare in practice, and
+      // the computations below will be correct regardless.
+      for (LocalOrdinal j = 0; j < ncols; ++j)
+	{
+	  const Scalar* const VT_j = &VT(0,j);
+	  Scalar* const R_j = &R_view(0,j);
+
+	  for (LocalOrdinal i = 0; i < ncols; ++i)
+	    R_j[i] = singular_values[i] * VT_j[i];
+	}
+
+      return rank;
+    }
 
     /// \brief Rank-revealing decomposition
     ///
@@ -160,7 +307,26 @@ namespace TSQR {
 		 Scalar R[],
 		 const LocalOrdinal ldr,
 		 const magnitude_type tol,
-		 const bool contiguous_cache_blocks) = 0;
+		 const bool contiguous_cache_blocks) const
+    {
+      // Take the easy exit if available.
+      if (ncols == 0)
+	return 0;
+      Matrix< LocalOrdinal, Scalar > U (ncols, ncols, Scalar(0));
+      const LocalOrdinal rank = 
+	reveal_R_rank (ncols, R, ldr, U.get(), U.ldu(), tol);
+      
+      if (rank < ncols)
+	{
+	  // If R is not full rank: reveal_R_rank() already computed
+	  // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
+	  // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
+	  // := Q \cdot U\f$, respecting cache blocks of Q.
+	  Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(), 
+		     contiguous_cache_blocks);
+	}
+      return rank;
+    }
 
     /// \brief Fill the nrows by ncols matrix A with zeros.
     /// 
@@ -179,7 +345,7 @@ namespace TSQR {
 		     const LocalOrdinal ncols,
 		     Scalar A[],
 		     const LocalOrdinal lda, 
-		     const bool contiguous_cache_blocks = false) = 0;
+		     const bool contiguous_cache_blocks) = 0;
 
     /// \brief Return topmost cache block of C
     ///
@@ -200,7 +366,7 @@ namespace TSQR {
     template< class MatrixViewType >
     virtual MatrixViewType
     top_block (const MatrixViewType& C, 
-	       const bool contiguous_cache_blocks = false) const = 0;
+	       const bool contiguous_cache_blocks) const = 0;
   };
 } // namespace TSQR
 

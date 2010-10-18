@@ -34,9 +34,10 @@
 #include <Tsqr_CacheBlockingStrategy.hpp>
 #include <Tsqr_CacheBlocker.hpp>
 #include <Tsqr_LocalVerify.hpp>
-#include <Tsqr_ScalarTraits.hpp>
 #include <Tsqr_Combine.hpp>
 #include <Tsqr_Util.hpp>
+
+#include <Teuchos_ScalarTraits.hpp>
 
 #include <algorithm>
 #include <limits>
@@ -148,7 +149,7 @@ namespace TSQR {
 
   public:
     typedef Scalar scalar_type;
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+    typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
     typedef LocalOrdinal ordinal_type;
     typedef std::vector< std::vector< Scalar > > FactorOutput;
 
