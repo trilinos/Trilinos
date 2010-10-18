@@ -5,19 +5,23 @@
 #include <iostream>
 #include <iomanip>
 
-#ifdef HAVE_MPI
-#include <mpi.h>
-#include <Epetra_MpiComm.h>
-#else
-#include <Epetra_SerialComm.h>
-#endif
+// #ifdef HAVE_MPI
+// #include <mpi.h>
+// #include <Epetra_MpiComm.h>
+// #else
+// #include <Epetra_SerialComm.h>
+// #endif
 
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <Epetra_CrsMatrix.h>
 #include <EpetraExt_MatrixMatrix.h>
 
-int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
+#include <Teuchos_RCP.hpp>
+
+using Teuchos::RCP;
+
+int MatrixVectorChecker(const RCP<Epetra_RowMatrix> & Mat) {
 // Check the matrix-vector product, getrow, and matrix-matrix
 // multiply associated with Mat by doing the following:
 //
@@ -37,10 +41,10 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
 //
 //      7) print if  abs(y[i] - tCRS[i])/z[i] > 1.e-8
 
-  const Epetra_Map & ColMap = Mat.RowMatrixColMap();
-  const Epetra_Map & RowMap = Mat.RowMatrixRowMap();
-  const Epetra_Map & DomMap = Mat.OperatorDomainMap();
-  const Epetra_Map & RanMap = Mat.OperatorRangeMap();
+  const Epetra_Map & ColMap = Mat->RowMatrixColMap();
+  const Epetra_Map & RowMap = Mat->RowMatrixRowMap();
+  const Epetra_Map & DomMap = Mat->OperatorDomainMap();
+  const Epetra_Map & RanMap = Mat->OperatorRangeMap();
   const int           MyPID = RowMap.Comm().MyPID();
   Epetra_Vector v(DomMap),y(RanMap), w(RowMap,true), z(RowMap,true), t(RowMap);
   v.Random();
@@ -50,15 +54,15 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
   }
 
   // y <-- Mat*v via standard multiply
-  Mat.Multiply(false,v,y);
+  Mat->Multiply(false,v,y);
 
   // Copy v and add ghost stuff imported from other processors
 
   double *vdata;
   Epetra_Vector vhat(ColMap); 
 
-  if (Mat.RowMatrixImporter()) {
-     vhat.Import(v, *(Mat.RowMatrixImporter()), Insert);
+  if (Mat->RowMatrixImporter()) {
+     vhat.Import(v, *(Mat->RowMatrixImporter()), Insert);
      vdata = vhat.Values();
   }
   else vdata = v.Values();
@@ -69,7 +73,7 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
   int    *Indices = new int     [ColMap.NumMyElements()+1];
   int    RowLength;
   for (int i = 0; i < RowMap.NumMyElements(); i++) {
-    Mat.ExtractMyRowCopy(i, ColMap.NumMyElements(), RowLength, Values, Indices);
+    Mat->ExtractMyRowCopy(i, ColMap.NumMyElements(), RowLength, Values, Indices);
     for (int j = 0; j < RowLength; j++) w[i] += (Values[j]*vdata[Indices[j]]);
     for (int j = 0; j < RowLength; j++) z[i] += fabs(Values[j]*vdata[Indices[j]]);
     if (z[i] == 0.) z[i] = 1.e-20;
@@ -91,6 +95,8 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
        << " " << std::setw(9) << z[i] << std::endl;
     }
   }
+
+#ifdef UNUSED
   const Epetra_CrsMatrix *MatCRS =
               dynamic_cast<const Epetra_CrsMatrix *>(&Mat);
 
@@ -151,6 +157,9 @@ int MatrixVectorChecker(const Epetra_RowMatrix & Mat) {
   } // if (MatCRS)
   else
     if (MyPID == 0) std::cout << "not crs" << std::endl;
+
+#endif
+
   return 0;
 
 } // MatrixVectorChecker()

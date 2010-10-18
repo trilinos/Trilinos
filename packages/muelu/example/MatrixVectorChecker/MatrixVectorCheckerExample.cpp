@@ -8,7 +8,9 @@
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
 
+#include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
+
 #include <Galeri_Maps.h>
 #include <Galeri_CrsMatrices.h>
 
@@ -36,7 +38,7 @@ int main(int argc, char *argv[])
   RCP<Epetra_Map> map = rcp( Galeri::CreateMap("Cartesian2D", Comm, galeriList) );
   RCP<Epetra_CrsMatrix> matrix = rcp( Galeri::CreateCrsMatrix("Laplace2D", map.get(), galeriList) );
 
-  MatrixVectorChecker(*matrix);
+  MatrixVectorChecker(matrix);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;
