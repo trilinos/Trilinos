@@ -786,9 +786,9 @@ enable_gzip
 with_parmetis_libdir
 with_parmetis_incdir
 with_parmetis
+with_scotch
 with_scotch_libdir
 with_scotch_incdir
-with_scotch
 with_patoh
 with_patoh_libdir
 with_patoh_incdir
@@ -1527,12 +1527,12 @@ Optional Packages:
                           Ex. /path/to/headers
   --with-parmetis         Enable Parmetis support. (default is
                           $PARMETIS_DEFAULT)
+  --with-scotch           Enable Scotch support. (default is
+                          $SCOTCH_DEFAULT)
   --with-scotch-libdir    Specify where the Scotch library is located. Ex.
                           /path/to/library
   --with-scotch-incdir    Specify where the Scotch header files are located.
                           Ex. /path/to/headers
-  --with-scotch           Enable Scotch support. (default is
-                          $SCOTCH_DEFAULT)
   --with-patoh            Enable Patoh support. (default is no)
   --with-patoh-libdir     Specify where the Patoh library is located. Ex.
                           /path/to/library
@@ -6520,6 +6520,32 @@ $as_echo "no" >&6; }
 fi
 
 
+
+
+# Check whether --with-scotch was given.
+if test "${with_scotch+set}" = set; then
+  withval=$with_scotch; ac_cv_use_scotch=$withval
+else
+  ac_cv_use_scotch=$SCOTCH_DEFAULT
+fi
+
+
+{ $as_echo "$as_me:$LINENO: checking whether to use scotch" >&5
+$as_echo_n "checking whether to use scotch... " >&6; }
+
+if test "X$ac_cv_use_scotch" != "Xno"; then
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SCOTCH /**/
+_ACEOF
+
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
  if test "X$ac_cv_use_scotch" != "Xno"; then
   BUILD_SCOTCH_TRUE=
   BUILD_SCOTCH_FALSE='#'
@@ -6564,32 +6590,6 @@ if test "X$tac_with_scotch_libdir" != "Xno" || test "X$tac_with_scotch_incdir" !
   SCOTCH_DEFAULT=yes
 else
   SCOTCH_DEFAULT=no
-fi
-
-
-
-# Check whether --with-scotch was given.
-if test "${with_scotch+set}" = set; then
-  withval=$with_scotch; ac_cv_use_scotch=$withval
-else
-  ac_cv_use_scotch=$SCOTCH_DEFAULT
-fi
-
-
-{ $as_echo "$as_me:$LINENO: checking whether to use scotch" >&5
-$as_echo_n "checking whether to use scotch... " >&6; }
-
-if test "X$ac_cv_use_scotch" != "Xno"; then
-  { $as_echo "$as_me:$LINENO: result: yes" >&5
-$as_echo "yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_SCOTCH /**/
-_ACEOF
-
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
 fi
 
 

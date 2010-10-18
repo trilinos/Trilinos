@@ -43,10 +43,7 @@
 using Teuchos::RefCountPtr;
 using Teuchos::rcp;
 
-// Define this macro to see some timers for some of these functions
-#define ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
-
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif
 
@@ -104,7 +101,7 @@ int Ifpack_ILU::SetParameters(Teuchos::ParameterList& List)
 int Ifpack_ILU::ComputeSetup() 
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::ComputeSetup");
 #endif
 
@@ -228,7 +225,7 @@ int Ifpack_ILU::ComputeSetup()
 int Ifpack_ILU::Initialize() 
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Initialize");
 #endif
 
@@ -296,7 +293,7 @@ int Ifpack_ILU::Initialize()
 int Ifpack_ILU::Compute() 
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Compute");
 #endif
 
@@ -455,7 +452,7 @@ int Ifpack_ILU::Solve(bool Trans, const Epetra_MultiVector& X,
                       Epetra_MultiVector& Y) const 
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::ApplyInverse - Solve");
 #endif
 
@@ -490,7 +487,7 @@ int Ifpack_ILU::Multiply(bool Trans, const Epetra_MultiVector& X,
 				Epetra_MultiVector& Y) const 
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Multiply");
 #endif
 
@@ -530,7 +527,7 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
                              Epetra_MultiVector& Y) const
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::ApplyInverse");
 #endif
 
@@ -569,7 +566,7 @@ double Ifpack_ILU::Condest(const Ifpack_CondestType CT,
                               Epetra_RowMatrix* Matrix_in)
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_ILU::Condest");
 #endif
 

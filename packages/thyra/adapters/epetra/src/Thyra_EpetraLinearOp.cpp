@@ -42,12 +42,7 @@
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h" // Printing only!
 
-#ifndef TEUCHOS_DISABLE_ALL_TIMERS
-// Define this to see selected timers
-#define EPETRA_THYRA_TEUCHOS_TIMERS
-#endif // TEUCHOS_DISABLE_ALL_TIMERS
-
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
 
@@ -317,10 +312,12 @@ void EpetraLinearOp::describe(
       << "}\n";
     OSTab tab2(out);
     if (op_.get()) {
-      out << "opTrans="<<toString(opTrans_)<<"\n";
-      out << "applyAs="<<toString(applyAs_)<<"\n";
-      out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
-      out << "op="<<typeName(*op_)<<"\n";
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+        out << "opTrans="<<toString(opTrans_)<<"\n";
+        out << "applyAs="<<toString(applyAs_)<<"\n";
+        out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
+        out << "op="<<typeName(*op_)<<"\n";
+      }
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
         OSTab tab3(out);
         RCP<const Epetra_CrsMatrix>
@@ -361,7 +358,7 @@ void EpetraLinearOp::applyImpl(
   ) const
 {
 
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Thyra::EpetraLinearOp::euclideanApply");
 #endif
 
@@ -394,7 +391,7 @@ void EpetraLinearOp::applyImpl(
   RCP<const Epetra_MultiVector> X;
   RCP<Epetra_MultiVector> Y;
   {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
     TEUCHOS_FUNC_TIME_MONITOR_DIFF(
       "Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
 #endif
@@ -424,14 +421,14 @@ void EpetraLinearOp::applyImpl(
   // Perform the apply operation
   //
   {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
     TEUCHOS_FUNC_TIME_MONITOR_DIFF(
       "Thyra::EpetraLinearOp::euclideanApply: Apply", Apply);
 #endif
     if( beta == 0.0 ) {
       // Y = M * X
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Apply",
           ApplyApply);
@@ -439,7 +436,7 @@ void EpetraLinearOp::applyImpl(
         op_->Apply( *X, *Y );
       }
       else if( applyAs_ == EPETRA_OP_APPLY_APPLY_INVERSE ) {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): ApplyInverse",
           ApplyApplyInverse);
@@ -453,7 +450,7 @@ void EpetraLinearOp::applyImpl(
       }
       // Y = alpha * Y
       if( alpha != 1.0 ) {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Scale Y",
           Scale);
@@ -464,7 +461,7 @@ void EpetraLinearOp::applyImpl(
     else {  // beta != 0.0
       // Y_inout = beta * Y_inout
       if(beta != 0.0) {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Scale Y",
           Scale);
@@ -472,7 +469,7 @@ void EpetraLinearOp::applyImpl(
         scale( beta, Y_inout );
       }
       else {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Y=0",
           Apply2);
@@ -485,7 +482,7 @@ void EpetraLinearOp::applyImpl(
       // non-transpose or transpose because we have already set the
       // UseTranspose flag correctly.
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Apply",
           Apply2);
@@ -493,7 +490,7 @@ void EpetraLinearOp::applyImpl(
         op_->Apply( *X, T );
       }
       else if( applyAs_ == EPETRA_OP_APPLY_APPLY_INVERSE ) {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): ApplyInverse",
           ApplyInverse);
@@ -507,7 +504,7 @@ void EpetraLinearOp::applyImpl(
       }
       // Y_inout += alpha * T
       {
-#ifdef EPETRA_THYRA_TEUCHOS_TIMERS
+#ifdef THYRA_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Update Y",
           Update);

@@ -350,7 +350,7 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
       }
     }
     
-    // Copy the data to the EpetraExt_BlockDiagMarix from TmpMatrix
+    // Copy the data to the EpetraExt_BlockDiagMatrix from TmpMatrix
     for(i=0;i<ExtSize;i++) {
       int block_num = l2b[Nrows+i];
       if(block_num>=0 && block_num<NumBlocks_) {
@@ -452,6 +452,42 @@ int EpetraExt_PointToBlockDiagPermute::CleanupContiguousMode(){
   if(Blockids_)   {delete [] Blockids_; Blockids_=0;}
   return 0;
 }
+
+
+//=======================================================================================================
+// Creates an Epetra_CrsMatrix from the BlockDiagMatrix.  This is generally only useful if you want to do a matrix-matrix multiply.
+Epetra_FECrsMatrix * EpetraExt_PointToBlockDiagPermute::CreateFECrsMatrix(){
+  Epetra_FECrsMatrix * NewMat=new Epetra_FECrsMatrix(Copy,Matrix_->RowMap(),0);
+  
+  const Epetra_BlockMap &BlockMap=BDMat_->BlockMap();
+  const Epetra_BlockMap &DataMap=BDMat_->DataMap();
+  const int *vlist=DataMap.FirstPointInElementList();
+  const int *xlist=BlockMap.FirstPointInElementList();
+  const int *blocksize=BlockMap.ElementSizeList();
+  const double *values=BDMat_->Values();
+  int NumBlocks=BDMat_->NumMyBlocks();
+
+  // Maximum size vector for stashing GIDs
+  std::vector<int> GIDs;
+  GIDs.resize(BlockMap.MaxMyElementSize());
+
+
+  for(int i=0;i<NumBlocks;i++){
+    int Nb=blocksize[i];
+    int vidx0=vlist[i];
+    int xidx0=xlist[i];
+    // Get global indices
+    for(int j=0;j<Nb;j++)
+      GIDs[j]=CompatibleMap_->GID(xidx0+j);
+    
+    // Remember: We're using column-major storage for LAPACK's benefit    
+    int ierr=NewMat->InsertGlobalValues(Nb,&GIDs[0],&values[vidx0],Epetra_FECrsMatrix::COLUMN_MAJOR);
+    if(ierr < 0) throw "CreateFECrsMatrix: ERROR in InsertGlobalValues";
+  }   
+  NewMat->GlobalAssemble();
+  return NewMat;
+}
+
 
 //=======================================================================================================
 void EpetraExt_PointToBlockDiagPermute::UpdateImportVector(int NumVectors) const {    

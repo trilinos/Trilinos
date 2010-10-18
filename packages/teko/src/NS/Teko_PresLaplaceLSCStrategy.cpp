@@ -140,7 +140,8 @@ LinearOp PresLaplaceLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPrecondi
    return state.getModifiableOp("invF");
 }
 
-LinearOp PresLaplaceLSCStrategy::getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+// LinearOp PresLaplaceLSCStrategy::getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp PresLaplaceLSCStrategy::getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);

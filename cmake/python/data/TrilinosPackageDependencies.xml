@@ -27,20 +27,6 @@
       <Regression address="teuchos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Trios" dir="Trios">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
-    <LIB_OPTIONAL_DEP_TPLS value="XDMF,HDF5"/>
-    <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="trios-checkins@software.sandia.gov"/>
-      <Regression address="trios-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
   <Package name="ThreadPool" dir="ThreadPool">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -319,6 +305,20 @@
     <EmailAddresses>
       <Checkin address="pamgen-checkins@software.sandia.gov"/>
       <Regression address="pamgen-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
+  <Package name="Trios" dir="Trios">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Pamgen"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="XDMF,HDF5,Netcdf"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="Netcdf"/>
+    <EmailAddresses>
+      <Checkin address="trios-checkins@software.sandia.gov"/>
+      <Regression address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="Ifpack" dir="ifpack">
@@ -633,9 +633,9 @@
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Ifpack,ML,TriKota,Anasazi,Sacado,NOX"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="AztecOO,Stratimikos"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK"/>
+    <LIB_OPTIONAL_DEP_TPLS value="ForUQTK,CUDA,Thrust"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -659,13 +659,13 @@
   </Package>
   <Package name="Sundance" dir="Sundance">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Anasazi,Belos,Stratimikos,NOX,Intrepid"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="MOOCHO,Stokhos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Trios,MOOCHO,Stokhos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="Peano,ExodusII,MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS value="Peano,MPI,Netcdf"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="Peano,ExodusII,MPI"/>
+    <TEST_OPTIONAL_DEP_TPLS value="Peano,MPI,Netcdf"/>
     <EmailAddresses>
       <Checkin address="sundance-checkins@software.sandia.gov"/>
       <Regression address="sundance-regression@software.sandia.gov"/>

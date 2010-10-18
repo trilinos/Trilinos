@@ -8,6 +8,7 @@ ADD_SUBDIRECTORY(MultiLevelPreconditioner_Maxwell)
 ADD_SUBDIRECTORY(MultiLevelPreconditioner_NonSym)
 ADD_SUBDIRECTORY(MultiLevelPreconditioner_Restart)
 ADD_SUBDIRECTORY(MultiLevelPreconditioner_Sym)
+ADD_SUBDIRECTORY(MultiLevelPreconditioner_Sys)
 ADD_SUBDIRECTORY(SelfSmoother)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zoltan ${PACKAGE_NAME}_ENABLE_Galeri ${PACKAGE_NAME}_ENABLE_METIS)

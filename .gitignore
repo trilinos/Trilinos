@@ -11,6 +11,7 @@ doxygen_objdb_*.tmp
 /preCopyrightTrilinos/
 /Panzer/
 /LIMEExt/
+/PSSDriversExt/
 /TerminalApplication/
 
 # Ignore gtags generated files

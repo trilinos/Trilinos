@@ -22,26 +22,6 @@
 extern "C" {
 #endif
 
-/* information about the network topology of specific platforms */
-
-#define PLATFORM_MAX_LEVELS 8
-
-enum {GLORY,
-      REDSKY,
-      CTX,
-      ODIN,
-      OCTOPI,
-      S861036,
-      LAST_PLATFORM} zoltan_platform_name;
-
-typedef struct _spec{
-  char *platform_name;
-  int numLevels;
-  int num_siblings[PLATFORM_MAX_LEVELS];
-  int my_part[PLATFORM_MAX_LEVELS];
-} zoltan_platform_specification;
-
-
 /* header file for hierarchical balancing */
 
 /* Parameters to hierarchical balancing */
@@ -75,12 +55,12 @@ struct HierPartParamsStruct {
 					migrated somewhere else */
   struct Zoltan_DD_Struct *dd;       /* distributed data to track migrated 
 					gids during hierarchical balancing */
-  int allocsize_gids_of_interest;    /* size of gids_of_interest array */
-  int num_gids_of_interest;          /* num gids in gids_of_interest */
-  ZOLTAN_ID_PTR gids_of_interest;    /* list of gids of interest, used
+  int allocsize_gnos_of_interest;    /* size of gids_of_interest array */
+  int num_gnos_of_interest;          /* num gids in gids_of_interest */
+  indextype *gnos_of_interest;    /* list of gids of interest, used
 					when looking up remote proc locations
 					for graph edge callbacks */
-  int *gids_of_interest_procs;       /* list of procs where gids of interest
+  int *gnos_of_interest_procs;       /* list of procs where gids of interest
 					are located */
   /*short *migrated_to; */           /* store pid of where a each global id 
 					that started here has been migrated.
@@ -90,18 +70,18 @@ struct HierPartParamsStruct {
   float *vwgt;                       /* vector of vertex weights */
   int *input_parts;                  /* Initial partitions for objects. */
   indextype *vtxdist, *xadj;           /* intermediate graph structure storage */
-  ZOLTAN_ID_PTR adjncy;              /*    see Zoltan_Build_Graph */
+  indextype *adjncy;              /*    see Zoltan_Build_Graph */
   float *ewgts;                      /* edge weights for intermediate struct */
   int *adjproc;                      /* adjacent proc for each edge */
   int ndims;                         /* number of dimensions for geom data */
   int num_edges;                     /* number of edges in graph rep */
   double *geom_vec;                  /* geometry of objects in intermediate */
-  int num_migrated_in_gids;          /* number of gids migrated to this proc */
-  int alloc_migrated_in_gids;        /* size of allocated array of migrated
+  int num_migrated_in_gnos;          /* number of gids migrated to this proc */
+  int alloc_migrated_in_gnos;        /* size of allocated array of migrated
 					in gids */
-  ZOLTAN_ID_PTR migrated_in_gids;    /* ordered array of gids migrated in */
+  indextype *migrated_in_gnos;    /* ordered array of gids migrated in */
   void **migrated_in_data;           /* data migrated in, parallel array to
-					migrated_in_gids */
+					migrated_in_gnos */
 
                                          /* If non-null, Zoltan is computing the */
   zoltan_platform_specification *spec;   /* levels based on network topology */

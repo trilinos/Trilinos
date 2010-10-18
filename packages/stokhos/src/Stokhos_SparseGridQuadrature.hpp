@@ -60,7 +60,10 @@ namespace Stokhos {
      *                          quadrature.  If equal to 0, the level is
      *                          calculated using a heuristic formula.
      */
-    SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis, ordinal_type sparse_grid_level = 0);
+    SparseGridQuadrature(
+      const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis, 
+      ordinal_type sparse_grid_level = 0,
+      value_type duplicate_tol = 1.0e-12);
 
     //! Destructor
     virtual ~SparseGridQuadrature() {}

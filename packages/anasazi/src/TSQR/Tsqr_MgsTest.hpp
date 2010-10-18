@@ -212,7 +212,7 @@ namespace TSQR {
 	}
 
       // Test accuracy of the resulting factorization
-      std::pair< magnitude_type, magnitude_type > result = 
+      std::vector< magnitude_type > results = 
 	global_verify (nrows_local, ncols, A_local.get(), A_local.lda(),
 		       Q_local.get(), Q_local.lda(), R.get(), R.lda(), 
 		       scalarComm.get());
@@ -235,10 +235,12 @@ namespace TSQR {
 		   << "# MPI processes = " << nprocs << endl;
 	      if (which == "MpiTbbTSQR")
 		cout << "# cores per process = " << num_cores << endl;
-	      cout << "Relative residual $\\|A - Q*R\\|_2 / \\|A\\|_2$ = " 
-		   << result.first << endl
-		   << "Relative orthogonality $\\|I - Q^T*Q\\|_2$ = " 
-		   << result.second << endl
+	      cout << "Absolute residual $\\|A - Q*R\\|_2: "
+		   << results[0] << endl
+		   << "Absolute orthogonality $\\|I - Q^T*Q\\|_2$: " 
+		   << results[1] << endl
+		   << "Test matrix norm $\\| A \\|_F$: "
+		   << results[2] << endl
 		   << endl;
 	    }
 	  else
@@ -249,8 +251,9 @@ namespace TSQR {
 		   << "," << nprocs;
 	      if (which == "MpiTbbTSQR")
 		cout << "," << num_cores << endl;
-	      cout << "," << result.first 
-		   << "," << result.second
+	      cout << "," << results[0] 
+		   << "," << results[1]
+		   << "," << results[2]
 		   << endl;
 	    }
 	}

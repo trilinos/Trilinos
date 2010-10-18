@@ -148,6 +148,10 @@ int main(int argc, char *argv[])
       i++;
       globals.working_directory = argv[i++];
     }
+    else if (std::strcmp("--in_type", argv[i]) == 0) {
+      i++;
+      in_type = argv[i++];
+    }
     else if (std::strcmp("-Maximum_Time", argv[i]) == 0) {
       i++;
       globals.maximum_time = std::strtod(argv[i++], NULL);
@@ -195,8 +199,15 @@ int main(int argc, char *argv[])
 namespace {
   void show_usage(const std::string &prog)
   {
-    OUTPUT << "USAGE: " << prog << " input_database\n";
+    OUTPUT << "\nUSAGE: " << prog << " input_database\n";
     OUTPUT << "       version: " << version << "\n";
+    Ioss::NameList db_types;
+    Ioss::IOFactory::describe(&db_types);
+    OUTPUT << "\nSupports database types:\n\t";
+    for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+      OUTPUT << *IF << "  ";
+    }
+    OUTPUT << "\n\n";
   }
 
   void file_info(const std::string& inpfile, const std::string& input_type, Globals& globals)

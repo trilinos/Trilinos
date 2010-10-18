@@ -141,6 +141,24 @@ namespace LOCA {
        * wrapped solver)
        */
       const Teuchos::ParameterList& getList() const;
+      
+      /*!
+       * \brief Returns underlying group if solution group is extended, 
+       * solution group otherwise.
+       */
+      Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const;
+      
+      /*!
+       * \brief Returns underlying group if previous solution group is 
+       * extended, previous solution group otherwise.
+       */
+      Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
+      
+      /*! 
+       * \brief Implementation of getListPtr method (forwarded to 
+       * wrapped solver)
+       */
+      Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
 
     protected:
 

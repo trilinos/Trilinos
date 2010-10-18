@@ -82,6 +82,25 @@ namespace TSQR {
 	}
     }
 
+    static void
+    printCombineFieldNames ()
+    {
+      using std::cout;
+      using std::endl;
+
+      const char prefix[] = "%";
+      cout << prefix
+	   << "method" 
+	   << ",kernel"
+	   << ",scalarType"
+	   << ",numRows"
+	   << ",numCols"
+	   << ",absFrobResid"
+	   << ",absFrobOrthog"
+	   << ",frobA"
+	   << endl;
+    }
+
     template< class MagnitudeType >
     static void
     printR1R2results (const std::string& datatype,
@@ -92,12 +111,13 @@ namespace TSQR {
       using std::endl;
 
       cout << "Combine"
-	   << "," << datatype
 	   << "," << "R1R2"
-	   << "," << numCols
+	   << "," << datatype
+	   << "," << (2*numCols)
 	   << "," << numCols
 	   << "," << results[0]
 	   << "," << results[1]
+	   << "," << results[2]
 	   << endl;
     }
 
@@ -112,12 +132,13 @@ namespace TSQR {
       using std::endl;
 
       cout << "Combine"
-	   << "," << datatype
 	   << "," << "R3A"
+	   << "," << datatype
 	   << "," << numRows
 	   << "," << numCols
-	   << "," << results[2]
 	   << "," << results[3]
+	   << "," << results[4]
+	   << "," << results[5]
 	   << endl;
     }
 
@@ -126,8 +147,11 @@ namespace TSQR {
     printResults (const std::string& datatype,
 		  const int numRows,
 		  const int numCols,
-		  const std::vector< MagnitudeType >& results)
+		  const std::vector< MagnitudeType >& results,
+		  const bool printFieldNames)
     {
+      if (printFieldNames)
+	printCombineFieldNames();
       printR1R2results (datatype, numCols, results);
       printR3Aresults (datatype, numRows, numCols, results);
     }
@@ -137,17 +161,32 @@ namespace TSQR {
     printSimSeqTsqrResults (const std::string& datatype, 
 			    const int numRows, 
 			    const int numCols, 
-			    const std::pair< MagnitudeType, MagnitudeType >& results)
+			    const std::vector< MagnitudeType >& results,
+			    const bool printFieldNames)
     {
       using std::cout;
       using std::endl;
 
+      if (printFieldNames)
+	{
+	  const char prefix[] = "%";
+	  cout << prefix
+	       << "method"
+	       << ",scalarType"
+	       << ",numRows"
+	       << ",numCols"
+	       << ",absFrobResid"
+	       << ",absFrobOrthog"
+	       << ",frobA"
+	       << endl;
+	}
       cout << "CombineSimSeqTsqr"
 	   << "," << datatype
 	   << "," << numRows
 	   << "," << numCols
-	   << "," << results.first
-	   << "," << results.second
+	   << "," << results[0]
+	   << "," << results[1]
+	   << "," << results[2]
 	   << endl;
     }
 
@@ -161,8 +200,7 @@ namespace TSQR {
 
     template< class MatrixViewType >
     static
-    std::pair< typename ScalarTraits< typename MatrixViewType::scalar_type >::magnitude_type, 
-	       typename ScalarTraits< typename MatrixViewType::scalar_type >::magnitude_type >
+    std::vector< typename ScalarTraits< typename MatrixViewType::scalar_type >::magnitude_type >
     localVerify (const MatrixViewType& A, 
 		 const MatrixViewType& Q, 
 		 const MatrixViewType& R)
@@ -179,9 +217,8 @@ namespace TSQR {
     /// 2. [R; A] where R is ncols by ncols upper triangular, and A is
     ///    nrows by ncols general dense.
     ///
-    ///
-    /// \return (relative residual, relative orthogonality) for each
-    ///   test problem.
+    /// \return ($\|A - QR\|_F$, $\|I - Q^* Q\|_F$, $\|A\|_F$) for each
+    ///   test problem (so, a vector of six elements).
     ///
     template< class Ordinal, class Scalar >
     static std::vector< typename ScalarTraits< Scalar >::magnitude_type >
@@ -205,7 +242,7 @@ namespace TSQR {
       typedef NormalGenerator< Ordinal, magnitude_type > normgen_mag_type;
       typedef MatrixGenerator< Ordinal, Scalar, normgen_type > matgen_type;
       typedef Matrix< Ordinal, Scalar > matrix_type;
-      typedef pair< magnitude_type, magnitude_type > results_type;
+      typedef vector< magnitude_type > results_type;
 
       if (numRows < numCols)
 	{
@@ -326,8 +363,9 @@ namespace TSQR {
 		      Q_R1R2.get(), Q_R1R2.lda(),
 		      R1.get(), R1.lda());
       if (debug)
-	cerr << "\\| A - Q*R \\|_F = " << firstResults.first << endl
-	     << "\\| I - Q'*Q \\|_F = " << firstResults.second << endl;
+	cerr << "\\| A - Q*R \\|_F = " << firstResults[0] << endl
+	     << "\\| I - Q'*Q \\|_F = " << firstResults[1] << endl
+	     << "\\| A \\|_A = " << firstResults[2] << endl;
 
       if (debug)
 	cerr << endl << "----------------------------------------" << endl
@@ -362,14 +400,18 @@ namespace TSQR {
 		      Q_R3A.get(), Q_R3A.lda(),
 		      R3.get(), R3.lda());
       if (debug)
-	cerr << "\\| A - Q*R \\|_F = " << secondResults.first << endl
-	     << "\\| I - Q'*Q \\|_F = " << secondResults.second << endl;
+	cerr << "\\| A - Q*R \\|_F = " << secondResults[0] << endl
+	     << "\\| I - Q'*Q \\|_F = " << secondResults[1] << endl
+	     << "\\| A \\|_A = " << secondResults[2] << endl;
 
-      vector< magnitude_type > finalResults (4);
-      finalResults[0] = firstResults.first;
-      finalResults[1] = firstResults.second;
-      finalResults[2] = secondResults.first;
-      finalResults[3] = secondResults.second;
+      vector< magnitude_type > finalResults;
+      finalResults.push_back (firstResults[0]);
+      finalResults.push_back (firstResults[1]);
+      finalResults.push_back (firstResults[2]);
+
+      finalResults.push_back (secondResults[0]);
+      finalResults.push_back (secondResults[1]);
+      finalResults.push_back (secondResults[2]);
       return finalResults;
     }
 
@@ -379,7 +421,7 @@ namespace TSQR {
     /// \brief Simulate one combine step of Sequential TSQR
     ///
     template< class Ordinal, class Scalar >
-    static std::pair< typename ScalarTraits< Scalar >::magnitude_type, typename ScalarTraits< Scalar >::magnitude_type >
+    static std::vector< typename ScalarTraits< Scalar >::magnitude_type >
     verifyCombineSeqTemplate (TSQR::Random::NormalGenerator< Ordinal, Scalar >& gen,
 			      TSQR::Random::NormalGenerator< Ordinal, typename ScalarTraits< Scalar >::magnitude_type >& magGen,
 			      const Ordinal numRows, 
@@ -401,7 +443,7 @@ namespace TSQR {
       typedef MatrixGenerator< Ordinal, Scalar, normgen_type > matgen_type;
       typedef Matrix< Ordinal, Scalar > matrix_type;
       typedef MatView< Ordinal, Scalar > mat_view_type;
-      typedef pair< magnitude_type, magnitude_type > results_type;
+      typedef vector< magnitude_type > results_type;
 
       if (numRows < numCols)
 	{
@@ -514,8 +556,9 @@ namespace TSQR {
       const results_type results = localVerify (A_copy, Q, R);
 
       if (debug)
-	cerr << "\\| A - Q*R \\|_F = " << results.first << endl
-	     << "\\| I - Q'*Q \\|_F = " << results.second << endl;
+	cerr << "\\| A - Q*R \\|_F = " << results[0] << endl
+	     << "\\| I - Q'*Q \\|_F = " << results[1] << endl
+	     << "\\| A \\|_F = " << results[2] << endl;
 
       return results;
     }
@@ -523,8 +566,9 @@ namespace TSQR {
 
     void
     verifyCombine (const int numRows,
-		   const int numCols,
+		   const int numCols, 
 		   const bool test_complex,
+		   const bool printFieldNames,
 		   const bool simulate_sequential_tsqr,
 		   const bool debug)
     {
@@ -555,7 +599,9 @@ namespace TSQR {
 	  NormalGenerator< int, float > normgenS;
 	  const vector< float > resultsS = 
 	    verifyCombineTemplate (normgenS, normgenS, numRows, numCols, debug);
-	  printResults (string("float"), numRows, numCols, resultsS);
+	  // Only print field names (if at all) once per run, for the
+	  // first data type.
+	  printResults (string("float"), numRows, numCols, resultsS, printFieldNames);
 	  // Fetch the pseudorandom seed from the previous test.
 	  normgenS.getSeed (iseed);
 
@@ -565,7 +611,7 @@ namespace TSQR {
 	      NormalGenerator< int, complex<float> > normgenC (iseed);
 	      const vector< float > resultsC = 
 		verifyCombineTemplate (normgenC, normgenS, numRows, numCols, debug);
-	      printResults (string("complex<float>"), numRows, numCols, resultsC);
+	      printResults (string("complex<float>"), numRows, numCols, resultsC, false);
 	      // Fetch the seed from this test
 	      normgenC.getSeed (iseed);
 	    }
@@ -574,7 +620,7 @@ namespace TSQR {
 	  NormalGenerator< int, double > normgenD (iseed);
 	  const vector< double > resultsD = 
 	    verifyCombineTemplate (normgenD, normgenD, numRows, numCols, debug);
-	  printResults (string("double"), numRows, numCols, resultsD);
+	  printResults (string("double"), numRows, numCols, resultsD, false);
 	  normgenD.getSeed (iseed);
 
 	  if (test_complex)
@@ -583,42 +629,44 @@ namespace TSQR {
 	      NormalGenerator< int, complex<double> > normgenZ (iseed);
 	      const vector< double > resultsZ = 
 		verifyCombineTemplate (normgenZ, normgenD, numRows, numCols, debug);
-	      printResults (string("complex<double>"), numRows, numCols, resultsZ);
+	      printResults (string("complex<double>"), numRows, numCols, resultsZ, false);
 	    }
 	}
       else // simulate_sequential_tsqr
 	{
 	  // First test.
 	  NormalGenerator< int, float > normgenS2;
-	  const pair< float, float > resultsS2 = 
+	  const vector< float > resultsS2 = 
 	    verifyCombineSeqTemplate (normgenS2, normgenS2, numRows, numCols, debug);
-	  printSimSeqTsqrResults (string("float"), numRows, numCols, resultsS2);
+	  // Only print field names (if at all) once per run, for the
+	  // first data type.
+	  printSimSeqTsqrResults (string("float"), numRows, numCols, resultsS2, printFieldNames);
 	  normgenS2.getSeed (iseed);
 
 	  if (test_complex)
 	    {
 	      // Next test.
 	      NormalGenerator< int, complex<float> > normgenC2 (iseed);
-	      const pair< float, float > resultsC2 = 
+	      const vector< float > resultsC2 = 
 		verifyCombineSeqTemplate (normgenC2, normgenS2, numRows, numCols, debug);
-	      printSimSeqTsqrResults (string("complex<float>"), numRows, numCols, resultsC2);
+	      printSimSeqTsqrResults (string("complex<float>"), numRows, numCols, resultsC2, false);
 	      normgenC2.getSeed (iseed);
 	    }
 
 	  // Next test.
 	  NormalGenerator< int, double > normgenD2 (iseed);
-	  const pair< double, double > resultsD2 = 
+	  const vector< double > resultsD2 = 
 	    verifyCombineSeqTemplate (normgenD2, normgenD2, numRows, numCols, debug);
-	  printSimSeqTsqrResults (string("double"), numRows, numCols, resultsD2);
+	  printSimSeqTsqrResults (string("double"), numRows, numCols, resultsD2, false);
 	  normgenD2.getSeed (iseed);
 
 	  if (test_complex)
 	    {
 	      // Next test.
 	      NormalGenerator< int, complex<double> > normgenZ2 (iseed);
-	      const pair< double, double > resultsZ2 = 
+	      const vector< double > resultsZ2 = 
 		verifyCombineSeqTemplate (normgenZ2, normgenD2, numRows, numCols, debug);
-	      printSimSeqTsqrResults (string("complex<double>"), numRows, numCols, resultsZ2);
+	      printSimSeqTsqrResults (string("complex<double>"), numRows, numCols, resultsZ2, false);
 	    }
 	}
     }

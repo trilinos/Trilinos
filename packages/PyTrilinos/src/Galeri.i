@@ -88,16 +88,19 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_InvOperator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_JadMatrix.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_FEVector.h"
-#include "Epetra_LinearProblem.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVbrMatrix.h"
+#include "Epetra_LinearProblem.h"
 
 // Epetra Python utility code
 #define NO_IMPORT_ARRAY
@@ -105,6 +108,12 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
 #endif
 
 // Teuchos includes

@@ -39,11 +39,12 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_OrthogPolyExpansion.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 #include "Stokhos_EpetraVectorOrthogPoly.hpp"
 #include "Stokhos_EpetraMultiVectorOrthogPoly.hpp"
-#include "Stokhos_PreconditionerFactory.hpp"
+#include "Stokhos_SGOperator.hpp"
 
 namespace Stokhos {
 
@@ -83,7 +84,8 @@ namespace Stokhos {
       const Teuchos::RCP<Teuchos::ParameterList>& params,
       const Teuchos::RCP<const Epetra_Comm>& comm,
       const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg = Teuchos::null,
-      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg = Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >());
+      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg = Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >(),
+      bool scaleOP = true);
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -272,17 +274,6 @@ namespace Stokhos {
     //! dg/dp stochastic Galerkin components
     mutable Teuchos::Array< Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > > dgdp_sg_blocks;
 
-    //! Method for creating block Jacobian
-    enum EJacobianMethod {
-      MATRIX_FREE,
-      KL_MATRIX_FREE,
-      KL_REDUCED_MATRIX_FREE,
-      FULLY_ASSEMBLED
-    };
-
-    //! Method for creating block Jacobian
-    EJacobianMethod jacobianMethod;
-
     std::vector< std::vector<int> > rowStencil;
     std::vector<int> rowIndex;
 
@@ -292,14 +283,16 @@ namespace Stokhos {
     //! SG initial p
     Teuchos::Array< Teuchos::RCP<EpetraExt::BlockVector> > sg_p_init;
 
-    //! SG Preconditioner factory
-    Teuchos::RCP<Stokhos::PreconditionerFactory> precFactory;
-
     //! Whether to always evaluate W with f
     bool eval_W_with_f;
 
     //! W pointer for evaluating W with f
-    mutable Teuchos::RCP<Epetra_Operator> my_W;
+    mutable Teuchos::RCP<Stokhos::SGOperator> my_W;
+
+    //! x pointer for evaluating preconditioner
+    mutable Teuchos::RCP<Epetra_Vector> my_x;
+
+    bool scaleOP;
 
   };
 

@@ -270,10 +270,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   maxLocked_(0),
   lockQuorum_(1),
   inSituRestart_(false),
-  numRestartBlocks_(1),
-  _timerSolve(Teuchos::TimeMonitor::getNewTimer("BlockDavidsonSolMgr::solve()")),
+  numRestartBlocks_(1)
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+  , _timerSolve(Teuchos::TimeMonitor::getNewTimer("BlockDavidsonSolMgr::solve()")),
   _timerRestarting(Teuchos::TimeMonitor::getNewTimer("BlockDavidsonSolMgr restarting")),
   _timerLocking(Teuchos::TimeMonitor::getNewTimer("BlockDavidsonSolMgr locking"))
+#endif
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
@@ -629,7 +631,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   // enter solve() iterations
   {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*_timerSolve);
+#endif
 
     // tell bd_solver to iterate
     while (1) {
@@ -662,7 +666,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         ////////////////////////////////////////////////////////////////////////////////////
         else if ( bd_solver->getCurSubspaceDim() == bd_solver->getMaxSubspaceDim() ) {
 
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor restimer(*_timerRestarting);
+#endif
 
           if ( numRestarts >= maxRestarts_ ) {
             break; // break from while(1){bd_solver->iterate()}
@@ -861,7 +867,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         ////////////////////////////////////////////////////////////////////////////////////
         else if (locktest != Teuchos::null && locktest->getStatus() == Passed) {
 
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor lcktimer(*_timerLocking);
+#endif
 
           // 
           // get current state
@@ -1255,7 +1263,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   bd_solver->currentStatus(printer_->stream(FinalSummary));
 
   // print timing information
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor::summarize(printer_->stream(TimingDetails));
+#endif
 
   problem_->setSolution(sol);
   printer_->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;

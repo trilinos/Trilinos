@@ -47,19 +47,17 @@
 //             Trilinos/packages/stokhos/example/hermite_example.cpp
 //     using the Sacado overloaded operators.
 
-#include <iostream>
-
-#include "Sacado.hpp"
-#include "Sacado_PCE_OrthogPoly.hpp"
-#include "Stokhos.hpp"
+#include "Stokhos_Sacado.hpp"
 
 // The function to compute the polynomial chaos expansion of,
 // written as a template function
 template <class ScalarType>
-ScalarType simple_function(const ScalarType& u) {
-  ScalarType w = std::log(u);
-  return 1.0/(w*w + 1.0);
+inline ScalarType simple_function(const ScalarType& u) {
+  return 1.0/(std::pow(std::log(u),2.0) + 1.0);
 }
+
+// Typename of PC expansion type
+typedef Sacado::ETPCE::OrthogPoly<double> pce_type;
 
 int main(int argc, char **argv)
 {
@@ -77,7 +75,7 @@ int main(int argc, char **argv)
 
     // Quadrature method
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-        Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
@@ -85,10 +83,11 @@ int main(int argc, char **argv)
 
     // Expansion method
     Teuchos::RCP<Stokhos::QuadOrthogPolyExpansion<int,double> > expn = 
-      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, Cijk, quad));
+      Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(
+		     basis, Cijk, quad));
 
     // Polynomial expansions
-    Sacado::PCE::OrthogPoly<double> u(expn);
+    pce_type u(expn);
     u.term(0,0) = 1.0;
     for (int i=0; i<d; i++) {
       u.term(i,1) = 0.4 / d;
@@ -96,8 +95,8 @@ int main(int argc, char **argv)
       u.term(i,3) = 0.002 / d;
     }
 
-    // Compute expansion
-    Sacado::PCE::OrthogPoly<double> v = simple_function(u);
+    // Compute PCE expansion of function
+    pce_type v = simple_function(u);
 
     // Print u and v
     std::cout << "v = 1.0 / (log(u)^2 + 1):" << std::endl;

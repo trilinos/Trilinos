@@ -72,7 +72,6 @@ script in the example subdirectory of the PyTrilinos package:
 
 // NOX includes
 #include "NOX_Version.H"
-#include "NOX_Utils.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -119,10 +118,7 @@ __version__ = version().split()[2]
 ///////////////////////
 // NOX Utils support //
 ///////////////////////
-%rename(_print) NOX::Utils::print;
-%ignore NOX::Utils::fill;
-%ignore NOX::Utils::sciformat;
-%include "NOX_Utils.H"
+%include "NOX_Utils.i"
 
 // NOX namespace imports
 %pythoncode

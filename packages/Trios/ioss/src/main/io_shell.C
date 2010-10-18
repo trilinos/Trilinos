@@ -170,9 +170,13 @@ int main(int argc, char *argv[])
       i++;
       globals.working_directory = argv[i++];
     }
-    else if (std::strcmp("--generate", argv[i]) == 0) {
+    else if (std::strcmp("--in_type", argv[i]) == 0) {
       i++;
-      in_type = "generated";
+      in_type = argv[i++];
+    }
+    else if (std::strcmp("--out_type", argv[i]) == 0) {
+      i++;
+      out_type = argv[i++];
     }
     else if (std::strcmp("-i", argv[i]) == 0) {
       i++;
@@ -240,6 +244,7 @@ int main(int argc, char *argv[])
       show_usage(codename);
       return (EXIT_FAILURE);
     }
+
     // First line should be input_file_name input_file_type
     // Last line should be output_file_name output_file_type
     std::string tmp;
@@ -271,17 +276,25 @@ int main(int argc, char *argv[])
 namespace {
   void show_usage(const std::string &prog)
   {
-    OUTPUT << "USAGE: " << prog << " in_file out_file\n";
+    OUTPUT << "\nUSAGE: " << prog << " in_file out_file\n";
     OUTPUT << "...or: " << prog << " command_file\n";
     OUTPUT << "       version: " << version << "\n";
     OUTPUT << "Options:\n";
     OUTPUT << "\t-directory or -d {dir} : specifies current working directory\n";
     OUTPUT << "\t-i {file} : read input and output filename data from file\n";
-    OUTPUT << "\t--generate : generate a mesh based on filename instead of reading from file\n";
+    OUTPUT << "\t--in_type {pamgen|generated|exodus} : set input type to the argument. Default exodus\n";
+    OUTPUT << "\t--out_type {exodus} : set output type to the argument. Default exodus\n";
     OUTPUT << "\t--debug : turn on debugging output\n";
     OUTPUT << "\t--Maximum_Time {time} : maximum time from input mesh to transfer to output mesh\n";
     OUTPUT << "\t--Minimum_Time {time} : minimum time from input mesh to transfer to output mesh\n";
-    OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n\n";
+    OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n";
+    Ioss::NameList db_types;
+    Ioss::IOFactory::describe(&db_types);
+    OUTPUT << "\nSupports database types:\n\t";
+    for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+      OUTPUT << *IF << "  ";
+    }
+    OUTPUT << "\n\n";
   }
 
   void file_copy(const std::string& inpfile, const std::string& input_type,

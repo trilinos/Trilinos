@@ -48,10 +48,7 @@ extern "C" {int dfill_diag(int n, NCformat *Astore);}
 using Teuchos::RefCountPtr;
 using Teuchos::rcp;
 
-// Define this macro to see some timers for some of these functions
-#define ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
-
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif
 
@@ -127,7 +124,7 @@ int Ifpack_SILU::SetParameters(Teuchos::ParameterList& List)
 int Ifpack_SILU::Initialize() 
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_SILU::Initialize");
 #endif
 
@@ -211,7 +208,7 @@ int Ifpack_SILU::Initialize()
 int Ifpack_SILU::Compute() 
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_SILU::Compute");
 #endif
 
@@ -275,7 +272,7 @@ int Ifpack_SILU::Solve(bool Trans, const Epetra_MultiVector& X,
                       Epetra_MultiVector& Y) const 
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_SILU::ApplyInverse - Solve");
 #endif
 
@@ -318,7 +315,7 @@ int Ifpack_SILU::ApplyInverse(const Epetra_MultiVector& X,
                              Epetra_MultiVector& Y) const
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_SILU::ApplyInverse");
 #endif
 
@@ -353,7 +350,7 @@ double Ifpack_SILU::Condest(const Ifpack_CondestType CT,
                               Epetra_RowMatrix* Matrix_in)
 {
 
-#ifdef ENABLE_IFPACK_ILU_TEUCHOS_TIMERS
+#ifdef IFPACK_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("Ifpack_SILU::Condest");
 #endif
 

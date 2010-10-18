@@ -78,12 +78,6 @@ namespace Sacado {							\
     template <typename T> Taylor<T> OP (const Taylor<T>&);		\
   }									\
 									\
-  namespace PCE {							\
-    template <typename T> class OrthogPoly;				\
-    template <typename T>						\
-    OrthogPoly<T> OP (const OrthogPoly<T>&);				\
-  }									\
-									\
   namespace FlopCounterPack {						\
     template <typename T> class ScalarFlopCounter;			\
     template <typename T>						\
@@ -105,7 +99,6 @@ namespace std {                                                         \
   using Sacado::ELRCacheFad::OP;					\
   using Sacado::LFad::OP;						\
   using Sacado::Tay::OP;						\
-  using Sacado::PCE::OP;						\
   using Sacado::FlopCounterPack::OP;					\
   using Sacado::Rad::OP;						\
 }
@@ -264,19 +257,6 @@ namespace Sacado {							\
 					const T&);			\
   }									\
 									\
-  namespace PCE {							\
-    template <typename T> class OrthogPoly;				\
-    template <typename T>						\
-    OrthogPoly<T> OP (const OrthogPoly<T>&,				\
-		      const OrthogPoly<T>&);				\
-    template <typename T>						\
-    OrthogPoly<T> OP (const T&,						\
-		      const OrthogPoly<T>&);				\
-    template <typename T>						\
-    OrthogPoly<T> OP (const OrthogPoly<T>&,				\
-		      const T&);					\
-  }									\
-									\
   namespace FlopCounterPack {						\
     template <typename T> class ScalarFlopCounter;			\
     template <typename T>						\
@@ -351,7 +331,6 @@ namespace std {                                                         \
   using Sacado::ELRCacheFad::OP;					\
   using Sacado::LFad::OP;						\
   using Sacado::Tay::OP;						\
-  using Sacado::PCE::OP;						\
   using Sacado::FlopCounterPack::OP;					\
   using Sacado::Rad::OP;						\
 }

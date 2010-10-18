@@ -171,8 +171,13 @@ operator<<(
   Writer &	dout,
   const char *	c_str)
 {
-  if (dout.shouldPrint())
-    dout.getStream() << c_str;
+  if (dout.shouldPrint()) {
+    std::ostream &os = dout.getStream();
+    if (!c_str)
+      os << "(null)";
+    else
+      os << c_str;
+  }
 
   return dout;
 }

@@ -730,6 +730,34 @@ getNewton() const
 {
   return *newtonVec;
 }
+  
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Homotopy::DeflatedGroup::
+getXPtr() const 
+{
+  return xVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Homotopy::DeflatedGroup::
+getFPtr() const 
+{
+  return fVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Homotopy::DeflatedGroup::
+getGradientPtr() const 
+{
+  return gradientVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Homotopy::DeflatedGroup::
+getNewtonPtr() const 
+{
+  return newtonVec;
+}
 
 double
 LOCA::Homotopy::DeflatedGroup::

@@ -75,6 +75,11 @@ namespace Ioss {
     static int    decode_entity_name(const std::string &entity_name);
     static std::string encode_entity_name(const std::string &entity_type, int id);
 
+    /*!
+     * Convert 'name' to lowercase and convert spaces to '_'
+     */
+    static void fixup_name(char *name);
+    
     static int case_strcmp(const std::string &s1, const std::string &s2);
     /*!
      * Return a string containing information about the current :

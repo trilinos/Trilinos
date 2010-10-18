@@ -1257,10 +1257,13 @@ def getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput):
 
   if foundStatusHeader:
     #print "\nlastNumBlankLines =", lastNumBlankLines
-    if origLogStrList[-3] != "":
+    #print "origLogStrList[-1] = '" + origLogStrList[-1] + "'"
+    #print "origLogStrList[-2] = '" + origLogStrList[-2] + "'"
+    if origLogStrList[-2] != "":
       raise Exception("Error, there must be at least one blank line before the" \
-        " build/test summary block!  This should never happen!")
-    origLogStrList = origLogStrList[0:-lastNumBlankLines-1]
+        " build/test summary block!  This is a corrupted commit message.  Please" \
+        " use 'git commit --amend' and manually remove the 'Build/test Cases Summary' block.")
+    origLogStrList = origLogStrList[0:-lastNumBlankLines]
   else:
     lastNumBlankLines = -1 # Flag we did not find status header
 

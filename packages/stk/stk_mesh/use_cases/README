@@ -17,13 +17,46 @@ miniFE builds a mesh representing a brick-shaped domain of hexahedral elements,
 defines a coordinate field on the nodes, and assembles a finite-element
 problem, solving the steady-state conduction equation.
 
+
 UseCase_2:
+  3D, (nLeft+nRight)x1x1 elements
+  Includes a coordinate field on nodes, a temperature field on nodes, 
+    and a volume field on elements.
+  This use case sets up the mesh, assigns coordinates, temperature, and volume
+  data to the fields and then demonstrates how all this data is retrieved from
+  the mesh by verifying everything is correct through a set of functions on the
+  class.
+
 
 UseCase_3:
+  3D, heterogeneous mesh composed of several different element types.
+  This is a heterogeneous mesh including:  hexahedron, wedge, tetrahedron,
+    pyramid, quadrilateral shell, and triangle shell.  
+  Includes a coordinate field on nodes, a centroid field on elements, a
+    temperature field on nodes, and a volume field on hexahedrons, wedges,
+    tetrahedrons, and pyramids, and an element_node coordinate field on elements
+    which sets up a set of pointers in the element field which point to the nodal
+    coordinate field data for the nodes attached to that element.
+
 
 UseCase_4:
+  3D, 2x Hex and 3x Wedge mesh with linear and quadratic elements and 66 nodes.
+  Includes a coordinate field on nodes, a velocity field on nodes, a centroid
+    field on elements, a temperature field on nodes, a pressure field on vertex
+    nodes, a boundary field on nodes in the sideset, and an element_node
+    coordinate field on the quadratic elements.
+
+  This use case demonstrates how to put the vertex nodes from the quadratic hex
+    and wedge elements into a vertex part through the use of part relations and
+    stencils.  This is used to put the pressure field on the vertex nodes.
+
+  This use case sets up the mesh, assigns the field data, and runs two centroid
+    algorithms on the quadratic hex and wedge elements, then demonstrates how all
+    this data is retrieved from the mesh by verifying the data.
 
 UseCase_ChangeOwner:
+  2D, 4x Quadrilateral elements
+  This use case demonsrates how to move elements from one processor to another.
 
 UseCase_ElementDeath_1:
   "This Use Case demonstrates iteratively removing entities from a mesh and re-skinning."

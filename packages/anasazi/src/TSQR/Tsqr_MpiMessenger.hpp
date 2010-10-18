@@ -12,6 +12,16 @@
 namespace TSQR {
   namespace MPI {
 
+    /// \class MpiMessenger
+    /// \brief Communication object for TSQR
+    ///
+    /// A thin wrapper around an MPI_Comm, for use by TSQR.  I wrote
+    /// this class specifically to experiment with the new MPI
+    /// communicator objects, like MPI_COMM_NETWORK, MPI_COMM_NODE,
+    /// and MPI_COMM_SOCKET.  These are not yet supported nicely in
+    /// Teuchos.
+    ///
+    /// \warning Datum should be a class with value-type semantics.
     template< class Datum >
     class MpiMessenger : public TSQR::MessengerBase< Datum > {
     public:

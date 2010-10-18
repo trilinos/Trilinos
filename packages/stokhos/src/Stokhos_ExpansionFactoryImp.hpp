@@ -100,7 +100,7 @@ create(Teuchos::ParameterList& sgParams)
 		    Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type,value_type>::TAYLOR);
     value_type rtol = expParams.get("ForUQTK Expansion Tolerance", 1e-12);
     expansion = 
-      Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type,value_type>(basis, method, rtol));
+      Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, method, rtol));
 #else
     TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 		       std::endl << 

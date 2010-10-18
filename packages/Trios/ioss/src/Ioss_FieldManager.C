@@ -60,6 +60,13 @@ Ioss::Field Ioss::FieldManager::get(const std::string& field_name) const
   return (*iter).second;
 }
 
+const Ioss::Field &Ioss::FieldManager::getref(const std::string& field_name) const
+{
+  FieldMapType::const_iterator iter = fields.find(field_name);
+  assert(iter != fields.end());
+  return (*iter).second;
+}
+
 // Assumes: Field 'name' must exist.
 void Ioss::FieldManager::erase(const std::string& field_name)
 {

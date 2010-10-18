@@ -331,7 +331,7 @@ namespace stk {
 	      }
 	    }
 	  }
-
+         
 	  process_elementblocks(*in_region, meta_data);
 	  process_nodeblocks(*in_region,    meta_data);
 	  process_facesets(*in_region,      meta_data);
@@ -359,6 +359,25 @@ namespace stk {
       }
 
       // ========================================================================
+      // Thin wrapper to hid Ioss::Region in favor of MeshData.
+      void create_output_mesh(const std::string &mesh_filename,
+				       const std::string &mesh_extension,
+				       const std::string &working_directory,
+				       stk::ParallelMachine comm,
+				       stk::mesh::BulkData &bulk_data,
+				       stk::mesh::MetaData &meta_data,
+                                       MeshData &mesh_data,
+				       bool add_transient,
+				       bool add_all_fields)
+      {
+        mesh_data.m_region = create_output_mesh(mesh_filename,
+                                       mesh_extension, working_directory,
+                                       comm, bulk_data, 
+                                       NULL, //mesh_data.m_region,
+                                       meta_data, add_transient, add_all_fields);
+      }
+      // ========================================================================
+
       Ioss::Region *create_output_mesh(const std::string &mesh_filename,
 				       const std::string &mesh_extension,
 				       const std::string &working_directory,
@@ -480,6 +499,19 @@ namespace stk {
 	    meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
 	  stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+
+        // Transfer any nodal "transient" fields from Ioss to stk
+        // ... only if current state is set by begin_state call,
+        // AND fields are in database
+        int step = region.get_property("current_state").get_int();
+        if (step>0) {
+          Ioss::NameList names;
+          nb->field_describe(Ioss::Field::TRANSIENT, &names);
+          for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
+            stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
+            stk::io::field_data_from_ioss(field, nodes, nb, *I);
+          }
+        }
       }
 
       // ========================================================================
@@ -519,13 +551,14 @@ namespace stk {
 	    size_t element_count = elem_ids.size();
 	    int nodes_per_elem = cell_topo->node_count ;
 
-	    std::vector<const stk::mesh::Entity*> elements(element_count);
+	    std::vector<stk::mesh::Entity*> elements(element_count);
 	    for(size_t i=0; i<element_count; ++i) {
 	      /// \todo REFACTOR cast from int to unsigned is unsafe and ugly.
 	      /// change function to take int[] argument.
               int *conn = &connectivity[i*nodes_per_elem];
 	      elements[i] = &stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
 	    }
+
 	  }
 	}
       }
@@ -699,6 +732,21 @@ namespace stk {
 	}
       }
 
+      int process_output_request(MeshData &mesh_data,
+				 stk::mesh::BulkData &bulk,
+				 double time, bool output_all_fields)
+      {
+        Ioss::Region &region = *(mesh_data.m_region);
+        region.begin_mode(Ioss::STATE_TRANSIENT);
+
+        int out_step = region.add_state(time);
+
+        process_output_request(region, bulk, out_step, output_all_fields);
+        region.end_mode(Ioss::STATE_TRANSIENT);
+
+        return out_step;
+      }
+
       void process_output_request(Ioss::Region &region,
 				  stk::mesh::BulkData &bulk,
 				  int step, bool output_all_fields)
@@ -735,16 +783,23 @@ namespace stk {
 
       void populate_bulk_data(stk::mesh::BulkData &bulk_data,
 			      MeshData &mesh_data,
-			      const std::string &mesh_type)
+			      const std::string &mesh_type,
+                              int step)
       {
 	if (mesh_type == "exodusii" || mesh_type == "generated") {
 	  Ioss::Region *region = mesh_data.m_region;
           bulk_data.modification_begin();
+
+          // Pick which time index to read into solution field.
+          if (step>0) region->begin_state(step);
+
 	  stk::io::util::process_elementblocks(*region, bulk_data);
-	  stk::io::util::process_nodeblocks(*region, bulk_data);
+	  stk::io::util::process_nodeblocks(*region, bulk_data); // solution field read here
 	  stk::io::util::process_nodesets(*region, bulk_data);
 	  stk::io::util::process_edgesets(*region, bulk_data);
 	  stk::io::util::process_facesets(*region, bulk_data);
+
+          if (step>0) region->end_state(step);
           bulk_data.modification_end();
 	}
 	else if (mesh_type == "gears") {

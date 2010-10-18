@@ -68,7 +68,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, paramlist, 0),
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -81,7 +81,7 @@ Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), paramlist, 0),
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -95,7 +95,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, costs, paramlist, 0) ,
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -110,7 +110,7 @@ Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), 
             Teuchos::RCP<CostDescriber>(costs,false), paramlist, 0),
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -123,7 +123,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -136,7 +136,7 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -150,7 +150,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, costs, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -165,7 +165,7 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), 
             Teuchos::RCP<CostDescriber>(costs,false), paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -178,7 +178,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (coords, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -191,7 +191,7 @@ Partitioner::Partitioner(const Epetra_MultiVector *coords,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -205,7 +205,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (coords, weights, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -220,7 +220,7 @@ Partitioner::Partitioner(const Epetra_MultiVector *coords,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_MultiVector>(coords,false), 
             Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -233,7 +233,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_map, paramlist, 0),
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -246,7 +246,7 @@ Partitioner::Partitioner(const Epetra_BlockMap *input_map,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_BlockMap>(input_map,false), paramlist, 0),
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -260,7 +260,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, coords, paramlist, 0),
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -275,7 +275,7 @@ Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), 
             Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0),
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -291,7 +291,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, costs, coords, weights, paramlist, 0) ,
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -310,7 +310,7 @@ Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
             Teuchos::RCP<CostDescriber>(costs,false), 
             Teuchos::RCP<const Epetra_MultiVector>(coords,false), 
             Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -324,7 +324,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, coords, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -339,7 +339,7 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
 			 bool compute_partitioning_now):
   Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), 
             Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -355,7 +355,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, costs, coords, weights, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -374,7 +374,7 @@ Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
             Teuchos::RCP<CostDescriber>(costs,false), 
             Teuchos::RCP<const Epetra_MultiVector>(coords,false), 
             Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0), printMetrics(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -416,7 +416,6 @@ setPartSizes(int len, int *global_part_id, float *part_size)
 void Partitioner::
 partition(bool force_repartitioning)
 {
-
   int input_type = Library::unspecified_input_;
 
   std::string partitioning_method_str("PARTITIONING METHOD");
@@ -559,6 +558,11 @@ partition(bool force_repartitioning)
       input_type = Library::simple_input_;
       sublist.set("LB_METHOD", "RANDOM");
     }
+    else if (partitioning_method == "HIER_GRAPH")
+    {
+      input_type = Library::graph_input_;
+      sublist.set("LB_METHOD", "HIER");
+    }
     else if (partitioning_method == "HIER_HGRAPH_GRAPH") // Can perhaps simplify this partitioning method name by using another parameter
     {
       sublist.set("LB_METHOD", "HIER");
@@ -599,6 +603,23 @@ partition(bool force_repartitioning)
   if (paramlist_.isParameter("BALANCE OBJECTIVE")
       && paramlist_.get<std::string>("BALANCE OBJECTIVE") == "NONZEROS") {
     sublist.set("ADD_OBJ_WEIGHT", "NONZEROS");
+  }
+
+  std::string print_metrics_str("PRINT ZOLTAN METRICS");
+  std::string print_metrics =
+    paramlist_.get(print_metrics_str, "UNSPECIFIED");
+
+  if (print_metrics == ("UNSPECIFIED")){
+    printMetrics = 0;
+  }
+  else if (print_metrics == ("1")){
+    printMetrics = 1;
+  }
+  else if (print_metrics == ("2")){
+    printMetrics = 2;
+  }
+  else {
+    printMetrics = 1;
   }
 
   lib_->input_type_ = input_type;

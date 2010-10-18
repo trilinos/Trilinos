@@ -67,6 +67,7 @@ class Entity ;   // Individual entity within the mesh
 class Relation ; // Relation pair of local mesh entities
 class Ghosting ;
 
+typedef std::vector<Bucket *> BucketVector;
 typedef std::vector<Entity *> EntityVector;
 
 /** Change log to reflect change from before 'modification_begin'
@@ -94,6 +95,7 @@ static const EntityRank BaseEntityRank = 0;
 typedef unsigned Ordinal;
 typedef Ordinal PartOrdinal;
 typedef Ordinal FieldOrdinal;
+typedef Ordinal RelationIdentifier;
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel
@@ -102,6 +104,7 @@ typedef Ordinal FieldOrdinal;
 
 /** \brief  Pairing of an entity with a processor rank */
 typedef std::pair<Entity*,unsigned> EntityProc ;
+typedef std::vector<EntityProc>     EntityProcVec ;
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
  *

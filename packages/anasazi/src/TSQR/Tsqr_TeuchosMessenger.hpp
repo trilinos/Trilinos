@@ -54,7 +54,12 @@ namespace TSQR {
 
       TeuchosMessenger (const comm_ptr& pComm) : pComm_ (pComm) {}
 
-      /// Send sendData[0:sendCount-1] to processor destProc.
+      /// Send sendData[0:sendCount-1] to process destProc.
+      ///
+      /// \param sendData [in] Array of value-type elements to send
+      /// \param sendCount [in] Number of elements in the array
+      /// \param destProc [in] Rank of destination process
+      /// \param tag [in] MPI tag (ignored)
       virtual void 
       send (const Datum sendData[], 
 	    const int sendCount, 
@@ -67,7 +72,12 @@ namespace TSQR {
 	Teuchos::send (*pComm_, sendCount, sendData, destProc);
       }
 
-      /// Receive recvData[0:recvCount-1] from processor srcProc.
+      /// Receive recvData[0:recvCount-1] from process srcProc.
+      ///
+      /// \param recvData [out] Array of value-type elements to receive
+      /// \param recvCount [in] Number of elements to receive in the array
+      /// \param srcProc [in] Rank of sending process
+      /// \param tag [in] MPI tag (ignored)
       virtual void 
       recv (Datum recvData[], 
 	    const int recvCount, 
@@ -83,6 +93,17 @@ namespace TSQR {
       /// Exchange sencRecvCount elements of sendData with processor
       /// destProc, receiving the result into recvData.  Assume that
       /// sendData and recvData do not alias one another.
+      ///
+      /// \param sendData [in] Array of value-type elements to send
+      /// \param recvData [out] Array of value-type elements to
+      ///   receive.  Caller is responsible for making sure that
+      ///   recvData does not alias sendData.
+      /// \param sendRecvCount [in] Number of elements to send and
+      ///   receive in the array
+      /// \param destProc [in] The "other" process' rank (to which
+      ///   this process is sending data, and from which this process is
+      ///   receiving data)
+      /// \param tag [in] MPI tag (ignored)
       virtual void 
       swapData (const Datum sendData[], 
 		Datum recvData[], 
@@ -91,7 +112,14 @@ namespace TSQR {
 		const int tag)
       {
 	if (destProc == rank())
-	  std::copy (sendData, sendData+sendRecvCount, recvData);
+	  {
+	    // If the sending and receiving processes are the same,
+	    // then all we need to do is copy the data.  Hopefully in
+	    // that case you aren't aliasing.  std::copy assumes that
+	    // the third argument does not point to an element in the
+	    // range of the first two arguments.
+	    std::copy (sendData, sendData+sendRecvCount, recvData);
+	  }
 	else
 	  {
 	    using Teuchos::RCP;

@@ -56,15 +56,15 @@ namespace Ioss {
     // items in the field.
     Field(const std::string &name, const BasicType type,
 	  const std::string &storage,
-	  const RoleType role, size_t value_count);
+	  const RoleType role, size_t value_count, size_t index=0);
     
     Field(const std::string &name, const BasicType type,
 	  const std::string &storage, int copies,
-	  const RoleType role, size_t value_count);
+	  const RoleType role, size_t value_count, size_t index=0);
 
     Field(const std::string &name, const BasicType type,
 	  const VariableType *storage,
-	  const RoleType role, size_t value_count);
+	  const RoleType role, size_t value_count, size_t index=0);
     
     // Create a field from another field.
     Field(const Field&);
@@ -89,8 +89,11 @@ namespace Ioss {
 
     size_t get_size() const; // data size (in bytes) required to hold entire field
 
-    RoleType      get_role() const {return role_;}
+    RoleType get_role() const {return role_;}
 
+    size_t get_index() const {return index_;}
+    void set_index(size_t index) const {index_ = index;}
+    
     void reset_count(size_t new_count); // new number of items in field
     void reset_type(BasicType new_type); // new type of items in field.
 
@@ -109,15 +112,16 @@ namespace Ioss {
   private:
     std::string  name_;
 
-    size_t    rawCount_; // Count of items in field before transformation
+    size_t    rawCount_;    // Count of items in field before transformation
     size_t    transCount_; // Count of items in field after transformed
+    size_t    size_;     // maximum data size (in bytes) required to hold entire field
+    mutable size_t    index_;     // Optional flag that can be used by a client to indicate an ordering. Unused by field itself.
     BasicType     type_;
     RoleType      role_;
 
     const VariableType* rawStorage_;  // Storage type of raw field
     const VariableType* transStorage_; // Storage type after transformation
 
-    size_t size_; // maximum data size (in bytes) required to hold entire field
     std::vector<Transform*>  transforms_;
   };
 }

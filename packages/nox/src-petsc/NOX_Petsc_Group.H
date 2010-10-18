@@ -176,6 +176,14 @@ public:
 
   virtual const Abstract::Vector& getNewton() const;
 
+  virtual Teuchos::RCP< const Abstract::Vector > getXPtr() const;
+
+  virtual Teuchos::RCP< const Abstract::Vector > getFPtr() const;
+
+  virtual Teuchos::RCP< const Abstract::Vector > getGradientPtr() const;
+
+  virtual Teuchos::RCP< const Abstract::Vector > getNewtonPtr() const;
+
   //@}
 
   virtual Teuchos::RCP<NOX::Abstract::Group> 

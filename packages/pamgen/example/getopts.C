@@ -51,7 +51,7 @@ int option_index = 1;
 int getopts_usage(char *progName, struct options opts[])
 {
   int count;
-  char *cmd;
+  char *cmd = NULL;
   
   printf("Usage: %s [options]\n\n", progName);
   printf("  --help,\t-h\t\t\tDisplays this information\n");

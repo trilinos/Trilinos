@@ -1,4 +1,4 @@
-//@HEADER
+ //@HEADER
 /*
 ************************************************************************
 
@@ -43,6 +43,10 @@ USA
 #ifdef HAVE_EPETRA
 class Epetra_Vector;
 class Epetra_CrsMatrix;
+class Epetra_RowMatrix;
+class Epetra_MultiVector;
+class Epetra_Import;
+class Epetra_CrsGraph;
 
 namespace Isorropia {
 
@@ -127,6 +131,9 @@ public:
   /** Destructor */
   ~CostDescriber();
 
+  /** Copy constructor */
+  CostDescriber(const CostDescriber &costs);
+
   /**  Overloaded << operator for CostDescriber object
    */
   friend std::ostream& operator <<(std::ostream &, const Isorropia::Epetra::CostDescriber &cd);
@@ -204,7 +211,34 @@ public:
    */
   void show_cd(std::ostream &) const;
 
+  // Add documentation
+
+  int compareBeforeAndAfterHypergraph( const Epetra_RowMatrix &in_m, const Epetra_RowMatrix &out_m,
+            const Epetra_Import &importer,
+            std::vector<double> &balance, std::vector<double> &cutn, std::vector<double> &cutl) const;
+
+  int compareBeforeAndAfterGraph( const Epetra_RowMatrix &in_m, const Epetra_RowMatrix &out_m,
+            const Epetra_Import &importer,
+            std::vector<double> &balance, std::vector<int> &numCuts, std::vector<double> &cutWgt,
+            std::vector<double> &cutn, std::vector<double> &cutl) const;
+
+  int compareBeforeAndAfterGraph( const Epetra_CrsGraph &in_g, const Epetra_CrsGraph &out_g,
+            const Epetra_Import &importer,
+            std::vector<double> &balance, std::vector<int> &numCuts, std::vector<double> &cutWgt,
+            std::vector<double> &cutn, std::vector<double> &cutl) const;
+
+  int compareBeforeAndAfterImbalance(const Epetra_MultiVector &mv, const  Epetra_Import &importer,
+                  std::vector<double> &min, std::vector<double> &max, std::vector<double> &avg) const;
+
 private:
+
+  void _transformWeights(const Epetra_Import &importer);
+
+  int _compareBeforeAndAfterGraph( const Epetra_RowMatrix *in_m, const Epetra_RowMatrix *out_m,
+            const Epetra_CrsGraph *in_g, const Epetra_CrsGraph *out_g,
+            const Epetra_Import &importer,
+            std::vector<double> &balance, std::vector<int> &numCuts, std::vector<double> &cutWgt,
+            std::vector<double> &cutn, std::vector<double> &cutl) const;
 
   /** \copydoc Isorropia::CostDescriber::setParameters
    */
@@ -267,6 +301,8 @@ private:
   */
   int getVertexWeights(std::map<int, float> &wgtMap) const;
 
+  // TODO documentation
+  const Epetra_Vector &getVertexWeights() { return *vertex_weights_;}
 
 
   /** getGraphEdgeWeights is called to obtain
@@ -345,7 +381,6 @@ private:
 
    */
   int getEdges(int vertexGID, int len, int *nborGID, float *weights) const;
-
 
 };//class CostDescriber
 

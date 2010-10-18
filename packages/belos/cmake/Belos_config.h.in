@@ -37,6 +37,8 @@
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
+#cmakedefine BELOS_TEUCHOS_TIME_MONITOR
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus

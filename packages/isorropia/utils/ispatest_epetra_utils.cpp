@@ -434,9 +434,8 @@ Epetra_MultiVector *file2multivector(const Epetra_Comm &comm, const std::string 
 
   return newcoords;
 }
- 
 
-int printMultiVector(const Epetra_MultiVector mv, std::ostream &os, const char *s, int max)
+int printMultiVector(const Epetra_MultiVector &mv, std::ostream &os, const char *s, int max)
 {
   const Epetra_Comm &comm = mv.Comm();
   int me = comm.MyPID();
@@ -557,6 +556,110 @@ int printMultiVector(const Epetra_MultiVector mv, std::ostream &os, const char *
     os << std::endl;
   }
   delete [] gids;
+
+  return 0;
+}
+
+int printRowMatrix(const Epetra_RowMatrix &m, std::ostream &os, const char *s, 
+                     bool withGraphCuts, int max)
+{
+  const Epetra_Comm &Comm = m.Comm();
+  int me = Comm.MyPID();
+  int nprocs = Comm.NumProc();
+  int ncols = m.NumGlobalCols();
+  int nrows = m.NumGlobalRows();
+  int localRows = m.NumMyRows();
+  int len;
+  const Epetra_Map &rowmap = m.RowMatrixRowMap();
+  const Epetra_Map &colmap = m.RowMatrixColMap();
+  int col_base = colmap.IndexBase();
+  int row_base = rowmap.IndexBase();
+
+  if (nrows > max){   // printing doesn't make sense for huge matrices
+    if (me == 0){
+      os << std::endl << s << std::endl;
+      os << "  " << nrows << " rows" << std::endl;
+    }
+
+    return 0;
+  }
+  int *pins = new int [ncols * nrows]; 
+  int *owners = new int [nrows];
+
+  for (int i=0; i < ncols * nrows; i++){
+    pins[i] = 0;
+    if (i < nrows) owners[i] = 0;
+  }
+
+  int maxNnz = m.MaxNumEntries();
+  double *val = new double [maxNnz];
+  int *col = new int [maxNnz];
+
+  for (int i=0; i < localRows; i++){
+
+    int rowGID = rowmap.GID(i) - row_base;
+    m.ExtractMyRowCopy(i, maxNnz, len, val, col);
+
+    owners[rowGID] = me;
+
+    int *rowptr = pins + (rowGID * ncols);
+
+    for (int j=0; j < len; j++){
+
+      int colGID = colmap.GID(col[j]) - col_base;
+
+      rowptr[colGID] = 1;
+    }
+  }
+
+  delete [] val;
+  delete [] col;
+
+  int *gpins = new int [ncols*nrows];
+  int *gowners = new int [nrows];
+
+  Comm.MaxAll(pins, gpins, ncols*nrows);
+  Comm.MaxAll(owners, gowners, nrows);
+
+  delete [] pins;
+  delete [] owners;
+
+  Comm.Barrier();
+
+  if (me == 0){
+
+    int *pinptr = gpins;
+    int xcount=0;
+
+    os << std::endl;
+    if (s) os << s << std::endl;
+    for (int i=0; i < nrows; i++){
+      os << "Proc " << gowners[i] << ", Row " << i+row_base << ": ";
+      for (int j=0; j < ncols; j++){
+        int pin = *pinptr++;
+        if (pin > 0){
+          if (!withGraphCuts || (gowners[j] == gowners[i])){
+            os << "1 ";
+          }
+          else{
+            os << "X ";
+            xcount++;
+          }
+        }
+        else{
+          os << "- ";
+        }
+      }
+      os << std::endl;
+    }
+    os << std::endl;
+    if (xcount > 0) os << "Number of cuts: " << xcount << std::endl;
+  }
+
+  delete [] gowners;
+  delete [] gpins;
+
+  Comm.Barrier();
 
   return 0;
 }

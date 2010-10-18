@@ -111,8 +111,10 @@ int main(int argc, char** argv) {
   //  by default, so we don't actually need to specify it. But it's
   //  useful for illustration...)
 
+  paramlist.set("PARTITIONING METHOD", "HYPERGRAPH");
+
+
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used to partition such that the number of nonzeros is equal (or
@@ -184,11 +186,12 @@ int main(int argc, char** argv) {
 
   // Results
 
-  double goalWeight = 1.0 / (double)numProcs; 
   double bal0, bal1, cutn0, cutn1, cutl0, cutl1;
 
+#if 1
   // Balance and cut quality before partitioning
 
+  double goalWeight = 1.0 / (double)numProcs; 
   ispatest::compute_hypergraph_metrics(*rowmatrix, *costs, goalWeight,
                      bal0, cutn0, cutl0);
 
@@ -200,6 +203,19 @@ int main(int argc, char** argv) {
 
   ispatest::compute_hypergraph_metrics(*bal_matrix, new_costs, goalWeight,
                      bal1, cutn1, cutl1);
+
+#else
+
+  std::vector<double> bal(2), cutn(2), cutl(2);
+
+  Epetra_Import &importer = rd.get_importer();
+
+  costs->compareBeforeAndAfterHypergraph(*rowmatrix, *bal_matrix, importer,
+             bal, cutn, cutl);
+
+  bal0 = bal[0]; cutn0 = cutn[0]; cutl0 = cutl[0];
+  bal1 = bal[1]; cutn1 = cutn[1]; cutl1 = cutl[1];
+#endif
 
   if (localProc == 0){
     std::cout << "Before partitioning: ";

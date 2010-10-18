@@ -33,10 +33,12 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::RecurrenceBasis<ordinal_type, value_type>::
-RecurrenceBasis(const std::string& name_, ordinal_type p_, bool normalize_) :
+RecurrenceBasis(const std::string& name_, ordinal_type p_, bool normalize_,
+		value_type quad_zero_tol_) :
   name(name_),
   p(p_),
   normalize(normalize_),
+  quad_zero_tol(quad_zero_tol_),
   alpha(p+1, value_type(0.0)),
   beta(p+1, value_type(0.0)),
   delta(p+1, value_type(0.0)),
@@ -322,6 +324,8 @@ getQuadPoints(ordinal_type quad_order,
   quad_weights.resize(num_points);
   for (ordinal_type i=0; i<num_points; i++) {
     quad_points[i] = a[i];
+    if (std::abs(quad_points[i]) < quad_zero_tol)
+      quad_points[i] = 0.0;
     quad_weights[i] = beta[0]*eig_vectors[i][0]*eig_vectors[i][0];
   }
   

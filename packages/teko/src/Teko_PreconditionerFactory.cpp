@@ -44,6 +44,7 @@
 
 */
 
+#include "Teko_Config.h"
 #include "Teko_PreconditionerFactory.hpp"
 
 #include "Teko_InverseLibrary.hpp"
@@ -59,9 +60,12 @@
 #include "Teko_DiagnosticPreconditionerFactory.hpp"
 #include "Teko_DiagonallyScaledPreconditionerFactory.hpp"
 #include "Teko_ProbingPreconditionerFactory.hpp"
-#include "Teko_SmootherPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
+
+#ifdef Teko_ENABLE_DEV_MODE
+#include "Teko_SmootherPreconditionerFactory.hpp"
+#endif
 
 
 #include "Thyra_DefaultPreconditioner.hpp"
@@ -307,8 +311,10 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
    clone = rcp(new AutoClone<DiagonallyScaledPreconditionerFactory>());
    precFactoryBuilder_.addClone("Diagonal Scaling",clone);
 
+#ifdef Teko_ENABLE_DEV_MODE
    clone = rcp(new AutoClone<SmootherPreconditionerFactory>());
    precFactoryBuilder_.addClone("Smoother",clone);
+#endif
 
 #ifdef Teko_ENABLE_Isorropia
    clone = rcp(new AutoClone<ProbingPreconditionerFactory>());

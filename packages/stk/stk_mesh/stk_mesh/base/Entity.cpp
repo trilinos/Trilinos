@@ -21,25 +21,6 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-std::ostream &
-print_entity_key( std::ostream & os , const MetaData & meta_data ,
-                  unsigned type , EntityId id )
-{
-  const std::string & name = meta_data.entity_rank_name( type );
-  return os << name << "[" << id << "]" ;
-}
-
-std::ostream &
-print_entity_key( std::ostream & os , const MetaData & meta_data ,
-                  const EntityKey & key )
-{
-  const unsigned type   = entity_rank(key);
-  const EntityId id = entity_id(key);
-  return print_entity_key( os , meta_data , type , id );
-}
-
-//----------------------------------------------------------------------
-
 Entity::Entity( const EntityKey & arg_key )
   : m_entityImpl( arg_key )
 {}

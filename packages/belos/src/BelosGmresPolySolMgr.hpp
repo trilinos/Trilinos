@@ -66,7 +66,9 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
+#endif
 
 /** \example epetra/example/BlockGmres/BlockGmresPolyEpetraExFile.cpp
     This is an example of how to use the Belos::GmresPolySolMgr solver manager.
@@ -596,9 +598,13 @@ void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teucho
       label_ = tempLabel;
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+#endif
       std::string polyLabel = label_ + ": GmresPolySolMgr polynomial creation time";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerPoly_ = Teuchos::TimeMonitor::getNewTimer(polyLabel);
+#endif
     }
   }
 
@@ -813,12 +819,16 @@ void GmresPolySolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teucho
   // Create the timers if we need to.
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": GmresPolySolMgr total solve time";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+#endif
   }
   
   if (timerPoly_ == Teuchos::null) {
     std::string polyLabel = label_ + ": GmresPolySolMgr polynomial creation time";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerPoly_ = Teuchos::TimeMonitor::getNewTimer(polyLabel);
+#endif
   }
 
   // Inform the solver manager that the current parameters were set.
@@ -1044,7 +1054,9 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 
   // If the GMRES polynomial has not been constructed for this matrix, preconditioner pair, generate it
   if (!isPolyBuilt_) {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*timerPoly_);
+#endif
     isPolyBuilt_ = generatePoly();
     TEST_FOR_EXCEPTION( !isPolyBuilt_ && poly_dim_==0, GmresPolySolMgrPolynomialFailure,
       "Belos::GmresPolySolMgr::generatePoly(): Failed to generate a non-trivial polynomial, reduce polynomial tolerance.");
@@ -1057,7 +1069,9 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
 
   // Solve the linear system using the polynomial
   {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
+#endif
     
     // Apply the polynomial to the current linear system
     poly_Op_->Apply( *problem_->getRHS(), *problem_->getLHS() );
@@ -1320,7 +1334,9 @@ ReturnType GmresPolySolMgr<ScalarType,MV,OP>::solve() {
   } // timing block
 
   // print timing information
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
+#endif
   
   if (!isConverged || loaDetected_) {
     return Unconverged; // return from GmresPolySolMgr::solve() 

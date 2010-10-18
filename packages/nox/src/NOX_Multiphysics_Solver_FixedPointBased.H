@@ -144,6 +144,10 @@ public:
   virtual int getNumIterations() const;
   virtual const Teuchos::ParameterList& getList() const;
 
+  inline virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const {return solnPtr;};
+  virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const;
+  inline virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const {return paramsPtr;};
+
 protected:
   
   //! Print out initialization information and calcuate the RHS.

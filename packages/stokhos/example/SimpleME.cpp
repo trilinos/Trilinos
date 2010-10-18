@@ -30,7 +30,7 @@
 
 #include "SimpleME.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Stokhos.hpp"
+#include "Stokhos_Epetra.hpp"
 
 SimpleME::SimpleME(const Teuchos::RCP<Epetra_Comm>& comm) 
 {

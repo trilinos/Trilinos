@@ -541,7 +541,9 @@ AztecOOLinearOpWithSolve::solveImpl(
   typedef SolveCriteria<double> SC;
   typedef SolveStatus<double> SS;
 
+#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("AztecOOLOWS");
+#endif
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
@@ -627,7 +629,9 @@ AztecOOLinearOpWithSolve::solveImpl(
 
   for( int j = 0; j < m; ++j ) {
 
+#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
     TEUCHOS_FUNC_TIME_MONITOR_DIFF("AztecOOLOWS:SingleSolve", SingleSolve);
+#endif
 
     //
     // Get Epetra_Vector views of B(:,j) and X(:,j)
@@ -713,6 +717,8 @@ AztecOOLinearOpWithSolve::solveImpl(
     solveStatus.achievedTol = TEUCHOS_MAX(solveStatus.achievedTol, achievedTol);
     // Note, achieveTol may actually be greater than tol due to ill conditioning and roundoff!
 
+    totalIterations += iterations;
+
     solveStatus.message = oss.str();
     if ( isDefaultSolveCriteria ) {
       switch(solveStatus.solveStatus) {
@@ -744,14 +750,6 @@ AztecOOLinearOpWithSolve::solveImpl(
   //
   totalTimer.stop();
   SolveStatus<double> overallSolveStatus;
-  std::ostringstream oss;
-  oss
-    << "AztecOO solver "
-    << ( overallSolveStatus.solveStatus==SOLVE_STATUS_CONVERGED ? "converged" : "unconverged" )
-    << " on m = "<<m<<" RHSs using " << totalIterations << " cumulative iterations"
-    << " for an average of " << (totalIterations/m) << " iterations/RHS and"
-    << " total CPU time of "<<totalTimer.totalElapsedTime()<<" sec.";
-  overallSolveStatus.message = oss.str();
   if (isDefaultSolveCriteria) {
     overallSolveStatus.solveStatus = SOLVE_STATUS_UNKNOWN;
     overallSolveStatus.achievedTol = SS::unknownTolerance();
@@ -760,6 +758,14 @@ AztecOOLinearOpWithSolve::solveImpl(
     overallSolveStatus.solveStatus = solveStatus.solveStatus;
     overallSolveStatus.achievedTol = solveStatus.achievedTol;
   }
+  std::ostringstream oss;
+  oss
+    << "AztecOO solver "
+    << ( overallSolveStatus.solveStatus==SOLVE_STATUS_CONVERGED ? "converged" : "unconverged" )
+    << " on m = "<<m<<" RHSs using " << totalIterations << " cumulative iterations"
+    << " for an average of " << (totalIterations/m) << " iterations/RHS and"
+    << " total CPU time of "<<totalTimer.totalElapsedTime()<<" sec.";
+  overallSolveStatus.message = oss.str();
 
   //
   // Report the overall time

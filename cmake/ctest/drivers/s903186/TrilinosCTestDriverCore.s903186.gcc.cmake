@@ -26,6 +26,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
     "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/jmwille/install/boost_1_41_0"
+    "-DTPL_ENABLE_Netcdf:BOOL=ON"
     "-DNetcdf_LIBRARY_DIRS=/Users/bmpersc/lib/netcdf-4.0/lib"
     "-DNetcdf_INCLUDE_DIRS=/Users/bmpersc/lib/netcdf-4.0/include"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
@@ -35,23 +36,23 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
     )
 
-  SET_DEFAULT(COMPILER_VERSION "GCC-4.4.2")
+  SET_DEFAULT(COMPILER_VERSION "GCC-4.4.5")
   
   IF (COMM_TYPE STREQUAL MPI)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
       "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/Users/jmwille/install"
+      "-DMPI_BASE_DIR:PATH=/Users/jmwille/install/openmpi-1.4.3"
       )
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/jmwille/install/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/jmwille/install/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/jmwille/install/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/jmwille/install/gcc4.4.5/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/Users/jmwille/install/gcc4.4.5/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/jmwille/install/gcc4.4.5/bin/gfortran"
       )
   
   ENDIF()

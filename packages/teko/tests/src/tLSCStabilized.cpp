@@ -491,7 +491,8 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
 
       // test alpha*inv(D)
       ss.str("");
-      result = tester.compare( *aiD, *iStrat.getInvAlphaD(blkA,state), &fos );
+      // result = tester.compare( *aiD, *iStrat.getInvAlphaD(blkA,state), &fos );
+      result = tester.compare( *aiD, *iStrat.getOuterStabilization(blkA,state), &fos );
       TEST_ASSERT(result,
             std::endl << "   tLSCStabilized::test_strategy " << toString(status)
                       << " : Comparing alpha*inv(D) operators");

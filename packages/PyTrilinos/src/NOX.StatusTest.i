@@ -73,6 +73,7 @@ NOX.StatusTest provides the following user-level classes:
 #include "NOX_StatusTest_Stagnation.H"
 #include "NOX_StatusTest_FiniteValue.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Solver_Generic.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -117,10 +118,14 @@ NOX.StatusTest provides the following user-level classes:
   }
 }
 
+// Declare classes to be stored with Teuchos::RCP< >
+%teuchos_rcp(NOX::Abstract::Group)
+%teuchos_rcp(NOX::Solver::Generic)
+
 ////////////////////////////////////
 // NOX_StatusTest_Generic support //
 ////////////////////////////////////
-%teuchos_rcp_typemaps(NOX::StatusTest::Generic)
+%teuchos_rcp(NOX::StatusTest::Generic)
 %rename(StatusTest_None) NOX::StatusTest::None;
 %include "NOX_StatusTest_Generic.H"
 namespace NOX
@@ -143,36 +148,43 @@ namespace StatusTest
 //////////////////////////////////
 // NOX_StatusTest_Combo support //
 //////////////////////////////////
+%teuchos_rcp(NOX::StatusTest::Combo)
 %include "NOX_StatusTest_Combo.H"
 
 //////////////////////////////////
 // NOX_StatusTest_NormF support //
 //////////////////////////////////
+%teuchos_rcp(NOX::StatusTest::NormF)
 %include "NOX_StatusTest_NormF.H"
 
 ///////////////////////////////////////
 // NOX_StatusTest_NurmUpdate support //
 ///////////////////////////////////////
+%teuchos_rcp(NOX::StatusTest::NormUpdate)
 %include "NOX_StatusTest_NormUpdate.H"
 
 /////////////////////////////////////
 // NOX_StatusTest_NormWRMS support //
 /////////////////////////////////////
+%teuchos_rcp(NOX::StatusTest::NormWRMS)
 %include "NOX_StatusTest_NormWRMS.H"
 
 /////////////////////////////////////
 // NOX_StatusTest_MaxIters support //
 /////////////////////////////////////
+%teuchos_rcp(NOX::StatusTest::MaxIters)
 %include "NOX_StatusTest_MaxIters.H"
 
 ///////////////////////////////////////
 // NOX_StatusTest_Stagnation support //
 ///////////////////////////////////////
+%teuchos_rcp(NOX::StatusTest::Stagnation)
 %include "NOX_StatusTest_Stagnation.H"
 
 ////////////////////////////////////////
 // NOX_StatusTest_FiniteValue support //
 ////////////////////////////////////////
+%teuchos_rcp(NOX::StatusTest::FiniteValue)
 %include "NOX_StatusTest_FiniteValue.H"
 
 // Turn off the exception handling

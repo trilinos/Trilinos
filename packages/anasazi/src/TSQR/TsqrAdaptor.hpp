@@ -372,9 +372,8 @@ namespace TSQR {
 				LDA_out, pA_in.get());
       }
 
-      /// \return Two magnitudes:  first $\| A - QR \|_F / \|A\|_F$, 
-      ///   second $\|I - Q^* Q\|_F / \|A\|_F$.
-      virtual std::pair< magnitude_type, magnitude_type >
+      /// \return Three magnitudes:  $\| A - QR \|_F$, $\|I - Q^* Q\|_F$, and $\|A\|_F$.
+      virtual std::vector< magnitude_type >
       verify (const multivector_type& A,
 	      const multivector_type& Q,
 	      const Teuchos::SerialDenseMatrix< local_ordinal_type, scalar_type >& R)

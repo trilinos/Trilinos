@@ -46,8 +46,9 @@ bool setPythonParameter(ParameterList     & plist,
 			const std::string & name,
 			PyObject          * value)
 {
-  static swig_type_info * swig_TPL_ptr   = SWIG_TypeQuery("Teuchos::ParameterList *");
+  static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::RCP< Teuchos::ParameterList >*");
   void * argp;
+  int newmem = 0;
 
   // Boolean values
   if (PyBool_Check(value))
@@ -91,11 +92,21 @@ bool setPythonParameter(ParameterList     & plist,
   }
 
   // ParameterList values
-  else if (SWIG_CheckState(SWIG_Python_ConvertPtr(value, &argp, swig_TPL_ptr, 0)))
+  else if (SWIG_CheckState(SWIG_Python_ConvertPtrAndOwn(value, &argp, swig_TPL_ptr, 0, &newmem)))
   {
-    ParameterList *arg = reinterpret_cast<ParameterList *>(argp);
-    plist.set(name, *arg);
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    { 
+      RCP< ParameterList > tempshared = *reinterpret_cast< RCP< ParameterList > * >(argp);
+      delete reinterpret_cast< RCP< ParameterList > * >(argp);
+      plist.set(name, *(tempshared.get()));
+    }
+    else
+    {
+      RCP< ParameterList > * smartarg = reinterpret_cast< RCP< ParameterList > * >(argp);
+      if (smartarg) plist.set(name, *(smartarg->get()));
+    }
   }
+
   // All other value types are unsupported
   else
   {
@@ -111,7 +122,7 @@ bool setPythonParameter(ParameterList     & plist,
 PyObject * getPythonParameter(const ParameterList & plist,
 			      const std::string   & name)
 {
-  static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
+  static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::RCP< Teuchos::ParameterList >*");
 
   // If parameter does not exist, return None
   if (!plist.isParameter(name)) return Py_BuildValue("");
@@ -154,8 +165,9 @@ PyObject * getPythonParameter(const ParameterList & plist,
   // ParameterList values
   else if (entry->isList())
   {
-    const ParameterList & value = getValue<ParameterList>(*entry);
-    return SWIG_NewPointerObj((void*) &value, swig_TPL_ptr, 0);
+    ParameterList & value = getValue<ParameterList>(*entry);
+    RCP< ParameterList > * valuercp = new RCP< ParameterList >(&value,false);
+    return SWIG_NewPointerObj((void*)valuercp, swig_TPL_ptr, SWIG_POINTER_OWN);
   }
   // All  other types are unsupported
   return NULL;
@@ -392,19 +404,18 @@ bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist,
 bool synchronizeParameters(PyObject * dict, ParameterList & plist,
 			   ResponseToIllegalParameters flag)
 {
-  bool result = true;
-  result = result && updatePyDictWithParameterList(dict,plist,flag);
-  result = result && updateParameterListWithPyDict(dict,plist,flag);
+  bool result = updatePyDictWithParameterList(dict,plist,flag);
+  result      = result && updateParameterListWithPyDict(dict,plist,flag);
   return result;
 }    // synchronizeParameters
 
 // **************************************************************** //
 
-Teuchos::ParameterList *
+ParameterList *
 pyDictToNewParameterList(PyObject * dict,
 			 ResponseToIllegalParameters flag)
 {
-  Teuchos::ParameterList * plist = 0;
+  ParameterList * plist = 0;
   // The dict pointer must point to a dictionary
   if (!PyDict_Check(dict))
   {

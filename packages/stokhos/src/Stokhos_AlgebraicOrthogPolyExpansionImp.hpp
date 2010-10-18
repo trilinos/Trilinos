@@ -45,8 +45,9 @@ AlgebraicOrthogPolyExpansion(
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-unaryMinus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-	   const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+unaryMinus(
+  Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   ordinal_type pc = a.size();
   if (c.size() != pc)
@@ -62,7 +63,7 @@ unaryMinus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	  const value_type& val)
 {
   c[0] += val;
@@ -71,7 +72,7 @@ plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	   const value_type& val)
 {
   c[0] -= val;
@@ -80,7 +81,7 @@ minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	   const value_type& val)
 {
   ordinal_type pc = c.size();
@@ -92,7 +93,7 @@ timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	    const value_type& val)
 {
   ordinal_type pc = c.size();
@@ -104,8 +105,9 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-          const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
+plusEqual(
+  Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& x)
 {
   ordinal_type xp = x.size();
   if (c.size() < xp)
@@ -120,8 +122,9 @@ plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-           const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
+minusEqual(
+  Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& x)
 {
   ordinal_type xp = x.size();
   if (c.size() < xp)
@@ -136,8 +139,9 @@ minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-           const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
+timesEqual(
+  Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& x)
 {
   ordinal_type p = c.size();
   ordinal_type xp = x.size();
@@ -189,7 +193,7 @@ timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type> 
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
             const Stokhos::OrthogPolyApprox<ordinal_type, value_type >& x)
 {
   if (x.size() == 1)
@@ -203,9 +207,9 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   ordinal_type pa = a.size();
   ordinal_type pb = b.size();
@@ -234,9 +238,9 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
      const value_type& a, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   ordinal_type pc = b.size();
   if (c.size() != pc)
@@ -253,8 +257,8 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
+plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
      const value_type& b)
 {
   ordinal_type pc = a.size();
@@ -272,9 +276,9 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   ordinal_type pa = a.size();
   ordinal_type pb = b.size();
@@ -303,9 +307,9 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const value_type& a, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   ordinal_type pc = b.size();
   if (c.size() != pc)
@@ -322,8 +326,8 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
+minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
       const value_type& b)
 {
   ordinal_type pc = a.size();
@@ -341,9 +345,9 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   ordinal_type pa = a.size();
   ordinal_type pb = b.size();
@@ -393,9 +397,9 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const value_type& a, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   ordinal_type pc = b.size();
   if (c.size() != pc)
@@ -411,8 +415,8 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
+times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
       const value_type& b)
 {
   ordinal_type pc = a.size();
@@ -429,9 +433,9 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (b.size() == 1)
     divide(c, a, b[0]);
@@ -444,9 +448,9 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
        const value_type& a, 
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (b.size() == 1) {
     if (c.size() != 1)
@@ -462,8 +466,8 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
+divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+       const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
        const value_type& b)
 {
   ordinal_type pc = a.size();
@@ -480,8 +484,8 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -497,8 +501,8 @@ exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-log(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+log(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -514,8 +518,8 @@ log(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-log10(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+log10(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -531,8 +535,8 @@ log10(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -548,9 +552,9 @@ sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (a.size() == 1 && b.size() == 1) {
     if (c.size() != 1)
@@ -566,9 +570,9 @@ pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
     const value_type& a, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (b.size() == 1) {
     if (c.size() != 1)
@@ -584,8 +588,8 @@ pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
+pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
     const value_type& b)
 {
   if (a.size() == 1) {
@@ -602,8 +606,8 @@ pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-sin(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+sin(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& s, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (s.size() != 1)
@@ -619,8 +623,8 @@ sin(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-cos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+cos(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -636,8 +640,8 @@ cos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-tan(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& t, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+tan(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& t, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (t.size() != 1)
@@ -653,8 +657,8 @@ tan(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& t,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-sinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+sinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& s, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (s.size() != 1)
@@ -670,8 +674,8 @@ sinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-cosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+cosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -687,8 +691,8 @@ cosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-tanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& t, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+tanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& t, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (t.size() != 1)
@@ -704,8 +708,8 @@ tanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& t,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-acos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+acos(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -721,8 +725,8 @@ acos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-asin(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+asin(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -738,8 +742,8 @@ asin(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-atan(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+atan(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -755,9 +759,9 @@ atan(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (a.size() == 1 && b.size() == 1) {
     if (c.size() != 1)
@@ -773,9 +777,9 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
       const value_type& a, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (b.size() == 1) {
     if (c.size() != 1)
@@ -791,8 +795,8 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
+atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
       const value_type& b)
 {
   if (a.size() == 1) {
@@ -809,8 +813,8 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-acosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+acosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -826,8 +830,8 @@ acosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-asinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+asinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -843,8 +847,8 @@ asinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-atanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+atanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a.size() == 1) {
     if (c.size() != 1)
@@ -860,8 +864,8 @@ atanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-fabs(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+fabs(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+     const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a[0] >= 0)
     c = a;
@@ -872,8 +876,8 @@ fabs(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-abs(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+abs(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a)
 {
   if (a[0] >= 0)
     c = a;
@@ -884,9 +888,9 @@ abs(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (a[0] >= b[0])
     c = a;
@@ -897,12 +901,12 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
     const value_type& a, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (a >= b[0]) {
-    c = OrthogPolyApprox<ordinal_type, value_type>(basis);
+    c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
     c[0] = a;
   }
   else
@@ -912,14 +916,14 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
+max(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
     const value_type& b)
 {
   if (a[0] >= b)
     c = a;
   else {
-    c = OrthogPolyApprox<ordinal_type, value_type>(basis);
+    c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
     c[0] = b;
   }
 }
@@ -927,9 +931,9 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (a[0] <= b[0])
     c = a;
@@ -940,12 +944,12 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
+min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
     const value_type& a, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& b)
 {
   if (a <= b[0]) {
-    c = OrthogPolyApprox<ordinal_type, value_type>(basis);
+    c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
     c[0] = a;
   }
   else
@@ -955,14 +959,14 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
-min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
-    const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
+min(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+    const Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
     const value_type& b)
 {
   if (a[0] <= b)
     c = a;
   else {
-    c = OrthogPolyApprox<ordinal_type, value_type>(basis);
+    c = OrthogPolyApprox<ordinal_type, value_type, node_type>(basis);
     c[0] = b;
   }
 }

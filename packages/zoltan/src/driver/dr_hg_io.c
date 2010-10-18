@@ -1045,7 +1045,7 @@ char cmesg[256];
 
   line = first_char(filebuf, fsize);
   if (line && (*line == '%')){
-    line = next_line(filebuf, fsize, linestr);  /* skip comments & blanks */
+    line = next_line(line, fsize, linestr);  /* skip comments & blanks */
   }
 
   if (!line){

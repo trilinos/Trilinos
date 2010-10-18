@@ -217,8 +217,8 @@ contains
     integer                         :: j, k, k_first, k_second, k_step
     logical                         :: no_trans
 
-    ZERO = complex( 0.0d0, 0.0d0 )
-    ONE = complex( 1.0d0, 0.0d0 )
+    ZERO = ( 0.0d0, 0.0d0 )
+    ONE = ( 1.0d0, 0.0d0 )
     do k = 1, ncols_C
        work(k) = ZERO
     end do
@@ -340,8 +340,8 @@ contains
     integer                    :: j, k, k_first, k_second, k_step
     logical                    :: no_trans
 
-    ZERO = complex( 0.0e0, 0.0e0 )
-    ONE = complex( 1.0e0, 0.0e0 )
+    ZERO = ( 0.0e0, 0.0e0 )
+    ONE = ( 1.0e0, 0.0e0 )
     do k = 1, ncols_C
        work(k) = ZERO
     end do
@@ -482,8 +482,8 @@ contains
     complex (8)                :: ZERO, ONE
     integer                    :: j, k
 
-    ZERO = complex( 0.0d0, 0.0d0 )
-    ONE = complex( 1.0d0, 0.0d0 )
+    ZERO = ( 0.0d0, 0.0d0 )
+    ONE = ( 1.0d0, 0.0d0 )
     do k = 1, n
        work(k) = ZERO
     end do
@@ -573,8 +573,8 @@ contains
     complex (4)                :: ZERO, ONE
     integer                    :: j, k
 
-    ZERO = complex( 0.0e0, 0.0e0 )
-    ONE = complex( 1.0e0, 0.0e0 )
+    ZERO = ( 0.0e0, 0.0e0 )
+    ONE = ( 1.0e0, 0.0e0 )
     do k = 1, n
        work(k) = ZERO
     end do
@@ -676,8 +676,8 @@ contains
     complex (8)                :: ZERO, ONE
     integer                    :: j, k
 
-    ZERO = complex( 0.0d0, 0.0d0 )
-    ONE = complex( 1.0d0, 0.0d0 )
+    ZERO = ( 0.0d0, 0.0d0 )
+    ONE = ( 1.0d0, 0.0d0 )
     do k = 1, n
        work(k) = ZERO
     end do
@@ -759,8 +759,8 @@ contains
     complex (4)                :: ZERO, ONE
     integer                    :: j, k
 
-    ZERO = complex( 0.0e0, 0.0e0 )
-    ONE = complex( 1.0e0, 0.0e0 )
+    ZERO = ( 0.0e0, 0.0e0 )
+    ONE = ( 1.0e0, 0.0e0 )
     do k = 1, n
        work(k) = ZERO
     end do
@@ -872,8 +872,8 @@ contains
     integer                    :: j, k, k_first, k_second, k_step
     logical                    :: no_trans
 
-    ZERO = complex( 0.0d0, 0.0d0 )
-    ONE = complex( 1.0d0, 0.0d0 )
+    ZERO = ( 0.0d0, 0.0d0 )
+    ONE = ( 1.0d0, 0.0d0 )
     do k = 1, ncols_C
        work(k) = ZERO
     end do
@@ -992,8 +992,8 @@ contains
     integer                    :: j, k, k_first, k_second, k_step
     logical                    :: no_trans
 
-    ZERO = complex( 0.0e0, 0.0e0 )
-    ONE = complex( 1.0e0, 0.0e0 )
+    ZERO = ( 0.0e0, 0.0e0 )
+    ONE = ( 1.0e0, 0.0e0 )
     do k = 1, ncols_C
        work(k) = ZERO
     end do

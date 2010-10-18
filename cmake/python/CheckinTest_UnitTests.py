@@ -143,7 +143,7 @@ M	packages/thyra/CMakeLists.txt
 class test_getLastCommitMessageStrFromRawCommitLogStr(unittest.TestCase):
 
 
-  def test_01(self):
+  def test_clean_commit(self):
     cleanCommitMsg_expected = \
 """Some Commit Message
 
@@ -157,7 +157,7 @@ Some other message
     self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
 
 
-  def test_02(self):
+  def test_dirty_commit_1(self):
     cleanCommitMsg_expected = \
 """Some Commit Message
 
@@ -168,34 +168,34 @@ Some other message
     rawLogOutput = \
        "Standard git header stuff\n\n" \
        +cleanCommitMsg_expected+ \
-       "\n\n\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
-    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
-    self.assertEqual(numBlankLines, 3)
-    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
-
-
-  def test_03(self):
-    cleanCommitMsg_expected = \
-"""Some Commit Message
-
-Some commit body
-
-Some other message
-"""
-    rawLogOutput = \
-       "Standard git header stuff\n\n" \
-       +cleanCommitMsg_expected+ \
-       "\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
+       "\nBuild/Test Cases Summary\n"
+    #print "\nrawLogOutput:\n----------------\n", rawLogOutput, "----------------\n"
     (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
     self.assertEqual(numBlankLines, 1)
     self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
+    #print "\ncleanCommitMsg:\n----------------\n", cleanCommitMsg, "-----------------\n"
 
 
-  def test_04(self):
+  def test_dirty_commit_2(self):
+    cleanCommitMsg_expected = \
+"""Some Commit Message
+
+Some commit body
+
+Some other message
+"""
+    rawLogOutput = \
+       "Standard git header stuff\n\n" \
+       +cleanCommitMsg_expected+ \
+       "\nBuild/Test Cases Summary\n"
+    #print "\nrawLogOutput:\n----------------\n", rawLogOutput, "----------------\n"
+    (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
+    self.assertEqual(numBlankLines, 1)
+    self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
+    #print "\ncleanCommitMsg:\n----------------\n", cleanCommitMsg, "-----------------\n"
+
+
+  def test_invalid_commit(self):
     cleanCommitMsg_expected = \
 """Some Commit Message
 
@@ -205,13 +205,13 @@ Some other message"""
     rawLogOutput = \
        "Standard git header stuff\n\n" \
        +cleanCommitMsg_expected+ \
-       "\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
+       "\nBuild/Test Cases Summary\n"
+    #print "\nrawLogOutput:\n----------------\n", rawLogOutput, "----------------\n"
+    #(cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
     self.assertRaises(Exception, getLastCommitMessageStrFromRawCommitLogStr, rawLogOutput)
 
 
-  def test_05(self):
+  def test_two_summary_blocks(self):
     cleanCommitMsg_expected = \
 """Some Commit Message
 
@@ -222,9 +222,7 @@ Some other message
     rawLogOutput = \
        "Standard git header stuff\n\n" \
        +cleanCommitMsg_expected+ \
-       "\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
+       "\nBuild/Test Cases Summary\n"
     (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
     self.assertEqual(numBlankLines, 1)
     self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)
@@ -232,9 +230,7 @@ Some other message
     rawLogOutput = \
        "Standard git header stuff\n\n" \
        +cleanCommitMsg+ \
-       "\n=====================\n" \
-       "Build/Test Cases Summary\n" \
-       "=====================\n"
+       "\nBuild/Test Cases Summary\n"
     (cleanCommitMsg, numBlankLines) = getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)
     self.assertEqual(numBlankLines, 1)
     self.assertEqual(cleanCommitMsg, cleanCommitMsg_expected)

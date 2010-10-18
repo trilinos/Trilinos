@@ -81,6 +81,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
   Stokhos_QuadratureFactoryImp.hpp
+  Stokhos_StandardStorage.hpp
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
@@ -98,9 +99,19 @@ SET(HEADERS ${HEADERS}
   Stokhos_ExpansionFactoryImp.hpp
   Stokhos_StieltjesGramSchmidtBuilder.hpp
   Stokhos_StieltjesGramSchmidtBuilderImp.hpp
-  Stokhos_MatrixFreeEpetraOp.hpp
-  Stokhos_KLMatrixFreeEpetraOp.hpp
-  Stokhos_MeanEpetraOp.hpp
+  Stokhos_SGOperator.hpp
+  Stokhos_MatrixFreeOperator.hpp
+  Stokhos_KLMatrixFreeOperator.hpp
+  Stokhos_KLReducedMatrixFreeOperator.hpp
+  Stokhos_FullyAssembledOperator.hpp
+  Stokhos_SGOperatorFactory.hpp
+  Stokhos_SGPreconditioner.hpp
+  Stokhos_MeanBasedPreconditioner.hpp
+  Stokhos_ApproxGaussSeidelPreconditioner.hpp
+  Stokhos_ApproxJacobiPreconditioner.hpp
+  Stokhos_KroneckerProductPreconditioner.hpp
+  Stokhos_FullyAssembledPreconditioner.hpp
+  Stokhos_SGPreconditionerFactory.hpp
   Stokhos_PreconditionerFactory.hpp
   Stokhos_IfpackPreconditionerFactory.hpp
   Stokhos_MLPreconditionerFactory.hpp
@@ -110,6 +121,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_SGInverseModelEvaluator.hpp
   Stokhos_VectorOrthogPoly.hpp
   Stokhos_VectorOrthogPolyImp.hpp
+  Stokhos_Epetra.hpp
   Stokhos_VectorOrthogPolyTraitsEpetra.hpp
   Stokhos_EpetraVectorOrthogPoly.hpp
   Stokhos_EpetraMultiVectorOrthogPoly.hpp
@@ -121,7 +133,6 @@ SET(HEADERS ${HEADERS}
   Stokhos_KL_OneDExponentialCovarianceFunctionImp.hpp
   Stokhos_KL_ExponentialRandomField.hpp
   Stokhos_KL_ExponentialRandomFieldImp.hpp
-  Stokhos_KLReducedMatrixFreeEpetraOp.hpp
   Stokhos_EpetraMultiVectorOperator.hpp
   )
 
@@ -129,9 +140,17 @@ SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
   Stokhos_SparseGridQuadrature.cpp
   Stokhos_AnisoSparseGridQuadrature.cpp
-  Stokhos_MatrixFreeEpetraOp.cpp
-  Stokhos_KLMatrixFreeEpetraOp.cpp
-  Stokhos_MeanEpetraOp.cpp
+  Stokhos_MatrixFreeOperator.cpp
+  Stokhos_KLMatrixFreeOperator.cpp
+  Stokhos_KLReducedMatrixFreeOperator.cpp
+  Stokhos_FullyAssembledOperator.cpp
+  Stokhos_SGOperatorFactory.cpp
+  Stokhos_MeanBasedPreconditioner.cpp
+  Stokhos_ApproxGaussSeidelPreconditioner.cpp
+  Stokhos_ApproxJacobiPreconditioner.cpp
+  Stokhos_KroneckerProductPreconditioner.cpp
+  Stokhos_FullyAssembledPreconditioner.cpp
+  Stokhos_SGPreconditionerFactory.cpp
   Stokhos_IfpackPreconditionerFactory.cpp
   Stokhos_MLPreconditionerFactory.cpp
   Stokhos_MLPrecOp.cpp
@@ -142,7 +161,6 @@ SET(SOURCES ${SOURCES}
   Stokhos_SGInverseModelEvaluator.cpp
   Stokhos_PCECovarianceOp.cpp
   Stokhos_PCEAnasaziKL.cpp
-  Stokhos_KLReducedMatrixFreeEpetraOp.cpp
   Stokhos_EpetraMultiVectorOperator.cpp
   )
 
@@ -150,10 +168,51 @@ SET(SOURCES ${SOURCES}
 IF (Stokhos_ENABLE_Sacado)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado)
   SET(HEADERS ${HEADERS}
+    sacado/Stokhos_Sacado.hpp
+    sacado/Stokhos_Sacado_MathFunctions.hpp
     sacado/Sacado_PCE_OrthogPoly.hpp
     sacado/Sacado_PCE_OrthogPolyImp.hpp
     sacado/Sacado_PCE_OrthogPolyTraits.hpp
+    sacado/Sacado_ETPCE_OrthogPoly.hpp
+    sacado/Sacado_ETPCE_OrthogPolyImp.hpp
+    sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
+    sacado/Sacado_ETPCE_OrthogPolyOps.hpp
     )
+ENDIF()
+
+# NOX
+IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
+    NOX_ENABLE_EpetraExt)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/nox)
+  SET(HEADERS ${HEADERS}
+    Stokhos_GaussSeidelPreconditioner.hpp
+    nox/NOX_Epetra_LinearSystem_SGJacobi.hpp
+    nox/NOX_Epetra_LinearSystem_SGGS.hpp
+    )
+  SET(SOURCES ${SOURCES}
+    Stokhos_GaussSeidelPreconditioner.cpp
+    nox/NOX_Epetra_LinearSystem_SGJacobi.cpp
+    nox/NOX_Epetra_LinearSystem_SGGS.cpp
+    )
+ENDIF()
+
+# CUDA/Thrust
+IF (Stokhos_ENABLE_Thrust)
+  CUDA_INCLUDE_DIRECTORIES( 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../teuchos/src
+    ${CMAKE_CURRENT_BINARY_DIR}/../../teuchos/src
+  )
+  CUDA_COMPILE(CUDA_SOURCES
+    Stokhos_CUDAStorage.cu 
+    Stokhos_CUDAQuadOrthogPolyExpansion.cu
+  )
+  SET(HEADERS ${HEADERS}
+    Stokhos_CUDAStorage.hpp
+    Stokhos_CUDAStorageImp.hpp
+    Stokhos_CUDAQuadOrthogPolyExpansion.hpp
+    Stokhos_CUDAQuadOrthogPolyExpansionImp.hpp
+    )
+  SET(SOURCES ${SOURCES} ${CUDA_SOURCES})
 ENDIF()
 
 #

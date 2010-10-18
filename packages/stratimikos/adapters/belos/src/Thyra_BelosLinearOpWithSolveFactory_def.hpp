@@ -427,7 +427,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
 
   typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
@@ -689,7 +689,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     paramList_->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
   }
 #endif
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nLeaving Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
   
 }

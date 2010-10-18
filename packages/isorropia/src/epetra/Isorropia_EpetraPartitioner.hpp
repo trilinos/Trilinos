@@ -362,10 +362,13 @@ public:
   */
   void createNewMap(Epetra_Map *&outputMap);
 
+  int printZoltanMetrics() { return printMetrics; }
+
 private:
   int *partGIDs;
   float *partSizes;
   int numPartSizes;
+  int printMetrics;
 
 };//class Partitioner
 

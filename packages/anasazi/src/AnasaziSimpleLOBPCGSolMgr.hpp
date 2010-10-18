@@ -383,7 +383,9 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   lobpcg_solver->currentStatus(printer->stream(FinalSummary));
 
   // print timing information
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
+#endif
 
   // send the solution to the eigenproblem
   problem_->setSolution(sol);

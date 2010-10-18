@@ -45,6 +45,7 @@
 #include "NOX_Abstract_Vector.H" // for NOX::CopyType
 #include "NOX_Common.H" // for string 
 #include "Teuchos_RCP.hpp" 
+#include "Teuchos_TestForException.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -478,6 +479,42 @@ namespace Abstract {
 
   //! Return Newton direction.
   virtual const NOX::Abstract::Vector& getNewton() const = 0;
+
+  //@{ \name PyTrilinos Interface functions (require RCPs
+
+  //! Return RCP to solution vector.  
+   virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const
+   {
+     TEST_FOR_EXCEPTION(true,std::logic_error,
+			"NOX::Abstract::Group::getXPtr() not implemented!");
+     return Teuchos::null;
+   }
+
+  //! Return RCP to F(x)
+   virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const
+   {
+     TEST_FOR_EXCEPTION(true,std::logic_error,
+			"NOX::Abstract::Group::getFPtr() not implemented!");
+     return Teuchos::null;
+   }
+
+  //! Return RCP to gradient.
+   virtual Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const
+   {
+     TEST_FOR_EXCEPTION(true,std::logic_error,
+			"NOX::Abstract::Group::getGradientPtr() not implemented!");
+     return Teuchos::null;
+   }
+
+  //! Return RCP to Newton direction.
+   virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const
+   {
+     TEST_FOR_EXCEPTION(true,std::logic_error,
+			"NOX::Abstract::Group::getNewtonPtr() not implemented!");
+     return Teuchos::null;
+   }
+
+  //@}
 
   /*!
     \brief 

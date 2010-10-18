@@ -330,12 +330,19 @@ namespace {
   void show_usage(const std::string &prog, bool add_sset)
   {
     if (add_sset)
-      std::cerr << "USAGE: " << prog << " in_file sset_file out_file\n";
+      std::cerr << "\nUSAGE: " << prog << " in_file sset_file out_file\n";
     else
-      std::cerr << "USAGE: " << prog << " in_file out_file\n";
+      std::cerr << "\nUSAGE: " << prog << " in_file out_file\n";
 
     std::cerr << "...or: " << prog << " command_file\n";
     std::cerr << "       version: " << version << "\n";
+    Ioss::NameList db_types;
+    Ioss::IOFactory::describe(&db_types);
+    std::cerr << "\nSupports database types:\n\t";
+    for (Ioss::NameList::const_iterator IF = db_types.begin(); IF != db_types.end(); ++IF) {
+      std::cerr << *IF << "  ";
+    }
+    std::cerr << "\n\n";
   }
 
   void file_copy(const std::string& inpfile, const std::string& input_type,

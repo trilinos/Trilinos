@@ -95,6 +95,9 @@ package:
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
 
+// Local includes
+#include "FILEstream.h"
+
 // Teuchos includes
 #ifdef HAVE_TEUCHOS
 #ifdef HAVE_INTTYPES_H
@@ -137,14 +140,15 @@ package:
 
 // Epetra NumPy includes
 #include "Epetra_PyUtil.h"
-#include "Epetra_NumPyIntSerialDenseMatrix.h"
-#include "Epetra_NumPyIntSerialDenseVector.h"
-#include "Epetra_NumPySerialDenseMatrix.h"
-#include "Epetra_NumPySerialDenseVector.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 #endif
 
 // Anasazi includes
@@ -206,17 +210,13 @@ package:
 %rename(_global) global;
 
 // Support for other Trilinos packages
-%include "numpy.i"
 #ifdef HAVE_TEUCHOS
-#ifdef HAVE_EPETRA
-%include "Teuchos_Epetra.i"
-#else
-%include "Teuchos.i"
+%import "Teuchos.i"
 #endif
-#else
+
 #ifdef HAVE_EPETRA
-%include "Epetra.i"
-#endif
+%include "numpy.i"
+%import "Epetra.i"
 #endif
 
 // General exception handling
@@ -249,22 +249,29 @@ package:
 // Support these classes, encapsulated in a //
 // Teuchos::RCP<...>, as function arguments //
 //////////////////////////////////////////////
-#ifdef HAVE_TEUCHOS
-%teuchos_rcp_typemaps(std::basic_ostream)
-%teuchos_rcp_typemaps(std::ostream)
-%teuchos_rcp_typemaps(std::vector<int, std::allocator<int> >)
-%teuchos_rcp_typemaps(Teuchos::SerialDenseMatrix<int, double>)
-%teuchos_rcp_typemaps(Anasazi::MultiVec< double >)
-%teuchos_rcp_typemaps(Anasazi::OutputManager< double >)
+%teuchos_rcp(std::basic_ostream)
+%teuchos_rcp(std::ostream)
+%teuchos_rcp(std::vector<int, std::allocator<int> >)
+%teuchos_rcp(Anasazi::MultiVec< double >)
+%teuchos_rcp(Anasazi::OutputManager< double >)
+%teuchos_rcp(Anasazi::BasicOutputManager< double >)
 #ifdef HAVE_EPETRA
-%teuchos_rcp_typemaps(Epetra_MultiVector)
-%teuchos_rcp_typemaps(Epetra_Operator)
-%teuchos_rcp_typemaps(Anasazi::StatusTest< double, Epetra_MultiVector, Epetra_Operator >)
-%teuchos_rcp_typemaps(Anasazi::SortManager< double >)
-%teuchos_rcp_typemaps(Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >)
-%teuchos_rcp_typemaps(Anasazi::OrthoManager< double, Epetra_MultiVector >)
-%teuchos_rcp_typemaps(Anasazi::MatOrthoManager< double, Epetra_MultiVector >)
-#endif
+%teuchos_rcp_epetra(Anasazi::EpetraMultiVec)
+%teuchos_rcp(Anasazi::EpetraGenOp)
+%teuchos_rcp(Anasazi::EpetraSymOp)
+%teuchos_rcp(Anasazi::StatusTest< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::StatusTestCombo< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::StatusTestMaxIters< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::StatusTestOutput< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::StatusTestResNorm< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::SortManager< double >)
+%teuchos_rcp(Anasazi::BasicSort< double >)
+%teuchos_rcp(Anasazi::Eigenproblem< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::BasicEigenproblem< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::OrthoManager< double, Epetra_MultiVector >)
+%teuchos_rcp(Anasazi::MatOrthoManager< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::BasicOrthoManager< double, Epetra_MultiVector, Epetra_Operator >)
+%teuchos_rcp(Anasazi::SVQBOrthoManager< double, Epetra_MultiVector, Epetra_Operator >)
 #endif
 
 /////////////////////////////////////////////////////////////////////////
@@ -346,7 +353,7 @@ __version__ = Anasazi_Version().split()[2]
 namespace std { struct ostream; }
 %include "AnasaziBasicOutputManager.hpp"
 %template (BasicOutputManagerDouble)
-  Anasazi::BasicOutputManager<double>;
+  Anasazi::BasicOutputManager< double >;
 
 /////////////////////////////////
 // Anasazi SortManager support //
@@ -583,29 +590,29 @@ def ClassName(*args):
 %anasazi_scalartype_factory(Operator          )
 
 // Implement the python factories for classes templated on MV and/or OP 
-%anasazi_factory(SortManager             )
-%anasazi_factory(BasicSort               )
-%anasazi_factory(MultiVecTraits          )
-%anasazi_factory(OperatorTraits          )
-%anasazi_factory(Eigenproblem            )
-%anasazi_factory(BasicEigenproblem       )
-%anasazi_factory(StatusTest              )
-%anasazi_factory(StatusTestCombo         )
-%anasazi_factory(StatusTestMaxIters      )
-%anasazi_factory(StatusTestOutput        )
-%anasazi_factory(StatusTestResNorm       )
-%anasazi_factory(OrthoManager            )
-%anasazi_factory(MatOrthoManager         )
-%anasazi_factory(SVQBOrthoManager        )
-%anasazi_factory(Eigensolver             )
-%anasazi_factory(SolverManager           )
-%anasazi_factory(BlockDavidson           )
-%anasazi_factory(BlockDavidsonSolMgr     )
-%anasazi_factory(BlockKrylovSchur        )
-%anasazi_factory(BlockKrylovSchurSolMgr  )
-%anasazi_factory(LOBPCG                  )
-%anasazi_factory(LOBPCGSolMgr            )
-%anasazi_factory(Eigensolution           )
+%anasazi_factory(SortManager           )
+%anasazi_factory(BasicSort             )
+%anasazi_factory(MultiVecTraits        )
+%anasazi_factory(OperatorTraits        )
+%anasazi_factory(Eigenproblem          )
+%anasazi_factory(BasicEigenproblem     )
+%anasazi_factory(StatusTest            )
+%anasazi_factory(StatusTestCombo       )
+%anasazi_factory(StatusTestMaxIters    )
+%anasazi_factory(StatusTestOutput      )
+%anasazi_factory(StatusTestResNorm     )
+%anasazi_factory(OrthoManager          )
+%anasazi_factory(MatOrthoManager       )
+%anasazi_factory(SVQBOrthoManager      )
+%anasazi_factory(Eigensolver           )
+%anasazi_factory(SolverManager         )
+%anasazi_factory(BlockDavidson         )
+%anasazi_factory(BlockDavidsonSolMgr   )
+%anasazi_factory(BlockKrylovSchur      )
+%anasazi_factory(BlockKrylovSchurSolMgr)
+%anasazi_factory(LOBPCG                )
+%anasazi_factory(LOBPCGSolMgr          )
+%anasazi_factory(Eigensolution         )
 
 // Turn off the exception handling
 %exception;

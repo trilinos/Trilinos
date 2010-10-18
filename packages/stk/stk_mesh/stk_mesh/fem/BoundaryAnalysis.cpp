@@ -182,7 +182,7 @@ void get_adjacent_entities( const Entity & entity ,
   std::sort(entity_nodes.begin(), entity_nodes.end());
 
   // Given the nodes related to the side, find all entities
-  // of similar rank that have some relation to one or more of these nodes
+  // with the same rank that have a relation to all of these nodes
   std::vector<Entity*> elements;
   elements.reserve(8); //big enough that resizing should be rare
   get_entities_through_relations(side_node_entities,

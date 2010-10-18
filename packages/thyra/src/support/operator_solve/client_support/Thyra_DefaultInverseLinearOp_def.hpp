@@ -394,18 +394,18 @@ Thyra::inverse(
   template RCP<LinearOpBase<SCALAR > > \
   nonconstInverse( \
     const RCP<LinearOpWithSolveBase<SCALAR > > &A, \
-    const SolveCriteria<SCALAR > *fwdSolveCriteria, \
+    const Ptr<const SolveCriteria<SCALAR > > &fwdSolveCriteria, \
     const EThrowOnSolveFailure throwOnFwdSolveFailure, \
-    const SolveCriteria<SCALAR > *adjSolveCriteria, \
+    const Ptr<const SolveCriteria<SCALAR > > &adjSolveCriteria, \
     const EThrowOnSolveFailure throwOnAdjSolveFailure \
     ); \
    \
   template RCP<LinearOpBase<SCALAR > > \
   inverse( \
     const RCP<const LinearOpWithSolveBase<SCALAR > > &A, \
-    const SolveCriteria<SCALAR > *fwdSolveCriteria, \
+    const Ptr<const SolveCriteria<SCALAR > > &fwdSolveCriteria, \
     const EThrowOnSolveFailure throwOnFwdSolveFailure, \
-    const SolveCriteria<SCALAR > *adjSolveCriteria, \
+    const Ptr<const SolveCriteria<SCALAR > > &adjSolveCriteria, \
     const EThrowOnSolveFailure throwOnAdjSolveFailure \
     );
 

@@ -99,6 +99,7 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
@@ -117,8 +118,20 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
 #include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 #endif
+
+// IFPACK includes
+#include "Ifpack_IC.h"
+#include "Ifpack_ICT.h"
+#include "Ifpack_ILU.h"
+#include "Ifpack_ILUT.h"
+#include "Ifpack_PointRelaxation.h"
+#include "Ifpack_Amesos.h"
 
 // ML includes
 #undef HAVE_STDINT_H
@@ -155,22 +168,18 @@ example subdirectory of the PyTrilinos package:
 #endif
 #ifdef HAVE_EPETRA
 %include "Epetra_RowMatrix_Utils.i"
+%ignore Epetra_Version;
 %import  "Epetra.i"
+%ignore Ifpack_Version;
+%import  "IFPACK.i"
 #endif
 
 // Teuchos::RCP handling
 #ifdef HAVE_TEUCHOS
-%teuchos_rcp_typemaps(MLAPI::DoubleVector)
-%teuchos_rcp_typemaps(MLAPI::ML_Operator_Box)
-%teuchos_rcp_typemaps(Ifpack_Preconditioner)
+%teuchos_rcp(MLAPI::DoubleVector)
+%teuchos_rcp(MLAPI::ML_Operator_Box)
 #ifdef HAVE_EPETRA
-%import "Teuchos_Epetra.i"
-%teuchos_rcp_typemaps(Epetra_CrsMatrix)
-%teuchos_rcp_typemaps(Epetra_MultiVector)
-%teuchos_rcp_typemaps(Epetra_RowMatrix)
-%teuchos_rcp_typemaps(Epetra_Map)
-%teuchos_rcp_typemaps(Epetra_IntSerialDenseVector)
-%teuchos_rcp_typemaps(ML_Epetra::MultiLevelPreconditioner)
+%teuchos_rcp(ML_Epetra::MultiLevelPreconditioner)
 #endif
 #endif
 
@@ -813,6 +822,7 @@ namespace MLAPI
 // MLAPI_EpetraBaseOperator support //
 //////////////////////////////////////
 #ifdef HAVE_EPETRA
+%teuchos_rcp(MLAPI::EpetraBaseOperator)
 %include "MLAPI_EpetraBaseOperator.h"
 #endif
 
@@ -868,16 +878,6 @@ namespace MLAPI
   }
 }
 #endif
-
-// %pythoncode
-// %{
-// # Call MPI_Init if appropriate
-// Init()
-
-// # Arrange for MPI_Finalize to be called at exit, if appropriate
-// import atexit
-// atexit.register(Finalize)
-// %}
 
 // Turn off the exception handling
 %exception;

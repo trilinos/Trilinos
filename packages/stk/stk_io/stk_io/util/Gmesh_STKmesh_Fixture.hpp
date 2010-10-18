@@ -1,5 +1,5 @@
-#ifndef stk_common_Gmesh_STKmesh_Fixture_hpp
-#define stk_common_Gmesh_STKmesh_Fixture_hpp
+#ifndef stk_io_util_Gmesh_STKmesh_Fixture_hpp
+#define stk_io_util_Gmesh_STKmesh_Fixture_hpp
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -11,7 +11,8 @@
 #include <string>
 
 namespace stk {
-namespace common {
+namespace io {
+namespace util {
 
 /**
  * This class implements a Stk-mesh based fixture that uses a generated
@@ -130,7 +131,8 @@ class Gmesh_STKmesh_Fixture
   int m_num_z;
 };
 
-}
-}
+}//namespace util
+}//namespace io
+}//namespace stk
 
 #endif

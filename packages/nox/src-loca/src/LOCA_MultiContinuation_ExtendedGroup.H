@@ -219,6 +219,18 @@ namespace LOCA {
       //! Return extended Newton direction.
       virtual const NOX::Abstract::Vector& getNewton() const;
 
+      //! Return extended solution vector.  
+      virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
+
+      //! Return extended residual
+      virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
+
+      //! Gradient is never valid
+      virtual Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
+
+      //! Return extended Newton direction.
+      virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const;
+
       //! Returns 2-norm of extended Newton solve residual
       virtual double getNormNewtonSolveResidual() const;
 

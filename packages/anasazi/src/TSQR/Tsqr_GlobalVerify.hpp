@@ -155,7 +155,7 @@ namespace TSQR {
   }
 
   template< class LocalOrdinal, class Scalar >
-  std::pair< typename ScalarTraits< Scalar >::magnitude_type, typename ScalarTraits< Scalar >::magnitude_type >
+  std::vector< typename ScalarTraits< Scalar >::magnitude_type >
   global_verify (const LocalOrdinal nrows_local, 
 		 const LocalOrdinal ncols, 
 		 const Scalar A_local[],
@@ -226,7 +226,11 @@ namespace TSQR {
     const magnitude_type Resid_F = 
       global_frobenius_norm (nrows_local, ncols, &Resid[0], ld_resid, messenger);
 
-    return make_pair (Resid_F / A_F, Orthog_F / A_F);
+    std::vector< magnitude_type > results (3);
+    results[0] = Resid_F;
+    results[1] = Orthog_F;
+    results[2] = A_F;
+    return results;
   }
 
 } // namespace TSQR

@@ -55,13 +55,12 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdlib.h>
-
 #include "exodusII.h"
 #include "exodusII_int.h"
 
 #include "ne_nemesisI_int.h"
 #include "ne_nemesisI.h"
+#include <stdlib.h>
 
 /*
  * writes the values of a single element variable for one element block,

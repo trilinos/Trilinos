@@ -195,6 +195,7 @@ namespace Ioex {
       int get_file_pointer() const; // Open file and set exodusFilePtr.
       int free_file_pointer() const; // Close file and set exodusFilePtr.
 
+      int get_current_state() const; // Get current state with error checks and usage message.
       void put_qa();
       void put_info();
       int read_nodal_coordinates();
@@ -360,14 +361,6 @@ namespace Ioex {
       VariableNameMap nodesetVariables;
       VariableNameMap sidesetVariables;
       VariableNameMap globalVariables;
-
-      // Similar for entity attributes (currently only element blocks); however, the
-      // names are not mapped to the individual components.
-      // The other difference is that that name stored in the map is a
-      // combination of the entity-block name and the attribute name
-      // so we can use a single VariableNameMap for the region instead
-      // of one-per entity block.
-      VariableNameMap attributeNames;
 
       mutable ValueContainer  globalValues;
 

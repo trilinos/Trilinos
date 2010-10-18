@@ -15,6 +15,11 @@ PACKAGE(Belos)
 # C) Add the libraries, tests, and examples
 #
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+  BELOS_TEUCHOS_TIME_MONITOR
+  "Build with Teuchos TimeMonitors enabled."
+  "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
+
 ADD_SUBDIRECTORY(src)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)

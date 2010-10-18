@@ -648,6 +648,33 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNewton() const
 {
   return *newtonVec;
 }
+  
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getXPtr() const 
+{
+  return xVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getFPtr() const 
+{
+  return fVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getGradientPtr() const 
+{
+  globalData->locaErrorCheck->throwError(
+	      "LOCA::Pitchfork::MooreSpence::ExtendedGroup::getGradientPtr()",
+	      " - not implemented");
+  return getNewtonPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNewtonPtr() const 
+{
+  return newtonVec;
+}
 
 double
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::getNormNewtonSolveResidual() const 

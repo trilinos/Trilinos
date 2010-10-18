@@ -72,12 +72,6 @@ ParameterList will accept a python dictionary.
 	implicitconv = "1",
 	docstring    = %teuchos_docstring) Teuchos
 
-// SWIG does not support wrapping nested classes.  We will %include
-// the Teuchos::ParameterList class, which has nested classes.  To
-// suppress the swig warning that would otherwise result, we use the
-// following:
-#pragma SWIG nowarn=312
-
 // Includes
 %{
 // Configuration includes
@@ -111,10 +105,10 @@ using Teuchos::RCP;
 // Configuration macros for SWIG
 %include "Teuchos_config.h"
 %include "Teuchos_DLLExportMacro.h"
+%include "PyTrilinos_config.h"
 
 // Namespace flattening
 using std::string;
-using Teuchos::RCP;
 
 // Standard exception handling
 %include "exception.i"
@@ -166,11 +160,20 @@ using Teuchos::RCP;
 %ignore *::operator=;
 %ignore *::print;
 
-//Teuchos imports
+// Teuchos::RCP support.  If a class is ever passed to or from a
+// function or method wrapped by a Teuchos::RCP<>, then it should be
+// stored internally as a Teuchos::RCP<> as well.  This is
+// accomplished by %include-ing Teuchos_RCP.i and calling the provided
+// macro %teuchos_rcp() on the class.
+%include "Teuchos_RCP.i"
+%teuchos_rcp(std::basic_ostream)
+%teuchos_rcp(std::ostream)
+%teuchos_rcp(std::vector< int, std::allocator< int > >)
+%teuchos_rcp(Teuchos::SerialDenseMatrix< int, double >)
+
+// Teuchos imports
 %import "Teuchos_TypeNameTraits.hpp"
 %import "Teuchos_NullIteratorTraits.hpp"
-%rename(reset_ptr) Teuchos::RCP::reset;
-%import "Teuchos_RCPDecl.hpp"
 
 // Teuchos includes
 %include "Teuchos_Traits.i"
@@ -190,121 +193,8 @@ __version__ = Teuchos_Version().split()[2]
 ///////////////////////////
 // Teuchos::Time support //
 ///////////////////////////
+%teuchos_rcp(Teuchos::Time)
 %include "Teuchos_Time.hpp"
-
-////////////////////////////////////////////////////////////////////////
-
-// Extend the %extend_smart_pointer macro to handle derived classes.
-// This has been specialized for RCP, because the constructor for
-// creating an RCP has an additional argument: a boolean false.
-%define %extend_RCP(Type...)
-%typemap(in, noblock=1) const SWIGTYPE & SMARTPOINTER
-(void* argp = 0, int res = 0)
-{
-  res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
-  if (!SWIG_IsOK(res))
-  {
-    res = SWIG_ConvertPtr($input, &argp, $descriptor(Type*), %convertptr_flags);
-    if (!SWIG_IsOK(res))
-    {
-      %argument_fail(res, "$type", $symname, $argnum);
-    }
-    if (!argp)
-    {
-      %argument_nullref("$type", $symname, $argnum);
-    }
-    $1 = new $*ltype ( %reinterpret_cast( argp, Type* ), false );
-  }
-  else
-  {
-    if (!argp) { %argument_nullref("$type", $symname, $argnum); }
-    $1 = %reinterpret_cast(argp, $ltype);
-  }
-}
-
-%typecheck(1200) const SWIGTYPE & SMARTPOINTER
-{
-  static void * argp = 0;
-  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags))
-    ? 1 : 0;
-  if (!$1)
-    $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor(Type *),
-					 %convertptr_flags)) ? 1 : 0;
-}
-
-%typemap(freearg) const SWIGTYPE & SMARTPOINTER
-{
-  delete $1;
-}
-
-%typemap(out) SWIGTYPE SMARTPOINTER
-{
-  $result = SWIG_NewPointerObj((void*)$1.get(), $descriptor(Type*), %convertptr_flags);
-}
-
-%extend_smart_pointer(RCP< Type >)
-%ignore     RCP< Type >::swap;
-%ignore     RCP< Type >::operator();
-%template() RCP< Type >;
-
-%enddef
-
-// These typemap macros allow developers to generate typemaps for any
-// classes that are wrapped in RCP<...> and used as function or method
-// arguments.
-%define %teuchos_rcp_typemaps(Type...)
-
-%extend_RCP(      Type)
-%extend_RCP(const Type)
-
-%enddef
-
-// Apply the RCP typemap macros to selected Teuchos classes
-%teuchos_rcp_typemaps(Teuchos::Time)
-
-// Provide specialized typemaps for RCP<Teuchos::ParameterList>
-%typemap(in) RCP<Teuchos::ParameterList>
-(Teuchos::ParameterList * params = NULL)
-{
-  int    res  = 0;
-  void * argp = NULL;
-  if (PyDict_Check($input))
-  {
-    params = Teuchos::pyDictToNewParameterList($input);
-    if (!params)
-    {
-      PyErr_SetString(PyExc_TypeError,
-		      "Python dictionary cannot be converted to ParameterList");
-      SWIG_fail;
-    }
-  }
-  else
-  {
-    res = SWIG_ConvertPtr($input, &argp, $descriptor(Teuchos::ParameterList*), 0);
-    if (!SWIG_IsOK(res))
-    {
-      PyErr_SetString(PyExc_TypeError,
-		      "Argument $argnum cannot be converted to ParameterList");
-      SWIG_fail;
-    }
-    params = reinterpret_cast< Teuchos::ParameterList * >(argp);
-  }
-  $1 = new Teuchos::RCP<Teuchos::ParameterList> (params, false);
-}
-%typemap(freearg) RCP<Teuchos::ParameterList>
-{
-  if (params$argnum) delete $1;
-}
-%apply RCP<Teuchos::ParameterList>
-{
-  RCP<Teuchos::ParameterList>&,
-  const RCP<Teuchos::ParameterList>,
-  const RCP<Teuchos::ParameterList>&,
-  Teuchos::RCP<Teuchos::ParameterList>,
-  Teuchos::RCP<Teuchos::ParameterList>&,
-  const Teuchos::RCP<Teuchos::ParameterList>,
-  const Teuchos::RCP<Teuchos::ParameterList>&
-};
 
 // Turn off the exception handling
 %exception;

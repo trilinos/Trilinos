@@ -735,6 +735,34 @@ getNewton() const
 {
   return *newtonVec;
 }
+  
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getXPtr() const 
+{
+  return xVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getFPtr() const 
+{
+  return fVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getGradientPtr() const 
+{
+  return gradientVec;
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getNewtonPtr() const 
+{
+  return newtonVec;
+}
 
 double
 LOCA::Hopf::MinimallyAugmented::ExtendedGroup::

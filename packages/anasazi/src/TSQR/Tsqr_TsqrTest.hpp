@@ -161,6 +161,8 @@ namespace TSQR {
     ///   (for cache-blocked sequential node-level TSQR underneath
     ///   MPI-parallel TSQR)
     ///
+    /// \param scalarTypeName [in] Name of the Scalar type
+    ///
     /// \param generator [in/out] Normal(0,1) (pseudo)random number
     ///   generator.  Only touched on MPI process 0.  Used to generate
     ///   random test matrices for the factorization.
@@ -187,6 +189,9 @@ namespace TSQR {
     /// \param contiguousCacheBlocks [in] Whether cache blocks
     ///   should be stored contiguously
     ///
+    /// \param printFieldNames [in] Whether to print field names (only
+    ///   appliable if not human_readable)
+    ///
     /// \param human_readable [in] Whether output should be human
     ///   readable, or machine parseable
     ///
@@ -195,6 +200,7 @@ namespace TSQR {
     template< class Ordinal, class Scalar, class Generator >
     void
     verifyTsqr (const std::string& which,
+		const std::string& scalarTypeName,
 		Generator& generator,
 		const Ordinal nrows_global,
 		const Ordinal ncols,
@@ -202,7 +208,8 @@ namespace TSQR {
 		const Teuchos::RCP< MessengerBase< Scalar > >& scalarComm,
 		const int num_cores = 1,
 		const size_t cache_block_size = 0,
-		const bool contiguousCacheBlocks = false,
+		const bool contiguousCacheBlocks,
+		const bool printFieldNames,
 		const bool human_readable = false,
 		const bool b_debug = false)
     {
@@ -326,7 +333,7 @@ namespace TSQR {
 	}
 
       // Test accuracy of the resulting factorization
-      std::pair< magnitude_type, magnitude_type > result = 
+      std::vector< magnitude_type > results = 
 	global_verify (nrows_local, ncols, A_local.get(), A_local.lda(),
 		       Q_local.get(), Q_local.lda(), R.get(), R.lda(), 
 		       scalarComm.get());
@@ -358,6 +365,7 @@ namespace TSQR {
 		throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
 
 	      cout << human_readable_name << ":" << endl
+		   << "Scalar type: " << scalarTypeName << endl
 		   << "# rows = " << nrows_global << endl
 		   << "# columns = " << ncols << endl
 		   << "# MPI processes = " << nprocs << endl;
@@ -367,26 +375,50 @@ namespace TSQR {
 #endif // HAVE_TSQR_INTEL_TBB
 	      cout << "cache block # bytes = " << actual_cache_block_size << endl
 		   << "contiguous cache blocks? " << contiguousCacheBlocks << endl
-		   << "Relative residual $\\|A - Q*R\\|_2 / \\|A\\|_2$ = " 
-		   << result.first << endl
-		   << "Relative orthogonality $\\|I - Q^T*Q\\|_2$ = " 
-		   << result.second << endl
+		   << "Absolute residual $\\| A - Q R \\|_2: "
+		   << results[0] << endl
+		   << "Absolute orthogonality $\\| I - Q^* Q \\|_2$: " 
+		   << results[1] << endl
+		   << "Test matrix norm $\\| A \\|_F$: "
+		   << results[2] << endl
 		   << endl;
 	    }
 	  else
 	    {
+	      if (printFieldNames)
+		{
+		  cout << "%"
+		       << "method"
+		       << ",scalarType"
+		       << ",globalNumRows"
+		       << ",numCols"
+		       << ",numProcs"
+		       << ",numCores"
+		       << ",cacheBlockSize"
+		       << ",contiguousCacheBlocks"
+		       << ",absFrobResid"
+		       << ",absFrobOrthog"
+		       << ",frobA" << endl;
+		}
+
 	      cout << which
+		   << "," << scalarTypeName
 		   << "," << nrows_global
 		   << "," << ncols
 		   << "," << nprocs;
 #ifdef HAVE_TSQR_INTEL_TBB
 	      if (which == "MpiTbbTSQR")
-		cout << "," << num_cores << endl;
+		cout << "," << num_cores;
+	      else
+		cout << ",1";
+#else
+	      cout << ",1" << endl;
 #endif // HAVE_TSQR_INTEL_TBB
 	      cout << "," << actual_cache_block_size
 		   << "," << contiguousCacheBlocks 
-		   << "," << result.first 
-		   << "," << result.second
+		   << "," << results[0] 
+		   << "," << results[1]
+		   << "," << results[2]
 		   << endl;
 	    }
 	}
@@ -511,6 +543,8 @@ namespace TSQR {
     ///   (for cache-blocked sequential node-level TSQR underneath
     ///   MPI-parallel TSQR)
     ///
+    /// \param scalarTypeName [in] Name of the Scalar type
+    ///
     /// \param generator [in/out] Normal(0,1) (pseudo)random number
     ///   generator.  Only touched on MPI process 0.  Used to generate
     ///   random test matrices for the factorization.
@@ -540,6 +574,9 @@ namespace TSQR {
     /// \param contiguousCacheBlocks [in] Whether cache blocks
     ///   should be stored contiguously
     ///
+    /// \param printFieldNames [in] Whether to print field names (only
+    ///   appliable if not human_readable)
+    ///
     /// \param human_readable [in] Whether output should be human
     ///   readable, or machine parseable
     ///
@@ -548,6 +585,7 @@ namespace TSQR {
     template< class Ordinal, class Scalar, class Generator, class TimerType >
     void
     benchmarkTsqr (const std::string& which,
+		   const std::string& scalarTypeName,
 		   Generator& generator,
 		   const int ntrials,
 		   const Ordinal nrows_global,
@@ -557,6 +595,7 @@ namespace TSQR {
 		   const Ordinal num_cores,
 		   const size_t cache_block_size,
 		   const bool contiguousCacheBlocks,
+		   const bool printFieldNames,
 		   const bool human_readable,
 		   const bool b_debug)
     {
@@ -697,6 +736,7 @@ namespace TSQR {
 		throw std::logic_error("Unknown TSQR implementation type \"" + which + "\"");
 
 	      cout << human_readable_name << ":" << endl
+		   << "Scalar type: " << scalarTypeName << endl
 		   << "# rows = " << nrows_global << endl
 		   << "# columns = " << ncols << endl
 		   << "# MPI processes = " << nprocs << endl;
@@ -717,13 +757,34 @@ namespace TSQR {
 	    }
 	  else
 	    {
+	      if (printFieldNames)
+		{
+		  cout << "%"
+		       << "method"
+		       << ",scalarType"
+		       << ",globalNumRows"
+		       << ",numCols"
+		       << ",numProcs"
+		       << ",numCores"
+		       << ",cacheBlockSize"
+		       << ",contiguousCacheBlocks"
+		       << ",numTrials"
+		       << ",minTiming"
+		       << ",maxTiming" 
+		       << endl;
+		}
 	      cout << which
+		   << "," << scalarTypeName
 		   << "," << nrows_global
 		   << "," << ncols 
-		   << "," << nprocs ;
+		   << "," << nprocs;
 #ifdef HAVE_TSQR_INTEL_TBB
 	      if (which == "MpiTbbTSQR")
-		cout << "," << num_cores << endl;
+		cout << "," << num_cores;
+	      else 
+		cout << ",1";
+#else
+	      cout << ",1";
 #endif // HAVE_TSQR_INTEL_TBB
 	      cout << "," << actual_cache_block_size
 		   << "," << contiguousCacheBlocks

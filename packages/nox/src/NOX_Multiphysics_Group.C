@@ -169,6 +169,30 @@ NOX::Multiphysics::Group::getNewton() const
   return (*solversVecPtr)[0]->getSolutionGroup().getX();
 }
 
+Teuchos::RCP< const NOX::Abstract::Vector >
+NOX::Multiphysics::Group::getXPtr() const
+{
+  return (*solversVecPtr)[0]->getSolutionGroup().getXPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+NOX::Multiphysics::Group::getFPtr() const
+{
+  return (*solversVecPtr)[0]->getSolutionGroup().getXPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+NOX::Multiphysics::Group::getGradientPtr() const
+{
+  return (*solversVecPtr)[0]->getSolutionGroup().getXPtr();
+}
+
+Teuchos::RCP< const NOX::Abstract::Vector >
+NOX::Multiphysics::Group::getNewtonPtr() const
+{
+  return (*solversVecPtr)[0]->getSolutionGroup().getXPtr();
+}
+
 double
 NOX::Multiphysics::Group::getNormF() const
 {

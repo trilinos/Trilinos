@@ -168,7 +168,7 @@ LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerSt
    return state.getInverse("invF");
 }
 
-LinearOp InvLSCStrategy::getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+LinearOp InvLSCStrategy::getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);

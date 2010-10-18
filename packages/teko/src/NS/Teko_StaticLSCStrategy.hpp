@@ -119,8 +119,11 @@ public:
      *
      * \returns The operator to stabilize the whole Schur complement (\f$\alpha D^{-1} \f$).
      */
-   virtual LinearOp getInvAlphaD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   virtual LinearOp getOuterStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return invD_; }
+
+   virtual LinearOp getInnerStabilization(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return Teuchos::null; }
 
    /** Get the inverse mass matrix.
      *

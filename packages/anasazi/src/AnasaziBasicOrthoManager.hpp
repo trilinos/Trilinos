@@ -303,8 +303,10 @@ namespace Anasazi {
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType kappa,
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType eps,
                                                           typename Teuchos::ScalarTraits<ScalarType>::magnitudeType tol ) : 
-    MatOrthoManager<ScalarType,MV,OP>(Op), kappa_(kappa), eps_(eps), tol_(tol),
-    timerReortho_(Teuchos::TimeMonitor::getNewTimer("Anasazi::BasicOrthoManager::Re-orthogonalization"))
+    MatOrthoManager<ScalarType,MV,OP>(Op), kappa_(kappa), eps_(eps), tol_(tol)
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+    , timerReortho_(Teuchos::TimeMonitor::getNewTimer("Anasazi::BasicOrthoManager::Re-orthogonalization"))
+#endif
   {
     TEST_FOR_EXCEPTION(eps_ < SCT::magnitude(SCT::zero()),std::invalid_argument,
         "Anasazi::ICGSOrthoManager::ICGSOrthoManager(): argument \"eps\" must be non-negative.");
@@ -507,7 +509,9 @@ namespace Anasazi {
 #ifdef ANASAZI_BASIC_ORTHO_DEBUG
         *out << "kappa_*newDot[" <<j<< "] == " << kappa_*newDot[j] << "... another step of Gram-Schmidt.\n";
 #endif
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
         Teuchos::TimeMonitor lcltimer( *timerReortho_ );
+#endif
         for (int i=0; i<nq; i++) {
           Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
           

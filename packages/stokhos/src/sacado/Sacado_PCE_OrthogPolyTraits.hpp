@@ -1,10 +1,8 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
-//                           Sacado Package
-//                 Copyright (2006) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -23,8 +21,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
-// (etphipp@sandia.gov).
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
@@ -37,88 +34,88 @@
 // Forward declarations
 namespace Sacado {
   namespace PCE {
-    template <typename T> class OrthogPoly;
+    template <typename T, typename S> class OrthogPoly;
   }
 }
 
 namespace Sacado {
 
-  //! Specialization of %Promote to Taylor types
-  template <typename T>
-  class Promote< PCE::OrthogPoly<T>, PCE::OrthogPoly<T> > {
+  //! Specialization of %Promote to OrthogPoly types
+  template <typename T, typename S>
+  class Promote< PCE::OrthogPoly<T,S>, PCE::OrthogPoly<T,S> > {
   public:
 
-    typedef PCE::OrthogPoly<T> type;
+    typedef PCE::OrthogPoly<T,S> type;
   };
 
   //! Specialization of %Promote to OrthogPoly types
-  template <typename L, typename R>
-  class Promote< PCE::OrthogPoly<L>, R > {
+  template <typename L, typename S, typename R>
+  class Promote< PCE::OrthogPoly<L,S>, R > {
   public:
 
-    typedef typename ValueType< PCE::OrthogPoly<L> >::type value_type_l;
+    typedef typename ValueType< PCE::OrthogPoly<L,S> >::type value_type_l;
     typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef PCE::OrthogPoly<value_type> type;
+    typedef PCE::OrthogPoly<value_type,S> type;
   };
 
   //! Specialization of %Promote to OrthogPoly types
-  template <typename L, typename R>
-  class Promote< L, PCE::OrthogPoly<R> > {
+  template <typename L, typename S, typename R>
+  class Promote< L, PCE::OrthogPoly<R,S> > {
   public:
 
     typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< PCE::OrthogPoly<R> >::type value_type_r;
+    typedef typename ValueType< PCE::OrthogPoly<R,S> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef PCE::OrthogPoly<value_type> type;
+    typedef PCE::OrthogPoly<value_type,S> type;
   };
 
   //! Specialization of %ScalarType to OrthogPoly types
-  template <typename T>
-  struct ScalarType< PCE::OrthogPoly<T> > {
-    typedef typename ScalarType<typename PCE::OrthogPoly<T>::value_type>::type type;
+  template <typename T, typename S>
+  struct ScalarType< PCE::OrthogPoly<T,S> > {
+    typedef typename ScalarType<typename PCE::OrthogPoly<T,S>::value_type>::type type;
   };
 
   //! Specialization of %ValueType to OrthogPoly types
-  template <typename T>
-  struct ValueType< PCE::OrthogPoly<T> > {
-    typedef typename PCE::OrthogPoly<T>::value_type type;
+  template <typename T, typename S>
+  struct ValueType< PCE::OrthogPoly<T,S> > {
+    typedef typename PCE::OrthogPoly<T,S>::value_type type;
   };
 
   //! Specialization of %IsADType to OrthogPoly types
-  template <typename T>
-  struct IsADType< PCE::OrthogPoly<T> > {
+  template <typename T, typename S>
+  struct IsADType< PCE::OrthogPoly<T,S> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to OrthogPoly types
-  template <typename T>
-  struct IsScalarType< PCE::OrthogPoly<T> > {
+  template <typename T, typename S>
+  struct IsScalarType< PCE::OrthogPoly<T,S> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to OrthogPoly types
-  template <typename T>
-  struct Value< PCE::OrthogPoly<T> > {
-    typedef typename ValueType< PCE::OrthogPoly<T> >::type value_type;
-    static const value_type& eval(const PCE::OrthogPoly<T>& x) { 
+  template <typename T, typename S>
+  struct Value< PCE::OrthogPoly<T,S> > {
+    typedef typename ValueType< PCE::OrthogPoly<T,S> >::type value_type;
+    static const value_type& eval(const PCE::OrthogPoly<T,S>& x) { 
       return x.val(); }
   };
 
   //! Specialization of %ScalarValue to OrthogPoly types
-  template <typename T>
-  struct ScalarValue< PCE::OrthogPoly<T> > {
-    typedef typename ValueType< PCE::OrthogPoly<T> >::type value_type;
-    typedef typename ScalarType< PCE::OrthogPoly<T> >::type scalar_type;
-    static const scalar_type& eval(const PCE::OrthogPoly<T>& x) { 
+  template <typename T, typename S>
+  struct ScalarValue< PCE::OrthogPoly<T,S> > {
+    typedef typename ValueType< PCE::OrthogPoly<T,S> >::type value_type;
+    typedef typename ScalarType< PCE::OrthogPoly<T,S> >::type scalar_type;
+    static const scalar_type& eval(const PCE::OrthogPoly<T,S>& x) { 
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to OrthogPoly types
-  template <typename T>
-  struct StringName< PCE::OrthogPoly<T> > {
+  template <typename T, typename S>
+  struct StringName< PCE::OrthogPoly<T,S> > {
     static std::string eval() { 
       return std::string("Sacado::PCE::OrthogPoly< ") + 
 	StringName<T>::eval() + " >"; }
@@ -136,33 +133,33 @@ namespace Sacado {
 namespace Teuchos {
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
-  template <typename T>
-  struct PromotionTraits< Sacado::PCE::OrthogPoly<T>, 
-			  Sacado::PCE::OrthogPoly<T> > {
-    typedef typename Sacado::Promote< Sacado::PCE::OrthogPoly<T>,
-				      Sacado::PCE::OrthogPoly<T> >::type
+  template <typename T, typename S>
+  struct PromotionTraits< Sacado::PCE::OrthogPoly<T,S>, 
+			  Sacado::PCE::OrthogPoly<T,S> > {
+    typedef typename Sacado::Promote< Sacado::PCE::OrthogPoly<T,S>,
+				      Sacado::PCE::OrthogPoly<T,S> >::type
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
-  template <typename T, typename R>
-  struct PromotionTraits< Sacado::PCE::OrthogPoly<T>, R > {
-    typedef typename Sacado::Promote< Sacado::PCE::OrthogPoly<T>, R >::type 
+  template <typename T, typename S, typename R>
+  struct PromotionTraits< Sacado::PCE::OrthogPoly<T,S>, R > {
+    typedef typename Sacado::Promote< Sacado::PCE::OrthogPoly<T,S>, R >::type 
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DFad types
-  template <typename L, typename T>
-  struct PromotionTraits< L, Sacado::PCE::OrthogPoly<T> > {
+  template <typename L, typename T, typename S>
+  struct PromotionTraits< L, Sacado::PCE::OrthogPoly<T,S> > {
   public:
-    typedef typename Sacado::Promote< L, Sacado::PCE::OrthogPoly<T> >::type 
+    typedef typename Sacado::Promote< L, Sacado::PCE::OrthogPoly<T,S> >::type 
     promote;
   };
 
   //! Specializtion of Teuchos::ScalarTraits
-  template <typename T>
-  struct ScalarTraits< Sacado::PCE::OrthogPoly<T> > {
-    typedef Sacado::PCE::OrthogPoly<T> ScalarType;
+  template <typename T, typename S>
+  struct ScalarTraits< Sacado::PCE::OrthogPoly<T,S> > {
+    typedef Sacado::PCE::OrthogPoly<T,S> ScalarType;
     typedef typename Sacado::ValueType<T>::type ValueT;
     
     typedef typename Sacado::mpl::apply<ScalarType,typename Teuchos::ScalarTraits<ValueT>::magnitudeType>::type magnitudeType;
@@ -303,7 +300,7 @@ namespace Teuchos {
       return true;
     }
 
-  }; // class ScalarTraits< Sacado::PCE::OrthogPoly<T> >
+  }; // class ScalarTraits< Sacado::PCE::OrthogPoly<T,S> >
 }
 #endif // HAVE_SACADO_TEUCHOS
 

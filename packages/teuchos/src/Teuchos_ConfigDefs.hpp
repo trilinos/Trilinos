@@ -49,7 +49,7 @@
 #  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
 #endif
 
-#ifdef _AIX
+#if defined(_AIX) || defined(__IBMC__)
 #  ifndef TEMPLATE_FRIENDS_NOT_SUPPORTED
 #    define TEMPLATE_FRIENDS_NOT_SUPPORTED
 #  endif

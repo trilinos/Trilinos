@@ -63,7 +63,12 @@ NOX.Epetra.Interface provides the following user-level classes:
 
 // Epetra includes
 #include "Epetra_LocalMap.h"
+#include "Epetra_MapColoring.h"
 #include "Epetra_SrcDistObject.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
@@ -74,10 +79,15 @@ NOX.Epetra.Interface provides the following user-level classes:
 #include "Epetra_PyUtil.h"
 
 // Local Epetra includes
+#include "Epetra_NumPyIntVector.h"
+#include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-
-// NOX include
-#include "NOX_Utils.H"
+#include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 
 // NOX::Epetra::Interface includes
 #include "NOX_Epetra_Interface_Required.H"
@@ -101,24 +111,14 @@ NOX.Epetra.Interface provides the following user-level classes:
 %import "Epetra.i"
 
 // Teuchos::RCPs typemaps
-%teuchos_rcp_typemaps(NOX::Epetra::Interface::Required)
-%teuchos_rcp_typemaps(NOX::Epetra::Interface::Jacobian)
-%teuchos_rcp_typemaps(NOX::Epetra::Interface::Preconditioner)
-
-// Epetra_Vector directorin typemap
-%typemap(directorin) Epetra_Vector &
-%{
-  Epetra_NumPyVector npa$argnum = Epetra_NumPyVector(View,$1_name);
-  $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPyVector*), 0);
-%}
+%teuchos_rcp(NOX::Epetra::Interface::Required)
+%teuchos_rcp(NOX::Epetra::Interface::Jacobian)
+%teuchos_rcp(NOX::Epetra::Interface::Preconditioner)
 
 ///////////////////////
 // NOX_Utils support //
 ///////////////////////
-// The following #pragma is for nested classes in NOX_Utils.H
-#pragma SWIG nowarn=312
-%rename(_print) NOX::Utils::print;
-%import "NOX_Utils.H"
+%import "NOX_Utils.i"
 
 ///////////////////////////////////////////
 // NOX_Epetra_Interface_Required support //

@@ -273,9 +273,11 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   maxLocked_(0),
   verbosity_(Anasazi::Errors),
   lockQuorum_(1),
-  recover_(true),
-  _timerSolve(Teuchos::TimeMonitor::getNewTimer("LOBPCGSolMgr::solve()")),
+  recover_(true)
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
+  , _timerSolve(Teuchos::TimeMonitor::getNewTimer("LOBPCGSolMgr::solve()")),
   _timerLocking(Teuchos::TimeMonitor::getNewTimer("LOBPCGSolMgr locking"))
+#endif
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
@@ -517,7 +519,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // enter solve() iterations
   {
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*_timerSolve);
+#endif
 
     // tell the lobpcg_solver to iterate
     while (1) {
@@ -550,7 +554,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         ////////////////////////////////////////////////////////////////////////////////////
         else if (locktest != Teuchos::null && locktest->getStatus() == Passed) {
 
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
           Teuchos::TimeMonitor lcktimer(*_timerLocking);
+#endif
 
           // remove the locked vectors,values from lobpcg_solver: put them in newvecs, newvals
           TEST_FOR_EXCEPTION(locktest->howMany() <= 0,std::logic_error,
@@ -947,7 +953,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   lobpcg_solver->currentStatus(printer->stream(FinalSummary));
 
   // print timing information
+#ifdef ANASAZI_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
+#endif
 
   problem_->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << std::endl;

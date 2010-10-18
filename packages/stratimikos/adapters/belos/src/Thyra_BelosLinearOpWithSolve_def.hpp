@@ -323,7 +323,9 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   ) const
 {
 
+#ifdef STRATIMIKOS_TEUCHOS_TIME_MONITOR
   TEUCHOS_FUNC_TIME_MONITOR("BelosLOWS");
+#endif
 
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
@@ -346,7 +348,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   const RCP<FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
-  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)) {
+  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW)) {
     *out << "\nStarting iterations with Belos:\n";
     OSTab tab2(out);
     *out << "Using forward operator = " << describe(*fwdOpSrc_->getOp(),verbLevel);
@@ -510,13 +512,13 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     <<"\" returned a solve status of \""<< toString(solveStatus.solveStatus) << "\""
     << " in " << iterativeSolver_->getNumIters() << " iterations"
     << " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;
-  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+  if (out.get() && static_cast<int>(verbLevel) >=static_cast<int>(Teuchos::VERB_LOW))
     *out << "\n" << ossmessage.str() << "\n";
 
   solveStatus.message = ossmessage.str();
 
   if (out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
+    *out << "\nTotal solve time in Belos = "<<totalTimer.totalElapsedTime()<<" sec\n";
 
   return solveStatus;
 

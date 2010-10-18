@@ -125,10 +125,16 @@ example subdirectory of the PyTrilinos package:
 // Epetra python includes
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
+#include "Epetra_PyUtil.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"
+#include "Epetra_NumPyIntSerialDenseMatrix.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
+#include "Epetra_NumPySerialDenseMatrix.h"
+#include "Epetra_NumPySerialSymDenseMatrix.h"
+#include "Epetra_NumPySerialDenseVector.h"
 
 // EpetraExt includes
 #include "EpetraExt_config.h"
@@ -173,21 +179,6 @@ example subdirectory of the PyTrilinos package:
 // Trilinos interface support
 %import "Teuchos.i"
 %import "Epetra.i"
-
-// Typemaps for Teuchos::RCP arguments
-%teuchos_rcp_typemaps(Epetra_Map)
-
-// Typemap for Teuchos::RCP<const Epetra_Vector>
-%typemap(out) Teuchos::RCP<const Epetra_Vector>
-{
-  if ($1 == Teuchos::null)
-    $result = Py_BuildValue("");
-  else
-  {
-    const Epetra_NumPyVector * env = new Epetra_NumPyVector($1.get());
-    $result = SWIG_NewPointerObj((void*) env, $descriptor(Epetra_NumPyVector*), 1);
-  }
-}
 
 // General exception handling
 %feature("director:except")
@@ -954,27 +945,27 @@ public:
   class OutArgs;
 
   virtual ~ModelEvaluator();
-  virtual Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const = 0;
-  virtual Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const = 0;
-  virtual Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
-  virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
-  virtual Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
-  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
-  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot_init() const;
-  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
+  virtual Teuchos::RCP<	const Epetra_Map > get_x_map() const = 0;
+  virtual Teuchos::RCP<	const Epetra_Map > get_f_map() const = 0;
+  virtual Teuchos::RCP<	const Epetra_Map > get_p_map(int l) const;
+  virtual Teuchos::RCP<	const Teuchos::Array<std::string> > get_p_names(int l) const;
+  virtual Teuchos::RCP<	const Epetra_Map > get_g_map(int j) const;
+  virtual Teuchos::RCP<	const Epetra_Vector > get_x_init() const;
+  virtual Teuchos::RCP<	const Epetra_Vector > get_x_dot_init() const;
+  virtual Teuchos::RCP<	const Epetra_Vector > get_p_init(int l) const;
   virtual double get_t_init() const;
   virtual double getInfBound() const;
-  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_lower_bounds() const;
-  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_upper_bounds() const;
-  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_lower_bounds(int l) const;
-  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_upper_bounds(int l) const;
+  virtual Teuchos::RCP<	const Epetra_Vector > get_x_lower_bounds() const;
+  virtual Teuchos::RCP<	const Epetra_Vector > get_x_upper_bounds() const;
+  virtual Teuchos::RCP<	const Epetra_Vector > get_p_lower_bounds(int l) const;
+  virtual Teuchos::RCP<	const Epetra_Vector > get_p_upper_bounds(int l) const;
   virtual double get_t_lower_bound() const;
   virtual double get_t_upper_bound() const;
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int l) const;
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_op( int j, int l ) const;
+  virtual Teuchos::RCP<	Epetra_Operator	> create_W() const;
+  virtual Teuchos::RCP<	Epetra_Operator	> create_DfDp_op(int l) const;
+  virtual Teuchos::RCP<	Epetra_Operator	> create_DgDx_dot_op(int j) const;
+  virtual Teuchos::RCP<	Epetra_Operator	> create_DgDx_op(int j) const;
+  virtual Teuchos::RCP<	Epetra_Operator	> create_DgDp_op( int j, int l ) const;
   virtual InArgs createInArgs() const = 0;
   virtual OutArgs createOutArgs() const = 0;
   virtual void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const = 0;
@@ -983,8 +974,6 @@ public:
 
 // Notes:
 //
-// * Institute a NOX.Epetra.DefaultSolver function/factory
-// * Add solver to exNOXEpetraExt_2DSim.py and test
 // * Teuchos::Polynomial is not yet wrapped, so the following have
 //   been ignored:
 //   + InArgs::x_poly

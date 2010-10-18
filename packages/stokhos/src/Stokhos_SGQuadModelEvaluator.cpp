@@ -494,23 +494,31 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 	continue;
 
       {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("SGQuadModelEvaluator -- Polynomial Evaluation",
           PolyEvaluation);
+#endif
 
         // Evaluate inputs at quadrature points
         if (x_sg != Teuchos::null) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
           TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- X Evaluation");
+#endif
           x_sg->evaluate(quad_values[qp], *x_qp);
           me_inargs.set_x(x_qp);
         }
         if (x_dot_sg != Teuchos::null) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
           TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- X_dot Evaluation");
+#endif
           x_dot_sg->evaluate(quad_values[qp], *x_dot_qp);
           me_inargs.set_x_dot(x_qp);
         }
         for (int i=0; i<inArgs.Np_sg(); i++) {
           if (p_sg[i] != Teuchos::null) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
             TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- P Evaluation");
+#endif
             p_sg[i]->evaluate(quad_values[qp], *(p_qp[i]));
             me_inargs.set_p(i, p_qp[i]);
           }
@@ -538,7 +546,9 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
       }
 
       {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- Model Evaluation");
+#endif
 
         // Evaluate model at quadrature points
         me->evalModel(me_inargs, me_outargs);
@@ -546,24 +556,32 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
       }
 
       {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
 	  "SGQuadModelEvaluator -- Polynomial Integration", Integration);
+#endif
 
         // Sum in results
         if (f_sg != Teuchos::null) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
           TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- F Integration");
+#endif
           f_sg->sumIntoAllTerms(quad_weights[qp], quad_values[qp], basis_norms,
 				*f_qp);
         }
         if (W_sg != Teuchos::null) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
           TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- W Integration");
+#endif
           W_sg->sumIntoAllTerms(quad_weights[qp], quad_values[qp], basis_norms,
 				*W_qp);
         }
 	for (int j=0; j<outArgs.Np_sg(); j++) {
 	  if (!dfdp_sg[j].isEmpty()) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
 	    TEUCHOS_FUNC_TIME_MONITOR(
 	      "SGQuadModelEvaluator -- df/dp Integration");
+#endif
 	    if (dfdp_sg[j].getMultiVector() != Teuchos::null) {
 	      dfdp_sg[j].getMultiVector()->sumIntoAllTerms(
 		quad_weights[qp], quad_values[qp], basis_norms, 
@@ -578,13 +596,17 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 	}
         for (int i=0; i<outArgs.Ng_sg(); i++) {
           if (g_sg[i] != Teuchos::null) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
             TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- G Integration");
+#endif
             g_sg[i]->sumIntoAllTerms(quad_weights[qp], quad_values[qp], 
 				     basis_norms, *g_qp[i]);
           }
 	  if (!dgdx_dot_sg[i].isEmpty()) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
 	    TEUCHOS_FUNC_TIME_MONITOR(
 	      "SGQuadModelEvaluator -- dg/dx_dot Integration");
+#endif
 	    if (dgdx_dot_sg[i].getMultiVector() != Teuchos::null) {
 	      dgdx_dot_sg[i].getMultiVector()->sumIntoAllTerms(
 		quad_weights[qp], quad_values[qp], basis_norms, 
@@ -597,8 +619,10 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 	    }
 	  }
 	  if (!dgdx_sg[i].isEmpty()) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
 	    TEUCHOS_FUNC_TIME_MONITOR(
 	      "SGQuadModelEvaluator -- dg/dx Integration");
+#endif
 	    if (dgdx_sg[i].getMultiVector() != Teuchos::null) {
 	      dgdx_sg[i].getMultiVector()->sumIntoAllTerms(
 		quad_weights[qp], quad_values[qp], basis_norms, 
@@ -612,8 +636,10 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 	  }
           for (int j=0; j<outArgs.Np_sg(); j++) {
 	    if (!dgdp_sg[i][j].isEmpty()) {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
 	      TEUCHOS_FUNC_TIME_MONITOR(
 		"SGQuadModelEvaluator -- dg/dp Integration");
+#endif
 	      if (dgdp_sg[i][j].getMultiVector() != Teuchos::null) {
 		dgdp_sg[i][j].getMultiVector()->sumIntoAllTerms(
 		  quad_weights[qp], quad_values[qp], basis_norms, 

@@ -44,6 +44,7 @@
 
 */
 
+#include "Teko_Config.h"
 #include "tSIMPLEPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
@@ -200,6 +201,7 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
    failcount += status ? 0 : 1;
    totalrun++;
 
+#ifdef Teko_ENABLE_Isorropia 
    status = test_initializePrec(verbosity,failstrm,1);
    Teko_TEST_MSG(stdstrm,1,"   \"initializePrec(block-1)\" ... PASSED","   \"initializePrec(block-1)\" ... FAILED");
    allTests &= status;
@@ -211,6 +213,7 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
+#endif
 
    status = test_uninitializePrec(verbosity,failstrm);
    Teko_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
@@ -230,6 +233,7 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
    failcount += status ? 0 : 1;
    totalrun++;
 
+#ifdef Teko_ENABLE_Isorropia 
    status = test_diagonal(verbosity,failstrm,1);
    Teko_TEST_MSG(stdstrm,1,"   \"diagonal(block-1)\" ... PASSED","   \"diagonal(block-1)\" ... FAILED");
    allTests &= status;
@@ -241,6 +245,7 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
+#endif
 
    status = test_result(verbosity,failstrm,0);
    Teko_TEST_MSG(stdstrm,1,"   \"result(diag)\" ... PASSED","   \"result(diag)\" ... FAILED");
@@ -248,6 +253,7 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
    failcount += status ? 0 : 1;
    totalrun++;
 
+#ifdef Teko_ENABLE_Isorropia 
    status = test_result(verbosity,failstrm,1);
    Teko_TEST_MSG(stdstrm,1,"   \"result(block-1)\" ... PASSED","   \"result(block-1)\" ... FAILED");
    allTests &= status;
@@ -259,6 +265,7 @@ int tSIMPLEPreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,s
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
+#endif
 
    status = allTests;
    if(verbosity >= 10) {

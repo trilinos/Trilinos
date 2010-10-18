@@ -45,7 +45,6 @@ namespace Ioxf {
   IOFactory::IOFactory()
     : Ioss::IOFactory("xdmf")
   {
-    Ioss::IOFactory::alias("xdmf", "xdmf_output");
   }
 
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,

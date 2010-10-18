@@ -36,17 +36,24 @@ namespace stk{
 namespace mesh {
 namespace use_cases {
 
-UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
+  typedef shards::Hexahedron<8>          Hex8;
+  typedef shards::Wedge<6>               Wedge6;
+  typedef shards::Tetrahedron<4>         Tet4;
+  typedef shards::Pyramid<5>             Pyramid4;
+  typedef shards::ShellQuadrilateral<4>  ShellQuad4;
+  typedef shards::ShellTriangle<3>       ShellTriangle3;
+
+  UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit )
   : m_spatial_dimension(3)
   , m_metaData( TopologicalMetaData::entity_rank_names(m_spatial_dimension) )
   , m_bulkData( m_metaData , comm )
   , m_topData( m_metaData, m_spatial_dimension )
-  , m_block_hex(        m_topData.declare_part<shards::Hexahedron<8> >( "block_1" ))
-  , m_block_wedge(      m_topData.declare_part<shards::Wedge<6> >( "block_2" ))
-  , m_block_tet(        m_topData.declare_part<shards::Tetrahedron<4> >( "block_3" ))
-  , m_block_pyramid(    m_topData.declare_part<shards::Pyramid<5> >( "block_4" ))
-  , m_block_quad_shell( m_topData.declare_part<shards::ShellQuadrilateral<4> >( "block_5" ))
-  , m_block_tri_shell(  m_topData.declare_part<shards::ShellTriangle<3> >( "block_6" ))
+  , m_block_hex(        m_topData.declare_part< Hex8 >( "block_1" ))
+  , m_block_wedge(      m_topData.declare_part< Wedge6 >( "block_2" ))
+  , m_block_tet(        m_topData.declare_part< Tet4 >( "block_3" ))
+  , m_block_pyramid(    m_topData.declare_part< Pyramid4 >( "block_4" ))
+  , m_block_quad_shell( m_topData.declare_part< ShellQuad4 >( "block_5" ))
+  , m_block_tri_shell(  m_topData.declare_part< ShellTriangle3 >( "block_6" ))
   , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
   , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
   , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))
@@ -81,14 +88,16 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
     m_coordinates_field
     );
 
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_hex, shards::Hexahedron<> ::node_count );
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_wedge, shards::Wedge<> ::node_count );
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_tet, shards::Tetrahedron<> ::node_count );
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_pyramid, shards::Pyramid<> ::node_count );
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_quad_shell, shards::ShellQuadrilateral<> ::node_count);
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_tri_shell, shards::ShellTriangle<> ::node_count );
+  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_hex, Hex8::node_count );
+  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_wedge, Wedge6::node_count );
+  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_tet, Tet4::node_count );
+  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_pyramid, Pyramid4::node_count );
+  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_quad_shell, ShellQuad4::node_count);
+  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_tri_shell, ShellTriangle3::node_count );
 
-  m_metaData.commit();
+
+  if (doCommit)
+    m_metaData.commit();
 }
 
 UseCase_3_Mesh::~UseCase_3_Mesh()
@@ -117,31 +126,31 @@ static const double node_coord_data[ node_count ][ SpatialDim ] = {
   { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
   { 1 , 1 , -2 } };
 
-static const EntityId hex_node_ids[3][ shards::Hexahedron<> ::node_count ] = {
+static const EntityId hex_node_ids[3][ Hex8::node_count ] = {
   { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
   { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
   { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
-static const EntityId wedge_node_ids[3][ shards::Wedge<> ::node_count ] = {
+static const EntityId wedge_node_ids[3][ Wedge6::node_count ] = {
   { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
   { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
   { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
-static const EntityId tetra_node_ids[3][ shards::Tetrahedron<> ::node_count ] = {
+static const EntityId tetra_node_ids[3][ Tet4::node_count ] = {
   { 15 , 19 , 16 , 21 } ,
   { 19 , 20 , 16 , 21 } ,
   { 16 , 20 , 17 , 21 } };
 
-static const EntityId pyramid_node_ids[2][ shards::Pyramid<> ::node_count ] = {
+static const EntityId pyramid_node_ids[2][ Pyramid4::node_count ] = {
   { 11 , 15 , 16 , 12 , 21 } ,
   { 12 , 16 , 17 , 13 , 21 } };
 
-static const EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<> ::node_count ]={
+static const EntityId shell_quad_node_ids[3][ ShellQuad4::node_count ]={
   { 9 , 6 , 16 , 19 } ,
   { 6 , 7 , 17 , 16 } ,
   { 7 , 8 , 18 , 17 } };
 
-static const EntityId shell_tri_node_ids[3][ shards::ShellTriangle<> ::node_count ] ={
+static const EntityId shell_tri_node_ids[3][ ShellTriangle3::node_count ] ={
   { 19 , 16 , 21 } ,
   { 16 , 17 , 21 } ,
   { 17 , 13 , 21 } };
@@ -303,7 +312,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::Hexahedron<> ::node_count
+      Hex8::node_count
       );
 
   // wedge_block:
@@ -314,7 +323,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::Wedge<> ::node_count
+      Wedge6::node_count
       );
 
   // tetra_block
@@ -325,7 +334,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::Tetrahedron<> ::node_count
+      Tet4::node_count
       );
 
   // pyramid_block
@@ -336,7 +345,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::Pyramid<> ::node_count
+      Pyramid4::node_count
       );
 
   // quad_shell_block
@@ -347,7 +356,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::ShellQuadrilateral<> ::node_count
+      ShellQuad4::node_count
       );
 
   // tri_shell_block
@@ -358,7 +367,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::ShellTriangle<> ::node_count
+      ShellTriangle3::node_count
       );
 
   // Check that all the nodes were allocated.

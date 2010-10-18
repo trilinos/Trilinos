@@ -30,116 +30,128 @@
 
 #include "Stokhos_ProductBasis.hpp"
 
-template <typename ordinal_type, typename value_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-OrthogPolyApprox() :
-  basis_(),
-  coeff_(1, value_type(0.0))
-{
-}
-
-template <typename ordinal_type, typename value_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-OrthogPolyApprox(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis) :
+template <typename ordinal_type, typename value_type, typename storage_type> 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+OrthogPolyApprox(
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+  ordinal_type sz,
+  const value_type* vals) :
   basis_(basis),
-  coeff_()
+  coeff_(0)
 {
-  if (basis != Teuchos::null)
-    coeff_.resize(basis->size(), value_type(0.0));
+  if (sz != 0)
+    coeff_.resize(sz);
+  else if (basis != Teuchos::null)
+    coeff_.resize(basis->size());
   else
-    coeff_.resize(1, value_type(0.0));
+    coeff_.resize(ordinal_type(1));
+  if (vals != NULL)
+    coeff_.init(vals);
 }
 
-template <typename ordinal_type, typename value_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-OrthogPolyApprox(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
-		 ordinal_type sz) :
-  basis_(basis),
-  coeff_(sz, value_type(0.0))
-{
-}
-
-template <typename ordinal_type, typename value_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-OrthogPolyApprox(const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x) :
+template <typename ordinal_type, typename value_type, typename storage_type> 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+OrthogPolyApprox(const Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>& x) :
   basis_(x.basis_),
   coeff_(x.coeff_) 
 {
 }
 
-template <typename ordinal_type, typename value_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename storage_type> 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 ~OrthogPolyApprox()
 {
 }
 
-template <typename ordinal_type, typename value_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-operator=(const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x) 
+template <typename ordinal_type, typename value_type, typename storage_type> 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>&
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+operator=(const Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>& x) 
 {
-  basis_ = x.basis_;
   if (this != &x) {
+    basis_ = x.basis_;
     coeff_ = x.coeff_;
   }
 
   return *this;
 }
 
-template <typename ordinal_type, typename value_type>
-void 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-init(const value_type& v) 
+template <typename ordinal_type, typename value_type, typename storage_type> 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>&
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+operator=(const value_type& v) 
 {
-  for (ordinal_type i=0; i<static_cast<ordinal_type>(coeff_.size()); i++)
-    coeff_[i] = v;
+  coeff_.init(value_type(0));
+  coeff_.init(&v, 1);
+
+  return *this;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename storage_type>
+void 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+init(const value_type& v) 
+{
+  coeff_.init(v);
+}
+
+template <typename ordinal_type, typename value_type, typename storage_type>
+void 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+init(const value_type* v) 
+{
+  coeff_.init(v);
+}
+
+template <typename ordinal_type, typename value_type, typename storage_type>
+void 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
+load(value_type* v) 
+{
+  coeff_.load(v);
+}
+
+template <typename ordinal_type, typename value_type, typename storage_type>
 Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 basis() const
 {
   return basis_;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename storage_type>
 void
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
-reset(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis)
-{
-  basis_ = new_basis;
-  coeff_.resize(basis_->size());
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 reset(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis, ordinal_type sz)
 {
   basis_ = new_basis;
-  coeff_.resize(sz);
+  if (sz != 0)
+    resize(sz);
+  else if (basis_ != Teuchos::null)
+    resize(basis_->size());
+  else
+    resize(1);
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename storage_type>
 void
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 resize(ordinal_type sz)
 {
   coeff_.resize(sz);
 }
 
-template <typename ordinal_type, typename value_type> 
+template <typename ordinal_type, typename value_type, typename storage_type> 
 ordinal_type
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 size() const 
 { 
   return coeff_.size(); 
 }
 
-template <typename ordinal_type, typename value_type> 
-value_type*
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename storage_type> 
+typename Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::pointer
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 coeff() 
 { 
 #ifdef STOKHOS_DEBUG
@@ -147,12 +159,12 @@ coeff()
 		     "Stokhos::OrthogPolyApprox::coeff():  " <<
 		     "Coefficient array is empty!");
 #endif
-  return coeff_.getRawPtr(); 
+  return coeff_.coeff(); 
 }
 
-template <typename ordinal_type, typename value_type> 
-const value_type*
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename storage_type> 
+typename Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::const_pointer
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 coeff() const 
 { 
 #ifdef STOKHOS_DEBUG
@@ -160,28 +172,28 @@ coeff() const
 		     "Stokhos::OrthogPolyApprox::coeff():  " <<
 		     "Coefficient array is empty!");
 #endif
-  return coeff_.getRawPtr();
+  return coeff_.coeff();
 }
 
-template <typename ordinal_type, typename value_type> 
-value_type&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename storage_type> 
+typename Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::reference
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 operator[](ordinal_type i) 
 { 
   return coeff_[i]; 
 }
 
-template <typename ordinal_type, typename value_type> 
-const value_type&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename storage_type> 
+typename Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::const_reference
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 operator[](ordinal_type i) const
 { 
   return coeff_[i]; 
 }
 
-template <typename ordinal_type, typename value_type> 
-value_type&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename storage_type> 
+typename Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::reference
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 term(ordinal_type dimension, ordinal_type order)
 {
   Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
@@ -193,9 +205,9 @@ term(ordinal_type dimension, ordinal_type order)
   return coeff_[index];
 }
 
-template <typename ordinal_type, typename value_type> 
-const value_type&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+template <typename ordinal_type, typename value_type, typename storage_type> 
+typename Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::const_reference
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 term(ordinal_type dimension, ordinal_type order) const
 {
   Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
@@ -207,9 +219,9 @@ term(ordinal_type dimension, ordinal_type order) const
   return coeff_[index];
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename storage_type>
 Teuchos::Array<ordinal_type> 
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 order(ordinal_type term) const
 {
   Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
@@ -217,9 +229,9 @@ order(ordinal_type term) const
   return product_basis->getTerm(term);
 }
 
-template <typename ordinal_type, typename value_type> 
+template <typename ordinal_type, typename value_type, typename storage_type> 
 value_type
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 evaluate(const Teuchos::Array<value_type>& point) const
 {
   Teuchos::Array<value_type> basis_vals(basis_->size()); 
@@ -227,9 +239,9 @@ evaluate(const Teuchos::Array<value_type>& point) const
   return evaluate(point, basis_vals);
 }
 
-template <typename ordinal_type, typename value_type> 
+template <typename ordinal_type, typename value_type, typename storage_type> 
 value_type
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 evaluate(const Teuchos::Array<value_type>& point,
 	 const Teuchos::Array<value_type>& basis_vals) const
 {
@@ -240,17 +252,17 @@ evaluate(const Teuchos::Array<value_type>& point,
   return val;
 }
 
-template <typename ordinal_type, typename value_type> 
+template <typename ordinal_type, typename value_type, typename storage_type> 
 value_type
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 mean() const
 {
   return coeff_[0];
 }
 
-template <typename ordinal_type, typename value_type> 
+template <typename ordinal_type, typename value_type, typename storage_type> 
 value_type
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 standard_deviation() const
 {
   value_type std_dev = 0.0;
@@ -261,9 +273,9 @@ standard_deviation() const
   return std_dev;
 }
 
-template <typename ordinal_type, typename value_type> 
+template <typename ordinal_type, typename value_type, typename storage_type> 
 std::ostream&
-Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>::
 print(std::ostream& os) const
 {
   Teuchos::Array<ordinal_type> trm;
@@ -295,10 +307,11 @@ print(std::ostream& os) const
   return os;
 }
 
-template <typename ordinal_type, typename value_type>
+template <typename ordinal_type, typename value_type, typename storage_type>
 std::ostream& 
-Stokhos::operator << (std::ostream& os, 
-		      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
+Stokhos::operator << (
+  std::ostream& os, 
+  const Stokhos::OrthogPolyApprox<ordinal_type, value_type, storage_type>& a)
 {
   os << "[ ";
       

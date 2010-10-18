@@ -64,7 +64,9 @@
 #include "BelosOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
+#endif
 
 /** \example epetra/example/BlockCG/BlockCGEpetraExFile.cpp
     This is an example of how to use the Belos::BlockCGSolMgr solver manager.
@@ -435,7 +437,9 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
       label_ = tempLabel;
       params_->set("Timer Label", label_);
       std::string solveLabel = label_ + ": BlockCGSolMgr total solve time";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
       timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+#endif
     }
   }
 
@@ -608,7 +612,9 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
   // Create the timer if we need to.
   if (timerSolve_ == Teuchos::null) {
     std::string solveLabel = label_ + ": BlockCGSolMgr total solve time";
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+#endif
   }
 
   // Inform the solver manager that the current parameters were set.
@@ -733,7 +739,9 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // Enter solve() iterations
   {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
+#endif
 
     while ( numRHS2Solve > 0 ) {
       //
@@ -891,7 +899,9 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
   sTest_->print( printer_->stream(FinalSummary) );
  
   // print timing information
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
   Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
+#endif
  
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();

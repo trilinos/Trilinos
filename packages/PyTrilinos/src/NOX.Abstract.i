@@ -63,6 +63,7 @@ NOX.Abstract provides the following user-level classes:
 #include "NOX_Abstract_PrePostOperator.H"
 #include "NOX_Abstract_MultiVector.H"
 #include "NOX_Abstract_Vector.H"
+#include "NOX_Solver_Generic.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -119,49 +120,72 @@ NOX.Abstract provides the following user-level classes:
 }
 
 // Support for Teuchos::RCPs
-%teuchos_rcp_typemaps(NOX::Abstract::Group)
+%teuchos_rcp(NOX::Abstract::Group)
 
 #ifdef HAVE_NOX_EPETRA
 // Downcast NOX::Abstract::Vector return arguments to Epetra.Vectors,
 // if possible
-%typemap(out) NOX::Abstract::Vector & (NOX::Epetra::Vector* nevResult  = NULL,
-				       Epetra_NumPyVector*  enpvResult = NULL)
+%typemap(out) NOX::Abstract::Vector &
+(NOX::Epetra::Vector* nevResult = NULL)
 {
   nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL)
   {
     // If we cannot downcast, then return the NOX::Abstract::Vector
-    $result = SWIG_NewPointerObj((void*)&$1, $descriptor, %convertptr_flags);
+    $result = SWIG_NewPointerObj((void*)&$1, $descriptor, SWIG_POINTER_OWN);
   }
   else
   {
-    enpvResult = new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
-    $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*),
-				 %convertptr_flags);
+    Teuchos::RCP< Epetra_NumPyVector > *smartresult = new
+      Teuchos::RCP< Epetra_NumPyVector >(new Epetra_NumPyVector(View,
+								nevResult->getEpetraVector(),
+								0), bool($owner));
+    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+				   $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+				   SWIG_POINTER_OWN));
   }
 }
 
-// Downcast NOX::Abstract::Group return arguments to NOX::Epetra::Group,
-// if possible
-%typemap(out) NOX::Abstract::Group & (NOX::Epetra::Group* negResult = NULL)
+%typemap(out) Teuchos::RCP< const NOX::Abstract::Vector >
+(Teuchos::RCP< const NOX::Epetra::Vector > nevResult)
 {
-  negResult = dynamic_cast<NOX::Epetra::Group*>($1);
-  if (negResult == NULL)
+  nevResult = Teuchos::rcp_dynamic_cast< const NOX::Epetra::Vector >(*(&$1));
+  if (nevResult.is_null())
   {
-    // If we cannot downcast, then return the NOX::Abstract::Group
-    $result = SWIG_NewPointerObj((void*)&$1, $descriptor, %convertptr_flags);
+    // If we cannot downcast, then return the NOX::Abstract::Vector
+    Teuchos::RCP< const NOX::Abstract::Vector > *smartresult = $1.is_null() ? 0 :
+      new Teuchos::RCP< const NOX::Abstract::Vector >($1);
+    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+				   $descriptor(Teuchos::RCP< NOX::Abstract::Vector > *),
+				   SWIG_POINTER_OWN));
   }
   else
   {
-    $result = SWIG_NewPointerObj((void*)negResult, $descriptor(NOX::Epetra::Group*),
-				 %convertptr_flags);
+    Teuchos::RCP< const Epetra_NumPyVector > *smartresult = new
+      Teuchos::RCP< const Epetra_NumPyVector >(new Epetra_NumPyVector(View,
+								      (*nevResult).getEpetraVector(),
+								      0), bool($owner));
+    %set_output(SWIG_NewPointerObj(%as_voidptr(smartresult),
+				   $descriptor(Teuchos::RCP< Epetra_NumPyVector > *),
+				   SWIG_POINTER_OWN));
   }
 }
 #endif
 
+// Declare class to be stored with Teuchos::RCP< >
+%teuchos_rcp(NOX::Solver::Generic)
+
 ////////////////////////////////
 // NOX_Abstract_Group support //
 ////////////////////////////////
+%ignore *::getX;
+%ignore *::getF;
+%ignore *::getGradient;
+%ignore *::getNewton;
+%rename(getX       ) *::getXPtr;
+%rename(getF       ) *::getFPtr;
+%rename(getGradient) *::getGradientPtr;
+%rename(getNewton  ) *::getNewtonPtr;
 %include "NOX_Abstract_Group.H"
 
 //////////////////////////////////////////

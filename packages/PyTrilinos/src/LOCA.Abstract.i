@@ -89,8 +89,8 @@ of the Trilinos package LOCA:
 %import "Teuchos.i"
 
 // Teuchos::RCPs typemaps
-//%teuchos_rcp_typemaps(LOCA::GlobalData)
-//%teuchos_rcp_typemaps(LOCA::DerivUtils)
+//%teuchos_rcp(LOCA::GlobalData)
+//%teuchos_rcp(LOCA::DerivUtils)
 
 %include "LOCA_Abstract_Iterator.H"
 

@@ -42,11 +42,6 @@
 
 #include "Thyra_VectorBase.hpp"
 
-#ifndef TEUCHOS_DISABLE_ALL_TIMERS
-// Define this to see selected timers
-#define ENABLE_RYTHMOS_TIMERS
-#endif
-
 #ifdef ENABLE_RYTHMOS_TIMERS
 #include "Teuchos_TimeMonitor.hpp"
 #endif

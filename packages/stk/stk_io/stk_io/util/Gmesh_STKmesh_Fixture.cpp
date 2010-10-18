@@ -18,7 +18,7 @@
 #include <stdexcept>
 #include <sstream>
 
-using namespace stk::common;
+using namespace stk::io::util;
 
 ///////////////////////////////////////////////////////////////////////////////
 Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,

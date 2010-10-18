@@ -162,6 +162,7 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
   int nz;
   PetscInt *gcols, *lcols, ierr;
   PetscScalar *vals;
+  bool alloc=false;
 
   // PETSc assumes the row number is global, whereas Trilinos assumes it's local.
   int globalRow = PetscRowStart_ + Row;
@@ -173,6 +174,7 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
   if (strcmp(MatType_,MATMPIAIJ) == 0) {
     Mat_MPIAIJ  *aij = (Mat_MPIAIJ*)Amat_->data;
     lcols = (PetscInt *) malloc(nz * sizeof(int));
+    alloc=true;
     if (!aij->colmap) {
       ierr = CreateColmap_MPIAIJ_Private(Amat_);CHKERRQ(ierr);
     }
@@ -216,6 +218,7 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
     Indices[i] = lcols[i];
     Values[i] = vals[i];
   }
+  if (alloc) free(lcols);
   MatRestoreRow(Amat_,globalRow,&nz,(const PetscInt**) &gcols, (const PetscScalar **) &vals);
   return(0);
 } //ExtractMyRowCopy()

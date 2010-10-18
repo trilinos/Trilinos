@@ -163,8 +163,8 @@ using Teuchos::rcp;
 
 %rename(Abstract_Group) LOCA::Abstract::Group;
 %rename(Abstact_TransposeSolveGroup) LOCA::Abstract::TransposeSolveGroup;
-%teuchos_rcp_typemaps(Abstract_Group)
-%teuchos_rcp_typemaps(Abstract_TransposeSolveGroup)
+%teuchos_rcp(Abstract_Group)
+%teuchos_rcp(Abstract_TransposeSolveGroup)
 %include "LOCA_Abstract_Group.H"
 %include "LOCA_Abstract_TransposeSolveGroup.H"
 
@@ -190,4 +190,4 @@ using Teuchos::rcp;
 
 %include "LOCA_Epetra_Group.H"
 
-%teuchos_rcp_typemaps(LOCA::Epetra::Group)
+%teuchos_rcp(LOCA::Epetra::Group)

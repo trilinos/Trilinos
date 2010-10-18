@@ -46,15 +46,11 @@
 %ignore *::ExportLIDs() const;
 %ignore *::ExportPIDs() const;
 
-//////////////
-// Typemaps //
-//////////////
-%epetra_argout_typemaps(Epetra_BlockMap)
-%epetra_argout_typemaps(Epetra_Map)
-
 /////////////////////////////
 // Epetra_BlockMap support //
 /////////////////////////////
+%teuchos_rcp_epetra(Epetra_BlockMap)
+%teuchos_rcp_epetra_argout(Epetra_BlockMap)
 %feature("autodoc",
 "
 __init__(self, int numGlobalElements, int elementSize, int indexBase,
@@ -373,6 +369,8 @@ indicates the local element ID that the point belongs to."
 ////////////////////////
 // Epetra_Map support //
 ////////////////////////
+%teuchos_rcp_epetra(Epetra_Map)
+%teuchos_rcp_epetra_argout(Epetra_Map)
 %feature("autodoc",
 "
 __init__(self, int numGlobalElements, int indexBase, Comm comm) -> Map
@@ -445,6 +443,8 @@ Epetra_Map::Epetra_Map(const Epetra_Map &);
 /////////////////////////////
 // Epetra_LocalMap support //
 /////////////////////////////
+%teuchos_rcp_epetra(Epetra_LocalMap)
+%teuchos_rcp_epetra_argout(Epetra_LocalMap)
 %rename(LocalMap) Epetra_LocalMap;
 %include "Epetra_LocalMap.h"
 
@@ -482,8 +482,8 @@ PyObject * methodName()
 }
 %enddef
 
-%define %epetra_mover_class(type)
-%extend Epetra_ ## type
+%define %epetra_mover_class(CLASS)
+%extend Epetra_##CLASS
 {
   %epetra_mover_method(PermuteFromLIDs,	NumPermuteIDs)
   %epetra_mover_method(PermuteToLIDs,   NumPermuteIDs)
@@ -496,6 +496,7 @@ PyObject * methodName()
 ///////////////////////////
 // Epetra_Import support //
 ///////////////////////////
+%teuchos_rcp_epetra(Epetra_Import)
 %rename(Import) Epetra_Import;
 %include "Epetra_Import.h"
 %epetra_mover_class(Import)
@@ -503,6 +504,7 @@ PyObject * methodName()
 ///////////////////////////
 // Epetra_Export support //
 ///////////////////////////
+%teuchos_rcp_epetra(Epetra_Export)
 %rename(Export) Epetra_Export;
 %include "Epetra_Export.h"
 %epetra_mover_class(Export)

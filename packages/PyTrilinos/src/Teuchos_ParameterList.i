@@ -39,6 +39,28 @@
 // ParameterList does not support deletion, these methods are not
 // implemented.
 
+// Handle the Teuchos::ParameterList:PrintOptions nested class by
+// defining it exclusively for SWIG as though it were not nested.
+namespace Teuchos
+{
+class PrintOptions
+{
+public:
+  PrintOptions();
+  PrintOptions& indent(int _indent);
+  PrintOptions& showTypes(bool _showTypes);
+  PrintOptions& showFlags(bool _showFlags);
+  PrintOptions& showDoc(bool _showDoc);
+  PrintOptions& incrIndent(int indents);
+  int indent() const;
+  bool showTypes() const;
+  bool showFlags() const;
+  bool showDoc() const;
+  PrintOptions copy() const;
+};
+%nestedworkaround ParameterList::PrintOptions;
+}
+
 %{
 #include "Teuchos_any.hpp"
 #include "Teuchos_ParameterEntry.hpp"
@@ -57,9 +79,113 @@ class any;
 %import "Teuchos_ParameterEntry.hpp"
 %import "Teuchos_PythonParameter.h"
 
+/////////////////////////////////////////////////////////////////////
+// Override typemaps for ParameterLists to allow PyDicts as input //
+/////////////////////////////////////////////////////////////////////
+%define %teuchos_rcp_pydict_overrides(CONST, CLASS...)
+// Input a plain reference
+%typemap(in) CONST CLASS &
+(void *argp=0, int res=0, bool cleanup=false, Teuchos::RCP< CONST CLASS > tempshared)
+{
+  if (PyDict_Check($input))
+  {
+    $1 = Teuchos::pyDictToNewParameterList($input);
+    if (!$1) SWIG_fail;
+    cleanup = true;
+  }
+  else
+  {
+    int newmem = 0;
+    res = SWIG_ConvertPtrAndOwn($input, &argp, $descriptor(Teuchos::RCP< CLASS > *),
+				%convertptr_flags, &newmem);
+    if (!SWIG_IsOK(res))
+    {
+      %argument_fail(res, "$type", $symname, $argnum); 
+    }
+    if (!argp)
+    {
+      %argument_nullref("$type", $symname, $argnum);
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    {
+      tempshared = *%reinterpret_cast(argp, Teuchos::RCP< CONST CLASS > *);
+      delete %reinterpret_cast(argp, Teuchos::RCP< CONST CLASS > *);
+      $1 = %const_cast(tempshared.get(), $1_ltype);
+    }
+    else
+    {
+      $1 = %const_cast(%reinterpret_cast(argp, Teuchos::RCP< CONST CLASS > *)->get(), $1_ltype);
+    }
+  }
+}
+// Perform type checking
+%typemap(typecheck,precedence=SWIG_TYPECHECK_POINTER,noblock=1)
+  CONST CLASS,
+  CONST CLASS &,
+  CONST CLASS *,
+  CONST CLASS *&,
+  Teuchos::RCP< CONST CLASS >,
+  Teuchos::RCP< CONST CLASS > &,
+  Teuchos::RCP< CONST CLASS > *,
+  Teuchos::RCP< CONST CLASS > *&
+{
+  // Accept PyDicts or CLASS instances
+  $1 = PyDict_Check($input);
+  if (!$1)
+  {
+    int res = SWIG_ConvertPtr($input, 0, $descriptor(Teuchos::RCP< CLASS > *), 0);
+    $1 = SWIG_CheckState(res);
+  }
+}
+// Cleanup
+%typemap(freearg) CONST CLASS &
+{
+  if (cleanup$argnum && $1) delete $1;
+}
+// Input a Teuchos::RCP by reference
+%typemap(in) Teuchos::RCP< CONST CLASS > &
+(void *argp, int res = 0, $*1_ltype tempshared)
+{
+  if (PyDict_Check($input))
+  {
+    tempshared = Teuchos::rcp(Teuchos::pyDictToNewParameterList($input));
+    if (tempshared.is_null()) SWIG_fail;
+    $1 = &tempshared;
+  }
+  else
+  {
+    int newmem = 0;
+    res = SWIG_ConvertPtrAndOwn($input, &argp, $descriptor(Teuchos::RCP< CLASS > *),
+				%convertptr_flags, &newmem);
+    if (!SWIG_IsOK(res))
+    {
+      %argument_fail(res, "$type", $symname, $argnum); 
+    }
+    if (newmem & SWIG_CAST_NEW_MEMORY)
+    {
+      if (argp) tempshared = *%reinterpret_cast(argp, $ltype);
+      delete %reinterpret_cast(argp, $ltype);
+      $1 = &tempshared;
+    }
+    else
+    {
+      $1 = (argp) ? %reinterpret_cast(argp, $ltype) : &tempshared;
+    }
+  }
+}
+%enddef
+
 ////////////////////////////////////
 // Teuchos::ParameterList support //
 ////////////////////////////////////
+
+// Implement internal storage of Teuchos::ParameterList objects via
+// Teuchos::RCP<>
+%teuchos_rcp(Teuchos::ParameterList)
+#define EMPTYHACK
+%teuchos_rcp_pydict_overrides(EMPTYHACK, Teuchos::ParameterList)
+%teuchos_rcp_pydict_overrides(const,     Teuchos::ParameterList)
+
 %feature("docstring") Teuchos::ParameterList
 "The ``ParameterList`` class is an important utility class that is used
 by several Trilinos packages for communicating arbitrary-type
@@ -320,27 +446,15 @@ Teuchos::ParameterList::values
 
   /******************************************************************/
   // Set method: accept only python objects as values
-  PyObject * set(const string &name, PyObject *value)
+  Teuchos::ParameterList & set(const string &name, PyObject *value)
   {
     if (!setPythonParameter(*self,name,value))
     {
       PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
       goto fail;
     }
-    return Py_BuildValue("");
+    return *self;
   fail:
-    return NULL;
-  }
-
-  /******************************************************************/
-  // SetParameters method, overloaded to accept a python dictionary
-  ParameterList & setParameters(PyObject * dict)
-  {
-    if (!updateParameterListWithPyDict(dict,*self))
-    {
-      PyErr_SetString(PyExc_ValueError,
-		      "ParameterList has values of unsupported type");
-    }
     return *self;
   }
 
@@ -446,6 +560,7 @@ Teuchos::ParameterList::values
   // templated C++ isType() methods.
   PyObject * type(const std::string & name)
   {
+    PyObject * result = NULL;
     PyObject * value = getPythonParameter(*self,name);
     // Type not supported
     if (value == NULL)
@@ -460,8 +575,11 @@ Teuchos::ParameterList::values
       goto fail;
     }
     // Name found and type supported
-    return PyObject_Type(value);
+    result = PyObject_Type(value);
+    Py_DECREF(value);
+    return result;
   fail:
+    Py_XDECREF(value);
     return NULL;
   }
 
@@ -501,7 +619,7 @@ Teuchos::ParameterList::values
     Py_XDECREF(dict2);
     return -2;
   }
-    
+ 
   /******************************************************************/
   // Contains operator
   int __contains__(const std::string & name) const
@@ -578,7 +696,7 @@ Teuchos::ParameterList::values
   fail:
     return NULL;
   }
-  
+
   /******************************************************************/
   // Length operator
   int __len__() const
@@ -811,43 +929,19 @@ Teuchos::ParameterList::values
 %ignore Teuchos::ParameterList::end() const;
 %ignore Teuchos::ParameterList::entry(ConstIterator) const;
 %ignore Teuchos::ParameterList::name(ConstIterator) const;
+#ifndef HAVE_TEUCHOS
+%warn "HAVE_TEUCHOS IS NOT DEFINED!!!!"
+#endif
 %include "Teuchos_ParameterList.hpp"
-
-// Add typemaps for using ParameterLists
-%typemap(in)
-Teuchos::ParameterList &
-(void *argp=0, int res=0, bool cleanup=false)
+// SWIG thinks that PrintOptions is an un-nested Teuchos class, so we
+// need to trick the C++ compiler into understanding this so called
+// un-nested Teuchos type.
+%{
+namespace Teuchos
 {
-  if (PyDict_Check($input))
-  {
-    $1 = Teuchos::pyDictToNewParameterList($input);
-    if ($1 == NULL) SWIG_fail;
-    cleanup = true;
-  }
-  else
-  {
-    res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
-    if (!SWIG_IsOK(res))
-    {
-      %argument_fail(res, "$type", $symname, $argnum);
-    }
-    $1 = %reinterpret_cast(argp, $ltype);
-  }
+typedef ParameterList::PrintOptions PrintOptions;
 }
-%typecheck(200)
-Teuchos::ParameterList &
-{
-  // Accept PyDicts or ParameterLists
-  void * argp = NULL;
-  $1 = PyDict_Check($input) ? 1 : 0;
-  if (!$1) if (SWIG_CheckState(SWIG_Python_ConvertPtr($input, &argp,
-						      $1_descriptor, 0))) $1 = 1;
-}
-%typemap(freearg)
-Teuchos::ParameterList &
-{
-  if (cleanup$argnum && $1) delete $1;
-}
+%}
 
 ////////////////////////////////////////////
 // Teuchos::ParameterListAcceptor support //
@@ -857,25 +951,4 @@ Teuchos::ParameterList &
 %ignore Teuchos::ParameterListAcceptor::unsetParameterList();
 %ignore Teuchos::ParameterListAcceptor::getParameterList() const;
 %ignore Teuchos::ParameterListAcceptor::getValidParameters() const;
-%extend Teuchos::ParameterListAcceptor
-{
-  // The ParameterListAcceptor Class has the following virtual
-  // functions with default implementations: getParameterList() const;
-  // and getValidParameters() const.  These both return RCP<const
-  // ParameterList> objects, which presents a problem: there are
-  // typemaps for RCP< > and for ParameterList, but combinations of
-  // the two must be handled in a "brute force" manner.
-
-  const Teuchos::ParameterList * getParameterList() const
-  {
-    RCP<const Teuchos::ParameterList> p_plist = self->getParameterList();
-    return p_plist.get();
-  }
-
-  const Teuchos::ParameterList * getValidParameters() const
-  {
-    RCP<const Teuchos::ParameterList> p_plist = self->getValidParameters();
-    return p_plist.get();
-  }
-}
 %include "Teuchos_ParameterListAcceptor.hpp"
