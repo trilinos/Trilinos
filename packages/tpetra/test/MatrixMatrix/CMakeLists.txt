@@ -23,7 +23,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TpetraMatMatFileCopies
 DEST_FILES
-cdt_d.mtx cdt_m.mtx cdt_tce.mtx
+#cdt_d.mtx cdt_m.mtx cdt_tce.mtx
+cdt_d.hb cdt_m.hb cdt_tce.hb
 wrong_d.mtx wrong_m.mtx wrong_tce.mtx
 matrixsystems.xml
 SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/MatrixMatrix

@@ -198,6 +198,7 @@ int main(int argc, char* argv[]) {
 
   }
 
+/*
   Teuchos::ParameterList wrongList;
   wrongList.set("A", "wrong_m.mtx");
   wrongList.set("B", "wrong_tce.mtx");
@@ -212,7 +213,7 @@ int main(int argc, char* argv[]) {
       verbose) == 0 )
   {
     err = -1;
-  }
+  }*/
 
 /*
   for(int i=0; i<numfiles; ++i) {
@@ -476,9 +477,14 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C = Teuchos::null;
   Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C_check = Teuchos::null;
 
+/*
   Tpetra::Utils::readMatrixMarketMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
   Tpetra::Utils::readMatrixMarketMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
-  Tpetra::Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
+  Tpetra::Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);*/
+  Tpetra::Utils::readHBMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A);
+  Tpetra::Utils::readHBMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B);
+  Tpetra::Utils::readHBMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check);
+
 
   /*Teuchos::RCP<Teuchos::basic_FancyOStream<char> > outstream = 
     Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -490,6 +496,7 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constA = A;
   Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constB = B;
   typedef Kokkos::DefaultNode::DefaultNodeType DNode;
+
 
   Tpetra::MatrixMatrix<
     double, 

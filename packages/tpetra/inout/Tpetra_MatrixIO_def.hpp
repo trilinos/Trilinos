@@ -226,13 +226,13 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
 Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
-  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-  const Teuchos::RCP<Node> &node,
- Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
- const bool transpose = false,
- Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null,
- bool verbose = false,
- std::ostream* outstream = &std::cout
+  Teuchos::RCP<const Teuchos::Comm<int> > comm,
+  Teuchos::RCP<Node> node,
+ Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& A,
+ bool transpose,
+ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap,
+ bool verbose,
+ std::ostream* outstream
  )
 {
   const int chunk_read = 500000;  //  Modify this variable to change the
@@ -272,9 +272,14 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
       
   FILE * handle = 0;
   if (me == 0) {
-    if (verbose) *outstream << "Reading MatrixMarket file " << filename << std::endl;
+    if (verbose) *outstream << 
+      "Reading MatrixMarket file " << filename << std::endl;
     handle = fopen(filename.c_str(),"r");  // Open file
-	TEST_FOR_EXCEPTION(handle == 0, std::runtime_error, "Couldn't open file: " << filename <<std::endl);
+	TEST_FOR_EXCEPTION(
+    handle == 0, 
+    std::runtime_error, 
+    "Couldn't open file: " << filename <<std::endl);
+
 
     // Check first line, which should be 
     // %%MatrixMarket matrix coordinate real general
@@ -296,7 +301,6 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
       if (handle!=0) fclose(handle); 
 	  throw std::runtime_error(e.what());
 	}
-
     // Next, strip off header lines (which start with "%")
     do {
 	  try{
@@ -363,6 +367,7 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
   int prevrow = -1;  // but test to detect otherwise.  If non-zeros
                      // are row-major, we can avoid the sort.
 
+
   while (nread < NZ) {
     if (NZ-nread > chunk_read) nchunk = chunk_read;
     else nchunk = NZ - nread;
@@ -380,8 +385,8 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
       }
       buffer[rlen++]='\n';
     }
-	Teuchos::broadcast(*comm, 0, 1, &rlen);
-    comm->broadcast(0, rlen, buffer);
+	  Teuchos::broadcast(*comm, 0, 1, &rlen);
+      comm->broadcast(0, rlen, buffer);
 
     buffer[rlen++] = '\0';
     nread += nchunk;
@@ -417,7 +422,6 @@ Tpetra::Utils::readMatrixMarketMatrix(const std::string &filename,
         prevrow = I;
       }
     }
-
     // Status check
     if (nread / 1000000 > nmillion) {
       nmillion++;

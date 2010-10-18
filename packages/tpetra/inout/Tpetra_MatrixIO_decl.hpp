@@ -46,10 +46,10 @@ namespace Tpetra {
       class LocalMatOps>
     void
 	  readMatrixMarketMatrix(const std::string &filename,
-	    const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-		  const Teuchos::RCP<Node> &node,
-      Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
-		  const bool transpose = false,
+	    Teuchos::RCP<const Teuchos::Comm<int> > comm,
+		  Teuchos::RCP<Node> node,
+      Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& A,
+		  bool transpose = false,
       Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null,
       bool verbose = false,
       std::ostream* outstream = &std::cout

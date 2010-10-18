@@ -730,14 +730,17 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_an
 
   Mview->numRows = targetMap->getNodeNumElements();
 
-  Teuchos::ArrayView<const GlobalOrdinal> Mrows = targetMap->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> Mrows = 
+    targetMap->getNodeElementList();
 
-  if (Mview->numRows > Teuchos::OrdinalTraits<size_t>::zero()) {
+  //if(Mview->numRows > Teuchos::OrdinalTraits<size_t>::zero()){
     Mview->numEntriesPerRow = Teuchos::Array<size_t>(Mview->numRows);
-    Mview->indices = Teuchos::Array<Teuchos::ArrayView<const LocalOrdinal> >(Mview->numRows);
-    Mview->values = Teuchos::Array<Teuchos::ArrayView<const Scalar> >(Mview->numRows);
+    Mview->indices = 
+      Teuchos::Array<Teuchos::ArrayView<const LocalOrdinal> >(Mview->numRows);
+    Mview->values = 
+      Teuchos::Array<Teuchos::ArrayView<const Scalar> >(Mview->numRows);
     Mview->remote = Teuchos::Array<bool>(Mview->numRows);
-  }
+  //}
 
   Mview->numRemote = Teuchos::OrdinalTraits<global_size_t>::zero();
 
@@ -749,14 +752,12 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_an
       ++Mview->numRemote;
     }
     else {
-  //    EPETRA_CHK_ERR( M->ExtractMyRowView(mlid, Mview.numEntriesPerRow[i],
-   //        Mview.values[i], Mview.indices[i]) );
       M->getLocalRowView(mlid, Mview->indices[i], Mview->values[i]);
-	  Mview->numEntriesPerRow[i] = Mview->indices[i].size();
+	    Mview->numEntriesPerRow[i] = Mview->indices[i].size();
       Mview->remote[i] = false;
     }
   }
-
+ 
 
   Mview->origRowMap = M->getRowMap();
   Mview->rowMap = targetMap;
@@ -789,12 +790,11 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_an
     //Create a map that describes the remote rows of M that we need.
 
     //int* MremoteRows = Mview.numRemote>0 ? new int[Mview.numRemote] : NULL;
-    Teuchos::Array<GlobalOrdinal> MremoteRows;
+    Teuchos::Array<GlobalOrdinal> MremoteRows(Mview->numRemote);
     if(Mview->numRemote > Teuchos::OrdinalTraits<global_size_t>::zero()){
       Teuchos::Array<GlobalOrdinal>(Mview->numRemote);
     }
 
-    //int offset = 0;
     global_size_t offset = Teuchos::OrdinalTraits<global_size_t>::zero();
     for(i=0; i<Mview->numRows; ++i) {
       if (Mview->remote[i]) {
@@ -802,8 +802,6 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_an
       }
     }
 
-    //Epetra_Map MremoteRowMap(-1, Mview->numRemote, MremoteRows,
-     //      Mrowmap.IndexBase(), Mrowmap.Comm());
     Teuchos::RCP<Map_t > MremoteRowMap = Teuchos::rcp(new Map_t(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), MremoteRows(), Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
 
     //Create an importer with target-map MremoteRowMap and 
@@ -815,6 +813,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::import_an
     //that we need.
     Mview->importMatrix = Teuchos::rcp(new CrsMatrix<Scalar,LocalOrdinal, GlobalOrdinal, Node, SpMatOps>( MremoteRowMap, 1));
 
+    
     //EPETRA_CHK_ERR( Mview.importMatrix->Import(M, importer, Insert) );
     Mview->importMatrix->doImport(*M, importer, INSERT);
 
@@ -1415,9 +1414,9 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
   //size_t A_NumEntries, B_NumEntries;
   //int * A_Indices = new int[MaxNumEntries];
   size_t A_NumEntries;
-  Teuchos::ArrayView<GlobalOrdinal> A_Indices;
+  Teuchos::Array<GlobalOrdinal> A_Indices(Aprime->getGlobalMaxNumRowEntries());
   //double * A_Values = new double[MaxNumEntries];
-  Teuchos::ArrayView<Scalar> A_Values;
+  Teuchos::Array<Scalar> A_Values(Aprime->getGlobalMaxNumRowEntries());
   //int* B_Indices;
   //double* B_Values;
   Teuchos::ArrayView<const GlobalOrdinal> B_Indices;
@@ -1432,7 +1431,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
   {
     B->scale(scalarB);
   }
-
+  
   if( scalarA )
   {
     //Loop over B's rows and sum into
@@ -1441,10 +1440,9 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::Add(
       i < NumMyRows;
       ++i )
     {
-      //Row = B.GRID(i);
 	    Row = B->getRowMap()->getGlobalElement(i);
       A_NumEntries = Aprime->getNumEntriesInGlobalRow(Row);
-	    Aprime->getGlobalRowCopy(Row, A_Indices, A_Values, A_NumEntries);
+	    Aprime->getGlobalRowCopy(Row, A_Indices(), A_Values(), A_NumEntries);
       if (scalarA != Teuchos::ScalarTraits<Scalar>::one()) {
         for( 
           size_t j = Teuchos::OrdinalTraits<size_t>::zero(); 
