@@ -69,10 +69,11 @@ namespace TSQR {
       /// \brief Constructor
       ///
       /// \param mv [in] Multivector object, used only to access the
-      ///   underlying map and its underlying communicator object (in
-      ///   this case, Tpetra::Map resp. Teuchos::Comm<int>).  All
-      ///   multivector objects with which this Adaptor works must use
-      ///   the same map and communicator.
+      ///   underlying communicator object (in this case,
+      ///   Teuchos::Comm<int>, accessed via the Tpetra::Map belonging
+      ///   to the multivector).  All multivector objects with which
+      ///   this Adaptor works must use the same map and communicator.
+      ///
       /// \param plist [in] List of parameters for configuring TSQR.
       ///   The specific parameter keys that are read depend on the
       ///   TSQR implementation.  "cacheBlockSize" (cache block size

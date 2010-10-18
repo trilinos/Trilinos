@@ -31,10 +31,10 @@
 
 /// \file TsqrCommFactory.hpp
 ///
-/// \warning Anasazi users should _not_ include this file directly.
+/// \warning TSQR users should _not_ include this file directly.
 
-#include "Teuchos_RCP.hpp"
-#include "Tsqr_MessengerBase.hpp"
+#include <Teuchos_RCP.hpp>
+#include <Tsqr_MessengerBase.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -49,6 +49,9 @@ namespace TSQR {
     template< class S, class LO, class GO, class MV >
     class TsqrTypeAdaptor;
 
+    /// \class CommFactory
+    /// \brief Factory for TSQR communicators
+    ///
     template< class S, class LO, class GO, class MV >
     class CommFactory {
     public:
@@ -63,6 +66,10 @@ namespace TSQR {
       typedef Teuchos::RCP< MessengerBase< S > >  scalar_messenger_ptr;
       typedef Teuchos::RCP< MessengerBase< LO > > ordinal_messenger_ptr;
 
+      /// Given a raw pointer to a communicator object (implementing
+      /// the underlying distributed-memory communication protocol),
+      /// return (through the last two reference arguments) wrappers
+      /// suitable for TSQR.
       virtual void
       makeMessengers (const comm_ptr& comm,
 		      scalar_messenger_ptr& scalarMessenger,

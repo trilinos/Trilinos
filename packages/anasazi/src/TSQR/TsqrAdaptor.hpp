@@ -30,10 +30,9 @@
 #define __TSQR_Trilinos_TsqrAdaptor_hpp
 
 /// \file TsqrAdaptor.hpp
-///
-/// \warning Anasazi users should _not_ include this file directly.
+/// \brief Abstract interface between TSQR and multivector type
 
-#include <AnasaziConfigDefs.hpp>
+#include <Tsqr_Config.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 
 #include <TsqrTypeAdaptor.hpp>
@@ -52,15 +51,13 @@ namespace TSQR {
   namespace Trilinos {
 
     /// \class TsqrAdaptor
-    /// \brief Abstract interface between multivector and TSQR
+    /// \brief Abstract interface between TSQR and multivector type
     ///
     /// Child classes of TsqrAdaptor tell TSQR how to compute a
     /// factorization of a specific Trilinos multivector class MV.
     /// Currently, Tpetra::MultiVector< S, LO, GO, NodeType > for any
-    /// NodeType is supported, via TsqrEpetraAdaptor (see
-    /// AnasaziEpetraAdaptor.hpp) resp. TsqrTpetraAdaptor (include
-    /// AnasaziTpetraAdaptor.hpp).  At the moment, the latter will
-    /// only be efficient if NodeType is not a GPU node.  Support for
+    /// NodeType is supported.  At the moment, the latter will only be
+    /// efficient if NodeType is not a GPU node.  Support for
     /// Epetra_MultiVector and Thyra multivectors may be added on
     /// request.
     ///

@@ -1,0 +1,11 @@
+TSQR adaptor
+
+* Tpetra::Map is immutable (post-creation)
+** That means we can use pointer equality to check whether 
+   two Tpetra::MultiVector objects use the same Map.
+*** If they do, then we don't have to construct / replace
+    DistTsqr's communicator objects.  It shouldn't be that
+    much overhead to do so anyway, though.
+*** Currently we only set those communicators once.  
+    That may result in incorrect behavior if different multivector
+    objects use different communicators.

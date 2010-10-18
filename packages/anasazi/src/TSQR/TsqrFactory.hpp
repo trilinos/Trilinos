@@ -31,7 +31,7 @@
 
 /// \file TsqrFactory.hpp
 ///
-/// \warning Anasazi users should _not_ include this file directly.
+/// \warning TSQR users should _not_ include this file directly.
 
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -78,12 +78,12 @@ namespace TSQR {
     template< class LO, class S, class NodeTsqrType, class DistTsqrType >
     class TsqrFactory {
     public:
-      typedef NodeTsqrType                       node_tsqr_type;
-      typedef Teuchos::RCP< node_tsqr_type >     node_tsqr_ptr;
+      typedef NodeTsqrType                        node_tsqr_type;
+      typedef Teuchos::RCP< node_tsqr_type >      node_tsqr_ptr;
 
-      typedef Teuchos::RCP< MessengerBase< S > > scalar_messenger_ptr;
-      typedef DistTsqrType                       dist_tsqr_type;
-      typedef Teuchos::RCP< dist_tsqr_type >     dist_tsqr_ptr;
+      typedef Teuchos::RCP< MessengerBase< S > >  scalar_messenger_ptr;
+      typedef DistTsqrType                        dist_tsqr_type;
+      typedef Teuchos::RCP< dist_tsqr_type >      dist_tsqr_ptr;
 
       typedef Tsqr< LO, S, node_tsqr_type, dist_tsqr_type > tsqr_type;
       typedef Teuchos::RCP< tsqr_type >                     tsqr_ptr;
