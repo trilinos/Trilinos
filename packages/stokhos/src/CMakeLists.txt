@@ -81,6 +81,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
   Stokhos_QuadratureFactoryImp.hpp
+  Stokhos_StandardStorage.hpp
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
@@ -167,9 +168,15 @@ SET(SOURCES ${SOURCES}
 IF (Stokhos_ENABLE_Sacado)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado)
   SET(HEADERS ${HEADERS}
+    sacado/Stokhos_Sacado.hpp
+    sacado/Stokhos_Sacado_MathFunctions.hpp
     sacado/Sacado_PCE_OrthogPoly.hpp
     sacado/Sacado_PCE_OrthogPolyImp.hpp
     sacado/Sacado_PCE_OrthogPolyTraits.hpp
+    sacado/Sacado_ETPCE_OrthogPoly.hpp
+    sacado/Sacado_ETPCE_OrthogPolyImp.hpp
+    sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
+    sacado/Sacado_ETPCE_OrthogPolyOps.hpp
     )
 ENDIF()
 
@@ -187,6 +194,25 @@ IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
     nox/NOX_Epetra_LinearSystem_SGJacobi.cpp
     nox/NOX_Epetra_LinearSystem_SGGS.cpp
     )
+ENDIF()
+
+# CUDA/Thrust
+IF (Stokhos_ENABLE_Thrust)
+  CUDA_INCLUDE_DIRECTORIES( 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../teuchos/src
+    ${CMAKE_CURRENT_BINARY_DIR}/../../teuchos/src
+  )
+  CUDA_COMPILE(CUDA_SOURCES
+    Stokhos_CUDAStorage.cu 
+    Stokhos_CUDAQuadOrthogPolyExpansion.cu
+  )
+  SET(HEADERS ${HEADERS}
+    Stokhos_CUDAStorage.hpp
+    Stokhos_CUDAStorageImp.hpp
+    Stokhos_CUDAQuadOrthogPolyExpansion.hpp
+    Stokhos_CUDAQuadOrthogPolyExpansionImp.hpp
+    )
+  SET(SOURCES ${SOURCES} ${CUDA_SOURCES})
 ENDIF()
 
 #

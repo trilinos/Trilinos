@@ -78,9 +78,6 @@ public:
 
   virtual int determine_new_partition (bool & RebalancingNeeded);
 
-  virtual int get_new_partition(std::vector<mesh::EntityProc> &new_partition)
-  { throw std::runtime_error("stk::rebalance::Zoltan::get_new_partition not yet implemented."); }
-
   /**
    * Evaluate the performance/quality of dynamic load rebalancing
    */

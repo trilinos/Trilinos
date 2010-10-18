@@ -90,3 +90,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+IF(Stokhos_ENABLE_TriKota)
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    SparseGridQuadratureUnitTest
+    SOURCES Stokhos_SparseGridQuadratureUnitTest.cpp
+    COMM serial mpi
+    STANDARD_PASS_OUTPUT
+    )
+
+ENDIF()

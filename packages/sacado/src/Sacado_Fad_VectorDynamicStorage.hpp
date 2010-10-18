@@ -65,7 +65,7 @@ namespace Sacado {
 	v_(), owns_mem(false), sz_(sz), len_(sz), stride_(stride), 
 	val_(x), dx_(dx_p) {
 	if (zero_out)
-	  zero(dx_, sz_);
+	  zero();
       }
 
       //! Copy constructor

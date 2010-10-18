@@ -75,6 +75,7 @@ EXTRA_CXX_FLAGS=
 #
 # Whether the exodus mesh database libraries are available. Default=yes.
 HAVE_EXODUS=ON
+ENABLE_NETCDF=ON
 
 # ----------------------------------------------------------------------------
 # Specify directories for the Trilinos source and Trilnos data, and for
@@ -182,6 +183,7 @@ ${ECHO} cmake \
 -D CMAKE_C_FLAGS:STRING="${PYTHON_INC_STRING} ${EXTRA_C_FLAGS}" \
 -D CMAKE_Fortran_FLAGS:STRING="${EXTRA_F_FLAGS}" \
 -D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
+-D TPL_ENABLE_Netcdf:BOOL=${ENABLE_NETCDF} \
 -D BLAS_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
 -D LAPACK_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS} \

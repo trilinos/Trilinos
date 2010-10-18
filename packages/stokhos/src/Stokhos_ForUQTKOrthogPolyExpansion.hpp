@@ -48,6 +48,8 @@ namespace Stokhos {
     public OrthogPolyExpansion<ordinal_type, value_type> {
   public:
 
+    typedef Stokhos::StandardStorage<ordinal_type, value_type>  node_type;
+
     enum EXPANSION_METHOD {
       TAYLOR,
       INTEGRATION
@@ -75,135 +77,140 @@ namespace Stokhos {
     getTripleProduct() const { return Cijk; }
  
     // Operations
-    void unaryMinus(OrthogPolyApprox<ordinal_type, value_type>& c, 
-		    const OrthogPolyApprox<ordinal_type, value_type>& a);
+    void unaryMinus(
+      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
 
-    void plusEqual(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void plusEqual(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 		   const value_type& x);
-    void minusEqual(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void minusEqual(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 		    const value_type& x);
-    void timesEqual(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void timesEqual(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 		    const value_type& x);
-    void divideEqual(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void divideEqual(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 		     const value_type& x);
 
-    void plusEqual(OrthogPolyApprox<ordinal_type, value_type>& c, 
-		   const OrthogPolyApprox<ordinal_type, value_type>& x);
-    void minusEqual(OrthogPolyApprox<ordinal_type, value_type>& c, 
-		    const OrthogPolyApprox<ordinal_type, value_type>& x);
-    void timesEqual(OrthogPolyApprox<ordinal_type, value_type>& c, 
-		    const OrthogPolyApprox<ordinal_type, value_type>& x);
-    void divideEqual(OrthogPolyApprox<ordinal_type, value_type>& c, 
-		     const OrthogPolyApprox<ordinal_type, value_type>& x);
+    void plusEqual(
+      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
+    void minusEqual(
+      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
+    void timesEqual(
+      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
+    void divideEqual(
+      OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+      const OrthogPolyApprox<ordinal_type, value_type, node_type>& x);
 
-    void plus(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void plus(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void plus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void plus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	      const value_type& a, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void plus(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void plus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
 	      const value_type& b);
-    void minus(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a,
-	       const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void minus(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void minus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void minus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	       const value_type& a, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void minus(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void minus(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
 	       const value_type& b);
-    void times(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void times(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void times(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void times(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	       const value_type& a, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void times(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void times(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
 	       const value_type& b);
-    void divide(OrthogPolyApprox<ordinal_type, value_type>& c, 
-		const OrthogPolyApprox<ordinal_type, value_type>& a, 
-		const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void divide(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+		const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+		const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 		const value_type& a, 
-		const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void divide(OrthogPolyApprox<ordinal_type, value_type>& c, 
-		const OrthogPolyApprox<ordinal_type, value_type>& a, 
+		const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void divide(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+		const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
 		const value_type& b);
 
-    void exp(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void log(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void log10(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void sqrt(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void pow(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void pow(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void exp(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void log(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void log10(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void sqrt(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void pow(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void pow(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	     const value_type& a, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void pow(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void pow(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
 	     const value_type& b);
-    void cos(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void sin(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void tan(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void cosh(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void sinh(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void tanh(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void acos(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void asin(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void atan(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a,
-	       const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void cos(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void sin(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void tan(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void cosh(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void sinh(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void tanh(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void acos(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void asin(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void atan(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void atan2(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void atan2(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	       const value_type& a, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void atan2(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
 	       const value_type& b);
-    void acosh(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void asinh(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void atanh(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	       const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void abs(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void fabs(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-    void max(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a,
-	     const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void max(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void acosh(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void asinh(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void atanh(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void abs(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void fabs(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	      const OrthogPolyApprox<ordinal_type, value_type, node_type>& a);
+    void max(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void max(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	     const value_type& a, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void max(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void max(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
 	     const value_type& b);
-    void min(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a,
-	     const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void min(OrthogPolyApprox<ordinal_type, value_type>& c, 
+    void min(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a,
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void min(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
 	     const value_type& a, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& b);
-    void min(OrthogPolyApprox<ordinal_type, value_type>& c, 
-	     const OrthogPolyApprox<ordinal_type, value_type>& a, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& b);
+    void min(OrthogPolyApprox<ordinal_type, value_type, node_type>& c, 
+	     const OrthogPolyApprox<ordinal_type, value_type, node_type>& a, 
 	     const value_type& b);
 
   private:

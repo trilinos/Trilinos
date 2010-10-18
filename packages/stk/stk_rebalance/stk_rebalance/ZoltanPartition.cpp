@@ -1006,8 +1006,8 @@ int Zoltan::determine_new_partition (bool &RebalancingNeeded)
     for (int j=0; j < num_exported; ++j ) {
 
       //: Get exported region, local, global, and processor ids
-      const unsigned rid = export_gids[ j*::num_gid_entries() ];  // Region ID variable
-      if (!rid) throw runtime_error ("Region ID variable should be non-zero.");
+      //const unsigned rid = export_gids[ j*::num_gid_entries() ];  // Region ID variable
+      //if (!rid) throw runtime_error ("Region ID variable should be non-zero.");
       const unsigned lid = export_lids[ j*::num_lid_entries() ];  // Local  ID variable
       const unsigned pid = export_procs[ j ];                     // Exported Processor ID (i.e., MPI "rank" )
 

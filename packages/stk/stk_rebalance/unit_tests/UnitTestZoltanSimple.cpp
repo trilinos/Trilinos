@@ -115,4 +115,6 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   if( do_rebal )
     stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
 
+  // Guard against false positives by ensuring we make it to the end
+  STKUNIT_ASSERT( true );
 }

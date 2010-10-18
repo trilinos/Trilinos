@@ -39,6 +39,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_OrthogPolyExpansion.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 #include "Stokhos_EpetraVectorOrthogPoly.hpp"

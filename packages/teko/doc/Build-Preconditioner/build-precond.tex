@@ -233,8 +233,46 @@ the state object needs to be dynamically casted to the most specific type used b
 \end{framed}
 
 
-\subsection{\emph{Step 3}: The ``strategy'' pattern}
-TODO: Write this section
+\subsection{Advanced Techniques}
+
+\subsubsection{Setting up parameter list construction for a preconditioner factory}
+One nice aspect of Teko is the construction of complex nested preconditioners through
+a human readable XML file defining a parameter list. It is possible for a custom
+preconditioner to take advantage of this mechanism by registering itself as a preconditioner
+with Teko. Here is a brief snippet of code that explains how to do just that.
+\begin{framed}
+\begin{lstlisting}
+RCP<Teko::Clonable> clone = rcp(new Teko::AutoClone<UserDefinedPreconditionerFactory>());
+Teko::PreconditionerFactory::addPreconditionerFactory("My Preconditioner",clone);
+\end{lstlisting}
+\end{framed}
+\noindent Notice the use of the \code{Teko::AutoClone} templated class. This class will make a \code{Clonable}
+object of any class with a default constructor. The preconditioner can now be constructed
+from the parameter list (see the following example) with the preconditioner specfic parameters automatically passed
+in to \code{Teko::PreconditionerFactory::initializeFromParameterList}.
+\begin{framed}
+\begin{lstlisting}
+<ParameterList name="Inverse Factory Library">
+
+  <ParameterList name="My Block Prec">
+    <Parameter name="Type" type="string" value="My Preconditioner"/>
+
+    <!-- * Parameters for "My Preconditioner" included here to be parsed
+         * by the "initializeFromParameterList" function
+         * -->
+
+  </ParameterList>
+
+  <!-- Other inverse operations specified here -->
+</ParameterList>
+\end{lstlisting}
+\end{framed}
+\noindent Once a \code{Teko::InverseLibrary} is constructed from this parameter list
+the user specified preconditioner will be constructed like all other Teko
+preconditioners.
+
+\subsection{The ``strategy'' pattern}
+The use of the strategy pattern is optional. TODO: Write this section
 
 \section{How to use your preconditioner}\label{sec:use-prec}
 So you have a preconditioner, now what? How is it to be used? Code listing~\ref{lst:example}
