@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
   }
 
 
-  MatrixVectorChecker(*A);
+  //TODO  MatrixVectorChecker(*A);
 
   delete [] rbmPointer;
   delete rbmVector;

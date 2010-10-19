@@ -29,7 +29,7 @@ void cthulhu_debug_me(const std::string & file, const std::string & funcName) {
     int nb=0;    
     if (subH.containsKey(funcName)) {
       nb = subH.get(funcName);
-      std::cout << nb << std::endl;
+      // std::cout << nb << std::endl;
     }
 
     subH.put(funcName, nb+1);

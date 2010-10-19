@@ -17,7 +17,7 @@
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
 Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 CreateCrsMatrix(const std::string &MatrixType,
-                Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
+                Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
                 Teuchos::ParameterList& List)
 {
   Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > returnMatrix;

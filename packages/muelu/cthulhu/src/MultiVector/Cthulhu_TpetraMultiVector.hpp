@@ -3,6 +3,7 @@
 
 #include "Cthulhu_MultiVector.hpp"
 
+#include "Cthulhu_TpetraMap.hpp"
 #include "Tpetra_MultiVector.hpp"
 
 #include "Cthulhu_Debug.hpp"
@@ -29,23 +30,35 @@ namespace Cthulhu {
     //@{ 
 
     //! Basic TpetraMultiVector constuctor.
-    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t NumVectors, bool zeroOut=true) : vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map, NumVectors, zeroOut))) { CTHULHU_DEBUG_ME;}
+    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t NumVectors, bool zeroOut=true) {
+      CTHULHU_DEBUG_ME;
+      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map); //TODO: handle error
+      vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), NumVectors, zeroOut));
+    }
 
-    //! TpetraMultiVector copy constructor.
-    TpetraMultiVector(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) : vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(source))) { CTHULHU_DEBUG_ME;}
+    //TODO...
+  //   //! TpetraMultiVector copy constructor.
+//     TpetraMultiVector(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source){} //TODO : : vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(source))) { CTHULHU_DEBUG_ME;}
 
-    //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
-    /*! Post-condition: constantStride() == true */
-    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) : vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map, A, LDA, NumVectors))) { CTHULHU_DEBUG_ME;}
+     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
+     /*! Post-condition: constantStride() == true */
+    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) {
+      CTHULHU_DEBUG_ME;
+      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map); //TODO: handle error
+      vec_ = rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tMap->getTpetra_Map(), A, LDA, NumVectors));
+    } 
 
-    //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
-    /*! Post-condition: constantStride() == true */
-    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) : vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map, ArrayOfPtrs, NumVectors))) { CTHULHU_DEBUG_ME;}
 
+    //TODO
+//     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
+//     /*! Post-condition: constantStride() == true */
+//     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) {} //TODO :: vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map, ArrayOfPtrs, NumVectors))) { CTHULHU_DEBUG_ME;}
+
+  
     TpetraMultiVector(const Teuchos::RCP<const Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node> > &vec) : vec_(vec) { CTHULHU_DEBUG_ME;}
 
     //! TpetraMultiVector destructor.
-    virtual ~TpetraMultiVector();
+    virtual ~TpetraMultiVector() { CTHULHU_DEBUG_ME; }
 
     //@}
 
@@ -79,7 +92,7 @@ namespace Cthulhu {
     inline void randomize() { CTHULHU_DEBUG_ME; vec_->randomize(); }
 
     //! Replace the underlying Map with a compatible one.
-    inline void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) { CTHULHU_DEBUG_ME; vec_->replaceMap(map); }
+    //TODO    inline void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) { CTHULHU_DEBUG_ME; vec_->replaceMap(map); }
 
     //! Instruct a local (non-distributed) TpetraMultiVector to sum values across all nodes.
     inline void reduce() { CTHULHU_DEBUG_ME; vec_->reduce(); }
@@ -101,45 +114,45 @@ namespace Cthulhu {
      */
     //@{
 
-    //! Returns a TpetraMultiVector with copies of selected columns.
-    inline Teuchos::RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const { CTHULHU_DEBUG_ME; return vec_->subCopy(colRng); }
+    //! Returns a MultiVector with copies of selected columns.
+    //TODO    inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const { CTHULHU_DEBUG_ME; return vec_->subCopy(colRng); }
 
     //! Returns a TpetraMultiVector with copies of selected columns.
-    inline Teuchos::RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const { CTHULHU_DEBUG_ME; return vec_->subCopy(cols); }
+    //TODO    inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const { CTHULHU_DEBUG_ME; return vec_->subCopy(cols); }
 
-    //! Returns a const TpetraMultiVector with const views of selected columns.
-    inline Teuchos::RCP<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const { CTHULHU_DEBUG_ME; return vec_->subView(colRng); }
+    //! Returns a const MultiVector with const views of selected columns.
+    //TODO   inline Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const { CTHULHU_DEBUG_ME; return vec_->subView(colRng); }
 
-    //! Returns a const TpetraMultiVector with const views of selected columns.
-    inline Teuchos::RCP<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const { CTHULHU_DEBUG_ME; return vec_->subView(cols); }
+    //! Returns a const MultiVector with const views of selected columns.
+    //TODO   inline Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const { CTHULHU_DEBUG_ME; return vec_->subView(cols); }
 
-    //! Returns a TpetraMultiVector with views of selected columns.
-    inline Teuchos::RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng) { CTHULHU_DEBUG_ME; return vec_->subViewNonConst(colRng); }
+    //! Returns a MultiVector with views of selected columns.
+    //TODO   inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng) { CTHULHU_DEBUG_ME; return vec_->subViewNonConst(colRng); }
 
-    //! Returns a TpetraMultiVector with views of selected columns.
-    inline Teuchos::RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols) { CTHULHU_DEBUG_ME; return vec_->subViewNonConst(cols); }
+    //! Returns a MultiVector with views of selected columns.
+    //TODO   inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols) { CTHULHU_DEBUG_ME; return vec_->subViewNonConst(cols); }
 
-    //! \brief Returns a const TpetraMultiVector view of a subset of rows.
+    //! \brief Returns a const MultiVector view of a subset of rows.
     /** 
-        Returns a const view of this TpetraMultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
+        Returns a const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
 
-        \param In subMap - The row map for the new TpetraMultiVector.
+        \param In subMap - The row map for the new MultiVector.
         \param In offset - The offset into the data of <tt>(*this)</tt>.
 
         \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
      */
-    inline Teuchos::RCP<const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const { CTHULHU_DEBUG_ME; return vec_->offsetView(subMap, offset); }
+    //TODO    inline Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const { CTHULHU_DEBUG_ME; return vec_->offsetView(subMap, offset); }
 
-    //! \brief Returns a non-const TpetraMultiVector view of a subset of rows.
+    //! \brief Returns a non-const MultiVector view of a subset of rows.
     /** 
-        Returns a non-const view of this TpetraMultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
+        Returns a non-const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
 
-        \param In subMap - The row map for the new TpetraMultiVector.
+        \param In subMap - The row map for the new MultiVector.
         \param In offset - The offset into the data of <tt>(*this)</tt>.
 
         \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
      */
-    inline Teuchos::RCP<TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) { CTHULHU_DEBUG_ME; return vec_->offsetViewNonConst(subMap, offset); }
+    //TODO inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) { CTHULHU_DEBUG_ME; return vec_->offsetViewNonConst(subMap, offset); }
 
     //! Const Vector access function.
     // inline Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const { CTHULHU_DEBUG_ME; return vec_->getVector(j); }
@@ -173,10 +186,10 @@ namespace Cthulhu {
     //! Return non-const persisting pointers to values.
     inline Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst() { CTHULHU_DEBUG_ME; return vec_->get2dViewNonConst(); }
 
-    //! Return a const reference to the underlying Kokkos::TpetraMultiVector object (advanced use only)
+    //! Return a const reference to the underlying Kokkos::MultiVector object (advanced use only)
     inline const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const { CTHULHU_DEBUG_ME; return vec_->getLocalMV(); }
 
-    //! Return a non-const reference to the underlying Kokkos::TpetraMultiVector object (advanced use only)
+    //! Return a non-const reference to the underlying Kokkos::MultiVector object (advanced use only)
     inline Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst() { CTHULHU_DEBUG_ME; return vec_->getLocalMVNonConst(); }
 
     //@}
@@ -266,10 +279,11 @@ namespace Cthulhu {
 
     //@}
 
-    RCP< const Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; }
+    //    RCP< const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; } //TODO: & ??
+    RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; } //TODO: & ??
     
   private:
-    const RCP< const Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node> > vec_;
+    RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;
 
 
   }; // class TpetraMultiVector

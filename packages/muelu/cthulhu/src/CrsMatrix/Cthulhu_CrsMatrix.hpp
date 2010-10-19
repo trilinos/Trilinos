@@ -194,17 +194,17 @@ namespace Cthulhu {
        //! Returns the underlying node.
        virtual RCP<Node> getNode() const =0;
 
-       //! Returns the Map that describes the row distribution in this matrix.
-    //TODO wrap map   virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const =0;
+    //! Returns the Map that describes the row distribution in this matrix.
+    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const =0; // TODO: I removed & in return type
 
-       //! \brief Returns the Map that describes the column distribution in this matrix.
-    //TODO wrap map   virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const =0;
-
- //       //! Returns the RowGraph associated with this matrix. 
- //       virtual RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const =0;
-
- //       //! Returns the CrsGraph associated with this matrix. 
- //       virtual RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const =0;
+    //! \brief Returns the Map that describes the column distribution in this matrix.
+    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const =0; // TODO: I removed & in return type
+    
+    //! Returns the RowGraph associated with this matrix. 
+    // virtual RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const =0;
+    
+    //! Returns the CrsGraph associated with this matrix. 
+    // virtual RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const =0;
 
        //! Returns the number of global rows in this matrix.
        /** Undefined if isFillActive().
@@ -383,7 +383,9 @@ namespace Cthulhu {
         */
      //TODO virtual=0
 //        template <class DomainScalar, class RangeScalar>
-//        void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+    //void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+    // TODO: Add default parameters ?
+    virtual void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const=0;
 
        //! Solves a linear system when the underlying matrix is triangular.
        /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
@@ -415,11 +417,13 @@ namespace Cthulhu {
 
        //! \brief Returns the Map associated with the domain of this operator.
        //! This will be <tt>null</tt> until fillComplete() is called.
-    //TODO    virtual const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const =0;
+    // TODO: I removed & in the return arg
+    virtual const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const =0;
 
        //! Returns the Map associated with the domain of this operator.
        //! This will be <tt>null</tt> until fillComplete() is called.
-    //TODO    virtual const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const =0;
+    // TODO: I removed & in the return arg
+    virtual const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const =0;
 
        //@}
 
