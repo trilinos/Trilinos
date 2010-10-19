@@ -31,9 +31,9 @@
 
 #include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR, etc.
 
-#include <Tsqr_NodeTsqrFactory.hpp>
-#include <Tsqr.hpp>
-#include <Tsqr_DistTsqrRB.hpp>
+#include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
+#include <Tsqr.hpp> // full (internode + intranode) TSQR
+#include <Tsqr_DistTsqrRB.hpp> // internode TSQR
 
 #include <Tpetra_MultiVector.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
@@ -47,6 +47,19 @@ namespace Tpetra {
 
   /// \class TsqrAdaptor
   /// \brief Adaptor from Tpetra::MultiVector to TSQR
+  ///
+  /// TSQR (Tall Skinny QR factorization) is an orthogonalization
+  /// kernel that is as accurate as Householder QR, yet requires only
+  /// \f$2 \log P\f$ messages between $P$ MPI processes, independently
+  /// of the number of columns in the multivector.  
+  ///
+  /// TSQR works independently of the particular multivector
+  /// implementation, and interfaces to the latter via an adaptor
+  /// class.  Tpetra::TsqrAdaptor is the adaptor class for
+  /// Tpetra::MultiVector.  It templates on the MultiVector (MV) type
+  /// so that it can pick up that class' typedefs.  In particular,
+  /// TSQR chooses its intranode implementation based on the Kokkos
+  /// Node type of the multivector.
   ///
   template< class MV >
   class TsqrAdaptor {
@@ -83,7 +96,9 @@ namespace Tpetra {
 		 const Teuchos::ParameterList& plist) :
       pTsqr_ (new tsqr_type (makeNodeTsqr (plist), makeDistTsqr (mv)))
     {}
-    
+
+    /// \brief Compute QR factorization [Q,R] = qr(A,0)
+    ///
     void
     factorExplicit (multivector_type& A,
 		    multivector_type& Q,
@@ -97,6 +112,37 @@ namespace Tpetra {
       pTsqr_->factorExplicit (getNonConstView (A), getNonConstView (Q), R_view);
     }
 
+    /// \brief Rank-revealing decomposition
+    ///
+    /// Using the R factor and explicit Q factor from
+    /// factorExplicit(), compute the singular value decomposition
+    /// (SVD) of R (\f$R = U \Sigma V^*\f$).  If R is full rank (with
+    /// respect to the given relative tolerance tol), don't change Q
+    /// or R.  Otherwise, compute \f$Q := Q \cdot U\f$ and \f$R :=
+    /// \Sigma V^*\f$ in place (the latter may be no longer upper
+    /// triangular).
+    ///
+    /// \param Q [in/out] On input: explicit Q factor computed by
+    ///   factorExplicit().  (Must be an orthogonal resp. unitary
+    ///   matrix.)  On output: If R is of full numerical rank with
+    ///   respect to the tolerance tol, Q is unmodified.  Otherwise, Q
+    ///   is updated so that the first rank columns of Q are a basis
+    ///   for the column space of A (the original matrix whose QR
+    ///   factorization was computed by factorExplicit()).  The
+    ///   remaining columns of Q are a basis for the null space of A.
+    ///
+    /// \param R [in/out] On input: ncols by ncols upper triangular
+    ///   matrix with leading dimension ldr >= ncols.  On output: if
+    ///   input is full rank, R is unchanged on output.  Otherwise, if
+    ///   \f$R = U \Sigma V^*\f$ is the SVD of R, on output R is
+    ///   overwritten with $\Sigma \cdot V^*$.  This is also an ncols by
+    ///   ncols matrix, but may not necessarily be upper triangular.
+    ///
+    /// \param tol [in] Relative tolerance for computing the numerical
+    ///   rank of the matrix R.
+    ///
+    /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
+    ///
     void
     revealRank (multivector_type& Q,
 		dense_matrix_type& R,
@@ -108,8 +154,8 @@ namespace Tpetra {
 
       matview_type Q_view = getNonConstView (Q);
       matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
-      pTsqr_->reveal_rank (Q_view.ncols(), Q_view.ncols(), Q.get(), Q.lda(),
-			   R.get(), R.lda(), tol);
+      pTsqr_->revealRank (Q_view.ncols(), Q_view.ncols(), Q.get(), Q.lda(),
+			  R.get(), R.lda(), tol);
     }
 
   private:

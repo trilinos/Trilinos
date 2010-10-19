@@ -470,7 +470,7 @@ namespace TSQR {
     ///
     /// Using the R factor from factor() and the explicit Q factor
     /// from explicit_Q(), compute the SVD of R (\f$R = U \Sigma
-    /// V^*\f$).  R.  If R is full rank (with respect to the given
+    /// V^*\f$).  If R is full rank (with respect to the given
     /// relative tolerance tol), don't change Q or R.  Otherwise,
     /// compute \f$Q := Q \cdot U\f$ and \f$R := \Sigma V^*\f$ in
     /// place (the latter may be no longer upper triangular).
@@ -485,14 +485,14 @@ namespace TSQR {
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
     ///
     LocalOrdinal
-    reveal_rank (const LocalOrdinal nrows,
-		 const LocalOrdinal ncols,
-		 Scalar Q[],
-		 const LocalOrdinal ldq,
-		 Scalar R[],
-		 const LocalOrdinal ldr,
-		 const magnitude_type& tol,
-		 const bool contiguousCacheBlocks = false) const
+    revealRank (const LocalOrdinal nrows,
+		const LocalOrdinal ncols,
+		Scalar Q[],
+		const LocalOrdinal ldq,
+		Scalar R[],
+		const LocalOrdinal ldr,
+		const magnitude_type& tol,
+		const bool contiguousCacheBlocks = false) const
     {
       // Take the easy exit if available.
       if (ncols == 0)
