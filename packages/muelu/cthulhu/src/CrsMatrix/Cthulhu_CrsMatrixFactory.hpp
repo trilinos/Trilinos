@@ -1,6 +1,8 @@
 #ifndef CTHULHU_CRSMATRIX_FACTORY_DECL_HPP
 #define CTHULHU_CRSMATRIX_FACTORY_DECL_HPP
 
+#include "Cthulhu_Classes.hpp"
+
 #include "Cthulhu_CrsMatrix.hpp"
 #include "Cthulhu_TpetraCrsMatrix.hpp"
 //#include "Cthulhu_EpetraCrsMatrix.hpp"
@@ -16,58 +18,60 @@
 
 namespace Cthulhu {
   
-  template <class Scalar, 
+  template <class ScalarType, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+            class LocalMatOps   = typename Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps>
 
   class CrsMatrixFactory {
+    
+#include "Cthulhu_UseShortNames.hpp"
     
   private:
     //! Private constructor. This is a static class. 
     CrsMatrixFactory() {}
     
   public:
-
+    
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > Build(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) {
+    static RCP<CrsMatrix> Build(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) {
 
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap);
+      const RCP<const TpetraMap> &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(rowMap);
       if (tRowMap != null)
-        return rcp( new TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(rowMap, maxNumEntriesPerRow, pftype) );
+        return rcp( new TpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
 
       //TODO
-      //       const RCP<const EpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &eRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap);
+      //       const RCP<const EpetraMap> &eRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(rowMap);
       //       if (eRowMap != null)
-      //         return rcp( new EpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(rowMap, maxNumEntriesPerRow, pftype) );
+      //         return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
       
       return null;
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Constructor specifying the number of non-zeros for each row.
-    Build(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) { }
+    Build(const RCP<const Map> &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) { }
 
     //! Constructor specifying a column map and the number of non-zeros for all rows.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    Build(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) { }
+    Build(const RCP<const Map> &rowMap, const RCP<const Map> &colMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) { }
     
     //! Constructor specifying a column map and the number of non-zeros for each row.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    Build(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) { } 
+    Build(const RCP<const Map> &rowMap, const RCP<const Map> &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) { } 
 
     //! Constructor specifying a pre-constructed graph.
     // TODO: need a CrsGraph
     // Build() {}
 
     //! Constructor specifying a Tpetra CrsMatrix
-    Build(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) { }
+    Build(const Teuchos::RCP<const Tpetra::CrsMatrix> &mtx) { }
 
     //! Constructor specifying a Epetra CrsMatrix
-    Build(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) { }
+    Build(const Teuchos::RCP<const Epetra_CrsMatrix> &mtx) { }
 #endif
     
   };
