@@ -131,6 +131,8 @@ namespace TSQR {
     }
 
 
+    /// \brief Compute QR factorization [Q,R] = qr(A,0)
+    ///
     template< class NodeType >
     void
     factorExplicit (Kokkos::MultiVector< Scalar, NodeType >& A,

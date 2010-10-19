@@ -63,6 +63,11 @@
 #include "BelosOperatorTraits.hpp"
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
+#ifdef HAVE_KOKKOS_TSQR
+#  include <Tpetra_TsqrAdaptor.hpp>
+#endif // HAVE_KOKKOS_TSQR
+
+
 namespace Belos {
 
   ////////////////////////////////////////////////////////////////////
@@ -307,6 +312,12 @@ namespace Belos {
     static void MvPrint( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
     { mv.print(os); }
 
+#ifdef HAVE_KOKKOS_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for Tpetra::MultiVector
+    ///
+    typedef Tpetra::TsqrAdaptor< Tpetra::MultiVector< Scalar, LO, GO, Node > > tsqr_adaptor_type;
+#endif // HAVE_KOKKOS_TSQR
   };        
 
   ////////////////////////////////////////////////////////////////////
