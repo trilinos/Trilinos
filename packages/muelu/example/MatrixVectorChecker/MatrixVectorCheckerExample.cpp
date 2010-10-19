@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
   MatrixVectorChecker<SC,LO,GO,NO>(matrix);
 
-  return(EXIT_SUCCESS);
+  return EXIT_SUCCESS;
 
 }
 
