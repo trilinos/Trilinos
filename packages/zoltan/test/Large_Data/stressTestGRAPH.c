@@ -36,6 +36,21 @@ struct Zoltan_DD_Struct *dd=NULL;
 static void debug(struct Zoltan_Struct *zz, char *s, int stop);
 static void usage();
 
+static void free_graph()
+{
+  if (dd) Zoltan_DD_Destroy(&dd);
+
+  if (vtxGID) free(vtxGID);
+  if (nborIndex) free(nborIndex);
+  if (nborGID) free(nborGID);
+  if (nborProc) free(nborProc);
+  if (edgeWgt) free(edgeWgt);
+
+  vtxGID = nborIndex = nborGID = nborProc = NULL;
+  edgeWgt = NULL;
+  dd=NULL;
+}
+
 static void gid_location(int gid, int *cylID, int *ringID)
 {
   div_t result;
@@ -392,7 +407,8 @@ int main(int argc, char *argv[])
   float ver;
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
-  char *platform=NULL, *node_topology=NULL, *machine_topology=NULL;
+  int generate_files = 0;
+  char *platform=NULL, *topology=NULL;
   char *graph_package=NULL;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
@@ -411,35 +427,35 @@ int main(int argc, char *argv[])
   opts[0].flag = NULL;
   opts[0].val = 1;
 
-  opts[1].name = "node_topology";
+  opts[1].name = "topology";
   opts[1].has_arg = 1;
   opts[1].flag = NULL;
   opts[1].val = 2;
 
-  opts[2].name = "machine_topology";
+  opts[2].name = "size";
   opts[2].has_arg = 1;
   opts[2].flag = NULL;
-  opts[2].val = 3;
+  opts[2].val = 4;
 
-  opts[3].name = "size";
-  opts[3].has_arg = 1;
+  opts[3].name = "verbose";
+  opts[3].has_arg = 0;
   opts[3].flag = NULL;
-  opts[3].val = 4;
+  opts[3].val = 5;
 
-  opts[4].name = "verbose";
+  opts[4].name = "help";
   opts[4].has_arg = 0;
   opts[4].flag = NULL;
-  opts[4].val = 5;
+  opts[4].val = 6;
 
-  opts[5].name = "help";
-  opts[5].has_arg = 0;
+  opts[5].name = "graph_package";
+  opts[5].has_arg = 1;
   opts[5].flag = NULL;
-  opts[5].val = 6;
+  opts[5].val = 7;
 
-  opts[6].name = "graph_package";
-  opts[6].has_arg = 1;
+  opts[6].name = "generate_files";
+  opts[6].has_arg = 0;
   opts[6].flag = NULL;
-  opts[6].val = 7;
+  opts[6].val = 8;
 
   opts[7].name = 0;
   opts[7].has_arg = 0;
@@ -461,19 +477,19 @@ int main(int argc, char *argv[])
         printf( "For platform %s\n",optarg );
     }
     else if (rc == 2){
-      node_topology = optarg;
+      topology = optarg;
       if (myRank == 0)
-        printf( "For node topology %s\n",optarg);
-    }
-    else if (rc == 3){
-      machine_topology = optarg;
-      if (myRank == 0)
-        printf( "For machine with %s cpus\n",optarg);
+        printf( "For topology %s\n",optarg);
     }
     else if (rc == 7){
       graph_package = optarg;
       if (myRank == 0)
         printf( "Zoltan parameter GRAPH_PACKAGE = %s\n",graph_package);
+    }
+    else if (rc == 8){
+      generate_files = 1;
+      if (myRank == 0)
+        printf( "Zoltan_Generate_Files will be called for each level.\n");
     }
     else if (rc == 4){
       nvert = atoi(optarg);
@@ -502,7 +518,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  if ((platform==NULL) && (node_topology==NULL) && (machine_topology==NULL)){
+  if ((platform==NULL) && (topology==NULL)){
     if (myRank == 0)
       fprintf(stderr,"No platform or topology, so we'll skip hierarchical partitioning\n");
     do_hier = 0;
@@ -534,6 +550,7 @@ int main(int argc, char *argv[])
 
   zz = Zoltan_Create(MPI_COMM_WORLD);
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  Zoltan_Set_Param(zz, "REMAP", "0");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL"); /* export AND import lists */
@@ -555,6 +572,10 @@ int main(int argc, char *argv[])
 
   if (verbose){
     debug(zz, "Initial graph", 0);
+  }
+
+  if (generate_files){
+    rc = Zoltan_Generate_Files(zz, "flat", zz->Proc, 0, 1, 0);
   }
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
@@ -595,19 +616,23 @@ int main(int argc, char *argv[])
   if (do_hier){
 
     /* HIERARCHICAL PARTITION */
+
+    free_graph();
+    create_a_graph();
   
     Zoltan_Set_Param(zz, "LB_METHOD", "HIER");
     Zoltan_Set_Param(zz, "HIER_DEBUG_LEVEL", "0");
     Zoltan_Set_Param(zz, "HIER_ASSIST", "1");
+    if (generate_files){
+      Zoltan_Set_Param(zz, "HIER_GENERATE_FILES", "1"); 
+    }
 
     /* TODO: Suppose graph is not symmetric, and we request SYMMETRIZE.  Do we still get
      *  a "good" answer when each sub-graph in the hierarchy is symmetrized?
      */
 
-    if (machine_topology)
-      Zoltan_Set_Param(zz, "MACHINE_TOPOLOGY", machine_topology);
-    else if (node_topology)
-      Zoltan_Set_Param(zz, "NODE_TOPOLOGY", node_topology);
+    if (topology)
+      Zoltan_Set_Param(zz, "TOPOLOGY", topology);
     else if (platform)
       Zoltan_Set_Param(zz, "PLATFORM", platform);
   
@@ -650,13 +675,7 @@ int main(int argc, char *argv[])
 
   Zoltan_Destroy(&zz);
 
-  if (dd) Zoltan_DD_Destroy(&dd);
-
-  if (vtxGID) free(vtxGID);
-  if (nborIndex) free(nborIndex);
-  if (nborGID) free(nborGID);
-  if (nborProc) free(nborProc);
-  if (edgeWgt) free(edgeWgt);
+  free_graph();
 
   MPI_Finalize();
 
@@ -719,8 +738,9 @@ static void usage()
 {
   int i;
   printf( "\nUsage: --verbose\n");
+  printf( "\n       --generate_files\n");
   printf( "\n       --graph_package={parmetis|scotch|phg}\n");
-  printf( "\n       --platform=desc | --node_topology=desc | --machine_topology=desc\n");
+  printf( "\n       --platform=desc | --topology=desc\n");
   printf( "\n       --size={approximate global number of vertices}\n");
 
   printf( "\nPlatform Names that Zoltan knows about:");
@@ -729,10 +749,9 @@ static void usage()
     if (i%8 == 0) printf("\n");
     printf( "  %s", zoltan_hier_platform_specs[i].platform_name );
   }
-  printf( "\n\nA node_topology description is a list of integers, for example\n");
+  printf( "\n\nA topology description is a list of integers, for example\n");
   printf( "  Dual socket, quad core: 2, 4\n");
   printf( "  Quad socket, six cores with core pairs sharing a cache: 4, 3, 2\n");
-  printf( "A machine_topology description is a list of integers (usually just 1), for example\n");
   printf( "  Dual core workstation: 2\n\n");
 
   printf( "The default global number of vertices is %d\n",NUM_GLOBAL_VERTICES);
