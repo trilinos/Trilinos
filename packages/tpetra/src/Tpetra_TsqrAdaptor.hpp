@@ -30,16 +30,13 @@
 #define __Tpetra_TsqrAdaptor_hpp
 
 #include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR, etc.
-
 #include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
 #include <Tsqr.hpp> // full (internode + intranode) TSQR
 #include <Tsqr_DistTsqr.hpp> // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
 #include <Tsqr_TeuchosMessenger.hpp> 
-
 #include <Tpetra_MultiVector.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
 
 #include <stdexcept>
 
@@ -107,14 +104,14 @@ namespace Tpetra {
 		    MV& Q,
 		    dense_matrix_type& R)
     {
+      typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
+
       // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> objects in A
       // and Q to make sure they are the same communicator as the one
       // we are using in our dist_tsqr_type implementation.
-
-      matview_type A_view = getNonConstView (A);
-      matview_type Q_view = getNonConstView (Q);
-      matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
-      pTsqr_->factorExplicit (A_view, Q_view, R_view, false);
+      KMV A_view = getNonConstView (A);
+      KMV Q_view = getNonConstView (Q);
+      pTsqr_->factorExplicit (A_view, Q_view, R, false);
     }
 
     /// \brief Rank-revealing decomposition
@@ -153,14 +150,14 @@ namespace Tpetra {
 		dense_matrix_type& R,
 		const magnitude_type& tol)
     {
+      typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
+
       // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> object in Q
       // to make sure it is the same communicator as the one we are
       // using in our dist_tsqr_type implementation.
 
-      matview_type Q_view = getNonConstView (Q);
-      return pTsqr_->revealRank (Q_view.ncols(), Q_view.ncols(), 
-				 Q_view.get(), Q_view.lda(), 
-				 R.values(), R.stride(), tol);
+      KMV Q_view = getNonConstView (Q);
+      return pTsqr_->revealRank (Q_view, R, tol, false);
     }
 
   private:
@@ -168,10 +165,10 @@ namespace Tpetra {
     ///
     Teuchos::RCP< tsqr_type > pTsqr_;
 
-    /// Return a TSQR::MatView (with raw pointer) from the given
-    /// multivector object.  TSQR does not currently support
-    /// multivectors with nonconstant stride.
-    static matview_type 
+    /// Return a Kokkos::MultiVector from the given multivector
+    /// object.  TSQR does not currently support multivectors with
+    /// nonconstant stride.
+    static Kokkos::MultiVector< scalar_type, node_type >
     getNonConstView (MV& A)
     {
       if (! A.isConstantStride())
@@ -186,15 +183,7 @@ namespace Tpetra {
 	    "inputs that do not have constant stride.";
 	  throw std::runtime_error (os.str());
 	}
-      //
-      // FIXME (mfh 19 Oct 2010) This will only work if the memory for
-      // A is allocated on the host.
-      //
-      scalar_type* const A_ptr = A.get1dViewNonConst().getRawPtr();
-      return matview_type (A.getLocalLength(), 
-			   A.getNumVectors(),
-			   A_ptr,
-			   A.getStride());
+      return A.getLocalMVNonConst();
     }
 
     /// Initialize and return internode TSQR implementation

@@ -36,6 +36,7 @@
 #include <Tsqr_SequentialTsqr.hpp>
 #include <Tsqr_Util.hpp>
 
+#include <Kokkos_MultiVector.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -130,42 +131,83 @@ namespace TSQR {
     }
 
 
+    template< class NodeType >
     void
-    factorExplicit (matview_type& A, 
-		    matview_type& Q, 
-		    matview_type& R, 
+    factorExplicit (Kokkos::MultiVector< Scalar, NodeType >& A,
+		    Kokkos::MultiVector< Scalar, NodeType >& Q,
+		    Teuchos::SerialDenseMatrix< LocalOrdinal, Scalar >& R,
 		    const bool contiguousCacheBlocks)
     {
+      typedef Kokkos::MultiVector< Scalar, NodeType > KMV;
+
+      // FIXME (mfh 19 Oct 2010) TSQR currently likes LocalOrdinal
+      // ordinals, but Kokkos::MultiVector has size_t ordinals.  Do
+      // conversions here.
+      // 
+      // FIXME check for overflow!
+      const LocalOrdinal A_numRows = static_cast< LocalOrdinal > (A.getNumRows());
+      const LocalOrdinal A_numCols = static_cast< LocalOrdinal > (A.getNumCols());
+      const LocalOrdinal A_stride = static_cast< LocalOrdinal > (A.getStride());
+      const LocalOrdinal Q_numRows = static_cast< LocalOrdinal > (Q.getNumRows());
+      const LocalOrdinal Q_numCols = static_cast< LocalOrdinal > (Q.getNumCols());
+      const LocalOrdinal Q_stride = static_cast< LocalOrdinal > (Q.getStride());
+
       // Sanity checks for matrix dimensions
-      if (A.nrows() < A.ncols())
+      if (A_numRows < A_numCols)
 	throw std::logic_error ("A must have at least as many rows as columns");
-      else if (A.nrows() != Q.nrows())
+      else if (A_numRows != Q_numRows)
 	throw std::logic_error ("A and Q must have same number of rows");
-      else if (R.nrows() < R.ncols())
+      else if (R.numRows() < R.numCols())
 	throw std::logic_error ("R must have at least as many rows as columns");
-      else if (A.ncols() != R.ncols())
+      else if (A_numCols != R.numCols())
 	throw std::logic_error ("A and R must have the same number of columns");
 
-      // Checks for quick exit, based on matrix dimensions
-      if (Q.ncols() == ordinal_type(0))
+      // Check for quick exit, based on matrix dimensions
+      if (Q_numCols == 0)
 	return;
 
-      R.fill (scalar_type (0));
+      // Hold on to nonconst views of A and Q.  This will make TSQR
+      // correct (if perhaps inefficient) for all possible Kokkos Node
+      // types, even GPU nodes.
+      Teuchos::ArrayRCP< scalar_type > A_ptr = A.getValuesNonConst();
+      Teuchos::ArrayRCP< scalar_type > Q_ptr = Q.getValuesNonConst();
+
+      R.putScalar (Scalar(0));
       NodeOutput nodeResults = 
-	nodeTsqr_->factor (A.nrows(), A.ncols(), A.get(), A.lda(), 
-			   R.get(), R.lda(), contiguousCacheBlocks);
-      nodeTsqr_->fill_with_zeros (Q.nrows(), Q.ncols(), Q.get(), Q.lda(), 
+	nodeTsqr_->factor (A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
+			   R.values(), R.stride(), contiguousCacheBlocks);
+      // FIXME (mfh 19 Oct 2010) Replace actions on raw pointer with
+      // actions on the Kokkos::MultiVector or at least the ArrayRCP.
+      nodeTsqr_->fill_with_zeros (Q_numRows, Q_numCols, 
+				  Q_ptr.getRawPtr(), Q_stride,
 				  contiguousCacheBlocks);
+      matview_type Q_rawView (Q_numRows, Q_numCols, 
+			      Q_ptr.getRawPtr(), Q_stride);
       matview_type Q_top_block = 
-	nodeTsqr_->top_block (Q, contiguousCacheBlocks);
-      if (Q_top_block.nrows() < R.ncols())
-	throw std::logic_error("Q has too few rows");
-      matview_type Q_top (R.ncols(), Q.ncols(), 
-			  Q_top_block.get(), Q_top_block.lda());
-      distTsqr_->factorExplicit (R, Q_top);
+	nodeTsqr_->top_block (Q_rawView, contiguousCacheBlocks);
+      if (Q_top_block.nrows() < R.numCols())
+	{
+	  std::ostringstream os;
+	  os << "The top block of Q has too few rows.  This means that the "
+	     << "the intranode TSQR implementation has a bug in its top_block"
+	     << "() method.  The top block should have at least " << R.numCols()
+	     << " rows, but instead has only " << Q_top_block.ncols() 
+	     << " rows.";
+	  throw std::logic_error (os.str());
+	}
+      {
+	matview_type Q_top (R.numCols(), Q_numCols, Q_top_block.get(), 
+			    Q_top_block.lda());
+	matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
+	distTsqr_->factorExplicit (R_view, Q_top);
+      }
       nodeTsqr_->apply (ApplyType::NoTranspose, 
-			A.nrows(), A.ncols(), A.get(), A.lda(), nodeResults,
-			Q.ncols(), Q.get(), Q.lda(), contiguousCacheBlocks);
+			A_numRows, A_numCols, A_ptr.getRawPtr(), A_stride,
+			nodeResults, Q_numCols, Q_ptr.getRawPtr(), Q_stride,
+			contiguousCacheBlocks);
+      // "Commit" the changes to the multivector.
+      A_ptr = Teuchos::null;
+      Q_ptr = Teuchos::null;
     }
 
 
@@ -465,32 +507,54 @@ namespace TSQR {
 
     /// \brief Rank-revealing decomposition
     ///
-    /// Using the R factor from factor() and the explicit Q factor
-    /// from explicit_Q(), compute the SVD of R (\f$R = U \Sigma
-    /// V^*\f$).  If R is full rank (with respect to the given
-    /// relative tolerance tol), don't change Q or R.  Otherwise,
-    /// compute \f$Q := Q \cdot U\f$ and \f$R := \Sigma V^*\f$ in
-    /// place (the latter may be no longer upper triangular).
+    /// Using the R factor and explicit Q factor from
+    /// factorExplicit(), compute the singular value decomposition
+    /// (SVD) of R (\f$R = U \Sigma V^*\f$).  If R is full rank (with
+    /// respect to the given relative tolerance tol), don't change Q
+    /// or R.  Otherwise, compute \f$Q := Q \cdot U\f$ and \f$R :=
+    /// \Sigma V^*\f$ in place (the latter may be no longer upper
+    /// triangular).
+    ///
+    /// \param Q [in/out] On input: explicit Q factor computed by
+    ///   factorExplicit().  (Must be an orthogonal resp. unitary
+    ///   matrix.)  On output: If R is of full numerical rank with
+    ///   respect to the tolerance tol, Q is unmodified.  Otherwise, Q
+    ///   is updated so that the first rank columns of Q are a basis
+    ///   for the column space of A (the original matrix whose QR
+    ///   factorization was computed by factorExplicit()).  The
+    ///   remaining columns of Q are a basis for the null space of A.
     ///
     /// \param R [in/out] On input: ncols by ncols upper triangular
-    /// matrix with leading dimension ldr >= ncols.  On output: if
-    /// input is full rank, R is unchanged on output.  Otherwise, if
-    /// \f$R = U \Sigma V^*\f$ is the SVD of R, on output R is
-    /// overwritten with $\Sigma \cdot V^*$.  This is also an ncols by
-    /// ncols matrix, but may not necessarily be upper triangular.
+    ///   matrix with leading dimension ldr >= ncols.  On output: if
+    ///   input is full rank, R is unchanged on output.  Otherwise, if
+    ///   \f$R = U \Sigma V^*\f$ is the SVD of R, on output R is
+    ///   overwritten with $\Sigma \cdot V^*$.  This is also an ncols by
+    ///   ncols matrix, but may not necessarily be upper triangular.
+    ///
+    /// \param tol [in] Relative tolerance for computing the numerical
+    ///   rank of the matrix R.
+    /// 
+    /// \param contiguousCacheBlocks [in] Whether or not the cache
+    ///   blocks of Q are stored contiguously.  Defaults to false,
+    ///   which means that Q uses the ordinary column-major layout on
+    ///   each MPI process.
     ///
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
     ///
+    template< class NodeType >
     LocalOrdinal
-    revealRank (const LocalOrdinal nrows,
-		const LocalOrdinal ncols,
-		Scalar Q[],
-		const LocalOrdinal ldq,
-		Scalar R[],
-		const LocalOrdinal ldr,
+    revealRank (Kokkos::MultiVector< Scalar, NodeType >& Q,
+		Teuchos::SerialDenseMatrix< LocalOrdinal, Scalar >& R,
 		const magnitude_type& tol,
 		const bool contiguousCacheBlocks = false) const
     {
+      typedef Kokkos::MultiVector< Scalar, NodeType > KMV;
+
+      const LocalOrdinal nrows = static_cast< LocalOrdinal > (Q.getNumRows());
+      const LocalOrdinal ncols = static_cast< LocalOrdinal > (Q.getNumCols());
+      const LocalOrdinal ldq = static_cast< LocalOrdinal > (Q.getStride());
+      Teuchos::ArrayRCP< Scalar > Q_ptr = Q.getValuesNonConst();
+
       // Take the easy exit if available.
       if (ncols == 0)
 	return 0;
@@ -505,8 +569,8 @@ namespace TSQR {
       //
       matrix_type U (ncols, ncols, Scalar(0));
       const ordinal_type rank = 
-	reveal_R_rank (ncols, R, ldr, U.get(), U.lda(), tol);
-      
+	reveal_R_rank (ncols, R.values(), R.stride(), 
+		       U.get(), U.lda(), tol);
       if (rank < ncols)
 	{
 	  // cerr << ">>> Rank of R: " << rank << " < ncols=" << ncols << endl;
@@ -518,8 +582,8 @@ namespace TSQR {
 	  // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
 	  // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
 	  // := Q \cdot U\f$, respecting cache blocks of Q.
-	  Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(), 
-		     contiguousCacheBlocks);
+	  Q_times_B (nrows, ncols, Q_ptr.getRawPtr(), ldq, 
+		     U.get(), U.lda(), contiguousCacheBlocks);
 	}
       return rank;
     }
