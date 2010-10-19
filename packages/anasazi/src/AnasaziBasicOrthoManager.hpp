@@ -309,7 +309,7 @@ namespace Anasazi {
 #endif
   {
     TEST_FOR_EXCEPTION(eps_ < SCT::magnitude(SCT::zero()),std::invalid_argument,
-        "Anasazi::ICGSOrthoManager::ICGSOrthoManager(): argument \"eps\" must be non-negative.");
+        "Anasazi::BasicOrthoManager::BasicOrthoManager(): argument \"eps\" must be non-negative.");
     if (eps_ == 0) {
       Teuchos::LAPACK<int,MagnitudeType> lapack;
       eps_ = lapack.LAMCH('E');
@@ -318,7 +318,7 @@ namespace Anasazi {
     TEST_FOR_EXCEPTION(
         tol_ < SCT::magnitude(SCT::zero()) || tol_ > SCT::magnitude(SCT::one()),
         std::invalid_argument,
-        "Anasazi::ICGSOrthoManager::ICGSOrthoManager(): argument \"tol\" must be in [0,1].");
+        "Anasazi::BasicOrthoManager::BasicOrthoManager(): argument \"tol\" must be in [0,1].");
   }
 
 

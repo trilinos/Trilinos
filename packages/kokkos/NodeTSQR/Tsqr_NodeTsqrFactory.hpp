@@ -150,9 +150,7 @@ namespace TSQR {
 
   template< class Scalar, class LocalOrdinal >
   class NodeTsqrFactory< Kokkos::SerialNode, Scalar, LocalOrdinal > {
-    typedef Scalar scalar_type;
-    typedef LocalOrdinal ordinal_type;
-
+  public:
     typedef Kokkos::SerialNode node_type;
     typedef Teuchos::RCP< node_type > node_ptr;
     typedef SequentialTsqr< LocalOrdinal, Scalar > node_tsqr_type;

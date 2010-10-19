@@ -66,10 +66,6 @@ namespace TSQR {
   /// concept, but it is not necessary that NodeTsqrType derive from
   /// that abstract base class.
   ///
-  /// DistTsqrType: the internode (across nodes) part of Tsqr.  Any
-  /// class implementing the same compile-time interface as the
-  /// default template parameter class is valid.
-  ///
   /// \note TSQR only needs to know about the local ordinal type (used
   ///   to index matrix entries on a single node), not about the
   ///   global ordinal type (used to index matrix entries globally,
@@ -77,8 +73,7 @@ namespace TSQR {
   ///
   template< class LocalOrdinal, 
 	    class Scalar, 
-	    class NodeTsqrType = SequentialTsqr< LocalOrdinal, Scalar >,
-	    class DistTsqrType = DistTsqr< LocalOrdinal, Scalar > >
+	    class NodeTsqrType = SequentialTsqr< LocalOrdinal, Scalar > >
   class Tsqr {
   public:
     typedef MatView< LocalOrdinal, Scalar > matview_type;
@@ -91,7 +86,7 @@ namespace TSQR {
     typedef typename STS::magnitudeType magnitude_type;
 
     typedef NodeTsqrType node_tsqr_type;
-    typedef DistTsqrType dist_tsqr_type;
+    typedef DistTsqr< LocalOrdinal, Scalar > dist_tsqr_type;
     typedef typename Teuchos::RCP< node_tsqr_type > node_tsqr_ptr;
     typedef typename Teuchos::RCP< dist_tsqr_type > dist_tsqr_ptr;
     typedef typename dist_tsqr_type::rank_type rank_type;
@@ -107,8 +102,10 @@ namespace TSQR {
     ///
     /// \param distTsqr [in/out] Previously initialized DistTsqrType
     ///   object.  This takes care of the internode part of TSQR.
-    Tsqr (const node_tsqr_ptr& nodeTsqr, const dist_tsqr_ptr& distTsqr) :
-      nodeTsqr_ (nodeTsqr), distTsqr_ (distTsqr)
+    Tsqr (const node_tsqr_ptr& nodeTsqr, 
+	  const dist_tsqr_ptr& distTsqr) :
+      nodeTsqr_ (nodeTsqr), 
+      distTsqr_ (distTsqr)
     {}
 
     /// \brief Cache block size in bytes
@@ -137,7 +134,7 @@ namespace TSQR {
     factorExplicit (matview_type& A, 
 		    matview_type& Q, 
 		    matview_type& R, 
-		    const bool contiguousCacheBlocks = false)
+		    const bool contiguousCacheBlocks)
     {
       // Sanity checks for matrix dimensions
       if (A.nrows() < A.ncols())

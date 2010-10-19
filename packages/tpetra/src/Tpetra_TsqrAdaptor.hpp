@@ -33,7 +33,7 @@
 
 #include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
 #include <Tsqr.hpp> // full (internode + intranode) TSQR
-#include <Tsqr_DistTsqrRB.hpp> // internode TSQR
+#include <Tsqr_DistTsqr.hpp> // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
 #include <Tsqr_TeuchosMessenger.hpp> 
@@ -77,8 +77,8 @@ namespace Tpetra {
     typedef TSQR::MatView< ordinal_type, scalar_type > matview_type;
     typedef TSQR::NodeTsqrFactory< node_type, scalar_type, ordinal_type > node_tsqr_factory_type;
     typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqrRB< ordinal_type, scalar_type > dist_tsqr_type;
-    typedef TSQR::Tsqr< ordinal_type, scalar_type, node_tsqr_type, dist_tsqr_type > tsqr_type;
+    typedef TSQR::DistTsqr< ordinal_type, scalar_type > dist_tsqr_type;
+    typedef TSQR::Tsqr< ordinal_type, scalar_type, node_tsqr_type > tsqr_type;
 
   public:
     /// \brief Constructor
@@ -111,8 +111,10 @@ namespace Tpetra {
       // and Q to make sure they are the same communicator as the one
       // we are using in our dist_tsqr_type implementation.
 
+      matview_type A_view = getNonConstView (A);
+      matview_type Q_view = getNonConstView (Q);
       matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
-      pTsqr_->factorExplicit (getNonConstView (A), getNonConstView (Q), R_view);
+      pTsqr_->factorExplicit (A_view, Q_view, R_view, false);
     }
 
     /// \brief Rank-revealing decomposition
@@ -146,7 +148,7 @@ namespace Tpetra {
     ///
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
     ///
-    void
+    int
     revealRank (MV& Q,
 		dense_matrix_type& R,
 		const magnitude_type& tol)
@@ -156,9 +158,9 @@ namespace Tpetra {
       // using in our dist_tsqr_type implementation.
 
       matview_type Q_view = getNonConstView (Q);
-      matview_type R_view (R.numRows(), R.numCols(), R.values(), R.stride());
-      pTsqr_->revealRank (Q_view.ncols(), Q_view.ncols(), Q.get(), Q.lda(),
-			  R.get(), R.lda(), tol);
+      return pTsqr_->revealRank (Q_view.ncols(), Q_view.ncols(), 
+				 Q_view.get(), Q_view.lda(), 
+				 R.values(), R.stride(), tol);
     }
 
   private:
@@ -170,7 +172,7 @@ namespace Tpetra {
     /// multivector object.  TSQR does not currently support
     /// multivectors with nonconstant stride.
     static matview_type 
-    getNonConstView (const MV& A)
+    getNonConstView (MV& A)
     {
       if (! A.isConstantStride())
 	{
@@ -184,9 +186,14 @@ namespace Tpetra {
 	    "inputs that do not have constant stride.";
 	  throw std::runtime_error (os.str());
 	}
+      //
+      // FIXME (mfh 19 Oct 2010) This will only work if the memory for
+      // A is allocated on the host.
+      //
+      scalar_type* const A_ptr = A.get1dViewNonConst().getRawPtr();
       return matview_type (A.getLocalLength(), 
-			   A.getNumVectors, 
-			   A.get1dViewNonConst().getRawPtr(), 
+			   A.getNumVectors(),
+			   A_ptr,
 			   A.getStride());
     }
 
@@ -195,14 +202,14 @@ namespace Tpetra {
     static RCP< dist_tsqr_type > 
     makeDistTsqr (const MV& mv)
     {
-      using Teuchos::Comm;
       using Teuchos::RCP;
+      using Teuchos::rcp_implicit_cast;
       typedef TSQR::TeuchosMessenger< scalar_type > mess_type;
       typedef TSQR::MessengerBase< scalar_type > base_mess_type;
 
-      RCP< Comm<int> > pComm = mv.getMap()->getComm();
+      RCP< const Teuchos::Comm<int> > pComm = mv.getMap()->getComm();
       RCP< mess_type > pMess (new mess_type (pComm));
-      RCP< base_mess_type > pMessBase = Teuchos::rcp_implicit_cast (pMess);
+      RCP< base_mess_type > pMessBase = rcp_implicit_cast< base_mess_type > (pMess);
       RCP< dist_tsqr_type > pDistTsqr (new dist_tsqr_type (pMessBase));
       return pDistTsqr;
     }

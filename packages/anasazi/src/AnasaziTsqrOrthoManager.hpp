@@ -36,6 +36,7 @@
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -757,6 +758,14 @@ namespace Anasazi {
     typedef Teuchos::RCP< serial_matrix_type >                   serial_matrix_ptr;
     typedef Teuchos::Array< Teuchos::RCP< serial_matrix_type > > prev_coeffs_type;
     typedef typename Teuchos::ScalarTraits< ScalarType >::magnitudeType magnitude_type; 
+
+    /// \brief Default constructor (sets Op to Teuchos::null)
+    ///
+    TsqrMatOrthoManager () :
+      MatOrthoManager< ScalarType, MV, OP >(Teuchos::null),
+      pTsqr_ (Teuchos::null), // Lazy initialization
+      pSvqb_ (Teuchos::null)  // Lazy initialization
+    {}
 
     /// \brief Constructor
     ///
