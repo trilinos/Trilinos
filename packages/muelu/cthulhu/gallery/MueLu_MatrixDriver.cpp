@@ -10,11 +10,10 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#include "Cthulhu_DefaultPlatform.hpp"
+#define USE_TPETRA
+#include <Cthulhu.hpp>         // TODO: <> or ""
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
-
-#include "Cthulhu_TpetraMap.hpp"
 
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"
@@ -29,17 +28,14 @@ using Teuchos::RCP;
 
 int main(int argc, char* argv[]) 
 {
-  typedef int                                                       Ordinal;
-  typedef double                                                    Scalar;
-
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
-  Ordinal numThreads=1;
-  Ordinal nx=4;
-  Ordinal ny=4;
-  Ordinal nz=4;
+  LO numThreads=1;
+  GO nx=4;
+  GO ny=4;
+  GO nz=4;
   Teuchos::CommandLineProcessor cmdp(false,true);
   std::string matrixType("Laplace1D");
   cmdp.setOption("nt",&numThreads,"number of threads.");
@@ -58,15 +54,15 @@ int main(int argc, char* argv[])
   Teuchos::ParameterList pl;
   pl.set("Num Threads",numThreads);
 
-  Ordinal numGlobalElements = nx*ny;
+  GO numGlobalElements = nx*ny;
   if (matrixType == "Laplace3D")
     numGlobalElements *= nz;
-  Ordinal indexBase = 0;
+  LO indexBase = 0;
 
-  RCP<const Cthulhu::Map<Ordinal,Ordinal> > map;
-  map = rcp( new Cthulhu::TpetraMap<Ordinal,Ordinal>(numGlobalElements, indexBase, comm) );
+  RCP<const Map > map;
+  map = rcp( new MyMap(numGlobalElements, indexBase, comm) );
 
-  RCP<Cthulhu::CrsMatrix<Scalar,Ordinal,Ordinal> > A;
+  RCP<CrsMatrix> A;
   Teuchos::ParameterList matrixList;
   matrixList.set("nx",nx);
   matrixList.set("ny",ny);
@@ -81,7 +77,7 @@ int main(int argc, char* argv[])
 
   if (comm->getRank() == 0)
     std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
-  A = CreateCrsMatrix<Scalar,Ordinal,Ordinal>(matrixType,map,matrixList);
+  A = CreateCrsMatrix<SC,LO,GO>(matrixType,map,matrixList);
   A->describe(*out, Teuchos::VERB_EXTREME);
 
   return EXIT_SUCCESS;

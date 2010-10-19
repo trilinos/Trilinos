@@ -4,40 +4,23 @@
 #include <Teuchos_DefaultComm.hpp>
 
 // Using Galeri:
+// #include <Epetra_Maps.h>
+// #include <Epetra_CrsMatrix.h>
 // #include <Galeri_Maps.h>
 // #include <Galeri_CrsMatrices.h>
 
 // Using MueLu gallery:
+#define USE_TPETRA
+#include <Cthulhu.hpp>
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
+
+//
+
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"
 
 #include "MatrixVectorChecker.hpp"
-
-// Define template types
-typedef double ScalarType;
-typedef int    LocalOrdinal;
-typedef int    GlobalOrdinal;
-typedef Kokkos::DefaultNode::DefaultNodeType Node;
-
-// Convenient shortcut for template types
-typedef ScalarType    SC;
-typedef LocalOrdinal  LO;
-typedef GlobalOrdinal GO;
-typedef Node          NO;
-
-// Get ride of template parameters for some classes
-typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
-typedef Cthulhu::MultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
-
-// Use Tpetra
-#include <Cthulhu_TpetraMap.hpp>
-#include <Cthulhu_TpetraCrsMatrix.hpp>
-typedef Cthulhu::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> MyMap;
-typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyCrsMatrix;
-typedef Cthulhu::TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyMultiVector;
 
 int main(int argc, char *argv[])
 {
@@ -67,7 +50,6 @@ int main(int argc, char *argv[])
   MatrixVectorChecker<SC,LO,GO,NO>(matrix);
 
   return EXIT_SUCCESS;
-
 }
 
 // JG TODO:
