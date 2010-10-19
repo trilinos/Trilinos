@@ -2,7 +2,6 @@
 #define CTHULHU_TPETRACRSMATRIX_DECL_HPP
 
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_CrsMatrix_def.hpp"
 
 #include "Cthulhu_CrsMatrix.hpp"
 
@@ -39,8 +38,8 @@ namespace Cthulhu {
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
-  class TpetraCrsMatrix : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
+  class TpetraCrsMatrix : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
   public:
     //! @name Constructor/Destructor Methods
     //@{ 
