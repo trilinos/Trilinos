@@ -455,7 +455,7 @@ namespace TSQR {
 		   const LocalOrdinal ldr,
 		   Scalar U[],
 		   const LocalOrdinal ldu,
-		   const magnitude_type tol) const 
+		   const magnitude_type& tol) const 
     {
       // Forward the request to the intranode TSQR implementation.
       // This work is performed redundantly on all MPI processes.
@@ -491,7 +491,7 @@ namespace TSQR {
 		 const LocalOrdinal ldq,
 		 Scalar R[],
 		 const LocalOrdinal ldr,
-		 const magnitude_type tol,
+		 const magnitude_type& tol,
 		 const bool contiguousCacheBlocks = false) const
     {
       // Take the easy exit if available.

@@ -51,8 +51,7 @@
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
 #ifdef HAVE_ANASAZI_TSQR
-#  include "AnasaziTsqrAdaptor.hpp" 
-#include "TsqrAdaptor_Tpetra_MultiVector.hpp" 
+#  include "Tpetra_TsqrAdaptor.hpp"
 #include "TsqrRandomizer_Tpetra_MultiVector.hpp" 
 #endif // HAVE_ANASAZI_TSQR
 
@@ -304,7 +303,7 @@ namespace Anasazi {
   class TsqrAdaptor< Scalar, Tpetra::MultiVector< Scalar, LO, GO, Node > >
   {
   public:
-    typedef TSQR::Trilinos::TsqrTpetraAdaptor< Scalar, LO, GO, Node > adaptor_type;
+    typedef Tpetra::TsqrAdaptor< Tpetra::MultiVector< Scalar, LO, GO, Node > > adaptor_type;
   };
 #endif // HAVE_ANASAZI_TSQR
 

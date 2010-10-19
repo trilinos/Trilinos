@@ -30,23 +30,17 @@
 #define __TSQR_Tsqr_NodeTsqr_hpp
 
 #include <Tsqr_ApplyType.hpp>
-#include <Tsqr_Lapack.hpp>
-#include <Tsqr_Matrix.hpp>
-
-#include <Teuchos_ScalarTraits.hpp>
-
-#include <cstring> // size_t
-#include <vector>
+#include <Tsqr_NodeTsqrBase.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace TSQR {
 
-  class TrivialNodeTsqrFactorOutput {
+  class NodeTsqrFactorOutput {
   public:
-    TrivialNodeTsqrFactorOutput () {}
-    virtual ~TrivialNodeTsqrFactorOutput() = 0;
+    NodeTsqrFactorOutput () {}
+    virtual ~NodeTsqrFactorOutput() = 0;
   };
 
   /// \class NodeTsqr
@@ -56,10 +50,8 @@ namespace TSQR {
   /// TSQR implementation.  When you inherit from this base class,
   /// fill in the specific NodeTsqrFactorOutput type.  It's awkward,
   /// but it gives us some flexibility in the interface.
-  template< class LocalOrdinal, 
-	    class Scalar, 
-	    class NodeTsqrFactorOutput=TrivialNodeTsqrFactorOutput >
-  class NodeTsqr {
+  template< class LocalOrdinal, class Scalar >
+  class NodeTsqr : public NodeTsqrBase< LocalOrdinal, Scalar > {
   public:
     typedef Scalar scalar_type;
     typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType magnitude_type;
@@ -68,70 +60,6 @@ namespace TSQR {
 
     NodeTsqr() {}
     virtual ~NodeTsqr() {}
-
-    /// Whether or not the R factor from the QR factorization has a
-    /// nonnegative diagonal.
-    virtual bool 
-    QR_produces_R_factor_with_nonnegative_diagonal () const = 0;
-
-    virtual void
-    cache_block (const LocalOrdinal nrows,
-		 const LocalOrdinal ncols, 
-		 Scalar A_out[],
-		 const Scalar A_in[],
-		 const LocalOrdinal lda_in) const = 0;
-
-    virtual void
-    un_cache_block (const LocalOrdinal nrows,
-		    const LocalOrdinal ncols,
-		    Scalar A_out[],
-		    const LocalOrdinal lda_out,		    
-		    const Scalar A_in[]) const = 0;
-
-    virtual factor_output_type
-    factor (const LocalOrdinal nrows,
-	    const LocalOrdinal ncols, 
-	    Scalar A[],
-	    const LocalOrdinal lda,
-	    Scalar R[],
-	    const LocalOrdinal ldr,
-	    const bool contiguous_cache_blocks) = 0;
-
-    virtual void
-    apply (const ApplyType& apply_type,
-	   const LocalOrdinal nrows,
-	   const LocalOrdinal ncols_Q,
-	   const Scalar* const Q,
-	   const LocalOrdinal ldq,
-	   const FactorOutput& factor_output,
-	   const LocalOrdinal ncols_C,
-	   Scalar* const C,
-	   const LocalOrdinal ldc,
-	   const bool contiguous_cache_blocks) = 0;
-
-    virtual void
-    explicit_Q (const LocalOrdinal nrows,
-		const LocalOrdinal ncols_Q,
-		const Scalar Q[],
-		const LocalOrdinal ldq,
-		const factor_output_type& factor_output,
-		const LocalOrdinal ncols_C,
-		Scalar C[],
-		const LocalOrdinal ldc,
-		const bool contiguous_cache_blocks) = 0;
-
-    /// \brief Compute Q*B
-    ///
-    /// Compute matrix-matrix product Q*B, where Q is nrows by ncols
-    /// and B is ncols by ncols.  Respect cache blocks of Q.
-    virtual void
-    Q_times_B (const LocalOrdinal nrows,
-	       const LocalOrdinal ncols,
-	       Scalar Q[],
-	       const LocalOrdinal ldq,
-	       const Scalar B[],
-	       const LocalOrdinal ldb,
-	       const bool contiguous_cache_blocks) const = 0;
 
     /// Compute SVD \f$R = U \Sigma V^*\f$, not in place.  Use the
     /// resulting singular values to compute the numerical rank of R,
@@ -307,7 +235,7 @@ namespace TSQR {
 		 Scalar R[],
 		 const LocalOrdinal ldr,
 		 const magnitude_type tol,
-		 const bool contiguous_cache_blocks) const
+		 const bool contiguousCacheBlocks) const
     {
       // Take the easy exit if available.
       if (ncols == 0)
@@ -323,50 +251,10 @@ namespace TSQR {
 	  // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
 	  // := Q \cdot U\f$, respecting cache blocks of Q.
 	  Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(), 
-		     contiguous_cache_blocks);
+		     contiguousCacheBlocks);
 	}
       return rank;
     }
-
-    /// \brief Fill the nrows by ncols matrix A with zeros.
-    /// 
-    /// Fill the matrix A with zeros, in a way that respects the cache
-    /// blocking scheme.
-    ///
-    /// \param nrows [in] Number of rows in A
-    /// \param ncols [in] Number of columns in A 
-    /// \param A [out] nrows by ncols column-major-order dense matrix 
-    ///   with leading dimension lda
-    /// \param lda [in] Leading dimension of A: lda >= nrows
-    /// \param contiguous_cache_blocks [in] Whether the cache blocks
-    ///   in A are stored contiguously.
-    virtual void
-    fill_with_zeros (const LocalOrdinal nrows,
-		     const LocalOrdinal ncols,
-		     Scalar A[],
-		     const LocalOrdinal lda, 
-		     const bool contiguous_cache_blocks) = 0;
-
-    /// \brief Return topmost cache block of C
-    ///
-    /// \param C [in] Matrix (view), supporting the usual nrows(),
-    ///   ncols(), get(), lda() interface.
-    /// \param contiguous_cache_blocks [in] Whether the cache blocks
-    ///   in C are stored contiguously.
-    ///
-    /// Return a view of the topmost cache block (on this node) of the
-    /// given matrix C.  This is not necessarily square, though it
-    /// must have at least as many rows as columns.  For a square
-    /// ncols by ncols block, as needed by Tsqr::apply(), do as 
-    /// follows:
-    /// \code 
-    /// MatrixViewType top = this->top_block (C, contig);
-    /// MatView< LocalOrdinal, Scalar > square (ncols, ncols, top.get(), top.lda());
-    /// \endcode
-    template< class MatrixViewType >
-    virtual MatrixViewType
-    top_block (const MatrixViewType& C, 
-	       const bool contiguous_cache_blocks) const = 0;
   };
 } // namespace TSQR
 
