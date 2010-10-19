@@ -6,6 +6,9 @@
 
 #include "Cthulhu_CrsMatrix.hpp"
 
+#include "Cthulhu_TpetraMap.hpp"
+#include "Cthulhu_TpetraMultiVector.hpp"
+
 #include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
@@ -45,7 +48,8 @@ namespace Cthulhu {
     // JG TODO: remove constructor, create factory ?
 
     //! Constructor specifying the number of non-zeros for all rows.
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) { CTHULHU_DEBUG_ME;
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
+    { CTHULHU_DEBUG_ME;
       const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
       mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), maxNumEntriesPerRow, pftype));
     }
@@ -72,8 +76,8 @@ namespace Cthulhu {
      */
     TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
     { CTHULHU_DEBUG_ME;
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tColMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(colMap); //TODO: handle error
+            const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
+       const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tColMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(colMap); //TODO: handle error
       mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), NumEntriesPerRowToAlloc, pftype));
     } 
 
@@ -223,18 +227,22 @@ namespace Cthulhu {
      inline RCP<Node> getNode() const { CTHULHU_DEBUG_ME; return mtx_->getNode(); }
 
      //! Returns the Map that describes the row distribution in this matrix.
-//    TODO Tpetra::Map
-//    inline const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const { CTHULHU_DEBUG_ME; return mtx_->getRowMap(); } 
-
+    inline const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const { 
+      CTHULHU_DEBUG_ME; 
+      return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getRowMap()) ); 
+    }
+     
      //! \brief Returns the Map that describes the column distribution in this matrix.
-//    TODO Tpetra::Map
-//    inline const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const { CTHULHU_DEBUG_ME; return mtx_->getColMap();  }
+    inline const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const { 
+      CTHULHU_DEBUG_ME; 
+      return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getColMap()) ); 
+    }
 
      //! Returns the RowGraph associated with this matrix. 
-     //TODO    inline RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const { CTHULHU_DEBUG_ME; return mtx_->getGraph(); }
+    //TODO    inline RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getGraph(); }
 
      //! Returns the CrsGraph associated with this matrix. 
-     //TODO    inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const { CTHULHU_DEBUG_ME; return mtx_->getCrsGraph(); }
+    //TODO    inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getCrsGraph(); }
 
      //! Returns the number of global rows in this matrix.
      /** Undefined if isFillActive().
@@ -411,8 +419,22 @@ namespace Cthulhu {
      If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
      will be accumulated into \c Y.
      */
-     template <class DomainScalar, class RangeScalar>
-     inline void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const { CTHULHU_DEBUG_ME; mtx_->multiply(X, Y, trans, alpha, beta); }
+  //    template <class DomainScalar, class RangeScalar>
+//      inline void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const { CTHULHU_DEBUG_ME; mtx_->multiply(X, Y, trans, alpha, beta); }
+
+    // TODO Note: Do we need to use a Tpetra::CrsMatrixMultiplyOp ?? 
+    //            (Tpetra Doc of multiply: it is recommended that multiply() not be called directly; instead, use the CrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.)
+
+    // TODO : templated type
+
+    void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
+      CTHULHU_DEBUG_ME; 
+
+      const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &tX = dynamic_cast<const TpetraMultiVector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &>(X); //TODO: handle error
+      /* */ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &tY = dynamic_cast<      TpetraMultiVector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &>(Y); //TODO: handle error
+
+      mtx_->template multiply<Scalar,Scalar>(*tX.getTpetra_MultiVector(), *tY.getTpetra_MultiVector(), trans, alpha, beta);
+    }
 
      //! Solves a linear system when the underlying matrix is triangular.
      /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
@@ -444,13 +466,18 @@ namespace Cthulhu {
 
      //! \brief Returns the Map associated with the domain of this operator.
      //! This will be <tt>null</tt> until fillComplete() is called.
-    //TODO: wrap Tpetra::Map into a Cthulhu::Map
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const { CTHULHU_DEBUG_ME; return mtx_->getDomainMap(); }
-
+    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const { 
+      CTHULHU_DEBUG_ME; 
+      return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getDomainMap()) ); 
+    }
+    
      //! Returns the Map associated with the domain of this operator.
      //! This will be <tt>null</tt> until fillComplete() is called.
     //TODO: wrap Tpetra::Map into a Cthulhu::Map
-     //inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const { CTHULHU_DEBUG_ME; return mtx_->getRangeMap(); }
+    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const { 
+      CTHULHU_DEBUG_ME; 
+      return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getRangeMap()) ); 
+    }
 
      //@}
 
