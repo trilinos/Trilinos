@@ -34,7 +34,6 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
-#include "AnasaziTsqrAdaptor.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "Teuchos_LAPACK.hpp"
 
@@ -121,7 +120,7 @@ namespace Anasazi {
     typedef Teuchos::ScalarTraits< MagnitudeType > SCTM;
     typedef MultiVecTraits< ScalarType, MV >       MVT;
 
-    typedef typename Anasazi::TsqrAdaptor< ScalarType, MV >::adaptor_type tsqr_adaptor_type;
+    typedef typename MVT::tsqr_adaptor_type tsqr_adaptor_type;
     typedef Teuchos::RCP< tsqr_adaptor_type > tsqr_adaptor_ptr;
 
   public:
