@@ -10,7 +10,7 @@
 // #include <Galeri_CrsMatrices.h>
 
 // Using MueLu gallery:
-#define USE_TPETRA
+#define CTHULHU_USE_TPETRA
 #include <Cthulhu.hpp>
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
