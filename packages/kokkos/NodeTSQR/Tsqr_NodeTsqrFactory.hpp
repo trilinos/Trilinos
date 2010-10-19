@@ -78,13 +78,18 @@ namespace TSQR {
     // All this try/catch stuff is because the C++ compiler can't
     // deduce the right two-argument get() function (second argument
     // would be the default).
+    T retrievedValue;
     try {
       const std::string paramName (name);
-      value = plist.get< T > (paramName);
+      retrievedValue = plist.get< T > (paramName);
       gotValue = true;
-    } catch (InvalidParameter&) {
+    } catch (Teuchos::Exceptions::InvalidParameter&) {
       gotValue = false;
     }
+    // Only write to the output argument if we got a value out of the
+    // parameter list.
+    if (gotValue)
+      value = retrievedValue;
   }
 
   static size_t
@@ -131,7 +136,7 @@ namespace TSQR {
   public:
     typedef Kokkos::TBBNode node_type;
     typedef Teuchos::RCP< node_type > node_ptr;
-    typedef TbbTsqr< LocalOrdinal, Scalar > node_tsqr_type;
+    typedef TBB::TbbTsqr< LocalOrdinal, Scalar > node_tsqr_type;
 
     static Teuchos::RCP< node_tsqr_type >
     makeNodeTsqr (const Teuchos::ParameterList& plist)

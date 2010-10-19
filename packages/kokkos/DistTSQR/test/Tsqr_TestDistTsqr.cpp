@@ -50,7 +50,7 @@
 #include <vector>
 
 using TSQR::MessengerBase;
-using TSQR::Trilinos::TeuchosMessenger;
+using TSQR::TeuchosMessenger;
 using TSQR::Test::DistTsqrVerifier;
 using TSQR::Test::DistTsqrBenchmarker;
 

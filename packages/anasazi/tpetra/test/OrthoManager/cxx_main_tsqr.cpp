@@ -145,7 +145,7 @@ MVDiff (const MV& X,
 /// Valid command-line parameter values for the OrthoManager subclass
 /// to test.
 static const char* validOrthoManagers[] = {
-  "Tsqr",
+  "TSQR",
   "SVQB",
   "Basic",
   "ICGS"
@@ -175,7 +175,7 @@ printValidOrthoManagerList ()
   return os.str();
 }
 static std::string
-defaultOrthoManagerName () { return std::string("Tsqr"); }
+defaultOrthoManagerName () { return std::string("TSQR"); }
 
 
 ///
@@ -189,15 +189,15 @@ getOrthoManager (const std::string& ortho,
   ParameterList tsqrParams;
 
   if (ortho == "SVQB") {
-    return rcp (new SVQBOrthoManager<scalar_type,MV,OP>(M));
+    return rcp (new SVQBOrthoManager< scalar_type, MV, OP >(M));
   }
-  else if (ortho == "Basic" || ortho == "basic") {
-    return rcp (new BasicOrthoManager<scalar_type,MV,OP>(M));
+  else if (ortho == "Basic" || ortho == "basic" || ortho == "BASIC") {
+    return rcp (new BasicOrthoManager< scalar_type, MV, OP >(M));
   }
-  else if (ortho == "ICGS") {
-    return rcp (new ICGSOrthoManager<scalar_type,MV,OP>(M));
+  else if (ortho == "ICGS" || ortho == "Icgs" || ortho == "icgs") {
+    return rcp (new ICGSOrthoManager< scalar_type, MV, OP >(M));
   }
-  else if (ortho == "Tsqr" || ortho == "TSQR") {
+  else if (ortho == "TSQR" || ortho == "Tsqr" || ortho == "tsqr") {
     return rcp (new TsqrMatOrthoManager< scalar_type, MV, OP > (tsqrParams, M));
   }
   else {

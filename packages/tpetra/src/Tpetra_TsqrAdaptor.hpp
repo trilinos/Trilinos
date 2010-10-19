@@ -34,6 +34,9 @@
 #include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
 #include <Tsqr.hpp> // full (internode + intranode) TSQR
 #include <Tsqr_DistTsqrRB.hpp> // internode TSQR
+// Subclass of TSQR::MessengerBase, implemented using Teuchos
+// communicator template helper functions
+#include <Tsqr_TeuchosMessenger.hpp> 
 
 #include <Tpetra_MultiVector.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
@@ -92,7 +95,7 @@ namespace Tpetra {
     ///   per core, in bytes) tends to be defined for all of the
     ///   non-GPU implementations.  For details, check the specific
     ///   NodeTsqrFactory implementation.
-    TsqrAdaptor (const multivector_type& mv,
+    TsqrAdaptor (const MV& mv,
 		 const Teuchos::ParameterList& plist) :
       pTsqr_ (new tsqr_type (makeNodeTsqr (plist), makeDistTsqr (mv)))
     {}
@@ -100,8 +103,8 @@ namespace Tpetra {
     /// \brief Compute QR factorization [Q,R] = qr(A,0)
     ///
     void
-    factorExplicit (multivector_type& A,
-		    multivector_type& Q,
+    factorExplicit (MV& A,
+		    MV& Q,
 		    dense_matrix_type& R)
     {
       // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> objects in A
@@ -144,7 +147,7 @@ namespace Tpetra {
     /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
     ///
     void
-    revealRank (multivector_type& Q,
+    revealRank (MV& Q,
 		dense_matrix_type& R,
 		const magnitude_type& tol)
     {
@@ -167,7 +170,7 @@ namespace Tpetra {
     /// multivector object.  TSQR does not currently support
     /// multivectors with nonconstant stride.
     static matview_type 
-    getNonConstView (const multivector_type& A)
+    getNonConstView (const MV& A)
     {
       if (! A.isConstantStride())
 	{
@@ -190,16 +193,17 @@ namespace Tpetra {
     /// Initialize and return internode TSQR implementation
     ///
     static RCP< dist_tsqr_type > 
-    makeDistTsqr (const multivector_type& mv)
+    makeDistTsqr (const MV& mv)
     {
       using Teuchos::Comm;
       using Teuchos::RCP;
-      using TSQR::MessengerBase;
-      using TSQR::Teuchos::TeuchosMessenger;
+      typedef TSQR::TeuchosMessenger< scalar_type > mess_type;
+      typedef TSQR::MessengerBase< scalar_type > base_mess_type;
 
       RCP< Comm<int> > pComm = mv.getMap()->getComm();
-      RCP< MessengerBase< scalar_type > > pMess (new TeuchosMessenger (pComm));
-      RCP< dist_tsqr_type > pDistTsqr (new dist_tsqr_type (pMess));
+      RCP< mess_type > pMess (new mess_type (pComm));
+      RCP< base_mess_type > pMessBase = Teuchos::rcp_implicit_cast (pMess);
+      RCP< dist_tsqr_type > pDistTsqr (new dist_tsqr_type (pMessBase));
       return pDistTsqr;
     }
 
