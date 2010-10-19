@@ -1,6 +1,8 @@
 #ifndef CTHULHU_BLOCKMAP_DECL_HPP
 #define CTHULHU_BLOCKMAP_DECL_HPP
 
+#ifdef CTHULHU_TPETRA_ONLY
+
 #include "Cthulhu_Map.hpp"
 
 #include "Cthulhu_Debug.hpp"
@@ -88,6 +90,8 @@ class BlockMap : public Teuchos::Describable {
 // convertBlockMapToPointMap(const Teuchos::RCP<const Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap)
 
 }//namespace Cthulhu
+
+#endif // CTHULHU_TPETRA_ONLY
 
 #endif
 

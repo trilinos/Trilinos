@@ -14,14 +14,9 @@
 /** \file Cthulhu_Map.hpp 
 
     The declarations for the class Cthulhu::Map and related non-member constructors.
- */
+*/
 
 namespace Cthulhu {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  // forward dec
-  template <class LO, class GO, class N> class Directory;
-#endif
 
   /** \brief A class for partitioning distributed objects.
 
@@ -33,44 +28,10 @@ namespace Cthulhu {
 
   public:
 
-//     //! @name Constructor/Destructor Methods
-//     //@{ 
-
-//     /** \brief Map constructor with Cthulhu-defined contiguous uniform distribution.
-//      *   The elements are distributed among nodes so that the subsets of global elements
-//      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
-//      *   possible.
-//      */
-//     Map(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-//         LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
-
-//     /** \brief Map constructor with a user-defined contiguous distribution.
-//      *  The elements are distributed among the nodes so that the subsets of global elements
-//      *  are non-overlapping and contiguous 
-//      *  
-//      *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-//      *  Otherwise, it must be equal to the sum of the local elements across all 
-//      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-//      *  If this verification fails, a std::invalid_argument exception will be thrown.
-//      */
-//     Map(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, 
-//         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
-        
-
-//     /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
-//      *  
-//      *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
-//      *  Otherwise, it must be equal to the sum of the local elements across all 
-//      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
-//      *  If this verification fails, a std::invalid_argument exception will be thrown.
-//      */
-//     Map(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, 
-//         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
-
-//     //! Map destructor. 
+    //! Map destructor. 
     virtual ~Map() { CTHULHU_DEBUG_ME; };
 
-//     //@}
+    //@}
 
     //! @name Map Attribute Methods
     //@{ 
@@ -117,16 +78,16 @@ namespace Cthulhu {
      */
     //TODO: LookupStatus
     virtual Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                                                                    const Teuchos::ArrayView<                int> & nodeIDList, 
-                                                                    const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const = 0;
-
+                                                    const Teuchos::ArrayView<                int> & nodeIDList, 
+                                                    const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const = 0;
+    
     //! Returns the node IDs for a given list of global indices.
     /** 
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
     virtual Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                                                                    const Teuchos::ArrayView<                int> & nodeIDList) const = 0;
+                                                    const Teuchos::ArrayView<                int> & nodeIDList) const = 0;
 
     //! Return a list of the global indices owned by this node.
     virtual Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const = 0;
@@ -179,15 +140,5 @@ namespace Cthulhu {
   }; // Map class
 
 } // Cthulhu namespace
-
-// /** \brief  Returns true if \c map is identical to this map. Implemented in Cthulhu::Map::isSameAs().
-//     \relates Cthulhu::Map */
-// template <class LocalOrdinal, class GlobalOrdinal, class Node>
-// bool operator== (const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
-
-// /** \brief Returns true if \c map is not identical to this map. Implemented in Cthulhu::Map::isSameAs().
-//     \relates Cthulhu::Map */
-// template <class LocalOrdinal, class GlobalOrdinal, class Node>
-// bool operator!= (const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
 #endif // CTHULHU_MAP_DECL_HPP
