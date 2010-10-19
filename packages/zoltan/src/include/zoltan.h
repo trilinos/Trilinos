@@ -3310,20 +3310,11 @@ enum {GLORY,
       S861036,
       ZOLTAN_HIER_LAST_PLATFORM};
 
-enum{ZOLTAN_NODE_TOPOLOGY,        /* app is loaded onto a collection of nodes */
-     ZOLTAN_MACHINE_TOPOLOGY};    /* app is loaded onto a machine */
-
 typedef struct _spec{
   /*
    * name of predefined topologies, or null if topology given by parameter
    */
   char *platform_name;
-
-  /* 
-   * does topology represent whole machine, or does it represent topology 
-   * of the nodes comprising machine 
-   */
-  int topology_type; 
 
   /*
    * size of num_siblings and my_part arrays
@@ -3340,7 +3331,6 @@ typedef struct _spec{
    * the part computed by this process at this level
    */
   int my_part[PLATFORM_MAX_LEVELS];
-
 } zoltan_platform_specification;
 
 #ifdef __cplusplus
