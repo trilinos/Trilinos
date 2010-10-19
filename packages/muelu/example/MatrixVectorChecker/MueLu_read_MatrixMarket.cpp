@@ -26,7 +26,7 @@ using namespace Teuchos;
 
 void ML_Read_Matrix_Dimensions(char *filename, int *numGlobalRows,Epetra_Comm &Comm);
 // Small function to handle exiting gracefully.  All pids must call.
-void ML_Exit(int mypid, int code, char *fmt, ...);
+void ML_Exit(int mypid, int code, const char *fmt, ...);
 
 // ============== //
 // example driver //
@@ -201,7 +201,7 @@ void ML_Read_Matrix_Dimensions(char *filename, int *numGlobalRows, Epetra_Comm &
 
 //** ************************************************************************ **
 
-void ML_Exit(int mypid, int code, char *fmt,...)
+void ML_Exit(int mypid, int code, const char *fmt,...)
 {
   char msg[800];
   va_list ap;
