@@ -13,48 +13,158 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/Comm.hpp>
+
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
 
-#include <unit_tests/UnitTestBulkData.hpp>
-#include <unit_tests/UnitTestRingMeshFixture.hpp>
+#include <stk_mesh/fixtures/BoxFixture.hpp>
+#include <stk_mesh/fixtures/RingFixture.hpp>
 
-STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testUnit)
+#include <unit_tests/UnitTestModificationEndWrapper.hpp>
+#include <unit_tests/UnitTestRingFixture.hpp>
+
+using stk::mesh::Part;
+using stk::mesh::MetaData;
+using stk::mesh::BulkData;
+using stk::mesh::Entity;
+using stk::mesh::Selector;
+using stk::mesh::PartVector;
+using stk::mesh::EntityProc;
+using stk::mesh::BaseEntityRank;
+using stk::mesh::PairIterRelation;
+using stk::mesh::EntityId;
+using stk::mesh::TopologicalMetaData;
+using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fixtures::BoxFixture;
+
+namespace {
+
+void donate_one_element( BulkData & mesh , bool aura )
 {
-  MPI_Barrier( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testBulkData( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testChangeOwner_nodes( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testChangeOwner_loop( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testChangeOwner_box( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testCreateMore( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testChangeParts( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testChangeParts_loop( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testDestroy_nodes( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testDestroy_loop( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testModifyPropagation( MPI_COMM_WORLD );
+  const unsigned p_rank = mesh.parallel_rank();
+
+  Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
+
+  std::vector<unsigned> before_count ;
+  std::vector<unsigned> after_count ;
+
+  count_entities( select_owned , mesh , before_count );
+
+  // Change owner of an element on a process boundary
+  // from P0 to P1, and then recount to confirm ownership change
+
+  std::vector<EntityProc> change ;
+
+  // A shared node:
+  Entity * node = NULL ;
+  Entity * elem = NULL ;
+
+  for ( std::vector<Entity*>::const_iterator
+        i =  mesh.entity_comm().begin() ;
+        i != mesh.entity_comm().end() ; ++i ) {
+    if ( in_shared( **i ) && (**i).entity_rank() == BaseEntityRank ) {
+      node = *i ;
+      break ;
+    }
+  }
+
+  STKUNIT_ASSERT( node != NULL );
+
+  for ( PairIterRelation rel = node->relations( 3 );
+        ! rel.empty() && elem == NULL ; ++rel ) {
+    elem = rel->entity();
+    if ( elem->owner_rank() != p_rank ) { elem = NULL ; }
+  }
+
+  STKUNIT_ASSERT( elem != NULL );
+
+  unsigned donated_nodes = 0 ;
+
+  // Only process #0 donates an element and its owned nodes:
+  if ( 0 == p_rank ) {
+    EntityProc entry ;
+    entry.first = elem ;
+    entry.second = node->sharing()[0].proc ;
+    change.push_back( entry );
+    for ( PairIterRelation
+          rel = elem->relations(0) ; ! rel.empty() ; ++rel ) {
+      if ( rel->entity()->owner_rank() == p_rank ) {
+        entry.first = rel->entity();
+        change.push_back( entry );
+        ++donated_nodes ;
+      }
+    }
+  }
+
+  STKUNIT_ASSERT( mesh.modification_begin() );
+  mesh.change_entity_owner( change );
+  STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper( mesh , aura ) );
+
+  count_entities( select_owned , mesh , after_count );
+
+  if ( 0 == p_rank ) {
+    STKUNIT_ASSERT_EQUAL( before_count[3] - 1 , after_count[3] );
+    STKUNIT_ASSERT_EQUAL( before_count[0] - donated_nodes, after_count[0] );
+  }
 }
 
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
-
-
-namespace stk {
-namespace mesh {
-
-bool UnitTestBulkData::modification_end( BulkData & mesh , bool aura )
-{ return mesh.internal_modification_end( aura ); }
-
-// Unit test the Part functionality in isolation:
-
-void UnitTestBulkData::testBulkData( ParallelMachine pm )
+void donate_all_shared_nodes( BulkData & mesh , bool aura )
 {
-  static const char method[] = "stk::mesh::UnitTestBulkData" ;
+  const unsigned p_rank = mesh.parallel_rank();
 
-  std::cout << std::endl ;
+  const Selector select_used = mesh.mesh_meta_data().locally_owned_part() |
+                               mesh.mesh_meta_data().globally_shared_part() ;
+
+  std::vector<unsigned> before_count ;
+  std::vector<unsigned> after_count ;
+
+  count_entities( select_used , mesh , before_count );
+
+  // Donate owned shared nodes to first sharing process.
+
+  const std::vector<Entity*> & entity_comm = mesh.entity_comm();
+
+  STKUNIT_ASSERT( ! entity_comm.empty() );
+
+  std::vector<EntityProc> change ;
+
+  for ( std::vector<Entity*>::const_iterator
+        i =  entity_comm.begin() ;
+        i != entity_comm.end() &&
+        (**i).entity_rank() == BaseEntityRank ; ++i ) {
+    Entity * const node = *i ;
+    const stk::mesh::PairIterEntityComm ec = node->sharing();
+
+    if ( node->owner_rank() == p_rank && ! ec.empty() ) {
+      change.push_back( EntityProc( node , ec->proc ) );
+    }
+  }
+
+  STKUNIT_ASSERT( mesh.modification_begin() );
+  mesh.change_entity_owner( change );
+  STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper( mesh , aura ) );
+
+  count_entities( select_used , mesh , after_count );
+
+  STKUNIT_ASSERT( 3 <= after_count.size() );
+  STKUNIT_ASSERT_EQUAL( before_count[0] , after_count[0] );
+  STKUNIT_ASSERT_EQUAL( before_count[1] , after_count[1] );
+  STKUNIT_ASSERT_EQUAL( before_count[2] , after_count[2] );
+  STKUNIT_ASSERT_EQUAL( before_count[3] , after_count[3] );
+}
+
+} // empty namespace
+
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkData)
+{
+  // Unit test the Part functionality in isolation:
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
 
   std::vector<std::string> entity_names(10);
   for ( size_t i = 0 ; i < 10 ; ++i ) {
@@ -91,37 +201,27 @@ void UnitTestBulkData::testBulkData( ParallelMachine pm )
     STKUNIT_ASSERT( e[i] == bulk.get_entity( i , id ) );
   }
 
-  bool ok = false ;
   STKUNIT_ASSERT( bulk.modification_begin() );
-  try {
-    bulk.declare_entity( 11 , id , no_parts );
-  }
-  catch( const std::exception & x ) {
-    std::cout << method << " correctly caught: " << x.what() << std::endl ;
-    ok = true ;
-  }
-  STKUNIT_ASSERT( ok );
+  STKUNIT_ASSERT_THROW( bulk.declare_entity( 11 , id , no_parts ),
+                        std::logic_error );
   STKUNIT_ASSERT( bulk.modification_end() );
 
   // Catch not-ok-to-modify
-  ok = false ;
-  try {
-    bulk.declare_entity( 0 , id + 1 , no_parts );
-  }
-  catch( const std::exception & x ) {
-    ok = true ;
-  }
-  STKUNIT_ASSERT( ok );
+  STKUNIT_ASSERT_THROW( bulk.declare_entity( 0 , id + 1 , no_parts ),
+                        std::runtime_error );
 }
 
 //----------------------------------------------------------------------
 // Testing for mesh entities without relations
 
-void UnitTestBulkData::testChangeOwner_nodes( ParallelMachine pm )
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
 {
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
   enum { nPerProc = 10 };
-  const unsigned p_rank = parallel_machine_rank( pm );
-  const unsigned p_size = parallel_machine_size( pm );
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const unsigned p_size = stk::parallel_machine_size( pm );
   const unsigned id_total = nPerProc * p_size ;
   const unsigned id_begin = nPerProc * p_rank ;
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
@@ -223,31 +323,22 @@ void UnitTestBulkData::testChangeOwner_nodes( ParallelMachine pm )
     STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[id_give] ) );
     STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[id_give+1] ) );
   }
-
-  std::cout << std::endl
-            << "P" << p_rank
-            << ": UnitTestBulkData::testChangeOwner_nodes( NP = "
-            << p_size << " ) SUCCESSFULL " << std::endl ;
 }
 
 //----------------------------------------------------------------------
 // Testing for creating existing mesh entities without relations
 
-void UnitTestBulkData::testCreateMore( ParallelMachine pm )
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
 {
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
   enum { nPerProc = 10 };
 
-  const unsigned p_size = parallel_machine_size( pm );
-  const unsigned p_rank = parallel_machine_rank( pm );
+  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
 
   if ( 1 < p_size ) {
-
-    std::cout << std::endl
-              << "P" << p_rank
-              << ": UnitTestBulkData::testCreateMore( NP = "
-              << p_size << " )"
-              << std::endl ;
-    std::cout.flush();
 
     const unsigned id_total = nPerProc * p_size ;
     const unsigned id_begin = nPerProc * p_rank ;
@@ -328,11 +419,14 @@ void UnitTestBulkData::testCreateMore( ParallelMachine pm )
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
 {
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
   enum { nPerProc = 10 };
-  const unsigned p_rank = parallel_machine_rank( pm );
-  const unsigned p_size = parallel_machine_size( pm );
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const unsigned p_size = stk::parallel_machine_size( pm );
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
 
@@ -340,9 +434,18 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 
   //------------------------------
   {
-    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    bool aura = false;
+    RingFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    BulkData & bulk = ring_mesh.m_bulk_data;
     ring_mesh.m_meta_data.commit();
-    ring_mesh.generate_mesh( false /* no aura */ );
+
+    bulk.modification_begin();
+    ring_mesh.generate_mesh( );
+    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
+
+    bulk.modification_begin();
+    ring_mesh.fixup_node_ownership( );
+    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
 
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
                                  ring_mesh.m_meta_data.globally_shared_part() ;
@@ -356,10 +459,10 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
     STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 
-    // Shift loop by two nodes and edges.
-
     if ( 1 < p_size ) {
-      ring_mesh.test_shift_loop( false /* no aura */ );
+      // Shift ring by two nodes and edges.
+
+      stk::unit_test::test_shift_ring( ring_mesh, false /* no aura */ );
 
       count_entities( select_used , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nLocalNode );
@@ -374,9 +477,17 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test shift starting with ghosting but not regenerated ghosting.
   {
-    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    RingFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    BulkData& bulk = ring_mesh.m_bulk_data;
     ring_mesh.m_meta_data.commit();
-    ring_mesh.generate_mesh( true /* with aura */ );
+
+    bulk.modification_begin();
+    ring_mesh.generate_mesh( );
+    STKUNIT_ASSERT(bulk.modification_end());
+
+    bulk.modification_begin();
+    ring_mesh.fixup_node_ownership( );
+    STKUNIT_ASSERT(bulk.modification_end());
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -393,7 +504,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
     if ( 1 < p_size ) {
-      ring_mesh.test_shift_loop( false /* no aura */ );
+      stk::unit_test::test_shift_ring( ring_mesh, false /* no aura */ );
 
       count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nPerProc );
@@ -412,9 +523,17 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test shift starting with ghosting and regenerating ghosting.
   {
-    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    RingFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    BulkData& bulk = ring_mesh.m_bulk_data;
     ring_mesh.m_meta_data.commit();
-    ring_mesh.generate_mesh( true /* with aura */ );
+
+    bulk.modification_begin();
+    ring_mesh.generate_mesh( );
+    STKUNIT_ASSERT(bulk.modification_end());
+
+    bulk.modification_begin();
+    ring_mesh.fixup_node_ownership( );
+    STKUNIT_ASSERT(bulk.modification_end());
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -431,7 +550,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
     if ( 1 < p_size ) {
-      ring_mesh.test_shift_loop( true /* with aura */ );
+      stk::unit_test::test_shift_ring( ring_mesh, true /* with aura */ );
 
       count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nPerProc );
@@ -450,9 +569,17 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test bad owner change catching:
   if ( 1 < p_size ) {
-    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    RingFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    BulkData& bulk = ring_mesh.m_bulk_data;
     ring_mesh.m_meta_data.commit();
-    ring_mesh.generate_mesh( true /* with aura */ );
+
+    bulk.modification_begin();
+    ring_mesh.generate_mesh( );
+    STKUNIT_ASSERT(bulk.modification_end());
+
+    bulk.modification_begin();
+    ring_mesh.fixup_node_ownership( );
+    STKUNIT_ASSERT(bulk.modification_end());
 
     std::vector<EntityProc> change ;
 
@@ -480,29 +607,24 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 
     STKUNIT_ASSERT( ring_mesh.m_bulk_data.modification_begin() );
 
-    std::string error_msg ;
-    bool exception_thrown = false ;
-    try {
-      ring_mesh.m_bulk_data.change_entity_owner( change );
-    }
-    catch( const std::exception & x ) {
-      exception_thrown = true ;
-      error_msg.assign( x.what() );
-    }
-    STKUNIT_ASSERT( exception_thrown );
-    std::cout
-      << std::endl
-      << "  UnitTestBulkData::testChangeOwner_loop SUCCESSFULLY CAUGHT: "
-      << error_msg << std::endl ;
-    std::cout.flush();
+    STKUNIT_ASSERT_THROW( ring_mesh.m_bulk_data.change_entity_owner( change ),
+                          std::runtime_error );
   }
   //------------------------------
   // Test move one element with initial ghosting but not regenerated ghosting:
   // last processor give its shared node to P0
   if ( 1 < p_size ) {
-    UnitTestRingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    RingFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
+    BulkData& bulk = ring_mesh.m_bulk_data;
     ring_mesh.m_meta_data.commit();
-    ring_mesh.generate_mesh( true /* with aura */ );
+
+    bulk.modification_begin();
+    ring_mesh.generate_mesh( );
+    STKUNIT_ASSERT(bulk.modification_end());
+
+    bulk.modification_begin();
+    ring_mesh.fixup_node_ownership( );
+    STKUNIT_ASSERT(bulk.modification_end());
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
@@ -521,7 +643,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 
     STKUNIT_ASSERT( ring_mesh.m_bulk_data.modification_begin() );
     ring_mesh.m_bulk_data.change_entity_owner( change );
-    STKUNIT_ASSERT( UnitTestBulkData::modification_end( ring_mesh.m_bulk_data , false ) );
+    STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper( ring_mesh.m_bulk_data , false ) );
 
     count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
     const unsigned n_node = p_rank == 0          ? nPerProc + 1 : (
@@ -541,193 +663,90 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     STKUNIT_ASSERT_EQUAL( nLocalNode + n_extra , local_count[0] );
     STKUNIT_ASSERT_EQUAL( nLocalEdge + n_extra , local_count[1] );
   }
-
-  //------------------------------
-
-  std::cout << std::endl
-            << "P" << p_rank
-            << ": UnitTestBulkData::testChangeOwner_loop( NP = "
-            << p_size << " ) SUCCESSFULL" << std::endl ;
 }
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Testing for collection of boxes
 
-namespace {
-
-void donate_one_element( BulkData & mesh , bool aura )
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
 {
-  const unsigned p_rank = mesh.parallel_rank();
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
 
-  Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
-
-  std::vector<unsigned> before_count ;
-  std::vector<unsigned> after_count ;
-
-  count_entities( select_owned , mesh , before_count );
-
-  // Change owner of an element on a process boundary
-  // from P0 to P1, and then recount to confirm ownership change
-
-  std::vector<EntityProc> change ;
-
-  // A shared node:
-  Entity * node = NULL ;
-  Entity * elem = NULL ;
-
-  for ( std::vector<Entity*>::const_iterator
-        i =  mesh.entity_comm().begin() ;
-        i != mesh.entity_comm().end() ; ++i ) {
-    if ( in_shared( **i ) && (**i).entity_rank() == BaseEntityRank ) {
-      node = *i ;
-      break ;
-    }
-  }
-
-  STKUNIT_ASSERT( node != NULL );
-
-  for ( PairIterRelation rel = node->relations( 3 );
-        ! rel.empty() && elem == NULL ; ++rel ) {
-    elem = rel->entity();
-    if ( elem->owner_rank() != p_rank ) { elem = NULL ; }
-  }
-
-  STKUNIT_ASSERT( elem != NULL );
-
-  unsigned donated_nodes = 0 ;
-
-  // Only process #0 donates an element and its owned nodes:
-  if ( 0 == p_rank ) {
-    EntityProc entry ;
-    entry.first = elem ;
-    entry.second = node->sharing()[0].proc ;
-    change.push_back( entry );
-    for ( PairIterRelation
-          rel = elem->relations(0) ; ! rel.empty() ; ++rel ) {
-      if ( rel->entity()->owner_rank() == p_rank ) {
-        entry.first = rel->entity();
-        change.push_back( entry );
-        ++donated_nodes ;
-      }
-    }
-  }
-
-  STKUNIT_ASSERT( mesh.modification_begin() );
-  mesh.change_entity_owner( change );
-  STKUNIT_ASSERT( UnitTestBulkData::modification_end( mesh , aura ) );
-
-  count_entities( select_owned , mesh , after_count );
-
-  if ( 0 == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( before_count[3] - 1 , after_count[3] );
-    STKUNIT_ASSERT_EQUAL( before_count[0] - donated_nodes, after_count[0] );
-  }
-}
-
-void donate_all_shared_nodes( BulkData & mesh , bool aura )
-{
-  const unsigned p_rank = mesh.parallel_rank();
-
-  const Selector select_used = mesh.mesh_meta_data().locally_owned_part() |
-                               mesh.mesh_meta_data().globally_shared_part() ;
-
-  std::vector<unsigned> before_count ;
-  std::vector<unsigned> after_count ;
-
-  count_entities( select_used , mesh , before_count );
-
-  // Donate owned shared nodes to first sharing process.
-
-  const std::vector<Entity*> & entity_comm = mesh.entity_comm();
-
-  STKUNIT_ASSERT( ! entity_comm.empty() );
-
-  std::vector<EntityProc> change ;
-
-  for ( std::vector<Entity*>::const_iterator
-        i =  entity_comm.begin() ;
-        i != entity_comm.end() &&
-        (**i).entity_rank() == BaseEntityRank ; ++i ) {
-    Entity * const node = *i ;
-    const PairIterEntityComm ec = node->sharing();
-
-    if ( node->owner_rank() == p_rank && ! ec.empty() ) {
-      change.push_back( EntityProc( node , ec->proc ) );
-    }
-  }
-
-  STKUNIT_ASSERT( mesh.modification_begin() );
-  mesh.change_entity_owner( change );
-  STKUNIT_ASSERT( UnitTestBulkData::modification_end( mesh , aura ) );
-
-  count_entities( select_used , mesh , after_count );
-
-  STKUNIT_ASSERT( 3 <= after_count.size() );
-  STKUNIT_ASSERT_EQUAL( before_count[0] , after_count[0] );
-  STKUNIT_ASSERT_EQUAL( before_count[1] , after_count[1] );
-  STKUNIT_ASSERT_EQUAL( before_count[2] , after_count[2] );
-  STKUNIT_ASSERT_EQUAL( before_count[3] , after_count[3] );
-}
-
-}
-
-void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
-{
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
-  int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
-  const unsigned p_rank = parallel_machine_rank( pm );
-  const unsigned p_size = parallel_machine_size( pm );
+  const unsigned p_size = stk::parallel_machine_size( pm );
 
   const int spatial_dimension = 3;
   MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
 
   meta.commit();
 
-  const Selector select_owned( meta.locally_owned_part() );
-  const Selector select_used = meta.locally_owned_part() |
-                               meta.globally_shared_part() ;
-  const Selector select_all(   meta.universal_part() );
-
   //------------------------------
   {
-    BulkData bulk( meta , pm , 100 );
+    bool aura = false;
+    BoxFixture fixture( pm, 100 );
+    fixture.meta_data().commit();
+    BulkData & bulk = fixture.bulk_data();
+    int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+
     bulk.modification_begin();
-    generate_boxes( bulk , false /* no aura */ , root_box , local_box );
+    fixture.generate_boxes( root_box, local_box );
+    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
 
     if ( 1 < p_size ) {
-      donate_one_element( bulk , false /* no aura */ );
+      donate_one_element( bulk , aura );
     }
   }
 
   if ( 1 < p_size ) {
-    BulkData bulk( meta , pm , 100 );
+    bool aura = false;
+    BoxFixture fixture( pm, 100 );
+    fixture.meta_data().commit();
+    BulkData & bulk = fixture.bulk_data();
+    int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+
     bulk.modification_begin();
+    fixture.generate_boxes( root_box, local_box );
+    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
 
-    generate_boxes( bulk , false /* no aura */ , root_box , local_box );
-
-    donate_all_shared_nodes( bulk , false /* no aura */ );
+    donate_all_shared_nodes( bulk , aura );
   }
   //------------------------------
   if ( 1 < p_size ) {
-    BulkData bulk( meta , pm , 100 );
-    bulk.modification_begin();
+    bool aura = false;
+    BoxFixture fixture( pm, 100 );
+    fixture.meta_data().commit();
+    BulkData & bulk = fixture.bulk_data();
+    int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
-    generate_boxes( bulk , false /* no aura */ , root_box , local_box );
+    bulk.modification_begin();
+    fixture.generate_boxes( root_box, local_box );
+    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
 
     donate_one_element( bulk , false /* no aura */ );
   }
   //------------------------------
   // Introduce ghosts:
   if ( 1 < p_size ) {
-    BulkData bulk( meta , pm , 100 );
-    bulk.modification_begin();
+    BoxFixture fixture( pm, 100 );
+    BulkData & bulk = fixture.bulk_data();
+    MetaData & box_meta = fixture.meta_data();
+    box_meta.commit();
+    int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
 
-    generate_boxes( bulk , true /* aura */ , root_box , local_box );
+    bulk.modification_begin();
+    fixture.generate_boxes( root_box, local_box );
+    STKUNIT_ASSERT(bulk.modification_end());
 
     std::vector<unsigned> used_count ;
     std::vector<unsigned> all_count ;
+
+    const Selector select_owned( box_meta.locally_owned_part() );
+    const Selector select_used = box_meta.locally_owned_part() |
+                                 box_meta.globally_shared_part() ;
+    const Selector select_all(   box_meta.universal_part() );
 
     count_entities( select_all , bulk , all_count );
     count_entities( select_used , bulk , used_count );
@@ -743,29 +762,40 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
     STKUNIT_ASSERT_EQUAL( used_count[0] , all_count[0] );
     STKUNIT_ASSERT_EQUAL( used_count[3] , all_count[3] );
   }
-  //------------------------------
-
-  std::cout << std::endl
-            << "P" << p_rank
-            << ": UnitTestBulkData::testChangeOwner_box( NP = "
-            << p_size << " ) SUCCESSFULL" << std::endl ;
 }
 
-void UnitTestBulkData::testModifyPropagation( ParallelMachine pm )
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
 {
+  // Our new modification model makes it so the modified status
+  // of an entity is propagated up to higher-ranked entities
+  // that have relations to the modified entity. We test this
+  // by grabbing a node off of a ring mesh, modifying it, and
+  // checking that its edge also gets marked as modified.
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
   const unsigned nPerProc = 2;
-  const unsigned p_size = parallel_machine_size( pm );
+  const unsigned p_size = stk::parallel_machine_size( pm );
 
   // this test only needs to be run w/ one processor
   if (p_size > 1) return;
 
   // Make a ring_mesh and add an extra part
-  UnitTestRingMeshFixture ring_mesh( pm , nPerProc, false /* don't use edge parts */);
+  RingFixture ring_mesh( pm , nPerProc, false /* don't use edge parts */);
   TopologicalMetaData & top_data = ring_mesh.m_top_data;
   stk::mesh::Part& special_part =
     ring_mesh.m_meta_data.declare_part( "special_node_part", stk::mesh::BaseEntityRank );
   ring_mesh.m_meta_data.commit();
-  ring_mesh.generate_mesh();
+  BulkData& bulk = ring_mesh.m_bulk_data;
+
+  bulk.modification_begin();
+  ring_mesh.generate_mesh( );
+  STKUNIT_ASSERT(bulk.modification_end());
+
+  bulk.modification_begin();
+  ring_mesh.fixup_node_ownership( );
+  STKUNIT_ASSERT(bulk.modification_end());
 
   // grab the first edge
   stk::mesh::EntityVector edges;
@@ -790,10 +820,3 @@ void UnitTestBulkData::testModifyPropagation( ParallelMachine pm )
 
   STKUNIT_ASSERT ( ring_mesh.m_bulk_data.modification_end() );
 }
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
-} // namespace mesh
-} // namespace stk
-

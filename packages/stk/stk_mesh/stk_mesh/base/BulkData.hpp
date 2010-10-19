@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #ifndef stk_mesh_BulkData_hpp
 #define stk_mesh_BulkData_hpp
 
@@ -427,7 +426,8 @@ private:
    */
   void internal_regenerate_shared_aura();
 
-  friend class UnitTestBulkData ;
+  // FIXME: Remove this friend once unit-testing has been refactored
+  friend class UnitTestModificationEndWrapper;
 #endif /* DOXYGEN_COMPILE */
 };
 

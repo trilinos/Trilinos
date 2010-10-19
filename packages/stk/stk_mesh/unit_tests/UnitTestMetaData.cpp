@@ -15,14 +15,14 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
-#include <unit_tests/UnitTestMesh.hpp>
+
+#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -1218,7 +1218,7 @@ void UnitTestMetaData::testEntityRepository()
 {
   //Test Entity repository - covering EntityRepository.cpp/hpp
 
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+  stk::mesh::MetaData meta ( stk::mesh::fem_entity_rank_names() );
   stk::mesh::Part & part = meta.declare_part( "another part");
 
   meta.commit();

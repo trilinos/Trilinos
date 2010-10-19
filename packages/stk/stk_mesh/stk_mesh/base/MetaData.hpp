@@ -6,8 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
-
 #ifndef stk_mesh_MetaData_hpp
 #define stk_mesh_MetaData_hpp
 
@@ -36,7 +34,6 @@ namespace mesh {
 /** \brief  Print an entity key for this meta data */
 std::ostream &
 print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey & key);
-
 
 //----------------------------------------------------------------------
 /** \brief  The manager of an integrated collection of

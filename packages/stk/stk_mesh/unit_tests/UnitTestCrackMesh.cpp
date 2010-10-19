@@ -12,11 +12,6 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
-#include <unit_tests/UnitTestMesh.hpp>
-
-namespace {
-
-}
 
 //----------------------------------------------------------------------------
 
@@ -27,6 +22,8 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
 
   const unsigned nx = 3 , ny = 3 , nz = 3 ;
 
+  // In 2D, build a fresh 3x3 mesh each loop iteration, destroying a different
+  // single element each time.
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
     stk::mesh::fixtures::QuadFixture fixture( pm , nx , ny );
@@ -50,6 +47,8 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
   }
   }
 
+  // In 3D, build a 3x3x3 mesh each loop iteration, destroying a different
+  // single element each time.
   for ( unsigned iz = 0 ; iz < nz ; ++iz ) {
   for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
   for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
@@ -80,11 +79,19 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy )
 
 STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 {
+  // Start with a normal hex fixture, then crack it, and check to see
+  // if all (incl ghosted) copies get updated.
+
+  // Make the hex fixture
+
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2,2,2 );
   fixture.meta_data.commit();
   fixture.generate_mesh();
 
   stk::mesh::BulkData & mesh = fixture.bulk_data;
+
+  // Hardwire which entities are being modified. Note that not every
+  // process will know about these entities
 
   stk::mesh::Entity * const old_node = fixture.node(0,1,1);
 
@@ -92,6 +99,9 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 
   unsigned right_ordinal = 0;
   unsigned new_node_id = 28;
+
+  // If this process knows about both entities, compute the ordinal
+  // of the relation from right_element to old_node
 
   if ( old_node && right_element ) {
     stk::mesh::PairIterRelation rel = old_node->relations();
@@ -103,6 +113,8 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
     }
   }
 
+  // Crack the mesh
+
   mesh.modification_begin();
 
   //only crack the mesh if I own the element
@@ -111,18 +123,20 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 
     const stk::mesh::PartVector no_parts;
 
+    // create a new node
     stk::mesh::Entity & new_node =
       mesh.declare_entity(fixture.top_data.node_rank, new_node_id, no_parts);
 
+    // destroy right_element's relation to old_node, replace with a
+    // relation to new node
     mesh.destroy_relation(*right_element, *old_node);
     mesh.declare_relation(*right_element, new_node, right_ordinal);
   }
 
-  //copy parts
-
-  //copy field data
-
   mesh.modification_end();
+
+  // Now that modification_end has been called, all processes that know
+  // about right_element should know about the crack.
 
   if ( right_element ) {
     stk::mesh::PairIterRelation rel = right_element->relations();

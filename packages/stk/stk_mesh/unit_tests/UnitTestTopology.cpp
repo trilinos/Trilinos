@@ -26,24 +26,18 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
-
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-#include <stk_mesh/fem/BoundaryAnalysis.hpp>
-
-#include <unit_tests/UnitTestBucket.hpp>
-#include <unit_tests/UnitTestMesh.hpp>
-
-#include <Shards_BasicTopologies.hpp>
-
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Transaction.hpp>
 #include <stk_mesh/baseImpl/BucketImpl.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 
-using stk::unit_test::UnitTestBucket;
+#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/BoundaryAnalysis.hpp>
+
+#include <Shards_BasicTopologies.hpp>
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;

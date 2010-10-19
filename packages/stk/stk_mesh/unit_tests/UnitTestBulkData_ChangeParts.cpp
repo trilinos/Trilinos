@@ -13,33 +13,38 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
+
 #include <stk_mesh/fem/EntityRanks.hpp>
 
-#include <unit_tests/UnitTestBulkData.hpp>
-#include <unit_tests/UnitTestRingMeshFixture.hpp>
+#include <stk_mesh/fixtures/RingFixture.hpp>
+
+#include <unit_tests/UnitTestModificationEndWrapper.hpp>
+
+using stk::mesh::Part;
+using stk::mesh::MetaData;
+using stk::mesh::BulkData;
+using stk::mesh::Entity;
+using stk::mesh::Selector;
+using stk::mesh::PartVector;
+using stk::mesh::fixtures::RingFixture;
 
 //----------------------------------------------------------------------
-//----------------------------------------------------------------------
 
-namespace stk {
-namespace mesh {
-
-//----------------------------------------------------------------------
-
-void UnitTestBulkData::testChangeParts( ParallelMachine pm )
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
 {
-  static const char method[] =
-    "stk::mesh::UnitTestBulkData::testChangeParts" ;
+  // This unit test tests part operations and verifies operations
+  // by looking at bucket supersets. We use contrived entities
+  // (as opposed to a fixture) for simplicity and clarity.
 
-  std::cout << std::endl << method << std::endl ;
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
 
-  const unsigned p_size = parallel_machine_size( pm );
-  const unsigned p_rank = parallel_machine_rank( pm );
-
-  if ( 1 < p_size ) return ;
+  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
 
   // Single process, no sharing
 
@@ -51,146 +56,183 @@ void UnitTestBulkData::testChangeParts( ParallelMachine pm )
     entity_names[i] = name.str();
   }
 
+  // Create a mesh with a bunch of parts
+
   MetaData meta( entity_names );
   BulkData bulk( meta , pm , 100 );
 
-  Part & part_univ = meta.universal_part();
-  Part & part_owns = meta.locally_owned_part();
+  Part & part_univ   = meta.universal_part();
+  Part & part_owns   = meta.locally_owned_part();
+  Part & part_shared = meta.globally_shared_part();
 
-  Part & part_A_0 = meta.declare_part( std::string("A_0") , 0 );
-  Part & part_A_1 = meta.declare_part( std::string("A_1") , 1 );
-  Part & part_A_2 = meta.declare_part( std::string("A_2") , 2 );
-  Part & part_A_3 = meta.declare_part( std::string("A_3") , 3 );
+  Part & part_A_0 = meta.declare_part( std::string("A_0"), 0 /*entity_rank*/);
+  Part & part_A_1 = meta.declare_part( std::string("A_1"), 1 /*entity_rank*/);
+  Part & part_A_2 = meta.declare_part( std::string("A_2"), 2 /*entity_rank*/);
+  Part & part_A_3 = meta.declare_part( std::string("A_3"), 3 /*entity_rank*/);
 
-  Part & part_B_0 = meta.declare_part( std::string("B_0") , 0 );
-  // Part & part_B_1 = meta.declare_part( std::string("B_1") , 1 );
-  Part & part_B_2 = meta.declare_part( std::string("B_2") , 2 );
-  // Part & part_B_3 = meta.declare_part( std::string("B_3") , 3 );
+  Part & part_B_0 = meta.declare_part( std::string("B_0"), 0 /*entity_rank*/);
+  Part & part_B_2 = meta.declare_part( std::string("B_2"), 2 /*entity_rank*/);
 
   meta.commit();
   bulk.modification_begin();
 
-  PartVector tmp(1);
+  PartVector tmp(1), no_parts;
+
+  // Declare a few entities of various ranks. In order for the sharing
+  // to work, we need to have all the entities we'll be playing with
+  // to be in the owned-closure of a high-level non-shared entity, we'll
+  // call that entity the closure_entity because all the other entities
+  // will be in it's closure.
+
+  Entity& closure_entity = bulk.declare_entity(4 /*entity rank*/,
+                                               p_rank+1 /*id*/,
+                                               no_parts);
 
   tmp[0] = & part_A_0 ;
-  Entity & entity_0_1 = bulk.declare_entity(  0 , 1 , tmp );
+  Entity& entity_0_1 = bulk.declare_entity(0 /*entity rank*/, 1 /*id*/, tmp);
+  bulk.declare_relation( closure_entity , entity_0_1 , 0 /*local_rel_id*/ );
 
   tmp[0] = & part_A_1 ;
-  Entity & entity_1_1 = bulk.declare_entity(  1 , 1 , tmp );
+  Entity& entity_1_1 = bulk.declare_entity(1 /*entity rank*/, 1 /*id*/, tmp);
+  bulk.declare_relation( closure_entity , entity_1_1 , 1 /*local_rel_id*/ );
 
   tmp[0] = & part_A_2 ;
-  Entity & entity_2_1 = bulk.declare_entity(  2 , 1 , tmp );
+  Entity& entity_2_1 = bulk.declare_entity(2 /*entity rank*/, 1 /*id*/, tmp);
+  bulk.declare_relation( closure_entity , entity_2_1 , 2 /*local_rel_id*/ );
 
   tmp[0] = & part_A_3 ;
-  Entity & entity_3_1 = bulk.declare_entity( 3 , 1 , tmp );
+  Entity& entity_3_1 = bulk.declare_entity(3 /*entity rank*/, 1 /*id*/, tmp);
+  bulk.declare_relation( closure_entity , entity_3_1 , 3 /*local_rel_id*/ );
+
+  // Ensure that the supersets of the buckets containing the entities we
+  // just created are correct.
 
   entity_0_1.bucket().supersets( tmp );
   STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-  STKUNIT_ASSERT( tmp[0] == & part_univ );
-  STKUNIT_ASSERT( tmp[1] == & part_owns );
-  STKUNIT_ASSERT( tmp[2] == & part_A_0 );
+  STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+  STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+  STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
 
   entity_1_1.bucket().supersets( tmp );
   STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-  STKUNIT_ASSERT( tmp[0] == & part_univ );
-  STKUNIT_ASSERT( tmp[1] == & part_owns );
-  STKUNIT_ASSERT( tmp[2] == & part_A_1 );
+  STKUNIT_ASSERT( entity_1_1.bucket().member(part_univ) );
+  STKUNIT_ASSERT( entity_1_1.bucket().member(part_owns) );
+  STKUNIT_ASSERT( entity_1_1.bucket().member(part_A_1) );
 
   entity_2_1.bucket().supersets( tmp );
   STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-  STKUNIT_ASSERT( tmp[0] == & part_univ );
-  STKUNIT_ASSERT( tmp[1] == & part_owns );
-  STKUNIT_ASSERT( tmp[2] == & part_A_2 );
+  STKUNIT_ASSERT( entity_2_1.bucket().member(part_univ) );
+  STKUNIT_ASSERT( entity_2_1.bucket().member(part_owns) );
+  STKUNIT_ASSERT( entity_2_1.bucket().member(part_A_2) );
 
   entity_3_1.bucket().supersets( tmp );
   STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-  STKUNIT_ASSERT( tmp[0] == & part_univ );
-  STKUNIT_ASSERT( tmp[1] == & part_owns );
-  STKUNIT_ASSERT( tmp[2] == & part_A_3 );
+  STKUNIT_ASSERT( entity_3_1.bucket().member(part_univ) );
+  STKUNIT_ASSERT( entity_3_1.bucket().member(part_owns) );
+  STKUNIT_ASSERT( entity_3_1.bucket().member(part_A_3) );
 
+  // Add entity_0_1 to the part it was already in
   {
     tmp.resize(1);
     tmp[0] = & part_A_0 ;
     bulk.change_entity_parts( entity_0_1 , tmp );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
   }
 
-  { // Add a new part:
+  // Add entity_0_1 to part_B_0
+  {
     tmp.resize(1);
     tmp[0] = & part_B_0 ;
     bulk.change_entity_parts( entity_0_1 , tmp );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
-    STKUNIT_ASSERT( tmp[3] == & part_B_0 );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_B_0) );
   }
 
-  { // Remove the part just added:
+  // Remove entity_0_1 from the part it was just added to above
+  {
     tmp.resize(1);
     tmp[0] = & part_B_0 ;
     bulk.change_entity_parts( entity_0_1 , PartVector() , tmp );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
   }
 
-  { // Relationship induced membership:
-    bulk.declare_relation( entity_1_1 , entity_0_1 , 0 );
+  // Add relation from entity_1_1 (which is in part_A_1) to
+  // entity_0_1 (which is in part_A_0). After the relation
+  // is added, there is an induced membership of entity_0_1
+  // within part A_1.
+  {
+    bulk.declare_relation( entity_1_1 , entity_0_1 , 0 /*local_rel_id*/ );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
-    STKUNIT_ASSERT( tmp[3] == & part_A_1 );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_1) );
   }
 
-  { // Remove relationship induced membership:
+  // Remove the relationship added in the step above and
+  // demonstrate that the induced membership of entity_0_1
+  // in part_A_1 is gone
+  {
     bulk.destroy_relation( entity_1_1 , entity_0_1 );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
   }
 
-  { // Add a new part:
+  // Add entity_2_1 to part_B_2
+  {
     tmp.resize(1);
     tmp[0] = & part_B_2 ;
     bulk.change_entity_parts( entity_2_1 , tmp );
     entity_2_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_2 );
-    STKUNIT_ASSERT( tmp[3] == & part_B_2 );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_owns) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_A_2) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_B_2) );
   }
 
-  { // Relationship induced membership:
-    bulk.declare_relation( entity_2_1 , entity_0_1 , 0 );
+  // Add relation from entity_2_1 (which is in part_A_2 and B_2) to
+  // entity_0_1 (which is in part_A_0). After the relation
+  // is added, there is an induced membership of entity_0_1
+  // within entity_2_1's parts (A_2 and B_2) (and of course entity_0_1
+  // is still in the parts it was already in).
+  {
+    bulk.declare_relation( entity_2_1 , entity_0_1 , 0 /*local_rel_id*/);
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(5) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
-    STKUNIT_ASSERT( tmp[3] == & part_A_2 );
-    STKUNIT_ASSERT( tmp[4] == & part_B_2 );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_2) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_B_2) );
   }
 
-  { // Remove relationship induced membership:
+  // Remove the relationship added in the step above and
+  // demonstrate that the induced membership of entity_0_1
+  // in parts A_2 and B_2 is gone.
+  {
     bulk.destroy_relation( entity_2_1 , entity_0_1 );
     entity_0_1.bucket().supersets( tmp );
     STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
   }
 
   bulk.modification_end();
@@ -200,35 +242,49 @@ void UnitTestBulkData::testChangeParts( ParallelMachine pm )
   // by all processes since they have the same identifiers.
   // They should also have the same parts.
 
+  bool parallel = p_size > 1;
+
+  // For parallel runs, the entities should be in the same parts
+  // as they were before the modification end and they should
+  // be in the shared part as well.
+
   entity_0_1.bucket().supersets( tmp );
   if ( entity_0_1.owner_rank() == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
+    STKUNIT_ASSERT_EQUAL( size_t(parallel ? 4 : 3) , tmp.size() );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    if ( parallel )
+      STKUNIT_ASSERT( entity_0_1.bucket().member(part_shared) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
   }
   else {
-    STKUNIT_ASSERT_EQUAL( size_t(2) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_A_0 );
+    STKUNIT_ASSERT( parallel );
+    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_shared) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
   }
 
   entity_2_1.bucket().supersets( tmp );
   if ( entity_2_1.owner_rank() == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_2 );
-    STKUNIT_ASSERT( tmp[3] == & part_B_2 );
+    STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_owns) );
+    if ( parallel )
+      STKUNIT_ASSERT( entity_2_1.bucket().member(part_shared) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_A_2) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_B_2) );
   }
   else {
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_A_2 );
-    STKUNIT_ASSERT( tmp[2] == & part_B_2 );
+    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_shared) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_A_2) );
+    STKUNIT_ASSERT( entity_2_1.bucket().member(part_B_2) );
   }
 
-  if (bulk.parallel_size() > 1) {
+  if ( parallel ) {
+    // If parallel, check that the entities are shared across all procs.
     STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_0_1.sharing().size() );
     STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_1_1.sharing().size() );
     STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_2_1.sharing().size() );
@@ -237,7 +293,7 @@ void UnitTestBulkData::testChangeParts( ParallelMachine pm )
 
   bulk.modification_begin();
 
-  // Add a new part on the owning process:
+  // Add entity_0_1 to a new part on the owning process
 
   int ok_to_modify = entity_0_1.owner_rank() == p_rank ;
 
@@ -251,71 +307,103 @@ void UnitTestBulkData::testChangeParts( ParallelMachine pm )
     STKUNIT_ASSERT( ! ok_to_modify );
   }
 
+  // Check that entity_0_1 is in the new part on the owning
+  // process, but not on other processes.
+
   entity_0_1.bucket().supersets( tmp );
   if ( entity_0_1.owner_rank() == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
-    STKUNIT_ASSERT( tmp[3] == & part_B_0 );
+    STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    if ( parallel )
+      STKUNIT_ASSERT( entity_0_1.bucket().member(part_shared) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_B_0) );
   }
   else {
-    STKUNIT_ASSERT_EQUAL( size_t(2) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_A_0 );
+    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_shared) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
   }
 
   bulk.modification_end();
 
+  // Now that modification_end has been called, entity_0_1 should
+  // be in the new part (B_0) on all processes.
+
   entity_0_1.bucket().supersets( tmp );
   if ( entity_0_1.owner_rank() == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_owns );
-    STKUNIT_ASSERT( tmp[2] == & part_A_0 );
-    STKUNIT_ASSERT( tmp[3] == & part_B_0 );
+    STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_owns) );
+    if ( parallel )
+      STKUNIT_ASSERT( entity_0_1.bucket().member(part_shared) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_B_0) );
   }
   else {
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( tmp[0] == & part_univ );
-    STKUNIT_ASSERT( tmp[1] == & part_A_0 );
-    STKUNIT_ASSERT( tmp[2] == & part_B_0 );
+    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_univ) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_shared) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_A_0) );
+    STKUNIT_ASSERT( entity_0_1.bucket().member(part_B_0) );
   }
 }
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-void UnitTestBulkData::testChangeParts_loop( ParallelMachine pm )
+STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
 {
-  enum { nPerProc = 10 };
-  const unsigned p_rank = parallel_machine_rank( pm );
-  const unsigned p_size = parallel_machine_size( pm );
+  // This unit test tests part operations and verifies operations
+  // by looking at bucket supersets. We use RingMesh for a slightly
+  // more realistic test than the test above but it's a bit harder
+  // to read.
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
+  const unsigned nPerProc   = 10;
+  const unsigned p_rank     = stk::parallel_machine_rank( pm );
+  const unsigned p_size     = stk::parallel_machine_size( pm );
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
+  
+  // Create the ring mesh
 
-  UnitTestRingMeshFixture ring_mesh( pm , nPerProc , true /* generate parts */ );
+  RingFixture ring_mesh( pm , nPerProc , true /* generate parts */ );
   ring_mesh.m_meta_data.commit();
-  ring_mesh.generate_mesh( false /* no aura */ );
+  BulkData& bulk = ring_mesh.m_bulk_data;
+
+  bulk.modification_begin();
+  ring_mesh.generate_mesh( );
+  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
+                                                         false /* no aura */));
+
+  bulk.modification_begin();
+  ring_mesh.fixup_node_ownership();
+  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
+                                                         false /* no aura */));
 
   Part & part_owns = ring_mesh.m_meta_data.locally_owned_part();
   Part & part_univ = ring_mesh.m_meta_data.universal_part();
 
-  Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
-  Selector select_used = select_owned | ring_mesh.m_meta_data.globally_shared_part();
-  Selector select_all(   ring_mesh.m_meta_data.universal_part() );
-
-  std::vector<unsigned> local_count ;
-
+  // Check that local edges are in the expected parts. Note that the
+  // RingMesh puts each edge in its own part.
   for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
     const unsigned n = i + nPerProc * p_rank ;
-    Entity * const edge = ring_mesh.m_bulk_data.get_entity( 1 , ring_mesh.m_edge_ids[n] );
+    Entity * const edge = bulk.get_entity( 1 /*entity rank*/,
+                                           ring_mesh.m_edge_ids[n] );
     STKUNIT_ASSERT( edge != NULL );
     STKUNIT_ASSERT( edge->bucket().member( part_univ ) );
     STKUNIT_ASSERT( edge->bucket().member( part_owns ) );
     STKUNIT_ASSERT( edge->bucket().member( * ring_mesh.m_edge_parts[ n % ring_mesh.m_edge_parts.size() ] ) );
   }
 
+  // Check that local nodes are in the expected parts. Note that the relations
+  // that nodes have to edges should cause induced membership of the node
+  // in the parts of both edges it touches.
   for ( unsigned i = 0 ; i < nLocalNode ; ++i ) {
     const unsigned n = ( i + nPerProc * p_rank ) % ring_mesh.m_node_ids.size();
     const unsigned e0 = n ;
@@ -326,7 +414,7 @@ void UnitTestBulkData::testChangeParts_loop( ParallelMachine pm )
     Part * const epart_0 = ring_mesh.m_edge_parts[ n0 < n1 ? n0 : n1 ];
     Part * const epart_1 = ring_mesh.m_edge_parts[ n0 < n1 ? n1 : n0 ];
 
-    Entity * const node = ring_mesh.m_bulk_data.get_entity( 0 , ring_mesh.m_node_ids[n] );
+    Entity * const node = bulk.get_entity( 0 , ring_mesh.m_node_ids[n] );
     STKUNIT_ASSERT( node != NULL );
     if ( node->owner_rank() == p_rank ) {
       STKUNIT_ASSERT( node->bucket().member( part_univ ) );
@@ -342,26 +430,29 @@ void UnitTestBulkData::testChangeParts_loop( ParallelMachine pm )
     }
   }
 
-  ring_mesh.m_bulk_data.modification_begin();
+  bulk.modification_begin();
 
+  // On rank 0, change all locally owned edges to the extra-part then check
+  // for correct part membership
   if ( 0 == p_rank ) {
-
     for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
       const unsigned n = i + nPerProc * p_rank ;
 
       PartVector add(1); add[0] = & ring_mesh.m_edge_part_extra ;
       PartVector rem(1); rem[0] = ring_mesh.m_edge_parts[ n % ring_mesh.m_edge_parts.size() ];
 
-      Entity * const edge = ring_mesh.m_bulk_data.get_entity( 1 , ring_mesh.m_edge_ids[n] );
-      ring_mesh.m_bulk_data.change_entity_parts( *edge , add , rem );
+      Entity * const edge = bulk.get_entity( 1 , ring_mesh.m_edge_ids[n] );
+      bulk.change_entity_parts( *edge , add , rem );
       STKUNIT_ASSERT( edge->bucket().member( part_univ ) );
       STKUNIT_ASSERT( edge->bucket().member( part_owns ) );
       STKUNIT_ASSERT( edge->bucket().member(ring_mesh.m_edge_part_extra ) );
     }
   }
 
-  ring_mesh.m_bulk_data.modification_end();
+  bulk.modification_end();
 
+  // Modification end has been called, check that the part changes made
+  // in the previous step are reflected across the other procs.
   for ( unsigned i = 0 ; i < nLocalNode ; ++i ) {
     const unsigned n = ( i + nPerProc * p_rank ) % ring_mesh.m_node_ids.size();
     const unsigned e0 = n ;
@@ -375,7 +466,7 @@ void UnitTestBulkData::testChangeParts_loop( ParallelMachine pm )
     Part * epart_0 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_0 : ep_1 ;
     Part * epart_1 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_1 : ep_0 ;
 
-    Entity * const node = ring_mesh.m_bulk_data.get_entity( 0 , ring_mesh.m_node_ids[n] );
+    Entity * const node = bulk.get_entity( 0 , ring_mesh.m_node_ids[n] );
     STKUNIT_ASSERT( node != NULL );
     if ( node->owner_rank() == p_rank ) {
       STKUNIT_ASSERT( node->bucket().member( part_owns ) );
@@ -389,7 +480,3 @@ void UnitTestBulkData::testChangeParts_loop( ParallelMachine pm )
     STKUNIT_ASSERT( node->bucket().member( *epart_1 ) );
   }
 }
-
-} // namespace mesh
-} // namespace stk
-
