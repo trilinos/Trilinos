@@ -29,6 +29,8 @@
 #ifndef __Tpetra_TsqrAdaptor_hpp
 #define __Tpetra_TsqrAdaptor_hpp
 
+#include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR, etc.
+
 #include <Tsqr_NodeTsqrFactory.hpp>
 #include <Tsqr.hpp>
 #include <Tsqr_DistTsqrRB.hpp>
