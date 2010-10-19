@@ -7,7 +7,7 @@
 
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
-#include "Cthulhu_TpetraCrsMatrix.hpp"
+#include "Cthulhu_CrsMatrixFactory.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ArrayView.hpp"
 
@@ -48,16 +48,14 @@ void Fill9PointStencil(const GlobalOrdinal center,
  *    Laplace 1D
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
-
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-
 TriDiag(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
         const GlobalOrdinal nx,
         const Scalar a, const Scalar b, const Scalar c)
 {
   Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix;
 
-  Matrix = Teuchos::rcp(new Cthulhu::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map,  3));
+  Matrix = Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Map,  3);
 
   LocalOrdinal NumMyElements = Map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = Map->getNodeElementList();
@@ -116,9 +114,7 @@ TriDiag(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
  *    Laplace 2D
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
-
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-
 Cross2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
         const GlobalOrdinal nx, const GlobalOrdinal ny,
         const Scalar a, const Scalar b, const Scalar c, 
@@ -126,7 +122,7 @@ Cross2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
 {
   Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix;
 
-  Matrix = Teuchos::rcp(new Cthulhu::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map,  5));
+  Matrix = Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Map,  5);
 
   LocalOrdinal NumMyElements = Map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = Map->getNodeElementList();
@@ -189,7 +185,6 @@ Cross2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
  *    Star2D
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
-
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 Star2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
         const GlobalOrdinal nx, const GlobalOrdinal ny,
@@ -200,7 +195,7 @@ Star2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
 {
   Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix;
 
-  Matrix = Teuchos::rcp(new Cthulhu::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map,  9));
+  Matrix = Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Map,  9);
 
   LocalOrdinal NumMyElements = Map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = Map->getNodeElementList();
@@ -294,7 +289,6 @@ Star2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
  *    BigStar2D (2D Biharmonic operator, for example)
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
-
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 BigStar2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
           const GlobalOrdinal nx, const GlobalOrdinal ny,
@@ -306,7 +300,7 @@ BigStar2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map
 {
   Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix;
 
-  Matrix = Teuchos::rcp(new Cthulhu::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map,  13));
+  Matrix = Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Map,  13);
 
   LocalOrdinal NumMyElements = Map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = Map->getNodeElementList();
@@ -419,7 +413,6 @@ BigStar2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map
  *    Laplace3D
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
-
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 Cross3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
         const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
@@ -429,7 +422,7 @@ Cross3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
 {
   Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix;
 
-  Matrix = Teuchos::rcp(new Cthulhu::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map,  7));
+  Matrix = Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Map, 7);
 
   LocalOrdinal NumMyElements = Map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = Map->getNodeElementList();
@@ -504,7 +497,6 @@ Cross3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
  *    3D 27-point stencil
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
-
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 Brick3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
         const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
@@ -514,7 +506,7 @@ Brick3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
 {
   Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix;
 
-  Matrix = Teuchos::rcp(new Cthulhu::TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map,  27));
+  Matrix = Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Map, 27);
 
   LocalOrdinal NumMyElements = Map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = Map->getNodeElementList();
