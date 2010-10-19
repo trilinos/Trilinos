@@ -11,15 +11,17 @@ SET(simple_example_SOURCES
 #PACKAGE_COPY_FILES_TO_BINARY_DIR(read_MatrixMarket_example_copyfiles
 #  SOURCE_FILES rgen.m
 #)
-  
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  read_MatrixMarket
-  SOURCES ${simple_example_SOURCES}
-  COMM serial
-  )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  MatrixVectorCheckerExample
-  SOURCES MatrixVectorCheckerExample.cpp MatrixVectorChecker.hpp
-  COMM serial
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    read_MatrixMarket
+    SOURCES ${simple_example_SOURCES}
+    COMM serial
   )
+  
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    MatrixVectorCheckerExample
+    SOURCES MatrixVectorCheckerExample.cpp MatrixVectorChecker.hpp
+    COMM serial mpi
+  )
+ENDIF()
