@@ -52,7 +52,6 @@
 
 #ifdef HAVE_ANASAZI_TSQR
 #  include "Tpetra_TsqrAdaptor.hpp"
-#include "TsqrRandomizer_Tpetra_MultiVector.hpp" 
 #endif // HAVE_ANASAZI_TSQR
 
 
