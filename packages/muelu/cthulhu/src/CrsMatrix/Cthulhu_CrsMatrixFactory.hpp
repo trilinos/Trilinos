@@ -7,7 +7,7 @@
 #include "Cthulhu_TpetraCrsMatrix.hpp"
 //#include "Cthulhu_EpetraCrsMatrix.hpp"
 
-//#include "Cthulhu_Map.hpp"
+#include "Cthulhu_Map.hpp"
 #include "Cthulhu_TpetraMap.hpp"
 //#include "Cthulhu_EpetraMap.hpp"
 
