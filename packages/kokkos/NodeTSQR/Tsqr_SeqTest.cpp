@@ -368,7 +368,9 @@ namespace TSQR {
 		   const bool b_debug)
     {
       using TSQR::Random::NormalGenerator;
+#ifdef HAVE_TSQR_COMPLEX
       using std::complex;
+#endif // HAVE_TSQR_COMPLEX
       using std::string;
       using std::vector;
 
@@ -406,7 +408,7 @@ namespace TSQR {
 			     cache_block_size, contiguous_cache_blocks, 
 			     save_matrices, additionalFieldNames, additionalData,
 			     printFieldNames, human_readable, b_debug);
-
+#ifdef HAVE_TSQR_COMPLEX
       if (test_complex_arithmetic)
 	{
 	  normgenD.getSeed (iseed);
@@ -426,6 +428,11 @@ namespace TSQR {
 				 save_matrices, additionalFieldNames, additionalData,
 				 printFieldNames, human_readable, b_debug);
 	}
+#else // HAVE_TSQR_COMPLEX
+      if (test_complex_arithmetic)
+	throw std::logic_error ("Trilinos was not built with "
+				"complex arithmetic support");
+#endif // HAVE_TSQR_COMPLEX
     }
 
 
@@ -584,7 +591,9 @@ namespace TSQR {
 		  const bool b_debug)
     {
       using TSQR::Random::NormalGenerator;
+#ifdef HAVE_TSQR_COMPLEX
       using std::complex;
+#endif // HAVE_TSQR_COMPLEX
       using std::string;
       using std::vector;
 
@@ -615,7 +624,7 @@ namespace TSQR {
       verifyLapackTemplate (out, normgenD, datatype, nrows, ncols, 
 			    additionalFieldNames, additionalData,
 			    false, human_readable, b_debug);
-
+#ifdef HAVE_TSQR_COMPLEX
       if (test_complex_arithmetic)
 	{
 	  normgenD.getSeed (iseed);
@@ -631,6 +640,11 @@ namespace TSQR {
 				additionalFieldNames, additionalData,
 				false, human_readable, b_debug);
 	}
+#else // HAVE_TSQR_COMPLEX
+      if (test_complex_arithmetic)
+	throw std::logic_error ("Trilinos was not built with "
+				"complex arithmetic support");
+#endif // HAVE_TSQR_COMPLEX
     }
 
     /// \class LapackBenchmarker
@@ -873,7 +887,8 @@ namespace TSQR {
 	      printedFieldNames = true;
 	  }
 #else // Don't HAVE_TSQR_COMPLEX
-	  throw std::logic_error("Not built with complex arithmetic support");
+	  throw std::logic_error ("Trilinos was not built with "
+				  "complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
 	}
     }
@@ -1105,7 +1120,8 @@ namespace TSQR {
 	      printedFieldNames = true;
 	  }
 #else // Don't HAVE_TSQR_COMPLEX
-	  throw std::logic_error("TSQR not built with complex arithmetic support");
+	  throw std::logic_error ("Trilinos was not built with "
+				  "complex arithmetic support");
 #endif // HAVE_TSQR_COMPLEX
 	}
     }

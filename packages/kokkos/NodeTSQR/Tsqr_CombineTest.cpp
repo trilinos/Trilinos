@@ -574,7 +574,9 @@ namespace TSQR {
     {
       using TSQR::Random::NormalGenerator;
       using std::cerr;
+#ifdef HAVE_TSQR_COMPLEX
       using std::complex;
+#endif // HAVE_TSQR_COMPLEX
       using std::cout;
       using std::endl;
       using std::pair;
@@ -607,6 +609,7 @@ namespace TSQR {
 
 	  if (test_complex)
 	    {
+#ifdef HAVE_TSQR_COMPLEX
 	      // Next test.
 	      NormalGenerator< int, complex<float> > normgenC (iseed);
 	      const vector< float > resultsC = 
@@ -614,6 +617,10 @@ namespace TSQR {
 	      printResults (string("complex<float>"), numRows, numCols, resultsC, false);
 	      // Fetch the seed from this test
 	      normgenC.getSeed (iseed);
+#else // HAVE_TSQR_COMPLEX
+	      throw std::logic_error ("Trilinos was not built with "
+				      "complex arithmetic support");
+#endif // HAVE_TSQR_COMPLEX
 	    }
 
 	  // Next test.
@@ -625,11 +632,16 @@ namespace TSQR {
 
 	  if (test_complex)
 	    {
+#ifdef HAVE_TSQR_COMPLEX
 	      // Next test.
 	      NormalGenerator< int, complex<double> > normgenZ (iseed);
 	      const vector< double > resultsZ = 
 		verifyCombineTemplate (normgenZ, normgenD, numRows, numCols, debug);
 	      printResults (string("complex<double>"), numRows, numCols, resultsZ, false);
+#else // HAVE_TSQR_COMPLEX
+	      throw std::logic_error ("Trilinos was not built with "
+				      "complex arithmetic support");
+#endif // HAVE_TSQR_COMPLEX
 	    }
 	}
       else // simulate_sequential_tsqr
@@ -645,12 +657,17 @@ namespace TSQR {
 
 	  if (test_complex)
 	    {
+#ifdef HAVE_TSQR_COMPLEX
 	      // Next test.
 	      NormalGenerator< int, complex<float> > normgenC2 (iseed);
 	      const vector< float > resultsC2 = 
 		verifyCombineSeqTemplate (normgenC2, normgenS2, numRows, numCols, debug);
 	      printSimSeqTsqrResults (string("complex<float>"), numRows, numCols, resultsC2, false);
 	      normgenC2.getSeed (iseed);
+#else // HAVE_TSQR_COMPLEX
+	      throw std::logic_error ("Trilinos was not built with "
+				      "complex arithmetic support");
+#endif // HAVE_TSQR_COMPLEX
 	    }
 
 	  // Next test.
@@ -662,11 +679,16 @@ namespace TSQR {
 
 	  if (test_complex)
 	    {
+#ifdef HAVE_TSQR_COMPLEX
 	      // Next test.
 	      NormalGenerator< int, complex<double> > normgenZ2 (iseed);
 	      const vector< double > resultsZ2 = 
 		verifyCombineSeqTemplate (normgenZ2, normgenD2, numRows, numCols, debug);
 	      printSimSeqTsqrResults (string("complex<double>"), numRows, numCols, resultsZ2, false);
+#else // HAVE_TSQR_COMPLEX
+	      throw std::logic_error ("Trilinos was not built with "
+				      "complex arithmetic support");
+#endif // HAVE_TSQR_COMPLEX
 	    }
 	}
     }
