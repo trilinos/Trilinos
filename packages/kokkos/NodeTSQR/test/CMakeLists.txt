@@ -52,7 +52,7 @@ IF (TSQR_ENABLE_Intel_TBB)
     TSQR_TbbTsqr
     SOURCES Tsqr_TestTbbTsqr.cpp
     COMM serial mpi
-    ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-bloks"
+    ARGS "--verify --nrows=100000 --ncols=10 --cache-block-size=50000 --contiguous-cache-blocks"
     STANDARD_PASS_OUTPUT
     NUM_MPI_PROCS 1
     DEPLIBS kokkos kokkosnodetsqr
