@@ -132,6 +132,14 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_TimeStats.cpp
     Tsqr_TrivialTimer.cpp
     )
+  # More non-generated source files, corresponding to complex
+  # arithmetic routines.
+  IF (TSQR_ENABLE_Complex)
+    APPEND_SET(SOURCES
+      Tsqr_CLapack.cpp
+      Tsqr_ZLapack.cpp
+      )
+  ENDIF ()
 
   PACKAGE_ADD_LIBRARY(
     kokkosnodetsqr
