@@ -50,15 +50,18 @@
 namespace Tpetra {
 
 template<class Scalar, class LocalOrdinal>
-Scalar sparsedot(Teuchos::ArrayRCP<Scalar> u, Teuchos::ArrayRCP<LocalOrdinal> u_ind, 
-     Teuchos::ArrayRCP<Scalar> v, Teuchos::ArrayRCP<LocalOrdinal> v_ind)
+Scalar sparsedot(
+  const ArrayView<const Scalar>& u, const ArrayView<const LocalOrdinal>& u_ind, const size_t usize,
+  const ArrayView<const Scalar>& v, const ArrayView<const LocalOrdinal>& v_ind, const size_t vsize)
 {
   Scalar result = Teuchos::ScalarTraits<Scalar>::zero();
 
-  LocalOrdinal v_idx = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
-  LocalOrdinal u_idx = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+  /*LocalOrdinal v_idx = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+  LocalOrdinal u_idx = Teuchos::OrdinalTraits<LocalOrdinal>::zero();*/
+  size_t v_idx = 0;
+  size_t u_idx = 0;
 
-  while(v_idx < v.size() && u_idx < u.size()) {
+  while(v_idx < vsize && u_idx < usize) {
     LocalOrdinal ui = u_ind[u_idx];
     LocalOrdinal vi = v_ind[v_idx];
 
@@ -236,14 +239,15 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_Bt
 
   size_t iworklen = maxlen*2 + numBcols;
   //int* iwork = new int[iworklen];
-  Teuchos::ArrayRCP<LocalOrdinal> iwork = Teuchos::ArrayRCP<LocalOrdinal>(iworklen);
+  Array<GlobalOrdinal> iwork(iworklen);
 
   //int* bcols = iwork+maxlen*2;
-  Teuchos::ArrayRCP<GlobalOrdinal> bcols = iwork+maxlen*2;
+  ArrayView<GlobalOrdinal> bcols = iwork(maxlen*2, numBcols);
   //int* bgids = Bview.colMap->MyGlobalElements();
   Teuchos::ArrayView<const GlobalOrdinal> bgids = Bview->colMap->getNodeElementList();
-  Teuchos::ArrayRCP<Scalar> bvals = Teuchos::ArrayRCP<Scalar>(maxlen*2);
-  Teuchos::ArrayRCP<Scalar> avals = bvals+maxlen;
+  Teuchos::Array<Scalar> vals(maxlen*2);
+  Teuchos::ArrayView<Scalar> bvals = vals(0,maxlen);
+  Teuchos::ArrayView<Scalar> avals = vals(maxlen, maxlen);
 
   GlobalOrdinal max_all_b = Bview->colMap->getMaxAllGlobalIndex();
   GlobalOrdinal min_all_b = Bview->colMap->getMinAllGlobalIndex();
@@ -292,9 +296,9 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_Bt
   //Epetra_Util util;
 
   //int* Aind = iwork;
-  Teuchos::ArrayRCP<GlobalOrdinal> Aind = iwork;
+  ArrayView<GlobalOrdinal> Aind = iwork(0,maxlen);
   //int* Bind = iwork+maxlen;
-  Teuchos::ArrayRCP<GlobalOrdinal> Bind = iwork+maxlen;
+  ArrayView<GlobalOrdinal> Bind = iwork(maxlen,maxlen);
 
   bool C_filled = C.isFillComplete();
 
@@ -325,7 +329,8 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_Bt
       avals[k] = Aval_i[k];
     }
 
-    typename ArrayRCP<GlobalOrdinal>::iterator end = Aind.begin();
+
+    typename ArrayView<GlobalOrdinal>::iterator end = Aind.begin();
     for(size_t l = 0; l<A_len_i; ++l, ++end);
     //util.Sort(true, A_len_i, Aind, 1, &avals, 0, NULL);
     sort2(Aind.begin(), end, avals.begin());
@@ -382,7 +387,6 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_Bt
           Bind[Blen++] = tmp;
         }
       }
-
       if (Blen < Teuchos::OrdinalTraits<size_t>::one()) {
         continue;
       }
@@ -390,7 +394,7 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_Bt
       //util.Sort(true, Blen, Bind, 1, &bvals, 0, NULL);
       sort2(Bind.begin(), Bind.end(), bvals.begin());
 
-      Teuchos::Array<Scalar> C_ij = Teuchos::Array<Scalar>(1, sparsedot(avals, Aind, bvals, Bind ));
+      Teuchos::Array<Scalar> C_ij = Teuchos::Array<Scalar>(1, sparsedot(avals.getConst(), Aind.getConst(), A_len_i, bvals.getConst(), Bind.getConst(), B_len_j));
 
       if (C_ij[0] == Teuchos::ScalarTraits<Scalar>::zero()) {
         continue;

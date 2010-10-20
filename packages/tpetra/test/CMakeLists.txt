@@ -18,7 +18,7 @@ ADD_SUBDIRECTORIES(
   VbrMatrix
   RowMatrixTransposer
   MatrixMatrix
-  IOTests
+#  IOTests
   )
 
 PACKAGE_ADD_LIBRARY(
