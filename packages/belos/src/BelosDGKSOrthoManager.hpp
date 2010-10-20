@@ -61,6 +61,10 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+#include "Teuchos_TimeMonitor.hpp"
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
 namespace Belos {
 
   template<class ScalarType, class MV, class OP>
@@ -312,7 +316,9 @@ namespace Belos {
 
     //! Timer and timer label.
     std::string label_;
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::RCP<Teuchos::Time> timerOrtho_;
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
     //! Routine to find an orthonormal basis for X
     int findBasis(MV &X, Teuchos::RCP<MV> MX, 

@@ -49,6 +49,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
 #include "Teuchos_oblackholestream.hpp"	
+#include "Teuchos_RCP.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -77,7 +78,7 @@ namespace Belos {
     //@{ 
     
     //! Basic constructor.
-    OutputManager( int vb = Belos::Errors, const Teuchos::RCP<std::ostream> &os = Teuchos::rcp(&std::cout,false) );
+    OutputManager( int vb = Belos::Errors, const Teuchos::RCP< std::ostream > &os = Teuchos::rcp(&std::cout,false) );
     
     //! Destructor.
     virtual ~OutputManager() {};

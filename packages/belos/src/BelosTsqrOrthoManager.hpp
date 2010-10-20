@@ -211,8 +211,8 @@ namespace Belos {
     /// well.
     void 
     project (MV& X, 
-	     const_prev_mvs_type Q,
-	     prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null))) const
+	     prev_coeffs_type C,
+	     const_prev_mvs_type Q) 
     {
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
@@ -238,8 +238,7 @@ namespace Belos {
 
 
     int 
-    normalize (MV& X,
-	       serial_matrix_ptr B = Teuchos::null)
+    normalize (MV& X, serial_matrix_ptr B) 
     {
       // Internal data used by this method require a specific MV
       // object for initialization (e.g., to get a Map / communicator,
@@ -321,17 +320,10 @@ namespace Belos {
 
     int 
     projectAndNormalize (MV &X,
-			 const_prev_mvs_type Q,
-			 prev_coeffs_type C
-			 = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
-			 serial_matrix_ptr B = Teuchos::null)
+			 prev_coeffs_type C,
+			 serial_matrix_ptr B,
+			 const_prev_mvs_type Q)
     {
-      // if (_hasOp || _Op != Teuchos::null)
-      // 	throw NonNullOperatorError();
-      // else if (MX != Teuchos::null)
-      // 	throw OrthoError("Sorry, TsqrOrthoManager::projectAndNormalizeMat() "
-      // 			 "doesn\'t work with MX non-null yet");
-
       // Fetch dimensions of X and Q.
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
@@ -670,6 +662,8 @@ namespace Belos {
   template< class ScalarType, class MV >
   class TsqrOrthoManager : public OrthoManager< ScalarType, MV > {
   public:
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
+
     TsqrOrthoManager (const Teuchos::ParameterList& tsqrParams) :
       impl_ (tsqrParams)
     {}
@@ -686,35 +680,33 @@ namespace Belos {
 
     virtual void 
     norm (const MV& X, 
-	  std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > &normvec) const
+	  std::vector< magnitude_type > &normvec) const
     {
       return impl_.norm (X, normvec);
     }
 
     virtual void 
     project (MV &X, 
-	     Teuchos::Array<Teuchos::RCP<const MV> > Q,
-	     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C 
-	     = Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> >(Teuchos::null))) const
+	     Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > > C,
+	     Teuchos::Array<Teuchos::RCP<const MV> > Q) const
     {
-      return impl_.project (X, Q, C);
+      return impl_.project (X, C, Q);
     }
 
     virtual int 
     normalize (MV &X, 
-	       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null) const
+	       Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B) const
     {
       return impl_.normalize (X, B);
     }
 
     virtual int 
     projectAndNormalize (MV &X, 
-			 Teuchos::Array<Teuchos::RCP<const MV> > Q,
-			 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C 
-			 = Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> >(Teuchos::null)),
-			 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null) const
+			 Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > > C,
+			 Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B,
+			 Teuchos::Array<Teuchos::RCP<const MV> > Q) const
     {
-      return impl_.projectAndNormalize (X, Q, C, B);
+      return impl_.projectAndNormalize (X, C, B, Q);
     }
 
     virtual typename Teuchos::ScalarTraits< ScalarType >::magnitudeType 
@@ -730,11 +722,18 @@ namespace Belos {
       return impl_.orthogError (X1, X2);
     }
 
+    /// Belos::OrthoManager wants this virtual function to be
+    /// implemented; Anasazi::OrthoManager does not.
+    void setLabel (const std::string& label) { label_ = label; }
+    const std::string& getLabel() const { return label_; }
+
   private:
     /// "Mutable" because it has internal scratch space state.  I know
     /// it's bad, but it's the only way this class can be part of the
     /// OrthoManager hierarchy.
     mutable TsqrOrthoManagerImpl< ScalarType, MV > impl_;
+
+    std::string label_;
   };
 
 
@@ -780,6 +779,11 @@ namespace Belos {
       pDgks_ (Teuchos::null)  // Lazy initialization
     {}
 
+    /// Belos::OrthoManager wants this virtual function to be
+    /// implemented; Anasazi::OrthoManager does not.
+    void setLabel (const std::string& label) { label_ = label; }
+    const std::string& getLabel() const { return label_; }
+
     /// \brief Constructor
     ///
     /// \param tsqrParams [in] Parameters used to initialize TSQR 
@@ -821,97 +825,128 @@ namespace Belos {
     virtual Teuchos::RCP< const OP > getOp () const { return base_type::getOp(); }
 
     virtual void 
-    projectMat (MV &X, 
-		const_prev_mvs_type Q,
-		prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
-		mv_ptr MX = Teuchos::null,
-		const_prev_mvs_type MQ = Teuchos::tuple (const_mv_ptr (Teuchos::null))) const
+    project (MV &X, 
+	     Teuchos::RCP< MV > MX,
+	     prev_coeffs_type C,
+	     const_prev_mvs_type Q) const
     {
       if (getOp() == Teuchos::null)
 	{
 	  ensureTsqrInit ();
-	  pTsqr_->project (X, Q, C);
-	  // FIXME (mfh 20 Jul 2010) What about MX and MQ?
+	  // MX is not modified by MatOrthoManager::project(), so we
+	  // don't need to use it here.
+	  pTsqr_->project (X, C, Q);
 	}
       else
 	{
 	  ensureDgksInit ();
-	  pDgks_->projectMat (X, Q, C, MX, MQ);
+	  pDgks_->project (X, MX, C, Q);
 	}
     }
 
-    virtual int 
-    normalizeMat (MV &X, 
-		  serial_matrix_ptr B = Teuchos::null,
-		  mv_ptr MX = Teuchos::null) const
+    virtual void 
+    project (MV &X, 
+	     prev_coeffs_type C,
+	     const_prev_mvs_type Q) const
     {
-      if (getOp() == Teuchos::null)
-	{
-	  ensureTsqrInit ();
-	  return pTsqr_->normalize (X, B);
-	  // FIXME (mfh 20 Jul 2010) What about MX?
-	}
-      else
-	{
-	  ensureDgksInit ();
-	  return pDgks_->normalizeMat (X, B, MX);
-	}
+      project (X, Teuchos::null, C, Q);
     }
 
     virtual int 
-    projectAndNormalizeMat (MV &X, 
-			    const_prev_mvs_type Q,
-			    prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
-			    serial_matrix_ptr B = Teuchos::null,
-			    mv_ptr MX = Teuchos::null,
-			    const_prev_mvs_type MQ = Teuchos::tuple (const_mv_ptr (Teuchos::null))) const
+    normalize (MV& X, 
+	       Teuchos::RCP< MV > MX,
+	       Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B) const
     {
       if (getOp() == Teuchos::null)
 	{
 	  ensureTsqrInit ();
-	  return pTsqr_->projectAndNormalize (X, Q, C, B); 
-	  // FIXME (mfh 20 Jul 2010) What about MX and MQ?
+	  const int rank = pTsqr_->normalize (X, B);
+	  if (MX != Teuchos::null)
+	    ; // FIXME: MX should get a copy of X
+	  return rank;
 	}
       else
 	{
 	  ensureDgksInit ();
-	  return pDgks_->projectAndNormalizeMat (X, Q, C, B, MX, MQ);
+	  return pDgks_->normalize (X, MX, B);
+	}
+    }
+
+    virtual int
+    normalize (MV& X, 
+	       Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > B) const 
+    {
+      return normalize (X, Teuchos::null, B);
+    }
+
+
+    virtual int 
+    projectAndNormalize (MV &X, 
+			 Teuchos::RCP< MV > MX,
+			 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+			 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+			 Teuchos::Array<Teuchos::RCP<const MV> > Q ) const
+    {
+      if (getOp() == Teuchos::null)
+	{
+	  ensureTsqrInit ();
+	  const int rank = pTsqr_->projectAndNormalize (X, C, B, Q); 
+	  if (MX != Teuchos::null)
+	    ; // FIXME: MX should get a copy of X
+	  return rank;
+	}
+      else
+	{
+	  ensureDgksInit ();
+	  return pDgks_->projectAndNormalize (X, MX, C, B, Q);
 	}
     }
 
     virtual magnitude_type
-    orthonormErrorMat (const MV &X, 
-		       const_mv_ptr MX = Teuchos::null) const
+    orthonormError (const MV &X,
+		    Teuchos::RCP< const MV > MX) const
     {
       if (getOp() == Teuchos::null)
 	{
 	  ensureTsqrInit ();
+	  // Ignore MX.
 	  return pTsqr_->orthonormError (X);
-	  // FIXME (mfh 20 Jul 2010) What about MX?
 	}
       else
 	{
 	  ensureDgksInit ();
-	  return pDgks_->orthonormErrorMat (X, MX);
+	  return pDgks_->orthonormError (X, MX);
 	}
     }
 
     virtual magnitude_type
-    orthogErrorMat (const MV &X, 
-		    const MV &Y,
-		    const_mv_ptr MX = Teuchos::null, 
-		    const_mv_ptr MY = Teuchos::null) const
+    orthonormError (const MV &X) const
+    {
+      return orthonormError (X, Teuchos::null);
+    }
+
+    virtual magnitude_type
+    orthogError (const MV &X1, 
+		 const MV &X2) const
+    {
+      return orthogError (X1, Teuchos::null, X2);
+    }
+
+    virtual magnitude_type
+    orthogError (const MV &X1, 
+		 Teuchos::RCP< const MV > MX1,
+		 const MV &X2) const
     {
       if (getOp() == Teuchos::null)
 	{
 	  ensureTsqrInit ();
-	  return pTsqr_->orthogError (X, Y);
-	  // FIXME (mfh 20 Jul 2010) What about MX and MY?
+	  // Ignore MX1, since we don't need to write to it.
+	  return pTsqr_->orthogError (X1, X2);
 	}
       else
 	{
 	  ensureDgksInit ();
-	  return pDgks_->orthogErrorMat (X, Y, MX, MY);
+	  return pDgks_->orthogError (X1, MX1, X2);
 	}
     }
 
@@ -926,7 +961,7 @@ namespace Belos {
     ensureDgksInit () const
     {
       if (pDgks_ == Teuchos::null)
-	pDgks_ = Teuchos::rcp (new dgks_type (getOp()));
+	pDgks_ = Teuchos::rcp (new dgks_type (getLabel(), getOp()));
     }
 
     ///
@@ -940,6 +975,8 @@ namespace Belos {
     /// DGKS orthogonalization manager, used when getOp() != null
     /// (could be a non-Euclidean inner product, but not necessarily).
     mutable Teuchos::RCP< dgks_type > pDgks_;
+
+    std::string label_;
   };
 
 } // namespace Belos

@@ -47,7 +47,7 @@
 /// implementation.
 
 #include "BelosConfigDefs.hpp"
-#include "BelosSolverUtils.hpp"
+#include "BelosOutputManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosIMGSOrthoManager.hpp"
 #include "BelosDGKSOrthoManager.hpp"
@@ -431,18 +431,18 @@ main (int argc, char *argv[])
       //
       MyOM->stream(Errors) << " -- Filling X1 with random values... " << endl;
       MVT::MvRandom(*X1);
-      MyOM->stream(Errors) << " -- OM->normalize(*X1);" << endl;
-      const int initialX1Rank = OM->normalize(*X1);
+      MyOM->stream(Errors) << " -- OM->normalize(*X1, Teuchos::null);" << endl;
+      const int initialX1Rank = OM->normalize(*X1, Teuchos::null);
       TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
 			 std::runtime_error, 
-			 "normalize(X1) returned rank "
+			 "normalize(*X1, Teuchos::null) returned rank "
 			 << initialX1Rank << " from " << sizeX1
 			 << " vectors. Cannot continue.");
       MyOM->stream(Errors) << " -- OM->orthonormError(*X1);" << endl;
       err = OM->orthonormError(*X1);
       TEST_FOR_EXCEPTION(err > TOL,
 			 std::runtime_error,
-			 "normalize(X1) did meet tolerance: "
+			 "normalize(*X1, Teuchos::null) did meet tolerance: "
 			 "orthonormError(X1) == " << err);
       MyOM->stream(Warnings) << "   || <X1,X1> - I || : " << err << endl;
 
@@ -452,9 +452,14 @@ main (int argc, char *argv[])
       //
       MyOM->stream(Errors) << " -- Filling X1 with random values... " << endl;
       MVT::MvRandom(*X2);
-      MyOM->stream(Errors) << " -- OM->projectAndNormalize (*X2, tuple(X1));... " << endl;
-      const int initialX2Rank = 
-	OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
+      MyOM->stream(Errors) << " -- OM->projectAndNormalize (*X2, C, B, tuple(X1));... " << endl;
+      int initialX2Rank;
+      {
+	Array< RCP< Teuchos::SerialDenseMatrix< int, scalar_type > > > C;
+	RCP< SerialDenseMatrix< int, scalar_type > > B = Teuchos::null;
+	initialX2Rank = 
+	  OM->projectAndNormalize (*X2, C, B, tuple< RCP< const MV > >(X1));
+      }
       TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
 			 std::runtime_error, 
 			 "projectAndNormalize(X2,X1) returned rank " 
@@ -723,7 +728,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         C[i]->random();
       }
       // run test
-      int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
+      int ret = OM->projectAndNormalize(*Scopy,C,B,theX);
       sout << "projectAndNormalize() returned rank " << ret << endl;
       if (ret == 0) {
         sout << "   Cannot continue." << endl;
@@ -771,7 +776,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
         // run test
-        ret = OM->projectAndNormalize(*Scopy,theX,C,B);
+        ret = OM->projectAndNormalize(*Scopy,C,B,theX);
         sout << "projectAndNormalize() returned rank " << ret << endl;
         if (ret == 0) {
           sout << "   Cannot continue." << endl;
@@ -1100,7 +1105,7 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
 	  C[i]->random();
 	}
 	// run test
-	OM->project(*Scopy,theX,C);
+	OM->project(*Scopy,C,theX);
 	// we allocate S and MS for each test, so we can save these as views
 	// however, save copies of the C
 	S_outs.push_back( Scopy );
@@ -1123,7 +1128,7 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
         // run test
-        OM->project(*Scopy,theX,C);
+        OM->project(*Scopy,C,theX);
         // we allocate S and MS for each test, so we can save these as views
         // however, save copies of the C
         S_outs.push_back( Scopy );
