@@ -158,7 +158,45 @@ namespace Belos {
       blockReorthogThreshold_ (MagnitudeType(1) / MagnitudeType(2)),
       relativeRankTolerance_ (MagnitudeType(100)*SCTM::eps()),
       throwOnReorthogFault_ (true)
-    {}
+    {
+      using Teuchos::Exceptions::InvalidParameterName;
+      using Teuchos::Exceptions::InvalidParameterType;
+
+      // Use input parameter list to set nondefault parameter values,
+      // if provided by the caller.  Silently ignore invalid values.
+
+      try {
+	const MagnitudeType brt = 
+	  tsqrParams.get< MagnitudeType >(std::string("blockReorthogThreshold"));
+	if (brt >= MagnitudeType(0))
+	  blockReorthogThreshold_ = brt;
+      } catch (InvalidParameterName&) {
+	;
+      } catch (InvalidParameterType&) {
+	;
+      }
+
+      try {
+	const MagnitudeType rrt = 
+	  tsqrParams.get< MagnitudeType >(std::string("relativeRankTolerance"));
+	if (rrt >= MagnitudeType(0))
+	  relativeRankTolerance_ = rrt;
+      } catch (InvalidParameterName&) {
+	;
+      } catch (InvalidParameterType&) {
+	;
+      }
+
+      try {
+	const bool tof = 
+	  tsqrParams.get< bool >(std::string("throwOnReorthogFault"));
+	throwOnReorthogFault_ = tof;
+      } catch (InvalidParameterName&) {
+	;
+      } catch (InvalidParameterType&) {
+	;
+      }
+    }
 
     // void 
     // setOp (Teuchos::RCP< const OP > Op)
