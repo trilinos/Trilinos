@@ -87,7 +87,12 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
 
   try {
     out << "Intentionally providing no prolongator factory to FillHierarchy .... ";
-    H.FillHierarchy(Teuchos::null);
+
+    RCP<SaPFactory<Scalar,LO,GO,Node> >    PFact = Teuchos::null;
+    //RCP<OperatorFactory<Scalar,LO,GO,Node> >  opFact = PFact;
+    //H.FillHierarchy(opFact);
+    H.FillHierarchy(PFact);
+    //H.FillHierarchy(Teuchos::null);
   }
   catch(...) {
     out << "Caught the error" << std::endl;
@@ -163,6 +168,36 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
 
   out << "Providing all three factories to FillHierarchy." << std::endl;
   H.FillHierarchy(PFact,RFact,AcFact);
+}
+
+TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
+{
+
+  typedef double Scalar;
+  typedef int    LO;
+  typedef int    GO;
+  typedef Kokkos::DefaultNode::DefaultNodeType Node;
+
+  typedef Tpetra::Map<LO,GO,Node> Map;
+
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
+  typedef Tpetra::Vector<Scalar,LO,GO,Node>    Vector;
+  typedef MueLu::Level<Scalar,LO,GO,Node>    Level;
+
+  typedef MueLu::Hierarchy<Scalar,LO,GO,Node>    Hierarchy;
+
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using namespace MueLu;
+
+  out << "version: " << MueLu::Version() << std::endl;
+
+  Level levelOne;
+  levelOne.SetLevelID(1);
+
+  Hierarchy H;
+  H.SetLevel(levelOne);
+  H.SetSmoothers();
 }
 
 }//namespace <anonymous>
