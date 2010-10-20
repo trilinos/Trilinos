@@ -118,14 +118,15 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
       TbbTsqr_UnCacheBlockTask.hpp
       )
   ENDIF ()
-  # Non-generated source files
+  # Non-generated source files.  Does not include source files
+  # corresponding to complex arithmetic routines; those are below.  We
+  # have to separate them out because Trilinos does not build with
+  # complex arithmetic support by default.
   APPEND_SET(SOURCES
     Tsqr_ApplyType.cpp 
     Tsqr_Blas.cpp 
-    Tsqr_CLapack.cpp
     Tsqr_DLapack.cpp
     Tsqr_SLapack.cpp
-    Tsqr_ZLapack.cpp
     Tsqr_CombineTest.cpp
     Tsqr_SeqTest.cpp
     Tsqr_StatTimeMonitor.cpp
@@ -133,7 +134,8 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_TrivialTimer.cpp
     )
   # More non-generated source files, corresponding to complex
-  # arithmetic routines.
+  # arithmetic routines.  The default value of TSQR_ENABLE_Complex is
+  # the value of Teuchos_ENABLE_COMPLEX.
   IF (TSQR_ENABLE_Complex)
     APPEND_SET(SOURCES
       Tsqr_CLapack.cpp
