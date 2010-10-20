@@ -23,13 +23,16 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
-#include <unit_tests/UnitTestRingMeshFixture.hpp>
+#include <stk_mesh/fixtures/RingFixture.hpp>
 
 #include <algorithm>
 
+using stk::mesh::BulkData;
+using stk::mesh::fixtures::RingFixture;
+
 class UnitTestStkMeshBulkModification {
  public:
-  UnitTestStkMeshBulkModification(stk::ParallelMachine pm) : m_comm(pm), m_num_procs(0), m_rank(0)
+  UnitTestStkMeshBulkModification(stk::ParallelMachine pm) : m_comm(pm), m_num_procs(0), m_rank(0), m_ring_mesh(pm)
   {
     m_num_procs = stk::parallel_machine_size( m_comm );
     m_rank = stk::parallel_machine_rank( m_comm );
@@ -41,9 +44,26 @@ class UnitTestStkMeshBulkModification {
   void test_all_local_edges();
   void test_parallel_consistency();
 
+  BulkData& initialize_ring_fixture()
+  {
+    m_ring_mesh.m_meta_data.commit();
+    BulkData& bulk_data = m_ring_mesh.m_bulk_data;
+
+    bulk_data.modification_begin();
+    m_ring_mesh.generate_mesh( );
+    ThrowRequire(bulk_data.modification_end());
+
+    bulk_data.modification_begin();
+    m_ring_mesh.fixup_node_ownership( );
+    ThrowRequire(bulk_data.modification_end());
+
+    return bulk_data;
+  }
+
   stk::ParallelMachine m_comm;
   int m_num_procs;
   int m_rank;
+  RingFixture m_ring_mesh;
 };
 
 namespace {
@@ -82,11 +102,7 @@ STKUNIT_UNIT_TEST( UnitTestParallelConsistency , testUnit )
 
 void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
 {
-  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.m_meta_data.commit();
-  ring_mesh.generate_mesh( true /* with aura */ );
-
-  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
+  BulkData& bulk_data = initialize_ring_fixture();
 
   bulk_data.modification_begin(); // Intentially make things unsynced
 
@@ -97,11 +113,7 @@ void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
 
 void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities()
 {
-  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.m_meta_data.commit();
-  ring_mesh.generate_mesh( true /* with aura */ );
-
-  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
+  BulkData& bulk_data = initialize_ring_fixture();
 
   const stk::mesh::Ghosting & ghost = bulk_data.shared_aura();
 
@@ -121,12 +133,9 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 
 void UnitTestStkMeshBulkModification::test_all_local_nodes()
 {
-  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.m_meta_data.commit();
-  ring_mesh.generate_mesh( true /* with aura */ );
+  BulkData& bulk_data = initialize_ring_fixture();
 
-  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
-  stk::mesh::TopologicalMetaData& top_data = ring_mesh.m_top_data;
+  stk::mesh::TopologicalMetaData& top_data = m_ring_mesh.m_top_data;
 
   {
     std::vector< stk::mesh::Entity *> entities;
@@ -139,7 +148,7 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 
   {
     // Get a selector for the univeral part (contains local, shared, and ghosted)
-    const stk::mesh::Part& universal = ring_mesh.m_meta_data.universal_part();
+    const stk::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();
     stk::mesh::Selector universal_selector(universal);
 
     // Get the buckets that will give us the universal nodes
@@ -165,8 +174,8 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 
     // Get the buckets that will give us the locally used nodes
     stk::mesh::Selector locally_used_selector =
-      ring_mesh.m_meta_data.locally_owned_part() |
-      ring_mesh.m_meta_data.globally_shared_part();
+      m_ring_mesh.m_meta_data.locally_owned_part() |
+      m_ring_mesh.m_meta_data.globally_shared_part();
 
     stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
 
@@ -198,15 +207,12 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 
 void UnitTestStkMeshBulkModification::test_all_local_edges()
 {
-  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.m_meta_data.commit();
-  ring_mesh.generate_mesh( true /* with aura */ );
+  BulkData& bulk_data = initialize_ring_fixture();
 
-  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
-  stk::mesh::TopologicalMetaData& top_data = ring_mesh.m_top_data;
+  stk::mesh::TopologicalMetaData& top_data = m_ring_mesh.m_top_data;
 
   {
-    const stk::mesh::Part& universal = ring_mesh.m_meta_data.universal_part();
+    const stk::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();
     stk::mesh::Selector universal_selector(universal);
 
     const std::vector<stk::mesh::Bucket*>& node_buckets = bulk_data.buckets(top_data.node_rank);
@@ -246,8 +252,8 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
 
     // get the buckets that we need to traverse to get the locally used edges
     stk::mesh::Selector locally_used_selector =
-      ring_mesh.m_meta_data.locally_owned_part() |
-      ring_mesh.m_meta_data.globally_shared_part();
+      m_ring_mesh.m_meta_data.locally_owned_part() |
+      m_ring_mesh.m_meta_data.globally_shared_part();
 
     stk::mesh::get_buckets(locally_used_selector, edge_buckets, buckets);
 
@@ -280,12 +286,9 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
 
 void UnitTestStkMeshBulkModification::test_parallel_consistency()
 {
-  UnitTestRingMeshFixture ring_mesh(MPI_COMM_WORLD);
-  ring_mesh.m_meta_data.commit();
-  ring_mesh.generate_mesh( true /* with aura */ );
+  BulkData& bulk_data = initialize_ring_fixture();
 
-  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
-  stk::mesh::TopologicalMetaData& top_data = ring_mesh.m_top_data;
+  stk::mesh::TopologicalMetaData& top_data = m_ring_mesh.m_top_data;
 
   stk::CommBroadcast all(bulk_data.parallel(), 0);
 
@@ -298,8 +301,8 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
     const std::vector<stk::mesh::Bucket*>& node_buckets = bulk_data.buckets(top_data.node_rank);
 
     stk::mesh::Selector locally_used_selector =
-      ring_mesh.m_meta_data.locally_owned_part() |
-      ring_mesh.m_meta_data.globally_shared_part();
+      m_ring_mesh.m_meta_data.locally_owned_part() |
+      m_ring_mesh.m_meta_data.globally_shared_part();
 
     std::vector<stk::mesh::Bucket*> buckets;
     stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);

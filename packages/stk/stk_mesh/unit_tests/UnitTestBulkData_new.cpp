@@ -10,18 +10,23 @@
 #include <stdexcept>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <unit_tests/UnitTestMesh.hpp>
 
+#include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
+
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/FieldData.hpp>
+
+using stk::mesh::Part;
 
 // UnitTestBulkData_new is the beginnings of a refactoring of the bulk
-// data unit test.  It relies on the UnitTestMesh fixture to rapidly
+// data unit test.  It relies on a customized BoxFixture to rapidly
 // create a mesh for testing.
 
+namespace {
 
 void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> &  ,
 					 const stk::mesh::EntityProc & entry );
@@ -35,17 +40,100 @@ void new_comm_recv_to_send(
   const std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv ,
         std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send );
 
+/**
+ * The customized box fixture used in this file for testing. This fixture
+ * is similar to the BoxFixture it inherits from, with the only difference
+ * being the extra parts that this fixture declares for testing purposes.
+ */
+class TestBoxFixture : public stk::mesh::fixtures::BoxFixture
+{
+ public:
+  TestBoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
+                 unsigned block_size = 1000) :
+    BoxFixture(pm, block_size),
+    m_test_part ( m_meta_data.declare_part ( "Test Part" ) ),
+    m_cell_part ( m_meta_data.declare_part ( "Cell list" , 3 /*max rank*/ ) ),
+    m_part_A_0 ( m_meta_data.declare_part ( "Part A 0", 0 ) ),
+    m_part_A_1 ( m_meta_data.declare_part ( "Part A 1", 1 ) ),
+    m_part_A_2 ( m_meta_data.declare_part ( "Part A 2", 2 ) ),
+    m_part_A_3 ( m_meta_data.declare_part ( "Part A 3", 3 ) ),
+    m_part_A_superset ( m_meta_data.declare_part ( "Part A superset" ) ),
+    m_part_B_0 ( m_meta_data.declare_part ( "Part B 0", 0 ) ),
+    m_part_B_1 ( m_meta_data.declare_part ( "Part B 1", 1 ) ),
+    m_part_B_2 ( m_meta_data.declare_part ( "Part B 2", 2 ) ),
+    m_part_B_3 ( m_meta_data.declare_part ( "Part B 3", 3 ) ),
+    m_part_B_superset ( m_meta_data.declare_part ( "Part B superset" ) )
+  {
+    m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_0 );
+    m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_1 );
+    m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_2 );
+    m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_3 );
+
+    m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_0 );
+    m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_1 );
+    m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_2 );
+    m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_3 );
+
+    // None of the tests currently need to make any addtional changes
+    // to MetaData; if this changes, the line below will have to be
+    // removed.
+    m_meta_data.commit();
+  }
+
+  Part & get_test_part () { return m_test_part; }
+  Part & get_cell_part () { return m_cell_part; }
+
+  Part & get_part_a_0 () { return m_part_A_0; }
+  Part & get_part_a_1 () { return m_part_A_1; }
+  Part & get_part_a_2 () { return m_part_A_2; }
+  Part & get_part_a_3 () { return m_part_A_3; }
+
+  Part & get_part_a_superset () { return m_part_A_superset; }
+
+  Part & get_part_b_0 () { return m_part_B_0; }
+  Part & get_part_b_1 () { return m_part_B_1; }
+  Part & get_part_b_2 () { return m_part_B_2; }
+  Part & get_part_b_3 () { return m_part_B_3; }
+
+  Part & get_part_b_superset () { return m_part_B_superset; }
+
+ private:
+  Part     & m_test_part;   // A simple part
+  Part     & m_cell_part;   // A part to put cells in
+
+  Part     & m_part_A_0;
+  Part     & m_part_A_1;
+  Part     & m_part_A_2;
+  Part     & m_part_A_3;
+
+  Part     & m_part_A_superset;
+
+  Part     & m_part_B_0;
+  Part     & m_part_B_1;
+  Part     & m_part_B_2;
+  Part     & m_part_B_3;
+
+  Part     & m_part_B_superset;
+};
+
+}
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 {
-  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
+  TestBoxFixture fixture;
 
-  stk::mesh::BulkData         &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::BulkData         &bulk = fixture.bulk_data();
   stk::mesh::Part             &new_part = fixture.get_test_part ();
   stk::mesh::PartVector        add_part;
   add_part.push_back ( &new_part );
 
-  fixture.generate_boxes ();
+  const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
+  int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+
+  bulk.modification_begin();
+  fixture.generate_boxes( root_box, local_box );
+  STKUNIT_ASSERT(bulk.modification_end());
+
   // Find a cell owned by this process
   stk::mesh::Entity  *cell_to_delete = NULL;
   stk::mesh::Entity  *cell_to_delete_copy = NULL;
@@ -77,9 +165,9 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertGoodKey )
 {
-  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
+  TestBoxFixture fixture;
 
-  stk::mesh::BulkData         &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::BulkData         &bulk = fixture.bulk_data();
   stk::mesh::Part             &new_part = fixture.get_test_part ();
   stk::mesh::PartVector        add_part;
   add_part.push_back ( &new_part );
@@ -91,19 +179,33 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertGoodKey )
   STKUNIT_ASSERT_THROW ( bulk.assert_good_key ( "method" , bad_key2 ) , std::runtime_error );
 }
 
+STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertEntityOwner )
+{
+  TestBoxFixture fixture;
+
+  stk::mesh::BulkData     &bulk = fixture.bulk_data ();
+  stk::mesh::PartVector    empty_vector;
+  bulk.modification_begin();
+
+  stk::mesh::Entity &new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
+
+  STKUNIT_ASSERT_THROW(bulk.assert_entity_owner ( "", new_cell, 50 ) , std::runtime_error );
+  bulk.modification_end();
+}
+
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyGetEntityGuards )
 {
-  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
+  TestBoxFixture fixture;
 
-  stk::mesh::BulkData      &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::BulkData      &bulk = fixture.bulk_data();
   STKUNIT_ASSERT_THROW ( bulk.get_entity ( 1 , 0 ) , std::runtime_error );
 }
 
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 {
-  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
-  stk::mesh::BulkData     &bulk = fixture.nonconst_bulk_data ();
+  TestBoxFixture fixture;
+  stk::mesh::BulkData     &bulk = fixture.bulk_data ();
   stk::mesh::PartVector    empty_vector;
   stk::mesh::PartVector    cell_part_vector;
 
@@ -125,8 +227,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
  * part modification routines.
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCannotRemoveFromSpecialParts )
 {
-  stk::unit_test::UnitTestMesh  fixture;
-  stk::mesh::BulkData          &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::fixtures::BoxFixture fixture;
+  stk::mesh::BulkData          &bulk = fixture.bulk_data();
   stk::mesh::PartVector         test_parts;
   stk::mesh::PartVector         out_parts;
   stk::mesh::PartVector         empty_vector;
@@ -146,8 +248,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCannotRemoveFromSpecialParts )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 {
-  stk::unit_test::UnitTestMesh    fixture( MPI_COMM_WORLD );
-  stk::mesh::BulkData            &bulk = fixture.nonconst_bulk_data ();
+  TestBoxFixture fixture;
+  stk::mesh::BulkData            &bulk = fixture.bulk_data ();
 
   bulk.modification_begin();
   stk::mesh::Entity &new_cell = fixture.get_new_entity ( 3 , 1 );
@@ -159,8 +261,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 {
-  stk::unit_test::UnitTestMesh    fixture( MPI_COMM_WORLD );
-  stk::mesh::BulkData            &bulk = fixture.nonconst_bulk_data ();
+  TestBoxFixture fixture;
+  stk::mesh::BulkData            &bulk = fixture.bulk_data ();
   stk::mesh::PartVector           create_parts , remove_parts , add_parts, empty_parts;
 
   create_parts.push_back ( &fixture.get_test_part() );
@@ -204,12 +306,18 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 {
-  stk::unit_test::UnitTestMesh     fixture( MPI_COMM_WORLD );
-  stk::mesh::BulkData             &bulk = fixture.nonconst_bulk_data ();
+  TestBoxFixture fixture;
+  stk::mesh::BulkData             &bulk = fixture.bulk_data ();
   stk::mesh::PartVector            add_part;
 
+  const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
+  int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+
   add_part.push_back ( &fixture.get_part_a_0() );
-  fixture.generate_boxes ();
+
+  bulk.modification_begin();
+  fixture.generate_boxes( root_box, local_box );
+  STKUNIT_ASSERT(bulk.modification_end());
 
   bulk.modification_begin();
 
@@ -238,8 +346,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
 {
-  stk::unit_test::UnitTestMesh     fixture( MPI_COMM_WORLD );
-  stk::mesh::BulkData             &bulk = fixture.nonconst_bulk_data ();
+  TestBoxFixture fixture;
+  stk::mesh::BulkData             &bulk = fixture.bulk_data ();
   stk::mesh::PartVector            create_node_parts , create_cell_parts , empty_parts;
 
   create_node_parts.push_back ( &fixture.get_part_a_0() );
@@ -269,8 +377,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
 {
-  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
-  stk::mesh::BulkData           &bulk = fixture.nonconst_bulk_data ();
+  TestBoxFixture fixture;
+  stk::mesh::BulkData           &bulk = fixture.bulk_data ();
   stk::mesh::PartVector          add_parts , remove_parts, empty_parts;
 
   add_parts.push_back ( &fixture.get_part_b_3() );
@@ -295,8 +403,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRa
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
 {
 
-  stk::unit_test::UnitTestMesh  fixture( MPI_COMM_WORLD );
-  stk::mesh::BulkData          &bulk = fixture.nonconst_bulk_data ();
+  TestBoxFixture fixture;
+  stk::mesh::BulkData          &bulk = fixture.bulk_data ();
 
   bulk.modification_begin();
 
@@ -315,13 +423,18 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
 {
-  stk::unit_test::UnitTestMesh  fixture( MPI_COMM_WORLD );
+  TestBoxFixture fixture;
 
   if ( fixture.comm_size() == 1 ) return;
 
-  fixture.generate_boxes ();
+  stk::mesh::BulkData  &bulk = fixture.bulk_data();
 
-  stk::mesh::BulkData  &bulk = fixture.nonconst_bulk_data();
+  const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
+  int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+
+  bulk.modification_begin();
+  fixture.generate_boxes( root_box, local_box );
+  STKUNIT_ASSERT(bulk.modification_end());
 
   bulk.modification_begin();
 
@@ -352,6 +465,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
   bulk.change_ghosting ( ghosting , to_send , empty_vector );
   bulk.modification_end();
 
+
   {
     std::vector<stk::mesh::EntityProc> send_list ;
     std::vector<stk::mesh::Entity*>    recv_list ;
@@ -361,6 +475,10 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
     STKUNIT_ASSERT ( ! send_list.empty()  );
     STKUNIT_ASSERT ( ! recv_list.empty() );
   }
+
+  // Usage of operator << in Ghosting.cpp
+  std::ostringstream oss;
+  oss << ghosting;
 
   bulk.modification_begin();
   bulk.destroy_all_ghosting ();
@@ -380,12 +498,21 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 {
-  stk::unit_test::UnitTestMesh   fixture1( MPI_COMM_WORLD ) , fixture2( MPI_COMM_WORLD );
-  stk::mesh::BulkData   &bulk1 = fixture1.nonconst_bulk_data ();
-  stk::mesh::BulkData   &bulk2 = fixture2.nonconst_bulk_data ();
+  TestBoxFixture fixture1, fixture2;
+  stk::mesh::BulkData & bulk1 = fixture1.bulk_data ();
+  stk::mesh::BulkData & bulk2 = fixture2.bulk_data ();
 
-  fixture1.generate_boxes();
-  fixture2.generate_boxes();
+  const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
+  int local_box1[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+  int local_box2[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+
+  bulk1.modification_begin();
+  fixture1.generate_boxes( root_box, local_box1 );
+  STKUNIT_ASSERT(bulk1.modification_end());
+
+  bulk2.modification_begin();
+  fixture2.generate_boxes( root_box, local_box2 );
+  STKUNIT_ASSERT(bulk2.modification_end());
 
   bulk1.modification_begin();
   bulk2.modification_begin();
@@ -425,9 +552,16 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 {
-  stk::unit_test::UnitTestMesh  fixture( MPI_COMM_WORLD );
-  stk::mesh::BulkData          &bulk = fixture.nonconst_bulk_data ();
-  fixture.generate_boxes ();
+  TestBoxFixture fixture;
+  stk::mesh::BulkData          &bulk = fixture.bulk_data ();
+
+  const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
+  int local_box[3][2] = { { 0 , 0 } , { 0 , 0 } , { 0 , 0 } };
+
+  bulk.modification_begin();
+  fixture.generate_boxes( root_box, local_box );
+  STKUNIT_ASSERT(bulk.modification_end());
+
   bulk.modification_begin();
 
   std::vector<stk::mesh::EntityProc>  to_send_unowned;
@@ -481,8 +615,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyPartsOnCreate )
 {
-   stk::unit_test::UnitTestMesh    fixture( MPI_COMM_WORLD );
-   stk::mesh::BulkData           & bulk = fixture.nonconst_bulk_data ();
+   TestBoxFixture fixture;
+   stk::mesh::BulkData           & bulk = fixture.bulk_data ();
    stk::mesh::Part               & part_a = fixture.get_part_a_0 ();
    stk::mesh::Part               & part_b = fixture.get_part_b_0 ();
 
@@ -563,8 +697,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   }
 }
 
-
-
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 {
   //Test on unpack_field_values in EntityComm.cpp
@@ -572,7 +704,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   //Create a simple mesh. Add nodes one element and some parts.
 
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( spatial_dimension ) );
+  stk::mesh::MetaData meta ( stk::mesh::fem_entity_rank_names() );
   stk::mesh::TopologicalMetaData top( meta, spatial_dimension );
 
   stk::mesh::Part & part_a = top.declare_part<shards::Tetrahedron<4> >( "block_a" );
@@ -590,15 +722,12 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   put_field ( volume , 3 , universal );
   put_field ( temperature , 3 , universal );
 
-
   meta.commit();
-
 
   stk::mesh::PartVector    create_vector;
   stk::mesh::PartVector    empty_vector;
   create_vector.push_back ( &part_a );
   create_vector.push_back ( &part_b );
-
 
   stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD , 100 );
 
@@ -613,10 +742,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   stk::mesh::Entity &elem2 = bulk.declare_entity ( 3 , new_id2+1 ,create_vector );
   STKUNIT_ASSERT_EQUAL( elem2.bucket().member ( part_a ), true );
 
-
   unsigned size = stk::parallel_machine_size( MPI_COMM_WORLD );
   unsigned rank_count = stk::parallel_machine_rank( MPI_COMM_WORLD );
-
 
   int id_base = 0;
   for ( id_base = 0 ; id_base < 99 ; ++id_base )
@@ -625,7 +752,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
     stk::mesh::Entity &new_node = bulk.declare_entity( 0 , new_id+1 , empty_vector );
     STKUNIT_ASSERT_EQUAL( new_node.bucket().member ( part_a_0 ), false );
   }
-
 
   //Create a bucket of nodes for sending
 
@@ -636,7 +762,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   std::vector<stk::mesh::Bucket*>::const_iterator cur_bucket;
 
   cur_bucket = buckets.begin();
-
 
   unsigned send_rank = 0;
   while ( cur_bucket != buckets.end() )
@@ -656,40 +781,34 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
     cur_bucket++;
   }
 
-
   std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > new_send ;
   std::set< stk::mesh::Entity * ,   stk::mesh::EntityLess > new_recv ;
 
+  //  Keep the closure of the remaining received ghosts.
+  //  Working from highest-to-lowest key (rank entity type)
+  //  results in insertion of the transitive closure.
+  //  Insertion will not invalidate the associative container's iterator.
 
-    //  Keep the closure of the remaining received ghosts.
-    //  Working from highest-to-lowest key (rank entity type)
-    //  results in insertion of the transitive closure.
-    //  Insertion will not invalidate the associative container's iterator.
+  for ( std::set< stk::mesh::Entity * , stk::mesh::EntityLess >::iterator
+        i = new_recv.end() ; i != new_recv.begin() ; ) {
+    --i ;
 
-    for ( std::set< stk::mesh::Entity * , stk::mesh::EntityLess >::iterator
-          i = new_recv.end() ; i != new_recv.begin() ; ) {
-      --i ;
+    const unsigned erank = (*i)->entity_rank();
 
-      const unsigned erank = (*i)->entity_rank();
-
-      for ( stk::mesh::PairIterRelation
-            irel = (*i)->relations(); ! irel.empty() ; ++irel ) {
-        if ( irel->entity_rank() < erank &&
-             in_receive_ghost( ghosts , * irel->entity() ) ) {
-          new_recv.insert( irel->entity() );
-        }
+    for ( stk::mesh::PairIterRelation
+          irel = (*i)->relations(); ! irel.empty() ; ++irel ) {
+      if ( irel->entity_rank() < erank &&
+           in_receive_ghost( ghosts , * irel->entity() ) ) {
+        new_recv.insert( irel->entity() );
       }
     }
+  }
 
-
-
-   //  Initialize the new_send from the new_recv
+  //  Initialize the new_send from the new_recv
   new_comm_recv_to_send( bulk , new_recv , new_send );
-
 
   //------------------------------------
   // Add the specified entities and their closure to the send ghosting
-
 
   for ( std::vector< stk::mesh::EntityProc >::const_iterator
         i = add_send.begin() ; i != add_send.end() ; ++i ) {
@@ -703,8 +822,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   new_comm_sync_send_recv( bulk , new_send , new_recv );
 
-
-   //------------------------------------
+  //------------------------------------
   // Push newly ghosted entities to the receivers and update the comm list.
   // Unpacking must proceed in entity-rank order so that higher ranking
   // entities that have relations to lower ranking entities will have
@@ -714,7 +832,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
   //Start of CommAll section:
   {
-
     stk::CommAll comm( MPI_COMM_WORLD );
 
     for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
@@ -728,7 +845,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
         stk::mesh::pack_field_values( buf , entity );
       }
     }
-
 
     comm.allocate_buffers( size / 4 );
 
@@ -744,7 +860,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
 
       }
     }
-
 
     comm.communicate();
 
@@ -777,13 +892,12 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
       }
 
     }
-    }//end of CommAll section
+  }//end of CommAll section
 
   bulk.modification_end ();
-
-
 }
 
+namespace {
 
 void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> & new_send ,
                                 const stk::mesh::EntityProc & entry )
@@ -944,4 +1058,4 @@ void new_comm_recv_to_send(
   }
 }
 
-
+}

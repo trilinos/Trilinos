@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include "zz_const.h"
+#include "zz_rand.h"
 #include "params_const.h"
 #include "all_allo_const.h"
 #include "hier.h"
@@ -110,14 +111,11 @@ static void view_hierarchy_specification(zoltan_platform_specification *spec, in
 /* 
  * The topology can be provided by giving a platform name in the PLATFORM_NAME parameter.  
  *
- * Alternatively the topology can be indicated in a string with the NODE_TOPOLOGY 
- * or MACHINE_TOPOLOGY parameter.
+ * Alternatively the topology can be indicated in a string with the TOPOLOGY parameter.
  *
- * A quad-socket six-core cluster:  NODE_TOPOLOGY="4,6".
- * A quad-socket six-core cluster where every core pair shares a cache: NODE_TOPOLOGY="4,3,2"
+ * Quad-socket six-core:  TOPOLOGY="4,6".
+ * Quad-socket six-core , every core pair shares a cache: TOPOLOGY="4,3,2"
  * We assume that every node has the same structure.
- *
- * A quad-core workstation:  MACHINE_TOPOLOGY="4"
  *
  * If you add a node topology to the zoltan_hier_platform_specs, include a "1" before the
  * node topology numbers, and include it in the level count.  Process are partitioned
@@ -129,32 +127,26 @@ static void view_hierarchy_specification(zoltan_platform_specification *spec, in
 zoltan_platform_specification zoltan_hier_platform_specs[ZOLTAN_HIER_LAST_PLATFORM]={
 
 {"glory",         /* machine named Glory */
-  ZOLTAN_NODE_TOPOLOGY,
   3,              /* 3-level hierarchy */
   {1, 4, 4}},     /* 1 node, 4 sockets, 4 cpus */
 
 {"redsky",       /* machine named RedSky */
-  ZOLTAN_NODE_TOPOLOGY,
   3,             /* 3-level hierarchy */
   {1, 2, 4}},     /* 1 node, 2 sockets, 4 cpus */
 
 {"ctx",          /* machine named CTX */
-  ZOLTAN_NODE_TOPOLOGY,
   3,             /* 3-level hierarchy */
   {1, 2, 6}},    /* 1 node, 2 sockets, 6 cpus */
 
 {"odin",         /* machine named odin */
-  ZOLTAN_NODE_TOPOLOGY,
   3,             /* 3-level hierarchy */
   {1, 2, 4}},    /* 1 node, 2 sockets, 4 cpus */
 
 {"octopi",        /* eight-core machine named octopi */
-  ZOLTAN_MACHINE_TOPOLOGY,
   2,             /* 2-level hierarchy */
   {2, 4}},       /* 2 sockets, 4 cpus */
 
 {"s861036",      /* dual-core machine named s861036 */
-  ZOLTAN_MACHINE_TOPOLOGY,
   1,             /* 1-level hierarchy */
   {2}}           /* 2 cpus */
 };
@@ -224,6 +216,7 @@ static void Zoltan_Hier_Assist_Method(void *data, int level, struct Zoltan_Struc
 /* Zoltan_Hier_Set_Param and Zoltan_Hier          */
 static PARAM_VARS Hier_params[] = {
   {  "HIER_DEBUG_LEVEL", NULL, "INT", 0},
+  {  "HIER_GENERATE_FILES", NULL, "INT", 0},
   {  "HIER_CHECKS", NULL, "INT" , 0},
 
   {  "HIER_ASSIST", NULL, "INT", 0},  /* If "1", Zoltan determines the hierarchy */
@@ -237,8 +230,7 @@ static PARAM_VARS Hier_params[] = {
           dual processor work station: "2"
           quad socket, each with 2 L3 caches, 3 cores per cache: "4,2,3" 
       */
-  {  "MACHINE_TOPOLOGY", NULL, "STRING", 0},
-  {  "NODE_TOPOLOGY", NULL, "STRING", 0},
+  {  "TOPOLOGY", NULL, "STRING", 0},
 
   {  NULL,              NULL,  NULL, 0 }};
 
@@ -333,32 +325,34 @@ static int split_comm(HierPartParams *hpp) {
   int *origranks;
   int i;
   
-  /* split the communicator based on the partition it just participated in */
-  /* not sure if this much swapping around communicators is needed */
-  MPI_Comm_dup(hpp->hier_comm, &hier_comm_copy);
-  MPI_Comm_free(&hpp->hier_comm);  
-  MPI_Comm_split(hier_comm_copy, hpp->part_to_compute, 0, &hpp->hier_comm);
-  MPI_Comm_free(&hier_comm_copy);
-
-  /* compute correspondence for hier_ranks_of_orig array */
-  MPI_Comm_group(hpp->origzz->Communicator, &orig_group);
-  MPI_Comm_group(hpp->hier_comm, &hier_group);
-
-  origranks = (int *)ZOLTAN_MALLOC(hpp->origzz->Num_Proc*sizeof(int));
-  if (!origranks) {
-    ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, "split_comm", "Out of memory");
-    return ZOLTAN_MEMERR;
+  if (hpp->num_parts > 1){
+    /* split the communicator based on the partition it just participated in */
+    /* not sure if this much swapping around communicators is needed */
+    MPI_Comm_dup(hpp->hier_comm, &hier_comm_copy);
+    MPI_Comm_free(&hpp->hier_comm);  
+    MPI_Comm_split(hier_comm_copy, hpp->part_to_compute, 0, &hpp->hier_comm);
+    MPI_Comm_free(&hier_comm_copy);
+  
+    /* compute correspondence for hier_ranks_of_orig array */
+    MPI_Comm_group(hpp->origzz->Communicator, &orig_group);
+    MPI_Comm_group(hpp->hier_comm, &hier_group);
+  
+    origranks = (int *)ZOLTAN_MALLOC(hpp->origzz->Num_Proc*sizeof(int));
+    if (!origranks) {
+      ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, "split_comm", "Out of memory");
+      return ZOLTAN_MEMERR;
+    }
+    for (i=0; i<hpp->origzz->Num_Proc; i++) {
+      origranks[i] = i;
+    }
+  
+    MPI_Group_translate_ranks(orig_group, hpp->origzz->Num_Proc, origranks, 
+  			    hier_group, hpp->hier_ranks_of_orig);
+    MPI_Group_free(&orig_group);
+    MPI_Group_free(&hier_group);
+  
+    ZOLTAN_FREE(&origranks);
   }
-  for (i=0; i<hpp->origzz->Num_Proc; i++) {
-    origranks[i] = i;
-  }
-
-  MPI_Group_translate_ranks(orig_group, hpp->origzz->Num_Proc, origranks, 
-			    hier_group, hpp->hier_ranks_of_orig);
-  MPI_Group_free(&orig_group);
-  MPI_Group_free(&hier_group);
-
-  ZOLTAN_FREE(&origranks);
   
   return ierr;
 }
@@ -502,7 +496,7 @@ int Zoltan_Hier(
 			     mainly things that will be needed in the 
 			     callbacks (a pointer to this is passed as 
 			     the user data) */
-  int i99, i, exp_index;
+  int i99, i, exp_index, last_level;
   char msg[256];
   char *yo = "Zoltan_Hier";
   /* internal Zoltan_LB_Partition call parameters */
@@ -545,6 +539,7 @@ int Zoltan_Hier(
   hpp.hierzz = NULL;
   hpp.hier_comm = MPI_COMM_NULL;
   hpp.spec = NULL;
+  hpp.gen_files = 0;
 
   /* Cannot currently do hierarchical balancing for num_parts != num_procs */
   if ((zz->Num_Proc != zz->LB.Num_Global_Parts) ||
@@ -639,15 +634,6 @@ int Zoltan_Hier(
   /* current number of objects starts as initial number of objects */
   hpp.hier_num_obj = hpp.init_num_obj;
 
-  /* initialize migrated_to array to indicate all starting here */
-  /*hpp.migrated_to = (short *)ZOLTAN_MALLOC(sizeof(short)*hpp.init_num_obj);
-  if (!hpp.migrated_to) {
-    ZOLTAN_HIER_ERROR(ZOLTAN_MEMERR, "Out of memory");
-  }
-  for (i=0; i<hpp.init_num_obj; i++) {
-    hpp.migrated_to[i] = zz->Proc;
-  }
-  */
   if (hpp.init_num_obj) {
     hpp.migrated = (char *)ZOLTAN_MALLOC(sizeof(char)*hpp.init_num_obj);
     if (!hpp.migrated) {
@@ -714,6 +700,7 @@ int Zoltan_Hier(
   /* find out how many levels of hierarchy this proc will participate in */
   hpp.num_levels = zz->Get_Hier_Num_Levels(zz->Get_Hier_Num_Levels_Data,
 					   &ierr);
+
   if (hpp.output_level >= HIER_DEBUG_ALL) {
     printf("HIER: Proc %d to compute %d levels\n", zz->Proc, hpp.num_levels);
   }
@@ -721,19 +708,20 @@ int Zoltan_Hier(
   MPI_Allreduce(&hpp.num_levels, &hpp.global_num_levels, 1, MPI_INT, MPI_MAX,
 		zz->Communicator);
 
+  last_level = hpp.global_num_levels - 1;
+
   /* initialize our communicator to the "world" as seen by Zoltan */
   MPI_Comm_dup(zz->Communicator, &hpp.hier_comm);
 
   /* initialize hier_ranks array of correspondence between original
      comm and hier_comm - starts out the same */
   hpp.hier_ranks_of_orig = (int *)ZOLTAN_MALLOC(sizeof(int)*zz->Num_Proc);
-  /*hpp.orig_ranks_of_hier = (int *)ZOLTAN_MALLOC(sizeof(int)*zz->Num_Proc);*/
-  if (!hpp.hier_ranks_of_orig /* || !hpp.orig_ranks_of_hier*/) {
+  
+  if (!hpp.hier_ranks_of_orig ) {
     ZOLTAN_HIER_ERROR(ZOLTAN_MEMERR, "Out of memory");
   }
   for (i=0; i<zz->Num_Proc; i++) {
     hpp.hier_ranks_of_orig[i]=i;
-    /* hpp.orig_ranks_of_hier[i]=i;*/
   }
 
   /* loop over levels of hierarchical balancing to be done */
@@ -749,11 +737,13 @@ int Zoltan_Hier(
     hpp.num_parts++;
 
     if (hpp.num_parts == 1){
-      if (hpp.output_level >= HIER_DEBUG_ALL) {
-        if (zz->Proc == 0)
-          printf("HIER: Level %d skipped because no partitioning required.\n",hpp.level);
-      }
-      continue;
+      /* 
+       * If there is only one part, and we've not done any partitioning
+       * yet, we can skip this step.
+       */
+      MPI_Comm_size(hpp.hier_comm, &i);
+      if (i == zz->Num_Proc)
+        continue;
     }
 
     if (hpp.output_level >= HIER_DEBUG_ALL || 
@@ -777,150 +767,181 @@ int Zoltan_Hier(
 
     /* should make sure we have reasonable partitions to compute */
 
-    /* construct appropriate ZZ and input arrays */
-    /* create a brand new one */
-    hpp.hierzz = Zoltan_Create(hpp.hier_comm);
+    hpp.hierzz = NULL;
 
-    /* and copy in some specified params from zz where appropriate */
+    if (hpp.num_parts > 1){
 
-    /* just copy debug level to child Zoltan_Struct, use can override
-       by setting params of the hierzz in the Get_Hier_Method callback */
+      /* construct appropriate ZZ and input arrays */
+      /* create a brand new one */
+      hpp.hierzz = Zoltan_Create(hpp.hier_comm);
+  
+      /* and copy in some specified params from zz where appropriate */
+  
+      /* just copy debug level to child Zoltan_Struct, use can override
+         by setting params of the hierzz in the Get_Hier_Method callback */
+  
+      hpp.hierzz->Debug_Level = zz->Debug_Level;
+      hpp.hierzz->Timer = zz->Timer;
+      hpp.hierzz->Deterministic = zz->Deterministic;
+      hpp.hierzz->Obj_Weight_Dim = zz->Obj_Weight_Dim;
+      hpp.hierzz->Edge_Weight_Dim = zz->Edge_Weight_Dim;
+  
+      /* remapping does not make sense for internal steps, only at the end */
+      hpp.hierzz->LB.Remap_Flag = 0;
+  
+      /* let the application specify any balancing params for this level */
+      zz->Get_Hier_Method(zz->Get_Hier_Method_Data, hpp.level,
+  			hpp.hierzz, &ierr);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Get_Hier_Method callback returned error.");
+      }
+  
+      /* set the numbers of partitions */
+      sprintf(msg, "%d", hpp.num_parts);
+      Zoltan_Set_Param(hpp.hierzz, "NUM_GLOBAL_PARTS", msg);
 
-    hpp.hierzz->Debug_Level = zz->Debug_Level;
-    hpp.hierzz->Timer = zz->Timer;
-    hpp.hierzz->Deterministic = zz->Deterministic;
-    hpp.hierzz->Obj_Weight_Dim = zz->Obj_Weight_Dim;
-    hpp.hierzz->Edge_Weight_Dim = zz->Edge_Weight_Dim;
+      /* specify the callbacks */
 
-    /* remapping does not make sense for internal steps, only at the end */
-    hpp.hierzz->LB.Remap_Flag = 0;
-
-    /* let the application specify any balancing params for this level */
-    zz->Get_Hier_Method(zz->Get_Hier_Method_Data, hpp.level,
-			hpp.hierzz, &ierr);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Get_Hier_Method callback returned error.");
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_OBJ_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Num_Obj_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+   
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_LIST_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Obj_List_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_GEOM_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Num_Geom_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_GEOM_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Geom_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_EDGES_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Num_Edges_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_EDGE_LIST_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Edge_List_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_SIZE_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Obj_Size_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_PACK_OBJ_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Pack_Obj_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_UNPACK_OBJ_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Unpack_Obj_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_MID_MIGRATE_PP_FN_TYPE,
+  			 (void (*)()) Zoltan_Hier_Mid_Migrate_Fn,
+  			 (void *) &hpp);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
+      }
+  
+      /* specify the GIDs (just the global numbering) */  
+      Zoltan_Set_Param(hpp.hierzz, "NUM_GID_ENTRIES", "1");
+      Zoltan_Set_Param(hpp.hierzz, "NUM_LID_ENTRIES", "0");
+  
+      /* specify that we need import and export lists (at least for now) */
+      Zoltan_Set_Param(hpp.hierzz, "RETURN_LISTS", "ALL");
+  
+      /* we want to have Zoltan's migration routines called automatically
+         by Zoltan_LB_Partition, except in the last round, where we can
+         save some work by processing result arrays manually */
+      if (hpp.level == last_level) {
+        Zoltan_Set_Param(hpp.hierzz, "AUTO_MIGRATE", "0");
+      }
+      else {
+        Zoltan_Set_Param(hpp.hierzz, "AUTO_MIGRATE", "1");
+      }
+  
+      /* deal with partition sizes, etc */
+      /* we have the assumption here that the final result is one
+         partition per process */
+      ierr = set_hier_part_sizes(&hpp, part_sizes);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_HIER_ERROR(ierr, "set_hier_part_sizes returned error");
+      }
     }
 
-    /* set the numbers of partitions */
-    sprintf(msg, "%d", hpp.num_parts);
-    Zoltan_Set_Param(hpp.hierzz, "NUM_GLOBAL_PARTS", msg);
+    /* fill in array of proc assignments for migrated objects 
+     *
+     * Zoltan_DD_* is called here, so all processes must participate,
+     *  even if they computing partition 0 out of a total of 1.
+     */
 
-    /* specify the callbacks */
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_OBJ_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Num_Obj_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
- 
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_LIST_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Obj_List_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_GEOM_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Num_Geom_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_GEOM_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Geom_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_NUM_EDGES_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Num_Edges_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_EDGE_LIST_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Edge_List_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_OBJ_SIZE_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Obj_Size_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_PACK_OBJ_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Pack_Obj_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_UNPACK_OBJ_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Unpack_Obj_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    ierr = Zoltan_Set_Fn(hpp.hierzz, ZOLTAN_MID_MIGRATE_PP_FN_TYPE,
-			 (void (*)()) Zoltan_Hier_Mid_Migrate_Fn,
-			 (void *) &hpp);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_Set_Fn returned error.");
-    }
-
-    /* specify the GIDs (just the global numbering) */  
-    Zoltan_Set_Param(hpp.hierzz, "NUM_GID_ENTRIES", "1");
-    Zoltan_Set_Param(hpp.hierzz, "NUM_LID_ENTRIES", "0");
-
-    /* specify that we need import and export lists (at least for now) */
-    Zoltan_Set_Param(hpp.hierzz, "RETURN_LISTS", "ALL");
-
-    /* we want to have Zoltan's migration routines called automatically
-       by Zoltan_LB_Partition, except in the last round, where we can
-       save some work by processing result arrays manually */
-    if (hpp.level == hpp.global_num_levels - 1) {
-      Zoltan_Set_Param(hpp.hierzz, "AUTO_MIGRATE", "0");
-    }
-    else {
-      Zoltan_Set_Param(hpp.hierzz, "AUTO_MIGRATE", "1");
-    }
-
-    /* deal with partition sizes, etc */
-    /* we have the assumption here that the final result is one
-       partition per process */
-    ierr = set_hier_part_sizes(&hpp, part_sizes);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_HIER_ERROR(ierr, "set_hier_part_sizes returned error");
-    }
-
-    /* fill in array of proc assignments for migrated objects */
-    if (hpp.use_graph && hpp.level) {
+    if (hpp.use_graph && hpp.level) {     /* if nlocalprocs < nglobalprocs */
       ierr = find_needed_gno_procs(&hpp);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
 	ZOLTAN_HIER_ERROR(ierr, "find_needed_gno_procs returned error.");
       }
     }
 
-    /* call partitioning method to compute the partitions at this level */
-    ierr = Zoltan_LB_Partition(hpp.hierzz, &hier_changes, 
-			       &hier_num_gid_entries, &hier_num_lid_entries, 
-			       &hier_num_import_objs,
-			       &hier_import_gids, &hier_import_lids,
-			       &hier_import_procs, &hier_import_to_part,
-			       &hier_num_export_objs,
-			       &hier_export_gids, &hier_export_lids,
-			       &hier_export_procs, &hier_export_to_part);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_HIER_ERROR(ierr, "Zoltan_LB_Partition returned error.");
+    if (hpp.num_parts > 1){
+
+      if (hpp.gen_files){
+        sprintf(msg,"level_%d",hpp.level);
+        ierr = Zoltan_Generate_Files(hpp.hierzz, msg, zz->Proc, 0, 1, 0);
+        if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+          ZOLTAN_HIER_ERROR(ierr, "Zoltan_Generate_Files returned error.");
+        }
+      }
+
+      /* call partitioning method to compute the partitions at this level */
+      ierr = Zoltan_LB_Partition(hpp.hierzz, &hier_changes, 
+  			       &hier_num_gid_entries, &hier_num_lid_entries, 
+  			       &hier_num_import_objs,
+  			       &hier_import_gids, &hier_import_lids,
+  			       &hier_import_procs, &hier_import_to_part,
+  			       &hier_num_export_objs,
+  			       &hier_export_gids, &hier_export_lids,
+  			       &hier_export_procs, &hier_export_to_part);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_HIER_ERROR(ierr, "Zoltan_LB_Partition returned error.");
+      }
+    }
+    else{
+      hier_changes=0;
+      hier_num_gid_entries = 1; hier_num_lid_entries = 0;
+      hier_num_import_objs = hier_num_export_objs = 0;
+      hier_import_gids = hier_import_lids=NULL;
+      hier_import_procs = hier_import_to_part=NULL;
+      hier_export_gids = hier_export_lids=NULL;
+      hier_export_procs = hier_export_to_part=NULL;
     }
 
     /* clean up array of proc assignments for migrated objects */
@@ -933,7 +954,7 @@ int Zoltan_Hier(
        except in the last round when we need to call just the
        mid-migrate function explicitly */
        
-    if (hpp.level == hpp.global_num_levels - 1) {
+    if (hpp.level == last_level) {
       Zoltan_Hier_Mid_Migrate_Fn((void *)&hpp, hier_num_gid_entries,
 				 hier_num_lid_entries,
 				 hier_num_import_objs,
@@ -973,7 +994,7 @@ int Zoltan_Hier(
       ZOLTAN_HIER_ERROR(ierr, "split_comm returned error");
     }
       
-    if (hpp.level != hpp.global_num_levels - 1) {
+    if (hpp.level != last_level) {
       if (hpp.checks) {
 	/* check intermediate structure correctness when HIER_CHECKS is 1 
 	   since the structure is not fully updated on the last level,
@@ -1100,29 +1121,22 @@ int assist, i, j;
 int num_cpus, num_siblings;
 char *c=NULL;
 char platform[MAX_PARAM_STRING_LEN+1];
-char node_desc[MAX_PARAM_STRING_LEN+1];
-char machine_desc[MAX_PARAM_STRING_LEN+1];
+char topology[MAX_PARAM_STRING_LEN+1];
 char *msg=NULL, *pnames=NULL;
 div_t result;
 
-  Zoltan_Bind_Param(Hier_params, "HIER_DEBUG_LEVEL",
-		    (void *) &hpp->output_level);
-  Zoltan_Bind_Param(Hier_params, "HIER_CHECKS",
-		    (void *) &hpp->checks);
-  Zoltan_Bind_Param(Hier_params, "HIER_ASSIST",
-		    (void *) &assist);
-  Zoltan_Bind_Param(Hier_params, "PLATFORM_NAME",
-		    (void *) platform);
-  Zoltan_Bind_Param(Hier_params, "NODE_TOPOLOGY",
-		    (void *) node_desc);
-  Zoltan_Bind_Param(Hier_params, "MACHINE_TOPOLOGY",
-		    (void *) machine_desc); 
+  Zoltan_Bind_Param(Hier_params, "HIER_DEBUG_LEVEL", (void *) &hpp->output_level);
+  Zoltan_Bind_Param(Hier_params, "HIER_GENERATE_FILES", (void *) &hpp->gen_files);
+  Zoltan_Bind_Param(Hier_params, "HIER_CHECKS", (void *) &hpp->checks);
+  Zoltan_Bind_Param(Hier_params, "HIER_ASSIST", (void *) &assist);
+  Zoltan_Bind_Param(Hier_params, "PLATFORM_NAME", (void *) platform);
+  Zoltan_Bind_Param(Hier_params, "TOPOLOGY", (void *) topology);
 
   /* set default values */
   hpp->output_level = HIER_DEBUG_NONE;
   hpp->checks = 0;
   assist = 0;
-  platform[0] = node_desc[0] = machine_desc[0] = 0;
+  platform[0] = topology[0] = 0;
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, Hier_params, zz->Debug_Level, zz->Proc,
@@ -1173,22 +1187,16 @@ div_t result;
     }
   }
 
-  if (!hpp->spec && (node_desc[0] || machine_desc[0])){
+  if (!hpp->spec && topology[0]){
     hpp->spec = 
       (zoltan_platform_specification *)ZOLTAN_CALLOC(sizeof(zoltan_platform_specification), 1);
 
     hpp->spec->platform_name = NULL; 
 
-    if (node_desc[0]){
-      hpp->spec->num_siblings[0] = 1;            /* the node itself is the first level */
-      hpp->spec->topology_type = ZOLTAN_NODE_TOPOLOGY;
+    if (topology[0]){
+      hpp->spec->num_siblings[0] = 1;            /* the node or machine itself is the first level */
       i = 1;
-      c = node_desc;
-    }
-    else{
-      hpp->spec->topology_type = ZOLTAN_MACHINE_TOPOLOGY;
-      i = 0;
-      c = machine_desc;
+      c = topology;
     }
 
     j = 0;
@@ -1213,6 +1221,7 @@ div_t result;
       } 
 
       while (*c && isdigit(*c)) c++;
+
     }
 
     hpp->spec->numLevels = i;
@@ -1229,17 +1238,14 @@ div_t result;
       msg = (char *)ZOLTAN_MALLOC(i);
       strcpy(msg,"Error:\n");
       strcat(msg, "HIER_ASSIST requested but insufficient topology information provided.\n\n" 
-        "Specify PLATFORM_NAME or NODE_TOPOLOGY or MACHINE_TOPOLOGY.\n\n");
+        "Specify PLATFORM_NAME or TOPOLOGY.\n\n");
    
-      strcat(msg,"NODE_TOPOLOGY is the number of hardware siblings at each level in a topology.\n"
-        "The assumption is that there are enough nodes to provide one CPU per process.\n"
-        "  Ex. NODE_TOPOLOGY=\"2, 4\" describes a dual-socket quad-core computing cluster.\n\n");
-  
-      strcat(msg,"MACHINE_TOPOLOGY is the topology of a single machine, such as a workstation.\n"
-        "  Ex. MACHINE_TOPOLOGY=\"4\" describes a quad-core desktop computer.\n\n");
+      strcat(msg,"TOPOLOGY is the number of hardware siblings at each level in a topology.\n"
+        "  Ex. TOPOLOGY=\"2, 4\" describes a dual-socket quad-core computing cluster.\n"
+        "  Ex. TOPOLOGY=\"4\" describes a quad-core desktop computer.\n\n");
   
       strcat(msg,"Zoltan assumes the run-time system has pinned each process to a CPU.\n");
-      strcat(msg,"It assumes MPI process ranks map to the topology.  (In the node example,\n");
+      strcat(msg,"It assumes MPI process ranks map to the topology.  (In the 2,4 example,\n");
       strcat(msg,"this means ranks 0-7 are on the same node, and 0-3 on the same socket.)\n\n");
       
       strcat(msg, "PLATFORM_NAME can be one of the following:\n");
@@ -1261,18 +1267,16 @@ div_t result;
    * topological rank of each process.
    */
   
-  if (hpp->spec->topology_type == ZOLTAN_NODE_TOPOLOGY){
-    num_cpus = 1;
-    for (i = 0; i < hpp->spec->numLevels; i++)
-      num_cpus *= hpp->spec->num_siblings[i];
+  num_cpus = 1;
+  for (i = 0; i < hpp->spec->numLevels; i++)
+    num_cpus *= hpp->spec->num_siblings[i];
   
-    result = div(zz->Num_Proc, num_cpus);
+  result = div(zz->Num_Proc, num_cpus);
 
-    hpp->spec->num_siblings[0] = result.quot; 
+  hpp->spec->num_siblings[0] = result.quot; 
 
-    if (result.rem > 0)
-      hpp->spec->num_siblings[0]++;  /* number of nodes */
-  }
+  if (result.rem > 0)
+    hpp->spec->num_siblings[0]++;  /* number of nodes */
 
   for (i=0; i < hpp->spec->numLevels; i++){
 

@@ -6,8 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
-
 #ifndef stk_mesh_MetaData_hpp
 #define stk_mesh_MetaData_hpp
 
@@ -29,6 +27,8 @@
 namespace stk {
 namespace mesh {
 
+class UnitTestPart;
+
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -36,7 +36,6 @@ namespace mesh {
 /** \brief  Print an entity key for this meta data */
 std::ostream &
 print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey & key);
-
 
 //----------------------------------------------------------------------
 /** \brief  The manager of an integrated collection of
@@ -47,6 +46,7 @@ print_entity_key( std::ostream & os, const MetaData & meta_data, const EntityKey
  */
 class MetaData {
 public:
+
 
   //------------------------------------
   /** \name Predefined Parts
@@ -341,6 +341,9 @@ public:
                                   const unsigned * arg_stride );
   /** \} */
 private:
+
+  friend class ::stk::mesh::UnitTestMetaData ;
+  friend class ::stk::mesh::UnitTestPart ;
 
   MetaData();                                  ///< \brief  Not allowed
   MetaData( const MetaData & );                ///< \brief  Not allowed

@@ -35,7 +35,7 @@ struct HierPartParamsStruct {
   int level;                         /* level currently being processed */
   MPI_Comm hier_comm;                /* MPI communicator for each level */
   int *hier_ranks_of_orig;           /* orig ranks of the procs in hier_comm */
-  /*int *orig_ranks_of_hier;*/       /* hier ranks of the procs in orig comm */
+ 
   ZZ *origzz;                        /* Zoltan struct passed into top level */
   ZZ *hierzz;                        /* internal zoltan struct for balancing 
 					within the hierarchy */
@@ -62,10 +62,6 @@ struct HierPartParamsStruct {
 					for graph edge callbacks */
   int *gnos_of_interest_procs;       /* list of procs where gids of interest
 					are located */
-  /*short *migrated_to; */           /* store pid of where a each global id 
-					that started here has been migrated.
-					pid is relative to origzz's 
-					MPI communicator */
   int obj_wgt_dim, edge_wgt_dim;     /* object and edge weight dimensions */
   float *vwgt;                       /* vector of vertex weights */
   int *input_parts;                  /* Initial partitions for objects. */
@@ -85,6 +81,7 @@ struct HierPartParamsStruct {
 
                                          /* If non-null, Zoltan is computing the */
   zoltan_platform_specification *spec;   /* levels based on network topology */
+  int gen_files;                      /* call Zoltan_Generate_Files */
                                          
 };
 typedef struct HierPartParamsStruct HierPartParams;

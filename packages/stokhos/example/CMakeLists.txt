@@ -97,7 +97,7 @@ IF(Stokhos_ENABLE_TriKota)
        SOURCES linear2d_diffusion_pce.cpp
        COMM serial mpi
        DEPLIBS stokhos linear2d_diffusion
-       NUM_MPI_PROCS 4
+       NUM_MPI_PROCS 2
        PASS_REGULAR_EXPRESSION "Example Passed!"
       )
 
@@ -108,7 +108,7 @@ IF(Stokhos_ENABLE_TriKota)
           SOURCES linear2d_diffusion_pce_nox.cpp
           COMM serial mpi
 	  DEPLIBS stokhos linear2d_diffusion
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
@@ -124,7 +124,7 @@ IF(Stokhos_ENABLE_TriKota)
 	  NAME "Linear2D_Diffusion_GMRES_Mean_Based"
 	  ARGS "--sg_prec_method=Mean-Based"
 	  COMM serial mpi
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
@@ -133,7 +133,7 @@ IF(Stokhos_ENABLE_TriKota)
 	  NAME "Linear2D_Diffusion_GMRES_AGS"
 	  ARGS "--sg_prec_method=Approx-Gauss-Seidel"
 	  COMM serial mpi
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
@@ -142,7 +142,7 @@ IF(Stokhos_ENABLE_TriKota)
 	  NAME "Linear2D_Diffusion_GMRES_GS"
 	  ARGS "--sg_prec_method=Gauss-Seidel"
 	  COMM serial mpi
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
@@ -151,7 +151,7 @@ IF(Stokhos_ENABLE_TriKota)
 	  NAME "Linear2D_Diffusion_GMRES_AJ"
 	  ARGS "--sg_prec_method=Approx-Jacobi"
 	  COMM serial mpi
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
@@ -160,7 +160,7 @@ IF(Stokhos_ENABLE_TriKota)
 	  NAME "Linear2D_Diffusion_GMRES_KP"
 	  ARGS "--sg_prec_method=Kronecker-Product"
 	  COMM serial mpi
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
@@ -169,7 +169,7 @@ IF(Stokhos_ENABLE_TriKota)
 	  NAME "Linear2D_Diffusion_GS"
 	  ARGS "--sg_solver=Gauss-Seidel"
 	  COMM serial mpi
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
@@ -178,7 +178,7 @@ IF(Stokhos_ENABLE_TriKota)
 	  NAME "Linear2D_Diffusion_GS"
 	  ARGS "--sg_solver=Jacobi"
 	  COMM serial mpi
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 
@@ -187,7 +187,7 @@ IF(Stokhos_ENABLE_TriKota)
 	  NAME "Linear2D_Diffusion_LN"
 	  ARGS "--rand_field=Log-Normal"
 	  COMM serial mpi
-	  NUM_MPI_PROCS 4
+	  NUM_MPI_PROCS 2
 	  PASS_REGULAR_EXPRESSION "Example Passed!"
         )
 	  

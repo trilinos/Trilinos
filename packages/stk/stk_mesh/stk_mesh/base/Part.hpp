@@ -25,6 +25,8 @@
 namespace stk {
 namespace mesh {
 
+class UnitTestPart;
+
 namespace impl {
   class PartRepository;
 } // namespace impl
@@ -104,6 +106,8 @@ private:
    *         friend.
    */
   friend class ::stk::mesh::impl::PartRepository ;
+  friend class ::stk::mesh::UnitTestPart ;
+  friend class ::stk::mesh::UnitTestMetaData ;
 
 #ifndef DOXYGEN_COMPILE
 

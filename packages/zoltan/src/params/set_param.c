@@ -298,7 +298,7 @@ int print_proc                  /* processor that should perform printing */
 	index = from_list->index;
 
         if (debug_level > 0 && proc == print_proc){
-          printf("From list has %s = %s\n",name,val);
+          printf("Incoming parameter list: %s = %s\n",name,val);
         }
 
 	found = 0;
@@ -315,9 +315,9 @@ int print_proc                  /* processor that should perform printing */
           Zoltan_Set_Param_Vec(to_zz, name, val, index);
           if (debug_level > 0 && proc == print_proc){
             if (index >= 0)
-              printf("Copy %s[%d] = %s to sub problem\n",name,index,val);
+              printf("Put %s[%d] = %s in outgoing parameter list\n",name,index,val);
             else
-              printf("Copy %s = %s to sub problem\n",name,val);
+              printf("Put %s = %s in outgoing parameter list\n",name,val);
           }
         }
         from_list = from_list->next;

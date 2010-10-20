@@ -48,7 +48,6 @@
 #include "Teko_DiagonalPreconditionerOp.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_MpiComm.h"
 #include "EpetraExt_PointToBlockDiagPermute.h"
 
 using Teuchos::rcp;

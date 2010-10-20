@@ -443,7 +443,7 @@ namespace Sacado {
     }; // class Expr<OrthogPolyImpl>
 
     //! Generalized polynomial chaos expansion class
-    template <typename T, typename Storage = Stokhos::StandardStorage<int,T> > 
+    template <typename T, typename Storage> 
     class OrthogPoly : public Expr< OrthogPolyImpl<T,Storage> > {
     public:
 
