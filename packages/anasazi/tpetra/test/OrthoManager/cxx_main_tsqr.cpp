@@ -114,6 +114,7 @@ const magnitude_type TOL = 1.0e-12;
 const magnitude_type ATOL = 10;
 
 // Declare an output manager for handling local output.
+// In Anasazi, this class is called BasicOutputManager.
 // In Belos, this class is called OutputManager.
 RCP< Anasazi::BasicOutputManager<scalar_type> > MyOM;
 
@@ -145,12 +146,13 @@ MVDiff (const MV& X,
 
 
 /// Valid command-line parameter values for the OrthoManager subclass
-/// to test.
+/// to test.  Anasazi and Belos currently implement different sets of 
+/// OrthoManagers.
 static const char* validOrthoManagers[] = {
   "TSQR",
+  "ICGS",
   "SVQB",
-  "Basic",
-  "ICGS"
+  "Basic"
 };
 /// Number of valid command-line parameter values for the OrthoManager
 /// subclass to test.  Must be at least one.
@@ -282,15 +284,15 @@ main (int argc, char *argv[])
       // confuses the compiler.
       int theType = Errors; // default (always print errors)
       if (verbose) 
-	{
+        {
 	  // "Verbose" also means printing out Debug messages.
 	  theType = theType | Warnings | IterationDetails |
 	    OrthoDetails | FinalSummary | TimingDetails |
 	    StatusTestDetails | Debug;
-	}
+        }
       if (debug)
-	theType = theType | Debug;
-      
+        theType = theType | Debug;
+
       MyOM->setVerbosity (theType);
     }
     // Stream for debug output.  If debug output is not enabled, then
@@ -322,20 +324,27 @@ main (int argc, char *argv[])
 	    // colptr, rowind, and dvals using malloc().
 	    info = readHB_newmat_double (filename.c_str(), &numRows, &numCols,
 					 &nnz, &colptr, &rowind, &dvals);
-	    // rnnzmax := maximum number of nonzeros per row, over all
-	    // rows of the sparse matrix.
-	    vector<int> rnnz (numRows, 0);
-	    for (int *ri = rowind; ri < rowind + nnz; ++ri) {
-	      ++rnnz[*ri-1];
-	    }
-	    // This business with the iterator ensures that results
-	    // are sensible even if the sequence is empty.
-	    vector<int>::const_iterator iter = std::max_element (rnnz.begin(),rnnz.end());
-	    if (iter != rnnz.end())
-	      rnnzmax = *iter;
+	    // The Harwell-Boeing routines use info == 0 to signal failure.
+	    if (info != 0)
+	      {
+		// rnnzmax := maximum number of nonzeros per row, over all
+		// rows of the sparse matrix.
+		vector<int> rnnz (numRows, 0);
+		for (int *ri = rowind; ri < rowind + nnz; ++ri) {
+		  ++rnnz[*ri-1];
+		}
+		// This business with the iterator ensures that results
+		// are sensible even if the sequence is empty.
+		vector<int>::const_iterator iter = 
+		  std::max_element (rnnz.begin(),rnnz.end());
+		if (iter != rnnz.end())
+		  rnnzmax = *iter;
+		else
+		  // The matrix has zero rows, so the max number of
+		  // nonzeros per row is trivially zero.
+		  rnnzmax = 0;
+	      }
 	    else
-	      // The matrix has zero rows, so the max number of
-	      // nonzeros per row is trivially zero.
 	      rnnzmax = 0;
 	  }
 
@@ -430,9 +439,9 @@ main (int argc, char *argv[])
       {
 	debugOut << "Testing with Euclidean inner product" << endl;
 
-	// Let M remain null, and allocate map using the number of rows
-	// (numRows) specified on the command line.
-	map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
+        // Let M remain null, and allocate map using the number of rows
+        // (numRows) specified on the command line.
+        map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
       }
     
     // Instantiate the specified OrthoManager subclass for testing.
@@ -444,20 +453,24 @@ main (int argc, char *argv[])
     // Create multivectors X1 and X2, using the same map as
     // multivector S.  X1 and X2 must be M-orthonormal and mutually
     // M-orthogonal.
-    MyOM->stream(Debug) << "Generating X1,X2 for testing... ";
+    debugOut << "Generating X1,X2 for testing... ";
     RCP< MV > X1 = MVT::Clone (*S, sizeX1);
     RCP< MV > X2 = MVT::Clone (*S, sizeX2);
-    MyOM->stream(Debug) << "done." << endl;
+    debugOut << "done." << endl;
     {
       magnitude_type err;
 
       //
       // Fill X1 with random values, and test the normalization error.
       //
-      debugOut << "Filling X1 with random values... ";
+      debugOut << "Filling X2 with random values... ";
       MVT::MvRandom(*X1);
       debugOut << "done." << endl
 	       << "Calling normalize() on X1... ";
+      // The Anasazi and Belos OrthoManager interfaces differ.
+      // For example, Anasazi's normalize() method accepts either
+      // one or two arguments, whereas Belos' normalize() requires
+      // two arguments.
       const int initialX1Rank = OM->normalize(*X1);
       TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
 			 std::runtime_error, 
@@ -481,6 +494,13 @@ main (int argc, char *argv[])
       MVT::MvRandom(*X2);
       debugOut << "done." << endl
 	       << "Calling projectAndNormalize(X2,X1)... " << endl;
+      // The projectAndNormalize() interface also differs between 
+      // Anasazi and Belos.  Anasazi's projectAndNormalize() puts 
+      // the multivector and the array of multivectors first, and
+      // the (array of) SerialDenseMatrix arguments (which are 
+      // optional) afterwards.  Belos puts the (array of) 
+      // SerialDenseMatrix arguments in the middle, and they are 
+      // not optional.
       const int initialX2Rank = 
 	OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
       TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
@@ -629,18 +649,23 @@ main (int argc, char *argv[])
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,cout,success);
 
-  if (numFailed || success==false) {
-    if (numFailed) {
-      MyOM->stream(Errors) << numFailed << " errors." << endl;
+  if (numFailed != 0 || ! success) 
+    {
+      if (numFailed != 0) {
+	MyOM->stream(Errors) << numFailed << " errors." << endl;
+      }
+      // The Trilinos test framework depends on seeing this message,
+      // so don't rely on the OutputManager to report it correctly.
+      if (MyPID == 0)
+	cout << "End Result: TEST FAILED" << endl;	
+      return -1;
     }
-    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;	
-    return -1;
-  }
-  //
-  // Default return value
-  //
-  MyOM->stream(Errors) << "End Result: TEST PASSED" << endl;
-  return 0;
+  else 
+    {
+      if (MyPID == 0)
+	cout << "End Result: TEST PASSED" << endl;
+      return 0;
+    }
 }	
 
 
@@ -753,7 +778,9 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
       for (size_type i=0; i<C.size(); i++) {
         C[i]->random();
       }
-      // run test
+      // Run test.
+      // Note that Anasazi and Belos differ, among other places, 
+      // in the order of arguments to projectAndNormalize().
       int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
       sout << "projectAndNormalize() returned rank " << ret << endl;
       if (ret == 0) {
@@ -801,7 +828,9 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
-        // run test
+        // Run test.
+        // Note that Anasazi and Belos differ, among other places, 
+        // in the order of arguments to projectAndNormalize().
         ret = OM->projectAndNormalize(*Scopy,theX,C,B);
         sout << "projectAndNormalize() returned rank " << ret << endl;
         if (ret == 0) {
@@ -1130,7 +1159,9 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
 	for (size_type i = 0; i < C.size(); ++i) {
 	  C[i]->random();
 	}
-	// run test
+	// Run test.
+        // Note that Anasazi and Belos differ, among other places, 
+        // in the order of arguments to project().
 	OM->project(*Scopy,theX,C);
 	// we allocate S and MS for each test, so we can save these as views
 	// however, save copies of the C
@@ -1153,7 +1184,9 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
-        // run test
+	// Run test.
+        // Note that Anasazi and Belos differ, among other places, 
+        // in the order of arguments to project().
         OM->project(*Scopy,theX,C);
         // we allocate S and MS for each test, so we can save these as views
         // however, save copies of the C
