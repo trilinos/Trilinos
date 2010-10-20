@@ -330,8 +330,8 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_Bt
     }
 
 
-    typename ArrayView<GlobalOrdinal>::iterator end = Aind.begin();
-    for(size_t l = 0; l<A_len_i; ++l, ++end);
+    typename ArrayView<GlobalOrdinal>::iterator end = Aind.begin() + A_len_i;
+    //for(size_t l = 0; l<A_len_i; ++l, ++end);
     //util.Sort(true, A_len_i, Aind, 1, &avals, 0, NULL);
     sort2(Aind.begin(), end, avals.begin());
 
