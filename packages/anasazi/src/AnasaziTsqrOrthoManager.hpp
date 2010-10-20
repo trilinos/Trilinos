@@ -267,7 +267,8 @@ namespace Anasazi {
       // Now we should copy Q_ back into X, but don't do it yet: if we
       // want to fill the last ncols-rank columns with random data, we
       // should do so in Q_, because it's fresh in the cache.
-      if (false)
+      //if (false)
+      if (true)
 	{
 	  // If X did not have full (numerical rank), augment the last
 	  // ncols-rank columns of X with random data.
