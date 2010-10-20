@@ -37,6 +37,16 @@ AC_CONFIG_SRCDIR([src/include/zoltan.h])
 
 AC_CONFIG_AUX_DIR(config)
 
+#
+# We don't want people to configure in the source directory.  Some
+# things may break.
+#
+
+if test -e configure.ac ; then
+  echo "You are trying to run configure in the source directory.  This is not allowed."
+  exit
+fi
+
 # Configure should create src/Zoltan_config.h from src/Zoltan_config.h.in
 AM_CONFIG_HEADER(src/include/Zoltan_config.h:src/include/Zoltan_config.h.in)
 

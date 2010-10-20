@@ -42,7 +42,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = .
-DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
+DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.zoltan.in $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure \
 	$(top_srcdir)/src/include/Zoltan_config.h.in config/compile \
