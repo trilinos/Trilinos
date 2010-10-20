@@ -10,7 +10,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#define USE_TPETRA
+#define CTHULHU_USE_TPETRA
 #include <Cthulhu.hpp>         // TODO: <> or ""
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
