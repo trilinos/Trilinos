@@ -36,6 +36,7 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Sacado_Handle.hpp"
+#include "Sacado_mpl_apply.hpp"
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
@@ -54,16 +55,9 @@ namespace Sacado {
      * Uses a handle and a "copy-on-write" strategy for efficient copying, but
      * no expression templating.
      */
-    template <typename T, 
-	      typename Storage = Stokhos::StandardStorage<int,T> > 
+    template <typename T, typename Storage > 
     class OrthogPoly {
     public:
-
-      //! Turn OrthogPoly into a meta-function class usable with mpl::apply
-      template <typename U> 
-      struct apply {
-	typedef OrthogPoly<U> type;
-      };
 
       //! Typename of values
       typedef T value_type;
@@ -87,7 +81,13 @@ namespace Sacado {
       typedef typename approx_type::const_pointer const_pointer;
       typedef typename approx_type::reference reference;
       typedef typename approx_type::const_reference const_reference;
-      
+
+      //! Turn OrthogPoly into a meta-function class usable with mpl::apply
+      template <typename S> 
+      struct apply {
+	typedef typename Sacado::mpl::apply<Storage,ordinal_type,S>::type storage_type;
+	typedef OrthogPoly<S,storage_type> type;
+      };
 
       //! Default constructor
       /*!

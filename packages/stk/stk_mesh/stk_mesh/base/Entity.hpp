@@ -19,6 +19,8 @@
 namespace stk {
 namespace mesh {
 
+class UnitTestEntity;
+
 namespace impl {
 
 class EntityRepository;
@@ -124,6 +126,8 @@ private:
 #ifndef DOXYGEN_COMPILE
   friend class impl::EntityRepository ;
   friend class impl::EntityImpl ;
+  friend class ::stk::mesh::UnitTestEntity;
+
 
 #endif /* DOXYGEN_COMPILE */
 };

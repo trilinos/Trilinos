@@ -31,6 +31,8 @@
 namespace stk {
 namespace mesh {
 
+class UnitTestFieldImpl;
+
 namespace impl {
   class FieldRepository;
 }
@@ -127,6 +129,7 @@ private:
 
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestMetaData ;
+  friend class ::stk::mesh::UnitTestFieldImpl ;
 
 
   FieldBase(

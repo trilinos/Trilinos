@@ -16,7 +16,7 @@
 #cmakedefine HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H
+#cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
 /* Define if want to build isorropia */
 #cmakedefine HAVE_ISORROPIA
@@ -49,4 +49,4 @@
 #cmakedefine TrilinosCouplings_ENABLE_Isorropia
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine HAVE_UNISTD_H
+#cmakedefine HAVE_UNISTD_H @HAVE_UNISTD_H@

@@ -12,35 +12,80 @@
 
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
-#include <stk_util/parallel/Parallel.hpp>
 
+using stk::mesh::MetaData;
+using stk::mesh::BulkData;
+using stk::mesh::Part;
+using stk::mesh::impl::PartRepository;
+using stk::mesh::TopologicalMetaData;
+
+
+class UnitTestPartRepository
+{
+public:
+  UnitTestPartRepository();
+  ~UnitTestPartRepository() {}
+
+   const int spatial_dimension;
+   MetaData meta;
+   stk::mesh::impl::PartRepository partRepo;
+   stk::mesh::impl::PartRepository partRepo_1;
+   stk::mesh::impl::PartRepository partRepo_2;
+
+   stk::mesh::Part * universal_part;
+   stk::mesh::Part * part_A;
+   stk::mesh::Part * part_B;
+   stk::mesh::Part * part_C;
+   stk::mesh::Part * part_D;
+   stk::mesh::Part * part_1_A;
+   stk::mesh::Part * part_1_B;
+   stk::mesh::Part * part_2_A;
+   std::vector<stk::mesh::Part *> intersection;
+   stk::mesh::PartRelation relation;
+   const CellTopologyData * singleton;
+
+};
+
+
+UnitTestPartRepository::UnitTestPartRepository()
+  : spatial_dimension(3)
+  , meta( TopologicalMetaData::entity_rank_names(spatial_dimension) )
+  , partRepo( &meta )
+  , partRepo_1( &meta )
+  , partRepo_2( &meta )
+  , universal_part(      partRepo.universal_part()    )
+  , part_A   (           partRepo.declare_part("A",0) )
+  , part_B   (           partRepo.declare_part("B",0) )
+  , part_C   (           partRepo.declare_part("C",0) )
+  , part_D   (           partRepo.declare_part("D",1) )
+  , part_1_A (           partRepo_1.declare_part("A",0) )
+  , part_1_B (           partRepo_1.declare_part("B",0) )
+  , part_2_A (           partRepo_2.declare_part("A",0) )
+  , intersection ( )
+  , relation ( )
+  , singleton ( NULL )
+
+{
+ meta.commit();
+}
 
 
 namespace {
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, construct )
 {
-  std::vector<std::string> entity_rank_names;
-  entity_rank_names.push_back("node");
-  entity_rank_names.push_back("element");
-  stk::mesh::MetaData meta(entity_rank_names);
-  stk::mesh::impl::PartRepository partRepo(&meta);
-  stk::mesh::Part * universal_part = partRepo.universal_part();
-  STKUNIT_EXPECT_TRUE( universal_part != NULL );
+  UnitTestPartRepository upr;
+  STKUNIT_EXPECT_TRUE( upr.universal_part != NULL );
 }
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, universal_in_subset )
 {
-  std::vector<std::string> entity_rank_names;
-  entity_rank_names.push_back("node");
-  entity_rank_names.push_back("element");
-  stk::mesh::MetaData meta(entity_rank_names);
-  stk::mesh::impl::PartRepository partRepo(&meta);
-  stk::mesh::Part * universal_part = partRepo.universal_part();
-  stk::mesh::Part * part_A = partRepo.declare_part("A",0);
+  UnitTestPartRepository upr;
   STKUNIT_ASSERT_THROW(
-    partRepo.declare_subset(*part_A,*universal_part),
+    upr.partRepo.declare_subset(*upr.part_A,*upr.universal_part),
     std::runtime_error
     );
 }
@@ -48,14 +93,9 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, universal_in_subset )
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, subset_equal_superset )
 {
-  std::vector<std::string> entity_rank_names;
-  entity_rank_names.push_back("node");
-  entity_rank_names.push_back("element");
-  stk::mesh::MetaData meta(entity_rank_names);
-  stk::mesh::impl::PartRepository partRepo(&meta);
-  stk::mesh::Part * part_A = partRepo.declare_part("A",0);
+  UnitTestPartRepository upr;
   STKUNIT_ASSERT_THROW(
-    partRepo.declare_subset(*part_A,*part_A),
+    upr.partRepo.declare_subset(*upr.part_A,*upr.part_A),
     std::runtime_error
     );
 }
@@ -63,22 +103,15 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, subset_equal_superset )
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, universal_in_intersection )
 {
-  std::vector<std::string> entity_rank_names;
-  entity_rank_names.push_back("node");
-  entity_rank_names.push_back("element");
-  stk::mesh::MetaData meta(entity_rank_names);
-  stk::mesh::impl::PartRepository partRepo(&meta);
-  stk::mesh::Part * universal_part = partRepo.universal_part();
-  stk::mesh::Part * part_A = partRepo.declare_part("A",0);
-  std::vector<stk::mesh::Part *> intersection;
-  intersection.push_back(universal_part);
+  UnitTestPartRepository upr;
+  upr.intersection.push_back(upr.universal_part);
   STKUNIT_ASSERT_THROW(
-    partRepo.declare_part(intersection),
+    upr.partRepo.declare_part(upr.intersection),
     std::runtime_error
     );
-  intersection.push_back(part_A);
+  upr.intersection.push_back(upr.part_A);
   STKUNIT_ASSERT_THROW(
-    partRepo.declare_part(intersection),
+    upr.partRepo.declare_part(upr.intersection),
     std::runtime_error
     );
 }
@@ -86,18 +119,11 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, universal_in_intersection )
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, circular_subset )
 {
-  std::vector<std::string> entity_rank_names;
-  entity_rank_names.push_back("node");
-  entity_rank_names.push_back("element");
-  stk::mesh::MetaData meta(entity_rank_names);
-  stk::mesh::impl::PartRepository partRepo(&meta);
-  stk::mesh::Part * part_A = partRepo.declare_part("A",0);
-  stk::mesh::Part * part_B = partRepo.declare_part("B",0);
-  stk::mesh::Part * part_C = partRepo.declare_part("C",0);
-  partRepo.declare_subset(*part_A,*part_B);
-  partRepo.declare_subset(*part_B,*part_C);
+  UnitTestPartRepository upr;
+  upr.partRepo.declare_subset(*upr.part_A,*upr.part_B);
+  upr.partRepo.declare_subset(*upr.part_B,*upr.part_C);
   STKUNIT_ASSERT_THROW(
-    partRepo.declare_subset(*part_C,*part_A),
+    upr.partRepo.declare_subset(*upr.part_C,*upr.part_A),
     std::runtime_error
     );
 }
@@ -105,58 +131,42 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, circular_subset )
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, inconsistent_rank_subset )
 {
-  std::vector<std::string> entity_rank_names;
-  entity_rank_names.push_back("node");
-  entity_rank_names.push_back("element");
-  stk::mesh::MetaData meta(entity_rank_names);
-  stk::mesh::impl::PartRepository partRepo(&meta);
-  stk::mesh::Part * part_A = partRepo.declare_part("A",0);
-  stk::mesh::Part * part_B = partRepo.declare_part("B",1);
+  UnitTestPartRepository upr;
   // lower rank cannot contain higher rank:
   STKUNIT_ASSERT_THROW(
-    partRepo.declare_subset(*part_A,*part_B),
+    upr.partRepo.declare_subset(*upr.part_A,*upr.part_D),
     std::runtime_error
     );
   // higher rank can contain lower rank:
   STKUNIT_ASSERT_NO_THROW(
-    partRepo.declare_subset(*part_B,*part_A)
+    upr.partRepo.declare_subset(*upr.part_D,*upr.part_A)
     );
 }
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, two_part_repositories )
 {
-  std::vector<std::string> entity_rank_names;
-  entity_rank_names.push_back("node");
-  entity_rank_names.push_back("element");
-  stk::mesh::MetaData meta(entity_rank_names);
-  stk::mesh::impl::PartRepository partRepo_1(&meta);
-  stk::mesh::Part * part_1_A = partRepo_1.declare_part("A",0);
-  stk::mesh::Part * part_1_B = partRepo_1.declare_part("B",0);
-  stk::mesh::impl::PartRepository partRepo_2(&meta);
-  stk::mesh::Part * part_2_A = partRepo_2.declare_part("A",0);
+  UnitTestPartRepository upr;
   // subset/superset parts must come from same part repository
   STKUNIT_ASSERT_THROW(
-    partRepo_1.declare_subset(*part_1_A,*part_2_A),
+    upr.partRepo_1.declare_subset(*upr.part_1_A,*upr.part_2_A),
     std::runtime_error
     );
 
   // intersection contains parts from another part repository
   {
-    std::vector<stk::mesh::Part *> intersection;
-    intersection.push_back(part_1_A);
-    intersection.push_back(part_1_B);
+    upr.intersection.push_back(upr.part_1_A);
+    upr.intersection.push_back(upr.part_1_B);
     STKUNIT_ASSERT_THROW(
-        partRepo_2.declare_part( intersection ),
+        upr.partRepo_2.declare_part( upr.intersection ),
         std::runtime_error
         );
   }
   // intersection contains parts from multiple part repositories
   {
-    std::vector<stk::mesh::Part *> intersection;
-    intersection.push_back(part_1_A);
-    intersection.push_back(part_2_A);
+    upr.intersection.push_back(upr.part_1_A);
+    upr.intersection.push_back(upr.part_2_A);
     STKUNIT_ASSERT_THROW(
-        partRepo_1.declare_part( intersection ),
+        upr.partRepo_1.declare_part( upr.intersection ),
         std::runtime_error
         );
   }
@@ -164,19 +174,24 @@ STKUNIT_UNIT_TEST( UnitTestPartRepository, two_part_repositories )
 
 STKUNIT_UNIT_TEST( UnitTestPartRepository, invalid_relation )
 {
-  std::vector<std::string> entity_rank_names;
-  entity_rank_names.push_back("node");
-  entity_rank_names.push_back("element");
-  stk::mesh::MetaData meta(entity_rank_names);
-  stk::mesh::impl::PartRepository partRepo(&meta);
-  stk::mesh::Part * part_A = partRepo.declare_part("A",0);
-  stk::mesh::Part * part_B = partRepo.declare_part("B",0);
-  stk::mesh::PartRelation relation;
-  relation.m_root = part_B;
-  relation.m_target = part_A;
+  UnitTestPartRepository upr;
+  upr.relation.m_root = upr.part_B;
+  upr.relation.m_target = upr.part_A;
   STKUNIT_ASSERT_THROW(
-      partRepo.declare_part_relation( *part_A, relation, *part_B ),
+      upr.partRepo.declare_part_relation( *upr.part_A, upr.relation, *upr.part_B ),
       std::runtime_error
       );
 }
-} // namespace 
+
+//Test covers declare_attribute_no_delete in PartRepository.hpp and PartImpl.hpp
+STKUNIT_UNIT_TEST( UnitTestPartRepository, declare_attribute_no_delete )
+{
+  UnitTestPartRepository upr;
+  upr.partRepo.declare_attribute_no_delete(*upr.part_A, upr.singleton);
+
+}
+
+}
+
+
+

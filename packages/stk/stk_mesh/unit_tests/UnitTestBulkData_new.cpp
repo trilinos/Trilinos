@@ -179,6 +179,20 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertGoodKey )
   STKUNIT_ASSERT_THROW ( bulk.assert_good_key ( "method" , bad_key2 ) , std::runtime_error );
 }
 
+STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertEntityOwner )
+{
+  TestBoxFixture fixture;
+
+  stk::mesh::BulkData     &bulk = fixture.bulk_data ();
+  stk::mesh::PartVector    empty_vector;
+  bulk.modification_begin();
+
+  stk::mesh::Entity &new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
+
+  STKUNIT_ASSERT_THROW(bulk.assert_entity_owner ( "", new_cell, 50 ) , std::runtime_error );
+  bulk.modification_end();
+}
+
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyGetEntityGuards )
 {
   TestBoxFixture fixture;
@@ -451,6 +465,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
   bulk.change_ghosting ( ghosting , to_send , empty_vector );
   bulk.modification_end();
 
+
   {
     std::vector<stk::mesh::EntityProc> send_list ;
     std::vector<stk::mesh::Entity*>    recv_list ;
@@ -460,6 +475,10 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
     STKUNIT_ASSERT ( ! send_list.empty()  );
     STKUNIT_ASSERT ( ! recv_list.empty() );
   }
+
+  // Usage of operator << in Ghosting.cpp
+  std::ostringstream oss;
+  oss << ghosting;
 
   bulk.modification_begin();
   bulk.destroy_all_ghosting ();

@@ -57,7 +57,7 @@ inline ScalarType simple_function(const ScalarType& u) {
 }
 
 // Typename of PC expansion type
-typedef Sacado::ETPCE::OrthogPoly<double> pce_type;
+typedef Sacado::ETPCE::OrthogPoly<double, Stokhos::StandardStorage<int,double> > pce_type;
 
 int main(int argc, char **argv)
 {
