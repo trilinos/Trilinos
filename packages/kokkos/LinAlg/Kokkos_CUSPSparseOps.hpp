@@ -43,6 +43,7 @@
 
 #include <cusp/hyb_matrix.h>
 #include <cusp/csr_matrix.h>
+#include <cusp/device/detail/spmv.h>
 
 namespace Kokkos {
 
@@ -252,19 +253,36 @@ namespace Kokkos {
   void CUSPSparseOps<Scalar,Ordinal,Node>::multiply(
                                 Teuchos::ETransp trans, 
                                 RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, 
-                                RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
+                                RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const { 
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+      Teuchos::typeName(*this) << "::multiply(): CUSP does not support multiple scalar types for sparse matrix-vector multiplication.");
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  template <>
+  void CUSPSparseOps<Scalar,Ordinal,Node>::multiply(
+                                Teuchos::ETransp trans, 
+                                Scalar alpha, const MultiVector<Scalar,Node> &X, 
+                                Scalar beta, MultiVector<Scalar,Node> &Y) const {
     // beta is provided and the output multivector enjoys accumulate semantics
     TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
     TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     TEST_FOR_EXCEPTION(trans != Teuchos::NO_TRANS, std::logic_error, 
       Teuchos::typeName(*this) << "::multiply(): this class does not provide support for transposed multipication. Consider manually transposing the matrix.");
-    // FINISH
-    // wdp.x       = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-    // wdp.y       = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-    // wdp.xstride = X.getStride();
-    // wdp.ystride = Y.getStride();
-    // const size_t numRHS = X.getNumCols();
+    const size_t numRHS = X.getNumCols(),
+                 Xstride = X.getStride(),
+                 Ystride = Y.getStride();
+    ReadyBufferHelper<Node> rbh(node_);
+    rbh.begin();
+    const Scalar * X = rbh.template addConstBuffer<Scalar>(X.getValues());
+    Scalar       * Y = rbh.template addNonConstBuffer<Scalar>(Y.getValuesNonConst());
+    rbh.end();
+    for (int v=0; v != numRHS; ++v) {
+      cusp::detail::device<int,Scalar>(*devcHyb_, X, Y);
+      X += Xstride;  
+      Y += Ystride;  
+    }
     return;
   }
 
