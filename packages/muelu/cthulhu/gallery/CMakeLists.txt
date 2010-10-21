@@ -12,5 +12,4 @@ SET(matrix_driver_SOURCES
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   cthulhu_simple_example
   SOURCES ${matrix_driver_SOURCES}
-  COMM serial
   )
