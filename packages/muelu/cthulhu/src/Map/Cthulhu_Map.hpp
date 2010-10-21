@@ -120,7 +120,7 @@ namespace Cthulhu {
     //@{ Misc. 
 
     //! Get the Comm object for this Map
-    virtual const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const = 0;
+    virtual const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0; //removed &
 
     //! Get the Node object for this Map
     virtual const Teuchos::RCP<Node> & getNode() const = 0;

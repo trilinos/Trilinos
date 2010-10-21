@@ -34,7 +34,7 @@ namespace Cthulhu {
    This class is templated on \c int and \c GlobalOrdinal. 
    The \c GlobalOrdinal type, if omitted, defaults to the \c int type.
   */
-  class EpetraMap : public Cthulhu::Map<int,int> {
+  class EpetraMap : public Cthulhu::Map<int,int, Node> {
 
   public:
 
@@ -49,10 +49,15 @@ namespace Cthulhu {
      *   possible.
      */
     EpetraMap(global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-              LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
-      : map_(rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos_Comm2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME;}
-      // JG Note: epetraComm is cloned in the constructor of Epetra_Map. We don't need to keep a reference on epetraComm.
+              LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
 
+      CTHULHU_DEBUG_ME;
+
+      map_ = rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos_Comm2Epetra_Comm(comm)));
+      
+      // JG Note: epetraComm is cloned in the constructor of Epetra_Map. We don't need to keep a reference on epetraComm.
+    }
+     
     /** \brief EpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
      *  are non-overlapping and contiguous 
@@ -218,9 +223,9 @@ namespace Cthulhu {
     //@{ Misc. 
 
     //! Get the Comm object for this Map
-    const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const { CTHULHU_DEBUG_ME; 
+    const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const { CTHULHU_DEBUG_ME;  //removed &
       RCP<const Epetra_Comm> rcpComm = rcpFromRef(map_->Comm());
-      const Teuchos::RCP<const Teuchos::Comm<int> > & r = Epetra_Comm2Teuchos_Comm(rcpComm);
+      const Teuchos::RCP<const Teuchos::Comm<int> > r = Epetra_Comm2Teuchos_Comm(rcpComm);
       return r;
     };
 
@@ -235,12 +240,96 @@ namespace Cthulhu {
     //@{ Implements Teuchos::Describable 
 
     //! \brief Return a simple one-line description of this object.
-    std::string description() const { CTHULHU_DEBUG_ME; return NULL; };
+    std::string description() const { 
+      CTHULHU_DEBUG_ME; 
+    
+      // This implementation come from Tpetra_Map_def.hpp (without modification)
+      std::ostringstream oss;
+      oss << Teuchos::Describable::description();
+      oss << "{getGlobalNumElements() = " << getGlobalNumElements()
+          << ", getNodeNumElements() = " << getNodeNumElements()
+          << ", isContiguous() = " << isContiguous()
+          << ", isDistributed() = " << isDistributed()
+          << "}";
+      return oss.str();
+    };
 
     //! Print the object with some verbosity level to a \c FancyOStream object.
-    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; 
-      // TODOmap_->describe();
-    };
+    void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel = Teuchos::Describable::verbLevel_default) const { 
+      CTHULHU_DEBUG_ME; 
+
+      const Teuchos::RCP<const Teuchos::Comm<int> > comm_ = getComm();
+
+      // This implementation come from Tpetra_Map_def.hpp (without modification)
+      using std::endl;
+      using std::setw;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+      
+      const size_t nME = getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> myEntries = getNodeElementList();
+      int myImageID = comm_->getRank();
+      int numImages = comm_->getSize();
+      
+      Teuchos::EVerbosityLevel vl = verbLevel;
+      if (vl == VERB_DEFAULT) vl = VERB_LOW;
+      
+      size_t width = 1;
+      for (size_t dec=10; dec<getGlobalNumElements(); dec *= 10) {
+        ++width;
+      }
+      width = std::max<size_t>(width,12) + 2;
+      
+      Teuchos::OSTab tab(out);
+      
+      if (vl == VERB_NONE) {
+        // do nothing
+      }
+      else if (vl == VERB_LOW) {
+        out << this->description() << endl;
+      }
+      else {  // MEDIUM, HIGH or EXTREME
+        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+          if (myImageID == imageCtr) {
+            if (myImageID == 0) { // this is the root node (only output this info once)
+              out << endl 
+                  << "Number of Global Entries = " << getGlobalNumElements()  << endl
+                  << "Maximum of all GIDs      = " << getMaxAllGlobalIndex() << endl
+                  << "Minimum of all GIDs      = " << getMinAllGlobalIndex() << endl
+                  << "Index Base               = " << getIndexBase()         << endl;
+            }
+            out << endl;
+            if (vl == VERB_HIGH || vl == VERB_EXTREME) {
+              out << "Number of Local Elements   = " << nME           << endl
+                  << "Maximum of my GIDs         = " << getMaxGlobalIndex() << endl
+                  << "Minimum of my GIDs         = " << getMinGlobalIndex() << endl;
+              out << endl;
+            }
+            if (vl == VERB_EXTREME) {
+              out << std::setw(width) << "Node ID"
+                  << std::setw(width) << "Local Index"
+                  << std::setw(width) << "Global Index"
+                  << endl;
+              for (size_t i=0; i < nME; i++) {
+                out << std::setw(width) << myImageID 
+                    << std::setw(width) << i
+                    << std::setw(width) << myEntries[i]
+                    << endl;
+              }
+              out << std::flush;
+            }
+          }
+          // Do a few global ops to give I/O a chance to complete
+          comm_->barrier();
+          comm_->barrier();
+          comm_->barrier();
+        }
+      }
+    }
 
     //@}
 
