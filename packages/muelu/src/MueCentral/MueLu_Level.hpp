@@ -20,6 +20,7 @@ class Level {
 
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Operator;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
+  typedef MueLu::Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Smoother;
 
   //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> &level);
 
@@ -28,12 +29,10 @@ class Level {
     Teuchos::RCP<Operator> A_;             // discretization operator
     Teuchos::RCP<Operator> R_;             // restriction operator
     Teuchos::RCP<Operator> P_;             // prolongator operator
-    //TODO enable this data
-    //Smoother PreSmoother_;   // smoother operator
-    //Smoother PostSmoother_;  // smoother operator
+    Teuchos::RCP<Smoother> PreSmoother_;   // smoother operator
+    Teuchos::RCP<Smoother> PostSmoother_;  // smoother operator
     mutable int levelID_;                  // id number associated with level
     // auxilliary (optional) data
-    //TODO enable this data
     Teuchos::RCP<Operator> AuxMatrix_;     // can be used instead of A_ to steer coarsening/sparsity pattern algorithms
     //TODO enable this data
     //AuxMatrixFunc_; // function used to regenerate AuxMatrix from A & coords instead of via RAP
@@ -52,7 +51,7 @@ class Level {
     //@{
     //! @name Constructors / Destructors
     Level() : A_(0), R_(0), P_(0), levelID_(-1) {
-      std::cout << "Constructing new unitialized Level" << std::endl;
+      std::cout << "Instantiating new unitialized Level" << std::endl;
     }
 
     //! Copy constructor.
@@ -67,6 +66,7 @@ class Level {
 
     //@{
     //! @name Build methods
+    //! Builds a new Level object.
     static Teuchos::RCP< Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build() {
       std::cout << "Building a Level" << std::endl;
       return Teuchos::rcp( new Level<Scalar,LocalOrdinal,GlobalOrdinal,Node>() );
@@ -170,8 +170,12 @@ class Level {
       altP = coordP_;
       altR = coordR_;
     }
-    void SetPreSmoother(Teuchos::RCP<Smoother> &preSmoo) {std::cout << "Need private data member for presmoother" << std::endl;}
-    void SetPostSmoother(Teuchos::RCP<Smoother> &postSmoo) {std::cout << "Need private data member for postsmoother" << std::endl;}
+    void SetPreSmoother(Teuchos::RCP<Smoother> &preSmoo) {
+      PreSmoother_ = preSmoo;
+    }
+    void SetPostSmoother(Teuchos::RCP<Smoother> &postSmoo) {
+      PostSmoother_ = postSmoo;
+    }
 /*
     //TODO ==================================================
     //TODO The following methods still need to be implemented.

@@ -20,6 +20,7 @@ Hierarchy.cpp
 RAPFactory.cpp
 SaPFactory.cpp
 TransPFactory.cpp
+SmootherFactory.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(

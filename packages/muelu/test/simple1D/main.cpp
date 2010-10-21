@@ -77,12 +77,14 @@ int main(int argc, char** argv)
   Ordinal ny=4;
   Ordinal nz=4;
   CommandLineProcessor cmdp(false,true);
+  Ordinal maxLevels = 10;
   std::string matrixType("Laplace1D");
   cmdp.setOption("nt",&numThreads,"number of threads.");
   cmdp.setOption("nx",&nx,"mesh points in x-direction.");
   cmdp.setOption("ny",&ny,"mesh points in y-direction.");
   cmdp.setOption("nz",&nz,"mesh points in z-direction.");
   cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Star2D, Laplace3D");
+  cmdp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -132,7 +134,8 @@ int main(int argc, char** argv)
   RCP<SmootherFactory>    SmooFact = Teuchos::null;
 
   //H.FillHierarchy(Pfact,Rfact,Acfact);
-  H.FullPopulate(Pfact,Rfact,Acfact,SmooFact);
+  std::cout << "\nCalling FullPopulate\n" << std::endl;
+  H.FullPopulate(Pfact,Rfact,Acfact,SmooFact,0,maxLevels);
 
   return(0);
 } //main

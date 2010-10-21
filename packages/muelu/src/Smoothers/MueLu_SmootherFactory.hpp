@@ -3,7 +3,8 @@
 
 #include <iostream>
 
-#include "Teuchos_ParameterList.hpp"
+#include "MueLu_BaseFactory.hpp"
+#include "MueLu_Smoother.hpp"
 #include "MueLu_Level.hpp"
 
 /*!
@@ -15,14 +16,16 @@ namespace MueLu {
 
 template <class Scalar,class LO,class GO,class Node>
 class SmootherFactory : public BaseFactory {
+
+  typedef MueLu::Smoother<Scalar,LO,GO,Node> Smoother;
+
   private:
-    Teuchos::ParameterList Needs_;
     int outputLevel_;
     int priorOutputLevel_;
 
   public:
     //@{ Constructors/Destructors.
-    SmootherFactory() {}
+    SmootherFactory() {std::cout << "Instantiating a new SmootherFactory" << std::endl;}
 
     virtual ~SmootherFactory() {}
     //@}
@@ -34,7 +37,15 @@ class SmootherFactory : public BaseFactory {
     bool Build(Teuchos::RCP<Smoother> &preSm,
                Teuchos::RCP<Smoother> &postSm,
                Level<Scalar,LO,GO,Node> &level) {
-      std::cout << "Building a pre- and post-smoother." << std::endl;
+      std::cout << "Building ";
+      if (preSm != Teuchos::null) {
+        std::cout << "a pre-";
+        if (postSm != Teuchos::null)
+          std::cout << " and post-";
+        std::cout << "smoother" << std::endl;
+      }
+      else if (postSm != Teuchos::null) std::cout << "a post-smoother." << std::endl;
+      else std::cout << "no smoothers." << std::endl;
       return true;
     }
 
@@ -58,16 +69,6 @@ class SmootherFactory : public BaseFactory {
     int GetOutputLevel() {
       return outputLevel_;
     }
-
-/*
-//FIXME The needs mechanism hasn't been decided upon.
-
-    void TempOutputLevel(int outputLevel) {
-    }
-
-    void RestoreOutputLevel(int outputLevel) {
-    }
-*/
 
 }; //class SmootherFactory
 

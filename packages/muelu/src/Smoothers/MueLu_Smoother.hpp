@@ -1,12 +1,21 @@
-#ifndef MULUE_SMOOTHER_HPP
-#define MULUE_SMOOTHER_HPP
+#ifndef MUELU_SMOOTHER_HPP
+#define MUELU_SMOOTHER_HPP
 
+namespace MueLu {
+
+template<class Scalar,class LO, class GO, class Node>
 class Smoother {
 
-  Smoother() {std::cout << "Building a smoother" << std::endl;}
+  private:
 
-  virtual ~Smoother() {}
+  public:
+
+    Smoother() {std::cout << "Instantiating a new smoother" << std::endl;}
+
+    virtual ~Smoother() {}
 
 }; //class Smoother
 
-#endif
+} //namespace MueLu
+
+#endif //ifndef MUELU_SMOOTHER_HPP

@@ -24,9 +24,10 @@ namespace MueLu {
 template<class Scalar,class LO, class GO, class Node>
 class Hierarchy {
 
-  typedef MueLu::Level<Scalar,LO,GO,Node> Level;
+  typedef MueLu::Level<Scalar,LO,GO,Node>           Level;
   typedef MueLu::OperatorFactory<Scalar,LO,GO,Node> OperatorFactory;
   typedef MueLu::SmootherFactory<Scalar,LO,GO,Node> SmootherFactory;
+  typedef MueLu::Smoother<Scalar,LO,GO,Node>        Smoother;
 
   template<class AA, class BB, class CC, class DD>
   inline friend std::ostream& operator<<(std::ostream& os, Hierarchy<AA,BB,CC,DD> &hierarchy);
