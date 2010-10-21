@@ -7,6 +7,7 @@ ADD_SUBDIRECTORY(EvaluatorManager)
 ADD_SUBDIRECTORY(ExpressionTemplates)
 ADD_SUBDIRECTORY(Field)
 ADD_SUBDIRECTORY(FieldTag)
+ADD_SUBDIRECTORY(Graphviz)
 ADD_SUBDIRECTORY(Performance)
 ADD_SUBDIRECTORY(IntrepidInteroperability)
 

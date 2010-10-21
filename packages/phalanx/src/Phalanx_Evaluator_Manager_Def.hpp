@@ -368,15 +368,31 @@ writeGraphvizFile(const std::string filename,
 
   TEST_FOR_EXCEPTION(!sorting_called_ && !debugRegisteredEvaluators, std::logic_error, "Error sorting of evaluators must be done before writing graphviz file.");
 
-  // Create the Graph object and attribute vectors
+#if (BOOST_VERSION>=104400)
+  typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS,
+    boost::property<boost::vertex_name_t, std::string, 
+    boost::property<boost::vertex_color_t, std::string,
+    boost::property<boost::vertex_index_t, std::string> > >,
+    boost::property<boost::edge_name_t, std::string> > Graph;
+#else
   typedef boost::GraphvizDigraph Graph;
+#endif
+
   Graph g_dot;
 
+#if (BOOST_VERSION>=104400)
+  boost::dynamic_properties dp;
+  dp.property("label",boost::get(boost::vertex_name, g_dot));
+  dp.property("fontcolor",boost::get(boost::vertex_color, g_dot));
+  dp.property("id",boost::get(boost::vertex_index, g_dot));
+  dp.property("label",boost::get(boost::edge_name, g_dot));
+#else
   boost::property_map<Graph,boost::vertex_attribute_t>::type
     vertex_attr_map = get(boost::vertex_attribute, g_dot);
   
   boost::property_map<Graph,boost::edge_attribute_t>::type
     edge_attr_map = get(boost::edge_attribute, g_dot);
+#endif
 
   typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_t;
   typedef typename boost::graph_traits<Graph>::edge_descriptor edge_t;
@@ -443,12 +459,16 @@ writeGraphvizFile(const std::string filename,
 
     std::pair<edge_t, bool> boost_edge = 
       boost::add_edge(edge->second.first, edge->second.second, g_dot);
-    //boost::add_edge(0, 1, g_dot);
 
+    
+#if (BOOST_VERSION>=104400)
+    boost::put("label",dp,boost_edge.first,std::string(edge->first));
+#else
     edge_attr_map[boost_edge.first]["label"] = edge->first;
+#endif
   }
 
-  boost::graph_traits<boost::GraphvizDigraph>::vertex_iterator vi, vi_end;
+  boost::graph_traits<Graph>::vertex_iterator vi, vi_end;
   for (boost::tie(vi, vi_end) = vertices(g_dot); vi != vi_end; ++vi) {
     
     string label = evaluators[*vi]->getName();
@@ -490,7 +510,11 @@ writeGraphvizFile(const std::string filename,
 	      field_to_evaluator_index.find((*field)->identifier());
 	    if (testing == field_to_evaluator_index.end()) {
 	      found = false;
+#if (BOOST_VERSION>=104400)
+	      boost::put("fontcolor",dp,*vi,std::string("red"));
+#else
 	      vertex_attr_map[*vi]["fontcolor"] = "red";
+#endif
 	    }
 
 	  }
@@ -510,12 +534,20 @@ writeGraphvizFile(const std::string filename,
 
     }
 
+#if (BOOST_VERSION>=104400)
+    boost::put("label",dp,*vi,label);
+#else
     vertex_attr_map[*vi]["label"] = label;
+#endif
   }
 
   std::ofstream outfile;
   outfile.open (filename.c_str());
+#if (BOOST_VERSION>=104400)
+  boost::write_graphviz_dp(outfile, g_dot, dp, std::string("id"));
+#else
   boost::write_graphviz(outfile, g_dot);
+#endif
   outfile.close();
 
 #else
