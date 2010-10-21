@@ -33,10 +33,10 @@ TEUCHOS_UNIT_TEST(Hierarchy,Test0)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  Level levelOne;
-  levelOne.SetLevelID(1);
-  Level levelTwo;
-  levelTwo.SetLevelID(2);
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
+  RCP<Level> levelTwo = rcp(new Level() );
+  levelTwo->SetLevelID(2);
 
   Hierarchy H;
 
@@ -79,8 +79,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  Level levelOne;
-  levelOne.SetLevelID(1);
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
 
   Hierarchy H;
   H.SetLevel(levelOne);
@@ -122,8 +122,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy2)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  Level levelOne;
-  levelOne.SetLevelID(1);
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
 
   Hierarchy H;
   H.SetLevel(levelOne);
@@ -156,8 +156,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  Level levelOne;
-  levelOne.SetLevelID(1);
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
 
   Hierarchy H;
   H.SetLevel(levelOne);
@@ -192,8 +192,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 
   out << "version: " << MueLu::Version() << std::endl;
 
-  Level levelOne;
-  levelOne.SetLevelID(1);
+  RCP<Level> levelOne = rcp(new Level() );
+  levelOne->SetLevelID(1);
 
   Hierarchy H;
   H.SetLevel(levelOne);
