@@ -77,9 +77,7 @@ namespace Cthulhu {
         \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
         \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
     */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals) =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Insert matrix entries, using local IDs.
     /**
@@ -205,9 +203,7 @@ namespace Cthulhu {
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
     //TODO : Get ride of "Tpetra"::OptimizeOption
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void fillComplete(Tpetra::OptimizeOption os = Tpetra::DoOptimizeStorage) =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //@}
 
@@ -216,7 +212,7 @@ namespace Cthulhu {
 
     //! Returns the communicator.
 #ifdef CTHULHU_TPETRA_ONLY
-    virtual const RCP<const Comm<int> > & getComm() const =0;
+    virtual const RCP<const Comm<int> > getComm() const =0; // removed &
 #endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the underlying node.
@@ -225,14 +221,10 @@ namespace Cthulhu {
 #endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the Map that describes the row distribution in this matrix.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const =0; // TODO: I removed & in return type
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const =0; // TODO: I removed & in return type
-#endif // CTHULHU_TPETRA_ONLY
   
     //! Returns the RowGraph associated with this matrix. 
 #ifdef CTHULHU_NOT_IMPLEMENTED  
@@ -247,21 +239,15 @@ namespace Cthulhu {
     //! Returns the number of global rows in this matrix.
     /** Undefined if isFillActive().
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual global_size_t getGlobalNumRows() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief Returns the number of global columns in the matrix.
     /** Undefined if isFillActive().
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual global_size_t getGlobalNumCols() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the number of matrix rows owned on the calling node.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getNodeNumRows() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the number of columns connected to the locally owned rows of this matrix.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
@@ -276,14 +262,10 @@ namespace Cthulhu {
 #endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the global number of entries in this matrix.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual global_size_t getGlobalNumEntries() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the local number of entries in this matrix.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getNodeNumEntries() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief Returns the current number of entries on this node in the specified global row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this matrix. */
@@ -293,37 +275,27 @@ namespace Cthulhu {
 
     //! Returns the current number of entries on this node in the specified local row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this matrix. */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
     /** Undefined if isFillActive().
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual global_size_t getGlobalNumDiags() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
     /** Undefined if isFillActive().
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getNodeNumDiags() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes.
     /** Undefined if isFillActive().
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getGlobalMaxNumRowEntries() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief Returns the maximum number of entries across all rows/columns on this node.
     /** Undefined if isFillActive().
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getNodeMaxNumRowEntries() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief Indicates whether the matrix has a well-defined column map. 
 #ifdef CTHULHU_TPETRA_ONLY
@@ -345,19 +317,13 @@ namespace Cthulhu {
 #endif // CTHULHU_TPETRA_ONLY
 
     //! \brief If matrix indices are in the local range, this function returns true. Otherwise, this function returns false. */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual bool isLocallyIndexed() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual bool isGloballyIndexed() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual bool isFillComplete() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Returns \c true if resumeFill() has been called and the matrix is in edit mode.
 #ifdef CTHULHU_TPETRA_ONLY
@@ -435,9 +401,7 @@ namespace Cthulhu {
 
       Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
     */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &indices, ArrayView<const Scalar> &values) const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     /*!
@@ -449,9 +413,7 @@ namespace Cthulhu {
 
       Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
     */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //       //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
     //       /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
@@ -481,9 +443,7 @@ namespace Cthulhu {
     void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const=0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Solves a linear system when the underlying matrix is triangular.
     /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
@@ -521,16 +481,12 @@ namespace Cthulhu {
     //! \brief Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
     // TODO: I removed & in the return arg
-#ifdef CTHULHU_TPETRA_ONLY
     virtual const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
     // TODO: I removed & in the return arg
-#ifdef CTHULHU_TPETRA_ONLY
     virtual const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //@}
 
@@ -538,14 +494,10 @@ namespace Cthulhu {
     //@{
 
     /** \brief Return a simple one-line description of this object. */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual std::string description() const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //@}
 

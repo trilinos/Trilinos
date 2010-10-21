@@ -1,10 +1,10 @@
-#ifndef CTHULHU_TPETRAMULTIVECTOR_DECL_HPP
-#define CTHULHU_TPETRAMULTIVECTOR_DECL_HPP
+#ifndef CTHULHU_ETPETRAMULTIVECTOR_DECL_HPP
+#define CTHULHU_EPETRAMULTIVECTOR_DECL_HPP
 
 #include "Cthulhu_MultiVector.hpp"
 
-#include "Cthulhu_TpetraMap.hpp"
-#include "Tpetra_MultiVector.hpp"
+#include "Cthulhu_EpetraMap.hpp" 
+#include "Epetra_MultiVector.h"
 
 #include "Cthulhu_Debug.hpp"
 
@@ -21,47 +21,45 @@ namespace Cthulhu {
     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
-  template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class TpetraMultiVector : public Cthulhu::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class EpetraMultiVector : public Cthulhu::MultiVector<double,int,int> {
 
   public:
 
     //! @name Constructor/Destructor Methods
     //@{ 
-
-    //! Basic TpetraMultiVector constuctor.
-    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t NumVectors, bool zeroOut=true) {
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    //! Basic EpetraMultiVector constuctor.
+    EpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t NumVectors, bool zeroOut=true) {
       CTHULHU_DEBUG_ME;
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map); //TODO: handle error
-      vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), NumVectors, zeroOut));
+      const RCP<const EpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tMap = Teuchos::rcp_dynamic_cast<const EpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map); //TODO: handle error
+      vec_ = rcp(new Epetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getEpetra_Map(), NumVectors, zeroOut));
     }
-
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     
-    //! TpetraMultiVector copy constructor.
+    //! EpetraMultiVector copy constructor.
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    TpetraMultiVector(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source){ CTHULHU_DEBUG_ME; } //TODO : : vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(source))) { CTHULHU_DEBUG_ME;}
+    EpetraMultiVector(const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source){ CTHULHU_DEBUG_ME; } 
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) {
+    EpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) {
       CTHULHU_DEBUG_ME;
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map); //TODO: handle error
-      vec_ = rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tMap->getTpetra_Map(), A, LDA, NumVectors));
+      
     } 
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME } //TODO :: vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map, ArrayOfPtrs, NumVectors))) { CTHULHU_DEBUG_ME;}
+    EpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME } 
 #endif // CTHULHU_NOT_IMPLEMENTED
   
-    TpetraMultiVector(const Teuchos::RCP<const Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node> > &vec) : vec_(vec) { CTHULHU_DEBUG_ME;}
+    EpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector> &vec) : vec_(vec) { CTHULHU_DEBUG_ME; }
 
-    //! TpetraMultiVector destructor.
-    virtual ~TpetraMultiVector() { CTHULHU_DEBUG_ME; }
+    //! EpetraMultiVector destructor.
+    virtual ~EpetraMultiVector() { CTHULHU_DEBUG_ME; }
 
     //@}
 
@@ -71,53 +69,67 @@ namespace Cthulhu {
     //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { CTHULHU_DEBUG_ME; vec_->replaceGlobalValue(globalRow, vectorIndex, value); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) { CTHULHU_DEBUG_ME; vec_->sumIntoGlobalValue(globalRow, vectorIndex, value); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { CTHULHU_DEBUG_ME; vec_->replaceLocalValue(myRow, vectorIndex, value); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) { CTHULHU_DEBUG_ME; vec_->sumIntoLocalValue(myRow, vectorIndex, value); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Initialize all values in a multi-vector with specified value.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void putScalar(const Scalar &value) { CTHULHU_DEBUG_ME; vec_->putScalar(value); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Set multi-vector values to random numbers.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void randomize() { CTHULHU_DEBUG_ME; vec_->randomize(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Replace the underlying Map with a compatible one.
 #ifdef CTHULHU_NOT_IMPLEMENTED
     inline void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) { CTHULHU_DEBUG_ME; vec_->replaceMap(map); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-    //! Instruct a local (non-distributed) TpetraMultiVector to sum values across all nodes.
+    //! Instruct a local (non-distributed) EpetraMultiVector to sum values across all nodes.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void reduce() { CTHULHU_DEBUG_ME; vec_->reduce(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! = Operator.
     /*! \param In A - Multivector to copy
      */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) { CTHULHU_DEBUG_ME; return vec_->(source); }
+    inline EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) { CTHULHU_DEBUG_ME; return vec_->(source); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //@}
 
     //! @name Data Copy and View get methods
-    /** These methods are used to get the data underlying the TpetraMultiVector. They return data in one of three forms: 
-        - a TpetraMultiVector with a subset of the columns of the target TpetraMultiVector
+    /** These methods are used to get the data underlying the EpetraMultiVector. They return data in one of three forms: 
+        - a EpetraMultiVector with a subset of the columns of the target EpetraMultiVector
         - a raw C pointer or array of raw C pointers
         - one of the Teuchos memory management classes
-        Not all of these methods are valid for a particular TpetraMultiVector. For instance, calling a method that accesses a 
-        view of the data in a 1-D format (i.e., get1dView) requires that the target TpetraMultiVector has constant stride.
+        Not all of these methods are valid for a particular EpetraMultiVector. For instance, calling a method that accesses a 
+        view of the data in a 1-D format (i.e., get1dView) requires that the target EpetraMultiVector has constant stride.
     */
     //@{
 #ifdef CTHULHU_NOT_IMPLEMENTED
@@ -125,7 +137,7 @@ namespace Cthulhu {
     //! Returns a MultiVector with copies of selected columns.
     inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const { CTHULHU_DEBUG_ME; return vec_->subCopy(colRng); }
 
-    //! Returns a TpetraMultiVector with copies of selected columns.
+    //! Returns a EpetraMultiVector with copies of selected columns.
     inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::ArrayView<const size_t> &cols) const { CTHULHU_DEBUG_ME; return vec_->subCopy(cols); }
 
     //! Returns a const MultiVector with const views of selected columns.
@@ -171,35 +183,55 @@ namespace Cthulhu {
 
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline Teuchos::ArrayRCP<const Scalar> getData(size_t j) const { CTHULHU_DEBUG_ME; return vec_->getData(j); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j) { CTHULHU_DEBUG_ME; return vec_->getDataNonConst(j); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const { CTHULHU_DEBUG_ME; vec_->get1dCopy(A, LDA); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const { CTHULHU_DEBUG_ME; vec_->get2dCopy(ArrayOfPtrs); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline Teuchos::ArrayRCP<const Scalar> get1dView() const { CTHULHU_DEBUG_ME; return vec_->get1dView(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Return const persisting pointers to values.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const { CTHULHU_DEBUG_ME; return vec_->get2dView(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.  Teuchos::ArrayRCP<Scalar> get1dViewNonConst() { CTHULHU_DEBUG_ME; return vec_->(); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline Teuchos::ArrayRCP<Scalar> get1dViewNonConst() { CTHULHU_DEBUG_ME; return vec_->get1dViewNonConst(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Return non-const persisting pointers to values.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst() { CTHULHU_DEBUG_ME; return vec_->get2dViewNonConst(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Return a const reference to the underlying Kokkos::MultiVector object (advanced use only)
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const { CTHULHU_DEBUG_ME; return vec_->getLocalMV(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Return a non-const reference to the underlying Kokkos::MultiVector object (advanced use only)
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst() { CTHULHU_DEBUG_ME; return vec_->getLocalMVNonConst(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@}
 
@@ -207,55 +239,83 @@ namespace Cthulhu {
     //@{ 
 
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    inline void dot(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const { CTHULHU_DEBUG_ME; vec_->dot(A, dots); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void dot(const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const { CTHULHU_DEBUG_ME; vec_->dot(A, dots); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-    inline void abs(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->abs(A); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void abs(const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->abs(A); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    inline void reciprocal(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->reciprocal(A); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void reciprocal(const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->reciprocal(A); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Scale the current values of a multi-vector, this = alpha*this.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void scale(const Scalar &alpha) { CTHULHU_DEBUG_ME; vec_->scale(alpha); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void scale(Teuchos::ArrayView<const Scalar> alpha) { CTHULHU_DEBUG_ME; vec_->scale(alpha); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    inline void scale(const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->scale(A); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void scale(const Scalar &alpha, const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->scale(A); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    inline void update(const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) { CTHULHU_DEBUG_ME; vec_->update(A, beta); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void update(const Scalar &alpha, const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) { CTHULHU_DEBUG_ME; vec_->update(A, beta); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    inline void update(const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma) { CTHULHU_DEBUG_ME; vec_->update(A, beta); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void update(const Scalar &alpha, const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma) { CTHULHU_DEBUG_ME; vec_->update(A, beta); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Compute 1-norm of each vector in multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->norm1(norms); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Compute 2-norm of each vector in multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->norm2(norms); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Compute Inf-norm of each vector in multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->normInf(norms); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    inline void normWeighted(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->normWeighted(weights, norms); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void normWeighted(const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->normWeighted(weights, norms); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Compute mean (average) value of each vector in multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void meanValue(const Teuchos::ArrayView<Scalar> &means) const { CTHULHU_DEBUG_ME; vec_->meanValue(means); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-    //! Element-wise multiply of a Vector A with a TpetraMultiVector B.
+    //! Element-wise multiply of a Vector A with a EpetraMultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
      *  where @ denotes element-wise multiplication.
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
+    inline void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
 #endif // CTHULHU_NOT_IMPLEMENTED
     //@} 
 
@@ -263,19 +323,29 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the number of vectors in the multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline size_t getNumVectors() const { CTHULHU_DEBUG_ME; return vec_->getNumVectors(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline size_t getLocalLength() const { CTHULHU_DEBUG_ME; return vec_->getLocalLength(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns the global vector length of vectors in the multi-vector.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline global_size_t getGlobalLength() const { CTHULHU_DEBUG_ME; return vec_->getGlobalLength(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline size_t getStride() const { CTHULHU_DEBUG_ME; return vec_->getStride(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns true if this multi-vector has constant stride between vectors. WARNING: This may vary from node to node.
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline bool isConstantStride() const { CTHULHU_DEBUG_ME; return vec_->isConstantStride(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@} 
 
@@ -283,29 +353,32 @@ namespace Cthulhu {
     //@{
 
     /** \brief Return a simple one-line description of this object. */
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline std::string description() const { CTHULHU_DEBUG_ME; return vec_->description(); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; vec_->describe(out, verbLevel); }
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@}
 
-    //    RCP< const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; } //TODO: & ??
-    RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; } //TODO: & ??
+    RCP< Epetra_MultiVector > getEpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; } //TODO: & ??
     
   private:
-    RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;
+    RCP< Epetra_MultiVector > vec_;
 
 
-  }; // class TpetraMultiVector
+  }; // class EpetraMultiVector
 
-  /** \brief Non-member function to create a TpetraMultiVector from a specified Map.
-      \relates TpetraMultiVector
+  /** \brief Non-member function to create a EpetraMultiVector from a specified Map.
+      \relates EpetraMultiVector
   */
 #ifdef CTHULHU_NOT_IMPLEMENTED
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-  createTpetraMultiVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors) { CTHULHU_DEBUG_ME; }
+  Teuchos::RCP< EpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  createEpetraMultiVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors) { CTHULHU_DEBUG_ME; }
 #endif // CTHULHU_NOT_IMPLEMENTED
   
 } // namespace Cthulhu

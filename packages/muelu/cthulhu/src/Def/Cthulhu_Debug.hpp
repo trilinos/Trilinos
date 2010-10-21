@@ -24,9 +24,8 @@ void cthulhu_debug_me_print();
 
 // #endif
 
-#define CTHULHU_TPETRA_ONLY
+//#define CTHULHU_TPETRA_ONLY
 
 //#define CTHULHU_NOT_IMPLEMENTED
-#define CTHULHU_PRINT_NOT_IMPLEMENTED std::cout << "ERROR" << std::endl;
 
 #endif

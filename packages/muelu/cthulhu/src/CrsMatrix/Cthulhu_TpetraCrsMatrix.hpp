@@ -223,7 +223,7 @@ namespace Cthulhu {
      //@{ 
 
      //! Returns the communicator.
-     inline const RCP<const Comm<int> > & getComm() const { CTHULHU_DEBUG_ME; return mtx_->getComm(); }
+    inline const RCP<const Comm<int> > getComm() const { CTHULHU_DEBUG_ME; return mtx_->getComm(); } // removed &
 
      //! Returns the underlying node.
      inline RCP<Node> getNode() const { CTHULHU_DEBUG_ME; return mtx_->getNode(); }
@@ -247,7 +247,7 @@ namespace Cthulhu {
 
      //! Returns the CrsGraph associated with this matrix. 
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const {  CTHULHU_DEBUG_ME; return null; } //mtx_->getCrsGraph(); }
+    inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getCrsGraph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
      //! Returns the number of global rows in this matrix.
@@ -409,7 +409,7 @@ namespace Cthulhu {
      /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
        the zero and non-zero diagonals owned by this node. */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const { CTHULHU_NOT_IMPLEMENTED; CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
+    inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
 #endif // CTHULHU_NOT_IMPLEMENTED
      //@}
 
@@ -428,7 +428,7 @@ namespace Cthulhu {
      */
 #ifdef CTHULHU_NOT_IMPLEMENTED
     template <class DomainScalar, class RangeScalar>
-    inline void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const { CTHULHU_NOT_IMPLEMENTED; CTHULHU_DEBUG_ME; mtx_->multiply(X, Y, trans, alpha, beta); }
+    inline void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const { CTHULHU_DEBUG_ME; mtx_->multiply(X, Y, trans, alpha, beta); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     // TODO Note: Do we need to use a Tpetra::CrsMatrixMultiplyOp ?? 
@@ -469,7 +469,7 @@ namespace Cthulhu {
      inline void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                        Teuchos::ETransp mode = Teuchos::NO_TRANS,
                        Scalar alpha = ScalarTraits<Scalar>::one(),
-                       Scalar beta = ScalarTraits<Scalar>::zero()) const { CTHULHU_NOT_IMPLEMENTED; CTHULHU_DEBUG_ME; //mtx_->apply(X, Y, mode, alpha, beta); TODO
+                       Scalar beta = ScalarTraits<Scalar>::zero()) const { CTHULHU_DEBUG_ME; //mtx_->apply(X, Y, mode, alpha, beta); TODO
      }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
@@ -507,26 +507,26 @@ namespace Cthulhu {
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! @name Methods implementing Cthulhu::DistObject
     //@{
-    inline bool checkSizes(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source) { CTHULHU_NOT_IMPLEMENTED; CTHULHU_DEBUG_ME; return mtx_->checkSizes(); }
+    inline bool checkSizes(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source) { CTHULHU_DEBUG_ME; return mtx_->checkSizes(); }
 
  inline void copyAndPermute(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
                             size_t numSameIDs,
                             const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                            const ArrayView<const LocalOrdinal> &permuteFromLIDs) { CTHULHU_NOT_IMPLEMENTED; CTHULHU_DEBUG_ME; mtx_->copyAndPermute(); }
+                            const ArrayView<const LocalOrdinal> &permuteFromLIDs) { CTHULHU_DEBUG_ME; mtx_->copyAndPermute(); }
 
  inline void packAndPrepare(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
                             const ArrayView<const LocalOrdinal> &exportLIDs,
                             Array<char> &exports,
                             const ArrayView<size_t> & numPacketsPerLID,
                             size_t& constantNumPackets,
-                            Distributor &distor) { CTHULHU_NOT_IMPLEMENTED; CTHULHU_DEBUG_ME; mtx_->packAndPrepare(); }
+                            Distributor &distor) { CTHULHU_DEBUG_ME; mtx_->packAndPrepare(); }
 
  inline void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
                               const ArrayView<const char> &imports,
                               const ArrayView<size_t> &numPacketsPerLID,
                               size_t constantNumPackets,
                               Distributor &distor,
-                              CombineMode CM) { CTHULHU_NOT_IMPLEMENTED; CTHULHU_DEBUG_ME; mtx_->unpackAndCombine(); }
+                              CombineMode CM) { CTHULHU_DEBUG_ME; mtx_->unpackAndCombine(); }
     //@}
 #endif // CTHULHU_NOT_IMPLEMENTED
 
@@ -542,7 +542,7 @@ namespace Cthulhu {
     Currently, the implementation simply calls resumeFill() and then fillComplete(OptimizeStorage). As such, it is 
     required to be called by all nodes that participate in the associated communicator.
     */
-    inline CTHULHU_DEPRECATED void optimizeStorage() { CTHULHU_NOT_IMPLEMENTED; CTHULHU_DEBUG_ME; }
+    inline CTHULHU_DEPRECATED void optimizeStorage() { CTHULHU_DEBUG_ME; }
     
     //! Deprecated. Get a persisting const view of the entries in a specified global row of this matrix.
     inline CTHULHU_DEPRECATED void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayRCP<const GlobalOrdinal> &indices, ArrayRCP<const Scalar> &values) const { CTHULHU_DEBUG_ME; } 

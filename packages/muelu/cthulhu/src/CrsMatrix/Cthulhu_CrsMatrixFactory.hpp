@@ -5,11 +5,11 @@
 
 #include "Cthulhu_CrsMatrix.hpp"
 #include "Cthulhu_TpetraCrsMatrix.hpp"
-//#include "Cthulhu_EpetraCrsMatrix.hpp"
+#include "Cthulhu_EpetraCrsMatrix.hpp"
 
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_TpetraMap.hpp"
-//#include "Cthulhu_EpetraMap.hpp"
+#include "Cthulhu_EpetraMap.hpp"
 
 #include "Cthulhu_Debug.hpp"
 
@@ -41,10 +41,9 @@ namespace Cthulhu {
       if (tRowMap != null)
         return rcp( new TpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
 
-      //TODO
-      //       const RCP<const EpetraMap> &eRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(rowMap);
-      //       if (eRowMap != null)
-      //         return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
+      const RCP<const EpetraMap> &eRowMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(rowMap);
+      if (eRowMap != null)
+        return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
       
       return null;
     }
