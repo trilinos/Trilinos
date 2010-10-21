@@ -296,8 +296,8 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
       msg += "\nPlease look at the EvaluatorManager output above, or \n";
       msg += "visually inspect the error graph that was dumped by \n";
       msg += "running the graphviz dot program on the file error.dot: \n";
-      msg += "> dot -Tpng -o error.png error.dot\n\n";
-      msg += "The above command generates a png file, \"error.png\"\n";
+      msg += "> dot -Tjpg -o error.jpg error.dot\n\n";
+      msg += "The above command generates a jpg file, \"error.jpg\"\n";
       msg += "that you can view in any web browser/graphics program.\n";
 	
       std::string filename = "error.dot";
