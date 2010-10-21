@@ -9,7 +9,7 @@
 
 /*!
   @class Base class for operator factories (e.g., R, P, and A_coarse).
-  @brief Base class for operator factories.
+  @brief Base class for factories that build operators.
   Very similar to BaseFactory, but with an additional virtual Build method.
 */
 

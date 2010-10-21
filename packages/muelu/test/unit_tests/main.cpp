@@ -16,7 +16,7 @@ specific unit test suites.
 
 int main( int argc, char* argv[] )
 {
- // Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   int ret = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 
   return ret;

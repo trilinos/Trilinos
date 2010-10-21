@@ -67,9 +67,9 @@ class Level {
 
     //@{
     //! @name Build methods
-    static Level Build() {
-      Level newLevel;
-      return newLevel;
+    static Teuchos::RCP< Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build() {
+      std::cout << "Building a Level" << std::endl;
+      return Teuchos::rcp( new Level<Scalar,LocalOrdinal,GlobalOrdinal,Node>() );
     }
     //@}
 
