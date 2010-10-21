@@ -121,9 +121,9 @@ int main(int argc, char** argv)
   nullSpace->putScalar( (SC) 1.0);
 
   MueLu::Hierarchy<SC,LO,GO,NO> H;
-  MueLu::SaLevel<SC,LO,GO,NO> Finest;
-  Finest.SetA(A);
-  Finest.SetNullSpace(nullSpace);
+  RCP<MueLu::SaLevel<SC,LO,GO,NO> > Finest = rcp( new MueLu::SaLevel<SC,LO,GO,NO>() );
+  Finest->SetA(A);
+  Finest->SetNullSpace(nullSpace);
   H.SetLevel(Finest);
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );

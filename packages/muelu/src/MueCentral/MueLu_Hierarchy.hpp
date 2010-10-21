@@ -35,7 +35,6 @@ class Hierarchy {
 
   private:
 
-    //TODO change this to an Teuchos::Array?
     std::vector<Teuchos::RCP<Level> > Levels_;
 
   public:
@@ -72,10 +71,10 @@ class Hierarchy {
 
      //FIXME should return status
      //FIXME also calculate complexity here
-     void FullPopulate(Teuchos::RCP<OperatorFactory> &PFact,
-                       Teuchos::RCP<OperatorFactory> &RFact=Teuchos::null,
-                       Teuchos::RCP<OperatorFactory> &AcFact=Teuchos::null,
-                       Teuchos::RCP<SmootherFactory> &SmooFact=Teuchos::null,
+     void FullPopulate(Teuchos::RCP<OperatorFactory> PFact,
+                       Teuchos::RCP<OperatorFactory> RFact=Teuchos::null,
+                       Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
+                       Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int startLevel=0, int numDesiredLevels=10 /*,Needs*/)
      {
        std::cout << "Hierarchy::FullPopulate()" << std::endl;
