@@ -80,9 +80,7 @@ namespace Cthulhu {
 #endif // CTHULHU_TPETRA_ONLY
 
     //! Set multi-vector values to random numbers.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void randomize() =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Replace the underlying Map with a compatible one.
 #ifdef CTHULHU_NOT_IMPLEMENTED
@@ -170,9 +168,7 @@ namespace Cthulhu {
 
     //! Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j) =0;
-#endif // CTHULHU_TPETRA_ONLY
 
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
 #ifdef CTHULHU_TPETRA_ONLY

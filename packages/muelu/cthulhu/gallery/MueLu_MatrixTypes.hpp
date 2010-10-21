@@ -55,7 +55,7 @@ TriDiag(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
 {
   Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix;
 
-  Matrix = Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Map,  3);
+  Matrix = Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(Map,  3); //TODO: remove template parameters
 
   LocalOrdinal NumMyElements = Map->getNodeNumElements();
   Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = Map->getNodeElementList();

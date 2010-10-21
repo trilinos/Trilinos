@@ -4,12 +4,14 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
+#include <Teuchos_ArrayView.hpp>
+
 // enums and defines
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Map.hpp"
 
-#include "Tpetra_Map.hpp" //tmp
-#include "Epetra_Map.h"
+#include <Tpetra_Map.hpp> //tmp
+#include <Epetra_Map.h>
 
 #include <Cthulhu_EpetraComm.hpp>
 
@@ -31,10 +33,10 @@ namespace Cthulhu {
 
   /** \brief A class for partitioning distributed objects.
 
-   This class is templated on \c int and \c GlobalOrdinal. 
-   The \c GlobalOrdinal type, if omitted, defaults to the \c int type.
+   This class is templated on \c int and \c int. 
+   The \c int type, if omitted, defaults to the \c int type.
   */
-  class EpetraMap : public Cthulhu::Map<int,int, Node> {
+  class EpetraMap : public Cthulhu::Map<int,int> {
 
   public:
 
@@ -271,7 +273,7 @@ namespace Cthulhu {
       using Teuchos::VERB_EXTREME;
       
       const size_t nME = getNodeNumElements();
-      Teuchos::ArrayView<const GlobalOrdinal> myEntries = getNodeElementList();
+      Teuchos::ArrayView<const int> myEntries = getNodeElementList();
       int myImageID = comm_->getRank();
       int numImages = comm_->getSize();
       
