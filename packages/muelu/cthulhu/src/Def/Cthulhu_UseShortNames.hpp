@@ -10,10 +10,6 @@ typedef Cthulhu::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
 typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 typedef Cthulhu::TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
 
-typedef Cthulhu::EpetraMap<LocalOrdinal, GlobalOrdinal, Node> EpetraMap;
-typedef Cthulhu::EpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> EpetraCrsMatrix;
-typedef Cthulhu::EpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> EpetraMultiVector;
-
 // Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by ScalarType, LocalOrdinal, GlobalOrdinal, Node).
 
 // TODO: add namespace {} for shortcut types

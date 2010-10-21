@@ -50,9 +50,9 @@ typedef Cthulhu::TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node
 #include <Cthulhu_EpetraMap.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>
 
-typedef Cthulhu::EpetraMap<LocalOrdinal, GlobalOrdinal, Node> MyMap;
-typedef Cthulhu::EpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyCrsMatrix;
-typedef Cthulhu::EpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyMultiVector;
+typedef Cthulhu::EpetraMap MyMap;
+typedef Cthulhu::EpetraCrsMatrix MyCrsMatrix;
+typedef Cthulhu::EpetraMultiVector MyMultiVector;
 
 #endif // CTHULHU_USE_E/TPETRA
 
