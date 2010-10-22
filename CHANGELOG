@@ -4,6 +4,17 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.4.2 October 22, 2010
+
+1. Kokkos - Added missing KERNEL_PREFIX to some kernels, neede for more strict
+            CUDA 3.1
+
+2. Tifpack - Minor changes to allow preconditioners with Scalar==Complex
+
+3. Tpetra - Fixed bug in which repeated inserts to a CrsGraph row, requiring new
+            allocation, produces incorrect behavior
+
+
 Release update 10.4.1 August 18, 2010
 
 1. ForTrilinos - Added new package ForTrilinos
