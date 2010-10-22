@@ -2922,8 +2922,7 @@ int Zoltan_Color_Test(
                               /* The application must allocate enough space */    
     ZOLTAN_ID_PTR local_ids,  /* Input: local ids of the vertices */
                               /* The application must allocate enough space */
-    int *color_exp            /* Output: Colors assigned to local vertices */
-                              /* The application must allocate enough space */
+    int *color_exp            /* Input: Colors assigned to local vertices */
     ); 
     
 
