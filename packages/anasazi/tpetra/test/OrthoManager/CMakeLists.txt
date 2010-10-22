@@ -25,11 +25,11 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   #     )
   # ENDIF ()
 
-  IF (${PACKAGE_NAME}_ENABLE_TSQR)
+  IF (Kokkos_ENABLE_TSQR)
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      Tpetra_OrthoManager_Real_Tsqr_test
+      Tpetra_OrthoManager_Tsqr_test
       SOURCES cxx_main_tsqr.cpp 
-      ARGS 
+      ARGS "--ortho=TSQR"
       COMM serial mpi
       )
   ENDIF ()

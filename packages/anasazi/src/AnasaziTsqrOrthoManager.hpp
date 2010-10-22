@@ -34,9 +34,9 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
-#include "AnasaziTsqrAdaptor.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -121,7 +121,7 @@ namespace Anasazi {
     typedef Teuchos::ScalarTraits< MagnitudeType > SCTM;
     typedef MultiVecTraits< ScalarType, MV >       MVT;
 
-    typedef typename Anasazi::TsqrAdaptor< ScalarType, MV >::adaptor_type tsqr_adaptor_type;
+    typedef typename MVT::tsqr_adaptor_type tsqr_adaptor_type;
     typedef Teuchos::RCP< tsqr_adaptor_type > tsqr_adaptor_ptr;
 
   public:
@@ -143,7 +143,7 @@ namespace Anasazi {
       Q_ (Teuchos::null),
       eps_ (SCT::eps()), // ScalarTraits< ScalarType >::eps() returns MagnitudeType
       blockReorthogThreshold_ (MagnitudeType(1) / MagnitudeType(2)),
-      relativeRankTolerance_ (MagnitudeType(100)*SCT::eps()),
+      relativeRankTolerance_ (MagnitudeType(100)*SCTM::eps()),
       throwOnReorthogFault_ (true)
     {}
 
@@ -248,18 +248,18 @@ namespace Anasazi {
       //
       // Compute rank-revealing decomposition (in this case, TSQR of X
       // followed by SVD of the R factor and appropriate updating of
-      // the resulting Q factor) of X.  X is modified in place, and Q
-      // contains the results.
+      // the resulting Q factor) of X.  X is modified in place, and Q_
+      // contains the resulting explicit Q factor.  Later, we will
+      // copy this back into X.  
       //
-      // Compute TSQR and SVD of X.  Resulting orthogonal vectors go
-      // into Q_, and coefficients (not necessarily upper triangular)
-      // go into B.
+      // The matrix *B will only be upper triangular if X is of full
+      // numerical rank.
+      //
       int rank;
       try {
-	typedef typename tsqr_adaptor_type::factor_output_type 
-	  factor_output_type;
-	factor_output_type factorOutput = tsqrAdaptor_->factor (X, *B);
-	tsqrAdaptor_->explicitQ (X, factorOutput, *Q_);
+	tsqrAdaptor_->factorExplicit (X, *Q_, *B);
+	// This call will only modify *B if *B on input is not of full
+	// numerical rank.
 	rank = tsqrAdaptor_->revealRank (*Q_, *B, relativeRankTolerance());
       } catch (std::exception& e) {
 	throw OrthoError (e.what());
@@ -267,7 +267,8 @@ namespace Anasazi {
       // Now we should copy Q_ back into X, but don't do it yet: if we
       // want to fill the last ncols-rank columns with random data, we
       // should do so in Q_, because it's fresh in the cache.
-      if (false)
+      //if (false)
+      if (true)
 	{
 	  // If X did not have full (numerical rank), augment the last
 	  // ncols-rank columns of X with random data.
@@ -474,7 +475,8 @@ namespace Anasazi {
 	    }
 	  else // Slowly reorthogonalize, one vector at a time, the offending vectors of X.
 	    {
-	      throw std::logic_error ("Not implemented yet");
+	      throw std::logic_error ("Slow-and-careful reorthogonalization "
+				      "is not yet implemented");
 
 	      // for (int k = 0; k < faultIndices.size(); ++k)
 	      // 	{
@@ -757,6 +759,14 @@ namespace Anasazi {
     typedef Teuchos::RCP< serial_matrix_type >                   serial_matrix_ptr;
     typedef Teuchos::Array< Teuchos::RCP< serial_matrix_type > > prev_coeffs_type;
     typedef typename Teuchos::ScalarTraits< ScalarType >::magnitudeType magnitude_type; 
+
+    /// \brief Default constructor (sets Op to Teuchos::null)
+    ///
+    TsqrMatOrthoManager () :
+      MatOrthoManager< ScalarType, MV, OP >(Teuchos::null),
+      pTsqr_ (Teuchos::null), // Lazy initialization
+      pSvqb_ (Teuchos::null)  // Lazy initialization
+    {}
 
     /// \brief Constructor
     ///

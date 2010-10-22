@@ -192,11 +192,13 @@ namespace Belos {
 
     /*! \brief This method computes the error in orthonormality of a multivector.
      */
-    virtual typename Teuchos::ScalarTraits< ScalarType >::magnitudeType orthonormError(const MV &X) const = 0;
+    virtual typename Teuchos::ScalarTraits< ScalarType >::magnitudeType 
+    orthonormError(const MV &X) const = 0;
 
     /*! \brief This method computes the error in orthogonality of two multivectors.
      */
-    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType orthogError(const MV &X1, const MV &X2) const = 0;
+    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    orthogError(const MV &X1, const MV &X2) const = 0;
 
     //@}
 

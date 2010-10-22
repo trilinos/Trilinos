@@ -31,11 +31,15 @@
 
 #include <Kokkos_NodeTrace.hpp>
 
-/*! \file AnasaziTpetraAdapter.hpp
-  \brief Specializaitons of Anasazi multi-vector and operator traits classes for the Tpetra MultiVector and Operator classes.
-*/
-
-// TODO: the assumption is made that the solver, multivector and operator are templated on the same scalar. this will need to be modified.
+/// \file AnasaziTpetraAdapter.hpp
+/// \brief Adaptor between Anasazi and Tpetra::{MultiVector,Operator}
+///
+/// Specializations of Anasazi multi-vector and operator traits
+/// classes for the Tpetra MultiVector and Operator classes.
+///
+/// \note TODO: Here, we assume the solver, multivector and operator
+/// are all templated on the same scalar.  This assumption should be
+/// relaxed, e.g., for implementing multiprecision solvers.
 
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Operator.hpp>
@@ -44,17 +48,15 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_DefaultSerialComm.hpp>
 
-#include "AnasaziConfigDefs.hpp"
-#include "AnasaziTypes.hpp"
-#include "AnasaziMultiVecTraits.hpp"
-#include "AnasaziOperatorTraits.hpp"
+#include <AnasaziConfigDefs.hpp>
+#include <AnasaziTypes.hpp>
+#include <AnasaziMultiVecTraits.hpp>
+#include <AnasaziOperatorTraits.hpp>
 #include <Kokkos_NodeAPIConfigDefs.hpp>
 
-#ifdef HAVE_ANASAZI_TSQR
-#  include "AnasaziTsqrAdaptor.hpp" 
-#include "TsqrAdaptor_Tpetra_MultiVector.hpp" 
-#include "TsqrRandomizer_Tpetra_MultiVector.hpp" 
-#endif // HAVE_ANASAZI_TSQR
+#ifdef HAVE_KOKKOS_TSQR
+#  include <Tpetra_TsqrAdaptor.hpp>
+#endif // HAVE_KOKKOS_TSQR
 
 
 namespace Anasazi {
@@ -291,22 +293,13 @@ namespace Anasazi {
     static void MvPrint( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, std::ostream& os )
     { mv.print(os); }
 
+#ifdef HAVE_KOKKOS_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for Tpetra::MultiVector
+    ///
+    typedef Tpetra::TsqrAdaptor< Tpetra::MultiVector< Scalar, LO, GO, Node > > tsqr_adaptor_type;
+#endif // HAVE_KOKKOS_TSQR
   };        
-
-#ifdef HAVE_ANASAZI_TSQR
-  ////////////////////////////////////////////////////////////////////
-  //
-  // Implementation of Anasazi::TsqrAdaptor for Tpetra::MultiVector.
-  //
-  ////////////////////////////////////////////////////////////////////
-
-  template< class Scalar, class LO, class GO, class Node >
-  class TsqrAdaptor< Scalar, Tpetra::MultiVector< Scalar, LO, GO, Node > >
-  {
-  public:
-    typedef TSQR::Trilinos::TsqrTpetraAdaptor< Scalar, LO, GO, Node > adaptor_type;
-  };
-#endif // HAVE_ANASAZI_TSQR
 
   ////////////////////////////////////////////////////////////////////
   //

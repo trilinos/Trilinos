@@ -1639,7 +1639,11 @@ namespace Tpetra {
         char lclerror = ( stat == IDNotPresent ? 1 : 0 );
         char gblerror;
         Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,outArg(gblerror));
-        std::string tfecfFuncName("globalAssemble()");
+	// This string was defined with the same value above; we don't
+	// need to redefine here and trigger annoying compiler
+	// warnings about shadowing declarations.
+	//
+        //std::string tfecfFuncName("globalAssemble()");
         TEST_FOR_EXCEPTION_CLASS_FUNC(gblerror != 0, std::runtime_error, ": non-local entries correspond to invalid rows.");
       }
 

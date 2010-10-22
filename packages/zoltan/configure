@@ -2059,6 +2059,16 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+#
+# We don't want people to configure in the source directory.  Some
+# things may break.
+#
+
+if test -e configure.ac ; then
+  echo "You are trying to run configure in the source directory.  This is not allowed."
+  exit
+fi
+
 # Configure should create src/Zoltan_config.h from src/Zoltan_config.h.in
 ac_config_headers="$ac_config_headers src/include/Zoltan_config.h:src/include/Zoltan_config.h.in"
 

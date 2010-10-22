@@ -756,7 +756,7 @@ int frac = 0, mod = 0;
 MPI_Op op;
 MPI_User_function Zoltan_PartDist_MPIOp;
 struct Zoltan_part_info *part_sizes=NULL;
-float sum_parts;
+float sum_parts, part_total;
 
   MPI_Op_create(&Zoltan_PartDist_MPIOp,1,&op);
 
@@ -857,6 +857,12 @@ float sum_parts;
 
       if (part_sizes != NULL){
         /* Use ratio of part sizes to assign parts to procs */
+
+        part_total = 0.0;
+        for (i=0; i < zz->LB.Part_Info_Len; i++){
+          part_total += part_sizes[i].Size;
+        }
+
         pdist[0] = 0;
         zz->LB.Single_Proc_Per_Part = 1;
 
@@ -864,7 +870,7 @@ float sum_parts;
 
         for (i = 1; i < max_global_parts; i++){
 
-          sum_parts += part_sizes[i-1].Size;
+          sum_parts += (part_sizes[i-1].Size / part_total);
 
           pdist[i] = sum_parts * num_proc;
 

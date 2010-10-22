@@ -98,6 +98,22 @@ APPEND_SET(HEADERS
   BelosTFQMRIter.hpp
   )
 
+######################################################################
+## BEGIN TSQR setup
+######################################################################
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_TSQR)
+IF(${PACKAGE_NAME}_ENABLE_TSQR)
+  #
+  # Build the TSQR-based OrthoManager and MatOrthoManager classes.
+  #
+  APPEND_SET(HEADERS BelosTsqrOrthoManager.hpp)
+ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
+
+######################################################################
+## END TSQR setup
+######################################################################
+
 #
 # C) Define the targets for package's library(s)
 #
