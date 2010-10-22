@@ -2,6 +2,14 @@
 Release Notes for Trilinos Package Kokkos
 -----------------------------------------
 
+Trilinos 10.6.1:
+----------------
+
+* Fixed some ansi/pednatic build warnings in the node tests.
+* Added sync() method to all nodes, modified node timings test to use it, documented it in Kokkos Node API module. Added cudaSyncThreads() to native CUDA/Thrust timings. Broke node timings into multiple exectuables, to keep TBB and TPI from stepping on each other.
+* Added native threading examples to Kokkos Node API tests for timing comparisons, kokkos/NodeAPI/test.
+* Added ifdefed TPI_Block() and TPI_Unblock() around GEMM calls in Kokkos::DefaultArithmetic<TPINode>
+* Added missing clearStatistics() method to CUDANodeMemoryModel
 
 Trilinos 10.6:
 --------------
