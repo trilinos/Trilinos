@@ -1237,7 +1237,7 @@ int ierr = ZOLTAN_OK;
   /* Error check */
   if (comm->nProc_x * comm->nProc_y != nProc) {
     ZOLTAN_PRINT_ERROR(proc, yo,
-                       "Values for PHG_NPROC_X and PHG_NPROC_Y "
+                       "Values for PHG_NPROC_VERTEX and PHG_NPROC_EDGE "
                        "do not evenly divide the "
                        "total number of processors.");
     ierr = ZOLTAN_FATAL;
