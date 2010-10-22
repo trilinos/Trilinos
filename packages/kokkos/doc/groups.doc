@@ -16,8 +16,9 @@
     - TPL_ENABLE_CUDA:BOOL=ON
     - TPL_ENABLE_Thrust:BOOL=ON
     - Thrust_INCLUDE_DIRS=/path/above/thrust/directory
+    - Trilinos_ENABLE_DEVELOPMENT_MODE:BOOL=OFF
     .
-    At this point, the Trilinos build system should look for the NVIDIA CUDA compiler and libraries in the default paths, depending on your system.
+    At this point, the Trilinos build system should look for the NVIDIA CUDA compiler and libraries in the default paths, depending on your system. The disabling of development m
 
     After this, the main thing that needs to be done is to specify the use of the ThrustGPUNode type in your Kokkos (and Tpetra, etc.) objects.
 */
