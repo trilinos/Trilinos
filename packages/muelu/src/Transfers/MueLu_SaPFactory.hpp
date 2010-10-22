@@ -24,7 +24,7 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
     //@}
 
     //@{ Build methods.
-    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {std::cout << "SaPFactory: Building a prolongator" << std::endl; return true;}
+    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {*(this->out_) << "SaPFactory: Building a prolongator" << std::endl; return true;}
     //@}
 
 }; //class SaPFactory

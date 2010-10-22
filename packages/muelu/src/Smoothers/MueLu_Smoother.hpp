@@ -1,15 +1,23 @@
 #ifndef MUELU_SMOOTHER_HPP
 #define MUELU_SMOOTHER_HPP
 
+#include "Teuchos_VerboseObject.hpp"
+
+/*!
+  @class Smoother class.
+  @brief Smoother class. Just a stub right now.
+  Just a stub right now
+*/
 namespace MueLu {
 
 template<class Scalar,class LO, class GO, class Node>
-class Smoother {
+class Smoother :  public Teuchos::VerboseObject<Smoother<Scalar,LO,GO,Node> > {
 
   private:
 
   public:
 
+    //! Constructor
     Smoother() {std::cout << "Instantiating a new smoother" << std::endl;}
 
     virtual ~Smoother() {}

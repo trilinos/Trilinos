@@ -24,7 +24,7 @@ class TransPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
     //@}
 
     //@{ Build methods.
-    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {std::cout << "TransPFactory: Building a restriction operator" << std::endl; return true;}
+    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {*(this->out_) << "TransPFactory: Building a restriction operator" << std::endl; return true;}
     //@}
 
 }; //class TransPFactory

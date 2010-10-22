@@ -2,6 +2,7 @@
 #define MUELU_BASEFACTORY_HPP
 
 //#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 /*!
   @class Factory base class.
@@ -14,15 +15,18 @@
 
 namespace MueLu {
 
-class BaseFactory {
+class BaseFactory : public Teuchos::VerboseObject<BaseFactory> {
   private:
     Teuchos::ParameterList Needs_;
     int outputLevel_;
     int priorOutputLevel_;
 
+  protected:
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+
   public:
     //@{ Constructors/Destructors.
-    BaseFactory() {}
+    BaseFactory() : out_(this->getOStream()) {}
 
     virtual ~BaseFactory() {}
     //@}

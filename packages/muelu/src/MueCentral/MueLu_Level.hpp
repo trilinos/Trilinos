@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Tpetra_CrsMatrix.hpp"    //FIXME replace with Cthulhu Operator
 #include "Tpetra_Vector.hpp"       //FIXME replace with Cthulhu Vector
 #include "MueLu_Smoother.hpp"
@@ -16,7 +17,7 @@
 namespace MueLu {
 
 template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-class Level {
+class Level : public Teuchos::VerboseObject<Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> > {
 
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Operator;
   typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
@@ -46,17 +47,21 @@ class Level {
     //TODO enable this data
     //Graph Graph_;         // saving a graph for SA
 
+  protected:
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+
   public:
 
     //@{
     //! @name Constructors / Destructors
-    Level() : A_(0), R_(0), P_(0), levelID_(-1) {
-      std::cout << "Instantiating new unitialized Level" << std::endl;
+    Level() : A_(0), R_(0), P_(0), levelID_(-1), out_(this->getOStream())
+    {
+      *out_ << "Instantiating new unitialized Level" << std::endl;
     }
 
     //! Copy constructor.
-    Level(Level const &Source) {
-      std::cout << "Copy constructing existing Level" << std::endl;
+    Level(Level const &Source) : out_(this->getOStream()) {
+      *out_ << "Copy constructing existing Level" << std::endl;
       A_ = Source.A_;
       R_ = Source.R_;
       P_ = Source.P_;
