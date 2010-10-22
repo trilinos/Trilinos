@@ -8,12 +8,11 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayViewDecl.hpp>
 
+#include <Cthulhu_Classes.hpp>
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_MultiVector.hpp> // TODO: Vector
-
-// Using Tpetra
-#include <Cthulhu_TpetraMultiVector.hpp> // TODO: Vector
+#include <Cthulhu_MultiVector.hpp>        // TODO: Vector
+#include <Cthulhu_MultiVectorFactory.hpp> // TODO: Vector
 
 using Teuchos::RCP;
 
@@ -35,36 +34,29 @@ using Teuchos::RCP;
 //      6) tCRS <-- mat*v via matrix-matrix multiply
 //
 //      7) print if  abs(y[i] - tCRS[i])/z[i] > 1.e-8
-template <typename ScalarType,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
-int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node> > & mat) {
+template <typename ScalarType,typename LocalOrdinal,typename GlobalOrdinal,typename Node, typename LocalMatOps>
+int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
 
-  // Define template types
-  typedef ScalarType    SC;
-  typedef LocalOrdinal  LO;
-  typedef GlobalOrdinal GO;
-  typedef Node          NO;
-
-  // Get ride of template parameters for some classes
-  typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
-  typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node> CrsMatrix;
-  typedef Cthulhu::MultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
-
-  // Use Tpetra
-  typedef Cthulhu::TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyMultiVector; // TODO
-  //
+#include "Cthulhu_UseShortNames.hpp"
 
   // const RCP<const Map> & colMap = mat->getColMap(); // unused
   const RCP<const Map> & rowMap = mat->getRowMap();
   const RCP<const Map> & domMap = mat->getDomainMap();
   const RCP<const Map> & ranMap = mat->getRangeMap();
   const int MyPID  = rowMap->getComm()->getRank();
-  MyMultiVector vv(domMap,1), yy(ranMap,1), ww(rowMap,1,true), zz(rowMap,1,true); // TODO: replace MultiVector by Vector (,1) //TODO: RCP ?
-  Teuchos::ArrayRCP<SC> v = vv.getDataNonConst(0);
-  Teuchos::ArrayRCP<SC> y = yy.getDataNonConst(0);
-  Teuchos::ArrayRCP<SC> w = ww.getDataNonConst(0);
-  Teuchos::ArrayRCP<SC> z = zz.getDataNonConst(0);
 
-  vv.randomize();
+  // MyMultiVector vv(domMap,1), yy(ranMap,1), ww(rowMap,1,true), zz(rowMap,1,true); 
+  RCP<MultiVector> vv = MultiVectorFactory::Build(domMap,1); // TODO: replace MultiVector by Vector (,1) //TODO: RCP ?
+  RCP<MultiVector> yy = MultiVectorFactory::Build(ranMap,1);
+  RCP<MultiVector> ww = MultiVectorFactory::Build(rowMap,1,true);
+  RCP<MultiVector> zz = MultiVectorFactory::Build(rowMap,1,true);
+  
+  Teuchos::ArrayRCP<SC> v = vv->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> y = yy->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> w = ww->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> z = zz->getDataNonConst(0);
+  
+  vv->randomize();
 
   for (unsigned int i = 0; i < domMap->getNodeNumElements(); i++) {
      if ((v[i] > -.5 ) && (v[i] < 0. )) v[i] -= .5;
@@ -72,7 +64,7 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
   }
 
   // y <-- mat*v via standard multiply
-  mat->multiply(vv,yy, Teuchos::NO_TRANS, 1, 0);
+  mat->multiply(*vv,*yy, Teuchos::NO_TRANS, 1, 0);
 
   // TODO ??
   // Copy v and add ghost stuff imported from other processors
@@ -96,12 +88,12 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
 
     for (LO j = 0; j < RowLength; j++) {
       w[i] += (values[j]*v[indices[j]]);
-      // ww.sumIntoLocalValue(i, 0, values[j]*v[indices[j]]); // Not implemented
+      // ww->sumIntoLocalValue(i, 0, values[j]*v[indices[j]]); // Not implemented
     }
 
     for (LO j = 0; j < RowLength; j++) {
       z[i] += fabs(values[j]*v[indices[j]]);
-      // zz.sumIntoLocalValue(i, 0, fabs(values[j]*v[indices[j]])); // Not implemented
+      // zz->sumIntoLocalValue(i, 0, fabs(values[j]*v[indices[j]])); // Not implemented
     }
     if (z[i] == 0.) z[i] = 1.e-20;
   }

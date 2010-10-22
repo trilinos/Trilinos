@@ -71,10 +71,12 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
       to each row in the graph, and a block-entry corresponding to each column-
       index in the graph.
   */
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //TODO: need BlockCrsGraph
-  //  VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
+  VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
+#endif // CTHULHU_NOT_IMPLEMENTED
 
-  TpetraVbrMatrix(const Teuchos::RCP<const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) { CTHULHU_DEBUG_ME;} //TODO
+  TpetraVbrMatrix(const Teuchos::RCP<const Tpetra::VbrMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) { CTHULHU_DEBUG_ME; } //TODO
 
   //! Destructor
   virtual ~TpetraVbrMatrix();
@@ -90,9 +92,10 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
       See also the Operator::apply method which is implemented below.
   */
   //TODO virtual
-//   template <class DomainScalar, class RangeScalar>
-//       void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
-
+#ifdef CTHULHU_NOT_IMPLEMENTED
+   template <class DomainScalar, class RangeScalar>
+       void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+#endif // CTHULHU_NOT_IMPLEMENTED
   //@}
 
   //! Triangular Solve -- Matrix must be triangular.
@@ -109,9 +112,10 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
       point-diagonal must be zero.
   */
   //TODO virtual
-//   template <class DomainScalar, class RangeScalar>
-//       void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
-
+#ifdef CTHULHU_NOT_IMPLEMENTED
+     template <class DomainScalar, class RangeScalar>
+     void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+#endif // CTHULHU_NOT_IMPLEMENTED
   //@}
 
   //! @name Operator Methods
@@ -372,8 +376,10 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
     Throws an exception if the input-vector's map is not the same as
     getBlockRowMap()->getPointMap().
   */
-  //TODO:Vector  inline void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
-
+  //TODO:Vector  
+#ifdef CTHULHU_NOT_IMPLEMENTED
+  inline void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
+#endif // CTHULHU_NOT_IMPLEMENTED
   //@}
 
   //! @name Overridden from Teuchos::Describable
@@ -446,4 +452,3 @@ private:
 //----------------------------------------------------------------------------
 
 #endif //CTHULHU_VBRMATRIX_DECL_HPP
-

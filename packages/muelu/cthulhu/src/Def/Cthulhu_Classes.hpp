@@ -11,9 +11,12 @@ namespace Cthulhu {
   template<class, class, class, class, class> class TpetraCrsMatrix;
   template<class, class, class, class> class TpetraMultiVector;
 
-  template<class, class, class> class EpetraMap;
-  template<class, class, class, class, class> class EpetraCrsMatrix;
-  template<class, class, class, class> class EpetraMultiVector;
+  template<class, class, class, class, class> class CrsMatrixFactory;
+  template<class, class, class, class> class MultiVectorFactory;
+
+  class EpetraMap;
+  class EpetraCrsMatrix;
+  class EpetraMultiVector;
 }
 
 #endif

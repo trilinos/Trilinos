@@ -188,7 +188,7 @@ namespace Cthulhu {
     //@{ Misc. 
 
     //! Get the Comm object for this Map
-    const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const { CTHULHU_DEBUG_ME; return map_->getComm(); };
+    const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const { CTHULHU_DEBUG_ME; return map_->getComm(); }; // removed &
 
     //! Get the Node object for this Map
     const Teuchos::RCP<Node> & getNode() const { CTHULHU_DEBUG_ME; return map_->getNode(); };

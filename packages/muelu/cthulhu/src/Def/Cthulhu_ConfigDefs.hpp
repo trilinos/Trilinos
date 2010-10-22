@@ -197,5 +197,6 @@ namespace Cthulhu {
 namespace CthuluExamples {
 }
 
+#define CTHULHU_ERR_CHECK(arg) { int r = arg; if (r < 0) { std::cout << "r = " << r << std::endl; assert(r>=0); } ; }; // TODO: throw exceptions
 
 #endif // CTHULHU_CONFIGDEFS_HPP

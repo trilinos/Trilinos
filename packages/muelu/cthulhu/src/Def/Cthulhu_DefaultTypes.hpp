@@ -11,6 +11,7 @@ typedef int    GlobalOrdinal;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
+// TODO remove from this file
 // Define convenient shortcut for data types
 typedef ScalarType    SC;
 typedef LocalOrdinal  LO;

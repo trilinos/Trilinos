@@ -1,6 +1,8 @@
 #ifndef CTHULHU_VBRMATRIX__HPP
 #define CTHULHU_VBRMATRIX_HPP
 
+#ifdef CTHULHU_TPETRA_ONLY
+
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_VbrMatrix.hpp>
@@ -96,8 +98,10 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
       See also the Operator::apply method which is implemented below.
   */
   //TODO virtual
-//   template <class DomainScalar, class RangeScalar>
-//       void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+#ifdef CTHULHU_NOT_IMPLEMENTED
+  template <class DomainScalar, class RangeScalar>
+  void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+#endif // CTHULHU_NOT_IMPLEMENTED
 
   //@}
 
@@ -115,8 +119,10 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
       point-diagonal must be zero.
   */
   //TODO virtual
-//   template <class DomainScalar, class RangeScalar>
-//       void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+#ifdef CTHULHU_NOT_IMPLEMENTED
+  template <class DomainScalar, class RangeScalar>
+  void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
+#endif // CTHULHU_NOT_IMPLEMENTED
 
   //@}
 
@@ -378,8 +384,10 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
     Throws an exception if the input-vector's map is not the same as
     getBlockRowMap()->getPointMap().
   */
-  //TODO: need Vector  virtual void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const =0;
-
+  //TODO: need Vector  
+#ifdef CTHULHU_NOT_IMPLEMENTED
+virtual void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const =0;
+#endif // CTHULHU_NOT_IMPLEMENTED
   //@}
 
   //! @name Overridden from Teuchos::Describable
@@ -445,5 +453,6 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
 // 
 //----------------------------------------------------------------------------
 
-#endif //CTHULHU_VBRMATRIX_DECL_HPP
+#endif
 
+#endif //CTHULHU_VBRMATRIX_DECL_HPP
