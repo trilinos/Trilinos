@@ -1,2 +1,3 @@
 ADD_SUBDIRECTORY(simple_test)
 ADD_SUBDIRECTORY(dofmngr_test)
+ADD_SUBDIRECTORY(integration_rule)
