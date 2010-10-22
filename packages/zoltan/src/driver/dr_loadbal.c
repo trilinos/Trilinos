@@ -916,11 +916,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	  else {
 	    int maxcolor = 0, gmaxcolor;
 	    for (i = 0; i < mesh->num_elems; i++)
-	      if (color[i] > maxcolor) maxcolor++;
+	      if (color[i] > maxcolor)
+                  maxcolor = color[i];
 	    MPI_Allreduce(&maxcolor, &gmaxcolor, 1,
 			  MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 	    if (Proc == 0)
-	      printf("Valid distance-1 coloring found; max color = %d.\n",
+	      printf("Valid coloring found; #colors = %d.\n",
 		     gmaxcolor);
 	  }
       }
