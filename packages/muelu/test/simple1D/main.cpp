@@ -134,7 +134,6 @@ int main(int argc, char** argv)
   RCP<SmootherFactory>    SmooFact = Teuchos::null;
 
   //H.FillHierarchy(Pfact,Rfact,Acfact);
-  std::cout << "\nCalling FullPopulate\n" << std::endl;
   H.FullPopulate(Pfact,Rfact,Acfact,SmooFact,0,maxLevels);
 
   return(0);

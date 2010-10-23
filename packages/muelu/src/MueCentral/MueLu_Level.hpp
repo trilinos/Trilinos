@@ -56,12 +56,12 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LocalOrdinal,GlobalOrdi
     //! @name Constructors / Destructors
     Level() : A_(0), R_(0), P_(0), levelID_(-1), out_(this->getOStream())
     {
-      *out_ << "Instantiating new unitialized Level" << std::endl;
+      Teuchos::OSTab tab(out_); *out_ << "Instantiating new unitialized Level" << std::endl;
     }
 
     //! Copy constructor.
     Level(Level const &Source) : out_(this->getOStream()) {
-      *out_ << "Copy constructing existing Level" << std::endl;
+      Teuchos::OSTab tab(out_); *out_ << "Copy constructing existing Level" << std::endl;
       A_ = Source.A_;
       R_ = Source.R_;
       P_ = Source.P_;
@@ -72,8 +72,8 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LocalOrdinal,GlobalOrdi
     //@{
     //! @name Build methods
     //! Builds a new Level object.
-    static Teuchos::RCP< Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build() {
-      std::cout << "Building a Level" << std::endl;
+    static Teuchos::RCP< Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build(std::ostream &os) {
+      os << "Building a Level" << std::endl;
       return Teuchos::rcp( new Level<Scalar,LocalOrdinal,GlobalOrdinal,Node>() );
     }
     //@}

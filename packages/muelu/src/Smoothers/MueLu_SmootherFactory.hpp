@@ -25,7 +25,7 @@ class SmootherFactory : public BaseFactory {
 
   public:
     //@{ Constructors/Destructors.
-    SmootherFactory() {*(this->out_) << "Instantiating a new SmootherFactory" << std::endl;}
+    SmootherFactory() {Teuchos::OSTab tab(this->out_); *(this->out_) << "Instantiating a new SmootherFactory" << std::endl;}
 
     virtual ~SmootherFactory() {}
     //@}
@@ -35,6 +35,7 @@ class SmootherFactory : public BaseFactory {
 
     //! Build pre-smoother and/or post-smoother
     bool Build(Level<Scalar,LO,GO,Node> &level /*,Teuchos::ParameterList Specs*/) {
+      Teuchos::OSTab tab(this->out_);
       *(this->out_) << "Building pre-smoother and/or post-smoother" << std::endl;
       return true;
     }

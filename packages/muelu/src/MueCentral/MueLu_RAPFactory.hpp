@@ -26,7 +26,7 @@ class RAPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
 
     //@{ Build methods.
     bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {
-      *(this->out_) << "RAPFactory: Building a coarse operator" << std::endl; return true;}
+     Teuchos::OSTab tab(this->out_);  *(this->out_) << "RAPFactory: Building a coarse operator" << std::endl; return true;}
     //@}
 
 

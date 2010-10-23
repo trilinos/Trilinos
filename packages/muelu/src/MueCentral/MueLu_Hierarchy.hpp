@@ -82,6 +82,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,Node> > {
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int startLevel=0, int numDesiredLevels=10 /*,Needs*/)
      {
+       Teuchos::OSTab tab(out_);
        *out_ << "Hierarchy::FullPopulate()" << std::endl;
        bool goodBuild=true;
        int i = startLevel;
@@ -91,8 +92,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,Node> > {
          //TODO I'm not sure how this can happen, but if it does, we must insert code to handle
          //TODO it similarly to MueMat.
          if (PFact != Teuchos::null /*|| isempty(Levels_[i+1] */) {
-           if ((i+1) >= (int) Levels_.size())
-             Levels_.push_back( Levels_[i]->Build() );
+           if ((i+1) >= (int) Levels_.size()) {
+             Teuchos::OSTab tab(out_);
+             Levels_.push_back( Levels_[i]->Build(*out_) );
+           }
            Levels_[i+1]->SetLevelID(i+1);
            goodBuild = PFact->Build(*(Levels_[i]),*(Levels_[i+1]) /*,MySpecs*/);
          }
@@ -119,7 +122,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,Node> > {
      } //FullPopulate()
 
      //FIXME should return status
-     void SetSmoothers() { *out_ << "Hierarchy::SetSmoothers()" << std::endl; }
+     void SetSmoothers() {Teuchos::OSTab tab(out_); *out_ << "Hierarchy::SetSmoothers()" << std::endl; }
 
      //FIXME should return status
      void FillHierarchy(Teuchos::RCP<OperatorFactory> PFact,
@@ -136,7 +139,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,Node> > {
      }
 
      //FIXME should return solution vector
-     void Iterate() { *out_ << "Hierarchy::Iterate()" << std::endl; }
+     void Iterate() {Teuchos::OSTab tab(out_); *out_ << "Hierarchy::Iterate()" << std::endl; }
 
    //@}
     
