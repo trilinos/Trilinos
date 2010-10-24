@@ -22,8 +22,6 @@ namespace panzer {
     
     panzer::Basis basis(basis_type, int_rule);
 
-    std::cout << "ROGER = " << basis.basis_ref->size();
-
     TEST_ASSERT(basis.getCardinality() == 9);
     TEST_ASSERT(basis.getNumCells() == 20);
     TEST_ASSERT(basis.getNumIntPoints() == 4);
