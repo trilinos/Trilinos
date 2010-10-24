@@ -12,6 +12,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  integration_values
+  SOURCES integration_values.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
   
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   dimension
