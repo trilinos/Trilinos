@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Remove the directories to make sure that we don't have rebuild problems
+# that can sometimes happen with doxygen
+
+rm -r html
+
+# Create new directories manually since the doxygen exe under windows
+# seems to be messing this up.
+
+mkdir html
+
+# Build the documentation
+
+./build_docs_guts
