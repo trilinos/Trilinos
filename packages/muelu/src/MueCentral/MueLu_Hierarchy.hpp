@@ -11,7 +11,6 @@
 #include "MueLu_SmootherFactory.hpp"
 
 namespace MueLu {
-
 /*!
   @class Hierarchy
   @brief Provides methods to build a multigrid hierarchy and apply multigrid cycles.

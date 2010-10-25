@@ -7,21 +7,17 @@
 #include "MueLu_Smoother.hpp"
 #include "MueLu_Level.hpp"
 
+namespace MueLu {
+
 /*!
   @class Smoother factory base class.
   @brief Base class for smoother factories.
 */
 
-namespace MueLu {
-
 template <class Scalar,class LO,class GO,class Node>
 class SmootherFactory : public BaseFactory {
 
   typedef MueLu::Smoother<Scalar,LO,GO,Node> Smoother;
-
-  private:
-    int outputLevel_;
-    int priorOutputLevel_;
 
   public:
     //@{ Constructors/Destructors.
@@ -41,25 +37,6 @@ class SmootherFactory : public BaseFactory {
     }
 
     //@}
-
-/*
-//FIXME The needs mechanism hasn't been decided upon.
-    void AddNeeds(Teuchos::ParameterList const &newNeeds) {
-      CrossFactory.MergeNeeds(newNeeds,Needs_);
-    }
-
-    Teuchos::ParameterList& GetNeeds(Teuchos::ParameterList &newNeeds) {
-      return Needs_;
-    }
-*/
-
-    void SetOutputLevel(int outputLevel) {
-      outputLevel_ = outputLevel;
-    }
-
-    int GetOutputLevel() {
-      return outputLevel_;
-    }
 
 }; //class SmootherFactory
 

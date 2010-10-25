@@ -9,21 +9,19 @@
 #include "Tpetra_Vector.hpp"       //FIXME replace with Cthulhu Vector
 #include "MueLu_Smoother.hpp"
 
+namespace MueLu {
 /*!
   @class Level
   @brief Multigrid level object.
 */
+template<class Scalar,class LO, class GO, class Node>
+class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,Node> > {
 
-namespace MueLu {
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
+  typedef Tpetra::Vector<Scalar,LO,GO,Node> Vector;
+  typedef MueLu::Smoother<Scalar,LO,GO,Node> Smoother;
 
-template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-class Level : public Teuchos::VerboseObject<Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> > {
-
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Operator;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
-  typedef MueLu::Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Smoother;
-
-  //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> &level);
+  //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,Node> &level);
 
   private: 
 
@@ -72,9 +70,9 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LocalOrdinal,GlobalOrdi
     //@{
     //! @name Build methods
     //! Builds a new Level object.
-    static Teuchos::RCP< Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build(std::ostream &os) {
+    static Teuchos::RCP< Level<Scalar,LO,GO,Node> > Build(std::ostream &os) {
       os << "Building a Level" << std::endl;
-      return Teuchos::rcp( new Level<Scalar,LocalOrdinal,GlobalOrdinal,Node>() );
+      return Teuchos::rcp( new Level<Scalar,LO,GO,Node>() );
     }
     //@}
 
@@ -202,8 +200,8 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LocalOrdinal,GlobalOrdi
 }; //class Level
 
 //Print function.  Not a friend b/c it uses only public interfaces for data access.
-template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &level) {
+template<class Scalar,class LO, class GO, class Node>
+std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,Node> const &level) {
   os << "Printing Level object " << level.GetLevelID() << std::endl;
   if (level.GetA() != Teuchos::null) os << *level.GetA() << std::endl;
   if (level.GetR() != Teuchos::null) os << *level.GetR() << std::endl;

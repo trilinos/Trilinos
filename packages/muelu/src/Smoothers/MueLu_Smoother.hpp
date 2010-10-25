@@ -3,12 +3,12 @@
 
 #include "Teuchos_VerboseObject.hpp"
 
+namespace MueLu {
+
 /*!
   @class Smoother class.
   @brief Smoother class. Just a stub right now.
-  Just a stub right now
 */
-namespace MueLu {
 
 template<class Scalar,class LO, class GO, class Node>
 class Smoother :  public Teuchos::VerboseObject<Smoother<Scalar,LO,GO,Node> > {

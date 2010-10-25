@@ -4,13 +4,12 @@
 #include <iostream>
 #include "MueLu_OperatorFactory.hpp"
 
+
+namespace MueLu {
 /*!
   @class RAPFactory class.
   @brief Factory for building coarse matrices.
 */
-
-namespace MueLu {
-
 template<class Scalar, class LO, class GO, class Node>
 class RAPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
 
@@ -32,6 +31,7 @@ class RAPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
 
 }; //class RAPFactory
 
+//! Friend print method.
 template<class Scalar, class LO, class GO, class Node>
 std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LO,GO,Node> &factory) {
   os << "Printing RAPFactory object" << std::endl;

@@ -5,7 +5,8 @@
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
-
+/*! @class SaLevel
+*/
 template<class SC,class LO, class GO, class NO>
 class SaLevel : public Level<SC,LO,GO,NO> {
 

@@ -4,12 +4,12 @@
 #include <iostream>
 #include "MueLu_OperatorFactory.hpp"
 
+namespace MueLu {
+
 /*!
   @class SaPFactory class.
   @brief Factory for building Smoothed Aggregation prolongators.
 */
-
-namespace MueLu {
 
 template<class Scalar, class LO, class GO, class Node>
 class SaPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
@@ -18,12 +18,16 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
 
   public:
     //@{ Constructors/Destructors.
+    //! Constructor.
     SaPFactory() {}
 
+    //! Destructor.
     virtual ~SaPFactory() {}
     //@}
 
     //@{ Build methods.
+
+    //! Build method.
     bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {
       Teuchos::OSTab tab(this->out_); *(this->out_) << "SaPFactory: Building a prolongator" << std::endl; return true;
     }
@@ -31,6 +35,7 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
 
 }; //class SaPFactory
 
+//! Friend print function.
 template<class Scalar, class LO, class GO, class Node>
 std::ostream& operator<<(std::ostream& os, SaPFactory<Scalar,LO,GO,Node> &factory) {
   os << "Printing an SaPFactory object" << std::endl;
