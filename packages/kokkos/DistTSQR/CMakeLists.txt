@@ -26,6 +26,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_RMessenger.hpp
     Tsqr_TestSetup.hpp
     Tsqr_TeuchosMessenger.hpp
+    Tsqr_TrivialMessenger.hpp
     Tsqr_TsqrTest.hpp
     )
   APPEND_SET(SOURCES
