@@ -1,8 +1,11 @@
 #ifndef __TSQR_MpiDatatype_hpp
 #define __TSQR_MpiDatatype_hpp
 
-#include <mpi.h>
-#include <stdexcept>
+#include <Teuchos_ConfigDefs.hpp> // HAVE_MPI
+
+#ifdef HAVE_MPI
+#  include <mpi.h>
+#  include <stdexcept>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -90,4 +93,6 @@ namespace TSQR {
   } // namespace MPI
 } // namespace TSQR
 
+
+#endif // HAVE_MPI
 #endif // __TSQR_MpiDatatype_hpp
