@@ -31,7 +31,7 @@
 
 #include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR, etc.
 
-#ifdef KOKKOS_HAVE_TSQR
+#ifdef HAVE_KOKKOS_TSQR
 #  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
 #  include <Tsqr.hpp> // full (internode + intranode) TSQR
 #  include <Tsqr_DistTsqr.hpp> // internode TSQR
@@ -216,7 +216,7 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // KOKKOS_HAVE_TSQR
+#endif // HAVE_KOKKOS_TSQR
 
 #endif // __Tpetra_TsqrAdaptor_hpp
 
