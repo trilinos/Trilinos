@@ -31,8 +31,8 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # 
 
-EXOIITEST = -L../.. -lexoIIv2c
-LOCALEXO = ../../libexoIIv2c.a
+EXOIITEST = -L../.. -lexodus
+LOCALEXO = ../../libexodus.a
 LIBS = $(EXOIITEST) $(NETCDF_LIB) -lm
 
 PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
