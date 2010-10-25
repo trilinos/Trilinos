@@ -1,0 +1,49 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 10.6 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 10.6.1 October 25, 2010
+
+1. EpetraExt - Fix memory leak in PETSc interface.
+
+2. EpetraExt - Added FECrsMatris extraction capability to
+               PointToBlockDiagPermute.
+
+3. Kokkos - Fixed some ansi/pednatic build warnings in the node tests.
+
+4. Kokkos - Added sync() method to all nodes, modified node timings test to use
+            it, documented it in Kokkos Node API module. Added cudaSyncThreads()
+            to native CUDA/Thrust timings. Broke node timings into multiple
+            exectuables, to keep TBB and TPI from stepping on each other.
+
+5. Kokkos - Added native threading examples to Kokkos Node API tests for timing
+            comparisons, kokkos/NodeAPI/test.
+
+6. Kokkos - Added ifdefed TPI_Block() and TPI_Unblock() around GEMM calls in
+            Kokkos::DefaultArithmetic<TPINode>
+
+7. Kokkos - Added missing clearStatistics() method to CUDANodeMemoryModel
+
+8. Teko - Fix build problem with GCC 4.5.1.
+
+9. Tpetra - Added new HybridPlatform examples, under
+            tpetra/examples/HybridPlatform. Anasazi and Belos examples are
+            currently not built, though they are functional.
+
+10. Tpetra - Added Added new MultiVector GEMM tests, to evaluate potential
+            interference of TPI/TBB threads and a threaded BLAS, to
+            tpetra/test/MultiVector.
+
+11. Tpetra - Added Tpetra timers to Anasazi and Belos adaptors.
+
+12. Tpetra - Added test/documentation build of Tpetra::CrsMatrix against
+            KokkosExamples::DummySpasreKernelClass
+
+13. Tpetra - Fixed some bugs, added some bug verification tests, disabled by
+            default.
+
+
+14. Zoltan - Fix bug in Distance-2 coloring code when all edges are external.
+
