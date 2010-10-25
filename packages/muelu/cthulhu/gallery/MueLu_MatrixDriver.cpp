@@ -10,7 +10,9 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
+#if !defined(CTHULHU_USE_TPETRA) && !defined(CTHULHU_USE_EPETRA)
 #define CTHULHU_USE_TPETRA
+#endif
 #include <Cthulhu.hpp>         // TODO: <> or ""
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
@@ -28,6 +30,13 @@ using Teuchos::RCP;
 
 int main(int argc, char* argv[]) 
 {
+
+#ifdef CTHULHU_USE_TPETRA
+  std::cout << "CTHULHU_USE_TPETRA" << std::endl;
+#else
+  std::cout << "CTHULHU_USE_EPETRA" << std::endl;
+#endif
+
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
@@ -62,13 +71,13 @@ int main(int argc, char* argv[])
   RCP<const Map > map;
   map = rcp( new MyMap(numGlobalElements, indexBase, comm) );
 
-  RCP<CrsMatrix> A;
   Teuchos::ParameterList matrixList;
   matrixList.set("nx",nx);
   matrixList.set("ny",ny);
   matrixList.set("nz",nz);
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  RCP<CrsMatrix> A = CreateCrsMatrix<SC,LO,GO>(matrixType,map,matrixList);
 
+  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if (comm->getRank() == 0)
     std::cout << "\n================ MAP =====================================================\n" << std::endl;
   map->describe(*out, Teuchos::VERB_EXTREME);
@@ -77,7 +86,6 @@ int main(int argc, char* argv[])
 
   if (comm->getRank() == 0)
     std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
-  A = CreateCrsMatrix<SC,LO,GO>(matrixType,map,matrixList);
   A->describe(*out, Teuchos::VERB_EXTREME);
 
   return EXIT_SUCCESS;
