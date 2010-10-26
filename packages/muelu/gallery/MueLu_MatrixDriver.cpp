@@ -89,13 +89,13 @@ int main(int argc, char** argv)
   RCP<const Tpetra::Map<Ordinal,Ordinal,NodeType> > map;
   map = rcp( new Tpetra::Map<Ordinal,Ordinal,NodeType>(numGlobalElements, indexBase, comm, Tpetra::GloballyDistributed, node) );
 
-  RCP<Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,NodeType> > A;
   ParameterList matrixList;
   matrixList.set("nx",nx);
   matrixList.set("ny",ny);
   matrixList.set("nz",nz);
-  RCP<FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+  RCP<Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,NodeType> > A = CreateCrsMatrix<Scalar,Ordinal,Ordinal,NodeType>(matrixType,map,matrixList);
 
+  RCP<FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if (comm->getRank() == 0)
     std::cout << "\n================ MAP =====================================================\n" << std::endl;
   map->describe(*out, VERB_EXTREME);
@@ -104,7 +104,6 @@ int main(int argc, char** argv)
 
   if (comm->getRank() == 0)
     std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
-  A = CreateCrsMatrix<Scalar,Ordinal,Ordinal,NodeType>(matrixType,map,matrixList);
   A->describe(*out, VERB_EXTREME);
 
   return(0);
