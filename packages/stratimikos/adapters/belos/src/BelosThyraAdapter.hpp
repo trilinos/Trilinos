@@ -362,6 +362,14 @@ namespace Belos {
 
     //@}
 
+#ifdef HAVE_BELOS_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for Epetra_MultiVector
+    ///
+    /// \warning This is a STUB for now; it doesn't work.
+    ///
+    typedef Thyra::TsqrAdaptor< ScalarType > tsqr_adaptor_type;
+#endif // HAVE_BELOS_TSQR
   };        
 
   ///////////////////////////////////////////////////////////////////////// 
