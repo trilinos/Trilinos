@@ -4,12 +4,12 @@
 #include <iostream>
 #include "MueLu_OperatorFactory.hpp"
 
+namespace MueLu {
+
 /*!
   @class TransPFactory class.
-  @brief Factory for building Smoothed Aggregation prolongators.
+  @brief Factory for building restriction operators.
 */
-
-namespace MueLu {
 
 template<class Scalar, class LO, class GO, class Node>
 class TransPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
@@ -18,17 +18,26 @@ class TransPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
 
   public:
     //@{ Constructors/Destructors.
-    TransPFactory() {}
 
+    //! Constructor.
+    TransPFactory() {
+      Teuchos::OSTab tab(this->out_);
+      *(this->out_) << "TransPFactory: Instantiating a new factory" << std::endl;
+    }
+
+    //! Destructor.
     virtual ~TransPFactory() {}
     //@}
 
     //@{ Build methods.
-    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {std::cout << "TransPFactory: Building a restriction operator" << std::endl; return true;}
+    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {
+      Teuchos::OSTab tab(this->out_); *(this->out_) << "TransPFactory: Building a restriction operator" << std::endl; return true;
+    }
     //@}
 
 }; //class TransPFactory
 
+//! Friend print function.
 template<class Scalar, class LO, class GO, class Node>
 std::ostream& operator<<(std::ostream& os, TransPFactory<Scalar,LO,GO,Node> &factory) {
   os << "Printing a TransPFactory object" << std::endl;

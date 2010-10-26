@@ -4,25 +4,24 @@
 #include <iostream>
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Tpetra_CrsMatrix.hpp"    //FIXME replace with Cthulhu Operator
 #include "Tpetra_Vector.hpp"       //FIXME replace with Cthulhu Vector
 #include "MueLu_Smoother.hpp"
 
+namespace MueLu {
 /*!
   @class Level
   @brief Multigrid level object.
 */
+template<class Scalar,class LO, class GO, class Node>
+class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,Node> > {
 
-namespace MueLu {
+  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
+  typedef Tpetra::Vector<Scalar,LO,GO,Node> Vector;
+  typedef MueLu::Smoother<Scalar,LO,GO,Node> Smoother;
 
-template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-class Level {
-
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> Operator;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
-  typedef MueLu::Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Smoother;
-
-  //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> &level);
+  //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,Node> &level);
 
   private: 
 
@@ -46,17 +45,21 @@ class Level {
     //TODO enable this data
     //Graph Graph_;         // saving a graph for SA
 
+  protected:
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+
   public:
 
     //@{
     //! @name Constructors / Destructors
-    Level() : A_(0), R_(0), P_(0), levelID_(-1) {
-      std::cout << "Instantiating new unitialized Level" << std::endl;
+    Level() : A_(0), R_(0), P_(0), levelID_(-1), out_(this->getOStream())
+    {
+      Teuchos::OSTab tab(out_); *out_ << "Instantiating new uninitialized Level" << std::endl;
     }
 
     //! Copy constructor.
-    Level(Level const &Source) {
-      std::cout << "Copy constructing existing Level" << std::endl;
+    Level(Level const &Source) : out_(this->getOStream()) {
+      Teuchos::OSTab tab(out_); *out_ << "Copy constructing existing Level" << std::endl;
       A_ = Source.A_;
       R_ = Source.R_;
       P_ = Source.P_;
@@ -67,9 +70,9 @@ class Level {
     //@{
     //! @name Build methods
     //! Builds a new Level object.
-    static Teuchos::RCP< Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Build() {
-      std::cout << "Building a Level" << std::endl;
-      return Teuchos::rcp( new Level<Scalar,LocalOrdinal,GlobalOrdinal,Node>() );
+    static Teuchos::RCP< Level<Scalar,LO,GO,Node> > Build(std::ostream &os) {
+      os << "Building a Level" << std::endl;
+      return Teuchos::rcp( new Level<Scalar,LO,GO,Node>() );
     }
     //@}
 
@@ -180,8 +183,6 @@ class Level {
     //TODO ==================================================
     //TODO The following methods still need to be implemented.
     //TODO ==================================================
-    SetPreSmoother
-    SetPostSmoother
     GetPreSmoother
     GetPostSmoother
     GetGraph
@@ -197,8 +198,8 @@ class Level {
 }; //class Level
 
 //Print function.  Not a friend b/c it uses only public interfaces for data access.
-template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-std::ostream& operator<<(std::ostream& os, Level<Scalar,LocalOrdinal,GlobalOrdinal,Node> const &level) {
+template<class Scalar,class LO, class GO, class Node>
+std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,Node> const &level) {
   os << "Printing Level object " << level.GetLevelID() << std::endl;
   if (level.GetA() != Teuchos::null) os << *level.GetA() << std::endl;
   if (level.GetR() != Teuchos::null) os << *level.GetR() << std::endl;

@@ -1,28 +1,32 @@
 #ifndef MUELU_BASEFACTORY_HPP
 #define MUELU_BASEFACTORY_HPP
 
+#include "Teuchos_VerboseObject.hpp"
 //#include "Teuchos_ParameterList.hpp"
 
+namespace MueLu {
 /*!
-  @class Factory base class.
-  @brief Base class for factories.
+  @class BaseFactory
+  @brief Parent class for factories.
   Maintains just 2 things:
    - Ouput level status
    - A list of 'Needs' for the factory. For example, a restriction factory that transposes the tentative
      prolongator 'Needs' the prolongator factory to save this.
+
+  Derived from Teuchos::VerboseObject.
 */
-
-namespace MueLu {
-
-class BaseFactory {
+class BaseFactory : public Teuchos::VerboseObject<BaseFactory> {
   private:
     Teuchos::ParameterList Needs_;
     int outputLevel_;
     int priorOutputLevel_;
 
+  protected:
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+
   public:
     //@{ Constructors/Destructors.
-    BaseFactory() {}
+    BaseFactory() : out_(this->getOStream()) {}
 
     virtual ~BaseFactory() {}
     //@}

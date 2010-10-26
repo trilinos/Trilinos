@@ -2,6 +2,7 @@
 #define MUELU_HIERARCHY_HPP
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 #include "MueLu_Level.hpp"
 #include "MueLu_SaPFactory.hpp"
@@ -10,7 +11,6 @@
 #include "MueLu_SmootherFactory.hpp"
 
 namespace MueLu {
-
 /*!
   @class Hierarchy
   @brief Provides methods to build a multigrid hierarchy and apply multigrid cycles.
@@ -22,7 +22,7 @@ namespace MueLu {
   a V-cycle apply method.
 */
 template<class Scalar,class LO, class GO, class Node>
-class Hierarchy {
+class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,Node> > {
 
   typedef MueLu::Level<Scalar,LO,GO,Node>           Level;
   typedef MueLu::OperatorFactory<Scalar,LO,GO,Node> OperatorFactory;
@@ -38,13 +38,16 @@ class Hierarchy {
 
     std::vector<Teuchos::RCP<Level> > Levels_;
 
+  protected:
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+
   public:
 
   //! @name Constructors/Destructors
   //@{
 
     //! Default constructor.
-    Hierarchy() {}
+    Hierarchy() : out_(this->getOStream()) {}
 
     //! Copy constructor.
     Hierarchy(Hierarchy const &inHierarchy) {
@@ -78,7 +81,8 @@ class Hierarchy {
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
                        int startLevel=0, int numDesiredLevels=10 /*,Needs*/)
      {
-       std::cout << "Hierarchy::FullPopulate()" << std::endl;
+       Teuchos::OSTab tab(out_);
+       *out_ << "Hierarchy::FullPopulate()" << std::endl;
        bool goodBuild=true;
        int i = startLevel;
        while (i < startLevel + numDesiredLevels - 1)
@@ -87,8 +91,10 @@ class Hierarchy {
          //TODO I'm not sure how this can happen, but if it does, we must insert code to handle
          //TODO it similarly to MueMat.
          if (PFact != Teuchos::null /*|| isempty(Levels_[i+1] */) {
-           if ((i+1) >= (int) Levels_.size())
-             Levels_.push_back( Levels_[i]->Build() );
+           if ((i+1) >= (int) Levels_.size()) {
+             Teuchos::OSTab tab(out_);
+             Levels_.push_back( Levels_[i]->Build(*out_) );
+           }
            Levels_[i+1]->SetLevelID(i+1);
            goodBuild = PFact->Build(*(Levels_[i]),*(Levels_[i+1]) /*,MySpecs*/);
          }
@@ -106,7 +112,7 @@ class Hierarchy {
            }
          if (SmooFact != Teuchos::null) {
            Teuchos::RCP<Smoother> preSm, postSm;
-           SmooFact->Build(preSm,postSm,*(Levels_[i]) /*,MySpecs*/);
+           SmooFact->Build(*(Levels_[i]) /*,MySpecs*/);
            if (preSm != Teuchos::null) Levels_[i]->SetPreSmoother(preSm);
            if (postSm != Teuchos::null) Levels_[i]->SetPostSmoother(postSm);
          }
@@ -115,7 +121,7 @@ class Hierarchy {
      } //FullPopulate()
 
      //FIXME should return status
-     void SetSmoothers() { std::cout << "Hierarchy::SetSmoothers()" << std::endl; }
+     void SetSmoothers() {Teuchos::OSTab tab(out_); *out_ << "Hierarchy::SetSmoothers()" << std::endl; }
 
      //FIXME should return status
      void FillHierarchy(Teuchos::RCP<OperatorFactory> PFact,
@@ -132,7 +138,7 @@ class Hierarchy {
      }
 
      //FIXME should return solution vector
-     void Iterate() { std::cout << "Hierarchy::Iterate()" << std::endl; }
+     void Iterate() {Teuchos::OSTab tab(out_); *out_ << "Hierarchy::Iterate()" << std::endl; }
 
    //@}
     
