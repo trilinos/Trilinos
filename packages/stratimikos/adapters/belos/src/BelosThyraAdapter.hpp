@@ -41,6 +41,9 @@
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
+#ifdef HAVE_BELOS_TSQR
+#  include <Thyra_TsqrAdaptor.hpp>
+#endif // HAVE_BELOS_TSQR
 
 namespace Belos {
   
