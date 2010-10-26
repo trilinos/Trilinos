@@ -29,6 +29,8 @@
 
 #include "AztecOOParameterList.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_StandardValidatorXMLConverters.hpp"
 
 namespace {
 
@@ -41,11 +43,21 @@ namespace {
 const std::string AztecSolver_name = "Aztec Solver";
 
 const std::string AztecPreconditioner_name = "Aztec Preconditioner";
+
 enum EAztecPreconditioner {
   AZTEC_PREC_NONE, AZTEC_PREC_ILU, AZTEC_PREC_ILUT, AZTEC_PREC_JACOBI,
   AZTEC_PREC_SYMMGS, AZTEC_PREC_POLY, AZTEC_PREC_LSPOLY
 };
+
+/** Needed for serialization KLN 23/09/2010 */
+inline istream& operator>>(istream& is, EAztecPreconditioner& prec){
+  int intval;
+  is >> intval;
+  prec = (EAztecPreconditioner)intval;
+  return is;
+}
   
+
 const std::string Overlap_name = "Overlap";
 
 const std::string GraphFill_name = "Graph Fill";
@@ -181,6 +193,18 @@ getValidAztecOOParameters()
   using Teuchos::setIntParameter;
   using Teuchos::setDoubleParameter;
   using Teuchos::ParameterList;
+  /**
+   * Must add this otherwise one of the stratimikos tests fail.
+   * By adding this converter we can write the ParameterList out to XML
+   * successfully.
+   * KLN 23/09/2010
+   */
+  Teuchos::ValidatorXMLConverterDB::addConverter(
+    Teuchos::DummyObjectGetter<
+      Teuchos::StringToIntegralParameterEntryValidator<EAztecPreconditioner> 
+    >::getDummyObject(),
+    Teuchos::DummyObjectGetter<Teuchos::StringToIntegralValidatorXMLConverter<
+      EAztecPreconditioner> >::getDummyObject());
   //
   RCP<ParameterList> pl = validAztecOOParams;
   if(pl.get()) return pl;

@@ -314,6 +314,14 @@ public:
   inline
   const ParameterEntry* getEntryPtr(const std::string& name) const;  
 
+  /*! \brief Retrieves the RCP for an entry with the name <tt>name</tt> if
+   *  it exists. */
+  inline RCP<ParameterEntry> getEntryRCP(const std::string& name);  
+  
+  /*! \brief Retrieves the RCP for a constant entry with the name <tt>name</tt> if
+   *  it exists. */
+  inline RCP<const ParameterEntry> getEntryRCP(const std::string& name) const;
+
   //@}
 
   //! @name Parameter removal functions
@@ -797,7 +805,8 @@ ParameterList::getEntryPtr(const std::string& name_in)
   Map::iterator i = params_.find(name_in);
   if ( i == params_.end() )
     return NULL;
-  return &entry(i);
+  //return &entry(i);
+  return &(params_[name_in]);
 }
 
 inline
@@ -808,6 +817,24 @@ ParameterList::getEntryPtr(const std::string& name_in) const
   if ( i == params_.end() )
     return NULL;
   return &entry(i);
+}
+
+inline RCP<ParameterEntry>
+ParameterList::getEntryRCP(const std::string& name_in)
+{
+  Iterator i = params_.find(name_in);
+  if ( i == params_.end() )
+    return null;
+  return rcpFromRef(entry(i));
+}
+
+inline RCP<const ParameterEntry>
+ParameterList::getEntryRCP(const std::string& name_in) const
+{
+  ConstIterator i = params_.find(name_in);
+  if ( i == params_.end() )
+    return null;
+  return rcpFromRef(entry(i));
 }
 
 // Attribute Functions

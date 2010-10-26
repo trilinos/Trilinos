@@ -1,0 +1,17 @@
+<ParameterList>
+  <Parameter name="blah" value="3" id="1" type="int"/>
+  <Parameter name="string param" value="vale" id="2" type="string"/>
+  <Dependencies>
+    <Dependency type="ConditionVisualDependency">
+      <Dependee parameterID="2"/>
+      <Dependent parameterID="1"/>
+      <Condition parameterID="10" type="stringCondition">
+        <Values>
+          <String value="steve"/>
+        </Values>
+      </Condition>
+    </Dependency>
+  </Dependencies>
+</ParameterList>
+  
+    

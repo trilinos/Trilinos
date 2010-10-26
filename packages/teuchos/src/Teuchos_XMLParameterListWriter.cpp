@@ -27,132 +27,136 @@
 // @HEADER
 
 #include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_ParameterEntryXMLConverterDB.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_XMLParameterListExceptions.hpp"
+#include "Teuchos_DependencyXMLConverterDB.hpp"
 
-using namespace Teuchos;
+
+namespace Teuchos{
+
 
 XMLParameterListWriter::XMLParameterListWriter()
 {;}
 
 
-XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
+XMLObject 
+XMLParameterListWriter::toXML(
+  const ParameterList& p, 
+  RCP<const DependencySheet> depSheet) const
 {
-  XMLObject rtn("ParameterList");
-  
-  for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i)
-    {
-      const ParameterEntry& val = p.entry(i);
-      const std::string& name = p.name(i);
-      XMLObject child = toXML(val);
-      child.addAttribute("name", name);
-      rtn.addChild(child);
-    }
+  EntryIDsMap entryIDsMap;
+  ValidatortoIDMap validatorIDsMap;
+  ParameterEntry::ParameterEntryID peIDCounter = 0;
 
+  //We build an initial map full of validators that are located in the 
+  //parameter list. That way we can convert the parameter entries.
+  buildInitialValidatorMap(p, validatorIDsMap);
+
+  XMLObject toReturn = 
+    convertParameterList(p, peIDCounter, entryIDsMap, validatorIDsMap);
+  toReturn.addAttribute(getNameAttributeName(), p.name());
+
+  if(!depSheet.is_null()){
+    XMLObject deps = 
+      convertDependencies(depSheet, entryIDsMap, validatorIDsMap);
+    toReturn.addChild(deps);
+  }
+
+  //Validators must be done after depencneies because dependencies might add
+  //entries to the validator map. KLN 09/20/2010
+  XMLObject validators = convertValidators(p, validatorIDsMap);
+  toReturn.addChild(validators);
+
+  return toReturn;
+}
+
+void XMLParameterListWriter::buildInitialValidatorMap(
+  const ParameterList& p,
+  ValidatortoIDMap& validatorIDsMap) const
+{
+  for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i) {
+    const ParameterEntry& entry = p.entry(i);
+    if(entry.isList()){
+      buildInitialValidatorMap(
+        getValue<ParameterList>(entry),
+        validatorIDsMap);
+    }
+    else if(nonnull(entry.validator())){
+      validatorIDsMap.insert(entry.validator());
+    }
+  }
+}
+
+
+XMLObject XMLParameterListWriter::convertValidators(
+  const ParameterList& p, ValidatortoIDMap& validatorIDsMap) const
+{
+  XMLObject validators(getValidatorsTagName());
+  for(
+    ValidatortoIDMap::const_iterator it = validatorIDsMap.begin();
+    it != validatorIDsMap.end();
+    ++it)
+  {
+    validators.addChild(
+      ValidatorXMLConverterDB::convertValidator(it->first, validatorIDsMap));
+  }
+  return validators;
+}
+
+
+XMLObject XMLParameterListWriter::convertParameterList(
+  const ParameterList& p,
+  ParameterEntry::ParameterEntryID& idCounter,
+  EntryIDsMap& entryIDsMap,
+  const ValidatortoIDMap& validatorIDsMap) const
+{
+  XMLObject rtn(getParameterListTagName());
+  
+  for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i){
+    RCP<const ParameterEntry> entry = p.getEntryRCP(i->first);
+    if(entry->isList()){
+      XMLObject newPL = convertParameterList(
+        getValue<ParameterList>(entry), 
+        idCounter, 
+        entryIDsMap,
+        validatorIDsMap);
+      newPL.addAttribute(
+        getNameAttributeName(), getValue<ParameterList>(*entry).name());
+      newPL.addAttribute(
+        ParameterEntryXMLConverter::getIdAttributeName(), idCounter);
+      entryIDsMap.insert(EntryIDsMap::value_type(entry, idCounter));
+      rtn.addChild(newPL);
+      ++idCounter;
+    }
+    else{
+      rtn.addChild(ParameterEntryXMLConverterDB::convertEntry(
+        entry, p.name(i), idCounter, validatorIDsMap));
+      entryIDsMap.insert(EntryIDsMap::value_type(entry, idCounter));
+      ++idCounter;
+    }
+  }
   return rtn;
 }
 
-XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
+XMLObject 
+XMLParameterListWriter::convertDependencies(
+  RCP<const DependencySheet> depSheet,
+  const EntryIDsMap& entryIDsMap,
+  ValidatortoIDMap& validatorIDsMap) const
 {
-  if (entry.isList())
-    {
-      return toXML(getValue<ParameterList>(entry));
-    }
-
-  XMLObject rtn("Parameter");
-  std::string type;
-  std::string value;
-
-  if (entry.isType<int>())
-    {
-      type = "int";
-      value = toString(any_cast<int>(entry.getAny(false)));
-    }
-  else if (entry.isType<short>())
-    {
-      type = "short";
-      value = toString(any_cast<short>(entry.getAny(false)));
-    }
-  else if (entry.isType<double>())
-    {
-      type = "double";
-      value = toString(any_cast<double>(entry.getAny(false)));
-    }
-  else if (entry.isType<float>())
-    {
-      type = "float";
-      value = toString(any_cast<float>(entry.getAny(false)));
-    }
-  else if (entry.isType<std::string>())
-    {
-      type = "string";
-      value = toString(any_cast<std::string>(entry.getAny(false)));
-    }
-  else if (entry.isType<char>())
-    {
-      type = "char";
-      value = toString(any_cast<char>(entry.getAny(false)));
-    }
-  else if (entry.isType<bool>())
-    {
-      type = "bool";
-      value = toString(any_cast<bool>(entry.getAny(false)));
-    }
-
-  else if (entry.isType<Array<int> >())
-    {
-      const Array<int>
-        &a = any_cast<Array<int> >(entry.getAny(false));
-      type = "Array int";
-      value = a.toString();
-    }
-  else if (entry.isType<Array<short> >())
-    {
-      const Array<short>
-        &a = any_cast<Array<short> >(entry.getAny(false));
-      type = "Array short";
-      value = a.toString();
-    }
-  else if (entry.isType<Array<float> >())
-    {
-      const Array<float>
-        &a = any_cast<Array<float> >(entry.getAny(false));
-      type = "Array float";
-      value = a.toString();
-    }
-  else if (entry.isType<Array<double> >())
-    {
-      const Array<double>
-        &a = any_cast<Array<double> >(entry.getAny(false));
-      type = "Array double";
-      value = a.toString();
-    }
-  else if (entry.isType<Array<std::string> >())
-    {
-      const Array<std::string>
-        &a = any_cast<Array<std::string> >(entry.getAny(false));
-      type = "Array string";
-      value = a.toString();
-    }
-  else
-    {
-      type = "any";
-      std::ostringstream ss;
-      ss << entry;
-      value = TEUCHOS_OSTRINGSTREAM_GET_C_STR(ss);
-    }
-  
-
-  rtn.addAttribute("type", type);
-  rtn.addAttribute("value", value);
-  
-  if (entry.isDefault())
-    {
-      rtn.addAttribute("isDefault", "true");
-    }
-
-  if (entry.isUsed())
-    {
-      rtn.addAttribute("isUsed","true");
-    }
-
-  return rtn;
+  XMLObject toReturn(getDependenciesTagName());
+  for(
+    DependencySheet::DepSet::const_iterator it = depSheet->depBegin();
+    it != depSheet->depEnd();
+    ++it)
+  {
+    toReturn.addChild(DependencyXMLConverterDB::convertDependency(
+      *it, entryIDsMap, validatorIDsMap));
+  }
+  return toReturn;
 }
+
+
+} // namespace Teuchos
+

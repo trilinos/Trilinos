@@ -411,6 +411,7 @@ if (!is_null(b1))
 \ingroup teuchos_mem_mng_grp
 
  */
+
 template<class T>
 class RCP {
 public:
@@ -902,6 +903,27 @@ public: // Bad bad bad
 #endif
 
 };
+
+/** \brief Struct for comparing two RCPs. Simply compares
+* the raw pointers contained within the RCPs*/
+struct RCPComp {
+  /** \brief . */
+  template<class T1, class T2> inline
+  bool operator() (const RCP<T1> &p1, const RCP<T2> &p2) const{
+    return p1.get() < p2.get();
+  }
+};
+
+/** \brief Struct for comparing two RCPs. Simply compares
+* the raw pointers contained within the RCPs*/
+struct RCPConstComp {
+  /** \brief . */
+  template<class T1, class T2> inline
+  bool operator() (const RCP<const T1> &p1, const RCP<const T2> &p2) const{
+    return p1.get() < p2.get();
+  }
+};
+
 
 
 // 2008/09/22: rabartl: NOTE: I removed the TypeNameTraits<RCP<T> >

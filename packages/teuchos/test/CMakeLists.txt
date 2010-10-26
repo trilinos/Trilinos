@@ -6,7 +6,9 @@ ADD_SUBDIRECTORIES(
   BLAS
   Comm
   Containers
+  Conditions
   DenseMatrix
+  Dependencies
   FancyOutputting
   LAPACK
   MemoryManagement
@@ -18,6 +20,7 @@ ADD_SUBDIRECTORIES(
   TabularOutputter
   Time
   UnitTest
+  Validators
   Workspace
   XML
   XMLParser

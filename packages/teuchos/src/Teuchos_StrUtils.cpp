@@ -30,7 +30,7 @@
 #include "Teuchos_TestForException.hpp"
 
 
-using namespace Teuchos;
+namespace Teuchos {
 
 
 Array<std::string> StrUtils::readFile(std::istream& is, char comment)
@@ -39,13 +39,14 @@ Array<std::string> StrUtils::readFile(std::istream& is, char comment)
   Array<std::string> rtn(0);
 
   while (readLine(is, line))
-    {
-      if (line.length() > 0) rtn.append(before(line, comment));
-      line="";
-    }
+  {
+    if (line.length() > 0) rtn.append(before(line, comment));
+    line="";
+  }
 	
   return rtn;
 }
+
 
 Array<std::string> StrUtils::splitIntoLines(const std::string& input)
 {
@@ -66,6 +67,7 @@ Array<std::string> StrUtils::splitIntoLines(const std::string& input)
   return rtn;
 }
 
+
 Array<Array<std::string> > StrUtils::tokenizeFile(std::istream& is, char comment)
 {
   std::string line;
@@ -75,16 +77,17 @@ Array<Array<std::string> > StrUtils::tokenizeFile(std::istream& is, char comment
 	
   int count = 0;
   for (int i=0; i<lines.length(); i++)
-    {
-      if (lines[i].length() == 0) continue;
-      Array<std::string> tokens = stringTokenizer(lines[i]);
-      if (tokens.length() == 0) continue;
-      rtn.append(tokens);
-      count++;
-    }
+  {
+    if (lines[i].length() == 0) continue;
+    Array<std::string> tokens = stringTokenizer(lines[i]);
+    if (tokens.length() == 0) continue;
+    rtn.append(tokens);
+    count++;
+  }
 	
   return rtn;
 }
+
 
 bool StrUtils::readLine(std::istream& is, std::string& line)
 {
@@ -93,13 +96,12 @@ bool StrUtils::readLine(std::istream& is, std::string& line)
 	
   if (is.eof()) return false;
   if (is.getline(c, 499))
-    {
-      line = std::string(c);
-    }
+  {
+    line = std::string(c);
+  }
 	
   return true;
 }
-
 	
 
 Array<std::string> StrUtils::getTokensPlusWhitespace(const std::string& str){
@@ -107,60 +109,64 @@ Array<std::string> StrUtils::getTokensPlusWhitespace(const std::string& str){
   unsigned int start = 0;
 	
   while(start < str.length())
+  {
+    unsigned int wordStart =  findNextNonWhitespace(str, start);
+    /* add any preceding whitespace */
+    if (wordStart > start)
     {
-      unsigned int wordStart =  findNextNonWhitespace(str, start);
-			/* add any preceding whitespace */
-			if (wordStart > start)
-				{
-					rtn.append(subString(str, start, wordStart));
-				}
-			start = wordStart;
-			/* add the next word */
-      int stop = findNextWhitespace(str, start);
-      if (start-stop == 0) return rtn;
-      std::string sub = subString(str, start, stop);
-      rtn.append(sub);
-			start = stop;// findNextNonWhitespace(str, stop);
+      rtn.append(subString(str, start, wordStart));
     }
+    start = wordStart;
+    /* add the next word */
+    int stop = findNextWhitespace(str, start);
+    if (start-stop == 0) return rtn;
+    std::string sub = subString(str, start, stop);
+    rtn.append(sub);
+    start = stop;// findNextNonWhitespace(str, stop);
+  }
   return rtn;
 }
+
 
 Array<std::string> StrUtils::stringTokenizer(const std::string& str){
   Array<std::string> rtn(0);
   unsigned int start = 0;
 	
   while(start < str.length())
-    {
-      start =  findNextNonWhitespace(str, start);
-      int stop = findNextWhitespace(str, start);
-      if (start-stop == 0) return rtn;
-      std::string sub = subString(str, start, stop);
-      rtn.append(sub);
-      start =  findNextNonWhitespace(str, stop);
-    }
+  {
+    start =  findNextNonWhitespace(str, start);
+    int stop = findNextWhitespace(str, start);
+    if (start-stop == 0) return rtn;
+    std::string sub = subString(str, start, stop);
+    rtn.append(sub);
+    start =  findNextNonWhitespace(str, stop);
+  }
   return rtn;
 }
 
-std::string StrUtils::reassembleFromTokens(const Array<std::string>& tokens, int iStart)
+
+std::string StrUtils::reassembleFromTokens(const Array<std::string>& tokens,
+  int iStart)
 {
   std::string rtn;
 
   for (int i=iStart; i<tokens.length(); i++) 
-    {
-      rtn += tokens[i];
-      if (i < (tokens.length()-1)) rtn += " ";
-    }
+  {
+    rtn += tokens[i];
+    if (i < (tokens.length()-1)) rtn += " ";
+  }
   return rtn;
 }
+
 
 void StrUtils::splitList(const std::string& big, Array<std::string>& list) 
 {
   if (subString(big, 0,1)!="[") 
-    {
-      list.resize(1);
-      list[0] = big;
-      return;
-    }
+  {
+    list.resize(1);
+    list[0] = big;
+    return;
+  }
 	
   int parenDepth = 0;
   int localCount = 0;
@@ -170,26 +176,26 @@ void StrUtils::splitList(const std::string& big, Array<std::string>& list)
   // start at 1 to ignore '[';
 	
   for (unsigned int i=1; i<big.length(); i++)
+  {
+    if (big[i]=='(') parenDepth++;
+    if (big[i]==')') parenDepth--;
+    if (big[i]==']') 
     {
-      if (big[i]=='(') parenDepth++;
-      if (big[i]==')') parenDepth--;
-      if (big[i]==']') 
-	{
-	  tmp[localCount]='\0'; 
-	  list.append(tmp);
-	  break;
-	}
-      if (big[i]==',' && parenDepth==0)
-	{
-	  tmp[localCount]='\0';
-	  list.append(tmp);
-	  tmp = big;
-	  localCount = 0;
-	  continue;
-	}
-      tmp[localCount] = big[i];
-      localCount++;
+      tmp[localCount]='\0'; 
+      list.append(tmp);
+      break;
     }
+    if (big[i]==',' && parenDepth==0)
+    {
+      tmp[localCount]='\0';
+      list.append(tmp);
+      tmp = big;
+      localCount = 0;
+      continue;
+    }
+    tmp[localCount] = big[i];
+    localCount++;
+  }
 }
 							
 
@@ -199,60 +205,59 @@ void StrUtils::splitList(const std::string& big, Array<std::string>& list)
 int StrUtils::findNextWhitespace(const std::string& str, int offset)
 {
   for (unsigned int i=0; i<(str.length()-offset); i++)
+  {
+    if (str[i+offset]==' ' || str[i+offset]=='\t' || str[i+offset]=='\n')
     {
-      if (str[i+offset]==' ' || str[i+offset]=='\t' || str[i+offset]=='\n')
-	{
-	  return i+offset;
-	}
+      return i+offset;
     }
+  }
   return str.length();
 }
+
 
 int StrUtils::findNextNonWhitespace(const std::string& str, int offset)
 {
   for (unsigned int i=0; i<(str.length()-offset); i++)
+  {
+    if (!(str[i+offset]==' ' || str[i+offset]=='\t' || str[i+offset]=='\n'))
     {
-      if (!(str[i+offset]==' ' || str[i+offset]=='\t' || str[i+offset]=='\n'))
-	{
-	  return i+offset;
-	}
+      return i+offset;
     }
+  }
   return str.length();
 }
 
 
 std::string StrUtils::varTableSubstitute(const std::string& rawLine,
-				    const Array<std::string>& varNames,
-				    const Array<std::string>& varValues)
+  const Array<std::string>& varNames,
+  const Array<std::string>& varValues)
 {
   TEST_FOR_EXCEPTION(varNames.length() != varValues.length(),
-                     std::runtime_error,
-                     "mismatched variable tables in varTableSubstitute");
+    std::runtime_error,
+    "mismatched variable tables in varTableSubstitute");
                      
   std::string line = rawLine;
   for (int i=0; i<varNames.length(); i++)
-    {
-      line = varSubstitute(line, varNames[i], varValues[i]);
-    }
+  {
+    line = varSubstitute(line, varNames[i], varValues[i]);
+  }
   return line;
 }
 
 
-
-
 std::string StrUtils::varSubstitute(const std::string& rawLine, 
-			       const std::string& varName, 
-			       const std::string& varValue)
+  const std::string& varName, 
+  const std::string& varValue)
 {
   std::string line = rawLine;
   
   // iterate because there might be more than one occurance on this line
   while (find(line, varName) >= 0)
-    {
-      std::string b = before(line, varName);
-      std::string a = after(line, varName);
-      line = b + varValue + a;
-    }
+  {
+    std::string b = before(line, varName);
+    std::string a = after(line, varName);
+    line = b + varValue + a;
+  }
   return line;
 }
 
@@ -265,10 +270,11 @@ std::string StrUtils::before(const std::string& str, char sub)
   return before(str, c);
 }
 
+
 std::string StrUtils::before(const std::string& str, const std::string& sub)
 {
   TEST_FOR_EXCEPTION(sub.c_str()==0,
-                     std::runtime_error, "String::before: arg is null pointer");
+    std::runtime_error, "String::before: arg is null pointer");
 
   char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str());
   if (p==0) return str;
@@ -277,10 +283,11 @@ std::string StrUtils::before(const std::string& str, const std::string& sub)
   return rtn;
 }
 
+
 std::string StrUtils::after(const std::string& str, const std::string& sub)
 {
   TEST_FOR_EXCEPTION(sub.c_str()==0,
-                     std::runtime_error, "String::after: arg is null pointer");
+    std::runtime_error, "String::after: arg is null pointer");
 
   // find beginning of substring
   char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str()) ;
@@ -291,6 +298,7 @@ std::string StrUtils::after(const std::string& str, const std::string& sub)
   return std::string(p);
 }
 
+
 int StrUtils::find(const std::string& str, const std::string& sub)
 {
   char* p = std::strstr((char*) str.c_str(), (char*) sub.c_str());
@@ -298,39 +306,42 @@ int StrUtils::find(const std::string& str, const std::string& sub)
   return p-str.c_str();
 }
 
+
 bool StrUtils::isWhite(const std::string& str)
 {
   for (unsigned int i=0; i<str.length(); i++)
+  {
+    unsigned char c = str[i];
+    if (c >= 33 && c <= 126)
     {
-      unsigned char c = str[i];
-      if (c >= 33 && c <= 126)
-        {
-          return false;
-        }
+      return false;
     }
+  }
   return true;
 }
+
 
 std::string StrUtils::fixUnprintableCharacters(const std::string& str)
 {
   std::string rtn = str;
   for (unsigned int i=0; i<rtn.length(); i++)
+  {
+    unsigned char c = rtn[i];
+    if (c < 33 || c > 126) 
     {
-      unsigned char c = rtn[i];
-      if (c < 33 || c > 126) 
-        {
-          if (c != '\t' && c != '\n'&& c != '\r' && c != '\f' && c != ' ')
-            {
-              rtn[i] = ' ';
-            }
-        }
+      if (c != '\t' && c != '\n'&& c != '\r' && c != '\f' && c != ' ')
+      {
+        rtn[i] = ' ';
+      }
     }
+  }
   return rtn;
 }
 
+
 std::string StrUtils::between(const std::string& str, const std::string& begin,
-			 const std::string& end, std::string& front,
-			 std::string& back)
+  const std::string& end, std::string& front,
+  std::string& back)
 {
   front = before(str, begin);
   std::string middle = before(after(str, begin), end);
@@ -341,36 +352,41 @@ std::string StrUtils::between(const std::string& str, const std::string& begin,
 
 std::string StrUtils::subString(const std::string& str, int begin, int end)
 {
-return std::string(str.c_str()+begin, end-begin);
+  return std::string(str.c_str()+begin, end-begin);
 }
+
 
 std::string StrUtils::readFromStream(std::istream& is)
 {
   TEST_FOR_EXCEPTION(true, std::logic_error, 
-                     "StrUtils::readFromStream isn't implemented yet");
+    "StrUtils::readFromStream isn't implemented yet");
 
 	return "";
 }
+
 
 std::string StrUtils::allCaps(const std::string& s)
 {
   std::string rtn = s;
   for (unsigned int i=0; i<rtn.length(); i++)
-    {
-      rtn[i] = toupper(rtn[i]);
-    }
+  {
+    rtn[i] = toupper(rtn[i]);
+  }
   return rtn;
 }
+
 
 double StrUtils::atof(const std::string& s)
 {
 	return std::atof(s.c_str());
 }
 
+
 int StrUtils::atoi(const std::string& s)
 {
 	return std::atoi(s.c_str());
 }
+
 
 std::ostream& StrUtils::printLines(
   std::ostream             &os
@@ -386,6 +402,24 @@ std::ostream& StrUtils::printLines(
   }
   return os;
 }
-  
 
-	
+
+std::string StrUtils::removeAllSpaces(std::string stringToClean)
+{
+  std::string::size_type pos=0;
+  bool spacesLeft = true;
+
+  while(spacesLeft){
+    pos = stringToClean.find(" ");
+    if(pos != string::npos){
+      stringToClean.erase(pos,1);
+    }
+    else{
+      spacesLeft = false;
+    }
+  }
+  return stringToClean;
+}
+
+  
+} // namespace Teuchos

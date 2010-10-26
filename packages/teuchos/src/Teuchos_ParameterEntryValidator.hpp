@@ -32,6 +32,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_XMLObject.hpp"
 
 namespace Teuchos {
 
@@ -39,7 +40,6 @@ namespace Teuchos {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 class ParameterEntry;
 #endif
-
 
 /** \brief Abstract interface for an object that can validate a
  *  ParameterEntry's value.
@@ -50,23 +50,42 @@ class ParameterEntry;
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator {
 public:
 
+  /** \name Public types */
+  //@{
+  
+  /** \brief .. */
+  typedef unsigned int ValidatorID;
+  
   /** \brief . */
-  virtual ~ParameterEntryValidator() {}
+  typedef RCP<const Array<std::string> > ValidStringsList;
+
+  //@}
+
+  /** \brief Default Constructor */
+  ParameterEntryValidator() {}
+
+  /** \brief Get a string that should be used as a value of the type attribute
+   * when serializing it to XML.
+   *
+   * \return a string that should be used as a tag for this validator
+   * when serializing it to XML.
+   */
+  virtual const std::string getXMLTypeName() const=0;
 
   /** \brief Print documentation for this parameter.
    *
-   * \param  docString 
-   *           [in] (Multi-line) documentation std::string.
-   * \param  out
-   *           [out] The std::ostream used for the output
+   * \param docString [in] (Multi-line) documentation std::string.
    *
-   * The purpose of this function is to augment what is in <tt>docString</tt>
-   * with some description of what valid values this parameter validator will
-   * accept.
+   * \param out [out] The std::ostream used for the output
+   *
+   * The purpose of this function is to augment what is 
+   * in <tt>docString</tt>
+   * with some description of what valid values this parameter 
+   * validator will accept.
    */
   virtual void printDoc(
-    std::string         const& docString
-    ,std::ostream            & out
+    std::string const& docString,
+    std::ostream &out
     ) const = 0;
 
   /** \brief Return an array of strings of valid values if applicable.
@@ -77,8 +96,7 @@ public:
    * The returned strings must not contain any newlines (i.e. no <tt>'\n'</tt>
    * characters) and must be short enough to fit on one line and be readable.
    */
-  virtual Teuchos::RCP<const Array<std::string> >
-  validStringValues() const = 0;
+  virtual ValidStringsList validStringValues() const = 0;
 
   /** \brief Validate a parameter entry value and throw std::exception (with a
    * great error message) if validation fails.
@@ -99,14 +117,14 @@ public:
 
   /** \brief Validate and perhaps modify a parameter entry's value.
    *
-   * \param  paramName
-   *            [in] The name of the ParameterEntry that is used to build error messages.
-   * \param  sublistName
-   *            [in] The name of the ParameterList that <tt>paramName</tt> exists in
-   *            that is used to build error messages.
-   * \param  entry
-   *            [in/out] The ParameterEntry who's type and value is being validated and
-   *            perhaps even changed as a result of calling this function.
+   * \param paramName [in] The name of the ParameterEntry that is used to
+   * build error messages.
+   *
+   * \param sublistName [in] The name of the ParameterList that
+   * <tt>paramName</tt> exists in that is used to build error messages.
+   *
+   * \param entry [in/out] The ParameterEntry who's type and value is being
+   * validated and perhaps even changed as a result of calling this function.
    *
    * The default implementation simply calls <tt>this->validate()</tt>.
    */
@@ -119,7 +137,6 @@ public:
       TEST_FOR_EXCEPT(0==entry);
       this->validate(*entry,paramName,sublistName);
     }
-  
 };
 
 
