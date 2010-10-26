@@ -15,12 +15,12 @@
 #include <iostream>
 
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
-Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
 CreateCrsMatrix(const std::string &MatrixType,
                 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
                 Teuchos::ParameterList& List)
 {
-  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > returnMatrix;
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > returnMatrix;
   if (MatrixType == "Laplace1D") {
 
     GlobalOrdinal nx = List.get("nx", -1);
@@ -31,8 +31,8 @@ CreateCrsMatrix(const std::string &MatrixType,
       TEST_FOR_EXCEPTION(nx*nx != n, std::logic_error, "You need to specify nx.");
     }
 
-    //return(TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, 2.0, -1.0, -1.0));
-    returnMatrix = TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, 2.0, -1.0, -1.0);
+    //return(TriDiag<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Map, nx, 2.0, -1.0, -1.0));
+    returnMatrix = TriDiag<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Map, nx, 2.0, -1.0, -1.0);
 
   } else if (MatrixType == "Laplace2D") {
 
@@ -46,8 +46,8 @@ CreateCrsMatrix(const std::string &MatrixType,
       TEST_FOR_EXCEPTION(nx*ny != n, std::logic_error, "You need to specify nx and ny.");
     }
 
-    //return(Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0));
-    returnMatrix = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0);
+    //return(Cross2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0));
+    returnMatrix = Cross2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0);
 
   } else if (MatrixType == "Star2D") {
 
