@@ -49,7 +49,7 @@ void Fill9PointStencil(const GlobalOrdinal center,
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-TriDiag(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
+TriDiag(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
         const GlobalOrdinal nx,
         const Scalar a, const Scalar b, const Scalar c)
 {
@@ -115,7 +115,7 @@ TriDiag(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Cross2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
+Cross2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
         const GlobalOrdinal nx, const GlobalOrdinal ny,
         const Scalar a, const Scalar b, const Scalar c, 
         const Scalar d, const Scalar e)
@@ -186,7 +186,7 @@ Cross2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Star2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
+Star2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
         const GlobalOrdinal nx, const GlobalOrdinal ny,
         const Scalar a, const Scalar b, const Scalar c, 
         const Scalar d, const Scalar e,
@@ -290,7 +290,7 @@ Star2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-BigStar2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
+BigStar2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
           const GlobalOrdinal nx, const GlobalOrdinal ny,
           const Scalar a, const Scalar b, const Scalar c, 
           const Scalar d, const Scalar e,
@@ -414,7 +414,7 @@ BigStar2D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Cross3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
+Cross3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
         const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
         const Scalar a, const Scalar b, const Scalar c, 
         const Scalar d, const Scalar e,
@@ -498,7 +498,7 @@ Cross3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
  * ****************************************************************************************************** */
 template <typename Scalar,typename LocalOrdinal,typename GlobalOrdinal,typename Node>
 Teuchos::RCP< Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Brick3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > Map,
+Brick3D(Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
         const GlobalOrdinal nx, const GlobalOrdinal ny, const GlobalOrdinal nz,
         const Scalar a, const Scalar b, const Scalar c, 
         const Scalar d, const Scalar e,
