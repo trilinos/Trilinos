@@ -20,7 +20,10 @@ class TransPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
     //@{ Constructors/Destructors.
 
     //! Constructor.
-    TransPFactory() {}
+    TransPFactory() {
+      Teuchos::OSTab tab(this->out_);
+      *(this->out_) << "TransPFactory: Instantiating a new factory" << std::endl;
+    }
 
     //! Destructor.
     virtual ~TransPFactory() {}

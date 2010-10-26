@@ -122,8 +122,12 @@ int main(int argc, char** argv)
   RCP<Vector> nullSpace = rcp(new Vector(map) );
   nullSpace->putScalar( (SC) 1.0);
 
+//Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_NONE);
+
   MueLu::Hierarchy<SC,LO,GO,NO> H;
+  H.setDefaultVerbLevel(Teuchos::VERB_NONE); //FIXME does nothing right now, must check inside Hierarchy
   RCP<MueLu::SaLevel<SC,LO,GO,NO> > Finest = rcp( new MueLu::SaLevel<SC,LO,GO,NO>() );
+  Finest->setDefaultVerbLevel(Teuchos::VERB_NONE); //FIXME does nothing right now, must check inside SaLevel
   Finest->SetA(A);
   Finest->SetNullSpace(nullSpace);
   H.SetLevel(Finest);

@@ -6,6 +6,10 @@
 
 namespace MueLu {
 /*! @class SaLevel
+    @brief Data associated with one level of a smoothed aggregation method
+
+     In addition to standard AMG operators, SaLevel also provides
+     a near null space associated with the discretization operator.
 */
 template<class SC,class LO, class GO, class NO>
 class SaLevel : public Level<SC,LO,GO,NO> {
@@ -25,7 +29,11 @@ class SaLevel : public Level<SC,LO,GO,NO> {
   public:
 
   //! Constructor
-  SaLevel() : Ptent_(Teuchos::null), Rtent_(Teuchos::null) {}
+  SaLevel() {
+    //Teuchos::OSTab tab(this->out_);
+    Teuchos::OSTab newTab = this->getOSTab();
+    *(this->out_) << "SaLevel: Instantiating an SaLevel" << std::endl;
+  }
 
   //! Destructor
   virtual ~SaLevel() {}
@@ -35,11 +43,42 @@ class SaLevel : public Level<SC,LO,GO,NO> {
     nullSpace_ = nullspace;
   }
 
+  //! Get nullspace.
+  Teuchos::RCP<Vector> GetNullSpace() {
+    return nullSpace_;
+  }
+
+  //! SetPtent
+  void SetPtent(Teuchos::RCP<Operator> Ptent) {
+    Ptent_ = Ptent;
+  }
+
+  //! SetRtent
+  void SetRtent(Teuchos::RCP<Operator> Rtent) {
+    Rtent_ = Rtent;
+  }
+
+  //! GetPtent
+  Teuchos::RCP<Operator> GetPtent() {
+    return Ptent_;
+  }
+
+  //! GetRtent
+  Teuchos::RCP<Operator> GetRtent() {
+    return Rtent_;
+  }
+
+/* //TODO
+     function SetAggregates(this, AggInfo)
+     function [z] = GetAggregates(this)
+*/
+
 }; //class SaLevel
 
 template<class SC,class LO, class GO, class NO>
 std::ostream& operator<<(std::ostream &os, SaLevel<SC,LO,GO,NO> const & level)
 {
+  os << level.nullSpace_;
   os << level.Ptent_;
   os << level.Rtent_;
   return os;

@@ -54,7 +54,7 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,Node> > {
     //! @name Constructors / Destructors
     Level() : A_(0), R_(0), P_(0), levelID_(-1), out_(this->getOStream())
     {
-      Teuchos::OSTab tab(out_); *out_ << "Instantiating new unitialized Level" << std::endl;
+      Teuchos::OSTab tab(out_); *out_ << "Instantiating new uninitialized Level" << std::endl;
     }
 
     //! Copy constructor.
@@ -183,8 +183,6 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,Node> > {
     //TODO ==================================================
     //TODO The following methods still need to be implemented.
     //TODO ==================================================
-    SetPreSmoother
-    SetPostSmoother
     GetPreSmoother
     GetPostSmoother
     GetGraph
