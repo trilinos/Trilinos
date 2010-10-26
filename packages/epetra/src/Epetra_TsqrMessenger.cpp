@@ -3,11 +3,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifdef HAVE_KOKKOS_TSQR
-
 namespace TSQR {
   namespace Epetra { 
 
+    // We only build this routine if Epetra was built with MPI
+    // support.  Otherwise, we don't even have an MPI_Comm definition.
 #ifdef EPETRA_MPI
     std::pair< MPI_Comm, bool >
     extractRawMpiComm (const Teuchos::RCP< const Epetra_Comm >& pComm)
@@ -20,25 +20,8 @@ namespace TSQR {
       
       RCP< const Epetra_MpiComm > pMpiComm = 
 	rcp_dynamic_cast< const Epetra_MpiComm > (pComm, false);
-      if (pMpiComm.get() == NULL)
-	{
-	  // Teuchos::rcp_dynamic_cast doesn't seem to work with
-	  // Epetra_MpiSmpComm.
-#if 0 
-	  // See if the input Epetra_Comm is really an
-	  // Epetra_MpiSmpComm.  If so, pull out its raw MPI_Comm
-	  // object and use that.
-	  RCP< const Epetra_MpiSmpComm > pMpiSmpComm = 
-	    rcp_dynamic_cast< const Epetra_MpiSmpComm > (pComm, false);
-	  if (pMpiSmpComm.get() != NULL)
-	    {
-	      rawMpiComm = pMpiSmpComm->Comm();
-	      haveMpiComm = true;
-	    }
-#else
-	  haveMpiComm = false;
-#endif // 0
-	}
+      if (pMpiComm.get() == NULL) 
+	haveMpiComm = false;
       else
 	{
 	  rawMpiComm = pMpiComm->Comm();
@@ -46,9 +29,10 @@ namespace TSQR {
 	}
       return std::make_pair (rawMpiComm, haveMpiComm);
     }
+#else
+#  error BADNESS IN THE EXTREME!
 #endif // EPETRA_MPI
 
   } // namespace Epetra
 } // namespace TSQR
 
-#endif // HAVE_KOKKOS_TSQR

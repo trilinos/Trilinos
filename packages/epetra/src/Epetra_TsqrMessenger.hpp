@@ -53,20 +53,19 @@
 #ifndef __Epetra_TsqrMessenger_hpp
 #define __Epetra_TsqrMessenger_hpp
 
-#include "Epetra_ConfigDefs.h" // HAVE_EPETRA_TSQR, EPETRA_MPI
+#include "Epetra_ConfigDefs.h" // EPETRA_MPI
 
-#ifdef HAVE_EPETRA_TSQR
-#  include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR
-#  include <Epetra_Comm.h>
-#  ifdef EPETRA_MPI
-#    include <Epetra_MpiComm.h>
-#    include <Epetra_MpiSmpComm.h>
-#    include <Tsqr_MpiMessenger.hpp>
-#  endif // EPETRA_MPI
-#  include <Teuchos_RCP.hpp>
-#  include <Tsqr_TrivialMessenger.hpp>
-#  include <algorithm>
-#  include <utility> // std::pair
+#include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR
+#include <Epetra_Comm.h>
+#ifdef EPETRA_MPI
+#  include <Epetra_MpiComm.h>
+#  include <Epetra_MpiSmpComm.h>
+#  include <Tsqr_MpiMessenger.hpp>
+#endif // EPETRA_MPI
+#include <Teuchos_RCP.hpp>
+#include <Tsqr_TrivialMessenger.hpp>
+#include <algorithm>
+#include <utility> // std::pair
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -92,7 +91,7 @@ namespace TSQR {
     /// appropriate subclass thereof, depending on whether the given
     /// Epetra_Comm uses MPI).
     template< class Datum >
-    Teuchos::RCP< MessengerBase< Datum > >
+    Teuchos::RCP< TSQR::MessengerBase< Datum > >
     makeTsqrMessenger (const Teuchos::RCP< const Epetra_Comm >& pComm)
     {
       using Teuchos::RCP;
@@ -129,6 +128,5 @@ namespace TSQR {
   } // namespace Epetra
 } // namespace TSQR
 
-#endif // HAVE_EPETRA_TSQR
 #endif // __Epetra_TsqrMessenger_hpp
 

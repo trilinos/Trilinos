@@ -208,7 +208,7 @@ ENDIF()
 # BEGIN TSQR
 ######################################################################
 
-IF(Epetra_ENABLE_TSQR)
+IF(${PACKAGE_NAME}_ENABLE_TSQR)
   # TSQR adaptors for Epetra.  TSQR lives in the Kokkos package and
   # requires the Teuchos package, so we don't attempt to include
   # TSQR-related header files unless both packages are enabled.  The
@@ -248,9 +248,19 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
-  epetra
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEFINES -DEPETRA_LIB_EXPORTS_MODE
-  )
+IF(${PACKAGE_NAME}_ENABLE_TSQR)
+  PACKAGE_ADD_LIBRARY(
+    epetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS kokkos kokkosnodetsqr kokkosdisttsqr
+    DEFINES -DEPETRA_LIB_EXPORTS_MODE
+    )
+ELSE()
+  PACKAGE_ADD_LIBRARY(
+    epetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEFINES -DEPETRA_LIB_EXPORTS_MODE
+    )
+ENDIF()

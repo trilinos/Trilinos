@@ -48,24 +48,24 @@
 ///
 /// \note Since TSQR lives in Kokkos, this file should only be
 ///   included when building Trilinos with the Kokkos package enabled.
+///   Test for HAVE_EPETRA_TSQR in Epetra_ConfigDefs.h.
 ///
 
-#include "Epetra_ConfigDefs.h"
+#include <Epetra_ConfigDefs.h>
+#include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR
+#include <Kokkos_DefaultNode.hpp> // Include minimal Kokkos Node types
 
-#ifdef HAVE_EPETRA_TSQR
-#  include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR
-#  include <Kokkos_DefaultNode.hpp> // Include minimal Kokkos Node types
+#include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
+#include <Tsqr.hpp> // full (internode + intranode) TSQR
+#include <Tsqr_DistTsqr.hpp> // internode TSQR
 
-#  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#  include <Tsqr.hpp> // full (internode + intranode) TSQR
-#  include <Tsqr_DistTsqr.hpp> // internode TSQR
-
+#include <Epetra_Comm.h>
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#  include <Epetra_TsqrMessenger.hpp>
-#  include <Epetra_MultiVector.h>
+#include <Epetra_TsqrMessenger.hpp>
+#include <Epetra_MultiVector.h>
 
-#  include <stdexcept>
+#include <stdexcept>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -322,8 +322,6 @@ namespace Epetra {
   };
 
 } // namespace Epetra
-
-#endif // HAVE_EPETRA_TSQR
 
 #endif // __Epetra_TsqrAdaptor_hpp
 

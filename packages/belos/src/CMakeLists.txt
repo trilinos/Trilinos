@@ -118,8 +118,17 @@ ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
-  belos
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  )
+IF (${PACKAGE_NAME}_ENABLE_TSQR)
+  PACKAGE_ADD_LIBRARY(
+    belos
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS kokkos kokkosnodetsqr kokkosdisttsqr
+    )
+ELSE ()
+  PACKAGE_ADD_LIBRARY(
+    belos
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    )
+ENDIF ()

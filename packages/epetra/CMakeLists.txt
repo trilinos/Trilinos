@@ -30,10 +30,17 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_THREADS
   "Enable threading support."
   OFF )
 
+# TSQR requires the Teuchos and Kokkos packages.
+IF (${Trilinos_ENABLE_Kokkos} AND ${Trilinos_ENABLE_Teuchos} AND ${Kokkos_ENABLE_TSQR})
+  SET(${PACKAGE_NAME}_CAN_USE_TSQR "ON")
+ELSE ()
+  SET(${PACKAGE_NAME}_CAN_USE_TSQR "OFF")
+ENDIF ()
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_EPETRA_TSQR
-  "Enable support for TSQR (Tall Skinny QR factorization) on Epetra_MultiVector objects.  Requires building with the Teuchos and Kokkos packages."
-  ${Trilinos_ENABLE_Kokkos} AND ${Trilinos_ENABLE_Teuchos} )
+  "Enable support for TSQR (Tall Skinny QR factorization) on Epetra_MultiVector objects."
+  ${${PACKAGE_NAME}_CAN_USE_TSQR} )
 
 ADD_SUBDIRECTORY(src)
 

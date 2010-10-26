@@ -252,7 +252,7 @@ namespace Belos {
   
   ////////////////////////////////////////////////////////////////////
   //
-  // Implementation of the Belos::MultiVecTraits for Epetra::MultiVector.
+  // Implementation of the Belos::MultiVecTraits for Epetra_MultiVector.
   //
   ////////////////////////////////////////////////////////////////////
 
@@ -411,17 +411,15 @@ namespace Belos {
     ///
     static void MvPrint( const Epetra_MultiVector& mv, std::ostream& os )
     { os << mv << std::endl; }
-    
-  };        
 
 #ifdef HAVE_BELOS_TSQR
-#  ifdef HAVE_EPETRA_TSQR
-  /// \typedef tsqr_adaptor_type
-  /// \brief TsqrAdaptor specialization for Epetra_MultiVector
-  ///
-  typedef Epetra::TsqrAdaptor tsqr_adaptor_type;
-#  endif // HAVE_EPETRA_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for Epetra_MultiVector
+    ///
+    typedef Epetra::TsqrAdaptor tsqr_adaptor_type;
 #endif // HAVE_BELOS_TSQR
+  };        
+
   
   ////////////////////////////////////////////////////////////////////
   //
