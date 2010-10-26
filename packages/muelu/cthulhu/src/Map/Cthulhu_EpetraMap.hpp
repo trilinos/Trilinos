@@ -3,21 +3,14 @@
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
-
 #include <Teuchos_ArrayView.hpp>
 
-// enums and defines
 #include "Cthulhu_ConfigDefs.hpp"
-#include "Cthulhu_Map.hpp"
-
-#include <Tpetra_Map.hpp> //tmp
-#include <Epetra_Map.h>
-
-#include <Cthulhu_EpetraComm.hpp>
-
-#include <Epetra_SerialComm.h> //tmp
-
 #include "Cthulhu_Debug.hpp"
+#include "Cthulhu_Map.hpp"
+#include "Cthulhu_EpetraComm.hpp"
+
+#include <Epetra_Map.h>
 
 /** \file Cthulhu_EpetraMap.hpp 
 
@@ -40,10 +33,10 @@ namespace Cthulhu {
 
   public:
 
-    // JG Note: we don't need this bunch constructor and they complicate the code (conversion of Comm, Vector etc.). Let see if I keep them.
-
     //! @name Constructor/Destructor Methods
     //@{ 
+
+    // Implementation note for constructors: the Epetra_Comm is cloned in the constructor of Epetra_Map. We don't need to keep a reference on it.
 
     /** \brief EpetraMap constructor with Cthulhu-defined contiguous uniform distribution.
      *   The elements are distributed among nodes so that the subsets of global elements
@@ -51,14 +44,8 @@ namespace Cthulhu {
      *   possible.
      */
     EpetraMap(global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-              LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
-
-      CTHULHU_DEBUG_ME;
-
-      map_ = rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos_Comm2Epetra_Comm(comm)));
-      
-      // JG Note: epetraComm is cloned in the constructor of Epetra_Map. We don't need to keep a reference on epetraComm.
-    }
+              LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) 
+      :  map_(rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos_Comm2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME; }
      
     /** \brief EpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
@@ -84,9 +71,8 @@ namespace Cthulhu {
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
       : map_(rcp(new Epetra_Map(numGlobalElements, elementList.size(), elementList.getRawPtr(), indexBase, *Teuchos_Comm2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME;}
 
-    /** \brief EpetraMap constructor to wrap a Epetra_Map object
+    /** \brief EpetraMap constructor to wrap a Epetra_Map object.
      */
-
     EpetraMap(const Teuchos::RCP<const Epetra_Map > &map) : map_(map) { CTHULHU_DEBUG_ME;}
 
     //! EpetraMap destructor. 
@@ -193,6 +179,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns true if \c map is compatible with this Map.
+    /** Note that an EpetraMap is never compatible with an TpetraMap. **/
     bool isCompatible (const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> &map) const { CTHULHU_DEBUG_ME; 
       try
 	{
@@ -201,12 +188,13 @@ namespace Cthulhu {
 	}
       catch (const std::bad_cast& e)
 	{
-          // Let say that a EpetraMap is not compatible with other format of Map.
+          // We consider that an EpetraMap is never compatible with a map stored in another format (ie: a TpetraMap).
           return false;
         }
     }
 
     //! Returns true if \c map is identical to this Map.
+    /** Note that an EpetraMap is never the 'same as' a TpetraMap. **/
     bool isSameAs (const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> &map) const { CTHULHU_DEBUG_ME; 
       try
 	{
@@ -215,7 +203,7 @@ namespace Cthulhu {
 	}
       catch (const std::bad_cast& e)
 	{
-          // Let say that a EpetraMap is not compatible with other format of Map.
+          // We consider that an EpetraMap is never the 'same as' a map stored in an other formats (ie: TpetraMap).
           return false;
 	}
     }
@@ -232,11 +220,13 @@ namespace Cthulhu {
     };
 
     //! Get the Node object for this Map
-    const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> & getNode() const { CTHULHU_DEBUG_ME; 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const { CTHULHU_DEBUG_ME; 
+      TEST_FOR_EXCEPTIONS(1, Cthulhu::Exceptions::NotImplemented, 'Cthulhu::EpetraMap->getNode()');
       const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> & r = Teuchos::null;
       return r;
-    }; // JG TODO
-
+    };
+#endif
     //@}
 
     //@{ Implements Teuchos::Describable 
@@ -335,11 +325,11 @@ namespace Cthulhu {
 
     //@}
 
-    const Epetra_Map& getEpetra_Map() const { CTHULHU_DEBUG_ME; return *map_; } //JG TODO: wrap output in a RCP ?
+    const Epetra_Map& getEpetra_Map() const { CTHULHU_DEBUG_ME; return *map_; }
 
   private:
 
-    RCP< const Epetra_Map > map_; // TODO JG const ?
+    RCP<const Epetra_Map> map_;
 
   }; // EpetraMap class
 

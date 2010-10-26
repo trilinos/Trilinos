@@ -44,8 +44,6 @@ namespace Cthulhu {
     //! @name Constructor/Destructor Methods
     //@{ 
 
-    // JG TODO: remove constructor, create factory ?
-
     //! Constructor specifying the number of non-zeros for all rows.
     TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
     { CTHULHU_DEBUG_ME;
@@ -485,7 +483,6 @@ namespace Cthulhu {
     
      //! Returns the Map associated with the domain of this operator.
      //! This will be <tt>null</tt> until fillComplete() is called.
-    //TODO: wrap Tpetra::Map into a Cthulhu::Map
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const { 
       CTHULHU_DEBUG_ME; 
       return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getRangeMap()) ); 
@@ -560,7 +557,7 @@ namespace Cthulhu {
 
   private:
     
-    RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_; //TODO const RCP?
+    RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
 
   }; // class TpetraCrsMatrix
 

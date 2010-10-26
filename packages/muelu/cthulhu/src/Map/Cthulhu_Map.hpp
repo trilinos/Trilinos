@@ -4,11 +4,9 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
-#include "Tpetra_ConfigDefs.hpp" //Tpetra::LookupStatus
+#include "Tpetra_ConfigDefs.hpp" // TMP: Tpetra::LookupStatus
 
-// enums and defines
 #include "Cthulhu_ConfigDefs.hpp"
-
 #include "Cthulhu_Debug.hpp"
 
 /** \file Cthulhu_Map.hpp 
@@ -120,10 +118,12 @@ namespace Cthulhu {
     //@{ Misc. 
 
     //! Get the Comm object for this Map
-    virtual const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0; //removed &
+    virtual const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const = 0;
 
     //! Get the Node object for this Map
+#ifdef CTHULHU_TPETRA_ONLY
     virtual const Teuchos::RCP<Node> & getNode() const = 0;
+#endif
 
     //@}
 

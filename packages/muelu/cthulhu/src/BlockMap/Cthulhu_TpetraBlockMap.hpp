@@ -31,7 +31,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
                  LocalOrdinal blockSize,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, blockSize, indexBase, comm, node))) { CTHULHU_DEBUG_ME;}
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, blockSize, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
 
   /*! \brief TpetraBlockMap constructor specifying num global and local blocks, and constant blockSize.
    */
@@ -40,7 +40,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
                  LocalOrdinal blockSize,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, numLocalBlocks, blockSize, indexBase, comm, node))) { CTHULHU_DEBUG_ME;}
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, numLocalBlocks, blockSize, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
 
   /*! \brief TpetraBlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
    */
@@ -50,7 +50,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
                  GlobalOrdinal indexBase,
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, comm, node))) { CTHULHU_DEBUG_ME;}
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
   
   /*! \brief TpetraBlockMap constructor which takes a "regular" Map.
    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
@@ -61,12 +61,12 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
   TpetraBlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap,
                  const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(pointMap, myGlobalBlockIDs, myBlockSizes, node))) { CTHULHU_DEBUG_ME;}
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(pointMap, myGlobalBlockIDs, myBlockSizes, node))) { CTHULHU_DEBUG_ME; }
 
-  TpetraBlockMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > &map) : map_(map) { CTHULHU_DEBUG_ME;}
+  TpetraBlockMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > &map) : map_(map) { CTHULHU_DEBUG_ME; }
 
   //! TpetraBlockMap destructor.
-  virtual ~TpetraBlockMap(){ CTHULHU_DEBUG_ME;}
+  virtual ~TpetraBlockMap(){ CTHULHU_DEBUG_ME; }
 
   //@}
 

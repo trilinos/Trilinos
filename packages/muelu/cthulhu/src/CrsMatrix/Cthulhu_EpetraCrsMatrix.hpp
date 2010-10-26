@@ -43,7 +43,6 @@ namespace Cthulhu {
     //! @name Constructor/Destructor Methods
     //@{ 
 
-    // JG TODO: remove constructor, create factory ?
     //! Constructor specifying the number of non-zeros for all rows.
     EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
     { CTHULHU_DEBUG_ME;
@@ -587,7 +586,6 @@ namespace Cthulhu {
     
     //! Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    //TODO: wrap Epetra::Map into a Cthulhu::Map
     inline const RCP<const Map<int,int> > getRangeMap() const { 
       CTHULHU_DEBUG_ME; 
 
@@ -847,11 +845,10 @@ namespace Cthulhu {
 
   private:
     
-    RCP<Epetra_CrsMatrix> mtx_; //TODO const RCP?
+    RCP<Epetra_CrsMatrix> mtx_;
 
   }; // class EpetraCrsMatrix
 
 } // namespace Cthulhu
 
-// TODO: inline
 #endif

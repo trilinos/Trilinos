@@ -212,7 +212,7 @@ namespace Cthulhu {
 
     //! Returns the communicator.
 #ifdef CTHULHU_TPETRA_ONLY
-    virtual const RCP<const Comm<int> > getComm() const =0; // removed &
+    virtual const RCP<const Comm<int> > getComm() const =0;
 #endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the underlying node.
@@ -221,10 +221,10 @@ namespace Cthulhu {
 #endif // CTHULHU_TPETRA_ONLY
 
     //! Returns the Map that describes the row distribution in this matrix.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const =0; // TODO: I removed & in return type
+    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const =0;
 
     //! \brief Returns the Map that describes the column distribution in this matrix.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const =0; // TODO: I removed & in return type
+    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const =0;
   
     //! Returns the RowGraph associated with this matrix. 
 #ifdef CTHULHU_NOT_IMPLEMENTED  
@@ -480,12 +480,10 @@ namespace Cthulhu {
 
     //! \brief Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    // TODO: I removed & in the return arg
     virtual const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const =0;
 
     //! Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    // TODO: I removed & in the return arg
     virtual const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const =0;
 
     //@}

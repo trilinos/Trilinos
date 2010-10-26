@@ -44,7 +44,8 @@ namespace Cthulhu {
       const RCP<const EpetraMap> &eRowMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(rowMap);
       if (eRowMap != null)
         return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
-      
+
+      //TODO: throw exception
       return null;
     }
 

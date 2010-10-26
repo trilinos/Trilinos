@@ -45,7 +45,8 @@ namespace Cthulhu {
      */
     //TODO: replace Tpetra::LocalGlobal by Cthulhu::LocalGlobal
     TpetraMap(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-              Tpetra::LocalGlobal lg=Tpetra::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, indexBase, comm, lg))) { CTHULHU_DEBUG_ME; }
+              Tpetra::LocalGlobal lg=Tpetra::GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) 
+      : map_(Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, indexBase, comm, lg))) { CTHULHU_DEBUG_ME; }
 
     /** \brief TpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
@@ -57,7 +58,8 @@ namespace Cthulhu {
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
      TpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, 
-               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, numLocalElements, indexBase, comm, node))) { CTHULHU_DEBUG_ME;}
+               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) 
+       : map_(rcp(Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, numLocalElements, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
         
     /** \brief TpetraMap constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
@@ -67,7 +69,8 @@ namespace Cthulhu {
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
      TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, 
-               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, comm, node))) { CTHULHU_DEBUG_ME;}
+               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) 
+       : map_(rcp(Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
 
     /** \brief TpetraMap constructor to wrap a Tpetra::Map object
      */
@@ -157,6 +160,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns true if \c map is compatible with this Map.
+    /** Note that a TpetraMap is never compatible with an EpetraMap. **/
     bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const { CTHULHU_DEBUG_ME; 
       try
 	{
@@ -165,12 +169,13 @@ namespace Cthulhu {
 	}
       catch (const std::bad_cast& e)
 	{
-          // Let say that a TpetraMap is not compatible with other format of Map.
+          // We consider that an TpetraMap is never compatible with a map stored in another format (ie: a EpetraMap).
           return false;
 	}
     };
 
     //! Returns true if \c map is identical to this Map.
+    /** Note that an TpetraMap is never the 'same as' a EpetraMap. **/
     bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const { CTHULHU_DEBUG_ME; 
       try
 	{
@@ -179,7 +184,7 @@ namespace Cthulhu {
 	}
       catch (const std::bad_cast& e)
 	{
-          // Let say that a TpetraMap is not compatible with other format of Map.
+          // We consider that an TpetraMap is never the 'same as' a map stored in an other formats (ie: EpetraMap).
           return false;
 	}
     }
@@ -205,7 +210,7 @@ namespace Cthulhu {
 
     //@}
 
-    RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Map() const { CTHULHU_DEBUG_ME; return map_; } // TODO: & ??
+    const RCP< const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > & getTpetra_Map() const { CTHULHU_DEBUG_ME; return map_; }
 
   private:
 

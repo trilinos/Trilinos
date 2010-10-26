@@ -371,7 +371,7 @@ namespace Cthulhu {
 
     //@}
 
-    RCP< Epetra_MultiVector > getEpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; } //TODO: & ??
+    RCP< Epetra_MultiVector > getEpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; }
     
   private:
     RCP< Epetra_MultiVector > vec_;
