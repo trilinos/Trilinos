@@ -81,8 +81,26 @@ namespace TSQR {
     /// MPI_COMM object.)
     ///
     /// \return (The MPI_Comm object, and whether it's valid)
-    std::pair< MPI_Comm, bool >
-    extractRawMpiComm (const Teuchos::RCP< const Epetra_Comm >& pComm);
+    static std::pair< MPI_Comm, bool >
+    extractRawMpiComm (const Teuchos::RCP< const Epetra_Comm >& pComm)
+    {
+      using Teuchos::RCP;
+      using Teuchos::rcp_dynamic_cast;
+
+      MPI_Comm rawMpiComm = MPI_COMM_NULL;
+      bool haveMpiComm = false;
+      
+      RCP< const Epetra_MpiComm > pMpiComm = 
+	rcp_dynamic_cast< const Epetra_MpiComm > (pComm, false);
+      if (pMpiComm.get() == NULL) 
+	haveMpiComm = false;
+      else
+	{
+	  rawMpiComm = pMpiComm->Comm();
+	  haveMpiComm = true;
+	}
+      return std::make_pair (rawMpiComm, haveMpiComm);
+    }
 #endif // EPETRA_MPI
 
 

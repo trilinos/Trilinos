@@ -30,11 +30,13 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_THREADS
   "Enable threading support."
   OFF )
 
-# TSQR requires the Teuchos and Kokkos packages.
-IF (${Trilinos_ENABLE_Kokkos} AND ${Trilinos_ENABLE_Teuchos} AND ${Kokkos_ENABLE_TSQR})
-  SET(${PACKAGE_NAME}_CAN_USE_TSQR "ON")
+# Support for TSQR in Epetra requires the Teuchos and Kokkos packages.
+# CMake complains if I just do "IF(X AND Y AND Z)".
+IF (("${Trilinos_ENABLE_Kokkos}" STREQUAL "ON") AND ("${Trilinos_ENABLE_Teuchos}" STREQUAL "ON") AND ("${Kokkos_ENABLE_TSQR}" STREQUAL "ON"))
+  MESSAGE(STATUS "Can use TSQR (the Tall Skinny QR factorization) in TSQR")
+  SET(${PACKAGE_NAME}_CAN_USE_TSQR BOOL "ON")
 ELSE ()
-  SET(${PACKAGE_NAME}_CAN_USE_TSQR "OFF")
+  SET(${PACKAGE_NAME}_CAN_USE_TSQR BOOL "OFF")
 ENDIF ()
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TSQR

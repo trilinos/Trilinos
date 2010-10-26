@@ -219,9 +219,6 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Epetra_TsqrAdaptor.hpp
     Epetra_TsqrMessenger.hpp
     )
-  APPEND_SET(SOURCES
-    Epetra_TsqrMessenger.cpp
-    )
 ENDIF()
 
 ######################################################################
