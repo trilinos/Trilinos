@@ -4,6 +4,19 @@
 #include <exception>
 #include "Teuchos_Exceptions.hpp"
 
+// Dynamically cast 'obj' to 'type newObj'. newObj is declared inside of the macro.
+// If the dynamic cast failed, throw an exception of type Cthulhu::Exception::Bad_Cast (using the message exceptionMsg).
+#define CTHULHU_DYNAMIC_CAST(type, obj, newObj, exceptionMsg)           \
+  type * newObj ## _pt = dynamic_cast<type *>(&obj);                    \
+  TEST_FOR_EXCEPTION(newObj ## _pt == NULL, Cthulhu::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); \
+  type & newObj = *newObj ## _pt;
+
+// Dynamically cast the RCP 'obj' to 'RCP<type> newObj'. newObj is declared inside of the macro.
+// If the dynamic cast failed, throw an exception of type Cthulhu::Exception::Bad_Cast (using the message exceptionMsg).
+#define CTHULHU_RCP_DYNAMIC_CAST(type, obj, newObj, exceptionMsg)       \
+  const RCP<type > & newObj = Teuchos::rcp_dynamic_cast<type >(obj);    \
+  TEST_FOR_EXCEPTION(newObj == null, Cthulhu::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); 
+
 namespace Cthulhu {
   namespace Exceptions {
     

@@ -8,6 +8,7 @@
 #include "Cthulhu_TpetraMap.hpp"
 #include "Cthulhu_TpetraMultiVector.hpp"
 
+#include "Cthulhu_Exceptions.hpp"
 #include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
@@ -38,8 +39,12 @@ namespace Cthulhu {
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps>
-  class TpetraCrsMatrix : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps> class TpetraCrsMatrix : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+    
+              // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+              typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+              typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraMultiVector;
+
   public:
     //! @name Constructor/Destructor Methods
     //@{ 
@@ -47,14 +52,14 @@ namespace Cthulhu {
     //! Constructor specifying the number of non-zeros for all rows.
     TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
     { CTHULHU_DEBUG_ME;
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
       mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), maxNumEntriesPerRow, pftype));
     }
 
     //! Constructor specifying the number of non-zeros for each row.
     TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
     { CTHULHU_DEBUG_ME;
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
       mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), NumEntriesPerRowToAlloc, pftype));
     }
 
@@ -63,8 +68,8 @@ namespace Cthulhu {
      */
     TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
     { CTHULHU_DEBUG_ME;
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tColMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(colMap); //TODO: handle error
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, colMap, tColMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
       mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), maxNumEntriesPerRow, pftype));
     }
     
@@ -73,8 +78,8 @@ namespace Cthulhu {
      */
     TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
     { CTHULHU_DEBUG_ME;
-            const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(rowMap); //TODO: handle error
-       const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tColMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(colMap); //TODO: handle error
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, colMap, tColMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
       mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), NumEntriesPerRowToAlloc, pftype));
     } 
 
@@ -229,13 +234,13 @@ namespace Cthulhu {
      //! Returns the Map that describes the row distribution in this matrix.
     inline const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const { 
       CTHULHU_DEBUG_ME; 
-      return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getRowMap()) ); 
+      return rcp( new TpetraMap(mtx_->getRowMap()) ); 
     }
      
      //! \brief Returns the Map that describes the column distribution in this matrix.
     inline const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const { 
       CTHULHU_DEBUG_ME; 
-      return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getColMap()) ); 
+      return rcp( new TpetraMap(mtx_->getColMap()) ); 
     }
 
      //! Returns the RowGraph associated with this matrix. 
@@ -436,10 +441,9 @@ namespace Cthulhu {
 
     inline void multiply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, Scalar alpha, Scalar beta) const {
       CTHULHU_DEBUG_ME; 
-      
-      const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &tX = dynamic_cast<const TpetraMultiVector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &>(X); //TODO: handle error
-      /* */ TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &tY = dynamic_cast<      TpetraMultiVector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &>(Y); //TODO: handle error
-      
+
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, X, tX, "Cthulhu::TpetraCrsMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(      TpetraMultiVector, Y, tY, "Cthulhu::TpetraCrsMatrix->multiply() only accept Cthulhu::TpetraMultiVector as input arguments.");
       mtx_->template multiply<Scalar,Scalar>(*tX.getTpetra_MultiVector(), *tY.getTpetra_MultiVector(), trans, alpha, beta);
     }
 
@@ -478,14 +482,14 @@ namespace Cthulhu {
      //! This will be <tt>null</tt> until fillComplete() is called.
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const { 
       CTHULHU_DEBUG_ME; 
-      return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getDomainMap()) ); 
+      return rcp( new TpetraMap(mtx_->getDomainMap()) ); 
     }
     
      //! Returns the Map associated with the domain of this operator.
      //! This will be <tt>null</tt> until fillComplete() is called.
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const { 
       CTHULHU_DEBUG_ME; 
-      return rcp( new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> (mtx_->getRangeMap()) ); 
+      return rcp( new TpetraMap(mtx_->getRangeMap()) ); 
     }
 
      //@}

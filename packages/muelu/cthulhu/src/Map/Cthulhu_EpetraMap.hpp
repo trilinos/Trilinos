@@ -8,7 +8,7 @@
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Debug.hpp"
 #include "Cthulhu_Map.hpp"
-#include "Cthulhu_EpetraComm.hpp"
+#include "Cthulhu_Comm.hpp"
 
 #include <Epetra_Map.h>
 
@@ -45,7 +45,7 @@ namespace Cthulhu {
      */
     EpetraMap(global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
               LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) 
-      :  map_(rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos_Comm2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME; }
+      :  map_(rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME; }
      
     /** \brief EpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
@@ -58,7 +58,7 @@ namespace Cthulhu {
      */
     EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, int indexBase, 
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
-      : map_(rcp(new Epetra_Map(numGlobalElements, numLocalElements, indexBase, *Teuchos_Comm2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME;}
+      : map_(rcp(new Epetra_Map(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME;}
         
     /** \brief EpetraMap constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
@@ -69,7 +69,7 @@ namespace Cthulhu {
      */
     EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, 
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
-      : map_(rcp(new Epetra_Map(numGlobalElements, elementList.size(), elementList.getRawPtr(), indexBase, *Teuchos_Comm2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME;}
+      : map_(rcp(new Epetra_Map(numGlobalElements, elementList.size(), elementList.getRawPtr(), indexBase, *Teuchos2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME;}
 
     /** \brief EpetraMap constructor to wrap a Epetra_Map object.
      */
@@ -189,6 +189,7 @@ namespace Cthulhu {
       catch (const std::bad_cast& e)
 	{
           // We consider that an EpetraMap is never compatible with a map stored in another format (ie: a TpetraMap).
+          // TODO: or throw exception ?
           return false;
         }
     }
@@ -215,7 +216,7 @@ namespace Cthulhu {
     //! Get the Comm object for this Map
     const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const { CTHULHU_DEBUG_ME;  //removed &
       RCP<const Epetra_Comm> rcpComm = rcpFromRef(map_->Comm());
-      const Teuchos::RCP<const Teuchos::Comm<int> > r = Epetra_Comm2Teuchos_Comm(rcpComm);
+      const Teuchos::RCP<const Teuchos::Comm<int> > r = Epetra2Teuchos_Comm(rcpComm);
       return r;
     };
 

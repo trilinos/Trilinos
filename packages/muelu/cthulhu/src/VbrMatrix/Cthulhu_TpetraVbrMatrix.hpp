@@ -58,7 +58,7 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
     Block-entries (rectangular, dense submatrices) may be inserted using class
     methods such as setGlobalBlockEntry(...), declared below.
   */
-  //VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+  // TODO VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
 
   //! Constructor specifying a pre-filled block-graph.
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will

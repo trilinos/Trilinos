@@ -6,6 +6,7 @@
 #include "Cthulhu_TpetraMap.hpp"
 #include "Tpetra_MultiVector.hpp"
 
+#include "Cthulhu_Exceptions.hpp"
 #include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
@@ -24,6 +25,9 @@ namespace Cthulhu {
   template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
   class TpetraMultiVector : public Cthulhu::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
+    // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+
   public:
 
     //! @name Constructor/Destructor Methods
@@ -32,14 +36,13 @@ namespace Cthulhu {
     //! Basic TpetraMultiVector constuctor.
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t NumVectors, bool zeroOut=true) {
       CTHULHU_DEBUG_ME;
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map); //TODO: handle error
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
       vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), NumVectors, zeroOut));
     }
 
-    
     //! TpetraMultiVector copy constructor.
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    TpetraMultiVector(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source){ CTHULHU_DEBUG_ME; } //TODO : : vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(source))) { CTHULHU_DEBUG_ME;}
+    TpetraMultiVector(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source){ CTHULHU_DEBUG_ME; }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
@@ -47,15 +50,13 @@ namespace Cthulhu {
 #ifdef CTHULHU_NOT_IMPLEMENTED
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) {
       CTHULHU_DEBUG_ME;
-      const RCP<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> > &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >(map); //TODO: handle error
-      vec_ = rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tMap->getTpetra_Map(), A, LDA, NumVectors));
     } 
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME } //TODO :: vec_(rcp(new Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(map, ArrayOfPtrs, NumVectors))) { CTHULHU_DEBUG_ME;}
+    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME } 
 #endif // CTHULHU_NOT_IMPLEMENTED
   
     TpetraMultiVector(const Teuchos::RCP<const Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node> > &vec) : vec_(vec) { CTHULHU_DEBUG_ME;}

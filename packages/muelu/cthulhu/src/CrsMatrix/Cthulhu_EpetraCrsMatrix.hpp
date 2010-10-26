@@ -9,6 +9,7 @@
 
 #include "Cthulhu_EpetraMap.hpp"
 #include "Cthulhu_EpetraMultiVector.hpp"
+#include "Cthulhu_Trans.hpp"
 
 #include "Cthulhu_Debug.hpp"
 
@@ -46,8 +47,8 @@ namespace Cthulhu {
     //! Constructor specifying the number of non-zeros for all rows.
     EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
     { CTHULHU_DEBUG_ME;
-      const RCP<const EpetraMap> &eRowMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(rowMap);      //TODO: - Handle error
-      mtx_ = rcp(new Epetra_CrsMatrix(Copy, eRowMap->getEpetra_Map(), maxNumEntriesPerRow, false)); //      - Copy or View by default ? // TODO: bool StaticProfile
+      CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, rowMap, eRowMap, "Cthulhu::EpetraCrsMatrix constructors only accept Cthulhu::EpetraMap as input arguments.");
+      mtx_ = rcp(new Epetra_CrsMatrix(Copy, eRowMap->getEpetra_Map(), maxNumEntriesPerRow, false)); // TODO Copy or View by default ? // TODO: bool StaticProfile
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -238,12 +239,11 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the communicator.
-    inline const RCP<const Comm<int> > getComm() const {  // removed &
+    inline const RCP<const Comm<int> > getComm() const {
       CTHULHU_DEBUG_ME; 
       
       RCP<const Epetra_Comm> rcpComm = rcpFromRef(mtx_->Comm());
-      const Teuchos::RCP<const Teuchos::Comm<int> > r = Epetra_Comm2Teuchos_Comm(rcpComm);
-      return r;
+      return Epetra2Teuchos_Comm(rcpComm);
     }
 
     //! Returns the underlying node.
@@ -521,18 +521,13 @@ namespace Cthulhu {
     inline void multiply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, Teuchos::ETransp trans, double alpha, double beta) const {
       CTHULHU_DEBUG_ME; 
 
-      assert(alpha == 1); // not implemented
-      assert(beta  == 0);
+      TEST_FOR_EXCEPTION((alpha != 1) || (beta != 0), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix.multiply() only accept alpha==1 and beta==0");
+      
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, X, eX, "Cthulhu::EpetraCrsMatrix->multiply() only accept Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(      EpetraMultiVector, Y, eY, "Cthulhu::EpetraCrsMatrix->multiply() only accept Cthulhu::EpetraMultiVector as input arguments.");
 
-      const EpetraMultiVector &eX = dynamic_cast<const EpetraMultiVector &>(X); //TODO: handle error
-      /* */ EpetraMultiVector &eY = dynamic_cast<      EpetraMultiVector &>(Y); //TODO: handle error
-
-      bool eTrans=false;
-      if (trans == Teuchos::NO_TRANS)
-        eTrans = false;
-      else if (trans == Teuchos::TRANS)
-        eTrans = true;
-      else {} //TODO
+      TEST_FOR_EXCEPTION((trans != Teuchos::NO_TRANS) && (trans == Teuchos::TRANS), Cthulhu::Exceptions::NotImplemented, "Cthulhu::EpetraCrsMatrix->multiply() only accept trans == NO_TRANS or trans == TRANS");
+      bool eTrans = Teuchos2Epetra_Trans(trans);
 
       CTHULHU_ERR_CHECK(mtx_->Multiply(eTrans, *eX.getEpetra_MultiVector(), *eY.getEpetra_MultiVector()));
     }

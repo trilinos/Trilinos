@@ -32,7 +32,7 @@ namespace Cthulhu {
     //! Basic EpetraMultiVector constuctor.
     EpetraMultiVector(const Teuchos::RCP<const Map<int,int> > &map, size_t NumVectors, bool zeroOut=true) {
       CTHULHU_DEBUG_ME;
-      const RCP<const EpetraMap > &eMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(map); //TODO: handle error
+      CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
       vec_ = rcp(new Epetra_MultiVector(eMap->getEpetra_Map(), NumVectors, zeroOut));
     }
     
@@ -44,10 +44,7 @@ namespace Cthulhu {
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    EpetraMultiVector(const Teuchos::RCP<const Map<int,int,Node> > &map, const Teuchos::ArrayView<const double> &A, size_t LDA, size_t NumVectors) {
-      CTHULHU_DEBUG_ME;
-      
-    } 
+    EpetraMultiVector(const Teuchos::RCP<const Map<int,int,Node> > &map, const Teuchos::ArrayView<const double> &A, size_t LDA, size_t NumVectors) { CTHULHU_DEBUG_ME; } 
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
