@@ -45,15 +45,15 @@ namespace Cthulhu {
 
     // JG TODO: remove constructor, create factory ?
     //! Constructor specifying the number of non-zeros for all rows.
-    EpetraCrsMatrix(const RCP<const Map<int,int,Node> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
+    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
     { CTHULHU_DEBUG_ME;
       const RCP<const EpetraMap> &eRowMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(rowMap);      //TODO: - Handle error
-      mtx_ = rcp(new Epetra_CrsMatrix(Copy, eRowMap->getEpetra_Map(), maxNumEntriesPerRow, pftype)); //      - Copy or View by default ?
+      mtx_ = rcp(new Epetra_CrsMatrix(Copy, eRowMap->getEpetra_Map(), maxNumEntriesPerRow, false)); //      - Copy or View by default ? // TODO: bool StaticProfile
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Constructor specifying the number of non-zeros for each row.
-    EpetraCrsMatrix(const RCP<const Map<int,int,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
     { CTHULHU_DEBUG_ME;
 
     }
@@ -61,7 +61,7 @@ namespace Cthulhu {
     //! Constructor specifying a column map and the number of non-zeros for all rows.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    EpetraCrsMatrix(const RCP<const Map<int,int,Node> > &rowMap, const RCP<const Map<int,int,Node> > &colMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
     { CTHULHU_DEBUG_ME;
 
     }
@@ -69,7 +69,7 @@ namespace Cthulhu {
     //! Constructor specifying a column map and the number of non-zeros for each row.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    EpetraCrsMatrix(const RCP<const Map<int,int,Node> > &rowMap, const RCP<const Map<int,int,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
     { CTHULHU_DEBUG_ME;
 
     } 
@@ -78,7 +78,7 @@ namespace Cthulhu {
     //! Constructor specifying a pre-constructed graph.
     // TODO: need a CrsGraph
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    explicit EpetraCrsMatrix(const RCP<const CrsGraph<int,int,Node,LocalMatOps> > &graph) { CTHULHU_DEBUG_ME; }
+    explicit EpetraCrsMatrix(const RCP<const CrsGraph<int,int,LocalMatOps> > &graph) { CTHULHU_DEBUG_ME; }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     EpetraCrsMatrix(const Teuchos::RCP<Epetra_CrsMatrix> &mtx) : mtx_(mtx) { CTHULHU_DEBUG_ME; }
@@ -105,7 +105,6 @@ namespace Cthulhu {
     */
     inline void insertGlobalValues(int globalRow, const ArrayView<const int> &cols, const ArrayView<const double> &vals) { 
       CTHULHU_DEBUG_ME; 
-
       CTHULHU_ERR_CHECK(mtx_->InsertGlobalValues(globalRow, vals.size(), vals.getRawPtr(), cols.getRawPtr())); 
     }
 
@@ -215,7 +214,7 @@ namespace Cthulhu {
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline void fillComplete(const RCP<const Map<int,int,Node> > &domainMap, const RCP<const Map<int,int,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { CTHULHU_DEBUG_ME; mtx_->fillComplete(domainMap, rangeMap, os); }
+    inline void fillComplete(const RCP<const Map<int,int> > &domainMap, const RCP<const Map<int,int> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { CTHULHU_DEBUG_ME; mtx_->fillComplete(domainMap, rangeMap, os); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     /*! \brief Signal that data entry is complete. 
@@ -254,27 +253,37 @@ namespace Cthulhu {
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Returns the Map that describes the row distribution in this matrix.
-    inline const RCP<const Cthulhu::Map<int,int,Node> > getRowMap() const { 
+    inline const RCP<const Cthulhu::Map<int,int> > getRowMap() const { 
       CTHULHU_DEBUG_ME; 
-      // Note: the internal map is owned by this.mtx_ so the map is wrap in a non-owning weak RCP.
-      // The object return by this method is valid until 'this' is freed.
-      return rcp( new Cthulhu::EpetraMap(rcpFromRef(mtx_->RowMap())) ); 
+
+      // The Epetra map is owned by the underlying Epetra matrix and freed when the matrix is deleted.
+      // I have to make a copy of the map to be sure that the RCP<Map> returned by this method will remain valid even if the matrix is deleted.
+      // Note that it is not a problem because the copy constructor of Epetra_Map doesn't really copy the data (there is an reference count mecanism in Epetra).
+
+      RCP<const Epetra_Map> map = rcp(new Epetra_Map(mtx_->RowMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     }
      
     //! \brief Returns the Map that describes the column distribution in this matrix.
-    inline const RCP<const Cthulhu::Map<int,int,Node> > getColMap() const { 
+    inline const RCP<const Cthulhu::Map<int,int> > getColMap() const { 
       CTHULHU_DEBUG_ME; 
-      return rcp( new Cthulhu::EpetraMap(rcpFromRef(mtx_->ColMap())) ); 
+
+      // The Epetra map is owned by the underlying Epetra matrix and freed when the matrix is deleted.
+      // I have to make a copy of the map to be sure that the RCP<Map> returned by this method will remain valid even if the matrix is deleted.
+      // Note that it is not a problem because the copy constructor of Epetra_Map doesn't really copy the data (there is an reference count mecanism in Epetra).
+
+      RCP<const Epetra_Map> map = rcp(new Epetra_Map(mtx_->ColMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
     //! Returns the RowGraph associated with this matrix. 
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline RCP<const RowGraph<int,int,Node> > getGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getGraph(); }
+    inline RCP<const RowGraph<int,int> > getGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getGraph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Returns the CrsGraph associated with this matrix. 
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline RCP<const CrsGraph<int,int,Node,LocalMatOps> > getCrsGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getCrsGraph(); }
+    inline RCP<const CrsGraph<int,int,LocalMatOps> > getCrsGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getCrsGraph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Returns the number of global rows in this matrix.
@@ -450,6 +459,7 @@ namespace Cthulhu {
       int    * eIndices;
       
       CTHULHU_ERR_CHECK(mtx_->ExtractGlobalRowView(GlobalRow, numEntries, eValues, eIndices));
+      if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
       indices = ArrayView<const int>(eIndices, numEntries);
       values  = ArrayView<const double>(eValues, numEntries);
@@ -473,6 +483,7 @@ namespace Cthulhu {
       int    * eIndices;
       
       CTHULHU_ERR_CHECK(mtx_->ExtractMyRowView(LocalRow, numEntries, eValues, eIndices));
+      if (numEntries == 0) { eValues = NULL; eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
 
       indices = ArrayView<const int>(eIndices, numEntries);
       values  = ArrayView<const double>(eValues, numEntries);
@@ -482,7 +493,7 @@ namespace Cthulhu {
     /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
       the zero and non-zero diagonals owned by this node. */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline void getLocalDiagCopy(Vector<double,int,int,Node> &diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
+    inline void getLocalDiagCopy(Vector<double,int,int> &diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
 #endif // CTHULHU_NOT_IMPLEMENTED
     //@}
 
@@ -501,14 +512,14 @@ namespace Cthulhu {
     */
 #ifdef CTHULHU_NOT_IMPLEMENTED
     template <class Domaindouble, class Rangedouble>
-    inline void multiply(const MultiVector<Domaindouble,int,int,Node> & X, MultiVector<Rangedouble,int,int,Node> &Y, Teuchos::ETransp trans, Rangedouble alpha, Rangedouble beta) const { CTHULHU_DEBUG_ME; mtx_->multiply(X, Y, trans, alpha, beta); }
+    inline void multiply(const MultiVector<Domaindouble,int,int> & X, MultiVector<Rangedouble,int,int> &Y, Teuchos::ETransp trans, Rangedouble alpha, Rangedouble beta) const { CTHULHU_DEBUG_ME; mtx_->multiply(X, Y, trans, alpha, beta); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     // TODO Note: Do we need to use a Tpetra::CrsMatrixMultiplyOp ?? 
     //            (Epetra Doc of multiply: it is recommended that multiply() not be called directly; instead, use the CrsMatrixMultiplyOp, as it will handle the import/exprt operations required to apply a matrix with non-trivial communication needs.)
 
     // TODO : templated type
-    inline void multiply(const MultiVector<double,int,int,Node> & X, MultiVector<double,int,int,Node> &Y, Teuchos::ETransp trans, double alpha, double beta) const {
+    inline void multiply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, Teuchos::ETransp trans, double alpha, double beta) const {
       CTHULHU_DEBUG_ME; 
 
       assert(alpha == 1); // not implemented
@@ -536,7 +547,7 @@ namespace Cthulhu {
     */
 #ifdef CTHULHU_NOT_IMPLEMENTED
     template <class Domaindouble, class Rangedouble>
-    inline void solve(const MultiVector<Rangedouble,int,int,Node> & Y, MultiVector<Domaindouble,int,int,Node> &X, Teuchos::ETransp trans) const { CTHULHU_DEBUG_ME; mtx_->solve(Y, X, trans); }
+    inline void solve(const MultiVector<Rangedouble,int,int> & Y, MultiVector<Domaindouble,int,int> &X, Teuchos::ETransp trans) const { CTHULHU_DEBUG_ME; mtx_->solve(Y, X, trans); }
 #endif // CTHULHU_NOT_IMPLEMENTED
           
     //@}
@@ -549,7 +560,7 @@ namespace Cthulhu {
       - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
     */
 #ifdef CTHULHU_NOT_IMPLEMENTED
-    inline void apply(const MultiVector<double,int,int,Node> & X, MultiVector<double,int,int,Node> &Y, 
+    inline void apply(const MultiVector<double,int,int> & X, MultiVector<double,int,int> &Y, 
                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
                       double alpha = doubleTraits<double>::one(),
                       double beta = doubleTraits<double>::zero()) const { CTHULHU_DEBUG_ME; //mtx_->apply(X, Y, mode, alpha, beta); TODO
@@ -563,22 +574,29 @@ namespace Cthulhu {
 
     //! \brief Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
-    inline const RCP<const Map<int,int,Node> > getDomainMap() const { 
+    inline const RCP<const Map<int,int> > getDomainMap() const { 
       CTHULHU_DEBUG_ME; 
-      // Note: the internal map is owned by this.mtx_ so the map is wrap in a non-owning weak RCP.
-      // The object return by this method is valid until 'this' is freed.
-      // JG TODO: do a test to convince myself
-      return rcp( new Cthulhu::EpetraMap(rcpFromRef(mtx_->DomainMap())) ); 
+
+      // The Epetra map is owned by the underlying Epetra matrix and freed when the matrix is deleted.
+      // I have to make a copy of the map to be sure that the RCP<Map> returned by this method will remain valid even if the matrix is deleted.
+      // Note that it is not a problem because the copy constructor of Epetra_Map doesn't really copy the data (there is an reference count mecanism in Epetra).
+
+      RCP<const Epetra_Map> map = rcp(new Epetra_Map(mtx_->DomainMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     }
     
     //! Returns the Map associated with the domain of this operator.
     //! This will be <tt>null</tt> until fillComplete() is called.
     //TODO: wrap Epetra::Map into a Cthulhu::Map
-    inline const RCP<const Map<int,int,Node> > getRangeMap() const { 
+    inline const RCP<const Map<int,int> > getRangeMap() const { 
       CTHULHU_DEBUG_ME; 
-      // Note: the internal map is owned by this.mtx_ so the map is wrap in a non-owning weak RCP.
-      // The object return by this method is valid until 'this' is freed.
-      return rcp( new Cthulhu::EpetraMap(rcpFromRef(mtx_->RangeMap())) ); 
+
+      // The Epetra map is owned by the underlying Epetra matrix and freed when the matrix is deleted.
+      // I have to make a copy of the map to be sure that the RCP<Map> returned by this method will remain valid even if the matrix is deleted.
+      // Note that it is not a problem because the copy constructor of Epetra_Map doesn't really copy the data (there is an reference count mecanism in Epetra).
+
+      RCP<const Epetra_Map> map = rcp(new Epetra_Map(mtx_->RangeMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
     //@}
@@ -592,7 +610,7 @@ namespace Cthulhu {
 
       // This implementation come from Tpetra_CrsMatrix_def.hpp (without modification)
       std::ostringstream oss;
-      //TODO: oss << DistObject<char, LocalOrdinal,GlobalOrdinal,Node>::description();
+      //TODO: oss << DistObject<char, LocalOrdinal,GlobalOrdinal>::description();
       if (isFillComplete()) {
         oss << "{status = fill complete"
             << ", global rows = " << getGlobalNumRows()
@@ -775,14 +793,14 @@ namespace Cthulhu {
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! @name Methods implementing Cthulhu::DistObject
     //@{
-    inline bool checkSizes(const DistObject<char, int,int,Node>& source) { CTHULHU_DEBUG_ME; return mtx_->checkSizes(); }
+    inline bool checkSizes(const DistObject<char, int,int>& source) { CTHULHU_DEBUG_ME; return mtx_->checkSizes(); }
 
-    inline void copyAndPermute(const DistObject<char, int,int,Node>& source,
+    inline void copyAndPermute(const DistObject<char, int,int>& source,
                                size_t numSameIDs,
                                const ArrayView<const int> &permuteToLIDs,
                                const ArrayView<const int> &permuteFromLIDs) { CTHULHU_DEBUG_ME; mtx_->copyAndPermute(); }
 
-    inline void packAndPrepare(const DistObject<char, int,int,Node>& source,
+    inline void packAndPrepare(const DistObject<char, int,int>& source,
                                const ArrayView<const int> &exportLIDs,
                                Array<char> &exports,
                                const ArrayView<size_t> & numPacketsPerLID,
