@@ -105,8 +105,10 @@ private:
     StreamErrorMap return_code;
 
     for (StreamSet::const_iterator it = m_destinations.begin(); it != m_destinations.end(); ++it) {
-      int ret = (*it)->rdbuf()->pubsync();
-      return_code[*it] = ret;
+      if ((*it)->rdbuf() != this) {
+        int ret = (*it)->rdbuf()->pubsync();
+        return_code[*it] = ret;
+      }
     }
 
     // Remove streambufs with errors
