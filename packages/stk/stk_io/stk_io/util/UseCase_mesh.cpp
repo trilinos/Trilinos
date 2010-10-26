@@ -132,15 +132,15 @@ namespace {
 	for(size_t is=0; is<side_count; ++is) {
 
 	  stk::mesh::Entity* const elem = bulk.get_entity(stk::mesh::Element, elem_side[is*2]);
-	  // If NULL, then the element was probably assigned to an
-	  // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
-	  // Hence the '-1' in the following line.
-	  int side_ordinal = elem_side[is*2+1] - 1 ;
 
+	  // If NULL, then the element was probably assigned to an
 	  // element block that appears in the database, but was
 	  // subsetted out of the analysis mesh. Only process if
 	  // non-null.
 	  if (elem != NULL) {
+	    // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+	    int side_ordinal = elem_side[is*2+1] - 1;
+
 	    stk::mesh::Entity& side =
 	      stk::mesh::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
 	    bulk.change_entity_parts( side, add_parts );
