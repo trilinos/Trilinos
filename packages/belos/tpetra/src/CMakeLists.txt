@@ -38,7 +38,7 @@ APPEND_SET(SOURCES
 # If Kokkos was built with TSQR (Tall Skinny QR) support, link with
 # the TSQR libraries.
 #
-IF (${PACKAGE_NAME}_ENABLE_TSQR})
+IF (${PACKAGE_NAME}_ENABLE_TSQR)
   PACKAGE_ADD_LIBRARY(
     belostpetra
     HEADERS ${HEADERS}

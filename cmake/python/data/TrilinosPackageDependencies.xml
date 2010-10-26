@@ -85,9 +85,9 @@
   </Package>
   <Package name="Epetra" dir="epetra">
     <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Kokkos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Teuchos,Kokkos"/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
     <LIB_OPTIONAL_DEP_TPLS value="CASK,MPI,Oski"/>
     <TEST_REQUIRED_DEP_TPLS/>

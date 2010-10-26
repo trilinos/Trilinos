@@ -38,7 +38,7 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-IF (${PACKAGE_NAME}_ENABLE_TSQR})
+IF (${PACKAGE_NAME}_ENABLE_TSQR)
   PACKAGE_ADD_LIBRARY(
     belosepetra
     HEADERS ${HEADERS}

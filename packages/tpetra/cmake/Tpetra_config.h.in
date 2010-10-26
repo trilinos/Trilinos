@@ -32,6 +32,9 @@
 /* Define if want to build tpetra-print_abuse_warnings */
 #cmakedefine HAVE_TPETRA_PRINT_ABUSE_WARNINGS
 
+/* Define when building Tpetra with TSQR support */
+#cmakedefine HAVE_TPETRA_TSQR
+
 /* Define if user requested explicit instantiation of classes into libtpetra */
 #cmakedefine HAVE_TPETRA_EXPLICIT_INSTANTIATION
 

@@ -80,7 +80,7 @@
 /* Define if want to build epetra-tests */
 #cmakedefine HAVE_EPETRA_TESTS
 
-/* Define if want to build with epetra enabled */
+/* Define if want to build with Teuchos enabled */
 #cmakedefine HAVE_EPETRA_TEUCHOS
 
 /* Define if want to build examples */
@@ -95,7 +95,7 @@
 /* Define if want to build with format_io enabled */
 #cmakedefine HAVE_FORMAT_IO
 
-/* Define if want to build with fortran enabled */
+/* Define if want to build with Fortran enabled */
 #cmakedefine HAVE_FORTRAN_SUPPORT
 
 /* Define if you are using gnumake - this will shorten your link lines. */
@@ -119,7 +119,7 @@
 /* define if we want to use OpenMP */
 #cmakedefine Epetra_HAVE_OMP
 
-/* Define if want to build with oski enabled */
+/* Define if want to build with OSKI enabled */
 #cmakedefine HAVE_OSKI
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
@@ -144,3 +144,8 @@
 #cmakedefine STDC_HEADERS
 
 #cmakedefine Epetra_ENABLE_CASK
+
+/* Define if want to build with TSQR (Tall Skinny QR) support.  
+   Requires both the Teuchos and Kokkos packages. */
+#cmakedefine HAVE_EPETRA_TSQR
+
