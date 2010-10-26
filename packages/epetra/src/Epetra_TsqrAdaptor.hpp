@@ -50,9 +50,10 @@
 ///   included when building Trilinos with the Kokkos package enabled.
 ///
 
-#include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR, etc.
+#include "Epetra_ConfigDefs.h"
 
-#ifdef HAVE_KOKKOS_TSQR
+#ifdef HAVE_EPETRA_TSQR
+#  include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR
 #  include <Kokkos_DefaultNode.hpp> // Include minimal Kokkos Node types
 
 #  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
@@ -173,7 +174,10 @@ namespace Epetra {
     TsqrAdaptor (const MV& mv,
 		 const Teuchos::ParameterList& plist) :
       pTsqr_ (new tsqr_type (makeNodeTsqr (plist), makeDistTsqr (mv)))
-    {}
+    {
+      Teuchos::ParameterList emptyParams;
+      pNode_ = Teuchos::rcp (new Kokkos::SerialNode (emptyParams));
+    }
 
     /// \brief Compute QR factorization [Q,R] = qr(A,0)
     ///
@@ -243,6 +247,11 @@ namespace Epetra {
     ///
     Teuchos::RCP< tsqr_type > pTsqr_;
 
+    /// Smart pointer to a Kokkos::SerialNode.  It really doesn't hold
+    /// or do anything, but we keep it around so that we don't have to
+    /// call the SerialNode constructor more than once.
+    Teuchos::RCP< Kokkos::SerialNode > pNode_;
+
     /// \brief Return a nonconstant view of the input MultiVector
     ///
     /// TSQR represents the local (to each MPI process) part of a
@@ -258,7 +267,7 @@ namespace Epetra {
     ///   Kokkos::MultiVector nonconstant view.
     ///
     /// \return Nonconstant view of the input MultiVector object. 
-    static Kokkos::MultiVector< scalar_type, node_type >
+    Kokkos::MultiVector< scalar_type, node_type >
     getNonConstView (MV& A)
     {
       if (! A.ConstantStride())
@@ -282,29 +291,30 @@ namespace Epetra {
       Teuchos::ArrayRCP< double > A_ptr (A.Values(), 0, numRows*stride, false);
 
       typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
-      KMV A_kmv;
+      KMV A_kmv (pNode_);
       A_kmv.initializeValues (numRows, numCols, A_ptr, stride);
       return A_kmv;
     }
 
     /// Initialize and return internode TSQR implementation
     ///
-    static RCP< dist_tsqr_type > 
+    static Teuchos::RCP< dist_tsqr_type > 
     makeDistTsqr (const MV& mv)
     {
       using Teuchos::RCP;
       typedef TSQR::MessengerBase< scalar_type > base_mess_type;
+      using TSQR::Epetra::makeTsqrMessenger;
 
       // pComm is a nonowning pointer to the reference.
       RCP< const Epetra_Comm > pComm = Teuchos::rcpFromRef (mv.Comm());
-      RCP< base_mess_type > pMessBase = TSQR::Epetra::makeTsqrMessenger (pComm);
+      RCP< base_mess_type > pMessBase = makeTsqrMessenger< scalar_type >(pComm);
       RCP< dist_tsqr_type > pDistTsqr (new dist_tsqr_type (pMessBase));
       return pDistTsqr;
     }
 
     /// Initialize and return intranode TSQR implementation
     ///
-    static RCP< node_tsqr_type >
+    static Teuchos::RCP< node_tsqr_type >
     makeNodeTsqr (const Teuchos::ParameterList& plist)
     {
       return node_tsqr_factory_type::makeNodeTsqr (plist);
@@ -313,7 +323,7 @@ namespace Epetra {
 
 } // namespace Epetra
 
-#endif // HAVE_KOKKOS_TSQR
+#endif // HAVE_EPETRA_TSQR
 
 #endif // __Epetra_TsqrAdaptor_hpp
 

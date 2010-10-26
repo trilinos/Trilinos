@@ -53,15 +53,17 @@
 #ifndef __Epetra_TsqrMessenger_hpp
 #define __Epetra_TsqrMessenger_hpp
 
-#include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR
+#include "Epetra_ConfigDefs.h" // HAVE_EPETRA_TSQR, EPETRA_MPI
 
-#ifdef HAVE_KOKKOS_TSQR
-#  include <Epetra_ConfigDefs.h> // EPETRA_MPI
+#ifdef HAVE_EPETRA_TSQR
+#  include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR
 #  include <Epetra_Comm.h>
 #  ifdef EPETRA_MPI
 #    include <Epetra_MpiComm.h>
+#    include <Epetra_MpiSmpComm.h>
 #    include <Tsqr_MpiMessenger.hpp>
 #  endif // EPETRA_MPI
+#  include <Teuchos_RCP.hpp>
 #  include <Tsqr_TrivialMessenger.hpp>
 #  include <algorithm>
 #  include <utility> // std::pair
@@ -81,33 +83,7 @@ namespace TSQR {
     ///
     /// \return (The MPI_Comm object, and whether it's valid)
     std::pair< MPI_Comm, bool >
-    extractRawMpiComm (const Teuchos::RCP< const Epetra_MpiComm >& pComm)
-    {
-      MPI_Comm rawMpiComm = MPI_COMM_NULL;
-      bool haveMpiComm = false;
-
-      Teuchos::RCP< const Epetra_MpiComm > pMpiComm = 
-	Teuchos::rcp_dynamic_cast (pComm, false);
-      if (pMpiComm.get() == NULL)
-	{
-	  // See if the input Epetra_Comm is really an
-	  // Epetra_MpiSmpComm.  If so, pull out its raw MPI_Comm
-	  // object and use that.
-	  Teuchos::RCP< const Epetra_MpiSmpComm > pMpiSmpComm = 
-	    Teuchos::rcp_dynamic_cast (pComm, false);
-	  if (pMpiSmpComm.get() != NULL)
-	    {
-	      rawMpiComm = pMpiSmpComm->Comm();
-	      haveMpiComm = true;
-	    }
-	}
-      else
-	{
-	  rawMpiComm = pMpiComm->Comm();
-	  haveMpiComm = true;
-	}
-      return std::make_pair (rawMpiComm, haveMpiComm);
-    }
+    extractRawMpiComm (const Teuchos::RCP< const Epetra_Comm >& pComm);
 #endif // EPETRA_MPI
 
 
@@ -134,7 +110,8 @@ namespace TSQR {
 	  typedef TSQR::MPI::MpiMessenger< Datum > mess_type;
 
 	  RCP< mess_type > pMess (new mess_type (results.first));
-	  RCP< base_mess_type > pMessBase = rcp_implicit_cast (pMess);
+	  RCP< base_mess_type > pMessBase = 
+	    rcp_implicit_cast< base_mess_type > (pMess);
 	  return pMessBase;
 	}
       else
@@ -143,7 +120,8 @@ namespace TSQR {
 	  typedef TSQR::TrivialMessenger< Datum > mess_type;
 	  
 	  RCP< mess_type > pMess (new mess_type);
-	  RCP< base_mess_type > pMessBase = rcp_implicit_cast (pMess);
+	  RCP< base_mess_type > pMessBase = 
+	    rcp_implicit_cast< base_mess_type > (pMess);
 	  return pMessBase;
 	}
     }
@@ -151,6 +129,6 @@ namespace TSQR {
   } // namespace Epetra
 } // namespace TSQR
 
-#endif // HAVE_KOKKOS_TSQR
+#endif // HAVE_EPETRA_TSQR
 #endif // __Epetra_TsqrMessenger_hpp
 

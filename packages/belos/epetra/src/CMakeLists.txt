@@ -38,9 +38,18 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
-  belosepetra
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS belos epetra
+IF (Belos_ENABLE_TSQR)
+  PACKAGE_ADD_LIBRARY(
+    belosepetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS belos epetra kokkos kokkosnodetsqr kokkosdisttsqr
   )
+ELSE ()
+  PACKAGE_ADD_LIBRARY(
+    belosepetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS belos epetra
+    )
+ENDIF ()

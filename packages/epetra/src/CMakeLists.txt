@@ -208,7 +208,7 @@ ENDIF()
 # BEGIN TSQR
 ######################################################################
 
-IF(Trilinos_ENABLE_Teuchos AND Trilinos_ENABLE_Kokkos)
+IF(Epetra_ENABLE_TSQR)
   # TSQR adaptors for Epetra.  TSQR lives in the Kokkos package and
   # requires the Teuchos package, so we don't attempt to include
   # TSQR-related header files unless both packages are enabled.  The
@@ -218,6 +218,9 @@ IF(Trilinos_ENABLE_Teuchos AND Trilinos_ENABLE_Kokkos)
   APPEND_SET(HEADERS
     Epetra_TsqrAdaptor.hpp
     Epetra_TsqrMessenger.hpp
+    )
+  APPEND_SET(SOURCES
+    Epetra_TsqrMessenger.cpp
     )
 ENDIF()
 

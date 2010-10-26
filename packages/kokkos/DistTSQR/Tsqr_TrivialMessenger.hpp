@@ -105,15 +105,15 @@ namespace TSQR {
       if (destProc != rank())
 	{
 	  std::ostringstream os;
-	  os << "Destination rank " << destProc " is invalid.  The only "
-	    "valid rank for TSQR::TrivialMessenger is 0 (zero)."
+	  os << "Destination rank " << destProc << " is invalid.  The only "
+	     << "valid rank for TSQR::TrivialMessenger is 0 (zero).";
 	    throw std::invalid_argument (os.str());
 	}
       else if (sendRecvCount < 0)
 	{
 	  std::ostringstream os;
 	  os << "sendRecvCount = " << sendRecvCount << " is invalid: "
-	    "only nonnegative values are allowed.";
+	     << "only nonnegative values are allowed.";
 	  throw std::invalid_argument (os.str());
 	}
       else if (sendRecvCount == 0)
@@ -128,6 +128,7 @@ namespace TSQR {
     virtual Datum 
     globalSum (const Datum& inDatum) 
     {
+      Datum outDatum (inDatum);
       return outDatum;
     }
 
@@ -138,6 +139,7 @@ namespace TSQR {
     virtual Datum 
     globalMin (const Datum& inDatum)
     {
+      Datum outDatum (inDatum);
       return outDatum;
     }
 
@@ -148,6 +150,7 @@ namespace TSQR {
     virtual Datum 
     globalMax (const Datum& inDatum)
     {
+      Datum outDatum (inDatum);
       return outDatum;
     }
 

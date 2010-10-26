@@ -57,6 +57,10 @@
 #include "BelosOperator.hpp"
 #include "BelosTypes.hpp"
 
+#ifdef HAVE_BELOS_TSQR
+#  include <Epetra_TsqrAdaptor.hpp>
+#endif // HAVE_BELOS_TSQR
+
 namespace Belos {
  
   //! @name Epetra Adapter Exceptions
@@ -409,6 +413,15 @@ namespace Belos {
     { os << mv << std::endl; }
     
   };        
+
+#ifdef HAVE_BELOS_TSQR
+#  ifdef HAVE_EPETRA_TSQR
+  /// \typedef tsqr_adaptor_type
+  /// \brief TsqrAdaptor specialization for Epetra_MultiVector
+  ///
+  typedef Epetra::TsqrAdaptor tsqr_adaptor_type;
+#  endif // HAVE_EPETRA_TSQR
+#endif // HAVE_BELOS_TSQR
   
   ////////////////////////////////////////////////////////////////////
   //

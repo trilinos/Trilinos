@@ -30,6 +30,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_THREADS
   "Enable threading support."
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TSQR
+  HAVE_EPETRA_TSQR
+  "Enable support for TSQR (Tall Skinny QR factorization) on Epetra_MultiVector objects.  Requires building with the Teuchos and Kokkos packages."
+  ${Trilinos_ENABLE_Kokkos} AND ${Trilinos_ENABLE_Teuchos} )
+
 ADD_SUBDIRECTORY(src)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)

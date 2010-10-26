@@ -38,12 +38,12 @@ APPEND_SET(SOURCES
 # If Kokkos was built with TSQR (Tall Skinny QR) support, link with
 # the TSQR libraries.
 #
-IF (Kokkos_ENABLE_TSQR)
+IF (Belos_ENABLE_TSQR)
   PACKAGE_ADD_LIBRARY(
     belostpetra
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
-    DEPLIBS anasazi tpetra kokkos kokkosnodetsqr kokkosdisttsqr
+    DEPLIBS belos tpetra kokkos kokkosnodetsqr kokkosdisttsqr
     )
 ELSE ()
   PACKAGE_ADD_LIBRARY(
