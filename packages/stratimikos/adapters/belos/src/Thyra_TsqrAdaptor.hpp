@@ -35,6 +35,8 @@
 #include <Thyra_MultiVectorBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
 
+#include <stdexcept>
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -86,7 +88,9 @@ namespace Thyra {
     ///   NodeTsqrFactory implementation.
     TsqrAdaptor (const MV& mv,
 		 const Teuchos::ParameterList& plist) 
-    {}
+    {
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
+    }
 
     /// \brief Compute QR factorization [Q,R] = qr(A,0)
     ///
@@ -94,7 +98,9 @@ namespace Thyra {
     factorExplicit (MV& A,
 		    MV& Q,
 		    dense_matrix_type& R)
-    {}
+    {
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
+    }
 
     /// \brief Rank-revealing decomposition
     ///
@@ -131,12 +137,12 @@ namespace Thyra {
     revealRank (MV& Q,
 		dense_matrix_type& R,
 		const magnitude_type& tol)
-    {}
+    {
+      return 0; // FIXME (mfh 26 Oct 2010) Stub implementation
+    }
   };
 
 } // namespace Tpetra
-
-#endif // HAVE_KOKKOS_TSQR
 
 #endif // __Thyra_TsqrAdaptor_hpp
 
