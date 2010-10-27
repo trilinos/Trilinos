@@ -45,9 +45,12 @@
 #ifndef __BelosTsqrOrthoManager_hpp
 #define __BelosTsqrOrthoManager_hpp
 
-#include "BelosConfigDefs.hpp"
+#include "BelosConfigDefs.hpp" // HAVE_BELOS_TSQR
 #include "BelosMultiVecTraits.hpp"
-#include "BelosDGKSOrthoManager.hpp" // Belos doesn't have an SVQB orthomanager impl. yet
+// Belos doesn't have an SVQB orthomanager implemented yet, so we just
+// use a default orthomanager for the case where the inner product
+// matrix is nontrivial.
+#include "BelosDGKSOrthoManager.hpp" 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ParameterList.hpp"
 

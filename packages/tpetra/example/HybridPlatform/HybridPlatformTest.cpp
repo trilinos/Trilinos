@@ -20,11 +20,11 @@ bool testPassed;
 template <class Node, class Scalar, class Ordinal>
 Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ordinal,Node> > &A, size_t niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose) {
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
-  const bool NO_INITIALIZE_TO_ZERO = false;
+  const bool INITIALIZE_TO_ZERO = true;
   // create three vectors; do not bother initializing q to zero, as we will fill it with random below
-  Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> z(A->getRangeMap(), NO_INITIALIZE_TO_ZERO),
-                                              q(A->getRangeMap(), NO_INITIALIZE_TO_ZERO),
-                                              r(A->getRangeMap(), NO_INITIALIZE_TO_ZERO);
+  Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> z(A->getRangeMap(), INITIALIZE_TO_ZERO),
+                                              q(A->getRangeMap(), INITIALIZE_TO_ZERO),
+                                              r(A->getRangeMap(), INITIALIZE_TO_ZERO);
   // Fill z with random numbers
   z.randomize();
   // Variables needed for iteration

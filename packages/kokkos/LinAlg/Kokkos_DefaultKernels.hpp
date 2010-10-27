@@ -5,6 +5,9 @@
 #include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_DefaultBlockSparseOps.hpp"
 #include "Kokkos_DefaultRelaxation.hpp"
+#if HAVE_KOKKOS_CUSP
+#include "Kokkos_CUSPSparseOps.hpp"
+#endif
 
 namespace Kokkos {
 
@@ -24,6 +27,15 @@ namespace Kokkos {
       For ThrustGPUNode, defaults are the same as in general, except that the default sparse ops should be provided by 
       DefaultDeviceSparseOps.
    */
+#ifdef HAVE_KOKKOS_CUSP
+  class ThrustGPUNode;
+  template <class Scalar, class Ordinal>
+  struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
+    typedef CUSPSparseOps<void  ,Ordinal,ThrustGPUNode>           SparseOps;
+    typedef DefaultBlockSparseOps <Scalar,Ordinal,ThrustGPUNode>  BlockSparseOps;
+    typedef DefaultRelaxation     <Scalar,Ordinal,ThrustGPUNode>  Relaxations;
+  };
+#else
   class ThrustGPUNode;
   template <class Scalar, class Ordinal>
   struct DefaultKernels<Scalar,Ordinal,ThrustGPUNode> {
@@ -31,6 +43,7 @@ namespace Kokkos {
     typedef DefaultBlockSparseOps <Scalar,Ordinal,ThrustGPUNode>  BlockSparseOps;
     typedef DefaultRelaxation     <Scalar,Ordinal,ThrustGPUNode>  Relaxations;
   };
+#endif
 
 #ifdef HAVE_KOKKOS_TREAT_SERIALNODE_AS_DEVICE
   /** \brief Traits class providing default kernel types for CRS, block CRS and relaxation kernels.

@@ -1,4 +1,5 @@
 INCLUDE(PackageAddExecutableAndTest)   
+INCLUDE(PackageLibraryMacros)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(  DummySparseKernelDriver  
   SOURCES DummySparseKernelDriver.cpp  

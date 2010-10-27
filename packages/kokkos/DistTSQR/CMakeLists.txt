@@ -9,6 +9,8 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
 
   # Non-generated header files
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+  # "Tsqr_Mpi*" files will only have nontrivial contents if HAVE_MPI
+  # is #defined via Teuchos_ConfigDefs.hpp.
   APPEND_SET(HEADERS
     Tsqr_DistTsqrHelper.hpp
     Tsqr_DistTsqr.hpp
@@ -20,16 +22,22 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
     Tsqr_MessengerBase.hpp 
     Tsqr_Mgs.hpp 
     Tsqr_MgsTest.hpp 
+    Tsqr_MpiDatatype.hpp 
+    Tsqr_MpiMessenger.hpp 
     Tsqr_ParTest.hpp 
     Tsqr_printGlobalMatrix.hpp 
     Tsqr_Random_GlobalMatrix.hpp
     Tsqr_RMessenger.hpp
     Tsqr_TestSetup.hpp
     Tsqr_TeuchosMessenger.hpp
+    Tsqr_TrivialMessenger.hpp
     Tsqr_TsqrTest.hpp
     )
+  # "Tsqr_Mpi*" files will only have nontrivial contents if HAVE_MPI
+  # is #defined via Teuchos_ConfigDefs.hpp.
   APPEND_SET(SOURCES
     Tsqr_GlobalTimeStats.cpp
+    Tsqr_MpiDatatype.cpp 
     )
   
   ASSERT_DEFINED(TSQR_ENABLE_Intel_TBB)

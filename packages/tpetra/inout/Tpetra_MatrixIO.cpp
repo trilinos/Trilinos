@@ -208,7 +208,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
         fin.getline(lineBuf, MAXSIZE);
         TEST_FOR_EXCEPTION(std::sscanf(lineBuf,"%*s") < 0, std::runtime_error, errStr);
         char *linePtr = lineBuf;
-        for (int ind=0; ind < indsPerLine; ++ind) {
+        for (int indcntr=0; indcntr < indsPerLine; ++indcntr) {
           if (indicesRead == numNZ) break;
           int ind;
           // terminate the string at the end of the current ind block, saving the character in that location
@@ -243,7 +243,7 @@ void Tpetra::Utils::readHBMatDouble(const std::string &filename, int &numRows, i
         // if valFlag == 'D', then we need to convert [dD] in fp vals into [eE] that scanf can parse
         if (valFlag == 'D') std::replace_if(lineBuf, lineBuf+MAXSIZE, std::bind2nd(std::equal_to<char>(), 'D'), 'E'); 
         char *linePtr = lineBuf;
-        for (int val=0; val < valsPerLine; ++val) {
+        for (int valcntr=0; valcntr < valsPerLine; ++valcntr) {
           if (valsRead == totalNumVals) break;
           double val;
           // terminate the string at the end of the current val block, saving the character in that location

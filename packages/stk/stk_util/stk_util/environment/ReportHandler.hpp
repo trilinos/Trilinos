@@ -11,6 +11,7 @@
 
 #include <iosfwd>
 #include <string>
+#include <sstream>
 
 namespace stk {
 
@@ -25,6 +26,14 @@ namespace stk {
  *
  */
 typedef void (*REH)(const char *message, int type);
+
+/**
+ * @brief ErrorHandler defines the signature of functions that can be used
+ * to handle errors. expr is the expression of the failing error-check,
+ * location is a raw code location (something like file:line, no prose),
+ * and message is the error message.
+ */
+typedef void (*ErrorHandler)(const char* expr, const std::string& location, std::ostringstream& message);
 
 /**
  * @brief Function <b>default_report_handler</b> is the default
@@ -71,6 +80,28 @@ void report(const char *message, int type);
  */
 std::string source_relative_path(const std::string &path);
 
+/**
+ * A function used to create and throw nice-looking exceptions (used by
+ * the Throw* macros).
+ */
+void default_assert_handler(const char* expr,
+                            const std::string& location,
+                            std::ostringstream& message);
+
+/**
+ * Change the error handler for ThrowAssert and ThrowRequire.
+ *
+ * @return The previous error handler (useful if you want to restore it later)
+ */
+ErrorHandler set_assert_handler(ErrorHandler error_handler);
+
+/**
+ * Makes the call to the current assert handler
+ */
+void handle_assert(const char* expr,
+                   const std::string& location,
+                   std::ostringstream& message);
+
 ///
 /// @}
 ///
@@ -106,16 +137,34 @@ std::string source_relative_path(const std::string &path);
 
 #define StackTrace std::string(std::string("  exception thrown from ") + stk::source_relative_path(STR_TRACE))
 
-#ifdef NDEBUG
-#  define ThrowAssert(expr)		((void) (0))
-#  define ThrowAssertMsg(expr,message)	((void) (0))
-#else
-#  define ThrowAssert(expr)		((expr) ? (void) 0 : throw std::runtime_error(std::string("Assertion ") + #expr + " failed\n" + StackTrace))
-#  define ThrowAssertMsg(expr,message)	((expr) ? (void) 0 : throw std::runtime_error(std::string(message) + ", assertion " + #expr + " failed\n" + StackTrace))
-#endif
+// The do-while is necessary to prevent usage of this macro from changing
+// program semantics (e.g. dangling-else problem). The obvious implementation:
+// if (expr) ; else throw ...
+// is not adequate because it causes ambiguous else statements in this context:
+// if (something)
+//   ThrowRequire(foo);
+// The compiler does not know whether the else statement that the macro inserts
+// applies to the "if (something) " or the "if (expr)".
+#define ThrowRequireMsg(expr, message)                                  \
+  do {                                                                  \
+    if ( !(expr) ) {                                                    \
+      std::ostringstream stk_util_internal_throw_require_oss;           \
+      stk_util_internal_throw_require_oss << message;                   \
+      stk::handle_assert( #expr,                                        \
+                          STR_TRACE,                                    \
+                          stk_util_internal_throw_require_oss );        \
+    }                                                                   \
+  } while (false)
 
-#define ThrowRequire(expr)		((expr) ? (void) 0 : throw std::runtime_error(std::string("Requirement ") + #expr + " failed\n" + StackTrace))
-#define ThrowRequireMsg(expr,message)	((expr) ? (void) 0 : throw std::runtime_error(std::string(message) + ", requirement " + #expr + " failed\n" + StackTrace))
+#define ThrowRequire(expr) ThrowRequireMsg(expr, "")
+
+#ifdef NDEBUG
+#  define ThrowAssert(expr)            ((void) (0))
+#  define ThrowAssertMsg(expr,message) ((void) (0))
+#else
+#  define ThrowAssert(expr)            ThrowRequire(expr)
+#  define ThrowAssertMsg(expr,message) ThrowRequireMsg(expr,message)
+#endif
 
 ///
 /// @}

@@ -47,6 +47,9 @@ These are the following:
     - \c GlobalOrdinal: A \c GlobalOrdinal is used to store indices representing global IDs and to describe 
       global properties of a distributed object (e.g., global number of non-zeros in a sparse matrix, global number
       of rows in a vector.) The \c GlobalOrdinal therefore dictates the maximum size of a distributed object.
+    .
+Additionally, computational class in %Tpetra will also be templated on a \c Node type. This node fulfills the \ref kokkos_node_api "Kokkos Node API" and 
+allows the %Tpetra objects to perform parallel computation on one of a number of shared-memory nodes, including multi-core CPUs and GPUs.
 
 The Tpetra::Distributor class is unique in that it is not parametrized by any
 templated types. However, the class includes some templated member functions.

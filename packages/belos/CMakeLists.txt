@@ -17,7 +17,6 @@ PACKAGE(Belos)
 # TSQR in the Euclidean-inner-product case).  TSQR is enabled by
 # default if enabled in Kokkos.  If Teuchos_ENABLE_COMPLEX is enabled,
 # TSQR is built with complex arithmetic support.
-
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_BELOS_TSQR
@@ -28,6 +27,13 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   BELOS_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
   "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_Tpetra_Timers
+  HAVE_BELOS_TPETRA_TIMERS
+  "Add timers to Belos::MultiVecTraits for Tpetra multivectors."
+  NO
+  )
 
 #
 # C) Add the libraries, tests, and examples
@@ -46,6 +52,7 @@ ENDIF()
 IF (Belos_ENABLE_Tpetra)
   ADD_SUBDIRECTORY(tpetra)
 ENDIF()
+
 
 #
 # Exclude files for source package.

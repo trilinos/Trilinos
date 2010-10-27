@@ -7,6 +7,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES test_bl_cg_hb.cpp 
   ARGS 
   COMM serial mpi
+  DEPLIBS tpetra
   )
 
 #PACKAGE_ADD_EXECUTABLE_AND_TEST(

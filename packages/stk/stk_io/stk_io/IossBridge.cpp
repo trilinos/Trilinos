@@ -934,27 +934,22 @@ namespace stk {
 			   const stk::mesh::BulkData &bulk,
 			   Ioss::Region &io_region)
       {
-	if (!part.subsets().empty()) {
-	  Ioss::FaceSet * const fs = new Ioss::FaceSet(io_region.get_database(), part.name());
+	Ioss::FaceSet * const fs = new Ioss::FaceSet(io_region.get_database(), part.name());
 
-	  io_region.add(fs);
-	  int spatial_dim = io_region.get_property("spatial_dimension").get_int();
-	  define_face_edge_blocks(part, bulk, fs, mesh::Face, spatial_dim);
-	}
+	io_region.add(fs);
+	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
+	define_face_edge_blocks(part, bulk, fs, mesh::Face, spatial_dim);
       }
 
       void define_edge_set(stk::mesh::Part &part,
 			   const stk::mesh::BulkData &bulk,
 			   Ioss::Region &io_region)
       {
-	if (!part.subsets().empty()) {
-	  Ioss::EdgeSet * const fs =
-	    new Ioss::EdgeSet(io_region.get_database(), part.name());
+	Ioss::EdgeSet * const fs = new Ioss::EdgeSet(io_region.get_database(), part.name());
 
-	  io_region.add(fs);
-	  int spatial_dim = io_region.get_property("spatial_dimension").get_int();
-	  define_face_edge_blocks(part, bulk, fs, mesh::Edge, spatial_dim);
-	}
+	io_region.add(fs);
+	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
+	define_face_edge_blocks(part, bulk, fs, mesh::Edge, spatial_dim);
       }
 
       void define_node_set(stk::mesh::Part &part,
@@ -1048,7 +1043,7 @@ namespace stk {
 
 	for(size_t i=0; i<num_sides; ++i) {
 
-	  const mesh::Entity & side = * sides[i] ;
+	  const mesh::Entity &side = *sides[i] ;
 
 	  const mesh::PairIterRelation side_elem = side.relations( mesh::Element );
 
@@ -1057,30 +1052,27 @@ namespace stk {
 
 	  const size_t num_side_elem = side_elem.size();
 
-	  const mesh::Relation * rel = NULL ;
+	  const mesh::Relation *rel = NULL ;
 
 	  for ( size_t j = 0 ; j < num_side_elem && ! rel ; ++j ) {
-	    rel = & side_elem[j] ;
-	    const mesh::Entity & elem = * rel->entity();
+	    const mesh::Entity & elem = *side_elem[j].entity();
 
-	    if ( ! elem.bucket().member( meta_data.locally_owned_part() ) ||
-		 ! element_side_polarity( elem , side , rel->identifier() ) ) {
-	      rel = NULL ;
+	    if ( elem.bucket().member( meta_data.locally_owned_part() ) &&
+		 (num_side_elem == 1 || element_side_polarity(elem, side, side_elem[j].identifier())) ) {
+	      rel = &side_elem[j];
 	    }
 	  }
 
-	  if ( NULL == rel ) { // no suitable element found
-      std::ostringstream oss;
-      oss << "ERROR, no suitable element found";
-      throw std::runtime_error(oss.str());
+	  if (rel == NULL) { // no suitable element found
+	    std::ostringstream oss;
+	    oss << "ERROR, no suitable element found";
+	    throw std::runtime_error(oss.str());
 	  }
 
 	  side_ids[i] = side.identifier();
 
-	  // Ioss is 1-based, mesh is 0-based.
-	  // Hence the '+1' in the following line.
 	  elem_side_ids[i*2]   = rel->entity()->identifier();
-	  elem_side_ids[i*2+1] = rel->identifier() + 1 ;
+	  elem_side_ids[i*2+1] = rel->identifier() + 1; // Ioss is 1-based, mesh is 0-based.
 	}
 
 	const size_t num_ids_written = io.put_field_data("ids", side_ids);

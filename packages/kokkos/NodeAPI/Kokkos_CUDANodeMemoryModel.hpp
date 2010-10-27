@@ -16,6 +16,7 @@ namespace Teuchos {
   template <typename CharT, typename Traits> class basic_FancyOStream;
   typedef basic_FancyOStream<char, std::char_traits<char> > FancyOStream;
 }
+
 namespace Kokkos {
 
   using Teuchos::ArrayRCP;
@@ -32,6 +33,7 @@ namespace Kokkos {
 
       //@{ Default Constructor 
 
+      //! Default constructor.
       CUDANodeMemoryModel();
 
       //@}
@@ -93,9 +95,27 @@ namespace Kokkos {
       template <class T> inline
       void copyBuffers(size_t size, const ArrayRCP<const T> &buffSrc, const ArrayRCP<T> &buffDest);
 
+      /*! \brief Return a const view of a buffer for use on the host.
+          This creates a \c const view of length \c size, constituting the first \c size entries of \c buff, as they exist at the time of view creation.
+          host memory allocated for the creation of this view is automatically deleted when no refences to the view remain. 
+          \pre <tt>buff.size() >= size</tt>
+       */
       template <class T> inline
       ArrayRCP<const T> viewBuffer(size_t size, ArrayRCP<const T> buff);
 
+      /*! \brief Return a non-const view of a buffer for use on the host.
+
+          \param[in] rw Specifies Kokkos::ReadWrite or Kokkos::WriteOnly. If Kokkos::WriteOnly, the contents of the view are undefined when it is created and must 
+          be initialized on the host. However, this prevents the potential need for a copy from device to host memory needed to set the view 
+          values as when Kokkos::ReadWrite is specified.
+          
+          This creates a view of length \c size, constituting the first \c size entries of \c buff, as they exist at the time of view creation.
+
+          A non-const view permits changes, which must be copied back to the buffer. This does not occur until all references to the view are deleted.
+          If the buffer is deallocated before the view is deleted, then the copy-back does not occur.
+
+          \pre <tt>buff.size() >= size</tt>
+       */
       template <class T> inline
       ArrayRCP<T> viewBufferNonConst(ReadWriteOption rw, size_t size, const ArrayRCP<T> &buff);
 
@@ -105,7 +125,11 @@ namespace Kokkos {
 
       //@{ Book-keeping information
 
+      //! \brief Print some statistics regarding node allocation and memory transfer.
       void printStatistics(const RCP< Teuchos::FancyOStream > &os) const;
+      
+      //! \brief Clear all statistics on memory transfer.
+      void clearStatistics();
 
       //@}
 

@@ -35,6 +35,7 @@ VERBATIM_HEADERS       = YES
 SHOW_INCLUDE_FILES     = YES
 #JAVADOC_AUTOBRIEF      = YES
 INHERIT_DOCS           = YES
+INLINE_INHERITED_MEMB  = YES
 INLINE_INFO            = YES
 SORT_MEMBER_DOCS       = NO
 TAB_SIZE               = 2
@@ -46,7 +47,7 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc ../src ../example/PowerMethod
+INPUT                  = index.doc groups.doc ../src ../example/PowerMethod
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = NO
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
@@ -54,7 +55,8 @@ EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           =  ../example/PowerMethod/Tpetra_Power_Method.cpp \
                           ../example/PowerMethod/Tpetra_Power_Method_From_File.cpp \
-                          ../example/PowerMethod/Tpetra_Power_Method.hpp
+                          ../example/PowerMethod/Tpetra_Power_Method.hpp \
+                          ../example/LocalMatOps/LocalMatOpExample.cpp
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 IMAGE_PATH             = 
 INPUT_FILTER           = 
