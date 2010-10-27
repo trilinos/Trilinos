@@ -12,12 +12,12 @@
 #define stk_rebalance_GeomDecomp_hpp
 
 /** @file GeomDecomp.h
- * @brief Geometric support for partitioning of mesh objects.
+ * @brief Geometric support for partitioning of mesh entities.
  *
  * This file contains a single class GeomDecomp derived from
  * the Partition class.  GeomDecomp adds geometric computations
  * to be used in determining an optimal distribution of mesh
- * objects.  GeomDecomp defines some virtual functions that
+ * entities.  GeomDecomp defines some virtual functions that
  * are to be specialized by the class that actually determines
  * the optimal distribution.
  *
@@ -44,14 +44,14 @@
 namespace stk {
 namespace rebalance {
 
-/** Class for determining the optimal partitioning of mesh objects.
+/** Class for determining the optimal partitioning of mesh entities.
  * The GeomDecomp class has no data associated with it, only
  * member functions.  All data is inherited from the Partition
  * class.
  *
  * GeomDecomp has two functions.  It adds functions to
- * compute geometry information for mesh objects, such as the
- * center point for a mesh object.  And it defines virtual
+ * compute geometry information for mesh entities, such as the
+ * center point for a mesh entity.  And it defines virtual
  * functions to be specialized by other classes that interface
  * to partitioning packages such as Zoltan.
  */
@@ -64,8 +64,8 @@ public:
 
   virtual ~GeomDecomp(){}
 
-  /** Convert a single mesh object to a single point.
-   * This is used in the case where a mesh object is
+  /** Convert a single mesh entity to a single point.
+   * This is used in the case where a mesh entity is
    * an element with many nodes.  Then something like
    * the element centroid can be used to define
    * a single coordinate point for it.
@@ -73,14 +73,14 @@ public:
    * be large enough to hold a single coordinate.
    * Note the maximum needed in all cases is length 3.
    *
-   * meshobj_coordinates is used to return the nodal coordinates
+   * entity_coordinates is used to return the nodal coordinates
    * that compute_obj_centroid averages.  The return value is
-   * the mesh objects from which the coordinates were obtained.
+   * the mesh entities from which the coordinates were obtained.
    * compute_obj_centroid returns a vector of vectors containing
    * the coordinates of the nodes that were used to compute the
    * centroid.
    */
-  static std::vector<const mesh::Entity *> meshobj_coordinates(const mesh::Entity           & obj,
+  static std::vector<const mesh::Entity *> entity_coordinates(const mesh::Entity           & obj,
                                                                const VectorField     & nodal_coor_ref,
                                                                std::vector<std::vector<double> >    & coordinates);
   static std::vector<std::vector<double> > compute_obj_centroid( const mesh::Entity     & obj,
@@ -96,9 +96,9 @@ public:
 
   static bool confirm ( const std::string &param_set_name );
 
-  /** Convert from a single mesh object to a box.
+  /** Convert from a single mesh entity to a box.
    *  lo and hi are arrays of length one, two, or three
-   *  depending on the dimension of the object.  These
+   *  depending on the dimension of the entity.  These
    * two points define the extent of the boy.
    * box_expansion_sum is an amount that will be used to
    * expand the box to make it larger than the smallest
@@ -134,15 +134,12 @@ public:
                             double max[],
                             std::vector<int> &procs) const =0;
 
-  int point_assign_all_objs (mesh::EntityProcVec &comm_spec);
-
-
   /**
    * Find all the processors which geometrically overlap a given
-   * mesh object (returned in the third argument).
+   * mesh entity (returned in the third argument).
    * NOTE:
    * The box_expansion_sum expands the surrounding "box" associated
-   * with the mesh object uniformly in each direction by the given sum.
+   * with the mesh entity uniformly in each direction by the given sum.
    * Specifically, each component of (x,y,z)_min of the box is REDUCED
    * by the sum, and each component of (x,y,z)_max of the box is
    * INCREASED by the sum.
