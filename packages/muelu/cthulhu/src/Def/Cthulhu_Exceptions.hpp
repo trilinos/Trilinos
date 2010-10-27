@@ -29,7 +29,7 @@ namespace Cthulhu {
     };
 
     //! Exception throws when you call an unimplemented method of Cthulhu
-    /** Mainly use for developement work. **/
+    /** Mainly use for development in progress. **/
     class NotImplemented : public Teuchos::ExceptionBase
     {
     public:

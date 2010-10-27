@@ -4,6 +4,8 @@
 #include <Kokkos_DefaultNode.hpp> // Note: we should not need this header for Epetra
 #include <Kokkos_DefaultKernels.hpp>
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
 // Define default data types
 typedef double ScalarType;
 typedef int    LocalOrdinal;
@@ -17,5 +19,7 @@ typedef ScalarType    SC;
 typedef LocalOrdinal  LO;
 typedef GlobalOrdinal GO;
 typedef Node          NO;
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif

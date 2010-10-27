@@ -16,10 +16,7 @@
 
 namespace Cthulhu {
 
-  /** \brief A class for partitioning distributed objects.
-
-   This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
-   The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
+  /** \brief A class for partitioning distributed 
   */
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class Map : public Teuchos::Describable {
