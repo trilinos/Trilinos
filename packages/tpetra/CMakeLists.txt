@@ -44,6 +44,13 @@ ADD_OPTION_AND_DEFINE(
   )
 
 ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_RTI
+  HAVE_TPETRA_RTI
+  "Enabling Tpetra Reduction/Transformation Interface."
+  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  )
+
+ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field float."
@@ -134,6 +141,9 @@ ADD_OPTION_AND_DEFINE(
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(inout)
+IF (Tpetra_ENABLE_RTI)
+  ADD_SUBDIRECTORY(rti)
+ENDIF()
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
