@@ -1,6 +1,7 @@
 ADD_SUBDIRECTORY(StridedSolve)
 ADD_SUBDIRECTORY(AddMultiplyPrecs)
 ADD_SUBDIRECTORY(BuildPreconditioner)
+ADD_SUBDIRECTORY(ML-Teko-Coupling)
 
 INCLUDE(PackageCopyFilesToBinaryDir)
 
