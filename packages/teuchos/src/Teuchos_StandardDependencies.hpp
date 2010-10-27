@@ -789,6 +789,7 @@ private:
   //
 };
 
+
 template<class T>
 void NumberVisualDependency<T>::validateDep() const{
   RCP<const ParameterEntry> dependee = getFirstDependee();
@@ -937,7 +938,7 @@ private:
    * \brief The function used to calculate the new value of the
    * arrays length.
    */
-    RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func_;
+    RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependentType> > func_;
   
   /**
    * \brief Modifies the length of an array.

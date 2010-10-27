@@ -37,16 +37,17 @@
 */
 
 #include "Teuchos_Dependency.hpp"
+#include "Teuchos_Describable.hpp"
 
-namespace Teuchos{
+namespace Teuchos {
 
 /**
  * \brief A Condition determines whether or not 
  * a particular set of conditions are currently
  * occuring.
  */
-class Condition {
-
+class Condition : public Describable
+{
 public:
 
   /** \name Public types */
