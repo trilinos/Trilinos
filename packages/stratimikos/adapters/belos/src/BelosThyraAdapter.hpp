@@ -41,6 +41,9 @@
 #include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
+#ifdef HAVE_BELOS_TSQR
+#  include <Thyra_TsqrAdaptor.hpp>
+#endif // HAVE_BELOS_TSQR
 
 namespace Belos {
   
@@ -362,6 +365,14 @@ namespace Belos {
 
     //@}
 
+#ifdef HAVE_BELOS_TSQR
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for Epetra_MultiVector
+    ///
+    /// \warning This is a STUB for now; it doesn't work.
+    ///
+    typedef Thyra::TsqrAdaptor< ScalarType > tsqr_adaptor_type;
+#endif // HAVE_BELOS_TSQR
   };        
 
   ///////////////////////////////////////////////////////////////////////// 

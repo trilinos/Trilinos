@@ -1,11 +1,11 @@
 #include <Tsqr_Config.hpp>
 #include <Tsqr_MpiDatatype.hpp>
 
-#ifdef HAVE_TSQR_COMPLEX
-#  include <complex>
-#endif // HAVE_TSQR_COMPLEX
-
-#include <utility> // std::pair
+#ifdef HAVE_MPI // #defined (or not) via Teuchos_ConfigDefs.hpp
+#  ifdef HAVE_TSQR_COMPLEX
+#    include <complex>
+#  endif // HAVE_TSQR_COMPLEX
+#  include <utility> // std::pair
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -130,3 +130,5 @@ namespace TSQR {
   } // namespace MPI
 } // namespace TSQR
 
+
+#endif // HAVE_MPI

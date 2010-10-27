@@ -1,10 +1,12 @@
 #ifndef __TSQR_MpiMessenger_hpp
 #define __TSQR_MpiMessenger_hpp
 
-#include <mpi.h>
-#include <Tsqr_MessengerBase.hpp>
-#include <Tsqr_MpiDatatype.hpp>
-#include <stdexcept>
+#include <Teuchos_ConfigDefs.hpp> // HAVE_MPI
+
+#ifdef HAVE_MPI
+#  include <Tsqr_MessengerBase.hpp>
+#  include <Tsqr_MpiDatatype.hpp>
+#  include <stdexcept>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -13,7 +15,7 @@ namespace TSQR {
   namespace MPI {
 
     /// \class MpiMessenger
-    /// \brief Communication object for TSQR
+    /// \brief Raw MPI-based communication object for TSQR
     ///
     /// A thin wrapper around an MPI_Comm, for use by TSQR.  I wrote
     /// this class specifically to experiment with the new MPI
@@ -21,7 +23,12 @@ namespace TSQR {
     /// and MPI_COMM_SOCKET.  These are not yet supported nicely in
     /// Teuchos.
     ///
+    /// This class may also be used whenever it's preferred to work
+    /// with a raw MPI_Comm object, rather than with the Teuchos comm
+    /// wrappers.
+    ///
     /// \warning Datum should be a class with value-type semantics.
+    ///
     template< class Datum >
     class MpiMessenger : public TSQR::MessengerBase< Datum > {
     public:
@@ -74,6 +81,8 @@ namespace TSQR {
       virtual Datum 
       globalSum (const Datum& inDatum)
       {
+	// Preserve const semantics of inDatum, by copying it and
+	// using the copy in MPI_Allreduce().
 	Datum input (inDatum);
 	Datum output;
 
@@ -88,6 +97,8 @@ namespace TSQR {
       virtual Datum 
       globalMin (const Datum& inDatum)
       {
+	// Preserve const semantics of inDatum, by copying it and
+	// using the copy in MPI_Allreduce().
 	Datum input (inDatum);
 	Datum output;
 
@@ -136,18 +147,6 @@ namespace TSQR {
       }
 
       virtual int 
-      size() const
-      {
-	int nprocs = 0;
-	const int err = MPI_Comm_size (comm_, &nprocs);
-	if (err != MPI_SUCCESS)
-	  throw std::runtime_error ("MPI_Comm_size failed");
-	else if (nprocs <= 0)
-	  throw std::runtime_error ("MPI_Comm_size returned # processors <= 0");
-	return nprocs;
-      }
-
-      virtual int 
       rank() const
       {
 	int my_rank = 0;
@@ -155,6 +154,21 @@ namespace TSQR {
 	if (err != MPI_SUCCESS)
 	  throw std::runtime_error ("MPI_Comm_rank failed");
 	return my_rank;
+      }
+
+      virtual int 
+      size() const
+      {
+	int nprocs = 0;
+	const int err = MPI_Comm_size (comm_, &nprocs);
+	if (err != MPI_SUCCESS)
+	  throw std::runtime_error ("MPI_Comm_size failed");
+	else if (nprocs <= 0)
+	  // We want to make sure that there is always at least one
+	  // valid rank (at least rank() == 0).  The messenger can't
+	  // do anything useful with MPI_COMM_NULL.
+	  throw std::runtime_error ("MPI_Comm_size returned # processors <= 0");
+	return nprocs;
       }
 
       virtual void 
@@ -175,9 +189,13 @@ namespace TSQR {
       /// notion of "const," and the MPI interface was designed for C.)
       mutable MPI_Comm comm_; 
 
+      /// Wrapper around an MPI_Datatype corresponding to Datum.  The
+      /// wrapper will handle allocation and deallocation of the
+      /// MPI_Datatype object, if necessary.
       MpiDatatype< Datum > mpiType_;
     };
   } // namespace MPI
 } // namespace TSQR
 
+#endif // HAVE_MPI
 #endif // __TSQR_MpiMessenger_hpp

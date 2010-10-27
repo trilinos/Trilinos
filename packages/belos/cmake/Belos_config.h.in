@@ -8,10 +8,10 @@
 #cmakedefine HAVE_BELOS_IFPACK
 
 /* Define if want to build with epetra enabled */
-#cmakedefine HAVE_ANASAZI_EPETRA
+#cmakedefine HAVE_BELOS_EPETRA
 
 /* Define if want to build with epetraext enabled */
-#cmakedefine HAVE_ANASAZI_EPETRAEXT
+#cmakedefine HAVE_BELOS_EPETRAEXT
 
 /* Define if want to build with ml enabled */
 #cmakedefine HAVE_BELOS_ML
@@ -23,7 +23,7 @@
 #cmakedefine HAVE_BELOS_TPETRA_TIMERS
 
 /* Define if want to build with thyra enabled */
-#cmakedefine HAVE_ANASAZI_THYRA
+#cmakedefine HAVE_BELOS_THYRA
 
 /* Define if want to build with triutils enabled */
 #cmakedefine HAVE_BELOS_TRIUTILS
@@ -56,6 +56,10 @@
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
+/* Define if we are building Belos TSQR with TSQR support */
+#cmakedefine HAVE_BELOS_TSQR
+
+/* Define if we are building with Teuchos TimeMonitors enabled */
 #cmakedefine BELOS_TEUCHOS_TIME_MONITOR
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler

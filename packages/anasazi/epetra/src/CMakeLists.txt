@@ -44,10 +44,20 @@ APPEND_SET(SOURCES
 # C) Define the targets for package's library(s)
 #
 
-PACKAGE_ADD_LIBRARY(
-  anasaziepetra
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS anasazi
-  DEFINES -DANASAZIEPETRA_LIB_EXPORTS_MODE
+IF (${PACKAGE_NAME}_ENABLE_TSQR)
+  PACKAGE_ADD_LIBRARY(
+    anasaziepetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS anasazi kokkos kokkosnodetsqr kokkosdisttsqr
+    DEFINES -DANASAZIEPETRA_LIB_EXPORTS_MODE
   )
+ELSE ()
+  PACKAGE_ADD_LIBRARY(
+    anasaziepetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS anasazi
+    DEFINES -DANASAZIEPETRA_LIB_EXPORTS_MODE
+    )
+ENDIF ()

@@ -1,54 +1,49 @@
 // @HEADER
 // ***********************************************************************
-// 
-//          Tpetra: Templated Linear Algebra Services Package
+//
+//                 Belos: Block Eigensolvers Package
 //                 Copyright (2010) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Tpetra_TsqrAdaptor_hpp
-#define __Tpetra_TsqrAdaptor_hpp
+#ifndef __Thyra_TsqrAdaptor_hpp
+#define __Thyra_TsqrAdaptor_hpp
 
-#include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR, etc.
+#include <BelosConfigDefs.hpp>
 
-#ifdef HAVE_KOKKOS_TSQR
-#  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#  include <Tsqr.hpp> // full (internode + intranode) TSQR
-#  include <Tsqr_DistTsqr.hpp> // internode TSQR
-// Subclass of TSQR::MessengerBase, implemented using Teuchos
-// communicator template helper functions
-#  include <Tsqr_TeuchosMessenger.hpp> 
-#  include <Tpetra_MultiVector.hpp>
+#include <Thyra_DetachedMultiVectorView.hpp>
+#include <Thyra_MultiVectorBase.hpp>
+#include <Thyra_MultiVectorStdOps.hpp>
 
-#  include <stdexcept>
+#include <stdexcept>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
-namespace Tpetra {
+namespace Thyra {
 
   /// \class TsqrAdaptor
-  /// \brief Adaptor from Tpetra::MultiVector to TSQR
+  /// \brief Stub adaptor from Thyra::MultiVectorBase to TSQR
   ///
   /// TSQR (Tall Skinny QR factorization) is an orthogonalization
   /// kernel that is as accurate as Householder QR, yet requires only
@@ -57,27 +52,24 @@ namespace Tpetra {
   ///
   /// TSQR works independently of the particular multivector
   /// implementation, and interfaces to the latter via an adaptor
-  /// class.  Tpetra::TsqrAdaptor is the adaptor class for
-  /// Tpetra::MultiVector.  It templates on the MultiVector (MV) type
-  /// so that it can pick up that class' typedefs.  In particular,
-  /// TSQR chooses its intranode implementation based on the Kokkos
-  /// Node type of the multivector.
+  /// class.  Thyra::TsqrAdaptor is the adaptor class for
+  /// Thyra::MultiVectorBase.  It templates on the MultiVector (MV)
+  /// type so that it can pick up that class' typedefs.  In
+  /// particular, TSQR chooses its intranode implementation based on
+  /// the Kokkos Node type of the multivector.
   ///
-  template< class MV >
+  /// \warning This is a stub adaptor that just placates the compiler
+  ///   and does nothing.
+  ///
+  template< class Scalar >
   class TsqrAdaptor {
   public:
-    typedef typename MV::scalar_type scalar_type;
-    typedef typename MV::local_ordinal_type ordinal_type;
-    typedef typename MV::node_type node_type;
+    typedef Thyra::MultiVectorBase< Scalar > MV;
+    typedef Scalar scalar_type;
+    typedef int ordinal_type; // MultiVectorBase really does use int for this
+    typedef int node_type; // FIXME (mfh 26 Oct 2010) stub for now
     typedef Teuchos::SerialDenseMatrix< ordinal_type, scalar_type > dense_matrix_type;
     typedef typename Teuchos::ScalarTraits< scalar_type >::magnitudeType magnitude_type;
-
-  private:
-    typedef TSQR::MatView< ordinal_type, scalar_type > matview_type;
-    typedef TSQR::NodeTsqrFactory< node_type, scalar_type, ordinal_type > node_tsqr_factory_type;
-    typedef typename node_tsqr_factory_type::node_tsqr_type node_tsqr_type;
-    typedef TSQR::DistTsqr< ordinal_type, scalar_type > dist_tsqr_type;
-    typedef TSQR::Tsqr< ordinal_type, scalar_type, node_tsqr_type > tsqr_type;
 
   public:
     /// \brief Constructor
@@ -95,9 +87,10 @@ namespace Tpetra {
     ///   non-GPU implementations.  For details, check the specific
     ///   NodeTsqrFactory implementation.
     TsqrAdaptor (const MV& mv,
-		 const Teuchos::ParameterList& plist) :
-      pTsqr_ (new tsqr_type (makeNodeTsqr (plist), makeDistTsqr (mv)))
-    {}
+		 const Teuchos::ParameterList& plist) 
+    {
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
+    }
 
     /// \brief Compute QR factorization [Q,R] = qr(A,0)
     ///
@@ -106,14 +99,7 @@ namespace Tpetra {
 		    MV& Q,
 		    dense_matrix_type& R)
     {
-      typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
-
-      // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> objects in A
-      // and Q to make sure they are the same communicator as the one
-      // we are using in our dist_tsqr_type implementation.
-      KMV A_view = getNonConstView (A);
-      KMV Q_view = getNonConstView (Q);
-      pTsqr_->factorExplicit (A_view, Q_view, R, false);
+      throw std::logic_error ("Thyra adaptor for TSQR not implemented");
     }
 
     /// \brief Rank-revealing decomposition
@@ -152,71 +138,11 @@ namespace Tpetra {
 		dense_matrix_type& R,
 		const magnitude_type& tol)
     {
-      typedef Kokkos::MultiVector< scalar_type, node_type > KMV;
-
-      // FIXME (mfh 18 Oct 2010) Check Teuchos::Comm<int> object in Q
-      // to make sure it is the same communicator as the one we are
-      // using in our dist_tsqr_type implementation.
-
-      KMV Q_view = getNonConstView (Q);
-      return pTsqr_->revealRank (Q_view, R, tol, false);
-    }
-
-  private:
-    /// Smart pointer to the TSQR implementation object
-    ///
-    Teuchos::RCP< tsqr_type > pTsqr_;
-
-    /// Return a Kokkos::MultiVector from the given multivector
-    /// object.  TSQR does not currently support multivectors with
-    /// nonconstant stride.
-    static Kokkos::MultiVector< scalar_type, node_type >
-    getNonConstView (MV& A)
-    {
-      if (! A.isConstantStride())
-	{
-	  // FIXME (mfh 14 June 2010) Storage of A uses nonconstant
-	  // stride internally, but that doesn't necessarily mean we
-	  // can't run TSQR.  It depends on what get1dViewNonConst()
-	  // returns.  If it's copied and packed into a matrix with
-	  // constant stride, then we are free to run TSQR.
-	  std::ostringstream os;
-	  os << "TSQR does not currently support Tpetra::MultiVector "
-	    "inputs that do not have constant stride.";
-	  throw std::runtime_error (os.str());
-	}
-      return A.getLocalMVNonConst();
-    }
-
-    /// Initialize and return internode TSQR implementation
-    ///
-    static RCP< dist_tsqr_type > 
-    makeDistTsqr (const MV& mv)
-    {
-      using Teuchos::RCP;
-      using Teuchos::rcp_implicit_cast;
-      typedef TSQR::TeuchosMessenger< scalar_type > mess_type;
-      typedef TSQR::MessengerBase< scalar_type > base_mess_type;
-
-      RCP< const Teuchos::Comm<int> > pComm = mv.getMap()->getComm();
-      RCP< mess_type > pMess (new mess_type (pComm));
-      RCP< base_mess_type > pMessBase = rcp_implicit_cast< base_mess_type > (pMess);
-      RCP< dist_tsqr_type > pDistTsqr (new dist_tsqr_type (pMessBase));
-      return pDistTsqr;
-    }
-
-    /// Initialize and return intranode TSQR implementation
-    ///
-    static RCP< node_tsqr_type >
-    makeNodeTsqr (const Teuchos::ParameterList& plist)
-    {
-      return node_tsqr_factory_type::makeNodeTsqr (plist);
+      return 0; // FIXME (mfh 26 Oct 2010) Stub implementation
     }
   };
 
 } // namespace Tpetra
 
-#endif // HAVE_KOKKOS_TSQR
-
-#endif // __Tpetra_TsqrAdaptor_hpp
+#endif // __Thyra_TsqrAdaptor_hpp
 

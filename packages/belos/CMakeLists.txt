@@ -17,7 +17,6 @@ PACKAGE(Belos)
 # TSQR in the Euclidean-inner-product case).  TSQR is enabled by
 # default if enabled in Kokkos.  If Teuchos_ENABLE_COMPLEX is enabled,
 # TSQR is built with complex arithmetic support.
-
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_BELOS_TSQR

@@ -120,6 +120,14 @@ ADD_OPTION_AND_DEFINE(
   ${Tpetra_PRINT_Warnings}
   )
 
+ADD_OPTION_AND_DEFINE(
+  Tpetra_ENABLE_TSQR
+  HAVE_TPETRA_TSQR
+  "Enable TSQR support in Tpetra."
+  ${Kokkos_ENABLE_TSQR}
+  )
+
+
 #
 # C) Add the libraries, tests, and examples
 #

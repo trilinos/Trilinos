@@ -30,6 +30,28 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_THREADS
   "Enable threading support."
   OFF )
 
+# Support for TSQR in Epetra requires the Teuchos and Kokkos packages.
+IF (${PACKAGE_NAME}_ENABLE_Teuchos AND ${PACKAGE_NAME}_ENABLE_Kokkos)
+  MESSAGE(STATUS "Epetra is being built with Teuchos and Kokkos support")
+  SET(${PACKAGE_NAME}_HAVE_TEUCHOS_AND_KOKKOS "ON")
+ELSE ()
+  MESSAGE(STATUS "Epetra is NOT being built with Teuchos and Kokkos support")
+  SET(${PACKAGE_NAME}_HAVE_TEUCHOS_AND_KOKKOS "OFF")
+ENDIF ()
+
+IF (${PACKAGE_NAME}_HAVE_TEUCHOS_AND_KOKKOS AND Kokkos_ENABLE_TSQR)
+  MESSAGE(STATUS "Epetra may be built with TSQR support")
+  SET(${PACKAGE_NAME}_MAY_USE_TSQR "ON")
+ELSE ()
+  MESSAGE(STATUS "Epetra may NOT be built with TSQR support")
+  SET(${PACKAGE_NAME}_MAY_USE_TSQR "OFF")
+ENDIF ()
+
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TSQR
+  HAVE_EPETRA_TSQR
+  "Enable support for TSQR (Tall Skinny QR factorization) on Epetra_MultiVector objects.  Requires the Kokkos and Teuchos packages, and enabling the Kokkos_ENABLE_TSQR CMake option."
+  ${${PACKAGE_NAME}_MAY_USE_TSQR} )
+
 ADD_SUBDIRECTORY(src)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
