@@ -12,7 +12,8 @@
 #include <Ioss_DBUsage.h>
 
   //: Enumerations used in Publish/Subscribe classes
-namespace Ioi {
+namespace Ioss {
+namespace Interface {
 
 enum EventState {
   DEFINE_MODEL   = 0,
@@ -33,5 +34,6 @@ enum EventInterest {
   WRITE_HEARTBEAT =  Ioss::WRITE_HEARTBEAT
 };
 
+}//namespace Interface
 }//namespace Ioi
 #endif // Ioi_Events_h

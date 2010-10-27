@@ -10,13 +10,15 @@ namespace Frio {
 }
 }
 
-namespace Ioi {
+namespace Ioss {
+namespace Interface {
 
   struct IOEvent {
     sierra::Frio::IOBase *		    m_ioBase;
     EventInterest   m_interest;
     EventState	    m_state;
   };
-}
+}//namespace Interface
+}//namespace Ioss
 
 #endif // Ioi_Observer_h

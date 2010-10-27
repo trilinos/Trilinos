@@ -14,10 +14,9 @@
 
 namespace Ioss {
   class GroupingEntity;
-}
 
-namespace Ioi {
-  /*! the Ioi::VariableNamePair class is used to associate an external
+namespace Interface {
+  /*! the VariableNamePair class is used to associate an external
    *  (i.e. for a results file) name with an internal sierra name for
    *  a variable
    */
@@ -92,5 +91,6 @@ namespace Ioi {
     bool subsetExclude;
     bool externalNameSpecified;  //! True if user specified the external name with "as external_name"
   };
-}
+}//namespace Interface
+}//namespace Ioss
 #endif

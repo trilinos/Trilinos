@@ -32,7 +32,8 @@ namespace sierra {
   }
 }
   
-namespace Ioi {
+namespace Ioss {
+namespace Interface {
   class IOBroker 
   {
   public:
@@ -45,8 +46,8 @@ namespace Ioi {
 
     // Specify that this region is special and does not need
     // to read a restart file if the calculation is being restarted.
-    virtual void restart_file_needs(Ioi::RestartNeed need) = 0;
-    virtual Ioi::RestartNeed restart_file_needs() const = 0;
+    virtual void restart_file_needs(RestartNeed need) = 0;
+    virtual RestartNeed restart_file_needs() const = 0;
 
     //! Tell the IO databases that the model topology has been modified.
     virtual void topology_modified(unsigned type /* Fmwk::TopologyModified type */ ) = 0;
@@ -67,7 +68,7 @@ namespace Ioi {
 
     //! Prepare interpolation fields (if any) and read in initial values.
     virtual void initialize_interpolation_request(double time)= 0;
-    virtual void initialize_interpolation_request(Ioi::FieldRoleType role, double time)= 0;
+    virtual void initialize_interpolation_request(FieldRoleType role, double time)= 0;
     
     //! Provide interpolated data 
     virtual void process_interpolation_request()= 0;
@@ -127,8 +128,8 @@ namespace Ioi {
 			       const std::string& request_name=std::string("")) const= 0;
 		   
     //! Methods for observer/publish/subscribe implementation:
-    virtual void subscribe(sierra::Listener<Ioi::IOEvent>& listener)= 0;
-    virtual void unsubscribe(sierra::Listener<Ioi::IOEvent>& listener)= 0;
+    virtual void subscribe(sierra::Listener<IOEvent>& listener)= 0;
+    virtual void unsubscribe(sierra::Listener<IOEvent>& listener)= 0;
 
     /*!
      * This routine provides a mechanism for an application to request
@@ -138,7 +139,7 @@ namespace Ioi {
 				   const std::string &request_name,
 				   const std::string &field_name,
 				   const std::string &fmwk_field_name,
-				   Ioi::FieldType type,
+				   FieldType type,
 				   const std::string &entity_name = "ALL")= 0;
   
     /*!
@@ -202,6 +203,7 @@ namespace Ioi {
     virtual OutputList::const_iterator output_list_end() const = 0;
 
   };
-}
+}//namespace Interface
+}//namespace Ioss
 
 #endif // Ioi_IOBroker_h

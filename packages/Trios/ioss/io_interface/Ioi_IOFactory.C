@@ -9,16 +9,16 @@
 #include <Ioi_IOFactory.h>
 #include <assert.h>
 
-Ioi::IOFactory* Ioi::IOFactory::factory_ = NULL;
+Ioss::Interface::IOFactory* Ioss::Interface::IOFactory::factory_ = NULL;
 
-Ioi::IOBroker* Ioi::IOFactory::create(const std::string& region_name)
+Ioss::Interface::IOBroker* Ioss::Interface::IOFactory::create(const std::string& region_name)
 {
   assert(factory_ != NULL);
-  Ioi::IOBroker *db = factory_->make_IO(region_name);
+  Ioss::Interface::IOBroker *db = factory_->make_IO(region_name);
   return db;
 }
 
-Ioi::IOFactory::IOFactory()
+Ioss::Interface::IOFactory::IOFactory()
 {
   factory_ = this;
 }

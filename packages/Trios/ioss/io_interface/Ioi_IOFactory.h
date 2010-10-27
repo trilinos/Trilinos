@@ -11,7 +11,8 @@
 
 #include <string>
 
-namespace Ioi {
+namespace Ioss {
+namespace Interface {
   class IOBroker;
 
   class IOFactory {
@@ -26,5 +27,6 @@ namespace Ioi {
   private:
     static IOFactory* factory_;
   };
-}
+}//namespace Interface
+}//namespace Ioss
 #endif // Ioi_IOFactory_h

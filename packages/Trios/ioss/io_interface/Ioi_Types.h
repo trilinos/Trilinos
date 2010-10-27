@@ -5,7 +5,8 @@
 #include <stk_util/util/string_case_compare.hpp>
 #include <Ioi_VariableNamePair.h>
 
-namespace Ioi {
+namespace Ioss {
+namespace Interface {
 
   /** Ouput mesh type -- default is 'REFINED'.  'UNREFINED'
 means that variables will be output on genesis-mesh
@@ -62,5 +63,6 @@ return INVALID_TYPE;
     }
     return INVALID_TYPE;  // Should not get here.  Quiet the compiler.
   }
-}
+}//namespace Interface
+}//namespace Ioss
 #endif

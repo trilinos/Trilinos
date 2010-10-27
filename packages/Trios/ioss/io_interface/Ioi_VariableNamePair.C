@@ -10,7 +10,8 @@
 #include <Ioss_EntityBlock.h>
 #include <assert.h>
 
-namespace Ioi {
+namespace Ioss {
+namespace Interface {
   VariableNamePair::VariableNamePair()
     : isValid(false), wasWritten(false), isExternal(false), subsetInclude(false), subsetExclude(false),
 externalNameSpecified(false)
@@ -171,4 +172,5 @@ return;
     std::vector<std::string>().swap(entities_);
     assert(entities_.empty());
   }
-}
+}//namespace Interface
+}//namespace Ioss
