@@ -56,7 +56,7 @@
 /// fix their build systems later.
 ///
 
-#include <Tpetra_ConfigDefs.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 

@@ -58,7 +58,7 @@
 #ifndef __Epetra_TsqrMessenger_hpp
 #define __Epetra_TsqrMessenger_hpp
 
-#include <Tpetra_ConfigDefs.h>
+#include <Tpetra_ConfigDefs.hpp>
 
 #if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_TSQR)
 
