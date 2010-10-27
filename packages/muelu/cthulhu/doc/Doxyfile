@@ -1,0 +1,34 @@
+# Note: all relative paths are relative to package/doc!
+#
+@INCLUDE = Doxyfile.options
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html 
+#
+# Package options
+#
+PROJECT_NAME           = "Cthulhu"
+OUTPUT_DIRECTORY       = .
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src ./Cthulhu_DoxygenDocumentation.hpp
+#FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATTERNS       =
+EXAMPLE_PATH           = ../examples
+IMAGE_PATH             = 
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+#
+# Links to other packages
+#
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO
+GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu-cthulhu.tag
