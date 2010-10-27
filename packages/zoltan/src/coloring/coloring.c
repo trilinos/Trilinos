@@ -132,11 +132,14 @@ static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *a
 
 int Zoltan_Color(
     ZZ *zz,                   /* Zoltan structure */
-    int num_gid_entries,     /* # of entries for a global id */
-    int num_obj,              /* Input: number of objects */
-    ZOLTAN_ID_PTR global_ids, /* Input: global ids of the vertices */
+    int num_gid_entries,      /* # of entries for a global id */
+    int num_req_objs,         /* Input: number of requested objects (vtx) */
+    ZOLTAN_ID_PTR req_objs,   /* Input: global ids of the objects for
+                                 which the colors should be returned.
+                                 (May be different from local objects.) */
 			      /* The application must allocate enough space */
-    int *color_exp            /* Output: Colors assigned to local vertices */
+    int *color_exp            /* Output: Colors assigned to objects 
+                                 given by req_objs (may be non-local) */
 			      /* The application must allocate enough space */
 )
 {
@@ -155,7 +158,7 @@ int Zoltan_Color(
   static char *yo = "color_fn";
   int *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
   int *adjproc=NULL;
-  int nvtx = num_obj;               /* number of vertices */
+  int nvtx;                         /* number of local vertices */
   int gvtx;                         /* number of global vertices */
 
   int *color=NULL;                  /* array to store colors of local and D1
@@ -166,6 +169,9 @@ int Zoltan_Color(
 				       vertices to consecutive local ids */
   int ierr = ZOLTAN_OK;
   int comm[2],gcomm[2];
+  ZOLTAN_ID_PTR my_global_ids;        /* gids local to this proc */
+  struct Zoltan_DD_Struct **dd_color; /* DDirectory for colors */
+
 #ifdef _DEBUG_TIMES  
   double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
   double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
@@ -257,8 +263,9 @@ int Zoltan_Color(
 
 
   /* BUILD THE GRAPH */
+  /* TODO: Allow req_objs==NULL as special case for local vertices. */
   /* Check that the user has allocated space for the return args. */
-  if (num_obj && !color_exp)
+  if (num_req_objs && !color_exp)
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument color_exp is NULL. Please allocate all required arrays before calling this routine.");
 
 #ifdef _DEBUG_TIMES
@@ -267,9 +274,8 @@ int Zoltan_Color(
   ierr =  Zoltan_ZG_Build (zz, &graph, 0);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
-  ierr = Zoltan_ZG_Export (zz, &graph,
-		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
-		     NULL, &partialD2);
+  ierr = Zoltan_ZG_Export (zz, &graph, &gvtx, &nvtx, NULL, NULL, 
+           &vtxdist, &xadj, &adjncy, &adjproc, NULL, &partialD2);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
 #ifdef _DEBUG_TIMES
@@ -319,20 +325,40 @@ int Zoltan_Color(
 #ifdef _DEBUG_TIMES    
   times[4] = Zoltan_Time(zz->Timer);
 #endif
-  Zoltan_ZG_Register (zz, &graph, color);
 
-/*   /\* Get object ids and part information *\/ */
-/*   { */
-/*     /\* TODO: find a way to not allocate this memory ! *\/ */
-/*     float *vtxwgt = NULL; */
-/*     int *input_part = NULL; */
+  /* Insert colors into a DDirectory by GIDs. */
+  /* OLD: Zoltan_ZG_Register (zz, &graph, color); */
+  /* First get global ids again. (may be stored somewhere?) */ 
+  {
+     /* TODO: find a way to not allocate memory for dummy args! */ 
+     float *vtxwgt = NULL; 
+     int *input_part = NULL;
+     ZOLTAN_ID_PTR my_local_ids = NULL;
+     ierr = Zoltan_Get_Obj_List(zz, &nvtx, &my_global_ids, &my_local_ids, 
+ 			       0, &vtxwgt, &input_part);
+     ZOLTAN_FREE(&vtxwgt); 
+     ZOLTAN_FREE(&input_part); 
+     ZOLTAN_FREE(&my_local_ids); 
+   }
 
-/*     ierr = Zoltan_Get_Obj_List(zz, &nvtx, &global_ids, &local_ids, */
-/* 			       0, &vtxwgt, &input_part); */
-/*     ZOLTAN_FREE(&vtxwgt); */
-/*     ZOLTAN_FREE(&input_part); */
-/*   } */
-  Zoltan_ZG_Query(zz, &graph, global_ids, num_obj, color_exp);
+   ierr = Zoltan_DD_Create (dd_color, zz->Communicator, 
+            num_gid_entries, 0, 0, 0, 0);
+   if (ierr != ZOLTAN_OK)
+     ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
+   /* Put color in part field. */
+   ierr = Zoltan_DD_Update (*dd_color, my_global_ids, NULL,
+            NULL, color, nvtx);
+   if (ierr != ZOLTAN_OK)
+     ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
+
+   /* Get requested colors from the DDirectory. */
+   /* OLD: Zoltan_ZG_Query(zz, &graph, global_ids, num_obj, color_exp); */
+   ierr = Zoltan_DD_Find (*dd_color, req_objs, NULL, NULL,
+            color_exp, num_req_objs, NULL);
+   if (ierr != ZOLTAN_OK)
+     ZOLTAN_COLOR_ERROR(ierr, "Cannot find object in DDirectory.");
+
+   ZOLTAN_FREE(&my_global_ids); 
 
 #if 0
   /* Check if there is an error in coloring */
