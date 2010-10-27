@@ -3,9 +3,6 @@ INCLUDE(PackageAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
   
-#TODO: clean up this line (needed for MatVec checker):
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery/)
-
 SET(simple_example_SOURCES
   MueLu_read_MatrixMarket.cpp
   MatrixVectorChecker.hpp

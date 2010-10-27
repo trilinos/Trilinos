@@ -1,1 +1,2 @@
+ADD_SUBDIRECTORY(Gallery)
 ADD_SUBDIRECTORY(MatrixVectorChecker)
