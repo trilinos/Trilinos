@@ -94,7 +94,9 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
 # endif
 # ifdef HAVE_ML_TekoSmoothers
   { 
+     Teuchos::RCP<Teuchos::ParameterList> nullList;
      PL->set("smoother: teko filename",std::string("teko_smoother.xml"));
+     PL->set("smoother: teko parameter list",nullList);
      PL->set("smoother: teko inverse",std::string("Amesos"));
      PL->set("smoother: teko is blocked",0);
   }

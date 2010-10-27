@@ -42,8 +42,12 @@
 #include "ml_petsc.h"
 
 #ifdef HAVE_ML_TekoSmoothers
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
 extern "C"
-int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const std::string & filename, const std::string & inverse,bool isBlocked);
+// int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const std::string & filename, const std::string & inverse,bool isBlocked);
+int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const Teuchos::RCP<const Teuchos::ParameterList> & tekoPList,
+                         const std::string & inverse,bool isBlocked);
 #endif
 
 extern "C" {
@@ -1192,15 +1196,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ======================================== //
       // Teko smoother (for block matrices only) //
       // ======================================== //
-      std::string tekoFilename = List_.get<std::string>("smoother: teko filename");
+      std::string tekoFilename = List_.get<std::string>("smoother: teko filename","teko_smoother.xml");
+      Teuchos::RCP<Teuchos::ParameterList> tekoPList
+             = List_.get<Teuchos::RCP<Teuchos::ParameterList> >("smoother: teko parameter list",Teuchos::null);
       std::string tekoInverse = List_.get<std::string>("smoother: teko inverse");
       int isBlocked = List_.get<int>("smoother: teko is blocked");
+
       tekoFilename = smList.get("smoother: teko filename",tekoFilename);
+      tekoPList = smList.get("smoother: teko parameter list",tekoPList);
       tekoInverse = smList.get("smoother: teko inverse",tekoInverse);
       isBlocked = smList.get("smoother: teko is blocked",isBlocked);
+
+      // if no parameter list read one from the specified file
+      if(tekoPList==Teuchos::null) 
+        tekoPList = Teuchos::getParametersFromXmlFile(tekoFilename); 
  
+      // ML_Gen_Smoother_Teko(ml_, currentLevel, pre_or_post, Mynum_smoother_steps,
+      //                      tekoFilename,tekoInverse,isBlocked);
       ML_Gen_Smoother_Teko(ml_, currentLevel, pre_or_post, Mynum_smoother_steps,
-                           tekoFilename,tekoInverse,isBlocked);
+                           tekoPList,tekoInverse,isBlocked);
 #else
       if (Comm().MyPID() == 0)
        cerr << ErrorMsg_
