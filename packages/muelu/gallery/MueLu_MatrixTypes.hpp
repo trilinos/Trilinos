@@ -7,13 +7,11 @@
 #ifndef __MATRIX_TYPES_HPP__
 #define  __MATRIX_TYPES_HPP__
 
-// needed for the specialized traits:
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_CrsMatrix.hpp"
-#include "Cthulhu_CrsMatrixFactory.hpp"
-
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Teuchos_RCP.hpp"
+
+using Teuchos::RCP;
 
 /* prototypes */
 template <typename GlobalOrdinal>
@@ -24,8 +22,8 @@ void GetNeighboursCartesian2d(const GlobalOrdinal i,
 
 template <typename GlobalOrdinal>
 void GetNeighboursCartesian2d(const GlobalOrdinal i, const GlobalOrdinal nx, const GlobalOrdinal ny,
-                        GlobalOrdinal& left, GlobalOrdinal& right, GlobalOrdinal& lower, GlobalOrdinal& upper,
-                        GlobalOrdinal& left2, GlobalOrdinal& right2, GlobalOrdinal& lower2, GlobalOrdinal& upper2);
+                              GlobalOrdinal& left, GlobalOrdinal& right, GlobalOrdinal& lower, GlobalOrdinal& upper,
+                              GlobalOrdinal& left2, GlobalOrdinal& right2, GlobalOrdinal& lower2, GlobalOrdinal& upper2);
 
 template <typename GlobalOrdinal>
 void GetNeighboursCartesian3d(const GlobalOrdinal i,
@@ -62,6 +60,13 @@ public:
   };
 };
 
+#ifdef CTHULHU_ENABLED
+
+// needed for the specialized traits:
+#include "Cthulhu_Map.hpp"
+#include "Cthulhu_CrsMatrix.hpp"
+#include "Cthulhu_CrsMatrixFactory.hpp"
+
 /* Specialized traits for:
    - Map = Cthulhu::Map<...>, Matrix = Cthulhu::CrsMatrix<...> */
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -72,6 +77,8 @@ public:
   // Use the CrsMatrixFactory to decide what kind of matrix to create (Cthulhu::TpetraCrsMatrix or Cthulhu::EpetraCrsMatrix).
   { return Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap,  maxNumEntriesPerRow); };
 };
+
+#endif
 
 /* ****************************************************************************************************** *
  *    Laplace 1D

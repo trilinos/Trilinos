@@ -6,11 +6,12 @@ ADD_SUBDIRECTORY(CMake/epetra)
 INCLUDE(PackageAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../gallery)
 
 SET(MatrixDriverTests_SOURCES
   MueLu_MatrixDriverTests.cpp
-  MueLu_MatrixFactory.hpp
-  MueLu_MatrixTypes.hpp
+#   MueLu_MatrixFactory.hpp
+#   MueLu_MatrixTypes.hpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(

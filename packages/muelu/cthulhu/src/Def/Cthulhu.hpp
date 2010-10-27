@@ -1,6 +1,8 @@
 #ifndef CTHULHU_MYTYPES_HPP
 #define CTHULHU_MYTYPES_HPP
 
+#define CTHULHU_ENABLED
+
 // The purpose of this file is to allow a user to write program without worrying about templates parameters.
 // For example, you can replace:
 //

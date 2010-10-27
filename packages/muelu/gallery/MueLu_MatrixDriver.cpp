@@ -93,7 +93,7 @@ int main(int argc, char** argv)
   matrixList.set("nx",nx);
   matrixList.set("ny",ny);
   matrixList.set("nz",nz);
-  RCP<Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,NodeType> > A = CreateCrsMatrix<Scalar,Ordinal,Ordinal,NodeType>(matrixType,map,matrixList);
+  RCP<Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,NodeType> > A = CreateCrsMatrix<Scalar,Ordinal,Ordinal, Tpetra::Map<Ordinal,Ordinal,NodeType>, Tpetra::CrsMatrix<Scalar,Ordinal,Ordinal,NodeType> >(matrixType,map,matrixList);
 
   RCP<FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if (comm->getRank() == 0)

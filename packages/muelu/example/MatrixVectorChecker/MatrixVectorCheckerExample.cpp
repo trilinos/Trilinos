@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   GO ny = paramList.get<GO>("ny");
 
   RCP<const Map> map = rcp( new MyMap(nx*ny, 0, comm) );
-  RCP<const CrsMatrix> matrix = CreateCrsMatrix<SC,LO,GO,NO,Map,CrsMatrix>("Laplace2D", map, paramList);
+  RCP<const CrsMatrix> matrix = CreateCrsMatrix<SC,LO,GO,Map,CrsMatrix>("Laplace2D", map, paramList);
 
   MatrixVectorChecker<SC,LO,GO,NO>(matrix);
 
