@@ -7,117 +7,108 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TestForException.hpp"
 
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_CrsMatrix.hpp"
-
 #include "MueLu_MatrixTypes.hpp"
 
 #include <iostream>
 
-template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Node>
-Teuchos::RCP<Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >
-CreateCrsMatrix(const std::string &MatrixType,
-                Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> > & Map,
-                Teuchos::ParameterList& List)
+template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+RCP<Matrix>
+CreateCrsMatrix(const std::string &MatrixType, const RCP<const Map> & map, Teuchos::ParameterList& list)
 {
-  Teuchos::RCP<Cthulhu::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > returnMatrix;
+  RCP<Matrix> returnMatrix;
   if (MatrixType == "Laplace1D") {
 
-    GlobalOrdinal nx = List.get("nx", -1);
+    GlobalOrdinal nx = list.get("nx", -1);
     if (nx == -1)
     {
-      GlobalOrdinal n = Map->getGlobalNumElements();
+      GlobalOrdinal n = map->getGlobalNumElements();
       nx = (GlobalOrdinal)sqrt((Scalar)n);
       TEST_FOR_EXCEPTION(nx*nx != n, std::logic_error, "You need to specify nx.");
     }
 
-    //return(TriDiag<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Map, nx, 2.0, -1.0, -1.0));
-    returnMatrix = TriDiag<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Map, nx, 2.0, -1.0, -1.0);
+    returnMatrix = TriDiag<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, 2.0, -1.0, -1.0);
 
   } else if (MatrixType == "Laplace2D") {
 
-    GlobalOrdinal nx = List.get("nx", -1);
-    GlobalOrdinal ny = List.get("ny", -1);
+    GlobalOrdinal nx = list.get("nx", -1);
+    GlobalOrdinal ny = list.get("ny", -1);
     if (nx == -1 || ny == -1)
     {
-      GlobalOrdinal n = Map->getGlobalNumElements();
+      GlobalOrdinal n = map->getGlobalNumElements();
       nx = (GlobalOrdinal)sqrt((Scalar)n);
       ny = nx;
       TEST_FOR_EXCEPTION(nx*ny != n, std::logic_error, "You need to specify nx and ny.");
     }
 
-    //return(Cross2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0));
-    returnMatrix = Cross2D<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0);
+    returnMatrix = Cross2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, 4.0, -1.0, -1.0, -1.0, -1.0);
 
   } else if (MatrixType == "Star2D") {
 
-    GlobalOrdinal nx = List.get("nx", -1);
-    GlobalOrdinal ny = List.get("ny", -1);
+    GlobalOrdinal nx = list.get("nx", -1);
+    GlobalOrdinal ny = list.get("ny", -1);
 
-    Scalar a = List.get("a", 8.0);
-    Scalar b = List.get("b", -1.0);
-    Scalar c = List.get("c", -1.0);
-    Scalar d = List.get("d", -1.0);
-    Scalar e = List.get("e", -1.0);
-    Scalar z1 = List.get("z1", -1.0);
-    Scalar z2 = List.get("z2", -1.0);
-    Scalar z3 = List.get("z3", -1.0);
-    Scalar z4 = List.get("z4", -1.0);
+    Scalar a = list.get("a", 8.0);
+    Scalar b = list.get("b", -1.0);
+    Scalar c = list.get("c", -1.0);
+    Scalar d = list.get("d", -1.0);
+    Scalar e = list.get("e", -1.0);
+    Scalar z1 = list.get("z1", -1.0);
+    Scalar z2 = list.get("z2", -1.0);
+    Scalar z3 = list.get("z3", -1.0);
+    Scalar z4 = list.get("z4", -1.0);
 
-    //return(Star2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4));
-    returnMatrix = Star2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4);
+    returnMatrix = Star2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, a, b, c, d, e, z1, z2, z3, z4);
 
   } else if (MatrixType == "BigStar2D") {
 
-    GlobalOrdinal nx = List.get("nx", -1);
-    GlobalOrdinal ny = List.get("ny", -1);
+    GlobalOrdinal nx = list.get("nx", -1);
+    GlobalOrdinal ny = list.get("ny", -1);
 
-    Scalar a = List.get("a", 20.0);
-    Scalar b = List.get("b", -8.0);
-    Scalar c = List.get("c", -8.0);
-    Scalar d = List.get("d", -8.0);
-    Scalar e = List.get("e", -8.0);
-    Scalar z1 = List.get("z1", 2.0);
-    Scalar z2 = List.get("z2", 2.0);
-    Scalar z3 = List.get("z3", 2.0);
-    Scalar z4 = List.get("z4", 2.0);
-    Scalar bb = List.get("bb", 1.0);
-    Scalar cc = List.get("cc", 1.0);
-    Scalar dd = List.get("dd", 1.0);
-    Scalar ee = List.get("ee", 1.0);
+    Scalar a = list.get("a", 20.0);
+    Scalar b = list.get("b", -8.0);
+    Scalar c = list.get("c", -8.0);
+    Scalar d = list.get("d", -8.0);
+    Scalar e = list.get("e", -8.0);
+    Scalar z1 = list.get("z1", 2.0);
+    Scalar z2 = list.get("z2", 2.0);
+    Scalar z3 = list.get("z3", 2.0);
+    Scalar z4 = list.get("z4", 2.0);
+    Scalar bb = list.get("bb", 1.0);
+    Scalar cc = list.get("cc", 1.0);
+    Scalar dd = list.get("dd", 1.0);
+    Scalar ee = list.get("ee", 1.0);
 
-    //return(BigStar2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4, bb, cc, dd, ee));
-    returnMatrix = BigStar2D(Map, nx, ny, a, b, c, d, e, z1, z2, z3, z4, bb, cc, dd, ee);
+    returnMatrix = BigStar2D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, a, b, c, d, e, z1, z2, z3, z4, bb, cc, dd, ee);
 
   } else if (MatrixType == "Laplace3D") {
 
-    GlobalOrdinal nx = List.get("nx", -1);
-    GlobalOrdinal ny = List.get("ny", -1);
-    GlobalOrdinal nz = List.get("nz", -1);
+    GlobalOrdinal nx = list.get("nx", -1);
+    GlobalOrdinal ny = list.get("ny", -1);
+    GlobalOrdinal nz = list.get("nz", -1);
     if (nx == -1 || ny == -1 || nz == -1)
     {
-      GlobalOrdinal n = Map->getGlobalNumElements();
+      GlobalOrdinal n = map->getGlobalNumElements();
       nx = (GlobalOrdinal)pow((Scalar)n, 0.33334);
       ny = nx; nz = nx;
       TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
     } 
-    //return(Cross3D(Map, nx, ny, nz, 6.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0));
-    returnMatrix = Cross3D(Map, nx, ny, nz, 6.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
+
+    returnMatrix = Cross3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, nz, 6.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
 
   } else if (MatrixType == "Brick3D") {
 
-    GlobalOrdinal nx = List.get("nx", -1);
-    GlobalOrdinal ny = List.get("ny", -1);
-    GlobalOrdinal nz = List.get("nz", -1);
+    GlobalOrdinal nx = list.get("nx", -1);
+    GlobalOrdinal ny = list.get("ny", -1);
+    GlobalOrdinal nz = list.get("nz", -1);
     if (nx == -1 || ny == -1 || nz == -1)
     {
-      GlobalOrdinal n = Map->getGlobalNumElements();
+      GlobalOrdinal n = map->getGlobalNumElements();
       nx = (GlobalOrdinal)pow((Scalar)n, 0.33334);
       ny = nx; nz = nx;
       TEST_FOR_EXCEPTION(nx * ny * nz != n, std::logic_error, "You need to specify nx, ny, and nz");
     } 
-    //return(Brick3D(Map, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0));
-    returnMatrix = Brick3D(Map, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
+
+    returnMatrix = Brick3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
 
   } else {
 
@@ -129,7 +120,7 @@ CreateCrsMatrix(const std::string &MatrixType,
   } //if-else
 
   returnMatrix->setObjectLabel(MatrixType);
-  return(returnMatrix);
+  return returnMatrix;
 
 } // CreateCrsMatrix()
 

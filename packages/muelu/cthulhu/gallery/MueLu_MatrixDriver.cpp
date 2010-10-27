@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
   matrixList.set("nx",nx);
   matrixList.set("ny",ny);
   matrixList.set("nz",nz);
-  RCP<CrsMatrix> A = CreateCrsMatrix<SC,LO,GO>(matrixType,map,matrixList);
+  RCP<CrsMatrix> A = CreateCrsMatrix<SC,LO,GO, Map, CrsMatrix>(matrixType,map,matrixList);
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if (comm->getRank() == 0)
