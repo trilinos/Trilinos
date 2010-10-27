@@ -14,7 +14,7 @@ OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../src ./MueLu_DoxygenDocumentation.hpp
+INPUT                  = ../src ../gallery ./MueLu_DoxygenDocumentation.hpp
 #FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
