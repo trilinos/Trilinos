@@ -96,7 +96,7 @@ Teko::LinearOp buildTekoBlockOp(ML_Operator * mlOp,int level)
                // create a CRS matrix from ML operator
                RCP<const Epetra_CrsMatrix> eCrsMat = convertToCrsMatrix(subBlock);
 
-               #if 1
+               #if 0
                std::stringstream ss;
                ss << "A(" << level << ")_" << i << "_" << j << ".mm";
                EpetraExt::RowMatrixToMatrixMarketFile(ss.str().c_str(),*eCrsMat);
@@ -147,7 +147,7 @@ Teuchos::RCP<Teko::InverseFactory> ML_Gen_Init_Teko_Prec(const std::string smoot
 }
 
 extern "C" 
-int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const std::string & filename, const std::string & inverse, bool isBlocked)
+int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes,const Teuchos::RCP<const Teuchos::ParameterList> & tekoPL, const std::string & inverse, bool isBlocked)
 {
    Teko_DEBUG_SCOPE("Teko::mlutils::ML_Gen_Smoother_Teko",10);
    ML_Operator * BlkMat = &(ml->Amat[level]);
@@ -166,14 +166,14 @@ int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const s
    // Teuchos::RCP<Teko::mlutils::SmootherData> data = Teuchos::rcp(new Teko::mlutils::SmootherData);
    Teko::mlutils::SmootherData * data = new Teko::mlutils::SmootherData;
    data->Amat = Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(tekoAmat));
-   Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(tekoAmat));
 
-   Teuchos::ParameterList pl = *Teuchos::getParametersFromXmlFile(filename);
-   Teuchos::RCP<Teko::InverseFactory> invFact = ML_Gen_Init_Teko_Prec(inverse,pl);
+   // Teuchos::ParameterList pl = *Teuchos::getParametersFromXmlFile(filename);
+   Teuchos::RCP<Teko::InverseFactory> invFact = ML_Gen_Init_Teko_Prec(inverse,*tekoPL);
    Teuchos::RCP<Teko::RequestHandler> rh = invFact->getRequestHandler();
 
    // build smoother operator
-   Teko::LinearOp smootherOp = Teko::buildInverse(*invFact,tekoAmat);
+   Teko::LinearOp precOp = Teko::buildInverse(*invFact,tekoAmat);
+   Teko::LinearOp smootherOp = Teko::buildSmootherLinearOp(tekoAmat,precOp,ntimes,true);
 
    // get an epetra operator wrapper
    data->smootherOperator = Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(smootherOp));

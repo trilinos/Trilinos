@@ -37,7 +37,9 @@ int smoother(ML_Smoother *mydata, int leng1, double x[], int leng2,
              double rhs[]);
 
 extern "C" 
-int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const std::string & filename, const std::string & inverse, bool isBlocked);
+int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const Teuchos::RCP<const Teuchos::ParameterList> & tekoPL,
+                         const std::string & inverse, bool isBlocked);
+// int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const std::string & filename, const std::string & inverse, bool isBlocked);
 
 }
 }

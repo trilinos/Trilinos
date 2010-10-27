@@ -54,59 +54,6 @@
 
 namespace Teko {
 
-/** This class exists only to feed the sub operators
-  * the initial guess contained in the <code>y</code> vector of 
-  * <code>implicitApply</code>. This is done through the
-  * request handler mechanism.
-  */
-class SmootherParentLinearOp : public ImplicitLinearOp, public RequestCallback<MultiVector> {
-public:
-   SmootherParentLinearOp(const LinearOp & smootherOp, Teuchos::RCP<RequestHandler> & rh);
-
-   /** @brief Range space of this operator */
-   virtual VectorSpace range() const
-   { return smootherOp_->range(); }
-
-   /** @brief Domain space of this operator */
-   virtual VectorSpace domain() const
-   { return smootherOp_->domain(); }
-   
-   /** @brief Perform a matrix vector multiply with this implicitly
-     * defined blocked operator. 
-     *
-     * The <code>apply</code> function takes one vector as input 
-     * and applies a linear operator. The result
-     * is returned in \f$y\f$. If this operator is reprsented as \f$M\f$ then
-     * \f$ y = \alpha M x + \beta y \f$
-     *
-     * @param[in]     x 
-     * @param[in,out] y 
-     * @param[in]     alpha (default=1)
-     * @param[in]     beta  (default=0)
-     */
-   virtual void implicitApply(const MultiVector & x, MultiVector & y,
-              const double alpha = 1.0, const double beta = 0.0) const;
-
-   //! Set the request handler with pointers to the appropriate callbacks
-   virtual void setRequestHandler(const Teuchos::RCP<RequestHandler> & rh);
-
-   //! Get the request handler with pointers to the appropriate callbacks
-   virtual Teuchos::RCP<RequestHandler> getRequestHandler() const;
-
-   // functions hanlding request callbacks
-   void preRequest(const RequestMesg &) {} // the smoother cability ignores the pre-request
-   MultiVector request(const RequestMesg & rm);
-   bool handlesRequest(const RequestMesg & rm);
-
-private:
-   SmootherParentLinearOp();
-
-   LinearOp smootherOp_;    // forward operator
-   Teuchos::RCP<RequestHandler> requestHandler_;
-
-   mutable BlockedMultiVector initialGuess_;
-};
-
 /** This class applies an operator as a smoother.
   * The main idea being that a residual is used and 
   * corrected to get a Gauss-Seidel like method.
