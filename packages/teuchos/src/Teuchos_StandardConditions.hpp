@@ -71,8 +71,7 @@ public:
    * set to false if the parameter
    * evaluates to false, then the condition will evaluate to true.
    */
-  ParameterCondition(
-    RCP<ParameterEntry> parameter, bool whenParamEqualsValue);
+  ParameterCondition(RCP<ParameterEntry> parameter, bool whenParamEqualsValue);
 
   virtual ~ParameterCondition(){}
   
@@ -82,7 +81,7 @@ public:
   //@{
 
   /**
-   * Evaluate the current condition of a paramtere and
+   * Evaluate the current condition of a parameter and
    * return the result.
    *
    * @param The result of evaluating the current condition
@@ -140,7 +139,7 @@ private:
 
 
   /**
-   * Wether or not the condition should evaluate to 
+   * Whether or not the condition should evaluate to 
    * true if the parameter evaluated to true.
    */
   bool whenParamEqualsValue_;
@@ -194,7 +193,7 @@ public:
    * \brief Constructs a String Condition.
    *
    * @param parameter The parameter to be evaluated.
-   * @param values The values to compare the parameter's value against.
+   * @param values The list values to compare the parameter's value against.
    * @param whenParamEqualsValue Indicates 
    * whether the condition should be true when the evaluation
    * results in a true or when the evaluation results in a false.
@@ -248,6 +247,7 @@ private:
    */
   ValueList values_;
 
+  /** \brief Ensures the parameter is the proper type. In this case a string. */
   void checkParameterType();
   
   //@}
@@ -288,11 +288,9 @@ public:
 
 /**
  * \brief A Number Condition is a Parameter Condition that evaluates
- * whether or not a number parameter is greater 0. 
- *
- * If the parameter is
- * greater than 0 this is interperted as the condition being "true".
- * Otherwise the oncidiont is interperted as false.
+ * whether or not a number parameter is greater than 0. 
+ * If the parameter is  greater than 0 this is interperted as the condition 
+ * being "true". Otherwise the oncidiont is interperted as false.
  */
 template<class T>
 class NumberCondition : public ParameterCondition{
@@ -360,19 +358,6 @@ private:
   
   /** \brief . */
   RCP<SingleArguementFunctionObject<T,T> > func_;
-
-  /**
-   * \brief Runs the function associated with this condition and
-   * returns the result.
-   *
-   * @param argument The value upon which to run the function.
-   */
-  inline T runFunction(T argument) const{
-    if(func_ !=0)
-      return (*func_)(argument);
-    else
-      return argument;
-  }  
   
   //@}
 
@@ -493,7 +478,7 @@ public:
  * Binary Logic Conditions return the result of performing some
  * Logical operation on a set of conditions. Note that although the
  * name implies the evaluation of two conditions, Binary Logic Conditions
- * can actually evaluate and arbiturary number of conditions.
+ * can actually evaluate an arbiturary number of conditions.
  */
 class BinaryLogicalCondition : public Condition{
 
