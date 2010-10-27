@@ -144,8 +144,3 @@
 #cmakedefine STDC_HEADERS
 
 #cmakedefine Epetra_ENABLE_CASK
-
-/* Define if want to build with TSQR (Tall Skinny QR) support.  
-   Requires both the Teuchos and Kokkos packages. */
-#cmakedefine HAVE_EPETRA_TSQR
-
