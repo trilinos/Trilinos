@@ -33,6 +33,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_XMLObject.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace Teuchos {
 
@@ -47,7 +48,8 @@ class ParameterEntry;
  * Not only can a validator validate and entry but it can also help to set
  * and/or adjust the default value.
  */
-class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator {
+class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator : public Describable
+{
 public:
 
   /** \name Public types */

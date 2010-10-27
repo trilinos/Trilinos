@@ -29,6 +29,9 @@
 #ifndef Teuchos_FUNCTION_OBJECT_H
 #define Teuchos_FUNCTION_OBJECT_H
 
+#include "Teuchos_Describable.hpp"
+
+
 /*! \file Teuchos_FunctionObject.hpp
     \brief An object representation of a function
 */
@@ -37,7 +40,7 @@
 namespace Teuchos{
 
 template<class ReturnType>
-class FunctionObject{
+class FunctionObject: public Describable {
 
 public:
   virtual ReturnType runFunction() const=0;
