@@ -18,7 +18,6 @@
 #include "Cthulhu_CrsMatrix.hpp"
 
 #include "MueLu_MatrixFactory.hpp"
-#include "MueLu_MatrixTypes.hpp"
 
 using Teuchos::RCP;
 
@@ -39,7 +38,7 @@ int main(int argc, char* argv[])
 
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   LO numThreads=1;
   GO nx=4;
@@ -75,7 +74,7 @@ int main(int argc, char* argv[])
   matrixList.set("nx",nx);
   matrixList.set("ny",ny);
   matrixList.set("nz",nz);
-  RCP<CrsMatrix> A = CreateCrsMatrix<SC,LO,GO, Map, CrsMatrix>(matrixType,map,matrixList);
+  RCP<CrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrix>(matrixType,map,matrixList);
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   if (comm->getRank() == 0)
@@ -89,4 +88,4 @@ int main(int argc, char* argv[])
   A->describe(*out, Teuchos::VERB_EXTREME);
 
   return EXIT_SUCCESS;
-} // main
+} 

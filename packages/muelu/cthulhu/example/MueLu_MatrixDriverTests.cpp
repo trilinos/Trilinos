@@ -61,35 +61,35 @@ int main(int argc, char* argv[])
   // Tpetra::CrsMatrix
   {
     RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO> (numGlobalElements, indexBase, comm) ); 
-    RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = CreateCrsMatrix<SC,LO,GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> > (matrixType,map,matrixList);
+    RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> > (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   }
 
   // Cthulhu::TpetraCrsMatrix
   {
     RCP<const Cthulhu::TpetraMap<LO,GO> > map = rcp( new Cthulhu::TpetraMap<LO,GO> (numGlobalElements, indexBase, comm) );
-    RCP<Cthulhu::TpetraCrsMatrix<SC,LO,GO> > A = CreateCrsMatrix<SC,LO,GO, Cthulhu::TpetraMap<LO,GO>, Cthulhu::TpetraCrsMatrix<SC,LO,GO> > (matrixType,map,matrixList);
+    RCP<Cthulhu::TpetraCrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::TpetraMap<LO,GO>, Cthulhu::TpetraCrsMatrix<SC,LO,GO> > (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   }
   
   // Cthulhu::EpetraCrsMatrix
   { 
     RCP<const Cthulhu::EpetraMap > map = rcp( new Cthulhu::EpetraMap (numGlobalElements, indexBase, comm) );
-    RCP<Cthulhu::EpetraCrsMatrix> A = CreateCrsMatrix<SC,LO,GO, Cthulhu::EpetraMap, Cthulhu::EpetraCrsMatrix> (matrixType,map,matrixList);
+    RCP<Cthulhu::EpetraCrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::EpetraMap, Cthulhu::EpetraCrsMatrix> (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   } 
   
   // Cthulhu::CrsMatrix (Tpetra)
   {
     RCP<const Cthulhu::Map<LO,GO> > map = rcp( new Cthulhu::TpetraMap<LO,GO> (numGlobalElements, indexBase, comm) ); 
-    RCP<Cthulhu::CrsMatrix<SC,LO,GO> > A = CreateCrsMatrix<SC,LO,GO, Cthulhu::Map<LO,GO>, Cthulhu::CrsMatrix<SC,LO,GO> >  (matrixType,map,matrixList);
+    RCP<Cthulhu::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::Map<LO,GO>, Cthulhu::CrsMatrix<SC,LO,GO> >  (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   } 
 
   // Cthulhu::CrsMatrix (Epetra)
   {
     RCP<const Cthulhu::Map<LO,GO> > map = rcp( new Cthulhu::EpetraMap (numGlobalElements, indexBase, comm) );
-    RCP<Cthulhu::CrsMatrix<SC,LO,GO> > A = CreateCrsMatrix<SC,LO,GO, Cthulhu::Map<LO,GO>, Cthulhu::CrsMatrix<SC,LO,GO> >  (matrixType,map,matrixList);
+    RCP<Cthulhu::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::Map<LO,GO>, Cthulhu::CrsMatrix<SC,LO,GO> >  (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   } 
 
