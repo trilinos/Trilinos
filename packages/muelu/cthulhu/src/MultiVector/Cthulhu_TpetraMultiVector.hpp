@@ -40,22 +40,22 @@ namespace Cthulhu {
       vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), NumVectors, zeroOut));
     }
 
-    //! TpetraMultiVector copy constructor.
 #ifdef CTHULHU_NOT_IMPLEMENTED
+    //! TpetraMultiVector copy constructor.
     TpetraMultiVector(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source){ CTHULHU_DEBUG_ME; }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
-#ifdef CTHULHU_NOT_IMPLEMENTED
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) {
       CTHULHU_DEBUG_ME;
     } 
 #endif // CTHULHU_NOT_IMPLEMENTED
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
-#ifdef CTHULHU_NOT_IMPLEMENTED
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME } 
 #endif // CTHULHU_NOT_IMPLEMENTED
   
@@ -95,18 +95,18 @@ namespace Cthulhu {
     //! Set multi-vector values to random numbers.
     inline void randomize() { CTHULHU_DEBUG_ME; vec_->randomize(); }
 
-    //! Replace the underlying Map with a compatible one.
 #ifdef CTHULHU_NOT_IMPLEMENTED
+    //! Replace the underlying Map with a compatible one.
     inline void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) { CTHULHU_DEBUG_ME; vec_->replaceMap(map); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Instruct a local (non-distributed) TpetraMultiVector to sum values across all nodes.
     inline void reduce() { CTHULHU_DEBUG_ME; vec_->reduce(); }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! = Operator.
     /*! \param In A - Multivector to copy
      */
-#ifdef CTHULHU_NOT_IMPLEMENTED
     inline TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) { CTHULHU_DEBUG_ME; return vec_->(source); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
@@ -249,13 +249,13 @@ namespace Cthulhu {
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a TpetraMultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
      *  where @ denotes element-wise multiplication.
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-#ifdef CTHULHU_NOT_IMPLEMENTED
     inline void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
 #endif // CTHULHU_NOT_IMPLEMENTED
     //@} 
@@ -299,10 +299,10 @@ namespace Cthulhu {
 
   }; // class TpetraMultiVector
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   /** \brief Non-member function to create a TpetraMultiVector from a specified Map.
       \relates TpetraMultiVector
   */
-#ifdef CTHULHU_NOT_IMPLEMENTED
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createTpetraMultiVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors) { CTHULHU_DEBUG_ME; }

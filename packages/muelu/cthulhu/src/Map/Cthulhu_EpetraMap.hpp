@@ -220,8 +220,8 @@ namespace Cthulhu {
       return r;
     };
 
-    //! Get the Node object for this Map
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    //! Get the Node object for this Map
     const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const { CTHULHU_DEBUG_ME; 
       TEST_FOR_EXCEPTIONS(1, Cthulhu::Exceptions::NotImplemented, 'Cthulhu::EpetraMap->getNode()');
       const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> & r = Teuchos::null;

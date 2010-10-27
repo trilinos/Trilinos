@@ -52,6 +52,7 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
   //! @name Constructor/Destructor Methods
   //@{
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //! Constructor specifying the row-map and the max number of (block) non-zeros for all rows.
   /*! After this constructor completes, the VbrMatrix is in the non-packed,
     non-optimized-storage, isFillComplete()==false state.
@@ -59,7 +60,9 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
     methods such as setGlobalBlockEntry(...), declared below.
   */
   // TODO VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+#endif
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //! Constructor specifying a pre-filled block-graph.
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
       start out in the optimized-storage state, i.e., isFillComplete()==true.
@@ -71,7 +74,6 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
       to each row in the graph, and a block-entry corresponding to each column-
       index in the graph.
   */
-#ifdef CTHULHU_NOT_IMPLEMENTED
   //TODO: need BlockCrsGraph
   VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
 #endif // CTHULHU_NOT_IMPLEMENTED
@@ -85,6 +87,7 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
 
   //! @name Advanced Mathematical operations
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //! Multiply this matrix by a MultiVector.
   /*! \c X is required to be post-imported, i.e., described by the column map
       of the matrix. \c Y is required to be pre-exported, i.e., described by
@@ -92,12 +95,12 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
       See also the Operator::apply method which is implemented below.
   */
   //TODO virtual
-#ifdef CTHULHU_NOT_IMPLEMENTED
    template <class DomainScalar, class RangeScalar>
        void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
 #endif // CTHULHU_NOT_IMPLEMENTED
   //@}
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       \c X is required to be post-imported, i.e., described by the column map
@@ -112,7 +115,6 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
       point-diagonal must be zero.
   */
   //TODO virtual
-#ifdef CTHULHU_NOT_IMPLEMENTED
      template <class DomainScalar, class RangeScalar>
      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
 #endif // CTHULHU_NOT_IMPLEMENTED
@@ -371,13 +373,13 @@ class TpetraVbrMatrix : public Cthulhu::VbrMatrix<Scalar,LocalOrdinal,GlobalOrdi
                                       LocalOrdinal& numPtCols,
                                       Teuchos::ArrayRCP<Scalar>& blockEntry) { CTHULHU_DEBUG_ME; mtx_->getLocalBlockEntryViewNonConst(localBlockRow, localBlockCol, numPtRows, numPtCols, blockEntry); }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //! Return a copy of the (point-entry) diagonal values.
   /*!
     Throws an exception if the input-vector's map is not the same as
     getBlockRowMap()->getPointMap().
   */
   //TODO:Vector  
-#ifdef CTHULHU_NOT_IMPLEMENTED
   inline void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
 #endif // CTHULHU_NOT_IMPLEMENTED
   //@}

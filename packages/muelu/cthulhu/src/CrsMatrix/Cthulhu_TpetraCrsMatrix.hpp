@@ -83,9 +83,9 @@ namespace Cthulhu {
       mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), NumEntriesPerRowToAlloc, pftype));
     } 
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Constructor specifying a pre-constructed graph.
     // TODO: need a CrsGraph
-#ifdef CTHULHU_NOT_IMPLEMENTED
     explicit TpetraCrsMatrix(const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph) { CTHULHU_DEBUG_ME; }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
@@ -189,6 +189,7 @@ namespace Cthulhu {
      */
      inline void resumeFill() { CTHULHU_DEBUG_ME; mtx_->resumeFill(); }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
      /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
      Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
@@ -200,7 +201,6 @@ namespace Cthulhu {
      \post <tt>isFillComplete() == true<tt>
      \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
      */ 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     inline void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { CTHULHU_DEBUG_ME; mtx_->fillComplete(domainMap, rangeMap, os); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
@@ -243,13 +243,13 @@ namespace Cthulhu {
       return rcp( new TpetraMap(mtx_->getColMap()) ); 
     }
 
-     //! Returns the RowGraph associated with this matrix. 
 #ifdef CTHULHU_NOT_IMPLEMENTED
+     //! Returns the RowGraph associated with this matrix. 
     inline RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getGraph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-     //! Returns the CrsGraph associated with this matrix. 
 #ifdef CTHULHU_NOT_IMPLEMENTED
+     //! Returns the CrsGraph associated with this matrix. 
     inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getCrsGraph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
@@ -408,10 +408,10 @@ namespace Cthulhu {
      */
      inline void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const { CTHULHU_DEBUG_ME; mtx_->getLocalRowView(LocalRow, indices, values); }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
      //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
      /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
        the zero and non-zero diagonals owned by this node. */
-#ifdef CTHULHU_NOT_IMPLEMENTED
     inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
 #endif // CTHULHU_NOT_IMPLEMENTED
      //@}
@@ -419,6 +419,7 @@ namespace Cthulhu {
      //! @name Advanced Matrix-vector multiplication and solve methods
      //@{
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
      //! Multiplies this matrix by a MultiVector.
      /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
 
@@ -429,7 +430,6 @@ namespace Cthulhu {
      If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
      will be accumulated into \c Y.
      */
-#ifdef CTHULHU_NOT_IMPLEMENTED
     template <class DomainScalar, class RangeScalar>
     inline void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const { CTHULHU_DEBUG_ME; mtx_->multiply(X, Y, trans, alpha, beta); }
 #endif // CTHULHU_NOT_IMPLEMENTED
@@ -447,6 +447,7 @@ namespace Cthulhu {
       mtx_->template multiply<Scalar,Scalar>(*tX.getTpetra_MultiVector(), *tY.getTpetra_MultiVector(), trans, alpha, beta);
     }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
      //! Solves a linear system when the underlying matrix is triangular.
      /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
 
@@ -454,7 +455,6 @@ namespace Cthulhu {
           
      Both are required to have constant stride. However, unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No runtime checking will be performed in a non-debug build.
      */
-#ifdef CTHULHU_NOT_IMPLEMENTED
      template <class DomainScalar, class RangeScalar>
      inline void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const { CTHULHU_DEBUG_ME; mtx_->solve(Y, X, trans); }
 #endif // CTHULHU_NOT_IMPLEMENTED          
@@ -463,11 +463,11 @@ namespace Cthulhu {
      //! @name Methods implementing Operator
      //@{ 
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
      //! \brief Computes the sparse matrix-multivector multiplication.
      /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
        - if <tt>beta == 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
      */
-#ifdef CTHULHU_NOT_IMPLEMENTED
      inline void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                        Teuchos::ETransp mode = Teuchos::NO_TRANS,
                        Scalar alpha = ScalarTraits<Scalar>::one(),

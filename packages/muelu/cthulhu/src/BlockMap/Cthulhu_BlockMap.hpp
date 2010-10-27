@@ -1,7 +1,7 @@
 #ifndef CTHULHU_BLOCKMAP_DECL_HPP
 #define CTHULHU_BLOCKMAP_DECL_HPP
 
-#ifdef CTHULHU_TPETRA_ONLY
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #include "Cthulhu_Map.hpp"
 
@@ -91,7 +91,7 @@ class BlockMap : public Teuchos::Describable {
 
 }//namespace Cthulhu
 
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #endif
 

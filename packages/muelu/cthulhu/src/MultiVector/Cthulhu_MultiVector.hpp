@@ -46,61 +46,62 @@ namespace Cthulhu {
     //! @name Post-construction modification routines
     //@{ 
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Replace current value at the specified (globalRow, vectorIndex) location with specified value.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void replaceGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Adds specified value to existing value at the specified (globalRow, vectorIndex) location.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, size_t vectorIndex, const Scalar &value) =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Replace current value at the specified (myRow, vectorIndex) location with specified value.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void replaceLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Adds specified value to existing value at the specified (myRow, vectorIndex) location.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Initialize all values in a multi-vector with specified value.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void putScalar(const Scalar &value) =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Set multi-vector values to random numbers.
     virtual void randomize() =0;
 
-    //! Replace the underlying Map with a compatible one.
 #ifdef CTHULHU_NOT_IMPLEMENTED
+    //! Replace the underlying Map with a compatible one.
     virtual void replaceMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Instruct a local (non-distributed) MultiVector to sum values across all nodes.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void reduce() =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! = Operator.
     /*! \param In A - Multivector to copy
      */
-#ifdef CTHULHU_NOT_IMPLEMENTED
     virtual MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //@}
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! @name Data Copy and View get methods
     /** These methods are used to get the data underlying the MultiVector. They return data in one of three forms: 
         - a MultiVector with a subset of the columns of the target MultiVector
@@ -110,8 +111,6 @@ namespace Cthulhu {
         view of the data in a 1-D format (i.e., get1dView) requires that the target MultiVector has constant stride.
     */
     //@{
-
-#ifdef CTHULHU_NOT_IMPLEMENTED
 
     //! Returns a MultiVector with copies of selected columns.
     virtual Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subCopy(const Teuchos::Range1D &colRng) const =0;
@@ -160,55 +159,55 @@ namespace Cthulhu {
     virtual Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(size_t j) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual Teuchos::ArrayRCP<const Scalar> getData(size_t j) const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
     virtual Teuchos::ArrayRCP<Scalar> getDataNonConst(size_t j) =0;
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Return multi-vector values in user-provided two-dimensional array (using Teuchos memory management classes).
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void get1dCopy(Teuchos::ArrayView<Scalar> A, size_t LDA) const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Return multi-vector values in user-provided array of pointers (using Teuchos memory management classes).
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void get2dCopy(Teuchos::ArrayView<const Teuchos::ArrayView<Scalar> > ArrayOfPtrs) const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Return const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual Teuchos::ArrayRCP<const Scalar> get1dView() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Return const persisting pointers to values.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > get2dView() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Return non-const persisting view of values in a one-dimensional array. Throws std::runtime_error if the underlying data is non-contiguous.  Teuchos::ArrayRCP<Scalar> get1dViewNonConst() =0;
-#ifdef CTHULHU_TPETRA_ONLY
     virtual Teuchos::ArrayRCP<Scalar> get1dViewNonConst() =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Return non-const persisting pointers to values.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst() =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Return a const reference to the underlying Kokkos::MultiVector object (advanced use only)
-#ifdef CTHULHU_TPETRA_ONLY
     virtual const Kokkos::MultiVector<Scalar,Node> & getLocalMV() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Return a non-const reference to the underlying Kokkos::MultiVector object (advanced use only)
-#ifdef CTHULHU_TPETRA_ONLY
     virtual Kokkos::MultiVector<Scalar,Node> & getLocalMVNonConst() =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@}
 
@@ -226,15 +225,15 @@ namespace Cthulhu {
     virtual void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a multi-vector, this = alpha*this.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void scale(const Scalar &alpha) =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void scale(Teuchos::ArrayView<const Scalar> alpha) =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
@@ -247,43 +246,43 @@ namespace Cthulhu {
     virtual void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute 1-norm of each vector in multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute 2-norm of each vector in multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute Inf-norm of each vector in multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
 #ifdef CTHULHU_NOT_IMPLEMENTED
+    //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
     virtual void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute mean (average) value of each vector in multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void meanValue(const Teuchos::ArrayView<Scalar> &means) const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-    //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
 #ifdef CTHULHU_NOT_IMPLEMENTED
+    //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     virtual void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Element-wise multiply of a Vector A with a MultiVector B.
     /** Forms this = scalarThis * this + scalarAB * B @ A
      *  where @ denotes element-wise multiplication.
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-#ifdef CTHULHU_NOT_IMPLEMENTED
     void elementWiseMultiply(Scalar scalarAB, const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, Scalar scalarThis) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
     //@} 
@@ -291,45 +290,44 @@ namespace Cthulhu {
     //! @name Attribute access functions
     //@{ 
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the number of vectors in the multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getNumVectors() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the local vector length on the calling processor of vectors in the multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getLocalLength() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the global vector length of vectors in the multi-vector.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual global_size_t getGlobalLength() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the stride between vectors in the multi-vector (only meaningful if ConstantStride() is true). WARNING: this may vary from node to node.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual size_t getStride() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns true if this multi-vector has constant stride between vectors. WARNING: This may vary from node to node.
-#ifdef CTHULHU_TPETRA_ONLY
     virtual bool isConstantStride() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@} 
 
     //! @name Overridden from Teuchos::Describable 
     //@{
-
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Return a simple one-line description of this object. */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual std::string description() const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-#ifdef CTHULHU_TPETRA_ONLY
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
-#endif // CTHULHU_TPETRA_ONLY
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@}
 

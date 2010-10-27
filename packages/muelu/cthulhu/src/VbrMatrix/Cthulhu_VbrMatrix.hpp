@@ -1,7 +1,7 @@
 #ifndef CTHULHU_VBRMATRIX__HPP
 #define CTHULHU_VBRMATRIX_HPP
 
-#ifdef CTHULHU_TPETRA_ONLY
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
@@ -91,6 +91,7 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
 
   //! @name Advanced Mathematical operations
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //! Multiply this matrix by a MultiVector.
   /*! \c X is required to be post-imported, i.e., described by the column map
       of the matrix. \c Y is required to be pre-exported, i.e., described by
@@ -98,13 +99,13 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
       See also the Operator::apply method which is implemented below.
   */
   //TODO virtual
-#ifdef CTHULHU_NOT_IMPLEMENTED
   template <class DomainScalar, class RangeScalar>
   void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
   //@}
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       \c X is required to be post-imported, i.e., described by the column map
@@ -119,7 +120,6 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
       point-diagonal must be zero.
   */
   //TODO virtual
-#ifdef CTHULHU_NOT_IMPLEMENTED
   template <class DomainScalar, class RangeScalar>
   void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
 #endif // CTHULHU_NOT_IMPLEMENTED
@@ -379,13 +379,13 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
                                      LocalOrdinal& numPtCols,
                                      Teuchos::ArrayRCP<Scalar>& blockEntry) =0;
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
   //! Return a copy of the (point-entry) diagonal values.
   /*!
     Throws an exception if the input-vector's map is not the same as
     getBlockRowMap()->getPointMap().
   */
   //TODO: need Vector  
-#ifdef CTHULHU_NOT_IMPLEMENTED
 virtual void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& diag) const =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
   //@}
