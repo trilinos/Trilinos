@@ -914,14 +914,14 @@ public:
   //@{
 
   /** \brief Gets the function associated with this dependency. */
-  RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> >
+  RCP<SingleArguementFunctionObject<DependeeType, DependeeType> >
     getFunctionObject()
   {
     return func_;
   }
 
   /** \brief Const version of function getter. */
-  RCP<const SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > 
+  RCP<const SingleArguementFunctionObject<DependeeType, DependeeType> > 
     getFunctionObject() const
   {
     return func_.getConst();
@@ -956,7 +956,7 @@ private:
    * @param dependentValue The index of the dependent array that is going to be changed.
    */
   void modifyArrayLength(
-    Teuchos_Ordinal newLength, RCP<ParameterEntry> dependentToModify);
+    DependeeType newLength, RCP<ParameterEntry> dependentToModify);
   
   //@}
   
@@ -1022,13 +1022,13 @@ NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDepen
 template <class DependeeType, class DependentType>
 void 
 NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
-  Teuchos_Ordinal newLength, RCP<ParameterEntry> dependentToModify)
+  DependeeType newLength, RCP<ParameterEntry> dependentToModify)
 {
   const Array<DependentType> originalArray = 
     any_cast<Array<DependentType> >(dependentToModify->getAny()); 
   Array<DependentType> newArray(newLength);
-  Teuchos_Ordinal i;
-  for(i=OrdinalTraits<Teuchos_Ordinal>::zero(); i<originalArray.size() && i<newLength; ++i){
+  DependeeType i;
+  for(i=OrdinalTraits<DependeeType>::zero(); i<originalArray.size() && i<newLength; ++i){
     newArray[i] = originalArray[i];
   }
 
@@ -1039,7 +1039,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
 template<class DependeeType, class DependentType>
 void 
 NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
-  Teuchos_Ordinal newLength;
+  DependeeType newLength;
   if(!func_.is_null()){
     func_->setParameterValue(getFirstDependeeValue<DependeeType>());
     newLength = func_->runFunction();
@@ -1048,7 +1048,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::evaluate(){
     newLength = getFirstDependeeValue<DependeeType>();
   }
 
-  TEST_FOR_EXCEPTION(newLength < OrdinalTraits<Teuchos_Ordinal>::zero(),
+  TEST_FOR_EXCEPTION(newLength < OrdinalTraits<DependeeType>::zero(),
     Exceptions::InvalidParameterValue,
     "Ruh Roh Shaggy! Looks like a dependency tried to set the length "
     "of the Array(s) to a negative number. Silly. You can't have "

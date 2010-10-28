@@ -145,8 +145,10 @@ DependencyXMLConverterDB::getConverterMap()
   static ConverterMap masterMap;
   if(masterMap.size() == 0){
     ADD_TEMPLATED_NUMBER_DEPS(int);
-    ADD_TEMPLATED_NUMBER_DEPS(double);
-    ADD_TEMPLATED_NUMBER_DEPS(float);
+    ADD_NUMBER_VISUAL_DEP(float); 
+    ADD_RANGE_VALIDATOR_DEP(float); 
+    ADD_NUMBER_VISUAL_DEP(double); 
+    ADD_RANGE_VALIDATOR_DEP(double); 
 
     #ifdef HAVE_TEUCHOS_LONG_LONG_INT
     ADD_TEMPLATED_NUMBER_DEPS(long long int);
