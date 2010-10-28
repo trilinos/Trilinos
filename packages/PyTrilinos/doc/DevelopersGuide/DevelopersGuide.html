@@ -1,0 +1,1198 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.7: http://docutils.sourceforge.net/" />
+<title>PyTrilinos Developers Guide</title>
+<meta name="author" content="Bill Spotz" />
+<meta name="organization" content="Sandia National Laboratories" />
+<meta name="date" content="28 October 2010" />
+<meta name="copyright" content="Sandia Corporation, 2010" />
+<style type="text/css">
+
+/*
+:Author: David Goodger (goodger@python.org)
+:Id: $Id: html4css1.css 6253 2010-03-02 00:24:53Z milde $
+:Copyright: This stylesheet has been placed in the public domain.
+
+Default cascading style sheet for the HTML output of Docutils.
+
+See http://docutils.sf.net/docs/howto/html-stylesheets.html for how to
+customize this style sheet.
+*/
+
+/* used to remove borders from tables and images */
+.borderless, table.borderless td, table.borderless th {
+  border: 0 }
+
+table.borderless td, table.borderless th {
+  /* Override padding for "table.docutils td" with "! important".
+     The right padding separates the table cells. */
+  padding: 0 0.5em 0 0 ! important }
+
+.first {
+  /* Override more specific margin styles with "! important". */
+  margin-top: 0 ! important }
+
+.last, .with-subtitle {
+  margin-bottom: 0 ! important }
+
+.hidden {
+  display: none }
+
+a.toc-backref {
+  text-decoration: none ;
+  color: black }
+
+blockquote.epigraph {
+  margin: 2em 5em ; }
+
+dl.docutils dd {
+  margin-bottom: 0.5em }
+
+/* Uncomment (and remove this text!) to get bold-faced definition list terms
+dl.docutils dt {
+  font-weight: bold }
+*/
+
+div.abstract {
+  margin: 2em 5em }
+
+div.abstract p.topic-title {
+  font-weight: bold ;
+  text-align: center }
+
+div.admonition, div.attention, div.caution, div.danger, div.error,
+div.hint, div.important, div.note, div.tip, div.warning {
+  margin: 2em ;
+  border: medium outset ;
+  padding: 1em }
+
+div.admonition p.admonition-title, div.hint p.admonition-title,
+div.important p.admonition-title, div.note p.admonition-title,
+div.tip p.admonition-title {
+  font-weight: bold ;
+  font-family: sans-serif }
+
+div.attention p.admonition-title, div.caution p.admonition-title,
+div.danger p.admonition-title, div.error p.admonition-title,
+div.warning p.admonition-title {
+  color: red ;
+  font-weight: bold ;
+  font-family: sans-serif }
+
+/* Uncomment (and remove this text!) to get reduced vertical space in
+   compound paragraphs.
+div.compound .compound-first, div.compound .compound-middle {
+  margin-bottom: 0.5em }
+
+div.compound .compound-last, div.compound .compound-middle {
+  margin-top: 0.5em }
+*/
+
+div.dedication {
+  margin: 2em 5em ;
+  text-align: center ;
+  font-style: italic }
+
+div.dedication p.topic-title {
+  font-weight: bold ;
+  font-style: normal }
+
+div.figure {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+div.footer, div.header {
+  clear: both;
+  font-size: smaller }
+
+div.line-block {
+  display: block ;
+  margin-top: 1em ;
+  margin-bottom: 1em }
+
+div.line-block div.line-block {
+  margin-top: 0 ;
+  margin-bottom: 0 ;
+  margin-left: 1.5em }
+
+div.sidebar {
+  margin: 0 0 0.5em 1em ;
+  border: medium outset ;
+  padding: 1em ;
+  background-color: #ffffee ;
+  width: 40% ;
+  float: right ;
+  clear: right }
+
+div.sidebar p.rubric {
+  font-family: sans-serif ;
+  font-size: medium }
+
+div.system-messages {
+  margin: 5em }
+
+div.system-messages h1 {
+  color: red }
+
+div.system-message {
+  border: medium outset ;
+  padding: 1em }
+
+div.system-message p.system-message-title {
+  color: red ;
+  font-weight: bold }
+
+div.topic {
+  margin: 2em }
+
+h1.section-subtitle, h2.section-subtitle, h3.section-subtitle,
+h4.section-subtitle, h5.section-subtitle, h6.section-subtitle {
+  margin-top: 0.4em }
+
+h1.title {
+  text-align: center }
+
+h2.subtitle {
+  text-align: center }
+
+hr.docutils {
+  width: 75% }
+
+img.align-left, .figure.align-left, object.align-left {
+  clear: left ;
+  float: left ;
+  margin-right: 1em }
+
+img.align-right, .figure.align-right, object.align-right {
+  clear: right ;
+  float: right ;
+  margin-left: 1em }
+
+img.align-center, .figure.align-center, object.align-center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.align-left {
+  text-align: left }
+
+.align-center {
+  clear: both ;
+  text-align: center }
+
+.align-right {
+  text-align: right }
+
+/* reset inner alignment in figures */
+div.align-right {
+  text-align: left }
+
+/* div.align-center * { */
+/*   text-align: left } */
+
+ol.simple, ul.simple {
+  margin-bottom: 1em }
+
+ol.arabic {
+  list-style: decimal }
+
+ol.loweralpha {
+  list-style: lower-alpha }
+
+ol.upperalpha {
+  list-style: upper-alpha }
+
+ol.lowerroman {
+  list-style: lower-roman }
+
+ol.upperroman {
+  list-style: upper-roman }
+
+p.attribution {
+  text-align: right ;
+  margin-left: 50% }
+
+p.caption {
+  font-style: italic }
+
+p.credits {
+  font-style: italic ;
+  font-size: smaller }
+
+p.label {
+  white-space: nowrap }
+
+p.rubric {
+  font-weight: bold ;
+  font-size: larger ;
+  color: maroon ;
+  text-align: center }
+
+p.sidebar-title {
+  font-family: sans-serif ;
+  font-weight: bold ;
+  font-size: larger }
+
+p.sidebar-subtitle {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+p.topic-title {
+  font-weight: bold }
+
+pre.address {
+  margin-bottom: 0 ;
+  margin-top: 0 ;
+  font: inherit }
+
+pre.literal-block, pre.doctest-block {
+  margin-left: 2em ;
+  margin-right: 2em }
+
+span.classifier {
+  font-family: sans-serif ;
+  font-style: oblique }
+
+span.classifier-delimiter {
+  font-family: sans-serif ;
+  font-weight: bold }
+
+span.interpreted {
+  font-family: sans-serif }
+
+span.option {
+  white-space: nowrap }
+
+span.pre {
+  white-space: pre }
+
+span.problematic {
+  color: red }
+
+span.section-subtitle {
+  /* font-size relative to parent (h1..h6 element) */
+  font-size: 80% }
+
+table.citation {
+  border-left: solid 1px gray;
+  margin-left: 1px }
+
+table.docinfo {
+  margin: 2em 4em }
+
+table.docutils {
+  margin-top: 0.5em ;
+  margin-bottom: 0.5em }
+
+table.footnote {
+  border-left: solid 1px black;
+  margin-left: 1px }
+
+table.docutils td, table.docutils th,
+table.docinfo td, table.docinfo th {
+  padding-left: 0.5em ;
+  padding-right: 0.5em ;
+  vertical-align: top }
+
+table.docutils th.field-name, table.docinfo th.docinfo-name {
+  font-weight: bold ;
+  text-align: left ;
+  white-space: nowrap ;
+  padding-left: 0 }
+
+h1 tt.docutils, h2 tt.docutils, h3 tt.docutils,
+h4 tt.docutils, h5 tt.docutils, h6 tt.docutils {
+  font-size: 100% }
+
+ul.auto-toc {
+  list-style-type: none }
+
+</style>
+</head>
+<body>
+<div class="document" id="pytrilinos-developers-guide">
+<h1 class="title">PyTrilinos Developers Guide</h1>
+<table class="docinfo" frame="void" rules="none">
+<col class="docinfo-name" />
+<col class="docinfo-content" />
+<tbody valign="top">
+<tr><th class="docinfo-name">Author:</th>
+<td>Bill Spotz</td></tr>
+<tr><th class="docinfo-name">Contact:</th>
+<td><a class="first last reference external" href="mailto:wfspotz&#64;sandia.gov">wfspotz&#64;sandia.gov</a></td></tr>
+<tr><th class="docinfo-name">Organization:</th>
+<td>Sandia National Laboratories</td></tr>
+<tr><th class="docinfo-name">Date:</th>
+<td>28 October 2010</td></tr>
+<tr><th class="docinfo-name">Copyright:</th>
+<td>Sandia Corporation, 2010</td></tr>
+</tbody>
+</table>
+<div class="abstract topic">
+<p class="topic-title first">Abstract</p>
+<p>PyTrilinos is a python interface to selected Trilinos
+packages.  The Trilinos Project is a collection of over 30
+software packages written primarily in C++ that provide linear-,
+nonlinear-, and eigen-solvers, along with preconditioners and
+supporting utilities, that are object-oriented, parallel and
+serial, for sparse and dense problems.  PyTrilinos is one of those
+packages, and provides python interfaces to the most popular and
+important Trilinos packages.  This Guide provides information,
+both necessary and recommended, for developing PyTrilinos
+packages.</p>
+</div>
+<div class="contents topic" id="contents">
+<p class="topic-title first">Contents</p>
+<ul class="simple">
+<li><a class="reference internal" href="#introduction-to-pytrilinos-development" id="id1">Introduction to PyTrilinos Development</a></li>
+<li><a class="reference internal" href="#adding-new-modules-to-pytrilinos" id="id2">Adding New Modules to PyTrilinos</a></li>
+<li><a class="reference internal" href="#the-pytrilinos-build-system" id="id3">The PyTrilinos Build System</a><ul>
+<li><a class="reference internal" href="#single-namespace-packages" id="id4">Single Namespace Packages</a></li>
+<li><a class="reference internal" href="#nested-namespace-packages" id="id5">Nested Namespace Packages</a></li>
+<li><a class="reference internal" href="#the-pytrilinos-library" id="id6">The <tt class="docutils literal">pytrilinos</tt> Library</a></li>
+<li><a class="reference internal" href="#package-specific-configuration-options" id="id7">Package-Specific Configuration Options</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#pytrilinos-documentation-system" id="id8">PyTrilinos Documentation System</a><ul>
+<li><a class="reference internal" href="#python-docstrings" id="id9">Python Docstrings</a></li>
+<li><a class="reference internal" href="#pytrilinos-docstring-policy" id="id10">PyTrilinos Docstring Policy</a></li>
+<li><a class="reference internal" href="#module-docstrings" id="id11">Module docstrings</a></li>
+<li><a class="reference internal" href="#function-and-method-docstrings" id="id12">Function and Method Docstrings</a></li>
+<li><a class="reference internal" href="#appending-doxygen-documentation-to-docstrings" id="id13">Appending Doxygen Documentation to Docstrings</a></li>
+<li><a class="reference internal" href="#overriding-doxygen-documentation" id="id14">Overriding Doxygen Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exception-handling-in-pytrilinos" id="id15">Exception Handling in PyTrilinos</a><ul>
+<li><a class="reference internal" href="#practical-considerations" id="id16">Practical Considerations</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#reference-counted-pointers" id="id17">Reference Counted Pointers</a><ul>
+<li><a class="reference internal" href="#pytrilinos-and-rcps" id="id18">PyTrilinos and RCPs</a></li>
+<li><a class="reference internal" href="#when-to-store-pytrilinos-classes-as-rcps" id="id19">When to Store PyTrilinos Classes as RCPs</a></li>
+<li><a class="reference internal" href="#usage-details" id="id20">Usage Details</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#testing" id="id21">Testing</a><ul>
+<li><a class="reference internal" href="#naming-conventions" id="id22">Naming Conventions</a></li>
+<li><a class="reference internal" href="#build-system" id="id23">Build System</a></li>
+<li><a class="reference internal" href="#running-all-tests" id="id24">Running All Tests</a></li>
+<li><a class="reference internal" href="#test-script-conventions" id="id25">Test Script Conventions</a></li>
+<li><a class="reference internal" href="#unit-tests" id="id26">Unit Tests</a></li>
+<li><a class="reference internal" href="#example-scripts" id="id27">Example Scripts</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="section" id="introduction-to-pytrilinos-development">
+<h1><a class="toc-backref" href="#id1">Introduction to PyTrilinos Development</a></h1>
+<p>The purpose of PyTrilinos is to provide a high-level, dynamic and
+interactive interface to selected Trilinos packages.  Being a
+PyTrilinos developer requires that you are, or will become, an expert
+in the following areas:</p>
+<ul class="simple">
+<li><strong>C++.</strong> The vast majority of Trilinos development is in C++, and
+much of that development takes advantage of advanced C++ or
+object-oriented techniques such as polymorphism, templating and
+reference-counted memory management.  A high level of comfort with
+C++ is required.</li>
+<li><strong>Python.</strong> Obviously, PyTrilinos is a package of python modules, so
+familiarity with the language is a must.  Beyond that, however, it
+is important to understand the philosophical underpinnings of the
+language (which are very different from C++) in order to develop
+interfaces that are &quot;pythonic&quot;, i.e. that are consistent with the
+many conventions of the language.</li>
+<li><strong>Trilinos.</strong> At a bare minimum, a PyTrilinos developer should have
+a decent level of expertise regarding the Trilinos package that is
+to be wrapped, as well as those packages that the package interacts
+with.  This expertise would include related development tools such
+as the CMake build system and the GIT version control system.</li>
+<li><strong>SWIG.</strong> SWIG is the Simple Wrapper and Interface Gernerator, and
+is the workhorse for generating the code that gets compiled to
+become python extension modules.  The 'S' in SWIG comes from the
+fact that SWIG can read and parse a header file and generate code
+that will compile, can be imported into a python shell, and mimics
+the C/C++ interface (within the constraints of the language).
+However, SWIG is very powerful, and almost all of its provisions can
+be overwritten by the python interface developer.  Trilinos is
+sufficiently complex that such overrides are commonplace, and the
+PyTrilinos developer must have a high degree of comfort doing this.</li>
+<li><strong>The Python C/API.</strong> When such overrides are necessary, it usually
+involves writing code that is compliant with the Python C/API.  In
+addition to the structs and function prototypes provided by the
+Python C/API, this means a thorough understanding of python
+exception handling (essential for a dynamic language) and reference
+counting (which requires more programmer intervention in C than in
+C++).</li>
+<li><strong>NumPy.</strong> NumPy is the accepted standard python package for
+handling arrays of contiguous (or strided) homogeneous data.  Any
+PyTrilinos classes or arguments that involve arrays of data should
+provide an interface that is highly compatible with NumPy.</li>
+</ul>
+<p>Each of these languages, libraries, tools and interfaces have
+extensive documentation available on-line, and should be accessed
+frequently by the PyTrilinos developer.  The purpose of this
+Developers Guide is detail how these tools are used together to
+generate PyTrilinos, and to document certain conventions that have
+been adopted for all PyTrilinos packages.</p>
+</div>
+<div class="section" id="adding-new-modules-to-pytrilinos">
+<h1><a class="toc-backref" href="#id2">Adding New Modules to PyTrilinos</a></h1>
+<p>If you want to add a Trilinos package as a new module in PyTrilinos,
+here are the necessary steps.</p>
+<ol class="arabic">
+<li><p class="first">Add the package name to the <tt class="docutils literal">cmake/Dependencies.cmake</tt> file, where
+variable <tt class="docutils literal">LIB_OPTIONAL_DEP_PACKAGES</tt> is set.  It is important
+that packages be listed in build order.</p>
+</li>
+<li><p class="first">If your package uses nested namespaces, then the python interface
+should use corresponding nested modules.  To partially facilitate
+this, within the <tt class="docutils literal">src/PyTrilinos</tt> directory, make a directory with your
+package name.  Repeat for nested namespaces.</p>
+<p>In <tt class="docutils literal">src/PyTrilinos/CMakeLists.txt</tt>, you will find logic such as:</p>
+<pre class="literal-block">
+# The NOX module employs namespaces, so include the NOX directory
+IF(${PACKAGE_NAME}_ENABLE_NOX)
+  ADD_SUBDIRECTORY(NOX)
+ENDIF(${PACKAGE_NAME}_ENABLE_NOX)
+</pre>
+<p>Add similar logic for your code.  In each nested directory, create
+a new <tt class="docutils literal">CMakeLists.txt</tt> file and provide similar logic.</p>
+</li>
+<li><p class="first">In the top-level <tt class="docutils literal">CMakeLists.txt</tt> file, you will find a series of
+if-blocks that look like this:</p>
+<pre class="literal-block">
+IF(PyTrilinos_ENABLE_Teuchos)
+  APPEND_SET(${PACKAGE_NAME}_PACKAGES Teuchos)
+  APPEND_SET(${PACKAGE_NAME}_MODULES  Teuchos)
+ENDIF(PyTrilinos_ENABLE_Teuchos)
+</pre>
+<p>Add a similar if-block for your new package, making sure it is
+placed in build-order relative to the other packages.  See the
+logic for the <tt class="docutils literal">NOX</tt> package if your package supports nested
+namespaces (sub-modules).</p>
+</li>
+<li><p class="first">If your package will require compiled code that will be archived in
+the pytrilinos shared library, add the headers and sources to
+<tt class="docutils literal">src/CMakeLists.txt</tt>, using the existing if-blocks as a guide.</p>
+</li>
+<li><p class="first">If your package supports nested namespaces (sub-modules), then in
+<tt class="docutils literal">src/CMakeLists.txt</tt>, find the loop prefaced with the comment:</p>
+<pre class="literal-block">
+# Loop over the PyTrilinos-enabled Trilinos modules and define the
+# swig-generated PyTrilinos extension modules
+</pre>
+<p>Use the existing if-blocks to add logic to support your
+sub-modules.</p>
+</li>
+<li><p class="first">Add your package by writing the required SWIG interface files.  For
+a standard PACKAGE, it will be in the file</p>
+<blockquote>
+<p><tt class="docutils literal">PACKAGE.i</tt></p>
+</blockquote>
+<p>For a package that supports nested namespaces, the primary SWIG
+interface file will be named:</p>
+<pre class="literal-block">
+``PACKAGE___init__.i``
+</pre>
+<p>In both cases, of course, <tt class="docutils literal">PACKAGE</tt> will be replaced with your
+package name.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="the-pytrilinos-build-system">
+<h1><a class="toc-backref" href="#id3">The PyTrilinos Build System</a></h1>
+<p>The move by Trilinos to the CMake build system has had many advantages
+for PyTrilinos.  The two primary advantages being that shared
+libraries and python extension libraries can now both be built
+automatically by the host build system.  Previously, shared libraries
+were built by the PyTrilinos package in an ad-hoc manner, and the
+python extension libraries were built using the python distutils
+module, which has some reports of portability issues.  The move to
+CMake has improved the reliability and robustness of the PyTrilinos
+build system.</p>
+<p>From a build-system point of view, there are two types of Trilinos
+packages that are supported by PyTrilinos: those that are contained
+within a single namespace, like Teuchos, Epetra and AztecOO; and those
+that are contained within nested namespaces, such as NOX.  These two
+types are detailed below, in addition to the <tt class="docutils literal">pytrilinos</tt> library
+and package-specific configuration options.</p>
+<div class="section" id="single-namespace-packages">
+<h2><a class="toc-backref" href="#id4">Single Namespace Packages</a></h2>
+<p>All supported packages must be listed in the
+<tt class="docutils literal">LIB_OPTIONAL_DEP_PACKAGES</tt> variable in the
+<tt class="docutils literal">cmake/Dependencies.cmake</tt> file, and they should be listed in build
+order.</p>
+<p>The PyTrilinos build system maintains two variables,
+<tt class="docutils literal">PyTrilnos_PACKAGES</tt> and <tt class="docutils literal">PyTrilinos_MODULES</tt>, both set in the
+top-level <tt class="docutils literal">CMakeLists.txt</tt> file, to keep track of what to build.
+(Note that these variables are referenced as
+<tt class="docutils literal">${PACKAGE_NAME}_PACKAGES</tt> and <tt class="docutils literal">${PACKAGE_NAME}_MODULES</tt> within
+<tt class="docutils literal">CMakeLists.txt</tt>.)  For single namespace packages, the entries in
+these two variables is the same.  For example,</p>
+<pre class="literal-block">
+IF(PyTrilinos_ENABLE_Teuchos)
+  APPEND_SET(${PACKAGE_NAME}_PACKAGES Teuchos)
+  APPEND_SET(${PACKAGE_NAME}_MODULES  Teuchos)
+ENDIF(PyTrilinos_ENABLE_Teuchos)
+</pre>
+<p>In this instance, the build system now expects to find a SWIG
+interface file in the source directory <tt class="docutils literal">src/Teuchos.i</tt> that defines
+module <tt class="docutils literal">PyTrilinos.Teuchos</tt>.  The end products will be placed in the
+build directory <tt class="docutils literal">src/PyTrilinos</tt>:</p>
+<pre class="literal-block">
+src/PyTrilinos/Teuchos.py
+src/PyTrilinos/Teuchos.pyc
+src/PyTrilinos/_Teuchos.so
+</pre>
+</div>
+<div class="section" id="nested-namespace-packages">
+<h2><a class="toc-backref" href="#id5">Nested Namespace Packages</a></h2>
+<p>Using <tt class="docutils literal">NOX</tt> as an example, the <tt class="docutils literal">LIB_OPTIONAL_DEP_PACKAGES</tt>
+variable in the <tt class="docutils literal">cmake/Dependencies.cmake</tt> file should contain the
+entry <tt class="docutils literal">NOX</tt> and it should be listed in build order.</p>
+<p>In the top-level <tt class="docutils literal">CMakeLists.txt</tt> file, the variable
+<tt class="docutils literal">PyTrilinos_PACKAGES</tt> should be appended as before, with a single
+entry.  But <tt class="docutils literal">PyTrilinos_MODULES</tt> should contain an entry for each
+nested namespace:</p>
+<pre class="literal-block">
+IF(PyTrilinos_ENABLE_NOX)
+  APPEND_SET(${PACKAGE_NAME}_PACKAGES NOX)
+  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.__init__  )
+  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Abstract  )
+  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.StatusTest)
+  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Solver    )
+  IF(NOX_ENABLE_Epetra)
+    APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.__init__ )
+    APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.Interface)
+  ENDIF(NOX_ENABLE_Epetra)
+ENDIF(PyTrilinos_ENABLE_NOX)
+</pre>
+<p>For every entry in <tt class="docutils literal">PyTrilnos_MODULES</tt>, there should be a
+corresponding SWIG file in the source directory:</p>
+<pre class="literal-block">
+src/NOX.__init__.i
+src/NOX.Abstract.i
+src/NOX.StatusTest.i
+src/NOX.Solver.i
+src/NOX.Epetra.__init__.i
+src/NOX.Epetra.Interface.i
+</pre>
+<p>which will produce the following build products:</p>
+<pre class="literal-block">
+src/PyTrilinos/NOX/__init__.py
+src/PyTrilinos/NOX/__init__.pyc
+src/PyTrilinos/NOX/___init__.so
+src/PyTrilinos/NOX/Abstract.py
+src/PyTrilinos/NOX/Abstract.pyc
+src/PyTrilinos/NOX/_Abstract.so
+src/PyTrilinos/NOX/StatusTest.py
+src/PyTrilinos/NOX/StatusTest.pyc
+src/PyTrilinos/NOX/_StatusTest.so
+src/PyTrilinos/NOX/Solver.py
+src/PyTrilinos/NOX/Solver.pyc
+src/PyTrilinos/NOX/_Solver.so
+src/PyTrilinos/NOX/Epetra/__init__.py
+src/PyTrilinos/NOX/Epetra/__init__.pyc
+src/PyTrilinos/NOX/Epetra/___init__.so
+src/PyTrilinos/NOX/Epetra/Interface.py
+src/PyTrilinos/NOX/Epetra/Interface.pyc
+src/PyTrilinos/NOX/Epetra/_Interface.so
+</pre>
+</div>
+<div class="section" id="the-pytrilinos-library">
+<h2><a class="toc-backref" href="#id6">The <tt class="docutils literal">pytrilinos</tt> Library</a></h2>
+<p>If you develop a module that requires compiled code not generated by
+SWIG, it should be put in the <tt class="docutils literal">pytrilinos</tt> library.  Simply append
+entries the the <tt class="docutils literal">HEADERS</tt> and <tt class="docutils literal">SOURCES</tt> variables in
+<tt class="docutils literal">src/CMakeLists.txt</tt> file.</p>
+</div>
+<div class="section" id="package-specific-configuration-options">
+<h2><a class="toc-backref" href="#id7">Package-Specific Configuration Options</a></h2>
+<p>If you need package-specific configuration options set, they should be
+done so in <tt class="docutils literal">src/CMakeLists.txt</tt> prior to the call to
+<tt class="docutils literal">PACKAGE_CONFIGURE_FILE()</tt> and in <tt class="docutils literal">cmake/PyTrilinos_config.h.in</tt>.
+Currently, the following variables are set depending upon the
+top-level Trilinos configuration:</p>
+<pre class="literal-block">
+HAVE_EPETRA
+HAVE_TEUCHOS
+HAVE_NOX_EPETRA
+HAVE_NOX_EPETRAEXT
+HAVE_MPI
+</pre>
+</div>
+</div>
+<div class="section" id="pytrilinos-documentation-system">
+<h1><a class="toc-backref" href="#id8">PyTrilinos Documentation System</a></h1>
+<div class="section" id="python-docstrings">
+<h2><a class="toc-backref" href="#id9">Python Docstrings</a></h2>
+<p>Python has an effective interactive documentation system, utilizing
+what are known as &quot;docstrings&quot;.  If the first statement of a python
+module, a python function or a python class is a string constant, then
+that string becomes the documentation string, or &quot;docstring&quot;, for the
+given module, function or class.  For example,</p>
+<pre class="literal-block">
+def func(arg):
+    &quot;Docstring for function func&quot;
+    return &quot;Hello, world!&quot;
+</pre>
+<p>Docstrings are fundamentally different from python comments, because
+of their position relative to the code they describe and because they
+are used by the python <tt class="docutils literal">help</tt> facility and other documentation
+tools, such as <tt class="docutils literal">pydoc</tt>:</p>
+<pre class="literal-block">
+&gt;&gt;&gt; help(func)
+Help on function func in module __main__:
+
+func(arg)
+    Docstring for function func
+&gt;&gt;&gt;
+</pre>
+</div>
+<div class="section" id="pytrilinos-docstring-policy">
+<h2><a class="toc-backref" href="#id10">PyTrilinos Docstring Policy</a></h2>
+<p>It is the policy of PyTrilinos that python docstrings should be
+maintained to provide useful, current and accurate information to
+PyTrilinos users that</p>
+<blockquote>
+<ul class="simple">
+<li>correctly reflect the calling arguments of PyTrilinos methods
+and functions,</li>
+<li>match the coresponding doxygen documentation provided by
+Trilinos developers when appropriate, and</li>
+<li>supercede the doxygen documentation when the python interface
+and/or implementation is different from the C++ interface and/or
+implementation.</li>
+</ul>
+</blockquote>
+<p>The difficulty in adhering to these policies is that the python code
+(and therefore the python docstrings) that makes up PyTrilinos is
+automatically generated by swig.  Fortunately, there are several tools
+available that allow these policies to be met.</p>
+</div>
+<div class="section" id="module-docstrings">
+<h2><a class="toc-backref" href="#id11">Module docstrings</a></h2>
+<p>Every PyTrilinos module should contain a module docstring.  This is
+typically implemented in the package interface file as follows:</p>
+<pre class="literal-block">
+%define %my_package_docstring
+&quot;
+Multi-line documentation string for
+My_Package
+&quot;
+%enddef
+%module (docstring = %my_package_docstring) My_Package
+</pre>
+<p>SWIG does not require that SWIG macro names begin with &quot;<tt class="docutils literal">%</tt>&quot;, but it
+is allowed and it is the convention for PyTrilinos SWIG macros.
+Further, PyTrilinos module docstrings follow a set format:</p>
+<pre class="literal-block">
+PyTrilinos.My_Package is the python interface to the Trilinos
+such-and-such package My_Package:
+
+    http://trilinos.sandia.gov/packages/my_package
+
+The purpose of My_Package is to . . . .  The python version of the
+My_Package package supports the following classes:
+
+    * Class1          - Short description 1
+    * Class2          - Short description 2
+    * ...
+
+Any other notes about the package as a whole. . . .
+</pre>
+</div>
+<div class="section" id="function-and-method-docstrings">
+<h2><a class="toc-backref" href="#id12">Function and Method Docstrings</a></h2>
+<p>Docstrings for functions and methods are partially implemented by the
+SWIG <tt class="docutils literal">%feature</tt> called <tt class="docutils literal">autodoc</tt>.  Before any code is directed to
+be wrapped within an interface file (by the first <tt class="docutils literal">%include</tt>
+directive), the following feature should be activated:</p>
+<pre class="literal-block">
+%feature(&quot;autodoc&quot;, &quot;1&quot;);
+</pre>
+<p>This automatically adds docstrings to each function and class method
+showing the function name, argument list, and return type.  The
+argument list contains both type and name information (as per the
+<tt class="docutils literal">&quot;1&quot;</tt> option).  If a function or method is overloaded, each valid
+calling signature is listed.</p>
+</div>
+<div class="section" id="appending-doxygen-documentation-to-docstrings">
+<h2><a class="toc-backref" href="#id13">Appending Doxygen Documentation to Docstrings</a></h2>
+<p>A system is in place for automatically extracting Doxygen
+documentation from a Trilinos package source code and inserting it
+into the package's python module.  First, Doxygen is used to extract
+the documentation and save it in XML format.  Second, a python script
+is run to read this XML data and convert it to a series of valid SWIG
+statements of the form::</p>
+<pre class="literal-block">
+%feature(&quot;docstring&quot;) &lt;symbol-name&gt; &lt;docstring&gt;
+</pre>
+<p>Third, each package interface file implements an <tt class="docutils literal">%include</tt>
+statement to read these documentation directives.  This adds the
+Doxygen documentation string to the end of the string created by
+<tt class="docutils literal"><span class="pre">%feature(&quot;autodoc&quot;,</span> &quot;1&quot;)</tt>.</p>
+<p>All of this infrastructure is contained within the PyTrilinos
+subdirectory:</p>
+<pre class="literal-block">
+doc/Doxygen
+</pre>
+<p>Within this subdirectory are a series of Doxygen control files, one
+for each package: <tt class="docutils literal">Doxyfile_Teuchos</tt>, <tt class="docutils literal">Doxyfile_Epetra</tt>, etc.
+These Doxyfiles have certain features in common: they all generate XML
+output:</p>
+<pre class="literal-block">
+GENERATE_XML = YES
+</pre>
+<p>while suppressing all other forms of output.  They all direct output
+to their own subdirectory:</p>
+<pre class="literal-block">
+OUTPUT_DIRECTORY = Teuchos
+XML_OUTPUT = .
+</pre>
+<p>If you add documentation for a new package, then add the package name
+to the <tt class="docutils literal">PyTrilinos/doc/Doxygen/Makefile</tt> variable <tt class="docutils literal">PACKAGES</tt>.
+When you run <tt class="docutils literal">make</tt> from the shell, this will cause <tt class="docutils literal">doxygen</tt> to
+be run on the Doxyfile and the script <tt class="docutils literal">doxy2swig.py</tt> (generously
+provided by Prabhu Ramachandran) to be run on the resulting output.
+This produces a file with a <tt class="docutils literal">_dox.i</tt> suffix, e.g. <tt class="docutils literal">Teuchos_dox.i</tt>,
+intended to be included into the package interface file
+<tt class="docutils literal">src/Teuchos.i</tt>.  To facilitate this inclusion, SWIG is invoked with
+<tt class="docutils literal"><span class="pre">-I$(top_srcdir)/doc/Doxygen</span></tt>.</p>
+</div>
+<div class="section" id="overriding-doxygen-documentation">
+<h2><a class="toc-backref" href="#id14">Overriding Doxygen Documentation</a></h2>
+<p>Sometimes the Doxygen documentation is not appropriate for a given
+python function or method.  This is often the case when <tt class="docutils literal">%typemap</tt>-s
+are employed or when the python implementation replaces the C++
+interface by using <tt class="docutils literal">%ignore</tt>, <tt class="docutils literal">%extend</tt> and/or <tt class="docutils literal">%inline</tt>.  This
+requires that the automatically created docstrings be overridden or
+appended, and can be accomplished by providing a SWIG documentation
+directive <em>after</em> the <tt class="docutils literal">%include &quot;Teuchos_dox.i&quot;</tt> (for example) and
+that redefines the docstring for a specified symbol.  These directives
+should be placed directly in the appropriate interface file.  By
+convention, all directives pertaining to the symbols within a single
+<tt class="docutils literal">%include</tt> file are grouped together.  The documentation directives
+should be at the top of these groupings.</p>
+<p>There are two SWIG documentation directives that can be employed to
+override or append docstrings.  If you wish to append documentation to
+what is already present, use:</p>
+<pre class="literal-block">
+%feature(&quot;docstring&quot;)
+&lt;symbol-name&gt;
+&quot;
+&lt;docstring&gt;
+&quot;;
+</pre>
+<p>If you wish to replace the existant docstring completely, use the
+directive:</p>
+<pre class="literal-block">
+%feature(&quot;autodoc&quot;,
+&quot;&lt;docstring&gt;&quot;)
+&lt;symbol-name&gt;;
+</pre>
+<p>The formatting given here tends to be the most readable for the widest
+range of situations, both for the interface files and for the
+resulting docstrings.</p>
+</div>
+</div>
+<div class="section" id="exception-handling-in-pytrilinos">
+<h1><a class="toc-backref" href="#id15">Exception Handling in PyTrilinos</a></h1>
+<p><strong>All</strong> C++ exceptions raised by Trilinos should be caught by
+PyTrilinos and converted to python exceptions.  Fortunately, there is
+a relatively straightforward SWIG facility for doing this.  Each SWIG
+interface file shall include an <tt class="docutils literal">%exception</tt> directive prior to any
+Trilinos header file <tt class="docutils literal">%include</tt> directives:</p>
+<pre class="literal-block">
+%include &quot;exception.i&quot;
+%exception
+{
+  try
+  {
+    $action
+  }
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, &quot;Unknown C++ exception&quot;);
+  }
+}
+</pre>
+<p>It is possible to implement an <tt class="docutils literal">%exception</tt> directive that includes
+a symbol name, prior to the first &quot;<tt class="docutils literal">{</tt>&quot;, that is specific to a
+function or method.  By omitting this symbol name, we are applying
+this <tt class="docutils literal">%exception</tt> to <em>all</em> functions and methods that get wrapped.
+Here, <tt class="docutils literal">$action</tt> is a SWIG macro that is replaced by the generated
+code for calling the wrapped function or method.  The <tt class="docutils literal"><span class="pre">catch(...)</span></tt>
+syntax ensures that <em>every</em> exception that might be thrown gets
+caught.</p>
+<p><tt class="docutils literal">SWIG_exception</tt> is a C macro <tt class="docutils literal">#define</tt>-ed at the top of the
+generated source file.  <tt class="docutils literal">SWIG_UnknownError</tt> is also a macro that
+evaluates to an integer.  See the SWIG documentation for valid SWIG
+error macro names.</p>
+<p>The directive given above is useful, but all exceptions will get
+converted to type <tt class="docutils literal">UnknownError</tt> with a nearly meaningless error
+message.  Realistically, we need to convert a wider range of
+exceptions to more meaningful python exception types, and produce more
+useful error messages.  SWIG also provides a macro for treating most
+standard C++ exceptions, converting them to appropriate python
+exceptions and extracting their error message from their <tt class="docutils literal">what()</tt>
+method.  Simply change the <tt class="docutils literal">%exception</tt> directive to:</p>
+<pre class="literal-block">
+%exception
+{
+  try
+  {
+    $action
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, &quot;Unknown C++ exception&quot;);
+  }
+}
+</pre>
+<p>and this will convert the vast majority of standard exceptions to
+appropriate python exceptions with useful error messages.</p>
+<p>There are Trilnios packages that throw exceptions other than those
+found in the standard library.  These can be caught anywhere prior to
+the <tt class="docutils literal"><span class="pre">catch(...)</span></tt> syntax, although in general, it is best to put them
+before the <tt class="docutils literal">SWIG_CATCH_STDEXCEPT</tt> macro, especially if the package
+exceptions inherit from the standard exceptions.  Here is the current
+Teuchos exception handler:</p>
+<pre class="literal-block">
+%exception
+{
+  try
+  {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(Teuchos::Exceptions::InvalidParameterType &amp; e)
+  {
+    SWIG_exception(SWIG_TypeError, e.what());
+  }
+  catch(Teuchos::Exceptions::InvalidParameter &amp; e)
+  {
+    PyErr_SetString(PyExc_KeyError, e.what());
+    SWIG_fail;
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, &quot;Unknown C++ exception&quot;);
+  }
+}
+</pre>
+<p>A few notes: (1) After the <tt class="docutils literal">$action</tt> macro, there is a call to
+<tt class="docutils literal">PyErr_Occurred()</tt>.  This is because the Teuchos wrappers
+<tt class="docutils literal">%extend</tt> certain classes and those new methods can set python
+errors.  Alternatively, you could raise C++ exceptions in all of these
+extensions, and then skip the <tt class="docutils literal">PyErr_Occurred()</tt> check.  (2)
+<tt class="docutils literal">SWIG_fail</tt> is a C macro provided by SWIG that evaluates to <tt class="docutils literal">goto
+fail</tt>, where <tt class="docutils literal">fail</tt> is a label that exists within all wrapper
+functions.  (3) The <tt class="docutils literal"><span class="pre">Teuchos::Exceptions::InvalidParameter</span></tt>
+exception is most closely related to the python <tt class="docutils literal">KeyError</tt>
+exception, but SWIG does not have a corresponding SWIG error for this.
+Therefore, I use the <tt class="docutils literal">PyErr_SetString()</tt> function and <tt class="docutils literal">SWIG_fail</tt>
+macro.</p>
+<div class="section" id="practical-considerations">
+<h2><a class="toc-backref" href="#id16">Practical Considerations</a></h2>
+<p>Most PyTrilinos packages will need to <tt class="docutils literal">%import &quot;Teuchos.i&quot;</tt> and/or
+<tt class="docutils literal">%import &quot;Epetra.i&quot;</tt>.  Both of these interface files implement their
+own <tt class="docutils literal">%exception</tt> directive, but both of them &quot;turn off&quot; exception
+handling by including a:</p>
+<pre class="literal-block">
+%exception;
+</pre>
+<p>at the end of the file.  This is considered good practice and should
+be followed in <em>all</em> PyTrilinos SWIG interface files.</p>
+<p>Nevertheless, experience shows that the following represents
+the best order for <tt class="docutils literal">%include</tt>-s and <tt class="docutils literal">%import</tt>-s when dealing with
+exceptions in PyTrilinos:</p>
+<pre class="literal-block">
+%include &quot;exception.i&quot;
+%import &quot;Teuchos.i&quot;
+%import &quot;Epetra.i&quot;
+%exception
+{
+  ...
+}
+</pre>
+<p>Putting the <tt class="docutils literal">%include &quot;exception.i&quot;</tt> after the <tt class="docutils literal">%import</tt>
+directives can result in undefined symbols when you compile the
+generated wrapper code.</p>
+<p>Finally, every effort should be made to prevent users from getting an
+<tt class="docutils literal">Unknown C++ exception</tt> error message.  Study the package to
+determine as many of the possible exceptions that might be thrown as
+you can, and explicitly include them in the <tt class="docutils literal">%exception</tt> directive.
+Whenever testing or use of PyTrilinos results in an <tt class="docutils literal">Unknown C++
+exception</tt> error message, track it down and then explicitly allow for
+it within the appropriate SWIG interface file.  There is no excuse for
+a meaningless error message.</p>
+</div>
+</div>
+<div class="section" id="reference-counted-pointers">
+<h1><a class="toc-backref" href="#id17">Reference Counted Pointers</a></h1>
+<p>Reference counting is a memory management technique whereby
+dynamically allocated objects can be tracked, and can be guaranteed to
+exist as long as any other entity (such as a class or the local scope
+of a function) needs it to.  Such entities can &quot;take a reference&quot; to
+the dynamically-allocated reference-counted object, and the technique
+works by ensuring that the object is never destroyed until its
+reference count falls to zero.</p>
+<p>A reference counted pointer is a data structure for implementing such
+a memory management technique.  It consists of a raw pointer to an
+object and an integer count of the number of entities that have taken
+a reference to the object.  It also consists of methods for
+increasing and decreasing the reference count as needed, and a
+destructor that waits until the reference count is zero before
+destroying the object.  These are also called shared pointers.</p>
+<div class="section" id="pytrilinos-and-rcps">
+<h2><a class="toc-backref" href="#id18">PyTrilinos and RCPs</a></h2>
+<p>Python implements just such a reference counting scheme for every
+python object that is constructed.  It occurs &quot;behind the scenes&quot; and
+&quot;just works&quot;, like python is famous for.  The only people who ever
+have to worry about python reference counting are programmers who
+write code using the Python/C API -- which does include PyTrilinos
+developers.</p>
+<p>C++ does not have a standard reference counting system, although
+several reference counting classes have been developed, which are much
+more powerful than can be developed in C (such as the Python/C API
+uses) and much less prone to error.  There is the
+<tt class="docutils literal"><span class="pre">boost::shared_ptr&lt;&gt;</span></tt> class, which is planned to be moved to the
+<tt class="docutils literal">std</tt> namespace at some point in the future.  Trilinos could not
+wait for this standardization process, and thus was born the
+<tt class="docutils literal"><span class="pre">Teuchos::RCP&lt;&gt;</span></tt>, which of course stands for &quot;reference counted
+pointer&quot;.</p>
+<p>Several Trilinos packages use RCPs, and so PyTrilinos has a policy for
+dealing with them.  First, if any package anywhere stores instances of
+a class using an RCP, then PyTrilinos will always store instances of
+that class internally using an RCP.  This ensures that all reference
+counts remain accurate under all use cases.  Second, python
+programmers should never have to deal with <tt class="docutils literal"><span class="pre">Teuchos::RCP&lt;&gt;</span></tt>.  That
+is to say, there is no <tt class="docutils literal">Teuchos.RCP</tt> class in PyTrilinos.  If a C++
+method requires a <tt class="docutils literal"><span class="pre">Teuchos::RCP&lt;&gt;</span></tt> of some class, the python
+interface will take an unadorned instance of that class.  The
+conversion to an RCP will happen behind the scenes.  And the python
+programmer, who has always benefitted from reference counts without
+ever exerting any effort, will continue in this happy state.</p>
+<p>By default, SWIG generates code that stores dynamically allocated
+objects using a raw pointer.  With SWIG 2.0.0, the python code
+generator in SWIG has a (relatively?) bug free implementation of using
+reference counted pointers instead of raw pointers.  This is coupled
+with a large set of typemaps that alter the conversion code between
+C++ and python, taking the new storage method into account.  This is
+implemented for <tt class="docutils literal"><span class="pre">boost::shared_ptr&lt;&gt;</span></tt> and <tt class="docutils literal"><span class="pre">std::shared_ptr&lt;&gt;</span></tt>.  It
+provides a <tt class="docutils literal">%shared_ptr()</tt> SWIG macro that the user invokes on a
+class that should be stored as a shared pointer.</p>
+<p>The <tt class="docutils literal">Teuchos_RCP.i</tt> file leverages the SWIG-provided
+<tt class="docutils literal">boost_shared_ptr.i</tt> file by using <tt class="docutils literal">#define</tt> statements to make
+all of the provided logic work with <tt class="docutils literal"><span class="pre">Teuchos::RCP&lt;&gt;</span></tt>.  It also
+provides replacement typemaps for when the <tt class="docutils literal"><span class="pre">Teuchos::RCP&lt;&gt;</span></tt>
+interface is different from the <tt class="docutils literal"><span class="pre">boost::shared_ptr&lt;&gt;</span></tt> interface and
+additional typemaps for directors, which <tt class="docutils literal">boost_shared_ptr.i</tt> does
+not provide.  This new logic is accessed by using a <tt class="docutils literal">%teuchos_rcp()</tt>
+SWIG macro on a class.</p>
+</div>
+<div class="section" id="when-to-store-pytrilinos-classes-as-rcps">
+<h2><a class="toc-backref" href="#id19">When to Store PyTrilinos Classes as RCPs</a></h2>
+<p>When do you use the <tt class="docutils literal">%teuchos_rcp()</tt> macro?  First, whenever you
+encounter a class that is wrapped in <tt class="docutils literal"><span class="pre">Teuchos::RCP&lt;&gt;</span></tt> as an input or
+output argument in a class method or function, then that class needs
+to be stored internally as as an RCP by using <tt class="docutils literal">%teuchos_rcp()</tt>.</p>
+<p>Second, if <tt class="docutils literal">B</tt> is a base class and <tt class="docutils literal">D</tt> derives from it, then
+<tt class="docutils literal">%teuchos_rcp(B)</tt> requires that <tt class="docutils literal">%teuchos_rcp(D)</tt> also be invoked.
+Failure to do so will result in an extension module that will fail to
+compile.  The reason is due to how type checking is performed for
+these RCP classes and the need for derived classes to be recognized as
+proper instances of base classes.</p>
+<p>Third, using <tt class="docutils literal">B</tt> and <tt class="docutils literal">D</tt> as before, if <tt class="docutils literal">%teuchos_rcp(D)</tt> is
+invoked, then <tt class="docutils literal">%teuchos_rcp(B)</tt> almost certainly should be as well.
+The extension module will compile even if this rule is not followed,
+but type checking will fail under certain circumstances.  This rule
+can be ignored if B is an implementation-only base class, but this is
+rare.</p>
+</div>
+<div class="section" id="usage-details">
+<h2><a class="toc-backref" href="#id20">Usage Details</a></h2>
+<p>If a class is defined in Package 1, but not used as an RCP in Package
+1, and is then used as an RCP in Package 2, the <tt class="docutils literal">%teuchos_rcp()</tt>
+macro should be invoked in the SWIG interface file for Package 1.
+This way, when <tt class="docutils literal">%import</tt> is used on Package 1 from other package
+SWIG interface files, the storage method remains constant among all
+the packages.</p>
+<p>If you are (in effect) wrapping Package 2, and Package 1 is Epetra,
+then there are some additional SWIG macros you should know.  If the
+Epetra class derives from Epetra_Object, then use
+<tt class="docutils literal">%teuchos_rcp_epetra()</tt>.  This ensures that <tt class="docutils literal">Print()</tt> and
+<tt class="docutils literal">__str__()</tt> methods will work properly without having to invoke
+<tt class="docutils literal">%teuchos_rcp(Epetra_Object)</tt>, which would then require almost all
+Epetra classes to be treated.</p>
+<p>If the Epetra class is an array storage class implemented as a hybrid
+numpy array, then you should use the <tt class="docutils literal">%teuchos_rcp_epetra_numpy()</tt>
+macro.  This should never be necessary, however, because all of these
+classes have already been treated.</p>
+</div>
+</div>
+<div class="section" id="testing">
+<h1><a class="toc-backref" href="#id21">Testing</a></h1>
+<p>There are two directories in the PyTrilinos package that provide
+python scripts for testing PyTrilinos, <tt class="docutils literal">example</tt> and <tt class="docutils literal">test</tt>.
+Generally speaking, unit tests go in the <tt class="docutils literal">test</tt> directory and
+descriptive or demonstrative example scripts go in <tt class="docutils literal">example</tt>.</p>
+<div class="section" id="naming-conventions">
+<h2><a class="toc-backref" href="#id22">Naming Conventions</a></h2>
+<p>Unit tests scripts shall begin with <tt class="docutils literal">test</tt>, followed by the package
+name and an underscore, followed by a short description of the test,
+typically the class name being tested.  For example:</p>
+<pre class="literal-block">
+testTeuchos_ParameterList
+testEpetra_MultiVector
+</pre>
+<p>are the base names of the unit tests for <tt class="docutils literal">Teuchos.ParameterList</tt> and
+<tt class="docutils literal">Epetra.MultiVector</tt>, respectively.  In certain situations, the
+underscore and test description can be omitted.</p>
+<p>Example scripts shall begin with <tt class="docutils literal">ex</tt>, followed by the name of the
+primary package being demonstrated, followed by an underscore and a
+short description of the test.  For example:</p>
+<pre class="literal-block">
+exEpetra_Comm
+exAztecOO_Operator
+</pre>
+<p>are the base names for example scripts demonstrating the Epetra.Comm
+class and an AztecOO solver that uses an Epetra.Operator,
+respectively.  In certain situations, the underscore and test
+description can be omitted.</p>
+</div>
+<div class="section" id="build-system">
+<h2><a class="toc-backref" href="#id23">Build System</a></h2>
+<p>Running <tt class="docutils literal">make</tt> in either the top, <tt class="docutils literal">example</tt> or <tt class="docutils literal">test</tt> build
+directories simply copies the test scripts from the source directory
+to the build directory.  For historical reasons, the source files have
+the suffix <tt class="docutils literal">.src</tt> and the build files have the suffix <tt class="docutils literal">.py</tt>.</p>
+<p>The <tt class="docutils literal">CMakeLists.txt</tt> files in the <tt class="docutils literal">test</tt> and <tt class="docutils literal">example</tt>
+directories control which scripts get copied to the build directory.
+Each test script, or group of related test scripts, should be
+protected with <tt class="docutils literal">IF()</tt> statements, depending on which PyTrilinos
+modules need to be present for the script to run.</p>
+</div>
+<div class="section" id="running-all-tests">
+<h2><a class="toc-backref" href="#id24">Running All Tests</a></h2>
+<p>To run all of the enabled tests, first make sure PyTrilinos and all
+tests and examples are up-to-date:</p>
+<pre class="literal-block">
+$ cd BUILD/packages/PyTrilinos
+$ make
+</pre>
+<p>Then you can use the CMake <tt class="docutils literal">ctest</tt> program to run all of the tests:</p>
+<pre class="literal-block">
+$ ctest -W 10
+</pre>
+<p>The results of all of the tests can be found in the <tt class="docutils literal">Testing</tt>
+directory, present in the directory from which <tt class="docutils literal">ctest</tt> was run.</p>
+</div>
+<div class="section" id="test-script-conventions">
+<h2><a class="toc-backref" href="#id25">Test Script Conventions</a></h2>
+<p>All test scripts shall use the <tt class="docutils literal">optparse</tt> module to parse command
+line options and support the following options:</p>
+<pre class="literal-block">
+-t, --testharness     test local build modules; prevent loading
+                      system-installed modules
+-v VERBOSITY, --verbosity=VERBOSITY
+                      set the verbosity level [default 2]
+</pre>
+<p>The <tt class="docutils literal"><span class="pre">-t</span></tt> option is to force use of the locally-built PyTrilinos,
+preventing the importing of any installed PyTrilinos modules.  The
+verbosity option is used in all <tt class="docutils literal">test</tt> scripts and optionally in any
+<tt class="docutils literal">example</tt> scripts where it makes sense.</p>
+<p>Tests scripts use the <tt class="docutils literal">from PyTrilinosImport</tt> function in the
+<tt class="docutils literal">testutil</tt> module, local to both <tt class="docutils literal">test</tt> and <tt class="docutils literal">example</tt>
+directories, to control where the PyTrilinos modules are imported
+from.  The user controls this import location from the command line:
+<tt class="docutils literal"><span class="pre">-t</span></tt> or <tt class="docutils literal"><span class="pre">--testharness</span></tt> indicates that the build directory should
+be used; otherwise an import from standard locations will be
+attempted.</p>
+<p>This policy is enabled by code in each test/example script like the
+following:</p>
+<pre class="literal-block">
+parser = OptionParser()
+parser.add_option(&quot;-t&quot;, &quot;--testharness&quot;, action=&quot;store_true&quot;,
+                  dest=&quot;testharness&quot;, default=False,
+                  help=&quot;test local build modules; prevent loading system-installed modules&quot;)
+options,args = parser.parse_args()
+from testutil import fromPyTrilinosImport
+Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
+Epetra  = fromPyTrilinosImport('Epetra' , options.testharness)
+</pre>
+<p>If the user specifies <tt class="docutils literal"><span class="pre">-t</span></tt> or <tt class="docutils literal"><span class="pre">--testharness</span></tt> then
+<tt class="docutils literal">options.testharness</tt> will be True, else it will be False.  When
+<tt class="docutils literal">fromPyTrilinosImport()</tt> is called, the <tt class="docutils literal">options.testharness</tt>
+argument will determine where the import is read from.</p>
+<p>Test scripts shall run in both serial or parallel.  You may use
+either:</p>
+<pre class="literal-block">
+comm = Teuchos.DefaultComm.getComm()
+</pre>
+<p>or:</p>
+<pre class="literal-block">
+comm = Epetra.PyComm()
+</pre>
+<p>to obtain an appropriate communicator object for the test scripts.  By
+convention, set the variable <tt class="docutils literal">iAmRoot</tt> to either <tt class="docutils literal">True</tt> or
+<tt class="docutils literal">False</tt> depending on whether the communicator's rank is 0.</p>
+<p>The test script shall output <tt class="docutils literal">End Result: TEST PASSED</tt> if the test
+passes correctly.  This helps the Trilinos test harness determine
+which tests pass and which do not, especially in parallel.</p>
+</div>
+<div class="section" id="unit-tests">
+<h2><a class="toc-backref" href="#id26">Unit Tests</a></h2>
+<p>Unit tests are based on the <tt class="docutils literal">unittest</tt> python library module.  Test
+case classes inherit from <tt class="docutils literal">unittest.TestCase</tt>.  Individual tests are
+implemented as methods of these classes that begin with <tt class="docutils literal">test</tt>.  See
+the python documentation (<a class="reference external" href="http://www.python.org">http://www.python.org</a>) for details.</p>
+<p>Each unit test script can have one or more <tt class="docutils literal">TestCase</tt> classes.  In
+<tt class="docutils literal">main()</tt>, each test case class should be added to a
+<tt class="docutils literal">unittest.TestSuite</tt> object named <tt class="docutils literal">suite</tt>.</p>
+<p>Unit tests shall print, from processor 0, a header with a message such
+as &quot;Testing Epetra.Object&quot; with a line of asterisks above and below
+the message:</p>
+<pre class="literal-block">
+*********************
+Testing Epetra.Object
+*********************
+</pre>
+<p>The suite of tests should be run with:</p>
+<pre class="literal-block">
+verbosity = options.verbosity * int(iAmRoot)
+result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+</pre>
+<p>and the success should be determined and output via (for the case of
+an Epetra communicator):</p>
+<pre class="literal-block">
+errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
+if errsPlusFails == 0 and iAmRoot: print &quot;End Result: TEST PASSED&quot;
+sys.exit(errsPlusFails)
+</pre>
+<p>If there are no errors and no failures on any processors, then the
+test will pass.</p>
+</div>
+<div class="section" id="example-scripts">
+<h2><a class="toc-backref" href="#id27">Example Scripts</a></h2>
+<p>Example scripts are more free-form and should be written for
+readability, to make for clear demonstrations of PyTrilinos usage.
+However, it is encouraged that example script output be consistent
+with unit test output whenever possible.</p>
+</div>
+</div>
+</div>
+<div class="footer">
+<hr class="footer" />
+Generated on: 2010-10-28 14:30 UTC.
+Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
+
+</div>
+</body>
+</html>
