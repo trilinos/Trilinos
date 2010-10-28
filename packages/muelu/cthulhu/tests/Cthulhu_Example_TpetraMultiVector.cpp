@@ -13,6 +13,9 @@
 #include "Cthulhu_DefaultPlatform.hpp"
 #include "Cthulhu_TpetraMultiVector.hpp"
 
+#include "Cthulhu_Vector.hpp"
+#include "Cthulhu_TpetraVector.hpp"
+
 int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);

@@ -12,6 +12,7 @@
 
 #include "Cthulhu_DefaultPlatform.hpp"
 #include "Cthulhu_EpetraMap.hpp"
+#include "Cthulhu_CrsGraph.hpp"
 
 int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;

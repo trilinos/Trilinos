@@ -13,6 +13,8 @@
 #include "Cthulhu_DefaultPlatform.hpp"
 #include "Cthulhu_TpetraCrsMatrix.hpp"
 
+#include "Cthulhu_TpetraCrsGraph.hpp"
+
 int main(int argc, char *argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
