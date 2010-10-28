@@ -59,6 +59,64 @@
 
 namespace Belos {
 
+  /// \brief Get default parameters for Tsqr(Mat)OrthoManager
+  ///
+  /// Get a (pointer to a) default list of parameters for setting up
+  /// TsqrOrthoManager or TsqrMatOrthoManager (the same parameters
+  /// work for both).  
+  template< class MagnitudeType >
+  Teuchos::RCP< const Teuchos::ParameterList >
+  getDefaultTsqrParameters ()
+  {
+    using Teuchos::RCP;
+    typedef Teuchos::ScalarTraits< MagnitudeType > SCTM;
+
+    // FIXME (mfh 28 Oct 2010) The use of persistent data means that
+    // this routine is NOT reentrant.  That means that it is not
+    // thread-safe, for example.  One way to make this routine
+    // reentrant would be to use a construct like pthread_once().
+    static RCP< const Teuchos::ParameterList > defaultParams_;
+    if (Teuchos::is_null (defaultParams_))
+      {
+	RCP< Teuchos::ParameterList > params = Teuchos::parameterList();
+
+	const bool defaultRandomizeNullSpace = false;
+	params->set ("randomizeNullSpace", defaultRandomizeNullSpace, 
+		     "Whether to fill in null space vectors with random data.");
+	const bool defaultReorthogonalizeBlocks = false;
+	params->set ("reorthogonalizeBlocks", defaultReorthogonalizeBlocks,
+		     "Whether to do block reorthogonalization at all.");
+	// This parameter corresponds to the "blk_tol_" parameter in
+	// Belos' DGKSOrthoManager.  We choose the same default value.
+	const MagnitudeType defaultBlockReorthogThreshold = 
+	  MagnitudeType(10) * SCTM::squareroot (SCTM::eps());
+	params->set ("blockReorthogThreshold", defaultBlockReorthogThreshold, 
+		     "If reorthogonalizeBlocks==true, and if the norm of "
+		     "any column within a block decreases by this much or "
+		     "more after orthogonalization, we reorthogonalize the "
+		     "block.");
+	// This parameter corresponds to the "sing_tol_" parameter in
+	// Belos' DGKSOrthoManager.  We choose the same default value.
+	const MagnitudeType defaultRelativeRankTolerance = 
+	  MagnitudeType(10) * SCTM::eps();
+	// If zero, then we will always declare blocks to be
+	// numerically full rank, as long as no singular values are
+	// zero.
+	params->set ("relativeRankTolerance", defaultRelativeRankTolerance,
+		     "Relative tolerance to determine the numerical rank "
+		     "of a block, in the normalize() method.");
+	const bool defaultThrowOnReorthogFault = true;
+	// See Stewart's 2008 paper on block Gram-Schmidt for an explanation.
+	params->set ("throwOnReorthogFault", defaultThrowOnReorthogFault,
+		     "Whether to throw an exception if a "
+		     "reorthogonalization fault occurs.  Handling the "
+		     "fault correctly can be expensive and the benefits "
+		     "of doing so for a Krylov method aren't clear.");
+	defaultParams_ = params;
+      }
+    return defaultParams_;
+  }
+
   /// \class TsqrOrthoError
   /// \brief TsqrOrthoManager(Impl) error
   class TsqrOrthoError : public OrthoError
@@ -71,20 +129,21 @@ namespace Belos {
   /// \class TsqrOrthoFault
   /// \brief Orthogonalization fault
   ///
-  /// Stewart (SISC 2008) gives a Block Gram-Schmidt (BGS) with
-  /// reorthogonalization algorithm.  An "orthogonalization fault" is
-  /// what happens when the second BGS pass does not succeed (which is
-  /// possible in BGS, but not possible in (non-block) Gram-Schmidt if
-  /// you use Stewart's randomization procedure).  Stewart gives an
-  /// algorithm for recovering from an orthogonalization fault, but
-  /// the algorithm is expensive: it involves careful
-  /// reorthogonalization with non-block Gram-Schmidt.  We choose
-  /// instead to report the orthogonalization fault and let users
-  /// recover from it.
+  /// Stewart (SISC 2008) presents a Block Gram-Schmidt (BGS)
+  /// algorithm with careful reorthogonalization.  He defines an
+  /// "orthogonalization fault" as happening when the second BGS pass
+  /// does not succeed.  This is possible in BGS, but not possible in
+  /// (non-block) Gram-Schmidt, if you use Stewart's randomization
+  /// procedure for the latter.  Stewart gives an algorithm for
+  /// recovering from an orthogonalization fault, but the algorithm is
+  /// expensive: it involves careful reorthogonalization with
+  /// non-block Gram-Schmidt.  If the "throwOnReorthogFault" option is
+  /// set, we choose instead to report the orthogonalization fault as
+  /// an exception.
   ///
   /// \note This is not a (subclass of) TsqrOrthoError, because the
-  /// latter is a logic or runtime bug, whereas a TsqrOrthoFault is a
-  /// property of the input and admits recovery.
+  ///   latter is a logic or runtime bug, whereas a TsqrOrthoFault is
+  ///   a property of the input and admits recovery.
   class TsqrOrthoFault : public OrthoError
   {
   public: 
@@ -153,64 +212,37 @@ namespace Belos {
     ///   Teuchos::null, otherwise an exception will be thrown.
     ///   Also, don't call setOp().
     ///
-    TsqrOrthoManagerImpl (const Teuchos::ParameterList& tsqrParams) :
+    TsqrOrthoManagerImpl (const Teuchos::ParameterList& tsqrParams,
+			  const std::string& label = "Belos") :
       tsqrParams_ (tsqrParams),
+      label_ (label),
       tsqrAdaptor_ (Teuchos::null),
       Q_ (Teuchos::null),
-      eps_ (SCT::eps()), // ScalarTraits< ScalarType >::eps() returns MagnitudeType
-      blockReorthogThreshold_ (MagnitudeType(1) / MagnitudeType(2)),
-      relativeRankTolerance_ (MagnitudeType(100)*SCTM::eps()),
-      throwOnReorthogFault_ (true)
+      eps_ (SCT::eps()),
+      randomizeNullSpace_ (false),    // Set later by readParams()
+      reorthogonalizeBlocks_ (false), // Set later by readParams()
+      throwOnReorthogFault_ (true),   // Set later by readParams()
+      blockReorthogThreshold_ (0),    // Set later by readParams()
+      relativeRankTolerance_ (0)     // Set later by readParams()
     {
-      using Teuchos::Exceptions::InvalidParameterName;
-      using Teuchos::Exceptions::InvalidParameterType;
+      // Extract values for the four parameters
+      // reorthogonalizeBlocks_, throwOnReorthogFault_,
+      // blockReorthogThreshold_, and relativeRankTolerance_ from the
+      // given parameter list.  Use default values if none are
+      // provided.  Other parameters in tsqrParams (e.g.,
+      // "cacheBlockSize") get passed along to the underlying TSQR
+      // implementation.
+      readParams (tsqrParams);
 
-      // Use input parameter list to set nondefault parameter values,
-      // if provided by the caller.  Silently ignore invalid values.
-
-      try {
-	const MagnitudeType brt = 
-	  tsqrParams.get< MagnitudeType >(std::string("blockReorthogThreshold"));
-	if (brt >= MagnitudeType(0))
-	  blockReorthogThreshold_ = brt;
-      } catch (InvalidParameterName&) {
-	;
-      } catch (InvalidParameterType&) {
-	;
-      }
-
-      try {
-	const MagnitudeType rrt = 
-	  tsqrParams.get< MagnitudeType >(std::string("relativeRankTolerance"));
-	if (rrt >= MagnitudeType(0))
-	  relativeRankTolerance_ = rrt;
-      } catch (InvalidParameterName&) {
-	;
-      } catch (InvalidParameterType&) {
-	;
-      }
-
-      try {
-	const bool tof = 
-	  tsqrParams.get< bool >(std::string("throwOnReorthogFault"));
-	throwOnReorthogFault_ = tof;
-      } catch (InvalidParameterName&) {
-	;
-      } catch (InvalidParameterType&) {
-	;
-      }
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": All orthogonalization");
+      timerProject_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Projection");
+      timerNormalize_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Normalization");
+#endif // BELOS_TEUCHOS_TIME_MONITOR
     }
 
-    // void 
-    // setOp (Teuchos::RCP< const OP > Op)
-    // {
-    //   static_cast< MatOrthoManager< ScalarType, MV, OP >* const >(this)->setOp (Op);
-    //   if (getOp() != Teuchos::null) 
-    // 	throw NonNullOperatorError();
-    // }
-
-    typedef Teuchos::RCP< MV >       mv_ptr;
-    typedef Teuchos::RCP< const MV > const_mv_ptr;
+    typedef Teuchos::RCP< MV >                                   mv_ptr;
+    typedef Teuchos::RCP< const MV >                             const_mv_ptr;
     typedef Teuchos::Array< const_mv_ptr >                       const_prev_mvs_type;
     typedef Teuchos::SerialDenseMatrix< int, ScalarType >        serial_matrix_type;
     typedef Teuchos::RCP< serial_matrix_type >                   serial_matrix_ptr;
@@ -224,16 +256,19 @@ namespace Belos {
       MVT::MvTransMv (SCT::one(), X, Y, Z);
     }
 
+    /// Compute the norm of each column j of X, and return it in
+    /// normvec[j].
     void
     norm (const MV& X, 
 	  std::vector< MagnitudeType >& normvec) const
     {
       const int ncols = MVT::GetNumberVecs (X);
 
-      // mfh 20 Jul 2010: MatOrthoManager::normMat() computes norms
-      // one column at a time, which results in too much
-      // communication.  Instead, we compute the whole inner product,
-      // which takes more computation but is the only option
+      // FIXME (mfh 10 Jul 2010, mfh 28 Oct 2010)
+      // The current MultiVecTraits, for Tpetra at least, computes
+      // column norms one column at a time.  This results in too much
+      // communication.  Instead, we compute the whole inner product.
+      // This takes more computation, but is the only option
       // available, given the current MVT interface.
       serial_matrix_type XTX (ncols, ncols); 
       innerProd (X, X, XTX);
@@ -255,6 +290,15 @@ namespace Belos {
 	     prev_coeffs_type C,
 	     const_prev_mvs_type Q) 
     {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      // project() is part of orthogonalization, so we time it with
+      // total orthogonalization as well as with projection.  If
+      // project() is called from projectAndNormalize(), the
+      // TimeMonitor won't start timerOrtho_, because it is already
+      // running in projectAndNormalize().
+      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
+      Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
+#endif
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
       // Test for quick exit: any dimension of X is zero, or there are
@@ -279,8 +323,17 @@ namespace Belos {
 
 
     int 
-    normalize (MV& X, serial_matrix_ptr B) 
+    normalize (MV& X, serial_matrix_ptr B)
     {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor timerMonitorNormalize(*timerNormalize_);
+      // If normalize() is called internally -- i.e., called from
+      // projectAndNormalize() -- the timer will not be started or 
+      // stopped, because it is already running.  TimeMonitor handles
+      // recursive invocation by doing nothing.
+      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
+#endif
+
       // Internal data used by this method require a specific MV
       // object for initialization (e.g., to get a Map / communicator,
       // and to initialize scratch space).  Thus, we delay (hence
@@ -317,10 +370,11 @@ namespace Belos {
       } catch (std::exception& e) {
 	throw OrthoError (e.what());
       }
+
       // Now we should copy Q_ back into X, but don't do it yet: if we
       // want to fill the last ncols-rank columns with random data, we
       // should do so in Q_, because it's fresh in the cache.
-      if (false)
+      if (randomizeNullSpace_)
 	{
 	  // If X did not have full (numerical rank), augment the last
 	  // ncols-rank columns of X with random data.
@@ -338,6 +392,7 @@ namespace Belos {
 	      Q_null = Teuchos::null;
 	    }
 	}
+
       // MultiVecTraits (MVT) doesn't have a "deep copy from one MV
       // into an existing MV in place" method, but it does have two
       // methods which may be used to this effect:
@@ -365,6 +420,10 @@ namespace Belos {
 			 serial_matrix_ptr B,
 			 const_prev_mvs_type Q)
     {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
+#endif
+
       // Fetch dimensions of X and Q.
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
@@ -396,15 +455,11 @@ namespace Belos {
 	  newC[i] = Teuchos::rcp (new serial_matrix_type (*C[i]));
 	}
 
-      // std::cerr << "Got past initialization of newC[0.." 
-      // 		<< (num_Q_blocks-1) << "]" << std::endl;
-
       // Keep track of the column norms of X, both before and after
       // each orthogonalization pass.
       std::vector< MagnitudeType > normsBeforeFirstPass (ncols_X, MagnitudeType(0));
-      std::vector< MagnitudeType > normsAfterFirstPass (ncols_X, MagnitudeType(0));
-      std::vector< MagnitudeType > normsAfterSecondPass (ncols_X, MagnitudeType(0));
-      MVT::MvNorm (X, normsBeforeFirstPass);
+      if (reorthogonalizeBlocks_)
+	MVT::MvNorm (X, normsBeforeFirstPass);
 
       // First BGS pass.  "Modified Gram-Schmidt" version of Block
       // Gram-Schmidt:
@@ -413,126 +468,132 @@ namespace Belos {
       // \li \f$X := X - Q_i \cdot C^{\text{new}}_i\f$
       rawProject (X, Q, newC);
 
-      // std::cerr << "Got past rawProject(X,Q,newC)" << std::endl;
-
       // Update the C matrices:
       //
       // \li \f$C_i := C_i + C^{\text{new}}_i\f$
       for (int i = 0; i < num_Q_blocks; ++i)
 	*C[i] += *newC[i];
 
-      // std::cerr << "Got past *C[i] += *newC[i]" << std::endl;
-
       // Normalize the matrix X.
       if (B == Teuchos::null)
 	B = Teuchos::rcp (new serial_matrix_type (ncols_X, ncols_X));
       int rank = normalize (X, B);
 
-      // std::cerr << "Got past normalize(X, B)" << std::endl;
-      
-      // Compute post-first-pass (pre-normalization) norms, using B.
-      // normalize() doesn't guarantee in general that B is upper
-      // triangular, so we compute norms using the entire column of B.
-      Teuchos::BLAS< int, ScalarType > blas;
-      for (int j = 0; j < ncols_X; ++j)
+      if (reorthogonalizeBlocks_)
 	{
-	  const ScalarType* const B_j = &(*B)(0,j);
-	  // Teuchos::BLAS returns a MagnitudeType result on
-	  // ScalarType inputs.
-	  normsAfterFirstPass[j] = blas.NRM2 (ncols_X, B_j, 1);
-	}
-      // Test whether any of the norms dropped below the
-      // reorthogonalization threshold.
-      bool reorthog = false;
-      for (int j = 0; j < ncols_X; ++j)
-	if (normsBeforeFirstPass[j] / normsAfterFirstPass[j] <= blockReorthogThreshold())
-	  {
-	    reorthog = true; 
-	    break;
-	  }
+	  std::vector< MagnitudeType > normsAfterFirstPass (ncols_X, MagnitudeType(0));
+	  std::vector< MagnitudeType > normsAfterSecondPass (ncols_X, MagnitudeType(0));
 
-      // Perform another BGS pass if necessary.  "Twice is enough"
-      // (Kahan's theorem) for a Krylov method, unless (using
-      // Stewart's term) there is an "orthogonalization fault"
-      // (indicated by reorthogFault).
-      bool reorthogFault = false;
-      // Indices of X at which there was an orthogonalization fault.
-      std::vector< int > faultIndices (0);
-      if (reorthog)
-	{
-	  // Block Gram-Schmidt (again):
-	  //
-	  // \li \f$C^{\text{new}} = Q^* X\f$
-	  // \li \f$X := X - Q C^{\text{new}}\f$
-	  // \li \f$C := C + C^{\text{new}}\f$
-	  rawProject (X, Q, newC);
-	  for (int i = 0; i < num_Q_blocks; ++i)
-	    *C[i] += *newC[i];
-
-	  // Normalize the matrix X.
-	  serial_matrix_ptr B_new (new serial_matrix_type (ncols_X, ncols_X));
-	  rank = normalize (X, B_new);
-	  *B += *B_new;
-
-	  // Compute post-second-pass (pre-normalization) norms, using
-	  // B.  normalize() doesn't guarantee in general that B is
-	  // upper triangular, so we compute norms using the entire
-	  // column of B.
+	  // Compute post-first-pass (pre-normalization) norms, using B.
+	  // normalize() doesn't guarantee in general that B is upper
+	  // triangular, so we compute norms using the entire column of B.
+	  Teuchos::BLAS< int, ScalarType > blas;
 	  for (int j = 0; j < ncols_X; ++j)
 	    {
-	      // FIXME Should we use B_new or B here?
 	      const ScalarType* const B_j = &(*B)(0,j);
 	      // Teuchos::BLAS returns a MagnitudeType result on
 	      // ScalarType inputs.
-	      normsAfterSecondPass[j] = blas.NRM2 (ncols_X, B_j, 1);
+	      normsAfterFirstPass[j] = blas.NRM2 (ncols_X, B_j, 1);
 	    }
 	  // Test whether any of the norms dropped below the
-	  // reorthogonalization threshold.  If so, it's an
-	  // orthogonalization fault, which requires expensive
-	  // recovery.
-	  reorthogFault = false;
+	  // reorthogonalization threshold.
+	  bool reorthog = false;
 	  for (int j = 0; j < ncols_X; ++j)
-	    if (normsAfterSecondPass[j] / normsAfterFirstPass[j] <= blockReorthogThreshold())
+	    // If any column's norm decreased too much, mark this
+	    // block for reorthogonalization.  Note that this test
+	    // will _not_ activate reorthogonalization if a column's
+	    // norm before the first project-and-normalize step was
+	    // zero.  It _will_ activate reorthogonalization if the
+	    // column's norm before was not zero, but is zero now.
+	    if (normsAfterFirstPass[j] < blockReorthogThreshold() * normsBeforeFirstPass[j])
 	      {
-		reorthogFault = true; 
-		faultIndices.push_back (j);
+		reorthog = true; 
+		break;
 	      }
-	} // if (reorthog) // reorthogonalization pass
 
-      if (reorthogFault)
-	{
-	  if (throwOnReorthogFault_)
+	  // Perform another Block Gram-Schmidt pass if necessary.  "Twice
+	  // is enough" (Kahan's theorem) for a Krylov method, unless
+	  // (using Stewart's term) there is an "orthogonalization fault"
+	  // (indicated by reorthogFault).
+	  bool reorthogFault = false;
+	  // Indices of X at which there was an orthogonalization fault.
+	  std::vector< int > faultIndices (0);
+	  if (reorthog)
 	    {
-	      using std::endl;
-	      typedef std::vector<int>::size_type size_type;
-	      std::ostringstream os;
-
-	      os << "Orthogonalization fault at the following column(s) of X:" << endl;
-	      os << "Column\tNorm decrease factor" << endl;
-	      for (size_type k = 0; k < faultIndices.size(); ++k)
+	      // Block Gram-Schmidt (again):
+	      //
+	      // \li \f$C^{\text{new}} = Q^* X\f$
+	      // \li \f$X := X - Q C^{\text{new}}\f$
+	      // \li \f$C := C + C^{\text{new}}\f$
+	      rawProject (X, Q, newC);
+	      for (int i = 0; i < num_Q_blocks; ++i)
+		*C[i] += *newC[i];
+	      
+	      // Normalize the matrix X.
+	      serial_matrix_ptr B_new (new serial_matrix_type (ncols_X, ncols_X));
+	      rank = normalize (X, B_new);
+	      *B += *B_new;
+	      
+	      // Compute post-second-pass (pre-normalization) norms, using
+	      // B.  normalize() doesn't guarantee in general that B is
+	      // upper triangular, so we compute norms using the entire
+	      // column of B.
+	      for (int j = 0; j < ncols_X; ++j)
 		{
-		  const int index = faultIndices[k];
-		  const MagnitudeType decreaseFactor = 
-		    normsAfterSecondPass[index] / normsAfterFirstPass[index];
-		  os << index << "\t" << decreaseFactor << endl;
+		  // FIXME Should we use B_new or B here?
+		  const ScalarType* const B_j = &(*B)(0,j);
+		  // Teuchos::BLAS returns a MagnitudeType result on
+		  // ScalarType inputs.
+		  normsAfterSecondPass[j] = blas.NRM2 (ncols_X, B_j, 1);
 		}
-	      throw TsqrOrthoFault (os.str());
-	    }
-	  else // Slowly reorthogonalize, one vector at a time, the offending vectors of X.
+	      // Test whether any of the norms dropped below the
+	      // reorthogonalization threshold.  If so, it's an
+	      // orthogonalization fault, which requires expensive
+	      // recovery.
+	      reorthogFault = false;
+	      for (int j = 0; j < ncols_X; ++j)
+		if (normsAfterSecondPass[j] / normsAfterFirstPass[j] <= blockReorthogThreshold())
+		  {
+		    reorthogFault = true; 
+		    faultIndices.push_back (j);
+		  }
+	    } // if (reorthog) // reorthogonalization pass
+
+	  if (reorthogFault)
 	    {
-	      throw std::logic_error ("Slow-and-careful reorthogonalization "
-				      "is not yet implemented");
+	      if (throwOnReorthogFault_)
+		{
+		  using std::endl;
+		  typedef std::vector<int>::size_type size_type;
+		  std::ostringstream os;
+		  
+		  os << "Orthogonalization fault at the following column(s) of X:" << endl;
+		  os << "Column\tNorm decrease factor" << endl;
+		  for (size_type k = 0; k < faultIndices.size(); ++k)
+		    {
+		      const int index = faultIndices[k];
+		      const MagnitudeType decreaseFactor = 
+			normsAfterSecondPass[index] / normsAfterFirstPass[index];
+		      os << index << "\t" << decreaseFactor << endl;
+		    }
+		  throw TsqrOrthoFault (os.str());
+		}
+	      else // Slowly reorthogonalize, one vector at a time, the offending vectors of X.
+		{
+		  throw std::logic_error ("Slow-and-careful reorthogonalization "
+					  "is not yet implemented");
 
-	      // for (int k = 0; k < faultIndices.size(); ++k)
-	      // 	{
-	      // 	  // Get a view of the current column of X.
-	      // 	  std::vector<int> currentIndex (1, faultIndices[k]);
-	      // 	  Teuchos::RCP< MV > X_j = MVT::CloneViewNonConst (X, currentIndex);
-
-	      // 	  // Reorthogonalize X_j against all columns of each Q[i].
-	      // 	}
+		  // for (int k = 0; k < faultIndices.size(); ++k)
+		  // 	{
+		  // 	  // Get a view of the current column of X.
+		  // 	  std::vector<int> currentIndex (1, faultIndices[k]);
+		  // 	  Teuchos::RCP< MV > X_j = MVT::CloneViewNonConst (X, currentIndex);
+		  
+		  // 	  // Reorthogonalize X_j against all columns of each Q[i].
+		  // 	}
+		}
 	    }
-	}
+	} // if (reorthogonalizeBlocks_)
       return rank;
     }
 
@@ -576,6 +637,9 @@ namespace Belos {
     /// Parameters for initializing TSQR
     Teuchos::ParameterList tsqrParams_;
     ///
+    /// Label for timers
+    std::string label_;
+    ///
     /// Interface between Belos and TSQR (the Tall Skinny QR
     /// factorization).
     tsqr_adaptor_ptr tsqrAdaptor_;
@@ -585,16 +649,100 @@ namespace Belos {
     /// 
     // Machine precision for ScalarType
     MagnitudeType eps_;
+
+    /// Whether to fill in null space vectors (after normalization)
+    /// with random data.
+    bool randomizeNullSpace_;
     ///
-    /// Reorthogonalization threshold (relative) in Block Gram-Schmidt.
+    /// Whether to reorthogonalize blocks at all.
+    bool reorthogonalizeBlocks_;
+    /// Whether to throw an exception when an orthogonalization fault
+    /// occurs.  Recovery is possible, but expensive.
+    bool throwOnReorthogFault_;
+    ///
+    /// Relative reorthogonalization threshold in Block Gram-Schmidt.
     MagnitudeType blockReorthogThreshold_;
     ///
     /// Relative tolerance for measuring the numerical rank of a matrix.
     MagnitudeType relativeRankTolerance_;
-    
-    /// Whether to throw an exception when an orthogonalization fault
-    /// occurs.  Recovery is possible, but expensive.
-    bool throwOnReorthogFault_;
+
+    static bool 
+    getBoolParamWithDefault (const Teuchos::ParameterList& params, 
+			     const std::string& key)
+    {
+      using Teuchos::Exceptions::InvalidParameterName;
+      using Teuchos::Exceptions::InvalidParameterType;
+
+      Teuchos::RCP< const Teuchos::ParameterList > defaultParams = 
+	getDefaultTsqrParameters< MagnitudeType >();
+      try {
+	// No validation is necessary; bool is either true or false.
+	return params.get< bool >(key);
+      } catch (InvalidParameterName&) {
+	// Don't try to catch an exception when reading from the
+	// default parameters, since they key had better be there.
+	return defaultParams->get< bool >(key);
+      } catch (InvalidParameterType&) {
+	std::ostringstream os;
+	os << "The value of parameter \"" << key << "\" to Tsqr(Mat)"
+	  "OrthoManager(Impl) must be a boolean truth value.  Here "
+	  "is the documentation for that parameter:" << std::endl
+	   << defaultParams->getEntry(key).docString();
+	throw std::invalid_argument (os.str());
+      }
+    }
+
+    static MagnitudeType
+    getMagParamWithDefault (const Teuchos::ParameterList& params, 
+			    const std::string& key)
+    {
+      using Teuchos::Exceptions::InvalidParameterName;
+      using Teuchos::Exceptions::InvalidParameterType;
+
+      Teuchos::RCP< const Teuchos::ParameterList > defaultParams = 
+	getDefaultTsqrParameters< MagnitudeType >();
+      try {
+	const MagnitudeType value = params.get< MagnitudeType >(key);
+	if (value >= MagnitudeType(0)) // Validate
+	  return value;
+	else
+	  {
+	    std::ostringstream os;
+	    os << "You specified " << key << " = " << value
+	       << ", but that parameter must be a nonnegative real "
+	       << "floating-point value.  Here is the documentation " 
+	       << "for that parameter:" << std::endl
+	       << defaultParams->getEntry(key).docString();
+	    throw std::invalid_argument (os.str());
+	  }
+      } catch (InvalidParameterName&) { 
+	// Don't try to catch an exception when reading from the
+	// default parameters, since they key had better be there.
+	return defaultParams->get< MagnitudeType >(key);
+      } catch (InvalidParameterType&) {
+	std::ostringstream os;
+	os << "The value of parameter \"" << key << "\" to Tsqr(Mat)OrthoMa"
+	  "nager(Impl) must be a nonnegative real floating-point value.  "
+	  "Here is the documentation for that parameter:" << std::endl
+	   << defaultParams->getEntry(key).docString();
+	throw std::invalid_argument (os.str());
+      }
+    }
+
+    void
+    readParams (const Teuchos::ParameterList& params)
+    {
+      randomizeNullSpace_ = 
+	getBoolParamWithDefault (params, "randomizeNullSpace");
+      reorthogonalizeBlocks_ = 
+	getBoolParamWithDefault (params, "reorthogonalizeBlocks");
+      throwOnReorthogFault_ = 
+	getBoolParamWithDefault (params, "throwOnReorthogFault");
+      blockReorthogThreshold_ = 
+	getMagParamWithDefault (params, "blockReorthogThreshold");
+      relativeRankTolerance_ = 
+	getMagParamWithDefault (params, "relativeRankTolerance");
+    }
 
     /// \brief Initialize the TSQR adaptor and scratch space
     ///
@@ -671,6 +819,19 @@ namespace Belos {
 		const_prev_mvs_type Q,
 		prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null))) const
     {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      // rawProject() is part of orthogonalization, so we time it with
+      // total orthogonalization as well as with projection.  If
+      // rawProject() is called from project(), the TimeMonitor won't
+      // start timerProject_, because it is already running in
+      // project().  Similarly, if rawProject() is called from
+      // projectAndNormalize(), the TimeMonitor won't start
+      // timerProject_, because it is already running in
+      // projectAndNormalize().
+      Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
+      Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
+#endif
+
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
       // Test for quick exit: any dimension of X is zero, or there are
@@ -763,9 +924,27 @@ namespace Belos {
       return impl_.orthogError (X1, X2);
     }
 
-    /// Belos::OrthoManager wants this virtual function to be
-    /// implemented; Anasazi::OrthoManager does not.
-    void setLabel (const std::string& label) { label_ = label; }
+    /// Set the label for (the timers for) this orthogonalization
+    /// manager, and create new timers if the label has changed.
+    ///
+    /// \param label [in] New label for timers
+    ///
+    /// \note Belos::OrthoManager wants this virtual function to be
+    ///   implemented; Anasazi::OrthoManager does not.
+    void 
+    setLabel (const std::string& label) 
+    { 
+      if (label != label_)
+	{
+	  label_ = label; 
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+	  timerOrtho_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Orthogonalization");
+	  timerProject_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Projection");
+	  timerNormalize_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Normalization");
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+	}
+    }
+
     const std::string& getLabel() const { return label_; }
 
   private:
@@ -1009,6 +1188,9 @@ namespace Belos {
     /// Parameter list for initializing TSQR
     Teuchos::ParameterList tsqrParams_;
     ///
+    /// Label for Belos timers
+    std::string label_;
+    ///
     /// TSQR + BGS orthogonalization manager implementation, used when
     /// getOp() == null (Euclidean inner product).
     mutable Teuchos::RCP< tsqr_type > pTsqr_;
@@ -1017,7 +1199,9 @@ namespace Belos {
     /// (could be a non-Euclidean inner product, but not necessarily).
     mutable Teuchos::RCP< dgks_type > pDgks_;
 
-    std::string label_;
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::RCP< Teuchos::Time > timerOrtho_, timerProject_, timerNormalize_;
+#endif // BELOS_TEUCHOS_TIME_MONITOR
   };
 
 } // namespace Belos
