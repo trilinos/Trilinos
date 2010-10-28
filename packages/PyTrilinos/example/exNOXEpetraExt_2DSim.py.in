@@ -1,0 +1,199 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python interface to Trilinos
+#                   Copyright (2009) Sandia Corporation
+#
+# Under terms of contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# license, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# without any warranty; without even the implied warranty of
+# merchantability or fitness for a particular purpose.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#############################################################################
+#
+# This script solves the 2x2 problem
+#
+#     F[0] =      x[0]^2 + x[1]^2 - p[0]  = 0
+#     F[1] = d * [x[1]   - x[0]^2 - p[1]] = 0
+#
+# using the EpetraExt.ModelEvaluator class and the
+# NOX.Epetra.ModelEvaluatorInterface interface.  If d=1, p[0]=1 and p[1]=0, then
+# this is the same problem as in exNOX_2DSim.
+#
+#############################################################################
+
+#
+# System imports
+from   optparse import *
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-d", "--d", type="float", dest="d", default=10.0,
+                  help="scaling factor for equation 1 [default 10.0]")
+parser.add_option("--p0", type="float", dest="p0", default=2.0,
+                  help="adjustment parameter for equation 0 [default 2.0]")
+parser.add_option("--p1", type="float", dest="p1", default=0.0,
+                  help="adjustment parameter for equation 1 [default 0.0]")
+parser.add_option("--x00", type="float", dest="x00", default=0.9,
+                  help="initial guess for x[0] [default 0.9]")
+parser.add_option("--x01", type="float", dest="x01", default=1.1,
+                  help="initial guess for x[1] [default 1.1]")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
+NOX       = fromPyTrilinosImport('NOX',       options.testharness)
+
+#
+# Derive a class from the ModelEvaluator base class
+class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
+    def __init__(self, d=10.0, p0=2.0, p1=0.0, x00=0.9, x01=1.1):
+        EpetraExt.ModelEvaluator.__init__(self)
+        self.setObjectLabel('2x2 Simulation')
+        # Simple data
+        self.__d    = d
+        self.__p0   = p0
+        self.__p1   = p1
+        self.__x00  = x00
+        self.__x01  = x01
+        self.__nx   = 2
+        # System data
+        self.__comm = Epetra.SerialComm()
+        self.__map  = Epetra.Map(self.__nx, 0, self.__comm)
+        # Vectors
+        self.__x0    = Epetra.Vector(self.__map)
+        self.__p     = Epetra.Vector(self.__map)
+        self.__x0[:] = [self.__x00, self.__x01]
+        self.__p[:]  = [p0, p1]
+        # Operator
+        self.__W_graph = Epetra.CrsGraph(Epetra.Copy, self.__map, self.__nx)
+        for i in range(self.__nx):
+            self.__W_graph.InsertGlobalIndices(i,[0,1])
+        self.__W_graph.FillComplete()
+        self.__isInitialized = True
+
+    def description(self):
+        return self.getObjectLabel()
+
+    def get_x_map(self):
+        return self.__map
+
+    def get_f_map(self):
+        return self.__map
+
+    def get_x_init(self):
+        return self.__x0
+
+    def create_W(self):
+        return Epetra.CrsMatrix(Epetra.Copy, self.__W_graph)
+
+    def createInArgs(self):
+        inArgs = EpetraExt.InArgs()
+        inArgs.description = self.getObjectLabel()
+        inArgs.x = True
+        return inArgs
+
+    def createOutArgs(self):
+        outArgs = EpetraExt.OutArgs()
+        outArgs.description = self.getObjectLabel()
+        outArgs.f = True
+        outArgs.W = True
+        outArgs.W_properties = \
+            EpetraExt.DerivativeProperties(linearity       = "nonconst",
+                                           rank            = "full",
+                                           supportsAdjoint = True)
+        return outArgs
+
+    def evalModel(self, inArgs, outArgs):
+        try:
+            d = self.__d
+            x = inArgs.x
+            p = self.__p
+            f = outArgs.f.vector
+            W = outArgs.W
+
+            if f:
+                f[0] =  x[0]*x[0] + x[1]*x[1] - p[0]
+                f[1] = (x[1]      - x[0]*x[0] - p[1]) * d
+
+            if W:
+                W.ReplaceGlobalValues(0, [ 2*x[0]  , 2*x[1]], [0, 1])
+                W.ReplaceGlobalValues(1, [-2*x[0]*d, d     ], [0, 1])
+        except Exception, e:
+            print '\n\nException raised in EpetraModelEval2DSim.evalModel():'
+            print type(e)
+            print e, '\n'
+
+def main():
+
+    # 'model' is an instance of the EpetraModelEval2DSim class defined in this
+    # example script, that derives from EpetraExt.ModelEvaluator
+    model = EpetraModelEval2DSim(options.d,
+                                 options.p0,
+                                 options.p1,
+                                 options.x00,
+                                 options.x01
+                                 )
+
+    # 'interface' is an instance of the NOX.Epetra.ModelEvaluatorInterface
+    # class, based on the EpetraExt.ModelEvaluator created above
+    interface = NOX.Epetra.ModelEvaluatorInterface(model)
+
+    # Use the NOX.Epetra.defaultSolver() function to build a complete NOX solver
+    # based on the ModelEvaluatorInterface created above
+    initGuess = model.get_x_init()
+    jacobian  = model.create_W()
+    interface.computeJacobian(initGuess, jacobian)
+    solver    = NOX.Epetra.defaultSolver(initGuess, interface, interface, jacobian)
+
+    # Solve the problem
+    solveStatus = solver.solve()
+
+    #
+    # Output the results
+    print
+    print "d  =", options.d
+    print "p0 =", options.p0
+    print "p1 =", options.p1
+    if solveStatus != NOX.StatusTest.Converged:
+        print "Nonlinear solver failed to converge"
+        print "End Result: TEST FAILED"
+    else:
+        group = solver.getSolutionGroup()
+        soln  = group.getX()
+        print "Solution =", soln
+        print "End Result: TEST PASSED"
+
+if __name__ == "__main__":
+    main()

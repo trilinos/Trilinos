@@ -1,0 +1,156 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @header
+# ************************************************************************
+#
+#                PyTrilinos: Python interface to Trilinos
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# license, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# without any warranty; without even the implied warranty of
+# merchantability or fitness for a particular purpose.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @header
+
+"""
+Usage is: ./exSolvers.py <options> <solver-type>
+    where <options> can be
+        -t, --testharness    Force testing of local build modules
+    where <solver-type> can be:
+        Amesos_Lapack (DEFAULT)
+        Amesos_Klu
+        Amesos_Umfpack
+        Amesos_Superlu
+        Amesos_Superludist
+        Amesos_Dscpack
+        Amesos_Mumps
+"""
+
+#
+# System imports
+from   optparse import *
+import sys
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+Amesos = fromPyTrilinosImport('Amesos', options.testharness)
+
+######################################################################
+
+def main():
+    Comm = Epetra.PyComm()
+    numProc = Comm.NumProc()
+    iAmRoot = Comm.MyPID() == 0
+
+    #args = sys.argv[1:]
+    if len(args) == 0:
+        Type = "Amesos_Lapack"
+    else:
+        Type = args[0]
+
+    NumGlobalRows = 10
+    Map           = Epetra.Map(NumGlobalRows, 0, Comm)
+    LHS_exact     = Epetra.MultiVector(Map, 1)
+    LHS           = Epetra.MultiVector(Map, 1)
+    RHS           = Epetra.MultiVector(Map, 1)
+    Matrix        = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
+    NumLocalRows  = Map.NumMyElements()
+
+    # Builds the matrix (1D Laplacian)
+    for ii in range(0, NumLocalRows):
+        i = Map.GID(ii)
+        Indices = [ i ]
+        Values  = [2.0]
+        if i > 0:
+          Indices.append(i-1)
+          Values.append(-1)
+        elif i < NumGlobalRows - 1:
+          Indices.append(i+1)
+          Values.append(-1)
+        Matrix.InsertGlobalValues(i, Values, Indices)
+    ierr = Matrix.FillComplete()
+
+    LHS_exact.Random()
+    Matrix.Multiply(False, LHS_exact, RHS)
+    LHS.PutScalar(1.0)
+
+    Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
+
+    if Type == "Amesos_Lapack":
+        Solver = Amesos.Lapack(Problem)
+    elif Type == "Amesos_Klu":
+        Solver = Amesos.Klu(Problem)
+    elif Type == "Amesos_Umfpack":
+        Solver = Amesos.Umfpack(Problem)
+    elif Type == "Amesos_Superlu":
+        Solver = Amesos.Superlu(Problem)
+    elif Type == "Amesos_Superludist":
+        Solver = Amesos.Superludist(Problem)
+    elif Type == "Amesos_Dscpack":
+        Solver = Amesos.Dscpack(Problem)
+    elif Type == "Amesos_Mumps":
+        Solver = Amesos.Mumps(Problem)
+    else:
+        print 'Selected solver (%s) not available' % Type
+        print __doc__
+        sys.exit(-2)
+
+    AmesosList = {"PrintStatus": True,
+                  "PrintTiming": True
+                  }
+    Solver.SetParameters(AmesosList)
+    if Comm.MyPID() == 0:
+        print "1) Performing symbolic factorizations..."
+    Solver.SymbolicFactorization()
+    if Comm.MyPID() == 0:
+        print "2) Performing numeric factorizations..."
+    Solver.NumericFactorization()
+    if Comm.MyPID() == 0:
+        print "3) Solving the linear system..."
+    ierr = Solver.Solve()
+    if Comm.MyPID() == 0:
+        print "   Solver.Solve() return code = ", ierr
+
+    del Solver
+
+    # Exit with a code that indicates the total number of successes
+    successes = Comm.SumAll(1)
+    if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(numProc-successes)
+
+if __name__ == "__main__":
+    main()

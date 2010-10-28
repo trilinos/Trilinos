@@ -1,0 +1,282 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#
+# System imports
+from   numpy    import *
+from   optparse import *
+import sys
+import unittest
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+
+##########################################################################
+
+class TestOperator(Epetra.Operator):
+    """
+    This is a dummy Epetra.Operator subclass.  Only a bare minimum of member
+    functions will be implemented.
+    """
+    def __init__(self, map):
+        Epetra.Operator.__init__(self)
+        self.__comm = map.Comm()
+        self.__map  = map
+    def OperatorDomainMap(self): return self.__map
+    def OperatorRangeMap(self):  return self.__map
+
+##########################################################################
+
+class TestRowMatrix(Epetra.RowMatrix):
+    """
+    This is a dummy Epetra.RowMatrix subclass.  Only a bare minimum of member
+    functions will be implemented.
+    """
+    def __init__(self, map):
+        Epetra.RowMatrix.__init__(self)
+        self.__comm = map.Comm()
+        self.__map  = map
+    def OperatorDomainMap(self): return self.__map
+    def OperatorRangeMap(self):  return self.__map
+
+##########################################################################
+
+class EpetraLinearProblemTestCase(unittest.TestCase):
+    "TestCase for Epetra_LinearProblems"
+
+    def setUp(self):
+        self.comm = Epetra.PyComm()
+        self.size = self.comm.NumProc() * 9
+        self.map  = Epetra.Map(self.size,0,self.comm)
+        self.A    = Epetra.CrsMatrix(Epetra.Copy,self.map,3)
+        self.fillA()
+        self.x    = Epetra.Vector(self.map)
+        self.b    = Epetra.Vector(self.map)
+        self.linProb = Epetra.LinearProblem(self.A,self.x,self.b)
+        self.comm.Barrier()
+
+    def fillA(self):
+        for gid in self.map.MyGlobalElements():
+            if gid in (0,self.size-1):
+                self.A.InsertGlobalValues(gid, [1.0], [gid])
+            else:
+                self.A.InsertGlobalValues(gid, [-1.0,2.0,-1.0], [gid-1,gid,gid+1])
+        self.A.FillComplete()
+
+    def tearDown(self):
+        self.comm.Barrier()
+
+    def testConstructor0(self):
+        "Test Epetra.LinearProblem default constructor"
+        lp = Epetra.LinearProblem()
+        self.failUnless(isinstance(lp,Epetra.LinearProblem))
+        self.assertEqual(lp.CheckInput(), -3)
+
+    def testConstructor1(self):
+        "Test Epetra.LinearProblem (RowMatrix,MultiVector,MultiVector) constructor"
+        rm = TestRowMatrix(self.map)
+        lp = Epetra.LinearProblem(rm, self.x, self.b)
+        self.failUnless(isinstance(lp,Epetra.LinearProblem))
+        self.assertEqual(lp.CheckInput(), 0)
+        A = lp.GetMatrix()
+        self.failUnless(isinstance(A,Epetra.Operator))
+        self.failUnless(isinstance(A,Epetra.RowMatrix))
+
+    def testConstructor2(self):
+        "Test Epetra.LinearProblem (Operator,MultiVector,MultiVector) constructor"
+        op = TestOperator(self.map)
+        lp = Epetra.LinearProblem(op, self.x, self.b)
+        self.failUnless(isinstance(lp,Epetra.LinearProblem))
+        self.assertEqual(lp.CheckInput(), 1)
+        A = lp.GetOperator()
+        self.failUnless(isinstance(A,Epetra.Operator))
+        self.failIf(isinstance(A,Epetra.RowMatrix))
+
+    def testConstructor3(self):
+        "Test Epetra.LinearProblem copy constructor"
+        lp = Epetra.LinearProblem(self.linProb)
+        self.assertEqual(id(lp.GetMatrix()), id(self.linProb.GetMatrix()))
+        self.failUnless((lp.GetLHS() == self.linProb.GetLHS()).all())
+        self.failUnless((lp.GetRHS() == self.linProb.GetRHS()).all())
+
+    def testIsOperatorSymmetric(self):
+        "Test Epetra.LinearProblem IsOperatorSymmetric/AssertSymmetric methods"
+        self.assertEqual(self.linProb.IsOperatorSymmetric(), False)
+        self.linProb.AssertSymmetric()
+        self.assertEqual(self.linProb.IsOperatorSymmetric(), True )
+
+    def testSetGetPDL(self):
+        "Test Epetra.LinearProblem SetPDL/GetPDL methods"
+        self.assertEqual(self.linProb.GetPDL(), Epetra.unsure)
+        for pdl in (Epetra.easy, Epetra.moderate, Epetra.hard):
+            self.linProb.SetPDL(pdl)
+            self.assertEqual(self.linProb.GetPDL(), pdl)
+
+    def testSetGetMatrix(self):
+        "Test Epetra.LinearProblem SetOperator/GetMatrix methods for RowMatrix"
+        rm = TestRowMatrix(self.map)
+        lp = Epetra.LinearProblem()
+        self.assertEqual(lp.GetMatrix(), None)
+        lp.SetOperator(rm)
+        self.assertEqual(id(lp.GetMatrix()), id(rm))
+
+    def testSetGetOperator(self):
+        "Test Epetra.LinearProblem SetOperator/GetOperator methods"
+        op = TestOperator(self.map)
+        lp = Epetra.LinearProblem()
+        self.assertEqual(lp.GetOperator(), None)
+        lp.SetOperator(op)
+        self.assertEqual(id(lp.GetOperator()), id(op))
+
+    def testSetGetLHS(self):
+        "Test Epetra.LinearProblem SetLHS/GetLHS methods"
+        lp = Epetra.LinearProblem()
+        self.assertEqual(lp.GetLHS(), None)
+        self.x.Random()
+        lp.SetLHS(self.x)
+        lhs = lp.GetLHS()
+        self.failUnless(isinstance(lhs,Epetra.MultiVector))
+        self.failUnless((lhs == self.x).all())
+
+    def testSetGetRHS(self):
+        "Test Epetra.LinearProblem SetRHS/GetRHS methods"
+        lp = Epetra.LinearProblem()
+        self.assertEqual(lp.GetRHS(), None)
+        self.b.Random()
+        lp.SetRHS(self.b)
+        rhs = lp.GetRHS()
+        self.failUnless(isinstance(rhs,Epetra.MultiVector))
+        self.failUnless((rhs == self.b).all())
+
+    def testCheckInput0(self):
+        "Test Epetra.LinearProblem CheckInput method for complete problem"
+        self.assertEqual(self.linProb.CheckInput(), 0)
+
+    def testCheckInput1(self):
+        "Test Epetra.LinearProblem CheckInput method for missing operator"
+        lp = Epetra.LinearProblem()
+        lp.SetLHS(self.x)
+        lp.SetRHS(self.b)
+        self.assertEqual(lp.CheckInput(), -1)
+
+    def testCheckInput2(self):
+        "Test Epetra.LinearProblem CheckInput method for missing LHS"
+        lp = Epetra.LinearProblem()
+        lp.SetOperator(self.A)
+        lp.SetRHS(self.b)
+        self.assertEqual(lp.CheckInput(), -2)
+
+    def testCheckInput3(self):
+        "Test Epetra.LinearProblem CheckInput method for missing RHS"
+        lp = Epetra.LinearProblem()
+        lp.SetOperator(self.A)
+        lp.SetLHS(self.x)
+        self.assertEqual(lp.CheckInput(), -3)
+
+    def testLeftScale(self):
+        "Test Epetra.LinearProblem LeftScale method"
+        d = Epetra.Vector(self.map)
+        d.PutScalar(0.5)
+        myPID = self.comm.MyPID()
+        if myPID == 0:                     d[ 0] = 1.0
+        if myPID == self.comm.NumProc()-1: d[-1] = 1.0
+        self.linProb.LeftScale(d)
+        for gid in self.map.MyGlobalElements():
+            values, indices = self.A.ExtractGlobalRowCopy(gid)
+            for (v,i) in zip(values, indices):
+                if i == gid:
+                    self.assertAlmostEqual(v, 1.0)
+                else:
+                    self.assertAlmostEqual(v, -0.5)
+
+    def testRightScale(self):
+        "Test Epetra.LinearProblem RightScale method"
+        d = Epetra.Vector(self.map)
+        d.PutScalar(0.5)
+        myPID = self.comm.MyPID()
+        if myPID == 0:                     d[ 0] = 1.0
+        if myPID == self.comm.NumProc()-1: d[-1] = 1.0
+        self.linProb.RightScale(d)
+        for gid in self.map.MyGlobalElements():
+            values, indices = self.A.ExtractGlobalRowCopy(gid)
+            for (v,i) in zip(values, indices):
+                if i == gid:
+                    self.assertAlmostEqual(v, 1.0)
+                elif gid == 1 and i == 0:
+                    self.assertAlmostEqual(v, -1.0)
+                elif gid == self.size-2 and i == self.size-1:
+                    self.assertAlmostEqual(v, -1.0)
+                else:
+                    self.assertAlmostEqual(v, -0.5)
+
+##########################################################################
+
+if __name__ == "__main__":
+
+    # Create the test suite object
+    suite = unittest.TestSuite()
+
+    # Add the test cases to the test suite
+    suite.addTest(unittest.makeSuite(EpetraLinearProblemTestCase))
+
+    # Create a communicator
+    comm    = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
+    comm.SetTracebackMode(0)    # Turn off errors printed to stderr
+
+    # Run the test suite
+    if iAmRoot: print >>sys.stderr, \
+          "\n****************************\nTesting Epetra.LinearProblem\n" \
+          "****************************\n"
+    verbosity = options.verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(errsPlusFails)

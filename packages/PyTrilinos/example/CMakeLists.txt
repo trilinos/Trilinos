@@ -1,3 +1,4 @@
+# -*- cmake -*-
 # @HEADER
 # ************************************************************************
 #
@@ -30,13 +31,23 @@ ENABLE_TESTING()
 
 INCLUDE(PyTrilinosMakeTest)
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(ex_testutil.py
-  SOURCE_FILES testutil.src
-  DEST_FILES   testutil.py)
+ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
+  COMMAND ${CMAKE_SOURCE_DIR}/packages/PyTrilinos/util/copyWithCMakeSubstitutions.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in
+	  ${CMAKE_CURRENT_BINARY_DIR}/testutil.py
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/testutil.py.in)
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(gre__115.rua
-  SOURCE_FILES gre__115.mx
-  DEST_FILES   gre__115.rua)
+ADD_CUSTOM_TARGET(ex_testutil ALL
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/testutil.py)
+
+ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
+  COMMAND ${CMAKE_SOURCE_DIR}/packages/PyTrilinos/util/copyWithCMakeSubstitutions.py
+          ${CMAKE_CURRENT_SOURCE_DIR}/gre__115.mx
+	  ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/gre__115.mx)
+
+ADD_CUSTOM_TARGET(gre__115 ALL
+  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua)
 
 IF(PyTrilinos_ENABLE_Teuchos)
   PyTrilinos_MAKE_TEST(exTeuchos)
