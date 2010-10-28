@@ -330,15 +330,14 @@ int Zoltan_Color(
   /* OLD: Zoltan_ZG_Register (zz, &graph, color); */
   /* First get global ids again. (may be stored somewhere?) */ 
   {
-     /* TODO: find a way to not allocate memory for dummy args! */ 
-     float *vtxwgt = NULL; 
-     int *input_part = NULL;
-     ZOLTAN_ID_PTR my_local_ids = NULL;
-     ierr = Zoltan_Get_Obj_List(zz, &nvtx, &my_global_ids, &my_local_ids, 
- 			       0, &vtxwgt, &input_part);
-     ZOLTAN_FREE(&vtxwgt); 
-     ZOLTAN_FREE(&input_part); 
-     ZOLTAN_FREE(&my_local_ids); 
+     if (zz->Get_Obj_List != NULL){
+       zz->Get_Obj_List(zz->Get_Obj_List_Data,
+                            zz->Num_GID, 0,
+                            &my_global_ids, NULL,
+                            0, NULL, &ierr);
+     }
+     else
+       ierr = ZOLTAN_FATAL; /* Couldn't get the gids. Should never happen! */
    }
 
    ierr = Zoltan_DD_Create (dd_color, zz->Communicator, 
