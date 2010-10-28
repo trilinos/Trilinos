@@ -9,7 +9,7 @@
 void cthulhu_debug_me(const std::string & file, const std::string & funcName);
 void cthulhu_debug_me_print();
 
-#define DEBUG_ME
+//#define DEBUG_ME
 #ifdef DEBUG_ME
 #define CTHULHU_DEBUG_ME       { cthulhu_debug_me(__FILE__,__FUNCTION__); };
 #define CTHULHU_DEBUG_ME_PRINT { cthulhu_debug_me_print();                };

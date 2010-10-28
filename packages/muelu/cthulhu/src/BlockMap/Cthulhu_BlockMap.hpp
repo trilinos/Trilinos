@@ -1,8 +1,6 @@
 #ifndef CTHULHU_BLOCKMAP_DECL_HPP
 #define CTHULHU_BLOCKMAP_DECL_HPP
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
 #include "Cthulhu_Map.hpp"
 
 #include "Cthulhu_Debug.hpp"
@@ -28,6 +26,8 @@ class BlockMap : public Teuchos::Describable {
   virtual ~BlockMap(){ CTHULHU_DEBUG_ME; }
 
   //@}
+
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
   //! @name Attribute Accessor Methods
   //@{
@@ -82,6 +82,7 @@ class BlockMap : public Teuchos::Describable {
 
   //@}
 
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 };//class BlockMap
 
 //-----------------------------------------------------------------
@@ -90,8 +91,6 @@ class BlockMap : public Teuchos::Describable {
 // convertBlockMapToPointMap(const Teuchos::RCP<const Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap)
 
 }//namespace Cthulhu
-
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #endif
 

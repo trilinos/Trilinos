@@ -1,8 +1,6 @@
 #ifndef CTHULHU_VBRMATRIX__HPP
 #define CTHULHU_VBRMATRIX_HPP
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_VbrMatrix.hpp>
@@ -63,31 +61,12 @@ class VbrMatrix { //: public Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal
   //! @name Constructor/Destructor Methods
   //@{
 
-  //! Constructor specifying the row-map and the max number of (block) non-zeros for all rows.
-  /*! After this constructor completes, the VbrMatrix is in the non-packed,
-    non-optimized-storage, isFillComplete()==false state.
-    Block-entries (rectangular, dense submatrices) may be inserted using class
-    methods such as setGlobalBlockEntry(...), declared below.
-  */
-//   VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
-
-  //! Constructor specifying a pre-filled block-graph.
-  /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
-      start out in the optimized-storage state, i.e., isFillComplete()==true.
-      The graph provided to this constructor must be already filled.
-      (If blkGraph->isFillComplete() != true, an exception is thrown.)
-
-      Entries in the input BlockCrsGraph correspond to block-entries in the
-      VbrMatrix. In other words, the VbrMatrix will have a block-row corresponding
-      to each row in the graph, and a block-entry corresponding to each column-
-      index in the graph.
-  */
-//   VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
-
   //! Destructor
   virtual ~VbrMatrix();
 
   //@}
+
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
   //! @name Advanced Mathematical operations
 
@@ -399,60 +378,10 @@ virtual void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,
   virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
   //@}
 
+#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+
 };//class VbrMatrix
 
 }//namespace Cthulhu
-
-//----------------------------------------------------------------------------
-// Description of arrays representing the VBR format:
-//
-// (For more description, see this URL (valid as of 5/26/2010):
-// http://docs.sun.com/source/817-0086-10/prog-sparse-support.html)
-// ...and of course more can be found using google...
-// The old Aztec manual was a great resource for this but I can't
-// find a copy of that these days...
-//
-//
-// Here is a brief description of the 6 arrays that are required to
-// represent a VBR matrix in packed (contiguous-memory-storage) format:
-//
-// rptr: length num_block_rows + 1
-//       rptr[i]: the pt-row corresponding to the i-th block-row
-//       Note: rptr is getBlockRowMap()->getNodeFirstPointInBlocks().
-//
-// cptr: length num_distinct_block_cols + 1
-//       cptr[j]: the pt-col corresponding to the j-th block-col
-//       Note: cptr is getBlockColMap()->getNodeFirstPointInBlocks().
-//
-// bptr: length num_block_rows + 1
-//       bptr[i]: location in bindx of the first nonzero block-entry
-//                of the i-th block-row
-//       Note: bptr is blkGraph_->getNodeRowOffsets();
-//
-// bindx: length num-nonzero-block-entries
-//        bindx[j]: block-col-index of j-th block-entry
-//        Note: bindx is blkGraph_->getNodePackedIndices();
-//
-// indx: length num-nonzero-block-entries + 1
-//       indx[j]: location in vals of the beginning of the j-th
-//       block-entry
-//
-// vals: length num-nonzero-scalar-entries
-//
-//
-// Some example look-ups:
-//
-// int nbr = num_block_rows;
-// int total_num_block_nonzeros = bptr[nbr];
-// int total_num_scalar_nonzeros = indx[num_block_nonzeros];
-// 
-// //get arrays for i-th block-row:
-// int* bindx_i = &bindx[bptr[i]];
-// double* vals_i = &val[indx[bptr[i]]];
-// int num_block_nonzeros_in_row_i = bptr[i+1]-bptr[i];
-// 
-//----------------------------------------------------------------------------
-
-#endif
 
 #endif //CTHULHU_VBRMATRIX_DECL_HPP

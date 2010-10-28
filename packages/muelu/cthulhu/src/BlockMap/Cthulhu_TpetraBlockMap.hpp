@@ -131,12 +131,12 @@ private:
 
 };//class TpetraBlockMap
 
-//-----------------------------------------------------------------
-template<class LocalOrdinal,class GlobalOrdinal,class Node>
-Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> >
-convertTpetraBlockMapToTpetraPointMap(const Teuchos::RCP<const Cthulhu::TpetraBlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap) { CTHULHU_DEBUG_ME;
-  return rcp(new TpetraMap(convertTpetraBlockMapToTpetraPointMap(blockMap.getTpetra_BlockMap())));
-}
+// //-----------------------------------------------------------------
+// template<class LocalOrdinal,class GlobalOrdinal,class Node>
+// Teuchos::RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal,Node> >
+// convertTpetraBlockMapToTpetraPointMap(const Teuchos::RCP<const Cthulhu::TpetraBlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap) { CTHULHU_DEBUG_ME;
+//   return rcp(new TpetraMap(convertTpetraBlockMapToTpetraPointMap(blockMap.getTpetra_BlockMap())));
+// }
 
 }//namespace Cthulhu
 
