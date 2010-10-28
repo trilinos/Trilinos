@@ -27,12 +27,8 @@ namespace mesh {
 void TopologicalMetaData::verify_spatial_dimension(
   unsigned spatial_dimension , const char * method )
 {
-  if ( spatial_dimension < 1 || 3 < spatial_dimension ) {
-    std::ostringstream msg ;
-    msg << method << " ERRONEOUS spatial dimension = "
-        << spatial_dimension ;
-    throw std::logic_error( msg.str() );
-  }
+  ThrowRequireMsg( spatial_dimension >= 1 && 3 >= spatial_dimension,
+      method << " ERRONEOUS spatial dimension = " << spatial_dimension );
 }
 
 std::vector<std::string>

@@ -19,6 +19,8 @@
 #include <vector>
 #include <algorithm>
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -69,15 +71,10 @@ Entity* find_entity(const EntityVector& entities, const EntityKey& key,
                      key,
                      EntityLess());
   if (itr == entities.end() || (*itr)->key() != key) {
-    if (expect_success) {
-      std::ostringstream err;
-      err << "Expected to be able to find entity of type: " << key.type()
-          << " and rank: " << key.rank();
-      throw std::logic_error(err.str());
-    }
-    else {
-      return NULL;
-    }
+    ThrowRequireMsg(!expect_success,
+                    "Expected to be able to find entity of type: " <<
+                    key.type() << " and rank: " << key.rank());
+    return NULL;
   }
   return *itr;
 }
@@ -244,9 +241,6 @@ namespace {
 
 void destroy_dependent_ghosts( BulkData & mesh , Entity * entity )
 {
-  static const char method[] =
-    "stk::mesh::BulkData::modification_end() { destroy_dependent_ghosts() }" ;
-
   for ( ; ; ) {
     PairIterRelation rel = entity->relations();
 
@@ -256,9 +250,8 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity * entity )
 
     if ( e->entity_rank() < entity->entity_rank() ) { break ; }
 
-    if ( in_owned_closure( *e , mesh.parallel_rank() ) ) {
-      throw std::logic_error( std::string(method) );
-    }
+    ThrowRequireMsg( !in_owned_closure( *e , mesh.parallel_rank()),
+        "Entity " << print_entity_key(e) << " should not be in closure." );
 
     destroy_dependent_ghosts( mesh , e );
   }
@@ -494,10 +487,8 @@ void BulkData::internal_resolve_ghosted_modify_delete()
         if ( ! in_owned_closure( *entity , m_parallel_rank ) ) {
 
           const bool destroy_entity_successful = destroy_entity(entity);
-          // Entity pointer is set to NULL:
-          if ( ! destroy_entity_successful ) {
-            throw std::logic_error("could not destroy ghost entity");
-          }
+          ThrowRequireMsg(destroy_entity_successful,
+              "Could not destroy ghost entity " << print_entity_key(entity));
         }
       }
     }
@@ -931,9 +922,6 @@ void pack_part_memberships( CommAll & comm ,
 
 void BulkData::internal_resolve_shared_membership()
 {
-  static const char method[] =
-    "stk::mesh::BulkData::internal_resolve_shared_membership" ;
-
   const MetaData & meta  = m_mesh_meta_data ;
   ParallelMachine p_comm = m_parallel_machine ;
   const unsigned  p_rank = m_parallel_rank ;
@@ -946,11 +934,20 @@ void BulkData::internal_resolve_shared_membership()
 
   // Quick verification of part ordinal assumptions
 
-  if ( PART_ORD_UNIVERSAL != part_universal.mesh_meta_data_ordinal() ||
-       PART_ORD_OWNED     != part_owned.mesh_meta_data_ordinal() ||
-       PART_ORD_SHARED    != part_shared.mesh_meta_data_ordinal() ) {
-    throw std::logic_error( std::string( method ) );
-  }
+  ThrowRequireMsg(PART_ORD_UNIVERSAL == part_universal.mesh_meta_data_ordinal(),
+                  "Universal part ordinal is wrong, expected "
+                  << PART_ORD_UNIVERSAL << ", got: "
+                  << part_universal.mesh_meta_data_ordinal());
+
+  ThrowRequireMsg(PART_ORD_OWNED == part_owned.mesh_meta_data_ordinal(),
+                  "Owned part ordinal is wrong, expected "
+                  << PART_ORD_OWNED << ", got: "
+                  << part_owned.mesh_meta_data_ordinal());
+
+  ThrowRequireMsg(PART_ORD_SHARED == part_shared.mesh_meta_data_ordinal(),
+                  "Shared part ordinal is wrong, expected "
+                  << PART_ORD_SHARED << ", got: "
+                  << part_shared.mesh_meta_data_ordinal());
 
   //  Shared entities may have been modified due to relationship changes.
   //  Send just the current induced memberships from the sharing to

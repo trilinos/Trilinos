@@ -208,7 +208,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkData)
 
   // Catch not-ok-to-modify
   STKUNIT_ASSERT_THROW( bulk.declare_entity( 0 , id + 1 , no_parts ),
-                        std::runtime_error );
+                        std::logic_error );
 }
 
 //----------------------------------------------------------------------

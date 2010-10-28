@@ -15,9 +15,13 @@
 #include <sstream>
 #include <algorithm>
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_util/util/StaticAssert.hpp>
+
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -105,70 +109,50 @@ BulkData::~BulkData()
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-void BulkData::assert_ok_to_modify( const char * method ) const
+void BulkData::require_ok_to_modify() const
 {
-  if ( m_sync_state == SYNCHRONIZED ) {
-    std::string msg( method );
-    msg.append( ": FAILED, NOT in the ok-to-modify state" );
-    throw std::runtime_error( msg );
-  }
+  ThrowRequireMsg( m_sync_state != SYNCHRONIZED,
+                   "NOT in the ok-to-modify state" );
 }
 
-void BulkData::assert_entity_owner( const char * method ,
-                                    const Entity & entity ,
-                                    unsigned owner ) const
+void BulkData::require_entity_owner( const Entity & entity ,
+                                     unsigned owner ) const
 {
   const bool error_not_owner = owner != entity.owner_rank() ;
 
-  if ( error_not_owner ) {
-    std::ostringstream msg ;
-    msg << method << "( " ;
-    print_entity_key( msg , m_mesh_meta_data , entity.key() );
-    msg << " ) FAILED" ;
-
-    msg << " : Owner( " << entity.owner_rank()
-        << " ) != Required( " << owner << " )" ;
-
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowRequireMsg( !error_not_owner,
+      "Entity " << print_entity_key(entity) << " owner is " <<
+                   entity.owner_rank() << ", expected " << owner);
 }
 
-void BulkData::assert_good_key( const char * method ,
-                                const EntityKey & key ) const
+void BulkData::require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const
 {
   const size_t rank_count = m_mesh_meta_data.entity_rank_count();
-  const bool ok_id   = 0 < entity_id( key );
-  const bool ok_type = entity_rank( key ) < rank_count ;
+  const bool ok_id   = entity_id_valid(ent_id);
+  const bool ok_rank = ent_rank < rank_count ;
 
-  if ( ! ok_type || ! ok_id ) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( " ;
-    if ( ! ok_type ) {
-      msg << entity_rank( key ) << "-"
-          << entity_id( key ) << " : BAD KEY TYPE" ;
-    }
-    else {
-      print_entity_key( msg , m_mesh_meta_data , key );
-      msg << " : BAD KEY ID" ;
-    }
-    msg << " ) FAILED" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowRequireMsg( ok_rank,
+                   "Bad key rank: " << ent_rank << " for id " << ent_id );
+
+  ThrowRequireMsg( ok_id, "Bad key id for key: " <<
+      print_entity_key(m_mesh_meta_data, EntityKey(ent_rank, ent_id) ) );
+}
+
+void BulkData::require_metadata_committed() const
+{
+  ThrowRequireMsg( m_mesh_meta_data.is_commit(), "MetaData not committed." );
 }
 
 //----------------------------------------------------------------------
 
 bool BulkData::modification_begin()
 {
-  static const char method[] = "stk::mesh::BulkData::modification_begin" ;
-
   parallel_machine_barrier( m_parallel_machine );
 
   if ( m_sync_state == MODIFIABLE ) return false ;
 
   if ( ! m_meta_data_verified ) {
-    m_mesh_meta_data.assert_committed( method );
+    require_metadata_committed();
 
     verify_parallel_consistency( m_mesh_meta_data , m_parallel_machine );
 
@@ -190,23 +174,6 @@ bool BulkData::modification_begin()
   return true ;
 }
 
-
-//----------------------------------------------------------------------
-
-
-void BulkData::verify_type_and_id(const char* calling_method,
-                                  EntityRank ent_type, EntityId ent_id) const
-{
-  m_mesh_meta_data.assert_entity_rank( calling_method , ent_type );
-
-  if (!entity_id_valid(ent_id)) {
-    std::ostringstream msg;
-    msg << calling_method << ": ent_id not valid";
-    std::string str = msg.str();
-    throw std::runtime_error(str);
-  }
-}
-
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // The add_parts must be full ordered and consistent,
@@ -217,18 +184,14 @@ void BulkData::verify_type_and_id(const char* calling_method,
 
 //----------------------------------------------------------------------
 
-Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
-				   const std::vector<Part*> & parts )
+Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
+                                   const std::vector<Part*> & parts )
 {
-  static const char method[] = "stk::mesh::BulkData::declare_entity" ;
+  require_ok_to_modify();
 
-  assert_ok_to_modify( method );
+  require_good_rank_and_id(ent_rank, ent_id);
 
-  verify_type_and_id("BulkData::declare_entity", ent_type, ent_id);
-
-  EntityKey key( ent_type , ent_id );
-
-  assert_good_key( method , key );
+  EntityKey key( ent_rank , ent_id );
 
   std::pair< Entity * , bool > result = m_entity_repo.internal_create_entity( key );
 
@@ -239,7 +202,7 @@ Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
   }
   else {
     // An existing entity, the owner must match.
-    assert_entity_owner( method , * result.first , m_parallel_rank );
+    require_entity_owner( * result.first , m_parallel_rank );
   }
 
   //------------------------------
@@ -260,6 +223,8 @@ Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
 //----------------------------------------------------------------------
 
 namespace {
+
+// TODO Change the methods below to requirements (private, const invariant checkers)
 
 // Returns false if there is a problem. It is expected that
 // verify_change_parts will be called if quick_verify_change_part detects
@@ -289,14 +254,14 @@ inline bool quick_verify_change_part(const Entity& entity,
 // appear in the add or remove parts lists.
 // 1) Intersection part
 // 2) PartRelation target part
-// 3) Part that does not match the entity type.
+// 3) Part that does not match the entity rank.
 
 void verify_change_parts( const char * method ,
                           const MetaData   & meta ,
                           const Entity     & entity ,
                           const PartVector & parts )
 {
-  const std::vector<std::string> & type_names = meta.entity_rank_names();
+  const std::vector<std::string> & rank_names = meta.entity_rank_names();
   const unsigned undef_rank  = std::numeric_limits<unsigned>::max();
   const unsigned entity_rank = entity.entity_rank();
 
@@ -331,8 +296,8 @@ void verify_change_parts( const char * method ,
       }
 
       msg << p->name() << "[" ;
-      if ( part_rank < type_names.size() ) {
-        msg << type_names[ part_rank ];
+      if ( part_rank < rank_names.size() ) {
+        msg << rank_names[ part_rank ];
       }
       else {
         msg << part_rank ;
@@ -359,9 +324,9 @@ void BulkData::change_entity_parts(
 {
   static const char method[] = "stk::mesh::BulkData::change_entity_parts" ;
 
-  assert_ok_to_modify( method );
+  require_ok_to_modify();
 
-  assert_entity_owner( method , entity , m_parallel_rank );
+  require_entity_owner( entity , m_parallel_rank );
 
   const unsigned entity_rank = entity.entity_rank();
   const unsigned undef_rank  = std::numeric_limits<unsigned>::max();
@@ -424,7 +389,7 @@ void BulkData::change_entity_parts(
   if ( ! quick_verify_check ) {
     verify_change_parts( method , m_mesh_meta_data , entity , a_parts );
     verify_change_parts( method , m_mesh_meta_data , entity , r_parts );
-    throw std::logic_error("Expected throw from verify methods above.");
+    ThrowRequireMsg(false, "Expected throw from verify methods above.");
   }
   else {
 #ifndef NDEBUG
@@ -579,11 +544,9 @@ void BulkData::internal_change_entity_parts(
 
 bool BulkData::destroy_entity( Entity * & entity_in )
 {
-  static const char method[] = "stk::mesh::BulkData::destroy_entity" ;
-
   Entity & entity = *entity_in ;
 
-  assert_ok_to_modify( method );
+  require_ok_to_modify( );
 
   bool has_upward_relation = false ;
 

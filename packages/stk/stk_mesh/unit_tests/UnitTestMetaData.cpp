@@ -70,12 +70,6 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   PartVector part_vector;
   metadata_committed.commit();
 
-  STKUNIT_ASSERT_THROW( metadata_not_committed.assert_committed("test throw"),std::logic_error);
-
-  STKUNIT_ASSERT_THROW( metadata_committed.assert_not_committed("test throw"),std::logic_error);
-
-  STKUNIT_ASSERT_THROW( metadata_not_committed.assert_same_mesh_meta_data("test throw", metadata_committed),std::logic_error);
-
   //test get_part with part that does not exist
   std::string test_string = "this_part_does_not_exist";
   STKUNIT_ASSERT_THROW( metadata_committed.get_part(test_string,"test_throw"),std::runtime_error);
@@ -98,7 +92,7 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   STKUNIT_ASSERT_THROW(  metadata.declare_part_subset( pe, pe), std::runtime_error);
  
   //Test declare_part_relation with parts that are not subsets of each other
-  STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pg,stencil_test_function, ph), std::runtime_error);
+  STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pg,stencil_test_function, ph), std::logic_error);
 
   //Test declare_part_relation with a NULL stencil function
   STKUNIT_ASSERT_THROW(  metadata.declare_part_relation( pe,NULL, pe), std::runtime_error);

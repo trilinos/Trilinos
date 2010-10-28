@@ -85,9 +85,8 @@ void insert_closure_send(
   const EntityProc                  send_entry ,
   std::set<EntityProc,EntityLess> & send_list )
 {
-  if ( EntityLogDeleted == send_entry.first->log_query() ) {
-    throw std::logic_error( std::string("Cannot send destroyed entity") );
-  }
+  ThrowRequireMsg( send_entry.first->log_query() != EntityLogDeleted,
+      "Cannot send destroyed entity " << print_entity_key(send_entry.first));
 
   std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
     result = send_list.insert( send_entry );
@@ -499,9 +498,8 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
         if ( entity != e ) {
           entity = e ;
           if ( ! member_of_owned_closure( *e , p_rank ) ) {
-            if ( ! destroy_entity( e ) ) {
-              throw std::logic_error(std::string("BulkData::destroy_entity FAILED"));
-            }
+            ThrowRequireMsg( destroy_entity( e ),
+                "Failed to destroy entity " << print_entity_key(e) );
           }
         }
       }
