@@ -875,8 +875,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
 
       color = (int *) malloc (mesh->num_elems * sizeof(int));
-      gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
-      lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+      gids = (ZOLTAN_ID_PTR) calloc(mesh->num_elems*Num_GID, sizeof(int));
+      lids = (ZOLTAN_ID_PTR) calloc(mesh->num_elems*Num_LID, sizeof(int));
 
       if (!color || !gids || !lids) {
 	  safe_free((void **)(void *) &color);
@@ -888,7 +888,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
       for (i = 0 ; i < mesh->num_elems ; ++i) {
 	gids[i*num_gid_entries+num_gid_entries-1] = mesh->elements[i].globalID;
-	lids[num_lid_entries * i + (num_lid_entries - 1)] = i;
+	lids[i*num_lid_entries+num_lid_entries-1] = i;
       }
 
       /* Only do coloring if it is specified in the driver input file */
@@ -916,11 +916,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	  else {
 	    int maxcolor = 0, gmaxcolor;
 	    for (i = 0; i < mesh->num_elems; i++)
-	      if (color[i] > maxcolor) maxcolor++;
+	      if (color[i] > maxcolor)
+                  maxcolor = color[i];
 	    MPI_Allreduce(&maxcolor, &gmaxcolor, 1,
 			  MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 	    if (Proc == 0)
-	      printf("Valid distance-1 coloring found; max color = %d.\n",
+	      printf("Valid coloring found; #colors = %d.\n",
 		     gmaxcolor);
 	  }
       }

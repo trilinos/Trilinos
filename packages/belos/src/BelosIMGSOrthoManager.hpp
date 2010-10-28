@@ -60,6 +60,12 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMatOrthoManager.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+#include "Teuchos_TimeMonitor.hpp"
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
 namespace Belos {
 
@@ -318,8 +324,10 @@ namespace Belos {
 
     //! Timers and timer label
     std::string label_;
-    Teuchos::RCP<Teuchos::Time> timerOrtho_, timerUpdate_, 
-                                        timerNorm_, timerScale_, timerInnerProd_;
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::RCP< Teuchos::Time > timerOrtho_, timerUpdate_, 
+      timerNorm_, timerScale_, timerInnerProd_;
+#endif // BELOS_TEUCHOS_TIME_MONITOR
   
     //! Routine to find an orthonormal basis for X
     int findBasis(MV &X, Teuchos::RCP<MV> MX, 

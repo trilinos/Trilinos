@@ -1,0 +1,144 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @header
+# ************************************************************************
+#
+#                PyTrilinos: Python interface to Trilinos
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# license, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# without any warranty; without even the implied warranty of
+# merchantability or fitness for a particular purpose.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @header
+
+#
+# System imports
+import math
+from   optparse import *
+import sys
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
+
+# Build a global communicator
+comm    = Epetra.PyComm()
+numProc = comm.NumProc()
+myPID   = comm.MyPID()
+iAmRoot = myPID == 0
+
+def main():
+
+    # Construct a vector x and populate with random values.
+    # Then construct a diagonal Epetra.CrsMatrix
+    n   = 10 * numProc
+    map = Epetra.Map(n, 0, comm)
+    x   = Epetra.Vector(map)
+    x.Random()
+
+    matrix = Epetra.CrsMatrix(Epetra.Copy, map, 0)
+
+    for lrid in range(matrix.NumMyRows()):
+        grid = matrix.GRID(lrid)
+        matrix[grid,grid] = grid
+
+    matrix.FillComplete()
+    matrix.Print()
+
+    # -------------------------------- #
+    # Part I: Write elements to a file #
+    # -------------------------------- #
+
+    filename = "Datafile.h5"
+    Hdf5 = EpetraExt.HDF5(comm)
+    Hdf5.Create(filename)
+    if iAmRoot: print "Writing map...",
+    Hdf5.Write("map"   , map   )
+    if iAmRoot: print "ok"
+    if iAmRoot: print "Writing vector...",
+    Hdf5.Write("x"     , x     )
+    if iAmRoot: print "ok"
+    if iAmRoot: print "Writing matrix...",
+    Hdf5.Write("matrix", matrix)
+    if iAmRoot: print "ok"
+    Hdf5.Close()
+
+    # ---------------------------------- #
+    # Part II: Read elements from a file #
+    # ---------------------------------- #
+
+    failures = 0
+    Hdf5.Open(filename)
+    # Check group names
+    for group in ("map", "map2", "x", "matrix"):
+        if iAmRoot: print group, "is", Hdf5.IsContained(group)
+
+    # Read the map and check that it is the same
+    map2    = Hdf5.ReadMap("map")
+    if not map2.SameAs(map):
+        print "map inconsistent on processor", myPID
+        failures += 1
+
+    # Read the vector and check that it is the same
+    x2 = Hdf5.ReadMultiVector("x")
+    if iAmRoot:
+        print "x  =", x
+        print "x2 =", x2
+    x2 = x2 - x
+    error = math.sqrt((x2 * x2).sum())
+    if error > 1.0e-8:
+        print "x inconsistent on processor", myPID
+        failures += 1
+
+    # Read the matrix
+    try:
+        matrix2 = Hdf5.ReadCrsMatrix("matrix")
+    except:
+        failures += 1
+
+    Hdf5.Close()
+
+    return failures
+
+################################################################
+
+if __name__ == "__main__":
+    failures = main()
+    failures = comm.SumAll(failures)
+    if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(failures)

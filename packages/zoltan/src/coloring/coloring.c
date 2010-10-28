@@ -259,7 +259,7 @@ int Zoltan_Color(
   /* BUILD THE GRAPH */
   /* Check that the user has allocated space for the return args. */
   if (num_obj && !color_exp)
-      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
+      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument color_exp is NULL. Please allocate all required arrays before calling this routine.");
 
 #ifdef _DEBUG_TIMES
   times[1] = Zoltan_Time(zz->Timer);
@@ -278,9 +278,6 @@ int Zoltan_Color(
 
   /* CREATE THE HASH TABLE */
   /* Determine hash size and allocate hash table */
-  /* UVCUVC: this is improved but it is still a TODO
-     we can allocate smaller hash; check this later */
-
   i = xadj[nvtx]; /* i is the minimum hash size */
   if (Zoltan_G2LHash_Create(&hash, i, vtxdist[zz->Proc], nvtx)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
@@ -361,7 +358,6 @@ int Zoltan_Color(
       printf("Zoltan_Color Total Time in Proc-0: %.2lf    Max: %.2lf\n", times[5]-times[0], gtimes[5]-times[0]);
   }
 #endif
-
  End:
   /* First, free graph */
   Zoltan_ZG_Free (&graph);

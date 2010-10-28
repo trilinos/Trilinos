@@ -46,6 +46,7 @@
 #include "Epetra_JadMatrix.h"
 
 // Local includes
+#include "PyTrilinos_config.h"
 #include "PyTrilinos_Util.h"
 #include "Epetra_PyUtil.h"
 #include "PythonException.h"

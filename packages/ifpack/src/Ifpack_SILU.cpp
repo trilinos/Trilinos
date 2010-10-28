@@ -142,8 +142,8 @@ int Ifpack_SILU::Initialize()
     // Case #1: Use original matrix
     Aover_=rcp(CrsMatrix,false);
   }
-  else if(CrsMatrix){
-    // Case #2: Extract using CrsDataPointers
+  else if(CrsMatrix && CrsMatrix->IndicesAreContiguous()){
+    // Case #2: Extract using CrsDataPointers w/ contiguous indices
     int size = A_->MaxNumEntries();
     int N=A_->NumMyRows();
     Aover_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMatrixRowMap(), size));
@@ -152,8 +152,8 @@ int Ifpack_SILU::Initialize()
 
     int i,j,ct,*rowptr,*colind;
     double *values;
-    CrsMatrix->ExtractCrsDataPointers(rowptr,colind,values);
- 
+    IFPACK_CHK_ERR(CrsMatrix->ExtractCrsDataPointers(rowptr,colind,values));
+
     // Use the fact that EpetraCrsMatrices always number the off-processor columns *LAST*   
     for(i=0;i<N;i++){
       for(j=rowptr[i],ct=0;j<rowptr[i+1];j++){
@@ -173,22 +173,29 @@ int Ifpack_SILU::Initialize()
     Aover_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMatrixRowMap(), size));
     if (Aover_.get() == 0) IFPACK_CHK_ERR(-5); // memory allocation error
 
-    vector<int> Indices(size);
-    vector<double> Values(size);
+    vector<int> Indices1(size),Indices2(size);
+    vector<double> Values1(size),Values2(size);
 
     // extract each row at-a-time, and insert it into
     // the graph, ignore all off-process entries
-    for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
+    int N=A_->NumMyRows();
+    for (int i = 0 ; i < N ; ++i) {
       int NumEntries;
       int GlobalRow = A_->RowMatrixRowMap().GID(i);
       IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, size, NumEntries, 
-					  &Values[0], &Indices[0]));
-      // convert to global indices
-      for (int j = 0 ; j < NumEntries ; ++j) {
-	Indices[j] = A_->RowMatrixColMap().GID(Indices[j]); 
+					  &Values1[0], &Indices1[0]));
+
+      // convert to global indices, keeping only on-proc entries
+      int ct=0;
+      for (int j=0; j < NumEntries ; ++j) {
+	if(Indices1[j] < N){
+	  Indices2[ct] = A_->RowMatrixColMap().GID(Indices1[j]);
+	  Values2[ct]=Values1[j];
+	  ct++;
+	} 
       }
-      IFPACK_CHK_ERR(Aover_->InsertGlobalValues(GlobalRow,NumEntries,
-						&Values[0],&Indices[0]));
+      IFPACK_CHK_ERR(Aover_->InsertGlobalValues(GlobalRow,ct,
+						&Values2[0],&Indices2[0]));
     }    
     IFPACK_CHK_ERR(Aover_->FillComplete(A_->RowMatrixRowMap(),A_->RowMatrixRowMap()));
   }
@@ -229,7 +236,7 @@ int Ifpack_SILU::Compute()
   // Grab pointers from Aover_
   int *rowptr,*colind;
   double *values;
-  Aover_->ExtractCrsDataPointers(rowptr,colind,values);
+  IFPACK_CHK_ERR(Aover_->ExtractCrsDataPointers(rowptr,colind,values));
   int N=Aover_->NumMyRows();
 
   // Copy the data over to SuperLU land - mark as a transposed CompCol Matrix

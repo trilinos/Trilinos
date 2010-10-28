@@ -56,6 +56,7 @@ SET(Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Peano           ""    EX
   CUDA            ""    EX
   Thrust          ""    EX
+  CUSP            ""    EX
   TBB             ""    EX
   Pthread         ""    SS
   ARPREC          ""    SS

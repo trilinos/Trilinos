@@ -87,7 +87,7 @@ InstallSubdirIncludeList(makeincludes,cbind/include,$(INCLIST1),$(INCDIR))
 InstallSubdirIncludeList(makeincludes,forbind/include,$(INCLIST2),$(INCDIR))
 
 /* Directory for exodusII c library */
-NamedTargetSubdirs(libexodus.a,cbind/src,"making exodus ",PassDebugFlags ExtraOptions,libexodus.a)
+NamedTargetSubdirs(libexodus.a,cbind/src,"making exodus ",PassDebugFlags ExtraOptions,all)
 
 /* Directory for exodusII fortran wrappers */
 NamedTargetSubdirs(libexoIIv2for.a,forbind/src,"making exoIIv2for ",PassDebugFlags ExtraOptions,libexoIIv2for.a)

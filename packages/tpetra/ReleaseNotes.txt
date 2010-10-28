@@ -1,0 +1,90 @@
+-----------------------------------------
+Release Notes for Trilinos Package Tpetra
+-----------------------------------------
+
+Trilinos 10.6.1:
+----------------
+
+* Added new HybridPlatform examples, under tpetra/examples/HybridPlatform. Anasazi and Belos examples are currently not built, though they are functional.
+* Added Added new MultiVector GEMM tests, to evaluate potential interference of TPI/TBB threads and a threaded BLAS, to tpetra/test/MultiVector.
+* Added Tpetra timers to Anasazi and Belos adaptors.
+* Added test/documentation build of Tpetra::CrsMatrix against KokkosExamples::DummySpasreKernelClass
+* Fixed some bugs, added some bug verification tests, disabled by default.
+
+Trilinos 10.6:
+--------------
+
+Significant internal changes in Tpetra for this release, mostly centered around
+the CrsMatrix class. Lots of new features centering around multi-core/GPUs did
+not make it in this release; look for more development in 10.6.1.
+
+* Lots of additional documentation, testing and examples in Tpetra.
+* Imported select Teuchos memory management classes/methods into the Tpetra namespace.
+* Updates to the Anasazi/Tpetra adaptors for efficiency, node-awareness and debugging.
+* Minor bug fixes, warnings addressed.
+
+Changes breaking backwards compatbility:
+* Tpetra CRS objects (i.e., CrsGraph and CrsMatrix) are required to be "fill-active" in order to be modified.
+  Furthermore, they are requried to be "fill-complete" in order to call multiply/solve.
+  The transition between these states is mediated by the methods fillComplete() and resumeFill(). 
+  This will only effect users that modify a matrix after calling fillComplete().
+
+Newly deprecated functionality:
+* CrsGraph/CrsMatrix persisting views of graph and matrix data are now
+  deprecated. New, non-persisting versions of these are provided.
+
+
+Trilinos 10.4:
+--------------
+
+The Trilinos release 10.4 came at an unfortunate time, as we were in the middle
+of a medium refactor in Kokkos/Tpetra in order to better support GPU and
+multicore nodes. Therefore, there has been some potential regression in performance
+for GPU nodes; and some known issues regarding multi-core CPU performance (especially 
+on NUMA platforms) have not been addressed. The rest of this refactor is likely to happen 
+in the development branch, and will not be released until 10.6 (estimated for September 2010). 
+
+Users that require access to this code should contact a Trilinos developer regarding access to the 
+development branch repository. 
+
+(*) Improvements to doxygen documentation.
+- added ifdefs to support profiling/tracing of host-to-device memory transfers 
+  These are enable via cmake options
+  -D Kokkos_CUDA_NODE_MEMORY_PROFILING:BOOL=ON
+  -D Kokkos_CUDA_NODE_MEMORY_TRACE:BOOL=ON
+
+(*) VBR capability (experimental)
+- added variable-block row matrix (VbrMatrix) and underlying support classes (BlockMap, BlockMultiVector)
+- added power method example of VBR classes
+
+(*) CrsMatrix:
+- now implements DisbObject, allowing import/export capability with CrsMatrix objects (experimental)
+- combined LocalMatVec and LocalMatSolve objects into a single template parameter. (non BC)
+  this required changes to CrsMatrixMultplyOp and CrsMatrixSolveOp operators as well. (non BC)
+- access default for this type via Kokkos::DefaultKernels
+- removed cached views of object data. this should have no effect on CPU-based nodes, but will result in slower performance
+  for GPU-based nodes. this regression is a result of the release happening mid-refactor. it will not be addressed in the 
+  10.4.x sequence.
+- bug fixes regarding complex cases involving user-specified column maps and graphs.
+
+(*) DistObject interface:
+- added createViews(), releaseViews() methods to allow host-based objects to temporarily cache views of host data during import/export procedure
+
+(*) Map: 
+- added new non-member constructors: createContigMap(), createWeightedContigMap(), createUniformContigMap()
+- fixed some bugs regarding use of unsigned Ordinal types
+- fixed MPI-stalling bug in getRemoteIndexList()
+
+(*) MultiVector:
+- added view methods offsetView() and offsetViewNonConst() to create a MultiVector view of a subset of rows
+- added non-member constructor Tpetra::createMultiVector(map,numVecs)
+
+(*) Vector:
+- added non-member constructor Tpetra::createVector(map)
+
+(*) Tpetra I/O:
+- added Galeri-type methods for generating pedagogical matrices (currently, only 3D Laplacian)
+
+(*) External adaptors (experiemental)
+- Efficiency improvements for Belos/Tpetra adaptors
+- Brought Anasazi/Tpetra adaptors back online

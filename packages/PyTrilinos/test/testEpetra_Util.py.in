@@ -1,0 +1,271 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#
+# System imports
+from   numpy    import *
+from   optparse import *
+import sys
+import unittest
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+
+##########################################################################
+
+class EpetraUtilTestCase(unittest.TestCase):
+    "TestCase for Epetra_Util"
+
+    def setUp(self):
+        self.comm = Epetra.PyComm()
+        self.size = self.comm.NumProc() * 5
+        self.map  = Epetra.Map(self.size, 0, self.comm)
+        self.util = Epetra.Util()
+        self.comm.Barrier()
+
+    def tearDown(self):
+        self.comm.Barrier()
+
+    def testConstructor0(self):
+        "Test Epetra.Util default constructor"
+        self.failUnless(isinstance(self.util, Epetra.Util))
+        
+    def testConstructor1(self):
+        "Test Epetra.Util copy constructor"
+        u2 = Epetra.Util(self.util)
+        self.failUnless(isinstance(u2, Epetra.Util))
+        self.assertEqual(self.util.Seed(), u2.Seed())
+
+    def testRandomInt(self):
+        "Test Epetra.Util RandomInt method"
+        numSamples = 100
+        maxInt = 2**31 - 1
+        count = { }
+        for sample in xrange(numSamples):
+            ri = self.util.RandomInt()
+            count[ri] = count.get(ri,0) + 1
+            self.failUnless(ri >= 0     )
+            self.failUnless(ri <= maxInt)
+        self.failUnless(len(count) > 9*numSamples/10)
+
+    def testRandomDouble(self):
+        "Test Epetra.Util RandomDouble method"
+        numSamples = 100
+        count = { }
+        for sample in xrange(numSamples):
+            rd = self.util.RandomDouble()
+            count[rd] = count.get(rd,0) + 1
+            self.failUnless(abs(rd) < 1.0)
+        self.failUnless(len(count) > 9*numSamples/10)
+
+    def testSetSeed(self):
+        "Test Epetra.Util SetSeed/Seed methods"
+        seed = 70861
+        self.util.SetSeed(seed)
+        self.assertEqual(self.util.Seed(), seed)
+
+    def testCreate_Root_Map0(self):
+        "Test Epetra.Util Create_Root_Map method"
+        rm = self.util.Create_Root_Map(self.map)
+        gids = rm.MyGlobalElements()
+        if self.comm.MyPID() == 0:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testCreate_Root_Map1(self):
+        "Test Epetra.Util Create_Root_Map method with root specified"
+        root = self.comm.NumProc()-1
+        rm = self.util.Create_Root_Map(self.map,root)
+        gids = rm.MyGlobalElements()
+        if self.comm.MyPID() == root:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testCreate_OneToOne_Map0(self):
+        "Test Epetra.Util Create_OneToOne_Map method, low proc gets copies"
+        map  = Epetra.Map(-1, range(self.size), 0, self.comm) # All elements on all procs
+        otom = self.util.Create_OneToOne_Map(map)
+        gids = otom.MyGlobalElements()
+        if self.comm.MyPID() == 0:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testCreate_OneToOne_Map1(self):
+        "Test Epetra.Util Create_OneToOne_Map method, high proc gets copies"
+        root = self.comm.NumProc()-1
+        map  = Epetra.Map(-1, range(self.size), 0, self.comm) # All elements on all procs
+        otom = self.util.Create_OneToOne_Map(map, True)
+        gids = otom.MyGlobalElements()
+        if self.comm.MyPID() == root:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testCreate_OneToOne_BlockMap0(self):
+        "Test Epetra.Util Create_OneToOne_BlockMap method, low proc gets copies"
+        # All elemements on all processors
+        map  = Epetra.BlockMap(-1, range(self.size), 5, 0, self.comm)
+        otom = self.util.Create_OneToOne_BlockMap(map)
+        gids = otom.MyGlobalElements()
+        if self.comm.MyPID() == 0:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testCreate_OneToOne_BlockMap1(self):
+        "Test Epetra.Util Create_OneToOne_BlockMap method, high proc gets copies"
+        root = self.comm.NumProc()-1
+        # All elemements on all processors
+        map  = Epetra.BlockMap(-1, range(self.size), 5, 0, self.comm)
+        otom = self.util.Create_OneToOne_BlockMap(map, True)
+        gids = otom.MyGlobalElements()
+        if self.comm.MyPID() == root:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testChop(self):
+        "Test Epetra.Util Chop method"
+        self.assertEqual(self.util.Chop(1.0e-16), 0.0    )
+        self.assertEqual(self.util.Chop(1.0e-14), 1.0e-14)
+
+    def testStaticCreate_Root_Map0(self):
+        "Test Epetra.Util Create_Root_Map method, static version"
+        rm = Epetra.Util.Create_Root_Map(self.map)
+        gids = rm.MyGlobalElements()
+        if self.comm.MyPID() == 0:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testStaticCreate_Root_Map1(self):
+        "Test Epetra.Util Create_Root_Map method with root specified, static version"
+        root = self.comm.NumProc()-1
+        rm = Epetra.Util.Create_Root_Map(self.map,root)
+        gids = rm.MyGlobalElements()
+        if self.comm.MyPID() == root:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testStaticCreate_OneToOne_Map0(self):
+        "Test Epetra.Util Create_OneToOne_Map method, low proc gets copies, static version"
+        map  = Epetra.Map(-1, range(self.size), 0, self.comm) # All elements on all procs
+        otom = Epetra.Util.Create_OneToOne_Map(map)
+        gids = otom.MyGlobalElements()
+        if self.comm.MyPID() == 0:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testStaticCreate_OneToOne_Map1(self):
+        "Test Epetra.Util Create_OneToOne_Map method, high proc gets copies, static version"
+        root = self.comm.NumProc()-1
+        map  = Epetra.Map(-1, range(self.size), 0, self.comm) # All elements on all procs
+        otom = Epetra.Util.Create_OneToOne_Map(map, True)
+        gids = otom.MyGlobalElements()
+        if self.comm.MyPID() == root:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testStaticCreate_OneToOne_BlockMap0(self):
+        "Test Epetra.Util Create_OneToOne_BlockMap method, low proc gets copies, static version"
+        # All elemements on all processors
+        map  = Epetra.BlockMap(-1, range(self.size), 5, 0, self.comm)
+        otom = Epetra.Util.Create_OneToOne_BlockMap(map)
+        gids = otom.MyGlobalElements()
+        if self.comm.MyPID() == 0:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testStaticCreate_OneToOne_BlockMap1(self):
+        "Test Epetra.Util Create_OneToOne_BlockMap method, high proc gets copies, static version"
+        root = self.comm.NumProc()-1
+        # All elemements on all processors
+        map  = Epetra.BlockMap(-1, range(self.size), 5, 0, self.comm)
+        otom = Epetra.Util.Create_OneToOne_BlockMap(map, True)
+        gids = otom.MyGlobalElements()
+        if self.comm.MyPID() == root:
+            self.assertEqual(len(gids), self.size)
+        else:
+            self.assertEqual(len(gids), 0)
+
+    def testStaticChop(self):
+        "Test Epetra.Util Chop method, static version"
+        self.assertEqual(Epetra.Util.Chop(1.0e-16), 0.0    )
+        self.assertEqual(Epetra.Util.Chop(1.0e-14), 1.0e-14)
+
+##########################################################################
+
+if __name__ == "__main__":
+
+    # Create the test suite object
+    suite = unittest.TestSuite()
+
+    # Add the test cases to the test suite
+    suite.addTest(unittest.makeSuite(EpetraUtilTestCase))
+
+    # Create a communicator
+    comm    = Epetra.PyComm()
+    iAmRoot = comm.MyPID() == 0
+
+    # Run the test suite
+    if iAmRoot: print >>sys.stderr, \
+          "\n*******************\nTesting Epetra.Util\n*******************\n"
+    verbosity = options.verbosity * int(iAmRoot)
+    result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
+
+    # Exit with a code that indicates the total number of errors and failures
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
+    if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(errsPlusFails)

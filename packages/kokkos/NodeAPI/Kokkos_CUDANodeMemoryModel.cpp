@@ -6,13 +6,17 @@ namespace Kokkos {
 
   CUDANodeMemoryModel::CUDANodeMemoryModel() 
   : allocSize_(0)
-  , numCopiesD2H_(0)
-  , numCopiesH2D_(0)
-  , numCopiesD2D_(0)
-  , bytesCopiedD2H_(0)
-  , bytesCopiedH2D_(0)
-  , bytesCopiedD2D_(0)
   {
+    clearStatistics();
+  }
+
+  void CUDANodeMemoryModel::clearStatistics() {
+    numCopiesD2H_ = 0;
+    numCopiesH2D_ = 0;
+    numCopiesD2D_ = 0;
+    bytesCopiedD2H_ = 0;
+    bytesCopiedH2D_ = 0;
+    bytesCopiedD2D_ = 0;
   }
 
   void CUDANodeMemoryModel::printStatistics(const RCP< Teuchos::FancyOStream > &os) const {

@@ -35,10 +35,21 @@ APPEND_SET(SOURCES
 #
 # C) Define the targets for package's library(s)
 #
-
-PACKAGE_ADD_LIBRARY(
-  belostpetra
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS belos tpetra kokkos
-  )
+# If Kokkos was built with TSQR (Tall Skinny QR) support, link with
+# the TSQR libraries.
+#
+IF (${PACKAGE_NAME}_ENABLE_TSQR)
+  PACKAGE_ADD_LIBRARY(
+    belostpetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS belos tpetra kokkos kokkosnodetsqr kokkosdisttsqr
+    )
+ELSE ()
+  PACKAGE_ADD_LIBRARY(
+    belostpetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS belos tpetra kokkos
+    )
+ENDIF ()

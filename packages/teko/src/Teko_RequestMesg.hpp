@@ -97,8 +97,6 @@ protected:
    Teuchos::RCP<Teuchos::ParameterList> paramList_;
 };
 
-} // end namespace Teko
-
 // simple stream interface for RequestMesg
 inline std::ostream & operator<<(std::ostream & os,const Teko::RequestMesg & rm)
 {
@@ -108,5 +106,7 @@ inline std::ostream & operator<<(std::ostream & os,const Teko::RequestMesg & rm)
  
    return os;
 }
+
+} // end namespace Teko
 
 #endif

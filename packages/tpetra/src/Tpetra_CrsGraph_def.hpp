@@ -758,12 +758,12 @@ namespace Tpetra {
     //    This is so that we can store LocalOrdinals in the memory formerly occupied by GlobalOrdinals
     // Assumption: max(GlobalOrdinal) >= max(LocalOrdinal)  and  max(size_t) >= max(LocalOrdinal)
     //    This is so that we can represent any LocalOrdinal as a size_t, and any LocalOrdinal as a GlobalOrdinal
-    Teuchos::CompileTimeAssert<sizeof(GlobalOrdinal) < sizeof(LocalOrdinal)> cta_size;
-    (void)cta_size;
+    Teuchos::CompileTimeAssert<sizeof(GlobalOrdinal) < sizeof(LocalOrdinal)> cta_size1; (void)cta_size1;
+    Teuchos::CompileTimeAssert<sizeof(global_size_t) < sizeof(size_t)      > cta_size2; (void)cta_size2;
     // can't call max() with CompileTimeAssert, because it isn't a constant expression; will need to make this a runtime check
     std::string msg = typeName(*this) + ": Object cannot be allocated with stated template arguments: size assumptions are not valid.";
     TEST_FOR_EXCEPTION( (size_t)OrdinalTraits<LocalOrdinal>::max() > OrdinalTraits<size_t>::max(),          std::runtime_error, msg);
-    TEST_FOR_EXCEPTION( OrdinalTraits<LocalOrdinal>::max() > OrdinalTraits<GlobalOrdinal>::max(),           std::runtime_error, msg);
+    TEST_FOR_EXCEPTION( (global_size_t)OrdinalTraits<LocalOrdinal>::max() > (global_size_t)OrdinalTraits<GlobalOrdinal>::max(),           std::runtime_error, msg);
     TEST_FOR_EXCEPTION( (size_t)OrdinalTraits<GlobalOrdinal>::max() > OrdinalTraits<global_size_t>::max(),  std::runtime_error, msg);
     TEST_FOR_EXCEPTION( OrdinalTraits<size_t>::max() > OrdinalTraits<global_size_t>::max(),                 std::runtime_error, msg);
   }
@@ -1639,7 +1639,11 @@ namespace Tpetra {
         char lclerror = ( stat == IDNotPresent ? 1 : 0 );
         char gblerror;
         Teuchos::reduceAll(*getComm(),Teuchos::REDUCE_MAX,lclerror,outArg(gblerror));
-        std::string tfecfFuncName("globalAssemble()");
+	// This string was defined with the same value above; we don't
+	// need to redefine here and trigger annoying compiler
+	// warnings about shadowing declarations.
+	//
+        //std::string tfecfFuncName("globalAssemble()");
         TEST_FOR_EXCEPTION_CLASS_FUNC(gblerror != 0, std::runtime_error, ": non-local entries correspond to invalid rows.");
       }
 

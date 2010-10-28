@@ -41,6 +41,7 @@
 #include "AnasaziBasicOrthoManager.hpp"
 #include "AnasaziTsqrOrthoManager.hpp"
 #include "AnasaziTpetraAdapter.hpp"
+
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -112,7 +113,9 @@ RCP< Kokkos::TBBNode > getNode< Kokkos::TBBNode >() {
 const magnitude_type TOL = 1.0e-12;
 const magnitude_type ATOL = 10;
 
-// declare an output manager for handling local output
+// Declare an output manager for handling local output.
+// In Anasazi, this class is called BasicOutputManager.
+// In Belos, this class is called OutputManager.
 RCP< Anasazi::BasicOutputManager<scalar_type> > MyOM;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -143,12 +146,13 @@ MVDiff (const MV& X,
 
 
 /// Valid command-line parameter values for the OrthoManager subclass
-/// to test.
+/// to test.  Anasazi and Belos currently implement different sets of 
+/// OrthoManagers.
 static const char* validOrthoManagers[] = {
-  "Tsqr",
+  "TSQR",
+  "ICGS",
   "SVQB",
-  "Basic",
-  "ICGS"
+  "Basic"
 };
 /// Number of valid command-line parameter values for the OrthoManager
 /// subclass to test.  Must be at least one.
@@ -175,7 +179,7 @@ printValidOrthoManagerList ()
   return os.str();
 }
 static std::string
-defaultOrthoManagerName () { return std::string("Tsqr"); }
+defaultOrthoManagerName () { return std::string("TSQR"); }
 
 
 ///
@@ -189,15 +193,15 @@ getOrthoManager (const std::string& ortho,
   ParameterList tsqrParams;
 
   if (ortho == "SVQB") {
-    return rcp (new SVQBOrthoManager<scalar_type,MV,OP>(M));
+    return rcp (new SVQBOrthoManager< scalar_type, MV, OP >(M));
   }
-  else if (ortho == "Basic" || ortho == "basic") {
-    return rcp (new BasicOrthoManager<scalar_type,MV,OP>(M));
+  else if (ortho == "Basic" || ortho == "basic" || ortho == "BASIC") {
+    return rcp (new BasicOrthoManager< scalar_type, MV, OP >(M));
   }
-  else if (ortho == "ICGS") {
-    return rcp (new ICGSOrthoManager<scalar_type,MV,OP>(M));
+  else if (ortho == "ICGS" || ortho == "Icgs" || ortho == "icgs") {
+    return rcp (new ICGSOrthoManager< scalar_type, MV, OP >(M));
   }
-  else if (ortho == "Tsqr" || ortho == "TSQR") {
+  else if (ortho == "TSQR" || ortho == "Tsqr" || ortho == "tsqr") {
     return rcp (new TsqrMatOrthoManager< scalar_type, MV, OP > (tsqrParams, M));
   }
   else {
@@ -273,16 +277,38 @@ main (int argc, char *argv[])
       verbose = true;
     
     MyOM = rcp( new BasicOutputManager<scalar_type>() );
-    if (verbose) {
-      // output in this driver will be sent to Anasazi::Warnings
-      MyOM->setVerbosity(Anasazi::Warnings);
+
+    // Select which type(s) of messages to print
+    {
+      // FIXME: Calling this a "MsgType" or even an "enum MsgType"
+      // confuses the compiler.
+      int theType = Errors; // default (always print errors)
+      if (verbose) 
+        {
+	  // "Verbose" also means printing out Debug messages.
+	  theType = theType | Warnings | IterationDetails |
+	    OrthoDetails | FinalSummary | TimingDetails |
+	    StatusTestDetails | Debug;
+        }
+      if (debug)
+        theType = theType | Debug;
+
+      MyOM->setVerbosity (theType);
     }
-    MyOM->stream(Anasazi::Warnings) << Anasazi_Version() << endl << endl;
+    // Stream for debug output.  If debug output is not enabled, then
+    // this stream doesn't print anything sent to it (it's a "black
+    // hole" stream).
+    std::ostream& debugOut = MyOM->stream(Debug);
+
+    debugOut << "Anasazi version information:" << endl 
+	     << Anasazi_Version() << endl << endl;
 
     RCP< map_type > map;
     RCP< sparse_matrix_type > M;
     if (filename != "") 
       {
+	debugOut << "Loading sparse matrix file \"" << filename << "\"" << endl;
+
 	int numCols = 0;
 	int nnz = -1;
 	int rnnzmax = 0;
@@ -298,13 +324,28 @@ main (int argc, char *argv[])
 	    // colptr, rowind, and dvals using malloc().
 	    info = readHB_newmat_double (filename.c_str(), &numRows, &numCols,
 					 &nnz, &colptr, &rowind, &dvals);
-	    // rnnzmax := maximum number of nonzeros per row, over all
-	    // rows of the sparse matrix.
-	    vector<int> rnnz (numRows, 0);
-	    for (int *ri = rowind; ri < rowind + nnz; ++ri) {
-	      ++rnnz[*ri-1];
-	    }
-	    rnnzmax = *std::max_element (rnnz.begin(),rnnz.end());
+	    // The Harwell-Boeing routines use info == 0 to signal failure.
+	    if (info != 0)
+	      {
+		// rnnzmax := maximum number of nonzeros per row, over all
+		// rows of the sparse matrix.
+		vector<int> rnnz (numRows, 0);
+		for (int *ri = rowind; ri < rowind + nnz; ++ri) {
+		  ++rnnz[*ri-1];
+		}
+		// This business with the iterator ensures that results
+		// are sensible even if the sequence is empty.
+		vector<int>::const_iterator iter = 
+		  std::max_element (rnnz.begin(),rnnz.end());
+		if (iter != rnnz.end())
+		  rnnzmax = *iter;
+		else
+		  // The matrix has zero rows, so the max number of
+		  // nonzeros per row is trivially zero.
+		  rnnzmax = 0;
+	      }
+	    else
+	      rnnzmax = 0;
 	  }
 
 	// Proc 0 now broadcasts the sparse matrix data to the other
@@ -391,12 +432,17 @@ main (int argc, char *argv[])
 	  }
 	// We're done reading in M.
 	M->fillComplete();
+	debugOut << "Completed loading and distributing sparse matrix" << endl;
+
       } // else M == null
-    else {
-      // Let M remain null, and allocate map using the number of rows
-      // (numRows) specified on the command line.
-      map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
-    }
+    else 
+      {
+	debugOut << "Testing with Euclidean inner product" << endl;
+
+        // Let M remain null, and allocate map using the number of rows
+        // (numRows) specified on the command line.
+        map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
+      }
     
     // Instantiate the specified OrthoManager subclass for testing.
     RCP< OrthoManager< scalar_type, MV > > OM = getOrthoManager (ortho, M);
@@ -407,39 +453,54 @@ main (int argc, char *argv[])
     // Create multivectors X1 and X2, using the same map as
     // multivector S.  X1 and X2 must be M-orthonormal and mutually
     // M-orthogonal.
-    MyOM->stream(Errors) << " Generating X1,X2 for testing... " << endl;
+    debugOut << "Generating X1,X2 for testing... ";
     RCP< MV > X1 = MVT::Clone (*S, sizeX1);
     RCP< MV > X2 = MVT::Clone (*S, sizeX2);
+    debugOut << "done." << endl;
     {
       magnitude_type err;
 
       //
       // Fill X1 with random values, and test the normalization error.
       //
-      MyOM->stream(Errors) << " -- Filling X1 with random values... " << endl;
+      debugOut << "Filling X2 with random values... ";
       MVT::MvRandom(*X1);
-      MyOM->stream(Errors) << " -- OM->normalize(*X1);" << endl;
+      debugOut << "done." << endl
+	       << "Calling normalize() on X1... ";
+      // The Anasazi and Belos OrthoManager interfaces differ.
+      // For example, Anasazi's normalize() method accepts either
+      // one or two arguments, whereas Belos' normalize() requires
+      // two arguments.
       const int initialX1Rank = OM->normalize(*X1);
       TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
 			 std::runtime_error, 
 			 "normalize(X1) returned rank "
 			 << initialX1Rank << " from " << sizeX1
 			 << " vectors. Cannot continue.");
-      MyOM->stream(Errors) << " -- OM->orthonormError(*X1);" << endl;
+      debugOut << "done." << endl 
+	       << "Calling orthonormError() on X1... ";
       err = OM->orthonormError(*X1);
       TEST_FOR_EXCEPTION(err > TOL,
 			 std::runtime_error,
 			 "normalize(X1) did meet tolerance: "
 			 "orthonormError(X1) == " << err);
-      MyOM->stream(Warnings) << "   || <X1,X1> - I || : " << err << endl;
+      debugOut << "done: ||<X1,X1> - I|| = " << err << endl;
 
       //
       // Fill X2 with random values, project against X1 and normalize,
       // and test the orthogonalization error.
       //
-      MyOM->stream(Errors) << " -- Filling X1 with random values... " << endl;
+      debugOut << "Filling X1 with random values... ";
       MVT::MvRandom(*X2);
-      MyOM->stream(Errors) << " -- OM->projectAndNormalize (*X2, tuple(X1));... " << endl;
+      debugOut << "done." << endl
+	       << "Calling projectAndNormalize(X2,X1)... " << endl;
+      // The projectAndNormalize() interface also differs between 
+      // Anasazi and Belos.  Anasazi's projectAndNormalize() puts 
+      // the multivector and the array of multivectors first, and
+      // the (array of) SerialDenseMatrix arguments (which are 
+      // optional) afterwards.  Belos puts the (array of) 
+      // SerialDenseMatrix arguments in the middle, and they are 
+      // not optional.
       const int initialX2Rank = 
 	OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
       TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
@@ -447,23 +508,22 @@ main (int argc, char *argv[])
 			 "projectAndNormalize(X2,X1) returned rank " 
 			 << initialX2Rank << " from " << sizeX2 
 			 << " vectors. Cannot continue.");
-      MyOM->stream(Errors) << " -- OM->orthonormError (*X2);" << endl;
+      debugOut << "done." << endl
+	       << "Calling orthonormError() on X2... ";
       err = OM->orthonormError (*X2);
       TEST_FOR_EXCEPTION(err > TOL,
 			 std::runtime_error,
 			 "projectAndNormalize(X2,X1) did not meet tolerance: "
 			 "orthonormError(X2) == " << err);
-      MyOM->stream(Warnings) << "   || <X2,X2> - I || : " << err << endl;
-      MyOM->stream(Errors) << " -- OM->orthogError (*X2, *X1);" << endl;
+      debugOut << "done: || <X2,X2> - I || = " << err << endl
+	       << "Calling orthogError(X2, X1)... ";
       err = OM->orthogError (*X2, *X1);
       TEST_FOR_EXCEPTION(err > TOL,
 			 std::runtime_error,
 			 "projectAndNormalize(X2,X1) did not meet tolerance: "
 			 "orthogError(X2,X1) == " << err);
-      MyOM->stream(Warnings) << "   || <X2,X1> ||     : " << err << endl;
+      debugOut << "done: || <X2,X1> || = " << err << endl;
     }
-    MyOM->stream(Warnings) << endl;
-
 
     {
       //
@@ -472,7 +532,8 @@ main (int argc, char *argv[])
       //
       MVT::MvRandom(*S);
 
-      MyOM->stream(Errors) << " project(): testing on random multivector " << endl;
+      debugOut << "Testing project() by projecting a random multivector S "
+	"against various combinations of X1 and X2 " << endl;
       numFailed += testProject(OM,S,X1,X2);
     }
 
@@ -489,7 +550,8 @@ main (int argc, char *argv[])
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
-      MyOM->stream(Errors) << " project(): testing [X1 X2]-range multivector against P_X1 P_X2 " << endl;
+      debugOut << "Testing project() by projecting [X1 X2]-range multivector "
+	"against P_X1 P_X2 " << endl;
       numFailed += testProject(OM,S,X1,X2);
     }
 
@@ -503,7 +565,7 @@ main (int argc, char *argv[])
       ind[0] = sizeS-1;
       MVT::SetBlock(*mid,ind,*S);
 
-      MyOM->stream(Errors) << " normalize(): testing on rank-deficient multivector " << endl;
+      debugOut << "Testing normalize() on a rank-deficient multivector " << endl;
       numFailed += testNormalize(OM,S);
     }
 
@@ -520,7 +582,7 @@ main (int argc, char *argv[])
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
 
-      MyOM->stream(Errors) << " normalize(): testing on rank-1 multivector " << endl;
+      debugOut << "Testing normalize() on a rank-1 multivector " << endl;
       numFailed += testNormalize(OM,S);
     }
 
@@ -529,7 +591,7 @@ main (int argc, char *argv[])
       std::vector<int> ind(1); 
       MVT::MvRandom(*S);
 
-      MyOM->stream(Errors) << " projectAndNormalize(): testing on random multivector " << endl;
+      debugOut << "Testing projectAndNormalize() on a random multivector " << endl;
       numFailed += testProjectAndNormalize(OM,S,X1,X2);
     }
 
@@ -547,7 +609,8 @@ main (int argc, char *argv[])
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
       MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
-      MyOM->stream(Errors) << " projectAndNormalize(): testing [X1 X2]-range multivector against P_X1 P_X2 " << endl;
+      debugOut << "Testing projectAndNormalize() by projecting [X1 X2]-range "
+	"multivector against P_X1 P_X2 " << endl;
       numFailed += testProjectAndNormalize(OM,S,X1,X2);
     }
 
@@ -561,7 +624,8 @@ main (int argc, char *argv[])
       ind[0] = sizeS-1;
       MVT::SetBlock(*mid,ind,*S);
 
-      MyOM->stream(Errors) << " projectAndNormalize(): testing on rank-deficient multivector " << endl;
+      debugOut << "Testing projectAndNormalize() on a rank-deficient "
+	"multivector " << endl;
       numFailed += testProjectAndNormalize(OM,S,X1,X2);
     }
 
@@ -578,25 +642,30 @@ main (int argc, char *argv[])
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
 
-      MyOM->stream(Errors) << " projectAndNormalize(): testing on rank-1 multivector " << endl;
+      debugOut << "Testing projectAndNormalize() on a rank-1 multivector " << endl;
       numFailed += testProjectAndNormalize(OM,S,X1,X2);
     }
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,cout,success);
 
-  if (numFailed || success==false) {
-    if (numFailed) {
-      MyOM->stream(Errors) << numFailed << " errors." << endl;
+  if (numFailed != 0 || ! success) 
+    {
+      if (numFailed != 0) {
+	MyOM->stream(Errors) << numFailed << " errors." << endl;
+      }
+      // The Trilinos test framework depends on seeing this message,
+      // so don't rely on the OutputManager to report it correctly.
+      if (MyPID == 0)
+	cout << "End Result: TEST FAILED" << endl;	
+      return -1;
     }
-    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;	
-    return -1;
-  }
-  //
-  // Default return value
-  //
-  MyOM->stream(Errors) << "End Result: TEST PASSED" << endl;
-  return 0;
+  else 
+    {
+      if (MyPID == 0)
+	cout << "End Result: TEST PASSED" << endl;
+      return 0;
+    }
 }	
 
 
@@ -709,7 +778,9 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
       for (size_type i=0; i<C.size(); i++) {
         C[i]->random();
       }
-      // run test
+      // Run test.
+      // Note that Anasazi and Belos differ, among other places, 
+      // in the order of arguments to projectAndNormalize().
       int ret = OM->projectAndNormalize(*Scopy,theX,C,B);
       sout << "projectAndNormalize() returned rank " << ret << endl;
       if (ret == 0) {
@@ -757,7 +828,9 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
-        // run test
+        // Run test.
+        // Note that Anasazi and Belos differ, among other places, 
+        // in the order of arguments to projectAndNormalize().
         ret = OM->projectAndNormalize(*Scopy,theX,C,B);
         sout << "projectAndNormalize() returned rank " << ret << endl;
         if (ret == 0) {
@@ -851,7 +924,7 @@ testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
 
   } // test for
 
-  MsgType type = Warnings;
+  MsgType type = Debug;
   if (numerr>0) type = Errors;
   MyOM->stream(type) << sout.str();
   MyOM->stream(type) << endl;
@@ -935,14 +1008,14 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         Scopy = MVT::CloneViewNonConst(*Scopy,ind);
 
-	std::cerr << "::: Resulting pre-subset B:" << std::endl;
-	TSQR::print_local_matrix (std::cerr, ret, sizeS, B->values(), B->stride());
+	sout << "::: Resulting pre-subset B:" << std::endl;
+	TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
 
 	B_original = B; // mfh 22 Jul 2010
         B = rcp( new serial_matrix_type(Teuchos::View,*B,ret,sizeS) );
 
-	std::cerr << "::: Resulting subset B:" << std::endl;
-	TSQR::print_local_matrix (std::cerr, ret, sizeS, B->values(), B->stride());
+	sout << "::: Resulting subset B:" << std::endl;
+	TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
       }
 
       // test all outputs for correctness
@@ -975,7 +1048,7 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
 
   } // test for
 
-  MsgType type = Warnings;
+  MsgType type = Debug;
   if (numerr>0) type = Errors;
   MyOM->stream(type) << sout.str();
   MyOM->stream(type) << endl;
@@ -1086,7 +1159,9 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
 	for (size_type i = 0; i < C.size(); ++i) {
 	  C[i]->random();
 	}
-	// run test
+	// Run test.
+        // Note that Anasazi and Belos differ, among other places, 
+        // in the order of arguments to project().
 	OM->project(*Scopy,theX,C);
 	// we allocate S and MS for each test, so we can save these as views
 	// however, save copies of the C
@@ -1109,7 +1184,9 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
         }
         // flip the inputs
         theX = tuple( theX[1], theX[0] );
-        // run test
+	// Run test.
+        // Note that Anasazi and Belos differ, among other places, 
+        // in the order of arguments to project().
         OM->project(*Scopy,theX,C);
         // we allocate S and MS for each test, so we can save these as views
         // however, save copies of the C
@@ -1191,7 +1268,7 @@ testProject (RCP< OrthoManager< scalar_type, MV > > OM,
 
   } // test for
 
-  MsgType type = Warnings;
+  MsgType type = Debug;
   if (numerr>0) type = Errors;
   MyOM->stream(type) << sout.str();
   MyOM->stream(type) << endl;

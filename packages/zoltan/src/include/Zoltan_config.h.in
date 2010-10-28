@@ -14,9 +14,6 @@
 /* As FC_FUNC, but for C identifiers containing underscores. */
 #undef FC_FUNC_
 
-/* Define if want to build with drum enabled */
-#undef HAVE_DRUM
-
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 

@@ -35,9 +35,9 @@
 
 INCLUDES = -I../include
 
-EXOIITEST = -L../.. -lexoIIv2c
-LOCALEXO = ../../libexoIIv2c.a
-LIBS = $(EXOIITEST) -L$(USRLIBDIR) $(NETCDF) $(EXTRANETCDFLIB)
+EXOIITEST = -Wl,-R../src -L../src -lexodus
+LOCALEXO = ../src/libexodus.a
+LIBS = $(LOCALEXO) -L$(USRLIBDIR) $(NETCDF) $(EXTRANETCDFLIB)
 
 PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
 	testwt_ss testwt_nossnsdf testrd_ss testrdwt testcp testcpd testcp_nl  \

@@ -27,6 +27,15 @@
 /* Enable complex<double> type for CUDA nodes. */
 #cmakedefine HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
 
+/* TSQR (Tall Skinny QR factorization) support */
+#cmakedefine HAVE_KOKKOS_TSQR
+/* Complex (via std::complex<T>) arithmetic support in TSQR */
+#cmakedefine HAVE_TSQR_COMPLEX
+/* Enable TSQR::CombineFortran backend for TSQR::Combine */
+#cmakedefine HAVE_TSQR_FORTRAN
+/* Enable Intel TBB paralleliation for intranode TSQR */
+#cmakedefine HAVE_TSQR_INTEL_TBB
+
 /* Define if want to build kokkos-tests */
 #cmakedefine HAVE_KOKKOS_TESTS
 
@@ -41,6 +50,7 @@
 #cmakedefine HAVE_KOKKOS_TBB
 #cmakedefine HAVE_KOKKOS_CUDA
 #cmakedefine HAVE_KOKKOS_THRUST
+#cmakedefine HAVE_KOKKOS_CUSP
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

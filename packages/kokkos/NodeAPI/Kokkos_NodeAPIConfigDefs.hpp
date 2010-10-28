@@ -33,11 +33,13 @@
 #include <sstream>
 #include <Teuchos_TypeTraits.hpp>
 
+//! %Kokkos namespace
 namespace Kokkos {
 
+  /*! Read/write options for non-const views. */
   enum ReadWriteOption {
-    ReadWrite,
-    WriteOnly
+    ReadWrite, /*!< Indicates that the view may be safely read and written. */
+    WriteOnly  /*!< Indicates that the contents of the view are undefined until set on the host. */
   };
 
 }

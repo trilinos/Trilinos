@@ -1,8 +1,12 @@
-
 ----------------------------------------
 Release Notes for Trilinos Package Belos
 ----------------------------------------
 
+
+Trilinos 10.6:
+--------------
+
+(*) Minor changes in Belos/Tpetra adaptors.
 
 Trilinos 10.4:
 --------------

@@ -33,12 +33,25 @@ APPEND_SET(SOURCES
   )
 
 #
-# C) Define the targets for package's library(s)
+# C) Define the targets for package's library/ies
 #
+# If Kokkos was built with TSQR (Tall Skinny QR) support, link with
+# the TSQR libraries.
+#
+IF (${PACKAGE_NAME}_ENABLE_TSQR)
+  PACKAGE_ADD_LIBRARY(
+    anasazitpetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS anasazi tpetra kokkos kokkosnodetsqr kokkosdisttsqr
+    )
+ELSE ()
+  PACKAGE_ADD_LIBRARY(
+    anasazitpetra
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    DEPLIBS anasazi tpetra kokkos
+    )
+ENDIF ()
 
-PACKAGE_ADD_LIBRARY(
-  anasazitpetra
-  HEADERS ${HEADERS}
-  SOURCES ${SOURCES}
-  DEPLIBS anasazi tpetra kokkos
-  )
+

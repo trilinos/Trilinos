@@ -36,9 +36,22 @@ Build System
 ------------
 
 Running ``make`` in either the top, ``example`` or ``test`` build
-directories simply copies the test scripts from the source directory
-to the build directory.  For historical reasons, the source files have
-the suffix ``.src`` and the build files have the suffix ``.py``.
+directories copies the test scripts from the source directory to the
+build directory while performing certain text substitutions.  Similar
+to the configuration file naming convention, the source files have the
+suffix ``.py.in`` and the build files have the suffix ``.py``.  The
+reason for this is that CMake variable values can be substituted
+during the copy procedure.  For example, the first line of each test
+script source file is now::
+
+  #! ${PYTHON_EXECUTABLE}
+
+which means that the python executable that is recognized (and
+compiled against) by the CMake build system will also be the python
+executable invoked by the PyTrilinos test scripts.  Note that this
+substitution is available to the test developers for any variable that
+is defined in the ``CMakeCache.txt`` file found in the top build
+directory.
 
 The ``CMakeLists.txt`` files in the ``test`` and ``example``
 directories control which scripts get copied to the build directory.

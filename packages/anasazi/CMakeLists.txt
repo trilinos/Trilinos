@@ -35,33 +35,36 @@ ADD_OPTION_AND_DEFINE(
   "Enable Anasazi features for complex data types."
   "${Teuchos_ENABLE_COMPLEX}" )
 
-# Anasazi includes an implementation of the Tall Skinny QR (TSQR)
+# Kokkos includes an implementation of the Tall Skinny QR (TSQR)
 # factorization.  TSQR is used to implement an OrthoManager
 # (Anasazi::TsqrOrthoManager) and a MatOrthoManager (which only uses
-# TSQR in the Euclidean-inner-product case).  TSQR is disabled by
-# default.  Set Anasazi_ENABLE_TSQR to enable TSQR.  If
-# Anasazi_ENABLE_COMPLEX is enabled, TSQR is built with complex
-# arithmetic support.
+# TSQR in the Euclidean-inner-product case).  TSQR is enabled by
+# default if enabled in Kokkos.  If Teuchos_ENABLE_COMPLEX is enabled,
+# TSQR is built with complex arithmetic support.
 
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_ANASAZI_TSQR
   "Enable TSQR (Tall Skinny QR factorization) support in Anasazi."
-  OFF )
+  "${Kokkos_ENABLE_TSQR}" )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
   ANASAZI_TEUCHOS_TIME_MONITOR
   "Build with Teuchos TimeMonitors enabled."
   "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
 
-
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_Tpetra_Timers
+  HAVE_ANASAZI_TPETRA_TIMERS
+  "Add timers to Anasazi::MultiVecTraits for Tpetra multivectors."
+  NO
+  )
 
 #
 # C) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(src)
-
 
 IF (Anasazi_ENABLE_Epetra)
   ADD_SUBDIRECTORY(epetra)
@@ -72,7 +75,6 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 IF (Anasazi_ENABLE_Thyra)
   ADD_SUBDIRECTORY(thyra)
 ENDIF()
-
 
 IF (Anasazi_ENABLE_Tpetra)
   ADD_SUBDIRECTORY(tpetra)

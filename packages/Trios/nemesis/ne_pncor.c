@@ -77,8 +77,8 @@ int ne_put_n_coord (int   neid,
   int coordid; 
 
   int  status;
-  int  ndimdim, i;
-  size_t num_dim, start[2], count[2];
+  int  ndimdim;
+  size_t i, num_dim, start[2], count[2];
   char *which = NULL;
   char errmsg[MAX_ERR_LENGTH];
 
