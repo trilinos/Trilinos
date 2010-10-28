@@ -77,9 +77,13 @@
 #ifdef HAVE_AMESOS2_SUPERLUDIST
 #include "Amesos2_Superludist.hpp"
 #endif
-#ifdef HAVE_AMESOS2_SUPERLU
+/* This check is no longer required as SuperLU is a required dependency.
+  cmake build infrastructure never turns this flag on for required
+  dependencies. Uncomment here if SuperLU changes to an optional dependency.
+  */
+/*#ifdef HAVE_AMESOS2_SUPERLU*/
 #include "Amesos2_Superlu.hpp"
-#endif
+/*#endif*/
 #ifdef HAVE_AMESOS2_DSCPACK
 #include "Amesos2_Dscpack.hpp"
 #endif

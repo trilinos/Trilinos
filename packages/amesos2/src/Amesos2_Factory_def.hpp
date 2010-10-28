@@ -171,11 +171,15 @@ Factory<Matrix,Vector>::create(
   }
 #endif
 
-#ifdef HAVE_AMESOS2_SUPERLU
+/* This check is no longer required as SuperLU is a required dependency.
+  cmake build infrastructure never turns this flag on for required
+  dependencies. Uncomment here if SuperLU changes to an optional dependency.
+  */
+/*#ifdef HAVE_AMESOS2_SUPERLU*/
   if((solverName == "Amesos2_Superlu") || (solverName == "Superlu")){
     return( rcp(new Superlu<Matrix,Vector>(A, X, B)) );
   }
-#endif
+/*#endif*/
 
 #ifdef HAVE_AMESOS2_DSCPACK
   if((solverName == "Amesos2_Dscpack") || (solverName == "Dscpack")){
@@ -258,11 +262,15 @@ bool Factory<Matrix,Vector>::query(const std::string solverName){
   }
 #endif
 
-#ifdef HAVE_AMESOS2_SUPERLU
+/* This check is no longer required as SuperLU is a required dependency.
+  cmake build infrastructure never turns this flag on for required
+  dependencies. Uncomment here if SuperLU changes to an optional dependency.
+  */
+/*#ifdef HAVE_AMESOS2_SUPERLU*/
   if((solverName == "Amesos2_Superlu") || (solverName == "Superlu")){
     return( true );
   }
-#endif
+/*#endif*/
 
 #ifdef HAVE_AMESOS2_DSCPACK
   if((solverName == "Amesos2_Dscpack") || (solverName == "Dscpack")){
@@ -276,7 +284,7 @@ bool Factory<Matrix,Vector>::query(const std::string solverName){
   }
 #endif
 
-#ifdef HAVE_AMESOS2_SUPERLU
+#ifdef HAVE_AMESOS2_TAUCS
   if((solverName == "Amesos2_Taucs") || (solverName == "Taucs")){
     return( true );
   }
