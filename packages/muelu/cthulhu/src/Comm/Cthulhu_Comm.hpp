@@ -3,6 +3,7 @@
 
 #ifdef HAVE_MPI
 #include <mpi.h>
+#include <Teuchos_OpaqueWrapper.hpp>
 #endif
 
 #include <Teuchos_Comm.hpp>
@@ -21,9 +22,10 @@ using Teuchos::RCP;
 //! Convert a Teuchos_Comm to an Epetra_Comm.
 const RCP<const Epetra_Comm> Teuchos2Epetra_Comm(const RCP<const Teuchos::Comm<int> > & comm) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_MPI
-  if (Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm) != Teuchos::null)
-    return Teuchos::rcp(new Epetra_MpiComm(comm.getRawMpiComm()()));
-  else 
+  const RCP<const Teuchos::MpiComm<int> > mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<int> >(comm);
+  if (mpiComm != Teuchos::null) {
+    return Teuchos::rcp(new Epetra_MpiComm(*mpiComm->getRawMpiComm()));
+  }  else
 #endif
     if ((Teuchos::rcp_dynamic_cast<const Teuchos::SerialComm<int> >(comm) != Teuchos::null))
       return Teuchos::rcp(new Epetra_SerialComm());
@@ -34,8 +36,9 @@ const RCP<const Epetra_Comm> Teuchos2Epetra_Comm(const RCP<const Teuchos::Comm<i
 //! Convert an Epetra_Comm.to a Teuchos_Comm
 const RCP<const Teuchos::Comm<int> > Epetra2Teuchos_Comm(RCP<const Epetra_Comm> & comm) { CTHULHU_DEBUG_ME;
 #ifdef HAVE_MPI
-  if (Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>(comm) != Teuchos::null) 
-    return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(comm.Comm()))); 
+  const RCP<const Epetra_MpiComm> mpiComm = Teuchos::rcp_dynamic_cast<const Epetra_MpiComm>(comm);
+  if (mpiComm != Teuchos::null) 
+    return Teuchos::rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(mpiComm->Comm()))); 
   else 
 #endif
     if (Teuchos::rcp_dynamic_cast<const Epetra_SerialComm>(comm) != Teuchos::null)
