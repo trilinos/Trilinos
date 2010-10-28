@@ -845,9 +845,15 @@ public:
  *
  * A NumberArrayLengthDependency must have the following characteristics:
  *
- *   \li The dependee must be either of type int or short.
+ *   \li The dependee type must be an ordinal.
  *
  *   \li The dependent must be an array.
+ *   
+ *   \li When supplying template parameters for this class, the dependent type
+ *   should be the type which the dependent array is templated on. For 
+ *   example: if the dependent is of type Array<int> then the
+ *   NumberArrayLengthDependency's dependent template parameter should be set
+ *   to int.
  *
  */
 template<class DependeeType, class DependentType>
@@ -869,7 +875,9 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func=null);
+    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func=null
+  );
+
 
   /**
    * \brief Constructs a NumberArrayLengthDependency.
@@ -882,7 +890,8 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependent,
-    RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func=null);
+    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func=null
+  );
 
   //@}
 
@@ -938,7 +947,7 @@ private:
    * \brief The function used to calculate the new value of the
    * arrays length.
    */
-    RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependentType> > func_;
+    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func_;
   
   /**
    * \brief Modifies the length of an array.
@@ -992,7 +1001,7 @@ template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
-  RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func):
+  RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func):
   Dependency(dependee, dependent),
   func_(func)
 {
@@ -1003,7 +1012,7 @@ template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
   ParameterEntryList dependents,
-  RCP<SingleArguementFunctionObject<Teuchos_Ordinal, DependeeType> > func):
+  RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func):
   Dependency(dependee, dependents),
   func_(func)
 {

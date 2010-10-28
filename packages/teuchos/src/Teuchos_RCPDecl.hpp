@@ -909,7 +909,7 @@ public: // Bad bad bad
 struct RCPComp {
   /** \brief . */
   template<class T1, class T2> inline
-  bool operator() (const RCP<T1> &p1, const RCP<T2> &p2) const{
+  bool operator() (const RCP<T1> p1, const RCP<T2> p2) const{
     return p1.get() < p2.get();
   }
 };
@@ -919,7 +919,7 @@ struct RCPComp {
 struct RCPConstComp {
   /** \brief . */
   template<class T1, class T2> inline
-  bool operator() (const RCP<const T1> &p1, const RCP<const T2> &p2) const{
+  bool operator() (const RCP<const T1> p1, const RCP<const T2> p2) const{
     return p1.get() < p2.get();
   }
 };

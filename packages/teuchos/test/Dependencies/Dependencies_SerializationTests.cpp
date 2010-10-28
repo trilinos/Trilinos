@@ -565,7 +565,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( \
   NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, llint) 
 #else
-#define NUMBER_VIS_TEST_GROUP(DependeeType) \
+#define NUM_ARRAY_LENGTH_TEST_GROUP(DependeeType) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, int) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, double) \
   NUM_ARRAY_LENGTH_TEST(DependeeType, float)
@@ -1156,16 +1156,6 @@ TEUCHOS_UNIT_TEST(
   CONVERT_DEP_TO_XML(numArrayLengthDep);
   TOO_MANY_DEPENDEE_TEST(numArrayLengthDep);
 }
-
-/*
-typedef NumberArrayLengthDependency<int, double> IntDoubleArrayLengthDep;
-TOO_MANY_DEPENDEES_TEST(
-  NumberArrayLengthDependency,
-  4,
-  Array<double>(4,3.0),
-  IntDoubleArrayLengthDep(dependeeParam, dependentParam),
-  {}
-) */
 
 
 
