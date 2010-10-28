@@ -15,13 +15,14 @@ SET(SOURCES "")
 APPEND_SET(SOURCES
   UnitTestMain.cpp
   UnitTestSimple.cpp
+  UnitTestZoltanSimple.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    rebalance_unit_tests
+    stk_rebalance_unit_tests
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 1-4
     )
 

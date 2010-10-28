@@ -125,7 +125,11 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   // Check that we satisfy our threshhold
   STKUNIT_ASSERT( !do_rebal );
   if( (2 == p_size) || (4 == p_size) )
+  {
     STKUNIT_ASSERT_NEAR(imbalance_threshold, 1.0, 1.e-8);
+  }
   else
+  {
     STKUNIT_ASSERT_LE(imbalance_threshold, 1.5);
+  }
 }
