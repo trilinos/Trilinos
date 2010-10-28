@@ -26,13 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
-// System includes
-#include <algorithm>
-
 // Local includes
+#include "Epetra_PyUtil.h"
 #include "PyTrilinos_config.h"
 #include "PyTrilinos_Util.h"
-#include "Epetra_PyUtil.h"
 #include "EpetraExt_PyUtil.h"
 #include "PythonException.h"
 #include "swigpyrun.h"
@@ -41,6 +38,9 @@
 #ifdef HAVE_TEUCHOS
 #include "Teuchos_Array.hpp"
 #endif
+
+// System includes
+#include <algorithm>
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -1106,7 +1106,7 @@ PyObject * convertArrayOfIntToPython(const Teuchos::Array<int> & tai)
   PyObject * args            = NULL;
   PyObject * result          = NULL;
   int        res             = 0;
-  int size                   = 0;
+  int        size            = 0;
 
   if (!classTupleOfInt)
   {
@@ -1117,7 +1117,7 @@ PyObject * convertArrayOfIntToPython(const Teuchos::Array<int> & tai)
   args = PyTuple_New(size);
   for (int i=0; i < size; ++i)
   {
-    res = PyTuple_SetItem(args, Py_ssize_t(i), PyInt_FromLong(long(i)));
+    res = PyTuple_SetItem(args, Py_ssize_t(i), PyInt_FromLong(long(tai[i])));
     if (res) goto fail;
   }
   result = PyObject_CallObject(classTupleOfInt, args);
