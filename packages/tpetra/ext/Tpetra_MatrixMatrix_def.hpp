@@ -91,7 +91,6 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_B(
   Teuchos::RCP<CrsMatrixStruct_t >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
 {
-
   LocalOrdinal C_firstCol = Bview->colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol = Bview->colMap->getMaxLocalIndex();
 
@@ -264,9 +263,11 @@ int MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::mult_A_Bt
   //This will provide a large performance gain for banded matrices, and
   //a somewhat smaller gain for *most* other matrices.
   //int* b_firstcol = new int[2*numBrows];
-  Teuchos::ArrayRCP<GlobalOrdinal> b_firstcol = Teuchos::ArrayRCP<GlobalOrdinal>(2*numBrows);
+  Teuchos::Array<GlobalOrdinal> b_firstcol = 
+    Teuchos::Array<GlobalOrdinal>(numBrows);
   //int* b_lastcol = b_firstcol+numBrows;
-  Teuchos::ArrayRCP<GlobalOrdinal> b_lastcol = b_firstcol+numBrows;
+  Teuchos::Array<GlobalOrdinal> b_lastcol = 
+    Teuchos::Array<GlobalOrdinal>(numBrows);
   //int temp;
   GlobalOrdinal temp;
   for(i=Teuchos::OrdinalTraits<size_t>::zero(); i<numBrows; ++i) {
@@ -887,7 +888,7 @@ Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
 MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create_map_from_imported_rows(
   Teuchos::RCP<const Map_t > map,
   size_t totalNumSend,
-  Teuchos::ArrayRCP<GlobalOrdinal> sendRows,
+  Teuchos::ArrayView<GlobalOrdinal> sendRows,
   int numProcs,
   Teuchos::Array<size_t> numSendPerProc)
 {
@@ -912,7 +913,7 @@ MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::create_map_fr
 
   Teuchos::Array<GlobalOrdinal> recv_rows(numRecv);
   const size_t numpackets = 1;
-  distributor->doPostsAndWaits(sendRows().getConst(), numpackets, recv_rows());
+  distributor->doPostsAndWaits(sendRows.getConst(), numpackets, recv_rows());
 
   //Now create a map with the rows we've received from other processors.
   Teuchos::RCP<Map_t > import_rows = 
@@ -1073,23 +1074,19 @@ MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::find_rows_con
   int** procRows = new int*[numProcs];*/
   Teuchos::Array<size_t> procNumCols(numProcs);
   Teuchos::Array<size_t> procNumRows(numProcs);
-  Teuchos::ArrayRCP<GlobalOrdinal> procRows_1D(numProcs*MnumRows);
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > procCols(numProcs);
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > procRows(numProcs);
+  Teuchos::Array<GlobalOrdinal> procRows_1D(numProcs*MnumRows);
+  Teuchos::Array<Teuchos::ArrayView<GlobalOrdinal> > procCols(numProcs);
+  Teuchos::Array<Teuchos::ArrayView<GlobalOrdinal> > procRows(numProcs);
   int i, err;
   //int offset = 0;
   size_t offset = Teuchos::OrdinalTraits<size_t>::zero();
   for(i=0; i<numProcs; ++i) {
     procNumCols[i] = all_proc_cols[offset];
-    procCols[i] = 
-      Teuchos::arcpFromArrayView<GlobalOrdinal>(
-        all_proc_cols.view(offset+1, max_num_cols-1));
+    procCols[i] = all_proc_cols.view(offset+1, max_num_cols-1);
     offset += max_num_cols;
 
     procNumRows[i] = Teuchos::OrdinalTraits<size_t>::zero();
-    procRows[i] = 
-      Teuchos::arcpFromArrayView<GlobalOrdinal>(
-        procRows_1D.view(i*MnumRows, MnumRows));
+    procRows[i] = procRows_1D.view(i*MnumRows, MnumRows);
   }
 
   Teuchos::ArrayView<const LocalOrdinal> Mindices;
@@ -1115,7 +1112,7 @@ MatrixMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::find_rows_con
         typename Teuchos::Array<GlobalOrdinal>::const_iterator result = binary_serach(procCols[p].begin(), procCols[p].end(), colGID);      
         if (result != procCols[p].end()) {
           size_t numRowsP = procNumRows[p];
-          Teuchos::ArrayRCP<GlobalOrdinal> prows = procRows[p];
+          Teuchos::ArrayView<GlobalOrdinal> prows = procRows[p];
           if (numRowsP < Teuchos::OrdinalTraits<size_t>::one() || prows[numRowsP-Teuchos::OrdinalTraits<size_t>::one()] < globalRow) {
             prows[numRowsP] = globalRow;
             procNumRows[p]++;

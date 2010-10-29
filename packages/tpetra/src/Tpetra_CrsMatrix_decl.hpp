@@ -229,9 +229,6 @@ namespace Tpetra {
 	  //@{
 
 	  //! \brief Returns the infinity norm of the global matrix.
-      Scalar getNormInf() const;
-
-	  //! \brief Returns the infinity norm of the global matrix.
       Scalar getEuclideanNorm() const;
 
 

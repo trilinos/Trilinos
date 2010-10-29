@@ -210,7 +210,7 @@ Teuchos::RCP<const Map_t >
 create_map_from_imported_rows(
   Teuchos::RCP<const Map_t > map,
   size_t totalNumSend,
-  Teuchos::ArrayRCP<GlobalOrdinal> sendRows,
+  Teuchos::ArrayView<GlobalOrdinal> sendRows,
   int numProcs,
   Teuchos::Array<size_t> numSendPerProc);
 
