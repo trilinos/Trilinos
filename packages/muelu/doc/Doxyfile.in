@@ -4,7 +4,8 @@
 TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
-  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html 
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/tpetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/muelu-cthulhu.tag=$(TRILINOS_HOME)/MueLu/muelu/cthulhu/doc/html
 #
 # Package options
 #
@@ -13,7 +14,7 @@ OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/../src @CMAKE_CURRENT_SOURCE_DIR@/MueLu_DoxygenDocumentation.hpp
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/../src @CMAKE_CURRENT_SOURCE_DIR@/../gallery @CMAKE_CURRENT_SOURCE_DIR@/MueLu_DoxygenDocumentation.hpp
 #FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
@@ -31,5 +32,4 @@ EXTRACT_PRIVATE        = YES
 #
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
-#GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu.tag
-#GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu.tag
+GENERATE_TAGFILE       = $(TRILINOS_HOME)/packages/common/tag_files/muelu.tag
