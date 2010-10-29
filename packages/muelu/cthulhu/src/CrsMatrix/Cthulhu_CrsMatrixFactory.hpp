@@ -2,14 +2,17 @@
 #define CTHULHU_CRSMATRIX_FACTORY_DECL_HPP
 
 #include "Cthulhu_Classes.hpp"
-
 #include "Cthulhu_CrsMatrix.hpp"
-#include "Cthulhu_TpetraCrsMatrix.hpp"
-#include "Cthulhu_EpetraCrsMatrix.hpp"
-
 #include "Cthulhu_Map.hpp"
+#include "Cthulhu_Exceptions.hpp"
+
+//
+
 #include "Cthulhu_TpetraMap.hpp"
+#include "Cthulhu_TpetraCrsMatrix.hpp"
+
 #include "Cthulhu_EpetraMap.hpp"
+#include "Cthulhu_EpetraCrsMatrix.hpp"
 
 #include "Cthulhu_Debug.hpp"
 
@@ -26,7 +29,10 @@ namespace Cthulhu {
 
   class CrsMatrixFactory {
     
-#include "Cthulhu_UseShortNames.hpp"
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map;
+    typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+    typedef TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
     
   private:
     //! Private constructor. This is a static class. 
@@ -36,16 +42,13 @@ namespace Cthulhu {
     
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<CrsMatrix> Build(const RCP<const Map> &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) {
-
       const RCP<const TpetraMap> &tRowMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(rowMap);
       if (tRowMap != null)
         return rcp( new TpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
-
       const RCP<const EpetraMap> &eRowMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(rowMap);
       if (eRowMap != null)
         return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
-
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map to an EpetraMap or a TpetraMap. The exact type of the Map 'rowMap' is unknown");
+      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map. The exact type of the Map 'rowMap' is unknown.");
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
