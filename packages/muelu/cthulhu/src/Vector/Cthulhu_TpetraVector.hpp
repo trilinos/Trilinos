@@ -4,8 +4,12 @@
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_MultiVector.hpp"
 #include "Cthulhu_Vector.hpp"
+#include "Cthulhu_Exceptions.hpp"
 
 #include "Cthulhu_ConfigDefs.hpp"
+
+#include "Cthulhu_TpetraMap.hpp"
+#include "Tpetra_Vector.hpp"
 
 namespace Cthulhu {
 
@@ -20,6 +24,9 @@ namespace Cthulhu {
     
     // // need this so that MultiVector::operator() can call Vector's private constructor
     // friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+
+    // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
     
   public:
 
@@ -27,13 +34,21 @@ namespace Cthulhu {
     //@{ 
 
     //! Sets all vector entries to zero.
-    explicit TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true);
+    explicit TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true) {
+      CTHULHU_DEBUG_ME;
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, map, tMap, "Cthulhu::TpetraVector constructors only accept Cthulhu::TpetraMap as input arguments.");
+      vec_ = rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), zeroOut));
+    }
     
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! TpetraVector copy constructor.
     TpetraVector(const TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
-    
+#endif
+
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! \brief Set multi-vector values from an array using Teuchos memory management classes. (copy)
     TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A);
+#endif
 
     //! Destructor.  
     inline ~TpetraVector() { CTHULHU_DEBUG_ME; };
@@ -110,7 +125,7 @@ namespace Cthulhu {
     inline std::string description() const { CTHULHU_DEBUG_ME; return vec_->description(); };
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; return vec_->describable(); };
+    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; return vec_->describe(out, verbLevel); };
 
     //@}
 
