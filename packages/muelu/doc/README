@@ -1,0 +1,16 @@
+MueLu's documentation can be built in either the source or build directories:
+
+1) SOURCE DIRECTORY
+
+   You do not need to run cmake.  In the *source* tree, simply do the following
+   in the directory muelu/doc:
+
+    a) setenv TRILINOS_HOME /absolute/path/to/your/Trilinos/source/dir
+    b) doxygen Doxyfile
+
+2) BUILD DIRECTORY
+
+   a) setenv TRILINOS_HOME /absolute/path/to/your/Trilinos/source/dir
+   b) Run your cmake configure line or script.
+   c) In the *build* directory in the subdirectory muelu/doc,
+      type "make doc".  The documentation will be placed in muelu/doc/html.
