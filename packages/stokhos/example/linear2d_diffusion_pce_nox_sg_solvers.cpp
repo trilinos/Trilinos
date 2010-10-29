@@ -124,6 +124,10 @@ int main(int argc, char *argv[]) {
     int n = 32;
     CLP.setOption("num_mesh", &n, "Number of mesh points in each direction");
 
+    bool symmetric = false;
+    CLP.setOption("symmetric", "unsymmetric", &symmetric, 
+		  "Symmetric discretization");
+
     SG_RF randField = UNIFORM;
     CLP.setOption("rand_field", &randField, 
 		   num_sg_rf, sg_rf_values, sg_rf_names,
@@ -143,6 +147,10 @@ int main(int argc, char *argv[]) {
 
     int p = 5;
     CLP.setOption("order", &p, "Polynomial order");
+
+    bool normalize_basis = true;
+    CLP.setOption("normalize", "unnormalize", &normalize_basis, 
+		  "Normalize PC basis");
     
     SG_Solver solve_method = SG_KRYLOV;
     CLP.setOption("sg_solver", &solve_method, 
@@ -197,6 +205,7 @@ int main(int argc, char *argv[]) {
     if (MyPID == 0) {
       std::cout << "Summary of command line options:" << std::endl
 		<< "\tnum_mesh            = " << n << std::endl
+		<< "\tsymmetric           = " << symmetric << std::endl
 		<< "\trand_field          = " << sg_rf_names[randField] 
 		<< std::endl
 		<< "\tmean                = " << mean << std::endl
@@ -204,6 +213,7 @@ int main(int argc, char *argv[]) {
 		<< "\tweight_cut          = " << weightCut << std::endl
 		<< "\tnum_kl              = " << num_KL << std::endl
 		<< "\torder               = " << p << std::endl
+		<< "\tnormalize_basis     = " << normalize_basis << std::endl
 		<< "\tsg_solver           = " << sg_solver_names[solve_method] 
 		<< std::endl
 		<< "\touter_krylov_method = " 
@@ -232,9 +242,9 @@ int main(int argc, char *argv[]) {
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
     for (int i=0; i<num_KL; i++)
       if (randField == UNIFORM)
-        bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
+        bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,normalize_basis));
       else if (randField == LOGNORMAL)      
-        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,true));
+        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,normalize_basis));
 
     //  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&uniform_weight,-weightCut,weightCut,true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
@@ -253,7 +263,8 @@ int main(int argc, char *argv[]) {
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
       Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, sigma, 
-					 mean, basis, nonlinear_expansion));
+					 mean, basis, nonlinear_expansion,
+					 symmetric));
 
     // Set up NOX parameters
     Teuchos::RCP<Teuchos::ParameterList> noxParams = 

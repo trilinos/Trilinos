@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
   bool nonlinear_expansion = false;  // nonlinear expansion of diffusion coeff
                                      // (e.g., log-normal)
   bool matrix_free = true;           // use matrix-free stochastic operator
+  bool symmetric = true;            // use symmetric formulation
 
 // Initialize MPI
 #ifdef HAVE_MPI
@@ -84,7 +85,7 @@ int main(int argc, char *argv[]) {
     // Create Stochastic Galerkin basis and expansion
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
     for (int i=0; i<num_KL; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p, true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     int sz = basis->size();
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]) {
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
       Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, mu, s, basis, 
-					 nonlinear_expansion));
+					 nonlinear_expansion, symmetric));
     
     // Set up stochastic parameters
     Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
@@ -132,6 +133,7 @@ int main(int argc, char *argv[]) {
     if (matrix_free) {
       sgOpParams.set("Operator Method", "Matrix Free");
       sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
+      sgPrecParams.set("Symmetric Gauss-Seidel", symmetric);
       sgPrecParams.set("Mean Preconditioner Type", "ML");
       Teuchos::ParameterList& precParams = 
       	sgPrecParams.sublist("Mean Preconditioner Parameters");
@@ -196,7 +198,10 @@ int main(int argc, char *argv[]) {
 
     // Sublist for linear solver for the Newton method
     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-    lsParams.set("Aztec Solver", "GMRES");  
+    if (symmetric)
+      lsParams.set("Aztec Solver", "CG");
+    else
+      lsParams.set("Aztec Solver", "GMRES");
     lsParams.set("Max Iterations", 1000);
     lsParams.set("Size of Krylov Subspace", 100);
     lsParams.set("Tolerance", 1e-12); 

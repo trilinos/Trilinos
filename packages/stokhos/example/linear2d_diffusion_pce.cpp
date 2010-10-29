@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
   double s = 0.2;                    // std. dev. of exponential r.f.
   bool nonlinear_expansion = false;  // nonlinear expansion of diffusion coeff
                                      // (e.g., log-normal)
+  bool symmetric = false;            // use symmetric formulation
 
 // Initialize MPI
 #ifdef HAVE_MPI
@@ -82,7 +83,7 @@ int main(int argc, char *argv[]) {
     // Create Stochastic Galerkin basis and expansion
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
     for (int i=0; i<num_KL; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p, true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     int sz = basis->size();
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model = 
       Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, mu, s, basis, 
-					 nonlinear_expansion));
+					 nonlinear_expansion, symmetric));
     
     // Set up stochastic parameters
     Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
@@ -129,6 +130,8 @@ int main(int argc, char *argv[]) {
     }
     sgOpParams.set("Operator Method", "Matrix Free");
     sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
+    sgPrecParams.set("Symmetric Gauss-Seidel", symmetric);
+    //sgPrecParams.set("Preconditioner Method", "Mean-based");
     sgPrecParams.set("Mean Preconditioner Type", "ML");
     Teuchos::ParameterList& precParams = 
       sgPrecParams.sublist("Mean Preconditioner Parameters");
@@ -185,7 +188,10 @@ int main(int argc, char *argv[]) {
 
     // Setup AztecOO solver
     AztecOO aztec;
-    aztec.SetAztecOption(AZ_solver, AZ_gmres);
+    if (symmetric)
+      aztec.SetAztecOption(AZ_solver, AZ_cg);
+    else
+      aztec.SetAztecOption(AZ_solver, AZ_gmres);
     aztec.SetAztecOption(AZ_precond, AZ_none);
     aztec.SetAztecOption(AZ_kspace, 20);
     aztec.SetAztecOption(AZ_conv, AZ_r0);
