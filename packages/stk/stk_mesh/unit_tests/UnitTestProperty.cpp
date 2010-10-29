@@ -76,9 +76,6 @@ void UnitTestProperty::testProperty()
 
   stk::mesh::Property<int> * property();
 
-  const stk::mesh::PropertyBase * p = NULL;
-  property_data_throw( *p, meta_data.locally_owned_part());
-
   //Test get_property_base with an correct type in Property.cpp
   const std::string& string_correct_double = "my_d";
   meta_data.get_property<double>( string_correct_double );
@@ -90,10 +87,10 @@ void UnitTestProperty::testProperty()
       std::runtime_error 
       );
 
-  //More coverage of Property.hpp to test two unequal parts
+  //More coverage of Property.hpp to test two parts with different meta data
   stk::mesh::Part & part_not_equal_to_pi = meta_data2.declare_part( "part_not_equal_to_pi", 0 );
-  stk::mesh::property_data( pi , part_not_equal_to_pi );
-
+  STKUNIT_ASSERT_THROW(stk::mesh::property_data( pi , part_not_equal_to_pi ),
+                       std::logic_error);
 
   //Final coverage of MetaData.hpp - declare_property
   stk::mesh::Property<double> & pb = meta_data.declare_property<double>("my_y",0);

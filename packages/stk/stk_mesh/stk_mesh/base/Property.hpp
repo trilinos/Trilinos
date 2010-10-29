@@ -17,6 +17,8 @@
 #include <map>
 #include <vector>
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 
 //----------------------------------------------------------------------
@@ -35,18 +37,14 @@ std::ostream & operator << ( std::ostream & , const PropertyBase & );
 std::ostream & print( std::ostream & ,
                       const char * const , const PropertyBase & );
 
-/** \brief  Internal function to throw a descriptive error message */
-void property_data_throw( const PropertyBase & , const Part & );
-
 /** \brief  Query pointer to property data for a given part */
 template< typename property_type >
 inline
 const typename property_type::data_type *
 property_data( const property_type & prop , const Part & part )
 {
-  if ( & prop.mesh_meta_data() != & part.mesh_meta_data() ) {
-    property_data_throw( prop , part );
-  }
+  ThrowRequireMsg( & prop.mesh_meta_data() == & part.mesh_meta_data(),
+                   "MetaData mismatch between property and part" );
   return prop.data( part.mesh_meta_data_ordinal() );
 }
 
@@ -56,9 +54,8 @@ inline
 typename property_type::data_type *
 property_data( property_type & prop , const Part & part )
 {
-  if ( & prop.mesh_meta_data() != & part.mesh_meta_data() ) {
-    property_data_throw( prop , part );
-  }
+  ThrowRequireMsg( & prop.mesh_meta_data() == & part.mesh_meta_data(),
+                   "MetaData mismatch between property and part" );
   return prop.data( part.mesh_meta_data_ordinal() );
 }
 
