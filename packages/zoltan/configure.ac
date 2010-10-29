@@ -43,7 +43,7 @@ AC_CONFIG_AUX_DIR(config)
 #
 
 if test -e configure.ac ; then
-  echo "You are trying to run configure in the source directory.  This is not allowed."
+  echo "You are trying to run configure in the source directory.  This is not allowed.  Please run configure from a separate build directory."
   exit
 fi
 
