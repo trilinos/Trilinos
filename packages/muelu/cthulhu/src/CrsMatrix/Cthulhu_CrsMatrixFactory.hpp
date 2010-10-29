@@ -45,8 +45,7 @@ namespace Cthulhu {
       if (eRowMap != null)
         return rcp( new EpetraCrsMatrix(rowMap, maxNumEntriesPerRow, pftype) );
 
-      //TODO: throw exception
-      return null;
+      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map to an EpetraMap or a TpetraMap. The exact type of the Map 'rowMap' is unknown");
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED

@@ -37,7 +37,7 @@ namespace Cthulhu {
   public:
     
     //! Constructor specifying the number of non-zeros for all rows.
-    static RCP<MultiVector> Build(const Teuchos::RCP<const Map > &map, size_t NumVectors, bool zeroOut=true) {
+    static RCP<MultiVector> Build(const Teuchos::RCP<const Map> &map, size_t NumVectors, bool zeroOut=true) {
 
       const RCP<const TpetraMap> &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(map);
       if (tMap != null)
@@ -47,7 +47,7 @@ namespace Cthulhu {
       if (eMap != null)
         return rcp( new EpetraMultiVector(map, NumVectors, zeroOut) );
       
-      return null;
+      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map to an EpetraMap or a TpetraMap. The exact type of the Map 'map' is unknown");
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
