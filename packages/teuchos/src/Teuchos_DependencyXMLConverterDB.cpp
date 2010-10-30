@@ -161,43 +161,10 @@ DependencyXMLConverterDB::getConverterMap()
     ADD_TEMPLATED_NUMBER_DEPS(long long int);
     #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-    /*masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<StringValidatorDependency>::
-          getDummyObject()->getTypeAttributeValue(), 
-        rcp(new StringValidatorDependencyXMLConverter)));*/
-  
     ADD_DEP_TO_MAP(StringVisualDependency)
-
-    /*masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<StringVisualDependency>::
-          getDummyObject()->getTypeAttributeValue(), 
-        rcp(new StringVisualDependencyXMLConverter)));*/
-
     ADD_DEP_TO_MAP(StringVisualDependency)
-
-    /*masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<BoolValidatorDependency>::
-          getDummyObject()->getTypeAttributeValue(), 
-        rcp(new BoolValidatorDependencyXMLConverter)));*/
-
     ADD_DEP_TO_MAP(BoolValidatorDependency)
-
-    /*masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<BoolVisualDependency>::
-          getDummyObject()->getTypeAttributeValue(), 
-        rcp(new BoolVisualDependencyXMLConverter)));*/
-
     ADD_DEP_TO_MAP(BoolVisualDependency)
-    /*masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<ConditionVisualDependency>::
-          getDummyObject()->getTypeAttributeValue(), 
-        rcp(new ConditionVisualDependencyXMLConverter)));*/
-
     ADD_DEP_TO_MAP(ConditionVisualDependency)
   }
   return masterMap;
