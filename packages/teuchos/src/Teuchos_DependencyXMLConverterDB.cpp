@@ -34,6 +34,13 @@
 
 namespace Teuchos {
 
+#define ADD_DEP_TO_MAP(DEP_TYPE) \
+    masterMap.insert( \
+      ConverterPair( \
+        DummyObjectGetter<DEP_TYPE>:: \
+          getDummyObject()->getTypeAttributeValue(), \
+        rcp(new DEP_TYPE##XMLConverter))); \
+  
 
 #define ADD_TEMPLATED_NUMBER_DEPS(T) \
   ADD_NUMBER_VISUAL_DEP(T); \
@@ -154,35 +161,44 @@ DependencyXMLConverterDB::getConverterMap()
     ADD_TEMPLATED_NUMBER_DEPS(long long int);
     #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-    masterMap.insert(
+    /*masterMap.insert(
       ConverterPair(
         DummyObjectGetter<StringValidatorDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new StringValidatorDependencyXMLConverter)));
+        rcp(new StringValidatorDependencyXMLConverter)));*/
+  
+    ADD_DEP_TO_MAP(StringVisualDependency)
 
-    masterMap.insert(
+    /*masterMap.insert(
       ConverterPair(
         DummyObjectGetter<StringVisualDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new StringVisualDependencyXMLConverter)));
+        rcp(new StringVisualDependencyXMLConverter)));*/
 
-    masterMap.insert(
+    ADD_DEP_TO_MAP(StringVisualDependency)
+
+    /*masterMap.insert(
       ConverterPair(
         DummyObjectGetter<BoolValidatorDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new BoolValidatorDependencyXMLConverter)));
+        rcp(new BoolValidatorDependencyXMLConverter)));*/
 
-    masterMap.insert(
+    ADD_DEP_TO_MAP(BoolValidatorDependency)
+
+    /*masterMap.insert(
       ConverterPair(
         DummyObjectGetter<BoolVisualDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new BoolVisualDependencyXMLConverter)));
+        rcp(new BoolVisualDependencyXMLConverter)));*/
 
-    masterMap.insert(
+    ADD_DEP_TO_MAP(BoolVisualDependency)
+    /*masterMap.insert(
       ConverterPair(
         DummyObjectGetter<ConditionVisualDependency>::
           getDummyObject()->getTypeAttributeValue(), 
-        rcp(new ConditionVisualDependencyXMLConverter)));
+        rcp(new ConditionVisualDependencyXMLConverter)));*/
+
+    ADD_DEP_TO_MAP(ConditionVisualDependency)
   }
   return masterMap;
 }
