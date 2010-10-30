@@ -169,8 +169,8 @@ int Zoltan_Color(
 				       vertices to consecutive local ids */
   int ierr = ZOLTAN_OK;
   int comm[2],gcomm[2];
-  ZOLTAN_ID_PTR my_global_ids;        /* gids local to this proc */
-  struct Zoltan_DD_Struct **dd_color; /* DDirectory for colors */
+  ZOLTAN_ID_PTR my_global_ids= NULL;  /* gids local to this proc */
+  struct Zoltan_DD_Struct *dd_color;  /* DDirectory for colors */
 
 #ifdef _DEBUG_TIMES  
   double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
@@ -328,35 +328,48 @@ int Zoltan_Color(
 
   /* Insert colors into a DDirectory by GIDs. */
   /* OLD: Zoltan_ZG_Register (zz, &graph, color); */
-  /* First get global ids again. (may be stored somewhere?) */ 
+  /* First get global ids again. */ 
   {
+     /* Dummy arrays that we don't really need */
+     ZOLTAN_ID_PTR my_lids = NULL;
+     float *wgts = NULL;
+     int *parts = NULL;
+     int nobj=0;
+
+     Zoltan_Get_Obj_List(zz, &nobj, &my_global_ids, &my_lids, 0, &wgts, &parts);
+     /*
      if (zz->Get_Obj_List != NULL){
+       my_global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, nvtx); 
        zz->Get_Obj_List(zz->Get_Obj_List_Data,
                             zz->Num_GID, 0,
-                            &my_global_ids, NULL,
+                            my_global_ids, NULL,
                             0, NULL, &ierr);
      }
-     else
-       ierr = ZOLTAN_FATAL; /* Couldn't get the gids. Should never happen! */
+     */
+     ZOLTAN_FREE(&my_lids); 
+     ZOLTAN_FREE(&wgts); 
+     ZOLTAN_FREE(&parts); 
    }
 
-   ierr = Zoltan_DD_Create (dd_color, zz->Communicator, 
+   ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
             num_gid_entries, 0, 0, 0, 0);
    if (ierr != ZOLTAN_OK)
      ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
    /* Put color in part field. */
-   ierr = Zoltan_DD_Update (*dd_color, my_global_ids, NULL,
+   ierr = Zoltan_DD_Update (dd_color, my_global_ids, NULL,
             NULL, color, nvtx);
    if (ierr != ZOLTAN_OK)
      ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
 
    /* Get requested colors from the DDirectory. */
    /* OLD: Zoltan_ZG_Query(zz, &graph, global_ids, num_obj, color_exp); */
-   ierr = Zoltan_DD_Find (*dd_color, req_objs, NULL, NULL,
+   ierr = Zoltan_DD_Find (dd_color, req_objs, NULL, NULL,
             color_exp, num_req_objs, NULL);
    if (ierr != ZOLTAN_OK)
      ZOLTAN_COLOR_ERROR(ierr, "Cannot find object in DDirectory.");
 
+   /* Free DDirectory */
+   Zoltan_DD_Destroy(&dd_color);
    ZOLTAN_FREE(&my_global_ids); 
 
 #if 0
