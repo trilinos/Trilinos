@@ -161,7 +161,7 @@ DependencyXMLConverterDB::getConverterMap()
     ADD_TEMPLATED_NUMBER_DEPS(long long int);
     #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
-    ADD_DEP_TO_MAP(StringVisualDependency)
+    ADD_DEP_TO_MAP(StringValidatorDependency)
     ADD_DEP_TO_MAP(StringVisualDependency)
     ADD_DEP_TO_MAP(BoolValidatorDependency)
     ADD_DEP_TO_MAP(BoolVisualDependency)
