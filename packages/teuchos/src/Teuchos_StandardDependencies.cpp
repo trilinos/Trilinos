@@ -66,10 +66,6 @@ VisualDependency::VisualDependency(
   Dependency(dependees, dependents),
   showIf_(showIf){}
 
-bool VisualDependency::isDependentVisible() const{
-  return dependentVisible_;
-}
-
 void VisualDependency::evaluate(){
   if((getDependeeState() && showIf_) || (!getDependeeState() && !showIf_)){
     dependentVisible_ = true;
@@ -143,6 +139,20 @@ void StringVisualDependency::validateDep() const{
     std::endl << std::endl);
 }
 
+RCP<StringVisualDependency> 
+  DummyObjectGetter<StringVisualDependency>::getDummyObject()
+{
+  static RCP<StringVisualDependency > dummyObject;
+  static std::string blahString = "blah";
+   if(dummyObject.is_null()){
+    dummyObject = rcp(new StringVisualDependency(
+    rcp(new ParameterEntry(blahString)),
+    DummyObjectGetter<ParameterEntry>::getDummyObject(),
+    "i'm a dummy"));
+  }
+  return dummyObject;
+}
+
 BoolVisualDependency::BoolVisualDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
@@ -171,6 +181,18 @@ void BoolVisualDependency::validateDep() const{
     std::endl << std::endl);
 }
 
+RCP<BoolVisualDependency> 
+  DummyObjectGetter<BoolVisualDependency>::getDummyObject()
+{
+  static RCP<BoolVisualDependency > dummyObject;
+  if(dummyObject.is_null()){
+    dummyObject = rcp(new BoolVisualDependency(
+    rcp(new ParameterEntry(true)),
+    DummyObjectGetter<ParameterEntry>::getDummyObject()));
+  }
+  return dummyObject;
+}
+
 ConditionVisualDependency::ConditionVisualDependency(
   RCP<const Condition> condition,
   RCP<ParameterEntry> dependent, 
@@ -189,6 +211,18 @@ ConditionVisualDependency::ConditionVisualDependency(
   condition_(condition)
 {
   validateDep();
+}
+
+RCP<ConditionVisualDependency> 
+  DummyObjectGetter<ConditionVisualDependency>::getDummyObject()
+{
+  static RCP<ConditionVisualDependency> dummyObject;
+  if(dummyObject.is_null()){
+    dummyObject = rcp(new ConditionVisualDependency(
+    DummyObjectGetter<NotCondition>::getDummyObject(),
+    DummyObjectGetter<ParameterEntry>::getDummyObject()));
+  }
+  return dummyObject;
 }
 
 StringValidatorDependency::StringValidatorDependency(
@@ -234,6 +268,7 @@ void StringValidatorDependency::evaluate(){
     }
   }
 }
+
 void StringValidatorDependency::validateDep() const{
   TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
     InvalidDependencyException,
@@ -259,6 +294,24 @@ void StringValidatorDependency::validateDep() const{
    }
 }
 
+
+RCP<StringValidatorDependency >
+  DummyObjectGetter<StringValidatorDependency>::getDummyObject()
+{
+  static RCP<StringValidatorDependency> dummyObject;
+  static std::string blahString = "blah";
+  StringValidatorDependency::ValueToValidatorMap dummyMap;
+  dummyMap.insert(StringValidatorDependency::ValueToValidatorPair("blah",
+    DummyObjectGetter<FileNameValidator>::getDummyObject()));
+  if(dummyObject.is_null()){
+    dummyObject = rcp(new StringValidatorDependency(
+    rcp(new ParameterEntry(blahString)),
+    DummyObjectGetter<ParameterEntry>::getDummyObject(),
+    dummyMap));
+  }
+  return dummyObject;
+}
+  
 BoolValidatorDependency::BoolValidatorDependency(
   RCP<const ParameterEntry> dependee,
   RCP<ParameterEntry> dependent,
@@ -322,6 +375,19 @@ void BoolValidatorDependency::validateDep() const{
       "must be the same type! " <<std::endl << std::endl);
   }
   
+}
+
+RCP<BoolValidatorDependency >
+  DummyObjectGetter<BoolValidatorDependency>::getDummyObject()
+{
+  static RCP<BoolValidatorDependency > dummyObject;
+  if(dummyObject.is_null()){
+    dummyObject = rcp(new BoolValidatorDependency(
+    rcp(new ParameterEntry(true)),
+    DummyObjectGetter<ParameterEntry>::getDummyObject(),
+    null, null));
+  }
+  return dummyObject;
 }
 
 }

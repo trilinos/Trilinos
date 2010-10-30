@@ -133,10 +133,11 @@ public:
   /**
    * \brief Determines whether or not the dependent is currently visible.
    */
-  bool isDependentVisible() const;
+  inline bool isDependentVisible() const{
+    return dependentVisible_;
+  }
 
-  inline
-  bool getShowIf() const{
+  inline bool getShowIf() const{
     return showIf_;
   }
 
@@ -327,8 +328,7 @@ public:
   /** \name Attribute/Query Functions */
   //@{
 
-  inline
-  const ValueList& getValues() const{
+  inline const ValueList& getValues() const{
     return values_;
   }
 
@@ -348,7 +348,7 @@ public:
   //@{
 
   /** \brief . */
-  std::string getTypeAttributeValue() const{
+  inline std::string getTypeAttributeValue() const{
     return "StringVisualDependency";
   }
   
@@ -395,17 +395,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * StringVisualDependency.
   */
-  static RCP<StringVisualDependency> getDummyObject(){
-    static RCP<StringVisualDependency > dummyObject;
-    static std::string blahString = "blah";
-     if(dummyObject.is_null()){
-      dummyObject = rcp(new StringVisualDependency(
-      rcp(new ParameterEntry(blahString)),
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
-      "i'm a dummy"));
-    }
-    return dummyObject;
-  }
+  static RCP<StringVisualDependency> getDummyObject();
   
   //@}
   
@@ -434,7 +424,8 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param showIf When true, the depndent will be be shown if the dependee is true.
+   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * true.
    * If false, the dependent will be shown only when the dependee is false.
    */
   BoolVisualDependency(
@@ -447,7 +438,8 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependent parameters.
-   * @param showIf When true, the depndent will be be shown if the dependee is true.
+   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * true.
    * If false, the dependent will be shown only when the dependee is false.
    */
   BoolVisualDependency(
@@ -471,7 +463,7 @@ public:
   //@{
 
   /** \brief . */
-  std::string getTypeAttributeValue() const{
+  inline std::string getTypeAttributeValue() const{
     return "BoolVisualDependency";
   }
   
@@ -506,15 +498,7 @@ public:
   /** \brief Retrieves a dummy object of type
   * BoolVisualDependency.
   */
-  static RCP<BoolVisualDependency> getDummyObject(){
-    static RCP<BoolVisualDependency > dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new BoolVisualDependency(
-      rcp(new ParameterEntry(true)),
-      DummyObjectGetter<ParameterEntry>::getDummyObject()));
-    }
-    return dummyObject;
-  }
+  static RCP<BoolVisualDependency> getDummyObject();
   
   //@}
   
@@ -594,7 +578,7 @@ public:
   //@{
 
   /** \brief . */
-  std::string getTypeAttributeValue() const{
+  inline std::string getTypeAttributeValue() const{
     return "ConditionVisualDependency";
   }
   
@@ -639,19 +623,10 @@ public:
   /** \name GetterFunctions */
   //@{
 
-  /** \brief Retrieves a dummy object of type
-  * ConditionVisualDependency.
+  /** \brief Retrieves a dummy object of type ConditionVisualDependency.
   */
-  static RCP<ConditionVisualDependency> getDummyObject(){
-    static RCP<ConditionVisualDependency> dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new ConditionVisualDependency(
-      DummyObjectGetter<NotCondition>::getDummyObject(),
-      DummyObjectGetter<ParameterEntry>::getDummyObject()));
-    }
-    return dummyObject;
-  }
-  
+  static RCP<ConditionVisualDependency> getDummyObject();
+
   //@}
   
 };
@@ -728,13 +703,7 @@ public:
   /** \name Overridden from VisualDependency */
   //@{
 
-  inline bool getDependeeState() const{
-    if(!func_.is_null()){
-      func_->setParameterValue(getFirstDependeeValue<T>());
-      return func_->runFunction() > ScalarTraits<T>::zero() ? true : false;
-    }
-    return getFirstDependeeValue<T>();
-  }
+  bool getDependeeState() const;
   
   //@}
 
@@ -742,7 +711,7 @@ public:
   //@{
 
   /** \brief . */
-  std::string getTypeAttributeValue() const{
+  inline std::string getTypeAttributeValue() const{
     return "NumberVisualDependency<" + TypeNameTraits<T>::name() + ">";
   }
   
@@ -752,7 +721,7 @@ public:
   //@{
   
   /** \brief Gets the function associated with this dependency. */
-  RCP<SingleArguementFunctionObject<T,T> > getFunctionObject(){
+  inline RCP<SingleArguementFunctionObject<T,T> > getFunctionObject(){
     return func_;
   }
 
@@ -789,6 +758,14 @@ private:
   //
 };
 
+template<class T>
+bool NumberVisualDependency<T>::getDependeeState() const{
+  if(!func_.is_null()){
+    func_->setParameterValue(getFirstDependeeValue<T>());
+    return func_->runFunction() > ScalarTraits<T>::zero() ? true : false;
+  }
+  return getFirstDependeeValue<T>();
+}
 
 template<class T>
 void NumberVisualDependency<T>::validateDep() const{
@@ -902,7 +879,7 @@ public:
   void evaluate();
   
   /** \brief . */
-  std::string getTypeAttributeValue() const{
+  inline std::string getTypeAttributeValue() const{
     return "NumberArrayLengthDependency<" +
       TypeNameTraits<DependeeType>::name() + ", " +
       TypeNameTraits<DependentType>::name() +">";
@@ -914,14 +891,14 @@ public:
   //@{
 
   /** \brief Gets the function associated with this dependency. */
-  RCP<SingleArguementFunctionObject<DependeeType, DependeeType> >
+  inline RCP<SingleArguementFunctionObject<DependeeType, DependeeType> >
     getFunctionObject()
   {
     return func_;
   }
 
   /** \brief Const version of function getter. */
-  RCP<const SingleArguementFunctionObject<DependeeType, DependeeType> > 
+  inline RCP<const SingleArguementFunctionObject<DependeeType, DependeeType> > 
     getFunctionObject() const
   {
     return func_.getConst();
@@ -1028,7 +1005,11 @@ NumberArrayLengthDependency<DependeeType, DependentType>::modifyArrayLength(
     any_cast<Array<DependentType> >(dependentToModify->getAny()); 
   Array<DependentType> newArray(newLength);
   DependeeType i;
-  for(i=OrdinalTraits<DependeeType>::zero(); i<originalArray.size() && i<newLength; ++i){
+  for(
+    i=OrdinalTraits<DependeeType>::zero(); 
+    i<originalArray.size() && i<newLength; 
+    ++i)
+  {
     newArray[i] = originalArray[i];
   }
 
@@ -1182,11 +1163,11 @@ public:
 
   /** \brief retrieve a const reference to the ValueToValidator map being 
    * used by this StringValidatorDependency */
-  const ValueToValidatorMap& getValuesAndValidators() const{
+  inline const ValueToValidatorMap& getValuesAndValidators() const{
     return valuesAndValidators_;
   }
 
-  RCP<const ParameterEntryValidator> getDefaultValidator() const{
+  inline RCP<const ParameterEntryValidator> getDefaultValidator() const{
     return defaultValidator_;
   }
 
@@ -1204,7 +1185,7 @@ public:
   //@{
 
   /** \brief . */
-  std::string getTypeAttributeValue() const{
+  inline std::string getTypeAttributeValue() const{
     return "StringValidatorDependency";
   }
   
@@ -1255,25 +1236,9 @@ public:
   /** \name GetterFunctions */
   //@{
 
-  /** \brief Retrieves a dummy object of type
-  * StringValidatorDependency.
+  /** \brief Retrieves a dummy object of type StringValidatorDependency.
   */
-  static RCP<StringValidatorDependency >
-    getDummyObject()
-  {
-    static RCP<StringValidatorDependency> dummyObject;
-    static std::string blahString = "blah";
-    StringValidatorDependency::ValueToValidatorMap dummyMap;
-    dummyMap.insert(StringValidatorDependency::ValueToValidatorPair("blah",
-      DummyObjectGetter<FileNameValidator>::getDummyObject()));
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new StringValidatorDependency(
-      rcp(new ParameterEntry(blahString)),
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
-      dummyMap));
-    }
-    return dummyObject;
-  }
+  static RCP<StringValidatorDependency > getDummyObject();
   
   //@}
   
@@ -1359,7 +1324,7 @@ public:
   //@{
 
   /** \brief . */
-  std::string getTypeAttributeValue() const{
+  inline std::string getTypeAttributeValue() const{
     return "BoolValidatorDependency";
   }
   
@@ -1402,21 +1367,8 @@ public:
   /** \name GetterFunctions */
   //@{
 
-  /** \brief Retrieves a dummy object of type
-  * BoolValidatorDependency.
-  */
-  static RCP<BoolValidatorDependency >
-    getDummyObject()
-  {
-    static RCP<BoolValidatorDependency > dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new BoolValidatorDependency(
-      rcp(new ParameterEntry(true)),
-      DummyObjectGetter<ParameterEntry>::getDummyObject(),
-      null, null));
-    }
-    return dummyObject;
-  }
+  /** \brief Retrieves a dummy object of type BoolValidatorDependency.  */
+  static RCP<BoolValidatorDependency > getDummyObject();
   
   //@}
   
