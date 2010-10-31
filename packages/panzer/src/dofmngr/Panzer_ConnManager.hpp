@@ -45,7 +45,7 @@ public:
      *
      * \returns Number of mesh IDs that are associated with this element.
      */
-   virtual int getConnectivitySize(LocalOrdinal localElmtId) const = 0;
+   virtual LocalOrdinal getConnectivitySize(LocalOrdinal localElmtId) const = 0;
 
    /** Get the block ID for a particular element.
      *
