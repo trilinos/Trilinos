@@ -356,6 +356,27 @@ namespace Tpetra {
     }
   }
 
+  /** \brief Non-member constructor for Import objects.
+
+      Creates a Import object from the given source and target maps.
+      \pre <tt>src != null</tt>
+      \pre <tt>tgt != null</tt>
+      \return Returns the Import object. (Debug mode: throws std::runtime_error if either \c src or \c tgt is \c null.)
+
+      \relates Import
+    */
+  template <class LO, class GO, class Node> 
+  RCP< const Import<LO,GO,Node> >
+  makeImport( const RCP<const Map<LO,GO,Node> > & src, 
+              const RCP<const Map<LO,GO,Node> > & tgt )
+  {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(src == null || tgt == null, std::runtime_error,
+        "Tpetra::makeImport(): neither source nor target map may be null:\nsource: " << src << "\ntarget: " << tgt << "\n");
+#endif
+    return rcp(new Import<LO,GO,Node>(src,tgt));
+  }
+
 } // namespace Tpetra
 
 #endif // TPETRA_IMPORT_HPP
