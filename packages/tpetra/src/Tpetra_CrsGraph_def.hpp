@@ -36,6 +36,7 @@
 #include <Teuchos_NullIteratorTraits.hpp>
 #include <algorithm>
 #include <string>
+#include <utility>
 
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_CrsGraph_decl.hpp"
@@ -1658,7 +1659,8 @@ namespace Tpetra {
            nlr != NLRs.end(); ++nlr, ++id) {
         NLR2Id[*nlr] = *id;
         localNeighbors[*id] = 1;
-        IdsAndRows.push_back(make_pair<int,GlobalOrdinal>(*id,*nlr));
+        // IdsAndRows.push_back(make_pair<int,GlobalOrdinal>(*id,*nlr));
+        IdsAndRows.push_back(make_pair(*id,*nlr));
       }
       for (int j=0; j<numImages; ++j) {
         if (localNeighbors[j]) {
