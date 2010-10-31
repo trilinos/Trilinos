@@ -538,8 +538,8 @@ namespace Tpetra {
   bool Map<LocalOrdinal,GlobalOrdinal,Node>::isSameAs(const Map<LocalOrdinal,GlobalOrdinal,Node> &map) const {
     using Teuchos::outArg;
     if (this == &map) {
-      // we should assume that this is globally coherent
-      // if they share the same underlying MapData, then they must be equivalent maps
+      // we assume that this is globally coherent
+      // if they are the same object, then they are equivalent maps
       return true;
     }
 
