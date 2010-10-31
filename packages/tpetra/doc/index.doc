@@ -41,7 +41,7 @@ These are the following:
     - \c LocalOrdinal: A \c LocalOrdinal is used to store indices representing local IDs. The standard use case,
       as well as the default for most classes, is \c int. Any type can be used that implements Teuchos::OrdinalTraits and Teuchos::SerializationTraits
       and supports the necessary arithmetic. The purpose of template local and global ordinals as two (possibly)
-      different types is for efficiency purposes. For example, the indices of a completed CrsGraph contain objects
+      different types is for efficiency purposes. For example, the indices of a completed Tpetra::CrsGraph contain objects
       of type \c LocalOrdinal. If the specific application allows it, using smaller local ordinals requires 
       less storage and potentially higher rates of computation.
     - \c GlobalOrdinal: A \c GlobalOrdinal is used to store indices representing global IDs and to describe 
