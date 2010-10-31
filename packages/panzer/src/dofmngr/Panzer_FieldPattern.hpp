@@ -94,6 +94,9 @@ public:
    virtual bool equals(const FieldPattern & fp) const;
 };
 
+//! Stream IO
+std::ostream & operator<<(std::ostream & os,const FieldPattern & fp);
+
 }
 
 #endif

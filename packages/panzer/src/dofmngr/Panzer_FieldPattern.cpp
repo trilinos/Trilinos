@@ -94,4 +94,10 @@ bool FieldPattern::equals(const FieldPattern & fp) const
   return true;
 }
 
+std::ostream & operator<<(std::ostream & os,const FieldPattern & fp)
+{
+   fp.print(os);
+   return os;
+}
+
 }

@@ -47,6 +47,9 @@ TEUCHOS_UNIT_TEST(tIntrepidFieldPattern, test2d_tri_c1)
    basis = rcp(new Intrepid::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
 
    Teuchos::RCP<FieldPattern> pattern = rcp(new IntrepidFieldPattern(basis));
+  
+   out << "output stream test: " << std::endl;
+   out << *pattern << std::endl;
 
    TEST_ASSERT(pattern->consistentSubcells());
    TEST_EQUALITY(pattern->getDimension(),2);
