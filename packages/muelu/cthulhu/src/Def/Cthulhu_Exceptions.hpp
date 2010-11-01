@@ -2,7 +2,9 @@
 #define CTHULHU_EXCEPTIONS_HPP
 
 #include <exception>
-#include "Teuchos_Exceptions.hpp"
+#include <Teuchos_Exceptions.hpp>
+
+#include "Cthulhu_ConfigDefs.hpp"
 
 // Dynamically cast 'obj' to 'type newObj'. newObj is declared inside of the macro.
 // If the dynamic cast failed, throw an exception of type Cthulhu::Exception::Bad_Cast (using the message exceptionMsg).

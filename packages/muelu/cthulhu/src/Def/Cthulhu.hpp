@@ -1,7 +1,7 @@
 #ifndef CTHULHU_MYTYPES_HPP
 #define CTHULHU_MYTYPES_HPP
 
-#define CTHULHU_ENABLED
+#include "Cthulhu_ConfigDefs.hpp"
 
 // The purpose of this file is to allow a user to write program without worrying about templates parameters.
 // For example, you can replace:
@@ -40,6 +40,10 @@
 
 #if defined (CTHULHU_USE_TPETRA) && !defined(CTHULHU_USE_EPETRA)
 
+#ifndef HAVE_CTHULHU_TPETRA
+#error You must enable Tpetra
+#endif
+
 #include <Cthulhu_TpetraMap.hpp>
 #include <Cthulhu_TpetraCrsMatrix.hpp>
 #include <Cthulhu_TpetraVector.hpp>
@@ -47,10 +51,14 @@
 
 typedef Cthulhu::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> MyMap;
 typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyCrsMatrix;
-typedef Cthulhu::TpetraVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyVector;
+//typedef Cthulhu::TpetraVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyVector; //TODO!
 typedef Cthulhu::TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyMultiVector;
 
 #elif defined(CTHULHU_USE_EPETRA) && !defined(CTHULHU_USE_TPETRA)
+
+#ifndef HAVE_CTHULHU_EPETRA
+#error You must enable Epetra
+#endif
 
 #include <Cthulhu_EpetraMap.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>

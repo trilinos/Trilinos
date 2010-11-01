@@ -1,6 +1,10 @@
 #ifndef CTHULHU_EPETRAMAP_HPP
 #define CTHULHU_EPETRAMAP_HPP
 
+#ifndef HAVE_CTHULHU_EPETRA
+#error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
+#endif
+
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_ArrayView.hpp>
@@ -11,6 +15,10 @@
 #include "Cthulhu_Comm.hpp"
 
 #include <Epetra_Map.h>
+
+namespace Tpetra { //TODO
+typedef size_t global_size_t;
+}
 
 /** \file Cthulhu_EpetraMap.hpp 
 
@@ -123,13 +131,13 @@ namespace Cthulhu {
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
-    Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
+    Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
                                             const Teuchos::ArrayView<      int> & nodeIDList, 
                                             const Teuchos::ArrayView<      int> & LIDList) const { CTHULHU_DEBUG_ME; 
 
       map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), LIDList.getRawPtr()); 
       
-      return Tpetra::AllIDsPresent; // JG TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
+      return Cthulhu::AllIDsPresent; // JG TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
     };
 
     //! Returns the node IDs for a given list of global indices.
@@ -137,7 +145,7 @@ namespace Cthulhu {
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
-    Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
+    Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
                                             const Teuchos::ArrayView<      int> & nodeIDList) const { CTHULHU_DEBUG_ME; 
 
       // JG Note: It's not on the documentation of Epetra_Map but it is in fact safe to call
@@ -146,7 +154,7 @@ namespace Cthulhu {
 
       map_->RemoteIDList(GIDList.size(), GIDList.getRawPtr(), nodeIDList.getRawPtr(), 0); 
 
-      return Tpetra::AllIDsPresent; // JG TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
+      return Cthulhu::AllIDsPresent; // JG TODO: manage error of EpetraMap RemoteIDList (return -1) + return the correct LookupStatus
     };
 
     //! Return a list of the global indices owned by this node.
@@ -361,7 +369,7 @@ namespace Cthulhu {
     Teuchos::RCP< const EpetraMap >
     createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
       Teuchos::RCP< EpetraMap > map;
-      map = Teuchos::rcp( new EpetraMap((Tpetra::global_size_t)numElements, // num elements, global and local
+      map = Teuchos::rcp( new EpetraMap((Cthulhu::global_size_t)numElements, // num elements, global and local
                                         0,                                  // index base is zero
                                         comm, LocallyReplicated, node));
       return map.getConst();

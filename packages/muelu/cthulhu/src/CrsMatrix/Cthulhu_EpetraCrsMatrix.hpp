@@ -1,6 +1,10 @@
 #ifndef CTHULHU_EPETRACRSMATRIX_DECL_HPP
 #define CTHULHU_EPETRACRSMATRIX_DECL_HPP
 
+#ifndef HAVE_CTHULHU_EPETRA
+#error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
+#endif
+
 #include <Teuchos_ArrayViewDecl.hpp>
 
 #include "Epetra_CrsMatrix.h"
@@ -45,7 +49,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Constructor specifying the number of non-zeros for all rows.
-    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
+    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile) 
     { CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, rowMap, eRowMap, "Cthulhu::EpetraCrsMatrix constructors only accept Cthulhu::EpetraMap as input arguments.");
       mtx_ = rcp(new Epetra_CrsMatrix(Copy, eRowMap->getEpetra_Map(), maxNumEntriesPerRow, false)); // TODO Copy or View by default ? // TODO: bool StaticProfile
@@ -53,7 +57,7 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Constructor specifying the number of non-zeros for each row.
-    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
     { CTHULHU_DEBUG_ME;
 
     }
@@ -61,7 +65,7 @@ namespace Cthulhu {
     //! Constructor specifying a column map and the number of non-zeros for all rows.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
     { CTHULHU_DEBUG_ME;
 
     }
@@ -69,7 +73,7 @@ namespace Cthulhu {
     //! Constructor specifying a column map and the number of non-zeros for each row.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
     { CTHULHU_DEBUG_ME;
 
     } 
@@ -229,8 +233,8 @@ namespace Cthulhu {
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
-    // TODO: Tpetra::OptimizeOption
-    inline void fillComplete(Tpetra::OptimizeOption os = Tpetra::DoOptimizeStorage) { CTHULHU_DEBUG_ME; if (os == Tpetra::DoOptimizeStorage) mtx_->FillComplete(true); else mtx_->FillComplete(false); }
+    // TODO: Cthulhu::OptimizeOption
+    inline void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) { CTHULHU_DEBUG_ME; if (os == Cthulhu::DoOptimizeStorage) mtx_->FillComplete(true); else mtx_->FillComplete(false); }
 
     //@}
 
@@ -391,7 +395,7 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns \c true if the matrix was allocated with static data structures.
-    inline Tpetra::ProfileType getProfileType() const { CTHULHU_DEBUG_ME; return mtx_->getProfileType(); } // TODO Tpetra::ProfileType
+    inline Cthulhu::ProfileType getProfileType() const { CTHULHU_DEBUG_ME; return mtx_->getProfileType(); } // TODO Cthulhu::ProfileType
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA

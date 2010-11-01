@@ -1,6 +1,10 @@
 #ifndef CTHULHU_TPETRAVBRMATRIX_DECL_HPP
 #define CTHULHU_TPETRAVBRMATRIX_DECL_HPP
 
+#ifndef HAVE_CTHULHU_TPETRA
+#error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
+#endif
+
 #include "Cthulhu_Debug.hpp"
 #include "Cthulhu_VbrMatrix.hpp"
 

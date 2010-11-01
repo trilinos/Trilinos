@@ -1,6 +1,10 @@
 #ifndef CTHULHU_EPETRATRANS_HPP
 #define CTHULHU_EPETRATRANS_HPP
 
+#include "Cthulhu_ConfigDefs.hpp"
+
+#ifdef HAVE_CTHULHU_EPETRA
+
 #include <Teuchos_BLAS_types.hpp>
 
 //   enum ETransp { 	
@@ -25,4 +29,5 @@ bool Teuchos2Epetra_Trans(Teuchos::ETransp trans) { CTHULHU_DEBUG_ME;
   return false; // to skip compilation warning msg.
 }
 
+#endif // HAVE_CTHULHU_EPETRA
 #endif // CTHULHU_EPETRATRANS_HPP

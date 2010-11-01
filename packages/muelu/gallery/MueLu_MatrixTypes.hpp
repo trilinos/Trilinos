@@ -11,6 +11,7 @@
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_RCP.hpp"
 
+//#define CTHULHU_ENABLED //TODO!
 #ifdef CTHULHU_ENABLED
 // needed for the specialized traits:
 #include "Cthulhu_Map.hpp"

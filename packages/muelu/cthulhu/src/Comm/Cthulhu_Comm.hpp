@@ -1,6 +1,8 @@
 #ifndef CTHULHU_EPETRACOMM_HPP
 #define CTHULHU_EPETRACOMM_HPP
 
+#ifdef HAVE_CTHULHU_EPETRA
+
 #ifdef HAVE_MPI
 #include <mpi.h>
 #include <Teuchos_OpaqueWrapper.hpp>
@@ -14,6 +16,7 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_SerialComm.h>
 
+#include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Exceptions.hpp"
 #include "Cthulhu_Debug.hpp"
 
@@ -47,6 +50,7 @@ const RCP<const Teuchos::Comm<int> > Epetra2Teuchos_Comm(RCP<const Epetra_Comm> 
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot convert an Epetra_Comm to a Teuchos::Comm: The exact type of the Epetra_Comm object is unknown");
 }
 
+#endif
 #endif // CTHULHU_EPETRACOMM_HPP
 
 // JG Note: At present, there is no support for Epetra_MpiSmpComm but if

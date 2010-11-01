@@ -5,6 +5,7 @@
 #include <Teuchos_Describable.hpp>
 #include <Kokkos_DefaultNode.hpp>
 
+#include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {

@@ -4,8 +4,6 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
-#include "Tpetra_ConfigDefs.hpp" // TMP: Tpetra::LookupStatus
-
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Debug.hpp"
 
@@ -72,7 +70,7 @@ namespace Cthulhu {
                Otherwise, returns AllIDsPresent.
      */
     //TODO: LookupStatus
-    virtual Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
+    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                                                     const Teuchos::ArrayView<                int> & nodeIDList, 
                                                     const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const = 0;
     
@@ -81,7 +79,7 @@ namespace Cthulhu {
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
-    virtual Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
+    virtual LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                                                     const Teuchos::ArrayView<                int> & nodeIDList) const = 0;
 
     //! Return a list of the global indices owned by this node.

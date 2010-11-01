@@ -1,0 +1,5 @@
+
+#cmakedefine HAVE_CTHULHU_EPETRA
+
+#cmakedefine HAVE_CTHULHU_TPETRA
+

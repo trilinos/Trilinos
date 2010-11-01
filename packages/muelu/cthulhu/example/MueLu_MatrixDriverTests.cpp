@@ -10,7 +10,7 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_FancyOStream.hpp>
 
-#define CTHULHU_ENABLED
+#define CTHULHU_ENABLED //TODO
 
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"
@@ -18,14 +18,17 @@
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
 
+#ifdef HAVE_CTHULHU_TPETRA
 #include "Cthulhu_TpetraMap.hpp"
 #include "Cthulhu_TpetraCrsMatrix.hpp"
-
-#include "Cthulhu_EpetraMap.hpp"
-#include "Cthulhu_EpetraCrsMatrix.hpp"
-
 #include "Tpetra_Map.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#endif
+
+#ifdef HAVE_CTHULHU_EPETRA
+#include "Cthulhu_EpetraMap.hpp"
+#include "Cthulhu_EpetraCrsMatrix.hpp"
+#endif
 
 // Define data types
 typedef double SC;
@@ -65,33 +68,41 @@ int main(int argc, char* argv[])
     A->describe(*out, Teuchos::VERB_EXTREME);
   }
 
+#ifdef HAVE_CTHULHU_TPETRA
   // Cthulhu::TpetraCrsMatrix
   {
     RCP<const Cthulhu::TpetraMap<LO,GO> > map = rcp( new Cthulhu::TpetraMap<LO,GO> (numGlobalElements, indexBase, comm) );
     RCP<Cthulhu::TpetraCrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::TpetraMap<LO,GO>, Cthulhu::TpetraCrsMatrix<SC,LO,GO> > (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   }
-  
+#endif
+
+#ifdef HAVE_CTHULHU_EPETRA
   // Cthulhu::EpetraCrsMatrix
   { 
     RCP<const Cthulhu::EpetraMap > map = rcp( new Cthulhu::EpetraMap (numGlobalElements, indexBase, comm) );
     RCP<Cthulhu::EpetraCrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::EpetraMap, Cthulhu::EpetraCrsMatrix> (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   } 
-  
+#endif
+
+#ifdef HAVE_CTHULHU_TPETRA
   // Cthulhu::CrsMatrix (Tpetra)
   {
     RCP<const Cthulhu::Map<LO,GO> > map = rcp( new Cthulhu::TpetraMap<LO,GO> (numGlobalElements, indexBase, comm) ); 
     RCP<Cthulhu::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::Map<LO,GO>, Cthulhu::CrsMatrix<SC,LO,GO> >  (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   } 
+#endif
 
+#ifdef HAVE_CTHULHU_EPETRA
   // Cthulhu::CrsMatrix (Epetra)
   {
     RCP<const Cthulhu::Map<LO,GO> > map = rcp( new Cthulhu::EpetraMap (numGlobalElements, indexBase, comm) );
     RCP<Cthulhu::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::Map<LO,GO>, Cthulhu::CrsMatrix<SC,LO,GO> >  (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   } 
+#endif
 
  return EXIT_SUCCESS;
 }

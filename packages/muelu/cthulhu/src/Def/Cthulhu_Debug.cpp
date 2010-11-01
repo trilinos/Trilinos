@@ -1,10 +1,10 @@
 #include <iostream>
 #include <Teuchos_Hashtable.hpp>
 #include <Teuchos_Array.hpp>
+
 #include "Cthulhu_Debug.hpp"
 
 // TODO Description of this file
-
 
 // h{string} = integer;
 typedef Teuchos::Hashtable<std::string, int> htable;

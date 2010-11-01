@@ -1,6 +1,10 @@
 #ifndef CTHULHU_TPETRAVECTOR_DECL_HPP
 #define CTHULHU_TPETRAVECTOR_DECL_HPP
 
+#ifndef HAVE_CTHULHU_TPETRA
+#error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
+#endif
+
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_MultiVector.hpp"
 #include "Cthulhu_Vector.hpp"

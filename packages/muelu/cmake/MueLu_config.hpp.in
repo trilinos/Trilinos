@@ -2,3 +2,7 @@
 #cmakedefine HAVE_MPI
 
 #cmakedefine MUELU_DEBUG
+
+#cmakedefine HAVE_MUELU_EPETRA
+
+#cmakedefine HAVE_MUELU_TPETRA

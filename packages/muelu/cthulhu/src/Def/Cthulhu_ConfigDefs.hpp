@@ -39,7 +39,7 @@
 
 // end of undoing autoconf's work section
 
-//#include <Cthulu_config.h>
+#include <Cthulhu_config.hpp>
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
 

@@ -8,6 +8,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayViewDecl.hpp>
 
+#include <Cthulhu_ConfigDefs.hpp>
 #include <Cthulhu_Classes.hpp>
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>

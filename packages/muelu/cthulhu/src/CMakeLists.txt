@@ -5,8 +5,24 @@ INCLUDE(PackageLibraryMacros)
 #
 # A) Package-specific configuration options
 #
+IF (${PACKAGE_NAME}_ENABLE_Tpetra)
+  GLOBAL_SET(HAVE_CTHULHU_TPETRA ON)
+  GLOBAL_SET(Cthulhu_ENABLE_Tpetra ON)
+ENDIF()
 
-# PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+IF (${PACKAGE_NAME}_ENABLE_Epetra)
+  GLOBAL_SET(HAVE_CTHULHU_EPETRA ON)
+  GLOBAL_SET(Cthulhu_ENABLE_Epetra ON)
+ENDIF()
+
+CONFIGURE_FILE(
+  ../cmake/Cthulhu_config.hpp.in 
+  ${CMAKE_CURRENT_BINARY_DIR}/Cthulhu_config.hpp
+  )
+
+# Note: cannot use the macro PACKAGE_CONFIGURE_FILE() because 
+# Cthulhu_config.h.in is not in ${PACKAGE_SOURCE_DIR}/cmake
+## PACKAGE_CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Cthulhu_config.h)
 
 #
 # B) Define the header and source files (and directories)

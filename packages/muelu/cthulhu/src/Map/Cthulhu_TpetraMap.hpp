@@ -1,6 +1,10 @@
 #ifndef CTHULHU_TPETRAMAP_HPP
 #define CTHULHU_TPETRAMAP_HPP
 
+#ifndef HAVE_CTHULHU_TPETRA
+#error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
+#endif
+
 #include <Kokkos_DefaultNode.hpp>
 #include <Teuchos_Describable.hpp>
 
@@ -127,17 +131,17 @@ namespace Cthulhu {
                Otherwise, returns AllIDsPresent.
      */
     //TODO: LookupStatus convert
-    Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                                    const Teuchos::ArrayView<                int> & nodeIDList, 
-                                    const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const { CTHULHU_DEBUG_ME; return map_->getRemoteIndexList(GIDList, nodeIDList, LIDList); };
+    Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
+                                             const Teuchos::ArrayView<                int> & nodeIDList, 
+                                             const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const { CTHULHU_DEBUG_ME; map_->getRemoteIndexList(GIDList, nodeIDList, LIDList); return AllIDsPresent; }; //TODO: convert Cthulhu::LookupStatus
 
     //! Returns the node IDs for a given list of global indices.
     /** 
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
-    Tpetra::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
-                                    const Teuchos::ArrayView<                int> & nodeIDList) const { CTHULHU_DEBUG_ME; return map_->getRemoteIndexList(GIDList, nodeIDList); };
+    Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
+                                             const Teuchos::ArrayView<                int> & nodeIDList) const { CTHULHU_DEBUG_ME; map_->getRemoteIndexList(GIDList, nodeIDList); return AllIDsPresent; }; //TODO: convert Cthulhu::LookupStatus
 
     //! Return a list of the global indices owned by this node.
     Teuchos::ArrayView<const GlobalOrdinal> getNodeElementList() const { CTHULHU_DEBUG_ME; return map_->getNodeElementList(); };

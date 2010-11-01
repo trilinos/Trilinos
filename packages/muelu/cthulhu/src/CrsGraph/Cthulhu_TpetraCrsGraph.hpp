@@ -1,6 +1,10 @@
 #ifndef CTHULHU_TPETRACRSGRAPH_DECL_HPP
 #define CTHULHU_TPETRACRSGRAPH_DECL_HPP
 
+#ifndef HAVE_CTHULHU_TPETRA
+#error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
+#endif
+
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>

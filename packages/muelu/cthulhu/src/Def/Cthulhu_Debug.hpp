@@ -25,6 +25,8 @@ void cthulhu_debug_me_print();
 // #endif
 
 //#define CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+// #define HAVE_CTHULHU_EPETRA
+// #define HAVE_CTHULHU_TPETRA
 
 //#define CTHULHU_NOT_IMPLEMENTED
 

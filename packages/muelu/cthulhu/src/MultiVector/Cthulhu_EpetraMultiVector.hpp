@@ -1,6 +1,10 @@
 #ifndef CTHULHU_EPETRAMULTIVECTOR_DECL_HPP
 #define CTHULHU_EPETRAMULTIVECTOR_DECL_HPP
 
+#ifndef HAVE_CTHULHU_EPETRA
+#error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
+#endif
+
 #include "Cthulhu_Classes.hpp" //TMP
 
 #include "Cthulhu_MultiVector.hpp"

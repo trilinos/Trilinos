@@ -16,7 +16,7 @@
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_MultiVector.hpp"
 
-#include "Tpetra_Map.hpp" //TODO TMP
+//#include "Tpetra_Map.hpp" //TODO TMP
 
 #include "Cthulhu_Debug.hpp"
 
@@ -202,7 +202,7 @@ namespace Cthulhu {
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
     //TODO : Get ride of "Tpetra"::OptimizeOption
-    virtual void fillComplete(Tpetra::OptimizeOption os = Tpetra::DoOptimizeStorage) =0;
+    virtual void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) =0;
 
     //@}
 

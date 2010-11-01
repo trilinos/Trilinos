@@ -17,6 +17,7 @@
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
 
+#define CTHULHU_ENABLED //TODO
 #include "MueLu_MatrixFactory.hpp"
 
 using Teuchos::RCP;

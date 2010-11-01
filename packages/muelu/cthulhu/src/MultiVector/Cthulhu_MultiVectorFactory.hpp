@@ -1,15 +1,21 @@
 #ifndef CTHULHU_MULTIVECTOR_FACTORY_DECL_HPP
 #define CTHULHU_MULTIVECTOR_FACTORY_DECL_HPP
 
+#include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Classes.hpp"
 
-#include "Cthulhu_MultiVector.hpp"
-#include "Cthulhu_TpetraMultiVector.hpp"
-#include "Cthulhu_EpetraMultiVector.hpp"
-
 #include "Cthulhu_Map.hpp"
+#include "Cthulhu_MultiVector.hpp"
+
+#ifdef HAVE_CTHULHU_TPETRA
 #include "Cthulhu_TpetraMap.hpp"
+#include "Cthulhu_TpetraMultiVector.hpp"
+#endif // HAVE_CTHULHU_TPETRA
+
+#ifdef HAVE_CTHULHU_EPETRA
+#include "Cthulhu_EpetraMultiVector.hpp"
 #include "Cthulhu_EpetraMap.hpp"
+#endif // HAVE_CTHULHU_EPETRA
 
 #include "Cthulhu_Debug.hpp"
 
@@ -27,9 +33,11 @@ namespace Cthulhu {
     
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef MultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+#ifdef HAVE_CTHULHU_TPETRA
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
     typedef TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
-    
+#endif
+
   private:
     //! Private constructor. This is a static class. 
     MultiVectorFactory() {}
@@ -38,16 +46,18 @@ namespace Cthulhu {
     
     //! Constructor specifying the number of non-zeros for all rows.
     static RCP<MultiVector> Build(const Teuchos::RCP<const Map> &map, size_t NumVectors, bool zeroOut=true) {
-
+#ifdef HAVE_CTHULHU_TPETRA
       const RCP<const TpetraMap> &tMap = Teuchos::rcp_dynamic_cast<const TpetraMap>(map);
       if (tMap != null)
         return rcp( new TpetraMultiVector(map, NumVectors, zeroOut) );
-
+#endif
+#ifdef HAVE_CTHULHU_EPETRA
       const RCP<const EpetraMap> &eMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(map);
       if (eMap != null)
         return rcp( new EpetraMultiVector(map, NumVectors, zeroOut) );
-      
-      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map to an EpetraMap or a TpetraMap. The exact type of the Map 'map' is unknown");
+#endif
+
+      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map. The exact type of the Map 'map' is unknown.");
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED

@@ -11,8 +11,8 @@ APPEND_SET(HEADERS
   MueLu_MatrixTypes.hpp
   )
 
-APPEND_SET(SOURCES
-  )
+#APPEND_SET(SOURCES
+#  )
 
 PACKAGE_ADD_LIBRARY(
   muelu-gallery

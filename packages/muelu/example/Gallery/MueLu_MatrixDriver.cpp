@@ -20,6 +20,8 @@ using Teuchos::RCP;
 /*
   This driver simply generates a Tpetra matrix, prints it to screen, and exits.
 
+  This example doesn't use Cthulhu.
+
   Use the "--help" option to get verbose help.
 */
 int main(int argc, char** argv) 

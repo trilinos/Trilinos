@@ -1,6 +1,10 @@
 #ifndef CTHULHU_TPETRACRSMATRIX_DECL_HPP
 #define CTHULHU_TPETRACRSMATRIX_DECL_HPP
 
+#ifndef HAVE_CTHULHU_TPETRA
+#error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
+#endif
+
 #include "Tpetra_CrsMatrix.hpp"
 
 #include "Cthulhu_CrsMatrix.hpp"
@@ -50,37 +54,37 @@ namespace Cthulhu {
     //@{ 
 
     //! Constructor specifying the number of non-zeros for all rows.
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile) 
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile) 
     { CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
-      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), maxNumEntriesPerRow, pftype));
+      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), maxNumEntriesPerRow)); //TODO: convert, pftype));
     }
 
     //! Constructor specifying the number of non-zeros for each row.
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
     { CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
-      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), NumEntriesPerRowToAlloc, pftype));
+      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), NumEntriesPerRowToAlloc)); // TODO convert, pftype));
     }
 
     //! Constructor specifying a column map and the number of non-zeros for all rows.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
     { CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, colMap, tColMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
-      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), maxNumEntriesPerRow, pftype));
+      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), maxNumEntriesPerRow));// TODO convert, pftype));
     }
     
     //! Constructor specifying a column map and the number of non-zeros for each row.
     /** The column map will be used to filter any matrix entries inserted using insertLocalValues() or insertGlobalValues().
      */
-    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Tpetra::ProfileType pftype = Tpetra::DynamicProfile)
+    TpetraCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile)
     { CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, colMap, tColMap, "Cthulhu::TpetraCrsMatrix constructors only accept Cthulhu::TpetraMap as input arguments.");
-      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), NumEntriesPerRowToAlloc, pftype));
+      mtx_ = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(tRowMap->getTpetra_Map(), tColMap->getTpetra_Map(), NumEntriesPerRowToAlloc));// TODO convert, pftype));
     } 
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
@@ -218,7 +222,14 @@ namespace Cthulhu {
      \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
      */
     // TODO: Tpetra::OptimizeOption
-    inline void fillComplete(Tpetra::OptimizeOption os = Tpetra::DoOptimizeStorage) { CTHULHU_DEBUG_ME; mtx_->fillComplete(os); }
+    inline void fillComplete(Cthulhu::OptimizeOption os = Cthulhu::DoOptimizeStorage) { 
+      CTHULHU_DEBUG_ME; 
+      if (os == Cthulhu::DoOptimizeStorage)
+        mtx_->fillComplete(Tpetra::DoOptimizeStorage); 
+      else if (os == Cthulhu::DoNotOptimizeStorage)
+        mtx_->fillComplete(Tpetra::DoNotOptimizeStorage); 
+      else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::BadCast, "Cannot convert 'Cthulhu::OptimizeOption' to a 'Tpetra::OptimizeOption'. Cthulhu::OptimizeOption 'os' have a bad value.");
+    }
 
      //@}
 
@@ -343,7 +354,7 @@ namespace Cthulhu {
      inline bool isStorageOptimized() const { CTHULHU_DEBUG_ME; return mtx_->isStorageOptimized(); }
 
      //! Returns \c true if the matrix was allocated with static data structures.
-    inline Tpetra::ProfileType getProfileType() const { CTHULHU_DEBUG_ME; return mtx_->getProfileType(); } // TODO Tpetra::ProfileType
+    inline Cthulhu::ProfileType getProfileType() const { CTHULHU_DEBUG_ME; return mtx_->getProfileType(); } // TODO Tpetra::ProfileType
 
      //! Indicates that the graph is static, so that new entries cannot be added to this matrix. */
      inline bool isStaticGraph() const { CTHULHU_DEBUG_ME; return mtx_->isStaticGraph(); }
