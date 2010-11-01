@@ -72,14 +72,14 @@ const SG_Solver sg_solver_values[] = { SG_KRYLOV, SG_GS, SG_JACOBI };
 const char *sg_solver_names[] = { "Krylov", "Gauss-Seidel", "Jacobi" };
 
 // Krylov methods
-// enum Krylov_Method { GMRES, CG, FGMRES, RGMRES };
-// const int num_krylov_method = 4;
-// const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES, RGMRES };
-// const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES", "RGMRES" };
-enum Krylov_Method { GMRES, CG, FGMRES };
-const int num_krylov_method = 3;
-const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES };
-const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES" };
+enum Krylov_Method { GMRES, CG, FGMRES, RGMRES };
+const int num_krylov_method = 4;
+const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES, RGMRES };
+const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES", "RGMRES" };
+// enum Krylov_Method { GMRES, CG, FGMRES };
+// const int num_krylov_method = 3;
+// const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES };
+// const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES" };
 
 // Krylov preconditioning approaches
 enum SG_Prec { MEAN, GS, AGS, AJ, KP };
@@ -386,7 +386,7 @@ int main(int argc, char *argv[]) {
 	belosParams.set("Solver Type","Block GMRES");
 	belosSolverParams = 
 	  &(belosParams.sublist("Solver Types").sublist("Block GMRES"));
-	if (outer_krylov_method == FGMRES)
+	if (inner_krylov_method == FGMRES)
 	  belosSolverParams->set("Flexible Gmres", true);
       }
       else if (inner_krylov_method == CG) {
@@ -394,11 +394,11 @@ int main(int argc, char *argv[]) {
 	belosSolverParams = 
 	  &(belosParams.sublist("Solver Types").sublist("Block CG"));
       }
-      // else if (inner_krylov_method == RGMRES) {
-      // 	belosParams.set("Solver Type","GCRODR");
-      // 	belosSolverParams = 
-      // 	  &(belosParams.sublist("Solver Types").sublist("GCRODR"));
-      // }
+      else if (inner_krylov_method == RGMRES) {
+      	belosParams.set("Solver Type","GCRODR");
+      	belosSolverParams = 
+      	  &(belosParams.sublist("Solver Types").sublist("GCRODR"));
+      }
       belosSolverParams->set("Convergence Tolerance", inner_tol);
       belosSolverParams->set("Maximum Iterations", inner_its);
       belosSolverParams->set("Output Frequency",0);
@@ -557,11 +557,11 @@ int main(int argc, char *argv[]) {
 	  belosSolverParams = 
 	    &(belosParams.sublist("Solver Types").sublist("Block CG"));
 	}
-	// else if (inner_krylov_method == RGMRES) {
-	//   belosParams.set("Solver Type","GCRODR");
-	//   belosSolverParams = 
-	//     &(belosParams.sublist("Solver Types").sublist("GCRODR"));
-	// }
+	else if (inner_krylov_method == RGMRES) {
+	  belosParams.set("Solver Type","GCRODR");
+	  belosSolverParams = 
+	    &(belosParams.sublist("Solver Types").sublist("GCRODR"));
+	}
 	belosSolverParams->set("Convergence Tolerance", outer_tol);
 	belosSolverParams->set("Maximum Iterations", outer_its);
 	belosSolverParams->set("Output Frequency",1);
