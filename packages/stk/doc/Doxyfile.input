@@ -1,8 +1,6 @@
+@INCLUDE = ../stk_io/doc/Doxyfile.input
 @INCLUDE = ../stk_linsys/doc/Doxyfile.input
 @INCLUDE = ../stk_mesh/doc/Doxyfile.input
-@INCLUDE = ../stk_search/doc/Doxyfile.input
-@INCLUDE = ../stk_util/doc/Doxyfile.input
-@INCLUDE = ../stk_linsys/doc/Doxyfile.input
-@INCLUDE = ../stk_mesh/doc/Doxyfile.input
+@INCLUDE = ../stk_rebalance/doc/Doxyfile.input
 @INCLUDE = ../stk_search/doc/Doxyfile.input
 @INCLUDE = ../stk_util/doc/Doxyfile.input

@@ -1,0 +1,7 @@
+#BANNER @copydoc stk_rebalance_banner
+#HOWTO @copydoc stk_rebalance_howto
+
+INPUT += ../../stk_rebalance/doc/index.dox \
+         ../../stk_rebalance/stk_rebalance \
+         ../stk_rebalance/doc/index.dox \
+         ../stk_rebalance/stk_rebalance

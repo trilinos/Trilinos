@@ -1,0 +1,12 @@
+#BANNER @copydoc stk_io_banner
+#HOWTO @copydoc stk_io_howto
+
+INPUT                  += ../../stk_io/doc/index.dox \
+                          ../../stk_io/stk_io \
+                          ../../stk_io/unit_tests \
+                          ../../stk_usecases/io \
+                          ../stk_io/doc/index.dox \
+                          ../stk_io/stk_io \
+                          ../stk_io/unit_tests \
+                          ../stk_usecases/io
+
