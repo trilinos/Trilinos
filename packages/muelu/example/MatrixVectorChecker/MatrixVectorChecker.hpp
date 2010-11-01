@@ -11,8 +11,8 @@
 #include <Cthulhu_Classes.hpp>
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
-#include <Cthulhu_MultiVector.hpp>        // TODO: Vector
-#include <Cthulhu_MultiVectorFactory.hpp> // TODO: Vector
+#include <Cthulhu_Vector.hpp>
+#include <Cthulhu_VectorFactory.hpp>
 
 using Teuchos::RCP;
 
@@ -43,20 +43,21 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
   const RCP<const Map> & rowMap = mat->getRowMap();
   const RCP<const Map> & domMap = mat->getDomainMap();
   const RCP<const Map> & ranMap = mat->getRangeMap();
-  const int MyPID  = rowMap->getComm()->getRank();
+  const int myPID = rowMap->getComm()->getRank();
 
-  // MyMultiVector vv(domMap,1), yy(ranMap,1), ww(rowMap,1,true), zz(rowMap,1,true); 
-  RCP<MultiVector> vv = MultiVectorFactory::Build(domMap,1); // TODO: replace MultiVector by Vector (,1) //TODO: RCP ?
-  RCP<MultiVector> yy = MultiVectorFactory::Build(ranMap,1);
-  RCP<MultiVector> ww = MultiVectorFactory::Build(rowMap,1,true);
-  RCP<MultiVector> zz = MultiVectorFactory::Build(rowMap,1,true);
+  // MyVector vv(domMap), yy(ranMap), ww(rowMap,true), zz(rowMap,true); 
+  RCP<Vector> vv = VectorFactory::Build(domMap); //TODO: RCP ?
+  RCP<Vector> yy = VectorFactory::Build(ranMap);
+  RCP<Vector> ww = VectorFactory::Build(rowMap,true);
+  RCP<Vector> zz = VectorFactory::Build(rowMap,true);
+
+  //TODO  
+  Teuchos::ArrayRCP<SC> v; // = vv->getDataNonConst();
+  Teuchos::ArrayRCP<SC> y; // = yy->getDataNonConst();
+  Teuchos::ArrayRCP<SC> w; // = ww->getDataNonConst();
+  Teuchos::ArrayRCP<SC> z; // = zz->getDataNonConst();
   
-  Teuchos::ArrayRCP<SC> v = vv->getDataNonConst(0);
-  Teuchos::ArrayRCP<SC> y = yy->getDataNonConst(0);
-  Teuchos::ArrayRCP<SC> w = ww->getDataNonConst(0);
-  Teuchos::ArrayRCP<SC> z = zz->getDataNonConst(0);
-  
-  vv->randomize();
+  //TODO  vv->randomize();
 
   for (unsigned int i = 0; i < domMap->getNodeNumElements(); i++) {
      if ((v[i] > -.5 ) && (v[i] < 0. )) v[i] -= .5;
@@ -64,11 +65,11 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
   }
 
   // y <-- mat*v via standard multiply
-  mat->multiply(*vv,*yy, Teuchos::NO_TRANS, 1, 0);
+  //TODO  mat->multiply(*vv,*yy, Teuchos::NO_TRANS, 1, 0);
 
   // TODO ??
   // Copy v and add ghost stuff imported from other processors
-  // MyMultiVector vhat(colMap,1);  //TODO: replace MultiVector by Vector
+  // MyVector vhat(colMap);  //TODO: replace Vector by Vector
   //   if (mat->RowMatrixImporter()) {
   //      vhat.Import(v, *(mat->RowMatrixImporter()), Insert);
   //      v = vhat.Values();
@@ -107,7 +108,7 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
   int Count = 0;
   for (size_t i = 0; i < rowMap->getNodeNumElements(); i++) {
     if (( fabs(y[i] - w[i])/z[i] > 1.e-8) && (Count++ < 20) ) {
-       std::cout << std::setw(5) << MyPID << ":matvec/getrow mismatch,row (GID=" << 
+       std::cout << std::setw(5) << myPID << ":matvec/getrow mismatch,row (GID=" << 
        std::setw(6) << rowMap->getGlobalElement(i) << ",LID=" << std::setw(6) << i << 
        "), y w & z =" << std::setw(9) << std::scientific << 
        std::setprecision(2) << y[i] << " " << std::setw(9) << w[i] 
@@ -121,7 +122,7 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
 
   // tCRS <-- mat*v via matrix-matrix multiply if mat is CRS
   if (matCRS) {
-     if (MyPID == 0) std::cout << "crs" << std::endl;
+     if (myPID == 0) std::cout << "crs" << std::endl;
      Epetra_CrsMatrix vCRS( Copy, domMap, 1);
      Epetra_CrsMatrix tCRS( Copy, ranMap, 1);
 
@@ -148,12 +149,12 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
            RowLength = 1; values[0] = 0.; indices[0] = 0;
          }
         if (RowLength != 1) {
-          std::cout << std::setw(5) << MyPID << ":matvec/matmult row (GID=" << 
+          std::cout << std::setw(5) << myPID << ":matvec/matmult row (GID=" << 
           std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i << 
           ") rowlength problem" << std::endl;
         }
         if (indices[0] != 0) {
-          std::cout << std::setw(5) << MyPID << ":matvec/matmult row (GID=" << 
+          std::cout << std::setw(5) << myPID << ":matvec/matmult row (GID=" << 
           std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i << 
           ") has Col Id = " << indices[0] << std::endl;
         }
@@ -166,7 +167,7 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
 
      for (int i = 0; i < rowMap.getNodeNumElements(); i++) {
         if (( fabs(y[i] - t[i])/z[i] > 1.e-8) && (Count++ < 20) ) {
-          std::cout << std::setw(5) << MyPID << ":matvec/matmult mismatch,row (GID=" << 
+          std::cout << std::setw(5) << myPID << ":matvec/matmult mismatch,row (GID=" << 
           std::setw(6) << rowMap.GID(i) << ",LID=" << std::setw(6) << i << 
           "), y t & z =" << std::setw(9) << std::scientific << 
           std::setprecision(2) << y[i] << " " << std::setw(9) << values[0] 
@@ -175,7 +176,7 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
      } // for (int i = 0; ...
   } // if (matCRS)
   else
-    if (MyPID == 0) std::cout << "not crs" << std::endl;
+    if (myPID == 0) std::cout << "not crs" << std::endl;
 
 #endif
 

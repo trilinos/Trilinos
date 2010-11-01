@@ -50,7 +50,7 @@ namespace Cthulhu {
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
-    EpetraMultiVector(const Teuchos::RCP<const Map<int,int,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const double> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME } 
+    EpetraMultiVector(const Teuchos::RCP<const Map<int,int,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const double> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME; } 
 #endif // CTHULHU_NOT_IMPLEMENTED
   
     EpetraMultiVector(const Teuchos::RCP<Epetra_MultiVector> &vec) : vec_(vec) { CTHULHU_DEBUG_ME; }

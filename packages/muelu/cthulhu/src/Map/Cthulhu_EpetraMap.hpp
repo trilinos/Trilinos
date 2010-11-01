@@ -222,10 +222,9 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Get the Node object for this Map
-    const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> getNode() const { CTHULHU_DEBUG_ME; 
-      TEST_FOR_EXCEPTIONS(1, Cthulhu::Exceptions::NotImplemented, 'Cthulhu::EpetraMap->getNode()');
-      const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> & r = Teuchos::null;
-      return r;
+    const Teuchos::RCP<Node> getNode() const { CTHULHU_DEBUG_ME;  //removed &
+      TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map to an EpetraMap or a TpetraMap. The exact type of the Map 'rowMap' is unknown");
+      return null;
     };
 #endif
     //@}

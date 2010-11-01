@@ -13,7 +13,7 @@ namespace Cthulhu {
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
   template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class Vector { //TODO : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
     // // need this so that MultiVector::operator() can call Vector's private constructor
     // friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -24,7 +24,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Destructor.  
-    virtual ~Vector() = 0;
+    virtual ~Vector() { CTHULHU_DEBUG_ME; }
 
     //@}
 

@@ -119,7 +119,7 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Get the Node object for this Map
-    virtual const Teuchos::RCP<Node> & getNode() const = 0;
+    virtual const Teuchos::RCP<Node> getNode() const = 0;
 #endif
 
     //@}

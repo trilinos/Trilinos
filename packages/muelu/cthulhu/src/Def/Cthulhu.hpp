@@ -42,18 +42,24 @@
 
 #include <Cthulhu_TpetraMap.hpp>
 #include <Cthulhu_TpetraCrsMatrix.hpp>
+#include <Cthulhu_TpetraVector.hpp>
+#include <Cthulhu_TpetraMultiVector.hpp>
 
 typedef Cthulhu::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> MyMap;
 typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyCrsMatrix;
+typedef Cthulhu::TpetraVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyVector;
 typedef Cthulhu::TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MyMultiVector;
 
 #elif defined(CTHULHU_USE_EPETRA) && !defined(CTHULHU_USE_TPETRA)
 
 #include <Cthulhu_EpetraMap.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>
+//#include <Cthulhu_EpetraVector.hpp>
+#include <Cthulhu_EpetraMultiVector.hpp>
 
 typedef Cthulhu::EpetraMap MyMap;
 typedef Cthulhu::EpetraCrsMatrix MyCrsMatrix;
+//typedef Cthulhu::EpetraVector MyVector;
 typedef Cthulhu::EpetraMultiVector MyMultiVector;
 
 #endif // CTHULHU_USE_E/TPETRA
