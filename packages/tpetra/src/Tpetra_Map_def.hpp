@@ -829,6 +829,21 @@ Tpetra::createContigMap(Tpetra::global_size_t numElements, size_t localNumElemen
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Tpetra::createNonContigMapWithNode(const Teuchos::ArrayView<const GlobalOrdinal> &elementList,
+                                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+                                   const Teuchos::RCP<Node> &node)
+{
+  Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
+  map = rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(
+                      Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(), 
+                      elementList,
+                      Teuchos::OrdinalTraits<Tpetra::global_size_t>::zero(), 
+                      comm, node ) );
+  return map;
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numElements, 
                                         const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
   Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
@@ -887,6 +902,10 @@ bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const
   createContigMapWithNode<LO,GO,NODE>(global_size_t numElements, size_t localNumElements, \
                                       const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
   \
+  template Teuchos::RCP< const Map<LO,GO,NODE> > \
+  createNonContigMapWithNode(const Teuchos::ArrayView<const GO> &elementList, \
+                             const RCP<const Teuchos::Comm<int> > &comm,      \
+                             const RCP<NODE> &node);                          \
   template Teuchos::RCP< const Map<LO,GO,NODE> > \
   createUniformContigMapWithNode<LO,GO,NODE>(global_size_t numElements, \
                                              const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
