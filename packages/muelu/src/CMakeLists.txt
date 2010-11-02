@@ -38,6 +38,7 @@ APPEND_SET(HEADERS
   )
 
 APPEND_SET(SOURCES
+  mac.cpp
   )
 
 #
