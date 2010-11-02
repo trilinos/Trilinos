@@ -9,11 +9,15 @@
 #endif
 
 #include <Teuchos_Comm.hpp>
+#ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
+#endif
 #include <Teuchos_DefaultSerialComm.hpp>
 
 #include <Epetra_Comm.h>
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#endif
 #include <Epetra_SerialComm.h>
 
 #include "Cthulhu_ConfigDefs.hpp"
