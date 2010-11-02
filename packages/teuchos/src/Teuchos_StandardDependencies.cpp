@@ -66,6 +66,14 @@ VisualDependency::VisualDependency(
   Dependency(dependees, dependents),
   showIf_(showIf){}
 
+bool VisualDependency::isDependentVisible() const{
+  return dependentVisible_;
+}
+
+bool VisualDependency::getShowIf() const{
+  return showIf_;
+}
+
 void VisualDependency::evaluate(){
   if((getDependeeState() && showIf_) || (!getDependeeState() && !showIf_)){
     dependentVisible_ = true;
@@ -129,6 +137,21 @@ StringVisualDependency::StringVisualDependency(
   validateDep();
 }
 
+const StringVisualDependency::ValueList& 
+  StringVisualDependency::getValues() const
+{
+  return values_;
+}
+
+bool StringVisualDependency::getDependeeState() const{
+  return find(values_.begin(), values_.end(), 
+    getFirstDependeeValue<std::string>()) != values_.end();
+}
+
+std::string StringVisualDependency::getTypeAttributeValue() const{
+  return "StringVisualDependency";
+}
+
 void StringVisualDependency::validateDep() const{
   TEST_FOR_EXCEPTION(!getFirstDependee()->isType<std::string>(),
     InvalidDependencyException,
@@ -169,6 +192,14 @@ BoolVisualDependency::BoolVisualDependency(
   VisualDependency(dependee, dependents, showIf)
 {
   validateDep();
+}
+
+bool BoolVisualDependency::getDependeeState() const{
+  return getFirstDependeeValue<bool>();
+}
+
+std::string BoolVisualDependency::getTypeAttributeValue() const{
+  return "BoolVisualDependency";
 }
 
 void BoolVisualDependency::validateDep() const{
@@ -213,6 +244,18 @@ ConditionVisualDependency::ConditionVisualDependency(
   validateDep();
 }
 
+RCP<const Condition> ConditionVisualDependency::getCondition() const{
+  return condition_;
+}
+
+bool ConditionVisualDependency::getDependeeState() const{
+  return condition_->isConditionTrue();
+}
+
+std::string ConditionVisualDependency::getTypeAttributeValue() const{
+  return "ConditionVisualDependency";
+}
+
 RCP<ConditionVisualDependency> 
   DummyObjectGetter<ConditionVisualDependency>::getDummyObject()
 {
@@ -249,6 +292,18 @@ StringValidatorDependency::StringValidatorDependency(
   validateDep();
 }
 
+const StringValidatorDependency::ValueToValidatorMap& 
+  StringValidatorDependency::getValuesAndValidators() const
+{
+  return valuesAndValidators_;
+}
+
+RCP<const ParameterEntryValidator> 
+  StringValidatorDependency::getDefaultValidator() const
+{
+  return defaultValidator_;
+}
+
 void StringValidatorDependency::evaluate(){
   std::string currentDependeeValue = getFirstDependeeValue<std::string>();
   for(
@@ -267,6 +322,10 @@ void StringValidatorDependency::evaluate(){
       (*it)->setValidator(valuesAndValidators_[currentDependeeValue]);
     }
   }
+}
+
+std::string StringValidatorDependency::getTypeAttributeValue() const{
+  return "StringValidatorDependency";
 }
 
 void StringValidatorDependency::validateDep() const{
@@ -349,6 +408,23 @@ void BoolValidatorDependency::evaluate(){
       (*it)->setValidator(falseValidator_);
   }
 }
+
+RCP<const ParameterEntryValidator> 
+  BoolValidatorDependency::getTrueValidator() const
+{
+  return trueValidator_;
+}
+
+RCP<const ParameterEntryValidator> 
+  BoolValidatorDependency::getFalseValidator() const
+{
+  return falseValidator_;
+}
+
+std::string BoolValidatorDependency::getTypeAttributeValue() const{
+  return "BoolValidatorDependency";
+}
+  
 
 void BoolValidatorDependency::validateDep() const{
 

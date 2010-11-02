@@ -47,7 +47,7 @@ namespace Teuchos{
  * \reference DependencySheet
  * \reference ParameterList
  */
-class Dependency{
+class Dependency : public Describable{
 
 public:
 
@@ -109,13 +109,6 @@ public:
     RCP<const ParameterEntry> dependee, 
     RCP<ParameterEntry> dependent);
 
-  /**
-   * \brief Desctructor
-   *
-   * Simply declaring the descrutor as virtual.
-   */
-  virtual ~Dependency(){}
-  
   //@}
 
   //! @name Attribute/Query Methods 

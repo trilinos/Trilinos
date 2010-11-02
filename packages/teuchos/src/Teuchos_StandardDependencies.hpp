@@ -67,7 +67,8 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependent The dependent parameter.
-   * @param showIf When true, the depndent will be be shown if the dependee is true.
+   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * true.
    */
   VisualDependency(
     RCP<const ParameterEntry> dependee, 
@@ -79,7 +80,8 @@ public:
    *
    * @param dependee The dependee parameter.
    * @param dependents The dependent parameters.
-   * @param showIf When true, the depndent will be be shown if the dependee is true.
+   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * true.
    */
   VisualDependency(
     RCP<const ParameterEntry> dependee,
@@ -91,7 +93,8 @@ public:
    *
    * @param dependees The dependees.
    * @param dependent The dependent parameter.
-   * @param showIf When true, the depndent will be be shown if the dependee is true.
+   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * true.
    */
   VisualDependency(
     ConstParameterEntryList dependees, 
@@ -103,20 +106,14 @@ public:
    *
    * @param dependees The dependees.
    * @param dependents The dependets.
-   * @param showIf When true, the depndent will be be shown if the dependee is true.
+   * @param showIf When true, the depndent will be be shown if the dependee is 
+   * true.
    */
   VisualDependency(
     ConstParameterEntryList dependees,
     ParameterEntryList dependents,
     bool showIf=true);
 
-  /**
-   * \brief Desctructor
-   *
-   * Simply declaring the descrutor as virtual.
-   */
-  virtual ~VisualDependency(){}
-  
   //@}
 
   //! @name Attribute/Query Methods 
@@ -133,13 +130,10 @@ public:
   /**
    * \brief Determines whether or not the dependent is currently visible.
    */
-  inline bool isDependentVisible() const{
-    return dependentVisible_;
-  }
+  bool isDependentVisible() const;
 
-  inline bool getShowIf() const{
-    return showIf_;
-  }
+  /** \brief Get's the value of the showIf variable. */
+  bool getShowIf() const;
 
   //@}
 
@@ -162,7 +156,8 @@ private:
   bool dependentVisible_;
 
   /**
-   * \brief Whether or not to show the dependent if the dependee is set to the value.
+   * \brief Whether or not to show the dependent if the dependee is set to the 
+   * value.
    */
   bool showIf_;
   
@@ -200,13 +195,6 @@ public:
     RCP<const ParameterEntry> dependee, 
     ParameterEntryList dependents);
 
-  /**
-   * \brief Desctructor
-   *
-   * Simply declaring the descrutor as virtual.
-   */
-  virtual ~ValidatorDependency(){}
-  
   //@}
 
   /** \name Overridden from Dependency */
@@ -328,19 +316,16 @@ public:
   /** \name Attribute/Query Functions */
   //@{
 
-  inline const ValueList& getValues() const{
-    return values_;
-  }
+  /** \brief get the List of values the dependee will be checked against. */
+  const ValueList& getValues() const;
 
   //@}
 
   /** \name Overridden from VisualDependency */
   //@{
 
-  inline bool getDependeeState() const{
-    return find(values_.begin(), values_.end(), 
-      getFirstDependeeValue<std::string>()) != values_.end();
-  }
+  /** \brief . */
+  bool getDependeeState() const;
   
   //@}
   
@@ -348,9 +333,7 @@ public:
   //@{
 
   /** \brief . */
-  inline std::string getTypeAttributeValue() const{
-    return "StringVisualDependency";
-  }
+  std::string getTypeAttributeValue() const;
   
   //@}
 
@@ -453,9 +436,7 @@ public:
   //@{
 
   /** \brief . */
-  inline bool getDependeeState() const{
-    return getFirstDependeeValue<bool>();
-  }
+  bool getDependeeState() const;
   
   //@}
 
@@ -463,9 +444,7 @@ public:
   //@{
 
   /** \brief . */
-  inline std::string getTypeAttributeValue() const{
-    return "BoolVisualDependency";
-  }
+  std::string getTypeAttributeValue() const;
   
   //@}
 
@@ -561,16 +540,13 @@ public:
   //@{
   
   /** \brief Gets the condition being used in this dependency */
-  inline RCP<const Condition> getCondition() const{
-    return condition_;
-  }
+  RCP<const Condition> getCondition() const;
 
   /** \name Overridden from VisualDependency */
   //@{
 
-  inline bool getDependeeState() const{
-    return condition_->isConditionTrue();
-  }
+  /** \brief . */
+  bool getDependeeState() const;
   
   //@}
 
@@ -578,9 +554,7 @@ public:
   //@{
 
   /** \brief . */
-  inline std::string getTypeAttributeValue() const{
-    return "ConditionVisualDependency";
-  }
+  std::string getTypeAttributeValue() const;
   
   //@}
 
@@ -647,7 +621,7 @@ class NumberVisualDependency : public VisualDependency{
 
 public:
 
-  /** \name Constructors/Destructor */
+  /** \name Constructors*/
   //@{
 
   /**
@@ -667,12 +641,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<SingleArguementFunctionObject<T,T> > func=null)
-    :VisualDependency(dependee, dependent),
-    func_(func)
-  {
-    validateDep();
-  }
+    RCP<SingleArguementFunctionObject<T,T> > func=null);
 
   /**
    * \brief Constructs a NumberVisualDependency.
@@ -691,12 +660,7 @@ public:
   NumberVisualDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependents,
-    RCP<SingleArguementFunctionObject<T,T> > func=null)
-    :VisualDependency(dependee, dependents),
-    func_(func)
-  {
-    validateDep();
-  }
+    RCP<SingleArguementFunctionObject<T,T> > func=null);
 
   //@}
 
@@ -711,9 +675,7 @@ public:
   //@{
 
   /** \brief . */
-  inline std::string getTypeAttributeValue() const{
-    return "NumberVisualDependency<" + TypeNameTraits<T>::name() + ">";
-  }
+  std::string getTypeAttributeValue() const;
   
   //@}
   
@@ -721,15 +683,10 @@ public:
   //@{
   
   /** \brief Gets the function associated with this dependency. */
-  inline RCP<SingleArguementFunctionObject<T,T> > getFunctionObject(){
-    return func_;
-  }
+  RCP<SingleArguementFunctionObject<T,T> > getFunctionObject();
 
   /** \brief Const version of function getter. */
-  RCP<const SingleArguementFunctionObject<T,T> > getFunctionObject() const{
-    return func_.getConst();
-  }
-
+  RCP<const SingleArguementFunctionObject<T,T> > getFunctionObject() const;
 
   //@}
 
@@ -759,12 +716,53 @@ private:
 };
 
 template<class T>
+NumberVisualDependency<T>::NumberVisualDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RCP<SingleArguementFunctionObject<T,T> > func)
+  :VisualDependency(dependee, dependent),
+  func_(func)
+{
+  validateDep();
+}
+
+template<class T>
+NumberVisualDependency<T>::NumberVisualDependency(
+  RCP<const ParameterEntry> dependee,
+  ParameterEntryList dependents,
+  RCP<SingleArguementFunctionObject<T,T> > func)
+  :VisualDependency(dependee, dependents),
+  func_(func)
+{
+  validateDep();
+}
+
+template<class T>
 bool NumberVisualDependency<T>::getDependeeState() const{
   if(!func_.is_null()){
     func_->setParameterValue(getFirstDependeeValue<T>());
     return func_->runFunction() > ScalarTraits<T>::zero() ? true : false;
   }
   return getFirstDependeeValue<T>();
+}
+
+template<class T>
+std::string NumberVisualDependency<T>::getTypeAttributeValue() const{
+  return "NumberVisualDependency<" + TypeNameTraits<T>::name() + ">";
+}
+
+template<class T>
+RCP<SingleArguementFunctionObject<T,T> > 
+  NumberVisualDependency<T>::getFunctionObject()
+{
+  return func_;
+}
+
+template<class T>
+RCP<const SingleArguementFunctionObject<T,T> > 
+  NumberVisualDependency<T>::getFunctionObject() const
+{
+  return func_.getConst();
 }
 
 template<class T>
@@ -798,21 +796,24 @@ public:
   /** \brief Retrieves a dummy object of type
   * NumberVisualDependency.
   */
-  static RCP<NumberVisualDependency<T> >
-    getDummyObject()
-  {
-    static RCP<NumberVisualDependency<T> > dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(new NumberVisualDependency<T>(
-      rcp(new ParameterEntry(ScalarTraits<T>::zero())),
-      DummyObjectGetter<ParameterEntry>::getDummyObject()));
-    }
-    return dummyObject;
-  }
+  static RCP<NumberVisualDependency<T> > getDummyObject();
   
   //@}
   
 };
+
+template<class T> 
+RCP<NumberVisualDependency<T> >
+  DummyObjectGetter<NumberVisualDependency<T> >::getDummyObject()
+{
+  static RCP<NumberVisualDependency<T> > dummyObject;
+  if(dummyObject.is_null()){
+    dummyObject = rcp(new NumberVisualDependency<T>(
+    rcp(new ParameterEntry(ScalarTraits<T>::zero())),
+    DummyObjectGetter<ParameterEntry>::getDummyObject()));
+  }
+  return dummyObject;
+}
 
 /**
  * \brief A NumberArrayLengthDependency says the following about the 
@@ -834,7 +835,7 @@ public:
  *
  */
 template<class DependeeType, class DependentType>
-class NumberArrayLengthDependency : public Dependency{
+  class NumberArrayLengthDependency : public Dependency{
 
 public:
 
@@ -852,8 +853,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func=null
-  );
+    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func=null);
 
 
   /**
@@ -867,8 +867,7 @@ public:
   NumberArrayLengthDependency(
     RCP<const ParameterEntry> dependee,
     ParameterEntryList dependent,
-    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func=null
-  );
+    RCP<SingleArguementFunctionObject<DependeeType, DependeeType> > func=null);
 
   //@}
 
@@ -879,11 +878,7 @@ public:
   void evaluate();
   
   /** \brief . */
-  inline std::string getTypeAttributeValue() const{
-    return "NumberArrayLengthDependency<" +
-      TypeNameTraits<DependeeType>::name() + ", " +
-      TypeNameTraits<DependentType>::name() +">";
-  }
+  std::string getTypeAttributeValue() const;
   
   //@}
 
@@ -891,18 +886,12 @@ public:
   //@{
 
   /** \brief Gets the function associated with this dependency. */
-  inline RCP<SingleArguementFunctionObject<DependeeType, DependeeType> >
-    getFunctionObject()
-  {
-    return func_;
-  }
+  RCP<SingleArguementFunctionObject<DependeeType, DependeeType> >
+    getFunctionObject();
 
   /** \brief Const version of function getter. */
-  inline RCP<const SingleArguementFunctionObject<DependeeType, DependeeType> > 
-    getFunctionObject() const
-  {
-    return func_.getConst();
-  }
+  RCP<const SingleArguementFunctionObject<DependeeType, DependeeType> > 
+    getFunctionObject() const;
 
   //@}
 
@@ -939,41 +928,6 @@ private:
   
 };
 
-
-/** \brief Speicialized class for retrieving a dummy object of type
- * NumberArrayLengthDependency.
- *
- * \relates NumberArrayLengthDependency
- */
-template<class DependeeType, class DependentType>
-class DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >{
-
-public:
-
-  /** \name GetterFunctions */
-  //@{
-
-  /** \brief Retrieves a dummy object of type
-  * NumberArrayLengthDependency.
-  */
-  static RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
-    getDummyObject()
-  {
-    static RCP<NumberArrayLengthDependency<DependeeType, DependentType> > 
-      dummyObject;
-    if(dummyObject.is_null()){
-      dummyObject = rcp(
-        new NumberArrayLengthDependency<DependeeType, DependentType>(
-        rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
-        rcp(new ParameterEntry(Array<DependentType>(1)))));
-    }
-    return dummyObject;
-  }
-  
-  //@}
-  
-};
-
 template<class DependeeType, class DependentType>
 NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDependency(
   RCP<const ParameterEntry> dependee,
@@ -994,6 +948,31 @@ NumberArrayLengthDependency<DependeeType, DependentType>::NumberArrayLengthDepen
   func_(func)
 {
   validateDep();
+}
+
+
+template<class DependeeType, class DependentType>
+std::string 
+NumberArrayLengthDependency<DependeeType, DependentType>::getTypeAttributeValue()
+const
+{
+  return "NumberArrayLengthDependency<" +
+    TypeNameTraits<DependeeType>::name() + ", " +
+    TypeNameTraits<DependentType>::name() +">";
+}
+
+template<class DependeeType, class DependentType>
+RCP<SingleArguementFunctionObject<DependeeType, DependeeType> >
+NumberArrayLengthDependency<DependeeType, DependentType>::getFunctionObject(){
+  return func_;
+}
+
+template<class DependeeType, class DependentType>
+RCP<const SingleArguementFunctionObject<DependeeType, DependeeType> >
+NumberArrayLengthDependency<DependeeType, DependentType>::getFunctionObject()
+const
+{
+  return func_.getConst();
 }
 
 template <class DependeeType, class DependentType>
@@ -1074,6 +1053,44 @@ NumberArrayLengthDependency<DependeeType, DependentType>::validateDep()
         "Dependent Parameter Type: " << 
         (*it)->getAny().typeName() << std::endl << std::endl);
   }
+}
+
+/** \brief Speicialized class for retrieving a dummy object of type
+ * NumberArrayLengthDependency.
+ *
+ * \relates NumberArrayLengthDependency
+ */
+template<class DependeeType, class DependentType>
+class DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >{
+
+public:
+
+  /** \name GetterFunctions */
+  //@{
+
+  /** \brief Retrieves a dummy object of type
+  * NumberArrayLengthDependency.
+  */
+  static RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
+    getDummyObject();
+  
+  //@}
+  
+};
+
+template<class DependeeType, class DependentType>
+RCP<NumberArrayLengthDependency<DependeeType, DependentType> >
+  DummyObjectGetter<NumberArrayLengthDependency<DependeeType, DependentType> >::getDummyObject()
+{
+  static RCP<NumberArrayLengthDependency<DependeeType, DependentType> > 
+    dummyObject;
+  if(dummyObject.is_null()){
+    dummyObject = rcp(
+      new NumberArrayLengthDependency<DependeeType, DependentType>(
+      rcp(new ParameterEntry(ScalarTraits<DependeeType>::zero())),
+      rcp(new ParameterEntry(Array<DependentType>(1)))));
+  }
+  return dummyObject;
 }
 
 /**
@@ -1163,13 +1180,10 @@ public:
 
   /** \brief retrieve a const reference to the ValueToValidator map being 
    * used by this StringValidatorDependency */
-  inline const ValueToValidatorMap& getValuesAndValidators() const{
-    return valuesAndValidators_;
-  }
+  const ValueToValidatorMap& getValuesAndValidators() const;
 
-  inline RCP<const ParameterEntryValidator> getDefaultValidator() const{
-    return defaultValidator_;
-  }
+  /** \brief . */
+  RCP<const ParameterEntryValidator> getDefaultValidator() const;
 
   //@}
   
@@ -1185,9 +1199,7 @@ public:
   //@{
 
   /** \brief . */
-  inline std::string getTypeAttributeValue() const{
-    return "StringValidatorDependency";
-  }
+  std::string getTypeAttributeValue() const;
   
   //@}
 
@@ -1309,14 +1321,10 @@ public:
   //@{
     
   /** \brief Gets the true validator */
-  inline RCP<const ParameterEntryValidator> getTrueValidator() const{
-    return trueValidator_;
-  }
+  RCP<const ParameterEntryValidator> getTrueValidator() const;
 
   /** \brief Gets the false validator */
-  inline RCP<const ParameterEntryValidator> getFalseValidator() const{
-    return falseValidator_;
-  }
+  RCP<const ParameterEntryValidator> getFalseValidator() const;
   
   //@}
 
@@ -1324,9 +1332,7 @@ public:
   //@{
 
   /** \brief . */
-  inline std::string getTypeAttributeValue() const{
-    return "BoolValidatorDependency";
-  }
+  std::string getTypeAttributeValue() const;
   
   //@}
 
@@ -1438,12 +1444,7 @@ public:
   RangeValidatorDependency(
     RCP<const ParameterEntry> dependee,
     RCP<ParameterEntry> dependent,
-    RangeToValidatorMap rangesAndValidators)
-    :ValidatorDependency(dependee, dependent),
-    rangesAndValidators_(rangesAndValidators)
-  {
-    validateDep();
-  }
+    RangeToValidatorMap rangesAndValidators);
 
   /**
    * \brief Constructs a RangeValidatorDependency.
@@ -1458,12 +1459,7 @@ public:
   RangeValidatorDependency(
     RCP<const ParameterEntry> dependee,
     Dependency::ParameterEntryList dependents,
-    RangeToValidatorMap rangesAndValidators)
-    :ValidatorDependency(dependee, dependents),
-    rangesAndValidators_(rangesAndValidators)
-  {
-    validateDep();
-  }
+    RangeToValidatorMap rangesAndValidators);
 
   //@}
 
@@ -1489,9 +1485,7 @@ public:
   //@{
 
   /** \brief . */
-  std::string getTypeAttributeValue() const{
-    return "RangeValidatorDependency<" + TypeNameTraits<T>::name() + ">";
-  }
+  std::string getTypeAttributeValue() const;
   
   //@}
 
@@ -1521,6 +1515,35 @@ private:
   //@}
 
 };
+
+template<class T>
+RangeValidatorDependency<T>::RangeValidatorDependency(
+  RCP<const ParameterEntry> dependee,
+  RCP<ParameterEntry> dependent,
+  RangeToValidatorMap rangesAndValidators)
+  :ValidatorDependency(dependee, dependent),
+  rangesAndValidators_(rangesAndValidators)
+{
+  validateDep();
+}
+
+template<class T>
+RangeValidatorDependency<T>::RangeValidatorDependency(
+  RCP<const ParameterEntry> dependee,
+  Dependency::ParameterEntryList dependents,
+  RangeToValidatorMap rangesAndValidators)
+  :ValidatorDependency(dependee, dependents),
+  rangesAndValidators_(rangesAndValidators)
+{
+  validateDep();
+}
+
+template<class T>
+std::string RangeValidatorDependency<T>::getTypeAttributeValue() const
+{
+  return "RangeValidatorDependency<" + TypeNameTraits<T>::name() + ">";
+}
+  
 
 template<class T>
 void RangeValidatorDependency<T>::evaluate(){
@@ -1582,6 +1605,7 @@ void RangeValidatorDependency<T>::setDependentsToValidator(
     (*it)->setValidator(toSet);
   }
 }
+
 /** \brief Speicialized class for retrieving a dummy object of type
  * RangeValidatorDependency.
  *
@@ -1598,28 +1622,32 @@ public:
   /** \brief Retrieves a dummy object of type
   * RangeValidatorDependency.
   */
-  static RCP<RangeValidatorDependency<T> > getDummyObject()
-  {
-    static RCP<RangeValidatorDependency<T> > dummyObject;
-    if(dummyObject.is_null()){
-      typename RangeValidatorDependency<T>::RangeToValidatorMap dummyMap;
-      typename RangeValidatorDependency<T>::Range dummyRange(
-        ScalarTraits<T>::zero(), ScalarTraits<T>::one());
-      RCP<FileNameValidator> dummyValidator = 
-        DummyObjectGetter<FileNameValidator>::getDummyObject();
-      dummyMap.insert(typename RangeValidatorDependency<T>::RangeValidatorPair(
-        dummyRange, dummyValidator));
-      dummyObject = rcp(new RangeValidatorDependency<T>(
-        rcp(new ParameterEntry(ScalarTraits<T>::zero())),
-        DummyObjectGetter<ParameterEntry>::getDummyObject(),
-        dummyMap));
-    }
-    return dummyObject;
-  }
+  static RCP<RangeValidatorDependency<T> > getDummyObject();
   
   //@}
   
 };
+
+template<class T>
+RCP<RangeValidatorDependency<T> > 
+  DummyObjectGetter<RangeValidatorDependency<T> >::getDummyObject()
+{
+  static RCP<RangeValidatorDependency<T> > dummyObject;
+  if(dummyObject.is_null()){
+    typename RangeValidatorDependency<T>::RangeToValidatorMap dummyMap;
+    typename RangeValidatorDependency<T>::Range dummyRange(
+      ScalarTraits<T>::zero(), ScalarTraits<T>::one());
+    RCP<FileNameValidator> dummyValidator = 
+      DummyObjectGetter<FileNameValidator>::getDummyObject();
+    dummyMap.insert(typename RangeValidatorDependency<T>::RangeValidatorPair(
+      dummyRange, dummyValidator));
+    dummyObject = rcp(new RangeValidatorDependency<T>(
+      rcp(new ParameterEntry(ScalarTraits<T>::zero())),
+      DummyObjectGetter<ParameterEntry>::getDummyObject(),
+      dummyMap));
+  }
+  return dummyObject;
+}
 
 
 } //namespace Teuchos
