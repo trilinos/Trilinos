@@ -105,12 +105,11 @@ int main(int argc, char* argv[]) {
   Teuchos::oblackholestream blackhole;
   Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-  //bool write_result_mtx = false;
   bool verbose = false;
   std::string matnamesFile;
-  bool write_result_mtx = false;
+  bool write_result_hb = false;
   clp.setOption("matnames-file", &matnamesFile, "A file containing a list of matricies we'll import", true);
-  clp.setOption("writeresults", "no-write-results", &write_result_mtx, "Whether or not to write the resutling matricies to mtx files");
+  clp.setOption("writeresults", "no-write-results", &write_result_hb, "Whether or not to write the resutling matricies to hb files");
   clp.setOption("v", "not-verbose", &verbose, "Whether or not to use verbose output");
   clp.parse(argc, argv);
   /*int write = 0;
@@ -190,7 +189,7 @@ int main(int argc, char* argv[]) {
     if( run_test<int>(
       comm, 
       matrixSystems->sublist(it->first), 
-      write_result_mtx, 
+      write_result_hb, 
       verbose) != 0)
     {
       err = -1;
@@ -198,22 +197,22 @@ int main(int argc, char* argv[]) {
 
   }
 
-/*
+
   Teuchos::ParameterList wrongList;
-  wrongList.set("A", "wrong_m.mtx");
-  wrongList.set("B", "wrong_tce.mtx");
-  wrongList.set("C", "wrong_d.mtx");
+  wrongList.set("A", "wrong_m.hb");
+  wrongList.set("B", "wrong_tce.hb");
+  wrongList.set("C", "wrong_d.hb");
   wrongList.set("TransA", false);
   wrongList.set("TransB", true);
   if(
     run_test<int>(
       comm, 
       wrongList, 
-      write_result_mtx, 
+      write_result_hb, 
       verbose) == 0 )
   {
     err = -1;
-  }*/
+  }
 
 /*
   for(int i=0; i<numfiles; ++i) {
