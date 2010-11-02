@@ -24,12 +24,6 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-void property_data_throw( const PropertyBase & , const Part & )
-{
-  std::ostringstream msg ;
-  msg << "stk::mesh::MetaData::property_data FAILED:" ;
-}
-
 Property<void>::~Property() {}
 
 PropertyBase *

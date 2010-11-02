@@ -1,5 +1,6 @@
 /** \mainpage
  *  - \ref stk_mesh_module  "Sierra Toolkit Mesh"
+ *  - \ref stk_mesh_documentation "Sierra Toolkit Documentation"
  *  - \ref util_page  "Sierra Toolkit Utilities"
  *  - \ref shards_package  "Shards Multi-dimensional array and cell topology"
  *
@@ -17,5 +18,129 @@
  *
  *    - \ref stk_mesh_example "Simple Mesh Example"<br>
  *
+ * \page stk_mesh_documentation STK Mesh Documentation...
+ *   
+ *    STK Mesh Documentation
+ *
+ *    Getting Started
+ *    - \ref stk_mesh_first_steps "First Steps"<br>
+ *    - \ref stk_mesh_tutorials_examples "Tutorials and Examples"<br>
+ *    - \ref stk_mesh_demonstrations "Demonstrations"<br>
+ *  
+ *    API Reference
+ *    - \ref stk_mesh_class_function_documentation "Class and Function Documentation"<br>
+ *    - \ref stk_mesh_tutorials_examples "Tutorials and Examples"<br>
+ *    - \ref stk_mesh_how_to_best_practices "How-To's and Best Practices"<br>
+ *
+ *    Working with STK
+ *    - \ref stk_mesh_testing_and_debugging "Unit Testing and Debugging"<br>
+ *    - \ref stk_mesh_deploying_STK_apps "Deploying STK Applications"<br>
+ *  
+ *    Community and Resources   
+ *    - \ref stk_mesh_online_resources "Online Resources"<br>
+ *    - \ref stk_mesh_developers "Developers"<br>
+ *    - \ref stk_mesh_support_training_services "Support, Training and Services"<br>
+ *
+ *    Contributing  
+ *    - \ref stk_mesh_report_bugs_make_suggestions "Report Bugs and Make Suggestions"<br>
+ *    - \ref stk_mesh_repository "Repository"<br>
+ *    - \ref stk_mesh_credits "Credits"<br>
+ *
+ *    Licenses
+ *    - \ref stk_mesh_license_for_STK "BSD"<br>
+ *    - \ref stk_mesh_licenses_in_STK "Licenses Used in STK"<br>
+ *
+ * \page stk_mesh_first_steps First Steps
+ *
+ * \page stk_mesh_tutorials_examples Tutorials and Examples
+ *
+ * \page stk_mesh_demonstrations Demonstrations
+ *    - Internal Force Calculation (Use Case 14)
+ *    - Gears Demonstration & video
+ *
+ * \page stk_mesh_class_function_documentation Class and Function Documentation
+ *
+ * \page stk_mesh_tutorials_examples Tutorials and Examples
+ *    - \ref stk_mesh_use_case_1 "Use Case 1"
+ *
+ * \page stk_mesh_how_to_best_practices How-To's and Best Practices
+ *    - How-To's
+ *      - How to create a fast-gather for nodal fields from an element?
+ *    - Design Decisions:
+ *      - Why are parts used to determine bucket decomposition?
+ *      - Why are attributes const?
+ *      - Why is modified status propagated upward through relations?
+ *      - Why can't we add parts after meta data is committed?
+ *      - Why are attributes settable on meta data for parts, but you can only get them off of the parts?
+ *      - etc.
+ *    - Free Function Philosophy:
+ *      - We endorse the use of free functions that provide the following benefits while outweighing the following disadvantages.  
+ *      - Benefits:
+ *        - Provide extension without modification to the API in cooperation with the Open Closed Principle
+ *        - Help encourage the Single Responsibility Principle and cohesion through a minimally defined API
+ *      - Disadvantages:
+ *        - Too many ways to do things
+ *        - Too hard to find where the free functions are defined
+ *        - Often belong in the user-space
+ *
+ * \page stk_mesh_testing_and_debugging Unit Testing and Debugging
+ *
+ * \page stk_mesh_deploying_STK_apps Deploying STK Applications
+ *
+ * \page stk_mesh_online_resources Online Resources
+ *
+ * \page stk_mesh_developers Developers
+ *    - Sierra Tool-Kit Developers (in alphabetical order)
+ *      - Dave Baur <dgbaur@sandia.gov>
+ *      - Todd Coffey <tscoffe@sandia.gov>
+ *      - Carter Edwards <hcedwar@sandia.gov>
+ *      - Jim Foucar <jgfouca@sandia.gov>
+ *      - Russell Hooper <rhoope@sandia.gov>
+ *      - James Overfelt <jroverf@sandia.gov>
+ *      - Greg Sjaardema <gdsjaar@sandia.gov>
+ *      - Dan Sunderland <dsunder@sandia.gov>
+ *      - Alan Williams <william@sandia.gov>
+ *    - Sierra Tool-Kit Product Owner:
+ *      - Mike Glass <mwglass@sandia.gov>
+ *
+ * \page stk_mesh_support_training_services Support, Training and Services
+ *    - For support, contact the Sierra Tool-Kit user email list:  <stk-users@software.sandia.gov>
+ *    - Our Tutorial and Training materials are currently under development
+ *    - For Services, please contact our product owner:  Mike Glass <mwglass@sandia.gov>
+ *
+ * \page stk_mesh_report_bugs_make_suggestions Report Bugs and Make Suggestions
+ *    - To report bugs or make suggestions, please send them to <stk-users@software.sandia.gov>
+ *
+ * \page stk_mesh_repository Repository
+ *    - The Sierra Tool-Kit repository is located at software.sandia.gov
+ *
+ * \page stk_mesh_credits Credits
+ *    - The following people have contributed to the Sierra Tool-Kit (in alphabetical order):
+ *      - Roscoe Bartlett <rabartl@sandia.gov>
+ *      - Dave Baur <dgbaur@sandia.gov>
+ *      - Noel Belcourt <kbelco@sandia.gov>
+ *      - Bill Cochran <cochranwk@ornl.gov>
+ *      - Todd Coffey <tscoffe@sandia.gov>
+ *      - Stefan Domino <spdomin@sandia.gov>
+ *      - Carter Edwards <hcedwar@sandia.gov>
+ *      - Jim Foucar <jgfouca@sandia.gov>
+ *      - Mike Glass <mwglass@sandia.gov>
+ *      - Russell Hooper <rhoope@sandia.gov>
+ *      - Elijah Newren <enewren@sandia.gov>
+ *      - James Overfelt <jroverf@sandia.gov>
+ *      - Kendall Pierson <khpiers@sandia.gov>
+ *      - Greg Sjaardema <gdsjaar@sandia.gov>
+ *      - Dan Sunderland <dsunder@sandia.gov>
+ *      - Alan Williams <william@sandia.gov>
+ *
+ * \page stk_mesh_license_for_STK BSD
+ *    - The Sierra Tool-Kit is currently distributed with Trilinos under the BSD license.
+ *
+ * \page stk_mesh_licenses_in_STK Licenses Used in STK
+ *
  */
+
+
+
+
 

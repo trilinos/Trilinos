@@ -491,7 +491,7 @@
   </Package>
   <Package name="STK" dir="stk">
     <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Trios,FEI,AztecOO,ThreadPool"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Trios,FEI,AztecOO,ThreadPool,Zoltan"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>

@@ -160,16 +160,4 @@ typedef std::vector<Relation> RelationVector;
 } // namespace mesh
 } // namespace stk
 
-//----------------------------------------------------------------------
-
-namespace stk {
-namespace mesh {
-
-class UnitTestMetaData ;
-class UnitTestBulkData ;
-
-} // namespace mesh
-} // namespace stk
-
 #endif
-

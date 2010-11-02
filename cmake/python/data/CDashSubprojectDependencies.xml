@@ -389,7 +389,7 @@
     <Dependency name="ThreadPool" type="LO"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
-    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Shards" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>

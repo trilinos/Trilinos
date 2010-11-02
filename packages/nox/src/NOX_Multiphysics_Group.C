@@ -28,12 +28,6 @@
 // Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
-//  CVS Information
-//  $Source$
-//  $Author$
-//  $Date$
-//  $Revision$
-// ************************************************************************
 //@HEADER
 
 #include "NOX_Multiphysics_Group.H"
@@ -154,19 +148,19 @@ NOX::Multiphysics::Group::getX() const
 const NOX::Abstract::Vector& 
 NOX::Multiphysics::Group::getF() const
 {
-  return (*solversVecPtr)[0]->getSolutionGroup().getX();
+  return (*solversVecPtr)[0]->getSolutionGroup().getF();
 }
 
 const NOX::Abstract::Vector& 
 NOX::Multiphysics::Group::getGradient() const
 {
-  return (*solversVecPtr)[0]->getSolutionGroup().getX();
+  return (*solversVecPtr)[0]->getSolutionGroup().getGradient();
 }
 
 const NOX::Abstract::Vector& 
 NOX::Multiphysics::Group::getNewton() const
 {
-  return (*solversVecPtr)[0]->getSolutionGroup().getX();
+  return (*solversVecPtr)[0]->getSolutionGroup().getNewton();
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
@@ -178,19 +172,19 @@ NOX::Multiphysics::Group::getXPtr() const
 Teuchos::RCP< const NOX::Abstract::Vector >
 NOX::Multiphysics::Group::getFPtr() const
 {
-  return (*solversVecPtr)[0]->getSolutionGroup().getXPtr();
+  return (*solversVecPtr)[0]->getSolutionGroup().getFPtr();
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
 NOX::Multiphysics::Group::getGradientPtr() const
 {
-  return (*solversVecPtr)[0]->getSolutionGroup().getXPtr();
+  return (*solversVecPtr)[0]->getSolutionGroup().getGradientPtr();
 }
 
 Teuchos::RCP< const NOX::Abstract::Vector >
 NOX::Multiphysics::Group::getNewtonPtr() const
 {
-  return (*solversVecPtr)[0]->getSolutionGroup().getXPtr();
+  return (*solversVecPtr)[0]->getSolutionGroup().getNewtonPtr();
 }
 
 double
