@@ -2,6 +2,12 @@
 Release Notes for Trilinos Package Tpetra
 -----------------------------------------
 
+Trilinos 10.7:
+--------------
+
+* Added (experimental) Reduction/Transformation Interface (RTI) interface to tpetra/rti, examples in tpetra/examples/RTInterface
+
+
 Trilinos 10.6.1:
 ----------------
 
