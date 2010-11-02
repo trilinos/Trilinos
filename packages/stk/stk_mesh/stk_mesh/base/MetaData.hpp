@@ -27,7 +27,6 @@
 namespace stk {
 namespace mesh {
 
-class UnitTestPart;
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -341,9 +340,6 @@ public:
                                   const unsigned * arg_stride );
   /** \} */
 private:
-
-  friend class ::stk::mesh::UnitTestMetaData ;
-  friend class ::stk::mesh::UnitTestPart ;
 
   MetaData();                                  ///< \brief  Not allowed
   MetaData( const MetaData & );                ///< \brief  Not allowed
@@ -828,4 +824,3 @@ void MetaData::put_property( PropertyBase & property , Part & part )
 //----------------------------------------------------------------------
 
 #endif /* stk_mesh_MetaData_hpp */
-

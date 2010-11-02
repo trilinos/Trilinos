@@ -128,7 +128,6 @@ private:
   friend class ::stk::mesh::impl::FieldBaseImpl ;
 
   /** \brief  Allow the unit test driver access */
-  friend class ::stk::mesh::UnitTestMetaData ;
   friend class ::stk::mesh::UnitTestFieldImpl ;
 
 

@@ -144,7 +144,6 @@ private:
   Property & operator = ( const Property & );
  
   friend class MetaData ;
-  friend class UnitTestMetaData ;
 
 #endif /* DOXYGEN_COMPILE */
 };
