@@ -632,6 +632,16 @@ namespace Tpetra {
 
   }; // class CrsMatrix
 
+  /** \brief Non-member function to create an empty CrsMatrix given a row map.
+
+      Returns a dynamical profile matrix with suggested allocation of zero entries per row.
+
+      \relates CrsMatrix
+   */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  createCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
+
 } // namespace Tpetra
 
 #endif
