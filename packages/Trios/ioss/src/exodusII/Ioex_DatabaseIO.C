@@ -1178,10 +1178,18 @@ namespace Ioex {
       // Maintain block order on output database...
       block->property_add(Ioss::Property("original_block_order", used_blocks++));
       
-      if (block->get_property("topology_type").get_string() != save_type
-	  && save_type != "null" && save_type != "") {
-	// Maintain original element type on output database if possible.
-	block->property_add(Ioss::Property("original_element_type", save_type));
+      if (save_type != "null" && save_type != "") {
+	if (block->property_exists("original_element_type")) {
+	  if (block->get_property("original_element_type").get_string() != save_type) {
+	    block->property_erase("original_element_type");
+	    block->property_add(Ioss::Property("original_element_type", save_type));
+	  }
+	} else {
+	  if (block->get_property("topology_type").get_string() != save_type) {
+	    // Maintain original element type on output database if possible.
+	    block->property_add(Ioss::Property("original_element_type", save_type));
+	  }
+	}
       }
       
       block->property_add(Ioss::Property("global_entity_count", global_element_count[iblk]));

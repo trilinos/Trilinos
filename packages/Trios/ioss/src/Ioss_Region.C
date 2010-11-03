@@ -1131,7 +1131,10 @@ namespace Ioss {
 	  if (ge->property_exists(orig_elem_str())) {
 	    std::string oes = ge->get_property(orig_elem_str()).get_string();
 
-	    // Set the new property
+	    // Set the new property (erase if already exists; original file trumps...)
+	    if (this_ge->property_exists(orig_elem_str())) {
+	      this_ge->property_erase(orig_elem_str());
+	    }
 	    this_ge->property_add(Property(orig_elem_str(), oes));
 	  }
 
