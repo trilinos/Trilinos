@@ -203,7 +203,8 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
         else {
           std::ostringstream msg ;
           msg << method ;
-          msg << " FAILED WITH INCOMPATIBLE FIELD SIZES" ;
+          msg << " FAILED WITH INCOMPATIBLE FIELD SIZES\n" ;
+          msg << "   " << i->m_size << " != " << j->m_size << "\n";
           throw std::runtime_error( msg.str() );
         }
       }

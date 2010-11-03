@@ -9,62 +9,31 @@
 
 #include <stddef.h>
 #include <stdexcept>
+#include <sstream>
+
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/DataTraits.hpp>
 #include <stk_mesh/base/DataTraitsEnum.hpp>
 #include <stk_mesh/base/DataTraitsClass.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-namespace stk {
-namespace mesh {
+using stk::mesh::DataTraits;
+using stk::mesh::data_traits;
+using stk::CommAll;
 
-class UnitTestDataTraits {
-public:
-  UnitTestDataTraits() {}
-
-  void testVoid( bool );
-  void testFundemental( bool );
-  void testEnum( bool );
-  void testClass( bool );
-  void testPointer( bool );
-};
-
-}//namespace mesh
-}//namespace stk
-
-namespace {
-STKUNIT_UNIT_TEST(TestDataTraits, testUnit)
-{
-  int mpi_rank = 0;
-  int mpi_size = 1;
-  
-#ifdef STK_HAS_MPI
-  STKUNIT_ASSERT_EQUAL(MPI_SUCCESS, MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank) );
-  STKUNIT_ASSERT_EQUAL(MPI_SUCCESS, MPI_Comm_size(MPI_COMM_WORLD, &mpi_size) );
-#endif
-  STKUNIT_ASSERT(mpi_rank < mpi_size);
-
-  bool testComm = mpi_size <= 1 ;
-
-  stk::mesh::UnitTestDataTraits udt;
-  if ( 0 == mpi_rank ) {
-    udt.testVoid( testComm );
-    udt.testFundemental( testComm );
-    udt.testEnum( testComm );
-    udt.testClass( testComm );
-    udt.testPointer( testComm );
-  }
-}
-
-}//namespace <anonymous>
-
-namespace stk {
-namespace mesh {
 //----------------------------------------------------------------------
 
-void UnitTestDataTraits::testVoid( bool testComm )
+namespace {
+
+STKUNIT_UNIT_TEST(TestDataTraits, testVoid)
 {
+  // Test the DataTrait for void
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
   const DataTraits & traits = data_traits<void>();
 
   STKUNIT_ASSERT(       traits.type_info        == typeid(void) );
@@ -95,24 +64,28 @@ void UnitTestDataTraits::testVoid( bool testComm )
   STKUNIT_ASSERT_THROW( traits.bit_and( NULL, NULL, 0 ), std::runtime_error );
   STKUNIT_ASSERT_THROW( traits.bit_or( NULL , NULL, 0 ), std::runtime_error );
   STKUNIT_ASSERT_THROW( traits.bit_xor( NULL, NULL, 0 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.print( std::cout, NULL, 0 ), std::runtime_error );
+  STKUNIT_ASSERT_THROW( traits.print( std::cout, NULL, 0), std::runtime_error);
 
-  if ( testComm ) {
-    CommAll all( MPI_COMM_WORLD );
-    STKUNIT_ASSERT_THROW( traits.pack( all.send_buffer(0) , NULL , 0 ), std::runtime_error );
-    all.allocate_buffers( 0 );
-    all.communicate();
-    STKUNIT_ASSERT_THROW( traits.unpack( all.recv_buffer(0) , NULL , 0 ), std::runtime_error );
-  }
+  CommAll comm( pm );
+  STKUNIT_ASSERT_THROW( traits.pack( comm.send_buffer(0) , NULL , 0 ), std::runtime_error );
+  comm.allocate_buffers( 0 );
+  comm.communicate();
+  STKUNIT_ASSERT_THROW( traits.unpack( comm.recv_buffer(0) , NULL , 0 ), std::runtime_error );
 }
-
-
 
 //----------------------------------------------------------------------
 
 template< typename T , bool is_integral , bool is_signed >
-void test_fundemental_type( bool testComm )
+void test_fundamental_type()
 {
+  // Test DataTrait for fundamental type T
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  int p_rank = stk::parallel_machine_rank( pm );
+  int p_size = stk::parallel_machine_size( pm );
+  MPI_Barrier( pm );
+
+  // Test data trait properties of type T
   const DataTraits & traits = data_traits<T>();
   STKUNIT_ASSERT(       traits.type_info        == typeid(T) );
   STKUNIT_ASSERT_EQUAL( traits.size_of           , sizeof(T) );
@@ -127,106 +100,154 @@ void test_fundemental_type( bool testComm )
   STKUNIT_ASSERT_EQUAL( traits.is_class          , false );
   STKUNIT_ASSERT_EQUAL( traits.is_pod            , true );
   STKUNIT_ASSERT_EQUAL( traits.is_signed         , is_signed );
-  STKUNIT_ASSERT_EQUAL( traits.is_unsigned       , is_integral && ! is_signed );
+  STKUNIT_ASSERT_EQUAL( traits.is_unsigned       , is_integral && ! is_signed);
 
   STKUNIT_ASSERT( ! traits.remove_pointer   );
   STKUNIT_ASSERT( traits.enum_info.empty()  );
   STKUNIT_ASSERT( traits.class_info.empty() );
 
+  const unsigned array_size = 3;
+  const T a[array_size] = { T(1) , T(2) , T(4) };
+  T b[array_size] ;
 
-  const T a[3] = { T(1) , T(2) , T(4) };
-  T b[3] ;
-
-  traits.construct( b , 3 );
+  // Test data trait basic operations on type T
+  traits.construct( b , array_size );
   STKUNIT_ASSERT_EQUAL( T(0) , b[0] );
   STKUNIT_ASSERT_EQUAL( T(0) , b[1] );
   STKUNIT_ASSERT_EQUAL( T(0) , b[2] );
 
-  traits.copy( b , a , 3 );
+  traits.copy( b , a , array_size );
   STKUNIT_ASSERT_EQUAL( T(1) , b[0] );
   STKUNIT_ASSERT_EQUAL( T(2) , b[1] );
   STKUNIT_ASSERT_EQUAL( T(4) , b[2] );
 
-  traits.sum( b , a , 3 );
+  traits.sum( b , a , array_size );
   STKUNIT_ASSERT_EQUAL( T(2) , b[0] );
   STKUNIT_ASSERT_EQUAL( T(4) , b[1] );
   STKUNIT_ASSERT_EQUAL( T(8) , b[2] );
 
-  traits.min( b , a , 3 );
+  traits.min( b , a , array_size );
   STKUNIT_ASSERT_EQUAL( T(1) , b[0] );
   STKUNIT_ASSERT_EQUAL( T(2) , b[1] );
   STKUNIT_ASSERT_EQUAL( T(4) , b[2] );
 
-  traits.sum( b , a , 3 );
-  traits.max( b , a , 3 );
+  traits.sum( b , a , array_size );
+  traits.max( b , a , array_size );
   STKUNIT_ASSERT_EQUAL( T(2) , b[0] );
   STKUNIT_ASSERT_EQUAL( T(4) , b[1] );
   STKUNIT_ASSERT_EQUAL( T(8) , b[2] );
 
   if ( is_integral ) {
-    traits.bit_or( b , a , 3 );
+    // Test integral-specific operations
+    traits.bit_or( b , a , array_size );
     STKUNIT_ASSERT_EQUAL( T(3) , b[0] );
     STKUNIT_ASSERT_EQUAL( T(6) , b[1] );
     STKUNIT_ASSERT_EQUAL( T(12) , b[2] );
 
-    traits.bit_and( b , a , 3 );
+    traits.bit_and( b , a , array_size );
     STKUNIT_ASSERT_EQUAL( T(1) , b[0] );
     STKUNIT_ASSERT_EQUAL( T(2) , b[1] );
     STKUNIT_ASSERT_EQUAL( T(4) , b[2] );
 
-    traits.bit_xor( b , a , 3 );
+    traits.bit_xor( b , a , array_size );
     STKUNIT_ASSERT_EQUAL( T(0) , b[0] );
     STKUNIT_ASSERT_EQUAL( T(0) , b[1] );
     STKUNIT_ASSERT_EQUAL( T(0) , b[2] );
   }
   else {
-    STKUNIT_ASSERT_THROW( traits.bit_or(  b , a , 3 ), std::runtime_error );
-    STKUNIT_ASSERT_THROW( traits.bit_and( b , a , 3 ), std::runtime_error );
-    STKUNIT_ASSERT_THROW( traits.bit_xor( b , a , 3 ), std::runtime_error );
+    // Test unsupported operations
+    STKUNIT_ASSERT_THROW(traits.bit_or (b, a, array_size), std::runtime_error);
+    STKUNIT_ASSERT_THROW(traits.bit_and(b, a, array_size), std::runtime_error);
+    STKUNIT_ASSERT_THROW(traits.bit_xor(b, a, array_size), std::runtime_error);
   }
 
-  if ( testComm ) {
-    traits.construct( b , 3 );
-    CommAll all( MPI_COMM_WORLD );
-    traits.pack( all.send_buffer(0) , a , 3 );
-    all.allocate_buffers( 0 );
-    traits.pack( all.send_buffer(0) , a , 3 );
-    all.communicate();
-    traits.unpack( all.recv_buffer(0) , b , 3 );
-    STKUNIT_ASSERT_EQUAL( T(1) , b[0] );
-    STKUNIT_ASSERT_EQUAL( T(2) , b[1] );
-    STKUNIT_ASSERT_EQUAL( T(4) , b[2] );
+  // Test data trait pack/unpack (communication) of type T
+  traits.construct( b , array_size );
+  CommAll comm( pm );
+  traits.pack( comm.send_buffer(0) , a , array_size );
+  comm.allocate_buffers( 0 );
+  traits.pack( comm.send_buffer(0) , a , array_size );
+  comm.communicate();
+  if (p_rank == 0) {
+    for (int proc_id = 0; proc_id < p_size; ++proc_id) {
+      traits.unpack( comm.recv_buffer(proc_id) , b , array_size );
+      STKUNIT_ASSERT_EQUAL( T(1) , b[0] );
+      STKUNIT_ASSERT_EQUAL( T(2) , b[1] );
+      STKUNIT_ASSERT_EQUAL( T(4) , b[2] );
+    }
   }
 
-  std::cout << traits.name << " " ;
-  traits.print( std::cout , a , 3 );
-  std::cout << std::endl ;
+  // Test data trait print of type T
+  std::ostringstream oss;
+  oss << traits.name << " " ;
+  traits.print( oss , a , array_size );
+  oss << std::endl ;
 
-  traits.destroy( b , 3 );
+  // Test data trait destruction (no-op in this case)
+  traits.destroy( b , array_size );
 }
 
-
-void UnitTestDataTraits::testFundemental( bool testComm )
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_bool)
 {
-  test_fundemental_type<char,           true, true >( testComm );
-  test_fundemental_type<unsigned char,  true, false>( testComm );
-  test_fundemental_type<short,          true, true >( testComm );
-  test_fundemental_type<unsigned short, true, false>( testComm );
-  test_fundemental_type<int,            true, true >( testComm );
-  test_fundemental_type<unsigned int,   true, false>( testComm );
-  test_fundemental_type<long,           true, true >( testComm );
-  test_fundemental_type<unsigned long,  true, false>( testComm );
-  test_fundemental_type<float,          false,false>( testComm );
-  test_fundemental_type<double,         false,false>( testComm );
+  test_fundamental_type<char, true, true>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_unsignedchar)
+{
+  test_fundamental_type<unsigned char, true, false>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_short)
+{
+  test_fundamental_type<short, true, true>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_unsignedshort)
+{
+  test_fundamental_type<unsigned short, true, false>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_int)
+{
+  test_fundamental_type<int, true, true>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_unsignedint)
+{
+  test_fundamental_type<unsigned int, true, false>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_long)
+{
+  test_fundamental_type<long, true, true>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_unsignedlong)
+{
+  test_fundamental_type<unsigned long, true, false>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_float)
+{
+  test_fundamental_type<float, false, false>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_double)
+{
+  test_fundamental_type<double, false, false>();
 }
 
 //----------------------------------------------------------------------
 
-namespace {
-
 template< typename T >
-void test_fundemental_pointer( bool testComm )
+void test_fundamental_pointer()
 {
+  // Test DataTrait for fundamenter pointer type T*
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  MPI_Barrier( pm );
+
+  // Test data trait properties of type T*
   const DataTraits & traits = data_traits<T*>();
   STKUNIT_ASSERT(       traits.type_info        == typeid(T*) );
   STKUNIT_ASSERT_EQUAL( traits.size_of           , sizeof(T*) );
@@ -247,71 +268,122 @@ void test_fundemental_pointer( bool testComm )
   STKUNIT_ASSERT( traits.enum_info.empty()  );
   STKUNIT_ASSERT( traits.class_info.empty() );
 
+  const unsigned array_size = 3;
+  T val[array_size] = { T(1) , T(2) , T(4) };
+  T * const a[array_size] = { val , val + 1 , val + 2 };
+  T * b[array_size] ;
 
-  T val[3] = { T(1) , T(2) , T(4) };
-  T * const a[3] = { val , val + 1 , val + 2 };
-  T * b[3] ;
-
-  traits.construct( b , 3 );
+  // Test data trait basic operations on type T*
+  traits.construct( b , array_size );
   STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[0] );
   STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[1] );
   STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[2] );
 
-  traits.copy( b , a , 3 );
+  traits.copy( b , a , array_size );
   STKUNIT_ASSERT_EQUAL( val + 0 , b[0] );
   STKUNIT_ASSERT_EQUAL( val + 1 , b[1] );
   STKUNIT_ASSERT_EQUAL( val + 2 , b[2] );
 
-  traits.destroy( b , 3 );
+  traits.destroy( b , array_size );
   STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[0] );
   STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[1] );
   STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[2] );
 
-  STKUNIT_ASSERT_THROW( traits.sum( b , a , 3 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.max( b , a , 3 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.min( b , a , 3 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_and( b, a, 3 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_or(  b, a, 3 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_xor( b, a, 3 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.print( std::cout, NULL, 0 ), std::runtime_error );
+  // Test unsupported operations
+  STKUNIT_ASSERT_THROW(traits.sum    (b, a, array_size),   std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.max    (b, a, array_size),   std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.min    (b, a, array_size),   std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_and(b, a, array_size),   std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_or( b, a, array_size),   std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_xor(b, a, array_size),   std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.print  (std::cout, NULL, 0), std::runtime_error);
 
-  if ( testComm ) {
-    CommAll all( MPI_COMM_WORLD );
-    STKUNIT_ASSERT_THROW( traits.pack( all.send_buffer(0) , a , 3 ), std::runtime_error );
-    all.allocate_buffers( 0 );
-    all.communicate();
-    STKUNIT_ASSERT_THROW( traits.unpack( all.recv_buffer(0) , b , 3 ), std::runtime_error );
-  }
+  CommAll comm( pm );
+  STKUNIT_ASSERT_THROW( traits.pack( comm.send_buffer(0) , a , array_size ), std::runtime_error );
+  comm.allocate_buffers( 0 );
+  comm.communicate();
+  STKUNIT_ASSERT_THROW( traits.unpack( comm.recv_buffer(0) , b , array_size ), std::runtime_error );
 }
 
-}
-
-
-void UnitTestDataTraits::testPointer( bool testComm )
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_char_ptr)
 {
-  test_fundemental_pointer<char          >( testComm );
-  test_fundemental_pointer<unsigned char >( testComm );
-  test_fundemental_pointer<short         >( testComm );
-  test_fundemental_pointer<unsigned short>( testComm );
-  test_fundemental_pointer<int           >( testComm );
-  test_fundemental_pointer<unsigned int  >( testComm );
-  test_fundemental_pointer<long          >( testComm );
-  test_fundemental_pointer<unsigned long >( testComm );
-  test_fundemental_pointer<float         >( testComm );
-  test_fundemental_pointer<double        >( testComm );
+  test_fundamental_pointer<char>();
 }
 
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_unsignedchar_ptr)
+{
+  test_fundamental_pointer<unsigned char>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_short_ptr)
+{
+  test_fundamental_pointer<short>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_unsignedshort_ptr)
+{
+  test_fundamental_pointer<unsigned short>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_int_ptr)
+{
+  test_fundamental_pointer<int>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_unsignedint_ptr)
+{
+  test_fundamental_pointer<unsigned int>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_long_ptr)
+{
+  test_fundamental_pointer<long>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_unsignedlong_ptr)
+{
+  test_fundamental_pointer<unsigned long>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_float_ptr)
+{
+  test_fundamental_pointer<float>();
+}
+
+STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_double_ptr)
+{
+  test_fundamental_pointer<double>();
+}
+
+}
 //----------------------------------------------------------------------
 
 enum EType { val_a = 'a' , val_b = 'b' , val_c = 'c' };
 
+namespace stk {
+namespace mesh {
+
+// This enum will only work within the stk::mesh namespace
 DATA_TRAITS_ENUM_3( EType , val_a , val_b , val_c )
 
-void UnitTestDataTraits::testEnum( bool testComm )
+}
+}
+
+namespace {
+
+STKUNIT_UNIT_TEST(TestDataTraits, testEnum)
 {
+  // Test interaction of DataTraits with enums
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  int p_rank = stk::parallel_machine_rank( pm );
+  int p_size = stk::parallel_machine_size( pm );
+  MPI_Barrier( pm );
+
   typedef EType T ;
   const DataTraits & traits = data_traits<T>();
 
+  // Test data trait properties of enum type
   STKUNIT_ASSERT(       traits.type_info        == typeid(T) );
   STKUNIT_ASSERT_EQUAL( traits.size_of           , sizeof(T) );
   STKUNIT_ASSERT_EQUAL( traits.alignment_of      , sizeof(T) );
@@ -337,70 +409,97 @@ void UnitTestDataTraits::testEnum( bool testComm )
   STKUNIT_ASSERT_EQUAL( traits.enum_info[1].value , long(val_b) );
   STKUNIT_ASSERT_EQUAL( traits.enum_info[2].value , long(val_c) );
 
-  EType a[3] = { val_a , val_b , val_c };
-  EType b[3] ;
+  const unsigned array_size = 3;
+  EType a[array_size] = { val_a , val_b , val_c };
+  EType b[array_size] ;
 
-  traits.construct( b , 3 );
+  // Test data trait basic operations on enum type
+  traits.construct( b , array_size );
   STKUNIT_ASSERT_EQUAL( val_a , b[0] );
   STKUNIT_ASSERT_EQUAL( val_a , b[1] );
   STKUNIT_ASSERT_EQUAL( val_a , b[2] );
 
-  traits.copy( b , a , 3 );
+  traits.copy( b , a , array_size );
   STKUNIT_ASSERT_EQUAL( a[0] , b[0] );
   STKUNIT_ASSERT_EQUAL( a[1] , b[1] );
   STKUNIT_ASSERT_EQUAL( a[2] , b[2] );
 
   b[0] = val_b ; b[1] = val_b ; b[2] = val_b ;
 
-  traits.min( b , a , 3 );
+  traits.min( b , a , array_size );
   STKUNIT_ASSERT_EQUAL( val_a , b[0] );
   STKUNIT_ASSERT_EQUAL( val_b , b[1] );
   STKUNIT_ASSERT_EQUAL( val_b , b[2] );
 
   b[0] = val_b ; b[1] = val_b ; b[2] = val_b ;
 
-  traits.max( b , a , 3 );
+  traits.max( b , a , array_size );
   STKUNIT_ASSERT_EQUAL( val_b , b[0] );
   STKUNIT_ASSERT_EQUAL( val_b , b[1] );
   STKUNIT_ASSERT_EQUAL( val_c , b[2] );
 
-  STKUNIT_ASSERT_THROW( traits.sum( b , a , 3 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_and( b, a, 3 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_or(  b, a, 3 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_xor( b, a, 3 ), std::runtime_error );
+  // Test unsupported operations
+  STKUNIT_ASSERT_THROW(traits.sum    (b, a, array_size), std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_and(b, a, array_size), std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_or (b, a, array_size), std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_xor(b, a, array_size), std::runtime_error);
 
-  if ( testComm ) {
-    traits.construct( b , 3 );
-    CommAll all( MPI_COMM_WORLD );
-    traits.pack( all.send_buffer(0) , a , 3 );
-    all.allocate_buffers( 0 );
-    traits.pack( all.send_buffer(0) , a , 3 );
-    all.communicate();
-    traits.unpack( all.recv_buffer(0) , b , 3 );
-    STKUNIT_ASSERT_EQUAL( a[0] , b[0] );
-    STKUNIT_ASSERT_EQUAL( a[1] , b[1] );
-    STKUNIT_ASSERT_EQUAL( a[2] , b[2] );
+  // Test pack/unpack (communication) of enum type
+  traits.construct( b , array_size );
+  CommAll comm( pm );
+  traits.pack( comm.send_buffer(0) , a , array_size );
+  comm.allocate_buffers( 0 );
+  traits.pack( comm.send_buffer(0) , a , array_size );
+  comm.communicate();
+  if (p_rank == 0) {
+    for (int proc_id = 0; proc_id < p_size; ++proc_id) {
+      traits.unpack( comm.recv_buffer(proc_id) , b , array_size );
+      STKUNIT_ASSERT_EQUAL( a[0] , b[0] );
+      STKUNIT_ASSERT_EQUAL( a[1] , b[1] );
+      STKUNIT_ASSERT_EQUAL( a[2] , b[2] );
+    }
   }
 
+  // Test printing of enum type
+  std::ostringstream oss;
   b[2] = static_cast<EType>( 'd' );
-  std::cout << traits.name << " " ;
-  traits.print( std::cout , b , 3 );
-  std::cout << std::endl ;
+  oss << traits.name << " " ;
+  traits.print( oss , b , array_size );
+  oss << std::endl ;
 
-  traits.destroy( b , 3 );
+  // Test destruction of enum type (no-op in this case)
+  traits.destroy( b , array_size );
 }
 
+}
 //----------------------------------------------------------------------
 
 struct Vec3 { double x , y , z ; };
 
+namespace stk {
+namespace mesh {
+
+// This enum will only work within the stk::mesh namespace
 DATA_TRAITS_POD_CLASS_3( Vec3 , x , y , z )
 
-void UnitTestDataTraits::testClass( bool testComm )
+}
+}
+
+namespace {
+
+STKUNIT_UNIT_TEST(TestDataTraits, testClass)
 {
+  // Test interaction of DataTraits with classes
+
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  int p_rank = stk::parallel_machine_rank( pm );
+  int p_size = stk::parallel_machine_size( pm );
+  MPI_Barrier( pm );
+
   typedef Vec3 T ;
   const DataTraits & traits = data_traits<T>();
 
+  // Test data trait properties of class type
   STKUNIT_ASSERT(       traits.type_info        == typeid(T) );
   STKUNIT_ASSERT_EQUAL( traits.size_of           , sizeof(T) );
   STKUNIT_ASSERT_EQUAL( traits.alignment_of      , sizeof(double) );
@@ -437,38 +536,42 @@ void UnitTestDataTraits::testClass( bool testComm )
   STKUNIT_ASSERT_EQUAL( traits.class_info[1].offset, dy );
   STKUNIT_ASSERT_EQUAL( traits.class_info[2].offset, dz );
 
+  // Test data trait basic operations on class type
+  const unsigned array_size = 1;
   Vec3 b ;
-  traits.construct( & b , 1 );
-  traits.copy( & b , & a , 1 );
+  traits.construct( & b , array_size );
+  traits.copy( & b , & a , array_size );
   STKUNIT_ASSERT_EQUAL( b.x , a.x );
   STKUNIT_ASSERT_EQUAL( b.y , a.y );
   STKUNIT_ASSERT_EQUAL( b.z , a.z );
 
-  STKUNIT_ASSERT_THROW( traits.sum( NULL , NULL , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.max( NULL , NULL , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.min( NULL , NULL , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_and( NULL, NULL, 0 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_or( NULL , NULL, 0 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.bit_xor( NULL, NULL, 0 ), std::runtime_error );
-  STKUNIT_ASSERT_THROW( traits.print( std::cout, NULL, 0 ), std::runtime_error );
+  // Test unsupport operations on class type
+  STKUNIT_ASSERT_THROW(traits.sum    (NULL, NULL, 0 ),     std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.max    (NULL, NULL, 0 ),     std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.min    (NULL, NULL, 0 ),     std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_and(NULL, NULL, 0 ),     std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_or (NULL, NULL, 0 ),     std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.bit_xor(NULL, NULL, 0 ),     std::runtime_error);
+  STKUNIT_ASSERT_THROW(traits.print  (std::cout, NULL, 0), std::runtime_error);
 
-  if ( testComm ) {
-    traits.construct( & b , 1 );
-    CommAll all( MPI_COMM_WORLD );
-    traits.pack( all.send_buffer(0) , & a , 1 );
-    all.allocate_buffers( 0 );
-    traits.pack( all.send_buffer(0) , & a , 1 );
-    all.communicate();
-    traits.unpack( all.recv_buffer(0) , & b , 1 );
-    STKUNIT_ASSERT_EQUAL( a.x , b.x );
-    STKUNIT_ASSERT_EQUAL( a.y , b.y );
-    STKUNIT_ASSERT_EQUAL( a.z , b.z );
+  // Test data trait pack/unpack (communication) of class type
+  traits.construct( & b , array_size );
+  CommAll comm( pm );
+  traits.pack( comm.send_buffer(0) , & a , array_size );
+  comm.allocate_buffers( 0 );
+  traits.pack( comm.send_buffer(0) , & a , array_size );
+  comm.communicate();
+  if (p_rank == 0) {
+    for (int proc_id = 0; proc_id < p_size; ++proc_id) {
+      traits.unpack( comm.recv_buffer(proc_id) , & b , array_size );
+      STKUNIT_ASSERT_EQUAL( a.x , b.x );
+      STKUNIT_ASSERT_EQUAL( a.y , b.y );
+      STKUNIT_ASSERT_EQUAL( a.z , b.z );
+    }
   }
 
-  traits.destroy( & b , 1 );
-
+  traits.destroy( & b , array_size );
 }
 
-}
 }
 

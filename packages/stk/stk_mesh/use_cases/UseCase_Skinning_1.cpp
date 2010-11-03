@@ -49,9 +49,9 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //setup the mesh
     stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
 
-    stk::mesh::MetaData & meta = fixture.meta_data;
-    stk::mesh::BulkData & mesh = fixture.bulk_data;
-    stk::mesh::TopologicalMetaData & top = fixture.top_data;
+    stk::mesh::MetaData & meta = fixture.m_meta_data;
+    stk::mesh::BulkData & mesh = fixture.m_bulk_data;
+    stk::mesh::TopologicalMetaData & top = fixture.m_top_data;
 
     stk::mesh::Part & skin_part = meta.declare_part("skin_part");
     meta.commit();
@@ -114,9 +114,9 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
     //setup the mesh
     stk::mesh::fixtures::HexFixture fixture(pm,3,3,3);
 
-    stk::mesh::MetaData & meta = fixture.meta_data;
-    stk::mesh::BulkData & mesh = fixture.bulk_data;
-    stk::mesh::TopologicalMetaData & top = fixture.top_data;
+    stk::mesh::MetaData & meta = fixture.m_meta_data;
+    stk::mesh::BulkData & mesh = fixture.m_bulk_data;
+    stk::mesh::TopologicalMetaData & top = fixture.m_top_data;
 
     stk::mesh::Part & skin_part = meta.declare_part("skin_part");
     meta.commit();

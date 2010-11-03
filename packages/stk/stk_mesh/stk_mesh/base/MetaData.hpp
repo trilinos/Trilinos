@@ -388,8 +388,10 @@ field_type & put_field( field_type & field ,
                         EntityRank  entity_rank ,
                         const Part & part );
 
-/** \brief  Declare a  field to exist
- *          for a given entity type and Part.
+/** \brief Declare a field to exist for a given entity type and Part. The
+ *         extra unsigned arguments specify the size of a dimension. So,
+ *         put_field( field, rank, part, 3, 3 ) would create a 3x3 2D field.
+ *         Fields of up to seven dimensions are supported.
  */
 template< class field_type >
 field_type & put_field( field_type & field ,

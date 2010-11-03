@@ -8,64 +8,67 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-
-#include <stdexcept>
-
-#include <Shards_BasicTopologies.hpp>
-
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
 
+#include <Shards_BasicTopologies.hpp>
+
+#include <stdexcept>
+
+using stk::mesh::MetaData;
+using stk::mesh::TopologicalMetaData;
 
 namespace {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class TestFixture {
+/**
+ * Really just a meta-data, topological-meta-data pair. They share the same
+ * spatial dimension and the meta-data is associated with the
+ * topological-meta-data.
+ */
+class MetaTopoPair {
 public:
-  typedef stk::mesh::MetaData            BaseMetaData ;
-  typedef stk::mesh::TopologicalMetaData TopoMetaData ;
+  MetaData            m_meta_data ;
+  TopologicalMetaData m_topo_data ;
 
-  BaseMetaData baseMetaData ;
-  TopoMetaData topoMetaData ;
-
-  TestFixture( unsigned spatial_dimension )
-    : baseMetaData( TopoMetaData::entity_rank_names( spatial_dimension ) )
-    , topoMetaData( baseMetaData , spatial_dimension )
+  MetaTopoPair( unsigned spatial_dimension )
+    : m_meta_data(TopologicalMetaData::entity_rank_names(spatial_dimension))
+    , m_topo_data(m_meta_data, spatial_dimension)
     {}
 
   int get_entity_rank( const CellTopologyData * top ) const
-    { return topoMetaData.get_entity_rank( top ); }
+    { return m_topo_data.get_entity_rank( top ); }
 };
 
 STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , entity_rank )
 {
-  TestFixture test1D( 1u );
-  TestFixture test2D( 2u );
-  TestFixture test3D( 3u );
+  MetaTopoPair test1D( 1u );
+  MetaTopoPair test2D( 2u );
+  MetaTopoPair test3D( 3u );
 
-  STKUNIT_EXPECT_EQUAL( test1D.topoMetaData.spatial_dimension , 1u );
-  STKUNIT_EXPECT_EQUAL( test1D.topoMetaData.node_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test1D.topoMetaData.edge_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test1D.topoMetaData.side_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test1D.topoMetaData.element_rank , 1u );
-  STKUNIT_EXPECT_EQUAL( test1D.topoMetaData.patch_rank , 2u );
+  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.spatial_dimension , 1u );
+  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.node_rank , 0u );
+  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.edge_rank , 0u );
+  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.side_rank , 0u );
+  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.element_rank , 1u );
+  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.patch_rank , 2u );
 
-  STKUNIT_EXPECT_EQUAL( test2D.topoMetaData.spatial_dimension , 2u );
-  STKUNIT_EXPECT_EQUAL( test2D.topoMetaData.node_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test2D.topoMetaData.edge_rank , 1u );
-  STKUNIT_EXPECT_EQUAL( test2D.topoMetaData.side_rank , 1u );
-  STKUNIT_EXPECT_EQUAL( test2D.topoMetaData.element_rank , 2u );
-  STKUNIT_EXPECT_EQUAL( test2D.topoMetaData.patch_rank , 3u );
+  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.spatial_dimension , 2u );
+  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.node_rank , 0u );
+  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.edge_rank , 1u );
+  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.side_rank , 1u );
+  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.element_rank , 2u );
+  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.patch_rank , 3u );
 
-  STKUNIT_EXPECT_EQUAL( test3D.topoMetaData.spatial_dimension , 3u );
-  STKUNIT_EXPECT_EQUAL( test3D.topoMetaData.node_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test3D.topoMetaData.edge_rank , 1u );
-  STKUNIT_EXPECT_EQUAL( test3D.topoMetaData.side_rank , 2u );
-  STKUNIT_EXPECT_EQUAL( test3D.topoMetaData.element_rank , 3u );
-  STKUNIT_EXPECT_EQUAL( test3D.topoMetaData.patch_rank , 4u );
+  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.spatial_dimension , 3u );
+  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.node_rank , 0u );
+  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.edge_rank , 1u );
+  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.side_rank , 2u );
+  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.element_rank , 3u );
+  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.patch_rank , 4u );
 }
 
 
@@ -120,7 +123,7 @@ STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , cellTopology )
   for ( unsigned spatial_dimension = 1 ;
         spatial_dimension < 4 ; ++spatial_dimension ) {
 
-    TestFixture test( spatial_dimension );
+    MetaTopoPair test( spatial_dimension );
 
     STKUNIT_EXPECT_EQUAL( 0 , test.get_entity_rank( node ) );
     STKUNIT_EXPECT_EQUAL( 1 , test.get_entity_rank( line2 ) );
@@ -214,26 +217,26 @@ STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , part_supersets )
   static const char method[] = "UnitTestPartCellTopologyMap::part_supersets" ;
   const unsigned spatial_dimension = 3 ;
 
-  TestFixture test( spatial_dimension );
+  MetaTopoPair test( spatial_dimension );
 
   const CellTopologyData * const top_hex8 = shards::getCellTopologyData< shards::Hexahedron<8> >();
   const CellTopologyData * const top_tet4 = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
-  stk::mesh::Part & hex8 = test.topoMetaData.declare_part( top_hex8->name , top_hex8 );
-  stk::mesh::Part & tet4 = test.topoMetaData.declare_part( top_tet4->name , top_tet4 );
+  stk::mesh::Part & hex8 = test.m_topo_data.declare_part( top_hex8->name , top_hex8 );
+  stk::mesh::Part & tet4 = test.m_topo_data.declare_part( top_tet4->name , top_tet4 );
 
-  stk::mesh::Part & part_hex_1 = test.baseMetaData.declare_part( "block_1" , spatial_dimension );
-  stk::mesh::Part & part_hex_2 = test.baseMetaData.declare_part( "block_2" , spatial_dimension );
-  stk::mesh::Part & part_hex_3 = test.baseMetaData.declare_part( "block_3" , spatial_dimension );
-  stk::mesh::Part & part_tet_1 = test.baseMetaData.declare_part( "block_4" , spatial_dimension );
-  stk::mesh::Part & part_tet_2 = test.baseMetaData.declare_part( "block_5" , spatial_dimension );
+  stk::mesh::Part & part_hex_1 = test.m_meta_data.declare_part( "block_1" , spatial_dimension );
+  stk::mesh::Part & part_hex_2 = test.m_meta_data.declare_part( "block_2" , spatial_dimension );
+  stk::mesh::Part & part_hex_3 = test.m_meta_data.declare_part( "block_3" , spatial_dimension );
+  stk::mesh::Part & part_tet_1 = test.m_meta_data.declare_part( "block_4" , spatial_dimension );
+  stk::mesh::Part & part_tet_2 = test.m_meta_data.declare_part( "block_5" , spatial_dimension );
 
-  test.baseMetaData.declare_part_subset( hex8 , part_hex_1 );
-  test.baseMetaData.declare_part_subset( hex8 , part_hex_2 );
-  test.baseMetaData.declare_part_subset( hex8 , part_hex_3 );
+  test.m_meta_data.declare_part_subset( hex8 , part_hex_1 );
+  test.m_meta_data.declare_part_subset( hex8 , part_hex_2 );
+  test.m_meta_data.declare_part_subset( hex8 , part_hex_3 );
 
-  test.baseMetaData.declare_part_subset( tet4 , part_tet_1 );
-  test.baseMetaData.declare_part_subset( tet4 , part_tet_2 );
+  test.m_meta_data.declare_part_subset( tet4 , part_tet_1 );
+  test.m_meta_data.declare_part_subset( tet4 , part_tet_2 );
 
   STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::TopologicalMetaData::get_cell_topology( hex8 , method ) );
   STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::TopologicalMetaData::get_cell_topology( part_hex_1 , method ) );
@@ -250,18 +253,18 @@ STKUNIT_UNIT_TEST( UnitTestPartCellTopologyMap , errors )
 {
   const unsigned spatial_dimension = 2 ;
 
-  TestFixture test( spatial_dimension );
+  MetaTopoPair test( spatial_dimension );
 
   const CellTopologyData * const top_quad4 = shards::getCellTopologyData< shards::Quadrilateral<4> >();
   const CellTopologyData * const top_tri3 = shards::getCellTopologyData< shards::Triangle<3> >();
   const CellTopologyData * const top_tet4 = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
-  STKUNIT_ASSERT_THROW( test.topoMetaData.declare_cell_topology( top_quad4 , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.topoMetaData.declare_cell_topology( top_quad4 , 1 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.topoMetaData.declare_cell_topology( top_quad4 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_quad4 , 0 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_quad4 , 1 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_quad4 , 3 ) , std::runtime_error );
 
-  STKUNIT_ASSERT_THROW( test.topoMetaData.declare_cell_topology( top_tri3 , 3 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.topoMetaData.declare_cell_topology( top_tet4 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_tri3 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_tet4 , 3 ) , std::runtime_error );
 }
 
 //----------------------------------------------------------------------------
@@ -272,18 +275,18 @@ STKUNIT_UNIT_TEST( UnitTestPartCellTopologyMap , errors )
 class FiniteElementMesh {
 public:
 
-  typedef stk::mesh::MetaData            BaseMetaData ;
-  typedef stk::mesh::TopologicalMetaData TopoMetaData ;
+  typedef stk::mesh::MetaData            MetaData ;
+  typedef stk::mesh::TopologicalMetaData TopologicalMetaData ;
   typedef stk::mesh::BulkData            BulkData ;
 
-  BaseMetaData baseMetaData ;
-  TopoMetaData topoMetaData ;
+  MetaData m_meta_data ;
+  TopologicalMetaData m_topo_data ;
   BulkData     bulkData ;
 
   FiniteElementMesh( unsigned spatial_dimension ,
                      stk::ParallelMachine machine )
-    : baseMetaData( TopoMetaData::entity_rank_names( spatial_dimension ) )
-    , topoMetaData( metaData , spatial_dimension )
+    : m_meta_data( TopologicalMetaData::entity_rank_names( spatial_dimension ) )
+    , m_topo_data( metaData , spatial_dimension )
     , bulkData( metaData , machine )
     {}
 };
@@ -300,9 +303,9 @@ STKUNIT_UNIT_TEST( UnitTestPartCellTopologyMap , bucket )
   FiniteElementMesh mesh( spatial_dimension , machine );
 
   stk::mesh::Part & block =
-    mesh.topoMetaData.declare_part< shards::Tetrahedron<4> >( "block_1" );
+    mesh.m_topo_data.declare_part< shards::Tetrahedron<4> >( "block_1" );
 
-  mesh.baseMetaData.commit();
+  mesh.m_meta_data.commit();
 
   mesh.bulkData.modification_begin();
 

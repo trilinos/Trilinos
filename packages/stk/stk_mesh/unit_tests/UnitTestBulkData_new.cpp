@@ -647,7 +647,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   if ( 8 < p_size ) { return ; }
 
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 2, 2 );
-  fixture.meta_data.commit();
+  fixture.m_meta_data.commit();
   fixture.generate_mesh();
 
   for ( size_t iz = 0 ; iz < 3 ; ++iz ) {
@@ -658,7 +658,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
     if ( NULL != node ) {
       STKUNIT_ASSERT( fixture.node_id(ix,iy,iz) == node->identifier() );
       stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-        stk::mesh::field_data( fixture.coord_field , *node );
+        stk::mesh::field_data( fixture.m_coord_field , *node );
       STKUNIT_ASSERT( node_coord != NULL );
     }
   }
@@ -674,11 +674,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
       stk::mesh::PairIterRelation elem_nodes = elem->relations();
       STKUNIT_ASSERT_EQUAL( 8u , elem_nodes.size() );
       stk::mesh::fixtures::HexFixture::Scalar ** const elem_node_coord =
-        stk::mesh::field_data( fixture.coord_gather_field , *elem );
+        stk::mesh::field_data( fixture.m_coord_gather_field , *elem );
       for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
         STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
         stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-          stk::mesh::field_data( fixture.coord_field , *elem_nodes[j].entity() );
+          stk::mesh::field_data( fixture.m_coord_field , *elem_nodes[j].entity() );
         STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
       }
       if ( 8u == elem_nodes.size() ) {
