@@ -39,11 +39,11 @@
     {bool success = true; TEUCHOS_TEST_INEQUALITY(B,A,std::cout,success); if (!success) throw 1;}
 #define STKUNIT_ASSERT_LE(A,B) \
     {bool success = true; TEUCHOS_TEST_COMPARE(A,<=,B,std::cout,success); if (!success) throw 1;}
-#define STKUNIT_ASSERT_LT(A,B) ASSERT_LT(A,B) \
+#define STKUNIT_ASSERT_LT(A,B) \
     {bool success = true; TEUCHOS_TEST_COMPARE(A,<,B,std::cout,success); if (!success) throw 1;}
-#define STKUNIT_ASSERT_GE(A,B) ASSERT_GE(A,B) \
+#define STKUNIT_ASSERT_GE(A,B) \
     {bool success = true; TEUCHOS_TEST_COMPARE(A,>=,B,std::cout,success); if (!success) throw 1;}
-#define STKUNIT_ASSERT_GT(A,B) ASSERT_GT(A,B) \
+#define STKUNIT_ASSERT_GT(A,B) \
     {bool success = true; TEUCHOS_TEST_COMPARE(A,>,B,std::cout,success); if (!success) throw 1;}
 #define STKUNIT_EXPECT_EQ(A,B) STKUNIT_ASSERT_EQ(A,B)
 #define STKUNIT_EXPECT_NE(A,B) STKUNIT_ASSERT_NE(A,B)
