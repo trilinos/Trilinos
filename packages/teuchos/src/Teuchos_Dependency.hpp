@@ -29,7 +29,7 @@
 
 #ifndef TEUCHOS_DEPENDENCY_HPP_
 #define TEUCHOS_DEPENDENCY_HPP_
-#include "Teuchos_RCPDecl.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_InvalidDependencyException.hpp"
 /*! \file Dependency.hpp
