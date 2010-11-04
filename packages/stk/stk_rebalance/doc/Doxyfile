@@ -19,6 +19,7 @@ EXAMPLE_PATTERNS       =
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES
 IGNORE_PREFIX          = 
+RECURSIVE              = YES
 #
 # Links to other packages
 #
