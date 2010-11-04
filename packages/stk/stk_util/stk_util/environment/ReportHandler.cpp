@@ -13,6 +13,15 @@
 
 namespace stk {
 
+namespace {
+
+// Global variables used to store the current handlers. We do not want direct
+// external access to this state, so we put these in an empty namespace.
+ErrorHandler s_assert_handler = &default_assert_handler;
+REH s_reportHandler = &default_report_handler;
+
+}
+
 void
 default_report_handler(
   const char *		message,
@@ -20,10 +29,6 @@ default_report_handler(
 {
   std::cout << "Message type " << type << ": " << message << std::endl;
 }
-
-REH
-s_reportHandler = &default_report_handler;
-
 
 void
 report(
@@ -66,6 +71,38 @@ source_relative_path(
     }
   }
   return path;
+}
+
+void default_assert_handler(const char* expr,
+                            const std::string& location,
+                            std::ostringstream& message)
+{
+  std::string error_msg = "";
+  if (message.str() != "") {
+    error_msg = std::string("Error message: ") + message.str() + "\n";
+  }
+  throw std::logic_error(
+    std::string("Requirement( ") + expr + " ) FAILED\n" +
+    "Error occured at: " + source_relative_path(location) + "\n" +
+    error_msg);
+}
+
+ErrorHandler set_assert_handler(ErrorHandler error_handler)
+{
+  if (!error_handler)
+    throw std::runtime_error("Cannot set assert handler to NULL");
+
+  ErrorHandler prev_error_handler = s_assert_handler;
+  s_assert_handler = error_handler;
+
+  return prev_error_handler;
+}
+
+void handle_assert(const char* expr,
+                   const std::string& location,
+                   std::ostringstream& message)
+{
+  (*s_assert_handler)(expr, location, message);
 }
 
 } // namespace stk

@@ -11,6 +11,11 @@ LATEX = pdflatex
 # ReStructured Text main source file
 SRC_FILE = DevelopersGuide.txt
 
+# Files that $(SRC_FILE) depends on
+DEPEND_FILES = AddingModules.txt BuildSystem.txt Documentation.txt \
+	       ExceptionHandling.txt Introduction.txt \
+	       ReferenceCountedPointers.txt Testing.txt
+
 # Web page to be made
 WEB_PAGE = $(SRC_FILE:txt=html)
 
@@ -26,17 +31,21 @@ AUX_FILES = $(TEX_FILE:tex=aux) \
 # Default target depends on all of the recursive subdirectories
 all: $(WEB_PAGE) $(PDF_FILE)
 
-%.html: %.txt
+$(WEB_PAGE): $(SRC_FILE) $(DEPEND_FILES)
 	$(RST2HTML) $(HTML_FLAGS) $< $@
 
-%.tex: %.txt
+$(TEX_FILE): $(SRC_FILE) $(DEPEND_FILES)
 	$(RST2LATEX) $(TEX_FLAGS) $< $@
 
-%.pdf: %.tex
+$(PDF_FILE): $(TEX_FILE)
+	$(LATEX) $<
 	$(LATEX) $<
 	$(LATEX) $<
 
 clean:
-	$(RM) $(WEB_PAGE) $(TEX_FILE) $(PDF_FILE) $(AUX_FILES) *~
+	$(RM) $(TEX_FILE) $(AUX_FILES) *~
 
-.PHONY : clean
+clobber: clean
+	$(RM) $(WEB_PAGE) $(PDF_FILE)
+
+.PHONY : clean clobber

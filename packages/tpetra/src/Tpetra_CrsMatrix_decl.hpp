@@ -45,6 +45,11 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 
+/**
+  \example LocalMatOpExample.cpp
+  An example using a different sparse mat-vec with Tpetra::CrsMatrix and Tpetra::CrsGraph.
+ */
+
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
   // struct for i,j,v triplets
@@ -75,6 +80,11 @@ namespace Tpetra {
 
   //! \brief A class for constructing and using sparse compressed matrices with row access.
   /*!
+   \tparam Scalar        The scalar field describing the numerical entries of the matrix.
+   \tparam LocalOrdinal  A ordinal type for lists of local indices. This specifies the \c LocalOrdinal type for Map objects used by this matrix.
+   \tparam GlobalOrdinal A ordinal type for lists of global indices. This specifies the \c GlobalOrdinal type for Map objects used by this matrix.
+   \tparam Node          A shared-memory node class, fulfilling the \ref kokkos_node_api "Kokkos Node API"
+   \tparam LocalMatOps   A local sparse matrix operations class, fulfiling the \ref kokkos_crs_ops "Kokkos CRS Ops API".
    * This class allows the construction of sparse matrices with row-access. 
    * 
    * <b>Local vs. Global</b>

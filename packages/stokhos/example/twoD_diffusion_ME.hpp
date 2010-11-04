@@ -53,7 +53,8 @@ public:
     double s = 0.1, double mu = 0.2, 
     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis = 
     Teuchos::null,
-    bool log_normal = false);
+    bool log_normal = false,
+    bool eliminate_bcs = false);
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{
@@ -116,26 +117,27 @@ protected:
 protected:
 
   double h;
-  Teuchos::Array<double> mesh;
+  struct MeshPoint {
+    MeshPoint() : up(-1), down(-1), left(-1), right(-1), boundary(false) {}
+    double x, y;
+    int up, down, left, right;
+    bool boundary;
+  };
+  Teuchos::Array<MeshPoint> mesh;
   Teuchos::Array<int> bcIndices;
 
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis;
   bool log_normal;
+  bool eliminate_bcs;
 
   //! Solution vector map
   Teuchos::RCP<Epetra_Map> x_map;
-
-  //! Overlapped solution vector map
-  Teuchos::RCP<Epetra_Map> x_overlapped_map;
 
   //! Importer to overlapped distribution
   Teuchos::RCP<Epetra_Import> importer;
 
   //! Initial guess
   Teuchos::RCP<Epetra_Vector> x_init;
-
-  //! Overlapped solution vector
-  Teuchos::RCP<Epetra_Vector> x_overlapped;
 
   //! Parameter vector map
   Teuchos::RCP<Epetra_Map> p_map;
@@ -179,54 +181,57 @@ fillMatrices(const FuncT& func, int sz)
 {
   int NumMyElements = x_map->NumMyElements();
   int *MyGlobalElements = x_map->MyGlobalElements();
-  double two;
-  int n = mesh.size();
-  int n2 = n*n;
   double h2 = h*h;
-  int Indices[4];
-  double Values[4];
-  int NumEntries;
+  double val;
 
   A_k.resize(sz);
   for (int k=0; k<sz; k++) {
     A_k[k] = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *graph));
     for( int i=0 ; i<NumMyElements; ++i ) {
-      if (bcIndices[i] == 1 && k == 0) two = 1; //Enforce BC in mean matrix
-      if (bcIndices[i] == 0) {
-	Indices[0] = MyGlobalElements[i]-n; //Down
-	Indices[1] = MyGlobalElements[i]-1; //left
-	Indices[2] = MyGlobalElements[i]+1; //right
-	Indices[3] = MyGlobalElements[i]+n; //up
-	NumEntries = 4;
-	Values[0] = 
-	  -(1/h2)*func(mesh[(MyGlobalElements[i]%n2)%n], 
-		       mesh[(MyGlobalElements[i]%n2)/n]-(h/2), k);
-	Values[1] = 
-	  -(1/h2)*func(mesh[(MyGlobalElements[i]%n2)%n]-(h/2), 
-		       mesh[(MyGlobalElements[i]%n2)/n], k);
-	Values[2] = 
-	  -(1/h2)*func(mesh[(MyGlobalElements[i]%n2)%n]+(h/2), 
-		       mesh[(MyGlobalElements[i]%n2)/n], k);
-	Values[3] = 
-	  -(1/h2)*func(mesh[(MyGlobalElements[i]%n2)%n], 
-		       mesh[(MyGlobalElements[i]%n2)/n]+(h/2), k);
-	
-	two = 
-	  ( func(mesh[(MyGlobalElements[i]%n2)%n]-(h/2), 
-		 mesh[(MyGlobalElements[i]%n2)/n], k) + 
-	    func(mesh[(MyGlobalElements[i]%n2)%n]+(h/2), 
-		 mesh[(MyGlobalElements[i]%n2)/n], k) + 
-	    func(mesh[(MyGlobalElements[i]%n2)%n], 
-		 mesh[(MyGlobalElements[i]%n2)/n]-(h/2), k) +
-	    func(mesh[(MyGlobalElements[i]%n2)%n], 
-		 mesh[(MyGlobalElements[i]%n2)/n]+(h/2), k) ) / h2;
+
+      // Center
+      int global_idx = MyGlobalElements[i];
+      if (mesh[global_idx].boundary) {
+	if (k == 0)
+	  val = 1.0; //Enforce BC in mean matrix
+	else
+	  val = 0.0;
+	A_k[k]->ReplaceGlobalValues(global_idx, 1, &val, &global_idx);
       }
-      if(bcIndices[i] == 0) 
-	A_k[k]->ReplaceGlobalValues(MyGlobalElements[i], NumEntries, Values, 
-			      Indices);
-      if (bcIndices[i]==0 || k == 0) 
-	A_k[k]->ReplaceGlobalValues(MyGlobalElements[i], 1, &two, 
-			      MyGlobalElements+i);
+      else {
+	double a_down = 
+	  -func(mesh[global_idx].x, mesh[global_idx].y-h/2.0, k)/h2;
+	double a_left = 
+	  -func(mesh[global_idx].x-h/2.0, mesh[global_idx].y, k)/h2;
+	double a_right = 
+	  -func(mesh[global_idx].x+h/2.0, mesh[global_idx].y, k)/h2;
+	double a_up = 
+	  -func(mesh[global_idx].x, mesh[global_idx].y+h/2.0, k)/h2;
+
+	// Center
+	val = -(a_down + a_left + a_right + a_up);
+	A_k[k]->ReplaceGlobalValues(global_idx, 1, &val, &global_idx);
+
+	// Down
+	if (!(eliminate_bcs && mesh[mesh[global_idx].down].boundary))
+	  A_k[k]->ReplaceGlobalValues(global_idx, 1, &a_down, 
+				      &mesh[global_idx].down);
+
+	// Left
+	if (!(eliminate_bcs && mesh[mesh[global_idx].left].boundary))
+	  A_k[k]->ReplaceGlobalValues(global_idx, 1, &a_left, 
+				      &mesh[global_idx].left);
+
+	// Right
+	if (!(eliminate_bcs && mesh[mesh[global_idx].right].boundary))
+	  A_k[k]->ReplaceGlobalValues(global_idx, 1, &a_right, 
+				      &mesh[global_idx].right);
+
+	// Up
+	if (!(eliminate_bcs && mesh[mesh[global_idx].up].boundary))
+	  A_k[k]->ReplaceGlobalValues(global_idx, 1, &a_up, 
+				      &mesh[global_idx].up);
+      }
     }
     A_k[k]->FillComplete();
   }

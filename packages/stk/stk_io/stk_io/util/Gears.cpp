@@ -79,15 +79,17 @@ namespace stk {
 	  m_mesh( NULL ),
 	  m_gear( S.declare_part(std::string("Gear_").append(name), stk::mesh::Element) ),
 	  m_surf( S.declare_part(std::string("Surf_").append(name), stk::mesh::Face) ),
-	  m_gear_coord(    gear_fields.gear_coord ),
-	  m_model_coord(   gear_fields.model_coord )
+	  m_gear_coord( gear_fields.gear_coord ),
+	  m_model_coord(gear_fields.model_coord )
       {
 	typedef shards::Hexahedron<> Hex ;
+	typedef shards::Quadrilateral<> Quad ;
 	enum { SpatialDimension = GearFields::SpatialDimension };
 
 	stk::io::put_io_part_attribute(m_gear);
 	stk::io::put_io_part_attribute(m_surf);
 	stk::mesh::set_cell_topology< Hex >( m_gear );
+	stk::mesh::set_cell_topology< Quad>( m_surf );
 
 	// Meshing parameters for this gear:
 

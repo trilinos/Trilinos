@@ -1,0 +1,17 @@
+/** \mainpage
+ *  - \ref stk_rebalance_module  "Sierra Toolkit Rebalance"
+ *
+ *  \page stk_rebalance_banner Sierra Toolkit Rebalance
+ *
+ *  \ref stk_rebalance_module "Sierra Toolkit Rebalance"
+ *  <P>
+ *  The Sierra Toolkit Rebalance package supports computing a new mesh
+ *  partition to reduce computational load imbalance and the corresponding
+ *  migration of mesh entities to the new partition.
+ *
+ * \page stk_rebalance_module Sierra Toolkit Rebalance
+ *
+ * \page stk_rebalance_howto Rebalance How To ...
+ *
+ */
+

@@ -7,6 +7,7 @@
 #include <Tsqr_StatTimeMonitor.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
+#include <Teuchos_TimeMonitor.hpp>
 
 #include <algorithm>
 #include <sstream>

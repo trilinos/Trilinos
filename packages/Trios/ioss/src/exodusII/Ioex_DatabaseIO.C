@@ -1164,23 +1164,14 @@ namespace Ioex {
 	
 	// If there are no elements on any processor for this block and
 	// we have no idea what the topology type is, skip it...
-	if (global_element_count[iblk] == 0)
+	if (global_element_count[iblk] == 0) {
 	  continue;
+	}
       }
       
       block = new Ioss::ElementBlock(this, block_name, type,
 				     local_element_count[iblk],
 				     attributes[iblk]);
-
-      // 	if (block->topology()->spatial_dimension() != spatialDimension) {
-      // 	  std::ostringstream errmsg;
-      // 	  errmsg << "ERROR: Element Block '" << block_name << "' is using a '"
-      // 		 << type << "' element. This is a "
-      // 		 << block->topology()->spatial_dimension()
-      // 		 << "D element being used in a "
-      // 		 << spatialDimension << "D mesh.";
-      // 	    IOSS_ERROR(errmsg);
-      // 	}
 
       block->property_add(Ioss::Property("id", id));
       
@@ -1222,7 +1213,9 @@ namespace Ioex {
 	add_map_fields(get_file_pointer(), block, local_element_count[iblk]);
       }
     }
+    elementBlockCount = used_blocks;
     assert(elementCount == offset);
+    assert(elementBlockCount == (int)get_region()->get_element_blocks().size());
   }
 
   void DatabaseIO::get_block_adjacencies(const Ioss::ElementBlock *eb,

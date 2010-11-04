@@ -25,32 +25,37 @@
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
-STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell ) {
+STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
+{
+  // This tests creates a small HexFixture with two hexes then, in a separate
+  // modification cycle, inserts a shell between the two elements.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD ;
 
+  // Create the fixture, adding a part for the shell
+
   stk::mesh::fixtures::HexFixture fixture( pm , 2 , 1 , 1 );
-  stk::mesh::TopologicalMetaData & top_data = fixture.top_data;
+  stk::mesh::TopologicalMetaData & top_data = fixture.m_top_data;
 
-  const unsigned p_rank = fixture.bulk_data.parallel_rank();
+  const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
 
-  stk::mesh::Part & shell_part = top_data.declare_part<shards::ShellQuadrilateral<4> >("shell_part");
+  stk::mesh::Part & shell_part =
+    top_data.declare_part<shards::ShellQuadrilateral<4> >("shell_part");
 
-  fixture.meta_data.commit();
+  fixture.m_meta_data.commit();
 
   fixture.generate_mesh();
 
   stk::mesh::Entity * elem = fixture.elem( 0 , 0 , 0 );
 
-  fixture.bulk_data.modification_begin();
+  fixture.m_bulk_data.modification_begin();
 
   bool no_throw = true;
 
+  // Whoever owns the 0,0,0 element create the shell and insert it between
+  // the two elements.
   if ( elem != NULL && p_rank == elem->owner_rank() ) {
-    //add shell between the two elements
-
     stk::mesh::EntityId elem_node[4] ;
-
     elem_node[0] = fixture.node_id( 1, 0, 0 );
     elem_node[1] = fixture.node_id( 1, 1, 0 );
     elem_node[2] = fixture.node_id( 1, 1, 1 );
@@ -59,14 +64,14 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell ) {
     stk::mesh::EntityId elem_id = 3;
 
     try {
-      stk::mesh::declare_element( fixture.bulk_data, shell_part, elem_id, elem_node);
+      stk::mesh::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
     }
     catch (...) {
       no_throw = false;
     }
 
   }
-  fixture.bulk_data.modification_end();
+  fixture.m_bulk_data.modification_end();
 
   STKUNIT_EXPECT_TRUE(no_throw);
 }

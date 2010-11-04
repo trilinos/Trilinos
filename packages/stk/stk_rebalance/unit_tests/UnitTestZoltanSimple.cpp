@@ -15,6 +15,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -51,7 +52,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 
   meta_data.commit();
 
-  //const unsigned p_size = bulk_data.parallel_size();
+  const unsigned p_size = bulk_data.parallel_size();
   const unsigned p_rank = bulk_data.parallel_rank();
 
   bulk_data.modification_begin();
@@ -104,17 +105,31 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 
   bulk_data.modification_end();
 
+  // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
+  // Other specializations are possible.
   Teuchos::ParameterList emptyList;
   stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
 
   stk::mesh::Selector selector(meta_data.universal_part());
 
-  // Force a rebalance by using imblance_threshhold < 1.0
-  double imblance_threshhold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, meta_data, weight_field, comm, imblance_threshhold);
+  // Force a rebalance by using imbalance_threshold < 1.0
+  double imbalance_threshold = 0.5;
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, weight_field, comm, imbalance_threshold);
+  // Coordinates are passed to support geometric-based load balancing algorithms
   if( do_rebal )
     stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
 
-  // Guard against false positives by ensuring we make it to the end
-  STKUNIT_ASSERT( true );
+  imbalance_threshold = 1.5;
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, weight_field, comm, imbalance_threshold);
+
+  // Check that we satisfy our threshhold
+  STKUNIT_ASSERT( !do_rebal );
+  if( (2 == p_size) || (4 == p_size) )
+  {
+    STKUNIT_ASSERT_NEAR(imbalance_threshold, 1.0, 1.e-8);
+  }
+  else
+  {
+    STKUNIT_ASSERT_LE(imbalance_threshold, 1.5);
+  }
 }

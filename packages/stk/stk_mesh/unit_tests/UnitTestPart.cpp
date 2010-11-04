@@ -24,67 +24,34 @@
 #include <stk_mesh/base/PartRelation.hpp>
 
 using stk::mesh::MetaData;
+using stk::mesh::BulkData;
 using stk::mesh::TopologicalMetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::PartRelation;
 using stk::mesh::impl::PartRepository;
 
-class UnitTestPart {
-public:
-  UnitTestPart();
-  ~UnitTestPart() {}
-
-  const int spatial_dimension;
-  MetaData m;
-  MetaData m2;
-  PartRepository partRepo;
-  PartRepository partRepo2;
-  PartRepository partRepo3;
-  PartRepository partRepo4;
-  PartRepository partRepo5;
-  PartRepository partRepo6;
-  Part & universal;
-  PartVector intersection;
-  PartVector intersection2;
-  PartVector intersection3;
-  PartVector intersection4;
-  PartVector intersection5;
-  PartRelation rA;
-
-};
-
-UnitTestPart::UnitTestPart()
-  :spatial_dimension(3)
-  ,m(TopologicalMetaData::entity_rank_names(spatial_dimension))
-  ,m2(TopologicalMetaData::entity_rank_names(spatial_dimension))
-  ,partRepo(&m)
-  ,partRepo2(&m)
-  ,partRepo3(&m)
-  ,partRepo4(&m)
-  ,partRepo5(&m)
-  ,partRepo6(&m2)
-  ,universal(*partRepo.universal_part())
-  ,intersection()
-  ,intersection2()
-  ,intersection3()
-  ,intersection4()
-  ,intersection5()
-  ,rA()
-{
-  m.commit();
-}
 
 namespace {
 
 STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 {
-  UnitTestPart upart;
+  const int spatial_dimension = 3;
+  MetaData m(TopologicalMetaData::entity_rank_names(spatial_dimension));
+  PartRepository partRepo(&m);
+  PartRepository partRepo2(&m);
+  PartRepository partRepo3(&m);
+  PartRepository partRepo4(&m);
+  Part & universal = *partRepo.universal_part();
+  PartVector intersection;
+  PartVector intersection2;
+  PartVector intersection4;
+  PartVector intersection5;
+  m.commit();
 
-
-  STKUNIT_ASSERT( upart.universal.supersets().empty() );
-  STKUNIT_ASSERT( 1u == upart.universal.subsets().size() );
-  STKUNIT_ASSERT_EQUAL( upart.universal.subsets()[0] , & upart.universal );
+  STKUNIT_ASSERT(  universal.supersets().empty() );
+  STKUNIT_ASSERT( 1u ==  universal.subsets().size() );
+  STKUNIT_ASSERT_EQUAL(  universal.subsets()[0] , &  universal );
 
   //--------------------------------------------------------------------
   // Test multiple part creation
@@ -93,39 +60,39 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 
   Part * parts[NPARTS];
 
-  parts[0] = & upart.universal ;
+  parts[0] = &  universal ;
 
   for ( int i = 1 ; i < NPARTS-1 ; ++i ) {
     std::ostringstream name ;
     name << "Part_" << i ;
-    parts[i] = upart.partRepo.declare_part( name.str() , 0 );
+    parts[i] =  partRepo.declare_part( name.str() , 0 );
   }
-  parts[99] = upart.partRepo.declare_part( "Part_99" , 1 );
+  parts[99] =  partRepo.declare_part( "Part_99" , 1 );
 
 
-  STKUNIT_ASSERT( upart.universal.supersets().empty() );
-  STKUNIT_ASSERT( NPARTS == upart.universal.subsets().size() );
-  STKUNIT_ASSERT_EQUAL( upart.universal.subsets()[0] , & upart.universal );
+  STKUNIT_ASSERT(  universal.supersets().empty() );
+  STKUNIT_ASSERT( NPARTS ==  universal.subsets().size() );
+  STKUNIT_ASSERT_EQUAL(  universal.subsets()[0] , &  universal );
 
   for ( unsigned i = 1 ; i < NPARTS ; ++i ) {
     STKUNIT_ASSERT( parts[i]->subsets().empty() );
     STKUNIT_ASSERT( parts[i]->intersection_of().empty() );
     STKUNIT_ASSERT( parts[i]->mesh_meta_data_ordinal() == i );
     STKUNIT_ASSERT( 1u == parts[i]->supersets().size() );
-    STKUNIT_ASSERT( & upart.universal == parts[i]->supersets()[0] );
-    STKUNIT_ASSERT_EQUAL( parts[i] , upart.universal.subsets()[i] );
-    STKUNIT_ASSERT_EQUAL( parts[i] , find(upart. universal.subsets() , parts[i]->name() ) );
+    STKUNIT_ASSERT( &  universal == parts[i]->supersets()[0] );
+    STKUNIT_ASSERT_EQUAL( parts[i] ,  universal.subsets()[i] );
+    STKUNIT_ASSERT_EQUAL( parts[i] , find(  universal.subsets() , parts[i]->name() ) );
   }
 
   //--------------------------------------------------------------------
   // Test multiple parts and transitive subset declarations:
 
-  upart.partRepo.declare_subset( * parts[3], * parts[4] );
-  upart.partRepo.declare_subset( * parts[4], * parts[5] );
+   partRepo.declare_subset( * parts[3], * parts[4] );
+   partRepo.declare_subset( * parts[4], * parts[5] );
 
-  upart.partRepo.declare_subset( * parts[1], * parts[2] );
+   partRepo.declare_subset( * parts[1], * parts[2] );
   // 1 and 2 pick up 4 and 5 via transitive relationship:
-  upart.partRepo.declare_subset( * parts[2], * parts[3] );
+   partRepo.declare_subset( * parts[2], * parts[3] );
 
   STKUNIT_ASSERT( 4u == parts[1]->subsets().size() );
   STKUNIT_ASSERT( 3u == parts[2]->subsets().size() );
@@ -147,21 +114,21 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   // Test declaration of an intersection part
 
   
-  upart.intersection.push_back( parts[1] );
-  upart.intersection.push_back( parts[2] );
-  upart.intersection.push_back( parts[3] );
-  upart.intersection.push_back( parts[4] ); // Smallest subset of 1..4
+   intersection.push_back( parts[1] );
+   intersection.push_back( parts[2] );
+   intersection.push_back( parts[3] );
+   intersection.push_back( parts[4] ); // Smallest subset of 1..4
 
   // Test filtering of trivial intersection
 
-  STKUNIT_ASSERT( parts[4] == upart.partRepo.declare_part( upart.intersection ) );
+  STKUNIT_ASSERT( parts[4] ==  partRepo.declare_part(  intersection ) );
 
   // Test non-trivial intersection:
 
-  upart.intersection.push_back( parts[6] );
-  upart.intersection.push_back( parts[7] );
+   intersection.push_back( parts[6] );
+   intersection.push_back( parts[7] );
 
-  Part & pint_4_6_7 = * upart.partRepo.declare_part( upart.intersection );
+  Part & pint_4_6_7 = *  partRepo.declare_part(  intersection );
 
   STKUNIT_ASSERT( 3u == pint_4_6_7.intersection_of().size() );
   STKUNIT_ASSERT( contain( pint_4_6_7.intersection_of() , * parts[4] ) );
@@ -172,38 +139,38 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 
  // Test redeclaration of intersection, should give the same part back:
 
-  STKUNIT_ASSERT( pint_4_6_7 == * upart.partRepo.declare_part( upart.intersection ) );
+  STKUNIT_ASSERT( pint_4_6_7 == *  partRepo.declare_part(  intersection ) );
 
-  upart.partRepo.declare_subset( pint_4_6_7, * parts[8] );
+   partRepo.declare_subset( pint_4_6_7, * parts[8] );
 
   //--------------------------------------------------------------------
   // Test intersection-induced subset relationship
 
-  upart.partRepo.declare_subset( * parts[7], * parts[10] );
+   partRepo.declare_subset( * parts[7], * parts[10] );
   STKUNIT_ASSERT( ! contain( pint_4_6_7.subsets() , * parts[10] ) );
 
-  upart.partRepo.declare_subset( * parts[6], * parts[10] );
+   partRepo.declare_subset( * parts[6], * parts[10] );
   STKUNIT_ASSERT( ! contain( pint_4_6_7.subsets() , * parts[10] ) );
 
-  upart.partRepo.declare_subset( * parts[3], * parts[10] );
+   partRepo.declare_subset( * parts[3], * parts[10] );
   STKUNIT_ASSERT( ! contain( pint_4_6_7.subsets() , * parts[10] ) );
 
-  upart.partRepo.declare_subset( * parts[4], * parts[10] );
+   partRepo.declare_subset( * parts[4], * parts[10] );
   STKUNIT_ASSERT( contain( pint_4_6_7.subsets() , * parts[10] ) );
 
   // Test intersection-induced subset relationship triggered from a subset
 
-  upart.partRepo.declare_subset( * parts[7], * parts[11] );
+   partRepo.declare_subset( * parts[7], * parts[11] );
   STKUNIT_ASSERT( ! contain( pint_4_6_7.subsets() , * parts[11] ) );
 
 
-  upart.partRepo.declare_subset( * parts[6], * parts[11] );
+   partRepo.declare_subset( * parts[6], * parts[11] );
   STKUNIT_ASSERT( ! contain( pint_4_6_7.subsets() , * parts[11] ) );
 
-  upart.partRepo.declare_subset( * parts[3], * parts[11] );
+   partRepo.declare_subset( * parts[3], * parts[11] );
   STKUNIT_ASSERT( ! contain( pint_4_6_7.subsets() , * parts[11] ) );
 
-  upart.partRepo.declare_subset( * parts[5], * parts[11] );
+   partRepo.declare_subset( * parts[5], * parts[11] );
   STKUNIT_ASSERT( contain( pint_4_6_7.subsets() , * parts[11] ) );
 
   std::cout << std::endl << "Part: test intersection generated" << std::endl ;
@@ -212,7 +179,6 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   print( std::cout , "  " , * parts[11] );
 
   std::cout << std::endl ;
-
 
   //Test to cover assert_same_universe in PartRepository - Part is not in the same universe
   {
@@ -225,12 +191,12 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
       stk::mesh::Part &part_not_in_same_universe = meta2.declare_part ( "part_not_in_same_universe");
       meta2.commit();
 
-      upart.intersection4.push_back( &part_not_in_same_universe );
+       intersection4.push_back( &part_not_in_same_universe );
 
-      PartVector::const_iterator i = upart.intersection4.begin() ;
+      PartVector::const_iterator i =  intersection4.begin() ;
       Part * const p = *i ;
       STKUNIT_ASSERT_THROW(
-          upart.partRepo3.declare_subset(*parts[5], *p),
+           partRepo3.declare_subset(*parts[5], *p),
 	  std::runtime_error
           );
     }
@@ -238,7 +204,7 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   //Test to cover assert_not_superset in PartRepository - parts[11] is not a superset of parts[7]
   {
       STKUNIT_ASSERT_THROW(
-	  upart.partRepo.declare_subset(*parts[11], *parts[7] ),
+	   partRepo.declare_subset(*parts[11], *parts[7] ),
           std::runtime_error
 	  );
     }
@@ -246,7 +212,7 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   //Test to cover assert_not_superset in PartRepository - parts[99] is not the same rank of parts[11]
   {
       STKUNIT_ASSERT_THROW(
-	  upart.partRepo.declare_subset(*parts[11], *parts[99] ),
+	   partRepo.declare_subset(*parts[11], *parts[99] ),
           std::runtime_error
 	  );
     }
@@ -254,7 +220,7 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   //Test to cover declare_part(arg_name, arg_rank) - Part_99 of rank 1 already exists..
   {
       STKUNIT_ASSERT_THROW(
-	  upart.partRepo.declare_part("Part_99", 0 ),
+	   partRepo.declare_part("Part_99", 0 ),
           std::runtime_error
 	  );
     }
@@ -273,34 +239,34 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 
       Part * parts2[ NPARTS ] ;
 
-      parts2[0] = & upart.universal ;
+      parts2[0] = &  universal ;
 
       for ( int i = 1 ; i < NPARTS-1 ; ++i ) {
         std::ostringstream name ;
         name << "Part_" << i ;
-        parts2[i] = upart.partRepo4.declare_part( name.str() , 0 );
+        parts2[i] =  partRepo4.declare_part( name.str() , 0 );
       }
 
-      upart.partRepo4.declare_subset( * parts2[3], * parts2[4] );
-      upart.partRepo4.declare_subset( * parts2[4], * parts2[5] );
+       partRepo4.declare_subset( * parts2[3], * parts2[4] );
+       partRepo4.declare_subset( * parts2[4], * parts2[5] );
 
-      upart.partRepo4.declare_subset( * parts2[1], * parts2[2] );
+       partRepo4.declare_subset( * parts2[1], * parts2[2] );
       // 1 and 2 pick up 4 and 5 via transitive relationship:
-      upart.partRepo4.declare_subset( * parts2[2], * parts2[3] );
+       partRepo4.declare_subset( * parts2[2], * parts2[3] );
 
 
-      upart.intersection5.push_back( parts2[1] );
-      upart.intersection5.push_back( parts2[2] );
-      upart.intersection5.push_back( parts2[3] );
-      upart.intersection5.push_back( parts2[4] ); // Smallest subset of 1..4
-      upart.intersection5.push_back( parts2[6] );
-      upart.intersection5.push_back( parts2[7] );
+       intersection5.push_back( parts2[1] );
+       intersection5.push_back( parts2[2] );
+       intersection5.push_back( parts2[3] );
+       intersection5.push_back( parts2[4] ); // Smallest subset of 1..4
+       intersection5.push_back( parts2[6] );
+       intersection5.push_back( parts2[7] );
 
-      Part & partB = * upart.partRepo2.declare_part("{Part_4^Part_6^Part_7}", 0);
+      Part & partB = *  partRepo2.declare_part("{Part_4^Part_6^Part_7}", 0);
 
       std::cout << "UnitTestPart name of partB is " << partB.name()  << std::endl ;
 
-      Part & pintersect_4_6_7 = * upart.partRepo2.declare_part(  upart.intersection5 );
+      Part & pintersect_4_6_7 = *  partRepo2.declare_part(   intersection5 );
 
       std::cout << "UnitTestPart name of intersection part, pintersect_4_6_7 is " << pintersect_4_6_7.name()  << std::endl ;
     }
@@ -318,19 +284,22 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 
 }
 
-
 STKUNIT_UNIT_TEST(UnitTestPart, testPartNotaSubset)
 {
   //Test to cover assert_contain in PartRepository - Part is not a subset
-  UnitTestPart upart;
+  const int spatial_dimension = 3;
+  MetaData m(TopologicalMetaData::entity_rank_names(spatial_dimension));
+  PartVector intersection;
+  PartRepository partRepo(&m);
 
-  stk::mesh::Part &part_not_a_subset = upart.m2.declare_part ( "part_not_a_subset");
-  upart.m2.commit();
+  stk::mesh::Part &part_not_a_subset =  m.declare_part ( "part_not_a_subset");
+  m.commit();
 
-  upart.intersection3.push_back( &part_not_a_subset );
+
+  intersection.push_back( &part_not_a_subset );
 
   STKUNIT_ASSERT_THROW(
-      upart.partRepo6.declare_part(upart.intersection3), 
+      partRepo.declare_part(intersection), 
       std::runtime_error
       );
 
@@ -340,14 +309,17 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartNotaSubset)
 
 STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
 {
-  UnitTestPart upart;
 
-  Part * const pa = upart.partRepo5.declare_part( std::string("a") , 0 );
-  Part * const pb = upart.partRepo5.declare_part( std::string("b") , 0 );
-  Part * const pc = upart.partRepo5.declare_part( std::string("c") , 0 );
-  Part * const pd = upart.partRepo5.declare_part( std::string("d") , 0 );
-  Part * const pe = upart.partRepo5.declare_part( std::string("e") , 0 );
-  Part * const pf = upart.partRepo5.declare_part( std::string("f") , 0 );
+  const int spatial_dimension = 3;
+  MetaData m(TopologicalMetaData::entity_rank_names(spatial_dimension));
+  PartRepository partRepo(&m);
+
+  Part * const pa =  partRepo.declare_part( std::string("a") , 0 );
+  Part * const pb =  partRepo.declare_part( std::string("b") , 0 );
+  Part * const pc =  partRepo.declare_part( std::string("c") , 0 );
+  Part * const pd =  partRepo.declare_part( std::string("d") , 0 );
+  Part * const pe =  partRepo.declare_part( std::string("e") , 0 );
+  Part * const pf =  partRepo.declare_part( std::string("f") , 0 );
 
   STKUNIT_ASSERT( ! intersect( *pa , *pb ) );
   STKUNIT_ASSERT( ! intersect( *pb , *pc ) );
@@ -393,21 +365,21 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
   STKUNIT_ASSERT_EQUAL( size_t(0) , intersect_size );
   STKUNIT_ASSERT_EQUAL( size_t(0) , vresult.size() );
 
-  Part * const pabc = upart.partRepo5.declare_part( std::string("abc") , 0 );
-  Part * const pbcd = upart.partRepo5.declare_part( std::string("bcd") , 0 );
-  Part * const pdef = upart.partRepo5.declare_part( std::string("def") , 0 );
+  Part * const pabc =  partRepo.declare_part( std::string("abc") , 0 );
+  Part * const pbcd =  partRepo.declare_part( std::string("bcd") , 0 );
+  Part * const pdef =  partRepo.declare_part( std::string("def") , 0 );
 
-  upart.partRepo5.declare_subset( * pabc, *pa );
-  upart.partRepo5.declare_subset( * pabc, *pb );
-  upart.partRepo5.declare_subset( * pabc, *pc );
+  partRepo.declare_subset( * pabc, *pa );
+  partRepo.declare_subset( * pabc, *pb );
+  partRepo.declare_subset( * pabc, *pc );
 
-  upart.partRepo5.declare_subset( * pbcd, *pb );
-  upart.partRepo5.declare_subset( * pbcd, *pc );
-  upart.partRepo5.declare_subset( * pbcd, *pd );
+  partRepo.declare_subset( * pbcd, *pb );
+  partRepo.declare_subset( * pbcd, *pc );
+  partRepo.declare_subset( * pbcd, *pd );
 
-  upart.partRepo5.declare_subset( * pdef, *pd );
-  upart.partRepo5.declare_subset( * pdef, *pe );
-  upart.partRepo5.declare_subset( * pdef, *pf );
+  partRepo.declare_subset( * pdef, *pd );
+  partRepo.declare_subset( * pdef, *pe );
+  partRepo.declare_subset( * pdef, *pf );
 
   STKUNIT_ASSERT( intersect( *pabc , *pa ) );
   STKUNIT_ASSERT( intersect( *pabc , *pb ) );
@@ -424,10 +396,10 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
 // Unit test the PartRelation copy constructor:
 STKUNIT_UNIT_TEST(UnitTestPart, testPartRelation)
 {
-  UnitTestPart upart;
-  PartRelation rB(upart.rA);
+  PartRelation rA;
+  PartRelation rB( rA);
 
-  upart.rA = rB;
+  rA = rB;
 
 }
 

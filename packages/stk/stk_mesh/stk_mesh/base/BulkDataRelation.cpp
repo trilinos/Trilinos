@@ -61,6 +61,8 @@ void set_field_relations( Entity & e_from ,
 
 namespace {
 
+// TODO: Change function below to official require method
+
 void assert_valid_relation( const char method[] ,
                             const BulkData & mesh ,
                             const Entity   & e_from ,
@@ -140,7 +142,7 @@ void BulkData::declare_relation( Entity & e_from ,
 {
   static const char method[] = "stk::mesh::BulkData::declare_relation" ;
 
-  assert_ok_to_modify( method );
+  require_ok_to_modify();
 
   assert_valid_relation( method , *this , e_from , e_to );
 
@@ -163,9 +165,7 @@ void BulkData::declare_relation( Entity & e_from ,
 void BulkData::declare_relation( Entity & entity ,
                                  const std::vector<Relation> & rel )
 {
-  static const char method[] = "stk::mesh::BulkData::declare_relation" ;
-
-  assert_ok_to_modify( method );
+  require_ok_to_modify();
 
   const unsigned etype = entity.entity_rank();
 
@@ -191,7 +191,7 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
 {
   static const char method[]= "stk::mesh::BulkData::destroy_relation" ;
 
-  assert_ok_to_modify( method );
+  require_ok_to_modify();
 
   assert_valid_relation( method , *this , e_from , e_to );
 

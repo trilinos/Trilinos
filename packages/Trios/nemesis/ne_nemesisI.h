@@ -61,8 +61,8 @@
 extern "C" {
 #endif
 
-#define NEMESIS_API_VERSION		3.11
-#define NEMESIS_API_VERSION_NODOT	311
+#define NEMESIS_API_VERSION		3.12
+#define NEMESIS_API_VERSION_NODOT	312
 
 /*=============================================================================
  *     Initial Information Routines

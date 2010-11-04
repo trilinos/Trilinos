@@ -17,10 +17,12 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
-
 #include <stk_mesh/fem/SkinMesh.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
+
+#include <stdexcept>
+#include <iostream>
 
 namespace {
 
@@ -30,21 +32,21 @@ void destroy_entity_and_create_particles(
     stk::mesh::Entity * elem
     )
 {
-  const unsigned p_rank = fixture.bulk_data.parallel_rank();
+  const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
 
-  fixture.bulk_data.modification_begin();
-  stk::mesh::TopologicalMetaData& top_data = fixture.top_data;
+  fixture.m_bulk_data.modification_begin();
+  stk::mesh::TopologicalMetaData& top_data = fixture.m_top_data;
   const stk::mesh::EntityRank particle_rank = top_data.patch_rank;
 
   // forumlate request for 8 particles on owning process
-  std::vector<size_t> requests(fixture.meta_data.entity_rank_count(), 0);
+  std::vector<size_t> requests(fixture.m_meta_data.entity_rank_count(), 0);
   if ( elem != NULL && p_rank == elem->owner_rank() ) {
     requests[particle_rank] = 8;
   }
 
   // create the particles
   stk::mesh::EntityVector new_particles;
-  fixture.bulk_data.generate_new_entities(requests, new_particles);
+  fixture.m_bulk_data.generate_new_entities(requests, new_particles);
 
   if ( ! new_particles.empty() ) {
     // Get node relations
@@ -56,10 +58,10 @@ void destroy_entity_and_create_particles(
     // iterate over the new particles
     for (unsigned i = 0; i != 8; ++i) {
       // add the particles to the skin_part
-      fixture.bulk_data.change_entity_parts( *new_particles[i],
+      fixture.m_bulk_data.change_entity_parts( *new_particles[i],
                                              add_parts );
       // copy fields from nodes to particles
-      fixture.bulk_data.copy_entity_fields( *(relations[i].entity()),
+      fixture.m_bulk_data.copy_entity_fields( *(relations[i].entity()),
                                             *new_particles[i] );
     }
   }
@@ -76,7 +78,7 @@ void destroy_entity_and_create_particles(
       downward_relations.push_back(current_entity);
     }
 
-    fixture.bulk_data.destroy_entity( elem );
+    fixture.m_bulk_data.destroy_entity( elem );
 
     // destroy the related entities if they are not connected to any
     // higher order entities
@@ -85,14 +87,14 @@ void destroy_entity_and_create_particles(
       stk::mesh::Entity * current_entity = *itr;
 
       if (current_entity->relations(top_data.element_rank).empty()) {
-        fixture.bulk_data.destroy_entity( current_entity );
+        fixture.m_bulk_data.destroy_entity( current_entity );
       }
     }
   }
 
-  fixture.bulk_data.modification_end();
+  fixture.m_bulk_data.modification_end();
 
-  stk::mesh::skin_mesh( fixture.bulk_data, top_data.element_rank, &skin_part);
+  stk::mesh::skin_mesh( fixture.m_bulk_data, top_data.element_rank, &skin_part);
 }
 
 }
@@ -110,22 +112,22 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
       stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-      stk::mesh::TopologicalMetaData& top_data = fixture.top_data;
+      stk::mesh::TopologicalMetaData& top_data = fixture.m_top_data;
       const stk::mesh::EntityRank particle_rank = top_data.patch_rank;
 
       stk::mesh::Part & skin_part =
-        fixture.meta_data.declare_part("skin_part");
+        fixture.m_meta_data.declare_part("skin_part");
 
-      stk::mesh::put_field( fixture.coord_field,
+      stk::mesh::put_field( fixture.m_coord_field,
                             particle_rank,
-                            fixture.meta_data.universal_part(),
+                            fixture.m_meta_data.universal_part(),
                             3 );
 
-      fixture.meta_data.commit();
+      fixture.m_meta_data.commit();
 
       fixture.generate_mesh();
 
-      stk::mesh::skin_mesh(fixture.bulk_data, top_data.element_rank, &skin_part);
+      stk::mesh::skin_mesh(fixture.m_bulk_data, top_data.element_rank, &skin_part);
 
       stk::mesh::Entity * elem = fixture.elem(ix , iy , iz);
 
@@ -134,7 +136,8 @@ bool skinning_use_case_1b(stk::ParallelMachine pm)
     }
     }
   }
-  catch(...) {
+  catch(std::exception& e) {
+    std::cerr << "Caught exception: " << e.what() << std::endl;
     result = false;
   }
 

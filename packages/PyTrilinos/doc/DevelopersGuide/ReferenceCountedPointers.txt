@@ -1,0 +1,115 @@
+Reference Counted Pointers
+==========================
+
+Reference counting is a memory management technique whereby
+dynamically allocated objects can be tracked, and can be guaranteed to
+exist as long as any other entity (such as a class or the local scope
+of a function) needs it to.  Such entities can "take a reference" to
+the dynamically-allocated reference-counted object, and the technique
+works by ensuring that the object is never destroyed until its
+reference count falls to zero.
+
+A reference counted pointer is a data structure for implementing such
+a memory management technique.  It consists of a raw pointer to an
+object and an integer count of the number of entities that have taken
+a reference to the object.  It also consists of methods for
+increasing and decreasing the reference count as needed, and a
+destructor that waits until the reference count is zero before
+destroying the object.  These are also called shared pointers.
+
+PyTrilinos and RCPs
+-------------------
+
+Python implements just such a reference counting scheme for every
+python object that is constructed.  It occurs "behind the scenes" and
+"just works", like python is famous for.  The only people who ever
+have to worry about python reference counting are programmers who
+write code using the Python/C API -- which does include PyTrilinos
+developers.
+
+C++ does not have a standard reference counting system, although
+several reference counting classes have been developed, which are much
+more powerful than can be developed in C (such as the Python/C API
+uses) and much less prone to error.  There is the
+``boost::shared_ptr<>`` class, which is planned to be moved to the
+``std`` namespace at some point in the future.  Trilinos could not
+wait for this standardization process, and thus was born the
+``Teuchos::RCP<>``, which of course stands for "reference counted
+pointer".
+
+Several Trilinos packages use RCPs, and so PyTrilinos has a policy for
+dealing with them.  First, if any package anywhere stores instances of
+a class using an RCP, then PyTrilinos will always store instances of
+that class internally using an RCP.  This ensures that all reference
+counts remain accurate under all use cases.  Second, python
+programmers should never have to deal with ``Teuchos::RCP<>``.  That
+is to say, there is no ``Teuchos.RCP`` class in PyTrilinos.  If a C++
+method requires a ``Teuchos::RCP<>`` of some class, the python
+interface will take an unadorned instance of that class.  The
+conversion to an RCP will happen behind the scenes.  And the python
+programmer, who has always benefitted from reference counts without
+ever exerting any effort, will continue in this happy state.
+
+By default, SWIG generates code that stores dynamically allocated
+objects using a raw pointer.  With SWIG 2.0.0, the python code
+generator in SWIG has a (relatively?) bug free implementation of using
+reference counted pointers instead of raw pointers.  This is coupled
+with a large set of typemaps that alter the conversion code between
+C++ and python, taking the new storage method into account.  This is
+implemented for ``boost::shared_ptr<>`` and ``std::shared_ptr<>``.  It
+provides a ``%shared_ptr()`` SWIG macro that the user invokes on a
+class that should be stored as a shared pointer.
+
+The ``Teuchos_RCP.i`` file leverages the SWIG-provided
+``boost_shared_ptr.i`` file by using ``#define`` statements to make
+all of the provided logic work with ``Teuchos::RCP<>``.  It also
+provides replacement typemaps for when the ``Teuchos::RCP<>``
+interface is different from the ``boost::shared_ptr<>`` interface and
+additional typemaps for directors, which ``boost_shared_ptr.i`` does
+not provide.  This new logic is accessed by using a ``%teuchos_rcp()``
+SWIG macro on a class.
+
+When to Store PyTrilinos Classes as RCPs
+----------------------------------------
+
+When do you use the ``%teuchos_rcp()`` macro?  First, whenever you
+encounter a class that is wrapped in ``Teuchos::RCP<>`` as an input or
+output argument in a class method or function, then that class needs
+to be stored internally as as an RCP by using ``%teuchos_rcp()``.
+
+Second, if ``B`` is a base class and ``D`` derives from it, then
+``%teuchos_rcp(B)`` requires that ``%teuchos_rcp(D)`` also be invoked.
+Failure to do so will result in an extension module that will fail to
+compile.  The reason is due to how type checking is performed for
+these RCP classes and the need for derived classes to be recognized as
+proper instances of base classes.
+
+Third, using ``B`` and ``D`` as before, if ``%teuchos_rcp(D)`` is
+invoked, then ``%teuchos_rcp(B)`` almost certainly should be as well.
+The extension module will compile even if this rule is not followed,
+but type checking will fail under certain circumstances.  This rule
+can be ignored if B is an implementation-only base class, but this is
+rare.
+
+Usage Details
+-------------
+
+If a class is defined in Package 1, but not used as an RCP in Package
+1, and is then used as an RCP in Package 2, the ``%teuchos_rcp()``
+macro should be invoked in the SWIG interface file for Package 1.
+This way, when ``%import`` is used on Package 1 from other package
+SWIG interface files, the storage method remains constant among all
+the packages.
+
+If you are (in effect) wrapping Package 2, and Package 1 is Epetra,
+then there are some additional SWIG macros you should know.  If the
+Epetra class derives from Epetra_Object, then use
+``%teuchos_rcp_epetra()``.  This ensures that ``Print()`` and
+``__str__()`` methods will work properly without having to invoke
+``%teuchos_rcp(Epetra_Object)``, which would then require almost all
+Epetra classes to be treated.
+
+If the Epetra class is an array storage class implemented as a hybrid
+numpy array, then you should use the ``%teuchos_rcp_epetra_numpy()``
+macro.  This should never be necessary, however, because all of these
+classes have already been treated.

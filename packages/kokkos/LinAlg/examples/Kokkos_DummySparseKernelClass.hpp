@@ -109,7 +109,7 @@ namespace KokkosExamples {
 
         In general, after calling clear(), multiply() and solve() cannot be called.
       */
-    void clear();
+    void clear() {}
 
     //@}
     //! @name Computational methods

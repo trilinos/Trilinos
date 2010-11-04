@@ -2,9 +2,13 @@
  *
  * @section stk_products The Sierra Toolkit contains the following products:
  *
+ * -  @copydoc stk_io_banner
+ *
  * -  @copydoc stk_linsys_banner
  *
  * -  @copydoc stk_mesh_banner
+ *
+ * -  @copydoc stk_rebalance_banner
  *
  * -  @copydoc stk_search_banner
  *
@@ -13,9 +17,13 @@
  *
  * @section stk_howto How to...
  *
+ * -  @copydoc stk_io_howto
+ *
  * -  @copydoc stk_linsys_howto
  *
  * -  @copydoc stk_mesh_howto
+ *
+ * -  @copydoc stk_rebalance_howto
  *
  * -  @copydoc stk_search_howto
  *

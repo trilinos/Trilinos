@@ -5,7 +5,7 @@
 :Author:       Bill Spotz
 :Contact:      wfspotz@sandia.gov
 :Organization: Sandia National Laboratories
-:Date:         12 August 2010
+:Date:         28 October 2010
 :Copyright:    Sandia Corporation, 2010
 
 :Abstract: PyTrilinos is a python interface to selected Trilinos
@@ -26,4 +26,5 @@
 .. include:: BuildSystem.txt
 .. include:: Documentation.txt
 .. include:: ExceptionHandling.txt
+.. include:: ReferenceCountedPointers.txt
 .. include:: Testing.txt

@@ -57,6 +57,9 @@
 #include "BelosDGKSOrthoManager.hpp"
 #include "BelosICGSOrthoManager.hpp"
 #include "BelosIMGSOrthoManager.hpp"
+#ifdef HAVE_BELOS_TSQR
+#  include "BelosTsqrOrthoManager.hpp"
+#endif // HAVE_BELOS_TSQR
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -66,7 +69,7 @@
 #include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
-#endif
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
 /** \example epetra/example/GCRODR/GCRODREpetraExFile.cpp
     This is an example of how to use the Belos::GCRODRSolMgr solver manager.
@@ -144,6 +147,58 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
+
+    /// \class ValidOrthoNames
+    /// \brief Enumeration of valid orthogonalization managers
+    ///
+    /// Encapsulates the list of valid orthogonalization manager names.
+    class ValidOrthoNames {
+    public:
+      ValidOrthoNames();
+
+      /// Return true if the given orthogonalization method name is
+      /// accepted by this solver manager, else return false.
+      ///
+      /// \param name [in] Candidate orthogonalization method name
+      bool isValidName (const std::string& name) const;
+
+      /// Check whether the given orthogonalization method name is
+      /// accepted by this solver manager.  If so, do nothing.
+      /// Otherwise, throw an std::invalid_argument with an informative
+      /// error message.
+      ///
+      /// \param name [in] Candidate orthogonalization method name
+      void checkValidName (const std::string& name) const;
+
+      /// Print to the given ostream a neatly formatted list of valid
+      /// orthogonalization method names accepted by this solver
+      /// manager.
+      ///
+      /// \param out [out] Output stream to which to print the list
+      void
+      printValidList (std::ostream& out) const;
+
+      /// Return a neatly formatted string of the list of valid
+      /// orthogonalization method names accepted by this solver
+      /// manager.
+      std::string validList () const;
+
+    private:
+      /// List of orthogonalization manager names accepted by this
+      /// solver.
+      std::vector< std::string > validNames_;
+
+      /// Number of orthogonalization manager names accepted by this
+      /// solver.
+      static const int numValidOrthoNames() {
+#ifdef HAVE_BELOS_TSQR
+	return 4;
+#else 
+	return 3;
+#endif // HAVE_BELOS_TSQR
+      }      
+    };
+
     
   public:
     
@@ -165,7 +220,7 @@ namespace Belos {
      *   - "Num Recycled Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 5
      *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 300
      *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
-     *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS, ICGS, IMGS. Default: "DGKS"
+     *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS, ICGS, IMGS, TSQR (if built with TSQR support). Default: "DGKS".
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Output Style" - a OutputType specifying the style of output. Default: Belos::General
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8.
@@ -316,6 +371,10 @@ namespace Belos {
       } else 
 	TEST_FOR_EXCEPTION( true ,std::logic_error,"Belos::GCRODRSolMgr(): Invalid residual scaling type.");
     }
+
+    // Object that validates the orthogonalization manager name
+    // specified by the user.
+    ValidOrthoNames orthoNameValidator_;
 
     // Lapack interface
     Teuchos::LAPACK<int,ScalarType> lapack;
@@ -584,27 +643,43 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
   // Check if the orthogonalization changed.
   if (params->isParameter("Orthogonalization")) {
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
-    TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
-			std::invalid_argument,
-			"Belos::GCRODRSolMgr: \"Orthogonalization\" must be either \"DGKS\", \"ICGS\", or \"IMGS\".");
+    // Make sure the orthogonalization manager name is valid.  If not,
+    // throw an informative exception.
+    orthoNameValidator_.checkValidName (tempOrthoType);
+
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
       // Create orthogonalization manager
-      if (orthoType_=="DGKS") {
+      if (orthoType_ == "DGKS") {
 	if (orthoKappa_ <= 0) {
+	  // Use default value of kappa (orthogonalization constant
+	  // for DGKS).
 	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
 	}
 	else {
 	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+	  // Use the user-specified value of kappa (orthogonalization
+	  // constant for DGKS).
 	  Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
 	}
       }
-      else if (orthoType_=="ICGS") {
+      else if (orthoType_ == "ICGS") {
 	ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
       } 
-      else if (orthoType_=="IMGS") {
+      else if (orthoType_ == "IMGS") {
 	ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
       } 
+#ifdef HAVE_BELOS_TSQR
+      else if (orthoType_ == "TSQR") {
+        ortho_ = Teuchos::rcp( new TsqrMatOrthoManager< ScalarType, MV, OP > );
+      } 
+#endif // HAVE_BELOS_TSQR
+      else {
+	std::ostringstream os;
+	os << "Belos::GCRODRSolMgr: Should never get here!  Orthogonalization "
+	  "manager \"" << orthoType_ << "\" is not supported";
+	throw std::logic_error (os.str());
+      }
     }  
   }
 
@@ -774,12 +849,18 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 
   // Create orthogonalization manager if we need to.
   if (ortho_ == Teuchos::null) {
-    if (orthoType_=="DGKS") {
+    // Make sure the orthogonalization manager name is valid.  If not,
+    // throw an informative exception.
+    orthoNameValidator_.checkValidName (orthoType_);
+
+    if (orthoType_ == "DGKS") {
       if (orthoKappa_ <= 0) {
+	// Use the default value of the orthogonalization constant kappa.
 	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
       }
       else {
 	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+	// Use the user-specified value of the orthogonalization constant kappa.
 	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
       }
     }
@@ -789,9 +870,16 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
     else if (orthoType_=="IMGS") {
       ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
     } 
+#ifdef HAVE_BELOS_TSQR
+    else if (orthoType_=="TSQR") {
+      ortho_ = Teuchos::rcp( new TsqrMatOrthoManager< ScalarType, MV, OP > );
+    }
+#endif // HAVE_BELOS_TSQR
     else {
-      TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
-			 "Belos::GCRODRSolMgr(): Invalid orthogonalization type.");
+      std::ostringstream os;
+      os << "Belos::GCRODRSolMgr: Should never get here!  Orthogonalization "
+	"manager \"" << orthoType_ << "\" is not supported";
+      throw std::logic_error (os.str());
     }  
   }
 
@@ -824,6 +912,9 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
     pl->set("Maximum Iterations", maxIters_default_,
       "The maximum number of iterations allowed for each\n"
       "set of RHS solved.");
+    // mfh 25 Oct 2010: "Block Size" must be 1 because GCRODR is
+    // currently not a block method: i.e., it does not work on
+    // multiple right-hand sides at once.
     pl->set("Block Size", blockSize_default_,
       "Block Size Parameter -- currently must be 1 for GCRODR");
     pl->set("Num Blocks", numBlocks_default_,
@@ -851,7 +942,8 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
       "The string to use as a prefix for the timer labels.");
     //  pl->set("Restart Timers", restartTimers_);
     pl->set("Orthogonalization", orthoType_default_,
-      "The type of orthogonalization to use: DGKS, ICGS, IMGS");
+	    "The type of orthogonalization to use: " + 
+	    orthoNameValidator_.validList());
     pl->set("Orthogonalization Constant",orthoKappa_default_,
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");
@@ -1956,7 +2048,61 @@ std::string GCRODRSolMgr<ScalarType,MV,OP>::description() const {
   oss << "}";
   return oss.str();
 }
-  
+
+template<class ScalarType, class MV, class OP>
+GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::ValidOrthoNames ()
+  : validNames_ (numValidOrthoNames()) {
+  validNames_[0] = "DGKS";
+  validNames_[1] = "ICGS";
+  validNames_[2] = "IMGS";
+#ifdef HAVE_BELOS_TSQR
+  validNames_[3] = "TSQR";
+#endif // HAVE_BELOS_TSQR
+}
+
+template<class ScalarType, class MV, class OP>
+bool
+GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::isValidName (const std::string& name) const {
+  return (std::find (validNames_.begin(), validNames_.end(), name) != validNames_.end());
+}
+
+template<class ScalarType, class MV, class OP>
+void
+GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::checkValidName (const std::string& name) const {
+  if (! isValidName (name))
+    {
+      std::ostringstream os;
+      os << "Belos::GCRODRSolMgr: Name of orthogonalization manager "
+	"(\"Orthogonalization\" parameter) must be one of the following: ";
+      printValidList (os);
+      throw std::invalid_argument (os.str());
+    }
+}
+
+
+template<class ScalarType, class MV, class OP>
+void
+GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::printValidList (std::ostream& out) const {
+  const int numValid = ValidOrthoNames::numValidOrthoNames();
+  for (int k = 0; k < numValid; ++k)
+    {
+      out << "\"" << validNames_[k] << "\"";
+      // Format the list of valid names nicely.
+      if (k < numValid - 1)
+	out << ", ";
+      if (k == numValid - 2)
+	out << " or ";
+    }
+}
+
+template<class ScalarType, class MV, class OP>
+std::string
+GCRODRSolMgr< ScalarType, MV, OP >::ValidOrthoNames::validList () const {
+  std::ostringstream os;
+  printValidList (os);
+  return os.str();
+}
+
 } // end Belos namespace
 
 #endif /* BELOS_GCRODR_SOLMGR_HPP */

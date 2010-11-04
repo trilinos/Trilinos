@@ -65,6 +65,11 @@ namespace Tpetra {
 
   //! \brief A class for constructing and using sparse compressed graphs with row access.
   /*!
+   \tparam LocalOrdinal  A ordinal type for lists of local indices. This specifies the \c LocalOrdinal type for Map objects used by this graph.
+   \tparam GlobalOrdinal A ordinal type for lists of global indices. This specifies the \c GlobalOrdinal type for Map objects used by this graph.
+   \tparam Node          A shared-memory node class, fulfilling the \ref kokkos_node_api "Kokkos Node API"
+   \tparam LocalMatOps   A local sparse matrix operations class, fulfiling the \ref kokkos_crs_ops "Kokkos CRS Ops API".
+   * 
    * This class allows the construction of sparse graphs with row-access. 
    * 
    * <b>Local vs. Global</b>
@@ -83,7 +88,6 @@ namespace Tpetra {
    * CrsGraph object; see DistObject. However, the method insertGlobalValues() is an exception to this rule, as non-local rows are 
    * allowed to be added via the local graph. These rows are stored in the local graph and communicated to the appropriate node 
    * on the next call to globalAssemble() or fillComplete() (the latter calls the former).
-   * 
    */
   template <class LocalOrdinal, 
             class GlobalOrdinal = LocalOrdinal, 

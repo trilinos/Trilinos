@@ -7,47 +7,24 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <stdexcept>
+#include <sstream>
+
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-#include <stdexcept>
-#include <iostream>
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-
 #include <stk_mesh/base/FieldData.hpp>
+
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 namespace {
-void testCartesian();
-void testCylindrical();
-void testFullTensor();
-void testSymmetricTensor();
-void testFieldDataArray( stk::ParallelMachine pm );
 
-STKUNIT_UNIT_TEST(UnitTestField, testUnit)
-{
-#if defined( STK_HAS_MPI )
-  stk::ParallelMachine pworld = MPI_COMM_WORLD ;
-  stk::ParallelMachine pself  = MPI_COMM_SELF ;
-#else
-  stk::ParallelMachine pworld = stk::parallel_machine_null();
-  stk::ParallelMachine pself  = stk::parallel_machine_null();
-#endif
-  if ( 0 == stk::parallel_machine_rank( pworld ) ) {
-    // Nothing parallel being tested, only run on one process
-    testCartesian();
-    testCylindrical();
-    testFullTensor();
-    testSymmetricTensor();
-    testFieldDataArray( pself );
-  }
-}
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
+typedef shards::ArrayDimTag::size_type size_type;
 
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ATAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( BTAG )
@@ -57,121 +34,132 @@ template< class FieldType >
 void print_bucket_array( const FieldType & f , const stk::mesh::Bucket & k )
 {
   typedef stk::mesh::BucketArray< FieldType > ArrayType ;
+  std::ostringstream oss;
 
-  try {
-    ArrayType a( f , k.begin(), k.end() );
-    ArrayType b( f , k );
+  ArrayType a( f , k.begin(), k.end() );
+  ArrayType b( f , k );
 
-    std::cout << "  BucketArray[" << f.name() << "](" ;
+  oss << "  BucketArray[" << f.name() << "](" ;
 
-    if ( a.size() != b.size() ) {
-      throw std::runtime_error("UnitTestField FAILED BucketArray dimensions not consistant with Bucket::iterator");
-    }
+  if ( a.size() != b.size() ) {
+    throw std::runtime_error("UnitTestField FAILED BucketArray dimensions not consistant with Bucket::iterator");
+  }
 
-    if ( a.size() ) {
-      for ( unsigned i = 0 ; i < ArrayType::Rank ; ++i ) {
-        if ( i ) { std::cout << "," ; }
-        std::cout << a.dimension(i);
-        if (a.dimension(i) != b.dimension(i)) {
-          throw std::runtime_error("UnitTestField FAILED BucketArray dimensions not consistant with Bucket::iterator");
-        }
+  if ( a.size() ) {
+    for ( unsigned i = 0 ; i < ArrayType::Rank ; ++i ) {
+      if ( i ) { oss << "," ; }
+      oss << a.dimension(i);
+      if (a.dimension(i) != b.dimension(i)) {
+        throw std::runtime_error("UnitTestField FAILED BucketArray dimensions not consistant with Bucket::iterator");
       }
     }
-    std::cout << ")" << std::endl ;
   }
-  catch( const std::exception & ) {
-  }
+  oss << ")" << std::endl ;
 }
 
-void testCartesian()
+STKUNIT_UNIT_TEST(UnitTestField, testCartesian)
 {
-  const stk::mesh::Cartesian&  cartesian_tag = stk::mesh::Cartesian::tag();
+  // Test the Cartesian array dimension tag
 
-  std::string to_str = cartesian_tag.to_string(3, 1);
+  const stk::mesh::Cartesian& cartesian_tag = stk::mesh::Cartesian::tag();
+
+  std::string to_str = cartesian_tag.to_string(3 /*size*/, 1 /*idx*/);
   std::string expected_str("y");
-  STKUNIT_ASSERT_EQUAL( to_str == expected_str, true );
+  STKUNIT_ASSERT_EQUAL( to_str, expected_str);
 
   //should throw if we supply a size < 3:
-  STKUNIT_ASSERT_THROW( cartesian_tag.to_string(2, 1), std::runtime_error );
+  STKUNIT_ASSERT_THROW( cartesian_tag.to_string(2 /*size*/, 1 /*idx*/),
+                        std::runtime_error );
 
-  shards::ArrayDimTag::size_type expected_idx = 1;
-  shards::ArrayDimTag::size_type idx = cartesian_tag.to_index(3, "y");
-
+  size_type expected_idx = 1;
+  size_type idx = cartesian_tag.to_index(3 /*size*/, "y" /*dim*/);
   STKUNIT_ASSERT_EQUAL( idx, expected_idx );
 
   //should throw if we supply a "z" along with size==2:
-  STKUNIT_ASSERT_THROW( cartesian_tag.to_index(2, "z"), std::runtime_error );
+  STKUNIT_ASSERT_THROW( cartesian_tag.to_index(2 /*size*/, "z" /*dim*/),
+                        std::runtime_error );
 }
 
-void testCylindrical()
+STKUNIT_UNIT_TEST(UnitTestField, testCylindrical)
 {
-  const stk::mesh::Cylindrical&  cylindrical_tag = stk::mesh::Cylindrical::tag();
+  // Test the Cylindrical array dimension tag
 
-  std::string to_str = cylindrical_tag.to_string(3, 1);
+  const stk::mesh::Cylindrical& cylindrical_tag =stk::mesh::Cylindrical::tag();
+
+  std::string to_str = cylindrical_tag.to_string(3 /*size*/, 1 /*idx*/);
   std::string expected_str("a");
-  STKUNIT_ASSERT_EQUAL( to_str == expected_str, true );
+  STKUNIT_ASSERT_EQUAL( to_str, expected_str );
 
   //should throw if we supply a size < 3:
-  STKUNIT_ASSERT_THROW( cylindrical_tag.to_string(2, 1), std::runtime_error );
+  STKUNIT_ASSERT_THROW( cylindrical_tag.to_string(2 /*size*/, 1 /*idx*/),
+                        std::runtime_error );
 
-  shards::ArrayDimTag::size_type expected_idx = 1;
-  shards::ArrayDimTag::size_type idx = cylindrical_tag.to_index(3, "a");
-
+  size_type expected_idx = 1;
+  size_type idx = cylindrical_tag.to_index(3 /*size*/, "a" /*dim*/);
   STKUNIT_ASSERT_EQUAL( idx, expected_idx );
 
   //should throw if we supply a "z" along with size==2:
-  STKUNIT_ASSERT_THROW( cylindrical_tag.to_index(2, "z"), std::runtime_error );
+  STKUNIT_ASSERT_THROW( cylindrical_tag.to_index(2 /*size*/, "z" /*dim*/),
+                        std::runtime_error );
 }
 
-void testFullTensor()
+STKUNIT_UNIT_TEST(UnitTestField, testFullTensor)
 {
+  // Test the FullTensor array dimension tag
+
   const stk::mesh::FullTensor&  fulltensor_tag = stk::mesh::FullTensor::tag();
 
-  std::string to_str = fulltensor_tag.to_string(9, 1);
+  std::string to_str = fulltensor_tag.to_string(9 /*size*/, 1 /*idx*/);
   std::string expected_str("yx");
-  STKUNIT_ASSERT_EQUAL( to_str == expected_str, true );
+  STKUNIT_ASSERT_EQUAL( to_str, expected_str );
 
   //should throw if we supply a size < 9:
-  STKUNIT_ASSERT_THROW( fulltensor_tag.to_string(2, 1), std::runtime_error );
+  STKUNIT_ASSERT_THROW( fulltensor_tag.to_string(2 /*size*/, 1 /*idx*/),
+                        std::runtime_error );
 
-  shards::ArrayDimTag::size_type expected_idx = 1;
-  shards::ArrayDimTag::size_type idx = fulltensor_tag.to_index(9, "yx");
-
+  size_type expected_idx = 1;
+  size_type idx = fulltensor_tag.to_index(9 /*size*/, "yx" /*dim*/);
   STKUNIT_ASSERT_EQUAL( idx, expected_idx );
 
   //should throw if we supply a "zz" along with size==2:
-  STKUNIT_ASSERT_THROW( fulltensor_tag.to_index(2, "zz"), std::runtime_error );
+  STKUNIT_ASSERT_THROW( fulltensor_tag.to_index(2 /*size*/, "zz" /*dim*/),
+                        std::runtime_error );
 }
 
-void testSymmetricTensor()
+STKUNIT_UNIT_TEST(UnitTestField, testSymmetricTensor)
 {
-  const stk::mesh::SymmetricTensor&  symmetrictensor_tag = stk::mesh::SymmetricTensor::tag();
+  // Test the SymmetricTensor array dimension tag
 
-  std::string to_str = symmetrictensor_tag.to_string(9, 1);
+  const stk::mesh::SymmetricTensor& symmetrictensor_tag =
+    stk::mesh::SymmetricTensor::tag();
+
+  std::string to_str = symmetrictensor_tag.to_string(9 /*size*/, 1 /*idx*/);
   std::string expected_str("yx");
-  STKUNIT_ASSERT_EQUAL( to_str == expected_str, true );
+  STKUNIT_ASSERT_EQUAL( to_str, expected_str);
 
   //should throw if we supply a size < 9:
-  STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_string(2, 1), std::runtime_error );
+  STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_string(2 /*size*/, 1 /*idx*/),
+                        std::runtime_error );
 
-
-  shards::ArrayDimTag::size_type expected_idx = 1;
-  shards::ArrayDimTag::size_type idx = symmetrictensor_tag.to_index(6, "yy");
-
+  size_type expected_idx = 1;
+  size_type idx = symmetrictensor_tag.to_index(6 /*size*/, "yy" /*dim*/);
   STKUNIT_ASSERT_EQUAL( idx, expected_idx );
 
   //should throw if we supply a "xz" along with size==5:
-  STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_index(5, "xz"), std::runtime_error );
+  STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_index(5 /*size*/, "xz" /*dim*/),
+                        std::runtime_error );
 }
 
-void testFieldDataArray( stk::ParallelMachine pm )
+STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
 {
+  stk::ParallelMachine pm = MPI_COMM_SELF ;
+  std::ostringstream oss; // to test printing of things w/out spamming cout
+
+  // specifications for some test fields
   typedef stk::mesh::Field<double>                rank_zero_field ;
   typedef stk::mesh::Field<double,ATAG>           rank_one_field ;
   typedef stk::mesh::Field<double,ATAG,BTAG>      rank_two_field ;
   typedef stk::mesh::Field<double,ATAG,BTAG,CTAG> rank_three_field ;
-
-  std::cout << "UnitTestField BEGIN:" << std::endl ;
 
   const std::string name0("test_field_0");
   const std::string name1("test_field_1");
@@ -183,43 +171,42 @@ void testFieldDataArray( stk::ParallelMachine pm )
   stk::mesh::BulkData bulk_data( meta_data , pm );
   stk::mesh::TopologicalMetaData top_data( meta_data, spatial_dimension );
 
+  // declare some test fields
   rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
   rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  name1 );
   rank_three_field & f3 = meta_data.declare_field< rank_three_field >( name3 );
   rank_two_field   & f2 = meta_data.declare_field< rank_two_field >(  name2 );
 
-  {
-    int ok = 0 ;
-    try {
-      typedef stk::mesh::Field<double,CTAG> error_type ;
-      meta_data.declare_field< error_type >( name1 );
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestField CORRECTLY caught error: "
-                << x.what()
-                << std::endl ;
-    }
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestField FAILED to catch error");
-    }
-  }
+  // confirm that declaring field with erroneous type throws exception
+  typedef stk::mesh::Field<double,CTAG> error_type ;
+  STKUNIT_ASSERT_THROW(meta_data.declare_field< error_type >( name1 ),
+                       std::runtime_error);
 
+  // declare some parts, each one will get one of our test fields
   stk::mesh::Part & p0 = meta_data.declare_part("P0", top_data.node_rank );
   stk::mesh::Part & p1 = meta_data.declare_part("P1", top_data.node_rank );
   stk::mesh::Part & p2 = meta_data.declare_part("P2", top_data.node_rank );
   stk::mesh::Part & p3 = meta_data.declare_part("P3", top_data.node_rank );
 
-  stk::mesh::put_field( f0 , top_data.node_rank , p0 );
-  stk::mesh::put_field( f1 , top_data.node_rank , p1 , 10 );
-  stk::mesh::put_field( f2 , top_data.node_rank , p2 , 10 , 20 );
-  stk::mesh::put_field( f3 , top_data.node_rank , p3 , 10 , 20 , 30 );
+  // put each test field on a part
+  stk::mesh::put_field( f0 , top_data.node_rank , p0 ); //scalar
+  stk::mesh::put_field( f1 , top_data.node_rank , p1 ,
+                        10 /*dim1 size*/);
+  stk::mesh::put_field( f2 , top_data.node_rank , p2 ,
+                        10 /*dim1 size*/,
+                        20 /*dim2 size*/);
+  stk::mesh::put_field( f3 , top_data.node_rank , p3 ,
+                        10 /*dim1 size*/,
+                        20 /*dim2 size*/,
+                        30 /*dim3 size*/);
 
-  stk::mesh::print( std::cout , "  " , f0 ); std::cout << std::endl ;
+  stk::mesh::print( oss , "  " , f0 );
 
   meta_data.commit();
 
   bulk_data.modification_begin();
+
+  // Declare a 10 nodes on each part
 
   for ( unsigned i = 1 ; i < 11 ; ++i ) {
     bulk_data.declare_entity( top_data.node_rank , i ,
@@ -241,9 +228,9 @@ void testFieldDataArray( stk::ParallelMachine pm )
                               std::vector< stk::mesh::Part * >( 1 , & p3 ) );
   }
 
+  // Go through node_buckets and print the all the fields on each bucket
   const std::vector< stk::mesh::Bucket *> & node_buckets =
     bulk_data.buckets( top_data.node_rank );
-
   for ( std::vector< stk::mesh::Bucket *>::const_iterator
         ik = node_buckets.begin() ; ik != node_buckets.end() ; ++ik ) {
     stk::mesh::Bucket & k = **ik ;
@@ -251,25 +238,21 @@ void testFieldDataArray( stk::ParallelMachine pm )
     std::vector< stk::mesh::Part * > parts ;
     k.supersets( parts );
 
-    std::cout << "Bucket:" ;
     for ( std::vector< stk::mesh::Part * >::iterator
           ip = parts.begin() ; ip != parts.end() ; ++ip ) {
-      std::cout << " " << (*ip)->name();
+      oss << " " << (*ip)->name();
     }
-    std::cout << std::endl ;
 
     print_bucket_array( f0 , k );
     print_bucket_array( f1 , k );
     print_bucket_array( f2 , k );
     print_bucket_array( f3 , k );
   }
-
-  std::cout << "UnitTestField END" << std::endl ;
 }
 
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( ATAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( BTAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( CTAG )
 
-}//namespace <anonymous>
+} //namespace <anonymous>
 

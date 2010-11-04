@@ -1,0 +1,270 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# System imports
+from   numpy    import *
+from   optparse import *
+import sys
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
+                  default=False,
+                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+parser.add_option("-n", "--numelem", type="int", dest="numelem", default=100,
+                  help="set the number of elements [default 100]")
+parser.add_option("--alpha", type="float", dest="alpha", default=0.0,
+                  help="set alpha")
+parser.add_option("--beta", type="float", dest="beta", default=0.0,
+                  help="set beta")
+parser.add_option("--scale", type="float", dest="scale", default=1.0,
+                  help="set scale")
+parser.add_option("--iters", type="int", dest="maxNewtonIters", default=20,
+                  help="set maxNewtonIters")
+parser.add_option("-N", type="int", dest="N", default=100,   # TODO: what is correct default?
+                  help="set N")
+options,args = parser.parse_args()
+
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Teuchos   = fromPyTrilinosImport('Teuchos'  , options.testharness)
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
+NOX       = fromPyTrilinosImport('NOX'      , options.testharness)
+LOCA      = fromPyTrilinosImport('LOCA'     , options.testharness)
+
+# ######################################################################
+
+
+class ChanProblemInterface(NOX.Epetra.Interface.Jacobian,
+                           LOCA.Epetra.Interface.Required):
+  def __init__(self, numGlobalElements, comm, globalData, N, a, b, s):
+    # Initialize base class first
+    LOCA.Epetra.Interface.Required.__init__(self)
+
+    self.__numGlobalElements = numGlobalElements
+    self.__comm = comm
+    self.__stdMap = Epetra.Map(numGlobalElements, 0, comm)
+
+    self.globalData = globalData
+    self.initialGuess = Epetra.Vector(self.__stdMap)
+    self.alpha = a
+    self.beta = b
+    self.scale = s
+    self.n = N
+
+    self.__myPID             = comm.MyPID()
+    self.__numProc           = comm.NumProc()
+    newElements              = list(self.__stdMap.MyGlobalElements())
+    if self.__myPID > 0:                newElements.insert(0,newElements[0]-1)
+    if self.__myPID < self.__numProc-1: newElements.append(newElements[-1]+1)
+    self.__overlapMap        = Epetra.Map(-1,newElements,0,comm)
+    self.__overlapMap        = Epetra.Map(-1,newElements,0,comm)
+
+    for i in range(0,self.n):
+      self.initialGuess[i] = i*(self.n-1-i)*self.source_param()/((self.n-1)*(self.n-1)) + 0.001
+
+    self.createGraph()
+
+#  for (int i=0; i<n; i++) 
+#    initialGuess(i) = 
+#      i*(n-1-i)*source_param(alpha, scale)/((n-1)*(n-1)) + 0.001;
+
+  def getGraph(self):
+    return self.__graph
+
+  def computeF(self, x, F, fillFlag): # we ignore the fillFlag argument and always perform all computation
+    n = self.n
+    F[0] = x[0] - self.beta
+    F[n-1] = x[n-1] - self.beta
+    for i in range(1,n-1):
+      F[i] = (x[i-1] - 2*x(i) + x[i+1])*(n-1)*(n-1) + self.source_param()*self.source_term(x[i])
+    return True
+
+#bool
+#ChanProblemInterface::computeF(NOX::LAPACK::Vector& f, 
+#			       const NOX::LAPACK::Vector &x)
+#{
+#  f(0) = x(0) - beta;
+#  f(n-1) = x(n-1) - beta;
+#  for (int i=1; i<n-1; i++)
+#    f(i) = (x(i-1) - 2*x(i) + x(i+1))*(n-1)*(n-1) 
+#      + source_param(alpha, scale)*source_term(x(i));
+#  
+#  return true;
+#}
+  def computeJacobian(self, x, Jac):
+    n = self.n
+    Jac[0,0] = 1.0
+    Jac[n-1, n-1] = 1.0
+    for i in range(1, n-1):
+      J[i,i-1] = (n-1)*(n-1)
+      J[i,i+1] = J[i,i-1]
+      J[i,i] = -2.0 * J[i,i+1] + \
+               self.source_param() * source_deriv(x[i])
+
+    return True
+
+  def source_param(self):
+    return self.alpha * self.scale
+
+  def source_term(self, x):
+    return 1. + (x + 0.5*x*x)/(1. + 0.01*x*x)
+
+  def source_deriv(self, x):
+    y = 1.0 + 0.01*x*x
+    return (1.0 + x - 0.01*x*x)/(y*y)
+
+  def setParams(self, p):
+    self.alpha = p["alpha"]
+    self.beta = p["beta"]
+    self.scale = p["scale"]
+
+  def createGraph(self):
+    self.__graph = Epetra.CrsGraph(Epetra.Copy, self.__stdMap,
+				   self.__overlapMap, 3)
+    for gid in self.__stdMap.MyGlobalElements():
+      lid = self.__stdMap.LID(gid)
+      if gid in (0,self.__numGlobalElements-1):  # Boundaries
+	self.__graph.InsertGlobalIndices(lid,[gid])
+      else:                                      # Interior
+	self.__graph.InsertGlobalIndices(lid,[gid-1,gid,gid+1])
+    self.__graph.FillComplete()
+    return True
+
+
+######################################################################
+
+# Main routine
+def main():
+
+  # Communicator
+  comm    = Epetra.PyComm()
+  myPID   = comm.MyPID()
+  numProc = comm.NumProc()
+
+  # Suppress 'Aztec status AZ_loss: loss of precision' messages
+  comm.SetTracebackMode(0)
+
+  # Get the number of elements from the command line
+  numGlobalElements = options.numelem + 1
+  if numGlobalElements < numProc:
+    msg = "numGlobalBlocks = %d cannot be < number of processors = %d" % \
+	  (numGlobalElements,numProc)
+    msg += "\nTest failed!"
+    raise RuntimeError, msg
+
+  # Get parameters
+  alpha = options.alpha
+  beta = options.beta
+  scale = options.scale
+  maxNewtonIters = options.maxNewtonIters
+  N = options.N
+
+  locaParams = {"Stepper" : {"Continuation Parameter": "alpha",
+			     "Initial Value": alpha,
+			     "Max Value": 5.0/scale,
+			     "Min Value": 0.0/scale,
+			     "Max Steps": 50,
+			     "Max Nonlinear Iterations": maxNewtonIters,
+			     "Compute Eigenvalues": False},  # Default
+		"Step Size" : {"Method": "Adaptive",   # Default
+		               "Initial Step Size": 0.1/scale,
+			       "Min Step Size": 1.0e-3/scale,
+			       "Max Step Size": 10.0/scale},
+	        "Bifurcation" : {"Type": "None"},   # Default
+		"Predictor" : {"Method": "Secant"}}   # Default
+
+  outputInfo = NOX.Utils.Error + \
+	       NOX.Utils.TestDetails
+  if options.verbosity: outputInfo += NOX.Utils.Debug      + \
+				      NOX.Utils.Warning    + \
+				      NOX.Utils.Details    + \
+				      NOX.Utils.Parameters + \
+				      NOX.Utils.LinearSolverDetails
+  if options.verbosity > 1: outputInfo += NOX.Utils.InnerIteration           + \
+					  NOX.Utils.OuterIterationStatusTest + \
+					  NOX.Utils.OuterIteration
+
+  printParams = {"MyPID": myPID,
+                 "Output Precision": 3,
+		 "Output Processor": 0,
+		 "Output Information": outputInfo}
+
+  noxParams = {"Printing" : {"Output Information": outputInfo}}
+
+  paramList = {"NOX":  noxParams,
+	       "LOCA": locaParams}
+
+  globalData = LOCA.createGlobalData(paramList)
+
+  lsParams =    {"Aztec Solver"    : "GMRES",
+                 "Max Iterations"  : 800,
+                 "Tolerance"       : 1e-4,
+                 "Preconditioner"  : "Ifpack",
+                 "Max Age Of Prec" : 5       }
+
+  # p = {"alpha": alpha,  # serving as LOCA:ParameterVector
+  #     "beta": beta,
+  #     "scale": scale}
+  p = LOCA.ParameterVector()
+  p.addParameter("alpha", alpha)
+  p.addParameter("beta", beta)
+  p.addParameter("scale", scale)
+
+  interface = ChanProblemInterface(numGlobalElements, comm, globalData, N, alpha, beta, scale)
+
+  # Get the solution vector from the problem
+  soln    = interface.initialGuess
+  noxSoln = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+
+  # Define the Jacobian linear system
+  mf     = NOX.Epetra.MatrixFree(noxParams,interface,noxSoln)
+  fdc    = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
+					       soln, interface.getGraph(),
+					       True)
+  linSys = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fdc,
+					  fdc, soln)
+
+  # Create the Group
+  initialGuess = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
+  # print LOCA.foo_pl(printParams)
+  # print LOCA.foo_gd(globalData)
+  # print LOCA.foo_pv(p)
+  group = LOCA.Epetra.Group(globalData, printParams, interface, initialGuess, linSys, p)
+  # print LOCA.Epetra.foo_g(group)
+
+  # Create the convergence tests
+  normF = NOX.StatusTest.NormF(1.0e-8)
+  maxIters = NOX.StatusTest.MaxIters(maxNewtonIters)
+  converged = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR, normF, maxIters)
+
+  # Create the stepper
+  print("Making stepper")
+  stepper = LOCA.Stepper(globalData, group, converged, paramList)
+
+  # Perform continuation run
+  print("About to run stepper")
+  status = stepper.run()
+  print("Completed stepper run")
+
+  # TODO print if failure to converge
+  return 1
+
+# ######################################################################
+
+if __name__ == "__main__":
+
+    status = main()
+
+    sys.exit(status)

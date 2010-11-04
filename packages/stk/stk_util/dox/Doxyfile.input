@@ -1,9 +1,0 @@
-#BANNER @copydoc stk_util_banner
-#HOWTO @copydoc stk_util_howto
-
-INPUT                  += ../../stk_util/dox/index.dox \
-                          ../../stk_util/stk_util \
-                          ../../stk_util/stk_util/parallel \ 
-                          ../../stk_util/stk_util/util \
-                          ../../stk_util/stk_util/environment \
-                          ../../stk_util/stk_util/diag

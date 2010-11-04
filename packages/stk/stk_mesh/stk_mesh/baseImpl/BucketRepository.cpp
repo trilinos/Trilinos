@@ -156,40 +156,35 @@ BucketRepository::~BucketRepository()
 
 void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * bucket_to_be_deleted )
 {
-  static const char method[] = "stk::mesh::impl::BucketRepository::destroy_bucket" ;
+  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(entity_rank),
+                  "Entity rank " << entity_rank << " is invalid");
 
-  m_mesh.mesh_meta_data().assert_entity_rank( method, entity_rank );
   std::vector<Bucket *> & bucket_set = m_buckets[entity_rank];
 
+  // Get the first bucket in the same family as the bucket being deleted
   Bucket * const first = bucket_to_be_deleted->m_bucketImpl.first_bucket_in_family();
 
-  if ( 0 != bucket_to_be_deleted->size() || bucket_to_be_deleted != first->m_bucketImpl.get_bucket_family_pointer() ) {
-    throw std::logic_error(std::string(method));
-  }
+  ThrowRequireMsg( bucket_to_be_deleted->size() == 0,
+      "Destroying non-empty bucket " << *(bucket_to_be_deleted->key()) );
+
+  ThrowRequireMsg( bucket_to_be_deleted == first->m_bucketImpl.get_bucket_family_pointer(),
+                   "Destroying bucket family") ;
 
   std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, bucket_to_be_deleted->key());
-
-  if ( ik == bucket_set.end() ) {
-    throw std::logic_error(std::string(method));
-  }
-
-  if ( bucket_to_be_deleted != *ik ) {
-    throw std::logic_error(std::string(method));
-  }
+  ThrowRequireMsg( ik != bucket_set.end() && bucket_to_be_deleted == *ik,
+      "Bucket not found in bucket set for entity rank " << entity_rank );
 
   ik = bucket_set.erase( ik );
 
   if ( first != bucket_to_be_deleted ) {
 
-    if ( ik == bucket_set.begin() ) {
-      throw std::logic_error(std::string(method));
-    }
+    ThrowRequireMsg( ik != bucket_set.begin(),
+                     "Where did first bucket go?" );
 
     first->m_bucketImpl.set_last_bucket_in_family( *--ik );
 
-    if ( 0 == first->m_bucketImpl.get_bucket_family_pointer()->size() ) {
-      throw std::logic_error(std::string(method));
-    }
+    ThrowRequireMsg ( first->m_bucketImpl.get_bucket_family_pointer()->size() != 0,
+                      "TODO: Explain" );
   }
 
   destroy_bucket( bucket_to_be_deleted );
@@ -283,7 +278,9 @@ BucketRepository::declare_bucket(
   const unsigned max = ~(0u);
   const size_t   num_fields = field_set.size();
 
-  m_mesh.mesh_meta_data().assert_entity_rank( method, arg_entity_rank );
+  ThrowRequireMsg(m_mesh.mesh_meta_data().check_rank(arg_entity_rank),
+                  "Entity rank " << arg_entity_rank << " is invalid");
+
   std::vector<Bucket *> & bucket_set = m_buckets[ arg_entity_rank ];
 
   //----------------------------------
@@ -336,9 +333,8 @@ BucketRepository::declare_bucket(
   }
   else { // Last bucket present, can it hold one more entity?
 
-    if ( 0 == last_bucket->size() ) {
-      throw std::logic_error( std::string(method) );
-    }
+    ThrowRequireMsg( last_bucket->size() != 0,
+                     "Last bucket should not be empty.");
 
     field_map = last_bucket->m_bucketImpl.get_field_map();
 
@@ -354,10 +350,7 @@ BucketRepository::declare_bucket(
     }
     else {
       // ERROR insane number of buckets!
-      std::string msg ;
-      msg.append( method );
-      msg.append( " FAILED due to insanely large number of buckets" );
-      throw std::logic_error( msg );
+      ThrowRequireMsg( false, "Insanely large number of buckets" );
     }
   }
 
@@ -490,9 +483,8 @@ void BucketRepository::update_field_data_states() const
 
 const std::vector<Bucket*> & BucketRepository::buckets( unsigned type ) const
 {
-  static const char method[]= "stk::mesh::impl::BucketRepository::buckets" ;
-
-  m_mesh.mesh_meta_data().assert_entity_rank( method , type );
+  ThrowRequireMsg( m_mesh.mesh_meta_data().check_rank(type),
+                   "Invalid entity rank " << type );
 
   return m_buckets[ type ];
 }
@@ -608,10 +600,7 @@ void BucketRepository::internal_sort_bucket_entities()
 
 void BucketRepository::remove_entity( Bucket * k , unsigned i )
 {
-
-  if ( k == m_nil_bucket) {
-    throw std::logic_error("BucketRepository::remove_entity: Cannot remove entity from nil_bucket");
-  }
+  ThrowRequireMsg( k != m_nil_bucket, "Cannot remove entity from nil_bucket" );
 
   const unsigned entity_rank = k->entity_rank();
 

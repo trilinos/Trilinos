@@ -170,8 +170,6 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 
   // For symmetric Gauss-Seidel
   if (symmetric) {
-    
-    rhs_block->Update(1.0, input_block, 0.0);
 
     for (int i=sz-1; i>=0; --i) {
        
@@ -192,7 +190,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 	  for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
 	       j_it != Cijk->j_end(k_it); ++j_it) {
 	    int j = index(j_it);
-	    if (j > i) {
+	    if (j < i) {
 	      do_mat_vec = true;
 	      break;
 	    }
@@ -203,7 +201,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 		 j_it != Cijk->j_end(k_it); ++j_it) {
 	      int j = index(j_it);
 	      double c = value(j_it);
-	      if (j > i) {
+	      if (j < i) {
 		rhs_block->GetBlock(j)->Update(-1.0*c/norms[j], *mat_vec_tmp, 1.0);
 	      }
 	    }

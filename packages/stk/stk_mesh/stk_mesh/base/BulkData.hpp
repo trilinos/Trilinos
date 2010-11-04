@@ -173,14 +173,14 @@ public:
   }
 
   //------------------------------------
-  /** \brief  Query all buckets of a given entity type */
-  const std::vector<Bucket*> & buckets( EntityRank type ) const
-  { return m_bucket_repository.buckets(type); }
+  /** \brief  Query all buckets of a given entity rank */
+  const std::vector<Bucket*> & buckets( EntityRank rank ) const
+  { return m_bucket_repository.buckets(rank); }
 
   /** \brief  Get entity with a given key */
   /// \todo REFACTOR remove required_by argument
   Entity * get_entity( EntityRank entity_rank , EntityId entity_id , const char * /* required_by */ = NULL  ) const {
-    verify_type_and_id("BulkData::get_entity", entity_rank, entity_id);
+    require_good_rank_and_id(entity_rank, entity_id);
     return m_entity_repo.get_entity( EntityKey(entity_rank, entity_id));
   }
 
@@ -191,7 +191,7 @@ public:
 
   //------------------------------------
   /** \brief  Create or retrieve a locally owned entity of a
-   *          given type and id.
+   *          given rank and id.
    *
    *  A parallel-local operation.
    *
@@ -199,11 +199,11 @@ public:
    *  mesh parts.  The entity a member of the meta data's locally owned
    *  mesh part and the entity's owner_rank() == parallel_rank().
    *
-   *  If two or more processes create an entity of the same type
+   *  If two or more processes create an entity of the same rank
    *  and identifier then the sharing and ownership of these entities
    *  will be resolved by the call to 'modification_end'.
    */
-  Entity & declare_entity( EntityRank ent_type ,
+  Entity & declare_entity( EntityRank ent_rank ,
       EntityId ent_id , const std::vector<Part*> & parts);
 
   /** \brief  Change the parallel-locally-owned entity's
@@ -357,21 +357,9 @@ public:
   /** \brief  Query all ghostings */
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
-  //------------------------------------
-  /** \brief  All non-const methods assert this */
-  void assert_ok_to_modify( const char * method ) const ;
-
-  void assert_entity_owner( const char * method, const Entity & entity, unsigned owner) const ;
-
-  void assert_good_key( const char * method, const EntityKey & key) const ;
-
-  //------------------------------------
 private:
-  void verify_type_and_id(const char* calling_method,
-                          EntityRank ent_type, EntityId ent_id) const;
 
 #ifndef DOXYGEN_COMPILE
-
 
   BulkData();
   BulkData( const BulkData & );
@@ -425,6 +413,26 @@ private:
    *  - a collective parallel operation.
    */
   void internal_regenerate_shared_aura();
+
+  //------------------------------------
+
+  /** \name  Invariants/preconditions for MetaData.
+   * \{
+   */
+
+  /** \brief  All non-const methods assert this */
+  void require_ok_to_modify() const ;
+
+  void require_entity_owner( const Entity & entity, unsigned owner) const ;
+
+  void require_metadata_committed() const;
+
+  void require_good_rank_and_id(EntityRank ent_rank, EntityId ent_id) const;
+
+  /** \} */
+
+  //------------------------------------
+
 
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;

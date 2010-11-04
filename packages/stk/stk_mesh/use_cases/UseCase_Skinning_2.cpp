@@ -86,21 +86,21 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
   //number of faces  and particles exist.
   try {
     stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-    stk::mesh::TopologicalMetaData & top_data = fixture.top_data;
+    stk::mesh::TopologicalMetaData & top_data = fixture.m_top_data;
 
-    const unsigned p_rank = fixture.bulk_data.parallel_rank();
-    const unsigned p_size = fixture.bulk_data.parallel_size();
+    const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
+    const unsigned p_size = fixture.m_bulk_data.parallel_size();
 
-    stk::mesh::Part & skin_part = fixture.meta_data.declare_part("skin_part");
+    stk::mesh::Part & skin_part = fixture.m_meta_data.declare_part("skin_part");
 
     stk::mesh::Part & shell_part = top_data.declare_part<shards::ShellQuadrilateral<4> >("shell_part");
 
-    fixture.meta_data.commit();
+    fixture.m_meta_data.commit();
 
     fixture.generate_mesh();
 
 
-    fixture.bulk_data.modification_begin();
+    fixture.m_bulk_data.modification_begin();
 
     if ( p_rank + 1 == p_size ) {
       // Verifies when all three elements on different processes, for p_size > 2
@@ -116,19 +116,19 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
       stk::mesh::EntityId elem_id = 3;
 
-      stk::mesh::declare_element( fixture.bulk_data, shell_part, elem_id, elem_node);
+      stk::mesh::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
 
     }
-    fixture.bulk_data.modification_end();
+    fixture.m_bulk_data.modification_end();
 
-    stk::mesh::skin_mesh(fixture.bulk_data, top_data.element_rank, &skin_part);
+    stk::mesh::skin_mesh(fixture.m_bulk_data, top_data.element_rank, &skin_part);
 
     //----------------------------------------------------------------------
     //Actual usecase
     //----------------------------------------------------------------------
 
     {
-      int num_skin_entities = count_skin_entities( fixture.bulk_data, skin_part, top_data.side_rank);
+      int num_skin_entities = count_skin_entities( fixture.m_bulk_data, skin_part, top_data.side_rank);
 
       stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
@@ -141,20 +141,20 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
 
     // Kill element on the "left" of the shell:
-    fixture.bulk_data.modification_begin();
+    fixture.m_bulk_data.modification_begin();
     stk::mesh::Entity * elem_to_kill = fixture.elem( 0 , 0 , 0 ); // (i,j,k) indices
     if ( elem_to_kill != NULL && p_rank == elem_to_kill->owner_rank() ) {
       // Destroy element and its sides and nodes
       // that are not in the closure of another element.
-      destroy_entity_closure( fixture.bulk_data, elem_to_kill);
+      destroy_entity_closure( fixture.m_bulk_data, elem_to_kill);
     }
 
-    fixture.bulk_data.modification_end();
+    fixture.m_bulk_data.modification_end();
 
-    stk::mesh::skin_mesh( fixture.bulk_data, top_data.element_rank, &skin_part);
+    stk::mesh::skin_mesh( fixture.m_bulk_data, top_data.element_rank, &skin_part);
 
     {
-      int num_skin_entities = count_skin_entities( fixture.bulk_data, skin_part, top_data.side_rank);
+      int num_skin_entities = count_skin_entities( fixture.m_bulk_data, skin_part, top_data.side_rank);
 
       stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 

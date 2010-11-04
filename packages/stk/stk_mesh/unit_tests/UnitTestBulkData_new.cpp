@@ -13,6 +13,7 @@
 
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/fixtures/HexFixture.hpp>
+#include <stk_mesh/fixtures/QuadFixture.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
@@ -163,33 +164,62 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 }
 
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertGoodKey )
+STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsBadKey )
 {
   TestBoxFixture fixture;
 
   stk::mesh::BulkData         &bulk = fixture.bulk_data();
   stk::mesh::Part             &new_part = fixture.get_test_part ();
-  stk::mesh::PartVector        add_part;
+  stk::mesh::PartVector        add_part, empty_vector;
   add_part.push_back ( &new_part );
 
   stk::mesh::EntityKey bad_key1 ( 45 , 1 );  // Bad entity rank
   stk::mesh::EntityKey bad_key2 ( 1 , 0 );   // Bad id
 
-  STKUNIT_ASSERT_THROW ( bulk.assert_good_key ( "method" , bad_key1 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW ( bulk.assert_good_key ( "method" , bad_key2 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW ( bulk.declare_entity(bad_key1.rank(),
+                                             bad_key1.id(),
+                                             empty_vector),
+                         std::logic_error );
+  STKUNIT_ASSERT_THROW ( bulk.declare_entity(bad_key2.rank(),
+                                             bad_key2.id(),
+                                             empty_vector),
+                         std::logic_error );
 }
 
-STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertEntityOwner )
+STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDetectsNonOwnerChange )
 {
-  TestBoxFixture fixture;
+  // Set up a mesh where there are shared nodes. Take one of the nodes, and
+  // have the non-owning processes try to make a change to that node; this
+  // should cause an exception.
 
-  stk::mesh::BulkData     &bulk = fixture.bulk_data ();
-  stk::mesh::PartVector    empty_vector;
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  unsigned p_size = stk::parallel_machine_size(pm);
+  unsigned p_rank = stk::parallel_machine_rank(pm);
+
+  stk::mesh::fixtures::QuadFixture fixture(pm, 1 /*nx*/, p_size /*ny*/);
+  fixture.m_meta_data.commit();
+  fixture.generate_mesh();
+  stk::mesh::BulkData & bulk = fixture.m_bulk_data;
+
+  stk::mesh::PartVector empty_vector;
+
+  stk::mesh::Entity* shared_node = fixture.node(1 /*x*/, 1 /*y*/);
+  // Assert that this node is shared
+  if ( p_size > 1 && shared_node && (p_rank == 0 || p_rank == 1) ) {
+    STKUNIT_ASSERT_GE(shared_node->sharing().size(), 1u);
+  }
+
   bulk.modification_begin();
 
-  stk::mesh::Entity &new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
+  // Non-owners of shared_node will attempt to make a change to it; this should
+  // cause an exception
+  if (shared_node && p_rank != shared_node->owner_rank()) {
+    STKUNIT_ASSERT_THROW(bulk.change_entity_parts(*shared_node,
+                                                  empty_vector,  //add parts
+                                                  empty_vector), //rem parts
+                         std::logic_error);
+  }
 
-  STKUNIT_ASSERT_THROW(bulk.assert_entity_owner ( "", new_cell, 50 ) , std::runtime_error );
   bulk.modification_end();
 }
 
@@ -198,7 +228,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyGetEntityGuards )
   TestBoxFixture fixture;
 
   stk::mesh::BulkData      &bulk = fixture.bulk_data();
-  STKUNIT_ASSERT_THROW ( bulk.get_entity ( 1 , 0 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW ( bulk.get_entity ( 1 , 0 ) , std::logic_error );
 }
 
 
@@ -647,7 +677,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   if ( 8 < p_size ) { return ; }
 
   stk::mesh::fixtures::HexFixture fixture( MPI_COMM_WORLD, 2, 2, 2 );
-  fixture.meta_data.commit();
+  fixture.m_meta_data.commit();
   fixture.generate_mesh();
 
   for ( size_t iz = 0 ; iz < 3 ; ++iz ) {
@@ -658,7 +688,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
     if ( NULL != node ) {
       STKUNIT_ASSERT( fixture.node_id(ix,iy,iz) == node->identifier() );
       stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-        stk::mesh::field_data( fixture.coord_field , *node );
+        stk::mesh::field_data( fixture.m_coord_field , *node );
       STKUNIT_ASSERT( node_coord != NULL );
     }
   }
@@ -674,11 +704,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
       stk::mesh::PairIterRelation elem_nodes = elem->relations();
       STKUNIT_ASSERT_EQUAL( 8u , elem_nodes.size() );
       stk::mesh::fixtures::HexFixture::Scalar ** const elem_node_coord =
-        stk::mesh::field_data( fixture.coord_gather_field , *elem );
+        stk::mesh::field_data( fixture.m_coord_gather_field , *elem );
       for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
         STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
         stk::mesh::fixtures::HexFixture::Scalar * const node_coord =
-          stk::mesh::field_data( fixture.coord_field , *elem_nodes[j].entity() );
+          stk::mesh::field_data( fixture.m_coord_field , *elem_nodes[j].entity() );
         STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
       }
       if ( 8u == elem_nodes.size() ) {
@@ -935,7 +965,6 @@ void new_comm_sync_send_recv(
   std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send ,
   std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv )
 {
-  static const char method[] = "stk::mesh::BulkData::change_ghosting" ;
   const unsigned parallel_rank = mesh.parallel_rank();
   const unsigned parallel_size = mesh.parallel_size();
 
@@ -1002,9 +1031,7 @@ void new_comm_sync_send_recv(
       if ( parallel_rank != proc ) {
         //  Receiving a ghosting need for an entity I own.
         //  Add it to my send list.
-        if ( e == NULL ) {
-          throw std::logic_error( std::string(method) );
-        }
+        STKUNIT_ASSERT( e != NULL );
         stk::mesh::EntityProc tmp( e , proc );
         new_send.insert( tmp );
       }

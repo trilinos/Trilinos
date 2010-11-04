@@ -11,6 +11,7 @@
 
 #include <utility>
 #include <vector>
+#include <iosfwd>
 
 #include <stk_mesh/base/Types.hpp>
 
@@ -18,8 +19,6 @@
 
 namespace stk {
 namespace mesh {
-
-class UnitTestEntity;
 
 namespace impl {
 
@@ -126,8 +125,6 @@ private:
 #ifndef DOXYGEN_COMPILE
   friend class impl::EntityRepository ;
   friend class impl::EntityImpl ;
-  friend class ::stk::mesh::UnitTestEntity;
-
 
 #endif /* DOXYGEN_COMPILE */
 };
@@ -218,6 +215,10 @@ public:
     return lhs_key == rhs_key;
   }
 };
+
+std::string print_entity_key(const Entity& entity);
+
+std::string print_entity_key(const Entity* entity);
 
 //----------------------------------------------------------------------
 

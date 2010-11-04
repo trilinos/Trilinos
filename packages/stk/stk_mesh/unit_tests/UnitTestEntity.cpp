@@ -36,67 +36,6 @@ using stk::ParallelMachine;
 
 using stk::mesh::EntityKey;
 using stk::mesh::Entity;
-using stk::mesh::Field;
-
-
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
-typedef stk::mesh::Field<double>                      ScalarFieldType ;
-enum { SpaceDim = 3 };
-
-class UnitTestEntity {
-public:
-  UnitTestEntity(ParallelMachine pm);
-  ~UnitTestEntity() {}
-
-  const int spatial_dimension;
-  MetaData meta;
-  TopologicalMetaData top;
-  Part & part; 
-  Part & part_left;
-  Part & part_right;
-  BulkData bulk;
-  std::vector<stk::mesh::Part *>  add_part;
-  EntityKey key_bad_zero;
-  EntityKey key_good_0_1;
-  EntityKey key_good_1_1;
-  EntityKey key_good_2_10;
-  EntityKey key_order_1_12;
-  EntityKey key_order_2_10;
-  const int rank;
-  const int size;
-  VectorFieldType   & coordinates_field;
-  ScalarFieldType   & temperature_field;
-  ScalarFieldType   & volume_field;
-
-
-
-};
-
-UnitTestEntity::UnitTestEntity(ParallelMachine pm)
-  :spatial_dimension(3)
-  ,meta( TopologicalMetaData::entity_rank_names(spatial_dimension) )
-  ,top( meta, spatial_dimension )
-  ,part( meta.declare_part( "another part") )
-  ,part_left (top.declare_part<shards::Hexahedron<8> >( "block_left" ))
-  ,part_right (top.declare_part<shards::Hexahedron<8> >( "block_right" ))
-  ,bulk( meta , pm, 100 )
-  ,add_part()
-  ,key_bad_zero (EntityKey())
-  ,key_good_0_1 (EntityKey( 0 , 1 ))
-  ,key_good_1_1 (EntityKey( 1 , 1 ))
-  ,key_good_2_10 (EntityKey( 2 , 10 ))
-  ,key_order_1_12 (EntityKey( 1 , 12 ))
-  ,key_order_2_10 (EntityKey( 2 , 10 ))
-  ,rank( bulk.parallel_rank() )
-  ,size( bulk.parallel_size() )
-  ,coordinates_field( meta.declare_field< VectorFieldType >( "coordinates" ))
-  ,temperature_field( meta.declare_field< ScalarFieldType >( "temperature" ))
-  ,volume_field( meta.declare_field< ScalarFieldType >( "volume" ))
-
-{
-  meta.commit();
-}
-
 
 
 namespace {
@@ -105,41 +44,31 @@ namespace {
 
 STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
 {
-  UnitTestEntity uent(MPI_COMM_WORLD);
-
-//   EntityId val = entity_id(key_good_2_10) ;
-
-//   EntityKey good_key_gone_bad;
-//   entity_good_key_gone_bad.key = val ;
-
-  STKUNIT_ASSERT( ! entity_key_valid( uent.key_bad_zero ) );
-  STKUNIT_ASSERT(   entity_key_valid( uent.key_good_0_1 ) );
-  STKUNIT_ASSERT(   entity_key_valid( uent.key_good_1_1 ) );
-  STKUNIT_ASSERT(   entity_key_valid( uent.key_good_2_10 ) );
-
-  STKUNIT_ASSERT( 0  == entity_rank(uent.key_good_0_1));
-  STKUNIT_ASSERT( 1  == entity_rank(uent.key_good_1_1) );
-  STKUNIT_ASSERT( 2  == entity_rank(uent.key_good_2_10) );
-  STKUNIT_ASSERT( 1  == entity_id(uent.key_good_0_1) );
-  STKUNIT_ASSERT( 1  == entity_id(uent.key_good_1_1) );
-  STKUNIT_ASSERT( 10 == entity_id(uent.key_good_2_10) );
+  
+  EntityKey key_bad_zero = EntityKey();
+  EntityKey key_good_0_1 = EntityKey( 0 , 1 );
+  EntityKey key_good_1_1 = EntityKey( 1 , 1 );
+  EntityKey key_good_2_10 = EntityKey( 2 , 10);
+  EntityKey key_order_1_12 = EntityKey( 1 , 12 );
+  EntityKey key_order_2_10 = EntityKey( 2 , 10 );
 
 
-  STKUNIT_ASSERT( uent.key_order_1_12 < uent.key_order_2_10);
-  STKUNIT_ASSERT( !(uent.key_order_1_12 > uent.key_order_2_10));
+  STKUNIT_ASSERT( ! entity_key_valid(  key_bad_zero ) );
+  STKUNIT_ASSERT(   entity_key_valid(  key_good_0_1 ) );
+  STKUNIT_ASSERT(   entity_key_valid(  key_good_1_1 ) );
+  STKUNIT_ASSERT(   entity_key_valid(  key_good_2_10 ) );
 
-//  STKUNIT_ASSERT( ! entity_key_valid( good_key_gone_bad ) );
+  STKUNIT_ASSERT( 0  == entity_rank( key_good_0_1));
+  STKUNIT_ASSERT( 1  == entity_rank( key_good_1_1) );
+  STKUNIT_ASSERT( 2  == entity_rank( key_good_2_10) );
+  STKUNIT_ASSERT( 1  == entity_id( key_good_0_1) );
+  STKUNIT_ASSERT( 1  == entity_id( key_good_1_1) );
+  STKUNIT_ASSERT( 10 == entity_id( key_good_2_10) );
 
-//   std::cout.unsetf( std::ios::dec);
-//   std::cout.setf( std::ios::hex);
-//   std::cout << "TEST entity_key_type "
-//             << ", key_good_2_10 = " << key_good_2_10.key
-//             << ", good_key_gone_bad = " << good_key_gone_bad.key
-//             << std::endl ;
-//   std::cout.unsetf( std::ios::hex);
-//   std::cout.setf( std::ios::dec);
 
-  //uent.key01 = uent.key_default;
+  STKUNIT_ASSERT(  key_order_1_12 <  key_order_2_10);
+  STKUNIT_ASSERT( !( key_order_1_12 >  key_order_2_10));
+
 
   STKUNIT_ASSERT_THROW( EntityKey( ~0u , 1 ) , std::runtime_error );
   STKUNIT_ASSERT_THROW( EntityKey( 0 , ~stk::mesh::EntityKey::raw_key_type(0) ) , std::runtime_error );
@@ -149,25 +78,30 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
 STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
 {
   //Test Entity repository - covering EntityRepository.cpp/hpp
-  UnitTestEntity uent(MPI_COMM_WORLD);
+  const int spatial_dimension = 3;
+  MetaData meta(TopologicalMetaData::entity_rank_names(spatial_dimension));
+  Part & part = meta.declare_part( "another part"); 
+  MPI_Barrier( MPI_COMM_WORLD );
+  ParallelMachine pm = MPI_COMM_WORLD;
+  BulkData bulk( meta , pm, 100 );
+  const int rank = stk::parallel_machine_rank( pm );
+  const int size = stk::parallel_machine_size( pm );
+  std::vector<stk::mesh::Part *>  add_part;
+  meta.commit();
 
+  add_part.push_back ( & part );
 
-  uent.add_part.push_back ( &uent.part );
-
-  uent.bulk.modification_begin();
+  bulk.modification_begin();
 
   int id_base = 0;
   for ( id_base = 0 ; id_base < 97 ; ++id_base )
   {
-    int new_id = uent.size * id_base + uent.rank;
-    uent.bulk.declare_entity( 0 , new_id+1 , uent.add_part );
+    int new_id =  size * id_base +  rank;
+     bulk.declare_entity( 0 , new_id+1 ,  add_part );
   }
 
-  int new_id = uent.size * (++id_base) + uent.rank;
-  stk::mesh::Entity & elem  = uent.bulk.declare_entity( 3 , new_id+1 , uent.add_part );
-
-  //new_id = uent.size * (++id_base) + uent.rank;
-  // stk::mesh::Entity & elem2  = uent.bulk.declare_entity( 3 , new_id+1 , uent.add_part );
+  int new_id =  size * (++id_base) +  rank;
+  stk::mesh::Entity & elem  =  bulk.declare_entity( 3 , new_id+1 ,  add_part );
 
   stk::mesh::impl::EntityRepository e;
 
@@ -175,9 +109,9 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
 
   e.comm_clear_ghosting( elem );
 
-  const stk::mesh::Ghosting & ghost = uent.bulk.shared_aura();
+  const stk::mesh::Ghosting & ghost =  bulk.shared_aura();
 
-  uent.bulk.modification_end();
+  bulk.modification_end();
 
   STKUNIT_ASSERT_FALSE(e.erase_ghosting(elem, ghost));
 

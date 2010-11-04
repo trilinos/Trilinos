@@ -105,19 +105,16 @@ void BucketImpl::update_state()
 
 Bucket * BucketImpl::last_bucket_in_family()
 {
-  static const char method[] = "stk::mesh::impl::BucketImpl::last_bucket_in_family" ;
-
   Bucket * last = last_bucket_in_family_impl();
 
-  if ( NULL == last || 0 == last->size() ) {
-    throw std::logic_error( std::string(method) );
-  }
+  ThrowRequireMsg( NULL != last, "Last is NULL");
+  ThrowRequireMsg( last->size() != 0, "Last bucket is empty");
 
   return last ;
 }
+
 Bucket * BucketImpl::last_bucket_in_family_impl()
 {
-
   bool this_is_first_bucket_in_family = (bucket_counter() == 0);
 
   Bucket * last = NULL;
@@ -203,7 +200,8 @@ void BucketImpl::replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_sr
         else {
           std::ostringstream msg ;
           msg << method ;
-          msg << " FAILED WITH INCOMPATIBLE FIELD SIZES" ;
+          msg << " FAILED WITH INCOMPATIBLE FIELD SIZES\n" ;
+          msg << "   " << i->m_size << " != " << j->m_size << "\n";
           throw std::runtime_error( msg.str() );
         }
       }

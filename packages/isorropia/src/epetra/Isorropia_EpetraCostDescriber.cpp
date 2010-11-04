@@ -812,14 +812,15 @@ void CostDescriber::show_cd(std::ostream &os) const
   }
 }
 
-}//namespace Epetra
-}//namespace Isorropia
-
 std::ostream& operator <<(std::ostream& os, const Isorropia::Epetra::CostDescriber &cd)
 {
   cd.show_cd(os);
   return os;
 }
+
+}//namespace Epetra
+}//namespace Isorropia
+
 
 
 #endif

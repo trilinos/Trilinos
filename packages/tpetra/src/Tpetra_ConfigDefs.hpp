@@ -111,6 +111,7 @@ namespace Tpetra {
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Tuple.hpp>
 // traits classes
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
@@ -182,6 +183,7 @@ namespace Tpetra {
   using Teuchos::OrdinalTraits;
   using Teuchos::ScalarTraits;
   using Teuchos::RCP;
+  using Teuchos::Tuple;
   using Teuchos::Comm;
   using Teuchos::null;
 
@@ -221,6 +223,12 @@ namespace Tpetra {
 
 //! Namespace for Tpetra example classes and methods
 namespace TpetraExamples {
+}
+
+namespace Tpetra {
+  //! Namespace for Tpetra Reduction/Tranformation Interface
+  namespace RTI {
+  }
 }
 
 

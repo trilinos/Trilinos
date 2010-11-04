@@ -1,0 +1,127 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2010) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+#############################################################################
+#
+# This script solves the 2x2 problem
+#
+#     F[0] = x[0]^2 + x[1]^2 - 1  = 0
+#     F[1] = x[1]   - x[0]^2      = 0
+#
+#############################################################################
+
+# System imports
+from optparse import *
+
+#
+# Parse the command-line arguments
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+NOX    = fromPyTrilinosImport('NOX'   , options.testharness)
+
+#
+# Define a class that is the interface to the nonlinear problem.  It derives
+# from NOX.Epetra.Interface.Required in order to support the computeF() method.
+# It derives from NOX.Epetra.Interface.Jacobian in order to support the
+# computeJacobian() method.
+class MyProblem(NOX.Epetra.Interface.Required,
+                NOX.Epetra.Interface.Jacobian):
+
+    def __init__(self):
+        NOX.Epetra.Interface.Required.__init__(self)
+        NOX.Epetra.Interface.Jacobian.__init__(self)
+        self.__comm = Epetra.SerialComm()
+        self.__map  = Epetra.Map(2, 0, self.__comm)
+        self.__jac  = Epetra.CrsMatrix(Epetra.Copy, self.__map, 2)
+
+    def getJacobian(self):
+        return self.__jac
+
+    def computeF(self,x,F,flag):
+        try:
+            F[0] = x[0]*x[0] + x[1]*x[1] - 1
+            F[1] = x[1]      - x[0]*x[0]
+        except Exception, e:
+            print "Exception in MyProblem.computeF method"
+            print e
+            return False
+        return True
+
+    def computeJacobian(self, x, Jac):
+        try:
+            Jac.InsertGlobalValues(0, [ 2*x[0], 2*x[1]], [0,1])
+            Jac.InsertGlobalValues(1, [-2*x[0], 1     ], [0,1])
+            Jac.FillComplete()
+        except Exception, e:
+            print "Exception in MyProblem.computeJacobian method"
+            print e
+            return False
+        return True
+
+#
+# Main function.  Create a solver based on the MyProblem class and solve it.
+def main():
+
+    # Initialize
+    initGuess = Epetra.Vector([.5,.5])
+    problem   = MyProblem()
+    jacobian  = problem.getJacobian()
+    solver    = NOX.Epetra.defaultSolver(initGuess, problem, problem, jacobian,
+                                         maxIters=40)
+    print solver.statusTest
+
+    # Solve
+    solveStatus = solver.solve()
+    print
+    if solveStatus != NOX.StatusTest.Converged:
+        print "Nonlinear solver failed to converge"
+        print "End Result: TEST FAILED"
+    else:
+        group = solver.getSolutionGroup()
+        soln  = group.getX()
+        print "Solution =", soln
+        print "End Result: TEST PASSED"
+
+#
+# Main script: call the main() function.
+main()

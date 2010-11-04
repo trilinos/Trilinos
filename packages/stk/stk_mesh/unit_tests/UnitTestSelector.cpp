@@ -25,7 +25,15 @@
 
 namespace {
 
-  using stk::mesh::fixtures::SelectorFixture ;
+using stk::mesh::fixtures::SelectorFixture ;
+
+void initialize(SelectorFixture& fixture)
+{
+  fixture.m_meta_data.commit();
+  fixture.m_bulk_data.modification_begin();
+  fixture.generate_mesh();
+  STKUNIT_ASSERT(fixture.m_bulk_data.modification_end());
+}
 
 /** \defgroup stk_mesh_selector_unit "stk::mesh::Selector Unit Testing"
   * \addtogroup stk_mesh_selector_unit
@@ -64,7 +72,10 @@ namespace {
  * */
 STKUNIT_UNIT_TEST( UnitTestSelector, one_SelectorFixture )
 {
-  SelectorFixture fix ;
+  {
+    SelectorFixture fix;
+    initialize(fix);
+  }
   STKUNIT_EXPECT_TRUE(true);
 }
 
@@ -75,10 +86,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, one_SelectorFixture )
 STKUNIT_UNIT_TEST( UnitTestSelector, two_SelectorFixture )
 {
   {
-    SelectorFixture fix ;
+    SelectorFixture fix;
+    initialize(fix);
   }
   {
-    SelectorFixture fix ;
+    SelectorFixture fix;
+    initialize(fix);
   }
   STKUNIT_EXPECT_TRUE(true);
 }
@@ -92,7 +105,9 @@ STKUNIT_UNIT_TEST( UnitTestSelector, two_SelectorFixture )
  * */
 STKUNIT_UNIT_TEST( UnitTestSelector, A_12345 )
 {
-  SelectorFixture fix ;
+  SelectorFixture fix;
+  initialize(fix);
+
   stk::mesh::Selector selector( fix.m_partA );
   //std::cout << "Selector = " << selector << std::endl;
 
@@ -130,7 +145,9 @@ STKUNIT_UNIT_TEST( UnitTestSelector, A_12345 )
  ** */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
 {
-  SelectorFixture fix ;
+  SelectorFixture fix;
+  initialize(fix);
+
   stk::mesh::Selector selector = ! fix.m_partA ;
   //std::cout << "Selector = " << selector << std::endl;
 
@@ -167,7 +184,9 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, D_5 )
 {
-  SelectorFixture fix ;
+  SelectorFixture fix;
+  initialize(fix);
+
   stk::mesh::Selector selector( fix.m_partD );
 
   const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
@@ -181,7 +200,9 @@ STKUNIT_UNIT_TEST( UnitTestSelector, D_5 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ac_15 )
 {
-  SelectorFixture fix ;
+  SelectorFixture fix;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
 
   stk::mesh::Selector selector(partA);
@@ -207,6 +228,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_15 )
 STKUNIT_UNIT_TEST( UnitTestSelector, AiB_12 )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
 
@@ -232,6 +255,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiB_12 )
 STKUNIT_UNIT_TEST( UnitTestSelector, AuB_14 )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
 
@@ -257,6 +282,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuB_14 )
 STKUNIT_UNIT_TEST( UnitTestSelector, AiBc_12 )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
 
@@ -282,6 +309,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiBc_12 )
 STKUNIT_UNIT_TEST( UnitTestSelector, AuBc_13 )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
 
@@ -309,6 +338,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBc_13 )
 STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -350,6 +381,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, entityTest )
 {
   {
     SelectorFixture fix ;
+    initialize(fix);
+
     stk::mesh::Part & partA = fix.m_partA ;
     stk::mesh::Part & partB = fix.m_partB ;
     stk::mesh::Selector selector = partA & !partB;
@@ -367,6 +400,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, entityTest )
 STKUNIT_UNIT_TEST( UnitTestSelector, defaultConstructor )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Selector selector;
   //std::cout << "Selector = " << selector << std::endl;
 
@@ -388,6 +423,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, defaultConstructor )
 STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Selector notOrSelector = partA | partB;
@@ -450,6 +487,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
 STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Selector notAndSelector = partA & partB;
@@ -510,6 +549,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, complementEmpty ) {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Selector selector;
   {
     const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
@@ -532,6 +573,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complementEmpty ) {
 STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -550,6 +593,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
 STKUNIT_UNIT_TEST( UnitTestSelector, AiBiC )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -567,6 +612,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiBiC )
 STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;
@@ -586,6 +633,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
 STKUNIT_UNIT_TEST( UnitTestSelector, selectIntersection )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::PartVector parts ;
   parts.push_back( & fix.m_partA );
   parts.push_back( & fix.m_partB );
@@ -630,6 +679,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectIntersection )
 STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::PartVector parts ;
   parts.push_back( & fix.m_partA );
   parts.push_back( & fix.m_partB );
@@ -744,6 +795,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuZero ) {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Selector selectNone;
   stk::mesh::Selector selectAll;
   selectAll.complement();
@@ -770,8 +823,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuZero ) {
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AibA )
 {
-  SelectorFixture fix ;
-  SelectorFixture fixHat ;
+  SelectorFixture fix;
+  initialize(fix);
+  SelectorFixture fixHat;
+  initialize(fixHat);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partAhat = fixHat.m_partA ;
   stk::mesh::Selector selector(partA);
@@ -790,7 +846,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AibA )
 STKUNIT_UNIT_TEST( UnitTestSelector, AubA )
 {
   SelectorFixture fix ;
+  initialize(fix);
   SelectorFixture fixHat ;
+  initialize(fixHat);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partAhat = fixHat.m_partA ;
   stk::mesh::Selector selector(partA);
@@ -811,9 +870,14 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AubA )
 STKUNIT_UNIT_TEST( UnitTestSelector, Ab1 )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Selector selector = partA;
+
   SelectorFixture fixHat ;
+  initialize(fixHat);
+
   const stk::mesh::Bucket & bucketHat = fixHat.m_entity1->bucket();
   bool result;
   STKUNIT_ASSERT_THROW(
@@ -835,6 +899,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ab1 )
 STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Selector selectNone;
   stk::mesh::Selector selectAll;
@@ -861,6 +927,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
 STKUNIT_UNIT_TEST( UnitTestSelector, copyConstructor )
 {
   SelectorFixture fix ;
+  initialize(fix);
+
   stk::mesh::Part & partA = fix.m_partA ;
   stk::mesh::Part & partB = fix.m_partB ;
   stk::mesh::Part & partC = fix.m_partC ;

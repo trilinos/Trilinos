@@ -34,11 +34,12 @@ namespace rebalance {
 
 /** Determine if rebalancing is needed.
  */
+
+// comm can also be obtained from Bulk data (as parallel_machine).
 bool rebalance_needed(mesh::BulkData &    bulk_data,
-                      mesh::MetaData &    meta_data,
                       const mesh::Field<double> & load_measure,
                       ParallelMachine    comm,
-                      const double  imbalance_threshold);
+                      double & imbalance_threshold);
 
 /** Rebalance with a Partition object.
  * This rebalance function will use the Partition object passed

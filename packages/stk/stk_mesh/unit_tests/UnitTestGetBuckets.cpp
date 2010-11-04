@@ -6,31 +6,59 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
-
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_util/parallel/Parallel.hpp>
+#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
+#include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/fixtures/SelectorFixture.hpp>
 
+#include <algorithm>
+
 namespace {
 
-  using stk::mesh::fixtures::SelectorFixture ;
+using stk::mesh::Bucket;
+using stk::mesh::Part;
+using stk::mesh::Selector;
+
+void sort_and_compare_eq(std::vector<Bucket*>& results,
+                         std::vector<Bucket*>& expected_results)
+{
+  std::sort(expected_results.begin(), expected_results.end());
+  std::sort(results.begin(), results.end());
+  STKUNIT_ASSERT_EQ(results.size(), expected_results.size());
+  for (unsigned i = 0; i < results.size(); ++i) {
+    STKUNIT_ASSERT(results[i] == expected_results[i]);
+  }
+}
 
 STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
 {
-  SelectorFixture fix ;
+  // Using the SelectorFixture, test for correct bucket membership and
+  // correct results from get_buckets.
+
+  // Generate mesh
+
+  stk::mesh::fixtures::SelectorFixture fix ;
+  stk::mesh::TopologicalMetaData top_data(fix.m_meta_data,
+                                          1 /*spatial_dimension*/);
+  fix.m_meta_data.commit();
+
+  fix.m_bulk_data.modification_begin();
+  fix.generate_mesh();
+  STKUNIT_ASSERT(fix.m_bulk_data.modification_end());
+
+  // Check bucket membership correctness
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    const Bucket & bucket = fix.m_entity1->bucket();
     STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
@@ -38,37 +66,80 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   }
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
-    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partA ) );
-    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partB ) );
+    const Bucket & bucket = fix.m_entity2->bucket();
+    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
+    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    const Bucket & bucket = fix.m_entity3->bucket();
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
-    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partB ) );
-    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partC ) );
+    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partB ) );
+    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partC ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    const Bucket & bucket = fix.m_entity4->bucket();
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
-    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partC ) );
+    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partC ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
   {
-    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
+    const Bucket & bucket = fix.m_entity5->bucket();
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
     STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
+  // Check get_buckets correctness
+
+  const std::vector<Bucket*> & node_buckets =
+    fix.m_bulk_data.buckets(top_data.node_rank);
+
+  {
+    std::vector<Bucket*> get_buckets, expected_results;
+
+    // get buckets selected by partA
+    Selector selector(fix.m_partA);
+    stk::mesh::get_buckets(selector, node_buckets, get_buckets);
+
+    expected_results.push_back(&(fix.m_entity1->bucket()));
+    expected_results.push_back(&(fix.m_entity2->bucket()));
+
+    sort_and_compare_eq(get_buckets, expected_results);
+  }
+
+  {
+    std::vector<Bucket*> get_buckets, expected_results;
+
+    // get buckets selected by partB
+    Selector selector(fix.m_partB);
+    stk::mesh::get_buckets(selector, node_buckets, get_buckets);
+
+    expected_results.push_back(&(fix.m_entity2->bucket()));
+    expected_results.push_back(&(fix.m_entity3->bucket()));
+
+    sort_and_compare_eq(get_buckets, expected_results);
+  }
+
+  {
+    std::vector<Bucket*> get_buckets, expected_results;
+
+    // get buckets selected by partC
+    Selector selector(fix.m_partC);
+    stk::mesh::get_buckets(selector, node_buckets, get_buckets);
+
+    expected_results.push_back(&(fix.m_entity3->bucket()));
+    expected_results.push_back(&(fix.m_entity4->bucket()));
+
+    sort_and_compare_eq(get_buckets, expected_results);
+  }
 }
 
 } // namespace

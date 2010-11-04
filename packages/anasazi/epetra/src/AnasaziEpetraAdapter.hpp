@@ -47,6 +47,13 @@
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 
+#if defined(HAVE_ANASAZI_TPETRA) && defined(HAVE_ANASAZI_TSQR)
+#  include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_EPETRA 
+#  if defined(HAVE_TPETRA_EPETRA)
+#    include <Epetra_TsqrAdaptor.hpp>
+#  endif // defined(HAVE_TPETRA_EPETRA)
+#endif // defined(HAVE_ANASAZI_TPETRA) && defined(HAVE_ANASAZI_TSQR)
+
 namespace Anasazi {
 
   //! @name Epetra Adapter Exceptions
@@ -939,6 +946,17 @@ namespace Anasazi {
     { os << mv << std::endl; }
 
     //@}
+
+#if defined(HAVE_ANASAZI_TPETRA) && defined(HAVE_ANASAZI_TSQR)
+#  if defined(HAVE_TPETRA_EPETRA)
+    /// \typedef tsqr_adaptor_type
+    /// \brief TsqrAdaptor specialization for Epetra_MultiVector
+    ///
+    /// \note This lives in Tpetra, for various hackish reasons.
+    ///
+    typedef Epetra::TsqrAdaptor tsqr_adaptor_type;
+#  endif // defined(HAVE_TPETRA_EPETRA)
+#endif // defined(HAVE_ANASAZI_TPETRA) && defined(HAVE_ANASAZI_TSQR)
   };        
 
   ////////////////////////////////////////////////////////////////////

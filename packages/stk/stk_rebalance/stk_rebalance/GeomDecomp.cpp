@@ -37,51 +37,15 @@ namespace rebalance {
 //: Public member functions
 //: =======================
 
-int GeomDecomp::point_assign_all_objs(mesh::EntityProcVec &comm_spec)
-{
-  //: Element centroid point assigment decomposition augmentation
-  //: Initialize local function variables
-  Partition *partition = this;
-  assert (partition);
-
-  partition->iter_init();
-  for (; !partition->at_end(); ++(*partition)) {
-
-    int                   proc_id;
-    std::vector<double> position;
-
-    mesh::Entity * mesh_obj = partition->iter_mesh_object();
-    unsigned          proc  = partition->iter_destination_proc();
-    mesh::EntityProc tmp(mesh_obj, proc);
-    comm_spec.push_back(tmp);
-
-    const mesh::Entity & target_obj = *(partition->iter_mesh_object());
-
-    //: Get centroid coordinates of target_obj
-    obj_to_point( target_obj, *(partition->object_coord_ref()), position );
-
-    //: Use virutal function
-    //: to assign a processor ID based on these coordinates
-    proc_id  = -1;
-    if ( 0 != this->point_assign( &position[0], &proc_id)  ) {
-      throw std::runtime_error("Point assignment failed");
-    }
-    //: Transfer Point_Assign processor ID to Destination Proc
-    partition->iter_set_destination_proc(proc_id);
-  }
-return(EXIT_SUCCESS);
-}/* end int GeomDecomp::point_assign */
-
-
 
 int  GeomDecomp::owning_proc(const VectorField & nodal_coord_ref ,
-			     const mesh::Entity       & mesh_obj         ) const
+                             const mesh::Entity       & mesh_entity         ) const
 {
   // if ( stk::Env::parallel_machine_size() == 1 ) return Env::parallel_rank();
 
   std::vector<double> position;
 
-  obj_to_point( mesh_obj, nodal_coord_ref, position );
+  obj_to_point( mesh_entity, nodal_coord_ref, position );
 
   int proc = 0;
   if ( 0 != this->point_assign( &position[0], &proc ) )
@@ -91,11 +55,11 @@ int  GeomDecomp::owning_proc(const VectorField & nodal_coord_ref ,
 }
 
 //***************************************************************************
-// Find all the processors which geometrically overlap a given mesh object
+// Find all the processors which geometrically overlap a given mesh entity
 // (returned in the third argument).
 // NOTE:
 //   The box_expansion_sum expands the surrounding "box" associated
-//   with the mesh object uniformly in each direction by the given sum.
+//   with the mesh entity uniformly in each direction by the given sum.
 //   Specifically, each component of (x,y,z)_min of the box is REDUCED
 //   by the sum, and each component of (x,y,z)_max of the box is
 //   INCREASED by the sum.
@@ -103,24 +67,24 @@ int  GeomDecomp::owning_proc(const VectorField & nodal_coord_ref ,
 
 void
 GeomDecomp::ghost_procs(const VectorField & nodal_coord_ref ,
-			const mesh::Entity  & mesh_obj ,
-			std::vector<int>    & procs ,
-			double                box_expansion_sum ) const
+                        const mesh::Entity  & mesh_entity ,
+                        std::vector<int>    & procs ,
+                        double                box_expansion_sum ) const
 {
   //if ( sierra::Env::parallel_size() == 1 ) return;
 
-  //: Form a bounding box the mesh object
+  //: Form a bounding box the mesh entity
 
   const double double_MAX = std::numeric_limits<double>::max();
   double
     lo[3]={ double_MAX,  double_MAX,  double_MAX},
     hi[3]={-double_MAX, -double_MAX, -double_MAX};
 
-    obj_to_box( mesh_obj,
-		lo,
-		hi,
-		nodal_coord_ref,
-		box_expansion_sum );
+    obj_to_box( mesh_entity,
+                lo,
+                hi,
+                nodal_coord_ref,
+                box_expansion_sum );
 
     if ( 0 != box_assign( lo, hi, procs) )
       throw std::runtime_error("Box assignment failed");
@@ -128,7 +92,7 @@ GeomDecomp::ghost_procs(const VectorField & nodal_coord_ref ,
     //ThrowRequire( procs.size() <= (unsigned) Env::parallel_size() );
 }
 
-std::vector<const mesh::Entity *> GeomDecomp::meshobj_coordinates(const mesh::Entity                 & obj,
+std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Entity                 & obj,
                                                                   const VectorField            & nodal_coor,
                                                                   std::vector<std::vector<double> >  & coordinates)
 {
@@ -150,10 +114,10 @@ std::vector<const mesh::Entity *> GeomDecomp::meshobj_coordinates(const mesh::En
     mesh_nodes.push_back(&obj);
   } else {
 
-    // Loop over node relations in mesh object
+    // Loop over node relations in mesh entity
     mesh::PairIterRelation nr   = obj.relations( mesh::Node );
 
-    for ( ; nr.first != nr.second; ++nr.first ) 
+    for ( ; nr.first != nr.second; ++nr.first )
     {
       const mesh::Relation &rel = *nr.first;
       if (rel.entity_rank() ==  mesh::Node) { // %fixme: need to check for USES relation
@@ -178,7 +142,7 @@ std::vector<std::vector<double> > GeomDecomp::compute_obj_centroid(const mesh::E
                                                                    std::vector<double>   & centroid)
 {
   std::vector<std::vector<double> > coordinates;
-  meshobj_coordinates(obj, nodal_coor_ref, coordinates);
+  entity_coordinates(obj, nodal_coor_ref, coordinates);
 
   const int ndim      = coordinates.front().size();
   const int num_nodes = coordinates.size();
@@ -234,11 +198,11 @@ void apply_rotation (std::vector<double> &coor)
 }
 }
 
-//: Convert a mesh object to a single point
+//: Convert a mesh entity to a single point
 //: in cartesian coordinates (x,y,z)
 void GeomDecomp::obj_to_point (const mesh::Entity            & obj,
-			       const VectorField & nodeCoord,
-			       std::vector<double>           & coor)
+                               const VectorField & nodeCoord,
+                               std::vector<double>           & coor)
 {
   compute_obj_centroid(obj, nodeCoord, coor);
   apply_rotation (coor);
@@ -247,24 +211,24 @@ void GeomDecomp::obj_to_point (const mesh::Entity            & obj,
 
 //*************************************************************
 // Find the bounding box, aligned with the cartesian axes,
-// for the supplied mesh object.
+// for the supplied mesh entity.
 // The box_expansion_sum expands the "box" associated
-// with the mesh object uniformly in each direction by the given sum.
+// with the mesh entity uniformly in each direction by the given sum.
 // Specifically, each component of (x,y,z)_min of the box is REDUCED
 // by the sum, and each component of (x,y,z)_max of the box is
 // INCREASED by the sum.
 //*************************************************************
 
 void GeomDecomp::obj_to_box(const mesh::Entity       & obj,
-			    double                  lo[],
-			    double                  hi[],
-			    const VectorField & nodeCoord,
-			    double                    box_expansion_sum )
+                            double                  lo[],
+                            double                  hi[],
+                            const VectorField & nodeCoord,
+                            double                    box_expansion_sum )
 {
   if ( box_expansion_sum < 0.0 ) box_expansion_sum = -1.0 * box_expansion_sum;
 
   std::vector<std::vector<double> > coordinates;
-  meshobj_coordinates(obj, nodeCoord, coordinates);
+  entity_coordinates(obj, nodeCoord, coordinates);
 
   const unsigned nnode = coordinates.size();
   const unsigned nd    = coordinates.front().size();

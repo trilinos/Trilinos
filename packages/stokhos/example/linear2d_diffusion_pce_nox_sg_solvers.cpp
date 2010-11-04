@@ -72,14 +72,14 @@ const SG_Solver sg_solver_values[] = { SG_KRYLOV, SG_GS, SG_JACOBI };
 const char *sg_solver_names[] = { "Krylov", "Gauss-Seidel", "Jacobi" };
 
 // Krylov methods
-// enum Krylov_Method { GMRES, CG, FGMRES, RGMRES };
-// const int num_krylov_method = 4;
-// const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES, RGMRES };
-// const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES", "RGMRES" };
-enum Krylov_Method { GMRES, CG, FGMRES };
-const int num_krylov_method = 3;
-const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES };
-const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES" };
+enum Krylov_Method { GMRES, CG, FGMRES, RGMRES };
+const int num_krylov_method = 4;
+const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES, RGMRES };
+const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES", "RGMRES" };
+// enum Krylov_Method { GMRES, CG, FGMRES };
+// const int num_krylov_method = 3;
+// const Krylov_Method krylov_method_values[] = { GMRES, CG, FGMRES };
+// const char *krylov_method_names[] = { "GMRES", "CG", "FGMRES" };
 
 // Krylov preconditioning approaches
 enum SG_Prec { MEAN, GS, AGS, AJ, KP };
@@ -124,6 +124,10 @@ int main(int argc, char *argv[]) {
     int n = 32;
     CLP.setOption("num_mesh", &n, "Number of mesh points in each direction");
 
+    bool symmetric = false;
+    CLP.setOption("symmetric", "unsymmetric", &symmetric, 
+		  "Symmetric discretization");
+
     SG_RF randField = UNIFORM;
     CLP.setOption("rand_field", &randField, 
 		   num_sg_rf, sg_rf_values, sg_rf_names,
@@ -143,6 +147,10 @@ int main(int argc, char *argv[]) {
 
     int p = 5;
     CLP.setOption("order", &p, "Polynomial order");
+
+    bool normalize_basis = true;
+    CLP.setOption("normalize", "unnormalize", &normalize_basis, 
+		  "Normalize PC basis");
     
     SG_Solver solve_method = SG_KRYLOV;
     CLP.setOption("sg_solver", &solve_method, 
@@ -197,6 +205,7 @@ int main(int argc, char *argv[]) {
     if (MyPID == 0) {
       std::cout << "Summary of command line options:" << std::endl
 		<< "\tnum_mesh            = " << n << std::endl
+		<< "\tsymmetric           = " << symmetric << std::endl
 		<< "\trand_field          = " << sg_rf_names[randField] 
 		<< std::endl
 		<< "\tmean                = " << mean << std::endl
@@ -204,6 +213,7 @@ int main(int argc, char *argv[]) {
 		<< "\tweight_cut          = " << weightCut << std::endl
 		<< "\tnum_kl              = " << num_KL << std::endl
 		<< "\torder               = " << p << std::endl
+		<< "\tnormalize_basis     = " << normalize_basis << std::endl
 		<< "\tsg_solver           = " << sg_solver_names[solve_method] 
 		<< std::endl
 		<< "\touter_krylov_method = " 
@@ -232,9 +242,9 @@ int main(int argc, char *argv[]) {
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
     for (int i=0; i<num_KL; i++)
       if (randField == UNIFORM)
-        bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,true));
+        bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p,normalize_basis));
       else if (randField == LOGNORMAL)      
-        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,true));
+        bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p,normalize_basis));
 
     //  bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&uniform_weight,-weightCut,weightCut,true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
@@ -253,7 +263,8 @@ int main(int argc, char *argv[]) {
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
       Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, sigma, 
-					 mean, basis, nonlinear_expansion));
+					 mean, basis, nonlinear_expansion,
+					 symmetric));
 
     // Set up NOX parameters
     Teuchos::RCP<Teuchos::ParameterList> noxParams = 
@@ -375,7 +386,7 @@ int main(int argc, char *argv[]) {
 	belosParams.set("Solver Type","Block GMRES");
 	belosSolverParams = 
 	  &(belosParams.sublist("Solver Types").sublist("Block GMRES"));
-	if (outer_krylov_method == FGMRES)
+	if (inner_krylov_method == FGMRES)
 	  belosSolverParams->set("Flexible Gmres", true);
       }
       else if (inner_krylov_method == CG) {
@@ -383,11 +394,11 @@ int main(int argc, char *argv[]) {
 	belosSolverParams = 
 	  &(belosParams.sublist("Solver Types").sublist("Block CG"));
       }
-      // else if (inner_krylov_method == RGMRES) {
-      // 	belosParams.set("Solver Type","GCRODR");
-      // 	belosSolverParams = 
-      // 	  &(belosParams.sublist("Solver Types").sublist("GCRODR"));
-      // }
+      else if (inner_krylov_method == RGMRES) {
+      	belosParams.set("Solver Type","GCRODR");
+      	belosSolverParams = 
+      	  &(belosParams.sublist("Solver Types").sublist("GCRODR"));
+      }
       belosSolverParams->set("Convergence Tolerance", inner_tol);
       belosSolverParams->set("Maximum Iterations", inner_its);
       belosSolverParams->set("Output Frequency",0);
@@ -546,11 +557,11 @@ int main(int argc, char *argv[]) {
 	  belosSolverParams = 
 	    &(belosParams.sublist("Solver Types").sublist("Block CG"));
 	}
-	// else if (inner_krylov_method == RGMRES) {
-	//   belosParams.set("Solver Type","GCRODR");
-	//   belosSolverParams = 
-	//     &(belosParams.sublist("Solver Types").sublist("GCRODR"));
-	// }
+	else if (inner_krylov_method == RGMRES) {
+	  belosParams.set("Solver Type","GCRODR");
+	  belosSolverParams = 
+	    &(belosParams.sublist("Solver Types").sublist("GCRODR"));
+	}
 	belosSolverParams->set("Convergence Tolerance", outer_tol);
 	belosSolverParams->set("Maximum Iterations", outer_its);
 	belosSolverParams->set("Output Frequency",1);

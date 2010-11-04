@@ -37,9 +37,7 @@ namespace mesh {
 
 Ghosting & BulkData::create_ghosting( const std::string & name )
 {
-  static const char method[] = "stk::mesh::BulkData::create_ghosting" ;
-
-  assert_ok_to_modify( method );
+  require_ok_to_modify();
 
   // Verify name is the same on all processors,
   // if not then throw an exception on all processors.
@@ -104,9 +102,7 @@ void comm_sync_send_recv(
 
 void BulkData::destroy_all_ghosting()
 {
-  static const char method[] = "stk::mesh::BulkData::destroy_all_ghosting" ;
-
-  assert_ok_to_modify( method );
+  require_ok_to_modify();
 
   // Clear Ghosting data
 
@@ -155,7 +151,7 @@ void BulkData::change_ghosting(
   //----------------------------------------
   // Verify inputs:
 
-  assert_ok_to_modify( method );
+  require_ok_to_modify();
 
   const bool ok_mesh  = & ghosts.mesh() == this ;
   const bool ok_ghost = 1 < ghosts.ordinal();
@@ -217,28 +213,11 @@ void BulkData::change_ghosting(
 
 //----------------------------------------------------------------------
 
-namespace {
-
-void require_destroy_entity( BulkData & mesh , Entity * entity ,
-                             const char * const method )
-{
-  if ( ! mesh.destroy_entity( entity ) ) {
-    std::ostringstream msg ;
-    msg << method << " FAILED attempt to destroy " ;
-    print_entity_key( msg , mesh.mesh_meta_data() , entity->key() );
-    throw std::logic_error( msg.str() );
-  }
-}
-
-}
-
 void BulkData::internal_change_ghosting(
   Ghosting & ghosts ,
   const std::vector<EntityProc> & add_send ,
   const std::vector<Entity*> & remove_receive )
 {
-  const char method[] = "stk::mesh::BulkData::internal_change_ghosting" ;
-
   const MetaData & meta = m_mesh_meta_data ;
   const unsigned rank_count = meta.entity_rank_count();
   const unsigned p_size = m_parallel_size ;
@@ -353,7 +332,8 @@ void BulkData::internal_change_ghosting(
       removed = true ;
       *i = NULL ; // No longer communicated
       if ( remove_recv ) {
-        require_destroy_entity( *this , entity , method );
+        ThrowRequireMsg( destroy_entity( entity ),
+                         " FAILED attempt to destroy entity: " << entity );
       }
     }
   }
@@ -456,7 +436,7 @@ void BulkData::internal_change_ghosting(
             m_entity_repo.set_entity_owner_rank( *(result.first), owner);
           }
 
-          assert_entity_owner( method , * result.first , owner );
+          require_entity_owner( * result.first , owner );
 
           internal_change_entity_parts( * result.first , parts , PartVector() );
 
@@ -576,7 +556,6 @@ void comm_sync_send_recv(
   std::set< EntityProc , EntityLess > & new_send ,
   std::set< Entity * , EntityLess > & new_recv )
 {
-  static const char method[] = "stk::mesh::BulkData::change_ghosting" ;
   const unsigned parallel_rank = mesh.parallel_rank();
   const unsigned parallel_size = mesh.parallel_size();
 
@@ -643,9 +622,10 @@ void comm_sync_send_recv(
       if ( parallel_rank != proc ) {
         //  Receiving a ghosting need for an entity I own.
         //  Add it to my send list.
-        if ( e == NULL ) {
-          throw std::logic_error( std::string(method) );
-        }
+        ThrowRequireMsg( e != NULL,
+            "Unknown entity key: " <<
+            mesh.mesh_meta_data().entity_rank_name(entity_key.rank()) <<
+            "[" << entity_key.id() << "]");
         EntityProc tmp( e , proc );
         new_send.insert( tmp );
       }
@@ -667,10 +647,7 @@ void comm_sync_send_recv(
 
 void BulkData::internal_regenerate_shared_aura()
 {
-  static const char method[] =
-    "stk::mesh::BulkData::internal_regenerate_shared_aura" ;
-
-  assert_ok_to_modify( method );
+  require_ok_to_modify();
 
   std::vector<EntityProc> send ;
 

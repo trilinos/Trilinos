@@ -75,15 +75,17 @@ bool full_rebalance(mesh::BulkData        & bulk_data ,
 // ------------------------------------------------------------------------------
 
 bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
-                                 mesh::MetaData &    meta_data,
                                  const mesh::Field<double> & load_measure,
                                  ParallelMachine    comm,
-				 const double  imbalance_threshold)
+				 double & imbalance_threshold)
 {
+  // Need to make load_measure optional with weights defaulting to 1.0. ??
+
   if ( imbalance_threshold < 1.0 ) return true;
 
   double my_load = 0.0;
 
+  const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
   const mesh::TopologicalMetaData & topo_data = mesh::TopologicalMetaData::find_TopologicalMetaData(meta_data);
 
   mesh::EntityVector local_elems;
@@ -101,15 +103,17 @@ bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
   }
 
   double max_load = my_load;
-  double tot_load = 0;
+  double tot_load = my_load;
 
-  all_reduce(comm, ReduceMax<1>(&max_load));
-  all_reduce_sum(comm, &my_load, &tot_load, 1);
+  all_reduce(comm, ReduceMax<1>(&max_load) & ReduceSum<1>(&tot_load));
 
-  const int   proc_size = parallel_machine_size(comm);
+  const int proc_size = parallel_machine_size(comm);
   const double avg_load = tot_load / proc_size;
 
-  return ( max_load / avg_load > imbalance_threshold );
+  bool need_to_rebalance =  max_load / avg_load > imbalance_threshold;
+  imbalance_threshold = max_load / avg_load;
+
+  return need_to_rebalance;
 }
 
 bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
@@ -130,6 +134,7 @@ bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
     {
       double * const w = mesh::field_data( *rebal_elem_weight_ref, **iA );
       ThrowRequire( NULL != w );
+      // Should this be a throw instead???
       if ( *w <= 0.0 ) {
         *w = 1.0 ;
       }
@@ -137,12 +142,12 @@ bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
     rebal_elem_ptrs.push_back( *iA );
   }
 
-  partition.replace_mesh(
+  partition.set_mesh_info(
       rebal_elem_ptrs,
       rebal_coord_ref,
       rebal_elem_weight_ref);
 
-  bool rebalancingHasOccurred =  full_rebalance(bulk_data, partition);
+  bool rebalancingHasOccurred = full_rebalance(bulk_data, partition);
 
   return rebalancingHasOccurred;
 }

@@ -1,3 +1,4 @@
+# -*- cmake -*-
 # @HEADER
 # ************************************************************************
 #
@@ -50,7 +51,7 @@ IF(TPL_ENABLE_MPI)
   SET(HAVE_MPI ON)
 ENDIF(TPL_ENABLE_MPI)
 
-PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+PACKAGE_CONFIGURE_FILE(PyTrilinos_config.h)
 
 #
 # On Mac OS X Gnu compilers, add dynamic lookup for undefined symbols
@@ -80,7 +81,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/pyfragments.swg.in
 SET(HEADERS "")
 SET(SOURCES "")
 SET(HEADERS ${HEADERS}
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  ${CMAKE_CURRENT_BINARY_DIR}/PyTrilinos_config.h
   )
 
 #

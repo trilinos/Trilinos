@@ -148,8 +148,8 @@ bool Internals::check_processor_info(int processor_count, int processor_id)
     }
       if (proc_info[1] != processor_id) {
 	IOSS_WARNING << "This file was originally written on processor " << proc_info[1]
-		     << ", but is now being read on processor " << processor_id
-		     << ". This may cause problems if there is any processor-dependent data on the file.\n";
+		     << ", but is now being read on processor " << processor_id << ".\n"
+		     << "This may cause problems if there is any processor-dependent data on the file.\n";
 	matches = false;
       }
     } else {

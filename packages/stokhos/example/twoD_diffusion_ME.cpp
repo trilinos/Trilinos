@@ -147,14 +147,15 @@ twoD_diffusion_ME(
   const Teuchos::RCP<Epetra_Comm>& comm, int n, int d, 
   double s, double mu, 
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis_,
-  bool log_normal_) :
-  mesh(n),
+  bool log_normal_,
+  bool eliminate_bcs_) :
+  mesh(n*n),
   basis(basis_),
-  log_normal(log_normal_)
+  log_normal(log_normal_),
+  eliminate_bcs(eliminate_bcs_)
 {
   //////////////////////////////////////////////////////////////////////////////
-  // Construct the mesh.  The mesh is just the tensor of the below array with 
-  // itself.
+  // Construct the mesh.  
   // The mesh is uniform and the nodes are numbered
   // LEFT to RIGHT, DOWN to UP.
   //
@@ -165,26 +166,43 @@ twoD_diffusion_ME(
   double xyLeft = -.5;
   double xyRight = .5;
   h = (xyRight - xyLeft)/((double)(n-1));
-  for(int idx = 0; idx < n; idx++){
-    mesh[idx] = xyLeft + (idx)*h;
+  Teuchos::Array<int> global_dof_indices;
+  for (int j=0; j<n; j++) {
+    double y = xyLeft + j*h;
+    for (int i=0; i<n; i++) {
+      double x = xyLeft + i*h;
+      int idx = j*n+i;
+      mesh[idx].x = x;
+      mesh[idx].y = y;
+      if (i == 0 || i == n-1 || j == 0 || j == n-1)
+	mesh[idx].boundary = true;
+      if (i != 0)
+	mesh[idx].left = idx-1;
+      if (i != n-1)
+	mesh[idx].right = idx+1;
+      if (j != 0)
+	mesh[idx].down = idx-n;
+      if (j != n-1)
+	mesh[idx].up = idx+n;
+      if (!(eliminate_bcs && mesh[idx].boundary))
+	global_dof_indices.push_back(idx);
+    }
   }
-  h = mesh[1]-mesh[0];
   
   // Solution vector map
-  x_map = Teuchos::rcp(new Epetra_Map(n*n, 0, *comm));
-
-  // Overlapped solution vector map
-  x_overlapped_map = Teuchos::rcp(new Epetra_Map(n*n, 0, *comm));
-
-  // Importer
-  importer = Teuchos::rcp(new Epetra_Import(*x_overlapped_map, *x_map));
+  int n_global_dof = global_dof_indices.size();
+  int n_proc = comm->NumProc();
+  int proc_id = comm->MyPID();
+  int n_my_dof = n_global_dof / n_proc;
+  if (proc_id == n_proc-1)
+    n_my_dof += n_global_dof % n_proc;
+  int *my_dof = global_dof_indices.getRawPtr() + proc_id*(n_global_dof / n_proc);
+  x_map = 
+    Teuchos::rcp(new Epetra_Map(n_global_dof, n_my_dof, my_dof, 0, *comm));
 
   // Initial guess, initialized to 0.0
   x_init = Teuchos::rcp(new Epetra_Vector(*x_map));
   x_init->PutScalar(0.0);
-
-  // Overlapped solution vector
-  x_overlapped = Teuchos::rcp(new Epetra_Vector(*x_overlapped_map));
 
   // Parameter vector map
   p_map = Teuchos::rcp(new Epetra_LocalMap(d, 0, *comm));
@@ -207,38 +225,30 @@ twoD_diffusion_ME(
   // Build Jacobian graph
   int NumMyElements = x_map->NumMyElements();
   int *MyGlobalElements = x_map->MyGlobalElements();
-  int *NumNz = new int[NumMyElements];
-  int Indices[4];
-  int NumEntries;
-  bcIndices.resize(NumMyElements);
-  for (int i = 0; i<NumMyElements; i++) {
-    // MyGlobalElements[i]<n ==> Boundary node on bottom edge.
-    // MyGlobalElements[i]%n == 0 ==> Boundary node on left edge.
-    // MyGlobalElements[i]+1%n == 0 ==> right edge.
-    // MyGlobalElements[i] >= n - n ==> top edge.
-    if (MyGlobalElements[i] < n || MyGlobalElements[i]%n == 0 ||
-	(MyGlobalElements[i]+1)%n == 0 || MyGlobalElements[i] >= n*n - n) {
-      NumNz[i] = 1;
-      bcIndices[i] = 1;
+  graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *x_map, 5));
+  for (int i=0; i<NumMyElements; ++i ) {
+
+    // Center
+    int global_idx = MyGlobalElements[i];
+    graph->InsertGlobalIndices(global_idx, 1, &global_idx);
+
+    if (!mesh[global_idx].boundary) {
+      // Down
+      if (!(eliminate_bcs && mesh[mesh[global_idx].down].boundary))
+	graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].down);
+
+      // Left
+      if (!(eliminate_bcs && mesh[mesh[global_idx].left].boundary))
+	graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].left);
+
+      // Right
+      if (!(eliminate_bcs && mesh[mesh[global_idx].right].boundary))
+	graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].right);
+
+      // Up
+      if (!(eliminate_bcs && mesh[mesh[global_idx].up].boundary))
+	graph->InsertGlobalIndices(global_idx, 1, &mesh[global_idx].up);
     }
-    else {
-      NumNz[i] = 5;
-      bcIndices[i] = 0;
-    }
-  }
-  graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *x_map, NumNz));
-  delete [] NumNz;
-  for(int i=0; i<NumMyElements; ++i ) {
-    if (bcIndices[i] == 0) {
-      Indices[0] = MyGlobalElements[i]-n; //Down
-      Indices[1] = MyGlobalElements[i]-1; //left
-      Indices[2] = MyGlobalElements[i]+1; //right
-      Indices[3] = MyGlobalElements[i]+n; //up
-      NumEntries = 4;
-    }
-    if(bcIndices[i] == 0) 
-      graph->InsertGlobalIndices(MyGlobalElements[i], NumEntries, Indices);
-    graph->InsertGlobalIndices(MyGlobalElements[i], 1, MyGlobalElements+i);
   }
   graph->FillComplete();
   graph->OptimizeStorage();
@@ -270,7 +280,8 @@ twoD_diffusion_ME(
   // Construct the RHS vector.
   b = Teuchos::rcp(new Epetra_Vector(*x_map));
   for( int i=0 ; i<NumMyElements; ++i ) {
-    if (bcIndices[i] == 1 )
+    int global_idx = MyGlobalElements[i];
+    if (mesh[global_idx].boundary)
       (*b)[i] = 0;
     else 
       (*b)[i] = 1;
@@ -500,8 +511,10 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 
   // Responses (mean value)
   Teuchos::RCP<Epetra_Vector> g = outArgs.get_g(0);
-  if (g != Teuchos::null)
-    det_x->MeanValue(&(*g)[0]);
+  if (g != Teuchos::null) {
+    (det_x->MeanValue(&(*g)[0]));
+    (*g)[0] *= double(det_x->GlobalLength()) / double(mesh.size());
+  }
 
   //
   // Stochastic Galerkin calculation
@@ -572,8 +585,10 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     outArgs.get_g_sg(0);
   if (g_sg != Teuchos::null) {
     int sz = x_sg->size();
-    for (int i=0; i<sz; i++)
+    for (int i=0; i<sz; i++) {
       (*x_sg)[i].MeanValue(&(*g_sg)[i][0]);
+      (*g_sg)[i][0] *= double((*x_sg)[i].GlobalLength()) / double(mesh.size());
+    }
   }
 
 }

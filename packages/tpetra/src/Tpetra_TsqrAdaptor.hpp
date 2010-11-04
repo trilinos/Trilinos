@@ -29,16 +29,18 @@
 #ifndef __Tpetra_TsqrAdaptor_hpp
 #define __Tpetra_TsqrAdaptor_hpp
 
-#include <Kokkos_ConfigDefs.hpp> // HAVE_KOKKOS_TSQR, etc.
-#include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
-#include <Tsqr.hpp> // full (internode + intranode) TSQR
-#include <Tsqr_DistTsqr.hpp> // internode TSQR
+#include <Tpetra_ConfigDefs.hpp> // HAVE_TPETRA_TSQR, etc.
+
+#ifdef HAVE_TPETRA_TSQR
+#  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
+#  include <Tsqr.hpp> // full (internode + intranode) TSQR
+#  include <Tsqr_DistTsqr.hpp> // internode TSQR
 // Subclass of TSQR::MessengerBase, implemented using Teuchos
 // communicator template helper functions
-#include <Tsqr_TeuchosMessenger.hpp> 
-#include <Tpetra_MultiVector.hpp>
+#  include <Tsqr_TeuchosMessenger.hpp> 
+#  include <Tpetra_MultiVector.hpp>
 
-#include <stdexcept>
+#  include <stdexcept>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -213,6 +215,8 @@ namespace Tpetra {
   };
 
 } // namespace Tpetra
+
+#endif // HAVE_TPETRA_TSQR
 
 #endif // __Tpetra_TsqrAdaptor_hpp
 
