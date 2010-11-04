@@ -119,6 +119,10 @@ extern "C" {
  */
 /*****************************************************************************/
 
+void Zoltan_add_back_trace(char *yo);
+void Zoltan_remove_back_trace();
+void Zoltan_print_trace(int rank);
+
 #define ZOLTAN_PRINT_ERROR(proc,yo,str) { \
   fprintf(stderr, "[%d] Zoltan ERROR in %s (line %d of %s):  %s\n", \
           proc, yo, __LINE__, __FILE__, str);                       \
@@ -141,7 +145,6 @@ extern "C" {
 #define ZOLTAN_PRINT_INFO(proc,yo,str) \
   printf("ZOLTAN (Processor %d) %s: %s\n", (proc), (yo), \
          ((str) != NULL ? (char *)(str) : " "));
-
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
