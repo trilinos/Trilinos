@@ -201,19 +201,19 @@ namespace Belos {
 
   public:
 
-    /// \brief Constructor
+    /// Constructor
     ///
-    /// \param tsqrParams [in] Configuration parameters for TSQR.  See
-    ///   TSQR documentation for how to set those.  They depend on
+    /// \param tsqrParams [in] Configuration parameters, both for this
+    ///   orthogonalization manager, and for TSQR itself.  See the TSQR
+    ///   documentation for how to set the latter.  They depend on
     ///   which multivector (MV) class you are using (since each MV
     ///   class maps to a specific TSQR implementation).
     ///
-    /// \param Op [in] Inner product.  Don't set to anything not 
-    ///   Teuchos::null, otherwise an exception will be thrown.
-    ///   Also, don't call setOp().
+    /// \param label [in] Label for Belos timers.  Only has an effect 
+    ///   if the compile-time option for enabling Belos timers is set.
     ///
     TsqrOrthoManagerImpl (const Teuchos::ParameterList& tsqrParams,
-			  const std::string& label = "Belos") :
+			  const std::string& label) :
       tsqrParams_ (tsqrParams),
       label_ (label),
       tsqrAdaptor_ (Teuchos::null),
@@ -223,8 +223,17 @@ namespace Belos {
       reorthogonalizeBlocks_ (false), // Set later by readParams()
       throwOnReorthogFault_ (true),   // Set later by readParams()
       blockReorthogThreshold_ (0),    // Set later by readParams()
-      relativeRankTolerance_ (0)     // Set later by readParams()
+      relativeRankTolerance_ (0)      // Set later by readParams()
     {
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+      std::string sublabel = label_ = ": All orthogonalization";
+      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer (sublabel);
+      sublabel = label_ = ": Projection";
+      timerProject_ = Teuchos::TimeMonitor::getNewTimer (sublabel);
+      sublabel = label_ = ": Normalization";
+      timerNormalize_ = Teuchos::TimeMonitor::getNewTimer (sublabel);
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
       // Extract values for the four parameters
       // reorthogonalizeBlocks_, throwOnReorthogFault_,
       // blockReorthogThreshold_, and relativeRankTolerance_ from the
@@ -233,12 +242,6 @@ namespace Belos {
       // "cacheBlockSize") get passed along to the underlying TSQR
       // implementation.
       readParams (tsqrParams);
-
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": All orthogonalization");
-      timerProject_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Projection");
-      timerNormalize_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Normalization");
-#endif // BELOS_TEUCHOS_TIME_MONITOR
     }
 
     typedef Teuchos::RCP< MV >                                   mv_ptr;
@@ -633,6 +636,10 @@ namespace Belos {
     MagnitudeType relativeRankTolerance() const { return relativeRankTolerance_; }
 
   private:
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    Teuchos::RCP< Teuchos::Time > timerOrtho_, timerProject_, timerNormalize_;
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
     /// 
     /// Parameters for initializing TSQR
     Teuchos::ParameterList tsqrParams_;
@@ -866,8 +873,9 @@ namespace Belos {
   public:
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType magnitude_type;
 
-    TsqrOrthoManager (const Teuchos::ParameterList& tsqrParams) :
-      impl_ (tsqrParams)
+    TsqrOrthoManager (const Teuchos::ParameterList& tsqrParams, 
+		      const std::string& label = "Belos") :
+      impl_ (tsqrParams, label)
     {}
 
     virtual ~TsqrOrthoManager() {}
@@ -934,18 +942,10 @@ namespace Belos {
     void 
     setLabel (const std::string& label) 
     { 
-      if (label != label_)
-	{
-	  label_ = label; 
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-	  timerOrtho_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Orthogonalization");
-	  timerProject_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Projection");
-	  timerNormalize_ = Teuchos::TimeMonitor::getNewTimer (label_ + ": Normalization");
-#endif // BELOS_TEUCHOS_TIME_MONITOR
-	}
+      impl_.setLabel (label);
     }
 
-    const std::string& getLabel() const { return label_; }
+    const std::string& getLabel() const { return impl_.getLabel(); }
 
   private:
     /// "Mutable" because it has internal scratch space state.  I know
@@ -1001,7 +1001,9 @@ namespace Belos {
 
     /// Belos::OrthoManager wants this virtual function to be
     /// implemented; Anasazi::OrthoManager does not.
-    void setLabel (const std::string& label) { label_ = label; }
+    void setLabel (const std::string& label) {
+      label_ = label; 
+    }
     const std::string& getLabel() const { return label_; }
 
     /// \brief Constructor
@@ -1012,9 +1014,11 @@ namespace Belos {
     ///   orthogonalize vectors.  If Teuchos::null, use the Euclidean
     ///   inner product.
     TsqrMatOrthoManager (const Teuchos::ParameterList& tsqrParams, 
+			 const std::string& label = "Belos",
 			 Teuchos::RCP< const OP > Op = Teuchos::null) :
       MatOrthoManager< ScalarType, MV, OP >(Op),
       tsqrParams_ (tsqrParams),
+      label_ (label),
       pTsqr_ (Teuchos::null), // Lazy initialization
       pDgks_ (Teuchos::null)  // Lazy initialization
     {}
@@ -1039,9 +1043,13 @@ namespace Belos {
       // a member function of the base class which does not depend on
       // the template parameters.
       base_type::setOp (Op); // base class gets a copy of the Op too
+      ensureDgksInit (); // Make sure the DGKS object has been initialized
       pDgks_->setOp (Op);
     }
-    /// We override only to help C++ do name lookup in the other member functions.
+
+    /// \brief Return the inner product operator, if any
+    ///
+    /// \note We override only to help C++ do name lookup in the other member functions.
     virtual Teuchos::RCP< const OP > getOp () const { return base_type::getOp(); }
 
     virtual void 
@@ -1175,7 +1183,7 @@ namespace Belos {
     ensureTsqrInit () const
     {
       if (pTsqr_ == Teuchos::null)
-	pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_, getLabel()));
     }
     void 
     ensureDgksInit () const
@@ -1198,10 +1206,6 @@ namespace Belos {
     /// DGKS orthogonalization manager, used when getOp() != null
     /// (could be a non-Euclidean inner product, but not necessarily).
     mutable Teuchos::RCP< dgks_type > pDgks_;
-
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::RCP< Teuchos::Time > timerOrtho_, timerProject_, timerNormalize_;
-#endif // BELOS_TEUCHOS_TIME_MONITOR
   };
 
 } // namespace Belos

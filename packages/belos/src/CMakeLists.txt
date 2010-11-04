@@ -51,6 +51,8 @@ APPEND_SET(HEADERS
   BelosOperator.hpp
   BelosOperatorTraits.hpp
   BelosOrthoManager.hpp
+  BelosOrthoManagerFactory.hpp
+  BelosOrthoManagerTest.hpp
   BelosOutputManager.hpp
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockCGSolMgr.hpp
