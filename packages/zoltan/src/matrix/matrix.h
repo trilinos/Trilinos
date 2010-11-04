@@ -65,6 +65,23 @@ typedef struct Zoltan_matrix_options_ {
   SpeedOpt speed;
 } Zoltan_matrix_options;
 
+
+/* Confusing memory allocations: Some fields are allocated, and then their
+ *  pointers are put in another structure that frees the memory when done.
+ *  We need to keep track of which fields get freed and which don't.
+ */
+
+#define FIELD_DIST_Y  0
+#define FIELD_YSTART  1
+#define FIELD_PINGNO  2
+#define FIELD_YGID    3
+#define FIELD_PINWGT 4
+#define FIELD_NUMBER_OF_FIELDS  5
+
+#define FIELD_FREE_WHEN_DONE(flag, x)  (flag |= (1 << x))
+#define FIELD_DO_NOT_FREE_WHEN_DONE(flag, x)  (flag &= ~(1 << x))
+#define FIELD_QUERY_DO_FREE(flag, x)  (flag & (1 << x))
+
 /* This structure is a CS view of a part of the matrix/hypergraph */
 typedef struct Zoltan_matrix_ {
   Zoltan_matrix_options opts;  /* How to build the matrix */
@@ -106,6 +123,8 @@ typedef struct Zoltan_matrix_2d_ {
   ZOLTAN_GNO_TYPE *dist_y;      /* Distribution on y axis */
   distFnct        *hashDistFct; /* How to distribute nnz */
   void            *hashDistData;/* Used by hashDist */
+  int             delete_flag;  /* 0x001: dist_y, 0x010: ystart, 
+                                 * 0x100: pinGNO, 0x1000: yGID */
 
 } Zoltan_matrix_2d;
 
@@ -128,7 +147,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix);
 
 /* Free a matrix object */
 void
-Zoltan_Matrix_Free(Zoltan_matrix *m);
+Zoltan_Matrix_Free(Zoltan_matrix *m, int delete_flag);
 
 /* Free a matrix2d object */
 void

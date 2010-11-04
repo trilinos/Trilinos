@@ -622,7 +622,7 @@ EndReporting:
             }
          printf ("  Part: %d  Weight %.1f  HSFC  %.6f\n", new_part[i],
           dots[i].weight, dots[i].fsfc);
-         printf ("PROC %d DOT %03" ZOLTAN_ID_SPECIFIER "\n", p->index, gids[i]);
+         printf ("PROC %d DOT " ZOLTAN_ID_SPEC "\n", p->index, gids[i]);
          }
 
    ZOLTAN_FREE(&new_part);

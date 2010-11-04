@@ -162,6 +162,9 @@ void Zoltan_Third_Exit(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Geom *geo,
 		       ZOLTAN_Output_Part *part, ZOLTAN_Output_Order *ord)
 {
   if (gr) {
+
+    Zoltan_Matrix2d_Free(&gr->graph.mtx);
+
     MEMFREE(gr->vwgt);
     MEMFREE(gr->vtxdist);
     MEMFREE(gr->xadj);
@@ -169,11 +172,7 @@ void Zoltan_Third_Exit(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Geom *geo,
     MEMFREE(gr->ewgts);
     MEMFREE(gr->float_ewgts);
     MEMFREE(gr->adjproc);
-    gr->graph.mtx.mtx.pinwgt = NULL;
-    gr->graph.mtx.mtx.ystart = NULL;
-    gr->graph.mtx.mtx.yend = NULL;
-    gr->graph.mtx.mtx.pinGNO = NULL;
-    gr->graph.mtx.dist_y = NULL;
+    
     Zoltan_ZG_Free(&gr->graph);
   }
 
@@ -343,7 +342,8 @@ int nproc_y = m2d->comm->nProc_y;
 }
 int Zoltan_Third_Graph_Print(ZZ *zz, ZOLTAN_Third_Graph *gr, char *s)
 {
-int i, j, me, proc, numvtx, offset;
+int i, me, proc;
+indextype numvtx, offset, j;
 me = zz->Proc;
 
   for (proc=0; proc < zz->Num_Proc; proc++){
@@ -359,20 +359,20 @@ me = zz->Proc;
       if (gr->vtxdist){
         numvtx = gr->vtxdist[proc+1] - gr->vtxdist[proc];
         offset = gr->vtxdist[proc];
-        fprintf(stderr,"Num vertices: %d\n",numvtx);
+        fprintf(stderr,"Num vertices: " TPL_IDX_SPEC "\n",numvtx);
         if (gr->xadj){
-          fprintf(stderr,"Num edges: %d\n",gr->xadj[numvtx]);
+          fprintf(stderr,"Num edges: " TPL_IDX_SPEC "\n",gr->xadj[numvtx]);
         }
 
         for (i=0; i < numvtx; i++){
-          fprintf(stderr,"%d: ",i+offset);
+          fprintf(stderr,TPL_IDX_SPEC ": ",i+offset);
           if (gr->xadj){
             for (j=gr->xadj[i];j < gr->xadj[i+1]; j++){
               if (gr->adjncy){
-                fprintf(stderr,"gid %zd ",gr->adjncy[j]);
+                fprintf(stderr,"gid " TPL_IDX_SPEC,gr->adjncy[j]);
               }
               if (gr->adjproc){
-                fprintf(stderr,"proc %d ",gr->adjproc[j]);
+                fprintf(stderr," proc %d ",gr->adjproc[j]);
               }
             }
           }
@@ -392,6 +392,41 @@ me = zz->Proc;
   MPI_Barrier(MPI_COMM_WORLD);
   return ZOLTAN_OK;
 }
+
+/*
+** Copy of Zoltan_Order_Init_Tree in order_tools.c which uses TPL data types
+*/
+#define CHECK_ZOLTAN_FREE(ptr) do { if ((ptr) != NULL) ZOLTAN_FREE(&(ptr)); } while (0)
+
+int Zoltan_TPL_Order_Init_Tree (struct Zoltan_TPL_Order_Struct *order, indextype blocknbr, indextype leavesnbr)
+{   
+  Zoltan_TPL_Order_Free_Struct(order);
+
+  order->ancestor = (indextype *) ZOLTAN_MALLOC(blocknbr*sizeof(indextype));
+  order->start = (indextype *) ZOLTAN_MALLOC((blocknbr+1)*sizeof(indextype));
+  order->leaves = (indextype *) ZOLTAN_MALLOC((leavesnbr+1)*sizeof(indextype));
+  
+  if ((order->ancestor == NULL) || (order->start == NULL) || (order->leaves == NULL)) {
+    Zoltan_TPL_Order_Free_Struct(order);
+    return (ZOLTAN_MEMERR);
+  }
+  order->needfree = 1;
+  return (ZOLTAN_OK);
+} 
+
+void Zoltan_TPL_Order_Free_Struct(struct Zoltan_TPL_Order_Struct *order)
+{
+  if (order->needfree == 0)
+    return;
+
+  CHECK_ZOLTAN_FREE(order->start);
+  CHECK_ZOLTAN_FREE(order->ancestor);
+  CHECK_ZOLTAN_FREE(order->leaves);
+
+  order->needfree = 0;
+}
+
+    
 
 
 #ifdef __cplusplus

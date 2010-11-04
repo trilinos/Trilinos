@@ -287,6 +287,7 @@ int gen_geom, int gen_graph, int gen_hg)
 
   for (i=0; i<num_obj; i++)
     fprintf(fp, "%d\n", part[i]);
+  fflush(fp);
   fclose(fp);
 
   /* Write geometry to file, if applicable. */
@@ -306,6 +307,7 @@ int gen_geom, int gen_graph, int gen_hg)
         fprintf(fp, "%f ", xyz[i*num_geom + j]);
       fprintf(fp, "\n");
     }
+    fflush(fp);
     fclose(fp);
   }
 
@@ -354,6 +356,7 @@ int gen_geom, int gen_graph, int gen_hg)
       }
       fprintf(fp, "\n");
     }
+    fflush(fp);
     fclose(fp);
   }
 
@@ -424,7 +427,7 @@ int gen_geom, int gen_graph, int gen_hg)
     fseek(fp, 0, SEEK_END);
     for (i=0; i<nEdges; i++){
       for (j=0; j<edgeSize[i]; j++){
-        fprintf(fp, "%" ZOLTAN_ID_SPECIFIER " %" ZOLTAN_ID_SPECIFIER " 1.0 %d\n",
+        fprintf(fp, ZOLTAN_ID_SPEC " " ZOLTAN_ID_SPEC " 1.0 %d\n",
                 eptr[0] + edgeOffset, vptr[0] + vtxOffset, zz->Proc);
         vptr += lenGID;
       }
@@ -450,7 +453,7 @@ int gen_geom, int gen_graph, int gen_hg)
     }
 
     for (i=0; i<num_obj; i++){
-      fprintf(fp, "%" ZOLTAN_ID_SPECIFIER " ",  vptr[0] + vtxOffset);
+      fprintf(fp, ZOLTAN_ID_SPEC " ",  vptr[0] + vtxOffset);
       for (j=0; j<zz->Obj_Weight_Dim; j++){
         fprintf(fp, "%f ", *wptr++);
       }
@@ -479,7 +482,7 @@ int gen_geom, int gen_graph, int gen_hg)
       }
 
       for (i=0; i<nEwgts; i++){
-        fprintf(fp, "%" ZOLTAN_ID_SPECIFIER " ",  eptr[0] + edgeOffset);
+        fprintf(fp, ZOLTAN_ID_SPEC " ",  eptr[0] + edgeOffset);
         for (j=0; j<zz->Edge_Weight_Dim; j++){
           fprintf(fp, "%f ", *wptr++);
         }
@@ -492,6 +495,7 @@ int gen_geom, int gen_graph, int gen_hg)
     }
 
     fclose(fp);
+    MPI_Barrier(zz->Communicator);
   }
 
 End:

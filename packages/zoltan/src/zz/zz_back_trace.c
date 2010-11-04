@@ -20,7 +20,6 @@ extern "C" {
 #define TRACE_STRING_LENGTH 128
 
 static char trace[TRACE_SIZE][TRACE_STRING_LENGTH];
-static char tmp_trace[TRACE_STRING_LENGTH];
 static int trace_base=-1;
 static int trace_top=-1;
 
@@ -77,7 +76,7 @@ int t, i;
     if (t == trace_base) break;
 
     t--;
-    if (t < 0) t == TRACE_SIZE-1;
+    if (t < 0) t = TRACE_SIZE-1;
   }
 }
 

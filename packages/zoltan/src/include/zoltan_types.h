@@ -25,11 +25,13 @@
 extern "C" {
 #endif
 
+#include "Zoltan_config.h"
+
 /* The default ZOLTAN_ID_TYPE is "long" but this can be over-ridden on the compile command line.  
  *
  * The type of a Zoltan object global ID is ZOLTAN_ID_TYPE.  A pointer to it is ZOLTAN_ID_PTR.
  *
- * It's decimal type specifier: printf("%" ZOLTAN_ID_SPECIFIER "\n", global_id);
+ * It's decimal type specifier: printf(ZOLTAN_ID_SPEC "\n", global_id);
  *
  * A constant of the same type:   ZOLTAN_ID_TYPE global_id = ZOLTAN_ID_CONSTANT(0);  (Do we need this?)
  *
@@ -54,16 +56,21 @@ extern "C" {
  */
 
 #undef ZOLTAN_ID_MPI_TYPE
-#undef ZOLTAN_ID_SPECIFIER
+#undef ZOLTAN_ID_SPEC
 #undef ZOLTAN_ID_CONSTANT
 
-/* The configure script can set the ZOLTAN_ID_TYPE if it's not set as a preprocessor flag */
+/* 
+ * Autoconf build: --with-id-type={name} (sets HAVE_ZOLTAN_ID_TYPE_{name})  
+ *                 or add CPPFLAGS=-DZOLTAN_ID_TYPE_INT to configure line
+ *
+ * CMake build:    -D CMAKE_CPP_FLAGS:STRING="-DZOLTAN_ID_TYPE_INT"
+ *
+ * If not specified, we'll use long.
+ */
 
 #ifndef ZOLTAN_ID_TYPE_INT
 #ifndef ZOLTAN_ID_TYPE_LONG
 #ifndef ZOLTAN_ID_TYPE_LONG_LONG
-
-  /* it wasn't set as a preprocessor flag */
 
 #if HAVE_ZOLTAN_ID_TYPE_LONG
 #define ZOLTAN_ID_TYPE_LONG
@@ -93,7 +100,7 @@ typedef int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_INT
 #define zoltan_mpi_id_datatype_name "MPI_INT"
 #define zoltan_id_datatype_name "int"
-#define ZOLTAN_ID_SPECIFIER  "d"
+#define ZOLTAN_ID_SPEC  "%d"
 #define ZOLTAN_ID_CONSTANT(z)  z
 
 #endif
@@ -104,7 +111,7 @@ typedef long long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG
 #define zoltan_mpi_id_datatype_name "MPI_LONG_LONG"
 #define zoltan_id_datatype_name "long long"
-#define ZOLTAN_ID_SPECIFIER  "Ld"
+#define ZOLTAN_ID_SPEC  "%Ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
 
 #endif
@@ -115,7 +122,7 @@ typedef long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_LONG
 #define zoltan_mpi_id_datatype_name "MPI_LONG"
 #define zoltan_id_datatype_name "long"
-#define ZOLTAN_ID_SPECIFIER  "ld"
+#define ZOLTAN_ID_SPEC  "%ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## L
 
 #endif

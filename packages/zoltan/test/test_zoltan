@@ -405,7 +405,7 @@ if ( $yes_fortran ) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
     set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
   endif
-  if (! $no_hier) then
+  if ((! $no_hier) && (! $no_parmetis)) then
     if (! $yes_serial) then
       set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
 	hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
@@ -637,7 +637,7 @@ else
 				     graph-refine graph-repartition)
     endif
   endif
-  if (! $no_hier) then
+  if ( (! $no_hier) && (! $no_parmetis)) then
     if (! $yes_serial) then
       set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
 	hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
@@ -713,7 +713,7 @@ if (! $no_chaco ) then
       @ skip = 0  # Was used to skip certain methods in previous versions.
       setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
 
-      if ( ($mtd  == "order-metis-v3") || ($mtd == "partkway-order-metis-v3") ) then
+      if (  ($mtd  == "order-scotch") || ($mtd  == "order-metis-v3") || ($mtd == "partkway-order-metis-v3") ) then
         if ($np != "1") then
           set skip = 1
           echo "Warning: skip $mtd because test is not serial" | tee -a ../$logfile

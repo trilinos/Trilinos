@@ -401,7 +401,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       offset -= zhg->nHedges;
 #ifdef CEDRIC_PRINT
       for (j=0; j < zhg->nHedges; j++){
-	fprintf (stderr, "EDGEGID %" ZOLTAN_ID_SPECIFIER "\t%zd\n", global_ids[j], offset + j);
+	fprintf (stderr, "EDGEGID " ZOLTAN_ID_SPEC "\t%zd\n", global_ids[j], offset + j);
       }
 #endif /* CEDRIC_PRINT */
 

@@ -353,6 +353,133 @@ int  equal, larger;
   }
 }
 
+/* Exact same code except the list to be sorted is short*/
+
+static void quickpart_list_inc_short(
+  short *list, int *parlist, int start, int end, int *equal, int *larger)
+{
+int i, parchange;
+short key, change;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parlist[*equal];
+      parlist[(*equal)] = parchange;
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parchange;
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_short(short *list, int *parlist, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_short(list, parlist, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_short(list, parlist, start,  equal-1);
+    Zoltan_quicksort_list_inc_short(list, parlist, larger, end);
+  }
+}
+
+/* Exact same code except the list to be sorted is long*/
+
+static void quickpart_list_inc_long (
+  long *list, int *parlist, int start, int end, int *equal, int *larger)
+{
+int i, parchange;
+long key, change;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parlist[*equal];
+      parlist[(*equal)] = parchange;
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parchange;
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_long(long *list, int *parlist, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_long(list, parlist, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_long(list, parlist, start,  equal-1);
+    Zoltan_quicksort_list_inc_long(list, parlist, larger, end);
+  }
+}
+
+/* Exact same code except the list to be sorted is long long*/
+
+static void quickpart_list_inc_long_long (
+  long long *list, int *parlist, int start, int end, int *equal, int *larger)
+{
+int i, parchange;
+long long key, change;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parlist[*equal];
+      parlist[(*equal)] = parchange;
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parchange;
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_long_long(long long *list, int *parlist, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_long_long(list, parlist, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_long_long(list, parlist, start,  equal-1);
+    Zoltan_quicksort_list_inc_long_long(list, parlist, larger, end);
+  }
+}
+
+
 
 /****************************************************************************/
 

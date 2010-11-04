@@ -34,10 +34,10 @@ int i, k;
   k = 0;
   for (i=0; i<z->nHedges; i++){
     if (z->edgeHash){
-      printf("  GID %" ZOLTAN_ID_SPECIFIER ", hashed to %d, num pins %d\n", z->edgeGID[i], z->edgeHash[i], z->esizes[i]);
+      printf("  GID " ZOLTAN_ID_SPEC ", hashed to %d, num pins %d\n", z->edgeGID[i], z->edgeHash[i], z->esizes[i]);
     }
     else{
-      printf("  GID %" ZOLTAN_ID_SPECIFIER ", num pins locally %d\n", z->edgeGID[i], z->esizes[i]);
+      printf("  GID " ZOLTAN_ID_SPEC ", num pins locally %d\n", z->edgeGID[i], z->esizes[i]);
     }
   }
   printf("\n");
@@ -76,12 +76,12 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
     printf("  %zd (",zhg->objGNO[i]);
 
     if (zhg->objGID)
-      printf("%" ZOLTAN_ID_SPECIFIER "/",zhg->objGID[i]);
+      printf(ZOLTAN_ID_SPEC "/",zhg->objGID[i]);
     else
       printf("-/");
 
     if (zhg->objLID)
-      printf("%" ZOLTAN_ID_SPECIFIER ") (",zhg->objLID[i]);
+      printf(ZOLTAN_ID_SPEC ") (",zhg->objLID[i]);
     else
       printf("/-) (");
 
@@ -196,9 +196,9 @@ ZOLTAN_ID_TYPE *v = vtx_GID;
   for (i=0; i<num_lists; i++){
     size = (i < num_lists-1 ? row_ptr[i+1] : num_pins) - row_ptr[i];
     sumsize += size;
-    printf("Edge %" ZOLTAN_ID_SPECIFIER ", size %d\n  ", edg_GID[i], size);
+    printf("Edge " ZOLTAN_ID_SPEC ", size %d\n  ", edg_GID[i], size);
     for (j=0; j<size; j++){
-      printf("%" ZOLTAN_ID_SPECIFIER " ",   *v++);
+      printf(ZOLTAN_ID_SPEC " ",   *v++);
     }
     printf("\n");
   }
@@ -220,16 +220,16 @@ void debug_graph_to_hg(
   printf("%d hyperedges, %d pins\n",nedges,npins);
   for (i=0; i<nedges; i++){
     printf("GID ");
-    for (j=0; j<lenGID; j++) printf("%" ZOLTAN_ID_SPECIFIER " ", egids[i*lenGID+ j]);
+    for (j=0; j<lenGID; j++) printf(ZOLTAN_ID_SPEC " ", egids[i*lenGID+ j]);
     printf(" LID ");
-    for (j=0; j<lenLID; j++) printf("%" ZOLTAN_ID_SPECIFIER " ", elids[i*lenLID+ j]);
+    for (j=0; j<lenLID; j++) printf(ZOLTAN_ID_SPEC " ", elids[i*lenLID+ j]);
     printf(" weights ");
     for (j=0; j<ewgtdim; j++) printf("%f ", ewgts[i*ewgtdim+ j]);
     printf(" size %d\n",esizes[i]);
 
     for (j=0; j < esizes[i]; j++){
       printf("  ");
-      for (k=0; k<lenGID; k++) printf("%" ZOLTAN_ID_SPECIFIER " ", *nextpin++);
+      for (k=0; k<lenGID; k++) printf(ZOLTAN_ID_SPEC " ", *nextpin++);
       printf(" (%d), ",*nextproc++);
       if (j && (j%10==0)) printf("\n");
     }

@@ -154,6 +154,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   times[6] = Zoltan_Time(zz->Timer);
 #endif
   ierr = Zoltan_Matrix_Complete(zz, &graph->mtx.mtx);
+  graph->mtx.delete_flag += 0x1000;   /* Confusing: flag that mtx.mtx.yGID needs to be freed when we're done */
 
 #ifdef CC_TIMERS
   times[7] = Zoltan_Time(zz->Timer);
@@ -205,31 +206,19 @@ int
 Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, ZOLTAN_GNO_TYPE *gvtx, int *nvtx,
 		  int *obj_wgt_dim, int *edge_wgt_dim,
 		  ZOLTAN_GNO_TYPE **vtxdist, int **xadj, ZOLTAN_GNO_TYPE **adjncy, int **adjproc,
-		  /* float **xwgt, */ float **ewgt, int **partialD2)
+		  float **ewgt, int **partialD2)
 {
-  if (sizeof(int) != sizeof(indextype)){
-    if (zz->Proc == 0) fprintf(stderr,"sizeof(int) != sizeof(indextype) in Zoltan_ZG_Export\n");
-    return ZOLTAN_FATAL;
-  }
-
   AFFECT_NOT_NULL(gvtx, graph->mtx.mtx.globalY);
   AFFECT_NOT_NULL(nvtx, graph->mtx.mtx.nY);
   AFFECT_NOT_NULL(vtxdist, graph->mtx.dist_y);
   AFFECT_NOT_NULL(xadj, graph->mtx.mtx.ystart); 
   AFFECT_NOT_NULL(adjncy, graph->mtx.mtx.pinGNO);
-  AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);    /* TODO64 fixed_vertices never set, OK? */
-  /* I have to convert from float to int */
+  AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);
+
   AFFECT_NOT_NULL(obj_wgt_dim, graph->mtx.mtx.ywgtdim);
   AFFECT_NOT_NULL(edge_wgt_dim, graph->mtx.mtx.pinwgtdim);
-/*   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt); */
+
   AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
-
-
-/*   /\* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph *\/ */
-/*   ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj, */
-/* 			     *adjncy, NULL, NULL, */
-/* 			     0, 0, */
-/* 			     0, 2, 2); */
 
   return Zoltan_Matrix2d_adjproc(zz, &graph->mtx, adjproc);
 }
@@ -251,7 +240,7 @@ Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
     if (graph->mtx.mtx.nY >0 && zz->Obj_Weight_Dim > 0 && *pwwgt == NULL) MEMORY_ERROR;
   }
   if (pinput_part != NULL) {
-    input_part = *pinput_part = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
+    input_part = *pinput_part = (int *) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
     if (graph->mtx.mtx.nY > 0 && *pinput_part == NULL) MEMORY_ERROR;
   }
   if (plid != NULL) {
@@ -349,7 +338,6 @@ Zoltan_ZG_Free(ZG *graph){
     ZOLTAN_FREE(&graph->fixed_vertices);
 
   Zoltan_Matrix2d_Free(&graph->mtx);
-  ZOLTAN_FREE(&graph->mtx.comm);
 }
 
 

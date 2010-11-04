@@ -23,12 +23,12 @@ extern "C" {
 #include "zoltan_util.h"
 #include "third_library_const.h"
 
-extern int Zoltan_Verify_Graph(MPI_Comm, ZOLTAN_GNO_TYPE *, int *,
-       ZOLTAN_GNO_TYPE *, weighttype *, weighttype *,
+extern int Zoltan_Verify_Graph(MPI_Comm, indextype *, indextype *,
+       indextype *, weighttype *, weighttype *,
        int, int, int, int, int);
 
-extern int Zoltan_Scatter_Graph(ZOLTAN_GNO_TYPE **, int **,
-       ZOLTAN_GNO_TYPE **, weighttype **, indextype **, weighttype **,
+extern int Zoltan_Scatter_Graph(indextype **, indextype **,
+       indextype **, weighttype **, indextype **, weighttype **,
        float **, int, int, ZZ *, ZOLTAN_COMM_OBJ **);
 
 

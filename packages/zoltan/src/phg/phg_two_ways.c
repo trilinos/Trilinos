@@ -120,7 +120,7 @@ Zoltan_PHG_2ways_hyperedge_partition (
     (*sizeParts)[rowpart[hEdge]] ++;
     rowGNO[hEdge] = EDGE_LNO_TO_GNO(hg, hEdge);
 #if 0
-    fprintf (stderr, "%zd : %" ZOLTAN_ID_SPECIFIER " (%d : %d - %d)\n", rowGNO[hEdge], rowpart[hEdge], node, -interval[2*hEdge], interval[2*hEdge+1]);
+    fprintf (stderr, "%zd : " ZOLTAN_ID_SPEC " (%d : %d - %d)\n", rowGNO[hEdge], rowpart[hEdge], node, -interval[2*hEdge], interval[2*hEdge+1]);
 #endif
   }
 

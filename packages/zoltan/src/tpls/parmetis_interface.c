@@ -60,53 +60,6 @@ int mylog2(int x)
   return (i-1);
 }
 
-static int _zoltan_warned = 0;
-
-static int *Zoltan_convert_for_tpl(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len)
-{
-int i;
-int *tmp_int=NULL;
-char *yo = "Zoltan_convert_for_tpl";
-char msg[256];
-
-  if (!len || (gnos == NULL)){
-    return NULL;
-  }
-
-  if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(int)){
-    if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS && !_zoltan_warned){
-      sprintf(msg, "Global numbers are being copied from %zd byte integers to %zd",
-                   sizeof(ZOLTAN_GNO_TYPE), sizeof(int));
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-      _zoltan_warned = 1;
-    }
-    tmp_int = (int *)ZOLTAN_MALLOC(sizeof(int) * len);  /* TODO64: int or indextype? */
-    if (!tmp_int){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory in Zoltan_convert_for_tpl.");
-      return NULL;
-    }
-
-    for (i=0; i < len; i++){
-      tmp_int[i] = (int)gnos[i];
-
-/*    TODO64 - check for integer overflow - this doesn't work
-      This code caused "i" and "gno" to be corrupted...
-      tmp_gno = (ZOLTAN_GNO_TYPE)tmp_int[i];
-      if (tmp_gno != gnos[i]){ 
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Integer truncation error");
-        return NULL;
-      }
-*/
-
-    }
-  }
-  else{
-    tmp_int = (int *)gnos;
-  }
-
-  return tmp_int;
-}
-
 int
 Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg, float* itr, double *pmv3_itr, ZOLTAN_Output_Order*);
 
@@ -156,7 +109,6 @@ int Zoltan_ParMetis(
   char alg[MAX_PARAM_STRING_LEN+1];
 
 #ifdef ZOLTAN_PARMETIS
-  int *tmp_vtx=NULL, *tmp_nbor=NULL;
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
                                    /* change our zz struct.                  */
 #endif
@@ -168,8 +120,6 @@ int Zoltan_ParMetis(
   int wgtflag;
   int   numflag = 0;
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
-
-  _zoltan_warned = 0;
 
 #ifndef ZOLTAN_PARMETIS
   ZOLTAN_PRINT_ERROR(zz->Proc, yo,
@@ -187,7 +137,27 @@ int Zoltan_ParMetis(
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "ParMetis 3.0 is no longer supported by Zoltan. Please upgrade to ParMetis 3.1 (or later).");
   ierr = ZOLTAN_WARN;
 #endif
+
+#if TPL_USE_DATATYPE != TPL_METIS_DATATYPES
+
+#ifdef TPL_FLOAT_WEIGHT
+  i = 1;
+#else
+  i = 0;
+#endif
+
+  if ((sizeof(indextype) != sizeof(idxtype)) ||
+      (sizeof(weighttype) != sizeof(idxtype)) || i){
+
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
+          "Not supported: Multiple 3rd party libraries with incompatible data types.");
+    return ZOLTAN_FATAL;
+  }
+
+#endif
+
 #endif /* ZOLTAN_PARMETIS */
+
 
   Zoltan_Third_Init(&gr, &prt, &vsp, &part,
 		    imp_gids, imp_lids, imp_procs, imp_to_part,
@@ -235,7 +205,6 @@ int Zoltan_ParMetis(
       gr.get_data = 0;
     }
   }
-
 
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
@@ -320,28 +289,21 @@ int Zoltan_ParMetis(
 
   /* Zoltan_Third_Graph_Print(zz, &gr, "Before calling parmetis"); */
 
+
 #ifdef ZOLTAN_PARMETIS
   if (!IS_LOCAL_GRAPH(gr.graph_type)) { /* May be GLOBAL or NO GRAPH */
 
-    tmp_vtx = Zoltan_convert_for_tpl(zz, gr.vtxdist, zz->Num_Proc+1);
-    if (gr.adjncy){
-      tmp_nbor = Zoltan_convert_for_tpl(zz, gr.adjncy, gr.xadj[gr.num_obj]);
-    }
-    else{
-      tmp_nbor = NULL;
-    }
-    
     /* First check for ParMetis 3 routines */
     if (strcmp(alg, "PARTKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartKway");
-      ParMETIS_V3_PartKway(tmp_vtx, gr.xadj, tmp_nbor, gr.vwgt, gr.ewgts,
+      ParMETIS_V3_PartKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
 			   &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes,
 			   imb_tols, options, &edgecut, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "PARTGEOMKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartGeomKway");
-      ParMETIS_V3_PartGeomKway(tmp_vtx, gr.xadj, tmp_nbor, gr.vwgt,gr.ewgts,
+      ParMETIS_V3_PartGeomKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,gr.ewgts,
                                &wgtflag, &numflag, &geo->ndims, geo->xyz, &ncon,
                                &num_part, prt.part_sizes,
 			       imb_tols, options, &edgecut, prt.part, &comm);
@@ -349,12 +311,12 @@ int Zoltan_ParMetis(
     }
     else if (strcmp(alg, "PARTGEOM") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartGeom");
-      ParMETIS_V3_PartGeom(tmp_vtx, &geo->ndims, geo->xyz, prt.part, &comm);
+      ParMETIS_V3_PartGeom(gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "ADAPTIVEREPART") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_AdaptiveRepart");
-      ParMETIS_V3_AdaptiveRepart(tmp_vtx, gr.xadj, tmp_nbor, gr.vwgt,
+      ParMETIS_V3_AdaptiveRepart(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,
                                  vsp.vsize, gr.ewgts, &wgtflag, &numflag, &ncon,
                                  &num_part, prt.part_sizes, imb_tols,
 				 &itr, options, &edgecut, prt.part, &comm);
@@ -362,7 +324,7 @@ int Zoltan_ParMetis(
     }
     else if (strcmp(alg, "REFINEKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_RefineKway");
-      ParMETIS_V3_RefineKway(tmp_vtx, gr.xadj, tmp_nbor, gr.vwgt, gr.ewgts,
+      ParMETIS_V3_RefineKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
 			     &wgtflag, &numflag, &ncon, &num_part,
                              prt.part_sizes, imb_tols,
 			     options, &edgecut, prt.part, &comm);
@@ -373,13 +335,6 @@ int Zoltan_ParMetis(
       char msg[256];
       sprintf(msg, "Unknown ParMetis algorithm %s.", alg);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
-    }
-
-    if (tmp_nbor != (int *)gr.adjncy){
-      ZOLTAN_FREE(&tmp_nbor);
-    }
-    if (tmp_vtx != (int *)gr.vtxdist){
-      ZOLTAN_FREE(&tmp_vtx);
     }
   }
 #endif /* ZOLTAN_PARMETIS */
@@ -411,8 +366,7 @@ int Zoltan_ParMetis(
 
   if (gr.final_output) { /* Do final output now because after the data will not be coherent:
 			    unscatter only unscatter part data, not graph */
-    ierr = Zoltan_Postprocess_FinalOutput (zz, &gr, &prt, &vsp,
-					   use_timers, itr);
+    ierr = Zoltan_Postprocess_FinalOutput (zz, &gr, &prt, &vsp, use_timers, itr);
   }
   /* Ignore the timings of Final Ouput */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -453,11 +407,11 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
    * ParMETIS 3.0 Partkway ignores partition sizes for problems with
    * less than 10000 objects.
    */
+  long long tmp_gno, gsum;
   if (!strcmp(alg, "PARTKWAY") && !(zz->LB.Uniform_Parts)
       && (zz->Obj_Weight_Dim <= 1)) {
-    ZOLTAN_GNO_TYPE gsum;
-    tmp_gno = (ZOLTAN_GNO_TYPE)gr->num_obj;
-    MPI_Allreduce(&tmp_gno, &gsum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
+    tmp_gno = (long long )gr->num_obj;
+    MPI_Allreduce(&tmp_gno, &gsum, 1, MPI_LONG_LONG, MPI_SUM, comm);
     if (gsum < 10000) {
       char str[256];
       sprintf(str, "Total objects %d < 10000 causes ParMETIS 3.0 PARTKWAY "
@@ -470,7 +424,7 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
   if (strcmp(alg, "ADAPTIVEREPART") == 0) {
     int gmax, maxpart = -1;
     for (i = 0; i < gr->num_obj; i++)
-      if (prt->part[i] > maxpart) maxpart = prt->part[i];
+      if (prt->part[i] > maxpart) maxpart = (int)prt->part[i];
     MPI_Allreduce(&maxpart, &gmax, 1, MPI_INT, MPI_MAX, zz->Communicator);
     if (gmax >= prt->num_part) {
       sprintf(msg, "Part number %1d >= number of parts %1d.\n"
@@ -636,7 +590,6 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_Third_Graph gr;
 
 #ifdef ZOLTAN_PARMETIS
-  int *tmp_vtx = NULL, *tmp_nbor = NULL;
   MPI_Comm comm = zz->Communicator;/* don't want to risk letting external 
                                       packages changing our communicator */
   int numflag = 0;
@@ -655,7 +608,24 @@ int Zoltan_ParMetis_Order(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  _zoltan_warned = 0;
+#ifdef ZOLTAN_PARMETIS
+#if TPL_USE_DATATYPE != TPL_METIS_DATATYPES
+
+#ifdef TPL_FLOAT_WEIGHT
+  i = 1;
+#else
+  i = 0;
+#endif
+
+  if ((sizeof(indextype) != sizeof(idxtype)) ||
+      (sizeof(weighttype) != sizeof(idxtype)) || i){
+
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
+          "Not supported: Multiple 3rd party libraries with incompatible data types.");
+    return ZOLTAN_FATAL;
+  }
+#endif
+#endif
 
   memset(&gr, 0, sizeof(ZOLTAN_Third_Graph));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
@@ -727,7 +697,7 @@ int Zoltan_ParMetis_Order(
   /* Allocate space for separator sizes */
 
   if (IS_GLOBAL_GRAPH(gr.graph_type)) {
-    if (Zoltan_Order_Init_Tree (&zz->Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
+    if (Zoltan_TPL_Order_Init_Tree (&zz->TPL_Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
       /* Not enough memory */
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
@@ -766,24 +736,10 @@ int Zoltan_ParMetis_Order(
   if (IS_GLOBAL_GRAPH(gr.graph_type)){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
 
-    tmp_vtx = Zoltan_convert_for_tpl(zz, gr.vtxdist, zz->Num_Proc+1);
-    if (gr.adjncy){
-      tmp_nbor = Zoltan_convert_for_tpl(zz, gr.adjncy, gr.xadj[gr.num_obj]);
-    }
-    else{
-      tmp_nbor = NULL;
-    }
-
-    ParMETIS_V3_NodeND (tmp_vtx, gr.xadj, tmp_nbor, 
+    ParMETIS_V3_NodeND (gr.vtxdist, gr.xadj, gr.adjncy, 
 			&numflag, options, ord.rank, ord.sep_sizes, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
 
-    if (tmp_nbor != (int *)gr.adjncy){
-      ZOLTAN_FREE(&tmp_nbor);
-    }
-    if (tmp_vtx != (int *)gr.vtxdist){
-      ZOLTAN_FREE(&tmp_vtx);
-    }
   }
   else
 #endif /* ZOLTAN_PARMETIS */
@@ -793,20 +749,9 @@ int Zoltan_ParMetis_Order(
     options[0] = 0;  /* Use default options for METIS. */
     order_opt->return_args = RETURN_RANK|RETURN_IPERM; /* We provide directly all the permutations */
 
-    if (gr.adjncy){
-      tmp_nbor = Zoltan_convert_for_tpl(zz, gr.adjncy, gr.xadj[gr.num_obj]);
-    }
-    else{
-      tmp_nbor = NULL;
-    }
-
-    METIS_NodeND (&gr.num_obj, gr.xadj, tmp_nbor, &numflag, options, ord.iperm, ord.rank);
+    METIS_NodeND (&gr.num_obj, gr.xadj, gr.adjncy, &numflag, options, ord.iperm, ord.rank);
 
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
-
-    if (tmp_nbor != (int *)gr.adjncy){
-      ZOLTAN_FREE(&tmp_nbor);
-    }
   }
 #endif /* ZOLTAN_METIS */
 
@@ -817,24 +762,24 @@ int Zoltan_ParMetis_Order(
     int numbloc;
     int start;
     int leaf;
-    int * converttab;
+    int *converttab;
     int levelmax;
 
     levelmax = mylog2(zz->Num_Proc) + 1;
     converttab = (int*)ZOLTAN_MALLOC(zz->Num_Proc*2*sizeof(int));
 
     memset(converttab, 0, zz->Num_Proc*2*sizeof(int));
-     /* Determine the first node in each separator, store it in zz->Order.start */
+     /* Determine the first node in each separator, store it in zz->TPL_Order.start */
     for (numbloc = 0, start=0, leaf=0; numbloc < zz->Num_Proc /2; numbloc++) {
       int father;
 
       father = zz->Num_Proc + numbloc;
       converttab[start] = 2*numbloc;
-      zz->Order.leaves[leaf++]=start;
-      zz->Order.ancestor[start] = start + 2;
+      zz->TPL_Order.leaves[leaf++]=start;
+      zz->TPL_Order.ancestor[start] = start + 2;
       converttab[start+1] = 2*numbloc+1;
-      zz->Order.leaves[leaf++]=start+1;
-      zz->Order.ancestor[start+1] = start + 2;
+      zz->TPL_Order.leaves[leaf++]=start+1;
+      zz->TPL_Order.ancestor[start+1] = start + 2;
       start+=2;
       do {
 	converttab[start] = father;
@@ -844,37 +789,37 @@ int Zoltan_ParMetis_Order(
 
 	  level = mylog2(2*zz->Num_Proc - 1 - father);
 	  nextoffset = (1<<(levelmax-level));
-	  zz->Order.ancestor[start] = start+nextoffset;
+	  zz->TPL_Order.ancestor[start] = start+nextoffset;
 	  start++;
 	  break;
 	}
 	else {
-	  zz->Order.ancestor[start] = start+1;
+	  zz->TPL_Order.ancestor[start] = start+1;
 	  start++;
 	  father = zz->Num_Proc + father/2;
 	}
       } while (father < 2*zz->Num_Proc - 1);
     }
 
-    zz->Order.start[0] = 0;
-    zz->Order.ancestor [2*zz->Num_Proc - 2] = -1;
+    zz->TPL_Order.start[0] = 0;
+    zz->TPL_Order.ancestor [2*zz->Num_Proc - 2] = -1;
     for (numbloc = 1 ; numbloc < 2*zz->Num_Proc ; numbloc++) {
       int oldblock=converttab[numbloc-1];
-      zz->Order.start[numbloc] = zz->Order.start[numbloc-1] + ord.sep_sizes[oldblock];
+      zz->TPL_Order.start[numbloc] = zz->TPL_Order.start[numbloc-1] + ord.sep_sizes[oldblock];
     }
 
     ZOLTAN_FREE(&converttab);
     ZOLTAN_FREE(&ord.sep_sizes);
 
-    zz->Order.leaves[zz->Num_Proc] = -1;
-    zz->Order.nbr_leaves = zz->Num_Proc;
-    zz->Order.nbr_blocks = 2*zz->Num_Proc-1;
+    zz->TPL_Order.leaves[zz->Num_Proc] = -1;
+    zz->TPL_Order.nbr_leaves = zz->Num_Proc;
+    zz->TPL_Order.nbr_blocks = 2*zz->Num_Proc-1;
   }
   else { /* No tree */
-    zz->Order.nbr_blocks = 0;
-    zz->Order.start = NULL;
-    zz->Order.ancestor = NULL;
-    zz->Order.leaves = NULL;
+    zz->TPL_Order.nbr_blocks = 0;
+    zz->TPL_Order.start = NULL;
+    zz->TPL_Order.ancestor = NULL;
+    zz->TPL_Order.leaves = NULL;
   }
 
   /* Correct because no redistribution */

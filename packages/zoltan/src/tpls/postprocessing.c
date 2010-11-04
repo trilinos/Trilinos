@@ -48,10 +48,10 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 			      ZOLTAN_ID_PTR       local_ids);
 
 static int Compute_Bal(ZZ *, int, weighttype *, int, indextype *, double *);
-static int Compute_EdgeCut(ZZ *, int, int *, float *, indextype *, int *, double *);
-static float Compute_NetCut(ZZ *, int, int *, float *, indextype *, int *);
-static float Compute_ConCut(ZZ *, int, int *, float *, indextype *, int *);
-static int Compute_Adjpart(ZZ *, int, ZOLTAN_GNO_TYPE *, int *, ZOLTAN_GNO_TYPE *, int *, indextype *, int *);
+static int Compute_EdgeCut(ZZ *, int, indextype *, float *, indextype *, int *, double *);
+static float Compute_NetCut(ZZ *, int, indextype *, float *, indextype *, int *);
+static float Compute_ConCut(ZZ *, int, indextype *, float *, indextype *, int *);
+static int Compute_Adjpart(ZZ *, int, indextype *, indextype *, indextype *, int *, indextype *, int *);
 
 
 
@@ -193,11 +193,13 @@ Zoltan_Postprocess_Order (ZZ *zz,
     FILE *fp;
     fp = fopen("separators.txt", "w");
     fprintf(fp, "%i\n", ord->num_part);
-    for (i=0; i<ord->num_part; ++i)
-      fprintf(fp, "%i ", ord->sep_sizes[i]);
+    for (i=0; i<ord->num_part; ++i){
+      fprintf(fp, TPL_IDX_SPEC " ", ord->sep_sizes[i]);
+    }
     fprintf(fp, "\n");
-    for (i=ord->num_part; i<2*ord->num_part-1; ++i)
-      fprintf(fp, "%i ", ord->sep_sizes[i]);
+    for (i=ord->num_part; i<2*ord->num_part-1; ++i){
+      fprintf(fp, TPL_IDX_SPEC " ", ord->sep_sizes[i]);
+    }
     fprintf(fp, "\n");
     fclose(fp);
   }
@@ -259,7 +261,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 						  (newproc[i] != zz->Proc)))
       nsend++;
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-      printf("[%1d] DEBUG: local object %1d: old part = %1d, new part = %1d\n",
+      printf("[%1d] DEBUG: local object %1d: old part = " TPL_IDX_SPEC ", new part = " TPL_IDX_SPEC "\n",
 	     zz->Proc, i, prt->input_part[i], prt->part[i]);
   }
 
@@ -537,7 +539,7 @@ float *tot = NULL, *max = NULL;
 static int Compute_EdgeCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
   indextype *parts,
   int *nborparts,
@@ -547,7 +549,7 @@ static int Compute_EdgeCut(
 /*
  * Compute total weight of cut graph edges w.r.t. partitions.
  */
-int i, j, k;
+indextype i, j, k;
 int dim = MAX(zz->Edge_Weight_Dim, 1);
 double *cut = NULL;
 
@@ -568,7 +570,7 @@ double *cut = NULL;
 static float Compute_NetCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
   indextype *parts,
   int *nborparts
@@ -579,7 +581,7 @@ static float Compute_NetCut(
  * Assume one hyperedge per vertex.
  * Equivalent to number of boundary vertices weighted by edge weights.
  */
-int i, j;
+indextype i, j;
 float cutn = 0., gcutn = 0.;
 int dim = zz->Edge_Weight_Dim;
 
@@ -608,7 +610,7 @@ int dim = zz->Edge_Weight_Dim;
 static float Compute_ConCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
   indextype *parts,
   int *nborparts
@@ -618,12 +620,12 @@ static float Compute_ConCut(
  * Compute SUM over hyperedges( (#parts/hyperedge - 1)*ewgt);
  * Assume one hyperedge per vertex.
  */
-int i, j;
+indextype i, j;
 float cutl = 0., gcutl = 0.;
-int *used = NULL;
+indextype *used = NULL;
 int dim = zz->Edge_Weight_Dim;
 
-  used = (int *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(int));
+  used = (indextype *) ZOLTAN_MALLOC(zz->LB.Num_Global_Parts * sizeof(indextype));
   for (i = 0; i < zz->LB.Num_Global_Parts; i++) used[i] = -1;
 
   for (i = 0; i < nvtx; i++) {
@@ -652,10 +654,10 @@ int dim = zz->Edge_Weight_Dim;
 static int Compute_Adjpart(
   ZZ *zz,
   int nvtx,         /* Input:  # vtxs in this processor */
-  ZOLTAN_GNO_TYPE *vtxdist,     /* Input:  Distribution of vertices across processors */
-  int *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
+  indextype *vtxdist,     /* Input:  Distribution of vertices across processors */
+  indextype *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
                                adjncy[xadj[i]+1] are all edge nbors of vtx i. */
-  ZOLTAN_GNO_TYPE *adjncy,      /* Input:  Array of nbor vertices. */
+  indextype *adjncy,      /* Input:  Array of nbor vertices. */
   int *adjproc,     /* Input:  adjproc[j] == processor owning adjncy[j]. */
   indextype *part,        /* Input:  Partition assignments of vtxs. */
   int *adjpart      /* Output: adjpart[j] == partition owning adjncy[j] */
@@ -666,23 +668,23 @@ static int Compute_Adjpart(
  */
 ZOLTAN_COMM_OBJ *plan;
 int i;
-ZOLTAN_GNO_TYPE start = vtxdist[zz->Proc];  /* First vertex on this processor */
-ZOLTAN_GNO_TYPE *recv_gno= NULL;
+indextype start = vtxdist[zz->Proc];  /* First vertex on this processor */
+indextype *recv_gno= NULL;
 int *send_int=NULL;
 int nrecv;
 int tag = 24542;
 
-  Zoltan_Comm_Create(&plan, xadj[nvtx], adjproc, zz->Communicator, tag++, &nrecv);
+  Zoltan_Comm_Create(&plan, (int)xadj[nvtx], adjproc, zz->Communicator, tag++, &nrecv);
 
   if (nrecv){
-    recv_gno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nrecv * sizeof(ZOLTAN_GNO_TYPE));
+    recv_gno = (indextype *) ZOLTAN_MALLOC(nrecv * sizeof(indextype));
     send_int = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
     if (!recv_gno || !send_int){
       return ZOLTAN_MEMERR;
     }
   }
 
-  Zoltan_Comm_Do(plan, tag++, (char *) adjncy, sizeof(ZOLTAN_GNO_TYPE), (char *) recv_gno);
+  Zoltan_Comm_Do(plan, tag++, (char *) adjncy, sizeof(indextype), (char *) recv_gno);
 
   for (i = 0; i < nrecv; i++){
     send_int[i] = part[recv_gno[i] - start];

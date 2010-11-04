@@ -91,10 +91,6 @@ int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP *map);
 int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, void **key, void **data);
 int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, void **key, void **data);
 
-void Zoltan_add_back_trace(char *yo);
-void Zoltan_remove_back_trace();
-void Zoltan_print_trace(int rank);
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

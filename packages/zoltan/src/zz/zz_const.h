@@ -27,6 +27,7 @@
 #include "order_const.h"
 #include "zz_id_const.h"
 #include "par_const.h"
+#include "third_library_const.h"
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
 #endif
@@ -120,6 +121,7 @@ struct Param_List;
 struct Zoltan_Migrate_Struct;
 struct Zoltan_LB_Struct;
 struct Zoltan_Order_Struct;
+struct Zoltan_TPL_Order_Struct;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -535,6 +537,7 @@ struct Zoltan_Struct {
   /***************************************************************************/
   struct Zoltan_LB_Struct LB;          /* Struct with info for load balancing */
   struct Zoltan_Order_Struct  Order;   /* Struct with info for ordering       */
+  struct Zoltan_TPL_Order_Struct  TPL_Order;   /* Struct with info for ordering       */
   struct Zoltan_Migrate_Struct Migrate;/* Struct with info for migration.     */
 #ifdef ZOLTAN_DRUM
   struct Zoltan_Drum_Struct Drum;      /* Struct with info for DRUM interface */
@@ -579,6 +582,7 @@ typedef struct Zoltan_Transform_Struct ZZ_Transform;
 /*  
  *  Print trace information.
  */
+
 #define ZOLTAN_TRACE_ENTER(zz,yo) do { \
   if ((zz)->Debug_Level >= ZOLTAN_DEBUG_PARAMS)  \
     Zoltan_add_back_trace((yo));           \

@@ -518,7 +518,7 @@ int Zoltan_Hier(
 	if (hpp.migrated[i99]) printf("E");	
       }
       for (i99=0; i99<hpp.num_migrated_in_gids; i99++) {
-	printf(" %" ZOLTAN_ID_SPECIFIER "I", hpp.migrated_in_gids[i99]);
+	printf( ZOLTAN_ID_SPEC "I", hpp.migrated_in_gids[i99]);
       }
       printf("\n");
     }
@@ -1154,7 +1154,7 @@ static int find_needed_gid_procs(HierPartParams *hpp) {
     printf("[%d] calling DD_Find on %d GIDs\n", hpp->origzz->Proc,
 	   hpp->num_gids_of_interest);
     for (i=0; i<hpp->num_gids_of_interest; i++) {
-      printf("[%d] DD_Find slot %d GID %" ZOLTAN_ID_SPECIFIER "\n",
+      printf("[%d] DD_Find slot %d GID " ZOLTAN_ID_SPEC "\n",
 	     hpp->origzz->Proc, i, hpp->gids_of_interest[i]);
     }
   }
@@ -1170,7 +1170,7 @@ static int find_needed_gid_procs(HierPartParams *hpp) {
     printf("[%d] DD_Find on %d GIDs returned\n", hpp->origzz->Proc,
 	   hpp->num_gids_of_interest);
     for (i=0; i<hpp->num_gids_of_interest; i++) {
-      printf("[%d] DD_Find slot %d GID %" ZOLTAN_ID_SPECIFIER " proc %d\n",
+      printf("[%d] DD_Find slot %d GID " ZOLTAN_ID_SPEC " proc %d\n",
 	     hpp->origzz->Proc, i, hpp->gids_of_interest[i],
 	     hpp->gids_of_interest_procs[i]);
     }
@@ -1576,7 +1576,7 @@ static int num_graph_edges_of_gid(HierPartParams *hpp, ZOLTAN_ID_TYPE gid,
     return ZOLTAN_OK;
   }
 
-  sprintf(msg, "could not find gid %" ZOLTAN_ID_SPECIFIER "\n", gid);
+  sprintf(msg, "could not find gid " ZOLTAN_ID_SPEC "\n", gid);
   ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, msg);
   return ZOLTAN_FATAL;
 }
@@ -1713,7 +1713,7 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
 
   for (i=0; i<nreturn; i++) {
     if ((ZOLTAN_ID_TYPE)owners[i] != recvbuf[2*i+1]) {
-      sprintf(msg, "Owner mismatch for GID %" ZOLTAN_ID_SPECIFIER ": DD has %d, msg came from %" ZOLTAN_ID_SPECIFIER "\n",
+      sprintf(msg, "Owner mismatch for GID " ZOLTAN_ID_SPEC ": DD has %d, msg came from " ZOLTAN_ID_SPEC "\n",
 	      recvbuf[2*i], owners[i], recvbuf[2*i+1]);
       ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, msg);
       *ierr = ZOLTAN_FATAL;
@@ -1806,7 +1806,7 @@ static void Zoltan_Hier_Pack_Obj_Fn(void *data,
   HIER_CHECK_GID_RANGE(gid);
 
   if (hpp->output_level >= HIER_DEBUG_ALL) {
-    printf("[%d] packing GID %" ZOLTAN_ID_SPECIFIER " to send to %d, size=%d\n", hpp->origzz->Proc, 
+    printf("[%d] packing GID " ZOLTAN_ID_SPEC " to send to %d, size=%d\n", hpp->origzz->Proc, 
 	   gid, dest_proc, size);
   }
 
@@ -1936,7 +1936,7 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
   HIER_CHECK_GID_RANGE(gid);
 
   if (hpp->output_level >= HIER_DEBUG_ALL) {
-    printf("[%d] unpacking GID %" ZOLTAN_ID_SPECIFIER "\n", hpp->origzz->Proc, gid);
+    printf("[%d] unpacking GID " ZOLTAN_ID_SPEC "\n", hpp->origzz->Proc, gid);
   }
 
   /* everything is OK unless we don't find it */
@@ -1947,7 +1947,7 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
      already unmarked its migrated flag */
   if (get_starting_local_index(hpp, gid) != -1) {
     if (hpp->output_level >= HIER_DEBUG_ALL) {
-      printf("[%d] GID %" ZOLTAN_ID_SPECIFIER " returns home, no unpack needed\n",
+      printf("[%d] GID " ZOLTAN_ID_SPEC " returns home, no unpack needed\n",
 	     hpp->origzz->Proc, gid);
     }
     return;
@@ -1971,7 +1971,7 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
       goto End;
     }
     if (hpp->output_level >= HIER_DEBUG_ALL) {
-      printf("[%d] unpacking GID %" ZOLTAN_ID_SPECIFIER " into slot %d\n", hpp->origzz->Proc, gid,
+      printf("[%d] unpacking GID " ZOLTAN_ID_SPEC " into slot %d\n", hpp->origzz->Proc, gid,
 	     local_index);
     }
     hpp->migrated_in_data[local_index] = (void *)info;
@@ -2180,7 +2180,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     if (export_procs[i] == hpp->hierzz->Proc) {
       /*export_partition_change_only++;*/
       if (hpp->output_level >= HIER_DEBUG_ALL) {
-	printf("[%d] mid-migrate exporting GID %" ZOLTAN_ID_SPECIFIER " - partition change only\n", 
+	printf("[%d] mid-migrate exporting GID " ZOLTAN_ID_SPEC " - partition change only\n", 
 	       hpp->origzz->Proc, export_gids[i]);
       }
       /* skip to next export */
@@ -2192,7 +2192,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     if (local_index != -1) {
       /* it started here, so we just need to mark it as migrated */
       if (hpp->output_level >= HIER_DEBUG_ALL) {
-	printf("[%d] mid-migrate exporting GID %" ZOLTAN_ID_SPECIFIER " to %d, started here\n", 
+	printf("[%d] mid-migrate exporting GID " ZOLTAN_ID_SPEC " to %d, started here\n", 
 	       hpp->origzz->Proc, export_gids[i], export_procs[i]);
       }
       hpp->migrated[local_index] = 1;
@@ -2208,7 +2208,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 	     loop to make sure the binary search for
 	     migrated_in_index_of_gid doesn't break */
 	  if (hpp->output_level >= HIER_DEBUG_ALL) {
-	    printf("[%d] mid-migrate exporting GID %" ZOLTAN_ID_SPECIFIER " to %d, was imported and was in slot %d\n",
+	    printf("[%d] mid-migrate exporting GID " ZOLTAN_ID_SPEC " to %d, was imported and was in slot %d\n",
 		   hpp->origzz->Proc, export_gids[i], export_procs[i],
 		   local_index);
 	  }
@@ -2237,7 +2237,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     if (import_procs[i] == hpp->hierzz->Proc) {
       import_partition_change_only++;
       if (hpp->output_level >= HIER_DEBUG_ALL) {
-	printf("[%d] mid-migrate importing GID %" ZOLTAN_ID_SPECIFIER " - partition change only\n", 
+	printf("[%d] mid-migrate importing GID " ZOLTAN_ID_SPEC " - partition change only\n", 
 	       hpp->origzz->Proc, import_gids[i]);
       }
       /* skip to next import */
@@ -2308,7 +2308,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     /* did it start its life here? */
     if (local_index != -1) {
       if (hpp->output_level >= HIER_DEBUG_ALL) {
-	printf("[%d] mid-migrate importing GID %" ZOLTAN_ID_SPECIFIER " from %d, started here\n",
+	printf("[%d] mid-migrate importing GID " ZOLTAN_ID_SPEC " from %d, started here\n",
 	       hpp->origzz->Proc, import_gids[i], import_procs[i]);
       }
       hpp->migrated[local_index] = 0;
@@ -2325,7 +2325,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 	insert_index = next_insert_index(hpp, insert_index);
 	hpp->migrated_in_gids[insert_index] = import_gids[i];
 	if (hpp->output_level >= HIER_DEBUG_ALL) {
-	  printf("[%d] mid-migrate importing GID %" ZOLTAN_ID_SPECIFIER " from %d, new arrival into slot %d\n",
+	  printf("[%d] mid-migrate importing GID " ZOLTAN_ID_SPEC " from %d, new arrival into slot %d\n",
 		 hpp->origzz->Proc, import_gids[i], import_procs[i], insert_index);
 	}
       }
@@ -2337,7 +2337,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     printf("[%d] calling DD_Remove on %d GIDs\n", hpp->origzz->Proc, 
 	   remove_count);
     for (i=0; i<remove_count; i++) {
-      printf("[%d] DD_Remove slot %d GID %" ZOLTAN_ID_SPECIFIER "\n",
+      printf("[%d] DD_Remove slot %d GID " ZOLTAN_ID_SPEC "\n",
 	     hpp->origzz->Proc, i, dd_updates[update_count+i]);
     }
   }
@@ -2354,7 +2354,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     printf("[%d] calling DD_Update on %d GIDs\n", hpp->origzz->Proc, 
 	   update_count);
     for (i=0; i<update_count; i++) {
-      printf("[%d] DD_Update slot %d GID %" ZOLTAN_ID_SPECIFIER "\n",
+      printf("[%d] DD_Update slot %d GID " ZOLTAN_ID_SPEC "\n",
 	     hpp->origzz->Proc, i, dd_updates[i]);
     }
   }
@@ -2385,7 +2385,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 	if (hpp->migrated_in_data[trail_index]) {
 	  insert_index = next_insert_index(hpp, insert_index);
 	  if (hpp->output_level >= HIER_DEBUG_ALL ) {
-	    printf("[%d] backfill from trail=%d to insert=%d, GID %" ZOLTAN_ID_SPECIFIER ", data=%p\n",
+	    printf("[%d] backfill from trail=%d to insert=%d, GID " ZOLTAN_ID_SPEC ", data=%p\n",
 		   hpp->origzz->Proc, trail_index, insert_index, 
 		   hpp->migrated_in_gids[trail_index], 
 		   hpp->migrated_in_data[trail_index]);
@@ -2407,7 +2407,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     
     if (hpp->output_level >= HIER_DEBUG_ALL) {
       for (i=0; i<hpp->num_migrated_in_gids; i++) { 
-	printf("[%d] GID %" ZOLTAN_ID_SPECIFIER " in slot %d unsorted\n", hpp->origzz->Proc, 
+	printf("[%d] GID " ZOLTAN_ID_SPEC " in slot %d unsorted\n", hpp->origzz->Proc, 
 	       hpp->migrated_in_gids[i], i);
       }
     }
@@ -2424,7 +2424,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     }
     if (hpp->output_level >= HIER_DEBUG_ALL) {
       for (i=0; i<hpp->num_migrated_in_gids; i++) { 
-	printf("[%d] GID %" ZOLTAN_ID_SPECIFIER " in slot %d sorted\n", hpp->origzz->Proc,
+	printf("[%d] GID " ZOLTAN_ID_SPEC " in slot %d sorted\n", hpp->origzz->Proc,
 	       hpp->migrated_in_gids[i], i);
       }
     }

@@ -285,7 +285,7 @@ int Zoltan_Order (
     for (i = 0; i < num_obj; i++) {
       printf("GID = ");
       ZOLTAN_PRINT_GID(zz, &(gids[i*(num_gid_entries)]));
-      printf(", rank = %3" ZOLTAN_ID_SPECIFIER "\n", permuted_global_ids[i]);
+      printf(", rank = " ZOLTAN_ID_SPEC "\n", permuted_global_ids[i]);
     }
     printf("\n");
     Zoltan_Print_Sync_End(zz->Communicator, TRUE);
