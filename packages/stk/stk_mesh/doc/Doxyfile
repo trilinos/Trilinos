@@ -13,7 +13,7 @@ OUTPUT_DIRECTORY       = ../..
 FILE_PATTERNS          = *.dox *.hpp *.h
                          
 IMAGE_PATH             =
-# EXAMPLE_PATH           = ../example
+EXAMPLE_PATH           = ../use_cases
 EXCLUDE                = 
 EXAMPLE_PATTERNS       =
 INPUT_FILTER           = 
