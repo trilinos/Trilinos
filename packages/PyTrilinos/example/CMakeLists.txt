@@ -50,6 +50,12 @@ ADD_CUSTOM_TARGET(gre__115 ALL
   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gre__115.rua)
 
 IF(PyTrilinos_ENABLE_Teuchos)
+  IF(PyTrilinos_ENABLE_Epetra)
+    PyTrilinos_MAKE_TEST(exMPI_Init)
+  ENDIF(PyTrilinos_ENABLE_Epetra)
+ENDIF(PyTrilinos_ENABLE_Teuchos)
+
+IF(PyTrilinos_ENABLE_Teuchos)
   PyTrilinos_MAKE_TEST(exTeuchos)
 ENDIF(PyTrilinos_ENABLE_Teuchos)
 

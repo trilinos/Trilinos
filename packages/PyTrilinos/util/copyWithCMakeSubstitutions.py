@@ -38,7 +38,7 @@ within the cache file, then substitute the null string.
 
 __version__ = "1.0"
 __author__  = "Bill Spotz"
-__date__    = "Oct 26 2010"
+__date__    = "Nov 4 2010"
 
 # Import python modules
 import MakefileVariables
@@ -97,7 +97,7 @@ def main():
         match = re.search(substitution, line)
         while match:
             name  = line[match.start()+2:match.end()-1]
-            line  = line.replace(match.group(), cmakeCacheVariables.get(name,""))
+            line  = line.replace(match.group(), str(cmakeCacheVariables.get(name,"")))
             match = re.search(substitution, line)
         outfile.write(line)
         line = infile.read()
