@@ -35,8 +35,6 @@ import sys
 
 #try:
 import setpath
-if options.boost: setpath.setpath("src-boost")
-else:             setpath.setpath()
 import LOCA
 print dir(LOCA)
 #except ImportError:

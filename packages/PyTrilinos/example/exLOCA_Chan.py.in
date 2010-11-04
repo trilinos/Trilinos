@@ -9,9 +9,6 @@ import sys
 #
 # Parse the command-line arguments
 parser = OptionParser()
-parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
-                  default=False,
-                  help="test the experimental boost-generated PyTrilinos package")
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
                   help="test local build modules; prevent loading system-installed modules")
