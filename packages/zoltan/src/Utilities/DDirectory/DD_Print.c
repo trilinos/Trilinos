@@ -56,12 +56,12 @@ int Zoltan_DD_Print (
          printf ("ZOLTAN DD Print(%d): \tList %3d, \tGID ", dd->my_proc, i);
          printf("(");
          for (j = 0 ; j < dd->gid_length; j++)
-            printf("%"ZOLTAN_ID_SPECIFIER " ", ptr->gid[j]);
+            printf(ZOLTAN_ID_SPEC " ", ptr->gid[j]);
          printf(") ");
          if (dd->lid_length > 0)  {
             printf("\tLID (");
             for (j = 0; j < dd->lid_length; j++)
-               printf("%" ZOLTAN_ID_SPECIFIER " ", ptr->gid[j+dd->gid_length]);
+               printf( ZOLTAN_ID_SPEC " ", ptr->gid[j+dd->gid_length]);
             printf(") ");
          }
          printf ("\tPart %d\n", ptr->partition);

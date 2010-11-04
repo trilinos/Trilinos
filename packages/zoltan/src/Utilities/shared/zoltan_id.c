@@ -82,7 +82,7 @@ int i;
 
   printf("(");
   for (i = 0; i < n; i++)
-    printf("%" ZOLTAN_ID_SPECIFIER " ",a[i]);
+    printf( ZOLTAN_ID_SPEC " ",a[i]);
   printf(") ");
 }
   

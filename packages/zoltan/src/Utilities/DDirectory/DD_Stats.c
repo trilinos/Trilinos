@@ -69,7 +69,7 @@ void Zoltan_DD_Stats (
          {
          if (dd->debug_level > 6)
             {
-            sprintf (str, "GID %4" ZOLTAN_ID_SPECIFIER ", Owner %d, Table Index %d.", *ptr->gid,
+            sprintf (str, "GID " ZOLTAN_ID_SPEC ", Owner %d, Table Index %d.", *ptr->gid,
              ptr->owner, i) ;
             ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
             }
