@@ -510,7 +510,7 @@ int create_a_graph(
   gnvtxs = (ZOLTAN_ID_TYPE)nvtxs * Num_Proc;
 
   if (Proc == 0){
-    printf("create_a_graph: Graph will have %" ZOLTAN_ID_SPECIFIER " vertices, %" ZOLTAN_ID_SPECIFIER " on each process\n",
+    printf("create_a_graph: Graph will have " ZOLTAN_ID_SPEC " vertices, " ZOLTAN_ID_SPEC " on each process\n",
                gnvtxs, nvtxs);
   }
 

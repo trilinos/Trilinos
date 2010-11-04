@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include "zoltan.h"
 
+#include "dr_const.h"
 #include "dr_hg_readfile.h"
 #include "dr_util_const.h"
 #include "dr_input_const.h" /* just for the matrix_obj define's */

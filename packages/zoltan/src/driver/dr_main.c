@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 /* Local declarations. */
   struct Zoltan_Struct *zz = NULL;
 
-  char  *cmd_file;
+  char  *cmd_file, *info;
   char   cmesg[256]; /* for error messages */
 
   float  version;
@@ -193,6 +193,16 @@ int main(int argc, char *argv[])
     error_report(Proc);
     print_output = 0;
     goto End;
+  }
+
+  if (Zoltan_get_global_id_type(&info) != sizeof(ZOLTAN_ID_TYPE)){
+    if (Proc == 0){
+      printf("ERROR: Zoltan is compiled to use ZOLTAN_ID_TYPE %s, driver is compiled to use %s.\n",
+                 info, zoltan_id_datatype_name);
+
+    }
+    MPI_Finalize();
+    exit(0);
   }
 
   /* initialize some variables */
@@ -800,7 +810,7 @@ ELEM_INFO *elem;
   MPI_Reduce(&tmp, &total_vertices, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (mesh->proc == 0){
-    printf("Dynamic graph factor %0.4f, %" ZOLTAN_ID_SPECIFIER " vertices, %" ZOLTAN_ID_SPECIFIER " blanked (%0.2lf%%)\n",
+    printf("Dynamic graph factor %0.4f, " ZOLTAN_ID_SPEC " vertices, " ZOLTAN_ID_SPEC " blanked (%0.2lf%%)\n",
             blank_factor, total_vertices, mesh->global_blank_count,
             ((double)mesh->global_blank_count*100.0/total_vertices));
   }
@@ -826,7 +836,7 @@ static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
   int i, j, ii;
   ZOLTAN_ID_TYPE globalID, adj;
   ELEM_INFO_PTR el;
-  printf("Global number of hyperedges %" ZOLTAN_ID_SPECIFIER "\n",m->gnhedges);
+  printf("Global number of hyperedges " ZOLTAN_ID_SPEC "\n",m->gnhedges);
   if (m->format == ZOLTAN_COMPRESSED_EDGE){
     printf("Pins: %d edges\n",m->nhedges);
   }
@@ -834,10 +844,10 @@ static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
     printf("Pins: %d vertices\n",m->nhedges);
   }
   for (i=0; i<m->nhedges; i++){
-    printf("  %" ZOLTAN_ID_SPECIFIER ": ", m->hgid[i]);
+    printf("  " ZOLTAN_ID_SPEC ": ", m->hgid[i]);
     for (j=m->hindex[i],ii=0; j<m->hindex[i+1]; j++,ii++){
       if (ii && (ii%15==0)) printf("\n       ");
-      printf("%" ZOLTAN_ID_SPECIFIER " ", m->hvertex[j]);
+      printf(ZOLTAN_ID_SPEC " ", m->hvertex[j]);
     }
     printf("\n");
   }
@@ -848,7 +858,7 @@ static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
   el = m->elements;
   
   for (i=0; i<m->num_elems; i++){
-    printf("%" ZOLTAN_ID_SPECIFIER " (%d adj: ", el->globalID, el->nadj);
+    printf(ZOLTAN_ID_SPEC " (%d adj: ", el->globalID, el->nadj);
     for (j=0; j<el->nadj; j++){
       adj = el->adj[j];
       if (el->adj_proc[j] == proc){
@@ -858,7 +868,7 @@ static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
         globalID = adj;
       } 
       if (j && (j%15==0)) printf("\n       ");
-      printf("%" ZOLTAN_ID_SPECIFIER " ",globalID);
+      printf(ZOLTAN_ID_SPEC " ",globalID);
     }
     printf(")\n");
 

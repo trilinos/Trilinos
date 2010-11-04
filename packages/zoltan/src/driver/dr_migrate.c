@@ -574,7 +574,7 @@ char msg[256];
             if (idx >= 0) 
               idx = New_Elem_Hash_Nodes[idx].localID;
             else {
-              sprintf(msg, "fatal: unable to locate element %" ZOLTAN_ID_SPECIFIER " in "
+              sprintf(msg, "fatal: unable to locate element " ZOLTAN_ID_SPEC " in "
                            "New_Elem_Index", mesh->ecmap_neighids[offset]);
               Gen_Error(0, msg);
               *ierr = ZOLTAN_FATAL;

@@ -710,7 +710,7 @@ int indx;
     j = sindex[i];
     if (map->neigh_id[j] != mesh->ecmap_neighids[i+cnt]) {
       printf("%d DDirectory Test: Different neigh IDs for nbor_proc %d: "
-             "%" ZOLTAN_ID_SPECIFIER " != %" ZOLTAN_ID_SPECIFIER "\n", proc, nbor_proc, map->neigh_id[j], 
+             ZOLTAN_ID_SPEC " != " ZOLTAN_ID_SPEC "\n", proc, nbor_proc, map->neigh_id[j], 
              mesh->ecmap_neighids[i+cnt]);
     }
   }
@@ -721,7 +721,7 @@ int indx;
     printf("Local ID\tSide ID\tGlobal ID\tNeigh ID\n");
     for (i = 0; i < map_size; i++) {
       j = sindex[i];
-      printf("\t%d\t%d\t%" ZOLTAN_ID_SPECIFIER "\t%" ZOLTAN_ID_SPECIFIER "\n", 
+      printf("\t%d\t%d\t" ZOLTAN_ID_SPEC "\t" ZOLTAN_ID_SPEC "\n", 
              map->elem_id[j], map->side_id[j], 
              map->glob_id[j], map->neigh_id[j]);
     }

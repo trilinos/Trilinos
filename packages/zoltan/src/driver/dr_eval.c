@@ -73,9 +73,9 @@ double gsumload, gmaxload, gminload;
   if (proc == 0) {
     printf("DRIVER EVAL:  load:  max %lf  min %lf  sum %lf\n", 
            gmaxload, gminload, gsumload);
-    printf("DRIVER EVAL:  objs:  max %" ZOLTAN_ID_SPECIFIER "  min %" ZOLTAN_ID_SPECIFIER "  sum %" ZOLTAN_ID_SPECIFIER "\n", 
+    printf("DRIVER EVAL:  objs:  max " ZOLTAN_ID_SPEC "  min " ZOLTAN_ID_SPEC "  sum " ZOLTAN_ID_SPEC "\n", 
            gmaxelems, gminelems, gsumelems);
-    printf("DRIVER EVAL:  cuts:  max %" ZOLTAN_ID_SPECIFIER "  min %" ZOLTAN_ID_SPECIFIER "  sum %" ZOLTAN_ID_SPECIFIER "\n",
+    printf("DRIVER EVAL:  cuts:  max " ZOLTAN_ID_SPEC "  min " ZOLTAN_ID_SPEC "  sum " ZOLTAN_ID_SPEC "\n",
            gmaxcuts, gmincuts, gsumcuts);
   }
 }

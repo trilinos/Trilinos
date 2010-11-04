@@ -700,7 +700,7 @@ int j;
 	if (current_elem->fixed_part != -1 &&
 	    current_elem->fixed_part != current_elem->my_part) {
 	  errcnt++;
-	  printf("%d:  Object %" ZOLTAN_ID_SPECIFIER " fixed to %d but assigned to %d\n",
+	  printf("%d:  Object " ZOLTAN_ID_SPEC " fixed to %d but assigned to %d\n",
 		 Proc, current_elem->globalID, current_elem->fixed_part,
 		 current_elem->my_part);
 	}

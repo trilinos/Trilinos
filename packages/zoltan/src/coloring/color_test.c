@@ -74,7 +74,7 @@ int Zoltan_Color_Test(
 
   int *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
   int *adjproc=NULL;
-  int gvtx;                         /* number of global vertices */
+  ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
   ZG graph;
 
 
@@ -154,11 +154,12 @@ int Zoltan_Color_Test(
 
   Zoltan_ZG_Build (zz, &graph, 0);
 
-  /* TODO64 the indextype* arrays are the wrong size if ZOLTAN_GNO_TYPE > indextype */
+  if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(int))                        /* TODO64 */
+      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "data type size error");
 
   Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, 
-                    (indextype **)&vtxdist, (indextype **)&xadj, (indextype **)&adjncy, &adjproc,
+                    (ZOLTAN_GNO_TYPE **)&vtxdist, &xadj, (ZOLTAN_GNO_TYPE **)&adjncy, &adjproc,
 		    NULL, NULL);
 
 

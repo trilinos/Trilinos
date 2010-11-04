@@ -66,7 +66,7 @@ ELEM_INFO_PTR current_elem;
     printf("\nElement block #%d\n", (i+1));
     printf("\tID:                 %d\n", mesh->eb_ids[i]);
     printf("\tElement Type:       %s\n", mesh->eb_names[i]);
-    printf("\tElement Count:      %" ZOLTAN_ID_SPECIFIER "\n", mesh->eb_cnts[i]);
+    printf("\tElement Count:      " ZOLTAN_ID_SPEC "\n", mesh->eb_cnts[i]);
     printf("\tNodes Per Element:  %d\n", mesh->eb_nnodes[i]);
     printf("\tAttrib Per Element: %d\n", mesh->eb_nattrs[i]);
   }
@@ -76,10 +76,10 @@ ELEM_INFO_PTR current_elem;
     current_elem = &(mesh->elements[i]);
     if (current_elem->globalID == ZOLTAN_ID_CONSTANT(-1)) continue;
 
-    printf("%" ZOLTAN_ID_SPECIFIER " in part %d (%f):\n", current_elem->globalID, 
+    printf(ZOLTAN_ID_SPEC " in part %d (%f):\n", current_elem->globalID, 
            current_elem->my_part, current_elem->cpu_wgt[0]);
     for (j = 0; j < mesh->eb_nnodes[current_elem->elem_blk]; j++) {
-      printf("\t%" ZOLTAN_ID_SPECIFIER " |", current_elem->connect[j]);
+      printf("\t" ZOLTAN_ID_SPEC " |", current_elem->connect[j]);
       for (k = 0; k < mesh->num_dims; k++) {
         printf(" %f", current_elem->coord[j][k]);
       }
@@ -94,7 +94,7 @@ ELEM_INFO_PTR current_elem;
     current_elem = &(mesh->elements[i]);
     if (current_elem->globalID == ZOLTAN_ID_CONSTANT(-1)) continue;
 
-    printf("%" ZOLTAN_ID_SPECIFIER "\t", current_elem->globalID);
+    printf(ZOLTAN_ID_SPEC "\t", current_elem->globalID);
     printf("%d(%d)\t", current_elem->nadj, current_elem->adj_len);
     for (j = 0; j < current_elem->adj_len; j++) {
 
@@ -105,7 +105,7 @@ ELEM_INFO_PTR current_elem;
         elem = mesh->elements[current_elem->adj[j]].globalID;
       else
         elem = current_elem->adj[j];
-      printf("%" ZOLTAN_ID_SPECIFIER ",%d ", elem, current_elem->adj_proc[j]);
+      printf(ZOLTAN_ID_SPEC ",%d ", elem, current_elem->adj_proc[j]);
     }
     printf("\n");
   }
@@ -122,7 +122,7 @@ ELEM_INFO_PTR current_elem;
     printf("    elem   side   globalID  neighID\n");
     for (j = 0; j < mesh->ecmap_cnt[i]; j++) {
       k = j + offset;
-      printf("    %d     %d     %" ZOLTAN_ID_SPECIFIER "    %" ZOLTAN_ID_SPECIFIER "\n", mesh->ecmap_elemids[k],
+      printf("    %d     %d     " ZOLTAN_ID_SPEC "    " ZOLTAN_ID_SPEC "\n", mesh->ecmap_elemids[k],
            mesh->ecmap_sideids[k], 
            mesh->elements[mesh->ecmap_elemids[k]].globalID,
            mesh->ecmap_neighids[k]);
@@ -131,7 +131,7 @@ ELEM_INFO_PTR current_elem;
   }
 
   printf("\nHyperedges\n");
-  printf("Number of global hyperedges:  %" ZOLTAN_ID_SPECIFIER "\n", mesh->gnhedges);
+  printf("Number of global hyperedges:  " ZOLTAN_ID_SPEC "\n", mesh->gnhedges);
   if (mesh->format == ZOLTAN_COMPRESSED_EDGE){
     printf("Number of rows (edges):   %d\n", mesh->nhedges);
   }
@@ -139,19 +139,19 @@ ELEM_INFO_PTR current_elem;
     printf("Number of columns (vertices):   %d\n", mesh->nhedges);
   }
   for (i = 0; i < mesh->nhedges; i++) {
-    printf("  %" ZOLTAN_ID_SPECIFIER " (%d):  (", mesh->hgid[i], i);
+    printf("  " ZOLTAN_ID_SPEC " (%d):  (", mesh->hgid[i], i);
     for (j = mesh->hindex[i]; j < mesh->hindex[i+1]; j++)
-      printf("%" ZOLTAN_ID_SPECIFIER, mesh->hvertex[j]);
+      printf(ZOLTAN_ID_SPEC, mesh->hvertex[j]);
     printf(")\n");
   }
   if (mesh->hewgt_dim && (mesh->heNumWgts > 0)){
     printf("\nHyperedge Weights\n");
     for (i=0; i<mesh->heNumWgts; i++){ 
       if (mesh->heWgtId){
-        printf("Hyperedge %" ZOLTAN_ID_SPECIFIER " (%d):  (", mesh->heWgtId[i], i);
+        printf("Hyperedge " ZOLTAN_ID_SPEC " (%d):  (", mesh->heWgtId[i], i);
       }
       else{
-        printf("Hyperedge %" ZOLTAN_ID_SPECIFIER " (%d):  (", mesh->hgid[i], i);
+        printf("Hyperedge " ZOLTAN_ID_SPEC " (%d):  (", mesh->hgid[i], i);
       }
       for (j = 0; j < mesh->hewgt_dim; j++) 
         printf("%f ", mesh->hewgts[i*mesh->hewgt_dim + j]);
@@ -243,7 +243,7 @@ int output_results(const char *cmd_file,
   fprintf(fp, "GID\tPart\tPerm\tIPerm\n");
   for (i = 0; i < mesh->num_elems; i++) {
     j = index[i];
-    fprintf(fp, "%" ZOLTAN_ID_SPECIFIER "\t%" ZOLTAN_ID_SPECIFIER "\t%" ZOLTAN_ID_SPECIFIER "\t%" ZOLTAN_ID_SPECIFIER "\n", 
+    fprintf(fp, ZOLTAN_ID_SPEC "\t" ZOLTAN_ID_SPEC "\t" ZOLTAN_ID_SPEC "\t" ZOLTAN_ID_SPEC "\n", 
               global_ids[j], parts[j], perm[j], invperm[j]);
   }
 
@@ -292,15 +292,15 @@ int output_results(const char *cmd_file,
       if (global_ids[j] == prev_id)
         continue;
       prev_id = global_ids[j];
-      fprintf(fp, "  %" ZOLTAN_ID_SPECIFIER "  (%e, %e, %e)\n", global_ids[j], x[j], y[j], z[j]);
+      fprintf(fp, "  " ZOLTAN_ID_SPEC "  (%e, %e, %e)\n", global_ids[j], x[j], y[j], z[j]);
     }
     fprintf(fp, "\n");
     fprintf(fp, "Element connectivity:\n");
     for (i = 0; i < mesh->num_elems; i++) {
       current_element = &(mesh->elements[i]);
-      fprintf(fp, "  %" ZOLTAN_ID_SPECIFIER "  (", current_element->globalID);
+      fprintf(fp, "  " ZOLTAN_ID_SPEC "  (", current_element->globalID);
       for (j = 0; j < mesh->eb_nnodes[current_element->elem_blk]; j++) {
-        fprintf(fp, "%" ZOLTAN_ID_SPECIFIER "  ", current_element->connect[j]);
+        fprintf(fp, ZOLTAN_ID_SPEC "  ", current_element->connect[j]);
       }
       fprintf(fp, ")\n");
     }

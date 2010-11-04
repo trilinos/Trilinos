@@ -285,7 +285,7 @@ int read_cmd_file (
 		   && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &nv) == 1)
 	    continue;
 	  else if (!strcmp(string, "size")
-		   && sscanf(value, "%" ZOLTAN_ID_SPECIFIER "%n", &pio_info->init_size, &nv) == 1)
+		   && sscanf(value, ZOLTAN_ID_SPEC "%n", &pio_info->init_size, &nv) == 1)
 	    continue;
 	  else  {
 	    Gen_Error(0, "fatal: bad create-a-graph file parameters");
@@ -324,7 +324,7 @@ int read_cmd_file (
 		   && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &nv) == 1)
 	    continue;
 	  else if (!strcmp(string, "size")
-		   && sscanf(value, "%" ZOLTAN_ID_SPECIFIER "%n", &pio_info->init_size, &nv) == 1)
+		   && sscanf(value,  ZOLTAN_ID_SPEC "%n", &pio_info->init_size, &nv) == 1)
 	    continue;
 	  else  {
 	    Gen_Error(0, "fatal: bad file type = random file parameters");

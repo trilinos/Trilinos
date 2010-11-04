@@ -187,8 +187,7 @@ int Zoltan_Color(
   times[0] = Zoltan_Time(zz->Timer);
 #endif
 
-  if ((sizeof(ZOLTAN_GNO_TYPE) != sizeof(int)) ||
-      (sizeof(ZOLTAN_ID_TYPE) != sizeof(int))    ){    /* TODO64 */
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)) {    /* TODO64 */
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Zoltan_Color is not ready for ints of more than one size");
   }
   
@@ -281,13 +280,12 @@ int Zoltan_Color(
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
 
-  if (sizeof(xadj) != sizeof(indextype)){
-    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "sizeof(xadj) != sizeof(indextype)");
-  }
+  if (sizeof(int) != sizeof(ZOLTAN_GNO_TYPE))                           /* TODO64 */
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "data type size problems");
 
   ierr = Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, 
-                   (ZOLTAN_GNO_TYPE **)&vtxdist, (indextype **) &xadj, (ZOLTAN_GNO_TYPE **)&adjncy, &adjproc,
+                   (ZOLTAN_GNO_TYPE **)&vtxdist, &xadj, (ZOLTAN_GNO_TYPE **)&adjncy, &adjproc,
 		     NULL, &partialD2);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
