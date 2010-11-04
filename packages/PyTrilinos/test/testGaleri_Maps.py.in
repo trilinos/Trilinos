@@ -124,7 +124,7 @@ if __name__ == "__main__":
     # Run the test suite
     if iAmRoot: print >>sys.stderr, "\n************************" \
        "\nTesting Galeri.CreateMap\n************************\n"
-    verbosity = 2 * int(iAmRoot)
+    verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
