@@ -50,28 +50,36 @@ namespace Iovs {
     // assume true until proven false
     sequentialNG2L = true;
     sequentialEG2L = true;
+#ifdef PARAVIEW
     int err; 
+    std::cerr << "creating an imesh\n";
     iMesh_newMesh ("", &mesh_instance, &err, 0);
     iMesh_getRootSet (mesh_instance, &rootset, &err);
+    std::cerr << "done creating imesh\n";
+#endif 
   }
 
   DatabaseIO::~DatabaseIO() 
   {
     try {
+#ifdef PARAVIEW
       int err;
       iMesh_dtor (mesh_instance, &err);
+#endif
     } catch (...) {
     }
   }
 
   bool DatabaseIO::begin(Ioss::State state)
   {
+    std::cerr << "dbio begin\n";
     dbState = state;
     return true;
   }
 
   bool DatabaseIO::end(Ioss::State state)
   {
+    std::cerr << "dbio end\n";
     // Transitioning out of state 'state'
     assert(state == dbState);
     switch (state) {
@@ -106,6 +114,7 @@ namespace Iovs {
   {
     Ioss::SerializeIO   serializeIO__(this);
 
+    std::cerr << "dbio begin_state\n";
     // TODO check exodus to see whether this is necessary here, may not be
     // state = get_database_step(state);
 
@@ -126,9 +135,13 @@ namespace Iovs {
   {
     Ioss::SerializeIO   serializeIO__(this);
 
+    std::cerr << "dbio end_state\n";
     // TODO, most likely global fields can be immediate, not delayed like this
+#ifdef PARAVIEW
+    std::cerr << "calling iMesh_save" << std::endl;
     int err;
     iMesh_save (mesh_instance, rootset, "", "", &err, 0, 0);
+#endif
     return true;
   }
 
@@ -550,8 +563,11 @@ namespace Iovs {
     {
       Ioss::SerializeIO serializeIO__(this);
 
+      std::cerr << "put_field_internal called\n";
+
       size_t num_to_get = field.verify(data_size);
       if (num_to_get > 0) {
+#ifdef PARAVIEW
         int ierr = 0;
 
         Ioss::Field::RoleType role = field.get_role();
@@ -630,6 +646,7 @@ namespace Iovs {
           std::cerr << "nodal global value\n";
           // write_global_field(EX_NODAL, field, nb, data);
         }
+#endif
       }
       return num_to_get;
     }
@@ -642,9 +659,12 @@ namespace Iovs {
     {
       Ioss::SerializeIO serializeIO__(this);
 
+      std::cerr << "put_field_internal called\n";
+
       size_t num_to_get = field.verify(data_size);
 
       if (num_to_get > 0) {
+#ifdef PARAVIEW
         int ierr = 0;
 
         // Get the element block id and element count
@@ -872,6 +892,7 @@ namespace Iovs {
           std::cerr << "elemental global value\n";
           // write_global_field(EX_ELEM_BLOCK, field, eb, data);
         }
+#endif
       }
       return num_to_get;
     }
@@ -880,6 +901,8 @@ namespace Iovs {
   void DatabaseIO::write_meta_data ()
   {
     Ioss::Region *region = get_region();
+
+    std::cerr << "write_meta_data called\n";
     
     // Node Blocks --
     {
@@ -895,7 +918,7 @@ namespace Iovs {
     {
       Ioss::ElementBlockContainer element_blocks =
                                     region->get_element_blocks();
-      assert(check_block_order(element_blocks));
+      // assert(check_block_order(element_blocks));
       Ioss::ElementBlockContainer::const_iterator I;
       /* TODO?
       // Set ids of all entities that have "id" property... 

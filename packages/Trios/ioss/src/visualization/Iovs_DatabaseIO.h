@@ -16,9 +16,11 @@
 #include <Ioss_Map.h>
 #include <Ioss_Utils.h>
 
+#ifdef PARAVIEW
 #include <iBase.h>
 #include <iMesh.h>
 #include <iField.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -132,9 +134,11 @@ namespace Iovs {
       bool doLogging; // True if logging field input/output
 
       // Private member data...
+#ifdef PARAVIEW
       iMesh_Instance mesh_instance; // interface to the vis component
       iBase_EntitySetHandle rootset;
       // mutable EntityIdSet ids_;
+#endif 
 
       std::string databaseTitle;
       int spatialDimension;
