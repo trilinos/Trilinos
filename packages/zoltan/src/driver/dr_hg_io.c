@@ -45,11 +45,6 @@ extern "C" {
 
 #define IS_BLANK(c) ((c == '\t') || (c == ' '))
 
-#ifdef ZID
-#undef ZID
-#endif
-#define ZID "%"ZOLTAN_ID_SPECIFIER
-
 #define COMMENT_CHAR '%'
 
 #define PRINT_DEBUG_INFO 0
@@ -1242,7 +1237,7 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
     return not_ok;
   }
 
-  rc = sscanf(linestr, ZID ZID ZID " %d %d " ZID "%d",
+  rc = sscanf(linestr, ZOLTAN_ID_SPEC ZOLTAN_ID_SPEC ZOLTAN_ID_SPEC " %d %d " ZOLTAN_ID_SPEC "%d",
 	    &nedges, &nvtxs, &npins, &nFileProcs, &vdim, &numew, &edim);
 
   if (rc != 7){
@@ -1342,11 +1337,12 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
   else{             /* file is not preprocessed */
 
     line = pinBuf;
+    counter = 0;
 
     while (line){          /* PINS */
 
       make_string(line, linestr);
-      rc = sscanf(linestr, ZID ZID "%f %d", &eid, &vid, &pinVal, &proc);
+      rc = sscanf(linestr, ZOLTAN_ID_SPEC ZOLTAN_ID_SPEC "%f %d", &eid, &vid, &pinVal, &proc);
 
       if ((rc != 4) || (eid < 1) || (eid > nedges) ||
 	  (vid < 1) || (vid > nvtxs) || (proc < 0) || (proc >= nFileProcs)){
@@ -1357,7 +1353,7 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
 
       eid -= 1;
       vid -= 1;
-      mine = my_pin(eid, vid, proc, i, npins,
+      mine = my_pin(eid, vid, proc, counter++, npins,
          myminPin, mymaxPin, myrank, nprocs, pio_info);
 
       if (mine){
@@ -1373,7 +1369,7 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
     while(line) {        /* VERTICES and possibly WEIGHTS */
   
       make_string(line, linestr);
-      rc = sscanf(linestr, ZID, &vid);
+      rc = sscanf(linestr, ZOLTAN_ID_SPEC, &vid);
 
       token = get_nth_token(linestr, vdim + 1, strlen(linestr), 1, (char)0);
       if (token) proc = atoi(token);
@@ -1386,7 +1382,8 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
         goto failure;
       }
   
-      mine = my_vtx(proc, i, myminVtx, mymaxVtx, myrank, nDistProcs, pio_info);
+      vid -= 1;
+      mine = my_vtx(proc, vid, myminVtx, mymaxVtx, myrank, nDistProcs, pio_info);
   
       if (mine){
         countMyVtxs++;
@@ -1400,7 +1397,7 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
 
       while(line) {   
         make_string(line, linestr);
-        rc = sscanf(linestr, ZID, &eid);
+        rc = sscanf(linestr, ZOLTAN_ID_SPEC, &eid);
         token = get_nth_token(linestr, edim + 1, strlen(linestr), 1, (char)0);
 
         if (token) proc = atoi(token);
@@ -1443,7 +1440,7 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
 
     while(line){
 
-      sscanf(linestr, ZID ZID "%f %d", &eid, &vid, &pinVal, &proc);
+      sscanf(linestr, ZOLTAN_ID_SPEC ZOLTAN_ID_SPEC "%f %d", &eid, &vid, &pinVal, &proc);
 
       eid -= 1;
       vid -= 1;
@@ -1481,13 +1478,13 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
 
     while(line){
 
-      sscanf(linestr, ZID, &vid);
+      sscanf(linestr, ZOLTAN_ID_SPEC, &vid);
       vid -= 1;
 
       if (!preprocessed){
         token = get_nth_token(linestr, vdim + 1, strlen(linestr), 1, (char)0);
         proc = atoi(token);
-        mine = my_vtx(proc, counter++, myminVtx, mymaxVtx, myrank, nDistProcs, pio_info);
+        mine = my_vtx(proc, vid, myminVtx, mymaxVtx, myrank, nDistProcs, pio_info);
       }
 
       if (mine){
@@ -1523,7 +1520,7 @@ char linestr[MATRIX_MARKET_MAX_LINE+1];
     line = ewgtBuf;
 
     while (line){
-      sscanf(linestr, ZID, &eid);
+      sscanf(linestr, ZOLTAN_ID_SPEC, &eid);
       eid -= 1;
 
       if (!preprocessed){
@@ -1749,7 +1746,7 @@ FILE *fp=NULL;
         if (!total_line_found){
           if (isdigit(c_in[0])){
             total_line_found=1;
-            rc = sscanf(c_in, ZID ZID ZID " %d %d " ZID "%d",
+            rc = sscanf(c_in, ZOLTAN_ID_SPEC ZOLTAN_ID_SPEC ZOLTAN_ID_SPEC " %d %d " ZOLTAN_ID_SPEC "%d",
 	      &nedges, &nvtxs, &npins, &numOwners, &vdim, &numew, &edim);
             if (rc != 7){
               status = 0;
@@ -2128,7 +2125,7 @@ static void debug_elements(int Proc, int Num_Proc, int num, ELEM_INFO_PTR el)
       printf("Process %d (%d elements):\n",i,num);
       for (e=0; e<num; e++){
 	if (e%20==0) printf("\n    ");
-	printf("%" ZOLTAN_ID_SPECIFIER,el[e].globalID);
+	printf("%" ZOLTAN_ID_SPEC,el[e].globalID);
       }
       printf("\n");
       fflush(stdout);
@@ -2144,10 +2141,10 @@ static void debug_lists(int Proc, int Num_Proc, int nedge, int *index, ZOLTAN_ID
       printf("Process %d\n",i);
       for (e=0; e<nedge; e++){
 	nvtxs = index[e+1]-index[e];
-	printf("%" ZOLTAN_ID_SPECIFIER " ) ",egid[e]);
+	printf("%" ZOLTAN_ID_SPEC " ) ",egid[e]);
 	for (v=0; v<nvtxs; v++){
 	  if (v && (v%10==0)) printf("\n    ");
-	  printf("%" ZOLTAN_ID_SPECIFIER " (%d) ",*vtx++,*vtx_proc++);
+	  printf("%" ZOLTAN_ID_SPEC " (%d) ",*vtx++,*vtx_proc++);
 	}
 	printf("\n");
       }
@@ -2169,14 +2166,14 @@ int p,i,j,k;
   for (p=0; p < Num_Proc; p++){
     if (p == Proc){
       printf("Process: %d\n",p);
-      printf(ZID " global edges, " ZID " global vertices, vwgtdim %d, ewgtdim %d\n",
+      printf(ZOLTAN_ID_SPEC " global edges, " ZOLTAN_ID_SPEC " global vertices, vwgtdim %d, ewgtdim %d\n",
               nGlobalEdges, nGlobalVtxs, vtxWDim, edgeWDim);
       printf("%d pins: ",nMyPins);
       for (i=0; i < nMyPins; i++) printf("%d,%d ",myPinI[i],myPinJ[i]);
       printf("\n");
       printf("%d vertices: ",nMyVtx);
       for (i=0, j=0; i < nMyVtx; i++){
-        printf(ZID " ",myVtxNum[i]);
+        printf(ZOLTAN_ID_SPEC " ",myVtxNum[i]);
         for (k=0; k < vtxWDim; k++){
           printf("%f", myVtxWgts[j++]);
           if (k < vtxWDim-1) printf(",");
@@ -2186,7 +2183,7 @@ int p,i,j,k;
       printf("\n");
       printf("%d edge weights: ",nMyEdgeWgts);
       for (i=0, j=0; i < nMyEdgeWgts; i++){
-        printf(ZID " ",myEWGno[i]);
+        printf(ZOLTAN_ID_SPEC " ",myEWGno[i]);
         for (k=0; k < edgeWDim; k++){
           printf("%f", myEdgeWgts[j++]);
           if (k < edgeWDim-1) printf(",");
