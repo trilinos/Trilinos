@@ -46,7 +46,7 @@
 #include <BelosTsqrOrthoManager.hpp>
 #include <BelosICGSOrthoManager.hpp>
 #include <BelosIMGSOrthoManager.hpp>
-#include <BelosDKGSOrthoManager.hpp>
+#include <BelosDGKSOrthoManager.hpp>
 
 #include <Teuchos_StandardCatchMacros.hpp>
 
@@ -82,7 +82,7 @@ namespace Belos {
       theList_[index++] = "TSQR";
       theList_[index++] = "ICGS";
       theList_[index++] = "IMGS";
-      theList_[index++] = "DKGS";
+      theList_[index++] = "DGKS";
     }
 
     /// Valid names of (Mat)OrthoManagers.  Useful as a list of valid
@@ -108,7 +108,7 @@ namespace Belos {
     void
     printValidNames (std::ostream& out) const
     {
-      const int numValid = numValidOrthoManagers();
+      const int numValid = numOrthoManagers();
       TEST_FOR_EXCEPTION( numValid <= 0,
 			  std::logic_error,
 			  "Invalid number " 
@@ -151,13 +151,14 @@ namespace Belos {
     ///   
     Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >
     makeOrthoManager (const std::string& ortho, 
-		      const RCP< const OP >& M,
-		      const RCP< Teuchos::ParameterList >& params)
+		      const Teuchos::RCP< const OP >& M,
+		      const Teuchos::RCP< Teuchos::ParameterList >& params)
     {
       using Belos::TsqrMatOrthoManager;
       using Belos::ICGSOrthoManager;
       using Belos::IMGSOrthoManager;
-      using Belos::DKGSOrthoManager;
+      using Belos::DGKSOrthoManager;
+      using Teuchos::RCP;
       using Teuchos::rcp;
 
       Teuchos::ParameterList theParams;
