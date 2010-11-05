@@ -14,7 +14,10 @@ foreach (_LIBNAME "BLAS" "LAPACK")
   endif ("${_CURRENT_LIB_VALUE}" STREQUAL "")
 endforeach (_LIBNAME "BLAS" "LAPACK")
 
-if (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_LIBRARIES}" STREQUAL "True")))
+# Some BLAS and LAPACK implementations are unified into a single
+# library.  Thus, we can only be sure that no LAPACK library was
+# provided, if neither of these variables were set.
+if (NOT ("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND NOT ("${HAVE_TPL_LAPACK_LIBRARIES}" STREQUAL "True"))
 
   if ("${PKG_DIR}" STREQUAL "")
     set (PKG_DIR "$ENV{HOME}/pkg")
