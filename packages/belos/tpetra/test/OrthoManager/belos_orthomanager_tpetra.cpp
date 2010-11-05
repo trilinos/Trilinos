@@ -77,7 +77,8 @@ using std::vector;
 typedef double scalar_type;
 typedef int local_ordinal_type;
 typedef int global_ordinal_type;
-typedef Kokkos::DefaultNode::DefaultNodeType node_type;
+//typedef Kokkos::DefaultNode::DefaultNodeType node_type;
+typedef Kokkos::SerialNode node_type;
 
 typedef Teuchos::ScalarTraits< scalar_type > SCT;
 typedef SCT::magnitudeType magnitude_type;
@@ -137,10 +138,30 @@ namespace {
   /// \fn getNode
   /// \brief Return an RCP to a Kokkos Node
   ///
+  template< class Node >
+  Teuchos::RCP< Node >
+  getNode() {
+    throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
+  }
+
+  template< >
   Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType >
   getNode() {
     return Kokkos::DefaultNode::getDefaultNode();
   }
+
+  // TPINode is the default Node type, if Kokkos was built with
+  // ThreadPool support.  Otherwise, if Kokkos was built with Intel
+  // Threading Building Blocks support, TBBNode is the default Node
+  // type.  Otherwise, SerialNode is the default.
+#if defined(HAVE_KOKKOS_THREADPOOL) || defined(HAVE_KOKKOS_TBB)
+  template< >
+  Teuchos::RCP< Kokkos::SerialNode >
+  getNode() {
+    Teuchos::ParameterList defaultParams;
+    return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
+  }
+#endif // defined(HAVE_KOKKOS_THREADPOOL) || defined(HAVE_KOKKOS_TBB)
 
   /// \fn loadSparseMatrix
   /// \brief Load a sparse matrix from a Harwell-Boeing file
@@ -264,7 +285,7 @@ namespace {
 	// the sparse matrix.
 	pMap = rcp (new map_type (numRows, 0, comm, 
 				  Tpetra::GloballyDistributed,
-				  getNode()));
+				  getNode< node_type >()));
 	// Second argument: max number of nonzero entries per row.
 	pMatrix = rcp (new sparse_matrix_type (pMap, rnnzmax));
 
@@ -324,7 +345,7 @@ namespace {
 	// (numRows) specified on the command line.
 	pMap = rcp (new map_type (numRows, 0, comm, 
 				  Tpetra::GloballyDistributed, 
-				  getNode()));
+				  getNode< node_type >()));
       }
     return std::make_pair (pMap, pMatrix);
   }
@@ -399,8 +420,15 @@ main (int argc, char *argv[])
 		  "routines do not require it) that sizeX1 >= sizeX2.");
   // Parse the command-line arguments.
   {
-    const bool successfulParse = (cmdp.parse (argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL);
-    TEST_FOR_EXCEPTION(!successfulParse, std::invalid_argument, 
+    const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse (argc,argv);
+    if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
+      {
+	if (Teuchos::rank(*comm) == 0)
+	  std::cout << "End Result: TEST PASSED" << endl;
+	return EXIT_SUCCESS;
+      }
+    TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
+		       std::invalid_argument, 
 		       "Failed to parse command-line arguments");
   }
   //
@@ -410,18 +438,13 @@ main (int argc, char *argv[])
   TEST_FOR_EXCEPTION(numRows <= sizeS + sizeX1 + sizeX2, std::invalid_argument, 
 		     "numRows <= sizeS + sizeX1 + sizeX2 is not allowed");
     
-  // Declare an output manager for handling local output.
+  // Declare an output manager for handling local output.  Initialize,
+  // using the caller's desired verbosity level.
   //
   // FIXME In Anasazi, this class is called BasicOutputManager.  In
   // Belos, this class is called OutputManager.  The difference is
   // annoying and should be factored out.
-  //
-  // We will initialize the output manager below, depending on the
-  // caller's desired verbosity level.
-  RCP< Belos::OutputManager< scalar_type > > MyOM;
-
-  // Select which type(s) of messages to print
-  MyOM->setVerbosity (selectVerbosity (verbose, debug));
+  RCP< Belos::OutputManager< scalar_type > > MyOM (new Belos::OutputManager< scalar_type > (selectVerbosity (verbose, debug)));
 
   // Stream for debug output.  If debug output is not enabled, then
   // this stream doesn't print anything sent to it (it's a "black
@@ -454,6 +477,7 @@ main (int argc, char *argv[])
   //
   // TODO Read in a ParameterList for configuring the specific
   // OrthoManager subclass.
+
   RCP< Belos::OrthoManager< scalar_type, MV > > OM = 
     factory.makeOrthoManager (ortho, M, Teuchos::null);
 

@@ -235,11 +235,20 @@ namespace Belos {
        If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
 
-     @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
-       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i<\tt> or <tt>C[i]</tt> is a null
-       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
+     @param C [out] The coefficients of the original \c X in the \c
+     *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a
+     non-null pointer and \c *C[i] matches the dimensions of \c X and
+     \c *Q[i], then the coefficients computed during the
+     orthogonalization routine will be stored in the matrix \c
+     *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not
+     match the dimensions of \c X and \c *Q[i], then *C[i] will first
+     be resized to the correct size.  This will destroy the original
+     contents of the matrix.  (This is a change from previous
+     behavior, in which a std::invalid_argument exception was thrown
+     if *C[i] was of the wrong size.)  Otherwise, if <tt>C.size() <
+     i<\tt> or <tt>C[i]</tt> is a null pointer, then the
+     orthogonalization manager will declare storage for the
+     coefficients and the user will not have access to them.
 
      @param B [out] The coefficients of the original \c X with respect to the computed basis. The first rows in \c B
             corresponding to the valid columns in \c X will be upper triangular.
@@ -411,7 +420,16 @@ namespace Belos {
                                     MV &X, Teuchos::RCP<MV> MX, 
                                     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                    Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
+                                    Teuchos::Array<Teuchos::RCP<const MV> > Q ) const 
+  {
+    using Teuchos::Array;
+    using Teuchos::null;
+    using Teuchos::is_null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::SerialDenseMatrix;
+    typedef SerialDenseMatrix< int, ScalarType > serial_dense_matrix_type;
+    typedef typename Array< RCP< const MV > >::size_type size_type;
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
@@ -425,12 +443,37 @@ namespace Belos {
     int xr = MVT::GetVecLength( X );
     int rank = xc;
 
-    /* if the user doesn't want to store the coefficienets, 
-     * allocate some local memory for them 
-     */
-    if ( B == Teuchos::null ) {
-      B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
+    // If the user doesn't want to store the normalization
+    // coefficients, allocate some local memory for them.  This will
+    // go away at the end of this method.
+    if (is_null (B)) {
+      B = rcp (new serial_dense_matrix_type (xc, xc));
     }
+    // Likewise, if the user doesn't want to store the projection
+    // coefficients, allocate some local memory for them.  Also make
+    // sure that all the entries of C are the right size.  We're going
+    // to overwrite them anyway, so we don't have to worry about the
+    // contents (other than to resize them if they are the wrong
+    // size).
+    if (C.size() < nq)
+      C.resize (nq);
+    for (size_type k = 0; k < nq; ++k)
+      {
+	const int numRows = MVT::GetNumberVecs (*Q[k]);
+	const int numCols = xc; // Number of vectors in X
+	
+	if (is_null (C[k]))
+	  C[k] = rcp (new serial_dense_matrix_type (numRows, numCols));
+	else if (C[k]->numRows() != numRows || C[k]->numCols() != numCols)
+	  {
+	    int err = C[k]->reshape (numRows, numCols);
+	    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
+			       "IMGS orthogonalization: failed to reshape "
+			       "C[" << k << "] (the array of block "
+			       "coefficients resulting from projecting X "
+			       "against Q[1:" << nq << "]).");
+	  }
+      }
 
     /******   DO NOT MODIFY *MX IF _hasOp == false   ******/
     if (this->_hasOp) {

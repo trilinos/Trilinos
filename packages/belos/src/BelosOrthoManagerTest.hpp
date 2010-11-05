@@ -166,7 +166,15 @@ namespace Belos {
 	  // not optional.
 	  int initialX2Rank;
 	  {
-	    Array< RCP< serial_matrix_type > > C;
+	    // FIXME (mfh 04 Nov 2010) TsqrOrthoManager resizes C
+	    // automatically.  The other OrthoManager subclasses in
+	    // Belos don't seem to do this.  The commented-out line
+	    // works fine with TsqrOrthoManager, but not with the
+	    // others.  The current line also doesn't work, but for a
+	    // different reason: the OrthoManager tries to access C[0]
+	    // and fails due to a Teuchos::NullReferenceError.
+	    //Array< RCP< serial_matrix_type > > C;
+	    Array< RCP< serial_matrix_type > > C (1);
 	    RCP< serial_matrix_type > B = Teuchos::null;
 	    initialX2Rank = 
 	      OM->projectAndNormalize (*X2, C, B, tuple< RCP< const MV > >(X1));
@@ -299,7 +307,12 @@ namespace Belos {
 
 	    debugOut << "Testing projectAndNormalize() on a rank-deficient "
 	      "multivector " << endl;
-	    numFailed += testProjectAndNormalize(OM,S,X1,X2,MyOM);
+	    const int thisNumFailed = testProjectAndNormalize(OM,S,X1,X2,MyOM);
+	    numFailed += thisNumFailed;
+	    if (thisNumFailed > 0)
+	      debugOut << "  *** " << thisNumFailed 
+		       << (thisNumFailed > 1 ? " tests" : " test") 
+		       << " failed." << endl;
 	  }
 
 	// This test will only exercise rank deficiency if S has at least 2
@@ -318,11 +331,16 @@ namespace Belos {
 		MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
 	      }
 	    debugOut << "Testing projectAndNormalize() on a rank-1 multivector " << endl;
-	    numFailed += testProjectAndNormalize(OM,S,X1,X2,MyOM);
+	    const int thisNumFailed = testProjectAndNormalize(OM,S,X1,X2,MyOM);
+	    numFailed += thisNumFailed;
+	    if (thisNumFailed > 0)
+	      debugOut << "  *** " << thisNumFailed 
+		       << (thisNumFailed > 1 ? " tests" : " test") 
+		       << " failed." << endl;
 	  }
 
 	if (numFailed != 0)
-	  MyOM->stream(Errors) << numFailed << " errors." << endl;
+	  MyOM->stream(Errors) << numFailed << " total test failures." << endl;
 
 	return numFailed;
       }
@@ -423,8 +441,7 @@ namespace Belos {
 	// otherwise, we run test cases 0-31
 	//
 
-	int numtests;
-	numtests = 4;
+	int numtests = 4;
 
 	// test ortho error before orthonormalizing
 	if (X1 != null) {
@@ -462,6 +479,10 @@ namespace Belos {
 		       rcp(new serial_matrix_type(sizeX2,sizeS)) );
 	  }
 
+	  // We wrap up all the OrthoManager calls in a try-catch
+	  // block, in order to check whether any of the methods throw
+	  // an exception.  For the tests we perform, every thrown
+	  // exception is a failure.
 	  try {
 	    // call routine
 	    // if (t && 3) == 3, {
@@ -490,7 +511,7 @@ namespace Belos {
 	    int ret = OM->projectAndNormalize(*Scopy,C,B,theX);
 	    sout << "projectAndNormalize() returned rank " << ret << endl;
 	    if (ret == 0) {
-	      sout << "   Cannot continue." << endl;
+	      sout << "   Cannot continue tests, since the returned rank is zero." << endl;
 	      numerr++;
 	      break;
 	    }
@@ -527,7 +548,11 @@ namespace Belos {
 	    if ( (t && 3) == 3 ) {
 	      // copies of S,MS
 	      Scopy = MVT::CloneCopy(*S);
-	      // randomize this data, it should be overwritten
+
+	      // Fill the B and C[i] matrices with random data.  The
+	      // data will be overwritten by projectAndNormalize().
+	      // Filling these matrices here is only to catch some
+	      // bugs in projectAndNormalize().
 	      B->random();
 	      for (size_type i=0; i<C.size(); i++) {
 		C[i]->random();
@@ -540,7 +565,7 @@ namespace Belos {
 	      ret = OM->projectAndNormalize(*Scopy,C,B,theX);
 	      sout << "projectAndNormalize() returned rank " << ret << endl;
 	      if (ret == 0) {
-		sout << "   Cannot continue." << endl;
+		sout << "   Cannot continue tests, since the returned rank is zero." << endl;
 		numerr++;
 		break;
 	      }
@@ -580,7 +605,11 @@ namespace Belos {
 	      {
 		magnitude_type err = OM->orthonormError(*S_outs[o]);
 		if (err > TOL) {
-		  sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+		  sout << endl
+		       << "  *** Test (number " << (t+1) << " of " << numtests 
+		       << " total tests) failed: Tolerance exceeded!  Error = "
+		       << err << " > TOL = " << TOL << "." 
+		       << endl << endl;
 		  numerr++;
 		}
 		sout << "   || <S,S> - I || after  : " << err << endl;
@@ -597,7 +626,11 @@ namespace Belos {
 		}
 		magnitude_type err = MVDiff(*tmp,*S);
 		if (err > ATOL*TOL) {
-		  sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+		  sout << endl
+		       << "  *** Test (number " << (t+1) << " of " << numtests 
+		       << " total tests) failed: Tolerance exceeded!  Error = "
+		       << err << " > ATOL*TOL = " << (ATOL*TOL) << "."
+		       << endl << endl;
 		  numerr++;
 		}
 		sout << "  " << t << "|| S_in - X1*C1 - X2*C2 - S_out*B || : " << err << endl;
@@ -606,7 +639,11 @@ namespace Belos {
 	      if (theX.size() > 0 && theX[0] != null) {
 		magnitude_type err = OM->orthogError(*theX[0],*S_outs[o]);
 		if (err > TOL) {
-		  sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+		  sout << endl
+		       << "  *** Test (number " << (t+1) << " of " << numtests 
+		       << " total tests) failed: Tolerance exceeded!  Error = "
+		       << err << " > TOL = " << TOL << "."
+		       << endl << endl;
 		  numerr++;
 		}
 		sout << "  " << t << "|| <X[0],S> || after      : " << err << endl;
@@ -615,7 +652,11 @@ namespace Belos {
 	      if (theX.size() > 1 && theX[1] != null) {
 		magnitude_type err = OM->orthogError(*theX[1],*S_outs[o]);
 		if (err > TOL) {
-		  sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+		  sout << endl
+		       << "  *** Test (number " << (t+1) << " of " << numtests 
+		       << " total tests) failed: Tolerance exceeded!  Error = "
+		       << err << " > TOL = " << TOL << "."
+		       << endl << endl;
 		  numerr++;
 		}
 		sout << "  " << t << "|| <X[1],S> || after      : " << err << endl;
@@ -630,11 +671,18 @@ namespace Belos {
 
 	} // test for
 
-	MsgType type = Debug;
-	if (numerr>0) type = Errors;
-	MyOM->stream(type) << sout.str();
-	MyOM->stream(type) << endl;
+	// FIXME (mfh 05 Nov 2010) Since Belos::MsgType is an enum,
+	// doing bitwise logical computations on Belos::MsgType values
+	// (such as "Debug | Errors") and passing the result into
+	// MyOM->stream() confuses the compiler.  As a result, we have
+	// to do weird casts to make it work.
+	const int msgType = (numerr > 0) ? 
+	  (static_cast<int>(Debug) | static_cast<int>(Errors)) :
+	  static_cast<int>(Debug);
 
+	// We report debug-level messages always.  We also report
+	// errors if at least one test failed.
+	MyOM->stream(static_cast< MsgType >(msgType)) << sout.str() << endl;
 	return numerr;
       }
 
