@@ -562,6 +562,37 @@ testPow() {
     t3.fastAccessDx(i) = 
       std::pow(val, b_fad.val())*std::log(val)*b_fad.dx(i);
   COMPARE_FADS(c_fad, t3);
+
+  val = 0.0;
+  c_fad = std::pow(a_fad, val);
+  FadType t4(n, std::pow(a_fad.val(), val));
+  for (int i=0; i<n; i++)
+    t4.fastAccessDx(i) = 0.0;
+  COMPARE_FADS(c_fad, t4);
+
+  c_fad = std::pow(val, b_fad);
+  FadType t5(n, std::pow(val, b_fad.val()));
+  for (int i=0; i<n; i++)
+    t5.fastAccessDx(i) = 0.0;
+  COMPARE_FADS(c_fad, t5);
+
+  FadType aa_fad = a_fad;
+  aa_fad.val() = 0.0;
+  c_fad = std::pow(aa_fad, b_fad);
+  FadType t6(n, std::pow(aa_fad.val(),b_fad.val()));
+  for (int i=0; i<n; i++)
+    t6.fastAccessDx(i) = 0.0;
+  COMPARE_FADS(c_fad, t6);
+
+  FadType bb_fad = b_fad;
+  bb_fad.val() = 0.0;
+  c_fad = std::pow(a_fad, bb_fad);
+  FadType t7(n, std::pow(a_fad.val(),bb_fad.val()));
+  for (int i=0; i<n; i++)
+    t7.fastAccessDx(i) = 
+      std::pow(a_fad.val(),bb_fad.val())*(bb_fad.val()*a_fad.dx(i)/a_fad.val() 
+					  + std::log(a_fad.val())*b_fad.dx(i));
+  COMPARE_FADS(c_fad, t7);
 }
 
 template <class FadType, class ScalarType>

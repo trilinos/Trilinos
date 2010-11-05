@@ -346,9 +346,8 @@ FAD_BINARYOP_MACRO(atan2,
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
 		   std::pow(expr1.val(), expr2.val()),
-		   bar*std::pow(expr1.val(),expr2.val())*expr2.val()/
-		   expr1.val(),
-		   bar*std::pow(expr1.val(),expr2.val())*std::log(expr1.val()))
+		   expr1.val() == 0 ? value_type(0) : value_type(bar*std::pow(expr1.val(),expr2.val())*expr2.val()/expr1.val()),
+		   expr1.val() == 0 ? value_type(0) : value_type(bar*std::pow(expr1.val(),expr2.val())*std::log(expr1.val())))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    std::max(expr1.val(), expr2.val()),

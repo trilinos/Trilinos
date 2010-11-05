@@ -380,8 +380,8 @@ FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
 		   value_type c=std::pow(v1,v2); a=c*v2/v1; b=c*std::log(v1),
 		   c,
-		   bar*a,
-		   bar*b)
+		   v1 == 0 ? value_type(0) : value_type(bar*a),
+		   v1 == 0 ? value_type(0) : value_type(bar*b))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
 		   ;,
