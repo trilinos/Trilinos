@@ -900,13 +900,13 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
 
   // Zero out global g_bar that will be summed into below
   if (!is_null(g_bar) )
-    assign( &*g_bar, ST::zero() );
+    assign( g_bar.ptr(), ST::zero() );
   
   // Set up storage for peroid DgDp[l] objects that will be summed into global
   // DgDp_bar[l] and zero out DgDp_bar[l] that will be summed into.
   for ( int l = 0; l < Np; ++l ) {
     if ( !is_null(DgDp_bar_mv[l]) ) {
-      assign(&*DgDp_bar_mv[l],ST::zero());
+      assign(DgDp_bar_mv[l].ptr(), ST::zero());
       periodOutArgs.set_DgDp(
         g_index_, period_l(l),
         create_DgDp_mv(
@@ -977,7 +977,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
 
     // Sum into global g_bar
     if (!is_null(g_bar)) {
-      Vp_StV( &*g_bar, g_weights_[i], *periodOutArgs.get_g(g_index_) );
+      Vp_StV( g_bar.ptr(), g_weights_[i], *periodOutArgs.get_g(g_index_) );
     }
 
     // Sum into global DgDp_bar
@@ -986,19 +986,21 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::evalModelImpl(
         update(
           g_weights_[i],
           *periodOutArgs.get_DgDp(g_index_,period_l(l)).getMultiVector(),
-          &*DgDp_bar_mv[l]
+          DgDp_bar_mv[l].ptr()
           );
       }
     }
     
     // Scale DgDx_dot_bar_mv[i]
     if ( !is_null(DgDx_dot_bar_mv) ) {
-      scale( g_weights_[i], &*DgDx_dot_bar_mv->getNonconstMultiVectorBlock(i) );
+      scale( g_weights_[i],
+        DgDx_dot_bar_mv->getNonconstMultiVectorBlock(i).ptr() );
     }
     
     // Scale DgDx_bar_mv[i]
     if ( !is_null(DgDx_bar_mv) ) {
-      scale( g_weights_[i], &*DgDx_bar_mv->getNonconstMultiVectorBlock(i) );
+      scale( g_weights_[i],
+        DgDx_bar_mv->getNonconstMultiVectorBlock(i).ptr() );
     }
 
   }
@@ -1089,7 +1091,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
         assign(
-          &*x_bar_init->getNonconstVectorBlock(i),
+          x_bar_init->getNonconstVectorBlock(i).ptr(),
           *periodModels_[i]->getNominalValues().get_x()
           );
       }
@@ -1104,7 +1106,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
         assign(
-          &*x_bar_l->getNonconstVectorBlock(i),
+          x_bar_l->getNonconstVectorBlock(i).ptr(),
           *periodModels_[i]->getLowerBounds().get_x()
           );
       }
@@ -1119,7 +1121,7 @@ void DefaultMultiPeriodModelEvaluator<Scalar>::wrapNominalValuesAndBounds()
       const int N = this->N();
       for ( int i = 0; i < N; ++i ) {
         assign(
-          &*x_bar_u->getNonconstVectorBlock(i),
+          x_bar_u->getNonconstVectorBlock(i).ptr(),
           *periodModels_[i]->getUpperBounds().get_x()
           );
       }
