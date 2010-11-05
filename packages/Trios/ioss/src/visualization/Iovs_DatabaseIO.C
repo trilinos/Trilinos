@@ -50,36 +50,28 @@ namespace Iovs {
     // assume true until proven false
     sequentialNG2L = true;
     sequentialEG2L = true;
-#ifdef PARAVIEW
     int err; 
-    std::cerr << "creating an imesh\n";
     iMesh_newMesh ("", &mesh_instance, &err, 0);
     iMesh_getRootSet (mesh_instance, &rootset, &err);
-    std::cerr << "done creating imesh\n";
-#endif 
   }
 
   DatabaseIO::~DatabaseIO() 
   {
     try {
-#ifdef PARAVIEW
       int err;
       iMesh_dtor (mesh_instance, &err);
-#endif
     } catch (...) {
     }
   }
 
   bool DatabaseIO::begin(Ioss::State state)
   {
-    std::cerr << "dbio begin\n";
     dbState = state;
     return true;
   }
 
   bool DatabaseIO::end(Ioss::State state)
   {
-    std::cerr << "dbio end\n";
     // Transitioning out of state 'state'
     assert(state == dbState);
     switch (state) {
@@ -114,7 +106,6 @@ namespace Iovs {
   {
     Ioss::SerializeIO   serializeIO__(this);
 
-    std::cerr << "dbio begin_state\n";
     // TODO check exodus to see whether this is necessary here, may not be
     // state = get_database_step(state);
 
@@ -135,14 +126,10 @@ namespace Iovs {
   {
     Ioss::SerializeIO   serializeIO__(this);
 
-    std::cerr << "dbio end_state " << state << "\n";
     // TODO, most likely global fields can be immediate, not delayed like this
-#ifdef PARAVIEW
-    std::cerr << "calling iMesh_save" << std::endl;
     int err;
     iMesh_setTimeData (mesh_instance, state, time, 0.0, &err);
     iMesh_save (mesh_instance, rootset, "", "", &err, 0, 0);
-#endif
     return true;
   }
 
@@ -537,7 +524,6 @@ namespace Iovs {
 
       if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) &&
           num_to_get == 1) {
-        std::cerr << "regional global value.\n";
         // write_global_field(EX_GLOBAL, field, get_region(), data);
       }
       else if (num_to_get != 1) {
@@ -564,11 +550,8 @@ namespace Iovs {
     {
       Ioss::SerializeIO serializeIO__(this);
 
-      std::cerr << "put_field_internal called\n";
-
       size_t num_to_get = field.verify(data_size);
       if (num_to_get > 0) {
-#ifdef PARAVIEW
         int ierr = 0;
 
         Ioss::Field::RoleType role = field.get_role();
@@ -647,7 +630,6 @@ namespace Iovs {
           std::cerr << "nodal global value\n";
           // write_global_field(EX_NODAL, field, nb, data);
         }
-#endif
       }
       return num_to_get;
     }
@@ -660,12 +642,9 @@ namespace Iovs {
     {
       Ioss::SerializeIO serializeIO__(this);
 
-      std::cerr << "put_field_internal called\n";
-
       size_t num_to_get = field.verify(data_size);
 
       if (num_to_get > 0) {
-#ifdef PARAVIEW
         int ierr = 0;
 
         // Get the element block id and element count
@@ -718,7 +697,6 @@ namespace Iovs {
 
               if (imesh_topology != iMesh_ALL_TOPOLOGIES) {
                 int* connect = static_cast<int*>(data);
-                iBase_EntityHandle* connectHandles = new iBase_EntityHandle[num_to_get * element_nodes];
 
                 if (!sequentialNG2L) {
                   for (size_t i=0; i < num_to_get * element_nodes; i++) {
@@ -733,22 +711,24 @@ namespace Iovs {
                                   iBase_VERTEX, iMesh_ALL_TOPOLOGIES,
                                   &vertexHandles, &vertexAllocated, &vertexSize,
                                   &ierr);
+                if (ierr == 0) {
+                  iBase_EntityHandle* connectHandles = new iBase_EntityHandle[num_to_get * element_nodes];
+                  iBase_EntityHandle *elementHandles = 0;
+                  int elementAllocated = 0, elementSize;
+                  int *status = 0;
+                  int statusAllocated = 0, statusSize;
 
-                iBase_EntityHandle *elementHandles = 0;
-                int elementAllocated = 0, elementSize;
-                int *status = 0;
-                int statusAllocated = 0, statusSize;
-
-                for (size_t i=0; i < num_to_get * element_nodes; i++) {
-                  connectHandles[i] = vertexHandles[connect[i] - 1];
-                }
-                iMesh_createEntArr (mesh_instance, imesh_topology,
-                  connectHandles, num_to_get * element_nodes,
-                  &elementHandles, &elementAllocated, &elementSize,
-                  &status, &statusAllocated, &statusSize,
-                  &ierr);
+                  for (size_t i=0; i < num_to_get * element_nodes; i++) {
+                    connectHandles[i] = vertexHandles[connect[i] - 1];
+                  }
+                  iMesh_createEntArr (mesh_instance, imesh_topology,
+                    connectHandles, num_to_get * element_nodes,
+                    &elementHandles, &elementAllocated, &elementSize,
+                    &status, &statusAllocated, &statusSize,
+                    &ierr);
               
                 delete [] connectHandles;
+                }
                 // ierr = ex_put_conn(get_file_pointer(), EX_ELEM_BLOCK, id, connect, NULL, NULL);
                 // if (ierr < 0)
                   // exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -893,7 +873,6 @@ namespace Iovs {
           std::cerr << "elemental global value\n";
           // write_global_field(EX_ELEM_BLOCK, field, eb, data);
         }
-#endif
       }
       return num_to_get;
     }
@@ -903,8 +882,6 @@ namespace Iovs {
   {
     Ioss::Region *region = get_region();
 
-    std::cerr << "write_meta_data called\n";
-    
     // Node Blocks --
     {
       Ioss::NodeBlockContainer node_blocks = region->get_node_blocks();

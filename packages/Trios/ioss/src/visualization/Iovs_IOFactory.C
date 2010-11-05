@@ -24,7 +24,6 @@ namespace Iovs {
   {
     Ioss::IOFactory::alias("visualization", "visualization_output");
 
-    std::cerr << "the factory has been registered\n";
     // Tell the database to register itself with sierra's product registry.
     // XXX exodus doesn't do this, do we need to?
     // register_library_versions();
@@ -33,8 +32,7 @@ namespace Iovs {
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
 				       Ioss::DatabaseUsage db_usage,
 				       MPI_Comm communicator) const
-  { std::cerr << "Now we're actually constructing one\n";
-          return new DatabaseIO(NULL, filename, db_usage, communicator); }
+  { return new DatabaseIO(NULL, filename, db_usage, communicator); }
 
   /**
    * Call the sierra product registry and register all dependent third-party libraries
