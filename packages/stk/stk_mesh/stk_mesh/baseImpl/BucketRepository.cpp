@@ -63,7 +63,7 @@ const FieldBase::Restriction & empty_field_restriction()
 }
 
 const FieldBase::Restriction & dimension( const FieldBase & field ,
-                                          unsigned etype ,
+                                          EntityRank erank ,
                                           const unsigned num_part_ord ,
                                           const unsigned part_ord[] ,
                                           const char * const method )
@@ -77,7 +77,7 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
 
   for ( unsigned i = 0 ; i < num_part_ord && iend != ibeg ; ++i ) {
 
-    const EntityKey key = EntityKey(etype,part_ord[i]);
+    const EntityKey key(erank,part_ord[i]);
 
     ibeg = std::lower_bound( ibeg , iend , key , FieldRestrictionLess() );
 
@@ -624,7 +624,7 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 {
   ThrowRequireMsg( k != m_nil_bucket, "Cannot remove entity from nil_bucket" );
 
-  const unsigned entity_rank = k->entity_rank();
+  const EntityRank entity_rank = k->entity_rank();
 
   // Last bucket in the family of buckets with the same parts.
   // The last bucket is the only non-full bucket in the family.
@@ -662,17 +662,17 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
 void BucketRepository::internal_propagate_relocation( Entity & entity )
 {
-  const unsigned etype = entity.entity_rank();
+  const EntityRank erank = entity.entity_rank();
   PairIterRelation rel = entity.relations();
 
   for ( ; ! rel.empty() ; ++rel ) {
-    const unsigned rel_type = rel->entity_rank();
-    if ( rel_type < etype ) {
+    const EntityRank rel_rank = rel->entity_rank();
+    if ( rel_rank < erank ) {
       Entity & e_to = * rel->entity();
 
       set_field_relations( entity, e_to, rel->identifier() );
     }
-    else if ( etype < rel_type ) {
+    else if ( erank < rel_rank ) {
       Entity & e_from = * rel->entity();
 
       set_field_relations( e_from, entity, rel->identifier() );
