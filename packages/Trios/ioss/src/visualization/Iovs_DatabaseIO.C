@@ -131,15 +131,16 @@ namespace Iovs {
     return true;
   }
 
-  bool DatabaseIO::end_state(Ioss::Region*, int, double time)
+  bool DatabaseIO::end_state(Ioss::Region*, int state, double time)
   {
     Ioss::SerializeIO   serializeIO__(this);
 
-    std::cerr << "dbio end_state\n";
+    std::cerr << "dbio end_state " << state << "\n";
     // TODO, most likely global fields can be immediate, not delayed like this
 #ifdef PARAVIEW
     std::cerr << "calling iMesh_save" << std::endl;
     int err;
+    iMesh_setTimeData (mesh_instance, state, time, 0.0, &err);
     iMesh_save (mesh_instance, rootset, "", "", &err, 0, 0);
 #endif
     return true;
