@@ -39,27 +39,30 @@
 // ************************************************************************
 //@HEADER
 
-/// \file belos_orthomanager_tpetra.cpp
-/// \brief Test (Mat)OrthoManager subclass(es) with Tpetra
+/// \file belos_orthomanager_epetra.cpp
+/// \brief Test (Mat)OrthoManager subclass(es) with Epetra
 ///
 /// Test various subclasses of (Mat)OrthoManager, using
-/// Tpetra::MultiVector as the multivector implementation,
-/// and Tpetra::Operator as the operator implementation.
+/// Epetra_MultiVector as the multivector implementation,
+/// and Epetra_Operator as the operator implementation.
 ///
 #include "BelosConfigDefs.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosOrthoManagerFactory.hpp"
 #include "BelosOrthoManagerTest.hpp"
-#include "BelosTpetraAdapter.hpp"
+#include "BelosEpetraAdapter.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
-#include <Tpetra_DefaultPlatform.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-#include <Kokkos_DefaultNode.hpp>
+#ifdef EPETRA_MPI
+#  include <mpi.h>
+#  include <Epetra_MpiComm.h>
+#else
+#  include "Epetra_SerialComm.h"
+#endif
 
 // I/O for Harwell-Boeing files
 #include <iohb.h>
@@ -78,19 +81,16 @@ using std::vector;
 typedef double scalar_type;
 typedef int local_ordinal_type;
 typedef int global_ordinal_type;
-//typedef Kokkos::DefaultNode::DefaultNodeType node_type;
-typedef Kokkos::SerialNode node_type;
 
 typedef Teuchos::ScalarTraits< scalar_type > SCT;
 typedef SCT::magnitudeType magnitude_type;
-typedef Tpetra::MultiVector< scalar_type, local_ordinal_type, global_ordinal_type, node_type > MV;
-typedef Tpetra::Operator< scalar_type, local_ordinal_type, global_ordinal_type, node_type > OP;
+typedef Epetra_MultiVector MV;
+typedef Epetra_Operator OP;
 typedef Belos::MultiVecTraits< scalar_type, MV > MVT;
 typedef Belos::OperatorTraits< scalar_type, MV, OP > OPT;
 typedef Teuchos::SerialDenseMatrix< int, scalar_type > serial_matrix_type;
-typedef Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type > map_type;
-typedef Tpetra::CrsMatrix< scalar_type, local_ordinal_type, global_ordinal_type, node_type > sparse_matrix_type;
-
+typedef Epetra_Map map_type;
+typedef Epetra_CrsMatrix sparse_matrix_type;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -136,34 +136,6 @@ namespace {
     return theType;
   }
 
-  /// \fn getNode
-  /// \brief Return an RCP to a Kokkos Node
-  ///
-  template< class Node >
-  Teuchos::RCP< Node >
-  getNode() {
-    throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
-  }
-
-  template< >
-  Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType >
-  getNode() {
-    return Kokkos::DefaultNode::getDefaultNode();
-  }
-
-  // TPINode is the default Node type, if Kokkos was built with
-  // ThreadPool support.  Otherwise, if Kokkos was built with Intel
-  // Threading Building Blocks support, TBBNode is the default Node
-  // type.  Otherwise, SerialNode is the default.
-#if defined(HAVE_KOKKOS_THREADPOOL) || defined(HAVE_KOKKOS_TBB)
-  template< >
-  Teuchos::RCP< Kokkos::SerialNode >
-  getNode() {
-    Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new Kokkos::SerialNode (defaultParams));
-  }
-#endif // defined(HAVE_KOKKOS_THREADPOOL) || defined(HAVE_KOKKOS_TBB)
-
   /// \fn loadSparseMatrix
   /// \brief Load a sparse matrix from a Harwell-Boeing file
   ///
@@ -175,7 +147,7 @@ namespace {
   ///
   std::pair< Teuchos::RCP< map_type >, 
 	     Teuchos::RCP< sparse_matrix_type > >
-  loadSparseMatrix (const Teuchos::RCP< const Teuchos::Comm<int> > comm,
+  loadSparseMatrix (const Epetra_Comm& comm,
 		    const std::string& filename,
 		    int& numRows,
 		    std::ostream& debugOut)
@@ -184,10 +156,7 @@ namespace {
     using Teuchos::rcp;
     using std::vector;
 
-    typedef Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type > map_type;
-    typedef Tpetra::CrsMatrix< scalar_type, local_ordinal_type, global_ordinal_type, node_type > sparse_matrix_type;
-
-    const int myRank = Teuchos::rank (*comm);
+    const int myRank = comm.MyPID();
     RCP< map_type > pMap;
     RCP< sparse_matrix_type > pMatrix;
 
@@ -251,8 +220,8 @@ namespace {
 	// succeeded.  (info should be nonzero if so.  The
 	// Harwell-Boeing routines return "C boolean true" rather than
 	// the POSIX-standard "zero for success.")
-	Teuchos::broadcast (*comm, 0, &info);
-	Teuchos::broadcast (*comm, 0, &nnz);
+	comm.Broadcast (&info, 1, 0);
+	comm.Broadcast (&nnz, 1, 0);
 
 	TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
 			   "Error reading Harwell-Boeing sparse matrix file \"" 
@@ -270,9 +239,9 @@ namespace {
 			   << "means it does not define a valid inner product." 
 			   << std::endl);
 
-	Teuchos::broadcast (*comm, 0, &loadedNumRows);
-	Teuchos::broadcast (*comm, 0, &numCols);
-	Teuchos::broadcast (*comm, 0, &rnnzmax);
+	comm.Broadcast (&loadedNumRows, 1, 0);
+	comm.Broadcast (&numCols, 1, 0);
+	comm.Broadcast (&rnnzmax, 1, 0);
 
 	TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
 			   "Test matrix in Harwell-Boeing sparse matrix file '" 
@@ -282,13 +251,12 @@ namespace {
 	// appropriate output parameter.
 	numRows = loadedNumRows;
 
-	// Create Tpetra::Map to represent multivectors in the range of
+	// Create Epetra_Map to represent multivectors in the range of
 	// the sparse matrix.
-	pMap = rcp (new map_type (numRows, 0, comm, 
-				  Tpetra::GloballyDistributed,
-				  getNode< node_type >()));
-	// Second argument: max number of nonzero entries per row.
-	pMatrix = rcp (new sparse_matrix_type (pMap, rnnzmax));
+	pMap = rcp (new map_type (numRows, 0, comm));
+
+	// Third argument: max number of nonzero entries per row.
+	pMatrix = rcp (new sparse_matrix_type (Copy, *pMap, rnnzmax));
 
 	if (myRank == 0) 
 	  {
@@ -306,9 +274,8 @@ namespace {
 		    // Value to insert there: *dptr
 		    const int curGlobalRowIndex = rowind[curNonzeroIndex] - 1;
 		    const scalar_type curValue = dvals[curNonzeroIndex];
-		    pMatrix->insertGlobalValues (curGlobalRowIndex, 
-						 Teuchos::tuple(c), 
-						 Teuchos::tuple(curValue));
+		    pMatrix->InsertGlobalValues (curGlobalRowIndex, 
+						 1, &curValue, &c);
 		    curNonzeroIndex++;
 		  }
 	      }
@@ -335,7 +302,7 @@ namespace {
 	// We're done reading in the sparse matrix.  Now distribute it
 	// among the processes.  The domain, range, and row maps are
 	// the same (the matrix must be square).
-	pMatrix->fillComplete();
+	pMatrix->FillComplete();
 	debugOut << "Completed loading and distributing sparse matrix" << endl;
       } // else M == null
     else 
@@ -344,9 +311,7 @@ namespace {
 
 	// Let M remain null, and allocate map using the number of rows
 	// (numRows) specified on the command line.
-	pMap = rcp (new map_type (numRows, 0, comm, 
-				  Tpetra::GloballyDistributed, 
-				  getNode< node_type >()));
+	pMap = rcp (new map_type (numRows, 0, comm));
       }
     return std::make_pair (pMap, pMatrix);
   }
@@ -363,8 +328,12 @@ main (int argc, char *argv[])
   using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
-  RCP< const Teuchos::Comm<int> > comm = 
-    Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+
+#ifdef EPETRA_MPI
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
+#endif
 
   // This factory object knows how to make a (Mat)OrthoManager
   // subclass, given a name for the subclass.  The name is not the
@@ -486,7 +455,7 @@ main (int argc, char *argv[])
   // Belos::MultiVecTraits) to clone other multivectors as
   // necessary.  (This means the test code doesn't need the Map, and
   // it also makes the test code independent of the idea of a Map.)
-  RCP< MV > S = rcp (new MV (map, sizeS));
+  RCP< MV > S = rcp (new MV (*map, sizeS));
 
   // Test the OrthoManager subclass.  Return the number of tests
   // that failed.  None of the tests should fail (this function
