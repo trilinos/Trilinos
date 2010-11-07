@@ -161,6 +161,46 @@ using Teuchos::rcp;
 %import "NOX.Epetra.Interface.i"
 %import "LOCA.Epetra.Interface.i"
 
+// Exception handling
+%include "exception.i"
+
+// Director exception handling
+%feature("director:except")
+{
+  if ($error != NULL) {
+    throw Swig::DirectorMethodException();
+  }
+}
+
+// General exception handling
+%exception
+{
+  try
+  {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(PythonException & e)
+  {
+    e.restore();
+    SWIG_fail;
+  }
+  catch(int errCode)
+  {
+    PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
+    SWIG_fail;
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch (Swig::DirectorException & e)
+  {
+    SWIG_fail;
+  }
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
+
 %rename(Abstract_Group) LOCA::Abstract::Group;
 %rename(Abstact_TransposeSolveGroup) LOCA::Abstract::TransposeSolveGroup;
 %teuchos_rcp(Abstract_Group)

@@ -3,12 +3,9 @@ PyTrilinos To Do List
 =====================
 
 * General
-  - Any package with Directors should get %feature("director:except") ...
-    and catch(Swig::DirectorException &e) ...
-  - Developers Manual
   - Can I get PyTrilinos to configure and build if Teuchos is
     disabled?
-  - Port to cygwin (2251)
+  - Move all compiled C++ code into PyTrilinos namespace
 
 * Teuchos
   - Teuchos::RCP/python-ref-count synchronization

@@ -110,6 +110,41 @@ NOX.Epetra.Interface provides the following user-level classes:
 // Epetra module imports
 %import "Epetra.i"
 
+// Exception handling
+%include "exception.i"
+
+// Director exception handling
+%feature("director:except")
+{
+  if ($error != NULL) {
+    throw Swig::DirectorMethodException();
+  }
+}
+
+// General exception handling
+%exception
+{
+  try
+  {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(PythonException & e)
+  {
+    e.restore();
+    SWIG_fail;
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch (Swig::DirectorException & e)
+  {
+    SWIG_fail;
+  }
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
+
 // Teuchos::RCPs typemaps
 %teuchos_rcp(NOX::Epetra::Interface::Required)
 %teuchos_rcp(NOX::Epetra::Interface::Jacobian)
