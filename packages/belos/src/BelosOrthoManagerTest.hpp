@@ -67,12 +67,16 @@ namespace Belos {
       typedef Scalar scalar_type;
       typedef Teuchos::ScalarTraits< scalar_type > SCT;
       typedef typename SCT::magnitudeType magnitude_type;
+      typedef Teuchos::ScalarTraits< magnitude_type > SMT;
       typedef Belos::MultiVecTraits< scalar_type, MV > MVT;
       typedef Teuchos::SerialDenseMatrix< int, scalar_type > serial_matrix_type;
 
       /// \brief Run all the tests
       ///
       /// \param OM [in/out] OrthoManager subclass instance to test
+      /// \param isRankRevealing [in] Whether that OrthoManager 
+      ///   subclass instance has a true rank-revealing capability.
+      ///   If not, we do not test it on rank-deficient vectors.
       /// \param S [in/out] Multivector instance
       /// \param sizeX1 [in] Number of columns in X1 (a multivector
       ///   instance created internally for tests)
@@ -85,6 +89,7 @@ namespace Belos {
       /// \return Number of tests that failed (zero means success)
       static int
       runTests (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+		const bool isRankRevealing,
 		const Teuchos::RCP< MV >& S,
 		const int sizeX1,
 		const int sizeX2,
@@ -143,10 +148,9 @@ namespace Belos {
 	  debugOut << "done." << endl 
 		   << "Calling orthonormError() on X1... ";
 	  err = OM->orthonormError(*X1);
-	  TEST_FOR_EXCEPTION(err > TOL,
-			     std::runtime_error,
-			     "normalize(X1) did meet tolerance: "
-			     "orthonormError(X1) == " << err);
+	  TEST_FOR_EXCEPTION(err > TOL, std::runtime_error,
+			     "After normalize(X1), orthonormError(X1) = " 
+			     << err << " > TOL = " << TOL);
 	  debugOut << "done: ||<X1,X1> - I|| = " << err << endl;
 
 	  //
@@ -156,7 +160,7 @@ namespace Belos {
 	  debugOut << "Filling X1 with random values... ";
 	  MVT::MvRandom(*X2);
 	  debugOut << "done." << endl
-		   << "Calling projectAndNormalize(X2,X1)... " << endl;
+		   << "Calling projectAndNormalize(X2,X1)... ";
 	  // The projectAndNormalize() interface also differs between 
 	  // Anasazi and Belos.  Anasazi's projectAndNormalize() puts 
 	  // the multivector and the array of multivectors first, and
@@ -190,14 +194,14 @@ namespace Belos {
 	  TEST_FOR_EXCEPTION(err > TOL,
 			     std::runtime_error,
 			     "projectAndNormalize(X2,X1) did not meet tolerance: "
-			     "orthonormError(X2) == " << err);
+			     "orthonormError(X2) = " << err << " > TOL = " << TOL);
 	  debugOut << "done: || <X2,X2> - I || = " << err << endl
 		   << "Calling orthogError(X2, X1)... ";
 	  err = OM->orthogError (*X2, *X1);
 	  TEST_FOR_EXCEPTION(err > TOL,
 			     std::runtime_error,
 			     "projectAndNormalize(X2,X1) did not meet tolerance: "
-			     "orthogError(X2,X1) == " << err);
+			     "orthogError(X2,X1) = " << err << " > TOL = " << TOL);
 	  debugOut << "done: || <X2,X1> || = " << err << endl;
 	}
 
@@ -210,30 +214,41 @@ namespace Belos {
 
 	  debugOut << "Testing project() by projecting a random multivector S "
 	    "against various combinations of X1 and X2 " << endl;
-	  numFailed += testProject(OM,S,X1,X2,MyOM);
+	  const int thisNumFailed = testProject(OM,S,X1,X2,MyOM);
+	  numFailed += thisNumFailed;
+	  if (thisNumFailed > 0)
+	    debugOut << "  *** " << thisNumFailed 
+		     << (thisNumFailed > 1 ? " tests" : " test") 
+		     << " failed." << endl;
 	}
 
-	{
-	  // run a X1,Y2 range multivector against P_{X1,X1} P_{Y2,Y2}
-	  // note, this is allowed under the restrictions on project(), 
-	  // because <X1,Y2> = 0
-	  // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
-	  // it should require randomization, as 
-	  // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
-	  serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-	  C1.random();
-	  C2.random();
-	  MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
-	  MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
+	if (isRankRevealing)
+	  {
+	    // run a X1,Y2 range multivector against P_{X1,X1} P_{Y2,Y2}
+	    // note, this is allowed under the restrictions on project(), 
+	    // because <X1,Y2> = 0
+	    // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
+	    // it should require randomization, as 
+	    // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
+	    serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
+	    C1.random();
+	    C2.random();
+	    MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
+	    MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
-	  debugOut << "Testing project() by projecting [X1 X2]-range multivector "
-	    "against P_X1 P_X2 " << endl;
-	  numFailed += testProject(OM,S,X1,X2,MyOM);
-	}
+	    debugOut << "Testing project() by projecting [X1 X2]-range multivector "
+	      "against P_X1 P_X2 " << endl;
+	    const int thisNumFailed = testProject(OM,S,X1,X2,MyOM);
+	    numFailed += thisNumFailed;
+	    if (thisNumFailed > 0)
+	      debugOut << "  *** " << thisNumFailed 
+		       << (thisNumFailed > 1 ? " tests" : " test") 
+		       << " failed." << endl;
+	  }
 
 	// This test is only distinct from the rank-1 multivector test
 	// (below) if S has at least 3 columns.
-	if (sizeS > 2) 
+	if (isRankRevealing && sizeS > 2) 
 	  {
 	    MVT::MvRandom(*S);
 	    RCP<MV> mid = MVT::Clone(*S,1);
@@ -244,12 +259,17 @@ namespace Belos {
 	    MVT::SetBlock(*mid,ind,*S);
 
 	    debugOut << "Testing normalize() on a rank-deficient multivector " << endl;
-	    numFailed += testNormalize(OM,S,MyOM);
+	    const int thisNumFailed = testNormalize(OM,S,MyOM);
+	    numFailed += thisNumFailed;
+	    if (thisNumFailed > 0)
+	      debugOut << "  *** " << thisNumFailed 
+		       << (thisNumFailed > 1 ? " tests" : " test") 
+		       << " failed." << endl;
 	  }
 
 	// This test will only exercise rank deficiency if S has at least 2
 	// columns.
-	if (sizeS > 1) 
+	if (isRankRevealing && sizeS > 1) 
 	  {
 	    // rank-1
 	    RCP<MV> one = MVT::Clone(*S,1);
@@ -263,7 +283,12 @@ namespace Belos {
 		MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
 	      }
 	    debugOut << "Testing normalize() on a rank-1 multivector " << endl;
-	    numFailed += testNormalize(OM,S,MyOM);
+	    const int thisNumFailed = testNormalize(OM,S,MyOM);
+	    numFailed += thisNumFailed;
+	    if (thisNumFailed > 0)
+	      debugOut << "  *** " << thisNumFailed 
+		       << (thisNumFailed > 1 ? " tests" : " test") 
+		       << " failed." << endl;
 	  }
 
 	{
@@ -271,31 +296,41 @@ namespace Belos {
 	  MVT::MvRandom(*S);
 
 	  debugOut << "Testing projectAndNormalize() on a random multivector " << endl;
-	  numFailed += testProjectAndNormalize(OM,S,X1,X2,MyOM);
+	  const int thisNumFailed = testProjectAndNormalize(OM,S,X1,X2,MyOM);
+	  numFailed += thisNumFailed;
+	  if (thisNumFailed > 0)
+	    debugOut << "  *** " << thisNumFailed 
+		     << (thisNumFailed > 1 ? " tests" : " test") 
+		     << " failed." << endl;
 	}
 
+	if (isRankRevealing)
+	  {
+	    // run a X1,X2 range multivector against P_X1 P_X2
+	    // this is allowed as <X1,X2> == 0
+	    // it should require randomization, as 
+	    // P_X1 P_X2 (X1*C1 + X2*C2) = P_X1 X1*C1 = 0
+	    // and 
+	    // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
+	    serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
+	    C1.random();
+	    C2.random();
+	    MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
+	    MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
-	{
-	  // run a X1,X2 range multivector against P_X1 P_X2
-	  // this is allowed as <X1,X2> == 0
-	  // it should require randomization, as 
-	  // P_X1 P_X2 (X1*C1 + X2*C2) = P_X1 X1*C1 = 0
-	  // and 
-	  // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
-	  serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
-	  C1.random();
-	  C2.random();
-	  MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
-	  MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
-
-	  debugOut << "Testing projectAndNormalize() by projecting [X1 X2]-range "
-	    "multivector against P_X1 P_X2 " << endl;
-	  numFailed += testProjectAndNormalize(OM,S,X1,X2,MyOM);
-	}
+	    debugOut << "Testing projectAndNormalize() by projecting [X1 X2]-range "
+	      "multivector against P_X1 P_X2 " << endl;
+	    const int thisNumFailed = testProjectAndNormalize(OM,S,X1,X2,MyOM);
+	    numFailed += thisNumFailed;
+	    if (thisNumFailed > 0)
+	      debugOut << "  *** " << thisNumFailed 
+		       << (thisNumFailed > 1 ? " tests" : " test") 
+		       << " failed." << endl;
+	  }
 
 	// This test is only distinct from the rank-1 multivector test
 	// (below) if S has at least 3 columns.
-	if (sizeS > 2) 
+	if (isRankRevealing && sizeS > 2) 
 	  {
 	    MVT::MvRandom(*S);
 	    RCP<MV> mid = MVT::Clone(*S,1);
@@ -317,7 +352,7 @@ namespace Belos {
 
 	// This test will only exercise rank deficiency if S has at least 2
 	// columns.
-	if (sizeS > 1) 
+	if (isRankRevealing && sizeS > 1) 
 	  {
 	    // rank-1
 	    RCP<MV> one = MVT::Clone(*S,1);
@@ -349,37 +384,49 @@ namespace Belos {
 
       /// \fn MVDiff
       ///
-      /// Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
-      /// $n$ is the number of columns in X.
+      /// Compute and return $\|X - Y\|_F$, the Frobenius (sum of
+      /// squares) norm of the difference between X and Y.
       static magnitude_type
       MVDiff (const MV& X, const MV& Y)
       {
 	using Teuchos::RCP;
 
 	const scalar_type ONE = SCT::one();
-	const int ncols_X = MVT::GetNumberVecs(X);
-	TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != ncols_X),
+	const int numCols = MVT::GetNumberVecs(X);
+	TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != numCols),
 			    std::logic_error,
 			    "MVDiff: X and Y should have the same number of columns."
-			    "  X has " << ncols_X << " column(s) and Y has " 
+			    "  X has " << numCols << " column(s) and Y has " 
 			    << MVT::GetNumberVecs(Y) << " columns." );
-	serial_matrix_type C (ncols_X, ncols_X);
+	// Resid := X
+	RCP< MV > Resid = MVT::CloneCopy(X);
+	// Resid := Resid - Y
+	MVT::MvAddMv (-ONE, Y, ONE, *Resid, *Resid);
 
-	// tmp := X
-	RCP< MV > tmp = MVT::CloneCopy(X);
-	// tmp := tmp - Y
-	MVT::MvAddMv (-ONE, Y, ONE, *tmp, *tmp);
-	// $C := (X - Y)^* \cdot (X - Y)$
-	MVT::MvTransMv (ONE, *tmp, *tmp, C);
+	return frobeniusNorm (*Resid);
+      }
 
-	// Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
-	// $n$ is the number of columns in X.
+
+      /// \fn frobeniusNorm
+      ///
+      /// Compute and return the Frobenius norm of X.
+      static magnitude_type
+      frobeniusNorm (const MV& X)
+      {
+	const scalar_type ONE = SCT::one();
+	const int numCols = MVT::GetNumberVecs(X);
+	serial_matrix_type C (numCols, numCols);
+
+	// $C := X^* X$
+	MVT::MvTransMv (ONE, X, X, C);
+
 	magnitude_type err (0);
-	for (int i = 0; i < ncols_X; ++i)
+	for (int i = 0; i < numCols; ++i)
 	  err += SCT::magnitude (C(i,i));
 
 	return SCT::magnitude (SCT::squareroot (err));
       }
+
 
       /// Test OrthoManager::projectAndNormalize() for the specific
       /// OrthoManager instance.
@@ -505,13 +552,17 @@ namespace Belos {
 	    for (size_type i=0; i<C.size(); i++) {
 	      C[i]->random();
 	    }
-	    // Run test.
+	    // Run test.  Since S was specified by the caller and
+	    // Scopy is a copy of S, we don't know what rank to expect
+	    // here -- though we do require that S have rank at least
+	    // one.
+	    //
 	    // Note that Anasazi and Belos differ, among other places, 
 	    // in the order of arguments to projectAndNormalize().
 	    int ret = OM->projectAndNormalize(*Scopy,C,B,theX);
 	    sout << "projectAndNormalize() returned rank " << ret << endl;
 	    if (ret == 0) {
-	      sout << "   Cannot continue tests, since the returned rank is zero." << endl;
+	      sout << "  *** Error: returned rank is zero, cannot continue tests" << endl;
 	      numerr++;
 	      break;
 	    }
@@ -565,7 +616,7 @@ namespace Belos {
 	      ret = OM->projectAndNormalize(*Scopy,C,B,theX);
 	      sout << "projectAndNormalize() returned rank " << ret << endl;
 	      if (ret == 0) {
-		sout << "   Cannot continue tests, since the returned rank is zero." << endl;
+		sout << "  *** Error: returned rank is zero, cannot continue tests" << endl;
 		numerr++;
 		break;
 	      }
@@ -664,8 +715,7 @@ namespace Belos {
 	    }
 	  }
 	  catch (Belos::OrthoError& e) {
-	    sout << "   -------------------------------------------         projectAndNormalize() threw exception" << endl;
-	    sout << "   Error: " << e.what() << endl;
+	    sout << "  *** Error: OrthoManager threw exception: " << e.what() << endl;
 	    numerr++;
 	  }
 
@@ -701,121 +751,152 @@ namespace Belos {
 	using Teuchos::tuple;
 
 	const scalar_type ONE = SCT::one();
-	const magnitude_type ZERO = SCT::magnitude(SCT::zero());
+	std::ostringstream sout;
+	// Total number of failed tests in this call of this routine.
+	int numerr = 0;
 
 	// Relative tolerance against which all tests are performed.
-	const magnitude_type TOL = 1.0e-12;
-	// Absolute tolerance constant
-	const magnitude_type ATOL = 10;
+	// We are measuring things in the Frobenius norm $\| \cdot \|_F$.
+	// The following bounds hold for all $m \times n$ matrices $A$:
+	// \[
+	// \|A\|_2 \leq \|A\|_F \leq \sqrt{r} \|A\|_2,
+	// \]
+	// where $r$ is the (column) rank of $A$.  We bound this above
+	// by the number of columns in $A$.  
+	//
+	// An accurate normalization in the Euclidean norm of a matrix
+	// $A$ with at least as many rows m as columns n, should
+	// produce orthogonality $\|Q^* Q - I\|_2$ less than a factor
+	// of machine precision times a low-order polynomial in m and
+	// n, and residual $\|A - Q B\|_2$ (where $A = Q B$ is the
+	// computed normalization) less than that bound times the norm
+	// of $A$.
+	//
+	// Since we are measuring both of these quantitites in the
+	// Frobenius norm instead, we should scale this bound by
+	// $\sqrt{n}$.
 
+	const int numRows = MVT::GetVecLength(*S);
+	const int numCols = MVT::GetNumberVecs(*S);
 	const int sizeS = MVT::GetNumberVecs(*S);
-	int numerr = 0;
-	std::ostringstream sout;
 
-	//
-	// output tests:
-	//   <S_out,S_out> = I
-	//   S_in = S_out B
-	// 
-	// we will loop over an integer specifying the test combinations
-	// the bit pattern for the different tests is listed in parenthesis
-	//
-	// for each of the following, we should test B
-	//
-	// if hasM:
-	// with and without MS  (1)
-	//
-	// as hasM controls the upper level bits, we need only run test case 0 if hasM==false
-	// otherwise, we run test cases 0-1
-	//
+	// A good heuristic is to scale the bound by the square root
+	// of the number of floating-point operations.  One could
+	// perhaps support this theoretically, since we are using
+	// uniform random test problems.
+	const magnitude_type fudgeFactor = 
+	  SMT::squareroot(magnitude_type(numRows) * 
+			  magnitude_type(numCols) * 
+			  magnitude_type(numCols));
+	const magnitude_type TOL = SMT::eps() * fudgeFactor *
+	  SMT::squareroot(magnitude_type(numCols));
+	// Absolute tolerance scaling: the Frobenius norm of the test
+	// matrix S.  TOL*ATOL is the absolute tolerance for the
+	// residual $\|A - Q*B\|_F$.
+	
+	std::cerr << "+++ COMPUTING FROB NORM +++" << endl;
+	const magnitude_type ATOL = frobeniusNorm (*S);
+	std::cerr << "+++ DONE COMPUTING FROB NORM +++" << endl;
 
-	int numtests;
-	numtests = 1;
+	sout << "The test matrix S has Frobenius norm " << ATOL 
+	     << ", and the relative error tolerance is TOL = " 
+	     << TOL << "." << endl;
 
-	for (int t=0; t<numtests; t++) {
-
-	  RCP<serial_matrix_type > B = rcp( new serial_matrix_type(sizeS,sizeS) );
+	const int numtests = 1;
+	for (int t = 0; t < numtests; ++t) {
 
 	  try {
 	    // call routine
 	    // test all outputs for correctness
 
-	    // here is where the outputs go
-	    RCP<MV> Scopy;
-	    int ret;
+	    // S_copy gets a copy of S; we normalize in place, so we
+	    // need a copy to check whether the normalization
+	    // succeeded.
+	    RCP< MV > S_copy = MVT::CloneCopy (*S);
 
-	    // copies of S,MS
-	    Scopy = MVT::CloneCopy(*S);
-	    // randomize this data, it should be overwritten
+	    // Matrix of coefficients from the normalization.
+	    RCP< serial_matrix_type > B (new serial_matrix_type (sizeS, sizeS));
+	    // The contents of B will be overwritten, but fill with
+	    // random data just to make sure that the normalization
+	    // operated on all the elements of B on which it should
+	    // operate.
 	    B->random();
-	    // run test
-	    ret = OM->normalize(*Scopy,B);
-	    sout << "normalize() returned rank " << ret << endl;
-	    if (ret == 0) {
-	      sout << "   Cannot continue." << endl;
+
+	    const int reportedRank = OM->normalize (*S_copy, B);
+	    sout << "normalize() returned rank " << reportedRank << endl;
+	    if (reportedRank == 0) {
+	      sout << "  *** Error: Cannot continue, since normalize() "
+		"reports that S has rank 0" << endl;
 	      numerr++;
 	      break;
 	    }
 	    //
-	    // normalize() is only required to return a 
-	    // basis of rank "ret"
-	    // this is what we will test:
-	    //   the first "ret" columns in Scopy
-	    //   the first "ret" rows in B
-	    // get pointers to the parts that we want
+	    // We don't know in this routine whether the input
+	    // multivector S has full rank; it is only required to
+	    // have nonzero rank.  Thus, we extract the first
+	    // reportedRank columns of S_copy and the first
+	    // reportedRank rows of B, and perform tests on them.
 	    //
-	    // B_original will be used to ensure that the "original" B
-	    // (before we take the first ret rows) doesn't go away.
-	    RCP< serial_matrix_type > B_original; // mfh 22 Jul 2010
-	    if (ret < sizeS) {
-	      std::vector<int> ind(ret);
-	      for (int i=0; i<ret; i++) {
-		ind[i] = i;
-	      }
-	      Scopy = MVT::CloneViewNonConst(*Scopy,ind);
 
-	      //sout << "::: Resulting pre-subset B:" << std::endl;
-	      //TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
+	    // Construct S_view, a view of the first reportedRank
+	    // columns of S_copy.
+	    std::vector<int> indices (reportedRank);
+	    for (int j = 0; j < reportedRank; ++j)
+	      indices[j] = j;
+	    RCP< MV > S_view = MVT::CloneViewNonConst (*S_copy, indices);
+	    // Construct B_top, a copy of the first reportedRank rows
+	    // of B.
+	    //
+	    // NOTE: We create this as a copy and not a view, because
+	    // otherwise it would not be safe with respect to RCPs.
+	    // This is because serial_matrix_type uses raw pointers
+	    // inside, so that a view would become invalid when B
+	    // would fall out of scope.
+	    RCP< serial_matrix_type > B_top (new serial_matrix_type (Teuchos::Copy, *B, reportedRank, sizeS));
 
-	      B_original = B; // mfh 22 Jul 2010
-	      B = rcp( new serial_matrix_type(Teuchos::View,*B,ret,sizeS) );
-
-	      //sout << "::: Resulting subset B:" << std::endl;
-	      //TSQR::print_local_matrix (sout, ret, sizeS, B->values(), B->stride());
-	    }
-
-	    // test all outputs for correctness
-	    // S^T M S == I
+	    // Check ||<S_view,S_view> - I||
 	    {
-	      magnitude_type err = OM->orthonormError(*Scopy);
+	      const magnitude_type err = OM->orthonormError(*S_view);
 	      if (err > TOL) {
-		sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+		sout << "  *** Error: Tolerance exceeded: err = " 
+		     << err << " > TOL = " << TOL << endl;
 		numerr++;
 	      }
 	      sout << "   || <S,S> - I || after  : " << err << endl;
 	    }
-	    // S_in = S_out*B
+	    // Check the residual ||Residual|| = ||S_view * B_top -
+	    // S_orig||, where S_orig is a view of the first
+	    // reportedRank columns of S.
 	    {
-	      RCP<MV> tmp = MVT::Clone(*S,sizeS);
-	      MVT::MvTimesMatAddMv(ONE,*Scopy,*B,ZERO,*tmp);
-	      magnitude_type err = MVDiff(*tmp,*S);
+	      // Residual is allocated with reportedRank columns.  It
+	      // will contain the result of testing the residual error
+	      // of the normalization (i.e., $\|S - S_in*B\|$).  It
+	      // should have the dimensions of S.  Its initial value
+	      // is a copy of the first reportedRank columns of S.
+	      RCP< MV > Residual = MVT::CloneCopy (*S);
+
+	      // Residual := Residual - S_view * B_view
+	      MVT::MvTimesMatAddMv (-ONE, *S_view, *B_top, ONE, *Residual);
+
+	      // Compute ||Residual||
+	      const magnitude_type err = frobeniusNorm (*Residual);
 	      if (err > ATOL*TOL) {
-		sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
+		sout << "  *** Error: Tolerance exceeded: err = " 
+		     << err << " > ATOL*TOL = " << (ATOL*TOL) << endl;
 		numerr++;
 	      }
-	      sout << "  " << t << "|| S_in - S_out*B || : " << err << endl;
+	      sout << "  " << t << "|| S - Q*B || : " << err << endl;
 	    }
 	  }
 	  catch (Belos::OrthoError& e) {
-	    sout << "   -------------------------------------------         normalize() threw exception" << endl;
-	    sout << "   Error: " << e.what() << endl;
+	    sout << "  *** Error: the OrthoManager's normalize() method "
+	      "threw an exception: " << e.what() << endl;
 	    numerr++;
 	  }
 
 	} // test for
 
-	MsgType type = Debug;
-	if (numerr>0) type = Errors;
+	const MsgType type = (numerr == 0) ? Debug : static_cast<MsgType> (static_cast<int>(Errors) | static_cast<int>(Debug));
 	MyOM->stream(type) << sout.str();
 	MyOM->stream(type) << endl;
 

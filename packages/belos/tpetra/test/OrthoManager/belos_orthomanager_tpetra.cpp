@@ -482,6 +482,12 @@ main (int argc, char *argv[])
   RCP< Belos::OrthoManager< scalar_type, MV > > OM = 
     factory.makeOrthoManager (ortho, M, Teuchos::null);
 
+  // Whether the specific OrthoManager subclass promises to compute
+  // rank-revealing orthogonalizations.  If yes, then test it on
+  // rank-deficient multivectors, otherwise only test it on full-rank
+  // multivectors.
+  const bool isRankRevealing = factory.isRankRevealing (ortho);
+
   // "Prototype" multivector.  The test code will use this (via
   // Belos::MultiVecTraits) to clone other multivectors as
   // necessary.  (This means the test code doesn't need the Map, and
@@ -491,8 +497,12 @@ main (int argc, char *argv[])
   // Test the OrthoManager subclass.  Return the number of tests
   // that failed.  None of the tests should fail (this function
   // should return zero).
-  const int numFailed = 
-    Belos::Test::OrthoManagerTester< scalar_type, MV >::runTests (OM, S, sizeX1, sizeX2, MyOM);
+  int numFailed = 0;
+  {
+    typedef Belos::Test::OrthoManagerTester< scalar_type, MV > tester_type;
+    numFailed = tester_type::runTests (OM, isRankRevealing, S, 
+				       sizeX1, sizeX2, MyOM);
+  }
 
   // Only Rank 0 gets to write to cout.  The other processes dump
   // output to a black hole.

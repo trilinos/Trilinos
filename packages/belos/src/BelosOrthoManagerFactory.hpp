@@ -74,6 +74,13 @@ namespace Belos {
     /// subclass to test.  (Must be at least one.)
     static int numOrthoManagers () { return 4; }
 
+    /// Return true if and only if the given OrthoManager name is that
+    /// of an OrthoManager subclass with rank-revealing capability.
+    static bool isRankRevealing (const std::string& name) {
+      // Currently only TSQR has a full rank-revealing capability.
+      return (name == "TSQR");
+    }
+
     /// Constructor
     ///
     OrthoManagerFactory () : theList_ (numOrthoManagers())

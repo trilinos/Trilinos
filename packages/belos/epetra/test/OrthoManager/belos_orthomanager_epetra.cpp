@@ -61,8 +61,9 @@
 #  include <mpi.h>
 #  include <Epetra_MpiComm.h>
 #else
-#  include "Epetra_SerialComm.h"
+#  include <Epetra_SerialComm.h>
 #endif
+#include <Epetra_CrsMatrix.h>
 
 // I/O for Harwell-Boeing files
 #include <iohb.h>
@@ -147,7 +148,7 @@ namespace {
   ///
   std::pair< Teuchos::RCP< map_type >, 
 	     Teuchos::RCP< sparse_matrix_type > >
-  loadSparseMatrix (const Epetra_Comm& comm,
+  loadSparseMatrix (const Teuchos::RCP< const Epetra_Comm >& pComm,
 		    const std::string& filename,
 		    int& numRows,
 		    std::ostream& debugOut)
@@ -156,7 +157,7 @@ namespace {
     using Teuchos::rcp;
     using std::vector;
 
-    const int myRank = comm.MyPID();
+    const int myRank = pComm->MyPID();
     RCP< map_type > pMap;
     RCP< sparse_matrix_type > pMatrix;
 
@@ -220,8 +221,8 @@ namespace {
 	// succeeded.  (info should be nonzero if so.  The
 	// Harwell-Boeing routines return "C boolean true" rather than
 	// the POSIX-standard "zero for success.")
-	comm.Broadcast (&info, 1, 0);
-	comm.Broadcast (&nnz, 1, 0);
+	pComm->Broadcast (&info, 1, 0);
+	pComm->Broadcast (&nnz,  1, 0);
 
 	TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
 			   "Error reading Harwell-Boeing sparse matrix file \"" 
@@ -239,9 +240,9 @@ namespace {
 			   << "means it does not define a valid inner product." 
 			   << std::endl);
 
-	comm.Broadcast (&loadedNumRows, 1, 0);
-	comm.Broadcast (&numCols, 1, 0);
-	comm.Broadcast (&rnnzmax, 1, 0);
+	pComm->Broadcast (&loadedNumRows, 1, 0);
+	pComm->Broadcast (&numCols, 1, 0);
+	pComm->Broadcast (&rnnzmax, 1, 0);
 
 	TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
 			   "Test matrix in Harwell-Boeing sparse matrix file '" 
@@ -253,7 +254,7 @@ namespace {
 
 	// Create Epetra_Map to represent multivectors in the range of
 	// the sparse matrix.
-	pMap = rcp (new map_type (numRows, 0, comm));
+	pMap = rcp (new map_type (numRows, 0, *pComm));
 
 	// Third argument: max number of nonzero entries per row.
 	pMatrix = rcp (new sparse_matrix_type (Copy, *pMap, rnnzmax));
@@ -311,7 +312,7 @@ namespace {
 
 	// Let M remain null, and allocate map using the number of rows
 	// (numRows) specified on the command line.
-	pMap = rcp (new map_type (numRows, 0, comm));
+	pMap = rcp (new map_type (numRows, 0, *pComm));
       }
     return std::make_pair (pMap, pMatrix);
   }
@@ -326,14 +327,16 @@ main (int argc, char *argv[])
   using Teuchos::CommandLineProcessor;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::rcp_implicit_cast;
 
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
 #ifdef EPETRA_MPI
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+  RCP< Epetra_MpiComm > pCommSpecific (new Epetra_MpiComm (MPI_COMM_WORLD));
 #else
-  Epetra_SerialComm Comm;
-#endif
+  RCP< Epetra_SerialComm > pCommSpecific (new Epetra_SerialComm);
+#endif // EPETRA_MPI
+  RCP< Epetra_Comm > pComm = rcp_implicit_cast< Epetra_Comm > (pCommSpecific);
 
   // This factory object knows how to make a (Mat)OrthoManager
   // subclass, given a name for the subclass.  The name is not the
@@ -393,7 +396,7 @@ main (int argc, char *argv[])
     const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse (argc,argv);
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
       {
-	if (Teuchos::rank(*comm) == 0)
+	if (pComm->MyPID() == 0)
 	  std::cout << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
@@ -434,7 +437,7 @@ main (int argc, char *argv[])
     // modify numRows to be the number of rows in the sparse matrix.
     // Otherwise, it will leave numRows alone.
     std::pair< RCP< map_type >, RCP< sparse_matrix_type > > results = 
-      loadSparseMatrix (comm, filename, numRows, debugOut);
+      loadSparseMatrix (pComm, filename, numRows, debugOut);
     map = results.first;
     M = results.second;
   }
@@ -451,6 +454,12 @@ main (int argc, char *argv[])
   RCP< Belos::OrthoManager< scalar_type, MV > > OM = 
     factory.makeOrthoManager (ortho, M, Teuchos::null);
 
+  // Whether the specific OrthoManager subclass promises to compute
+  // rank-revealing orthogonalizations.  If yes, then test it on
+  // rank-deficient multivectors, otherwise only test it on full-rank
+  // multivectors.
+  const bool isRankRevealing = factory.isRankRevealing (ortho);
+
   // "Prototype" multivector.  The test code will use this (via
   // Belos::MultiVecTraits) to clone other multivectors as
   // necessary.  (This means the test code doesn't need the Map, and
@@ -460,12 +469,16 @@ main (int argc, char *argv[])
   // Test the OrthoManager subclass.  Return the number of tests
   // that failed.  None of the tests should fail (this function
   // should return zero).
-  const int numFailed = 
-    Belos::Test::OrthoManagerTester< scalar_type, MV >::runTests (OM, S, sizeX1, sizeX2, MyOM);
+  int numFailed = 0;
+  {
+    typedef Belos::Test::OrthoManagerTester< scalar_type, MV > tester_type;
+    numFailed = tester_type::runTests (OM, isRankRevealing, S, 
+				       sizeX1, sizeX2, MyOM);
+  }
 
   // Only Rank 0 gets to write to cout.  The other processes dump
   // output to a black hole.
-  //std::ostream& finalOut = (Teuchos::rank(*comm) == 0) ? std::cout : Teuchos::oblackholestream;
+  //std::ostream& finalOut = (pComm->MyPID() == 0) ? std::cout : Teuchos::oblackholestream;
 
   if (numFailed != 0)
     {
@@ -473,13 +486,16 @@ main (int argc, char *argv[])
 
       // The Trilinos test framework depends on seeing this message,
       // so don't rely on the OutputManager to report it correctly.
-      if (Teuchos::rank(*comm) == 0)
-	std::cout << "End Result: TEST FAILED" << endl;	
+      if (pComm->MyPID() == 0)
+	{
+	  std::cout << "Total number of errors: " << numFailed << endl;
+	  std::cout << "End Result: TEST FAILED" << endl;	
+	}
       return EXIT_FAILURE;
     }
   else 
     {
-      if (Teuchos::rank(*comm) == 0)
+      if (pComm->MyPID() == 0)
 	std::cout << "End Result: TEST PASSED" << endl;
       return EXIT_SUCCESS;
     }
