@@ -4004,9 +4004,19 @@ are indicated by the index.size() indices in index.
 
 Pointer to the new multivector ";
 
-%feature("docstring")  Anasazi::MultiVec::CloneView "virtual
+%feature("docstring")  Anasazi::MultiVec::CloneView "virtual const
 MultiVec<ScalarType>* Anasazi::MultiVec< ScalarType >::CloneView(const
-std::vector< int > &index)=0
+std::vector< int > &index) const =0
+
+Creates a new Anasazi::MultiVec that shares the selected contents of
+*this. The index of the numvecs vectors shallow copied from *this are
+indicated by the indices given in index.
+
+Pointer to the new multivector ";
+
+%feature("docstring")  Anasazi::MultiVec::CloneViewNonConst "virtual
+MultiVec<ScalarType>* Anasazi::MultiVec< ScalarType
+>::CloneViewNonConst(const std::vector< int > &index)=0
 
 Creates a new Anasazi::MultiVec that shares the selected contents of
 *this. The index of the numvecs vectors shallow copied from *this are
@@ -4148,9 +4158,8 @@ The copied vectors from mv are indicated by the index.size() indices
 in index. Reference-counted pointer to the new multivector of type MV.
 ";
 
-%feature("docstring")  Anasazi::MultiVecTraits::CloneView "static
-Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
->::CloneView(MV &mv, const std::vector< int > &index)
+%feature("docstring")  Anasazi::MultiVecTraits::CloneViewNonConst "static Teuchos::RCP<MV> Anasazi::MultiVecTraits< ScalarType, MV
+>::CloneViewNonConst(MV &mv, const std::vector< int > &index)
 
 Creates a new MV that shares the selected contents of mv (shallow
 copy).
@@ -4199,6 +4208,18 @@ alpha, const MV &A, const ScalarType beta, const MV &B, MV &mv)
 
 Replace mv with $\\\\alpha A + \\\\beta B$. ";
 
+%feature("docstring")  Anasazi::MultiVecTraits::MvScale "static void
+Anasazi::MultiVecTraits< ScalarType, MV >::MvScale(MV &mv, const
+ScalarType alpha)
+
+Scale each element of the vectors in mv with alpha. ";
+
+%feature("docstring")  Anasazi::MultiVecTraits::MvScale "static void
+Anasazi::MultiVecTraits< ScalarType, MV >::MvScale(MV &mv, const
+std::vector< ScalarType > &alpha)
+
+Scale each element of the i-th vector in mv with alpha[i]. ";
+
 %feature("docstring")  Anasazi::MultiVecTraits::MvTransMv "static
 void Anasazi::MultiVecTraits< ScalarType, MV >::MvTransMv(const
 ScalarType alpha, const MV &A, const MV &mv,
@@ -4214,18 +4235,6 @@ MV &A, std::vector< ScalarType > &b)
 Compute a vector b where the components are the individual dot-
 products of the i-th columns of A and mv, i.e. $b[i] = A[i]^Hmv[i]$.
 ";
-
-%feature("docstring")  Anasazi::MultiVecTraits::MvScale "static void
-Anasazi::MultiVecTraits< ScalarType, MV >::MvScale(MV &mv, const
-ScalarType alpha)
-
-Scale each element of the vectors in mv with alpha. ";
-
-%feature("docstring")  Anasazi::MultiVecTraits::MvScale "static void
-Anasazi::MultiVecTraits< ScalarType, MV >::MvScale(MV &mv, const
-std::vector< ScalarType > &alpha)
-
-Scale each element of the i-th vector in mv with alpha[i]. ";
 
 /*  Norm method  */
 
@@ -4316,10 +4325,10 @@ The copied vectors from mv are indicated by the index.size() indices
 in index. Reference-counted pointer to the new  Anasazi::MultiVec. ";
 
 %feature("docstring")  Anasazi::MultiVecTraits< ScalarType, MultiVec<
-ScalarType > >::CloneView " static Teuchos::RCP<MultiVec<ScalarType> >
-Anasazi::MultiVecTraits< ScalarType, MultiVec< ScalarType >
->::CloneView(MultiVec< ScalarType > &mv, const std::vector< int >
-&index)
+ScalarType > >::CloneViewNonConst " static
+Teuchos::RCP<MultiVec<ScalarType> > Anasazi::MultiVecTraits<
+ScalarType, MultiVec< ScalarType > >::CloneViewNonConst(MultiVec<
+ScalarType > &mv, const std::vector< int > &index)
 
 Creates a new  Anasazi::MultiVec that shares the selected contents of
 mv (shallow copy).
@@ -4455,6 +4464,13 @@ ScalarType, MultiVec< ScalarType > >::MvPrint(const MultiVec<
 ScalarType > &mv, std::ostream &os)
 
 Print the mv multi-vector to the os output stream. ";
+
+
+// File: classAnasazi_1_1NonNullOperatorError.xml
+%feature("docstring") Anasazi::NonNullOperatorError "";
+
+%feature("docstring")
+Anasazi::NonNullOperatorError::NonNullOperatorError "Anasazi::NonNullOperatorError::NonNullOperatorError() ";
 
 
 // File: classAnasazi_1_1Operator.xml
@@ -6873,6 +6889,462 @@ measured as the Frobenius norm of innerProd(X,Y). The method has the
 option of exploiting a caller-provided MX. ";
 
 
+// File: classAnasazi_1_1TsqrAdaptor.xml
+%feature("docstring") Anasazi::TsqrAdaptor "
+
+Map from multivector class to TSQR adaptor class.
+
+C++ includes: AnasaziTsqrAdaptor.hpp ";
+
+
+// File: classAnasazi_1_1TsqrMatOrthoManager.xml
+%feature("docstring") Anasazi::TsqrMatOrthoManager "
+
+MatOrthoManager subclass using TSQR or SVQB.
+
+Subclass of MatOrthoManager. When getOp() == null (Euclidean inner
+product), uses TSQR + Block Gram-Schmidt for orthogonalization. When
+getOp() != null, uses SVQBOrthoManager (Stathopoulos and Wu 2002:
+CholeskyQR + SVD) for orthogonalization. Avoids communication in
+either case. Initialization of either orthogonalization manager is
+\"lazy,\" so you don't have to pay for scratch space if you don't use
+it.
+
+C++ includes: AnasaziTsqrOrthoManager.hpp ";
+
+%feature("docstring")
+Anasazi::TsqrMatOrthoManager::TsqrMatOrthoManager "Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
+>::TsqrMatOrthoManager()
+
+Default constructor (sets Op to Teuchos::null). ";
+
+%feature("docstring")
+Anasazi::TsqrMatOrthoManager::TsqrMatOrthoManager "Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
+>::TsqrMatOrthoManager(const Teuchos::ParameterList &tsqrParams,
+Teuchos::RCP< const OP > Op=Teuchos::null)
+
+Constructor.
+
+Parameters:
+-----------
+
+tsqrParams:  [in] Parameters used to initialize TSQR
+
+Op:  [in] Inner product with respect to which to orthogonalize
+vectors. If Teuchos::null, use the Euclidean inner product. ";
+
+%feature("docstring")
+Anasazi::TsqrMatOrthoManager::~TsqrMatOrthoManager "virtual
+Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
+>::~TsqrMatOrthoManager()
+
+Destructor. ";
+
+%feature("docstring")  Anasazi::TsqrMatOrthoManager::setOp "virtual
+void Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
+>::setOp(Teuchos::RCP< const OP > Op)
+
+Return the inner product operator.
+
+Return the inner product operator used for orthogonalization. If it is
+Teuchos::null, then the vectors are orthogonalized with respect to the
+Euclidean inner product.
+
+We override the base class' setOp() so that the SVQBOrthoManager gets
+the new op. ";
+
+%feature("docstring")  Anasazi::TsqrMatOrthoManager::getOp "virtual
+Teuchos::RCP< const OP > Anasazi::TsqrMatOrthoManager< ScalarType, MV,
+OP >::getOp() const
+
+We override only to help C++ do name lookup in the other member
+functions. ";
+
+%feature("docstring")  Anasazi::TsqrMatOrthoManager::projectMat "virtual void Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
+>::projectMat(MV &X, const_prev_mvs_type Q, prev_coeffs_type
+C=Teuchos::tuple(serial_matrix_ptr(Teuchos::null)), mv_ptr
+MX=Teuchos::null, const_prev_mvs_type
+MQ=Teuchos::tuple(const_mv_ptr(Teuchos::null))) const ";
+
+%feature("docstring")  Anasazi::TsqrMatOrthoManager::normalizeMat "virtual int Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
+>::normalizeMat(MV &X, serial_matrix_ptr B=Teuchos::null, mv_ptr
+MX=Teuchos::null) const ";
+
+%feature("docstring")
+Anasazi::TsqrMatOrthoManager::projectAndNormalizeMat "virtual int
+Anasazi::TsqrMatOrthoManager< ScalarType, MV, OP
+>::projectAndNormalizeMat(MV &X, const_prev_mvs_type Q,
+prev_coeffs_type C=Teuchos::tuple(serial_matrix_ptr(Teuchos::null)),
+serial_matrix_ptr B=Teuchos::null, mv_ptr MX=Teuchos::null,
+const_prev_mvs_type MQ=Teuchos::tuple(const_mv_ptr(Teuchos::null)))
+const ";
+
+%feature("docstring")  Anasazi::TsqrMatOrthoManager::orthonormErrorMat
+"virtual magnitude_type Anasazi::TsqrMatOrthoManager< ScalarType, MV,
+OP >::orthonormErrorMat(const MV &X, const_mv_ptr MX=Teuchos::null)
+const ";
+
+%feature("docstring")  Anasazi::TsqrMatOrthoManager::orthogErrorMat "virtual magnitude_type Anasazi::TsqrMatOrthoManager< ScalarType, MV,
+OP >::orthogErrorMat(const MV &X, const MV &Y, const_mv_ptr
+MX=Teuchos::null, const_mv_ptr MY=Teuchos::null) const ";
+
+
+// File: classAnasazi_1_1TsqrOrthoError.xml
+%feature("docstring") Anasazi::TsqrOrthoError "
+
+TsqrOrthoManager(Impl) error.
+
+C++ includes: AnasaziTsqrOrthoManager.hpp ";
+
+%feature("docstring")  Anasazi::TsqrOrthoError::TsqrOrthoError "Anasazi::TsqrOrthoError::TsqrOrthoError(const std::string &what_arg)
+";
+
+
+// File: classAnasazi_1_1TsqrOrthoFault.xml
+%feature("docstring") Anasazi::TsqrOrthoFault "
+
+Orthogonalization fault.
+
+Stewart (SISC 2008) gives a Block Gram-Schmidt (BGS) with
+reorthogonalization algorithm. An \"orthogonalization fault\" is what
+happens when the second BGS pass does not succeed (which is possible
+in BGS, but not possible in (non-block) Gram-Schmidt if you use
+Stewart's randomization procedure). Stewart gives an algorithm for
+recovering from an orthogonalization fault, but the algorithm is
+expensive: it involves careful reorthogonalization with non-block
+Gram-Schmidt. We choose instead to report the orthogonalization fault
+and let users recover from it.
+
+This is not a (subclass of) TsqrOrthoError, because the latter is a
+logic or runtime bug, whereas a TsqrOrthoFault is a property of the
+input and admits recovery.
+
+C++ includes: AnasaziTsqrOrthoManager.hpp ";
+
+%feature("docstring")  Anasazi::TsqrOrthoFault::TsqrOrthoFault "Anasazi::TsqrOrthoFault::TsqrOrthoFault(const std::string &what_arg)
+";
+
+
+// File: classAnasazi_1_1TsqrOrthoManager.xml
+%feature("docstring") Anasazi::TsqrOrthoManager "
+
+TSQR-based OrthoManager subclass.
+
+This is the actual subclass of OrthoManager, implemented using
+TsqrOrthoManagerImpl (TSQR + Block Gram-Schmidt).
+
+C++ includes: AnasaziTsqrOrthoManager.hpp ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::TsqrOrthoManager "Anasazi::TsqrOrthoManager< ScalarType, MV >::TsqrOrthoManager(const
+Teuchos::ParameterList &tsqrParams) ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::~TsqrOrthoManager "virtual Anasazi::TsqrOrthoManager< ScalarType, MV
+>::~TsqrOrthoManager() ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::innerProd "virtual
+void Anasazi::TsqrOrthoManager< ScalarType, MV >::innerProd(const MV
+&X, const MV &Y, Teuchos::SerialDenseMatrix< int, ScalarType > &Z)
+const
+
+Provides the inner product defining the orthogonality concepts.
+
+All concepts of orthogonality discussed in this class are defined with
+respect to this inner product.
+
+This is potentially different from MultiVecTraits::MvTransMv(). For
+example, it is customary in many eigensolvers to exploit a mass matrix
+M for the inner product: $x^HMx$.
+
+Parameters:
+-----------
+
+Z:  [out] Z(i,j) contains the inner product of X[i] and Y[i]: \\\\[
+Z(i,j) = \\\\langle X[i], Y[i] \\\\rangle \\\\] ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::norm "virtual void
+Anasazi::TsqrOrthoManager< ScalarType, MV >::norm(const MV &X,
+std::vector< typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType > &normvec) const
+
+Provides the norm induced by innerProd().
+
+This computes the norm for each column of a multivector. This is the
+norm induced by innerProd(): \\\\[ \\\\|x\\\\| = \\\\sqrt{\\\\langle
+x, x \\\\rangle} \\\\]
+
+Parameters:
+-----------
+
+normvec:  [out] Vector of norms, whose i-th entry corresponds to the
+i-th column of X
+
+normvec.size() == GetNumberVecs(X) ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::project "virtual
+void Anasazi::TsqrOrthoManager< ScalarType, MV >::project(MV &X,
+Teuchos::Array< Teuchos::RCP< const MV > > Q, Teuchos::Array<
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > > >
+C=Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > >(Teuchos::null))) const
+
+Given a list of mutually orthogonal and internally orthonormal bases
+Q, this method projects a multivector X onto the space orthogonal to
+the individual Q[i], optionally returning the coefficients of X for
+the individual Q[i]. All of this is done with respect to the inner
+product innerProd().
+
+After calling this routine, X will be orthogonal to each of the Q[i].
+
+Parameters:
+-----------
+
+X:  [in/out] The multivector to be modified.  On output, the columns
+of X will be orthogonal to each Q[i], satisfying \\\\[ \\\\langle
+Q[i], X_{out} \\\\rangle = 0 \\\\] Also, \\\\[ X_{out} = X_{in} -
+\\\\sum_i Q[i] \\\\langle Q[i], X_{in} \\\\rangle \\\\]
+
+Q:  [in] A list of multivector bases specifying the subspaces to be
+orthogonalized against, satisfying \\\\[ \\\\langle Q[i], Q[j]
+\\\\rangle = I \\\\quad\\\\textrm{if}\\\\quad i=j \\\\] and \\\\[
+\\\\langle Q[i], Q[j] \\\\rangle = 0 \\\\quad\\\\textrm{if}\\\\quad i
+\\\\neq j\\\\ . \\\\]
+
+C:  [out] The coefficients of X in the bases Q[i]. If C[i] is a non-
+null pointer and C[i] matches the dimensions of X and Q[i], then the
+coefficients computed during the orthogonalization routine will be
+stored in the matrix C[i], similar to calling If C[i] points to a
+Teuchos::SerialDenseMatrix with size inconsistent with X and  Q[i],
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+C.size() < i or C[i] is a null pointer, the caller will not have
+access to the computed coefficients. ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::normalize "virtual
+int Anasazi::TsqrOrthoManager< ScalarType, MV >::normalize(MV &X,
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null) const
+
+This method takes a multivector X and attempts to compute a basis for
+$colspan(X)$. This basis is orthonormal with respect to innerProd().
+
+This routine returns an integer rank stating the rank of the computed
+basis. If X does not have full rank and the normalize() routine does
+not attempt to augment the subspace, then rank may be smaller than the
+number of columns in X. In this case, only the first rank columns of
+output X and first rank rows of B will be valid.
+
+Parameters:
+-----------
+
+X:  [in/out] The multivector to be modified.  On output, the first
+rank columns of X satisfy \\\\[ \\\\langle X[i], X[j] \\\\rangle =
+\\\\delta_{ij}\\\\ . \\\\] Also, \\\\[ X_{in}(1:m,1:n) =
+X_{out}(1:m,1:rank) B(1:rank,1:n)\\\\ , \\\\] where m is the number of
+rows in X and n is the number of columns in X.
+
+B:  [out] The coefficients of the original X with respect to the
+computed basis. If B is a non-null pointer and B matches the
+dimensions of B, then the coefficients computed during the
+orthogonalization routine will be stored in B, similar to calling If B
+points to a Teuchos::SerialDenseMatrix with size inconsistent with X,
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+B is null, the caller will not have access to the computed
+coefficients.
+
+This matrix is not necessarily triangular (as in a QR factorization);
+see the documentation of specific orthogonalization managers.
+
+Rank of the basis computed by this method, less than or equal to the
+number of columns in X. This specifies how many columns in the
+returned X and rows in the returned B are valid. ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::projectAndNormalize
+"virtual int Anasazi::TsqrOrthoManager< ScalarType, MV
+>::projectAndNormalize(MV &X, Teuchos::Array< Teuchos::RCP< const MV >
+> Q, Teuchos::Array< Teuchos::RCP< Teuchos::SerialDenseMatrix< int,
+ScalarType > > > C=Teuchos::tuple(Teuchos::RCP<
+Teuchos::SerialDenseMatrix< int, ScalarType > >(Teuchos::null)),
+Teuchos::RCP< Teuchos::SerialDenseMatrix< int, ScalarType > >
+B=Teuchos::null) const
+
+Given a set of bases Q[i] and a multivector X, this method computes an
+orthonormal basis for $colspan(X) - \\\\sum_i colspan(Q[i])$.
+
+This routine returns an integer rank stating the rank of the computed
+basis. If the subspace $colspan(X) - \\\\sum_i colspan(Q[i])$ does not
+have dimension as large as the number of columns of X and the
+orthogonalization manager does not attempt to augment the subspace,
+then rank may be smaller than the number of columns of X. In this
+case, only the first rank columns of output X and first rank rows of B
+will be valid.
+
+This routine guarantees both the orthogonality of the returned basis
+against the Q[i] as well as the orthonormality of the returned basis.
+Therefore, this method is not necessarily equivalent to calling
+project() followed by a call to normalize(); see the documentation for
+specific orthogonalization managers.
+
+Parameters:
+-----------
+
+X:  [in/out] On output, the first rank columns of X satisfy \\\\[
+\\\\langle X[i], X[j] \\\\rangle = \\\\delta_{ij} \\\\quad
+\\\\textrm{and} \\\\quad \\\\langle X, Q[i] \\\\rangle = 0\\\\ . \\\\]
+Also, \\\\[ X_{in}(1:m,1:n) = X_{out}(1:m,1:rank) B(1:rank,1:n) +
+\\\\sum_i Q[i] C[i] \\\\] where m is the number of rows in X and n is
+the number of columns in X.
+
+Q:  [in] A list of multivector bases specifying the subspaces to be
+orthogonalized against, satisfying \\\\[ \\\\langle Q[i], Q[j]
+\\\\rangle = I \\\\quad\\\\textrm{if}\\\\quad i=j \\\\] and \\\\[
+\\\\langle Q[i], Q[j] \\\\rangle = 0 \\\\quad\\\\textrm{if}\\\\quad i
+\\\\neq j\\\\ . \\\\]
+
+C:  [out] The coefficients of X in the Q[i]. If C[i] is a non-null
+pointer and C[i] matches the dimensions of X and Q[i], then the
+coefficients computed during the orthogonalization routine will be
+stored in the matrix C[i], similar to calling If C[i] points to a
+Teuchos::SerialDenseMatrix with size inconsistent with X and  Q[i],
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+C.size() < i or C[i] is a null pointer, the caller will not have
+access to the computed coefficients.
+
+B:  [out] The coefficients of the original X with respect to the
+computed basis. If B is a non-null pointer and B matches the
+dimensions of B, then the coefficients computed during the
+orthogonalization routine will be stored in B, similar to calling If B
+points to a Teuchos::SerialDenseMatrix with size inconsistent with X,
+then a std::invalid_argument exception will be thrown.  Otherwise, if
+B is null, the caller will not have access to the computed
+coefficients.
+
+This matrix is not necessarily triangular (as in a QR factorization);
+see the documentation of specific orthogonalization managers.
+
+Rank of the basis computed by this method, less than or equal to the
+number of columns in X. This specifies how many columns in the
+returned X and rows in the returned B are valid. ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::orthonormError "virtual Teuchos::ScalarTraits< ScalarType >::magnitudeType
+Anasazi::TsqrOrthoManager< ScalarType, MV >::orthonormError(const MV
+&X) const
+
+This method computes the error in orthonormality of a multivector.
+
+This method return some measure of $\\\\| \\\\langle X, X \\\\rangle -
+I \\\\| $.  See the documentation of specific orthogonalization
+managers. ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManager::orthogError "virtual Teuchos::ScalarTraits<ScalarType>::magnitudeType
+Anasazi::TsqrOrthoManager< ScalarType, MV >::orthogError(const MV &X1,
+const MV &X2) const
+
+This method computes the error in orthogonality of two multivectors.
+
+This method return some measure of $\\\\| \\\\langle X1, X2 \\\\rangle
+\\\\| $.  See the documentation of specific orthogonalization
+managers. ";
+
+
+// File: classAnasazi_1_1TsqrOrthoManagerImpl.xml
+%feature("docstring") Anasazi::TsqrOrthoManagerImpl "
+
+TSQR-based OrthoManager subclass implementation.
+
+TsqrOrthoManagerImpl implements the interface defined by OrthoManager.
+It doesn't actually inherit from OrthoManager, which gives us a bit
+more freedom when defining the actual subclass of OrthoManager (
+TsqrOrthoManager).
+
+This class uses a combination of Tall Skinny QR (TSQR) and Block Gram-
+Schmidt (BGS) to orthogonalize multivectors.
+
+The Block Gram-Schmidt procedure used here is inspired by that of G.
+W. Stewart (\"Block Gram-Schmidt Orthogonalization\", SISC vol 31 #1
+pp. 761--775, 2008), except that we use TSQR+SVD instead of standard
+Gram-Schmidt with orthogonalization to handle the current block.
+\"Orthogonalization faults\" may still happen, but we do not handle
+them by default. Rather, we make one BGS pass, do TSQR+SVD, check the
+resulting column norms, and make a second BGS pass (+ TSQR+SVD) if
+necessary. If we then detect an orthogonalization fault, we throw
+TsqrOrthoFault.
+
+C++ includes: AnasaziTsqrOrthoManager.hpp ";
+
+%feature("docstring")
+Anasazi::TsqrOrthoManagerImpl::TsqrOrthoManagerImpl "Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
+>::TsqrOrthoManagerImpl(const Teuchos::ParameterList &tsqrParams)
+
+Constructor.
+
+Parameters:
+-----------
+
+tsqrParams:  [in] Configuration parameters for TSQR. See TSQR
+documentation for how to set those. They depend on which multivector
+(MV) class you are using (since each MV class maps to a specific TSQR
+implementation).
+
+Op:  [in] Inner product. Don't set to anything not Teuchos::null,
+otherwise an exception will be thrown. Also, don't call setOp(). ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManagerImpl::innerProd "void
+Anasazi::TsqrOrthoManagerImpl< ScalarType, MV >::innerProd(const MV
+&X, const MV &Y, serial_matrix_type &Z) const ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManagerImpl::norm "void
+Anasazi::TsqrOrthoManagerImpl< ScalarType, MV >::norm(const MV &X,
+std::vector< MagnitudeType > &normvec) const ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManagerImpl::project "void
+Anasazi::TsqrOrthoManagerImpl< ScalarType, MV >::project(MV &X,
+const_prev_mvs_type Q, prev_coeffs_type
+C=Teuchos::tuple(serial_matrix_ptr(Teuchos::null))) const
+
+Compute $C := Q^* X$ and $X := X - Q C$.
+
+WARNING:  This method does not do reorthogonalization. This is because
+the reorthogonalization test requires normalization as well. ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManagerImpl::normalize "int
+Anasazi::TsqrOrthoManagerImpl< ScalarType, MV >::normalize(MV &X,
+serial_matrix_ptr B=Teuchos::null) ";
+
+%feature("docstring")
+Anasazi::TsqrOrthoManagerImpl::projectAndNormalize "int
+Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
+>::projectAndNormalize(MV &X, const_prev_mvs_type Q, prev_coeffs_type
+C=Teuchos::tuple(serial_matrix_ptr(Teuchos::null)), serial_matrix_ptr
+B=Teuchos::null) ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManagerImpl::orthonormError "MagnitudeType Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
+>::orthonormError(const MV &X) const
+
+Return $ \\\\| I - X^* \\\\cdot X \\\\|_F $.
+
+Return the Frobenius norm of I - X^* X, which is an absolute measure
+of the orthogonality of the columns of X. ";
+
+%feature("docstring")  Anasazi::TsqrOrthoManagerImpl::orthogError "MagnitudeType Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
+>::orthogError(const MV &X1, const MV &X2) const ";
+
+%feature("docstring")
+Anasazi::TsqrOrthoManagerImpl::blockReorthogThreshold "MagnitudeType
+Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
+>::blockReorthogThreshold() const
+
+Relative tolerance for triggering a block reorthogonalization. If any
+column norm in a block decreases by this amount, then we
+reorthogonalize. ";
+
+%feature("docstring")
+Anasazi::TsqrOrthoManagerImpl::relativeRankTolerance "MagnitudeType
+Anasazi::TsqrOrthoManagerImpl< ScalarType, MV
+>::relativeRankTolerance() const
+
+Relative tolerance for determining (via the SVD) whether a block is of
+full numerical rank. ";
+
+
 // File: structAnasazi_1_1UndefinedDenseMatTraits.xml
 %feature("docstring") Anasazi::UndefinedDenseMatTraits "
 
@@ -7072,16 +7544,22 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziSVQBOrthoManager_8hpp.xml
 
 
+// File: AnasaziTsqrAdaptor_8hpp.xml
+
+
+// File: AnasaziTsqrOrthoManager_8hpp.xml
+
+
 // File: AnasaziTypes_8hpp.xml
 
 
 // File: AnasaziVersion_8cpp.xml
 
 
-// File: dir_dc5a21cdf9ae5c2aac185b6aad0b5f42.xml
+// File: dir_8f983d347b184c700dae93e0e3738fe1.xml
 
 
-// File: dir_7c2139b3455d9e99d84c8cdfb950729b.xml
+// File: dir_af06fb6c54d4c652eacc03e73e36cb53.xml
 
 
 // File: BlockDavidson_2BlockDavidsonEpetraEx_8cpp-example.xml

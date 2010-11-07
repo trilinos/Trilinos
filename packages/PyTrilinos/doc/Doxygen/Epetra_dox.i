@@ -852,6 +852,20 @@ double *A, const int LDA, double *B, const int LDB) const
 
 Epetra_BLAS triangular matrix-matrix multiply function (DTRMM). ";
 
+%feature("docstring")  Epetra_BLAS::SYRK "void
+Epetra_BLAS::SYRK(const char UPLO, const char TRANS, const int N,
+const int K, const float ALPHA, const float *A, const int LDA, const
+float BETA, float *C, const int LDC) const
+
+Eperta_BLAS symetric rank k funtion (ssyrk). ";
+
+%feature("docstring")  Epetra_BLAS::SYRK "void
+Epetra_BLAS::SYRK(const char UPLO, const char TRANS, const int N,
+const int K, const double ALPHA, const double *A, const int LDA, const
+double BETA, double *C, const int LDC) const
+
+Eperta_BLAS symetric rank k funtion (dsyrk). ";
+
 
 // File: classEpetra__BlockMap.xml
 %feature("docstring") Epetra_BlockMap "
@@ -3187,6 +3201,9 @@ C++ includes: Epetra_CrsGraphData.h ";
 deallocations.  */
 
 
+// File: structEpetra__CrsGraphData_1_1EntriesInOneRow.xml
+
+
 // File: classEpetra__CrsMatrix.xml
 %feature("docstring") Epetra_CrsMatrix "
 
@@ -3511,6 +3528,47 @@ All values of this have been multiplied by ScalarConstant. ";
 
 %feature("docstring")  Epetra_CrsMatrix::InsertGlobalValues "int
 Epetra_CrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
+const double *Values, const int *Indices)
+
+Insert a list of elements in a given global row of the matrix.
+
+This method is used to construct a matrix for the first time. It
+cannot be used if the matrix structure has already been fixed (via a
+call to FillComplete()). If multiple values are inserted for the same
+matrix entry, the values are initially stored separately, so memory
+use will grow as a result. However, when FillComplete is called the
+values will be summed together and the additional memory will be
+released.
+
+For example, if the values 2.0, 3.0 and 4.0 are all inserted in Row 1,
+Column 2, extra storage is used to store each of the three values
+separately. In this way, the insert process does not require any
+searching and can be faster. However, when FillComplete() is called,
+the values will be summed together to equal 9.0 and only a single
+entry will remain in the matrix for Row 1, Column 2.
+
+Parameters:
+-----------
+
+GlobalRow:  - (In) Row number (in global coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Global column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if the allocated
+length of the row has to be expanded, a positive warning code will be
+returned.
+
+WARNING:  This method may not be called once FillComplete() has been
+called.
+
+IndicesAreLocal()==false && IndicesAreContiguous()==false ";
+
+%feature("docstring")  Epetra_CrsMatrix::InsertGlobalValues "int
+Epetra_CrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
 double *Values, int *Indices)
 
 Insert a list of elements in a given global row of the matrix.
@@ -3552,7 +3610,7 @@ IndicesAreLocal()==false && IndicesAreContiguous()==false ";
 
 %feature("docstring")  Epetra_CrsMatrix::ReplaceGlobalValues "int
 Epetra_CrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
-double *Values, int *Indices)
+const double *Values, const int *Indices)
 
 Replace specified existing values with this list of entries for a
 given global row of the matrix.
@@ -3577,7 +3635,7 @@ IndicesAreLocal()==false && IndicesAreContiguous()==false ";
 
 %feature("docstring")  Epetra_CrsMatrix::SumIntoGlobalValues "int
 Epetra_CrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
-double *Values, int *Indices)
+const double *Values, const int *Indices)
 
 Add this list of entries to existing values for a given global row of
 the matrix.
@@ -3599,6 +3657,33 @@ input value will be ignored and a positive warning code will be
 returned.
 
 IndicesAreLocal()==false && IndicesAreContiguous()==false ";
+
+%feature("docstring")  Epetra_CrsMatrix::InsertMyValues "int
+Epetra_CrsMatrix::InsertMyValues(int MyRow, int NumEntries, const
+double *Values, const int *Indices)
+
+Insert a list of elements in a given local row of the matrix.
+
+Parameters:
+-----------
+
+MyRow:  - (In) Row number (in local coordinates) to put elements.
+
+NumEntries:  - (In) Number of entries.
+
+Values:  - (In) Values to enter.
+
+Indices:  - (In) Local column indices corresponding to values.
+
+Integer error code, set to 0 if successful. Note that if the allocated
+length of the row has to be expanded, a positive warning code will be
+returned.
+
+IndicesAreGlobal()==false && ( IndicesAreContiguous()==false ||
+CV_==View)
+
+The given local row of the matrix has been updated as described above.
+";
 
 %feature("docstring")  Epetra_CrsMatrix::InsertMyValues "int
 Epetra_CrsMatrix::InsertMyValues(int MyRow, int NumEntries, double
@@ -3628,8 +3713,8 @@ The given local row of the matrix has been updated as described above.
 ";
 
 %feature("docstring")  Epetra_CrsMatrix::ReplaceMyValues "int
-Epetra_CrsMatrix::ReplaceMyValues(int MyRow, int NumEntries, double
-*Values, int *Indices)
+Epetra_CrsMatrix::ReplaceMyValues(int MyRow, int NumEntries, const
+double *Values, const int *Indices)
 
 Replace current values with this list of entries for a given local row
 of the matrix.
@@ -3655,8 +3740,8 @@ IndicesAreLocal()==true
 MyRow contains the given list of Values at the given Indices. ";
 
 %feature("docstring")  Epetra_CrsMatrix::SumIntoMyValues "int
-Epetra_CrsMatrix::SumIntoMyValues(int MyRow, int NumEntries, double
-*Values, int *Indices)
+Epetra_CrsMatrix::SumIntoMyValues(int MyRow, int NumEntries, const
+double *Values, const int *Indices)
 
 Add this list of entries to existing values for a given local row of
 the matrix.
@@ -5776,25 +5861,27 @@ C++ includes: Epetra_FECrsGraph.h ";
 
 %feature("docstring")  Epetra_FECrsGraph::Epetra_FECrsGraph "Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV, const
 Epetra_BlockMap &RowMap, int *NumIndicesPerRow, bool
-ignoreNonLocalEntries=false)
+ignoreNonLocalEntries=false, bool buildNonlocalGraph=false)
 
 Constructor ";
 
 %feature("docstring")  Epetra_FECrsGraph::Epetra_FECrsGraph "Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV, const
 Epetra_BlockMap &RowMap, int NumIndicesPerRow, bool
-ignoreNonLocalEntries=false)
+ignoreNonLocalEntries=false, bool buildNonlocalGraph=false)
 
 Constructor ";
 
 %feature("docstring")  Epetra_FECrsGraph::Epetra_FECrsGraph "Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV, const
 Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, int
-*NumIndicesPerRow, bool ignoreNonLocalEntries=false)
+*NumIndicesPerRow, bool ignoreNonLocalEntries=false, bool
+buildNonlocalGraph=false)
 
 Constructor ";
 
 %feature("docstring")  Epetra_FECrsGraph::Epetra_FECrsGraph "Epetra_FECrsGraph::Epetra_FECrsGraph(Epetra_DataAccess CV, const
 Epetra_BlockMap &RowMap, const Epetra_BlockMap &ColMap, int
-NumIndicesPerRow, bool ignoreNonLocalEntries=false)
+NumIndicesPerRow, bool ignoreNonLocalEntries=false, bool
+buildNonlocalGraph=false)
 
 Constructor ";
 
@@ -5884,6 +5971,9 @@ this matrix.
 
 error-code 0 if successful, non-zero if some error occurs ";
 
+%feature("docstring")  Epetra_FECrsGraph::UseNonlocalGraph "bool
+Epetra_FECrsGraph::UseNonlocalGraph() const ";
+
 
 // File: classEpetra__FECrsMatrix.xml
 %feature("docstring") Epetra_FECrsMatrix "
@@ -5972,6 +6062,11 @@ Epetra_CrsGraph &Graph, bool ignoreNonLocalEntries=false)
 
 Constructor. ";
 
+%feature("docstring")  Epetra_FECrsMatrix::Epetra_FECrsMatrix "Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV, const
+Epetra_FECrsGraph &Graph, bool ignoreNonLocalEntries=false)
+
+Constructor. ";
+
 %feature("docstring")  Epetra_FECrsMatrix::Epetra_FECrsMatrix "Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix &src)
 
 Copy Constructor. ";
@@ -5982,19 +6077,19 @@ Destructor. ";
 
 %feature("docstring")  Epetra_FECrsMatrix::SumIntoGlobalValues "int
 Epetra_FECrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
-double *Values, int *Indices)
+const double *Values, const int *Indices)
 
 override base-class Epetra_CrsMatrix::SumIntoGlobalValues method ";
 
 %feature("docstring")  Epetra_FECrsMatrix::InsertGlobalValues "int
 Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
-double *Values, int *Indices)
+const double *Values, const int *Indices)
 
 override base-class Epetra_CrsMatrix::InsertGlobalValues method ";
 
 %feature("docstring")  Epetra_FECrsMatrix::ReplaceGlobalValues "int
 Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
-double *Values, int *Indices)
+const double *Values, const int *Indices)
 
 override base-class Epetra_CrsMatrix::ReplaceGlobalValues method ";
 
@@ -6819,14 +6914,24 @@ Epetra_FEVector::ReplaceGlobalValues(int numIDs, const int *GIDs,
 const int *numValuesPerID, const double *values, int vectorIndex=0) ";
 
 %feature("docstring")  Epetra_FEVector::GlobalAssemble "int
-Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode=Add)
+Epetra_FEVector::GlobalAssemble(Epetra_CombineMode mode=Add, bool
+reuse_map_and_exporter=false)
 
 Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this vector at
 construction time. Data imported from other processors is stored on
 the owning processor with a \"sumInto\" or accumulate operation. This
 is a collective method -- every processor must enter it before any
-will complete it. ";
+will complete it.
+
+Optimization for power-users: The optional parameter
+'reuse_map_and_exporter' defaults to false. By default, a map that
+describes the non-local data is re-created at each call to
+GlobalAssemble, along with an exporter used to do the communication.
+This is expensive. If you know that the layout of your nonlocal data
+has not changed since your previous call to GlobalAssemble, you can
+set this flag to true and it will reuse the previously created map and
+exporter rather than creating new ones. ";
 
 %feature("docstring")  Epetra_FEVector::setIgnoreNonLocalEntries "void Epetra_FEVector::setIgnoreNonLocalEntries(bool flag)
 
@@ -8865,6 +8970,22 @@ Epetra_LAPACK::LAMCH(const char CMACH, double &T) const
 Epetra_LAPACK wrapper for SLAMCH routine. On out, T holds machine
 single precision floating point characteristics. This information is
 returned by the Lapack routine. ";
+
+/*  Triangular solve  */
+
+%feature("docstring")  Epetra_LAPACK::TRTRS "void
+Epetra_LAPACK::TRTRS(const char UPLO, const char TRANS, const char
+DIAG, const int N, const int NRHS, const float *A, const int LDA,
+float *B, const int LDB, int *INFO) const
+
+Epetra_LAPACK wrapper for TRTRS routine. ";
+
+%feature("docstring")  Epetra_LAPACK::TRTRS "void
+Epetra_LAPACK::TRTRS(const char UPLO, const char TRANS, const char
+DIAG, const int N, const int NRHS, const double *A, const int LDA,
+double *B, const int LDB, int *INFO) const
+
+Epetra_LAPACK wrapper for TRTRS routine. ";
 
 
 // File: classEpetra__LinearProblem.xml
@@ -11840,6 +11961,9 @@ Parameters:
 
 Out:  Result - Result[i] contains 1-norm of ith vector.
 
+WARNING:  Map of the this multivector must have unique GIDs
+(UniqueGIDs() must return true).
+
 Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Epetra_MultiVector::Norm2 "int
@@ -11851,6 +11975,9 @@ Parameters:
 -----------
 
 Out:  Result - Result[i] contains 2-norm of ith vector.
+
+WARNING:  Map of the this multivector must have unique GIDs
+(UniqueGIDs() must return true).
 
 Integer error code, set to 0 if successful. ";
 
@@ -11933,6 +12060,9 @@ Parameters:
 
 Out:  Result - Result[i] contains mean value of ith vector.
 
+WARNING:  Map of the this multivector must have unique GIDs
+(UniqueGIDs() must return true).
+
 Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Epetra_MultiVector::Multiply "int
@@ -11976,6 +12106,9 @@ In:  A - Multi-vector.
 In:  B - Multi-vector.
 
 In:  ScalarThis - Scalar to multiply with this.
+
+WARNING:  Map of the distributed multivectors must have unique GIDs
+(UniqueGIDs() must return true).
 
 Integer error code, set to 0 if successful.
 
@@ -17214,6 +17347,17 @@ Note that even after FillComplete() has been called, it is possible to
 update existing matrix entries but it is not possible to create new
 entries.
 
+Using Epetra_VbrMatrix as an Epetra_RowMatrix
+
+Although Epetra_VbrMatrix does inherit from Epetra_RowMatrix, a design
+flaw in the inheritance structure of Epetra prohibits the use of an
+Epetra_VbrMatrix object as an Epetra_RowMatrix in some important
+situations. Therefore we recommend the use of the Epetra_VbrRowMatrix
+class to wrap an Epetra_VbrMatrix object for use as an
+Epetra_RowMatrix. The Epetra_VbrRowMatrix object does not duplicate
+data in the Epetra_VbrMatrix object, but uses it to satisfy the
+Epetra_RowMatrix interface.
+
 Epetra_Map attributes
 
 Epetra_VbrMatrix objects have four Epetra_Map attributes, which are
@@ -19075,8 +19219,8 @@ Epetra_Vector destructor. ";
 /*  Post-construction modification routines  */
 
 %feature("docstring")  Epetra_Vector::ReplaceGlobalValues "int
-Epetra_Vector::ReplaceGlobalValues(int NumEntries, double *Values, int
-*Indices)
+Epetra_Vector::ReplaceGlobalValues(int NumEntries, const double
+*Values, const int *Indices)
 
 Replace values in a vector with a given indexed list of values,
 indices are in global index space.
@@ -19098,8 +19242,8 @@ Integer error code, set to 0 if successful, set to 1 if one or more
 indices are not associated with calling processor. ";
 
 %feature("docstring")  Epetra_Vector::ReplaceMyValues "int
-Epetra_Vector::ReplaceMyValues(int NumEntries, double *Values, int
-*Indices)
+Epetra_Vector::ReplaceMyValues(int NumEntries, const double *Values,
+const int *Indices)
 
 Replace values in a vector with a given indexed list of values,
 indices are in local index space.
@@ -19121,8 +19265,8 @@ Integer error code, set to 0 if successful, set to 1 if one or more
 indices are not associated with calling processor. ";
 
 %feature("docstring")  Epetra_Vector::SumIntoGlobalValues "int
-Epetra_Vector::SumIntoGlobalValues(int NumEntries, double *Values, int
-*Indices)
+Epetra_Vector::SumIntoGlobalValues(int NumEntries, const double
+*Values, const int *Indices)
 
 Sum values into a vector with a given indexed list of values, indices
 are in global index space.
@@ -19144,8 +19288,8 @@ Integer error code, set to 0 if successful, set to 1 if one or more
 indices are not associated with calling processor. ";
 
 %feature("docstring")  Epetra_Vector::SumIntoMyValues "int
-Epetra_Vector::SumIntoMyValues(int NumEntries, double *Values, int
-*Indices)
+Epetra_Vector::SumIntoMyValues(int NumEntries, const double *Values,
+const int *Indices)
 
 Sum values into a vector with a given indexed list of values, indices
 are in local index space.
@@ -19168,7 +19312,7 @@ indices are not associated with calling processor. ";
 
 %feature("docstring")  Epetra_Vector::ReplaceGlobalValues "int
 Epetra_Vector::ReplaceGlobalValues(int NumEntries, int BlockOffset,
-double *Values, int *Indices)
+const double *Values, const int *Indices)
 
 Replace values in a vector with a given indexed list of values at the
 specified BlockOffset, indices are in global index space.
@@ -19199,8 +19343,8 @@ Integer error code, set to 0 if successful, set to 1 if one or more
 indices are not associated with calling processor. ";
 
 %feature("docstring")  Epetra_Vector::ReplaceMyValues "int
-Epetra_Vector::ReplaceMyValues(int NumEntries, int BlockOffset, double
-*Values, int *Indices)
+Epetra_Vector::ReplaceMyValues(int NumEntries, int BlockOffset, const
+double *Values, const int *Indices)
 
 Replace values in a vector with a given indexed list of values at the
 specified BlockOffset, indices are in local index space.
@@ -19232,7 +19376,7 @@ indices are not associated with calling processor. ";
 
 %feature("docstring")  Epetra_Vector::SumIntoGlobalValues "int
 Epetra_Vector::SumIntoGlobalValues(int NumEntries, int BlockOffset,
-double *Values, int *Indices)
+const double *Values, const int *Indices)
 
 Sum values into a vector with a given indexed list of values at the
 specified BlockOffset, indices are in global index space.
@@ -19263,8 +19407,8 @@ Integer error code, set to 0 if successful, set to 1 if one or more
 indices are not associated with calling processor. ";
 
 %feature("docstring")  Epetra_Vector::SumIntoMyValues "int
-Epetra_Vector::SumIntoMyValues(int NumEntries, int BlockOffset, double
-*Values, int *Indices)
+Epetra_Vector::SumIntoMyValues(int NumEntries, int BlockOffset, const
+double *Values, const int *Indices)
 
 Sum values into a vector with a given indexed list of values at the
 specified BlockOffset, indices are in local index space.
@@ -19487,6 +19631,11 @@ const int *, const int *, const double *, const int *, const int *,
 double *, const int *, double *, const int *, const int *, const int
 *) ";
 
+%feature("docstring")  DSYRK_F77 "void PREFIX DSYRK_F77(Epetra_fcd
+uplo, Epetra_fcd trans, const int *n, const int *k, const double
+*alpha, const double *a, const int *lda, const double *beta, double
+*c, const int *ldc) ";
+
 %feature("docstring")  SGEMM_F77 "void PREFIX SGEMM_F77(Epetra_fcd,
 Epetra_fcd, const int *m, const int *n, const int *k, const float
 *alpha, const float *a, const int *lda, const float *b, const int
@@ -19509,6 +19658,11 @@ float *alpha, const float *a, const int *lda, float *b, const int
 
 %feature("docstring")  XERBLA_F77 "void PREFIX XERBLA_F77(Epetra_fcd,
 int *info) ";
+
+%feature("docstring")  SSYRK_F77 "void PREFIX SSYRK_F77(Epetra_fcd
+uplo, Epetra_fcd trans, const int *n, const int *k, const float
+*alpha, const float *a, const int *lda, const float *beta, float *c,
+const int *ldc) ";
 
 
 // File: Epetra__BlockMap_8cpp.xml
@@ -20054,6 +20208,11 @@ int *mm, int *m, double *work, int *info) ";
 const int *n, double *t, const int *ldt, double *q, const int *ldq,
 int *ifst, int *ilst, double *work, int *info) ";
 
+%feature("docstring")  DTRTRS_F77 "void PREFIX DTRTRS_F77(Epetra_fcd
+uplo, Epetra_fcd trans, Epetra_fcd diag, const int *n, const int
+*nrhs, const double *a, const int *lda, double *b, const int *ldb, int
+*info) ";
+
 %feature("docstring")  SGECON_F77 "void PREFIX SGECON_F77(Epetra_fcd
 norm, const int *n, const float *a, const int *lda, const float
 *anorm, float *rcond, float *work, int *iwork, int *info) ";
@@ -20262,6 +20421,11 @@ int *m, float *work, int *info) ";
 %feature("docstring")  STREXC_F77 "void PREFIX STREXC_F77(Epetra_fcd,
 const int *n, float *t, const int *ldt, float *q, const int *ldq, int
 *ifst, int *ilst, float *work, int *info) ";
+
+%feature("docstring")  STRTRS_F77 "void PREFIX STRTRS_F77(Epetra_fcd
+uplo, Epetra_fcd trans, Epetra_fcd diag, const int *n, const int
+*nrhs, const float *a, const int *lda, float *b, const int *ldb, int
+*info) ";
 
 
 // File: Epetra__LinearProblem_8cpp.xml
@@ -20669,8 +20833,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 %feature("docstring")  Epetra_Version "string Epetra_Version() ";
 
 
-// File: dir_18b2d64510239fed06b88e74196cfd3f.xml
+// File: dir_2f5d26c5f83553e3332267445a2b6aa0.xml
 
 
-// File: dir_4368af47e412e90c65d06ecb9459c00d.xml
+// File: dir_48cc903f8a53fa8212fd5a32af1fe45e.xml
 

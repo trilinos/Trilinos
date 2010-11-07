@@ -3906,6 +3906,9 @@ Ifpack_HashTable::print()
 
 Basic printing routine. ";
 
+%feature("docstring")  Ifpack_HashTable::getRecommendedHashSize "int
+Ifpack_HashTable::getRecommendedHashSize(int n) ";
+
 
 // File: classIfpack__IC.xml
 %feature("docstring") Ifpack_IC "
@@ -4506,7 +4509,7 @@ Returns the drop threshold. ";
 // File: classIfpack__IKLU.xml
 %feature("docstring") Ifpack_IKLU "
 
-Ifpack_IKLU: A class for constructing and using an incomplete Cholesky
+Ifpack_IKLU: A class for constructing and using an incomplete LU
 factorization of a given Epetra_RowMatrix.
 
 The Ifpack_IKLU class computes a \"Relaxed\" IKLU factorization with
@@ -5224,14 +5227,18 @@ matrix operator. ";
 // File: classIfpack__ILUT.xml
 %feature("docstring") Ifpack_ILUT "
 
-Ifpack_ILUT: A class for constructing and using an incomplete Cholesky
+Ifpack_ILUT: A class for constructing and using an incomplete LU
 factorization of a given Epetra_RowMatrix.
 
 The Ifpack_ILUT class computes a \"Relaxed\" ILUT factorization with
-level k fill of a given Epetra_RowMatrix.
+dual threshold dropping of small elements of a given Epetra_RowMatrix.
 
-Please refer to ifp_ilu for a general description of the ILU
-algorithm.
+This implementation does not use the algorithm that is described in
+ifp_ilu. The algorithm drops entries in a row (i) of matrix A that are
+smaller than drop_tolerance even before the factorization of row i
+then computes the factorization for that row. This is different than
+the usual algorithm where the drop tolerance is applied to the
+factored rows.
 
 The complete list of supported parameters is reported in page
 ifp_params.
@@ -6889,7 +6896,7 @@ Matrix:  - (In) Pointer to matrix to precondition. ";
 
 Destructor. ";
 
-%feature("docstring")  Ifpack_PointRelaxation::Apply "int
+%feature("docstring")  Ifpack_PointRelaxation::Apply "virtual int
 Ifpack_PointRelaxation::Apply(const Epetra_MultiVector &X,
 Epetra_MultiVector &Y) const
 
@@ -8213,6 +8220,9 @@ Teuchos::StringToIntMap @0::precTypeNameToIntMap(\"parameter
 
 
 // File: Ifpack__Chebyshev_8cpp.xml
+%feature("docstring")  Apply_Transpose "void
+Apply_Transpose(Teuchos::RCP< const Epetra_Operator > Operator_, const
+Epetra_MultiVector &X, Epetra_MultiVector &Y) ";
 
 
 // File: Ifpack__Chebyshev_8h.xml
@@ -8390,6 +8400,12 @@ Ifpack_AIJMatrix *L, double **pdiag) ";
 
 
 // File: Ifpack__ICT_8h.xml
+
+
+// File: Ifpack__IHSS_8cpp.xml
+
+
+// File: Ifpack__IHSS_8h.xml
 
 
 // File: Ifpack__IKLU_8cpp.xml
@@ -8678,10 +8694,22 @@ int(*fkeep)(int, int, double, void *), void *other) ";
 // File: Ifpack__ScalingType_8h.xml
 
 
+// File: Ifpack__SILU_8cpp.xml
+
+
+// File: Ifpack__SILU_8h.xml
+
+
 // File: Ifpack__SingletonFilter_8cpp.xml
 
 
 // File: Ifpack__SingletonFilter_8h.xml
+
+
+// File: Ifpack__SORa_8cpp.xml
+
+
+// File: Ifpack__SORa_8h.xml
 
 
 // File: Ifpack__SparseContainer_8h.xml
@@ -8938,8 +8966,8 @@ IFPACK. ";
 %feature("docstring")  Ifpack_Version "string Ifpack_Version() ";
 
 
-// File: dir_8854a7b0da65cc6c1ac55447f65a4567.xml
+// File: dir_207d99e23ac77274753a810581b3f875.xml
 
 
-// File: dir_e880793e0fae3f15b5813f32a1a6bd45.xml
+// File: dir_0562ae9d8b33a9f28564b6cabeba0009.xml
 
