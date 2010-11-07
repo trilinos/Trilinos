@@ -284,18 +284,22 @@ namespace Belos {
     //! @name Error methods
     //@{ 
 
-    /*! \brief This method computes the error in orthonormality of a multivector, measured
-     * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
-     */
+    /// \brief Compute \fn$\| X^* M X - I \|_F\fn$
+    ///
+    /// This method computes the error in orthonormality of a
+    /// multivector, measured as the Frobenius norm of the difference
+    /// <tt>innerProd(X,X) - I</tt>.
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X) const {
       return orthonormError(X,Teuchos::null);
     }
 
-    /*! \brief This method computes the error in orthonormality of a multivector, measured
-     * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
-     *  The method has the option of exploiting a caller-provided \c MX.
-     */
+    /// \brief Compute \fn$\| X^* M X - I \|_F\fn$
+    ///
+    /// This method computes the error in orthonormality of a
+    /// multivector, measured as the Frobenius norm of the difference
+    /// <tt>innerProd(X,X) - I</tt>.  The method has the option of
+    /// exploiting a caller-provided \c MX, which is used if not null.
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const;
 

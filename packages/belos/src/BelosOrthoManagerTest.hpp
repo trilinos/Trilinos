@@ -170,14 +170,6 @@ namespace Belos {
 	  // not optional.
 	  int initialX2Rank;
 	  {
-	    // FIXME (mfh 04 Nov 2010) TsqrOrthoManager resizes C
-	    // automatically.  The other OrthoManager subclasses in
-	    // Belos don't seem to do this.  The commented-out line
-	    // works fine with TsqrOrthoManager, but not with the
-	    // others.  The current line also doesn't work, but for a
-	    // different reason: the OrthoManager tries to access C[0]
-	    // and fails due to a Teuchos::NullReferenceError.
-	    //Array< RCP< serial_matrix_type > > C;
 	    Array< RCP< serial_matrix_type > > C (1);
 	    RCP< serial_matrix_type > B = Teuchos::null;
 	    initialX2Rank = 
@@ -428,16 +420,26 @@ namespace Belos {
       }
 
 
+      static int
+      testProjectAndNormalize (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM, 
+			       const Teuchos::RCP< const MV >& S, 
+			       const Teuchos::RCP< const MV >& X1, 
+			       const Teuchos::RCP< const MV >& X2,
+			       const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+      {
+	return testProjectAndNormalizeNew (OM, S, X1, X2, MyOM);
+      }
+
       /// Test OrthoManager::projectAndNormalize() for the specific
       /// OrthoManager instance.
       ///
       /// \return Count of errors (should be zero)
       static int 
-      testProjectAndNormalize (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
-			       const Teuchos::RCP< const MV >& S, 
-			       const Teuchos::RCP< const MV >& X1, 
-			       const Teuchos::RCP< const MV >& X2,
-			       const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+      testProjectAndNormalizeOld (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >& OM,
+				  const Teuchos::RCP< const MV >& S, 
+				  const Teuchos::RCP< const MV >& X1, 
+				  const Teuchos::RCP< const MV >& X2,
+				  const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
       {
 	using Teuchos::Array;
 	using Teuchos::null;
@@ -790,13 +792,11 @@ namespace Belos {
 			  magnitude_type(numCols));
 	const magnitude_type TOL = SMT::eps() * fudgeFactor *
 	  SMT::squareroot(magnitude_type(numCols));
+
 	// Absolute tolerance scaling: the Frobenius norm of the test
 	// matrix S.  TOL*ATOL is the absolute tolerance for the
 	// residual $\|A - Q*B\|_F$.
-	
-	std::cerr << "+++ COMPUTING FROB NORM +++" << endl;
 	const magnitude_type ATOL = frobeniusNorm (*S);
-	std::cerr << "+++ DONE COMPUTING FROB NORM +++" << endl;
 
 	sout << "The test matrix S has Frobenius norm " << ATOL 
 	     << ", and the relative error tolerance is TOL = " 
@@ -903,15 +903,329 @@ namespace Belos {
 	return numerr;
       }
 
+      /// Test OrthoManager::projectAndNormalize() for the specific
+      /// OrthoManager instance.
+      ///
+      /// \return Count of errors (should be zero)
+      static int
+      testProjectAndNormalizeNew (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM, 
+				  const Teuchos::RCP< const MV >& S, 
+				  const Teuchos::RCP< const MV >& X1, 
+				  const Teuchos::RCP< const MV >& X2,
+				  const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+      {
+	using Teuchos::Array;
+	using Teuchos::null;
+	using Teuchos::RCP;
+	using Teuchos::rcp;
+	using Teuchos::tuple;
+
+	// We collect all the output in this string wrapper, and print
+	// it at the end.
+	std::ostringstream sout;
+	// Total number of failed tests in this call of this routine.
+	int numerr = 0;
+
+	const int numRows = MVT::GetVecLength(*S);
+	const int numCols = MVT::GetNumberVecs(*S);
+	const int sizeS = MVT::GetNumberVecs(*S);
+
+	// Relative tolerance against which all tests are performed.
+	// We are measuring things in the Frobenius norm $\| \cdot \|_F$.
+	// The following bounds hold for all $m \times n$ matrices $A$:
+	// \[
+	// \|A\|_2 \leq \|A\|_F \leq \sqrt{r} \|A\|_2,
+	// \]
+	// where $r$ is the (column) rank of $A$.  We bound this above
+	// by the number of columns in $A$.  
+	//
+	// Since we are measuring both of these quantitites in the
+	// Frobenius norm instead, we scale all error tests by 
+	// $\sqrt{n}$.
+	//
+	// A good heuristic is to scale the bound by the square root
+	// of the number of floating-point operations.  One could
+	// perhaps support this theoretically, since we are using
+	// uniform random test problems.
+	const magnitude_type fudgeFactor = 
+	  SMT::squareroot(magnitude_type(numRows) * 
+			  magnitude_type(numCols) * 
+			  magnitude_type(numCols));
+	const magnitude_type TOL = SMT::eps() * fudgeFactor *
+	  SMT::squareroot(magnitude_type(numCols));
+
+	// Absolute tolerance scaling: the Frobenius norm of the test
+	// matrix S.  TOL*ATOL is the absolute tolerance for the
+	// residual $\|A - Q*B\|_F$.
+	const magnitude_type ATOL = frobeniusNorm (*S);
+
+	sout << "-- The test matrix S has Frobenius norm " << ATOL 
+	     << ", and the relative error tolerance is TOL = " 
+	     << TOL << "." << endl;
+
+	// Q will contain the result of projectAndNormalize() on S.
+	RCP< MV > Q = MVT::CloneCopy(*S);
+	// We use this for collecting the residual error components
+	RCP< MV > Residual = MVT::CloneCopy(*S);
+	// Number of elements in the X array of blocks against which
+	// to project S.
+	const int num_X = 2;
+	Array< RCP< const MV > > X (num_X);
+	X[0] = MVT::CloneCopy(*X1);
+	X[1] = MVT::CloneCopy(*X2);
+
+	// Coefficients for the normalization
+	RCP< serial_matrix_type > B (new serial_matrix_type (sizeS, sizeS));
+	  
+	// Array of coefficients matrices from the projection.  
+	// For our first test, we allocate each of these matrices
+	// with the proper dimensions.
+	Array< RCP< serial_matrix_type > > C (num_X);
+	for (int k = 0; k < num_X; ++k)
+	  {
+	    C[k] = rcp (new serial_matrix_type (MVT::GetNumberVecs(*X[k]), sizeS));
+	    C[k]->random(); // will be overwritten
+	  }
+	try {
+	  // Q*B := (I - X X^*) S
+	  const int reportedRank = OM->projectAndNormalize (*Q, C, B, X);
+
+	  // Pick out the first reportedRank columns of Q.
+	  std::vector<int> indices (reportedRank);
+	  for (int j = 0; j < reportedRank; ++j)
+	    indices[j] = j;
+	  RCP< const MV > Q_left = MVT::CloneView (*Q, indices);
+	  
+	  // Test whether the first reportedRank columns of Q are
+	  // orthogonal.
+	  {
+	    const magnitude_type orthoError = OM->orthonormError (*Q_left);
+	    sout << "-- ||Q(1:" << reportedRank << ")^* Q(1:" << reportedRank 
+		 << ") - I||_F = " << orthoError << endl;
+	    if (orthoError > TOL)
+	      {
+		sout << "   *** Error: ||Q(1:" << reportedRank << ")^* Q(1:" 
+		     << reportedRank << ") - I||_F = " << orthoError 
+		     << " > TOL = " << TOL << "." << endl;
+		numerr++;
+	      }
+	  }
+
+	  // Compute the residual: if successful, S = Q*B + 
+	  // X (X^* S =: C) in exact arithmetic.  So, the residual is
+	  // S - Q*B - X1 C1 - X2 C2.
+	  //
+	  // Residual := S
+	  MVT::MvAddMv (SCT::one(), *S, SCT::zero(), *Residual, *Residual);
+	  {
+	    // Pick out the first reportedRank rows of B.  Make a deep
+	    // copy, since serial_matrix_type is not safe with respect
+	    // to RCP-based memory management (it uses raw pointers
+	    // inside).
+	    RCP< const serial_matrix_type > B_top (new serial_matrix_type (Teuchos::Copy, *B, reportedRank, B->numCols()));
+	    // Residual := Residual - Q(:, 1:reportedRank) * B(1:reportedRank, :)
+	    MVT::MvTimesMatAddMv (-SCT::one(), *Q_left, *B_top, SCT::one(), *Residual);
+	  }
+	  // Residual := Residual - X[k]*C[k]
+	  for (int k = 0; k < num_X; ++k)
+	    MVT::MvTimesMatAddMv (-SCT::one(), *X[k], *C[k], SCT::one(), *Residual);
+	  const magnitude_type residErr = frobeniusNorm (*Residual);
+	  sout << "-- ||S - Q(:, 1:" << reportedRank << ")*B(1:" 
+	       << reportedRank << ", :) - X1*C1 - X2*C2||_F = " 
+	       << residErr << endl;
+	  if (residErr > ATOL * TOL)
+	    {
+	      sout << "   *** Error: ||S - Q(:, 1:" << reportedRank 
+		   << ")*B(1:" << reportedRank << ", :) "
+		   << "- X1*C1 - X2*C2||_F = " << residErr 
+		   << " > ATOL*TOL = " << (ATOL*TOL) << "." << endl;
+	      numerr++;
+	    }
+	  // Verify that Q(1:reportedRank) is orthogonal to X[k], for
+	  // all k.  This test only makes sense if reportedRank > 0.
+	  if (reportedRank == 0)
+	    {
+	      sout << "-- Reported rank of Q is zero: skipping Q, X[k] "
+		"orthogonality test." << endl;
+	    }
+	  else
+	    {
+	      for (int k = 0; k < num_X; ++k)
+		{
+		  // Q should be orthogonal to X[k], for all k.
+		  const magnitude_type projErr = OM->orthogError(*X[k], *Q_left);
+		  sout << "-- ||<Q(1:" << reportedRank << "), X[" << k 
+		       << "]>||_F = " << projErr << endl;
+		  if (projErr > ATOL*TOL)
+		    {
+		      sout << "   *** Error: ||<Q(1:" << reportedRank << "), X["
+			   << k << "]>||_F = " << projErr << " > ATOL*TOL = " 
+			   << (ATOL*TOL) << "." << endl;
+		      numerr++;
+		    }
+		}
+	    }
+	} catch (Belos::OrthoError& e) {
+	  sout << "  *** Error: The OrthoManager subclass instance threw "
+	    "an exception: " << e.what() << endl;
+	  numerr++;
+	}
+
+	// Print out the collected diagnostic messages, which possibly
+	// include error messages.
+	const MsgType type = (numerr == 0) ? Debug : static_cast<MsgType> (static_cast<int>(Errors) | static_cast<int>(Debug));
+	MyOM->stream(type) << sout.str();
+	MyOM->stream(type) << endl;
+
+	return numerr;
+      }
+
+
       /// Test OrthoManager::project() for the specific OrthoManager instance.
       ///
       /// \return Count of errors (should be zero)
+      static int
+      testProjectNew (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM, 
+		      const Teuchos::RCP< const MV >& S, 
+		      const Teuchos::RCP< const MV >& X1, 
+		      const Teuchos::RCP< const MV >& X2,
+		      const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+      {
+	using Teuchos::Array;
+	using Teuchos::null;
+	using Teuchos::RCP;
+	using Teuchos::rcp;
+	using Teuchos::tuple;
+
+	// We collect all the output in this string wrapper, and print
+	// it at the end.
+	std::ostringstream sout;
+	// Total number of failed tests in this call of this routine.
+	int numerr = 0;
+
+	const int numRows = MVT::GetVecLength(*S);
+	const int numCols = MVT::GetNumberVecs(*S);
+	const int sizeS = MVT::GetNumberVecs(*S);
+
+	// Relative tolerance against which all tests are performed.
+	// We are measuring things in the Frobenius norm $\| \cdot \|_F$.
+	// The following bounds hold for all $m \times n$ matrices $A$:
+	// \[
+	// \|A\|_2 \leq \|A\|_F \leq \sqrt{r} \|A\|_2,
+	// \]
+	// where $r$ is the (column) rank of $A$.  We bound this above
+	// by the number of columns in $A$.  
+	//
+	// Since we are measuring both of these quantitites in the
+	// Frobenius norm instead, we scale all error tests by 
+	// $\sqrt{n}$.
+	//
+	// A good heuristic is to scale the bound by the square root
+	// of the number of floating-point operations.  One could
+	// perhaps support this theoretically, since we are using
+	// uniform random test problems.
+	const magnitude_type fudgeFactor = 
+	  SMT::squareroot(magnitude_type(numRows) * 
+			  magnitude_type(numCols) * 
+			  magnitude_type(numCols));
+	const magnitude_type TOL = SMT::eps() * fudgeFactor *
+	  SMT::squareroot(magnitude_type(numCols));
+
+	// Absolute tolerance scaling: the Frobenius norm of the test
+	// matrix S.  TOL*ATOL is the absolute tolerance for the
+	// residual $\|A - Q*B\|_F$.
+	const magnitude_type ATOL = frobeniusNorm (*S);
+
+	sout << "The test matrix S has Frobenius norm " << ATOL 
+	     << ", and the relative error tolerance is TOL = " 
+	     << TOL << "." << endl;
+
+	// Make some copies of S, X1, and X2.  The OrthoManager's
+	// project() method shouldn't modify X1 or X2, but this is a a
+	// test and we don't know that it doesn't!
+	RCP< MV > S_copy = MVT::CloneCopy(*S);
+	RCP< MV > Residual = MVT::CloneCopy(*S);
+	const int num_X = 2;
+	Array< RCP< const MV > > X (num_X);
+	X[0] = MVT::CloneCopy(*X1);
+	X[1] = MVT::CloneCopy(*X2);
+	  
+	// Array of coefficients matrices from the projection.  
+	// For our first test, we allocate each of these matrices
+	// with the proper dimensions.
+	Array< RCP< serial_matrix_type > > C (num_X);
+	for (int k = 0; k < num_X; ++k)
+	  {
+	    C[k] = rcp (new serial_matrix_type (MVT::GetNumberVecs(*X[k]), sizeS));
+	    C[k]->random(); // will be overwritten
+	  }
+	try {
+	  // Compute the projection: S_copy := (I - X X^*) S
+	  OM->project(*S_copy, C, X);
+
+	  // Compute the residual: if successful, S = S_copy + X (X^*
+	  // S =: C) in exact arithmetic.  So, the residual is
+	  // S - S_copy - X1 C1 - X2 C2.
+	  //
+	  // Residual := S - S_copy
+	  MVT::MvAddMv (SCT::one(), *S, -SCT::one(), *S_copy, *Residual);
+	  // Residual := Residual - X[k]*C[k]
+	  for (int k = 0; k < num_X; ++k)
+	    MVT::MvTimesMatAddMv (-SCT::one(), *X[k], *C[k], SCT::one(), *Residual);
+	  magnitude_type residErr = frobeniusNorm (*Residual);
+	  sout << "  ||S - S_copy - X1*C1 - X2*C2||_F = " << residErr;
+	  if (residErr > ATOL * TOL)
+	    {
+	      sout << "  *** Error: ||S - S_copy - X1*C1 - X2*C2||_F = " << residErr 
+		   << " > ATOL*TOL = " << (ATOL*TOL) << ".";
+	      numerr++;
+	    }
+	  for (int k = 0; k < num_X; ++k)
+	    {
+	      // S_copy should be orthogonal to X[k] now.
+	      const magnitude_type projErr = OM->orthogError(*X[k], *S_copy);
+	      if (projErr > TOL)
+		{
+		  sout << "  *** Error: S is not orthogonal to X[" << k 
+		       << "] by a factor of " << projErr << " > TOL = " 
+		       << TOL << ".";
+		  numerr++;
+		}
+	    }
+	} catch (Belos::OrthoError& e) {
+	  sout << "  *** Error: The OrthoManager subclass instance threw "
+	    "an exception: " << e.what() << endl;
+	  numerr++;
+	}
+
+	// Print out the collected diagnostic messages, which possibly
+	// include error messages.
+	const MsgType type = (numerr == 0) ? Debug : static_cast<MsgType> (static_cast<int>(Errors) | static_cast<int>(Debug));
+	MyOM->stream(type) << sout.str();
+	MyOM->stream(type) << endl;
+
+	return numerr;
+      }
+
       static int 
       testProject (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM, 
 		   const Teuchos::RCP< const MV >& S, 
 		   const Teuchos::RCP< const MV >& X1, 
 		   const Teuchos::RCP< const MV >& X2,
 		   const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
+      {
+	return testProjectNew (OM, S, X1, X2, MyOM);
+      }
+
+      /// Test OrthoManager::project() for the specific OrthoManager instance.
+      ///
+      /// \return Count of errors (should be zero)
+      static int 
+      testProjectOld (const Teuchos::RCP< Belos::OrthoManager< Scalar, MV > > OM, 
+		      const Teuchos::RCP< const MV >& S, 
+		      const Teuchos::RCP< const MV >& X1, 
+		      const Teuchos::RCP< const MV >& X2,
+		      const Teuchos::RCP< Belos::OutputManager< Scalar > >& MyOM)
       {
 	using Teuchos::Array;
 	using Teuchos::null;
@@ -920,17 +1234,51 @@ namespace Belos {
 	using Teuchos::tuple;
 
 	const scalar_type ONE = SCT::one();
+	// We collect all the output in this string wrapper, and print
+	// it at the end.
+	std::ostringstream sout;
+	// Total number of failed tests in this call of this routine.
+	int numerr = 0;
 
-	// Relative tolerance against which all tests are performed.
-	const magnitude_type TOL = 1.0e-12;
-	// Absolute tolerance constant
-	const magnitude_type ATOL = 10;
-
+	const int numRows = MVT::GetVecLength(*S);
+	const int numCols = MVT::GetNumberVecs(*S);
 	const int sizeS = MVT::GetNumberVecs(*S);
 	const int sizeX1 = MVT::GetNumberVecs(*X1);
 	const int sizeX2 = MVT::GetNumberVecs(*X2);
-	int numerr = 0;
-	std::ostringstream sout;
+
+	// Relative tolerance against which all tests are performed.
+	// We are measuring things in the Frobenius norm $\| \cdot \|_F$.
+	// The following bounds hold for all $m \times n$ matrices $A$:
+	// \[
+	// \|A\|_2 \leq \|A\|_F \leq \sqrt{r} \|A\|_2,
+	// \]
+	// where $r$ is the (column) rank of $A$.  We bound this above
+	// by the number of columns in $A$.  
+	//
+	// Since we are measuring both of these quantitites in the
+	// Frobenius norm instead, we scale all error tests by 
+	// $\sqrt{n}$.
+	//
+	// A good heuristic is to scale the bound by the square root
+	// of the number of floating-point operations.  One could
+	// perhaps support this theoretically, since we are using
+	// uniform random test problems.
+	const magnitude_type fudgeFactor = 
+	  SMT::squareroot(magnitude_type(numRows) * 
+			  magnitude_type(numCols) * 
+			  magnitude_type(numCols));
+	const magnitude_type TOL = SMT::eps() * fudgeFactor *
+	  SMT::squareroot(magnitude_type(numCols));
+
+	// Absolute tolerance scaling: the Frobenius norm of the test
+	// matrix S.  TOL*ATOL is the absolute tolerance for the
+	// residual $\|A - Q*B\|_F$.
+	const magnitude_type ATOL = frobeniusNorm (*S);
+
+	sout << "The test matrix S has Frobenius norm " << ATOL 
+	     << ", and the relative error tolerance is TOL = " 
+	     << TOL << "." << endl;
+
 
 	//
 	// Output tests:
