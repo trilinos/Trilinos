@@ -1,7 +1,7 @@
 #! ${PYTHON_EXECUTABLE}
 # -*- python -*-
 
-# @header
+# @HEADER
 # ************************************************************************
 #
 #                PyTrilinos: Python interface to Trilinos
@@ -27,7 +27,7 @@
 # Questions? contact Bill Spotz (wfspotz@sandia.gov)
 #
 # ************************************************************************
-# @header
+# @HEADER
 
 # This example creates a (distributed) tridiagonal matrix, a vector for the
 # solution and one for the right-handi. Then, it solves the corresponding

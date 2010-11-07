@@ -1,7 +1,7 @@
 #! ${PYTHON_EXECUTABLE}
 # -*- python -*-
 
-# @header
+# @HEADER
 # ************************************************************************
 #
 #                PyTrilinos: Python interface to Trilinos
@@ -27,7 +27,7 @@
 # Questions? contact Bill Spotz (wfspotz@sandia.gov)
 #
 # ************************************************************************
-# @header
+# @HEADER
 
 """
 Usage is: ./exSolvers.py <options> <solver-type>
