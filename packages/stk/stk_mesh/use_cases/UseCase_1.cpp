@@ -31,7 +31,7 @@ namespace use_cases {
 enum { field_data_chunk_size = 10 };
 
 UseCase_1_Mesh::UseCase_1_Mesh( stk::ParallelMachine comm )
-  , m_metaData( use_case_1_rank_names() )
+  : m_metaData( use_case_1_rank_names() )
   , m_bulkData(  m_metaData , comm , field_data_chunk_size )
 {
   /// Done populating the mesh meta data.
