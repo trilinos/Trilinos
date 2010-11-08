@@ -168,8 +168,9 @@ Piro::Thyra::PerformDakotaAnalysis(
 
   dakota.run(trikota_interface.get());
 
-  Dakota::RealVector finalValues =
-    dakota.getFinalSolution().all_continuous_variables();
+  Dakota::RealVector finalValues;
+  if (dakota.rankZero()) 
+    finalValues = dakota.getFinalSolution().all_continuous_variables();
 
   // Copy Dakota parameters into Thyra
   p = ::Thyra::createMember(piroModel.get_p_space(0));
