@@ -144,8 +144,8 @@ protected:
   bool use_probing_diags;
 
   // These should be COLUMN colorings, ergo, no import should be needed
-  const Teuchos::RCP<Epetra_MapColoring>& colorMap_;
-  const Teuchos::RCP<Epetra_MapColoring>& updateColorMap_;
+  Teuchos::RCP<Epetra_MapColoring> colorMap_;
+  Teuchos::RCP<Epetra_MapColoring> updateColorMap_;
 
   
 
