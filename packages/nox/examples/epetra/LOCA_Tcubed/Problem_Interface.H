@@ -70,7 +70,7 @@ public:
   ~Problem_Interface();
   
   //! Compute and return F
-  bool computeF(const Epetra_Vector& x, Epetra_Vector& F, FillType flag);
+  bool computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType flag);
 
   //! Compute an explicit Jacobian
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
