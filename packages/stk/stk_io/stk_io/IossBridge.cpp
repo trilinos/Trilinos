@@ -934,22 +934,52 @@ namespace stk {
 			   const stk::mesh::BulkData &bulk,
 			   Ioss::Region &io_region)
       {
-	Ioss::FaceSet * const fs = new Ioss::FaceSet(io_region.get_database(), part.name());
+	bool create_faceset = true;
+	if (part.subsets().empty()) {
+	  // Only define a faceset for this part if its superset part is
+	  // not a face-containing part..  (i.e., this part is not a subset part
+	  // in a surface...)
+	  const stk::mesh::PartVector &supersets = part.supersets();
+	  for (size_t i=0; i < supersets.size(); i++) {
+	    if (supersets[i]->primary_entity_rank() == stk::mesh::Face) {
+	      create_faceset = false;
+	      break;
+	    }	      
+	  }
+	}
+	if (create_faceset) {
+	  Ioss::FaceSet * const fs = new Ioss::FaceSet(io_region.get_database(), part.name());
 
-	io_region.add(fs);
-	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
-	define_face_edge_blocks(part, bulk, fs, mesh::Face, spatial_dim);
+	  io_region.add(fs);
+	  int spatial_dim = io_region.get_property("spatial_dimension").get_int();
+	  define_face_edge_blocks(part, bulk, fs, mesh::Face, spatial_dim);
+	}
       }
 
       void define_edge_set(stk::mesh::Part &part,
 			   const stk::mesh::BulkData &bulk,
 			   Ioss::Region &io_region)
       {
-	Ioss::EdgeSet * const fs = new Ioss::EdgeSet(io_region.get_database(), part.name());
+	bool create_edgeset = true;
+	if (part.subsets().empty()) {
+	  // Only define a edgeset for this part if its superset part is
+	  // not a edge-containing part..  (i.e., this part is not a subset part
+	  // in a surface...)
+	  const stk::mesh::PartVector &supersets = part.supersets();
+	  for (size_t i=0; i < supersets.size(); i++) {
+	    if (supersets[i]->primary_entity_rank() == stk::mesh::Edge) {
+	      create_edgeset = false;
+	      break;
+	    }	      
+	  }
+	}
+	if (create_edgeset) {
+	  Ioss::EdgeSet * const fs = new Ioss::EdgeSet(io_region.get_database(), part.name());
 
-	io_region.add(fs);
-	int spatial_dim = io_region.get_property("spatial_dimension").get_int();
-	define_face_edge_blocks(part, bulk, fs, mesh::Edge, spatial_dim);
+	  io_region.add(fs);
+	  int spatial_dim = io_region.get_property("spatial_dimension").get_int();
+	  define_face_edge_blocks(part, bulk, fs, mesh::Edge, spatial_dim);
+	}
       }
 
       void define_node_set(stk::mesh::Part &part,
