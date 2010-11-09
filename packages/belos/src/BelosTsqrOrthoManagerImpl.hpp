@@ -444,7 +444,7 @@ namespace Belos {
       if (MVT::GetNumberVecs(*Q_) < numCols)
 	Q_ = MVT::Clone (X, numCols);
 
-      return rawNormalize (X, Q_, B);
+      return normalizeImpl (X, Q_, B);
     }
 
 
@@ -1017,6 +1017,30 @@ namespace Belos {
 	}
     }
 
+    /// Normalize X into Q*B, overwriting X in the process.
+    ///
+    /// \warning Q must have _exactly_ as many columns as X.
+    ///
+    /// \warning B must have been allocated and must have the right
+    ///   dimensions (square, with number of rows/columns equal to the
+    ///   number of columns in X).
+    int 
+    rawNormalize (MV& X, MV& Q, serial_matrix_type& B)
+    {
+      int rank;
+      try {
+	// This call only computes the QR factorization X = Q B.
+	// It doesn't compute the rank of X.  That comes from
+	// revealRank() below.
+	tsqrAdaptor_->factorExplicit (X, Q, B);
+	// This call will only modify *B if *B on input is not of full
+	// numerical rank.
+	rank = tsqrAdaptor_->revealRank (Q, B, relativeRankTolerance_);
+      } catch (std::exception& e) {
+	throw TsqrOrthoError (e.what()); // Toss the exception up the chain.
+      }
+      return rank;
+    }
 
     /// Normalize X into Q*B, overwriting X in the process.
     ///
@@ -1024,7 +1048,7 @@ namespace Belos {
     /// more columns than X.  This routine doesn't try to allocate
     /// space for Q if it is too small.
     int 
-    rawNormalize (MV& X, const Teuchos::RCP< MV >& Q, serial_matrix_ptr B)
+    normalizeImpl (MV& X, const Teuchos::RCP< MV >& Q, serial_matrix_ptr B)
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor timerMonitorNormalize(*timerNormalize_);
@@ -1068,18 +1092,7 @@ namespace Belos {
       // The matrix *B will only be upper triangular if X is of full
       // numerical rank.
       //
-      int rank;
-      try {
-	// This call only computes the QR factorization X = Q_view B.
-	// It doesn't compute the rank of X.  That comes from
-	// revealRank() below.
-	tsqrAdaptor_->factorExplicit (X, *Q_view, *B);
-	// This call will only modify *B if *B on input is not of full
-	// numerical rank.
-	rank = tsqrAdaptor_->revealRank (*Q_view, *B, relativeRankTolerance_);
-      } catch (std::exception& e) {
-	throw TsqrOrthoError (e.what()); // Toss the exception up the chain.
-      }
+      const int rank = rawNormalize (X, *Q_view, *B);
 
       // Whether we've copied the orthogonalized basis vectors back
       // into X yet.  We keep track of this because if we add in
@@ -1148,17 +1161,18 @@ namespace Belos {
 	    // output of TSQR here.  We're just avoiding the allocation
 	    // of scratch space.)  
 	    X_null = MVT::CloneViewNonConst (X, nullSpaceIndices);
+
 	    // We don't need to keep the normalization coefficients,
 	    // but TSQR needs somewhere to put them.
 	    serial_matrix_type B_null (nullSpaceNumCols, nullSpaceNumCols);
-	    tsqrAdaptor_->factorExplicit (*Q_null, *X_null, B_null);
+
 	    // Remember that we are using X_null for the output of
 	    // TSQR here.  We don't need to copy it again since it
 	    // will contain the final results, as long as the
 	    // randomized null space basis rank is the same as the
 	    // number of random columns.  If the random vectors are
 	    // not full rank, things get more complicated (see below).
-	    nullSpaceBasisRank = tsqrAdaptor_->revealRank (*X_null, B_null, relativeRankTolerance());
+	    nullSpaceBasisRank = rawNormalize (*Q_null, *X_null, B_null);
 	  } catch (std::exception& e) {
 	    throw TsqrOrthoError (e.what()); // Toss the exception up the chain.
 	  }
