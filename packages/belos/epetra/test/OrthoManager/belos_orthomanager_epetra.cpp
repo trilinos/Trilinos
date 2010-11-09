@@ -369,7 +369,7 @@ main (int argc, char *argv[])
   // ensure that the test always passes with default parameters, we
   // scale by the number of processes.  The default value below may be
   // changed by a command-line parameter with a corresponding name.
-  int numRows = 100 * pComm->numProc();
+  int numRows = 100 * pComm->NumProc();
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption ("verbose", "quiet", &verbose,
@@ -471,7 +471,7 @@ main (int argc, char *argv[])
     if (map->NumMyElements() < maxNormalizeNumCols)
       {
 	std::ostringstream os;
-	os << "The number of elements on this process " << comm->MyPID() 
+	os << "The number of elements on this process " << pComm->MyPID() 
 	   << " is too small for the number of columns that you want to test."
 	   << "  There are " << map->NumMyElements() << " elements on "
 	  "this process, but the normalize() method of the MatOrthoManager "
