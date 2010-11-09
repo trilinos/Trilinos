@@ -64,6 +64,7 @@
 // I/O for Harwell-Boeing files
 #include <iohb.h>
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -91,8 +92,7 @@ typedef Teuchos::SerialDenseMatrix< int, scalar_type > serial_matrix_type;
 typedef Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type > map_type;
 typedef Tpetra::CrsMatrix< scalar_type, local_ordinal_type, global_ordinal_type, node_type > sparse_matrix_type;
 
-
-////////////////////////////////////////////////////////////////////////////////
+/* ******************************************************************* */
 
 // The accepted way to restrict the scope of functions to their source
 // file, is to use an anonymous namespace, rather than to declare the
@@ -175,7 +175,7 @@ namespace {
   ///
   std::pair< Teuchos::RCP< map_type >, 
 	     Teuchos::RCP< sparse_matrix_type > >
-  loadSparseMatrix (const Teuchos::RCP< const Teuchos::Comm<int> > comm,
+  loadSparseMatrix (const Teuchos::RCP< const Teuchos::Comm<int> > pComm,
 		    const std::string& filename,
 		    int& numRows,
 		    std::ostream& debugOut)
@@ -187,7 +187,7 @@ namespace {
     typedef Tpetra::Map< local_ordinal_type, global_ordinal_type, node_type > map_type;
     typedef Tpetra::CrsMatrix< scalar_type, local_ordinal_type, global_ordinal_type, node_type > sparse_matrix_type;
 
-    const int myRank = Teuchos::rank (*comm);
+    const int myRank = Teuchos::rank (*pComm);
     RCP< map_type > pMap;
     RCP< sparse_matrix_type > pMatrix;
 
@@ -251,8 +251,8 @@ namespace {
 	// succeeded.  (info should be nonzero if so.  The
 	// Harwell-Boeing routines return "C boolean true" rather than
 	// the POSIX-standard "zero for success.")
-	Teuchos::broadcast (*comm, 0, &info);
-	Teuchos::broadcast (*comm, 0, &nnz);
+	Teuchos::broadcast (*pComm, 0, &info);
+	Teuchos::broadcast (*pComm, 0, &nnz);
 
 	TEST_FOR_EXCEPTION(info == 0, std::runtime_error,
 			   "Error reading Harwell-Boeing sparse matrix file \"" 
@@ -270,9 +270,9 @@ namespace {
 			   << "means it does not define a valid inner product." 
 			   << std::endl);
 
-	Teuchos::broadcast (*comm, 0, &loadedNumRows);
-	Teuchos::broadcast (*comm, 0, &numCols);
-	Teuchos::broadcast (*comm, 0, &rnnzmax);
+	Teuchos::broadcast (*pComm, 0, &loadedNumRows);
+	Teuchos::broadcast (*pComm, 0, &numCols);
+	Teuchos::broadcast (*pComm, 0, &rnnzmax);
 
 	TEST_FOR_EXCEPTION(loadedNumRows != numCols, std::runtime_error,
 			   "Test matrix in Harwell-Boeing sparse matrix file '" 
@@ -284,7 +284,7 @@ namespace {
 
 	// Create Tpetra::Map to represent multivectors in the range of
 	// the sparse matrix.
-	pMap = rcp (new map_type (numRows, 0, comm, 
+	pMap = rcp (new map_type (numRows, 0, pComm, 
 				  Tpetra::GloballyDistributed,
 				  getNode< node_type >()));
 	// Second argument: max number of nonzero entries per row.
@@ -344,7 +344,7 @@ namespace {
 
 	// Let M remain null, and allocate map using the number of rows
 	// (numRows) specified on the command line.
-	pMap = rcp (new map_type (numRows, 0, comm, 
+	pMap = rcp (new map_type (numRows, 0, pComm, 
 				  Tpetra::GloballyDistributed, 
 				  getNode< node_type >()));
       }
@@ -363,7 +363,7 @@ main (int argc, char *argv[])
   using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
-  RCP< const Teuchos::Comm<int> > comm = 
+  RCP< const Teuchos::Comm<int> > pComm = 
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   // This factory object knows how to make a (Mat)OrthoManager
@@ -381,10 +381,22 @@ main (int argc, char *argv[])
 
   bool verbose = false;
   bool debug = false;
-  int numRows = 100;
+
+  // The OrthoManager is tested with three different multivectors: S,
+  // X1, and X2.  sizeS is the number of columns in S, sizeX1 the
+  // number of columns in X1, and sizeX2 the number of columns in X2.
+  // The values below are defaults and may be changed by command-line
+  // arguments with corresponding names.
   int sizeS  = 5;
-  int sizeX1 = 11; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
-  int sizeX2 = 13; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
+  int sizeX1 = 11;
+  int sizeX2 = 13;
+
+  // Default global number of rows.  The number of rows per MPI
+  // process must be no less than max(sizeS, sizeX1, sizeX2).  To
+  // ensure that the test always passes with default parameters, we
+  // scale by the number of processes.  The default value below may be
+  // changed by a command-line parameter with a corresponding name.
+  int numRows = 100 * pComm->getSize();
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption ("verbose", "quiet", &verbose,
@@ -424,7 +436,7 @@ main (int argc, char *argv[])
     const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse (argc,argv);
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
       {
-	if (Teuchos::rank(*comm) == 0)
+	if (Teuchos::rank(*pComm) == 0)
 	  std::cout << "End Result: TEST PASSED" << endl;
 	return EXIT_SUCCESS;
       }
@@ -465,13 +477,38 @@ main (int argc, char *argv[])
     // modify numRows to be the number of rows in the sparse matrix.
     // Otherwise, it will leave numRows alone.
     std::pair< RCP< map_type >, RCP< sparse_matrix_type > > results = 
-      loadSparseMatrix (comm, filename, numRows, debugOut);
+      loadSparseMatrix (pComm, filename, numRows, debugOut);
     map = results.first;
     M = results.second;
   }
   TEST_FOR_EXCEPTION(Teuchos::is_null(map), std::logic_error,
 		     "Error: (Mat)OrthoManager test code failed to "
 		     "initialize the Map");
+  {
+    // The maximum number of columns that will be passed to a
+    // MatOrthoManager's normalize() routine.  Some MatOrthoManager
+    // subclasses (e.g., Tsqr(Mat)OrthoManager) need to have the
+    // number of columns no larger than the number of rows on any
+    // process.  We check this _after_ attempting to load any sparse
+    // matrix to be used as the inner product matrix, because if a
+    // sparse matrix is successfully loaded, its number of rows will
+    // override the number of rows specified on the command line (if
+    // specified), and will also override the default number of rows.
+    const int maxNormalizeNumCols = std::max (sizeS, std::max (sizeX1, sizeX2));
+    if (map->getNodeNumElements() < maxNormalizeNumCols)
+      {
+	std::ostringstream os;
+	os << "The number of elements on this process " << pComm->getRank() 
+	   << " is too small for the number of columns that you want to test."
+	   << "  There are " << map->getNodeNumElements() << " elements on "
+	  "this process, but the normalize() method of the MatOrthoManager "
+	  "subclass will need to process a multivector with " 
+	   << maxNormalizeNumCols << " columns.  Not all MatOrthoManager "
+	  "subclasses can handle a local row block with fewer rows than "
+	  "columns.";
+	throw std::invalid_argument(os.str());
+      }
+  }
 
   // Using the factory object, instantiate the specified
   // OrthoManager subclass to be tested.
@@ -507,7 +544,7 @@ main (int argc, char *argv[])
 
   // Only Rank 0 gets to write to cout.  The other processes dump
   // output to a black hole.
-  //std::ostream& finalOut = (Teuchos::rank(*comm) == 0) ? std::cout : Teuchos::oblackholestream;
+  //std::ostream& finalOut = (Teuchos::rank(*pComm) == 0) ? std::cout : Teuchos::oblackholestream;
 
   if (numFailed != 0)
     {
@@ -515,13 +552,13 @@ main (int argc, char *argv[])
 
       // The Trilinos test framework depends on seeing this message,
       // so don't rely on the OutputManager to report it correctly.
-      if (Teuchos::rank(*comm) == 0)
+      if (Teuchos::rank(*pComm) == 0)
 	std::cout << "End Result: TEST FAILED" << endl;	
       return EXIT_FAILURE;
     }
   else 
     {
-      if (Teuchos::rank(*comm) == 0)
+      if (Teuchos::rank(*pComm) == 0)
 	std::cout << "End Result: TEST PASSED" << endl;
       return EXIT_SUCCESS;
     }

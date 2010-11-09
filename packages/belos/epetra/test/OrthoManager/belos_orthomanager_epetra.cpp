@@ -68,6 +68,7 @@
 // I/O for Harwell-Boeing files
 #include <iohb.h>
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -93,7 +94,7 @@ typedef Teuchos::SerialDenseMatrix< int, scalar_type > serial_matrix_type;
 typedef Epetra_Map map_type;
 typedef Epetra_CrsMatrix sparse_matrix_type;
 
-////////////////////////////////////////////////////////////////////////////////
+/* ******************************************************************* */
 
 // The accepted way to restrict the scope of functions to their source
 // file, is to use an anonymous namespace, rather than to declare the
@@ -353,10 +354,22 @@ main (int argc, char *argv[])
 
   bool verbose = false;
   bool debug = false;
-  int numRows = 100;
+
+  // The OrthoManager is tested with three different multivectors: S,
+  // X1, and X2.  sizeS is the number of columns in S, sizeX1 the
+  // number of columns in X1, and sizeX2 the number of columns in X2.
+  // The values below are defaults and may be changed by command-line
+  // arguments with corresponding names.
   int sizeS  = 5;
-  int sizeX1 = 11; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
-  int sizeX2 = 13; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
+  int sizeX1 = 11;
+  int sizeX2 = 13;
+
+  // Default global number of rows.  The number of rows per MPI
+  // process must be no less than max(sizeS, sizeX1, sizeX2).  To
+  // ensure that the test always passes with default parameters, we
+  // scale by the number of processes.  The default value below may be
+  // changed by a command-line parameter with a corresponding name.
+  int numRows = 100 * pComm->numProc();
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption ("verbose", "quiet", &verbose,
@@ -444,6 +457,31 @@ main (int argc, char *argv[])
   TEST_FOR_EXCEPTION(Teuchos::is_null(map), std::logic_error,
 		     "Error: (Mat)OrthoManager test code failed to "
 		     "initialize the Map");
+  {
+    // The maximum number of columns that will be passed to a
+    // MatOrthoManager's normalize() routine.  Some MatOrthoManager
+    // subclasses (e.g., Tsqr(Mat)OrthoManager) need to have the
+    // number of columns no larger than the number of rows on any
+    // process.  We check this _after_ attempting to load any sparse
+    // matrix to be used as the inner product matrix, because if a
+    // sparse matrix is successfully loaded, its number of rows will
+    // override the number of rows specified on the command line (if
+    // specified), and will also override the default number of rows.
+    const int maxNormalizeNumCols = std::max (sizeS, std::max (sizeX1, sizeX2));
+    if (map->NumMyElements() < maxNormalizeNumCols)
+      {
+	std::ostringstream os;
+	os << "The number of elements on this process " << comm->MyPID() 
+	   << " is too small for the number of columns that you want to test."
+	   << "  There are " << map->NumMyElements() << " elements on "
+	  "this process, but the normalize() method of the MatOrthoManager "
+	  "subclass will need to process a multivector with " 
+	   << maxNormalizeNumCols << " columns.  Not all MatOrthoManager "
+	  "subclasses can handle a local row block with fewer rows than "
+	  "columns.";
+	throw std::invalid_argument(os.str());
+      }
+  }
 
   // Using the factory object, instantiate the specified
   // OrthoManager subclass to be tested.
