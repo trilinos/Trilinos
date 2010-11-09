@@ -451,8 +451,9 @@ main (int argc, char *argv[])
   // TODO Read in a ParameterList for configuring the specific
   // OrthoManager subclass.
 
+  std::string timingLabel ("Belos");
   RCP< Belos::OrthoManager< scalar_type, MV > > OM = 
-    factory.makeOrthoManager (ortho, M, Teuchos::null);
+    factory.makeOrthoManager (ortho, M, timingLabel, Teuchos::null);
 
   // Whether the specific OrthoManager subclass promises to compute
   // rank-revealing orthogonalizations.  If yes, then test it on
