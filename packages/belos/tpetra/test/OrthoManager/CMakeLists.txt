@@ -12,7 +12,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_TSQR)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Tpetra_OrthoManager_test
     SOURCES belos_orthomanager_tpetra.cpp
-    ARGS "--ortho=TSQR"
+    ARGS "--ortho=TSQR --verbose"
     COMM serial mpi
     )
 ENDIF()
