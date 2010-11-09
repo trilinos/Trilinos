@@ -43,9 +43,7 @@
 #define __Belos_OrthoManagerFactory_hpp
 
 #include <BelosConfigDefs.hpp>
-#ifdef HAVE_BELOS_TSQR
-#  include <BelosTsqrOrthoManager.hpp>
-#endif // HAVE_BELOS_TSQR
+#include <BelosTsqrOrthoManager.hpp>
 #include <BelosICGSOrthoManager.hpp>
 #include <BelosIMGSOrthoManager.hpp>
 #include <BelosDGKSOrthoManager.hpp>
@@ -74,23 +72,13 @@ namespace Belos {
   public:
     /// Number of valid command-line parameter values for the OrthoManager
     /// subclass to test.  (Must be at least one.)
-    static int numOrthoManagers () {
-#ifdef HAVE_BELOS_TSQR
-      return 4; 
-#else
-      return 3;
-#endif // HAVE_BELOS_TSQR
-    }
+    static int numOrthoManagers () { return 4; }
 
     /// Return true if and only if the given OrthoManager name is that
     /// of an OrthoManager subclass with rank-revealing capability.
     static bool isRankRevealing (const std::string& name) {
-#ifdef HAVE_BELOS_TSQR
       // Currently only TSQR has a full rank-revealing capability.
       return (name == "TSQR");
-#else
-      return false;
-#endif // HAVE_BELOS_TSQR
     }
 
     /// Constructor
@@ -98,9 +86,7 @@ namespace Belos {
     OrthoManagerFactory () : theList_ (numOrthoManagers())
     {
       int index = 0;
-#ifdef HAVE_BELOS_TSQR
       theList_[index++] = "TSQR";
-#endif // HAVE_BELOS_TSQR
       theList_[index++] = "ICGS";
       theList_[index++] = "IMGS";
       theList_[index++] = "DGKS";
@@ -165,21 +151,17 @@ namespace Belos {
     /// \param M [in] Inner product operator.  If Teuchos::null,
     ///   orthogonalize with respect to the standard Euclidean 
     ///   inner product.
-    /// \param label [in] Label for timers
     /// \param params [in] Optional list of parameters for 
     ///   setting up the specific MatOrthoManager subclass
     ///
     /// \return (Smart pointer to an) MatOrthoManager instance
     ///   
-    Teuchos::RCP< Belos::MatOrthoManager< Scalar, MV, OP > >
-    makeMatOrthoManager (const std::string& ortho, 
-			 const Teuchos::RCP< const OP >& M,
-			 const std::string& label,
-			 const Teuchos::RCP< Teuchos::ParameterList >& params)
+    Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >
+    makeOrthoManager (const std::string& ortho, 
+		      const Teuchos::RCP< const OP >& M,
+		      const Teuchos::RCP< Teuchos::ParameterList >& params)
     {
-#ifdef HAVE_BELOS_TSQR
       using Belos::TsqrMatOrthoManager;
-#endif // HAVE_BELOS_TSQR
       using Belos::ICGSOrthoManager;
       using Belos::IMGSOrthoManager;
       using Belos::DGKSOrthoManager;
@@ -190,19 +172,18 @@ namespace Belos {
       if (! Teuchos::is_null (params))
 	theParams = *params;
 
-      if (ortho == "DGKS") {
-	return rcp (new DGKSOrthoManager< Scalar, MV, OP >(label, M));
-      }
-#ifdef HAVE_BELOS_TSQR
-      else if (ortho == "TSQR") {
+      const std::string label("Belos");
+      if (ortho == "TSQR") {
 	return rcp (new TsqrMatOrthoManager< Scalar, MV, OP > (theParams, label, M));
       }
-#endif // HAVE_BELOS_TSQR
       else if (ortho == "ICGS") {
 	return rcp (new ICGSOrthoManager< Scalar, MV, OP >(label, M));
       }
       else if (ortho == "IMGS") {
 	return rcp (new IMGSOrthoManager< Scalar, MV, OP >(label, M));
+      }
+      else if (ortho == "DGKS") {
+	return rcp (new DGKSOrthoManager< Scalar, MV, OP >(label, M));
       }
       else {
 	TEST_FOR_EXCEPTION( true, std::invalid_argument, 
@@ -210,29 +191,6 @@ namespace Belos {
 			    " valid values are " << validNamesString() 
 			    << "." );
       }
-    }
-
-    /// Instantiate and return an RCP to the specified OrthoManager
-    /// subclass.
-    ///
-    /// \param ortho [in] Name of OrthoManager to instantiate
-    /// \param M [in] Inner product operator.  If Teuchos::null,
-    ///   orthogonalize with respect to the standard Euclidean 
-    ///   inner product.
-    /// \param label [in] Label for timers
-    /// \param params [in] Optional list of parameters for 
-    ///   setting up the specific OrthoManager subclass
-    ///
-    /// \return (Smart pointer to a) OrthoManager instance
-    ///   
-    Teuchos::RCP< Belos::OrthoManager< Scalar, MV > >
-    makeOrthoManager (const std::string& ortho, 
-		      const Teuchos::RCP< const OP >& M,
-		      const std::string& label,
-		      const Teuchos::RCP< Teuchos::ParameterList >& params)
-    {
-      // A MatOrthoManager is-an OrthoManager.
-      return makeMatOrthoManager (ortho, M, label, params);
     }
   };
 
