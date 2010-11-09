@@ -48,18 +48,13 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
+#include "BelosOrthoManagerFactory.hpp"
 
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
 #include "BelosGCRODRIter.hpp"
 #include "BelosBlockFGmresIter.hpp"
-#include "BelosDGKSOrthoManager.hpp"
-#include "BelosICGSOrthoManager.hpp"
-#include "BelosIMGSOrthoManager.hpp"
-#ifdef HAVE_BELOS_TSQR
-#  include "BelosTsqrOrthoManager.hpp"
-#endif // HAVE_BELOS_TSQR
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestGenResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -605,7 +600,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 	  os << "Belos::GCRODRSolMgr: Invalid orthogonalization type \"" 
 	     << tempOrthoType << "\".  The following are valid options "
 	     << "for the \"Orthogonalization\" type parameter: ";
-	  printValidNames (os);
+	  orthoFactory_.printValidNames (os);
 	  throw std::invalid_argument (os.str());
 	}
       // Only instantiate a new MatOrthoManager subclass if the
@@ -802,7 +797,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 	  os << "Belos::GCRODRSolMgr: Invalid orthogonalization type \"" 
 	     << orthoType_ << "\".  The following are valid options "
 	     << "for the \"Orthogonalization\" type parameter: ";
-	  printValidNames (os);
+	  orthoFactory_.printValidNames (os);
 	  throw std::invalid_argument (os.str());
 	}
       ortho_ = orthoFactory_.makeMatOrthoManager (orthoType_, Teuchos::null, 
@@ -878,7 +873,7 @@ Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getVa
     //  pl->set("Restart Timers", restartTimers_);
     pl->set("Orthogonalization", orthoType_default_,
 	    "The type of orthogonalization to use: " + 
-	    orthoNameValidator_.validList());
+	    orthoFactory_.validNamesString());
     pl->set("Orthogonalization Constant",orthoKappa_default_,
       "The constant used by DGKS orthogonalization to determine\n"
       "whether another step of classical Gram-Schmidt is necessary.");

@@ -1055,9 +1055,11 @@ namespace Belos {
     int
     normalizeOne (MV& X, serial_matrix_ptr B) const
     {
-      std::vector<int> theNorm(1, SCTM::zero());
+      std::vector< MagnitudeType > theNorm (1, SCTM::zero());
       MVT::MvNorm (X, theNorm);
-      B(0,0) = theNorm[0];
+      if (Teuchos::is_null(B))
+	B = Teuchos::rcp (new serial_matrix_type (1, 1));
+      (*B)(0,0) = theNorm[0];
       if (theNorm[0] == SCTM::zero())
 	{
 	  // Make a view of the first column of Q, fill it with random
@@ -1072,10 +1074,10 @@ namespace Belos {
 	      else
 		{
 		  // FIXME (mfh 09 Nov 2010) I'm assuming that this
-		  // constructor that converts from a MagnitudeType to
+		  // operation that converts from a MagnitudeType to
 		  // a ScalarType makes sense.
-		  ScalarType scalarNorm (theNorm[0]);
-		  MVT::MvScale (SCT::one() / scalarNorm);
+		  const ScalarType alpha = SCT::one() / theNorm[0];
+		  MVT::MvScale (X, alpha);
 		}
 	    }
 	  return 0;
@@ -1083,10 +1085,10 @@ namespace Belos {
       else
 	{
 	  // FIXME (mfh 09 Nov 2010) I'm assuming that this
-	  // constructor that converts from a MagnitudeType to
+	  // operation that converts from a MagnitudeType to
 	  // a ScalarType makes sense.
-	  ScalarType scalarNorm (theNorm[0]);
-	  MVT::MvScale (SCT::one() / scalarNorm);
+	  const ScalarType alpha = SCT::one() / theNorm[0];
+	  MVT::MvScale (X, alpha);
 	  return 1;
 	}
     }
