@@ -5661,15 +5661,6 @@ namespace Ioex {
 	else {
 	  unknown_attributes = attribute_count;
 	}
-
-	if (unknown_attributes > 0 && myProcessor == 0) {
-	  IOSS_WARNING << "For element block '" << block->name()
-		       << "' of type '" << type << "' there were "
-		       << unknown_attributes << " attributes that are not known to the IO Subsystem "
-		       << "in addition to the " << attribute_count - unknown_attributes
-		       << " that were known. The extra attributes can be accessed as the last "
-		       << unknown_attributes << " components of the field named 'attribute'";
-	}
       }
 
       // Always create a field called "attribute" containing data
