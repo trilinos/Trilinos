@@ -434,6 +434,13 @@ namespace Belos {
       // of the MV may be some other type.
       const int numCols = MVT::GetNumberVecs (X);
 
+      // This special case (for X having only one column) makes
+      // TsqrOrthoManagerImpl equivalent to Modified Gram-Schmidt
+      // orthogonalization with conditional full reorthogonalization,
+      // if all multivector inputs have only one column.
+      if (numCols == 1)
+	return normalizeOne (X, B);
+
       // Make sure that Q_ is big enough to hold the results of the
       // "thin" QR factorization of X: Q should have at least as many
       // columns as X.  If not, set Q_ to be a clone of X.
@@ -1040,6 +1047,50 @@ namespace Belos {
 	throw TsqrOrthoError (e.what()); // Toss the exception up the chain.
       }
       return rank;
+    }
+
+    /// Special case of normalize() when X has only one column.
+    /// The operation is done in place in X.  We assume that B(0,0)
+    /// makes sense, since we're going to assign to it.
+    int
+    normalizeOne (MV& X, serial_matrix_ptr B) const
+    {
+      std::vector< MagnitudeType > theNorm (1, SCTM::zero());
+      MVT::MvNorm (X, theNorm);
+      if (Teuchos::is_null(B))
+	B = Teuchos::rcp (new serial_matrix_type (1, 1));
+      (*B)(0,0) = theNorm[0];
+      if (theNorm[0] == SCTM::zero())
+	{
+	  // Make a view of the first column of Q, fill it with random
+	  // data, and normalize it.  Throw away the resulting norm.
+	  if (randomizeNullSpace_)
+	    {
+	      MVT::MvRandom(X);
+	      MVT::MvNorm (X, theNorm);
+	      if (theNorm[0] == SCTM::zero())
+		throw TsqrOrthoError("normalizeOne(): a supposedly random "
+				     "vector has norm zero!");
+	      else
+		{
+		  // FIXME (mfh 09 Nov 2010) I'm assuming that this
+		  // operation that converts from a MagnitudeType to
+		  // a ScalarType makes sense.
+		  const ScalarType alpha = SCT::one() / theNorm[0];
+		  MVT::MvScale (X, alpha);
+		}
+	    }
+	  return 0;
+	}
+      else
+	{
+	  // FIXME (mfh 09 Nov 2010) I'm assuming that this
+	  // operation that converts from a MagnitudeType to
+	  // a ScalarType makes sense.
+	  const ScalarType alpha = SCT::one() / theNorm[0];
+	  MVT::MvScale (X, alpha);
+	  return 1;
+	}
     }
 
     /// Normalize X into Q*B, overwriting X in the process.
