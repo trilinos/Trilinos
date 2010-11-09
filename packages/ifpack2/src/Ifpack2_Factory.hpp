@@ -80,21 +80,20 @@ typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
 typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCrsMatrix;
 typedef Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> TPrecond;
 ...
-Ifpack2::Factory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Factory;
+Ifpack2::Factory factory;
 
 Teuchos::RCP<TCrsMatrix> A; // A is fillComplete()'d.
 std::string PrecType = "ILUT"; // use incomplete LU on each process
-Teuchos::RCP<TPrecond> Prec = Factory.create(PrecType, A);
-assert (Prec != Teuchos::null);
+Teuchos::RCP<TPrecond> prec = factory.create(PrecType, A);
 
-Teuchos::ParameterList List;
-List.set("fact: ilut level-of-fill", 5.0); // use ILUT(fill=5, drop=0)
+Teuchos::ParameterList params;
+params.set("fact: ilut level-of-fill", 5.0); // use ILUT(fill=5, drop=0)
 
-Prec->SetParameters(List);
-Prec->Initialize();
-Prec->Compute();
+prec->setParameters(List);
+prec->initialize();
+prec->compute();
 
-// now Prec can be used as a preconditioner
+// now prec can be used as a preconditioner
 
 \endcode
 
