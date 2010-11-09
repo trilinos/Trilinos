@@ -132,6 +132,10 @@ namespace Belos {
     static int GetNumberVecs( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }     
 
+    //! Ask whether the given multivector \c mv has constant stride.  This is useful for certain orthogonalization methods, for example.
+    static bool HasConstantStride( const MV& mv )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return false; }
+
     //@}
 
     //! @name Update methods

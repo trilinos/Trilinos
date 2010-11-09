@@ -169,6 +169,9 @@ namespace Belos {
     static int GetNumberVecs( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     { return mv.getNumVectors(); }
 
+    static bool HasConstantStride( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
+    { return mv.isConstantStride(); }
+
     static void MvTimesMatAddMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
                                  const Teuchos::SerialDenseMatrix<int,Scalar>& B, 
                                  Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )

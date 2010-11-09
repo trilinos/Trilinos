@@ -87,7 +87,8 @@ namespace Belos {
     const bool defaultRandomizeNullSpace = true;
     params->set ("randomizeNullSpace", defaultRandomizeNullSpace, 
 		 "Whether to fill in null space vectors with random data.");
-    const bool defaultReorthogonalizeBlocks = false;
+    //const bool defaultReorthogonalizeBlocks = false;
+    const bool defaultReorthogonalizeBlocks = true;
     params->set ("reorthogonalizeBlocks", defaultReorthogonalizeBlocks,
 		 "Whether to do block reorthogonalization at all.");
     // This parameter corresponds to the "blk_tol_" parameter in
@@ -225,9 +226,9 @@ namespace Belos {
       tsqrAdaptor_ (Teuchos::null),
       Q_ (Teuchos::null),
       eps_ (SCT::eps()),
-      randomizeNullSpace_ (false),    // Set later by readParams()
-      reorthogonalizeBlocks_ (false), // Set later by readParams()
-      throwOnReorthogFault_ (true),   // Set later by readParams()
+      randomizeNullSpace_ (true),    // Set later by readParams()
+      reorthogonalizeBlocks_ (true), // Set later by readParams()
+      throwOnReorthogFault_ (false),   // Set later by readParams()
       blockReorthogThreshold_ (0),    // Set later by readParams()
       relativeRankTolerance_ (0)      // Set later by readParams()
     {
@@ -338,7 +339,7 @@ namespace Belos {
 	  if (C[k] == Teuchos::null)
 	    C[k] = Teuchos::rcp (new serial_matrix_type (ncols_Q_k, ncols_X));
 	  else if (C[k]->numRows() != ncols_Q_k || C[k]->numCols() != ncols_X)
-	    C[k]->reshape (ncols_Q_k, ncols_X);
+	    C[k]->shape (ncols_Q_k, ncols_X);
 	  else
 	    C[k]->putScalar (ScalarType(0));
 	}
@@ -387,13 +388,13 @@ namespace Belos {
 		  // recycle existing storage whenever possible, at
 		  // least when the new matrix dimensions are the
 		  // same.
-		  Teuchos::RCP< serial_matrix_type > C2_k (new serial_matrix_type (ncols_Q_k, ncols_X));
+		  serial_matrix_type C2_k (ncols_Q_k, ncols_X);
 		  //
 		  // Redo the projection for this block, and update coefficients.
 		  //
-		  innerProd (*Q[k], X, *C2_k);
-		  MVT::MvTimesMatAddMv (ScalarType(-1), *Q[k], *C2_k, ScalarType(1), X);
-		  *C[k] += *C2_k;
+		  innerProd (*Q[k], X, C2_k);
+		  MVT::MvTimesMatAddMv (ScalarType(-1), *Q[k], C2_k, ScalarType(1), X);
+		  *C[k] += C2_k;
 		}
 	    }
 	}	  
@@ -456,7 +457,6 @@ namespace Belos {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
 #endif
-
       // Fetch dimensions of X and Q.
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
@@ -499,10 +499,20 @@ namespace Belos {
       // First (Modified) Block Gram-Schmidt pass:
       // C := Q^* X
       // X := X - Q C
+      // std::cerr << "+++ first rawProject() call" << std::endl;
       rawProject (X, Q, C);
+      // std::cerr << "+++ done with first rawProject() call" << std::endl;
 
-      // Normalize the matrix X.  This allocates a new B if necessary.
+      // Before normalizing the matrix X, be sure to allocate a new B
+      // matrix here.  If we let the normalize() routine allocate,
+      // that storage will go away at the end of normalize().
+      if (B.is_null())
+	B = Teuchos::rcp (new serial_matrix_type (ncols_X, ncols_X));
+      // std::cerr << "+++ first normalize() call" << std::endl;
+      // if (! MVT::HasConstantStride(X))
+      //   std::cerr << "*** X does not have constant stride! ***" << std::endl;
       const int firstPassRank = normalize (X, B);
+      // std::cerr << "+++ done with first normalize() call" << std::endl;
       int rank = firstPassRank;
 
       // If X (after the projection step) is not full rank and
@@ -531,12 +541,23 @@ namespace Belos {
       // the random vectors with the block reorthogonalization of X.
       if (firstPassRank < ncols_X && randomizeNullSpace_)
 	{
+	  // using std::cerr;
+	  // using std::endl;
+	  // cerr << "+++ X has " << ncols_X << " columns but rank " 
+	  //      << firstPassRank << " after first normalize() call; will "
+	  //      << "replace null space basis with random vectors." << endl;
+
 	  const int numNullSpaceCols = ncols_X - firstPassRank;
 	  // View of the null space basis columns of X.
 	  std::vector<int> nullSpaceIndices (numNullSpaceCols);
-	  for (int k = 0; k < firstPassRank; ++k)
+	  for (int k = 0; k < numNullSpaceCols; ++k)
 	    nullSpaceIndices[k] = k + firstPassRank;
 	  Teuchos::RCP< MV > X_null = MVT::CloneViewNonConst (X, nullSpaceIndices);
+
+	  // if (MVT::HasConstantStride(*X_null))
+	  //   cerr << "+++ X_null has constant stride" << endl;
+	  // else
+	  //   cerr << "*** X_null does not have constant stride! ***" << endl;
 
 	  // FIXME (mfh 07 Nov 2010) The projection coefficients will
 	  // be thrown away, but rawProject() wants them.  It's a bit

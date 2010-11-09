@@ -225,7 +225,9 @@ namespace Belos {
 	    serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
 	    C1.random();
 	    C2.random();
+	    // S := X1*C1
 	    MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
+	    // S := S + X2*C2
 	    MVT::MvTimesMatAddMv(ONE,*X2,C2,ONE,*S);
 
 	    debugOut << "Testing project() by projecting [X1 X2]-range multivector "
@@ -358,12 +360,34 @@ namespace Belos {
 		MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
 	      }
 	    debugOut << "Testing projectAndNormalize() on a rank-1 multivector " << endl;
-	    const int thisNumFailed = testProjectAndNormalize(OM,S,X1,X2,MyOM);
-	    numFailed += thisNumFailed;
-	    if (thisNumFailed > 0)
-	      debugOut << "  *** " << thisNumFailed 
-		       << (thisNumFailed > 1 ? " tests" : " test") 
-		       << " failed." << endl;
+	    bool constantStride = true;
+	    if (! MVT::HasConstantStride(*S))
+	      {
+		debugOut << "-- S does not have constant stride" << endl;
+		constantStride = false;
+	      }
+	    if (! MVT::HasConstantStride(*X1))
+	      {
+		debugOut << "-- X1 does not have constant stride" << endl;
+		constantStride = false;
+	      }
+	    if (! MVT::HasConstantStride(*X2))
+	      {
+		debugOut << "-- X2 does not have constant stride" << endl;
+		constantStride = false;
+	      }
+	    if (! constantStride)
+	      debugOut << "-- Skipping this test, since TSQR does not work on "
+		"multivectors with nonconstant stride" << endl;
+	    else
+	      {
+		const int thisNumFailed = testProjectAndNormalize(OM,S,X1,X2,MyOM);
+		numFailed += thisNumFailed;
+		if (thisNumFailed > 0)
+		  debugOut << "  *** " << thisNumFailed 
+			   << (thisNumFailed > 1 ? " tests" : " test") 
+			   << " failed." << endl;
+	      }
 	  }
 
 	if (numFailed != 0)

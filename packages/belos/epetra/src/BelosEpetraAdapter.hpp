@@ -291,6 +291,9 @@ namespace Belos {
     static int GetNumberVecs( const Epetra_MultiVector& mv )
     { return mv.NumVectors(); }
     ///
+    static bool HasConstantStride( const Epetra_MultiVector& mv )
+    { return mv.ConstantStride(); }
+    ///
     static void MvTimesMatAddMv( const double alpha, const Epetra_MultiVector& A, 
 				 const Teuchos::SerialDenseMatrix<int,double>& B, 
 				 const double beta, Epetra_MultiVector& mv )
