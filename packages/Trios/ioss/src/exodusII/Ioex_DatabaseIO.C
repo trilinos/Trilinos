@@ -5744,11 +5744,11 @@ namespace {
       }
     }
     
-    if (component_sum > attribute_count) {
+    if (component_sum != attribute_count) {
       std::ostringstream errmsg;
-      std::cerr << "INTERNAL ERROR: Block '" << block->name() << "' is supposed to have " << attribute_count
-		<< " attributes, but " << component_sum << " attributes were counted.\n"
-		<< "Something is wrong in the Ioex::DatabaseIO class, function check_attribute_index_error. Please report.\n";
+      std::cerr << "ERROR: Block '" << block->name() << "' is supposed to have " << attribute_count
+		<< " attributes, but" << component_sum << " attributes were defined.\n"
+		<< "Error detected in the Ioex::DatabaseIO function 'check_attribute_index_error'. Please report.\n";
       IOSS_ERROR(errmsg);
     }
 
