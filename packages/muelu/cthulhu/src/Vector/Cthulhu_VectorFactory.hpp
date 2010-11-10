@@ -13,7 +13,7 @@
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
 #include "Cthulhu_EpetraMap.hpp"
-//#include "Cthulhu_EpetraVector.hpp"
+#include "Cthulhu_EpetraVector.hpp"
 #endif
 
 #include "Cthulhu_Debug.hpp"
@@ -51,9 +51,9 @@ namespace Cthulhu {
         return rcp( new TpetraVector(map, zeroOut) );
 #endif
 #ifdef HAVE_CTHULHU_EPETRA
-//       const RCP<const EpetraMap> &eMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(map);
-//       if (eMap != null)
-//         return rcp( new EpetraVector(map, zeroOut) );
+      const RCP<const EpetraMap> &eMap = Teuchos::rcp_dynamic_cast<const EpetraMap>(map);
+      if (eMap != null)
+        return rcp( new EpetraVector(map, zeroOut) );
 #endif
       TEST_FOR_EXCEPTION(1,Cthulhu::Exceptions::BadCast,"Cannot dynamically cast Cthulhu::Map to an EpetraMap or a TpetraMap. The exact type of the Map 'map' is unknown");
     }

@@ -10,9 +10,8 @@
 #include "Cthulhu_Vector.hpp"
 #include "Cthulhu_Exceptions.hpp"
 
-#include "Cthulhu_ConfigDefs.hpp"
-
 #include "Cthulhu_TpetraMap.hpp"
+#include "Cthulhu_TpetraMultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 
 namespace Cthulhu {
@@ -24,12 +23,12 @@ namespace Cthulhu {
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
   template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class TpetraVector : public Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> { // TODO public::TpetraMultiVector ?
+  class TpetraVector : public Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,  public TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     
     // // need this so that MultiVector::operator() can call Vector's private constructor
     // friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
-    // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+    // The following typedef is used by the CTHULHU_DYNAMIC_CAST() macro.
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
     
   public:
@@ -38,10 +37,10 @@ namespace Cthulhu {
     //@{ 
 
     //! Sets all vector entries to zero.
-    explicit TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true) {
+    explicit TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true) 
+      : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut)
+    {
       CTHULHU_DEBUG_ME;
-      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, map, tMap, "Cthulhu::TpetraVector constructors only accept Cthulhu::TpetraMap as input arguments.");
-      vec_ = rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), zeroOut));
     }
     
 #ifdef CTHULHU_NOT_IMPLEMENTED
@@ -65,22 +64,22 @@ namespace Cthulhu {
     //! Replace current value at the specified location with specified value.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-    inline void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { CTHULHU_DEBUG_ME; vec_->replaceGlobalValue(globalRow, value); };
+    inline void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceGlobalValue(globalRow,0,value); };
 
     //! Adds specified value to existing value at the specified location.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-    inline void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { CTHULHU_DEBUG_ME; vec_->sumIntoGlobalValue(globalRow, value); };
+    inline void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoGlobalValue(globalRow, 0, value); };
 
     //! Replace current value at the specified location with specified values.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-    inline void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { CTHULHU_DEBUG_ME; vec_->replaceLocalValue(myRow, value); };
+    inline void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(myRow, 0, value); };
 
     //! Adds specified value to existing value at the specified location.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-    inline void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { CTHULHU_DEBUG_ME; vec_->sumIntoLocalValue(myRow, value); };
+    inline void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(myRow, 0, value); };
 
     //@}
 
@@ -126,24 +125,87 @@ namespace Cthulhu {
     //@{
 
     /** \brief Return a simple one-line description of this object. */
-    inline std::string description() const { CTHULHU_DEBUG_ME; return vec_->description(); };
+    inline std::string description() const { 
+      CTHULHU_DEBUG_ME; 
+
+      // This implementation come from Tpetra_Vector_def.hpp (without modification)
+      std::ostringstream oss;
+      oss << Teuchos::Describable::description();
+      oss << "{length="<<this->getGlobalLength()
+          << "}";
+      return oss.str();
+      
+    };
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; return vec_->describe(out, verbLevel); };
+    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
+      CTHULHU_DEBUG_ME; 
+      
+      typedef Kokkos::MultiVector<Scalar,Node> KMV;
+      typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+
+      // This implementation come from Tpetra_Vector_def.hpp (without modification)
+      using std::endl;
+      using std::setw;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+      Teuchos::EVerbosityLevel vl = verbLevel;
+      if (vl == VERB_DEFAULT) vl = VERB_LOW;
+      Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
+      const int myImageID = comm->getRank(),
+        numImages = comm->getSize();
+      size_t width = 1;
+      for (size_t dec=10; dec<this->getGlobalLength(); dec *= 10) {
+        ++width;
+      }
+      Teuchos::OSTab tab(out);
+      if (vl != VERB_NONE) {
+        // VERB_LOW and higher prints description()
+        if (myImageID == 0) out << this->description() << std::endl; 
+        for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+          if (myImageID == imageCtr) {
+            if (vl != VERB_LOW) {
+              // VERB_MEDIUM and higher prints getLocalLength()
+              out << "node " << setw(width) << myImageID << ": local length=" << this->getLocalLength() << endl;
+              if (vl != VERB_MEDIUM) {
+                // VERB_HIGH and higher prints isConstantStride() and stride()
+                if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
+                  Teuchos::RCP<Node> node = this->lclMV_.getNode();
+                  KOKKOS_NODE_TRACE("Vector::describe()")
+                    Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
+                                                                                               this->getLocalLength(), 
+                                                                                               MVT::getValues(this->lclMV_) );
+                  // VERB_EXTREME prints values
+                  for (size_t i=0; i<this->getLocalLength(); ++i) {
+                    out << setw(width) << this->getMap()->getGlobalElement(i) 
+                        << ": "
+                        << myview[i] << endl;
+                  }
+                  myview = Teuchos::null;
+                }
+              }
+              else {
+                out << endl;
+              }
+            }
+          }
+        }
+      }
+    }
 
     //@}
 
-//   protected:
+    // protected:
 
-//     //! Advanced constructor accepting parallel buffer view.
-//     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) { CTHULHU_DEBUG_ME; vec_->(); };
+    //     //! Advanced constructor accepting parallel buffer view.
+    //     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) { CTHULHU_DEBUG_ME; vec_->(); };
 
-    RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { CTHULHU_DEBUG_ME; return vec_; }
+    RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector().getVector(0); }
     
-  private:
-    RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;
-
-
   }; // class TpetraVector
 
 #ifdef CTHULHU_NOT_IMPLEMENTED

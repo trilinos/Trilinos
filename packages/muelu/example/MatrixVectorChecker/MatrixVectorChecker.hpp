@@ -52,13 +52,12 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
   RCP<Vector> ww = VectorFactory::Build(rowMap,true);
   RCP<Vector> zz = VectorFactory::Build(rowMap,true);
 
-  //TODO  
-  Teuchos::ArrayRCP<SC> v; // = vv->getDataNonConst();
-  Teuchos::ArrayRCP<SC> y; // = yy->getDataNonConst();
-  Teuchos::ArrayRCP<SC> w; // = ww->getDataNonConst();
-  Teuchos::ArrayRCP<SC> z; // = zz->getDataNonConst();
+  Teuchos::ArrayRCP<SC> v = vv->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> y = yy->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> w = ww->getDataNonConst(0);
+  Teuchos::ArrayRCP<SC> z = zz->getDataNonConst(0);
   
-  //TODO  vv->randomize();
+  vv->randomize();
 
   for (unsigned int i = 0; i < domMap->getNodeNumElements(); i++) {
      if ((v[i] > -.5 ) && (v[i] < 0. )) v[i] -= .5;
@@ -66,11 +65,11 @@ int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdi
   }
 
   // y <-- mat*v via standard multiply
-  //TODO  mat->multiply(*vv,*yy, Teuchos::NO_TRANS, 1, 0);
+  mat->multiply(*vv,*yy, Teuchos::NO_TRANS, 1, 0);
 
   // TODO ??
   // Copy v and add ghost stuff imported from other processors
-  // MyVector vhat(colMap);  //TODO: replace Vector by Vector
+  // MyVector vhat(colMap);  //TODO: replace MyVector
   //   if (mat->RowMatrixImporter()) {
   //      vhat.Import(v, *(mat->RowMatrixImporter()), Insert);
   //      v = vhat.Values();

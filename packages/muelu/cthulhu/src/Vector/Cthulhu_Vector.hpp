@@ -13,7 +13,7 @@ namespace Cthulhu {
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
   template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class Vector { //TODO : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class Vector : public virtual MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
     // // need this so that MultiVector::operator() can call Vector's private constructor
     // friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
@@ -31,25 +31,33 @@ namespace Cthulhu {
     //! @name Post-construction modification routines
     //@{ 
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Replace current value at the specified location with specified value.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
     virtual void replaceGlobalValue(GlobalOrdinal globalRow, const Scalar &value) = 0;
+#endif
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Adds specified value to existing value at the specified location.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
     virtual void sumIntoGlobalValue(GlobalOrdinal globalRow, const Scalar &value) = 0;
+#endif
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Replace current value at the specified location with specified values.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
     virtual void replaceLocalValue(LocalOrdinal myRow, const Scalar &value) = 0;
+#endif
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Adds specified value to existing value at the specified location.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
     virtual void sumIntoLocalValue(LocalOrdinal myRow, const Scalar &value) = 0;
+#endif
 
     //@}
 
@@ -94,12 +102,15 @@ namespace Cthulhu {
     //! @name Overridden from Teuchos::Describable 
     //@{
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Return a simple one-line description of this object. */
     virtual std::string description() const = 0;
+#endif
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
-
+#endif
     //@}
 
 //   protected:

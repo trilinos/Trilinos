@@ -27,7 +27,7 @@ namespace Cthulhu {
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
   template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class TpetraMultiVector : public Cthulhu::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class TpetraMultiVector : public virtual Cthulhu::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
     // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
     typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
