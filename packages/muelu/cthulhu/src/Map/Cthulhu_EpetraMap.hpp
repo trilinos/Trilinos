@@ -13,6 +13,7 @@
 #include "Cthulhu_Debug.hpp"
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_Comm.hpp"
+#include "Cthulhu_EpetraExceptions.hpp"
 
 #include <Epetra_Map.h>
 
@@ -53,8 +54,12 @@ namespace Cthulhu {
      */
     EpetraMap(global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
               LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) 
-      :  map_(rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME; }
-     
+    {
+
+      CTHULHU_DEBUG_ME;       
+      CATCH_EPETRA_EXCEPTION_AND_THROW_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos2Epetra_Comm(comm))))););
+    }
+    
     /** \brief EpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
      *  are non-overlapping and contiguous 
@@ -66,7 +71,10 @@ namespace Cthulhu {
      */
     EpetraMap(global_size_t numGlobalElements, size_t numLocalElements, int indexBase, 
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
-      : map_(rcp(new Epetra_Map(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME;}
+    {
+      CTHULHU_DEBUG_ME; 
+      CATCH_EPETRA_EXCEPTION_AND_THROW_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm))))););
+    }
         
     /** \brief EpetraMap constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
@@ -75,9 +83,13 @@ namespace Cthulhu {
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, 
-              const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
-      : map_(rcp(new Epetra_Map(numGlobalElements, elementList.size(), elementList.getRawPtr(), indexBase, *Teuchos2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME;}
+// TODO: UnitTest FAILED
+//     EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, 
+//               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
+//     { 
+//       CTHULHU_DEBUG_ME; 
+//       CATCH_EPETRA_EXCEPTION_AND_THROW_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, elementList.size(), elementList.getRawPtr(), indexBase, *Teuchos2Epetra_Comm(comm))))););
+//     }
 
     /** \brief EpetraMap constructor to wrap a Epetra_Map object.
      */
@@ -169,11 +181,11 @@ namespace Cthulhu {
 
     //! Returns true if the local index is valid for this Map on this node; returns false if it isn't.
     bool isNodeLocalElement(int localIndex) const { CTHULHU_DEBUG_ME; 
-      return map_->LID(localIndex); 
+      return map_->MyLID(localIndex); 
     };
 
     //! Returns true if the global index is found in this Map on this node; returns false if it isn't.
-    bool isNodeGlobalElement(int globalIndex) const { CTHULHU_DEBUG_ME; return map_->GID(globalIndex); };
+    bool isNodeGlobalElement(int globalIndex) const { CTHULHU_DEBUG_ME; return map_->MyGID(globalIndex); };
 
     //! Returns true if this Map is distributed contiguously; returns false otherwise.
     bool isContiguous() const { CTHULHU_DEBUG_ME; return map_->LinearMap(); };
