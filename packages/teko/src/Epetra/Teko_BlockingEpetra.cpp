@@ -213,7 +213,6 @@ RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const
    TEUCHOS_ASSERT(j>=0 && j<numVarFamily);
 
    const Epetra_Map & gRowMap = *subMaps[i].first; // new GIDs
-   const Epetra_Map & gColMap = *subMaps[j].first;
    const Epetra_Map & rowMap = *subMaps[i].second; // contiguous GIDs
    const Epetra_Map & colMap = *subMaps[j].second;
 
@@ -279,9 +278,7 @@ void rebuildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<Ma
    TEUCHOS_ASSERT(j>=0 && j<numVarFamily);
 
    const Epetra_Map & gRowMap = *subMaps[i].first; // new GIDs
-   const Epetra_Map & gColMap = *subMaps[j].first;
    const Epetra_Map & rowMap = *subMaps[i].second; // contiguous GIDs
-   const Epetra_Map & colMap = *subMaps[j].second;
 
    const RCP<Epetra_IntVector> plocal2ContigGIDs = getSubBlockColumnGIDs(A,subMaps[j]);
    Epetra_IntVector & local2ContigGIDs = *plocal2ContigGIDs;

@@ -759,6 +759,13 @@ ModifiableLinearOp getDiagonalOp(const Teko::LinearOp & A,const DiagonalType & d
   */
 ModifiableLinearOp getInvDiagonalOp(const Teko::LinearOp & A,const DiagonalType & dt);
 
+/** \brief Get the diagonal of a sparse linear operator
+  *
+  * \param[in] Op Sparse linear operator to get diagonal of
+  * \param[in] dt Type of diagonal operator required.
+  */
+const MultiVector getDiagonal(const LinearOp & op,const DiagonalType & dt);
+
 /** Get a string corresponding to the type of digaonal specified.
   *
   * \param[in] dt The type of diagonal.

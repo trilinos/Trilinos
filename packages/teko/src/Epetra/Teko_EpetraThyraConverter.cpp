@@ -48,6 +48,7 @@
 
 // Teuchos includes
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 // Thyra includes
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -88,8 +89,13 @@ void blockEpetraToThyra(int numVectors,const double * epetraData,int leadingDim,
       int localSubDim = spmdVS->localSubDim();
 
       Thyra::Ordinal thyraLeadingDim=0;
-      double * thyraData=0;
-      spmdX->getLocalData(&thyraData,&thyraLeadingDim);
+      // double * thyraData=0;
+      // spmdX->getLocalData(&thyraData,&thyraLeadingDim);
+
+      Teuchos::ArrayRCP<double> thyraData_arcp;
+      Teuchos::ArrayView<double> thyraData;
+      spmdX->getNonconstLocalData(Teuchos::outArg(thyraData_arcp),Teuchos::outArg(thyraLeadingDim));
+      thyraData = thyraData_arcp(); // build array view
 
       for(int i=0;i<localSubDim;i++) {
          // copy each vector
@@ -97,7 +103,7 @@ void blockEpetraToThyra(int numVectors,const double * epetraData,int leadingDim,
             thyraData[i+thyraLeadingDim*v] = epetraData[i+leadingDim*v];
       }
 
-      spmdX->commitLocalData(thyraData);
+      // spmdX->commitLocalData(&thyraData[0]);
 
       // set the local dimension
       localDim = localSubDim;
@@ -160,8 +166,13 @@ void blockThyraToEpetra(int numVectors,double * epetraData,int leadingDim,const 
       int localSubDim = spmdVS->localSubDim();
 
       Thyra::Ordinal thyraLeadingDim=0;
-      const double * thyraData=0;
-      spmdX->getLocalData(&thyraData,&thyraLeadingDim);
+      // const double * thyraData=0;
+      // spmdX->getLocalData(&thyraData,&thyraLeadingDim);
+    
+      Teuchos::ArrayView<const double> thyraData;
+      Teuchos::ArrayRCP<const double> thyraData_arcp;
+      spmdX->getLocalData(Teuchos::outArg(thyraData_arcp),Teuchos::outArg(thyraLeadingDim));
+      thyraData = thyraData_arcp(); // grab the array view
 
       for(int i=0;i<localSubDim;i++) {
          // copy each vector

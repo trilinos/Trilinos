@@ -203,9 +203,9 @@ protected:
    Teuchos::RCP<InverseFactory> invFactoryP_;
 
    // flags for handling various options
-   bool useFullLDU_;
    bool isSymmetric_;
    int eigSolveParam_;
+   bool useFullLDU_;
 
    // scaling operator parameters
    bool useMass_;

@@ -698,6 +698,15 @@ const MultiVector getDiagonal(const LinearOp & op)
    return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eCrsOp->RowMap())));
 }
 
+const MultiVector getDiagonal(const Teko::LinearOp & A,const DiagonalType & dt)
+{
+   LinearOp diagOp = Teko::getDiagonalOp(A,dt);
+
+   Teuchos::RCP<const Thyra::MultiVectorBase<double> > v = 
+         Teuchos::rcp_dynamic_cast<const Thyra::DiagonalLinearOpBase<double> >(A)->getDiag(); 
+   return Teuchos::rcp_const_cast<Thyra::MultiVectorBase<double> >(v);
+}
+
 /** \brief Get the diaonal of a linear operator
   *
   * Get the inverse of the diagonal of a linear operator.
