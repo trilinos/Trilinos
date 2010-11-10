@@ -52,6 +52,9 @@
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ParameterList.hpp"
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+#  include "Teuchos_TimeMonitor.hpp"
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -216,7 +219,7 @@ namespace Belos {
     ///   which multivector (MV) class you are using (since each MV
     ///   class maps to a specific TSQR implementation).
     ///
-    /// \param label [in] Label for Belos timers.  Only has an effect 
+    /// \param label [in] Label for Belos timers.  This only matters
     ///   if the compile-time option for enabling Belos timers is set.
     ///
     TsqrOrthoManagerImpl (const Teuchos::ParameterList& tsqrParams,
@@ -226,19 +229,16 @@ namespace Belos {
       tsqrAdaptor_ (Teuchos::null),
       Q_ (Teuchos::null),
       eps_ (SCT::eps()),
-      randomizeNullSpace_ (true),    // Set later by readParams()
-      reorthogonalizeBlocks_ (true), // Set later by readParams()
-      throwOnReorthogFault_ (false),   // Set later by readParams()
+      randomizeNullSpace_ (true),     // Set later by readParams()
+      reorthogonalizeBlocks_ (true),  // Set later by readParams()
+      throwOnReorthogFault_ (false),  // Set later by readParams()
       blockReorthogThreshold_ (0),    // Set later by readParams()
       relativeRankTolerance_ (0)      // Set later by readParams()
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-      std::string sublabel = label_ = ": All orthogonalization";
-      timerOrtho_ = Teuchos::TimeMonitor::getNewTimer (sublabel);
-      sublabel = label_ = ": Projection";
-      timerProject_ = Teuchos::TimeMonitor::getNewTimer (sublabel);
-      sublabel = label_ = ": Normalization";
-      timerNormalize_ = Teuchos::TimeMonitor::getNewTimer (sublabel);
+      timerOrtho_ = makeTimer (label, "All orthogonalization");
+      timerProject_ = makeTimer (label, "Projection");
+      timerNormalize_ = makeTimer (label, "Normalization");
 #endif // BELOS_TEUCHOS_TIME_MONITOR
 
       // Extract values for the four parameters
@@ -312,7 +312,8 @@ namespace Belos {
       // running in projectAndNormalize().
       Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
       Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
-#endif
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
       // Internal data used by this method require a specific MV
       // object for initialization (e.g., to get a Map / communicator,
       // and to initialize scratch space).  Thus, we delay (hence
@@ -411,7 +412,8 @@ namespace Belos {
       // stopped, because it is already running.  TimeMonitor handles
       // recursive invocation by doing nothing.
       Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-#endif
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
       // Internal data used by this method require a specific MV
       // object for initialization (e.g., to get a Map / communicator,
       // and to initialize scratch space).  Thus, we delay (hence
@@ -463,7 +465,8 @@ namespace Belos {
     {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
       Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-#endif
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
       // Fetch dimensions of X and Q.
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
@@ -782,9 +785,6 @@ namespace Belos {
     MagnitudeType relativeRankTolerance() const { return relativeRankTolerance_; }
 
   private:
-#ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::RCP< Teuchos::Time > timerOrtho_, timerProject_, timerNormalize_;
-#endif // BELOS_TEUCHOS_TIME_MONITOR
 
     /// Default parameters for initializing TSQR, complete with
     /// human-readable documentation strings.  This is a pointer
@@ -824,6 +824,35 @@ namespace Belos {
     ///
     /// Relative tolerance for measuring the numerical rank of a matrix.
     MagnitudeType relativeRankTolerance_;
+
+#ifdef BELOS_TEUCHOS_TIME_MONITOR
+    /// Timer for all orthogonalization operations
+    ///
+    Teuchos::RCP< Teuchos::Time > timerOrtho_;
+    /// Timer for projection operations
+    /// 
+    Teuchos::RCP< Teuchos::Time > timerProject_;
+    /// Timer for normalization operations
+    ///
+    Teuchos::RCP< Teuchos::Time > timerNormalize_;
+
+    /// Instantiate and return a timer with an appropriate label
+    ///
+    /// \param prefix [in] Prefix for the timer label, e.g., "Belos"
+    /// \param timerName [in] Name of the timer, or what the timer
+    ///   is timing, e.g., "Projection" or "Normalization"
+    ///
+    /// \return Smart pointer to a new Teuchos::Time timer object,
+    ///   to be used via Teuchos::TimeMonitor
+    static Teuchos::RCP< Teuchos::Time >
+    makeTimer (const std::string& prefix, 
+	       const std::string& timerName)
+    {
+      const std::string timerLabel = 
+	prefix.empty() ? timerName : (prefix + ": " + timerName);
+      return Teuchos::TimeMonitor::getNewTimer (timerLabel);
+    }
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
     /// Try to return a boolean parameter with the given key.  If no
     /// parameter with that key exists, return the value of the
@@ -1000,7 +1029,7 @@ namespace Belos {
       // projectAndNormalize().
       Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
       Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
-#endif
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
@@ -1108,7 +1137,8 @@ namespace Belos {
       // stopped, because it is already running.  TimeMonitor handles
       // recursive invocation by doing nothing.
       Teuchos::TimeMonitor timerMonitorOrtho(*timerOrtho_);
-#endif
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
       const int numCols = MVT::GetNumberVecs (X);
       if (numCols == 0)
 	return 0; // Fast exit for an empty input matrix
@@ -1182,7 +1212,8 @@ namespace Belos {
 	  {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 	    Teuchos::TimeMonitor timerMonitorProject(*timerProject_);
-#endif
+#endif // BELOS_TEUCHOS_TIME_MONITOR
+
 	    // Make temporary storage for the projection coefficients.
 	    // We don't need to keep the coefficients, since the
 	    // random vectors are replacing the null space basis of X.
