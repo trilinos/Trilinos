@@ -32,7 +32,7 @@ TEUCHOS_UNIT_TEST(Level, Test0)
   list.set("nx",10);
   LO nx = list.get("nx",10);
   RCP<const Map> map = MueLu_UnitTest::create_tpetra_map<LO,GO,Node>(nx);
-  RCP<Operator> A = CreateCrsMatrix<Scalar,LO,GO,Node>("Laplace1D",map,list);
+  RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<Scalar,LO,GO,Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO> >("Laplace1D",map,list);
 
   out << "Testing default ctor" << std::endl;
   Level firstLevel;

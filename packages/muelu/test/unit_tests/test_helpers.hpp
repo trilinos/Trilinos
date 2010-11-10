@@ -7,6 +7,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Map.hpp"
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"
 #include <iostream>

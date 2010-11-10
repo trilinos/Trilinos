@@ -115,7 +115,7 @@ int main(int argc, char** argv)
   matrixList.set("ny",ny);
   matrixList.set("nz",nz);
 
-  A = CreateCrsMatrix<SC,LO,GO,NO>(matrixType,map,matrixList);
+  A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO> >(matrixType,map,matrixList);
   //RCP<FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   //A->describe(*out, VERB_EXTREME);
 
