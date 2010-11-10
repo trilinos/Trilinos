@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-#include <limits.h>
+#include <assert.h>
 #include <ctype.h>
 #include "zoltan_mem.h"
 #include "zz_const.h"
@@ -28,6 +28,7 @@ extern "C" {
 #include "graph.h"
 #include "all_allo_const.h"
 #include "zz_rand.h"
+#include "bucket.h"
 
 /* when sending new colored vertices to processors,
    sent only the "relevant" ones; i.e., send the color info if the processors has
@@ -159,11 +160,11 @@ int Zoltan_Color(
 			   information exchange */
   char comm_pattern;    /* (A) asynchronous (S) synchronous supersteps*/
   char coloring_order;     /* (I) interior vertices first
-			   (B) boundary vertices first (U) interleaved */
+			   (B) boundary vertices first (U) interleaved = (N) natural,
+                           (L) largest degree first, (S) smallest degree last */
   char coloring_method;    /* Coloring method. (F) First fit */
 
-
-  static char *yo = "color_fn";
+  static char *yo = "Zoltan_Color";
   ZOLTAN_GNO_TYPE *vtxdist=NULL, *adjncy=NULL;
   int *itmp, *xadj=NULL;
   int *adjproc=NULL;
@@ -181,7 +182,7 @@ int Zoltan_Color(
   ZOLTAN_ID_PTR my_global_ids= NULL;  /* gids local to this proc */
   struct Zoltan_DD_Struct *dd_color;  /* DDirectory for colors */
 
-  #define _DEBUG_TIMES  
+
 #ifdef _DEBUG_TIMES  
   double times[6]={0.,0.,0.,0.,0.,0.}, rtimes[6]; /* Used for timing measurements */
   double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
@@ -245,7 +246,7 @@ int Zoltan_Color(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Asynchronous communication pattern is not implemented for distance-2 coloring and its variants. Using synchronous communication (S).");
       comm_pattern = 'S';
   }
-  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U') {
+  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U' && coloring_order != 'N' && coloring_order != 'L' && coloring_order != 'S') {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring order. Using internal first coloring order (I).");
       coloring_order = 'I';
   }
@@ -419,14 +420,99 @@ int Zoltan_Color(
   return ierr;
 }
 
+
+/* fills the visit array with the n first vertices of xadj using the
+   Largest Degree First ordering. The algorithm used to compute this
+   ordering is a stable count sort. */
+static void LargestDegreeFirstOrdering(
+    ZZ  *zz, 
+    int *visit, /*Out*/
+    int *xadj,
+    int n,
+    int max_degree) 
+{	
+    static char* yo = "LargestDegreeFirstOrdering";
+    int ierr = ZOLTAN_OK;
+    int i;
+    int *cnt;
+    
+    cnt = (int*) ZOLTAN_MALLOC (sizeof(int)*(max_degree+1));
+    if (!cnt)
+        MEMORY_ERROR;
+    
+    memset(cnt, 0, sizeof(int)*(max_degree+1));
+    for (i=0; i<n; ++i) {
+        int degree_of_i = xadj[i+1]-xadj[i];
+        ++cnt[degree_of_i];
+    }
+    /* now, cnt[i] is the number of vertice which degree is i*/
+
+    /* this loop performs a prefix sum array computation on cnt*/
+    for (i=1; i<max_degree+1; ++i) 
+        cnt[i] = cnt[i] + cnt[i-1];
+
+  
+    /* cnt[x]-1 is the index of the next node of degree x*/
+    for (i=0; i<n; ++i) {
+        int degree_of_i = xadj[i+1]-xadj[i];
+        cnt[degree_of_i]--;
+        visit[n - 1 - cnt[degree_of_i]] = i;
+    }
+    
+End:
+    ZOLTAN_FREE(&cnt);
+}
+
+
+static void SmallestDegreeLastOrdering(
+    ZZ  *zz, 
+    int *visit, /*Out*/
+    int *xadj,
+    int *adj,
+    int n,
+    int max_degree) 
+{	
+  static char* yo = "SmallestDegreeLastOrdering";
+  int ierr = ZOLTAN_OK;
+  int i;
+  Bucket bs;
+  
+  bs = Zoltan_Bucket_Initialize(max_degree+1,n);
+  if (bs.buckets == NULL) 
+      MEMORY_ERROR;
+
+  for (i=0; i<n; i++) {
+      int degree_of_i = xadj[i+1] - xadj[i];
+      Zoltan_Bucket_Insert(&bs, i, degree_of_i);
+  }
+
+  for (i=0; i<n; i++) {
+      int u = Zoltan_Bucket_PopMin(&bs);
+      int j;
+      
+      visit[n - 1 - i] = u;
+      for (j = xadj[u]; j < xadj[u+1]; ++j) { /* decrease the degree of the neighboors*/
+	  if (adj[j] < n)  /* Otherwise it is not a local vertex */
+              Zoltan_Bucket_DecVal(&bs, adj[j]);
+      }    
+  }
+End:
+  Zoltan_Bucket_Free(&bs);		
+}
+
+
+
+
 /*****************************************************************************/
 /* Distance-1 coloring. No two adjacent vertices get the same color. */
 
 static int D1coloring(
     ZZ *zz,
     char coloring_problem,/* Coloring problem. '1' in this case */
-    char coloring_order,  /* (I) interior vertices first
-			  (B) boundary vertices first (U) interleaved */
+    char coloring_order,  /* (I) interior vertices first (B) boundary
+			  vertices first (U) interleaved, (N) Natural
+			  Ordering, (L) Largest Degree First, (S)
+			  Smallest Degree Last (dynamic) */
     char coloring_method, /* Coloring method. (F) First fit
 			  (S) staggered first fit (L) load balancing */
     char comm_pattern, /* (A) asynchronous (S) synchronous supersteps */
@@ -573,7 +659,7 @@ static int D1coloring(
     rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
     if (!rand_key)
 	MEMORY_ERROR;
-    for(i=0; i<lastlno; i++) {
+    for (i=0; i<lastlno; i++) {
 	Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
 	rand_key[i] = (int) (((double)Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000);
     }
@@ -584,10 +670,22 @@ static int D1coloring(
 	times[2] = Zoltan_Time(zz->Timer);
     }
     visitIntern = visit + nbound; /* Start of internal vertex visit order. Used with I and B options below */
-    if (coloring_order == 'U') {
+    if (coloring_order == 'U' || coloring_order == 'N' || coloring_order == 'L' || coloring_order == 'S') {
 	nConflict = nvtx;
-	for (i=0; i<nvtx; i++)
-	    visit[i] = i;
+
+	/* change the order of the vertices */
+	/*The ReorderGraph function also set the visit array. But I believe it is only useful for 'B' and 'I' */
+	if (coloring_order == 'N' || coloring_order == 'U') /*natural order*/
+	  {
+	    for (i=0; i<nvtx; i++)
+	      visit[i] = i;
+	  }
+	else if (coloring_order == 'L') /*largest first*/
+	    LargestDegreeFirstOrdering(zz, visit, xadj, nvtx, lmaxdeg);
+	else if (coloring_order == 'S') /*smallest last*/
+	    SmallestDegreeLastOrdering(zz, visit, xadj, adj, nvtx, lmaxdeg);
+
+
 	if (zz->Num_Proc==1)
 	    InternalColoring(zz, coloring_problem, &nColor, nvtx, visit, xadj, adj, color, mark, gmaxdeg, coloring_method);
     }
@@ -597,6 +695,7 @@ static int D1coloring(
     }
     else if (coloring_order == 'B')
 	nConflict = nbound;
+
 
     if (get_times) times[3] = Zoltan_Time(zz->Timer);
 
@@ -1048,7 +1147,7 @@ static int D2coloring(
     rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
     if (lastlno && !rand_key)
 	MEMORY_ERROR;
-    for(i=0; i<lastlno; i++) {
+    for (i=0; i<lastlno; i++) {
 	Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
 	rand_key[i] = (int) (((double)Zoltan_Rand(NULL)/(double)ZOLTAN_RAND_MAX)*1000000);
     }

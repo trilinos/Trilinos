@@ -115,7 +115,7 @@ int Zoltan_Color_Test(
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Asynchronous communication pattern is not implemented for distance-2 coloring and its variants. Using synchronous communication (S).");
       comm_pattern = 'S';
   }
-  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U') {
+  if (coloring_order != 'I' && coloring_order != 'B' && coloring_order != 'U' && coloring_order != 'L' && coloring_order != 'N' && coloring_order != 'S') {
       ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid coloring order. Using internal first coloring order (I).");
       coloring_order = 'I';
   }
