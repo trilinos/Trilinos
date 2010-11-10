@@ -231,7 +231,7 @@ Teuchos::ParameterList::get(const std::string &name)
 Retrieves parameter name of type T from a list, an
 Exceptions::InvalidParameter std::exception is thrown if this
 parameter doesn't exist (  Exceptions::InvalidParameterName) or is the
-wrong type (  Exceptions::InvalidParameterName).
+wrong type (  Exceptions::InvalidParameterType).
 
 The syntax for calling this method is:  list.template get<int>(
 \"Iters\" ) ";
@@ -242,7 +242,7 @@ Teuchos::ParameterList::get(const std::string &name) const
 Retrieves parameter name of type T from a constant list, an
 Exceptions::InvalidParameter std::exception is thrown if this
 parameter doesn't exist (  Exceptions::InvalidParameterName) or is the
-wrong type (  Exceptions::InvalidParameterName).
+wrong type (  Exceptions::InvalidParameterType).
 
 The syntax for calling this method is:  list.template get<int>(
 \"Iters\" ) ";
@@ -717,36 +717,6 @@ Teuchos::ParameterListNonAcceptor::getValidParameters() const
 Returns a non-null but empty parameter list. ";
 
 
-// File: structTeuchos_1_1ScalarTraits.xml
-%feature("docstring") Teuchos::ScalarTraits "
-
-This structure defines some basic traits for a scalar field type.
-
-Scalar traits are an essential part of templated codes. This structure
-offers the basic traits of the templated scalar type, like defining
-zero and one, and basic functions on the templated scalar type, like
-performing a square root.
-
-The functions in the templated base unspecialized struct are designed
-not to compile (giving a nice compile-time error message) and
-therefore specializations must be written for Scalar types actually
-used.
-
-The default defined specializations are provided for int, float, and
-double.
-
-ScalarTraits can be used with the Arbitrary Precision Library (
-http://crd.lbl.gov/~dhbailey/mpdist/ ) by configuring Teuchos with
---enable-teuchos-arprec and giving the appropriate paths to ARPREC.
-Then ScalarTraits has the specialization: mp_real.
-
-If Teuchos is configured with --enable-teuchos-stdcomplex then
-ScalarTraits also has a parital specialization for all std::complex
-numbers of the form std::complex<T>.
-
-C++ includes: Teuchos_ScalarTraits.hpp ";
-
-
 // File: structTeuchos_1_1ScalarTraits_3_01char_01_4.xml
 %feature("docstring") Teuchos::ScalarTraits< char > " ";
 
@@ -834,8 +804,9 @@ Stops the timer. ";
 %feature("docstring")  Teuchos::Time::totalElapsedTime "double
 Teuchos::Time::totalElapsedTime(bool readCurrentTime=false) const
 
-Returns the total time accumulated by this timer. This should be
-called only when the clock is stopped.. ";
+Returns the total time (in seconds) accumulated by this timer.
+
+This should be called only when the clock is stopped. ";
 
 %feature("docstring")  Teuchos::Time::reset "void
 Teuchos::Time::reset()
@@ -1274,20 +1245,9 @@ Consume the XMLInputStream to build an XMLObject. ";
 Teuchos::haveSameValues(const ParameterList &list1, const
 ParameterList &list2) ";
 
-%feature("docstring")  Teuchos::Exceptions::parameterList "RCP<ParameterList> Teuchos::parameterList()
-
-Nonmember constructor. ";
-
-%feature("docstring")  Teuchos::Exceptions::parameterList "RCP<ParameterList> Teuchos::parameterList(const std::string &name)
-
-Nonmember constructor. ";
-
-%feature("docstring")  Teuchos::Exceptions::parameterList "RCP<ParameterList> Teuchos::parameterList(const ParameterList &source)
-
-Nonmember constructor. ";
-
-%feature("docstring")  Teuchos::Exceptions::printValidParameters "void Teuchos::printValidParameters(const ParameterListAcceptor
-&paramListAccpetor, std::ostream &out, const bool showDoc=true)
+%feature("docstring")  Teuchos::Exceptions::printValidParameters "TEUCHOS_LIB_DLL_EXPORT void Teuchos::printValidParameters(const
+ParameterListAcceptor &paramListAccpetor, std::ostream &out, const
+bool showDoc=true)
 
 Pretty print the valid parameters from a ParameterListAccpetor object.
 ";
@@ -1296,95 +1256,43 @@ Pretty print the valid parameters from a ParameterListAccpetor object.
 Teuchos::Exceptions::throwScalarTraitsNanInfError "void
 Teuchos::throwScalarTraitsNanInfError(const std::string &errMsg) ";
 
+%feature("docstring")  Teuchos::Exceptions::gmp_rng "gmp_randclass
+Teuchos::gmp_rng(gmp_randinit_default) ";
+
+%feature("docstring")  Teuchos::Exceptions::generic_real_isnaninf "bool Teuchos::generic_real_isnaninf(const Scalar &x) ";
+
 %feature("docstring")
 Teuchos::Exceptions::updateParametersFromXmlFile "void
 Teuchos::updateParametersFromXmlFile(const std::string &xmlFileName,
-Teuchos::ParameterList *paramList)
+Teuchos::ParameterList *paramList) ";
 
-Reads XML parameters from a file and updates those already in the
-given parameter list.
+%feature("docstring")
+Teuchos::Exceptions::updateParametersFromXmlFileAndBroadcast "void
+Teuchos::updateParametersFromXmlFileAndBroadcast(const std::string
+&xmlFileName, Teuchos::ParameterList *paramList, const Teuchos::Comm<
+int > &comm) ";
 
-Parameters:
------------
-
-xmlFileName:  [in] The file name containing XML parameter list
-specification.
-
-paramList:  [in/out] On input, *paramList may be empty or contain some
-parameters and sublists. On output, parameters and sublist from the
-file xmlFileName will be set or overide those in *paramList. ";
-
-%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "RCP< ParameterList > Teuchos::getParametersFromXmlFile(const
-std::string &xmlFileName)
-
-Reads XML parameters from a file and return them in a new parameter
-list.
-
-Parameters:
------------
-
-xmlFileName:  [in] The file name containing XML parameter list
-specification. ";
+%feature("docstring")  Teuchos::Exceptions::getParametersFromXmlFile "Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlFile(const std::string &xmlFileName) ";
 
 %feature("docstring")
 Teuchos::Exceptions::updateParametersFromXmlString "void
 Teuchos::updateParametersFromXmlString(const std::string &xmlStr,
-Teuchos::ParameterList *paramList)
-
-Reads XML parameters from a std::string and updates those already in
-the given parameter list.
-
-Parameters:
------------
-
-xmlStr:  [in] String containing XML parameter list specification.
-
-paramList:  [in/out] On input, *paramList may be empty or contain some
-parameters and sublists. On output, parameters and sublist from the
-file xmlStr will be set or overide those in *paramList. ";
+Teuchos::ParameterList *paramList) ";
 
 %feature("docstring")  Teuchos::Exceptions::getParametersFromXmlString
-"RCP< ParameterList > Teuchos::getParametersFromXmlString(const
-std::string &xmlStr)
-
-Reads XML parameters from a std::string and return them in a new
-parameter list.
-
-Parameters:
------------
-
-xmlStr:  [in] String containing XML parameter list specification. ";
+"Teuchos::RCP<Teuchos::ParameterList>
+Teuchos::getParametersFromXmlString(const std::string &xmlStr) ";
 
 %feature("docstring")
 Teuchos::Exceptions::writeParameterListToXmlOStream "void
 Teuchos::writeParameterListToXmlOStream(const Teuchos::ParameterList
-&paramList, std::ostream &xmlOut)
-
-Write parameters and sublists in XML format to an std::ostream.
-
-Parameters:
------------
-
-paramList:  [in] Contains the parameters and sublists that will be
-written to file.
-
-xmlOut:  [in] The stream that will get the XML output. ";
+&paramList, std::ostream &xmlOut) ";
 
 %feature("docstring")
 Teuchos::Exceptions::writeParameterListToXmlFile "void
 Teuchos::writeParameterListToXmlFile(const Teuchos::ParameterList
-&paramList, const std::string &xmlFileName)
-
-Write parameters and sublist to an XML file.
-
-Parameters:
------------
-
-paramList:  [in] Contains the parameters and sublists that will be
-written to file.
-
-xmlFileName:  [in] The file name that will be create to contain the
-XML version of the parameter list specification. ";
+&paramList, const std::string &xmlFileName) ";
 
 
 // File: namespaceTeuchos_1_1Exceptions.xml
@@ -1502,10 +1410,10 @@ XML version of the parameter list specification. ";
 // File: Teuchos__XMLParser_8hpp.xml
 
 
-// File: dir_daa2443682d0f547b84c7fa838636502.xml
+// File: dir_65f6d23da234a7168833c1821735e923.xml
 
 
-// File: dir_2c9d975476051ec1d3cf6e8ee401cf57.xml
+// File: dir_09fc306ea299b58fb03525b9d7f8a6b7.xml
 
 
 // File: ParameterList_2cxx__main_8cpp-example.xml

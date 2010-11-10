@@ -1178,10 +1178,18 @@ namespace Ioex {
       // Maintain block order on output database...
       block->property_add(Ioss::Property("original_block_order", used_blocks++));
       
-      if (block->get_property("topology_type").get_string() != save_type
-	  && save_type != "null" && save_type != "") {
-	// Maintain original element type on output database if possible.
-	block->property_add(Ioss::Property("original_element_type", save_type));
+      if (save_type != "null" && save_type != "") {
+	if (block->property_exists("original_element_type")) {
+	  if (block->get_property("original_element_type").get_string() != save_type) {
+	    block->property_erase("original_element_type");
+	    block->property_add(Ioss::Property("original_element_type", save_type));
+	  }
+	} else {
+	  if (block->get_property("topology_type").get_string() != save_type) {
+	    // Maintain original element type on output database if possible.
+	    block->property_add(Ioss::Property("original_element_type", save_type));
+	  }
+	}
       }
       
       block->property_add(Ioss::Property("global_entity_count", global_element_count[iblk]));
@@ -5652,15 +5660,6 @@ namespace Ioex {
 
 	else {
 	  unknown_attributes = attribute_count;
-	}
-
-	if (unknown_attributes > 0 && myProcessor == 0) {
-	  IOSS_WARNING << "For element block '" << block->name()
-		       << "' of type '" << type << "' there were "
-		       << unknown_attributes << " attributes that are not known to the IO Subsystem "
-		       << "in addition to the " << attribute_count - unknown_attributes
-		       << " that were known. The extra attributes can be accessed as the last "
-		       << unknown_attributes << " components of the field named 'attribute'";
 	}
       }
 

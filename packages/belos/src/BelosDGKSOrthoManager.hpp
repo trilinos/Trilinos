@@ -212,33 +212,56 @@ namespace Belos {
 
     /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
      *
-     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not 
-     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank 
-     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
-     *  be valid.
+     *  This routine returns an integer \c rank stating the rank of
+     *  the computed basis. If the subspace \f$colspan(X) - \sum_i
+     *  colspan(Q[i])\f$ does not have dimension as large as the
+     *  number of columns of \c X and the orthogonalization manager
+     *  doe not attempt to augment the subspace, then \c rank may be
+     *  smaller than the number of columns of \c X. In this case, only
+     *  the first \c rank columns of output \c X and first \c rank
+     *  rows of \c B will be valid.
      *
-     * The method attempts to find a basis with dimension the same as the number of columns in \c X. It does this by augmenting linearly dependant 
-     * vectors with random directions. A finite number of these attempts will be made; therefore, it is possible that the dimension of the 
-     * computed basis is less than the number of vectors in \c X.
+     * The method attempts to find a basis with dimension the same as
+     * the number of columns in \c X. It does this by augmenting
+     * linearly dependant vectors with random directions. A finite
+     * number of these attempts will be made; therefore, it is
+     * possible that the dimension of the computed basis is less than
+     * the number of vectors in \c X.
      *
-     @param X [in/out] The multivector to the modified. 
-       On output, the relevant rows of \c X will be orthogonal to the <tt>Q[i]</tt> and will have orthonormal columns (with respect to innerProd()).
+     @param X [in/out] The multivector to the modified.  On output,
+       the relevant rows of \c X will be orthogonal to the
+       <tt>Q[i]</tt> and will have orthonormal columns (with respect
+       to innerProd()).
 
-     @param MX [in/out] The image of \c X under the operator \c Op. 
-       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
-       If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
+     @param MX [in/out] The image of \c X under the operator \c Op.
+       If \f$ MX != 0\f$: On input, this is expected to be consistent
+       with \c X. On output, this is updated consistent with updates
+       to \c X.  If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not
+       referenced.
 
-     @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
-       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
-       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
-       \c X and \c *Q[i], then a std::invalid_argument std::exception will be thrown. Otherwise, if <tt>C.size() < i<\tt> or <tt>C[i]</tt> is a null
-       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
+     @param C [out] The coefficients of the original \c X in the \c
+     *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a
+     non-null pointer and \c *C[i] matches the dimensions of \c X and
+     \c *Q[i], then the coefficients computed during the
+     orthogonalization routine will be stored in the matrix \c
+     *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not
+     match the dimensions of \c X and \c *Q[i], then *C[i] will first
+     be resized to the correct size.  This will destroy the original
+     contents of the matrix.  (This is a change from previous
+     behavior, in which a std::invalid_argument exception was thrown
+     if *C[i] was of the wrong size.)  Otherwise, if <tt>C.size() <
+     i<\tt> or <tt>C[i]</tt> is a null pointer, then the
+     orthogonalization manager will declare storage for the
+     coefficients and the user will not have access to them.
 
-     @param B [out] The coefficients of the original \c X with respect to the computed basis. The first rows in \c B
-            corresponding to the valid columns in \c X will be upper triangular.
+     @param B [out] The coefficients of the original \c X with respect
+       to the computed basis. The first rows in \c B corresponding to
+       the valid columns in \c X will be upper triangular.
 
-     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
-     orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
+     @param Q [in] A list of multivector bases specifying the
+       subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is
+       assumed to have orthonormal columns, and the <tt>Q[i]</tt> are
+       assumed to be mutually orthogonal.
 
      @return Rank of the basis computed by this method.
     */
@@ -261,18 +284,22 @@ namespace Belos {
     //! @name Error methods
     //@{ 
 
-    /*! \brief This method computes the error in orthonormality of a multivector, measured
-     * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
-     */
+    /// \brief Compute \fn$\| X^* M X - I \|_F\fn$
+    ///
+    /// This method computes the error in orthonormality of a
+    /// multivector, measured as the Frobenius norm of the difference
+    /// <tt>innerProd(X,X) - I</tt>.
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X) const {
       return orthonormError(X,Teuchos::null);
     }
 
-    /*! \brief This method computes the error in orthonormality of a multivector, measured
-     * as the Frobenius norm of the difference <tt>innerProd(X,Y) - I</tt>.
-     *  The method has the option of exploiting a caller-provided \c MX.
-     */
+    /// \brief Compute \fn$\| X^* M X - I \|_F\fn$
+    ///
+    /// This method computes the error in orthonormality of a
+    /// multivector, measured as the Frobenius norm of the difference
+    /// <tt>innerProd(X,X) - I</tt>.  The method has the option of
+    /// exploiting a caller-provided \c MX, which is used if not null.
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X, Teuchos::RCP<const MV> MX) const;
 
@@ -384,7 +411,16 @@ namespace Belos {
                                     MV &X, Teuchos::RCP<MV> MX, 
                                     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
-                                    Teuchos::Array<Teuchos::RCP<const MV> > Q ) const {
+                                    Teuchos::Array<Teuchos::RCP<const MV> > Q ) const 
+  {
+    using Teuchos::Array;
+    using Teuchos::null;
+    using Teuchos::is_null;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    using Teuchos::SerialDenseMatrix;
+    typedef SerialDenseMatrix< int, ScalarType > serial_dense_matrix_type;
+    typedef typename Array< RCP< const MV > >::size_type size_type;
     
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
     Teuchos::TimeMonitor orthotimer(*timerOrtho_);
@@ -398,12 +434,37 @@ namespace Belos {
     int xr = MVT::GetVecLength( X );
     int rank = xc;
 
-    /* if the user doesn't want to store the coefficienets, 
-     * allocate some local memory for them 
-     */
-    if ( B == Teuchos::null ) {
-      B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
+    // If the user doesn't want to store the normalization
+    // coefficients, allocate some local memory for them.  This will
+    // go away at the end of this method.
+    if (is_null (B)) {
+      B = rcp (new serial_dense_matrix_type (xc, xc));
     }
+    // Likewise, if the user doesn't want to store the projection
+    // coefficients, allocate some local memory for them.  Also make
+    // sure that all the entries of C are the right size.  We're going
+    // to overwrite them anyway, so we don't have to worry about the
+    // contents (other than to resize them if they are the wrong
+    // size).
+    if (C.size() < nq)
+      C.resize (nq);
+    for (size_type k = 0; k < nq; ++k)
+      {
+	const int numRows = MVT::GetNumberVecs (*Q[k]);
+	const int numCols = xc; // Number of vectors in X
+	
+	if (is_null (C[k]))
+	  C[k] = rcp (new serial_dense_matrix_type (numRows, numCols));
+	else if (C[k]->numRows() != numRows || C[k]->numCols() != numCols)
+	  {
+	    int err = C[k]->reshape (numRows, numCols);
+	    TEST_FOR_EXCEPTION(err != 0, std::runtime_error, 
+			       "DGKS orthogonalization: failed to reshape "
+			       "C[" << k << "] (the array of block "
+			       "coefficients resulting from projecting X "
+			       "against Q[1:" << nq << "]).");
+	  }
+      }
 
     /******   DO NO MODIFY *MX IF _hasOp == false   ******/
     if (this->_hasOp) {

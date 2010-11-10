@@ -14,7 +14,11 @@ foreach (_LIBNAME "BLAS" "LAPACK")
   endif ("${_CURRENT_LIB_VALUE}" STREQUAL "")
 endforeach (_LIBNAME "BLAS" "LAPACK")
 
-if (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_LIBRARIES}" STREQUAL "True")))
+# Some BLAS and LAPACK implementations are unified into a single
+# library.  Thus, we can only be sure that no LAPACK library was
+# provided, if neither of these variables were set.
+if (NOT HAVE_TPL_BLAS_LIBRARIES AND NOT HAVE_TPL_LAPACK_LIBRARIES)
+#if (NOT ("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND NOT ("${HAVE_TPL_LAPACK_LIBRARIES}" STREQUAL "True"))
 
   if ("${PKG_DIR}" STREQUAL "")
     set (PKG_DIR "$ENV{HOME}/pkg")
@@ -120,11 +124,11 @@ if (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_
 
   endif ("${BLAS_AND_LAPACK_SETUP}" STREQUAL "goto")
 
-else (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_LIBRARIES}" STREQUAL "True")))
+else ()
   if (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
     message (STATUS "Using previously set TPL_{BLAS,LAPACK}_LIBRARIES")
   endif()
-endif (NOT (("${HAVE_TPL_BLAS_LIBRARIES}" STREQUAL "True") AND ("${HAVE_TPL_LAPACK_LIBRARIES}" STREQUAL "True")))
+endif ()
 
 IF (NOT ${PACKAGE_NAME}_FINISHED_FIRST_CONFIGURE)
   message (STATUS "* TPL_BLAS_LIBRARIES = ${TPL_BLAS_LIBRARIES}")

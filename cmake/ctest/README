@@ -8,43 +8,46 @@ A) Prerequisites:
 
 First, manually ensure that the following prerequisites are satisfied:
 
-python version 2.4 or later
-eg or git version 1.6.x or later
+(*) python version 2.4 or later
+
+(*) eg or git version 1.6.x or later
 
 
 B) Create a base directory:
 ===========================
 
-Create a directory as a base. I always use "T" in my home directory, or "C:\T"
-on Windows, as the base directory. Inside there, clone the Trilinos repository
-and checkout whatever branch you will be testing.
+Create a directory as a base. I always use "T" in my home directory,
+or "C:\T" on Windows, as the base directory. Inside there, clone the
+Trilinos repository and checkout whatever branch you will be testing.
 
   $ cd ~    # cd \" on Windows
   $ mkdir T
   $ cd T
   $ git clone software.sandia.gov:/space/git/nightly/Trilinos
 
-See the Trilinos developers website for instructions on how to set up ssh so
-that the git clone call works using just software.sandia.gov without a user
-name and without you having to type a password.
+See the Trilinos developers website for instructions on how to set up
+ssh so that the git clone call works using just software.sandia.gov
+without a user name and without you having to type a password.
 
 
 C) Create machine specific content:
 ===================================
 
-Add a subdirectory named after your machine in Trilinos/cmake/ctest/drivers. If
-you name the directory exactly as your machine is named by `uname -n` then you
-simply need to add some files to that directory. You can drop ".domain.gov"
-stuff from the end of the machine name, as long as the name does not conflict
-with any other directory names already in the drivers directory.
+Add a subdirectory named after your machine in
+Trilinos/cmake/ctest/drivers. If you name the directory exactly as
+your machine is named by `uname -n` then you simply need to add some
+files to that directory. You can drop ".domain.gov" stuff from the end
+of the machine name, as long as the name does not conflict with any
+other directory names already in the drivers directory.
 
-Add some ctest -S scripts to run as tests. You can base the *.cmake files in
-this directory on those used on an existing machine that is substantially
-similar to yours. If there isn't one, just copy the files from the s903186
-directory and work from there.
+Add some ctest -S scripts to run as tests. You can base the *.cmake
+files in this directory on those used on an existing machine that is
+substantially similar to yours. If there isn't one, just copy the
+files from the s903186 directory and work from there.
 
-Add a CMakeLists.txt file to the new directory for your machine. It should
-contain content something like this (from the flagship example, s903186):
+Add a CMakeLists.txt file to the new directory for your machine. It
+should contain content something like this (from the flagship example,
+s903186):
 
   # Initially:
   #
@@ -66,30 +69,35 @@ contain content something like this (from the flagship example, s903186):
   #
   TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
 
-The first argument to TRILINOS_DRIVER_ADD_DASHBOARD calls is the test name as
-it will appear on the TrilinosDriver dashboard. The second argument is the name
-of the script in the same directory that will be run as a ctest -S script as a
-test on the driver dashboard.
+The first argument to TRILINOS_DRIVER_ADD_DASHBOARD calls is the test
+name as it will appear on the TrilinosDriver dashboard. The second
+argument is the name of the script in the same directory that will be
+run as a ctest -S script as a test on the driver dashboard.
 
 If you have a dashboard that must run all by itself, without any other
-dashboards being run in parallel, then you should pass the RUN_SERIAL argument.
+dashboards being run in parallel, then you should pass the RUN_SERIAL
+argument.
 
-For more details on other optional arguments, see the comments at the function
-definition for TRILINOS_DRIVER_ADD_DASHBOARD in TrilinosDriverSupport.cmake.
+For more details on other optional arguments, see the comments at the
+function definition for TRILINOS_DRIVER_ADD_DASHBOARD in
+TrilinosDriverSupport.cmake.
 
-WARNING: The name of the build (the first argument, e.g. MPI_OPT) should be
-the same as the name of the build set in the *.cmake driver file (the second
-argument, e.g. ctest_mac_nightly_mpi_opt_s903186.cmake).  There are no checks
-in place to make sure that this is true.  You have been warned!
+WARNING: The name of the build (the first argument, e.g. MPI_OPT)
+should be the same as the name of the build set in the *.cmake driver
+file (the second argument,
+e.g. ctest_mac_nightly_mpi_opt_s903186.cmake).  There are no checks in
+place to make sure that this is true.  You have been warned!
 
-Next, add a cron_driver.sh for your machine. (Or cron_driver.bat on Windows.)
+Next, add a cron_driver.sh for your machine. (Or cron_driver.bat on
+Windows.)
 
-You can set the environment variable TDD_PARALLEL_LEVEL to control how many
-dashboards are run in parallel (as tests) by the TrilinosDriver dashboard.
+You can set the environment variable TDD_PARALLEL_LEVEL to control how
+many dashboards are run in parallel (as tests) by the TrilinosDriver
+dashboard.
 
-You may also need to set the environment variable TDD_HTTP_PROXY for your http
-proxy which is needed if the script download-cmake.py can't figure it out the
-proxy automatically.  For Sandia machines, this is
+You may also need to set the environment variable TDD_HTTP_PROXY for
+your http proxy which is needed if the script download-cmake.py can't
+figure it out the proxy automatically.  For Sandia machines, this is
 http://wwwproxy.sandia.gov:80/.
 
 Typical cron_driver.sh contents:
@@ -124,7 +132,8 @@ for example as:
 
   $ mkdir MOCK_MPI_OPT
   $ cd MOCK_MPI_OPT
-  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos  CTEST_TEST_TYPE=Experimental \
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
+     CTEST_TEST_TYPE=Experimental \
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly CTEST_DO_SUBMIT=OFF \
      ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
@@ -141,9 +150,11 @@ a file and then examine).
 After the local CTest processes are working, just to make sure the
 submit works, you can run a final trial build with:
 
-  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos  CTEST_TEST_TYPE=Experimental \
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos \
+     CTEST_TEST_TYPE=Experimental \
      Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly \
-     CTEST_DO_SUBMIT=ON  CTEST_DO_UPDATES=FALSE  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+     CTEST_DO_SUBMIT=ON  CTEST_DO_UPDATES=FALSE \
+     CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
      ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
 
 If this submits to the 'Experimental' CDash dashbaord, you should be
@@ -156,13 +167,13 @@ D.2) Testing the outer cron driver script:
 
 To test this script manually, so something like:
 
-  Linux/Mac:
+on Linux/Mac:
 
   $ cd ~
   $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
   $ ./cron_driver.sh
 
-  on Windows:
+on Windows:
 
   $ cd \
   $ cd T\Trilinos\cmake\ctest\drivers\MACHINE_NAME
@@ -176,16 +187,17 @@ environment such as:
 
   $ cd ~
   $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
-  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE  TDD_DO_SUBMIT=FALSE \
-      CTEST_TEST_TYPE=Experimental \
+  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE  \
+      TDD_DO_SUBMIT=FALSE CTEST_TEST_TYPE=Experimental \
       ./cron_driver.sh
 
 Once you are done with the initial run, you can test it out
 interactively in a rapid, iterative process by setting up the
 following additionial environment variables:
 
-  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE  TDD_DO_SUBMIT=FALSE \
-      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE  CTEST_TEST_TYPE=Experimental \
+  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE \
+      TDD_DO_SUBMIT=FALSE CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+      CTEST_TEST_TYPE=Experimental \
       TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
       ./cron_driver.sh
 
@@ -199,7 +211,8 @@ you should try to run this as a cron job using the command (see the
 entire command below in the "cron driver" section):
 
   $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=ON  TDD_DO_SUBMIT=ON \
-      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE  CTEST_TEST_TYPE=Experimental \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+      CTEST_TEST_TYPE=Experimental \
       TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
       ./cron_driver.sh
 
@@ -237,12 +250,13 @@ the date-specific subdirectory under:
 
   ~/T/TDD_BUILD/Testing/Temporary/
 
-Note that you will also find the output from the TrilinosCTestDriverCore.cmake
-script as the test output in:
+Note that you will also find the output from the
+TrilinosCTestDriverCore.cmake script as the test output in:
 
   T/TDD_BUILD/Testing/Temporary/LastTest_XXX.log
 
-Also, of course all of the output for each build case (BUILD_CASE) is in:
+Also, of course all of the output for each build case (BUILD_CASE) is
+in:
 
   T/BUILD_CASE/Testing/Temporary/
 
@@ -275,8 +289,8 @@ configuration).
 G) Commit changes to the driver scripts:
 ========================================
 
-You must commit and push changes in Trilinos/cmake/ctest/drivers into the main
-Trilinos git repository.  To do this, do:
+You must commit and push changes in Trilinos/cmake/ctest/drivers into
+the main Trilinos git repository.  To do this, do:
 
   $ cd ~/T/Trilinos
   $ eg remote add trilinos software:/space/git/Trilinos
@@ -285,7 +299,7 @@ Trilinos git repository.  To do this, do:
   $ eg rebase --against trilinos/origin
   $ eg push
 
-Hopefully, that should push you changes back and you should be ready
+Hopefully, that should push your changes back and you should be ready
 to let the cron job run on its own every day.  If that does not work,
 cherry-pick your commits into a different local Trilinos repo cloned
 directly from software:/space/git/Trilinos and do the push from there

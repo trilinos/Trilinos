@@ -273,6 +273,8 @@ namespace Epetra {
     ///   Kokkos::MultiVector nonconstant view.
     ///
     /// \return Nonconstant view of the input MultiVector object. 
+    ///
+    /// \note The view never escapes the scope of the creating 
     Kokkos::MultiVector< scalar_type, node_type >
     getNonConstView (MV& A)
     {

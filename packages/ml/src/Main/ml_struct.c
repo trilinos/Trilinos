@@ -3873,7 +3873,8 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          ML_CSolve_Apply(csolve, lengf, sol, lengf, rhss);
       } else {
          ML_Smoother_Apply(pre, lengf, sol, lengf, rhss, approx_all_zeros);
-         ML_Smoother_Apply(post, lengf, sol, lengf, rhss, ML_NONZERO);
+	 if (pre->smoother->func_ptr == NULL) ML_Smoother_Apply(post, lengf, sol, lengf, rhss, approx_all_zeros);
+	 else ML_Smoother_Apply(post, lengf, sol, lengf, rhss, ML_NONZERO);
       }
       if (res_norm_or_not == ML_COMPUTE_RES_NORM) {
          res = (double *) ML_allocate(lengf*sizeof(double));

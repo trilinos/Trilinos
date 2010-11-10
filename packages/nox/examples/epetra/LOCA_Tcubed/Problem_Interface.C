@@ -62,7 +62,7 @@ Problem_Interface::~Problem_Interface()
 { 
 }
 
-bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& F, FillType flag)
+bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType flag)
 {
   return problem.evaluate(F_ONLY, &x, &F, NULL);
 }

@@ -13,7 +13,7 @@ export TDD_PARALLEL_LEVEL=2
 # Trilinos settings:
 #
 
-#export CTEST_TEST_TYPE=Experimental
+export TDD_CTEST_TEST_TYPE=Nightly
 
 #export CTEST_DO_SUBMIT=FALSE
 

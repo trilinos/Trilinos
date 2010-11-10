@@ -502,7 +502,7 @@ InverseOperator: basic class to define smoother and coarse solvers.
 
 Marzio Sala, D-INFK/ETHZ.
 
-C++ includes: MLAPI_InverseOperator.h ";
+C++ includes: MLAPI_LoadBalanceInverseOperator.h ";
 
 %feature("docstring")  MLAPI::InverseOperator::InverseOperator "MLAPI::InverseOperator::InverseOperator()
 
@@ -669,6 +669,272 @@ MLAPI::LinearCombinationScaled::Set(MultiVector &v) const ";
 
 %feature("docstring")  MLAPI::LinearCombinationScaled::Update "void
 MLAPI::LinearCombinationScaled::Update(MultiVector &v) const ";
+
+
+// File: classMLAPI_1_1LoadBalanceInverseOperator.xml
+%feature("docstring") MLAPI::LoadBalanceInverseOperator "";
+
+%feature("docstring")
+MLAPI::LoadBalanceInverseOperator::LoadBalanceInverseOperator "MLAPI::LoadBalanceInverseOperator::LoadBalanceInverseOperator()
+
+Empty constructor. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceInverseOperator::LoadBalanceInverseOperator "MLAPI::LoadBalanceInverseOperator::LoadBalanceInverseOperator(const
+LoadBalanceInverseOperator &RHS)
+
+Copy constructor. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceInverseOperator::~LoadBalanceInverseOperator "virtual
+MLAPI::LoadBalanceInverseOperator::~LoadBalanceInverseOperator()
+
+Destructor. ";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::Reshape "void MLAPI::LoadBalanceInverseOperator::Reshape()
+
+Resets this object. ";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::Reshape "void MLAPI::LoadBalanceInverseOperator::Reshape(Ifpack_Preconditioner
+*prec, const LoadBalanceOperator &Op, const bool ownership)
+
+Reshape with preconstructed smoother as Ifpack_Preconditioner. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceInverseOperator::GetParticipation "virtual bool
+MLAPI::LoadBalanceInverseOperator::GetParticipation() const
+
+Returns a bool indicating whether this proc participates in the
+operator application. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceInverseOperator::GetOperatorRangeSpace "const Space
+MLAPI::LoadBalanceInverseOperator::GetOperatorRangeSpace() const
+
+Returns a reference to the range space of this object. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceInverseOperator::GetOperatorDomainSpace "const
+Space MLAPI::LoadBalanceInverseOperator::GetOperatorDomainSpace()
+const
+
+Returns a reference to the domain space of this object. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceInverseOperator::GetRangeSpace "const Space
+MLAPI::LoadBalanceInverseOperator::GetRangeSpace() const
+
+Returns a reference to the range space of this object. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceInverseOperator::GetDomainSpace "const Space
+MLAPI::LoadBalanceInverseOperator::GetDomainSpace() const
+
+Returns a reference to the domain space of this object. ";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::RCPRowMatrix
+"const Teuchos::RCP<Epetra_RowMatrix>
+MLAPI::LoadBalanceInverseOperator::RCPRowMatrix() const
+
+Returns pointer of the internally stored ML_Epetra::RowMatrix object.
+";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::RowMatrix "Epetra_RowMatrix* MLAPI::LoadBalanceInverseOperator::RowMatrix() const
+
+Returns pointer of the internally stored ML_Epetra::RowMatrix object.
+";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::GetOperator
+"const LoadBalanceOperator&
+MLAPI::LoadBalanceInverseOperator::GetOperator() const
+
+Returns a reference to the Operator of which this object defines the
+inverse. ";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::GetRCPData "Teuchos::RCP<Ifpack_Preconditioner>&
+MLAPI::LoadBalanceInverseOperator::GetRCPData()
+
+Returns a pointer to the internally stored IFPACK preconditioner. ";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::GetRCPData "const Teuchos::RCP<Ifpack_Preconditioner>&
+MLAPI::LoadBalanceInverseOperator::GetRCPData() const
+
+Returns a pointer to the internally stored IFPACK preconditioner. ";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::Apply "int
+MLAPI::LoadBalanceInverseOperator::Apply(const MultiVector &x,
+MultiVector &y) const
+
+Applies this object to vector lhs, returns values in rhs. ";
+
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::Print "ostream& MLAPI::LoadBalanceInverseOperator::Print(std::ostream &os,
+const bool verbose=true) const
+
+Prints out basic information about this object. ";
+
+
+// File: classMLAPI_1_1LoadBalanceOperator.xml
+%feature("docstring") MLAPI::LoadBalanceOperator "";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::LoadBalanceOperator
+"MLAPI::LoadBalanceOperator::LoadBalanceOperator()
+
+Default constructor. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::LoadBalanceOperator
+"MLAPI::LoadBalanceOperator::LoadBalanceOperator(const Space
+&DomainSpace, const Space &RangeSpace, ML_Operator *Op, bool
+Ownership=true, Teuchos::RefCountPtr< ML_Operator_Box >
+AuxOp=Teuchos::null)
+
+Constructor with given already computed ML_Operator pointer. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::LoadBalanceOperator
+"MLAPI::LoadBalanceOperator::LoadBalanceOperator(const Space
+&DomainSpace, const Space &RangeSpace, Epetra_RowMatrix *Matrix, bool
+Ownership=true, Teuchos::RefCountPtr< ML_Operator_Box >
+AuxOp=Teuchos::null)
+
+Constructor with given already FillComplete()'d object. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::LoadBalanceOperator
+"MLAPI::LoadBalanceOperator::LoadBalanceOperator(const
+LoadBalanceOperator &RHS)
+
+Copy constructor. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceOperator::~LoadBalanceOperator "MLAPI::LoadBalanceOperator::~LoadBalanceOperator()
+
+Destructor. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::Reshape "void
+MLAPI::LoadBalanceOperator::Reshape()
+
+Resets this object. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::Reshape "void
+MLAPI::LoadBalanceOperator::Reshape(const Space &DomainSpace, const
+Space &RangeSpace, ML_Operator *Op, bool Ownership=true,
+Teuchos::RefCountPtr< ML_Operator_Box > AuxOp=Teuchos::null)
+
+Reshape with given already computed ML_Operator pointer. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::Reshape "void
+MLAPI::LoadBalanceOperator::Reshape(const Space &DomainSpace, const
+Space &RangeSpace, Epetra_RowMatrix *Matrix, bool Ownership=true,
+Teuchos::RCP< ML_Operator_Box > AuxOp=Teuchos::null)
+
+Reshape with given already FillComplete()'d object. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetParticipation "virtual bool MLAPI::LoadBalanceOperator::GetParticipation() const
+
+Returns a bool indicating whether this proc participates in the
+operator application. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceOperator::GetOperatorDomainSpace "const Space
+MLAPI::LoadBalanceOperator::GetOperatorDomainSpace() const
+
+Returns a reference to the internally stored domain space. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceOperator::GetOperatorRangeSpace "const Space
+MLAPI::LoadBalanceOperator::GetOperatorRangeSpace() const
+
+Returns a reference to the internally stored range space. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetDomainSpace "const Space MLAPI::LoadBalanceOperator::GetDomainSpace() const
+
+Returns a reference to the internally stored domain space. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetRangeSpace "const Space MLAPI::LoadBalanceOperator::GetRangeSpace() const
+
+Returns a reference to the internally stored range space. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetColumnSpace "const Space MLAPI::LoadBalanceOperator::GetColumnSpace() const
+
+Returns a reference to the internally stored column space. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetNumGlobalRows "int MLAPI::LoadBalanceOperator::GetNumGlobalRows() const
+
+Returns the number of global rows. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetNumMyRows "int
+MLAPI::LoadBalanceOperator::GetNumMyRows() const
+
+Returns the number of local rows. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetNumGlobalCols "int MLAPI::LoadBalanceOperator::GetNumGlobalCols() const
+
+Returns the number of global columns. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetNumMyCols "int
+MLAPI::LoadBalanceOperator::GetNumMyCols() const
+
+Returns the number of local columns. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceOperator::GetNumGlobalNonzeros "int
+MLAPI::LoadBalanceOperator::GetNumGlobalNonzeros() const
+
+Returns the global number of nonzeros. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetNumMyNonzeros "int MLAPI::LoadBalanceOperator::GetNumMyNonzeros() const
+
+Returns the local number of nonzeros. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetRowMatrix "const Epetra_RowMatrix* MLAPI::LoadBalanceOperator::GetRowMatrix()
+const
+
+Returns the RefCountPtr of OperatorBox_. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetML_Operator "ML_Operator* MLAPI::LoadBalanceOperator::GetML_Operator() const
+
+Returns the RefCountPtr of OperatorBox_. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetRCPOperatorBox "const Teuchos::RCP<ML_Operator_Box>&
+MLAPI::LoadBalanceOperator::GetRCPOperatorBox() const
+
+Returns the RefCountPtr of OperatorBox_. ";
+
+%feature("docstring")
+MLAPI::LoadBalanceOperator::GetRCPAuxOperatorBox "const
+Teuchos::RCP<ML_Operator_Box>&
+MLAPI::LoadBalanceOperator::GetRCPAuxOperatorBox() const
+
+Returns the RefCountPtr of AuxOperatorBox_. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetRCPRowMatrix "const Teuchos::RCP<Epetra_RowMatrix>&
+MLAPI::LoadBalanceOperator::GetRCPRowMatrix() const
+
+Returns the RefCountPtr of RowMatrix_. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetGRID "int
+MLAPI::LoadBalanceOperator::GetGRID(const int LRID) const
+
+Returns the global ID of local row ID LRID. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::GetGCID "int
+MLAPI::LoadBalanceOperator::GetGCID(const int LCID) const
+
+Returns the global ID of local column ID LCID. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::Apply "int
+MLAPI::LoadBalanceOperator::Apply(const MultiVector &X, MultiVector
+&Y) const
+
+Applies this operator to LHS, returns the result in RHS. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::Print "ostream&
+MLAPI::LoadBalanceOperator::Print(std::ostream &os, const bool
+verbose=true) const
+
+Prints basic information about this object. ";
+
+%feature("docstring")  MLAPI::LoadBalanceOperator::BuildColumnSpace "void MLAPI::LoadBalanceOperator::BuildColumnSpace()
+
+Build the column space, by computing the GID of all local columns. ";
 
 
 // File: classMLAPI_1_1MATLABStream.xml
@@ -1318,6 +1584,8 @@ MLAPI::MultiVectorScaled::Set(MultiVector &v) const ";
 %feature("docstring") MLAPI::Operator "
 
 Operator: basic class to define operators within MLAPI.
+
+Michael Gee, TU Munich.
 
 Marzio Sala, SNL 9214
 
@@ -2105,6 +2373,15 @@ MLAPI::GetMatrixType() ";
 // File: MLAPI__LinearCombinations_8h.xml
 
 
+// File: MLAPI__LoadBalanceInverseOperator_8cpp.xml
+
+
+// File: MLAPI__LoadBalanceInverseOperator_8h.xml
+
+
+// File: MLAPI__LoadBalanceOperator_8h.xml
+
+
 // File: MLAPI__MATLABStream_8h.xml
 
 
@@ -2156,14 +2433,14 @@ MLAPI::GetMatrixType() ";
 // File: MLAPI__Workspace_8h.xml
 
 
-// File: dir_675942c6029ac094066b3b01798a20e5.xml
+// File: dir_d136d99f436d66ac79262c571aec36be.xml
 
 
-// File: dir_cbc5cef1c09d94196b66e1045b0d879a.xml
+// File: dir_d74a4d2709be09b9ccea214c305ad782.xml
 
 
-// File: dir_5c2a07a4854ec895e04db044a77b08e2.xml
+// File: dir_50ffe10e94f4b54803eff0b5854be557.xml
 
 
-// File: dir_c42f661d3164c34551290526b5f2c443.xml
+// File: dir_b38d87d99409f5994ae3d0661f909fab.xml
 

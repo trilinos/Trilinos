@@ -140,8 +140,12 @@ pre-existing preconditioner is replaced, they must set the optional
 bool argument 'call_SetPrecMatrix' to true, which will force this
 function to call SetPrecMatrix().
 
-WARNING:  If a preconditioner has been pre-built and associated with
-this AztecOO object, the Epetra_LinearProblem being passed in to this
+WARNING:  The first time this method is called, the default options
+and parameters are set. Therefore, this method should be called before
+setting any individual options or parameters.
+
+If a preconditioner has been pre-built and associated with this
+AztecOO object, the Epetra_LinearProblem being passed in to this
 method must have compatible domain and range maps. ";
 
 %feature("docstring")  AztecOO::SetUserOperator "int
@@ -190,6 +194,13 @@ AztecOO RHS Set.
 
 Associates an already defined Epetra_MultiVector (or Epetra_Vector) as
 the right-hand-side of the linear system. ";
+
+%feature("docstring")  AztecOO::UnsetLHSRHS "int
+AztecOO::UnsetLHSRHS()
+
+AztecOO unset LHS and RHS.
+
+Sets to null the previously objects.. ";
 
 %feature("docstring")  AztecOO::SetPrecMatrix "int
 AztecOO::SetPrecMatrix(Epetra_RowMatrix *PrecMatrix)
@@ -1492,8 +1503,8 @@ Epetra matrices passed in by AztecOO. ";
 %feature("docstring")  AztecOO_Version "string AztecOO_Version() ";
 
 
-// File: dir_4dc5e7d6705411ebb2207ed00e1644b4.xml
+// File: dir_0ad82f99e7b685543925bc99d3c3d983.xml
 
 
-// File: dir_c12959d073c8d91317941666aec70eef.xml
+// File: dir_5912e688d6eb8a0beac01aa6b9eaa514.xml
 

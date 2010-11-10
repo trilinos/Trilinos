@@ -34,39 +34,38 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 
+namespace Thyra {
+
 /** \brief Silly little implementation of the modified Gram-Schmidt algorithm
- * to compute a QR factorization V=Q*R of a multi-vector V.
+ * to compute a QR factorization A=Q*R of a multi-vector A.
  *
- * \param   V   [in/out] On input, contains the columns to compute the factorization
- *              for.  On output, contains the columns of Q.
- * \param   R   [out] On output, contains the upper triangular matrix R.
+ * \param V [in/out] On input, V contains the columns of A to compute the QR
+ * factorization.  On output, V contains the columns of Q.
  *
- * ToDo: Finish documentation!
+ * \param R [out] On output, contains the upper triangular matrix R.
  *
  * \ingroup Thyra_Op_Vec_examples_cg_grp
  */
 template<class Scalar>
 void sillyModifiedGramSchmidt(
-  Thyra::MultiVectorBase<Scalar> *V_inout
-  ,Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > *R_out
+  const Ptr<MultiVectorBase<Scalar> > &V,
+  const Ptr<RCP<MultiVectorBase<Scalar> > > &R_out
   )
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(V_inout==NULL);
-  Thyra::MultiVectorBase<Scalar> &V = *V_inout;
-  const int n = V.domain()->dim();
-  *R_out = Thyra::createMembers(V.domain(),n);
-  //Thyra::assign(&*(*R_out),ST::zero());
-  Thyra::DetachedMultiVectorView<Scalar> R(*(*R_out));
-  for( int k = 0; k < n; ++k ) {
-    R(k,k) = Thyra::norm(*V.col(k));
-    Thyra::scale(Scalar(ST::one()/R(k,k)),&*V.col(k));
-    for( int j = k+1; j < n; ++j ) {
-      R(k,j) = Thyra::scalarProd(*V.col(k),*V.col(j));
-      Thyra::update( Scalar(-R(k,j)), *V.col(k), &*V.col(j) );
+  typedef Teuchos::ScalarTraits<Scalar> ST; using Teuchos::as;
+  const int n = V->domain()->dim();
+  *R_out = createMembers(V->domain(), V->domain());
+  DetachedMultiVectorView<Scalar> R(*(*R_out));
+  for (int k = 0; k < n; ++k) {
+    R(k,k) = norm(*V->col(k));
+    Vt_S(V->col(k).ptr(), ST::one()/R(k,k));
+    for (int j = k+1; j < n; ++j) {
+      R(k,j) = scalarProd(*V->col(k), *V->col(j));
+      Vp_StV(V->col(j).ptr(), -R(k,j), *V->col(k));
     }
   }
-
 } // end sillyModifiedGramSchmidt
+
+} // namespace Thyra
 
 #endif // THYRA_SILLY_MODIFIED_GRAM_SHMIDT_HPP

@@ -261,6 +261,28 @@ BucketRepository::declare_nil_bucket()
 }
 
 
+/** 11/9/10 Discussion between Kendall, Alan, Todd:
+ *  Kendall is confused about why presto would run faster simply by removing
+ *  several fields that are not even used.  We considered this and posed the
+ *  following possibility.  The current bucket allocation system guarantees
+ *  that all the fields for a bucket are layed out contiguously in memory so
+ *  that they can be accessed in a fast cache-friendly manner.  This also
+ *  guarantees means that if a field is allocated but not used, it will still
+ *  be chopped up and carried around in the bucket field data as part of the
+ *  contiguous block of memory and that it will have to be skipped over as the
+ *  computations progress over that block of data.  This would result in cache
+ *  misses and reduced performance.  When they're removed, it makes sense that
+ *  the performance might get better.
+ *  
+ *  This leads to the idea that maybe we should test this in a use-case or
+ *  performance test case and that we should include this in the performance
+ *  comparison of the up-and-coming pluggable data module for the Bucket memory
+ *  allocation.
+ *
+ *  It may be that a flat-array style data allocation for field data would
+ *  eliminate this issue.
+ **/
+
 //----------------------------------------------------------------------
 // The input part ordinals are complete and contain all supersets.
 Bucket *

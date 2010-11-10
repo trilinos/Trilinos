@@ -468,17 +468,14 @@ FAD_BINARYOP_MACRO(atan2,
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
 		   std::pow(expr1.val(), expr2.val()),
-		   (expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/
-		    expr1.val())*std::pow(expr1.val(),expr2.val()),
-		   (expr2.fastAccessDx(i)*std::log(expr1.val())+
-		    expr2.val()*expr1.fastAccessDx(i)/
-		    expr1.val())*std::pow(expr1.val(),expr2.val()),
+		   expr1.val() == value_type(0) ? value_type(0) : value_type((expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
+		   expr1.val() == value_type(0) ? value_type(0.0) : value_type((expr2.fastAccessDx(i)*std::log(expr1.val())+expr2.val()*expr1.fastAccessDx(i)/expr1.val())*std::pow(expr1.val(),expr2.val())),
 		   std::pow(c, expr2.val()),
 		   std::pow(expr1.val(), c),
-		   expr2.dx(i)*std::log(c)*std::pow(c,expr2.val()),
-		   c*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),c),
-		   expr2.fastAccessDx(i)*std::log(c)*std::pow(c,expr2.val()),
-		   c*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),c))
+		   c == value_type(0) ? value_type(0) : value_type(expr2.dx(i)*std::log(c)*std::pow(c,expr2.val())),
+		   expr1.val() == value_type(0) ? value_type(0.0) : value_type(c*expr1.dx(i)/expr1.val()*std::pow(expr1.val(),c)),
+		   c == value_type(0) ? value_type(0) : value_type(expr2.fastAccessDx(i)*std::log(c)*std::pow(c,expr2.val())),
+		   expr1.val() == value_type(0) ? value_type(0.0) : value_type(c*expr1.fastAccessDx(i)/expr1.val()*std::pow(expr1.val(),c)))
 FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    std::max(expr1.val(), expr2.val()),

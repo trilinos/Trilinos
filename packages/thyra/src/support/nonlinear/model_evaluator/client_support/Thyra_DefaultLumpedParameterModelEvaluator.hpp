@@ -763,7 +763,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::reportFinalPoint(
   // Replace p with p_orig.
   RCP<const VectorBase<Scalar> > p;
   if (!is_null(p=finalPoint.get_p(p_idx_))) {
-    wrappedFinalPoint.set_p(p_idx_,map_from_p_to_p_orig(*p));
+    wrappedFinalPoint.set_p(p_idx_, map_from_p_to_p_orig(*p));
   }
 
   thyraModel->reportFinalPoint(wrappedFinalPoint,wasSolved);
@@ -948,12 +948,13 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::generateParameterBasisMatrix(
   // possible that will hopefully yeild a well scaled orthonomal B after we
   // are finished.
 
-  RCP<MultiVectorBase<Scalar> >
+  const RCP<MultiVectorBase<Scalar> >
     B = createMembers(p_orig_space,numberOfBasisColumns_);
-  assign( &*B->col(0), ST::one() );
+  assign( B->col(0).ptr(), ST::one() );
   if (numberOfBasisColumns_ > 1) {
     seed_randomize<double>(0);
-    Thyra::randomize( as<Scalar>(0.5*ST::one()), as<Scalar>(1.5*ST::one()), &*B );
+    Thyra::randomize( as<Scalar>(0.5*ST::one()), as<Scalar>(1.5*ST::one()),
+      B.ptr() );
   }
 
   //
@@ -961,7 +962,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::generateParameterBasisMatrix(
   //
 
   RCP<MultiVectorBase<double> > R;
-  sillyModifiedGramSchmidt( &*B, &R );
+  sillyModifiedGramSchmidt( B.ptr(), Teuchos::outArg(R) );
 
   // Above:
   // 1) On output, B will have orthonomal columns which makes it a good basis
@@ -1016,8 +1017,8 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::updateNominalValuesAndBounds(
     // A value of p==0 will give p_orig = p_orig_init!
     const RCP<VectorBase<Scalar> >
       p_init = createMember(B_->domain());
-    assign( &*p_init, ST::zero() );
-    nominalValues_.set_p(p_idx_,p_init);
+    assign( p_init.ptr(), ST::zero() );
+    nominalValues_.set_p(p_idx_, p_init);
   }
   else {
     TEST_FOR_EXCEPTION(
@@ -1056,9 +1057,9 @@ DefaultLumpedParameterModelEvaluator<Scalar>::map_from_p_to_p_orig(
   ) const
 {
   // p_orig = B*p + p_orig_base
-  RCP<VectorBase<Scalar> > p_orig = createMember(B_->range());
-  apply( *B_, NOTRANS, p, &*p_orig );
-  Vp_V( &*p_orig, *p_orig_base_ );
+  const RCP<VectorBase<Scalar> > p_orig = createMember(B_->range());
+  apply( *B_, NOTRANS, p, p_orig.ptr() );
+  Vp_V( p_orig.ptr(), *p_orig_base_ );
   return p_orig;
 }
 
@@ -1189,7 +1190,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::assembleParamDeriv(
       TEUCHOS_ASSERT(
         DhDp.getMultiVectorOrientation() == MEB::DERIV_MV_BY_COL );
 #endif
-      apply( *DhDp_orig_mv, NOTRANS, *B_, &*DhDp_mv );
+      apply( *DhDp_orig_mv, NOTRANS, *B_, DhDp_mv.ptr() );
       // Above, we could generalize DhDp_oirg to just be a general linear
       // operator.
       break;
@@ -1199,7 +1200,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::assembleParamDeriv(
       TEUCHOS_ASSERT(
         DhDp.getMultiVectorOrientation() == MEB::DERIV_TRANS_MV_BY_ROW );
 #endif
-      apply( *B_, CONJTRANS, *DhDp_orig_mv, &*DhDp_mv );
+      apply( *B_, CONJTRANS, *DhDp_orig_mv, DhDp_mv.ptr() );
       break;
     default:
       TEST_FOR_EXCEPT(true); // Should never get here!

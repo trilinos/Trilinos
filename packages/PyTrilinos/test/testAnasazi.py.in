@@ -38,9 +38,6 @@ import unittest
 #
 # Parse the command-line arguments
 parser = OptionParser()
-parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
-                  default=False,
-                  help="test the experimental boost-generated PyTrilinos package")
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
                   help="test local build modules; prevent loading system-installed modules")
@@ -89,7 +86,7 @@ if __name__ == "__main__":
     # Run the test suite
     if iAmRoot: print >>sys.stderr, \
        "\n***************\nTesting Anasazi\n***************\n"
-    verbosity = 2 * int(comm.MyPID() == 0)
+    verbosity = options.verbosity * int(comm.MyPID() == 0)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures

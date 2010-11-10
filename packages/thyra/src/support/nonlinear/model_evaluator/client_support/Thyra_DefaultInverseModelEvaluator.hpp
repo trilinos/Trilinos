@@ -823,18 +823,19 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
   //
   // A) See what needs to be computed
   //
-
-  VectorBase<Scalar>
-    *g_inv_out = outArgs.get_g(outArgs.Ng()-1).get();
-  MultiVectorBase<Scalar>
-    *DgDx_inv_trans_out = get_mv(
-      outArgs.get_DgDx(outArgs.Ng()-1),"DgDx",MEB::DERIV_TRANS_MV_BY_ROW
-      ).get();
-  MultiVectorBase<Scalar>
-    *DgDp_inv_trans_out = get_mv(
-      outArgs.get_DgDp(outArgs.Ng()-1,p_idx_),"DgDp",MEB::DERIV_TRANS_MV_BY_ROW
-      ).get();
-  const bool computeInverseFunction = ( g_inv_out || DgDx_inv_trans_out || DgDp_inv_trans_out );
+  
+  const RCP<VectorBase<Scalar> >
+    g_inv_out = outArgs.get_g(outArgs.Ng()-1);
+  const RCP<MultiVectorBase<Scalar> >
+    DgDx_inv_trans_out = get_mv(
+      outArgs.get_DgDx(outArgs.Ng()-1), "DgDx", MEB::DERIV_TRANS_MV_BY_ROW
+      );
+  const RCP<MultiVectorBase<Scalar> >
+    DgDp_inv_trans_out = get_mv(
+      outArgs.get_DgDp(outArgs.Ng()-1,p_idx_), "DgDp", MEB::DERIV_TRANS_MV_BY_ROW
+      );
+  const bool computeInverseFunction = ( nonnull(g_inv_out)
+    || nonnull(DgDx_inv_trans_out) || nonnull(DgDp_inv_trans_out) );
   
   //
   // B) Compute all of the needed functions from the base model
@@ -854,7 +855,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
   {
     wrapped_o = createMember(thyraModel->get_g_space(obs_idx_));
     wrappedOutArgs.set_g(obs_idx_,wrapped_o);
-    if( DgDx_inv_trans_out ) {
+    if (nonnull(DgDx_inv_trans_out)) {
       if (!observationPassThrough_)
         wrapped_DoDx = thyraModel->create_DgDx_op(obs_idx_);
       else
@@ -862,7 +863,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
           *thyraModel, obs_idx_, MEB::DERIV_TRANS_MV_BY_ROW );
       wrappedOutArgs.set_DgDx(obs_idx_,wrapped_DoDx);
     }
-    if( DgDp_inv_trans_out ) {
+    if (nonnull(DgDp_inv_trans_out)) {
       wrapped_DoDp_trans = create_DgDp_mv(
         *thyraModel, obs_idx_, p_idx_, MEB::DERIV_TRANS_MV_BY_ROW
         );
@@ -928,7 +929,8 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
     // Compute diff_o if needed
     RCP<const VectorBase<Scalar> > o;
     RCP<VectorBase<Scalar> > diff_o;
-    if( !observationPassThrough_ && ( g_inv_out || DgDx_inv_trans_out )  ) {
+    if( !observationPassThrough_ && ( nonnull(g_inv_out) || nonnull(DgDx_inv_trans_out) ) )
+    {
       if (obs_idx_ < 0 ) o = x; else o = wrapped_o; // can't use ( test ? x : wrapped_o )!
       if(trace) *out << "\n||o||inf = " << norm_inf(*o) << endl;
       if (print_o) *out << "\no = " << *o;
@@ -947,33 +949,41 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
           *out << "\not = " << *observationTarget;
       }
       if (!is_null(observationTarget)) {
-        V_VmV( &*diff_o, *o, *observationTarget );
+        V_VmV( diff_o.ptr(), *o, *observationTarget );
       }
       else {
-        assign( &*diff_o, *o );
+        assign( diff_o.ptr(), *o );
       }
-      if(trace)
+      if(trace) {
         *out << "\n||diff_o||inf = " << norm_inf(*diff_o) << endl;
-      if (print_o)
+      }
+      if (print_o) {
         *out << "\ndiff_o = " << *diff_o;
+      }
     }
   
     // Compute diff_p if needed
     RCP<VectorBase<Scalar> > diff_p;
-    if( g_inv_out || DgDp_inv_trans_out ) {
+    if ( nonnull(g_inv_out) || nonnull(DgDp_inv_trans_out)) {
       if(trace) *out << "\n||p||inf = " << norm_inf(*p) << endl;
       if(print_p) *out << "\np = " << Teuchos::describe(*p,Teuchos::VERB_EXTREME);
       diff_p = createMember(p_space);
       if (!is_null(parameterBase_) ) {
         if(trace) *out << "\n||pt||inf = " << norm_inf(*parameterBase_) << endl;
-        if(print_p) *out << "\npt = " << Teuchos::describe(*parameterBase_,Teuchos::VERB_EXTREME);
-        V_VmV( &*diff_p, *p, *parameterBase_ );
+        if(print_p) {
+          *out << "\npt = "
+               << Teuchos::describe(*parameterBase_,Teuchos::VERB_EXTREME);
+        }
+        V_VmV( diff_p.ptr(), *p, *parameterBase_ );
       }
       else {
-        assign( &*diff_p, *p );
+        assign( diff_p.ptr(), *p );
       }
-      if(trace) *out << "\n||diff_p|| = " << norm(*diff_p) << endl;
-      if(print_p) *out << "\ndiff_p = " << Teuchos::describe(*diff_p,Teuchos::VERB_EXTREME);
+      if(trace) {*out << "\n||diff_p|| = " << norm(*diff_p) << endl;}
+      if(print_p) {
+        *out << "\ndiff_p = "
+             << Teuchos::describe(*diff_p, Teuchos::VERB_EXTREME);
+      }
     }
     
 
@@ -1012,18 +1022,18 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
     RCP<VectorBase<Scalar> > Q_o_diff_o;
     if ( !is_null(Q_o) && !is_null(diff_o) ) {
       Q_o_diff_o = createMember(Q_o->range()); // Should be same as domain!
-      apply( *Q_o, NOTRANS, *diff_o, &*Q_o_diff_o );
+      apply( *Q_o, NOTRANS, *diff_o, Q_o_diff_o.ptr() );
     }
     
     // Compute Q_p * diff_p
     RCP<VectorBase<Scalar> > Q_p_diff_p;
     if ( !is_null(Q_p)  && !is_null(diff_p)  ) {
       Q_p_diff_p = createMember(Q_p->range()); // Should be same as domain!
-      apply( *Q_p, NOTRANS, *diff_p, &*Q_p_diff_p );
+      apply( *Q_p, NOTRANS, *diff_p, Q_p_diff_p.ptr() );
     }
 
     // Compute g_inv(x,p)
-    if(g_inv_out) {
+    if (nonnull(g_inv_out)) {
       if(trace)
         *out << "\nComputing inverse response function ginv = g(Np-1) ...\n";
       const Scalar observationTerm
@@ -1056,11 +1066,11 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
           << "\n  parameterMultiplier*parameterRegularization(p) = " << parameterTerm
           << "\nginv = " << g_inv_val
           << "\n";
-      set_ele(0,observationTerm+parameterTerm,g_inv_out);
+      set_ele(0, observationTerm+parameterTerm, g_inv_out.ptr());
     }
 
     // Compute d(g_inv)/d(x)^T
-    if(DgDx_inv_trans_out) {
+    if (nonnull(DgDx_inv_trans_out)) {
       if(trace)
         *out << "\nComputing inverse response function derivative DginvDx^T:\n";
       if (!observationPassThrough_) {
@@ -1069,7 +1079,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
             if (trace)
               *out << "\nDginvDx^T = observationMultiplier * Q_o * diff_o ...\n";
             V_StV(
-              &*DgDx_inv_trans_out->col(0),
+              DgDx_inv_trans_out->col(0).ptr(),
               observationMultiplier_,
               *Q_o_diff_o
               );
@@ -1078,7 +1088,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
             if (trace)
               *out << "\nDginvDx^T = observationMultiplier * (1/no) * diff_o ...\n";
             V_StV(
-              &*DgDx_inv_trans_out->col(0),
+              DgDx_inv_trans_out->col(0).ptr(),
               Scalar(observationMultiplier_*(1.0/no)),
               *diff_o
               );
@@ -1095,7 +1105,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
             apply(
               *wrapped_DoDx.getLinearOp(), CONJTRANS,
               *Q_o_diff_o,
-              &*DgDx_inv_trans_out->col(0),
+              DgDx_inv_trans_out->col(0).ptr(),
               observationMultiplier_
               );
           }
@@ -1105,7 +1115,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
             apply(
               *wrapped_DoDx.getLinearOp(), CONJTRANS,
               *diff_o,
-              &*DgDx_inv_trans_out->col(0),
+              DgDx_inv_trans_out->col(0).ptr(),
               Scalar(observationMultiplier_*(1.0/no))
               );
           }
@@ -1115,7 +1125,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
         if (trace)
           *out << "\nDginvDx^T = observationMultiplier * DoDx^T ...\n";
         V_StV(
-          &*DgDx_inv_trans_out->col(0), observationMultiplier_,
+          DgDx_inv_trans_out->col(0).ptr(), observationMultiplier_,
           *wrapped_DoDx.getMultiVector()->col(0)
           );
       }
@@ -1126,7 +1136,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
     }
 
     // Compute d(g_inv)/d(p)^T
-    if(DgDp_inv_trans_out) {
+    if (nonnull(DgDp_inv_trans_out)) {
       if(trace)
         *out << "\nComputing inverse response function derivative DginvDp^T ...\n";
       if (obs_idx_ >= 0) {
@@ -1137,7 +1147,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
       }
       if(trace)
         *out << "\nDginvDp^T = 0 ...\n";
-      assign( &*DgDp_inv_trans_out->col(0), ST::zero() );
+      assign( DgDp_inv_trans_out->col(0).ptr(), ST::zero() );
       // DgDp^T += observationMultiplier * d(observationMatch)/d(p)^T
       if (!observationPassThrough_) {
         if ( obs_idx_ >= 0 ) {
@@ -1147,7 +1157,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
             apply(
               *wrapped_DoDp_trans.getMultiVector(), NOTRANS,
               *Q_o_diff_o,
-              &*DgDp_inv_trans_out->col(0),
+              DgDp_inv_trans_out->col(0).ptr(),
               Scalar(observationMultiplier_*(1.0/no)),
               ST::one()
               );
@@ -1158,7 +1168,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
             apply(
               *wrapped_DoDp_trans.getMultiVector(), NOTRANS,
               *diff_o,
-              &*DgDp_inv_trans_out->col(0),
+              DgDp_inv_trans_out->col(0).ptr(),
               Scalar(observationMultiplier_*(1.0/no)),
               ST::one()
               );
@@ -1176,7 +1186,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
         if(trace)
           *out << "\nDginvDp^T += (observationMultiplier*(1/no)) * (DoDp^T) * diff_o ...\n";
         Vp_StV(
-          &*DgDp_inv_trans_out->col(0), observationMultiplier_,
+          DgDp_inv_trans_out->col(0).ptr(), observationMultiplier_,
           *wrapped_DoDp_trans.getMultiVector()->col(0)
           );
         
@@ -1187,7 +1197,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
           if(trace)
             *out << "\nDginvDp^T += parameterMultiplier * Q_p * diff_p ...\n";
           Vp_StV(
-            &*DgDp_inv_trans_out->col(0),
+            DgDp_inv_trans_out->col(0).ptr(),
             parameterMultiplier_,
             *Q_p_diff_p
             );
@@ -1196,7 +1206,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
           if(trace)
             *out << "\nDginvDp^T += (parameterMultiplier*(1.0/np)) * diff_p ...\n";
           Vp_StV(
-            &*DgDp_inv_trans_out->col(0),
+            DgDp_inv_trans_out->col(0).ptr(),
             Scalar(parameterMultiplier_*(1.0/np)),
             *diff_p
             );

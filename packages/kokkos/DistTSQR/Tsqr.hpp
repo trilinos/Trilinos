@@ -156,13 +156,38 @@ namespace TSQR {
 
       // Sanity checks for matrix dimensions
       if (A_numRows < A_numCols)
-	throw std::logic_error ("A must have at least as many rows as columns");
+	{
+	  std::ostringstream os;
+	  os << "In Tsqr::factorExplicit: input matrix A has " << A_numRows 
+	     << " local rows, and " << A_numCols << " columns.  The input "
+	    "matrix must have at least as many rows on each processor as "
+	    "there are columns.";
+	  throw std::invalid_argument(os.str());
+	}
       else if (A_numRows != Q_numRows)
-	throw std::logic_error ("A and Q must have same number of rows");
+	{
+	  std::ostringstream os;
+	  os << "In Tsqr::factorExplicit: input matrix A and output matrix Q "
+	    "must have the same number of rows.  A has " << A_numRows << " rows"
+	    " and Q has " << Q_numRows << " rows.";
+	  throw std::invalid_argument(os.str());
+	}
       else if (R.numRows() < R.numCols())
-	throw std::logic_error ("R must have at least as many rows as columns");
+	{
+	  std::ostringstream os;
+	  os << "In Tsqr::factorExplicit: output matrix R must have at least "
+	    "as many rows as columns.  R has " << R.numRows() << " rows and "
+	     << R.numCols() << " columns.";
+	  throw std::invalid_argument(os.str());
+	}
       else if (A_numCols != R.numCols())
-	throw std::logic_error ("A and R must have the same number of columns");
+	{
+	  std::ostringstream os;
+	  os << "In Tsqr::factorExplicit: input matrix A and output matrix R "
+	    "must have the same number of columns.  A has " << A_numCols 
+	     << " columns and R has " << R.numCols() << " columns.";
+	  throw std::invalid_argument(os.str());
+	}
 
       // Check for quick exit, based on matrix dimensions
       if (Q_numCols == 0)

@@ -115,6 +115,46 @@ using Teuchos::RCP;
 // Note: Teuchos.i turns off warnings for nested classes, so we do not
 // have to do it again.
 
+// Exception handling
+%include "exception.i"
+
+// Director exception handling
+%feature("director:except")
+{
+  if ($error != NULL) {
+    throw Swig::DirectorMethodException();
+  }
+}
+
+// General exception handling
+%exception
+{
+  try
+  {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(PythonException & e)
+  {
+    e.restore();
+    SWIG_fail;
+  }
+  catch(int errCode)
+  {
+    PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
+    SWIG_fail;
+  }
+  SWIG_CATCH_STDEXCEPT
+  catch (Swig::DirectorException & e)
+  {
+    SWIG_fail;
+  }
+  catch(...)
+  {
+    SWIG_exception(SWIG_UnknownError, "Unknown C++ exception");
+  }
+}
+
 %teuchos_rcp(LOCA::GlobalData)
 %teuchos_rcp(LOCA::DerivUtils)
 

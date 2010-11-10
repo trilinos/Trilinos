@@ -1,0 +1,105 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+# 
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2010) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
+# 
+# ************************************************************************
+# @HEADER
+
+# The point of this test is to make sure that if another python module calls
+# MPI_Init(), then the Epetra module will not register Epetra.Finalize with the
+# atexit module.
+
+# For this test to work, I have to import another MPI module which calls
+# MPI_Init().  I choose mpi4py, but protect things so that the test exits
+# gracefully if mpi4py is not installed.
+try:
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+except ImportError:
+    print "Python module 'mpi4py' not found -- skipping test"
+    print "End Result: TEST PASSED"
+    exit()
+
+# Parse the command-line arguments
+from optparse import *
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+
+# Under normal usage, simply use 'from PyTrilinos import Epetra', etc.  For
+# testing, we want to be able to control whether we import from the build
+# directory or from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra  = fromPyTrilinosImport('Epetra',  options.testharness)
+Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
+
+# Main routine, which checks the Teuchos and Epetra MPII finalization functions,
+# which should be registered with the atexit module under normal conditions.
+# Here, however, because we imported from mpi4py, the PyTrilinos modules should
+# recognize that another module is responsible for finalization, and not
+# register the functions.
+def main():
+
+    # Define the root processor
+    iAmRoot = comm.Get_rank() == 0
+
+    # Output a message
+    if iAmRoot:
+        print "Module mpi4py has been imported and implicitly called MPI_Init()."
+        print "Under this circumstance the Epetra and Teuchos modules should"
+        print "not register their finalization functions with the atexit module."
+        print "Test status depends only upon this status.\n"
+
+    # Check the atexit module for instances of the Epetra or Teuchos
+    # finalization functions
+    import atexit
+    fails = 0
+    if "${TPL_ENABLE_MPI}":
+        for handler in atexit._exithandlers:
+            if handler[0] is Epetra.Epetra_MPI_Finalize:   fails += 1
+            if handler[0] is Teuchos.Teuchos_MPI_Finalize: fails += 1
+
+    # Output the results
+    totalFails = comm.reduce(fails)
+    if iAmRoot:
+        print "End Result: TEST",
+        if totalFails > 0:
+            print "FAILED"
+        else:
+            print "PASSED"
+
+    return
+
+################################################################################
+
+if __name__ == "__main__":
+    main()

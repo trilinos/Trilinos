@@ -51,6 +51,8 @@ APPEND_SET(HEADERS
   BelosOperator.hpp
   BelosOperatorTraits.hpp
   BelosOrthoManager.hpp
+  BelosOrthoManagerFactory.hpp
+  BelosOrthoManagerTest.hpp
   BelosOutputManager.hpp
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockCGSolMgr.hpp
@@ -107,7 +109,7 @@ IF(${PACKAGE_NAME}_ENABLE_TSQR)
   #
   # Build the TSQR-based OrthoManager and MatOrthoManager classes.
   #
-  APPEND_SET(HEADERS BelosTsqrOrthoManager.hpp)
+  APPEND_SET(HEADERS BelosTsqrOrthoManagerImpl.hpp BelosTsqrOrthoManager.hpp)
 ENDIF() # ${PACKAGE_NAME}_ENABLE_TSQR
 
 ######################################################################

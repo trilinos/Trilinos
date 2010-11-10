@@ -781,10 +781,10 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
   // evaluation
   if (responseType_ == FSIAMET::RESPONSE_TYPE_SUM) {
     if (!is_null(d_hat)) {
-      assign( &*d_hat, ST::zero() );
+      assign( d_hat.ptr(), ST::zero() );
     }
     if (!D_d_hat_D_p.isEmpty()) {
-      assign( &*D_d_hat_D_p.getMultiVector(), ST::zero() );
+      assign( D_d_hat_D_p.getMultiVector().ptr(), ST::zero() );
     }
   }
 
@@ -892,11 +892,11 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
     if (!is_null(d_hat)) {
       if (responseType_ == FSIAMET::RESPONSE_TYPE_SUM) {
         if (trace) *out << "\nd_hat += g_k ...\n";
-        Vp_V( &*d_hat, *g_k );
+        Vp_V( d_hat.ptr(), *g_k );
       }
       else if (responseType_ == FSIAMET::RESPONSE_TYPE_BLOCK) {
         if (trace) *out << "\nd_hat["<<k<<"] = g_k ...\n";
-        assign( &*prod_d_hat->getNonconstVectorBlock(k), *g_k );
+        assign( prod_d_hat->getNonconstVectorBlock(k).ptr(), *g_k );
       }
     }
 
@@ -904,7 +904,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
     if (!D_d_hat_D_p.isEmpty()) {
       if (responseType_ == FSIAMET::RESPONSE_TYPE_SUM) {
         if (trace) *out << "\nD_d_hat_D_p += D_g_hat_D_p_k ...\n";
-        Vp_V( &*D_d_hat_D_p.getMultiVector(), *D_g_hat_D_p_k );
+        Vp_V( D_d_hat_D_p.getMultiVector().ptr(), *D_g_hat_D_p_k );
         if (dumpSensitivities_ || print_x)
           *out << "\nD_d_hat_D_p = "
                << Teuchos::describe(*D_d_hat_D_p.getMultiVector(),Teuchos::VERB_EXTREME);
@@ -912,7 +912,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
       else if (responseType_ == FSIAMET::RESPONSE_TYPE_BLOCK) {
         if (trace) *out << "\nD_d_hat_D_p["<<k<<"] = D_g_hat_D_p_k ...\n";
         assign(
-          &*prod_D_d_hat_D_p_trans->getNonconstMultiVectorBlock(k),
+          prod_D_d_hat_D_p_trans->getNonconstMultiVectorBlock(k).ptr(),
           *D_g_hat_D_p_k
           );
       }

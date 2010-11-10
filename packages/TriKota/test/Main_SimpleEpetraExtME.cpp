@@ -88,32 +88,33 @@ int main(int argc, char* argv[])
     // Run the requested Dakota strategy using this interface
     dakota.run(trikota_interface.get());
 
-    // Get the final solution and check it!
-    Dakota::Variables finalVariables = dakota.getFinalSolution();
-    Dakota::RealVector finalValues = finalVariables.continuous_variables();
+    // Get the final solution and check it! Only for rank==0
+    if (dakota.rankZero()) {
+      Dakota::Variables finalVariables = dakota.getFinalSolution();
+      Dakota::RealVector finalValues = finalVariables.continuous_variables();
     
-    *out << "\nfinalValues =\n" << finalValues;
+      *out << "\nfinalValues =\n" << finalValues;
 
-    const double errorTol = 1e-12;
-    const double finalError = std::sqrt(
-      sqr(finalValues[0] - 1.0)
-      + sqr(finalValues[1] - 1.2)
-      + sqr(finalValues[2] - 4.0)
-      );
+      const double errorTol = 1e-12;
+      const double finalError = std::sqrt(
+        sqr(finalValues[0] - 1.0)
+        + sqr(finalValues[1] - 1.2)
+        + sqr(finalValues[2] - 4.0)
+        );
 
-    *out << "\nfinalError = "<<finalError<<"\n";
+      *out << "\nfinalError = "<<finalError<<"\n";
       
-    if (finalError > errorTol) {
-      *out << "\nError:  finalError > errorTol = "<<errorTol<<"\n";
-      success = false;
-    }
+      if (finalError > errorTol) {
+        *out << "\nError:  finalError > errorTol = "<<errorTol<<"\n";
+        success = false;
+      }
 
-    // ToDo: Remove this once the segfaults go away!
-    if(success)
-      *out << "\nEnd Result: TEST PASSED\n";
+      // ToDo: Remove this once the segfaults go away!
+      if(success)
+        *out << "\nEnd Result: TEST PASSED\n";
 
-    *out << std::flush;
-        
+      *out << std::flush;
+    }    
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
