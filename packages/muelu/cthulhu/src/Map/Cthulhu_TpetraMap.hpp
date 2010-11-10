@@ -63,7 +63,7 @@ namespace Cthulhu {
      */
      TpetraMap(global_size_t numGlobalElements, size_t numLocalElements, GlobalOrdinal indexBase, 
                const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) 
-       : map_(rcp(Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, numLocalElements, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
+       : map_(Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, numLocalElements, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
         
     /** \brief TpetraMap constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
@@ -74,7 +74,7 @@ namespace Cthulhu {
      */
      TpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const GlobalOrdinal> &elementList, GlobalOrdinal indexBase, 
                const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) 
-       : map_(rcp(Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
+       : map_(Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElements, elementList, indexBase, comm, node))) { CTHULHU_DEBUG_ME; }
 
     /** \brief TpetraMap constructor to wrap a Tpetra::Map object
      */
