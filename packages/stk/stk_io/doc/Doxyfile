@@ -1,7 +1,1 @@
-@INCLUDE = Doxyfile.common.config
-@INCLUDE = Doxyfile.input
-
-# Overrides go here
-PROJECT_NAME           = "Sierra Toolkit IO Utilities"
-EXTRACT_ALL            = YES
-ENUM_VALUES_PER_LINE   = 4
+../../doc/Doxyfile

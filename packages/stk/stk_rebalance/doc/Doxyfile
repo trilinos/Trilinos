@@ -1,4 +1,1 @@
-@INCLUDE = Doxyfile.common.config
-@INCLUDE = Doxyfile.input
-
-# Overrides go here
+../../doc/Doxyfile

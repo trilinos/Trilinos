@@ -1,6 +1,1 @@
-@INCLUDE = Doxyfile.common.config
-@INCLUDE = Doxyfile.input
-
-# Overrides go here
-
-EXAMPLE_PATH = ../use_cases
+../../doc/Doxyfile
