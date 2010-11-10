@@ -27,7 +27,7 @@ namespace Cthulhu {
     The \c int type, if omitted, defaults to \c int. The \c GlobalOrdinal 
     type, if omitted, defaults to the \c int type.
   */
-  class EpetraMultiVector : public Cthulhu::MultiVector<double,int,int> {
+  class EpetraMultiVector : public virtual Cthulhu::MultiVector<double,int,int> {
 
   public:
 

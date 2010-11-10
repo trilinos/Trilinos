@@ -11,14 +11,13 @@
 #include "Cthulhu_Exceptions.hpp"
 
 #include "Cthulhu_EpetraMap.hpp"
+#include "Cthulhu_EpetraMultiVector.hpp"
 #include "Epetra_Vector.h"
 
 namespace Cthulhu {
 
   //! \brief A class for constructing and using dense, distributors vectors.
-  /*!
-  */
-  class EpetraVector : public Vector<double,int,int> { // TODO public::EpetraMultiVector ?
+  class EpetraVector : public Vector<double,int,int>,  public EpetraMultiVector {
     
   public:
 
@@ -26,10 +25,10 @@ namespace Cthulhu {
     //@{ 
 
     //! Sets all vector entries to zero.
-    explicit EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut=true) {
+    explicit EpetraVector(const Teuchos::RCP<const Map<int,int> > &map, bool zeroOut=true) 
+      : EpetraMultiVector(map,1,zeroOut)
+    {
       CTHULHU_DEBUG_ME;
-      CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Cthulhu::EpetraVector constructors only accept Cthulhu::EpetraMap as input arguments.");
-      vec_ = rcp(new Epetra_Vector(eMap->getEpetra_Map(), zeroOut));
     }
     
 #ifdef CTHULHU_NOT_IMPLEMENTED
@@ -53,30 +52,23 @@ namespace Cthulhu {
     //! Replace current value at the specified location with specified value.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-    inline void replaceGlobalValue(int globalRow, const double &value) { CTHULHU_DEBUG_ME; vec_->replaceGlobalValue(globalRow, value); };
-#endif
+    inline void replaceGlobalValue(int globalRow, const double &value) { CTHULHU_DEBUG_ME; this->EpetraMultiVector::replaceGlobalValue(globalRow,0,value); };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Adds specified value to existing value at the specified location.
     /** \pre \c globalRow must be a valid global element on this node, according to the row map.
      */
-    inline void sumIntoGlobalValue(int globalRow, const double &value) { CTHULHU_DEBUG_ME; vec_->sumIntoGlobalValue(globalRow, value); };
-#endif
+    inline void sumIntoGlobalValue(int globalRow, const double &value) { CTHULHU_DEBUG_ME; this->EpetraMultiVector::sumIntoGlobalValue(globalRow, 0, value); };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Replace current value at the specified location with specified values.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-    inline void replaceLocalValue(int myRow, const double &value) { CTHULHU_DEBUG_ME; vec_->replaceLocalValue(myRow, value); };
-#endif
+    inline void replaceLocalValue(int myRow, const double &value) { CTHULHU_DEBUG_ME; this->EpetraMultiVector::replaceLocalValue(myRow, 0, value); };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Adds specified value to existing value at the specified location.
     /** \pre \c localRow must be a valid local element on this node, according to the row map.
      */
-    inline void sumIntoLocalValue(int myRow, const double &value) { CTHULHU_DEBUG_ME; vec_->sumIntoLocalValue(myRow, value); };
+    inline void sumIntoLocalValue(int myRow, const double &value) { CTHULHU_DEBUG_ME; this->EpetraMultiVector::sumIntoLocalValue(myRow, 0, value); };
 #endif
-
     //@}
 
 #ifdef CTHULHU_TODO
@@ -119,29 +111,89 @@ namespace Cthulhu {
 
     //! @name Overridden from Teuchos::Describable 
     //@{
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
-    /** \brief Return a simple one-line description of this object. */
-    inline std::string description() const { CTHULHU_DEBUG_ME; return vec_->description(); };
-#endif
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    /** \brief Return a simple one-line description of this object. */
+    inline std::string description() const { 
+      CTHULHU_DEBUG_ME; 
+
+      // This implementation come from Epetra_Vector_def.hpp (without modification)
+      std::ostringstream oss;
+      //TODO      oss << Teuchos::Describable::description();
+      //TODO oss << "{length="<<this->getGlobalLength()
+      //<< "}";
+      return oss.str();
+      
+    };
+
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; return vec_->describe(out, verbLevel); };
-#endif
+    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
+      CTHULHU_DEBUG_ME; 
+      
+      typedef Kokkos::MultiVector<double> KMV;
+      typedef Kokkos::DefaultArithmetic<KMV>   MVT;
+
+      // This implementation come from Tpetra_Vector_def.hpp (without modification)
+      using std::endl;
+      using std::setw;
+      using Teuchos::VERB_DEFAULT;
+      using Teuchos::VERB_NONE;
+      using Teuchos::VERB_LOW;
+      using Teuchos::VERB_MEDIUM;
+      using Teuchos::VERB_HIGH;
+      using Teuchos::VERB_EXTREME;
+      Teuchos::EVerbosityLevel vl = verbLevel;
+      if (vl == VERB_DEFAULT) vl = VERB_LOW;
+//       Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap()->getComm();
+//       const int myImageID = comm->getRank(),
+//       numImages = comm->getSize();
+//       size_t width = 1;
+//       for (size_t dec=10; dec<this->getGlobalLength(); dec *= 10) {
+//         ++width;
+//       }
+//       Teuchos::OSTab tab(out);
+//       if (vl != VERB_NONE) {
+//         // VERB_LOW and higher prints description()
+//         if (myImageID == 0) out << this->description() << std::endl; 
+//         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+//           if (myImageID == imageCtr) {
+//             if (vl != VERB_LOW) {
+//               // VERB_MEDIUM and higher prints getLocalLength()
+//               out << "node " << setw(width) << myImageID << ": local length=" << this->getLocalLength() << endl;
+//               if (vl != VERB_MEDIUM) {
+//                 // VERB_HIGH and higher prints isConstantStride() and stride()
+//                 if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
+//                   Teuchos::RCP<Node> node = this->lclMV_.getNode();
+//                   KOKKOS_NODE_TRACE("Vector::describe()")
+//                     Teuchos::ArrayRCP<const double> myview = node->template viewBuffer<double>(
+//                                                                                                this->getLocalLength(), 
+//                                                                                                MVT::getValues(this->lclMV_) );
+//                   // VERB_EXTREME prints values
+//                   for (size_t i=0; i<this->getLocalLength(); ++i) {
+//                     out << setw(width) << this->getMap()->getGlobalElement(i) 
+//                         << ": "
+//                         << myview[i] << endl;
+//                   }
+//                   myview = Teuchos::null;
+//                 }
+//               }
+//               else {
+//                 out << endl;
+//               }
+//             }
+//           }
+//         }
+//       }
+    }
 
     //@}
 
-//   protected:
+    // protected:
 
-//     //! Advanced constructor accepting parallel buffer view.
-//     Vector(const Teuchos::RCP<const Map<int,int> > &map, Teuchos::ArrayRCP<double> data) { CTHULHU_DEBUG_ME; vec_->(); };
+    //     //! Advanced constructor accepting parallel buffer view.
+    //     Vector(const Teuchos::RCP<const Map<int,int> > &map, Teuchos::ArrayRCP<double> data) { CTHULHU_DEBUG_ME; vec_->(); };
 
-    RCP<Epetra_Vector> getEpetra_Vector() const { CTHULHU_DEBUG_ME; return vec_; }
+    //TODO wrap RCP etc.   RCP<Epetra_Vector> getEpetra_Vector() const { CTHULHU_DEBUG_ME; this->EpetraMultiVector::getEpetra_MultiVector()->getVector(0); }
     
-  private:
-    RCP<Epetra_Vector> vec_;
-
-
   }; // class EpetraVector
 
 #ifdef CTHULHU_NOT_IMPLEMENTED

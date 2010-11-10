@@ -166,13 +166,13 @@ namespace Cthulhu {
         \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
     */
     inline Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) { CTHULHU_DEBUG_ME; return vec_->offsetViewNonConst(subMap, offset); }
+#endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Const Vector access function.
     inline Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const { CTHULHU_DEBUG_ME; return vec_->getVector(j); }
 
     //! Vector access function.
     inline Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(size_t j) { CTHULHU_DEBUG_ME; return vec_->getVectorNonConst(j); }
-#endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
