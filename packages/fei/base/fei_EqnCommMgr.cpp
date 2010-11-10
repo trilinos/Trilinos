@@ -263,7 +263,7 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
   }
 
   int numRecvsStarted = 0;
-  int indTag = 199904;
+  int indTag = 9904;
 
   //now, let's start the recvs for the incoming indices.
   for(unsigned i=0; i<numRecvProcs; i++) {
@@ -481,7 +481,7 @@ int EqnCommMgr::exchangeEqnBuffers(MPI_Comm comm, ProcEqns* sendProcEqns,
   (void)recvEqns;
   (void)accumulate;
 #else
-   int indTag = 19991130, coefTag = 19991131;
+   int indTag = 9113, coefTag = 9114;
 
    size_t numRecvProcs = recvProcEqns->getNumProcs();
    size_t numSendProcs = sendProcEqns->getNumProcs();
@@ -666,7 +666,7 @@ void EqnCommMgr::exchangeSoln()
   //is defined...
 #ifndef FEI_SER
 
-   int solnTag = 199906;
+   int solnTag = 19906;
 
    MPI_Request* solnRequests = NULL;
    double** solnBuffer = NULL;
