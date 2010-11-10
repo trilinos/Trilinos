@@ -16,7 +16,7 @@ with a (minimal) summary of the builds and tests run with results.
 
 
 Quickstart:
------------
+-----------trivial
 
 In order to do a solid checkin, perform the following recommended workflow
 (different variations on this workflow are described below):
@@ -644,6 +644,26 @@ clp.add_option(
   "--skip-commit-readiness-check", dest="doCommitReadinessCheck", action="store_false",
   default=True,
   help="Skip commit status check." )
+
+clp.add_option(
+  "--rebase", dest="rebase", action="store_true",
+  help="Rebase the local commits on top of origin/master before amending" \
+  +" the final commit and pushing.  Rebasing keeps a nice linear commit" \
+  +" history like with CVS or SVN and will work perfectly for the basic" \
+  +" workflow of adding commits to the 'master' branch and then syncing" \
+  +" up with origin/master before the final push. [default]" )
+clp.add_option(
+  "--no-rebase", dest="rebase", action="store_false",
+  help="Do not rebase the local commits on top of origin/master before" \
+  +" amending the final commit and pushing.  This allows for some more " \
+  +" complex workflows involving local branches with multiple merges." \
+  +"  However, this will result in non-linear history and will allow for" \
+  +" trivial merge commits with origin/master to get pushed.  This mode" \
+  +" should only be used in cases where the rebase mode will not or " \
+  +" when it is desired to use a merge commit to integrate changes on a" \
+  +" branch that you wish be able to easily back out.  For sophisticated" \
+  +" users of git, this may in fact be the prefered mode.",
+  default=True )
 
 clp.add_option(
   "--append-test-results", dest="appendTestResults", action="store_true",
