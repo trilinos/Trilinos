@@ -82,12 +82,11 @@ ADD_OPTION_AND_DEFINE(
 ## BEGIN TSQR options
 ######################################################################
 
-# TSQR is disabled by default, just for now.  We will make it enabled
-# by default once we are sure it's working properly inside Kokkos.
+# Whether to enable TSQR (Tall Skinny QR factorization).
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_TSQR
   HAVE_KOKKOS_TSQR
-  "Enable (intranode) TSQR (Tall Skinny QR factorization) support in Kokkos"
+  "Enable TSQR (Tall Skinny QR factorization) in Kokkos"
   OFF
   )
 
