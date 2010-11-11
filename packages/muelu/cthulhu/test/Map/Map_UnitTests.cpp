@@ -82,7 +82,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor1, MAP, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor1, M, LO, GO )
   {
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -90,11 +90,11 @@ namespace {
     const int myImageID = comm->getRank();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     // bad constructor calls: (num global elements, index base)
-    TEST_THROW(MAP map(GSTI,0,comm), std::invalid_argument);
+    TEST_THROW(M map(GSTI,0,comm), std::invalid_argument);
     if (numImages > 1) {
-      TEST_THROW(MAP map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument);
-      TEST_THROW(MAP map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
-      TEST_THROW(MAP map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
+      TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
     // All procs fail if any proc fails 
     int globalSuccess_int = -1;
@@ -104,7 +104,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor2, MAP, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor2, M, LO, GO )
   {
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -112,11 +112,11 @@ namespace {
     const int myImageID = comm->getRank();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     // bad constructor calls: (num global elements, num local elements, index base)
-    TEST_THROW(MAP map(1,0,0, comm),  std::invalid_argument);
+    TEST_THROW(M map(1,0,0, comm),  std::invalid_argument);
     if (numImages > 1) {
-      TEST_THROW(MAP map((myImageID == 0 ? GSTI :  1),0,0,comm), std::invalid_argument);
-      TEST_THROW(MAP map((myImageID == 0 ?  1 :  0),0,0,comm), std::invalid_argument);
-      TEST_THROW(MAP map(0,0,(myImageID == 0 ? 0 : 1),comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ? GSTI :  1),0,0,comm), std::invalid_argument);
+      TEST_THROW(M map((myImageID == 0 ?  1 :  0),0,0,comm), std::invalid_argument);
+      TEST_THROW(M map(0,0,(myImageID == 0 ? 0 : 1),comm), std::invalid_argument);
     }
     // All procs fail if any proc fails 
     int globalSuccess_int = -1;
@@ -126,7 +126,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor3, MAP, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, invalidConstructor3, M, LO, GO )
   {
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -134,11 +134,11 @@ namespace {
     const int myImageID = comm->getRank();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     // bad constructor calls: (num global, entry list, index base)
-    TEST_THROW(MAP map(numImages, tuple<GO>(-myImageID), 1, comm), std::invalid_argument); // GID less than iB
+    TEST_THROW(M map(numImages, tuple<GO>(-myImageID), 1, comm), std::invalid_argument); // GID less than iB
     if (numImages > 1) {
-      TEST_THROW(MAP map( 1, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG != sum nL
-      TEST_THROW(MAP map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
-      TEST_THROW(MAP map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
+      TEST_THROW(M map( 1, tuple<GO>(myImageID+1), 1, comm), std::invalid_argument);    // nG != sum nL
+      TEST_THROW(M map((myImageID == 0 ? GSTI :  0),tuple<GO>(myImageID+1),1, comm), std::invalid_argument);
+      TEST_THROW(M map(0, tuple<GO>(myImageID+1), (myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
     // All procs fail if any proc fails 
     int globalSuccess_int = -1;
@@ -168,7 +168,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, compatabilityTests, MAP, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, compatabilityTests, M, LO, GO )
   {
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -188,19 +188,19 @@ namespace {
     // test symmetry   : m1.isCompatible(m2) <=> m2.isCompatible(m1)
     // test reflexivity: m1.isCompatible(m1), m2.isCompatible(m2)
     {
-      MAP m1(GSTI,myImageID,0,comm), 
+      M m1(GSTI,myImageID,0,comm), 
         m2(GSTI,myImageID,0,comm);
       TEST_IS_COMPATIBLE( m1, m2, true );
     }
     {
-      MAP m1(GSTI,myImageID+1,0,comm),
+      M m1(GSTI,myImageID+1,0,comm),
         m2(GSTI,myImageID,0,comm);
       TEST_IS_COMPATIBLE( m1, m2, false);
     }
     if (numImages > 1) {
       // want different num local on every proc; map1:numLocal==[0,...,numImages-1], map2:numLocal==[1,...,numImages-1,0]
       {
-        MAP m1(GSTI,myImageID,0,comm),
+        M m1(GSTI,myImageID,0,comm),
           m2(GSTI,(myImageID+1)%numImages,0,comm);
         TEST_IS_COMPATIBLE( m1, m2, false);
       }
@@ -220,7 +220,7 @@ namespace {
           mynl1 = mynl2 = myImageID;
         }
         {
-          MAP m1(GSTI,mynl1,0,comm),
+          M m1(GSTI,mynl1,0,comm),
             m2(GSTI,mynl2,0,comm);
           TEST_IS_COMPATIBLE( m1, m2, false);
         }
@@ -230,7 +230,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, sameasTests, MAP, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, sameasTests, M, LO, GO )
   {
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -238,24 +238,24 @@ namespace {
     const int myImageID = comm->getRank();
     const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
     {
-      MAP m1(GSTI,0,0,comm),
+      M m1(GSTI,0,0,comm),
         m2(GSTI,0,0,comm);
       TEST_IS_SAME_AS(m1, m2, true);
     }
     {
-      MAP m1(GSTI,myImageID,0,comm),
+      M m1(GSTI,myImageID,0,comm),
         m2(GSTI,myImageID,0,comm);
       TEST_IS_SAME_AS(m1, m2, true);
     }
     {
-      MAP m1(GSTI,myImageID,0,comm),
+      M m1(GSTI,myImageID,0,comm),
         m2(GSTI,myImageID+1,0,comm);
       TEST_IS_SAME_AS(m1, m2, false);
     }
     if (numImages > 1) {
       // FINISH: test all multi-node scenarios, esp. divergent paths
       {
-        MAP m1(GSTI,myImageID,0,comm),
+        M m1(GSTI,myImageID,0,comm),
           m2(GSTI,myImageID+(myImageID==1?1:0),0,comm);
         TEST_IS_SAME_AS(m1, m2, false);
       }
@@ -264,7 +264,7 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, ContigUniformMap, MAP, LO, GO )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Map, ContigUniformMap, M, LO, GO )
   {
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -277,7 +277,7 @@ namespace {
 
     const size_t numGlobalEntries = numImages*2;
     const GO indexBase = 0;
-    MAP map(numGlobalEntries,indexBase,comm);
+    M map(numGlobalEntries,indexBase,comm);
 
     TEST_EQUALITY_CONST(map.isContiguous(), true);
     TEST_EQUALITY_CONST(map.isDistributed(), numImages > 1);
@@ -328,13 +328,13 @@ namespace {
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#   define UNIT_TEST_GROUP_ORDINAL_( MAP, LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor1, MAP, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor2, MAP, LO, GO ) \
-      //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, MAP, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, MAP, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, MAP, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, MAP, LO, GO )
+#   define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor1, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
+      //TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, M, LO, GO )
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       typedef Cthulhu::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
@@ -346,13 +346,13 @@ namespace {
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#   define UNIT_TEST_GROUP_ORDINAL_( MAP, LO, GO )                        \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor1, MAP, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor2, MAP, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, MAP, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, MAP, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, MAP, LO, GO )
-      //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, MAP, LO, GO ) \
+#   define UNIT_TEST_GROUP_ORDINAL_( M, LO, GO )                        \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor1, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor2, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, compatabilityTests, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, sameasTests, M, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, ContigUniformMap, M, LO, GO )
+      //JG TODO FAILED: TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Map, invalidConstructor3, M, LO, GO )
 
 #  define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       typedef Cthulhu::TpetraMap<LO,GO> TpetraMap ## LO ## GO; \
