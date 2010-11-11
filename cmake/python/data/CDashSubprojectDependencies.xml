@@ -841,4 +841,17 @@
       <Email address="feapp-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="KrylovSupport">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="LR"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Triutils" type="TO"/>
+    <Dependency name="Tpetra" type="LO"/>
+    <Dependency name="EpetraExt" type="TO"/>
+    <EmailAddresses>
+      <Email address="krylovsupport-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
 </Project>
