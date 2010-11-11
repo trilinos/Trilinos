@@ -13,7 +13,7 @@ ADD_SUBDIRECTORIES(
 # CrsGraph
 # CrsMatrix
 # BlockCrsGraph
-# BlockMap
+  BlockMap
 # BlockMultiVector
 # VbrMatrix
   )

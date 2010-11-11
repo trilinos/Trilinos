@@ -47,11 +47,13 @@ class BlockMap : public Teuchos::Describable {
   //! Return ArrayRCP of first-local-point in local blocks.
   virtual Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks() const =0;
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
   //! Return device-resident ArrayRCP of first-local-point in local blocks.
   /*! This version of this method is primarily used internally by VbrMatrix
       for passing data to the matrix-vector-product kernel.
   */
   virtual Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks_Device() const =0;
+#endif
 
   //! Return the globalBlockID corresponding to the given localBlockID
   /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().

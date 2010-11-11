@@ -9,6 +9,7 @@
 #include "Cthulhu_BlockMap.hpp"
 
 #include "Tpetra_BlockMap.hpp"
+#include "Tpetra_Map.hpp"
 
 #include "Cthulhu_Debug.hpp"
 
@@ -25,6 +26,9 @@ namespace Cthulhu {
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node> {
  public:
+  
+  // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+  typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -65,7 +69,11 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
   TpetraBlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap,
                  const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
                  const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
-                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(pointMap, myGlobalBlockIDs, myBlockSizes, node))) { CTHULHU_DEBUG_ME; }
+                 const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode()) {
+    CTHULHU_DEBUG_ME;
+    CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, pointMap, tPointMap, "Cthulhu::TpetraBlockMap constructors only accept Cthulhu::TpetraMap as input arguments.");
+    map_ = rcp(new Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node>(tPointMap->getTpetra_Map(), myGlobalBlockIDs, myBlockSizes, node));
+  }
 
   TpetraBlockMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > &map) : map_(map) { CTHULHU_DEBUG_ME; }
 
@@ -76,8 +84,9 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
 
   //! @name Attribute Accessor Methods
   //@{
-
+#ifdef CTHULHU_NOT_IMPLEMENTED
   inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const { CTHULHU_DEBUG_ME; return map_->getPointMap(); }
+#endif
 
   inline global_size_t getGlobalNumBlocks() const { CTHULHU_DEBUG_ME; return map_->getGlobalNumBlocks(); }
 
@@ -130,7 +139,7 @@ class TpetraBlockMap : public Cthulhu::BlockMap<LocalOrdinal,GlobalOrdinal,Node>
   RCP< const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > getTpetra_BlockMap() const { CTHULHU_DEBUG_ME; return map_; }
 
 private:
-  const RCP< const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > map_;
+  RCP< const Tpetra::BlockMap<LocalOrdinal, GlobalOrdinal, Node> > map_;
 
 
 };//class TpetraBlockMap
