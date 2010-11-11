@@ -5,6 +5,7 @@
 #error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
 #endif
 
+#include "Cthulhu_Vector.hpp"
 #include "Cthulhu_MultiVector.hpp"
 
 #include "Cthulhu_TpetraMap.hpp"

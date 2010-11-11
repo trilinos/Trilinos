@@ -1,5 +1,7 @@
 INCLUDE(AddSubdirectories)
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
 ADD_SUBDIRECTORIES(
 # Platform
   Map
@@ -7,7 +9,7 @@ ADD_SUBDIRECTORIES(
 # Directory
 # ImportExport
 # ImportExport2
-# MultiVector
+  MultiVector
 # BasicPerfTest
 # Utils
 # CrsGraph
