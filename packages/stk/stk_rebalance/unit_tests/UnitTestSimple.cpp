@@ -67,6 +67,9 @@ class MockPartition : public stk::rebalance::Partition
 
     int get_new_partition(std::vector<stk::mesh::EntityProc> &new_partition);
 
+    bool partition_dependents_needed() const
+    { return false; /* I handle both element and dependent node partitioning */ }
+
   private:
 
     unsigned total_number_entities_;

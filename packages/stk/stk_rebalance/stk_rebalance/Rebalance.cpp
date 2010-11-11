@@ -30,7 +30,7 @@ using namespace stk::rebalance;
 namespace {
 
 bool balance_comm_spec_domain( Partition & partition,
-                               std::vector<mesh::EntityProc> & rebal_spec )
+                               mesh::EntityProcVec & rebal_spec )
 {
   bool rebalancingHasOccurred = false;
   {
@@ -48,14 +48,82 @@ bool balance_comm_spec_domain( Partition & partition,
 }
 
 
-bool full_rebalance(mesh::BulkData        & bulk_data ,
-                    Partition             & partition)
+void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
+                                   const Partition         & partition,
+                                   const mesh::EntityRank  & dep_rank,
+                                   mesh::EntityProcVec     & entity_procs )
 {
-  std::vector<mesh::EntityProc> cs_elem;
-  bool rebalancingHasOccurred =  balance_comm_spec_domain( partition,
-                                                           cs_elem );
 
-  if ( rebalancingHasOccurred ) {
+  const mesh::TopologicalMetaData & topo_data = 
+    mesh::TopologicalMetaData::find_TopologicalMetaData(bulk_data.mesh_meta_data());
+
+  std::map<mesh::EntityId, unsigned> elem_procs;
+  mesh::EntityVector owned_moving_elems;
+  mesh::EntityProcVec::iterator ep_iter = entity_procs.begin(),
+                                 ep_end = entity_procs.end();
+  for( ; ep_end != ep_iter; ++ep_iter )
+    if( topo_data.element_rank == ep_iter->first->entity_rank() )
+    {
+      elem_procs[ep_iter->first->identifier()] = ep_iter->second;
+      owned_moving_elems.push_back(ep_iter->first);
+    }
+
+  /* 
+   * Traversing the migrating elements in reverse order produces a simplistic
+   * attempt at lowest-rank element proc greedy partitioning of dependents
+   * which seems to often work in practice.  Some logic could be added here 
+   * as needed to enforce more deterministic dependent partitions. 
+  */
+
+  // TODO: Determine if this "dumb" greedy approach is adequate and the cost/benefit
+  //       of doing something more sophisticated
+  std::map<mesh::EntityId, unsigned> dep_entity_procs;
+  mesh::EntityVector::reverse_iterator r_iter = owned_moving_elems.rbegin(),
+                                        r_end = owned_moving_elems.rend();
+  for( ; r_end != r_iter; ++r_iter )
+  {
+    mesh::EntityId elem_id = (*r_iter)->identifier();
+    mesh::EntityVector related_entities;
+    mesh::EntityVector elems(1);
+    elems[0] = *r_iter;
+    stk::mesh::get_entities_through_relations(elems, dep_rank, related_entities);
+    for( size_t j = 0; j < related_entities.size(); ++j )
+      dep_entity_procs[related_entities[j]->identifier()] = elem_procs[elem_id];
+  }
+
+
+  std::map<mesh::EntityId, unsigned>::const_iterator c_iter = dep_entity_procs.begin(),
+                                                      c_end = dep_entity_procs.end();
+  for( ; c_end != c_iter; ++c_iter )
+  {
+    mesh::Entity * de = bulk_data.get_entity( dep_rank, c_iter->first );
+    if( parallel_machine_rank(partition.parallel()) == de->owner_rank() )
+    {
+      stk::mesh::EntityProc dep_proc(de, c_iter->second);
+      entity_procs.push_back(dep_proc);
+      std::cerr << "Putting node[" << c_iter->first << "] on proc " << c_iter->second << std::endl;
+    }
+  }
+}
+
+
+bool full_rebalance(mesh::BulkData  & bulk_data ,
+                    Partition       & partition)
+{
+  mesh::EntityProcVec cs_elem;
+  bool rebalancingHasOccurred =  balance_comm_spec_domain( partition, cs_elem );
+
+  if( rebalancingHasOccurred && partition.partition_dependents_needed() )
+  {
+    const mesh::TopologicalMetaData & topo_data = 
+      mesh::TopologicalMetaData::find_TopologicalMetaData(bulk_data.mesh_meta_data());
+
+    // TODO: Determine which dependent types this call needs to be made for
+    rebalance_dependent_entities( bulk_data, partition, topo_data.node_rank, cs_elem );
+  }
+
+  if ( rebalancingHasOccurred ) 
+  {
     bulk_data.modification_begin();
     bulk_data.change_entity_owner( cs_elem );
     bulk_data.modification_end();
@@ -65,7 +133,9 @@ bool full_rebalance(mesh::BulkData        & bulk_data ,
   return rebalancingHasOccurred;
 }
 
-}
+
+} // namespace
+
 
 // ------------------------------------------------------------------------------
 
