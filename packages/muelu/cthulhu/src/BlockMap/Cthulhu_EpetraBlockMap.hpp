@@ -50,27 +50,32 @@ class EpetraBlockMap : public Cthulhu::BlockMap<int,int> {
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
                  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Epetra_BlockMap(numGlobalBlocks, numLocalBlocks, blockSize, indexBase, *Teuchos2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME; }
 
-// TODO
-//   /*! \brief EpetraBlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
-//    */
-//   EpetraBlockMap(global_size_t numGlobalBlocks,
+  /*! \brief EpetraBlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
+   */
+ // EpetraBlockMap(global_size_t numGlobalBlocks,
 //                  const Teuchos::ArrayView<const int>& myGlobalBlockIDs,
 //                  const Teuchos::ArrayView<const int>& myFirstGlobalPointInBlocks,
 //                  const Teuchos::ArrayView<const int>& myBlockSizes,
 //                  int indexBase,
 //                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-//                  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Epetra_BlockMap(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, *Teuchos2Epetra_Comm(comm)))) { CTHULHU_DEBUG_ME; }
-  
-//   /*! \brief EpetraBlockMap constructor which takes a "regular" Map.
-//    * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
-//    * sum(myBlockSizes) must equal pointMap->getNodeNumElements().
-//    * If these arrays are different lengths or sum(myBlockSizes) is incorrect,
-//    * then std::runtime_error is thrown.
-//    */
+//                  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
+//     CTHULHU_DEBUG_ME; 
+//     map_ = rcp(new Epetra_BlockMap(numGlobalBlocks, myGlobalBlockIDs, myFirstGlobalPointInBlocks, myBlockSizes, indexBase, *Teuchos2Epetra_Comm(comm)));
+//   }
+
+  /*! \brief EpetraBlockMap constructor which takes a "regular" Map.
+   * The arrays myGlobalBlockIDs and myBlockSizes must be the same length, and
+   * sum(myBlockSizes) must equal pointMap->getNodeNumElements().
+   * If these arrays are different lengths or sum(myBlockSizes) is incorrect,
+   * then std::runtime_error is thrown.
+   */
 //   EpetraBlockMap(const Teuchos::RCP<const Map<int,int> >& pointMap,
 //                  const Teuchos::ArrayView<const int>& myGlobalBlockIDs,
 //                  const Teuchos::ArrayView<const int>& myBlockSizes,
-//                  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) : map_(rcp(new Epetra_BlockMap(pointMap, myGlobalBlockIDs, myBlockSizes))) { CTHULHU_DEBUG_ME; }
+//                  const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) {
+//     CTHULHU_DEBUG_ME;
+//     map_ = rcp(new Epetra_BlockMap(pointMap, myGlobalBlockIDs, myBlockSizes));
+//   }
 
   EpetraBlockMap(const Teuchos::RCP<const Epetra_BlockMap > &map) : map_(map) { CTHULHU_DEBUG_ME; }
 
@@ -88,7 +93,7 @@ class EpetraBlockMap : public Cthulhu::BlockMap<int,int> {
   inline global_size_t getGlobalNumBlocks() const { CTHULHU_DEBUG_ME; return map_->NumGlobalElements(); }
 
   //! Return number of blocks on the local processor.
-  //TODO inline size_t getNodeNumBlocks() const { CTHULHU_DEBUG_ME; return map_->NumMyElements(); }
+  inline size_t getNodeNumBlocks() const { CTHULHU_DEBUG_ME; return map_->NumMyElements(); }
 
   //TODO inline Teuchos::ArrayView<const int> getNodeBlockIDs() const { CTHULHU_DEBUG_ME; return map_->getNodeBlockIDs(); }
 
