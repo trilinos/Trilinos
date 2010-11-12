@@ -1,20 +1,30 @@
 #!/usr/bin/tcsh
+rm -rf CMakeCache.txt
 cmake \
       -D CMAKE_INSTALL_PREFIX="/home/rppawlo/trilinos_install" \
       -D Trilinos_EXTRA_REPOSITORIES="Panzer" \
       -D Trilinos_ENABLE_DEBUG=ON \
       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-      -D Trilinos_ENABLE_Panzer:BOOL=ON \
       -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+      -D Trios_ENABLE_XDMF:BOOL=OFF \
       -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+      -D Trilinos_ENABLE_Trios:BOOL=ON \
+      -D Trilinos_ENABLE_Panzer:BOOL=ON \
+      -D Trilinos_ENABLE_Panzer_STK:BOOL=ON \
+      -D Trilinos_ENABLE_STK:BOOL=ON \
       -D Panzer_ENABLE_TESTS:BOOL=ON \
       -D Panzer_ENABLE_EXAMPLES:BOOL=ON \
+      -D Panzer_STK_ENABLE_TESTS:BOOL=ON \
+      -D Panzer_STK_ENABLE_EXAMPLES:BOOL=ON \
       -D TPL_ENABLE_MPI:BOOL=ON \
       -D MPI_BASE_DIR:PATH="/home/rppawlo/local" \
       -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
       -D TPL_ENABLE_Boost:BOOL=ON \
-      -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Libs/Boost/boost_1_43_0" \
+      -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Libs/Boost/boost_1_44_0" \
+      -D TPL_ENABLE_Netcdf:BOOL=ON \
+      -D Netcdf_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Charon/Alegra_TPL/TPL20100206/netcdf/3.6.1-snl2/include" \
+      -D Netcdf_LIB_DIRS:FILEPATH="/home/rppawlo/Charon/Alegra_TPL/TPL20100206/netcdf/3.6.1-snl2/lib/64BITgnu4_opt" \
       -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpiCC" \
       -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpicc" \
       -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpif77" \
