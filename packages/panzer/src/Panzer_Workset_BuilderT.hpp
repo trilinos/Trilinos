@@ -55,9 +55,9 @@ panzer::buildWorksets(const std::string& block_id,
     for (i = worksets.begin(); i != worksets.end(); ++i)
       i->num_cells = workset_size;
 	 
-    if (!last_set_is_full)
+    if (!last_set_is_full) {
       worksets.back().num_cells = last_workset_size;
-
+    }
   }
 
   // assign workset cell local ids
@@ -67,6 +67,10 @@ panzer::buildWorksets(const std::string& block_id,
     std::vector<std::size_t>::const_iterator end_iter = begin_iter + wkst->num_cells;
     local_begin = end_iter;
     wkst->cell_local_ids.assign(begin_iter,end_iter);
+    wkst->cell_vertex_coordinates.resize(workset_size,
+					 vertex_coordinates.dimension(1),
+					 vertex_coordinates.dimension(2));
+    wkst->block_id = block_id;
   }
   
   TEUCHOS_ASSERT(local_begin == local_cell_ids.end());
@@ -128,7 +132,7 @@ panzer::buildWorksets(const std::string& block_id,
       worksets[wkst].int_rules[i]->setupArrays(ir);
 
       worksets[wkst].int_rules[i]->
-	evaluateValues(vertex_coordinates);
+	evaluateValues(worksets[wkst].cell_vertex_coordinates);
     }
   }
 

@@ -24,13 +24,23 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/dofmngr)
 
 APPEND_SET(HEADERS
-  Panzer_Version.hpp
-  Panzer_ConfigDefs.hpp
+  Panzer_ArrayTraits.hpp
   Panzer_Basis.hpp
+  Panzer_BasisValues.hpp
+  Panzer_BasisValuesT.hpp
+  Panzer_BoundaryCondition.hpp
   Panzer_CellData.hpp
+  Panzer_ConfigDefs.hpp
   Panzer_Dimension.hpp
+  Panzer_InputPhysicsBlock.hpp
   Panzer_IntegrationRule.hpp
+  Panzer_IntegrationValues.hpp
+  Panzer_IntegrationValuesT.hpp
   Panzer_IntrepidBasisFactory.hpp
+  Panzer_Version.hpp
+  Panzer_Workset.hpp
+  Panzer_Workset_Builder.hpp
+  Panzer_Workset_BuilderT.hpp
   dofmngr/Panzer_FieldPattern.hpp
   dofmngr/Panzer_IntrepidFieldPattern.hpp
   dofmngr/Panzer_GeometricAggFieldPattern.hpp
@@ -41,7 +51,9 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES
   Panzer_Basis.cpp
+  Panzer_BoundaryCondition.cpp
   Panzer_Dimension.cpp
+  Panzer_InputPhysicsBlock.cpp
   Panzer_IntegrationRule.cpp
   Panzer_Version.cpp
   dofmngr/Panzer_FieldPattern.cpp

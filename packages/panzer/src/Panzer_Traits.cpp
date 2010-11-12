@@ -9,7 +9,7 @@
 // ******************************************************************
 
 #include <string>
-#include "phx/Panzer_Traits.h"
+#include "Panzer_Traits.hpp"
 
 const std::string PHX::TypeString<panzer::Traits::Residual>::value = "Residual";
 

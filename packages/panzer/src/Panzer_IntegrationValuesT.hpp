@@ -108,7 +108,7 @@ namespace panzer {
       size_type num_cells = in_node_coordinates.dimension(0);
       size_type num_nodes = in_node_coordinates.dimension(1);
       size_type num_dims = in_node_coordinates.dimension(2);
-      
+     
       for (size_type cell = 0; cell < num_cells;  ++cell) {
 	for (size_type node = 0; node < num_nodes; ++node) {
 	  for (size_type dim = 0; dim < num_dims; ++dim) {

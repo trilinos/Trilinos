@@ -3,7 +3,7 @@ rm -rf CMakeCache.txt
 cmake \
       -D CMAKE_INSTALL_PREFIX="/home/rppawlo/trilinos_install" \
       -D Trilinos_EXTRA_REPOSITORIES="Panzer" \
-      -D Trilinos_ENABLE_DEBUG=ON \
+      -D Trilinos_ENABLE_DEBUG=OFF \
       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
       -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \

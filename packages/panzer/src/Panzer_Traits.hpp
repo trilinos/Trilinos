@@ -10,12 +10,15 @@
 #include "boost/mpl/map.hpp"
 #include "boost/mpl/find.hpp"
 
+// Scalar types
+#include "Sacado.hpp"
+
 // traits Base Class
 #include "Phalanx_Traits_Base.hpp"
 
 // Include User Data Types
 #include "Phalanx_Allocator_Contiguous.hpp"
-#include "Panzer_Workset.h"
+#include "Panzer_Workset.hpp"
 
 // Debugging information
 #include "Phalanx_TypeStrings.hpp"
