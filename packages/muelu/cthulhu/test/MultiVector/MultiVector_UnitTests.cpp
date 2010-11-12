@@ -781,8 +781,8 @@ namespace {
     RCP<Node> node = getNode<Node>();
     // create a Map
     RCP<const Cthulhu::Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
-    const Mag    M0 = ScalarTraits<Mag>::zero();
 #ifdef CTHULHU_NOT_IMPLEMENTED
+    const Mag    M0 = ScalarTraits<Mag>::zero();
     const Scalar S1 = ScalarTraits<Scalar>::one();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
 #endif

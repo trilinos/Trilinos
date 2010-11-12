@@ -246,53 +246,72 @@ namespace Cthulhu {
     //! @name Mathematical methods
     //@{ 
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    inline void dot(const MultiVector<double,int,int,Node> &A, const Teuchos::ArrayView<double> &dots) const { CTHULHU_DEBUG_ME; // vec_->dot(A, dots); TODO
+    inline void dot(const MultiVector<double,int,int,Node> &A, const Teuchos::ArrayView<double> &dots) const { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+      vec_->Dot(*eA.getEpetra_MultiVector(), dots.getRawPtr());
     }
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-    inline void abs(const MultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; // vec_->abs(A); TODO
+    inline void abs(const MultiVector<double,int,int,Node> &A) { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+      vec_->Abs(*eA.getEpetra_MultiVector());
     }
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    inline void reciprocal(const MultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; // vec_->reciprocal(A); TODO
+    inline void reciprocal(const MultiVector<double,int,int,Node> &A) { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+      vec_->Reciprocal(*eA.getEpetra_MultiVector());
     }
 
     //! Scale the current values of a multi-vector, this = alpha*this.
-    inline void scale(const double &alpha) { CTHULHU_DEBUG_ME; // vec_->scale(alpha); TODO
-    }
+    inline void scale(const double &alpha) { CTHULHU_DEBUG_ME; vec_->Scale(alpha); }
 
-    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-    inline void scale(Teuchos::ArrayView<const double> alpha) { CTHULHU_DEBUG_ME; // vec_->scale(alpha); // TODO
-    }
+//     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+//     inline void scale(Teuchos::ArrayView<const double> alpha) { CTHULHU_DEBUG_ME; vec_->Scale(alpha.getRawPtr()); }
 
-    //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    inline void scale(const double &alpha, const MultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; } // TODOvec_->scale(A); }
+//     //! Replace multi-vector values with scaled values of A, this = alpha*A.
+//     inline void scale(const double &alpha, const MultiVector<double,int,int,Node> &A) { 
+//       CTHULHU_DEBUG_ME; 
+//       CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+//       vec_->Scale(*eA.getEpetra_MultiVector()); 
+//     }
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    inline void update(const double &alpha, const MultiVector<double,int,int,Node> &A, const double &beta) { CTHULHU_DEBUG_ME; } // TODO vec_->update(A, beta); }
-
-    //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    inline void update(const double &alpha, const MultiVector<double,int,int,Node> &A, const double &beta, const MultiVector<double,int,int,Node> &B, const double &gamma) { CTHULHU_DEBUG_ME; } //TODO vec_->update(A, beta); }
-
-    //! Compute 1-norm of each vector in multi-vector.
-    inline void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME;  } //TODO vec_->norm1(norms); }
-
-    //! Compute 2-norm of each vector in multi-vector.
-    inline void norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME;  } //TODO vec_->norm2(norms); }
-
-    //! Compute Inf-norm of each vector in multi-vector.
-    inline void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { 
+    inline void update(const double &alpha, const MultiVector<double,int,int,Node> &A, const double &beta) { 
       CTHULHU_DEBUG_ME; 
-      //TODO
-      //      vec_->normInf(norms); 
-      //vec_->NormInf();
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+      vec_->Update(alpha, *eA.getEpetra_MultiVector(), beta); 
     }
 
+    //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
+    inline void update(const double &alpha, const MultiVector<double,int,int,Node> &A, const double &beta, const MultiVector<double,int,int,Node> &B, const double &gamma) {
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, A, eA, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, B, eB, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+      vec_->Update(alpha, *eA.getEpetra_MultiVector(), beta, *eB.getEpetra_MultiVector(), gamma); 
+    }
+
+    //! Compute 1-norm of each vector in multi-vector.
+    inline void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->Norm1(norms.getRawPtr()); }
+
+    //! Compute 2-norm of each vector in multi-vector.
+    inline void norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->Norm2(norms.getRawPtr()); }
+
+    //! Compute Inf-norm of each vector in multi-vector.
+    inline void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->NormInf(norms.getRawPtr()); }
+
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    inline void normWeighted(const MultiVector<double,int,int,Node> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME;  } //TODO vec_->normWeighted(weights, norms); }
+    inline void normWeighted(const MultiVector<double,int,int,Node> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const EpetraMultiVector, weights, eWeights, "This Cthulhu::EpetraMultiVector method only accept Cthulhu::EpetraMultiVector as input arguments.");
+      vec_->NormWeighted(*eWeights.getEpetra_MultiVector(), norms.getRawPtr()); 
+    }
 
     //! Compute mean (average) value of each vector in multi-vector.
-    inline void meanValue(const Teuchos::ArrayView<double> &means) const { CTHULHU_DEBUG_ME;  } //TODO vec_->meanValue(means); }
+    inline void meanValue(const Teuchos::ArrayView<double> &means) const { CTHULHU_DEBUG_ME; vec_->MeanValue(means.getRawPtr()); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
