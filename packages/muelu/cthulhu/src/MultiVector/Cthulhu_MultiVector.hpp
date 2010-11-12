@@ -214,7 +214,6 @@ namespace Cthulhu {
     //! @name Mathematical methods
     //@{ 
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
     virtual void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const =0;
 
@@ -223,19 +222,13 @@ namespace Cthulhu {
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
     virtual void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a multi-vector, this = alpha*this.
     virtual void scale(const Scalar &alpha) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
     virtual void scale(Teuchos::ArrayView<const Scalar> alpha) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
     virtual void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
 
@@ -244,32 +237,21 @@ namespace Cthulhu {
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
     virtual void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute 1-norm of each vector in multi-vector.
     virtual void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute 2-norm of each vector in multi-vector.
     virtual void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute Inf-norm of each vector in multi-vector.
     virtual void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
     virtual void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute mean (average) value of each vector in multi-vector.
     virtual void meanValue(const Teuchos::ArrayView<Scalar> &means) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).

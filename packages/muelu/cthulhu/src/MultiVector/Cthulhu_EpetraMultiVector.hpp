@@ -245,74 +245,58 @@ namespace Cthulhu {
 
     //! @name Mathematical methods
     //@{ 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    inline void dot(const EpetraMultiVector<double,int,int,Node> &A, const Teuchos::ArrayView<double> &dots) const { CTHULHU_DEBUG_ME; vec_->dot(A, dots); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void dot(const MultiVector<double,int,int,Node> &A, const Teuchos::ArrayView<double> &dots) const { CTHULHU_DEBUG_ME; // vec_->dot(A, dots); TODO
+    }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-    inline void abs(const EpetraMultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; vec_->abs(A); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void abs(const MultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; // vec_->abs(A); TODO
+    }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    inline void reciprocal(const EpetraMultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; vec_->reciprocal(A); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void reciprocal(const MultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; // vec_->reciprocal(A); TODO
+    }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a multi-vector, this = alpha*this.
-    inline void scale(const double &alpha) { CTHULHU_DEBUG_ME; vec_->scale(alpha); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void scale(const double &alpha) { CTHULHU_DEBUG_ME; // vec_->scale(alpha); TODO
+    }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-    inline void scale(Teuchos::ArrayView<const double> alpha) { CTHULHU_DEBUG_ME; vec_->scale(alpha); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void scale(Teuchos::ArrayView<const double> alpha) { CTHULHU_DEBUG_ME; // vec_->scale(alpha); // TODO
+    }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    inline void scale(const double &alpha, const EpetraMultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; vec_->scale(A); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void scale(const double &alpha, const MultiVector<double,int,int,Node> &A) { CTHULHU_DEBUG_ME; } // TODOvec_->scale(A); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    inline void update(const double &alpha, const EpetraMultiVector<double,int,int,Node> &A, const double &beta) { CTHULHU_DEBUG_ME; vec_->update(A, beta); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void update(const double &alpha, const MultiVector<double,int,int,Node> &A, const double &beta) { CTHULHU_DEBUG_ME; } // TODO vec_->update(A, beta); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    inline void update(const double &alpha, const EpetraMultiVector<double,int,int,Node> &A, const double &beta, const EpetraMultiVector<double,int,int,Node> &B, const double &gamma) { CTHULHU_DEBUG_ME; vec_->update(A, beta); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void update(const double &alpha, const MultiVector<double,int,int,Node> &A, const double &beta, const MultiVector<double,int,int,Node> &B, const double &gamma) { CTHULHU_DEBUG_ME; } //TODO vec_->update(A, beta); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute 1-norm of each vector in multi-vector.
-    inline void norm1(const Teuchos::ArrayView<typename Teuchos::doubleTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->norm1(norms); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void norm1(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME;  } //TODO vec_->norm1(norms); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute 2-norm of each vector in multi-vector.
-    inline void norm2(const Teuchos::ArrayView<typename Teuchos::doubleTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->norm2(norms); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void norm2(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME;  } //TODO vec_->norm2(norms); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute Inf-norm of each vector in multi-vector.
-    inline void normInf(const Teuchos::ArrayView<typename Teuchos::doubleTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->normInf(norms); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void normInf(const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { 
+      CTHULHU_DEBUG_ME; 
+      //TODO
+      //      vec_->normInf(norms); 
+      //vec_->NormInf();
+    }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    inline void normWeighted(const EpetraMultiVector<double,int,int,Node> &weights, const Teuchos::ArrayView<typename Teuchos::doubleTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->normWeighted(weights, norms); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void normWeighted(const MultiVector<double,int,int,Node> &weights, const Teuchos::ArrayView<Teuchos::ScalarTraits<double>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME;  } //TODO vec_->normWeighted(weights, norms); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Compute mean (average) value of each vector in multi-vector.
-    inline void meanValue(const Teuchos::ArrayView<double> &means) const { CTHULHU_DEBUG_ME; vec_->meanValue(means); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void meanValue(const Teuchos::ArrayView<double> &means) const { CTHULHU_DEBUG_ME;  } //TODO vec_->meanValue(means); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
-    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const double &alpha, const EpetraMultiVector<double,int,int,Node> &A, const EpetraMultiVector<double,int,int,Node> &B, const double &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
+    inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const double &alpha, const MultiVector<double,int,int,Node> &A, const MultiVector<double,int,int,Node> &B, const double &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
@@ -322,7 +306,7 @@ namespace Cthulhu {
      *  B must be the same shape (size and num-vectors) as this, while
      *  A is the same size but a single vector (column).
      */
-    inline void elementWiseMultiply(double scalarAB, const Vector<double,int,int,Node> &A, const EpetraMultiVector<double,int,int,Node> &B, double scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
+    inline void elementWiseMultiply(double scalarAB, const Vector<double,int,int,Node> &A, const MultiVector<double,int,int,Node> &B, double scalarThis) { CTHULHU_DEBUG_ME; vec_->elementWiseMultiply(scalarAB, A , B , scalarThis); }
 #endif // CTHULHU_NOT_IMPLEMENTED
     //@} 
 

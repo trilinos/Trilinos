@@ -78,7 +78,6 @@ namespace Cthulhu {
 
     /** \brief TpetraMap constructor to wrap a Tpetra::Map object
      */
-
     TpetraMap(const Teuchos::RCP<const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &map) : map_(map) { CTHULHU_DEBUG_ME; }
 
     //! TpetraMap destructor. 
@@ -301,7 +300,7 @@ namespace Cthulhu {
     Teuchos::RCP< const TpetraMap<LocalOrdinal,GlobalOrdinal,Node> >
     createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) { CTHULHU_DEBUG_ME;
-      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, comm, node)));
+      return rcp(new Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node>(Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements, localNumElements, comm, node)));
     }
 
     /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.

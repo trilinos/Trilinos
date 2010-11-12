@@ -10,9 +10,12 @@
 //#include "Tpetra_BlockMap.hpp"
 #include "Cthulhu_BlockMap.hpp"
 #include "Cthulhu_TpetraMap.hpp"
-#include "Cthulhu_EpetraMap.hpp"
 #include "Cthulhu_TpetraBlockMap.hpp"
+
+#ifdef HAVE_CTHULHU_EPETRA
+#include "Cthulhu_EpetraMap.hpp"
 #include "Cthulhu_EpetraBlockMap.hpp"
+#endif
 
 namespace {
 
@@ -28,8 +31,10 @@ namespace {
   //using Tpetra::BlockMap;
   using Cthulhu::TpetraMap;
   using Cthulhu::TpetraBlockMap;
+#ifdef HAVE_CTHULHU_EPETRA
   using Cthulhu::EpetraMap;
   using Cthulhu::EpetraBlockMap;
+#endif
   using Tpetra::global_size_t;
   using Tpetra::DefaultPlatform;
   using std::sort;

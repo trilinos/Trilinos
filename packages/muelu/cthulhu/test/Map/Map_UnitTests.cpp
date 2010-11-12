@@ -9,16 +9,21 @@
 //#include "Tpetra_Map.hpp"
 
 #define HAVE_CTHULHU_TPETRA //TODO!
-#define HAVE_CTHULHU_EPETRA //TODO!
+// #define HAVE_CTHULHU_EPETRA //TODO!
 #include "Cthulhu_TpetraMap.hpp"
+
+
+#ifdef HAVE_CTHULHU_EPETRA
 #include "Cthulhu_EpetraMap.hpp"
+#endif
 
 // FINISH: add testing of operator==, operator!=, operator=, copy construct
 // put these into test_same_as and test_is_compatible
 
 namespace {
+#ifdef HAVE_CTHULHU_EPETRA
   typedef Cthulhu::EpetraMap EpetraMap;
-
+#endif
   using Teuchos::Array;
   using Teuchos::as;
   using Teuchos::RCP;
@@ -341,7 +346,9 @@ namespace {
       UNIT_TEST_GROUP_ORDINAL_(TpetraMap ## LO ## GO, LO, GO)
 
     UNIT_TEST_GROUP_ORDINAL(char , int)
+#ifdef HAVE_CTHULHU_EPETRA
       UNIT_TEST_GROUP_ORDINAL_(Cthulhu::EpetraMap, int , int)
+#endif
     UNIT_TEST_GROUP_ORDINAL(int , int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
@@ -360,7 +367,9 @@ namespace {
 
     // UNIT_TEST_GROUP_ORDINAL(char , int)
 
+#ifdef HAVE_CTHULHU_EPETRA
       UNIT_TEST_GROUP_ORDINAL_(EpetraMap, int , int)
+#endif
       UNIT_TEST_GROUP_ORDINAL(int , int)
 
     // typedef short int ShortInt;

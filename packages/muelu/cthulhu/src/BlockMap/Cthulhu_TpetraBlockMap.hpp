@@ -12,6 +12,7 @@
 #include "Tpetra_Map.hpp"
 
 #include "Cthulhu_Debug.hpp"
+#include "Cthulhu_Exceptions.hpp"
 
 /** \file Cthulhu_EpetraBlockMap.hpp
 

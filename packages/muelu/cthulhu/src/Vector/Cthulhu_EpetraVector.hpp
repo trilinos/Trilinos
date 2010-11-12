@@ -82,31 +82,42 @@ namespace Cthulhu {
 
     //! @name Mathematical methods
     //@{ 
-#ifdef CTHULHU_TODO
-    using MultiVector<double,int,int>::dot; // overloading, not hiding
+    using EpetraMultiVector::dot; // overloading, not hiding
     //! Computes dot product of this Vector against input Vector x.
-    double dot(const Vector<double,int,int> &a) const;
+    double dot(const Vector<double,int,int> &a) const { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const EpetraVector, a, tA, "This Cthulhu::EpetraVector method only accept Cthulhu::EpetraVector as input arguments.");
+      //      return getEpetra_Vector()->Dot(*tA.getEpetra_Vector()); 
 
-    using MultiVector<double,int,int>::norm1; // overloading, not hiding
+      // other way: use the MultiVector Dot instead of VectorDot:
+      double r;
+      getEpetra_MultiVector()->Epetra_MultiVector::Dot(*tA.getEpetra_MultiVector(), &r); 
+      return r;
+    }
+
+    using EpetraMultiVector::norm1; // overloading, not hiding
     //! Return 1-norm of this Vector.
-    typename Teuchos::doubleTraits<double>::magnitudeType norm1() const;
+    Teuchos::ScalarTraits<double>::magnitudeType norm1() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->Norm1(&r); return r; }
 
-    using MultiVector<double,int,int>::norm2; // overloading, not hiding
+    using EpetraMultiVector::norm2; // overloading, not hiding
     //! Compute 2-norm of this Vector.
-    typename Teuchos::doubleTraits<double>::magnitudeType norm2() const;
+    Teuchos::ScalarTraits<double>::magnitudeType norm2() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->Norm2(&r); return r; }
 
-    using MultiVector<double,int,int>::normInf; // overloading, not hiding
+    using EpetraMultiVector::normInf; // overloading, not hiding
     //! Compute Inf-norm of this Vector.
-    typename Teuchos::doubleTraits<double>::magnitudeType normInf() const;
+    Teuchos::ScalarTraits<double>::magnitudeType normInf() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->NormInf(&r); return r; }
 
-    using MultiVector<double,int,int>::normWeighted; // overloading, not hiding
+    using EpetraMultiVector::normWeighted; // overloading, not hiding
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::doubleTraits<double>::magnitudeType normWeighted(const Vector<double,int,int> &weights) const;
+    Teuchos::ScalarTraits<double>::magnitudeType normWeighted(const Vector<double,int,int> &weights) const { CTHULHU_DEBUG_ME;
+      CTHULHU_DYNAMIC_CAST(const EpetraVector, weights, tWeights, "This Cthulhu::EpetraVector method only accept Cthulhu::EpetraVector as input arguments.");
+      double r; 
+      getEpetra_MultiVector()->NormWeighted(*tWeights.getEpetra_MultiVector(), &r); return r; 
+    }
 
-    using MultiVector<double,int,int>::meanValue; // overloading, not hiding
+    using EpetraMultiVector::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
-    double meanValue() const;
-#endif // CTHULHU_TODO
+    double meanValue() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
     //@} 
 
     //! @name Overridden from Teuchos::Describable 

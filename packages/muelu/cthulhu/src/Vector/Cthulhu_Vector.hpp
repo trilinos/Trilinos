@@ -72,31 +72,30 @@ namespace Cthulhu {
 
     //! @name Mathematical methods
     //@{ 
-#ifdef CTHULHU_TODO
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
     //! Computes dot product of this Vector against input Vector x.
-    Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
+    virtual Scalar dot(const Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const = 0;
 
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
     //! Return 1-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const;
+    virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const = 0;
 
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
     //! Compute 2-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const;
+    virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const = 0;
 
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
     //! Compute Inf-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const;
+    virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const = 0;
 
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
+    virtual typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const = 0;
 
     using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
-    Scalar meanValue() const;
-#endif // CTHULHU_TODO
+    virtual Scalar meanValue() const = 0;
+
     //@} 
 
     //! @name Overridden from Teuchos::Describable 

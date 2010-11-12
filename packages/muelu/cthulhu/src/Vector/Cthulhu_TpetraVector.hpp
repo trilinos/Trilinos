@@ -5,6 +5,8 @@
 #error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
 #endif
 
+#include <Teuchos_ScalarTraitsDecl.hpp> //TODO: useless?
+
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_MultiVector.hpp"
 #include "Cthulhu_Vector.hpp"
@@ -37,7 +39,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Sets all vector entries to zero.
-    explicit TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true) 
+    TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, bool zeroOut=true)
       : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,1,zeroOut)
     {
       CTHULHU_DEBUG_ME;
@@ -48,10 +50,17 @@ namespace Cthulhu {
     TpetraVector(const TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 #endif
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! \brief Set multi-vector values from an array using Teuchos memory management classes. (copy)
-    TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A);
-#endif
+    TpetraVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A)
+      : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,A,map->getNodeNumElements(),1)
+    {
+      CTHULHU_DEBUG_ME;
+    }
+    
+    /** \brief TpetraVector constructor to wrap a Tpetra::Vector object
+     */
+    TpetraVector(const Teuchos::RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(vec) { CTHULHU_DEBUG_ME; }
+    //TODO: removed const of Tpetra::Vector
 
     //! Destructor.  
     inline ~TpetraVector() { CTHULHU_DEBUG_ME; };
@@ -94,31 +103,37 @@ namespace Cthulhu {
 
     //! @name Mathematical methods
     //@{ 
-#ifdef CTHULHU_TODO
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
     //! Computes dot product of this Vector against input Vector x.
-    Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
+    Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraVector, a, tA, "This Cthulhu::TpetraVector method only accept Cthulhu::TpetraVector as input arguments.");
+      return getTpetra_Vector()->dot(*tA.getTpetra_Vector()); 
+    }
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
     //! Return 1-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->norm1(); }
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
     //! Compute 2-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->norm2(); }
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
     //! Compute Inf-norm of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normInf() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->normInf(); }
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normWeighted; // overloading, not hiding
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
-    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const;
+    typename Teuchos::ScalarTraits<Scalar>::magnitudeType normWeighted(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights) const { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraVector, weights, tWeights, "This Cthulhu::TpetraVector method only accept Cthulhu::TpetraVector as input arguments.");
+      return getTpetra_Vector()->normWeighted(*tWeights.getTpetra_Vector()); 
+    }
 
-    using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
-    Scalar meanValue() const;
-#endif // CTHULHU_TODO
+    Scalar meanValue() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->meanValue(); }
     //@} 
 
     //! @name Overridden from Teuchos::Describable 
@@ -204,7 +219,7 @@ namespace Cthulhu {
     //     //! Advanced constructor accepting parallel buffer view.
     //     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) { CTHULHU_DEBUG_ME; vec_->(); };
 
-    RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { CTHULHU_DEBUG_ME; this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->getVector(0); }
+    RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { CTHULHU_DEBUG_ME; return this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->getVectorNonConst(0); }
     
   }; // class TpetraVector
 
@@ -220,3 +235,6 @@ namespace Cthulhu {
 } // namespace Cthulhu
 
 #endif // CTHULHU_VECTOR_DECL_HPP
+
+
+//JG TODO: overload constructor to have a real vector as underlying obj

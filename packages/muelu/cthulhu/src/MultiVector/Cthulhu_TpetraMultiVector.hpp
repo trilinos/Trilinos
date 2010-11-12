@@ -10,16 +10,17 @@
 
 #include "Cthulhu_TpetraMap.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_Vector.hpp"
 
 #include "Cthulhu_Exceptions.hpp"
 #include "Cthulhu_Debug.hpp"
 
 namespace Cthulhu {
 
-  // #ifndef DOXYGEN_SHOULD_SKIP_THIS
-  //   // forward declaration of Vector, needed to prevent circular inclusions
-  //   template<class S, class LO, class GO, class N> class Vector;
-  // #endif
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+  // forward declaration of TpetraVector, needed to prevent circular inclusions
+  template<class S, class LO, class GO, class N> class TpetraVector;
+#endif
 
   //! \brief A class for constructing and using dense, distributors multivectors.
   /*!
@@ -50,21 +51,23 @@ namespace Cthulhu {
     TpetraMultiVector(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source){ CTHULHU_DEBUG_ME; }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Set multi-vector values from two-dimensional array using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
     TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Scalar> &A, size_t LDA, size_t NumVectors) {
       CTHULHU_DEBUG_ME;
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
+      vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), A, LDA, NumVectors));
     } 
-#endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy)
     /*! Post-condition: constantStride() == true */
-    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) { CTHULHU_DEBUG_ME } 
-#endif // CTHULHU_NOT_IMPLEMENTED
+    TpetraMultiVector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> > &ArrayOfPtrs, size_t NumVectors) { 
+      CTHULHU_DEBUG_ME;
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, map, tMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
+      vec_ = rcp(new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(tMap->getTpetra_Map(), ArrayOfPtrs, NumVectors));
+    } 
   
-    TpetraMultiVector(const Teuchos::RCP<const Tpetra::MultiVector<LocalOrdinal, GlobalOrdinal, Node> > &vec) : vec_(vec) { CTHULHU_DEBUG_ME;}
+    TpetraMultiVector(const Teuchos::RCP<Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &vec) : vec_(vec) { CTHULHU_DEBUG_ME; } //TODO removed const
 
     //! TpetraMultiVector destructor.
     virtual ~TpetraMultiVector() { CTHULHU_DEBUG_ME; }
@@ -170,9 +173,15 @@ namespace Cthulhu {
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Const Vector access function.
-    inline Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const { CTHULHU_DEBUG_ME; return vec_->getVector(j); }
+    inline Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const { 
+      CTHULHU_DEBUG_ME; 
+      const RCP<Tpetra::Vector<Scalar,LocalOrdinal, GlobalOrdinal, Node> > v = vec_->getVectorNonConst(j);
 
-    //! Vector access function.
+      rcp(new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(v)); 
+      return Teuchos::null;//rcp(new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(v)); 
+    }
+
+    //! Vector access function. //TODO see getVector
     inline Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(size_t j) { CTHULHU_DEBUG_ME; return vec_->getVectorNonConst(j); }
 
     //! Const Local vector access function.
@@ -213,40 +222,84 @@ namespace Cthulhu {
     //@{ 
 
     //! Computes dot product of each corresponding pair of vectors, dots[i] = this[i].dot(A[i])
-    inline void dot(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const { CTHULHU_DEBUG_ME; vec_->dot(A, dots); }
+    inline void dot(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Teuchos::ArrayView<Scalar> &dots) const { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, A, tA, "This Cthulhu::TpetraMultiVector method only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->dot(*tA.getTpetra_MultiVector(), dots); 
+    }
 
     //! Puts element-wise absolute values of input Multi-vector in target: A = abs(this)
-    inline void abs(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->abs(A); }
+    inline void abs(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, A, tA, "This Cthulhu::TpetraMultiVector method only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->abs(*tA.getTpetra_MultiVector()); 
+    }
 
     //! Puts element-wise reciprocal values of input Multi-vector in target, this(i,j) = 1/A(i,j).
-    inline void reciprocal(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->reciprocal(A); }
+    inline void reciprocal(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, A, tA, "This Cthulhu::TpetraMultiVector method only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->reciprocal(*tA.getTpetra_MultiVector()); 
+    }
 
     //! Scale the current values of a multi-vector, this = alpha*this.
-    inline void scale(const Scalar &alpha) { CTHULHU_DEBUG_ME; vec_->scale(alpha); }
+    inline void scale(const Scalar &alpha) { 
+      CTHULHU_DEBUG_ME;
+      vec_->scale(alpha); 
+    }
 
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
-    inline void scale(Teuchos::ArrayView<const Scalar> alpha) { CTHULHU_DEBUG_ME; vec_->scale(alpha); }
+    inline void scale(Teuchos::ArrayView<const Scalar> alpha) { 
+      CTHULHU_DEBUG_ME; 
+      vec_->scale(alpha); 
+    }
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
-    inline void scale(const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { CTHULHU_DEBUG_ME; vec_->scale(A); }
+    inline void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, A, tA, "This Cthulhu::TpetraMultiVector method only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->scale(alpha, *tA.getTpetra_MultiVector()); 
+    }
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
-    inline void update(const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) { CTHULHU_DEBUG_ME; vec_->update(A, beta); }
+    inline void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, A, tA, "This Cthulhu::TpetraMultiVector method only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->update(alpha, *tA.getTpetra_MultiVector(), beta); 
+    }
 
     //! Update multi-vector with scaled values of A and B, this = gamma*this + alpha*A + beta*B.
-    inline void update(const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma) { CTHULHU_DEBUG_ME; vec_->update(A, beta); }
+    inline void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &gamma) { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, A, tA, "This Cthulhu::TpetraMultiVector method only accept Cthulhu::TpetraMultiVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, B, tB, "This Cthulhu::TpetraMultiVector method only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->update(alpha, *tA.getTpetra_MultiVector(), beta, *tB.getTpetra_MultiVector(), gamma); 
+    }
 
     //! Compute 1-norm of each vector in multi-vector.
-    inline void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->norm1(norms); }
+    inline void norm1(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { 
+      CTHULHU_DEBUG_ME; 
+      vec_->norm1(norms); 
+    }
 
     //! Compute 2-norm of each vector in multi-vector.
-    inline void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->norm2(norms); }
+    inline void norm2(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { 
+      CTHULHU_DEBUG_ME; 
+      vec_->norm2(norms); 
+    }
 
     //! Compute Inf-norm of each vector in multi-vector.
-    inline void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->normInf(norms); }
+    inline void normInf(const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { 
+      CTHULHU_DEBUG_ME; 
+      vec_->normInf(norms); 
+    }
 
     //! Compute Weighted 2-norm (RMS Norm) of each vector in multi-vector.
-    inline void normWeighted(const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { CTHULHU_DEBUG_ME; vec_->normWeighted(weights, norms); }
+    inline void normWeighted(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &weights, const Teuchos::ArrayView<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> &norms) const { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_DYNAMIC_CAST(const TpetraMultiVector, weights, tWeights, "This Cthulhu::TpetraMultiVector method only accept Cthulhu::TpetraMultiVector as input arguments.");
+      vec_->normWeighted(*tWeights.getTpetra_MultiVector(), norms);
+    }
 
     //! Compute mean (average) value of each vector in multi-vector.
     inline void meanValue(const Teuchos::ArrayView<Scalar> &means) const { CTHULHU_DEBUG_ME; vec_->meanValue(means); }
