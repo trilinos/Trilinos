@@ -9,6 +9,7 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <map>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
@@ -18,12 +19,14 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Bucket.hpp>
+
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
+
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologicalMetaData.hpp>
-#include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
@@ -33,10 +36,11 @@ using stk::mesh::PartVector;
 using stk::mesh::PartRelation;
 using stk::mesh::impl::PartRepository;
 using stk::ParallelMachine;
+using stk::mesh::impl::EntityRepository;
 
 using stk::mesh::EntityKey;
 using stk::mesh::Entity;
-
+using stk::mesh::Bucket;
 
 namespace {
 
@@ -83,7 +87,7 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   Part & part = meta.declare_part( "another part"); 
   MPI_Barrier( MPI_COMM_WORLD );
   ParallelMachine pm = MPI_COMM_WORLD;
-  BulkData bulk( meta , pm, 100 );
+  BulkData bulk( meta , pm, 200 );
   const int rank = stk::parallel_machine_rank( pm );
   const int size = stk::parallel_machine_size( pm );
   std::vector<stk::mesh::Part *>  add_part;
@@ -99,9 +103,10 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
     int new_id =  size * id_base +  rank;
      bulk.declare_entity( 0 , new_id+1 ,  add_part );
   }
-
+ 
   int new_id =  size * (++id_base) +  rank;
   stk::mesh::Entity & elem  =  bulk.declare_entity( 3 , new_id+1 ,  add_part );
+
 
   stk::mesh::impl::EntityRepository e;
 
@@ -111,8 +116,6 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
 
   const stk::mesh::Ghosting & ghost =  bulk.shared_aura();
 
-  bulk.modification_end();
-
   STKUNIT_ASSERT_FALSE(e.erase_ghosting(elem, ghost));
 
   const stk::mesh::EntityCommInfo comm_info( ghost.ordinal() , 0 );
@@ -120,6 +123,14 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   STKUNIT_ASSERT_FALSE(e.erase_comm_info(elem, comm_info));
 
   STKUNIT_ASSERT(e.insert_comm_info(elem, comm_info));
+
+  //Coverage of verfify_parallel_attributes in BulkDataParallelVerify.cpp
+  //for owned_closure = 1 AND recv_ghost = 1.
+  //Also uses pack and unpack in DataTraits.cpp, DataTraitsClass.hpp and DataTraitsEnum.hpp
+  STKUNIT_ASSERT_THROW(bulk.modification_end(), std::runtime_error);
+
+  bulk.modification_begin();
+
 
   //Checking internal_create_entity
 
@@ -134,6 +145,52 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
         std::runtime_error
         );
   }
+
+  // stk::mesh::impl::EntityRepository::EntityMap eMap;
+  stk::mesh::Entity & elem2  =  bulk.declare_entity( 3 , new_id+8 ,  add_part );
+  stk::mesh::Entity & elem3  =  bulk.declare_entity( 3 , new_id+9 ,  add_part );
+  stk::mesh::Entity & elem4  =  bulk.declare_entity( 3 , new_id+10 ,  add_part );
+
+
+  e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+8 ));
+  e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+9 ));
+  e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+10 ));
+
+
+  typedef std::map<EntityKey,Entity*> EntityMap;
+  EntityMap entity_map_array;
+
+
+  entity_map_array[stk::mesh::EntityKey( 3, new_id+8 )] = &elem2;
+  entity_map_array[stk::mesh::EntityKey( 3, new_id+9 )] = &elem3;
+  entity_map_array[stk::mesh::EntityKey( 3, new_id+10 )] = &elem4;
+
+
+  //Coverage of destroy_later in EntityRepository.cpp
+  Bucket *nil_bucket =  bulk.buckets(3)[0];
+  e.destroy_later(elem2, nil_bucket);
+  //Call a second time for more coverage
+  STKUNIT_ASSERT_THROW(e.destroy_later(elem2, nil_bucket), std::runtime_error);
+
+  //Coverage of !comm_mesh_verify_parallel_consistency in BulkDataEndSync.cpp
+  //in internal_modification_end function
+  Bucket *nil_bucket2 =  bulk.buckets(0)[0];
+
+  STKUNIT_ASSERT ( nil_bucket2 != NULL);
+
+  e.destroy_later(elem3, nil_bucket2);
+
+  STKUNIT_ASSERT_THROW(bulk.modification_end(), std::runtime_error);
+
+  bulk.modification_begin();
+
+  STKUNIT_ASSERT_THROW(e.destroy_later(elem2, nil_bucket), std::runtime_error);
+
+  STKUNIT_ASSERT_THROW(bulk.modification_end(), std::runtime_error);
+
+  bulk.modification_begin();
+  STKUNIT_ASSERT_THROW(bulk.modification_end(), std::runtime_error);
+ 
 }
 
 //----------------------------------------------------------------------
