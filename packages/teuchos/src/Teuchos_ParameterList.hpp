@@ -805,8 +805,7 @@ ParameterList::getEntryPtr(const std::string& name_in)
   Map::iterator i = params_.find(name_in);
   if ( i == params_.end() )
     return NULL;
-  //return &entry(i);
-  return &(params_[name_in]);
+  return &entry(i);
 }
 
 inline
