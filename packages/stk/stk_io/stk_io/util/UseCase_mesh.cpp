@@ -297,7 +297,7 @@ namespace stk {
       {
 	Ioss::Region *in_region = NULL;
 
-	if (mesh_type == "exodusii" || mesh_type == "generated") {
+	if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
 
 	  // Prepend the working directory onto the mesh filename iff the
 	  // directory was specified *and* the mesh filename does not
@@ -786,7 +786,7 @@ namespace stk {
 			      const std::string &mesh_type,
                               int step)
       {
-	if (mesh_type == "exodusii" || mesh_type == "generated") {
+	if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
 	  Ioss::Region *region = mesh_data.m_region;
           bulk_data.modification_begin();
 
