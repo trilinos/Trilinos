@@ -29,6 +29,7 @@ To make gitk show only zoltan commits:
 Commands:
 
 -  git clone software.sandia.gov:/space/git/Trilinos
+-  git clone software.sandia.gov:/space/git/preCopyrightTrilinos
 
 -  git status
    Shows which state files are in
@@ -96,6 +97,11 @@ Commands:
 -  git pull
    Gets all new work pushed to server since last fetch/clone.
    Attempts a merge on current branch.
+
+-  git pull --rebase
+   Gets all new work pushed to server since last fetch/clone.
+   Applies the new work it precedes (instead of follows) the work 
+   you have committed but not pushed yet.  Preferred way to push committed work.
    
 -  git push [remote] [branch]
    Push committed work to server.
@@ -108,6 +114,10 @@ Commands:
 
 -  git tag "tagname"
    Adds a lightweight tag
+
+-  git checkout -b <name> "tagname"
+   Check out from master a tagged version of code to be known
+   locally as branch "name"
 
 -  git push origin --tags
    Have to explicitly push tags to origin; they don't go with normal "git push"
