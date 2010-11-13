@@ -100,7 +100,7 @@ Commands:
 
 -  git pull --rebase
    Gets all new work pushed to server since last fetch/clone.
-   Applies the new work it precedes (instead of follows) the work 
+   Applies the new work so it precedes (instead of follows) the work 
    you have committed but not pushed yet.  Preferred way to push committed work.
    
 -  git push [remote] [branch]
