@@ -42,6 +42,6 @@
 
 PROJECT_NAME           = PyTrilinos
 
-INPUT                  = ../src
+INPUT                  = ../../../MPI/packages/PyTrilinos/src/PyTrilinos
 
 GENERATE_TAGFILE       = ../../common/tag_files/PyTrilinos.tag
