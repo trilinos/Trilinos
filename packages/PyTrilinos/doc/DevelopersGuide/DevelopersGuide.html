@@ -369,19 +369,20 @@ packages.</p>
 <li><a class="reference internal" href="#practical-considerations" id="id16">Practical Considerations</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#reference-counted-pointers" id="id17">Reference Counted Pointers</a><ul>
-<li><a class="reference internal" href="#pytrilinos-and-rcps" id="id18">PyTrilinos and RCPs</a></li>
-<li><a class="reference internal" href="#when-to-store-pytrilinos-classes-as-rcps" id="id19">When to Store PyTrilinos Classes as RCPs</a></li>
-<li><a class="reference internal" href="#usage-details" id="id20">Usage Details</a></li>
+<li><a class="reference internal" href="#handling-c-array-arguments" id="id17">Handling C-Array Arguments</a></li>
+<li><a class="reference internal" href="#reference-counted-pointers" id="id18">Reference Counted Pointers</a><ul>
+<li><a class="reference internal" href="#pytrilinos-and-rcps" id="id19">PyTrilinos and RCPs</a></li>
+<li><a class="reference internal" href="#when-to-store-pytrilinos-classes-as-rcps" id="id20">When to Store PyTrilinos Classes as RCPs</a></li>
+<li><a class="reference internal" href="#usage-details" id="id21">Usage Details</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#testing" id="id21">Testing</a><ul>
-<li><a class="reference internal" href="#naming-conventions" id="id22">Naming Conventions</a></li>
-<li><a class="reference internal" href="#build-system" id="id23">Build System</a></li>
-<li><a class="reference internal" href="#running-all-tests" id="id24">Running All Tests</a></li>
-<li><a class="reference internal" href="#test-script-conventions" id="id25">Test Script Conventions</a></li>
-<li><a class="reference internal" href="#unit-tests" id="id26">Unit Tests</a></li>
-<li><a class="reference internal" href="#example-scripts" id="id27">Example Scripts</a></li>
+<li><a class="reference internal" href="#testing" id="id22">Testing</a><ul>
+<li><a class="reference internal" href="#naming-conventions" id="id23">Naming Conventions</a></li>
+<li><a class="reference internal" href="#build-system" id="id24">Build System</a></li>
+<li><a class="reference internal" href="#running-all-tests" id="id25">Running All Tests</a></li>
+<li><a class="reference internal" href="#test-script-conventions" id="id26">Test Script Conventions</a></li>
+<li><a class="reference internal" href="#unit-tests" id="id27">Unit Tests</a></li>
+<li><a class="reference internal" href="#example-scripts" id="id28">Example Scripts</a></li>
 </ul>
 </li>
 </ul>
@@ -934,8 +935,55 @@ it within the appropriate SWIG interface file.  There is no excuse for
 a meaningless error message.</p>
 </div>
 </div>
+<div class="section" id="handling-c-array-arguments">
+<h1><a class="toc-backref" href="#id17">Handling C-Array Arguments</a></h1>
+<p>Trilinos defines a number of high-level array-like objects that store
+contiguous, homogenous data.  Nevertheless, there are instances when
+Trilinos objects pass low-level C-arrays as input or return arguments.</p>
+<p>SWIG does not handle this case automatically in th emanner we would
+like.  However, PyTrilinos has adopted a set of interface conventions
+for dealing with them and simple methods for achieving those
+interfaces.</p>
+<p>Built-in python containers, such as list, are discontiguous and
+heterogeneous, which makes them unsuitable for efficiently handling
+C-array type data.  Fortunately, there is a third party module named
+NumPy that has been adopted by the python community for just this
+purpose.  (This adoption has been hard won -- NumPy brought together
+two divergent efforts named Numeric and NumArray.)  Included in the
+NumPy distribution is a file named <tt class="docutils literal">numpy.i</tt>, which is a SWIG
+interface file that provides typemaps and other tools.  This file has
+been copied to the PyTrilinos/src directory and is used by PyTrilinos
+SWIG interface files for handling C-array arguments.</p>
+<p>To learn how to use <tt class="docutils literal">numpy.i</tt>, its <a class="reference external" href="http://docs.scipy.org/doc/numpy/reference/swig.interface-file.html">documentation is online</a>.</p>
+<p>Code that needs to interface with NumPy should call the function
+<tt class="docutils literal">import_array()</tt>, but only once.  To avoid the possibility of two
+unrelated python modules both calling <tt class="docutils literal">import_array()</tt> in a
+conflicting way, NumPy requires that you define a macro
+<tt class="docutils literal">PY_ARRAY_UNIQUE_SYMBOL</tt>.  In PyTrilinos, we do:</p>
+<pre class="literal-block">
+#define PY_ARRAY_UNIQUE_SYMBOL PyTrilinos
+</pre>
+<p>However, we must also guard against two or more PyTrilinos modules
+calling <tt class="docutils literal">import_array()</tt>.  To do this, we define a singleton class
+<tt class="docutils literal">NumPyImporter</tt> that calls <tt class="docutils literal">import_array()</tt> and lives in the
+<tt class="docutils literal">pytrilinos</tt> shared library.  All PyTrilinos extension modules link
+against this library and so the first one to be imported will
+instantiate the <tt class="docutils literal">NumPyImporter</tt> object, which calls
+<tt class="docutils literal">import_array()</tt> in its constructor.</p>
+<p>For this reason, the initialization instructions in the <tt class="docutils literal">numpy.i</tt>
+instructions should be ignored, as they are for a single python module
+environment.  Instead, all a PyTrilinos developer has to do is add:</p>
+<pre class="literal-block">
+%{
+#include &quot;numpy_include.h&quot;
+%}
+%include &quot;numpy.i&quot;
+</pre>
+<p>to his SWIG interface file, and then start using the <tt class="docutils literal">%apply</tt>
+directive as described in the <tt class="docutils literal">numpy.i</tt> documentation.</p>
+</div>
 <div class="section" id="reference-counted-pointers">
-<h1><a class="toc-backref" href="#id17">Reference Counted Pointers</a></h1>
+<h1><a class="toc-backref" href="#id18">Reference Counted Pointers</a></h1>
 <p>Reference counting is a memory management technique whereby
 dynamically allocated objects can be tracked, and can be guaranteed to
 exist as long as any other entity (such as a class or the local scope
@@ -951,7 +999,7 @@ increasing and decreasing the reference count as needed, and a
 destructor that waits until the reference count is zero before
 destroying the object.  These are also called shared pointers.</p>
 <div class="section" id="pytrilinos-and-rcps">
-<h2><a class="toc-backref" href="#id18">PyTrilinos and RCPs</a></h2>
+<h2><a class="toc-backref" href="#id19">PyTrilinos and RCPs</a></h2>
 <p>Python implements just such a reference counting scheme for every
 python object that is constructed.  It occurs &quot;behind the scenes&quot; and
 &quot;just works&quot;, like python is famous for.  The only people who ever
@@ -998,7 +1046,7 @@ not provide.  This new logic is accessed by using a <tt class="docutils literal"
 SWIG macro on a class.</p>
 </div>
 <div class="section" id="when-to-store-pytrilinos-classes-as-rcps">
-<h2><a class="toc-backref" href="#id19">When to Store PyTrilinos Classes as RCPs</a></h2>
+<h2><a class="toc-backref" href="#id20">When to Store PyTrilinos Classes as RCPs</a></h2>
 <p>When do you use the <tt class="docutils literal">%teuchos_rcp()</tt> macro?  First, whenever you
 encounter a class that is wrapped in <tt class="docutils literal"><span class="pre">Teuchos::RCP&lt;&gt;</span></tt> as an input or
 output argument in a class method or function, then that class needs
@@ -1017,7 +1065,7 @@ can be ignored if B is an implementation-only base class, but this is
 rare.</p>
 </div>
 <div class="section" id="usage-details">
-<h2><a class="toc-backref" href="#id20">Usage Details</a></h2>
+<h2><a class="toc-backref" href="#id21">Usage Details</a></h2>
 <p>If a class is defined in Package 1, but not used as an RCP in Package
 1, and is then used as an RCP in Package 2, the <tt class="docutils literal">%teuchos_rcp()</tt>
 macro should be invoked in the SWIG interface file for Package 1.
@@ -1038,13 +1086,13 @@ classes have already been treated.</p>
 </div>
 </div>
 <div class="section" id="testing">
-<h1><a class="toc-backref" href="#id21">Testing</a></h1>
+<h1><a class="toc-backref" href="#id22">Testing</a></h1>
 <p>There are two directories in the PyTrilinos package that provide
 python scripts for testing PyTrilinos, <tt class="docutils literal">example</tt> and <tt class="docutils literal">test</tt>.
 Generally speaking, unit tests go in the <tt class="docutils literal">test</tt> directory and
 descriptive or demonstrative example scripts go in <tt class="docutils literal">example</tt>.</p>
 <div class="section" id="naming-conventions">
-<h2><a class="toc-backref" href="#id22">Naming Conventions</a></h2>
+<h2><a class="toc-backref" href="#id23">Naming Conventions</a></h2>
 <p>Unit tests scripts shall begin with <tt class="docutils literal">test</tt>, followed by the package
 name and an underscore, followed by a short description of the test,
 typically the class name being tested.  For example:</p>
@@ -1068,7 +1116,7 @@ respectively.  In certain situations, the underscore and test
 description can be omitted.</p>
 </div>
 <div class="section" id="build-system">
-<h2><a class="toc-backref" href="#id23">Build System</a></h2>
+<h2><a class="toc-backref" href="#id24">Build System</a></h2>
 <p>Running <tt class="docutils literal">make</tt> in either the top, <tt class="docutils literal">example</tt> or <tt class="docutils literal">test</tt> build
 directories copies the test scripts from the source directory to the
 build directory while performing certain text substitutions.  Similar
@@ -1093,7 +1141,7 @@ protected with <tt class="docutils literal">IF()</tt> statements, depending on w
 modules need to be present for the script to run.</p>
 </div>
 <div class="section" id="running-all-tests">
-<h2><a class="toc-backref" href="#id24">Running All Tests</a></h2>
+<h2><a class="toc-backref" href="#id25">Running All Tests</a></h2>
 <p>To run all of the enabled tests, first make sure PyTrilinos and all
 tests and examples are up-to-date:</p>
 <pre class="literal-block">
@@ -1108,7 +1156,7 @@ $ ctest -W 10
 directory, present in the directory from which <tt class="docutils literal">ctest</tt> was run.</p>
 </div>
 <div class="section" id="test-script-conventions">
-<h2><a class="toc-backref" href="#id25">Test Script Conventions</a></h2>
+<h2><a class="toc-backref" href="#id26">Test Script Conventions</a></h2>
 <p>All test scripts shall use the <tt class="docutils literal">optparse</tt> module to parse command
 line options and support the following options:</p>
 <pre class="literal-block">
@@ -1161,7 +1209,7 @@ passes correctly.  This helps the Trilinos test harness determine
 which tests pass and which do not, especially in parallel.</p>
 </div>
 <div class="section" id="unit-tests">
-<h2><a class="toc-backref" href="#id26">Unit Tests</a></h2>
+<h2><a class="toc-backref" href="#id27">Unit Tests</a></h2>
 <p>Unit tests are based on the <tt class="docutils literal">unittest</tt> python library module.  Test
 case classes inherit from <tt class="docutils literal">unittest.TestCase</tt>.  Individual tests are
 implemented as methods of these classes that begin with <tt class="docutils literal">test</tt>.  See
@@ -1193,7 +1241,7 @@ sys.exit(errsPlusFails)
 test will pass.</p>
 </div>
 <div class="section" id="example-scripts">
-<h2><a class="toc-backref" href="#id27">Example Scripts</a></h2>
+<h2><a class="toc-backref" href="#id28">Example Scripts</a></h2>
 <p>Example scripts are more free-form and should be written for
 readability, to make for clear demonstrations of PyTrilinos usage.
 However, it is encouraged that example script output be consistent
@@ -1203,7 +1251,7 @@ with unit test output whenever possible.</p>
 </div>
 <div class="footer">
 <hr class="footer" />
-Generated on: 2010-11-07 01:21 UTC.
+Generated on: 2010-11-12 20:16 UTC.
 Generated by <a class="reference external" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference external" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
