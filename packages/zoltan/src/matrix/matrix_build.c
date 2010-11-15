@@ -345,7 +345,7 @@ static int
 matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_PTR *pinID, int nX,
 		 ZOLTAN_ID_PTR *xGID, ZOLTAN_ID_PTR *xLID, ZOLTAN_GNO_TYPE **xGNO, float **xwgt)
 {
-  static char *yo = "Zoltan_Matrix_Build";
+  static char *yo = "matrix_get_edges";
   int ierr = ZOLTAN_OK;
   int hypergraph_callbacks = 0, graph_callbacks = 0;
   int *nbors_proc = NULL; /* Pointers are global for the function to ensure proper free */
