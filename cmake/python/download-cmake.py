@@ -343,7 +343,7 @@ def Install(basedir, url):
       if not os.path.exists(options.installDir):
         raise
 
-    echoRunSysCmnd("cp -r \"" + dirname + "/\" \"" + options.installDir + "\"")
+    echoRunSysCmnd("cp -r " + dirname + "/* " + options.installDir)
 
 
 def DownloadForPlatform(p):
