@@ -31,23 +31,17 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_StrUtils.hpp"
-
-#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
 #include "Teuchos_VerboseObject.hpp"
-#endif
 
-/* NOTE: ASCI Red (TFLOP) does not support the i-> function for iterators 
- * in the STL.  Therefore when compiling for the TFLOP we must redefine the 
- * iterator from i-> to (*i). This slows things down on other platforms 
- * so we switch between the two when necessary.
- */
 
 namespace {
+
 
 std::string filterValueToString(const Teuchos::ParameterEntry& entry )
 {
   return ( entry.isList() ? std::string("...") : toString(entry.getAny()) );
 }
+
 
 struct ListPlusValidList {
   Teuchos::ParameterList   *list;
@@ -60,17 +54,22 @@ struct ListPlusValidList {
     {}
 };
 
+
 } // namespace 
 
+
 namespace Teuchos {
+
 
 ParameterList::ParameterList()
   :name_("ANONYMOUS"), disableRecursiveValidation_(false)
 {}
 
+
 ParameterList::ParameterList(const std::string &name_in)
   :name_(name_in), disableRecursiveValidation_(false)
 {}
+
 
 ParameterList::ParameterList(const ParameterList& source)
 {
@@ -78,6 +77,7 @@ ParameterList::ParameterList(const ParameterList& source)
   params_ = source.params_;
   disableRecursiveValidation_ = source.disableRecursiveValidation_;
 }
+
 
 ParameterList& ParameterList::operator=(const ParameterList& source) 
 {
@@ -88,6 +88,7 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
   disableRecursiveValidation_ = source.disableRecursiveValidation_;
   return *this;
 }
+
 
 ParameterList& ParameterList::setParameters(const ParameterList& source)
 {
@@ -105,6 +106,7 @@ ParameterList& ParameterList::setParameters(const ParameterList& source)
   this->updateSubListNames();
   return *this;
 }
+
 
 ParameterList& ParameterList::setParametersNotAlreadySet(
   const ParameterList& source
@@ -130,14 +132,17 @@ ParameterList& ParameterList::setParametersNotAlreadySet(
   return *this;
 }
 
+
 ParameterList& ParameterList::disableRecursiveValidation()
 {
   disableRecursiveValidation_ = true;
   return *this;
 }
 
+
 ParameterList::~ParameterList() 
 {}
+
 
 void ParameterList::unused(std::ostream& os) const
 {
@@ -148,6 +153,7 @@ void ParameterList::unused(std::ostream& os) const
     }
   }
 }
+
 
 std::string ParameterList::currentParametersString() const
 {
@@ -166,6 +172,7 @@ std::string ParameterList::currentParametersString() const
   return oss.str();
 }
 
+
 bool ParameterList::isSublist(const std::string& name_in) const
 {
   ConstIterator i = params_.find(name_in);
@@ -174,10 +181,12 @@ bool ParameterList::isSublist(const std::string& name_in) const
   return false;
 }
 
+
 bool ParameterList::isParameter(const std::string& name_in) const
 {
   return (params_.find(name_in) != params_.end());
 }
+
 
 bool ParameterList::remove(
   std::string const& name_in, bool throwIfNotExists
@@ -194,6 +203,7 @@ bool ParameterList::remove(
   }
   return false;
 }
+
 
 ParameterList& ParameterList::sublist(
   const std::string& name_in, bool mustAlreadyExist
@@ -252,6 +262,7 @@ ParameterList& ParameterList::sublist(
   return any_cast<ParameterList>(newParamEntry.getAny(false));
 }
 
+
 const ParameterList& ParameterList::sublist(const std::string& name_in) const
 {
   // Find name in list, if it exists.
@@ -271,11 +282,13 @@ const ParameterList& ParameterList::sublist(const std::string& name_in) const
     );
   return getValue<ParameterList>(entry(i));
 }
+
   
-std::ostream& ParameterList::print(std::ostream& os, int indent, bool showTypes, bool showFlags) const
+void ParameterList::print() const
 {
-  return this->print(os,PrintOptions().indent(indent).showTypes(showTypes).showFlags(showFlags));
+  this->print(*Teuchos::VerboseObjectBase::getDefaultOStream());
 }
+
   
 std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOptions ) const
 {
@@ -332,51 +345,41 @@ std::ostream& ParameterList::print(std::ostream& os, const PrintOptions &printOp
   return os;
 }
 
+  
+std::ostream& ParameterList::print(std::ostream& os, int indent, bool showTypes, bool showFlags) const
+{
+  return this->print(os,PrintOptions().indent(indent).showTypes(showTypes).showFlags(showFlags));
+}
+
+
 ParameterList::ConstIterator ParameterList::begin() const
 {
   return params_.begin();
 }
+
 
 ParameterList::ConstIterator ParameterList::end() const
 {
   return params_.end();
 }
 
-#if defined(TFLOP)
-
-const std::string& ParameterList::name(ConstIterator i) const
-{
-  return ((*i).first);
-}
-
-ParameterEntry& ParameterList::entry(Iterator i)
-{
-  return ((*i).second);
-}
-
-const ParameterEntry& ParameterList::entry(ConstIterator i) const
-{
-  return ((*i).second);
-}
-
-#else // defined(TFLOP)
 
 const std::string& ParameterList::name(ConstIterator i) const
 {
   return (i->first);
 }
 
+
 ParameterEntry& ParameterList::entry(Iterator i)
 {
   return (i->second);
 }
 
+
 const ParameterEntry& ParameterList::entry(ConstIterator i) const
 {
   return (i->second);
 }
-
-#endif // defined(TFLOP)
 
 
 void ParameterList::validateParameters(
@@ -735,4 +738,3 @@ bool Teuchos::haveSameValues( const ParameterList& list1, const ParameterList& l
   }
   return true;
 }
-

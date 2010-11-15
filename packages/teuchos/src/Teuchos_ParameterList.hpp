@@ -416,6 +416,13 @@ public:
   //! @name I/O Functions 
   //@{
 
+  /*! \brief Print function to use in debugging in a debugger.
+   *
+   * Prints to *VerboseObjectBase::getDefaultOStream() so it will print well
+   * in parallel.
+   */
+  void print() const;
+
   /*! \brief Printing method for parameter lists which takes an print options
    *  object.*/
   std::ostream& print(std::ostream& os, const PrintOptions &printOptions) const;
