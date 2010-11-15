@@ -30,18 +30,15 @@
 #define KOKKOS_CONFIGDEFS_H
 
 #include <Kokkos_config.h>
-#ifndef __CUDACC__
 // mem management
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayView.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_RCP.hpp>
-#endif
 
 //! Namespace for Kokkos classes and methods
 namespace Kokkos {
   // import Teuchos memory management classes into Tpetra
-#ifndef __CUDACC__
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -51,7 +48,6 @@ namespace Kokkos {
   using Teuchos::null;
   using Teuchos::arcp_reinterpret_cast;
   using Teuchos::Array;
-#endif
 }
 
 //! Namespace for Kokkos example classes
