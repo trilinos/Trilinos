@@ -50,9 +50,9 @@ Zoltan_Scotch_Construct_Offset(ZTPL_OS *order,
 			       SCOTCH_Num* tree,
 			       SCOTCH_Num offset, SCOTCH_Num *leafnum);
 
-static int compar_int (const void * a, const void * b)
+static int compar_indextype(const void * a, const void * b)
 {
-  return ( *(int*)a - *(int*)b );
+  return ( *(indextype*)a - *(indextype*)b );
 }
 
 static int
@@ -103,7 +103,7 @@ int Zoltan_Scotch_Order(
   SCOTCH_Num leafnum, start;
   int root = -1;
 #endif /* ZOLTAN_PTSCOTCH */
-  int numbloc;
+  indextype numbloc;
 
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
   int timer_p = 0;
@@ -204,6 +204,10 @@ int Zoltan_Scotch_Order(
 
   ierr = Zoltan_Preprocess_Graph(zz, &l_gids, &l_lids,  &gr, NULL, NULL, NULL);
 
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    ZOLTAN_THIRD_ERROR(ierr, "Cannot preprocess Scotch Graph");
+  }
+
   if (Zoltan_Scotch_Build_Graph(&gr, comm,
 #ifdef ZOLTAN_PTSCOTCH
  &grafdat,
@@ -212,6 +216,7 @@ int Zoltan_Scotch_Order(
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch Graph");
   }
+
 
   if (strat != NULL) {
     int len, pos;
@@ -306,7 +311,7 @@ int Zoltan_Scotch_Order(
       zz->TPL_Order.leaves[zz->TPL_Order.ancestor[numbloc]] = zz->TPL_Order.nbr_blocks + 1;
     }
     /* TODO : check if there is a normalized sort in Zoltan */
-    qsort(zz->TPL_Order.leaves, zz->TPL_Order.nbr_blocks, sizeof(int), compar_int);
+    qsort(zz->TPL_Order.leaves, zz->TPL_Order.nbr_blocks, sizeof(indextype), compar_indextype);
     zz->TPL_Order.nbr_leaves = 0;
     for (numbloc = 0 ; numbloc < zz->TPL_Order.nbr_blocks ; ++numbloc) {
       if (zz->TPL_Order.leaves[numbloc] > zz->TPL_Order.nbr_blocks) {
@@ -380,7 +385,7 @@ int Zoltan_Scotch_Order(
 	ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot compute Scotch tree array");
       }
 
-      children[3*tmp+index] = numbloc;
+      children[3*tmp+index] = (SCOTCH_Num)numbloc;
     }
 
     leafnum = 0;
@@ -406,8 +411,8 @@ int Zoltan_Scotch_Order(
 #endif /* ZOLTAN_PTSCOTCH */
 
   /* Correct because no redistribution */
-  memcpy(gids, l_gids, n*zz->Num_GID*sizeof(int));
-  memcpy(lids, l_lids, n*zz->Num_GID*sizeof(int));
+  memcpy(gids, l_gids, n*zz->Num_GID*sizeof(ZOLTAN_ID_TYPE));
+  memcpy(lids, l_lids, n*zz->Num_GID*sizeof(ZOLTAN_ID_TYPE));
 
   ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
@@ -889,6 +894,10 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
     if (SCOTCH_dgraphInit (dgrafptr, comm) != 0) {
       return (ZOLTAN_FATAL);
     }
+
+    /* TODO: are we certain that we don't allow randomization of global numbers?  This
+          call assumes the global numbers are consectutive across processes
+     */
 
     if (SCOTCH_dgraphBuild (dgrafptr, 0, (SCOTCH_Num)gr->num_obj, (SCOTCH_Num)gr->num_obj, 
                             gr->xadj, gr->xadj + 1,
