@@ -760,22 +760,36 @@ int idx;
   num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
 
   /*
-   * Compute size of one element's data.
+   * Compute an upper bound of the size of one element's data.
+   *   Some values are hard-coded to an upper bound because we want
+   *   to get the same test answers on 32-bit arches that we get on
+   *   64-bit arches, and we want the same answer whether we have
+   *   32-bit ZOLTAN_ID_TYPEs or 64-bit ZOLTAN_ID_TYPEs.
    */
 
-  /* 152 is hardcoded size of ELEM_INFO for 64-bit archs;
-   * Need it to make 32-bit and 64-bit repartitioning results match. */
-  size = (sizeof(ELEM_INFO) > 152 ? sizeof(ELEM_INFO) : 152);
+  /* Using 200 instead of sizeof(ELEM_INFO) */
+
+  if (sizeof(ELEM_INFO) > 200){
+    fprintf(stderr,"Re-code migrate_elem_size\n");
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+
+  size = 200;
  
   /* Add space to correct alignment so casts work in (un)packing. */
   size = Zoltan_Align(size);
 
-  /* Add space for connect table. */
+  /* Add space for connect table.  
+   * Using "8" instead of  sizeof(ZOLTAN_ID_TYPE). */
+   
   if (mesh->num_dims > 0)
-    size += num_nodes * sizeof(ZOLTAN_ID_TYPE);
+    size += num_nodes * 8;
 
-  /* Add space for adjacency info (elements[].adj) */
-  size += current_elem->adj_len * sizeof(ZOLTAN_ID_TYPE);
+  /* Add space for adjacency info (elements[].adj)
+   * Using "8" instead of  sizeof(ZOLTAN_ID_TYPE). */
+   
+  size += current_elem->adj_len * 8;
 
   /* Add space for adjacency info (elements[].adj_proc). */
   size += current_elem->adj_len * sizeof(int);
