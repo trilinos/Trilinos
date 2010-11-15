@@ -12,7 +12,7 @@
 
 #include "Kokkos_ThrustGPUNode.hpp"
 #include "Kokkos_TPINode.hpp"
-#include "Kokkos_SerialNode.hpp"
+
 
 #include "PDP10_TestOps.hpp"
 
@@ -24,10 +24,12 @@
   using std::cout;
   using std::endl;
   using std::setw;
+  using std::fixed;
+  using std::scientific;
+  using std::setprecision;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::ArrayRCP;
-  using Teuchos::Time;
   using Teuchos::null;
 
   int numPthreads;
@@ -77,7 +79,7 @@
 
   /////////////////////////////////////////////////////////
   template <class SCALAR, class NODE>
-  void sumTest(RCP<Time> time, int N)
+  void sumTest(RCP<Teuchos::Time> time, int N)
   {
     Teuchos::ArrayRCP<SCALAR> x;
     RCP<NODE> node = getNode<NODE>();
@@ -175,24 +177,10 @@
     return dsm;
   }
 
-  /////////////////////////////////////////////////////////
-  // for debugging
-  /////////////////////////////////////////////////////////
-  template <class Node>
-  void printVec(const Kokkos::MultiVector<float,Node> &vec) {
-    const size_t n = vec.getNumRows();
-    ArrayRCP<const float> vals = vec.getValues(0);
-    ArrayRCP<const float> vals_h = vec.getNode()->viewBuffer(n,vals);
-    for (size_t i=0; i<n; ++i) {
-      cout << "   " << vals_h[i];
-    }
-    cout << endl;
-  }
-
 
   /////////////////////////////////////////////////////////
   template <class Node>
-  CompStats power_method(RCP<Time> time, int N, size_t niters, float tolerance, bool verbose)  
+  CompStats power_method(RCP<Teuchos::Time> time, int N, size_t niters, float tolerance, bool verbose)  
   {
     typedef Kokkos::MultiVector<float,Node>                        MV;
     typedef Kokkos::DefaultArithmetic< Kokkos::MultiVector<float,Node> > DMVA;
@@ -226,11 +214,11 @@
     {
       Teuchos::TimeMonitor lcltimer(*time);
       for (size_t iter = 0; iter < niters; ++iter) {
-        cout << "z: "; printVec(z);
+        // cout << "z: "; printVec(z);
         normz = Teuchos::ScalarTraits<float>::squareroot( DMVA::Norm2Squared(z) );  // Compute |z|
-        cout << "|z|: " << normz << endl;
+        // cout << "|z|: " << normz << endl;
         DMVA::Scale(q, ONE/normz, (const MV&)z);                                    // Set q = z / |z|
-        cout << "q: "; printVec(q);
+        // cout << "q: "; printVec(q);
         A->template multiply<float,float>(Teuchos::NO_TRANS, ONE, (const MV&)q, z); // Compute z = A*q
       }
     }
@@ -250,7 +238,7 @@
 
   /////////////////////////////////////////////////////////
   template <class Node>
-  CompStats conjugate_gradient(RCP<Time> time, int N, size_t niters, float tolerance, bool verbose) 
+  CompStats conjugate_gradient(RCP<Teuchos::Time> time, int N, size_t niters, float tolerance, bool verbose) 
   {
     typedef Kokkos::MultiVector<float,Node> MV;
     typedef Kokkos::DefaultArithmetic<MV> DMVA;
@@ -294,7 +282,7 @@
         DMVA::GESUM(x, alpha,(const MV&)p,ONE);   // x = x + alpha*p
         DMVA::GESUM(r,-alpha,(const MV&)p,ONE);   // r = r - alpha*p
         r2_old = r2;
-        r2 = DMVA::Norm2Squared(r);
+        r2 = DMVA::Norm2Squared(r);               // <new r, new r>
         beta = r2 / r2_old;                       // beta = <old r, old r> / <new r, new r>
         DMVA::GESUM(p,ONE,(const MV&)r,beta);     // p = beta*p + r
       }
@@ -315,6 +303,32 @@
 
 
   /////////////////////////////////////////////////////////
+  // create a timer, for timing time.
+  /////////////////////////////////////////////////////////
+  inline RCP<Teuchos::Time> getNewTimer(const std::string &lbl) 
+  {
+    return Teuchos::TimeMonitor::getNewTimer(lbl);
+  }
+
+
+  /////////////////////////////////////////////////////////
+  // for debugging
+  /////////////////////////////////////////////////////////
+  template <class Node>
+  void printVec(const Kokkos::MultiVector<float,Node> &vec) {
+    const size_t n = vec.getNumRows();
+    ArrayRCP<const float> vals = vec.getValues(0);
+    ArrayRCP<const float> vals_h = vec.getNode()->viewBuffer(n,vals);
+    for (size_t i=0; i<n; ++i) {
+      cout << "   " << vals_h[i];
+    }
+    cout << endl;
+  }
+
+
+  /////////////////////////////////////////////////////////
+  // Do it!
+  /////////////////////////////////////////////////////////
   int main(int argc, char **argv) {
     Teuchos::CommandLineProcessor cmdp(false,true);
     int numIters = 100;
@@ -326,39 +340,43 @@
     if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
       return -1;
     }
-  
+
+    cout << endl << Kokkos::Kokkos_Version() << endl;
+
     // 
     cout << "\nTesting SerialNode" << endl;
-    sumTest<int,  SerialNode>(Teuchos::TimeMonitor::getNewTimer("sum int srl"),N);
-    sumTest<float,SerialNode>(Teuchos::TimeMonitor::getNewTimer("sum float srl"),N);
-    RCP<Time> timer;
-    timer = Teuchos::TimeMonitor::getNewTimer("cg srl");
-    CompStats cg_serial = conjugate_gradient<SerialNode   >(timer,N,numIters,1e-5f,1);
-    CompStats pm_serial = power_method      <SerialNode   >(timer,N,numIters,1e-5f,1);
+    sumTest<int,  SerialNode>(getNewTimer("sum int srl"  ),N);
+    sumTest<float,SerialNode>(getNewTimer("sum float srl"),N);
+    CompStats pm_serial = power_method      <SerialNode   >(getNewTimer("pm srl"),N,numIters,1e-5f,1);
+    CompStats cg_serial = conjugate_gradient<SerialNode   >(getNewTimer("cg srl"),N,numIters,1e-5f,1);
     // 
     cout << "\nTesting TPINode" << endl;
-    sumTest<int,  TPINode>(Teuchos::TimeMonitor::getNewTimer("sum int tpi"),N);
-    sumTest<float,TPINode>(Teuchos::TimeMonitor::getNewTimer("sum float tpi"),N);
-    timer = Teuchos::TimeMonitor::getNewTimer("cg tpi");
-    CompStats cg_tpi = conjugate_gradient<TPINode      >(timer,N,numIters,1e-5f,1);
-    CompStats pm_tpi = power_method      <TPINode      >(timer,N,numIters,1e-5f,1);
+    sumTest<int,  TPINode>(getNewTimer("sum int tpi"),N);
+    sumTest<float,TPINode>(getNewTimer("sum float tpi"),N);
+    CompStats pm_tpi = power_method      <TPINode      >(getNewTimer("pm tpi"),N,numIters,1e-5f,1);
+    CompStats cg_tpi = conjugate_gradient<TPINode      >(getNewTimer("cg tpi"),N,numIters,1e-5f,1);
     // 
     cout << "\nTesting ThrustGPUNode" << endl;
-    sumTest<int,  ThrustGPUNode>(Teuchos::TimeMonitor::getNewTimer("sum int gpu"),N);
-    sumTest<float,ThrustGPUNode>(Teuchos::TimeMonitor::getNewTimer("sum float gpu"),N);
-    timer = Teuchos::TimeMonitor::getNewTimer("cg gpu");
-    CompStats cg_gpu = conjugate_gradient<ThrustGPUNode>(timer,N,numIters,1e-5f,1);
-    CompStats pm_gpu = power_method      <ThrustGPUNode>(timer,N,numIters,1e-5f,1);
+    sumTest<int,  ThrustGPUNode>(getNewTimer("sum int gpu"),N);
+    sumTest<float,ThrustGPUNode>(getNewTimer("sum float gpu"),N);
+    CompStats pm_gpu = power_method      <ThrustGPUNode>(getNewTimer("pm gpu"),N,numIters,1e-5f,1);
+    CompStats cg_gpu = conjugate_gradient<ThrustGPUNode>(getNewTimer("cg gpu"),N,numIters,1e-5f,1);
+
     // 
+    // Timings, or it didn't happen...
+    //
+    cout.precision(3);
     cout << endl 
-      << setw(6) << "test"    << "  " << setw(16) << "seconds"          << "  " << setw(16)<< "flops"            << "  " << setw(16) << "mflops/second"                 << endl
-      << setw(6) << "------"  << "  " << setw(16) << "----------------" << "  " << setw(16)<< "----------------" << "  " << setw(16) << "----------------"              << endl
-      << setw(6) << "cg srl"  << "  " << setw(16) << cg_serial.seconds  << "  " << setw(16)<< cg_serial.flops    << "  " << setw(16) << cg_serial.flops/cg_serial.seconds/1.0e6 << endl
-      << setw(6) << "cg tpi"  << "  " << setw(16) << cg_tpi.seconds     << "  " << setw(16)<< cg_tpi.flops       << "  " << setw(16) << cg_tpi.flops/cg_tpi.seconds/1.0e6 << endl
-      << setw(6) << "cg gpu"  << "  " << setw(16) << cg_gpu.seconds     << "  " << setw(16)<< cg_gpu.flops       << "  " << setw(16) << cg_gpu.flops/cg_gpu.seconds/1.0e6 << endl
-      << setw(6) << "pm srl"  << "  " << setw(16) << pm_serial.seconds  << "  " << setw(16)<< pm_serial.flops    << "  " << setw(16) << pm_serial.flops/pm_serial.seconds/1.0e6 << endl
-      << setw(6) << "pm tpi"  << "  " << setw(16) << pm_tpi.seconds     << "  " << setw(16)<< pm_tpi.flops       << "  " << setw(16) << pm_tpi.flops/pm_tpi.seconds/1.0e6 << endl
-      << setw(6) << "pm gpu"  << "  " << setw(16) << pm_gpu.seconds     << "  " << setw(16)<< pm_gpu.flops       << "  " << setw(16) << pm_gpu.flops/pm_gpu.seconds/1.0e6 << endl;
+      << setw(6) << "test"    << "  " << setw(10) <<               "seconds"         << "  " << setw(10)<<               "flops"         << "  " << setw(13) << "mflops/second"                                                     << endl
+      << setw(6) << "------"  << "  " << setw(10) <<               "----------"      << "  " << setw(10)<<               "----------"    << "  " << setw(13) << "-------------"                                                     << endl
+      << setw(6) << "pm srl"  << "  " << setw(10) << scientific << pm_serial.seconds << "  " << setw(10)<< scientific << pm_serial.flops << "  " << setw(13) << fixed << pm_serial.flops/pm_serial.seconds/1.0e6 << endl
+      << setw(6) << "pm tpi"  << "  " << setw(10) << scientific << pm_tpi.seconds    << "  " << setw(10)<< scientific << pm_tpi.flops    << "  " << setw(13) << fixed << pm_tpi.flops   /pm_tpi.seconds   /1.0e6 << endl
+      << setw(6) << "pm gpu"  << "  " << setw(10) << scientific << pm_gpu.seconds    << "  " << setw(10)<< scientific << pm_gpu.flops    << "  " << setw(13) << fixed << pm_gpu.flops   /pm_gpu.seconds   /1.0e6 << endl
+      << setw(6) << "------"  << "  " << setw(10) <<               "----------"      << "  " << setw(10)<<               "----------"    << "  " << setw(13) << "-------------"                                                     << endl
+      << setw(6) << "cg srl"  << "  " << setw(10) << scientific << cg_serial.seconds << "  " << setw(10)<< scientific << cg_serial.flops << "  " << setw(13) << fixed << cg_serial.flops/cg_serial.seconds/1.0e6 << endl
+      << setw(6) << "cg tpi"  << "  " << setw(10) << scientific << cg_tpi.seconds    << "  " << setw(10)<< scientific << cg_tpi.flops    << "  " << setw(13) << fixed << cg_tpi.flops   /cg_tpi.seconds   /1.0e6 << endl
+      << setw(6) << "cg gpu"  << "  " << setw(10) << scientific << cg_gpu.seconds    << "  " << setw(10)<< scientific << cg_gpu.flops    << "  " << setw(13) << fixed << cg_gpu.flops   /cg_gpu.seconds   /1.0e6 << endl
+      ;
     // cout << endl;
     // Teuchos::TimeMonitor::summarize();
     return 0;
