@@ -1,14 +1,17 @@
 #include "Teuchos_stacktrace.hpp"
 
+
 void g()
 {
     Teuchos::show_stacktrace();
 }
 
+
 void f()
 {
     g();
 }
+
 
 int main()
 {
