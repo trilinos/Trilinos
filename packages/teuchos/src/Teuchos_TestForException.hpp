@@ -201,6 +201,7 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
       omsg << "\n\nThrow number = " << TestForException_getThrowNumber() << "\n\n"; \
       const std::string &omsgstr = omsg.str(); \
       TestForException_break(omsgstr); \
+      TEUCHOS_STORE_STACKTRACE(); \
       throw Exception(omsgstr); \
     } \
 }
@@ -216,7 +217,7 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
  * \note The exception thrown is <tt>std::logic_error</tt>.
  */
 #define TEST_FOR_EXCEPT(throw_exception_test) \
-  TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,"Error!")
+  TEST_FOR_EXCEPTION(throw_exception_test, std::logic_error, "Error!")
 
 /** \brief This macro is designed to be a short version of
  * <tt>TEST_FOR_EXCEPTION()</tt> that is easier to call.
@@ -231,7 +232,7 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
  * \note The exception thrown is <tt>std::logic_error</tt>.
  */
 #define TEST_FOR_EXCEPT_MSG(throw_exception_test, msg) \
-  TEST_FOR_EXCEPTION(throw_exception_test,std::logic_error,msg)
+  TEST_FOR_EXCEPTION(throw_exception_test, std::logic_error, msg)
 
 /** \brief This macro is the same as <tt>TEST_FOR_EXCEPTION()</tt> except that the
  * exception will be caught, the message printed, and then rethrown.
@@ -248,13 +249,14 @@ TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
  */
 #define TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr) \
 try { \
-  TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
+  TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg); \
 } \
 catch(const std::exception &except) { \
   std::ostream *l_out_ptr = (out_ptr); \
   if(l_out_ptr) { \
     *l_out_ptr \
-      << "\nThorwing an std::exception of type \'"<<Teuchos::typeName(except)<<"\' with the error message: " \
+      << "\nThorwing an std::exception of type \'"<<Teuchos::typeName(except) \
+      <<"\' with the error message: " \
       << except.what(); \
   } \
   throw; \
@@ -270,7 +272,7 @@ catch(const std::exception &except) { \
  * the error message that is generated.
  */
 #define TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr) \
-  TEST_FOR_EXCEPTION_PRINT(throw_exception_test,std::logic_error,"Error!",out_ptr)
+  TEST_FOR_EXCEPTION_PRINT(throw_exception_test, std::logic_error, "Error!", out_ptr)
 
 
 /** \brief This macro intercepts an exception, prints a standardized message including
