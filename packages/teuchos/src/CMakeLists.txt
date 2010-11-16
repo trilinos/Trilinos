@@ -300,6 +300,14 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
+IF (CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+  # Must suppress strick aliasing warnings for this file!
+  SET_SOURCE_FILES_PROPERTIES(
+    Teuchos_stacktrace.cpp
+    PROPERTIES COMPILE_FLAGS -fno-strict-aliasing
+    )
+ENDIF()
+
 PACKAGE_ADD_LIBRARY(
   teuchos
   HEADERS ${HEADERS}
