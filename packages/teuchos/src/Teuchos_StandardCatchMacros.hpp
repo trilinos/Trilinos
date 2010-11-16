@@ -41,7 +41,8 @@
 #endif
 
 
-/** \brief Simple macro that catches and reports standard exceptions and other exceptions.
+/** \brief Simple macro that catches and reports standard exceptions and other
+ * exceptions.
  *
  * \ingroup teuchos_language_support_grp
  *
@@ -57,25 +58,27 @@
    try {
      ...
    }
-   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
    return ( success ? 0 : 1 );
  }
  \endcode
  */
 #define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE,ERR_STREAM,SUCCESS_FLAG) \
-  catch( const std::exception &excpt ) { \
+  catch (const std::exception &excpt) { \
     if((VERBOSE)) { \
       std::ostringstream oss; \
       oss \
-        << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard std::exception of type \'" \
+        << "\np="<<::Teuchos::GlobalMPISession::getRank() \
+        <<": *** Caught standard std::exception of type \'" \
         <<Teuchos::concreteTypeName(excpt)<<"\' :\n\n"; \
-        Teuchos::OSTab(oss).o() << TEUCHOS_GET_STORED_STACKTRACE() << excpt.what() << std::endl; \
+        Teuchos::OSTab(oss).o() << TEUCHOS_GET_STORED_STACKTRACE() \
+                                << excpt.what() << std::endl; \
         std::cout << std::flush; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
     } \
   } \
-  catch( const int &excpt_code ) { \
+  catch (const int &excpt_code) { \
     if((VERBOSE)) { \
       std::ostringstream oss; \
       oss \
@@ -87,10 +90,11 @@
     (SUCCESS_FLAG) = false; \
     } \
   } \
-  catch( ... ) { \
-    if((VERBOSE)) { \
+  catch ( ... ) { \
+    if ((VERBOSE)) { \
       std::ostringstream oss; \
-      oss << "\np="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught an unknown exception\n"; \
+      oss << "\np="<<::Teuchos::GlobalMPISession::getRank() \
+          <<": *** Caught an unknown exception\n"; \
       std::cout << std::flush; \
       (ERR_STREAM) << oss.str(); \
       (SUCCESS_FLAG) = false; \
