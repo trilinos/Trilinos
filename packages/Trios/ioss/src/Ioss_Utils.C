@@ -57,6 +57,10 @@
 #include <iostream>
 #include <fstream>
 
+namespace {
+  inline int to_lower(int c) { return std::tolower(c); }
+  inline int to_upper(int c) { return std::toupper(c); }
+}
 Ioss::Utils::Utils() {}
   
 void Ioss::Utils::time_and_date(char* time_string, char* date_string,
@@ -333,6 +337,20 @@ int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)
     if (*c1 == '\0')
       return 0;
   }
+}
+
+std::string Ioss::Utils::uppercase(const std::string &name)
+{
+  std::string s(name);
+  std::transform(s.begin(), s.end(), s.begin(), to_upper);
+  return s;
+}
+
+std::string Ioss::Utils::lowercase(const std::string &name)
+{
+  std::string s(name);
+  std::transform(s.begin(), s.end(), s.begin(), to_lower);
+  return s;
 }
 
 void Ioss::Utils::fixup_name(char *name)

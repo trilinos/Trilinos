@@ -80,6 +80,9 @@ namespace Ioss {
      */
     static void fixup_name(char *name);
     
+    static std::string uppercase(const std::string &name);
+    static std::string lowercase(const std::string &name);
+
     static int case_strcmp(const std::string &s1, const std::string &s2);
     /*!
      * Return a string containing information about the current :
