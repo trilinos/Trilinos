@@ -331,8 +331,8 @@
   /////////////////////////////////////////////////////////
   int main(int argc, char **argv) {
     Teuchos::CommandLineProcessor cmdp(false,true);
-    int numIters = 100;
-    int N = 1000000;
+    int numIters = 25;
+    int N = 100000;
     numPthreads = 8;
     cmdp.setOption("N",  &N,  "Size of the grid.");
     cmdp.setOption("numPthreads",&numPthreads,"Number of Pthreads for use by TPI.");
@@ -379,5 +379,6 @@
       ;
     // cout << endl;
     // Teuchos::TimeMonitor::summarize();
+    cout << "\nEnd Result: TEST PASSED" << endl;
     return 0;
   }
