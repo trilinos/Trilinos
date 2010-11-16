@@ -568,6 +568,7 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
 
           Scalar determinant    = inMats[offset]*inMats[offset+3]-inMats[offset+1]*inMats[offset+2];;
 #ifdef HAVE_INTREPID_DEBUG
+#ifdef HAVE_INTREPID_DEBUG_INF_CHECK
           TEST_FOR_EXCEPTION( ( (inMats[offset]==(Scalar)0)   && (inMats[offset+1]==(Scalar)0) &&
                                 (inMats[offset+2]==(Scalar)0) && (inMats[offset+3]==(Scalar)0) ),
                               std::invalid_argument,
@@ -575,6 +576,7 @@ void RealSpaceTools<Scalar>::inverse(ArrayInverse & inverseMats, const ArrayIn &
           TEST_FOR_EXCEPTION( ( determinant == (Scalar)0 ),
                               std::invalid_argument,
                               ">>> ERROR (Matrix): Inverse of a singular matrix is undefined!");
+#endif
 #endif
           inverseMats[offset]   = inMats[offset+3] / determinant;
           inverseMats[offset+1] = - inMats[offset+1] / determinant;

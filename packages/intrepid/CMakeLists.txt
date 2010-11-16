@@ -28,6 +28,13 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   "Enable a host of runtime debug checking."
   ${Trilinos_ENABLE_DEBUG}
   )
+
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG_INF_CHECK
+  HAVE_INTREPID_DEBUG_INF_CHECK
+  "Enable a host of runtime debug checking for infs and nans."
+  ${Trilinos_ENABLE_DEBUG}
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #
