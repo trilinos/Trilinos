@@ -445,6 +445,8 @@ RCP<StacktraceAddresses> get_stacktrace_addresses() {
     return rcp(new StacktraceAddresses(stacktrace_array, stacktrace_size));
 }
 
+
+
 RCP<StacktraceAddresses> last_stacktrace;
 
 } // Unnamed namespace
@@ -452,10 +454,12 @@ RCP<StacktraceAddresses> last_stacktrace;
 
 // Public functions
 
+
 void Teuchos::store_stacktrace()
 {
     last_stacktrace = get_stacktrace_addresses();
 }
+
 
 std::string Teuchos::get_stored_stacktrace()
 {
@@ -464,6 +468,7 @@ std::string Teuchos::get_stored_stacktrace()
     else
         return stacktrace2str(*last_stacktrace);
 }
+
 
 std::string Teuchos::get_stacktrace()
 {
