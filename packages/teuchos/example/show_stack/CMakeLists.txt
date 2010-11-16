@@ -8,23 +8,37 @@ PACKAGE_ADD_EXECUTABLE(
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_STACKTRACE)
 IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
+
+  SET(PASS_REGEXS "")
+
+  IF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS OR CMAKE_BUILD_TYPE STREQUAL DEBUG)
+    APPEND_SET(PASS_REGEXS
+      "Teuchos::show_stacktrace();"
+      "teuchos/src/Teuchos_stacktrace.cpp., .+, in Teuchos::show_stacktrace()"
+      "teuchos/src/Teuchos_stacktrace.cpp., .+, in Teuchos::get_stacktrace()"
+      )
+  ENDIF()
+
+  IF (CMAKE_BUILD_TYPE STREQUAL DEBUG)
+    APPEND_SET(PASS_REGEXS
+      "teuchos/example/show_stack/cxx_main.cpp., line 19, in main()"
+      "f()"
+      "teuchos/example/show_stack/cxx_main.cpp., line 12, in f()"
+      "g()"
+      "teuchos/example/show_stack/cxx_main.cpp., line 6, in g()"
+      "char .p = NULL. .p = 0"
+      )
+  ENDIF()
+
   
   PACKAGE_ADD_ADVANCED_TEST(
     show_stack
     TEST_0 EXEC show_stack
       PASS_REGULAR_EXPRESSION_ALL
         "Traceback .most recent call last.:"
-        "teuchos/example/show_stack/cxx_main.cpp., line 16, in main()"
-        "f()"
-        "teuchos/example/show_stack/cxx_main.cpp., line 10, in f()"
-        "g()"
-        "teuchos/example/show_stack/cxx_main.cpp., line 5, in g()"
-        "Teuchos::show_stacktrace();"
-        "teuchos/src/Teuchos_stacktrace.cpp., .+, in Teuchos::show_stacktrace()"
-        "teuchos/src/Teuchos_stacktrace.cpp., .+, in Teuchos::get_stacktrace()"
         "Segfault caught. Printing stacktrace:"
-        "teuchos/example/show_stack/cxx_main.cpp., line 19, in main()"
-        "char .p = NULL. .p = 0"
+        "Done. Exiting the program."
+        ${PASS_REGEXS}
     OVERALL_NUM_MPI_PROCS 1
     )
   
