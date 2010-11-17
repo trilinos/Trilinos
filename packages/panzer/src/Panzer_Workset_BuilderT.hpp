@@ -170,13 +170,28 @@ panzer::buildWorksets(const std::string& block_id,
 
 // ****************************************************************
 // ****************************************************************
+
 /*
-Teuchos::RCP<std::map<unsigned,charon::Workset> > 
-charon::buildBCWorkset(const SBC_Set* sideset,
-		       const charon::BoundaryCondition& bc,
-		       Node_Vector_Index* node_coordinates,
-		       const charon::InputPhysicsBlock& ipb,
-		       const shards::CellTopology& base_cell_topology)
+
+// NEW VERSION
+
+template<typename ArrayT>
+Teuchos::RCP<std::map<unsigned,charon::Workset> >
+panzer::buildBCWorkset(const charon::BoundaryCondition& bc,
+		       const std::vector<std::size_t>& local_cell_ids,
+		       const std::vector<std::size_t>& local_side_ids,
+		       const ArrayT& vertex_coordinates, 
+		       const panzer::InputPhysicsBlock& ipb,
+		       unsigned base_cell_dim)
+
+// OLD VERSION
+
+// Teuchos::RCP<std::map<unsigned,charon::Workset> > 
+// charon::buildBCWorkset(const SBC_Set* sideset,
+// 		       const charon::BoundaryCondition& bc,
+// 		       Node_Vector_Index* node_coordinates,
+// 		       const charon::InputPhysicsBlock& ipb,
+// 		       const shards::CellTopology& base_cell_topology)
 {
   // All elements of boundary condition should go into one workset.
   // However due to design of Intrepid (requires same basis for all
@@ -353,4 +368,5 @@ charon::buildBCWorkset(const SBC_Set* sideset,
 
   return worksets_ptr;
 }
+
 */
