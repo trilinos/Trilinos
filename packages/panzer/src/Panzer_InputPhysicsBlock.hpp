@@ -6,25 +6,15 @@
 #include <string>
 #include <iostream>
 #include "Teuchos_ParameterList.hpp"
+#include "Panzer_InputEquationSet.hpp"
 
 namespace panzer {
 
   struct InputPhysicsBlock {
 
-    struct InputEquationSet {
-      std::string name;
-      std::string basis;
-      int integration_order;
-      int model_id;
-      std::string model_factory;
-      std::string prefix;
-      Teuchos::ParameterList params;
-    };
-
-    //! ID from the input file
     std::string physics_block_id;
     
-    std::vector<InputEquationSet> eq_sets;
+    std::vector<panzer::InputEquationSet> eq_sets;
  
   };
 

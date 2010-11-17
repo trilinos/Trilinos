@@ -9,7 +9,7 @@ namespace panzer {
 
   TEUCHOS_UNIT_TEST(input_physics_block, basic)
   {
-    panzer::InputPhysicsBlock::InputEquationSet ies_1;
+    panzer::InputEquationSet ies_1;
     ies_1.name = "Momentum";
     ies_1.basis = "Q2";
     ies_1.integration_order = 1;
@@ -19,7 +19,7 @@ namespace panzer {
     ies_1.params.set<int>("junk", 1);
 
 
-    panzer::InputPhysicsBlock::InputEquationSet ies_2;
+    panzer::InputEquationSet ies_2;
     ies_2.name = "Continuity";
     ies_2.basis = "Q1";
     ies_2.integration_order = 1;

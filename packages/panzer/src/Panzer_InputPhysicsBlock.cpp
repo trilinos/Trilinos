@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include "Panzer_InputPhysicsBlock.hpp"
+#include "Panzer_InputEquationSet.hpp"
 
 std::ostream& 
 panzer::operator<<(std::ostream& os, const panzer::InputPhysicsBlock& i) {

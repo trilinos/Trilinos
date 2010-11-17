@@ -47,14 +47,21 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
-  
+      
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  input_equation_set
+  SOURCES input_equation_set.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+   
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   input_physics_block
   SOURCES input_physics_block.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
-    
+ 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   boundary_condition
   SOURCES boundary_condition.cpp ${UNIT_TEST_DRIVER}
