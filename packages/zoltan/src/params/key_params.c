@@ -403,8 +403,8 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
          zz->LB.Approach);
   printf("Size of ZOLTAN_ID_TYPE: %zd, sizeof ZOLTAN_GNO_TYPE: %zd\n",
          sizeof(ZOLTAN_ID_TYPE),sizeof(ZOLTAN_GNO_TYPE));
-  printf("MPI_Datatype for ZOLTAN_ID_TYPE: %s, MPI_Datatype for ZOLTAN_GNO_TYPE: %s\n",
-         zoltan_mpi_id_datatype_name, zoltan_mpi_gno_datatype_name);
+  printf("MPI_Datatype for ZOLTAN_ID_TYPE: %s\n", zoltan_mpi_id_datatype_name);
+  printf("MPI_Datatype for ZOLTAN_GNO_TYPE: %s\n", zoltan_mpi_gno_datatype_name);
 }
 
 #ifdef __cplusplus
