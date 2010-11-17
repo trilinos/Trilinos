@@ -6,13 +6,13 @@
 ##   -no_hsfc
 ##   -no_oct     - have to use this, oct fails
 ##   -no_parmetis
-##   -no_scotch            - have to use this
+##   -no_scotch     
 ##   -no_reftree
 ##   -no_order
-##   -no_color     - have to use this
+##   -no_color     - have to use this, not converted for multiple sized ints
 ##   -no_chaco
 ##   -no_hg
-##   -no_hier           uses parmetis
+##   -no_hier 
 ##   -yes_nemesis
 ##   -yes_fortran
 ##   -yes_cpp
@@ -37,23 +37,23 @@ GENERAL_ARGS="-failure_detail -no_reftree -no_oct -no_color -logfile test_zoltan
 #
 # Zoltan with 64 bit IDs
 #
-#test_zoltan $GENERAL_ARGS -no_parmetis -exe $SCOTCH_ZOLTAN &> test_output_scotch_32.txt
-
-#test_zoltan $GENERAL_ARGS -no_parmetis -exe $SCOTCH_64_ZOLTAN &> test_output_scotch_64.txt
-
-#test_zoltan $GENERAL_ARGS -no_scotch -exe $PARMETIS_ZOLTAN &> test_output_parmetis.txt
-
-#test_zoltan $GENERAL_ARGS -no_scotch -no_parmetis -exe $NO_TPL_ZOLTAN &> test_output_none.txt
-
-#test_zoltan $GENERAL_ARGS -exe $BOTH_TPL_ZOLTAN &> test_output_both_32.txt
-
+test_zoltan $GENERAL_ARGS -no_parmetis -exe $SCOTCH_ZOLTAN &> test_output_scotch_32.txt
 #
-# Zoltan with 32 bit IDs
+test_zoltan $GENERAL_ARGS -no_parmetis -exe $SCOTCH_64_ZOLTAN &> test_output_scotch_64.txt
 #
+test_zoltan $GENERAL_ARGS -no_scotch -exe $PARMETIS_ZOLTAN &> test_output_parmetis.txt
+#
+test_zoltan $GENERAL_ARGS -no_scotch -no_parmetis -exe $NO_TPL_ZOLTAN &> test_output_none.txt
+#
+test_zoltan $GENERAL_ARGS -exe $BOTH_TPL_ZOLTAN &> test_output_both_32.txt
+#
+##
+## Zoltan with 32 bit IDs
+##
 test_zoltan $GENERAL_ARGS -no_parmetis -exe $ZOLTAN_32_SCOTCH &> test_output_32_scotch_32.txt
-
+#
 test_zoltan $GENERAL_ARGS -no_scotch -exe $ZOLTAN_32_PARMETIS &> test_output_32_parmetis.txt
-
+#
 test_zoltan $GENERAL_ARGS -no_scotch -no_parmetis -exe $ZOLTAN_32_NO_TPL &> test_output_32_none.txt
-
+#
 test_zoltan $GENERAL_ARGS -exe $ZOLTAN_32_BOTH &> test_output_32_both_32.txt

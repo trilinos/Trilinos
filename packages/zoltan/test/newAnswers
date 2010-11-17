@@ -1,4 +1,6 @@
 #!/bin/bash
+#
+# To be run in the same directory as the zdrive input file
 
 ZDIR=/home/lriesen/projects/Trilinos-zoltan_gid_64/packages/zoltan
 
@@ -13,27 +15,35 @@ ZOLTAN_32_PARMETIS=$ZDIR/build_32_parmetis/src/driver/zdrive.exe
 ZOLTAN_32_SCOTCH=$ZDIR/build_32_scotch/src/driver/zdrive.exe
 
 
-testName=$1
-testNum=$2
-testDir=$3
+testDir=$1
+testName=$2
 
-echo Running in test directory $3: $1 on $2 procs
-
-echo -n "Go on?"
-read  answer 
-
-if [  "$answer" = "no" ] ; then
+if [ $# -ne 2 ] ; then
+  echo "Need two parameters:  test directory and test name"
+  echo "Example:  directory hg_simple and test zdrive.inp.phg would be \"newAnswers simple phg\""
   exit
 fi
+
+testNum=`cat NUMPROC`
+echo $testNum
+
+echo Running test $testDir: $testName on $testNum procs
+
+#echo -n "Go on?"
+#read  answer 
+#
+#if [  "$answer" = "no" ] ; then
+#  exit
+#fi
 
 mpiexec -np $testNum $BOTH_TPL_ZOLTAN zdrive.inp.$testName
 
-echo -n "Save it?"
-read saveIt
+#echo -n "Save it?"
+#read saveIt
 
-if [  "$saveIt" = "no" ] ; then
-  exit
-fi
+#if [  "$saveIt" = "no" ] ; then
+#  exit
+#fi
 
 declare -i count=0
 declare -i done=$testNum
