@@ -45,7 +45,7 @@ void store_stacktrace();
 std::string get_stored_stacktrace();
 
 /** Returns the current stacktrace as a string */
-std::string get_stacktrace();
+std::string get_stacktrace(int impl_stacktrace_depth=0);
 
 /** Prints the current stacktrace to stdout */
 void show_stacktrace();

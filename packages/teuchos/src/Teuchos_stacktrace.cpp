@@ -359,8 +359,11 @@ int shared_lib_callback(struct dl_phdr_info *info,
 // store the addresses internally, but this can be changed.
 class StacktraceAddresses {
     std::vector<bfd_vma> stacktrace_buffer;
+    int impl_stacktrace_depth;
 public:
-    StacktraceAddresses(void *const *_stacktrace_buffer, int _size) {
+    StacktraceAddresses(void *const *_stacktrace_buffer, int _size, int _impl_stacktrace_depth)
+      : impl_stacktrace_depth(_impl_stacktrace_depth)
+    {
         for (int i=0; i < _size; i++)
             stacktrace_buffer.push_back((bfd_vma) _stacktrace_buffer[i]);
     }
@@ -369,6 +372,9 @@ public:
     }
     int get_size() const {
         return this->stacktrace_buffer.size();
+    }
+    int get_impl_stacktrace_depth() const {
+        return this->impl_stacktrace_depth;
     }
 };
 
@@ -390,7 +396,9 @@ std::string stacktrace2str(const StacktraceAddresses &stacktrace_addresses)
     bfd_init();
 #endif
     // Loop over the stack
-    for (int i=stack_depth; i >= 0; i--) {
+    const int stack_depth_start = stack_depth;
+    const int stack_depth_end = stacktrace_addresses.get_impl_stacktrace_depth();
+    for (int i=stack_depth_start; i >= stack_depth_end; i--) {
         // Iterate over all loaded shared libraries (see dl_iterate_phdr(3) -
         // Linux man page for more documentation)
         struct match_data match;
@@ -437,14 +445,16 @@ void loc_abort_callback_print_stack(int sig_num)
     std::cout << "\nDone.\n";
 }
 
-RCP<StacktraceAddresses> get_stacktrace_addresses() {
+
+RCP<StacktraceAddresses> get_stacktrace_addresses(int impl_stacktrace_depth)
+{
     const int STACKTRACE_ARRAY_SIZE = 100; // 2010/09/22: rabartl: Is this large enough?
     void *stacktrace_array[STACKTRACE_ARRAY_SIZE];
     const size_t stacktrace_size = backtrace(stacktrace_array,
             STACKTRACE_ARRAY_SIZE);
-    return rcp(new StacktraceAddresses(stacktrace_array, stacktrace_size));
+    return rcp(new StacktraceAddresses(stacktrace_array, stacktrace_size,
+        impl_stacktrace_depth+1));
 }
-
 
 
 RCP<StacktraceAddresses> last_stacktrace;
@@ -457,29 +467,33 @@ RCP<StacktraceAddresses> last_stacktrace;
 
 void Teuchos::store_stacktrace()
 {
-    last_stacktrace = get_stacktrace_addresses();
+    const int impl_stacktrace_depth=1;
+    last_stacktrace = get_stacktrace_addresses(impl_stacktrace_depth);
 }
 
 
 std::string Teuchos::get_stored_stacktrace()
 {
-    if (last_stacktrace == null)
+    if (last_stacktrace == null) {
         return "";
-    else
+    }
+    else {
         return stacktrace2str(*last_stacktrace);
+    }
 }
 
 
-std::string Teuchos::get_stacktrace()
+std::string Teuchos::get_stacktrace(int impl_stacktrace_depth)
 {
-    RCP<StacktraceAddresses> addresses = get_stacktrace_addresses();
+    RCP<StacktraceAddresses> addresses = get_stacktrace_addresses(impl_stacktrace_depth+1);
     return stacktrace2str(*addresses);
 }
 
 
 void Teuchos::show_stacktrace()
 {
-    std::cout << Teuchos::get_stacktrace();
+    const int impl_stacktrace_depth=1;
+    std::cout << Teuchos::get_stacktrace(impl_stacktrace_depth);
 }
 // 2010/09/21: rabartl: Above, you should never print directly to std::cout
 // (see TCDG 1.0 GCG 17).  At the very least, we should provide a "seam" to
