@@ -984,25 +984,36 @@ namespace Intrepid {
           // If whichCell = -1, all jacobians are computed, otherwise a single cell jacobian is computed
           int cellLoop = (whichCell == -1) ? numCells : 1 ;
           
-          for(int cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
-            for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
-              for(int row = 0; row < spaceDim; row++){
-                for(int col = 0; col < spaceDim; col++){
-                  
-                  // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same
-                  for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
+          if(whichCell == -1) {
+            for(int cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+              for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
                     
-                    if(whichCell == -1) {
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                       jacobian(cellOrd, pointOrd, row, col) += cellWorkset(cellOrd, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
-                    }
-                    else {
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            } // cellOrd
+          }
+          else {
+            for(int cellOrd = 0; cellOrd < cellLoop; cellOrd++) {
+              for(int pointOrd = 0; pointOrd < numPoints; pointOrd++) {
+                for(int row = 0; row < spaceDim; row++){
+                  for(int col = 0; col < spaceDim; col++){
+                  
+                    // The entry is computed by contracting the basis index. Number of basis functions and vertices must be the same.
+                    for(int bfOrd = 0; bfOrd < basisCardinality; bfOrd++){
                       jacobian(pointOrd, row, col) += cellWorkset(whichCell, bfOrd, row)*basisGrads(bfOrd, pointOrd, col);
-                    }
-                  } // bfOrd
-                } // col
-              } // row
-            } // pointOrd
-          } // cellOrd
+                    } // bfOrd
+                  } // col
+                } // row
+              } // pointOrd
+            } // cellOrd
+          } // if whichcell
         }// case 2
         break;
         

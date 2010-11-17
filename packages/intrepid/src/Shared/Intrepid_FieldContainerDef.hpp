@@ -53,6 +53,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const FieldContainer<Scalar,
   dim2_ = right.dim2_;
   dim3_ = right.dim3_;
   dim4_ = right.dim4_;
+  data_ptr_ = data_.begin();
 }
 
 //--------------------------------------------------------------------------------------------//
@@ -75,6 +76,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0) : dim0_(dim0
   dimensions_.resize(as<Ordinal>(1)); 
   dimensions_[0] = dim0_;
   data_.assign(as<Ordinal>(dim0_), as<Scalar>(0));
+  data_ptr_ = data_.begin();
 }
 
 
@@ -96,6 +98,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   dimensions_[0] = dim0_;   
   dimensions_[1] = dim1_;  
   data_.assign(as<Ordinal>(dim0_*dim1_), as<Scalar>(0));
+  data_ptr_ = data_.begin();
 }
 
 
@@ -118,6 +121,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   dimensions_[1] = dim1_; 
   dimensions_[2] = dim2_;  
   data_.assign(dim0_*dim1_*dim2_, (Scalar)0);
+  data_ptr_ = data_.begin();
 }
 
 
@@ -144,6 +148,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   dimensions_[2] = dim2_;  
   dimensions_[3] = dim3_; 
   data_.assign(dim0_*dim1_*dim2_*dim3_, (Scalar)0);
+  data_ptr_ = data_.begin();
 }
 
 
@@ -174,6 +179,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const int dim0,
   dimensions_[3] = dim3_;  
   dimensions_[4] = dim4_;  
   data_.assign(dim0_*dim1_*dim2_*dim3_*dim4_, (Scalar)0);
+  data_ptr_ = data_.begin();
 }
 
 
@@ -239,6 +245,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>& d
 
   // resize data array according to specified dimensions
   data_.assign( this -> size(), (Scalar)0);
+  data_ptr_ = data_.begin();
   
 }
 
@@ -312,6 +319,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&  
   
   // Deep-copy ArrayView data.
   data_.assign(data.begin(),data.end());
+  data_ptr_ = data_.begin();
 }
 
 
@@ -384,6 +392,7 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&  
   
   // Shallow-copy ArrayRCP data.
   data_ = data;
+  data_ptr_ = data_.begin();
 }
 
 
@@ -453,9 +462,11 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>&  
   if (deep_copy) {
     Teuchos::ArrayRCP<Scalar> arrayrcp = Teuchos::arcp<Scalar>(data, 0, this -> size(), false);
     data_.deepCopy(arrayrcp());
+    data_ptr_ = data_.begin();
   }
   else {
     data_ = Teuchos::arcp<Scalar>(data, 0, this -> size(), owns_mem);
+    data_ptr_ = data_.begin();
   }
 }
 
@@ -542,9 +553,11 @@ FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const shards::Array<Scalar,s
   if (deep_copy) {
     Teuchos::ArrayRCP<Scalar> arrayrcp = Teuchos::arcp<Scalar>(data.contiguous_data(), 0, this -> size(), false);
     data_.deepCopy(arrayrcp());
+    data_ptr_ = data_.begin();
   }
   else {
     data_ = Teuchos::arcp<Scalar>(data.contiguous_data(), 0, this -> size(), owns_mem);
+    data_ptr_ = data_.begin();
   }
 }
 
@@ -1022,6 +1035,7 @@ inline void FieldContainer<Scalar, ArrayTypeId>::clear() {
   
   // Clears data array and sets to zero length
   data_.clear();
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1038,6 +1052,7 @@ void FieldContainer<Scalar, ArrayTypeId>::resize(const Teuchos::Array<int>& newD
     dim3_ = 0;
     dim4_ = 0;
     data_.resize(0);
+    data_ptr_ = data_.begin();
   }
   else {
     
@@ -1090,6 +1105,7 @@ void FieldContainer<Scalar, ArrayTypeId>::resize(const Teuchos::Array<int>& newD
     
     // Resize data array
     data_.resize(this -> size());
+    data_ptr_ = data_.begin();
   }
 }
 
@@ -1105,6 +1121,7 @@ inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0) {
   dimensions_.resize(1);  
   dimensions_[0] = dim0_; 
   data_.resize(dim0_); 
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1121,6 +1138,7 @@ inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0,
   dimensions_[0] = dim0_;  
   dimensions_[1] = dim1_;  
   data_.resize(dim0_*dim1_); 
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1139,6 +1157,7 @@ inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0,
   dimensions_[1] = dim1_;  
   dimensions_[2] = dim2_;  
   data_.resize(dim0_*dim1_*dim2_); 
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1159,6 +1178,7 @@ inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0,
   dimensions_[2] = dim2_;  
   dimensions_[3] = dim3_;  
   data_.resize(dim0_*dim1_*dim2_*dim3_); 
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1181,6 +1201,7 @@ inline void FieldContainer<Scalar, ArrayTypeId>::resize(const int dim0,
   dimensions_[3] = dim3_;  
   dimensions_[4] = dim4_;  
   data_.resize(dim0_*dim1_*dim2_*dim3_*dim4_); 
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1237,6 +1258,7 @@ inline void FieldContainer<Scalar, ArrayTypeId>::resize(const FieldContainer<Sca
   
   // Resize data array
   data_.resize(this->size());  
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1365,6 +1387,7 @@ void FieldContainer<Scalar, ArrayTypeId>::setValues(const Teuchos::ArrayView<Sca
                       ">>> ERROR (FieldContainer): Size of argument does not match the size of container.");  
 #endif  
   data_.assign(dataArray.begin(),dataArray.end());
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1379,6 +1402,7 @@ void FieldContainer<Scalar, ArrayTypeId>::setValues(const Scalar* dataPtr,
 
 #endif
   data_.assign(dataPtr, dataPtr + numData);  
+  data_ptr_ = data_.begin();
 }
 
 
@@ -1392,7 +1416,7 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int
   TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): index is out of range.");    
 #endif
-  return data_[i0]; 
+  return data_ptr_[i0]; 
 }
 
 
@@ -1405,7 +1429,7 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0)
   TEST_FOR_EXCEPTION( ( (i0 < 0) || (i0 >= dim0_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): index is out of range.");    
 #endif
-  return data_[i0]; 
+  return data_ptr_[i0]; 
 }
 
 
@@ -1422,7 +1446,7 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int
   TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
-  return data_[i0*dim1_ + i1]; 
+  return data_ptr_[i0*dim1_ + i1]; 
 }
 
 
@@ -1438,7 +1462,7 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0,
   TEST_FOR_EXCEPTION( ( (i1 < 0) || (i1 >= dim1_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 2nd index is out of range.");    
 #endif
-  return data_[i0*dim1_ + i1]; 
+  return data_ptr_[i0*dim1_ + i1]; 
 }
 
 
@@ -1458,7 +1482,7 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int
   TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
 #endif
-  return data_[(i0*dim1_ + i1)*dim2_ + i2]; 
+  return data_ptr_[(i0*dim1_ + i1)*dim2_ + i2]; 
 }
 
 template<class Scalar, int ArrayTypeId>
@@ -1476,7 +1500,7 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator () (const int i0,
   TEST_FOR_EXCEPTION( ( (i2 < 0) || (i2 >= dim2_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 3rd index is out of range.");    
 #endif
-  return data_[(i0*dim1_ + i1)*dim2_ + i2]; 
+  return data_ptr_[(i0*dim1_ + i1)*dim2_ + i2]; 
 }
 
 
@@ -1498,7 +1522,7 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const in
   TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
 #endif
-  return data_[( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3];
+  return data_ptr_[( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3];
 }
 
 
@@ -1519,7 +1543,7 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
   TEST_FOR_EXCEPTION( ( (i3 < 0) || (i3 >= dim3_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 4th index is out of range.");    
 #endif
-  return data_[( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3];
+  return data_ptr_[( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3];
 }
 
 
@@ -1544,7 +1568,7 @@ inline const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const in
   TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 5th index is out of range.");    
 #endif
-  return data_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
+  return data_ptr_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
 }
 
 template<class Scalar, int ArrayTypeId>
@@ -1567,7 +1591,7 @@ inline Scalar& FieldContainer<Scalar, ArrayTypeId>::operator ()  (const int i0,
   TEST_FOR_EXCEPTION( ( (i4 < 0) || (i4 >= dim4_) ), std::invalid_argument,
                       ">>> ERROR (FieldContainer): 5th index is out of range.");    
 #endif
-  return data_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
+  return data_ptr_[( ( (i0*dim1_ + i1 )*dim2_ + i2 )*dim3_ + i3 )*dim4_ + i4];
 }
 
 
@@ -1579,7 +1603,7 @@ const Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int addres
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Specified address is out of range.");
 #endif
-  return data_[address];
+  return data_ptr_[address];
 }
 
 
@@ -1591,7 +1615,7 @@ Scalar& FieldContainer<Scalar, ArrayTypeId>::operator [] (const int address) {
                       std::invalid_argument,
                       ">>> ERROR (FieldContainer): Specified address is out of range.");
 #endif
-  return data_[address];
+  return data_ptr_[address];
 }
 
 
@@ -1610,6 +1634,7 @@ inline FieldContainer<Scalar, ArrayTypeId>& FieldContainer<Scalar, ArrayTypeId>:
   dim3_ = right.dim3_;
   dim4_ = right.dim4_;
   data_.deepCopy(right.data_());
+  data_ptr_ = data_.begin();
   dimensions_ = right.dimensions_; 
   return *this;
 }
