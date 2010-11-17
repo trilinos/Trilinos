@@ -1,5 +1,6 @@
 
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageAddAdvancedTest)
 
 
 #
@@ -24,6 +25,49 @@ IF (${PACKAGE_NAME}_ENABLE_Boost)
   ENDIF()
 ENDIF()
 
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  TestForException_throwTest
+  SOURCES
+    TestForException_throwTest.cpp
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "This is an exception I throw"
+  )
+
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_STACKTRACE)
+IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
+
+  PACKAGE_ADD_ADVANCED_TEST(
+    TestForException_throwTest_stracktrace
+    TEST_0 EXEC TestForException_throwTest
+      ARGS  --enable-stacktrace
+      PASS_REGULAR_EXPRESSION_ALL
+        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:39"
+        "Throw number = 1"
+        "Throw test that evaluated to true: true"
+        "This is an exception I throw!"
+        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_b()"
+        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_a()"
+    OVERALL_NUM_MPI_PROCS 1
+    )
+    # ToDo: Add more greps to look for the stacktrace output!
+
+  PACKAGE_ADD_ADVANCED_TEST(
+    TestForException_throwTest_nostracktrace
+    TEST_0 EXEC TestForException_throwTest
+      ARGS  --no-enable-stacktrace
+      PASS_REGULAR_EXPRESSION_ALL
+        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:39"
+        "Throw number = 1"
+        "Throw test that evaluated to true: true"
+        "This is an exception I throw!"
+    OVERALL_NUM_MPI_PROCS 1
+    FINAL_FAIL_REGULAR_EXPRESSION
+      "teuchos/src/Teuchos_stacktrace.cpp., .+, in Teuchos::store_stacktrace()"
+    )
+
+ENDIF()
 
 # These RCPNodeHandle tests are pulled out to run first in order to catch
 # problems before running the other memory management tests.

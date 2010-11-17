@@ -106,6 +106,8 @@
 
 #cmakedefine HAVE_TEUCHOS_STACKTRACE
 
+#cmakedefine HAVE_TEUCHOS_DEFAULT_STACKTRACE
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H
 

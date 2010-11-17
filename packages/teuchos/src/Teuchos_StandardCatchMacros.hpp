@@ -33,13 +33,16 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_stacktrace.hpp"
+#include "Teuchos_TestForException.hpp"
 
 #ifdef HAVE_TEUCHOS_STACKTRACE
-#  define TEUCHOS_GET_STORED_STACKTRACE() Teuchos::get_stored_stacktrace() << "\n"
+#  define TEUCHOS_GET_STORED_STACKTRACE() \
+  (TestForException_getEnableStacktrace() \
+    ? Teuchos::get_stored_stacktrace() + "\n" \
+    : std::string() )
 #else
 #  define TEUCHOS_GET_STORED_STACKTRACE() ""
 #endif
-
 
 /** \brief Simple macro that catches and reports standard exceptions and other
  * exceptions.
@@ -63,7 +66,7 @@
  }
  \endcode
  */
-#define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE,ERR_STREAM,SUCCESS_FLAG) \
+#define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE, ERR_STREAM, SUCCESS_FLAG) \
   catch (const std::exception &excpt) { \
     if((VERBOSE)) { \
       std::ostringstream oss; \

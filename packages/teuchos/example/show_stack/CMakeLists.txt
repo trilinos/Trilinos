@@ -14,8 +14,7 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
   IF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS OR CMAKE_BUILD_TYPE STREQUAL DEBUG)
     APPEND_SET(PASS_REGEXS
       "Teuchos::show_stacktrace();"
-      "teuchos/src/Teuchos_stacktrace.cpp., .+, in Teuchos::show_stacktrace()"
-      "teuchos/src/Teuchos_stacktrace.cpp., .+, in Teuchos::get_stacktrace()"
+      "teuchos/src/Teuchos_stacktrace.cpp., .+, in .+loc_segfault_callback_print_stack.+"
       )
   ENDIF()
 

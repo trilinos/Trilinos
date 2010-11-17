@@ -29,7 +29,26 @@
 #include "Teuchos_TestForException.hpp"
 
 
-namespace { int throwNumber = 0; }
+namespace {
+
+
+int throwNumber = 0;
+
+
+bool& loc_enableStackTrace()
+{
+  static bool static_enableStackTrace =
+#ifdef HAVE_TEUCHOS_DEFAULT_STACKTRACE
+    true
+#else
+    false
+#endif
+    ;
+  return static_enableStackTrace;
+}
+
+
+} // namespace
 
 
 void TestForException_incrThrowNumber()
@@ -58,4 +77,16 @@ void TestForException_break( const std::string &errorMsg )
   // is.  Also, you should consider adding a conditional breakpoint in this
   // function based on a specific value of 'throwNumber' if the exception you
   // want to examine is not the first exception thrown.
+}
+
+
+void TestForException_setEnableStacktrace(bool enableStrackTrace)
+{
+  loc_enableStackTrace() = enableStrackTrace;
+}
+
+
+bool TestForException_getEnableStacktrace()
+{
+  return loc_enableStackTrace();
 }

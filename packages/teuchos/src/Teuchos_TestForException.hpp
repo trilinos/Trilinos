@@ -50,11 +50,23 @@ TEUCHOS_LIB_DLL_EXPORT int TestForException_getThrowNumber();
 /** \brief The only purpose for this function is to set a breakpoint. */
 TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
 
+/** \brief Set at runtime if stacktracing functionality is enabled when
+ * exceptions are thrown. */
+void TestForException_setEnableStacktrace(bool enableStrackTrace);
+
+/** \brief Get at runtime if stacktracing functionality is enabled when
+ * exceptions are thrown. */
+bool TestForException_getEnableStacktrace();
+
 #ifdef HAVE_TEUCHOS_STACKTRACE
-#  define TEUCHOS_STORE_STACKTRACE() Teuchos::store_stacktrace()
+#  define TEUCHOS_STORE_STACKTRACE() \
+  if (TestForException_getEnableStacktrace()) { \
+    Teuchos::store_stacktrace(); \
+  }
 #else
 #  define TEUCHOS_STORE_STACKTRACE()
 #endif
+
 
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
  *
