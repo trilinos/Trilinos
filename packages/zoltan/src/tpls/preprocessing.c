@@ -110,6 +110,34 @@ int Zoltan_Preprocess_Graph(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  if (zz->Debug_Level > 0 && zz->Debug_Proc == zz->Proc){
+    printf("Third party library index type is %zd-byte integer\n",sizeof(indextype));
+#ifdef TPL_INTEGRAL_WEIGHT
+    printf("Third party library weight type is %zd-byte integer\n",sizeof(weighttype));
+#else
+    printf("Third party library weight type is %zd-byte floating point value\n",sizeof(weighttype));
+#endif    
+
+#if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ > 1
+    printf("Zoltan was compiled with support for: ");
+#if __parmetis__ == 1
+    printf("ParMetis ");
+#endif
+#if __metis__ == 1
+    printf("Metis ");
+#endif
+#if __scotch__ == 1
+    printf("Scotch ");
+#endif
+#if __ptscotch__ == 1
+    printf("PT-Scotch ");
+#endif
+    printf("\n");
+#endif
+
+    fflush(stdout);
+  }
+
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
