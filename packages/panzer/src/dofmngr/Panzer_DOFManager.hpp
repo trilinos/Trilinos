@@ -74,7 +74,7 @@ public:
      */
    void addField(const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern);
 
-   void addField(int blockId,const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern);
+   void addField(const std::string & blockId,const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern);
 
    /** Set the ordering of the fields to be used internally.  This controls
      * to some extent the local ordering (on a node or edge) of the individual fields.
@@ -117,7 +117,7 @@ public:
      * \returns Pointer to <code>FieldPattern</code> requested if the field exists,
      *          otherwise <code>Teuchos::null</code> is returned.
      */
-   Teuchos::RCP<const FieldPattern> getFieldPattern(int blockId, int fieldNum) const;
+   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, int fieldNum) const;
 
    /** \brief Find a field pattern stored for a particular block and field number. This will
      *        retrive the pattern added with <code>addField(blockId,fieldNum)</code>.
@@ -132,7 +132,7 @@ public:
      * \returns Pointer to <code>FieldPattern</code> requested if the field exists,
      *          otherwise <code>Teuchos::null</code> is returned.
      */
-   Teuchos::RCP<const FieldPattern> getFieldPattern(int blockId, const std::string & fieldName) const
+   Teuchos::RCP<const FieldPattern> getFieldPattern(const std::string & blockId, const std::string & fieldName) const
    { return getFieldPattern(blockId,getFieldNum(fieldName)); }
    
    /** \brief Get the number used for access to this
@@ -203,7 +203,7 @@ public:
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
      */
-   const std::vector<int> & getGIDFieldOffsets(int blockId,int fieldNum) const
+   const std::vector<int> & getGIDFieldOffsets(const std::string & blockId,int fieldNum) const
    { return fieldAggPattern_.find(blockId)->second->localOffsets(fieldNum); }
 
    /** \brief Use the field pattern so that you can find a particular
@@ -215,7 +215,7 @@ public:
      * \param[in] subCellDim
      * \param[in] subCellId
      */
-   const std::vector<int> & getGIDFieldOffsets(int blockId,int fieldNum,int subCellDim,int subCellId) const
+   const std::vector<int> & getGIDFieldOffsets(const std::string & blockId,int fieldNum,int subCellDim,int subCellId) const
    { TEUCHOS_ASSERT(false); } 
 
    /** \brief Use the field pattern so that you can find a particular
@@ -230,7 +230,7 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   const std::vector<int> & getGIDFieldOffsets_closure(int blockId,int fieldNum,int subcellDim,int subcellId) const
+   const std::vector<int> & getGIDFieldOffsets_closure(const std::string & blockId,int fieldNum,int subcellDim,int subcellId) const
    { return fieldAggPattern_.find(blockId)->second->localOffsets_closure(fieldNum,subcellDim,subcellId); }
 
    //@}
@@ -277,11 +277,16 @@ protected:
      * imposed by <code>fieldStrToInt_</code> (alphabetical on field name)
      */
    void buildDefaultFieldOrder();
+   
+   std::vector<int> getOrderedBlock(const std::string & blockId);
 
-   std::vector<int> getOrderedBlock(int blockIndex);
+   /** Using the natural ordering associated with the std::vector
+     * retrieved from the connection manager
+     */
+   std::size_t blockIdToIndex(const std::string & blockId) const;
 
    //! build the pattern associated with this manager
-   void buildPattern(int blockId,const Teuchos::RCP<FieldPattern> & geomPattern);
+   void buildPattern(const std::string & blockId,const Teuchos::RCP<FieldPattern> & geomPattern);
 
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
@@ -300,14 +305,14 @@ protected:
    std::map<std::string,int> fieldStrToInt_;
    std::map<int,std::string> intToFieldStr_;
 
-   //! (block index x field id) ==> pattern
-   std::map<std::pair<int,int>,Teuchos::RCP<const FieldPattern> > fieldIntToPattern_;
+   //! (block ID x field id) ==> pattern
+   std::map<std::pair<std::string,int>,Teuchos::RCP<const FieldPattern> > fieldIntToPattern_;
 
-   //! block index ==> Aggregate field pattern
-   std::map<int,Teuchos::RCP<FieldAggPattern> > fieldAggPattern_;
+   //! block id ==> Aggregate field pattern
+   std::map<std::string,Teuchos::RCP<FieldAggPattern> > fieldAggPattern_;
 
-   //! block index ==> set of field ids
-   std::map<int,std::set<int> > blockToField_; // help define the pattern
+   //! block id ==> set of field ids
+   std::map<std::string,std::set<int> > blockToField_; // help define the pattern
    //@}
 
    // FEI based DOF management stuff
@@ -324,6 +329,9 @@ protected:
    mutable Teuchos::RCP<Epetra_Map> overlappedMap_;
    mutable Teuchos::RCP<Epetra_CrsGraph> graph_;
    mutable Teuchos::RCP<Epetra_CrsGraph> overlappedGraph_;
+
+   // maps blockIds to indices
+   mutable Teuchos::RCP<std::map<std::string,std::size_t> > blockIdToIndex_;
 
    std::vector<int> fieldOrder_;
 

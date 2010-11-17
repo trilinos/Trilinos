@@ -51,11 +51,15 @@ public:
      *
      * \param[in] localElmtId Local element ID
      */
-   virtual GlobalOrdinal getBlockId(LocalOrdinal localElmtId) const = 0;
+   virtual std::string getBlockId(LocalOrdinal localElmtId) const = 0;
 
    /** How many element blocks in this mesh?
      */
-   virtual GlobalOrdinal numElementBlocks() const = 0;
+   virtual std::size_t numElementBlocks() const = 0;
+
+   /** What are the blockIds included in this connection manager?
+     */
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
 
    /** Get the local element IDs for a paricular element
      * block.
@@ -64,7 +68,7 @@ public:
      *
      * \returns Vector of local element IDs.
      */
-   virtual const std::vector<LocalOrdinal> & getElementBlock(GlobalOrdinal blockID) const = 0;
+   virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockID) const = 0;
 };
 
 }

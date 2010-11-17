@@ -90,11 +90,15 @@ Teuchos::RCP<ConnManager<int,int> > DOFManager::resetIndices()
 
 void DOFManager::addField(const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern)
 {
-   for(int i=0;i<connMngr_->numElementBlocks();i++)
-      addField(i,str,pattern);
+   std::vector<std::string> elementBlockIds;
+   connMngr_->getElementBlockIds(elementBlockIds);
+
+   // loop over blocks adding field pattern to each 
+   for(std::size_t i=0;i<elementBlockIds.size();i++)
+      addField(elementBlockIds[i],str,pattern);
 }
 
-void DOFManager::addField(int blockId,const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern)
+void DOFManager::addField(const std::string & blockId,const std::string & str,const Teuchos::RCP<const FieldPattern> & pattern)
 {
    std::map<std::string,int>::const_iterator itr = fieldStrToInt_.find(str);
    if(itr!=fieldStrToInt_.end()) {
@@ -176,20 +180,28 @@ void DOFManager::buildGlobalUnknowns()
    // build the pattern for the ID layout on the mesh
    std::vector<RCP<const FieldPattern> > patVector;
    RCP<GeometricAggFieldPattern> aggFieldPattern = Teuchos::rcp(new GeometricAggFieldPattern);;
-   std::map<std::pair<int,int>,Teuchos::RCP<const FieldPattern> >::iterator f2p_itr;
+   std::map<std::pair<std::string,int>,Teuchos::RCP<const FieldPattern> >::iterator f2p_itr;
    for(f2p_itr=fieldIntToPattern_.begin();f2p_itr!=fieldIntToPattern_.end();f2p_itr++)
       patVector.push_back(f2p_itr->second);
    aggFieldPattern->buildPattern(patVector);
 
+   // get element blocks
+   std::vector<std::string> elementBlockIds;
+   connMngr_->getElementBlockIds(elementBlockIds);
+
    // setup connectivity mesh
    connMngr_->buildConnectivity(*aggFieldPattern);
    patternNum_.resize(connMngr_->numElementBlocks()); 
-   for(int blockIndex=0;blockIndex<connMngr_->numElementBlocks();blockIndex++) {
+   std::vector<std::string>::const_iterator blockItr;
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+      std::size_t blockIndex = blockIdToIndex(blockId);
+
       // build the pattern
-      buildPattern(blockIndex,aggFieldPattern);
+      buildPattern(blockId,aggFieldPattern);
 
       // figure out what IDs are active for this pattern
-      const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockIndex]->numFieldsPerId();
+      const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
       std::vector<int> activeIds;
       for(std::size_t i=0;i<numFieldsPerID.size();i++)
          if(numFieldsPerID[i]>0) 
@@ -197,7 +209,7 @@ void DOFManager::buildGlobalUnknowns()
       std::vector<int> reduceConn(activeIds.size()); // which IDs to use
    
       // grab elements for this block
-      const std::vector<int> & elements = connMngr_->getElementBlock(blockIndex);
+      const std::vector<int> & elements = connMngr_->getElementBlock(blockId);
 
       // build graph for this block
       matrixGraph_->initConnectivityBlock(blockIndex,elements.size(),patternNum_[blockIndex]);
@@ -226,9 +238,9 @@ void DOFManager::buildDefaultFieldOrder()
    setFieldOrder(fieldOrder);
 }
 
-std::vector<int> DOFManager::getOrderedBlock(int blockIndex)
+std::vector<int> DOFManager::getOrderedBlock(const std::string & blockId)
 {
-   const std::set<int> & fieldSet = blockToField_[blockIndex];
+   const std::set<int> & fieldSet = blockToField_[blockId];
    std::vector<int> orderedBlock;
 
    std::vector<int>::const_iterator itr;
@@ -242,7 +254,7 @@ std::vector<int> DOFManager::getOrderedBlock(int blockIndex)
 }
 
 // build the pattern associated with this manager
-void DOFManager::buildPattern(int blockIndex,const RCP<FieldPattern> & geomPattern)
+void DOFManager::buildPattern(const std::string & blockId,const RCP<FieldPattern> & geomPattern)
 {
    using Teuchos::rcp;
    using Teuchos::RCP;
@@ -251,29 +263,24 @@ void DOFManager::buildPattern(int blockIndex,const RCP<FieldPattern> & geomPatte
    if(fieldOrder_.size()==0)
       buildDefaultFieldOrder();
 
-   // const std::set<int> & fieldSet = blockToField_[blockIndex];
-   std::vector<int> orderedBlock = getOrderedBlock(blockIndex);
+   std::vector<int> orderedBlock = getOrderedBlock(blockId);
    std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > blockPatterns;
 
    // get a map of field patterns
    // std::set<int>::const_iterator itr;
    std::vector<int>::const_iterator itr;
-   // for(itr=fieldSet.begin();itr!=fieldSet.end();++itr) {
    for(itr=orderedBlock.begin();itr!=orderedBlock.end();++itr) {
-      Teuchos::RCP<const FieldPattern> fp = fieldIntToPattern_[std::make_pair(blockIndex,*itr)];
+      Teuchos::RCP<const FieldPattern> fp = fieldIntToPattern_[std::make_pair(blockId,*itr)];
       blockPatterns.push_back(std::make_pair(*itr,fp));
    }
 
    // smash together all fields...do interlacing
-   fieldAggPattern_[blockIndex] = rcp(new FieldAggPattern(blockPatterns));
-   TEUCHOS_ASSERT(geomPattern->equals(*fieldAggPattern_[blockIndex]->getGeometricAggFieldPattern()));
+   fieldAggPattern_[blockId] = rcp(new FieldAggPattern(blockPatterns));
+   TEUCHOS_ASSERT(geomPattern->equals(*fieldAggPattern_[blockId]->getGeometricAggFieldPattern()));
 
-   // std::cout << "Agg FEI (block = " << blockIndex << ")" << std::endl;
-   // fieldAggPattern_[blockIndex]->print(std::cout);
- 
    // build FEI pattern
-   const std::vector<int> & fields = fieldAggPattern_[blockIndex]->fieldIds();
-   const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockIndex]->numFieldsPerId();
+   const std::vector<int> & fields = fieldAggPattern_[blockId]->fieldIds();
+   const std::vector<int> & numFieldsPerID = fieldAggPattern_[blockId]->numFieldsPerId();
 
    std::vector<int> reduceNumFieldsPerID;
    for(std::size_t i=0;i<numFieldsPerID.size();i++)
@@ -282,6 +289,7 @@ void DOFManager::buildPattern(int blockIndex,const RCP<FieldPattern> & geomPatte
 
    int idsPerSimplex  = reduceNumFieldsPerID.size();
 
+   std::size_t blockIndex = blockIdToIndex(blockId);
    patternNum_[blockIndex] 
          = matrixGraph_->definePattern(idsPerSimplex,nodeType_,&reduceNumFieldsPerID[0],&fields[0]);
 }
@@ -388,10 +396,17 @@ const Teuchos::RCP<Epetra_CrsGraph> DOFManager::buildOverlapGraph() const
    Teuchos::RCP<Epetra_Map> map = getOverlapMap();
    Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*map,0));
 
+   std::vector<std::string> elementBlockIds;
+   connMngr_->getElementBlockIds(elementBlockIds);
+
    // graph information about the mesh
-   for(int blockIndex=0;blockIndex<connMngr_->numElementBlocks();blockIndex++) {
+   std::vector<std::string>::const_iterator blockItr;
+   for(blockItr=elementBlockIds.begin();blockItr!=elementBlockIds.end();++blockItr) {
+      std::string blockId = *blockItr;
+      std::size_t blockIndex = blockIdToIndex(blockId);
+
       // grab elements for this block
-      const std::vector<int> & elements = connMngr_->getElementBlock(blockIndex);
+      const std::vector<int> & elements = connMngr_->getElementBlock(blockId);
 
       // get information about number of indicies
       int rowDOF=-1, colDOF=-1;
@@ -426,13 +441,14 @@ const Teuchos::RCP<Epetra_CrsGraph> DOFManager::buildOverlapGraph() const
 void DOFManager::getElementGIDs(int localElmtId,std::vector<int> & gids) const
 {
    // get information about number of indicies
-   int blockId = connMngr_->getBlockId(localElmtId);
-   int dof = matrixGraph_->getConnectivityNumIndices(blockId);
+   std::string blockId = connMngr_->getBlockId(localElmtId);
+   std::size_t blockIndex = blockIdToIndex(blockId);
+   int dof = matrixGraph_->getConnectivityNumIndices(blockIndex);
    std::vector<int> indices(dof);
 
    // get elements indices
    int localSize = -1;
-   matrixGraph_->getConnectivityIndices(blockId,localElmtId,dof,&indices[0],localSize);
+   matrixGraph_->getConnectivityIndices(blockIndex,localElmtId,dof,&indices[0],localSize);
 
    // copy the indices
    gids = indices;
@@ -442,7 +458,7 @@ void DOFManager::printFieldInformation(std::ostream & os) const
 {
    os << "DOFManager Field Information: " << std::endl;
    
-   std::map<int,Teuchos::RCP<FieldAggPattern> >::const_iterator iter;
+   std::map<std::string,Teuchos::RCP<FieldAggPattern> >::const_iterator iter;
    for(iter=fieldAggPattern_.begin();iter!=fieldAggPattern_.end();++iter) {
       os << "Element Block = " << iter->first << std::endl; 
       iter->second->print(os);
@@ -456,9 +472,9 @@ void DOFManager::printFieldInformation(std::ostream & os) const
    }
 }
 
-Teuchos::RCP<const FieldPattern> DOFManager::getFieldPattern(int blockId, int fieldNum) const
+Teuchos::RCP<const FieldPattern> DOFManager::getFieldPattern(const std::string & blockId, int fieldNum) const
 {
-   std::map<std::pair<int,int>,Teuchos::RCP<const FieldPattern> >::const_iterator itr;
+   std::map<std::pair<std::string,int>,Teuchos::RCP<const FieldPattern> >::const_iterator itr;
    itr = fieldIntToPattern_.find(std::make_pair(blockId,fieldNum));
 
    if(itr==fieldIntToPattern_.end()) {
@@ -467,6 +483,23 @@ Teuchos::RCP<const FieldPattern> DOFManager::getFieldPattern(int blockId, int fi
    }
 
    return itr->second;
+}
+
+std::size_t DOFManager::blockIdToIndex(const std::string & blockId) const
+{
+   // use lazy evaluation to build block indices
+   if(blockIdToIndex_==Teuchos::null) {
+
+      std::vector<std::string> elementBlockIds;
+      connMngr_->getElementBlockIds(elementBlockIds);
+
+      // build ID to Index map
+      blockIdToIndex_ = Teuchos::rcp(new std::map<std::string,std::size_t>);
+      for(std::size_t i=0;i<elementBlockIds.size();i++)
+         (*blockIdToIndex_)[elementBlockIds[i]] = i;
+   }
+ 
+   return (*blockIdToIndex_)[blockId];
 }
 
 }
