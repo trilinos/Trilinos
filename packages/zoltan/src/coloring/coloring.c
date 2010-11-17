@@ -182,13 +182,16 @@ int Zoltan_Color(
   int *partialD2 = NULL;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
   ZG graph;
 
+  memset (&graph, 0, sizeof(ZG));
+  memset(&hash, 0 , sizeof(G2LHash)); /* To allow a correct free */
+
 #ifdef _DEBUG_TIMES    
   MPI_Barrier(zz->Communicator);
   times[0] = Zoltan_Time(zz->Timer);
 #endif
 
   if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)) {    /* TODO64 */
-    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Zoltan_Color is not ready for ints of more than one size");
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "\nZoltan_Color can not handle ints of more than one size");
   }
   
   /* PARAMETER SETTINGS */
@@ -257,7 +260,6 @@ int Zoltan_Color(
   zz->Num_GID = gcomm[0];
   zz->Num_LID = gcomm[1];
 
-  memset(&hash, 0 , sizeof(G2LHash)); /* To allow a correct free */
 
   if (num_gid_entries != zz->Num_GID)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "num_gid_entries is not consistent with the queries.");
