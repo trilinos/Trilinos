@@ -2,49 +2,82 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_ParameterList.hpp>
 
-#include "Panzer_BoundaryCondition.hpp"
+#include "Panzer_BC.hpp"
 #include <iostream>
 #include <sstream>
+#include <map>
 
 namespace panzer {
 
-
-  TEUCHOS_UNIT_TEST(bc, dirichlet_constant)
+  TEUCHOS_UNIT_TEST(bc, neumann_no_param_list)
   {
-    panzer::BCType dirichlet = BCT_Dirichlet;
+
+    std::size_t bc_id = 0;
     panzer::BCType neumann = BCT_Dirichlet;
-
-    int bc_id = 0;
-    int sideset_id = 4;
-    int element_block_id = 7;
+    std::string sideset_id = "4";
+    std::string element_block_id = "fluid";
     std::string dof_name = "UX";
+    std::string strategy = "Constant";
     double value = 5.0;
-    panzer::BoundaryCondition bc(bc_id, dirichlet, sideset_id, 
-				 element_block_id, dof_name, value);
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		  strategy, p);
 
-    TEST_ASSERT(bc.bcID() == bc_id);
-    TEST_ASSERT(bc.bcType() == dirichlet);
-    TEST_ASSERT(bc.sidesetID() == sideset_id);
-    TEST_ASSERT(bc.elementBlockID() == element_block_id);
-    TEST_ASSERT(bc.equationSetName() == dof_name);
-    TEST_ASSERT(bc.constantValue() == value);
+    TEST_EQUALITY(bc.bcID(), bc_id);
+    TEST_EQUALITY(bc.bcType(), neumann);
+    TEST_EQUALITY(bc.sidesetID(), sideset_id);
+    TEST_EQUALITY(bc.elementBlockID(), element_block_id);
+    TEST_EQUALITY(bc.equationSetName(), dof_name);
 
-    TEST_ASSERT(bc.isConstant());
-    TEST_ASSERT(!bc.isStrategy());
-    TEST_ASSERT(!bc.isMethodFunction());
-
-    
     std::stringstream s;
-    bc.print(s);
-
-    std::string compare = "  BoundaryCondition ID =0\n  Type = Dirichlet\n  Side Set ID = 4\n  Element Block ID =7\n  Function Type = Constant\n  Variable Name = UX\n  Value = 5\n";
-
-    std::cout << s.str() << std::endl;
-    std::cout << compare << std::endl;
-
-    //TEST_ASSERT(s.str() == compare);
-
+    s << bc << std::endl;
   }
 
+  TEUCHOS_UNIT_TEST(bc, dirichlet_with_param_list)
+  {
+    std::size_t bc_id = 0;
+    panzer::BCType dirichlet = BCT_Dirichlet;
+    std::string sideset_id = "4";
+    std::string element_block_id = "fluid";
+    std::string dof_name = "UX";
+    std::string strategy = "Constant";
+    double value = 5.0;
+    Teuchos::ParameterList p;
+    p.set("Value",value);
+    panzer::BC bc(bc_id, dirichlet, sideset_id, element_block_id, dof_name, 
+		  strategy, p);
+
+    TEST_EQUALITY(bc.bcID(), bc_id);
+    TEST_EQUALITY(bc.bcType(), dirichlet);
+    TEST_EQUALITY(bc.sidesetID(), sideset_id);
+    TEST_EQUALITY(bc.elementBlockID(), element_block_id);
+    TEST_EQUALITY(bc.equationSetName(), dof_name);
+
+    std::stringstream s;
+    s << bc << std::endl;
+  }
+
+  TEUCHOS_UNIT_TEST(bc, map_comparitor)
+  {
+    using panzer::BC;
+
+    BC bc1(0,BCT_Dirichlet,"3","fluid","VELOCITY","Constant");
+    BC bc2(1,BCT_Dirichlet,"3","fluid","VELOCITY","Constant");
+    BC bc3(2,BCT_Dirichlet,"3","fluid","VELOCITY","Constant");
+
+    std::map<BC,int,panzer::LessBC> my_bcs;
+
+    my_bcs[bc1] = 8;
+    my_bcs[bc2] = 2;
+    my_bcs[bc3] = 11;
+
+    TEST_EQUALITY(my_bcs[bc1], 8);
+    TEST_EQUALITY(my_bcs[bc2], 2);
+    TEST_EQUALITY(my_bcs[bc3], 11);
+
+    TEST_INEQUALITY(my_bcs[bc3], 4);    
+  }
 }

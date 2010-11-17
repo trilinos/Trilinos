@@ -28,7 +28,7 @@ APPEND_SET(HEADERS
   Panzer_Basis.hpp
   Panzer_BasisValues.hpp
   Panzer_BasisValuesT.hpp
-  Panzer_BoundaryCondition.hpp
+  Panzer_BC.hpp
   Panzer_CellData.hpp
   Panzer_ConfigDefs.hpp
   Panzer_Dimension.hpp
@@ -51,7 +51,7 @@ APPEND_SET(HEADERS
 
 APPEND_SET(SOURCES
   Panzer_Basis.cpp
-  Panzer_BoundaryCondition.cpp
+  Panzer_BC.cpp
   Panzer_Dimension.cpp
   Panzer_InputPhysicsBlock.cpp
   Panzer_IntegrationRule.cpp
