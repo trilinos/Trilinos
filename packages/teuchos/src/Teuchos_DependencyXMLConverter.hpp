@@ -57,8 +57,10 @@ public:
   /** \brief Converts a given XMLObject to a Dependency.
    *
    * @param xmlObj The XMLObject to convert to a Dependency.
-   * @param rootParameterList The root parameter list of dependency sheet
-   * in which this resulting dependency will be inserted.
+   * @param entryIDsMap A map containing ParameterEntrys and their
+   * associated IDs.
+   * @param validtorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    * @return The converted Dependency.
    */
   RCP<Dependency> fromXMLtoDependency(
@@ -73,6 +75,10 @@ public:
    * in which this resulting dependency will be inserted.
    * @param dependees The dependees of the dependency.
    * @param dependents The dependents of the dependency.
+   * @param entryIDsMap A map containing ParameterEntrys and their
+   * associated IDs.
+   * @param validtorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    * @return The converted Dependency.
    */
   virtual RCP<Dependency> convertXML(
@@ -85,6 +91,10 @@ public:
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param dependency The Dependency to be converted to XML.
+   * @param entryIDsMap A map containing ParameterEntrys and their
+   * associated IDs.
+   * @param validtorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    * @return An XML representation of the given Dependency.
    */
   XMLObject fromDependencytoXML(
@@ -96,6 +106,12 @@ public:
    * specific to a particlar Dependency.
    *
    * @param dependency The validator to be converted.
+   * @param xmlObj The XMLObject on which all child tags should be appended
+   * and attributes added.
+   * @param entryIDsMap A map containing ParameterEntrys and their
+   * associated IDs.
+   * @param validtorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    * @return An XML representation of the given Dependency.
    */
   virtual void convertDependency(

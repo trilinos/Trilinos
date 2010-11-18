@@ -57,6 +57,8 @@ public:
   /** \brief Converts a given XMLObject to a Condition.
    *
    * @param xmlObj The XMLObject to convert to a Condition.
+   * @param entryIDsMap A map containing ParameterEntrys and their assocaited
+   * 
    * @return The converted Condition.
    */
   RCP<Condition>
@@ -69,6 +71,8 @@ public:
    *
    * @param xmlObj The xml to be converted.
    * in which this resulting condition will be inserted.
+   * @param entryIDsMap A map containing ParameterEntrys and their assocaited
+   *
    * @return The converted Condition.
    */
   virtual RCP<Condition> convertXML(
@@ -78,6 +82,8 @@ public:
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param condition The Condition to be converted to XML.
+   * @param entryIDsMap A map containing ParameterEntrys and their assocaited
+   *
    * @return An XML representation of the given Condition.
    */
   XMLObject fromConditiontoXML(
@@ -87,7 +93,11 @@ public:
   /** \brief Preforms any and all special condition conversion that is
    * specific to a particlar Condition.
    *
-   * @param condition The validator to be converted.
+   * @param condition The Condition to be converted.
+   * @param xmlObj The xml representation of the condition on to which all
+   * children should be attached and attributes added.
+   * @param entryIDsMap A map containing ParameterEntrys and their assocaited
+   *
    * @return An XML representation of the given Condition.
    */
   virtual void convertCondition(
@@ -100,9 +110,7 @@ public:
   //! \name Attribute/Query Functions
   //@{
 
-  /**
-   * \brief Returns the string to be used for the type attribute.
-   */
+  /** \brief Returns the string to be used for the type attribute */
   static const std::string& getTypeAttributeName(){
     static const std::string typeAttributeName = "type";
     return typeAttributeName;

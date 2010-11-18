@@ -58,6 +58,8 @@ public:
   /** \brief Converts a given XMLObject to a ParameterEntryValidator.
    *
    * @param xmlObj The XMLObject to convert to a ParameterEntryValidator.
+   * @param validatorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    * @return The converted ParameterEntryValidator.
    */
   RCP<ParameterEntryValidator>
@@ -70,6 +72,8 @@ public:
    * particular ParameterEntryValidator.
    *
    * @param xmlObj The xml to be converted.
+   * @param validatorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    * @return The converted ParameterEntryValidator.
    */
   virtual RCP<ParameterEntryValidator> 
@@ -79,18 +83,25 @@ public:
   /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param validator The ParameterEntryValidator to be converted to XML.
+   * @param validatorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
+   * @param assignedID Whether or not the validator to be converted has been 
+   * assigned an ID and is therefore in the validatorIDsMap and should have a
+   * ID attribute.
    * @return An XML representation of the given ParameterEntryValidator.
    */
   XMLObject fromValidatortoXML(
     const RCP<const ParameterEntryValidator> validator,
     const ValidatortoIDMap& validatorIDsMap,
-    bool assigneID=true) const;
+    bool assignedID=true) const;
 
   /** \brief Preforms any and all special validator conversion that is
    * specific to a particlar ParameterEntryValidator
    *
    * @param validator The validator to be converted.
    * @param xmlObj The XMLObject to store all serialization in.
+   * @param validatorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    * being converted.
    */
   virtual void convertValidator(
@@ -105,7 +116,8 @@ public:
   //@{
 
   /**
-   * \brief Returns the a default dummy validator.
+   * \brief Returns dummy validator of the type the converter is designed to
+   * convert.
    *
    * @return A default dummy validator.
    */

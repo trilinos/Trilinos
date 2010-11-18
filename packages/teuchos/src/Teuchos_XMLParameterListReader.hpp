@@ -70,6 +70,7 @@ public:
   RCP<ParameterList> toParameterList(
     const XMLObject& xml, RCP<DependencySheet> depSheet) const;
 
+  /** Write the given XML object to a parameter list */
   ParameterList toParameterList(const XMLObject& xml) const;
 
 
@@ -98,7 +99,7 @@ private:
     ParameterEntryValidator::ValidatorID potentialNewID,
     const IDtoValidatorMap& currentMap) const;
 
-  /** \brief .. */
+  /** \brief . */
   void insertEntryIntoMap(
     const XMLObject& xmlObj,
     RCP<ParameterEntry> entryToInsert,

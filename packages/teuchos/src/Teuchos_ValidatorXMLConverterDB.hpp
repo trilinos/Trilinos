@@ -51,6 +51,8 @@ public:
   
   /** \brief Add a converter to the database.
    *
+   * \param validator A dummy validator representing the type of validator the
+   * converter is designed to convert.
    * \param convertToAdd The converter to add to the database.
    */
   static void addConverter(RCP<ParameterEntryValidator> validator,
@@ -81,17 +83,27 @@ public:
    * \brief Given a validator converts the
    * validator to XML.
    *
+   * \param validator The validator to be converter.
+   * \param validatorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
+   * \param assignedID Whether or not the validator to be converted has been 
+   * assigned an ID and is therefore in the validatorIDsMap and should have a
+   * ID attribute.
+   *
    * \return XML representation of the validator.
    */
   static XMLObject convertValidator(
     RCP<const ParameterEntryValidator> validator,
     const ValidatortoIDMap& validatorIDsMap,
-    bool assignID=true); 
+    bool assignedID=true); 
 
   /**
    * \brief Given an XMLObject converts the XMLObject 
    * to a ParameterEntryValidator and inserts the validator into the map.
    *
+   * \param xmlObject The XMLObject representing the validator to be converted.
+   * \param validatorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    * \return A ParameterEntryValidator that was represented by the XML.
    */
   static RCP<ParameterEntryValidator> 

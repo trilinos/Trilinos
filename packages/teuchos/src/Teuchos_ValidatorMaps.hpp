@@ -73,6 +73,7 @@ public:
   /** \brief Returns a const_reference to the end of the map. */
   const_iterator end() const;
 
+  /** \brief removes the specified validator from the map. */
   inline
   size_t erase(const ParameterEntryValidator::ValidatorID& x){
     return validatorMap.erase(x);

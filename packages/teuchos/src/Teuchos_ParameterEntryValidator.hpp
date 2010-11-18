@@ -55,7 +55,7 @@ public:
   /** \name Public types */
   //@{
   
-  /** \brief .. */
+  /** \brief . */
   typedef unsigned int ValidatorID;
   
   /** \brief . */

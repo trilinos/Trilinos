@@ -52,6 +52,8 @@ public:
   
   /** \brief Add a converter to the database.
    *
+   * \param A dummy dependency representing the type of dependency the converter
+   * will convert.
    * \param convertToAdd The converter to add to the database.
    */
   static void addConverter(Dependency& dependency,
@@ -82,6 +84,12 @@ public:
    * \brief Given a dependency converts the
    * dependency to XML.
    *
+   * \param dependency Dependency to Convert.
+   * \param entryIDsMap A map containing ParameterEntrys and their associated
+   * IDs.
+   * \param validatorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
+   *
    * \return XML representation of the dependency.
    */
   static XMLObject convertDependency(
@@ -92,6 +100,12 @@ public:
   /**
    * \brief Given an XMLObject converts the XMLObject 
    * to a Dependency.
+   *
+   * \param xmlObject The XMLObject to convert into a depdendency.
+   * \param entryIDsMap A map containing ParameterEntrys and their associated
+   * IDs.
+   * \param validatorIDsMap A map containing ParameterEntryValidators and their
+   * associated IDs.
    *
    * \return A Dependency that was represented by the XML.
    */

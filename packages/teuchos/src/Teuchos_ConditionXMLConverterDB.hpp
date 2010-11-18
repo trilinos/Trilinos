@@ -52,6 +52,8 @@ public:
   
   /** \brief Add a converter to the database.
    *
+   * \param condition A dummy condition representing the type of contidion
+   * this converter will convert.
    * \param convertToAdd The converter to add to the database.
    */
   static void addConverter(Condition& condition,
@@ -67,6 +69,8 @@ public:
    *
    * \param condition The Condition for which a converter is
    * desired.
+   *
+   * \return A converter for the condition.
    */
   static RCP<const ConditionXMLConverter> 
     getConverter(const Condition& condition);
@@ -74,6 +78,8 @@ public:
   /** \brief Get an appropriate ConditionXMLConverter given a XMLObject.
    *
    * @param xmlObject The XMLObject for which a converter is desired.
+   *
+   * @return A converter for the XMLObject.
    */
   static RCP<const ConditionXMLConverter> 
     getConverter(const XMLObject& xmlObject);
@@ -81,6 +87,10 @@ public:
   /**
    * \brief Given a condition and ConditiontoIDMap, converts the
    * condition to XML.
+   *
+   * \param The condition to convert.
+   * \param entryIDsMap A map containing ParameterEntrys and their associated
+   * IDs.
    *
    * \return XML representation of the condition.
    */
@@ -91,6 +101,10 @@ public:
   /**
    * \brief Given an XMLObject and IDtoConditionMap, converts the XMLObject 
    * to a ParameterEntryCondition and inserts the condition into the map.
+   *
+   * \param xmlObject The XMLObject to be converted.
+   * \param entryIDsMap A map containing ParameterEntrys and their associated
+   * IDs.
    *
    * \return A ParameterEntryCondition that was represented by the XML.
    */

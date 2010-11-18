@@ -171,6 +171,7 @@ public:
    *
    * @param xmlObj The xml object from which the ParameterCondition 
    * is being derived.
+   * @param parameterEntry The ParameterEntry the ParameterCondition evaluates.
    * @param whenParamEqualsValue The whenParamEqualsValue for the 
    * ParameterCondition to be created
    */
@@ -212,11 +213,13 @@ private:
   /** \name Private Members */
   //@{
  
+  /** \brief gets the ParameterEntryID attribute name. */
   static const std::string& getParameterEntryIDAttributeName(){
     static const std::string parameterEntryIDAttributeName = "parameterID";
     return parameterEntryIDAttributeName;
   }
 
+  /** \brief gets the WhenParamEqualsValue attribute name. */
   static const std::string& getWhenParamEqualsValueAttributeName(){
     static const std::string whenParamEqualsValueAttributeName = 
       "whenParamEqualsValue";
@@ -250,16 +253,20 @@ public:
   //@}
 
 private:
+
+  /** \brief . */
   static const std::string& getValuesTagName(){
     static const std::string valuesTagName = "Values";
     return valuesTagName;
   }
 
+  /** \brief . */
   static const std::string& getStringTagName(){
     static const std::string stringTagName = "String";
     return stringTagName;
   }
 
+  /** \brief . */
   static const std::string& getStringValueAttributeName(){
     static const std::string stringValueAttributeName = "value";
     return stringValueAttributeName;
@@ -286,10 +293,8 @@ public:
   /** \brief . */
   void addSpecificXMLTraits(
     RCP<const ParameterCondition> condition, XMLObject& xmlObj) const;
-  //@}
 
-  /** \name Overridden from ConditionXMLConverter */
-  //@{
+  //@}
 
 };
 

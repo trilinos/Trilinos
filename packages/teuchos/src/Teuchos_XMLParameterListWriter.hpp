@@ -55,7 +55,7 @@ public:
   /** \name Public Types */
   //@{
 
-  /** \breif . */
+  /** \brief . */
   typedef std::map<RCP<const ParameterEntry>,
     ParameterEntry::ParameterEntryID, RCPConstComp> EntryIDsMap;
   
@@ -72,24 +72,25 @@ public:
     const ParameterList& p, 
     RCP<const DependencySheet> depSheet = null) const;
 
-  /** \brief */
+  /** \brief . */
   static const std::string& getParameterListTagName(){
     static const std::string parameterListTagName = "ParameterList";
     return parameterListTagName;
   }
 
-  /** \brief */
+  /** \brief . */
   static const std::string& getNameAttributeName(){
     static const std::string nameAttributeName = "name";
     return nameAttributeName;
   } 
 
-  /** \brief */
+  /** \brief . */
   static const std::string& getValidatorsTagName(){
     static const std::string validatorsTagName = "Validators";
     return validatorsTagName;
   }
 
+  /** \brief . */
   static const std::string& getDependenciesTagName(){
     static const std::string dependenciesTagName = "Dependencies";
     return dependenciesTagName;

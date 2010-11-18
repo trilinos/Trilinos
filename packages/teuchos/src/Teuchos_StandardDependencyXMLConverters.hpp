@@ -57,6 +57,8 @@ public:
    * @param dependency The dependency being converted.
    * @param xmlObj The XMLObject to which the dependency is
    * being converted.
+   * @param entryIDsMap A map containing ParameterEntrys and their associated
+   * IDs.
    * @return An XMLObject representing the VisualDependency.
    */
   virtual void convertSpecialVisualAttributes(
@@ -71,6 +73,8 @@ public:
    * @param dependees The dependees of the visual dependency.
    * @param dependents The dependents of the visua dependency.
    * @param showIf The showIf attribute of the visual dependency.
+   * @param entryIDsMap A map containing ParameterEntrys and their associated
+   * IDs.
    * @return The converted VisualDependency.
    */
   virtual RCP<VisualDependency> convertSpecialVisualAttributes(
@@ -107,6 +111,7 @@ private:
   /** \name Private Members */
   //@{
   
+  /** \brief Gets the name of the showif attribute */
   static const std::string& getShowIfAttributeName(){
     static const std::string showIfAttributeName = "showIf";
     return showIfAttributeName;
@@ -131,6 +136,8 @@ public:
    * @param dependency The dependency being converted.
    * @param xmlObj The XMLObject to which the dependency is
    * being converted.
+   * @param validatorIDsMap A map containing validators and their associated
+   * IDs.
    * @return An XMLObject representing the ValidatorDepenency.
    */
   virtual void convertSpecialValidatorAttributes(
@@ -144,6 +151,8 @@ public:
    * @param xmlObj The xml being converted.
    * @param dependee The dependees of the validator dependency.
    * @param dependents The dependents of the validator dependency.
+   * @param validatorIDsMap A map containing validators and their associated
+   * IDs.
    * @return The converted ValidatorDependency.
    */
   virtual RCP<ValidatorDependency> convertSpecialValidatorAttributes(
@@ -198,12 +207,13 @@ public:
     const Dependency::ParameterEntryList dependets,
     bool showIf,
     const XMLParameterListReader::EntryIDsMap& entryIDsMap) const;
-  
+
+  /** \brief Gets the StringValues Tag */
   static const std::string& getStringValuesTagName(){
     static const std::string stringValuesTagName = "StringValues";
     return stringValuesTagName;
   }
-
+  
   //@}
 
 private:
@@ -211,11 +221,13 @@ private:
   /** \name Private Members */
   //@{
   
+  /** \brief Gets the String Tag */
   static const std::string& getStringTagName(){
     static const std::string stringTagName = "string";
     return stringTagName;
   }
 
+  /** \brief Gets the Value attribute name */
   static const std::string& getValueAttributeName(){
     static const std::string valueAttributeName = "value";
     return valueAttributeName;
