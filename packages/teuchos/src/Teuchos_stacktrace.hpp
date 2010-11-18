@@ -36,21 +36,47 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "Teuchos_ConfigDefs.hpp"
 
+
+/*! \defgroup TeuchosStackTrace_grp Utility code for generating stacktraces.
+ *
+ * \ingroup teuchos_language_support_grp
+ */
+
 namespace Teuchos {
 
-/** Stores the current stacktrace into an internal global variable */
+
+/** Stores the current stacktrace into an internal global variable.
+ *
+ * \ingroup TeuchosStackTrace_grp
+ */
 void store_stacktrace();
 
-/** Returns the last stored stacktrace as a string */
+/** Returns the last stored stacktrace as a string.
+ *
+ * \ingroup TeuchosStackTrace_grp
+ */
 std::string get_stored_stacktrace();
 
-/** Returns the current stacktrace as a string */
+/** Returns the current stacktrace as a string.
+ *
+ * \param impl_stacktrace_depth [in] The stacktrace depth to remove from the
+ * stacktrace printout to avoid showing users implementation functions in the
+ * stacktrace.
+ *
+ * \ingroup TeuchosStackTrace_grp
+ */
 std::string get_stacktrace(int impl_stacktrace_depth=0);
 
-/** Prints the current stacktrace to stdout */
+/** Prints the current stacktrace to stdout.
+ *
+ * \ingroup TeuchosStackTrace_grp
+ */
 void show_stacktrace();
 
-/** Prints the current stacktrace to stdout on segfault */
+/** Prints the current stacktrace to stdout on segfault.
+ *
+ * \ingroup TeuchosStackTrace_grp
+ */
 void print_stack_on_segfault();
 
 } // end namespace Teuchos

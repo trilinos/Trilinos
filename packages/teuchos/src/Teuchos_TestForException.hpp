@@ -39,19 +39,19 @@
 /*! \defgroup TestForException_grp Utility code for throwing exceptions and setting breakpoints. 
 \ingroup teuchos_language_support_grp
 */
-//@{
 
-/** \brief Increment the throw number. */
+/** \brief Increment the throw number.  \ingroup TestForException_grp */
 TEUCHOS_LIB_DLL_EXPORT void TestForException_incrThrowNumber();
 
-/** \brief Increment the throw number. */
+/** \brief Increment the throw number.  \ingroup TestForException_grp */
 TEUCHOS_LIB_DLL_EXPORT int TestForException_getThrowNumber();
 
-/** \brief The only purpose for this function is to set a breakpoint. */
+/** \brief The only purpose for this function is to set a breakpoint.
+    \ingroup TestForException_grp */
 TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
 
-/** \brief Set at runtime if stacktracing functionality is enabled when
- * exceptions are thrown. */
+/** \brief Set at runtime if stacktracing functionality is enabled when *
+    exceptions are thrown.  \ingroup TestForException_grp */
 void TestForException_setEnableStacktrace(bool enableStrackTrace);
 
 /** \brief Get at runtime if stacktracing functionality is enabled when
@@ -135,6 +135,13 @@ bool TestForException_getEnableStacktrace();
  * reguardless if the test fails and the exception is thrown or
  * not. Therefore, it is safe to call a function with side-effects as the
  * <tt>throw_exception_test</tt> argument.
+ *
+ * NOTE: This macro will result in creating a stacktrace snapshot in some
+ * cases (see the main doc page for details) and will be printed automatically
+ * when main() uses TEUCHOS_STANDARD_CATCH_STATEMENTS() to catch uncaught
+ * excpetions.
+ *
+ * \ingroup TestForException_grp
  */
 #define TEST_FOR_EXCEPTION(throw_exception_test, Exception, msg) \
 { \
@@ -157,7 +164,8 @@ bool TestForException_getEnableStacktrace();
 }
 
 
-/** \brief Macro for throwing an exception from within a class method with breakpointing to ease debugging
+/** \brief Macro for throwing an exception from within a class method with
+ * breakpointing to ease debugging.
  *
  * \param throw_exception_test [in] Test for when to throw the exception.
  * This can and should be an expression that may mean something to the user.
@@ -177,19 +185,25 @@ bool TestForException_getEnableStacktrace();
  * \param tfecfFuncName [implicit] This is a variable in the current scope that is 
  * required to exist and assumed to contain the name of the current class method. 
  * 
- * \param this [implicit] This is the variable (*this), used for printing the typename
- * of the enclosing class.
- * 
- * The way that this macro is intended to be used is to call it from a member of
- * of a class. It is used similarly to TEST_FOR_EXCEPTION, except that it assumes that the 
- * (above) variables \c this and \tfecfFuncName exist and are properly defined. Example
- * usage is: 
- \verbatim 
+ * \param this [implicit] This is the variable (*this), used for printing the
+ * typename of the enclosing class.
+ *
+ * The way that this macro is intended to be used is to call it from a member
+ * of of a class. It is used similarly to TEST_FOR_EXCEPTION, except that it
+ * assumes that the (above) variables <tt>this</tt> and <tt>fecfFuncName</tt>
+ * exist and are properly defined. Example usage is:
+ 
+ \code
+
    std::string tfecfFuncName("someMethod");
-   TEST_FOR_EXCEPTION_CLASS_FUNC( test, std::runtime_error, ": can't call this method in that way.");
- \endverbtim
- * 
- * \related TEST_FOR_EXCEPTION
+    TEST_FOR_EXCEPTION_CLASS_FUNC( test, std::runtime_error,
+      ": can't call this method in that way.");
+
+ \endcode
+
+ * See <tt>TEST_FOR_EXCEPTION()</tt> for more details.
+ *
+ * \ingroup TestForException_grp
  */
 #define TEST_FOR_EXCEPTION_CLASS_FUNC(throw_exception_test, Exception, msg) \
 { \
@@ -202,6 +216,8 @@ bool TestForException_getEnableStacktrace();
  *
  * This macro is equivalent to the <tt>TEST_FOR_EXCEPTION()</tt> macro except
  * the file name, line number, and test condition are not printed.
+ *
+ * \ingroup TestForException_grp
  */
 #define TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test, Exception, msg) \
 { \
@@ -227,6 +243,8 @@ bool TestForException_getEnableStacktrace();
  * string.
  *
  * \note The exception thrown is <tt>std::logic_error</tt>.
+ *
+ * \ingroup TestForException_grp
  */
 #define TEST_FOR_EXCEPT(throw_exception_test) \
   TEST_FOR_EXCEPTION(throw_exception_test, std::logic_error, "Error!")
@@ -242,6 +260,10 @@ bool TestForException_getEnableStacktrace();
  * \param msg [in] The error message.
  *
  * \note The exception thrown is <tt>std::logic_error</tt>.
+ *
+ * See <tt>TEST_FOR_EXCEPTION()</tt> for more details.
+ *
+ * \ingroup TestForException_grp
  */
 #define TEST_FOR_EXCEPT_MSG(throw_exception_test, msg) \
   TEST_FOR_EXCEPTION(throw_exception_test, std::logic_error, msg)
@@ -258,6 +280,10 @@ bool TestForException_getEnableStacktrace();
  * \param out_ptr [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will
  * receive a printout of a line of output that gives the exception type and
  * the error message that is generated.
+ *
+ * See <tt>TEST_FOR_EXCEPTION()</tt> for more details.
+ *
+ * \ingroup TestForException_grp
  */
 #define TEST_FOR_EXCEPTION_PRINT(throw_exception_test, Exception, msg, out_ptr) \
 try { \
@@ -274,6 +300,7 @@ catch(const std::exception &except) { \
   throw; \
 }
 
+
 /** \brief This macro is the same as <tt>TEST_FOR_EXCEPT()</tt> except that the
  * exception will be caught, the message printed, and then rethrown.
  *
@@ -282,15 +309,22 @@ catch(const std::exception &except) { \
  * \param out_ptr [in] If <tt>out_ptr!=NULL</tt> then <tt>*out_ptr</tt> will
  * receive a printout of a line of output that gives the exception type and
  * the error message that is generated.
+ *
+ * See <tt>TEST_FOR_EXCEPTION()</tt> for more details.
+ *
+ * \ingroup TestForException_grp
  */
 #define TEST_FOR_EXCEPT_PRINT(throw_exception_test, out_ptr) \
   TEST_FOR_EXCEPTION_PRINT(throw_exception_test, std::logic_error, "Error!", out_ptr)
 
 
-/** \brief This macro intercepts an exception, prints a standardized message including
- * the current filename and line number, and then throws the exception up the stack.
+/** \brief This macro intercepts an exception, prints a standardized message
+ * including the current filename and line number, and then throws the
+ * exception up the stack.
  *
  * \param exc [in] the exception that has been caught
+ *
+ * \ingroup TestForException_grp
  */
 #define TEUCHOS_TRACE(exc)\
 { \
@@ -300,7 +334,5 @@ catch(const std::exception &except) { \
   throw std::runtime_error(omsg.str()); \
 }
 
-
-//@}
 
 #endif // TEUCHOS_TEST_FOR_EXCEPTION_H
