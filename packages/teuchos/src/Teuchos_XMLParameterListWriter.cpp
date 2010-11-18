@@ -122,7 +122,7 @@ XMLObject XMLParameterListWriter::convertParameterList(
         entryIDsMap,
         validatorIDsMap);
       newPL.addAttribute(
-        getNameAttributeName(), getValue<ParameterList>(*entry).name());
+        getNameAttributeName(), p.name(i));
       newPL.addAttribute(
         ParameterEntryXMLConverter::getIdAttributeName(), idCounter);
       entryIDsMap.insert(EntryIDsMap::value_type(entry, idCounter));
