@@ -267,7 +267,7 @@ int main(int argc, char *argv[])
   RCP< OutputManager<ScalarType> > printer = 
     rcp( new BasicOutputManager<ScalarType>( verbosity ) );
 
-  printer->stream(Debug) << Anasazi_Version() << endl << endl;
+  printer->stream(Debug) << Anasazi_Version() << endl;
 
   //  Problem information
   int space_dim = 1;
@@ -329,50 +329,50 @@ int main(int argc, char *argv[])
     pls.set<int>("Num Blocks",3);
     pls.set<int>("Step Size", 2);
     pls.set<int>("Number of Ritz Vectors",nev);
-    printer->stream(Warnings) << "Testing solver(nev,3) with standard eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev,3) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",3);
-    printer->stream(Warnings) << "Testing solver(nev,3) with generalized eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev,3) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",4);
-    printer->stream(Warnings) << "Testing solver(nev,4) with standard eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev,4) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",4);
-    printer->stream(Warnings) << "Testing solver(nev,4) with generalized eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev,4) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Num Blocks",3);
-    printer->stream(Warnings) << "Testing solver(2*nev,3) with standard eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(2*nev,3) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",3);
-    printer->stream(Warnings) << "Testing solver(2*nev,3) with generalized eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(2*nev,3) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Num Blocks",4);
-    printer->stream(Warnings) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",4);
-    printer->stream(Warnings) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Num Blocks",3);
-    printer->stream(Warnings) << "Testing solver(nev/2,3) with standard eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,3) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",3);
-    printer->stream(Warnings) << "Testing solver(nev/2,3) with generalized eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,3) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Num Blocks",4);
-    printer->stream(Warnings) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     pls.set<int>("Num Blocks",4);
-    printer->stream(Warnings) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl << endl;
+    printer->stream(Warnings) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with an invalid blocksize
