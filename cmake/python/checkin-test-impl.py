@@ -16,27 +16,27 @@ with a (minimal) summary of the builds and tests run with results.
 
 
 Quickstart:
------------trivial
+-----------
 
 In order to do a solid checkin, perform the following recommended workflow
 (different variations on this workflow are described below):
 
 1) Commit changes in the lcoal repo:
 
-  # 1.a) See what files are changed, added new, etc. that need to be committed
+  # 1.a) See what files are changed, newly added, etc. that need to be committed
   # or stashed.
   $ eg status
 
-  # 1.b) Stash the files you don't want to test/push (optional)
-  $ eg stash
-
-  # 1.c) Stage the files you want to commit (optional)
+  # 1.b) Stage the files you want to commit (optional)
   $ eg stage <files you want to commit>
 
-  # 1.d) Create your local commits
+  # 1.c) Create your local commits
   $ eg commit -- SOMETHING
   $ eg commit -- SOMETHING_ELSE
   ...
+
+  # 1.d) Stash whatever changes are left you don't want to test/push (optional)
+  $ eg stash
 
   NOTE: You can group your commits any way that you would like (see the basic
   eg/git documentation).
@@ -57,9 +57,9 @@ In order to do a solid checkin, perform the following recommended workflow
 
   NOTE: If you see any files/directories that are listed as 'unknown' returned
   from 'eg local-stat', then you will need to do an 'eg add' to track them or
-  add them to the ignore list *before* you run the checkin-test.py script.
+  add them to an ignore list *before* you run the checkin-test.py script.
   The eg script will not allow you to push if there are new 'unknown' files or
-  uncommitted changes.
+  uncommitted changes to tracked files.
 
 3) Set up the checkin base build directory (first time only):
 
@@ -79,7 +79,7 @@ In order to do a solid checkin, perform the following recommended workflow
 
   NOTE: You can set up a CHECKIN directory of any name in any location you
   want.  If you create one outside of the main Trilinos source dir, then you
-  will not have to add the git exclude.
+  will not have to add the git exclude shown above.
 
 4) Do the checkin build, test, and push:
 
@@ -101,7 +101,7 @@ In order to do a solid checkin, perform the following recommended workflow
   is performed which will get all of the branches from 'origin'.  This means
   that your current branch must be a tracking branch so that it will get
   updated correctly.  The branch 'master' is the most common branch but
-  release tracking branches also common.
+  release tracking branches are also common.
 
   NOTE: You must not have any uncommitted changes or the 'eg pull && eg rebase
   --against origin' command will fail on the final pull/rebase before the push
@@ -115,14 +115,14 @@ In order to do a solid checkin, perform the following recommended workflow
 
   NOTE: You can do the final push in a second invocation of the script with a
   follow-up run with --push and removing --do-all (it will remember the
-  results from the build/test cases just run).  For more details, see detailed
+  results from the build/test cases just ran).  For more details, see detailed
   documentation below.
 
   NOTE: Once you start running the checkin-test.py script, you can go off and
   do something else and just check your email to see if all the builds and
   tests passed and if the push happened or not.
 
-For more details on using this script, see below.
+For more details on using this script, see the detailed documentation below.
 
 
 Detailed Documentation:
@@ -224,7 +224,7 @@ The most basic way to do the checkin test is:
 
 If your MPI installation, other compilers, and standard TPLs (i.e. BLAS and
 LAPACK) can be found automatically, then this is all you will need to do.
-However, if the setup can not be determined automatically, then you can add a
+However, if the setup cannot be determined automatically, then you can add a
 set of CMake variables that will get read in the files:
 
   COMMON.config
@@ -236,7 +236,7 @@ automatically be written out with typical CMake cache variables (commented
 out) that you would need to set out.  Any CMake cache variables listed in
 these files will be read into and passed on the configure line to 'cmake'.
 
-WARNING: Please do not add any CMake case variables than what are needed to
+WARNING: Please do not add any CMake cache variables than what are needed to
 get the MPI_DEBUG and SERIAL_RELEASE builds to work.  Adding other
 enables/disables will make the builds non-standard and break the Primary
 Stable build.  The goal of these configuration files is to allow you to
@@ -260,7 +260,7 @@ NOTE: Before running this script, you should first do an 'eg status' and 'eg
 diff --name-status origin..' and examine what files are changed to make sure
 you want to commit what you have in your local working directory.  Also,
 please look out for unknown files that you may need to add to the git
-repository with 'eg add' or add to your ignores list.  There can not be any
+repository with 'eg add' or add to your ignores list.  There cannot be any
 uncommitted changes in the local repo before running this script.
 
 NOTE: You don't need to run this script if you have not changed any files that
@@ -348,7 +348,7 @@ Common Use Cases (examples):
   do so.
 
   NOTE: Using these options is greatly preferred to not running this script at
-  all and should not be any more expensive than what testing you already do.
+  all and should not be any more expensive than the testing you already do.
 
 (*) Test changes locally without pulling updates:
 
@@ -399,11 +399,11 @@ Common Use Cases (examples):
 (*) Performing a remote test/push:
 
   If you develop on a slow machine like your laptop, doing an appropriate
-  level of testing may take a long time.  In this case, you can pull the
-  changes to another faster remote workstation machine and do a more complete
+  level of testing can take a long time.  In this case, you can pull the
+  changes to another faster remote workstation and do a more complete
   set of tests and push from there.
 
-  On your slow local development machine mymachine, do the limited testing
+  On your slow local development machine 'mymachine', do the limited testing
   with:
 
     ../checkin-test.py --do-all --no-enable-fwd-packages
@@ -432,7 +432,7 @@ Common Use Cases (examples):
 
   NOTE: Git will resolve the duplicated commits when you pull the commits
   pushed from the remote machine.  Git knows that the commits are the same and
-  will do the right thing (almost always anyway).
+  will do the right thing.
   
 (*) Check commit readiness status:
 
@@ -468,7 +468,7 @@ complement.  If the action command appears, then the action will be performed.
 b) Aggregate action commands such as --do-all and --local-do-all turn on sets
 of other action commands and are shown with [AGGR ACTION] in their
 documentation.  The sub-actions that these aggregate action commands turn on
-can not be disabled with other arguments.
+and cannot be disabled with other arguments.
 
 c) Other arguments are those that are not [ACTION] or [AGGR ACTION] arguments
 and tend to either pass in data and turn control flags on or off.
