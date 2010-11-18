@@ -349,8 +349,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
                         errstr );
 
     // Create convenience variables for zero, one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    const ScalarType one = SCT::one();
+    const MagnitudeType zero = MagnitudeType::zero();
 
     // Set up y and v for the first Lanczos vector v_1.
     // y  =  beta1_ P' v1,  where  P = C**(-1).
@@ -373,18 +373,18 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     beta1_ = Teuchos::SerialDenseMatrix<int,ScalarType>( 1, 1 );
     MVT::MvTransMv( one, *rhsMV, *Y_, beta1_ );
 
-    TEST_FOR_EXCEPTION( Teuchos::ScalarTraits<ScalarType>::magnitude(beta1_(0,0)) < zero,
+    TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < zero,
                         std::invalid_argument,
                         "The preconditioner is not positive definite." );
 
-    if( Teuchos::ScalarTraits<ScalarType>::magnitude(beta1_(0,0)) == zero )
+    if( SCT::magnitude(beta1_(0,0)) == zero )
     {
         // X = 0
         Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
         MVT::MvInit( *cur_soln_vec, zero );
     }
 
-    beta1_(0,0) = Teuchos::ScalarTraits<ScalarType>::squareroot( beta1_(0,0) );
+    beta1_(0,0) = SCT::squareroot( beta1_(0,0) );
 
     // The solver is initialized
     initialized_ = true;
@@ -404,8 +404,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     }
 
     // Create convenience variables for zero and one.
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    const ScalarType one = SCT::one();
+    const MagnitudeType zero = MagnitudeType::zero();
 
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
@@ -490,7 +490,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) <= zero,
                           MinresIterateFailure,
                           "Belos::MinresIter::iterate(): non-positive value for r2^H*M*r2 encountered!" );
-      beta(0,0) = Teuchos::ScalarTraits<ScalarType>::squareroot( beta(0,0) );
+      beta(0,0) = SCT::squareroot( beta(0,0) );
 
       // Apply previous rotation Q_{k-1} to get
       //
@@ -541,10 +541,10 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
                                                ScalarType *c, ScalarType *s, ScalarType *r
                                              )
   {
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
-    const MagnitudeType absA = Teuchos::ScalarTraits<ScalarType>::magnitude( a );
-    const MagnitudeType absB = Teuchos::ScalarTraits<ScalarType>::magnitude( b );
+    const ScalarType one = SCT::one();
+    const MagnitudeType zero = MagnitudeType::zero();
+    const MagnitudeType absA = SCT::magnitude( a );
+    const MagnitudeType absB = SCT::magnitude( b );
     if ( absB == zero ) {
         *s = zero;
         *r = absA;
@@ -559,17 +559,17 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     } else if ( absB >= absA ) { // && a!=0 && b!=0
         ScalarType tau = a / b;
         if ( b < zero )
-            *s = -one / Teuchos::ScalarTraits<ScalarType>::squareroot( 1+tau*tau );
+            *s = -one / SCT::squareroot( 1+tau*tau );
         else
-            *s =  one / Teuchos::ScalarTraits<ScalarType>::squareroot( 1+tau*tau );
+            *s =  one / SCT::squareroot( 1+tau*tau );
         *c = *s * tau;
         *r = b / *s;
     } else { // (absA > absB) && a!=0 && b!=0
         ScalarType tau = b / a;
         if ( a < zero )
-            *c = -one / Teuchos::ScalarTraits<ScalarType>::squareroot( 1+tau*tau );
+            *c = -one / SCT::squareroot( 1+tau*tau );
         else
-            *c =  one / Teuchos::ScalarTraits<ScalarType>::squareroot( 1+tau*tau );
+            *c =  one / SCT::squareroot( 1+tau*tau );
         *s = *c * tau;
         *r = a / *c;
     }
