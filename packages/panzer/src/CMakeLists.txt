@@ -32,6 +32,14 @@ APPEND_SET(HEADERS
   Panzer_CellData.hpp
   Panzer_ConfigDefs.hpp
   Panzer_Dimension.hpp
+  Panzer_EquationSet.hpp
+  Panzer_EquationSet_Base.hpp
+  Panzer_EquationSet_DefaultImpl.hpp
+  Panzer_EquationSet_DefaultImplT.hpp
+  Panzer_EquationSet_Factory.hpp
+  Panzer_EquationSet_Factory_Defines.hpp
+  Panzer_EquationSet_TemplateManager.hpp
+  Panzer_ExplicitTemplateInstantiation.hpp
   Panzer_InputPhysicsBlock.hpp
   Panzer_IntegrationRule.hpp
   Panzer_IntegrationValues.hpp
@@ -53,6 +61,7 @@ APPEND_SET(SOURCES
   Panzer_Basis.cpp
   Panzer_BC.cpp
   Panzer_Dimension.cpp
+  Panzer_EquationSet_DefaultImpl.cpp
   Panzer_InputPhysicsBlock.cpp
   Panzer_IntegrationRule.cpp
   Panzer_Version.cpp

@@ -50,16 +50,10 @@ namespace panzer {
     // Create the data types for each evaluation type
     
     // Residual (default scalar type is RealType)
-    typedef Sacado::mpl::vector< RealType, 
-				 VectorT<RealType>,
-				 TensorT<RealType> 
-    > ResidualDataTypes;
+    typedef Sacado::mpl::vector< RealType > ResidualDataTypes;
   
     // Jacobian (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType,
-				 VectorT<FadType>,
-				 TensorT<FadType> 
-    > JacobianDataTypes;
+    typedef Sacado::mpl::vector< FadType > JacobianDataTypes;
 
     // Maps the key EvalType a vector of DataTypes
     typedef boost::mpl::map<
@@ -108,27 +102,7 @@ namespace PHX {
   template<> struct TypeString<double> 
   { static const std::string value; };
 
-  template<> struct TypeString< VectorT<double> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< TensorT<double> > 
-  { static const std::string value; };
-
   template<> struct TypeString< Sacado::Fad::DFad<double> > 
-  { static const std::string value; };
-
-  template<> struct TypeString< VectorT<Sacado::Fad::DFad<double> > > 
-  { static const std::string value; };
-
-  template<> struct TypeString< TensorT<Sacado::Fad::DFad<double> > > 
-  { static const std::string value; };
-
-  // Extra declarations not used in field manager
-
-  template<> struct TypeString<Vector> 
-  { static const std::string value; };
-
-  template<> struct TypeString<Tensor> 
   { static const std::string value; };
 
 }
