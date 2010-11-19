@@ -170,7 +170,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
 
    Epetra_FEVector& operator=(const Epetra_FEVector& source);
 
- protected:
+ private:
   int inputValues(int numIDs,
                   const int* GIDs, const double* values,
                   bool suminto,
