@@ -91,8 +91,8 @@ int Zoltan_Distribute_Origin(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, 
   intptr_t answer = 0;
 
   part = (ZOLTAN_DIST_PART*) data;
-  Zoltan_Map_Find(part->zz, part->map, (void *)&edge_gno, (void**)&answer);
-  *part_y = (int)(intptr_t)answer;
+  Zoltan_Map_Find(part->zz, part->map, (char *)&edge_gno, &answer);
+  *part_y = (int)answer;
 
   return (*part_y);
 }
@@ -123,8 +123,8 @@ int Zoltan_Distribute_Partition(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gn
   intptr_t answer;
 
   part = (ZOLTAN_DIST_PART*) data;
-  Zoltan_Map_Find(part->zz, part->map, (void *)&edge_gno, (void**)&answer);
-  *part_y = (int)(intptr_t)answer;
+  Zoltan_Map_Find(part->zz, part->map, (char *)&edge_gno, &answer);
+  *part_y = (int)answer;
 
   return ((int)floor((double)*part_y/((double)part->nPart/(double)part->nProc)));
 }
@@ -148,7 +148,7 @@ void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, ZOLTAN_GNO_TYPE *yG
   }
 
   for (i = 0 ; i < size ; ++i ) {
-    Zoltan_Map_Add(dist->zz, dist->map, (void *)&yGNO[i], (void*)(intptr_t)part[i]);
+    Zoltan_Map_Add(dist->zz, dist->map, (char *)&yGNO[i], (intptr_t)part[i]);
   }
 
   dist->nProc = nProc;
@@ -247,7 +247,9 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   if ((outmat->mtx.nPins + outmat->mtx.nY >0) && (proclist == NULL || sendbuf == NULL)) MEMORY_ERROR;
 
-  wgtarray = (float*) ZOLTAN_MALLOC(outmat->mtx.nPins*outmat->mtx.pinwgtdim*sizeof(float));
+  wgtarray = (float*) ZOLTAN_MALLOC((outmat->mtx.nPins+outmat->mtx.nY)*outmat->mtx.pinwgtdim*sizeof(float));
+
+  if (outmat->mtx.nPins*outmat->mtx.pinwgtdim && !wgtarray) MEMORY_ERROR;
 
   if (outmat->mtx.nPins*outmat->mtx.pinwgtdim && !wgtarray) MEMORY_ERROR;
 
@@ -282,9 +284,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
         continue;
       sendbuf[cnt].GNO[0] = edge_gno;
       sendbuf[cnt].GNO[1] = -1;
-#ifdef HAVE_PURIFY
       memset(wgtarray+cnt*outmat->mtx.pinwgtdim, 0,outmat->mtx.pinwgtdim*sizeof(float));
-#endif
       cnt++;
     }
   }

@@ -210,7 +210,7 @@ int *actual_imp_to_part = NULL;          /* processor may not be included.  */
 int i, k, n;
 int left, right, start_offset;
 int *dummyPtr=NULL, *idx=NULL, *numGIDs=NULL;
-int dummyVal, idx_cnt, tmp_size;
+int idx_cnt, tmp_size;
 int destProcMap=-1;
 int numDestProcs;
 int nprocs = zz->Num_Proc;
@@ -232,6 +232,7 @@ int inBytes, outBytes, inCount, outCount;
 char *inBuf=NULL, *outBuf=NULL, *tmp;
 int msgtag, msgtag2;
 ZOLTAN_ID_PTR tmp_id;
+intptr_t dummyVal;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -416,7 +417,7 @@ ZOLTAN_ID_PTR tmp_id;
   }
 
   for (i=0; i < actual_num_exp; i++){
-     ierr = Zoltan_Map_Add(zz, destProcMap, (void *)(actual_exp_procs + i), &dummyVal);
+     ierr = Zoltan_Map_Add(zz, destProcMap, (char *)(actual_exp_procs + i), dummyVal);
      if (ierr != ZOLTAN_OK){
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to add proc to first map.");
        goto End;
@@ -456,17 +457,17 @@ ZOLTAN_ID_PTR tmp_id;
 
     for (i=0,n=0; i < actual_num_exp; i++){
 
-      ierr = Zoltan_Map_Find(zz, destProcMap, (void *)(actual_exp_procs + i), &dummyPtr);
+      ierr = Zoltan_Map_Find(zz, destProcMap, (char *)(actual_exp_procs + i), &dummyPtr);
       if (ierr != ZOLTAN_OK){
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to search for proc in second map.");
         goto End;
       }
       
-      if (dummyPtr){
-        (*dummyPtr)++;
+      if (dummyPtr != ZOLTAN_NOT_FOUND){
+        dummyPtr++;
       }
       else{
-        ierr = Zoltan_Map_Add(zz, destProcMap, (void *)(actual_exp_procs + i), numGIDs + n);
+        ierr = Zoltan_Map_Add(zz, destProcMap, (char *)(actual_exp_procs + i), (intptr_t)(numGIDs + n));
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to add proc to second map.");
           goto End;
@@ -511,14 +512,14 @@ ZOLTAN_ID_PTR tmp_id;
 
   if (!(zz->Migrate.Only_Proc_Changes)) {
 
-    ierr = Zoltan_Map_Find(zz, destProcMap, (void *)&rank, &dummyPtr);
+    ierr = Zoltan_Map_Find(zz, destProcMap, (char *)&rank, &dummyPtr);
 
     if (ierr != ZOLTAN_OK){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to search second map.");
       goto End;
     }
 
-    if (dummyPtr != NULL){
+    if (dummyPtr != ZOLTAN_NOT_FOUND) {
       /* 
        * send myself objects that are going to a different partition on my process 
        */
@@ -545,15 +546,15 @@ ZOLTAN_ID_PTR tmp_id;
 
     /* Compute the size of the data I'll send to the right */
 
-    ierr = Zoltan_Map_Find(zz, destProcMap, (void *)&right, &dummyPtr);
+    ierr = Zoltan_Map_Find(zz, destProcMap, (char *)&right, &dummyPtr);
 
     if (ierr != ZOLTAN_OK){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to search for proc in second map.");
       goto End;
     }
 
-    if (dummyPtr != NULL){   /* "right" was found in the map */
-      outCount = *dummyPtr;  /* number of objects I send to "right" */
+    if (dummyPtr != ZOLTAN_NOT_FOUND){   /* "right" was found in the map */
+      outCount = dummyPtr;  /* number of objects I send to "right" */
 
       if (need_export_lists){
         ierr = pack_message_for_proc(zz, right, outCount, 

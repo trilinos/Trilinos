@@ -338,7 +338,7 @@ int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
 
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, obj_count_tag, 1);
-      num = sscanf(buf, "%" ZOLTAN_ID_SPECIFIER , myData->myGlobalIDs + i);
+      num = sscanf(buf, "%" ZOLTAN_ID_SPEC , myData->myGlobalIDs + i);
       if (num != 1) input_file_error(numProcs, obj_count_tag, 1);
   
     }
@@ -366,7 +366,7 @@ int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
         for (j=0; j < nobj; j++){
           num = get_next_line(fp, buf, bufsize);
           if (num == 0) input_file_error(numProcs, obj_count_tag, i);
-          num = sscanf(buf, "%" ZOLTAN_ID_SPECIFIER, gids + j);
+          num = sscanf(buf, "%" ZOLTAN_ID_SPEC, gids + j);
           if (num != 1) input_file_error(numProcs, obj_count_tag, i);
         }
       }

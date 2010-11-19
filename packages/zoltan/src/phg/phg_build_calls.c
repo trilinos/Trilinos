@@ -556,7 +556,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (map1 == NULL) goto End;
 
       for (iptr=0; iptr < zhg->nObj; iptr++){
-        ierr = Zoltan_Map_Add(zz, map1, (void *)(zhg->objGNO + iptr), (void *)(iptr + 1));
+        ierr = Zoltan_Map_Add(zz, map1, (char *)(zhg->objGNO + iptr), iptr + 1);
         if (ierr != ZOLTAN_OK) goto End;
       }
 
@@ -585,11 +585,11 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (zhg->nObj && !zhg->numHEdges) MEMORY_ERROR;
 
       for (i=0; i < nRequests; i++){
-        ierr = Zoltan_Map_Find(zz, map1, (void *)(recvGnoBuf + i), (void**)&iptr);
+        ierr = Zoltan_Map_Find(zz, map1, (char *)(recvGnoBuf + i), &iptr);
         if (ierr != ZOLTAN_OK) goto End;
-        if ((void *)iptr == NULL) FATAL_ERROR("Unexpected vertex global number received");
+        if (iptr == ZOLTAN_NOT_FOUND) FATAL_ERROR("Unexpected vertex global number received");
 
-        index = (int)iptr - 1;
+        index = iptr - 1;
         zhg->numHEdges[index]++;
       }
 
@@ -820,7 +820,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       for (j=0; j < zhg->Esize[i]; j++, iptr++){
          gnos[0] = zhg->objGNO[i];
          gnos[1] = zhg->pinGNO[iptr];
-         ierr = Zoltan_Map_Add(zz, map2, (void *)gnos, (void *)(iptr + 1));
+         ierr = Zoltan_Map_Add(zz, map2, (char *)gnos, iptr + 1);
          if (ierr != ZOLTAN_OK) goto End;
       }
     }
@@ -854,13 +854,13 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
            cnt++;
          }
          else{
-           ierr = Zoltan_Map_Find(zz, map2, (void *)gnos, (void**)&iptr);
+           ierr = Zoltan_Map_Find(zz, map2, (char *)gnos, &iptr);
            if (ierr != ZOLTAN_OK) goto End;
 
-           if ((void *)iptr != NULL){
+           if (iptr != ZOLTAN_NOT_FOUND){
              if (ew_dim){
                /* this proc provided weights for [v0,v1] and [v1, v0] */
-               index = (int)iptr - 1;
+               index = iptr - 1;
                dest = wgts + k * ew_dim; 
                src = zhg->Ewgt + index * ew_dim;
                for (dim = 0; dim < ew_dim; dim++){
@@ -926,12 +926,12 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       gnos[0] = recvGnoBuf[i*2];
       gnos[1] = recvGnoBuf[i*2 + 1];
 
-      ierr = Zoltan_Map_Find(zz, map2, (void *)gnos, (void**)&iptr);
+      ierr = Zoltan_Map_Find(zz, map2, (char *)gnos, &iptr);
       if (ierr != ZOLTAN_OK) goto End;
 
-      index = (int)iptr - 1;
+      index = iptr - 1;
 
-      if ((void *)iptr != NULL){
+      if (iptr != ZOLTAN_NOT_FOUND){
         if (ew_dim){
           dest = sendFloatBuf + i * ew_dim; 
           src = zhg->Ewgt + index * ew_dim;
@@ -1476,6 +1476,7 @@ int *rptr=NULL, *cptr=NULL;
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
 
+
       if ((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN)){
         ierr = Convert_To_CSR(zz,
                      np,    /* number of pins doesn't change */
@@ -1517,10 +1518,13 @@ int *rptr=NULL, *cptr=NULL;
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
+
+
 /*****************************************************************************/
 /* This is called "Convert_To_CSR" but it also converts CSR to CSC.  The
  * conversion is symmetric.
  */
+
 static int Convert_To_CSR(
     ZZ *zz, int num_pins, int *col_ptr,   /* input */
     int *num_lists,                       /* rest are input/output */

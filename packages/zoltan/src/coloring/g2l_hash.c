@@ -22,14 +22,14 @@ extern "C" {
 
 
 /*****************************************************************************/
-/* Returns the prime number closest to (and smaller than) stop */
-int Zoltan_GenPrime(int stop, int *prime_num)
+/* Returns the "next" closest prime number after (or equal to) stopafter */
+int Zoltan_GenPrime(int stopafter, int *prime_num)
 {
-    int nap;
+    int nap, cont=1;
     int num, c, i;
     int *prime;
-    
-    prime = (int *) ZOLTAN_MALLOC(((stop/2) > 2 ? (stop/2) : 2) * sizeof(int));
+
+    prime = (int *) ZOLTAN_MALLOC(((stopafter/2) + 7) * sizeof(int));
     if (!prime)
         return ZOLTAN_MEMERR;
     
@@ -37,7 +37,7 @@ int Zoltan_GenPrime(int stop, int *prime_num)
     c = 2; /* initial primes */
     
     /* only have to check odd numbers */
-    for (num=5; num < stop; num = num + 2) {
+    for (num=5; cont; num = num + 2) {
         nap = 0;  /* set not-a-prime false */        
         /* cycle through list of known primes */
         for (i=0; i < c; i++) { 
@@ -56,6 +56,8 @@ int Zoltan_GenPrime(int stop, int *prime_num)
            /* add prime to list of known primes */
             prime[c] = num;
             c++;
+            if (num >= stopafter)
+                cont = 0;
         }
     }
     *prime_num = prime[c-1];
@@ -158,8 +160,8 @@ int Zoltan_KVHash_Create(KVHash *hash, int maxsize)
     hash->nodes = NULL;
     hash->size = 0;
     hash->num_gid_entries = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
-    hash->table = (G2LHashNode **) ZOLTAN_CALLOC(maxsize, sizeof(G2LHashNode *));
-    hash->nodes = (G2LHashNode *) ZOLTAN_MALLOC(maxsize * sizeof(G2LHashNode));
+    hash->table = (G2LHashNode **) ZOLTAN_CALLOC(hash->maxsize, sizeof(G2LHashNode *));
+    hash->nodes = (G2LHashNode *) ZOLTAN_MALLOC(hash->maxsize * sizeof(G2LHashNode));
     if (!hash->table || !hash->nodes) {
         Zoltan_G2LHash_Destroy(hash);
         return ZOLTAN_MEMERR;

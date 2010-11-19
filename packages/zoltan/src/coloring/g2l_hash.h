@@ -43,7 +43,6 @@ typedef struct G2L_Hash G2LHash;
 /* Returns the prime number closest to (and smaller than) stop */
 /* int Zoltan_GenPrime(int stop, int *prime_num); */
     
-
 int Zoltan_G2LHash_Create(G2LHash *hash, int maxsize, ZOLTAN_GNO_TYPE base, int nlvtx);
 int Zoltan_G2LHash_Destroy(G2LHash *hash);
 int Zoltan_G2LHash_G2L(G2LHash *hash, ZOLTAN_GNO_TYPE gno);

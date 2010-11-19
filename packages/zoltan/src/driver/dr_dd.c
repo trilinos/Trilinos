@@ -78,7 +78,7 @@ int i, j;
 /****************************************************************************/
 int update_hvertex_proc(MESH_INFO_PTR mesh)
 {
-  int i, npins;
+  int npins;
 
   npins = mesh->hindex[mesh->nhedges];  
 

@@ -54,7 +54,7 @@ int read_chaco_file(int Proc,
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
-  int    nvtxs, i;
+  int    nvtxs;
   int    vwgt_dim=0, ewgt_dim=0;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL;

@@ -35,7 +35,7 @@ struct HierPartParamsStruct {
   int level;                         /* level currently being processed */
   MPI_Comm hier_comm;                /* MPI communicator for each level */
   int *hier_ranks_of_orig;           /* orig ranks of the procs in hier_comm */
-  /*int *orig_ranks_of_hier;*/       /* hier ranks of the procs in orig comm */
+ 
   ZZ *origzz;                        /* Zoltan struct passed into top level */
   ZZ *hierzz;                        /* internal zoltan struct for balancing 
 					within the hierarchy */
@@ -54,18 +54,14 @@ struct HierPartParamsStruct {
 					each gid in global_ids has been
 					migrated somewhere else */
   struct Zoltan_DD_Struct *dd;       /* distributed data to track migrated 
-					gids during hierarchical balancing */
-  int allocsize_gids_of_interest;    /* size of gids_of_interest array */
-  int num_gids_of_interest;          /* num gids in gids_of_interest */
-  ZOLTAN_ID_TYPE *gids_of_interest;    /* list of gids of interest, used
+					gnos during hierarchical balancing */
+  int allocsize_gnos_of_interest;    /* size of gnos_of_interest array */
+  int num_gnos_of_interest;          /* num gnos in gnos_of_interest */
+  ZOLTAN_GNO_TYPE *gnos_of_interest;    /* list of gnos of interest, used
 					when looking up remote proc locations
 					for graph edge callbacks */
-  int *gids_of_interest_procs;       /* list of procs where gids of interest
+  int *gnos_of_interest_procs;       /* list of procs where gnos of interest
 					are located */
-  /*short *migrated_to; */           /* store pid of where a each global id 
-					that started here has been migrated.
-					pid is relative to origzz's 
-					MPI communicator */
   int obj_wgt_dim, edge_wgt_dim;     /* object and edge weight dimensions */
   float *vwgt;                       /* vector of vertex weights */
   int *input_parts;                  /* Initial partitions for objects. */
@@ -77,12 +73,17 @@ struct HierPartParamsStruct {
   int ndims;                         /* number of dimensions for geom data */
   int num_edges;                     /* number of edges in graph rep */
   double *geom_vec;                  /* geometry of objects in intermediate */
-  int num_migrated_in_gids;          /* number of gids migrated to this proc */
-  int alloc_migrated_in_gids;        /* size of allocated array of migrated
-					in gids */
-  ZOLTAN_ID_TYPE *migrated_in_gids;    /* ordered array of gids migrated in */
+  int num_migrated_in_gnos;          /* number of gnos migrated to this proc */
+  int alloc_migrated_in_gnos;        /* size of allocated array of migrated
+					in gnos */
+  ZOLTAN_GNO_TYPE *migrated_in_gnos;    /* ordered array of gnos migrated in */
   void **migrated_in_data;           /* data migrated in, parallel array to
-					migrated_in_gids */
+					migrated_in_gnos */
+
+                                         /* If non-null, Zoltan is computing the */
+  zoltan_platform_specification *spec;   /* levels based on network topology */
+  int gen_files;                      /* call Zoltan_Generate_Files */
+                                         
 };
 typedef struct HierPartParamsStruct HierPartParams;
 
@@ -100,7 +101,6 @@ typedef struct HierPartParamsStruct HierPartParams;
 
 /* prototype for set_param function needed by params/set_param.c */
 extern int Zoltan_Hier_Set_Param(char *name, char *val);
-
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

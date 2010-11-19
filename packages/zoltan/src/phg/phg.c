@@ -433,9 +433,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
         err = Zoltan_PHG_Partition(zz, hg, p,
                                    hgp.part_sizes, parts, &hgp);
 
-MPI_Barrier(MPI_COMM_WORLD);
-fprintf(stderr,"Back from PHG_Partition %d\n",zz->Proc);
-MPI_Barrier(MPI_COMM_WORLD);
         if (err != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
           goto End;
@@ -1244,7 +1241,7 @@ int ierr = ZOLTAN_OK;
   /* Error check */
   if (comm->nProc_x * comm->nProc_y != nProc) {
     ZOLTAN_PRINT_ERROR(proc, yo,
-                       "Values for PHG_NPROC_X and PHG_NPROC_Y "
+                       "Values for PHG_NPROC_VERTEX and PHG_NPROC_EDGE "
                        "do not evenly divide the "
                        "total number of processors.");
     ierr = ZOLTAN_FATAL;

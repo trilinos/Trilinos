@@ -875,12 +875,12 @@ intptr_t iptr;                   /* an int the size of a pointer */
     if (map == NULL) goto End;
 
     for (iptr=0; iptr < zhg->nObj; iptr++){
-      ierr = Zoltan_Map_Add(zz, map, (void *)(myObjGNO + iptr), (void *)(iptr + 1));
+      ierr = Zoltan_Map_Add(zz, map, (char *)(myObjGNO + iptr), iptr + 1);
       if (ierr != ZOLTAN_OK) goto End;
     }
     
     for (i = 0; i < nrecv; i++) {
-      ierr = Zoltan_Map_Find(zz, map, (void *)(recvpins + i), (void **)&iptr);
+      ierr = Zoltan_Map_Find(zz, map, (char *)(recvpins + i), &iptr);
       if (ierr != ZOLTAN_OK) goto End;
       if ((void *)iptr == NULL){
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in pin map.");

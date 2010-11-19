@@ -103,8 +103,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   ZOLTAN_GNO_TYPE *tabGNO;
   int *perm;
   int *iperm;
-  intptr_t indexptr ;        /* for typecasting integers, not a "true" pointer */
-  intptr_t prev_indexptr ;   /* for typecasting integers, not a "true" pointer */
+  intptr_t pos;
 #ifdef CC_TIMERS
   double time;
 #endif
@@ -146,9 +145,8 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
     if (arcs[i].GNO[1] >= 0) {/* real arc */
       int prev = -1;
       /* Store the ints as void pointers in Map */
-      indexptr = i ;
-      Zoltan_Map_Find_Add(zz, nnz_map, arcs[i].GNO, (void *)indexptr, (void **)&prev_indexptr);
-      prev = (int) prev_indexptr ;
+      Zoltan_Map_Find_Add(zz, nnz_map, (char *)arcs[i].GNO, (intptr_t)i, &pos);
+      prev = (int) pos;
       if (prev != i) {/* Duplicate arcs */
 	wgtfct(pinwgt+i*outmat->pinwgtdim, pinwgt+prev*outmat->pinwgtdim,
 	       outmat->pinwgtdim);
@@ -156,9 +154,8 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
       }
     }
     position = Zoltan_Map_Size(zz, y_map);
-    indexptr = position ;
-    Zoltan_Map_Find_Add(zz, y_map, &arcs[i].GNO[0], (void *)indexptr, (void **)&prev_indexptr);
-    position = (int) prev_indexptr ;
+    Zoltan_Map_Find_Add(zz, y_map, (char *)&arcs[i].GNO[0], (intptr_t)position, &pos);
+    position = (int) pos;
     if (arcs[i].GNO[1] >= 0)
       ysize[position] += 1; /* One arc for yGNO */
   }
@@ -172,12 +169,12 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   for (i = 0 ; i < outmat->nY ; ++i)
     iperm[i] = i;
 
-  Zoltan_Map_First(zz, y_map, (void **)&ptrGNO, (void **)&indexptr);
-  i = (int) indexptr ;
+  Zoltan_Map_First(zz, y_map, (char **)&ptrGNO, &pos);
+  i = (int) pos;
   while (ptrGNO != NULL) {
     outmat->yGNO[i] = ptrGNO[0];
-    Zoltan_Map_Next(zz, y_map, (void **)&ptrGNO, (void **)&indexptr);
-    i = (int) indexptr ;
+    Zoltan_Map_Next(zz, y_map, (char **)&ptrGNO, &pos);
+    i = (int) pos;
   }
 
   Zoltan_quicksort_list_inc_gno(outmat->yGNO, iperm, 0, outmat->nY - 1);
@@ -193,12 +190,12 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   if (outmat->ystart == NULL) MEMORY_ERROR;
   outmat->yend = outmat->ystart+1;
 
-  Zoltan_Map_First(zz, y_map, (void **)&ptrGNO, (void **)&indexptr);
-  i = (int) indexptr ;
+  Zoltan_Map_First(zz, y_map, (char **)&ptrGNO, &pos);
+  i = (int) pos;
   while (ptrGNO != NULL) {
     outmat->ystart[perm[i]+1] = ysize[i]; /* Trick +1 to allow easy build of indirection */
-    Zoltan_Map_Next(zz, y_map, (void **)&ptrGNO, (void **)&indexptr);
-    i = (int) indexptr ;
+    Zoltan_Map_Next(zz, y_map, (char **)&ptrGNO, &pos);
+    i = (int) pos;
   }
   outmat->ystart[0] = 0;
   for (i = 1 ; i < outmat->nY + 1 ; ++i)
@@ -213,14 +210,14 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
   /* Now put the nnz at the correct place */
   memset(ysize, 0, outmat->nY*sizeof(int));
-  Zoltan_Map_First(zz, nnz_map, (void **)&tabGNO, (void **)&indexptr);
-  i = (int) indexptr ;
+  Zoltan_Map_First(zz, nnz_map, (char **)&tabGNO, &pos);
+  i = (int) pos;
   while (tabGNO != NULL) {
     int nnz_index;
     int y_index;
 
-    Zoltan_Map_Find(zz, y_map, &tabGNO[0], (void **)&indexptr);
-    y_index = (int) indexptr ;
+    Zoltan_Map_Find(zz, y_map, (char *)tabGNO, &pos);
+    y_index = (int) pos;
     y_index = perm[y_index];
 
     nnz_index = outmat->ystart[y_index] + ysize[y_index];
@@ -230,15 +227,15 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
       memcpy(outmat->pinwgt+nnz_index*outmat->pinwgtdim,
 	     pinwgt+i*outmat->pinwgtdim, /* No *sizeof(float) as it is float* pointer */
 	     outmat->pinwgtdim*sizeof(float));
-    Zoltan_Map_Next(zz, nnz_map, (void **)&tabGNO, (void **)&indexptr);
-    i = (int) indexptr ;
+    Zoltan_Map_Next(zz, nnz_map, (char **)&tabGNO, &pos);
+    i = (int) pos;
   }
 
 #ifdef CC_TIMERS
   fprintf(stderr, "(%d) remove arcs: %g\n", zz->Proc, MPI_Wtime()-time);
 #endif
 
-/*#define MATRIX_DEBUG*/
+#undef MATRIX_DEBUG
 
 #ifdef MATRIX_DEBUG
  {
@@ -536,7 +533,8 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
       ierr = Zoltan_DD_Create (&m->ddY, zz->Communicator, gno_size_for_dd, zz->Num_GID,
 			       sizeof(int), m->globalY/zz->Num_Proc, 0);
       /* Hope a linear assignment will help a little */
-      Zoltan_DD_Set_Neighbor_Hash_Fn1(m->ddY, m->globalY/zz->Num_Proc);
+      if (m->globalY/zz->Num_Proc)
+        Zoltan_DD_Set_Neighbor_Hash_Fn1(m->ddY, m->globalY/zz->Num_Proc);
     }
     m->yGID = NULL;
     m->ypid = NULL;
@@ -579,7 +577,8 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
   /* We have to define dd : old_yGNO, new_yGNO */
   ierr = Zoltan_DD_Create (&dd, zz->Communicator, gno_size_for_dd, gno_size_for_dd, 0, m->globalY/zz->Num_Proc, 0);
   /* Hope a linear assignment will help a little */
-  Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, m->globalY/zz->Num_Proc);
+  if (m->globalY/zz->Num_Proc)
+    Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, m->globalY/zz->Num_Proc);
 
   Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)m->yGNO, (ZOLTAN_ID_PTR)perm_y, NULL, NULL, m->nY);
   memcpy (m->yGNO, perm_y, m->nY*sizeof(ZOLTAN_GNO_TYPE));

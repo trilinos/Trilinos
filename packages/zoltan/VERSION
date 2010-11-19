@@ -1,17 +1,1 @@
-lriesen@sandia.gov
-July 1, 2010
-
-This is the Zoltan branch "zoltan_gid_64".
-
-It is Zoltan 3.3, with modifications to permit 64 bit global IDs,
-and counts of global objects that require 64 bit integers.
-
-Bug fixes subsequent to Zoltan 3.3 have been applied to this branch.
-
-To checkout this branch from the Trilinos git repository:
-
-git clone software.sandia.gov:/space/git/Trilinos
-cd Trilinos
-git branch --track zoltan_gid_64 origin/zoltan_gid_64
-git checkout zoltan_gid_64
-cd packages/zoltan
+This is Zoltan version 3.4 (or higher).

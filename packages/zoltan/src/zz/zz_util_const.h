@@ -17,6 +17,7 @@
 
 #include "zz_const.h"
 #include "zoltan_types.h"
+#include <limits.h>
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -47,8 +48,8 @@ int Zoltan_overflow_test(size_t val);
  */
 
 struct Zoltan_Map_Entry{
-  void *key;          /* a copy of or a pointer to callers key */
-  void *data;        /* a pointer provided by caller */
+  char *key;             /* pointer to arbitrary length key */
+  intptr_t data;         /* value */
   struct Zoltan_Map_Entry *next;
 };
 
@@ -58,7 +59,7 @@ struct Zoltan_Map_List{
   ZOLTAN_ENTRY **entries; /* hash array, length max_index + 1 */
 
   ZOLTAN_ENTRY *top;      /* if dynamicEntries==0, entries are here */
-  void *keys;              /* If copyKeys and !dynamicEntries, keys are here */
+  char *keys;             /* If copyKeys and !dynamicEntries, keys are here */
 
   int key_size;             /* size in bytes of key */
   int num_zoltan_id_types;  /* number of ZOLTAN_ID_TYPES required to hold key */
@@ -84,12 +85,14 @@ typedef struct Zoltan_Map_List ZOLTAN_MAP;
 
 ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz, int hash_range, int key_size_in_bytes, int store_keys, int num_entries);
 int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP **map);
-int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, void *key, void *data);
-int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, void *key, void **data);
-int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, void *key, void *datain, void **dataout);
+int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, char *key, intptr_t data);
+int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, char *key, intptr_t *data);
+int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, char *key, intptr_t datain, intptr_t *dataout);
 int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP *map);
-int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, void **key, void **data);
-int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, void **key, void **data);
+int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, char **key, intptr_t *data);
+int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, char **key, intptr_t *data);
+
+#define ZOLTAN_NOT_FOUND INTPTR_MIN
 
 /*****************************************************************************/
 /*****************************************************************************/

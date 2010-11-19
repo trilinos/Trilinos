@@ -140,11 +140,14 @@ static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *a
 
 int Zoltan_Color(
     ZZ *zz,                   /* Zoltan structure */
-    int num_gid_entries,     /* # of entries for a global id */
-    int num_obj,              /* Input: number of objects */
-    ZOLTAN_ID_PTR global_ids, /* Input: global ids of the vertices */
+    int num_gid_entries,      /* # of entries for a global id */
+    int num_req_objs,         /* Input: number of requested objects (vtx) */
+    ZOLTAN_ID_PTR req_objs,   /* Input: global ids of the objects for
+                                 which the colors should be returned.
+                                 (May be different from local objects.) */
 			      /* The application must allocate enough space */
-    int *color_exp            /* Output: Colors assigned to local vertices */
+    int *color_exp            /* Output: Colors assigned to objects 
+                                 given by req_objs (may be non-local) */
 			      /* The application must allocate enough space */
 )
 {
@@ -163,7 +166,7 @@ int Zoltan_Color(
   static char *yo = "color_fn";
   int *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
   int *adjproc=NULL;
-  int nvtx = num_obj;               /* number of vertices */
+  int nvtx;                         /* number of local vertices */
   ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
 
   int *color=NULL;                  /* array to store colors of local and D1
@@ -174,6 +177,9 @@ int Zoltan_Color(
 				       vertices to consecutive local ids */
   int ierr = ZOLTAN_OK;
   int comm[2],gcomm[2];
+  ZOLTAN_ID_PTR my_global_ids= NULL;  /* gids local to this proc */
+  struct Zoltan_DD_Struct *dd_color;  /* DDirectory for colors */
+
 #ifdef _DEBUG_TIMES  
   double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
   double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
@@ -271,9 +277,10 @@ int Zoltan_Color(
 
 
   /* BUILD THE GRAPH */
+  /* TODO: Allow req_objs==NULL as special case for local vertices. */
   /* Check that the user has allocated space for the return args. */
-  if (!color_exp)
-      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
+  if (num_req_objs && !color_exp)
+      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument color_exp is NULL. Please allocate all required arrays before calling this routine.");
 
 #ifdef _DEBUG_TIMES
   times[1] = Zoltan_Time(zz->Timer);
@@ -289,6 +296,7 @@ int Zoltan_Color(
 		    &gvtx, &nvtx, NULL, NULL, 
                    (ZOLTAN_GNO_TYPE **)&vtxdist, &xadj, (ZOLTAN_GNO_TYPE **)&adjncy, &adjproc,
 		     NULL, &partialD2);
+
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
 #ifdef _DEBUG_TIMES
@@ -297,9 +305,6 @@ int Zoltan_Color(
 
   /* CREATE THE HASH TABLE */
   /* Determine hash size and allocate hash table */
-  /* UVCUVC: this is improved but it is still a TODO
-     we can allocate smaller hash; check this later */
-
   i = xadj[nvtx]; /* i is the minimum hash size */
   if (Zoltan_G2LHash_Create(&hash, i, vtxdist[zz->Proc], nvtx)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
@@ -319,11 +324,11 @@ int Zoltan_Color(
 #endif
 
   /* Allocate color array. Local and D1 neighbor colors will be stored here. */
-  if (!(color = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int))))
+  if (lastlno && !(color = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int))))
       MEMORY_ERROR;
 
   if (coloring_problem == 'P') {
-      if (!(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
+      if (nvtx && !(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
 	  MEMORY_ERROR;
       for (i=0; i<nvtx; i++)
 	  partialD2[i] = 1; /* UVCUVC: TODO CHECK: We need to fill this from fixed vertex function
@@ -341,20 +346,52 @@ int Zoltan_Color(
 #ifdef _DEBUG_TIMES    
   times[4] = Zoltan_Time(zz->Timer);
 #endif
-  Zoltan_ZG_Register (zz, &graph, color);
 
-/*   /\* Get object ids and part information *\/ */
-/*   { */
-/*     /\* TODO: find a way to not allocate this memory ! *\/ */
-/*     float *vtxwgt = NULL; */
-/*     int *input_part = NULL; */
+  /* Insert colors into a DDirectory by GIDs. */
+  /* OLD: Zoltan_ZG_Register (zz, &graph, color); */
+  /* First get global ids again. */ 
+  {
+     /* Dummy arrays that we don't really need */
+     ZOLTAN_ID_PTR my_lids = NULL;
+     float *wgts = NULL;
+     int *parts = NULL;
+     int nobj=0;
 
-/*     ierr = Zoltan_Get_Obj_List(zz, &nvtx, &global_ids, &local_ids, */
-/* 			       0, &vtxwgt, &input_part); */
-/*     ZOLTAN_FREE(&vtxwgt); */
-/*     ZOLTAN_FREE(&input_part); */
-/*   } */
-  Zoltan_ZG_Query(zz, &graph, global_ids, num_obj, color_exp);
+     Zoltan_Get_Obj_List(zz, &nobj, &my_global_ids, &my_lids, 0, &wgts, &parts);
+     /*
+     if (zz->Get_Obj_List != NULL){
+       my_global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, nvtx); 
+       zz->Get_Obj_List(zz->Get_Obj_List_Data,
+                            zz->Num_GID, 0,
+                            my_global_ids, NULL,
+                            0, NULL, &ierr);
+     }
+     */
+     ZOLTAN_FREE(&my_lids); 
+     ZOLTAN_FREE(&wgts); 
+     ZOLTAN_FREE(&parts); 
+   }
+
+   ierr = Zoltan_DD_Create (&dd_color, zz->Communicator, 
+            num_gid_entries, 0, 0, 0, 0);
+   if (ierr != ZOLTAN_OK)
+     ZOLTAN_COLOR_ERROR(ierr, "Cannot construct DDirectory.");
+   /* Put color in part field. */
+   ierr = Zoltan_DD_Update (dd_color, my_global_ids, NULL,
+            NULL, color, nvtx);
+   if (ierr != ZOLTAN_OK)
+     ZOLTAN_COLOR_ERROR(ierr, "Cannot update DDirectory.");
+
+   /* Get requested colors from the DDirectory. */
+   /* OLD: Zoltan_ZG_Query(zz, &graph, global_ids, num_obj, color_exp); */
+   ierr = Zoltan_DD_Find (dd_color, req_objs, NULL, NULL,
+            color_exp, num_req_objs, NULL);
+   if (ierr != ZOLTAN_OK)
+     ZOLTAN_COLOR_ERROR(ierr, "Cannot find object in DDirectory.");
+
+   /* Free DDirectory */
+   Zoltan_DD_Destroy(&dd_color);
+   ZOLTAN_FREE(&my_global_ids); 
 
 #if 0
   /* Check if there is an error in coloring */
@@ -380,7 +417,6 @@ int Zoltan_Color(
       printf("Zoltan_Color Total Time in Proc-0: %.2lf    Max: %.2lf\n", times[5]-times[0], gtimes[5]-times[0]);
   }
 #endif
-
  End:
   /* First, free graph */
   Zoltan_ZG_Free (&graph);
@@ -829,7 +865,7 @@ static int D2coloring(
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
     visit = (int *) ZOLTAN_MALLOC((1+nvtx) * sizeof(int));
-    if (!isbound || !visit)
+    if ((nvtx && !isbound) || !visit)
 	MEMORY_ERROR;
 
     /* Start timer */
@@ -940,7 +976,7 @@ static int D2coloring(
     mark = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     vmark = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int));
     conflicts = (int *) ZOLTAN_MALLOC((1+nvtx) * sizeof(int));
-    if (!mark || !conflicts || !vmark)
+    if ((gmaxcolor && !mark) || !conflicts || (lastlno && !vmark))
 	MEMORY_ERROR;
     repliesF = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     repliesFx = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
@@ -973,7 +1009,7 @@ static int D2coloring(
 	xforbiddenS[i] = (int *) ZOLTAN_MALLOC((ss+1) * sizeof(int));
 	forbsizeS[i] = (int)(ceil((double) xadj[nvtx] / (double) nvtx) * ss); /* size of forbidden color allocation for send buffer - init to avgDeg*ss */
 	forbiddenS[i] = (int *) ZOLTAN_MALLOC((forbsizeS[i] > 0 ? forbsizeS[i] : 1) * sizeof(int));
-	if (!newcolored[i] || !xforbidden[i] || !forbidden[i] || !xforbiddenS[i] || !forbiddenS[i])
+	if ((ss && !newcolored[i]) || !xforbidden[i] || !forbidden[i] || !xforbiddenS[i] || !forbiddenS[i])
 	    MEMORY_ERROR;
     }
     confChk = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int)); /*the vertices to be checked in conflict detection */
@@ -981,7 +1017,7 @@ static int D2coloring(
     seen = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     where = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     pwhere = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
-    if (!confChk || !wset || !seen || !where || !pwhere)
+    if ((nvtx && !confChk) || !wset || (gmaxcolor && (!seen || !where || !pwhere)))
 	MEMORY_ERROR;
 
     /* Wait for superstep size communication to end */
@@ -1018,7 +1054,7 @@ static int D2coloring(
     /* All processors generate the same random number corresponding
        to the same global vertex number */
     rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
-    if (!rand_key)
+    if (lastlno && !rand_key)
 	MEMORY_ERROR;
     for(i=0; i<lastlno; i++) {
 	Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
