@@ -156,6 +156,10 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   ierr = Zoltan_Matrix_Complete(zz, &graph->mtx.mtx);
   graph->mtx.delete_flag += 0x1000;   /* Confusing: flag that mtx.mtx.yGID needs to be freed when we're done */
 
+  /* Confusing: flag that mtx.mtx.yGID needs to be freed when we're done */
+  FIELD_FREE_WHEN_DONE(graph->mtx.delete_flag, FIELD_YGID);
+
+
 #ifdef CC_TIMERS
   times[7] = Zoltan_Time(zz->Timer);
 #endif
@@ -299,7 +303,9 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
 			       sizeof(ZOLTAN_ID_TYPE), graph->mtx.mtx.globalY/zz->Num_Proc, 0);
       CHECK_IERR;
       /* Hope a linear assignment will help a little */
-      Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY, graph->mtx.mtx.globalX/zz->Num_Proc);
+      if (graph->mtx.mtx.globalX/zz->Num_Proc)
+        Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY,
+                                        graph->mtx.mtx.globalX/zz->Num_Proc);
     }
     dd = graph->mtx.mtx.ddY;
   }
