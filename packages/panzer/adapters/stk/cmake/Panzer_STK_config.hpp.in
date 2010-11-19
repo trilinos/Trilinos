@@ -1,8 +1,10 @@
 
 #cmakedefine HAVE_MPI
-
-#cmakedefine PANZER_DEBUG
+#ifdef HAVE_MPI
+#define ALBANY_MPI
+#endif
 
 #cmakedefine PANZER_STK_DEBUG
+
 #cmakedefine HAVE_IOSS
 #cmakedefine ALBANY_IOSS
