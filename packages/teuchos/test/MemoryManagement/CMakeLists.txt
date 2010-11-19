@@ -38,23 +38,35 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_STACKTRACE)
 IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
 
+  SET(PASS_REGEXS
+    "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:39"
+    "Throw number = 1"
+    "Throw test that evaluated to true: true"
+    "This is an exception I throw!"
+    )
+
+  IF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS OR CMAKE_BUILD_TYPE STREQUAL DEBUG)
+    APPEND_SET(PASS_REGEXS
+      "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_b()"
+      "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_a()"
+      )
+  ELSE()
+    APPEND_SET(PASS_REGEXS
+      "in func_a()"
+      )
+  ENDIF()
+
   PACKAGE_ADD_ADVANCED_TEST(
-    TestForException_throwTest_stracktrace
+    TestForException_throwTest_stacktrace
     TEST_0 EXEC TestForException_throwTest
       ARGS  --enable-stacktrace
-      PASS_REGULAR_EXPRESSION_ALL
-        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp:39"
-        "Throw number = 1"
-        "Throw test that evaluated to true: true"
-        "This is an exception I throw!"
-        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_b()"
-        "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_a()"
+      PASS_REGULAR_EXPRESSION_ALL ${PASS_REGEXS}
     OVERALL_NUM_MPI_PROCS 1
     )
     # ToDo: Add more greps to look for the stacktrace output!
 
   PACKAGE_ADD_ADVANCED_TEST(
-    TestForException_throwTest_nostracktrace
+    TestForException_throwTest_nostacktrace
     TEST_0 EXEC TestForException_throwTest
       ARGS  --no-enable-stacktrace
       PASS_REGULAR_EXPRESSION_ALL
