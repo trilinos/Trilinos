@@ -30,6 +30,8 @@ IF (HAVE_TEUCHOS_LINK AND HAVE_TEUCHOS_BFD AND CMAKE_CXX_COMPILER_ID STREQUAL "G
     "Enable Teuchos to show stack track for GCC on segfaults and uncaught exceptions."
     ${${PACKAGE_NAME}_ENABLE_DEBUG}
     )
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_STACKTRACE OFF)
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
@@ -39,6 +41,8 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
     "Enable Teuchos expansion of the stacktrace."
     ON
     )
+ELSE()
+  SET(${PACKAGE_NAME}_ENABLE_DEFAULT_STACKTRACE OFF)
 ENDIF()
   
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Boost)
