@@ -77,7 +77,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
          = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
 
    RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
-   RCP<panzer::DOFManager > dofManager = rcp(new panzer::DOFManager());
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
 
    TEST_EQUALITY(dofManager->getConnManager(),Teuchos::null);
 

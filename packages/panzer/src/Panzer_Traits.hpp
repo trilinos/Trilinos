@@ -24,9 +24,13 @@
 #include "Phalanx_TypeStrings.hpp"
 
 namespace panzer {
+  template <typename LocalOrdinalT,typename GlobalOrdinalT>
   class DOFManager;
 
   struct Traits : public PHX::TraitsBase {
+
+    typedef int LocalOrdinal; 
+    typedef long int GlobalOrdinal; 
     
     // ******************************************************************
     // *** Scalar Types
@@ -70,7 +74,7 @@ namespace panzer {
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
     struct SD { 
-      Teuchos::RCP<panzer::DOFManager> dofManager_; 
+      Teuchos::RCP<panzer::DOFManager<LocalOrdinal,GlobalOrdinal> > dofManager_; 
       Teuchos::RCP< std::vector<panzer::Workset> > worksets_;
     };
     typedef SD SetupData;

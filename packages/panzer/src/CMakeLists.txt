@@ -55,6 +55,7 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_FieldAggPattern.hpp
   dofmngr/Panzer_ConnManager.hpp
   dofmngr/Panzer_DOFManager.hpp
+  dofmngr/Panzer_DOFManagerT.hpp
   ) 
 
 APPEND_SET(SOURCES

@@ -26,8 +26,11 @@
 
 namespace panzer {
 
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class DOFManager {
 public:
+   typedef GlobalOrdinalT GlobalOrdinal;
+   typedef LocalOrdinalT LocalOrdinal;
    typedef std::map<int,std::string>::const_iterator const_field_iterator;
 
    virtual ~DOFManager() {}
@@ -38,7 +41,7 @@ public:
      * objects. This is equivalent to calling the default constructor and
      * then "setConnManager" routine.
      */
-   DOFManager(Teuchos::RCP<ConnManager<int,int> > & connMngr,MPI_Comm mpiComm);
+   DOFManager(Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
    /** \brief Set the connection manager and MPI_Comm objects.
      *
@@ -51,7 +54,7 @@ public:
      * \param[in] connMngr Connection manager to use.
      * \param[in] mpiComm  Communicator to use.
      */
-   void setConnManager(Teuchos::RCP<ConnManager<int,int> > & connMngr,MPI_Comm mpiComm);
+   void setConnManager(Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
    /** \brief Reset the indicies for this DOF manager.
      *
@@ -61,7 +64,7 @@ public:
      *
      * \returns Old connection manager.
      */
-   Teuchos::RCP<ConnManager<int,int> > resetIndices();
+   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > resetIndices();
 
    /** \brief Add a field to the DOF manager.
      *
@@ -175,7 +178,7 @@ public:
    
    /**  Returns the connection manager current being used.
      */
-   Teuchos::RCP<const ConnManager<int,int> > getConnManager() const 
+   Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const 
    { return connMngr_; } 
 
    /** build the global unknown numberings
@@ -198,7 +201,7 @@ public:
      *
      * \notes Should this use an int* instead?
      */
-   void getElementGIDs(int localElmtId,std::vector<int> & gids) const;
+   void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids) const;
 
    /** \brief Use the field pattern so that you can find a particular
      *        field in the GIDs array.
@@ -297,7 +300,7 @@ protected:
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildOverlapGraph() const;
 
    // computes connectivity
-   Teuchos::RCP<ConnManager<int,int> > connMngr_; 
+   Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
    
    //! \defgroup MapFunctions Mapping objects
    //@{ 
@@ -343,5 +346,7 @@ protected:
 };
 
 }
+
+#include "Panzer_DOFManagerT.hpp"
 
 #endif
