@@ -27,7 +27,7 @@ ELSE()
     SERIAL_RELEASE
     ctest_mac_nightly_serial_release_s909348.cmake
     RUN_SERIAL
-    TIMEOUT_MINUTES 240
+    TIMEOUT_MINUTES 300
   )
   
 ENDIF()
