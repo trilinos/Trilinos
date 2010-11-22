@@ -45,7 +45,7 @@
 /// \brief KrylovSupport header file which includes config info
 ///
 
-#include <Krylov_config.h>
+#include <KrylovSupport_config.h>
 #include <string>
 
 namespace Krylov { 
