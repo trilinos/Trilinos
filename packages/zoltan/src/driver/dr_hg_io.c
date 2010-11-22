@@ -98,7 +98,6 @@ static int _zoltan_sortFunc(const void *, const void *);
  * In the future we may want to allow both graphs and hypergraphs
  * to be read in MatrixMarket format.
  *
- * TODO: not updated for 64-bit global IDs
  */
 int read_mm_file(
   int Proc,
@@ -112,7 +111,6 @@ int read_mm_file(
 }
 
 /* Read from file and set up hypergraph. */
-/* TODO: not updated for 64-bit global IDs */
 int read_hypergraph_file(
   int Proc,
   int Num_Proc,
@@ -1848,6 +1846,7 @@ size_t l;
 int found;
 
   if (nth > 9){
+    return NULL;
     /* TODO - error */
   }
 

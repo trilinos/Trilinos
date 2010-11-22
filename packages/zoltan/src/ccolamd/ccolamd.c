@@ -630,6 +630,12 @@
 #include <stdio.h>
 #endif
 
+#if !defined (NPRINT)
+#define PRINTF(params) { printf params ; }
+#else
+#define PRINTF(params) {}
+#endif
+
 #ifndef NULL
 #define NULL ((void *) 0)
 #endif
@@ -816,7 +822,7 @@ typedef struct CColamd_Row_struct
 #endif
 
 /* All output goes through the PRINTF macro.  */
-#define PRINTF(params) { if (Zoltan_ccolamd_printf != NULL) (void) Zoltan_ccolamd_printf params ; }
+/*#define PRINTF(params) { if (Zoltan_ccolamd_printf != NULL) (void) Zoltan_ccolamd_printf params ; }*/
 
 
 /* ========================================================================== */

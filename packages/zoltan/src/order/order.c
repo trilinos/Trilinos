@@ -261,7 +261,8 @@ int Zoltan_Order (
   /* MMW: perhaps don't ever use graph here since we need to support geometric orderings, otherwise need if/else */
   ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, (local_rank==NULL)?0:1, 0, local_num_obj, 0);
   /* Hope a linear assignment will help a little */
-  Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
+  if (local_num_obj)
+    Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
   /* Associate all the data with our xGNO */
 
   Zoltan_DD_Update (dd, local_gids, local_rank, NULL, NULL, local_num_obj);

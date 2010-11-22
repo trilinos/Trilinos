@@ -12,7 +12,8 @@
 #   2. Any user callable function <func> of CCOLAMD will be called
 #   Zoltan_<func>.
 #
-#   3. The one global varibale ccolamd_printf will be Zoltan_ccolamd_printf.
+#   3. PRINTF defined to printf if NPRINT is not defined. ccolamd_global.c
+#   is no longer used.
 #
 ##############################################################################
 
@@ -20,12 +21,10 @@
 CCOLAMD Directory - Constrained Column ordering methods.
 ------------------------------------------------------------------------
 
-ccolamd.c     	 -- Routines for computing constrained column ordering for 
-		    sparse LU and Cholesky factorizations.
+ccolamd.c   -- Routines for computing constrained column ordering for
+            sparse LU and Cholesky factorizations.
 
-ccolamd.h 	 -- External interface oc CCOLAMD. The methods are visible to 
-		    Zoltan only.
-
-ccolamd_global.c -- Defines the printf used by CCOLAMD for debug information.
+ccolamd.h   -- External interface of CCOLAMD. The methods are visible to
+            Zoltan only.
 
 

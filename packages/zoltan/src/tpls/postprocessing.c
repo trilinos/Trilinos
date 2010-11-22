@@ -219,7 +219,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 
   int ierr = ZOLTAN_OK;
   int i, j, nsend;
-  int *newproc;
+  int *newproc, *tmp_part, *tmp_input_part;
 
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
@@ -232,7 +232,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory. ");
   }
   for (i=0; i<gr->num_obj; i++){
-    newproc[i] = Zoltan_LB_Part_To_Proc(zz, prt->part[i],
+    newproc[i] = Zoltan_LB_Part_To_Proc(zz, (int)prt->part[i],
 					&(global_ids[i*num_gid_entries]));
     if (newproc[i]<0){
       ZOLTAN_FREE(&newproc);
@@ -244,10 +244,32 @@ Zoltan_Postprocess_Partition (ZZ *zz,
   if (zz->LB.Remap_Flag) {
     int new_map;
 
-    /* This call assumes sizeof indextype equals sizeof int */
-
-    ierr = Zoltan_LB_Remap(zz, &new_map, gr->num_obj, newproc, (int *)prt->input_part,
+    if (sizeof(indextype) == sizeof(int)){
+      ierr = Zoltan_LB_Remap(zz, &new_map, gr->num_obj, newproc, (int *)prt->input_part,
 			   (int *)prt->part, 1);
+    }
+    else{
+      tmp_part = (int *)ZOLTAN_MALLOC(sizeof(int) * gr->num_obj);
+      tmp_input_part = (int *)ZOLTAN_MALLOC(sizeof(int) * gr->num_obj);
+
+      if (gr->num_obj && (!tmp_part || !tmp_input_part)){
+	ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Not enough memory.");
+      }
+      for (i=0; i < gr->num_obj; i++){
+        tmp_part[i] = (int)prt->part[i];
+        tmp_input_part[i] = (int)prt->input_part[i];
+      }
+      ierr = Zoltan_LB_Remap(zz, &new_map, gr->num_obj, newproc, tmp_input_part, tmp_part, 1);
+
+      for (i=0; i < gr->num_obj; i++){
+        prt->part[i] = (indextype)tmp_part[i];
+        prt->input_part[i] = (indextype)tmp_input_part[i];
+      }
+
+      ZOLTAN_FREE(&tmp_part);
+      ZOLTAN_FREE(&tmp_input_part);
+    }
+
     if (ierr < 0) {
       ZOLTAN_FREE(&newproc);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
@@ -297,7 +319,7 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 	  if (num_lid_entries)
 	    ZOLTAN_SET_LID(zz, &((*(part->exp_lids))[j*num_lid_entries]),
 			   &(local_ids[i*num_lid_entries]));
-	  (*(part->exp_part))[j] = prt->part[i];
+	  (*(part->exp_part))[j] = (int)prt->part[i];
 	  (*(part->exp_procs))[j] = newproc[i];
 /*	  printf("[%1d] Debug: Move object %1d to part %1d, proc %1d\n", */
 /*	     zz->Proc, i, prt->part[i], newproc[i]); */

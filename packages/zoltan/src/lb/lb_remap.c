@@ -120,7 +120,6 @@ End:
   return(ierr);
 }
 
-
 /******************************************************************************/
 static int local_HEs_from_import_lists(
   ZZ *zz,

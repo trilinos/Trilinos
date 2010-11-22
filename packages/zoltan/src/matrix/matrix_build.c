@@ -127,7 +127,8 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   CHECK_IERR;
 
   /* Hope a linear assignment will help a little */
-  Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
+  if (matrix->globalX/zz->Num_Proc)
+    Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
   /* Associate all the data with our xGNO */
   xpid = (int*)ZOLTAN_MALLOC(nX*sizeof(int));
   if (nX >0 && xpid == NULL) MEMORY_ERROR;
@@ -256,7 +257,8 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
       ierr = Zoltan_DD_Create (&matrix->ddY, zz->Communicator, gno_size_for_dd, zz->Num_GID,
 			       0, matrix->globalY/zz->Num_Proc, 0);
       /* Hope a linear assignment will help a little */
-      Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddY, matrix->globalY/zz->Num_Proc);
+      if (matrix->globalY/zz->Num_Proc)
+        Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddY, matrix->globalY/zz->Num_Proc);
       /* Associate all the data with our yGNO */
       Zoltan_DD_Update (matrix->ddY, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, NULL, NULL, matrix->nY);
   }

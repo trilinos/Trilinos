@@ -1456,8 +1456,8 @@ static int is_gno_local(HierPartParams *hpp, ZOLTAN_GNO_TYPE gno) {
 /* insert a gid uniquely into the (ordered) gnos_of_interest array */
 /* it might be more efficient to make a big unsorted array with duplicates 
    then remove duplicates and sort */
-static void insert_unique_gids_of_interest(HierPartParams *hpp,
-					   ZOLTAN_GNO_TYPE gid) {
+static void insert_unique_gnos_of_interest(HierPartParams *hpp,
+					   ZOLTAN_GNO_TYPE gno) {
   int low, mid, high, index;
 
   HIER_CHECK_GNO_RANGE(gno);
@@ -1465,10 +1465,10 @@ static void insert_unique_gids_of_interest(HierPartParams *hpp,
   /* we will not always insert, but we realloc first just in case */
   if (hpp->allocsize_gnos_of_interest == hpp->num_gnos_of_interest) {
     /* reasonable increment? */
-    hpp->allocsize_gids_of_interest += hpp->hier_num_obj + 1;
-    hpp->gids_of_interest = 
-      (ZOLTAN_ID_TYPE *)ZOLTAN_REALLOC(hpp->gids_of_interest, 
-          sizeof(ZOLTAN_ID_TYPE)* hpp->allocsize_gids_of_interest);
+    hpp->allocsize_gnos_of_interest += hpp->hier_num_obj + 1;
+    hpp->gnos_of_interest = 
+      (ZOLTAN_GNO_TYPE *)ZOLTAN_REALLOC(hpp->gnos_of_interest, 
+          sizeof(ZOLTAN_GNO_TYPE)* hpp->allocsize_gnos_of_interest);
   }
 
   /* find it (or not) */
@@ -1793,7 +1793,7 @@ static void Zoltan_Hier_Geom_Fn(void *data, int num_gid_entries,
   int i;
   double *coord_ptr;
 
-  HIER_CHECK_GNO_RANGE((index_type)gid);
+  HIER_CHECK_GNO_RANGE((ZOLTAN_GNO_TYPE)gid);
 
   /* everything is OK unless we don't find it */
   *ierr = ZOLTAN_OK;
@@ -2403,7 +2403,7 @@ static void Zoltan_Hier_Unpack_Obj_Fn(void *data,
       goto End;
     }
     if (hpp->output_level >= HIER_DEBUG_ALL) {
-      printf("[%d] unpacking GID " ZOLTAN_ID_SPEC " into slot %d\n", hpp->origzz->Proc, gid,
+      printf("[%d] unpacking GID %zd into slot %d\n", hpp->origzz->Proc, gno,
 	     local_index);
     }
     hpp->migrated_in_data[local_index] = (void *)info;

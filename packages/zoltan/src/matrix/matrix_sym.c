@@ -134,7 +134,8 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 			     sizeof(int), matrix->globalX/zz->Num_Proc, 0);
     matrix->ddY = matrix->ddX;
     /* Hope a linear assignment will help a little */
-    Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
+    if (matrix->globalX/zz->Num_Proc)
+      Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
     /* Associate all the data with our xyGNO */
     Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (char *)ypid, ybipart,
 		      matrix->nY);

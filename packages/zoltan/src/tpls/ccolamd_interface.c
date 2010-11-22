@@ -38,6 +38,9 @@ static PARAM_VARS CColAMD_params[] = {
  * used by Zoltan_order.
  **************************************************************************/
 
+#if 0  
+/* This function is not yet used in Zoltan. */
+
 int Zoltan_CColAMD_Order(
   ZZ *zz,               /* Zoltan structure */
   int num_obj,		/* Number of (local) objects to order. */
@@ -52,6 +55,7 @@ int Zoltan_CColAMD_Order(
 {
   return (ZOLTAN_OK);
 }
+#endif
 
 
 /***************************************************************************

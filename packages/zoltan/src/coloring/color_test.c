@@ -54,8 +54,7 @@ int Zoltan_Color_Test(
 			      /* The application must allocate enough space */
     ZOLTAN_ID_PTR local_ids,  /* Input: local ids of the vertices */
 			      /* The application must allocate enough space */
-    int *color_exp            /* Output: Colors assigned to local vertices */
-			      /* The application must allocate enough space */
+    int *color_exp            /* Input: Colors assigned to local vertices */
 )
 {
   static char *yo = "color_test_fn";
@@ -129,8 +128,6 @@ int Zoltan_Color_Test(
       coloring_method = 'F';
   }
 
-  if (coloring_problem != '1')
-      ZOLTAN_COLOR_ERROR(ZOLTAN_WARN, "Zoltan_Color_Test is only implemented for distance-1 coloring. Skipping verification.");
 
   /* Compute Max number of array entries per ID over all processors.
      This is a sanity-maintaining step; we don't want different
@@ -149,7 +146,7 @@ int Zoltan_Color_Test(
   /* BUILD THE GRAPH */
   /* Check that the user has allocated space for the return args. */
   if (!color_exp)
-      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
+      ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Color argument is NULL. Please give colors of local vertices.");
 
 
   Zoltan_ZG_Build (zz, &graph, 0);
@@ -170,31 +167,61 @@ int Zoltan_Color_Test(
       MEMORY_ERROR;
 
 
-
   for (i=0; i<zz->Num_Proc; i++)
       reccnt[i] = vtxdist[i+1]-vtxdist[i];
   MPI_Allgatherv(color_exp, nvtx, MPI_INT, color, reccnt, vtxdist, MPI_INT, zz->Communicator);
 
   /* Check if there is an error in coloring */
-  for (i=0; i<nvtx; i++) {
-      int gno = i + vtxdist[zz->Proc];
-      if (color[gno] == 0) { /* object i is not colored */
-	  ierr = ZOLTAN_FATAL;
-	  break;
-	  /* printf("Error in coloring! u:%d, cu:%d\n", gno, color[gno]); */
+  if (coloring_problem == '1') {
+      for (i=0; i<nvtx; i++) {
+          int gno = i + vtxdist[zz->Proc];
+          if (color[gno] <= 0) { /* object i is not colored properly */
+              ierr = ZOLTAN_FATAL;
+              break;
+              /* printf("Error in coloring! u:%d, cu:%d\n", gno, color[gno]); */
+          }
+          for (j = xadj[i]; j < xadj[i+1]; ++j) {
+              int v = adjncy[j];
+              if (color[gno] == color[v]) { /* neighbors have the same color */
+                  ierr = ZOLTAN_FATAL;
+                  break;
+                  /* printf("Error in coloring! u:%d, v:%d, cu:%d, cv:%d\n", gno, v, color[gno], color[v]); */
+              }
+          }
+          if (ierr == ZOLTAN_FATAL)
+              break;
       }
-      for (j = xadj[i]; j < xadj[i+1]; j++) {
-	  int v = adjncy[j];
-	  if (color[gno] == color[v]) { /* neighbors have the same color */
-	      ierr = ZOLTAN_FATAL;
-	      break;
-	      /* printf("Error in coloring! u:%d, v:%d, cu:%d, cv:%d\n", gno, v, color[gno], color[v]); */
-	  }
-      }
-      if (ierr == ZOLTAN_FATAL)
-	  break;
-  }
+  } else if (coloring_problem == '2') {
+      for (i=0; i<nvtx; i++) {
+          int gno = i + vtxdist[zz->Proc];
+          if (color[gno] <= 0) { /* object i is not colored properly */
+              ierr = ZOLTAN_FATAL;
+              break;
+              /* printf("Error in coloring! u:%d, cu:%d\n", gno, color[gno]); */
+          }
+          for (j = xadj[i]; j < xadj[i+1]; ++j) {
+              int v = adjncy[j], k;
+              if (color[gno] == color[v]) { /* d-1 neighbors have the same color */
+                  ierr = ZOLTAN_FATAL;
+                  break;
+                  /* printf("Error in coloring! d1-neigh: u:%d, v:%d, cu:%d, cv:%d\n", gno, v, color[gno], color[v]); */
+              }
+              for (k = j+1; k < xadj[i+1]; ++k) {
+                  int w = adjncy[k];
+                  if (color[v] == color[w]) { /* d-2 neighbors have the same color */
+                      ierr = ZOLTAN_FATAL;
+                      break;
+                      /* printf("Error in coloring! d2-neigh: v:%d, w:%d, cv:%d, cw:%d\n", v, w, color[v], color[w]); */
+                  }
 
+              }
+          }
+          if (ierr == ZOLTAN_FATAL)
+              break;
+      }      
+  } else 
+      ZOLTAN_COLOR_ERROR(ZOLTAN_WARN, "Zoltan_Color_Test is only implemented for distance-1 and distance-2 coloring. Unknown coloring, skipping verification.");      
+  
  End:
   if (ierr==ZOLTAN_FATAL)
       ierr = 2;

@@ -200,6 +200,7 @@ int Zoltan_Preprocess_Graph(
   if (gr->get_data) {
     ZOLTAN_FREE(&float_vwgt);
     ZOLTAN_FREE(global_ids);
+    ZOLTAN_FREE(local_ids);
     local = IS_LOCAL_GRAPH(gr->graph_type);
 
     ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
@@ -268,23 +269,25 @@ int Zoltan_Preprocess_Graph(
 
     if (prt){
 
-      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, (int **)&prt->input_part);
+      input_part = NULL;
+
+      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, (int **)&input_part);
 
       if (sizeof(indextype) != sizeof(int)){
 
         /* Zoltan query function gets int data type, but TPL structures store indextype */
 
-        buf = NULL;
-        j = graph->mtx.mtx.nY;
-        buf = (indextype *) ZOLTAN_MALLOC(sizeof(indextype) * j);
-        if (j > 0 && !buf)
+        prt->input_part = (indextype *) ZOLTAN_MALLOC(sizeof(indextype) * gr->num_obj);
+        if (gr->num_obj > 0 && !prt->input_part)
           ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
 
-        for (i=0; i < j; i++){
-          buf[i] = (indextype)(prt->input_part[i]);
+        for (i=0; i < gr->num_obj; i++){
+          prt->input_part[i] = (indextype)input_part[i];
         }
-        ZOLTAN_FREE(&prt->input_part);
-        prt->input_part = buf;
+        ZOLTAN_FREE(&input_part);
+      }
+      else{
+        prt->input_part = (indextype *)input_part;
       }
     }
     else{
@@ -301,17 +304,20 @@ int Zoltan_Preprocess_Graph(
 
     /* Confusing: Here global_ids will point to memory allocated by Zoltan_Get_Obj_List */
 
+    input_part = NULL;
+
     ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
 			       gr->obj_wgt_dim, &float_vwgt, &input_part);
     CHECK_IERR;
+
     if (prt) {
       if (sizeof(indextype) != sizeof(int)){
         /* Zoltan query function gets int data type, but TPL structures store indextype */
-        prt->input_part = (indextype *) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(indextype));
-        if (graph->mtx.mtx.nY > 0 && prt->input_part == NULL) 
+        prt->input_part = (indextype *) ZOLTAN_MALLOC(gr->num_obj*sizeof(indextype));
+        if (gr->num_obj > 0 && prt->input_part == NULL) 
           ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
 
-        for (i=0; i < graph->mtx.mtx.nY; i++){
+        for (i=0; i < gr->num_obj; i++){
           prt->input_part[i] = (indextype)input_part[i];
         }
         ZOLTAN_FREE(&input_part);
@@ -620,6 +626,7 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
   int num_lid_entries = zz->Num_LID;
   int ierr= ZOLTAN_OK;
   int i;
+  int *buf = NULL;
 
   if (gr->obj_wgt_dim)
     vsp->vsize_malloc = 0;
@@ -635,17 +642,36 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
       /* Not enough space */
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
+
   if (zz->Get_Obj_Size_Multi) {
-     /* assumes sizeof(indextype) == sizeof(int) */
+
+    if (sizeof(indextype) == sizeof(int) ){
+      buf = (int *)ZOLTAN_MALLOC(sizeof(int) * gr->num_obj);
+      if (gr->num_obj && !buf){
+        ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+      }
+    }
+    else {
+      buf = (int *)vsp->vsize;
+    }
+
     zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
 			   num_gid_entries, num_lid_entries, gr->num_obj,
-			   *global_ids, *local_ids, (int *)vsp->vsize, &ierr);
+			   *global_ids, *local_ids, buf, &ierr);
+
+    if (sizeof(indextype) == sizeof(int) ){
+      for (i=0; i < gr->num_obj; i++){
+        vsp->vsize[i] = (indextype)buf[i];
+      }
+      ZOLTAN_FREE(&buf);
+    }
+
   }
   else if (zz->Get_Obj_Size) {
     ZOLTAN_ID_PTR lid;
     for (i=0; i<gr->num_obj; i++){
       lid = (num_lid_entries ? &((*local_ids)[i*num_lid_entries]) : NULL);
-      vsp->vsize[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
+      vsp->vsize[i] = (indextype)zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
 				  num_gid_entries, num_lid_entries,
 				  &((*global_ids)[i*num_gid_entries]),
 				  lid, &ierr);

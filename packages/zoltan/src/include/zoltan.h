@@ -33,7 +33,7 @@ typedef void ZOLTAN_VOID_FN(void);
 extern "C" {
 #endif
 
-#define ZOLTAN_VERSION_NUMBER   3.3
+#define ZOLTAN_VERSION_NUMBER   3.4
 
 /*****************************************************************************
  *  Data types and functions describing the interface between the
@@ -2922,8 +2922,7 @@ int Zoltan_Color_Test(
                               /* The application must allocate enough space */    
     ZOLTAN_ID_PTR local_ids,  /* Input: local ids of the vertices */
                               /* The application must allocate enough space */
-    int *color_exp            /* Output: Colors assigned to local vertices */
-                              /* The application must allocate enough space */
+    int *color_exp            /* Input: Colors assigned to local vertices */
     ); 
     
 
@@ -3299,6 +3298,39 @@ extern int Zoltan_LB_Set_Part_Sizes(struct Zoltan_Struct *zz, int global_num,
  *    Return value  --  Error code.
  */
 extern int Zoltan_Generate_Files(struct Zoltan_Struct *zz, char *fname, int base_index, int gen_geom, int gen_graph, int gen_hg);
+
+#define PLATFORM_MAX_LEVELS 8
+
+enum {GLORY,
+      REDSKY,
+      CTX,
+      ODIN,
+      OCTOPI,
+      S861036,
+      ZOLTAN_HIER_LAST_PLATFORM};
+
+typedef struct _spec{
+  /*
+   * name of predefined topologies, or null if topology given by parameter
+   */
+  char *platform_name;
+
+  /*
+   * size of num_siblings and my_part arrays
+   */
+  int numLevels;
+
+  /*
+   * number of objects (cores, caches, sockets, etc), or number of
+   *  children of the parent, of this level
+   */
+  int num_siblings[PLATFORM_MAX_LEVELS];
+
+  /*
+   * the part computed by this process at this level
+   */
+  int my_part[PLATFORM_MAX_LEVELS];
+} zoltan_platform_specification;
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

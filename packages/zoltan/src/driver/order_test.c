@@ -38,7 +38,6 @@ int Zoltan_Order_Test(
 #ifdef DEBUG_PRINT
   int ancestor;
 #endif /* DEBUG_PRINT */
-  ZOLTAN_ID_PTR perm_gids;
 
   nbr = Zoltan_Order_Get_Num_Blocks(zz);
 #ifdef DEBUG_PRINT

@@ -33,6 +33,7 @@
 #include "dr_const.h"
 #include "dr_input_const.h"
 #include "dr_loadbal_const.h"
+#include "dr_util_const.h"
 #include "dr_output_const.h"
 #include "dr_err_const.h"
 #include "dr_elem_util_const.h"
