@@ -21,13 +21,14 @@
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"
+#include "Panzer_GlobalNumProvider.hpp"
 
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class DOFManager {
+class DOFManager : public GlobalNumProvider<LocalOrdinalT,GlobalOrdinalT> {
 public:
    typedef GlobalOrdinalT GlobalOrdinal;
    typedef LocalOrdinalT LocalOrdinal;
@@ -198,8 +199,6 @@ public:
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
-     *
-     * \notes Should this use an int* instead?
      */
    void getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids) const;
 

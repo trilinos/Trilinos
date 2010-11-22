@@ -66,6 +66,7 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_ConnManager.hpp
   dofmngr/Panzer_DOFManager.hpp
   dofmngr/Panzer_DOFManagerT.hpp
+  dofmngr/Panzer_GlobalNumProvider.hpp
   ) 
 
 APPEND_SET(SOURCES
