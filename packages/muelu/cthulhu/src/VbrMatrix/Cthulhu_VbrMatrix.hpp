@@ -1,4 +1,4 @@
-#ifndef CTHULHU_VBRMATRIX__HPP
+#ifndef CTHULHU_VBRMATRIX_HPP
 #define CTHULHU_VBRMATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
