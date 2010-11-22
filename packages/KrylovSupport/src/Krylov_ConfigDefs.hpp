@@ -52,7 +52,7 @@ namespace Krylov {
 
   /// Return a string containing version information for the
   /// KrylovSupport package.
-  std::string Krylov_Version(); 
+  std::string KrylovSupport_Version(); 
 
 } // namespace Krylov
 

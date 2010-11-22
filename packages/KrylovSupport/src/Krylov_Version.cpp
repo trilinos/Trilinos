@@ -49,7 +49,7 @@
 
 namespace Krylov {
 
-  std::string Krylov_Version() {
+  std::string KrylovSupport_Version() {
     return "KrylovSupport version 0.1";
   }
 
