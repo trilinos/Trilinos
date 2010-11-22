@@ -38,6 +38,7 @@
 #include "Teuchos_any.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterEntryValidator.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 
 namespace Teuchos {
 
@@ -52,7 +53,16 @@ class ParameterList; // another parameter type (forward declaration)
     templated Set/Get methods.
 */
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntry {
+
 public:
+
+  /** \name Public types */
+  //@{
+  
+  /** \brief . */
+  typedef unsigned int ParameterEntryID;
+  
+  //@}
 
   //! @name Constructors/Destructor 
   //@{
@@ -70,9 +80,6 @@ public:
     const std::string &docString = "",
     RCP<const ParameterEntryValidator> const& validator = null
     );
-
-  //! Destructor
-  ~ParameterEntry();
 
   //@}
 
@@ -165,6 +172,9 @@ public:
   inline
   bool isType() const;
 
+  //! Test if the type of data being contained is a Teuchos::Array.
+  inline bool isArray() const;
+
   //! Indicate whether this entry takes on the default value.
   inline
   bool isDefault() const;
@@ -180,7 +190,7 @@ public:
   //@}
 
   //! @name I/O Methods 
-
+  //@{
   /*! \brief Output a non-list parameter to the given output stream.  
 
       The parameter is followed by "[default]" if it is the default value given through a 
@@ -189,8 +199,16 @@ public:
   */
   std::ostream& leftshift(std::ostream& os, bool printFlags = true) const;
 
+  /*! \brief Get the string that should be used as the tag name for all parameters when they are serialized
+   * to xml.
+   */
+  static const std::string& getTagName(){
+      static const std::string tagName = "Parameter";
+      return tagName;
+  }
+  
   //@}
-
+  
 private:
 
   //! Reset the entry
@@ -230,6 +248,17 @@ template<typename T>
 inline T& getValue( const ParameterEntry &entry )
 {
   return entry.getValue((T*)NULL);
+}
+
+/*! \relates ParameterEntry 
+    \brief A templated helper function for returning the value of type \c T held in the ParameterEntry object,
+    where the type \c T can be specified in the call.  This is an easier way to call the getValue method
+    in the ParameterEntry class, since the user does not have to pass in a pointer of type \c T.
+*/
+template<typename T>
+inline T& getValue(RCP<const ParameterEntry> entry)
+{
+  return entry->getValue((T*)NULL);
 }
 
 /*! \relates ParameterEntry 
@@ -280,10 +309,6 @@ ParameterEntry::ParameterEntry(
     isDefault_(isDefault_in),
     docString_(docString_in),
     validator_(validator_in)
-{}
-
-inline
-ParameterEntry::~ParameterEntry()
 {}
 
 // Set Methods
@@ -343,6 +368,10 @@ bool ParameterEntry::isType() const
 { return val_.type() == typeid(T); }
 
 inline
+bool ParameterEntry::isArray() const
+{ return val_.typeName().find("Array<")!=std::string::npos; }
+
+inline
 bool ParameterEntry::isDefault() const
 { return isDefault_; }
 
@@ -355,6 +384,8 @@ RCP<const ParameterEntryValidator>
 ParameterEntry::validator() const
 { return validator_; }
 
+
 } // namespace Teuchos
+
 
 #endif

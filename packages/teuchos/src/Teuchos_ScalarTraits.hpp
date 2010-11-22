@@ -167,6 +167,39 @@ struct ScalarTraits<short int>
   static inline short int pow(short int x, short int y) { return (short int) std::pow((double)x,(double)y); }
 };
 
+template<>
+struct ScalarTraits<unsigned short int>
+{
+  typedef unsigned short int magnitudeType;
+  typedef unsigned short int halfPrecision;
+  typedef unsigned short int doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(unsigned short int a) { return static_cast<unsigned short int>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned short int zero()  { return 0; }
+  static inline unsigned short int one()   { return 1; }
+  static inline unsigned short int conjugate(unsigned short int x) { return x; }
+  static inline unsigned short int real(unsigned short int x) { return x; }
+  static inline unsigned short int imag(unsigned short int) { return 0; }
+  static inline bool isnaninf(unsigned short int) { return false; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline unsigned short int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "unsigned short int"; }
+  static inline unsigned short int squareroot(unsigned short int x) { return (unsigned short int) std::sqrt((double) x); }
+  static inline unsigned short int pow(unsigned short int x, unsigned short int y) { return (unsigned short int) std::pow((double)x,(double)y); }
+};
+
 
 template<>
 struct ScalarTraits<int>
@@ -332,6 +365,38 @@ struct ScalarTraits<long long int>
   static inline std::string name() { return "long long int"; }
   static inline long long int squareroot(long long int x) { return (long long int) std::sqrt((double) x); }
   static inline long long int pow(long long int x, long long int y) { return (long long int) std::pow((double)x,(double)y); }
+};
+
+template<>
+struct ScalarTraits<unsigned long long int>
+{
+  typedef unsigned long long int magnitudeType;
+  typedef unsigned long long int halfPrecision;
+  typedef unsigned long long int doublePrecision;
+  static const bool isComplex = false;
+  static const bool isOrdinal = true;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = false;
+  // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+  static inline magnitudeType magnitude(unsigned long long int a) { return static_cast<unsigned long long int>(std::fabs(static_cast<double>(a))); }
+  static inline unsigned long long int zero()  { return 0; }
+  static inline unsigned long long int one()   { return 1; }
+  static inline unsigned long long int conjugate(unsigned long long int x) { return x; }
+  static inline unsigned long long int real(unsigned long long int x) { return x; }
+  static inline unsigned long long int imag(unsigned long long int) { return 0; }
+  static inline void seedrandom(unsigned int s) { 
+    std::srand(s); 
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  //static inline int random() { return (-1 + 2*rand()); }  // RAB: This version should be used to be consistent with others
+  static inline unsigned long long int random() { return std::rand(); }             // RAB: This version should be used for an unsigned int, not int
+  static inline std::string name() { return "unsigned long long int"; }
+  static inline unsigned long long int squareroot(unsigned long long int x) { return (unsigned long long int) std::sqrt((double) x); }
+  static inline unsigned long long int pow(unsigned long long int x, unsigned long long int y) { return (unsigned long long int) std::pow((double)x,(double)y); }
 };
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 

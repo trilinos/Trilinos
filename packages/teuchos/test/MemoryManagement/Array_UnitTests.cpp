@@ -64,27 +64,47 @@ TEUCHOS_UNIT_TEST( Array, stringToArray )
 {
 
   {
-    Array<std::string> arrayVal = fromStringToArray<std::string>("{}");
+    std::string arrayString="{}";
+    std::istringstream arrayStream(arrayString);
+    Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
+    Array<std::string> arrayStreamVal;
+    arrayStream >> arrayStreamVal;
     Array<std::string> arrayVal_exp;
     TEST_EQUALITY(arrayVal, arrayVal_exp);
+    TEST_EQUALITY(arrayStreamVal, arrayVal_exp);
   }
 
   {
-    Array<std::string> arrayVal = fromStringToArray<std::string>("{ a, b, c, d }");
+    std::string arrayString = "{ a, b, c, d }";
+    std::istringstream arrayStream(arrayString);
+    Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
+    Array<std::string> arrayStreamVal;
+    arrayStream >> arrayStreamVal;
     Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("a", "b", "c", "d" );
     TEST_EQUALITY(arrayVal, arrayVal_exp);
+    TEST_EQUALITY(arrayStreamVal, arrayVal_exp);
   }
 
   {
-    Array<std::string> arrayVal = fromStringToArray<std::string>("{ (a), b, c, (d) }");
+    std::string arrayString = "{ (a), b, c, (d) }";
+    std::istringstream arrayStream(arrayString);
+    Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
+    Array<std::string> arrayStreamVal;
+    arrayStream >> arrayStreamVal;
     Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("(a)", "b", "c", "(d)" );
     TEST_EQUALITY(arrayVal, arrayVal_exp);
+    TEST_EQUALITY(arrayStreamVal, arrayVal_exp);
   }
 
   {
-    Array<std::string> arrayVal = fromStringToArray<std::string>("{ (a ), b, c, (d ) }");
+    std::string arrayString = "{ (a ), b, c, (d ) }";
+    std::istringstream arrayStream(arrayString);
+    Array<std::string> arrayVal = fromStringToArray<std::string>(arrayString);
+    Array<std::string> arrayStreamVal;
+    arrayStream >> arrayStreamVal;
     Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("(a )", "b", "c", "(d )" );
     TEST_EQUALITY(arrayVal, arrayVal_exp);
+    TEST_EQUALITY(arrayStreamVal, arrayVal_exp);
   }
 
   // This should work but does not.  I should fix this!
@@ -475,7 +495,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter_const, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView_const, T )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, structuralChangeArrayView_const, T ) \
   DEBUG_UNIT_TEST_GROUP( T )
 
 UNIT_TEST_GROUP(int)

@@ -126,7 +126,7 @@ public:
   /** \brief . */
   ~MpiReductionOpSetter();
 
-  /** \breif Return the created <tt>MPI_Op</tt> reduction object that can be used
+  /** \brief Return the created <tt>MPI_Op</tt> reduction object that can be used
    * by MPI.
    *
    * Note, this reduction function object will only be valid while <tt>*this</tt> is still

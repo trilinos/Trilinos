@@ -48,6 +48,9 @@
 /* Define if want to build teuchos-boost */
 #cmakedefine HAVE_TEUCHOS_BOOST
 
+/* Define if you want to build teuchos-qt */
+#cmakedefine HAVE_TEUCHOS_QT
+
 /* Define if want to build teuchos-qd */
 #cmakedefine HAVE_TEUCHOS_QD
 
