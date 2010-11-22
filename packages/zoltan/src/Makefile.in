@@ -627,7 +627,7 @@ TPLS = \
 	$(srcdir)/tpls/verify_graph.c
 
 CCOLAMD_H = \
-	$(srcdir)/ccolamd/zoltan_ccolamd.h 
+	$(srcdir)/ccolamd/zoltan_ccolamd.h
 
 CCOLAMD = \
 	$(srcdir)/ccolamd/ccolamd.c

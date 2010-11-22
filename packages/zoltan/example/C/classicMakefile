@@ -31,6 +31,11 @@ SRC=../../src
 ZOLTAN_INCLUDE=-I$(SRC)/include
 
 ##
+## For an autoconf build, the location of Zoltan_config.h
+##
+ZOLTAN_CONFIG_INCLUDE=-I$(BLD)/include
+
+##
 ## Headers for zoltan utilities, not often used by applications
 ## Needed for use of Zoltan_Hash in simpleGRAPH.c
 ##

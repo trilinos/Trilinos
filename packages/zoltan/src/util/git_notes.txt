@@ -22,9 +22,14 @@ A common scenario (assuming working in master):
    git merge origin/master
    git push origin master
 
+To make gitk show only zoltan commits:
+-  cd Trilinos
+   gitk -- packages/zoltan
+
 Commands:
 
 -  git clone software.sandia.gov:/space/git/Trilinos
+-  git clone software.sandia.gov:/space/git/preCopyrightTrilinos
 
 -  git status
    Shows which state files are in
@@ -92,6 +97,11 @@ Commands:
 -  git pull
    Gets all new work pushed to server since last fetch/clone.
    Attempts a merge on current branch.
+
+-  git pull --rebase
+   Gets all new work pushed to server since last fetch/clone.
+   Applies the new work so it precedes (instead of follows) the work 
+   you have committed but not pushed yet.  Preferred way to push committed work.
    
 -  git push [remote] [branch]
    Push committed work to server.
@@ -105,11 +115,18 @@ Commands:
 -  git tag "tagname"
    Adds a lightweight tag
 
+-  git checkout -b <name> "tagname"
+   Check out from master a tagged version of code to be known
+   locally as branch "name"
+
 -  git push origin --tags
    Have to explicitly push tags to origin; they don't go with normal "git push"
 
+-  git push origin origin:refs/heads/HMC_Clinic_2010_Partitioning
+   create branch HMC_Clinic_2010_Partitioning at HEAD of origin in global repo
+
 -  git branch <branchname>
-   create a branch
+   create a branch in local repo
 
 -  git branch -d <branchname>
    delete a branch.
@@ -153,6 +170,8 @@ Commands:
    !! Do not rebase commits that you have pushed to a public repository. !!
    !! only rebase commits that have never been available publicly.  !!
 
+-  git checkout `git rev-list -n 1 --before="2010-06-22" master
+   Checkout a copy of the code from a given date.
 
 ---------------------------------------------------------------------------
 How I merged the trilinos-release-10-0-branch with the main trunk

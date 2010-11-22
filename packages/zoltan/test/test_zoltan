@@ -77,6 +77,11 @@ set exit_on_failure = $?ZOLTAN_EXIT_ON_FAILURE
 #  only if it fails to complete.
 #
 set failure_detail = $?ZOLTAN_FAILURE_DETAIL
+#
+# Replace the answers with the output of these tests
+#
+set new_answers = $?ZOLTAN_NEW_ANSWERS
+
 set no_hier = $?ZOLTAN_NO_HIER
 set yes_drum = $?ZOLTAN_YES_DRUM
 
@@ -133,6 +138,8 @@ while ( $#argv )
      @ exit_on_failure = 1
   else if ( "$1" == "-failure_detail" ) then
      @ failure_detail = 1
+  else if ( "$1" == "-new_answers" ) then
+     @ new_answers = 1
 
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
 
@@ -757,19 +764,25 @@ if (! $no_chaco ) then
 
   	    while ( $i < $np )
   	      /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
-  	      if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix ) then
+
+    	      if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix ) then
   	        set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix
   	      else
   	        set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
   	      endif
-  	      diff -ciw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
-  	      if ( $status ) then
-                if ( $failure_detail ) then
-    	          @ difffail = 1
-                else
-    	          @ fail = 1
-                endif
-  	      endif
+
+              if ( $new_answers ) then
+  	        cp ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile
+              else
+    	        diff -ciw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+    	        if ( $status ) then
+                  if ( $failure_detail ) then
+      	          @ difffail = 1
+                  else
+      	          @ fail = 1
+                  endif
+    	        endif
+    	      endif
   
   	      # If drop files were created, test them.
   	      if (-e ${ch_name[1]}.drops.$np.$i ) then
@@ -780,9 +793,13 @@ if (! $no_chaco ) then
   	        else
   		  set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i
   	        endif
-  	        diff -ciw ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
-  	        if ( $status ) then
-  		  @ dropfail = 1
+                if ( $new_answers ) then
+  	          cp ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile
+                else 
+  	          diff -ciw ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+  	          if ( $status ) then
+  		    @ dropfail = 1
+  	          endif
   	        endif
   	      endif
   
@@ -930,13 +947,18 @@ if ( $yes_nemesis ) then
 	      else
 	        set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i
 	      endif
-	      diff -ciw ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
-	      if ( $status ) then
-                if ( $failure_detail ) then
-    	          @ difffail = 1
-                else
-    	          @ fail = 1
-                endif
+
+              if ( $new_answers ) then
+	        cp ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile
+              else
+	        diff -ciw ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+	        if ( $status ) then
+                  if ( $failure_detail ) then
+    	            @ difffail = 1
+                  else
+    	            @ fail = 1
+                  endif
+	        endif
 	      endif
   
             else                                          # no output files
@@ -951,9 +973,13 @@ if ( $yes_nemesis ) then
 	      else
 		set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i
 	      endif
-	      diff -ciw ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
-	      if ( $status ) then
-		@ dropfail = 1
+              if ( $new_answers ) then
+	        cp ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i $answerfile 
+              else
+	        diff -ciw ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+	        if ( $status ) then
+		  @ dropfail = 1
+	        endif
 	      endif
 	    endif
 
@@ -1200,18 +1226,24 @@ if (! $no_hg) then
             if (-e ${hg_name[1]}.$out_tag.$np.$field) then             # we have an output file
 
  	      /bin/mv ${hg_name[1]}.$out_tag.$np.$field  ${outdir}/${outfile}
-	      if (-e ${answers}/${outfile}.$suffix ) then
+
+              if (-e ${answers}/${outfile}.$suffix ) then
 	        set answerfile = ${answers}/${outfile}.$suffix
 	      else
 	        set answerfile = ${answers}/${outfile}
 	      endif
-	      diff -ciw ${outdir}/${outfile} $answerfile >> ../$logfile
-	      if ( $status ) then
-                if ( $failure_detail ) then
-    	          @ difffail = 1
-                else
-    	          @ fail = 1
-                endif
+
+              if ( $new_answers ) then
+	        cp ${outdir}/${outfile} $answerfile
+              else
+	        diff -ciw ${outdir}/${outfile} $answerfile >> ../$logfile
+	        if ( $status ) then
+                  if ( $failure_detail ) then
+    	            @ difffail = 1
+                  else
+    	            @ fail = 1
+                  endif
+	        endif
 	      endif
             else
 	        @ fail = 1                  # we do not have an output file

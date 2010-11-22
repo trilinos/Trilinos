@@ -10,6 +10,7 @@
 //#define MPICPP // Uncomment to use C++ interface for MPI.
 
 #include <mpi.h>
+#include <stdio.h>
 #include <zoltan_cpp.h>
 
 // Class representing collection of objects to be partitioned.
