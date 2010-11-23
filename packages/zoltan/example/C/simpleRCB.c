@@ -371,7 +371,7 @@ int x_tag = 20, y_tag = 25;
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
 
-      num = sscanf(buf, "%" ZOLTAN_ID_SPEC, myMesh->myGlobalIDs + i);
+      num = sscanf(buf, ZOLTAN_ID_SPEC, myMesh->myGlobalIDs + i);
 
       if (num != 1) input_file_error(numProcs, count_tag, 1);
 
@@ -405,7 +405,7 @@ int x_tag = 20, y_tag = 25;
         for (j=0; j < nobj; j++){
           num = get_next_line(fp, buf, bufsize);
           if (num == 0) input_file_error(numProcs, count_tag, i);
-          num = sscanf(buf, "%" ZOLTAN_ID_SPEC, gids + j);
+          num = sscanf(buf, ZOLTAN_ID_SPEC, gids + j);
           if (num != 1) input_file_error(numProcs, count_tag, i);
           num = sscanf(buf, "%f %f", xcoord + j, ycoord + j);
           if (num != 2) input_file_error(numProcs, count_tag, i);
