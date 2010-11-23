@@ -44,7 +44,6 @@ Teuchos::RCP<panzer::ConnManager<int,int> > buildQuadMesh(stk::ParallelMachine c
    meshFact.setParameterList(Teuchos::rcpFromRef(pl));
    
    Teuchos::RCP<panzer_stk::STK_Interface> mesh = meshFact.buildMesh(comm);
-   mesh->writeToExodus("una-taco.exo");
    return Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 }
 
@@ -147,6 +146,97 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, buildTest_quad)
       TEST_EQUALITY(gids[6],24); TEST_EQUALITY(gids[7],25); TEST_EQUALITY(gids[8],26);
       TEST_EQUALITY(gids[9],15); TEST_EQUALITY(gids[10],16); TEST_EQUALITY(gids[11],17);
    }
+}
+
+// quad tests
+TEUCHOS_UNIT_TEST(tSquareQuadMeshDOFManager, shared_owned_indices)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      stk::ParallelMachine Comm = MPI_COMM_WORLD;
+   #else
+      stk::ParallelMachine Comm = WHAT_TO_DO_COMM;
+   #endif
+
+   int numProcs = stk::parallel_machine_size(Comm);
+   int myRank = stk::parallel_machine_rank(Comm);
+
+   TEUCHOS_ASSERT(numProcs<=2);
+
+   // build a geometric pattern from a single basis
+   RCP<const panzer::FieldPattern> patternC1 
+         = buildFieldPattern<Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer> >();
+
+   // build DOF manager
+   RCP<panzer::ConnManager<int,int> > connManager = buildQuadMesh(Comm,2,2,1,1);
+   RCP<panzer::DOFManager<int,int> > dofManager = rcp(new panzer::DOFManager<int,int>());
+   dofManager->setConnManager(connManager,MPI_COMM_WORLD);
+   dofManager->addField("u",patternC1);
+   dofManager->buildGlobalUnknowns();
+
+   // test GlobalNumProvider
+   RCP<panzer::GlobalNumProvider<int,int> > glbNum = dofManager;
+
+   std::vector<int> owned, ownedAndShared;
+   glbNum->getOwnedIndices(owned);
+   glbNum->getOwnedAndSharedIndices(ownedAndShared);
+
+   if(numProcs==1) {
+      TEST_EQUALITY(owned.size(),ownedAndShared.size());
+
+      bool ownedCorrect = true;
+      bool ownedAndSharedCorrect = true;
+      std::sort(owned.begin(),owned.end());
+      std::sort(ownedAndShared.begin(),ownedAndShared.end());
+      for(std::size_t i=0;i<owned.size();i++) {
+         ownedCorrect &= (owned[i] == (int) i);
+         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) i);
+      }
+
+      TEST_ASSERT(ownedCorrect);
+      TEST_ASSERT(ownedAndSharedCorrect);
+   }
+   else if(myRank==0 && numProcs==2) {
+      TEST_EQUALITY(owned.size(),6);
+      TEST_EQUALITY(ownedAndShared.size(),6);
+      bool ownedCorrect = true;
+      bool ownedAndSharedCorrect = true;
+
+      std::sort(owned.begin(),owned.end());
+      for(std::size_t i=0;i<owned.size();i++) {
+         ownedCorrect &= (owned[i] == (int) i);
+      }
+      TEST_ASSERT(ownedCorrect);
+
+      std::sort(ownedAndShared.begin(),ownedAndShared.end());
+      for(std::size_t i=0;i<ownedAndShared.size();i++) {
+         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) i);
+      }
+      TEST_ASSERT(ownedAndSharedCorrect);
+   }
+   else if(myRank==1 && numProcs==2) {
+      TEST_EQUALITY(owned.size(),3);
+      TEST_EQUALITY(ownedAndShared.size(),6);
+      bool ownedCorrect = true;
+      bool ownedAndSharedCorrect = true;
+
+      std::sort(owned.begin(),owned.end());
+      for(std::size_t i=0;i<owned.size();i++) {
+         ownedCorrect &= (owned[i] == (int) i+6);
+      }
+      TEST_ASSERT(ownedCorrect);
+
+      std::sort(ownedAndShared.begin(),ownedAndShared.end());
+      for(std::size_t i=0;i<3;i++) {
+         ownedAndSharedCorrect &= (ownedAndShared[i] == (int) (2*i+1));
+      }
+      for(std::size_t i=0;i<3;i++) {
+         ownedAndSharedCorrect &= (ownedAndShared[i+3] == (int) i+6);
+      }
+      TEST_ASSERT(ownedAndSharedCorrect);
+   }
+   else 
+      TEUCHOS_ASSERT(false);
 }
 
 }

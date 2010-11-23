@@ -251,6 +251,16 @@ public:
    const_field_iterator endFieldIter() const
    { return intToFieldStr_.end(); }
 
+   /** Get set of indices owned by this processor
+     */
+   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const;
+
+   /** Get set of indices owned and shared by this processor.
+     * This can be thought of as the ``ghosted'' indices.
+     */
+   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
+ 
+
    //! \defgroup LA_DS_Info Methods that are specific to the linear algebra
    //@{
 
@@ -271,7 +281,7 @@ public:
 
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<Epetra_Export> getOverlapExport() const;
- 
+
    //@}
 
 protected:

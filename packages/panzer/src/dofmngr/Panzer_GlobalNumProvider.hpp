@@ -6,6 +6,9 @@ namespace panzer {
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 class GlobalNumProvider {
 public:
+   //! Pure virtual destructor: prevents warnings with inline empty implementation 
+   virtual ~GlobalNumProvider() = 0;
+
    /** \brief Get the number used for access to this
      *        field
      *
@@ -51,7 +54,20 @@ public:
    virtual const std::vector<int> & getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                                int subcellDim,int subcellId) const = 0;
 
+   /** Get set of indices owned by this processor
+     */
+   virtual void getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
+
+   /** Get set of indices owned and shared by this processor.
+     * This can be thought of as the ``ghosted'' indices.
+     */
+   virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
+
 };
+
+// prevents a warning because a destructor does not exist
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+inline GlobalNumProvider<LocalOrdinalT,GlobalOrdinalT>::~GlobalNumProvider() {}
 
 }
 

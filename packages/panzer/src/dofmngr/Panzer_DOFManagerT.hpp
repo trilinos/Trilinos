@@ -534,4 +534,71 @@ std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::
    return (*blockIdToIndex_)[blockId];
 }
 
+// These two functions are "helpers" for DOFManager::getOwnedIndices
+///////////////////////////////////////////////////////////////////////////
+template <typename OrdinalType> 
+static void getOwnedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<OrdinalType> & indices) 
+{
+   int numIndices, ni;
+   numIndices = vs->getNumIndices_Owned();
+   indices.resize(numIndices);
+   std::vector<int> int_Indices; // until FEI is templated
+
+   // get the number of locally owned degrees of freedom...allocate space
+   int_Indices.resize(numIndices);
+
+   // get the global indices
+   vs->getIndices_Owned(numIndices,&int_Indices[0],ni);
+
+   for(std::size_t i=0;i<int_Indices.size();i++) 
+      indices[i] = (OrdinalType) int_Indices[i];
+}
+
+template < >
+static void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
+{
+   int numIndices, ni;
+   numIndices = vs->getNumIndices_Owned();
+   indices.resize(numIndices);
+
+   // directly write to int indices
+   vs->getIndices_Owned(numIndices,&indices[0],ni);
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
+{
+   getOwnedIndices_T<GlobalOrdinalT>(vectorSpace_,indices);
+}
+///////////////////////////////////////////////////////////////////////////
+
+// These two functions are "helpers" for DOFManager::getOwnedAndSharedIndices
+///////////////////////////////////////////////////////////////////////////
+template <typename OrdinalType> 
+static void getOwnedAndSharedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<OrdinalType> & indices) 
+{
+   std::vector<int> int_Indices; // until FEI is templated
+
+   // get the global indices
+   vs->getIndices_SharedAndOwned(int_Indices);
+
+   indices.resize(int_Indices.size());
+   for(std::size_t i=0;i<int_Indices.size();i++) 
+      indices[i] = (OrdinalType) int_Indices[i];
+}
+
+template < >
+static void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
+{
+   // get the global indices
+   vs->getIndices_SharedAndOwned(indices);
+}
+
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
+{
+   getOwnedAndSharedIndices_T<GlobalOrdinalT>(vectorSpace_,indices);
+}
+///////////////////////////////////////////////////////////////////////////
+
 }
