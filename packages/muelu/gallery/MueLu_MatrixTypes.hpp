@@ -17,6 +17,8 @@
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
 #include "Cthulhu_CrsMatrixFactory.hpp"
+#include "Cthulhu_Operator.hpp"
+#include "Cthulhu_OperatorFactory.hpp"
 #endif
 
 namespace MueLu {
@@ -59,9 +61,9 @@ namespace MueLu {
 
     /* Default traits */
     /* These traits work for the following couples of (Map,Matrix):
-       - Map = Tpetra::Map<>,       and Matrix = Tpetra::CrsMatrix<>  
-       - Map = Cthulhu::TpetraMap<> and Matrix = Cthulhu::TpetraCrsMatrix<>
-       - Map = Cthulhu::EpetraMap,  and Matrix = Cthulhu::EpetraCrsMatrix
+       - Map = Tpetra::Map<...>,       and Matrix = Tpetra::CrsMatrix<...>  
+       - Map = Cthulhu::TpetraMap<...> and Matrix = Cthulhu::TpetraCrsMatrix<...>
+       - Map = Cthulhu::EpetraMap,     and Matrix = Cthulhu::EpetraCrsMatrix
     */
     template <class Map, class Matrix>
     class MatrixTraits 
@@ -83,6 +85,17 @@ namespace MueLu {
       static RCP<Cthulhu::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
       // Use the CrsMatrixFactory to decide what kind of matrix to create (Cthulhu::TpetraCrsMatrix or Cthulhu::EpetraCrsMatrix).
       { return Cthulhu::CrsMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap,  maxNumEntriesPerRow); };
+    };
+
+    /* Specialized traits for:
+       - Map = Cthulhu::Map<...>, Matrix = Cthulhu::Operator<...> */
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+    class MatrixTraits <Cthulhu::Map<LocalOrdinal,GlobalOrdinal, Node>, Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> >
+    {
+    public:
+      static RCP<Cthulhu::Operator<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps> > Build(const RCP<const Cthulhu::Map<LocalOrdinal,GlobalOrdinal, Node> > &rowMap, size_t maxNumEntriesPerRow)
+      // Use the CrsMatrixFactory to decide what kind of matrix to create (Cthulhu::TpetraCrsMatrix or Cthulhu::EpetraCrsMatrix).
+      { return Cthulhu::OperatorFactory<Scalar,LocalOrdinal,GlobalOrdinal, Node, LocalMatOps>::Build(rowMap, maxNumEntriesPerRow); };
     };
 
 #endif

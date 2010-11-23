@@ -104,5 +104,23 @@ int main(int argc, char* argv[])
   } 
 #endif
 
+#ifdef HAVE_CTHULHU_TPETRA
+  // Cthulhu::Operator (Tpetra)
+  {
+    RCP<const Cthulhu::Map<LO,GO> > map = rcp( new Cthulhu::TpetraMap<LO,GO> (numGlobalElements, indexBase, comm) );
+    RCP<Cthulhu::Operator<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::Map<LO,GO>, Cthulhu::Operator<SC,LO,GO> >  (matrixType,map,matrixList);
+    A->describe(*out, Teuchos::VERB_EXTREME);
+  } 
+#endif
+
+#ifdef HAVE_CTHULHU_EPETRA
+  // Cthulhu::Operator (Epetra)
+  {
+    RCP<const Cthulhu::Map<LO,GO> > map = rcp( new Cthulhu::EpetraMap (numGlobalElements, indexBase, comm) );
+    RCP<Cthulhu::Operator<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Cthulhu::Map<LO,GO>, Cthulhu::Operator<SC,LO,GO> >  (matrixType,map,matrixList);
+    A->describe(*out, Teuchos::VERB_EXTREME);
+  } 
+#endif
+  
  return EXIT_SUCCESS;
 }

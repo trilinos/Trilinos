@@ -75,18 +75,21 @@ int main(int argc, char* argv[])
   matrixList.set("nx",nx);
   matrixList.set("ny",ny);
   matrixList.set("nz",nz);
-  RCP<CrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrix>(matrixType,map,matrixList);
 
-  RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  if (comm->getRank() == 0)
-    std::cout << "\n================ MAP =====================================================\n" << std::endl;
-  map->describe(*out, Teuchos::VERB_EXTREME);
-  comm->barrier();
-  sleep(1);
-
-  if (comm->getRank() == 0)
-    std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
-  A->describe(*out, Teuchos::VERB_EXTREME);
-
+  {
+    RCP<CrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrix>(matrixType,map,matrixList);
+    
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    if (comm->getRank() == 0)
+      std::cout << "\n================ MAP =====================================================\n" << std::endl;
+    map->describe(*out, Teuchos::VERB_EXTREME);
+    comm->barrier();
+    sleep(1);
+    
+    if (comm->getRank() == 0)
+      std::cout << "\n================ MATRIX ==================================================\n" << std::endl;
+    A->describe(*out, Teuchos::VERB_EXTREME);
+  }
+  
   return EXIT_SUCCESS;
 } 

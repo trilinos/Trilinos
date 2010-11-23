@@ -261,6 +261,7 @@ public:
   /** \brief Return a simple one-line description of this object. */
   std::string description() const { 
     std::ostringstream oss;
+    oss << "Cthulhu_CrsOperator.description()" << std::endl;
     return oss.str();
   }
   
@@ -274,6 +275,8 @@ public:
     
     //     if (myImageID == 0) out << this->description() << std::endl; 
     
+    out << "Cthulhu_CrsOperator.describe()" << std::endl;
+
     // Teuchos::OSTab tab(out);
   }
   
