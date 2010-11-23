@@ -18,7 +18,7 @@ ID_TYPE_FLAG=-DZOLTAN_ID_TYPE_LONG_LONG
 ## Location of zoltan library, also location of Zoltan_config.h if
 ## using the autoconf build
 
-BLD=../../build/src
+BLD=../../build_both/src
 
 ##
 ## Location of zoltan "src" directory (for header files)
@@ -43,6 +43,7 @@ ZOLTAN_CONFIG_INCLUDE=-I$(BLD)/include
 ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
                     -I$(SRC)/par \
                     -I$(SRC)/order \
+                    -I$(SRC)/tpls \
                     -I$(SRC)/lb \
                     -I$(SRC)/params \
                     -I$(SRC)/Utilities/shared
@@ -52,9 +53,12 @@ ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
 ## to link with that library.
 ##
 
-TPL_LIB_DIR=-L/home/lafisk/software/ParMetis-3.1
-TPL_INCLUDE=-L/home/lafisk/software/ParMetis-3.1
-TPL_LIBS=-lparmetis -lmetis
+SCOTCH=/home/lriesen/system/scotch_5.1.10a-32
+PARMETIS=/home/lafisk/system/parmetis/ParMetis-3.1
+
+TPL_LIB_DIR=-L$(PARMETIS) -L$(SCOTCH)/lib
+TPL_INCLUDE=-I$(PARMETIS) -I$(SCOTCH)/include
+TPL_LIBS=-lparmetis -lmetis -lptscotch -lscotch -lptscotcherr -lscotcherr
 
 CC=mpicc
 
@@ -65,10 +69,10 @@ EXAMPLE_NAMES= simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH
 all:   $(EXAMPLE_NAMES)
 
 %: %.c
-    $(CC) $(CFLAGS) $(TPL_LIB_DIR)  \
+	$(CC) $(CFLAGS) $(TPL_LIB_DIR)  \
         -I$(BLD)/include $(TPL_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
         -o $@ $< $(BLD)/libzoltan.a $(TPL_LIBS) -lm
 
 clean:
-    @rm -rf  $(EXAMPLE_NAMES)
+	@rm -rf  $(EXAMPLE_NAMES)
 
