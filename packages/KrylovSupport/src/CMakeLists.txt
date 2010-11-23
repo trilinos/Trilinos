@@ -25,6 +25,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS 
   Krylov_ConfigDefs.hpp
   Krylov_Leja.hpp
+  Krylov_Operator.hpp
+  Krylov_OperatorTraits.hpp
   Krylov_PolyBasis.hpp
   Krylov_ProductIsZero.hpp
   Krylov_ShiftsOutOfOrder.hpp
