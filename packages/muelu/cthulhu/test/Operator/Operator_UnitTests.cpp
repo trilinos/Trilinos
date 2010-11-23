@@ -11,6 +11,7 @@
 //#include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Map.hpp"
 #include "Cthulhu_Operator.hpp"
+#include "Cthulhu_CrsOperator.hpp"
 #include "Cthulhu_TpetraCrsMatrix.hpp" //TMP
 
 namespace {
@@ -30,6 +31,7 @@ namespace {
   using Kokkos::SerialNode;
 
   using Cthulhu::Operator;
+  using Cthulhu::CrsOperator;
   using Cthulhu::TpetraCrsMatrix; //TMP
   using Cthulhu::Map;
 
@@ -69,6 +71,7 @@ namespace {
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     typedef Operator<Scalar, LO, GO, Node> Operator;
+    typedef CrsOperator<Scalar, LO, GO, Node> CrsOperator;
     RCP<const Comm<int> > comm = getDefaultComm();
 
     const size_t numLocal = 10;
@@ -78,14 +81,14 @@ namespace {
        TpetraCrsMatrix<Scalar, LO, GO, Node> t =  TpetraCrsMatrix<Scalar,LO,GO,Node>(map, numLocal);
 
        // Test of constructor
-       Operator op(map,1);
+       CrsOperator op(map,1);
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.GetDefaultViewLabel());
        TEST_EQUALITY_CONST(op.GetCurrentViewLabel(), op.SwitchToView(op.GetCurrentViewLabel()));
 
        // Test of CreateView
-       TEST_THROW(op.CreateView(op.GetDefaultViewLabel(),op.GetRowMap(),op.GetColMap()), Cthulhu::Exceptions::RuntimeError); // a
-       op.CreateView("newView",op.GetRowMap(),op.GetColMap());                                                               // b
-       TEST_THROW(op.CreateView("newView",op.GetRowMap(),op.GetColMap()), Cthulhu::Exceptions::RuntimeError);                // c
+       TEST_THROW(op.CreateView(op.GetDefaultViewLabel(),op.getRowMap(),op.getColMap()), Cthulhu::Exceptions::RuntimeError); // a
+       op.CreateView("newView",op.getRowMap(),op.getColMap());                                                               // b
+       TEST_THROW(op.CreateView("newView",op.getRowMap(),op.getColMap()), Cthulhu::Exceptions::RuntimeError);                // c
 
        // Test of SwitchToView
        // a
