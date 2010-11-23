@@ -8,7 +8,6 @@ PyTrilinos To Do List
   - Move all compiled C++ code into PyTrilinos namespace
 
 * Teuchos
-  - Expat TPL
   - Unit tests
   - Examples
 
