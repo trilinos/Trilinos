@@ -18,4 +18,7 @@ ADD_SUBDIRECTORIES(
   BlockMap
 # BlockMultiVector
 # VbrMatrix
+
+# Tests specifically written for Cthulhu:
+  Operator
   )

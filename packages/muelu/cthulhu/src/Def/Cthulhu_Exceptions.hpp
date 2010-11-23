@@ -23,7 +23,7 @@ namespace Cthulhu {
   namespace Exceptions {
     
     //! Exception indicating invalid cast attempted
-    /** For instance, this exception is throw when you try to mix Epetra and Tpetra objects: a Cthulhu::EpetraCrsMatrix cannot be built from a Cthulhu::TpetraMap. **/
+    /** For instance, this exception is throw when you try to mix Epetra and Tpetra objects: for example, a Cthulhu::EpetraCrsMatrix cannot be built from a Cthulhu::TpetraMap. **/
     class BadCast : public Teuchos::ExceptionBase
     {
     public:
@@ -37,7 +37,14 @@ namespace Cthulhu {
     public:
       NotImplemented(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
     };
-    
+      
+    //! Exception throws to report errors in the internal logical of the program.
+    class RuntimeError : public Teuchos::ExceptionBase
+    {
+    public:
+      RuntimeError(const std::string& what_arg) : Teuchos::ExceptionBase(what_arg) {}
+    };
+
   }
 }
 
