@@ -77,7 +77,8 @@ int main(int argc, char* argv[])
   matrixList.set("nz",nz);
 
   {
-    RCP<CrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrix>(matrixType,map,matrixList);
+    // RCP<CrsMatrix> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsMatrix>(matrixType,map,matrixList);
+    RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, Operator>(matrixType,map,matrixList);
     
     RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
     if (comm->getRank() == 0)

@@ -10,6 +10,9 @@ namespace Cthulhu {
   template<class, class, class, class> class Vector;
   template<class, class, class, class> class MultiVector;
 
+  template<class, class, class, class, class> class Operator;
+  template<class, class, class, class, class> class CrsOperator;
+
 #ifdef HAVE_CTHULHU_TPETRA
   template<class, class, class> class TpetraMap;
   template<class, class, class, class, class> class TpetraCrsMatrix;
@@ -28,6 +31,7 @@ namespace Cthulhu {
   template<class, class, class, class> class VectorFactory;
   template<class, class, class, class> class MultiVectorFactory;
 
+  template<class, class, class, class, class> class OperatorFactory;
 }
 
 #endif
