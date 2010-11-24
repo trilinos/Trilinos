@@ -68,26 +68,34 @@ int Zoltan_RIB_inertial3d(
      double    xxt, yyt, zzt;   /* temp for inertial tensor */
      double    xyt, xzt, yzt;   /* temp for inertial tensor */
      int       rank = 0;        /* rank in partition (Tflops_Special) */
+     double wgt;
+     double *x, *y, *z;
 
      /* Compute center of mass and total mass. */
      cm[0] = cm[1] = cm[2] = 0.0;
-     if (wgtflag) {
+
+     x = dotpt->X;
+     y = dotpt->Y;
+     z = dotpt->Z;
+
+     if (dotpt->nWeights > 0) {
         wgt_sum = 0;
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           wgt_sum += dotpt[i].Weight[0];
-           cm[0] += dotpt[i].Weight[0]*dotpt[i].X[0];
-           cm[1] += dotpt[i].Weight[0]*dotpt[i].X[1];
-           cm[2] += dotpt[i].Weight[0]*dotpt[i].X[2];
+           wgt = dotpt->Weight[i*dotpt->nWeights];
+           wgt_sum += wgt;
+           cm[0] += wgt*x[i];
+           cm[1] += wgt*y[i];
+           cm[2] += wgt*z[i];
         }
      }
      else {
         wgt_sum = dotnum;
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           cm[0] += dotpt[i].X[0];
-           cm[1] += dotpt[i].X[1];
-           cm[2] += dotpt[i].X[2];
+           cm[0] += x[i];
+           cm[1] += y[i];
+           cm[2] += z[i];
         }
      }
 
@@ -109,25 +117,28 @@ int Zoltan_RIB_inertial3d(
 
      /* Generate 6 elements of Inertial tensor. */
      xx = yy = zz = xy = xz = yz = 0.0;
-     if (wgtflag)
+     ydif = zdif = 0.0;
+
+     if (dotpt->nWeights)
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           xdif = dotpt[i].X[0] - cm[0];
-           ydif = dotpt[i].X[1] - cm[1];
-           zdif = dotpt[i].X[2] - cm[2];
-           xx += dotpt[i].Weight[0]*xdif*xdif;
-           yy += dotpt[i].Weight[0]*ydif*ydif;
-           zz += dotpt[i].Weight[0]*zdif*zdif;
-           xy += dotpt[i].Weight[0]*xdif*ydif;
-           xz += dotpt[i].Weight[0]*xdif*zdif;
-           yz += dotpt[i].Weight[0]*ydif*zdif;
+           wgt = dotpt->Weight[i * dotpt->nWeights]; 
+           xdif = x[i] - cm[0];
+           ydif = y[i] - cm[1];
+           zdif = z[i] - cm[2];
+           xx += wgt*xdif*xdif;
+           yy += wgt*ydif*ydif;
+           zz += wgt*zdif*zdif;
+           xy += wgt*xdif*ydif;
+           xz += wgt*xdif*zdif;
+           yz += wgt*ydif*zdif;
         }
      else
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           xdif = dotpt[i].X[0] - cm[0];
-           ydif = dotpt[i].X[1] - cm[1];
-           zdif = dotpt[i].X[2] - cm[2];
+           xdif = x[i] - cm[0];
+           ydif = y[i] - cm[1];
+           zdif = z[i] - cm[2];
            xx += xdif*xdif;
            yy += ydif*ydif;
            zz += zdif*zdif;
@@ -168,9 +179,7 @@ int Zoltan_RIB_inertial3d(
      /* This is inner product with eigenvector. */
      for (j = 0; j < dotnum; j++) {
         i = (dindx ? dindx[j] : j);
-        value[j] = (dotpt[i].X[0] - cm[0])*evec[0] +
-                   (dotpt[i].X[1] - cm[1])*evec[1] +
-                   (dotpt[i].X[2] - cm[2])*evec[2];
+        value[j] = (x[i] - cm[0])*evec[0] + (y[i] - cm[1])*evec[1] + (z[i] - cm[2])*evec[2];
      }
 
      return(ZOLTAN_OK);

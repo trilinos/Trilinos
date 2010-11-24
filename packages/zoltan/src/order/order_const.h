@@ -81,8 +81,8 @@ typedef struct Zoltan_Order_Options ZOOS;
  */
 
 typedef int ZOLTAN_ORDER_FN(  struct Zoltan_Struct *zz, int,
-			      ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
-			      int *, int *, ZOOS *);
+			      ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
+			      int *, ZOOS *);
 
 /*****************************************************************************/
 /* PROTOTYPES */

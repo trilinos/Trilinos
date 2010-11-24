@@ -20,7 +20,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(Zoltan, 3.2, kddevin@sandia.gov)
+AC_INIT(Zoltan_GID_64, 3.3, lriesen@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running Zoltan Configure Script"
@@ -77,6 +77,27 @@ AM_MAINTAINER_MODE
 # Define $build, $host, $target, etc
 
 AC_CANONICAL_TARGET
+
+# Note in header file and Makefile conditional what the host OS is
+  
+AM_CONDITIONAL(HOST_CYGWIN, false)
+AM_CONDITIONAL(HOST_LINUX, false)
+AM_CONDITIONAL(HOST_SOLARIS, false)
+
+case $host_os in
+  cygwin)
+    AM_CONDITIONAL(HOST_CYGWIN, true)
+    AC_DEFINE(HOST_CYGWIN,1,[software host will be cygwin])
+    ;;
+  linux*)
+    AM_CONDITIONAL(HOST_LINUX, true)
+    AC_DEFINE(HOST_LINUX,1,[software host will be linux])
+    ;;
+  solaris*)
+    AM_CONDITIONAL(HOST_SOLARIS, true)
+    AC_DEFINE(HOST_SOLARIS,1,[software host will be solaris])
+    ;;
+esac
 
 # Use automake
 
@@ -193,6 +214,8 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # ------------------------------------------------------------------------
 # Checks for special package flags 
 # ------------------------------------------------------------------------
+
+ZAC_ARG_WITH_ID()
 
 TAC_ARG_ENABLE_OPTION(octreepartitioning, [enable octreepartitioning], ZOLTAN_OCT, no)
 AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_octreepartitioning" != "Xno"])
@@ -390,6 +413,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/C/Makefile
 		example/CPP/Makefile
+		test/Large_Data/Makefile
 		siMPI/Makefile
 		siMPI/pyMPI/Makefile
 		siMPI/pyMPI/siMPI/Makefile

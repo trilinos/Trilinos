@@ -7,19 +7,23 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
+#include "zz_util_const.h"  /* included for Zoltan_get_global_id_type() */
 
 /* Name of file containing graph to be partitioned */
 
 static char *fname="graph.txt";
 
-/* Structure to hold graph data */
+/* Structure to hold graph data 
+   ZOLTAN_ID_TYPE is defined when Zoltan is compiled.  It's size can
+   be obtained at runtime by a library call.  (See zoltan_types.h).
+*/
 
 typedef struct{
   int numMyVertices; /* total vertices in in my partition */
   int numAllNbors;   /* total number of neighbors of my vertices */
-  int *vertexGID;    /* global ID of each of my vertices */
+  ZOLTAN_ID_TYPE *vertexGID;    /* global ID of each of my vertices */
   int *nborIndex;    /* nborIndex[i] is location of start of neighbors for vertex i */
-  int *nborGID;      /* nborGIDs[nborIndex[i]] is first neighbor of vertex i */
+  ZOLTAN_ID_TYPE *nborGID;      /* nborGIDs[nborIndex[i]] is first neighbor of vertex i */
   int *nborProc;     /* process owning each nbor in nborGID */
 } GRAPH_DATA;
 
@@ -44,7 +48,7 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static int get_line_ints(char *buf, int bufsize, int *vals);
 static void input_file_error(int numProcs, int tag, int startProc);
-static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts, int nparts);
+static void showGraphPartitions(int myProc, int numIDs, ZOLTAN_ID_TYPE *GIDs, int *parts, int nparts);
 static void read_input_file(int myRank, int numProcs, char *fname, GRAPH_DATA *myData);
 static unsigned int simple_hash(unsigned int *key, unsigned int n);
 
@@ -61,6 +65,7 @@ int main(int argc, char *argv[])
   int *parts;
   FILE *fp;
   GRAPH_DATA myGraph;
+  char *datatype_name;
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -74,6 +79,21 @@ int main(int argc, char *argv[])
 
   if (rc != ZOLTAN_OK){
     printf("sorry...\n");
+    MPI_Finalize();
+    exit(0);
+  }
+
+  /******************************************************************
+  ** Check that this example and the Zoltan library are both
+  ** built with the same ZOLTAN_ID_TYPE definition.
+  ******************************************************************/
+
+  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
+    if (myRank == 0){
+      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
+                 datatype_name, zoltan_id_datatype_name);
+
+    }
     MPI_Finalize();
     exit(0);
   }
@@ -265,7 +285,8 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         int wgt_dim, float *ewgts, int *ierr)
 {
 int i, j, from, to;
-int *nextNbor, *nextProc;
+int *nextProc;
+ZOLTAN_ID_TYPE *nextNbor;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
   *ierr = ZOLTAN_OK;
@@ -277,7 +298,7 @@ int *nextNbor, *nextProc;
     return;
   }
 
-  nextNbor = (int *)nborGID;
+  nextNbor = nborGID;
   nextProc = nborProc;
 
   for (i=0; i < num_obj; i++){
@@ -389,7 +410,7 @@ int i, val[2];
 
 /* Draw the partition assignments of the objects */
 
-static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts, int nparts)
+static void showGraphPartitions(int myProc, int numIDs, ZOLTAN_ID_TYPE *GIDs, int *parts, int nparts)
 {
 int partAssign[25], allPartAssign[25];
 int i, j, part, cuts, prevPart=-1;
@@ -505,9 +526,9 @@ GRAPH_DATA *send_graph;
 
     /* Allocate arrays to read in entire graph */
 
-    graph->vertexGID = (int *)malloc(sizeof(int) * numGlobalVertices);
+    graph->vertexGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numGlobalVertices);
     graph->nborIndex = (int *)malloc(sizeof(int) * (numGlobalVertices + 1));
-    graph->nborGID = (int *)malloc(sizeof(int) * numGlobalNeighbors);
+    graph->nborGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numGlobalNeighbors);
     graph->nborProc = (int *)malloc(sizeof(int) * numGlobalNeighbors);
 
     graph->nborIndex[0] = 0;
@@ -526,10 +547,10 @@ GRAPH_DATA *send_graph;
 
       if (num < (nnbors + 2)) input_file_error(numProcs, count_tag, 1);
 
-      graph->vertexGID[i] = vGID;
+      graph->vertexGID[i] = (ZOLTAN_ID_TYPE)vGID;
 
       for (j=0; j < nnbors; j++){
-        graph->nborGID[graph->nborIndex[i] + j] = vals[2 + j];
+        graph->nborGID[graph->nborIndex[i] + j] = (ZOLTAN_ID_TYPE)vals[2 + j];
       }
 
       graph->nborIndex[i+1] = graph->nborIndex[i] + nnbors;
@@ -556,7 +577,7 @@ GRAPH_DATA *send_graph;
 
     for (i=0; i < numProcs; i++){
       num = send_graph[i].numMyVertices;
-      send_graph[i].vertexGID = (int *)malloc(sizeof(int) * num);
+      send_graph[i].vertexGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * num);
       send_graph[i].nborIndex = (int *)calloc(sizeof(int) , (num + 1));
     }
 
@@ -569,7 +590,7 @@ GRAPH_DATA *send_graph;
       procID = simple_hash(&id, numProcs);
 
       j = idx[procID];
-      send_graph[procID].vertexGID[j] = id;
+      send_graph[procID].vertexGID[j] = (ZOLTAN_ID_TYPE)id;
       send_graph[procID].nborIndex[j+1] = send_graph[procID].nborIndex[j] + nnbors;
 
       idx[procID] = j+1;
@@ -579,7 +600,7 @@ GRAPH_DATA *send_graph;
 
       num = send_graph[i].nborIndex[send_graph[i].numMyVertices];
 
-      send_graph[i].nborGID = (int *)malloc(sizeof(int) * num);
+      send_graph[i].nborGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * num);
       send_graph[i].nborProc= (int *)malloc(sizeof(int) * num);
 
       send_graph[i].numAllNbors = num;
@@ -596,7 +617,7 @@ GRAPH_DATA *send_graph;
 
       if (nnbors > 0){
         memcpy(send_graph[procID].nborGID + j, graph->nborGID + graph->nborIndex[i],
-               nnbors * sizeof(int));
+               nnbors * sizeof(ZOLTAN_ID_TYPE));
   
         memcpy(send_graph[procID].nborProc + j, graph->nborProc + graph->nborIndex[i],
                nnbors * sizeof(int));
@@ -627,14 +648,14 @@ GRAPH_DATA *send_graph;
 
       if (send_count[0] > 0){
 
-        MPI_Send(send_graph[i].vertexGID, send_count[0], MPI_INT, i, id_tag, MPI_COMM_WORLD);
+        MPI_Send(send_graph[i].vertexGID, send_count[0], ZOLTAN_ID_MPI_TYPE, i, id_tag, MPI_COMM_WORLD);
         free(send_graph[i].vertexGID);
 
         MPI_Send(send_graph[i].nborIndex, send_count[0] + 1, MPI_INT, i, id_tag + 1, MPI_COMM_WORLD);
         free(send_graph[i].nborIndex);
 
         if (send_count[1] > 0){
-          MPI_Send(send_graph[i].nborGID, send_count[1], MPI_INT, i, id_tag + 2, MPI_COMM_WORLD);
+          MPI_Send(send_graph[i].nborGID, send_count[1], ZOLTAN_ID_MPI_TYPE, i, id_tag + 2, MPI_COMM_WORLD);
           free(send_graph[i].nborGID);
 
           MPI_Send(send_graph[i].nborProc, send_count[1], MPI_INT, i, id_tag + 3, MPI_COMM_WORLD);
@@ -667,11 +688,11 @@ GRAPH_DATA *send_graph;
 
     if (send_count[0] > 0){
 
-      graph->vertexGID = (int *)malloc(sizeof(int) * send_count[0]);
+      graph->vertexGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * send_count[0]);
       graph->nborIndex = (int *)malloc(sizeof(int) * (send_count[0] + 1));
 
       if (send_count[1] > 0){
-        graph->nborGID  = (int *)malloc(sizeof(int) * send_count[1]);
+        graph->nborGID  = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * send_count[1]);
         graph->nborProc = (int *)malloc(sizeof(int) * send_count[1]);
       }
     }
@@ -679,11 +700,11 @@ GRAPH_DATA *send_graph;
     MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
 
     if (send_count[0] > 0){
-      MPI_Recv(graph->vertexGID,send_count[0], MPI_INT, 0, id_tag, MPI_COMM_WORLD, &status);
+      MPI_Recv(graph->vertexGID,send_count[0],ZOLTAN_ID_MPI_TYPE, 0, id_tag, MPI_COMM_WORLD, &status);
       MPI_Recv(graph->nborIndex,send_count[0] + 1, MPI_INT, 0, id_tag + 1, MPI_COMM_WORLD, &status);
 
       if (send_count[1] > 0){
-        MPI_Recv(graph->nborGID,send_count[1], MPI_INT, 0, id_tag + 2, MPI_COMM_WORLD, &status);
+        MPI_Recv(graph->nborGID,send_count[1], ZOLTAN_ID_MPI_TYPE, 0, id_tag + 2, MPI_COMM_WORLD, &status);
         MPI_Recv(graph->nborProc,send_count[1], MPI_INT, 0, id_tag + 3, MPI_COMM_WORLD, &status);
       }
     }

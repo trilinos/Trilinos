@@ -39,14 +39,17 @@ void Zoltan_Transform_Box(double *lo, double *hi, double (*m)[3], int *a,
 void Zoltan_Transform_Box_Points(double *lo, double *hi, double (*m)[3], 
   int *a, int d, int ndims, double (*v)[3]);
 int Zoltan_AllReduceInPlace(void *, int , MPI_Datatype , MPI_Op , MPI_Comm );
+int Zoltan_set_mpi_types();
+void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly);
+int Zoltan_get_global_id_type(char **name);
+int Zoltan_overflow_test(size_t val);
 
 /* A Zoltan_Map is like a C++ STL map.  It uses Zoltan_Hash.
  */
 
-
 struct Zoltan_Map_Entry{
-  int *key;          /* a copy of or a pointer to callers key */
-  int data;          /* an integer provided by caller */
+  char *key;             /* pointer to arbitrary length key */
+  intptr_t data;         /* value */
   struct Zoltan_Map_Entry *next;
 };
 
@@ -56,9 +59,10 @@ struct Zoltan_Map_List{
   ZOLTAN_ENTRY **entries; /* hash array, length max_index + 1 */
 
   ZOLTAN_ENTRY *top;      /* if dynamicEntries==0, entries are here */
-  int *keys;              /* If copyKeys and !dynamicEntries, keys are here */
+  char *keys;             /* If copyKeys and !dynamicEntries, keys are here */
 
-  int id_size;          /* size of integer tuple */
+  int key_size;             /* size in bytes of key */
+  int num_zoltan_id_types;  /* number of ZOLTAN_ID_TYPES required to hold key */
   int max_index;        /* hash number range */
   int max_entries;      /* size of top array, or 0 if dynamicEntries == 1 */
 
@@ -74,20 +78,21 @@ struct Zoltan_Map_List{
 
   int used;             /* 1 - this map is being used, 0 - it's free */
   int entry_count;      /* how many entries have been added to the map */
+  ZOLTAN_ID_PTR zid;    /* buffer to hold key if it is not a multiple of ZOLTAN_ID_TYPEs */
 };
 
 typedef struct Zoltan_Map_List ZOLTAN_MAP;
 
-ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz, int hash_range, int num_id_entries, int store_keys, int num_entries);
+ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz, int hash_range, int key_size_in_bytes, int store_keys, int num_entries);
 int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP **map);
-int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, int *key, int data);
-int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, int *key, int *data);
-int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, int datain, int *dataout);
+int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, char *key, intptr_t data);
+int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, char *key, intptr_t *data);
+int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, char *key, intptr_t datain, intptr_t *dataout);
 int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP *map);
-int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, int **key, int *data);
-int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, int **key, int *data);
+int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, char **key, intptr_t *data);
+int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, char **key, intptr_t *data);
 
-#define ZOLTAN_NOT_FOUND INT_MIN
+#define ZOLTAN_NOT_FOUND INTPTR_MIN
 
 /*****************************************************************************/
 /*****************************************************************************/

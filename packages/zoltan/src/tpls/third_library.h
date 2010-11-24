@@ -47,12 +47,12 @@ typedef struct ZOLTAN_Third_Graph_ {
   int get_data;                         /* Construct edge datas */
   int obj_wgt_dim;                      /* Number of weights by vertex */
   int edge_wgt_dim;                     /* Number of weights by edge */
-  int num_obj;                          /* Number of vertices */
-  int num_obj_orig;                     /* Number of vertices in original graph */
-  int num_edges;                        /* Number of edges */
-  indextype * vtxdist;                  /* How vertices are distributed */
+  int num_obj;                          /* Local number of vertices */
+  int num_obj_orig;                     /* Local number of vertices in original graph */
+  int num_edges;                        /* Local number of edges */
+  indextype *vtxdist;                   /* How vertices are distributed */
   indextype * xadj;                     /* Indexes on adjency array */
-  indextype * adjncy;                   /* adjency array (CSR) */
+  indextype *adjncy;                    /* adjency array (CSR) */
   weighttype * vwgt;                    /* Array of vertex weights */
   weighttype * ewgts;                   /* Array of edge weights */
   float * float_ewgts;
@@ -85,11 +85,11 @@ typedef struct ZOLTAN_Third_Vsize_ {
 /* Structure that defines an ordering output for third party libraries like ParMetis. */
 typedef struct ZOLTAN_Output_Order_ {
   int num_part;
-  int start_index;
-  int *rank;            /* rank[i] is the rank of gids[i] */
-  int *iperm;           /* inverse permutation of rank */
+  indextype start_index;
+  indextype *rank;      /* rank[i] is the rank of gids[i] */
+  indextype *iperm;     /* inverse permutation of rank */
   ZOOS *order_opt;	/* ordering options */
-  ZOS *order_info;	/* ordering info */
+  ZTPL_OS *order_info;	/* ordering info */
   indextype *sep_sizes;
 } ZOLTAN_Output_Order;
 
@@ -168,6 +168,9 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 				int use_timers, double itr);
 
 
+int Zoltan_matrix_Print(Zoltan_matrix *m, char *s);
+int Zoltan_Third_Graph_Print(ZZ *zz, ZOLTAN_Third_Graph *gr, char *s);
+int Zoltan_ZG_Print(ZZ *zz, ZG *gr, char *s);
 
 #ifdef __cplusplus
 }

@@ -52,7 +52,7 @@ int Zoltan_DD_Set_Hash_Fn (
    }
 
    dd->hash = (DD_Hash_fn*)dd_hash_user;
-   dd->hashdata = (void*)hash;
+   dd->hashdata = (char *)hash;
    dd->cleanup = (DD_Cleanup_fn*) NULL; /* We don't have to free the function pointer */
 
    if (dd->debug_level > 0)

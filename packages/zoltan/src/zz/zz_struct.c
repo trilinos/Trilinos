@@ -211,6 +211,7 @@ static void Zoltan_Free_Zoltan_Struct_Members(ZZ *zz)
   Zoltan_Free_Structures(zz);  /* Algorithm-specific structures */
   Zoltan_LB_Free_Struct(&(zz->LB));
   Zoltan_Order_Free_Struct(&(zz->Order));
+  Zoltan_TPL_Order_Free_Struct(&(zz->TPL_Order));
 }
 
 /****************************************************************************/
@@ -367,6 +368,7 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Hier_Method_Data = NULL;
 
   zz->Order.needfree = 0;
+  zz->TPL_Order.needfree = 0;
 }
 
 #ifdef __cplusplus

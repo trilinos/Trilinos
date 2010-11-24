@@ -52,7 +52,7 @@ extern "C" {
  * are set in ch_dist_init and are used in all subsequent queries of
  * the chaco distribution.
  */
-static int Gnvtxs;          /* Global number of vertices (across all procs)  */
+static intmax_t Gnvtxs;     /* Global number of vertices (across all procs)  */
 static int Num_Proc;        /* Global number of processors                   */
 static int Num_Proc_Dist;   /* Number of processors to distribute data; 
                                Num_Proc_Dist may be < Num_Proc!              */
@@ -61,7 +61,7 @@ static int Initial_Method;  /* Flag indicating which initial decomposition
 
 /*****************************************************************************/
 /* Data structures specifically for INITIAL_LINEAR */
-static int *Vtxdist;        /* Array of size Num_Proc+1 indicating range of
+static intmax_t *Vtxdist;   /* Array of size Num_Proc+1 indicating range of
                                vertices assigned to a processor.  It is 
                                assumed that vertices are numbered 
                                consecutively.  The values stored in Vtxdist
@@ -217,7 +217,7 @@ void ch_dist_vtx_list(
   int *vtx_list,
   int *nvtx,
   int target_proc,
-  short *assignments
+  short *assignments          
 )
 {
 /* Function that returns a list of vertices assigned to proc target_proc.
@@ -227,9 +227,10 @@ void ch_dist_vtx_list(
  * in the arrays containing chaco input file data.
  * The number of entries in the list is returned in nvtx.
  */
-int i;
+int i, proc;
 
   *nvtx = 0;
+  proc = (intmax_t)target_proc;
 
   switch(Initial_Method) {
   case INITIAL_FILE:
@@ -244,7 +245,7 @@ int i;
     break;
   case INITIAL_CYCLIC:
     if (target_proc < Num_Proc_Dist){
-      for (i = target_proc; i < Gnvtxs; i+=Num_Proc_Dist) 
+      for (i = proc; i < Gnvtxs; i+=Num_Proc_Dist) 
         vtx_list[(*nvtx)++] = i;
     }
     break;
@@ -269,23 +270,24 @@ int ch_dist_proc(int v, short *assignments, int base)
  *       for HG input files, base may be 0 or 1.
  */
 int p;
+intmax_t b = (intmax_t)base;
 
   switch(Initial_Method) {
   case INITIAL_FILE:
     /* return the appropriate entry from the assignments array. */
-    p = assignments[v-base];
+    p = assignments[v-b];
     break;
   case INITIAL_LINEAR:
   case INITIAL_OWNER:
     for (p = 0; p < Num_Proc_Dist; p++)
       /* Since v is "base"-based and Vtxdist is 0-based, add base to 
        * Vtxdist[p+1]. */
-      if (v < Vtxdist[p+1]+base) break;
+      if (v < Vtxdist[p+1]+b) break;
     break;
   case INITIAL_CYCLIC:
     /* test for (v-base) as v is "base"-based and 
      * INITIAL_CYCLIC equations are 0-based */
-    p = (v-base) % Num_Proc_Dist;
+    p = (v-b) % Num_Proc_Dist;
     break;
   default:
     Gen_Error(0, "Invalid Initial Distribution Type in ch_dist_proc");
@@ -311,7 +313,7 @@ int rest, i, n;
 
   /* Set up Vtxdist data */
   if (Vtxdist == NULL){
-    Vtxdist = (int *) malloc((Num_Proc+1) * sizeof(int));
+    Vtxdist = (intmax_t *) malloc((Num_Proc+1) * sizeof(intmax_t));
     if (Vtxdist == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
       return;

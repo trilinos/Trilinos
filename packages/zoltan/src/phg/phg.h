@@ -33,7 +33,7 @@ extern "C" {
 /* Function types for options to hypergraph partitioning */
 struct PHGPartParamsStruct;  /* Forward declaration */
 
-typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching, 
+typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, ZOLTAN_GNO_TYPE *, 
                                    struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, HGraph*, int, float *, Partition,
                                           struct PHGPartParamsStruct*);
@@ -129,7 +129,7 @@ struct PHGPartParamsStruct {
   int use_timers;       /* Flag indicating whether to time the PHG code. */
   float EdgeSizeThreshold;  /* % of global vtxs beyond which an edge is 
                                considered to be dense. */
-  int MatchEdgeSizeThreshold;  /* Edges with sizes bigger than this threshold
+  ZOLTAN_GNO_TYPE MatchEdgeSizeThreshold;  /* Edges with sizes bigger than this threshold
                                considered to be dense for matching and ignored. */
   float hybrid_keep_factor; /* h-ipm only: keep matches with i.p. values
                                greater than this factor times the mean */
@@ -170,7 +170,7 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 /**********************/
 /* Matching functions */
 /**********************/
-int Zoltan_PHG_Matching (ZZ*, HGraph*, Matching, PHGPartParams*);
+int Zoltan_PHG_Matching (ZZ*, HGraph*, ZOLTAN_GNO_TYPE *, PHGPartParams*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 int Zoltan_PHG_Scale_Edges (ZZ*, HGraph*, float*, int);
 int Zoltan_PHG_Scale_Vtx (ZZ*, HGraph*, PHGPartParams*);
@@ -179,7 +179,7 @@ int Zoltan_PHG_Vertex_Visit_Order (ZZ*, HGraph*, PHGPartParams*, int*);
 /**************/
 /* Coarsening */
 /**************/
-int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int*,
+int Zoltan_PHG_Coarsening(ZZ*, HGraph*, ZOLTAN_GNO_TYPE *, HGraph*, ZOLTAN_GNO_TYPE *, int*, int*,
  int**, struct Zoltan_Comm_Obj**, PHGPartParams*);
  
 /*********************************/
@@ -203,7 +203,7 @@ ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char*);
 extern int Zoltan_PHG_Set_2D_Proc_Distrib(ZZ *, MPI_Comm, int, int, int, int,
                                           PHGComm *);
 
-extern int Zoltan_PHG_Gno_To_Proc_Block(int gno, int*, int);
+extern int Zoltan_PHG_Gno_To_Proc_Block(ZOLTAN_GNO_TYPE gno, ZOLTAN_GNO_TYPE *, int);
     
 /*****************************/
 /* Other Function Prototypes */
@@ -231,7 +231,7 @@ extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, float *, int,
                                          int, Partition);
 
 extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZHG**, Partition*, PHGPartParams*);
-extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
+extern void Zoltan_PHG_Plot(int, int, int, int*, int *, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
 extern int Zoltan_PHG_PaToH(ZZ *, HGraph *, int, int *, PHGPartParams*);    
@@ -252,7 +252,7 @@ extern int Zoltan_PHG_2ways_hyperedge_partition (ZZ *, HGraph *, Partition, Zolt
 int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
     int *part, int **cut, double *gain, HEAP *heap);
 
-int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize, int *num);
+int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len, int randomize, ZOLTAN_GNO_TYPE *num);
 
 int Zoltan_Get_Hypergraph_From_Queries(ZZ *, PHGPartParams *, int, ZHG *); 
 

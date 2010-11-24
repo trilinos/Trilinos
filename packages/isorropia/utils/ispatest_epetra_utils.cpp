@@ -565,7 +565,6 @@ int printRowMatrix(const Epetra_RowMatrix &m, std::ostream &os, const char *s,
 {
   const Epetra_Comm &Comm = m.Comm();
   int me = Comm.MyPID();
-  int nprocs = Comm.NumProc();
   int ncols = m.NumGlobalCols();
   int nrows = m.NumGlobalRows();
   int localRows = m.NumMyRows();

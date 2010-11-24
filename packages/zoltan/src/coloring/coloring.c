@@ -130,6 +130,14 @@ static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *a
 /*****************************************************************************/
 /* Interface routine for Graph Coloring */
 
+/* TODO64: Zoltan_Color has not been modified to work with the Zoltan_ZG_Export interface
+ * and with the ZOLTAN_GNO_TYPE data type.  Some difficulties: It looks like the hash
+ * table length is equal to the number of vertices in the graph.  It looks like the
+ * adjncy value (a neighbor global number) is an index into the xadj array (which is
+ * usually indexing in to the adjncy array of global numbers).  So this code needs
+ * to be looked at much more carefully before it can be changed to use ZOLTAN_GNO_TYPEs.
+ */
+
 int Zoltan_Color(
     ZZ *zz,                   /* Zoltan structure */
     int num_gid_entries,      /* # of entries for a global id */
@@ -159,7 +167,7 @@ int Zoltan_Color(
   int *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
   int *adjproc=NULL;
   int nvtx;                         /* number of local vertices */
-  int gvtx;                         /* number of global vertices */
+  ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
 
   int *color=NULL;                  /* array to store colors of local and D1
 				       neighbor vertices */
@@ -180,10 +188,17 @@ int Zoltan_Color(
   int *partialD2 = NULL;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
   ZG graph;
 
+  memset (&graph, 0, sizeof(ZG));
+  memset(&hash, 0 , sizeof(G2LHash)); /* To allow a correct free */
+
 #ifdef _DEBUG_TIMES    
   MPI_Barrier(zz->Communicator);
   times[0] = Zoltan_Time(zz->Timer);
 #endif
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)) {    /* TODO64 */
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "\nZoltan_Color can not handle ints of more than one size");
+  }
   
   /* PARAMETER SETTINGS */
 
@@ -251,7 +266,6 @@ int Zoltan_Color(
   zz->Num_GID = gcomm[0];
   zz->Num_LID = gcomm[1];
 
-  memset(&hash, 0 , sizeof(G2LHash)); /* To allow a correct free */
 
   if (num_gid_entries != zz->Num_GID)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "num_gid_entries is not consistent with the queries.");
@@ -274,8 +288,15 @@ int Zoltan_Color(
   ierr =  Zoltan_ZG_Build (zz, &graph, 0);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
-  ierr = Zoltan_ZG_Export (zz, &graph, &gvtx, &nvtx, NULL, NULL, 
-           &vtxdist, &xadj, &adjncy, &adjproc, NULL, &partialD2);
+
+  if (sizeof(int) != sizeof(ZOLTAN_GNO_TYPE))                           /* TODO64 */
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "data type size problems");
+
+  ierr = Zoltan_ZG_Export (zz, &graph,
+		    &gvtx, &nvtx, NULL, NULL, 
+                   (ZOLTAN_GNO_TYPE **)&vtxdist, &xadj, (ZOLTAN_GNO_TYPE **)&adjncy, &adjproc,
+		     NULL, &partialD2);
+
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
 #ifdef _DEBUG_TIMES

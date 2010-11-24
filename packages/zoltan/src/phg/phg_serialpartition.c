@@ -123,7 +123,6 @@ int local_coarse_part = hgp->LocalCoarsePartition;
 /* 10 when p=1, and 1 when p is large. */
 const int num_coarse_iter = 1 + 9/zz->Num_Proc; 
 
-
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (fine_timing) {
@@ -471,22 +470,26 @@ static int seq_part (
   double weight_sum = 0.0, part_sum, old_sum, cutoff;
   double psize_sum = 0.0;
   double *fixed_wgts = NULL;
+  int ierr = ZOLTAN_OK;
   char *yo = "seq_part";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (part_sizes==NULL){
     /* part_sizes should always exist, even with uniform partitions */
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_FATAL;
   }
 
   if (p<1){
     /* should never happen */
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_FATAL;
   }
 
   if (hgp->UsePrefPart) {
     fixed_wgts = (double *) ZOLTAN_CALLOC(p, sizeof(double));
+    if (!fixed_wgts) MEMORY_ERROR;
   }
 
   /* Sum up all the vertex weights. */
@@ -558,8 +561,9 @@ static int seq_part (
 
   if (fixed_wgts) ZOLTAN_FREE(&fixed_wgts);
 
+End:
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ZOLTAN_OK;
+  return ierr;
 }
 
 /****************************************************************************/

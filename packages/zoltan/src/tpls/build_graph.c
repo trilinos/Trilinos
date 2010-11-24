@@ -25,18 +25,17 @@ extern "C" {
 #include "params_const.h"
 #include "graph.h"
 
-
 int Zoltan_Build_Graph(ZZ *zz, int *graph_type, int check_graph,
 		       int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 		       int obj_wgt_dim, int * edge_wgt_dim,
-		       indextype **vtxdist, indextype **xadj, indextype **adjncy, float **ewgts,
+		       ZOLTAN_GNO_TYPE **vtxdist, int **xadj, ZOLTAN_GNO_TYPE **adjncy, float **ewgts,
 		       int **adjproc)
 {
   int ierr = ZOLTAN_OK;
   int local;
 
   int my_num_obj;
-  int glb_obj;
+  ZOLTAN_GNO_TYPE glb_obj;
   int my_obj_wgt_dim;
   ZG graph;
 

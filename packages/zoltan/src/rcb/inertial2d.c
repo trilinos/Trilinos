@@ -64,25 +64,31 @@ int Zoltan_RIB_inertial2d(
      double xcmt, ycmt, wgtt;   /* temp for center of mass */
      double xxt, yyt, xyt;      /* temp for tensor */
      int    rank = 0;           /* rank in partition (Tflops_Special) */
+     double wgt;
+     double *x, *y;
 
      /* Compute center of mass and total mass. */
 
+     x = dotpt->X;
+     y = dotpt->Y;
      xcm = ycm = 0.0;
-     if (wgtflag) {
+
+     if (dotpt->nWeights) {
         wgt_sum = 0.0;
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           wgt_sum += dotpt[i].Weight[0];
-           xcm += dotpt[i].Weight[0]*dotpt[i].X[0];
-           ycm += dotpt[i].Weight[0]*dotpt[i].X[1];
+           wgt = dotpt->Weight[i * dotpt->nWeights];
+           wgt_sum += wgt;
+           xcm += wgt*x[i];
+           ycm += wgt*y[i];
         }
      }
      else {
         wgt_sum = dotnum;
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           xcm += dotpt[i].X[0];
-           ycm += dotpt[i].X[1];
+           xcm += x[i];
+           ycm += y[i];
         }
      }
 
@@ -105,20 +111,21 @@ int Zoltan_RIB_inertial2d(
 
      /* Generate 3 elements of Inertial tensor. */
      xx = yy = xy = 0.0;
-     if (wgtflag)
+     if (dotpt->nWeights)
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           xdif = dotpt[i].X[0] - xcm;
-           ydif = dotpt[i].X[1] - ycm;
-           xx += dotpt[i].Weight[0]*xdif*xdif;
-           yy += dotpt[i].Weight[0]*ydif*ydif;
-           xy += dotpt[i].Weight[0]*xdif*ydif;
+           wgt = dotpt->Weight[i * dotpt->nWeights];
+           xdif = x[i] - xcm;
+           ydif = y[i] - ycm;
+           xx += wgt*xdif*xdif;
+           yy += wgt*ydif*ydif;
+           xy += wgt*xdif*ydif;
         }
      else
         for (j = 0; j < dotnum; j++) {
            i = (dindx ? dindx[j] : j);
-           xdif = dotpt[i].X[0] - xcm;
-           ydif = dotpt[i].X[1] - ycm;
+           xdif = x[i] - xcm;
+           ydif = y[i] - ycm;
            xx += xdif*xdif;
            yy += ydif*ydif;
            xy += xdif*ydif;
@@ -149,8 +156,8 @@ int Zoltan_RIB_inertial2d(
      /* This is inner product with eigenvector. */
      for (j = 0; j < dotnum; j++) {
         i = (dindx ? dindx[j] : j);
-        value[j] = (dotpt[i].X[0] - xcm)*evec[0] +
-                   (dotpt[i].X[1] - ycm)*evec[1];
+        value[j] = (x[i] - xcm)*evec[0] +
+                   (y[i] - ycm)*evec[1];
      }
 
      cm[0] = xcm;

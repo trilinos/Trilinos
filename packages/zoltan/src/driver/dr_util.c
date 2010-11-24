@@ -211,7 +211,23 @@ void clean_string(char inp_str[], const char *tokens)
  * found in the vector then it's index in that vector is returned, otherwise
  * the function returns -1;
  *****************************************************************************/
-int in_list(const int value, const int count, int *vector)
+int in_list(const ZOLTAN_ID_TYPE value, const int count, ZOLTAN_ID_TYPE *vector)
+{
+  int i;
+
+  for(i=0; i < count; i++)
+  {
+    if(*vector == value)
+      return i;
+
+    vector++;
+  }
+
+  return -1;
+
+}
+
+int in_list2(const int value, const int count, int *vector)
 {
   int i;
 
@@ -230,7 +246,7 @@ int in_list(const int value, const int count, int *vector)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int find_max(const int list_length, const int list[])
+ZOLTAN_ID_TYPE find_max(const ZOLTAN_ID_TYPE list_length, const ZOLTAN_ID_TYPE list[])
 
      /*
        Function which finds the largest integer from a vector of integers
@@ -246,7 +262,7 @@ int find_max(const int list_length, const int list[])
 
   /* local variables */
 
-  register int i, max;
+  register ZOLTAN_ID_TYPE i, max;
 
  /*************************** execution begins *******************************/
 
@@ -264,7 +280,7 @@ int find_max(const int list_length, const int list[])
 /*****************************************************************************/
 /*****************************************************************************/
 
-int find_min(const int list_length, const int list[])
+ZOLTAN_ID_TYPE find_min(const ZOLTAN_ID_TYPE list_length, const ZOLTAN_ID_TYPE list[])
 
 /*
  *     Function which finds the smallest integer from a vector of integers
@@ -278,7 +294,7 @@ int find_min(const int list_length, const int list[])
 
   /* local variables */
 
-  register int i, min;
+  register ZOLTAN_ID_TYPE i, min;
 
   /************************** execution begins *******************************/
   if (list_length > 0) {
@@ -299,7 +315,7 @@ int find_min(const int list_length, const int list[])
  * This function finds the intersection between two lists of integer values,
  * and returns the number of values in the intersection.
  *****************************************************************************/
-int find_inter(const int set1[], const int set2[], const int length1,
+int find_inter(const ZOLTAN_ID_TYPE set1[], const ZOLTAN_ID_TYPE set2[], const int length1,
                const int length2, const int prob_type, int inter_ptr[])
 
 /*
@@ -326,7 +342,7 @@ int find_inter(const int set1[], const int set2[], const int length1,
   /* Local variables */
 
   register int    i, j, counter = 0;
-  int             max_set1, min_set1, max_set2, min_set2;
+  ZOLTAN_ID_TYPE        max_set1, min_set1, max_set2, min_set2;
 
 /****************************** execution begins *****************************/
 
@@ -401,7 +417,7 @@ void safe_free(void **ptr) {
 /*****************************************************************************/
 /*****************************************************************************/
 
-void sort2_index(int n, int ra[], int sa[], int indx[])
+void sort2_index(int n, ZOLTAN_ID_TYPE ra[], ZOLTAN_ID_TYPE sa[], int indx[])
 
 /*
 *       Numerical Recipies in C source code
@@ -416,9 +432,9 @@ void sort2_index(int n, int ra[], int sa[], int indx[])
 */
 
 {
-  int   l, j, ir, i;
-  int   rra, irra;
-  int   ssa;
+  int   l, j, ir, i, irra;
+  ZOLTAN_ID_TYPE   rra;
+  ZOLTAN_ID_TYPE   ssa;
 
   /*
    *  No need to sort if one or fewer items.
@@ -480,6 +496,50 @@ void sort_index(int n, int ra[], int indx[])
 {
   int   l, j, ir, i;
   int   rra, irra;
+
+  /*
+   *  No need to sort if one or fewer items.
+   */
+  if (n <= 1) return;
+
+  l=n >> 1;
+  ir=n-1;
+  for (;;) {
+    if (l > 0) {
+      rra=ra[indx[--l]];
+      irra = indx[l];
+    }
+    else {
+      rra=ra[indx[ir]];
+      irra=indx[ir];
+     
+      indx[ir]=indx[0];
+      if (--ir == 0) {
+        indx[0]=irra;
+        return;
+      }
+    }
+    i=l;
+    j=(l << 1)+1;
+    while (j <= ir) {
+      if (j < ir && 
+          (ra[indx[j]] <  ra[indx[j+1]]))
+        ++j;
+      if (rra <  ra[indx[j]]) {
+        indx[i] = indx[j];
+        j += (i=j)+1;
+      }
+      else j=ir+1;
+    }
+    indx[i]=irra;
+  }
+}
+
+void sort_id_type_index(int n, ZOLTAN_ID_TYPE ra[], ZOLTAN_ID_TYPE indx[])
+{
+  ZOLTAN_ID_TYPE   l, j, ir, i;
+  ZOLTAN_ID_TYPE   irra;
+  ZOLTAN_ID_TYPE  rra;
 
   /*
    *  No need to sort if one or fewer items.

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
+#include "zz_util_const.h"  /* included for Zoltan_get_global_id_type() */
 
 /* Name of file containing objects to be partitioned */
 
@@ -17,7 +18,7 @@ static char *fname="objects.txt";
 typedef struct{
   int numGlobalObjects;
   int numMyObjects;
-  int *myGlobalIDs;
+  ZOLTAN_ID_TYPE *myGlobalIDs;
 } OBJECT_DATA;
 
 static int get_number_of_objects(void *data, int *ierr);
@@ -30,7 +31,7 @@ static int get_next_line(FILE *fp, char *buf, int bufsize);
 
 static void input_file_error(int numProcs, int tag, int startProc);
 
-static void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts);
+static void showSimpleMeshPartitions(int myProc, int numIDs, ZOLTAN_ID_TYPE *GIDs, int *parts);
 
 static void read_input_objects(int myRank, int numProcs, char *fname, OBJECT_DATA *myData);
 
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
   ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids; 
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   int *parts = NULL;
+  char *datatype_name;
 
   FILE *fp;
   OBJECT_DATA myData;
@@ -65,6 +67,21 @@ int main(int argc, char *argv[])
     exit(0);
   }
 
+  /******************************************************************
+  ** Check that this example and the Zoltan library are both
+  ** built with the same ZOLTAN_ID_TYPE definition.
+  ******************************************************************/
+
+  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
+    if (myRank == 0){
+      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
+                 datatype_name, zoltan_id_datatype_name);
+
+    }
+    MPI_Finalize();
+    exit(0);
+  }
+  
   /******************************************************************
   ** Read objects from input file and distribute them unevenly
   ******************************************************************/
@@ -252,7 +269,7 @@ int i, val;
 
 /* Draw the partition assignments of the objects */
 
-void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts)
+void showSimpleMeshPartitions(int myProc, int numIDs, ZOLTAN_ID_TYPE *GIDs, int *parts)
 {
 int partAssign[25], allPartAssign[25];
 int i, j, part;
@@ -290,7 +307,7 @@ char *buf;
 int bufsize = 512;
 int num, nobj, remainingObj, ack=0;
 int i, j;
-int *gids;
+ZOLTAN_ID_TYPE *gids;
 FILE *fp;
 MPI_Status status;
 int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
@@ -314,19 +331,19 @@ int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
       remainingObj = 0;
     }
 
-    myData->myGlobalIDs = (int *)malloc(sizeof(int) * nobj);
+    myData->myGlobalIDs = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * nobj);
     myData->numMyObjects = nobj;
 
     for (i=0; i < nobj; i++){
 
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, obj_count_tag, 1);
-      num = sscanf(buf, "%d", myData->myGlobalIDs + i);
+      num = sscanf(buf, ZOLTAN_ID_SPEC , myData->myGlobalIDs + i);
       if (num != 1) input_file_error(numProcs, obj_count_tag, 1);
   
     }
 
-    gids = (int *)malloc(sizeof(int) * (nobj + 1));
+    gids = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * (nobj + 1));
 
     for (i=1; i < numProcs; i++){
     
@@ -349,7 +366,7 @@ int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
         for (j=0; j < nobj; j++){
           num = get_next_line(fp, buf, bufsize);
           if (num == 0) input_file_error(numProcs, obj_count_tag, i);
-          num = sscanf(buf, "%d", gids + j);
+          num = sscanf(buf, ZOLTAN_ID_SPEC, gids + j);
           if (num != 1) input_file_error(numProcs, obj_count_tag, i);
         }
       }
@@ -358,7 +375,7 @@ int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
       MPI_Recv(&ack, 1, MPI_INT, i, obj_ack_tag, MPI_COMM_WORLD, &status);
 
       if (nobj > 0)
-        MPI_Send(gids, nobj, MPI_INT, i, obj_id_tag, MPI_COMM_WORLD);
+        MPI_Send(gids, nobj, ZOLTAN_ID_MPI_TYPE, i, obj_id_tag, MPI_COMM_WORLD);
       
     }
 
@@ -377,9 +394,9 @@ int obj_ack_tag = 5, obj_count_tag = 10, obj_id_tag = 15;
     MPI_Recv(&myData->numMyObjects, 1, MPI_INT, 0, obj_count_tag, MPI_COMM_WORLD, &status);
     ack = 0;
     if (myData->numMyObjects > 0){
-      myData->myGlobalIDs = (int *)malloc(sizeof(int) * myData->numMyObjects);
+      myData->myGlobalIDs = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * myData->numMyObjects);
       MPI_Send(&ack, 1, MPI_INT, 0, obj_ack_tag, MPI_COMM_WORLD);
-      MPI_Recv(myData->myGlobalIDs, myData->numMyObjects, MPI_INT, 0, 
+      MPI_Recv(myData->myGlobalIDs, myData->numMyObjects, ZOLTAN_ID_MPI_TYPE, 0, 
                obj_id_tag, MPI_COMM_WORLD, &status);
     }
     else if (myData->numMyObjects == 0){

@@ -44,7 +44,7 @@ extern int migrate_elements(int, MESH_INFO_PTR, ZOLTAN_STRUCT,
                             int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *,
                             int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *);
 
-extern ELEM_INFO *search_by_global_id(MESH_INFO *, int, int *);
+extern ELEM_INFO *search_by_global_id(MESH_INFO *, ZOLTAN_ID_TYPE, int *);
 
 extern ZOLTAN_OBJ_SIZE_FN migrate_elem_size;
 extern ZOLTAN_OBJ_SIZE_MULTI_FN migrate_elem_size_multi;
