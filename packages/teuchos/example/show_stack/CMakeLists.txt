@@ -14,17 +14,16 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
   IF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS OR CMAKE_BUILD_TYPE STREQUAL DEBUG)
     APPEND_SET(PASS_REGEXS
       "Teuchos::show_stacktrace();"
-      "teuchos/src/Teuchos_stacktrace.cpp., .+, in .+loc_segfault_callback_print_stack.+"
       )
   ENDIF()
 
   IF (CMAKE_BUILD_TYPE STREQUAL DEBUG)
     APPEND_SET(PASS_REGEXS
-      "teuchos/example/show_stack/cxx_main.cpp., line 19, in main()"
+      "teuchos/example/show_stack/cxx_main.cpp., line 23, in main()"
       "f()"
-      "teuchos/example/show_stack/cxx_main.cpp., line 12, in f()"
+      "teuchos/example/show_stack/cxx_main.cpp., line 14, in f()"
       "g()"
-      "teuchos/example/show_stack/cxx_main.cpp., line 6, in g()"
+      "teuchos/example/show_stack/cxx_main.cpp., line 7, in g()"
       "char .p = NULL. .p = 0"
       )
   ENDIF()
