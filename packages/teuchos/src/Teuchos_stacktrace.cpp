@@ -27,6 +27,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
+#include "Teuchos_stacktrace.hpp"
+#include "Teuchos_RCP.hpp"
+
+
+#ifdef HAVE_TEUCHOS_STACKTRACE
+
+
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -40,8 +47,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // For registering SIGSEGV callbacks
 #include <csignal>
 
-#include "Teuchos_stacktrace.hpp"
-
 
 // The following C headers are needed for some specific C functionality (see
 // the comments), which is not available in C++:
@@ -49,13 +54,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // backtrace() function for retrieving the stacktrace
 #include <execinfo.h>
 
+// For demangling function names
+#include <cxxabi.h>
+
 #ifdef HAVE_TEUCHOS_LINK
 // For dl_iterate_phdr() functionality
 #include <link.h>
 #endif
-
-// For demangling function names
-#include <cxxabi.h>
 
 #ifdef HAVE_TEUCHOS_BFD
   // For bfd_* family of functions for loading debugging symbols from the binary
@@ -65,8 +70,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #else
   typedef long long unsigned bfd_vma;
 #endif
-
-#include "Teuchos_RCP.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -505,3 +508,7 @@ void Teuchos::print_stack_on_segfault()
     signal(SIGSEGV, loc_segfault_callback_print_stack);
     signal(SIGABRT, loc_abort_callback_print_stack);
 }
+
+
+#endif // HAVE_TEUCHOS_STACKTRACE
+
