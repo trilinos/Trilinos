@@ -70,18 +70,15 @@ STK_Interface::STK_Interface()
 
    edgesPart_        = &metaData_->declare_part(edgesString,stk::mesh::Edge);
    edgesPartVec_.push_back(edgesPart_);
-
-   sidesetsPart_     = &metaData_->declare_part("sidesets",stk::mesh::Edge);
 }
 
 void STK_Interface::addSideset(const std::string & name)
 {
    TEUCHOS_ASSERT(not initialized_);
-   TEUCHOS_ASSERT(dimension_!=0);
+   // TEUCHOS_ASSERT(dimension_!=0);
 
    stk::mesh::Part * sideset = &metaData_->declare_part(name,stk::mesh::Edge);
    sidesets_.insert(std::make_pair(name,sideset));
-   metaData_->declare_part_subset(*sidesetsPart_,*sideset);
    stk::mesh::set_cell_topology(*sideset,shards::getCellTopologyData<shards::Line<2> >());
 }
 
@@ -98,10 +95,10 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
    }
 }
 
-void STK_Interface::initialize(stk::ParallelMachine parallelMach) 
+void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO) 
 {
    TEUCHOS_ASSERT(not initialized_);
-   TEUCHOS_ASSERT(dimension_!=0); // no zero dimensional meshes!
+   // TEUCHOS_ASSERT(dimension_!=0); // no zero dimensional meshes!
 
    procRank_ = stk::parallel_machine_rank(parallelMach);
 
@@ -123,27 +120,28 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach)
    }
 
 #ifdef HAVE_IOSS
-   // setup Exodus file IO
-   {
-      // add element blocks
-      std::map<std::string, stk::mesh::Part*>::iterator itr;
-      for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr) 
-         stk::io::put_io_part_attribute(*itr->second);
+   if(setupIO) {
+      // setup Exodus file IO
+      {
+         // add element blocks
+         std::map<std::string, stk::mesh::Part*>::iterator itr;
+         for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr) 
+            stk::io::put_io_part_attribute(*itr->second);
+      }
+   
+      stk::io::put_io_part_attribute(*sidesetsPart_);
+
+      // add nodes
+      stk::io::put_io_part_attribute(*nodesPart_);
+
+      stk::io::set_field_role(*coordinatesField_, Ioss::Field::ATTRIBUTE);
+      stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
+
+      // add solution fields
+      std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
+      for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
+         stk::io::set_field_role(*(*uniqueFieldIter), Ioss::Field::TRANSIENT);
    }
-
-   stk::io::put_io_part_attribute(*sidesetsPart_);
-
-   // add edges
-   // stk::io::put_io_part_attribute(*edgesPart_);
-   stk::io::put_io_part_attribute(*nodesPart_);
-
-   stk::io::set_field_role(*coordinatesField_, Ioss::Field::ATTRIBUTE);
-   stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
-
-   // add solution fields
-   std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
-   for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
-      stk::io::set_field_role(*(*uniqueFieldIter), Ioss::Field::TRANSIENT);
 #endif
 
    metaData_->commit();
@@ -629,5 +627,19 @@ Teuchos::RCP<const std::vector<stk::mesh::Entity*> > STK_Interface::getElementsO
    return orderedElementVector_.getConst();
 }
 
+void STK_Interface::addElementBlock(const std::string & name,const CellTopologyData * ctData)
+{
+   TEUCHOS_ASSERT(not initialized_);
+
+   stk::mesh::Part * block = &metaData_->declare_part(name,stk::mesh::Element);
+
+   // construct cell topology object for this block
+   Teuchos::RCP<shards::CellTopology> ct
+         = Teuchos::rcp(new shards::CellTopology(ctData));
+
+   // add element block part and cell topology
+   elementBlocks_.insert(std::make_pair(name,block));
+   elementBlockCT_.insert(std::make_pair(name,ct));
+}
 
 }

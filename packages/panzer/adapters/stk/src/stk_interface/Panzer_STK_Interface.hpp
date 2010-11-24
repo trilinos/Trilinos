@@ -13,6 +13,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <Shards_CellTopology.hpp>
+#include <Shards_CellTopologyData.h>
 
 #include <Panzer_STK_config.hpp>
 
@@ -61,8 +62,7 @@ public:
 
    /** Add an element block with a string name
      */
-   template <typename TopologyTYpe>
-   inline void addElementBlock(const std::string & name);
+   void addElementBlock(const std::string & name,const CellTopologyData * ctData);
 
    /** Add a side set with a string name
      */
@@ -78,7 +78,7 @@ public:
      * commit on the meta data causing it to be frozen. Information
      * about elements blocks has to be commited before this.
      */
-   void initialize(stk::ParallelMachine parallelMach);
+   void initialize(stk::ParallelMachine parallelMach,bool setupIO=true);
 
    // functions to manage and manipulate bulk data
    //////////////////////////////////////////
@@ -152,6 +152,9 @@ public:
 
    // Accessor functions
    //////////////////////////////////////////
+ 
+   Teuchos::RCP<stk::mesh::BulkData> getBulkData() const { return bulkData_; }
+   Teuchos::RCP<stk::mesh::MetaData> getMetaData() const { return metaData_; }
 
    bool isWritable() const;
 
@@ -313,7 +316,6 @@ protected:
 
    std::map<std::string, stk::mesh::Part*> elementBlocks_;   // Element blocks
    std::map<std::string, stk::mesh::Part*> sidesets_; // Side sets 
-   stk::mesh::Part * sidesetsPart_;
    std::map<std::string, Teuchos::RCP<shards::CellTopology> > elementBlockCT_;
 
    // for storing/accessing nodes
@@ -359,23 +361,6 @@ protected:
      const STK_Interface * mesh_;
    };
 };
-
-template <typename TopologyType> 
-void STK_Interface::addElementBlock(const std::string & name)
-{
-   TEUCHOS_ASSERT(not initialized_);
-
-   stk::mesh::Part * block = &metaData_->declare_part(name,stk::mesh::Element);
-   stk::mesh::set_cell_topology(*block,shards::getCellTopologyData<TopologyType>());
-
-   // construct cell topology object for this block
-   Teuchos::RCP<shards::CellTopology> ct
-         = Teuchos::rcp(new shards::CellTopology(stk::mesh::get_cell_topology(*block)));
-
-   // add element block part and cell topology
-   elementBlocks_.insert(std::make_pair(name,block));
-   elementBlockCT_.insert(std::make_pair(name,ct));
-}
 
 template <typename ArrayT>
 void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
