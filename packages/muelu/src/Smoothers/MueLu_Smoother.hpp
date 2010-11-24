@@ -10,8 +10,8 @@ namespace MueLu {
   @brief Smoother class. Just a stub right now.
 */
 
-template<class Scalar,class LO, class GO, class Node>
-class Smoother :  public Teuchos::VerboseObject<Smoother<Scalar,LO,GO,Node> > {
+  template<class Scalar,class LO, class GO, class NO, class LMO>
+  class Smoother : public Teuchos::VerboseObject<Smoother<Scalar,LO,GO,NO,LMO> > {
 
   private:
 

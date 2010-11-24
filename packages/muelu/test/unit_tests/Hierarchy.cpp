@@ -20,14 +20,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,Test0)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
 
-  typedef Tpetra::Map<LO,GO,Node> Map;
+  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
+  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
+  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
 
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
-  typedef Tpetra::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node>    Hierarchy;
+  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
 
   using namespace Teuchos;
 
@@ -49,11 +48,10 @@ TEUCHOS_UNIT_TEST(Hierarchy,Test0)
   Test set/get of R & P matrices.
   */
   /*
-  RCP<Operator> x = rcp(new Tpetra::Vector<Scalar,LO,GO,Node>(map,nx) );
-  RCP<Operator> y = rcp(new Tpetra::Vector<Scalar,LO,GO,Node>(map,nx) );
+  RCP<Vector> x = rcp(new Cthulhu::TpetraVector<Scalar,LO,GO,Node>(map,nx) );
+  RCP<Vector> y = rcp(new Cthulhu::TpetraVector<Scalar,LO,GO,Node>(map,nx) );
   x->putScalar(1);
   */
-
 
 } //TEST0
 
@@ -64,14 +62,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
 
-  typedef Tpetra::Map<LO,GO,Node> Map;
+  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
+  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
+  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
 
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
-  typedef Tpetra::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node>    Hierarchy;
+  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -88,7 +85,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
   try {
     out << "Intentionally providing no prolongator factory to FillHierarchy .... ";
 
-    RCP<SaPFactory<Scalar,LO,GO,Node> >    PFact = Teuchos::null;
+    RCP<SaPFactory<Scalar,LO,GO,Node,LMO> >    PFact = Teuchos::null;
     //RCP<OperatorFactory<Scalar,LO,GO,Node> >  opFact = PFact;
     //H.FillHierarchy(opFact);
     H.FillHierarchy(PFact);
@@ -107,14 +104,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy2)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
 
-  typedef Tpetra::Map<LO,GO,Node> Map;
+  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
+  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
+  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
 
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
-  typedef Tpetra::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node>    Hierarchy;
+  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -128,7 +124,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy2)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  RCP<SaPFactory<Scalar,LO,GO,Node> >    PFact = rcp(new SaPFactory<Scalar,LO,GO,Node>());
+  RCP<SaPFactory<Scalar,LO,GO,Node,LMO> >    PFact = rcp(new SaPFactory<Scalar,LO,GO,Node,LMO>());
 
   out << "Providing just prolongator factory to FillHierarchy." << std::endl;
   H.FillHierarchy(PFact);
@@ -141,14 +137,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
 
-  typedef Tpetra::Map<LO,GO,Node> Map;
+  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
+  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
+  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
 
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
-  typedef Tpetra::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node>    Hierarchy;
+  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -162,9 +157,9 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  RCP<SaPFactory<Scalar,LO,GO,Node> >    PFact = rcp(new SaPFactory<Scalar,LO,GO,Node>());
-  RCP<TransPFactory<Scalar,LO,GO,Node> > RFact = rcp(new TransPFactory<Scalar,LO,GO,Node>());
-  RCP<RAPFactory<Scalar,LO,GO,Node> >    AcFact= rcp(new RAPFactory<Scalar,LO,GO,Node>());
+  RCP<SaPFactory<Scalar,LO,GO,Node,LMO> >    PFact = rcp(new SaPFactory<Scalar,LO,GO,Node,LMO>());
+  RCP<TransPFactory<Scalar,LO,GO,Node,LMO> > RFact = rcp(new TransPFactory<Scalar,LO,GO,Node,LMO>());
+  RCP<RAPFactory<Scalar,LO,GO,Node,LMO> >    AcFact= rcp(new RAPFactory<Scalar,LO,GO,Node,LMO>());
 
   out << "Providing all three factories to FillHierarchy." << std::endl;
   H.FillHierarchy(PFact,RFact,AcFact);
@@ -177,14 +172,13 @@ TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
+  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
 
-  typedef Tpetra::Map<LO,GO,Node> Map;
+  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
+  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
+  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
 
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
-  typedef Tpetra::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node>    Hierarchy;
+  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
 
   using Teuchos::RCP;
   using Teuchos::rcp;

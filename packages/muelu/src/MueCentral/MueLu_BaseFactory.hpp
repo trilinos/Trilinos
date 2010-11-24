@@ -65,3 +65,5 @@ class BaseFactory : public Teuchos::VerboseObject<BaseFactory> {
 } //namespace MueLu
 
 #endif //ifndef MUELU_BASEFACTORY_HPP
+
+// JG to JHU: why we cannot use direclty Teuchos::VerboseObject::getVerbLevel() and setVerbLevel() ?

@@ -16,7 +16,9 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor)
   typedef int    LO;
   typedef int    GO;
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
-  typedef MueLu::SmootherFactory<Scalar,LO,GO,Node>    SmootherFactory;
+  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
+
+  typedef MueLu::SmootherFactory<Scalar,LO,GO,Node,LMO> SmootherFactory;
 
   using namespace Teuchos;
   using namespace MueLu;

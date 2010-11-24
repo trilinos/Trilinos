@@ -16,16 +16,33 @@ SET(SOURCES "")
 APPEND_SET(SOURCES
 main.cpp
 Level.cpp
-Hierarchy.cpp
-RAPFactory.cpp
-SaPFactory.cpp
-TransPFactory.cpp
-SmootherFactory.cpp
+#Hierarchy.cpp
+#RAPFactory.cpp
+#SaPFactory.cpp
+#TransPFactory.cpp
+#SmootherFactory.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     unit_tests
     SOURCES ${SOURCES}
+    ARGS ""
+    COMM serial  mpi
+  )
+
+APPEND_SET(SOURCES2
+main.cpp
+#Level.cpp
+Hierarchy.cpp
+#RAPFactory.cpp
+#SaPFactory.cpp
+#TransPFactory.cpp
+#SmootherFactory.cpp
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    unit_tests2
+    SOURCES ${SOURCES2}
     ARGS ""
     COMM serial  mpi
   )

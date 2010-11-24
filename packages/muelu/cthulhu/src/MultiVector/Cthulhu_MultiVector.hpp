@@ -74,10 +74,8 @@ namespace Cthulhu {
     virtual void sumIntoLocalValue(LocalOrdinal myRow, size_t vectorIndex, const Scalar &value) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Initialize all values in a multi-vector with specified value.
     virtual void putScalar(const Scalar &value) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Set multi-vector values to random numbers.
     virtual void randomize() =0;
@@ -226,11 +224,13 @@ namespace Cthulhu {
     //! Scale the current values of a multi-vector, this = alpha*this.
     virtual void scale(const Scalar &alpha) =0;
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
     virtual void scale(Teuchos::ArrayView<const Scalar> alpha) =0;
 
     //! Replace multi-vector values with scaled values of A, this = alpha*A.
     virtual void scale(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A) =0;
+#endif
 
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
     virtual void update(const Scalar &alpha, const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const Scalar &beta) =0;

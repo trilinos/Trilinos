@@ -9,15 +9,17 @@
 
 namespace MueLu {
 
-/*!
-  @class Basic class for operator factories (e.g., R, P, and A_coarse).
-  @brief Basic class for factories that build operators.
+  /*!
+    @class Basic class for operator factories (e.g., R, P, and A_coarse).
+    @brief Basic class for factories that build operators.
 
-  Very similar to BaseFactory, but with an additional virtual Build method.
-*/
+    Very similar to BaseFactory, but with an additional virtual Build method.
+  */
 
-template<class Scalar, class LO, class GO, class Node>
-class OperatorFactory : public BaseFactory {
+  template<class Scalar, class LO, class GO, class NO, class LMO>
+  class OperatorFactory : public BaseFactory {
+    
+    typedef Level<Scalar, LO, GO, NO, LMO> Level;
 
   private:
 
@@ -35,11 +37,11 @@ class OperatorFactory : public BaseFactory {
     //! @name Build methods.
 
     //! Build an object with this factory.
-    virtual bool Build(Level<Scalar, LO, GO, Node> &i,Level<Scalar, LO, GO, Node> &j) = 0;
+    virtual bool Build(Level & i, Level & j) = 0;
 
     //@}
 
-}; //class OperatorFactory
+  }; //class OperatorFactory
 
 } //namespace MueLu
 

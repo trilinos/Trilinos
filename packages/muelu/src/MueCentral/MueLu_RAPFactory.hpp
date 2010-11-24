@@ -4,17 +4,19 @@
 #include <iostream>
 #include "MueLu_OperatorFactory.hpp"
 
-
 namespace MueLu {
 /*!
   @class RAPFactory class.
   @brief Factory for building coarse matrices.
 */
-template<class Scalar, class LO, class GO, class Node>
-class RAPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
+  template<class Scalar, class LO, class GO, class NO, class LMO>
+class RAPFactory : public OperatorFactory<Scalar,LO,GO,NO,LMO> {
 
-  template<class AA, class BB, class CC, class DD>
-  inline friend std::ostream& operator<<(std::ostream& os, RAPFactory<AA,BB,CC,DD> &factory);
+  typedef Level<Scalar,LO,GO,NO,LMO> Level;
+
+  //JG to JJH: use Teuchos::Describable instead ?
+  template<class AA, class BB, class CC, class DD, class EE>
+  inline friend std::ostream& operator<<(std::ostream& os, RAPFactory<AA,BB,CC,DD,EE> &factory);
 
   public:
     //@{ Constructors/Destructors.
@@ -24,7 +26,7 @@ class RAPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
     //@}
 
     //@{ Build methods.
-    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {
+    bool Build(Level &fineLevel, Level &coarseLevel) {
      Teuchos::OSTab tab(this->out_);  *(this->out_) << "RAPFactory: Building a coarse operator" << std::endl; return true;}
     //@}
 
@@ -32,8 +34,8 @@ class RAPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
 }; //class RAPFactory
 
 //! Friend print method.
-template<class Scalar, class LO, class GO, class Node>
-std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LO,GO,Node> &factory) {
+  template<class Scalar, class LO, class GO, class NO, class LMO>
+std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LO,GO,NO,LMO> &factory) {
   os << "Printing RAPFactory object" << std::endl;
   return os;
 }

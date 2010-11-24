@@ -10,7 +10,6 @@ specific unit test suites.
 
 */
 
-
 #include <Teuchos_UnitTestRepository.hpp>
 //#include <Teuchos_GlobalMPISession.hpp>
 

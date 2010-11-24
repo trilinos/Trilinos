@@ -5,23 +5,25 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Tpetra_CrsMatrix.hpp"    //FIXME replace with Cthulhu Operator
-#include "Tpetra_Vector.hpp"       //FIXME replace with Cthulhu Vector
+#include "Cthulhu_Operator.hpp"
+#include "Cthulhu_Vector.hpp"
 #include "MueLu_Smoother.hpp"
 
+// JG TODO: add **default** template parameters
+
 namespace MueLu {
-/*!
-  @class Level
-  @brief Multigrid level object.
-*/
-template<class Scalar,class LO, class GO, class Node>
-class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,Node> > {
+  /*!
+    @class Level
+    @brief Multigrid level object.
+  */
+  template<class Scalar,class LO, class GO, class NO, class LMO>
+  class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,NO, LMO> > {
 
-  typedef Tpetra::CrsMatrix<Scalar,LO,GO,Node> Operator;
-  typedef Tpetra::Vector<Scalar,LO,GO,Node> Vector;
-  typedef MueLu::Smoother<Scalar,LO,GO,Node> Smoother;
+    typedef Cthulhu::Operator<Scalar,LO,GO,NO,LMO> Operator;
+    typedef Cthulhu::Vector<Scalar,LO,GO,NO> Vector;
+    typedef MueLu::Smoother<Scalar,LO,GO,NO,LMO> Smoother;
 
-  //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,Node> &level);
+    //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,NO,LMO> &level);
 
   private: 
 
@@ -70,9 +72,9 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,Node> > {
     //@{
     //! @name Build methods
     //! Builds a new Level object.
-    static Teuchos::RCP< Level<Scalar,LO,GO,Node> > Build(std::ostream &os) {
+    static Teuchos::RCP<Level<Scalar,LO,GO,NO,LMO> > Build(std::ostream &os) {
       os << "Building a Level" << std::endl;
-      return Teuchos::rcp( new Level<Scalar,LO,GO,Node>() );
+      return Teuchos::rcp( new Level() );
     }
     //@}
 
@@ -179,7 +181,7 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,Node> > {
     void SetPostSmoother(Teuchos::RCP<Smoother> &postSmoo) {
       PostSmoother_ = postSmoo;
     }
-/*
+    /*
     //TODO ==================================================
     //TODO The following methods still need to be implemented.
     //TODO ==================================================
@@ -190,22 +192,23 @@ class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,Node> > {
     SetGraph
     SetAuxMatrixFunc
     ProjectInterface
-*/
+    */
     //@}
 
 
 
-}; //class Level
+  }; //class Level
 
-//Print function.  Not a friend b/c it uses only public interfaces for data access.
-template<class Scalar,class LO, class GO, class Node>
-std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,Node> const &level) {
-  os << "Printing Level object " << level.GetLevelID() << std::endl;
-  if (level.GetA() != Teuchos::null) os << *level.GetA() << std::endl;
-  if (level.GetR() != Teuchos::null) os << *level.GetR() << std::endl;
-  if (level.GetP() != Teuchos::null) os << *level.GetP() << std::endl;
-  return os;
-}
+  //Print function.  Not a friend b/c it uses only public interfaces for data access.
+  template<class Scalar,class LO, class GO, class NO, class LMO>
+  std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,NO, LMO> const &level) {
+    os << "Printing Level object " << level.GetLevelID() << std::endl;
+    if (level.GetA() != Teuchos::null) os << *level.GetA() << std::endl;
+    if (level.GetR() != Teuchos::null) os << *level.GetR() << std::endl;
+    if (level.GetP() != Teuchos::null) os << *level.GetP() << std::endl;
+    return os;
+  }
 
 } //namespace MueLu
+
 #endif //ifndef MUELU_LEVEL_HPP

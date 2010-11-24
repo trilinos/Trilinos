@@ -14,10 +14,11 @@ namespace MueLu {
   @brief Base class for smoother factories.
 */
 
-template <class Scalar,class LO,class GO,class Node>
+  template <class Scalar,class LO,class GO,class NO, class LMO>
 class SmootherFactory : public BaseFactory {
 
-  typedef MueLu::Smoother<Scalar,LO,GO,Node> Smoother;
+  typedef Level<Scalar, LO, GO, NO, LMO> Level;
+  typedef MueLu::Smoother<Scalar,LO,GO,NO, LMO> Smoother;
 
   public:
     //@{ Constructors/Destructors.
@@ -30,7 +31,7 @@ class SmootherFactory : public BaseFactory {
     //! @name Build methods.
 
     //! Build pre-smoother and/or post-smoother
-    bool Build(Level<Scalar,LO,GO,Node> &level /*,Teuchos::ParameterList Specs*/) {
+    bool Build(Level &level /*,Teuchos::ParameterList Specs*/) {
       Teuchos::OSTab tab(this->out_);
       *(this->out_) << "Building pre-smoother and/or post-smoother" << std::endl;
       return true;

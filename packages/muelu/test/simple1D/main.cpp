@@ -1,5 +1,5 @@
 /*
-  This driver simply generates a Tpetra matrix, prints it to screen, and exits.
+  This driver simply generates a matrix, prints it to screen, and exits.
 */
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -13,8 +13,12 @@
 #include "Teuchos_FancyOStream.hpp"
 
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_CrsMatrix.hpp"
+
+#include "Cthulhu_Operator.hpp"
+#include "Cthulhu_CrsOperator.hpp"
+
+#include "Cthulhu_Vector.hpp"
+#include "Cthulhu_TpetraVector.hpp"
 
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_MatrixTypes.hpp"
@@ -56,14 +60,19 @@ int main(int argc, char** argv)
   typedef Ordinal  GO;
   typedef Scalar   SC;
 
-  typedef Tpetra::Map<LO,GO,NO>              Map;
-  typedef Tpetra::CrsMatrix<SC,LO,GO,NO>     CrsMatrix;
-  typedef Tpetra::Vector<SC,LO,GO,NO>        Vector;
+  typedef Kokkos::DefaultKernels<Scalar,LO,NO>::SparseOps LMO;
 
-  typedef MueLu::SaPFactory<SC,LO,GO,NO>        SaPFactory;
-  typedef MueLu::TransPFactory<SC,LO,GO,NO>     TransPFactory;
-  typedef MueLu::RAPFactory<SC,LO,GO,NO>        RAPFactory;
-  typedef MueLu::SmootherFactory<SC,LO,GO,NO>   SmootherFactory;
+  typedef Cthulhu::Map<LO,GO,NO>              Map;
+  typedef Cthulhu::TpetraMap<LO,GO,NO>              TpetraMap;
+  typedef Cthulhu::Operator<SC,LO,GO,NO,LMO>  Operator;
+  typedef Cthulhu::CrsOperator<SC,LO,GO,NO,LMO> CrsOperator;
+  typedef Cthulhu::Vector<SC,LO,GO,NO>        Vector;
+  typedef Cthulhu::TpetraVector<SC,LO,GO,NO>        TpetraVector;
+
+  typedef MueLu::SaPFactory<SC,LO,GO,NO,LMO>        SaPFactory;
+  typedef MueLu::TransPFactory<SC,LO,GO,NO,LMO>     TransPFactory;
+  typedef MueLu::RAPFactory<SC,LO,GO,NO,LMO>        RAPFactory;
+  typedef MueLu::SmootherFactory<SC,LO,GO,NO,LMO>   SmootherFactory;
 
   using namespace Teuchos;
 
@@ -107,27 +116,27 @@ int main(int argc, char** argv)
   GO indexBase = 0;
 
   RCP<const Map > map;
-  map = rcp( new Map(numGlobalElements, indexBase, comm, Tpetra::GloballyDistributed, node) );
+  map = rcp( new TpetraMap(numGlobalElements, indexBase, comm, Tpetra::GloballyDistributed, node) );
 
-  RCP<CrsMatrix> A;
+  RCP<Operator> A;
   ParameterList matrixList;
   matrixList.set("nx",nx);
   matrixList.set("ny",ny);
   matrixList.set("nz",nz);
 
-  A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<Scalar,LO,GO> >(matrixType,map,matrixList);
+  A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator >(matrixType,map,matrixList);
   //RCP<FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
   //A->describe(*out, VERB_EXTREME);
 
-  RCP<Vector> nullSpace = rcp(new Vector(map) );
+  RCP<Vector> nullSpace = rcp(new TpetraVector(map) );
   nullSpace->putScalar( (SC) 1.0);
 
-//Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_NONE);
+  //Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_NONE);
 
-  MueLu::Hierarchy<SC,LO,GO,NO> H;
-  H.setDefaultVerbLevel(Teuchos::VERB_NONE); //FIXME does nothing right now, must check inside Hierarchy
-  RCP<MueLu::SaLevel<SC,LO,GO,NO> > Finest = rcp( new MueLu::SaLevel<SC,LO,GO,NO>() );
-  Finest->setDefaultVerbLevel(Teuchos::VERB_NONE); //FIXME does nothing right now, must check inside SaLevel
+  MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
+  H.setDefaultVerbLevel(Teuchos::VERB_NONE); // FIXME does nothing right now, must check inside Hierarchy
+  RCP<MueLu::SaLevel<SC,LO,GO,NO,LMO> > Finest = rcp( new MueLu::SaLevel<SC,LO,GO,NO,LMO>() );
+  Finest->setDefaultVerbLevel(Teuchos::VERB_NONE); // FIXME does nothing right now, must check inside SaLevel
   Finest->SetA(A);
   Finest->SetNullSpace(nullSpace);
   H.SetLevel(Finest);

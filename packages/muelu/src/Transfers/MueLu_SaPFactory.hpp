@@ -11,10 +11,12 @@ namespace MueLu {
   @brief Factory for building Smoothed Aggregation prolongators.
 */
 
-template<class Scalar, class LO, class GO, class Node>
-class SaPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
-  template<class AA, class BB, class CC, class DD>
-  inline friend std::ostream& operator<<(std::ostream& os, SaPFactory<AA,BB,CC,DD> &factory);
+template<class Scalar, class LO, class GO, class NO, class LMO>
+class SaPFactory : public OperatorFactory<Scalar,LO,GO,NO, LMO> {
+  template<class AA, class BB, class CC, class DD, class EE>
+  inline friend std::ostream& operator<<(std::ostream& os, SaPFactory<AA,BB,CC,DD, EE> &factory);
+
+  typedef Level<Scalar,LO,GO,NO, LMO> Level;
 
   private:
 /*
@@ -45,7 +47,7 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,Node> {
     //@{ Build methods.
 
     //! Build method.
-    bool Build(Level<Scalar,LO,GO,Node> &fineLevel, Level<Scalar,LO,GO,Node> &coarseLevel) {
+    bool Build(Level &fineLevel, Level &coarseLevel) {
       Teuchos::OSTab tab(this->out_); *(this->out_) << "SaPFactory: Building a prolongator" << std::endl; return true;
     }
     //@}
@@ -126,8 +128,8 @@ function  [P] = MakeNoQRTentative(AggInfo,Amat,nullspace,OutputLevel)
 }; //class SaPFactory
 
 //! Friend print function.
-template<class Scalar, class LO, class GO, class Node>
-std::ostream& operator<<(std::ostream& os, SaPFactory<Scalar,LO,GO,Node> &factory) {
+template<class Scalar, class LO, class GO, class NO, class LMO>
+std::ostream& operator<<(std::ostream& os, SaPFactory<Scalar,LO,GO,NO, LMO> &factory) {
   os << "Printing an SaPFactory object" << std::endl;
   return os;
 }
