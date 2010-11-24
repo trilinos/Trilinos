@@ -136,13 +136,13 @@ public:
   
   //@}
 
-private:
-
-  /** \name Private Members */
+  /** \name Setup functions */
   //@{
 
   /** \brief Gets the default converter to be used to convert
    * Validators.
+   *
+   * This map is used to enable outside code to set up new converter types.
    */
   static ConverterMap& getConverterMap();
   
@@ -188,7 +188,7 @@ private:
 #define TEUCHOS_ADD_ARRAYCONVERTER(CONVERTER_MAP, VALIDATORTYPE, ENTRYTYPE) \
   \
   (CONVERTER_MAP).insert(Teuchos::ValidatorXMLConverterDB::ConverterPair( \
-    DummyObjectGetter<Teuchos::ArrayValidator< VALIDATORTYPE , ENTRYTYPE > >:: \
+    Teuchos::DummyObjectGetter<Teuchos::ArrayValidator< VALIDATORTYPE , ENTRYTYPE > >:: \
       getDummyObject()->getXMLTypeName(), \
     Teuchos::rcp(new Teuchos::ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >)));
 
@@ -197,7 +197,7 @@ private:
 #define TEUCHOS_ADD_NUMBERTYPECONVERTERS(CONVERTER_MAP, T) \
   TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(CONVERTER_MAP, T ); \
   TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(CONVERTER_MAP, T ); \
-  TEUCHOS_ADD_ARRAYCONVERTER(CONVERTER_MAP, EnhancedNumberValidator< T >, T );
+  TEUCHOS_ADD_ARRAYCONVERTER(CONVERTER_MAP, Teuchos::EnhancedNumberValidator< T >, T );
 
 
 #endif // TEUCHOS_VALIDATORXMLCONVERTERDB_HPP

@@ -30,6 +30,7 @@
 #include "Teuchos_StandardValidatorXMLConverters.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
+#include "Teuchos_StaticSetupMacro.hpp"
 
 
 
@@ -99,40 +100,8 @@ ValidatorXMLConverterDB::ConverterMap&
 ValidatorXMLConverterDB::getConverterMap()
 {
   static ConverterMap masterMap;
-  if(masterMap.size() == 0){
-    TEUCHOS_ADD_NUMBERTYPECONVERTERS(masterMap, int);
-    TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(masterMap, double);
-    TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(masterMap, float);
-
-    TEUCHOS_ADD_ARRAYCONVERTER(masterMap, EnhancedNumberValidator<double>, double);
-    TEUCHOS_ADD_ARRAYCONVERTER(masterMap, EnhancedNumberValidator<float>, float);
-
-    TEUCHOS_ADD_ARRAYCONVERTER(masterMap, FileNameValidator, std::string);
-    TEUCHOS_ADD_ARRAYCONVERTER(masterMap, StringValidator, std::string);
-
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-    TEUCHOS_ADD_NUMBERTYPECONVERTERS(masterMap, long long int);
-#endif // HAVE_TEUCHOS_LONG_LONG_INT
-
-    TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(masterMap, EVerbosityLevel); \
-
-    masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<FileNameValidator>::getDummyObject()->getXMLTypeName(), 
-        rcp(new FileNameValidatorXMLConverter)));
-
-    masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<StringValidator>::getDummyObject()->getXMLTypeName(), 
-        rcp(new StringValidatorXMLConverter)));
-
-    masterMap.insert(
-      ConverterPair(
-        DummyObjectGetter<AnyNumberParameterEntryValidator>::getDummyObject()->getXMLTypeName(), 
-        rcp(new AnyNumberValidatorXMLConverter)));
-
-  }
   return masterMap;
+  // See default setup code below!
 }
 
 
@@ -149,3 +118,50 @@ void ValidatorXMLConverterDB::printKnownConverters(std::ostream& out){
   
 
 } // namespace Teuchos
+
+
+namespace {
+
+
+TEUCHOS_STATIC_SETUP()
+{
+  Teuchos::ValidatorXMLConverterDB::ConverterMap& masterMap = 
+    Teuchos::ValidatorXMLConverterDB::getConverterMap();
+  TEUCHOS_ADD_NUMBERTYPECONVERTERS(masterMap, int);
+  TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(masterMap, double);
+  TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(masterMap, float);
+  
+  TEUCHOS_ADD_ARRAYCONVERTER(masterMap, Teuchos::EnhancedNumberValidator<double>, double);
+  TEUCHOS_ADD_ARRAYCONVERTER(masterMap, Teuchos::EnhancedNumberValidator<float>, float);
+  
+  TEUCHOS_ADD_ARRAYCONVERTER(masterMap, Teuchos::FileNameValidator, std::string);
+  TEUCHOS_ADD_ARRAYCONVERTER(masterMap, Teuchos::StringValidator, std::string);
+  
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+  TEUCHOS_ADD_NUMBERTYPECONVERTERS(masterMap, long long int);
+#endif // HAVE_TEUCHOS_LONG_LONG_INT
+  
+  TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(masterMap, Teuchos::EVerbosityLevel); \
+  
+  masterMap.insert(
+    Teuchos::ValidatorXMLConverterDB::ConverterPair(
+      Teuchos::DummyObjectGetter<Teuchos::FileNameValidator>
+      ::getDummyObject()->getXMLTypeName(), 
+      Teuchos::rcp(new Teuchos::FileNameValidatorXMLConverter)));
+  
+  masterMap.insert(
+    Teuchos::ValidatorXMLConverterDB::ConverterPair(
+      Teuchos::DummyObjectGetter<Teuchos::StringValidator>
+      ::getDummyObject()->getXMLTypeName(), 
+      Teuchos::rcp(new Teuchos::StringValidatorXMLConverter)));
+  
+  masterMap.insert(
+    Teuchos::ValidatorXMLConverterDB::ConverterPair(
+      Teuchos::DummyObjectGetter<Teuchos::AnyNumberParameterEntryValidator>
+      ::getDummyObject()->getXMLTypeName(), 
+      Teuchos::rcp(new Teuchos::AnyNumberValidatorXMLConverter)));
+  
+}
+
+
+} // namespace
