@@ -31,9 +31,9 @@ EXTRA_ARGS=$@
 # Set up configuration files
 #
 
-echo "
--DBUILD_SHARED_LIBS:BOOL=ON
-" > COMMON.config
+#echo "
+#-DBUILD_SHARED_LIBS:BOOL=ON
+#" > COMMON.config
 
 echo "
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
