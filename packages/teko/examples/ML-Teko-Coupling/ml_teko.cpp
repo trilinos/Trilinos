@@ -21,6 +21,7 @@
 #include <EpetraExt_RowMatrixOut.h>
 #include <EpetraExt_MultiVectorIn.h>
 #include <EpetraExt_MultiVectorOut.h>
+#include <EpetraExt_MatrixMatrix.h>
 #include <EpetraExt_VectorIn.h>
 #include "ml_epetra_utils.h"
 #include "ml_RowMatrix.h"
@@ -64,6 +65,9 @@ int main(int argc, char *argv[])
   ML_Comm *ml_comm;
   ML_Comm_Create(&ml_comm);
 
+  Teuchos::RCP<Teuchos::ParameterList> tekoPL = Teuchos::getParametersFromXmlFile("ml_teko.xml"); 
+  bool cForPressure = tekoPL->get<bool>("Use C For Pressure");
+
   /***********************************************/
   /* Read in BlkMatrix, set A[0] to BlkMat(0,0), */
   /* and then read BBt into A[1].                */
@@ -78,16 +82,33 @@ int main(int argc, char *argv[])
        A[0] = (Epetra_RowMatrix *) tmpF->data;
   else A[0] = dynamic_cast<Epetra_RowMatrix*>((Epetra_CrsMatrix *) tmpF->data);
 
-  if (Epetra_ML_GetCrsDataptrs(tmpC, &ddummy, &idummy1,&idummy2)) 
-       A[1] = (Epetra_RowMatrix *) tmpC->data;
-  else A[1] = dynamic_cast<Epetra_RowMatrix*>((Epetra_CrsMatrix *) tmpC->data);
+  Teko::ModifiableLinearOp BBt;
+  if(cForPressure) {
+     std::cout << "Using C for SA" << std::endl;
+     if (Epetra_ML_GetCrsDataptrs(tmpC, &ddummy, &idummy1,&idummy2)) 
+          A[1] = (Epetra_RowMatrix *) tmpC->data;
+     else A[1] = dynamic_cast<Epetra_RowMatrix*>((Epetra_CrsMatrix *) tmpC->data);
+  }
+  else {
+     std::cout << "Using approximate Schur Complement for SA" << std::endl;
+     ML_Operator * tmpBt = ML_Operator_BlkMatExtract(BlkMat,0,1);
+     ML_Operator * tmpB  = ML_Operator_BlkMatExtract(BlkMat,1,0);
+
+     Teko::LinearOp Bt = Thyra::epetraLinearOp(Teuchos::rcp((Epetra_CrsMatrix*) tmpBt->data,false));
+     Teko::LinearOp B  = Thyra::epetraLinearOp(Teuchos::rcp((Epetra_CrsMatrix*) tmpB->data,false));
+     Teko::LinearOp F  = Thyra::epetraLinearOp(Teuchos::rcp((Epetra_CrsMatrix*) tmpF->data,false));
+     Teko::LinearOp C  = Thyra::epetraLinearOp(Teuchos::rcp((Epetra_CrsMatrix*) tmpC->data,false));
+     Teko::LinearOp idF = Teko::getInvDiagonalOp(F,Teko::AbsRowSum);
+
+     BBt = Teko::explicitAdd(C,Teko::scale(-1.0,Teko::explicitMultiply(B,idF,Bt)),BBt);
+     A[1] = &*Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*BBt));
+  }
 
   /**************************************************/
   /* Read ML parameter lists for subblocks and for  */
   /* block 2x2 system.                              */
   /**************************************************/
 
-  Teuchos::RCP<Teuchos::ParameterList> tekoPL = Teuchos::getParametersFromXmlFile("ml_teko.xml"); 
   Teuchos::RCP<Teuchos::ParameterList> invLibPL = Teuchos::rcpFromRef(tekoPL->sublist("Inverse Library"));
   int maxAztecIters = tekoPL->get<int>("Max Aztec Iters",100);
   double aztecTols  = tekoPL->get<double>("Aztec Tolerance",1e-8);
@@ -123,6 +144,8 @@ int main(int argc, char *argv[])
   /* read in rhs */
   Teuchos::RCP<Epetra_Vector> RHS = Teuchos::rcp(new Epetra_Vector(EBlkMat.OperatorRangeMap()));
   RHS->PutScalar(7.0);
+  Teuchos::RCP<Epetra_Vector> srcRHS = Teuchos::rcp(new Epetra_Vector(*RHS));
+  EBlkMat.Apply(*srcRHS,*RHS);
 
   /* set initial guess */
   Epetra_Vector LHS(EBlkMat.OperatorDomainMap()); LHS.PutScalar(0.0);

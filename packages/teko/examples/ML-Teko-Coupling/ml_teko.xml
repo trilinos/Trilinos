@@ -2,6 +2,7 @@
   
   <Parameter name="Max Aztec Iters" type="int" value="100"/>
   <Parameter name="Aztec Tolerance" type="double" value="1.0e-5"/>
+  <Parameter name="Use C For Pressure" type="bool" value="false"/>
 
   <ParameterList name="Main ML List">
     <Parameter name="ML label" type="string" value="2x2 system"/>
@@ -25,7 +26,7 @@
     <Parameter name="max levels" type="int" value="4"/>
     <Parameter name="PDE equations" type="int" value="2"/>
 
-    <Parameter name="aggregation: damping factor" type="double" value="0.0"/>
+    <Parameter name="aggregation: damping factor" type="double" value="1.3333"/>
 
     <Parameter name="smoother: type" type="string" value="do-nothing"/>
     <Parameter name="coarse: type" type="string" value="do-nothing"/>
