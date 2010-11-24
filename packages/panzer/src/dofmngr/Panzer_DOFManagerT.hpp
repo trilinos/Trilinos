@@ -1,5 +1,3 @@
-// #include "Panzer_DOFManager.hpp"
-
 // FEI includes
 #include "fei_Factory_Trilinos.hpp"
 

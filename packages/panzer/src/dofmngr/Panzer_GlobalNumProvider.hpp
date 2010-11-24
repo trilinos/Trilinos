@@ -1,6 +1,13 @@
 #ifndef __Panzer_GlobalNumProvider_hpp__
 #define __Panzer_GlobalNumProvider_hpp__
 
+#include <vector>
+#include <string>
+
+#include "Teuchos_RCP.hpp"
+
+#include "Panzer_ConnManager.hpp"
+
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
