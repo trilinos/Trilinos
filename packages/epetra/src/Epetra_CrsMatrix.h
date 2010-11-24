@@ -51,6 +51,11 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsGraph.h"
+
+#ifdef Epetra_ENABLE_CASK
+#include "cask_kernels.h"
+#endif
+
 class Epetra_Map;
 class Epetra_Import;
 class Epetra_Export;
@@ -1303,6 +1308,9 @@ or if the number of entries in this row exceed the Length parameter.
   Epetra_DataAccess CV_;
 
   bool squareFillCompleteCalled_;
+#ifdef Epetra_ENABLE_CASK
+  caskHandle_t cask;
+#endif
  private:
 
   // These are the pre-5.0 versions of solve.  They are still faster that generic 5.0 solves, so we keep them around
