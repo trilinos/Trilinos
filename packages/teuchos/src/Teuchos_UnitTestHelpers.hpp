@@ -37,6 +37,7 @@
 
 
 #include "Teuchos_UnitTestBase.hpp"
+#include "Teuchos_StaticSetupMacro.hpp"
 
 
 /** \brief Basic unit test creation macro for non-templated code. */
@@ -217,34 +218,6 @@
   template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3, TYPE4 >; \
   TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3, TYPE4 > \
   instance_##TEST_GROUP##_##TYPE1##_##TYPE2##_##TYPE3##_##TYPE4##_##TEST_NAME##_UnitTest(#TYPE1,#TYPE2,#TYPE3,#TYPE4);
-
-
-/** \brief Run setup code statically in a translation unit.
- *
- * NOTE: Make sure the call this in an anonymous namespace as:
- *
- \verbatim
-
- namespace {
-
- TEUCHOS_STATIC_SETUP()
- {
-   // Some code you want to call before main() runs ...
-   ...
- }
-
- } // namespace
-
- \endverbatim
- *
- */
-#define TEUCHOS_STATIC_SETUP() \
-  class StaticSetup { \
-  public: \
-    StaticSetup(); \
-  } staticSetup; \
-  \
-  StaticSetup::StaticSetup()
 
 
 #endif  // TEUCHOS_UNIT_TEST_HELPERS_HPP

@@ -81,7 +81,6 @@ APPEND_SET(HEADERS
   Teuchos_FancyOStream.hpp
   Teuchos_Flops.hpp
   Teuchos_FunctionObject.hpp
-  Teuchos_getRawPtr.hpp
   Teuchos_GlobalMPISession.hpp
   Teuchos_Handle.hpp
   Teuchos_Handleable.hpp
@@ -127,14 +126,14 @@ APPEND_SET(HEADERS
   Teuchos_RefCountPtr.hpp
   Teuchos_RefCountPtrDecl.hpp
   Teuchos_ScalarTraits.hpp
-  Teuchos_ScalarTraitsDecl.hpp
   Teuchos_ScalarTraitsCUDA.hpp
-  Teuchos_SerialDenseMatrix.hpp
-  Teuchos_SerialSymDenseMatrix.hpp
-  Teuchos_SerialDenseVector.hpp
-  Teuchos_SerialDenseSolver.hpp
-  Teuchos_SerialSpdDenseSolver.hpp
+  Teuchos_ScalarTraitsDecl.hpp
   Teuchos_SerialDenseHelpers.hpp
+  Teuchos_SerialDenseMatrix.hpp
+  Teuchos_SerialDenseSolver.hpp
+  Teuchos_SerialDenseVector.hpp
+  Teuchos_SerialSpdDenseSolver.hpp
+  Teuchos_SerialSymDenseMatrix.hpp
   Teuchos_SerializationTraits.hpp
   Teuchos_SerializationTraitsHelpers.hpp
   Teuchos_Serializer.hpp
@@ -147,8 +146,8 @@ APPEND_SET(HEADERS
   Teuchos_StandardFunctionObjects.hpp
   Teuchos_StandardMemberCompositionMacros.hpp
   Teuchos_StandardParameterEntryValidators.hpp
+  Teuchos_StaticSetupMacro.hpp
   Teuchos_StringToIntMap.hpp
-  Teuchos_toString.hpp
   Teuchos_TableColumn.hpp
   Teuchos_TableEntry.hpp
   Teuchos_TableFormat.hpp
@@ -158,8 +157,8 @@ APPEND_SET(HEADERS
   Teuchos_Time.hpp
   Teuchos_TimeMonitor.hpp
   Teuchos_Tuple.hpp
-  Teuchos_TypeTraits.hpp
   Teuchos_TypeNameTraits.hpp
+  Teuchos_TypeTraits.hpp
   Teuchos_UnitTestBase.hpp
   Teuchos_UnitTestHarness.hpp
   Teuchos_UnitTestHelpers.hpp
@@ -170,6 +169,7 @@ APPEND_SET(HEADERS
   Teuchos_VerboseObjectParameterListHelpers.hpp
   Teuchos_VerbosityLevel.hpp
   Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp
+  Teuchos_Version.hpp
   Teuchos_Workspace.hpp
   Teuchos_any.hpp
   Teuchos_arrayArg.hpp
@@ -178,11 +178,12 @@ APPEND_SET(HEADERS
   Teuchos_dyn_cast.hpp
   Teuchos_getBaseObjVoidPtr.hpp
   Teuchos_getConst.hpp
+  Teuchos_getRawPtr.hpp
   Teuchos_implicit_cast.hpp
   Teuchos_map.hpp
   Teuchos_oblackholestream.hpp
   Teuchos_stacktrace.hpp
-  Teuchos_Version.hpp
+  Teuchos_toString.hpp
   )
 
 # Set sources
