@@ -64,7 +64,7 @@ CC=mpicc
 
 CFLAGS =$(ID_TYPE_FLAG)
 
-EXAMPLE_NAMES= simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH 
+EXAMPLE_NAMES= simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH problemGRAPH
 
 all:   $(EXAMPLE_NAMES)
 

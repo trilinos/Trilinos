@@ -207,6 +207,8 @@ int main(int argc, char *argv[])
 
   showGraphPartitions(myRank, myGraph.numMyVertices, myGraph.vertexGID, parts, numProcs);
 
+  free(parts);
+
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
   ** the storage allocated for the Zoltan structure.
@@ -296,7 +298,7 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
 {
 int i, j, from, to;
 int *nextProc;
-ZOLTAN_ID_TYPE *nextNbor:
+ZOLTAN_ID_TYPE *nextNbor;
 float *nextWgt;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
@@ -310,7 +312,7 @@ float *nextWgt;
     return;
   }
 
-  nextNbor = (int *)nborGID;
+  nextNbor = nborGID;
   nextProc = nborProc;
   nextWgt = ewgts;
   
@@ -426,7 +428,7 @@ static void showGraphPartitions(int myProc, int numIDs, ZOLTAN_ID_TYPE *GIDs, in
 int partAssign[25], allPartAssign[25];
 int i, j, part, cuts, prevPart;
 float imbal, localImbal, sum;
-int *partCount;
+int *partCount=NULL;
 
   partCount = (int *)calloc(sizeof(int), nparts);
 
@@ -490,8 +492,9 @@ int *partCount;
     printf("Object imbalance (1.0 perfect, larger numbers are worse): %f\n",imbal);
     printf("Total number of edge cuts: %d\n\n",cuts);
 
-    if (nparts) free(partCount);
   }
+
+  if (partCount) free(partCount);
 
 }
 
