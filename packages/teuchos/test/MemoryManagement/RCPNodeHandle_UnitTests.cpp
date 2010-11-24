@@ -200,6 +200,10 @@ TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_basic )
 TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_owning_twice_error )
 {
   SET_RCPNODE_TRACING();
+#ifdef HAVE_TEUCHOS_STACKTRACE
+  // Make sure that you store a stacktrace so as not to affect the RCPNode count below!
+  Teuchos::store_stacktrace();
+#endif
   A *a_ptr = new A;
   RCPNode *node1 = basicRCPNodeNoAlloc<A>(a_ptr, true);
   const int numActiveNodesBase = RCPNodeTracer::numActiveRCPNodes();
