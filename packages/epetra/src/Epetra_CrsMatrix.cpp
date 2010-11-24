@@ -52,9 +52,6 @@
 #include "Epetra_OffsetIndex.h"
 #include "Epetra_BLAS_wrappers.h"
 
-#ifdef Epetra_ENABLE_CASK 
-#include "cask_kernels.h"
-#endif 
 
 #include <cstdlib>
 
@@ -278,7 +275,11 @@ Epetra_CrsMatrix& Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix& src)
     double * srcValues = src.All_Values();
     for (int i=0; i<NumMyNonzeros; ++i) All_Values_[i] = srcValues[i];
     Allocated_ = true;
-
+#ifdef Epetra_ENABLE_CASK
+    if( matrixFillCompleteCalled_  ) {
+      cask = cask_handler_copy(src.cask);
+    }
+#endif
   }
   else { // copy for non-optimized storage
     
@@ -355,6 +356,9 @@ int Epetra_CrsMatrix::Allocate() {
     }
   }
   SetAllocated(true);
+#ifdef Epetra_ENABLE_CASK
+  cask=NULL;
+#endif
   return(0);
 }
 //==============================================================================
@@ -392,6 +396,16 @@ void Epetra_CrsMatrix::DeleteMemory()
   Values_alloc_lengths_ = 0;
 
   NumMyRows_ = 0;
+
+#ifdef Epetra_ENABLE_CASK
+  if( StorageOptimized_  )
+  {
+    if( cask != NULL ) 
+      cask_handler_destroy(cask);
+
+    cask = NULL;
+  }
+#endif
 
   Allocated_ = false;
 }
@@ -1130,6 +1144,18 @@ int Epetra_CrsMatrix::OptimizeStorage() {
   
   // Delete unneeded storage
   delete [] Values_; Values_=0;
+
+#ifdef Epetra_ENABLE_CASK 
+  if (cask == NULL  && Graph().StorageOptimized() )  {
+     int * Indices = Graph().All_Indices();
+     int * IndexOffset = Graph().IndexOffset();
+     int NumMyCols_ = NumMyCols();
+     cask_handler_initialize(&cask);
+     cask_csr_analysis(NumMyRows_, NumMyCols_, IndexOffset, Indices,
+                       NumGlobalNonzeros(),cask);
+  }
+#endif
+
 
   StorageOptimized_ = true;
 
@@ -2788,7 +2814,8 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
  	  *dst_ptr++ = s;
  	}
 #else
-       cask_csr_dax(NumMyRows_, IndexOffset, Indices, Values, x, y );
+       cask_csr_dax_new(NumMyRows_, IndexOffset, Indices,
+                        Values, x, y, cask);
 #endif // Epetra_ENABLE_CASK
 #endif // Epetra_HAVE_OMP
 
@@ -2915,8 +2942,8 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
     int izero = 0;
     EPETRA_DCRSMM_F77(&izero, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
 #else
-    cask_csr_dgesmm(0, 1.0, NumMyRows_, NumMyRows_,  NumVectors, 
-                    IndexOffset, Indices, Values, *X, LDX, 0.0,  *Y, LDY);
+    cask_csr_dgesmm_new(0, 1.0, NumMyRows_, NumMyRows_,  NumVectors,
+                    IndexOffset, Indices, Values, *X, LDX, 0.0,  *Y, LDY,cask);
 #endif
     return;
     }
@@ -3001,8 +3028,9 @@ void Epetra_CrsMatrix::GeneralMTM(double ** X, int LDX, double ** Y, int LDY, in
       int ione = 1;
       EPETRA_DCRSMM_F77(&ione, &NumMyRows_, &NumCols, Values, Indices, IndexOffset, *X, &LDX, *Y, &LDY, &NumVectors);
 #else
-      cask_csr_dgesmm(1, 1.0, NumMyRows_, NumCols,  NumVectors, 
-                      IndexOffset, Indices, Values, *X, LDX, 0.0, *Y, LDY);
+      cask_csr_dgesmm_new(1, 1.0, NumMyRows_, NumCols,  NumVectors,
+                          IndexOffset, Indices, Values, *X, LDX, 0.0,
+                          *Y, LDY, cask);
 #endif
       return;
     }
@@ -3085,8 +3113,8 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 #ifndef Epetra_ENABLE_CASK
     EPETRA_DCRSSV_F77( &iupper, &itrans, &udiag, &nodiag, &NumMyRows_, &NumMyRows_, Values, Indices, IndexOffset, xp, yp, &xysame);
 #else
-    cask_csr_dtrsv( iupper, itrans, udiag, nodiag, 0, xysame, NumMyRows_, 
-                    NumMyRows_, IndexOffset, Indices, Values, xp, yp);
+    cask_csr_dtrsv_new( iupper, itrans, udiag, nodiag, 0, xysame, NumMyRows_,
+                    NumMyRows_, IndexOffset, Indices, Values, xp, yp, cask);
 #endif
     return;
   }
