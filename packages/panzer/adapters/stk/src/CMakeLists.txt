@@ -40,6 +40,7 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_Interface.hpp
   stk_interface/Panzer_STK_MeshFactory.hpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.hpp
+  stk_interface/Panzer_STK_ExodusReaderFactory.hpp
   ) 
 
 APPEND_SET(SOURCES
@@ -51,6 +52,7 @@ APPEND_SET(SOURCES
   Panzer_STK_SetupUtilities.cpp
   stk_interface/Panzer_STK_Interface.cpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.cpp
+  stk_interface/Panzer_STK_ExodusReaderFactory.cpp
   )
 
 #
