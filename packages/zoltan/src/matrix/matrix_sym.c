@@ -57,10 +57,6 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
   if (((matrix->nPins*2+matrix->nY)*matrix->pinwgtdim) && !pinwgt) MEMORY_ERROR;
 
-  for (i = 0 ; i < 2 ; ++i) /* Copy pin weights */
-    memcpy(pinwgt + i*matrix->nPins*matrix->pinwgtdim*sizeof(float),
-	   matrix->pinwgt, matrix->nPins*matrix->pinwgtdim*sizeof(float));
-
   for (i=0, cnt = 0 ; i < matrix->nY ; ++i) {
     for (j = matrix->ystart[i] ; j < matrix->yend[i] ; ++j) {
       tr_tab[cnt].GNO[0] = matrix->yGNO[i] + bipartite*matrix->globalX;   /* Normal arc */
@@ -69,7 +65,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 	     matrix->pinwgtdim*sizeof(float));
       cnt ++;
 
-      tr_tab[cnt].GNO[0] = matrix->pinGNO[j];                        /* Symmetric arc */
+      tr_tab[cnt].GNO[0] = matrix->pinGNO[j];          /* Symmetric arc */
       tr_tab[cnt].GNO[1] = matrix->yGNO[i] + bipartite*matrix->globalX; /* new ordering */
       memcpy(pinwgt + cnt*matrix->pinwgtdim, matrix->pinwgt+j*matrix->pinwgtdim,
 	     matrix->pinwgtdim*sizeof(float));
