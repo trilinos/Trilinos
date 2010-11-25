@@ -26,9 +26,9 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
-#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+
+using stk::mesh::fem::NODE_RANK;
 
 //----------------------------------------------------------------------
 
@@ -43,34 +43,34 @@ namespace use_cases {
   typedef shards::ShellQuadrilateral<4>  ShellQuad4;
   typedef shards::ShellTriangle<3>       ShellTriangle3;
 
-  UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit )
-  : m_spatial_dimension(3)
-  , m_metaData( TopologicalMetaData::entity_rank_names(m_spatial_dimension) )
+  UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
+    m_spatial_dimension(3)
+  , m_metaData( fem::entity_rank_names(m_spatial_dimension) )
   , m_bulkData( m_metaData , comm )
-  , m_topData( m_metaData, m_spatial_dimension )
-  , m_block_hex(        m_topData.declare_part< Hex8 >( "block_1" ))
-  , m_block_wedge(      m_topData.declare_part< Wedge6 >( "block_2" ))
-  , m_block_tet(        m_topData.declare_part< Tet4 >( "block_3" ))
-  , m_block_pyramid(    m_topData.declare_part< Pyramid4 >( "block_4" ))
-  , m_block_quad_shell( m_topData.declare_part< ShellQuad4 >( "block_5" ))
-  , m_block_tri_shell(  m_topData.declare_part< ShellTriangle3 >( "block_6" ))
+  , m_topoData( m_metaData, m_spatial_dimension )
+  , m_block_hex(        declare_part< Hex8 >( m_metaData, "block_1" ))
+  , m_block_wedge(      declare_part< Wedge6 >(m_metaData,  "block_2" ))
+  , m_block_tet(        declare_part< Tet4 >(m_metaData,  "block_3" ))
+  , m_block_pyramid(    declare_part< Pyramid4 >(m_metaData,  "block_4" ))
+  , m_block_quad_shell( declare_part< ShellQuad4 >(m_metaData,  "block_5" ))
+  , m_block_tri_shell(  declare_part< ShellTriangle3 >(m_metaData,  "block_6" ))
+  , m_elem_rank( fem::element_rank(m_topoData) )
   , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
   , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
   , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))
   , m_volume_field( m_metaData.declare_field< ScalarFieldType >( "volume" ))
   , m_element_node_coordinates_field( m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
 {
-
   // Define where fields exist on the mesh:
   Part & universal = m_metaData.universal_part();
 
-  put_field( m_coordinates_field , m_topData.node_rank , universal );
-  put_field( m_centroid_field , m_topData.element_rank , universal );
-  put_field( m_temperature_field, m_topData.node_rank, universal );
-  put_field( m_volume_field, m_topData.element_rank, m_block_hex );
-  put_field( m_volume_field, m_topData.element_rank, m_block_wedge );
-  put_field( m_volume_field, m_topData.element_rank, m_block_tet );
-  put_field( m_volume_field, m_topData.element_rank, m_block_pyramid );
+  put_field( m_coordinates_field , NODE_RANK , universal );
+  put_field( m_centroid_field , m_elem_rank , universal );
+  put_field( m_temperature_field, NODE_RANK, universal );
+  put_field( m_volume_field, m_elem_rank, m_block_hex );
+  put_field( m_volume_field, m_elem_rank, m_block_wedge );
+  put_field( m_volume_field, m_elem_rank, m_block_tet );
+  put_field( m_volume_field, m_elem_rank, m_block_pyramid );
 
   // Define the field-relation such that the values of the
   // 'element_node_coordinates_field' are pointers to the
@@ -84,16 +84,16 @@ namespace use_cases {
 
   m_metaData.declare_field_relation(
     m_element_node_coordinates_field ,
-    & element_node_stencil<void> ,
+    fem::get_element_node_stencil(3) ,
     m_coordinates_field
     );
 
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_hex, Hex8::node_count );
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_wedge, Wedge6::node_count );
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_tet, Tet4::node_count );
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_pyramid, Pyramid4::node_count );
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_quad_shell, ShellQuad4::node_count);
-  put_field( m_element_node_coordinates_field, m_topData.element_rank, m_block_tri_shell, ShellTriangle3::node_count );
+  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_hex, Hex8::node_count );
+  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_wedge, Wedge6::node_count );
+  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tet, Tet4::node_count );
+  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_pyramid, Pyramid4::node_count );
+  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_quad_shell, ShellQuad4::node_count);
+  put_field( m_element_node_coordinates_field, m_elem_rank, m_block_tri_shell, ShellTriangle3::node_count );
 
 
   if (doCommit)
@@ -190,7 +190,7 @@ void UseCase_3_Mesh::populate()
   }
 
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = m_bulkData.get_entity( m_topData.node_rank , i + 1 );
+    Entity * const node = m_bulkData.get_entity( NODE_RANK , i + 1 );
     double * const coord = field_data( m_coordinates_field , *node );
     coord[0] = node_coord_data[i][0] ;
     coord[1] = node_coord_data[i][1] ;
@@ -210,7 +210,7 @@ bool verify_elem_node_coord_3(
   const unsigned node_count )
 {
   bool result = true;
-  mesh::PairIterRelation rel = elem.relations( NodeRank );
+  mesh::PairIterRelation rel = elem.relations( fem::NODE_RANK );
 
   if( (unsigned) rel.size() != node_count ) {
     std::cerr << "Error!  relation size == " << rel.size() << " != "
@@ -300,7 +300,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
   const ElementNodePointerFieldType & elem_node_coord  =
     mesh.m_element_node_coordinates_field ;
 
-  std::vector<Bucket *> element_buckets = bulkData.buckets( mesh.m_topData.element_rank );
+  std::vector<Bucket *> element_buckets = bulkData.buckets( mesh.m_elem_rank );
 
   // Verify entities in each part are set up correcty:
 
@@ -372,10 +372,10 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
 
   // Check that all the nodes were allocated.
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = bulkData.get_entity( mesh.m_topData.node_rank , i + 1 );
+    Entity * const node = bulkData.get_entity( NODE_RANK , i + 1 );
     if ( node == NULL ) {
       std::cerr << "Error!  Invalid null pointer for node returned from "
-        << "bulkData.get_entity( m_topData.node_rank, " << i+1 << " ) " << std::endl;
+        << "bulkData.get_entity( NODE_RANK, " << i+1 << " ) " << std::endl;
       result = false;
     }
   }

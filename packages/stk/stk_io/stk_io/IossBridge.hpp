@@ -14,7 +14,6 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <Ioss_DBUsage.h>
 #include <Ioss_Field.h>
@@ -261,7 +260,19 @@ namespace stk {
     void internal_part_processing(Ioss::EntityBlock *entity, stk::mesh::MetaData &meta,
 				  stk::mesh::EntityRank type);
 
-    stk::mesh::EntityRankEnum get_entity_rank(const std::string &entity_name);
+
+    // To minimize ifdefs for the deprecated code:
+    bool invalid_rank(mesh::EntityRank rank);
+    mesh::EntityRank part_primary_entity_rank(const mesh::Part &part);
+    mesh::EntityRank element_rank(const mesh::MetaData &meta);
+    mesh::EntityRank side_rank(const mesh::MetaData &meta);
+    mesh::EntityRank face_rank(const mesh::MetaData &meta);
+    mesh::EntityRank edge_rank(const mesh::MetaData &meta);
+    mesh::EntityRank node_rank(const mesh::MetaData &meta);
+    void set_cell_topology(mesh::Part &part, const CellTopologyData * const cell_topology);
+    const CellTopologyData *get_cell_topology(const mesh::Part &part);
+    void initialize_spatial_dimension(const mesh::MetaData &meta, size_t spatial_dimension);
+
 /**
  * \}
  */

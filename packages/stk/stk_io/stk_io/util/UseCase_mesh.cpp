@@ -25,7 +25,9 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/FieldDeclarations.hpp>
+#endif /* ! SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -39,6 +41,8 @@
 #include <limits>
 
 namespace {
+  using stk::mesh::fem::NODE_RANK;
+
   void generate_gears(stk::ParallelMachine comm,
 		      const std::string &parameters,
 		      stk::mesh::MetaData &meta,
@@ -90,7 +94,7 @@ namespace {
 	  stk::io::set_distribution_factor_field(*fb_part, *distribution_factors_field);
 	  int face_node_count = fb->topology()->number_nodes();
 	  stk::mesh::put_field(*distribution_factors_field,
-                               stk::mesh::fem_entity_rank( fb_part->primary_entity_rank() ),
+			       stk::io::part_primary_entity_rank(*fb_part),
 			       *fb_part, face_node_count);
 	}
 
@@ -99,8 +103,7 @@ namespace {
 	 * present in the mesh...
 	 */
 	stk::io::define_io_fields(fb, Ioss::Field::TRANSIENT,
-				  *fb_part,
-                                  stk::mesh::fem_entity_rank( fb_part->primary_entity_rank()) );
+				  *fb_part, stk::io::part_primary_entity_rank(*fb_part));
       }
     }
   }
@@ -120,6 +123,7 @@ namespace {
 	std::vector<int> elem_side ;
 
 	stk::mesh::Part * const fb_part = meta.get_part(block->name());
+	stk::mesh::EntityRank elem_rank = stk::io::element_rank(meta);
 
 	block->get_field_data("ids", side_ids);
 	block->get_field_data("element_side", elem_side);
@@ -130,8 +134,7 @@ namespace {
 	size_t side_count = side_ids.size();
 	std::vector<stk::mesh::Entity*> sides(side_count);
 	for(size_t is=0; is<side_count; ++is) {
-
-	  stk::mesh::Entity* const elem = bulk.get_entity(stk::mesh::Element, elem_side[is*2]);
+	  stk::mesh::Entity* const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
 
 	  // If NULL, then the element was probably assigned to an
 	  // element block that appears in the database, but was
@@ -296,7 +299,6 @@ namespace stk {
 			     bool hex_only)
       {
 	Ioss::Region *in_region = NULL;
-
 	if (mesh_type == "exodusii" || mesh_type == "generated" || mesh_type == "pamgen" ) {
 
 	  // Prepend the working directory onto the mesh filename iff the
@@ -318,6 +320,8 @@ namespace stk {
 
 	  // NOTE: 'in_region' owns 'dbi' pointer at this time...
 	  in_region = new Ioss::Region(dbi, "input_model");
+          size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
+	  initialize_spatial_dimension(meta_data, spatial_dimension);
 
 	  // Filter out all non-hex8 element blocks...
 	  if (hex_only) {
@@ -331,7 +335,6 @@ namespace stk {
 	      }
 	    }
 	  }
-         
 	  process_elementblocks(*in_region, meta_data);
 	  process_nodeblocks(*in_region,    meta_data);
 	  process_facesets(*in_region,      meta_data);
@@ -349,12 +352,11 @@ namespace stk {
 	// so, all exposed faces are generated and put in a part named
 	// "skin"
 	if (mesh_data.m_generateSkinFaces) {
-	  stk::mesh::Part &skin_part = meta_data.declare_part("skin", stk::mesh::Face);
+	  stk::mesh::Part &skin_part = stk::mesh::declare_part(meta_data, "skin", side_rank(meta_data));
 	  stk::io::put_io_part_attribute(skin_part);
 
 	  /** \todo REFACTOR Query all parts to determine topology of the skin. */
-	  stk::mesh::set_cell_topology(skin_part,
-				       shards::getCellTopologyData<shards::Quadrilateral<4> >());
+	  stk::io::set_cell_topology(skin_part, shards::getCellTopologyData<shards::Quadrilateral<4> >());
 	}
       }
 
@@ -372,7 +374,7 @@ namespace stk {
       {
         mesh_data.m_region = create_output_mesh(mesh_filename,
                                        mesh_extension, working_directory,
-                                       comm, bulk_data, 
+                                       comm, bulk_data,
                                        NULL, //mesh_data.m_region,
                                        meta_data, add_transient, add_all_fields);
       }
@@ -401,7 +403,7 @@ namespace stk {
 	}
 
 	std::string out_filename = filename;
-        if (!mesh_extension.empty()) 
+        if (!mesh_extension.empty())
  	  out_filename += "." + mesh_extension;
 
 	// Prepend the working directory onto the mesh filename iff the
@@ -430,7 +432,7 @@ namespace stk {
 	  out_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
 	  // Special processing for nodeblock (all nodes in model)...
-	  stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::Node,
+	  stk::io::ioss_add_fields(meta_data.universal_part(), node_rank(meta_data),
 				   out_region->get_node_blocks()[0],
 				   Ioss::Field::TRANSIENT, add_all_fields);
 
@@ -446,7 +448,7 @@ namespace stk {
 	      Ioss::GroupingEntity *entity = out_region->get_entity(part->name());
 	      if (entity != NULL) {
 		if (entity->type() == Ioss::ELEMENTBLOCK) {
-		  stk::io::ioss_add_fields(*part, stk::mesh::fem_entity_rank( part->primary_entity_rank()),
+		  stk::io::ioss_add_fields(*part, part_primary_entity_rank(*part),
 					   entity, Ioss::Field::TRANSIENT, add_all_fields);
 		}
 	      }
@@ -472,8 +474,7 @@ namespace stk {
 	stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
 	  meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
-	stk::mesh::put_field( coord_field, stk::mesh::Node, meta.universal_part(),
-			spatial_dim);
+	stk::mesh::put_field( coord_field, node_rank(meta), meta.universal_part(), spatial_dim);
       }
 
       void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -489,12 +490,12 @@ namespace stk {
 	Ioss::NodeBlock *nb = node_blocks[0];
 
 	std::vector<stk::mesh::Entity*> nodes;
-	stk::io::get_entity_list(nb, stk::mesh::Node, bulk, nodes);
+	const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
+	stk::io::get_entity_list(nb, node_rank(meta), bulk, nodes);
 
 	/// \todo REFACTOR Application would probably store this field
 	  /// (and others) somewhere after the declaration instead of
 	  /// looking it up each time it is needed.
-	  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
 	  stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
 	    meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
 
@@ -518,7 +519,7 @@ namespace stk {
       void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
 	const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-	stk::io::default_part_processing(elem_blocks, meta, stk::mesh::Element);
+	stk::io::default_part_processing(elem_blocks, meta, element_rank(meta));
       }
 
       void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
@@ -535,7 +536,7 @@ namespace stk {
 	    stk::mesh::Part* const part = meta.get_part(name);
 	    assert(part != NULL);
 
-	    const CellTopologyData* cell_topo = stk::mesh::get_cell_topology(*part);
+	    const CellTopologyData* cell_topo = stk::io::get_cell_topology(*part);
 	    if (cell_topo == NULL) {
 	      std::ostringstream msg ;
 	      msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
@@ -568,7 +569,7 @@ namespace stk {
       void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
 	const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-	stk::io::default_part_processing(node_sets, meta, stk::mesh::Node);
+	stk::io::default_part_processing(node_sets, meta, node_rank(meta));
 
 	/** \todo REFACTOR should "distribution_factor" be a default field
 	 * that is automatically declared on all objects that it exists
@@ -591,14 +592,14 @@ namespace stk {
 	    assert(part != NULL);
 	    assert(entity->field_exists("distribution_factors"));
 
-	    stk::mesh::put_field(distribution_factors_field, stk::mesh::Node, *part);
+	    stk::mesh::put_field(distribution_factors_field, node_rank(meta), *part);
 
 	    /** \todo IMPLEMENT truly handle fields... For this case we
 	     * are just defining a field for each transient field that is
 	     * present in the mesh...
 	     */
 	    stk::io::define_io_fields(entity, Ioss::Field::TRANSIENT,
-				      *part, stk::mesh::fem_entity_rank( part->primary_entity_rank()));
+				      *part, part_primary_entity_rank(*part));
 	  }
 	}
       }
@@ -608,14 +609,14 @@ namespace stk {
       void process_facesets(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
 	const Ioss::FaceSetContainer& face_sets = region.get_facesets();
-	stk::io::default_part_processing(face_sets, meta, stk::mesh::Face);
+	stk::io::default_part_processing(face_sets, meta, side_rank(meta));
 
 	for(Ioss::FaceSetContainer::const_iterator it = face_sets.begin();
 	    it != face_sets.end(); ++it) {
 	  Ioss::FaceSet *entity = *it;
 
 	  if (stk::io::include_entity(entity)) {
-	    process_surface_entity(entity, meta, stk::mesh::Face);
+	    process_surface_entity(entity, meta, side_rank(meta));
 	  }
 	}
       }
@@ -624,14 +625,14 @@ namespace stk {
       void process_edgesets(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
 	const Ioss::EdgeSetContainer& edge_sets = region.get_edgesets();
-	stk::io::default_part_processing(edge_sets, meta, stk::mesh::Edge);
+	stk::io::default_part_processing(edge_sets, meta, edge_rank(meta));
 
 	for(Ioss::EdgeSetContainer::const_iterator it = edge_sets.begin();
 	    it != edge_sets.end(); ++it) {
 	  Ioss::EdgeSet *entity = *it;
 
 	  if (stk::io::include_entity(entity)) {
-	    process_surface_entity(entity, meta, stk::mesh::Edge);
+	    process_surface_entity(entity, meta, edge_rank(meta));
 	  }
 	}
       }
@@ -658,10 +659,11 @@ namespace stk {
 	    int node_count = entity->get_field_data("ids", node_ids);
 
 	    std::vector<stk::mesh::Entity*> nodes(node_count);
+	    stk::mesh::EntityRank n_rank = node_rank(meta);
 	    for(int i=0; i<node_count; ++i) {
-	      nodes[i] = bulk.get_entity( stk::mesh::Node, node_ids[i] );
+	      nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
 	      if (nodes[i] != NULL)
-		bulk.declare_entity(stk::mesh::Node, node_ids[i], add_parts );
+		bulk.declare_entity(n_rank, node_ids[i], add_parts );
 	    }
 
 
@@ -755,7 +757,7 @@ namespace stk {
 	// Special processing for nodeblock (all nodes in model)...
 	const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
 
-	put_field_data(bulk, meta.universal_part(), stk::mesh::Node,
+	put_field_data(bulk, meta.universal_part(), node_rank(meta),
 		       region.get_node_blocks()[0], Ioss::Field::Field::TRANSIENT,
 		       output_all_fields);
 
@@ -771,7 +773,7 @@ namespace stk {
 	    Ioss::GroupingEntity *entity = region.get_entity(part->name());
 	    if (entity != NULL) {
 	      if (entity->type() == Ioss::ELEMENTBLOCK) {
-		put_field_data(bulk, *part, stk::mesh::fem_entity_rank( part->primary_entity_rank()),
+		put_field_data(bulk, *part, part_primary_entity_rank(*part),
 			       entity, Ioss::Field::Field::TRANSIENT,
 			       output_all_fields);
 	      }
@@ -820,6 +822,8 @@ namespace {
   void generate_gears(stk::ParallelMachine comm, const std::string &parameters, stk::mesh::MetaData &meta,
 		      std::vector<stk::io::util::Gear*> &gears)
   {
+    const size_t spatial_dimension = 3;
+    stk::io::initialize_spatial_dimension(meta, spatial_dimension);
     const double TWO_PI = 2.0 * std::acos( static_cast<double>(-1.0) );
 
     int p_size = stk::parallel_machine_size( comm );
@@ -989,13 +993,10 @@ namespace {
 	std::cout << "N_GEARS Meshing completed and verified" << std::endl ;
 
 	std::cout << "N_GEARS Global Counts { "
-		  << "node = " << counts[stk::mesh::Node] << " , "
-		  << "edge = " << counts[stk::mesh::Edge] << " , "
-		  << "face = " << counts[stk::mesh::Face] << " , "
-		  << "elem = " << counts[stk::mesh::Element] << " , "
-		  << "particle = " << counts[stk::mesh::Particle] << " , "
-		  << "constraint = " << counts[stk::mesh::Constraint] << " }" << std::endl ;
-
+                  << " Node = " << counts[ stk::io::node_rank(mesh.mesh_meta_data())]
+                  << " Edge = " << counts[ stk::io::edge_rank(mesh.mesh_meta_data())]
+                  << " Face = " << counts[ stk::io::face_rank(mesh.mesh_meta_data())]
+                  << " Elem = " << counts[ stk::io::element_rank(mesh.mesh_meta_data())] << std::endl;
       }
     }
   }

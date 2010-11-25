@@ -20,7 +20,11 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/EntityRanks.hpp>
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#include <stk_mesh/fem/FEMInterface.hpp>
+
 #include <stk_mesh/fem/Stencils.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
@@ -43,8 +47,8 @@ namespace stk {
       {
 	const stk::mesh::Part & universe = S.universal_part();
 
-	stk::mesh::put_field( gear_coord    , stk::mesh::Node , universe , SpatialDimension );
-	stk::mesh::put_field( model_coord   , stk::mesh::Node , universe , SpatialDimension );
+	stk::mesh::put_field( gear_coord    , stk::mesh::fem::NODE_RANK , universe , SpatialDimension );
+	stk::mesh::put_field( model_coord   , stk::mesh::fem::NODE_RANK , universe , SpatialDimension );
       }
 
       //----------------------------------------------------------------------
@@ -76,9 +80,17 @@ namespace stk {
 		  const size_t angle_num ,
 		  const int      turn_direction )
 	: m_mesh_meta_data( S ),
+#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+          m_topo_data( S, GearFields::SpatialDimension),
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	  m_mesh( NULL ),
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 	  m_gear( S.declare_part(std::string("Gear_").append(name), stk::mesh::Element) ),
 	  m_surf( S.declare_part(std::string("Surf_").append(name), stk::mesh::Face) ),
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+	  m_gear( stk::mesh::declare_part(S, std::string("Gear_").append(name), stk::mesh::fem::element_rank(m_topo_data)) ),
+	  m_surf( stk::mesh::declare_part(S, std::string("Surf_").append(name), stk::mesh::fem::side_rank(m_topo_data)) ),
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	  m_gear_coord( gear_fields.gear_coord ),
 	  m_model_coord(gear_fields.model_coord )
       {
@@ -88,8 +100,13 @@ namespace stk {
 
 	stk::io::put_io_part_attribute(m_gear);
 	stk::io::put_io_part_attribute(m_surf);
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 	stk::mesh::set_cell_topology< Hex >( m_gear );
 	stk::mesh::set_cell_topology< Quad>( m_surf );
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+	stk::mesh::fem::set_cell_topology< Hex >( m_gear );
+	stk::mesh::fem::set_cell_topology< Quad>( m_surf );
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
 	// Meshing parameters for this gear:
 
@@ -137,7 +154,7 @@ namespace stk {
 	stk::mesh::EntityId id_gear = identifier( m_z_num, m_rad_num, iz, ir, ia );
 	stk::mesh::EntityId id = node_id_base + id_gear ;
 
-	stk::mesh::Entity & node = m_mesh->declare_entity( stk::mesh::Node, id , parts );
+	stk::mesh::Entity & node = m_mesh->declare_entity( stk::mesh::fem::NODE_RANK, id , parts );
 
 	double * const gear_data    = field_data( m_gear_coord , node );
 	double * const model_data   = field_data( m_model_coord , node );
@@ -159,6 +176,15 @@ namespace stk {
       {
 	static const char method[] = "phdmesh::Gear::mesh" ;
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+        const stk::mesh::EntityRank element_rank = stk::mesh::Element;
+        const stk::mesh::EntityRank side_rank    = stk::mesh::Face;
+#else
+        stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(M);
+        const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+        const stk::mesh::EntityRank side_rank    = stk::mesh::fem::side_rank(fem);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+
         M.modification_begin();
 
 	m_mesh = & M ;
@@ -169,16 +195,12 @@ namespace stk {
         std::vector<size_t> counts ;
 	stk::mesh::comm_mesh_counts(M, counts);
 
-#if 0
-	const unsigned long node_id_base = max_id[ stk::mesh::Node ] + 1 ;
-	const unsigned long elem_id_base = max_id[ stk::mesh::Element ] + 1 ;
-#else
 	// max_id is no longer available from comm_mesh_stats.
 	// If we assume uniform numbering from 1.., then max_id
 	// should be equal to counts...
-	const stk::mesh::EntityId node_id_base = counts[ stk::mesh::Node ] + 1 ;
-	const stk::mesh::EntityId elem_id_base = counts[ stk::mesh::Element ] + 1 ;
-#endif
+	const stk::mesh::EntityId node_id_base = counts[ stk::mesh::fem::NODE_RANK ] + 1 ;
+	const stk::mesh::EntityId elem_id_base = counts[ element_rank ] + 1 ;
+
 	const unsigned long elem_id_gear_max =
 	  m_angle_num * ( m_rad_num - 1 ) * ( m_z_num - 1 );
 
@@ -256,7 +278,7 @@ namespace stk {
 #endif
 
 		stk::mesh::Entity & elem =
-		  M.declare_entity( stk::mesh::Element,elem_id, elem_parts );
+		  M.declare_entity( element_rank, elem_id, elem_parts );
 
 		for ( size_t j = 0 ; j < 8 ; ++j ) {
 		  M.declare_relation( elem , * node[j] ,
@@ -296,14 +318,14 @@ namespace stk {
 		node[3] = &create_node( node_parts, node_id_base, iz  , ir  , ia   );
 
 		stk::mesh::Entity & face =
-		  M.declare_entity( stk::mesh::Face,face_id, face_parts );
+		  M.declare_entity( side_rank, face_id, face_parts );
 
 		for ( size_t j = 0 ; j < 4 ; ++j ) {
 		  M.declare_relation( face , * node[j] ,
 				      static_cast<unsigned>(j) );
 		}
 
-		stk::mesh::Entity & elem = * M.get_entity(stk::mesh::Element,elem_id,method);
+		stk::mesh::Entity & elem = * M.get_entity(element_rank, elem_id,method);
 
 		M.declare_relation( elem , face , face_ord );
 	      }

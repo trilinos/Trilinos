@@ -189,6 +189,11 @@ Selector selectUnion( const PartVector& union_part_vector );
  * */
 Selector selectIntersection( const PartVector& intersection_part_vector );
 
+/** \brief Return a selector for the union of the parts where field exists.
+ * \relates Selector
+ * */
+Selector selectField( const FieldBase& field );
+
 /** \} */
 
 } // namespace mesh

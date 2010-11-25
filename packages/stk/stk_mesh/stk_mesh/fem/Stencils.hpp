@@ -9,53 +9,33 @@
 #ifndef stk_mesh_Stencils_hpp
 #define stk_mesh_Stencils_hpp
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+#include <stk_mesh/fem/Stencils_deprecated.hpp>
+#endif
+
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-// TO BE REMOVED AFTER FEM TopologicalMetaData refactor is finished:
-#include <stk_mesh/fem/EntityRanks.hpp> 
+#include <stk_mesh/fem/FEMInterface.hpp>
 
 namespace stk {
 namespace mesh {
-namespace { // To prevent multiple copies for the linker
+namespace fem {
 
-enum EntityRankEnum3D {
-  Node3D                = 0 ,
-  Edge3D                = 1 ,
-  Face3D                = 2 ,
-  Element3D             = 3 
-};
+relation_stencil_ptr get_element_node_stencil(size_t spatial_dimension);
 
-//----------------------------------------------------------------------
-
-template< class TopologyTraits >
+template<class TopologyTraits, EntityRank element_rank >
 int element_node_stencil( EntityRank , EntityRank , unsigned );
 
-template<>
-int element_node_stencil<void>( EntityRank from_type ,
-                                EntityRank to_type ,
-                                unsigned identifier )
-{
-  int ordinal = -1 ;
 
-  if ( Element3D == from_type && Node3D == to_type ) {
-    ordinal = static_cast<int>(identifier);
-  }
-
-  return ordinal ;
-}
-
-template< class TopologyTraits >
-int element_node_stencil( EntityRank from_type ,
-                          EntityRank to_type ,
-                          unsigned   identifier )
+template<class TopologyTraits, EntityRank element_rank >
+int element_node_stencil( EntityRank from_type , EntityRank to_type , unsigned identifier )
 {
   enum { number_node = TopologyTraits::node_count };
 
   int ordinal = -1 ;
 
-  if ( Element3D == from_type &&
-       Node3D    == to_type &&
+  if ( element_rank == from_type &&
+       NODE_RANK    == to_type &&
        identifier < number_node ) {
     ordinal = static_cast<int>(identifier);
   }
@@ -63,43 +43,7 @@ int element_node_stencil( EntityRank from_type ,
   return ordinal ;
 }
 
-template< class TopologyTraits >
-int entity_node_stencil( EntityRank , EntityRank , unsigned );
-
-template<>
-int entity_node_stencil<void>( EntityRank from_entity_rank ,
-                               EntityRank to_entity_rank ,
-                               unsigned identifier )
-{
-  int ordinal = -1 ;
-
-  if ( Node3D == to_entity_rank ) {
-    ordinal = static_cast<int>(identifier);
-  }
-
-  return ordinal ;
-}
-
-template< class TopologyTraits >
-int entity_node_stencil( EntityRank from_entity_rank ,
-                         EntityRank to_entity_rank ,
-                         unsigned   identifier )
-{
-  enum { number_node = TopologyTraits::node_count };
-
-  int ordinal = -1 ;
-
-  if ( Node3D    == to_entity_rank &&
-       identifier < number_node ) {
-    ordinal = static_cast<int>(identifier);
-  }
-
-  return ordinal ;
-}
-
-//----------------------------------------------------------------------
-
-} // namespace <empty>
+} // namespace fem
 } // namespace mesh
 } // namespace stk
 

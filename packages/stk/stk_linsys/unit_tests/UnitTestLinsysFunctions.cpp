@@ -12,8 +12,11 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -32,10 +35,14 @@
 #include <fei_Factory_Trilinos.hpp>
 #include <Teuchos_ParameterList.hpp>
 
-
 #include <unit_tests/UnitTest_helpers.hpp>
 
+using stk::mesh::fem::NODE_RANK;
+
 namespace stk_linsys_unit_tests {
+
+typedef stk::mesh::Field<double>                          ScalarField ;
+typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
 
 bool confirm_vector_values(const fei::Vector& vec, double expected_value)
 {
@@ -71,7 +78,7 @@ bool confirm_matrix_values(const fei::Matrix& mat, double expected_value)
     indices.resize(rowlength);
     coefs.resize(rowlength);
     mat.copyOutRow(rows[i], rowlength, &coefs[0], &indices[0]);
-  
+
     for(size_t j=0; j<indices.size(); ++j) {
       if (std::abs(coefs[j] - expected_value) > 1.e-13) {
         result = false;
@@ -84,25 +91,36 @@ bool confirm_matrix_values(const fei::Matrix& mat, double expected_value)
 
 //------------- LinsysFunctions unit-tests... -----------------------
 
-
-
-
 STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 {
+  static const size_t spatial_dimension = 3;
+
   MPI_Barrier( MPI_COMM_WORLD );
   MPI_Comm comm = MPI_COMM_WORLD;
   //First create and fill MetaData and BulkData objects:
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
-  stk::mesh::MetaData meta_data2( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::MetaData meta_data2( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const stk::mesh::EntityRank element_rank = stk::mesh::Element;
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  stk::mesh::DefaultFEM fem(meta_data, spatial_dimension);
+  stk::mesh::DefaultFEM fem2(meta_data2, spatial_dimension);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
   stk::mesh::BulkData bulk_data2( meta_data2, comm, bucket_size );
 
   //create a boundary-condition part for testing later:
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   stk::mesh::Part& bcpart = meta_data.declare_part("bcpart");
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  stk::mesh::Part& bcpart = declare_part(meta_data, "bcpart");
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
   fill_utest_mesh_meta_data( meta_data );
 
@@ -125,7 +143,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   std::vector<stk::mesh::Entity*> local_nodes;
   stk::mesh::Selector select_owned(meta_data.locally_owned_part());
   stk::mesh::get_selected_entities(select_owned,
-                                   bulk_data.buckets(stk::mesh::Node),
+                                   bulk_data.buckets(NODE_RANK),
                                    local_nodes);
 
   stk::mesh::EntityId bc_node_id = 0;
@@ -143,11 +161,10 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
 
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Element], (unsigned)4 );
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Node],    (unsigned)20 );
+  STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
+  STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
 
-  stk::mesh::ScalarField* temperature_field =
-      meta_data.get_field<stk::mesh::ScalarField>("temperature");
+  ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
   //Create a fei Factory and stk::linsys::LinearSystem object:
 
@@ -155,7 +172,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   stk::linsys::LinearSystem ls(comm, factory);
 
-  stk::linsys::add_connectivities(ls, stk::mesh::Element, stk::mesh::Node,
+  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                                   *temperature_field, selector, bulk_data);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
@@ -185,8 +202,8 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   }
 
   //now we'll impose a dirichlet bc on our one-node bcpart:
-  stk::linsys::dirichlet_bc(ls, bulk_data, bcpart, stk::mesh::Node,
-                  *temperature_field, 0, 9.0);
+  stk::linsys::dirichlet_bc(ls, bulk_data, bcpart, NODE_RANK,
+                            *temperature_field, 0, 9.0);
 
   ls.finalize_assembly();
 
@@ -195,7 +212,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   fei::SharedPtr<fei::Vector> rhsvec = ls.get_fei_LinearSystem()->getRHS();
   double rhs_bc_val = 0;
-  int bc_eqn_index = ls.get_DofMapper().get_global_index(stk::mesh::Node,
+  int bc_eqn_index = ls.get_DofMapper().get_global_index(NODE_RANK,
            bc_node_id, *temperature_field);
   rhsvec->copyOut(1, &bc_eqn_index, &rhs_bc_val);
 
@@ -204,10 +221,9 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   stk::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data);
 
-  stk::mesh::Entity* bc_node = bulk_data.get_entity(stk::mesh::Node, local_nodes[0]->identifier());
+  stk::mesh::Entity* bc_node = bulk_data.get_entity(NODE_RANK, local_nodes[0]->identifier());
 
-  stk::mesh::FieldTraits<stk::mesh::ScalarField>::data_type* bc_node_data =
-    stk::mesh::field_data(*temperature_field, *bc_node);
+  stk::mesh::FieldTraits<ScalarField>::data_type* bc_node_data = stk::mesh::field_data(*temperature_field, *bc_node);
 
   bool bc_node_data_is_correct = std::abs(bc_node_data[0] - 9.0) < 1.e-13;
   STKUNIT_ASSERT( bc_node_data_is_correct );
@@ -249,13 +265,15 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
 STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
 {
+  static const size_t spatial_dimension = 3;
+
   MPI_Barrier( MPI_COMM_WORLD );
   MPI_Comm comm = MPI_COMM_WORLD;
   //First create and fill MetaData and BulkData objects:
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
 
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
@@ -271,12 +289,12 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
   stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(spatial_dimension);
 
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Element], (unsigned)4 );
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Node],    (unsigned)20 );
+  STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
+  STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
 
-  stk::mesh::ScalarField* temperature_field =
-      meta_data.get_field<stk::mesh::ScalarField>("temperature");
+  ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
   //Create a fei Factory and stk::linsys::LinearSystem object:
 
@@ -284,7 +302,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
 
   stk::linsys::LinearSystem ls(comm, factory);
 
-  stk::linsys::add_connectivities(ls, stk::mesh::Element, stk::mesh::Node,
+  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                                   *temperature_field, selector, bulk_data);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
@@ -315,13 +333,15 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
 
 STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
 {
+  static const size_t spatial_dimension = 3;
+
   MPI_Barrier( MPI_COMM_WORLD );
   MPI_Comm comm = MPI_COMM_WORLD;
   //First create and fill MetaData and BulkData objects:
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
 
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
@@ -337,12 +357,12 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
   stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(spatial_dimension);
 
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Element], (unsigned)4 );
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Node],    (unsigned)20 );
+  STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
+  STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
 
-  stk::mesh::ScalarField* temperature_field =
-      meta_data.get_field<stk::mesh::ScalarField>("temperature");
+  ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
   //Create a fei Factory and stk::linsys::LinearSystem object:
 
@@ -350,7 +370,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
 
   stk::linsys::LinearSystem ls(comm, factory);
 
-  stk::linsys::add_connectivities(ls, stk::mesh::Element, stk::mesh::Node,
+  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                                   *temperature_field, selector, bulk_data);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();

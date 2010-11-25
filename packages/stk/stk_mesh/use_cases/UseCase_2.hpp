@@ -15,7 +15,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 /** stk_mesh Use Case 2
  * Note, the basic layout of the mesh is the same as Use Case 1, with
@@ -72,15 +72,17 @@ public:
 
   void populate( unsigned nleft , unsigned nright );
 
-  const int           m_spatial_dimension;
   stk::mesh::MetaData m_metaData;
   stk::mesh::BulkData m_bulkData;
-  stk::mesh::TopologicalMetaData m_topData;
+  stk::mesh::DefaultFEM m_fem;
   stk::mesh::Part   & m_partLeft;
   stk::mesh::Part   & m_partRight;
   VectorFieldType   & m_coordinates_field;
   ScalarFieldType   & m_temperature_field;
   ScalarFieldType   & m_volume_field;
+  const stk::mesh::EntityRank m_elem_rank;
+  const stk::mesh::EntityRank m_side_rank;
+  const stk::mesh::EntityRank m_edge_rank;
 };
 
 bool verifyMesh( const UseCase_2_Mesh & mesh, unsigned nleft, unsigned nright );

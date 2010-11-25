@@ -23,9 +23,16 @@
 
 #include <stk_mesh/fixtures/Gear.hpp>
 
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
-#define PI     3.14159265358979
-#define TWO_PI 6.28210184121061
+namespace {
+
+using stk::mesh::fem::NODE_RANK;
+
+const double PI     = 3.14159265358979;
+const double TWO_PI = 2 * PI;
+
+}
 
 namespace stk {
 namespace mesh {
@@ -77,14 +84,14 @@ Gear::Gear(
     , displacement_field(arg_displacement_field)
     , translation_field(arg_translation_field)
     , cylindrical_coord_field(arg_cylindrical_coord_field)
-  {}
+{}
 
 //
 //-----------------------------------------------------------------------------
 //
 
-void Gear::populate_fields() {
-
+void Gear::populate_fields()
+{
   //setup the cylindrical_coord_field on the hex nodes
   for ( size_t ir = 0 ; ir < rad_num-1; ++ir ) {
     const double rad = rad_min + rad_increment * ir ;
@@ -125,7 +132,7 @@ void Gear::populate_fields() {
   {
     size_t ir = rad_num-1;
     //const double rad = rad_min + rad_increment * ir ;
-    const double rad = rad_max;
+    const double rad = 1.1*rad_max;
 
     for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
       const double angle = angle_increment * (ia + ia +1.0)/2.0;
@@ -165,23 +172,20 @@ void Gear::populate_fields() {
 //-----------------------------------------------------------------------------
 //
 
-void Gear::generate_gear() {
-
-  enum {
-    NodeRank = 0,
-    ElementRank = SpatialDimension
-  };
+void Gear::generate_gear()
+{
+  const stk::mesh::EntityRank element_rank =
+    stk::mesh::fem::element_rank(SpatialDimension);
 
   std::vector<size_t> requests(meta_data.entity_rank_count(), 0);
-  requests[NodeRank] = num_nodes;
-  requests[ElementRank] = num_elements;
+  requests[NODE_RANK]     = num_nodes;
+  requests[element_rank] = num_elements;
 
   bulk_data.generate_new_entities(requests, gear_entities);
 
-
   //setup hex elements
   {
-    std::vector<Part*> add_parts, empty_parts ;
+    std::vector<Part*> add_parts, remove_parts ;
     add_parts.push_back( & cylindrical_coord_part );
     add_parts.push_back( & gear_part );
     add_parts.push_back( & hex_part );
@@ -191,7 +195,7 @@ void Gear::generate_gear() {
         for ( size_t iz = 0 ; iz < height_num -1 ; ++iz ) {
 
           Entity & elem = get_element(iz, ir, ia);
-          bulk_data.change_entity_parts(elem, add_parts, empty_parts);
+          bulk_data.change_entity_parts(elem, add_parts, remove_parts);
 
           const size_t ia_1 = ( ia + 1 ) % angle_num ;
           const size_t ir_1 = ir + 1 ;
@@ -218,65 +222,56 @@ void Gear::generate_gear() {
 
   //setup wedges elements
   {
-    std::vector<Part*> add_parts, empty_parts ;
+    std::vector<Part*> add_parts, remove_parts ;
     add_parts.push_back( & cylindrical_coord_part );
     add_parts.push_back( & gear_part );
     add_parts.push_back( & wedge_part );
 
-    {
-      size_t ir = rad_num-2 ;
-      for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
-        for ( size_t iz = 0 ; iz < height_num -1 ; ++iz ) {
+    size_t ir = rad_num-2 ;
+    for ( size_t ia = 0 ; ia < angle_num; ++ia ) {
+      for ( size_t iz = 0 ; iz < height_num -1 ; ++iz ) {
 
-          Entity & elem = get_element(iz, ir, ia);
-          bulk_data.change_entity_parts(elem, add_parts, empty_parts);
+        Entity & elem = get_element(iz, ir, ia);
+        bulk_data.change_entity_parts(elem, add_parts, remove_parts);
 
-          const size_t ia_1 = ( ia + 1 ) % angle_num ;
-          const size_t ir_1 = ir + 1 ;
-          const size_t iz_1 = iz + 1 ;
+        const size_t ia_1 = ( ia + 1 ) % angle_num ;
+        const size_t ir_1 = ir + 1 ;
+        const size_t iz_1 = iz + 1 ;
 
-          Entity * node[6] ;
+        Entity * node[6] ;
 
-          node[0] = & get_node(iz  , ir  , ia_1 );
-          node[1] = & get_node(iz  , ir  , ia   );
-          node[2] = & get_node(iz  , ir_1, ia   );
-          node[3] = & get_node(iz_1, ir  , ia_1 );
-          node[4] = & get_node(iz_1, ir  , ia   );
-          node[5] = & get_node(iz_1, ir_1, ia   );
+        node[0] = & get_node(iz  , ir  , ia_1 );
+        node[1] = & get_node(iz  , ir  , ia   );
+        node[2] = & get_node(iz  , ir_1, ia   );
+        node[3] = & get_node(iz_1, ir  , ia_1 );
+        node[4] = & get_node(iz_1, ir  , ia   );
+        node[5] = & get_node(iz_1, ir_1, ia   );
 
-          for ( size_t j = 0 ; j < 6 ; ++j ) {
-            bulk_data.declare_relation( elem , * node[j] , j );
-          }
+        for ( size_t j = 0 ; j < 6 ; ++j ) {
+          bulk_data.declare_relation( elem , * node[j] , j );
         }
       }
     }
   }
 
-  //cylindrical and cartesian coordinates
-  //are 2 state fields.  Need to update
-  //both states at construction
+  // Cylindrical and cartesian coordinates are 2 state fields. Need to
+  // update both states at construction
   populate_fields();
 
   bulk_data.update_field_data_states();
 
   populate_fields();
-
-
 }
 
 //
 //-----------------------------------------------------------------------------
 //
 
-void Gear::move( const GearData & data) {
+void Gear::move( const GearMovement & data)
+{
+  Selector select = gear_part & cylindrical_coord_part;
 
-  enum { Node = 0 };
-
-  Selector select = meta_data.universal_part();
-  select &= gear_part;
-  select &= cylindrical_coord_part;
-
-  BucketVector all_node_buckets = bulk_data.buckets(Node);
+  BucketVector all_node_buckets = bulk_data.buckets(NODE_RANK);
 
   BucketVector node_buckets;
 
@@ -286,20 +281,18 @@ void Gear::move( const GearData & data) {
       node_buckets
       );
 
-
   for (BucketVector::iterator b_itr = node_buckets.begin();
       b_itr != node_buckets.end();
       ++b_itr)
   {
     Bucket & b = **b_itr;
-    BucketArray<CylindricalField> cylindrical_data( cylindrical_coord_field, b);
-    BucketArray<CartesianField>   translation_data( translation_field, b);
-    const BucketArray<CartesianField>   cartesian_data( cartesian_coord_field, b);
-    BucketArray<CartesianField>   displacement_data( displacement_field, b);
+    BucketArray<CylindricalField> cylindrical_data(cylindrical_coord_field, b);
+    BucketArray<CartesianField>   translation_data(translation_field, b);
+    const BucketArray<CartesianField> cartesian_data(cartesian_coord_field, b);
+    BucketArray<CartesianField>   displacement_data(displacement_field, b);
 
     double new_cartesian_data[3] = {0};
     for (size_t i = 0; i < b.size(); ++i) {
-
       int index = i;
 
       const double   radius = cylindrical_data(0,index);
@@ -326,7 +319,6 @@ void Gear::move( const GearData & data) {
       displacement_data(0,index) = new_cartesian_data[0] - cartesian_data(0,index);
       displacement_data(1,index) = new_cartesian_data[1] - cartesian_data(1,index);
       displacement_data(2,index) = new_cartesian_data[2] - cartesian_data(2,index);
-
     }
   }
 }

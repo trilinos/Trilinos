@@ -15,9 +15,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -43,13 +41,13 @@ void boundary_analysis(const BulkData& bulk_data,
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
     Entity& curr_entity = **itr;
-    const CellTopologyData* celltopology = TopologicalMetaData::get_cell_topology(curr_entity);
+    const CellTopologyData* celltopology = fem::get_cell_topology(curr_entity).getTopologyData();
     if (celltopology == NULL) {
       continue;
     }
 
     unsigned subcell_rank = closure_rank - 1;
-    PairIterRelation relations = curr_entity.relations(NodeRank);
+    PairIterRelation relations = curr_entity.relations(fem::NODE_RANK);
 
     // iterate over the subcells of the current entity
     for (unsigned nitr = 0; nitr < celltopology->subcell_count[subcell_rank]; ++nitr) {
@@ -118,8 +116,7 @@ void get_adjacent_entities( const Entity & entity ,
   adjacent_entities.clear();
 
   // get cell topology
-  const CellTopologyData* celltopology =
-    TopologicalMetaData::get_cell_topology(entity);
+  const CellTopologyData* celltopology = fem::get_cell_topology(entity).getTopologyData();
   if (celltopology == NULL) {
     return;
   }
@@ -138,10 +135,10 @@ void get_adjacent_entities( const Entity & entity ,
     std::ostringstream msg;
     //parallel consisent throw
     if (bad_rank) {
-      msg << "stk::mesh::get_adjacent_entities( const Entity& entity, unsigned subcell_rank, ... ) subcell_rank is >= celltopology dimension\n";
+      msg << "get_adjacent_entities( const Entity& entity, unsigned subcell_rank, ... ) subcell_rank is >= celltopology dimension\n";
     }
     else if (bad_id) {
-      msg << "stk::mesh::get_adjacent_entities( const Entity& entity, unsigned subcell_rank, unsigned subcell_identifier, ... ) subcell_identifier is >= subcell count\n";
+      msg << "get_adjacent_entities( const Entity& entity, unsigned subcell_rank, unsigned subcell_identifier, ... ) subcell_identifier is >= subcell count\n";
     }
 
     throw std::runtime_error(msg.str());
@@ -167,7 +164,7 @@ void get_adjacent_entities( const Entity & entity ,
   // that's compatible w/ the adjacent entities.
   std::vector<Entity*> side_node_entities;
   side_node_entities.reserve(num_nodes_in_side);
-  PairIterRelation irel = entity.relations(NodeRank);
+  PairIterRelation irel = entity.relations(fem::NODE_RANK);
   for (int itr = num_nodes_in_side; itr > 0; ) {
     --itr;
     side_node_entities.push_back(irel[side_node_local_ids[itr]].entity());
@@ -196,7 +193,7 @@ void get_adjacent_entities( const Entity & entity ,
   std::vector<Entity*>::iterator itr = elements.begin();
   while ( itr != elements.end() ) {
     Entity * current_entity = *itr;
-    PairIterRelation relations = current_entity->relations(NodeRank);
+    PairIterRelation relations = current_entity->relations(fem::NODE_RANK);
 
     if (current_entity == &entity) {
       // We do not want to be adjacent to ourself

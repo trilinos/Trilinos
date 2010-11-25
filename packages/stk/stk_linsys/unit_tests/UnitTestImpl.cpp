@@ -9,14 +9,19 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <stk_linsys/FieldIdMap.hpp>
 #include <stk_linsys/ImplDetails.hpp>
 
 namespace stk_linsys_unit_tests {
+
+typedef stk::mesh::Field<double>                          ScalarField ;
+typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
+
+static const size_t spatial_dimension = 3;
 
 //------------- here is the unit-test of stk::linsys::impl functions... -----------------------
 
@@ -24,16 +29,13 @@ void testImpl( MPI_Comm comm )
 {
   //First create and initialize a MetaData to use in our testing:
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
 
   const unsigned number_of_states = 1;
 
-  stk::mesh::ScalarField& temperature_field =
-    meta_data.declare_field<stk::mesh::ScalarField>( "temperature", number_of_states );
-  stk::mesh::ScalarField& pressure_field =
-    meta_data.declare_field<stk::mesh::ScalarField>( "pressure", number_of_states );
-  stk::mesh::VectorField& velocity_field =
-    meta_data.declare_field<stk::mesh::VectorField>( "velocity",    number_of_states );
+  ScalarField& temperature_field = meta_data.declare_field<ScalarField>( "temperature", number_of_states );
+  ScalarField& pressure_field = meta_data.declare_field<ScalarField>( "pressure", number_of_states );
+  VectorField& velocity_field = meta_data.declare_field<VectorField>( "velocity",    number_of_states );
 
   meta_data.commit();
 

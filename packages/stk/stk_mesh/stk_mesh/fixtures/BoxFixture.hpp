@@ -11,12 +11,13 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 namespace stk {
 namespace mesh {
 namespace fixtures {
 
+static const size_t spatial_dimension = 3;
 /**
  * A fixture that creates a "box" mesh of hexes
  */
@@ -24,12 +25,13 @@ class  BoxFixture {
 public:
   BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
              unsigned block_size = 1000,
-             const std::vector<std::string>& entity_names = stk::mesh::fem_entity_rank_names());
+             const std::vector<std::string>& entity_names = stk::mesh::fem::entity_rank_names(spatial_dimension));
 
   ~BoxFixture () {}
 
   MetaData & meta_data () { return m_meta_data; }
   BulkData & bulk_data () { return m_bulk_data; }
+  DefaultFEM & fem () { return m_fem; }
 
   unsigned  comm_size() const { return m_comm_size; }
   unsigned  comm_rank() const { return m_comm_rank; }
@@ -52,11 +54,12 @@ public:
   Entity  &get_new_entity ( EntityRank rank , EntityId parallel_dependent_id );
 
 protected:
-  MetaData   m_meta_data;
-  BulkData   m_bulk_data;
+  MetaData      m_meta_data;
+  BulkData      m_bulk_data;
+  DefaultFEM    m_fem;
 
-  unsigned    m_comm_rank;
-  unsigned    m_comm_size;
+  unsigned      m_comm_rank;
+  unsigned      m_comm_size;
 
   BulkData::BulkDataSyncState m_previous_state;
 

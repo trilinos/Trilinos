@@ -18,11 +18,12 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 namespace {
+
+using stk::mesh::fem::NODE_RANK;
 
 typedef shards::ArrayDimTag::size_type size_type;
 
@@ -167,11 +168,12 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   const std::string name3("test_field_3");
 
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta_data( stk::mesh::TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
   stk::mesh::BulkData bulk_data( meta_data , pm );
-  stk::mesh::TopologicalMetaData top_data( meta_data, spatial_dimension );
 
   // declare some test fields
+  stk::mesh::DefaultFEM topo_data( meta_data, spatial_dimension );
+  
   rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
   rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  name1 );
   rank_three_field & f3 = meta_data.declare_field< rank_three_field >( name3 );
@@ -182,23 +184,15 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   STKUNIT_ASSERT_THROW(meta_data.declare_field< error_type >( name1 ),
                        std::runtime_error);
 
-  // declare some parts, each one will get one of our test fields
-  stk::mesh::Part & p0 = meta_data.declare_part("P0", top_data.node_rank );
-  stk::mesh::Part & p1 = meta_data.declare_part("P1", top_data.node_rank );
-  stk::mesh::Part & p2 = meta_data.declare_part("P2", top_data.node_rank );
-  stk::mesh::Part & p3 = meta_data.declare_part("P3", top_data.node_rank );
+  stk::mesh::Part & p0 = declare_part(meta_data, "P0", NODE_RANK );
+  stk::mesh::Part & p1 = declare_part(meta_data, "P1", NODE_RANK );
+  stk::mesh::Part & p2 = declare_part(meta_data, "P2", NODE_RANK );
+  stk::mesh::Part & p3 = declare_part(meta_data, "P3", NODE_RANK );
 
-  // put each test field on a part
-  stk::mesh::put_field( f0 , top_data.node_rank , p0 ); //scalar
-  stk::mesh::put_field( f1 , top_data.node_rank , p1 ,
-                        10 /*dim1 size*/);
-  stk::mesh::put_field( f2 , top_data.node_rank , p2 ,
-                        10 /*dim1 size*/,
-                        20 /*dim2 size*/);
-  stk::mesh::put_field( f3 , top_data.node_rank , p3 ,
-                        10 /*dim1 size*/,
-                        20 /*dim2 size*/,
-                        30 /*dim3 size*/);
+  stk::mesh::put_field( f0 , NODE_RANK , p0 );
+  stk::mesh::put_field( f1 , NODE_RANK , p1 , 10 );
+  stk::mesh::put_field( f2 , NODE_RANK , p2 , 10 , 20 );
+  stk::mesh::put_field( f3 , NODE_RANK , p3 , 10 , 20 , 30 );
 
   stk::mesh::print( oss , "  " , f0 );
 
@@ -209,28 +203,29 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldDataArray)
   // Declare a 10 nodes on each part
 
   for ( unsigned i = 1 ; i < 11 ; ++i ) {
-    bulk_data.declare_entity( top_data.node_rank , i ,
+    bulk_data.declare_entity( NODE_RANK , i ,
                               std::vector< stk::mesh::Part * >( 1 , & p0 ) );
   }
 
   for ( unsigned i = 11 ; i < 21 ; ++i ) {
-    bulk_data.declare_entity( top_data.node_rank , i ,
+    bulk_data.declare_entity( NODE_RANK , i ,
                               std::vector< stk::mesh::Part * >( 1 , & p1 ) );
   }
 
   for ( unsigned i = 21 ; i < 31 ; ++i ) {
-    bulk_data.declare_entity( top_data.node_rank , i ,
+    bulk_data.declare_entity( NODE_RANK , i ,
                               std::vector< stk::mesh::Part * >( 1 , & p2 ) );
   }
 
   for ( unsigned i = 31 ; i < 41 ; ++i ) {
-    bulk_data.declare_entity( top_data.node_rank , i ,
+    bulk_data.declare_entity( NODE_RANK , i ,
                               std::vector< stk::mesh::Part * >( 1 , & p3 ) );
   }
 
   // Go through node_buckets and print the all the fields on each bucket
   const std::vector< stk::mesh::Bucket *> & node_buckets =
-    bulk_data.buckets( top_data.node_rank );
+    bulk_data.buckets( NODE_RANK );
+
   for ( std::vector< stk::mesh::Bucket *>::const_iterator
         ik = node_buckets.begin() ; ik != node_buckets.end() ; ++ik ) {
     stk::mesh::Bucket & k = **ik ;

@@ -19,10 +19,9 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 namespace stk {
 namespace mesh {
@@ -49,28 +48,28 @@ class QuadFixture
 
   ~QuadFixture() {}
 
-  const unsigned                  m_spatial_dimension;
-  stk::mesh::MetaData             m_meta_data ;
-  stk::mesh::BulkData             m_bulk_data ;
-  stk::mesh::TopologicalMetaData  m_top_data;
-  stk::mesh::Part &               m_quad_part ;
-  CoordFieldType &                m_coord_field ;
-  CoordGatherFieldType &          m_coord_gather_field ;
-  const unsigned                  m_nx ;
-  const unsigned                  m_ny ;
+  const unsigned                m_spatial_dimension;
+  MetaData                      m_meta_data ;
+  BulkData                      m_bulk_data ;
+  DefaultFEM                    m_fem;
+  Part &                        m_quad_part ;
+  CoordFieldType &              m_coord_field ;
+  CoordGatherFieldType &        m_coord_gather_field ;
+  const unsigned                m_nx ;
+  const unsigned                m_ny ;
 
   /**
    * Thinking in terms of rows and columns of nodes, get the id of the node in
    * the (x, y) position.
    */
-  stk::mesh::EntityId node_id( unsigned x , unsigned y ) const
+  EntityId node_id( unsigned x , unsigned y ) const
     { return 1 + x + ( m_nx + 1 ) * y ; }
 
   /**
    * Thinking in terms of rows and columns of elements, get the id of the
    * element in the (x, y) position.
    */
-  stk::mesh::EntityId elem_id( unsigned x , unsigned y ) const
+  EntityId elem_id( unsigned x , unsigned y ) const
     { return 1 + x + m_nx * y ; }
 
   /**
@@ -78,16 +77,16 @@ class QuadFixture
    * the (x, y) position. Return NULL if this process doesn't know about
    * this node.
    */
-  stk::mesh::Entity * node( unsigned x , unsigned y ) const
-    { return m_bulk_data.get_entity( m_top_data.node_rank , node_id(x, y) ); }
+  Entity * node( unsigned x , unsigned y ) const
+  { return m_bulk_data.get_entity( fem::NODE_RANK , node_id(x, y) ); }
 
   /**
    * Thinking in terms of rows and columns of elements, get the element in
    * the (x, y) position. Return NULL if this process doesn't know about
    * this element.
    */
-  stk::mesh::Entity * elem( unsigned x , unsigned y ) const
-    { return m_bulk_data.get_entity( m_top_data.element_rank, elem_id(x, y)); }
+  Entity * elem( unsigned x , unsigned y ) const
+  { return m_bulk_data.get_entity( fem::element_rank(m_fem), elem_id(x, y)); }
 
   /**
    * Thinking in terms of a 2D grid of nodes, compute the (x, y) position

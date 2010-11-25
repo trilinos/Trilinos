@@ -16,7 +16,6 @@
 #include <stk_mesh/fixtures/QuadFixture.hpp>
 
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/FieldData.hpp>
@@ -734,13 +733,14 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
   //Create a simple mesh. Add nodes one element and some parts.
 
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta ( stk::mesh::fem_entity_rank_names() );
-  stk::mesh::TopologicalMetaData top( meta, spatial_dimension );
 
-  stk::mesh::Part & part_a = top.declare_part<shards::Tetrahedron<4> >( "block_a" );
-  stk::mesh::Part & part_b = top.declare_part<shards::Tetrahedron<4> >( "block_b" );
+  stk::mesh::MetaData meta ( stk::mesh::fem::entity_rank_names ( spatial_dimension ) );
+  stk::mesh::DefaultFEM fem( meta, spatial_dimension );
 
-  stk::mesh::Part & part_a_0 = top.declare_part<shards::Node>( "block_a_0" );
+  stk::mesh::Part & part_a = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_a" );
+  stk::mesh::Part & part_b = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_b" );
+
+  stk::mesh::Part & part_a_0 = stk::mesh::declare_part<shards::Node>( meta, "block_a_0" );
 
   typedef stk::mesh::Field<double>  ScalarFieldType;
 

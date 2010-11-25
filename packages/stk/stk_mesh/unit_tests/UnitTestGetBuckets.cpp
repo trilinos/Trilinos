@@ -14,7 +14,7 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 
@@ -27,6 +27,7 @@ namespace {
 using stk::mesh::Bucket;
 using stk::mesh::Part;
 using stk::mesh::Selector;
+using stk::mesh::fem::NODE_RANK;
 
 void sort_and_compare_eq(std::vector<Bucket*>& results,
                          std::vector<Bucket*>& expected_results)
@@ -47,8 +48,6 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
   // Generate mesh
 
   stk::mesh::fixtures::SelectorFixture fix ;
-  stk::mesh::TopologicalMetaData top_data(fix.m_meta_data,
-                                          1 /*spatial_dimension*/);
   fix.m_meta_data.commit();
 
   fix.m_bulk_data.modification_begin();
@@ -99,8 +98,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
 
   // Check get_buckets correctness
 
-  const std::vector<Bucket*> & node_buckets =
-    fix.m_bulk_data.buckets(top_data.node_rank);
+  const std::vector<Bucket*> & node_buckets = fix.m_bulk_data.buckets(NODE_RANK);
 
   {
     std::vector<Bucket*> get_buckets, expected_results;

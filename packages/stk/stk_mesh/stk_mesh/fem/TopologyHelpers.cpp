@@ -20,8 +20,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/fem/FEMTypes.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
@@ -43,7 +41,7 @@ void verify_declare_element_side(
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   const CellTopologyData * const side_top =
@@ -104,7 +102,7 @@ Entity & declare_element_side(
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if (elem_top == NULL) {
@@ -135,7 +133,7 @@ Entity & declare_element_side(
 
   mesh.declare_relation( elem , side , local_side_id );
 
-  PairIterRelation rel = elem.relations( NodeRank );
+  PairIterRelation rel = elem.relations( fem::NODE_RANK );
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
     Entity & node = * rel[ side_node_map[i] ].entity();
@@ -160,7 +158,7 @@ Entity & declare_element_side(
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if (elem_top == NULL) {
@@ -201,9 +199,9 @@ bool element_side_polarity( const Entity & elem ,
   const bool is_side = side.entity_rank() != Edge;
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const TopologicalMetaData& top_data = *elem.bucket().mesh().mesh_meta_data().get_attribute<TopologicalMetaData>();
-  const bool is_side = side.entity_rank() != top_data.edge_rank;
-  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(elem);
+  const bool is_side = side.entity_rank() != fem::edge_rank(fem);
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   const unsigned side_count = ! elem_top ? 0 : (
@@ -237,8 +235,8 @@ bool element_side_polarity( const Entity & elem ,
     is_side ? elem_top->side[ local_side_id ].node
             : elem_top->edge[ local_side_id ].node ;
 
-  const PairIterRelation elem_nodes = elem.relations( NodeRank );
-  const PairIterRelation side_nodes = side.relations( NodeRank );
+  const PairIterRelation elem_nodes = elem.relations( fem::NODE_RANK );
+  const PairIterRelation side_nodes = side.relations( fem::NODE_RANK );
 
   bool good = true ;
   for ( unsigned j = 0 ; good && j < side_top->node_count ; ++j ) {
@@ -264,14 +262,14 @@ int element_local_side_id( const Entity & elem ,
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData* elem_topology = get_cell_topology(elem);
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData* elem_topology = TopologicalMetaData::get_cell_topology(elem);
+  const CellTopologyData* elem_topology = fem::get_cell_topology(elem).getTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   if (elem_topology == NULL) {
     return INVALID_SIDE;
   }
 
   // get nodal relations for elem
-  PairIterRelation relations = elem.relations(NodeRank);
+  PairIterRelation relations = elem.relations(fem::NODE_RANK);
 
   const unsigned subcell_rank = elem_topology->dimension - 1;
 
@@ -334,7 +332,7 @@ const CellTopologyData * get_elem_side_nodes( const Entity & elem,
 {
   side_nodes.clear();
 
-  const CellTopologyData * const elem_top = TopologicalMetaData::get_cell_topology( elem );
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
   if (elem_top == NULL) {
     return NULL;
   }
@@ -346,7 +344,7 @@ const CellTopologyData * get_elem_side_nodes( const Entity & elem,
 
   const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
 
-  PairIterRelation relations = elem.relations( NodeRank );
+  PairIterRelation relations = elem.relations( fem::NODE_RANK );
 
   // Find positive polarity permutation that starts with lowest entity id:
   const int num_permutations = side_top->permutation_count;

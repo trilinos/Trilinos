@@ -19,10 +19,10 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -30,57 +30,55 @@ namespace fixtures {
 
 class Gear;
 
-
-
-
 class GearsFixture{
-  public:
+ public:
 
-    typedef Field< double ,Cylindrical>  CylindricalField ;
-    typedef Field< double ,Cartesian>    CartesianField ;
-    enum { SpatialDimension = 3 };
+  typedef Field< double , Cylindrical>  CylindricalField ;
+  typedef Field< double , Cartesian>    CartesianField ;
 
-    GearsFixture( stk::ParallelMachine pm, size_t num_gears);
-    ~GearsFixture();
+  enum { SpatialDimension = 3 };
 
-    void generate_mesh();
+  GearsFixture( stk::ParallelMachine pm, size_t num_gears);
+  ~GearsFixture();
 
-    const size_t NUM_GEARS;
+  void generate_mesh();
 
-    MetaData  meta_data;
-    BulkData  bulk_data;
-    TopologicalMetaData top_data;
+  const size_t num_gears;
 
-    Part & cylindrical_coord_part;
-    Part & hex_part;
-    Part & wedge_part;
+  MetaData   meta_data;
+  BulkData   bulk_data;
+  DefaultFEM fem;
 
-    CartesianField    & cartesian_coord_field ;
-    CartesianField    & displacement_field ;
-    CartesianField    & translation_field ;
-    CylindricalField  & cylindrical_coord_field;
+  const EntityRank element_rank;
 
-    Gear & get_gear(size_t i) {
-      return * m_gears[i];
-    }
+  Part & cylindrical_coord_part;
+  Part & hex_part;
+  Part & wedge_part;
 
-    const Gear & get_gear(size_t i) const{
-      return * m_gears[i];
-    }
+  CartesianField    & cartesian_coord_field ;
+  CartesianField    & displacement_field ;
+  CartesianField    & translation_field ;
+  CylindricalField  & cylindrical_coord_field;
 
-    void update_displacement_field();
+  Gear & get_gear(size_t i) {
+    return * m_gears[i];
+  }
 
-    void communicate_model_fields();
+  const Gear & get_gear(size_t i) const{
+    return * m_gears[i];
+  }
 
-  private:
+  void update_displacement_field();
 
-    std::vector<Gear *>   m_gears;
+  void communicate_model_fields();
 
-    GearsFixture( const GearsFixture & );
-    GearsFixture & operator = ( const GearsFixture & );
+ private:
 
+  std::vector<Gear *> m_gears;
+
+  GearsFixture( const GearsFixture & );
+  GearsFixture & operator = ( const GearsFixture & );
 };
-
 
 } // fixtures
 } // mesh

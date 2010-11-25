@@ -59,7 +59,7 @@ public:
    *   For example, the primary purpose of an Element part
    *   is to define a collection of elements.  However, the
    *   nodes of those elements are also members of an element part.
-   *   Return std::numeric_limits<unsigned>::max() if no primary entity type.
+   *   Return InvalidEntityRank if no primary entity type.
    */
   unsigned primary_entity_rank() const { return m_partImpl.primary_entity_rank(); }
 

@@ -19,15 +19,14 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
 
 #include <iomanip>
 #include <algorithm>
+
+using stk::mesh::fem::NODE_RANK;
 
 class UnitTestStkMeshBoundaryAnalysis {
 public:
@@ -93,11 +92,12 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& meta_data = grid_mesh.meta_data();
-  stk::mesh::TopologicalMetaData& top_data = grid_mesh.top_data();
+  stk::mesh::DefaultFEM& fem     = grid_mesh.fem();
+
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
 
   // make shell part
-  stk::mesh::Part& shell_part =
-    top_data.declare_part<shards::ShellLine<2> >("shell_part");
+  stk::mesh::Part& shell_part = stk::mesh::declare_part<shards::ShellLine<2> >(meta_data, "shell_part");
 
   meta_data.commit();
 
@@ -111,15 +111,14 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   std::vector<unsigned> count;
   stk::mesh::Selector locally_owned(meta_data.locally_owned_part());
   stk::mesh::count_entities(locally_owned, bulk_data, count);
-  const unsigned num_entities = count[top_data.node_rank] +
-    count[top_data.element_rank];
+  const unsigned num_entities = count[NODE_RANK] + count[element_rank];
 
   // Declare the shell entities, placing them in the shell part
   std::vector<stk::mesh::Entity*> shells;
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
   for (unsigned i = 1; i <= num_shells; ++i) {
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(top_data.element_rank,
+    stk::mesh::Entity& new_shell = bulk_data.declare_entity(element_rank,
                                                             num_entities + i,
                                                             shell_parts);
     shells.push_back(&new_shell);
@@ -129,10 +128,8 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   unsigned node_list[5] = {20, 25, 30, 35, 40};
   for (unsigned i = 0; i < num_shells; ++i) {
     stk::mesh::Entity& shell = *(shells[i]);
-    stk::mesh::Entity& node1 =
-      *(bulk_data.get_entity(top_data.node_rank, node_list[i]));
-    stk::mesh::Entity& node2 =
-      *(bulk_data.get_entity(top_data.node_rank, node_list[i+1]));
+    stk::mesh::Entity& node1 = *(bulk_data.get_entity(NODE_RANK, node_list[i]));
+    stk::mesh::Entity& node2 = *(bulk_data.get_entity(NODE_RANK, node_list[i+1]));
     bulk_data.declare_relation(shell, node1, 0);
     bulk_data.declare_relation(shell, node2, 1);
   }
@@ -149,10 +146,10 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
        ++i) {
     stk::mesh::EntityRank rank_of_entity;
     if (i < num_elems_in_closure) {
-      rank_of_entity = top_data.element_rank;
+      rank_of_entity = element_rank;
     }
     else {
-      rank_of_entity = 0;
+      rank_of_entity = NODE_RANK;
     }
     stk::mesh::Entity* closure_entity =
       bulk_data.get_entity(rank_of_entity, ids_of_entities_in_closure[i]);
@@ -163,7 +160,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
 
   // Run the bounary analysis!
   stk::mesh::EntitySideVector boundary;
-  stk::mesh::boundary_analysis(bulk_data, closure, top_data.element_rank, boundary);
+  stk::mesh::boundary_analysis(bulk_data, closure, element_rank, boundary);
   STKUNIT_EXPECT_TRUE(!boundary.empty());
 
   // Prepare the expected-results as a vector of pairs of pairs representing
@@ -240,11 +237,13 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
 
   //create new meta, bulk and boundary for this test
   const int spatial_dimension = 3;
-  stk::mesh::MetaData meta( stk::mesh::TopologicalMetaData::entity_rank_names(spatial_dimension) );
-  stk::mesh::TopologicalMetaData top_data(meta, spatial_dimension);
+  stk::mesh::MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::DefaultFEM fem(meta, spatial_dimension);
+
+  const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
 
   //declare part with topology = NULL
-  stk::mesh::Part & quad_part = meta.declare_part("quad_part", top_data.side_rank);
+  stk::mesh::Part & quad_part = declare_part(meta, "quad_part", side_rank);
   meta.commit();
 
   stk::ParallelMachine comm(MPI_COMM_WORLD);
@@ -258,11 +257,11 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
 
   bulk.modification_begin();
   if (m_rank == 0) {
-    stk::mesh::Entity & new_face = bulk.declare_entity(top_data.side_rank, 1, face_parts);
+    stk::mesh::Entity & new_face = bulk.declare_entity(side_rank, 1, face_parts);
     newclosure.push_back(&new_face);
   }
 
-  stk::mesh::boundary_analysis(bulk, newclosure, top_data.side_rank, boundary);
+  stk::mesh::boundary_analysis(bulk, newclosure, side_rank, boundary);
   /*
   STKUNIT_EXPECT_TRUE(!boundary.empty());
   */

@@ -51,6 +51,17 @@ print_entity_key( const MetaData & meta_data, const EntityKey & key );
 class MetaData {
 public:
 
+  /** \} */
+  //------------------------------------
+  /** \name  Meta data manager construction and destruction
+   *  \{
+   */
+
+  /** \brief  Construct a meta data manager to own parts and fields.  */
+  explicit MetaData( const std::vector<std::string>& entity_rank_names );
+
+  /** \brief  Construct a meta data manager to own parts and fields.  */
+  MetaData();
 
   //------------------------------------
   /** \name Predefined Parts
@@ -154,13 +165,17 @@ public:
   /** \brief Query entity-type names
    *
    */
+  void set_entity_rank_names(const std::vector<std::string> &entity_rank_names);
+  
+  EntityRank entity_rank( const std::string &name ) const;
+  
   const std::vector<std::string> & entity_rank_names() const
     { return m_entity_rank_names ; }
 
   std::vector<std::string>::size_type entity_rank_count() const
     { return m_entity_rank_names.size(); }
 
-  const std::string & entity_rank_name( unsigned ) const ;
+  const std::string & entity_rank_name( EntityRank entity_rank ) const ;
 
   /**
    * Return true if rank is valid.
@@ -286,15 +301,6 @@ public:
   /** \brief  Put a property on the given part */
   void put_property( PropertyBase & property, Part & part);
 
-  /** \} */
-  //------------------------------------
-  /** \name  Meta data manager construction and destruction
-   *  \{
-   */
-
-  /** \brief  Construct a meta data manager to own parts and fields.  */
-  explicit MetaData( const std::vector<std::string>& entity_rank_names );
-
   /** \brief  Commit the part and field declarations so that the
    *          meta data manager can be used to create
    *          \ref stk::mesh::BulkData "mesh bulk data".
@@ -332,13 +338,11 @@ public:
   /** \brief  Declare a field restriction via runtime type information.
    */
   void declare_field_restriction( FieldBase      & arg_field ,
-                                  unsigned         arg_entity_rank ,
+                                  EntityRank       arg_entity_rank ,
                                   const Part     & arg_part ,
                                   const unsigned * arg_stride );
   /** \} */
 private:
-
-  MetaData();                                  ///< \brief  Not allowed
   MetaData( const MetaData & );                ///< \brief  Not allowed
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
 

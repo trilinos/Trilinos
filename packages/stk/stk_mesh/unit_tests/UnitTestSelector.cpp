@@ -969,6 +969,37 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AlliuAll )
     STKUNIT_EXPECT_EQUAL( "!(())", description.str() );
   }
 }
+
+/** \brief Verify that the 'selectField' selector works correctly.
+ *
+ */
+STKUNIT_UNIT_TEST( UnitTestSelector, selectField )
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::Selector selectA = stk::mesh::selectField(fix.m_fieldA);
+  stk::mesh::Selector selectABC = stk::mesh::selectField(fix.m_fieldABC);
+  {
+    //entity1 is in partA, so entity1's bucket should be selected by selectA:
+    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    bool result = selectA(bucket);
+    STKUNIT_EXPECT_TRUE(result);
+  }
+  {
+    //entity3 is not in partA, so entity3's bucket should not be selected by selectA:
+    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    bool result = selectA(bucket);
+    STKUNIT_EXPECT_FALSE(result);
+  }
+  {
+    //entity3 is in partB, so entity3's bucket should be selected by selectABC:
+    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    bool result = selectABC(bucket);
+    STKUNIT_EXPECT_TRUE(result);
+  }
+}
+
 /** \} */
 
 

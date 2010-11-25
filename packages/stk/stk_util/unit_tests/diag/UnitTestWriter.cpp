@@ -6,11 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
 #include <boost/regex.hpp>
 
 #include <iostream>
@@ -32,24 +27,7 @@
 #include <stk_util/diag/WriterManip.hpp>
 #include <stk_util/diag/WriterExt.hpp>
 
-class UnitTestWriter : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE(UnitTestWriter);
-  CPPUNIT_TEST(testUnit);
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-  void setUp()
-  {}
-  
-  void tearDown()
-  {}
-
-  void testUnit();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(UnitTestWriter);
-
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 using namespace stk::diag;
 
@@ -93,20 +71,18 @@ dw()
   return s_diagWriter;
 }
 
-
-void
-UnitTestWriter::testUnit()
+STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
 {
   dw() << "This is a test" << dendl << dflush;
 
-  CPPUNIT_ASSERT_EQUAL(std::string("This is a test\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL(std::string("This is a test\n"), oss().str());
   
   oss().str("");
   dw() << "Level 0" << push << dendl
        << "This is a test" << dendl
        << pop << dendl;
 
-  CPPUNIT_ASSERT_EQUAL(std::string("Level 0 {\n  This is a test\n}\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL(std::string("Level 0 {\n  This is a test\n}\n"), oss().str());
 
   oss().str("");
   {
@@ -120,7 +96,7 @@ UnitTestWriter::testUnit()
          << pop << dendl;  
   }
   dw() << dendl;
-  CPPUNIT_ASSERT_EQUAL(std::string("Level 0 {\n  Level 1 {\n    Level 2 {\n      Level 3 {\n        This is a test\n      }\n    }\n  }\n}\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL(std::string("Level 0 {\n  Level 1 {\n    Level 2 {\n      Level 3 {\n        This is a test\n      }\n    }\n  }\n}\n"), oss().str());
 
   oss().str("");
   {
@@ -153,7 +129,7 @@ UnitTestWriter::testUnit()
     dw() << "This is a test" << dendl;
     dw() << std::string("This is a test") << dendl;    
   }
-  CPPUNIT_ASSERT_EQUAL(std::string("7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\nThis is a test\nThis is a test\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL(std::string("7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\nThis is a test\nThis is a test\n"), oss().str());
   
   oss().str("");
   dw() << std::hex << 16 << dendl;
@@ -171,7 +147,7 @@ UnitTestWriter::testUnit()
   dw() << stk::diag::setiosflags(std::ios::fixed) << 3.14159265 << dendl;
   dw() << stk::diag::resetiosflags(std::ios::fixed) << 3.14159265 << dendl;
   dw() << stk::diag::setfill('#') << stk::diag::setw(10) << "x" << dendl;
-  CPPUNIT_ASSERT_EQUAL(std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n"), oss().str());
+  STKUNIT_ASSERT_EQUAL(std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n"), oss().str());
 
   oss().str("");
   {
@@ -273,7 +249,7 @@ UnitTestWriter::testUnit()
       delete *curmsp;
     
   }
-//  CPPUNIT_ASSERT_EQUAL(std::string("int\n(5:7)\nstd::vector<int, std::allocator<int> >, size 3 {\n  1 2 3 \n}\nstd::vector<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b040), 1\n  [1] (pointer 0x53b770), 2\n  [2] (pointer 0x53b750), 3\n}\nstd::list<int, std::allocator<int> >, size 3 {\n  [0] 1\n  [1] 2\n  [2] 3\n}\nstd::list<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b820), 1\n  [1] (pointer 0x53b8a0), 2\n  [2] (pointer 0x53b8e0), 3\n}\nstd::map<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [2] 3\n  [3] 4\n}\nstd::map<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53b9f0\n  [2] 0x53ba50\n  [3] 0x53bab0\n}\nstd::multimap<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [1] 3\n  [2] 4\n}\nstd::multimap<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53bb60\n  [1] 0x53bbc0\n  [2] 0x53bc20\n}\nstd::set<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  3\n  4\n}\nstd::set<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53bd10\n  0x53bd60\n  0x53bdb0\n}\nstd::multiset<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  2\n  4\n}\nstd::multiset<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53be90\n  0x53bee0\n  0x53bf30\n}\n00001010\n"), oss().str());  
+//  STKUNIT_ASSERT_EQUAL(std::string("int\n(5:7)\nstd::vector<int, std::allocator<int> >, size 3 {\n  1 2 3 \n}\nstd::vector<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b040), 1\n  [1] (pointer 0x53b770), 2\n  [2] (pointer 0x53b750), 3\n}\nstd::list<int, std::allocator<int> >, size 3 {\n  [0] 1\n  [1] 2\n  [2] 3\n}\nstd::list<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b820), 1\n  [1] (pointer 0x53b8a0), 2\n  [2] (pointer 0x53b8e0), 3\n}\nstd::map<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [2] 3\n  [3] 4\n}\nstd::map<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53b9f0\n  [2] 0x53ba50\n  [3] 0x53bab0\n}\nstd::multimap<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [1] 3\n  [2] 4\n}\nstd::multimap<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53bb60\n  [1] 0x53bbc0\n  [2] 0x53bc20\n}\nstd::set<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  3\n  4\n}\nstd::set<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53bd10\n  0x53bd60\n  0x53bdb0\n}\nstd::multiset<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  2\n  4\n}\nstd::multiset<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53be90\n  0x53bee0\n  0x53bf30\n}\n00001010\n"), oss().str());  
 
   oss().str("");
   {
@@ -285,5 +261,5 @@ UnitTestWriter::testUnit()
     dw() << a0 << dendl;
     dw() << a1 << dendl;    
   }
-//  CPPUNIT_ASSERT_EQUAL(std::string("std::auto_ptr<int>, 0x53b8c0, 1\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, 0x53b8c0, 1\n"), oss().str());
+//  STKUNIT_ASSERT_EQUAL(std::string("std::auto_ptr<int>, 0x53b8c0, 1\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, <not created or not owner>\n std::auto_ptr<int>, 0x53b8c0, 1\n"), oss().str());
 }

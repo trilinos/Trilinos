@@ -331,7 +331,7 @@ private:
   Bucket & operator = ( const Bucket & );
 
   Bucket( BulkData        & arg_mesh ,
-          unsigned          arg_entity_rank ,
+          EntityRank        arg_entity_rank ,
           const unsigned  * arg_key ,
           size_t            arg_alloc_size ,
           size_t            arg_capacity ,

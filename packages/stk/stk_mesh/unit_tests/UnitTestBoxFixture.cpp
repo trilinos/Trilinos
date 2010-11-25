@@ -17,8 +17,6 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Selector;
@@ -26,6 +24,7 @@ using stk::mesh::Entity;
 using stk::mesh::EntityId;
 using stk::mesh::EntityRank;
 using stk::mesh::fixtures::BoxFixture;
+using stk::mesh::fem::NODE_RANK;
 
 namespace {
 
@@ -59,13 +58,14 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
   MetaData& meta = fixture.meta_data();
   BulkData& bulk = fixture.bulk_data();
 
+  const EntityRank element_rank = stk::mesh::fem::element_rank(fixture.fem());
+
   const unsigned p_rank = bulk.parallel_rank();
   const unsigned p_size = bulk.parallel_size();
 
   BoxFixture::BOX * const p_box = new BoxFixture::BOX[ p_size ];
   ExposePartition::expose_box_partition( 0, p_size, 2, root_box, &p_box[0] );
 
-  stk::mesh::TopologicalMetaData top( meta, 3 /* spatial dim */ );
   meta.commit();
 
   bulk.modification_begin();
@@ -101,23 +101,23 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
     const EntityId elem_id =  1 + i + j * ngx + k * ngx * ngy;
 
     std::vector<Entity*> nodes(8);
-    nodes[0] = bulk.get_entity( top.node_rank, n0 );
-    nodes[1] = bulk.get_entity( top.node_rank, n1 );
-    nodes[2] = bulk.get_entity( top.node_rank, n2 );
-    nodes[3] = bulk.get_entity( top.node_rank, n3 );
-    nodes[4] = bulk.get_entity( top.node_rank, n4 );
-    nodes[5] = bulk.get_entity( top.node_rank, n5 );
-    nodes[6] = bulk.get_entity( top.node_rank, n6 );
-    nodes[7] = bulk.get_entity( top.node_rank, n7 );
+    nodes[0] = bulk.get_entity( NODE_RANK, n0 );
+    nodes[1] = bulk.get_entity( NODE_RANK, n1 );
+    nodes[2] = bulk.get_entity( NODE_RANK, n2 );
+    nodes[3] = bulk.get_entity( NODE_RANK, n3 );
+    nodes[4] = bulk.get_entity( NODE_RANK, n4 );
+    nodes[5] = bulk.get_entity( NODE_RANK, n5 );
+    nodes[6] = bulk.get_entity( NODE_RANK, n6 );
+    nodes[7] = bulk.get_entity( NODE_RANK, n7 );
 
-    Entity* elem = bulk.get_entity( top.element_rank, elem_id );
+    Entity* elem = bulk.get_entity( element_rank, elem_id );
 
     std::vector<Entity*> elems ;
     stk::mesh::get_entities_through_relations( nodes , elems );
     STKUNIT_ASSERT_EQUAL( elems.size() , size_t(1) );
     STKUNIT_ASSERT_EQUAL( elems[0] , elem );
 
-    stk::mesh::get_entities_through_relations(nodes, top.element_rank, elems);
+    stk::mesh::get_entities_through_relations(nodes, element_rank, elems);
     STKUNIT_ASSERT_EQUAL( elems.size() , size_t(1) );
     STKUNIT_ASSERT_EQUAL( elems[0] , elem );
 

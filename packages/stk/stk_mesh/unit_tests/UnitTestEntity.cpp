@@ -21,26 +21,25 @@
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Ghosting.hpp>
 
 #include <stk_mesh/baseImpl/EntityRepository.hpp>
+#include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-#include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
+using stk::ParallelMachine;
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;
-using stk::mesh::TopologicalMetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::PartRelation;
-using stk::mesh::impl::PartRepository;
-using stk::ParallelMachine;
-using stk::mesh::impl::EntityRepository;
-
 using stk::mesh::EntityKey;
 using stk::mesh::Entity;
 using stk::mesh::Bucket;
+using stk::mesh::impl::PartRepository;
+using stk::mesh::impl::EntityRepository;
 
 namespace {
 
@@ -83,7 +82,7 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
 {
   //Test Entity repository - covering EntityRepository.cpp/hpp
   const int spatial_dimension = 3;
-  MetaData meta(TopologicalMetaData::entity_rank_names(spatial_dimension));
+  MetaData meta(stk::mesh::fem::entity_rank_names(spatial_dimension));
   Part & part = meta.declare_part( "another part"); 
   MPI_Barrier( MPI_COMM_WORLD );
   ParallelMachine pm = MPI_COMM_WORLD;
@@ -106,7 +105,6 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
  
   int new_id =  size * (++id_base) +  rank;
   stk::mesh::Entity & elem  =  bulk.declare_entity( 3 , new_id+1 ,  add_part );
-
 
   stk::mesh::impl::EntityRepository e;
 
@@ -151,20 +149,16 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
   stk::mesh::Entity & elem3  =  bulk.declare_entity( 3 , new_id+9 ,  add_part );
   stk::mesh::Entity & elem4  =  bulk.declare_entity( 3 , new_id+10 ,  add_part );
 
-
   e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+8 ));
   e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+9 ));
   e.internal_create_entity( stk::mesh::EntityKey( 3, new_id+10 ));
 
-
   typedef std::map<EntityKey,Entity*> EntityMap;
   EntityMap entity_map_array;
-
 
   entity_map_array[stk::mesh::EntityKey( 3, new_id+8 )] = &elem2;
   entity_map_array[stk::mesh::EntityKey( 3, new_id+9 )] = &elem3;
   entity_map_array[stk::mesh::EntityKey( 3, new_id+10 )] = &elem4;
-
 
   //Coverage of destroy_later in EntityRepository.cpp
   Bucket *nil_bucket =  bulk.buckets(3)[0];
@@ -190,7 +184,6 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityRepository)
 
   bulk.modification_begin();
   STKUNIT_ASSERT_THROW(bulk.modification_end(), std::runtime_error);
- 
 }
 
 //----------------------------------------------------------------------

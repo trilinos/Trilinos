@@ -21,16 +21,11 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-
-
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
 
 using namespace stk;
 using namespace stk::rebalance;
-
 
 namespace {
 
@@ -86,14 +81,15 @@ bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
   double my_load = 0.0;
 
   const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
-  const mesh::TopologicalMetaData & topo_data = mesh::TopologicalMetaData::find_TopologicalMetaData(meta_data);
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
 
   mesh::EntityVector local_elems;
   mesh::Selector select_owned( meta_data.locally_owned_part() );
 
   // Determine imbalance based on current element decomposition
   mesh::get_selected_entities(select_owned,
-                              bulk_data.buckets(topo_data.element_rank),
+                              bulk_data.buckets(element_rank),
                               local_elems);
 
   for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
@@ -122,11 +118,14 @@ bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
                           const ScalarField * rebal_elem_weight_ref ,
                           Partition & partition)
 {
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(bulk_data);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+
   mesh::EntityVector rebal_elem_ptrs;
   mesh::EntityVector entities;
-  const mesh::TopologicalMetaData & topo_data = mesh::TopologicalMetaData::find_TopologicalMetaData(bulk_data.mesh_meta_data());
+
   mesh::get_selected_entities(selector,
-                              bulk_data.buckets(topo_data.element_rank),
+                              bulk_data.buckets(element_rank),
                               entities);
 
   for (mesh::EntityVector::iterator iA = entities.begin() ; iA != entities.end() ; ++iA ) {
