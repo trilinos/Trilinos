@@ -5,7 +5,6 @@
 
 #include "Panzer_CellData.hpp"
 #include "Panzer_InputEquationSet.hpp"
-
 #include "user_app_EquationSetFactory.hpp"
 
 namespace panzer {

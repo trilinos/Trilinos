@@ -29,6 +29,12 @@ APPEND_SET(HEADERS
   Panzer_BasisValues.hpp
   Panzer_BasisValuesT.hpp
   Panzer_BC.hpp
+  Panzer_BCStrategy.hpp
+  Panzer_BCStrategyT.hpp
+  Panzer_BCStrategy_Base.hpp
+  Panzer_BCStrategy_Factory.hpp
+  Panzer_BCStrategy_Factory_Defines.hpp
+  Panzer_BCStrategy_TemplateManager.hpp
   Panzer_CellData.hpp
   Panzer_ConfigDefs.hpp
   Panzer_Dimension.hpp
@@ -45,6 +51,10 @@ APPEND_SET(HEADERS
   Panzer_IntegrationValues.hpp
   Panzer_IntegrationValuesT.hpp
   Panzer_IntrepidBasisFactory.hpp
+  Panzer_MaterialModelEntry.hpp
+  Panzer_ModelFactory.hpp
+  Panzer_ModelFactory_TemplateManager.hpp
+  Panzer_PhysicsBlock.hpp
   Panzer_Version.hpp
   Panzer_Workset.hpp
   Panzer_Workset_Builder.hpp
@@ -61,10 +71,14 @@ APPEND_SET(HEADERS
 APPEND_SET(SOURCES
   Panzer_Basis.cpp
   Panzer_BC.cpp
+  Panzer_BCStrategy.cpp
   Panzer_Dimension.cpp
   Panzer_EquationSet_DefaultImpl.cpp
   Panzer_InputPhysicsBlock.cpp
   Panzer_IntegrationRule.cpp
+  Panzer_MaterialModelEntry.cpp
+  Panzer_PhysicsBlock.cpp
+  Panzer_Traits.cpp
   Panzer_Version.cpp
   dofmngr/Panzer_FieldPattern.cpp
   dofmngr/Panzer_IntrepidFieldPattern.cpp

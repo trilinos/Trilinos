@@ -1,0 +1,17 @@
+
+INCLUDE(PackageAddExecutableAndTest)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../equation_set)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../model_factory)
+
+SET(UNIT_TEST_DRIVER
+  ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  physics_block
+  SOURCES physics_block.cpp ${UNIT_TEST_DRIVER}
+  NUM_MPI_PROCS 1
+  )
+  

@@ -22,7 +22,7 @@ EquationSet_Energy(const panzer::InputEquationSet& ies,
   // Assemble DOF names
   // ********************
   m_dof_names = Teuchos::rcp(new std::vector<std::string>);
-  m_dof_names->push_back("TEMPERATURE");
+  m_dof_names->push_back(eqSetPrefix+"TEMPERATURE");
 
 
   // ********************

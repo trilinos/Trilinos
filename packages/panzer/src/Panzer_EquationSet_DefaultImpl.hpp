@@ -1,5 +1,5 @@
-#ifndef PANZER_EQUATION_SET_DEFAULTIMPL_H
-#define PANZER_EQUATION_SET_DEFAULTIMPL_H
+#ifndef PANZER_EQUATION_SET_DEFAULTIMPL_HPP
+#define PANZER_EQUATION_SET_DEFAULTIMPL_HPP
 
 #include "Panzer_EquationSet.hpp"
 #include "Panzer_InputEquationSet.hpp"
@@ -18,13 +18,18 @@ namespace panzer {
     
     EquationSet_DefaultImpl(const panzer::InputEquationSet& ies, const panzer::CellData& cell_data);
     
+    virtual ~EquationSet_DefaultImpl() {}
+    
     virtual void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 						       const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const = 0;
 
     virtual void buildAndRegisterGatherScatterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 							 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const = 0;
     
-    // virtual void buildAndRegisterMaterialModelEvaluators(int physics_id, PHX::FieldManager<panzer::Traits>& fm, const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs) const;
+    virtual void buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
+						 const std::vector<std::pair<std::string,Teuchos::RCP<panzer::Basis> > > & dofs,
+						 const std::map<std::string,Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > >& factories,
+						 const std::vector<Teuchos::ParameterList>& models) const;
     
     virtual const Teuchos::RCP<Teuchos::ParameterList> getEvaluatorParameterList() const = 0;
     
