@@ -41,10 +41,12 @@ template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned char>
   : public DirectSerializationTraits<Ordinal,unsigned char>
 {};
+#if 1
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned short>
   : public DirectSerializationTraits<Ordinal,unsigned short>
 {};
+#endif
 #ifdef TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_INT
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned int>
@@ -105,7 +107,8 @@ struct ScalarTraits<unsigned char>
   { return (unsigned char) std::pow((double)x,(double)y); }
 };
 
-// Type unsigned short
+// Type unsigned short (now defined in Teuchos_ScalarTraits.hpp)
+#if 0
 template<>
 struct ScalarTraits<unsigned short>
 {
@@ -132,6 +135,7 @@ struct ScalarTraits<unsigned short>
   static inline unsigned short pow(unsigned short x, unsigned short y)
   { return (unsigned short) std::pow((double)x,(double)y); }
 };
+#endif
 
 // Type unsigned int
 #ifdef TEUCHOS_SCALARTRAITS_UNSIGNED_INT
@@ -280,6 +284,18 @@ struct ScalarTraits<unsigned long long>
 %ignore Teuchos::ScalarTraits< short >::isnaninf;
 %template(ScalarTraitsShort) Teuchos::ScalarTraits< short >;
 
+%ignore Teuchos::ScalarTraits< unsigned short >::eps     ;
+%ignore Teuchos::ScalarTraits< unsigned short >::sfmin   ;
+%ignore Teuchos::ScalarTraits< unsigned short >::base    ;
+%ignore Teuchos::ScalarTraits< unsigned short >::prec    ;
+%ignore Teuchos::ScalarTraits< unsigned short >::t       ;
+%ignore Teuchos::ScalarTraits< unsigned short >::rnd     ;
+%ignore Teuchos::ScalarTraits< unsigned short >::emin    ;
+%ignore Teuchos::ScalarTraits< unsigned short >::rmin    ;
+%ignore Teuchos::ScalarTraits< unsigned short >::emax    ;
+%ignore Teuchos::ScalarTraits< unsigned short >::rmax    ;
+%ignore Teuchos::ScalarTraits< unsigned short >::nan     ;
+%ignore Teuchos::ScalarTraits< unsigned short >::isnaninf;
 %template(ScalarTraitsUshort) Teuchos::ScalarTraits< unsigned short >;
 
 %ignore Teuchos::ScalarTraits< int >::eps  ;
