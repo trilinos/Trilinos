@@ -163,7 +163,7 @@ Good luck with """+productName+"""!
     
     
     print ""
-    print "C) Configure "+ProductName+" ..."
+    print "C) Configure "+productName+" ..."
     print ""
     
     
@@ -174,7 +174,7 @@ Good luck with """+productName+"""!
     
     
     print ""
-    print "D) Build "+ProductName+" ..."
+    print "D) Build "+productName+" ..."
     print ""
     
     if options.build:
@@ -184,7 +184,7 @@ Good luck with """+productName+"""!
     
     
     print ""
-    print "E) Install "+ProductName+" ..."
+    print "E) Install "+productName+" ..."
     print ""
     
     if options.install:
@@ -192,4 +192,4 @@ Good luck with """+productName+"""!
     else:
       print "Skipping on request ..."
     
-    print "[End]"
+    print "\n[End]"
