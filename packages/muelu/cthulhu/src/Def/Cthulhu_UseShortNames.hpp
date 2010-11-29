@@ -27,10 +27,3 @@ typedef Cthulhu::OperatorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, 
 // Note: There is no #ifndef/#define/#end in this header file because it can be included more than once (it can be included in methods templated by ScalarType, LocalOrdinal, GlobalOrdinal, Node).
 
 // TODO: add namespace {} for shortcut types
-
-
-// Define convenient shortcut for data types
-typedef ScalarType    SC;
-typedef LocalOrdinal  LO;
-typedef GlobalOrdinal GO;
-typedef Node          NO;
