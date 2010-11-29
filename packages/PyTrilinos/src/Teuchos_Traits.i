@@ -41,12 +41,10 @@ template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned char>
   : public DirectSerializationTraits<Ordinal,unsigned char>
 {};
-#if 1
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned short>
   : public DirectSerializationTraits<Ordinal,unsigned short>
 {};
-#endif
 #ifdef TEUCHOS_SERIALIZATIONTRAITS_UNSIGNED_INT
 template<typename Ordinal>
 class SerializationTraits<Ordinal,unsigned int>
