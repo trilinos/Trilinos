@@ -51,8 +51,7 @@ target_triplet = @target@
 # ------------------------------------------------------------------------
 @BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__append_1 = $(FORTRAN_MODULES)
 subdir = src
-DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
->>>>>>> origin/zoltan_gid_64
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_case.m4 \
