@@ -17,7 +17,7 @@ class GitInstall:
     return "git-"+gitVersion
 
   def getScriptName(self):
-    return "install-git-new"
+    return "install-git"
 
   def getExtraHelpStr(self):
     return """
@@ -27,10 +27,18 @@ This script installs both git-"""+gitVersion+""" and eg-"""+egVersion+""".
   def getBaseDirName(self):
     return "Git.base"
 
-  def getDefaultCheckoutCommand(self):
-    return "cvs -d :ext:software.sandia.gov:/space/CVS co -d "+self.getBaseDirName()+\
-      " Trilinos3PL/Git.base"
+  def injectExtraCmndLineOptions(self, clp):
+    clp.add_option(
+      "--checkout-cmnd", dest="checkoutCmnd", type="string",
+      default="cvs -d :ext:software.sandia.gov:/space/CVS co -d "+self.getBaseDirName()+\
+      " Trilinos3PL/Git.base",
+      help="Command used to check out "+self.getProductName()+" tarball(s)." )
 
+  def echoExtraCmndLineOptions(self, inOptions):
+    cmndLine = ""
+    cmndLine += "  --checkout-cmnd='" + inOptions.checkoutCmnd + "' \\\n"
+    return cmndLine
+    
   def setup(self, inOptions):
     self.inOptions = inOptions
     self.baseDir = os.getcwd()

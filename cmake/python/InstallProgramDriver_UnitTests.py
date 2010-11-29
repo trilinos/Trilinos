@@ -24,9 +24,17 @@ class DummyInstall:
   def getBaseDirName(self):
     return "Dummy.base"
 
-  def getDefaultCheckoutCommand(self):
-    return "git clone software.sandia.gov:/space/git/TrilinosToolset/Dummy "\
-      +self.getBaseDirName()+"/Dummy"
+  def injectExtraCmndLineOptions(self, clp):
+    clp.add_option(
+      "--checkout-cmnd", dest="checkoutCmnd", type="string",
+      default="git clone software.sandia.gov:/space/git/TrilinosToolset/Dummy "\
+      +self.getBaseDirName()+"/Dummy",
+      help="Command used to check out "+self.getProductName()+" tarball(s)." )
+
+  def echoExtraCmndLineOptions(self, inOptions):
+    cmndLine = ""
+    cmndLine += "  --checkout-cmnd='" + inOptions.checkoutCmnd + "' \\\n"
+    return cmndLine
 
   def setup(self, inOptions):
     self.options = inOptions

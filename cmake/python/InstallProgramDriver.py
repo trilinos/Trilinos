@@ -83,11 +83,6 @@ in order to remove the source and build files.
     clp = OptionParser(usage=usageHelp)
     
     clp.add_option(
-      "--checkout-cmnd", dest="checkoutCmnd", type="string",
-      default=self.installObj.getDefaultCheckoutCommand(),
-      help="Command used to check out "+productName+" tarball(s)." )
-    
-    clp.add_option(
       "--install-dir", dest="installDir", type="string",
       default="/usr/local",
       help="The install directory for "+productName+" (default = /usr/local)." )
@@ -96,6 +91,8 @@ in order to remove the source and build files.
       "--make-options", dest="makeOptions", type="string",
       default="",
       help="The options to pass to make for "+productName+"." )
+
+    self.installObj.injectExtraCmndLineOptions(clp)
     
     clp.add_option(
       "--show-defaults", dest="showDefaults", action="store_true", default=False,
@@ -139,17 +136,17 @@ in order to remove the source and build files.
     #
 
     cmndLine = scriptName + " \\\n"
+    cmndLine += "  --install-dir='" + options.installDir + "' \\\n"
+    cmndLine += "  --make-options='" + options.makeOptions + "'\\\n"
+    cmndLine += self.installObj.echoExtraCmndLineOptions(options)
     if options.checkout:
       cmndLine += "  --checkout \\\n"
-    cmndLine += "  --checkout-cmnd='" + options.checkoutCmnd + "' \\\n"
     if options.untar:
       cmndLine += "  --untar \\\n"
     if options.configure:
       cmndLine += "  --configure \\\n"
-    cmndLine += "  --install-dir='" + options.installDir + "' \\\n"
     if options.build:
       cmndLine += "  --build \\\n"
-    cmndLine += "  --make-options='" + options.makeOptions + "'\\\n"
     if options.install:
       cmndLine += "  --install \\\n"
     if options.showFinalInstructions:
