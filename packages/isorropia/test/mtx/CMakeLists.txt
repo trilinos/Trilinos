@@ -44,18 +44,18 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  test_colorer
-  SOURCES test_colorer.cpp
-  DEPLIBS isorropia_test_utils
-  COMM serial mpi
-  ARGS
-    "--f=simple.mtx"
-    "--f=simple_25X50.mtx"
-    "--f=simple_50X25.mtx"
-    "--f=small.mtx"
-    "--f=felix.mtx"
-  )
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#  test_colorer
+#  SOURCES test_colorer.cpp
+#  DEPLIBS isorropia_test_utils
+#  COMM serial mpi
+#  ARGS
+#    "--f=simple.mtx"
+#    "--f=simple_25X50.mtx"
+#    "--f=simple_50X25.mtx"
+#    "--f=small.mtx"
+#    "--f=felix.mtx"
+#  )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCreateBalancedCopyCopyFiles
   SOURCE_FILES simple.mtx simple_25X50.mtx simple_50X25.mtx small.mtx felix.mtx arrow100.mtx west0067.mtx
