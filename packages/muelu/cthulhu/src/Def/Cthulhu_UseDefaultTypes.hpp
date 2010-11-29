@@ -1,5 +1,5 @@
-#ifndef CTHULHU_DEFAULTTYPES_HPP
-#define CTHULHU_DEFAULTTYPES_HPP
+#ifndef CTHULHU_USEDEFAULTTYPES_HPP
+#define CTHULHU_USEDEFAULTTYPES_HPP
 
 #include <Kokkos_DefaultNode.hpp> // Note: we should not need this header for Epetra
 #include <Kokkos_DefaultKernels.hpp>

@@ -1,3 +1,6 @@
+//TODO: rename or rm this file (Cthulhu_Example)
+//      + get ride of Cthulhu_Classes.hpp
+
 #ifndef CTHULHU_MYTYPES_HPP
 #define CTHULHU_MYTYPES_HPP
 
@@ -28,7 +31,7 @@
 
 // Cthulhu_DefaultTypes.hpp defines the types: ScalarType, LocalOrdinal, GlobalOrdinal and Node.
 // You can use your own definition of these types by defining them before including Cthulhu.hpp. You just have to define also the macro CTHULHU_DEFAULTTYPES_HPP.
-#include "Cthulhu_DefaultTypes.hpp"
+#include "Cthulhu_UseDefaultTypes.hpp"
 
 // Cthulhu_UseShortNames.hpp get ride of template type.
 // For example, instead of using the type 'Map<LocalOrdinal,GlobalOrdinal,Node>', you can simply use the short type name 'Map'.
