@@ -20,12 +20,12 @@ SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.hpp
   )
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Headers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MueCentral)
 
 APPEND_SET(HEADERS
-  MueCentral/MueLu_Version.hpp
-  MueCentral/MueLu_ConfigDefs.hpp
+  Headers/MueLu_Version.hpp
+  Headers/MueLu_ConfigDefs.hpp
   MueCentral/MueLu_Level.hpp
   MueCentral/MueLu_SaLevel.hpp
   MueCentral/MueLu_Hierarchy.hpp
