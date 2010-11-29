@@ -81,6 +81,14 @@ Limitations:
 
 Zoltan_Color does not yet support 64-bit ZOLTAN_ID_TYPE.
 
+Assumptions:
+===========
+
+sizeof(ZOLTAN_GNO_TYPE) >= sizeof(ZOLTAN_ID_TYPE)
+sizeof(ZOLTAN_ID_TYPE) >= sizeof(int)
+
+It is assumed that both types are signed.  The value -1 is used throughout Zoltan to indicate some special setting for these types.
+
 Some changes to support 64-bit IDs:
 ==================================
 
