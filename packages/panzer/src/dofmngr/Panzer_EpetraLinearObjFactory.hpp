@@ -10,7 +10,7 @@
 #include "Epetra_Export.h"
 
 #include "Panzer_config.hpp"
-#include "Panzer_GlobalNumProvider.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
 #include "Teuchos_RCP.hpp"
 
@@ -20,7 +20,7 @@ template <typename LocalOrdinalT>
 class EpetraLinearObjFactory {
 public:
 
-   EpetraLinearObjFactory(const Teuchos::RCP<Epetra_Comm> & comm,const Teuchos::RCP<const GlobalNumProvider<LocalOrdinalT,int> > & gidProvider);
+   EpetraLinearObjFactory(const Teuchos::RCP<Epetra_Comm> & comm,const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider);
 
    virtual ~EpetraLinearObjFactory();
 
@@ -58,7 +58,7 @@ protected:
    mutable Teuchos::RCP<Epetra_CrsGraph> graph_;
    mutable Teuchos::RCP<Epetra_CrsGraph> overlappedGraph_;
 
-   Teuchos::RCP<const GlobalNumProvider<LocalOrdinalT,int> > gidProvider_;
+   Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > gidProvider_;
 };
 
 }

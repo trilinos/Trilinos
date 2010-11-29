@@ -1,4 +1,4 @@
-#include "Panzer_GlobalNumProvider.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
 using Teuchos::RCP;
 
@@ -10,7 +10,7 @@ namespace panzer {
 
 template <typename LocalOrdinalT>
 EpetraLinearObjFactory<LocalOrdinalT>::EpetraLinearObjFactory(const Teuchos::RCP<Epetra_Comm> & comm,
-                                                              const Teuchos::RCP<const GlobalNumProvider<LocalOrdinalT,int> > & gidProvider)
+                                                              const Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > & gidProvider)
    : comm_(comm), gidProvider_(gidProvider)
 { }
 
@@ -125,7 +125,7 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<LocalOrdinalT>::build
 
    std::vector<std::string> elementBlockIds;
    
-   gidProvider_->getConnManager()->getElementBlockIds(elementBlockIds);
+   gidProvider_->getElementBlockIds(elementBlockIds);
 
    // graph information about the mesh
    std::vector<std::string>::const_iterator blockItr;
@@ -133,7 +133,7 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<LocalOrdinalT>::build
       std::string blockId = *blockItr;
 
       // grab elements for this block
-      const std::vector<LocalOrdinalT> & elements = gidProvider_->getConnManager()->getElementBlock(blockId);
+      const std::vector<LocalOrdinalT> & elements = gidProvider_->getElementBlock(blockId);
 
       // get information about number of indicies
       std::vector<int> gids;

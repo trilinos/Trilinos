@@ -21,14 +21,14 @@
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_FieldAggPattern.hpp"
 #include "Panzer_ConnManager.hpp"
-#include "Panzer_GlobalNumProvider.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 
 #include "Teuchos_RCP.hpp"
 
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class DOFManager : public GlobalNumProvider<LocalOrdinalT,GlobalOrdinalT> {
+class DOFManager : public UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT> {
 public:
    typedef GlobalOrdinalT GlobalOrdinal;
    typedef LocalOrdinalT LocalOrdinal;
@@ -196,6 +196,21 @@ public:
 
    //! \defgroup FieldAssembly_Indices Methods to access the global indices
    //{@
+
+   /** What are the blockIds included in this connection manager?
+     */
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const
+   { getConnManager()->getElementBlockIds(elementBlockIds); }
+
+   /** Get the local element IDs for a paricular element
+     * block.
+     *
+     * \param[in] blockId Block ID
+     *
+     * \returns Vector of local element IDs.
+     */
+   virtual const std::vector<LocalOrdinal> & getElementBlock(const std::string & blockId) const
+   { return getConnManager()->getElementBlock(blockId); }
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.

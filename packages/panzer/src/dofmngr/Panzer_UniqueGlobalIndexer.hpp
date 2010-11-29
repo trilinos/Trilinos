@@ -1,5 +1,5 @@
-#ifndef __Panzer_GlobalNumProvider_hpp__
-#define __Panzer_GlobalNumProvider_hpp__
+#ifndef __Panzer_UniqueGlobalIndexer_hpp__
+#define __Panzer_UniqueGlobalIndexer_hpp__
 
 #include <vector>
 #include <string>
@@ -11,10 +11,10 @@
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class GlobalNumProvider {
+class UniqueGlobalIndexer {
 public:
    //! Pure virtual destructor: prevents warnings with inline empty implementation 
-   virtual ~GlobalNumProvider() = 0;
+   virtual ~UniqueGlobalIndexer() = 0;
 
    /** \brief Get the number used for access to this
      *        field
@@ -32,9 +32,18 @@ public:
      */
    virtual int getFieldNum(const std::string & str) const = 0;
 
-   /**  Returns the connection manager current being used.
+   /** What are the blockIds included in this connection manager?
      */
-   virtual Teuchos::RCP<const ConnManager<LocalOrdinalT,GlobalOrdinalT> > getConnManager() const = 0;
+   virtual void getElementBlockIds(std::vector<std::string> & elementBlockIds) const = 0; 
+
+   /** Get the local element IDs for a paricular element
+     * block.
+     *
+     * \param[in] blockId Block ID
+     *
+     * \returns Vector of local element IDs.
+     */
+   virtual const std::vector<LocalOrdinalT> & getElementBlock(const std::string & blockId) const = 0;
 
    /** \brief Get the global IDs for a particular element. This function
      * overwrites the <code>gids</code> variable.
@@ -74,7 +83,7 @@ public:
 
 // prevents a warning because a destructor does not exist
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-inline GlobalNumProvider<LocalOrdinalT,GlobalOrdinalT>::~GlobalNumProvider() {}
+inline UniqueGlobalIndexer<LocalOrdinalT,GlobalOrdinalT>::~UniqueGlobalIndexer() {}
 
 }
 

@@ -66,7 +66,7 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_ConnManager.hpp
   dofmngr/Panzer_DOFManager.hpp
   dofmngr/Panzer_DOFManagerT.hpp
-  dofmngr/Panzer_GlobalNumProvider.hpp
+  dofmngr/Panzer_UniqueGlobalIndexer.hpp
   dofmngr/Panzer_EpetraLinearObjFactory.hpp
   dofmngr/Panzer_EpetraLinearObjFactoryT.hpp
   ) 
