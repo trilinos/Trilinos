@@ -790,16 +790,15 @@ with_gnumake
 with_id_type
 enable_octreepartitioning
 enable_gzip
+with_parmetis
 with_parmetis_libdir
 with_parmetis_incdir
-with_parmetis
 with_scotch
 with_scotch_libdir
 with_scotch_incdir
 with_patoh
 with_patoh_libdir
 with_patoh_incdir
-with_drum
 with_nemesis_exodus
 enable_tests
 enable_zoltan_tests
@@ -1528,6 +1527,7 @@ Optional Packages:
                           --with-perl=<perl executable>. Configure will check
                           for the existence of the perl executable and quit
                           with an error if it is not found. (default is no)
+  --with-id-type          Zoltan global ID type: long (default), int, or llong
   --with-parmetis         Enable Parmetis support. (default is no)
   --with-parmetis-libdir  Specify where the Parmetis library is located. Ex.
                           /path/to/library
@@ -4611,7 +4611,7 @@ $as_echo "$ac_try_echo") >&5
 else
   eval ac_cv_prog_cc_${ac_cc}_c_o=no
 fi
-rm -f -r core conftest*
+rm -f core conftest*
 
 fi
 if eval test \$ac_cv_prog_cc_${ac_cc}_c_o = yes; then
@@ -6599,20 +6599,20 @@ else
 fi
 
 
-{ echo "$as_me:$LINENO: checking whether to use parmetis" >&5
-echo $ECHO_N "checking whether to use parmetis... $ECHO_C" >&6; }
+{ $as_echo "$as_me:$LINENO: checking whether to use parmetis" >&5
+$as_echo_n "checking whether to use parmetis... " >&6; }
 
 if test "X$ac_cv_use_parmetis" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_PARMETIS
+#define HAVE_PARMETIS /**/
 _ACEOF
 
 else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
 fi
 
  if test "X$ac_cv_use_parmetis" != "Xno"; then
@@ -6652,6 +6652,8 @@ fi
 #if test "X$tac_with_parmetis_incdir" != "Xno"; then
 #  CPPFLAGS="-I${tac_with_parmetis_incdir}  ${CPPFLAGS}"
 #fi
+
+
 
 
 # Check whether --with-scotch was given.
@@ -6772,7 +6774,6 @@ if test "X$tac_with_patoh_incdir" != "Xno"; then
 fi
 
 #TAC_ARG_WITH_PACKAGE(drum, [Enable Drum support.  Library name as well as library and include paths must be specified using LDFLAGS and CPPFLAGS.], DRUM, no)
-
 #TAC_ARG_WITH_3PL_SUB(drum, libdir, [Specify where the Drum library is located.  Ex. /path/to/library])
 #if test "X$tac_with_drum_libdir" != "Xno"; then
 #  LIBS="-L${tac_with_drum_libdir} ${LIBS}"
@@ -7102,7 +7103,7 @@ ac_fc_v_output=`eval $ac_link 5>&1 2>&1 |
 $as_echo "$ac_fc_v_output" >&5
 FCFLAGS=$ac_save_FFLAGS
 
-rm -f -r conftest*
+rm -rf conftest*
 
 # On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
 # /foo, /bar, and /baz are search directories for the Fortran linker.
@@ -7196,7 +7197,7 @@ ac_fc_v_output=`eval $ac_link 5>&1 2>&1 |
 $as_echo "$ac_fc_v_output" >&5
 FCFLAGS=$ac_save_FFLAGS
 
-rm -f -r conftest*
+rm -rf conftest*
 
 # On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
 # /foo, /bar, and /baz are search directories for the Fortran linker.
@@ -7517,7 +7518,7 @@ ac_compile='$FC -c $FCFLAGS $ac_fcflags_srcext conftest.$ac_ext >&5'
 ac_link='$FC -o conftest$ac_exeext $FCFLAGS $LDFLAGS $ac_fcflags_srcext conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_fc_compiler_gnu
  ac_cv_fc_dummy_main=$ac_cv_fortran_dummy_main
- rm -f -r conftest*
+ rm -rf conftest*
  LIBS=$ac_fc_dm_save_LIBS
 
 fi
@@ -7782,7 +7783,8 @@ ac_compiler_gnu=$ac_cv_fc_compiler_gnu
   fi
 
   LIBS=$ac_save_LIBS
-  rm -f -r cfortran_test* conftest*
+  rm -rf conftest*
+  rm -f cfortran_test*
 else
   $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -8461,7 +8463,7 @@ ac_fc_v_output=`eval $ac_link 5>&1 2>&1 |
 $as_echo "$ac_fc_v_output" >&5
 FCFLAGS=$ac_save_FFLAGS
 
-rm -f -r conftest*
+rm -rf conftest*
 
 # On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
 # /foo, /bar, and /baz are search directories for the Fortran linker.
@@ -8555,7 +8557,7 @@ ac_fc_v_output=`eval $ac_link 5>&1 2>&1 |
 $as_echo "$ac_fc_v_output" >&5
 FCFLAGS=$ac_save_FFLAGS
 
-rm -f -r conftest*
+rm -rf conftest*
 
 # On HP/UX there is a line like: "LPATH is: /foo:/bar:/baz" where
 # /foo, /bar, and /baz are search directories for the Fortran linker.
