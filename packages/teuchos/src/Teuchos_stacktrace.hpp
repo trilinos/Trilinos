@@ -26,8 +26,8 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef _STACKTRACE_H_
-#define _STACKTRACE_H_
+#ifndef TEUCHOS_STACKTRACE_HPP
+#define TEUCHOS_STACKTRACE_HPP
 
 /*! \file Teuchos_stacktrace.hpp
 
@@ -35,6 +35,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "Teuchos_ConfigDefs.hpp"
+
+
+#ifdef HAVE_TEUCHOS_STACKTRACE
 
 
 /*! \defgroup TeuchosStackTrace_grp Utility code for generating stacktraces.
@@ -81,4 +84,7 @@ void print_stack_on_segfault();
 
 } // end namespace Teuchos
 
-#endif
+#endif // HAVE_TEUCHOS_STACKTRACE
+
+#endif // TEUCHOS_STACKTRACE_HPP
+

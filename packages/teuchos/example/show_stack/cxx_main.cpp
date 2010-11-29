@@ -3,7 +3,9 @@
 
 void g()
 {
+#ifdef HAVE_TEUCHOS_STACKTRACE
     Teuchos::show_stacktrace();
+#endif
 }
 
 
@@ -15,7 +17,9 @@ void f()
 
 int main()
 {
+#ifdef HAVE_TEUCHOS_STACKTRACE
     Teuchos::print_stack_on_segfault();
+#endif
     f();
 
     // This will segfault:

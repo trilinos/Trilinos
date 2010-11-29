@@ -45,10 +45,14 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
     "This is an exception I throw!"
     )
 
-  IF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS OR CMAKE_BUILD_TYPE STREQUAL DEBUG)
+  IF (CMAKE_BUILD_TYPE STREQUAL DEBUG)
     APPEND_SET(PASS_REGEXS
       "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_b()"
       "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_a()"
+      )
+  ELSEIF (${PROJECT_NAME}_ENABLE_DEBUG_SYMBOLS)
+    APPEND_SET(PASS_REGEXS
+      "teuchos/test/MemoryManagement/TestForException_throwTest.cpp., line .+, in func_.()"
       )
   ELSE()
     APPEND_SET(PASS_REGEXS
@@ -75,8 +79,6 @@ IF (${PACKAGE_NAME}_ENABLE_STACKTRACE)
         "Throw test that evaluated to true: true"
         "This is an exception I throw!"
     OVERALL_NUM_MPI_PROCS 1
-    FINAL_FAIL_REGULAR_EXPRESSION
-      "teuchos/src/Teuchos_stacktrace.cpp., .+, in Teuchos::store_stacktrace()"
     )
 
 ENDIF()

@@ -77,7 +77,7 @@ RCP<const DependencySheet::DepSet> DependencySheet::getDependenciesForParameter(
 
 void DependencySheet::printDeps(std::ostream& out) const {
   out << "Dependency Sheet: " << name_ << std::endl << std::endl;
-  for(DepSet::iterator it = depBegin(); it != depEnd(); ++it){
+  for(DepSet::const_iterator it = depBegin(); it != depEnd(); ++it){
     (*it)->print(out);
   }
 }
