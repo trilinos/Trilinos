@@ -115,6 +115,7 @@ void SquareQuadMeshFactory::initializeWithDefaults()
 void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const
 {
    typedef shards::Quadrilateral<4> QuadTopo;
+   const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
 
    // build meta data
    mesh.setDimension(2);
@@ -127,7 +128,7 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
             ebPostfix << "-" << bx << "_" << by;
 
             // add element blocks
-            mesh.addElementBlock<QuadTopo>("eblock"+ebPostfix.str());
+            mesh.addElementBlock("eblock"+ebPostfix.str(),ctd);
          }
 
       }

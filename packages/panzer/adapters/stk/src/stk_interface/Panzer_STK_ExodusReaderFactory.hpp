@@ -6,8 +6,6 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_MeshFactory.hpp"
 
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-
 #ifdef HAVE_IOSS
 
 namespace panzer_stk {
@@ -34,6 +32,18 @@ public:
      */ 
    virtual Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
 
+   /** This builds all the meta data of the mesh. Does not call metaData->commit.
+     * Allows user to add solution fields and other pieces. The mesh can be "completed"
+     * by calling <code>completeMeshConstruction</code>.
+     */
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const 
+   { return Teuchos::null; }
+
+   /** Finishes building a mesh object started by <code>buildUncommitedMesh</code>.
+     */
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
+   { return; }
+
    //! From ParameterListAcceptor
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
 
@@ -46,8 +56,8 @@ public:
 
 protected:
 
-   void registerElementBlocks(STK_Interface & mesh,const stk::mesh::TopologicalMetaData & md) const;
-   void registerSidesets(STK_Interface & mesh,const stk::mesh::TopologicalMetaData & md) const;
+   void registerElementBlocks(STK_Interface & mesh) const;
+   void registerSidesets(STK_Interface & mesh) const;
 
    std::string fileName_;
 };

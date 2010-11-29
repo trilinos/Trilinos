@@ -33,19 +33,22 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
    stk::io::util::MeshData meshData;
    stk::io::util::create_input_mesh("exodusii", fileName_, "", parallelMach,
                                     *metaData, meshData, false); 
-
    // build spactial dimension and some topological meta data
    unsigned spaceDim = metaData->get_field<VectorFieldType>("coordinates")->max_size(stk::mesh::Node);
-   stk::mesh::TopologicalMetaData md(*metaData,spaceDim);
-
-   mesh->setDimension(md.spatial_dimension);
+   mesh->setDimension(spaceDim);
 
    // build element blocks
-   registerElementBlocks(*mesh,md);
-   registerSidesets(*mesh,md);
+   registerElementBlocks(*mesh);
+   registerSidesets(*mesh);
 
    // this calls commit on meta data
    mesh->initialize(parallelMach,false);
+
+   mesh->beginModification();
+   RCP<stk::mesh::BulkData> bulkData = mesh->getBulkData();
+   stk::io::util::populate_bulk_data(*bulkData, meshData, "exodusii");
+   // bulkData->modification_end();
+   mesh->endModification();
    
    return mesh;
 }
@@ -61,7 +64,7 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
    return Teuchos::null;
 }
 
-void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,const stk::mesh::TopologicalMetaData & md) const
+void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh) const 
 {
    using Teuchos::RCP;
 
@@ -71,18 +74,20 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh,const s
    stk::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
       const stk::mesh::Part * part = *partItr;
+      const CellTopologyData * ct = stk::mesh::get_cell_topology(*part);
 
       // if an element part ==> this is element block
       if(part->primary_entity_rank()==stk::mesh::Element) {
-         const CellTopologyData * ct = stk::mesh::get_cell_topology(*part);
+         TEUCHOS_ASSERT(ct!=0);
          mesh.addElementBlock(part->name(),ct);
       }
    }
 }
 
-void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,const stk::mesh::TopologicalMetaData & md) const
+void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh) const
 {
    using Teuchos::RCP;
+   unsigned spatialDim = mesh.getDimension();
 
    RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
    const stk::mesh::PartVector & parts = metaData->get_parts();
@@ -90,9 +95,10 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh,const stk::m
    stk::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
       const stk::mesh::Part * part = *partItr;
+      const CellTopologyData * ct = stk::mesh::get_cell_topology(*part);
 
-      // if an element part ==> this is element block
-      if(part->primary_entity_rank()==md.spatial_dimension-1)
+      // if an side part ==> this is a sideset: only take null cell topologies
+      if(part->primary_entity_rank()==spatialDim-1 && ct==0)
          mesh.addSideset(part->name());
    }
 }

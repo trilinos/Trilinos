@@ -68,8 +68,8 @@ STK_Interface::STK_Interface()
    nodesPart_        = &metaData_->declare_part(nodesString,stk::mesh::Node);
    nodesPartVec_.push_back(nodesPart_);
 
-   edgesPart_        = &metaData_->declare_part(edgesString,stk::mesh::Edge);
-   edgesPartVec_.push_back(edgesPart_);
+   // edgesPart_        = &metaData_->declare_part(edgesString,stk::mesh::Edge);
+   // edgesPartVec_.push_back(edgesPart_);
 }
 
 void STK_Interface::addSideset(const std::string & name)
@@ -129,8 +129,6 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
             stk::io::put_io_part_attribute(*itr->second);
       }
    
-      stk::io::put_io_part_attribute(*sidesetsPart_);
-
       // add nodes
       stk::io::put_io_part_attribute(*nodesPart_);
 
@@ -294,8 +292,6 @@ void STK_Interface::getElementsSharingNodes(const std::vector<stk::mesh::EntityI
 void STK_Interface::buildEntityCounts()
 {
    entityCounts_.clear();
-   // TEST_FOR_EXCEPTION(not stk::mesh::comm_mesh_counts(*bulkData_,entityCounts_),std::logic_error,
-   //                    "STK_Interface::buildEntityCounts: \"comm_mesh_counts\" returned false!");
    stk::mesh::comm_mesh_counts(*bulkData_,entityCounts_);
 }
 
@@ -631,7 +627,12 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
 {
    TEUCHOS_ASSERT(not initialized_);
 
-   stk::mesh::Part * block = &metaData_->declare_part(name,stk::mesh::Element);
+   stk::mesh::Part * block = metaData_->get_part(name);
+   if(block==0) {
+      block = &metaData_->declare_part(name,stk::mesh::Element);
+
+      stk::mesh::set_cell_topology(*block,ctData);
+   }
 
    // construct cell topology object for this block
    Teuchos::RCP<shards::CellTopology> ct

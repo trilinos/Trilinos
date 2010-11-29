@@ -34,8 +34,9 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
    TEST_ASSERT(mesh!=Teuchos::null);
    TEST_ASSERT(mesh->getDimension()==2);
    TEST_ASSERT(mesh->isWritable());
-   // TEST_ASSERT(not mesh->isModifiable());
+   TEST_ASSERT(not mesh->isModifiable());
 
+   // check element blocks
    std::vector<std::string> eBlocks;
    mesh->getElementBlockNames(eBlocks);
    TEST_EQUALITY((int) eBlocks.size(),2);
@@ -44,6 +45,7 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
       out << "\"" << eBlocks[i] << "\" ";
    out << std::endl;
 
+   // check side sets
    std::vector<std::string> sidesets;
    mesh->getSidesetNames(sidesets);
    TEST_EQUALITY((int) sidesets.size(),7);
@@ -51,6 +53,10 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
    for(std::size_t i=0;i<sidesets.size();i++)  
       out << "\"" << sidesets[i] << "\" ";
    out << std::endl;
+
+   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Element),8);
+   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Edge),22);
+   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Node),15);
 }
 
 }
