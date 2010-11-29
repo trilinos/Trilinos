@@ -17,7 +17,7 @@ class GitInstall:
     return "git-"+gitVersion
 
   def getScriptName(self):
-    return "install-git"
+    return "install-git.py"
 
   def getExtraHelpStr(self):
     return """
