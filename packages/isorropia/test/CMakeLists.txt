@@ -3,7 +3,7 @@ INCLUDE(AddSubdirectories)
 ADD_SUBDIRECTORIES(
   geometric
   part_sizes
-  #probing
+  probing
   #utest
   #rebalance_1d_default
   )
