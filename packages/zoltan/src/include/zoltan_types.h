@@ -27,7 +27,7 @@ extern "C" {
 
 #include "Zoltan_config.h"
 
-/* The default ZOLTAN_ID_TYPE is "long" but this can be over-ridden on the compile command line.  
+/* The default ZOLTAN_ID_TYPE is "int" but this can be over-ridden on the compile command line.  
  *
  * The type of a Zoltan object global ID is ZOLTAN_ID_TYPE.  A pointer to it is ZOLTAN_ID_PTR.
  *
@@ -61,9 +61,9 @@ extern "C" {
 
 /* 
  * Autoconf build: --with-id-type={name} (sets HAVE_ZOLTAN_ID_TYPE_{name})  
- *                 or add CPPFLAGS=-DZOLTAN_ID_TYPE_INT to configure line
+ *                 or add CPPFLAGS=-DZOLTAN_ID_TYPE_LONG to configure line
  *
- * CMake build:    -D CMAKE_CPP_FLAGS:STRING="-DZOLTAN_ID_TYPE_INT"
+ * CMake build:    -D CMAKE_CPP_FLAGS:STRING="-DZOLTAN_ID_TYPE_LONG"
  *
  * If not specified, we'll use long.
  */
@@ -94,14 +94,14 @@ extern "C" {
  *   There is code in Zoltan that assumes the global ID is at least as large as an int.)
  */
 
-#ifdef ZOLTAN_ID_TYPE_INT
+#ifdef ZOLTAN_ID_TYPE_LONG
 
-typedef int ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_INT
-#define zoltan_mpi_id_datatype_name "MPI_INT"
-#define zoltan_id_datatype_name "int"
-#define ZOLTAN_ID_SPEC  "%d"
-#define ZOLTAN_ID_CONSTANT(z)  z
+typedef long ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_LONG
+#define zoltan_mpi_id_datatype_name "MPI_LONG"
+#define zoltan_id_datatype_name "long"
+#define ZOLTAN_ID_SPEC  "%ld"
+#define ZOLTAN_ID_CONSTANT(z)  z ## L
 
 #endif
 
@@ -118,12 +118,12 @@ typedef long long ZOLTAN_ID_TYPE;
 
 #ifndef ZOLTAN_ID_MPI_TYPE
 
-typedef long ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_LONG
-#define zoltan_mpi_id_datatype_name "MPI_LONG"
-#define zoltan_id_datatype_name "long"
-#define ZOLTAN_ID_SPEC  "%ld"
-#define ZOLTAN_ID_CONSTANT(z)  z ## L
+typedef int ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_INT
+#define zoltan_mpi_id_datatype_name "MPI_INT"
+#define zoltan_id_datatype_name "int"
+#define ZOLTAN_ID_SPEC  "%d"
+#define ZOLTAN_ID_CONSTANT(z)  z
 
 #endif
 
