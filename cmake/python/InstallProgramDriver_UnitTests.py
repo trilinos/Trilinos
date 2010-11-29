@@ -13,7 +13,13 @@ class DummyInstall:
     self.dummy = None
 
   def getProductName(self):
-    return "Dummy"
+    return "Dummy-0.1"
+
+  def getScriptName(self):
+    return "dummy-install.py"
+
+  def getExtraHelpStr(self):
+    return "\nThis is the extra help string!"
 
   def getBaseDirName(self):
     return "Dummy.base"
@@ -29,8 +35,9 @@ class DummyInstall:
 class test_InstallProgramDriver(unittest.TestCase):
 
 
-  def test_help(self):
+  def test_default(self):
     ipd = InstallProgramDriver(DummyInstall())
+    sys.argv = ["scriptName"]
     self.assertEqual(ipd.runDriver(), None)
 
 
