@@ -1,0 +1,123 @@
+lriesen@sandia.gov
+November 29, 2010
+
+Notes on typedefs that were just introduced in order to support 64-bit global counts and IDs:
+
+ZOLTAN_ID_TYPE:
+==============
+
+A ZOLTAN_ID_TYPE is still the type that we use for global IDs passed in by the user.  However now the ZOLTAN_ID_TYPE can be set at configuration time.  The default type is "int".
+
+In CMake you can choose: 
+
+-D CMAKE_CPP_FLAGS:STRING="-DZOLTAN_ID_TYPE_LONG"
+-D CMAKE_CPP_FLAGS:STRING="-DZOLTAN_ID_TYPE_LONG_LONG"
+-D CMAKE_CPP_FLAGS:STRING="-DZOLTAN_ID_TYPE_INT"
+
+Using autoconf it's:
+
+--with-id-type=long
+--with-id-type=llong
+--with-id-type=int
+
+To print a ZOLTAN_ID_TYPE use ZOLTAN_ID_SPEC:
+
+printf("GID: " ZOLTAN_ID_SPEC ", LID %d\n", my_gid, my_lid);
+
+To send a ZOLTAN_ID_TYPE in an MPI message, use ZOLTAN_ID_MPI_TYPE:
+
+MPI_Bcast(&gid, 1, ZOLTAN_ID_MPI_TYPE, 0, MPI_COMM_WORLD);
+
+To silence compiler warnings, you can properly specify a constant of type ZOLTAN_ID_TYPE using ZOLTAN_ID_CONSTANT:
+
+a = ZOLTAN_ID_CONSTANT(99)
+
+ZOLTAN_GNO_TYPE:
+===============
+
+ZOLTAN_GNO_TYPE is a new typedef which Zoltan uses for global counts and for internal global IDs regardless of the definition of ZOLTAN_ID_TYPE.  It is defined to be ssize_t, so it is signed and it will be 64 bits on a 64-bit architecture and 32 bits on a 32-bit architecture.  You send it in an MPI message with ZOLTAN_GNO_MPI_TYPE and you print it with a ZOLTAN_GNO_SPEC.
+
+Any time that Zoltan creates a new problem from the application supplied problem it uses ZOLTAN_GNO_TYPE for the object IDs.
+
+indextype and weighttype:
+========================
+
+At compile time, the Zoltan library defines indextype and weighttype to coincide with the third party graph libraries, if any, that it has been configured to work with.  
+
+The "indextype" will be the data type used by the third party library (TPL) for global IDs.
+
+The "weighttype" will be the data type used by the TPL for weights.
+
+Based on configure-time parameters, Zoltan will recognize and correcty set types for Metis, ParMetis, 32- or 64-bit Scotch or 32- or 64-bit PTScotch.
+
+As a developer, it is important to know where the boundary is in the code for the use of Zoltan's types (ZOLTAN_ID_TYPE, ZOLTAN_GNO_TYPE, float) versus the types used by the TPL (indextype, weighttype).  A simplified explanation is that indextype and weighttype are only used in source code that is in the "tpls" directory.
+
+More specifically, it goes like this:
+
+1. Zoltan calls the application query functions to obtain the graph using Zoltan's data types for IDs and weights.
+
+2. Zoltan builds graph and matrix structures in Zoltan_ZG_Build using Zoltan's data types.  (I suspect the "ZG" stands for "Zoltan Graph").
+
+3. The graph is exported to the TPL data structures in Zoltan_ZG_Export.  This is the point where arrays are converted if necessary to the data types used by the third party libraries.  The C-structures with names like ZOLTAN_Third_* and others found in tpls/third_library.h use the indextype and weighttype data types.
+
+4. Of course the TPL is called with indextype and weighttype objects.
+
+5. Zoltan_Postprocess_Graph is called on the TPL structures and writes the ZOLTAN_Output_Part structure which uses Zoltan's data types.
+
+6. Zoltan_Third_Export_User uses the ZOLTAN_Output_Part structure to write the part assignments to the structures returned to the user.
+
+To print a indextype or weighttype use TPL_IDX_SPEC or TPL_WGT_SPEC respectively.
+
+If the TPL weight type is a floating point type, then TPL_FLOAT_WEIGHT will be defined.
+
+If the TPL weight type is an integral type, then TPL_INTEGRAL_WEIGHT will be defined.
+
+Other useful TPL configuration macro definitions can be found in tpls/third_library_const.h.
+
+Zoltan can be configured to use both Scotch and ParMetis as long as the 32-bit version of Scotch is used.
+
+Limitations:
+===========
+
+Zoltan_Color does not yet support 64-bit ZOLTAN_ID_TYPE.
+
+Some changes to support 64-bit IDs:
+==================================
+
+There is a new library function:
+
+  int Zoltan_get_global_id_type(char **name)
+
+which returns the number of bytes in a ZOLTAN_ID_TYPE.  If "name" is non-NULL, it also returns the name of the data type in "name".  This would be one of "int", "long long", or "long".  This function is called by Zoltan tests and examples to ensure that were compiled with the same ZOLTAN_ID_TYPE that the Zoltan library was compiled with.
+
+Zoltan_Map_Create() used to assume it was handling keys that were multiples of ZOLTAN_ID_TYPEs.  Now you supply the number of bytes in the key, not the number of ZOLTAN_ID_TYPEs.
+
+Because testing of this branch involves running large memory problems, I added the function Zoltan_write_linux_meminfo() which will write out the contents of /proc/meminfo on a Linux machine.  The new function Zoltan_Memory_Get_Debug() returns the debug level set in mem.c by Zoltan_Memory_Debug().  zdrive has a new input option
+
+  zoltan memory debug level = n
+
+which will set the debug level.  Then after partitioning, zdrive checks the debug level and if there was an error and it is running on a linux machine it will dump out /proc/meminfo.
+
+I modified the configure script to define HOST_LINUX on a linux machine.
+
+I wrote three tests in tests/Large_Data that test PHG, RCB and RIB with arbitrarily large numbers of objects.  They have signal handlers that call Zoltan_write_linux_meminfo() on a Linux machine.  One test can be configured to use 64-bit IDs when it has less than 2*10^9 IDs.
+
+INTERESTING CHART:
+=================
+
+32 and 64 bit data models (ILP - integer/long/pointer):
+
+type            LP32    ILP32   ILP64   LLP64   LP64
+
+char            8       8       8       8       8
+short           16      16      16      16      16
+_int32                          32
+int             16      32      64      32      32
+long            32      32      64      32      64
+long long                               64
+pointer         32      32      64      64      64
+
+ILP32 is most widely used.
+LP64 is most widely used.
+
+LLP64 is ILP32 with new 64 bit int added to it - used for Win64.
