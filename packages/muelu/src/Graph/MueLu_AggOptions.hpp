@@ -4,7 +4,7 @@
 /*******************************************************************************
    User-requested options affecting aggregation. 
 *******************************************************************************/
-typedef struct MueLoo_AggOptions_Struct
+typedef struct MueLu_AggOptions_Struct
 {
    double print_flag;
    int    ordering;                  /**<  natural, random, graph           */
@@ -19,6 +19,6 @@ typedef struct MueLoo_AggOptions_Struct
                                            aggregates but nonzero fill-in     
                                            increases on coarse meshes.        
                                            Default: .5                      */
-} MueLoo_AggOptions;
+} MueLu_AggOptions;
 
 #endif

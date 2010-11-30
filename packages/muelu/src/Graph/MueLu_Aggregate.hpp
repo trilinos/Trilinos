@@ -11,7 +11,7 @@
    where rows (or vertices) correspond to aggregates and colunmns (or edges) 
    correspond to nodes.  While not strictly necessary, it might be convenient.
  *****************************************************************************/
-typedef struct MueLoo_Aggregate_Struct
+typedef struct MueLu_Aggregate_Struct
 {
    char *name;
    int  NAggregates;              /* Number of aggregates on this processor  */
@@ -29,19 +29,19 @@ typedef struct MueLoo_Aggregate_Struct
                                   /* is a root node.                       */
 
    Epetra_CrsGraph *Agg2Vertex;   /* Currently not used                    */
-} MueLoo_Aggregate;
+} MueLu_Aggregate;
 
 
-extern MueLoo_Aggregate *MueLoo_AggregateCreate(MueLoo_Graph *Graph, char *str);
-extern int MueLoo_AggregateDestroy(MueLoo_Aggregate *agg);
+extern MueLu_Aggregate *MueLu_AggregateCreate(MueLu_Graph *Graph, char *str);
+extern int MueLu_AggregateDestroy(MueLu_Aggregate *agg);
 
 // Constructors to create aggregates. This should really be replaced by an 
 // aggregate class.
-MueLoo_Aggregate *MueLoo_AggregateCreate(MueLoo_Graph *Graph, char *str)
+MueLu_Aggregate *MueLu_AggregateCreate(MueLu_Graph *Graph, char *str)
 {
-   MueLoo_Aggregate *Aggregates;
+   MueLu_Aggregate *Aggregates;
 
-   Aggregates = (MueLoo_Aggregate *) malloc(sizeof(MueLoo_Aggregate));
+   Aggregates = (MueLu_Aggregate *) malloc(sizeof(MueLu_Aggregate));
    Aggregates->name = (char *) malloc(sizeof(char)*80);
    strcpy(Aggregates->name,str);
    Aggregates->NAggregates  = 0;
@@ -58,7 +58,7 @@ MueLoo_Aggregate *MueLoo_AggregateCreate(MueLoo_Graph *Graph, char *str)
 }
 // Destructor for aggregates. This should really be replaced by an 
 // aggregate class.
-int MueLoo_AggregateDestroy(MueLoo_Aggregate *agg)
+int MueLu_AggregateDestroy(MueLu_Aggregate *agg)
 {
    if (agg != NULL) {
       if (agg->IsRoot       != NULL) delete [] (agg->IsRoot);

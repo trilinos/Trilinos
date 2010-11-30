@@ -34,61 +34,61 @@
 
 using namespace std;
 
-int MueLoo_PrintLevel() { return 7; }   /* Normally this should be some general*/
+int MueLu_PrintLevel() { return 7; }   /* Normally this should be some general*/
                                         /* attribute the indicates the level   */
                                         /* verbosity.                          */
 
 /* ************************************************************************* */
 /* linked list structures from ML for holding free node information          */
 /* ------------------------------------------------------------------------- */
-typedef struct MueLoo_Node_Struct
+typedef struct MueLu_Node_Struct
 {
    int    node_id;
-   struct MueLoo_Node_Struct *next;
-} MueLoo_Node;
+   struct MueLu_Node_Struct *next;
+} MueLu_Node;
 /* ************************************************************************* */
 /* definition of the structure from ML for holding aggregate information     */
 /* ------------------------------------------------------------------------- */
-typedef struct MueLoo_SuperNode_Struct
+typedef struct MueLu_SuperNode_Struct
 {
    int    length;
    int    maxlength;
    int    index;
    int    *list;
-   struct MueLoo_SuperNode_Struct *next;
-} MueLoo_SuperNode;
+   struct MueLu_SuperNode_Struct *next;
+} MueLu_SuperNode;
 
-extern int MueLoo_RandomReorder(int *randomVector, const Epetra_BlockMap &Map);
+extern int MueLu_RandomReorder(int *randomVector, const Epetra_BlockMap &Map);
 
 
-extern MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions *AggregateOptions,
-                        MueLoo_Graph *Graph);
+extern MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions *AggregateOptions,
+                        MueLu_Graph *Graph);
 
-extern int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions, 
-                                  MueLoo_Aggregate *Aggregates,
-				  char *label, MueLoo_Graph *Graph);
+extern int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions, 
+                                  MueLu_Aggregate *Aggregates,
+				  char *label, MueLu_Graph *Graph);
 
-extern int MueLoo_NonUnique2NonUnique(const Epetra_Vector &source, 
+extern int MueLu_NonUnique2NonUnique(const Epetra_Vector &source, 
          Epetra_Vector &dest, const Epetra_Map &UniqueMap, 
          const Epetra_Import &Unique2NonUniqueWidget, 
          const Epetra_CombineMode what);
 
-extern int MueLoo_NonUnique2NonUnique(const Epetra_IntVector &source, 
+extern int MueLu_NonUnique2NonUnique(const Epetra_IntVector &source, 
          Epetra_IntVector &dest, const Epetra_Map &UniqueMap, 
          const Epetra_Import &Unique2NonUniqueWidget, 
          const Epetra_CombineMode what);
 
-extern int MueLoo_ArbitrateAndCommunicate(Epetra_Vector &OrigWt, Epetra_IntVector &ProcWinner,
+extern int MueLu_ArbitrateAndCommunicate(Epetra_Vector &OrigWt, Epetra_IntVector &ProcWinner,
    Epetra_IntVector *Companion, const Epetra_Map &UniqueMap, const Epetra_Import &Unique2NonUniqueWidget, const bool perturb);
 
-extern int MueLoo_RootCandidates(int nvertices, int *Vertex2AggId, MueLoo_Graph *Graph,
+extern int MueLu_RootCandidates(int nvertices, int *Vertex2AggId, MueLu_Graph *Graph,
             int *Candidates, int &NCandidates, int &NCandidatesGlobal);
 
-extern int MueLoo_RemoveSmallAggs(MueLoo_Aggregate *Aggregates, int min_size,
+extern int MueLu_RemoveSmallAggs(MueLu_Aggregate *Aggregates, int min_size,
     Epetra_Vector &Weights, const Epetra_Map &UniqueMap, 
     const Epetra_Import &Unique2NonUniqueWidget);
 
-extern int MueLoo_ComputeAggSizes(MueLoo_Aggregate *Aggregates, int *AggSizes);
+extern int MueLu_ComputeAggSizes(MueLu_Aggregate *Aggregates, int *AggSizes);
 
 
 #define MUELOO_AGGR_READY    -11  /* indicates that a node is available to be*/
@@ -110,7 +110,7 @@ extern int MueLoo_ComputeAggSizes(MueLoo_Aggregate *Aggregates, int *AggSizes);
                                   /* arbitration still needs to occur.       */
                                   /* The corresponding ProcWinner[]'s remain */
                                   /* as MUELOO_UNASSIGNED until              */
-                                  /* MueLoo_ArbitrateAndCommunicate() is     */
+                                  /* MueLu_ArbitrateAndCommunicate() is     */
                                   /* invoked to arbitrate.                   */
 #define MUELOO_NOSCORE       -100 /* indicates that a quality score has not  */
                                   /* yet been assigned when determining to   */
@@ -158,13 +158,13 @@ extern int MueLoo_ComputeAggSizes(MueLoo_Aggregate *Aggregates, int *AggSizes);
 /*       with setting ProcWinner[]'s is that one needs to make sure that the*/
 /*       ghost ids are properly set on all processors. Since there is no    */
 /*       arbitration, this can have easily been done with an import. Instead*/
-/*       ProcWinner[] will be set in MueLoo_AggregateLeftOvers().           */
-/*       MueLoo_AggregateLeftOvers() should also function properly when     */
+/*       ProcWinner[] will be set in MueLu_AggregateLeftOvers().           */
+/*       MueLu_AggregateLeftOvers() should also function properly when     */
 /*       ProcWinner[] is set during Phase 1.                                */
 /* ------------------------------------------------------------------------ */
 
-MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions 
-        *AggregateOptions, MueLoo_Graph *Graph)
+MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions 
+        *AggregateOptions, MueLu_Graph *Graph)
 {
    int     i, j, k, m, kk, inode = 0, jnode, length, Nrows;
    int     select_flag, NAggregates, index, mypid, inode2;
@@ -174,11 +174,11 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
    int     *randomVector = NULL, *aggr_cnt_array = NULL;
    int     min_nodes_per_aggregate, max_neigh_selected;
    unsigned int nbytes;
-   MueLoo_Node       *node_head=NULL, *node_tail=NULL, *new_node=NULL;
-   MueLoo_SuperNode  *aggr_head=NULL, *aggr_curr=NULL, *supernode=NULL;
-   MueLoo_Aggregate *Aggregates=NULL;
+   MueLu_Node       *node_head=NULL, *node_tail=NULL, *new_node=NULL;
+   MueLu_SuperNode  *aggr_head=NULL, *aggr_curr=NULL, *supernode=NULL;
+   MueLu_Aggregate *Aggregates=NULL;
 
-   Aggregates = MueLoo_AggregateCreate(Graph, "Uncoupled");
+   Aggregates = MueLu_AggregateCreate(Graph, "Uncoupled");
    Aggregates->Vertex2AggId->ExtractView(&Vertex2AggId);
    
    /* ============================================================= */
@@ -225,11 +225,11 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
       nbytes = Nrows * sizeof(int);
       randomVector = (int *) malloc(nbytes);
       for (i = 0; i < Nrows; i++) randomVector[i] = i;
-      MueLoo_RandomReorder(randomVector, Graph->EGraph->DomainMap());
+      MueLu_RandomReorder(randomVector, Graph->EGraph->DomainMap());
    } 
    else if ( ordering == 2 )  /* graph ordering */
    {
-      new_node = (MueLoo_Node *) malloc(sizeof(MueLoo_Node));      
+      new_node = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
       new_node->node_id = 0;
       node_head = new_node;
       node_tail = new_node;
@@ -253,7 +253,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
             {
                if ( aggr_stat[jnode] == MUELOO_AGGR_READY )
                { 
-                  new_node = (MueLoo_Node *) malloc(sizeof(MueLoo_Node));      
+                  new_node = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
                   new_node->node_id = jnode;
                   node_head = new_node;
                   node_tail = new_node;
@@ -277,7 +277,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
       {
          length = Graph->VertexNeighborsPtr[inode+1] - 
                   Graph->VertexNeighborsPtr[inode] + 1;
-         supernode = (MueLoo_SuperNode *) malloc(sizeof(MueLoo_SuperNode));      
+         supernode = (MueLu_SuperNode *) malloc(sizeof(MueLu_SuperNode));      
          supernode->list = (int*) malloc(length*sizeof(int));
 
          if ((supernode->list) == NULL) 
@@ -337,7 +337,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
                   index = Graph->VertexNeighbors[jnode];
                   if ( aggr_stat[index] == MUELOO_AGGR_READY )
                   { 
-                     new_node = (MueLoo_Node *) malloc(sizeof(MueLoo_Node));      
+                     new_node = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
                      new_node->node_id = index;
                      new_node->next = NULL;
                      if ( node_head == NULL )
@@ -366,7 +366,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
                   {
                      if ( aggr_stat[(Graph->VertexNeighbors)[kk]] == MUELOO_AGGR_READY )
                      { 
-                        new_node = (MueLoo_Node *) malloc(sizeof(MueLoo_Node));      
+                        new_node = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
                         new_node->node_id = Graph->VertexNeighbors[kk];
                         new_node->next = NULL;
                         if ( node_head == NULL )
@@ -413,7 +413,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
       if ( aggr_stat[i] == MUELOO_AGGR_READY ) m++;
 
    Graph->EGraph->Comm().SumAll(&m,&k,1);
-   if ( k > 0 && mypid == 0 && printflag  < MueLoo_PrintLevel())
+   if ( k > 0 && mypid == 0 && printflag  < MueLu_PrintLevel())
       printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",k);
    m = 0;
    for ( i = 0; i < Nrows; i++ ) 
@@ -424,7 +424,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
    Graph->EGraph->Comm().SumAll(&NAggregates,&j,1);
    Aggregates->NAggregates = NAggregates;
 
-   if ( mypid == 0 && printflag  < MueLoo_PrintLevel()) 
+   if ( mypid == 0 && printflag  < MueLu_PrintLevel()) 
    {
       printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",j);
@@ -454,7 +454,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
 // On input, the structure Aggregates describes already aggregated vertices.
 // The field ProcWinners[] indicates the processor owning the aggregate to
 // which a vertex is "definitively" assigned. If on entry 
-// ProcWinners[i] == MUELOO_UNASSIGNED, MueLoo_ArbitrateAndCommunicate() 
+// ProcWinners[i] == MUELOO_UNASSIGNED, MueLu_ArbitrateAndCommunicate() 
 // will arbitrate and decide which processor's aggregate really has
 // the vertex. If only one processor claims ownership (as in
 // the Uncoupled case), no real arbitration is needed. Otherwise,
@@ -462,7 +462,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
 //
 // This cleanup has many phases:
 //   
-//   Phase 1b: Invoke MueLoo_ArbitrateAndCommunicate() to ensure that
+//   Phase 1b: Invoke MueLu_ArbitrateAndCommunicate() to ensure that
 //             all processors have the same view of aggregated vertices
 //             (e.g., to which aggregate they have been assigend and
 //             which processor owns that aggregate).
@@ -470,13 +470,13 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
 //             to root nodes. Tentatively assign these to the aggregate
 //             associated with the root. Arbitrate any cases where 
 //             several processors claim the same vertex for one of 
-//             their aggregates via MueLoo_ArbitrateAndCommunicate().
+//             their aggregates via MueLu_ArbitrateAndCommunicate().
 //   Phase 3:  Try to create new aggregates if it looks like there are
 //             root node candidates which have many unaggregated neighbors.
 //             This decision to make a new aggregate is based on only local
 //             information. However, the new aggregate will be tentatively
 //             assigned any unaggregated ghost vertices. Arbitration is again
-//             done by MueLoo_ArbitrateAndCommunicate() where local vertices
+//             done by MueLu_ArbitrateAndCommunicate() where local vertices
 //             use a Weight[] = 2 and ghost vertices have Weight[] = 1.
 //             The basic idea is that after arbitration, each aggregate
 //             is guaranteed to keep all local vertices assigned in
@@ -504,7 +504,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
 //             local vertices that are sent to other processors or ghost
 //             vertices) in that each processor sharing the vertex
 //             will attempt to assign it to different aggregates. 
-//             MueLoo_ArbitrateAndCommunicate() is again used for arbitration
+//             MueLu_ArbitrateAndCommunicate() is again used for arbitration
 //             with the score being given as the weight. 
 //
 //             The main tricky thing occurs when v is tentatively added to y.
@@ -550,7 +550,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
 //                         .
 //                         .
 //                         .
-//                     MueLoo_ArbitrateAndCommunicate() i
+//                     MueLu_ArbitrateAndCommunicate() i
 //                }
 //
 //             New vertices are swept into aggregates only if their best
@@ -588,7 +588,7 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
 //             created.
 
 //  
-// One final note about the use of MueLoo_ArbitrateAndCommunicate(). No
+// One final note about the use of MueLu_ArbitrateAndCommunicate(). No
 // arbitration occurs (which means the ProcWinner[] is not set as well) for a
 // global shared id if and only if all Weights on all processors corresponding
 // to this id is zero. Thus, the general idea is that any global id where we
@@ -596,14 +596,14 @@ MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions
 // one processor which is nonzero. Any global id where we don't want any
 // arbitration should have all Weights set to 0.
 //
-// Note: ProcWinners is also set to MyPID() by MueLoo_ArbitrateAndCommunicate()
+// Note: ProcWinners is also set to MyPID() by MueLu_ArbitrateAndCommunicate()
 // for any nonshared gid's with a nonzero weight.
 //
 
-int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions, 
-                                  MueLoo_Aggregate *Aggregates,
+int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions, 
+                                  MueLu_Aggregate *Aggregates,
 				  char *label,
-                                  MueLoo_Graph *Graph)
+                                  MueLu_Graph *Graph)
 {
   int      Nphase1_agg, phase_one_aggregated, i, j, k, kk, nonaggd_neighbors;
   int      AdjacentAgg, total_aggs, *agg_incremented = NULL;
@@ -637,7 +637,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
   Epetra_Vector Weights(NonUniqueMap);
 
   // Aggregated vertices not "definitively" assigned to processors are
-  // arbitrated by MueLoo_ArbitrateAndCommunicate(). There is some
+  // arbitrated by MueLu_ArbitrateAndCommunicate(). There is some
   // additional logic to prevent losing root nodes in arbitration.
   
   Weights.PutScalar(0.);
@@ -649,7 +649,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
          }
      }
   }
-  MueLoo_ArbitrateAndCommunicate(Weights, ProcWinner, &Vtx2AggId, 
+  MueLu_ArbitrateAndCommunicate(Weights, ProcWinner, &Vtx2AggId, 
                 UniqueMap, Unique2NonUniqueWidget, true);
   Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 
@@ -669,7 +669,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
          }
        }
    }
-  MueLoo_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
+  MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
                 UniqueMap, Unique2NonUniqueWidget, true);
   Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 
@@ -722,12 +722,12 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
      }
    } /*for (i = 0; i < nvertices; i++)*/
 
-  MueLoo_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
+  MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
                 UniqueMap, Unique2NonUniqueWidget, true);
   Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 
 
-   if ( printflag < MueLoo_PrintLevel()) {
+   if ( printflag < MueLu_PrintLevel()) {
 
      Graph->EGraph->Comm().SumAll(&Nphase1_agg,&total_aggs,1);
      if (mypid == 0) {
@@ -743,7 +743,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
    }
 
    // Determine vertices that are not shared by setting Temp to all ones
-   // and doing MueLoo_NonUnique2NonUnique(..., Add). This sums values of all
+   // and doing MueLu_NonUnique2NonUnique(..., Add). This sums values of all
    // local copies associated with each Gid. Thus, sums > 1 are shared.
 
    Epetra_Vector Temp(NonUniqueMap);
@@ -751,7 +751,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
 
    Temp.PutScalar(1.);  
    TempOutput.PutScalar(0.); 
-   MueLoo_NonUnique2NonUnique(Temp, TempOutput, UniqueMap, 
+   MueLu_NonUnique2NonUnique(Temp, TempOutput, UniqueMap, 
                               Unique2NonUniqueWidget, Add);
    
    vector<bool> GidNotShared(exp_Nrows);
@@ -797,7 +797,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
 
       double PriorThreshold = 0.;
      for (int kkk = 0 ; kkk < MUELOO_PHASE4BUCKETS; kkk++) {
-       MueLoo_RootCandidates(nvertices, Vertex2AggId, Graph,
+       MueLu_RootCandidates(nvertices, Vertex2AggId, Graph,
             Candidates, NCandidates, NCandidatesGlobal);
 
 
@@ -847,7 +847,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
             }
          }
        }
-       MueLoo_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
+       MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
                 UniqueMap, Unique2NonUniqueWidget, true);
        Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
        Graph->EGraph->Comm().SumAll(&NAggregates,&NAggregatesGlobal,1);
@@ -857,7 +857,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
 
       Aggregates->NAggregates = NAggregates;
 
-      MueLoo_RemoveSmallAggs(Aggregates, min_nodes_per_aggregate, 
+      MueLu_RemoveSmallAggs(Aggregates, min_nodes_per_aggregate, 
                              Weights, UniqueMap, Unique2NonUniqueWidget);
       NAggregates = Aggregates->NAggregates;
      }   // one possibility
@@ -1012,7 +1012,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
          }
        }
      }
-     MueLoo_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
+     MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
                 UniqueMap, Unique2NonUniqueWidget, true);
      Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
    }
@@ -1069,11 +1069,11 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
          NAggregates++;
       }
    }
-   MueLoo_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
+   MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
                  UniqueMap, Unique2NonUniqueWidget, false);
 
 
-   if (printflag < MueLoo_PrintLevel()) {
+   if (printflag < MueLu_PrintLevel()) {
      Graph->EGraph->Comm().SumAll(&Nsingle,&Nsingle,1);
      Graph->EGraph->Comm().SumAll(&Nleftover,&Nleftover,1);
      Graph->EGraph->Comm().SumAll(&NAggregates,&total_aggs,1);
@@ -1098,7 +1098,7 @@ int MueLoo_AggregateLeftOvers(MueLoo_AggOptions *AggregateOptions,
 //     list[]      Same integers as on input but in a different order
 //                 that is determined randomly.
 //
-int MueLoo_RandomReorder(int *list, const Epetra_BlockMap &Map)
+int MueLu_RandomReorder(int *list, const Epetra_BlockMap &Map)
 {
    Epetra_Vector     RandVec(Map);
    Epetra_IntVector iRandVec(Map);
@@ -1150,7 +1150,7 @@ int MueLoo_RandomReorder(int *list, const Epetra_BlockMap &Map)
 //                              values associated with the same GlobalId are
 //                              combined into a unique value on all processors.
 //
-int MueLoo_NonUnique2NonUnique(const Epetra_Vector &source, 
+int MueLu_NonUnique2NonUnique(const Epetra_Vector &source, 
      Epetra_Vector &dest, const Epetra_Map &UniqueMap, 
      const Epetra_Import &Unique2NonUniqueWidget, const Epetra_CombineMode what)
 {
@@ -1233,7 +1233,7 @@ int MueLoo_NonUnique2NonUnique(const Epetra_Vector &source,
 //                                    its MyPID, the corresponding Companion
 //                                    is not altered.
 //
-int MueLoo_ArbitrateAndCommunicate(Epetra_Vector &Weight, 
+int MueLu_ArbitrateAndCommunicate(Epetra_Vector &Weight, 
                Epetra_IntVector &ProcWinner,
                Epetra_IntVector *Companion, const Epetra_Map &UniqueMap, 
                const Epetra_Import &Unique2NonUniqueWidget, const bool perturb)
@@ -1269,7 +1269,7 @@ int MueLoo_ArbitrateAndCommunicate(Epetra_Vector &Weight,
    Epetra_Vector  PostComm(Weight.Map());
    PostComm.PutScalar(0.0);
 
-   MueLoo_NonUnique2NonUnique(Weight, PostComm, UniqueMap, Unique2NonUniqueWidget, AbsMax);
+   MueLu_NonUnique2NonUnique(Weight, PostComm, UniqueMap, Unique2NonUniqueWidget, AbsMax);
 
    
    // Let every processor know who is the ProcWinner. For nonunique
@@ -1295,7 +1295,7 @@ int MueLoo_ArbitrateAndCommunicate(Epetra_Vector &Weight,
 
    for (int i=0; i < Weight.Map().NumMyElements(); i++) Weight[i]=PostComm[i]; 
 
-   MueLoo_NonUnique2NonUnique(CandidateWinners, PostComm, UniqueMap, Unique2NonUniqueWidget, AbsMax);
+   MueLu_NonUnique2NonUnique(CandidateWinners, PostComm, UniqueMap, Unique2NonUniqueWidget, AbsMax);
 
    // Note: 
    //                      associated CandidateWinners[]
@@ -1351,7 +1351,7 @@ int MueLoo_ArbitrateAndCommunicate(Epetra_Vector &Weight,
 
 // build a list of candidate root nodes (vertices not adjacent to already
 // aggregated vertices)
-int MueLoo_RootCandidates(int nvertices, int *Vertex2AggId, MueLoo_Graph *Graph,
+int MueLu_RootCandidates(int nvertices, int *Vertex2AggId, MueLu_Graph *Graph,
             int *Candidates, int &NCandidates, int &NCandidatesGlobal) {
 
    int rowi_N, *rowi_col, Adjacent;
@@ -1379,7 +1379,7 @@ int MueLoo_RootCandidates(int nvertices, int *Vertex2AggId, MueLoo_Graph *Graph,
 }
 
 // Compute sizes of all the aggregates.
-int MueLoo_ComputeAggSizes(MueLoo_Aggregate *Aggregates, int *AggSizes)
+int MueLu_ComputeAggSizes(MueLu_Aggregate *Aggregates, int *AggSizes)
 {
   int *Vertex2AggId;
   int NAggregates = Aggregates->NAggregates;
@@ -1393,7 +1393,7 @@ int MueLoo_ComputeAggSizes(MueLoo_Aggregate *Aggregates, int *AggSizes)
      if (ProcWinner[k] == mypid) AggSizes[Vertex2AggId[k]]++;
   }
 }
-int MueLoo_RemoveSmallAggs(MueLoo_Aggregate *Aggregates, int min_size,
+int MueLu_RemoveSmallAggs(MueLu_Aggregate *Aggregates, int min_size,
     Epetra_Vector &Weights, const Epetra_Map &UniqueMap, 
     const Epetra_Import &Unique2NonUniqueWidget) 
 {
@@ -1408,7 +1408,7 @@ int MueLoo_RemoveSmallAggs(MueLoo_Aggregate *Aggregates, int min_size,
   Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(Aggregates->Vertex2AggId);
   Aggregates->Vertex2AggId->ExtractView(&Vertex2AggId);
 
-  MueLoo_ComputeAggSizes(Aggregates, AggInfo);
+  MueLu_ComputeAggSizes(Aggregates, AggInfo);
 
   // Make a list of all aggregates indicating New AggId
   // Use AggInfo array for this.
@@ -1433,7 +1433,7 @@ int MueLoo_RemoveSmallAggs(MueLoo_Aggregate *Aggregates, int min_size,
   }
   NAggregates = NewNAggs;
 
-  MueLoo_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
+  MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
                 UniqueMap, Unique2NonUniqueWidget, true);
   Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 

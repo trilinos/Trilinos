@@ -1,23 +1,23 @@
 #include "ml_aggregate.h"
 #include "ml_epetra_utils.h"
-extern MueLoo_Graph  *MueLoo_BuildGraph(ML_Operator *Amatrix, char *name);
-extern int MueLoo_DestroyGraph(MueLoo_Graph *Graph);
+extern MueLu_Graph  *MueLu_BuildGraph(ML_Operator *Amatrix, char *name);
+extern int MueLu_DestroyGraph(MueLu_Graph *Graph);
 
 /**********************************************************************************/
-/* Function to execute new MueLoo aggregation via old ML                          */
-/* This function should go away soon as we should start executing new MueLoo      */
-/* aggregation inside MueLoo.
+/* Function to execute new MueLu aggregation via old ML                          */
+/* This function should go away soon as we should start executing new MueLu      */
+/* aggregation inside MueLu.
 /**********************************************************************************/
 int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag, 
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   MueLoo_Graph     *Graph;
-   Graph = MueLoo_BuildGraph(Amatrix,"ML_Uncoupled");
+   MueLu_Graph     *Graph;
+   Graph = MueLu_BuildGraph(Amatrix,"ML_Uncoupled");
 
-   if (Graph->EGraph->Comm().MyPID() == 0 && ml_ag->print_flag  < MueLoo_PrintLevel())
+   if (Graph->EGraph->Comm().MyPID() == 0 && ml_ag->print_flag  < MueLu_PrintLevel())
        printf("ML_Aggregate_CoarsenUncoupled : \n");
 
-   MueLoo_AggOptions AggregateOptions;
+   MueLu_AggOptions AggregateOptions;
 
    AggregateOptions.print_flag                 = ml_ag->print_flag;
    AggregateOptions.min_nodes_per_aggregate    = ml_ag->min_nodes_per_aggregate;
@@ -26,12 +26,12 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    AggregateOptions.phase3_agg_creation        = ml_ag->phase3_agg_creation;
 
 
-   MueLoo_Aggregate *Aggregates = NULL;
+   MueLu_Aggregate *Aggregates = NULL;
 
-   Aggregates = MueLoo_Aggregate_CoarsenUncoupled(&AggregateOptions,Graph);
+   Aggregates = MueLu_Aggregate_CoarsenUncoupled(&AggregateOptions,Graph);
 
 
-   MueLoo_AggregateLeftOvers(&AggregateOptions, Aggregates, "UC_CleanUp", Graph);
+   MueLu_AggregateLeftOvers(&AggregateOptions, Aggregates, "UC_CleanUp", Graph);
 
 //#ifdef out
 Epetra_IntVector Final( Aggregates->Vertex2AggId->Map() );
@@ -41,23 +41,23 @@ printf("finals\n");
 cout << Final << endl; sleep(2);
 //#endif
 
-   MueLoo_AggregateDestroy(Aggregates); 
-   MueLoo_DestroyGraph(Graph);
+   MueLu_AggregateDestroy(Aggregates); 
+   MueLu_DestroyGraph(Graph);
    return 0;
 }
 
 /**********************************************************************************/
 /* Function to take an ML_Operator (which actually wraps an Epetra_CrsMatrix) and */
 /* extract out the Epetra_CrsGraph. My guess is that this should be changed soon  */
-/* so that the first argument is some MueLoo API Operator.                        */
+/* so that the first argument is some MueLu API Operator.                        */
 /**********************************************************************************/
-MueLoo_Graph *MueLoo_BuildGraph(ML_Operator *Amatrix, char *name)
+MueLu_Graph *MueLu_BuildGraph(ML_Operator *Amatrix, char *name)
 {
-  MueLoo_Graph *Graph;
+  MueLu_Graph *Graph;
   double *dtmp = NULL;
   Epetra_CrsMatrix *A;
 
-  Graph = (MueLoo_Graph *) malloc(sizeof(MueLoo_Graph));
+  Graph = (MueLu_Graph *) malloc(sizeof(MueLu_Graph));
   Graph->EGraph     = NULL;
   Graph->name = NULL;
   Graph->name       = (char *) malloc(sizeof(char)*80); strcpy(Graph->name,name);
@@ -71,7 +71,7 @@ MueLoo_Graph *MueLoo_BuildGraph(ML_Operator *Amatrix, char *name)
   else {
      Epetra_ML_GetCrsDataptrs(Amatrix, &dtmp, &(Graph->VertexNeighbors),&(Graph->VertexNeighborsPtr));
      if ( Graph->VertexNeighborsPtr == NULL) {
-        printf("MueLoo_BuildGraph: Only functions for an Epetra_CrsMatrix.\n");
+        printf("MueLu_BuildGraph: Only functions for an Epetra_CrsMatrix.\n");
         exit(1);
       }
       Graph->NEdges      = (Graph->VertexNeighborsPtr)[Amatrix->getrow->Nrows];
@@ -85,7 +85,7 @@ MueLoo_Graph *MueLoo_BuildGraph(ML_Operator *Amatrix, char *name)
   }
   return Graph;
 }
-int MueLoo_DestroyGraph(MueLoo_Graph *Graph)
+int MueLu_DestroyGraph(MueLu_Graph *Graph)
 {
    if ( Graph != NULL) {
       if (Graph->name != NULL) free(Graph->name);

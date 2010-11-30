@@ -2,12 +2,12 @@
 #define MUELU_GRAPH_HPP
 
 /******************************************************************************
-   MueLoo representation of a graph. Some of this is redundant with an 
+   MueLu representation of a graph. Some of this is redundant with an 
    Epetra_CrsGraph so we might want to clean up. In particular, things
    like VertexNeighbors, NVertices, NEdges, etc. are available somewhere 
    in EGraph (though perhaps protected).              
 ******************************************************************************/
-typedef struct MueLoo_Graph_Struct
+typedef struct MueLu_Graph_Struct
 {
    char *name;
    int  NVertices, NEdges, NGhost;
@@ -16,6 +16,6 @@ typedef struct MueLoo_Graph_Struct
                               /* corresponds to vertices Adjacent to vertex */
                               /* i in graph                                 */ 
    const Epetra_CrsGraph *EGraph;
-} MueLoo_Graph;
+} MueLu_Graph;
 
 #endif
