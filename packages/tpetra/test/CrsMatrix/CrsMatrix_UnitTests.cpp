@@ -8,6 +8,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_TypeTraits.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -26,7 +27,6 @@
 #ifdef HAVE_KOKKOS_THRUST
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
-
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
@@ -99,6 +99,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
+  using Tpetra::createNonContigMapWithNode;
   using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
@@ -244,6 +245,8 @@ namespace {
   //
   // UNIT TESTS
   // 
+
+  #include "CrsMatrix_NonlocalAfterResume.hpp"
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, BadCalls, LO, GO, Scalar, Node )
@@ -812,13 +815,6 @@ namespace {
         TEST_THROW( matrix.insertGlobalValues(myrowind,arrayView(&myrowind,1),tuple(ST::one())), std::runtime_error );
       }
       matrix.fillComplete(os);
-      // check that inserting global entries throws (inserting local entries is still allowed)
-      {
-        matrix.resumeFill();
-        Array<GO> zero(0); Array<Scalar> vzero(0);
-        TEST_THROW( matrix.insertGlobalValues(0,zero,vzero), std::runtime_error );
-        matrix.fillComplete(os);
-      }
       // check for throws and no-throws/values
       TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
       TEST_THROW( matrix.getLocalRowCopy(    0       ,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
@@ -1838,10 +1834,6 @@ namespace {
 //
 
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
 
@@ -1862,6 +1854,7 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph_replaceLocal, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NonlocalAfterResume, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AlphaBetaMultiply, LO, GO, SCALAR, NODE ) \
@@ -1873,6 +1866,10 @@ typedef std::complex<double> ComplexDouble;
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )
+
+typedef typename Kokkos::DefaultNode::DefaultNodeType DefaultNode;
+#define UNIT_TEST_DEFAULTNODE(LO, GO, SCALAR) \
+      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, DefaultNode )
 
 #ifdef HAVE_KOKKOS_TBB
 #define UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
@@ -1927,9 +1924,7 @@ typedef std::complex<double> ComplexDouble;
 #endif
 
 #define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
-    UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
-    UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
-    UNIT_TEST_TPINODE(LO, GO, SCALAR)
+    UNIT_TEST_DEFAULTNODE(LO, GO, SCALAR) 
 
 #define UNIT_TEST_FLOAT(LO, GO) \
     UNIT_TEST_ALLCPUNODES(LO, GO, float) \
@@ -1951,16 +1946,8 @@ typedef std::complex<double> ComplexDouble;
   UNIT_TEST_DOUBLE(int, int)
 #endif
 
-#if !defined(FAST_DEVELOPMENT_UNIT_TEST_BUILD)
-# if defined(HAVE_TPETRA_INST_FLOAT)
-    UNIT_TEST_FLOAT(int, int)
-# endif 
 # if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
     UNIT_TEST_COMPLEX_FLOAT(int, int)
 # endif 
-# if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-    UNIT_TEST_COMPLEX_DOUBLE(int, int)
-# endif 
-#endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

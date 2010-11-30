@@ -45,11 +45,6 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 
-/**
-  \example LocalMatOpExample.cpp
-  An example using a different sparse mat-vec with Tpetra::CrsMatrix and Tpetra::CrsGraph.
- */
-
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
   // struct for i,j,v triplets
@@ -154,15 +149,13 @@ namespace Tpetra {
       //! Insert matrix entries, using global IDs.
       /** All index values must be in the global space. 
           \pre \c globalRow exists as an ID in the global row map
-          \pre <tt>isLocallyIndexed() == false</tt>
           \pre <tt>isStorageOptimized() == false</tt>
-
-          \post <tt>isGloballyIndexed() == true</tt>
 
           \note If \c globalRow does not belong to the matrix on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local matrix. 
           \note If the matrix row already contains values at the indices corresponding to values in \c cols, then the new values will be summed with the old values; this may happen at insertion or during the next call to fillComplete().
           \note If <tt>hasColMap() == true</tt>, only (cols[i],vals[i]) where cols[i] belongs to the column map on this node will be inserted into the matrix.
-        */
+          \note If <tt>isLocallyIndexed() == true</tt>, then the global indices will be translated to local indices via the column map; indices not present in the column map will be discarded.
+       */
       void insertGlobalValues(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &cols, const ArrayView<const Scalar> &vals);
 
       //! Insert matrix entries, using local IDs.
@@ -643,5 +636,15 @@ namespace Tpetra {
   createCrsMatrix(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
 } // namespace Tpetra
+
+/**
+  \example LocalMatOpExample.cpp
+  An example using a different sparse mat-vec with Tpetra::CrsMatrix and Tpetra::CrsGraph.
+ */
+
+/** 
+  \example CrsMatrix_NonlocalAfterResume.hpp
+  An example for inserting non-local entries into a Tpetra::CrsMatrix using Tpetra::CrsMatrix::insertGlobalValues(), with multiple calls to Tpetra::CrsMatrix::fillComplete().
+ */
 
 #endif
