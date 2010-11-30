@@ -108,8 +108,8 @@ typedef long ZOLTAN_ID_TYPE;
 #ifdef ZOLTAN_ID_TYPE_LONG_LONG
 
 typedef long long ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG
-#define zoltan_mpi_id_datatype_name "MPI_LONG_LONG"
+#define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG_INT
+#define zoltan_mpi_id_datatype_name "MPI_LONG"
 #define zoltan_id_datatype_name "long long"
 #define ZOLTAN_ID_SPEC  "%Ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
