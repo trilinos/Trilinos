@@ -41,46 +41,74 @@
 #include <stdexcept>
 #include <cstdlib>
 #include <ostream>
-#include <Kokkos_CudaMap.hpp>
+#include <Kokkos_HostMappedArray.hpp>
 
 namespace Kokkos {
+namespace {
 
-/*--------------------------------------------------------------------------*/
-
-CudaDevice::CudaDevice()
-{}
-
-CudaDevice::~CudaDevice()
-{}
-
-void CudaDevice::deallocate( void * pointer )
+void device_free( void * pointer_on_device )
 {
-  cudaFree( pointer );
+  free( pointer_on_device );
 }
 
-void * CudaDevice::allocate( CudaDevice::size_type  sizeof_value ,
-                             CudaDevice::size_type  chunk_count ,
-                             CudaDevice::size_type  work_count )
+void * device_allocate( int sizeof_value ,
+                        int chunk_count ,
+                        int work_count )
 {
-  void * pointer = NULL ;
+  void * pointer_on_device = NULL ;
 
-  // TODO: Error check return value
-  cudaMalloc( & pointer , chunk_count * work_count * sizeof_value );
+  pointer_on_device = calloc( work_count * chunk_count , sizeof_value );
 
-  // TODO: Initialize memory to zero.
-
-  return pointer ;
+  return pointer_on_device ;
 }
 
-/*--------------------------------------------------------------------------*/
+}
 
-CudaMap::CudaMap( CudaMap::size_type parallel_work_count )
-  : m_device()
-  , m_arrays( m_device , parallel_work_count )
+HostMap::HostMap( BaseMapInterface::size_type parallel_work_count )
+  : m_allocated_arrays()
+  , m_parallel_work_count( parallel_work_count )
 {}
 
-CudaMap::~CudaMap()
-{}
+HostMap::~HostMap()
+{
+  while ( ! m_allocated_arrays.empty() ) {
+    void * ptr = m_allocated_arrays.back().clear( m_allocated_arrays );
+    device_free( ptr );
+  }
+}
+
+void HostMap::deallocate( BaseMappedArray & array )
+{
+  // Clear all views and destroy the owned view
+  void * ptr = array.clear( m_allocated_arrays );
+
+  device_free( ptr );
+}
+
+void HostMap::allocate( BaseMappedArray                 & array ,
+                        BaseMapInterface::size_type       sizeof_value ,
+                        BaseMapInterface::size_type       rank ,
+                        const BaseMapInterface::size_type * const dimension )
+{
+  array.require_not_allocated();
+
+  size_type dim[8] ;
+
+  size_type n = 1 ;
+
+  for ( size_type i = 0 ; i < rank - 1 ; ++i ) {
+    n *= ( dim[i] = dimension[i] );
+  }
+
+  dim[ rank - 1 ] = m_parallel_work_count ;
+
+  void * const pointer =
+    device_allocate( sizeof_value , n , m_parallel_work_count );
+
+  if ( pointer ) {
+    array.assign( m_allocated_arrays , this , pointer , rank , dim );
+  }
+}
 
 } // namespace Kokkos
 

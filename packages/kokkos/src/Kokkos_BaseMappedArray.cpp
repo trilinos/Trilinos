@@ -47,7 +47,6 @@ namespace Kokkos {
 
 //----------------------------------------------------------------------------
 
-inline
 void BaseMappedArray::require_not_owned_view() const
 {
   if ( m_map_on_host ) {
@@ -56,49 +55,102 @@ void BaseMappedArray::require_not_owned_view() const
   }
 }
 
-inline
-void BaseMappedArray::require_next_exists() const
+void BaseMappedArray::require_not_allocated() const
 {
-  if ( NULL == m_next_on_host ) {
-    std::string msg("Kokkos::BasedMappedArray::require_next_exists FAILED");
-    throw std::logic_error( msg );
+  if ( m_ptr_on_device ) {
+    std::string msg("Kokkos::BasedMappedArray::require_not_allocated FAILED");
+    throw std::runtime_error( msg );
   }
 }
 
 //----------------------------------------------------------------------------
 
-inline
-BaseMappedArray *
-BaseMappedArray::next_on_host() const
+BaseMappedArray::BaseMappedArray()
+  : m_map_on_host( NULL )
+  , m_next_on_host( this )
+  , m_ptr_on_device( NULL )
+  , m_rank( 0 )
 {
-  require_next_exists();
-  return m_next_on_host ;
+  m_dimension[0] = 0 ;
+  m_dimension[1] = 0 ;
+  m_dimension[2] = 0 ;
+  m_dimension[3] = 0 ;
+  m_dimension[4] = 0 ;
+  m_dimension[5] = 0 ;
+  m_dimension[6] = 0 ;
+  m_dimension[7] = 0 ;
 }
 
-// Only non-owned views are ever queried for the owned view.
-// Only the owned view has a non-null 'm_map'.
-BaseMappedArray *
-BaseMappedArray::owned_view()
+  /** \brief  Construct a view of the array */
+BaseMappedArray::BaseMappedArray( const BaseMappedArray & rhs )
+  : m_map_on_host( NULL )
+  , m_next_on_host(  rhs.m_next_on_host )
+  , m_ptr_on_device( rhs.m_ptr_on_device )
+  , m_rank(          rhs.m_rank )
+{
+  m_dimension[0] = rhs.m_dimension[0] ;
+  m_dimension[1] = rhs.m_dimension[1] ;
+  m_dimension[2] = rhs.m_dimension[2] ;
+  m_dimension[3] = rhs.m_dimension[3] ;
+  m_dimension[4] = rhs.m_dimension[4] ;
+  m_dimension[5] = rhs.m_dimension[5] ;
+  m_dimension[6] = rhs.m_dimension[6] ;
+  m_dimension[7] = rhs.m_dimension[7] ;
+
+  const_cast<BaseMappedArray&>(rhs).m_next_on_host = this ;
+}
+
+BaseMappedArray &
+BaseMappedArray::operator = ( const BaseMappedArray & rhs )
+{
+  require_not_owned_view();
+
+  prev_on_host()->m_next_on_host = m_next_on_host ;
+
+  m_next_on_host  = rhs.m_next_on_host ;
+  m_ptr_on_device = rhs.m_ptr_on_device ;
+  m_rank          = rhs.m_rank ;
+  m_dimension[0]  = rhs.m_dimension[0] ;
+  m_dimension[1]  = rhs.m_dimension[1] ;
+  m_dimension[2]  = rhs.m_dimension[2] ;
+  m_dimension[3]  = rhs.m_dimension[3] ;
+  m_dimension[4]  = rhs.m_dimension[4] ;
+  m_dimension[5]  = rhs.m_dimension[5] ;
+  m_dimension[6]  = rhs.m_dimension[6] ;
+  m_dimension[7]  = rhs.m_dimension[7] ;
+
+  const_cast<BaseMappedArray&>(rhs).m_next_on_host = this ;
+  
+  return *this ;
+}
+
+BaseMappedArray::~BaseMappedArray()
+{
+  prev_on_host()->m_next_on_host = m_next_on_host ;
+
+  m_map_on_host   = NULL ;
+  m_next_on_host  = this ;
+  m_ptr_on_device = NULL ;
+  m_rank          = 0 ;
+  m_dimension[0]  = 0 ;
+  m_dimension[1]  = 0 ;
+  m_dimension[2]  = 0 ;
+  m_dimension[3]  = 0 ;
+  m_dimension[4]  = 0 ;
+  m_dimension[5]  = 0 ; 
+  m_dimension[6]  = 0 ;
+  m_dimension[7]  = 0 ;
+}
+
+//----------------------------------------------------------------------------
+
+BaseMapInterface *
+BaseMappedArray::base_map() const
 {
   require_not_owned_view();
 
   for ( BaseMappedArray *
-        ptr = next_on_host() ; this != ptr ; ptr = ptr->next_on_host() ) {
-    if ( ptr->m_map_on_host ) { return ptr ; }
-  }
-
-  return NULL ;
-}
-
-// Only non-owned views are ever queried for the map.
-// Only the owned view has a non-null 'm_map'.
-BaseMappedArrayRepository *
-BaseMappedArray::repository() const
-{
-  require_not_owned_view();
-
-  for ( BaseMappedArray *
-        ptr = next_on_host() ; this != ptr ; ptr = ptr->next_on_host() ) {
+        ptr = m_next_on_host ; this != ptr ; ptr = ptr->m_next_on_host ) {
     if ( ptr->m_map_on_host ) { return ptr->m_map_on_host ; }
   }
 
@@ -108,59 +160,100 @@ BaseMappedArray::repository() const
 BaseMappedArray *
 BaseMappedArray::prev_on_host() const
 {
-  BaseMappedArray * ptr = next_on_host() ;
-  for ( ; this != ptr->m_next_on_host ; ptr = ptr->next_on_host() );
+  BaseMappedArray * ptr = m_next_on_host ;
+  for ( ; this != ptr->m_next_on_host ; ptr = ptr->m_next_on_host );
   return ptr ;
 }
 
-void BaseMappedArray::clear()
-{
-  m_map_on_host   = NULL ;
-  m_ptr_on_device = NULL ;
-  m_rank          = 0 ;
-  m_dimension[0]  = 0 ;
-  m_dimension[1]  = 0 ;
-  m_dimension[2]  = 0 ;
-  m_dimension[3]  = 0 ;
-  m_dimension[4]  = 0 ;
-  m_dimension[5]  = 0 ;
-  m_dimension[6]  = 0 ;
-  m_dimension[7]  = 0 ;
+//----------------------------------------------------------------------------
 
-  for ( BaseMappedArray *
-        a = next_on_host() ; a != this ; a = a->next_on_host() ) {
-    a->m_ptr_on_device = NULL ;
-    a->m_rank          = 0 ;
-    a->m_dimension[0]  = 0 ;
-    a->m_dimension[1]  = 0 ;
-    a->m_dimension[2]  = 0 ;
-    a->m_dimension[3]  = 0 ;
-    a->m_dimension[4]  = 0 ;
-    a->m_dimension[5]  = 0 ;
-    a->m_dimension[6]  = 0 ;
-    a->m_dimension[7]  = 0 ;
+void * BaseMappedArray::clear( std::list< BaseMappedArray > & mapped_arrays )
+{
+  void * const ptr = m_ptr_on_device ;
+
+  if ( ptr ) {
+
+    { // Destroy the owned view, any other views are now not-owned
+
+      BaseMappedArray * owned = this ;
+
+      if ( NULL == owned->m_map_on_host ) {
+        for ( owned = m_next_on_host ;
+              owned != this && NULL == owned->m_map_on_host ;
+              owned = owned->m_next_on_host );
+      }
+
+      std::list< BaseMappedArray >::iterator i = mapped_arrays.begin();
+
+      while ( i != mapped_arrays.end() && owned != & *i ) { ++i ; }
+
+      if ( i == mapped_arrays.end() ) {
+        std::string msg("Kokkos::BaseMappedArray::clear FAILED");
+        throw std::logic_error( msg );
+      }
+
+      mapped_arrays.erase( i );
+    }
+
+    m_ptr_on_device = NULL ;
+    m_rank          = 0 ;
+    m_dimension[0]  = 0 ;
+    m_dimension[1]  = 0 ;
+    m_dimension[2]  = 0 ;
+    m_dimension[3]  = 0 ;
+    m_dimension[4]  = 0 ;
+    m_dimension[5]  = 0 ;
+    m_dimension[6]  = 0 ;
+    m_dimension[7]  = 0 ;
+
+    for ( BaseMappedArray *
+          a = m_next_on_host ; a != this ; a = a->m_next_on_host ) {
+      a->m_ptr_on_device = NULL ;
+      a->m_rank          = 0 ;
+      a->m_dimension[0]  = 0 ;
+      a->m_dimension[1]  = 0 ;
+      a->m_dimension[2]  = 0 ;
+      a->m_dimension[3]  = 0 ;
+      a->m_dimension[4]  = 0 ;
+      a->m_dimension[5]  = 0 ;
+      a->m_dimension[6]  = 0 ;
+      a->m_dimension[7]  = 0 ;
+    }
   }
+
+  return ptr ;
 }
 
 void BaseMappedArray::assign(
-  BaseMappedArrayRepository * const map , void * const ptr_on_device , 
+  std::list< BaseMappedArray > & mapped_arrays ,
+  BaseMapInterface * const map ,
+  void * const ptr_on_device , 
   const BaseMappedArray::size_type rank ,
   const BaseMappedArray::size_type dimension[] )
 {
-  m_map_on_host   = map ;
-  m_ptr_on_device = ptr_on_device ;
-  m_rank          = rank ;
-  m_dimension[0]  = dimension[0] ;
-  m_dimension[1]  = dimension[1] ;
-  m_dimension[2]  = dimension[2] ;
-  m_dimension[3]  = dimension[3] ;
-  m_dimension[4]  = dimension[4] ;
-  m_dimension[5]  = dimension[5] ;
-  m_dimension[6]  = dimension[6] ;
-  m_dimension[7]  = dimension[7] ;
+  require_not_allocated();
+
+  // Create the owned view of the input array
+  mapped_arrays.push_back( *this );
+
+  BaseMappedArray & owned = mapped_arrays.back();
+
+  // Assigned the owned view to this host map,
+
+  owned.m_map_on_host   = map ;
+  owned.m_ptr_on_device = ptr_on_device ;
+  owned.m_rank          = rank ;
+  owned.m_dimension[0]  = dimension[0] ;
+  owned.m_dimension[1]  = dimension[1] ;
+  owned.m_dimension[2]  = dimension[2] ;
+  owned.m_dimension[3]  = dimension[3] ;
+  owned.m_dimension[4]  = dimension[4] ;
+  owned.m_dimension[5]  = dimension[5] ;
+  owned.m_dimension[6]  = dimension[6] ;
+  owned.m_dimension[7]  = dimension[7] ;
 
   for ( BaseMappedArray *
-        a = next_on_host() ; a != this ; a = a->next_on_host() ) {
+        a = owned.m_next_on_host ; a != & owned ; a = a->m_next_on_host ) {
     a->m_ptr_on_device = ptr_on_device ;
     a->m_rank          = rank ;
     a->m_dimension[0]  = dimension[0] ;
@@ -175,104 +268,6 @@ void BaseMappedArray::assign(
 }
 
 /*--------------------------------------------------------------------------*/
-
-BaseMappedArrayRepository::BaseMappedArrayRepository( BaseDeviceMemory & device ,
-                              BaseMappedArrayRepository::size_type parallel_work_count )
-  : m_base_device( device )
-  , m_allocated_arrays()
-  , m_parallel_work_count( parallel_work_count )
-{}
-
-BaseMappedArrayRepository::~BaseMappedArrayRepository()
-{
-  // Deallocate all member arrays.
-  for ( std::list< BaseMappedArray >::iterator
-        i  = m_allocated_arrays.begin() ;
-        i != m_allocated_arrays.end() ; ++i ) {
-
-    void * const ptr = i->pointer_on_device<void>();
-
-    // Assign the pointer and chunk size to zero
-    i->clear();
-
-    if ( ptr ) { m_base_device.deallocate( ptr ); }
-  }
-
-  m_allocated_arrays.clear();
-}
-
-void BaseMappedArrayRepository::deallocate( BaseMappedArray & array )
-{
-  std::list< BaseMappedArray >::iterator
-    i = require_array_is_member( array );
-
-  void * const ptr = i->pointer_on_device<void>();
-
-  // Assign the pointer and chunk size to zero
-  i->clear();
-
-  if ( ptr ) { m_base_device.deallocate( ptr ); }
-
-  // Destroy the owned view, any other views are now not-owned
-  m_allocated_arrays.erase( i );
-}
-
-void BaseMappedArrayRepository::allocate( BaseMappedArray              & array ,
-                              BaseMappedArrayRepository::size_type       sizeof_value ,
-                              BaseMappedArrayRepository::size_type       rank ,
-                              const BaseMappedArrayRepository::size_type dimension[] )
-{
-  require_array_is_not_owned( array );
-
-  size_type dim[8] ;
-
-  size_type n = 1 ;
-
-  for ( size_type i = 0 ; i < rank - 1 ; ++i ) {
-    n *= ( dim[i] = dimension[i] );
-  }
-
-  dim[ rank - 1 ] = m_parallel_work_count ;
-
-  // Allocation and initialization
-
-  void * const pointer =
-    n ? m_base_device.allocate( sizeof_value , n , m_parallel_work_count )
-      : NULL ;
-
-  // Create an owned view of the input array
-  m_allocated_arrays.push_back( array );
-
-  // Assigned the owned view to this host map,
-  // assignment operator pushes the pointer and chunking to
-  // the other views.
-  m_allocated_arrays.back().assign( this , pointer , rank , dim );
-}
-
-void BaseMappedArrayRepository::require_array_is_not_owned( BaseMappedArray & array )
-{
-  if ( NULL != array.owned_view() ) {
-    std::string msg( "Kokkos::BaseMappedArrayRepository::allocate FAILED required condition that array is not already allocated" );
-    throw std::runtime_error( msg );
-  }
-}
-
-std::list< BaseMappedArray >::iterator
-BaseMappedArrayRepository::require_array_is_member( BaseMappedArray & array )
-{
-  BaseMappedArray * const owned = array.owned_view();
-
-  std::list< BaseMappedArray >::iterator i = m_allocated_arrays.begin();
-
-  while ( i != m_allocated_arrays.end() && owned != & *i ) { ++i ; }
-
-  if ( i == m_allocated_arrays.end() ) {
-    std::string msg("Kokkos::BaseMappedArrayRepository::deallocate FAILED require_array_is_member");
-     throw std::logic_error( msg );
-  }
-
-  return i ;
-}
 
 } // namespace Kokkos
 
