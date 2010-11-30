@@ -23,6 +23,7 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Headers)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/MueCentral)
 
+#TODO: APPEND_GLOB(HEADERS */*.hpp) instead ?
 APPEND_SET(HEADERS
   Headers/MueLu_Version.hpp
   Headers/MueLu_ConfigDefs.hpp
@@ -35,8 +36,13 @@ APPEND_SET(HEADERS
   Transfers/MueLu_TransPFactory.hpp
   Smoothers/MueLu_SmootherFactory.hpp
   Smoothers/MueLu_Smoother.hpp
+  Graph/MueLu_AggAlgorithm.hpp
+  Graph/MueLu_AggOptions.hpp
+  Graph/MueLu_Aggregate.hpp
+  Graph/MueLu_Graph.hpp
   )
 
+#TODO: APPEND_GLOB(SOURCES */*.cpp) instead ?
 APPEND_SET(SOURCES
   mac.cpp
   )

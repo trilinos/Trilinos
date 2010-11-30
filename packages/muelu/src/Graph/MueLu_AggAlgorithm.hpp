@@ -32,6 +32,12 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+
+#include "MueLu_AggOptions.hpp"
+#include "MueLu_Aggregate.hpp"
+#include "MueLu_Graph.hpp"
+
+
 using namespace std;
 
 int MueLu_PrintLevel() { return 7; }   /* Normally this should be some general*/
@@ -91,50 +97,6 @@ extern int MueLu_RemoveSmallAggs(MueLu_Aggregate *Aggregates, int min_size,
 extern int MueLu_ComputeAggSizes(MueLu_Aggregate *Aggregates, int *AggSizes);
 
 
-#define MUELOO_AGGR_READY    -11  /* indicates that a node is available to be*/
-                                  /* selected as a root node of an aggregate */
-#define MUELOO_AGGR_NOTSEL   -12  /* indicates that a node has been rejected */
-                                  /* as a root node. This could perhaps be   */
-                                  /* because if this node had been selected a*/
-                                  /* small aggregate would have resulted.    */
-#define MUELOO_AGGR_SELECTED -13  /* indicates that a node has been assigned */
-                                  /* to an aggregate.                        */
-#define MUELOO_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
-                                  /* any aggregate.                          */
-#define MUELOO_UNASSIGNED    -1   /* indicates a vertex is not yet claimed   */
-                                  /* by a processor during aggregation.      */
-                                  /* Note, it is possible at                 */
-                                  /* this stage that some processors may have*/
-                                  /* claimed their copy of a vertex for one  */
-                                  /* of their aggregates.  However, some     */
-                                  /* arbitration still needs to occur.       */
-                                  /* The corresponding ProcWinner[]'s remain */
-                                  /* as MUELOO_UNASSIGNED until              */
-                                  /* MueLu_ArbitrateAndCommunicate() is     */
-                                  /* invoked to arbitrate.                   */
-#define MUELOO_NOSCORE       -100 /* indicates that a quality score has not  */
-                                  /* yet been assigned when determining to   */
-                                  /* which existing aggregate a vertex       */
-                                  /* should be assigned.                     */
-#define MUELOO_DISTONE_VERTEX_WEIGHT 100  /* Weights associated with all     */
-                                  /* vertices that have a direct connection  */
-                                  /* to the aggregate root.                  */
-#define INCR_SCALING 3            /* Determines how much of a penalty should */
-                                  /* be deduced from a score during Phase 5  */
-                                  /* for each Phase 5 vertex already added   */
-                                  /* to this aggregate. Specifically the     */
-                                  /* penalty associated with aggregate y is  */
-                                  /*   max (INCR_SCALING*NNewVtx,            */
-                                  /*        UnpenalizedScore*(1-             */
-                                  /*              MUELOO_PENALTYFACTOR))*/
-                                  /* where NNewVtx is the number of phase 5  */
-                                  /* vertices already assigned to y.         */
-#define MUELOO_PENALTYFACTOR .30 /* determines maximum allowable        */
-                                  /* percentage of a score that can be       */
-                                  /* deducted from this score for having     */
-                                  /* already enlargened an aggregate to      */
-                                  /* which we are contemplated adding another*/
-                                  /* vertex.  Should be between 0 and 1.     */
 
 
 /* ************************************************************************ */
@@ -168,7 +130,8 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
 {
    int     i, j, k, m, kk, inode = 0, jnode, length, Nrows;
    int     select_flag, NAggregates, index, mypid, inode2;
-   int     *Vertex2AggId = NULL, *itmp_array = NULL, count;
+   int     *Vertex2AggId = NULL; //, *itmp_array = NULL,
+   int     count;
    int     *aggr_stat = NULL, ordering;
    double  printflag;
    int     *randomVector = NULL, *aggr_cnt_array = NULL;
@@ -178,7 +141,9 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
    MueLu_SuperNode  *aggr_head=NULL, *aggr_curr=NULL, *supernode=NULL;
    MueLu_Aggregate *Aggregates=NULL;
 
-   Aggregates = MueLu_AggregateCreate(Graph, "Uncoupled");
+   std::string name = "Uncoupled";
+
+   Aggregates = MueLu_AggregateCreate(Graph, name.c_str());
    Aggregates->Vertex2AggId->ExtractView(&Vertex2AggId);
    
    /* ============================================================= */
@@ -1347,6 +1312,7 @@ int MueLu_ArbitrateAndCommunicate(Epetra_Vector &Weight,
       delete [] MyGids;
    }
 
+   return 0; //TODO
 }
 
 // build a list of candidate root nodes (vertices not adjacent to already
@@ -1392,7 +1358,10 @@ int MueLu_ComputeAggSizes(MueLu_Aggregate *Aggregates, int *AggSizes)
   for (int k = 0; k < N; k++ ) {
      if (ProcWinner[k] == mypid) AggSizes[Vertex2AggId[k]]++;
   }
+
+  return 0; //TODO
 }
+
 int MueLu_RemoveSmallAggs(MueLu_Aggregate *Aggregates, int min_size,
     Epetra_Vector &Weights, const Epetra_Map &UniqueMap, 
     const Epetra_Import &Unique2NonUniqueWidget) 
@@ -1444,4 +1413,6 @@ int MueLu_RemoveSmallAggs(MueLu_Aggregate *Aggregates, int min_size,
             ProcWinner[i] = MUELOO_UNASSIGNED;
   }
   Aggregates->NAggregates = NAggregates;
+
+  return 0; //TODO
 }

@@ -1,6 +1,53 @@
 #ifndef MUELU_AGGREGATE_HPP
 #define MUELU_AGGREGATE_HPP
 
+#include "MueLu_Graph.hpp"
+
+#define MUELOO_AGGR_READY    -11  /* indicates that a node is available to be*/
+                                  /* selected as a root node of an aggregate */
+#define MUELOO_AGGR_NOTSEL   -12  /* indicates that a node has been rejected */
+                                  /* as a root node. This could perhaps be   */
+                                  /* because if this node had been selected a*/
+                                  /* small aggregate would have resulted.    */
+#define MUELOO_AGGR_SELECTED -13  /* indicates that a node has been assigned */
+                                  /* to an aggregate.                        */
+#define MUELOO_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
+                                  /* any aggregate.                          */
+#define MUELOO_UNASSIGNED    -1   /* indicates a vertex is not yet claimed   */
+                                  /* by a processor during aggregation.      */
+                                  /* Note, it is possible at                 */
+                                  /* this stage that some processors may have*/
+                                  /* claimed their copy of a vertex for one  */
+                                  /* of their aggregates.  However, some     */
+                                  /* arbitration still needs to occur.       */
+                                  /* The corresponding ProcWinner[]'s remain */
+                                  /* as MUELOO_UNASSIGNED until              */
+                                  /* MueLu_ArbitrateAndCommunicate() is     */
+                                  /* invoked to arbitrate.                   */
+#define MUELOO_NOSCORE       -100 /* indicates that a quality score has not  */
+                                  /* yet been assigned when determining to   */
+                                  /* which existing aggregate a vertex       */
+                                  /* should be assigned.                     */
+#define MUELOO_DISTONE_VERTEX_WEIGHT 100  /* Weights associated with all     */
+                                  /* vertices that have a direct connection  */
+                                  /* to the aggregate root.                  */
+#define INCR_SCALING 3            /* Determines how much of a penalty should */
+                                  /* be deduced from a score during Phase 5  */
+                                  /* for each Phase 5 vertex already added   */
+                                  /* to this aggregate. Specifically the     */
+                                  /* penalty associated with aggregate y is  */
+                                  /*   max (INCR_SCALING*NNewVtx,            */
+                                  /*        UnpenalizedScore*(1-             */
+                                  /*              MUELOO_PENALTYFACTOR))*/
+                                  /* where NNewVtx is the number of phase 5  */
+                                  /* vertices already assigned to y.         */
+#define MUELOO_PENALTYFACTOR .30 /* determines maximum allowable        */
+                                  /* percentage of a score that can be       */
+                                  /* deducted from this score for having     */
+                                  /* already enlargened an aggregate to      */
+                                  /* which we are contemplated adding another*/
+                                  /* vertex.  Should be between 0 and 1.     */
+
 /***************************************************************************** 
    Structure holding aggregate information. Right now, NAggregates, IsRoot,
    Vertex2AggId, ProcWinner are populated.  This allows us to look at a node
@@ -32,12 +79,12 @@ typedef struct MueLu_Aggregate_Struct
 } MueLu_Aggregate;
 
 
-extern MueLu_Aggregate *MueLu_AggregateCreate(MueLu_Graph *Graph, char *str);
-extern int MueLu_AggregateDestroy(MueLu_Aggregate *agg);
+MueLu_Aggregate *MueLu_AggregateCreate(MueLu_Graph *Graph, const char *str);
+int MueLu_AggregateDestroy(MueLu_Aggregate *agg);
 
 // Constructors to create aggregates. This should really be replaced by an 
 // aggregate class.
-MueLu_Aggregate *MueLu_AggregateCreate(MueLu_Graph *Graph, char *str)
+MueLu_Aggregate *MueLu_AggregateCreate(MueLu_Graph *Graph, const char *str)
 {
    MueLu_Aggregate *Aggregates;
 
