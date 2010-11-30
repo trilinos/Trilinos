@@ -38,73 +38,6 @@ int MueLoo_PrintLevel() { return 7; }   /* Normally this should be some general*
                                         /* attribute the indicates the level   */
                                         /* verbosity.                          */
 
-/*******************************************************************************
-   User-requested options affecting aggregation. 
-*******************************************************************************/
-typedef struct MueLoo_AggOptions_Struct
-{
-   double print_flag;
-   int    ordering;                  /**<  natural, random, graph           */
-   int    min_nodes_per_aggregate;   /**<  aggregate size control           */
-   int    max_neigh_already_selected;/**<  complexity control               */
-   double phase3_agg_creation;       /**<  Steers how the MIS  and Uncoupled 
-                                           handle phase 3 of aggregation.     
-                                           Values near 0 create few additional
-                                           aggregates.Large values create many
-                                           additional aggregates. Convergence 
-                                           can be improve convergence by new  
-                                           aggregates but nonzero fill-in     
-                                           increases on coarse meshes.        
-                                           Default: .5                      */
-} MueLoo_AggOptions;
-
-/***************************************************************************** 
-   Structure holding aggregate information. Right now, NAggregates, IsRoot,
-   Vertex2AggId, ProcWinner are populated.  This allows us to look at a node
-   and determine the aggregate to which it has been assigned and the id of the 
-   processor that owns this aggregte.  It is not so easy to determine vertices
-   within the kth aggregate or the size of the kth aggregate. Thus, it might be
-   useful to have a secondary structure which would be a rectangular CrsGraph 
-   where rows (or vertices) correspond to aggregates and colunmns (or edges) 
-   correspond to nodes.  While not strictly necessary, it might be convenient.
- *****************************************************************************/
-typedef struct MueLoo_Aggregate_Struct
-{
-   char *name;
-   int  NAggregates;              /* Number of aggregates on this processor  */
-
-   Epetra_IntVector *Vertex2AggId;/* Vertex2AggId[k] gives a local id        */
-                                  /* corresponding to the aggregate to which */
-                                  /* local id k has been assigned.  While k  */
-   Epetra_IntVector *ProcWinner;  /* is the local id on my processor (MyPID),*/
-                                  /* Vertex2AggId[k] is the local id on the  */
-                                  /* processor which actually owns the       */
-                                  /* aggregate. This owning processor has id */
-                                  /* given by ProcWinner[k].                 */
-
-   bool *IsRoot;                  /* IsRoot[i] indicates whether vertex i  */
-                                  /* is a root node.                       */
-
-   Epetra_CrsGraph *Agg2Vertex;   /* Currently not used                    */
-} MueLoo_Aggregate;
-
-/******************************************************************************
-   MueLoo representation of a graph. Some of this is redundant with an 
-   Epetra_CrsGraph so we might want to clean up. In particular, things
-   like VertexNeighbors, NVertices, NEdges, etc. are available somewhere 
-   in EGraph (though perhaps protected).              
-******************************************************************************/
-typedef struct MueLoo_Graph_Struct
-{
-   char *name;
-   int  NVertices, NEdges, NGhost;
-   int  *VertexNeighborsPtr;  /* VertexNeighbors[VertexNeighborsPtr[i]:     */
-   int  *VertexNeighbors;     /*                 VertexNeighborsPtr[i+1]-1] */
-                              /* corresponds to vertices Adjacent to vertex */
-                              /* i in graph                                 */ 
-   const Epetra_CrsGraph *EGraph;
-} MueLoo_Graph;
-
 /* ************************************************************************* */
 /* linked list structures from ML for holding free node information          */
 /* ------------------------------------------------------------------------- */
@@ -127,8 +60,6 @@ typedef struct MueLoo_SuperNode_Struct
 
 extern int MueLoo_RandomReorder(int *randomVector, const Epetra_BlockMap &Map);
 
-extern MueLoo_Aggregate *MueLoo_AggregateCreate(MueLoo_Graph *Graph, char *str);
-extern int MueLoo_AggregateDestroy(MueLoo_Aggregate *agg);
 
 extern MueLoo_Aggregate *MueLoo_Aggregate_CoarsenUncoupled(MueLoo_AggOptions *AggregateOptions,
                         MueLoo_Graph *Graph);
@@ -1181,42 +1112,6 @@ int MueLoo_RandomReorder(int *list, const Epetra_BlockMap &Map)
    return 0; 
 }
 
-// Constructors to create aggregates. This should really be replaced by an 
-// aggregate class.
-MueLoo_Aggregate *MueLoo_AggregateCreate(MueLoo_Graph *Graph, char *str)
-{
-   MueLoo_Aggregate *Aggregates;
-
-   Aggregates = (MueLoo_Aggregate *) malloc(sizeof(MueLoo_Aggregate));
-   Aggregates->name = (char *) malloc(sizeof(char)*80);
-   strcpy(Aggregates->name,str);
-   Aggregates->NAggregates  = 0;
-   Aggregates->Agg2Vertex   = NULL;
-   Aggregates->Vertex2AggId = new Epetra_IntVector(Graph->EGraph->ImportMap());
-   Aggregates->Vertex2AggId->PutValue(MUELOO_UNAGGREGATED);
-   Aggregates->ProcWinner = new Epetra_IntVector(Graph->EGraph->ImportMap());
-   Aggregates->ProcWinner->PutValue(MUELOO_UNASSIGNED);
-   Aggregates->IsRoot = new bool[Graph->EGraph->ImportMap().NumMyElements()];
-   for (int i=0; i < Graph->EGraph->ImportMap().NumMyElements(); i++)
-       Aggregates->IsRoot[i] = false;
-
-   return Aggregates;
-}
-// Destructor for aggregates. This should really be replaced by an 
-// aggregate class.
-int MueLoo_AggregateDestroy(MueLoo_Aggregate *agg)
-{
-   if (agg != NULL) {
-      if (agg->IsRoot       != NULL) delete [] (agg->IsRoot);
-      if (agg->ProcWinner   != NULL) delete agg->ProcWinner;
-      if (agg->Vertex2AggId != NULL) delete agg->Vertex2AggId;
-      if (agg->name         != NULL) free(agg->name);
-      if (agg->Agg2Vertex   != NULL) delete agg->Agg2Vertex;
-      free(agg);
-   }
-   return 0;
-}
-
 // Redistribute data in source to dest where both source and dest might have 
 // multiple copies of the same global id across many processors. The source
 // may not have the same value for all of these multiple copies, but on 
@@ -1549,101 +1444,4 @@ int MueLoo_RemoveSmallAggs(MueLoo_Aggregate *Aggregates, int min_size,
             ProcWinner[i] = MUELOO_UNASSIGNED;
   }
   Aggregates->NAggregates = NAggregates;
-}
-
-
-#include "ml_aggregate.h"
-#include "ml_epetra_utils.h"
-extern MueLoo_Graph  *MueLoo_BuildGraph(ML_Operator *Amatrix, char *name);
-extern int MueLoo_DestroyGraph(MueLoo_Graph *Graph);
-
-/**********************************************************************************/
-/* Function to execute new MueLoo aggregation via old ML                          */
-/* This function should go away soon as we should start executing new MueLoo      */
-/* aggregation inside MueLoo.
-/**********************************************************************************/
-int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag, 
-           ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
-{
-   MueLoo_Graph     *Graph;
-   Graph = MueLoo_BuildGraph(Amatrix,"ML_Uncoupled");
-
-   if (Graph->EGraph->Comm().MyPID() == 0 && ml_ag->print_flag  < MueLoo_PrintLevel())
-       printf("ML_Aggregate_CoarsenUncoupled : \n");
-
-   MueLoo_AggOptions AggregateOptions;
-
-   AggregateOptions.print_flag                 = ml_ag->print_flag;
-   AggregateOptions.min_nodes_per_aggregate    = ml_ag->min_nodes_per_aggregate;
-   AggregateOptions.max_neigh_already_selected = ml_ag->max_neigh_already_selected;
-   AggregateOptions.ordering                   = ml_ag->ordering;
-   AggregateOptions.phase3_agg_creation        = ml_ag->phase3_agg_creation;
-
-
-   MueLoo_Aggregate *Aggregates = NULL;
-
-   Aggregates = MueLoo_Aggregate_CoarsenUncoupled(&AggregateOptions,Graph);
-
-
-   MueLoo_AggregateLeftOvers(&AggregateOptions, Aggregates, "UC_CleanUp", Graph);
-
-//#ifdef out
-Epetra_IntVector Final( Aggregates->Vertex2AggId->Map() );
-for (int i = 0; i < Aggregates->Vertex2AggId->Map().NumMyElements(); i++) 
-   Final[i] = (*(Aggregates->Vertex2AggId))[i] + (*(Aggregates->ProcWinner))[i]*1000;
-printf("finals\n");
-cout << Final << endl; sleep(2);
-//#endif
-
-   MueLoo_AggregateDestroy(Aggregates); 
-   MueLoo_DestroyGraph(Graph);
-   return 0;
-}
-
-/**********************************************************************************/
-/* Function to take an ML_Operator (which actually wraps an Epetra_CrsMatrix) and */
-/* extract out the Epetra_CrsGraph. My guess is that this should be changed soon  */
-/* so that the first argument is some MueLoo API Operator.                        */
-/**********************************************************************************/
-MueLoo_Graph *MueLoo_BuildGraph(ML_Operator *Amatrix, char *name)
-{
-  MueLoo_Graph *Graph;
-  double *dtmp = NULL;
-  Epetra_CrsMatrix *A;
-
-  Graph = (MueLoo_Graph *) malloc(sizeof(MueLoo_Graph));
-  Graph->EGraph     = NULL;
-  Graph->name = NULL;
-  Graph->name       = (char *) malloc(sizeof(char)*80); strcpy(Graph->name,name);
-  Graph->NVertices  = Amatrix->invec_leng;
-
-  if ( Amatrix->getrow->Nrows == 0) {
-     Graph->VertexNeighbors    = NULL;
-     Graph->VertexNeighborsPtr = NULL;
-     Graph->NEdges             = 0;
-  }
-  else {
-     Epetra_ML_GetCrsDataptrs(Amatrix, &dtmp, &(Graph->VertexNeighbors),&(Graph->VertexNeighborsPtr));
-     if ( Graph->VertexNeighborsPtr == NULL) {
-        printf("MueLoo_BuildGraph: Only functions for an Epetra_CrsMatrix.\n");
-        exit(1);
-      }
-      Graph->NEdges      = (Graph->VertexNeighborsPtr)[Amatrix->getrow->Nrows];
-      Epetra_ML_GetCrsMatrix( Amatrix, (void **) &A );
-      Graph->EGraph = &(A->Graph());
-  }
-  if (Graph->EGraph == NULL) Graph->NGhost = 0;
-  else {
-     Graph->NGhost = A->RowMatrixColMap().NumMyElements() - A->OperatorDomainMap().NumMyElements();
-     if (Graph->NGhost < 0) Graph->NGhost = 0;
-  }
-  return Graph;
-}
-int MueLoo_DestroyGraph(MueLoo_Graph *Graph)
-{
-   if ( Graph != NULL) {
-      if (Graph->name != NULL) free(Graph->name);
-      free(Graph);
-   }
-   return 0;
 }
