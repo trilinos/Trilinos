@@ -41,6 +41,33 @@ from InstallProgramDriver import *
 from GeneralScriptSupport import *
 
 
+def addRpathToLink(specFileStrIn, rpath):
+  specFileStrOut = ""
+  linkLastLine = False
+  for line in specFileStrIn.split('\n'):
+    #print "line: "+line
+    if linkLastLine:
+      #print "Prepending rpath!"
+      newLine = """%{!rpath:-rpath """+rpath+"""} """ + line
+      linkLastLine = False
+    else:
+      newLine = line
+    #print "newLine: "+newLine
+    specFileStrOut += newLine + "\n"
+    if line == "*link:":
+      #print "*link: found!"
+      linkLastLine = True
+  return specFileStrOut
+
+
+def appendToRPath(rpathIn, anotherPath):
+  rpathOut = rpathIn
+  if rpathIn:
+    rpathOut += ";:"
+  rpathOut += anotherPath
+  return rpathOut
+
+
 class GccInstall:
 
   def __init__(self):
@@ -68,10 +95,19 @@ which are built and installed along with GCC.
       default="git clone software.sandia.gov:/space/git/TrilinosToolset/gcc.BASE "+\
       self.getBaseDirName(),
       help="Command used to check out "+self.getProductName()+" and dependent source tarball(s)." )
-
+    clp.add_option(
+      "--extra-configure-options", dest="extraConfigureOptions", type="string", default="",
+      help="Extra options to add to the 'configure' cmmand for "+self.getProductName()+"." \
+      +"  Note: This does not override the hard-coded configure options." )
+    clp.add_option(
+      "--embed-rpath", dest="embedRPath", action="store_true", default=False,
+      help="Update the GCC specs file with the rpaths to GCC shared libraries." )
+      
   def echoExtraCmndLineOptions(self, inOptions):
     cmndLine = ""
-    cmndLine += "  --checkout-cmnd='" + inOptions.checkoutCmnd + "' \\\n"
+    cmndLine += "  --checkout-cmnd='"+inOptions.checkoutCmnd+"' \\\n"
+    if inOptions.extraConfigureOptions:
+      cmndLine += "  --extra-configure-options='"+inOptions.extraConfigureOptions+"' \\\n"
     return cmndLine
     
   def setup(self, inOptions):
@@ -80,6 +116,7 @@ which are built and installed along with GCC.
     self.gccBaseDir = self.baseDir+"/"+self.getBaseDirName()
     self.gccSrcBaseDir = self.gccBaseDir+"/"+gccSrcDir
     self.gccBuildBaseDir = self.gccBaseDir+"/gcc-build"
+    self.scriptBaseDir = getScriptBaseDir()
 
   def doCheckout(self):
     echoRunSysCmnd(self.inOptions.checkoutCmnd)
@@ -97,16 +134,24 @@ which are built and installed along with GCC.
     echoRunSysCmnd("ln -sf ../"+mpfrSrcDir+" mpfr")
     echoRunSysCmnd("ln -sf ../"+mpcSrcDir+" mpc")
     createDir(self.gccBuildBaseDir, True, True)
-    echoRunSysCmnd("../"+gccSrcDir+"/configure --enable-languages='c,c++,fortran'"+\
-      " --disable-gnu-unique-object --prefix="+self.inOptions.installDir)
+    echoRunSysCmnd(
+      "../"+gccSrcDir+"/configure --enable-languages='c,c++,fortran'"+\
+      " "+self.inOptions.extraConfigureOptions+\
+      " --prefix="+self.inOptions.installDir)
 
   def doBuild(self):
     echoChDir(self.gccBuildBaseDir)
     echoRunSysCmnd("make "+self.inOptions.makeOptions)
 
   def doInstall(self):
+
+    print "\nInstall GCC ...\n"
     echoChDir(self.gccBuildBaseDir)
-    echoRunSysCmnd("make "+self.inOptions.makeOptions + " install")
+    echoRunSysCmnd("make "+self.inOptions.makeOptions+" install")
+
+    if self.inOptions.embedRPath:
+      print "\nSet up rpath for GCC versions so that you don't need to set LD_LIBRARY_PATH ...\n"
+      self.updateSpecsFile()
 
   def getFinalInstructions(self):
     return """
@@ -122,6 +167,31 @@ Also, you must prepend
 
 to your LD_LIBRARY_PATH env variable.
 """
+
+  def updateSpecsFile(self):
+    gccExec = self.inOptions.installDir+"/bin/gcc"
+    rpathbase = self.inOptions.installDir
+    print "rpathbase = "+rpathbase
+    specpath = getCmndOutput(gccExec+" --print-file libgcc.a | sed 's|/libgcc.a||'", True)
+    print "specpath = "+specpath
+    rpath = ""
+    libPath = rpathbase+"/lib"
+    if os.path.exists(libPath):
+      rpath = appendToRPath(rpath, libPath)
+    lib64Path = rpathbase+"/lib64"
+    if os.path.exists(lib64Path):
+      rpath = appendToRPath(rpath, lib64Path)
+    print "rpath will be: '"+rpath+"'"
+    specsfile = specpath+"/specs"
+    if os.path.exists(specsfile):
+      print "Backing up the existing GCC specs file '"+specsfile+"' ..."
+      echoRunSysCmnd("cp "+specsfile+" "+specsfile+".backup")
+    print "Writing to GCC specs file "+specsfile
+    gccSpecs = getCmndOutput(gccExec+" -dumpspecs", True)
+    #print "gccSpecs:\n", gccSpecs
+    gccSpecsMod = addRpathToLink(gccSpecs, rpath)
+    #print "gccSpecsMod:\n", gccSpecsMod
+    writeStrToFile(specsfile, gccSpecsMod)
 
 
 #
