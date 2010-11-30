@@ -72,7 +72,7 @@ extern MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions *Aggre
 
 extern int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions, 
                                   MueLu_Aggregate *Aggregates,
-				  char *label, MueLu_Graph *Graph);
+				  const char *label, MueLu_Graph *Graph);
 
 extern int MueLu_NonUnique2NonUnique(const Epetra_Vector &source, 
          Epetra_Vector &dest, const Epetra_Map &UniqueMap, 
@@ -567,7 +567,7 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
 
 int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions, 
                                   MueLu_Aggregate *Aggregates,
-				  char *label,
+				  const char *label,
                                   MueLu_Graph *Graph)
 {
   int      Nphase1_agg, phase_one_aggregated, i, j, k, kk, nonaggd_neighbors;

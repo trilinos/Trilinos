@@ -280,6 +280,8 @@ public:
     // Teuchos::OSTab tab(out);
   }
   
+  RCP<CrsMatrix> get_CrsMatrix() const { CTHULHU_DEBUG_ME; return matrixData_; }
+
   //@}
   
 private:

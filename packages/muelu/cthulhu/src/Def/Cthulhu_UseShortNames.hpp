@@ -67,3 +67,6 @@ typedef ScalarType    SC;
 typedef LocalOrdinal  LO;
 typedef GlobalOrdinal GO;
 typedef Node          NO;
+
+
+// TODO: do the same for Epetra object (problem of namespace)
