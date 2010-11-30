@@ -1,5 +1,5 @@
-#ifndef CTHULHU_CRSMATRIX_DECL_HPP
-#define CTHULHU_CRSMATRIX_DECL_HPP
+#ifndef CTHULHU_CRSMATRIX_HPP
+#define CTHULHU_CRSMATRIX_HPP
 
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultKernels.hpp>

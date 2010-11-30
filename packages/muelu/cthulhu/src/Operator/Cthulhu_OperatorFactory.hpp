@@ -1,5 +1,5 @@
-#ifndef CTHULHU_OPERATOR_FACTORY_DECL_HPP
-#define CTHULHU_OPERATOR_FACTORY_DECL_HPP
+#ifndef CTHULHU_OPERATOR_FACTORY_HPP
+#define CTHULHU_OPERATOR_FACTORY_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Classes.hpp"

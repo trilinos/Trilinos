@@ -13,12 +13,13 @@
 #if !defined(CTHULHU_USE_TPETRA) && !defined(CTHULHU_USE_EPETRA)
 #define CTHULHU_USE_TPETRA
 #endif
-#include <Cthulhu.hpp>         // TODO: <> or ""
-#include "Cthulhu_Map.hpp"
-#include "Cthulhu_CrsMatrix.hpp"
+#include <Cthulhu_Map.hpp>
+#include <Cthulhu_CrsMatrix.hpp>
+#include <Cthulhu_Operator.hpp>
+#include <Cthulhu.hpp>
 
 #define CTHULHU_ENABLED //TODO
-#include "MueLu_MatrixFactory.hpp"
+#include <MueLu_MatrixFactory.hpp>
 
 using Teuchos::RCP;
 

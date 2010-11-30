@@ -13,7 +13,7 @@
 #include <Tpetra_Map.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-#include "MueLu_MatrixFactory.hpp" // MueLu Gallery
+#include <MueLu_MatrixFactory.hpp> // TODO: rename MueLu Gallery
 
 using Teuchos::RCP;
 
@@ -24,6 +24,7 @@ using Teuchos::RCP;
 
   Use the "--help" option to get verbose help.
 */
+
 int main(int argc, char** argv) 
 {
   typedef int    LO; // LocalOrdinal

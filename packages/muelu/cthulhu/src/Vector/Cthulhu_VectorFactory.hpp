@@ -1,5 +1,5 @@
-#ifndef CTHULHU_VECTOR_FACTORY_DECL_HPP
-#define CTHULHU_VECTOR_FACTORY_DECL_HPP
+#ifndef CTHULHU_VECTORFACTORY_HPP
+#define CTHULHU_VECTORFACTORY_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Classes.hpp"

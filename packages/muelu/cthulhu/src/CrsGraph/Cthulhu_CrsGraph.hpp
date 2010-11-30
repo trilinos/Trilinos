@@ -1,5 +1,5 @@
-#ifndef CTHULHU_CRSGRAPH_DECL_HPP
-#define CTHULHU_CRSGRAPH_DECL_HPP
+#ifndef CTHULHU_CRSGRAPH_HPP
+#define CTHULHU_CRSGRAPH_HPP
 
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>

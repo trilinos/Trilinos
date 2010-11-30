@@ -28,6 +28,8 @@
 // } 
 //
 
+#include <Cthulhu_UseShortNames.hpp>
+
 // New definition of types using the types ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
 #ifdef MUELU_SAPFACTORY_HPP
 typedef MueLu::SaPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      SaPFactory;

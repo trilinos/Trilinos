@@ -1,4 +1,4 @@
-#ifndef CTHULHU_EPETRATRANS_HPP
+#ifndef CTHULHU_EPETRATRANS_HPP //TODO: name of macro ?
 #define CTHULHU_EPETRATRANS_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"

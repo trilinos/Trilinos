@@ -15,13 +15,6 @@ typedef int    GlobalOrdinal;
 typedef Kokkos::DefaultNode::DefaultNodeType Node;
 typedef Kokkos::DefaultKernels<ScalarType,LocalOrdinal,Node>::SparseOps LocalMatOps;
 
-// TODO remove from this file
-// Define convenient shortcut for data types
-typedef ScalarType    SC;
-typedef LocalOrdinal  LO;
-typedef GlobalOrdinal GO;
-typedef Node          NO;
-
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif

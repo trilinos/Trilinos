@@ -1,5 +1,5 @@
-#ifndef CTHULHU_TPETRAVECTOR_DECL_HPP
-#define CTHULHU_TPETRAVECTOR_DECL_HPP
+#ifndef CTHULHU_TPETRAVECTOR_HPP
+#define CTHULHU_TPETRAVECTOR_HPP
 
 #ifndef HAVE_CTHULHU_TPETRA
 #error This file should be included only if HAVE_CTHULHU_TPETRA is defined.

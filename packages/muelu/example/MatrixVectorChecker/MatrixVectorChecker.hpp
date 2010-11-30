@@ -39,7 +39,7 @@ template <typename ScalarType,typename LocalOrdinal,typename GlobalOrdinal,typen
 //int MatrixVectorChecker(const RCP<const Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
 int MatrixVectorChecker(const RCP<const Cthulhu::Operator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & mat) {
 
-#include "Cthulhu_UseShortNames.hpp"
+#include "MueLu_UseShortNames.hpp"
 
   // const RCP<const Map> & colMap = mat->getColMap(); // unused
   const RCP<const Map> & rowMap = mat->getRowMap();

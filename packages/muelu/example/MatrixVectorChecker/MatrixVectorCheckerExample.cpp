@@ -9,20 +9,21 @@
 // #include <Galeri_Maps.h>
 // #include <Galeri_CrsMatrices.h>
 
-// Using MueLu gallery:
-#if !defined(CTHULHU_USE_TPETRA) && !defined(CTHULHU_USE_EPETRA)
-#define CTHULHU_USE_TPETRA
-#endif
-#include <Cthulhu.hpp>
+// Using MueLu:
 #include <Cthulhu_Map.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
 
-//
+#include <MueLu_UseDefaultTypes.hpp>
+#include <MueLu_UseShortNames.hpp>
+
+// MueLu Gallery :
 #define CTHULHU_ENABLED
 #include "MueLu_MatrixFactory.hpp"
-#include "MueLu_MatrixTypes.hpp"
 
+//
 #include "MatrixVectorChecker.hpp"
+
+#include <Cthulhu.hpp> //TODO
 
 int main(int argc, char *argv[])
 {
@@ -46,7 +47,7 @@ int main(int argc, char *argv[])
   GO nx = paramList.get<GO>("nx");
   GO ny = paramList.get<GO>("ny");
 
-  RCP<const Map> map = rcp( new MyMap(nx*ny, 0, comm) );
+  RCP<const Map> map = rcp( new DefaultMap(nx*ny, 0, comm) );
   //  RCP<const CrsMatrix> matrix = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO,Map,CrsMatrix>("Laplace2D", map, paramList);
   RCP<const Operator> matrix = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO,Map,Operator>("Laplace2D", map, paramList);
 

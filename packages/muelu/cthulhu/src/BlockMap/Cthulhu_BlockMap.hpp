@@ -1,5 +1,5 @@
-#ifndef CTHULHU_BLOCKMAP_DECL_HPP
-#define CTHULHU_BLOCKMAP_DECL_HPP
+#ifndef CTHULHU_BLOCKMAP_HPP
+#define CTHULHU_BLOCKMAP_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_Debug.hpp"

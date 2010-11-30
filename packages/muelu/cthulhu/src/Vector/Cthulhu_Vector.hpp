@@ -1,5 +1,5 @@
-#ifndef CTHULHU_VECTOR_DECL_HPP
-#define CTHULHU_VECTOR_DECL_HPP
+#ifndef CTHULHU_VECTOR_HPP
+#define CTHULHU_VECTOR_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_MultiVector.hpp"

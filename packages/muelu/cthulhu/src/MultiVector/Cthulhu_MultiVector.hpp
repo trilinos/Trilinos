@@ -1,5 +1,5 @@
-#ifndef CTHULHU_MULTIVECTOR_DECL_HPP
-#define CTHULHU_MULTIVECTOR_DECL_HPP
+#ifndef CTHULHU_MULTIVECTOR_HPP
+#define CTHULHU_MULTIVECTOR_HPP
 
 #include <Teuchos_LabeledObject.hpp>
 #include <Teuchos_DataAccess.hpp>

@@ -1,5 +1,5 @@
-#ifndef CTHULHU_CLASSES_DECL_HPP
-#define CTHULHU_CLASSES_DECL_HPP
+#ifndef CTHULHU_CLASSES_HPP
+#define CTHULHU_CLASSES_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
 

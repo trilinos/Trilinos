@@ -1,5 +1,5 @@
-#ifndef CTHULHU_OPERATOR_VIEW_HPP
-#define CTHULHU_OPERATOR_VIEW_HPP
+#ifndef CTHULHU_OPERATORVIEW_HPP
+#define CTHULHU_OPERATORVIEW_HPP
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_BlockMap.hpp"
