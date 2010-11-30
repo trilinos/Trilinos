@@ -37,11 +37,44 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MAPPEDARRAY_HPP
-#define KOKKOS_MAPPEDARRAY_HPP
+#ifndef KOKKOS_HOSTMAPPEDARRAY_HPP
+#define KOKKOS_HOSTMAPPEDARRAY_HPP
+
+#include <Kokkos_BaseMappedArray.hpp>
 
 namespace Kokkos {
 
+template< typename ValueType , class DeviceMap > class MDArray ;
+
+/** \brief  Map array into most memory space */
+class HostMap : public BaseMapInterface {
+public:
+
+  ~HostMap();
+
+  HostMap( size_type parallel_work_count );
+
+  size_type parallel_work_count() const { return m_parallel_work_count ; }
+
+  void deallocate( BaseMappedArray & );
+
+  void allocate( BaseMappedArray & ,
+                 size_type sizeof_value ,
+                 size_type rank ,
+                 const size_type * const dimension );
+
+private:
+
+  std::list< BaseMappedArray > m_allocated_arrays ;
+  size_type                    m_parallel_work_count ;
+
+  HostMap();
+  HostMap( const HostMap & );
+  HostMap & operator = ( const HostMap & );
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 /** \brief  Multidimensional array allocated and mapped
  *          onto a compute device.
  *
@@ -57,17 +90,22 @@ namespace Kokkos {
  *  with respect to the type of the mapped array and thus achieve portability
  *  across compute devices.
  */
-template< typename ValueType , class DeviceMapType >
-class MDArray {
+template< typename ValueType >
+class MDArray< ValueType , HostMap > {
 public:
-  typedef ValueType                             value_type ;
-  typedef DeviceMapType                         device_map_type ;
-  typedef typename device_map_type::size_type   size_type ;
+  typedef ValueType                   value_type ;
+  typedef HostMap                     device_map_type ;
+  typedef BaseMappedArray::size_type  size_type ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query dimension of the given ordinate of the array */
   template < typename iType >
-  size_type dimension( const iType & ordinal ) const ;
+  inline
+  size_type dimension( const iType & ordinal ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_rank(ordinal) );
+      return m_base.m_dimension[ordinal] ;
+    }
 
   /*------------------------------------------------------------------*/
   /** \brief  Query value of a rank 8 array */
@@ -75,69 +113,142 @@ public:
             typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 ,
             typename iType6 , typename iTypeP >
+  inline
   value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
                            const iType4 & i4 , const iType5 & i5 ,
-                           const iType6 & i6 , const iTypeP & iP ) const ;
+                           const iType6 & i6 , const iTypeP & iP ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_bounds(i0,i1,i2,i3,i4,i5,i6,iP) );
+
+      return ( (value_type*) m_base.m_ptr_on_device )
+             [ ( i0 + m_base.m_dimension[0] * ( i1 + m_base.m_dimension[1] *
+               ( i2 + m_base.m_dimension[2] * ( i3 + m_base.m_dimension[3] *
+               ( i4 + m_base.m_dimension[4] * ( i5 + m_base.m_dimension[5] *
+               ( i6 + m_base.m_dimension[6] * ( iP )))))))) ];
+    }
 
   /** \brief  Query value of a rank 7 array */
   template< typename iType0 , typename iType1 ,
             typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 ,
             typename iTypeP >
+  inline
   value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
                            const iType4 & i4 , const iType5 & i5 ,
-                           const iTypeP & iP ) const ;
+                           const iTypeP & iP ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_bounds(i0,i1,i2,i3,i4,i5,iP) );
+
+      return ( (value_type*) m_base.m_ptr_on_device )
+             [ ( i0 + m_base.m_dimension[0] * ( i1 + m_base.m_dimension[1] *
+               ( i2 + m_base.m_dimension[2] * ( i3 + m_base.m_dimension[3] *
+               ( i4 + m_base.m_dimension[4] * ( i5 + m_base.m_dimension[5] *
+               ( iP ))))))) ];
+    }
 
   /** \brief  Query value of a rank 6 array */
   template< typename iType0 , typename iType1 ,
             typename iType2 , typename iType3 ,
             typename iType4 , typename iTypeP >
+  inline
   value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
-                           const iType4 & i4 , const iTypeP & iP ) const ;
+                           const iType4 & i4 , const iTypeP & iP ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_bounds(i0,i1,i2,i3,i4,iP) );
+
+      return ( (value_type*) m_base.m_ptr_on_device )
+             [ ( i0 + m_base.m_dimension[0] * ( i1 + m_base.m_dimension[1] *
+               ( i2 + m_base.m_dimension[2] * ( i3 + m_base.m_dimension[3] *
+               ( i4 + m_base.m_dimension[4] * ( iP )))))) ];
+    }
 
   /** \brief  Query value of a rank 5 array */
   template< typename iType0 , typename iType1 ,
             typename iType2 , typename iType3 ,
             typename iTypeP >
+  inline
   value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
                            const iType2 & i2 , const iType3 & i3 ,
-                           const iTypeP & iP ) const ;
+                           const iTypeP & iP ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_bounds(i0,i1,i2,i3,iP) );
+
+      return ( (value_type*) m_base.m_ptr_on_device )
+             [ ( i0 + m_base.m_dimension[0] * ( i1 + m_base.m_dimension[1] *
+               ( i2 + m_base.m_dimension[2] * ( i3 + m_base.m_dimension[3] *
+               ( iP ))))) ];
+    }
 
   /** \brief  Query value of a rank 4 array */
   template< typename iType0 , typename iType1 ,
             typename iType2 , typename iTypeP >
+  inline
   value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
-                           const iType2 & i2 , const iTypeP & iP ) const ;
+                           const iType2 & i2 , const iTypeP & iP ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_bounds(i0,i1,i2,iP) );
+
+      return ( (value_type*) m_base.m_ptr_on_device )
+             [ ( i0 + m_base.m_dimension[0] * ( i1 + m_base.m_dimension[1] *
+               ( i2 + m_base.m_dimension[2] * ( iP )))) ];
+    }
 
   /** \brief  Query value of a rank 3 array */
   template< typename iType0 , typename iType1 ,
             typename iTypeP >
+  inline
   value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
-                           const iTypeP & iP ) const ;
+                           const iTypeP & iP ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_bounds(i0,i1,iP) );
+
+      return ( (value_type*) m_base.m_ptr_on_device )
+             [ ( i0 + m_base.m_dimension[0] * ( i1 + m_base.m_dimension[1] *
+               ( iP ))) ];
+    }
 
   /** \brief  Query value of a rank 2 array */
   template< typename iType0 , typename iTypeP >
-  value_type & operator()( const iType0 & i0 , const iTypeP & iP ) const ;
+  inline
+  value_type & operator()( const iType0 & i0 , const iTypeP & iP ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_bounds(i0,iP) );
+
+      return ( (value_type*) m_base.m_ptr_on_device )
+             [ ( i0 + m_base.m_dimension[0] * ( iP )) ];
+    }
 
   /** \brief  Query value of a rank 1 array */
   template< typename iTypeP >
-  value_type & operator()( const iTypeP & iP ) const ;
+  inline
+  value_type & operator()( const iTypeP & iP ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_bounds(iP) );
+
+      return ( (value_type*) m_base.m_ptr_on_device )
+             [ ( iP ) ];
+    }
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  MDArray();
+  inline
+  MDArray() : m_base() {}
 
   /** \brief  Construct a view of the array */
-  MDArray( const MDArray & rhs );
+  inline
+  MDArray( const MDArray & rhs ) : m_base( rhs.m_base ) {}
 
   /** \brief  Assign a view of the array, the old view is discarded. */
-  MDArray & operator = ( const MDArray & rhs );
+  inline
+  MDArray & operator = ( const MDArray & rhs )
+    { m_base = rhs.m_base ; return *this ; }
   
   /**  Destroy this view of the array, the memory is not deallocated. */
-  ~MDArray();
+  inline
+  ~MDArray() {}
 
   /*------------------------------------------------------------------*/
   /** \brief  Allocate a rank 8 array on device using the device array map */
@@ -145,60 +256,138 @@ public:
             typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 ,
             typename iType6 >
+  inline
   void allocate( const iType0 & n0 , const iType1 & n1 ,
                  const iType2 & n2 , const iType3 & n3 ,
                  const iType4 & n4 , const iType5 & n5 ,
-                 const iType6 & n6 , device_map_type & map );
+                 const iType6 & n6 , device_map_type & map )
+    {
+      size_type dimension[7] ;
+      dimension[0] = n0 ;
+      dimension[1] = n1 ;
+      dimension[2] = n2 ;
+      dimension[3] = n3 ;
+      dimension[4] = n4 ;
+      dimension[5] = n5 ;
+      dimension[6] = n6 ;
+      map.allocate( m_base , sizeof(value_type) , 8 , dimension );
+    }
 
   /** \brief  Allocate a rank 7 array on device using the device array map */
   template< typename iType0 , typename iType1 ,
             typename iType2 , typename iType3 ,
             typename iType4 , typename iType5 >
+  inline
   void allocate( const iType0 & n0 , const iType1 & n1 ,
                  const iType2 & n2 , const iType3 & n3 ,
                  const iType4 & n4 , const iType5 & n5 ,
-                 device_map_type & map );
+                 device_map_type & map )
+    {
+      size_type dimension[6] ;
+      dimension[0] = n0 ;
+      dimension[1] = n1 ;
+      dimension[2] = n2 ;
+      dimension[3] = n3 ;
+      dimension[4] = n4 ;
+      dimension[5] = n5 ;
+      map.allocate( *this , sizeof(value_type) , 7 , dimension );
+    }
 
   /** \brief  Allocate a rank 6 array on device using the device array map */
   template< typename iType0 , typename iType1 ,
             typename iType2 , typename iType3 ,
             typename iType4 >
+  inline
   void allocate( const iType0 & n0 , const iType1 & n1 ,
                  const iType2 & n2 , const iType3 & n3 ,
-                 const iType4 & n4 , device_map_type & map );
+                 const iType4 & n4 , device_map_type & map )
+    {
+      size_type dimension[5] ;
+      dimension[0] = n0 ;
+      dimension[1] = n1 ;
+      dimension[2] = n2 ;
+      dimension[3] = n3 ;
+      dimension[4] = n4 ;
+      map.allocate( m_base , sizeof(value_type) , 6 , dimension );
+    }
 
   /** \brief  Allocate a rank 5 array on device using the device array map */
   template< typename iType0 , typename iType1 ,
             typename iType2 , typename iType3 >
+  inline
   void allocate( const iType0 & n0 , const iType1 & n1 ,
                  const iType2 & n2 , const iType3 & n3 ,
-                 device_map_type & map );
+                 device_map_type & map )
+    {
+      size_type dimension[4] ;
+      dimension[0] = n0 ;
+      dimension[1] = n1 ;
+      dimension[2] = n2 ;
+      dimension[3] = n3 ;
+      map.allocate( m_base , sizeof(value_type) , 5 , dimension );
+    }
 
   /** \brief  Allocate a rank 4 array on device using the device array map */
   template< typename iType0 , typename iType1 ,
             typename iType2 >
+  inline
   void allocate( const iType0 & n0 , const iType1 & n1 ,
-                 const iType2 & n2 , device_map_type & map );
+                 const iType2 & n2 , device_map_type & map )
+    {
+      size_type dimension[3] ;
+      dimension[0] = n0 ;
+      dimension[1] = n1 ;
+      dimension[2] = n2 ;
+      map.allocate( m_base , sizeof(value_type) , 4 , dimension );
+    }
 
   /** \brief  Allocate a rank 3 array on device using the device array map */
   template< typename iType0 , typename iType1 >
+  inline
   void allocate( const iType0 & n0 , const iType1 & n1 ,
-                 device_map_type & map );
+                    device_map_type & map )
+    {
+      size_type dimension[2] ;
+      dimension[0] = n0 ;
+      dimension[1] = n1 ;
+      map.allocate( m_base , sizeof(value_type) , 3 , dimension );
+    }
 
   /** \brief  Allocate a rank 2 array on device using the device array map */
   template< typename iType0 >
-  void allocate( const iType0 & n0 , device_map_type & map );
+  inline
+  void allocate( const iType0 & n0 , device_map_type & map )
+    {
+      size_type dimension[1] ;
+      dimension[0] = n0 ;
+      map.allocate( m_base , sizeof(value_type) , 2 , dimension );
+    }
 
   /** \brief  Allocate a rank 1 array on device using the device array map */
-  void allocate( device_map_type & map );
+  inline
+  void allocate( device_map_type & map )
+    {
+      map.allocate( m_base, sizeof(value_type) , 1 , (size_type *) NULL );
+    }
 
   /** \brief  Deallocate an array, all views are set to NULL */
-  void deallocate();
+  inline
+  void deallocate()
+    {
+      device_map_type * const map = m_base.map<device_map_type>();
+      if ( map ) { map->deallocate( m_base ); }
+    }
 
+private:
+  /** \brief  A single data member to manage multiple views. */
+  BaseMappedArray m_base ;
 };
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 } // namespace Kokkos
 
-#endif /* KOKKOS_MAPPEDARRAY_HPP */
+#endif /* KOKKOS_HOSTMAPPEDARRAY_HPP */
 
 
