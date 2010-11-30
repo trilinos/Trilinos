@@ -274,7 +274,7 @@ int Zoltan_set_mpi_types()
   MPI_Type_size(MPI_SHORT, &size_short);
   MPI_Type_size(MPI_INT, &size_int);
   MPI_Type_size(MPI_LONG, &size_long);
-  MPI_Type_size(MPI_LONG_LONG, &size_long_long);
+  MPI_Type_size(MPI_LONG_LONG_INT, &size_long_long);
 
   if (sizeof(ssize_t) == size_short){
     zoltan_mpi_gno_datatype = MPI_SHORT;
@@ -289,8 +289,8 @@ int Zoltan_set_mpi_types()
     strcpy(zoltan_mpi_gno_datatype_name, "MPI_LONG");
   }
   else if (sizeof(ssize_t) == size_long_long){
-    zoltan_mpi_gno_datatype = MPI_LONG_LONG;
-    strcpy(zoltan_mpi_gno_datatype_name, "MPI_LONG_LONG");
+    zoltan_mpi_gno_datatype = MPI_LONG_LONG_INT;
+    strcpy(zoltan_mpi_gno_datatype_name, "MPI_LONG_LONG_INT");
   }
 
   if (zoltan_mpi_gno_datatype == (MPI_Datatype)MPI_UNDEFINED){

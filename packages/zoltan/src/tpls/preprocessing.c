@@ -342,7 +342,7 @@ int Zoltan_Preprocess_Graph(
 
     sum = (long long *)ZOLTAN_MALLOC(sizeof(long long) * zz->Num_Proc);
     nobj = (long long )gr->num_obj;
-    MPI_Allgather(&nobj, 1, MPI_LONG_LONG, sum, 1, MPI_LONG_LONG, zz->Communicator);
+    MPI_Allgather(&nobj, 1, MPI_LONG_LONG_INT, sum, 1, MPI_LONG_LONG_INT, zz->Communicator);
 
     for (i=1 ; i <= zz->Num_Proc ; ++i) {
       gr->vtxdist[i] = (gr->vtxdist[i-1] + (indextype)sum[i-1]);
