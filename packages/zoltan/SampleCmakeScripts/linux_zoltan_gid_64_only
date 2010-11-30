@@ -1,0 +1,31 @@
+#!/bin/csh
+# Sample script for building using CMAKE on linux workstation octopi.
+# 64-bit, Zoltan only.
+
+# Clean up the mess from previous configurations.
+/bin/rm -r cmake* CMake* CPack* CTest* Dart* Trilinos* Testing packages Makefile OUT* 
+
+cmake \
+-D CMAKE_INSTALL_PREFIX:FILEPATH="/home/lriesen/projects/Trilinos/build" \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D CMAKE_C_FLAGS:STRING="-m64 -g -DZOLTAN_ID_TYPE_LONG -std=c99" \
+-D CMAKE_CXX_FLAGS:STRING="-m64 -g" \
+-D CMAKE_Fortran_FLAGS:STRING="-m64 -g" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D MPIEXEC_MAX_NUMPROCS:STRING=11 \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan:BOOL=ON \
+-D Zoltan_ENABLE_EXAMPLES:BOOL=ON \
+-D Zoltan_ENABLE_TESTS:BOOL=ON \
+-D Zoltan_ENABLE_ParMETIS:BOOL=ON \
+-D ParMETIS_INCLUDE_DIRS:FILEPATH="/Net/local/proj/zoltan/arch/all/src/ParMETIS3_1" \
+-D ParMETIS_LIBRARY_DIRS:FILEPATH="/Net/local/proj/zoltan/arch/linux64/lib/openmpi/ParMETIS3_1" \
+-D Zoltan_ENABLE_Scotch:BOOL=OFF \
+-D Zoltan_ENABLE_PaToH:BOOL=OFF \
+.. |& tee OUTPUT.CMAKE
+
+make |& tee OUTPUT.MAKE
+make install |& tee OUTPUT.INSTALL
+

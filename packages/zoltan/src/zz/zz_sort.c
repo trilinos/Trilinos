@@ -206,7 +206,7 @@ int i, next, key1, key1_next, key2, key2_next;
 /* Sorts in increasing order with primary key val1 and secondary key val2.
    The arrays val1 and val2 are not rearranged; rather the index array
    sorted is rearranged based on values in val1 and val2. */
-void Zoltan_quicksort_pointer_inc_int_int (
+void Zoltan_quicksort_pointer_inc_int_int(
   int *sorted,   /* index array that is rearranged; should be initialized
                     so that sorted[i] == i. */
   int* val1,     /* array of primary key values. */
@@ -221,6 +221,48 @@ int  equal, larger;
      quickpart_pointer_inc_int_int (sorted,val1,val2,start,end,&equal,&larger);
      Zoltan_quicksort_pointer_inc_int_int (sorted, val1, val2, start, equal-1);
      Zoltan_quicksort_pointer_inc_int_int (sorted, val1, val2, larger, end);
+     }
+}
+
+/* Same code as above except that the primary key is ZOLTAN_GNO_TYPE */
+
+static void quickpart_pointer_inc_gno_int(
+  int *sorted, ZOLTAN_GNO_TYPE *val1, int *val2, int start, int end, int *equal, int *larger)
+{
+int i, next;
+int key2, key2_next;
+ZOLTAN_GNO_TYPE key1, key1_next; 
+
+  i = (end + start) / 2;
+  key1 = val1 ? val1[sorted[i]] : 1;
+  key2 = val2 ? val2[sorted[i]] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++) {
+     next = sorted[i];
+     key1_next = val1 ? val1[next] : 1;
+     key2_next = val2 ? val2[next] : 1;
+     if (key1_next < key1 || (key1_next == key1 && key2_next < key2)) {
+        sorted[i]           = sorted[*larger];
+        sorted[(*larger)++] = sorted[*equal];
+        sorted[(*equal)++]  = next;
+        }
+     else if (key1_next == key1  &&  key2_next == key2) {
+        sorted[i]           = sorted[*larger];
+        sorted[(*larger)++] = next;
+        }
+     }
+}
+
+void Zoltan_quicksort_pointer_inc_gno_int(
+  int *sorted, ZOLTAN_GNO_TYPE *val1, int *val2, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+     quickpart_pointer_inc_gno_int (sorted,val1,val2,start,end,&equal,&larger);
+     Zoltan_quicksort_pointer_inc_gno_int (sorted, val1, val2, start, equal-1);
+     Zoltan_quicksort_pointer_inc_gno_int (sorted, val1, val2, larger, end);
      }
 }
 
@@ -268,6 +310,176 @@ int  equal, larger;
     Zoltan_quicksort_list_inc_int (list, parlist, larger, end);
   }
 }
+
+/* Exact same code except the list to be sorted is ZOLTAN_GNO_TYPEs */
+
+static void quickpart_list_inc_gno (
+  ZOLTAN_GNO_TYPE *list, int *parlist, int start, int end, int *equal, int *larger)
+{
+int i, parchange;
+ZOLTAN_GNO_TYPE key, change;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parlist[*equal];
+      parlist[(*equal)] = parchange;
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parchange;
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_gno(ZOLTAN_GNO_TYPE * list, int *parlist, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_gno(list, parlist, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_gno(list, parlist, start,  equal-1);
+    Zoltan_quicksort_list_inc_gno(list, parlist, larger, end);
+  }
+}
+
+/* Exact same code except the list to be sorted is short*/
+
+static void quickpart_list_inc_short(
+  short *list, int *parlist, int start, int end, int *equal, int *larger)
+{
+int i, parchange;
+short key, change;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parlist[*equal];
+      parlist[(*equal)] = parchange;
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parchange;
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_short(short *list, int *parlist, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_short(list, parlist, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_short(list, parlist, start,  equal-1);
+    Zoltan_quicksort_list_inc_short(list, parlist, larger, end);
+  }
+}
+
+/* Exact same code except the list to be sorted is long*/
+
+static void quickpart_list_inc_long (
+  long *list, int *parlist, int start, int end, int *equal, int *larger)
+{
+int i, parchange;
+long key, change;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parlist[*equal];
+      parlist[(*equal)] = parchange;
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parchange;
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_long(long *list, int *parlist, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_long(list, parlist, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_long(list, parlist, start,  equal-1);
+    Zoltan_quicksort_list_inc_long(list, parlist, larger, end);
+  }
+}
+
+/* Exact same code except the list to be sorted is long long*/
+
+static void quickpart_list_inc_long_long (
+  long long *list, int *parlist, int start, int end, int *equal, int *larger)
+{
+int i, parchange;
+long long key, change;
+
+  key = list ? list[(end+start)/2] : 1;
+
+  *equal = *larger = start;
+  for (i = start; i <= end; i++)
+    if (list[i] < key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parlist[*equal];
+      parlist[(*equal)] = parchange;
+      change            = list[i];
+      list[i]           = list[*larger];
+      list[(*larger)++] = list[*equal];
+      list[(*equal)++]  = change;
+    }
+    else if (list[i] == key) {
+      parchange         = parlist[i];
+      parlist[i]        = parlist[*larger];
+      parlist[(*larger)]= parchange;
+      list[i]           = list[*larger];
+      list[(*larger)++] = key;
+    }
+}
+
+void Zoltan_quicksort_list_inc_long_long(long long *list, int *parlist, int start, int end)
+{
+int  equal, larger;
+
+  if (start < end) {
+    quickpart_list_inc_long_long(list, parlist, start, end, &equal, &larger);
+    Zoltan_quicksort_list_inc_long_long(list, parlist, start,  equal-1);
+    Zoltan_quicksort_list_inc_long_long(list, parlist, larger, end);
+  }
+}
+
+
 
 /****************************************************************************/
 

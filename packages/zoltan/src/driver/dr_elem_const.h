@@ -43,31 +43,31 @@ extern
 int get_elem_info(
   const int info,		/* The requested information */
   const E_Type elem_type,	/* The element type */
-  const int sid			/* side id (to get number of side nodes) */
+  const ZOLTAN_ID_TYPE sid			/* side id (to get number of side nodes) */
 );
 
 extern
 int get_side_id(
   E_Type     etype,		/* The element type */
-  const int *conn,		/* The element connectivity */
-  const int  nsnodes,		/* The number of side nodes */
-  int        side_nodes[]	/* The list of side node IDs */
+  const ZOLTAN_ID_TYPE *conn,		/* The element connectivity */
+  const int  nsnodes,	/* The number of side nodes */
+  int side_nodes[]	/* The list of side node IDs */
 );
 
 extern
 int ss_to_node_list(
   const E_Type  etype,		/* The element type */
-  const int *connect,		/* The element connectivity */
-  int  side_num,		/* The element side number */
-  int  ss_node_list[]		/* The list of side node IDs */
+  const ZOLTAN_ID_TYPE *connect,	/* The element connectivity */
+  int  side_num,		 /* The element side number */
+  int ss_node_list[]	/* The list of side node IDs */
 );
 
 extern
-int get_ss_mirror(
+ZOLTAN_ID_TYPE get_ss_mirror(
   const E_Type etype,		/* The element type */
-  const int *ss_node_list,	/* The list of side node IDs */
-  int side_num,			/* The element side number */
-  int mirror_node_list[]	/* The list of the mirror side node IDs */
+  const ZOLTAN_ID_TYPE *ss_node_list,	/* The list of side node IDs */
+  ZOLTAN_ID_TYPE side_num,			/* The element side number */
+  ZOLTAN_ID_TYPE mirror_node_list[]	/* The list of the mirror side node IDs */
 );
 
 

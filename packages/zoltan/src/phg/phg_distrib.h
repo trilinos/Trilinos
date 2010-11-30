@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-int Zoltan_PHG_Gno_To_Proc_Block(int gno, int *dist_dim, int nProc_dim);
+int Zoltan_PHG_Gno_To_Proc_Block(ZOLTAN_GNO_TYPE gno, ZOLTAN_GNO_TYPE  *dist_dim, int nProc_dim);
 
     
 int Zoltan_PHG_Redistribute(

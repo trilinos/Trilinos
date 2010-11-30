@@ -27,6 +27,7 @@
 #include "order_const.h"
 #include "zz_id_const.h"
 #include "par_const.h"
+#include "third_library_const.h"
 #ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
 #endif
@@ -71,7 +72,8 @@ struct Param_List;
 /*
  *  Define the debug levels allowed.
  *    ZOLTAN_DEBUG_NONE = 0           - quiet mode; no debugging information.
- *    ZOLTAN_DEBUG_PARAMS = 1         - print values of all parameters used.
+ *    ZOLTAN_DEBUG_PARAMS = 1         - print values of all parameters used 
+ *                                           plus backtrace on Zoltan error.
  *    ZOLTAN_DEBUG_ZTIME = 2          - print Zoltan timing information.
  *    ZOLTAN_DEBUG_ATIME = 3          - print algorithm's timing info, if the
  *                                  algorithm supports this level.
@@ -119,6 +121,7 @@ struct Param_List;
 struct Zoltan_Migrate_Struct;
 struct Zoltan_LB_Struct;
 struct Zoltan_Order_Struct;
+struct Zoltan_TPL_Order_Struct;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -534,6 +537,7 @@ struct Zoltan_Struct {
   /***************************************************************************/
   struct Zoltan_LB_Struct LB;          /* Struct with info for load balancing */
   struct Zoltan_Order_Struct  Order;   /* Struct with info for ordering       */
+  struct Zoltan_TPL_Order_Struct  TPL_Order;   /* Struct with info for ordering       */
   struct Zoltan_Migrate_Struct Migrate;/* Struct with info for migration.     */
 #ifdef ZOLTAN_DRUM
   struct Zoltan_Drum_Struct Drum;      /* Struct with info for DRUM interface */
@@ -578,13 +582,18 @@ typedef struct Zoltan_Transform_Struct ZZ_Transform;
 /*  
  *  Print trace information.
  */
+
 #define ZOLTAN_TRACE_ENTER(zz,yo) do { \
+  if ((zz)->Debug_Level >= ZOLTAN_DEBUG_PARAMS)  \
+    Zoltan_add_back_trace((yo));           \
   if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
      ((zz)->Proc == (zz)->Debug_Proc && \
       (zz)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
     ZOLTAN_TRACE_IN((zz)->Proc, (yo), NULL); } while (0)
 
 #define ZOLTAN_TRACE_EXIT(zz,yo) do { \
+  if ((zz)->Debug_Level >= ZOLTAN_DEBUG_PARAMS)  \
+    Zoltan_remove_back_trace();           \
   if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
      ((zz)->Proc == (zz)->Debug_Proc && \
       (zz)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \

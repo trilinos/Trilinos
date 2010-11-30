@@ -148,7 +148,6 @@ int Zoltan_PHG_ParKway(
     
     constraint = hgp->bal_tol-1.0;
     
-    
     Zoltan_ParaPartKway(nVtx, hg->nEdge, &ivwgts[hgc->myProc*anVtx], iewgts,
                         hg->hindex, hg->hvertex, nparts,
                         constraint, &cut, options, pvector, NULL, hgc->Communicator);

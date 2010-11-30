@@ -58,7 +58,7 @@ int i, j;
   for (j = 0, i = 0; i < mesh->elem_array_len; i++) {
     current_elem = &(mesh->elements[i]);
     if (current_elem->globalID >= 0) {
-      gids[j] = current_elem->globalID;
+      gids[j] = (ZOLTAN_ID_TYPE)current_elem->globalID;
       parts[j] = current_elem->my_part;
       j++;
     }
@@ -78,12 +78,16 @@ int i, j;
 /****************************************************************************/
 int update_hvertex_proc(MESH_INFO_PTR mesh)
 {
-  if (Zoltan_DD_Find(mesh->dd, (ZOLTAN_ID_PTR)mesh->hvertex, NULL, NULL, NULL,
-                     mesh->hindex[mesh->nhedges], mesh->hvertex_proc) != 0) {
+  int npins;
+
+  npins = mesh->hindex[mesh->nhedges];  
+
+  if (Zoltan_DD_Find(mesh->dd, mesh->hvertex, NULL, NULL, NULL, npins, mesh->hvertex_proc) != 0) {
 
     Gen_Error(0, "fatal:  NULL returned from Zoltan_DD_Find()\n");
     return 0;
   }
+
   return 1;
 }
 

@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <values.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -53,11 +54,12 @@ int read_chaco_file(int Proc,
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
-  int    nvtxs, gnvtxs;
+  int    nvtxs;
   int    vwgt_dim=0, ewgt_dim=0;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL;
   int    no_geom = FALSE;
+  int    gnvtxs;
 
   float *ewgts = NULL, *vwgts = NULL;
   float *x = NULL, *y = NULL, *z = NULL;
@@ -197,6 +199,7 @@ for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
   }
 
   /* Distribute graph */
+
   if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
              &start, &adj, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts, 
              &ndim, &x, &y, &z, &assignments) != 0) {
@@ -204,7 +207,7 @@ for (i=0; i<nvtxs; i++) { /* move 2/3 of points much closer to "a" */
     return 0;
   }
 
-  if (!chaco_setup_mesh_struct(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
+  if (!chaco_setup_mesh_struct(Proc, Num_Proc, prob, mesh, pio_info, gnvtxs, nvtxs,
                      start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
                      ndim, x, y, z, assignments, 1, no_geom)) {
     Gen_Error(0, "fatal: Error returned from chaco_setup_mesh_struct");
@@ -233,6 +236,7 @@ int chaco_setup_mesh_struct(
   int        Num_Proc,
   PROB_INFO_PTR prob,            /* problem description */
   MESH_INFO_PTR mesh,            /* mesh information for the problem */
+  PARIO_INFO_PTR pio_info,       /* element distribution info*/
   int        gnvtxs,             /* global number of vertices across all procs*/
   int        nvtxs,              /* number of vertices in local graph */
   int       *start,              /* start of edge list for each vertex */
@@ -266,15 +270,20 @@ int i;
   mesh->num_dims = ndim;
   mesh->num_el_blks = 1;
 
-  mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
+  mesh->eb_etypes = (int *) malloc (4 * mesh->num_el_blks * sizeof(int));
   if (!mesh->eb_etypes) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
   mesh->eb_ids = mesh->eb_etypes + mesh->num_el_blks;
-  mesh->eb_cnts = mesh->eb_ids + mesh->num_el_blks;
-  mesh->eb_nnodes = mesh->eb_cnts + mesh->num_el_blks;
+  mesh->eb_nnodes = mesh->eb_ids + mesh->num_el_blks;
   mesh->eb_nattrs = mesh->eb_nnodes + mesh->num_el_blks;
+
+  mesh->eb_cnts = (ZOLTAN_ID_TYPE *) malloc (mesh->num_el_blks * sizeof(ZOLTAN_ID_TYPE));
+  if (!mesh->eb_cnts) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
 
   mesh->eb_names = (char **) malloc (mesh->num_el_blks * sizeof(char *));
   if (!mesh->eb_names) {
@@ -284,7 +293,7 @@ int i;
 
   mesh->eb_etypes[0] = -1;
   mesh->eb_ids[0] = 1;
-  mesh->eb_cnts[0] = nvtxs;
+  mesh->eb_cnts[0] = (ZOLTAN_ID_TYPE)nvtxs;
   mesh->eb_nattrs[0] = 0;
 
   mesh->hindex = (int *) malloc(sizeof(int));
@@ -326,10 +335,18 @@ int i;
   /*
    * now fill the element structure array with the
    * information from the Chaco file
+   *  TODO - shouldn't we be passing in "base" instead of "1"
    */
-  if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
+#if 0
+  if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, pio_info, gnvtxs, nvtxs,
                      start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
-                     ndim, x, y, z, assignments, 1)) {
+                     ndim, x, y, z, assignments, 1)) 
+#else
+  if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, pio_info, gnvtxs, nvtxs,
+                     start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
+                     ndim, x, y, z, assignments, base)) 
+#endif
+  {
     Gen_Error(0, "fatal: Error returned from chaco_fill_elements");
     return 0;
   }
@@ -347,6 +364,7 @@ int chaco_fill_elements(
   int        Num_Proc,
   PROB_INFO_PTR prob,            /* problem description */
   MESH_INFO_PTR mesh,            /* mesh information for the problem */
+  PARIO_INFO_PTR pio_info,       /* element distribution info*/
   int        gnvtxs,             /* global number of vertices across all procs*/
   int        nvtxs,              /* number of vertices in local graph */
   int       *start,              /* start of edge list for each vertex */
@@ -366,8 +384,10 @@ int chaco_fill_elements(
 )
 {
   /* Local declarations. */
-  int i, j, k, elem_id, *local_ids = NULL;
-  int num_vtx, min_vtx, max_vtx; 
+  int i, j, k, *local_ids = NULL;
+  int num_vtx;
+  int elem_id;
+  int min_vtx, max_vtx; 
   int *vtx_list = NULL;
   const char *yo = "chaco_fill_elements";
 /***************************** BEGIN EXECUTION ******************************/
@@ -375,11 +395,10 @@ int chaco_fill_elements(
   DEBUG_TRACE_START(Proc, yo);
 
   chaco_init_local_ids(&local_ids, &vtx_list, &min_vtx, &max_vtx, &num_vtx, 
-                       gnvtxs, assignments, base);
-
+                       assignments, base);
 
   for (i = 0; i < num_vtx; i++) {
-    mesh->elements[i].globalID = vtx_list[i]+base;  /* GlobalIDs are 1-based
+    mesh->elements[i].globalID = vtx_list[i]+base;      /* GlobalIDs are 1-based
                                                        in Chaco; may be 0-based
                                                        or 1-based in HG files */
     if (vwgts != NULL){
@@ -392,13 +411,13 @@ int chaco_fill_elements(
     mesh->elements[i].elem_blk = 0; /* only one elem block for all vertices */
 
     if (assignments)
-      mesh->elements[i].my_part = assignments[vtx_list[i]];
+      mesh->elements[i].my_part = (int)assignments[vtx_list[i]];
     else
       mesh->elements[i].my_part = Proc;  /* Init partition is starting proc.*/
 
     if (mesh->num_dims > 0) {
       /* One set of coords per element. */
-      mesh->elements[i].connect = (int *) malloc(sizeof(int));
+      mesh->elements[i].connect = (ZOLTAN_ID_TYPE *) malloc(sizeof(ZOLTAN_ID_TYPE));
       mesh->elements[i].connect[0] = mesh->elements[i].globalID;
       mesh->elements[i].coord = (float **) malloc(sizeof(float *));
       mesh->elements[i].coord[0] = (float *) calloc(mesh->num_dims,
@@ -424,7 +443,7 @@ int chaco_fill_elements(
       mesh->elements[i].nadj = 0;
     if (mesh->elements[i].nadj > 0) {
       mesh->elements[i].adj_len = mesh->elements[i].nadj;
-      mesh->elements[i].adj = (int *) malloc (mesh->elements[i].nadj * sizeof(int));
+      mesh->elements[i].adj = (ZOLTAN_ID_TYPE *) malloc (mesh->elements[i].nadj * sizeof(ZOLTAN_ID_TYPE));
       mesh->elements[i].adj_proc = (int *) malloc (mesh->elements[i].nadj * sizeof(int));
       if (!(mesh->elements[i].adj) || !(mesh->elements[i].adj_proc)) {
         Gen_Error(0, "fatal: insufficient memory");
@@ -453,6 +472,7 @@ int chaco_fill_elements(
 #endif
 
         /* determine which processor the adjacent vertex is on */
+
         k = ch_dist_proc(elem_id, assignments, base);
 
         /*
@@ -460,9 +480,9 @@ int chaco_fill_elements(
          * then find the local id for that element
          */
         if (k == Proc) 
-          mesh->elements[i].adj[j] = local_ids[elem_id-base-min_vtx];
+          mesh->elements[i].adj[j] = (ZOLTAN_ID_TYPE)local_ids[elem_id-base-min_vtx];
         else /* use the global id */
-          mesh->elements[i].adj[j] = elem_id;
+          mesh->elements[i].adj[j] = (ZOLTAN_ID_TYPE)elem_id;
 
         mesh->elements[i].adj_proc[j] = k;
 
@@ -490,11 +510,10 @@ int chaco_fill_elements(
 /****************************************************************************/
 void chaco_init_local_ids(
   int  **local_ids, 
-  int  **vtx_list, 
-  int   *min_vtx, 
-  int   *max_vtx, 
-  int   *num_vtx, 
-  int    gnvtxs,
+  int **vtx_list, 
+  int *min_vtx, 
+  int *max_vtx, 
+  int *num_vtx, 
   short *assignments,
   int    base
 )
@@ -506,11 +525,11 @@ int Proc;
   MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
 
   *num_vtx = ch_dist_max_num_vtx(assignments);
-  *vtx_list = (int *) malloc(*num_vtx * sizeof(int));
+  *vtx_list = (int *) malloc(((int)*num_vtx) * sizeof(int));
   ch_dist_vtx_list(*vtx_list, num_vtx, Proc, assignments);
 
   if (*num_vtx > 0) {
-    *min_vtx = gnvtxs+1;
+    *min_vtx = MAXINT;
     *max_vtx = -1;
     for (i = 0; i < *num_vtx; i++) {
       if ((*vtx_list)[i] > *max_vtx) *max_vtx = (*vtx_list)[i];

@@ -26,7 +26,7 @@ extern "C" {
 extern void ch_dist_init(int, int, PARIO_INFO_PTR, short **, int, MPI_Comm);
 extern int ch_dist_num_vtx(int, short *);
 extern int ch_dist_max_num_vtx(short *);
-extern void ch_dist_vtx_list(int*, int*, int, short *);
+extern void ch_dist_vtx_list(int *, int*, int, short *);
 extern int ch_dist_proc(int, short *, int);
 
 #ifdef __cplusplus

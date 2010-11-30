@@ -6,8 +6,6 @@
 ## The default type for a Zoltan global ID is "int".  This can be changed
 ## with compile-time flags like:
 ##
-##   -DZOLTAN_ID_TYPE_LONG_LONG
-##
 ## See src/include/zoltan_types.h for the valid id type macros.  If Zoltan was compiled 
 ## with one of these flags, then these examples need to be compiled with the same flag.
 ##
@@ -20,7 +18,6 @@ ID_TYPE_FLAG=-DZOLTAN_ID_TYPE_LONG_LONG
 ## using the autoconf build 
 
 BLD=../../../../build/packages/zoltan/src
-
 
 ##
 ## Location of zoltan "src" directory (for header files)
@@ -41,6 +38,7 @@ ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
                     -I$(SRC)/par \
                     -I$(SRC)/order \
                     -I$(SRC)/lb \
+                    -I$(SRC)/tpls \
                     -I$(SRC)/params \
                     -I$(SRC)/Utilities/shared
 
@@ -49,22 +47,25 @@ ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
 ## to link with that library.
 ##
 
-TPL_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1
-TPL_INCLUDE=-I/home/lafisk/system/parmetis/ParMetis-3.1
-TPL_LIBS=-lparmetis -lmetis
+SCOTCH=/home/lriesen/system/scotch_5.1.10a-32
+PARMETIS=/home/lafisk/system/parmetis/ParMetis-3.1
+
+TPL_LIB_DIR=-L$(PARMETIS) -L$(SCOTCH)/lib
+TPL_INCLUDE=-I$(PARMETIS) -I$(SCOTCH)/include
+TPL_LIBS=-lparmetis -lmetis -lptscotch -lscotch -lptscotcherr -lscotcherr
 
 CC=mpicc
 
-CFLAGS =$(ID_TYPE_FLAG) -g -Wall -O1
+CFLAGS =$(ID_TYPE_FLAG)
 
-TEST_NAMES = stressTestGRAPH
+TESTS=stressTestPHG  stressTestRCB  stressTestRIB stressTestGRAPH
 
-all:   $(TEST_NAMES)
+all:   $(TESTS)
 
-%: %.c $(BLD)/libzoltan.a
+%: %.c
 	$(CC) $(CFLAGS) $(TPL_LIB_DIR)  \
-        -I$(BLD) $(TPL_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
-        -o $@ $< $(BLD)/libzoltan.a $(TPL_LIBS) -lm 
+        -I$(BLD)/include $(TPL_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
+        -o $@ $< $(BLD)/libzoltan.a $(TPL_LIBS) -lm
 
 clean:
-	@rm -rf  $(TEST_NAMES)
+	@rm -rf  $(EXAMPLE_NAMES)

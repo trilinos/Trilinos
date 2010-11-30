@@ -68,7 +68,7 @@ int Zoltan_GenPrime(int stopafter, int *prime_num)
 
 
 
-int Zoltan_G2LHash_Create(G2LHash *hash, int maxsize, int base, int nlvtx)
+int Zoltan_G2LHash_Create(G2LHash *hash, int maxsize, ZOLTAN_GNO_TYPE base, int nlvtx)
 {
     if (maxsize == 0) /* to avoid memory allocation errors */
         maxsize = 1;
@@ -82,6 +82,7 @@ int Zoltan_G2LHash_Create(G2LHash *hash, int maxsize, int base, int nlvtx)
     hash->baseend = base+nlvtx-1;
     hash->nlvtx = nlvtx;
     hash->size = 0;
+    hash->num_gid_entries = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
     hash->table = (G2LHashNode **) ZOLTAN_CALLOC(hash->maxsize, sizeof(G2LHashNode *));
     hash->nodes = (G2LHashNode *) ZOLTAN_MALLOC(hash->maxsize * sizeof(G2LHashNode));
     if (!hash->table || !hash->nodes) {
@@ -99,13 +100,13 @@ int Zoltan_G2LHash_Destroy(G2LHash *hash)
     return ZOLTAN_OK;
 }
 
-int Zoltan_G2LHash_Insert(G2LHash *hash, int gno)
+int Zoltan_G2LHash_Insert(G2LHash *hash, ZOLTAN_GNO_TYPE gno)
 {
     int i, lno;
     G2LHashNode *ptr;
 
     if (gno<hash->base || gno>hash->baseend) {
-        i = Zoltan_Hash((ZOLTAN_ID_PTR) &gno, 1, (unsigned int) hash->maxsize);
+        i = Zoltan_Hash((ZOLTAN_ID_PTR) &gno, hash->num_gid_entries, (unsigned int) hash->maxsize);
         for (ptr=hash->table[i]; ptr && ptr->gno!=gno; ptr = ptr->next);
         if (!ptr) {
             if (hash->size >= hash->maxsize) {
@@ -128,13 +129,13 @@ int Zoltan_G2LHash_Insert(G2LHash *hash, int gno)
     return lno;
 }
 
-int Zoltan_G2LHash_G2L(G2LHash *hash, int gno)
+int Zoltan_G2LHash_G2L(G2LHash *hash, ZOLTAN_GNO_TYPE gno)
 {
     int i;
     G2LHashNode *ptr;
 
     if (gno<hash->base || gno>hash->baseend) {
-        i = Zoltan_Hash((ZOLTAN_ID_PTR) &gno, 1, (unsigned int) hash->maxsize);
+        i = Zoltan_Hash((ZOLTAN_ID_PTR) &gno, hash->num_gid_entries, (unsigned int) hash->maxsize);
         for (ptr=hash->table[i]; ptr && ptr->gno!=gno; ptr = ptr->next);
         if (!ptr)
             return -1;
@@ -158,6 +159,7 @@ int Zoltan_KVHash_Create(KVHash *hash, int maxsize)
     hash->table = NULL;
     hash->nodes = NULL;
     hash->size = 0;
+    hash->num_gid_entries = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
     hash->table = (G2LHashNode **) ZOLTAN_CALLOC(hash->maxsize, sizeof(G2LHashNode *));
     hash->nodes = (G2LHashNode *) ZOLTAN_MALLOC(hash->maxsize * sizeof(G2LHashNode));
     if (!hash->table || !hash->nodes) {
@@ -175,13 +177,13 @@ int Zoltan_KVHash_Destroy(KVHash *hash)
     return ZOLTAN_OK;
 }    
 
-int Zoltan_KVHash_Insert(KVHash *hash, int key, int value)
+int Zoltan_KVHash_Insert(KVHash *hash, ZOLTAN_GNO_TYPE key, int value)
 {
     int i;
     
     G2LHashNode *ptr;
 
-    i = Zoltan_Hash((ZOLTAN_ID_PTR) &key, 1, (unsigned int) hash->maxsize);
+    i = Zoltan_Hash((ZOLTAN_ID_PTR) &key, hash->num_gid_entries, (unsigned int) hash->maxsize);
     for (ptr=hash->table[i]; ptr && ptr->gno!=key; ptr = ptr->next);
     if (!ptr) {
         if (hash->size >= hash->maxsize) {
@@ -202,12 +204,12 @@ int Zoltan_KVHash_Insert(KVHash *hash, int key, int value)
 }
 
 
-int Zoltan_KVHash_GetValue(KVHash *hash, int key)    
+int Zoltan_KVHash_GetValue(KVHash *hash, ZOLTAN_GNO_TYPE key)    
 {
     int i;
     G2LHashNode *ptr;
 
-    i = Zoltan_Hash((ZOLTAN_ID_PTR) &key, 1, (unsigned int) hash->maxsize);
+    i = Zoltan_Hash((ZOLTAN_ID_PTR) &key, hash->num_gid_entries, (unsigned int) hash->maxsize);
     for (ptr=hash->table[i]; ptr && ptr->gno!=key; ptr = ptr->next);
     if (!ptr)
         return -1;

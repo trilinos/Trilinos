@@ -21,7 +21,7 @@ extern "C" {
 #include "zz_const.h"
 #include "create_proc_list_const.h"
 
-static void Zoltan_RB_Gather(int *, int *, int, int, int, MPI_Comm);
+static void Zoltan_RB_Gather(ZOLTAN_GNO_TYPE *, ZOLTAN_GNO_TYPE *, int, int, int, MPI_Comm);
 
 int Zoltan_RB_Create_Proc_List(
      ZZ       *zz,            /* Load-balancing structure. */
@@ -42,18 +42,19 @@ int Zoltan_RB_Create_Proc_List(
 
      int  nprocs;             /* number of processors in partition */
      int  rank;               /* my processor number in partition */
-     int *send;               /* array of number of dots outgoing */
-     int *rem;                /* array of number of dots that remain */
-     int *sets;               /* set for each of the processors */
-     int  a;                  /* number of dots that will be on each proc */
-     int  sum_send;           /* total number sent from my group */
-     int  sum_rem;            /* total number remaining in other group */
      int  np_other = 0;       /* number of processors in other group */
-     int  s, sp;              /* temporary sums on number of dots */
-     int  num_to;             /* number of dots to send to a processor */
-     int  i, j, k;            /* loop indexes */
-     int *tmp_send;           /* Work vector */
+     int  i, k;            /* loop indexes */
      int  err = ZOLTAN_OK;    /* error code */
+
+     ZOLTAN_GNO_TYPE *send;         /* array of number of dots outgoing */
+     ZOLTAN_GNO_TYPE *rem;          /* array of number of dots that remain */
+     ZOLTAN_GNO_TYPE *sets;         /* set for each of the processors */
+     ZOLTAN_GNO_TYPE  a;            /* number of dots that will be on each proc */
+     ZOLTAN_GNO_TYPE  sum_send;     /* total number sent from my group */
+     ZOLTAN_GNO_TYPE  sum_rem;      /* total number remaining in other group */
+     ZOLTAN_GNO_TYPE  s, sp;        /* temporary sums */
+     ZOLTAN_GNO_TYPE  num_to;       /* number of dots to send to a processor */
+     ZOLTAN_GNO_TYPE *tmp_send;     /* Work vector */
 
      /* allocate memory for arrays */
      MPI_Comm_rank(comm, &rank);
@@ -64,9 +65,9 @@ int Zoltan_RB_Create_Proc_List(
      else
         MPI_Comm_size(comm, &nprocs);
 
-     if ((send = (int *) ZOLTAN_MALLOC(3*nprocs*sizeof(int))) == NULL)
+     if ((send = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(3*nprocs*sizeof(ZOLTAN_GNO_TYPE))) == NULL)
         return ZOLTAN_MEMERR;
-     if ((tmp_send = (int *) ZOLTAN_MALLOC(3*nprocs*sizeof(int))) == NULL) {
+     if ((tmp_send = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(3*nprocs*sizeof(ZOLTAN_GNO_TYPE))) == NULL) {
         ZOLTAN_FREE(&send);
         return ZOLTAN_MEMERR;
      }
@@ -90,7 +91,7 @@ int Zoltan_RB_Create_Proc_List(
         tmp_send[rank+nprocs] = dotnum - outgoing;
         tmp_send[rank+2*nprocs] = set;
         i = 3*nprocs;
-        MPI_Allreduce(tmp_send, send, i, MPI_INT, MPI_SUM, comm);
+        MPI_Allreduce(tmp_send, send, i, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
      }
 
      ZOLTAN_FREE(&tmp_send);
@@ -100,7 +101,8 @@ int Zoltan_RB_Create_Proc_List(
 
      /* to determine the number of dots (a) that will be on each of the
         processors in the other group, start with the average */
-     for (i = sum_send = sum_rem = 0; i < nprocs; i++)
+     sum_send = sum_rem = 0;
+     for (i = 0; i < nprocs; i++)
         if (sets[i] == set)
            sum_send += send[i];
         else {
@@ -121,7 +123,8 @@ int Zoltan_RB_Create_Proc_List(
         sp = -1;
         k = 0;
         while (!k) {
-           for (i = s = 0; i < nprocs; i++)
+           s = 0;
+           for (i = 0; i < nprocs; i++)
               if (sets[i] != set && rem[i] < a)
                  s += a - rem[i];
            if (s == sum_send)
@@ -145,7 +148,8 @@ int Zoltan_RB_Create_Proc_List(
      /* Allocate who recieves how much and if necessary give out remainder.
         The variable send is now the number that will be received by each
         processor only in the other part */
-     for (i = s = 0; i < nprocs; i++)
+     s = 0;
+     for (i = 0; i < nprocs; i++)
         if (sets[i] != set && rem[i] < a)
            s += send[i] = a - rem[i];
      while (s < sum_send)
@@ -156,24 +160,25 @@ int Zoltan_RB_Create_Proc_List(
            }
 
      /* Create list of which processor to send dots to.  Only the other half
-        of send has been overwritten above.  j is the number of dots that will
+        of send has been overwritten above.  s is the number of dots that will
         be sent by processors in my part of the partition which are less then
-        my processor.  k is the sum of what processors in the other part are
-        recieving.  The processor which causes k > j is the first processor
+        my processor.  sp is the sum of what processors in the other part are
+        recieving.  The processor which causes sp > s is the first processor
         that we send dots to.  We continue to send dots to processors beyond
         that one until we run out of dots to send. */
      if (outgoing) {
-        if (zz->Tflops_Special) a = outgoing;    /* keep outgoing around in a */
-        for (i = j = 0; i < rank; i++)
+        if (zz->Tflops_Special) a = (ZOLTAN_GNO_TYPE)outgoing;    /* keep outgoing around in a */
+        s = sp = 0;
+        for (i = 0; i < rank; i++)
            if (sets[i] == set)                   /* only overwrote other half */
-              j += send[i];
-        for (i = k = 0; k <= j; i++)
+              s += send[i];
+        for (i = 0; sp <= s; i++)
            if (sets[i] != set)
-              k += send[i];
+              sp += send[i];
         i--;
-        num_to = (outgoing < (k - j)) ? outgoing : (k - j);
-        for (k = 0; k < num_to; k++)
-           proclist[k] = i;
+        num_to = (outgoing < (sp - s)) ? outgoing : (sp - s);
+        for (sp = 0; sp < num_to; sp++)
+           proclist[sp] = i;
         outgoing -= num_to;
         while (outgoing > 0) {
            i++;
@@ -181,12 +186,12 @@ int Zoltan_RB_Create_Proc_List(
               i++;
            num_to = (outgoing < send[i]) ? outgoing : send[i];
            outgoing -= num_to;
-           for (j = 0; j < num_to; j++, k++)
-              proclist[k] = i;
+           for (s = 0; s < num_to; s++, sp++)
+              proclist[sp] = i;
         }
         if (zz->Tflops_Special)
-           for (i = 0; i < a; i++)
-              proclist[i] += proclower;
+           for (s = 0; s < a; s++)
+              proclist[s] += proclower;
      }
 
 End:
@@ -197,8 +202,8 @@ End:
 }
 
 static void Zoltan_RB_Gather(
-   int *send,                 /* input/output array */
-   int *tmp_send,             /* temporary array */
+   ZOLTAN_GNO_TYPE *send,                 /* input/output array */
+   ZOLTAN_GNO_TYPE *tmp_send,             /* temporary array */
    int proclower,             /* smallest numbered processor in partition */
    int rank,                  /* processor number within partition */
    int nprocs,                /* number of processors in this partition */
@@ -230,13 +235,13 @@ static void Zoltan_RB_Gather(
 
    to = proclower + (rank ^ nprocs_small);
    if (rank & nprocs_small) {  /* processors greater than largest power of 2 */
-      MPI_Send(send, len, MPI_INT, to, tag, comm);
+      MPI_Send(send, len, ZOLTAN_GNO_MPI_TYPE, to, tag, comm);
       tag += hbit + 1;
-      MPI_Recv(send, len, MPI_INT, to, tag, comm, &status);
+      MPI_Recv(send, len, ZOLTAN_GNO_MPI_TYPE, to, tag, comm, &status);
    }
    else {   /* processors within greatest power of 2 */
       if (rank + nprocs_small < nprocs) {
-         MPI_Recv(tmp_send, len, MPI_INT, to, tag, comm, &status);
+         MPI_Recv(tmp_send, len, ZOLTAN_GNO_MPI_TYPE, to, tag, comm, &status);
          for (i = 0; i < len; i++)
             send[i] += tmp_send[i];
       }
@@ -245,17 +250,17 @@ static void Zoltan_RB_Gather(
          partner = proclower + (rank ^ mask);
          /* Change requested by Qingyu Meng <qymeng@cs.utah.edu> to        */
          /* support mvapich 1.0 on TACC Ranger.                            */
-         /* MPI_Send(send, len, MPI_INT, partner, tag, comm);              */
-         /* MPI_Recv(tmp_send, len, MPI_INT, partner, tag, comm, &status); */
-         MPI_Sendrecv(send, len, MPI_INT, partner, tag,
-            tmp_send, len, MPI_INT, partner, tag, comm, &status);
+         /* MPI_Send(send, len, ZOLTAN_GNO_MPI_TYPE, partner, tag, comm);              */
+         /* MPI_Recv(tmp_send, len, ZOLTAN_GNO_MPI_TYPE, partner, tag, comm, &status); */
+         MPI_Sendrecv(send, len, ZOLTAN_GNO_MPI_TYPE, partner, tag,
+            tmp_send, len, ZOLTAN_GNO_MPI_TYPE, partner, tag, comm, &status);
 
          for (i = 0; i < len; i++)
             send[i] += tmp_send[i];
       }
       tag++;
       if (rank + nprocs_small < nprocs)
-         MPI_Send(send, len, MPI_INT, to, tag, comm);
+         MPI_Send(send, len, ZOLTAN_GNO_MPI_TYPE, to, tag, comm);
    }
 }
 

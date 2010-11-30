@@ -37,7 +37,7 @@ struct rcb_median {          /* RCB cut info */
   double    totallo, totalhi;   /* weight in each half of active partition */
   double    valuelo, valuehi;	/* position of dot(s) nearest to cut */
   double    wtlo, wthi;         /* total weight of dot(s) at that position */
-  int       countlo, counthi;   /* # of dots at that position */
+  ZOLTAN_GNO_TYPE countlo, counthi;   /* # of dots at that position */
   int       proclo, prochi;	/* unique proc who owns a nearest dot */
 };
 
@@ -60,7 +60,7 @@ typedef struct RCB_Struct {
                                 reallocated separately from Dots. 
                                 This array is NOT used if Zoltan_RB_Use_IDs 
                                 returns FALSE.   */
-  struct Dot_Struct *Dots;     
+  struct Dot_Struct Dots;       /* coordinates, weights, etc */
   struct rcb_tree *Tree_Ptr;
   struct rcb_box *Box;
   int Num_Dim;    /* Number of dimensions in the input geometry. */

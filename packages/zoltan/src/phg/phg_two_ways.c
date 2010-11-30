@@ -47,8 +47,8 @@ Zoltan_PHG_2ways_hyperedge_partition (
   int *interval;
   int *partnumber = NULL;
   int tree_size;
-  int *rowpart =NULL;
-  int *rowGNO = NULL;
+  ZOLTAN_ID_TYPE *rowpart =NULL;  /* ZOLTAN_ID_TYPE because it's used in Zoltan_DD_* */
+  ZOLTAN_GNO_TYPE *rowGNO = NULL;
   ZOLTAN_ID_PTR rowGID=NULL;
   int index;
   int offset;
@@ -102,10 +102,10 @@ Zoltan_PHG_2ways_hyperedge_partition (
 
   (*numParts) = get_tree_size(tree);
 
-  rowpart = (int*) ZOLTAN_MALLOC(nEdge*sizeof(int));
+  rowpart = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(nEdge*sizeof(ZOLTAN_ID_TYPE));
   if ((nEdge > 0) && (rowpart == NULL)) MEMORY_ERROR;
 
-  rowGNO = (int*) ZOLTAN_MALLOC(nEdge*sizeof(int));
+  rowGNO = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(nEdge*sizeof(ZOLTAN_GNO_TYPE));
   if ((nEdge > 0) && (rowGNO == NULL)) MEMORY_ERROR;
 
   (*sizeParts) = (int*)ZOLTAN_CALLOC((*numParts), sizeof(int));
@@ -120,7 +120,7 @@ Zoltan_PHG_2ways_hyperedge_partition (
     (*sizeParts)[rowpart[hEdge]] ++;
     rowGNO[hEdge] = EDGE_LNO_TO_GNO(hg, hEdge);
 #if 0
-    fprintf (stderr, "%d : %d (%d : %d - %d)\n", rowGNO[hEdge], rowpart[hEdge], node, -interval[2*hEdge], interval[2*hEdge+1]);
+    fprintf (stderr, "%zd : " ZOLTAN_ID_SPEC " (%d : %d - %d)\n", rowGNO[hEdge], rowpart[hEdge], node, -interval[2*hEdge], interval[2*hEdge+1]);
 #endif
   }
 
@@ -147,7 +147,7 @@ Zoltan_PHG_2ways_hyperedge_partition (
   CHECK_IERR;
 
   /* Make our new numbering public */
-  Zoltan_DD_Update (*dd, (ZOLTAN_ID_PTR)rowGID, (ZOLTAN_ID_PTR) rowpart, NULL,  NULL, nEdge);
+  Zoltan_DD_Update (*dd, (ZOLTAN_ID_PTR)rowGID, rowpart, NULL,  NULL, nEdge);
 
 #ifdef CEDRIC_PRINT
   for (hEdge = 0 ; hEdge < nEdge ; ++hEdge) {

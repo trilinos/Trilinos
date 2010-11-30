@@ -29,11 +29,12 @@ extern "C" {
 /* define the input file types */
 #define NO_FILE_POINTS    0
 #define NO_FILE_TRIANGLES 1
-#define NEMESIS_FILE      2
-#define CHACO_FILE        3
-#define HYPERGRAPH_FILE   4
-#define MATRIXMARKET_FILE 5
-#define MATRIXMARKET_PLUS_FILE 6
+#define NO_FILE_GRAPH     2
+#define NEMESIS_FILE      3
+#define CHACO_FILE        4
+#define HYPERGRAPH_FILE   5
+#define MATRIXMARKET_FILE 6
+#define MATRIXMARKET_PLUS_FILE 7
 
 /* define matrix_obj options */
 #define ROWS            0
@@ -50,6 +51,7 @@ extern "C" {
 #define INITIAL_ROW    4   /* hypergraph pins */
 #define INITIAL_COL    5   /* hypergraph pins */
 #define INITIAL_ZERO   6   /* hypergraph pins */
+#define INITIAL_NO_DIST 7   /* distribution not necessary */
 
 #define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
 
@@ -79,7 +81,7 @@ struct Parallel_IO
                                   should be initially distributed.     */
   int     init_dist_procs;     /* How many procs to use in 
                                   the initial distribution.            */
-  int     init_size;           /* For NO_FILE_* (random) input, the 
+  ZOLTAN_ID_TYPE  init_size;           /* For NO_FILE_* (random) input, the 
                                   no. of objects to be created. */
   int     init_dim;            /* For NO_FILE_* (random) input, the 
                                   dimension of the problem (1, 2, or 3D) */
@@ -216,17 +218,27 @@ extern int create_random_input(
   MESH_INFO_PTR mesh
 );
 
+extern int create_a_graph(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
+);
+
 extern int chaco_fill_elements(int, int, PROB_INFO_PTR,
-                         MESH_INFO_PTR, int, int, int *,
+                         MESH_INFO_PTR, PARIO_INFO_PTR,
+                         int, int, int *,
                          int *, int, float *, int, float *, int,
                          float *, float *, float *, short *, int);
 
 extern int chaco_setup_mesh_struct(int, int, PROB_INFO_PTR,
-                         MESH_INFO_PTR, int, int, int *,
+                         MESH_INFO_PTR, PARIO_INFO_PTR ,
+                         int, int, int *,
                          int *, int, float *, int, float *, int,
                          float *, float *, float *, short *, int, int);
 
-extern void chaco_init_local_ids(int **, int **, int *, int *, int *, int,
+extern void chaco_init_local_ids(int **, int **, int *, int *, int *, 
                          short *, int);
 
 #ifdef __cplusplus

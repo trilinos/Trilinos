@@ -23,6 +23,8 @@ extern "C" {
 #include "third_library_tools.h"
 #include "zz_util_const.h"
 
+/*#define REPART_FASTER_METHOD*/
+
 /*#define DEBUG_FILL_HYPERGRAPH 1*/
   
 /* Macro returning the global number of the first repartition vertex or 
@@ -52,8 +54,8 @@ static int calculate_cuts(ZZ *zz, ZHG *zhg,
 static int getObjectSizes(ZZ *zz, ZHG *zhg);
 
 static int remove_dense_edges(ZZ *zz, ZHG *zhg, float esize_threshold, int save_removed,
-   int *nEdge, int *nGlobalEdges, int *nPins, int **edgeGNO, int **edgeSize, float **edgeWeight,
-   int **pinGNO, int **pinProcs) ;
+   int *nEdge, ZOLTAN_GNO_TYPE *nGlobalEdges, int *nPins, ZOLTAN_GNO_TYPE **edgeGNO, int **edgeSize, float **edgeWeight,
+   ZOLTAN_GNO_TYPE **pinGNO, int **pinProcs) ;
 
 /*****************************************************************************/
 int Zoltan_PHG_Build_Hypergraph(
@@ -180,25 +182,30 @@ int i, j, cnt, dim, rc;
 int msg_tag = 30000;
 float *gid_weights = NULL;
 char *have_wgt = NULL;
-int edge_gno, edge_Proc_y;
-int vtx_gno, vtx_Proc_x;
+ZOLTAN_GNO_TYPE edge_gno, vtx_gno;
+int edge_Proc_y, vtx_Proc_x;
 int nnz, idx, method_repart;
 int *proclist = NULL;
-int *sendbuf = NULL;
+ZOLTAN_GNO_TYPE *sendbuf = NULL;
 int *tmparray = NULL;
-int *hindex = NULL, *hvertex = NULL;
-int *dist_x = NULL, *dist_y = NULL;
-int *nonzeros = NULL;
+int *hindex = NULL;
+ZOLTAN_GNO_TYPE *dist_x = NULL, *dist_y = NULL;
+ZOLTAN_GNO_TYPE *nonzeros = NULL; 
+int *hvertex=NULL;
 int nEdge, nVtx, nwgt = 0;
-int nrecv, *recv_gno = NULL; 
+int nrecv = 0; 
+ZOLTAN_GNO_TYPE *recv_gno = NULL; 
 int *tmpparts = NULL;
 int num_gid_entries = zz->Num_GID;
-int totalNumEdges, nLocalEdges, nGlobalEdges, nPins;
-int *edgeGNO = NULL, *edgeSize = NULL, *pinGNO = NULL, *pinProcs = NULL;
+ZOLTAN_GNO_TYPE totalNumEdges, nGlobalEdges;
+int nLocalEdges, nPins;
+int *edgeSize = NULL, *pinProcs = NULL;
+ZOLTAN_GNO_TYPE *edgeGNO = NULL, *pinGNO = NULL;
 float *edgeWeight = NULL;
 HGraph *phg = &(zhg->HG);
 int nProc_x, nProc_y, myProc_x, myProc_y;
 int proc_offset;
+char msg[250];
 
 float frac_x, frac_y;
 float *tmpwgts=NULL; 
@@ -312,28 +319,44 @@ int nRepartEdge = 0, nRepartVtx = 0;
   myProc_x = phg->comm->myProc_x;
   myProc_y = phg->comm->myProc_y;
 
-  phg->dist_x = dist_x = (int *) ZOLTAN_CALLOC((nProc_x+1), sizeof(int));
-  phg->dist_y = dist_y = (int *) ZOLTAN_CALLOC((nProc_y+1), sizeof(int));
+  phg->dist_x = dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((nProc_x+1), sizeof(ZOLTAN_GNO_TYPE));
+  phg->dist_y = dist_y = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((nProc_y+1), sizeof(ZOLTAN_GNO_TYPE));
 
   phg->VtxWeightDim = zhg->objWeightDim;
 
   if (!dist_x || !dist_y) MEMORY_ERROR;
 
-  frac_x = (float) zhg->globalObj / (float) nProc_x;
+  frac_x = (float) (zhg->globalObj / (float) nProc_x);
   for (i = 1; i < nProc_x; i++)
-    dist_x[i] = (int) (i * frac_x);
-  dist_x[nProc_x] = zhg->globalObj;
+    dist_x[i] = (ZOLTAN_GNO_TYPE) (i * frac_x);
+  dist_x[nProc_x] = (ZOLTAN_GNO_TYPE)zhg->globalObj;
   
-  frac_y = (float) nGlobalEdges / (float) nProc_y;
+  frac_y = (float)nGlobalEdges / (float)nProc_y;
   for (i = 1; i < nProc_y; i++)
-    dist_y[i] = (int) (i * frac_y);
-  dist_y[nProc_y] = nGlobalEdges;
-  
+    dist_y[i] = (ZOLTAN_GNO_TYPE) (i * frac_y);
+  dist_y[nProc_y] = (ZOLTAN_GNO_TYPE)nGlobalEdges;
+
+  if (Zoltan_overflow_test(dist_x[nProc_x] - dist_x[nProc_x - 1]) ||
+      Zoltan_overflow_test(dist_y[nProc_y] - dist_y[nProc_y - 1])) {
+
+    if (zz->Proc == 0){
+      ZOLTAN_GNO_TYPE n = (zhg->globalObj > nGlobalEdges) ? zhg->globalObj : nGlobalEdges;
+      double sqrtminprocs = ((double)n / INT_MAX) + .5;
+      int minprocs = (int)sqrtminprocs * (int)sqrtminprocs;
+      sprintf(msg,
+       "At least %d processes are required to acheive the 2D deposition of the problem matrix\n",
+       minprocs);
+    }
+
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+    goto End;
+  }
+
   /* myProc_y and myProc_x can be -1 when nProc is prime and we use a 2D
    * decomposition.  One processor is excluded from the 2D communicator;
    * for it, myProc_y and myProc_x == -1. */
-  nEdge = (myProc_y >= 0 ? dist_y[myProc_y+1] - dist_y[myProc_y] : 0);
-  nVtx  = (myProc_x >= 0 ? dist_x[myProc_x+1] - dist_x[myProc_x] : 0);
+  nEdge = (myProc_y >= 0 ? (int)(dist_y[myProc_y+1] - dist_y[myProc_y]) : 0);
+  nVtx  = (myProc_x >= 0 ? (int)(dist_x[myProc_x+1] - dist_x[myProc_x]) : 0);
 
   if (method_repart){
     /* For REPARTITION, we add one vertex per partition and one edge 
@@ -371,7 +394,11 @@ int nRepartEdge = 0, nRepartVtx = 0;
    * 2D data distribution. 
    */
   proclist = (int *)ZOLTAN_MALLOC(MAX(nPins, zhg->nObj)*sizeof(int));
-  sendbuf = (int *) ZOLTAN_MALLOC(nPins * 2 * sizeof(int));
+  sendbuf = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nPins * 2 * sizeof(ZOLTAN_GNO_TYPE));
+
+  if ( ((nPins || zhg->nObj) && !proclist) || (nPins && !sendbuf)){
+    MEMORY_ERROR;
+  }
 
   cnt = 0; 
   for (i = 0; i < nLocalEdges; i++) {
@@ -400,13 +427,12 @@ int nRepartEdge = 0, nRepartVtx = 0;
   ierr = Zoltan_Comm_Create(&plan, cnt, proclist, zz->Communicator, msg_tag, &nnz);
 
   if (nnz) {
-    nonzeros = (int *) ZOLTAN_MALLOC(nnz * 2 * sizeof(int));
+    nonzeros = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nnz * 2 * sizeof(ZOLTAN_GNO_TYPE));
     if (!nonzeros) MEMORY_ERROR;
   }
 
   msg_tag--;
-  Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(int),
-                 (char *) nonzeros);
+  Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(ZOLTAN_GNO_TYPE), (char *) nonzeros);
 
   Zoltan_Comm_Destroy(&plan);
 
@@ -475,14 +501,13 @@ int nRepartEdge = 0, nRepartVtx = 0;
     }
     zhg->nRecv_GNOs = nrecv;
 
-    zhg->Recv_GNOs = recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+    zhg->Recv_GNOs = recv_gno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nrecv * sizeof(ZOLTAN_GNO_TYPE));
 
     if (nrecv && !recv_gno) MEMORY_ERROR;
 
     /* Use plan to send global numbers to the appropriate proc_x. */
     msg_tag++;
-    ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->objGNO, 
-                          sizeof(int), (char *) recv_gno);
+    ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->objGNO, sizeof(ZOLTAN_GNO_TYPE), (char *) recv_gno);
 
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       goto End;
@@ -491,11 +516,11 @@ int nRepartEdge = 0, nRepartVtx = 0;
   else {
     /* Save map of what needed. */
     zhg->nRecv_GNOs = nrecv = zhg->nObj;
-    zhg->Recv_GNOs = recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+    zhg->Recv_GNOs = recv_gno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nrecv * sizeof(ZOLTAN_GNO_TYPE));
 
     if (nrecv && !recv_gno) MEMORY_ERROR;
    
-    memcpy(zhg->Recv_GNOs, zhg->objGNO, nrecv * sizeof(int));
+    memcpy(zhg->Recv_GNOs, zhg->objGNO, nrecv * sizeof(ZOLTAN_GNO_TYPE));
   }
 
   /* Send vertex partition assignments and weights to 2D distribution. */
@@ -641,7 +666,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   
         /* Multiple processes may have weights for the same edge */
   
-        recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+        recv_gno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nrecv * sizeof(ZOLTAN_GNO_TYPE));
   
         gid_weights = (float *) ZOLTAN_CALLOC(nrecv*dim, sizeof(float));
   
@@ -655,8 +680,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         }
   
         msg_tag++;
-        ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) edgeGNO,
-                              sizeof(int), (char *) recv_gno);
+        ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) edgeGNO, sizeof(ZOLTAN_GNO_TYPE), (char *) recv_gno);
   
         if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
           goto End;
@@ -813,18 +837,18 @@ int ierr = ZOLTAN_OK;
 int i;
 ZOLTAN_MAP *map;
 int npins = 0;                   /* # of pins in hyperedges */
-int *pins = NULL;                   /* pins for edges */
+ZOLTAN_GNO_TYPE *pins = NULL;                   /* pins for edges */
 int *pin_procs = NULL;           /* procs owning pins for edges */
 int *pin_parts = NULL;           /* parts computed for pins in edges */
-int *myObjGNO = NULL;
+ZOLTAN_GNO_TYPE *myObjGNO = NULL;
 ZOLTAN_COMM_OBJ *plan = NULL;
 int nrecv;                       /* # of requests for pin info */
-int *recvpins = NULL;            /* Requested pins from other procs */
+ZOLTAN_GNO_TYPE *recvpins = NULL;            /* Requested pins from other procs */
 int *outparts = NULL;            /* received partition info for pins */
 int num_parts, max_parts;
 int msg_tag = 23132;
-
 int index;
+intptr_t iptr;                   /* an int the size of a pointer */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -838,31 +862,32 @@ int index;
   Zoltan_Comm_Create(&plan, npins, pin_procs, zz->Communicator, msg_tag, &nrecv);
 
   if (nrecv) {
-    recvpins = (int *)ZOLTAN_MALLOC(sizeof(int) * nrecv);
+    recvpins = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nrecv);
     outparts = (int *)ZOLTAN_MALLOC(sizeof(int) * nrecv);
     if (!recvpins || !outparts) MEMORY_ERROR;
   }
 
-  Zoltan_Comm_Do(plan, msg_tag, (char *) pins, sizeof(int), (char *) recvpins);
+  Zoltan_Comm_Do(plan, msg_tag, (char *) pins, sizeof(ZOLTAN_GNO_TYPE), (char *) recvpins);
 
   if (nrecv) {
 
-    map = Zoltan_Map_Create(zz, 0, 1, 0, zhg->nObj);
+    map = Zoltan_Map_Create(zz, 0, sizeof(ZOLTAN_GNO_TYPE), 0, zhg->nObj);
     if (map == NULL) goto End;
 
-    for (i=0; i < zhg->nObj; i++){
-      index = i;
-      ierr = Zoltan_Map_Add(zz, map, myObjGNO + i, index);
+    for (iptr=0; iptr < zhg->nObj; iptr++){
+      ierr = Zoltan_Map_Add(zz, map, (char *)(myObjGNO + iptr), iptr + 1);
       if (ierr != ZOLTAN_OK) goto End;
     }
     
     for (i = 0; i < nrecv; i++) {
-      ierr = Zoltan_Map_Find(zz, map, recvpins + i, &index);
+      ierr = Zoltan_Map_Find(zz, map, (char *)(recvpins + i), &iptr);
       if (ierr != ZOLTAN_OK) goto End;
-      if (index == ZOLTAN_NOT_FOUND) {
+      if ((void *)iptr == NULL){
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in pin map.");
          goto End;
       }
+
+      index = (int)iptr - 1;
       outparts[i] = zhg->Output_Parts[index];
     }
     Zoltan_Map_Destroy(zz, &map);
@@ -872,6 +897,8 @@ int index;
 
   /* Send partition info back to requesting processor */
   pin_parts = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
+  if (npins && !pin_parts) MEMORY_ERROR;
+
   Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) outparts, sizeof(int), NULL, (char *) pin_parts);
 
   ZOLTAN_FREE(&outparts);
@@ -1020,18 +1047,18 @@ static int Zoltan_PHG_Add_Repart_Data(
 char *yo = "Zoltan_PHG_Add_Repart_Data";
 PHGComm *hgc = phg->comm;
 int gnRepartVtx = zhg->GnRepartVtx;
-int maxgnRepartEdge = zhg->globalObj;   /* max # of repartition edges that could
-int *vtxgno = zhg->ObjGNO;
-                                       be added to the global hypergraph. */
+ZOLTAN_GNO_TYPE maxgnRepartEdge = zhg->globalObj; /* max # of repartition edges that could
+                                                     be added to the global hypergraph. */
 int myProc_x = hgc->myProc_x;
 int myProc_y = hgc->myProc_y;
 int nProc_x = hgc->nProc_x;
 int nProc_y = hgc->nProc_y;
-int nRepartVtx = 0, nRepartEdge;         /* # of repartition vertices & edges 
+int nRepartVtx = 0, nRepartEdge;    /* # of repartition vertices & edges 
                                         to add to this processor. */
 int nRepartPin = 0;                  /* # of repartition pins to add to this
                                         processor. */
-int firstRepartVtx = 0, firstRepartEdge = 0; /* global no. of the first repartition
+ZOLTAN_GNO_TYPE firstRepartEdge=0;
+int firstRepartVtx = 0;              /* global no. (0-based) of the first repartition
                                         vertex & edge to add to this processor.
                                         Repartition vertices and repartition
                                         edges are ordered and distributed
@@ -1048,13 +1075,23 @@ ZOLTAN_COMM_OBJ *plan;               /* Plan for communicating input part
                                         info to procs owning corresponding
                                         repartition vertices and edges. */
 int *proclist = NULL;                /* Buffers to send/recv input part info */
-int *sendbuf = NULL;                 /* to procs owning the corresponding   */
-int *recvbuf = NULL;                 /* repartition vertices and edges.     */
+ZOLTAN_GNO_TYPE *sendgno = NULL;     /* to procs owning the corresponding   */
+ZOLTAN_GNO_TYPE *recvgno = NULL;     /* repartition vertices and edges.     */
+
+
+#ifndef REPART_FASTER_METHOD
+int *sendpart = NULL;
+int *recvpart = NULL;
+int *sendsize = NULL;
+int *recvsize = NULL;
+#endif
+
 int nrecv = 0;
                                  
-int *tmp_hindex, *tmp_hvertex;       /* Pointers into phg->hindex and 
+int *tmp_hindex;                     /* Pointers into phg->hindex and 
                                         phg->hvertex; set to start of entries
                                         for repartition edges. */
+int *tmp_hvertex;
 float *tmp_ewgt = NULL;              /* Edge weights for local repartion
                                         edges */
 int *pins_per_edge = NULL;           /* # of pins in each repartition edge. */
@@ -1064,16 +1101,24 @@ int ierr = ZOLTAN_OK;
 int *objsize = NULL;                 /* repartition edge weights. */
 int *tmpobjsize = NULL;
 int *colProc_cnt = NULL;             /* actual nRepartEdge per column proc */
-int *repart_dist_x = NULL;           /* Distribution of repartition vertices
+ZOLTAN_GNO_TYPE *repart_dist_x = NULL; /* Distribution of repartition vertices
                                         to proc rows; similar to phg->dist_x. */
-int *repart_dist_y = NULL;           /* Distribution of repartition edges
+
+ZOLTAN_GNO_TYPE *repart_dist_y = NULL; /* Distribution of repartition edges
                                         to proc cols; similar to phg->dist_y. */
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (myProc_x >= 0 && myProc_y >= 0) {  /* This proc is part of 2D decomp */
 
-    /* Compute distribution of repartition vertices and edges */
-    repart_dist_x = (int *) ZOLTAN_MALLOC((2+nProc_x+nProc_y) * sizeof(int));
-    repart_dist_y = repart_dist_x + nProc_x + 1;
+    /* Compute distribution of repartition vertices and edges. repart_dist_x is a
+     * ZOLTAN_GNO_TYPE only because ProcForRepart needs a ZOLTAN_GNO_TYPE array */
+
+    repart_dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC((2+nProc_x+nProc_y) * sizeof(ZOLTAN_GNO_TYPE));
+
+    repart_dist_y = repart_dist_x + 1+ nProc_x;
+
+    if (!repart_dist_x || !repart_dist_y) MEMORY_ERROR;
 
     for (i = 0; i < nProc_x; i++)
       repart_dist_x[i] = FirstRepart(i, nProc_x, gnRepartVtx);
@@ -1085,12 +1130,12 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
 
     /* Compute number of repartition vertices to add to this processor column */
     phg->nRepartVtx = nRepartVtx
-                    = repart_dist_x[myProc_x+1] - repart_dist_x[myProc_x];
-    firstRepartVtx = repart_dist_x[myProc_x];
+                    = (int)(repart_dist_x[myProc_x+1] - repart_dist_x[myProc_x]);
+    firstRepartVtx = (int)repart_dist_x[myProc_x];
 
     /* Compute maximum number of repartition edges to add to this proc row */
     phg->nRepartEdge = nRepartEdge 
-                     = repart_dist_y[myProc_y+1] - repart_dist_y[myProc_y];
+                     = (int)(repart_dist_y[myProc_y+1] - repart_dist_y[myProc_y]);
     firstRepartEdge = repart_dist_y[myProc_y];
 
     /* If application did not fix any vertices, allocate fixed array for 
@@ -1110,10 +1155,10 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
 
     /***** Create repartition vertices in this processor column. *****/
     /***** Repartition vertices are distributed linearly.        *****/
-    cnt = firstRepartVtx;
-    dim = phg->VtxWeightDim;
+    cnt = firstRepartVtx;     /* Also the part that the first repart Vertex is associated with */
+    dim = phg->VtxWeightDim;  /* since repartition vertex global numbers begin at 0 */
     for (i = phg->nVtx; i < (phg->nVtx + nRepartVtx); i++) {
-      phg->fixed_part[i] = cnt;
+      phg->fixed_part[i] = cnt; 
       input_parts[i] = cnt++;
       if (phg->vwgt) 
         for (j = 0; j < dim; j++)
@@ -1193,20 +1238,35 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
     nextStart_vtx = ((myProc_y+1) * phg->nVtx) / nProc_y;
     cnt = nextStart_vtx - myStart_vtx;
     tmp = 0;
-  
-#define NSEND 3  /* number of fields to be sent for each vertex */
+
     if (cnt) {
       proclist = (int *) ZOLTAN_MALLOC(2 * cnt * sizeof(int));
-      sendbuf = (int *) ZOLTAN_MALLOC(NSEND * 2 * cnt * sizeof(int));
-      if (!proclist || !sendbuf) MEMORY_ERROR;
+      if (!proclist) MEMORY_ERROR;
+
+#ifdef REPART_FASTER_METHOD
+      /* Most likely faster, but uses more memory */
+#define NSEND 3  /* number of fields to be sent for each vertex */
+      sendgno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(NSEND * 2 * cnt * sizeof(ZOLTAN_GNO_TYPE));
+      if (!sendgno) MEMORY_ERROR;
+#else
+      /* uses less memory */
+      sendgno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(2 * cnt * sizeof(ZOLTAN_GNO_TYPE));
+      sendpart = (int *) ZOLTAN_MALLOC(2 * cnt * sizeof(int));
+      if (!sendgno || !sendpart) MEMORY_ERROR;
+
+      if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
+        sendsize = (int *) ZOLTAN_MALLOC(2 * cnt * sizeof(int));
+        if (!sendsize) MEMORY_ERROR;
+      }
+#endif
   
       for (i = 0; i < cnt; i++){
         int vtxproc_x;            /* Processor column for actual vtx. */
         int proc_x;               /* Processor column for repartition vtx. */
         int proc_y;               /* Processor row for repartition edge. */
         int v = i + myStart_vtx;  /* Index of vertex being processed. */
-        int vgno;                 /* Gno for vertex v. */
-        int k = input_parts[v];   /* Repartition vtx global number */
+        ZOLTAN_GNO_TYPE vgno;                 /* Gno for vertex v. */
+        ZOLTAN_GNO_TYPE k = (ZOLTAN_GNO_TYPE)input_parts[v];   /* Repartition vtx global number */
 
         if (k < gnRepartVtx) {
           vgno = VTX_LNO_TO_GNO(phg,v);  /* Gno of vertex */
@@ -1221,18 +1281,36 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
   
           /* Send message to processor owning repartition vertex and edge */
           proclist[tmp] = proc_y * nProc_x + proc_x;
-          sendbuf[NSEND*tmp] = vgno;            /* GNO of vertex */
-          sendbuf[NSEND*tmp+1] = k;             /* Vertex's input partition */
-          sendbuf[NSEND*tmp+2] = (objsize ? objsize[v] : 1);
+
+#ifdef REPART_FASTER_METHOD
+          sendgno[NSEND*tmp] = vgno;            /* GNO of vertex */
+          sendgno[NSEND*tmp+1] = k;             /* Vertex's input partition */
+          sendgno[NSEND*tmp+2] = (objsize ? objsize[v] : 1);
+#else
+          sendgno[tmp] = vgno;
+          sendpart[tmp] = (int)k;
+          if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
+            sendsize[tmp] = (objsize ? objsize[v] : 1);
+          }
+#endif
           tmp++;
 
           /* Send message to proc owning actual vertex and repartition edge */
           vtxproc_x = VTX_TO_PROC_X(phg,vgno);
           if (vtxproc_x != proc_x) {
             proclist[tmp] = proc_y * nProc_x + vtxproc_x;
-            sendbuf[NSEND*tmp] = vgno;            /* GNO of vertex */
-            sendbuf[NSEND*tmp+1] = k;             /* Vertex's input partition */
-            sendbuf[NSEND*tmp+2] = (objsize ? objsize[v] : 1);
+
+#ifdef REPART_FASTER_METHOD
+            sendgno[NSEND*tmp] = vgno;            /* GNO of vertex */
+            sendgno[NSEND*tmp+1] = k;             /* Vertex's input partition */
+            sendgno[NSEND*tmp+2] = (objsize ? objsize[v] : 1);
+#else
+            sendgno[tmp] = vgno;
+            sendpart[tmp] = (int)k;
+            if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
+              sendsize[tmp] = (objsize ? objsize[v] : 1);
+            }
+#endif
             tmp++;
           }
         }
@@ -1244,14 +1322,41 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
 
     /* Create plan and send info. */
 
-    ierr = Zoltan_Comm_Create(&plan, tmp, proclist, hgc->Communicator,
-                              24555, &nrecv);
+    ierr = Zoltan_Comm_Create(&plan, tmp, proclist, hgc->Communicator, 24555, &nrecv);
 
-    if (nrecv && !(recvbuf = (int *) ZOLTAN_MALLOC(NSEND*nrecv*sizeof(int))))
+#ifdef REPART_FASTER_METHOD
+    if (nrecv && !(recvgno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(NSEND*nrecv*sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
   
-    ierr = Zoltan_Comm_Do(plan, 24556, (char *) sendbuf, NSEND * sizeof(int),
-                         (char *) recvbuf);
+    ierr = Zoltan_Comm_Do(plan, 24556, (char *) sendgno, NSEND * sizeof(ZOLTAN_GNO_TYPE),
+                         (char *) recvgno);
+
+    ZOLTAN_FREE(&sendgno);
+#else
+
+    if (nrecv && !(recvgno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nrecv*sizeof(ZOLTAN_GNO_TYPE))))
+      MEMORY_ERROR;
+  
+    ierr = Zoltan_Comm_Do(plan, 24556, (char *) sendgno, sizeof(ZOLTAN_GNO_TYPE), (char *) recvgno);
+
+    ZOLTAN_FREE(&sendgno);
+
+    if (nrecv && !(recvpart = (int *) ZOLTAN_MALLOC(nrecv*sizeof(int))))
+      MEMORY_ERROR;
+  
+    ierr = Zoltan_Comm_Do(plan, 24557, (char *) sendpart, sizeof(int), (char *) recvpart);
+
+    ZOLTAN_FREE(&sendpart);
+
+    if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
+      if (nrecv && !(recvsize = (int *) ZOLTAN_MALLOC(nrecv*sizeof(int))))
+        MEMORY_ERROR;
+
+      ierr = Zoltan_Comm_Do(plan, 24558, (char *) sendsize, sizeof(int), (char *) recvsize);
+
+      ZOLTAN_FREE(&sendsize);
+    }
+#endif
 
     ierr = Zoltan_Comm_Destroy(&plan);
 
@@ -1265,16 +1370,22 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
   
     /* Loop to build hindex array */
     for (i = 0; i < nrecv; i++) {
-      int vtx_gno;   /* Global vtx number of vtx in received repartition edge.*/
+      ZOLTAN_GNO_TYPE vtx_gno;   /* Global vtx number of vtx in received repartition edge.*/
       int rEdge_lno; /* local index of repartition edge */
-      int rVtx_gno;  /* global repartition vertex number */
+      ZOLTAN_GNO_TYPE rVtx_gno;  /* global repartition vertex number */
       int rVtx_lno;  /* local index of repartition vertex */
   
-      vtx_gno = recvbuf[NSEND*i];
-      rEdge_lno = vtx_gno - firstRepartEdge;
-      rVtx_gno = recvbuf[NSEND*i+1];
-      rVtx_lno = rVtx_gno - firstRepartVtx;
-
+#ifdef REPART_FASTER_METHOD
+      vtx_gno = recvgno[NSEND*i];
+      rEdge_lno = (int)(vtx_gno - firstRepartEdge);
+      rVtx_gno = recvgno[NSEND*i+1];
+      rVtx_lno = (int)(rVtx_gno - firstRepartVtx);
+#else
+      vtx_gno = recvgno[i];
+      rEdge_lno = (int)(vtx_gno - firstRepartEdge);
+      rVtx_gno = recvpart[i];
+      rVtx_lno = (int)(rVtx_gno - firstRepartVtx);
+#endif
 
       if (rVtx_gno >= firstRepartVtx && rVtx_gno < firstRepartVtx+nRepartVtx) {
         /* Add pin for repartition vertex */
@@ -1312,30 +1423,56 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
       MEMORY_ERROR;
 
     for (i = 0; i < nrecv; i++) {
-      int vtx_gno;   /* Global vtx number of vtx in received repartition edge.*/
+      ZOLTAN_GNO_TYPE vtx_gno;   /* Global vtx number of vtx in received repartition edge.*/
       int rEdge_lno; /* local index of repartition edge */
-      int rVtx_gno;  /* global repartition vertex number */
+      ZOLTAN_GNO_TYPE rVtx_gno;  /* global repartition vertex number */
       int rVtx_lno;  /* local index of repartition vertex */
   
-      vtx_gno = recvbuf[NSEND*i];
-      rEdge_lno = vtx_gno - firstRepartEdge;
-      rVtx_gno = recvbuf[NSEND*i+1];
-      rVtx_lno = rVtx_gno - firstRepartVtx;
+#ifdef REPART_FASTER_METHOD
+      vtx_gno = recvgno[NSEND*i];
+      rEdge_lno = (int)(vtx_gno - firstRepartEdge);
+      rVtx_gno = recvgno[NSEND*i+1];
+      rVtx_lno = (int)(rVtx_gno - firstRepartVtx);
+#else
+      vtx_gno = recvgno[i];
+      rEdge_lno = (int)(vtx_gno - firstRepartEdge);
+      rVtx_gno = recvpart[i];
+      rVtx_lno = (int)(rVtx_gno - firstRepartVtx);
+#endif
       
       cnt = 0;
       if (rVtx_gno >= firstRepartVtx && rVtx_gno < firstRepartVtx+nRepartVtx) {
         /* Add pin for repartition vertex */
         tmp_hvertex[tmp_hindex[rEdge_lno]] = phg->nVtx + rVtx_lno;
         cnt++;
+#ifdef REPART_FASTER_METHOD
         for (j = 0; j < phg->EdgeWeightDim; j++) 
-          tmp_ewgt[rEdge_lno*phg->EdgeWeightDim+j] = (float) recvbuf[NSEND*i+2];
+          tmp_ewgt[rEdge_lno*phg->EdgeWeightDim+j] = (float) recvgno[NSEND*i+2];
+#else
+        if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
+          for (j = 0; j < phg->EdgeWeightDim; j++) 
+            tmp_ewgt[rEdge_lno*phg->EdgeWeightDim+j] = (float) recvsize[i];
+        }
+        else{
+          for (j = 0; j < phg->EdgeWeightDim; j++) 
+            tmp_ewgt[rEdge_lno*phg->EdgeWeightDim+j] = 1.0;
+        }
+#endif
       }
       if (myProc_x == VTX_TO_PROC_X(phg, vtx_gno)) {
         /* Add pin for vertex */
         tmp_hvertex[tmp_hindex[rEdge_lno]+cnt] = VTX_GNO_TO_LNO(phg, vtx_gno);
       }
     }
+
+    ZOLTAN_FREE(&recvgno);
+
+#ifdef REPART_FASTER_METHOD
 #undef NSEND
+#else
+    ZOLTAN_FREE(&recvpart);
+    ZOLTAN_FREE(&recvsize);
+#endif
 
     /* Remove zero-length repartition edges */
     cnt = 0;
@@ -1396,6 +1533,9 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
      * Need to get actual nRepartEdge values from each proc in column. */
     
     colProc_cnt = (int *) ZOLTAN_MALLOC(nProc_y * sizeof(int));
+
+    if (!colProc_cnt) MEMORY_ERROR;
+
     MPI_Allgather(&nRepartEdge, 1, MPI_INT, colProc_cnt, 1, MPI_INT, 
                   phg->comm->col_comm);
     for (sum = 0, i = 0; i < nProc_y; i++) {
@@ -1409,8 +1549,17 @@ int *repart_dist_y = NULL;           /* Distribution of repartition edges
 End:
 
   ZOLTAN_FREE(&proclist);
-  ZOLTAN_FREE(&sendbuf);
-  ZOLTAN_FREE(&recvbuf);
+  ZOLTAN_FREE(&sendgno);
+  ZOLTAN_FREE(&recvgno);
+
+#ifndef REPART_FASTER_METHOD
+  ZOLTAN_FREE(&sendpart);
+  ZOLTAN_FREE(&recvpart);
+  ZOLTAN_FREE(&sendsize);
+  ZOLTAN_FREE(&recvsize);
+#endif
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 /****************************************************************************/
@@ -1429,11 +1578,12 @@ int Zoltan_PHG_Remove_Repart_Data(
  */
 int nProc_x = phg->comm->nProc_x;
 int nProc_y = phg->comm->nProc_y;
-int sum;
+ZOLTAN_GNO_TYPE sum;
 int i;
 int *colProc_cnt = NULL;
 int myProc_x = phg->comm->myProc_x;
 int myProc_y = phg->comm->myProc_y;
+int ierr = ZOLTAN_OK;
 
   if (myProc_x >= 0 && myProc_y >= 0) {  /* This proc is part of 2D decomp */
     /* Only processors in the 2D decomp added repartition data, so 
@@ -1456,12 +1606,17 @@ int myProc_y = phg->comm->myProc_y;
 
     /* Update distx and disty to remove the repartition vtx & edges. */
     for (sum = 0, i = 0; i < nProc_x; i++) {
-      phg->dist_x[i] -= sum;
+      phg->dist_x[i] -= (int)sum;
       sum += NumRepart(i, nProc_x, zhg->GnRepartVtx);
     }
-    phg->dist_x[nProc_x] -= sum;
+    phg->dist_x[nProc_x] -= (int)sum;
   
     colProc_cnt = (int *) ZOLTAN_MALLOC(nProc_y * sizeof(int));
+    if (!colProc_cnt){
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
     MPI_Allgather(&(phg->nRepartEdge), 1, MPI_INT, colProc_cnt, 1, MPI_INT, 
                   phg->comm->col_comm);
     for (sum = 0, i = 0; i < nProc_y; i++) {
@@ -1472,7 +1627,8 @@ int myProc_y = phg->comm->myProc_y;
     ZOLTAN_FREE(&colProc_cnt);
   }
 
-  return ZOLTAN_OK;
+End:
+  return ierr;
 }
 /****************************************************************************/
 
@@ -1481,49 +1637,45 @@ static int remove_dense_edges(ZZ *zz,
    float esize_threshold,               /* %age of gnVtx considered a dense edge */
    int save_removed,                    /* save the removed edges in ZHG */
    int *nEdge,                          /* number of edges remaining */
-   int *nGlobalEdges,                   /* number of global edges remaining */
+   ZOLTAN_GNO_TYPE *nGlobalEdges,       /* number of global edges remaining */
    int *nPins,                          /* number of local pins remainint */
-   int **edgeGNO,                       /* global numbers of remaining edges */
+   ZOLTAN_GNO_TYPE **edgeGNO,           /* global numbers of remaining edges */
    int **edgeSize,                      /* number pins in each remaining edge */
    float **edgeWeight,                  /* weight of remaining edges */
-   int **pinGNO,                        /* global numbers of pins in remaining edges */
+   ZOLTAN_GNO_TYPE **pinGNO,            /* global numbers of pins in remaining edges */
    int **pinProcs)                     /* processes owning pin vertices */
 {
 char *yo = "remove_dense_edges";
 int ierr = ZOLTAN_OK;
 int i, w, esize, k, l, kpin, lpin, pin;
 int ew_dim = zhg->edgeWeightDim;
-int global_nremove = 0; 
-int global_nremove_pins = 0; 
-int nremove = 0;
-int nremove_size = 0;
-int nkeep = 0;
-int nkeep_size = 0;
-int numGlobalEdges = 0;
-float gesize_threshold;
-int *goEdgeGNO = NULL;
+ZOLTAN_GNO_TYPE global_nremove = 0; 
+ZOLTAN_GNO_TYPE global_nremove_pins = 0; 
+ZOLTAN_GNO_TYPE nremove = 0;
+ZOLTAN_GNO_TYPE nremove_size = 0;
+ZOLTAN_GNO_TYPE nkeep = 0;
+ZOLTAN_GNO_TYPE nkeep_size = 0;
+ZOLTAN_GNO_TYPE numGlobalEdges = 0;
+double gesize_threshold;
 int *goEdgeSize = NULL;
-int *goPinGNO = NULL;
 int *goPinProc = NULL;
 float *goEdgeWeight = NULL;
-int *keepEdgeGNO = NULL;
 int *keepEdgeSize = NULL;
-int *keepPinGNO = NULL;
 int *keepPinProc = NULL;
 float *keepEdgeWeight = NULL;
-int *gnoPtr, *procPtr;
+ZOLTAN_GNO_TYPE *keepPinGNO = NULL, *keepEdgeGNO = NULL, *goPinGNO = NULL, *goEdgeGNO = NULL, *gnoPtr;
+int *procPtr;
 float *wgtPtr;
-int localval[2], globalval[2];
+ZOLTAN_GNO_TYPE localval[2], globalval[2];
 
   /* Remove dense edges and zero-sized edges from input list */
 
   if (esize_threshold <= 1)
-    gesize_threshold = esize_threshold * zhg->globalObj; /* relative */
+    gesize_threshold = esize_threshold * (double)zhg->globalObj; /* relative */
   else
-    gesize_threshold = esize_threshold; /* absolute */
+    gesize_threshold = (double)esize_threshold; /* absolute */
 
   for (i = 0; i < zhg->nHedges; i++) {
-
     if ((zhg->Esize[i] > gesize_threshold) || (zhg->Esize[i] == 0)){
       nremove++;
       nremove_size += zhg->Esize[i];
@@ -1537,7 +1689,7 @@ int localval[2], globalval[2];
   localval[0] = nremove;
   localval[1] = nremove_size;
 
-  MPI_Allreduce(localval, globalval, 2, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(localval, globalval, 2, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);
 
   global_nremove = globalval[0];
   global_nremove_pins = globalval[1];
@@ -1546,7 +1698,7 @@ int localval[2], globalval[2];
 
   if ((zhg->globalHedges > zz->Num_Proc) && (numGlobalEdges < zz->Num_Proc)){
     if (zz->Proc == 0) fprintf(stderr,
-     "\nWARNING: PHG_EDGE_SIZE_THRESHOLD is low (%f), resulting in only %d edges\n remaining.",
+     "\nWARNING: PHG_EDGE_SIZE_THRESHOLD is low (%f), resulting in only %zd edges\n remaining.",
         esize_threshold, numGlobalEdges);
   }
 
@@ -1602,9 +1754,9 @@ int localval[2], globalval[2];
   }
 
   if (save_removed){
-    goEdgeGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * nremove);
+    goEdgeGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nremove);
     goEdgeSize = (int *)ZOLTAN_MALLOC(sizeof(int) * nremove);
-    goPinGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * nremove_size);
+    goPinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nremove_size);
     goPinProc = (int *)ZOLTAN_MALLOC(sizeof(int) * nremove_size);
 
     if (!goEdgeGNO || !goEdgeSize || !goPinGNO || !goPinProc){
@@ -1618,9 +1770,9 @@ int localval[2], globalval[2];
     }
   }
 
-  keepEdgeGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * nkeep);
+  keepEdgeGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nkeep);
   keepEdgeSize = (int *)ZOLTAN_MALLOC(sizeof(int) * nkeep);
-  keepPinGNO = (int *)ZOLTAN_MALLOC(sizeof(int) * nkeep_size);
+  keepPinGNO = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * nkeep_size);
   keepPinProc = (int *)ZOLTAN_MALLOC(sizeof(int) * nkeep_size);
 
   if (!keepEdgeGNO || !keepEdgeSize || !keepPinGNO || !keepPinProc){

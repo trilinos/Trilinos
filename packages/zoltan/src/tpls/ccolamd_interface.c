@@ -53,9 +53,6 @@ int Zoltan_CColAMD_Order(
   ZOOS *order_opt 	/* Ordering options, parsed by Zoltan_Order */
 )
 {
-  static char *yo = "Zoltan_CColAMD_Order";
-  int n, ierr;
-
   return (ZOLTAN_OK);
 }
 #endif
@@ -74,7 +71,7 @@ int Zoltan_CColAMD(
   int nPart,
   int *num_obj,
   ZOLTAN_ID_PTR *gids,
-  int **rank
+  ZOLTAN_ID_PTR *rank
 )
 {
   static char *yo = "Zoltan_CColAMD";
@@ -84,14 +81,15 @@ int Zoltan_CColAMD(
   int stats [CCOLAMD_STATS];
   size_t Alen;
   int *pins = NULL;         /* Ccolamd needs a copy of the non-zeros */
-  int *cmember = NULL;      /* constraints */
+  int *imember = NULL;                 /* constraints */
+  ZOLTAN_ID_TYPE *cmember = NULL;      /* constraints */
   void *partdata = NULL;
   int *ystart = NULL;
-  int n_col, n_row, n_nnz;
+  ZOLTAN_GNO_TYPE n_col, n_row, n_nnz;
   ZOLTAN_ID_PTR localgids;
   Zoltan_matrix_2d mtx;
   int i;
-  int offset = 0;
+  ZOLTAN_GNO_TYPE offset = 0, tmpgno;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   memset (&opt, 0, sizeof(Zoltan_matrix_options));
@@ -113,14 +111,30 @@ int Zoltan_CColAMD(
   localgids = Zoltan_Matrix_Get_GID(zz, &mtx.mtx);
   if (n_col > 0 && localgids == NULL) MEMORY_ERROR;
 
-  cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
+  cmember = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(n_col * sizeof(ZOLTAN_ID_TYPE));
   if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
-  ierr = Zoltan_DD_Find (dd_constraint, localgids, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
+  ierr = Zoltan_DD_Find (dd_constraint, localgids, cmember, NULL, NULL,
 			 n_col, NULL);
   CHECK_IERR;
   ZOLTAN_FREE(&localgids);
-  partdata = Zoltan_Distribute_Partition_Register(zz, n_col, mtx.mtx.yGNO, cmember, zz->Num_Proc, nPart);
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){       /* TODO64 - check for overflow */
+    imember = (int *)ZOLTAN_MALLOC(sizeof(int) * n_col);
+    for (i=0; i < n_col; i++){
+      imember[i] = (int)cmember[i];
+    }
+  }
+  else{
+    imember = (int *)cmember;
+  }
+
+  partdata = Zoltan_Distribute_Partition_Register(zz, n_col, mtx.mtx.yGNO, imember, zz->Num_Proc, nPart);
+
+  if (imember && (imember != (int *)cmember)){
+    ZOLTAN_FREE(&imember);
+  }
   ZOLTAN_FREE(&cmember);
+
   Zoltan_Distribute_Set(&mtx, &Zoltan_Distribute_Partition, partdata);
 
   ierr = Zoltan_Distribute_LinearY(zz, mtx.comm);
@@ -138,27 +152,38 @@ int Zoltan_CColAMD(
 
   (*num_obj) = n_col = mtx.mtx.nY;
   n_row = mtx.mtx.globalX;
-  n_nnz = mtx.mtx.nPins;
+  n_nnz = (ZOLTAN_GNO_TYPE)mtx.mtx.nPins;
 
 
   /* Prepare call to CCOLAMD */
   Zoltan_ccolamd_set_defaults (knobs);
 
-  cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
+  cmember = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(n_col * sizeof(ZOLTAN_ID_TYPE));
   if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
-  ierr = Zoltan_DD_Find (dd_constraint, mtx.mtx.yGID, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
+  ierr = Zoltan_DD_Find (dd_constraint, mtx.mtx.yGID, cmember, NULL, NULL,
 			 n_col, NULL);
   CHECK_IERR;
 
 
   (*gids) = ZOLTAN_MALLOC_GID_ARRAY(zz , n_col);
   if (n_col > 0 && (*gids) == NULL) MEMORY_ERROR;
-  memcpy ((*gids), mtx.mtx.yGID, n_col*sizeof(int)*zz->Num_GID);
+
+  memcpy ((*gids), mtx.mtx.yGID, n_col*sizeof(ZOLTAN_ID_TYPE)*zz->Num_GID);
 
   Alen = Zoltan_ccolamd_recommended (n_nnz, n_row, n_col);
   pins = (int*) ZOLTAN_MALLOC(Alen * sizeof(int));
   if (Alen >0 && pins == NULL) MEMORY_ERROR;
-  memcpy (pins, mtx.mtx.pinGNO, mtx.mtx.nPins*sizeof(int));
+
+  /* TODO64 check for overflow */
+
+  if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(int)){
+    for (i=0; i < Alen; i++){
+      pins[i] = (int)mtx.mtx.pinGNO[i];
+    }
+  }
+  else{
+    memcpy (pins, mtx.mtx.pinGNO, mtx.mtx.nPins*sizeof(int));
+  }
 
   ystart = (int*) ZOLTAN_MALLOC((n_col + 1) * sizeof(int));
   if (ystart == NULL) MEMORY_ERROR;
@@ -169,18 +194,33 @@ int Zoltan_CColAMD(
 
   /* Compute ordering */
   /* Upon return, ystart is the invert permutation ... */
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){       /* TODO64 - check for overflow */
+    imember = (int *)ZOLTAN_MALLOC(sizeof(int) * n_col);
+    for (i=0; i < n_col; i++){
+      imember[i] = (int)cmember[i];
+    }
+  }
+  else{
+    imember = (int *)cmember;
+  }
+
   ierr = Zoltan_ccolamd (n_row, n_col, Alen, pins, ystart,
-		  knobs, stats, cmember);
+		  knobs, stats, imember);
 
   ZOLTAN_FREE(&pins);
+  if (imember && (imember != (int *)cmember)){
+    ZOLTAN_FREE(&imember);
+  }
   ZOLTAN_FREE(&cmember);
 
-  (*rank) = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
+  (*rank) = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(n_col * sizeof(ZOLTAN_ID_TYPE));
   if (n_col > 0 && (*rank) == NULL) MEMORY_ERROR;
 
 
   /* Compute offset in the global graph */
-  MPI_Scan(&n_col, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  tmpgno = (ZOLTAN_GNO_TYPE)n_col;
+  MPI_Scan(&tmpgno, &offset, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);
   offset -= n_col;
   /* Compute direct permutation */
 
@@ -195,6 +235,7 @@ int Zoltan_CColAMD(
   ZOLTAN_FREE(&pins);
   ZOLTAN_FREE(&ystart);
   ZOLTAN_FREE(&cmember);
+  ZOLTAN_FREE(&imember);
 
 
   ZOLTAN_TRACE_EXIT(zz, yo);

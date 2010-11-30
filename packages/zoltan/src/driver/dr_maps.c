@@ -30,10 +30,10 @@ extern "C" {
 
 struct map_list_head {
   int map_alloc_size;
-  int *glob_id;
-  int *elem_id;
-  int *side_id;
-  int *neigh_id;
+  ZOLTAN_ID_TYPE *glob_id;
+  int      *elem_id;
+  int      *side_id;
+  ZOLTAN_ID_TYPE *neigh_id;
 };
 
 static void compare_maps_with_ddirectory_results(int, MESH_INFO_PTR);
@@ -70,7 +70,7 @@ int build_elem_comm_maps(int proc, MESH_INFO_PTR mesh)
 char *yo = "build_elem_comm_maps";
 int i, j;
 ELEM_INFO *elem;
-int iadj_elem;
+ZOLTAN_ID_TYPE iadj_elem;
 int iadj_proc;
 int indx;
 int num_alloc_maps;
@@ -129,7 +129,7 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
          * Add this element to the temporary data structure for 
          * the appropriate neighboring processor.
          */
-        if ((indx = in_list(iadj_proc, mesh->necmap, mesh->ecmap_id)) == -1) {
+        if ((indx = in_list2(iadj_proc, mesh->necmap, mesh->ecmap_id)) == -1) {
           /*
            * Start a new communication map.
            */
@@ -152,10 +152,10 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
           mesh->ecmap_id[mesh->necmap] = iadj_proc;
           mesh->ecmap_cnt[mesh->necmap] = 0;
           map = &(tmp_maps[mesh->necmap]);
-          map->glob_id  = (int *) malloc(MAP_ALLOC * sizeof(int));
+          map->glob_id  = (ZOLTAN_ID_TYPE *) malloc(MAP_ALLOC * sizeof(ZOLTAN_ID_TYPE));
           map->elem_id  = (int *) malloc(MAP_ALLOC * sizeof(int));
           map->side_id  = (int *) malloc(MAP_ALLOC * sizeof(int));
-          map->neigh_id = (int *) malloc(MAP_ALLOC * sizeof(int));
+          map->neigh_id = (ZOLTAN_ID_TYPE *) malloc(MAP_ALLOC * sizeof(ZOLTAN_ID_TYPE));
           if (map->glob_id == NULL || map->elem_id == NULL || 
               map->side_id == NULL || map->neigh_id == NULL) {
             Gen_Error(0, "Fatal:  insufficient memory");
@@ -170,14 +170,14 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
         map = &(tmp_maps[indx]);
         if (mesh->ecmap_cnt[indx] >= map->map_alloc_size) {
           map->map_alloc_size += MAP_ALLOC;
-          map->glob_id  = (int *) realloc(map->glob_id, 
-                                          map->map_alloc_size * sizeof(int));
+          map->glob_id  = (ZOLTAN_ID_TYPE *) realloc(map->glob_id, 
+                                          map->map_alloc_size * sizeof(ZOLTAN_ID_TYPE));
           map->elem_id  = (int *) realloc(map->elem_id, 
                                           map->map_alloc_size * sizeof(int));
           map->side_id  = (int *) realloc(map->side_id, 
                                           map->map_alloc_size * sizeof(int));
-          map->neigh_id = (int *) realloc(map->neigh_id, 
-                                          map->map_alloc_size * sizeof(int));
+          map->neigh_id = (ZOLTAN_ID_TYPE *) realloc(map->neigh_id, 
+                                          map->map_alloc_size * sizeof(ZOLTAN_ID_TYPE));
           if (map->glob_id == NULL || map->elem_id == NULL || 
               map->side_id == NULL || map->neigh_id == NULL) {
             Gen_Error(0, "Fatal:  insufficient memory");
@@ -188,8 +188,7 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
         tmp = mesh->ecmap_cnt[indx];
         map->glob_id[tmp] = elem->globalID;
         map->elem_id[tmp] = i;
-        map->side_id[tmp] = j+1;  /* side is determined by position in
-                                          adj array (+1 since not 0-based). */
+        map->side_id[tmp] = j+1;  /* side is determined by position in adj array (+1 since not 0-based). */
         map->neigh_id[tmp] = iadj_elem;
         mesh->ecmap_cnt[indx]++;
         max_adj++;
@@ -209,8 +208,7 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
 
     mesh->ecmap_elemids  = (int *) malloc(max_adj * sizeof(int));
     mesh->ecmap_sideids  = (int *) malloc(max_adj * sizeof(int));
-    mesh->ecmap_neighids = (int *) malloc(max_adj * sizeof(int));
-
+    mesh->ecmap_neighids = (ZOLTAN_ID_TYPE *) malloc(max_adj * sizeof(ZOLTAN_ID_TYPE));
 
     /*
      * Allocate temporary memory for sort index.
@@ -332,7 +330,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
   for (i = 0; i < num_elems; i++) {
     current = &(mesh->elements[i]);
     gids[i] = current->globalID;
-    lids[i] = i;
+    lids[i] = (ZOLTAN_ID_TYPE)i;
     for (j = 0; j < current->adj_len; j++) {
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
       if (current->adj[j] == -1) continue;
@@ -561,11 +559,14 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
   }
 
   map.map_alloc_size = max_map_size;
-  map.glob_id  = (int *) malloc(max_map_size * 4 * sizeof(int));
-  map.elem_id  = map.glob_id + max_map_size;
-  map.side_id  = map.elem_id + max_map_size;
-  map.neigh_id = map.side_id + max_map_size; 
-  if (max_map_size > 0 && map.glob_id == NULL) {
+
+  map.elem_id = (int *) malloc(max_map_size * sizeof(int));
+  map.side_id = (int *) malloc(max_map_size * sizeof(int));
+
+  map.glob_id = (ZOLTAN_ID_TYPE *) malloc(max_map_size * sizeof(ZOLTAN_ID_TYPE));
+  map.neigh_id= (ZOLTAN_ID_TYPE *) malloc(max_map_size * sizeof(ZOLTAN_ID_TYPE));
+  
+  if (max_map_size > 0 && map.neigh_id == NULL) {
     Gen_Error(0, "Fatal:  insufficient memory");
     return;
   }
@@ -585,9 +586,9 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     current = &(mesh->elements[map.elem_id[map_size]]);
     for (k = 0; k < current->adj_len; k++) {
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current->adj[k] == -1) continue;
+      if (current->adj[k] == ZOLTAN_ID_CONSTANT(-1)) continue;
       if (current->adj_proc[k] == nbor_proc && 
-          current->adj[k] == (int) others_want[j+3]) {
+          current->adj[k] ==  others_want[j+3]) {
         map.side_id[map_size] = k + 1;
         map.neigh_id[map_size] = current->adj[k];
         break;
@@ -618,6 +619,9 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
   }
 
   free(map.glob_id);
+  free(map.elem_id);
+  free(map.side_id);
+  free(map.neigh_id);
   free(sindex);
   free(nbor_gids);
   free(ownerlist);
@@ -662,7 +666,7 @@ int indx;
   /*
    * Compute offset into mesh communication maps for the given nbor proc.
    */
-  if ((indx = in_list(nbor_proc, mesh->necmap, mesh->ecmap_id)) == -1) {
+  if ((indx = in_list2(nbor_proc, mesh->necmap, mesh->ecmap_id)) == -1) {
     printf("%d DDirectory Test:  Comm map for nbor proc %d does not exist\n",
            proc, nbor_proc);
     return;
@@ -706,7 +710,7 @@ int indx;
     j = sindex[i];
     if (map->neigh_id[j] != mesh->ecmap_neighids[i+cnt]) {
       printf("%d DDirectory Test: Different neigh IDs for nbor_proc %d: "
-             "%d != %d\n", proc, nbor_proc, map->neigh_id[j], 
+             ZOLTAN_ID_SPEC " != " ZOLTAN_ID_SPEC "\n", proc, nbor_proc, map->neigh_id[j], 
              mesh->ecmap_neighids[i+cnt]);
     }
   }
@@ -717,7 +721,7 @@ int indx;
     printf("Local ID\tSide ID\tGlobal ID\tNeigh ID\n");
     for (i = 0; i < map_size; i++) {
       j = sindex[i];
-      printf("\t%d\t%d\t%d\t%d\n", 
+      printf("\t%d\t%d\t" ZOLTAN_ID_SPEC "\t" ZOLTAN_ID_SPEC "\n", 
              map->elem_id[j], map->side_id[j], 
              map->glob_id[j], map->neigh_id[j]);
     }

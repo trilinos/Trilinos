@@ -133,7 +133,7 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
 }
 
 
-int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
+ssize_t ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
 {
   int toread = 0;
   int nbrdone = 0;
@@ -175,9 +175,9 @@ int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
 
 char* ZOLTAN_FILE_gets(char * buf, int len, ZOLTAN_FILE* file)
 {
-  int size;
+  ssize_t size;
   char * end = NULL;
-  int offset = 0;
+  ssize_t offset = 0;
 
   if (file->type == STANDARD) return (fgets(buf, len, file->strm.fileunc));
 

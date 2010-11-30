@@ -43,7 +43,7 @@ typedef struct tagVCycle {
     int              *vlno;       /* vlno size = hg->nVtx 
                                      vlno[i] is the local vertex number of vtx
 				     i on proc vdest[i]. */
-    int              *LevelMap;   /* necessary to uncoarsen                  */
+    ZOLTAN_GNO_TYPE  *LevelMap;   /* necessary to uncoarsen                  */
                                   /* LevelMap size = hg->nVtx 
                                      LevelMap[i] is the vtx number of the
                                      coarse vertex containing fine vtx i 
@@ -133,7 +133,7 @@ static int allocVCycle(VCycle *v)
     return ZOLTAN_MEMERR;
  
   if (!v->LevelMap 
-   && !(v->LevelMap = (int*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(int))))
+   && !(v->LevelMap = (ZOLTAN_GNO_TYPE*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(ZOLTAN_GNO_TYPE))))
      return ZOLTAN_MEMERR;
 
   return ZOLTAN_OK;
@@ -200,11 +200,12 @@ int Zoltan_PHG_Partition (
 
   PHGComm *hgc = hg->comm;
   VCycle  *vcycle=NULL, *del=NULL;
-  int  i, err = ZOLTAN_OK, middle, tot_nPins;
-  int  origVpincnt; /* for processor reduction test */
-  int  prevVcnt     = 2*hg->dist_x[hgc->nProc_x]; /* initialized so that the */
-  int  prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
-						     before any coarsening */
+  int  i, err = ZOLTAN_OK, middle;
+  ZOLTAN_GNO_TYPE origVpincnt; /* for processor reduction test */
+  ZOLTAN_GNO_TYPE prevVcnt     = 2*hg->dist_x[hgc->nProc_x]; /* initialized so that the */
+  ZOLTAN_GNO_TYPE prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
+				 		               before any coarsening */
+  ZOLTAN_GNO_TYPE tot_nPins, local_nPins;
   char *yo = "Zoltan_PHG_Partition";
   int do_timing = (hgp->use_timers > 1);
   int fine_timing = (hgp->use_timers > 2);
@@ -234,21 +235,25 @@ int Zoltan_PHG_Partition (
     ZOLTAN_TIMER_START(zz->ZTime, timer->vcycle, hgc->Communicator);
   }
 
-  MPI_Allreduce(&hg->nPins,&tot_nPins,1,MPI_INT,MPI_SUM,hgc->Communicator);
+  local_nPins = (ZOLTAN_GNO_TYPE)hg->nPins;
+
+  MPI_Allreduce(&local_nPins,&tot_nPins,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,hgc->Communicator);
+
   origVpincnt = tot_nPins;
 
   if (!(vcycle = newVCycle(zz, hg, parts, NULL, vcycle_timing))) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
   /****** Coarsening ******/    
 #define COARSEN_FRACTION_LIMIT 0.9  /* Stop if we don't make much progress */
-  while ((hg->redl>0) && (hg->dist_x[hgc->nProc_x] > hg->redl)
-	 && ((hg->dist_x[hgc->nProc_x] < (int) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5)) /* prevVcnt initialized to 2*hg->dist_x[hgc->nProc_x] */
-	     || (hg->dist_y[hgc->nProc_y] < (int) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5))) /* prevVedgecnt initialized to 2*hg->dist_y[hgc->nProc_y] */
+  while ((hg->redl>0) && (hg->dist_x[hgc->nProc_x] > (ZOLTAN_GNO_TYPE)hg->redl)
+	 && ((hg->dist_x[hgc->nProc_x] < (ZOLTAN_GNO_TYPE) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5)) /* prevVcnt initialized to 2*hg->dist_x[hgc->nProc_x] */
+	     || (hg->dist_y[hgc->nProc_y] < (ZOLTAN_GNO_TYPE) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5))) /* prevVedgecnt initialized to 2*hg->dist_y[hgc->nProc_y] */
     && hg->dist_y[hgc->nProc_y] && hgp->matching) {
-      int *match = NULL;
+      ZOLTAN_GNO_TYPE *match = NULL;
       VCycle *coarser=NULL, *redistributed=NULL;
         
       prevVcnt     = hg->dist_x[hgc->nProc_x];
@@ -290,15 +295,18 @@ int Zoltan_PHG_Partition (
       }
 
       /* Allocate and initialize Matching Array */
-      if (hg->nVtx && !(match = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
+      if (hg->nVtx && !(match = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC (hg->nVtx*sizeof(ZOLTAN_GNO_TYPE)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: Matching array");
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_MEMERR;
       }
       for (i = 0; i < hg->nVtx; i++)
         match[i] = i;
         
       /* Calculate matching (packing or grouping) */
+
       err = Zoltan_PHG_Matching (zz, hg, match, hgp);
+
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
         ZOLTAN_FREE (&match);
         goto End;
@@ -332,6 +340,7 @@ int Zoltan_PHG_Partition (
       err = Zoltan_PHG_Coarsening (zz, hg, match, coarser->hg, vcycle->LevelMap,
        &vcycle->LevelCnt, &vcycle->LevelSndCnt, &vcycle->LevelData, 
        &vcycle->comm_plan, hgp);
+
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) 
         goto End;
 
@@ -352,10 +361,11 @@ int Zoltan_PHG_Partition (
       hg = vcycle->hg;
 
       if (hgc->nProc > 1 && hgp->ProRedL > 0) {
-	MPI_Allreduce(&hg->nPins, &tot_nPins, 1, MPI_INT, MPI_SUM,
+        local_nPins = (ZOLTAN_GNO_TYPE)hg->nPins;
+	MPI_Allreduce(&local_nPins, &tot_nPins, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM,
 		      hgc->Communicator);
 
-	if (tot_nPins < (int)(hgp->ProRedL * origVpincnt + 0.5)) {
+	if (tot_nPins < (ZOLTAN_GNO_TYPE)(hgp->ProRedL * origVpincnt + 0.5)) {
 	  if (do_timing) {
 	    ZOLTAN_TIMER_STOP(zz->ZTime, timer->vcycle, hgc->Communicator);
 	    ZOLTAN_TIMER_START(zz->ZTime, timer->procred, hgc->Communicator);
@@ -365,6 +375,7 @@ int Zoltan_PHG_Partition (
 
 	  if(hg->nVtx&&!(hg->vmap=(int*)ZOLTAN_MALLOC(hg->nVtx*sizeof(int)))) {
 	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: hg->vmap");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 
@@ -382,6 +393,7 @@ int Zoltan_PHG_Partition (
 
 	  if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
 	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: PHGComm");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 
@@ -454,7 +466,9 @@ int Zoltan_PHG_Partition (
   }
 
   /****** Coarse Partitioning ******/
+
   err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
+
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
@@ -466,6 +480,7 @@ int Zoltan_PHG_Partition (
 Refine:
   del = vcycle;
   refine = 1;
+
   /****** Uncoarsening/Refinement ******/
   while (vcycle) {
     VCycle *finer = vcycle->finer;
@@ -553,6 +568,7 @@ Refine:
 	  rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->LevelSndCnt * sizeof(int));
 	  if (!rbuffer)    {
 	    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 	}       
@@ -588,6 +604,7 @@ Refine:
 	  sendbuf = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int));
 	  if (!sendbuf) {
 	    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 
@@ -617,6 +634,7 @@ Refine:
 
 	  if (!rbuffer) {
 	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+            ZOLTAN_TRACE_EXIT(zz, yo);
 	    return ZOLTAN_MEMERR;
 	  }
 	}
@@ -774,7 +792,7 @@ double Zoltan_PHG_Compute_ConCut(
     if (hg->nEdge) {
         int i, j, *cuts=NULL, *rescuts=NULL, *parts, nEdge, start;
             
-        nEdge = MIN(MAXMEMORYALLOC / (2*sizeof(int)*p), hg->nEdge);
+        nEdge = MIN((int)MAXMEMORYALLOC / (2*sizeof(int)*p), hg->nEdge);
 
         if (!(cuts = (int*) ZOLTAN_MALLOC (p * nEdge * sizeof(int)))) {
             ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Memory error.");

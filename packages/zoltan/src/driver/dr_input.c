@@ -100,6 +100,19 @@ int read_cmd_file (
 	continue;
       }
     }
+    else if (sscanf(line, " zoltan memory debug level" SKIPEQ "%s", value) == 1) {
+      if (strcmp(value, "1")) {
+	Zoltan_Memory_Debug(1);
+      }
+      else if (strcmp(value, "2")) {
+	Zoltan_Memory_Debug(2);
+      }
+      else {
+	Zoltan_Memory_Debug(3);  /* highest level */
+      }
+      continue;
+    }
+
 
     else if (sscanf(line, " file type" LASTARG "%n", value, &n) == 1) {
       if ((!strcmp(value, "chaco")) || (!strcmp(value, "graph")))  {
@@ -253,6 +266,33 @@ int read_cmd_file (
 	  }
 	}
       }
+      else if (strcmp(value, "create-a-graph") == 0){
+        pio_info->file_type = NO_FILE_GRAPH;         /* zdrive creates a graph */
+	strcpy(pio_info->pexo_fname, "zdrive-created-graph");
+	pio_info->init_dist_type = INITIAL_NO_DIST;  /* it's already distributed */
+
+	pio_info->init_size     = 10000;       /* default */
+	pio_info->init_dim      = 3;           /* default */
+	pio_info->init_vwgt_dim = 1;           /* default */
+
+	pline = line;
+	while (pline+n < pmax &&
+	       sscanf(pline += n, NEXTARG LASTARG "%n", string, value, &n)==2) {
+	  if (!strcmp(string, "dimension")
+	      && sscanf(value, "%d%n", &pio_info->init_dim, &nv) == 1)
+	    continue;
+	  else if (!strcmp(string, "obj_weight_dim")
+		   && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &nv) == 1)
+	    continue;
+	  else if (!strcmp(string, "size")
+		   && sscanf(value, ZOLTAN_ID_SPEC "%n", &pio_info->init_size, &nv) == 1)
+	    continue;
+	  else  {
+	    Gen_Error(0, "fatal: bad create-a-graph file parameters");
+	    return 0;
+	  }
+	}
+      }
       else if (strcmp(value, "nemesisi") == 0)  {
 	pio_info->file_type      = NEMESIS_FILE;
 	pio_info->init_dist_type = INITIAL_FILE;
@@ -284,7 +324,7 @@ int read_cmd_file (
 		   && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &nv) == 1)
 	    continue;
 	  else if (!strcmp(string, "size")
-		   && sscanf(value, "%d%n", &pio_info->init_size, &nv) == 1)
+		   && sscanf(value,  ZOLTAN_ID_SPEC "%n", &pio_info->init_size, &nv) == 1)
 	    continue;
 	  else  {
 	    Gen_Error(0, "fatal: bad file type = random file parameters");

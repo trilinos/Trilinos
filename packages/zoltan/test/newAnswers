@@ -1,0 +1,66 @@
+#!/bin/bash
+#
+# To be run in the same directory as the zdrive input file
+
+ZDIR=/home/lriesen/projects/Trilinos-zoltan_gid_64/packages/zoltan
+
+PARMETIS_ZOLTAN=$ZDIR/build_parmetis/src/driver/zdrive.exe
+SCOTCH_ZOLTAN=$ZDIR/build_scotch_32/src/driver/zdrive.exe
+SCOTCH_64_ZOLTAN=$ZDIR/build_scotch/src/driver/zdrive.exe
+NO_TPL_ZOLTAN=$ZDIR/build/src/driver/zdrive.exe
+BOTH_TPL_ZOLTAN=$ZDIR/build_both/src/driver/zdrive.exe
+ZOLTAN_32_NO_TPL=$ZDIR/build_32/src/driver/zdrive.exe
+ZOLTAN_32_BOTH=$ZDIR/build_32_both/src/driver/zdrive.exe
+ZOLTAN_32_PARMETIS=$ZDIR/build_32_parmetis/src/driver/zdrive.exe
+ZOLTAN_32_SCOTCH=$ZDIR/build_32_scotch/src/driver/zdrive.exe
+
+
+testDir=$1
+testName=$2
+
+if [ $# -ne 2 ] ; then
+  echo "Need two parameters:  test directory and test name"
+  echo "Example:  directory hg_simple and test zdrive.inp.phg would be \"newAnswers simple phg\""
+  exit
+fi
+
+testNum=`cat NUMPROC`
+echo $testNum
+
+echo Running test $testDir: $testName on $testNum procs
+
+#echo -n "Go on?"
+#read  answer 
+#
+#if [  "$answer" = "no" ] ; then
+#  exit
+#fi
+
+mpiexec -np $testNum $BOTH_TPL_ZOLTAN zdrive.inp.$testName
+
+#echo -n "Save it?"
+#read saveIt
+
+#if [  "$saveIt" = "no" ] ; then
+#  exit
+#fi
+
+declare -i count=0
+declare -i done=$testNum
+idx=0
+
+while [ $count -lt $done ] ; do
+  if [ $done -ge 10 ] ; then
+    if [ $count -lt 10 ] ; then
+      idx=0$count
+    else
+      idx=$count
+    fi
+  else
+    idx=$count
+  fi
+  
+  echo "$testDir.out.$testNum.$idx===> answers/$testDir.$testName.$testNum.$idx"
+  cp $testDir.out.$testNum.$idx answers/$testDir.$testName.$testNum.$idx
+  let count=$count+1
+done

@@ -71,6 +71,11 @@ void Zoltan_Memory_Debug(int new_level) {
   DEBUG_MEMORY = new_level;
 }
 
+/******************************************************************************/
+int Zoltan_Memory_Get_Debug() {
+  return DEBUG_MEMORY;
+}
+
 /******************************************************************************
  *
  *                    Dynamic Allocation of Multidimensional Arrays

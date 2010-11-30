@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
+#include "zz_util_const.h"  /* included for Zoltan_get_global_id_type() */
+
 
 /* Name of file containing the mesh to be partitioned */
 
@@ -18,7 +20,7 @@ static char *fname="mesh.txt";
 typedef struct{
   int numGlobalPoints;
   int numMyPoints;
-  int *myGlobalIDs;
+  ZOLTAN_ID_PTR myGlobalIDs;
   float *x;
   float *y;
 } MESH_DATA;
@@ -39,7 +41,7 @@ static void get_geometry_list(void *data, int sizeGID, int sizeLID,
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static void input_file_error(int numProcs, int tag, int startProc);
 void read_input_objects(int myRank, int numProcs, char *fname, MESH_DATA *myData);
-void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts);
+void showSimpleMeshPartitions(int myProc, int numIDs, ZOLTAN_ID_PTR IDs, int *parts);
 
 int main(int argc, char *argv[])
 {
@@ -52,6 +54,7 @@ int main(int argc, char *argv[])
   int *parts;
   FILE *fp;
   MESH_DATA myMesh;
+  char *datatype_name;
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -65,6 +68,21 @@ int main(int argc, char *argv[])
 
   if (rc != ZOLTAN_OK){
     printf("sorry...\n");
+    MPI_Finalize();
+    exit(0);
+  }
+
+  /******************************************************************
+  ** Check that this example and the Zoltan library are both
+  ** built with the same ZOLTAN_ID_TYPE definition.
+  ******************************************************************/
+
+  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
+    if (myRank == 0){
+      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
+                 datatype_name, zoltan_id_datatype_name);
+
+    }
     MPI_Finalize();
     exit(0);
   }
@@ -94,7 +112,7 @@ int main(int argc, char *argv[])
 
   /* General parameters */
 
-  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "5");
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
@@ -317,7 +335,7 @@ char *buf;
 int bufsize = 512;
 int num, nobj, remaining, ack=0;
 int i, j;
-int *gids;
+ZOLTAN_ID_PTR gids;
 float *xcoord, *ycoord;
 FILE *fp;
 MPI_Status status;
@@ -343,7 +361,7 @@ int x_tag = 20, y_tag = 25;
       remaining = 0;
     }
 
-    myMesh->myGlobalIDs = (int *)malloc(sizeof(int) * nobj);
+    myMesh->myGlobalIDs = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * nobj);
     myMesh->x = (float *)malloc(sizeof(float) * nobj);
     myMesh->y = (float *)malloc(sizeof(float) * nobj);
     myMesh->numMyPoints= nobj;
@@ -352,12 +370,17 @@ int x_tag = 20, y_tag = 25;
 
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
-      num = sscanf(buf, "%d %f %f", myMesh->myGlobalIDs + i, myMesh->x + i, myMesh->y + i);
-      if (num != 3) input_file_error(numProcs, count_tag, 1);
 
+      num = sscanf(buf, ZOLTAN_ID_SPEC, myMesh->myGlobalIDs + i);
+
+      if (num != 1) input_file_error(numProcs, count_tag, 1);
+
+      num = sscanf(buf, "%f %f", myMesh->x + i, myMesh->y + i);
+
+      if (num != 2) input_file_error(numProcs, count_tag, 1);
     }
 
-    gids = (int *)malloc(sizeof(int) * (nobj + 1));
+    gids = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * (nobj + 1));
     xcoord = (float *)malloc(sizeof(float) * (nobj + 1));
     ycoord = (float *)malloc(sizeof(float) * (nobj + 1));
 
@@ -382,8 +405,10 @@ int x_tag = 20, y_tag = 25;
         for (j=0; j < nobj; j++){
           num = get_next_line(fp, buf, bufsize);
           if (num == 0) input_file_error(numProcs, count_tag, i);
-          num = sscanf(buf, "%d %f %f", gids + j, xcoord + j, ycoord + j);
-          if (num != 3) input_file_error(numProcs, count_tag, i);
+          num = sscanf(buf, ZOLTAN_ID_SPEC, gids + j);
+          if (num != 1) input_file_error(numProcs, count_tag, i);
+          num = sscanf(buf, "%f %f", xcoord + j, ycoord + j);
+          if (num != 2) input_file_error(numProcs, count_tag, i);
         }
       }
 
@@ -391,7 +416,7 @@ int x_tag = 20, y_tag = 25;
       MPI_Recv(&ack, 1, MPI_INT, i, ack_tag, MPI_COMM_WORLD, &status);
 
       if (nobj > 0){
-        MPI_Send(gids, nobj, MPI_INT, i, id_tag, MPI_COMM_WORLD);
+        MPI_Send(gids, nobj, ZOLTAN_ID_MPI_TYPE, i, id_tag, MPI_COMM_WORLD);
         MPI_Send(xcoord, nobj, MPI_FLOAT, i, x_tag, MPI_COMM_WORLD);
         MPI_Send(ycoord, nobj, MPI_FLOAT, i, y_tag, MPI_COMM_WORLD);
       }
@@ -414,11 +439,11 @@ int x_tag = 20, y_tag = 25;
     MPI_Recv(&myMesh->numMyPoints, 1, MPI_INT, 0, count_tag, MPI_COMM_WORLD, &status);
     ack = 0;
     if (myMesh->numMyPoints > 0){
-      myMesh->myGlobalIDs = (int *)malloc(sizeof(int) * myMesh->numMyPoints);
+      myMesh->myGlobalIDs = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * myMesh->numMyPoints);
       myMesh->x = (float *)malloc(sizeof(float) * myMesh->numMyPoints);
       myMesh->y = (float *)malloc(sizeof(float) * myMesh->numMyPoints);
       MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
-      MPI_Recv(myMesh->myGlobalIDs, myMesh->numMyPoints, MPI_INT, 0,
+      MPI_Recv(myMesh->myGlobalIDs, myMesh->numMyPoints, ZOLTAN_ID_MPI_TYPE, 0,
                id_tag, MPI_COMM_WORLD, &status);
       MPI_Recv(myMesh->x, myMesh->numMyPoints, MPI_FLOAT, 0,
                x_tag, MPI_COMM_WORLD, &status);
@@ -440,7 +465,7 @@ int x_tag = 20, y_tag = 25;
     }
   }
 }
-void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts)
+void showSimpleMeshPartitions(int myProc, int numIDs, ZOLTAN_ID_PTR GIDs, int *parts)
 {
 int partAssign[25], allPartAssign[25];
 int i, j, part;

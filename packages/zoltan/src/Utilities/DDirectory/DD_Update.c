@@ -26,7 +26,7 @@ extern "C" {
 
 
 static int DD_Update_Local (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
- ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR user, int partition, int owner);
+ ZOLTAN_ID_PTR lid, char *user, int partition, int owner);
 
 
 /******************   Zoltan_DD_Update()  *************************/
@@ -35,7 +35,7 @@ int Zoltan_DD_Update (
  Zoltan_DD_Directory *dd,  /* directory state information              */
  ZOLTAN_ID_PTR gid,        /* Incoming list of GIDs to update          */
  ZOLTAN_ID_PTR lid,        /* Incoming corresponding LIDs (optional)   */
- ZOLTAN_ID_PTR user,       /* Incoming list of user data (optional)    */
+ char *user,               /* Incoming list of user data (optional)    */
  int *partition,           /* Optional, grouping of GIDs to partitions */
  int count)                /* Number of GIDs in update list            */
    {
@@ -115,9 +115,7 @@ int Zoltan_DD_Update (
          memset(ptr->gid + dd->gid_length, 0, dd->lid_length);
       }
       if (user) {
-         ZOLTAN_SET_ID(dd->user_data_length,
-                       ptr->gid + (dd->gid_length + dd->lid_length), 
-                       user + i * dd->user_data_length);
+         memcpy(ptr->gid + (dd->gid_length + dd->lid_length), user + i * dd->user_data_length, dd->user_data_length);
       }
       else {
          memset(ptr->gid + (dd->gid_length + dd->lid_length), 0, 
@@ -167,7 +165,7 @@ int Zoltan_DD_Update (
 
       err = DD_Update_Local (dd, ptr->gid,
        (ptr->lid_flag)  ? (ptr->gid + dd->gid_length)                   :NULL,
-       (ptr->user_flag) ? (ptr->gid + (dd->gid_length + dd->lid_length)):NULL,
+       (char *)((ptr->user_flag) ? (ptr->gid + (dd->gid_length + dd->lid_length)):NULL),
        (ptr->partition_flag) ? (ptr->partition) : -1,  /* illegal partition */
        ptr->owner);
 
@@ -213,7 +211,7 @@ fini:
 static int DD_Update_Local (Zoltan_DD_Directory *dd,
  ZOLTAN_ID_PTR gid,         /* GID to update (in)                        */
  ZOLTAN_ID_PTR lid,         /* gid's LID (in), NULL if not needed        */
- ZOLTAN_ID_PTR user,        /* gid's user data (in), NULL if not needed  */
+ char *user,                /* gid's user data (in), NULL if not needed  */
  int partition,             /* gid's partition (in), -1 if not used      */
  int owner)                 /* gid's current owner (proc number) (in)    */
    {
@@ -241,8 +239,7 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
           if (lid)
              ZOLTAN_SET_ID (dd->lid_length,(*ptr)->gid + dd->gid_length, lid);
           if (user)
-             ZOLTAN_SET_ID (dd->user_data_length, (*ptr)->gid + (dd->gid_length
-              + dd->lid_length), user);
+             memcpy((*ptr)->gid + (dd->gid_length + dd->lid_length), user, dd->user_data_length);
 
           (*ptr)->owner = owner;
           if (partition != -1)
@@ -280,12 +277,10 @@ static int DD_Update_Local (Zoltan_DD_Directory *dd,
              dd->lid_length*sizeof(ZOLTAN_ID_TYPE));
    }
    if (user) {
-      ZOLTAN_SET_ID(dd->user_data_length,
-                    (*ptr)->gid + (dd->gid_length + dd->lid_length), user);
+      memcpy((*ptr)->gid + (dd->gid_length + dd->lid_length), user, dd->user_data_length);
    }
    else {
-      memset((*ptr)->gid + (dd->gid_length+dd->lid_length), 0,
-             dd->user_data_length*sizeof(ZOLTAN_ID_TYPE));
+      memset((*ptr)->gid + (dd->gid_length+dd->lid_length), 0, dd->user_data_length);
    }
    (*ptr)->partition = partition ;
 

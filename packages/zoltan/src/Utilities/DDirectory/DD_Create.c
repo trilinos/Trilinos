@@ -26,6 +26,32 @@ extern "C" {
 
 /*  NOTE: See file, README, for associated documentation. (RTH) */
 
+/* Zoltan_DD_Create assumes the global object being managed by the
+ * directory is a Zoltan global ID, which is a ZOLTAN_ID_TYPE-tuple.  
+ * The "num_gid" parameter is where we specify how many ZOLTAN_ID_TYPEs 
+ * are in the object (zz->Num_GID).
+ *
+ * However, some Zoltan code uses a data directory to manage other
+ * global integer values.  When the ZOLTAN_ID_TYPE was always be an
+ * unsigned integer, that worked.  
+ *
+ * But now that the ZOLTAN_ID_TYPE can be specified at compile time,
+ * we need to be more careful.
+ *
+ * If the global value is not a Zoltan global ID, then the "num_gid"
+ * parameter should be factor which, when multiplied by a ZOLTAN_ID_TYPE,
+ * give an object of the same length as the global value.
+ *
+ * So if ZOLTAN_ID_TYPE is a 32-bit int, and the global value being
+ * managed by the data directory is a 64-bit int, "num_gid" should
+ * be "2".
+ *
+ * The "num_lid" parameter specifies the number ZOLTAN_ID_TYPEs in 
+ * the local ID.
+ *
+ * The "user_length" parameter specifies the number of chars in the
+ * user data.
+ */
 
 /*******************  Zoltan_DD_Create()  ***************************/
 
@@ -35,7 +61,7 @@ int Zoltan_DD_Create (
  int num_gid,                 /* Number of entries in a global ID.     */
  int num_lid,                 /* Number of entries in a local ID.      
                                  If zero, ignore LIDs                  */
- int user_length,             /* Optional user data length, 0 ignore   */
+ int user_length,             /* Optional user data length in chars, 0 ignore   */
  int table_length,            /* sizeof hash table, use default if 0   */
  int debug_level)             /* control actions to errors, normally 0 */
    {
@@ -95,14 +121,14 @@ int Zoltan_DD_Create (
    (*dd)->max_id_length    = (num_gid > num_lid) ? num_gid : num_lid;
 
    /* frequently used dynamic allocation computed sizes */
-   size = (num_gid + num_lid + user_length) * sizeof(ZOLTAN_ID_TYPE);
+   size = ((num_gid + num_lid) * sizeof(ZOLTAN_ID_TYPE)) + user_length;
    (*dd)->node_size       = size + sizeof(DD_Node);
    (*dd)->update_msg_size = size + sizeof(DD_Update_Msg);
 
    size = num_gid * sizeof(ZOLTAN_ID_TYPE);
    (*dd)->remove_msg_size = size + sizeof(DD_Remove_Msg);
 
-   size = (user_length + (*dd)->max_id_length) * sizeof(ZOLTAN_ID_TYPE);
+   size = user_length + ((*dd)->max_id_length * sizeof(ZOLTAN_ID_TYPE));
    (*dd)->find_msg_size   = size + sizeof(DD_Find_Msg);
 
    /* force alignment */

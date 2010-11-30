@@ -130,6 +130,14 @@ static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *a
 /*****************************************************************************/
 /* Interface routine for Graph Coloring */
 
+/* TODO64: Zoltan_Color has not been modified to work with the Zoltan_ZG_Export interface
+ * and with the ZOLTAN_GNO_TYPE data type.  Some difficulties: It looks like the hash
+ * table length is equal to the number of vertices in the graph.  It looks like the
+ * adjncy value (a neighbor global number) is an index into the xadj array (which is
+ * usually indexing in to the adjncy array of global numbers).  So this code needs
+ * to be looked at much more carefully before it can be changed to use ZOLTAN_GNO_TYPEs.
+ */
+
 int Zoltan_Color(
     ZZ *zz,                   /* Zoltan structure */
     int num_gid_entries,      /* # of entries for a global id */
@@ -156,14 +164,15 @@ int Zoltan_Color(
 
 
   static char *yo = "color_fn";
-  int *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
+  ZOLTAN_GNO_TYPE *vtxdist=NULL, *adjncy=NULL;
+  int *itmp, *xadj=NULL;
   int *adjproc=NULL;
   int nvtx;                         /* number of local vertices */
-  int gvtx;                         /* number of global vertices */
+  ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
 
   int *color=NULL;                  /* array to store colors of local and D1
 				       neighbor vertices */
-  int i;
+  int i, lno;
   int lastlno;                      /* total number of local and D1 neighbor vertices */
   G2LHash hash;                     /* hash to map global ids of local and D1 neighbor
 				       vertices to consecutive local ids */
@@ -180,10 +189,17 @@ int Zoltan_Color(
   int *partialD2 = NULL;       /* binary array showing which vertices to be colored */ /* DBDB: temporary. This array should be allocated outside Zoltan_Color */
   ZG graph;
 
+  memset (&graph, 0, sizeof(ZG));
+  memset(&hash, 0 , sizeof(G2LHash)); /* To allow a correct free */
+
 #ifdef _DEBUG_TIMES    
   MPI_Barrier(zz->Communicator);
   times[0] = Zoltan_Time(zz->Timer);
 #endif
+
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)) {    /* TODO64 */
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "\nZoltan_Color can not handle ints of more than one size");
+  }
   
   /* PARAMETER SETTINGS */
 
@@ -251,7 +267,6 @@ int Zoltan_Color(
   zz->Num_GID = gcomm[0];
   zz->Num_LID = gcomm[1];
 
-  memset(&hash, 0 , sizeof(G2LHash)); /* To allow a correct free */
 
   if (num_gid_entries != zz->Num_GID)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "num_gid_entries is not consistent with the queries.");
@@ -274,8 +289,12 @@ int Zoltan_Color(
   ierr =  Zoltan_ZG_Build (zz, &graph, 0);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
-  ierr = Zoltan_ZG_Export (zz, &graph, &gvtx, &nvtx, NULL, NULL, 
-           &vtxdist, &xadj, &adjncy, &adjproc, NULL, &partialD2);
+
+  ierr = Zoltan_ZG_Export (zz, &graph,
+		    &gvtx, &nvtx, NULL, NULL, 
+                    &vtxdist, &xadj, &adjncy, &adjproc,
+		     NULL, &partialD2);
+
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
 #ifdef _DEBUG_TIMES
@@ -288,19 +307,22 @@ int Zoltan_Color(
   if (Zoltan_G2LHash_Create(&hash, i, vtxdist[zz->Proc], nvtx)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
 
-#if 0
-  PrintGraph(zz, "Before Global-2-Local", vtxdist[zz->Proc], nvtx, xadj, adjncy, adjproc);
-#endif
-
   /* Add ids of the d1 neighbors into the hash table*/
-  for (i=0; i<xadj[nvtx]; ++i)
-      adjncy[i] = Zoltan_G2LHash_Insert(&hash, adjncy[i]);
+
+  if (sizeof(ZOLTAN_GNO_TYPE) == sizeof(int)){
+    for (i=0; i<xadj[nvtx]; ++i)
+        adjncy[i] = (ZOLTAN_GNO_TYPE)Zoltan_G2LHash_Insert(&hash, adjncy[i]);
+  }
+  else{
+    itmp = (int *)adjncy;
+    for (i=0; i<xadj[nvtx]; ++i){
+        lno = Zoltan_G2LHash_Insert(&hash, adjncy[i]);
+        itmp[i] = lno;
+    }
+  }
+
   /* lastlno is the total number of local and d1 neighbors */
   lastlno = nvtx+hash.size;
-
-#if 0
-  PrintGraph(zz, "After Global-2-Local", vtxdist[zz->Proc], nvtx, xadj, adjncy, adjproc);
-#endif
 
   /* Allocate color array. Local and D1 neighbor colors will be stored here. */
   if (lastlno && !(color = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int))))
@@ -319,9 +341,9 @@ int Zoltan_Color(
 #endif
   /* Select Coloring algorithm and perform the coloring */
   if (coloring_problem == '1')
-      D1coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color);
+      D1coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, (int *)adjncy, adjproc, color);
   else if (coloring_problem == '2' || coloring_problem == 'P')
-      D2coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, adjncy, adjproc, color, partialD2);
+      D2coloring(zz, coloring_problem, coloring_order, coloring_method, comm_pattern, ss, nvtx, &hash, xadj, (int *)adjncy, adjproc, color, partialD2);
 #ifdef _DEBUG_TIMES    
   times[4] = Zoltan_Time(zz->Timer);
 #endif
@@ -371,19 +393,6 @@ int Zoltan_Color(
    /* Free DDirectory */
    Zoltan_DD_Destroy(&dd_color);
    ZOLTAN_FREE(&my_global_ids); 
-
-#if 0
-  /* Check if there is an error in coloring */
-  if (coloring_problem == '1' && zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
-      for (i=0; i<nvtx; i++) {
-	  for (j = xadj[i]; j < xadj[i+1]; j++) {
-	      int v = adjncy[j];
-	      if (color[i] == color[v])
-		  printf("Error in coloring! u:%d(%d), v:%d(%d), cu:%d, cv:%d\n", i, Zoltan_G2LHash_L2G(&hash, i), v, Zoltan_G2LHash_L2G(&hash, v), color[i], color[v]);
-	  }
-      }
-  }
-#endif
 
 #ifdef _DEBUG_TIMES    
   MPI_Barrier(zz->Communicator);

@@ -72,12 +72,22 @@ unsigned int Zoltan_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 {
   unsigned int h, rest, *p, bytes, num_bytes;
   char *byteptr;
+  unsigned int low_order_id[10];
 
-  num_bytes = (unsigned int) num_id_entries * sizeof(ZOLTAN_ID_TYPE);
+  /* We want the same hash value for 64 bit ZOLTAN_ID_TYPE that we get for 
+   * 32 bit ZOLTAN_ID_TYPE so that test answers do not change.  For 64 bit
+   * ZOLTAN_ID_TYPE, we still get a good spread of hash values.
+   */
+
+  for (h=0; (h < num_id_entries) && (h < 10); h++){
+    low_order_id[h] = key[h] & 0xffff;
+  }
+
+  num_bytes = (unsigned int) num_id_entries * sizeof(unsigned int);
 
   /* First hash the int-sized portions of the key */
   h = 0;
-  for (p = (unsigned int *)key, bytes=num_bytes;
+  for (p = (unsigned int *)low_order_id, bytes=num_bytes;
        bytes >= (unsigned int) sizeof(int); 
        bytes-=sizeof(int), p++){
     h = (h^(*p))*MAXINT_DIV_PHI;
@@ -143,12 +153,22 @@ unsigned int Zoltan_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 {
   unsigned int h, rest, *p, bytes, num_bytes;
   char *byteptr;
+  unsigned int low_order_id[10];
 
-  num_bytes = (unsigned int) num_id_entries * sizeof(ZOLTAN_ID_TYPE);
+  /* We want the same hash value for 64 bit ZOLTAN_ID_TYPE that we get for 
+   * 32 bit ZOLTAN_ID_TYPE so that test answers do not change.  For 64 bit
+   * ZOLTAN_ID_TYPE, we still get a good spread of hash values.
+   */
+
+  for (h=0; (h < num_id_entries) && (h < 10); h++){
+    low_order_id[h] = key[h] & 0xffff;
+  }
+
+  num_bytes = (unsigned int) num_id_entries * sizeof(unsigned int);
 
   /* First hash the int-sized portions of the key */
   h = 0;
-  for (p = (unsigned int *)key, bytes=num_bytes;
+  for (p = (unsigned int *)low_order_id, bytes=num_bytes;
        bytes >= (unsigned int) sizeof(int); 
        bytes-=sizeof(int), p++){
     h = (h*2654435761U) ^ (*p);

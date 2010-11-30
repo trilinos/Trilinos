@@ -85,11 +85,11 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   if (!shg) MEMORY_ERROR;
 
   Zoltan_HG_HGraph_Init(shg);
-  shg->nVtx = phg->dist_x[nProc_x];
+  shg->nVtx = phg->dist_x[nProc_x];    /* TODO64 - can this exceed 2B? */
   shg->nEdge = phg->dist_y[nProc_y];
 
-  shg->dist_x = (int *) ZOLTAN_MALLOC(2 * sizeof(int));
-  shg->dist_y = (int *) ZOLTAN_MALLOC(2 * sizeof(int));
+  shg->dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(2 * sizeof(ZOLTAN_GNO_TYPE));
+  shg->dist_y = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(2 * sizeof(ZOLTAN_GNO_TYPE));
   if (!shg->dist_x || !shg->dist_y) MEMORY_ERROR;
 
   shg->dist_x[0] = shg->dist_y[0] = 0;
@@ -118,6 +118,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   each = recv_size + max_nProc_xy;
   disp = each + max_nProc_xy;
  
+  /* TODO64 - phg->dist_y[nProc_y] could exceed 2 Billion, NO? */
   send_size = MAX(phg->dist_x[myProc_x+1] - phg->dist_x[myProc_x], 
                   phg->dist_y[nProc_y]);
   send_buf = (int *) ZOLTAN_MALLOC(send_size * sizeof(int));
@@ -159,7 +160,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
                   phg->comm->col_comm);
   
     /* Compute number of vtx, edge, and nnz in column */
-    col_nVtx = phg->dist_x[myProc_x+1] - phg->dist_x[myProc_x];
+    col_nVtx = (int)(phg->dist_x[myProc_x+1] - phg->dist_x[myProc_x]);
     col_nEdge = phg->dist_y[nProc_y];   /* SCHEMEA */
     col_nPin = 0;
     for (i = 0; i < nProc_y; i++) {
@@ -202,12 +203,17 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   
     for (i = 0; i < nProc_y; i++) 
       each[i] = phg->dist_y[i+1] - phg->dist_y[i];
+
+    disp[0] = 0;  /* Can't use dist_y because it may not be sizeof(int) */
+    for (i=1; i < nProc_y; i++){
+      disp[i] = disp[i-1] + each[i-1];
+    }
   
     /* SCHEMEA can use phg->dist_y for displacement array.
      * SCHEMEB requires separate displacement array. */
-  
+
     MPI_Allgatherv(send_buf, phg->nEdge, MPI_INT, 
-                   col_hindex, each, phg->dist_y, MPI_INT, phg->comm->col_comm);
+                   col_hindex, each, disp, MPI_INT, phg->comm->col_comm);
   
     /* Perform prefix sum on col_hindex */
     sum = 0;
@@ -319,15 +325,19 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
      * SCHEMEB would need to gather the number of vtxs recv'd from each proc. */
   
     for (i = 0; i < nProc_x; i++) 
-      each[i] = phg->dist_x[i+1] - phg->dist_x[i];
-  
+      each[i] = (int)(phg->dist_x[i+1] - phg->dist_x[i]);
+
+    disp[0] = 0;  /* Can't use dist_x, may not be sizeof(int) */
+    for (i = 1; i < nProc_x; i++) 
+      disp[i] = disp[i-1] + each[i-1];
+
     /* SCHEMEA can use phg->dist_x as displacement array;
      * SCHEMEB requires separate displacement array. */
-  
+
     MPI_Allgatherv(send_buf, col_nVtx, MPI_INT, 
-                   shg->vindex, each, phg->dist_x, 
+                   shg->vindex, each, disp,
                    MPI_INT, phg->comm->row_comm);
-  
+
     /* Perform prefix sum on shg->vindex */
     sum = 0;
     for (i = 0; i < shg->nVtx; i++) {

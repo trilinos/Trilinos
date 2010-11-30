@@ -110,8 +110,14 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
 /* Decided for Trilinos v10/Zoltan v3.2 would almost always use */
 /* MPI_Alltoall communication instead of point-to-point.        */
 /* August 2009 */
+/* #define MPI_RECV_LIMIT 4 */
+
+/* Decided for zoltan_gid_64 branch to always used posted receives because
+ * Alltoall requires that offsets be 32-bit integers.  October 2010
+ */
+#define MPI_RECV_LIMIT 0
+
 /* #define MPI_RECV_LIMIT 2000 */
-#define MPI_RECV_LIMIT 4
 #endif
 
 
