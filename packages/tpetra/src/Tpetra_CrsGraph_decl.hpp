@@ -521,8 +521,8 @@ namespace Tpetra {
       // insert/suminto/replace
       template <ELocalGlobal lg>                           size_t                filterIndices         (const SLocalGlobalNCViews &inds) const;
       template <ELocalGlobal lg, class T>                  size_t                filterIndicesAndValues(const SLocalGlobalNCViews &inds, const ArrayView<T> &vals) const;
-      template <ELocalGlobal lg, ELocalGlobal I=lg>                           size_t                insertIndices         (RowInfo rowInfo, const SLocalGlobalViews &newInds);
-      template <ELocalGlobal lg, ELocalGlobal I=lg, class IterO, class IterN> void                  insertIndicesAndValues(RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
+      template <ELocalGlobal lg, ELocalGlobal I>                           size_t       insertIndices         (RowInfo rowInfo, const SLocalGlobalViews &newInds);
+      template <ELocalGlobal lg, ELocalGlobal I, class IterO, class IterN> void         insertIndicesAndValues(RowInfo rowInfo, const SLocalGlobalViews &newInds, IterO rowVals, IterN newVals);
       template <ELocalGlobal lg, class IterO, class IterN, class BinaryFunction> void   transformValues(RowInfo rowInfo, const SLocalGlobalViews &inds,    IterO rowVals, IterN newVals, BinaryFunction f) const;
       // Sorting and merging
       bool                       isSorted() const;

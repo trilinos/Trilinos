@@ -1501,7 +1501,7 @@ namespace Tpetra {
       }
       SLocalGlobalViews inds_view;
       inds_view.linds = f_inds(0,numFilteredEntries);
-      insertIndices<LocalIndices>(rowInfo, inds_view);
+      insertIndices<LocalIndices,LocalIndices>(rowInfo, inds_view);
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION_CLASS_FUNC(indicesAreAllocated() == false || isLocallyIndexed() == false, std::logic_error,
@@ -1554,7 +1554,7 @@ namespace Tpetra {
           // update allocation only as much as necessary
           rowInfo = updateAlloc<GlobalIndices>(rowInfo, newNumEntries);
         }
-        insertIndices<GlobalIndices>(rowInfo, inds_view);
+        insertIndices<GlobalIndices,GlobalIndices>(rowInfo, inds_view);
 #ifdef HAVE_TPETRA_DEBUG
         {
           const size_t chkNewNumEntries = getNumEntriesInLocalRow(myRow);

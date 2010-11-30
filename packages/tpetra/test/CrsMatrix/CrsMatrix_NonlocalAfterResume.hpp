@@ -12,7 +12,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
   const size_t numImages = size(*comm);
   const size_t myImageID = rank(*comm);
   // create a row Map, 5 rows per processor
-  const size_t numLocal = 5;
+  const GO numLocal = 5;
   RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
   RCP<const Map<LO,GO,Node> > cmap;
   // create a column Map, with super- and sub-diagonal blocks
@@ -44,7 +44,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
     TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
     TEST_EQUALITY      ( matrix.getGlobalNumEntries(), numLocal*numImages );
-    TEST_EQUALITY      ( matrix.getNodeNumEntries(),   numLocal           );
+    TEST_EQUALITY      ( matrix.getNodeNumEntries(),   (size_t)numLocal   );
 
     //----------------------------------------------------------------------
     // add super-diagonal, non-locally
