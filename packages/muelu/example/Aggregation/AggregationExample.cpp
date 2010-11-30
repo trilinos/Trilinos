@@ -29,16 +29,16 @@
 /* Function to build MueLu_Graph (take an Epetra_CrsMatrix and                    */
 /* extract out the Epetra_CrsGraph).                                              */
 /**********************************************************************************/
-MueLu_Graph *MueLu_BuildGraph(const Epetra_CrsMatrix & A, const char *name)
+MueLu_Graph *MueLu_BuildGraph(const Epetra_CrsMatrix & A, const char *name="")
 {
   MueLu_Graph *Graph;
-  //double *dtmp = NULL;
+  double *dtmp = NULL;
 
   Graph = (MueLu_Graph *) malloc(sizeof(MueLu_Graph));
-  Graph->EGraph     = NULL;
+  Graph->EGraph = NULL;
   Graph->name = NULL;
-  Graph->name       = (char *) malloc(sizeof(char)*80); strcpy(Graph->name,name);
-  //TODO Graph->NVertices  = Amatrix->invec_leng;
+  Graph->name = (char *) malloc(sizeof(char)*80); strcpy(Graph->name,name);
+  Graph->NVertices = A.NumMyRows(); // Q:local or global ? Amatrix->invec_leng;
 
   if ( A.NumMyRows() == 0) { // Q: ML_Operator* Amatrix->getrow->Nrows is local or global ?
      Graph->VertexNeighbors    = NULL;
@@ -46,19 +46,15 @@ MueLu_Graph *MueLu_BuildGraph(const Epetra_CrsMatrix & A, const char *name)
      Graph->NEdges             = 0;
   }
   else {
-//      Epetra_ML_GetCrsDataptrs(Amatrix, &dtmp, &(Graph->VertexNeighbors),&(Graph->VertexNeighborsPtr));
-//      if ( Graph->VertexNeighborsPtr == NULL) {
-//         printf("MueLu_BuildGraph: Only functions for an Epetra_CrsMatrix.\n");
-//         exit(1);
-//       }
-//       Graph->NEdges      = (Graph->VertexNeighborsPtr)[Amatrix->getrow->Nrows];
-//       Epetra_ML_GetCrsMatrix( Amatrix, (void **) &A );
-//       Graph->EGraph = &(A->Graph());
+    A.ExtractCrsDataPointers(Graph->VertexNeighborsPtr, Graph->VertexNeighbors, dtmp);
+
+    Graph->NEdges = (Graph->VertexNeighborsPtr)[A.NumMyRows()]; // Q:
+    Graph->EGraph = &(A.Graph());
   }
   if (Graph->EGraph == NULL) Graph->NGhost = 0;
   else {
-//      Graph->NGhost = A->RowMatrixColMap().NumMyElements() - A->OperatorDomainMap().NumMyElements();
-//      if (Graph->NGhost < 0) Graph->NGhost = 0;
+    Graph->NGhost = A.RowMatrixColMap().NumMyElements() - A.OperatorDomainMap().NumMyElements();
+    if (Graph->NGhost < 0) Graph->NGhost = 0;
   }
   return Graph;
 }
@@ -122,7 +118,7 @@ int main(int argc, char *argv[]) {
 
   RCP<const Epetra_CrsMatrix> A;
 
-  { // Get the underlying Epetra Mtx (Wow ! It's paintful !)
+  { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I shoudl create a function to do that)
     RCP<const CrsMatrix> tmp_CrsMtx = Op->get_CrsMatrix();
     const RCP<const Cthulhu::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Cthulhu::EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null) { std::cout << "Error !" << std::endl; return 1; }
@@ -133,16 +129,17 @@ int main(int argc, char *argv[]) {
   std::string name = "Uncoupled";
   Graph = MueLu_BuildGraph(*A, name.c_str());
   
-  //  if (Graph->EGraph->Comm().MyPID() == 0 && ml_ag->print_flag  < MueLu_PrintLevel())
-  //  printf("main() Aggregate_CoarsenUncoupled : \n");
+  int print_flag=6;
+  if (Graph->EGraph->Comm().MyPID() == 0 && print_flag < MueLu_PrintLevel())
+    printf("main() Aggregate_CoarsenUncoupled : \n");
   
   MueLu_AggOptions AggregateOptions;
   
-//   AggregateOptions.print_flag                 //= ml_ag->print_flag;
-//   AggregateOptions.min_nodes_per_aggregate    //= ml_ag->min_nodes_per_aggregate;
-//   AggregateOptions.max_neigh_already_selected //= ml_ag->max_neigh_already_selected;
-//   AggregateOptions.ordering                   //= ml_ag->ordering;
-//   AggregateOptions.phase3_agg_creation        //= ml_ag->phase3_agg_creation;
+  AggregateOptions.print_flag                 = print_flag;      
+  AggregateOptions.min_nodes_per_aggregate    = 2;  
+  AggregateOptions.max_neigh_already_selected = 5;
+  AggregateOptions.ordering                   = 1;                 
+  AggregateOptions.phase3_agg_creation        = 1; //Q: ??
   
   MueLu_Aggregate *Aggregates = NULL;
   

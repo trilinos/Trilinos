@@ -703,7 +703,7 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
      i = NAggregates - Nphase1_agg;
      Graph->EGraph->Comm().SumAll(&i,&i,1);
      if ( mypid == 0 ) {
-       printf("Aggregation(%s) : Phase 3- additional aggregates = %d\n",label, i);
+       printf("Aggregation(%s) : Phase 3 - additional aggregates = %d\n",label, i);
      }
    }
 
