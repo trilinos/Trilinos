@@ -54,15 +54,15 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                    mesh::EntityProcVec     & entity_procs )
 {
 
-  const mesh::TopologicalMetaData & topo_data = 
-    mesh::TopologicalMetaData::find_TopologicalMetaData(bulk_data.mesh_meta_data());
+  stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
 
   std::map<mesh::EntityId, unsigned> elem_procs;
   mesh::EntityVector owned_moving_elems;
   mesh::EntityProcVec::iterator ep_iter = entity_procs.begin(),
                                  ep_end = entity_procs.end();
   for( ; ep_end != ep_iter; ++ep_iter )
-    if( topo_data.element_rank == ep_iter->first->entity_rank() )
+    if( element_rank == ep_iter->first->entity_rank() )
     {
       elem_procs[ep_iter->first->identifier()] = ep_iter->second;
       owned_moving_elems.push_back(ep_iter->first);
@@ -115,11 +115,11 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
 
   if( rebalancingHasOccurred && partition.partition_dependents_needed() )
   {
-    const mesh::TopologicalMetaData & topo_data = 
-      mesh::TopologicalMetaData::find_TopologicalMetaData(bulk_data.mesh_meta_data());
+    stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
+    const stk::mesh::EntityRank node_rank = stk::mesh::fem::node_rank(fem);
 
     // TODO: Determine which dependent types this call needs to be made for
-    rebalance_dependent_entities( bulk_data, partition, topo_data.node_rank, cs_elem );
+    rebalance_dependent_entities( bulk_data, partition, node_rank, cs_elem );
   }
 
   if ( rebalancingHasOccurred ) 
