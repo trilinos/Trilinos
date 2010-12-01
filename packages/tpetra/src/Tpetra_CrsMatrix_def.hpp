@@ -566,7 +566,7 @@ namespace Tpetra {
       }
       typename Graph::SLocalGlobalViews inds_view;
       inds_view.linds = f_inds(0,numFilteredEntries);
-      myGraph_->template insertIndicesAndValues<LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), f_vals.begin());
+      myGraph_->template insertIndicesAndValues<LocalIndices,LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), f_vals.begin());
 #ifdef HAVE_TPETRA_DEBUG
       {
         const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow(localRow);
@@ -592,8 +592,6 @@ namespace Tpetra {
   {
     TEST_FOR_EXCEPTION(isStaticGraph() == true, std::runtime_error,
         typeName(*this) << "::insertGlobalValues(): matrix was constructed with static graph. Cannot insert new entries.");
-    TEST_FOR_EXCEPTION(myGraph_->isLocallyIndexed() == true, std::runtime_error,
-        typeName(*this) << "::insertGlobalValues(): graph indices are local; use insertLocalValues().");
     TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
         typeName(*this) << "::insertGlobalValues(): values.size() must equal indices.size().");
     if (myGraph_->indicesAreAllocated() == false) {
@@ -635,7 +633,12 @@ namespace Tpetra {
           // update allocation only as much as necessary
           rowInfo = myGraph_->template updateAllocAndValues<GlobalIndices,Scalar>(rowInfo, newNumEntries, values2D_[lrow]);
         }
-        myGraph_->template insertIndicesAndValues<GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
+        if (isGloballyIndexed()) {
+          myGraph_->template insertIndicesAndValues<GlobalIndices,GlobalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
+        }
+        else {
+          myGraph_->template insertIndicesAndValues<GlobalIndices,LocalIndices>(rowInfo, inds_view, this->getViewNonConst(rowInfo).begin(), vals_view.begin());
+        }
 #ifdef HAVE_TPETRA_DEBUG
         {
           const size_t chkNewNumEntries = myGraph_->getNumEntriesInLocalRow(lrow);
@@ -653,10 +656,6 @@ namespace Tpetra {
         nonlocals_[globalRow].push_back(std::make_pair(*ind, *val));
       }
     }
-#ifdef HAVE_TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(isGloballyIndexed() == false, std::logic_error,
-        typeName(*this) << "::insertGlobalValues(): Violated stated post-conditions. Please contact Tpetra team.");
-#endif
   }
 
 
