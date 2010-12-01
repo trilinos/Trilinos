@@ -46,7 +46,8 @@ namespace Kokkos {
 
 template< typename ValueType , class DeviceMap > class MDArray ;
 
-/** \brief  Map array into most memory space */
+//----------------------------------------------------------------------------
+/** \brief  Map array into host memory space */
 class HostMap : public BaseMapInterface {
 public:
 
