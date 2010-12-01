@@ -74,7 +74,7 @@ ELEM_INFO_PTR current_elem;
   printf("\nElement connect table, partition, weights and coordinates:\n");
   for (i = 0; i < mesh->elem_array_len; i++) {
     current_elem = &(mesh->elements[i]);
-    if (current_elem->globalID == ZOLTAN_ID_CONSTANT(-1)) continue;
+    if (current_elem->globalID == ZOLTAN_ID_INVALID) continue;
 
     printf(ZOLTAN_ID_SPEC " in part %d (%f):\n", current_elem->globalID, 
            current_elem->my_part, current_elem->cpu_wgt[0]);
@@ -92,14 +92,14 @@ ELEM_INFO_PTR current_elem;
   printf("elem\tnadj(adj_len)\tadj,proc\n");
   for (i = 0; i < mesh->elem_array_len; i++) {
     current_elem = &(mesh->elements[i]);
-    if (current_elem->globalID == ZOLTAN_ID_CONSTANT(-1)) continue;
+    if (current_elem->globalID == ZOLTAN_ID_INVALID) continue;
 
     printf(ZOLTAN_ID_SPEC "\t", current_elem->globalID);
     printf("%d(%d)\t", current_elem->nadj, current_elem->adj_len);
     for (j = 0; j < current_elem->adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current_elem->adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
+      if (current_elem->adj[j] == ZOLTAN_ID_INVALID) continue;
 
       if (current_elem->adj_proc[j] == Proc)
         elem = mesh->elements[current_elem->adj[j]].globalID;
@@ -210,7 +210,7 @@ int output_results(const char *cmd_file,
   }
 
   for (i = j = 0; i < mesh->elem_array_len; i++) {
-    if (mesh->elements[i].globalID >= 0) {
+    if (mesh->elements[i].globalID != ZOLTAN_ID_INVALID) {
       global_ids[j] = mesh->elements[i].globalID;
       parts[j] =(ZOLTAN_ID_TYPE) mesh->elements[i].my_part;
       perm[j] = (ZOLTAN_ID_TYPE)mesh->elements[i].perm_value;
@@ -243,8 +243,8 @@ int output_results(const char *cmd_file,
   fprintf(fp, "GID\tPart\tPerm\tIPerm\n");
   for (i = 0; i < mesh->num_elems; i++) {
     j = index[i];
-    fprintf(fp, ZOLTAN_ID_SPEC "\t" ZOLTAN_ID_SPEC "\t" ZOLTAN_ID_SPEC "\t" ZOLTAN_ID_SPEC "\n", 
-              global_ids[j], parts[j], perm[j], invperm[j]);
+    fprintf(fp, ZOLTAN_ID_SPEC "\t%d\t%d\t%d\n", 
+              global_ids[j], (int)parts[j], (int)perm[j], (int)invperm[j]);
   }
 
   fclose(fp);
@@ -256,7 +256,7 @@ int output_results(const char *cmd_file,
     int total_nodes = 0;
     float *x, *y, *z;
     int k;
-    int prev_id;
+    ZOLTAN_ID_TYPE prev_id;
 
     for (i = 0; i < mesh->num_elems; i++) {
       total_nodes += mesh->eb_nnodes[mesh->elements[i].elem_blk];
@@ -286,7 +286,7 @@ int output_results(const char *cmd_file,
     strcat(par_out_fname, ".mesh");
     fp = fopen(par_out_fname, "w");
     fprintf(fp, "Vertex IDs and coordinates\n");
-    prev_id = -1;
+    prev_id = ZOLTAN_ID_INVALID;
     for (k = 0; k < total_nodes; k++) {
       j = (int)index[k];
       if (global_ids[j] == prev_id)

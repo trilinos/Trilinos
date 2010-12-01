@@ -1270,7 +1270,8 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j, k, cnt, local_elem, idx;
+  ZOLTAN_ID_TYPE local_elem;
+  int i, j, k, cnt, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -1300,17 +1301,17 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
     for (i = 0; i < current_elem->adj_len; i++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current_elem->adj[i] == -1) continue;
+      if (current_elem->adj[i] == ZOLTAN_ID_INVALID) continue;
 
       if (current_elem->adj_proc[i] == mesh->proc) {
 	local_elem = current_elem->adj[i];
       }
       else{
-	local_elem = -1;
+	local_elem = ZOLTAN_ID_INVALID;
       }
 
       /* Skip blanked vertices */
-      if (local_elem >= 0){
+      if (local_elem != ZOLTAN_ID_INVALID){
 	/* Did I blank this vertex of mine */
 	if (mesh->blank && mesh->blank[local_elem]) continue;
 	if (mesh->visible_nvtx &&
@@ -1323,7 +1324,7 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
       }
 
       for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
-      if (local_elem >= 0){
+      if (local_elem != ZOLTAN_ID_INVALID){
 	nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
       }
       else { /* adjacent element on another processor */
@@ -1376,7 +1377,7 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   for (i = 0; i < current_elem->adj_len; i++) {
 
     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-    if (current_elem->adj[i] == -1) continue;
+    if (current_elem->adj[i] == ZOLTAN_ID_INVALID) continue;
 
     if (current_elem->adj_proc[i] == mesh->proc) {
       local_elem = (int)current_elem->adj[i];

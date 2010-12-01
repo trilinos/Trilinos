@@ -219,7 +219,7 @@ int read_exoII_file(int Proc,
 
   /*
    * intialize all of the element structs as unused by
-   * setting the globalID to -1
+   * setting the globalID to ZOLTAN_ID_INVALID.
    */
   for (i = 0; i < mesh->elem_array_len; i++) 
     initialize_element(&(mesh->elements[i]));
@@ -628,7 +628,7 @@ static int find_adjacency(int Proc, MESH_INFO_PTR mesh,
 
       /* Initialize adjacency entries to -1 for each side. */
       for (nscnt = 0; nscnt < nsides; nscnt++) {
-        elements[ielem].adj[nscnt] = ZOLTAN_ID_CONSTANT(-1);
+        elements[ielem].adj[nscnt] = ZOLTAN_INVALID;
         elements[ielem].adj_proc[nscnt] = -1;
         elements[ielem].edge_wgt[nscnt] = 0;
       }

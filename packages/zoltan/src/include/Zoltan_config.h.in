@@ -62,6 +62,9 @@
 /* Define if "typedef long long ZOLTAN_ID_TYPE" */
 #undef HAVE_ZOLTAN_ID_TYPE_LONG_LONG
 
+/* Define if "typedef unsigned int ZOLTAN_ID_TYPE" */
+#undef HAVE_ZOLTAN_ID_TYPE_UINT
+
 /* Define if want to build with octreepartitioning enabled */
 #undef HAVE_ZOLTAN_OCT
 
