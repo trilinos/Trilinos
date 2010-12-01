@@ -42,11 +42,7 @@
 
 #include <Kokkos_BaseMappedArray.hpp>
 
-// #if defined( __CUDA_ARCH__ )
 #define KOKKOS_DEVICE_FUNCTION inline __device__ __host__
-// #else
-// #define KOKKOS_DEVICE_FUNCTION inline
-// #endif
 
 namespace Kokkos {
 
