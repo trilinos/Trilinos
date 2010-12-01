@@ -173,28 +173,6 @@ void * BaseMappedArray::clear( std::list< BaseMappedArray > & mapped_arrays )
 
   if ( ptr ) {
 
-    { // Destroy the owned view, any other views are now not-owned
-
-      BaseMappedArray * owned = this ;
-
-      if ( NULL == owned->m_map_on_host ) {
-        for ( owned = m_next_on_host ;
-              owned != this && NULL == owned->m_map_on_host ;
-              owned = owned->m_next_on_host );
-      }
-
-      std::list< BaseMappedArray >::iterator i = mapped_arrays.begin();
-
-      while ( i != mapped_arrays.end() && owned != & *i ) { ++i ; }
-
-      if ( i == mapped_arrays.end() ) {
-        std::string msg("Kokkos::BaseMappedArray::clear FAILED");
-        throw std::logic_error( msg );
-      }
-
-      mapped_arrays.erase( i );
-    }
-
     m_ptr_on_device = NULL ;
     m_rank          = 0 ;
     m_dimension[0]  = 0 ;
@@ -218,6 +196,28 @@ void * BaseMappedArray::clear( std::list< BaseMappedArray > & mapped_arrays )
       a->m_dimension[5]  = 0 ;
       a->m_dimension[6]  = 0 ;
       a->m_dimension[7]  = 0 ;
+    }
+
+    { // Destroy the owned view, any other views are now not-owned
+
+      BaseMappedArray * owned = this ;
+
+      if ( NULL == owned->m_map_on_host ) {
+        for ( owned = m_next_on_host ;
+              owned != this && NULL == owned->m_map_on_host ;
+              owned = owned->m_next_on_host );
+      }
+
+      std::list< BaseMappedArray >::iterator i = mapped_arrays.begin();
+
+      while ( i != mapped_arrays.end() && owned != & *i ) { ++i ; }
+
+      if ( i == mapped_arrays.end() ) {
+        std::string msg("Kokkos::BaseMappedArray::clear FAILED");
+        throw std::logic_error( msg );
+      }
+
+      mapped_arrays.erase( i );
     }
   }
 

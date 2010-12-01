@@ -1,0 +1,10 @@
+
+cuda_test.exe : \
+		Kokkos_test_hex_grad.hpp	\
+		Kokkos_test_mdarray_cuda.cu	\
+		../src/Kokkos_CudaMappedArray.hpp	\
+		../src/Kokkos_CudaMappedArray.cu	\
+		../src/Kokkos_BaseMappedArray.hpp	\
+		../src/Kokkos_BaseMappedArray.cpp
+	nvcc -I. -I../src Kokkos_test_mdarray_cuda.cu ../src/Kokkos_CudaMappedArray.cu ../src/Kokkos_BaseMappedArray.cpp -o cuda_test.exe
+
