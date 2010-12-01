@@ -1720,7 +1720,7 @@ void get_nemesis_hg(
   edg_GID = meshvtxGID;
   /* copy vertex GIDs -- elements are vertices */
   for (i = 0; i < mesh->elem_array_len; i++){
-    if (mesh->elements[i].globalID < 0) continue;
+    if (mesh->elements[i].globalID == ZOLTAN_ID_INVALID) continue;
     for (k=0; k<gid; k++) *vtx_GID++ = 0;
     *vtx_GID++ = mesh->elements[i].globalID;
     /* copy mesh vertex IDs into pins array */

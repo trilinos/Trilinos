@@ -53,7 +53,7 @@ int update_elem_dd(MESH_INFO_PTR mesh)
 
   for (j = 0, i = 0; i < mesh->elem_array_len; i++) {
     ELEM_INFO_PTR current_elem = &(mesh->elements[i]);
-    if (current_elem->globalID >= 0) {
+    if (current_elem->globalID != ZOLTAN_ID_INVALID) {
       gids[j] = current_elem->globalID;
       parts[j] = current_elem->my_part;
       j++;
