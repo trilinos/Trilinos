@@ -1,0 +1,10 @@
+
+host_test.exe : \
+		Kokkos_test_hex_grad.hpp	\
+		Kokkos_test_mdarray_host.cpp	\
+		../src/Kokkos_HostMappedArray.hpp	\
+		../src/Kokkos_HostMappedArray.cpp	\
+		../src/Kokkos_BaseMappedArray.hpp	\
+		../src/Kokkos_BaseMappedArray.cpp
+	purify g++ -g -I. -I../src Kokkos_test_mdarray_host.cpp ../src/Kokkos_HostMappedArray.cpp ../src/Kokkos_BaseMappedArray.cpp -o host_test.exe
+

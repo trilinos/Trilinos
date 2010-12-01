@@ -42,6 +42,9 @@
 
 #include <Kokkos_BaseMappedArray.hpp>
 
+#undef  KOKKOS_DEVICE_FUNCTION
+#define KOKKOS_DEVICE_FUNCTION inline
+
 namespace Kokkos {
 
 template< typename ValueType , class DeviceMap > class MDArray ;
@@ -99,13 +102,16 @@ public:
   typedef BaseMappedArray::size_type  size_type ;
 
   /*------------------------------------------------------------------*/
+  /** \brief  Query rank of the array */
+  size_type rank() const { return m_base.m_rank ; }
+
   /** \brief  Query dimension of the given ordinate of the array */
   template < typename iType >
   inline
-  size_type dimension( const iType & ordinal ) const
+  size_type dimension( const iType & rank_ordinate ) const
     {
-      KOKKOS_MDARRAY_CHECK( m_base.require_in_rank(ordinal) );
-      return m_base.m_dimension[ordinal] ;
+      KOKKOS_MDARRAY_CHECK( m_base.require_in_rank(rank_ordinate) );
+      return m_base.m_dimension[rank_ordinate] ;
     }
 
   /*------------------------------------------------------------------*/
