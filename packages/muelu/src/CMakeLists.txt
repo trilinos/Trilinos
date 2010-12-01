@@ -38,7 +38,7 @@ APPEND_SET(HEADERS
   Smoothers/MueLu_Smoother.hpp
   Graph/MueLu_AggAlgorithm.hpp
   Graph/MueLu_AggregationOptions.hpp
-  Graph/MueLu_Aggregate.hpp
+  Graph/MueLu_Aggregates.hpp
   Graph/MueLu_Graph.hpp
   )
 
