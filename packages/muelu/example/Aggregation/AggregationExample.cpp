@@ -133,20 +133,20 @@ int main(int argc, char *argv[]) {
   if (graph->eGraph->Comm().MyPID() == 0 && printFlag < MueLu_PrintLevel())
     printf("main() Aggregate_CoarsenUncoupled : \n");
   
-  MueLu_AggOptions AggregateOptions;
+  AggregationOptions aggOptions;
   
-  AggregateOptions.printFlag               = printFlag;      
-  AggregateOptions.minNodesPerAggregate    = 2;  
-  AggregateOptions.maxNeighAlreadySelected = 5;
-  AggregateOptions.ordering                = 1;
-  AggregateOptions.phase3AggCreation       = 0.5;
+  aggOptions.SetPrintFlag(printFlag);      
+  aggOptions.SetMinNodesPerAggregate(2);  
+  aggOptions.SetMaxNeighAlreadySelected(5);
+  aggOptions.SetOrdering(1);
+  aggOptions.SetPhase3AggCreation(0.5);
   
   Aggregates *aggregates = NULL;
   
-  aggregates = MueLu_Aggregate_CoarsenUncoupled(&AggregateOptions,graph);
+  aggregates = MueLu_Aggregate_CoarsenUncoupled(&aggOptions,graph);
 
   name = "UC_CleanUp";
-  MueLu_AggregateLeftOvers(&AggregateOptions, aggregates, name.c_str(), graph);
+  MueLu_AggregateLeftOvers(&aggOptions, aggregates, name.c_str(), graph);
   
   Epetra_IntVector Final( aggregates->GetVertex2AggId()->Map() );
 

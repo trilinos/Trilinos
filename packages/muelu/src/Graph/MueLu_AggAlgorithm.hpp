@@ -32,8 +32,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-
-#include "MueLu_AggOptions.hpp"
+#include "MueLu_AggregationOptions.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Graph.hpp"
 
@@ -67,10 +66,10 @@ typedef struct MueLu_SuperNode_Struct
 extern int MueLu_RandomReorder(int *randomVector, const Epetra_BlockMap &map);
 
 
-extern Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions *aggregateOptions,
-                        MueLu_Graph *graph);
+extern Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions *aggOptions,
+                                                    MueLu_Graph *graph);
 
-extern int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions, 
+extern int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions, 
                                   Aggregates *aggregates,
 				  const char *label, MueLu_Graph *graph);
 
@@ -127,8 +126,8 @@ extern int MueLu_ComputeAggSizes(Aggregates *aggregates, int *AggSizes);
 /*       procWinner[] is set during Phase 1.                                */
 /* ------------------------------------------------------------------------ */
 
-Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions 
-        *aggregateOptions, MueLu_Graph *graph)
+Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions 
+        *aggOptions, MueLu_Graph *graph)
 {
    int     i, j, k, m, kk, iNode = 0, jNode, length, nRows;
    int     selectFlag, nAggregates, index, myPid, iNode2;
@@ -153,10 +152,10 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
    /* ============================================================= */
 
    myPid                   = graph->eGraph->Comm().MyPID();
-   minNodesPerAggregate    = aggregateOptions->minNodesPerAggregate;
-   maxNeighSelected        = aggregateOptions->maxNeighAlreadySelected;
-   ordering                = aggregateOptions->ordering;
-   printFlag               = aggregateOptions->printFlag;
+   minNodesPerAggregate    = aggOptions->GetMinNodesPerAggregate();
+   maxNeighSelected        = aggOptions->GetMaxNeighAlreadySelected();
+   ordering                = aggOptions->GetOrdering();
+   printFlag               = aggOptions->GetPrintFlag();
    nRows                   = graph->nVertices;
 
    /* ============================================================= */
@@ -567,7 +566,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
 // for any nonshared gid's with a nonzero weight.
 //
 
-int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions, 
+int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions, 
                                   Aggregates *aggregates,
 				  const char *label,
                                   MueLu_Graph *graph)
@@ -584,10 +583,10 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
   nVertices    = graph->nVertices;
   exp_nRows    = graph->nVertices + graph->nGhost;
   myPid        = graph->eGraph->Comm().MyPID();
-  printFlag    = aggregateOptions->printFlag;
+  printFlag    = aggOptions->GetPrintFlag();
   nAggregates  = aggregates->GetNumAggregates();
 
-  int minNodesPerAggregate = aggregateOptions->minNodesPerAggregate;
+  int minNodesPerAggregate = aggOptions->GetMinNodesPerAggregate();
   Nphase1_agg = nAggregates;
 
   const Epetra_Map &nonUniqueMap=(Epetra_Map &) aggregates->GetVertex2AggId()->Map();
@@ -658,7 +657,7 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
    /* unaggregated nodes.                                                */
 
    factor = ((double) phase_one_aggregated)/((double)(total_vertices + 1));
-   factor = pow(factor, aggregateOptions->phase3AggCreation);
+   factor = pow(factor, aggOptions->GetPhase3AggCreation());
 
    for (i = 0; i < nVertices; i++) {
      if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
