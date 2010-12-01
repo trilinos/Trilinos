@@ -378,8 +378,7 @@ struct RemoveKeyProc {
   {
     std::vector<DistributedIndex::KeyProc>::iterator
       i = std::lower_bound( key_usage.begin(),
-                            key_usage.end(), kp.first , KeyProcLess() );
-    while ( i != key_usage.end() && kp != *i ) { ++i ; }
+                            key_usage.end(), kp , KeyProcLess() );
     if ( i != key_usage.end() && kp == *i ) {
       i->second = -1 ;
     }
@@ -404,6 +403,8 @@ void DistributedIndex::update_keys(
 
   size_t local_bad_input = 0 ;
 
+  // Iterate over keys being removed and keep a count of keys being removed
+  // from other processes
   for ( std::vector<KeyType>::const_iterator
         i = remove_existing_keys.begin();
         i != remove_existing_keys.end(); ++i ) {
@@ -417,12 +418,11 @@ void DistributedIndex::update_keys(
     }
   }
 
+  // Iterate over keys being added and keep a count of keys being added
+  // to other processes
   for ( std::vector<KeyType>::const_iterator
         i = add_new_keys.begin();
         i != add_new_keys.end(); ++i ) {
-
-    // Count
-
     const ProcType p = to_which_proc( *i );
     if ( p == m_comm_size ) {
       // Key is not within one of the span:
@@ -433,17 +433,13 @@ void DistributedIndex::update_keys(
     }
   }
 
-  if ( 0 < local_bad_input ) {
-    // If this process knows it will throw
-    // then don't bother communicating the add and remove requests.
-    count_remove.clear();
-    count_add.clear();
-  }
-
   CommAll all( m_comm );
 
   // Sizing and add_new_keys bounds checking:
 
+  // For each process, we are going to send the number of removed keys,
+  // the removed keys, and the added keys. It will be assumed that any keys
+  // beyond the number of removed keys will be added keys.
   for ( int p = 0 ; p < m_comm_size ; ++p ) {
     if ( count_remove[p] || count_add[p] ) {
       CommBuffer & buf = all.send_buffer( p );
@@ -453,7 +449,7 @@ void DistributedIndex::update_keys(
     }
   }
 
-  // Allocate buffers and perform a global
+  // Allocate buffers and perform a global OR of error_flag
   const bool symmetry_flag = false ;
   const bool error_flag = 0 < local_bad_input ;
 
@@ -474,12 +470,14 @@ void DistributedIndex::update_keys(
 
   // Packing:
 
+  // Pack the remove counts for each process
   for ( int p = 0 ; p < m_comm_size ; ++p ) {
     if ( count_remove[p] || count_add[p] ) {
       all.send_buffer( p ).pack<unsigned long>( count_remove[p] );
     }
   }
 
+  // Pack the removed keys for each process
   for ( std::vector<KeyType>::const_iterator
         i = remove_existing_keys.begin();
         i != remove_existing_keys.end(); ++i ) {
@@ -489,6 +487,7 @@ void DistributedIndex::update_keys(
     }
   }
 
+  // Pack the added keys for each process
   for ( std::vector<KeyType>::const_iterator
         i = add_new_keys.begin();
         i != add_new_keys.end(); ++i ) {
@@ -498,6 +497,7 @@ void DistributedIndex::update_keys(
     }
   }
 
+  // Communicate keys
   all.communicate();
 
   //------------------------------
@@ -565,8 +565,9 @@ void DistributedIndex::update_keys(
     }
   }
 
-  sort_unique( m_key_usage );
   //------------------------------
+
+  sort_unique( m_key_usage );
 }
 
 //----------------------------------------------------------------------
