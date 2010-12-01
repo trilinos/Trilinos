@@ -47,6 +47,8 @@ IF( STK_ENABLE_ThreadPool )
   ADD_SUBDIRECTORY(stk_search)
 ENDIF()
 
+# ADD_SUBDIRECTORY(stk_expreval)
+
 #
 # D) Do standard postprocessing
 #
