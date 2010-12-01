@@ -376,7 +376,7 @@ extern double Total_Partition_Time;
 #endif
 
 #ifndef ZOLTAN_ID_INVALID
-#error "Unable to set ZOLTAN_ID_INVALID. See zoltan_types.h."
+#define ZOLTAN_ID_INVALID UINT_MAX
 #endif
 
 #ifdef __cplusplus
