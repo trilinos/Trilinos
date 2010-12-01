@@ -31,39 +31,39 @@
 /**********************************************************************************/
 MueLu_Graph *MueLu_BuildGraph(const Epetra_CrsMatrix & A, const char *name="")
 {
-  MueLu_Graph *Graph;
+  MueLu_Graph *graph;
   double *dtmp = NULL;
 
-  Graph = (MueLu_Graph *) malloc(sizeof(MueLu_Graph));
-  Graph->EGraph = NULL;
-  Graph->name = NULL;
-  Graph->name = (char *) malloc(sizeof(char)*80); strcpy(Graph->name,name);
-  Graph->NVertices = A.NumMyRows(); // Q:local or global ? Amatrix->invec_leng;
+  graph = (MueLu_Graph *) malloc(sizeof(MueLu_Graph));
+  graph->eGraph = NULL;
+  graph->name = NULL;
+  graph->name = (char *) malloc(sizeof(char)*80); strcpy(graph->name,name);
+  graph->nVertices = A.NumMyRows(); // Q:local or global ? Amatrix->invec_leng;
 
   if ( A.NumMyRows() == 0) { // Q: ML_Operator* Amatrix->getrow->Nrows is local or global ?
-     Graph->VertexNeighbors    = NULL;
-     Graph->VertexNeighborsPtr = NULL;
-     Graph->NEdges             = 0;
+     graph->vertexNeighbors    = NULL;
+     graph->vertexNeighborsPtr = NULL;
+     graph->nEdges             = 0;
   }
   else {
-    A.ExtractCrsDataPointers(Graph->VertexNeighborsPtr, Graph->VertexNeighbors, dtmp);
+    A.ExtractCrsDataPointers(graph->vertexNeighborsPtr, graph->vertexNeighbors, dtmp);
 
-    Graph->NEdges = (Graph->VertexNeighborsPtr)[A.NumMyRows()]; // Q:
-    Graph->EGraph = &(A.Graph());
+    graph->nEdges = (graph->vertexNeighborsPtr)[A.NumMyRows()]; // Q:
+    graph->eGraph = &(A.Graph());
   }
-  if (Graph->EGraph == NULL) Graph->NGhost = 0;
+  if (graph->eGraph == NULL) graph->nGhost = 0;
   else {
-    Graph->NGhost = A.RowMatrixColMap().NumMyElements() - A.OperatorDomainMap().NumMyElements();
-    if (Graph->NGhost < 0) Graph->NGhost = 0;
+    graph->nGhost = A.RowMatrixColMap().NumMyElements() - A.OperatorDomainMap().NumMyElements();
+    if (graph->nGhost < 0) graph->nGhost = 0;
   }
-  return Graph;
+  return graph;
 }
 
-int MueLu_DestroyGraph(MueLu_Graph *Graph)
+int MueLu_DestroyGraph(MueLu_Graph *graph)
 {
-   if ( Graph != NULL) {
-      if (Graph->name != NULL) free(Graph->name);
-      free(Graph);
+   if ( graph != NULL) {
+      if (graph->name != NULL) free(graph->name);
+      free(graph);
    }
    return 0;
 }
@@ -118,44 +118,44 @@ int main(int argc, char *argv[]) {
 
   RCP<const Epetra_CrsMatrix> A;
 
-  { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I shoudl create a function to do that)
+  { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I should create a function to do that)
     RCP<const CrsMatrix> tmp_CrsMtx = Op->get_CrsMatrix();
     const RCP<const Cthulhu::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Cthulhu::EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null) { std::cout << "Error !" << std::endl; return 1; }
     A = tmp_ECrsMtx->getEpetra_CrsMatrix();
   }
   
-  MueLu_Graph *Graph;
+  MueLu_Graph *graph;
   std::string name = "Uncoupled";
-  Graph = MueLu_BuildGraph(*A, name.c_str());
+  graph = MueLu_BuildGraph(*A, name.c_str());
   
-  int print_flag=6;
-  if (Graph->EGraph->Comm().MyPID() == 0 && print_flag < MueLu_PrintLevel())
+  int printFlag=6;
+  if (graph->eGraph->Comm().MyPID() == 0 && printFlag < MueLu_PrintLevel())
     printf("main() Aggregate_CoarsenUncoupled : \n");
   
   MueLu_AggOptions AggregateOptions;
   
-  AggregateOptions.print_flag                 = print_flag;      
-  AggregateOptions.min_nodes_per_aggregate    = 2;  
-  AggregateOptions.max_neigh_already_selected = 5;
-  AggregateOptions.ordering                   = 1;                 
-  AggregateOptions.phase3_agg_creation        = 1; //Q: ??
+  AggregateOptions.printFlag               = printFlag;      
+  AggregateOptions.minNodesPerAggregate    = 2;  
+  AggregateOptions.maxNeighAlreadySelected = 5;
+  AggregateOptions.ordering                = 1;
+  AggregateOptions.phase3AggCreation       = 0.5;
   
-  MueLu_Aggregate *Aggregates = NULL;
+  Aggregates *aggregates = NULL;
   
-  Aggregates = MueLu_Aggregate_CoarsenUncoupled(&AggregateOptions,Graph);
+  aggregates = MueLu_Aggregate_CoarsenUncoupled(&AggregateOptions,graph);
 
   name = "UC_CleanUp";
-  MueLu_AggregateLeftOvers(&AggregateOptions, Aggregates, name.c_str(), Graph);
+  MueLu_AggregateLeftOvers(&AggregateOptions, aggregates, name.c_str(), graph);
   
-  Epetra_IntVector Final( Aggregates->Vertex2AggId->Map() );
-  for (int i = 0; i < Aggregates->Vertex2AggId->Map().NumMyElements(); i++) 
-    Final[i] = (*(Aggregates->Vertex2AggId))[i] + (*(Aggregates->ProcWinner))[i]*1000;
+  Epetra_IntVector Final( aggregates->vertex2AggId->Map() );
+  for (int i = 0; i < aggregates->vertex2AggId->Map().NumMyElements(); i++) 
+    Final[i] = (*(aggregates->vertex2AggId))[i] + (*(aggregates->procWinner))[i]*1000;
   printf("finals\n");
   cout << Final << endl; sleep(2);
   
-  MueLu_AggregateDestroy(Aggregates); 
-  MueLu_DestroyGraph(Graph);
+  MueLu_AggregateDestroy(aggregates); 
+  MueLu_DestroyGraph(graph);
   
   return 0;
 

@@ -1,5 +1,5 @@
-#ifndef MUELU_AGGREGATE_HPP
-#define MUELU_AGGREGATE_HPP
+#ifndef MUELU_AGGREGATES_HPP
+#define MUELU_AGGREGATES_HPP
 
 #include "MueLu_Graph.hpp"
 
@@ -20,7 +20,7 @@
                                   /* claimed their copy of a vertex for one  */
                                   /* of their aggregates.  However, some     */
                                   /* arbitration still needs to occur.       */
-                                  /* The corresponding ProcWinner[]'s remain */
+                                  /* The corresponding procWinner[]'s remain */
                                   /* as MUELOO_UNASSIGNED until              */
                                   /* MueLu_ArbitrateAndCommunicate() is     */
                                   /* invoked to arbitrate.                   */
@@ -49,71 +49,80 @@
                                   /* vertex.  Should be between 0 and 1.     */
 
 /***************************************************************************** 
-   Structure holding aggregate information. Right now, NAggregates, IsRoot,
-   Vertex2AggId, ProcWinner are populated.  This allows us to look at a node
+   Structure holding aggregate information. Right now, nAggregates, IsRoot,
+   Vertex2AggId, procWinner are populated.  This allows us to look at a node
    and determine the aggregate to which it has been assigned and the id of the 
-   processor that owns this aggregte.  It is not so easy to determine vertices
+   processor that owns this aggregate. It is not so easy to determine vertices
    within the kth aggregate or the size of the kth aggregate. Thus, it might be
    useful to have a secondary structure which would be a rectangular CrsGraph 
    where rows (or vertices) correspond to aggregates and colunmns (or edges) 
-   correspond to nodes.  While not strictly necessary, it might be convenient.
+   correspond to nodes. While not strictly necessary, it might be convenient.
  *****************************************************************************/
-typedef struct MueLu_Aggregate_Struct
-{
-   char *name;
-   int  NAggregates;              /* Number of aggregates on this processor  */
 
-   Epetra_IntVector *Vertex2AggId;/* Vertex2AggId[k] gives a local id        */
-                                  /* corresponding to the aggregate to which */
-                                  /* local id k has been assigned.  While k  */
-   Epetra_IntVector *ProcWinner;  /* is the local id on my processor (MyPID),*/
-                                  /* Vertex2AggId[k] is the local id on the  */
-                                  /* processor which actually owns the       */
-                                  /* aggregate. This owning processor has id */
-                                  /* given by ProcWinner[k].                 */
+//namespace MueLu {
 
-   bool *IsRoot;                  /* IsRoot[i] indicates whether vertex i  */
-                                  /* is a root node.                       */
+  class Aggregates {
+    
+  public:
+    
+    char *name;
+    int  nAggregates;              /* Number of aggregates on this processor  */
+    
+    Epetra_IntVector *vertex2AggId;/* vertex2AggId[k] gives a local id        */
+    /* corresponding to the aggregate to which */
+    /* local id k has been assigned.  While k  */
+    Epetra_IntVector *procWinner;  /* is the local id on my processor (MyPID),*/
+    /* vertex2AggId[k] is the local id on the  */
+    /* processor which actually owns the       */
+    /* aggregate. This owning processor has id */
+    /* given by procWinner[k].                 */
 
-   Epetra_CrsGraph *Agg2Vertex;   /* Currently not used                    */
-} MueLu_Aggregate;
+    bool *isRoot;                  /* IsRoot[i] indicates whether vertex i  */
+    /* is a root node.                       */
 
+    Epetra_CrsGraph *agg2Vertex;   /* Currently not used                    */
+  
+  private:
+  
+  };
 
-MueLu_Aggregate *MueLu_AggregateCreate(MueLu_Graph *Graph, const char *str);
-int MueLu_AggregateDestroy(MueLu_Aggregate *agg);
+  //}
+
+Aggregates *MueLu_AggregateCreate(MueLu_Graph *Graph, const char *str);
+int MueLu_AggregateDestroy(Aggregates *aggregates);
 
 // Constructors to create aggregates. This should really be replaced by an 
 // aggregate class.
-MueLu_Aggregate *MueLu_AggregateCreate(MueLu_Graph *Graph, const char *str)
+Aggregates *MueLu_AggregateCreate(MueLu_Graph *Graph, const char *str)
 {
-   MueLu_Aggregate *Aggregates;
+   Aggregates *aggregates;
 
-   Aggregates = (MueLu_Aggregate *) malloc(sizeof(MueLu_Aggregate));
-   Aggregates->name = (char *) malloc(sizeof(char)*80);
-   strcpy(Aggregates->name,str);
-   Aggregates->NAggregates  = 0;
-   Aggregates->Agg2Vertex   = NULL;
-   Aggregates->Vertex2AggId = new Epetra_IntVector(Graph->EGraph->ImportMap());
-   Aggregates->Vertex2AggId->PutValue(MUELOO_UNAGGREGATED);
-   Aggregates->ProcWinner = new Epetra_IntVector(Graph->EGraph->ImportMap());
-   Aggregates->ProcWinner->PutValue(MUELOO_UNASSIGNED);
-   Aggregates->IsRoot = new bool[Graph->EGraph->ImportMap().NumMyElements()];
-   for (int i=0; i < Graph->EGraph->ImportMap().NumMyElements(); i++)
-       Aggregates->IsRoot[i] = false;
+   aggregates = (Aggregates *) malloc(sizeof(Aggregates));
+   aggregates->name = (char *) malloc(sizeof(char)*80);
+   strcpy(aggregates->name,str);
+   aggregates->nAggregates  = 0;
+   aggregates->agg2Vertex   = NULL;
+   aggregates->vertex2AggId = new Epetra_IntVector(Graph->eGraph->ImportMap());
+   aggregates->vertex2AggId->PutValue(MUELOO_UNAGGREGATED);
+   aggregates->procWinner = new Epetra_IntVector(Graph->eGraph->ImportMap());
+   aggregates->procWinner->PutValue(MUELOO_UNASSIGNED);
+   aggregates->isRoot = new bool[Graph->eGraph->ImportMap().NumMyElements()];
+   for (int i=0; i < Graph->eGraph->ImportMap().NumMyElements(); i++)
+       aggregates->isRoot[i] = false;
 
-   return Aggregates;
+   return aggregates;
 }
 // Destructor for aggregates. This should really be replaced by an 
 // aggregate class.
-int MueLu_AggregateDestroy(MueLu_Aggregate *agg)
+int MueLu_AggregateDestroy(Aggregates *aggregates)
 {
-   if (agg != NULL) {
-      if (agg->IsRoot       != NULL) delete [] (agg->IsRoot);
-      if (agg->ProcWinner   != NULL) delete agg->ProcWinner;
-      if (agg->Vertex2AggId != NULL) delete agg->Vertex2AggId;
-      if (agg->name         != NULL) free(agg->name);
-      if (agg->Agg2Vertex   != NULL) delete agg->Agg2Vertex;
-      free(agg);
+   if (aggregates != NULL) {
+      if (aggregates->isRoot       != NULL) delete [] (aggregates->isRoot);
+      if (aggregates->procWinner   != NULL) delete aggregates->procWinner;
+      if (aggregates->vertex2AggId != NULL) delete aggregates->vertex2AggId;
+      if (aggregates->name         != NULL) free(aggregates->name);
+      if (aggregates->agg2Vertex   != NULL) delete aggregates->agg2Vertex;
+      free(aggregates);
    }
    return 0;
 }

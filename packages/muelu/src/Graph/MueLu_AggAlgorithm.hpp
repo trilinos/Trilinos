@@ -6,8 +6,8 @@
 /* ************************************************************************* */
 /* Functions to aggregate vertices in a graph                                */
 /* ************************************************************************* */
-/* Author        : Ray Tuminaro
-/* Date          : Jan, 2010                                              */
+/* Author        : Ray Tuminaro                                              */
+/* Date          : Jan, 2010                                                 */
 /* ************************************************************************* */
 
 #define CLEAN_DEBUG
@@ -34,13 +34,13 @@
 
 
 #include "MueLu_AggOptions.hpp"
-#include "MueLu_Aggregate.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Graph.hpp"
 
 
 using namespace std;
 
-int MueLu_PrintLevel() { return 7; }   /* Normally this should be some general*/
+int MueLu_PrintLevel() { return 7; }    /* Normally this should be some general*/
                                         /* attribute the indicates the level   */
                                         /* verbosity.                          */
 
@@ -49,7 +49,7 @@ int MueLu_PrintLevel() { return 7; }   /* Normally this should be some general*/
 /* ------------------------------------------------------------------------- */
 typedef struct MueLu_Node_Struct
 {
-   int    node_id;
+   int    nodeId;
    struct MueLu_Node_Struct *next;
 } MueLu_Node;
 /* ************************************************************************* */
@@ -58,43 +58,45 @@ typedef struct MueLu_Node_Struct
 typedef struct MueLu_SuperNode_Struct
 {
    int    length;
-   int    maxlength;
+   int    maxLength;
    int    index;
    int    *list;
    struct MueLu_SuperNode_Struct *next;
 } MueLu_SuperNode;
 
-extern int MueLu_RandomReorder(int *randomVector, const Epetra_BlockMap &Map);
+extern int MueLu_RandomReorder(int *randomVector, const Epetra_BlockMap &map);
 
 
-extern MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions *AggregateOptions,
-                        MueLu_Graph *Graph);
+extern Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions *aggregateOptions,
+                        MueLu_Graph *graph);
 
-extern int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions, 
-                                  MueLu_Aggregate *Aggregates,
-				  const char *label, MueLu_Graph *Graph);
+extern int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions, 
+                                  Aggregates *aggregates,
+				  const char *label, MueLu_Graph *graph);
 
 extern int MueLu_NonUnique2NonUnique(const Epetra_Vector &source, 
-         Epetra_Vector &dest, const Epetra_Map &UniqueMap, 
-         const Epetra_Import &Unique2NonUniqueWidget, 
+         Epetra_Vector &dest, const Epetra_Map &uniqueMap, 
+         const Epetra_Import &unique2NonUniqueWidget, 
          const Epetra_CombineMode what);
 
 extern int MueLu_NonUnique2NonUnique(const Epetra_IntVector &source, 
-         Epetra_IntVector &dest, const Epetra_Map &UniqueMap, 
-         const Epetra_Import &Unique2NonUniqueWidget, 
+         Epetra_IntVector &dest, const Epetra_Map &uniqueMap, 
+         const Epetra_Import &unique2NonUniqueWidget, 
          const Epetra_CombineMode what);
 
-extern int MueLu_ArbitrateAndCommunicate(Epetra_Vector &OrigWt, Epetra_IntVector &ProcWinner,
-   Epetra_IntVector *Companion, const Epetra_Map &UniqueMap, const Epetra_Import &Unique2NonUniqueWidget, const bool perturb);
+int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight, 
+                                  Epetra_IntVector &procWinner,
+                                  Epetra_IntVector *companion, const Epetra_Map &uniqueMap, 
+                                  const Epetra_Import &unique2NonUniqueWidget, const bool perturb);
 
-extern int MueLu_RootCandidates(int nvertices, int *Vertex2AggId, MueLu_Graph *Graph,
+extern int MueLu_RootCandidates(int nVertices, int *vertex2AggId, MueLu_Graph *graph,
             int *Candidates, int &NCandidates, int &NCandidatesGlobal);
 
-extern int MueLu_RemoveSmallAggs(MueLu_Aggregate *Aggregates, int min_size,
-    Epetra_Vector &Weights, const Epetra_Map &UniqueMap, 
-    const Epetra_Import &Unique2NonUniqueWidget);
+extern int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
+    Epetra_Vector &weights, const Epetra_Map &uniqueMap, 
+    const Epetra_Import &unique2NonUniqueWidget);
 
-extern int MueLu_ComputeAggSizes(MueLu_Aggregate *Aggregates, int *AggSizes);
+extern int MueLu_ComputeAggSizes(Aggregates *aggregates, int *AggSizes);
 
 
 
@@ -111,137 +113,137 @@ extern int MueLu_ComputeAggSizes(MueLu_Aggregate *Aggregates, int *AggSizes);
 /* unaggregated nodes should be Adjacented to at least one aggregated node  */
 /* (otherwise it would have been chosen as a root node).                    */
 /*                                                                          */
-/* New aggregates are specified by setting Vertex2AggId. In particular,     */
-/* Vertex2AggId[k] = j >= 0 indicates that the kth node resides in the      */
-/* jth aggregate. Vertex2AggId[k] == MUELOO_UNAGGREGATED indicates that the */
+/* New aggregates are specified by setting vertex2AggId. In particular,     */
+/* vertex2AggId[k] = j >= 0 indicates that the kth node resides in the      */
+/* jth aggregate. vertex2AggId[k] == MUELOO_UNAGGREGATED indicates that the */
 /* kth node is  unaggregated.                                               */
 /*                                                                          */
-/* NOTE: This function does not set ProcWinner[]'s. The main trickness      */
-/*       with setting ProcWinner[]'s is that one needs to make sure that the*/
+/* NOTE: This function does not set procWinner[]'s. The main trickness      */
+/*       with setting procWinner[]'s is that one needs to make sure that the*/
 /*       ghost ids are properly set on all processors. Since there is no    */
 /*       arbitration, this can have easily been done with an import. Instead*/
-/*       ProcWinner[] will be set in MueLu_AggregateLeftOvers().           */
+/*       procWinner[] will be set in MueLu_AggregateLeftOvers().           */
 /*       MueLu_AggregateLeftOvers() should also function properly when     */
-/*       ProcWinner[] is set during Phase 1.                                */
+/*       procWinner[] is set during Phase 1.                                */
 /* ------------------------------------------------------------------------ */
 
-MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions 
-        *AggregateOptions, MueLu_Graph *Graph)
+Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions 
+        *aggregateOptions, MueLu_Graph *graph)
 {
-   int     i, j, k, m, kk, inode = 0, jnode, length, Nrows;
-   int     select_flag, NAggregates, index, mypid, inode2;
-   int     *Vertex2AggId = NULL; //, *itmp_array = NULL,
+   int     i, j, k, m, kk, iNode = 0, jNode, length, nRows;
+   int     selectFlag, nAggregates, index, myPid, iNode2;
+   int     *vertex2AggId = NULL; //, *itmpArray = NULL,
    int     count;
-   int     *aggr_stat = NULL, ordering;
-   double  printflag;
-   int     *randomVector = NULL, *aggr_cnt_array = NULL;
-   int     min_nodes_per_aggregate, max_neigh_selected;
-   unsigned int nbytes;
-   MueLu_Node       *node_head=NULL, *node_tail=NULL, *new_node=NULL;
-   MueLu_SuperNode  *aggr_head=NULL, *aggr_curr=NULL, *supernode=NULL;
-   MueLu_Aggregate *Aggregates=NULL;
+   int     *aggStat = NULL, ordering;
+   double  printFlag;
+   int     *randomVector = NULL, *aggCntArray = NULL;
+   int     minNodesPerAggregate, maxNeighSelected;
+   unsigned int nBytes;
+   MueLu_Node       *nodeHead=NULL, *nodeTail=NULL, *newNode=NULL;
+   MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
+   Aggregates *aggregates=NULL;
 
    std::string name = "Uncoupled";
 
-   Aggregates = MueLu_AggregateCreate(Graph, name.c_str());
-   Aggregates->Vertex2AggId->ExtractView(&Vertex2AggId);
+   aggregates = MueLu_AggregateCreate(graph, name.c_str());
+   aggregates->vertex2AggId->ExtractView(&vertex2AggId);
    
    /* ============================================================= */
    /* get the machine information and matrix references             */
    /* ============================================================= */
 
-   mypid                   = Graph->EGraph->Comm().MyPID();
-   min_nodes_per_aggregate = AggregateOptions->min_nodes_per_aggregate;
-   max_neigh_selected      = AggregateOptions->max_neigh_already_selected;
-   ordering                = AggregateOptions->ordering;
-   printflag               = AggregateOptions->print_flag;
-   Nrows                   = Graph->NVertices;
+   myPid                   = graph->eGraph->Comm().MyPID();
+   minNodesPerAggregate    = aggregateOptions->minNodesPerAggregate;
+   maxNeighSelected        = aggregateOptions->maxNeighAlreadySelected;
+   ordering                = aggregateOptions->ordering;
+   printFlag               = aggregateOptions->printFlag;
+   nRows                   = graph->nVertices;
 
    /* ============================================================= */
-   /* aggr_stat indicates whether this node has been aggreated, and */
-   /* Vertex2AggId stores the aggregate number where this node has    */
+   /* aggStat indicates whether this node has been aggreated, and */
+   /* vertex2AggId stores the aggregate number where this node has    */
    /* been aggregated into.                                         */
    /* ============================================================= */
 
-   nbytes = Nrows * sizeof( int );
-   if (nbytes > 0) aggr_stat = (int *) malloc(nbytes);
-   for ( i = 0; i < Nrows; i++ ) aggr_stat[i] = MUELOO_AGGR_READY;
+   nBytes = nRows * sizeof( int );
+   if (nBytes > 0) aggStat = (int *) malloc(nBytes);
+   for ( i = 0; i < nRows; i++ ) aggStat[i] = MUELOO_AGGR_READY;
 
    /* ============================================================= */
    /* Set up the data structures for aggregation                    */
    /* ============================================================= */
 
-   NAggregates = 0;
-   aggr_head = NULL;
-   nbytes = (Nrows+1)*sizeof(int);
-   aggr_cnt_array = (int *) malloc(nbytes);
-   for ( i = 0; i <= Nrows; i++ ) aggr_cnt_array[i] = 0;
+   nAggregates = 0;
+   aggHead = NULL;
+   nBytes = (nRows+1)*sizeof(int);
+   aggCntArray = (int *) malloc(nBytes);
+   for ( i = 0; i <= nRows; i++ ) aggCntArray[i] = 0;
 
    /* ============================================================= */
    /* Phase 1  :                                                    */
    /*    for all nodes, form a new aggregate with its neighbors     */
    /*    if the number of its neighbors having been aggregated does */
    /*    not exceed a given threshold                               */
-   /*    (max_neigh_selected = 0 ===> Vanek's scheme)               */
+   /*    (maxNeighSelected = 0 ===> Vanek's scheme)               */
    /* ============================================================= */
 
    if ( ordering == 1 )       /* random ordering */
    {
-      nbytes = Nrows * sizeof(int);
-      randomVector = (int *) malloc(nbytes);
-      for (i = 0; i < Nrows; i++) randomVector[i] = i;
-      MueLu_RandomReorder(randomVector, Graph->EGraph->DomainMap());
+      nBytes = nRows * sizeof(int);
+      randomVector = (int *) malloc(nBytes);
+      for (i = 0; i < nRows; i++) randomVector[i] = i;
+      MueLu_RandomReorder(randomVector, graph->eGraph->DomainMap());
    } 
    else if ( ordering == 2 )  /* graph ordering */
    {
-      new_node = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
-      new_node->node_id = 0;
-      node_head = new_node;
-      node_tail = new_node;
-      new_node->next = NULL;
+      newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
+      newNode->nodeId = 0;
+      nodeHead = newNode;
+      nodeTail = newNode;
+      newNode->next = NULL;
    }
    
-   inode2 = 0;
-   while ( inode2 < Nrows)
+   iNode2 = 0;
+   while ( iNode2 < nRows)
    {
       /*------------------------------------------------------ */
       /* pick the next node to aggregate                       */
       /*------------------------------------------------------ */
 
-      if      ( ordering == 0 ) inode = inode2++;
-      else if ( ordering == 1 ) inode = randomVector[inode2++];
+      if      ( ordering == 0 ) iNode = iNode2++;
+      else if ( ordering == 1 ) iNode = randomVector[iNode2++];
       else if ( ordering == 2 ) 
       {
-         if ( node_head == NULL ) 
+         if ( nodeHead == NULL ) 
          {
-            for ( jnode = 0; jnode < Nrows; jnode++ ) 
+            for ( jNode = 0; jNode < nRows; jNode++ ) 
             {
-               if ( aggr_stat[jnode] == MUELOO_AGGR_READY )
+               if ( aggStat[jNode] == MUELOO_AGGR_READY )
                { 
-                  new_node = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
-                  new_node->node_id = jnode;
-                  node_head = new_node;
-                  node_tail = new_node;
-                  new_node->next = NULL;
+                  newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
+                  newNode->nodeId = jNode;
+                  nodeHead = newNode;
+                  nodeTail = newNode;
+                  newNode->next = NULL;
                   break;
                }
             }
          }
-         if ( node_head == NULL ) break;
-         new_node = node_head;
-         inode = new_node->node_id;
-         node_head = new_node->next;
-         free(new_node);
+         if ( nodeHead == NULL ) break;
+         newNode = nodeHead;
+         iNode = newNode->nodeId;
+         nodeHead = newNode->next;
+         free(newNode);
       }
 
       /*------------------------------------------------------ */
       /* consider further only if the node is in READY mode    */
       /*------------------------------------------------------ */
 
-      if ( aggr_stat[inode] == MUELOO_AGGR_READY ) 
+      if ( aggStat[iNode] == MUELOO_AGGR_READY ) 
       {
-         length = Graph->VertexNeighborsPtr[inode+1] - 
-                  Graph->VertexNeighborsPtr[inode] + 1;
+         length = graph->vertexNeighborsPtr[iNode+1] - 
+                  graph->vertexNeighborsPtr[iNode] + 1;
          supernode = (MueLu_SuperNode *) malloc(sizeof(MueLu_SuperNode));      
          supernode->list = (int*) malloc(length*sizeof(int));
 
@@ -252,23 +254,23 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
             exit(1);
          }
 
-         supernode->maxlength = length;
+         supernode->maxLength = length;
          supernode->length = 1;
-         supernode->list[0] = inode;
-         select_flag = 1;
+         supernode->list[0] = iNode;
+         selectFlag = 1;
 
          /*--------------------------------------------------- */
          /* count the no. of neighbors having been aggregated  */
          /*--------------------------------------------------- */
 
          count = 0;
-         for (jnode=Graph->VertexNeighborsPtr[inode];jnode<Graph->VertexNeighborsPtr[inode+1];jnode++) 
+         for (jNode=graph->vertexNeighborsPtr[iNode];jNode<graph->vertexNeighborsPtr[iNode+1];jNode++) 
          {
-            index = Graph->VertexNeighbors[jnode];
-            if ( index < Nrows ) 
+            index = graph->vertexNeighbors[jNode];
+            if ( index < nRows ) 
             {
-               if ( aggr_stat[index] == MUELOO_AGGR_READY || 
-                    aggr_stat[index] == MUELOO_AGGR_NOTSEL ) 
+               if ( aggStat[index] == MUELOO_AGGR_READY || 
+                    aggStat[index] == MUELOO_AGGR_NOTSEL ) 
                   supernode->list[supernode->length++] = index;
                else count++;
 
@@ -281,7 +283,7 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
          /* don't do this one                                  */
          /*--------------------------------------------------- */
 
-         if ( count > max_neigh_selected ) select_flag = 0;
+         if ( count > maxNeighSelected ) selectFlag = 0;
 
          // Note: the supernode length is actually 1 more than the 
          //       number of nodes in the candidate aggregate. The 
@@ -289,29 +291,29 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
          //       a bug or a feature ... so I'll leave it and change
          //       < to <= in the if just below.
 
-         if (select_flag != 1 || 
-             supernode->length <= min_nodes_per_aggregate) 
+         if (selectFlag != 1 || 
+             supernode->length <= minNodesPerAggregate) 
          {
-            aggr_stat[inode] = MUELOO_AGGR_NOTSEL;
+            aggStat[iNode] = MUELOO_AGGR_NOTSEL;
             free( supernode->list );
             free( supernode );
             if ( ordering == 2 ) /* if graph ordering */
             {
-               for (jnode=Graph->VertexNeighborsPtr[inode];jnode<Graph->VertexNeighborsPtr[inode+1];jnode++) 
+               for (jNode=graph->vertexNeighborsPtr[iNode];jNode<graph->vertexNeighborsPtr[iNode+1];jNode++) 
                {
-                  index = Graph->VertexNeighbors[jnode];
-                  if ( aggr_stat[index] == MUELOO_AGGR_READY )
+                  index = graph->vertexNeighbors[jNode];
+                  if ( aggStat[index] == MUELOO_AGGR_READY )
                   { 
-                     new_node = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
-                     new_node->node_id = index;
-                     new_node->next = NULL;
-                     if ( node_head == NULL )
+                     newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
+                     newNode->nodeId = index;
+                     newNode->next = NULL;
+                     if ( nodeHead == NULL )
                      {
-                        node_head = new_node;
-                        node_tail = new_node;
+                        nodeHead = newNode;
+                        nodeTail = newNode;
                      } else {
-                        node_tail->next = new_node;
-                        node_tail = new_node;
+                        nodeTail->next = newNode;
+                        nodeTail = newNode;
                      }
                   } 
                } 
@@ -319,77 +321,77 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
          } 
          else 
          {
-            Aggregates->IsRoot[inode] = true;
+            aggregates->isRoot[iNode] = true;
             for ( j = 0; j < supernode->length; j++ ) 
             {
-               jnode = supernode->list[j];
-               aggr_stat[jnode] = MUELOO_AGGR_SELECTED;
-               Vertex2AggId[jnode] = NAggregates;
+               jNode = supernode->list[j];
+               aggStat[jNode] = MUELOO_AGGR_SELECTED;
+               vertex2AggId[jNode] = nAggregates;
                if ( ordering == 2 ) /* if graph ordering */
                {
-                    for (kk=Graph->VertexNeighborsPtr[jnode];kk<Graph->VertexNeighborsPtr[jnode+1];kk++) 
+                    for (kk=graph->vertexNeighborsPtr[jNode];kk<graph->vertexNeighborsPtr[jNode+1];kk++) 
                   {
-                     if ( aggr_stat[(Graph->VertexNeighbors)[kk]] == MUELOO_AGGR_READY )
+                     if ( aggStat[(graph->vertexNeighbors)[kk]] == MUELOO_AGGR_READY )
                      { 
-                        new_node = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
-                        new_node->node_id = Graph->VertexNeighbors[kk];
-                        new_node->next = NULL;
-                        if ( node_head == NULL )
+                        newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
+                        newNode->nodeId = graph->vertexNeighbors[kk];
+                        newNode->next = NULL;
+                        if ( nodeHead == NULL )
                         {
-                           node_head = new_node;
-                           node_tail = new_node;
+                           nodeHead = newNode;
+                           nodeTail = newNode;
                         } else {
-                           node_tail->next = new_node;
-                           node_tail = new_node;
+                           nodeTail->next = newNode;
+                           nodeTail = newNode;
                         }
                      }
                   } 
                } 
             }
             supernode->next = NULL;
-            supernode->index = NAggregates;
-            if ( NAggregates == 0 ) 
+            supernode->index = nAggregates;
+            if ( nAggregates == 0 ) 
             {
-               aggr_head = supernode;
-               aggr_curr = supernode;
+               aggHead = supernode;
+               aggCurrent = supernode;
             } 
             else 
             {
-               aggr_curr->next = supernode;
-               aggr_curr = supernode;
+               aggCurrent->next = supernode;
+               aggCurrent = supernode;
             } 
-            aggr_cnt_array[NAggregates++] = supernode->length;
+            aggCntArray[nAggregates++] = supernode->length;
          }
       }
    }
    if ( ordering == 1 ) free(randomVector);
    else if ( ordering == 2 ) 
    {
-      while ( node_head != NULL )
+      while ( nodeHead != NULL )
       {
-         new_node = node_head;
-         node_head = new_node->next;
-         free( new_node );
+         newNode = nodeHead;
+         nodeHead = newNode->next;
+         free( newNode );
       }
    }
 
    m = 0;
-   for ( i = 0; i < Nrows; i++ ) 
-      if ( aggr_stat[i] == MUELOO_AGGR_READY ) m++;
+   for ( i = 0; i < nRows; i++ ) 
+      if ( aggStat[i] == MUELOO_AGGR_READY ) m++;
 
-   Graph->EGraph->Comm().SumAll(&m,&k,1);
-   if ( k > 0 && mypid == 0 && printflag  < MueLu_PrintLevel())
+   graph->eGraph->Comm().SumAll(&m,&k,1);
+   if ( k > 0 && myPid == 0 && printFlag  < MueLu_PrintLevel())
       printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",k);
    m = 0;
-   for ( i = 0; i < Nrows; i++ ) 
-      if ( aggr_stat[i] == MUELOO_AGGR_SELECTED ) m++;
+   for ( i = 0; i < nRows; i++ ) 
+      if ( aggStat[i] == MUELOO_AGGR_SELECTED ) m++;
 
-   Graph->EGraph->Comm().SumAll(&m,&k,1);
-   Graph->EGraph->Comm().SumAll(&Nrows,&m,1);
-   Graph->EGraph->Comm().SumAll(&NAggregates,&j,1);
-   Aggregates->NAggregates = NAggregates;
+   graph->eGraph->Comm().SumAll(&m,&k,1);
+   graph->eGraph->Comm().SumAll(&nRows,&m,1);
+   graph->eGraph->Comm().SumAll(&nAggregates,&j,1);
+   aggregates->nAggregates = nAggregates;
 
-   if ( mypid == 0 && printflag  < MueLu_PrintLevel()) 
+   if ( myPid == 0 && printFlag  < MueLu_PrintLevel()) 
    {
       printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",k,m);
       printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",j);
@@ -399,27 +401,27 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
 
-   if (aggr_stat != NULL) free(aggr_stat);
-   free(aggr_cnt_array);
-   aggr_curr = aggr_head;
-   while ( aggr_curr != NULL ) 
+   if (aggStat != NULL) free(aggStat);
+   free(aggCntArray);
+   aggCurrent = aggHead;
+   while ( aggCurrent != NULL ) 
    {
-      supernode = aggr_curr;
-      aggr_curr = aggr_curr->next;
-      if ( supernode->maxlength > 0 ) free( supernode->list );
+      supernode = aggCurrent;
+      aggCurrent = aggCurrent->next;
+      if ( supernode->maxLength > 0 ) free( supernode->list );
       free( supernode );
    }
 
-   return Aggregates;
+   return aggregates;
 }
 // Take a partially aggregated graph and complete the aggregation. This is
 // typically needed to take care of vertices that are left over after
 // creating a bunch of ideal aggregates (root plus immediate neighbors).
 //
 // On input, the structure Aggregates describes already aggregated vertices.
-// The field ProcWinners[] indicates the processor owning the aggregate to
+// The field procWinners[] indicates the processor owning the aggregate to
 // which a vertex is "definitively" assigned. If on entry 
-// ProcWinners[i] == MUELOO_UNASSIGNED, MueLu_ArbitrateAndCommunicate() 
+// procWinners[i] == MUELOO_UNASSIGNED, MueLu_ArbitrateAndCommunicate() 
 // will arbitrate and decide which processor's aggregate really has
 // the vertex. If only one processor claims ownership (as in
 // the Uncoupled case), no real arbitration is needed. Otherwise,
@@ -442,7 +444,7 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
 //             information. However, the new aggregate will be tentatively
 //             assigned any unaggregated ghost vertices. Arbitration is again
 //             done by MueLu_ArbitrateAndCommunicate() where local vertices
-//             use a Weight[] = 2 and ghost vertices have Weight[] = 1.
+//             use a weight[] = 2 and ghost vertices have weight[] = 1.
 //             The basic idea is that after arbitration, each aggregate
 //             is guaranteed to keep all local vertices assigned in
 //             this phase. Thus, by basing the aggregation creation logic 
@@ -531,13 +533,13 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
 //             be aggregated by Phase's 1-5.  One way that we could still have 
 //             unaggegated vertices is if processor p was never assigned a
 //             root node (perhaps because the number of local vertices on p
-//             is less than min_nodes_per_aggregate) and additionally p has
+//             is less than minNodesPerAggregate) and additionally p has
 //             local ids which are not shared with any other processors (so
 //             that no other processor's aggregate can claim these vertices).
 //             
 //             Phase 6 looks at the first unassigned vertex and all of its
 //             local unassigned neighbors and makes a new aggregate. If this
-//             aggregate has at least min_nodes_per_aggregate vertices, 
+//             aggregate has at least minNodesPerAggregate vertices, 
 //             we continue this process of creating new aggregates by 
 //             examining other unassigned vertices. If the new aggregate
 //             is too small, we try add the next unassigned vertex
@@ -554,99 +556,99 @@ MueLu_Aggregate *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
 
 //  
 // One final note about the use of MueLu_ArbitrateAndCommunicate(). No
-// arbitration occurs (which means the ProcWinner[] is not set as well) for a
-// global shared id if and only if all Weights on all processors corresponding
+// arbitration occurs (which means the procWinner[] is not set as well) for a
+// global shared id if and only if all weights on all processors corresponding
 // to this id is zero. Thus, the general idea is that any global id where we
-// want arbitration to occur should have at least one associated Weight on 
+// want arbitration to occur should have at least one associated weight on 
 // one processor which is nonzero. Any global id where we don't want any
-// arbitration should have all Weights set to 0.
+// arbitration should have all weights set to 0.
 //
-// Note: ProcWinners is also set to MyPID() by MueLu_ArbitrateAndCommunicate()
+// Note: procWinners is also set to MyPid() by MueLu_ArbitrateAndCommunicate()
 // for any nonshared gid's with a nonzero weight.
 //
 
-int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions, 
-                                  MueLu_Aggregate *Aggregates,
+int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions, 
+                                  Aggregates *aggregates,
 				  const char *label,
-                                  MueLu_Graph *Graph)
+                                  MueLu_Graph *graph)
 {
   int      Nphase1_agg, phase_one_aggregated, i, j, k, kk, nonaggd_neighbors;
   int      AdjacentAgg, total_aggs, *agg_incremented = NULL;
   int      *Mark = NULL, *SumOfMarks = NULL;
-  int      best_score, score, best_agg, BestMark, mypid;
-  int      NAggregates, *Vertex2AggId, nvertices, exp_Nrows;
+  int      best_score, score, best_agg, BestMark, myPid;
+  int      nAggregates, *vertex2AggId, nVertices, exp_nRows;
   int      *rowi_col = NULL, rowi_N,total_vertices;
   int      Nleftover = 0, Nsingle = 0, Adjacent;
-  double   printflag, factor = 1., penalty;
+  double   printFlag, factor = 1., penalty;
 
-  nvertices    = Graph->NVertices;
-  exp_Nrows    = Graph->NVertices + Graph->NGhost;
-  mypid        = Graph->EGraph->Comm().MyPID();
-  printflag    = AggregateOptions->print_flag;
-  NAggregates  = Aggregates->NAggregates;
+  nVertices    = graph->nVertices;
+  exp_nRows    = graph->nVertices + graph->nGhost;
+  myPid        = graph->eGraph->Comm().MyPID();
+  printFlag    = aggregateOptions->printFlag;
+  nAggregates  = aggregates->nAggregates;
 
-  int min_nodes_per_aggregate = AggregateOptions->min_nodes_per_aggregate;
-  Nphase1_agg = NAggregates;
+  int minNodesPerAggregate = aggregateOptions->minNodesPerAggregate;
+  Nphase1_agg = nAggregates;
 
-  const Epetra_Map &NonUniqueMap=(Epetra_Map &) Aggregates->Vertex2AggId->Map();
-  const Epetra_Map &UniqueMap=(Epetra_Map &) Graph->EGraph->DomainMap();
-  const Epetra_Import Unique2NonUniqueWidget(NonUniqueMap, UniqueMap);
+  const Epetra_Map &nonUniqueMap=(Epetra_Map &) aggregates->vertex2AggId->Map();
+  const Epetra_Map &uniqueMap=(Epetra_Map &) graph->eGraph->DomainMap();
+  const Epetra_Import unique2NonUniqueWidget(nonUniqueMap, uniqueMap);
 
   // Pull stuff out of epetra vectors
 
-  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(Aggregates->Vertex2AggId);
-  Aggregates->Vertex2AggId->ExtractView(&Vertex2AggId);
-  Epetra_IntVector &ProcWinner = *(Aggregates->ProcWinner);
+  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(aggregates->vertex2AggId);
+  aggregates->vertex2AggId->ExtractView(&vertex2AggId);
+  Epetra_IntVector &procWinner = *(aggregates->procWinner);
 
 
-  Epetra_Vector Weights(NonUniqueMap);
+  Epetra_Vector weights(nonUniqueMap);
 
   // Aggregated vertices not "definitively" assigned to processors are
   // arbitrated by MueLu_ArbitrateAndCommunicate(). There is some
   // additional logic to prevent losing root nodes in arbitration.
   
-  Weights.PutScalar(0.);
-  for (int i=0;i<NonUniqueMap.NumMyElements();i++) {
-     if (ProcWinner[i] == MUELOO_UNASSIGNED) {
-        if (Vertex2AggId[i] != MUELOO_UNAGGREGATED) {
-           Weights[i] = 1.;
-           if ( (Aggregates->IsRoot)[i] == true) Weights[i] = 2.;
+  weights.PutScalar(0.);
+  for (int i=0;i<nonUniqueMap.NumMyElements();i++) {
+     if (procWinner[i] == MUELOO_UNASSIGNED) {
+        if (vertex2AggId[i] != MUELOO_UNAGGREGATED) {
+           weights[i] = 1.;
+           if ( (aggregates->isRoot)[i] == true) weights[i] = 2.;
          }
      }
   }
-  MueLu_ArbitrateAndCommunicate(Weights, ProcWinner, &Vtx2AggId, 
-                UniqueMap, Unique2NonUniqueWidget, true);
-  Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+  MueLu_ArbitrateAndCommunicate(weights, procWinner, &Vtx2AggId, 
+                uniqueMap, unique2NonUniqueWidget, true);
+  weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 
   // Tentatively assign any vertex (ghost or local) which neighbors a root
   // to the aggregate associated with the root.
 
-   for (int i =0; i < nvertices; i++) {
-      if ( ( (Aggregates->IsRoot)[i] == true) && (ProcWinner[i] == mypid) ){
-         rowi_col = &(Graph->VertexNeighbors[Graph->VertexNeighborsPtr[i]]);
-         rowi_N   = Graph->VertexNeighborsPtr[i+1] - Graph->VertexNeighborsPtr[i];
+   for (int i =0; i < nVertices; i++) {
+      if ( ( (aggregates->isRoot)[i] == true) && (procWinner[i] == myPid) ){
+         rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
+         rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
          for (j = 0; j < rowi_N; j++) {
             int colj = rowi_col[j];
-            if (Vertex2AggId[colj] == MUELOO_UNAGGREGATED) {
-               Weights[colj]= 1.;
-               Vertex2AggId[colj] = Vertex2AggId[i];
+            if (vertex2AggId[colj] == MUELOO_UNAGGREGATED) {
+               weights[colj]= 1.;
+               vertex2AggId[colj] = vertex2AggId[i];
             }
          }
        }
    }
-  MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
-                UniqueMap, Unique2NonUniqueWidget, true);
-  Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+  MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
+                uniqueMap, unique2NonUniqueWidget, true);
+  weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 
   // Record the number of aggregated vertices
 
   phase_one_aggregated = 0;
-  for (i = 0; i < nvertices; i++) {
-     if (Vertex2AggId[i] != MUELOO_UNAGGREGATED)
+  for (i = 0; i < nVertices; i++) {
+     if (vertex2AggId[i] != MUELOO_UNAGGREGATED)
          phase_one_aggregated++;
   }
-  Graph->EGraph->Comm().SumAll(&phase_one_aggregated,&phase_one_aggregated,1);
-  Graph->EGraph->Comm().SumAll(&nvertices,&total_vertices,1);
+  graph->eGraph->Comm().SumAll(&phase_one_aggregated,&phase_one_aggregated,1);
+  graph->eGraph->Comm().SumAll(&nVertices,&total_vertices,1);
 
 
    /* Among unaggregated points, see if we can make a reasonable size    */
@@ -656,53 +658,53 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
    /* unaggregated nodes.                                                */
 
    factor = ((double) phase_one_aggregated)/((double)(total_vertices + 1));
-   factor = pow(factor, AggregateOptions->phase3_agg_creation);
+   factor = pow(factor, aggregateOptions->phase3AggCreation);
 
-   for (i = 0; i < nvertices; i++) {
-     if (Vertex2AggId[i] == MUELOO_UNAGGREGATED) 
+   for (i = 0; i < nVertices; i++) {
+     if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
      {
-       rowi_col = &(Graph->VertexNeighbors[Graph->VertexNeighborsPtr[i]]);
-       rowi_N   = Graph->VertexNeighborsPtr[i+1] - Graph->VertexNeighborsPtr[i];
+       rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
+       rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
        nonaggd_neighbors = 0;
        for (j = 0; j < rowi_N; j++) {
          int colj = rowi_col[j];
-         if (Vertex2AggId[colj] == MUELOO_UNAGGREGATED && colj < nvertices)
+         if (vertex2AggId[colj] == MUELOO_UNAGGREGATED && colj < nVertices)
            nonaggd_neighbors++;
        }
-       if (  (nonaggd_neighbors > min_nodes_per_aggregate) &&
+       if (  (nonaggd_neighbors > minNodesPerAggregate) &&
           (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
        {
-         Vertex2AggId[i] = (NAggregates)++;
+         vertex2AggId[i] = (nAggregates)++;
          for (j = 0; j < rowi_N; j++) {
            int colj = rowi_col[j];
-           if (Vertex2AggId[colj]==MUELOO_UNAGGREGATED) {
-             Vertex2AggId[colj] = Vertex2AggId[i];
-             if (colj < nvertices) Weights[colj] = 2.;
-             else                  Weights[colj] = 1.;
+           if (vertex2AggId[colj]==MUELOO_UNAGGREGATED) {
+             vertex2AggId[colj] = vertex2AggId[i];
+             if (colj < nVertices) weights[colj] = 2.;
+             else                  weights[colj] = 1.;
            }
          }
-         (Aggregates->IsRoot)[i] = true;
-         Weights[i] = 2.;
+         (aggregates->isRoot)[i] = true;
+         weights[i] = 2.;
        }
      }
-   } /*for (i = 0; i < nvertices; i++)*/
+   } /*for (i = 0; i < nVertices; i++)*/
 
-  MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
-                UniqueMap, Unique2NonUniqueWidget, true);
-  Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+  MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
+                uniqueMap, unique2NonUniqueWidget, true);
+  weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 
 
-   if ( printflag < MueLu_PrintLevel()) {
+   if ( printFlag < MueLu_PrintLevel()) {
 
-     Graph->EGraph->Comm().SumAll(&Nphase1_agg,&total_aggs,1);
-     if (mypid == 0) {
+     graph->eGraph->Comm().SumAll(&Nphase1_agg,&total_aggs,1);
+     if (myPid == 0) {
        printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label,
              phase_one_aggregated);
        printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n",label, total_aggs);
      }
-     i = NAggregates - Nphase1_agg;
-     Graph->EGraph->Comm().SumAll(&i,&i,1);
-     if ( mypid == 0 ) {
+     i = nAggregates - Nphase1_agg;
+     graph->eGraph->Comm().SumAll(&i,&i,1);
+     if ( myPid == 0 ) {
        printf("Aggregation(%s) : Phase 3 - additional aggregates = %d\n",label, i);
      }
    }
@@ -711,100 +713,100 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
    // and doing MueLu_NonUnique2NonUnique(..., Add). This sums values of all
    // local copies associated with each Gid. Thus, sums > 1 are shared.
 
-   Epetra_Vector Temp(NonUniqueMap);
-   Epetra_Vector TempOutput(NonUniqueMap);
+   Epetra_Vector temp(nonUniqueMap);
+   Epetra_Vector tempOutput(nonUniqueMap);
 
-   Temp.PutScalar(1.);  
-   TempOutput.PutScalar(0.); 
-   MueLu_NonUnique2NonUnique(Temp, TempOutput, UniqueMap, 
-                              Unique2NonUniqueWidget, Add);
+   temp.PutScalar(1.);  
+   tempOutput.PutScalar(0.); 
+   MueLu_NonUnique2NonUnique(temp, tempOutput, uniqueMap, 
+                             unique2NonUniqueWidget, Add);
    
-   vector<bool> GidNotShared(exp_Nrows);
-   for (int i = 0; i < exp_Nrows; i++) {
-      if (TempOutput[i] > 1.) GidNotShared[i] = false; 
-      else  GidNotShared[i] = true; 
+   vector<bool> gidNotShared(exp_nRows);
+   for (int i = 0; i < exp_nRows; i++) {
+      if (tempOutput[i] > 1.) gidNotShared[i] = false; 
+      else  gidNotShared[i] = true; 
    }
 
    // Phase 4. 
 
-   double NAggregatesTarget;
-   int    NAggregatesGlobal, MinNAggs, MaxNAggs;
+   double nAggregatesTarget;
+   int    nAggregatesGlobal, minNAggs, maxNAggs;
 
-   NAggregatesTarget = ((double) UniqueMap.NumGlobalElements())*
-                       (((double) UniqueMap.NumGlobalElements())/
-                       ((double)Graph->EGraph->NumGlobalNonzeros()));
+   nAggregatesTarget = ((double) uniqueMap.NumGlobalElements())*
+                       (((double) uniqueMap.NumGlobalElements())/
+                       ((double)graph->eGraph->NumGlobalNonzeros()));
 
-   Graph->EGraph->Comm().SumAll(&NAggregates,&NAggregatesGlobal,1);
-   Graph->EGraph->Comm().MinAll(&NAggregates,&MinNAggs,1);
-   Graph->EGraph->Comm().MaxAll(&NAggregates,&MaxNAggs,1);
+   graph->eGraph->Comm().SumAll(&nAggregates,&nAggregatesGlobal,1);
+   graph->eGraph->Comm().MinAll(&nAggregates,&minNAggs,1);
+   graph->eGraph->Comm().MaxAll(&nAggregates,&maxNAggs,1);
 
    //
    // Only do this phase if things look really bad. THIS
    // CODE IS PRETTY EXPERIMENTAL 
    //
 #define MUELOO_PHASE4BUCKETS 6
-   if ((NAggregatesGlobal < Graph->EGraph->Comm().NumProc()) &&
-        (2.5*NAggregatesGlobal < NAggregatesTarget) &&
-        (MinNAggs ==0) && (MaxNAggs <= 1)) {
+   if ((nAggregatesGlobal < graph->eGraph->Comm().NumProc()) &&
+        (2.5*nAggregatesGlobal < nAggregatesTarget) &&
+        (minNAggs ==0) && (maxNAggs <= 1)) {
 
-      Epetra_Util Util;
-      Util.SetSeed( (unsigned int) mypid*2 + (int) (11*rand()));
-      k = (int)ceil( (10.*mypid)/Graph->EGraph->Comm().NumProc());
-      for (i = 0; i < k+7; i++) Util.SetSeed( (unsigned int) Util.RandomInt() );
-      Temp.SetSeed( (unsigned int) Util.RandomInt() );
-      Temp.Random(); 
+      Epetra_Util util;
+      util.SetSeed( (unsigned int) myPid*2 + (int) (11*rand()));
+      k = (int)ceil( (10.*myPid)/graph->eGraph->Comm().NumProc());
+      for (i = 0; i < k+7; i++) util.SetSeed( (unsigned int) util.RandomInt() );
+      temp.SetSeed( (unsigned int) util.RandomInt() );
+      temp.Random(); 
 
       // build a list of candidate root nodes (vertices not adjacent
       // to aggregated vertices)
 
-      int NCandidates = 0, NCandidatesGlobal;
-      int *Candidates = new int[nvertices+1];
+      int nCandidates = 0, nCandidatesGlobal;
+      int *candidates = new int[nVertices+1];
 
-      double PriorThreshold = 0.;
+      double priorThreshold = 0.;
      for (int kkk = 0 ; kkk < MUELOO_PHASE4BUCKETS; kkk++) {
-       MueLu_RootCandidates(nvertices, Vertex2AggId, Graph,
-            Candidates, NCandidates, NCandidatesGlobal);
+       MueLu_RootCandidates(nVertices, vertex2AggId, graph,
+            candidates, nCandidates, nCandidatesGlobal);
 
 
-       double NTargetNewGuys =  NAggregatesTarget - NAggregatesGlobal;
-       double Threshold      =  PriorThreshold + (1. - PriorThreshold)*
-                                NTargetNewGuys/(NCandidatesGlobal + .001);
+       double nTargetNewGuys =  nAggregatesTarget - nAggregatesGlobal;
+       double threshold      =  priorThreshold + (1. - priorThreshold)*
+                                nTargetNewGuys/(nCandidatesGlobal + .001);
    
 
-       Threshold = (Threshold*(kkk+1.))/((double) MUELOO_PHASE4BUCKETS);
-       PriorThreshold = Threshold;
+       threshold = (threshold*(kkk+1.))/((double) MUELOO_PHASE4BUCKETS);
+       priorThreshold = threshold;
 
-       for (k = 0; k < NCandidates ; k++ ) {
-         i = Candidates[k];
-         if ((Vertex2AggId[i] == MUELOO_UNAGGREGATED) && 
-             (fabs(Temp[i])  < Threshold)) {
-                 // Note: PriorThreshold <= fabs(Temp[i]) <= 1
-            rowi_col = &(Graph->VertexNeighbors[Graph->VertexNeighborsPtr[i]]);
-            rowi_N   = Graph->VertexNeighborsPtr[i+1] - Graph->VertexNeighborsPtr[i];
+       for (k = 0; k < nCandidates ; k++ ) {
+         i = candidates[k];
+         if ((vertex2AggId[i] == MUELOO_UNAGGREGATED) && 
+             (fabs(temp[i])  < threshold)) {
+                 // Note: priorThreshold <= fabs(temp[i]) <= 1
+            rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
+            rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
 
-            if (rowi_N >= min_nodes_per_aggregate) {
+            if (rowi_N >= minNodesPerAggregate) {
                int count = 0;
                for (j = 0; j < rowi_N; j++) {
                   Adjacent    = rowi_col[j];
                   // This might not be true if someone close to i
-                  // is chosen as a root via fabs(Temp[]) < Threshold
-                  if (Vertex2AggId[Adjacent] == MUELOO_UNAGGREGATED){
+                  // is chosen as a root via fabs(temp[]) < Threshold
+                  if (vertex2AggId[Adjacent] == MUELOO_UNAGGREGATED){
                      count++;
-                     Vertex2AggId[Adjacent] = NAggregates;
-                     Weights[Adjacent] = 1.;
+                     vertex2AggId[Adjacent] = nAggregates;
+                     weights[Adjacent] = 1.;
                   }
                }
-               if (count >= min_nodes_per_aggregate) {
-                  Vertex2AggId[i] = NAggregates++;
-                  Weights[i] = 2.;
-                  (Aggregates->IsRoot)[i] = true;
+               if (count >= minNodesPerAggregate) {
+                  vertex2AggId[i] = nAggregates++;
+                  weights[i] = 2.;
+                  (aggregates->isRoot)[i] = true;
                }
                else { // undo things
                   for (j = 0; j < rowi_N; j++) {
                      Adjacent    = rowi_col[j];
-                     if (Vertex2AggId[Adjacent] == NAggregates){
-                        Vertex2AggId[Adjacent] = MUELOO_UNAGGREGATED;
-                        Weights[Adjacent] = 0.;
+                     if (vertex2AggId[Adjacent] == nAggregates){
+                        vertex2AggId[Adjacent] = MUELOO_UNAGGREGATED;
+                        weights[Adjacent] = 0.;
                      }
                   }
                }
@@ -812,19 +814,19 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
             }
          }
        }
-       MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
-                UniqueMap, Unique2NonUniqueWidget, true);
-       Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
-       Graph->EGraph->Comm().SumAll(&NAggregates,&NAggregatesGlobal,1);
+       MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
+                uniqueMap, unique2NonUniqueWidget, true);
+       weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+       graph->eGraph->Comm().SumAll(&nAggregates,&nAggregatesGlobal,1);
 
-     // check that there are no aggregates sizes below min_nodes_per_aggregate
+     // check that there are no aggregates sizes below minNodesPerAggregate
      
 
-      Aggregates->NAggregates = NAggregates;
+      aggregates->nAggregates = nAggregates;
 
-      MueLu_RemoveSmallAggs(Aggregates, min_nodes_per_aggregate, 
-                             Weights, UniqueMap, Unique2NonUniqueWidget);
-      NAggregates = Aggregates->NAggregates;
+      MueLu_RemoveSmallAggs(aggregates, minNodesPerAggregate, 
+                             weights, uniqueMap, unique2NonUniqueWidget);
+      nAggregates = aggregates->nAggregates;
      }   // one possibility
    }
 
@@ -833,102 +835,102 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
    // ghost vertices. Further, the transpose is only a local transpose. 
    // Nonzero edges which exist on other processors are not represented.
 
-   Mark = (int *) malloc(sizeof(int)* (exp_Nrows+1));
-   agg_incremented = (int *) malloc(sizeof(int)* (NAggregates+1)); 
-   SumOfMarks = (int *) malloc(sizeof(int)*(NAggregates+1));
+   Mark = (int *) malloc(sizeof(int)* (exp_nRows+1));
+   agg_incremented = (int *) malloc(sizeof(int)* (nAggregates+1)); 
+   SumOfMarks = (int *) malloc(sizeof(int)*(nAggregates+1));
 
-   for (i = 0; i < exp_Nrows; i++)   Mark[i] = MUELOO_DISTONE_VERTEX_WEIGHT;
-   for (i = 0; i < NAggregates; i++) agg_incremented[i] = 0;
-   for (i = 0; i < NAggregates; i++) SumOfMarks[i] = 0;
+   for (i = 0; i < exp_nRows; i++)   Mark[i] = MUELOO_DISTONE_VERTEX_WEIGHT;
+   for (i = 0; i < nAggregates; i++) agg_incremented[i] = 0;
+   for (i = 0; i < nAggregates; i++) SumOfMarks[i] = 0;
 
    // Grab the transpose matrix graph for unaggregated ghost vertices.
    //     a) count the number of nonzeros per row in the transpose
 
-   vector<int> RowPtr(exp_Nrows+1-nvertices);
-   for (i = nvertices; i < exp_Nrows ;  i++) RowPtr[i-nvertices] = 0;
-   for (i = 0; i < nvertices;  i++) {
-      rowi_col = &(Graph->VertexNeighbors[Graph->VertexNeighborsPtr[i]]);
-      rowi_N   = Graph->VertexNeighborsPtr[i+1] - Graph->VertexNeighborsPtr[i];
+   vector<int> RowPtr(exp_nRows+1-nVertices);
+   for (i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
+   for (i = 0; i < nVertices;  i++) {
+      rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
+      rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
       for (int k = 0; k < rowi_N; k++) {
          j = rowi_col[k];
-         if ( (j >= nvertices) && (Vertex2AggId[j] == MUELOO_UNAGGREGATED)){
-            RowPtr[j-nvertices]++;
+         if ( (j >= nVertices) && (vertex2AggId[j] == MUELOO_UNAGGREGATED)){
+            RowPtr[j-nVertices]++;
          }
       }
    }
 
    //     b) Convert RowPtr[i] to point to 1st first nnz spot in row i.
 
-   int isum = 0, itemp;
-   for (i = nvertices; i < exp_Nrows ;  i++) {
-      itemp = RowPtr[i-nvertices];
-      RowPtr[i-nvertices] = isum;
-      isum += itemp;
+   int iSum = 0, iTemp;
+   for (i = nVertices; i < exp_nRows ;  i++) {
+      iTemp = RowPtr[i-nVertices];
+      RowPtr[i-nVertices] = iSum;
+      iSum += iTemp;
    }
-   RowPtr[exp_Nrows-nvertices] = isum;
-   vector<int> Cols(isum+1);
+   RowPtr[exp_nRows-nVertices] = iSum;
+   vector<int> cols(iSum+1);
    
    //     c) Traverse matrix and insert entries in proper location.
-   for (i = 0; i < nvertices;  i++) {
-      rowi_col = &(Graph->VertexNeighbors[Graph->VertexNeighborsPtr[i]]);
-      rowi_N   = Graph->VertexNeighborsPtr[i+1] - Graph->VertexNeighborsPtr[i];
+   for (i = 0; i < nVertices;  i++) {
+      rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
+      rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
       for (int k = 0; k < rowi_N; k++) {
          j = rowi_col[k];
-         if ( (j >= nvertices) && (Vertex2AggId[j] == MUELOO_UNAGGREGATED)){
-            Cols[RowPtr[j-nvertices]++] = i;
+         if ( (j >= nVertices) && (vertex2AggId[j] == MUELOO_UNAGGREGATED)){
+            cols[RowPtr[j-nVertices]++] = i;
          }
       }
    }
    //     d) RowPtr[i] points to beginning of row i+1 so shift by one location.
 
-   for (i = exp_Nrows; i > nvertices;  i--)
-      RowPtr[i-nvertices] = RowPtr[i-1-nvertices];
+   for (i = exp_nRows; i > nVertices;  i--)
+      RowPtr[i-nVertices] = RowPtr[i-1-nVertices];
    RowPtr[0] = 0;
   
-   int best_score_cutoff;
+   int bestScoreCutoff;
    int thresholds[10] = {300,200,100,50,25,13,7,4,2,0};
 
    // Stick unaggregated vertices into existing aggregates as described above. 
    
-   bool CannotLoseAllFriends; // Used to address possible loss of vertices in 
+   bool cannotLoseAllFriends; // Used to address possible loss of vertices in 
                               // arbitration of shared nodes discussed above.
    for (kk = 0; kk < 10; kk += 2) {
-     best_score_cutoff = thresholds[kk];
-     for (i = 0; i < exp_Nrows; i++) {
-       if (Vertex2AggId[i] == MUELOO_UNAGGREGATED) {
+     bestScoreCutoff = thresholds[kk];
+     for (i = 0; i < exp_nRows; i++) {
+       if (vertex2AggId[i] == MUELOO_UNAGGREGATED) {
 
          // Grab neighboring vertices which is either in graph for local ids
          // or sits in transposed fragment just constructed above for ghosts.
-         if (i < nvertices) {
-            rowi_col = &(Graph->VertexNeighbors[Graph->VertexNeighborsPtr[i]]);
-            rowi_N   = Graph->VertexNeighborsPtr[i+1] - Graph->VertexNeighborsPtr[i];
+         if (i < nVertices) {
+            rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
+            rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
          }
          else {
-            rowi_col = &(Cols[RowPtr[i-nvertices]]);
-            rowi_N   = RowPtr[i+1-nvertices] - RowPtr[i-nvertices];
+            rowi_col = &(cols[RowPtr[i-nVertices]]);
+            rowi_N   = RowPtr[i+1-nVertices] - RowPtr[i-nVertices];
          }
          for (j = 0; j < rowi_N; j++) {
            Adjacent    = rowi_col[j];
-           AdjacentAgg = Vertex2AggId[Adjacent];
+           AdjacentAgg = vertex2AggId[Adjacent];
 
           //Adjacent is aggregated and either I own the aggregate
           // or I could own the aggregate after arbitration.
           if ((AdjacentAgg != MUELOO_UNAGGREGATED) && 
-              ((ProcWinner[Adjacent] == mypid) ||     
-               (ProcWinner[Adjacent] == MUELOO_UNASSIGNED))){
+              ((procWinner[Adjacent] == myPid) ||     
+               (procWinner[Adjacent] == MUELOO_UNASSIGNED))){
             SumOfMarks[AdjacentAgg] += Mark[Adjacent];
           }
          }
          best_score = MUELOO_NOSCORE;
          for (j = 0; j < rowi_N; j++) {
            Adjacent    = rowi_col[j];
-           AdjacentAgg = Vertex2AggId[Adjacent];
+           AdjacentAgg = vertex2AggId[Adjacent];
            //Adjacent is unaggregated, has some value and no
            //other processor has definitively claimed him
            if ((AdjacentAgg != MUELOO_UNAGGREGATED) && 
                (SumOfMarks[AdjacentAgg] != 0) &&
-               ((ProcWinner[Adjacent] == mypid) ||
-                (ProcWinner[Adjacent] == MUELOO_UNASSIGNED ))) {
+               ((procWinner[Adjacent] == myPid) ||
+                (procWinner[Adjacent] == MUELOO_UNASSIGNED ))) {
 
              // first figure out the penalty associated with
              // AdjacentAgg having already been incremented 
@@ -943,43 +945,43 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
                best_agg             = AdjacentAgg; 
                best_score           = score;
                BestMark             = Mark[Adjacent];
-               CannotLoseAllFriends = false;
+               cannotLoseAllFriends = false;
  
                // This address issue mentioned above by checking whether
-               // Adjacent could be lost in arbitration. Weight==0 means that
+               // Adjacent could be lost in arbitration. weight==0 means that
                // Adjacent was not set during this loop of Phase 5 (and so it
                // has already undergone arbitration). GidNotShared == true 
                // obviously implies that Adjacent cannot be lost to arbitration
-               if ((Weights[Adjacent]== 0.) || (GidNotShared[Adjacent] == true))
-                  CannotLoseAllFriends = true;
+               if ((weights[Adjacent]== 0.) || (gidNotShared[Adjacent] == true))
+                  cannotLoseAllFriends = true;
              }
              // Another vertex within current best aggregate found.
              // We should have (best_score == score). We need to see
-             // if we can improve BestMark and CannotLoseAllFriends.
+             // if we can improve BestMark and cannotLoseAllFriends.
              else if (best_agg == AdjacentAgg) {
-               if ((Weights[Adjacent]== 0.) || (GidNotShared[Adjacent] == true))
-                  CannotLoseAllFriends = true;
+               if ((weights[Adjacent]== 0.) || (gidNotShared[Adjacent] == true))
+                  cannotLoseAllFriends = true;
                if (Mark[Adjacent] > BestMark) BestMark = Mark[Adjacent];
              }
            }
          }
          // Clean up
          for (j = 0; j < rowi_N; j++) {
-           AdjacentAgg = Vertex2AggId[rowi_col[j]];
+           AdjacentAgg = vertex2AggId[rowi_col[j]];
            if (AdjacentAgg >= 0) SumOfMarks[AdjacentAgg] = 0;
          }
          // Tentatively assign vertex to best_agg. 
-         if ( (best_score >= best_score_cutoff) && (CannotLoseAllFriends)) { 
-           Vertex2AggId[i] = best_agg;
-           Weights[i] = best_score;
+         if ( (best_score >= bestScoreCutoff) && (cannotLoseAllFriends)) { 
+           vertex2AggId[i] = best_agg;
+           weights[i] = best_score;
            agg_incremented[best_agg]++;
            Mark[i] = (int) ceil(   ((double) BestMark)/2.);
          }
        }
      }
-     MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
-                UniqueMap, Unique2NonUniqueWidget, true);
-     Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+     MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
+                uniqueMap, unique2NonUniqueWidget, true);
+     weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
    }
 
    // Phase 6: Aggregate remain unaggregated vertices and try at all costs
@@ -991,58 +993,58 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
    //          aggregates.
 
    int count = 0;
-   for (i = 0; i < nvertices; i++) { 
-     if ((Vertex2AggId[i] == MUELOO_UNAGGREGATED) ) {
+   for (i = 0; i < nVertices; i++) { 
+     if ((vertex2AggId[i] == MUELOO_UNAGGREGATED) ) {
        Nleftover++;
-       rowi_col = &(Graph->VertexNeighbors[Graph->VertexNeighborsPtr[i]]);
-       rowi_N   = Graph->VertexNeighborsPtr[i+1] - Graph->VertexNeighborsPtr[i];
+       rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
+       rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
 
 	 // We don't want too small of an aggregate. So lets see if there is an
          // unaggregated neighbor that we can also put with this vertex
 
-         Vertex2AggId[i] = NAggregates;
-         Weights[i] = 1.;
-         if (count ==0) Aggregates->IsRoot[i] = true;
+         vertex2AggId[i] = nAggregates;
+         weights[i] = 1.;
+         if (count ==0) aggregates->isRoot[i] = true;
          count++;
 	 for (j = 0; j < rowi_N; j++) {
-	   if ((rowi_col[j] != i)&&(Vertex2AggId[rowi_col[j]] == MUELOO_UNAGGREGATED)&&
-               (rowi_col[j] < nvertices)) {
-	      Vertex2AggId[rowi_col[j]] = NAggregates;
-              Weights[rowi_col[j]] = 1.;
+	   if ((rowi_col[j] != i)&&(vertex2AggId[rowi_col[j]] == MUELOO_UNAGGREGATED)&&
+               (rowi_col[j] < nVertices)) {
+	      vertex2AggId[rowi_col[j]] = nAggregates;
+              weights[rowi_col[j]] = 1.;
               count++;
 	   }
 	 }
-         if ( count >= min_nodes_per_aggregate) {
-            NAggregates++; 
+         if ( count >= minNodesPerAggregate) {
+            nAggregates++; 
             count = 0;
          }
      }
    }
-   // We have something which is under min_nodes_per_aggregate when 
+   // We have something which is under minNodesPerAggregate when 
    if (count != 0) {
       // Can stick small aggregate with 0th aggregate?
-      if (NAggregates > 0) {
-         for (i = 0; i < nvertices; i++) {
-            if ((Vertex2AggId[i] == NAggregates) && (ProcWinner[i] == mypid)){
-               Vertex2AggId[i] = 0;
-               (Aggregates->IsRoot)[i] = false;
+      if (nAggregates > 0) {
+         for (i = 0; i < nVertices; i++) {
+            if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
+               vertex2AggId[i] = 0;
+               (aggregates->isRoot)[i] = false;
             }
          }
       }
       else {
          Nsingle++;
-         NAggregates++;
+         nAggregates++;
       }
    }
-   MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
-                 UniqueMap, Unique2NonUniqueWidget, false);
+   MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
+                 uniqueMap, unique2NonUniqueWidget, false);
 
 
-   if (printflag < MueLu_PrintLevel()) {
-     Graph->EGraph->Comm().SumAll(&Nsingle,&Nsingle,1);
-     Graph->EGraph->Comm().SumAll(&Nleftover,&Nleftover,1);
-     Graph->EGraph->Comm().SumAll(&NAggregates,&total_aggs,1);
-     if ( mypid == 0 ) {
+   if (printFlag < MueLu_PrintLevel()) {
+     graph->eGraph->Comm().SumAll(&Nsingle,&Nsingle,1);
+     graph->eGraph->Comm().SumAll(&Nleftover,&Nleftover,1);
+     graph->eGraph->Comm().SumAll(&nAggregates,&total_aggs,1);
+     if ( myPid == 0 ) {
        printf("Aggregation(%s) : Phase 3 - total aggregates = %d\n",label, total_aggs);
        printf("Aggregation(%s) : Phase 6 - leftovers = %d and singletons = %d\n",label ,Nleftover, Nsingle);
      }
@@ -1050,7 +1052,7 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
   if (agg_incremented != NULL) free(agg_incremented);
   if (Mark != NULL) free(Mark);
   if (SumOfMarks != NULL) free(SumOfMarks);
-  Aggregates->NAggregates = NAggregates;
+  aggregates->nAggregates = nAggregates;
 
   return 0;
 }
@@ -1063,16 +1065,16 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *AggregateOptions,
 //     list[]      Same integers as on input but in a different order
 //                 that is determined randomly.
 //
-int MueLu_RandomReorder(int *list, const Epetra_BlockMap &Map)
+int MueLu_RandomReorder(int *list, const Epetra_BlockMap &map)
 {
-   Epetra_Vector     RandVec(Map);
-   Epetra_IntVector iRandVec(Map);
+   Epetra_Vector     RandVec(map);
+   Epetra_IntVector iRandVec(map);
 
    double *ptr;
    int  *iptr;
 
    RandVec.Random(); RandVec.ExtractView(&ptr); iRandVec.ExtractView(&iptr);
-   for (int i=0; i <  Map.NumMyElements(); i++) iptr[i] = (int) (10000.*ptr[i]);
+   for (int i=0; i <  map.NumMyElements(); i++) iptr[i] = (int) (10000.*ptr[i]);
    Epetra_Util::Sort(true,RandVec.Map().NumMyElements(), iptr, 0,NULL,1,&list);
    return 0; 
 }
@@ -1090,18 +1092,18 @@ int MueLu_RandomReorder(int *list, const Epetra_BlockMap &Map)
 //
 //     dest                     Allocated but contents ignored.
 //
-//     UniqueMap                A subset of source.Map() where each GlobalId 
+//     uniqueMap                A subset of source.Map() where each GlobalId 
 //                              has only one unique copy on one processor.
 //                              Normally, source.Map() would have both locals
-//                              and ghost elements while UniqueMap would just
+//                              and ghost elements while uniqueMap would just
 //                              have the locals. It should be possible to
 //                              remove this or make it an optional argument
 //                              and use some existing Epetra capability to 
-//                              make a UniqueMap.
+//                              make a uniqueMap.
 //
-//     Unique2NonUniqueWidget   This corresponds precisely to 
-//                                   Epetra_Import Unique2NonUniqueWidget(
-//                                           source.Map(), UniqueMap);
+//     unique2NonUniqueWidget   This corresponds precisely to 
+//                                   Epetra_Import unique2NonUniqueWidget(
+//                                           source.Map(), uniqueMap);
 //                              This could also be eliminated and created
 //                              here, but for efficiency user's must pass in.
 //
@@ -1116,26 +1118,26 @@ int MueLu_RandomReorder(int *list, const Epetra_BlockMap &Map)
 //                              combined into a unique value on all processors.
 //
 int MueLu_NonUnique2NonUnique(const Epetra_Vector &source, 
-     Epetra_Vector &dest, const Epetra_Map &UniqueMap, 
-     const Epetra_Import &Unique2NonUniqueWidget, const Epetra_CombineMode what)
+     Epetra_Vector &dest, const Epetra_Map &uniqueMap, 
+     const Epetra_Import &unique2NonUniqueWidget, const Epetra_CombineMode what)
 {
-  Epetra_Vector temp(UniqueMap);
-  temp.Export(source, Unique2NonUniqueWidget, what);
-  dest.Import(temp,   Unique2NonUniqueWidget,Insert);
+  Epetra_Vector temp(uniqueMap);
+  temp.Export(source, unique2NonUniqueWidget, what);
+  dest.Import(temp,   unique2NonUniqueWidget, Insert);
 
   return 0;
 }
 
 //
-// For each GlobalId associated with Weight.Map():
+// For each GlobalId associated with weight.Map():
 //
-//      1) find the maximum absolute value of Weight[] distributed across all
-//         processors and assign this to all local elements of Weight[] (across 
+//      1) find the maximum absolute value of weight[] distributed across all
+//         processors and assign this to all local elements of weight[] (across 
 //         processors) associated with the GlobalId.
-//      2) set ProcWinner[] to the MyPID() that had the largest element.
-//         ProcWinner[] is still set if only one processor owns a GlobalId. 
+//      2) set procWinner[] to the MyPid() that had the largest element.
+//         procWinner[] is still set if only one processor owns a GlobalId. 
 //
-//         The ONLY CASE when ProcWinner[i] is NOT set corresponds to when
+//         The ONLY CASE when procWinner[i] is NOT set corresponds to when
 //         all local weights associated with a GlobalId are zero. This allows
 //         one to effectively skip the maximum/winner calculation for a subset
 //         of GlobalId's.  This might occur when a processor has already
@@ -1143,173 +1145,173 @@ int MueLu_NonUnique2NonUnique(const Epetra_Vector &source,
 //         the same value. We want to skip the maximum calculation with 
 //         tiebreaking to avoid another processor claiming ownership.
 //
-//      3) optionally, set Companion[] (across all relevant processors) to the
-//         local Companion value associated with the ProcWinner[] processor.
+//      3) optionally, set companion[] (across all relevant processors) to the
+//         local companion value associated with the procWinner[] processor.
 //
 //  Input:
-//     Weight                   Vector of weights. ASSUMED TO BE nonnegative.
+//     weight                   Vector of weights. ASSUMED TO BE nonnegative.
 //
-//     ProcWinner               Allocated but contents ignored.
+//     procWinner               Allocated but contents ignored.
 //
-//     Companion                Either NULL or allocated but contents ignored.
+//     companion                Either NULL or allocated but contents ignored.
 //                              If NULL, step 3 above is skipped.
 //
-//     UniqueMap                A subset of Weight.Map() where each GlobalId 
+//     uniqueMap                A subset of weight.Map() where each GlobalId 
 //                              has only one unique copy on one processor.
-//                              Normally, Weight.Map() would have both locals
-//                              and ghost elements while UniqueMap would just
+//                              Normally, weight.Map() would have both locals
+//                              and ghost elements while uniqueMap would just
 //                              have the locals. It should be possible to
 //                              remove this or make it an optional argument
 //                              and use some existing Epetra capability to 
-//                              make a UniqueMap.
+//                              make a uniqueMap.
 //
-//     Unique2NonUniqueWidget   This corresponds precisely to 
-//                                   Epetra_Import Unique2NonUniqueWidget(
-//                                           Weight.Map(), UniqueMap);
+//     unique2NonUniqueWidget   This corresponds precisely to 
+//                                   Epetra_Import unique2NonUniqueWidget(
+//                                           weight.Map(), uniqueMap);
 //                              This could also be eliminated and created
 //                              here, but for efficiency user's must pass in.
 //
 //     perturb                  Optional arguments that is either true or 
-//                              false (default: true). Weight is perturbed
+//                              false (default: true). weight is perturbed
 //                              and the perturbed values are used in step 1)
 //                              above. Returned values reflect the perturbed
 //                              data. This option avoids having lots of
-//                              tiebreaks where the large MyPID() always wins.
+//                              tiebreaks where the large MyPid() always wins.
 //
 //  Output:
-//     Weight                   Weight[k] <-- Max(Weight[k1],...,Weight[kn])
-//                              where Weight[kj] live on different processors
-//                              but have the same GlobalId as Weight[k] on
+//     weight                   weight[k] <-- Max(weight[k1],...,weight[kn])
+//                              where weight[kj] live on different processors
+//                              but have the same GlobalId as weight[k] on
 //                              this processor.
 //
-//     ProcWinner               ProcWinner[k] <-- MyPID associated with the
+//     procWinner               procWinner[k] <-- MyPid associated with the
 //                              kj yielding the max in 
-//                                    Max(Weight[k1],...,Weight[kn]) .
-//                              See Weight Output comments.
-//                              NOTE: If all input Weight[kj]'s are zero,
-//                                    then ProcWinner[k] is left untouched.
+//                                    Max(weight[k1],...,weight[kn]) .
+//                              See weight Output comments.
+//                              NOTE: If all input weight[kj]'s are zero,
+//                                    then procWinner[k] is left untouched.
 //
-//     Companion                If not null, 
-//                                 Companion[k] <-- Companion[kj] where
-//                              Companion[kj] lives on processor ProcWinner[k].
+//     companion                If not null, 
+//                                 companion[k] <-- companion[kj] where
+//                              companion[kj] lives on processor procWinner[k].
 //                              and corresponds to the same GlobalId as k.
 //                              NOTE: If for a particlar GlobalId, no processor
-//                                    has a value of ProcWinner that matches
-//                                    its MyPID, the corresponding Companion
+//                                    has a value of procWinner that matches
+//                                    its MyPid, the corresponding companion
 //                                    is not altered.
 //
-int MueLu_ArbitrateAndCommunicate(Epetra_Vector &Weight, 
-               Epetra_IntVector &ProcWinner,
-               Epetra_IntVector *Companion, const Epetra_Map &UniqueMap, 
-               const Epetra_Import &Unique2NonUniqueWidget, const bool perturb)
+int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight, 
+               Epetra_IntVector &procWinner,
+               Epetra_IntVector *companion, const Epetra_Map &uniqueMap, 
+               const Epetra_Import &unique2NonUniqueWidget, const bool perturb)
 {
-   int MyPid = Weight.Comm().MyPID();
+   int MyPid = weight.Comm().MyPID();
 
    if (perturb) {
-      Epetra_Vector PerturbWt(Weight.Map());
+      Epetra_Vector perturbWt(weight.Map());
 
-      double LargestGlobalWeight;
-      Weight.MaxValue(&LargestGlobalWeight);
+      double largestGlobalWeight;
+      weight.MaxValue(&largestGlobalWeight);
 
-      Epetra_Util Util;
-      Util.SetSeed( (unsigned int) MyPid*2 + (int) (11*rand()));
-      for (int i = 0; i < 10; i++) Util.SetSeed( (unsigned int) Util.RandomInt() );
+      Epetra_Util util;
+      util.SetSeed( (unsigned int) MyPid*2 + (int) (11*rand()));
+      for (int i = 0; i < 10; i++) util.SetSeed( (unsigned int) util.RandomInt() );
 
-      PerturbWt.SetSeed( (unsigned int) Util.RandomInt() );
-      PerturbWt.Random(); 
+      perturbWt.SetSeed( (unsigned int) util.RandomInt() );
+      perturbWt.Random(); 
 
-      for (int i=0; i < Weight.Map().NumMyElements(); i++) {
-         if (Weight[i] == 0.) PerturbWt[i] = 0.;
-         else (PerturbWt)[i] = Weight[i] + 1.0e-7*LargestGlobalWeight*fabs(PerturbWt[i]);
+      for (int i=0; i < weight.Map().NumMyElements(); i++) {
+         if (weight[i] == 0.) perturbWt[i] = 0.;
+         else (perturbWt)[i] = weight[i] + 1.0e-7*largestGlobalWeight*fabs(perturbWt[i]);
       }
-      for (int i=0; i < Weight.Map().NumMyElements(); i++) Weight[i]= PerturbWt[i]; 
+      for (int i=0; i < weight.Map().NumMyElements(); i++) weight[i]= perturbWt[i]; 
    }
 
-   // Communicate Weights and store results in PostComm (which will be copied
-   // back into Weights later. When multiple processors have different Weights
-   // for the same GID, we take the largest Weight. After this fragment every
+   // Communicate weights and store results in PostComm (which will be copied
+   // back into weights later. When multiple processors have different weights
+   // for the same GID, we take the largest weight. After this fragment every
    // processor should have the same value for PostComm[] even when multiple
    // copies of the same Gid are involved.
 
-   Epetra_Vector  PostComm(Weight.Map());
-   PostComm.PutScalar(0.0);
+   Epetra_Vector postComm(weight.Map());
+   postComm.PutScalar(0.0);
 
-   MueLu_NonUnique2NonUnique(Weight, PostComm, UniqueMap, Unique2NonUniqueWidget, AbsMax);
+   MueLu_NonUnique2NonUnique(weight, postComm, uniqueMap, unique2NonUniqueWidget, AbsMax);
 
    
-   // Let every processor know who is the ProcWinner. For nonunique
+   // Let every processor know who is the procWinner. For nonunique
    // copies of the same Gid, this corresponds to the procesosr with
    // the highest Wt[]. When several processors have the same positive value
-   // for Weight[] (which is also the maximum value), the highest proc id
-   // is declared the ProcWinner.
+   // for weight[] (which is also the maximum value), the highest proc id
+   // is declared the procWinner.
    //
-   // Note:This is accomplished by filling a vector with MyPid+1 if Weight[k] is
-   //      nonzero and PostComm[k]==Weight[k]. NonUnique2NonUnique(...,AbsMax)
-   //      is invoked to let everyone know the ProcWinner.
-   //      One is then subtracted so that ProcWinner[i] indicates the 
+   // Note:This is accomplished by filling a vector with MyPid+1 if weight[k] is
+   //      nonzero and PostComm[k]==weight[k]. NonUnique2NonUnique(...,AbsMax)
+   //      is invoked to let everyone know the procWinner.
+   //      One is then subtracted so that procWinner[i] indicates the 
    //      Pid of the winning processor.
-   //      When all Weight's for a GID are zero, the associated ProcWinner's
+   //      When all weight's for a GID are zero, the associated procWinner's
    //      are left untouched.
 
-   Epetra_Vector CandidateWinners(Weight.Map());
-   CandidateWinners.PutScalar(0.0);
+   Epetra_Vector candidateWinners(weight.Map());
+   candidateWinners.PutScalar(0.0);
 
-   for (int i=0; i < Weight.Map().NumMyElements(); i++) {
-       if (PostComm[i] == Weight[i]) CandidateWinners[i] = (double) MyPid+1;
+   for (int i=0; i < weight.Map().NumMyElements(); i++) {
+       if (postComm[i] == weight[i]) candidateWinners[i] = (double) MyPid+1;
    }
 
-   for (int i=0; i < Weight.Map().NumMyElements(); i++) Weight[i]=PostComm[i]; 
+   for (int i=0; i < weight.Map().NumMyElements(); i++) weight[i]=postComm[i]; 
 
-   MueLu_NonUnique2NonUnique(CandidateWinners, PostComm, UniqueMap, Unique2NonUniqueWidget, AbsMax);
+   MueLu_NonUnique2NonUnique(candidateWinners, postComm, uniqueMap, unique2NonUniqueWidget, AbsMax);
 
    // Note: 
    //                      associated CandidateWinners[]
-   //    Weight[i]!=0  ==> on some proc is equal to its ==> PostComm[i]!=0
-   //                      MyPID+1.
+   //    weight[i]!=0  ==> on some proc is equal to its ==> postComm[i]!=0
+   //                      MyPid+1.
    //          
-   for (int i=0; i < Weight.Map().NumMyElements(); i++)  {
-      if ( Weight[i] != 0.) ProcWinner[i] = ((int) (PostComm[i])) - 1;
+   for (int i=0; i < weight.Map().NumMyElements(); i++)  {
+      if ( weight[i] != 0.) procWinner[i] = ((int) (postComm[i])) - 1;
    }
 
-   if (Companion != NULL) {
-      // Now build a new Map, WinnerMap which just consists of ProcWinners. 
+   if (companion != NULL) {
+      // Now build a new Map, WinnerMap which just consists of procWinners. 
       // This is done by extracting the Gids for Wt, and shoving
-      // the subset that correspond to ProcWinners in MyWinners.
+      // the subset that correspond to procWinners in MyWinners.
       // WinnerMap is then constructed using MyWinners.
    
-      int NumMyWinners = 0;
-      for (int i = 0; i < Weight.Map().NumMyElements(); i++) {
-         if (ProcWinner[i] == MyPid) NumMyWinners++;
+      int numMyWinners = 0;
+      for (int i = 0; i < weight.Map().NumMyElements(); i++) {
+         if (procWinner[i] == MyPid) numMyWinners++;
       }
    
-      int *MyGids    = new int[Weight.Map().NumMyElements()+1];
-      int *MyWinners = new int[NumMyWinners+1];
+      int *myGids    = new int[weight.Map().NumMyElements()+1];
+      int *myWinners = new int[numMyWinners+1];
    
-      Weight.Map().MyGlobalElements(MyGids);
+      weight.Map().MyGlobalElements(myGids);
    
-      NumMyWinners = 0;
-      for (int i = 0; i < Weight.Map().NumMyElements(); i++) {
-         if (ProcWinner[i] == MyPid)
-            MyWinners[NumMyWinners++] = MyGids[i];
+      numMyWinners = 0;
+      for (int i = 0; i < weight.Map().NumMyElements(); i++) {
+         if (procWinner[i] == MyPid)
+            myWinners[numMyWinners++] = myGids[i];
       }
-      Epetra_Map WinnerMap(-1, NumMyWinners, MyWinners,0,Weight.Comm());
+      Epetra_Map winnerMap(-1, numMyWinners, myWinners, 0, weight.Comm());
    
-      // Pull the Winners out of Companion
-      //     JustWinners <-- Companion[Winners];
+      // Pull the Winners out of companion
+      //     JustWinners <-- companion[Winners];
    
-      Epetra_IntVector JustWinners(WinnerMap);
-      Epetra_Import WinnerImport(WinnerMap,Weight.Map());
-      JustWinners.Import(*Companion, WinnerImport, Insert);
+      Epetra_IntVector justWinners(winnerMap);
+      Epetra_Import winnerImport(winnerMap,weight.Map());
+      justWinners.Import(*companion, winnerImport, Insert);
    
-      // Put the JustWinner values back into Companion so that
-      // all nonunique copies of the same Gid have the ProcWinner's
-      // version of the Companion.
+      // Put the JustWinner values back into companion so that
+      // all nonunique copies of the same Gid have the procWinner's
+      // version of the companion.
    
-      Epetra_Import PushWinners(Weight.Map(),WinnerMap);
-      Companion->Import(JustWinners, PushWinners, Insert);
+      Epetra_Import pushWinners(weight.Map(), winnerMap);
+      companion->Import(justWinners, pushWinners, Insert);
 
-      delete [] MyWinners;
-      delete [] MyGids;
+      delete [] myWinners;
+      delete [] myGids;
    }
 
    return 0; //TODO
@@ -1317,73 +1319,73 @@ int MueLu_ArbitrateAndCommunicate(Epetra_Vector &Weight,
 
 // build a list of candidate root nodes (vertices not adjacent to already
 // aggregated vertices)
-int MueLu_RootCandidates(int nvertices, int *Vertex2AggId, MueLu_Graph *Graph,
-            int *Candidates, int &NCandidates, int &NCandidatesGlobal) {
+int MueLu_RootCandidates(int nVertices, int *vertex2AggId, MueLu_Graph *graph,
+            int *candidates, int &nCandidates, int &nCandidatesGlobal) {
 
-   int rowi_N, *rowi_col, Adjacent;
-   bool NoAggdNeighbors;
+   int rowi_N, *rowi_col, adjacent;
+   bool noAggdNeighbors;
 
-   NCandidates = 0;
+   nCandidates = 0;
  
-   for (int i = 0; i < nvertices; i++ ) {
-      if (Vertex2AggId[i] == MUELOO_UNAGGREGATED) {
-         NoAggdNeighbors = true;
-         rowi_col = &(Graph->VertexNeighbors[Graph->VertexNeighborsPtr[i]]);
-         rowi_N   = Graph->VertexNeighborsPtr[i+1] - Graph->VertexNeighborsPtr[i];
+   for (int i = 0; i < nVertices; i++ ) {
+      if (vertex2AggId[i] == MUELOO_UNAGGREGATED) {
+         noAggdNeighbors = true;
+         rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
+         rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
 
          for (int j = 0; j < rowi_N; j++) {
-            Adjacent    = rowi_col[j];
-            if (Vertex2AggId[Adjacent] != MUELOO_UNAGGREGATED) 
-               NoAggdNeighbors = false;
+            adjacent    = rowi_col[j];
+            if (vertex2AggId[adjacent] != MUELOO_UNAGGREGATED) 
+               noAggdNeighbors = false;
          }
-         if (NoAggdNeighbors == true) Candidates[NCandidates++] = i;
+         if (noAggdNeighbors == true) candidates[nCandidates++] = i;
       }
    }
-   Graph->EGraph->Comm().SumAll(&NCandidates,&NCandidatesGlobal,1);
+   graph->eGraph->Comm().SumAll(&nCandidates,&nCandidatesGlobal,1);
 
    return 0;
 }
 
 // Compute sizes of all the aggregates.
-int MueLu_ComputeAggSizes(MueLu_Aggregate *Aggregates, int *AggSizes)
+int MueLu_ComputeAggSizes(Aggregates *aggregates, int *aggSizes)
 {
-  int *Vertex2AggId;
-  int NAggregates = Aggregates->NAggregates;
-  Epetra_IntVector &ProcWinner = *(Aggregates->ProcWinner);
-  int N = ProcWinner.Map().NumMyElements();
-  int mypid = ProcWinner.Comm().MyPID();
+  int *vertex2AggId;
+  int nAggregates = aggregates->nAggregates;
+  Epetra_IntVector &procWinner = *(aggregates->procWinner);
+  int N = procWinner.Map().NumMyElements();
+  int myPid = procWinner.Comm().MyPID();
 
-  Aggregates->Vertex2AggId->ExtractView(&Vertex2AggId);
-  for (int i = 0; i < NAggregates; i++) AggSizes[i] = 0;
+  aggregates->vertex2AggId->ExtractView(&vertex2AggId);
+  for (int i = 0; i < nAggregates; i++) aggSizes[i] = 0;
   for (int k = 0; k < N; k++ ) {
-     if (ProcWinner[k] == mypid) AggSizes[Vertex2AggId[k]]++;
+     if (procWinner[k] == myPid) aggSizes[vertex2AggId[k]]++;
   }
 
   return 0; //TODO
 }
 
-int MueLu_RemoveSmallAggs(MueLu_Aggregate *Aggregates, int min_size,
-    Epetra_Vector &Weights, const Epetra_Map &UniqueMap, 
-    const Epetra_Import &Unique2NonUniqueWidget) 
+int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
+    Epetra_Vector &weights, const Epetra_Map &uniqueMap, 
+    const Epetra_Import &unique2NonUniqueWidget) 
 {
-  int NAggregates = Aggregates->NAggregates;
-  int *AggInfo = new int[NAggregates+1];
-  int *Vertex2AggId;
+  int nAggregates = aggregates->nAggregates;
+  int *AggInfo = new int[nAggregates+1];
+  int *vertex2AggId;
 
-  Epetra_IntVector &ProcWinner = *(Aggregates->ProcWinner);
-  int N = ProcWinner.Map().NumMyElements();
-  int mypid = ProcWinner.Comm().MyPID();
+  Epetra_IntVector &procWinner = *(aggregates->procWinner);
+  int N = procWinner.Map().NumMyElements();
+  int myPid = procWinner.Comm().MyPID();
 
-  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(Aggregates->Vertex2AggId);
-  Aggregates->Vertex2AggId->ExtractView(&Vertex2AggId);
+  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(aggregates->vertex2AggId);
+  aggregates->vertex2AggId->ExtractView(&vertex2AggId);
 
-  MueLu_ComputeAggSizes(Aggregates, AggInfo);
+  MueLu_ComputeAggSizes(aggregates, AggInfo);
 
   // Make a list of all aggregates indicating New AggId
   // Use AggInfo array for this.
 
   int NewNAggs = 0; 
-  for (int i = 0; i < NAggregates; i++) {
+  for (int i = 0; i < nAggregates; i++) {
      if ( AggInfo[i] < min_size) { 
             AggInfo[i] =  MUELOO_UNAGGREGATED;
      }
@@ -1391,28 +1393,28 @@ int MueLu_RemoveSmallAggs(MueLu_Aggregate *Aggregates, int min_size,
   }
 
   for (int k = 0; k < N; k++ ) {
-     if (ProcWinner[k] == mypid) {
-        if (Vertex2AggId[k] !=  MUELOO_UNAGGREGATED) {
-           Vertex2AggId[k] = AggInfo[Vertex2AggId[k]];
-           Weights[k] = 1.;
+     if (procWinner[k] == myPid) {
+        if (vertex2AggId[k] !=  MUELOO_UNAGGREGATED) {
+           vertex2AggId[k] = AggInfo[vertex2AggId[k]];
+           weights[k] = 1.;
         }
-        if (Vertex2AggId[k] ==  MUELOO_UNAGGREGATED) 
-           (Aggregates->IsRoot)[k] = false;
+        if (vertex2AggId[k] ==  MUELOO_UNAGGREGATED) 
+           (aggregates->isRoot)[k] = false;
      }
   }
-  NAggregates = NewNAggs;
+  nAggregates = NewNAggs;
 
-  MueLu_ArbitrateAndCommunicate(Weights, ProcWinner,&Vtx2AggId, 
-                UniqueMap, Unique2NonUniqueWidget, true);
-  Weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+  MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
+                uniqueMap, unique2NonUniqueWidget, true);
+  weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 
-  // ProcWinner is not set correctly for aggregates which have 
+  // procWinner is not set correctly for aggregates which have 
   // been eliminated
   for (int i = 0; i < N; i++) {
-     if (Vertex2AggId[i] == MUELOO_UNAGGREGATED) 
-            ProcWinner[i] = MUELOO_UNASSIGNED;
+     if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
+            procWinner[i] = MUELOO_UNASSIGNED;
   }
-  Aggregates->NAggregates = NAggregates;
+  aggregates->nAggregates = nAggregates;
 
   return 0; //TODO
 }

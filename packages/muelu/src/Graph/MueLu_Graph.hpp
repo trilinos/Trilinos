@@ -10,12 +10,12 @@
 typedef struct MueLu_Graph_Struct
 {
    char *name;
-   int  NVertices, NEdges, NGhost;
-   int  *VertexNeighborsPtr;  /* VertexNeighbors[VertexNeighborsPtr[i]:     */
-   int  *VertexNeighbors;     /*                 VertexNeighborsPtr[i+1]-1] */
+   int  nVertices, nEdges, nGhost;
+   int  *vertexNeighborsPtr;  /* VertexNeighbors[VertexNeighborsPtr[i]:     */
+   int  *vertexNeighbors;     /*                 VertexNeighborsPtr[i+1]-1] */
                               /* corresponds to vertices Adjacent to vertex */
                               /* i in graph                                 */ 
-   const Epetra_CrsGraph *EGraph;
+   const Epetra_CrsGraph *eGraph;
 } MueLu_Graph;
 
 #endif

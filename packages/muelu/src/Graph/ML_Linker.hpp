@@ -1,48 +1,49 @@
 #include "ml_aggregate.h"
 #include "ml_epetra_utils.h"
+
 extern MueLu_Graph  *MueLu_BuildGraph(ML_Operator *Amatrix, char *name);
-extern int MueLu_DestroyGraph(MueLu_Graph *Graph);
+extern int MueLu_DestroyGraph(MueLu_Graph *graph);
 
 /**********************************************************************************/
 /* Function to execute new MueLu aggregation via old ML                          */
 /* This function should go away soon as we should start executing new MueLu      */
 /* aggregation inside MueLu.
 /**********************************************************************************/
-int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag, 
+int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *mlAggregates, 
            ML_Operator *Amatrix, ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   MueLu_Graph     *Graph;
-   Graph = MueLu_BuildGraph(Amatrix,"ML_Uncoupled");
+   MueLu_Graph     *graph;
+   graph = MueLu_BuildGraph(Amatrix,"ML_Uncoupled");
 
-   if (Graph->EGraph->Comm().MyPID() == 0 && ml_ag->print_flag  < MueLu_PrintLevel())
+   if (graph->eGraph->Comm().MyPID() == 0 && mlAggregates->printFlag  < MueLu_PrintLevel())
        printf("ML_Aggregate_CoarsenUncoupled : \n");
 
-   MueLu_AggOptions AggregateOptions;
+   MueLu_AggOptions aggregateOptions;
 
-   AggregateOptions.print_flag                 = ml_ag->print_flag;
-   AggregateOptions.min_nodes_per_aggregate    = ml_ag->min_nodes_per_aggregate;
-   AggregateOptions.max_neigh_already_selected = ml_ag->max_neigh_already_selected;
-   AggregateOptions.ordering                   = ml_ag->ordering;
-   AggregateOptions.phase3_agg_creation        = ml_ag->phase3_agg_creation;
-
-
-   MueLu_Aggregate *Aggregates = NULL;
-
-   Aggregates = MueLu_Aggregate_CoarsenUncoupled(&AggregateOptions,Graph);
+   aggregateOptions.printFlag               = mlAggregates->print_flag;
+   aggregateOptions.minNodesPerAggregate    = mlAggregates->min_nodes_per_aggregate;
+   aggregateOptions.maxNeighAlreadySelected = mlAggregates->max_neigh_already_selected;
+   aggregateOptions.ordering                = mlAggregates->ordering;
+   aggregateOptions.phase3AggCreation       = mlAggregates->phase3_agg_creation;
 
 
-   MueLu_AggregateLeftOvers(&AggregateOptions, Aggregates, "UC_CleanUp", Graph);
+   Aggregates *aggregates = NULL;
+
+   aggregates = MueLu_Aggregate_CoarsenUncoupled(&aggregateOptions,graph);
+
+
+   MueLu_AggregateLeftOvers(&aggregateOptions, aggregates, "UC_CleanUp", graph);
 
 //#ifdef out
-Epetra_IntVector Final( Aggregates->Vertex2AggId->Map() );
-for (int i = 0; i < Aggregates->Vertex2AggId->Map().NumMyElements(); i++) 
-   Final[i] = (*(Aggregates->Vertex2AggId))[i] + (*(Aggregates->ProcWinner))[i]*1000;
+Epetra_IntVector Final( aggregates->vertex2AggId->Map() );
+for (int i = 0; i < aggregates->vertex2AggId->Map().NumMyElements(); i++) 
+   Final[i] = (*(aggregates->vertex2AggId))[i] + (*(aggregates->procWinner))[i]*1000;
 printf("finals\n");
 cout << Final << endl; sleep(2);
 //#endif
 
-   MueLu_AggregateDestroy(Aggregates); 
-   MueLu_DestroyGraph(Graph);
+   MueLu_AggregateDestroy(aggregates); 
+   MueLu_DestroyGraph(graph);
    return 0;
 }
 
@@ -53,43 +54,44 @@ cout << Final << endl; sleep(2);
 /**********************************************************************************/
 MueLu_Graph *MueLu_BuildGraph(ML_Operator *Amatrix, char *name)
 {
-  MueLu_Graph *Graph;
+  MueLu_Graph *graph;
   double *dtmp = NULL;
   Epetra_CrsMatrix *A;
 
-  Graph = (MueLu_Graph *) malloc(sizeof(MueLu_Graph));
-  Graph->EGraph     = NULL;
-  Graph->name = NULL;
-  Graph->name       = (char *) malloc(sizeof(char)*80); strcpy(Graph->name,name);
-  Graph->NVertices  = Amatrix->invec_leng;
+  graph = (MueLu_Graph *) malloc(sizeof(MueLu_Graph));
+  graph->eGraph     = NULL;
+  graph->name = NULL;
+  graph->name       = (char *) malloc(sizeof(char)*80); strcpy(Graph->name,name);
+  graph->nVertices  = Amatrix->invec_leng;
 
-  if ( Amatrix->getrow->Nrows == 0) {
-     Graph->VertexNeighbors    = NULL;
-     Graph->VertexNeighborsPtr = NULL;
-     Graph->NEdges             = 0;
+  if ( Amatrix->getrow->nrows == 0) {
+     graph->vertexNeighbors    = NULL;
+     graph->vertexNeighborsPtr = NULL;
+     graph->nEdges             = 0;
   }
   else {
-     Epetra_ML_GetCrsDataptrs(Amatrix, &dtmp, &(Graph->VertexNeighbors),&(Graph->VertexNeighborsPtr));
-     if ( Graph->VertexNeighborsPtr == NULL) {
+     Epetra_ML_GetCrsDataptrs(Amatrix, &dtmp, &(graph->vertexNeighbors),&(graph->vertexNeighborsPtr));
+     if ( graph->vertexNeighborsPtr == NULL) {
         printf("MueLu_BuildGraph: Only functions for an Epetra_CrsMatrix.\n");
         exit(1);
       }
-      Graph->NEdges      = (Graph->VertexNeighborsPtr)[Amatrix->getrow->Nrows];
+      graph->nEdges      = (graph->vertexNeighborsPtr)[Amatrix->getrow->Nrows];
       Epetra_ML_GetCrsMatrix( Amatrix, (void **) &A );
-      Graph->EGraph = &(A->Graph());
+      graph->eGraph = &(A->graph());
   }
-  if (Graph->EGraph == NULL) Graph->NGhost = 0;
+  if (graph->eGraph == NULL) graph->nGhost = 0;
   else {
-     Graph->NGhost = A->RowMatrixColMap().NumMyElements() - A->OperatorDomainMap().NumMyElements();
-     if (Graph->NGhost < 0) Graph->NGhost = 0;
+     graph->nGhost = A->RowMatrixColMap().NumMyElements() - A->OperatorDomainMap().NumMyElements();
+     if (graph->nGhost < 0) graph->nGhost = 0;
   }
-  return Graph;
+  return graph;
 }
-int MueLu_DestroyGraph(MueLu_Graph *Graph)
+
+int MueLu_DestroyGraph(MueLu_Graph *graph)
 {
-   if ( Graph != NULL) {
-      if (Graph->name != NULL) free(Graph->name);
-      free(Graph);
+   if ( graph != NULL) {
+      if (graph->name != NULL) free(graph->name);
+      free(graph);
    }
    return 0;
 }
