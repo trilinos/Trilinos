@@ -48,6 +48,13 @@ bool balance_comm_spec_domain( Partition & partition,
 }
 
 
+/* 
+ * Traversing the migrating elements in reverse order produces a simplistic
+ * attempt at lowest-rank element proc greedy partitioning of dependents
+ * which seems to often work in practice.  Some logic could be added here 
+ * as needed to enforce more deterministic dependent partitions. 
+ */
+
 void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                    const Partition         & partition,
                                    const mesh::EntityRank  & dep_rank,
@@ -57,6 +64,7 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
   stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
   const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
 
+  // Create a map of ids of migrating elements to their owner proc and a vector of the migrating elements.
   std::map<mesh::EntityId, unsigned> elem_procs;
   mesh::EntityVector owned_moving_elems;
   mesh::EntityProcVec::iterator ep_iter = entity_procs.begin(),
@@ -68,15 +76,14 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
       owned_moving_elems.push_back(ep_iter->first);
     }
 
-  /* 
-   * Traversing the migrating elements in reverse order produces a simplistic
-   * attempt at lowest-rank element proc greedy partitioning of dependents
-   * which seems to often work in practice.  Some logic could be added here 
-   * as needed to enforce more deterministic dependent partitions. 
-  */
-
   // TODO: Determine if this "dumb" greedy approach is adequate and the cost/benefit
   //       of doing something more sophisticated
+
+  // This reverse traversal of elements overwrites assignment of procs for 
+  // dependents resulting in the last assignment winning.  
+
+  // For all dep-rank entities related to migrating elements, pack their info in to 
+  // dep_entity_procs.
   std::map<mesh::EntityId, unsigned> dep_entity_procs;
   mesh::EntityVector::reverse_iterator r_iter = owned_moving_elems.rbegin(),
                                         r_end = owned_moving_elems.rend();
@@ -101,7 +108,6 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
     {
       stk::mesh::EntityProc dep_proc(de, c_iter->second);
       entity_procs.push_back(dep_proc);
-      std::cerr << "Putting node[" << c_iter->first << "] on proc " << c_iter->second << std::endl;
     }
   }
 }
