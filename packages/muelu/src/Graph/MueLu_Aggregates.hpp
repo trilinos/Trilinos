@@ -67,7 +67,7 @@ namespace MueLu {
     
   public:
     
-    Aggregates(MueLu_Graph *Graph, const std::string & objectLabel);
+    Aggregates(Graph *Graph, const std::string & objectLabel);
     ~Aggregates();
 
     inline int GetNumAggregates()                      { return nAggregates_;            }
@@ -97,21 +97,21 @@ namespace MueLu {
   };
 
   // Constructors to create aggregates.
-  Aggregates::Aggregates(MueLu_Graph *graph, const std::string & objectLabel)
+  Aggregates::Aggregates(Graph *graph, const std::string & objectLabel)
   {
     
     setObjectLabel(objectLabel);
     
     nAggregates_  = 0;
     
-    vertex2AggId_ = new Epetra_IntVector(graph->eGraph->ImportMap());
+    vertex2AggId_ = new Epetra_IntVector(graph->GetCrsGraph()->ImportMap());
     vertex2AggId_->PutValue(MUELOO_UNAGGREGATED);
     
-    procWinner_ = new Epetra_IntVector(graph->eGraph->ImportMap());
+    procWinner_ = new Epetra_IntVector(graph->GetCrsGraph()->ImportMap());
     procWinner_->PutValue(MUELOO_UNASSIGNED);
     
-    isRoot_ = new bool[graph->eGraph->ImportMap().NumMyElements()];
-    for (int i=0; i < graph->eGraph->ImportMap().NumMyElements(); i++)
+    isRoot_ = new bool[graph->GetCrsGraph()->ImportMap().NumMyElements()];
+    for (int i=0; i < graph->GetCrsGraph()->ImportMap().NumMyElements(); i++)
       isRoot_[i] = false;
 
     //agg2Vertex_   = NULL; /* Currently not used */
@@ -127,6 +127,5 @@ namespace MueLu {
   }
 
 }
-
 
 #endif

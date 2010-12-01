@@ -25,49 +25,6 @@
 
 // For the moment, this file is just a modified version of ML_Linker.hpp
 
-/**********************************************************************************/
-/* Function to build MueLu_Graph (take an Epetra_CrsMatrix and                    */
-/* extract out the Epetra_CrsGraph).                                              */
-/**********************************************************************************/
-MueLu_Graph *MueLu_BuildGraph(const Epetra_CrsMatrix & A, const char *name="")
-{
-  MueLu_Graph *graph;
-  double *dtmp = NULL;
-
-  graph = (MueLu_Graph *) malloc(sizeof(MueLu_Graph));
-  graph->eGraph = NULL;
-  graph->name = NULL;
-  graph->name = (char *) malloc(sizeof(char)*80); strcpy(graph->name,name);
-  graph->nVertices = A.NumMyRows(); // Q:local or global ? Amatrix->invec_leng;
-
-  if ( A.NumMyRows() == 0) { // Q: ML_Operator* Amatrix->getrow->Nrows is local or global ?
-     graph->vertexNeighbors    = NULL;
-     graph->vertexNeighborsPtr = NULL;
-     graph->nEdges             = 0;
-  }
-  else {
-    A.ExtractCrsDataPointers(graph->vertexNeighborsPtr, graph->vertexNeighbors, dtmp);
-
-    graph->nEdges = (graph->vertexNeighborsPtr)[A.NumMyRows()]; // Q:
-    graph->eGraph = &(A.Graph());
-  }
-  if (graph->eGraph == NULL) graph->nGhost = 0;
-  else {
-    graph->nGhost = A.RowMatrixColMap().NumMyElements() - A.OperatorDomainMap().NumMyElements();
-    if (graph->nGhost < 0) graph->nGhost = 0;
-  }
-  return graph;
-}
-
-int MueLu_DestroyGraph(MueLu_Graph *graph)
-{
-   if ( graph != NULL) {
-      if (graph->name != NULL) free(graph->name);
-      free(graph);
-   }
-   return 0;
-}
-
 int main(int argc, char *argv[]) {
   
   std::cout << "Hello World !" << std::endl;
@@ -125,12 +82,12 @@ int main(int argc, char *argv[]) {
     A = tmp_ECrsMtx->getEpetra_CrsMatrix();
   }
   
-  MueLu_Graph *graph;
+  Graph *graph;
   std::string name = "Uncoupled";
-  graph = MueLu_BuildGraph(*A, name.c_str());
+  graph = new Graph(*A, name.c_str());
   
   int printFlag=6;
-  if (graph->eGraph->Comm().MyPID() == 0 && printFlag < MueLu_PrintLevel())
+  if (graph->GetCrsGraph()->Comm().MyPID() == 0 && printFlag < MueLu_PrintLevel())
     printf("main() Aggregate_CoarsenUncoupled : \n");
   
   AggregationOptions aggOptions;
@@ -156,8 +113,8 @@ int main(int argc, char *argv[]) {
   cout << Final << endl; sleep(2);
   
   delete aggregates; 
-  MueLu_DestroyGraph(graph);
+  delete graph;
   
-  return 0;
+  return EXIT_SUCCESS;
 
 }
