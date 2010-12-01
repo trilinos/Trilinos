@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
   graph = new Graph(*A, name.c_str());
   
   int printFlag=6;
-  if (graph->GetCrsGraph()->Comm().MyPID() == 0 && printFlag < MueLu_PrintLevel())
+  if (graph->GetComm().MyPID() == 0 && printFlag < MueLu_PrintLevel())
     printf("main() Aggregate_CoarsenUncoupled : \n");
   
   AggregationOptions aggOptions;

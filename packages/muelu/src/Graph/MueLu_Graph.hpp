@@ -3,6 +3,8 @@
 
 #include <Epetra_CrsGraph.h>
 
+#include "MueLu_Exceptions.hpp"
+
 /******************************************************************************
    MueLu representation of a graph. Some of this is redundant with an 
    Epetra_CrsGraph so we might want to clean up. In particular, things
@@ -19,22 +21,42 @@ namespace MueLu {
     Graph(const Epetra_CrsMatrix & A, const std::string & objectLabel="");
     ~Graph();
 
-    inline int GetNumVertices() { return nVertices_; }
-    inline int GetNumEdges()    { return nEdges_;    }
-    inline int GetNumGhost()    { return nGhost_;    }
+    inline int GetNodeNumVertices() { return nVertices_; }
+    inline int GetNodeNumEdges()    { return nEdges_;    }
+    inline int GetNodeNumGhost()    { return nGhost_;    }
+
+    inline int GetGlobalNumEdges() { 
+      TEST_FOR_EXCEPTION(eGraph_ == NULL, MueLu::Exceptions::RuntimeError, "Graph: eGraph_ == NULL. Cannot call this method");
+      return eGraph_->NumGlobalNonzeros(); 
+    }
 
     inline void GetCrsDataPointers(int** vertexNeighborsPtr, int** vertexNeighbors) { 
       *vertexNeighborsPtr = vertexNeighborsPtr_;
       *vertexNeighbors    = vertexNeighbors_;
     }
 
-    inline const Epetra_CrsGraph * GetCrsGraph() { return eGraph_; }
+    inline const Epetra_Comm & GetComm() { 
+      TEST_FOR_EXCEPTION(eGraph_ == NULL, MueLu::Exceptions::RuntimeError, "Graph: eGraph_ == NULL. Cannot call this method");
+      return eGraph_->Comm();
+    }
+
+    inline const Epetra_BlockMap & GetDomainMap() { 
+      TEST_FOR_EXCEPTION(eGraph_ == NULL, MueLu::Exceptions::RuntimeError, "Graph: eGraph_ == NULL. Cannot call this method");
+      return eGraph_->DomainMap();
+    }
+
+    inline const Epetra_BlockMap & GetImportMap() { 
+      TEST_FOR_EXCEPTION(eGraph_ == NULL, MueLu::Exceptions::RuntimeError, "Graph: eGraph_ == NULL. Cannot call this method");
+      return eGraph_->ImportMap();
+    }
 
     //TMP
     int  *vertexNeighborsPtr;
     int  *vertexNeighbors;  
 
   private:
+
+    // inline const Epetra_CrsGraph * GetCrsGraph() { return eGraph_; } // not used.
     
     int  nVertices_;
     int  nEdges_;

@@ -151,12 +151,12 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
    /* get the machine information and matrix references             */
    /* ============================================================= */
 
-   myPid                   = graph->GetCrsGraph()->Comm().MyPID();
+   myPid                   = graph->GetComm().MyPID();
    minNodesPerAggregate    = aggOptions->GetMinNodesPerAggregate();
    maxNeighSelected        = aggOptions->GetMaxNeighAlreadySelected();
    ordering                = aggOptions->GetOrdering();
    printFlag               = aggOptions->GetPrintFlag();
-   nRows                   = graph->GetNumVertices();
+   nRows                   = graph->GetNodeNumVertices();
 
    /* ============================================================= */
    /* aggStat indicates whether this node has been aggreated, and */
@@ -191,7 +191,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
       nBytes = nRows * sizeof(int);
       randomVector = (int *) malloc(nBytes);
       for (i = 0; i < nRows; i++) randomVector[i] = i;
-      MueLu_RandomReorder(randomVector, graph->GetCrsGraph()->DomainMap());
+      MueLu_RandomReorder(randomVector, graph->GetDomainMap());
    } 
    else if ( ordering == 2 )  /* graph ordering */
    {
@@ -378,16 +378,16 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
    for ( i = 0; i < nRows; i++ ) 
       if ( aggStat[i] == MUELOO_AGGR_READY ) m++;
 
-   graph->GetCrsGraph()->Comm().SumAll(&m,&k,1);
+   graph->GetComm().SumAll(&m,&k,1);
    if ( k > 0 && myPid == 0 && printFlag  < MueLu_PrintLevel())
       printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",k);
    m = 0;
    for ( i = 0; i < nRows; i++ ) 
       if ( aggStat[i] == MUELOO_AGGR_SELECTED ) m++;
 
-   graph->GetCrsGraph()->Comm().SumAll(&m,&k,1);
-   graph->GetCrsGraph()->Comm().SumAll(&nRows,&m,1);
-   graph->GetCrsGraph()->Comm().SumAll(&nAggregates,&j,1);
+   graph->GetComm().SumAll(&m,&k,1);
+   graph->GetComm().SumAll(&nRows,&m,1);
+   graph->GetComm().SumAll(&nAggregates,&j,1);
    aggregates->SetNumAggregates(nAggregates);
 
    if ( myPid == 0 && printFlag  < MueLu_PrintLevel()) 
@@ -580,9 +580,9 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   int      Nleftover = 0, Nsingle = 0, Adjacent;
   double   printFlag, factor = 1., penalty;
 
-  nVertices    = graph->GetNumVertices();
-  exp_nRows    = graph->GetNumVertices() + graph->GetNumGhost();
-  myPid        = graph->GetCrsGraph()->Comm().MyPID();
+  nVertices    = graph->GetNodeNumVertices();
+  exp_nRows    = nVertices + graph->GetNodeNumGhost();
+  myPid        = graph->GetComm().MyPID();
   printFlag    = aggOptions->GetPrintFlag();
   nAggregates  = aggregates->GetNumAggregates();
 
@@ -590,7 +590,7 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   Nphase1_agg = nAggregates;
 
   const Epetra_Map &nonUniqueMap=(Epetra_Map &) aggregates->GetVertex2AggId()->Map();
-  const Epetra_Map &uniqueMap=(Epetra_Map &) graph->GetCrsGraph()->DomainMap();
+  const Epetra_Map &uniqueMap=(Epetra_Map &) graph->GetDomainMap();
   const Epetra_Import unique2NonUniqueWidget(nonUniqueMap, uniqueMap);
 
   // Pull stuff out of epetra vectors
@@ -646,8 +646,8 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
      if (vertex2AggId[i] != MUELOO_UNAGGREGATED)
          phase_one_aggregated++;
   }
-  graph->GetCrsGraph()->Comm().SumAll(&phase_one_aggregated,&phase_one_aggregated,1);
-  graph->GetCrsGraph()->Comm().SumAll(&nVertices,&total_vertices,1);
+  graph->GetComm().SumAll(&phase_one_aggregated,&phase_one_aggregated,1);
+  graph->GetComm().SumAll(&nVertices,&total_vertices,1);
 
 
    /* Among unaggregated points, see if we can make a reasonable size    */
@@ -695,14 +695,14 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
 
    if ( printFlag < MueLu_PrintLevel()) {
 
-     graph->GetCrsGraph()->Comm().SumAll(&Nphase1_agg,&total_aggs,1);
+     graph->GetComm().SumAll(&Nphase1_agg,&total_aggs,1);
      if (myPid == 0) {
        printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label,
              phase_one_aggregated);
        printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n",label, total_aggs);
      }
      i = nAggregates - Nphase1_agg;
-     graph->GetCrsGraph()->Comm().SumAll(&i,&i,1);
+     graph->GetComm().SumAll(&i,&i,1);
      if ( myPid == 0 ) {
        printf("Aggregation(%s) : Phase 3 - additional aggregates = %d\n",label, i);
      }
@@ -731,26 +731,26 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
    double nAggregatesTarget;
    int    nAggregatesGlobal, minNAggs, maxNAggs;
 
-   nAggregatesTarget = ((double) uniqueMap.NumGlobalElements())*
+   nAggregatesTarget = ((double)  uniqueMap.NumGlobalElements())*
                        (((double) uniqueMap.NumGlobalElements())/
-                       ((double)graph->GetCrsGraph()->NumGlobalNonzeros()));
+                       ((double) graph->GetGlobalNumEdges()));
 
-   graph->GetCrsGraph()->Comm().SumAll(&nAggregates,&nAggregatesGlobal,1);
-   graph->GetCrsGraph()->Comm().MinAll(&nAggregates,&minNAggs,1);
-   graph->GetCrsGraph()->Comm().MaxAll(&nAggregates,&maxNAggs,1);
+   graph->GetComm().SumAll(&nAggregates,&nAggregatesGlobal,1);
+   graph->GetComm().MinAll(&nAggregates,&minNAggs,1);
+   graph->GetComm().MaxAll(&nAggregates,&maxNAggs,1);
 
    //
    // Only do this phase if things look really bad. THIS
    // CODE IS PRETTY EXPERIMENTAL 
    //
 #define MUELOO_PHASE4BUCKETS 6
-   if ((nAggregatesGlobal < graph->GetCrsGraph()->Comm().NumProc()) &&
+   if ((nAggregatesGlobal < graph->GetComm().NumProc()) &&
         (2.5*nAggregatesGlobal < nAggregatesTarget) &&
         (minNAggs ==0) && (maxNAggs <= 1)) {
 
       Epetra_Util util;
       util.SetSeed( (unsigned int) myPid*2 + (int) (11*rand()));
-      k = (int)ceil( (10.*myPid)/graph->GetCrsGraph()->Comm().NumProc());
+      k = (int)ceil( (10.*myPid)/graph->GetComm().NumProc());
       for (i = 0; i < k+7; i++) util.SetSeed( (unsigned int) util.RandomInt() );
       temp.SetSeed( (unsigned int) util.RandomInt() );
       temp.Random(); 
@@ -816,7 +816,7 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
        MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
                 uniqueMap, unique2NonUniqueWidget, true);
        weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
-       graph->GetCrsGraph()->Comm().SumAll(&nAggregates,&nAggregatesGlobal,1);
+       graph->GetComm().SumAll(&nAggregates,&nAggregatesGlobal,1);
 
      // check that there are no aggregates sizes below minNodesPerAggregate
      
@@ -1040,9 +1040,9 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
 
 
    if (printFlag < MueLu_PrintLevel()) {
-     graph->GetCrsGraph()->Comm().SumAll(&Nsingle,&Nsingle,1);
-     graph->GetCrsGraph()->Comm().SumAll(&Nleftover,&Nleftover,1);
-     graph->GetCrsGraph()->Comm().SumAll(&nAggregates,&total_aggs,1);
+     graph->GetComm().SumAll(&Nsingle,&Nsingle,1);
+     graph->GetComm().SumAll(&Nleftover,&Nleftover,1);
+     graph->GetComm().SumAll(&nAggregates,&total_aggs,1);
      if ( myPid == 0 ) {
        printf("Aggregation(%s) : Phase 3 - total aggregates = %d\n",label, total_aggs);
        printf("Aggregation(%s) : Phase 6 - leftovers = %d and singletons = %d\n",label ,Nleftover, Nsingle);
@@ -1340,7 +1340,7 @@ int MueLu_RootCandidates(int nVertices, int *vertex2AggId, Graph *graph,
          if (noAggdNeighbors == true) candidates[nCandidates++] = i;
       }
    }
-   graph->GetCrsGraph()->Comm().SumAll(&nCandidates,&nCandidatesGlobal,1);
+   graph->GetComm().SumAll(&nCandidates,&nCandidatesGlobal,1);
 
    return 0;
 }

@@ -104,14 +104,14 @@ namespace MueLu {
     
     nAggregates_  = 0;
     
-    vertex2AggId_ = new Epetra_IntVector(graph->GetCrsGraph()->ImportMap());
+    vertex2AggId_ = new Epetra_IntVector(graph->GetImportMap());
     vertex2AggId_->PutValue(MUELOO_UNAGGREGATED);
     
-    procWinner_ = new Epetra_IntVector(graph->GetCrsGraph()->ImportMap());
+    procWinner_ = new Epetra_IntVector(graph->GetImportMap());
     procWinner_->PutValue(MUELOO_UNASSIGNED);
     
-    isRoot_ = new bool[graph->GetCrsGraph()->ImportMap().NumMyElements()];
-    for (int i=0; i < graph->GetCrsGraph()->ImportMap().NumMyElements(); i++)
+    isRoot_ = new bool[graph->GetImportMap().NumMyElements()];
+    for (int i=0; i < graph->GetImportMap().NumMyElements(); i++)
       isRoot_[i] = false;
 
     //agg2Vertex_   = NULL; /* Currently not used */
