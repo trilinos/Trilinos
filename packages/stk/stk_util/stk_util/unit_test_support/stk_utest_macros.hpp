@@ -11,6 +11,8 @@
 
 #ifndef STK_BUILT_IN_SIERRA
 #include <STK_config.h>
+#else
+#define HAVE_MPI
 #endif
 
 //
@@ -19,6 +21,7 @@
 //cppunit macros, or trilinos/teuchos unit-test macros, depending
 //on whether stk_mesh is being built as a sierra product or Trilinos package.
 //
+#ifdef HAVE_MPI
 #define RUN_TEST_REDUCE(error) \
   int reduce_result = MPI_Allreduce ( &error, &error, 1 /*count*/, \
                                       MPI_INT, MPI_MAX, MPI_COMM_WORLD ); \
@@ -28,6 +31,15 @@
   } \
   if ( !error ) \
     std::cout << "STKUNIT_ALL_PASS" << std::endl;
+#else
+#define RUN_TEST_REDUCE(error) \
+  if (error != 0) { \
+    std::cerr << "Test FAILED" << std::endl; \
+    error = true; \
+  } \
+  if ( !error ) \
+    std::cout << "STKUNIT_ALL_PASS" << std::endl;
+#endif
 
 
 #ifdef HAVE_STK_Trilinos
@@ -90,10 +102,8 @@ int main(int argc,char**argv) {\
   Teuchos::GlobalMPISession mpiSession(&argc, &argv); \
   int error = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv); \
   RUN_TEST_REDUCE(error); \
-  MPI_Finalize(); \
   return error; \
 }
-
 
 #else // HAVE_STK_GTEST
 
