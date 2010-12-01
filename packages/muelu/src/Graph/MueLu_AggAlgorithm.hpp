@@ -37,8 +37,8 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Graph.hpp"
 
-
 using namespace std;
+using namespace MueLu;
 
 int MueLu_PrintLevel() { return 7; }    /* Normally this should be some general*/
                                         /* attribute the indicates the level   */
@@ -145,8 +145,8 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
 
    std::string name = "Uncoupled";
 
-   aggregates = MueLu_AggregateCreate(graph, name.c_str());
-   aggregates->vertex2AggId->ExtractView(&vertex2AggId);
+   aggregates = new Aggregates(graph, name.c_str());
+   aggregates->GetVertex2AggId()->ExtractView(&vertex2AggId);
    
    /* ============================================================= */
    /* get the machine information and matrix references             */
@@ -321,7 +321,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
          } 
          else 
          {
-            aggregates->isRoot[iNode] = true;
+           aggregates->SetIsRoot(iNode);
             for ( j = 0; j < supernode->length; j++ ) 
             {
                jNode = supernode->list[j];
@@ -389,7 +389,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(MueLu_AggOptions
    graph->eGraph->Comm().SumAll(&m,&k,1);
    graph->eGraph->Comm().SumAll(&nRows,&m,1);
    graph->eGraph->Comm().SumAll(&nAggregates,&j,1);
-   aggregates->nAggregates = nAggregates;
+   aggregates->SetNumAggregates(nAggregates);
 
    if ( myPid == 0 && printFlag  < MueLu_PrintLevel()) 
    {
@@ -585,20 +585,20 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
   exp_nRows    = graph->nVertices + graph->nGhost;
   myPid        = graph->eGraph->Comm().MyPID();
   printFlag    = aggregateOptions->printFlag;
-  nAggregates  = aggregates->nAggregates;
+  nAggregates  = aggregates->GetNumAggregates();
 
   int minNodesPerAggregate = aggregateOptions->minNodesPerAggregate;
   Nphase1_agg = nAggregates;
 
-  const Epetra_Map &nonUniqueMap=(Epetra_Map &) aggregates->vertex2AggId->Map();
+  const Epetra_Map &nonUniqueMap=(Epetra_Map &) aggregates->GetVertex2AggId()->Map();
   const Epetra_Map &uniqueMap=(Epetra_Map &) graph->eGraph->DomainMap();
   const Epetra_Import unique2NonUniqueWidget(nonUniqueMap, uniqueMap);
 
   // Pull stuff out of epetra vectors
 
-  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(aggregates->vertex2AggId);
-  aggregates->vertex2AggId->ExtractView(&vertex2AggId);
-  Epetra_IntVector &procWinner = *(aggregates->procWinner);
+  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(aggregates->GetVertex2AggId());
+  aggregates->GetVertex2AggId()->ExtractView(&vertex2AggId);
+  Epetra_IntVector &procWinner = *(aggregates->GetProcWinner());
 
 
   Epetra_Vector weights(nonUniqueMap);
@@ -612,7 +612,7 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
      if (procWinner[i] == MUELOO_UNASSIGNED) {
         if (vertex2AggId[i] != MUELOO_UNAGGREGATED) {
            weights[i] = 1.;
-           if ( (aggregates->isRoot)[i] == true) weights[i] = 2.;
+           if (aggregates->IsRoot(i)) weights[i] = 2.;
          }
      }
   }
@@ -624,7 +624,7 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
   // to the aggregate associated with the root.
 
    for (int i =0; i < nVertices; i++) {
-      if ( ( (aggregates->isRoot)[i] == true) && (procWinner[i] == myPid) ){
+     if ( aggregates->IsRoot(i) && (procWinner[i] == myPid) ){
          rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
          rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
          for (j = 0; j < rowi_N; j++) {
@@ -683,7 +683,7 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
              else                  weights[colj] = 1.;
            }
          }
-         (aggregates->isRoot)[i] = true;
+         aggregates->SetIsRoot(i);
          weights[i] = 2.;
        }
      }
@@ -799,7 +799,7 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
                if (count >= minNodesPerAggregate) {
                   vertex2AggId[i] = nAggregates++;
                   weights[i] = 2.;
-                  (aggregates->isRoot)[i] = true;
+                  aggregates->SetIsRoot(i);
                }
                else { // undo things
                   for (j = 0; j < rowi_N; j++) {
@@ -821,12 +821,12 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
 
      // check that there are no aggregates sizes below minNodesPerAggregate
      
-
-      aggregates->nAggregates = nAggregates;
+       aggregates->SetNumAggregates(nAggregates);
 
       MueLu_RemoveSmallAggs(aggregates, minNodesPerAggregate, 
                              weights, uniqueMap, unique2NonUniqueWidget);
-      nAggregates = aggregates->nAggregates;
+
+      nAggregates = aggregates->GetNumAggregates();
      }   // one possibility
    }
 
@@ -1004,30 +1004,30 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
 
          vertex2AggId[i] = nAggregates;
          weights[i] = 1.;
-         if (count ==0) aggregates->isRoot[i] = true;
-         count++;
-	 for (j = 0; j < rowi_N; j++) {
-	   if ((rowi_col[j] != i)&&(vertex2AggId[rowi_col[j]] == MUELOO_UNAGGREGATED)&&
-               (rowi_col[j] < nVertices)) {
-	      vertex2AggId[rowi_col[j]] = nAggregates;
-              weights[rowi_col[j]] = 1.;
-              count++;
-	   }
-	 }
-         if ( count >= minNodesPerAggregate) {
-            nAggregates++; 
-            count = 0;
-         }
-     }
-   }
-   // We have something which is under minNodesPerAggregate when 
-   if (count != 0) {
-      // Can stick small aggregate with 0th aggregate?
-      if (nAggregates > 0) {
-         for (i = 0; i < nVertices; i++) {
-            if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
-               vertex2AggId[i] = 0;
-               (aggregates->isRoot)[i] = false;
+         if (count == 0) aggregates->SetIsRoot(i);
+          count++;
+          for (j = 0; j < rowi_N; j++) {
+            if ((rowi_col[j] != i)&&(vertex2AggId[rowi_col[j]] == MUELOO_UNAGGREGATED)&&
+                (rowi_col[j] < nVertices)) {
+               vertex2AggId[rowi_col[j]] = nAggregates;
+               weights[rowi_col[j]] = 1.;
+               count++;
+            }
+          }
+          if ( count >= minNodesPerAggregate) {
+             nAggregates++; 
+             count = 0;
+          }
+      }
+    }
+    // We have something which is under minNodesPerAggregate when 
+    if (count != 0) {
+       // Can stick small aggregate with 0th aggregate?
+       if (nAggregates > 0) {
+          for (i = 0; i < nVertices; i++) {
+             if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
+                vertex2AggId[i] = 0;
+                aggregates->SetIsRoot(i,false);
             }
          }
       }
@@ -1052,7 +1052,7 @@ int MueLu_AggregateLeftOvers(MueLu_AggOptions *aggregateOptions,
   if (agg_incremented != NULL) free(agg_incremented);
   if (Mark != NULL) free(Mark);
   if (SumOfMarks != NULL) free(SumOfMarks);
-  aggregates->nAggregates = nAggregates;
+  aggregates->SetNumAggregates(nAggregates);
 
   return 0;
 }
@@ -1350,12 +1350,12 @@ int MueLu_RootCandidates(int nVertices, int *vertex2AggId, MueLu_Graph *graph,
 int MueLu_ComputeAggSizes(Aggregates *aggregates, int *aggSizes)
 {
   int *vertex2AggId;
-  int nAggregates = aggregates->nAggregates;
-  Epetra_IntVector &procWinner = *(aggregates->procWinner);
+  int nAggregates = aggregates->GetNumAggregates();
+  Epetra_IntVector &procWinner = *(aggregates->GetProcWinner());
   int N = procWinner.Map().NumMyElements();
   int myPid = procWinner.Comm().MyPID();
 
-  aggregates->vertex2AggId->ExtractView(&vertex2AggId);
+  aggregates->GetVertex2AggId()->ExtractView(&vertex2AggId);
   for (int i = 0; i < nAggregates; i++) aggSizes[i] = 0;
   for (int k = 0; k < N; k++ ) {
      if (procWinner[k] == myPid) aggSizes[vertex2AggId[k]]++;
@@ -1368,16 +1368,16 @@ int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
     Epetra_Vector &weights, const Epetra_Map &uniqueMap, 
     const Epetra_Import &unique2NonUniqueWidget) 
 {
-  int nAggregates = aggregates->nAggregates;
+  int nAggregates = aggregates->GetNumAggregates();
   int *AggInfo = new int[nAggregates+1];
   int *vertex2AggId;
 
-  Epetra_IntVector &procWinner = *(aggregates->procWinner);
+  Epetra_IntVector &procWinner = *(aggregates->GetProcWinner());
   int N = procWinner.Map().NumMyElements();
   int myPid = procWinner.Comm().MyPID();
 
-  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(aggregates->vertex2AggId);
-  aggregates->vertex2AggId->ExtractView(&vertex2AggId);
+  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(aggregates->GetVertex2AggId());
+  aggregates->GetVertex2AggId()->ExtractView(&vertex2AggId);
 
   MueLu_ComputeAggSizes(aggregates, AggInfo);
 
@@ -1399,7 +1399,7 @@ int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
            weights[k] = 1.;
         }
         if (vertex2AggId[k] ==  MUELOO_UNAGGREGATED) 
-           (aggregates->isRoot)[k] = false;
+          aggregates->SetIsRoot(k,false);
      }
   }
   nAggregates = NewNAggs;
@@ -1414,7 +1414,7 @@ int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
      if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
             procWinner[i] = MUELOO_UNASSIGNED;
   }
-  aggregates->nAggregates = nAggregates;
+  aggregates->SetNumAggregates(nAggregates);
 
   return 0; //TODO
 }

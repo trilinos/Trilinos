@@ -1,6 +1,8 @@
 #ifndef MUELU_AGGREGATES_HPP
 #define MUELU_AGGREGATES_HPP
 
+#include <Teuchos_Describable.hpp>
+
 #include "MueLu_Graph.hpp"
 
 #define MUELOO_AGGR_READY    -11  /* indicates that a node is available to be*/
@@ -59,72 +61,72 @@
    correspond to nodes. While not strictly necessary, it might be convenient.
  *****************************************************************************/
 
-//namespace MueLu {
+namespace MueLu {
 
-  class Aggregates {
+  class Aggregates : public Teuchos::Describable {
     
   public:
     
-    char *name;
-    int  nAggregates;              /* Number of aggregates on this processor  */
-    
-    Epetra_IntVector *vertex2AggId;/* vertex2AggId[k] gives a local id        */
-    /* corresponding to the aggregate to which */
-    /* local id k has been assigned.  While k  */
-    Epetra_IntVector *procWinner;  /* is the local id on my processor (MyPID),*/
-    /* vertex2AggId[k] is the local id on the  */
-    /* processor which actually owns the       */
-    /* aggregate. This owning processor has id */
-    /* given by procWinner[k].                 */
+    Aggregates(MueLu_Graph *Graph, const std::string & objectLabel);
+    ~Aggregates();
 
-    bool *isRoot;                  /* IsRoot[i] indicates whether vertex i  */
-    /* is a root node.                       */
+    inline int GetNumAggregates()                      { return nAggregates_;            }
+    inline void SetNumAggregates(int nAggregates)      { nAggregates_ = nAggregates;     }
+    inline Epetra_IntVector* GetVertex2AggId()         { return vertex2AggId_;           }
+    inline Epetra_IntVector* GetProcWinner() { return procWinner_;             }
+    inline bool IsRoot(int i)                          { return isRoot_[i];              }
+    inline void SetIsRoot(int vertex, bool value=true) { isRoot_[vertex] = value; }
 
-    Epetra_CrsGraph *agg2Vertex;   /* Currently not used                    */
-  
   private:
-  
+    int   nAggregates_;             /* Number of aggregates on this processor  */
+    
+    Epetra_IntVector *vertex2AggId_;/* vertex2AggId[k] gives a local id        */
+                                    /* corresponding to the aggregate to which */
+                                    /* local id k has been assigned.  While k  */
+    Epetra_IntVector *procWinner_;  /* is the local id on my processor (MyPID),*/
+                                    /* vertex2AggId[k] is the local id on the  */
+                                    /* processor which actually owns the       */
+                                    /* aggregate. This owning processor has id */
+                                    /* given by procWinner[k].                 */
+
+    bool *isRoot_;                  /* IsRoot[i] indicates whether vertex i  */
+                                    /* is a root node.                       */
+
+    // Epetra_CrsGraph *agg2Vertex_;/* Currently not used                    */
+
   };
 
-  //}
+  // Constructors to create aggregates.
+  Aggregates::Aggregates(MueLu_Graph *graph, const std::string & objectLabel)
+  {
+    
+    setObjectLabel(objectLabel);
+    
+    nAggregates_  = 0;
+    
+    vertex2AggId_ = new Epetra_IntVector(graph->eGraph->ImportMap());
+    vertex2AggId_->PutValue(MUELOO_UNAGGREGATED);
+    
+    procWinner_ = new Epetra_IntVector(graph->eGraph->ImportMap());
+    procWinner_->PutValue(MUELOO_UNASSIGNED);
+    
+    isRoot_ = new bool[graph->eGraph->ImportMap().NumMyElements()];
+    for (int i=0; i < graph->eGraph->ImportMap().NumMyElements(); i++)
+      isRoot_[i] = false;
 
-Aggregates *MueLu_AggregateCreate(MueLu_Graph *Graph, const char *str);
-int MueLu_AggregateDestroy(Aggregates *aggregates);
+    //agg2Vertex_   = NULL; /* Currently not used */
+  }
 
-// Constructors to create aggregates. This should really be replaced by an 
-// aggregate class.
-Aggregates *MueLu_AggregateCreate(MueLu_Graph *Graph, const char *str)
-{
-   Aggregates *aggregates;
+  // Destructor for aggregates.
+  Aggregates::~Aggregates()
+  {
+    if (isRoot_       != NULL) delete [] (isRoot_);
+    if (procWinner_   != NULL) delete procWinner_;
+    if (vertex2AggId_ != NULL) delete vertex2AggId_;
+    // if (agg2Vertex_   != NULL) delete agg2Vertex_; /* Currently not used */
+  }
 
-   aggregates = (Aggregates *) malloc(sizeof(Aggregates));
-   aggregates->name = (char *) malloc(sizeof(char)*80);
-   strcpy(aggregates->name,str);
-   aggregates->nAggregates  = 0;
-   aggregates->agg2Vertex   = NULL;
-   aggregates->vertex2AggId = new Epetra_IntVector(Graph->eGraph->ImportMap());
-   aggregates->vertex2AggId->PutValue(MUELOO_UNAGGREGATED);
-   aggregates->procWinner = new Epetra_IntVector(Graph->eGraph->ImportMap());
-   aggregates->procWinner->PutValue(MUELOO_UNASSIGNED);
-   aggregates->isRoot = new bool[Graph->eGraph->ImportMap().NumMyElements()];
-   for (int i=0; i < Graph->eGraph->ImportMap().NumMyElements(); i++)
-       aggregates->isRoot[i] = false;
-
-   return aggregates;
 }
-// Destructor for aggregates. This should really be replaced by an 
-// aggregate class.
-int MueLu_AggregateDestroy(Aggregates *aggregates)
-{
-   if (aggregates != NULL) {
-      if (aggregates->isRoot       != NULL) delete [] (aggregates->isRoot);
-      if (aggregates->procWinner   != NULL) delete aggregates->procWinner;
-      if (aggregates->vertex2AggId != NULL) delete aggregates->vertex2AggId;
-      if (aggregates->name         != NULL) free(aggregates->name);
-      if (aggregates->agg2Vertex   != NULL) delete aggregates->agg2Vertex;
-      free(aggregates);
-   }
-   return 0;
-}
+
 
 #endif
