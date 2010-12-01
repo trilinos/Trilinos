@@ -15,8 +15,6 @@ if [ "$mpdhost" != "s861036" ] ; then
   mpd &
 fi
 
-exit
-
 # TrilinosDriver settings:
 #
 export TDD_GIT_EXE=/usr/local/bin/git
