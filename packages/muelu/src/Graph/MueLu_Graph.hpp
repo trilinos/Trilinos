@@ -1,6 +1,7 @@
 #ifndef MUELU_GRAPH_HPP
 #define MUELU_GRAPH_HPP
 
+#include <Teuchos_ArrayView.hpp>
 #include <Epetra_CrsGraph.h>
 
 #include "MueLu_Exceptions.hpp"
@@ -30,11 +31,6 @@ namespace MueLu {
       return eGraph_->NumGlobalNonzeros(); 
     }
 
-    inline void GetCrsDataPointers(int** vertexNeighborsPtr, int** vertexNeighbors) { 
-      *vertexNeighborsPtr = vertexNeighborsPtr_;
-      *vertexNeighbors    = vertexNeighbors_;
-    }
-
     inline const Epetra_Comm & GetComm() { 
       TEST_FOR_EXCEPTION(eGraph_ == NULL, MueLu::Exceptions::RuntimeError, "Graph: eGraph_ == NULL. Cannot call this method");
       return eGraph_->Comm();
@@ -50,6 +46,15 @@ namespace MueLu {
       return eGraph_->ImportMap();
     }
 
+    //! Return the list of vertices adjacent to the vertex 'v'
+    Teuchos::ArrayView<int> getNeighborVertices(int v) {
+      int* startPtr = &(vertexNeighbors_[vertexNeighborsPtr_[v]]);
+      int  size     = vertexNeighborsPtr_[v+1] - vertexNeighborsPtr_[v] + 1;
+
+      return Teuchos::ArrayView<int>(startPtr, size);
+    }
+    // TODO: use directly a GetRow or something like that.
+
     //TMP
     int  *vertexNeighborsPtr;
     int  *vertexNeighbors;  
@@ -57,7 +62,12 @@ namespace MueLu {
   private:
 
     // inline const Epetra_CrsGraph * GetCrsGraph() { return eGraph_; } // not used.
-    
+
+    // inline void GetCrsDataPointers(int** vertexNeighborsPtr, int** vertexNeighbors) { 
+    //   *vertexNeighborsPtr = vertexNeighborsPtr_;
+    //   *vertexNeighbors    = vertexNeighbors_;
+    // }
+
     int  nVertices_;
     int  nEdges_;
     int  nGhost_;
