@@ -3,6 +3,7 @@
 #define CHARON_WORKSET_BUILDER_HPP
 
 #include <vector>
+#include <map>
 #include "Teuchos_RCP.hpp"
 
 namespace shards {
@@ -16,6 +17,7 @@ namespace panzer {
   class BoundaryCondition;
   class InputPhysicsBlock;
   class PhysicsBlock;
+  class BC;
 
   template<typename ArrayT>
   Teuchos::RCP<std::vector<panzer::Workset> > 
@@ -26,12 +28,14 @@ namespace panzer {
 		std::size_t workset_size,
 		int base_cell_dimension);
   
-//   Teuchos::RCP<std::map<unsigned,panzer::Workset> > 
-//     buildBCWorkset(const SBC_Set* sideset,
-// 		   const panzer::BoundaryCondition& bc,
-// 		   Node_Vector_Index* node_coordinates,
-// 		   const panzer::InputPhysicsBlock& ipb,
-// 		   const shards::CellTopology& base_cell_topology);
+  template<typename ArrayT>
+  Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+  buildBCWorkset(const panzer::BC& bc,
+		 const std::vector<std::size_t>& local_cell_ids,
+		 const std::vector<std::size_t>& local_side_ids,
+		 const ArrayT& vertex_coordinates, 
+		 const panzer::InputPhysicsBlock& ipb,
+		 unsigned base_cell_dim);
 
 }
 

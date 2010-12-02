@@ -5,9 +5,9 @@
 #include <algorithm>
 #include "Panzer_Workset.hpp"
 #include "Panzer_CellData.hpp"
-//#include "Charon_BoundaryCondition.h"
+#include "Panzer_BC.hpp"
 #include "Panzer_InputPhysicsBlock.hpp"
-//#include "Charon_Shards_Utilities.h"
+#include "Panzer_Shards_Utilities.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
@@ -171,32 +171,28 @@ panzer::buildWorksets(const std::string& block_id,
 // ****************************************************************
 // ****************************************************************
 
-/*
-
-// NEW VERSION
-
 template<typename ArrayT>
-Teuchos::RCP<std::map<unsigned,charon::Workset> >
-panzer::buildBCWorkset(const charon::BoundaryCondition& bc,
+Teuchos::RCP<std::map<unsigned,panzer::Workset> >
+panzer::buildBCWorkset(const panzer::BC& bc,
 		       const std::vector<std::size_t>& local_cell_ids,
 		       const std::vector<std::size_t>& local_side_ids,
 		       const ArrayT& vertex_coordinates, 
 		       const panzer::InputPhysicsBlock& ipb,
 		       unsigned base_cell_dim)
-
-// OLD VERSION
-
-// Teuchos::RCP<std::map<unsigned,charon::Workset> > 
-// charon::buildBCWorkset(const SBC_Set* sideset,
-// 		       const charon::BoundaryCondition& bc,
-// 		       Node_Vector_Index* node_coordinates,
-// 		       const charon::InputPhysicsBlock& ipb,
-// 		       const shards::CellTopology& base_cell_topology)
 {
+  // key is local face index, value is workset with all elements
+  // for that local face
+  Teuchos::RCP<std::map<unsigned,panzer::Workset> > worksets_ptr = 
+    Teuchos::rcp(new std::map<unsigned,panzer::Workset>);
+
   // All elements of boundary condition should go into one workset.
   // However due to design of Intrepid (requires same basis for all
   // cells), we have to separate the workset based on the local side
   // index.
+  
+  std::cout << "local_side_ids.size() = " << local_side_ids.size() << std::endl;
+
+  /*
   
   // key is local face index, value is vector of element pointers
   std::map<unsigned,std::vector<SBC_Element*> > element_list;
@@ -273,10 +269,6 @@ panzer::buildBCWorkset(const charon::BoundaryCondition& bc,
 
   int dim = static_cast<int>(base_cell_topology.getDimension());
 
-  // key is local face index, value is workset with all elements
-  // for that local face
-  Teuchos::RCP<std::map<unsigned,charon::Workset> > worksets_ptr = 
-    Teuchos::rcp(new std::map<unsigned,charon::Workset>);
 
   std::map<unsigned,charon::Workset>& worksets = *worksets_ptr;
 
@@ -366,7 +358,7 @@ panzer::buildBCWorkset(const charon::BoundaryCondition& bc,
 
   }
 
-  return worksets_ptr;
-}
-
 */
+  return worksets_ptr;
+
+}
