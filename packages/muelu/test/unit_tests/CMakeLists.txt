@@ -17,7 +17,7 @@ APPEND_SET(SOURCES
 main.cpp
 #Level.cpp
 Hierarchy.cpp
-RAPFactory.cpp
+#RAPFactory.cpp
 #SaPFactory.cpp
 #TransPFactory.cpp
 #SmootherFactory.cpp
