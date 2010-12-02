@@ -59,6 +59,7 @@ SET(DAKOTA_CONFIGURE_COMMAND ${PACKAGE_SOURCE_DIR}/Dakota/configure
     --with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
     --with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
     --with-boost=${Boost_INCLUDE_DIRS}
+    --disable-tests
     --with-plugin 
     --without-graphics
     --without-dot 
