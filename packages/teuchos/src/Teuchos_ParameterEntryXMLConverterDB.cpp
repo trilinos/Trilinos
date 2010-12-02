@@ -29,27 +29,10 @@
 
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_StaticSetupMacro.hpp"
 
 namespace Teuchos{
 
-
-#define ADD_TYPE_CONVERTER(T) \
-  \
-  RCP<StandardTemplatedParameterConverter< T > > T##Converter = \
-    rcp(new StandardTemplatedParameterConverter< T >); \
-  masterMap.insert(ConverterPair(T##Converter->getTypeAttributeValue(), \
-      T##Converter)); 
-
-#define ADD_ARRAYTYPE_CONVERTER(T) \
-  RCP<StandardTemplatedParameterConverter< Array< T > > > T##ArrayConverter = \
-    rcp(new StandardTemplatedParameterConverter< Array< T > >); \
-  masterMap.insert(ConverterPair(T##ArrayConverter->getTypeAttributeValue(), \
-      T##ArrayConverter)); 
-
-#define ADD_TYPE_AND_ARRAYTYPE_CONVERTER(T) \
-  \
-  ADD_TYPE_CONVERTER(T); \
-  ADD_ARRAYTYPE_CONVERTER(T);
 
 RCP<const ParameterEntryXMLConverter> 
 ParameterEntryXMLConverterDB::getConverter(RCP<const ParameterEntry> entry) 
@@ -110,43 +93,54 @@ RCP<const ParameterEntryXMLConverter>
   }
   return defaultConverter;
 }
+
 ParameterEntryXMLConverterDB::ConverterMap& 
 ParameterEntryXMLConverterDB::getConverterMap()
 {
   static ConverterMap masterMap;
-  if(masterMap.size() == 0){
-    typedef unsigned int uint;
-    typedef unsigned short int ushort;
-    typedef unsigned long ulong;
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(int);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(uint);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(short);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ushort);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(long);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ulong);
-    #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-    typedef long long int llint;
-    typedef unsigned long long int ullint;
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(llint);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(ullint);
-    #endif //HAVE_TEUCHOS_LONG_LONG_INT
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(double);
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(float);
-
-    ADD_TYPE_AND_ARRAYTYPE_CONVERTER(string);
-
-    ADD_TYPE_CONVERTER(char);
-    ADD_TYPE_CONVERTER(bool);
-
-    RCP<AnyParameterEntryConverter > anyConverter = 
-      rcp(new AnyParameterEntryConverter); 
-    masterMap.insert(ConverterPair(anyConverter->getTypeAttributeValue(), 
-      anyConverter)); 
-
-  }
   return masterMap;
+
 }
   
 
-
 } //namespace Teuchos
+
+
+namespace {
+
+TEUCHOS_STATIC_SETUP()
+{
+    Teuchos::ParameterEntryXMLConverterDB::ConverterMap& masterMap =
+      Teuchos::ParameterEntryXMLConverterDB::getConverterMap();
+    typedef unsigned int uint;
+    typedef unsigned short int ushort;
+    typedef unsigned long ulong;
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, int);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, uint);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, short);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, ushort);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, long);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, ulong);
+    #ifdef HAVE_TEUCHOS_LONG_LONG_INT
+    typedef long long int llint;
+    typedef unsigned long long int ullint;
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, llint);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, ullint);
+    #endif //HAVE_TEUCHOS_LONG_LONG_INT
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, double);
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, float);
+
+    typedef std::string myString;
+    TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(masterMap, myString);
+
+    TEUCHOS_ADD_TYPE_CONVERTER(masterMap, char);
+    TEUCHOS_ADD_TYPE_CONVERTER(masterMap, bool);
+
+    Teuchos::RCP<Teuchos::AnyParameterEntryConverter > anyConverter = 
+      Teuchos::rcp(new Teuchos::AnyParameterEntryConverter); 
+    masterMap.insert(Teuchos::ParameterEntryXMLConverterDB::ConverterPair(anyConverter->getTypeAttributeValue(), 
+      anyConverter)); 
+}
+
+
+} // namespace
