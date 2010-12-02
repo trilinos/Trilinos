@@ -1,6 +1,8 @@
 #ifndef CTHULHU_EPETRAMAP_HPP
 #define CTHULHU_EPETRAMAP_HPP
 
+#include "Cthulhu_ConfigDefs.hpp"
+
 #ifndef HAVE_CTHULHU_EPETRA
 #error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
 #endif
@@ -367,7 +369,7 @@ namespace Cthulhu {
     Teuchos::RCP< const EpetraMap > createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node);
     Teuchos::RCP< const EpetraMap > createContigMapWithNode(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node);
 
-    Teuchos::RCP< const EpetraMap >
+    inline Teuchos::RCP< const EpetraMap >
     createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
       return createLocalMapWithNode(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
     }
@@ -378,7 +380,7 @@ namespace Cthulhu {
 
     \relates EpetraMap
     */
-    Teuchos::RCP< const EpetraMap >
+    inline Teuchos::RCP< const EpetraMap >
     createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
       Teuchos::RCP< EpetraMap > map;
       map = Teuchos::rcp( new EpetraMap((Cthulhu::global_size_t)numElements, // num elements, global and local
@@ -393,7 +395,7 @@ namespace Cthulhu {
 
     \relates EpetraMap
     */
-    Teuchos::RCP< const EpetraMap >
+    inline Teuchos::RCP< const EpetraMap >
     createUniformContigMapWithNode(global_size_t numElements,
                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
       Teuchos::RCP< EpetraMap > map;
@@ -411,7 +413,7 @@ namespace Cthulhu {
 
     \relates EpetraMap
     */
-    Teuchos::RCP< const EpetraMap >
+    inline Teuchos::RCP< const EpetraMap >
     createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
       return createUniformContigMapWithNode(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
     }
@@ -424,7 +426,7 @@ namespace Cthulhu {
 
     \relates EpetraMap
     */
-    Teuchos::RCP< const EpetraMap >
+    inline Teuchos::RCP< const EpetraMap >
     createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) { CTHULHU_DEBUG_ME;
       return createContigMapWithNode(numElements, localNumElements, comm, Kokkos::DefaultNode::getDefaultNode() );
     }
@@ -435,7 +437,7 @@ namespace Cthulhu {
 
     \relates EpetraMap
     */
-    Teuchos::RCP< const EpetraMap >
+    inline Teuchos::RCP< const EpetraMap >
     createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
       Teuchos::RCP< EpetraMap > map;
@@ -453,31 +455,7 @@ namespace Cthulhu {
     */
     Teuchos::RCP< const EpetraMap >
     createWeightedContigMapWithNode(int myWeight, global_size_t numElements, 
-                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node) { CTHULHU_DEBUG_ME;
-      Teuchos::RCP< EpetraMap > map;
-      int sumOfWeights, elemsLeft, localNumElements;
-      const int numImages = comm->getSize(), 
-        myImageID = comm->getRank();
-      Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM,myWeight,Teuchos::outArg(sumOfWeights));
-      const double myShare = ((double)myWeight) / ((double)sumOfWeights);
-      localNumElements = (int)std::floor( myShare * ((double)numElements) );
-      // std::cout << "numElements: " << numElements << "  myWeight: " << myWeight << "  sumOfWeights: " << sumOfWeights << "  myShare: " << myShare << std::endl;
-      Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM,localNumElements,Teuchos::outArg(elemsLeft));
-      elemsLeft = numElements - elemsLeft;
-      // std::cout << "(before) localNumElements: " << localNumElements << "  elemsLeft: " << elemsLeft << std::endl;
-      // i think this is true. just test it for now.
-      TEST_FOR_EXCEPT(elemsLeft < -numImages || numImages < elemsLeft);
-      if (elemsLeft < 0) {
-        // last elemsLeft nodes lose an element
-        if (myImageID >= numImages-elemsLeft) --localNumElements;
-      }
-      else if (elemsLeft > 0) {
-        // first elemsLeft nodes gain an element
-        if (myImageID < elemsLeft) ++localNumElements;
-      }
-      // std::cout << "(after) localNumElements: " << localNumElements << std::endl;
-      return createContigMapWithNode(numElements,localNumElements,comm,node);
-    }
+                                    const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Kokkos::DefaultNode::DefaultNodeType > &node);
 
   } // useEpetra namespace
 
@@ -485,13 +463,13 @@ namespace Cthulhu {
 
 /** \brief  Returns true if \c map is identical to this map. Implemented in Cthulhu::EpetraMap::isSameAs().
     \relates Cthulhu::EpetraMap */
-bool operator== (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { CTHULHU_DEBUG_ME;
+inline bool operator== (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { CTHULHU_DEBUG_ME;
   return map1.isSameAs(map2);
 }
 
 /** \brief Returns true if \c map is not identical to this map. Implemented in Cthulhu::EpetraMap::isSameAs().
     \relates Cthulhu::EpetraMap */
-bool operator!= (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { CTHULHU_DEBUG_ME;
+inline bool operator!= (const Cthulhu::EpetraMap &map1, const Cthulhu::EpetraMap &map2) { CTHULHU_DEBUG_ME;
   return !map1.isSameAs(map2);
 }
 

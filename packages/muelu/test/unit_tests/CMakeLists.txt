@@ -15,9 +15,9 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
 main.cpp
-Level.cpp
-#Hierarchy.cpp
-#RAPFactory.cpp
+#Level.cpp
+Hierarchy.cpp
+RAPFactory.cpp
 #SaPFactory.cpp
 #TransPFactory.cpp
 #SmootherFactory.cpp
@@ -28,6 +28,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial  mpi
+    DEPLIBS muelu muelu-cthulhu
   )
 
 APPEND_SET(SOURCES2
@@ -45,5 +46,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES2}
     ARGS ""
     COMM serial  mpi
+    DEPLIBS muelu muelu-cthulhu
   )
 

@@ -18,5 +18,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial  mpi
+    DEPLIBS muelu muelu-cthulhu
   )
 

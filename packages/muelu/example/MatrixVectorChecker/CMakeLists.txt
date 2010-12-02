@@ -20,6 +20,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
       read_MatrixMarket
       SOURCES MueLu_read_MatrixMarket.cpp
       COMM serial
+      DEPLIBS muelu muelu-cthulhu
       )
   ENDIF()
 ENDIF()

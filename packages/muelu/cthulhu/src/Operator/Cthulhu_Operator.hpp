@@ -35,7 +35,9 @@ namespace Cthulhu {
     
     typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+#ifdef HAVE_CTHULHU_TPETRA
     typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
+#endif
     typedef Cthulhu::CrsMatrixFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
     typedef Cthulhu::OperatorView<LocalOrdinal, GlobalOrdinal, Node> OperatorView;
 

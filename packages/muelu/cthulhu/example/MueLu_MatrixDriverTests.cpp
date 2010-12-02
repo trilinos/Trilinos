@@ -61,12 +61,14 @@ int main(int argc, char* argv[])
 
   RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
+#ifdef HAVE_CTHULHU_TPETRA
   // Tpetra::CrsMatrix
   {
     RCP<const Tpetra::Map<LO,GO> > map = rcp( new Tpetra::Map<LO,GO> (numGlobalElements, indexBase, comm) ); 
     RCP<Tpetra::CrsMatrix<SC,LO,GO> > A = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Tpetra::Map<LO,GO>, Tpetra::CrsMatrix<SC,LO,GO> > (matrixType,map,matrixList);
     A->describe(*out, Teuchos::VERB_EXTREME);
   }
+#endif
 
 #ifdef HAVE_CTHULHU_TPETRA
   // Cthulhu::TpetraCrsMatrix

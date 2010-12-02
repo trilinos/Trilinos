@@ -1,6 +1,8 @@
 #ifndef CTHULHU_TPETRACRSGRAPH_HPP
 #define CTHULHU_TPETRACRSGRAPH_HPP
 
+#include "Cthulhu_ConfigDefs.hpp"
+
 #ifndef HAVE_CTHULHU_TPETRA
 #error This file should be included only if HAVE_CTHULHU_TPETRA is defined.
 #endif

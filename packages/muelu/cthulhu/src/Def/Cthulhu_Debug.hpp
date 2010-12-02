@@ -1,6 +1,8 @@
 #ifndef CTHULHU_DEBUG_HPP
 #define CTHULHU_DEBUG_HPP
 
+// #include "Cthulhu_ConfigDefs.hpp" -> TODO: add this header line. But at the moment, Cthulhu_ConfigDefs use Cthulhu_Debug
+
 // #ifdef HAVE_MUEMAT_DEBUG
 
 // TODO: Description

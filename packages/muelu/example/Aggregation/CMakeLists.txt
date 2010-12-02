@@ -9,6 +9,7 @@ IF (${PACKAGE_NAME}_ENABLE_Epetra)
       AggregationExample
       SOURCES AggregationExample.cpp
       COMM serial mpi
+      DEPLIBS muelu muelu-cthulhu
       )
 #  ENDIF()
 ENDIF()
