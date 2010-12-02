@@ -49,7 +49,7 @@ public:
 
   //! Constructor
   twoD_diffusion_ME(
-    const Teuchos::RCP<Epetra_Comm>& comm, int n, int d,
+    const Teuchos::RCP<const Epetra_Comm>& comm, int n, int d,
     double s = 0.1, double mu = 0.2, 
     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis = 
     Teuchos::null,

@@ -141,7 +141,7 @@ computeTripleProductTensor(ordinal_type order) const
 
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
+    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>);
 
   // Create 1-D triple products
   Teuchos::Array< Teuchos::RCP<Dense3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
@@ -179,14 +179,21 @@ computeDerivTripleProductTensor(
       for (ordinal_type k=0; k<sz; k++)
 	(*Dijk)(i,j,k) = value_type(0.0);
 
-  ordinal_type i,j;
+  ordinal_type i,j,m;
   value_type c;
   for (ordinal_type k=0; k<sz; k++) {
-    for (ordinal_type m=0; m<sz; m++) {
-      ordinal_type n = Cijk->num_values(m);
-      for (ordinal_type l=0; l<n; l++) {
-	Cijk->value(m,l,i,j,c);
-	(*Dijk)(i,j,k) += (*Bij)(m,k)*c/norms[m];
+    for (typename Cijk_type::k_iterator m_it=Cijk->k_begin(); 
+	 m_it!=Cijk->k_end(); ++m_it) {
+      m = index(m_it);
+      for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(m_it); 
+	   j_it != Cijk->j_end(m_it); ++j_it) {
+	j = index(j_it);
+	for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	     i_it != Cijk->i_end(j_it); ++i_it) {
+	  i = index(i_it);
+	  c = value(i_it);
+	  (*Dijk)(i,j,k) += (*Bij)(m,k)*c/norms[m];
+	}
       }
     }
   }

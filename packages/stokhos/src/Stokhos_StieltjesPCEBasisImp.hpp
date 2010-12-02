@@ -290,9 +290,10 @@ integrateBasisSquaredProj(
 
   // Compute \int \eta phi_k^2(\eta) d\eta
   val2 = value_type(0);
+  typename Cijk_type::k_iterator k_it = Cijk->find_k(k);
   for (ordinal_type l=0; l<npc; l++) {
-    for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
-	 j_it != Cijk->j_end(k); ++j_it) {
+    for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	 j_it != Cijk->j_end(k_it); ++j_it) {
       ordinal_type j = index(j_it);
       for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
 	   i_it != Cijk->i_end(j_it); ++i_it) {

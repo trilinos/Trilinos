@@ -28,7 +28,6 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Epetra_config.h"
 #include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_KLReducedMatrixFreeOperator.hpp"
 #include "Stokhos_PCEAnasaziKL.hpp"
@@ -41,22 +40,27 @@
 
 Stokhos::KLReducedMatrixFreeOperator::
 KLReducedMatrixFreeOperator(
- const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
- const Teuchos::RCP<const Epetra_Map>& range_base_map_,
- const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
- const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
- const Teuchos::RCP<Teuchos::ParameterList>& params_) : 
+  const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
+  const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
+  const Teuchos::RCP<const Epetra_Map>& range_base_map_,
+  const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
+  const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
+  const Teuchos::RCP<Teuchos::ParameterList>& params_) : 
   label("Stokhos KL Reduced Matrix Free Operator"),
+  sg_comm(sg_comm_),
+  sg_basis(sg_basis_),
+  epetraCijk(epetraCijk_),
   domain_base_map(domain_base_map_),
   range_base_map(range_base_map_),
   domain_sg_map(domain_sg_map_),
   range_sg_map(range_sg_map_),
-  sg_basis(),
-  Cijk(),
+  Cijk(epetraCijk->getParallelCijk()),
   block_ops(),
   params(params_),
   useTranspose(false),
-  expansion_size(0),
+  expansion_size(sg_basis->size()),
   num_blocks(0),
   num_KL(0),
   num_KL_computed(0),
@@ -75,13 +79,9 @@ KLReducedMatrixFreeOperator(
 void 
 Stokhos::KLReducedMatrixFreeOperator::
 setupOperator(
-   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops,
-   const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_)
+   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
 {
   block_ops = ops;
-  Cijk = Cijk_;
-  sg_basis = block_ops->basis();
-  expansion_size = sg_basis->size();
   num_blocks = block_ops->size();
 
   // Build a vector polynomial out of matrix nonzeros
@@ -112,13 +112,6 @@ getSGPolynomial() const
   return block_ops;
 }
 
-Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
-Stokhos::KLReducedMatrixFreeOperator::
-getTripleProduct() const
-{
-  return Cijk;
-}
-
 Stokhos::KLReducedMatrixFreeOperator::
 ~KLReducedMatrixFreeOperator()
 {
@@ -129,6 +122,7 @@ Stokhos::KLReducedMatrixFreeOperator::
 SetUseTranspose(bool UseTranspose) 
 {
   useTranspose = UseTranspose;
+  kl_mat_free_op->SetUseTranspose(useTranspose);
   for (int i=0; i<num_blocks; i++)
     (*block_ops)[i].SetUseTranspose(useTranspose);
 
@@ -183,12 +177,14 @@ const Epetra_Comm &
 Stokhos::KLReducedMatrixFreeOperator::
 Comm() const
 {
-  return domain_base_map->Comm();
+  return *sg_comm;
 }
 const Epetra_Map& 
 Stokhos::KLReducedMatrixFreeOperator::
 OperatorDomainMap() const
 {
+  if (useTranspose)
+    return *range_sg_map;
   return *domain_sg_map;
 }
 
@@ -196,6 +192,8 @@ const Epetra_Map&
 Stokhos::KLReducedMatrixFreeOperator::
 OperatorRangeMap() const
 {
+  if (useTranspose)
+    return *domain_sg_map;
   return *range_sg_map;
 }
 
@@ -225,16 +223,31 @@ setup()
     }
   }
 
+  int myPID = sg_comm->MyPID();
+
   // Compute KL expansion of solution sg_J_vec_poly
   Stokhos::PCEAnasaziKL pceKL(*block_vec_poly, num_KL);
   Teuchos::ParameterList anasazi_params = pceKL.getDefaultParams();
   bool result = pceKL.computeKL(anasazi_params);
-  if (!result)
+  if (!result && myPID == 0)
     std::cout << "KL Eigensolver did not converge!" << std::endl;
-  //Teuchos::Array<double> evals = pceKL.getEigenvalues();
   Teuchos::RCP<Epetra_MultiVector> evecs = pceKL.getEigenvectors();
-  num_KL_computed = evecs->NumVectors();
-  std::cout << "num computed evecs = " << num_KL_computed << std::endl;
+  Teuchos::Array<double> evals = pceKL.getEigenvalues();
+  //num_KL_computed = evecs->NumVectors();
+  if (myPID == 0)
+    std::cout << "num computed eigenvectors  = " 
+	      << evecs->NumVectors() << std::endl;
+  double kl_tol = params->get("KL Tolerance", 1e-6);
+  num_KL_computed = 0;
+  while (num_KL_computed < evals.size() && 
+	 std::sqrt(evals[num_KL_computed]/evals[0]) > kl_tol)
+    num_KL_computed++;
+  if (num_KL_computed == evals.size() && myPID == 0) 
+    std::cout << "Can't achieve KL tolerance " << kl_tol
+	      << ".  Smallest eigenvalue / largest eigenvalue = " 
+	      << std::sqrt(evals[num_KL_computed-1]/evals[0]) << std::endl;
+  if (myPID == 0)
+    std::cout << "num KL eigenvectors = " << num_KL_computed << std::endl;
 
   // Compute dot products of Jacobian blocks and KL eigenvectors
   dot_products.resize(num_KL_computed);
@@ -250,18 +263,23 @@ setup()
   // Compute KL coefficients
   const Teuchos::Array<double>& norms = sg_basis->norm_squared();
   sparse_kl_coeffs = 
-    //Teuchos::rcp(new Stokhos::Sparse3Tensor<int,double>(num_KL_computed+1));
-    Teuchos::rcp(new Stokhos::Sparse3Tensor<int,double>(expansion_size));
-  for (int i=0; i<expansion_size; i++)
+    Teuchos::rcp(new Stokhos::Sparse3Tensor<int,double>);
+  for (Cijk_type::i_iterator i_it=Cijk->i_begin(); 
+       i_it!=Cijk->i_end(); ++i_it) {
+    int i = epetraCijk->GRID(index(i_it));
     sparse_kl_coeffs->sum_term(i, i, 0, norms[i]);
-  for (int l=1; l<num_blocks; l++) {
-    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(l); 
-	 j_it != Cijk->j_end(l); ++j_it) {
-      int j = index(j_it);
+  }
+  Cijk_type::k_iterator l_begin = ++(Cijk->k_begin());
+  Cijk_type::k_iterator l_end = Cijk->k_end();
+  for (Cijk_type::k_iterator l_it=l_begin; l_it!=l_end; ++l_it) {
+    int l = index(l_it);
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(l_it); 
+	 j_it != Cijk->j_end(l_it); ++j_it) {
+      int j = epetraCijk->GCID(index(j_it));
       for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
 	   i_it != Cijk->i_end(j_it); ++i_it) {
-	int i = index(i_it);
-	double c  = value(i_it);
+	int i = epetraCijk->GRID(index(i_it));
+	double c = value(i_it);
 	for (int k=1; k<num_KL_computed+1; k++) {
 	  double dp = dot_products[k-1][l-1];
 	  double v = dp*c;
@@ -279,8 +297,8 @@ setup()
 				       "sparse_KL_coeffs");
     std::stringstream ss;
     ss << basename << "_" << idx++ << ".mm";
-    sparse3Tensor2MatrixMarket(*sg_basis, *sparse_kl_coeffs, 
-			       domain_base_map->Comm(), ss.str());
+    sparse3Tensor2MatrixMarket(*sparse_kl_coeffs, 
+			       *(epetraCijk->getStochasticRowMap()), ss.str());
   }
 
   // Transform eigenvectors back to matrices
@@ -301,17 +319,29 @@ setup()
     }
     kl_ops->setCoeffPtr(rv+1, kl_blocks[rv]);
   }
-  if (kl_mat_free_op == Teuchos::null)
-    kl_mat_free_op = Teuchos::rcp(new Stokhos::MatrixFreeOperator(domain_base_map, range_base_map, domain_sg_map, range_sg_map));
-  kl_mat_free_op->setupOperator(kl_ops, sparse_kl_coeffs);
+
+  Teuchos::RCP<Stokhos::EpetraSparse3Tensor> reducedEpetraCijk =
+    Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(
+		   sg_basis, sparse_kl_coeffs, sg_comm, 
+		   epetraCijk->getStochasticRowMap(), sparse_kl_coeffs,
+		   0, -1));
+  reducedEpetraCijk->transformToLocal();
+
+  // Create matrix-free op
+  kl_mat_free_op = Teuchos::rcp(new Stokhos::MatrixFreeOperator(
+				  sg_comm, sg_basis, reducedEpetraCijk,
+				  domain_base_map, range_base_map, 
+				  domain_sg_map, range_sg_map, params));
+  kl_mat_free_op->setupOperator(kl_ops);
 
   // Check accuracy of KL expansion
   if (do_error_tests) {
     Teuchos::Array<double> point(sg_basis->dimension());
     for (int i=0; i<sg_basis->dimension(); i++)
       point[i] = 0.5;
-    Teuchos::Array<double> basis_vals(num_blocks);
+    Teuchos::Array<double> basis_vals(sg_basis->size());
     sg_basis->evaluateBases(point, basis_vals);
+
     Epetra_Vector val(*block_vec_map);
     Epetra_Vector val_kl(*block_vec_map);
     block_vec_poly->evaluate(basis_vals, val);
@@ -326,23 +356,30 @@ setup()
       val_rvs[rv] = rvs[rv].evaluate(point, basis_vals);
       val_kl.Update(val_rvs[rv], *((*evecs)(rv)), 1.0);
     } 
+    double nrm;
+    val.NormInf(&nrm);
     val.Update(-1.0, val_kl, 1.0);
     double diff;
     val.NormInf(&diff);
-    std::cout << "Infinity norm of random field difference = " << diff 
-	      << std::endl;
+    if (myPID == 0)
+      std::cout << "Infinity norm of random field difference = " << diff/nrm
+		<< std::endl;
   
     // Check accuracy of operator
     Epetra_Vector op_input(*domain_sg_map), op_result(*range_sg_map), op_kl_result(*range_sg_map);
     op_input.PutScalar(1.0);
-    Stokhos::MatrixFreeOperator op(domain_base_map, range_base_map, domain_sg_map, range_sg_map, params);
-    op.setupOperator(block_ops, Cijk);
+    Stokhos::MatrixFreeOperator op(sg_comm, sg_basis, epetraCijk, 
+				   domain_base_map, range_base_map, 
+				   domain_sg_map, range_sg_map, params);
+    op.setupOperator(block_ops);
     op.Apply(op_input, op_result);
     this->Apply(op_input, op_kl_result);
+    op_result.NormInf(&nrm);
     op_result.Update(-1.0, op_kl_result, 1.0);
     op_result.NormInf(&diff);
-    std::cout << "Infinity norm of operator difference = " << diff 
-	      << std::endl;
+    if (myPID == 0)
+      std::cout << "Infinity norm of operator difference = " << diff/nrm
+		<< std::endl;
   }
 
 #else

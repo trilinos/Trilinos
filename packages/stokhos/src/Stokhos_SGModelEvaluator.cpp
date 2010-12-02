@@ -32,27 +32,23 @@
 
 #include <algorithm>
 #include "Teuchos_TestForException.hpp"
-#ifdef HAVE_MPI
-#include "EpetraExt_MultiMpiComm.h"
-#else
-#include "EpetraExt_MultiSerialComm.h"
-#endif
 #include "EpetraExt_BlockUtility.h"
-#include "EpetraExt_BlockCrsMatrix.h"
 #include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_SGOperatorFactory.hpp"
 #include "Stokhos_SGPreconditionerFactory.hpp"
 #include "Stokhos_MatrixFreeOperator.hpp"
 #include "Stokhos_EpetraMultiVectorOperator.hpp"
+#include "Epetra_LocalMap.h"
+#include "Epetra_Export.h"
+#include "Epetra_Import.h"
 
 Stokhos::SGModelEvaluator::SGModelEvaluator(
   const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
   const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& sg_quad_,
   const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp_,
-  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
+  const Teuchos::RCP<const Stokhos::ParallelData>& sg_parallel_data_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_,
-  const Teuchos::RCP<const Epetra_Comm>& comm,
   const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg,
   const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg,
   bool scaleOP_) 
@@ -67,9 +63,19 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     supports_x(false),
     x_map(me->get_x_map()),
     f_map(me->get_f_map()),
-    sg_comm(),
+    sg_parallel_data(sg_parallel_data_),
+    sg_comm(sg_parallel_data->getMultiComm()),
+    epetraCijk(sg_parallel_data->getEpetraCijk()),
+    serialCijk(),
     sg_x_map(),
+    sg_overlapped_x_map(),
     sg_f_map(),
+    sg_overlapped_f_map(),
+    sg_overlapped_x_importer(),
+    sg_overlapped_f_exporter(),
+    sg_overlapped_x(),
+    sg_overlapped_x_dot(),
+    sg_overlapped_f(),
     num_p(0),
     num_p_sg(0),
     sg_p_map(),
@@ -77,7 +83,6 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     num_g(0),
     num_g_sg(0),
     sg_g_map(),
-    Cijk(Cijk_),
     x_dot_sg_blocks(),
     x_sg_blocks(),
     p_sg_blocks(),
@@ -95,48 +100,39 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   if (x_map != Teuchos::null)
     supports_x = true;
 
-  Teuchos::RCP<EpetraExt::MultiComm> multiComm;
-#ifdef HAVE_MPI
-  // No parallelism over blocks, so spatial partition is unchanged 
-  // as comm->NumProc()
-  multiComm =
-    Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD, 
-					     comm->NumProc(), 
-					     num_sg_blocks));
-#else
-  multiComm = Teuchos::rcp(new EpetraExt::MultiSerialComm(num_sg_blocks));
-#endif
-  sg_comm = multiComm;
-  int numBlockRows =  multiComm->NumTimeSteps();
-  int myBlockRows  =  multiComm->NumTimeStepsOnDomain();
-  int myFirstBlockRow = multiComm->FirstTimeStepOnDomain();
-
-  // DENSE STENCIL for Stochastic Galerkin
-  // For 3 blocks on 2 procs, this should be:
-  // Proc  nBR  mBR  mFBR     Stencil      Index
-  //  0     3    2    0       0  1  2        0
-  //                         -1  0  1        1
-  //  1     3    1    2      -2 -1  0        2
-  //
-  rowStencil.resize(myBlockRows);
-  rowIndex.resize(myBlockRows);
-  for (int i=0; i < myBlockRows; i++) {
-    for (int j=0; j < numBlockRows; j++) 
-      rowStencil[i].push_back(-myFirstBlockRow - i + j);
-    rowIndex[i] = (i + myFirstBlockRow);
-  }
+  Teuchos::RCP<const Epetra_BlockMap> stoch_row_map =
+    epetraCijk->getStochasticRowMap();
+  Teuchos::RCP<const Epetra_BlockMap> overlapped_stoch_row_map = 
+    Teuchos::rcp(new Epetra_LocalMap(
+		   num_sg_blocks, 0, *(sg_parallel_data->getStochasticComm())));
 
   if (supports_x) {
 
     // Create block SG x and f maps
     sg_x_map = 
-      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*x_map,
-							     rowIndex,
-							     *sg_comm));
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+		     *x_map, *stoch_row_map, *sg_comm));
+    sg_overlapped_x_map = 
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+		     *x_map, *overlapped_stoch_row_map, *sg_comm));
+
     sg_f_map = 
-      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*f_map,
-							     rowIndex,
-							     *sg_comm));
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+		     *f_map, *stoch_row_map, *sg_comm));
+    sg_overlapped_f_map = 
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+		     *f_map, *overlapped_stoch_row_map, *sg_comm));
+
+    // Create importer/exporter from/to overlapped distribution
+    sg_overlapped_x_importer = 
+      Teuchos::rcp(new Epetra_Import(*sg_overlapped_x_map, *sg_x_map));
+    sg_overlapped_f_exporter = 
+      Teuchos::rcp(new Epetra_Export(*sg_overlapped_f_map, *sg_f_map));
+
+    // Create overlapped vectors
+    sg_overlapped_x = Teuchos::rcp(new Epetra_Vector(*sg_overlapped_x_map));
+    sg_overlapped_x_dot = Teuchos::rcp(new Epetra_Vector(*sg_overlapped_x_map));
+    sg_overlapped_f = Teuchos::rcp(new Epetra_Vector(*sg_overlapped_f_map));
     
     // Create vector blocks
     x_dot_sg_blocks = 
@@ -186,9 +182,8 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   for (int i=0; i<num_p_sg; i++) {
     Teuchos::RCP<const Epetra_Map> p_map = me->get_p_sg_map(i);
     sg_p_map[i] = 
-      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*p_map,
-							     rowIndex,
-							     *sg_comm));
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+		     *p_map, *overlapped_stoch_row_map, *sg_comm));
     
     Teuchos::RCP<const Teuchos::Array<std::string> > p_names = 
       me->get_p_sg_names(i);
@@ -248,9 +243,8 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   for (int i=0; i<num_g_sg; i++) {
     Teuchos::RCP<const Epetra_Map> g_map = me->get_g_sg_map(i);
     sg_g_map[i] = 
-      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*g_map,
-							     rowIndex,
-							     *sg_comm));
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(
+		     *g_map, *overlapped_stoch_row_map, *sg_comm));
     
     // Create g SG blocks
     g_sg_blocks[i] = 
@@ -274,6 +268,7 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
 
     // Create df/dp SG blocks
     dfdp_sg_blocks.resize(num_p_sg);
+    sg_overlapped_dfdp.resize(num_p_sg);
     for (int i=0; i<num_p_sg; i++)
       dfdp_sg_blocks[i] = 
 	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(sg_basis));
@@ -282,24 +277,40 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     sg_x_init = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
     if (initial_x_sg != Teuchos::null) {
       // Use supplied initial guess
-      initial_x_sg->assignToBlockVector(*sg_x_init);
+      EpetraExt::BlockVector sg_overlapped_x_init(*x_map, 
+						  *sg_overlapped_x_map);
+      initial_x_sg->assignToBlockVector(sg_overlapped_x_init);
+      sg_x_init->Export(sg_overlapped_x_init, *sg_overlapped_x_importer, 
+			Insert);
     }
     else {
       Teuchos::RCP<const EpetraVectorOrthogPoly> init_x_sg = 
 	me->get_x_sg_init();
       if (init_x_sg != Teuchos::null) {
 	// Use initial guess provided by underlying model evaluator
-	init_x_sg->assignToBlockVector(*sg_x_init);
+	EpetraExt::BlockVector sg_overlapped_x_init(*x_map, 
+						    *sg_overlapped_x_map);
+	init_x_sg->assignToBlockVector(sg_overlapped_x_init);
+	sg_x_init->Export(sg_overlapped_x_init, *sg_overlapped_x_importer, 
+			  Insert);
       }
       else {
 	// Use default choice of deterministic initial guess for mean
-	sg_x_init->LoadBlockValues(*(me->get_x_init()), 0);
+	if (stoch_row_map->MyGID(0))
+	  sg_x_init->LoadBlockValues(*(me->get_x_init()), 0);
       }
     }
    
   }
   
   eval_W_with_f = params->get("Evaluate W with F", false);
+
+  // We don't support parallel for dgdx yet, so build a new EpetraCijk
+  serialCijk =
+    Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(sg_basis, 
+						  epetraCijk->getCijk(), 
+						  sg_comm,
+						  overlapped_stoch_row_map));
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -380,18 +391,19 @@ Stokhos::SGModelEvaluator::create_W() const
   if (supports_x) {
     Teuchos::RCP<Teuchos::ParameterList> sgOpParams =
       Teuchos::rcp(&(params->sublist("SG Operator")), false);
+    Teuchos::RCP<Epetra_CrsMatrix> W_crs;
     if (sgOpParams->get("Operator Method", "Matrix Free") == 
 	"Fully Assembled") {
-      Teuchos::RCP<Epetra_CrsMatrix> W_crs =
-	Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(me->create_W(), true);
-      sgOpParams->set< Teuchos::RCP<const Epetra_CrsMatrix> >("Base Matrix", 
-	W_crs);
-      sgOpParams->set< Teuchos::RCP<const std::vector< std::vector<int> > > >("Row Stencil", Teuchos::rcp(&rowStencil,false));
-      sgOpParams->set< Teuchos::RCP<const std::vector<int> > >("Row Index", Teuchos::rcp(&rowIndex,false));
+      W_crs = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(me->create_W(), true);
+      Teuchos::RCP<const Epetra_CrsGraph> W_graph =
+	Teuchos::rcp(&(W_crs->Graph()), false);
+      sgOpParams->set< Teuchos::RCP<const Epetra_CrsGraph> >("Base Graph", 
+	W_graph);
     }
     Stokhos::SGOperatorFactory sg_op_factory(sgOpParams);
-    my_W = sg_op_factory.build(x_map, f_map, sg_x_map, sg_f_map);
-    my_W->setupOperator(W_sg_blocks, Cijk);
+    my_W = sg_op_factory.build(sg_comm, sg_basis, epetraCijk, x_map, f_map, 
+			       sg_x_map, sg_f_map);
+    my_W->setupOperator(W_sg_blocks);
 
     return my_W;
   }
@@ -407,7 +419,7 @@ Stokhos::SGModelEvaluator::create_WPrec() const
       Teuchos::rcp(&(params->sublist("SG Preconditioner")), false);
     Stokhos::SGPreconditionerFactory sg_prec_factory(sgPrecParams);
     Teuchos::RCP<Epetra_Operator> precOp = 
-      sg_prec_factory.build(x_map, sg_x_map);
+      sg_prec_factory.build(sg_comm, sg_basis, epetraCijk, x_map, sg_x_map);
     return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(precOp,
 								      true));
   }
@@ -451,11 +463,13 @@ Stokhos::SGModelEvaluator::create_DgDx_op(int j) const
 			 "Error!  me_outargs.supports(OUT_ARG_DgDx_sg, " << j
 			 << ").none() is true!");
 
+    Teuchos::RCP<Teuchos::ParameterList> pl = 
+      Teuchos::rcp(new Teuchos::ParameterList);
     Teuchos::RCP<Stokhos::SGOperator> dgdx_sg = 
       Teuchos::rcp(new Stokhos::MatrixFreeOperator(
-		     x_map, me->get_g_sg_map(jj), sg_x_map, 
-		     sg_g_map[jj]));
-    dgdx_sg->setupOperator(sg_blocks, Cijk);
+		     sg_comm, sg_basis, serialCijk, x_map, me->get_g_sg_map(jj),
+		     sg_x_map, sg_g_map[jj], pl));
+    dgdx_sg->setupOperator(sg_blocks);
     return dgdx_sg;
   }
   else 
@@ -503,11 +517,13 @@ Stokhos::SGModelEvaluator::create_DgDx_dot_op(int j) const
 			 "Error!  me_outargs.supports(OUT_ARG_DgDx_dot_sg, " 
 			 << j << ").none() is true!");
 
+    Teuchos::RCP<Teuchos::ParameterList> pl = 
+      Teuchos::rcp(new Teuchos::ParameterList);
     Teuchos::RCP<Stokhos::SGOperator> dgdx_dot_sg = 
       Teuchos::rcp(new Stokhos::MatrixFreeOperator(
-		     x_map, me->get_g_sg_map(jj), sg_x_map, 
-		     sg_g_map[jj]));
-    dgdx_dot_sg->setupOperator(sg_blocks, Cijk);
+		     sg_comm, sg_basis, serialCijk, x_map, me->get_g_sg_map(jj),
+		     sg_x_map, sg_g_map[jj], pl));
+    dgdx_dot_sg->setupOperator(sg_blocks);
   }
   else 
     TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -633,12 +649,14 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   // Create underlying inargs
   InArgs me_inargs = me->createInArgs();
   if (x != Teuchos::null) {
-    x_sg_blocks->resetCoefficients(View, *x_map, *x);
+    sg_overlapped_x->Import(*x, *sg_overlapped_x_importer, Insert);
+    x_sg_blocks->resetCoefficients(View, *x_map, *sg_overlapped_x);
     me_inargs.set_x_sg(x_sg_blocks);
   }
   if (x_dot != Teuchos::null) {
+    sg_overlapped_x_dot->Import(*x_dot, *sg_overlapped_x_importer, Insert);
+    x_dot_sg_blocks->resetCoefficients(View, *x_map, *sg_overlapped_x_dot);
     me_inargs.set_x_dot_sg(x_dot_sg_blocks);
-    x_dot_sg_blocks->resetCoefficients(View, *x_map, *x_dot);
   }
   if (me_inargs.supports(IN_ARG_alpha))
     me_inargs.set_alpha(inArgs.get_alpha());
@@ -686,7 +704,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 
   // f
   if (f_out != Teuchos::null) {
-    f_sg_blocks->resetCoefficients(View, *f_map, *f_out);
+    f_sg_blocks->resetCoefficients(View, *f_map, *sg_overlapped_f);
     me_outargs.set_f_sg(f_sg_blocks);
     if (eval_W_with_f)
       me_outargs.set_W_sg(W_sg_blocks);
@@ -701,8 +719,14 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
     if (!outArgs.supports(OUT_ARG_DfDp, i).none()) {
       Derivative dfdp = outArgs.get_DfDp(i);
       if (dfdp.getMultiVector() != Teuchos::null) {
+	if (sg_overlapped_dfdp[i] == Teuchos::null)
+	  sg_overlapped_dfdp[i] = 
+	    Teuchos::rcp(new Epetra_MultiVector(
+			   *sg_overlapped_f_map, 
+			   dfdp.getMultiVector()->NumVectors()));
+	
 	dfdp_sg_blocks[i]->resetCoefficients(View, *(me->get_f_map()), 
-					     *(dfdp.getMultiVector()));
+					     *sg_overlapped_dfdp[i]);
 	me_outargs.set_DfDp_sg(i, 
 			       SGDerivative(dfdp_sg_blocks[i],
 					    dfdp.getMultiVectorOrientation()));
@@ -829,7 +853,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   // Compute the functions
   me->evalModel(me_inargs, me_outargs);
 
-  // Copy block SG components for f and W into f and W
+  // Copy block SG components for W
   if ((W_out != Teuchos::null || (eval_W_with_f && f_out != Teuchos::null)) 
       && !eval_prec) {
     Teuchos::RCP<Epetra_Operator> W;
@@ -839,7 +863,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       W = my_W;
     Teuchos::RCP<Stokhos::SGOperator> W_sg = 
       Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(W, true);
-    W_sg->setupOperator(W_sg_blocks, Cijk);
+    W_sg->setupOperator(W_sg_blocks);
       
     if (WPrec_out != Teuchos::null) {
       Teuchos::RCP<Stokhos::SGPreconditioner> W_prec = 
@@ -847,10 +871,24 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       W_prec->setupPreconditioner(W_sg, *my_x);
     }
   }
-  if (f_out!=Teuchos::null && !scaleOP) {
-   for (int i=0; i<sg_basis->size(); i++) {
-     (*f_sg_blocks)[i].Scale(sg_basis->norm_squared(i));
-   } 
+
+  // f
+  if (f_out!=Teuchos::null){
+    if (!scaleOP)
+      for (int i=0; i<sg_basis->size(); i++)
+	(*f_sg_blocks)[i].Scale(sg_basis->norm_squared(i));
+    f_out->Export(*sg_overlapped_f, *sg_overlapped_f_exporter, Insert);
+  }
+
+  // df/dp
+  for (int i=0; i<outArgs.Np(); i++) {
+    if (!outArgs.supports(OUT_ARG_DfDp, i).none()) {
+      Derivative dfdp = outArgs.get_DfDp(i);
+      if (dfdp.getMultiVector() != Teuchos::null) {
+	dfdp.getMultiVector()->Export(*sg_overlapped_dfdp[i], 
+				      *sg_overlapped_f_exporter, Insert);
+      }
+    }
   }
 }
 
@@ -912,4 +950,40 @@ Stokhos::SGModelEvaluator::get_g_sg_base_maps() const
   for (int i=0; i<num_g_sg; i++)
     base_maps[i] = me->get_g_sg_map(i);
   return base_maps;
+}
+
+Teuchos::RCP<EpetraExt::BlockVector> 
+Stokhos::SGModelEvaluator::import_solution(const Epetra_Vector& x) const
+{
+  Teuchos::RCP<EpetraExt::BlockVector> x_overlapped = 
+    Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_overlapped_x_map));
+  x_overlapped->Import(x, *sg_overlapped_x_importer, Insert);
+  return x_overlapped;
+}
+
+Teuchos::RCP<EpetraExt::BlockVector> 
+Stokhos::SGModelEvaluator::export_solution(const Epetra_Vector& x_overlapped) const
+{
+  Teuchos::RCP<EpetraExt::BlockVector> x = 
+    Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
+  x->Export(x_overlapped, *sg_overlapped_x_importer, Insert);
+  return x;
+}
+
+Teuchos::RCP<EpetraExt::BlockVector> 
+Stokhos::SGModelEvaluator::import_residual(const Epetra_Vector& f) const
+{
+  Teuchos::RCP<EpetraExt::BlockVector> f_overlapped = 
+    Teuchos::rcp(new EpetraExt::BlockVector(*f_map, *sg_overlapped_f_map));
+  f_overlapped->Import(f, *sg_overlapped_f_exporter, Insert);
+  return f_overlapped;
+}
+
+Teuchos::RCP<EpetraExt::BlockVector> 
+Stokhos::SGModelEvaluator::export_residual(const Epetra_Vector& f_overlapped) const
+{
+  Teuchos::RCP<EpetraExt::BlockVector> f = 
+    Teuchos::rcp(new EpetraExt::BlockVector(*f_map, *sg_f_map));
+  f->Export(f_overlapped, *sg_overlapped_f_exporter, Insert);
+  return f;
 }

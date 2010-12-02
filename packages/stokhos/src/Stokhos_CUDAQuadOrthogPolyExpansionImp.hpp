@@ -302,24 +302,33 @@ compute_times_coeff(int k, const ExprT1& a, const ExprT2& b) const
   int pa = a.size();
   int pb = b.size();
 
+  typename Cijk_type::k_iterator k_it = Cijk->find_k(k);
+
   if (pa > 1 && pb > 1) {
     float cc = float(0);
     float aa, bb, cijk;
     int i,j;
     cc = float(0.0);
-    int n = Cijk->num_values(k);
-    for (int l=0; l<n; l++) {
-      Cijk->value(k,l,i,j,cijk);
-      if (i < pa && j < pb) {
-	if (i == 0)
-	  aa = a.val();
-	else
-	  aa = a.higher_order_coeff(i);
+    for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	 j_it != Cijk->j_end(k_it); ++j_it) {
+      j = index(j_it);
+      if (j < pb) {
 	if (j == 0)
 	  bb = b.val();
 	else
 	  bb = b.higher_order_coeff(j);
-	cc += cijk*aa*bb;
+	for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	     i_it != Cijk->i_end(j_it); ++i_it) {
+	  i = index(i_it);
+	  cijk = value(i_it);
+	  if (i < pa) {
+	    if (i == 0)
+	      aa = a.val();
+	    else
+	      aa = a.higher_order_coeff(i);
+	  }
+	  cc += cijk*aa*bb;
+	}
       }
     }
     return cc / basis->norm_squared(k);
@@ -342,18 +351,24 @@ fast_compute_times_coeff(int k, const ExprT1& a, const ExprT2& b) const
   float cc = float(0);
   float aa, bb, cijk;
   int i,j;
-  int n = Cijk->num_values(k);
-  for (int l=0; l<n; l++) {
-    Cijk->value(k,l,i,j,cijk);
-    if (i == 0)
-      aa = a.val();
-    else
-      aa = a.fast_higher_order_coeff(i);
+  typename Cijk_type::k_iterator k_it = Cijk->find_k(k);
+  for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+       j_it != Cijk->j_end(k_it); ++j_it) {
+    j = index(j_it);
     if (j == 0)
       bb = b.val();
     else
       bb = b.fast_higher_order_coeff(j);
-    cc += cijk*aa*bb;
+    for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	 i_it != Cijk->i_end(j_it); ++i_it) {
+      i = index(i_it);
+      cijk = value(i_it);
+      if (i == 0)
+	aa = a.val();
+      else
+	aa = a.fast_higher_order_coeff(i);
+      cc += cijk*aa*bb;
+    }
   }
   return cc / basis->norm_squared(k);
 }

@@ -44,6 +44,13 @@ Stokhos::BasisFactory<ordinal_type, value_type>::
 create(Teuchos::ParameterList& sgParams)
 {
   Teuchos::ParameterList& basisParams = sgParams.sublist("Basis");
+
+  // Check if basis is already there
+  Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis
+    = basisParams.template get< Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > >("Stochastic Galerkin Basis", Teuchos::null);
+  if (basis != Teuchos::null) 
+    return basis;
+
   ordinal_type dimension = basisParams.get("Dimension", 1);
   Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(dimension);
   for (ordinal_type i=0; i<dimension; i++) {
@@ -63,20 +70,19 @@ create(Teuchos::ParameterList& sgParams)
       bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(order, normalize));
     else if (type == "Rys") {
       value_type cut = bp.get("Weight Cut", 1.0);
-      bases[i] = Teuchos::rcp(new Stokhos::RysBasis<ordinal_type,value_type>(order, cut,
-								normalize));
+      bases[i] = Teuchos::rcp(new Stokhos::RysBasis<ordinal_type,value_type>(order, cut, normalize));
     }
     else
       TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
 			 std::endl << 
 			 "Error!  Stokhos::BasisFactory::create():  " <<
 			 "Invalid basis type  " << type << std::endl);
-
+    
     
   }
-  Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis = 
+  basis = 
     Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
   basisParams.set("Stochastic Galerkin Basis", basis);
-
+  
   return basis;
 }

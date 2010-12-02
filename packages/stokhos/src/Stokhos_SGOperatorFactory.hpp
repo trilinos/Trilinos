@@ -34,6 +34,9 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Stokhos_SGOperator.hpp"
+#include "EpetraExt_MultiComm.h"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Epetra_Map.h"
 
 namespace Stokhos {
@@ -51,10 +54,14 @@ namespace Stokhos {
 
     //! Build preconditioner operator
     virtual Teuchos::RCP<Stokhos::SGOperator> 
-    build(const Teuchos::RCP<const Epetra_Map>& domain_base_map,
-	  const Teuchos::RCP<const Epetra_Map>& range_base_map,
-	  const Teuchos::RCP<const Epetra_Map>& domain_sg_map,
-	  const Teuchos::RCP<const Epetra_Map>& range_sg_map);
+    build(
+      const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
+      const Teuchos::RCP<const Epetra_Map>& domain_base_map,
+      const Teuchos::RCP<const Epetra_Map>& range_base_map,
+      const Teuchos::RCP<const Epetra_Map>& domain_sg_map,
+      const Teuchos::RCP<const Epetra_Map>& range_sg_map);
 
   private:
     

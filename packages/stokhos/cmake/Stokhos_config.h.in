@@ -33,6 +33,9 @@
 /* Define if NOX is enabled */
 #cmakedefine HAVE_STOKHOS_NOX
 
+/* Define if Isorropia is enabled */
+#cmakedefine HAVE_STOKHOS_ISORROPIA
+
 /* Define if Teuchos timers are enabled */
 #cmakedefine STOKHOS_TEUCHOS_TIME_MONITOR
 

@@ -52,13 +52,13 @@
 int main(int argc, char *argv[]) {
   int n = 32;                        // spatial discretization (per dimension)
   int num_KL = 2;                    // number of KL terms
-  int p = 5;                         // polynomial order
+  int p = 3;                         // polynomial order
   double mu = 0.1;                   // mean of exponential random field
   double s = 0.2;                    // std. dev. of exponential r.f.
   bool nonlinear_expansion = false;  // nonlinear expansion of diffusion coeff
                                      // (e.g., log-normal)
   bool matrix_free = true;           // use matrix-free stochastic operator
-  bool symmetric = true;            // use symmetric formulation
+  bool symmetric = false;            // use symmetric formulation
 
 // Initialize MPI
 #ifdef HAVE_MPI
@@ -73,14 +73,13 @@ int main(int argc, char *argv[]) {
     TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
 
     // Create a communicator for Epetra objects
-    Teuchos::RCP<Epetra_Comm> Comm;
+    Teuchos::RCP<const Epetra_Comm> globalComm;
 #ifdef HAVE_MPI
-    Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    globalComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-    Comm = Teuchos::rcp(new Epetra_SerialComm);
+    globalComm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
-
-    MyPID = Comm->MyPID();
+    MyPID = globalComm->MyPID();
     
     // Create Stochastic Galerkin basis and expansion
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
@@ -97,15 +96,30 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
 									 Cijk));
-    std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+    if (MyPID == 0)
+      std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+
+    // Create stochastic parallel distribution
+    int num_spatial_procs = -1;
+    if (argc > 1)
+      num_spatial_procs = std::atoi(argv[1]);
+    Teuchos::ParameterList parallelParams;
+    parallelParams.set("Number of Spatial Processors", num_spatial_procs);
+    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data =
+      Teuchos::rcp(new Stokhos::ParallelData(basis, Cijk, globalComm,
+					     parallelParams));
+    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm = 
+      sg_parallel_data->getMultiComm();
+    Teuchos::RCP<const Epetra_Comm> app_comm = 
+      sg_parallel_data->getSpatialComm();
 
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
-      Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, mu, s, basis, 
+      Teuchos::rcp(new twoD_diffusion_ME(app_comm, n, num_KL, mu, s, basis, 
 					 nonlinear_expansion, symmetric));
     
     // Set up stochastic parameters
-    Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
+    Epetra_LocalMap p_sg_map(num_KL, 0, *sg_comm);
     Teuchos::Array<Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >sg_p_init(1);
     sg_p_init[0]= Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, p_sg_map));
     for (int i=0; i<num_KL; i++) {
@@ -160,8 +174,9 @@ int main(int argc, char *argv[]) {
    // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
-                                                 expansion, Cijk, sgParams,
-                                                 Comm, sg_x_init, sg_p_init));
+                                                 expansion, sg_parallel_data, 
+						 sgParams, 
+						 sg_x_init, sg_p_init));
 
     // Set up NOX parameters
     Teuchos::RCP<Teuchos::ParameterList> noxParams = 
@@ -205,7 +220,7 @@ int main(int argc, char *argv[]) {
     lsParams.set("Max Iterations", 1000);
     lsParams.set("Size of Krylov Subspace", 100);
     lsParams.set("Tolerance", 1e-12); 
-    lsParams.set("Output Frequency", 10);
+    lsParams.set("Output Frequency", 1);
     if (matrix_free)
       lsParams.set("Preconditioner", "User Defined");
     else {
@@ -280,9 +295,11 @@ int main(int argc, char *argv[]) {
 					finalSolution);
 
     // Save mean and variance to file
+    Teuchos::RCP<Epetra_Vector> solution_overlapped = 
+      sg_model->import_solution(finalSolution);
     Stokhos::EpetraVectorOrthogPoly sg_x_poly(basis, View, 
 					      *(model->get_x_map()), 
-					      finalSolution);
+					      *solution_overlapped);
     Epetra_Vector mean(*(model->get_x_map()));
     Epetra_Vector std_dev(*(model->get_x_map()));
     sg_x_poly.computeMean(mean);
@@ -315,7 +332,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
-    if (status == NOX::StatusTest::Converged) 
+    if (status == NOX::StatusTest::Converged && MyPID == 0) 
       utils.out() << "Example Passed!" << std::endl;
 
     }

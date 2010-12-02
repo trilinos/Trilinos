@@ -43,7 +43,10 @@ SGOperatorFactory(const Teuchos::RCP<Teuchos::ParameterList>& params_) :
 
 Teuchos::RCP<Stokhos::SGOperator> 
 Stokhos::SGOperatorFactory::
-build(const Teuchos::RCP<const Epetra_Map>& domain_base_map,
+build(const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
+      const Teuchos::RCP<const Epetra_Map>& domain_base_map,
       const Teuchos::RCP<const Epetra_Map>& range_base_map,
       const Teuchos::RCP<const Epetra_Map>& domain_sg_map,
       const Teuchos::RCP<const Epetra_Map>& range_sg_map)
@@ -52,30 +55,27 @@ build(const Teuchos::RCP<const Epetra_Map>& domain_base_map,
   std::string op_method = params->get("Operator Method", "Matrix Free");
   if (op_method == "Matrix Free") {
     sg_op = Teuchos::rcp(new Stokhos::MatrixFreeOperator(
+			   sg_comm, sg_basis, epetraCijk, 
 			   domain_base_map, range_base_map, 
 			   domain_sg_map, range_sg_map, params));
   }
   else if (op_method == "KL Matrix Free") {
     sg_op = Teuchos::rcp(new Stokhos::KLMatrixFreeOperator(
+			   sg_comm, sg_basis, epetraCijk, 
 			   domain_base_map, range_base_map, 
 			   domain_sg_map, range_sg_map, params));
   }
   else if (op_method == "KL Reduced Matrix Free") {
     sg_op = Teuchos::rcp(new Stokhos::KLReducedMatrixFreeOperator(
+			   sg_comm, sg_basis, epetraCijk, 
 			   domain_base_map, range_base_map, 
 			   domain_sg_map, range_sg_map, params));
   }
   else if (op_method == "Fully Assembled") {
-    Teuchos::RCP<const Epetra_CrsMatrix> mat = 
-      params->get< Teuchos::RCP<const Epetra_CrsMatrix> >("Base Matrix");
-    Teuchos::RCP<const std::vector< std::vector<int> > > row_stencil =
-      params->get< Teuchos::RCP<const std::vector< std::vector<int> > > >("Row Stencil");
-    Teuchos::RCP<const std::vector<int> > row_index = 
-      params->get< Teuchos::RCP<const std::vector<int> > >("Row Index");
-    Teuchos::RCP<const Epetra_Comm> sg_comm = 
-      Teuchos::rcp(&(domain_sg_map->Comm()), false);
+    Teuchos::RCP<const Epetra_CrsGraph> base_graph = 
+      params->get< Teuchos::RCP<const Epetra_CrsGraph> >("Base Graph");
     sg_op = Teuchos::rcp(new Stokhos::FullyAssembledOperator(
-			   mat, row_stencil, row_index, sg_comm, params));
+			   sg_comm, sg_basis, epetraCijk, base_graph, params));
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,

@@ -32,7 +32,11 @@
 #define STOKHOS_MATRIX_FREE_OPERATOR_HPP
 
 #include "Stokhos_SGOperator.hpp"
+#include "EpetraExt_MultiComm.h"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Epetra_Map.h"
+#include "Epetra_Import.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_Array.hpp"
 
@@ -48,11 +52,14 @@ namespace Stokhos {
 
     //! Constructor 
     MatrixFreeOperator(
+      const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
       const Teuchos::RCP<const Epetra_Map>& domain_base_map,
       const Teuchos::RCP<const Epetra_Map>& range_base_map,
       const Teuchos::RCP<const Epetra_Map>& domain_sg_map,
       const Teuchos::RCP<const Epetra_Map>& range_sg_map,
-      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+      const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
     virtual ~MatrixFreeOperator();
@@ -62,8 +69,7 @@ namespace Stokhos {
 
     //! Setup operator
     virtual void setupOperator(
-      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk);
+      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly);
 
     //! Get SG polynomial
     virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
@@ -72,10 +78,6 @@ namespace Stokhos {
     //! Get SG polynomial
     virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
     getSGPolynomial() const;
-
-    //! Get triple product tensor
-    virtual Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
-    getTripleProduct() const;
 
     //@}
 
@@ -147,6 +149,15 @@ namespace Stokhos {
     //! Label for operator
     std::string label;
     
+    //! Stores SG parallel communicator
+    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm;
+
+    //! Stochastic Galerking basis
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+
+    //! Stores Epetra Cijk tensor
+    Teuchos::RCP<const Stokhos::EpetraSparse3Tensor> epetraCijk;
+    
     //! Stores domain base map
     Teuchos::RCP<const Epetra_Map> domain_base_map;
 
@@ -159,8 +170,23 @@ namespace Stokhos {
     //! Stores range SG map
     Teuchos::RCP<const Epetra_Map> range_sg_map;
 
-    //! Stochastic Galerking basis
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+    //! Whether we have parallelism over stochastic blocks
+    bool is_stoch_parallel;
+
+    //! Stores operator column SG map
+    Teuchos::RCP<Epetra_Map> global_col_map;
+
+    //! Stores operator column SG map for transpose
+    Teuchos::RCP<Epetra_Map> global_col_map_trans;
+
+    //! Stores stochastic part of column map
+    Teuchos::RCP<const Epetra_BlockMap> stoch_col_map;
+
+    //! Importer from domain map to column map
+    Teuchos::RCP<Epetra_Import> col_importer;
+
+    //! Importer from range map to column map
+    Teuchos::RCP<Epetra_Import> col_importer_trans;
 
     //! Short-hand for Cijk
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;
@@ -189,6 +215,15 @@ namespace Stokhos {
     //! Number of Jacobian blocks (not necessarily equal to expansion_size)
     int num_blocks;
 
+    //! Maximum number of matvecs in Apply
+    int max_num_mat_vec;
+
+    //! Temporary to store result of importing input into column map
+    mutable Teuchos::RCP<Epetra_MultiVector> input_col;
+
+    //! Temporary to store result of importing input into column map (transpose)
+    mutable Teuchos::RCP<Epetra_MultiVector> input_col_trans;
+
     //! MultiVectors for each block for Apply() input
     mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
 
@@ -200,6 +235,12 @@ namespace Stokhos {
 
     //! Temporary multivector used in Apply() for transpose
     mutable Teuchos::RCP<Epetra_MultiVector> tmp_trans;
+
+    //! Starting k iterator
+    Cijk_type::k_iterator k_begin;
+
+    //! Ending k iterator
+    Cijk_type::k_iterator k_end;
 
   }; // class MatrixFreeOperator
   
