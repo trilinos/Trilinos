@@ -466,10 +466,11 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					    *precPtr, &p);
 
-    Teuchos::RCP<Epetra_Operator> invPrecPtr =
-      Teuchos::rcp(new Epetra_InvOperator(precPtr.get()));
+    // Wrap the preconditioner so that apply() calls ApplyInverse()
     RCP<const Thyra::LinearOpBase<double> > precOp =
-      Thyra::epetraLinearOp(invPrecPtr);
+      Thyra::epetraLinearOp(precPtr, 
+			    Thyra::NOTRANS, 
+			    Thyra::EPETRA_OP_APPLY_APPLY_INVERSE);
 
     RCP<Thyra::DefaultPreconditioner<double> > precObjDef =
        rcp(new Thyra::DefaultPreconditioner<double>);
