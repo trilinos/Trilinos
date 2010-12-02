@@ -15,12 +15,12 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
 main.cpp
-#Level.cpp
+Level.cpp
 Hierarchy.cpp
-#RAPFactory.cpp
-#SaPFactory.cpp
-#TransPFactory.cpp
-#SmootherFactory.cpp
+RAPFactory.cpp
+SaPFactory.cpp
+TransPFactory.cpp
+SmootherFactory.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -30,22 +30,3 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     COMM serial  mpi
     DEPLIBS muelu muelu-cthulhu
   )
-
-APPEND_SET(SOURCES2
-main.cpp
-#Level.cpp
-Hierarchy.cpp
-#RAPFactory.cpp
-#SaPFactory.cpp
-#TransPFactory.cpp
-#SmootherFactory.cpp
-  )
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    unit_tests2
-    SOURCES ${SOURCES2}
-    ARGS ""
-    COMM serial  mpi
-    DEPLIBS muelu muelu-cthulhu
-  )
-
