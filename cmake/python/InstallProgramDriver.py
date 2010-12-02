@@ -42,22 +42,21 @@ Tool that checks out, untars, configures, builds, and installs
 
 By default, if you just type:
 
-   $ SOME_DIR/"""+scriptName+""" --do-all
+   $ SOME_DIR/"""+scriptName+""" --do-all --install-dir=SOME_INSTALL_DIR
 
 then the directory """+baseDirName+""" will be created in the local working directory
 and it will contain a tarball for """+productName+""" and the build files. NOTE: This
-requires that you run this as root (or with an account that has root
-privileges).  For not running as root, you need to specify --install-dir.
+requires that you not run as root your userid on the download computer
+will not be correct.  If you want to install as root, see below.
 
-You can control various parts of the process with the options (see below).
+You can control various parts of the process with various options (see below).
 
-The one option that you may need to change if you do not have root privileges
-is the --install-dir option which is set to /usr/local/bin by default.  For
-example, you might just type:
+If you do not install as root then you must override the option --install-dir
+which is set to /usr/local/bin by default.  For example, you might just type:
 
   $ SOME_DIR/"""+scriptName+""" --install-dir=$HOME --do-all
 
-and then it would install "++" and the other executables in $HOME/bin.
+and then it would install "+productName+" and the other executables in $HOME/bin.
 NOTE: You will have to update your PATH variable to include whatever directory
 you choose to install """+productName+""" in.
 
@@ -67,13 +66,13 @@ that needs root privileges, do:
   $ SOME_DIR/"""+scriptName+""" --install-dir=$HOME --checkout --untar --configure --build
   $ sudo SOME_DIR/"""+scriptName+""" --install-dir=$HOME --install
 
-This appears to work on some systems.
+This appears to work on most systems.
 
 After you have done a successful install, you might want to do:
 
   $ rm -r """+baseDirName+"""
 
-in order to remove the source and build files.
+in order to remove the intermediate source and build files.
 """ + self.installObj.getExtraHelpStr()
 
     #
@@ -135,7 +134,8 @@ in order to remove the source and build files.
     # 3) Echo the command-line options
     #
 
-    cmndLine = scriptName + " \\\n"
+    cmndLine = "******************************************************************************\n"
+    cmndLine += scriptName + " \\\n"
     cmndLine += "  --install-dir='" + options.installDir + "' \\\n"
     cmndLine += "  --make-options='" + options.makeOptions + "'\\\n"
     cmndLine += self.installObj.echoExtraCmndLineOptions(options)
