@@ -20,10 +20,13 @@ fi
 export TDD_GIT_EXE=/usr/local/bin/git
 export TDD_PARALLEL_LEVEL=2
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
-
-# Trilinos settings:
-#
 export TDD_CTEST_TEST_TYPE=Nightly
+
+#
+# just testing
+#
+export CTEST_DO_SUBMIT=FALSE
+
 
 # Machine specific environment:
 #
