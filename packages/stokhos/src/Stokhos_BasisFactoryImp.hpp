@@ -52,37 +52,53 @@ create(Teuchos::ParameterList& sgParams)
     return basis;
 
   ordinal_type dimension = basisParams.get("Dimension", 1);
+  bool isotropic = basisParams.get("Isotropic", false);
+
   Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > > bases(dimension);
   for (ordinal_type i=0; i<dimension; i++) {
-    std::ostringstream ss;
-    ss << "Basis " << i;
-    Teuchos::ParameterList& bp = basisParams.sublist(ss.str());
-    std::string type = bp.get("Type","Legendre");
-    ordinal_type order = bp.get("Order", 3);
-    bool normalize = bp.get("Normalize", false);
-    if (type == "Legendre")
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(order, normalize));
-    else if (type == "Clenshaw-Curtis") {
-      bool isotropic = bp.get("Isotropic", false);
-      bases[i] = Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(order, normalize, isotropic));
+    if (isotropic)
+      bases[i] = create1DBasis(basisParams);
+    else {
+      std::ostringstream ss;
+      ss << "Basis " << i;
+      Teuchos::ParameterList& bp = basisParams.sublist(ss.str());
+      bases[i] = create1DBasis(bp);
     }
-    else if (type == "Hermite")
-      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(order, normalize));
-    else if (type == "Rys") {
-      value_type cut = bp.get("Weight Cut", 1.0);
-      bases[i] = Teuchos::rcp(new Stokhos::RysBasis<ordinal_type,value_type>(order, cut, normalize));
-    }
-    else
-      TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
-			 std::endl << 
-			 "Error!  Stokhos::BasisFactory::create():  " <<
-			 "Invalid basis type  " << type << std::endl);
-    
-    
   }
   basis = 
     Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
   basisParams.set("Stochastic Galerkin Basis", basis);
   
+  return basis;
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> >
+Stokhos::BasisFactory<ordinal_type, value_type>::
+create1DBasis(Teuchos::ParameterList& bp)
+{
+  Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type,value_type> > basis;
+
+  std::string type = bp.get("Type","Legendre");
+  ordinal_type order = bp.get("Order", 3);
+  bool normalize = bp.get("Normalize", false);
+  if (type == "Legendre")
+    basis = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(order, normalize));
+  else if (type == "Clenshaw-Curtis") {
+    bool isotropic = bp.get("Isotropic", false);
+    basis = Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(order, normalize, isotropic));
+  }
+  else if (type == "Hermite")
+    basis = Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(order, normalize));
+  else if (type == "Rys") {
+    value_type cut = bp.get("Weight Cut", 1.0);
+    basis = Teuchos::rcp(new Stokhos::RysBasis<ordinal_type,value_type>(order, cut, normalize));
+  }
+  else
+    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+		       std::endl << 
+		       "Error!  Stokhos::BasisFactory::create1DBasis():  " <<
+		       "Invalid basis type  " << type << std::endl);
+
   return basis;
 }

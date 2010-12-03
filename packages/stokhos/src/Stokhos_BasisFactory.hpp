@@ -52,6 +52,11 @@ namespace Stokhos {
     static Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >
     create(Teuchos::ParameterList& sgParams);
 
+  protected:
+
+    //! Generate 1-D basis
+    static Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > create1DBasis(Teuchos::ParameterList& params);
+
   private:
 
     // Prohibit copying
