@@ -33,64 +33,7 @@ namespace panzer {
 
   void testInitialzation(const panzer_stk::STK_Interface& mesh,
 			 panzer::InputPhysicsBlock& ipb,
-			 std::vector<panzer::BC>& bcs)
-  {
-    // ROGER - duplicated code: remove this block and pass in values
-    std::vector<std::string> element_blocks;
-    mesh.getElementBlockNames(element_blocks);
-
-    panzer::InputEquationSet ies_1;
-    ies_1.name = "Momentum";
-    ies_1.basis = "Q2";
-    ies_1.integration_order = 1;
-    ies_1.model_id = 6;
-    ies_1.model_factory = "rf";
-    ies_1.prefix = "";
-    ies_1.params.set<int>("junk", 1);
-
-    panzer::InputEquationSet ies_2;
-    ies_2.name = "Continuity";
-    ies_2.basis = "Q1";
-    ies_2.integration_order = 1;
-    ies_2.model_id = 6;
-    ies_2.model_factory = "rf";
-    ies_2.prefix = "ION_";
-    ies_2.params.set<int>("junk", 1);
-
-    ipb.physics_block_id = "4";
-    ipb.eq_sets.push_back(ies_1);
-    ipb.eq_sets.push_back(ies_2);
-
-
-    {
-      std::size_t bc_id = 0;
-      panzer::BCType neumann = BCT_Dirichlet;
-      std::string sideset_id = "left";
-      std::string element_block_id = "eblock-0_0";
-      std::string dof_name = "UX";
-      std::string strategy = "Constant";
-      double value = 5.0;
-      Teuchos::ParameterList p;
-      p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
-		    strategy, p);
-      bcs.push_back(bc);
-    }    
-    {
-      std::size_t bc_id = 0;
-      panzer::BCType neumann = BCT_Dirichlet;
-      std::string sideset_id = "right";
-      std::string element_block_id = "eblock-1_0";
-      std::string dof_name = "UX";
-      std::string strategy = "Constant";
-      double value = 5.0;
-      Teuchos::ParameterList p;
-      p.set("Value",value);
-      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
-		    strategy, p);
-      bcs.push_back(bc);
-    }
-  }
+			 std::vector<panzer::BC>& bcs);
 
 
   TEUCHOS_UNIT_TEST(workset_builder, volume)
@@ -187,7 +130,6 @@ namespace panzer {
     for (std::vector<panzer::BC>::const_iterator bc = bcs.begin();
 	 bc != bcs.end(); ++bc) {
       
-
       std::vector<stk::mesh::Entity*> sideEntities; 
       mesh->getMySides(bc->sidesetID(),bc->elementBlockID(),sideEntities);
    
@@ -227,6 +169,49 @@ namespace panzer {
       bc_worksets.push_back(workset);
     }
     
+    
+    TEST_EQUALITY(bc_worksets[0]->size(), 1);
+    TEST_EQUALITY(bc_worksets[1]->size(), 1);
+    TEST_EQUALITY(bc_worksets[2]->size(), 1);
+
+    std::map<unsigned,panzer::Workset>& workset_bc0 = *bc_worksets[0];
+    TEST_EQUALITY(workset_bc0[3].num_cells, 4);
+    TEST_EQUALITY(workset_bc0[3].block_id, "eblock-0_0");
+    std::map<unsigned,panzer::Workset>& workset_bc1 = *bc_worksets[1];
+    TEST_EQUALITY(workset_bc1[1].num_cells, 4);
+    TEST_EQUALITY(workset_bc1[1].block_id, "eblock-1_0");
+    std::map<unsigned,panzer::Workset>& workset_bc2 = *bc_worksets[2];
+    TEST_EQUALITY(workset_bc2[2].num_cells, 6);
+    TEST_EQUALITY(workset_bc2[2].block_id, "eblock-1_0");
+
+    for (std::size_t i=0; i < 4; ++i )
+      TEST_ASSERT(std::find(workset_bc0[3].cell_local_ids.begin(),
+			    workset_bc0[3].cell_local_ids.end(), i) != 
+		  workset_bc0[3].cell_local_ids.end());
+
+    for (std::size_t i=27; i < 48; i+=4)
+      TEST_ASSERT(std::find(workset_bc2[2].cell_local_ids.begin(),
+			    workset_bc2[2].cell_local_ids.end(), i) != 
+		  workset_bc0[3].cell_local_ids.end());
+
+    std::size_t cell_index = 
+      std::distance(workset_bc0[3].cell_local_ids.begin(), 
+		    std::find(workset_bc0[3].cell_local_ids.begin(),
+			      workset_bc0[3].cell_local_ids.end(), 0)
+		    );
+
+    TEST_ASSERT(workset_bc0[3].cell_vertex_coordinates(cell_index,0,0)
+		== 0.0);
+
+    cell_index =
+    std::distance(workset_bc2[2].cell_local_ids.begin(), 
+		  std::find(workset_bc2[2].cell_local_ids.begin(),
+			    workset_bc2[2].cell_local_ids.end(), 47)
+		  );
+
+    TEST_EQUALITY(workset_bc2[2].cell_vertex_coordinates(cell_index,2,0),
+		  1.0);
+
   }
 
   
@@ -305,13 +290,15 @@ namespace panzer {
     // for verifying that an element is in specified block
     stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
     
-    // loop over each side extracting elements and local side ID taht are containted
-    // in specified block.
+    // loop over each side extracting elements and local side ID that
+    // are containted in specified block.
     std::vector<stk::mesh::Entity*>::const_iterator sideItr;
     for(sideItr=sides.begin();sideItr!=sides.end();++sideItr) {
       stk::mesh::Entity * side = *sideItr;
       
-      stk::mesh::PairIterRelation relations = side->relations(stk::mesh::Element);
+      stk::mesh::PairIterRelation relations = 
+	side->relations(stk::mesh::Element);
+
       for(std::size_t e=0;e<relations.size();++e) {
 	stk::mesh::Entity * element = relations[e].entity();
 	std::size_t sideId = relations[e].identifier();
@@ -324,6 +311,77 @@ namespace panzer {
 	  localSideIds.push_back(sideId);
 	}
       }
+    }
+  }
+
+  void testInitialzation(const panzer_stk::STK_Interface& mesh,
+			 panzer::InputPhysicsBlock& ipb,
+			 std::vector<panzer::BC>& bcs)
+  {
+    panzer::InputEquationSet ies_1;
+    ies_1.name = "Momentum";
+    ies_1.basis = "Q2";
+    ies_1.integration_order = 1;
+    ies_1.model_id = 6;
+    ies_1.model_factory = "rf";
+    ies_1.prefix = "";
+    ies_1.params.set<int>("junk", 1);
+
+    panzer::InputEquationSet ies_2;
+    ies_2.name = "Continuity";
+    ies_2.basis = "Q1";
+    ies_2.integration_order = 1;
+    ies_2.model_id = 6;
+    ies_2.model_factory = "rf";
+    ies_2.prefix = "ION_";
+    ies_2.params.set<int>("junk", 1);
+
+    ipb.physics_block_id = "4";
+    ipb.eq_sets.push_back(ies_1);
+    ipb.eq_sets.push_back(ies_2);
+
+
+    {
+      std::size_t bc_id = 0;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "left";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "UX";
+      std::string strategy = "Constant";
+      double value = 5.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
+    }    
+    {
+      std::size_t bc_id = 0;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "right";
+      std::string element_block_id = "eblock-1_0";
+      std::string dof_name = "UX";
+      std::string strategy = "Constant";
+      double value = 5.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
+    }   
+    {
+      std::size_t bc_id = 0;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "top";
+      std::string element_block_id = "eblock-1_0";
+      std::string dof_name = "UX";
+      std::string strategy = "Constant";
+      double value = 5.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
     }
   }
 

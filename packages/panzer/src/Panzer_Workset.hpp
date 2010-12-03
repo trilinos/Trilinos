@@ -35,8 +35,6 @@ namespace panzer {
     //! Static basis function data, key is basis name, value is index in the static_bases vector
     std::vector<Teuchos::RCP< panzer::BasisValues<double,Intrepid::FieldContainer<double> > > > bases;
     
-    //THashList sideset_elements;
-
     Teuchos::RCP<Epetra_Vector> solution_vector;
     Teuchos::RCP<Epetra_Vector> solution_deriv_vector;
     Teuchos::RCP<Epetra_Vector> residual_vector;

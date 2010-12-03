@@ -188,56 +188,19 @@ panzer::buildBCWorkset(const panzer::BC& bc,
   // All elements of boundary condition should go into one workset.
   // However due to design of Intrepid (requires same basis for all
   // cells), we have to separate the workset based on the local side
-  // index.
+  // index.  Each workset for a boundary condition is associated with
+  // a local side for the element
   
-  std::cout << "local_side_ids.size() = " << local_side_ids.size() << std::endl;
+  std::cout << "local_side_ids.size() = " << local_side_ids.size() 
+	    << std::endl;
 
-  /*
-  
-  // key is local face index, value is vector of element pointers
-  std::map<unsigned,std::vector<SBC_Element*> > element_list;
-  
-  SBC_Set& nc_sideset = const_cast<SBC_Set&>(*sideset);
- 
-  for (SBC_Element_Ref side = nc_sideset.Head_Local_Element(); 
-       side.notNull(); side = nc_sideset.Next_Local_Element()) {
-    
-    // Nevada sideset lists have all elements associated with the
-    // sides in the sideset. Loop over elements in the side set and
-    // add SBC_Elements to the list only if they are owned by the
-    // corresponding element block (otherwise sideset contributions
-    // would cancel each other out).
-    
-    if ( (*side)->Cell()->myBlockId() == bc.elementBlockID() &&
-	 (*side)->Cell()->Processor_Ownership() == TopoEntity::OWNED) {
-      
-      std::vector<unsigned> element_lids;
-      for (int local_node=0; local_node < (*side)->Cell()->Num_Nodes(); 
-	   ++local_node) {
-	element_lids.push_back((*side)->Cell()->Nodes(local_node)->globalIndex());
-      }
-      
-      std::vector<unsigned> side_lids;
-      for (int local_node=0; local_node < (*side)->Side()->Num_Nodes(); 
-	   ++local_node) {
-	side_lids.push_back((*side)->Side()->Nodes(local_node)->globalIndex());
-      }
+  TEUCHOS_ASSERT(local_side_ids.size() == local_cell_ids.size());
+  TEUCHOS_ASSERT(local_side_ids.size() == static_cast<std::size_t>(vertex_coordinates.dimension(0)));
 
-      unsigned face_index = 
-	charon::getLocalSideIndexFromGlobalNodeList(element_lids, side_lids, 
-						    base_cell_topology);
-      
-      element_list[face_index].push_back(*side);
-      
-    }	
-    
-  }
-
-  std::cout << "BC:\n" << bc << std::endl;
-  for (std::map<unsigned,std::vector<SBC_Element*> >::const_iterator side =  element_list.begin(); 
-       side != element_list.end(); ++side) {
-    TASK_0_cout << "  Workset for side " << side->first << " has " << side->second.size() << " elements." << std::endl;
-  }
+  // key is local face index, value is a pair of cell index and vector of element local ids
+  std::map<unsigned,std::vector<std::pair<std::size_t,std::size_t> > > element_list;
+  for (std::size_t cell=0; cell < local_cell_ids.size(); ++cell)
+    element_list[local_side_ids[cell]].push_back(std::make_pair(cell,local_cell_ids[cell])); 
 
   // *****************
   // New BCs only work for Intrepid elements!!
@@ -261,76 +224,68 @@ panzer::buildBCWorkset(const panzer::BC& bc,
     basis_names.push_back(ipb.eq_sets[eq].basis);
     basis_to_int_order[ipb.eq_sets[eq].basis] = 
       ipb.eq_sets[eq].integration_order;
-  }
+  } 
   std::sort(ir_degrees.begin(), ir_degrees.end());
   std::unique(ir_degrees.begin(), ir_degrees.end());
   std::sort(basis_names.begin(), basis_names.end());
   std::unique(basis_names.begin(),basis_names.end());
 
-  int dim = static_cast<int>(base_cell_topology.getDimension());
-
-
-  std::map<unsigned,charon::Workset>& worksets = *worksets_ptr;
+  std::map<unsigned,panzer::Workset>& worksets = *worksets_ptr;
 
   // create worksets 
-  for (std::map<unsigned,std::vector<SBC_Element*> >::iterator side =
-	 element_list.begin(); side != element_list.end(); ++side) {
-    THashList elements;
-    for (std::vector<SBC_Element*>::iterator element = side->second.begin();
-	 element != side->second.end(); ++element) {
-      elements.insert( (*element)->Cell() );
+  std::map<unsigned,std::vector<std::pair<std::size_t,std::size_t> > >::const_iterator side;
+  for (side = element_list.begin(); side != element_list.end(); ++side) {
+
+    std::vector<std::size_t>& cell_local_ids = worksets[side->first].cell_local_ids;
+    Intrepid::FieldContainer<double> & coords = worksets[side->first].cell_vertex_coordinates;
+    coords.resize(side->second.size(),vertex_coordinates.dimension(1),vertex_coordinates.dimension(2));
+    for (std::size_t cell = 0; cell < side->second.size(); ++cell) {
+      cell_local_ids.push_back(side->second[cell].second);
+
+      for (std::size_t vertex = 0; vertex < Teuchos::as<std::size_t>(vertex_coordinates.dimension(1)); ++ vertex)
+	for (std::size_t dim = 0; dim < Teuchos::as<std::size_t>(vertex_coordinates.dimension(2)); ++ dim)
+	  coords(cell,vertex,dim) = vertex_coordinates(side->second[cell].first,vertex,dim);
     }
-    worksets[side->first].sideset_elements = elements;
-    worksets[side->first].begin = 
-      worksets[side->first].sideset_elements.begin();
-    worksets[side->first].end = 
-      worksets[side->first].sideset_elements.end();
-    worksets[side->first].num_cells = 
-      worksets[side->first].sideset_elements.size();
-    
-    worksets[side->first].coordinate_index = node_coordinates;
+    worksets[side->first].num_cells = worksets[side->first].cell_local_ids.size();
+    worksets[side->first].block_id = bc.elementBlockID();
   }
 
   // setup the integration rules
-  for (std::map<unsigned,charon::Workset>::iterator wkst = worksets.begin(); 
+  for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin(); 
        wkst != worksets.end(); ++wkst)
     wkst->second.int_rules.resize(ir_degrees.size());
 
-  for (int i = 0; i < ir_degrees.size(); ++i) {
+  for (std::size_t i = 0; i < ir_degrees.size(); ++i) {
     
-    for (std::map<unsigned,charon::Workset>::iterator wkst = worksets.begin();
+    for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin();
 	 wkst != worksets.end(); ++wkst) {
       
-      const charon::CellData side_cell_data(wkst->second.num_cells, dim,
+      const panzer::CellData side_cell_data(wkst->second.num_cells, base_cell_dim,
 					    static_cast<int>(wkst->first));
 
-      RCP<charon::IntegrationRule> ir = 
-	rcp(new charon::IntegrationRule(ir_degrees[i], side_cell_data));
+      RCP<panzer::IntegrationRule> ir = 
+	rcp(new panzer::IntegrationRule(ir_degrees[i], side_cell_data));
       
       wkst->second.ir_degrees = rcp_ir_degrees;
 
       wkst->second.int_rules[i] = 
-	rcp(new charon::IntegrationValues<double,Intrepid::FieldContainer<double> >);
+	rcp(new panzer::IntegrationValues<double,Intrepid::FieldContainer<double> >);
       
       wkst->second.int_rules[i]->setupArrays(ir);
 
-      wkst->second.int_rules[i]->
-	evaluateValues(wkst->second.begin, wkst->second.end, 
-		       wkst->second.coordinate_index);
+      wkst->second.int_rules[i]->evaluateValues(wkst->second.cell_vertex_coordinates);
     }
   }
 
 
-
   // setup the basis functions
-  for (std::map<unsigned,charon::Workset>::iterator wkst = worksets.begin(); 
+  for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin(); 
        wkst != worksets.end(); ++wkst)
     wkst->second.bases.resize(basis_names.size());
 
-
-  for (int i = 0; i < basis_names.size(); ++i) {
+  for (std::size_t i = 0; i < basis_names.size(); ++i) {
     
-    for (std::map<unsigned,charon::Workset>::iterator wkst = worksets.begin(); 
+    for (std::map<unsigned,panzer::Workset>::iterator wkst = worksets.begin(); 
 	 wkst != worksets.end(); ++wkst) {
       
       std::size_t int_degree_index = 
@@ -339,14 +294,14 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 				ir_degrees.end(), 
 				basis_to_int_order[basis_names[i]]));
 
-
-      RCP<charon::Basis> cb = 
-	rcp(new charon::Basis(basis_names[i], *(wkst->second.int_rules[int_degree_index]->int_rule)));
-
+      
+      RCP<panzer::Basis> cb = 
+	rcp(new panzer::Basis(basis_names[i], *(wkst->second.int_rules[int_degree_index]->int_rule)));
+      
       wkst->second.basis_names = rcp_basis_names;
 
       wkst->second.bases[i] = 
-	rcp(new charon::BasisValues<double,Intrepid::FieldContainer<double> >);
+	rcp(new panzer::BasisValues<double,Intrepid::FieldContainer<double> >);
       
       wkst->second.bases[i]->setupArrays(cb);
 
@@ -358,7 +313,5 @@ panzer::buildBCWorkset(const panzer::BC& bc,
 
   }
 
-*/
   return worksets_ptr;
-
 }
