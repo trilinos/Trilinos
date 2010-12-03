@@ -1,0 +1,21 @@
+EXTRA_ARGS=$@
+
+# This is the script I used to configure Trilinos to use GCC and OpenMPI
+# installed with the install-gcc.py and install-openmpi.py scripts.  As you
+# can see I don't need to set LD_LIBRARY_PATH to get this to work by hard
+# coding the rpath shown below.
+
+GCC_INSTALL_BASE=/usr/local/trilinos-toolset
+MPI_BASE_DIR=$GCC_INSTALL_BASE
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="-Wl,-rpath,$GCC_INSTALL_BASE/lib64" \
+-D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR:PATH=$MPI_BASE_DIR \
+-D TPL_ENABLE_Boost:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D DART_TESTING_TIMEOUT:STRING=180.0 \
+$EXTRA_ARGS \
+../../../Trilinos
