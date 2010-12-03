@@ -46,17 +46,6 @@ class ParameterEntryValidator;
 class ValidatorXMLConverterDB {
 public:
 
-  /** \name Public types. */
-  //@{
-  
-  /** \brief convience class. */
-  typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
-
-  /** \brief convience typedef. */
-  typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
-
-  //@}
-
   /** \name Modifier Functions */
   //@{
   
@@ -136,6 +125,19 @@ public:
   
   //@}
 
+private:
+
+  /** \name Private types. */
+  //@{
+  
+  /** \brief convience class. */
+  typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
+
+  /** \brief convience typedef. */
+  typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
+
+  //@}
+
   /** \name Setup functions */
   //@{
 
@@ -147,6 +149,7 @@ public:
   static ConverterMap& getConverterMap();
   
   //@}
+
 
 };
 
@@ -162,51 +165,53 @@ public:
 /** \brief Add StringToIntegralParameterEntryValidator<INTEGRAL_TYPE> to set of
  * supported parameter types.
  */
-#define TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(CONVERTER_MAP, INTEGRALTYPE) \
+#define TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(INTEGRALTYPE) \
   \
-  (CONVERTER_MAP).insert(Teuchos::ValidatorXMLConverterDB::ConverterPair( \
+  Teuchos::ValidatorXMLConverterDB::addConverter( \
     Teuchos::DummyObjectGetter< \
       Teuchos::StringToIntegralParameterEntryValidator< INTEGRALTYPE > >:: \
-        getDummyObject()->getXMLTypeName(), \
-    Teuchos::rcp(new Teuchos::StringToIntegralValidatorXMLConverter< INTEGRALTYPE >)));
+        getDummyObject(), \
+    Teuchos::rcp(new Teuchos::StringToIntegralValidatorXMLConverter< INTEGRALTYPE >));
+    
 
 
 /** \brief Add EnhancedNumberValidator<T> to the set of supported parameter 
  * types.
  */
-#define TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(CONVERTER_MAP, T) \
+#define TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(T) \
   \
-  (CONVERTER_MAP).insert(Teuchos::ValidatorXMLConverterDB::ConverterPair( \
-    Teuchos::DummyObjectGetter<Teuchos::EnhancedNumberValidator< T > >:: \
-      getDummyObject()->getXMLTypeName(), \
-    Teuchos::rcp(new Teuchos::EnhancedNumberValidatorXMLConverter< T >)));
+  Teuchos::ValidatorXMLConverterDB::addConverter( \
+    Teuchos::DummyObjectGetter< \
+      Teuchos::EnhancedNumberValidator< T > >:: \
+        getDummyObject(), \
+    Teuchos::rcp(new Teuchos::EnhancedNumberValidatorXMLConverter< T >));
 
 
 /** \brief Add ArrayValidator<VALIDATORTYPE, ENTRYTYPE> to set of supported
  * parameter types.
  */
-#define TEUCHOS_ADD_ARRAYCONVERTER(CONVERTER_MAP, VALIDATORTYPE, ENTRYTYPE) \
+#define TEUCHOS_ADD_ARRAYCONVERTER(VALIDATORTYPE, ENTRYTYPE) \
   \
-  (CONVERTER_MAP).insert(Teuchos::ValidatorXMLConverterDB::ConverterPair( \
-    Teuchos::DummyObjectGetter<Teuchos::ArrayValidator< VALIDATORTYPE , ENTRYTYPE > >:: \
-      getDummyObject()->getXMLTypeName(), \
-    Teuchos::rcp(new Teuchos::ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >)));
+  Teuchos::ValidatorXMLConverterDB::addConverter( \
+    Teuchos::DummyObjectGetter< \
+      Teuchos::ArrayValidator< VALIDATORTYPE, ENTRYTYPE > >:: \
+        getDummyObject(), \
+    Teuchos::rcp(new Teuchos::ArrayValidatorXMLConverter< VALIDATORTYPE, ENTRYTYPE >));
 
 
 /** \brief Add numeric parameter types for type T. */
-#define TEUCHOS_ADD_NUMBERTYPECONVERTERS(CONVERTER_MAP, T) \
-  TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(CONVERTER_MAP, T ); \
-  TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(CONVERTER_MAP, T ); \
-  TEUCHOS_ADD_ARRAYCONVERTER(CONVERTER_MAP, Teuchos::EnhancedNumberValidator< T >, T );
+#define TEUCHOS_ADD_NUMBERTYPECONVERTERS(T) \
+  TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER(T); \
+  TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(T); \
+  TEUCHOS_ADD_ARRAYCONVERTER(Teuchos::EnhancedNumberValidator< T >, T );
 
 /** \brief Add a validator converter of type CONVERTER_TYPE which converts
  *  validators of VALIDATOR_TYPE to the map CONVERTER_MAP.
  */
-#define TEUCHOS_ADD_VALIDATOR_CONVERTER(CONVERTER_MAP, VALIDATOR_TYPE, CONVERTER_TYPE) \
-  (CONVERTER_MAP).insert( \
-    Teuchos::ValidatorXMLConverterDB::ConverterPair( \
+#define TEUCHOS_ADD_VALIDATOR_CONVERTER(VALIDATOR_TYPE, CONVERTER_TYPE) \
+  Teuchos::ValidatorXMLConverterDB::addConverter( \
       Teuchos::DummyObjectGetter< VALIDATOR_TYPE > \
-      ::getDummyObject()->getXMLTypeName(), \
-      Teuchos::rcp(new CONVERTER_TYPE )));
+      ::getDummyObject(), \
+      Teuchos::rcp(new CONVERTER_TYPE ));
 
 #endif // TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
