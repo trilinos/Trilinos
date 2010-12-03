@@ -254,7 +254,7 @@ LinearOp SmootherPreconditionerFactory::buildPreconditionerOperator(LinearOp & l
    // build user specified preconditioner
    ModifiableLinearOp & invM = state.getModifiableOp("prec");
    if(invM==Teuchos::null)
-      invM = Teko::buildInverse(*precFactory_,lo,state);
+      invM = Teko::buildInverse(*precFactory_,lo);
    else
       Teko::rebuildInverse(*precFactory_,lo,invM);
 
