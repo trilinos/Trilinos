@@ -56,7 +56,7 @@ public:
    * this converter will convert.
    * \param convertToAdd The converter to add to the database.
    */
-  static void addConverter(Condition& condition,
+  static void addConverter(RCP<const Condition> condition,
     RCP<ConditionXMLConverter> converterToAdd);
   
   //@}
@@ -158,5 +158,15 @@ private:
 
 } // end namespace Teuchos
 
+//
+// Helper Macros
+//
+
+/** \brief Adds a NumberCondition of type T */
+#define TEUCHOS_ADD_NUMBERCONVERTER(T) \
+  Teuchos::ConditionXMLConverterDB::addConverter( \
+    Teuchos::DummyObjectGetter<Teuchos::NumberCondition< T > >:: \
+      getDummyObject(), \
+    Teuchos::rcp(new Teuchos::NumberConditionConverter< T >));
 
 #endif // TEUCHOS_CONDITIONXMLCONVERTERDB_HPP
