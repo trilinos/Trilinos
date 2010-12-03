@@ -409,7 +409,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,MagnitudeType> beta( beta1_ );
+    Teuchos::SerialDenseMatrix<int,ScalarType> beta( beta1_ );
     MagnitudeType phibar = beta1_(0,0);
     ScalarType shift = zero; // TODO Allow for proper shift.
 
@@ -525,8 +525,6 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // Update x:
       // x = x + phi*w;
       MVT::MvAddMv( one, *cur_soln_vec, phi, *W_, *cur_soln_vec );
-
-//       std::cout << phibar << std::endl;
     } // end while (sTest_->checkStatus(this) != Passed)
   }
 
