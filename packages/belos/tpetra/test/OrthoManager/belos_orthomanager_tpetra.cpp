@@ -494,7 +494,10 @@ main (int argc, char *argv[])
     // sparse matrix is successfully loaded, its number of rows will
     // override the number of rows specified on the command line (if
     // specified), and will also override the default number of rows.
-    const int maxNormalizeNumCols = std::max (sizeS, std::max (sizeX1, sizeX2));
+    const size_t maxNormalizeNumCols = std::max (sizeS, std::max (sizeX1, sizeX2));
+    // getNodeNumElements() returns a size_t, which is unsigned, and
+    // you shouldn't compare signed and unsigned values.  This is why
+    // we make maxNormalizeNumCols a size_t as well.
     if (map->getNodeNumElements() < maxNormalizeNumCols)
       {
 	std::ostringstream os;

@@ -605,7 +605,21 @@ namespace TSQR {
 	       << svd_info;
 	    throw std::logic_error (os.str());
 	  }
-	svd_lwork = static_cast< LocalOrdinal > (svd_lwork_scalar);
+	// Scalar could be a complex type, but LAPACK should only ever
+	// return a Scalar with zero imaginary part.
+	if (Teuchos::ScalarTraits< Scalar >::isComplex && Teuchos::ScalarTraits< Scalar >::imag (svd_lwork_scalar) != Teuchos::ScalarTraits< magnitude_type >::zero())
+	  {
+	    std::ostringstream os;
+	    os << "In SequentialTsqr::reveal_rank: GESVD LWORK query returned "
+	      "LWORK (as a Scalar) with a nonzero imaginary part.  How do I "
+	      "allocate an imaginary amount of workspace?  LAPACK should never "
+	      "do this, so there must be some weird internal corruption "
+	      "somewhere.  Returned LWORK value is " << svd_lwork_scalar << ".";
+	    throw std::logic_error (os.str());
+	  }
+	// Scalar has a zero imaginary part, so we can try converting
+	// its real part into a LocalOrdinal.
+	svd_lwork = static_cast< LocalOrdinal > (Teuchos::ScalarTraits< Scalar >::real (svd_lwork_scalar));
 	// Check the LWORK cast.  LAPACK shouldn't ever return LWORK
 	// that won't fit in an OrdinalType, but it's not bad to make
 	// sure.
