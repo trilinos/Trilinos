@@ -20,6 +20,15 @@
 static int myRank, numProcs;
 static double mbytes=0;
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef M_PI_2
+#define M_PI_2 1.57079632679489661923
+#endif
+
+
 /* Mesh data */
 
 #define NUM_GLOBAL_VERTICES     2500000000

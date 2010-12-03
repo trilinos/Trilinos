@@ -11,6 +11,13 @@
 #
 
 # Run the test driver script through perl.
+
+#
+# Non-zdrive tests
+#
+ADD_SUBDIRECTORY(Large_Data)
+#
+
 IF(PERL_EXECUTABLE)
   SET(ZOLTAN_TEST_DRIVER CMND ${PERL_EXECUTABLE} ARGS ../ctest_zoltan.pl)
 ELSE()
