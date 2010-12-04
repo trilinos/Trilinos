@@ -27,8 +27,6 @@
 // @HEADER
 
 #include "Teuchos_ConditionXMLConverterDB.hpp"
-#include "Teuchos_StandardConditionXMLConverters.hpp"
-#include "Teuchos_StandardConditions.hpp"
 #include "Teuchos_XMLConditionExceptions.hpp"
 #include "Teuchos_StaticSetupMacro.hpp"
 

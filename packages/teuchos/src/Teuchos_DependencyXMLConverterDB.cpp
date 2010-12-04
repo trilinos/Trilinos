@@ -27,73 +27,20 @@
 // @HEADER
 
 #include "Teuchos_DependencyXMLConverterDB.hpp"
-#include "Teuchos_StandardDependencyXMLConverters.hpp"
-#include "Teuchos_StandardDependencies.hpp"
+#include "Teuchos_StaticSetupMacro.hpp"
 
 
 
 namespace Teuchos {
 
-#define ADD_DEP_TO_MAP(DEP_TYPE) \
-    masterMap.insert( \
-      ConverterPair( \
-        DummyObjectGetter<DEP_TYPE>:: \
-          getDummyObject()->getTypeAttributeValue(), \
-        rcp(new DEP_TYPE##XMLConverter))); \
-  
-
-#define ADD_TEMPLATED_NUMBER_DEPS(T) \
-  ADD_NUMBER_VISUAL_DEP(T); \
-  ADD_RANGE_VALIDATOR_DEP(T); \
-  ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(T);
-
-#define ADD_NUMBER_VISUAL_DEP(T) \
-  \
-  masterMap.insert( \
-    ConverterPair( \
-      DummyObjectGetter<NumberVisualDependency< T > >:: \
-      getDummyObject()->getTypeAttributeValue(), \
-      rcp(new NumberVisualDependencyXMLConverter< T >)));
-
-#define ADD_RANGE_VALIDATOR_DEP(T) \
-  \
-  masterMap.insert( \
-    ConverterPair( \
-      DummyObjectGetter<RangeValidatorDependency< T > >:: \
-        getDummyObject()->getTypeAttributeValue(), \
-      rcp(new RangeValidatorDependencyXMLConverter< T >)));
-
-#define ADD_NUMBER_ARRAY_LENGTH_DEP(DEPENDEE_TYPE , DEPENDENT_TYPE) \
-  masterMap.insert( \
-    ConverterPair( \
-      DummyObjectGetter<NumberArrayLengthDependency< \
-        DEPENDEE_TYPE , DEPENDENT_TYPE > >::getDummyObject()->getTypeAttributeValue(), \
-        rcp(new NumberArrayLengthDependencyXMLConverter< \
-        DEPENDEE_TYPE , DEPENDENT_TYPE >)));
-
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-#define ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(DEPENDEE_TYPE) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , std::string) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , long long int) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , double) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , float) 
-#else
-#define ADD_NUMBER_ARRAY_LENGTH_DEP_GROUP(DEPENDEE_TYPE) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , std::string) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , int) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , double) \
-  ADD_NUMBER_ARRAY_LENGTH_DEP( DEPENDEE_TYPE , float) 
-#endif
-
   
 
 void DependencyXMLConverterDB::addConverter(
-  Dependency& dependency,
+  RCP<const Dependency> dependency,
   RCP<DependencyXMLConverter> converterToAdd)
 {
   getConverterMap().insert(
-    ConverterPair(dependency.getTypeAttributeValue(), converterToAdd));
+    ConverterPair(dependency->getTypeAttributeValue(), converterToAdd));
 }
 
 
@@ -150,25 +97,45 @@ DependencyXMLConverterDB::ConverterMap&
 DependencyXMLConverterDB::getConverterMap()
 {
   static ConverterMap masterMap;
-  if(masterMap.size() == 0){
-    ADD_TEMPLATED_NUMBER_DEPS(int);
-    ADD_NUMBER_VISUAL_DEP(float); 
-    ADD_RANGE_VALIDATOR_DEP(float); 
-    ADD_NUMBER_VISUAL_DEP(double); 
-    ADD_RANGE_VALIDATOR_DEP(double); 
-
-    #ifdef HAVE_TEUCHOS_LONG_LONG_INT
-    ADD_TEMPLATED_NUMBER_DEPS(long long int);
-    #endif // HAVE_TEUCHOS_LONG_LONG_INT
-
-    ADD_DEP_TO_MAP(StringValidatorDependency)
-    ADD_DEP_TO_MAP(StringVisualDependency)
-    ADD_DEP_TO_MAP(BoolValidatorDependency)
-    ADD_DEP_TO_MAP(BoolVisualDependency)
-    ADD_DEP_TO_MAP(ConditionVisualDependency)
-  }
   return masterMap;
 }
 
 
 } // namespace Teuchos
+
+
+namespace {
+  
+
+TEUCHOS_STATIC_SETUP()
+{
+    TEUCHOS_ADD_TEMPLATED_NUMBER_DEPS(int)
+    TEUCHOS_ADD_NUMBER_VISUAL_DEP(float)
+    TEUCHOS_ADD_RANGE_VALIDATOR_DEP(float)
+    TEUCHOS_ADD_NUMBER_VISUAL_DEP(double)
+    TEUCHOS_ADD_RANGE_VALIDATOR_DEP(double)
+
+    #ifdef HAVE_TEUCHOS_LONG_LONG_INT
+    TEUCHOS_ADD_TEMPLATED_NUMBER_DEPS(long long int)
+    #endif // HAVE_TEUCHOS_LONG_LONG_INT
+
+    TEUCHOS_ADD_DEP_CONVERTER(
+      Teuchos::StringValidatorDependency,
+      Teuchos::StringValidatorDependencyXMLConverter)
+    TEUCHOS_ADD_DEP_CONVERTER(
+      Teuchos::StringVisualDependency,
+      Teuchos::StringVisualDependencyXMLConverter)
+    TEUCHOS_ADD_DEP_CONVERTER(
+      Teuchos::BoolValidatorDependency,
+      Teuchos::BoolValidatorDependencyXMLConverter)
+    TEUCHOS_ADD_DEP_CONVERTER(
+      Teuchos::BoolVisualDependency,
+      Teuchos::BoolVisualDependencyXMLConverter)
+    TEUCHOS_ADD_DEP_CONVERTER(
+      Teuchos::ConditionVisualDependency,
+      Teuchos::ConditionVisualDependencyXMLConverter)
+}
+
+
+} //namespace 
+

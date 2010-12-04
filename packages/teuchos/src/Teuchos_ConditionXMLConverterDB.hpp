@@ -34,7 +34,9 @@
  * \brief A database for ConditionXMLConverters.
 */
 
-#include "Teuchos_ConditionXMLConverter.hpp"
+// Both includes needed for convience macros below 
+#include "Teuchos_StandardConditionXMLConverters.hpp"
+#include "Teuchos_StandardConditions.hpp"
 
 
 namespace Teuchos {

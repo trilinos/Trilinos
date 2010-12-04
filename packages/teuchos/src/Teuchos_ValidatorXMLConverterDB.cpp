@@ -27,7 +27,6 @@
 // @HEADER
 
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
-#include "Teuchos_StandardValidatorXMLConverters.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Teuchos_StaticSetupMacro.hpp"
@@ -38,7 +37,7 @@ namespace Teuchos {
 
 
 void ValidatorXMLConverterDB::addConverter(
-  RCP<ParameterEntryValidator> validator,
+  RCP<const ParameterEntryValidator> validator,
   RCP<ValidatorXMLConverter> converterToAdd){
   getConverterMap().insert(ConverterPair(
     validator->getXMLTypeName(), converterToAdd));

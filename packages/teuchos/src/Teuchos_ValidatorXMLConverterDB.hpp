@@ -55,7 +55,7 @@ public:
    * converter is designed to convert.
    * \param convertToAdd The converter to add to the database.
    */
-  static void addConverter(RCP<ParameterEntryValidator> validator,
+  static void addConverter(RCP<const ParameterEntryValidator> validator,
     RCP<ValidatorXMLConverter> converterToAdd);
   
   //@}
@@ -161,6 +161,11 @@ private:
 // Helper Macros
 //
 
+// Doing this include so that when people macros like 
+// TEUCHOS_ADD_STRINGTOINTEGRALCONVERTER below they don't have to bother
+// including it themselves. More likely they might not even know they have
+// to.
+#include "Teuchos_StandardValidatorXMLConverters.hpp"
 
 /** \brief Add StringToIntegralParameterEntryValidator<INTEGRAL_TYPE> to set of
  * supported parameter types.
