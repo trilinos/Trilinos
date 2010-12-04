@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "MueLu_BaseFactory.hpp"
+#include "MueLu_Needs.hpp"
 #include "MueLu_Smoother.hpp"
 #include "MueLu_Level.hpp"
 
@@ -15,7 +15,7 @@ namespace MueLu {
 */
 
   template <class Scalar,class LO,class GO,class NO, class LMO>
-class SmootherFactory : public BaseFactory {
+class SmootherFactory : public Needs {
 
   typedef Level<Scalar, LO, GO, NO, LMO> Level;
   typedef MueLu::Smoother<Scalar,LO,GO,NO, LMO> Smoother;

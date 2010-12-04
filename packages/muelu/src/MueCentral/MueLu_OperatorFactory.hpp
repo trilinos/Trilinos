@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "Teuchos_ParameterList.hpp"
-#include "MueLu_BaseFactory.hpp"
+#include "MueLu_Needs.hpp"
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
@@ -13,11 +13,11 @@ namespace MueLu {
     @class Basic class for operator factories (e.g., R, P, and A_coarse).
     @brief Basic class for factories that build operators.
 
-    Very similar to BaseFactory, but with an additional virtual Build method.
+    Derives from Needs, but with an additional virtual Build method.
   */
 
   template<class Scalar, class LO, class GO, class NO, class LMO>
-  class OperatorFactory : public BaseFactory {
+  class OperatorFactory : public Needs {
     
     typedef Level<Scalar, LO, GO, NO, LMO> Level;
 
