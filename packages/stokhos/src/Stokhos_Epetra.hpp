@@ -33,6 +33,7 @@
 
 #include "Stokhos.hpp"
 
+#include "Stokhos_ParallelData.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 #include "Stokhos_Sparse3TensorUtilities.hpp"
 

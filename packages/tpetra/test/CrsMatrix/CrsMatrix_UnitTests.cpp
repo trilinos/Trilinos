@@ -1867,7 +1867,7 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, SerialNode )
 
-typedef typename Kokkos::DefaultNode::DefaultNodeType DefaultNode;
+typedef Kokkos::DefaultNode::DefaultNodeType DefaultNode;
 #define UNIT_TEST_DEFAULTNODE(LO, GO, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, DefaultNode )
 

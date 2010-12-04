@@ -13,15 +13,16 @@ LinearSystemSGJacobi(
   Teuchos::ParameterList& printingParams, 
   Teuchos::ParameterList& linearSolverParams_, 
   const Teuchos::RCP<NOX::Epetra::LinearSystem>& det_solver_,
-  const Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> >& Cijk_,
   const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
   const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+  const Teuchos::RCP<const Stokhos::ParallelData>& sg_parallel_data,
   const Teuchos::RCP<Epetra_Operator>& J,
   const Teuchos::RCP<const Epetra_Map>& base_map_,
   const Teuchos::RCP<const Epetra_Map>& sg_map_,
   const Teuchos::RCP<NOX::Epetra::Scaling> s):
   det_solver(det_solver_),
-  Cijk(Cijk_),
+  epetraCijk(sg_parallel_data->getEpetraCijk()),
   jacInterfacePtr(iJac),
   base_map(base_map_),
   sg_map(sg_map_),
@@ -30,7 +31,6 @@ LinearSystemSGJacobi(
 {
   sg_op = Teuchos::rcp_dynamic_cast<Stokhos::SGOperator>(J, true);
   sg_poly = sg_op->getSGPolynomial();
-  sz = sg_poly->basis()->size();
 
   sg_df_block = 
     Teuchos::rcp(new EpetraExt::BlockVector(*base_map, *sg_map));
@@ -38,14 +38,30 @@ LinearSystemSGJacobi(
 
   Teuchos::RCP<Teuchos::ParameterList> sgOpParams =
     Teuchos::rcp(&(linearSolverParams_.sublist("Jacobi SG Operator")), false);
-  if (!sgOpParams->isParameter("Scale Operator by Inverse Basis Norms"))
-    sgOpParams->set("Scale Operator by Inverse Basis Norms", true);
-  if (!sgOpParams->isParameter("Include Mean"))
-    sgOpParams->set("Include Mean", false);
+  sgOpParams->set("Include Mean", false);
   if (!sgOpParams->isParameter("Only Use Linear Terms"))
     sgOpParams->set("Only Use Linear Terms", true);
+
+  // Build new parallel Cijk if we are only using the linear terms, Cijk
+  // is distributed over proc's, and Cijk includes more than just the linear
+  // terms (so we have the right column map; otherwise we will be importing
+  // much more than necessary)
+  if (sgOpParams->get<bool>("Only Use Linear Terms") && 
+      epetraCijk->isStochasticParallel()) {
+    int dim = sg_basis->dimension();
+    if (epetraCijk->getKEnd() > dim+1)
+      epetraCijk = 
+	Teuchos::rcp(new Stokhos::EpetraSparse3Tensor(
+		       *epetraCijk, 1, dim+1));
+					     
+  }
+
   Stokhos::SGOperatorFactory sg_op_factory(sgOpParams);
-  mat_free_op = sg_op_factory.build(base_map, base_map, sg_map, sg_map);
+  Teuchos::RCP<const EpetraExt::MultiComm> sg_comm = 
+    sg_parallel_data->getMultiComm();
+  mat_free_op = 
+    sg_op_factory.build(sg_comm, sg_basis, epetraCijk, 
+			base_map, base_map, sg_map, sg_map);
 }
 
 NOX::Epetra::LinearSystemSGJacobi::
@@ -98,6 +114,7 @@ applyJacobianInverse(Teuchos::ParameterList &params,
   Teuchos::ParameterList& det_solver_params = 
     params.sublist("Deterministic Solver Parameters");
 
+  int myBlockRows = epetraCijk->numMyRows();
   int iter = 0;
   while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
     TEUCHOS_FUNC_TIME_MONITOR("Total global solve Time");
@@ -111,7 +128,7 @@ applyJacobianInverse(Teuchos::ParameterList &params,
       sg_df_block->Update(1.0, sg_f_block, -1.0);
     }
 
-    for (int i=0; i<sz; i++) {
+    for (int i=0; i<myBlockRows; i++) {
       df = sg_df_block->GetBlock(i);
       dx = sg_dx_block.GetBlock(i);
       NOX::Epetra::Vector nox_df(df, NOX::Epetra::Vector::CreateView);
@@ -167,7 +184,7 @@ computeJacobian(const NOX::Epetra::Vector& x)
 						  *sg_op);
   sg_poly = sg_op->getSGPolynomial();
   det_solver->setJacobianOperatorForSolve(sg_poly->getCoeffPtr(0));
-  mat_free_op->setupOperator(sg_poly, Cijk);
+  mat_free_op->setupOperator(sg_poly);
   return success;
 }
 

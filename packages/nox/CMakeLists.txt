@@ -35,6 +35,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MF
   "Enable Multifario (MF) support in LOCA"
   ${NOX_ENABLE_MF_default} )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TEUCHOS_TIME_MONITOR
+  NOX_TEUCHOS_TIME_MONITOR
+  "Build with Teuchos TimeMonitors enabled."
+  "${Trilinos_ENABLE_TEUCHOS_TIME_MONITOR}" )
+
 # Ignoring these flags - should be fixed in more recent compilers
 # AC_CXX_STL_MAP_KEY_CONST
 # AC_CXX_INVALID_TEMPLATE_QUALIFIER

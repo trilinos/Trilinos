@@ -38,7 +38,11 @@
 #include "Teuchos_RCP.hpp"
 
 #include "Stokhos_SGPreconditioner.hpp"
+#include "EpetraExt_MultiComm.h"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Epetra_Map.h"
+#include "Epetra_Export.h"
 #include "NOX_Epetra_LinearSystem.H"
 #include "Teuchos_ParameterList.hpp"
 #include "EpetraExt_BlockMultiVector.h"
@@ -54,11 +58,14 @@ namespace Stokhos {
   public:
 
     //! Constructor 
-  GaussSeidelPreconditioner(
-    const Teuchos::RCP<const Epetra_Map>& base_map,
-    const Teuchos::RCP<const Epetra_Map>& sg_map,
-    const Teuchos::RCP<NOX::Epetra::LinearSystem>& det_solver,
-    const Teuchos::RCP<Teuchos::ParameterList>& params);
+    GaussSeidelPreconditioner(
+      const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
+      const Teuchos::RCP<const Epetra_Map>& base_map,
+      const Teuchos::RCP<const Epetra_Map>& sg_map,
+      const Teuchos::RCP<NOX::Epetra::LinearSystem>& det_solver,
+      const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
     virtual ~GaussSeidelPreconditioner();
@@ -140,12 +147,27 @@ namespace Stokhos {
     
     //! Label for operator
     std::string label;
+
+    //! Stores SG parallel communicator
+    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm;
+
+    //! Stochastic Galerking basis
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+
+    //! Stores Epetra Cijk tensor
+    Teuchos::RCP<const Stokhos::EpetraSparse3Tensor> epetraCijk;
     
     //! Stores base map
     Teuchos::RCP<const Epetra_Map> base_map;
 
     //! Stores SG map
     Teuchos::RCP<const Epetra_Map> sg_map;
+
+    //! Whether we have parallelism over stochastic blocks
+    bool is_stoch_parallel;
+
+    //! Stores stochastic part of row map
+    Teuchos::RCP<const Epetra_BlockMap> stoch_row_map;
 
     //! Deterministic solver
     Teuchos::RCP<NOX::Epetra::LinearSystem> det_solver;
@@ -168,14 +190,29 @@ namespace Stokhos {
     //! Pointer to triple product
     Teuchos::RCP<const Cijk_type > Cijk;
 
-    //! Temporary vector used in Gauss-Seidel iteration
-    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_df_block;
+    //! Stores block vector of right-hand-sides
+      mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_df_block;
 
-    //! Temporary vector used in Gauss-Seidel iteration
-    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_y_block;
+      //! Stores block residual vector to compute residual norm
+      mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_y_block;
+      
+      //! Stores K_0*x for the most recently computed x
+      mutable Teuchos::RCP<Epetra_MultiVector> kx;
 
-    //! Temporary vector used in Gauss-Seidel iteration
-    mutable Teuchos::RCP<Epetra_MultiVector> kx;
+      //! Flag indicating whether stochastic blocks are distributed
+      bool is_parallel;
+
+      //! Stores global column map
+      Teuchos::RCP<const Epetra_BlockMap> sg_col_map;
+
+      //! Stores exporter from column map to row map
+      Teuchos::RCP<Epetra_Export> col_exporter;
+
+      //! Stores off-processor contributions to right-hand-sides
+      mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_df_col;
+
+      //! Stores summed off-processor contributions
+      mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_df_tmp;
 
 
   }; // class GaussSeidelPreconditioner

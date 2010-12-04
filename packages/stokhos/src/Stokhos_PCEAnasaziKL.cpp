@@ -88,6 +88,7 @@ computeKL(Teuchos::ParameterList& anasazi_params)
   Teuchos::RCP<Epetra_MultiVector> ivec = 
     Teuchos::rcp(new Epetra_MultiVector(covOp->CoeffMap(), 
 					anasazi_params.get<int>("Block Size")));
+  ivec->SetSeed(1);
   ivec->Random();
   
   // Create the eigenproblem.

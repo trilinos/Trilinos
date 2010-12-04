@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -29,50 +27,10 @@
 // @HEADER
 
 template <typename ordinal_type, typename value_type>
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-Sparse3Tensor(ordinal_type sz) :
-  i_indices(sz),
-  j_indices(sz),
-  Cijk_values(sz),
-  kji_data(sz),
-  ikj_data(sz)
-{
-}
-
-template <typename ordinal_type, typename value_type>
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-~Sparse3Tensor()
-{
-}
-
-template <typename ordinal_type, typename value_type>
-ordinal_type
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-num_values(ordinal_type i) const
-{
-  return Cijk_values[i].size();
-}
-
-template <typename ordinal_type, typename value_type>
-void
-Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-value(ordinal_type k, ordinal_type l, ordinal_type& i, ordinal_type& j, 
-      value_type& c) const
-{
-  i = i_indices[k][l];
-  j = j_indices[k][l];
-  c = Cijk_values[k][l];
-}
-
-template <typename ordinal_type, typename value_type>
 void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 add_term(ordinal_type i, ordinal_type j, ordinal_type k, const value_type& c)
 {
-  i_indices[k].push_back(i);
-  j_indices[k].push_back(j);
-  Cijk_values[k].push_back(c);
-
   kji_data[k][j][i] = c;
   ikj_data[i][k][j] = c;
 }
@@ -91,11 +49,12 @@ void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 print(std::ostream& os) const
 {
-  for (ordinal_type k=0; k<static_cast<ordinal_type>(Cijk_values.size()); k++)
-    for (ordinal_type l=0; l<static_cast<ordinal_type>(Cijk_values[k].size()); 
-	 l++)
-      os << "k = " << k << ", l = " << l 
-	 << ", i = " << i_indices[k][l] << ", j = " << j_indices[k][l]
-	 << ", Cijk = " << Cijk_values[k][l] << std::endl;
+  for (k_iterator k=k_begin(); k!=k_end(); ++k)
+    for (kj_iterator j=j_begin(k); j!=j_end(k); ++j)
+      for (kji_iterator i=i_begin(j); i!=i_end(j); ++i)
+	os << "k = " << index(k) 
+	   << ", j = " << index(j) 
+	   << ", i = " << index(i) 
+	   << ", Cijk = " << value(i) << std::endl;
 }
 

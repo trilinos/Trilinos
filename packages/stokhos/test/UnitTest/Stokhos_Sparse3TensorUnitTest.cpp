@@ -83,45 +83,11 @@ namespace Sparse3TensorUnitTest {
       setup.quad->getBasisAtQuadPoints();
 
     success = true;
-    for (int k=0; k<setup.sz; k++) {
-      int nl = setup.Cijk->num_values(k);
-      for (int l=0; l<nl; l++) {
-	int i, j;
-	double c;
-	setup.Cijk->value(k,l,i,j,c);
-
-	double c2 = 0.0;
-	int nqp = weights.size();
-	for (int qp=0; qp<nqp; qp++)
-	  c2 += weights[qp]*values[qp][i]*values[qp][j]*values[qp][k];
-
-	double tol = setup.atol + c*setup.rtol;
-	double err = std::abs(c-c2);
-	bool s = err < tol;
-	if (!s) {
-	  out << std::endl
-	      << "Check: rel_err( C(" << i << "," << j << "," << k << ") )"
-	      << " = " << "rel_err( " << c << ", " << c2 << " ) = " << err 
-	      << " <= " << tol << " : ";
-	  if (s) out << "Passed.";
-	  else 
-	    out << "Failed!";
-	  out << std::endl;
-	}
-	success = success && s;
-      }
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( Stokhos_Sparse3Tensor, Values2 ) {
-    const Teuchos::Array<double>& weights = setup.quad->getQuadWeights();
-    const Teuchos::Array< Teuchos::Array<double> > & values = 
-      setup.quad->getBasisAtQuadPoints();
-
-    success = true;
-    for (int k=0; k<setup.sz; k++) {
-      for (Cijk_type::kj_iterator j_it = setup.Cijk->j_begin(k); 
-	   j_it != setup.Cijk->j_end(k); ++j_it) {
+    for (Cijk_type::k_iterator k_it=setup.Cijk->k_begin(); 
+	 k_it!=setup.Cijk->k_end(); ++k_it) {
+      int k = Stokhos::index(k_it);
+      for (Cijk_type::kj_iterator j_it = setup.Cijk->j_begin(k_it); 
+	   j_it != setup.Cijk->j_end(k_it); ++j_it) {
 	int j = Stokhos::index(j_it);
 	for (Cijk_type::kji_iterator i_it = setup.Cijk->i_begin(j_it);
 	     i_it != setup.Cijk->i_end(j_it); ++i_it) {

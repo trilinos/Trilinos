@@ -107,7 +107,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Optika		optika			       SS
   Mesquite              mesquite                       PS
   FEApp                 ../demos/FEApp                 SS # Capability demonstration package
-  KrylovSupport         KrylovSupport                  EX
   )
 
 

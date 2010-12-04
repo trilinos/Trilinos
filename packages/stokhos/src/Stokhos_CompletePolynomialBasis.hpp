@@ -260,6 +260,9 @@ namespace Stokhos {
     //! Temporary array used in basis evaluation
     mutable Teuchos::Array< Teuchos::Array<value_type> > basis_eval_tmp;
 
+    //! Short-hand for Cijk
+    typedef Stokhos::Sparse3Tensor<ordinal_type, value_type> Cijk_type;
+
   }; // class CompletePolynomialBasis
 
 } // Namespace Stokhos
