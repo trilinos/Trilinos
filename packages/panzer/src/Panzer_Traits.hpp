@@ -30,7 +30,7 @@ namespace panzer {
   struct Traits : public PHX::TraitsBase {
 
     typedef int LocalOrdinal; 
-    typedef long int GlobalOrdinal; 
+    typedef int GlobalOrdinal; 
     
     // ******************************************************************
     // *** Scalar Types

@@ -19,7 +19,7 @@ DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager()
 { }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
    : numFields_(0)
 {
    setConnManager(connMngr,mpiComm);
@@ -37,7 +37,7 @@ DOFManager<LocalOrdinalT,GlobalOrdinalT>::DOFManager(Teuchos::RCP<ConnManager<Lo
   * \param[in] mpiComm  Communicator to use.
   */
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm)
 {
    // this kills any old connection manager as well as the old FEI objects
    resetIndices();

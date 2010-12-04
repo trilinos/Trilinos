@@ -42,7 +42,7 @@ public:
      * objects. This is equivalent to calling the default constructor and
      * then "setConnManager" routine.
      */
-   DOFManager(Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+   DOFManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
    /** \brief Set the connection manager and MPI_Comm objects.
      *
@@ -55,7 +55,7 @@ public:
      * \param[in] connMngr Connection manager to use.
      * \param[in] mpiComm  Communicator to use.
      */
-   void setConnManager(Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
+   void setConnManager(const Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > & connMngr,MPI_Comm mpiComm);
 
    /** \brief Reset the indicies for this DOF manager.
      *

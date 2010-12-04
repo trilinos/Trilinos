@@ -46,6 +46,8 @@ APPEND_SET(HEADERS
   Panzer_EquationSet_Factory_Defines.hpp
   Panzer_EquationSet_TemplateManager.hpp
   Panzer_ExplicitTemplateInstantiation.hpp
+  Panzer_FieldManagerBuilder.hpp
+  Panzer_FieldManagerBuilderT.hpp
   Panzer_InputPhysicsBlock.hpp
   Panzer_IntegrationRule.hpp
   Panzer_IntegrationValues.hpp
