@@ -106,16 +106,8 @@ namespace Iovs {
   {
     Ioss::SerializeIO   serializeIO__(this);
 
-    // TODO check exodus to see whether this is necessary here, may not be
-    // state = get_database_step(state);
-
-    // TODO, need to determine where to pass time
-    /*
-    int ierr = ex_put_time(get_file_pointer(), state, &time);
-    if (ierr < 0)
-        exodus_error(get_file_pointer(), __LINE__, myProcessor);
-    ex_update(get_file_pointer());
-    */
+    int err;
+    iMesh_setTimeData (mesh_instance, state, time, 0.0, &err);
 
     // Zero global variable array...
     // std::fill(globalValues.begin(), globalValues.end(), 0.0);
@@ -128,7 +120,6 @@ namespace Iovs {
 
     // TODO, most likely global fields can be immediate, not delayed like this
     int err;
-    iMesh_setTimeData (mesh_instance, state, time, 0.0, &err);
     iMesh_save (mesh_instance, rootset, "", "", &err, 0, 0);
     return true;
   }
