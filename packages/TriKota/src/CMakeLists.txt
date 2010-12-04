@@ -25,6 +25,11 @@ IF (NOT EXISTS ${Boost_INCLUDE_DIRS}/boost/type.hpp)
   ENDIF()
 
 ENDIF()
+IF (NOT EXISTS ${Boost_INCLUDE_DIRS}/lib/libboost_signals.a)
+    MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota (Colin) now requires
+     Boost Signals library: looking for   
+     ${Boost_INCLUDE_DIRS}/lib/libboost_signals.a ")
+ENDIF()
 
 #
 # Configure Dakota libraries
@@ -153,12 +158,15 @@ APPEND_SET(SOURCES
 SET(DAKOTA_LIBS
     dakota pecos lhs surfpack conmin
     ddace fsudace jega opt
-    psuade newmat ncsuopt sparsegrid coliny colin
-    pebbl utilib 3po nappspack appspack conveyor
-    shared cdd cport amplsolver lhs nidr dl
+    psuade newmat ncsuopt sparsegrid 
+    colin interfaces momh scolib pebbl tinyxml
+    utilib 3po hopspack 
+    cport amplsolver nidr dl 
+    boost_signals
   )
 
-LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib)
+LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
+                 ${Boost_INCLUDE_DIRS}/lib)
 
 # Compiling code that includes Dakota headers requires
 # -DHAVE_CONFIG_H.
