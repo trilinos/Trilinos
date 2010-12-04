@@ -30,7 +30,7 @@ APPEND_SET(HEADERS
   MueCentral/MueLu_Level.hpp
   MueCentral/MueLu_SaLevel.hpp
   MueCentral/MueLu_Hierarchy.hpp
-  MueCentral/MueLu_BaseFactory.hpp
+  MueCentral/MueLu_Needs.hpp
   MueCentral/MueLu_RAPFactory.hpp
   Transfers/MueLu_SaPFactory.hpp
   Transfers/MueLu_TransPFactory.hpp
