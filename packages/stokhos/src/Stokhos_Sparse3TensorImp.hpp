@@ -58,3 +58,22 @@ print(std::ostream& os) const
 	   << ", Cijk = " << value(i) << std::endl;
 }
 
+template <typename ordinal_type, typename value_type>
+value_type
+Stokhos::Sparse3Tensor<ordinal_type, value_type>::
+getValue(ordinal_type i, ordinal_type j, ordinal_type k) const
+{
+  k_iterator k_it = kji_data.find(k);
+  if (k_it == kji_data.end())
+    return value_type(0);
+
+  kj_iterator j_it = k_it->second.find(j);
+  if (j_it == k_it->second.end())
+    return value_type(0);
+
+  kji_iterator i_it = j_it->second.find(i);
+  if (i_it == j_it->second.end())
+    return value_type(0);
+
+  return i_it->second;
+}
