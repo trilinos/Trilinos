@@ -42,9 +42,20 @@
 #ifndef BELOS_MINRES_ITER_HPP
 #define BELOS_MINRES_ITER_HPP
 
-/*! \file BelosMinresIter.hpp
-    \brief Belos concrete class for performing the Minimal Residual Method (MINRES) iteration.
-*/
+/// \file BelosMinresIter.hpp
+/// \brief MINRES iteration implementation 
+///
+/// The Minimal Residual Method (MINRES) is a Krylov subspace method
+/// for solving symmetric (in real arithmetic, or Hermitian in complex
+/// arithmetic), nonsingular, but possibly indefinite linear systems
+/// \fn$Ax=b\fn$.  It works on one right-hand side \fn$b\fn$ at a
+/// time.
+///
+/// References:
+///
+/// C. Paige and M. Saunders.  "Solution of sparse indefinite systems
+/// of linear equations."  SIAM J. Numer. Anal., vol. 12, pp. 617-629,
+/// 1975.
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
@@ -62,18 +73,19 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-/*!
-  \class Belos::MinresIter
-
-  \brief This class implements the preconditioned Minimal Residual Method (MINRES) iteration.
-
-  \ingroup belos_solver_framework
- 
-  \author Nico Schl\"omer
-*/
 
 namespace Belos {
 
+///
+/// \class MinresIter
+/// \brief MINRES implementation
+/// \author Nico Schl\"omer
+///
+/// Implementation of the preconditioned Minimal Residual Method
+/// (MINRES) iteration.
+///
+/// \ingroup belos_solver_framework
+///
 template<class ScalarType, class MV, class OP>
 class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
@@ -82,25 +94,35 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   //
   // Convenience typedefs
   //
-  typedef MultiVecTraits<ScalarType,MV> MVT;
-  typedef OperatorTraits<ScalarType,MV,OP> OPT;
-  typedef Teuchos::ScalarTraits<ScalarType> SCT;
+  typedef MultiVecTraits< ScalarType, MV > MVT;
+  typedef OperatorTraits< ScalarType, MV, OP > OPT;
+  typedef Teuchos::ScalarTraits< ScalarType > SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
+  typedef Teuchos::ScalarTraits< MagnitudeType > SMT;
 
   //! @name Constructors/Destructor
   //@{ 
 
-  /*! \brief %MinresIter constructor with linear problem, solver utilities, and parameter list of solver options.
-   *
-   * This constructor takes pointers required by the linear solver iteration, in addition
-   * to a parameter list of options for the linear solver.
-   */
-  MinresIter( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-                  const Teuchos::RCP<OutputManager<ScalarType> > &printer,
-                  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                  Teuchos::ParameterList &params );
+  /// \brief Constructor
+  ///
+  /// \params problem The linear problem to solve
+  /// \params printer Output manager, for intermediate solver output
+  /// \params tester Status test for determining when the current
+  ///   approximate solution has converged (currently ignored)
+  /// \params params Parameter list of solver options (currently
+  ///   ignored)
+  ///
+  /// \warning Currently the solver ignores the status test object.
+  ///   This will eventually be fixed.  (Any volunteers?)  The solver
+  ///   currently merely tests the residual 2-norm for convergence to
+  ///   within a specified tolerance.
+  ///
+  MinresIter (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > >& problem,
+	      const Teuchos::RCP< OutputManager< ScalarType > > &        printer,
+	      const Teuchos::RCP< StatusTest< ScalarType, MV, OP > >&    tester,
+	      const Teuchos::ParameterList& params);
 
-  //! Destructor.
+  //! Destructor
   virtual ~MinresIter() {};
   //@}
 
@@ -108,18 +130,20 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   //! @name Solver methods
   //@{ 
 
-  /*! \brief This method performs MINRES iterations until the status
-   * test indicates the need to stop or an error occurs (in which case, an
-   * std::exception is thrown).
-   *
-   * iterate() will first determine whether the solver is initialized; if
-   * not, it will call initialize() using default arguments. After
-   * initialization, the solver performs MINRES iterations until the
-   * status test evaluates as ::Passed, at which point the method returns to
-   * the caller. 
-   *
-   * The status test is queried at the beginning of the iteration.
-   */
+  /// \brief Perform MINRES iterations until convergence or error
+  ///
+  /// Perform MINRES iterations until the status test indicates the
+  /// need to stop, or until an error occurs.  In the latter case, a
+  /// (subclass of) std::exception is thrown.
+  ///
+  /// iterate() will first determine whether the solver is
+  /// initialized; if not, it will call initialize() using default
+  /// arguments. After initialization, the solver performs MINRES
+  /// iterations until the status test evaluates as ::Passed, at which
+  /// point the method returns to the caller.
+  ///
+  /// The status test is queried at the beginning of the iteration.
+  ///
   void iterate();
 
   /*! \brief Initialize the solver to an iterate, providing a complete state.
@@ -136,24 +160,29 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
    * \note For any pointer in \c newstate which directly points to the multivectors in 
    * the solver, the data is not copied.
    */
-  void initializeMinres(MinresIterationState<ScalarType,MV> newstate);
+  void initializeMinres (MinresIterationState<ScalarType,MV> newstate);
 
-  /*! \brief Initialize the solver with the initial vectors from the linear problem
-   *  or random data.
-   */
+  /// \brief Initialize the solver
+  ///
+  /// Initialize the solver.  If a starting guess is provided in the
+  /// linear problem, use that.  Otherwise, choose a random starting
+  /// guess.
   void initialize()
   {
     MinresIterationState<ScalarType,MV> empty;
     initializeMinres(empty);
   }
 
-  /*! \brief Get the current state of the linear solver.
-   *
-   * The data is only valid if isInitialized() == \c true.
-   *
-   * \returns A MinresIterationState object containing const pointers to the current solver state.
-   */
+  /// Get the current state of the linear solver.
+  ///
+  /// The returned current state is only valid if isInitialized() == \c true.
+  ///
+  /// \return A MinresIterationState object containing const pointers
+  ///         to the current solver state.
   MinresIterationState<ScalarType,MV> getState() const {
+    if (! isInitialized())
+      throw std::logic_error("getState() cannot be called unless "
+			     "the state has been initialized");
     MinresIterationState<ScalarType,MV> state;
     state.Y = Y_;
     state.R1 = R1_;
@@ -206,6 +235,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   }
 
   //! States whether the solver has been initialized or not.
+  bool isInitialized() const { return initialized_; }
   bool isInitialized() { return initialized_; }
 
   //@}
@@ -221,50 +251,55 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   //
   // Classes inputed through constructor that define the linear problem to be solved.
   //
-  const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >    lp_;
-  const Teuchos::RCP<OutputManager<ScalarType> >          om_;
-  const Teuchos::RCP<StatusTest<ScalarType,MV,OP> >       stest_;
+  const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > > lp_;
+  const Teuchos::RCP< OutputManager< ScalarType > >         om_;
+  const Teuchos::RCP< StatusTest< ScalarType, MV, OP > >    stest_;
 
-  //  
-  // Current solver state
-  //
-  // initialized_ specifies that the basis vectors have been initialized and the iterate() routine
-  // is capable of running; _initialize is controlled  by the initialize() member method
-  // For the implications of the state of initialized_, please see documentation for initialize()
+
+  /// \brief Whether the solver has been initialized
+  ///
+  /// If initialized_ == true, then the basis vectors have been
+  /// initialized and the iterate() routine is capable of running.
+  /// _initialize is set by the initialize() member method.  For the
+  /// implications of the state of initialized_, please see
+  /// documentation for initialize().
   bool initialized_;
 
-  // stateStorageInitialized_ specifies that the state storage has been initialized.
-  // This initialization may be postponed if the linear problem was generated without 
-  // the right-hand side or solution vectors.
+  /// \brief Whether the state storage has been initialized
+  ///
+  /// If stateStorageInitialized_ == true, then the state storage has
+  /// been initialized.  This initialization may be postponed if the
+  /// linear problem was generated without the right-hand side or
+  /// solution vectors.
   bool stateStorageInitialized_;
 
-  // Current number of iterations performed.
+  //! Current number of iterations performed.
   int iter_;
 
   // 
   // State Storage
   //
-  // Preconditioned residual
-  Teuchos::RCP<MV> Y_;
-  //
-  // Previous residual
-  Teuchos::RCP<MV> R1_;
-  //
-  // Previous residual
-  Teuchos::RCP<MV> R2_;
-  //
-  // Direction vector
-  Teuchos::RCP<MV> W_;
-  //
-  // Previous direction vector
-  Teuchos::RCP<MV> W1_;
-  //
-  // Previous direction vector
-  Teuchos::RCP<MV> W2_;
 
-  // If we could be sure that the preconditioner is symmetric (which must be true anyway),
-  // we could make beta1_ a MagnitudeType; this would certainly be cleaner, considering it will
-  // be copied into beta (which is of MagnitudeType).
+  //! Preconditioned residual
+  Teuchos::RCP< MV > Y_;
+  //! Previous residual
+  Teuchos::RCP< MV > R1_;
+  //! Previous residual
+  Teuchos::RCP< MV > R2_;
+  //! Direction vector
+  Teuchos::RCP< MV > W_;
+  //! Previous direction vector
+  Teuchos::RCP< MV > W1_;
+  //! Previous direction vector
+  Teuchos::RCP< MV > W2_;
+
+  /// Coefficient in the MINRES iteration
+  ///
+  /// \note If we could be sure that the preconditioner is Hermitian
+  ///   in complex arithmetic (which must be true anyway, in order for
+  ///   MINRES to work), we could make beta1_ a MagnitudeType.  This
+  ///   would certainly be cleaner, considering it will be copied into
+  ///   beta (which is of MagnitudeType).
   Teuchos::SerialDenseMatrix<int,ScalarType> beta1_;
 
 };
@@ -275,7 +310,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   MinresIter<ScalarType,MV,OP>::MinresIter(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                                                    const Teuchos::RCP<OutputManager<ScalarType> > &printer,
                                                    const Teuchos::RCP<StatusTest<ScalarType,MV,OP> > &tester,
-                                                   Teuchos::ParameterList &params ):
+                                                   const Teuchos::ParameterList &params ):
     lp_(problem),
     om_(printer),
     stest_(tester),
@@ -293,8 +328,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     if (!stateStorageInitialized_) {
 
       // Check if there is any multivector to clone from.
-      Teuchos::RCP<const MV> lhsMV = lp_->getLHS();
-      Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
+      Teuchos::RCP< const MV > lhsMV = lp_->getLHS();
+      Teuchos::RCP< const MV > rhsMV = lp_->getRHS();
       if (lhsMV == Teuchos::null && rhsMV == Teuchos::null) {
         stateStorageInitialized_ = false;
         return;
@@ -305,7 +340,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
         // If the subspace has not be initialized before, generate it using the LHS or RHS from lp_.
         if (Y_ == Teuchos::null) {
           // Get the multivector that is not null.
-          Teuchos::RCP<const MV> tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
+          Teuchos::RCP< const MV > tmp = ( (rhsMV!=Teuchos::null)? rhsMV: lhsMV );
           TEST_FOR_EXCEPTION( tmp == Teuchos::null,
                               std::invalid_argument,
                               "Belos::MinresIter::setStateSize(): linear problem does not specify multivectors to clone from.");
@@ -350,7 +385,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     // Create convenience variables for zero, one.
     const ScalarType one = SCT::one();
-    const MagnitudeType zero = MagnitudeType::zero();
+    const MagnitudeType zero = SMT::zero();
 
     // Set up y and v for the first Lanczos vector v_1.
     // y  =  beta1_ P' v1,  where  P = C**(-1).
@@ -405,7 +440,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     // Create convenience variables for zero and one.
     const ScalarType one = SCT::one();
-    const MagnitudeType zero = MagnitudeType::zero();
+    const MagnitudeType zero = SMT::zero();
 
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
@@ -540,7 +575,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
                                              )
   {
     const ScalarType one = SCT::one();
-    const MagnitudeType zero = MagnitudeType::zero();
+    const MagnitudeType zero = SMT::zero();
     const MagnitudeType absA = SCT::magnitude( a );
     const MagnitudeType absB = SCT::magnitude( b );
     if ( absB == zero ) {
