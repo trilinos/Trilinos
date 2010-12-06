@@ -18,17 +18,20 @@ IF (NOT EXISTS ${Boost_INCLUDE_DIRS}/boost/type.hpp)
 
   IF (EXISTS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost/boost/type.hpp)
     SET(Boost_INCLUDE_DIRS ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost)
+    SET(Boost_LIBRARY_DIRS ${PACKAGE_BINARY_DIR}/Dakota/install/lib)
+    SET(TriKota_Dakota_Boost ON)
   ELSE()
     MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota requires
      Boost, and the headers were not found in ${Boost_INCLUDE_DIRS}
      nor inside of Dakota at ${PACKAGE_SOURCE_DIR}/Dakota/packages/boost. ")
   ENDIF()
-
-ENDIF()
-IF (NOT EXISTS ${Boost_INCLUDE_DIRS}/lib/libboost_signals.a)
-    MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota (Colin) now requires
-     Boost Signals library: looking for   
-     ${Boost_INCLUDE_DIRS}/lib/libboost_signals.a ")
+ELSE()
+  IF (NOT EXISTS ${Boost_LIBRARY_DIRS}/libboost_signals.a)
+      MESSAGE(FATAL_ERROR "\nTriKota Fatal Error: Dakota (Colin) now requires
+       Boost Signals library: looking for   
+       ${Boost_LIBRARY_DIRS}/libboost_signals.a ")
+  ENDIF()
+  SET(TriKota_Dakota_Boost OFF)
 ENDIF()
 
 #
@@ -63,7 +66,6 @@ SET(DAKOTA_CONFIGURE_COMMAND ${PACKAGE_SOURCE_DIR}/Dakota/configure
     --prefix=${PACKAGE_BINARY_DIR}/Dakota/install
     --with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
     --with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
-    --with-boost=${Boost_INCLUDE_DIRS}
     --disable-tests
     --with-plugin 
     --without-graphics
@@ -76,6 +78,11 @@ IF(TPL_ENABLE_MPI)
 ELSE()
   SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
     --disable-mpi)
+ENDIF()
+IF(NOT TriKota_Dakota_Boost)
+  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+    --with-boost=${Boost_INCLUDE_DIRS}
+    --with-boost-libdir=${Boost_LIBRARY_DIRS})
 ENDIF()
 
 EXECUTE_PROCESS(
@@ -166,7 +173,7 @@ SET(DAKOTA_LIBS
   )
 
 LINK_DIRECTORIES(${PACKAGE_BINARY_DIR}/Dakota/install/lib
-                 ${Boost_INCLUDE_DIRS}/lib)
+                 ${Boost_LIBRARY_DIRS})
 
 # Compiling code that includes Dakota headers requires
 # -DHAVE_CONFIG_H.
@@ -187,5 +194,7 @@ ENDIF()
 
 # Custom "make install" command to copy contents of Dakota lib&include
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/lib/ DESTINATION lib)
-INSTALL(FILES ${Boost_INCLUDE_DIRS}/lib/libboost_signals.a  DESTINATION lib)
+IF(TriKota_Dakota_Boost)
+  INSTALL(FILES ${Boost_LIBRARY_DIRS}/libboost_signals.a  DESTINATION lib)
+ENDIF()
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/include/ DESTINATION include)
