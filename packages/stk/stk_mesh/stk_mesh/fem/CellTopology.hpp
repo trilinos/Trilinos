@@ -36,7 +36,7 @@ std::ostream & operator << ( std::ostream & , const CellTopology & );
 /** \class CellTopology
  *  \brief Provide input checked access (in debug mode) to
  *         \ref shards::CellTopologyData "cell topology data"
- *         and a procedure to create custom cell topologies. 
+ *         and a procedure to create custom cell topologies.
  *
  *  Input checking is compiled in when the HAVE_SHARDS_DEBUG macro is defined.
  *
@@ -68,8 +68,8 @@ public:
   CellTopology( const CellTopologyData * cell )
     : m_cell( cell )
   {}
-  
-        
+
+
   /** \brief Assignment operator <var>*this = right</var>.  */
   CellTopology& operator = (const CellTopology& right) {
     m_cell = right.m_cell;
@@ -89,28 +89,28 @@ public:
   /** \brief Destructor */
   ~CellTopology()
   {}
-  
+
 
   /** \} */
 
-  operator bool() {
-    return m_cell != 0;
+  bool is_valid() const {
+    return m_cell != NULL;
   }
 
   /*------------------------------------------------------------------*/
   /** \name  Safe query methods
    *  \{
    */
-  
-          
+
+
   /** \brief  Dimension of this cell topology */
   unsigned getDimension() const
   {
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     return m_cell->dimension ;
   }
-  
-        
+
+
   /** \brief  Unique key for this cell topology;
    *          under certain subcell uniformity conditions.
    *
@@ -122,7 +122,7 @@ public:
     return m_cell->key ;
   }
 
-        
+
   /** \brief  Unique key for this cell's base topology;
    *          under certain subcell uniformity conditions.
    *
@@ -133,11 +133,11 @@ public:
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     return m_cell->base->key ;
   }
-        
-        
-        
+
+
+
   /** \brief  Unique name for this cell topology;
-   *          
+   *
    *  The name is only guaranteed to be unique for predefined cell topologies.
    *  A calling code may construct custom cell topologies with arbitrary names.
    */
@@ -147,62 +147,62 @@ public:
     return m_cell->name ;
   }
 
-        
+
   /** \brief  Unique name for this cell's base topology.
-   *          
+   *
    */
   const char* getBaseName() const
   {
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     return m_cell->base->name ;
   }
-        
-        
+
+
   /** \brief  Node count of this cell topology */
   unsigned getNodeCount() const
   {
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     return m_cell->node_count ;
   }
-  
-        
+
+
   /** \brief  Vertex count of this cell topology */
   unsigned getVertexCount() const
   {
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     return m_cell->vertex_count ;
   }
-  
-        
+
+
   /** \brief  Edge boundary subcell count of this cell topology */
   unsigned getEdgeCount() const
   {
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     return m_cell->edge_count ;
   }
-  
+
   /** \brief  Face boundary subcell count of this cell topology */
   unsigned getFaceCount() const
   {
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     return m_cell->dimension == 3 ? m_cell->side_count : 0 ;
   }
-  
-        
+
+
   /** \brief  Side boundary subcell count of this cell topology */
   unsigned getSideCount() const
   {
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     return m_cell->side_count ;
   }
-  
-        
+
+
   /** \brief  This cell's raw topology data */
   const CellTopologyData * getCellTopologyData() const {
     return m_cell ;
   }
 
-        
+
   /** \brief  This cell's base cell topology's raw topology data */
   const CellTopology getBaseTopology() const
   {
@@ -210,7 +210,7 @@ public:
     return CellTopology(m_cell->base);
   }
 
-        
+
   /** \brief  Raw cell topology data for a subcell of the
    *          given dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
@@ -224,7 +224,7 @@ public:
     return CellTopology(m_cell->subcell[subcell_dim][subcell_ord].topology) ;
   }
 
-        
+
   /** \brief  Raw cell topology data for the base topology of a subcell of the
    *          given dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
@@ -236,8 +236,8 @@ public:
     return getTopology(subcell_dim,subcell_ord).getBaseTopology();
   }
 
-        
-  /** \brief  Key of a subcell of the given dimension and ordinal. 
+
+  /** \brief  Key of a subcell of the given dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
    */
@@ -248,19 +248,19 @@ public:
   }
 
 
-        
-  /** \brief  Name of a subcell of the given dimension and ordinal. 
+
+  /** \brief  Name of a subcell of the given dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
    */
-  const char * getName(const unsigned subcell_dim,   
+  const char * getName(const unsigned subcell_dim,
                        const unsigned subcell_ord) const
   {
     return getTopology(subcell_dim,subcell_ord).getName();
   }
-        
-        
-  /** \brief  Node count of a subcell of the given dimension and ordinal. 
+
+
+  /** \brief  Node count of a subcell of the given dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
    */
@@ -270,8 +270,8 @@ public:
     return getTopology(subcell_dim,subcell_ord).getNodeCount() ;
   }
 
-        
-  /** \brief  Vertex count of a subcell of the given dimension and ordinal. 
+
+  /** \brief  Vertex count of a subcell of the given dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
    */
@@ -281,8 +281,8 @@ public:
     return getTopology(subcell_dim,subcell_ord).getVertexCount() ;
   }
 
-        
-  /** \brief  Edge count of a subcell of the given dimension and ordinal. 
+
+  /** \brief  Edge count of a subcell of the given dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
    */
@@ -291,30 +291,30 @@ public:
   {
     return getTopology(subcell_dim,subcell_ord).getEdgeCount() ;
   }
-  
-        
-  /** \brief  Side count of a subcell of the given dimension and ordinal. 
+
+
+  /** \brief  Side count of a subcell of the given dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
-   */        
+   */
   unsigned getSideCount( const unsigned subcell_dim ,
                          const unsigned subcell_ord ) const
   {
     return getTopology(subcell_dim,subcell_ord).getSideCount() ;
   }
 
-        
-  /** \brief  Subcell count of subcells of the given dimension. 
+
+  /** \brief  Subcell count of subcells of the given dimension.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
-   */        
+   */
   unsigned getSubcellCount( const unsigned subcell_dim ) const
   {
     STK_MESH_FEM_CHECK_REQUIRE( requireCell() );
     STK_MESH_FEM_CHECK_REQUIRE( requireDimension(subcell_dim) );
     return m_cell->subcell_count[subcell_dim] ;
   }
-  
-        
+
+
   /** \brief  Query if all subcells of the given dimension
    *          have the same cell topology.
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
@@ -325,8 +325,8 @@ public:
     STK_MESH_FEM_CHECK_REQUIRE( requireDimension(subcell_dim) );
     return 0 != m_cell->subcell_homogeneity[subcell_dim] ;
   }
-  
-        
+
+
   /** \brief  Mapping from a subcell's node ordinal to a
    *          node ordinal of this parent cell topology.
    *  \param  subcell_dim      [in]  - spatial dimension of the subcell
@@ -363,7 +363,7 @@ public:
     STK_MESH_FEM_CHECK_REQUIRE(requireNodePermutation(permutation_ord,node_ord));
     return m_cell->permutation[permutation_ord].node[node_ord];
   }
-  
+
   /** \brief  Permutation of a cell's node ordinals.
    *  \param  permutation_ordinal [in]
    *  \param  node_ordinal        [in]
@@ -374,7 +374,7 @@ public:
     STK_MESH_FEM_CHECK_REQUIRE(requireNodePermutation(permutation_ord,0));
     return m_cell->permutation[permutation_ord].polarity;
   }
-  
+
   /** \brief  Inverse permutation of a cell's node ordinals.
    *  \param  permutation_ordinal [in]
    *  \param  node_ordinal        [in]
@@ -386,29 +386,29 @@ public:
     STK_MESH_FEM_CHECK_REQUIRE(requireNodePermutation(permutation_ord,node_ord));
     return m_cell->permutation_inverse[permutation_ord].node[node_ord];
   }
-  
+
   /** \} */
-  
+
   /*------------------------------------------------------------------*/
   /** \name Constructors and destructor
    *  \{
    */
 
 private:
-  
-  /** \brief Throws runtime_error if CellTopology object is null or hase null 
-      base topology   
+
+  /** \brief Throws runtime_error if CellTopology object is null or hase null
+      base topology
   */
   void requireCell() const ;
-  
-  
-  /** \brief  Throws invalid_argument if subcell dimension exceedes the maximal 
+
+
+  /** \brief  Throws invalid_argument if subcell dimension exceedes the maximal
    *          admissible space dimension 3.
    *  \param  subcell_dim    [in]  - spatial dimension of a subcell
    */
   void requireDimension( const unsigned subcellDim ) const ;
-  
-  
+
+
   /** \brief  Throws invalid_argument if subcell_ord exceeds the actual number
    *          of subcells with specified dimension.
    *  \param  subcell_dim    [in]  - spatial dimension of a subcell
@@ -416,9 +416,9 @@ private:
    */
   void requireSubcell( const unsigned subcellDim ,
                        const unsigned subcellOrd ) const ;
-  
-  
-  /** \brief  Throws invalid_argument if node_ord exceeds the actual number 
+
+
+  /** \brief  Throws invalid_argument if node_ord exceeds the actual number
    *          of nodes in the subcell with specified dimension and ordinal.
    *  \param  subcell_dim    [in]  - spatial dimension of a subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
@@ -446,13 +446,13 @@ int findPermutation( const CellTopology top ,
 }
 
 inline
-bool operator==(const CellTopology &left, const CellTopology &right) 
+bool operator==(const CellTopology &left, const CellTopology &right)
 {
   return left.getCellTopologyData() == right.getCellTopologyData();
 }
 
 inline
-bool operator<(const CellTopology &left, const CellTopology &right) 
+bool operator<(const CellTopology &left, const CellTopology &right)
 {
   return left.getCellTopologyData() < right.getCellTopologyData();
 }
