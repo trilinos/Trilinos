@@ -26,7 +26,7 @@ typedef size_t global_size_t;
 /** \file Cthulhu_EpetraMap.hpp 
 
     The declarations for the class Cthulhu::EpetraMap and related non-member constructors.
- */
+*/
 
 namespace Cthulhu {
 
@@ -57,11 +57,57 @@ namespace Cthulhu {
     EpetraMap(global_size_t numGlobalElements, int indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
               LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode()) 
     {
-
       CTHULHU_DEBUG_ME;       
-      CATCH_EPETRA_EXCEPTION_AND_THROW_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos2Epetra_Comm(comm))))););
+
+      // This test come from Tpetra (Epetra doesn't check if numGlobalElements,indexBase are equivalent across images).
+      // In addition, for the test TEST_THROW(M map((myImageID == 0 ? GSTI : 0),0,comm), std::invalid_argument), only one node throw an exception and there is a dead lock.
+      std::string errPrefix;
+      errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,indexBase,comm,lOrG): ";
+      
+      if (lg == GloballyDistributed) {
+        const int myImageID = comm->getRank();
+        
+        // check that numGlobalElements,indexBase is equivalent across images
+        global_size_t rootNGE = numGlobalElements;
+        int rootIB  = indexBase;
+        Teuchos::broadcast<int,global_size_t>(*comm,0,&rootNGE);
+        Teuchos::broadcast<int,int>(*comm,0,&rootIB);
+        int localChecks[2], globalChecks[2];
+        localChecks[0] = -1;   // fail or pass
+        localChecks[1] = 0;    // fail reason
+        if (numGlobalElements != rootNGE) {
+          localChecks[0] = myImageID;
+          localChecks[1] = 1;
+        }
+        else if (indexBase != rootIB) {
+          localChecks[0] = myImageID;
+          localChecks[1] = 2;
+        }
+        // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass, as well as the reason
+        // these will be -1 and 0 if all procs passed
+        Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
+        if (globalChecks[0] != -1) {
+          if (globalChecks[1] == 1) {
+            TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                               errPrefix << "numGlobal must be the same on all nodes (examine node " << globalChecks[0] << ").");
+          }
+          else if (globalChecks[1] == 2) {
+            TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                               errPrefix << "indexBase must be the same on all nodes (examine node " << globalChecks[0] << ").");
+          }
+          else {
+            // logic error on our part
+            TEST_FOR_EXCEPTION(true,std::logic_error,
+                               errPrefix << "logic error. Please contact the Tpetra team.");
+          }
+        }
+      }
+      
+      // Note: validity of numGlobalElements checked by Epetra.
+
+      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
-    
+
     /** \brief EpetraMap constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
      *  are non-overlapping and contiguous 
@@ -75,7 +121,98 @@ namespace Cthulhu {
               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
     {
       CTHULHU_DEBUG_ME; 
-      CATCH_EPETRA_EXCEPTION_AND_THROW_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm))))););
+
+      // This test come from Tpetra
+      using Teuchos::outArg;
+
+      const size_t  L0 = Teuchos::OrdinalTraits<size_t>::zero();
+      const size_t  L1 = Teuchos::OrdinalTraits<size_t>::one();
+      const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
+      const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
+      const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid();
+
+      std::string errPrefix;
+      errPrefix = Teuchos::typeName(*this) + "::constructor(numGlobal,numLocal,indexBase,platform): ";
+      
+      // get a internodal communicator from the Platform
+      const int myImageID = comm->getRank();
+      
+      { // begin scoping block
+        // for communicating failures 
+        int localChecks[2], globalChecks[2];
+        /* compute the global size 
+           we are computing the number of global elements because exactly ONE of the following is true:
+           - the user didn't specify it, and we need it
+           - the user did specify it, but we need to 
+           + validate it against the sum of the local sizes, and
+           + ensure that it is the same on all nodes
+        */
+        global_size_t global_sum;
+        Teuchos::reduceAll<int,global_size_t>(*comm,Teuchos::REDUCE_SUM,
+                                              Teuchos::as<global_size_t>(numLocalElements),outArg(global_sum));
+        /* there are three errors we should be detecting:
+           - numGlobalElements != invalid() and it is incorrect/invalid
+           - numLocalElements invalid (<0)
+        */
+        localChecks[0] = -1;
+        localChecks[1] = 0;
+        if (numLocalElements < L1 && numLocalElements != L0) {
+          // invalid
+          localChecks[0] = myImageID;
+          localChecks[1] = 1;
+        }
+        else if (numGlobalElements < GST1 && numGlobalElements != GST0 && numGlobalElements != GSTI) {
+          // invalid
+          localChecks[0] = myImageID;
+          localChecks[1] = 2;
+        }
+        else if (numGlobalElements != GSTI && numGlobalElements != global_sum) {
+          // incorrect
+          localChecks[0] = myImageID;
+          localChecks[1] = 3;
+        }
+        // now check that indexBase is equivalent across images
+        int rootIB = indexBase;
+        Teuchos::broadcast<int,int>(*comm,0,&rootIB);   // broadcast one ordinal from node 0
+        if (indexBase != rootIB) {
+          localChecks[0] = myImageID;
+          localChecks[1] = 4;
+        }
+        // REDUCE_MAX will give us the image ID of the highest rank proc that DID NOT pass
+        // this will be -1 if all procs passed
+        Teuchos::reduceAll<int,int>(*comm,Teuchos::REDUCE_MAX,2,localChecks,globalChecks);
+        if (globalChecks[0] != -1) {
+          if (globalChecks[1] == 1) {
+            TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                               errPrefix << "numLocal is not valid on at least one node (possibly node " 
+                               << globalChecks[0] << ").");
+          }
+          else if (globalChecks[1] == 2) {
+            TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                               errPrefix << "numGlobal is not valid on at least one node (possibly node " 
+                               << globalChecks[0] << ").");
+          }
+          else if (globalChecks[1] == 3) {
+            TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                               errPrefix << "numGlobal doesn't match sum of numLocal (== " 
+                               << global_sum << ") on at least one node (possibly node " 
+                               << globalChecks[0] << ").");
+          }
+          else if (globalChecks[1] == 4) {
+            TEST_FOR_EXCEPTION(true,std::invalid_argument,
+                               errPrefix << "indexBase is not the same on all nodes (examine node " 
+                               << globalChecks[0] << ").");
+          }
+          else {
+            // logic error on my part
+            TEST_FOR_EXCEPTION(true,std::logic_error,
+                               errPrefix << "logic error. Please contact the Tpetra team.");
+          }
+        }
+        
+      }
+
+      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
         
     /** \brief EpetraMap constructor with user-defined non-contiguous (arbitrary) distribution.
