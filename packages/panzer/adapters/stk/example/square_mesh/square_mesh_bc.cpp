@@ -37,7 +37,7 @@ int main( int argc, char **argv )
   panzer_stk::SquareQuadMeshFactory factory;
   factory.setParameterList(pl);
   RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
-  if(mesh->isWritable());
+  if(mesh->isWritable())
      mesh->writeToExodus("blocked_mesh.exo");
   unsigned dim = mesh->getDimension();
 
