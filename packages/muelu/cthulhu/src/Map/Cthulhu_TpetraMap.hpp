@@ -116,7 +116,7 @@ namespace Cthulhu {
     inline GlobalOrdinal getMinAllGlobalIndex() const { CTHULHU_DEBUG_ME; return map_->getMinAllGlobalIndex(); }
 
     //! Return the maximum global index over all nodes
-    inline GlobalOrdinal getMaxAllGlobalIndex() const { CTHULHU_DEBUG_ME; return map_->getMaxGlobalIndex(); }
+    inline GlobalOrdinal getMaxAllGlobalIndex() const { CTHULHU_DEBUG_ME; return map_->getMaxAllGlobalIndex(); }
 
     //! \brief Return the local index for a given global index
     /** If the global index is not owned by this node, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid(). */
