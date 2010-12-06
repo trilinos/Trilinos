@@ -202,6 +202,9 @@ namespace Stokhos {
 
     //@}
 
+    //! Get Cijk value for a given i, j, k indices
+    value_type getValue(ordinal_type i, ordinal_type j, ordinal_type k) const;
+
   private:
 
     // Prohibit copying
