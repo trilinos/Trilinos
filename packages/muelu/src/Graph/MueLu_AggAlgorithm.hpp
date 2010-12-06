@@ -571,12 +571,12 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
                              const char *label,
                              Graph *graph)
 {
-  int      Nphase1_agg, phase_one_aggregated, i, j, k, kk, nonaggd_neighbors;
+  int      Nphase1_agg, i, j, k, kk, nonaggd_neighbors;
   int      AdjacentAgg, total_aggs, *agg_incremented = NULL;
   int      *Mark = NULL, *SumOfMarks = NULL;
   int      best_score, score, best_agg, BestMark, myPid;
   int      nAggregates, *vertex2AggId, nVertices, exp_nRows;
-  int      *rowi_col = NULL, rowi_N,total_vertices;
+  int      *rowi_col = NULL, rowi_N;
   int      Nleftover = 0, Nsingle = 0, Adjacent;
   double   printFlag, factor = 1., penalty;
 
@@ -640,23 +640,27 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
 
   // Record the number of aggregated vertices
+  int total_phase_one_aggregated = 0;
+  {
+    int phase_one_aggregated = 0;
+    for (i = 0; i < nVertices; i++) {
+      if (vertex2AggId[i] != MUELOO_UNAGGREGATED)
+        phase_one_aggregated++;
+    }
 
-  phase_one_aggregated = 0;
-  for (i = 0; i < nVertices; i++) {
-    if (vertex2AggId[i] != MUELOO_UNAGGREGATED)
-      phase_one_aggregated++;
+    graph->GetComm().SumAll(&phase_one_aggregated,&total_phase_one_aggregated,1);
   }
-  graph->GetComm().SumAll(&phase_one_aggregated,&phase_one_aggregated,1);
-  graph->GetComm().SumAll(&nVertices,&total_vertices,1);
-
-
+  
+  int total_nVertices = 0;
+  graph->GetComm().SumAll(&nVertices,&total_nVertices,1);
+  
   /* Among unaggregated points, see if we can make a reasonable size    */
   /* aggregate out of it. We do this by looking at neighbors and seeing */
   /* how many are unaggregated and on my processor. Loosely,            */
   /* base the number of new aggregates created on the percentage of     */
   /* unaggregated nodes.                                                */
 
-  factor = ((double) phase_one_aggregated)/((double)(total_vertices + 1));
+  factor = ((double) total_phase_one_aggregated)/((double)(total_nVertices + 1));
   factor = pow(factor, aggOptions->GetPhase3AggCreation());
 
   for (i = 0; i < nVertices; i++) {
@@ -698,11 +702,12 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
     graph->GetComm().SumAll(&Nphase1_agg,&total_aggs,1);
     if (myPid == 0) {
       printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label,
-             phase_one_aggregated);
+             total_phase_one_aggregated);
       printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n",label, total_aggs);
     }
     i = nAggregates - Nphase1_agg;
-    graph->GetComm().SumAll(&i,&i,1);
+
+    { int ii; graph->GetComm().SumAll(&i,&ii,1); i = ii; }
     if ( myPid == 0 ) {
       printf("Aggregation(%s) : Phase 3 - additional aggregates = %d\n",label, i);
     }
@@ -1040,8 +1045,8 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
 
 
   if (printFlag < MueLu_PrintLevel()) {
-    graph->GetComm().SumAll(&Nsingle,&Nsingle,1);
-    graph->GetComm().SumAll(&Nleftover,&Nleftover,1);
+    { int total_Nsingle=0;   graph->GetComm().SumAll(&Nsingle,&total_Nsingle,1);     Nsingle = total_Nsingle; }
+    { int total_Nleftover=0; graph->GetComm().SumAll(&Nleftover,&total_Nleftover,1); Nleftover = total_Nleftover; }
     graph->GetComm().SumAll(&nAggregates,&total_aggs,1);
     if ( myPid == 0 ) {
       printf("Aggregation(%s) : Phase 3 - total aggregates = %d\n",label, total_aggs);
@@ -1225,7 +1230,7 @@ int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight,
     }
     for (int i=0; i < weight.Map().NumMyElements(); i++) weight[i]= perturbWt[i]; 
   }
-
+  
   // Communicate weights and store results in PostComm (which will be copied
   // back into weights later. When multiple processors have different weights
   // for the same GID, we take the largest weight. After this fragment every
