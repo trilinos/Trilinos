@@ -479,7 +479,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     // Iterate until the status test tells us to stop.
     //
     // TODO Replace this status test by something Belos-flavored.
-    while ( phibar > 1.0e-10 ) { // phibar = residual norm
+    //while ( phibar > 1.0e-10 ) { // phibar = residual norm
+    while (stest_->checkStatus(this) != Passed) {
 
       // Increment the iteration
       iter_++;
@@ -560,6 +561,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // Update x:
       // x = x + phi*w;
       MVT::MvAddMv( one, *cur_soln_vec, phi, *W_, *cur_soln_vec );
+      lp_->updateSolution();
     } // end while (sTest_->checkStatus(this) != Passed)
   }
 

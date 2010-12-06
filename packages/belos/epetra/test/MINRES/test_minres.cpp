@@ -100,7 +100,6 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
-  cmdp.setOption("ortho-type",&ortho,"Orthogonalization type. Must be one of DGKS, ICGS, IMGS.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -158,7 +157,6 @@ int main(int argc, char *argv[]) {
   ParameterList belosList;
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-  belosList.set( "Orthogonalization", ortho );           // Orthogonalization type
 
   int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {
@@ -169,7 +167,7 @@ int main(int argc, char *argv[]) {
   if (debug) {
     verbosity += Belos::Debug;
   }
-  belosList.set( "Verbosity", verbosity );
+  belosList.set( "Verbosity", (int) verbosity );
   //
   // Construct an unpreconditioned linear problem instance.
   //

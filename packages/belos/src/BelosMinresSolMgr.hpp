@@ -179,8 +179,8 @@ namespace Belos {
     ///     residual norms must reach to decide convergence. Default value: 1e-8.
     ///   - "Maximum Iterations" - an \c int specifying the maximum number of 
     ///     iterations the underlying solver is allowed to perform. Default: 1000
-    ///   - "Verbosity" - a sum of MsgType specifying the verbosity. 
-    ///     Default value: Belos::Errors
+    ///   - "Verbosity" - a sum of MsgType (stored as an int) specifying the 
+    ///     verbosity.  Default value: Belos::Errors
     ///   - "Output Style" - a OutputType specifying the style of output. 
     ///     Default value: Belos::General
     ///   - "Output Stream" - a reference-counted pointer to the output stream 
@@ -437,10 +437,10 @@ namespace Belos {
 	// pl->set("Adaptive Block Size", adaptiveBlockSize_default_,
 	// 	      "Whether the solver manager should adapt to the block size\n"
 	// 	      "based on the number of right-hand sides to solve.");
-	pl->set ("Verbosity", Belos::Errors,
+	pl->set ("Verbosity", (int) Belos::Errors,
 		 "The type(s) of solver information that should "
 		 "be written to the output stream.");
-	pl->set ("Output Style", Belos::General,
+	pl->set ("Output Style", (int) Belos::General,
 		 "What style is used for the solver information written "
 		 "to the output stream.");
 	pl->set ("Output Frequency", static_cast<int>(-1),
@@ -559,22 +559,17 @@ namespace Belos {
     // particular solver.
     blockSize_ = params->get<int> ("Block Size");
 
-    // Check to see if the timer label changed.
+    // Change the timer label.
     {
-      const string tempLabel = params->get< string > ("Timer Label");
-      // Update parameter in our list and solver timer
-      if (tempLabel != label_) 
-	{
-	  label_ = tempLabel;
+      label_ = params->get< string > ("Timer Label");
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-	  const string solveLabel = label_ + ": MinresSolMgr total solve time";
-	  timerSolve_ = Teuchos::TimeMonitor::getNewTimer(solveLabel);
+      const string solveLabel = label_ + ": MinresSolMgr total solve time";
+      timerSolve_ = Teuchos::TimeMonitor::getNewTimer (solveLabel);
 #endif
-	}
     }
 
     // Set verbosity level
-    verbosity_ = params->get<int> ("Verbosity");
+    verbosity_ = params->get< int > ("Verbosity");
     // We may not have created the output manager yet.  If we haven't,
     // we will create it below and set the verbosity level
     // appropriately.
@@ -587,20 +582,13 @@ namespace Belos {
     //outputTest_ == Teuchos::null;
 
     // Set output stream
-    {
-      RCP< std::ostream > tempOutputStream = 
-	params->get< RCP< std::ostream > > ("Output Stream");
-      if (outputStream_ != tempOutputStream)
-	{
-	  outputStream_ = tempOutputStream;
-	  // Tell the output manager about the new output stream.  We
-	  // may not yet have created the output manager yet, so check
-	  // here if it is not null.  We will create the output manager
-	  // if necessary below.
-	  if (! Teuchos::is_null (printer_))
-	    printer_->setOStream (outputStream_);
-	}
-    }
+    outputStream_ = params->get< RCP< std::ostream > > ("Output Stream");
+    // Tell the output manager about the new output stream.  We
+    // may not yet have created the output manager yet, so check
+    // here if it is not null.  We will create the output manager
+    // if necessary below.
+    if (! Teuchos::is_null (printer_))
+      printer_->setOStream (outputStream_);
 
     // Set output frequency level
     if (Belos::StatusTestDetails) 
@@ -611,9 +599,8 @@ namespace Belos {
 	  outputTest_->setOutputFrequency (outputFreq_);
       }
 
-    // Create output manager if we need to.
-    if (printer_ == Teuchos::null)
-      printer_ = rcp (new OutputManager< ScalarType >(verbosity_, outputStream_));
+    // Create output manager
+    printer_ = rcp (new OutputManager< ScalarType >(verbosity_, outputStream_));
   
     //
     // Set up the convergence tests
@@ -622,46 +609,28 @@ namespace Belos {
     typedef Belos::StatusTestGenResNorm< ScalarType, MV, OP > StatusTestResNorm_t;
 
     // Set convergence tolerance
-    bool newConvergenceTolerance = false;
-    {
-      const MagnitudeType newConvTol = 
-	params->get< MagnitudeType >("Convergence Tolerance");
-      if (newConvTol != convtol_)
-	{
-	  convtol_ = newConvTol;
-	  newConvergenceTolerance = true;
-	}
-    }
+    convtol_ = params->get< MagnitudeType >("Convergence Tolerance");
+
     // Residual status test.  It uses the native residual to determine
     // if convergence was achieved.  Initialize it if we haven't yet
-    // done so, otherwise tell it the new convergence tolerance if we
-    // changed the convergence tolerance.
+    // done so, otherwise tell it the new convergence tolerance.
     if (is_null (convTest_))
-      convTest_ = rcp (new StatusTestResNorm_t (convtol_, 1));
-    else if (newConvergenceTolerance)
+      convTest_ = rcp (new StatusTestResNorm_t (convtol_, -1));
+    else
       convTest_->setTolerance (convtol_);
 
     // Set maximum number of iterations.
-    bool newMaximumNumberOfIterations = false;
-    {
-      const int newMaxIters = params->get<int>("Maximum Iterations");
-      if (newMaxIters != maxIters_)
-	{
-	  maxIters_ = newMaxIters;
-	  newMaximumNumberOfIterations = true;
-	}
-    }
+    maxIters_ = params->get<int>("Maximum Iterations");
+
     // Maximum number of iterations status test.  It tells the solver to
     // stop iteration, if the maximum number of iterations has been
     // exceeded.  Initialize it if we haven't yet done so, otherwise
-    // tell it the new maximum number of iterations if that number was
-    // changed.
+    // tell it the new maximum number of iterations.
     if (is_null (maxIterTest_))
       maxIterTest_ = rcp (new StatusTestMaxIters<ScalarType,MV,OP> (maxIters_));
-    else if (newMaximumNumberOfIterations)
+    else
       maxIterTest_->setMaxIters (maxIters_);
 
-    //
     // Create the full status test if we need to.  
     //
     // The full status test: maximum number of iterations reached, OR
@@ -672,7 +641,6 @@ namespace Belos {
     // convTest_, so if we changed either the convergence tolerance
     // and/or the maximum number of iterations, the full status test
     // will get the results of the updates.
-    //
     if (is_null (sTest_))
       sTest_ = rcp (new StatusTestCombo_t (StatusTestCombo_t::OR, maxIterTest_, convTest_));
   
@@ -688,7 +656,7 @@ namespace Belos {
       }
 
     // Create the timer if we need to.
-    if (is_null (timerSolve_) == Teuchos::null) 
+    if (is_null (timerSolve_))
       {
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 	const std::string solveLabel = label_ + ": MinresSolMgr total solve time";
@@ -818,7 +786,10 @@ namespace Belos {
 	  // probably our fault.
 	  else {
 	    TEST_FOR_EXCEPTION(true, std::logic_error,
-			       "Belos::MinresSolMgr::solve(): Invalid return from CGIteration::iterate().");
+			       "Belos::MinresSolMgr::solve(): iterations neither"
+			       " converged, nor reached the maximum number of it"
+			       "erations " << maxIters_ << ".  That means someth"
+			       "ing went wrong.");
 	  }
 	} catch (const std::exception &e) {
 	  printer_->stream(Errors) 
