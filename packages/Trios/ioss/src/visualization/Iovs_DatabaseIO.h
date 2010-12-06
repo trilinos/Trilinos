@@ -51,7 +51,8 @@ namespace Iovs {
        * throw an exception if not found.
        */
       int    node_global_to_local(int global, bool must_exist) const;
-      int element_global_to_local(int global) const;
+      // this is unnecessary for vis
+      int element_global_to_local(int global) const { return global; }
 
       bool begin(Ioss::State state);
       bool   end(Ioss::State state);
@@ -66,17 +67,18 @@ namespace Iovs {
 				    std::vector<std::string> &block_membership) const;
 
     private:
+      // For the time being, treat vis as write only. Consider glue pipelines.
       int get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
+			     void *data, size_t data_size) const { return 0; }
 
       int get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
+			     void *data, size_t data_size) const { return 0; }
       int get_field_internal(const Ioss::FaceBlock* fb, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
       int get_field_internal(const Ioss::EdgeBlock* eb, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
       int get_field_internal(const Ioss::NodeBlock* nb, const Ioss::Field& field,
-			     void *data, size_t data_size) const;
+			     void *data, size_t data_size) const { return 0; }
 
       int get_field_internal(const Ioss::NodeSet* ns, const Ioss::Field& field,
 			     void *data, size_t data_size) const { return 0; }
@@ -113,8 +115,6 @@ namespace Iovs {
       int handle_node_ids(int* ids, size_t num_to_get);
       int handle_element_ids(const Ioss::ElementBlock *eb, int* ids, size_t num_to_get);
 
-      
-
       // void build_element_reorder_map(int start, int count);
       // void build_node_reorder_map(int *new_ids, int count);
 
@@ -125,8 +125,6 @@ namespace Iovs {
       DatabaseIO(const DatabaseIO&); // Do not implement
       DatabaseIO& operator=(const DatabaseIO&); // Do not implement
 
-      // Ioss::ParallelUtils util_; // Encapsulate parallel and other utility functions.
-      // Region *region_;
       bool isInput;
       bool singleProcOnly; // True if history or heartbeat which is only written from proc 0...
       bool doLogging; // True if logging field input/output
@@ -175,7 +173,7 @@ namespace Iovs {
       // 1 if nonsequential
       // mutable Ioss::MapContainer        elementMap;
       // mutable Ioss::MapContainer        reorderElementMap;
-      mutable Ioss::ReverseMapContainer reverseElementMap;
+      // mutable Ioss::ReverseMapContainer reverseElementMap;
       mutable bool sequentialEG2L; // true if reverse element map is
 				   // sequential (local==global)
 
@@ -253,6 +251,7 @@ namespace Iovs {
       return local;
     }
 
+  /*
   inline int DatabaseIO::element_global_to_local(int global) const
     {
       int local = global;
@@ -278,8 +277,7 @@ namespace Iovs {
       }
       return local;
     }
-    
-
+  */
 };
 
 #endif
