@@ -187,4 +187,5 @@ ENDIF()
 
 # Custom "make install" command to copy contents of Dakota lib&include
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/lib/ DESTINATION lib)
+INSTALL(FILES ${Boost_INCLUDE_DIRS}/lib/libboost_signals.a  DESTINATION lib)
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/include/ DESTINATION include)
