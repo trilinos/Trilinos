@@ -12,9 +12,11 @@
 // *******************************************************************
 panzer::PhysicsBlock::
 PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
+             const std::string & element_block_id,
 	     const panzer::CellData cell_data,
 	     const panzer::EquationSetFactory& factory) :
   m_physics_id(ipb.physics_block_id),
+  m_element_block_id(element_block_id),
   m_cell_data(cell_data)
 {
   using Teuchos::RCP;
@@ -152,6 +154,12 @@ const shards::CellTopology panzer::PhysicsBlock::getBaseCellTopology() const
 std::string panzer::PhysicsBlock::physicsBlockID() const
 {
   return m_physics_id;
+}
+
+// *******************************************************************
+std::string panzer::PhysicsBlock::elementBlockID() const
+{
+  return m_element_block_id;
 }
 
 // *******************************************************************

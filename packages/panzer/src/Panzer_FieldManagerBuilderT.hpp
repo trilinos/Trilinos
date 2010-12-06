@@ -83,7 +83,7 @@ setup(const Teuchos::RCP<panzer::ConnManager<LO,GO> >& conn_manager,
       const panzer::InputPhysicsBlock& ipb = ipb_it->second;
 
       RCP<panzer::PhysicsBlock> pb = 
-	rcp(new panzer::PhysicsBlock(ipb, volume_cell_data, eqset_factory));
+	rcp(new panzer::PhysicsBlock(ipb, itr->first, volume_cell_data, eqset_factory));
       
       phxPhysicsBlocks.push_back(pb);
       worksets_.push_back(volume_worksets.find(itr->first)->second);
@@ -257,6 +257,84 @@ template<typename LO, typename GO>
 void panzer::FieldManagerBuilder<LO,GO>::print(std::ostream& os) const
 {
   os << "panzer::FieldManagerBuilder<LO,GO> output:  Not implemented yet!";
+}
+
+//=======================================================================
+//=======================================================================
+template<typename LO, typename GO>
+void panzer::FieldManagerBuilder<LO,GO>::buildPhysicsBLocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
+                                                            const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
+                                                            int base_cell_dimension, std::size_t workset_size,
+	                                                    const panzer::EquationSetFactory & eqset_factory,
+                                                            std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks
+                                                            ) const 
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   // loop over all block id physics id pairs
+   std::map<std::string,std::string>::const_iterator itr;
+   for (itr = block_ids_to_physics_ids.begin(); itr!=block_ids_to_physics_ids.end();++itr) {
+      std::string element_block_id = itr->first;
+      std::string physics_block_id = itr->second;
+ 
+      const panzer::CellData volume_cell_data(workset_size, base_cell_dimension);
+      
+      // find InputPhysicsBlock that corresponds to a paricular block ID
+      std::map<std::string,panzer::InputPhysicsBlock>::const_iterator ipb_it = 
+            physics_id_to_input_physics_blocks.find(physics_block_id);
+
+      // sanity check: passes only if there is a paricular physics ID
+      TEST_FOR_EXCEPTION(ipb_it == physics_id_to_input_physics_blocks.end(),
+			 std::runtime_error,
+			 "Falied to find InputPhysicsBlock for physics id: "
+			 << physics_block_id << "!");
+
+      const panzer::InputPhysicsBlock& ipb = ipb_it->second;
+      RCP<panzer::PhysicsBlock> pb = 
+	rcp(new panzer::PhysicsBlock(ipb, element_block_id, volume_cell_data, eqset_factory));
+      physicsBlocks.push_back(pb);
+   }
+}
+
+//=======================================================================
+//=======================================================================
+template<typename LO, typename GO>
+void panzer::FieldManagerBuilder<LO,GO>::buildDOFManager(const Teuchos::RCP<panzer::ConnManager<LO,GO> > & conn_manager, MPI_Comm comm,
+                                                         const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks)
+{
+   Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
+   pout->setShowProcRank(true);
+   pout->setOutputToRootOnly(0);
+
+   // build the DOF manager for the problem
+   dofMngr_ = Teuchos::rcp(new panzer::DOFManager<LO,GO>(conn_manager,comm));
+
+   std::vector<Teuchos::RCP<panzer::PhysicsBlock> >::const_iterator physIter;
+   for(physIter=physicsBlocks.begin();physIter!=physicsBlocks.end();++physIter) {
+      Teuchos::RCP<const panzer::PhysicsBlock> pb = *physIter;
+       
+      const std::vector<StrBasisPair> & blockFields = pb->getProvidedDOFs();
+
+      // insert all fields into a set
+      std::set<StrBasisPair,StrBasisComp> fieldNames;
+      fieldNames.insert(blockFields.begin(),blockFields.end()); 
+
+      // add basis to DOF manager: block specific
+      std::set<StrBasisPair>::const_iterator fieldItr; 
+      for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
+         Teuchos::RCP< Intrepid::Basis<double,Intrepid::FieldContainer<double> > > intrepidBasis 
+               = fieldItr->second->getIntrepidBasis();
+         Teuchos::RCP<IntrepidFieldPattern> fp = Teuchos::rcp(new IntrepidFieldPattern(intrepidBasis));
+         dofMngr_->addField(pb->elementBlockID(),fieldItr->first,fp);
+
+         *pout << "\"" << fieldItr->first << "\" Field Pattern = \n";
+         fp->print(*pout);
+      }
+   } 
+
+   dofMngr_->buildGlobalUnknowns();
+   dofMngr_->printFieldInformation(*pout);
 }
 
 //=======================================================================

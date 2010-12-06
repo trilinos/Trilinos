@@ -55,8 +55,9 @@ namespace panzer_test_utils {
     
     user_app::MyFactory eqs_factory;
     
+    std::string element_block_id = "eblock_id";
     Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
-      Teuchos::rcp(new panzer::PhysicsBlock(ipb,cd,eqs_factory));
+      Teuchos::rcp(new panzer::PhysicsBlock(ipb,element_block_id,cd,eqs_factory));
     
     return physics_block;
   }
@@ -185,6 +186,16 @@ namespace panzer {
     std::vector<Teuchos::ParameterList> models = panzer_test_utils::buildModelDescriptors();
 
     physics_block->buildAndRegisterModelEvaluators(fm,my_factories,models);
+  }
+
+  TEUCHOS_UNIT_TEST(physics_block, elementBlockID)
+  {
+
+    Teuchos::RCP<panzer::PhysicsBlock> physics_block = 
+      panzer_test_utils::createPhysicsBlock();
+   
+
+    TEST_EQUALITY(physics_block->elementBlockID(),"eblock_id");
   }
 
   TEUCHOS_UNIT_TEST(physics_block, templated_evaluator_builders)

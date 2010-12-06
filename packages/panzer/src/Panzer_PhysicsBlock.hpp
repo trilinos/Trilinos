@@ -33,6 +33,7 @@ namespace panzer {
     typedef std::pair<std::string,Teuchos::RCP<panzer::Basis> > StrBasisPair;
     
     PhysicsBlock(const panzer::InputPhysicsBlock& ipb,
+                 const std::string & element_block_id,
 		 const panzer::CellData cell_data,
 		 const panzer::EquationSetFactory& factory);
 
@@ -62,12 +63,14 @@ namespace panzer {
     const shards::CellTopology getBaseCellTopology() const;
 
     std::string physicsBlockID() const;
+    std::string elementBlockID() const;
 
     const panzer::CellData cellData() const;
 
   protected:
 
     std::string m_physics_id;
+    std::string m_element_block_id;
     panzer::CellData m_cell_data;
 
     std::vector<std::string> m_dof_names;
