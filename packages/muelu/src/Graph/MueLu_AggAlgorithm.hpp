@@ -38,6 +38,7 @@
 
 using namespace std;
 using namespace MueLu;
+using Teuchos::ArrayView;
 
 int MueLu_PrintLevel() { return 7; }    /* Normally this should be some general*/
                                         /* attribute the indicates the level   */
@@ -129,7 +130,7 @@ extern int MueLu_ComputeAggSizes(Aggregates *aggregates, int *AggSizes);
 Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions 
                                              *aggOptions, Graph *graph)
 {
-  int     i, j, k, m, kk, iNode = 0, jNode, length, nRows;
+  int     i, j, k, m, iNode = 0, jNode, length, nRows;
   int     selectFlag, nAggregates, index, myPid, iNode2;
   int     *vertex2AggId = NULL; //, *itmpArray = NULL,
   int     count;
@@ -241,8 +242,10 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
 
       if ( aggStat[iNode] == MUELOO_AGGR_READY ) 
         {
-          length = graph->vertexNeighborsPtr[iNode+1] - 
-            graph->vertexNeighborsPtr[iNode] + 1;
+          // neighOfINode is the neighbor node list of node 'iNode'.
+          ArrayView<int> neighOfINode = graph->getNeighborVertices(iNode);
+          length = neighOfINode.size();
+          
           supernode = (MueLu_SuperNode *) malloc(sizeof(MueLu_SuperNode));      
           supernode->list = (int*) malloc(length*sizeof(int));
 
@@ -263,9 +266,9 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
           /*--------------------------------------------------- */
 
           count = 0;
-          for (jNode=graph->vertexNeighborsPtr[iNode];jNode<graph->vertexNeighborsPtr[iNode+1];jNode++) 
+          for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
             {
-              index = graph->vertexNeighbors[jNode];
+              index = *it;
               if ( index < nRows ) 
                 {
                   if ( aggStat[index] == MUELOO_AGGR_READY || 
@@ -298,9 +301,9 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
               free( supernode );
               if ( ordering == 2 ) /* if graph ordering */
                 {
-                  for (jNode=graph->vertexNeighborsPtr[iNode];jNode<graph->vertexNeighborsPtr[iNode+1];jNode++) 
+                  for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                     {
-                      index = graph->vertexNeighbors[jNode];
+                      index = *it;
                       if ( aggStat[index] == MUELOO_AGGR_READY )
                         { 
                           newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
@@ -328,12 +331,13 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
                   vertex2AggId[jNode] = nAggregates;
                   if ( ordering == 2 ) /* if graph ordering */
                     {
-                      for (kk=graph->vertexNeighborsPtr[jNode];kk<graph->vertexNeighborsPtr[jNode+1];kk++) 
+                      for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                         {
-                          if ( aggStat[(graph->vertexNeighbors)[kk]] == MUELOO_AGGR_READY )
+                          index = *it;
+                          if ( aggStat[index] == MUELOO_AGGR_READY )
                             { 
                               newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
-                              newNode->nodeId = graph->vertexNeighbors[kk];
+                              newNode->nodeId = index;
                               newNode->next = NULL;
                               if ( nodeHead == NULL )
                                 {
@@ -622,12 +626,14 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   // Tentatively assign any vertex (ghost or local) which neighbors a root
   // to the aggregate associated with the root.
 
-  for (int i =0; i < nVertices; i++) {
-    if ( aggregates->IsRoot(i) && (procWinner[i] == myPid) ){
-      rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
-      rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
-      for (j = 0; j < rowi_N; j++) {
-        int colj = rowi_col[j];
+  for (int i = 0; i < nVertices; i++) { 
+    if ( aggregates->IsRoot(i) && (procWinner[i] == myPid) ) {
+
+      // neighOfINode is the neighbor node list of node 'i'.
+      ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+      
+      for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        int colj = *it;
         if (vertex2AggId[colj] == MUELOO_UNAGGREGATED) {
           weights[colj]= 1.;
           vertex2AggId[colj] = vertex2AggId[i];
@@ -666,11 +672,13 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   for (i = 0; i < nVertices; i++) {
     if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
       {
-        rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
-        rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
+
+        // neighOfINode is the neighbor node list of node 'iNode'.
+        ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+
         nonaggd_neighbors = 0;
-        for (j = 0; j < rowi_N; j++) {
-          int colj = rowi_col[j];
+        for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          int colj = *it;
           if (vertex2AggId[colj] == MUELOO_UNAGGREGATED && colj < nVertices)
             nonaggd_neighbors++;
         }
@@ -678,8 +686,8 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
               (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
           {
             vertex2AggId[i] = (nAggregates)++;
-            for (j = 0; j < rowi_N; j++) {
-              int colj = rowi_col[j];
+            for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+              int colj = *it;
               if (vertex2AggId[colj]==MUELOO_UNAGGREGATED) {
                 vertex2AggId[colj] = vertex2AggId[i];
                 if (colj < nVertices) weights[colj] = 2.;
@@ -780,18 +788,19 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
       threshold = (threshold*(kkk+1.))/((double) MUELOO_PHASE4BUCKETS);
       priorThreshold = threshold;
 
-      for (k = 0; k < nCandidates ; k++ ) {
-        i = candidates[k];
+      for (k = 0; k < nCandidates ; k++ ) { 
+        i = candidates[k];                  
         if ((vertex2AggId[i] == MUELOO_UNAGGREGATED) && 
             (fabs(temp[i])  < threshold)) {
           // Note: priorThreshold <= fabs(temp[i]) <= 1
-          rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
-          rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
 
-          if (rowi_N >= minNodesPerAggregate) {
+          // neighOfINode is the neighbor node list of node 'iNode'.
+          ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+
+          if (neighOfINode.size() > minNodesPerAggregate) { //TODO: check if this test is exactly was we want to do
             int count = 0;
-            for (j = 0; j < rowi_N; j++) {
-              Adjacent    = rowi_col[j];
+            for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+              Adjacent    = *it;
               // This might not be true if someone close to i
               // is chosen as a root via fabs(temp[]) < Threshold
               if (vertex2AggId[Adjacent] == MUELOO_UNAGGREGATED){
@@ -806,8 +815,8 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
               aggregates->SetIsRoot(i);
             }
             else { // undo things
-              for (j = 0; j < rowi_N; j++) {
-                Adjacent    = rowi_col[j];
+              for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+                Adjacent    = *it;
                 if (vertex2AggId[Adjacent] == nAggregates){
                   vertex2AggId[Adjacent] = MUELOO_UNAGGREGATED;
                   weights[Adjacent] = 0.;
@@ -853,10 +862,12 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   vector<int> RowPtr(exp_nRows+1-nVertices);
   for (i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
   for (i = 0; i < nVertices;  i++) {
-    rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
-    rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
-    for (int k = 0; k < rowi_N; k++) {
-      j = rowi_col[k];
+
+    // neighOfINode is the neighbor node list of node 'iNode'.
+    ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+
+    for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      j = *it;
       if ( (j >= nVertices) && (vertex2AggId[j] == MUELOO_UNAGGREGATED)){
         RowPtr[j-nVertices]++;
       }
@@ -876,10 +887,12 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
    
   //     c) Traverse matrix and insert entries in proper location.
   for (i = 0; i < nVertices;  i++) {
-    rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
-    rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
-    for (int k = 0; k < rowi_N; k++) {
-      j = rowi_col[k];
+
+    // neighOfINode is the neighbor node list of node 'iNode'.
+    ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+    
+    for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      j = *it;
       if ( (j >= nVertices) && (vertex2AggId[j] == MUELOO_UNAGGREGATED)){
         cols[RowPtr[j-nVertices]++] = i;
       }
@@ -1000,8 +1013,9 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   for (i = 0; i < nVertices; i++) { 
     if ((vertex2AggId[i] == MUELOO_UNAGGREGATED) ) {
       Nleftover++;
-      rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
-      rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
+
+      // neighOfINode is the neighbor node list of node 'iNode'.
+      ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
 
       // We don't want too small of an aggregate. So lets see if there is an
       // unaggregated neighbor that we can also put with this vertex
@@ -1010,11 +1024,12 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
       weights[i] = 1.;
       if (count == 0) aggregates->SetIsRoot(i);
       count++;
-      for (j = 0; j < rowi_N; j++) {
-        if ((rowi_col[j] != i)&&(vertex2AggId[rowi_col[j]] == MUELOO_UNAGGREGATED)&&
-            (rowi_col[j] < nVertices)) {
-          vertex2AggId[rowi_col[j]] = nAggregates;
-          weights[rowi_col[j]] = 1.;
+      for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        int j = *it;
+        if ((j != i)&&(vertex2AggId[j] == MUELOO_UNAGGREGATED)&&
+            (j < nVertices)) {
+          vertex2AggId[j] = nAggregates;
+          weights[j] = 1.;
           count++;
         }
       }
@@ -1326,7 +1341,7 @@ int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight,
 int MueLu_RootCandidates(int nVertices, int *vertex2AggId, Graph *graph,
                          int *candidates, int &nCandidates, int &nCandidatesGlobal) {
 
-  int rowi_N, *rowi_col, adjacent;
+  int  adjacent;
   bool noAggdNeighbors;
 
   nCandidates = 0;
@@ -1334,11 +1349,12 @@ int MueLu_RootCandidates(int nVertices, int *vertex2AggId, Graph *graph,
   for (int i = 0; i < nVertices; i++ ) {
     if (vertex2AggId[i] == MUELOO_UNAGGREGATED) {
       noAggdNeighbors = true;
-      rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
-      rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
 
-      for (int j = 0; j < rowi_N; j++) {
-        adjacent    = rowi_col[j];
+      // neighOfINode is the neighbor node list of node 'iNode'.
+      ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+
+      for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        adjacent    = *it;
         if (vertex2AggId[adjacent] != MUELOO_UNAGGREGATED) 
           noAggdNeighbors = false;
       }
@@ -1422,3 +1438,12 @@ int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
 
   return 0; //TODO
 }
+
+
+// TODO: rename variables:
+//  Adjacent-> adjacent
+//  homogenization of variables names :
+//  - colj and j
+//  - i and iNode
+//  - k->kNode
+//  - ...
