@@ -17,6 +17,13 @@ PACKAGE_ADD_EXECUTABLE(
    COMM mpi
    )
 
+PACKAGE_ADD_EXECUTABLE(
+   teko_ml_prec
+   SOURCES 
+      teko_ml_prec.cpp
+   COMM mpi
+   )
+
 PACKAGE_COPY_FILES_TO_BINARY_DIR(ml_teko_copy
   SOURCE_FILES 
     ml_teko.xml
