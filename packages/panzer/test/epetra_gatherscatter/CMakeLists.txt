@@ -11,3 +11,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES tEpetraGather.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  tEpetraScatter
+  SOURCES tEpetraScatter.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  )
