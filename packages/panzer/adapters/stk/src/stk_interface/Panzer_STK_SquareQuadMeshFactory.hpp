@@ -30,6 +30,9 @@ public:
    //! Build the mesh object
    Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
 
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const;
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const;
+
    //! From ParameterListAcceptor
    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & paramList);
 

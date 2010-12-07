@@ -18,6 +18,20 @@ SquareQuadMeshFactory::~SquareQuadMeshFactory()
 //! Build the mesh object
 Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk::ParallelMachine parallelMach) const
 {
+   // build all meta data
+   RCP<STK_Interface> mesh = buildUncommitedMesh(parallelMach);
+
+   // commit meta data
+   mesh->initialize(parallelMach);
+
+   // build bulk data
+   completeMeshConstruction(*mesh,parallelMach);
+
+   return mesh;
+}
+
+Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
+{
    RCP<STK_Interface> mesh = rcp(new STK_Interface);
 
    machRank_ = stk::parallel_machine_rank(parallelMach);
@@ -25,17 +39,23 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk::ParallelMachin
 
    // build meta information: blocks and side set setups
    buildMetaData(parallelMach,*mesh);
+ 
+  return mesh;
+}
+
+void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const
+{
+   if(not mesh.isInitialized())
+      mesh.initialize(parallelMach);
 
    // add node and element information
-   buildElements(parallelMach,*mesh);
+   buildElements(parallelMach,mesh);
 
    // finish up the edges
-   mesh->buildSubcells(stk::mesh::Edge);
+   mesh.buildSubcells(stk::mesh::Edge);
 
    // now that edges are built, sidets can be added
-   addSideSets(*mesh);
-
-   return mesh;
+   addSideSets(mesh);
 }
 
 //! From ParameterListAcceptor
@@ -118,8 +138,6 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
    mesh.addSideset("right");
    mesh.addSideset("top");
    mesh.addSideset("bottom");
-
-   mesh.initialize(parallelMach);
 }
 
 void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const

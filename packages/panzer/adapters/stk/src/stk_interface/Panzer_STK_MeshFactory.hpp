@@ -24,6 +24,16 @@ public:
      *          <code>isModifiable()==false</code>.
      */ 
    virtual Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const = 0;
+
+   /** This builds all the meta data of the mesh. Does not call metaData->commit.
+     * Allows user to add solution fields and other pieces. The mesh can be "completed"
+     * by calling <code>completeMeshConstruction</code>.
+     */
+   virtual Teuchos::RCP<STK_Interface> buildUncommitedMesh(stk::ParallelMachine parallelMach) const = 0;
+
+   /** Finishes building a mesh object started by <code>buildUncommitedMesh</code>.
+     */
+   virtual void completeMeshConstruction(STK_Interface & mesh,stk::ParallelMachine parallelMach) const = 0;
 };
 
 }
