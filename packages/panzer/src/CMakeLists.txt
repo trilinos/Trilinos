@@ -81,6 +81,8 @@ APPEND_SET(HEADERS
   evaluators/Panzer_GatherSolution_EpetraT.hpp
   evaluators/Panzer_ScatterResidual_Epetra.hpp
   evaluators/Panzer_ScatterResidual_EpetraT.hpp
+  evaluators/Panzer_ScatterDirichletResidual_Epetra.hpp
+  evaluators/Panzer_ScatterDirichletResidual_EpetraT.hpp
   ) 
 
 APPEND_SET(SOURCES
