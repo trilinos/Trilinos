@@ -12,6 +12,7 @@
 #include "Epetra_CrsMatrix.h"
 
 #include "Cthulhu_CrsMatrix.hpp"
+#include "Cthulhu_EpetraCrsGraph.hpp"
 
 #include "Cthulhu_EpetraMap.hpp"
 #include "Cthulhu_EpetraMultiVector.hpp"
@@ -282,13 +283,16 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the RowGraph associated with this matrix. 
-    inline RCP<const RowGraph<int,int> > getGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getGraph(); }
+    inline RCP<const RowGraph<int,int> > getGraph() const { CTHULHU_DEBUG_ME; return mtx_->Graph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the CrsGraph associated with this matrix. 
-    inline RCP<const CrsGraph<int,int,LocalMatOps> > getCrsGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getCrsGraph(); }
-#endif // CTHULHU_NOT_IMPLEMENTED
+    inline RCP<const CrsGraph<int,int> > getCrsGraph() const { CTHULHU_DEBUG_ME; 
+      RCP<const Epetra_CrsGraph> graph = rcp(new Epetra_CrsGraph(mtx_->Graph())); // Copy
+      return rcp ( new Cthulhu::EpetraCrsGraph(graph) );
+    }
+#endif
 
     //! Returns the number of global rows in this matrix.
     /** Undefined if isFillActive().

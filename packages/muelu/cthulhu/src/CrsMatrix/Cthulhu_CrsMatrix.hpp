@@ -9,7 +9,7 @@
 //#include "Cthulhu_RowMatrix.hpp"
 //TODO #include "Cthulhu_DistObject.hpp"
 #include "Teuchos_Describable.hpp"
-//#include "Cthulhu_CrsGraph.hpp"
+#include "Cthulhu_CrsGraph.hpp"
 //#include "Cthulhu_Vector.hpp"
 //TODO ??? #include "Cthulhu_CrsMatrixMultiplyOp_decl.hpp"
 
@@ -230,10 +230,8 @@ namespace Cthulhu {
     virtual RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED       
     //! Returns the CrsGraph associated with this matrix. 
     virtual RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Returns the number of global rows in this matrix.
     /** Undefined if isFillActive().

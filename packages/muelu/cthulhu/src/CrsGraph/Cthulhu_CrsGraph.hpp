@@ -72,7 +72,7 @@ namespace Cthulhu {
     //@{ 
 
     // !Destructor.
-    virtual ~CrsGraph() = 0;
+    virtual ~CrsGraph() {}
 
     //@}
 
@@ -182,16 +182,16 @@ namespace Cthulhu {
     virtual RCP<Node> getNode() const = 0;
 
     //! Returns the Map that describes the row distribution in this graph.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const = 0;
+    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const = 0;
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const = 0;
+    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const = 0;
 
     //! Returns the Map associated with the domain of this graph.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
+    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const = 0;
 
     //! Returns the Map associated with the domain of this graph.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
+    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const = 0;
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the importer associated with this graph.
@@ -310,8 +310,10 @@ namespace Cthulhu {
     */
     virtual bool isStorageOptimized() const = 0;
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns \c true if the graph was allocated with static data structures.
     virtual ProfileType getProfileType() const = 0;
+#endif
 
     //! Extract a list of elements in a specified global row of the graph. Put into pre-allocated storage.
     /*!

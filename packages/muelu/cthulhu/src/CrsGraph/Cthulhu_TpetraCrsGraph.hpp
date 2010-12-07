@@ -16,6 +16,8 @@
 #include <Kokkos_CrsGraph.hpp>
 #include <Kokkos_NodeHelpers.hpp>
 
+#include <Tpetra_CrsGraph.hpp>
+
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_CrsGraph.hpp"
 //#include "Cthulhu_RowGraph.hpp"
@@ -56,30 +58,54 @@ namespace Cthulhu {
             class GlobalOrdinal = LocalOrdinal, 
             class Node = Kokkos::DefaultNode::DefaultNodeType,
             class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
-  class TpetraCrsGraph : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalOrdinal> {
+  class TpetraCrsGraph : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
                    
    // template <class S, class LO, class GO, class N, class SpMatOps>
    // friend class CrsMatrix;
 
+    // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
+    typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
+    
   public: 
     //! @name Constructor/Destructor Methods
     //@{ 
 
   //! Constructor with fixed number of indices per row.
-  TpetraCrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+  TpetraCrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile)
+    { CTHULHU_DEBUG_ME;
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsGraph constructors only accept Cthulhu::TpetraMap as input arguments.");
+      graph_ = rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>(tRowMap->getTpetra_Map(), maxNumEntriesPerRow)); //TODO: convert, pftype));
+    }
 
   //! Constructor with variable number of indices per row.
-  TpetraCrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
-
+  TpetraCrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile)
+    { CTHULHU_DEBUG_ME;
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsGraph constructors only accept Cthulhu::TpetraMap as input arguments.");
+      graph_ = rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>(tRowMap->getTpetra_Map(), NumEntriesPerRowToAlloc)); //TODO: convert, pftype));
+    }
+    
   //! Constructor with fixed number of indices per row and specified column map.
   /** The column map will be used to filter any graph indices inserted using insertLocalIndices() or insertGlobalIndices().
    */
-  TpetraCrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+  TpetraCrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile)
+    { CTHULHU_DEBUG_ME;
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsGraph constructors only accept Cthulhu::TpetraMap as input arguments.");
+      graph_ = rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>(tRowMap->getTpetra_Map(), colMap, maxNumEntriesPerRow)); //TODO: convert, pftype));
+    }
 
   //! Constructor with variable number of indices per row and specified column map.
   /** The column map will be used to filter any graph indices inserted using insertLocalIndices() or insertGlobalIndices().
    */
-  TpetraCrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
+  TpetraCrsGraph(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile)
+    { CTHULHU_DEBUG_ME;
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rowMap, tRowMap, "Cthulhu::TpetraCrsGraph constructors only accept Cthulhu::TpetraMap as input arguments.");
+      graph_ = rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>(tRowMap->getTpetra_Map(), colMap, NumEntriesPerRowToAlloc)); //TODO: convert, pftype));
+    }
+    
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &graph) : graph_(graph) { 
+      
+      CTHULHU_DEBUG_ME; 
+    }
 
     // !Destructor.
     inline ~TpetraCrsGraph() { CTHULHU_DEBUG_ME; };
@@ -163,7 +189,12 @@ namespace Cthulhu {
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
-    inline void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { CTHULHU_DEBUG_ME; graph_->fillComplete(domainMap, rangeMap, os); };
+    inline void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) {  //TODO: os
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, domainMap, tDomainMap, "Cthulhu::TpetraCrsGraph constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rangeMap,  tRangeMap,  "Cthulhu::TpetraCrsGraph constructors only accept Cthulhu::TpetraMap as input arguments.");
+      graph_->fillComplete(tDomainMap->getTpetra_Map(), tRangeMap->getTpetra_Map()); 
+    };
 
     /*! \brief Signal that data entry is complete. 
 
@@ -178,7 +209,7 @@ namespace Cthulhu {
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
-    inline void fillComplete(OptimizeOption os = DoOptimizeStorage) { CTHULHU_DEBUG_ME; graph_->fillComplete(os); };
+    inline void fillComplete(OptimizeOption os = DoOptimizeStorage) { CTHULHU_DEBUG_ME; graph_->fillComplete(); }; //TODO: os
 
     //@}
 
@@ -192,16 +223,16 @@ namespace Cthulhu {
     inline RCP<Node> getNode() const { CTHULHU_DEBUG_ME; return graph_->getNode(); };
 
     //! Returns the Map that describes the row distribution in this graph.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRowMap() const { CTHULHU_DEBUG_ME; return graph_->getRowMap(); };
+    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMap(graph_->getRowMap())); };
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getColMap() const { CTHULHU_DEBUG_ME; return graph_->getColMap(); };
+    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMap(graph_->getColMap())); };
 
     //! Returns the Map associated with the domain of this graph.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const { CTHULHU_DEBUG_ME; return graph_->getDomainMap(); };
+    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMap(graph_->getDomainMap())); };
 
     //! Returns the Map associated with the domain of this graph.
-    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const { CTHULHU_DEBUG_ME; return graph_->getRangeMap(); };
+    inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMap(graph_->getRangeMap())); };
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the importer associated with this graph.
@@ -320,8 +351,10 @@ namespace Cthulhu {
     */
     inline bool isStorageOptimized() const { CTHULHU_DEBUG_ME; return graph_->isStorageOptimized(); };
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns \c true if the graph was allocated with static data structures.
     inline ProfileType getProfileType() const { CTHULHU_DEBUG_ME; return graph_->getProfileType(); };
+#endif
 
     //! Extract a list of elements in a specified global row of the graph. Put into pre-allocated storage.
     /*!
@@ -364,7 +397,7 @@ namespace Cthulhu {
 
       Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
     */
-    inline void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &Indices) const { CTHULHU_DEBUG_ME; graph_->getGlobalRowCopy(GlobalRow, Indices); };
+    inline void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &Indices) const { CTHULHU_DEBUG_ME; graph_->getGlobalRowView(GlobalRow, Indices); };
 
     //! Extract a const, non-persisting view of local indices in a specified row of the graph.
     /*!

@@ -13,6 +13,7 @@
 
 #include "Cthulhu_TpetraMap.hpp"
 #include "Cthulhu_TpetraMultiVector.hpp"
+#include "Cthulhu_TpetraCrsGraph.hpp"
 
 #include "Cthulhu_Exceptions.hpp"
 #include "Cthulhu_Debug.hpp"
@@ -96,7 +97,7 @@ namespace Cthulhu {
     explicit TpetraCrsMatrix(const RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &graph) { CTHULHU_DEBUG_ME; }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-    TpetraCrsMatrix(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) { CTHULHU_DEBUG_ME; }
+    TpetraCrsMatrix(const Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &mtx) : mtx_(mtx) { CTHULHU_DEBUG_ME; }
 
     // !Destructor.
     virtual ~TpetraCrsMatrix() { CTHULHU_DEBUG_ME; CTHULHU_DEBUG_ME_PRINT; }
@@ -259,13 +260,16 @@ namespace Cthulhu {
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
      //! Returns the RowGraph associated with this matrix. 
-    inline RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getGraph(); }
+    inline RCP<const RowGraph<LocalOrdinal,GlobalOrdinal,Node> > getGraph() const { CTHULHU_DEBUG_ME; return mtx_->getGraph(); } // wrapped by a Cthulhu object
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
      //! Returns the CrsGraph associated with this matrix. 
-    inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const { CTHULHU_DEBUG_ME; return null; } //mtx_->getCrsGraph(); }
-#endif // CTHULHU_NOT_IMPLEMENTED
+    inline RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > getCrsGraph() const { 
+      CTHULHU_DEBUG_ME; 
+      
+      RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > graph = Teuchos::rcp_const_cast<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >(mtx_->getCrsGraph()); //TODO: can I avoid the const_cast ?
+      return rcp ( new Cthulhu::TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>(graph) );
+    }
 
      //! Returns the number of global rows in this matrix.
      /** Undefined if isFillActive().
