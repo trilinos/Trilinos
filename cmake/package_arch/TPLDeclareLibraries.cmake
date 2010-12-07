@@ -247,7 +247,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
           ENDIF()
           
           IF(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
-            MESSAGE(STATUS "  Found ${TPL_NAME} TPL header: ${_${TPL_NAME}_${INCLUDE_FILE}_PATH}")
+            MESSAGE(STATUS "  Found ${TPL_NAME} TPL header: ${_${TPL_NAME}_${INCLUDE_FILE}_PATH}/${INCLUDE_FILE}")
             SET(INCLUDE_FILE_SET_PATH ${_${TPL_NAME}_${INCLUDE_FILE}_PATH})
             BREAK()
           ENDIF()
