@@ -49,7 +49,7 @@ namespace MueLu {
     //! Return the list of vertices adjacent to the vertex 'v'
     Teuchos::ArrayView<int> getNeighborVertices(int v) {
       int* startPtr = &(vertexNeighbors_[vertexNeighborsPtr_[v]]);
-      int  size     = vertexNeighborsPtr_[v+1] - vertexNeighborsPtr_[v] + 1;
+      int  size     = vertexNeighborsPtr_[v+1] - vertexNeighborsPtr_[v];
 
       return Teuchos::ArrayView<int>(startPtr, size);
     }
