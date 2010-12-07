@@ -898,8 +898,8 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
       }
     }
   }
-  //     d) RowPtr[i] points to beginning of row i+1 so shift by one location.
 
+  //     d) RowPtr[i] points to beginning of row i+1 so shift by one location.
   for (i = exp_nRows; i > nVertices;  i--)
     RowPtr[i-nVertices] = RowPtr[i-1-nVertices];
   RowPtr[0] = 0;
@@ -908,9 +908,7 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   int thresholds[10] = {300,200,100,50,25,13,7,4,2,0};
 
   // Stick unaggregated vertices into existing aggregates as described above. 
-   
-  int      *rowi_col = NULL, rowi_N; //TMP
-
+ 
   bool cannotLoseAllFriends; // Used to address possible loss of vertices in 
   // arbitration of shared nodes discussed above.
   for (kk = 0; kk < 10; kk += 2) {
@@ -918,18 +916,23 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
     for (i = 0; i < exp_nRows; i++) {
       if (vertex2AggId[i] == MUELOO_UNAGGREGATED) {
 
+        // neighOfINode is the neighbor node list of node 'iNode'.
+        ArrayView<int> neighOfINode;
+
         // Grab neighboring vertices which is either in graph for local ids
         // or sits in transposed fragment just constructed above for ghosts.
         if (i < nVertices) {
-          rowi_col = &(graph->vertexNeighbors[graph->vertexNeighborsPtr[i]]);
-          rowi_N   = graph->vertexNeighborsPtr[i+1] - graph->vertexNeighborsPtr[i];
+          neighOfINode = graph->getNeighborVertices(i);
         }
         else {
+          int *rowi_col = NULL, rowi_N;
           rowi_col = &(cols[RowPtr[i-nVertices]]);
           rowi_N   = RowPtr[i+1-nVertices] - RowPtr[i-nVertices];
+          
+          neighOfINode = ArrayView<int>(rowi_col, rowi_N);
         }
-        for (j = 0; j < rowi_N; j++) {
-          Adjacent    = rowi_col[j];
+        for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          Adjacent    = *it;
           AdjacentAgg = vertex2AggId[Adjacent];
 
           //Adjacent is aggregated and either I own the aggregate
@@ -941,8 +944,8 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
           }
         }
         best_score = MUELOO_NOSCORE;
-        for (j = 0; j < rowi_N; j++) {
-          Adjacent    = rowi_col[j];
+        for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          Adjacent    = *it;
           AdjacentAgg = vertex2AggId[Adjacent];
           //Adjacent is unaggregated, has some value and no
           //other processor has definitively claimed him
@@ -985,8 +988,9 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
           }
         }
         // Clean up
-        for (j = 0; j < rowi_N; j++) {
-          AdjacentAgg = vertex2AggId[rowi_col[j]];
+         for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          Adjacent    = *it;
+          AdjacentAgg = vertex2AggId[Adjacent];
           if (AdjacentAgg >= 0) SumOfMarks[AdjacentAgg] = 0;
         }
         // Tentatively assign vertex to best_agg. 
