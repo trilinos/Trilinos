@@ -248,15 +248,19 @@ namespace Iovs {
 
       if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) &&
           num_to_get == 1) {
-        std::cerr << "region global value\n";
         int ierr = 0;
         const Ioss::VariableType *var_type = field.transformed_storage();
         int components = var_type->component_count();
         Ioss::Field::BasicType ioss_type = field.get_type();
-        int is_integer = (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX);
-        iMesh_putRegionField (mesh_instance, 
+        if (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX) {
+          iMesh_putIntGlobalField (mesh_instance, 
                 field.get_name ().c_str (), components, 
-                static_cast<void*>(data), is_integer, &ierr);
+                static_cast<int*>(data), &ierr);
+        } else {
+          iMesh_putDblGlobalField (mesh_instance, 
+                field.get_name ().c_str (), components, 
+                static_cast<double*>(data), &ierr);
+        }
       }
       else if (num_to_get != 1) {
         // There should have been a warning/error message printed to the
@@ -315,6 +319,10 @@ namespace Iovs {
                                 rdata, num_to_get * 3, 
                                 &handles, &allocated, &size,
                                 &ierr);
+            iMesh_putDblEntityField (mesh_instance, iBase_VERTEX, 
+                                  "original coordinates", 3, iBase_INTERLEAVED,
+                                  static_cast<double*>(rdata), num_to_get * 3, num_to_get,
+                                  &ierr);
           } else if (field.get_name() == "ids") {
             // The ids coming in are the global ids; their position is the
             // local id -1 (That is, data[0] contains the global id of local
@@ -335,11 +343,48 @@ namespace Iovs {
           const Ioss::VariableType *var_type = field.transformed_storage();
           int components = var_type->component_count();
           int err;
-          int is_integer = (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX);
-          iMesh_putEntityField (mesh_instance, iBase_VERTEX, 
+          if (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX) {
+            iMesh_putIntEntityField (mesh_instance, iBase_VERTEX, 
                   field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<void*>(data), is_integer, num_to_get * components, num_to_get,
+                  static_cast<int*>(data), num_to_get * components, num_to_get,
                   &err);
+          } else {
+            iMesh_putDblEntityField (mesh_instance, iBase_VERTEX, 
+                  field.get_name ().c_str (), components, iBase_INTERLEAVED,
+                  static_cast<double*>(data), num_to_get * components, num_to_get,
+                  &err);
+          }
+
+          // add in the displacement so that it visualizes correctly.
+          if (field.get_name () == "displ") {
+            double *coords = 0;
+            int coords_allocated = 0, components = 0, size = 0;
+            iMesh_getDblEntityField (mesh_instance, iBase_VERTEX, 
+                                     "original coordinates", &components, iBase_INTERLEAVED,
+                                     &coords, &coords_allocated, &size, &err);
+            if (num_to_get == static_cast<size_t>(size)) {
+                double *new_coords = (double *) malloc (coords_allocated);
+
+                double *dbl_array = static_cast<double*>(data);
+                int leftIndex = 0, rightIndex = 0;
+                for (size_t i=0; i < num_to_get; i++) {
+                  new_coords[leftIndex] = coords[leftIndex] + dbl_array[rightIndex++];
+                  leftIndex ++;
+                  new_coords[leftIndex] = coords[leftIndex] + dbl_array[rightIndex++];
+                  leftIndex ++;
+                  if (components == 3) {
+                    new_coords[leftIndex] = coords[leftIndex] + dbl_array[rightIndex++];
+                  } else {
+                    new_coords[leftIndex] = coords[leftIndex];
+                  }
+                  leftIndex ++;
+                }
+                iMesh_setVtxArrCoords (mesh_instance, 0, 0, iBase_INTERLEAVED,
+                      new_coords, size, &err);
+                free (new_coords);
+            }
+            free (coords);
+          }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO imesh version
           std::cerr << "nodal global value\n";
@@ -560,12 +605,17 @@ namespace Iovs {
           const Ioss::VariableType *var_type = field.transformed_storage();
           int components = var_type->component_count();
           int err;
-          int is_integer = (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX);
-          iMesh_putEntityField (mesh_instance, iBase_REGION, 
+          if (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX) {
+            iMesh_putIntEntityField (mesh_instance, iBase_REGION, 
                   field.get_name ().c_str (), components, iBase_INTERLEAVED,
-                  static_cast<void*>(data), is_integer, num_to_get * components, num_to_get,
+                  static_cast<int*>(data), num_to_get * components, num_to_get,
                   &err);
-
+          } else {
+            iMesh_putDblEntityField (mesh_instance, iBase_REGION, 
+                  field.get_name ().c_str (), components, iBase_INTERLEAVED,
+                  static_cast<double*>(data), num_to_get * components, num_to_get,
+                  &err);
+          }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO replace with ITAPS
           std::cerr << "elemental global value\n";
