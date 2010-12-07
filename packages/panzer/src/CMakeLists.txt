@@ -22,6 +22,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/dofmngr)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/evaluators)
 
 APPEND_SET(HEADERS
   Panzer_ArrayTraits.hpp
@@ -76,6 +77,8 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_UniqueGlobalIndexer.hpp
   dofmngr/Panzer_EpetraLinearObjFactory.hpp
   dofmngr/Panzer_EpetraLinearObjFactoryT.hpp
+  evaluators/Panzer_GatherSolution_Epetra.hpp
+  evaluators/Panzer_GatherSolution_EpetraT.hpp
   ) 
 
 APPEND_SET(SOURCES
