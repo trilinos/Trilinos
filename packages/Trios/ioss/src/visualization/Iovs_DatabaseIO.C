@@ -248,7 +248,15 @@ namespace Iovs {
 
       if ((role == Ioss::Field::TRANSIENT || role == Ioss::Field::REDUCTION) &&
           num_to_get == 1) {
-        // write_global_field(EX_GLOBAL, field, get_region(), data);
+        std::cerr << "region global value\n";
+        int ierr = 0;
+        const Ioss::VariableType *var_type = field.transformed_storage();
+        int components = var_type->component_count();
+        Ioss::Field::BasicType ioss_type = field.get_type();
+        int is_integer = (ioss_type != Ioss::Field::REAL && ioss_type != Ioss::Field::COMPLEX);
+        iMesh_putRegionField (mesh_instance, 
+                field.get_name ().c_str (), components, 
+                static_cast<void*>(data), is_integer, &ierr);
       }
       else if (num_to_get != 1) {
         // There should have been a warning/error message printed to the
