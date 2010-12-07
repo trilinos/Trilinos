@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   
   Graph *graph;
   std::string name = "Uncoupled";
-  graph = new Graph(*A, name.c_str());
+  graph = new Graph(A->Graph(), name.c_str());
   
   int printFlag=6;
   if (graph->GetComm().MyPID() == 0 && printFlag < MueLu_PrintLevel())
