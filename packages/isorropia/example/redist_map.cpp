@@ -65,10 +65,12 @@
 //Declaration for helper-function that creates epetra objects. This
 //function is implemented at the bottom of this file.
 #ifdef HAVE_EPETRA
+#ifdef HAVE_MPI
 Epetra_LinearProblem* create_epetra_problem(int numProcs,
                                             int localProc,
                                             int local_n,
                                             Epetra_MpiComm comm);
+#endif
 #endif
 
 int main(int argc, char** argv) {
