@@ -67,6 +67,10 @@ public:
      */
    void addSideset(const std::string & name);
 
+   /** Add a solution field
+     */ 
+   void addSolutionField(const std::string & fieldName,const std::string & blockId);
+
    //////////////////////////////////////////
 
    /** Initialize the mesh with the current dimension This also calls
@@ -226,6 +230,16 @@ public:
      */ 
    std::string containingBlockId(stk::mesh::Entity * elmt);
 
+   /** Get the stk mesh field pointer associated with a particular solution value
+     * Assumes there is a field associated with "fieldName,blockId" pair. If none
+     * is found an exception (std::runtime_error) is raised.
+     */
+   stk::mesh::Field<double> * getSolutionField(const std::string & fieldName,
+                                               const std::string & blockId) const;
+
+   //! Has <code>initialize</code> been called on this mesh object?
+   bool isInitialized() const { return initialized_; }
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -254,6 +268,7 @@ protected:
      */
    stk::mesh::Entity * addEdge(stk::mesh::Entity * n0,stk::mesh::Entity * n1, stk::mesh::EntityId edgeId);
 
+   typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
    typedef stk::mesh::Field<int> ProcIdFieldType;
    typedef stk::mesh::Field<std::size_t> LocalIdFieldType;
@@ -276,6 +291,9 @@ protected:
    ProcIdFieldType * processorIdField_;
    LocalIdFieldType * localIdField_;
    
+   // maps field names to solution field stk mesh handles
+   std::map<std::pair<std::string,std::string>,SolutionFieldType*> fieldNameToSolution_;
+
    unsigned dimension_;
 
    bool initialized_;

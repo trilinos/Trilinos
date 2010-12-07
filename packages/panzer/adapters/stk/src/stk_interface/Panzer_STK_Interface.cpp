@@ -16,7 +16,7 @@
 #include <stk_io/util/UseCase_mesh.hpp>
 #endif
 
-#include <list>
+#include <set>
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -85,6 +85,15 @@ void STK_Interface::addSideset(const std::string & name)
    stk::mesh::set_cell_topology(*sideset,shards::getCellTopologyData<shards::Line<2> >());
 }
 
+void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
+{
+   std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
+
+   // add & declare field if not already added...currently assuming linears
+   if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end())
+      fieldNameToSolution_[key] = &metaData_->declare_field<SolutionFieldType>(fieldName);     
+}
+
 void STK_Interface::initialize(stk::ParallelMachine parallelMach) 
 {
    TEUCHOS_ASSERT(not initialized_);
@@ -97,6 +106,20 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach)
    stk::mesh::put_field( *processorIdField_ , stk::mesh::Element, metaData_->universal_part());
    stk::mesh::put_field( *localIdField_ , stk::mesh::Element, metaData_->universal_part());
 
+   // register fields for output primarily
+   std::set<SolutionFieldType*> uniqueFields;
+   std::map<std::pair<std::string,std::string>,SolutionFieldType*>::const_iterator fieldIter;
+   for(fieldIter=fieldNameToSolution_.begin();fieldIter!=fieldNameToSolution_.end();++fieldIter) {
+      std::string fieldName = fieldIter->first.first;
+      std::string blockId = fieldIter->first.second; // element block ID
+
+      stk::mesh::Part * elementBlock = this->getElementBlockPart(blockId);
+      TEST_FOR_EXCEPTION(elementBlock==0,std::runtime_error,"No element block \"" << blockId << "\" was found");
+      stk::mesh::put_field(*fieldIter->second, stk::mesh::Node,*elementBlock);
+
+      uniqueFields.insert(fieldIter->second); // this makes setting up IO easier!
+   }
+
 #ifdef HAVE_IOSS
    // setup Exodus file IO
    {
@@ -106,14 +129,6 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach)
          stk::io::put_io_part_attribute(*itr->second);
    }
 
-   // {
-   //    // add side sets
-   //    std::map<std::string, stk::mesh::Part*>::iterator itr;
-   //    for(itr=sidesets_.begin();itr!=sidesets_.end();++itr) {
-   //       std::cout << "Adding \"" << itr->first << "\" for writing" << std::endl;
-   //       stk::io::put_io_part_attribute(*itr->second);
-   //    }
-   // }
    stk::io::put_io_part_attribute(*sidesetsPart_);
 
    // add edges
@@ -122,6 +137,11 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach)
 
    stk::io::set_field_role(*coordinatesField_, Ioss::Field::ATTRIBUTE);
    stk::io::set_field_role(*processorIdField_, Ioss::Field::TRANSIENT);
+
+   // add solution fields
+   std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
+   for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
+      stk::io::set_field_role(*(*uniqueFieldIter), Ioss::Field::TRANSIENT);
 #endif
 
    metaData_->commit();
@@ -557,6 +577,20 @@ std::string STK_Interface::containingBlockId(stk::mesh::Entity * elmt)
       if(elmt->bucket().member(*itr->second))
          return itr->first;
    return "";
+}
+
+stk::mesh::Field<double> * STK_Interface::getSolutionField(const std::string & fieldName,
+                                                           const std::string & blockId) const
+{
+   // look up field in map
+   std::map<std::pair<std::string,std::string>, SolutionFieldType*>::const_iterator 
+         iter = fieldNameToSolution_.find(std::make_pair(fieldName,blockId));
+ 
+   // check to make sure field was actually found
+   TEST_FOR_EXCEPTION(iter==fieldNameToSolution_.end(),std::runtime_error,
+                      "Field name \"" << fieldName << "\" in block ID \"" << blockId << "\" was not found");
+
+   return iter->second;
 }
 
 }

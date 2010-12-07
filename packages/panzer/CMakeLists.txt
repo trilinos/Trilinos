@@ -24,12 +24,12 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
   HAVE_IOSS
-  "Build with debug code enabled."
+  "Build with IOSS code enabled."
   ON )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
   ALBANY_IOSS
-  "Build with debug code enabled."
+  "Build with Albany's IOSS code enabled."
   ON )
 
 #
