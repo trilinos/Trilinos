@@ -61,8 +61,7 @@ namespace Epetra {
 Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner)
   : partitioner_(partitioner),
   importer_(),
-  target_map_(),
-  created_importer_(false)
+  target_map_()
 {
   if (!partitioner_->alreadyComputed()) {
     partitioner_->partition();
@@ -72,8 +71,7 @@ Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partit
 Redistributor::Redistributor(Isorropia::Epetra::Partitioner *partitioner)
   : partitioner_(Teuchos::RCP<Isorropia::Epetra::Partitioner>(partitioner,false)),
   importer_(),
-  target_map_(),
-  created_importer_(false)
+  target_map_()
 {
   if (!partitioner_->alreadyComputed()) {
     partitioner_->partition();
@@ -83,8 +81,7 @@ Redistributor::Redistributor(Isorropia::Epetra::Partitioner *partitioner)
 Redistributor::Redistributor(Teuchos::RCP<Epetra_Map> target_map)
   : partitioner_(),
   importer_(),
-  target_map_(target_map),
-  created_importer_(false)
+  target_map_(target_map)
 {
     // Do not partition, target map is given.
 }
@@ -92,8 +89,7 @@ Redistributor::Redistributor(Teuchos::RCP<Epetra_Map> target_map)
 Redistributor::Redistributor(Epetra_Map *target_map)
   : partitioner_(),
   importer_(),
-  target_map_(Teuchos::RCP<Epetra_Map>(target_map, false)),
-  created_importer_(false)
+  target_map_(Teuchos::RCP<Epetra_Map>(target_map, false))
 {
     // Do not partition, target map is given.
 }
@@ -106,16 +102,7 @@ void
 Redistributor::redistribute(const Epetra_SrcDistObject& src,
 				 Epetra_DistObject& target)
 {
-  if (!created_importer_) {
-    create_importer(src.Map());
-  }
-  else {
-    if (!src.Map().SameAs(importer_->SourceMap()) ||
-	!target.Map().SameAs(importer_->TargetMap())) {
-      created_importer_ = false;
-      create_importer(src.Map());
-    }
-  }
+  create_importer(src.Map());
 
   target.Import(src, *importer_, Insert);
 }
@@ -132,16 +119,7 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillCom
 void 
 Redistributor::redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph * &outputGraphPtr, bool callFillComplete)
 {
-  // SRSR : Comparing the Maps using SameAs is not very expensive compared to
-  // export/import. But multiple redistribute calls with the same source map 
-  // mighttake a small performance hit because of these checks. However, the 
-  // check is necessary to support redistribution of multiple objects with 
-  // different source maps.
-
-  if (!created_importer_ || !input_graph.Map().SameAs(importer_->SourceMap())) {
-    created_importer_ = false;
-    create_importer(input_graph.RowMap());
-  }
+  create_importer(input_graph.RowMap());
 
   // First obtain the length of each of my new rows
 
@@ -203,10 +181,7 @@ Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, bool callFillCo
 void 
 Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, Epetra_CrsMatrix * &outputMatrix, bool callFillComplete)
 {
-  if (!created_importer_ || !inputMatrix.Map().SameAs(importer_->SourceMap())) {
-    created_importer_ = false;
-    create_importer(inputMatrix.RowMap());
-  }
+  create_importer(inputMatrix.RowMap());
 
   // First obtain the length of each of my new rows
 
@@ -326,10 +301,7 @@ Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatri
 {
 
 
-  if (!created_importer_ || !inputMatrix.Map().SameAs(importer_->SourceMap())) {
-    created_importer_ = false;
-    create_importer(inputMatrix.RowMatrixRowMap());
-  }
+  create_importer(inputMatrix.RowMatrixRowMap());
  // First obtain the length of each of my new rows
 
   int myOldRows = inputMatrix.NumMyRows();
@@ -447,10 +419,7 @@ Redistributor::redistribute(const Epetra_Vector& input_vector)
 void
 Redistributor::redistribute(const Epetra_Vector& inputVector, Epetra_Vector * &outputVector)
 {
-  if (!created_importer_ || !inputVector.Map().SameAs(importer_->SourceMap())) {
-    created_importer_ = false;
-    create_importer(inputVector.Map());
-  }
+  create_importer(inputVector.Map());
 
   outputVector = new Epetra_Vector(*target_map_);
 
@@ -472,10 +441,7 @@ Redistributor::redistribute(const Epetra_MultiVector& input_vector)
 void
 Redistributor::redistribute(const Epetra_MultiVector& inputVector, Epetra_MultiVector * &outputVector)
 {
-  if (!created_importer_ || !inputVector.Map().SameAs(importer_->SourceMap())) {
-    created_importer_ = false;
-    create_importer(inputVector.Map());
-  }
+  create_importer(inputVector.Map());
 
   outputVector = new Epetra_MultiVector(*target_map_, inputVector.NumVectors());
 
@@ -490,10 +456,7 @@ Redistributor::redistribute(const Epetra_MultiVector& inputVector, Epetra_MultiV
 void
 Redistributor::redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Vector& output_vector)
 {
-  if (!created_importer_ || !input_vector.Map().SameAs(importer_->TargetMap())){
-    created_importer_ = false;
-    create_importer(input_vector.Map());
-  }
+  create_importer(input_vector.Map());
 
   // Export using the importer
   output_vector.Export(input_vector, *importer_, Insert);
@@ -503,10 +466,7 @@ Redistributor::redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Ve
 void
 Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector)
 {
-  if (!created_importer_ || !input_vector.Map().SameAs(importer_->TargetMap())){
-    created_importer_ = false;
-    create_importer(input_vector.Map());
-  }
+  create_importer(input_vector.Map());
 
   // Export using the importer
   output_vector.Export(input_vector, *importer_, Insert);
@@ -515,7 +475,6 @@ Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epet
 
 void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 {
-  if (created_importer_) return;
 
   if (!Teuchos::is_null(partitioner_) && partitioner_->numProperties() >
                                 src_map.Comm().NumProc()) {
@@ -527,7 +486,6 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 
   importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));
 
-  created_importer_ = true;
 }
 
 #endif //HAVE_EPETRA

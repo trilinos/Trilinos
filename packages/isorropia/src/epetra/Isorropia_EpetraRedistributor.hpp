@@ -317,8 +317,6 @@ private:
   Teuchos::RCP<Epetra_Import> importer_;
   Teuchos::RCP<Epetra_Map> target_map_;
 
-  bool created_importer_;
-
 }; //class Redistributor
 
 }//namespace Epetra
