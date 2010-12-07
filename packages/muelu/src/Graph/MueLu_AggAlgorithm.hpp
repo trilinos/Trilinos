@@ -580,7 +580,6 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   int      *Mark = NULL, *SumOfMarks = NULL;
   int      best_score, score, best_agg, BestMark, myPid;
   int      nAggregates, *vertex2AggId, nVertices, exp_nRows;
-  int      *rowi_col = NULL, rowi_N;
   int      Nleftover = 0, Nsingle = 0, Adjacent;
   double   printFlag, factor = 1., penalty;
 
@@ -675,6 +674,7 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
 
         // neighOfINode is the neighbor node list of node 'iNode'.
         ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+        int rowi_N = neighOfINode.size();
 
         nonaggd_neighbors = 0;
         for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
@@ -909,6 +909,8 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
 
   // Stick unaggregated vertices into existing aggregates as described above. 
    
+  int      *rowi_col = NULL, rowi_N; //TMP
+
   bool cannotLoseAllFriends; // Used to address possible loss of vertices in 
   // arbitration of shared nodes discussed above.
   for (kk = 0; kk < 10; kk += 2) {
