@@ -25,6 +25,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/dofmngr)
 
 APPEND_SET(HEADERS
   Panzer_ArrayTraits.hpp
+  Panzer_AssemblyEngine.hpp
+  Panzer_AssemblyEngineT.hpp
+  Panzer_AssemblyEngine_InArgs.hpp
+  Panzer_AssemblyEngine_TemplateBuilder.hpp
+  Panzer_AssemblyEngine_TemplateManager.hpp
   Panzer_Basis.hpp
   Panzer_BasisValues.hpp
   Panzer_BasisValuesT.hpp
