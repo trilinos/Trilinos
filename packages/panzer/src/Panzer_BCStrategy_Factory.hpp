@@ -12,8 +12,11 @@ namespace panzer {
 
   struct BCStrategyFactory {
 
-    Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
-    buildBCStrategy(const panzer::BC& bc) const;
+    BCStrategyFactory() {}
+    virtual ~BCStrategyFactory() {}
+
+    virtual Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
+    buildBCStrategy(const panzer::BC& bc) const = 0;
 
   };
   

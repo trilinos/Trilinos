@@ -29,7 +29,7 @@ namespace panzer {
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> > bcs;
   
-    user_app::MyFactory my_factory;
+    user_app::BCFactory my_factory;
     bcs = my_factory.buildBCStrategy(bc);
 
   }

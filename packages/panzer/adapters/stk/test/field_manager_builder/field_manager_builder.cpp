@@ -17,6 +17,7 @@ using Teuchos::rcp;
 #include "Panzer_STKConnManager.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
+#include "user_app_BCStrategy_Factory.hpp"
 
 namespace panzer {
 
@@ -74,6 +75,7 @@ namespace panzer {
 
     const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets = buildBCWorksets(mesh);
 
+    cout << "ROGER" << bcs.size();
 
     std::map<std::string,std::string> block_ids_to_physics_ids;
     block_ids_to_physics_ids["eblock-0_0"] = "test physics";
@@ -91,6 +93,8 @@ namespace panzer {
 				  
     panzer::FieldManagerBuilder<int,int> fmb;
 
+    user_app::BCFactory bc_factory;
+
     fmb.setup(conn_manager,
 	      MPI_COMM_WORLD,
 	      block_ids_to_physics_ids,
@@ -99,8 +103,31 @@ namespace panzer {
 	      bc_worksets,
 	      Teuchos::as<int>(mesh->getDimension()),
 	      eqset_factory,
+	      bc_factory,
 	      workset_size);
+ 
+    const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
+      fmb.getVolumeFieldManagers();
     
+    const std::vector< Teuchos::RCP<std::vector<panzer::Workset> > >& fmb_vol_worksets = 
+      fmb.getWorksets();
+    
+    TEST_EQUALITY(fmb_vol_fm.size(), 2);
+    TEST_EQUALITY(fmb_vol_fm.size(), fmb_vol_worksets.size());
+
+    const std::map<panzer::BC, 
+      std::map<unsigned,PHX::FieldManager<panzer::Traits> >,
+      panzer::LessBC>& fmb_bc_fm = fmb.getBCFieldManagers();
+      
+    const std::map<panzer::BC,
+		   Teuchos::RCP<std::map<unsigned,panzer::Workset> >,
+		   panzer::LessBC>& fmb_bc_worksets = fmb.getBCWorksets();
+
+    TEST_EQUALITY(fmb_bc_fm.size(), 3);
+    TEST_EQUALITY(fmb_bc_fm.size(), fmb_bc_worksets.size());
+
+    
+
   }
 
   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
@@ -346,7 +373,7 @@ namespace panzer {
       bcs.push_back(bc);
     }    
     {
-      std::size_t bc_id = 0;
+      std::size_t bc_id = 1;
       panzer::BCType neumann = BCT_Dirichlet;
       std::string sideset_id = "right";
       std::string element_block_id = "eblock-1_0";
@@ -360,7 +387,7 @@ namespace panzer {
       bcs.push_back(bc);
     }   
     {
-      std::size_t bc_id = 0;
+      std::size_t bc_id = 2;
       panzer::BCType neumann = BCT_Dirichlet;
       std::string sideset_id = "top";
       std::string element_block_id = "eblock-1_0";

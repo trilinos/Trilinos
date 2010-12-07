@@ -15,6 +15,7 @@ namespace panzer {
   struct Workset;
   template <typename LO, typename GO> class ConnManager;
   class EquationSetFactory;
+  class BCStrategyFactory;
 }
 
 namespace PHX {
@@ -28,6 +29,8 @@ namespace panzer {
 
   public:
 
+    typedef std::map<unsigned,panzer::Workset> BCFaceWorksetMap;
+
     /** Constructing DOFManager
       */
     void 
@@ -40,6 +43,7 @@ namespace panzer {
                                                                                                      // boundary condition -> maps of (side set id -> workset)
 	  int base_cell_dimension,
 	  const panzer::EquationSetFactory& factory,
+	  const panzer::BCStrategyFactory& bc_factory,
 	  std::size_t workset_size);
 
     void print(std::ostream& os) const;
@@ -80,7 +84,7 @@ namespace panzer {
       * \param[in] eqset_factory
       * \param[out] physicsBlocks
       */
-    void buildPhysicsBLocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
+    void buildPhysicsBlocks(const std::map<std::string,std::string>& block_ids_to_physics_ids,
                             const std::map<std::string,panzer::InputPhysicsBlock>& physics_id_to_input_physics_blocks,
                             int base_cell_dimension, std::size_t workset_size,
 	                    const panzer::EquationSetFactory & eqset_factory,
@@ -92,6 +96,9 @@ namespace panzer {
       */
     void buildDOFManager(const Teuchos::RCP<panzer::ConnManager<LO,GO> > & conn_manager, MPI_Comm comm,
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
+
+
+    void buildFieldManagers(MPI_Comm, const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_volume_field_managers) const;
 
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >

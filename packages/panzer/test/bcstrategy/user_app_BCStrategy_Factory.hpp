@@ -16,7 +16,7 @@ namespace user_app {
 					     user_app::BCStrategy_Dirichlet_Constant,
 					     BCStrategy_Dirichlet_Constant)
 
-  struct MyFactory : public panzer::BCStrategyFactory {
+  struct BCFactory : public panzer::BCStrategyFactory {
 
     Teuchos::RCP<panzer::BCStrategy_TemplateManager<panzer::Traits> >
     buildBCStrategy(const panzer::BC& bc) const
