@@ -55,10 +55,6 @@ namespace MueLu {
     }
     // TODO: use directly a GetRow or something like that.
 
-    //TMP
-    int  *vertexNeighborsPtr;
-    int  *vertexNeighbors;  
-
   private:
 
     // inline const Epetra_CrsGraph * GetCrsGraph() { return eGraph_; } // not used.
@@ -120,10 +116,6 @@ namespace MueLu {
       if (nGhost_ < 0) nGhost_ = 0;
     }
 
-
-    //TMP
-    vertexNeighborsPtr = vertexNeighborsPtr_;
-    vertexNeighbors = vertexNeighbors_;
   }
 
   Graph::~Graph()
