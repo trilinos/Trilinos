@@ -16,6 +16,7 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_AssemblyEngine.hpp"
+#include "Panzer_DOFManager.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
@@ -102,10 +103,18 @@ namespace panzer {
 	      bc_factory,
 	      workset_size);
 
-    panzer::AssemblyEngineInArgs input;
-    // ROGER - populate input arguments
-
     panzer::AssemblyEngine<panzer::Traits::Residual,int,int> ae(fmb);
+    RCP<DOFManager<int,int> > dofManager = 
+      ae.getManagerBuilder()->getDOFManager();
+    RCP<Epetra_Map> ghosted_map = dofManager->getOverlapMap();
+    RCP<Epetra_CrsGraph> ghosted_graph = dofManager->getOverlapGraph();
+    
+    panzer::AssemblyEngineInArgs input;
+    input.x = rcp(new Epetra_Vector(*ghosted_map));
+    input.dxdt = rcp(new Epetra_Vector(*ghosted_map));
+    input.f = rcp(new Epetra_Vector(*ghosted_map));
+    input.j = rcp(new Epetra_CrsMatrix(Copy, *ghosted_graph));
+
     ae.evaluate(input);
 
   }
