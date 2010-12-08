@@ -53,7 +53,7 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
       parts.push_back(part);
     }
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-    if (fem::get_cell_topology(*part).getTopologyData() == topology) {
+    if (fem::get_cell_topology(*part).getCellTopologyData() == topology) {
       parts.push_back(part);
     }
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -74,7 +74,7 @@ Entity & declare_element( BulkData & mesh ,
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const top = get_cell_topology( part );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const top = fem::get_cell_topology( part ).getTopologyData();
+  const CellTopologyData * const top = fem::get_cell_topology( part ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if ( top == NULL ) {
@@ -122,7 +122,7 @@ Entity & declare_element( BulkData & mesh ,
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const top = get_cell_topology( part );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const top = fem::get_cell_topology( part ).getTopologyData();
+  const CellTopologyData * const top = fem::get_cell_topology( part ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if ( top == NULL ) {

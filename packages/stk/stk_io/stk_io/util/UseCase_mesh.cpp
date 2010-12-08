@@ -321,7 +321,7 @@ namespace stk {
 	  // NOTE: 'in_region' owns 'dbi' pointer at this time...
 	  in_region = new Ioss::Region(dbi, "input_model");
           size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
-	  initialize_spatial_dimension(meta_data, spatial_dimension);
+	  initialize_spatial_dimension(meta_data, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
 
 	  // Filter out all non-hex8 element blocks...
 	  if (hex_only) {
@@ -823,7 +823,7 @@ namespace {
 		      std::vector<stk::io::util::Gear*> &gears)
   {
     const size_t spatial_dimension = 3;
-    stk::io::initialize_spatial_dimension(meta, spatial_dimension);
+    stk::io::initialize_spatial_dimension(meta, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
     const double TWO_PI = 2.0 * std::acos( static_cast<double>(-1.0) );
 
     int p_size = stk::parallel_machine_size( comm );

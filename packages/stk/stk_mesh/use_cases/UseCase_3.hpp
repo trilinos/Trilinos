@@ -12,6 +12,7 @@
 #include <Shards_BasicTopologies.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -25,15 +26,13 @@
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
 
+#include <use_cases/UseCase_Common.hpp>
+
 /** stk_mesh Use Case 3 */
 
 namespace stk {
 namespace mesh {
 namespace use_cases {
-
-typedef Field<double,Cartesian>    VectorFieldType ;
-typedef Field<double>              ScalarFieldType ;
-typedef Field<double*,ElementNode> ElementNodePointerFieldType ;
 
 /** Use case with mixed element topologies and
  *  field relations to provide fast access to node field data
@@ -52,7 +51,7 @@ public:
   const int m_spatial_dimension;
   MetaData m_metaData;
   BulkData m_bulkData;
-  DefaultFEM m_topoData;
+  DefaultFEM m_fem;
 
   Part & m_block_hex;
   Part & m_block_wedge;

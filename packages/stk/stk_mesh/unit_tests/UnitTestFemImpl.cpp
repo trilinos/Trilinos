@@ -283,14 +283,14 @@ STKUNIT_UNIT_TEST( UnitTestDefaultFEM , part_supersets )
   test.m_meta_data.declare_part_subset( tet4 , part_tet_1 );
   test.m_meta_data.declare_part_subset( tet4 , part_tet_2 );
 
-  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( hex8 ).getTopologyData() );
-  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_1 ).getTopologyData() );
-  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_2 ).getTopologyData() );
-  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_3 ).getTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( hex8 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_1 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_2 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_3 ).getCellTopologyData() );
 
-  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( tet4 ).getTopologyData() );
-  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( part_tet_1 ).getTopologyData() );
-  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( part_tet_2 ).getTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( tet4 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( part_tet_1 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( part_tet_2 ).getCellTopologyData() );
 
 }
 
@@ -304,12 +304,12 @@ STKUNIT_UNIT_TEST( UnitTestPartCellTopologyMap , errors )
   const CellTopologyData * const top_tri3 = shards::getCellTopologyData< shards::Triangle<3> >();
   const CellTopologyData * const top_tet4 = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
-  STKUNIT_ASSERT_THROW( test.m_fem.set_entity_rank( top_quad4 , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.m_fem.set_entity_rank( top_quad4 , 1 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.m_fem.set_entity_rank( top_quad4 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_quad4 , 0 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_quad4 , 1 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_quad4 , 3 ) , std::runtime_error );
 
-  STKUNIT_ASSERT_THROW( test.m_fem.set_entity_rank( top_tri3 , 3 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.m_fem.set_entity_rank( top_tet4 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_tri3 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_tet4 , 3 ) , std::runtime_error );
 }
 
 

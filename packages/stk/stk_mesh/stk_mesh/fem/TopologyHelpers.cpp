@@ -41,7 +41,7 @@ void verify_declare_element_side(
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   const CellTopologyData * const side_top =
@@ -102,7 +102,7 @@ Entity & declare_element_side(
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if (elem_top == NULL) {
@@ -158,7 +158,7 @@ Entity & declare_element_side(
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   if (elem_top == NULL) {
@@ -201,7 +201,7 @@ bool element_side_polarity( const Entity & elem ,
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(elem);
   const bool is_side = side.entity_rank() != fem::edge_rank(fem);
-  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
   const unsigned side_count = ! elem_top ? 0 : (
@@ -262,7 +262,7 @@ int element_local_side_id( const Entity & elem ,
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData* elem_topology = get_cell_topology(elem);
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData* elem_topology = fem::get_cell_topology(elem).getTopologyData();
+  const CellTopologyData* elem_topology = fem::get_cell_topology(elem).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   if (elem_topology == NULL) {
     return INVALID_SIDE;
@@ -332,7 +332,7 @@ const CellTopologyData * get_elem_side_nodes( const Entity & elem,
 {
   side_nodes.clear();
 
-  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getTopologyData();
+  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
   if (elem_top == NULL) {
     return NULL;
   }

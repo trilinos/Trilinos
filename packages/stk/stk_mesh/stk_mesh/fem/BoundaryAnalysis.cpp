@@ -41,7 +41,7 @@ void boundary_analysis(const BulkData& bulk_data,
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
     Entity& curr_entity = **itr;
-    const CellTopologyData* celltopology = fem::get_cell_topology(curr_entity).getTopologyData();
+    const CellTopologyData* celltopology = fem::get_cell_topology(curr_entity).getCellTopologyData();
     if (celltopology == NULL) {
       continue;
     }
@@ -116,7 +116,7 @@ void get_adjacent_entities( const Entity & entity ,
   adjacent_entities.clear();
 
   // get cell topology
-  const CellTopologyData* celltopology = fem::get_cell_topology(entity).getTopologyData();
+  const CellTopologyData* celltopology = fem::get_cell_topology(entity).getCellTopologyData();
   if (celltopology == NULL) {
     return;
   }

@@ -67,8 +67,20 @@ get_fem_interface(
 
 
 void
+register_cell_topology(
+  MetaData &            meta_data,
+  const CellTopology    cell_topology,
+  EntityRank            entity_rank)
+{
+  FEMInterface &fem = get_fem_interface(meta_data);
+
+  fem.register_cell_topology(cell_topology, entity_rank);
+}
+
+
+void
 set_cell_topology(
-  const Part &          part,
+  Part &                part,
   CellTopology          cell_topology)
 {
   FEMInterface &fem = get_fem_interface(part.mesh_meta_data());
@@ -93,16 +105,16 @@ get_cell_topology(
 
   CellTopology cell_topology(fem.get_cell_topology( part ));
 
-  if (!cell_topology.getTopologyData()) {
+  if (!cell_topology.getCellTopologyData()) {
     const PartVector & supersets = part.supersets();
 
     for ( PartVector::const_iterator it = supersets.begin(); it != supersets.end() ; ++it ) {
       CellTopology top = fem.get_cell_topology( *(*it));
 
-      if ( ! cell_topology.getTopologyData() ) {
+      if ( ! cell_topology.getCellTopologyData() ) {
         cell_topology = top ;
       }
-      else if ( top.getTopologyData() && top != cell_topology ) {
+      else if ( top.getCellTopologyData() && top != cell_topology ) {
         std::ostringstream oss;
         oss << "Cell topology is ambiguously defined. It is defined as " << cell_topology.getName()
             << " on part " << part.name() << " and as " << top.getName() << " on its superset part " << (*it)->name();
@@ -140,13 +152,13 @@ get_cell_topology(
 
         CellTopology top = fem.get_cell_topology( part );
 
-        if ( ! cell_topology.getTopologyData() ) {
+        if ( ! cell_topology.getCellTopologyData() ) {
           cell_topology = top ;
           
           if (!first_found_part)
             first_found_part = &part;
         }
-        else if ( top.getTopologyData() && top != cell_topology ) {
+        else if ( top.getCellTopologyData() && top != cell_topology ) {
           std::ostringstream oss;
           oss << "Cell topology is ambiguously defined. It is defined as " << cell_topology.getName()
               << " on part " << first_found_part->name() << " and as " << top.getName() << " on its superset part " << part.name();
@@ -157,6 +169,17 @@ get_cell_topology(
   }
 
   return cell_topology ;
+}
+
+
+Part &
+get_part(
+  const MetaData &      meta_data,
+  const CellTopology    cell_topology)
+{
+  FEMInterface &fem = get_fem_interface(meta_data);
+
+  return fem.get_part(cell_topology);
 }
 
 

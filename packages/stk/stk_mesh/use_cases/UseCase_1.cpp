@@ -8,18 +8,13 @@
 
 /// doxygen tutorial start #includes
 #include <use_cases/UseCase_1.hpp>
+
 #include <stk_util/parallel/Parallel.hpp>
+
+#include <stk_mesh/fem/DefaultFEM.hpp>
 /// end code snippet
 
 //----------------------------------------------------------------------
-
-namespace {
-  std::vector<std::string> use_case_1_rank_names() {
-    std::vector<std::string> names;
-    names.push_back("Node");
-    return names;
-  }
-} // namespace
 
 
 namespace stk{
@@ -31,7 +26,7 @@ namespace use_cases {
 enum { field_data_chunk_size = 10 };
 
 UseCase_1_Mesh::UseCase_1_Mesh( stk::ParallelMachine comm )
-  : m_metaData( use_case_1_rank_names() )
+  : m_metaData( stk::mesh::fem::entity_rank_names(SpatialDim) )
   , m_bulkData(  m_metaData , comm , field_data_chunk_size )
 {
   /// Done populating the mesh meta data.

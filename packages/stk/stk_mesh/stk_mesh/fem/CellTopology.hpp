@@ -198,7 +198,7 @@ public:
   
         
   /** \brief  This cell's raw topology data */
-  const CellTopologyData * getTopologyData() const {
+  const CellTopologyData * getCellTopologyData() const {
     return m_cell ;
   }
 
@@ -442,19 +442,19 @@ int findPermutation( const CellTopology top ,
                      const id_type * const expected_node ,
                      const id_type * const actual_node )
 {
-  return shards::findPermutation( *top.getTopologyData() , expected_node , actual_node );
+  return shards::findPermutation( *top.getCellTopologyData() , expected_node , actual_node );
 }
 
 inline
 bool operator==(const CellTopology &left, const CellTopology &right) 
 {
-  return left.getTopologyData() == right.getTopologyData();
+  return left.getCellTopologyData() == right.getCellTopologyData();
 }
 
 inline
 bool operator<(const CellTopology &left, const CellTopology &right) 
 {
-  return left.getTopologyData() < right.getTopologyData();
+  return left.getCellTopologyData() < right.getCellTopologyData();
 }
 
 inline

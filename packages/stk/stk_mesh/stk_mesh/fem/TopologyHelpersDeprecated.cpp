@@ -45,7 +45,7 @@ const CellTopologyData * get_cell_topology( const Part & p )
   const fem::FEMInterface * fem = p.mesh_meta_data().get_attribute<fem::FEMInterface>();
   const CellTopologyData * cell_topology_data = NULL;
   if (fem) {
-    cell_topology_data = fem::get_cell_topology(p).getTopologyData();
+    cell_topology_data = fem::get_cell_topology(p).getCellTopologyData();
   }
   if (cell_topology_data == NULL) {
     cell_topology_data = get_cell_topology_deprecated(p);
@@ -139,7 +139,7 @@ const CellTopologyData * get_cell_topology( const Bucket & bucket )
   const fem::FEMInterface * fem = bucket.mesh().mesh_meta_data().get_attribute< fem::FEMInterface >();
   const CellTopologyData * cell_topology_data;
   if (fem) {
-    cell_topology_data = fem::get_cell_topology(bucket).getTopologyData();
+    cell_topology_data = fem::get_cell_topology(bucket).getCellTopologyData();
   } else {
     cell_topology_data = get_cell_topology_deprecated(bucket);
   }

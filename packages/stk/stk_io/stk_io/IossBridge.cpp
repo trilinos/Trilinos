@@ -30,83 +30,6 @@
 
 namespace {
 
-  void get_io_field_type(const stk::mesh::FieldBase *field, int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result)
-  {
-    const std::string invalid("invalid");
-    const std::string scalar("scalar");
-    const std::string vector_2d("vector_2d");
-    const std::string vector_3d("vector_3d");
-    const std::string quaternion_2d("quaternion_2d");
-    const std::string quaternion_3d("quaternion_3d");
-    const std::string full_tensor_36("full_tensor_36");
-    const std::string full_tensor_32("full_tensor_32");
-    const std::string full_tensor_22("full_tensor_22");
-    const std::string full_tensor_16("full_tensor_16");
-    const std::string full_tensor_12("full_tensor_12");
-    const std::string sym_tensor_33("sym_tensor_33");
-    const std::string sym_tensor_31("sym_tensor_31");
-    const std::string sym_tensor_21("sym_tensor_21");
-    const std::string sym_tensor_13("sym_tensor_13");
-    const std::string sym_tensor_11("sym_tensor_11");
-    const std::string sym_tensor_10("sym_tensor_10");
-    const std::string asym_tensor_03("asym_tensor_03");
-    const std::string asym_tensor_02("asym_tensor_02");
-    const std::string asym_tensor_01("asym_tensor_01");
-    const std::string matrix_22("matrix_22");
-    const std::string matrix_33("matrix_33");
-
-    const unsigned rank = field->rank();
-    const shards::ArrayDimTag * const * const tags = field->dimension_tags();
-
-    result->second = Ioss::Field::INVALID;
-
-    if ( field->type_is<double>() ) {
-      result->second = Ioss::Field::REAL;
-    }
-    else if ( field->type_is<int>() ) {
-      result->second = Ioss::Field::INTEGER;
-    }
-
-    if ( 0 == rank ) {
-      result->first = scalar ;
-    }
-    else if ( 1 == rank ) {
-      if ( tags[0] == & stk::mesh::Cartesian::tag() && 2 == num_comp ) {
-	result->first = vector_2d ;
-      }
-      else if ( tags[0] == & stk::mesh::Cartesian::tag() && 3 == num_comp ) {
-	result->first = vector_3d ;
-      }
-      else if ( tags[0] == & stk::mesh::FullTensor::tag() && 9 == num_comp ) {
-	result->first = full_tensor_36 ;
-      }
-      else if ( tags[0] == & stk::mesh::FullTensor::tag() && 5 == num_comp ) {
-	result->first = full_tensor_32 ;
-      }
-      else if ( tags[0] == & stk::mesh::FullTensor::tag() && 4 == num_comp ) {
-	result->first = full_tensor_22 ;
-      }
-      else if ( tags[0] == & stk::mesh::FullTensor::tag() && 3 == num_comp ) {
-	result->first = full_tensor_12 ;
-      }
-      else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 6 == num_comp ) {
-	result->first = sym_tensor_33 ;
-      }
-      else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 4 == num_comp ) {
-	result->first = sym_tensor_31 ;
-      }
-      else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 3 == num_comp ) {
-	result->first = sym_tensor_21 ;
-      }
-    }
-
-    if ( result->first.empty() ) {
-      std::ostringstream tmp ;
-      tmp << "Real[" << num_comp << "]" ;
-      result->first = tmp.str();
-    }
-  }
-
   const CellTopologyData *map_ioss_to_topology( const std::string &element_type ,
 							const int node_count)
   {
@@ -408,6 +331,13 @@ namespace stk {
 
     stk::mesh::EntityRank part_primary_entity_rank(const stk::mesh::Part &part)
     {
+      if (part.mesh_meta_data().universal_part() == part) {
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+	return stk::mesh::Node;
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+	return stk::mesh::fem::NODE_RANK;
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+      }
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return mesh::fem_entity_rank( part.primary_entity_rank() );
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
@@ -460,7 +390,7 @@ namespace stk {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return stk::mesh::Node;
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      return stk::mesh::fem::NodeRank;
+      return stk::mesh::fem::NODE_RANK;
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
     }
 
@@ -478,20 +408,97 @@ namespace stk {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       return stk::mesh::get_cell_topology(part);
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      return stk::mesh::fem::get_cell_topology(part).getTopologyData();
+      return stk::mesh::fem::get_cell_topology(part).getCellTopologyData();
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
     }
 
-    void initialize_spatial_dimension(const stk::mesh::MetaData &meta, size_t spatial_dimension)
+    void initialize_spatial_dimension(stk::mesh::MetaData &meta, size_t spatial_dimension, const std::vector<std::string> &entity_rank_names)
     {
 #ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-    stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
+      stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta);
 
-    meta.set_entity_rank_names(stk::mesh::fem::entity_rank_names(spatial_dimension));
-    fem.set_spatial_dimension(spatial_dimension);
+      meta.set_entity_rank_names(entity_rank_names);
+      fem.set_spatial_dimension(spatial_dimension);
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
     }
     
+    void get_io_field_type(const stk::mesh::FieldBase *field, int num_comp, std::pair<std::string, Ioss::Field::BasicType> *result)
+    {
+      const std::string invalid("invalid");
+      const std::string scalar("scalar");
+      const std::string vector_2d("vector_2d");
+      const std::string vector_3d("vector_3d");
+      const std::string quaternion_2d("quaternion_2d");
+      const std::string quaternion_3d("quaternion_3d");
+      const std::string full_tensor_36("full_tensor_36");
+      const std::string full_tensor_32("full_tensor_32");
+      const std::string full_tensor_22("full_tensor_22");
+      const std::string full_tensor_16("full_tensor_16");
+      const std::string full_tensor_12("full_tensor_12");
+      const std::string sym_tensor_33("sym_tensor_33");
+      const std::string sym_tensor_31("sym_tensor_31");
+      const std::string sym_tensor_21("sym_tensor_21");
+      const std::string sym_tensor_13("sym_tensor_13");
+      const std::string sym_tensor_11("sym_tensor_11");
+      const std::string sym_tensor_10("sym_tensor_10");
+      const std::string asym_tensor_03("asym_tensor_03");
+      const std::string asym_tensor_02("asym_tensor_02");
+      const std::string asym_tensor_01("asym_tensor_01");
+      const std::string matrix_22("matrix_22");
+      const std::string matrix_33("matrix_33");
+
+      const unsigned rank = field->rank();
+      const shards::ArrayDimTag * const * const tags = field->dimension_tags();
+
+      result->second = Ioss::Field::INVALID;
+
+      if ( field->type_is<double>() ) {
+	result->second = Ioss::Field::REAL;
+      }
+      else if ( field->type_is<int>() ) {
+	result->second = Ioss::Field::INTEGER;
+      }
+
+      if ( 0 == rank ) {
+	result->first = scalar ;
+      }
+      else if ( 1 == rank ) {
+	if ( tags[0] == & stk::mesh::Cartesian::tag() && 2 == num_comp ) {
+	  result->first = vector_2d ;
+	}
+	else if ( tags[0] == & stk::mesh::Cartesian::tag() && 3 == num_comp ) {
+	  result->first = vector_3d ;
+	}
+	else if ( tags[0] == & stk::mesh::FullTensor::tag() && 9 == num_comp ) {
+	  result->first = full_tensor_36 ;
+	}
+	else if ( tags[0] == & stk::mesh::FullTensor::tag() && 5 == num_comp ) {
+	  result->first = full_tensor_32 ;
+	}
+	else if ( tags[0] == & stk::mesh::FullTensor::tag() && 4 == num_comp ) {
+	  result->first = full_tensor_22 ;
+	}
+	else if ( tags[0] == & stk::mesh::FullTensor::tag() && 3 == num_comp ) {
+	  result->first = full_tensor_12 ;
+	}
+	else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 6 == num_comp ) {
+	  result->first = sym_tensor_33 ;
+	}
+	else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 4 == num_comp ) {
+	  result->first = sym_tensor_31 ;
+	}
+	else if ( tags[0] == & stk::mesh::SymmetricTensor::tag() && 3 == num_comp ) {
+	  result->first = sym_tensor_21 ;
+	}
+      }
+
+      if ( result->first.empty() ) {
+	std::ostringstream tmp ;
+	tmp << "Real[" << num_comp << "]" ;
+	result->first = tmp.str();
+      }
+    }
+
     //----------------------------------------------------------------------
     struct IOPartAttribute {
     };
