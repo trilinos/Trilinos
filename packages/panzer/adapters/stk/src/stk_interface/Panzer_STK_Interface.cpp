@@ -90,8 +90,12 @@ void STK_Interface::addSolutionField(const std::string & fieldName,const std::st
    std::pair<std::string,std::string> key = std::make_pair(fieldName,blockId);
 
    // add & declare field if not already added...currently assuming linears
-   if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end())
-      fieldNameToSolution_[key] = &metaData_->declare_field<SolutionFieldType>(fieldName);     
+   if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end()) {
+      SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName);
+      if(field==0)
+         field = &metaData_->declare_field<SolutionFieldType>(fieldName);     
+      fieldNameToSolution_[key] = field;
+   }
 }
 
 void STK_Interface::initialize(stk::ParallelMachine parallelMach) 
@@ -592,5 +596,39 @@ stk::mesh::Field<double> * STK_Interface::getSolutionField(const std::string & f
 
    return iter->second;
 }
+
+Teuchos::RCP<const std::vector<stk::mesh::Entity*> > STK_Interface::getElementsOrderedByLID() const
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   if(orderedElementVector_==Teuchos::null) { 
+      RCP<std::vector<stk::mesh::Entity*> > elements;
+
+      // defines ordering of blocks
+      std::vector<std::string> blockIds;
+      this->getElementBlockNames(blockIds);
+
+      std::vector<std::string>::const_iterator idItr;
+      for(idItr=blockIds.begin();idItr!=blockIds.end();++idItr) {
+         std::string blockId = *idItr;
+
+         // grab elements on this block
+         std::vector<stk::mesh::Entity*> blockElmts;
+         this->getMyElements(blockId,blockElmts); 
+
+         // concatenate them into element LID lookup table
+         elements->insert(elements->end(),blockElmts.begin(),blockElmts.end());
+      }
+
+      // this expensive operation gurantees ordering of local IDs
+      std::sort(elements->begin(),elements->end(),LocalIdCompare(this));
+
+      orderedElementVector_ = elements;
+   }
+
+   return orderedElementVector_.getConst();
+}
+
 
 }

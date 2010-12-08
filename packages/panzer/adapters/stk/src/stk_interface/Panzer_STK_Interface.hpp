@@ -10,6 +10,7 @@
 #include <stk_mesh/fem/FieldTraits.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/base/FieldData.hpp>
 
 #include <Shards_CellTopology.hpp>
 
@@ -240,6 +241,29 @@ public:
    //! Has <code>initialize</code> been called on this mesh object?
    bool isInitialized() const { return initialized_; }
 
+   /** Get Vector of element entities ordered by their LID, returns an RCP so that
+     * it is easily stored by the caller.
+     */
+   Teuchos::RCP<const std::vector<stk::mesh::Entity*> > getElementsOrderedByLID() const;
+
+   /** Writes a particular field to an array. Notice this is setup to work with
+     * the worksets associated with Panzer.
+     *
+     * \param[in] fieldName Name of field to be filled
+     * \param[in] blockId Name of block this set of elements belongs to
+     * \param[in] localElementIds Local element IDs for this set of solution values
+     * \param[in] solutionValues An two dimensional array object sized by (Cells,Basis Count)
+     *
+     * \note The block ID is not strictly needed in this context. However forcing the
+     *       user to provide it does permit an additional level of safety. The implicit
+     *       assumption is that the elements being "set" are part of the specified block.
+     *       This prevents the need to perform a null pointer check on the field data, because
+     *       the STK_Interface construction of the fields should force it to be nonnull...
+     */
+   template <typename ArrayT>
+   void setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
+                             std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -306,6 +330,23 @@ protected:
 
    int procRank_;
    std::size_t currentLocalId_;
+
+   // uses lazy evaluation
+   mutable Teuchos::RCP<std::vector<stk::mesh::Entity*> > orderedElementVector_;
+
+   // Object describing how to sort a vector of elements using
+   // local ID as the key, very short lived object
+   class LocalIdCompare {
+   public:
+     LocalIdCompare(const STK_Interface * mesh) : mesh_(mesh) {}
+   
+     // Compares two stk mesh entities based on local ID
+     bool operator() (stk::mesh::Entity * a,stk::mesh::Entity * b) 
+     { return mesh_->elementLocalId(a) < mesh_->elementLocalId(b);}
+   
+   private:
+     const STK_Interface * mesh_;
+   };
 };
 
 template <typename TopologyType> 
@@ -323,6 +364,31 @@ void STK_Interface::addElementBlock(const std::string & name)
    // add element block part and cell topology
    elementBlocks_.insert(std::make_pair(name,block));
    elementBlockCT_.insert(std::make_pair(name,ct));
+}
+
+template <typename ArrayT>
+void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std::string & blockId,std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues)
+{
+   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+
+   // SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName); // if no blockId is specified you can get the field like this!
+   SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
+
+   std::vector<std::size_t>::const_iterator itr;
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) {
+      std::size_t localId = localElementIds[cell];
+      stk::mesh::Entity * element = elements[localId];
+
+      // loop over nodes set solution values
+      stk::mesh::PairIterRelation relations = element->relations();
+      for(std::size_t i=0;i<relations.size();++i) {
+         stk::mesh::Entity * node = relations[i].entity();
+
+         double * solnData = stk::mesh::field_data(*field,*node);
+         // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
+         solnData[0] = solutionValues(cell,i);
+      }
+   }
 }
  
 }

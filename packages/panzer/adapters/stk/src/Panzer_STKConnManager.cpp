@@ -57,8 +57,6 @@ void STKConnManager::buildLocalElementMapping()
    std::vector<std::string> blockIds;
    stkMeshDB_->getElementBlockNames(blockIds);
 
-   // elementBlocks_.resize(blockIds.size());
-
    std::size_t blockIndex=0;
    std::vector<std::string>::const_iterator idItr;
    for(idItr=blockIds.begin();idItr!=blockIds.end();++idItr,++blockIndex) {
