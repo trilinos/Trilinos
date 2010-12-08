@@ -9,20 +9,21 @@
 
 namespace panzer {
 
+  template<typename LO,typename GO>
   class AssemblyEngine_TemplateBuilder {
     
-    Teuchos::RCP<panzer::FieldManagerBuilder> m_region_data;
+    Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> > m_fmb;
     
   public:
     
-    AssemblyEngine_TemplateBuilder(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb) :
+    AssemblyEngine_TemplateBuilder(const Teuchos::RCP<panzer::FieldManagerBuilder<LO,GO> >& fmb) :
       m_fmb(fmb) 
       {}
       
     template <typename EvalT>
       Teuchos::RCP<panzer::Base> build() const {
       return Teuchos::rcp( static_cast<panzer::Base*>
-			   (new panzer::AssemblyEngine<EvalT>(m_fmb)) );
+			   (new panzer::AssemblyEngine<EvalT,LO,GO>(m_fmb)) );
     }
     
   };

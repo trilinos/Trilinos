@@ -16,6 +16,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   assembly_engine
   SOURCES assembly_engine.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
-  NUM_MPI_PROCS 1
+  NUM_MPI_PROCS 4
   )
   

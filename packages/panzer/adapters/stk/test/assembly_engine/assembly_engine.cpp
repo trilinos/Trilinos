@@ -16,6 +16,8 @@ using Teuchos::rcp;
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_AssemblyEngine.hpp"
+#include "Panzer_AssemblyEngine_TemplateManager.hpp"
+#include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "user_app_EquationSetFactory.hpp"
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
@@ -103,9 +105,13 @@ namespace panzer {
 	      bc_factory,
 	      workset_size);
 
-    panzer::AssemblyEngine<panzer::Traits::Residual,int,int> ae(fmb);
+    panzer::AssemblyEngine_TemplateManager<panzer::Traits,int,int> ae_tm;
+    panzer::AssemblyEngine_TemplateBuilder<int,int> builder(fmb);
+    ae_tm.buildObjects(builder);
+
+
     RCP<DOFManager<int,int> > dofManager = 
-      ae.getManagerBuilder()->getDOFManager();
+      ae_tm.getAsObject<panzer::Traits::Residual>()->getManagerBuilder()->getDOFManager();
     RCP<Epetra_Map> ghosted_map = dofManager->getOverlapMap();
     RCP<Epetra_CrsGraph> ghosted_graph = dofManager->getOverlapGraph();
     
@@ -115,8 +121,11 @@ namespace panzer {
     input.f = rcp(new Epetra_Vector(*ghosted_map));
     input.j = rcp(new Epetra_CrsMatrix(Copy, *ghosted_graph));
 
-    ae.evaluate(input);
+    ae_tm.getAsObject<panzer::Traits::Residual>()->evaluate(input);
+    ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
+    //input.f->Print(std::cout);
+    //input.j->Print(std::cout);
   }
 
   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
