@@ -79,12 +79,30 @@ APPEND_SET(HEADERS
   dofmngr/Panzer_EpetraLinearObjFactoryT.hpp
   evaluators/Panzer_Constant.hpp
   evaluators/Panzer_ConstantT.hpp
+  evaluators/Panzer_Dirichlet_Constant.hpp
+  evaluators/Panzer_Dirichlet_ConstantT.hpp
+  evaluators/Panzer_DOF.hpp
+  evaluators/Panzer_DOFT.hpp
+  evaluators/Panzer_DOFGradient.hpp
+  evaluators/Panzer_DOFGradientT.hpp
   evaluators/Panzer_GatherSolution_Epetra.hpp
   evaluators/Panzer_GatherSolution_EpetraT.hpp
+  evaluators/Panzer_Integrator_BasisTimesScalar.hpp
+  evaluators/Panzer_Integrator_BasisTimesScalarT.hpp
+  evaluators/Panzer_Integrator_GradBasisDotVector.hpp
+  evaluators/Panzer_Integrator_GradBasisDotVectorT.hpp
+  evaluators/Panzer_ScalarToVector.hpp
+  evaluators/Panzer_ScalarToVectorT.hpp
   evaluators/Panzer_ScatterResidual_Epetra.hpp
   evaluators/Panzer_ScatterResidual_EpetraT.hpp
   evaluators/Panzer_ScatterDirichletResidual_Epetra.hpp
   evaluators/Panzer_ScatterDirichletResidual_EpetraT.hpp
+  evaluators/Panzer_TestScatter.hpp
+  evaluators/Panzer_TestScatterT.hpp
+  evaluators/Panzer_Sum.hpp
+  evaluators/Panzer_SumT.hpp
+  evaluators/Panzer_VectorToScalar.hpp
+  evaluators/Panzer_VectorToScalarT.hpp
   ) 
 
 APPEND_SET(SOURCES
