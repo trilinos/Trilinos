@@ -4,16 +4,20 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-namespace MueLu {
-/*!
-  @class NeedsObject
-  @brief Base class for factories.
-  Maintains just 2 things:
-   - Ouput level status
-   - A list of 'Needs' for the factory. For example, a restriction factory that transposes the tentative
-     prolongator 'Needs' the prolongator factory to save this.
+#define MueLu_cout(minimumVerbLevel) \
+    if (this->getVerbLevel() >= minimumVerbLevel) *(this->getOStream())
 
-  Derived from Teuchos::VerboseObject.
+namespace MueLu {
+  
+/*!
+ @class Needs
+ @brief Class that allows cross-factory communication of data needs.
+
+ Maintains a list of 'Needs' for a given Level. For example, a restriction factory that
+ transposes the tentative prolongator 'Needs' the prolongator factory to save this.
+
+ Derives from Teuchos::VerboseObject.
+
 */
 class Needs : public Teuchos::VerboseObject<Needs> {
 
@@ -24,22 +28,21 @@ class Needs : public Teuchos::VerboseObject<Needs> {
 
   private:
 
-    // TODO JG to JHU: why we cannot use direclty Teuchos::VerboseObject::getVerbLevel() and setVerbLevel() ?
-    // FIXME JHU why doesn't  needs->setVerbLevel(Teuchos::VERB_NONE) change output?!
-    //! Current output level
-    Teuchos::EVerbosityLevel outputLevel_; //FIXME this state should already be stored in VerboseObject
     //! Prior output level
     Teuchos::EVerbosityLevel priorOutputLevel_;
-    //! Stores number of references to a Need.
+    //! Stores number of outstanding requests for a need.
     Teuchos::ParameterList countTable_;
-    //! Stores values associated with a Need.
+    //! Stores data associated with a need.
     Teuchos::ParameterList dataTable_;
 
   protected:
     Teuchos::RCP<Teuchos::FancyOStream> out_;
 
   public:
-    //@{ Constructors/Destructors.
+    //! @name Constructors/Destructors.
+    //@{
+
+    //! Default constructor.
     Needs() : out_(this->getOStream()) {
       countTable_.setName("countTable");
       dataTable_.setName("dataTable");
@@ -48,8 +51,9 @@ class Needs : public Teuchos::VerboseObject<Needs> {
     virtual ~Needs() {}
     //@}
 
-    //@{ Access methods.
-    //! Store need and its value. (This does not indicate that it's needed.)
+    //! @name Access methods
+    //@{
+    //! Store need label and its associated data. This does not increment the storage counter.
     template <typename T>
     void Save(const std::string ename, const T &entry) {
       if ( !countTable_.isParameter(ename) ) {
@@ -58,18 +62,18 @@ class Needs : public Teuchos::VerboseObject<Needs> {
       dataTable_.set(ename,entry);
     } //Save
 
-    //! Indicate that an object is needed.
-    void Want(const std::string ename) {
+    //! Indicate that an object is needed. This increments the storage counter.
+    void Request(const std::string ename) {
       int currentCount = countTable_.get(ename,0);
       countTable_.set(ename,++currentCount);
-    } //Want
+    } //Request
 
 
-    //! Get a need and decrement the storage counter.
+    //! Get data and decrement the storage counter associated with it.
     template <typename T>
-    void Release(const std::string ename, T &value) {
+    void CheckOut(const std::string ename, T &value) {
       if (!countTable_.isParameter(ename)) {
-        std::string msg =  "Release: " + ename + " not found in countTable_";
+        std::string msg =  "Checkout: " + ename + " not found in countTable_";
         throw(std::logic_error(msg));
       } else {
         value = dataTable_.get<T>(ename);
@@ -81,24 +85,28 @@ class Needs : public Teuchos::VerboseObject<Needs> {
           countTable_.set(ename,--currentCount);
         }
       }
-    } //Release
+    } //CheckOut
 
-    //! Get a need without decrementing the storage counter.
-    //! This should be used only for local needs or for debugging purposes.
+    /*! @brief Get data without decrementing associated storage counter (i.e., read-only access).
+    
+        This should be used only for local needs or for debugging purposes.
+    */
     template <typename T>
-    void Get(const std::string ename, T &value) {
+    void Examine(const std::string ename, T &value) {
       if (!countTable_.isParameter(ename)) {
         Teuchos::OSTab tab(out_);
-        std::string msg =  "Get: " + ename + " not found in countTable_";
+        std::string msg =  "Examine: " + ename + " not found in countTable_";
         throw(std::logic_error(msg));
       } else {
         value = dataTable_.get<T>(ename);
       }
-    } //Get
+    } //Examine
     //@}
 
-    //@{ Utilities.
+    //! @name Utilities.
+    //@{
     //! NeedsTable raw print
+    //FIXME not covered by unit test right now
     void RawPrint(std::ostream &os, Needs const &foo) {
       std::cout << "name | #requests" << std::endl;
       std::cout << "=================" << std::endl;
@@ -108,31 +116,34 @@ class Needs : public Teuchos::VerboseObject<Needs> {
       std::cout << foo.dataTable_ << std::endl;
     } //RawPrint
 
-    //! Return count for a need.
-    int GetCount(const std::string ename) {
+    //! Test whether a need's value has been saved.
+    bool IsSaved(const std::string ename) {
+      if (dataTable_.isParameter(ename)) return true;
+      else                               return false;
+    }
+
+    //! Test whether a need has been requested.  Note: this tells nothing about whether the need's value exists.
+    bool IsRequested(const std::string ename) {
+      if (countTable_.isParameter(ename)) return true;
+      else                                return false;
+    }
+
+    /*! @brief Return the number of outstanding requests for a need.
+
+        Throws a <tt>std::logic_error</tt> exception if the need either hasn't been requested or
+        hasn't been saved.
+    */
+    int NumRequests(const std::string ename) {
+      //FIXME should we return 0 instead of throwing an exception?
       if (!countTable_.isParameter(ename)) {
-        std::string msg =  "GetCount: " + ename + " not found in countTable_";
+        std::string msg =  "NumRequests: " + ename + " not found in countTable_";
         throw(std::logic_error(msg));
       } else {
         return countTable_.get(ename,0);
       }
-    } //GetCount
+    } //NumRequests
 
-    //! Test whether a need has been registered.
-    //! Note: this tells nothing about whether the value exists.
-    bool IsRegistered(const std::string ename) {
-      if (countTable_.isParameter(ename)) return true;
-      else                                return false;
-    }
     //@}
-
-    void SetOutputLevel(Teuchos::EVerbosityLevel outputLevel) {
-      outputLevel_ = outputLevel;
-    }
-
-    int GetOutputLevel() {
-      return outputLevel_;
-    }
 
 }; //class Needs
 

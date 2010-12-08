@@ -24,7 +24,7 @@ namespace MueLu {
     //! Constructor.
     TransPFactory() {
       Teuchos::OSTab tab(this->out_);
-      *(this->out_) << "TransPFactory: Instantiating a new factory" << std::endl;
+      MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Instantiating a new factory" << std::endl;
     }
 
     //! Destructor.
@@ -33,7 +33,7 @@ namespace MueLu {
 
     //@{ Build methods.
     bool Build(Level & fineLevel, Level & coarseLevel) {
-      Teuchos::OSTab tab(this->out_); *(this->out_) << "TransPFactory: Building a restriction operator" << std::endl; return true;
+      Teuchos::OSTab tab(this->out_); MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Building a restriction operator" << std::endl; return true;
     }
     //@}
 
