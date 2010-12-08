@@ -2,17 +2,16 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Set the options specific to this build case
-#   Build Zoltan, Isorropia, Epetra and EpetraExt
-#   Specify 64-bit global IDs for Zoltan and Isorropia
-#  "-D Trilinos_ENABLE_Isorropia:BOOL=ON"
-#  "-D Trilinos_ENABLE_Epetra:BOOL=ON"
-#  "-D Trilinos_ENABLE_EpetraExt:BOOL=ON"
+# Build Zoltan and all Trilinos packages that have optional or
+#   required dependencies on it.
+#
+# Zoltan will use 64-bit global IDs on 64-bit machines.  ParMetis and
+#    Scotch are using 32-bit global IDs.
 #
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_ZOLTAN_64)
+SET(BUILD_DIR_NAME MPI_ZOLTAN_PLUS_64)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 
@@ -34,6 +33,9 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-D ParMETIS_LIBRARY_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
   "-D Scotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/include"
   "-D Scotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/lib"
+  "-D Trilinos_ENABLE_Isorropia:BOOL=ON"
+  "-D Trilinos_ENABLE_Epetra:BOOL=ON"
+  "-D Trilinos_ENABLE_EpetraExt:BOOL=ON"
   )
 
 SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
