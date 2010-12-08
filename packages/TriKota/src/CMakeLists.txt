@@ -194,7 +194,6 @@ ENDIF()
 
 # Custom "make install" command to copy contents of Dakota lib&include
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/lib/ DESTINATION lib)
-IF(TriKota_Dakota_Boost)
-  INSTALL(FILES ${Boost_LIBRARY_DIRS}/libboost_signals.a  DESTINATION lib)
-ENDIF()
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/include/ DESTINATION include)
+# Temporary fix, to be removed by boostsignals TPL
+INSTALL(FILES ${Boost_LIBRARY_DIRS}/libboost_signals.a  DESTINATION lib)
