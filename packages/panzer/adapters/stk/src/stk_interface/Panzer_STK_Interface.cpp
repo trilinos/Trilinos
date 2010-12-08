@@ -113,15 +113,13 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach)
    // register fields for output primarily
    std::set<SolutionFieldType*> uniqueFields;
    std::map<std::pair<std::string,std::string>,SolutionFieldType*>::const_iterator fieldIter;
-   for(fieldIter=fieldNameToSolution_.begin();fieldIter!=fieldNameToSolution_.end();++fieldIter) {
-      std::string fieldName = fieldIter->first.first;
-      std::string blockId = fieldIter->first.second; // element block ID
-
-      stk::mesh::Part * elementBlock = this->getElementBlockPart(blockId);
-      TEST_FOR_EXCEPTION(elementBlock==0,std::runtime_error,"No element block \"" << blockId << "\" was found");
-      stk::mesh::put_field(*fieldIter->second, stk::mesh::Node,*elementBlock);
-
+   for(fieldIter=fieldNameToSolution_.begin();fieldIter!=fieldNameToSolution_.end();++fieldIter)
       uniqueFields.insert(fieldIter->second); // this makes setting up IO easier!
+
+   {
+      std::set<SolutionFieldType*>::const_iterator uniqueFieldIter;
+      for(uniqueFieldIter=uniqueFields.begin();uniqueFieldIter!=uniqueFields.end();++uniqueFieldIter)
+         stk::mesh::put_field(*(*uniqueFieldIter), stk::mesh::Node,metaData_->universal_part());
    }
 
 #ifdef HAVE_IOSS
@@ -232,7 +230,7 @@ void STK_Interface::writeToExodus(const std::string & filename)
 
       Ioss::Init::Initializer io;
       stk::io::util::MeshData meshData;
-      stk::io::util::create_output_mesh(filename,"", "", comm, 
+      stk::io::util::create_output_mesh(filename, "", "", comm, 
                                                      *bulkData_, *metaData_,meshData);
 
       stk::io::util::process_output_request(meshData, *bulkData_, 0.0);
@@ -603,7 +601,8 @@ Teuchos::RCP<const std::vector<stk::mesh::Entity*> > STK_Interface::getElementsO
    using Teuchos::rcp;
 
    if(orderedElementVector_==Teuchos::null) { 
-      RCP<std::vector<stk::mesh::Entity*> > elements;
+      RCP<std::vector<stk::mesh::Entity*> > elements
+         = Teuchos::rcp(new std::vector<stk::mesh::Entity*>);
 
       // defines ordering of blocks
       std::vector<std::string> blockIds;

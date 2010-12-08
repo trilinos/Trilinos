@@ -262,7 +262,10 @@ public:
      */
    template <typename ArrayT>
    void setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
-                             std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+                             const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
+
+   template <typename ArrayT>
+   void getElementVertices(std::vector<std::size_t> & localIds, ArrayT & vertices) const;
 
 public: // static operations
    static const std::string coordsString;
@@ -367,26 +370,52 @@ void STK_Interface::addElementBlock(const std::string & name)
 }
 
 template <typename ArrayT>
-void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std::string & blockId,std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues)
+void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
+                                         const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues)
 {
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
    // SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(fieldName); // if no blockId is specified you can get the field like this!
    SolutionFieldType * field = this->getSolutionField(fieldName,blockId);
 
-   std::vector<std::size_t>::const_iterator itr;
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       std::size_t localId = localElementIds[cell];
       stk::mesh::Entity * element = elements[localId];
 
       // loop over nodes set solution values
-      stk::mesh::PairIterRelation relations = element->relations();
+      stk::mesh::PairIterRelation relations = element->relations(stk::mesh::Node);
       for(std::size_t i=0;i<relations.size();++i) {
          stk::mesh::Entity * node = relations[i].entity();
 
          double * solnData = stk::mesh::field_data(*field,*node);
          // TEUCHOS_ASSERT(solnData!=0); // only needed if blockId is not specified
          solnData[0] = solutionValues(cell,i);
+      }
+   }
+}
+
+template <typename ArrayT>
+void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
+{
+   const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
+
+   unsigned dim = getDimension();
+
+   // allocate space
+   vertices.resize(localElementIds.size(),4,getDimension());
+
+   // loop over each requested element
+   for(std::size_t cell=0;cell<localElementIds.size();cell++) {
+      stk::mesh::Entity * element = elements[localElementIds[cell]];
+      stk::mesh::PairIterRelation nodes = element->relations(stk::mesh::Node);
+
+      // loop over all element nodes
+      for(std::size_t node=0;node<nodes.size();++node) {
+         const double * coord = getNodeCoordinates(nodes[node].entity()->identifier());
+
+         // set each dimension of the coordinate
+         for(unsigned d=0;d<dim;d++)
+            vertices(cell,node,d) = coord[d];
       }
    }
 }
