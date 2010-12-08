@@ -84,13 +84,14 @@ using Teuchos::ScalarTraits;
 #define IAMAXTESTS 5
 #define NRM2TESTS  5
 #define SCALTESTS  5
-#define GEMVTESTS  5
-#define GERTESTS   5
-#define TRMVTESTS  5
-#define GEMMTESTS  5
-#define SYMMTESTS  5
-#define TRMMTESTS  5
-#define TRSMTESTS  5
+#define GEMVTESTS  0
+#define GERTESTS   0
+#define TRMVTESTS  0
+#define GEMMTESTS  0
+#define SYMMTESTS  0
+#define SYRKTESTS  5
+#define TRMMTESTS  0
+#define TRSMTESTS  0
 
 // Returns ScalarTraits<TYPE>::random() (the input parameters are ignored)
 template<typename TYPE>
@@ -218,7 +219,7 @@ int main(int argc, char *argv[])
   OType incx, incy;
   OType SType1IAMAXresult;
   OType SType2IAMAXresult;
-  OType TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, LDA, LDB, LDC, Mx, My;
+  OType TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, K, LDA, LDB, LDC, Mx, My;
   Teuchos::EUplo UPLO;
   Teuchos::ESide SIDE;
   Teuchos::ETransp TRANS, TRANSA, TRANSB;
@@ -723,6 +724,7 @@ int main(int argc, char *argv[])
     {
       UPLO = RandomUPLO();
       TRANSA = RandomTRANS();
+      
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
       //DIAG = RandomDIAG();  
@@ -1126,6 +1128,117 @@ int main(int argc, char *argv[])
   if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End SYMM Tests
+  //--------------------------------------------------------------------------------
+
+  //--------------------------------------------------------------------------------
+  // Begin SYRK Tests
+  //--------------------------------------------------------------------------------
+  GoodTestSubcount = 0;
+  for(i = 0; i < SYRKTESTS; i++)
+  {
+    N = GetRandom(MVMIN, MVMAX);
+    K = GetRandom(MVMIN, MVMAX);
+    while (K > N) { K = GetRandom(MVMIN, MVMAX); }
+
+    UPLO = RandomUPLO();
+    TRANS = RandomTRANS();
+#ifdef HAVE_TEUCHOS_COMPLEX
+    while (TRANS == Teuchos::CONJ_TRANS) { TRANS = RandomTRANS(); }
+#endif
+
+    LDA = GetRandom(MVMIN, MVMAX);
+    if(Teuchos::ETranspChar[TRANS] == 'N') {
+      while (LDA < N) { LDA = GetRandom(MVMIN, MVMAX); }
+      SType1A = new SType1[LDA * K];
+      SType2A = new SType2[LDA * K];
+      for(j = 0; j < LDA * K; j++) {
+        SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
+        SType2A[j] = ConvertType(SType1A[j], convertTo);
+      }
+    } else {
+      while (LDA < K) { LDA = GetRandom(MVMIN, MVMAX); }
+      SType1A = new SType1[LDA * N];
+      SType2A = new SType2[LDA * N];
+      for(j = 0; j < LDA * N; j++) {
+        SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
+        SType2A[j] = ConvertType(SType1A[j], convertTo);
+      }
+    }
+
+    LDC = GetRandom(MVMIN, MVMAX);
+    while (LDC < N) {  LDC = GetRandom(MVMIN, MVMAX); }
+    SType1C = new SType1[LDC * N];
+    SType2C = new SType2[LDC * N];
+    for(j = 0; j < N; j++) {
+
+      if(Teuchos::EUploChar[UPLO] == 'U') {
+        // The operator is upper triangular, make sure that the entries are
+        // only in the upper triangular part of C.
+        for(k = 0; k < N; k++)
+        {
+          if(k <= j) {
+            SType1C[j*LDC+k] = GetRandom(-SCALARMAX, SCALARMAX);
+          } else {
+            SType1C[j*LDC+k] = SType1zero;
+          } 
+          SType2C[j*LDC+k] = ConvertType(SType1C[j*LDC+k], convertTo);
+        }
+      }
+      else {
+        for(k = 0; k < N; k++)
+        {
+          if(k >= j) {
+            SType1C[j*LDC+k] = GetRandom(-SCALARMAX, SCALARMAX);
+          } else {
+            SType1C[j*LDC+k] = SType1zero;
+          }
+          SType2C[j*LDC+k] = ConvertType(SType1C[j*LDC+k], convertTo);
+        }
+      } 
+    }
+       
+    SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
+    SType1beta = GetRandom(-SCALARMAX, SCALARMAX);
+    SType2alpha = ConvertType(SType1alpha, convertTo);
+    SType2beta = ConvertType(SType1beta, convertTo);
+    if(debug)
+    {
+      std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+      std::cout << "SType1alpha = " << SType1alpha << std::endl;
+      std::cout << "SType2alpha = " << SType2alpha << std::endl;
+      std::cout << "SType1beta = " << SType1beta << std::endl;
+      std::cout << "SType2beta = " << SType2beta << std::endl;
+      if (Teuchos::ETranspChar[TRANS] == 'N') {
+        PrintMatrix(SType1A, N, K, LDA,"SType1A", matlab);
+        PrintMatrix(SType2A, N, K, LDA,"SType2A", matlab);
+      } else {
+        PrintMatrix(SType1A, K, N, LDA, "SType1A", matlab);
+        PrintMatrix(SType2A, K, N, LDA, "SType2A", matlab);
+      }
+      PrintMatrix(SType1C, N, N, LDC,"SType1C_before_operation", matlab);
+      PrintMatrix(SType2C, N, N, LDC,"SType2C_before_operation", matlab);
+    }
+    TotalTestCount++;
+
+    SType1BLAS.SYRK(UPLO, TRANS, N, K, SType1alpha, SType1A, LDA, SType1beta, SType1C, LDC);
+    SType2BLAS.SYRK(UPLO, TRANS, N, K, SType2alpha, SType2A, LDA, SType2beta, SType2C, LDC);
+    if(debug)
+    {
+      PrintMatrix(SType1C, N, N, LDC,"SType1C_after_operation", matlab);
+      PrintMatrix(SType2C, N, N, LDC,"SType2C_after_operation", matlab);
+    }
+    GoodTestSubcount += CompareMatrices(SType1C, SType2C, N, N, LDC, TOL);
+
+    delete [] SType1A;
+    delete [] SType1C;
+    delete [] SType2A;
+    delete [] SType2C;
+  }
+  GoodTestCount += GoodTestSubcount;
+  if(verbose || debug) std::cout << "SYRK: " << GoodTestSubcount << " of " << SYRKTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
+  //--------------------------------------------------------------------------------
+  // End SYRK Tests
   //--------------------------------------------------------------------------------
 
   //--------------------------------------------------------------------------------
