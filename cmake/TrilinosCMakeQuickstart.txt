@@ -21,6 +21,7 @@ Section C: Configuring Trilinos
   --  Configuring MPI support
   --  Building shared libraries
   --  Configuring with third party libraries (TPLS)
+  --  Disabling tentatively enabled TPLs
   --  Getting verbose output
   --  Enabling/disabling deprecated warnings
   --  Disable update of package dependency information
@@ -560,6 +561,27 @@ C) Configuring (Makefile Generator)
 
   That will result in setting TPL_ENABLE_<TPLNAME>=ON internally (but not set
   in the cache) if TPL_ENABLE_<TPLNAME>=OFF is not already set.
+
+
+(*) Disabling tentatively enabled TPLs:
+
+    -D TPL_ENABLE_<TPLNAME>:BOOL=OFF
+
+  where <TPLNAME> = BinUtils, Boost, etc.
+
+  NOTE: Some TPLs in Trilinos are always tentatively enabled (e.g. BinUtils
+  for C++ stacktracing) and if all of the components for the TPL are found
+  (e.g. headers and libraries) then support for the TPL will be enabled,
+  otherwise it will be disabled.  This is to allow as much functionality as
+  possible to get automatically enabled without the user having to learn about
+  the TPL, explicitly enable the TPL, and then see if it is supported or not
+  on the given system.  However, if the TPL is not supported on a given
+  platform, then it may be better to explicitly disable the TPL (as shown
+  above) so as to avoid the output from the CMake configure process that shows
+  the tentatively enabled TPL being processes and then failing to be enabled.
+  Also, it is possible that the enable process for the TPL may pass, but the
+  TPL may not work correctly on the given platform.  In this case, one would
+  also want to explicitly disable the TPL as shown above.
 
 
 (*) Getting verbose output from configure:

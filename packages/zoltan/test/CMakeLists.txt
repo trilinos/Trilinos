@@ -15,7 +15,7 @@
 #
 # Non-zdrive tests
 #
-#ADD_SUBDIRECTORY(Large_Data)
+ADD_SUBDIRECTORY(Large_Data)
 #
 
 IF(PERL_EXECUTABLE)

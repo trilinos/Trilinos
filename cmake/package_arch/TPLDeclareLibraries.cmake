@@ -36,7 +36,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
      #lists
      "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES;LIBRARY_DIR_HINT"
      #options
-     ""
+     "MUST_FIND_ALL_LIBS"
      ${ARGN}
      )
 
@@ -44,6 +44,13 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     MESSAGE("TPL_DECLARE_LIBRARIES: ${TPL_NAME}")
     PRINT_VAR(PARSE_REQUIRED_HEADERS)
     PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+  ENDIF()
+
+  IF (TPL_TENTATIVE_ENABLE_${TPL_NAME})
+    MESSAGE(STATUS "  Attempting to enable tentatively enabled TPL '${TPL_NAME}' ...")
+    SET(ERROR_MSG_MODE STATUS)
+  ELSE()
+    SET(ERROR_MSG_MODE FATAL_ERROR)
   ENDIF()
 
   #
@@ -112,6 +119,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   # Direct build options
   #
 
+  SET(_${TPL_NAME}_ENABLE_SUCCESS TRUE)
+
   IF (PARSE_REQUIRED_LIBS_NAMES)
 
     # Libraries
@@ -167,11 +176,16 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   
         IF (NOT LIBNAME_SET_LIB)
           MULTILINE_SET(ERRMSG
-            "Warning: Could not find a library in the set \"${LIBNAME_SET}\" for"
+            "Could not find a library in the set \"${LIBNAME_SET}\" for"
             " the TPL ${TPL_NAME}!  Please manually set"
             " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARY_NAMES or just"
             " TPL_${TPL_NAME}_LIBRARIES to point to the ${TPL_NAME} libraries!")
-          MESSAGE(STATUS ${ERRMSG})
+          IF (PARSE_MUST_FIND_ALL_LIBS)
+            SET(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
+            MESSAGE(${ERROR_MSG_MODE} "  Error: ${ERRMSG}")
+          ELSE()
+            MESSAGE(STATUS "  Warning: ${ERRMSG}")
+          ENDIF()
         ENDIF()
   
         APPEND_SET(LIBRARIES_FOUND ${LIBNAME_SET_LIB})
@@ -190,10 +204,12 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     
       IF (NOT TPL_${TPL_NAME}_LIBRARIES)
         MULTILINE_SET(ERRMSG
-          "Error, could not find the ${TPL_NAME} Library!  Please manually set"
+          "Could not find the ${TPL_NAME} Library!  Please manually set"
           " ${TPL_NAME}_LIBRARY_DIRS and/or ${TPL_NAME}_LIBRARY_NAMES or just"
           " TPL_${TPL_NAME}_LIBRARIES to point to the ${TPL_NAME} libraries!")
-        MESSAGE(FATAL_ERROR ${ERRMSG})
+        SET(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
+        MESSAGE(${ERROR_MSG_MODE} ${ERRMSG})
+        PRINT_VAR(_${TPL_NAME}_ENABLE_SUCCESS)
       ENDIF()
   
     ENDIF()
@@ -247,7 +263,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
           ENDIF()
           
           IF(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
-            MESSAGE(STATUS "  Found ${TPL_NAME} TPL header: ${_${TPL_NAME}_${INCLUDE_FILE}_PATH}")
+            MESSAGE(STATUS "  Found ${TPL_NAME} TPL header: ${_${TPL_NAME}_${INCLUDE_FILE}_PATH}/${INCLUDE_FILE}")
             SET(INCLUDE_FILE_SET_PATH ${_${TPL_NAME}_${INCLUDE_FILE}_PATH})
             BREAK()
           ENDIF()
@@ -280,11 +296,13 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
         
       IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
         MULTILINE_SET(ERRMSG
-          "Error, could not find the ${TPL_NAME} headers include directory!"
+          "Could not find the ${TPL_NAME} headers include directory!"
           " Please manually set ${TPL_NAME}_INCLUDE_DIRS and/or"
           " ${TPL_NAME}_LIBRARY_DIRS or TPL_${TPL_NAME}_INCLUDE_DIRS to point"
           " to the ${TPL_NAME} headers!")
-        MESSAGE(FATAL_ERROR ${ERRMSG})
+        SET(_${TPL_NAME}_ENABLE_SUCCESS FALSE)
+        MESSAGE(${ERROR_MSG_MODE} ${ERRMSG})
+        PRINT_VAR(_${TPL_NAME}_ENABLE_SUCCESS)
       ENDIF()
     
       IF (TPL_${TPL_NAME}_INCLUDE_DIRS)
@@ -317,4 +335,37 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     PRINT_VAR(TPL_${TPL_NAME}_LIBRARY_DIRS)
   ENDIF()
 
+  #PRINT_VAR(TPL_TENTATIVE_ENABLE_${TPL_NAME})
+  #PRINT_VAR(_${TPL_NAME}_ENABLE_SUCCESS)
+  IF (TPL_TENTATIVE_ENABLE_${TPL_NAME})
+    IF (_${TPL_NAME}_ENABLE_SUCCESS)
+      MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' passed!")
+    ELSE()
+      MESSAGE(STATUS "  Attempt to enable tentatively enabled TPL '${TPL_NAME}' failed!  Setting TPL_ENABLE_${TPL_NAME}=OFF")
+      SET(TPL_ENABLE_${TPL_NAME} OFF CACHE STRING "autoset" FORCE)
+    ENDIF()
+  ENDIF()
+
 ENDFUNCTION()
+
+
+#
+# Function that sets up for an optionally enabled TPL that is attempted to be
+# enabled but will be disabled if all of the parts are not found.
+#
+
+FUNCTION(TPL_TENTATIVELY_ENABLE TPL_NAME)
+
+  IF ("${TPL_ENABLE_${TPL_NAME}}" STREQUAL "")
+    # The TPL's enable status has not been set so we will tentatively enable
+    # it.
+    SET(TPL_ENABLE_${TPL_NAME} ON CACHE STRING "autoset" FORCE)
+    ADVANCED_SET(TPL_TENTATIVE_ENABLE_${TPL_NAME} ON CACHE STRING "autoset" FORCE)
+  ELSE()
+    # The TPL's enable status has already be hard set to be ON or OFF so we
+    # will leave it alone.
+  ENDIF()
+
+ENDFUNCTION()
+
+

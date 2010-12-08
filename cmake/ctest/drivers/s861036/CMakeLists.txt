@@ -3,8 +3,8 @@ INCLUDE("../../../TrilinosVersion.cmake")
 TRILINOS_DRIVER_SETUP()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-    MPI_ZOLTAN_64
-    ctest_zoltan_ids64.cmake
+    MPI_ZOLTAN_ONLY_64
+    ctest_zoltan_only_ids64.cmake
     CTEST_INSTALLER_TYPE dev
     TIMEOUT_MINUTES 300
 )

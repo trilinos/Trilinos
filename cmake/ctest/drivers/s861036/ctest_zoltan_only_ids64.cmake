@@ -2,17 +2,14 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
-# Set the options specific to this build case
-#   Build Zoltan, Isorropia, Epetra and EpetraExt
-#   Specify 64-bit global IDs for Zoltan and Isorropia
-#  "-D Trilinos_ENABLE_Isorropia:BOOL=ON"
-#  "-D Trilinos_ENABLE_Epetra:BOOL=ON"
-#  "-D Trilinos_ENABLE_EpetraExt:BOOL=ON"
+# Build Zoltan and its examples and tests.
+#  Zoltan's global IDs are 64 bits on 64 bit machines.
+#  Scotch and Parmetis use 32 bit IDs
 #
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_ZOLTAN_64)
+SET(BUILD_DIR_NAME MPI_ZOLTAN_ONLY_64)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 
