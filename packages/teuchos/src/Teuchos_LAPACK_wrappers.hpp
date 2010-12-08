@@ -89,6 +89,8 @@
 #define DLAPY2_F77  F77_BLAS_MANGLE(slapy2,SLAPY2)
 #define DLARTG_F77  F77_BLAS_MANGLE(slartg,SLARTG)
 #define DLARFG_F77  F77_BLAS_MANGLE(slarfg,SLARFG)
+#define DGEBAL_F77  F77_BLAS_MANGLE(sgebal,SGEBAL)
+#define DGEBAK_F77  F77_BLAS_MANGLE(sgebak,SGEBAK)
 #define DLARND_F77  F77_BLAS_MANGLE(slarnd,SLARND)
 #define DLARNV_F77  F77_BLAS_MANGLE(slarnv,SLARNV)
 #define ILAENV_F77  F77_BLAS_MANGLE(ilaenv,ILAENV)
@@ -138,8 +140,10 @@
 #define ZSTEQR_F77  F77_BLAS_MANGLE(csteqr,CSTEQR)
 #define ZHEEV_F77   F77_BLAS_MANGLE(cheev,CHEEV)
 #define ZHEGV_F77   F77_BLAS_MANGLE(chegv,CHEGV)
-#define ZLARTG_F77  F77_BLAS_MANGLE(clartg,cLARTG)
-#define ZLARFG_F77  F77_BLAS_MANGLE(clarfg,cLARFG)
+#define ZLARTG_F77  F77_BLAS_MANGLE(clartg,CLARTG)
+#define ZLARFG_F77  F77_BLAS_MANGLE(clarfg,CLARFG)
+#define ZGEBAL_F77  F77_BLAS_MANGLE(cgebal,CGEBAL)
+#define ZGEBAK_F77  F77_BLAS_MANGLE(cgebak,CGEBAK)
 #define ZLARND_F77  F77_BLAS_MANGLE(clarnd,CLARND)
 #define ZLARNV_F77  F77_BLAS_MANGLE(clarnv,CLARNV)
 /*
@@ -203,6 +207,8 @@
 #define DLAPY2_F77  F77_BLAS_MANGLE(dlapy2,DLAPY2)
 #define DLARTG_F77  F77_BLAS_MANGLE(dlartg,DLARTG)
 #define DLARFG_F77  F77_BLAS_MANGLE(dlarfg,DLARFG)
+#define DGEBAL_F77  F77_BLAS_MANGLE(dgebal,DGEBAL)
+#define DGEBAK_F77  F77_BLAS_MANGLE(dgebak,DGEBAK)
 #define DLARND_F77  F77_BLAS_MANGLE(dlarnd,DLARND)
 #define DLARNV_F77  F77_BLAS_MANGLE(dlarnv,DLARNV)
 #define ILAENV_F77  F77_BLAS_MANGLE(ilaenv,ILAENV)
@@ -253,6 +259,8 @@
 #define ZHEGV_F77   F77_BLAS_MANGLE(zhegv,ZHEGV)
 #define ZLARTG_F77  F77_BLAS_MANGLE(zlartg,ZLARTG)
 #define ZLARFG_F77  F77_BLAS_MANGLE(zlarfg,ZLARFG)
+#define ZGEBAL_F77  F77_BLAS_MANGLE(zgebal,ZGEBAL)
+#define ZGEBAK_F77  F77_BLAS_MANGLE(zgebak,ZGEBAK)
 #define ZLARND_F77  F77_BLAS_MANGLE(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_BLAS_MANGLE(zlarnv,ZLARNV)
 /*
@@ -316,6 +324,8 @@
 #define DLAPY2_F77  F77_BLAS_MANGLE(dlapy2,DLAPY2)
 #define DLARTG_F77  F77_BLAS_MANGLE(dlartg,DLARTG)
 #define DLARFG_F77  F77_BLAS_MANGLE(dlarfg,DLARFG)
+#define DGEBAL_F77  F77_BLAS_MANGLE(dgebal,DGEBAL)
+#define DGEBAK_F77  F77_BLAS_MANGLE(dgebak,DGEBAK)
 #define DLARND_F77  F77_BLAS_MANGLE(dlarnd,DLARND)
 #define DLARNV_F77  F77_BLAS_MANGLE(dlarnv,DLARNV)
 #define ILAENV_F77  F77_BLAS_MANGLE(ilaenv,ILAENV)
@@ -366,6 +376,8 @@
 #define ZHEGV_F77   F77_BLAS_MANGLE(zhegv,ZHEGV)
 #define ZLARTG_F77  F77_BLAS_MANGLE(zlartg,ZLARTG)
 #define ZLARFG_F77  F77_BLAS_MANGLE(zlarfg,ZLARFG)
+#define ZGEBAL_F77  F77_BLAS_MANGLE(zgebal,ZGEBAL)
+#define ZGEBAK_F77  F77_BLAS_MANGLE(zgebak,ZGEBAK)
 #define ZLARND_F77  F77_BLAS_MANGLE(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_BLAS_MANGLE(zlarnv,ZLARNV)
 /*
@@ -469,6 +481,8 @@
 #define DLAPY2_F77  F77_BLAS_MANGLE(dlapy2,DLAPY2)
 #define DLARND_F77  F77_BLAS_MANGLE(dlarnd,DLARND)
 #define DLARNV_F77  F77_BLAS_MANGLE(dlarnv,DLARNV)
+#define DGEBAL_F77  F77_BLAS_MANGLE(dgebal,DGEBAL)
+#define DGEBAK_F77  F77_BLAS_MANGLE(dgebak,DGEBAK)
 #define DLARTG_F77  F77_BLAS_MANGLE(dlartg,DLARTG)
 #define DLARFG_F77  F77_BLAS_MANGLE(dlarfg,DLARFG)
 #define ILAENV_F77  F77_BLAS_MANGLE(ilaenv,ILAENV)
@@ -521,6 +535,8 @@
 #define ZHEGV_F77   F77_BLAS_MANGLE(zhegv,ZHEGV)
 #define ZLARTG_F77  F77_BLAS_MANGLE(zlartg,ZLARTG)
 #define ZLARFG_F77  F77_BLAS_MANGLE(zlarfg,ZLARFG)
+#define ZGEBAL_F77  F77_BLAS_MANGLE(zgebal,ZGEBAL)
+#define ZGEBAK_F77  F77_BLAS_MANGLE(zgebak,ZGEBAK)
 #define ZLARND_F77  F77_BLAS_MANGLE(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_BLAS_MANGLE(zlarnv,ZLARNV)
 /*
@@ -583,6 +599,8 @@
 #define SLAPY2_F77  F77_BLAS_MANGLE(slapy2,SLAPY2)
 #define SLARTG_F77  F77_BLAS_MANGLE(slartg,SLARTG)
 #define SLARFG_F77  F77_BLAS_MANGLE(slarfg,SLARFG)
+#define SGEBAL_F77  F77_BLAS_MANGLE(sgebal,SGEBAL)
+#define SGEBAK_F77  F77_BLAS_MANGLE(sgebak,SGEBAK)
 #define SLARND_F77  F77_BLAS_MANGLE(slarnd,SLARND)
 #define SLARNV_F77  F77_BLAS_MANGLE(slarnv,SLARNV)
 #ifdef HAVE_LAPACK_GGEV
@@ -634,6 +652,8 @@
 #define CHEGV_F77   F77_BLAS_MANGLE(chegv,CHEGV)
 #define CLARTG_F77  F77_BLAS_MANGLE(clartg,CLARTG)
 #define CLARFG_F77  F77_BLAS_MANGLE(clarfg,CLARFG)
+#define CGEBAL_F77  F77_BLAS_MANGLE(cgebal,CGEBAL)
+#define CGEBAK_F77  F77_BLAS_MANGLE(cgebak,CGEBAK)
 #define CLARND_F77  F77_BLAS_MANGLE(clarnd,CLARND)
 #define CLARNV_F77  F77_BLAS_MANGLE(clarnv,CLARNV)
 /*
@@ -723,7 +743,7 @@ void PREFIX DGGEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const
 void PREFIX DGEHRD_F77(const int* n, const int* ilo, const int* ihi, double* A, const int* lda, double* tau, double* work, const int* lwork, int* info);
 void PREFIX DHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, double* h, const int* ldh, double* wr, double* wi, double* z, const int* ldz, double* work, const int* lwork, int* info);
 void PREFIX DGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(double*, double*), const int* n, double* a, const int* lda, int*sdim, double* wr, double* wi, double* vs, const int* ldvs, double* work, const int* lwork, int* bwork, int* info);
-void PREFIX DORGHR_F77(const int* n, const int* ilo, const int* ihi, double* a, const int* lda, double* tau, double* work, int* lwork, int* info);
+void PREFIX DORGHR_F77(const int* n, const int* ilo, const int* ihi, double* a, const int* lda, const double* tau, double* work, const int* lwork, int* info);
 void PREFIX DORMHR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* ilo, const int* ihi, const double* a, const int* lda, const double* tau, double* c, const int* ldc, double* work, int* lwork, int* info);
 void PREFIX DORGQR_F77(const int* m, const int* n, const int* k, double* a, const int* lda, const double* tau, double* work, const int* lwork, int* info);
 void PREFIX DORMQR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* k, double* a, const int* lda, const double* tau, double* C, const int* ldc, double* work, const int* lwork, int* info);
@@ -744,7 +764,7 @@ void PREFIX SGGEVX_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, const
 void PREFIX SGEHRD_F77(const int* n, const int* ilo, const int* ihi, float* A, const int* lda, float* tau, float* work, const int* lwork, int* info);
 void PREFIX SHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, float* h, const int* ldh, float* wr, float* wi, float* z, const int* ldz, float* work, const int* lwork, int* info);
 void PREFIX SGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(float*, float*), const int* n, float* a, const int* lda, int* sdim, float* wr, float* wi, float* vs, const int* ldvs, float* work, const int* lwork, int* bwork, int* info);
-void PREFIX SORGHR_F77(const int* n, const int* ilo, const int* ihi, float* a, const int* lda, float* tau, float* work, int* lwork, int* info);
+void PREFIX SORGHR_F77(const int* n, const int* ilo, const int* ihi, float* a, const int* lda, const float* tau, float* work, const int* lwork, int* info);
 void PREFIX SORMHR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* ilo, const int* ihi, const float* a, const int* lda, const float* tau, float* c, const int* ldc, float* work, int* lwork, int* info);
 void PREFIX SORGQR_F77(const int* m, const int* n, const int* k, float* a, const int* lda, const float* tau, float* work, const int* lwork, int* info);
 void PREFIX SORMQR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* k, float* a, const int* lda, const float* tau, float* C, const int* ldc, float* work, const int* lwork, int* info);
@@ -757,6 +777,11 @@ void PREFIX DLARTG_F77(const double* f, const double* g, double* c, double* s, d
 
 void PREFIX SLARFG_F77(const int* n, float* alpha, float* x, const int* incx, float* tau);
 void PREFIX DLARFG_F77(const int* n, double* alpha, double* x, const int* incx, double* tau);
+
+void PREFIX SGEBAL_F77(Teuchos_fcd, const int* n, float* a, const int* lda, int* ilo, int* ihi, float* scale, int* info);
+void PREFIX SGEBAK_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, const float* scale, const int* m, float* V, const int* ldv, int* info);
+void PREFIX DGEBAL_F77(Teuchos_fcd, const int* n, double* a, const int* lda, int* ilo, int* ihi, double* scale, int* info);
+void PREFIX DGEBAK_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, const double* scale, const int* m, double* V, const int* ldv, int* info);
 
 float PREFIX SLARND_F77(const int* idist, int* seed);
 double PREFIX DLARND_F77(const int* idist, int* seed);
@@ -865,6 +890,11 @@ void PREFIX ZLARTG_F77(const std::complex<double>* f, const std::complex<double>
 
 void PREFIX CLARFG_F77(const int* n, std::complex<float>* alpha, std::complex<float>* x, const int* incx, std::complex<float>* tau);
 void PREFIX ZLARFG_F77(const int* n, std::complex<double>* alpha, std::complex<double>* x, const int* incx, std::complex<double>* tau);
+
+void PREFIX CGEBAL_F77(Teuchos_fcd, const int* n, std::complex<float>* a, const int* lda, int* ilo, int* ihi, float* scale, int* info);
+void PREFIX CGEBAK_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, const float* scale, const int* m, std::complex<float>* V, const int* ldv, int* info);
+void PREFIX ZGEBAL_F77(Teuchos_fcd, const int* n, std::complex<double>* a, const int* lda, int* ilo, int* ihi, double* scale, int* info);
+void PREFIX ZGEBAK_F77(Teuchos_fcd, Teuchos_fcd, const int* n, const int* ilo, const int* ihi, const double* scale, const int* m, std::complex<double>* V, const int* ldv, int* info);
 
 std::complex<float> PREFIX CLARND_F77(const int* idist, int* seed);
 std::complex<double> PREFIX ZLARND_F77(const int* idist, int* seed);
