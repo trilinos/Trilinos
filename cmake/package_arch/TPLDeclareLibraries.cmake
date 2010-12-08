@@ -281,7 +281,9 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
 
       ENDFOREACH()
     
-      LIST(REMOVE_DUPLICATES INCLUDES_FOUND)
+      IF (INCLUDES_FOUND)
+        LIST(REMOVE_DUPLICATES INCLUDES_FOUND)
+      ENDIF()
 
       MULTILINE_SET(DOCSTR
         "List of semi-colon separated paths to append to the compile invocations"
