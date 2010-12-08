@@ -77,6 +77,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
 
   stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk::mesh::DefaultFEM fem_data( meta_data, spatial_dimension );
 
   //create a boundary-condition part for testing later:
   stk::mesh::Part& bcpart = declare_part(meta_data, "bcpart");
@@ -183,6 +184,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
 
   stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk::mesh::DefaultFEM fem_data( meta_data, spatial_dimension );
 
   //create a boundary-condition part for testing later:
   stk::mesh::Part& bcpart = declare_part(meta_data, "bcpart");

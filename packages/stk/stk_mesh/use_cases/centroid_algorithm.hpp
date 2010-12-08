@@ -17,14 +17,13 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
-
+#include <use_cases/UseCase_Common.hpp>
 
 namespace stk {
 namespace mesh {
 namespace use_cases {
 
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
-typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerFieldType ;
+enum {SpatialDim = 3};
 
 //----------------------------------------------------------------------
 // An example of a trivial element-block algorithm
@@ -46,7 +45,7 @@ void centroid( unsigned number_elements ,
 
     double ** node_coordinates = elem_node_coordinates + j * nodes_per_element ;
 
-    double tmp[3] = { 0 , 0 , 0 };
+    double tmp[SpatialDim] = { 0 , 0 , 0 };
 
     for ( unsigned i = 0 ; i < vertices_per_element ; ++i ) {
       // Pointer to this node's coordinates,
@@ -68,7 +67,7 @@ void centroid( unsigned number_elements ,
 
     // The centroid field data for this element.
 
-    double * centroid = elem_centroid + j * 3 ;
+    double * centroid = elem_centroid + j * SpatialDim ;
 
     centroid[0] = tmp[0] ;
     centroid[1] = tmp[1] ;
@@ -120,7 +119,7 @@ void centroid_algorithm(
       double ** node_ptr = field_data( elem_node_coord , bucket.begin() );
 
       // Element centroid field data
-      //   double elem_ptr[ 3 * number_of_elements ]
+      //   double elem_ptr[ SpatialDim * number_of_elements ]
 
       double *  elem_ptr = field_data( elem_centroid , bucket.begin() );
 

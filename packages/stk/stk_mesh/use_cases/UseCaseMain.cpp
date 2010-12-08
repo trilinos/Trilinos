@@ -8,6 +8,7 @@
 
 #include <iostream>
 
+#include <use_cases/UseCase_1.hpp>
 #include <use_cases/UseCase_2.hpp>
 #include <use_cases/UseCase_3.hpp>
 #include <use_cases/UseCase_4.hpp>
@@ -35,6 +36,21 @@ int main ( int argc, char * argv[] )
     stk::parallel_machine_size( parallel_machine ) <= 1 ;
 
   bool status = true;
+
+   if ( single_process ) {
+    std::cout << "Use Case 1 ... ";
+    bool local_status = true ;
+    try {
+      stk::mesh::use_cases::UseCase_1_Mesh mesh(parallel_machine);
+      printStatus(local_status);
+    }
+    catch ( const std::exception & x ) {
+      local_status = false ;
+      printStatus(local_status);
+      std::cout << x.what();
+    }
+    status = status && local_status;
+   }
 
   if ( single_process ) {
     std::cout << "Use Case 2 ... ";

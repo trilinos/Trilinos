@@ -125,7 +125,7 @@ namespace {
     const stk::mesh::PairIterRelation elem_nodes = elem.relations( stk::mesh::Node );
     const stk::mesh::PairIterRelation side_nodes = side.relations( stk::mesh::Node );
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-    const shards::CellTopology elem_top(stk::mesh::fem::get_cell_topology( elem ).getTopologyData());
+    const shards::CellTopology elem_top(stk::mesh::fem::get_cell_topology( elem ).getCellTopologyData());
     const stk::mesh::PairIterRelation elem_nodes = elem.relations( NODE_RANK);
     const stk::mesh::PairIterRelation side_nodes = side.relations( NODE_RANK);
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
@@ -203,7 +203,7 @@ namespace {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
     const shards::CellTopology elem_top = shards::CellTopology(stk::mesh::get_cell_topology(element));
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-    const shards::CellTopology elem_top = shards::CellTopology(stk::mesh::fem::get_cell_topology(element).getTopologyData());
+    const shards::CellTopology elem_top = shards::CellTopology(stk::mesh::fem::get_cell_topology(element).getCellTopologyData());
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
     const unsigned p_rank = mesh.parallel_rank();
@@ -291,7 +291,7 @@ namespace stk {
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 	  const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(*part);
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-	  const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(*part).getTopologyData();
+	  const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 	  if (cell_topo == NULL || cell_topo->dimension != 3)
 	    continue;

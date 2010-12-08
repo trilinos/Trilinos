@@ -243,7 +243,7 @@ void build_axis_bbox(stk::mesh::Part &part,
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(part);
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-  const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(part).getTopologyData();
+  const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(part).getCellTopologyData();
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
   if (cell_topo == NULL)
     return;

@@ -30,21 +30,54 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef IOSS_Ioss_EntityType_H
-#define IOSS_Ioss_EntityType_H
+// -*- Mode: c++ -*-
+#ifndef IOSS_Ioss_Tri4a_h
+#define IOSS_Ioss_Tri4a_h
+
+#include <Ioss_CodeTypes.h>
+#include <Ioss_ElementTopology.h>
+#include <string>
+
+// STL Includes
+#include <vector>
 
 namespace Ioss {
-  enum EntityType {NODEBLOCK    =   1,
-		   ELEMENTBLOCK =   2,
-		   NODESET      =   4,
-		   EDGESET      =   8,
-		   FACESET      =  16,
-		   SURFACE      =  16, //: Same as faceset
-		   COMMSET      =  32,
-		   EDGEBLOCK    =  64,
-		   FACEBLOCK    = 128,
-                   REGION       = 256,
-                   SUPERELEMENT = 512,
-                   INVALID_TYPE =   0};
+  class Tri4a : public Ioss::ElementTopology {
+
+  public:
+    static void factory();
+    ~Tri4a();
+
+    int spatial_dimension()           const;
+    int parametric_dimension()       const;
+    bool is_element()                 const {return true;}
+    int order()               const;
+
+    int number_corner_nodes() const;
+    int number_nodes()        const;
+    int number_edges()        const;
+    int number_faces()        const;
+
+    int number_nodes_edge(int edge= 0)   const;
+    int number_nodes_face(int face= 0)   const;
+    int number_edges_face(int face= 0)   const;
+
+    bool edges_similar()      const;
+
+    Ioss::IntVector edge_connectivity(int edge_number) const;
+    Ioss::IntVector face_connectivity(int face_number) const;
+    Ioss::IntVector element_connectivity()             const;
+
+    Ioss::ElementTopology* face_type(int face_number = 0) const;
+    Ioss::ElementTopology* edge_type(int edge_number = 0) const;
+
+  protected:
+    Tri4a();
+
+  private:
+    static Tri4a instance_;
+
+    Tri4a(const Tri4a&); // Do not implement
+  };
 }
 #endif

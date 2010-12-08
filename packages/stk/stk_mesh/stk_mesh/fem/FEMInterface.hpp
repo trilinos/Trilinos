@@ -52,7 +52,7 @@ static const EntityRank INVALID_RANK = stk::mesh::InvalidEntityRank;
 class FEMInterface
 {
 public:
-  FEMInterface()
+  virtual ~FEMInterface()
   {}
 
 
@@ -65,6 +65,10 @@ public:
    */
   virtual void set_spatial_dimension(size_t spatial_dimension) = 0;
   
+  virtual void register_cell_topology(const CellTopology cell_topology, EntityRank entity_rank) = 0;
+
+  virtual void set_cell_topology(Part &part, CellTopology cell_topology) = 0;
+
   /** 
    * @brief <b>get_spatial_dimension</b> 
    * 
@@ -72,17 +76,14 @@ public:
    * @return 
    */
   virtual size_t get_spatial_dimension() const = 0;
-
-
   
-  virtual void set_cell_topology(const Part &part, CellTopology cell_topology) = 0;
-
   virtual CellTopology get_cell_topology(const Part &part) const = 0;
 
   
-  virtual void set_entity_rank(const CellTopology cell_topology , EntityRank entity_rank) = 0;
+  virtual EntityRank get_entity_rank(const CellTopology cell_topology) const = 0;
 
-  virtual EntityRank get_entity_rank(CellTopology cell_topology) const = 0;
+
+  virtual Part &get_part(const CellTopology cell_topology) const = 0;
 };
 
 
@@ -95,20 +96,23 @@ FEMInterface &get_fem_interface(const Part &part);
 FEMInterface &get_fem_interface(const Bucket &bucket);
 FEMInterface &get_fem_interface(const Entity &entity);
 
-void set_cell_topology( const Part & part, CellTopology cell_topology);
+void register_cell_topology(MetaData &meta_data, const CellTopology cell_topology, EntityRank entity_rank);
+
+void set_cell_topology(Part & part, CellTopology cell_topology);
 
 template< class TopologyTraits >
-void set_cell_topology( Part & p) {
-  return set_cell_topology( p , shards::getCellTopologyData<TopologyTraits>());
+void set_cell_topology(Part & p) {
+  return set_cell_topology(p, shards::getCellTopologyData<TopologyTraits>());
 }
 
 
-CellTopology get_cell_topology( const Part & part);
-CellTopology get_cell_topology( const Bucket & bucket);
-CellTopology get_cell_topology( const Entity & entity);
+CellTopology get_cell_topology(const Part & part);
+CellTopology get_cell_topology(const Bucket & bucket);
+CellTopology get_cell_topology(const Entity & entity);
 
 
 EntityRank get_entity_rank(const MetaData &meta_data, CellTopology cell_topology);
+Part &get_part(const MetaData &meta_data, const CellTopology cell_topology);
 
 
 /// Rank of nodes (always zero)      
@@ -174,7 +178,7 @@ Part &declare_part(MetaData &meta_data, const std::string &name, fem::CellTopolo
 
 template< class Top >
 Part &declare_part(MetaData &meta_data, const std::string &name) {
-  return declare_part(meta_data, name , shards::getCellTopologyData<Top>());
+  return declare_part(meta_data, name, shards::getCellTopologyData<Top>());
 }
 
 } // namespace mesh
