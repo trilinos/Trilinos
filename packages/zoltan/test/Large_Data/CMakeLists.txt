@@ -6,7 +6,7 @@ INCLUDE_DIRECTORIES(Zoltan/src/zz)
 # Test of HIER_ASSIST option of hierarchical partitioning
 #
 
-IF (Zoltan_ENABLE_ParMETIS AND Zoltan_ENABLE_Scotch)
+IF (${PACKAGE_NAME}_ENABLE_ParMETIS AND ${PACKAGE_NAME}_ENABLE_Scotch)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stressTestGRAPH
     SOURCES stressTestGRAPH.c
@@ -19,7 +19,8 @@ IF (Zoltan_ENABLE_ParMETIS AND Zoltan_ENABLE_Scotch)
       "--topology=2,2,2 --size=10000 --graph_package=scotch"
   )
 
-ELSEIF(Zoltan_ENABLE_ParMETIS)
+ELSEIF (${PACKAGE_NAME}_ENABLE_ParMETIS)
+
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stressTestGRAPH
     SOURCES stressTestGRAPH.c
@@ -30,7 +31,8 @@ ELSEIF(Zoltan_ENABLE_ParMETIS)
       "--topology=2,2,2 --size=10000 --graph_package=parmetis"
   )
 
-ELSEIF(Zoltan_ENABLE_Scotch)
+ELSEIF (${PACKAGE_NAME}_ENABLE_Scotch)
+
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stressTestGRAPH
     SOURCES stressTestGRAPH.c

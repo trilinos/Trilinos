@@ -5,13 +5,15 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 # Build Zoltan and all Trilinos packages that have optional or
 #   required dependencies on it.
 #
-# Zoltan will use 64-bit global IDs on 64-bit machines.  ParMetis and
+# Zoltan will use 32-bit global IDs.  ParMetis and
 #    Scotch are using 32-bit global IDs.
+#
+# Didsko, Epetra EpetraExt Isorropia ML STK TrilinosCouplings
 #
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_ZOLTAN_PLUS_64)
+SET(BUILD_DIR_NAME MPI_ZOLTAN_PLUS)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 
@@ -20,8 +22,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
   "-DTPL_ENABLE_MPI:BOOL=ON"
-  "-D CMAKE_C_FLAGS:STRING=-std=c99 -DZOLTAN_ID_TYPE_LONG"
-  "-D CMAKE_CXX_FLAGS:STRING=-DZOLTAN_ID_TYPE_LONG"
+  "-D CMAKE_C_FLAGS:STRING=-std=c99"
   "-D MPI_EXEC_MAX_NUMPROCS:STRING=11"
   "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF"
   "-D Trilinos_ENABLE_EXAMPLES:BOOL=ON"
@@ -36,6 +37,10 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-D Trilinos_ENABLE_Isorropia:BOOL=ON"
   "-D Trilinos_ENABLE_Epetra:BOOL=ON"
   "-D Trilinos_ENABLE_EpetraExt:BOOL=ON"
+  "-D Trilinos_ENABLE_ML:BOOL=ON"
+  "-D Trilinos_ENABLE_STK:BOOL=ON"
+  "-D Trilinos_ENABLE_Didasko:BOOL=ON"
+  "-D Trilinos_ENABLE_trilinoscouplings:BOOL=ON"
   )
 
 SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )

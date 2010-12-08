@@ -1,3 +1,6 @@
+INCLUDE(PackageMacros)
+INCLUDE(AddOptionAndDefine)
+
 #
 #  When adding test directories if you want the test to be distributed
 #  simply add the subdirectory like normal. If you do not want the test
@@ -15,7 +18,7 @@
 #
 # Non-zdrive tests
 #
-ADD_SUBDIRECTORY(Large_Data)
+PACKAGE_ADD_TEST_DIRECTORIES(Large_Data)
 #
 
 IF(PERL_EXECUTABLE)
