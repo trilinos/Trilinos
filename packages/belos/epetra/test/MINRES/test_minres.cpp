@@ -62,18 +62,16 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-int main(int argc, char *argv[]) {
-  //
-  int MyPID = 0;
-#ifdef EPETRA_MPI
-  // Initialize MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-  MyPID = Comm.MyPID();
-#else
-  Epetra_SerialComm Comm;
-#endif
-  //
+int 
+main(int argc, char *argv[]) 
+{
+  using Teuchos::CommandLineProcessor;
+  using Teuchos::ParameterList;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using std::cout;
+  using std::endl;
+
   typedef double                            ST;
   typedef Teuchos::ScalarTraits<ST>        SCT;
   typedef SCT::magnitudeType                MT;
@@ -82,77 +80,146 @@ int main(int argc, char *argv[]) {
   typedef Belos::MultiVecTraits<ST,MV>     MVT;
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
 
-  using Teuchos::ParameterList;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+#ifdef EPETRA_MPI
+  // Initialize MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  const int MyPID = Comm.MyPID();
+  const int numProcs = Comm.NumProc();
+#else // No EPETRA_MPI
+  Epetra_SerialComm Comm;
+  const int MyPID = 0;
+  const int numProcs = 1;
+#endif // EPETRA_MPI
 
-  bool verbose = false, debug = false, proc_verbose = false;
+  // We will construct a diagonal matrix with number of elements
+  // proportional to the number of MPI processes.  This allows us to
+  // scale the test, and prevents awkward test failures.
+  const int numGlobalElements = 10 * numProcs;
+  // Number of negative eigenvalues in the diagonal matrix; also
+  // proportional to the number of MPI processes.
+  const int numNegativeEigenvalues = 1 * numProcs;
+
+  bool verbose = false, debug = false;
   int frequency = -1;        // frequency of status test output.
   int numrhs = 1;            // number of right-hand sides to solve for
   int maxiters = -1;         // maximum number of iterations allowed per linear system
-  std::string ortho("IMGS");
-  MT tol = 1.0e-10;           // relative residual tolerance
+  MT tol = 1.0e-8;           // relative residual tolerance
 
-  Teuchos::CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("debug","nodebug",&debug,"Print debugging information from the solver.");
-  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
-  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
-  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return -1;
-  }
-  if (!verbose)
-    frequency = -1;  // reset frequency if test is not verbose
+  // Define command-line arguments
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
+  cmdp.setOption ("debug", "nodebug", &debug, 
+		  "Print debugging information from the solver.");
+  cmdp.setOption ("frequency", &frequency,
+		  "Solver's frequency for printing residuals (#iters).");
+  cmdp.setOption ("tol", &tol,
+		  "Relative residual tolerance used by MINRES solver.");
+  cmdp.setOption ("num-rhs", &numrhs,
+		  "Number of right-hand sides for which to solve (> 0).");
+  cmdp.setOption ("max-iters", &maxiters, 
+		  "Maximum number of iterations per linear system.  -1 means "
+		  "we choose, based on problem size.");
+
+  // Parse command-line arguments and fetch values
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) 
+    {
+      std::cout << "Failed to parse command-line arguments!" << std::endl;
+      std::cout << "End Result: TEST FAILED" << std::endl;
+      return -1;
+    }
+
+  //
+  // Set parameters that the user asked us to pick intelligently.
+  //
+
+  // Maximum number of iterations: set according to problem size.
+  // maxiters=numGlobalElements-1 may not always converge, so we
+  // set to numGlobalElements+1 for good measure.
+  if (maxiters == -1)
+    maxiters = numGlobalElements + 1; 
+
+  // In a nonverbose test, the frequency should be set to -1, which
+  // Belos interprets as "no intermediate status output."  Override
+  // whatever the user may have specified.
+  if (! verbose)
+    frequency = -1;
+  // Silently fix a bad frequency value.
+  else if (frequency < 0 && frequency != -1)
+    frequency = -1;
+
+  // Validate command-line arguments
+  TEST_FOR_EXCEPTION( tol < 0, std::invalid_argument,
+		      "Relative residual tolerance must be nonnegative, but "
+		      "you supplied tol = " << tol << "." );
+  TEST_FOR_EXCEPTION( numrhs < 1, std::invalid_argument,
+		      "MINRES test requires at least one right-hand side, but "
+		      "you set the number of right-hand sides to " 
+		      << numrhs << "." );
+  TEST_FOR_EXCEPTION( maxiters < 1, std::invalid_argument,
+		      "MINRES test requires at least one iteration, but you "
+		      "set the maximum number of iterations to " 
+		      << maxiters << "." );
+
   // **********************************************************************
   // ******************Set up the problem to be solved*********************
-  // construct diagonal matrix
-  const int NumGlobalElements = 1e1;
-  const int m = 1; // number of negative eigenvalues
 
-  // Create diagonal matrix with n-m positive and m negative eigenvalues.
-  Epetra_Map epetraMap( NumGlobalElements, 0, Comm );
+  //
+  // Create diagonal matrix with numGlobalElements -
+  // numNegativeEigenvalues positive and numNegativeEigenvalues
+  // negative eigenvalues.
+  //
+  Epetra_Map epetraMap (numGlobalElements, 0, Comm);
+  const int numEntriesPerRow = 1;
+  Teuchos::RCP< Epetra_CrsMatrix > A (new Epetra_CrsMatrix (Copy, epetraMap, numEntriesPerRow, true));
 
-  Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix( Copy, epetraMap, 1 ) );
-  for ( int k=0; k<epetraMap.NumMyElements(); k++ )
+  // Fill in the nonzero values of the matrix.  They are all diagonal
+  // elements.
+  for (int k = 0; k < epetraMap.NumMyElements(); ++k)
   {
-      double val = 2*(epetraMap.GID(k)-m) + 1;
-      TEUCHOS_ASSERT_EQUALITY( 0, A->InsertGlobalValues( k, 1, &val, &k ) );
+    const int curGlobalId = epetraMap.GID(k);
+    // Multiplying by 2 and adding 1 ensures odd values, therefore
+    // nonzero values.  We want the matrix to be indefinite but
+    // nonsingular.
+    const ST val = 2 * (curGlobalId - numNegativeEigenvalues) + 1;
+    // A positive warning code is returned if new storage has to be
+    // allocated in order to insert the value.
+    const int errcode = A->InsertGlobalValues (curGlobalId, 1, &val, &curGlobalId);
+    TEST_FOR_EXCEPTION( errcode < 0, std::logic_error, 
+			"On MPI process " << MyPID << " of " << numProcs << ": "
+			"Epetra_CrsMatrix::InsertGlobalValues(" << curGlobalId << ", 1, [" 
+			<< val << "], [" << curGlobalId << "]) returned a negative error "
+			"code " << errcode << "." );
   }
   TEUCHOS_ASSERT_EQUALITY( 0, A->FillComplete() );
   TEUCHOS_ASSERT_EQUALITY( 0, A->OptimizeStorage() );
 
-  // create initial guess and right-hand side
-  Teuchos::RCP<Epetra_MultiVector> vecX = Teuchos::rcp( new Epetra_MultiVector( epetraMap, numrhs ) );
+  //
+  // Make some (multi)vectors, for use in testing: an exact solution,
+  // its corresponding right-hand side, and an initial guess. 
+  //
 
-  Teuchos::RCP<Epetra_MultiVector> vecB = Teuchos::rcp( new Epetra_MultiVector( epetraMap, numrhs ) );
+  // Make a random exact solution.
+  Teuchos::RCP<Epetra_MultiVector> X_exact (new Epetra_MultiVector (epetraMap, numrhs));
+  X_exact->Seed();
+  MVT::MvRandom (*X_exact);
+
+  // Compute the right-hand side as B = A*X.
+  Teuchos::RCP<Epetra_MultiVector> B = MVT::Clone (*X_exact, numrhs);
+  OPT::Apply (*A, *X_exact, *B);
+
+  // Choose an initial guess of all zeros.
+  Teuchos::RCP<Epetra_MultiVector> X = MVT::Clone (*X_exact, numrhs);
+  MVT::MvInit (*X, ST(0.0));
+
   // **********************************************************************
-  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
+  const bool proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
 
-
-  Teuchos::RCP<Epetra_MultiVector> X;
-  Teuchos::RCP<Epetra_MultiVector> B;
-  // Check to see if the number of right-hand sides is the same as requested.
-  if (numrhs>1) {
-    X = rcp( new Epetra_MultiVector( epetraMap, numrhs ) );
-    B = rcp( new Epetra_MultiVector( epetraMap, numrhs ) );
-    X->Seed();
-    X->Random();
-    OPT::Apply( *A, *X, *B );
-    X->PutScalar( 0.0 );
-  }
-  else {
-    X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
-    B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
-    B->PutScalar( 1.0 );
-  }
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
-  if (maxiters == -1)
-    maxiters = NumGlobalElements - 1; // maximum number of iterations to run
+
   //
   ParameterList belosList;
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
@@ -171,77 +238,111 @@ int main(int argc, char *argv[]) {
   //
   // Construct an unpreconditioned linear problem instance.
   //
-  Belos::LinearProblem<double,MV,OP> problem( A, X, B );
-  bool set = problem.setProblem();
-  if (set == false) {
-    if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-    return -1;
+  Belos::LinearProblem< ST, MV, OP > problem (A, X, B);
+  {
+    const bool set = problem.setProblem();
+    TEST_FOR_EXCEPTION( set == false, std::logic_error, 
+			"Belos::LinearProblem failed to set up correctly (setP"
+			"roblem() returned false)!  This probably means we imp"
+			"lemented our test incorrectly." );
   }
   //
   // *******************************************************************
   // ****************Start the MINRES iteration*************************
   // *******************************************************************
   //
-  Belos::OutputManager<double> My_OM();
+  Belos::OutputManager< ST > My_OM();
  
   // Create an iterative solver manager.
-  RCP<Belos::SolverManager<double,MV,OP> > newSolver
-    = rcp( new Belos::MinresSolMgr<double,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
+  RCP< Belos::SolverManager<ST,MV,OP> > newSolver
+    = rcp( new Belos::MinresSolMgr<ST,MV,OP>(rcp(&problem,false), rcp(&belosList,false)));
 
   //
   // **********Print out information about problem*******************
   //
   if (proc_verbose) {
-    std::cout << std::endl << std::endl;
-    std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
-    std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Relative residual tolerance: " << tol << std::endl;
-    std::cout << std::endl;
+    cout << endl << endl;
+    cout << "Dimension of matrix: " << numGlobalElements << endl;
+    cout << "Number of right-hand sides: " << numrhs << endl;
+    cout << "Relative residual tolerance: " << tol << endl;
+    cout << endl;
   }
   //
   // Perform solve
   //
-  Belos::ReturnType ret = newSolver->solve();
+  try {
+    Belos::ReturnType solverRetVal = newSolver->solve();
+  } catch (std::exception& e) {
+    if (MyPID == 0)
+      cout << "Solver threw an exception: " << e.what() << endl;
+    throw e;
+  }
+  if (proc_verbose)
+    {
+      if (solverRetVal == Belos::Converged)
+	cout << "Solver reports that the problem converged." << endl;
+      else
+	cout << "Solver reports that the problem did _not_ converge." << endl;
+    }
   //
   // Get the number of iterations for this solve.
   //
   int numIters = newSolver->getNumIters();
-  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+  cout << "Number of iterations performed for this solve: " << numIters << endl;
   //
   // Compute actual residuals.
   //
-  bool badRes = false;
-  std::vector<double> actual_resids( numrhs );
-  std::vector<double> rhs_norm( numrhs );
-  Epetra_MultiVector resid(epetraMap, numrhs);
-  OPT::Apply( *A, *X, resid );
+  bool everyProblemConverged = true;
+  std::vector<MT> absoluteResidualNorms (numrhs);
+  std::vector<MT> rhsNorm (numrhs);
+  Epetra_MultiVector resid (epetraMap, numrhs);
+  OPT::Apply (*A, *X, resid);
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
-  MVT::MvNorm( resid, actual_resids );
-  MVT::MvNorm( *B, rhs_norm );
-  if (proc_verbose) {
-    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
-    for ( int i=0; i<numrhs; i++) {
-      double actRes = actual_resids[i]/rhs_norm[i];
-      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
-      if (actRes > tol) badRes = true;
-    }
-  }
+  MVT::MvNorm( resid, absoluteResidualNorms );
+  MVT::MvNorm( *B, rhsNorm );
 
+  if (proc_verbose) 
+    cout << "Relative residuals (computed via b-Ax) "
+      "for each right-hand side:" << endl << endl;
+  for (int i = 0; i < numrhs; ++i)
+    {
+      // The right-hand side shouldn't have a zero norm, but avoid
+      // dividing by zero anyway.  It's sensible to test an
+      // iterative solver with a zero right-hand side; it should,
+      // of course, return a zero solution vector.
+      const MT relativeResidualNorm = (rhsNorm[i] == 0) ? 
+	absoluteResidualNorms[i] : 
+	absoluteResidualNorms[i] / rhsNorm[i];
+      if (proc_verbose)
+	cout << "Problem " << i << ": ||b - Ax|| / ||b|| = " 
+	     << relativeResidualNorm;
+      if (relativeResidualNorm > tol) 
+	{
+	  if (proc_verbose)
+	    cout << " > tolerance = " << tol << endl;
+	  everyProblemConverged = false;
+	}
+      else if (proc_verbose)
+	cout << " <= tolerance = " << tol << endl;
+    }
+
+  const bool success = (solverRetVal == Belos::Converged) && everyProblemConverged;
+  // The Trilinos test framework expects a message like one of the two
+  // below to be printed out; otherwise, it considers the test to have
+  // failed.
+  if (MyPID == 0)
+    {
+      if (success)
+	cout << "End Result: TEST PASSED" << endl;
+      else
+	cout << "End Result: TEST FAILED" << endl;
+    }
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
 
-  if (ret!=Belos::Converged || badRes) {
-    if (proc_verbose)
-      std::cout << "End Result: TEST FAILED" << std::endl;
-    return -1;
-  }
-  //
-  // Default return value
-  //
-  if (proc_verbose)
-    std::cout << "End Result: TEST PASSED" << std::endl;
-  return 0;
-  //
+  if (success)
+    return 0;
+  else
+    return 1;
 } 

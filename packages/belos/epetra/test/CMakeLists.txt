@@ -1,6 +1,10 @@
 ADD_SUBDIRECTORY(BlockGmres)
 ADD_SUBDIRECTORY(BlockCG)
-ADD_SUBDIRECTORY(MINRES)
+
+# mfh 07 Dec 2010: Disabling the MINRES test until we've had more time
+#to run an extensive test suite.  Use MINRES at your own risk.
+#ADD_SUBDIRECTORY(MINRES)
+
 ADD_SUBDIRECTORY(GCRODR)
 ADD_SUBDIRECTORY(RCG)
 ADD_SUBDIRECTORY(PCPG)

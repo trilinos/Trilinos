@@ -207,7 +207,18 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
   //! Get the norms of the residuals native to the solver.
   //! \return A std::vector of length blockSize containing the native residuals.
-  Teuchos::RCP<const MV> getNativeResiduals( std::vector<MagnitudeType> *norms ) const { return Y_; }
+  Teuchos::RCP<const MV> 
+  getNativeResiduals( std::vector<MagnitudeType> *norms ) const 
+  { 
+    if (norms != NULL)
+      {
+	std::vector<MagnitudeType>& theNorms = *norms;
+	if (theNorms.size() < 1)
+	  theNorms.resize(1);
+	theNorms[0] = phibar_;
+      }
+    return Y_; 
+  }
 
   //! Get the current update to the linear system.
   /*! \note This method returns a null pointer because the linear problem is current.
@@ -275,6 +286,12 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
   //! Current number of iterations performed.
   int iter_;
+
+  /// \brief Current "native" residual
+  ///
+  /// Current "native" residual (not the "exact" residual \fn$\|b -
+  /// Ax\|_2\fn$).
+  MagnitudeType phibar_;
 
   // 
   // State Storage
@@ -445,7 +462,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( beta1_ );
-    MagnitudeType phibar = beta1_(0,0);
+    phibar_ = beta1_(0,0);
     ScalarType shift = zero; // TODO Allow for proper shift.
 
     // Initialize a few variables.
@@ -487,23 +504,23 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
       // Normalize previous vector.
       //   v = y / beta(0,0);
-      MVT::MvAddMv( one / beta(0,0), *Y_, zero, *Y_, *V );
+      MVT::MvAddMv (one / beta(0,0), *Y_, zero, *Y_, *V);
 
       // Apply operator.
-      lp_->applyOp( *V, *Y_ );
+      lp_->applyOp (*V, *Y_);
 
       // Apply shift
-      if ( shift != zero )
-          MVT::MvAddMv( one, *Y_, -shift, *V, *Y_ );
+      if (shift != zero)
+	MVT::MvAddMv (one, *Y_, -shift, *V, *Y_);
 
       if (iter_ > 1)
-          MVT::MvAddMv( one, *Y_, -beta(0,0)/oldBeta, *R1_, *Y_ );
+	MVT::MvAddMv (one, *Y_, -beta(0,0)/oldBeta, *R1_, *Y_);
 
-      // alpha = V.Y_
-      MVT::MvTransMv( one, *V, *Y_, alpha );
+      // alpha := dot(V, Y_)
+      MVT::MvTransMv (one, *V, *Y_, alpha);
 
-      // y = y - alpha/beta r2
-      MVT::MvAddMv( one, *Y_, -alpha(0,0)/beta(0,0), *R2_, *Y_ );
+      // y := y - alpha/beta r2
+      MVT::MvAddMv (one, *Y_, -alpha(0,0)/beta(0,0), *R2_, *Y_);
 
       // r1 = r2;
       // r2 = y;
@@ -523,9 +540,20 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       MVT::MvTransMv( one, *R2_, *Y_, beta );
 
       // Intercept beta <= 0.
+      //
+      // Note: we don't try to test for nonzero imaginary component of
+      // beta, because (a) it could be small and nonzero due to
+      // rounding error in computing the inner product, and (b) it's
+      // hard to tell how big "not small" should be, without computing
+      // some error bounds (for example, by modifying the linear
+      // algebra library to compute a posteriori rounding error bounds
+      // for the inner product, and then changing
+      // Belos::MultiVecTraits to make this information available).
       TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) <= zero,
                           MinresIterateFailure,
-                          "Belos::MinresIter::iterate(): non-positive value for r2^H*M*r2 encountered!" );
+                          "Belos::MinresIter::iterate(): Encountered nonpositi"
+			  "ve value " << beta(0,0) << " for r2^H*M*r2 at itera"
+			  "tion " << iter_ << ": MINRES cannot continue." );
       beta(0,0) = SCT::squareroot( beta(0,0) );
 
       // Apply previous rotation Q_{k-1} to get
@@ -542,8 +570,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // Compute the next plane rotation Q_k.
       this->symOrtho( gbar, beta(0,0), &cs, &sn, &gamma );
 
-      phi    = cs * phibar; // phi_k
-      phibar = sn * phibar; // phibar_{k+1}
+      phi    = cs * phibar_; // phi_k
+      phibar_ = sn * phibar_; // phibar_{k+1}
 
       //  w1 = w2;
       //  w2 = w;

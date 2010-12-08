@@ -769,35 +769,30 @@ namespace Belos {
 	  minres_iter->iterate();
 
 	  // First check for convergence
-	  if (convTest_->getStatus() == Passed) 
-	    {
-	      // Inform the linear problem that we are finished with
-	      // this current linear system.
-	      problem_->setCurrLS();
-	    }
-	  // Now check for max # of iterations
-	  else if (maxIterTest_->getStatus() == Passed)
+	  if (convTest_->getStatus() != Passed) 
 	    {
 	      // This right-hand side didn't converge!
 	      notConverged.push_back (currentRHS);
 	    }
-	  // If we get here, we returned from iterate(), but none of
-	  // our status tests Passed.  Something is wrong, and it is
-	  // probably our fault.
-	  else {
-	    TEST_FOR_EXCEPTION(true, std::logic_error,
-			       "Belos::MinresSolMgr::solve(): iterations neither"
-			       " converged, nor reached the maximum number of it"
-			       "erations " << maxIters_ << ".  That means someth"
-			       "ing went wrong.");
-	  }
+	  // Now check for max # of iterations
+	  if (maxIterTest_->getStatus() != Passed)
+	    {
+	      // If we get here, we returned from iterate(), but none of
+	      // our status tests Passed.  Something is wrong, and it is
+	      // probably our fault.
+	      TEST_FOR_EXCEPTION(true, std::logic_error,
+				 "Belos::MinresSolMgr::solve(): iterations neither"
+				 " converged, nor reached the maximum number of it"
+				 "erations " << maxIters_ << ".  That means someth"
+				 "ing went wrong.");
+	    }
 	} catch (const std::exception &e) {
 	  printer_->stream(Errors) 
 	    << "Error! Caught (some subclass of) std::exception in "
 	    << "MinresSolMgr::iterate() at iteration "
 	    << minres_iter->getNumIters() << std::endl
 	    << e.what() << std::endl;
-	  throw;
+	  throw e;
 	}
 
 	// Inform the linear problem that we are finished with the
