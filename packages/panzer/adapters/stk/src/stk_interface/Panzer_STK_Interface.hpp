@@ -264,6 +264,14 @@ public:
    void setSolutionFieldData(const std::string & fieldName,const std::string & blockId,
                              const std::vector<std::size_t> & localElementIds,const ArrayT & solutionValues);
 
+   /** Get vertices associated with a number of elements of the same geometry.
+     *
+     * \param[in] localIds Element local IDs to construct vertices
+     * \param[out] vertices Output array that will be sized (<code>localIds.size()</code>,#Vertices,#Dim)
+     *
+     * \note If not all elements have the same number of vertices an exception is thrown.
+     *       If the size of <code>localIds</code> is 0, the function will silently return
+     */
    template <typename ArrayT>
    void getElementVertices(std::vector<std::size_t> & localIds, ArrayT & vertices) const;
 
@@ -397,19 +405,36 @@ void STK_Interface::setSolutionFieldData(const std::string & fieldName,const std
 template <typename ArrayT>
 void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementIds, ArrayT & vertices) const
 {
+   // nothing to do! silently return
+   if(localElementIds.size()==0)
+      return;
+
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
-   unsigned dim = getDimension();
+   // get *master* cell toplogy...(belongs to first element)
+   unsigned masterVertexCount 
+      = stk::mesh::get_cell_topology(*elements[localElementIds[0]])->vertex_count;
 
    // allocate space
-   vertices.resize(localElementIds.size(),4,getDimension());
+   vertices.resize(localElementIds.size(),masterVertexCount,getDimension());
 
    // loop over each requested element
+   unsigned dim = getDimension();
    for(std::size_t cell=0;cell<localElementIds.size();cell++) {
       stk::mesh::Entity * element = elements[localElementIds[cell]];
-      stk::mesh::PairIterRelation nodes = element->relations(stk::mesh::Node);
+      TEUCHOS_ASSERT(element!=0);
+ 
+      unsigned vertexCount 
+         = stk::mesh::get_cell_topology(*elements[localElementIds[0]])->vertex_count;
+      TEST_FOR_EXCEPTION(vertexCount!=masterVertexCount,std::runtime_error,
+                         "In call to STK_Interface::getElementVertices all elements "
+                         "must have the same vertex count!");
 
       // loop over all element nodes
+      stk::mesh::PairIterRelation nodes = element->relations(stk::mesh::Node);
+      TEST_FOR_EXCEPTION(nodes.size()!=masterVertexCount,std::runtime_error,
+                         "In call to STK_Interface::getElementVertices cardinality of "
+                         "element node relations must be the vertex count!");
       for(std::size_t node=0;node<nodes.size();++node) {
          const double * coord = getNodeCoordinates(nodes[node].entity()->identifier());
 

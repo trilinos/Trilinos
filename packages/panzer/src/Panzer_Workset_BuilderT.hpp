@@ -191,8 +191,8 @@ panzer::buildBCWorkset(const panzer::BC& bc,
   // index.  Each workset for a boundary condition is associated with
   // a local side for the element
   
-  std::cout << "local_side_ids.size() = " << local_side_ids.size() 
-	    << std::endl;
+  // std::cout << "local_side_ids.size() = " << local_side_ids.size() 
+  // 	    << std::endl;
 
   TEUCHOS_ASSERT(local_side_ids.size() == local_cell_ids.size());
   TEUCHOS_ASSERT(local_side_ids.size() == static_cast<std::size_t>(vertex_coordinates.dimension(0)));

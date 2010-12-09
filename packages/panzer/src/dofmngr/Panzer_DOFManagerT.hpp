@@ -553,7 +553,7 @@ static void getOwnedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::v
 }
 
 template < >
-void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
+static void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
 {
    int numIndices, ni;
    numIndices = vs->getNumIndices_Owned();
@@ -586,7 +586,7 @@ static void getOwnedAndSharedIndices_T(const fei::SharedPtr<fei::VectorSpace> & 
 }
 
 template < >
-void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
+static void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
 {
    // get the global indices
    vs->getIndices_SharedAndOwned(indices);

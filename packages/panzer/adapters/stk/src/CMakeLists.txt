@@ -35,6 +35,8 @@ APPEND_SET(HEADERS
   albany/Albany_AbstractDiscretization.hpp
   albany/Albany_STKDiscretization.hpp
   Panzer_STKConnManager.hpp
+  Panzer_STK_SetupUtilities.hpp
+  Panzer_STK_SetupUtilitiesT.hpp
   stk_interface/Panzer_STK_Interface.hpp
   stk_interface/Panzer_STK_MeshFactory.hpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.hpp
@@ -46,6 +48,7 @@ APPEND_SET(SOURCES
   albany/Albany_Quad2DSTKMeshStruct.cpp
   albany/Albany_STKDiscretization.cpp
   Panzer_STKConnManager.cpp
+  Panzer_STK_SetupUtilities.cpp
   stk_interface/Panzer_STK_Interface.cpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.cpp
   )
