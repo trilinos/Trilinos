@@ -29,9 +29,6 @@ TEUCHOS_UNIT_TEST(SaPFactory, Test0)
   RCP<SaPFactory> sapFactory = rcp(new SaPFactory);
   TEUCHOS_TEST_EQUALITY(sapFactory != Teuchos::null, true, out, success);
 
-  sapFactory->SetOutputLevel(Teuchos::VERB_MEDIUM);
-  TEUCHOS_TEST_EQUALITY(sapFactory->GetOutputLevel() == Teuchos::VERB_MEDIUM, true, out, success);
-
   out << *sapFactory << std::endl;
 
 }

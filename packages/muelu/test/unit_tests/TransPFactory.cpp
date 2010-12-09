@@ -29,9 +29,6 @@ TEUCHOS_UNIT_TEST(TransPFactory, Test0)
   RCP<TransPFactory> transPFactory = rcp(new TransPFactory);
   TEUCHOS_TEST_EQUALITY(transPFactory != Teuchos::null, true, out, success);
 
-  transPFactory->SetOutputLevel(Teuchos::VERB_MEDIUM);
-  TEUCHOS_TEST_EQUALITY(transPFactory->GetOutputLevel() == Teuchos::VERB_MEDIUM, true, out, success);
-
   out << *transPFactory << std::endl;
 
 }

@@ -29,9 +29,6 @@ TEUCHOS_UNIT_TEST(RAPFactory, Test0)
   RCP<RAPFactory> rapFactory = rcp(new RAPFactory);
   TEUCHOS_TEST_EQUALITY(rapFactory != Teuchos::null, true, out, success);
 
-  rapFactory->SetOutputLevel(Teuchos::VERB_MEDIUM);
-  TEUCHOS_TEST_EQUALITY(rapFactory->GetOutputLevel() == Teuchos::VERB_MEDIUM, true, out, success);
-
   out << *rapFactory << std::endl;
 
 }
