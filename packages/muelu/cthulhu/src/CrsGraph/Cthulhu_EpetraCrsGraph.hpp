@@ -1,5 +1,11 @@
-#ifndef CTHULHU_CRSGRAPH_HPP
-#define CTHULHU_CRSGRAPH_HPP
+#ifndef CTHULHU_EPETRACRSGRAPH_HPP
+#define CTHULHU_EPETRACRSGRAPH_HPP
+
+#include "Cthulhu_ConfigDefs.hpp"
+
+#ifndef HAVE_CTHULHU_EPETRA
+#error This file should be included only if HAVE_CTHULHU_EPETRA is defined.
+#endif
 
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
@@ -10,31 +16,23 @@
 #include <Kokkos_CrsGraph.hpp>
 #include <Kokkos_NodeHelpers.hpp>
 
+#include <Epetra_CrsGraph.h>
+
 #include "Cthulhu_ConfigDefs.hpp"
-// #include "Cthulhu_RowGraph.hpp"
-// #include "Cthulhu_DistObject.hpp"
-// #include "Cthulhu_Util.hpp"
+#include "Cthulhu_CrsGraph.hpp"
+#include "Cthulhu_Comm.hpp"
+//#include "Cthulhu_RowGraph.hpp"
+//#include "Cthulhu_DistObject.hpp"
+//#include "Cthulhu_Util.hpp"
 
 namespace Cthulhu {
-
+  
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration
   template <class S, class LO, class GO, class N, class SpMatOps>
   class CrsMatrix;
 #endif
-
-  struct RowInfo {
-    size_t localRow;
-    size_t allocSize;
-    size_t numEntries;
-    size_t offset1D;
-  };
-
-  enum ELocalGlobal {
-    LocalIndices,
-    GlobalIndices
-  };
-
+  
   //! \brief A class for constructing and using sparse compressed graphs with row access.
   /*!
    * This class allows the construction of sparse graphs with row-access. 
@@ -57,22 +55,35 @@ namespace Cthulhu {
    * on the next call to globalAssemble() or fillComplete() (the latter calls the former).
    * 
    */
-  template <class LocalOrdinal, 
-            class GlobalOrdinal = LocalOrdinal, 
-            class Node = Kokkos::DefaultNode::DefaultNodeType,
-            class LocalMatOps = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
-  class CrsGraph { // : public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
-//                    public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> { TODO
-
-    // template <class S, class LO, class GO, class N, class SpMatOps>
-    // friend class CrsMatrix;
+  class EpetraCrsGraph : public CrsGraph<int,int> {
+                   
+   // template <class S, class LO, class GO, class N, class SpMatOps>
+   // friend class CrsMatrix;
 
   public: 
     //! @name Constructor/Destructor Methods
     //@{ 
 
+  //! Constructor with fixed number of indices per row.
+  EpetraCrsGraph(const RCP<const Map<int,int> > &rowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+
+  //! Constructor with variable number of indices per row.
+  EpetraCrsGraph(const RCP<const Map<int,int> > &rowMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
+
+  //! Constructor with fixed number of indices per row and specified column map.
+  /** The column map will be used to filter any graph indices inserted using insertLocalIndices() or insertGlobalIndices().
+   */
+  EpetraCrsGraph(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+
+  //! Constructor with variable number of indices per row and specified column map.
+  /** The column map will be used to filter any graph indices inserted using insertLocalIndices() or insertGlobalIndices().
+   */
+  EpetraCrsGraph(const RCP<const Map<int,int> > &rowMap, const RCP<const Map<int,int> > &colMap, const ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
+
+    EpetraCrsGraph(const Teuchos::RCP<Epetra_CrsGraph> &graph) : graph_(graph) { CTHULHU_DEBUG_ME; }
+
     // !Destructor.
-    virtual ~CrsGraph() {}
+    inline ~EpetraCrsGraph() { CTHULHU_DEBUG_ME; };
 
     //@}
 
@@ -91,7 +102,12 @@ namespace Cthulhu {
         \note If \c globalRow does not belong to the graph on this node, then it will be communicated to the appropriate node when globalAssemble() is called (which will, at the latest, occur during the next call to fillComplete().) Otherwise, the entries will be inserted in the local graph. 
         \note If the graph row already contains entries at the indices corresponding to values in \c indices, then the redundant indices will be eliminated; this may happen at insertion or during the next call to fillComplete().
     */
-    virtual void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView<const GlobalOrdinal> &indices) = 0;
+    inline void insertGlobalIndices(int globalRow, const ArrayView<const int> &indices) { 
+      CTHULHU_DEBUG_ME;
+
+      int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
+      CTHULHU_ERR_CHECK(graph_->InsertGlobalIndices(globalRow, indices.size(), indices_rawPtr)); 
+    };
 
     //! Insert graph indices, using local IDs.
     /**
@@ -105,7 +121,12 @@ namespace Cthulhu {
 
        \note If the graph row already contains entries at the indices corresponding to values in \c indices, then the redundant indices will be eliminated; this may happen at insertion or during the next call to fillComplete().
     */
-    virtual void insertLocalIndices(LocalOrdinal localRow, const ArrayView<const LocalOrdinal> &indices) = 0;
+    inline void insertLocalIndices(int localRow, const ArrayView<const int> &indices) { 
+      CTHULHU_DEBUG_ME;
+
+      int* indices_rawPtr = const_cast<int*>(indices.getRawPtr()); // there is no const in the Epetra interface :(
+      CTHULHU_ERR_CHECK(graph_->InsertMyIndices(localRow, indices.size(), indices_rawPtr)); 
+    }
 
     //! Remove all graph indices from the specified local row.
     /**
@@ -117,7 +138,7 @@ namespace Cthulhu {
        \post <tt>indicesAreAllocated() == true</tt>
        \post <tt>isLocallyIndexed() == true</tt>
     */
-    virtual void removeLocalIndices(LocalOrdinal localRow) = 0;
+    inline void removeLocalIndices(int localRow) { CTHULHU_DEBUG_ME; graph_->RemoveMyIndices(localRow); };
 
     //@}
 
@@ -128,9 +149,10 @@ namespace Cthulhu {
         communicator associated with this graph.
     */
     //@{ 
+
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! \brief Communicate non-local contributions to other nodes.
-    virtual void globalAssemble() = 0;
+    inline void globalAssemble() { CTHULHU_DEBUG_ME; graph_->globalAssemble(); };
 #endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -142,7 +164,7 @@ namespace Cthulhu {
       \post  <tt>isFillActive() == true<tt>
       \post  <tt>isFillComplete() == false<tt>
     */
-    virtual void resumeFill() = 0;
+    inline void resumeFill() { CTHULHU_DEBUG_ME; graph_->resumeFill(); };
 #endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -157,7 +179,10 @@ namespace Cthulhu {
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
-    virtual void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) = 0;
+    inline void fillComplete(const RCP<const Map<int,int> > &domainMap, const RCP<const Map<int,int> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { 
+      CTHULHU_DEBUG_ME; 
+      graph_->FillComplete(domainMap, rangeMap, os); 
+    };
 #endif
 
     /*! \brief Signal that data entry is complete. 
@@ -173,7 +198,10 @@ namespace Cthulhu {
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */
-    virtual void fillComplete(OptimizeOption os = DoOptimizeStorage) = 0;
+    inline void fillComplete(OptimizeOption os = DoOptimizeStorage) {  //TODO: os
+      CTHULHU_DEBUG_ME; 
+      graph_->FillComplete(); 
+    };
 
     //@}
 
@@ -181,69 +209,105 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the communicator.
-    virtual const RCP<const Comm<int> > getComm() const = 0;
+    inline const RCP<const Comm<int> > getComm() const { 
+      CTHULHU_DEBUG_ME; 
+      RCP<const Epetra_Comm> rcpComm = rcpFromRef(graph_->Comm());
+      return Epetra2Teuchos_Comm(rcpComm);
+    };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+#ifdef NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the underlying node.
-    virtual RCP<Node> getNode() const = 0;
+    inline RCP<Node> getNode() const { CTHULHU_DEBUG_ME; return graph_->getNode(); };
 #endif
 
     //! Returns the Map that describes the row distribution in this graph.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const = 0;
+    inline const RCP<const Map<int,int> > getRowMap() const { 
+      CTHULHU_DEBUG_ME; 
+    
+      // RCP<const Epetra_Map> map = rcp(new Epetra_Map(graph_->RowMap()));
+      //       return rcp ( new Cthulhu::EpetraMap(map) );
+      
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
+      return Teuchos::null;
+    };
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const = 0;
+    inline const RCP<const Map<int,int> > getColMap() const { 
+      CTHULHU_DEBUG_ME; 
+    
+//       RCP<const Epetra_Map> map = rcp(new Epetra_Map(graph_->ColMap()));
+//       return rcp ( new Cthulhu::EpetraMap(map) );
+
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
+      return Teuchos::null;
+    };
 
     //! Returns the Map associated with the domain of this graph.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const = 0;
+    inline const RCP<const Map<int,int> > getDomainMap() const { 
+      CTHULHU_DEBUG_ME; 
+    
+//       RCP<const Epetra_Map> map = rcp(new Epetra_Map(graph_->DomainMap()));
+//       return rcp ( new Cthulhu::EpetraMap(map) );
+
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
+      return Teuchos::null;
+    };
 
     //! Returns the Map associated with the domain of this graph.
-    virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const = 0;
+    inline const RCP<const Map<int,int> > getRangeMap() const { 
+      CTHULHU_DEBUG_ME; 
+    
+//       RCP<const Epetra_Map> map = rcp(new Epetra_Map(graph_->RangeMap()));
+//       return rcp ( new Cthulhu::EpetraMap(map) );
+
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
+      return Teuchos::null;
+    };
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the importer associated with this graph.
-    virtual RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const = 0;
+    inline RCP<const Import<int,int> > getImporter() const { CTHULHU_DEBUG_ME; return graph_->getImporter(); };
 
     //! Returns the exporter associated with this graph.
-    virtual RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const = 0;
+    inline RCP<const Export<int,int> > getExporter() const { CTHULHU_DEBUG_ME; return graph_->getExporter(); };
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     //! Returns the number of global rows in the graph.
     /** Undefined if isFillActive().
      */
-    virtual global_size_t getGlobalNumRows() const = 0;
+    inline global_size_t getGlobalNumRows() const { CTHULHU_DEBUG_ME; return graph_->NumGlobalRows(); };
 
     //! \brief Returns the number of global columns in the graph.
     /** Undefined if isFillActive().
      */
-    virtual global_size_t getGlobalNumCols() const = 0;
+    inline global_size_t getGlobalNumCols() const { CTHULHU_DEBUG_ME; return graph_->NumGlobalCols(); };
 
     //! Returns the number of graph rows owned on the calling node.
-    virtual size_t getNodeNumRows() const = 0;
+    inline size_t getNodeNumRows() const { CTHULHU_DEBUG_ME; return graph_->NumMyRows(); };
 
     //! Returns the number of columns connected to the locally owned rows of this graph.
     /** Throws std::runtime_error if <tt>hasColMap() == false</tt>
      */
-    virtual size_t getNodeNumCols() const = 0;
+    inline size_t getNodeNumCols() const { CTHULHU_DEBUG_ME; return graph_->NumMyCols(); };
 
     //! Returns the index base for global indices for this graph. 
-    virtual GlobalOrdinal getIndexBase() const = 0;
+    inline int getIndexBase() const { CTHULHU_DEBUG_ME; return graph_->IndexBase(); };
 
     //! Returns the global number of entries in the graph.
     /** Undefined if isFillActive().
      */
-    virtual global_size_t getGlobalNumEntries() const = 0;
+    inline global_size_t getGlobalNumEntries() const { CTHULHU_DEBUG_ME; return graph_->NumGlobalEntries(); };
 
     //! Returns the local number of entries in the graph.
-    virtual size_t getNodeNumEntries() const = 0;
+    inline size_t getNodeNumEntries() const { CTHULHU_DEBUG_ME; return graph_->NumMyEntries(); };
 
     //! \brief Returns the current number of entries on this node in the specified global row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified global row does not belong to this graph. */
-    virtual size_t getNumEntriesInGlobalRow(GlobalOrdinal globalRow) const = 0;
+    inline size_t getNumEntriesInGlobalRow(int globalRow) const { CTHULHU_DEBUG_ME; return graph_->NumGlobalIndices(globalRow); };
 
     //! Returns the current number of entries on this node in the specified local row.
     /*! Returns OrdinalTraits<size_t>::invalid() if the specified local row is not valid for this graph. */
-    virtual size_t getNumEntriesInLocalRow(LocalOrdinal localRow) const = 0;
+    inline size_t getNumEntriesInLocalRow(int localRow) const { CTHULHU_DEBUG_ME; return graph_->NumMyIndices(localRow); };
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! \brief Returns the total number of indices allocated for the graph, across all rows on this node.
@@ -254,62 +318,62 @@ namespace Cthulhu {
       This quantity is computed during the actual allocation. Therefore, if <tt>indicesAreAllocated() == false</tt>,
       this method returns <tt>OrdinalTraits<size_t>::invalid()</tt>.
     */
-    virtual size_t getNodeAllocationSize() const = 0;
+    inline size_t getNodeAllocationSize() const { CTHULHU_DEBUG_ME; return graph_->(); };
 #endif
 
     //! \brief Returns the current number of allocated entries for this node in the specified global row .
     /** Throws exception std::runtime_error if the specified global row does not belong to this node. */
-    virtual size_t getNumAllocatedEntriesInGlobalRow(GlobalOrdinal globalRow) const = 0;
+    inline size_t getNumAllocatedEntriesInGlobalRow(int globalRow) const { CTHULHU_DEBUG_ME; return graph_->NumAllocatedGlobalIndices(globalRow); };
 
     //! Returns the current number of allocated entries on this node in the specified local row.
     /** Throws exception std::runtime_error if the specified local row is not valid for this node. */
-    virtual size_t getNumAllocatedEntriesInLocalRow(LocalOrdinal localRow) const = 0;
+    inline size_t getNumAllocatedEntriesInLocalRow(int localRow) const { CTHULHU_DEBUG_ME; return graph_->NumAllocatedMyIndices(localRow); };
 
     //! \brief Returns the number of global diagonal entries, based on global row/column index comparisons. 
     /** Undefined if isFillActive().
      */
-    virtual global_size_t getGlobalNumDiags() const = 0;
+    inline global_size_t getGlobalNumDiags() const { CTHULHU_DEBUG_ME; return graph_->NumGlobalDiagonals(); };
 
     //! \brief Returns the number of local diagonal entries, based on global row/column index comparisons. 
     /** Undefined if isFillActive().
      */
-    virtual size_t getNodeNumDiags() const = 0;
+    inline size_t getNodeNumDiags() const { CTHULHU_DEBUG_ME; return graph_->NumMyDiagonals(); };
 
     //! \brief Returns the maximum number of entries across all rows/columns on all nodes. 
     /** Undefined if isFillActive().
      */
-    virtual size_t getGlobalMaxNumRowEntries() const = 0;
+    inline size_t getGlobalMaxNumRowEntries() const { CTHULHU_DEBUG_ME; return graph_->GlobalMaxNumIndices(); };
 
     //! \brief Returns the maximum number of entries across all rows/columns on this node. 
     /** Undefined if isFillActive().
      */
-    virtual size_t getNodeMaxNumRowEntries() const = 0;
+    inline size_t getNodeMaxNumRowEntries() const { CTHULHU_DEBUG_ME; return graph_->MaxNumIndices(); }; //Note: why is it not *My*MaxNumIndices ?
 
     //! \brief Indicates whether the graph has a well-defined column map. 
-    virtual bool hasColMap() const = 0; 
+    inline bool hasColMap() const { CTHULHU_DEBUG_ME; return graph_->HaveColMap(); }; 
 
     //! \brief Indicates whether the graph is lower triangular.
     /** Undefined if isFillActive().
      */
-    virtual bool isLowerTriangular() const = 0;
+    inline bool isLowerTriangular() const { CTHULHU_DEBUG_ME; return graph_->LowerTriangular(); };
 
     //! \brief Indicates whether the graph is upper triangular.
     /** Undefined if isFillActive().
      */
-    virtual bool isUpperTriangular() const = 0;
+    inline bool isUpperTriangular() const { CTHULHU_DEBUG_ME; return graph_->UpperTriangular(); };
 
     //! \brief If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */
-    virtual bool isLocallyIndexed() const = 0;
+    inline bool isLocallyIndexed() const { CTHULHU_DEBUG_ME; return graph_->IndicesAreLocal(); };
 
     //! \brief If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */
-    virtual bool isGloballyIndexed() const = 0;
+    inline bool isGloballyIndexed() const { CTHULHU_DEBUG_ME; return graph_->IndicesAreGlobal(); };
 
     //! Returns \c true if fillComplete() has been called and the graph is in compute mode.
-    virtual bool isFillComplete() const = 0;
+    inline bool isFillComplete() const { CTHULHU_DEBUG_ME; return graph_->Filled(); };
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns \c true if resumeFill() has been called and the graph is in edit mode.
-    virtual bool isFillActive() const = 0;
+    inline bool isFillActive() const { CTHULHU_DEBUG_ME; return graph_->isFillActive(); };
 #endif
 
     //! \brief Returns \c true if storage has been optimized.
@@ -319,11 +383,11 @@ namespace Cthulhu {
        during a mat-vec, requires minimal memory traffic. One limitation of
        optimized storage is that no new indices can be added to the graph.
     */
-    virtual bool isStorageOptimized() const = 0;
+    inline bool isStorageOptimized() const { CTHULHU_DEBUG_ME; return graph_->StorageOptimized(); };
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns \c true if the graph was allocated with static data structures.
-    virtual ProfileType getProfileType() const = 0;
+    inline ProfileType getProfileType() const { CTHULHU_DEBUG_ME; return graph_->getProfileType(); };
 #endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -337,10 +401,16 @@ namespace Cthulhu {
       with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
       returned as OrdinalTraits<size_t>::invalid().
     */
-    virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow, 
-                                 const ArrayView<GlobalOrdinal> &Indices, 
+    inline void getGlobalRowCopy(int GlobalRow, 
+                                 const ArrayView<int> &Indices, 
                                  size_t &NumIndices
-                                 ) const = 0;
+                                 ) const { 
+      CTHULHU_DEBUG_ME; 
+
+      graph_->getGlobalRowCopy(GlobalRow, Indices, NumIndices); 
+
+
+    };
 #endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
@@ -356,10 +426,10 @@ namespace Cthulhu {
 
       \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
     */
-    virtual void getLocalRowCopy(LocalOrdinal LocalRow, 
-                                const ArrayView<LocalOrdinal> &indices, 
+    inline void getLocalRowCopy(int LocalRow, 
+                                const ArrayView<int> &indices, 
                                 size_t &NumIndices
-                                ) const = 0;
+                                ) const { CTHULHU_DEBUG_ME; graph_->getLocalRowCopy(LocalRow, indices, NumIndices); };
 #endif
 
     //! Extract a const, non-persisting view of global indices in a specified row of the graph.
@@ -371,7 +441,17 @@ namespace Cthulhu {
 
       Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
     */
-    virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView<const GlobalOrdinal> &Indices) const = 0;
+    inline void getGlobalRowView(int GlobalRow, ArrayView<const int> &Indices) const { 
+      CTHULHU_DEBUG_ME; 
+    
+      int      numEntries;
+      int    * eIndices;
+      
+      CTHULHU_ERR_CHECK(graph_->ExtractGlobalRowView(GlobalRow, numEntries, eIndices));
+      if (numEntries == 0) { eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
+
+      Indices = ArrayView<const int>(eIndices, numEntries);
+    };
 
     //! Extract a const, non-persisting view of local indices in a specified row of the graph.
     /*!
@@ -382,7 +462,17 @@ namespace Cthulhu {
 
       Note: If \c LocalRow does not belong to this node, then \c indices is set to null.
     */
-    virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices) const = 0;
+    inline void getLocalRowView(int LocalRow, ArrayView<const int> &indices) const {
+      CTHULHU_DEBUG_ME; 
+      
+      int      numEntries;
+      int    * eIndices;
+      
+      CTHULHU_ERR_CHECK(graph_->ExtractMyRowView(LocalRow, numEntries, eIndices));
+      if (numEntries == 0) { eIndices = NULL; } // Cf. TEST_FOR_EXCEPT( p == 0 && size_in != 0 ) in Teuchos ArrayView constructor.
+
+      indices = ArrayView<const int>(eIndices, numEntries);
+    }
 
     //@}
 
@@ -390,36 +480,37 @@ namespace Cthulhu {
     //@{
 
     /** \brief Return a simple one-line description of this object. */
-    virtual std::string description() const = 0;
+    inline std::string description() const { CTHULHU_DEBUG_ME; return "TODO"; };
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const = 0;
+    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; }; //TODO
 
     //@}
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! @name Methods implementing Cthulhu::DistObject
     //@{
-    virtual bool checkSizes(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>& source) = 0;
 
-    virtual void copyAndPermute(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
+    inline bool checkSizes(const DistObject<int,int,int>& source) { CTHULHU_DEBUG_ME; return graph_->checkSizes(source); };
+
+    inline void copyAndPermute(const DistObject<int,int,int> & source,
                                size_t numSameIDs,
-                               const ArrayView<const LocalOrdinal> &permuteToLIDs,
-                               const ArrayView<const LocalOrdinal> &permuteFromLIDs) = 0;
+                               const ArrayView<const int> &permuteToLIDs,
+                               const ArrayView<const int> &permuteFromLIDs) { CTHULHU_DEBUG_ME; graph_->copyAndPermute(sourcem numSameIDs, permuteToLIDs, permuteFromLIDs); };
 
-    virtual void packAndPrepare(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
-                               const ArrayView<const LocalOrdinal> &exportLIDs,
-                               Array<GlobalOrdinal> &exports,
+    inline void packAndPrepare(const DistObject<int,int,int> & source,
+                               const ArrayView<const int> &exportLIDs,
+                               Array<int> &exports,
                                const ArrayView<size_t> & numPacketsPerLID,
                                size_t& constantNumPackets,
-                               Distributor &distor) = 0;
+                               Distributor &distor) { CTHULHU_DEBUG_ME; graph_->packAndPrepare(source, exportLIDs, exports, numPacketsPerLID, constantNumPackets, distor); };
 
-    virtual void unpackAndCombine(const ArrayView<const LocalOrdinal> &importLIDs,
-                                 const ArrayView<const GlobalOrdinal> &imports,
+    inline void unpackAndCombine(const ArrayView<const int> &importLIDs,
+                                 const ArrayView<const int> &imports,
                                  const ArrayView<size_t> &numPacketsPerLID,
                                  size_t constantNumPackets,
                                  Distributor &distor,
-                                 CombineMode CM) = 0;
+                                 CombineMode CM) { CTHULHU_DEBUG_ME; graph_->unpackAndCombine(importLIDs, imports, numPacketsPerLID, constantNumPackets, distor, CM); };
     //@}
 #endif // CTHULHU_NOT_IMPLEMENTED
 
@@ -431,13 +522,13 @@ namespace Cthulhu {
     /*! Returns null if optimizeStorage() hasn't been called.
       The returned buffer exists in host-memory.
     */
-    virtual ArrayRCP<const size_t>       getNodeRowBegs() const = 0;
+    inline ArrayRCP<const size_t>       getNodeRowBegs() const { CTHULHU_DEBUG_ME; return graph_->getNodeRowBegs(); };
 
     //! Get an ArrayRCP of the packed column-indices.
     /*! Returns null if optimizeStorage() hasn't been called.
       The returned buffer exists in host-memory.
     */
-    virtual ArrayRCP<const LocalOrdinal> getNodePackedIndices() const = 0;
+    inline ArrayRCP<const int> getNodePackedIndices() const { CTHULHU_DEBUG_ME; return graph_->getNodePackedIndices(); };
 
     //@}
 #endif
@@ -454,17 +545,24 @@ namespace Cthulhu {
     Currently, the implementation simply calls resumeFill() and then fillComplete(OptimizeStorage). As such, it is 
     required to be called by all nodes that participate in the associated communicator.
     */
-    CTHULHU_DEPRECATED virtual void optimizeStorage() = 0;
+    CTHULHU_DEPRECATED inline void optimizeStorage() { CTHULHU_DEBUG_ME; graph_->optimizeStorage(); };
 
     //! Deprecated. Get a persisting const view of the elements in a specified global row of the graph.
-    CTHULHU_DEPRECATED virtual ArrayRCP<const GlobalOrdinal> getGlobalRowView(GlobalOrdinal GlobalRow) const = 0;
+    CTHULHU_DEPRECATED inline ArrayRCP<const int> getGlobalRowView(int GlobalRow) const { CTHULHU_DEBUG_ME; return graph_->getGlobalRowView(GlobalRow); };
 
     //! Deprecated. Get a persisting const view of the elements in a specified local row of the graph.
-    CTHULHU_DEPRECATED virtual ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const = 0;
+    CTHULHU_DEPRECATED inline ArrayRCP<const int> getLocalRowView(int LocalRow) const { CTHULHU_DEBUG_ME; return graph_->getLocalRowView(LocalRow); };
 
     //@}
-#endif // CTHULHU_NOT_IMPLEMENTED
-  }; // class CrsGraph
+#endif
+
+    RCP< const Epetra_CrsGraph> getEpetra_CrsGraph() const { CTHULHU_DEBUG_ME; return graph_; }
+    
+  private:
+    
+    RCP<Epetra_CrsGraph> graph_;
+    
+  }; // class EpetraCrsGraph
 
 } // namespace Cthulhu
 

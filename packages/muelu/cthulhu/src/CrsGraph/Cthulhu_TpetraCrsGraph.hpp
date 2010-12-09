@@ -217,7 +217,7 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the communicator.
-    inline const RCP<const Comm<int> > & getComm() const { CTHULHU_DEBUG_ME; return graph_->getComm(); };
+    inline const RCP<const Comm<int> > getComm() const { CTHULHU_DEBUG_ME; return graph_->getComm(); };
 
     //! Returns the underlying node.
     inline RCP<Node> getNode() const { CTHULHU_DEBUG_ME; return graph_->getNode(); };

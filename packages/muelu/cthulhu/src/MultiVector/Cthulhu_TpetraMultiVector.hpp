@@ -10,6 +10,7 @@
 #include "Cthulhu_Vector.hpp"
 #include "Cthulhu_MultiVector.hpp"
 
+#include "Cthulhu_Map.hpp"
 #include "Cthulhu_TpetraMap.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
@@ -352,6 +353,12 @@ namespace Cthulhu {
     //@}
 
     RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; }
+
+    // From DistObject
+    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const { 
+      CTHULHU_DEBUG_ME; 
+      return rcp( new TpetraMap(vec_->getMap()) ); 
+    }
     
   private:
     RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;

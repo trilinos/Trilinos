@@ -286,13 +286,13 @@ namespace Cthulhu {
     inline RCP<const RowGraph<int,int> > getGraph() const { CTHULHU_DEBUG_ME; return mtx_->Graph(); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Returns the CrsGraph associated with this matrix. 
     inline RCP<const CrsGraph<int,int> > getCrsGraph() const { CTHULHU_DEBUG_ME; 
-      RCP<const Epetra_CrsGraph> graph = rcp(new Epetra_CrsGraph(mtx_->Graph())); // Copy
+      RCP<const Epetra_CrsGraph> const_graph = rcp(new Epetra_CrsGraph(mtx_->Graph()));
+
+      RCP<Epetra_CrsGraph> graph = Teuchos::rcp_const_cast<Epetra_CrsGraph>(const_graph); //TODO: can I avoid the const_cast ?
       return rcp ( new Cthulhu::EpetraCrsGraph(graph) );
     }
-#endif
 
     //! Returns the number of global rows in this matrix.
     /** Undefined if isFillActive().

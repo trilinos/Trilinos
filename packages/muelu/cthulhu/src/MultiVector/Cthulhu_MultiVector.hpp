@@ -313,6 +313,10 @@ namespace Cthulhu {
 
     //@}
 
+    // From DistObject:
+
+    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const =0;
+
   }; // class MultiVector
 
 } // namespace Cthulhu

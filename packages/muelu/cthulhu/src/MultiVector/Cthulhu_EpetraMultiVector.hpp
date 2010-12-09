@@ -375,6 +375,16 @@ namespace Cthulhu {
     //@}
 
     RCP< Epetra_MultiVector > getEpetra_MultiVector() const { CTHULHU_DEBUG_ME; return vec_; }
+
+    // From DistObject
+    const Teuchos::RCP<const Map<int,int> > getMap() const { 
+      CTHULHU_DEBUG_ME; 
+      
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO BlockMap/Map");
+      
+      RCP<const Epetra_Map> map; // TODO = rcp(new Epetra_Map(vec_->Map()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
+    }
     
   private:
     RCP< Epetra_MultiVector > vec_;

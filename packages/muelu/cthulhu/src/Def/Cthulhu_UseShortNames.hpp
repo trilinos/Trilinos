@@ -8,6 +8,10 @@
 typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 #endif
 
+#ifdef CTHULHU_CRSGRAPH_HPP
+typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
+#endif
+
 #ifdef CTHULHU_CRSMATRIX_HPP
 typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
 #endif
@@ -49,9 +53,14 @@ typedef Cthulhu::OperatorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, 
 typedef Cthulhu::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
 #endif
 
+#ifdef CTHULHU_TPETRACRSGRAPH_HPP
+typedef Cthulhu::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraph;
+#endif
+
 #ifdef CTHULHU_TPETRACRSMATRIX_HPP
 typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
+
 #ifdef CTHULHU_TPETRAMULTIVECTOR_HPP
 typedef Cthulhu::TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
 #endif
