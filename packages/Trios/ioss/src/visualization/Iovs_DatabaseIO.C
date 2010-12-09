@@ -50,7 +50,7 @@ namespace Iovs {
     sequentialNG2L = true;
     sequentialEG2L = true;
     int err; 
-    iMesh_newMesh ("", &mesh_instance, &err, 0);
+    iMesh_newMesh (filename.c_str(), &mesh_instance, &err, 1);
     iMesh_getRootSet (mesh_instance, &rootset, &err);
   }
 
@@ -646,23 +646,6 @@ namespace Iovs {
                                     region->get_element_blocks();
       // assert(check_block_order(element_blocks));
       Ioss::ElementBlockContainer::const_iterator I;
-      /* TODO?
-      // Set ids of all entities that have "id" property... 
-      for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-        set_id(*I, EX_ELEM_BLOCK, &ids_);
-      }
-      
-      elementCount = 0;
-      for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
-        elementCount += (*I)->get_property("entity_count").get_int();
-        // Set ids of all entities that do not have "id" property...
-        get_id(*I, EX_ELEM_BLOCK, &ids_);
-        Ioex::Block T(*(*I));
-        if (std::find(blocks.begin(), blocks.end(), T) == blocks.end()) {
-          blocks.push_back(T);
-        }
-      }
-      */
       elementBlockCount = 0;
       for (I=element_blocks.begin(); I != element_blocks.end(); ++I) {
         elementBlockCount ++;
@@ -738,13 +721,6 @@ namespace Iovs {
         assert(sequentialNG2L || static_cast<int>(reverseNodeMap.size()) == nodeCount);
       }
       assert(get_region()->get_property("node_block_count").get_int() == 1);
-
-      // Write to the database...
-      /* TODO replace with ITAPS
-      int ierr = ex_put_node_num_map(get_file_pointer(), ids);
-      if (ierr < 0)
-        exodus_error(get_file_pointer(), __LINE__, myProcessor);
-        */
     }
 
     // build_node_reorder_map(ids, num_to_get);
@@ -821,129 +797,9 @@ namespace Iovs {
       }
     }
 
-    // Now, if the state is Ioss::STATE_MODEL, update the reverseElementMap
-    // if (dbState == Ioss::STATE_MODEL) {
-      // Ioss::Map::build_reverse_map(&reverseElementMap, ids, num_to_get,
-                                   // eb_offset, "element", myProcessor);
-
-      // Strongest assertion we can make is that size of map <=
-      // elementCount
-      // TODO assert(static_cast<int>(reverseElementMap.size()) <= elementCount);
-
-      // Output this portion of the element number map
-      /* TODO ITAPS global ids
-      int ierr = ne_put_n_elem_num_map(get_file_pointer(), eb_offset+1, num_to_get, ids);
-      if (ierr < 0)
-        exodus_error(get_file_pointer(), __LINE__, myProcessor);
-        */
-    // }
-
-    // Build the reorderElementMap which does a direct mapping from
-    // the current topologies local order to the local order stored in
-    // the database...  This is 0-based and used for remapping output
-    // TRANSIENT fields. (Will also need one on input once we read fields)
-    // TODO build_element_reorder_map(eb_offset, num_to_get);
     return num_to_get;
   }
 
-  /*
-  void DatabaseIO::build_node_reorder_map(int *new_ids, int count)
-  {
-    // This routine builds a map that relates the current node id order
-    // to the original node ordering in affect at the time the file was
-    // created. That is, the node map used to define the topology of the
-    // model.  Now, if there are changes in node ordering at the
-    // application level, we build the node reorder map to map the
-    // current order into the original order.  An added complication is
-    // that this is more than just a reordering... It may be that the
-    // application has 'ghosted' nodes that it doesnt want put out on
-    // the database, so the reorder map must handle a node that is not
-    // in the original mesh and map that to an invalid value (currently
-    // using -1 as invalid value...)
-
-    // Note: To further add confusion,
-    // the reorderNodeMap and new_ids are 0-based
-    // the reverseNodeMap and nodeMap are 1-based. This is
-    // just a consequence of how they are intended to be used...
-
-    reorderNodeMap.resize(count);
-
-    for (int i=0; i < count; i++) {
-      int global_id = new_ids[i];
-
-      // This will return 0 if node is not found in list.
-      int orig_local_id = node_global_to_local(global_id, false) - 1;
-
-      reorderNodeMap[i] = orig_local_id;
-    }
-  }
-  */
-
-  /*
-  void DatabaseIO::build_element_reorder_map(int start, int count)
-  {
-    // Note: To further add confusion, the reorderElementMap is 0-based
-    // and the reverseElementMap and elementMap are 1-based. This is
-    // just a consequence of how they are intended to be used...
-    //
-    // start is based on a 0-based array -- start of the reorderMap to build.
-
-    if (reorderElementMap.empty())
-      reorderElementMap.resize(elementCount);
-    assert(static_cast<int>(elementMap.size()) == elementCount+1);
-    assert(static_cast<int>(reverseElementMap.size()) <= elementCount); // Built in pieces
-
-    int end = start+count;
-    for (int i=start; i < end; i++) {
-      int global_id = elementMap[i+1];
-      int orig_local_id = element_global_to_local(global_id) - 1;
-
-      // If we assume that partial output is not being used (it
-      // currently isn't in Sierra), then the reordering should only be
-      // a permutation of the original ordering within this element block...
-      assert(orig_local_id >= start && orig_local_id <= end);
-      reorderElementMap[i] = orig_local_id;
-    }
-  }
-  */
-
-  /*
-  const Ioss::MapContainer& DatabaseIO::get_node_map() const
-  {
-    // Allocate space for node number map and read it in...
-    // Can be called multiple times, allocate 1 time only
-    if (nodeMap.empty()) {
-      nodeMap.resize(nodeCount+1);
-      // Output database; nodeMap not set yet... Build a default map.
-      for (int i=1; i < nodeCount+1; i++) {
-        nodeMap[i] = i;
-      }
-      // Sequential map
-      nodeMap[0] = -1;
-    }
-    return nodeMap;
-  }
-  */
-
-  /*
-  const Ioss::MapContainer& DatabaseIO::get_element_map() const
-  {
-    // Allocate space for elemente number map and read it in...
-    // Can be called multiple times, allocate 1 time only
-    if (elementMap.empty()) {
-      elementMap.resize(elementCount+1);
-
-      // Output database; elementMap not set yet... Build a default map.
-      for (int i=1; i < elementCount+1; i++) {
-        elementMap[i] = i;
-      }
-      // Sequential map
-      sequentialEG2L = true;
-      elementMap[0] = -1;
-    }
-    return elementMap;
-  }
-  */
 
   int field_warning(const Ioss::GroupingEntity *ge,
                     const Ioss::Field &field, const std::string& inout)
