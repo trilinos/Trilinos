@@ -12,6 +12,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_Workset_Builder.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
@@ -23,7 +24,29 @@ using Teuchos::rcp;
 #include "user_app_ModelFactory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
+#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
+
+#include <cstdio> // for get char
+
 namespace panzer {
+
+   void pause_to_attach()
+   {
+      MPI_Comm mpicomm = MPI_COMM_WORLD;
+      Teuchos::RCP<Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(
+            Teuchos::rcp(new Teuchos::OpaqueWrapper<MPI_Comm>(mpicomm)));
+      Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
+      out.setShowProcRank(true);
+      out.setOutputToRootOnly(-1);
+
+      out << "PID = " << getpid();
+
+      if (comm->getRank() == 0)
+         getchar();
+      comm->barrier();
+   }
+
 
   std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
   buildWorksets(const RCP<panzer_stk::STK_Interface>& mesh,
@@ -55,6 +78,8 @@ namespace panzer {
   TEUCHOS_UNIT_TEST(field_manager_builder, basic)
   {
     using Teuchos::RCP;
+  
+    // pause_to_attach();
 
     RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
     pl->set("X Blocks",2);
@@ -66,15 +91,16 @@ namespace panzer {
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
-    const std::size_t workset_size = 20;
-    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
-      volume_worksets = buildWorksets(mesh, workset_size);
-    
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
     testInitialzation(*mesh, ipb, bcs);
 
-    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets = buildBCWorksets(mesh);
+    const std::size_t workset_size = 20;
+    std::map<std::string,Teuchos::RCP<std::vector<panzer::Workset> > > 
+      volume_worksets = panzer_stk::buildWorksets(*mesh,ipb, workset_size);
+
+    const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
+       = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
 
     std::map<std::string,std::string> block_ids_to_physics_ids;
     block_ids_to_physics_ids["eblock-0_0"] = "test physics";
@@ -361,7 +387,7 @@ namespace panzer {
       panzer::BCType neumann = BCT_Dirichlet;
       std::string sideset_id = "left";
       std::string element_block_id = "eblock-0_0";
-      std::string dof_name = "UX";
+      std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
       double value = 5.0;
       Teuchos::ParameterList p;
@@ -375,7 +401,7 @@ namespace panzer {
       panzer::BCType neumann = BCT_Dirichlet;
       std::string sideset_id = "right";
       std::string element_block_id = "eblock-1_0";
-      std::string dof_name = "UX";
+      std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
       double value = 5.0;
       Teuchos::ParameterList p;
@@ -389,7 +415,7 @@ namespace panzer {
       panzer::BCType neumann = BCT_Dirichlet;
       std::string sideset_id = "top";
       std::string element_block_id = "eblock-1_0";
-      std::string dof_name = "UX";
+      std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
       double value = 5.0;
       Teuchos::ParameterList p;
