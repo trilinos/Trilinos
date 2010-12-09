@@ -17,7 +17,7 @@
 // If the dynamic cast failed, throw an exception of type Cthulhu::Exception::Bad_Cast (using the message exceptionMsg).
 #define CTHULHU_RCP_DYNAMIC_CAST(type, obj, newObj, exceptionMsg)       \
   const RCP<type > & newObj = Teuchos::rcp_dynamic_cast<type >(obj);    \
-  TEST_FOR_EXCEPTION(newObj == null, Cthulhu::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); 
+  TEST_FOR_EXCEPTION(newObj == Teuchos::null, Cthulhu::Exceptions::BadCast, "Cannot cast '" #obj "' to a " #type ". " #exceptionMsg); 
 
 namespace Cthulhu {
   namespace Exceptions {
