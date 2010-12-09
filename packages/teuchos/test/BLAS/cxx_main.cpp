@@ -74,7 +74,7 @@ using Teuchos::ScalarTraits;
 #define SCALARMAX  10
 // These define the number of tests to be run for each individual BLAS routine.
 #define ROTGTESTS  5
-#define ROTTESTS   10
+#define ROTTESTS   5
 #define ASUMTESTS  5
 #define AXPYTESTS  5
 #define COPYTESTS  5
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   bool verbose = 0;
-  bool debug = 1;
+  bool debug = 0;
   bool matlab = 0;
   bool InvalidCmdLineArgs = 0;
   OType i, j, k;
@@ -335,7 +335,6 @@ int main(int argc, char *argv[])
       PrintVector(SType2y, My, "SType2y_before_operation",  matlab);
     }
     TotalTestCount++;
-    TotalTestCount++;
     SType1BLAS.ROT(M, SType1x, incx, SType1y, incy, &c1, &s1);
     SType2BLAS.ROT(M, SType2x, incx, SType2y, incy, &c2, &s2);
     if(debug)
@@ -343,8 +342,8 @@ int main(int argc, char *argv[])
       PrintVector(SType1y, My, "SType1y_after_operation", matlab);
       PrintVector(SType2y, My, "SType2y_after_operation", matlab);
     }
-    GoodTestSubcount += CompareVectors(SType1x, SType2x, Mx, TOL);
-    GoodTestSubcount += CompareVectors(SType1y, SType2y, My, TOL);
+    GoodTestSubcount += ( CompareVectors(SType1x, SType2x, Mx, TOL) &&
+                          CompareVectors(SType1y, SType2y, My, TOL) );
     delete [] SType1x;
     delete [] SType1y;
     delete [] SType2x;
