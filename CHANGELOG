@@ -4,6 +4,16 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.6.2 December 9, 2010
+
+1. NOX - Fixed a compile error on VS8
+
+2. Phalanx - FIxed graphviz output for boos versions greater than 1.43
+
+3. Zoltan - Changed Autotools build to handle all TPLS identically
+
+-------------------------------------------------------------------------------
+
 Release update 10.6.1 October 25, 2010
 
 1. EpetraExt - Fix memory leak in PETSc interface.
