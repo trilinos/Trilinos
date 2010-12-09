@@ -9,12 +9,9 @@
 
 namespace {
 
-//this macro declares the unit-test-class:
-TEUCHOS_UNIT_TEST(Level, Test0)
-{
-//we are now in a class method declared by the above macro, and
-//that method has these input arguments:
-//Teuchos::FancyOStream& out, bool& success
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using namespace MueLu;
 
   typedef double Scalar;
   typedef int    LO;
@@ -30,7 +27,13 @@ TEUCHOS_UNIT_TEST(Level, Test0)
   typedef Cthulhu::TpetraVector<Scalar,LO,GO,Node>    TpetraVector;
   typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
 
-  using namespace Teuchos;
+//this macro declares the unit-test-class:
+TEUCHOS_UNIT_TEST(Level, SetCoreData)
+{
+//we are now in a class method declared by the above macro, and
+//that method has these input arguments:
+//Teuchos::FancyOStream& out, bool& success
+
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -40,26 +43,29 @@ TEUCHOS_UNIT_TEST(Level, Test0)
   RCP<const Map> map = MueLu_UnitTest::create_map<LO,GO,Node>(nx);
   RCP<Operator> A = MueLu::Gallery::CreateCrsMatrix<Scalar, LO, GO, Map, CrsOperator>("Laplace1D",map,list);
 
-  out << "Testing default ctor" << std::endl;
   Level firstLevel;
-  out << "Testing set methods" << std::endl;
-  firstLevel.SetLevelID(1);
   firstLevel.SetA(A);
+  TEUCHOS_TEST_EQUALITY(firstLevel.GetA(), A, out, success);
+  firstLevel.SetR(A);
+  TEUCHOS_TEST_EQUALITY(firstLevel.GetR(), A, out, success);
+  firstLevel.SetP(A);
+  TEUCHOS_TEST_EQUALITY(firstLevel.GetP(), A, out, success);
+  firstLevel.SetLevelID(42);
+  TEUCHOS_TEST_EQUALITY(firstLevel.GetLevelID(), 42, out, success);
 
-  /* TODO
-  Test set/get of R & P matrices.
-  */
-  /*
-  RCP<Vector> x = rcp(new TpetraVector<Scalar,LO,GO,Node>(map,nx) );
-  RCP<Vector> y = rcp(new TpetraVector<Scalar,LO,GO,Node>(map,nx) );
-  x->putScalar(1);
-  */
+/*
+  RCP<Smoother> preSmoo = Smoother<Scalar, LO, GO, Node, LMO>();
+  TEUCHOS_TEST_EQUALITY(firstLevel.GetPreSmoother(), preSmoo, out, success);
+  //RCP<Smoother> postSmoo = Smoother<Scalar, LO, GO, Map, CrsOperator>();
+*/
 
 
   //out << firstLevel << std::endl;
+  /*
   out << "Testing copy ctor" << std::endl;
   Level secondLevel(firstLevel);
   //out << secondLevel << std::endl;
+  */
 }
 
 }//namespace <anonymous>

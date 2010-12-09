@@ -16,7 +16,7 @@ namespace MueLu {
   @brief Provides methods to build a multigrid hierarchy and apply multigrid cycles.
 
   Allows users to manually populate operators at different levels within 
-  a multigrid method and push them into the hierarchy via SetBucket() 
+  a multigrid method and push them into the hierarchy via SetLevel() 
   and/or to supply factories for automatically generating prolongators, 
   restrictors, and coarse level discretizations.  Additionally contains 
   a V-cycle apply method.
@@ -31,11 +31,10 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
 
   template<class AA, class BB, class CC, class DD, class EE>
   inline friend std::ostream& operator<<(std::ostream& os, Hierarchy<AA,BB,CC,DD,EE> &hierarchy);
-  //friend std::ostream& operator<< <>(std::ostream& os, Hierarchy<Scalar,LO,GO,NO, LMO> &hierarchy);
-  //friend std::ostream& operator<<(std::ostream& os, Hierarchy<Scalar,LO,GO,NO, LMO> &hierarchy);
 
   private:
 
+    //! vector of Level objects
     std::vector<Teuchos::RCP<Level> > Levels_;
 
   protected:
@@ -59,7 +58,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
 
    //@}
 
-   //! Set/Get Methods.
+   //! @name Set/Get Methods.
    //@{
 
      //! Assign a level to hierarchy.
@@ -69,20 +68,31 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
      }
 
      //! Retrieve a certain level from hierarchy.
-     Teuchos::RCP<Level>& GetLevel(int levelID) {
+     Teuchos::RCP<Level>& GetLevel(int const levelID) {
        return Levels_[levelID];
      }
+   //@}
 
-     //FIXME should return status
-     //FIXME also calculate complexity here
+   //! @name Populate Methods.
+   //@{
+
+     /*!
+       @brief Constructs components of the hierarchy.
+       FIXME should return status
+       FIXME also calculate complexity here
+
+       The only required factory is for the prolongator.  Factories to build the smoothers,
+       restriction matrices, and coarse level matrices are optional.  Default behavior is to
+       ignore any empty factories.  FillHierarchy invokes this method.
+     */
      void FullPopulate(Teuchos::RCP<OperatorFactory> PFact,
                        Teuchos::RCP<OperatorFactory> RFact=Teuchos::null,
                        Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
                        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null,
-                       int startLevel=0, int numDesiredLevels=10 /*,Needs*/)
+                       int startLevel=0, int numDesiredLevels=10 )
      {
        Teuchos::OSTab tab(out_);
-       *out_ << "Hierarchy::FullPopulate()" << std::endl;
+       MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::FullPopulate()" << std::endl;
        bool goodBuild=true;
        int i = startLevel;
        while (i < startLevel + numDesiredLevels - 1)
@@ -98,7 +108,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
            Levels_[i+1]->SetLevelID(i+1);
            goodBuild = PFact->Build(*(Levels_[i]),*(Levels_[i+1]) /*,MySpecs*/);
          }
-         if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right wasy to cast?
+         if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
          if (!goodBuild) /*TODO make Levels_ be length i*/;
          if (RFact != Teuchos::null)
            if ( !RFact->Build(*(Levels_[i]),*(Levels_[i+1]) /*,MySpecs*/) ) {
@@ -120,10 +130,20 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
        } //while
      } //FullPopulate()
 
-     //FIXME should return status
-     void SetSmoothers() {Teuchos::OSTab tab(out_); *out_ << "Hierarchy::SetSmoothers()" << std::endl; }
+     /*! @brief Construct smoothers on all levels.
+       TODO should return status
+     */
+     void SetSmoothers() {Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::SetSmoothers()" << std::endl; }
 
-     //FIXME should return status
+     /*!
+       @brief Constructs components of the hierarchy.
+       TODO should return status
+
+       The only required factory is for the prolongator.  Factories to build the restriction and
+       coarse level matrices are optional.  Default behavior is to ignore any empty factories.
+       Internally, this calls FullPopulate.
+
+     */
      void FillHierarchy(Teuchos::RCP<OperatorFactory> PFact,
                         Teuchos::RCP<OperatorFactory> RFact=Teuchos::null,
                         Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
@@ -137,8 +157,11 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
        FullPopulate(PFact,RFact,AcFact,SmooFact,startLevel,numDesiredLevels);
      }
 
-     //FIXME should return solution vector
-     void Iterate() {Teuchos::OSTab tab(out_); *out_ << "Hierarchy::Iterate()" << std::endl; }
+     /*!
+       @brief Apply the multigrid preconditioner.
+       FIXME Does not return solution vector right now!
+     */
+     void Iterate() {Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::Iterate()" << std::endl; }
 
    //@}
     

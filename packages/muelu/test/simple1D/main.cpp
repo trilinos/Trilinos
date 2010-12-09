@@ -1,5 +1,5 @@
 /*
-  This driver simply generates a matrix, prints it to screen, and exits.
+  Simple 1D AMG driver.
 */
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -44,6 +44,11 @@
 
 int main(int argc, char** argv) 
 {
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::ParameterList;
+  using Teuchos::CommandLineProcessor;
+
   typedef int                                                       Ordinal;
   typedef double                                                    Scalar;
   //typedef Tpetra::DefaultPlatform::DefaultPlatformType              Platform;
@@ -74,10 +79,8 @@ int main(int argc, char** argv)
   typedef MueLu::RAPFactory<SC,LO,GO,NO,LMO>        RAPFactory;
   typedef MueLu::SmootherFactory<SC,LO,GO,NO,LMO>   SmootherFactory;
 
-  using namespace Teuchos;
-
-  oblackholestream blackhole;
-  GlobalMPISession mpiSession(&argc,&argv,&blackhole);
+  Teuchos::oblackholestream blackhole;
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
 
 
   //use the "--help" option to get verbose help
@@ -86,7 +89,7 @@ int main(int argc, char** argv)
   Ordinal ny=4;
   Ordinal nz=4;
   CommandLineProcessor cmdp(false,true);
-  Ordinal maxLevels = 10;
+  Ordinal maxLevels = 3;
   std::string matrixType("Laplace1D");
   cmdp.setOption("nt",&numThreads,"number of threads.");
   cmdp.setOption("nx",&nx,"mesh points in x-direction.");
@@ -108,7 +111,7 @@ int main(int argc, char** argv)
   RCP<NO> node = rcp(new NO(pl));
 
   Platform myplat(node);
-  RCP<const Comm<int> > comm = myplat.getComm();
+  RCP<const Teuchos::Comm<int> > comm = myplat.getComm();
 
   GO numGlobalElements = nx*ny;
   if (matrixType == "Laplace3D")
@@ -131,20 +134,19 @@ int main(int argc, char** argv)
   RCP<Vector> nullSpace = rcp(new TpetraVector(map) );
   nullSpace->putScalar( (SC) 1.0);
 
-  //Teuchos::VerboseObject<AlgorithmA>::setDefaultVerbLevel(Teuchos::VERB_NONE);
-
   MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
-  H.setDefaultVerbLevel(Teuchos::VERB_NONE); // FIXME does nothing right now, must check inside Hierarchy
-  RCP<MueLu::SaLevel<SC,LO,GO,NO,LMO> > Finest = rcp( new MueLu::SaLevel<SC,LO,GO,NO,LMO>() );
-  Finest->setDefaultVerbLevel(Teuchos::VERB_NONE); // FIXME does nothing right now, must check inside SaLevel
+  H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
+  RCP<MueLu::Level<SC,LO,GO,NO,LMO> > Finest = rcp( new MueLu::Level<SC,LO,GO,NO,LMO>() );
+  Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
   Finest->SetA(A);
-  Finest->SetNullSpace(nullSpace);
+  Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory() );
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   RCP<SmootherFactory>    SmooFact = Teuchos::null;
+  Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   //H.FillHierarchy(Pfact,Rfact,Acfact);
   H.FullPopulate(Pfact,Rfact,Acfact,SmooFact,0,maxLevels);

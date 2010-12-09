@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_VerboseObject.hpp"
+#include "MueLu_Needs.hpp"
 #include "Cthulhu_Operator.hpp"
 #include "Cthulhu_Vector.hpp"
 #include "MueLu_Smoother.hpp"
@@ -14,10 +14,16 @@
 namespace MueLu {
   /*!
     @class Level
-    @brief Multigrid level object.
+    @brief Class that holds all level-specific information.
+
+    This class stores <tt>A</tt>, <tt>R</tt>, <tt>P</tt>, the presmother and the postsmoother
+    explicitly.  All other data is stored in an associative list.
+    See the Needs class for more information.
   */
+  //template<class Scalar,class LO, class GO, class NO, class LMO>
+  //class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,NO, LMO> > {
   template<class Scalar,class LO, class GO, class NO, class LMO>
-  class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,NO, LMO> > {
+  class Level : public Needs {
 
     typedef Cthulhu::Operator<Scalar,LO,GO,NO,LMO> Operator;
     typedef Cthulhu::Vector<Scalar,LO,GO,NO> Vector;
@@ -33,19 +39,6 @@ namespace MueLu {
     Teuchos::RCP<Smoother> PreSmoother_;   // smoother operator
     Teuchos::RCP<Smoother> PostSmoother_;  // smoother operator
     mutable int levelID_;                  // id number associated with level
-    // auxilliary (optional) data
-    Teuchos::RCP<Operator> AuxMatrix_;     // can be used instead of A_ to steer coarsening/sparsity pattern algorithms
-    //TODO enable this data
-    //AuxMatrixFunc_; // function used to regenerate AuxMatrix from A & coords instead of via RAP
-    Teuchos::RCP<Operator> AuxMatP_;       // an alternative prolongator for projecting AuxMatrix
-    Teuchos::RCP<Operator> AuxMatR_;       // an alternative restrictor for projecting AuxMatrix
-    Teuchos::RCP<Vector> xCoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
-    Teuchos::RCP<Vector> yCoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
-    Teuchos::RCP<Vector> zCoords_;       // coordinates can be used to steer coarsening/sparsity or for visualization
-    Teuchos::RCP<Vector> coordP_;        // an alternative prolongator for projecting coordinates
-    Teuchos::RCP<Vector> coordR_;        // an alternative restrictor for projecting coordinates
-    //TODO enable this data
-    //Graph Graph_;         // saving a graph for SA
 
   protected:
     Teuchos::RCP<Teuchos::FancyOStream> out_;
@@ -56,12 +49,12 @@ namespace MueLu {
     //! @name Constructors / Destructors
     Level() : A_(0), R_(0), P_(0), levelID_(-1), out_(this->getOStream())
     {
-      Teuchos::OSTab tab(out_); *out_ << "Instantiating new uninitialized Level" << std::endl;
+      Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Instantiating new uninitialized Level" << std::endl;
     }
 
     //! Copy constructor.
     Level(Level const &Source) : out_(this->getOStream()) {
-      Teuchos::OSTab tab(out_); *out_ << "Copy constructing existing Level" << std::endl;
+      Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Copy constructing existing Level" << std::endl;
       A_ = Source.A_;
       R_ = Source.R_;
       P_ = Source.P_;
@@ -87,46 +80,34 @@ namespace MueLu {
     //@{
     //! @name Set methods.
 
+    //! @brief Set level number.
     void SetLevelID(int i) const {
       levelID_ = i;
     }
 
+    //! @brief Set matrix.
     void SetA(Teuchos::RCP<Operator> const A) {
       A_ = A;
     }
 
+    //! @brief Set restriction matrix.
     void SetR(Teuchos::RCP<Operator> const R) {
       R_ = R;
     }
 
+    //! @brief Set prolongation matrix.
     void SetP(Teuchos::RCP<Operator> const P) {
       P_ = P;
     }
 
-    void SetAuxMatrix(Teuchos::RCP<Operator> const AuxMatrix) {
-      return AuxMatrix_;
+    //! @brief Set presmoother.
+    void SetPreSmoother(Teuchos::RCP<Smoother> &preSmoo) {
+      PreSmoother_ = preSmoo;
     }
 
-    void SetXCoords(Teuchos::RCP<Vector> x) {
-      xCoords_ = x;
-    }
-
-    void SetYCoords(Teuchos::RCP<Vector> y) {
-      yCoords_ = y;
-    }
-
-    void SetZCoords(Teuchos::RCP<Vector> z) {
-      zCoords_ = z;
-    }
-
-    void SetAuxMatTransfers(Teuchos::RCP<Operator> &altP, Teuchos::RCP<Operator> &altR) {
-      AuxMatP_ = altP;
-      AuxMatR_ = altR;
-    }
-
-    void SetCoordTransfers(Teuchos::RCP<Operator> &altP, Teuchos::RCP<Operator> &altR) {
-      coordP_ = altP;
-      coordR_ = altR;
+    //! @brief Set postsmoother.
+    void SetPostSmoother(Teuchos::RCP<Smoother> &postSmoo) {
+      PostSmoother_ = postSmoo;
     }
 
     //@}
@@ -134,68 +115,37 @@ namespace MueLu {
     //@{
     //! @name Get methods.
 
+    //! @brief Return level number.
     int GetLevelID() const {
       return levelID_;
     }
 
+    //! @brief Return matrix.
     Teuchos::RCP<Operator> GetA() const {
       return A_;
     }
 
+    //! @brief Return restriction matrix.
     Teuchos::RCP<Operator> GetR() const {
       return R_;
     }
 
+    //! @brief Return prolongation matrix.
     Teuchos::RCP<Operator> GetP() const {
       return P_;
     }
 
-    Teuchos::RCP<Operator> GetAuxMatrix() {
-      return AuxMatrix_;
+    //! @brief Return presmoother.
+    Teuchos::RCP<Smoother> GetPreSmoother() const {
+      return PreSmoother_;
     }
 
-    Teuchos::RCP<Vector> GetXCoords() {
-      return xCoords_;
+    //! @brief Return postsmoother.
+    Teuchos::RCP<Smoother> GetPostSmoother() const {
+      return PostSmoother_;
     }
 
-    Teuchos::RCP<Vector> GetYCoords() {
-      return yCoords_;
-    }
-
-    Teuchos::RCP<Vector> GetZCoords() {
-      return zCoords_;
-    }
-
-    void GetAuxMatTransfers(Teuchos::RCP<Operator> &altP, Teuchos::RCP<Operator> &altR) {
-      altP = AuxMatP_;
-      altR = AuxMatR_;
-    }
-
-    void GetCoordTransfers(Teuchos::RCP<Operator> &altP, Teuchos::RCP<Operator> &altR) {
-      altP = coordP_;
-      altR = coordR_;
-    }
-    void SetPreSmoother(Teuchos::RCP<Smoother> &preSmoo) {
-      PreSmoother_ = preSmoo;
-    }
-    void SetPostSmoother(Teuchos::RCP<Smoother> &postSmoo) {
-      PostSmoother_ = postSmoo;
-    }
-    /*
-    //TODO ==================================================
-    //TODO The following methods still need to be implemented.
-    //TODO ==================================================
-    GetPreSmoother
-    GetPostSmoother
-    GetGraph
-    GetAuxMatrixFunc
-    SetGraph
-    SetAuxMatrixFunc
-    ProjectInterface
-    */
     //@}
-
-
 
   }; //class Level
 

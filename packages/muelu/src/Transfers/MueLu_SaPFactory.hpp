@@ -37,7 +37,7 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,NO, LMO> {
     //! Constructor.
     SaPFactory() {
       Teuchos::OSTab tab(this->out_);
-      *(this->out_) << "SaPFactory: Instantiating a new factory" << std::endl;
+      MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Instantiating a new factory" << std::endl;
     }
 
     //! Destructor.
@@ -48,7 +48,7 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,NO, LMO> {
 
     //! Build method.
     bool Build(Level &fineLevel, Level &coarseLevel) {
-      Teuchos::OSTab tab(this->out_); *(this->out_) << "SaPFactory: Building a prolongator" << std::endl; return true;
+      Teuchos::OSTab tab(this->out_); MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Building a prolongator" << std::endl; return true;
     }
     //@}
 

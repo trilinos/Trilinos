@@ -27,7 +27,17 @@ class RAPFactory : public OperatorFactory<Scalar,LO,GO,NO,LMO> {
 
     //@{ Build methods.
     bool Build(Level &fineLevel, Level &coarseLevel) {
-     Teuchos::OSTab tab(this->out_);  *(this->out_) << "RAPFactory: Building a coarse operator" << std::endl; return true;}
+      Teuchos::OSTab tab(this->getOStream());
+      MueLu_cout(Teuchos::VERB_HIGH) << "RAPFactory: Building a coarse operator" << std::endl;
+#ifdef CTHULHU_USE_EPETRA
+      //CTHULHU_RCP_DYNAMIC_CAST(Epetra_CrsMatrix, A, epA, "Problem casting A to Epetra_CrsMatrix");
+      MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
+#else
+      MueLu_cout(Teuchos::VERB_LOW) << "Tpetra has no matrix-matrix multiply yet" << std::endl;
+#endif
+
+      return true;
+    }
     //@}
 
 
