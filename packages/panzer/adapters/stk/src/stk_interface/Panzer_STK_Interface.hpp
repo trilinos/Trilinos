@@ -11,6 +11,8 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
+#include <stk_mesh/fem/FEMInterface.hpp>
 
 #include <Shards_CellTopology.hpp>
 #include <Shards_CellTopologyData.h>
@@ -218,6 +220,9 @@ public:
    //! get a set of elements sharing multiple nodes
    void getElementsSharingNodes(const std::vector<stk::mesh::EntityId> nodeId,std::vector<stk::mesh::Entity *> & elements) const;
 
+   //! force the mesh to build subcells: edges and faces
+   void buildSubcells();
+
    //! force the mesh to build the subcells of a particular rank
    void buildSubcells(unsigned subcellRank);
 
@@ -277,6 +282,9 @@ public:
      */
    template <typename ArrayT>
    void getElementVertices(std::vector<std::size_t> & localIds, ArrayT & vertices) const;
+
+   const stk::mesh::fem::FEMInterface & getFEMInterface() const 
+   { return *femPtr_; }
 
 public: // static operations
    static const std::string coordsString;
@@ -343,6 +351,8 @@ protected:
 
    int procRank_;
    std::size_t currentLocalId_;
+
+   Teuchos::RCP<stk::mesh::DefaultFEM> femPtr_;
 
    // uses lazy evaluation
    mutable Teuchos::RCP<std::vector<stk::mesh::Entity*> > orderedElementVector_;

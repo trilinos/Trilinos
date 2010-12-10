@@ -7,6 +7,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -99,6 +100,8 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 {
    TEUCHOS_ASSERT(not initialized_);
    // TEUCHOS_ASSERT(dimension_!=0); // no zero dimensional meshes!
+
+   femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
 
    procRank_ = stk::parallel_machine_rank(parallelMach);
 
@@ -356,6 +359,19 @@ stk::mesh::EntityId STK_Interface::getEdgeId(stk::mesh::EntityId n0,stk::mesh::E
   
    // minus one to fix STK index starts at 1 restriction
    return nodeCount*(n0-1)+(n1-1) + 1;  
+}
+
+void STK_Interface::buildSubcells()
+{
+   // const bool modifyState = isModifiable();
+   // if(not modifyState)
+   //    beginModification();
+ 
+   stk::mesh::PartVector emptyPartVector;
+   stk::mesh::create_adjacent_entities(*bulkData_,emptyPartVector);
+
+   // if(not modifyState)
+   //    endModification();
 }
 
 //! force the mesh to build the subcells of a particular rank
