@@ -77,7 +77,7 @@ using Teuchos::ScalarTraits;
 #define SCALARMAX  10
 // These define the number of tests to be run for each individual BLAS routine.
 #define ROTGTESTS  5
-#define ROTTESTS  5
+#define ROTTESTS   5
 #define ASUMTESTS  5
 #define AXPYTESTS  5
 #define COPYTESTS  5
@@ -85,10 +85,10 @@ using Teuchos::ScalarTraits;
 #define IAMAXTESTS 5
 #define NRM2TESTS  5
 #define SCALTESTS  5
-#define GEMVTESTS  0
+#define GEMVTESTS  5
 #define GERTESTS   0
-#define TRMVTESTS  0
-#define GEMMTESTS  0
+#define TRMVTESTS  5
+#define GEMMTESTS  5
 #define SYMMTESTS  0
 #define SYRKTESTS  5
 #define TRMMTESTS  0
