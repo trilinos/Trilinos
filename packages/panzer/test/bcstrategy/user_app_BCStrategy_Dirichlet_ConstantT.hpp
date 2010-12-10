@@ -9,18 +9,20 @@
 #include "Panzer_Basis.hpp"
 
 // Evaluators
-// #include "Panzer_DOF.hpp"
-// #include "Panzer_DOFGradient.hpp"
-// #include "Panzer_GatherSolution.hpp"
-// #include "Panzer_ScatterDirichletResidual.hpp"
-// #include "Panzer_Dirichlet_Constant.hpp"
+#include "Panzer_DOF.hpp"
+#include "Panzer_DOFGradient.hpp"
+#include "Panzer_GatherSolution_Epetra.hpp"
+#include "Panzer_ScatterDirichletResidual_Epetra.hpp"
+#include "Panzer_Dirichlet_Constant.hpp"
 
 // ***********************************************************************
 template <typename EvalT>
 user_app::BCStrategy_Dirichlet_Constant<EvalT>::
 BCStrategy_Dirichlet_Constant(const panzer::BC& bc) :
   panzer::BCStrategy<EvalT>(bc)
-{ }
+{
+  TEUCHOS_ASSERT(this->m_bc.strategy() == "Constant");
+}
 
 // ***********************************************************************
 template <typename EvalT>
@@ -28,7 +30,6 @@ void user_app::BCStrategy_Dirichlet_Constant<EvalT>::
 buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 			   const panzer::PhysicsBlock& pb) const
 {
-  /*
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -65,7 +66,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("DOF Names", field_names);
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::rf::GatherSolution<EvalT,panzer::Traits>(p));
+      rcp(new panzer::GatherSolution_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }
@@ -81,14 +82,13 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     names_map->insert(std::make_pair(bc_name + *i,*i));
   }
 
-  string scatter_field_name = "Dummy Scatter: " + bc_name;
-  
+  string scatter_field_name = "Dummy Scatter: " + bc_name;  
   {
     ParameterList p("Scatter");
     p.set("Scatter Name", scatter_field_name);
     p.set("Basis", basis);
-    p.set("Evaluated Names", residual_names);
-    p.set("Evaluated Map", names_map);
+    p.set("Dependent Names", residual_names);
+    p.set("Dependent Map", names_map);
     
     TEST_FOR_EXCEPTION(!pb.cellData().isSide(), std::logic_error,
 		       "Error - physics block is not a side set!");
@@ -97,10 +97,8 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 	       pb.getBaseCellTopology().getDimension() - 1);
     p.set<int>("Local Side ID", pb.cellData().side());
 
-
-
     RCP< PHX::Evaluator<panzer::Traits> > op = 
-      rcp(new panzer::ScatterDirichletResidual<EvalT,panzer::Traits>(p));
+      rcp(new panzer::ScatterDirichletResidual_Epetra<EvalT,panzer::Traits>(p));
     
     fm.template registerEvaluator<EvalT>(op);
   }
@@ -111,7 +109,7 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
     p.set("Residual Name", (*residual_names)[0]);
     p.set("DOF Name", (*names_map)[(*residual_names)[0]]);
     p.set("Data Layout", basis->functional);
-    p.set("Value", this->m_bc.constantValue());
+    p.set("Value", this->m_bc.params()->get<double>("Value"));
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DirichletConstant<EvalT,panzer::Traits>(p));
@@ -121,10 +119,10 @@ buildAndRegisterEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 
   // Require variables
   {
-
+    using panzer::Dummy;
     PHX::Tag<typename EvalT::ScalarT> tag(scatter_field_name, 
 					  rcp(new PHX::MDALayout<Dummy>(0)));
     fm.template requireField<EvalT>(tag);
   }
-  */
+  
 }

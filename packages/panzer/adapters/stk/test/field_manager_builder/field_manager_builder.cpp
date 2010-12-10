@@ -139,7 +139,7 @@ namespace panzer {
       panzer::BCType neumann = BCT_Dirichlet;
       std::string sideset_id = "left";
       std::string element_block_id = "eblock-0_0";
-      std::string dof_name = "UX";
+      std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
       double value = 5.0;
       Teuchos::ParameterList p;
@@ -153,7 +153,7 @@ namespace panzer {
       panzer::BCType neumann = BCT_Dirichlet;
       std::string sideset_id = "right";
       std::string element_block_id = "eblock-1_0";
-      std::string dof_name = "UX";
+      std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
       double value = 5.0;
       Teuchos::ParameterList p;
@@ -167,7 +167,7 @@ namespace panzer {
       panzer::BCType neumann = BCT_Dirichlet;
       std::string sideset_id = "top";
       std::string element_block_id = "eblock-1_0";
-      std::string dof_name = "UX";
+      std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
       double value = 5.0;
       Teuchos::ParameterList p;
