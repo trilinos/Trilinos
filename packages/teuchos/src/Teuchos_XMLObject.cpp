@@ -140,7 +140,7 @@ bool XMLObject::getRequiredBool(const std::string& name) const
 
 template<>
 void XMLObject::addAttribute<const std::string&>(
-  const std::string& name, const std::string& value) const
+  const std::string& name, const std::string& value)
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addAttribute: XMLObject is empty");

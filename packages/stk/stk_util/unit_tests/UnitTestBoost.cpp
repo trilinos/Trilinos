@@ -6,11 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
 #include <utility>
 #include <iostream>
 #include <cstring>
@@ -20,7 +15,6 @@
 //On the sun, couldn't get '#include <memory>' to work, so we're using the boost
 //form instead...
 #include <boost/tr1/memory.hpp>
-#include <boost/tr1/array.hpp>
 #include <boost/unordered_set.hpp>
 #include <boost/shared_array.hpp>
 
@@ -28,35 +22,15 @@
 
 #include <boost/program_options.hpp>
 
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+
 namespace {
-  char * my_strdup(const char *s) {
-    return std::strcpy(new char[std::strlen(s) + 1], s);
-  }
+  
+char * my_strdup(const char *s) {
+  return std::strcpy(new char[std::strlen(s) + 1], s);
 }
 
-class UnitTestBoost : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE( UnitTestBoost );
-  CPPUNIT_TEST( testUnit );
-  CPPUNIT_TEST_SUITE_END();
-  char *m_argv[2];
-public:
-  UnitTestBoost() : CppUnit::TestCase() {
-    m_argv[0] = my_strdup("UnitTestBoost");
-    m_argv[1] = my_strdup("--compression=1");
-  }
-  ~UnitTestBoost() {
-    delete [] m_argv[0];
-    delete [] m_argv[1];
-  }
-  void setUp() {}
-  void tearDown() {}
-  void testUnit();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION( UnitTestBoost);
-
-
+}
 
 namespace boost {
 
@@ -77,63 +51,73 @@ struct hash<ci_string>
   
 } // namespace boost
 
-
-void UnitTestBoost::testUnit()
+STKUNIT_UNIT_TEST(UnitTestBoost, testUnit)
 {
   {  
     double* d = new double;
     boost::shared_ptr<double> dptr(d);
 
-    CPPUNIT_ASSERT_EQUAL( dptr.get(), d);
+    STKUNIT_ASSERT_EQUAL( dptr.get(), d);
 
     double* d2 = new double[1];
     boost::shared_array<double> dptr2(d2);
 
-    CPPUNIT_ASSERT_EQUAL( dptr2.get(), d2);
+    STKUNIT_ASSERT_EQUAL( dptr2.get(), d2);
   }
   
+  // Had to comment this out because boost/tr1/array.hpp is incompatible with
+  // stk_utest_macros.hpp
+  /*
   boost::array<double,5> my_array;
 
   my_array[0] = 5.0;
 
-  CPPUNIT_ASSERT_EQUAL( my_array[0], 5.0 );
-  CPPUNIT_ASSERT_EQUAL( my_array.size(), (boost::array<double,5>::size_type)5 );
+  STKUNIT_ASSERT_EQUAL( my_array[0], 5.0 );
+  STKUNIT_ASSERT_EQUAL( my_array.size(), (boost::array<double,5>::size_type)5 );
+  */
 
   boost::unordered_set<int> int_set;
 
   int_set.insert(5);
 
-  CPPUNIT_ASSERT_EQUAL( int_set.size(), (boost::unordered_set<int>::size_type)1 );
+  STKUNIT_ASSERT_EQUAL( int_set.size(), (boost::unordered_set<int>::size_type)1 );
 
   boost::unordered_set<ci_string> ci_string_set;
 
   ci_string_set.insert("Test");
   std::pair<boost::unordered_set<ci_string>::iterator, bool> res = ci_string_set.insert("test");
 
-  CPPUNIT_ASSERT_EQUAL( ci_string_set.size(), (boost::unordered_set<ci_string>::size_type)1 );
-  CPPUNIT_ASSERT_EQUAL( res.second, false );
+  STKUNIT_ASSERT_EQUAL( ci_string_set.size(), (boost::unordered_set<ci_string>::size_type)1 );
+  STKUNIT_ASSERT_EQUAL( res.second, false );
 
   ci_string s("This is a test");
 
-  CPPUNIT_ASSERT( s == "this is a test" );
+  STKUNIT_ASSERT( s == "this is a test" );
   
   std::cout << s << std::endl;
   
   namespace po = boost::program_options;
 
-// Declare the supported options.
+  // Declare the supported options.
   po::options_description desc("Allowed options");
   desc.add_options()
     ("help", "produce help message")
     ("compression", po::value<int>(), "set compression level")
     ;
 
-  int argc = sizeof(m_argv)/sizeof(m_argv[0]);
+  char * test_argv[2];
+  test_argv[0] = my_strdup("UnitTestBoost");
+  test_argv[1] = my_strdup("--compression=1");
+
+  int argc = sizeof(test_argv)/sizeof(test_argv[0]);
   
   po::variables_map vm;
-  po::store(po::parse_command_line(argc, m_argv, desc), vm);
+  po::store(po::parse_command_line(argc, test_argv, desc), vm);
   po::notify(vm);    
 
-  CPPUNIT_ASSERT_EQUAL(vm["compression"].as<int>(), 1);
+  STKUNIT_ASSERT_EQUAL(vm["compression"].as<int>(), 1);
+
+  delete [] test_argv[0];
+  delete [] test_argv[1];
 }
 

@@ -47,6 +47,18 @@ namespace Teuchos {
 class ParameterEntryXMLConverterDB {
 public:
 
+  /** \name Public types. */
+  //@{
+
+  /** \brief convience typedef */
+  typedef std::map<std::string, RCP<ParameterEntryXMLConverter> > ConverterMap;
+
+  /** \brief convience typedef */
+  typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
+
+  //@} 
+  
+
   /** \name Modifier Functions */
   //@{
   
@@ -63,6 +75,10 @@ public:
 
   /** \name Getter Functions */
   //@{
+
+  /** \brief Gets the map containing all the ParameterEntry converters. */
+  static ConverterMap& getConverterMap();
+  
 
   /** \brief Get an appropriate ParameterEntryXMLConverter given a ParameterEntry.
    *
@@ -130,21 +146,44 @@ private:
   /** \name Private Members */
   //@{
   
-  /** \brief convience typedef */
-  typedef std::map<std::string, RCP<ParameterEntryXMLConverter> > ConverterMap;
-
-  /** \brief convience typedef */
-  typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
-
-  /** \brief Gets the map containing all the converters. */
-  static ConverterMap& getConverterMap();
-  
   //@}
 
 };
 
 
 } // namespace Teuchos
+
+//
+// Helper Macros
+//
+
+
+/**
+ * Add a converter of type T to map CONVERTER_MAP
+ */
+#define TEUCHOS_ADD_TYPE_CONVERTER(CONVERTER_MAP, T) \
+  \
+  Teuchos::RCP<Teuchos::StandardTemplatedParameterConverter< T > > T##Converter = \
+    Teuchos::rcp(new Teuchos::StandardTemplatedParameterConverter< T >); \
+  (CONVERTER_MAP).insert(Teuchos::ParameterEntryXMLConverterDB::ConverterPair(T##Converter->getTypeAttributeValue(), \
+      T##Converter)); 
+
+/**
+ * Add a converter of type Array<T> to map CONVERTER_MAP
+ */
+#define TEUCHOS_ADD_ARRAYTYPE_CONVERTER(CONVERTER_MAP, T) \
+  Teuchos::RCP<Teuchos::StandardTemplatedParameterConverter< Teuchos::Array< T > > > T##ArrayConverter = \
+    Teuchos::rcp(new Teuchos::StandardTemplatedParameterConverter< Teuchos::Array< T > >); \
+  (CONVERTER_MAP).insert(Teuchos::ParameterEntryXMLConverterDB::ConverterPair(T##ArrayConverter->getTypeAttributeValue(), \
+      T##ArrayConverter)); 
+
+/**
+ * Add both a converter for type T and Array<T> to CONVERTER_MAP
+ */
+#define TEUCHOS_ADD_TYPE_AND_ARRAYTYPE_CONVERTER(CONVERTER_MAP, T) \
+  \
+  TEUCHOS_ADD_TYPE_CONVERTER(CONVERTER_MAP, T); \
+  TEUCHOS_ADD_ARRAYTYPE_CONVERTER(CONVERTER_MAP, T);
 
 
 #endif // TEUCHOS_PARAMETERENTRYXMLCONVERTERDB_HPP

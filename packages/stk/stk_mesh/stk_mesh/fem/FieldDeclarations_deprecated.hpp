@@ -11,8 +11,8 @@
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 namespace stk {
 namespace mesh {
@@ -329,9 +329,9 @@ declare_scalar_int_field_on_all_nodes( MetaData & md , const std::string & n )
 inline
 ScalarField &
 declare_scalar_field_on_all_elements( MetaData & md ,
-                                      const std::string & n )
+                                      const std::string & s )
 {
-  return put_field( md.declare_field<ScalarField>(n) ,
+  return put_field( md.declare_field<ScalarField>(s) ,
                        Element , md.universal_part() );
 }
 
@@ -390,7 +390,7 @@ declare_symmetric_tensor_field_on_all_elements(
 }
 
 } // namespace mesh
-}
+} // namespace stk
 
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 

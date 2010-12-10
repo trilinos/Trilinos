@@ -56,6 +56,8 @@ APPEND_SET(HEADERS
   BelosOutputManager.hpp
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockCGSolMgr.hpp
+  BelosMinresIter.hpp
+  BelosMinresSolMgr.hpp
   BelosPseudoBlockGmresIter.hpp
   BelosPseudoBlockGmresSolMgr.hpp
   BelosRCGIter.hpp
@@ -88,12 +90,14 @@ APPEND_SET(SOURCES
 # COMP_H
 APPEND_SET(HEADERS
   BelosBlockCGSolMgr.hpp
+  BelosMinresSolMgr.hpp
   BelosBlockGmresSolMgr.hpp
   BelosPseudoBlockCGSolMgr.hpp
   BelosPseudoBlockGmresSolMgr.hpp
   BelosTFQMRSolMgr.hpp
   BelosCGIter.hpp
   BelosBlockCGIter.hpp
+  BelosMinresIter.hpp
   BelosBlockGmresIter.hpp
   BelosPseudoBlockCGIter.hpp
   BelosPseudoBlockGmresIter.hpp

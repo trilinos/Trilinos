@@ -18,7 +18,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
@@ -29,10 +28,10 @@ namespace fixtures {
 QuadFixture::QuadFixture( stk::ParallelMachine pm ,
                           unsigned nx , unsigned ny )
   : m_spatial_dimension(2),
-    m_meta_data( TopologicalMetaData::entity_rank_names(m_spatial_dimension) ),
+    m_meta_data( fem::entity_rank_names(m_spatial_dimension) ),
     m_bulk_data( m_meta_data , pm ),
-    m_top_data( m_meta_data, m_spatial_dimension ),
-    m_quad_part( m_top_data.declare_part<shards::Quadrilateral<4> >("quad_part" ) ),
+    m_fem(m_meta_data, m_spatial_dimension),
+    m_quad_part( declare_part<shards::Quadrilateral<4> >(m_meta_data, "quad_part" ) ),
     m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") ),
     m_coord_gather_field( m_meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
     m_nx( nx ),
@@ -44,7 +43,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   //put coord-field on all nodes:
   put_field(
       m_coord_field,
-      m_top_data.node_rank,
+      fem::NODE_RANK,
       m_meta_data.universal_part(),
       m_spatial_dimension
       );
@@ -52,7 +51,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   //put coord-gather-field on all elements:
   put_field(
       m_coord_gather_field,
-      m_top_data.element_rank,
+      fem::element_rank(m_fem),
       m_meta_data.universal_part(),
       nodes_per_elem
       );
@@ -61,7 +60,7 @@ QuadFixture::QuadFixture( stk::ParallelMachine pm ,
   // to coord-field of the element's nodes
   m_meta_data.declare_field_relation(
       m_coord_gather_field,
-      element_node_stencil<Quad4>,
+      fem::element_node_stencil<Quad4, 2>,
       m_coord_field
       );
 }
@@ -137,8 +136,7 @@ void QuadFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proc
 
       stk::mesh::declare_element( m_bulk_data, m_quad_part, elem_id( ix , iy ) , elem_nodes);
       for (unsigned i = 0; i<4; ++i) {
-        stk::mesh::Entity * const node =
-          m_bulk_data.get_entity( m_top_data.node_rank , elem_nodes[i] );
+        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::NODE_RANK , elem_nodes[i] );
 
         ThrowRequireMsg( node != NULL,
           "This process should know about the nodes that make up its element");

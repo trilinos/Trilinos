@@ -56,7 +56,7 @@ using Teuchos::InvalidArrayStringRepresentation;
 TEUCHOS_UNIT_TEST( Array, TypeNameTraits )
 {
   TEST_EQUALITY(Teuchos::TypeNameTraits<Array<double> >::name(),
-    std::string("Array<double>"));
+    std::string("Array(double)"));
 }
 
 

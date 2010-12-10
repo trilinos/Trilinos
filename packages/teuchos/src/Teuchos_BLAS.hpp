@@ -206,7 +206,11 @@ namespace Teuchos
     template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
     void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const;
 
-    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*B+beta*C or \c C \c <- \c alpha*B*op(A)+beta*C where \c op(A) is an unit/non-unit, upper/lower triangular matrix and \c B is a general matrix.
+    //! Performs the symmetric rank k operation: \c C <- \c alpha*A*A'+beta*C or \c C <- \c alpha*A'*A+beta*C, where \c alpha and \c beta are scalars, \c C is an \c n by \c n symmetric matrix and \c A is an \c n by \c k matrix in the first case or \c k by \c n matrix in the second case.
+    template <typename alpha_type, typename A_type, typename beta_type>
+    void SYRK(EUplo uplo, ETransp trans, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const beta_type beta, ScalarType* C, const OrdinalType ldc) const;
+
+    //! Performs the matrix-matrix operation: \c B \c <- \c alpha*op(A)*B or \c B \c <- \c alpha*B*op(A) where \c op(A) is an unit/non-unit, upper/lower triangular matrix and \c B is a general matrix.
     template <typename alpha_type, typename A_type>
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
                 const alpha_type alpha, const A_type* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const;
@@ -285,6 +289,7 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void DefaultBLASImpl<OrdinalType,ScalarType>::ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const
   {
+    OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     ScalarType sconj = Teuchos::ScalarTraits<ScalarType>::conjugate(*s);
     if (n <= 0) return;
     if (incx==1 && incy==1) {
@@ -296,8 +301,8 @@ namespace Teuchos
     }
     else {
       OrdinalType ix = 0, iy = 0;
-      if (incx < 0) ix = (-n+1)*incx;
-      if (incy < 0) iy = (-n+1)*incy;
+      if (incx < izero) ix = (-n+1)*incx;
+      if (incy < izero) iy = (-n+1)*incy;
       for(OrdinalType i=0; i<n; ++i) {
         ScalarType temp = *c*dx[ix] + sconj*dy[iy];
         dy[iy] = *c*dy[iy] - sconj*dx[ix];
@@ -893,11 +898,11 @@ namespace Teuchos
       BadArgument = true;
     }
     if( lda < NRowA ) { 
-      std::cout << "BLAS::GEMM Error: LDA < MAX(1,M)"<< std::endl;	    
+      std::cout << "BLAS::GEMM Error: LDA < "<<NRowA<<std::endl;	    
       BadArgument = true;
     }
     if( ldb < NRowB ) { 
-      std::cout << "BLAS::GEMM Error: LDB < MAX(1,K)"<< std::endl;	    
+      std::cout << "BLAS::GEMM Error: LDB < "<<NRowB<<std::endl;	    
       BadArgument = true;
     }
      if( ldc < m ) { 
@@ -1029,20 +1034,20 @@ namespace Teuchos
     
     // Quick return.
     if ( (m==izero) || (n==izero) || ( (alpha==alpha_zero)&&(beta==beta_one) ) ) { return; }
-    if( m < 0 ) { 
+    if( m < izero ) { 
       std::cout << "BLAS::SYMM Error: M == "<< m << std::endl;
       BadArgument = true; }
-    if( n < 0 ) {
+    if( n < izero ) {
       std::cout << "BLAS::SYMM Error: N == "<< n << std::endl;
       BadArgument = true; }
     if( lda < NRowA ) {
-      std::cout << "BLAS::SYMM Error: LDA == "<<lda<<std::endl;
+      std::cout << "BLAS::SYMM Error: LDA < "<<NRowA<<std::endl;
       BadArgument = true; }
     if( ldb < m ) {
-      std::cout << "BLAS::SYMM Error: LDB == "<<ldb<<std::endl;
+      std::cout << "BLAS::SYMM Error: LDB < MAX(1,M)"<<std::endl;
       BadArgument = true; }
     if( ldc < m ) {
-      std::cout << "BLAS::SYMM Error: LDC == "<<ldc<<std::endl;
+      std::cout << "BLAS::SYMM Error: LDC < MAX(1,M)"<<std::endl;
       BadArgument = true; }
 
     if(!BadArgument) {
@@ -1140,6 +1145,177 @@ namespace Teuchos
       } // end if (ESideChar[side]=='L') ...
     } // end if(!BadArgument) ...
 } // end SYMM
+
+  template<typename OrdinalType, typename ScalarType>
+  template <typename alpha_type, typename A_type, typename beta_type>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::SYRK(EUplo uplo, ETransp trans, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const beta_type beta, ScalarType* C, const OrdinalType ldc) const
+  {
+    typedef TypeNameTraits<OrdinalType> OTNT;
+    typedef TypeNameTraits<ScalarType> STNT;
+
+    OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
+    alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
+    beta_type beta_zero = ScalarTraits<beta_type>::zero();
+    beta_type beta_one = ScalarTraits<beta_type>::one();
+    A_type temp, A_zero = ScalarTraits<A_type>::zero();
+    ScalarType C_zero = ScalarTraits<ScalarType>::zero();
+    OrdinalType i, j, l, NRowA = n;
+    bool BadArgument = false;
+    bool Upper = (EUploChar[uplo] == 'U');
+
+    TEST_FOR_EXCEPTION(
+      Teuchos::ScalarTraits<ScalarType>::isComplex
+      && (trans == CONJ_TRANS),
+      std::logic_error,
+            "Teuchos::BLAS<"<<OTNT::name()<<","<<STNT::name()<<">::SYRK()"
+            " does not support CONJ_TRANS for complex data types."
+      );
+
+    // Change dimensions of A matrix is transposed
+    if( !(ETranspChar[trans]=='N') ) {
+      NRowA = k;
+    }
+
+    // Quick return.
+    if ( n==izero ) { return; }
+    if ( ( (alpha==alpha_zero) || (k==izero) )  && (beta==beta_one) ) { return; }
+    if( n < izero ) {
+      std::cout << "BLAS::SYRK Error: N == "<< n <<std::endl;
+      BadArgument = true; }
+    if( k < izero ) {
+      std::cout << "BLAS::SYRK Error: K == "<< k <<std::endl;
+      BadArgument = true; }
+    if( lda < NRowA ) {
+      std::cout << "BLAS::SYRK Error: LDA < "<<NRowA<<std::endl;
+      BadArgument = true; }
+    if( ldc < n ) {
+      std::cout << "BLAS::SYRK Error: LDC < MAX(1,N)"<<std::endl;
+      BadArgument = true; }
+
+    // Scale C when alpha is zero
+    if (alpha == alpha_zero) {
+      if (Upper) {
+        if (beta==beta_zero) {      
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<=j; i++) {
+	      C[j*ldc + i] = C_zero;
+            }
+          }
+        } 
+        else {
+          for (j=izero; j<n; j++) {
+            for (i=izero; i<=j; i++) {
+              C[j*ldc + i] *= beta;
+            }
+          }
+        }
+      }
+      else {
+        if (beta==beta_zero) {      
+          for (j=izero; j<n; j++) {
+            for (i=j; i<n; i++) {
+	      C[j*ldc + i] = C_zero;
+            }
+          }
+        } 
+        else {
+          for (j=izero; j<n; j++) {
+            for (i=j; i<n; i++) {
+              C[j*ldc + i] *= beta;
+            }
+          }
+        }
+      }
+      return;
+    }
+
+    // Now we can start the computation
+
+    if ( ETranspChar[trans]=='N' ) {
+
+      // Form C <- alpha*A*A' + beta*C
+      if (Upper) {
+        for (j=izero; j<n; j++) {
+          if (beta==beta_zero) {
+            for (i=izero; i<=j; i++) {
+              C[j*ldc + i] = C_zero;
+            }
+          }
+          else if (beta!=beta_one) {
+            for (i=izero; i<=j; i++) {
+              C[j*ldc + i] *= beta;
+            }
+          }
+          for (l=izero; l<k; l++) {
+            if (A[l*lda + j] != A_zero) {
+              temp = alpha*A[l*lda + j];
+              for (i = izero; i <=j; i++) {
+                C[j*ldc + i] += temp*A[l*lda + i];
+              }
+            }
+          }
+        }
+      }
+      else {
+        for (j=izero; j<n; j++) {
+          if (beta==beta_zero) {
+            for (i=j; i<n; i++) {
+              C[j*ldc + i] = C_zero;
+            }
+          }
+          else if (beta!=beta_one) {
+            for (i=j; i<n; i++) {
+              C[j*ldc + i] *= beta;
+            }
+          }
+          for (l=izero; l<k; l++) {
+            if (A[l*lda + j] != A_zero) {
+              temp = alpha*A[l*lda + j];
+              for (i=j; i<n; i++) {
+                C[j*ldc + i] += temp*A[l*lda + i];
+              }
+            }
+          }
+        }
+      }
+    }
+    else {
+
+      // Form C <- alpha*A'*A + beta*C
+      if (Upper) {
+        for (j=izero; j<n; j++) {
+          for (i=izero; i<=j; i++) {
+            temp = A_zero;
+            for (l=izero; l<k; l++) {
+              temp += A[i*lda + l]*A[j*lda + l];
+            }
+            if (beta==beta_zero) {
+              C[j*ldc + i] = alpha*temp;
+            }
+            else {
+              C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
+            }
+          }
+        }
+      }
+      else {
+        for (j=izero; j<n; j++) {
+          for (i=j; i<n; i++) {
+            temp = A_zero;
+            for (l=izero; l<k; ++l) {
+              temp += A[i*lda + l]*A[j*lda + l];
+            }
+            if (beta==beta_zero) {
+              C[j*ldc + i] = alpha*temp;
+            }
+            else {
+              C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
+            }
+          }
+        }
+      }
+    }  
+  }
   
   template<typename OrdinalType, typename ScalarType>
   template <typename alpha_type, typename A_type>
@@ -1165,17 +1341,17 @@ namespace Teuchos
 
     // Quick return.
     if (n==izero || m==izero) { return; }
-    if( m < 0 ) {
+    if( m < izero ) {
       std::cout << "BLAS::TRMM Error: M == "<< m <<std::endl;
       BadArgument = true; }
-    if( n < 0 ) {
+    if( n < izero ) {
       std::cout << "BLAS::TRMM Error: N == "<< n <<std::endl;
       BadArgument = true; }
     if( lda < NRowA ) {
-      std::cout << "BLAS::TRMM Error: LDA == "<< lda << std::endl;
+      std::cout << "BLAS::TRMM Error: LDA < "<<NRowA<<std::endl;
       BadArgument = true; }
     if( ldb < m ) {
-      std::cout << "BLAS::TRMM Error: M == "<< ldb << std::endl;
+      std::cout << "BLAS::TRMM Error: LDB < MAX(1,M)"<<std::endl;
       BadArgument = true; }
 
     if(!BadArgument) {
@@ -1376,10 +1552,10 @@ namespace Teuchos
       std::cout << "BLAS::TRSM Error: N == "<<n<<std::endl;
       BadArgument = true; }
     if( lda < NRowA ) {
-      std::cout << "BLAS::TRSM Error: LDA == "<<lda<<std::endl;
+      std::cout << "BLAS::TRSM Error: LDA < "<<NRowA<<std::endl;
       BadArgument = true; }
     if( ldb < m ) {
-      std::cout << "BLAS::TRSM Error: LDB == "<<ldb<<std::endl;
+      std::cout << "BLAS::TRSM Error: LDB < MAX(1,M)"<<std::endl;
       BadArgument = true; }
 
     if(!BadArgument)
@@ -1629,6 +1805,7 @@ namespace Teuchos
     void GER(const int m, const int n, const float alpha, const float* x, const int incx, const float* y, const int incy, float* A, const int lda) const;
     void GEMM(ETransp transa, ETransp transb, const int m, const int n, const int k, const float alpha, const float* A, const int lda, const float* B, const int ldb, const float beta, float* C, const int ldc) const;
     void SYMM(ESide side, EUplo uplo, const int m, const int n, const float alpha, const float* A, const int lda, const float *B, const int ldb, const float beta, float *C, const int ldc) const;
+    void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const float alpha, const float* A, const int lda, const float beta, float* C, const int ldc) const;
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const float alpha, const float* A, const int lda, float* B, const int ldb) const;
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const float alpha, const float* A, const int lda, float* B, const int ldb) const;
   };
@@ -1656,6 +1833,7 @@ namespace Teuchos
     void GER(const int m, const int n, const double alpha, const double* x, const int incx, const double* y, const int incy, double* A, const int lda) const;
     void GEMM(ETransp transa, ETransp transb, const int m, const int n, const int k, const double alpha, const double* A, const int lda, const double* B, const int ldb, const double beta, double* C, const int ldc) const;
     void SYMM(ESide side, EUplo uplo, const int m, const int n, const double alpha, const double* A, const int lda, const double *B, const int ldb, const double beta, double *C, const int ldc) const;
+    void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const double alpha, const double* A, const int lda, const double beta, double* C, const int ldc) const;
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const double alpha, const double* A, const int lda, double* B, const int ldb) const;
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const double alpha, const double* A, const int lda, double* B, const int ldb) const;
   };
@@ -1683,6 +1861,7 @@ namespace Teuchos
     void GER(const int m, const int n, const std::complex<float> alpha, const std::complex<float>* x, const int incx, const std::complex<float>* y, const int incy, std::complex<float>* A, const int lda) const;
     void GEMM(ETransp transa, ETransp transb, const int m, const int n, const int k, const std::complex<float> alpha, const std::complex<float>* A, const int lda, const std::complex<float>* B, const int ldb, const std::complex<float> beta, std::complex<float>* C, const int ldc) const;
     void SYMM(ESide side, EUplo uplo, const int m, const int n, const std::complex<float> alpha, const std::complex<float>* A, const int lda, const std::complex<float> *B, const int ldb, const std::complex<float> beta, std::complex<float> *C, const int ldc) const;
+    void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const std::complex<float> alpha, const std::complex<float>* A, const int lda, const std::complex<float> beta, std::complex<float>* C, const int ldc) const;
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<float> alpha, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb) const;
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<float> alpha, const std::complex<float>* A, const int lda, std::complex<float>* B, const int ldb) const;
   };
@@ -1710,6 +1889,7 @@ namespace Teuchos
     void GER(const int m, const int n, const std::complex<double> alpha, const std::complex<double>* x, const int incx, const std::complex<double>* y, const int incy, std::complex<double>* A, const int lda) const;
     void GEMM(ETransp transa, ETransp transb, const int m, const int n, const int k, const std::complex<double> alpha, const std::complex<double>* A, const int lda, const std::complex<double>* B, const int ldb, const std::complex<double> beta, std::complex<double>* C, const int ldc) const;
     void SYMM(ESide side, EUplo uplo, const int m, const int n, const std::complex<double> alpha, const std::complex<double>* A, const int lda, const std::complex<double> *B, const int ldb, const std::complex<double> beta, std::complex<double> *C, const int ldc) const;
+    void SYRK(EUplo uplo, ETransp trans, const int n, const int k, const std::complex<double> alpha, const std::complex<double>* A, const int lda, const std::complex<double> beta, std::complex<double>* C, const int ldc) const;
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<double> alpha, const std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb) const;
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const int m, const int n, const std::complex<double> alpha, const std::complex<double>* A, const int lda, std::complex<double>* B, const int ldb) const;
   };

@@ -18,13 +18,18 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/FEMInterface.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/FieldDeclarations.hpp>
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
 // #include <stk_search/CoarseSearch.hpp>
+
+using stk::mesh::fem::NODE_RANK;
 
 #define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
 
@@ -36,27 +41,27 @@ namespace {
 void build_node_axis_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
                           stk::mesh::EntityRank type,
-                          stk::mesh::VectorField *coordinates,
+                          CartesianField *coordinates,
                           std::vector<AxisAlignedBoundingBox3D> &box_vector,
                           const stk::search_util::Op &op);
 
 void build_axis_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
                      stk::mesh::EntityRank type,
-                     stk::mesh::VectorField *coordinates,
+                     CartesianField *coordinates,
                      std::vector<AxisAlignedBoundingBox3D> &box_vector,
                      const stk::search_util::Op &op);
 
 void build_node_cent_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
                           stk::mesh::EntityRank type,
-                          stk::mesh::VectorField *coordinates,
+                          CartesianField *coordinates,
                           std::vector<PointBoundingBox3D> &box_vector);
 
 void build_cent_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
                      stk::mesh::EntityRank type,
-                     stk::mesh::VectorField *coordinates,
+                     CartesianField *coordinates,
                      std::vector<PointBoundingBox3D> &box_vector);
 }
 
@@ -65,7 +70,7 @@ namespace search_util {
 
 // The adjust_box should be implemented as an Op rather than a scale and offset parameter.
 void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRank type,
-                             stk::mesh::VectorField *coordinates,
+                             CartesianField *coordinates,
                              std::vector<AxisAlignedBoundingBox3D> &box_vector,
                              bool use_universal_part,
                              const stk::search_util::Op &op)
@@ -77,11 +82,17 @@ void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRa
   // the model.
 
   const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const stk::mesh::EntityRank side_rank = stk::mesh::Face;
+#else
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
+  const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 
-  if (use_universal_part && type == stk::mesh::Node) {
+  if (use_universal_part && type == NODE_RANK) {
     stk::mesh::Part &universal = meta_data.universal_part();
     build_node_axis_bbox(universal, bulk_data, type, coordinates, box_vector, op);
-  } else if (use_universal_part && type == stk::mesh::Face) {
+  } else if (use_universal_part && type == side_rank) {
     stk::mesh::Part *skin = meta_data.get_part("skin");
     build_axis_bbox(*skin, bulk_data, type, coordinates, box_vector, op);
   } else {
@@ -90,10 +101,10 @@ void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRa
           ip != all_parts.end(); ++ip ) {
       stk::mesh::Part * const part = *ip;
       if ( part->primary_entity_rank() == type ) {
-        if (type == stk::mesh::Node) {
+        if (type == NODE_RANK) {
           build_node_axis_bbox(*part, bulk_data, type, coordinates, box_vector, op);
         } else {
-          if (type == stk::mesh::Face && part->name() == "skin")
+          if (type == side_rank && part->name() == "skin")
             continue;
           build_axis_bbox(*part, bulk_data, type, coordinates, box_vector, op);
         }
@@ -103,7 +114,7 @@ void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRa
 }
 
 void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank type,
-                         stk::mesh::VectorField *coordinates,
+                         CartesianField *coordinates,
                          std::vector<PointBoundingBox3D> &box_vector,
                          bool use_universal_part)
 {
@@ -113,10 +124,18 @@ void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank 
 
   // The box for this case is the centroid of each entity in the mesh...
   const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
-  if (use_universal_part && type == stk::mesh::Node) {
+
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+  const stk::mesh::EntityRank side_rank = stk::mesh::Face;
+#else
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
+  const stk::mesh::EntityRank side_rank = stk::mesh::fem::side_rank(fem);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+
+  if (use_universal_part && type == NODE_RANK) {
     stk::mesh::Part &universal = meta_data.universal_part();
     build_node_cent_bbox(universal, bulk_data, type, coordinates, box_vector);
-  } else if (use_universal_part && type == stk::mesh::Face) {
+  } else if (use_universal_part && type == side_rank) {
     stk::mesh::Part *skin = meta_data.get_part("skin");
     build_cent_bbox(*skin, bulk_data, type, coordinates, box_vector);
   } else {
@@ -125,10 +144,10 @@ void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank 
           ip != all_parts.end(); ++ip ) {
       stk::mesh::Part * const part = *ip;
       if ( part->primary_entity_rank() == type ) {
-        if (type == stk::mesh::Node) {
+        if (type == NODE_RANK) {
           build_node_cent_bbox(*part, bulk_data, type, coordinates, box_vector);
         } else {
-          if (type == stk::mesh::Face && part->name() == "skin")
+          if (type == side_rank && part->name() == "skin")
             continue;
           build_cent_bbox(*part, bulk_data, type, coordinates, box_vector);
         }
@@ -187,7 +206,7 @@ namespace {
 void build_node_axis_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
                           stk::mesh::EntityRank type,
-                          stk::mesh::VectorField *coordinates,
+                          CartesianField *coordinates,
                           std::vector<AxisAlignedBoundingBox3D> &box_vector,
                           const stk::search_util::Op &op)
 {
@@ -215,13 +234,17 @@ void build_node_axis_bbox(stk::mesh::Part &part,
 void build_axis_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
                      stk::mesh::EntityRank type,
-                     stk::mesh::VectorField *coordinates,
+                     CartesianField *coordinates,
                      std::vector<AxisAlignedBoundingBox3D> &box_vector,
                      const stk::search_util::Op &op)
 {
   const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const cell_topo = stk::mesh::get_cell_topology(part);
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(part).getCellTopologyData();
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
   if (cell_topo == NULL)
     return;
 
@@ -237,7 +260,7 @@ void build_axis_bbox(stk::mesh::Part &part,
     ct_assert(sizeof(domain.key.ident) >= sizeof(stk::mesh::EntityKey));
     domain.key.ident = entities[i]->key();
 
-    const stk::mesh::PairIterRelation entity_nodes = entities[i]->relations(stk::mesh::Node);
+    const stk::mesh::PairIterRelation entity_nodes = entities[i]->relations(NODE_RANK);
     assert(static_cast<int>(entity_nodes.size()) == nodes_per_entity);
 
     double *fld_data = (double*)stk::mesh::field_data(*coordinates, *entity_nodes[0].entity());
@@ -273,7 +296,7 @@ void build_axis_bbox(stk::mesh::Part &part,
 void build_node_cent_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
                           stk::mesh::EntityRank type,
-                          stk::mesh::VectorField *coordinates,
+                          CartesianField *coordinates,
                           std::vector<PointBoundingBox3D> &box_vector)
 {
   const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
@@ -299,7 +322,7 @@ void build_node_cent_bbox(stk::mesh::Part &part,
 void build_cent_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
                      stk::mesh::EntityRank type,
-                     stk::mesh::VectorField *coordinates,
+                     CartesianField *coordinates,
                      std::vector<PointBoundingBox3D> &box_vector)
 {
   const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
@@ -318,7 +341,7 @@ void build_cent_bbox(stk::mesh::Part &part,
     p.center[1] = 0;
     p.center[2] = 0;
 
-    const stk::mesh::PairIterRelation entity_nodes = entities[i]->relations(stk::mesh::Node);
+    const stk::mesh::PairIterRelation entity_nodes = entities[i]->relations(NODE_RANK);
     const size_t nodes_per_entity = entity_nodes.size();
     for (size_t j = 0; j < nodes_per_entity; ++j) {
       double *fld_data = (double*)stk::mesh::field_data(*coordinates, *entity_nodes[j].entity());

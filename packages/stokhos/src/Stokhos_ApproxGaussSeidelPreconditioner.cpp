@@ -29,16 +29,21 @@
 // @HEADER
 
 #include "Stokhos_ApproxGaussSeidelPreconditioner.hpp"
-#include "Epetra_config.h"
 #include "Teuchos_TimeMonitor.hpp"
 
 Stokhos::ApproxGaussSeidelPreconditioner::
 ApproxGaussSeidelPreconditioner(
+  const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
   const Teuchos::RCP<const Epetra_Map>& base_map_,
   const Teuchos::RCP<const Epetra_Map>& sg_map_,
   const Teuchos::RCP<Stokhos::PreconditionerFactory>& prec_factory_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   label("Stokhos Approximate Gauss-Seidel Preconditioner"),
+  sg_comm(sg_comm_),
+  sg_basis(sg_basis_),
+  epetraCijk(epetraCijk_),
   base_map(base_map_),
   sg_map(sg_map_),
   prec_factory(prec_factory_),
@@ -46,12 +51,14 @@ ApproxGaussSeidelPreconditioner(
   useTranspose(false),
   sg_op(),
   sg_poly(),
-  Cijk(),
+  Cijk(epetraCijk->getParallelCijk()),
+  scale_op(true),
   symmetric(false),
   only_use_linear(true),
   mat_vec_tmp(),
   rhs_block()
 {
+  scale_op = params_->get("Scale Operator by Inverse Basis Norms", true);
   symmetric = params_->get("Symmetric Gauss-Seidel", false);
   only_use_linear = params_->get("Only Use Linear Terms", true);
 }
@@ -72,7 +79,6 @@ setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op_,
   label = std::string("Stokhos Approximate Gauss-Seidel Preconditioner:\n") + 
     std::string("		***** ") + 
     std::string(mean_prec->Label());
-  Cijk = sg_op->getTripleProduct();
 }
 
 int 
@@ -121,15 +127,16 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 
   result_block.PutScalar(0.0);
 
-  int sz = sg_poly->basis()->size();
   int k_limit = sg_poly->size();
   if (only_use_linear)
     k_limit = sg_poly->basis()->dimension() + 1;
-  const Teuchos::Array<double>& norms = sg_poly->basis()->norm_squared();
+  const Teuchos::Array<double>& norms = sg_basis->norm_squared();
 
   rhs_block->Update(1.0, input_block, 0.0);
 
-  for (int i=0; i<sz; i++) {
+  for (Cijk_type::i_iterator i_it=Cijk->i_begin(); 
+       i_it!=Cijk->i_end(); ++i_it) {
+    int i = index(i_it);
 
     Teuchos::RCP<Epetra_MultiVector> res_i = result_block.GetBlock(i);
     {
@@ -140,17 +147,22 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
     }
 
-    for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i);
-	 k_it != Cijk->k_end(i); ++k_it) {
+    int i_gid = epetraCijk->GRID(i);
+    for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i_it);
+	 k_it != Cijk->k_end(i_it); ++k_it) {
       int k = index(k_it);
       if (k!=0 && k<k_limit) {
 	bool do_mat_vec = false;
 	for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
 	     j_it != Cijk->j_end(k_it); ++j_it) {
 	  int j = index(j_it);
-	  if (j > i) {
-	    do_mat_vec = true;
-	    break;
+	  int j_gid = epetraCijk->GCID(j);
+	  if (j_gid > i_gid) {
+	    bool on_proc = epetraCijk->myGRID(j_gid);
+	    if (on_proc) {
+	      do_mat_vec = true;
+	      break;
+	    }
 	  }
 	}
 	if (do_mat_vec) {
@@ -158,9 +170,15 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 	  for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
 	       j_it != Cijk->j_end(k_it); ++j_it) {
 	    int j = index(j_it);
+	    int j_gid = epetraCijk->GCID(j);
 	    double c = value(j_it);
-	    if (j > i) {
-	      rhs_block->GetBlock(j)->Update(-1.0*c/norms[j], *mat_vec_tmp, 1.0);
+	    if (scale_op)
+	      c /= norms[j_gid];
+	    if (j_gid > i_gid) {
+	      bool on_proc = epetraCijk->myGRID(j_gid);
+	      if (on_proc) {
+		rhs_block->GetBlock(j)->Update(-c, *mat_vec_tmp, 1.0);
+	      }
 	    }
 	  }
 	}
@@ -171,7 +189,9 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   // For symmetric Gauss-Seidel
   if (symmetric) {
 
-    for (int i=sz-1; i>=0; --i) {
+    for (Cijk_type::i_reverse_iterator i_it= Cijk->i_rbegin(); 
+       i_it!=Cijk->i_rend(); ++i_it) {
+      int i = index(i_it);
        
       Teuchos::RCP<Epetra_MultiVector> res_i = result_block.GetBlock(i);
       {
@@ -182,17 +202,22 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 	mean_prec->ApplyInverse(*(rhs_block->GetBlock(i)), *res_i);
       }
 
-      for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i);
-	   k_it != Cijk->k_end(i); ++k_it) {
+      int i_gid = epetraCijk->GRID(i);
+      for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i_it);
+	   k_it != Cijk->k_end(i_it); ++k_it) {
 	int k = index(k_it);
 	if (k!=0 && k<k_limit) {
 	  bool do_mat_vec = false;
 	  for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
 	       j_it != Cijk->j_end(k_it); ++j_it) {
 	    int j = index(j_it);
-	    if (j < i) {
-	      do_mat_vec = true;
-	      break;
+	    int j_gid = epetraCijk->GCID(j);
+	    if (j_gid < i_gid) {
+	      bool on_proc = epetraCijk->myGRID(j_gid);
+	      if (on_proc) {
+		do_mat_vec = true;
+		break;
+	      }
 	    }
 	  }
 	  if (do_mat_vec) {
@@ -200,9 +225,15 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 	    for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
 		 j_it != Cijk->j_end(k_it); ++j_it) {
 	      int j = index(j_it);
+	      int j_gid = epetraCijk->GCID(j);
 	      double c = value(j_it);
-	      if (j < i) {
-		rhs_block->GetBlock(j)->Update(-1.0*c/norms[j], *mat_vec_tmp, 1.0);
+	      if (scale_op)
+		c /= norms[j_gid];
+	      if (j_gid < i_gid) {
+		bool on_proc = epetraCijk->myGRID(j_gid);
+		if (on_proc) {
+		  rhs_block->GetBlock(j)->Update(-c, *mat_vec_tmp, 1.0);
+		}
 	      }
 	    }
 	  }
@@ -250,7 +281,7 @@ const Epetra_Comm &
 Stokhos::ApproxGaussSeidelPreconditioner::
 Comm() const
 {
-  return base_map->Comm();
+  return *sg_comm;
 }
 const Epetra_Map& 
 Stokhos::ApproxGaussSeidelPreconditioner::

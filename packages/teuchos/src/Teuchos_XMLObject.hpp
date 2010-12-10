@@ -177,7 +177,7 @@ public:
   /** \brief Lookup whether or not Doubles are allowed.
    */
   template<class T>
-  void addAttribute(const std::string& name, T value) const{
+  void addAttribute(const std::string& name, T value) {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addAttribute: XMLObject is empty");
   ptr_->addAttribute(name, Teuchos::toString(value));
@@ -219,7 +219,7 @@ template<>
 std::string XMLObject::getRequired<std::string>(const std::string& name) const;
 
 template<>
-void XMLObject::addAttribute(const std::string& name, const std::string& value) const;
+void XMLObject::addAttribute(const std::string& name, const std::string& value);
 
 
 /** \brief Write XMLObject to \c os stream.

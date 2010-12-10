@@ -215,22 +215,13 @@ void throw_field_data_array( const FieldBase & f , unsigned R )
 //----------------------------------------------------------------------
 
 Bucket::Bucket( BulkData        & arg_mesh ,
-                unsigned          arg_entity_rank ,
+                EntityRank        arg_entity_rank ,
                 const unsigned  * arg_key ,
                 size_t            arg_alloc_size ,
                 size_t            arg_capacity ,
                 impl::BucketImpl::DataMap * arg_field_map ,
                 Entity         ** arg_entity_array )
 : m_bucketImpl( arg_mesh, arg_entity_rank, arg_key, arg_alloc_size, arg_capacity, arg_field_map, arg_entity_array )
-  //m_mesh( arg_mesh ),
-  //m_entity_rank( arg_entity_rank ),
-  //m_key( arg_key ),
-  //m_alloc_size( arg_alloc_size ),
-  //m_capacity( arg_capacity ),
-  //m_size( 0 ),
-  //m_bucket(),
-  //m_field_map( arg_field_map ),
-  //m_entities( arg_entity_array )
 {}
 
 

@@ -10,9 +10,12 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <Shards_BasicTopologies.hpp>
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
+#endif /* ! SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -25,8 +28,11 @@
 
 #include <unit_tests/UnitTest_helpers.hpp>
 
+using stk::mesh::fem::NODE_RANK;
+
 namespace stk_linsys_unit_tests {
 
+static const size_t spatial_dimension = 3;
 
 //------------- here is the DofMapper unit-test... -----------------------
 
@@ -36,7 +42,14 @@ void testDofMapper( MPI_Comm comm )
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  const stk::mesh::EntityRank element_rank = stk::mesh::Element;
+#else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk::mesh::DefaultFEM fem(meta_data, spatial_dimension);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+#endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
   fill_utest_mesh_meta_data( meta_data );
@@ -46,14 +59,13 @@ void testDofMapper( MPI_Comm comm )
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
 
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Element], (unsigned)4 );
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Node],    (unsigned)20 );
+  STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
+  STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
   std::vector<stk::mesh::Entity*> nodes;
-  stk::mesh::get_entities(bulk_data, stk::mesh::Node, nodes);
+  stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
-  stk::mesh::ScalarField* temperature_field =
-      meta_data.get_field<stk::mesh::ScalarField>("temperature");
+  ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
   //Now we're ready to test the DofMapper:
 
@@ -62,7 +74,7 @@ void testDofMapper( MPI_Comm comm )
   const stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part();
 
   dof_mapper.add_dof_mappings(bulk_data, select_used,
-                              stk::mesh::Node, *temperature_field);
+                              NODE_RANK, *temperature_field);
 
   stk::mesh::EntityRank ent_type;
   stk::mesh::EntityId ent_id;
@@ -86,13 +98,13 @@ void testDofMapper( MPI_Comm comm )
 
   //test the get_global_index function:
   stk::mesh::EntityId node_id = nodes[i_node]->identifier();
-  index = dof_mapper.get_global_index(stk::mesh::Node, node_id, *temperature_field);
+  index = dof_mapper.get_global_index(NODE_RANK, node_id, *temperature_field);
   STKUNIT_ASSERT_EQUAL( index, (int)(node_id-1) );
 
   std::cout << "Testing error condition: " << std::endl;
   //call DofMapper::get_global_index with a non-existent ID and verify that an
   //exception is thrown:
-  STKUNIT_ASSERT_THROW(dof_mapper.get_global_index(stk::mesh::Node, (stk::mesh::EntityId)999999, *temperature_field), std::runtime_error);
+  STKUNIT_ASSERT_THROW(dof_mapper.get_global_index(NODE_RANK, (stk::mesh::EntityId)999999, *temperature_field), std::runtime_error);
   std::cout << "...Completed testing error condition." << std::endl;
 
   int numProcs = 1;

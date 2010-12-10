@@ -51,7 +51,7 @@
 int main(int argc, char *argv[]) {
   int n = 32;                        // spatial discretization (per dimension)
   int num_KL = 2;                    // number of KL terms
-  int p = 5;                         // polynomial order
+  int p = 3;                         // polynomial order
   double mu = 0.1;                   // mean of exponential random field
   double s = 0.2;                    // std. dev. of exponential r.f.
   bool nonlinear_expansion = false;  // nonlinear expansion of diffusion coeff
@@ -71,21 +71,21 @@ int main(int argc, char *argv[]) {
     TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
 
     // Create a communicator for Epetra objects
-    Teuchos::RCP<Epetra_Comm> Comm;
+    Teuchos::RCP<const Epetra_Comm> globalComm;
 #ifdef HAVE_MPI
-    Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    globalComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-    Comm = Teuchos::rcp(new Epetra_SerialComm);
+    globalComm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
-
-    MyPID = Comm->MyPID();
+    MyPID = globalComm->MyPID();
 
     // Create Stochastic Galerkin basis and expansion
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
     for (int i=0; i<num_KL; i++)
       bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p, true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases,
+		     1e-12));
     int sz = basis->size();
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
     if (nonlinear_expansion)
@@ -95,15 +95,34 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
 									 Cijk));
-    std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+    if (MyPID == 0)
+      std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+
+    // Create stochastic parallel distribution
+    int num_spatial_procs = -1;
+    if (argc > 1)
+      num_spatial_procs = std::atoi(argv[1]);
+    Teuchos::ParameterList parallelParams;
+    parallelParams.set("Number of Spatial Processors", num_spatial_procs);
+    // parallelParams.set("Rebalance Stochastic Graph", true);
+    // Teuchos::ParameterList& isorropia_params = 
+    //   parallelParams.sublist("Isorropia");
+    // isorropia_params.set("Balance objective", "nonzeros");
+    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data =
+      Teuchos::rcp(new Stokhos::ParallelData(basis, Cijk, globalComm,
+					     parallelParams));
+    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm = 
+      sg_parallel_data->getMultiComm();
+    Teuchos::RCP<const Epetra_Comm> app_comm = 
+      sg_parallel_data->getSpatialComm();
 
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model = 
-      Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, mu, s, basis, 
+      Teuchos::rcp(new twoD_diffusion_ME(app_comm, n, num_KL, mu, s, basis, 
 					 nonlinear_expansion, symmetric));
     
     // Set up stochastic parameters
-    Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
+    Epetra_LocalMap p_sg_map(num_KL, 0, *sg_comm);
     Teuchos::Array<Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >sg_p_init(1);
     sg_p_init[0]= Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, p_sg_map));
     for (int i=0; i<num_KL; i++) {
@@ -131,7 +150,6 @@ int main(int argc, char *argv[]) {
     sgOpParams.set("Operator Method", "Matrix Free");
     sgPrecParams.set("Preconditioner Method", "Approximate Gauss-Seidel");
     sgPrecParams.set("Symmetric Gauss-Seidel", symmetric);
-    //sgPrecParams.set("Preconditioner Method", "Mean-based");
     sgPrecParams.set("Mean Preconditioner Type", "ML");
     Teuchos::ParameterList& precParams = 
       sgPrecParams.sublist("Mean Preconditioner Parameters");
@@ -153,8 +171,9 @@ int main(int argc, char *argv[]) {
     // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
-						 expansion, Cijk, sgParams,
-						 Comm, sg_x_init, sg_p_init));
+						 expansion, sg_parallel_data, 
+						 sgParams, 
+						 sg_x_init, sg_p_init));
 
     // Create vectors and operators
     Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(1);
@@ -184,7 +203,8 @@ int main(int argc, char *argv[]) {
     // Print initial residual norm
     double norm_f;
     sg_f->Norm2(&norm_f);
-    std::cout << "\nInitial residual norm = " << norm_f << std::endl;
+    if (MyPID == 0)
+      std::cout << "\nInitial residual norm = " << norm_f << std::endl;
 
     // Setup AztecOO solver
     AztecOO aztec;
@@ -211,9 +231,11 @@ int main(int argc, char *argv[]) {
     EpetraExt::VectorToMatrixMarketFile("stochastic_solution.mm", *sg_x);
 
     // Save mean and variance to file
+    Teuchos::RCP<Epetra_Vector> sg_x_overlapped = 
+      sg_model->import_solution(*sg_x);
     Stokhos::EpetraVectorOrthogPoly sg_x_poly(basis, View, 
 					      *(model->get_x_map()), 
-					      *sg_x);
+					      *sg_x_overlapped);
     Epetra_Vector mean(*(model->get_x_map()));
     Epetra_Vector std_dev(*(model->get_x_map()));
     sg_x_poly.computeMean(mean);
@@ -232,7 +254,8 @@ int main(int argc, char *argv[]) {
 
     // Print initial residual norm
     sg_f->Norm2(&norm_f);
-    std::cout << "\nFinal residual norm = " << norm_f << std::endl;
+    if (MyPID == 0)
+      std::cout << "\nFinal residual norm = " << norm_f << std::endl;
 
     // Print mean and standard deviation of responses
     Stokhos::EpetraVectorOrthogPoly sg_g_poly(basis, View, 
@@ -247,7 +270,7 @@ int main(int argc, char *argv[]) {
     std::cout << "\nResponse Mean =      " << std::endl << g_mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << g_std_dev << std::endl;
 
-    if (norm_f < 1.0e-10)
+    if (norm_f < 1.0e-10 && MyPID == 0)
       std::cout << "Example Passed!" << std::endl;
     }
 

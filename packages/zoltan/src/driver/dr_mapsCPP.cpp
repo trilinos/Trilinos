@@ -17,6 +17,8 @@
 #include "dr_err_const.h"
 #include "dr_par_util_const.h"
 
+#include <limits.h>
+
 // This is a partial port to C++, only changing the code to use
 // the C++ bindings for Zoltan.
 
@@ -119,7 +121,7 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
     for (j = 0; j < elem->adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (elem->adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
+      if (elem->adj[j] == ZOLTAN_ID_INVALID) continue;
 
       iadj_elem = elem->adj[j];
       iadj_proc = elem->adj_proc[j];
@@ -332,7 +334,7 @@ Zoltan_Comm *comm;
     lids[i] = i;
     for (j = 0; j < current->adj_len; j++) {
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current->adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
+      if (current->adj[j] == ZOLTAN_ID_INVALID) continue;
       if (current->adj_proc[j] != proc)
         num_nbor++;
     }
@@ -389,7 +391,7 @@ Zoltan_Comm *comm;
     current = &(mesh->elements[i]);
     for (j = 0; j < current->adj_len; j++) {
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current->adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
+      if (current->adj[j] == ZOLTAN_ID_INVALID) continue;
       if (current->adj_proc[j] != proc) {
         nbor_gids[cnt] = current->adj[j];
         my_gids[cnt] = current->globalID;
@@ -502,7 +504,7 @@ printf("Test comm copy functions\n");
   num_maps = 0;
   map_size = max_map_size = 0;
   for (i = 0, j = 0; i < num_others; i++, j += want_size) {
-    nbor_proc = others_want[j];
+    nbor_proc = (int)others_want[j];
     map_size++;
     if (i == (num_others - 1) || nbor_proc != (int) others_want[j+want_size]) {
       /* End of map reached */
@@ -550,15 +552,15 @@ printf("Test comm copy functions\n");
 
   map_size = 0;
   for (i = 0, j = 0; i < num_others; i++, j += want_size) {
-    nbor_proc = others_want[j];
+    nbor_proc = (int)others_want[j];
     map.glob_id[map_size] = others_want[j+1];
     map.elem_id[map_size] = others_want[j+2];
     current = &(mesh->elements[map.elem_id[map_size]]);
     for (k = 0; k < current->adj_len; k++) {
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current->adj[k] == ZOLTAN_ID_CONSTANT(-1)) continue;
+      if (current->adj[k] == ZOLTAN_ID_INVALID) continue;
       if (current->adj_proc[k] == nbor_proc && 
-          current->adj[k] == (int) others_want[j+3]) {
+          current->adj[k] == others_want[j+3]) {
         map.side_id[map_size] = k + 1;
         map.neigh_id[map_size] = current->adj[k];
         break;

@@ -262,8 +262,8 @@ void verify_change_parts( const char * method ,
                           const PartVector & parts )
 {
   const std::vector<std::string> & rank_names = meta.entity_rank_names();
-  const unsigned undef_rank  = std::numeric_limits<unsigned>::max();
-  const unsigned entity_rank = entity.entity_rank();
+  const EntityRank undef_rank  = InvalidEntityRank;
+  const EntityRank entity_rank = entity.entity_rank();
 
   bool ok = true ;
   std::ostringstream msg ;
@@ -328,8 +328,8 @@ void BulkData::change_entity_parts(
 
   require_entity_owner( entity , m_parallel_rank );
 
-  const unsigned entity_rank = entity.entity_rank();
-  const unsigned undef_rank  = std::numeric_limits<unsigned>::max();
+  const EntityRank entity_rank = entity.entity_rank();
+  const EntityRank undef_rank  = InvalidEntityRank;
 
   // Transitive addition and removal:
   // 1) Include supersets of add_parts

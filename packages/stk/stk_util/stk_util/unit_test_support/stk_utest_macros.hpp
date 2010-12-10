@@ -11,6 +11,8 @@
 
 #ifndef STK_BUILT_IN_SIERRA
 #include <STK_config.h>
+#else
+#define HAVE_MPI
 #endif
 
 //
@@ -19,6 +21,26 @@
 //cppunit macros, or trilinos/teuchos unit-test macros, depending
 //on whether stk_mesh is being built as a sierra product or Trilinos package.
 //
+#ifdef HAVE_MPI
+#define RUN_TEST_REDUCE(error) \
+  int reduce_result = MPI_Allreduce ( &error, &error, 1 /*count*/, \
+                                      MPI_INT, MPI_MAX, MPI_COMM_WORLD ); \
+  if (reduce_result != MPI_SUCCESS) { \
+    std::cerr << "MPI_Allreduce FAILED" << std::endl; \
+    error = true; \
+  } \
+  if ( !error ) \
+    std::cout << "STKUNIT_ALL_PASS" << std::endl;
+#else
+#define RUN_TEST_REDUCE(error) \
+  if (error != 0) { \
+    std::cerr << "Test FAILED" << std::endl; \
+    error = true; \
+  } \
+  if ( !error ) \
+    std::cout << "STKUNIT_ALL_PASS" << std::endl;
+#endif
+
 
 #ifdef HAVE_STK_Trilinos
 //If we're building as a Trilinos package, then we'll use the Teuchos unit-test macros.
@@ -78,71 +100,9 @@
 #define STKUNIT_MAIN(argc,argv) \
 int main(int argc,char**argv) {\
   Teuchos::GlobalMPISession mpiSession(&argc, &argv); \
-  bool result = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv); \
-  std::cout << std::endl ; \
-  return result; \
-}
-
-
-#elif HAVE_STK_CPPUNIT
-
-//If we're not in Trilinos, we're a sierra product, so we're using cppunit:
-
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
-#define STKUNIT_ASSERT(A) CPPUNIT_ASSERT(A)
-#define STKUNIT_ASSERT_EQUAL(A,B) CPPUNIT_ASSERT_EQUAL(A,B)
-#define STKUNIT_EXPECT_EQUAL(A,B) CPPUNIT_ASSERT_EQUAL(A,B)
-#define STKUNIT_ASSERT_THROW(A,B) CPPUNIT_ASSERT_THROW(A,B)
-
-#define STKUNIT_UNIT_TEST(testclass,testmethod) \
-class testclass##_##testmethod : public CppUnit::TestCase { \
-private: \
-  CPPUNIT_TEST_SUITE( testclass##_##testmethod ); \
-  CPPUNIT_TEST( testmethod ); \
-  CPPUNIT_TEST_SUITE_END(); \
-public: \
-  testclass##_##testmethod() : CppUnit::TestCase() {} \
-  void setUp() {} \
-  void tearDown() {} \
-  void testmethod(); \
-}; \
-CPPUNIT_TEST_SUITE_REGISTRATION( testclass##_##testmethod ); \
-void testclass##_##testmethod::testmethod() \
-
-#define STKUNIT_MAIN(argc,argv) \
-int main(int argc, char ** argv) \
-{ \
-  if ( MPI_SUCCESS != MPI_Init( & argc , & argv ) ) { \
-    std::cerr << "MPI_Init FAILED" << std::endl ; \
-    std::abort(); \
-  } \
- \
-  std::string test_names; \
- \
-  { \
-    for (int i = 0; i < argc; ++i) { \
-      if (std::string(argv[i]) == "-test") { \
-        if (i + 1 < argc) \
-          test_names = argv[i + 1]; \
-        else \
-          std::cout << "Running all tests" << std::endl; \
-      } \
-    } \
- \
-    CppUnit::TextUi::TestRunner runner; \
-    CppUnit::TestFactoryRegistry & registry = \
-      CppUnit::TestFactoryRegistry::getRegistry(); \
-    runner.addTest( registry.makeTest() ); \
-    runner.run(test_names); \
-  } \
- \
-  MPI_Finalize(); \
- \
-  return 0; \
+  int error = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv); \
+  RUN_TEST_REDUCE(error); \
+  return error; \
 }
 
 #else // HAVE_STK_GTEST
@@ -191,11 +151,20 @@ int main(int argc, char **argv) { \
   } \
   std::cout << "Running main() from gtest_main.cc\n"; \
   testing::InitGoogleTest(&argc, argv); \
-  bool result = RUN_ALL_TESTS(); \
+  int error = RUN_ALL_TESTS();                                     \
+  RUN_TEST_REDUCE(error);                                          \
   MPI_Finalize(); \
-  return result; \
+  return error; \
 }
 
+#define STKUNIT_WITH_SIERRA_MAIN(argc,argv,prod)    \
+int main(int argc, char **argv) { \
+  testing::InitGoogleTest(&argc, argv); \
+  sierra::Env::Startup startup__(&argc, &argv, sierra::prod::get_product_name(), __DATE__ " " __TIME__); \
+  int error = RUN_ALL_TESTS();                                          \
+  RUN_TEST_REDUCE(error);                                          \
+  return error; \
+}
 
 #endif // HAVE_STK_Trilinos
 

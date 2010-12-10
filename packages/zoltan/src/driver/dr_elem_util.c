@@ -37,7 +37,7 @@ void initialize_element(ELEM_INFO *elem)
 /*
  * Initializes all fields of an element.
  */
-  elem->globalID = ZOLTAN_ID_CONSTANT(-1);
+  elem->globalID = ZOLTAN_ID_INVALID;
   elem->border = 0;
   elem->elem_blk = 0;
   elem->my_part = -1;
@@ -80,7 +80,7 @@ int j;
   safe_free((void **)(void *) &(elem->adj_blank));
   safe_free((void **)(void *) &(elem->edge_wgt));
   elem->avg_coord[0] = elem->avg_coord[1] = elem->avg_coord[2] = 0.;
-  elem->globalID = ZOLTAN_ID_CONSTANT(-1);
+  elem->globalID = ZOLTAN_ID_INVALID;
   elem->border = 0;
   elem->my_part = -1;
   elem->fixed_part = -1;

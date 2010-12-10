@@ -9,7 +9,7 @@
 #ifndef STK_IO_UTIL_USECASE_MESH_HPP
 #define STK_IO_UTIL_USECASE_MESH_HPP
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <Ioss_SubSystem.h>
 
 namespace stk {

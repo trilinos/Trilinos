@@ -27,7 +27,7 @@ extern "C" {
 
 #include "Zoltan_config.h"
 
-/* The default ZOLTAN_ID_TYPE is "int" but this can be over-ridden on the compile command line.  
+/* The default ZOLTAN_ID_TYPE is "unsigned int" but this can be over-ridden on the compile command line.  
  *
  * The type of a Zoltan object global ID is ZOLTAN_ID_TYPE.  A pointer to it is ZOLTAN_ID_PTR.
  *
@@ -68,6 +68,7 @@ extern "C" {
  * If not specified, we'll use long.
  */
 
+#ifndef ZOLTAN_ID_TYPE_UINT
 #ifndef ZOLTAN_ID_TYPE_INT
 #ifndef ZOLTAN_ID_TYPE_LONG
 #ifndef ZOLTAN_ID_TYPE_LONG_LONG
@@ -80,6 +81,10 @@ extern "C" {
 #define ZOLTAN_ID_TYPE_LONG_LONG
 #endif
 
+#if HAVE_ZOLTAN_ID_TYPE_UINT
+#define ZOLTAN_ID_TYPE_UINT
+#endif
+
 #if HAVE_ZOLTAN_ID_TYPE_INT
 #define ZOLTAN_ID_TYPE_INT
 #endif
@@ -87,11 +92,11 @@ extern "C" {
 #endif
 #endif
 #endif
+#endif
 
 /* 
- * The ZOLTAN_ID_TYPE can be any signed integral type greater in size or equal to an int.
- *  (Zoltan code uses "-1" to indicate "unset".  This should be changed in "new zoltan".
- *   There is code in Zoltan that assumes the global ID is at least as large as an int.)
+ * The ZOLTAN_ID_TYPE can be any an integral type greater in size or equal to an int.
+ *  (There is code in Zoltan that assumes the global ID is at least as large as an int.)
  */
 
 #ifdef ZOLTAN_ID_TYPE_LONG
@@ -108,21 +113,32 @@ typedef long ZOLTAN_ID_TYPE;
 #ifdef ZOLTAN_ID_TYPE_LONG_LONG
 
 typedef long long ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG
-#define zoltan_mpi_id_datatype_name "MPI_LONG_LONG"
+#define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG_INT
+#define zoltan_mpi_id_datatype_name "MPI_LONG"
 #define zoltan_id_datatype_name "long long"
 #define ZOLTAN_ID_SPEC  "%Ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
 
 #endif
 
-#ifndef ZOLTAN_ID_MPI_TYPE
+#ifdef ZOLTAN_ID_TYPE_INT
 
 typedef int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_INT
 #define zoltan_mpi_id_datatype_name "MPI_INT"
 #define zoltan_id_datatype_name "int"
 #define ZOLTAN_ID_SPEC  "%d"
+#define ZOLTAN_ID_CONSTANT(z)  z
+
+#endif
+
+#ifndef ZOLTAN_ID_MPI_TYPE
+
+typedef unsigned int ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
+#define zoltan_mpi_id_datatype_name "MPI_UNSIGNED"
+#define zoltan_id_datatype_name "unsigned int"
+#define ZOLTAN_ID_SPEC  "%u"
 #define ZOLTAN_ID_CONSTANT(z)  z
 
 #endif

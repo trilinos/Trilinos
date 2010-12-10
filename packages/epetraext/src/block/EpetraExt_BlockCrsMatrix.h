@@ -73,6 +73,9 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   */
   BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
 
+  //! Version taking a local block graph
+  BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const Epetra_CrsGraph& LocalBlockGraph, const Epetra_Comm & GlobalComm );
+
   BlockCrsMatrix( const Epetra_RowMatrix & BaseMatrix, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
   
   //! Copy constructor.
@@ -95,6 +98,10 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   //! Routine for summing base matrices values into the large Block Matrix
   //! The Row and Col arguments are indices into RowStencil 
   void SumIntoBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col);
+
+  //! Routine for summing base matrices values into the large Block Matrix
+  //! The Row and Col arguments are global indices
+  void SumIntoGlobalBlock(double alpha, const Epetra_RowMatrix & BaseMatrix, const int Row, const int Col);
 
   //! Sum Entries into Block matrix using base-matrix numbering plus block Row and Col
   //! The Row and Col arguments are indices into RowStencil 

@@ -1,5 +1,5 @@
 /*--------------------------------------------------------------------*/
-/*    Copyright 2002 Sandia Corporation.                              */
+/*    Copyright 2002, 2010 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
 /*    non-exclusive license for use of this work by or on behalf      */
 /*    of the U.S. Government.  Export of this program may require     */
@@ -15,20 +15,18 @@
 #include <cstdlib>
 #include <stdexcept>
 
-
 #include <stk_mesh/base/Types.hpp>
-
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_util/environment/ReportHandler.hpp>
 
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/base/Field.hpp>
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/FieldData.hpp>
+
 #include <stk_rebalance/GeomDecomp.hpp>
 
-
+using stk::mesh::fem::NODE_RANK;
 
 namespace stk {
 namespace rebalance {
@@ -36,7 +34,6 @@ namespace rebalance {
 //: =======================
 //: Public member functions
 //: =======================
-
 
 int  GeomDecomp::owning_proc(const VectorField & nodal_coord_ref ,
                              const mesh::Entity       & mesh_entity         ) const
@@ -100,10 +97,10 @@ std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Ent
   std::vector<const mesh::Entity *> mesh_nodes;
 
   const mesh::EntityRank objtype   = obj.entity_rank();
-  if ( objtype == mesh::Node )
+  if ( objtype == NODE_RANK )
   {
     const double * const coor = mesh::field_data(nodal_coor, obj);
-    if (!coor) throw std::runtime_error(" Error: The field does not exist.");
+    if (!coor) throw std::runtime_error(" Error: The coordinate field does not exist.");
 
     const unsigned ndim(field_data_size(nodal_coor, obj));
     std::vector<double> temp(ndim);
@@ -114,18 +111,18 @@ std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Ent
     mesh_nodes.push_back(&obj);
   } else {
 
-    // Loop over node relations in mesh entity
-    mesh::PairIterRelation nr   = obj.relations( mesh::Node );
+    // Loop over node relations in mesh object
+    mesh::PairIterRelation nr   = obj.relations( NODE_RANK );
 
     for ( ; nr.first != nr.second; ++nr.first )
     {
       const mesh::Relation &rel = *nr.first;
-      if (rel.entity_rank() ==  mesh::Node) { // %fixme: need to check for USES relation
+      if (rel.entity_rank() ==  NODE_RANK) { // %fixme: need to check for USES relation
         const mesh::Entity *nobj = rel.entity();
         const unsigned ndim(field_data_size(nodal_coor, *nobj)/sizeof(double)); // TODO - is there a better way to get this info?
         double * coor = mesh::field_data(nodal_coor, *nobj);
         if (!coor) {
-          throw std::runtime_error("Error: The field does not exist.");
+          throw std::runtime_error("Error: The coordinate field does not exist.");
         }
         std::vector<double> temp(ndim);
         for ( unsigned i = 0; i < ndim; ++i ) { temp[i] = coor[i]; }
@@ -207,7 +204,6 @@ void GeomDecomp::obj_to_point (const mesh::Entity            & obj,
   compute_obj_centroid(obj, nodeCoord, coor);
   apply_rotation (coor);
 }
-
 
 //*************************************************************
 // Find the bounding box, aligned with the cartesian axes,

@@ -99,6 +99,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_ExpansionFactoryImp.hpp
   Stokhos_StieltjesGramSchmidtBuilder.hpp
   Stokhos_StieltjesGramSchmidtBuilderImp.hpp
+  Stokhos_EpetraSparse3Tensor.hpp
+  Stokhos_ParallelData.hpp
   Stokhos_SGOperator.hpp
   Stokhos_MatrixFreeOperator.hpp
   Stokhos_KLMatrixFreeOperator.hpp
@@ -140,6 +142,8 @@ SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
   Stokhos_SparseGridQuadrature.cpp
   Stokhos_AnisoSparseGridQuadrature.cpp
+  Stokhos_EpetraSparse3Tensor.cpp
+  Stokhos_ParallelData.cpp
   Stokhos_MatrixFreeOperator.cpp
   Stokhos_KLMatrixFreeOperator.cpp
   Stokhos_KLReducedMatrixFreeOperator.cpp

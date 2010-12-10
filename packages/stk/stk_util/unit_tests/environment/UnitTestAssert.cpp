@@ -118,19 +118,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfThrowRequireMsg, testUnit)
   ThrowRequireMsg(true, "test: " << temp << " blah");
   ThrowAssertMsg(true, "test: " << temp << " blah");
 
-  // Check that error messages look OK
-  try {
-    ThrowRequireMsg(false, "LOL UR CODE IS ... " << "BAD");
-  }
-  catch (std::logic_error& err) {
-    std::string expected =
-      "Requirement( false ) FAILED\n"\
-      "Error occured at: code/stk_util/unit_tests/environment/UnitTestAssert.cpp:123\n"
-      "Error message: LOL UR CODE IS ... BAD\n";
-    std::string actual(err.what());
-    STKUNIT_EXPECT_EQUAL(expected, actual);
-  }
-
   // Check that assert behaves as expected (throws in debug, not in opt)
 #ifdef NDEBUG
   force_throw_assert();

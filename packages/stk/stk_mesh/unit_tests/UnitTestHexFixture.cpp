@@ -14,6 +14,7 @@
 namespace {
 
 using stk::mesh::Entity;
+using stk::mesh::EntityRank;
 using stk::mesh::EntityId;
 
 STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_x )
@@ -154,12 +155,12 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
   }
 
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
-  stk::mesh::TopologicalMetaData & top = hf.m_top_data;
 
   // Verify element_id 1 is owned by proc 0
   // Verify element_id 2 is owned by proc 1
-  Entity * entity_1 = mesh.get_entity(top.element_rank,1);
-  Entity * entity_2 = mesh.get_entity(top.element_rank,2);
+  const EntityRank element_rank = stk::mesh::fem::element_rank(hf.m_fem);
+  Entity * entity_1 = mesh.get_entity(element_rank, 1);
+  Entity * entity_2 = mesh.get_entity(element_rank ,2);
   if (p_rank <= 1) {
     STKUNIT_ASSERT_TRUE( entity_1 != NULL );
     STKUNIT_ASSERT_TRUE( entity_2 != NULL );
@@ -197,23 +198,23 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
   hf.m_meta_data.commit();
   hf.generate_mesh(parallel_distribution[p_rank]);
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
-  stk::mesh::TopologicalMetaData & top = hf.m_top_data;
+  const EntityRank element_rank = stk::mesh::fem::element_rank(hf.m_fem);
 
   // We should always know about, and own, the element assigned to us
-  Entity * my_entity    = mesh.get_entity(top.element_rank, p_rank + 1);
+  Entity * my_entity    = mesh.get_entity(element_rank, p_rank + 1);
   STKUNIT_ASSERT_TRUE( my_entity != NULL );
   STKUNIT_EXPECT_EQUAL( p_rank, my_entity->owner_rank() );
 
   // If applicable, we know about the element on adjacent lower rank
   if (p_rank > 0) {
-    Entity * prior_entity = mesh.get_entity(top.element_rank, p_rank);
+    Entity * prior_entity = mesh.get_entity(element_rank, p_rank);
     STKUNIT_ASSERT_TRUE( prior_entity != NULL );
     STKUNIT_EXPECT_EQUAL( p_rank - 1, prior_entity->owner_rank() );
   }
 
   // If applicable, we know about the element on adjacent higher rank
   if (p_rank < p_size - 1) {
-    Entity * next_entity   = mesh.get_entity(top.element_rank, p_rank + 2);
+    Entity * next_entity   = mesh.get_entity(element_rank, p_rank + 2);
     STKUNIT_ASSERT_TRUE( next_entity != NULL );
     STKUNIT_EXPECT_EQUAL( p_rank + 1, next_entity->owner_rank() );
   }
@@ -272,17 +273,17 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   }
 
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
-  stk::mesh::TopologicalMetaData & top = hf.m_top_data;
 
   // Verify that the entities and known and owned by the appropriate procs
-  Entity * entity_1 = mesh.get_entity(top.element_rank,1);
-  Entity * entity_2 = mesh.get_entity(top.element_rank,2);
-  Entity * entity_3 = mesh.get_entity(top.element_rank,3);
-  Entity * entity_4 = mesh.get_entity(top.element_rank,4);
-  Entity * entity_5 = mesh.get_entity(top.element_rank,5);
-  Entity * entity_6 = mesh.get_entity(top.element_rank,6);
-  Entity * entity_7 = mesh.get_entity(top.element_rank,7);
-  Entity * entity_8 = mesh.get_entity(top.element_rank,8);
+  const EntityRank element_rank = stk::mesh::fem::element_rank(hf.m_fem);
+  Entity * entity_1 = mesh.get_entity(element_rank, 1);
+  Entity * entity_2 = mesh.get_entity(element_rank, 2);
+  Entity * entity_3 = mesh.get_entity(element_rank, 3);
+  Entity * entity_4 = mesh.get_entity(element_rank, 4);
+  Entity * entity_5 = mesh.get_entity(element_rank, 5);
+  Entity * entity_6 = mesh.get_entity(element_rank, 6);
+  Entity * entity_7 = mesh.get_entity(element_rank, 7);
+  Entity * entity_8 = mesh.get_entity(element_rank, 8);
   if (p_rank == 0) {
     STKUNIT_ASSERT_TRUE( entity_1 != NULL );
     STKUNIT_ASSERT_TRUE( entity_2 != NULL );
@@ -374,14 +375,14 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   }
 
   stk::mesh::BulkData & mesh = hf.m_bulk_data;
-  stk::mesh::TopologicalMetaData & top = hf.m_top_data;
 
   // Verify that the entities and known and owned by the appropriate procs
-  Entity * entity_1 = mesh.get_entity(top.element_rank,1);
-  Entity * entity_2 = mesh.get_entity(top.element_rank,2);
-  Entity * entity_3 = mesh.get_entity(top.element_rank,3);
-  Entity * entity_4 = mesh.get_entity(top.element_rank,4);
-  Entity * entity_5 = mesh.get_entity(top.element_rank,5);
+  const EntityRank element_rank = stk::mesh::fem::element_rank(hf.m_fem);
+  Entity * entity_1 = mesh.get_entity(element_rank, 1);
+  Entity * entity_2 = mesh.get_entity(element_rank, 2);
+  Entity * entity_3 = mesh.get_entity(element_rank, 3);
+  Entity * entity_4 = mesh.get_entity(element_rank, 4);
+  Entity * entity_5 = mesh.get_entity(element_rank, 5);
   if (p_rank == 0) {
     STKUNIT_ASSERT_TRUE( entity_1 != NULL );
     STKUNIT_ASSERT_TRUE( entity_2 != NULL );

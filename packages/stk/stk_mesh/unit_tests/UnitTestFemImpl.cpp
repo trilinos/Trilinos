@@ -6,18 +6,17 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stdexcept>
+
+#include <Shards_BasicTopologies.hpp>
+
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 
-#include <Shards_BasicTopologies.hpp>
-
-#include <stdexcept>
-
-using stk::mesh::MetaData;
-using stk::mesh::TopologicalMetaData;
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 namespace {
 
@@ -25,54 +24,64 @@ namespace {
 //----------------------------------------------------------------------------
 
 /**
- * Really just a meta-data, topological-meta-data pair. They share the same
- * spatial dimension and the meta-data is associated with the
- * topological-meta-data.
+ * Really just a meta-data, fem-object pair. They share the same
+ * spatial dimension and the meta-data is associated with the fem-object.
  */
-class MetaTopoPair {
+class TestFixture {
 public:
-  MetaData            m_meta_data ;
-  TopologicalMetaData m_topo_data ;
+  typedef stk::mesh::MetaData           BaseMetaData ;
+  typedef stk::mesh::DefaultFEM         TopoMetaData ;
 
-  MetaTopoPair( unsigned spatial_dimension )
-    : m_meta_data(TopologicalMetaData::entity_rank_names(spatial_dimension))
-    , m_topo_data(m_meta_data, spatial_dimension)
-    {}
+  BaseMetaData m_meta_data ;
+  TopoMetaData m_fem ;
 
-  int get_entity_rank( const CellTopologyData * top ) const
-    { return m_topo_data.get_entity_rank( top ); }
+  TestFixture( unsigned spatial_dimension )
+    : m_meta_data( stk::mesh::fem::entity_rank_names( spatial_dimension ) )
+    , m_fem( m_meta_data, spatial_dimension )
+  {}
+
+  stk::mesh::EntityRank get_entity_rank( const CellTopologyData * top ) const
+  { return m_fem.get_entity_rank( top ); }
 };
 
-STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , entity_rank )
+STKUNIT_UNIT_TEST( UnitTestDefaultFEM , entity_rank )
 {
-  MetaTopoPair test1D( 1u );
-  MetaTopoPair test2D( 2u );
-  MetaTopoPair test3D( 3u );
+  TestFixture test1D( 1u );
+  TestFixture test2D( 2u );
+  TestFixture test3D( 3u );
+  {
+    stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(test1D.m_meta_data);
 
-  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.spatial_dimension , 1u );
-  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.node_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.edge_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.side_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.element_rank , 1u );
-  STKUNIT_EXPECT_EQUAL( test1D.m_topo_data.patch_rank , 2u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::node_rank(fem) , 0u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::edge_rank(fem) , stk::mesh::fem::INVALID_RANK );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::face_rank(fem) , stk::mesh::fem::INVALID_RANK );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::side_rank(fem) , 0u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::element_rank(fem) , 1u );
+//    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::patch_rank(fem) , 2u );
+  }
+  {
+    stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(test2D.m_meta_data);
 
-  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.spatial_dimension , 2u );
-  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.node_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.edge_rank , 1u );
-  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.side_rank , 1u );
-  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.element_rank , 2u );
-  STKUNIT_EXPECT_EQUAL( test2D.m_topo_data.patch_rank , 3u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::NODE_RANK , 0u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::edge_rank(fem) , 1u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::face_rank(fem) , stk::mesh::fem::INVALID_RANK );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::side_rank(fem) , 1u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::element_rank(fem) , 2u );
+//    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::patch_rank(fem) , 3u );
+  }
+  {
+    stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(test3D.m_meta_data);
 
-  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.spatial_dimension , 3u );
-  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.node_rank , 0u );
-  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.edge_rank , 1u );
-  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.side_rank , 2u );
-  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.element_rank , 3u );
-  STKUNIT_EXPECT_EQUAL( test3D.m_topo_data.patch_rank , 4u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::node_rank(fem) , 0u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::edge_rank(fem) , 1u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::side_rank(fem) , 2u );
+    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::element_rank(fem) , 3u );
+//    STKUNIT_EXPECT_EQUAL( stk::mesh::fem::patch_rank(fem) , 4u );
+  }
 }
 
 
-STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , cellTopology )
+STKUNIT_UNIT_TEST( UnitTestDefaultFEM , cellTopology )
 {
   const CellTopologyData * node  = shards::getCellTopologyData< shards::Node >();
 
@@ -123,113 +132,149 @@ STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , cellTopology )
   for ( unsigned spatial_dimension = 1 ;
         spatial_dimension < 4 ; ++spatial_dimension ) {
 
-    MetaTopoPair test( spatial_dimension );
+    TestFixture test( spatial_dimension );
 
-    STKUNIT_EXPECT_EQUAL( 0 , test.get_entity_rank( node ) );
-    STKUNIT_EXPECT_EQUAL( 1 , test.get_entity_rank( line2 ) );
-    STKUNIT_EXPECT_EQUAL( 1 , test.get_entity_rank( line3 ) );
-    STKUNIT_EXPECT_EQUAL( (int) spatial_dimension , test.get_entity_rank( particle ) );
+    STKUNIT_EXPECT_EQUAL( 0u , test.get_entity_rank( node ) );
+    STKUNIT_EXPECT_EQUAL( 1u , test.get_entity_rank( line2 ) );
+    STKUNIT_EXPECT_EQUAL( 1u , test.get_entity_rank( line3 ) );
+    STKUNIT_EXPECT_EQUAL( spatial_dimension , test.get_entity_rank( particle ) );
     if ( 1 < spatial_dimension ) {
-      STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( tri3 ) );
-      STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( tri6 ) );
-      STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( tri4 ) );
-      STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( quad4 ) );
-      STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( quad8 ) );
-      STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( quad9 ) );
+      STKUNIT_EXPECT_EQUAL( 2u , test.get_entity_rank( tri3 ) );
+      STKUNIT_EXPECT_EQUAL( 2u , test.get_entity_rank( tri6 ) );
+      STKUNIT_EXPECT_EQUAL( 2u , test.get_entity_rank( tri4 ) );
+      STKUNIT_EXPECT_EQUAL( 2u , test.get_entity_rank( quad4 ) );
+      STKUNIT_EXPECT_EQUAL( 2u , test.get_entity_rank( quad8 ) );
+      STKUNIT_EXPECT_EQUAL( 2u , test.get_entity_rank( quad9 ) );
 
-      STKUNIT_EXPECT_EQUAL( (int) spatial_dimension , test.get_entity_rank( beam2 ) );
-      STKUNIT_EXPECT_EQUAL( (int) spatial_dimension , test.get_entity_rank( beam3 ) );
+      STKUNIT_EXPECT_EQUAL( spatial_dimension , test.get_entity_rank( beam2 ) );
+      STKUNIT_EXPECT_EQUAL( spatial_dimension , test.get_entity_rank( beam3 ) );
     }
     else {
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( tri3 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( tri6 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( tri4 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( quad4 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( quad8 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( quad9 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( tri3 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( tri4 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( tri6 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( quad4 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( quad8 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( quad9 ) , std::runtime_error );
 
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( beam2 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( beam3 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( beam2 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( beam3 ) , std::runtime_error );
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( tri3 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( tri4 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( tri6 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( quad4 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( quad8 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( quad9 ));
+
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( beam2 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( beam3 ));
     }
 
     if ( 2 == spatial_dimension ) {
-      STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( shellLine2 ) );
-      STKUNIT_EXPECT_EQUAL( 2 , test.get_entity_rank( shellLine3 ) );
+      STKUNIT_EXPECT_EQUAL( 2u , test.get_entity_rank( shellLine2 ) );
+      STKUNIT_EXPECT_EQUAL( 2u , test.get_entity_rank( shellLine3 ) );
     }
     else {
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellLine2 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellLine3 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( shellLine2 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( shellLine3 ) , std::runtime_error );
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( shellLine2 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( shellLine3 ));
     }
 
     if ( 2 < spatial_dimension ) {
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( tet4 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( tet10 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( tet8 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( tet4 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( tet10 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( tet8 ) );
 
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( pyr5 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( pyr13 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( pyr14 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( pyr5 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( pyr13 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( pyr14 ) );
 
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( wedge6 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( wedge15 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( wedge18 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( wedge6 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( wedge15 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( wedge18 ) );
 
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( hex8 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( hex20 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( hex27 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( hex8 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( hex20 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( hex27 ) );
 
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( shellTri3 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( shellTri6 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( shellTri3 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( shellTri6 ) );
 
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( shellQuad4 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( shellQuad8 ) );
-      STKUNIT_EXPECT_EQUAL( 3 , test.get_entity_rank( shellQuad9 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( shellQuad4 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( shellQuad8 ) );
+      STKUNIT_EXPECT_EQUAL( 3u , test.get_entity_rank( shellQuad9 ) );
     }
     else {
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( tet4 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( tet10 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( tet8 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( tet4 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( tet10 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( tet8 ) , std::runtime_error );
 
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr5 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr13 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr14 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr5 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr13 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( pyr14 ) , std::runtime_error );
 
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge6 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge15 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge18 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge6 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge15 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( wedge18 ) , std::runtime_error );
 
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( hex8 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( hex20 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( hex27 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( hex8 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( hex20 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( hex27 ) , std::runtime_error );
 
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellTri3 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellTri6 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( shellTri3 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( shellTri6 ) , std::runtime_error );
 
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad4 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad8 ) , std::runtime_error );
-      STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad9 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad4 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad8 ) , std::runtime_error );
+      // STKUNIT_ASSERT_THROW( test.get_entity_rank( shellQuad9 ) , std::runtime_error );
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( tet4 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( tet10 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( tet8 ));
+
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( pyr5 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( pyr13 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( pyr14 ));
+
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( wedge6 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( wedge15 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( wedge18 ));
+
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( hex8 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( hex20 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( hex27 ));
+
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( shellTri3 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( shellTri6 ));
+
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( shellQuad4 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( shellQuad8 ));
+      STKUNIT_EXPECT_EQUAL( stk::mesh::fem::INVALID_RANK, test.get_entity_rank( shellQuad9 ));
     }
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , part_supersets )
+STKUNIT_UNIT_TEST( UnitTestDefaultFEM , part_supersets )
 {
-  static const char method[] = "UnitTestPartCellTopologyMap::part_supersets" ;
   const unsigned spatial_dimension = 3 ;
 
-  MetaTopoPair test( spatial_dimension );
+  TestFixture test( spatial_dimension );
 
   const CellTopologyData * const top_hex8 = shards::getCellTopologyData< shards::Hexahedron<8> >();
   const CellTopologyData * const top_tet4 = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
-  stk::mesh::Part & hex8 = test.m_topo_data.declare_part( top_hex8->name , top_hex8 );
-  stk::mesh::Part & tet4 = test.m_topo_data.declare_part( top_tet4->name , top_tet4 );
+  stk::mesh::Part & hex8 = stk::mesh::declare_part( test.m_meta_data, top_hex8->name , top_hex8 );
+  stk::mesh::Part & tet4 = stk::mesh::declare_part( test.m_meta_data, top_tet4->name , top_tet4 );
 
-  stk::mesh::Part & part_hex_1 = test.m_meta_data.declare_part( "block_1" , spatial_dimension );
-  stk::mesh::Part & part_hex_2 = test.m_meta_data.declare_part( "block_2" , spatial_dimension );
-  stk::mesh::Part & part_hex_3 = test.m_meta_data.declare_part( "block_3" , spatial_dimension );
-  stk::mesh::Part & part_tet_1 = test.m_meta_data.declare_part( "block_4" , spatial_dimension );
-  stk::mesh::Part & part_tet_2 = test.m_meta_data.declare_part( "block_5" , spatial_dimension );
+  // stk::mesh::Part & hex8 = declare_part(m_meta_data,  top_hex8->name , get_entity_rank( top_hex8 ) );
+  // stk::mesh::Part & hex4 = declare_part(m_meta_data,  top_hex4->name , get_entity_rank( top_hex4 ) );
+  // stk::mesh::fem::set_cell_topology(hex8, get_entity_rank( top_hex8 ) , top_hex8 );
+
+  stk::mesh::Part & part_hex_1 = declare_part(test.m_meta_data,  "block_1" , spatial_dimension );
+  stk::mesh::Part & part_hex_2 = declare_part(test.m_meta_data,  "block_2" , spatial_dimension );
+  stk::mesh::Part & part_hex_3 = declare_part(test.m_meta_data,  "block_3" , spatial_dimension );
+  stk::mesh::Part & part_tet_1 = declare_part(test.m_meta_data,  "block_4" , spatial_dimension );
+  stk::mesh::Part & part_tet_2 = declare_part(test.m_meta_data,  "block_5" , spatial_dimension );
 
   test.m_meta_data.declare_part_subset( hex8 , part_hex_1 );
   test.m_meta_data.declare_part_subset( hex8 , part_hex_2 );
@@ -238,14 +283,14 @@ STKUNIT_UNIT_TEST( UnitTestTopologicalMetaData , part_supersets )
   test.m_meta_data.declare_part_subset( tet4 , part_tet_1 );
   test.m_meta_data.declare_part_subset( tet4 , part_tet_2 );
 
-  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::TopologicalMetaData::get_cell_topology( hex8 , method ) );
-  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::TopologicalMetaData::get_cell_topology( part_hex_1 , method ) );
-  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::TopologicalMetaData::get_cell_topology( part_hex_2 , method ) );
-  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::TopologicalMetaData::get_cell_topology( part_hex_3 , method ) );
+  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( hex8 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_1 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_2 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_hex8 , stk::mesh::fem::get_cell_topology( part_hex_3 ).getCellTopologyData() );
 
-  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::TopologicalMetaData::get_cell_topology( tet4 , method ) );
-  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::TopologicalMetaData::get_cell_topology( part_tet_1 , method ) );
-  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::TopologicalMetaData::get_cell_topology( part_tet_2 , method ) );
+  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( tet4 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( part_tet_1 ).getCellTopologyData() );
+  STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::fem::get_cell_topology( part_tet_2 ).getCellTopologyData() );
 
 }
 
@@ -253,81 +298,20 @@ STKUNIT_UNIT_TEST( UnitTestPartCellTopologyMap , errors )
 {
   const unsigned spatial_dimension = 2 ;
 
-  MetaTopoPair test( spatial_dimension );
+  TestFixture test( spatial_dimension );
 
   const CellTopologyData * const top_quad4 = shards::getCellTopologyData< shards::Quadrilateral<4> >();
   const CellTopologyData * const top_tri3 = shards::getCellTopologyData< shards::Triangle<3> >();
   const CellTopologyData * const top_tet4 = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
-  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_quad4 , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_quad4 , 1 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_quad4 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_quad4 , 0 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_quad4 , 1 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_quad4 , 3 ) , std::runtime_error );
 
-  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_tri3 , 3 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW( test.m_topo_data.declare_cell_topology( top_tet4 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_tri3 , 3 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( test.m_fem.register_cell_topology( top_tet4 , 3 ) , std::runtime_error );
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-/*
-
-class FiniteElementMesh {
-public:
-
-  typedef stk::mesh::MetaData            MetaData ;
-  typedef stk::mesh::TopologicalMetaData TopologicalMetaData ;
-  typedef stk::mesh::BulkData            BulkData ;
-
-  MetaData m_meta_data ;
-  TopologicalMetaData m_topo_data ;
-  BulkData     bulkData ;
-
-  FiniteElementMesh( unsigned spatial_dimension ,
-                     stk::ParallelMachine machine )
-    : m_meta_data( TopologicalMetaData::entity_rank_names( spatial_dimension ) )
-    , m_topo_data( metaData , spatial_dimension )
-    , bulkData( metaData , machine )
-    {}
-};
-
-STKUNIT_UNIT_TEST( UnitTestPartCellTopologyMap , bucket )
-{
-  stk::ParallelMachine machine = MPI_COMM_WORLD ;
-
-  const CellTopologyData * const top_tet4 =
-    shards::getCellTopologyData< shards::Tetrahedron<4> >();
-
-  const unsigned spatial_dimension = 3 ;
-
-  FiniteElementMesh mesh( spatial_dimension , machine );
-
-  stk::mesh::Part & block =
-    mesh.m_topo_data.declare_part< shards::Tetrahedron<4> >( "block_1" );
-
-  mesh.m_meta_data.commit();
-
-  mesh.bulkData.modification_begin();
-
-  stk::mesh::Entity * element = NULL ;
-
-  if ( mesh.bulkData.parallel_rank() == 0 ) {
-    int node_ids[4] = { 1 , 2 , 3 , 4 };
-
-    element = & declare_element( mesh.bulkData , block , 1 , node_ids );
-  }
-
-  mesh.bulkData.modification_end();
-
-  if ( element ) {
-    STKUNIT_EXPECT_EQUAL( top_tet4 , stk::mesh::get_cell_topology( *element ) );
-  }
-}
-
-*/
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
 } // namespace
 

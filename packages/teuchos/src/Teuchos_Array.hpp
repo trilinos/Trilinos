@@ -698,7 +698,7 @@ template<typename T>
 class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<Array<T> > {
 public:
   static std::string name()
-    { return "Array<"+TypeNameTraits<T>::name()+">"; }
+    { return "Array("+TypeNameTraits<T>::name()+")"; }
   static std::string concreteName(const Array<T>&)
     { return name(); }
 };

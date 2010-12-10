@@ -466,7 +466,7 @@ int read_hypergraph_file(
 
   /*
    * initialize all of the element structs as unused by
-   * setting the globalID to -1
+   * setting the globalID to ZOLTAN_ID_INVALID 
    */
   for (i = 0; i < mesh->elem_array_len; i++)
     initialize_element(&(mesh->elements[i]));
@@ -807,7 +807,7 @@ void mm_cleanup(MESH_INFO_PTR mesh)
     ELEM_INFO_PTR current_elem = &(elements[i]);
     current_elem->globalID++;
     for (j = 0; j < current_elem->adj_len; j++) {
-      if (current_elem->adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
+      if (current_elem->adj[j] == ZOLTAN_ID_INVALID) continue;
       if (current_elem->adj_proc[j] != mesh->proc) {
         current_elem->adj[j]++;
       }

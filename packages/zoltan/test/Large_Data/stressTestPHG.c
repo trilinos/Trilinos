@@ -2,7 +2,22 @@
 * Stress test that can create a very large hypergraph to test
 * the large memory problems.
 *
-* Argument is number of vertices in hypergraph.
+* When compiled to use 64-bit global IDs, the option
+*   --use_high_order_bits
+* asks that the 32 high order bits be used as part of the
+* global ID.
+*
+* This test uses hypergraph query functions unless the option
+*    --use_graph_queries
+* is chosen.
+*
+* The approximate number of vertices in the graph is given with
+* the option
+*   --size=
+*
+* The vertices have unit weights unless the option
+*   --use_varying_weights
+* is chosen.
 ***************************************************************/
 
 #include <mpi.h>
@@ -10,6 +25,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <signal.h>
+#include <getopt.h>
 #include "zoltan.h"
 #include "zz_util_const.h"
 
@@ -18,35 +34,19 @@ static int *vertex_part = NULL;
 
 static double mbytes=0;
 
-/* saves memory to use unit weights */
-#define UNIT_WEIGHTS yes
-
-#define NUM_GLOBAL_VERTICES     2500000000
+#define NUM_GLOBAL_VERTICES     2500
 #define VERTEX_WEIGHT_DIMENSION 1
 #define EDGE_WEIGHT_DIMENSION 1
 
-/* We can define hypergraph queries, graph queries, or both */
+static int64_t gid_base = 0x000000000;
+static int64_t high_order_bit = 0x100000000;
+static long long numGlobalVertices;
+static int vwgt_dim=1;
+static int unit_weights=1;
 
-/*#define USE_HYPERGRAPH_QUERIES*/
-#define USE_GRAPH_QUERIES
-
-/*************************************************************
- * Defining GID_BASE allows us to test 64 bit global IDs when we
- * don't have enough memory to run a test that has more than
- * two billion vertices.  Defining this when we do have more
- * than two billion vertices breaks the test.
- */
-/*#define GID_BASE  0x100000000*/
-/*************************************************************/
-
-static ZOLTAN_GNO_TYPE numGlobalVertices;
-static int vwgt_dim, ewgt_dim;
 static ZOLTAN_ID_TYPE *vertexGIDs=NULL;
-#ifndef UNIT_WEIGHTS
 static float *vwgts=NULL;
-#endif
 static int edgeCutCost;
-
 static int numMyVertices;
 
 static int create_a_graph();
@@ -54,14 +54,45 @@ extern void Zoltan_write_linux_meminfo(int, char *, int);
 
 #define proc_vertex_gid(proc, lid) (vertexGIDs[proc] + lid)
 
+static void usage()
+{
+  printf( "\nUsage: --use_high_order_bits\n");
+  printf( "\n       --use_graph_queries\n");
+  printf( "\n       --size={global number of vertices}\n");
+  printf( "\n       --use_varying_weights\n");
+
+  printf( "\nDefault is to not use the 32 high order bits of the 64 bit global ID\n");
+  printf( "\nDefault is to use hypergraph queries, not graph queries.\n");
+  printf( "\nDefault global number of vertices is %d\n",NUM_GLOBAL_VERTICES);
+  printf( "\nDefault is unit vertex weights.\n");
+}
+
+static int get_partition_quality(struct Zoltan_Struct *zz, float *cutn, float *imbalance)
+{
+ZOLTAN_HG_EVAL result;
+int rc;
+
+  rc = Zoltan_LB_Eval_HG(zz, 0, &result);
+
+  if (rc != ZOLTAN_OK){
+    fprintf(stderr,"%d Failure in Zoltan_LB_Eval_HG\n",myRank);
+    return 1;
+  }
+
+  *cutn = result.cutn[EVAL_GLOBAL_SUM];
+  *imbalance = result.imbalance;
+
+  return 0;
+}
+
 void meminfo_signal_handler(int sig)
 {
   char msg[128];
 
   sprintf(msg,"(%d) Received signal %d\n",myRank,sig);
 
-  // Signal handler for Linux that helps us to understand
-  // whether failure was due to insufficient memory.
+  /* Signal handler for Linux that helps us to understand */
+  /* whether failure was due to insufficient memory. */
 
   signal(SIGINT, SIG_IGN);
   signal(SIGTERM, SIG_IGN);
@@ -93,15 +124,13 @@ static void get_vertex_list(void *data, int sizeGID, int sizeLID,
   for (i=0; i < numMyVertices; i++){
     globalID[i] = proc_vertex_gid(myRank, i);
     localID[i] = i;
-#ifndef UNIT_WEIGHTS
-    obj_wgts[i] = vwgts[i];
-#else
-    obj_wgts[i] = 1.0;
-#endif
+
+    if (!unit_weights)
+      obj_wgts[i] = vwgts[i];
+    else
+      obj_wgts[i] = 1.0;
   }
 }
-
-#ifdef USE_HYPERGRAPH_QUERIES
 
 static void get_local_hypergraph_size(void *data, 
                   int *num_lists, int *num_pins, int *format, int *ierr)
@@ -175,10 +204,6 @@ static void get_edge_weights(void *data, int sizeGID, int sizeLID,
   }
 }
 
-#endif
-
-#ifdef USE_GRAPH_QUERIES
-
 static void get_num_edges_list(void *data, int sizeGID, int sizeLID,
                       int num_obj,
              ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
@@ -244,8 +269,6 @@ float wgt;
   }
 }
 
-#endif
-
 static void get_partition_list(void *data, int sizeGID, int sizeLID, int num_obj,
         ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID, int*parts, int *ierr)
 {
@@ -270,14 +293,19 @@ static void get_partition_list(void *data, int sizeGID, int sizeLID, int num_obj
 
 int main(int argc, char *argv[])
 {
-  int i, rc;
+  int i, rc, status;
   float ver;
+  struct option opts[10];
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   char *datatype_name;
-  double local, global, min, max, avg;
+  double local, min, max, avg;
+  float cutn[10], imbalance[10];
+
+  int use_hg = 1;
+  int use_graph = 0;
 
 #ifdef LINUX_HOST
   signal(SIGSEGV, meminfo_signal_handler);
@@ -300,10 +328,106 @@ int main(int argc, char *argv[])
   if (rc != ZOLTAN_OK){
     if (myRank == 0) printf("sorry...\n");
     MPI_Finalize();
-    exit(0);
+    return 1;
   }
 
   Zoltan_Memory_Debug(2);
+
+  /******************************************************************
+  ** Arguments
+  ******************************************************************/
+
+  opts[0].name = "use_high_order_bits";
+  opts[0].has_arg = 0;
+  opts[0].flag = NULL;
+  opts[0].val = 1;
+
+  opts[1].name = "use_hypergraph_queries";
+  opts[1].has_arg = 0;
+  opts[1].flag = NULL;
+  opts[1].val = 2;
+
+  opts[2].name = "use_graph_queries";
+  opts[2].has_arg = 0;
+  opts[2].flag = NULL;
+  opts[2].val = 3;
+
+  opts[3].name = "help";
+  opts[3].has_arg = 0;
+  opts[3].flag = NULL;
+  opts[3].val = 4;
+
+  opts[4].name = "size";
+  opts[4].has_arg = 1;
+  opts[4].flag = NULL;
+  opts[4].val = 5;
+
+  opts[5].name = "use_varying_weights";
+  opts[5].has_arg = 0;
+  opts[5].flag = NULL;
+  opts[5].val = 6;
+
+  opts[6].name = 0;
+  opts[6].has_arg = 0;
+  opts[6].flag = NULL;
+  opts[6].val = 0;
+
+  while (1){
+    rc = getopt_long_only(argc, argv, "",  opts, NULL);
+
+    if (rc == '?'){
+      MPI_Barrier(MPI_COMM_WORLD);
+      if (myRank == 0) usage();
+      MPI_Finalize();
+      return 1;
+    }
+    else if (rc == 1){
+      if (sizeof(ZOLTAN_ID_TYPE) != 8){
+        if (myRank == 0){
+          printf("The ZOLTAN_ID_TYPE has only 4 bytes, so we ignore --use_high_order_bits.\n");
+        }
+      }
+      else{
+        gid_base = high_order_bit;
+      }
+    }
+    else if (rc == 2){
+      use_hg = 1;
+      use_graph = 0;
+    }
+    else if (rc == 3){
+      use_hg = 0;
+      use_graph = 1;
+    }
+    else if (rc == 6){
+      unit_weights = 0;
+    }
+    else if (rc == 4){
+      if (myRank == 0) usage();
+      MPI_Finalize();
+      return 0;
+    }
+    else if (rc == 5){
+      numGlobalVertices = (size_t)atoll(optarg);
+    }
+    else if (rc <= 0){
+      break;
+    }
+  }
+
+  if (!myRank){
+    printf("Creating graph with approximately %lld vertices.\n",numGlobalVertices);
+    if (use_hg)
+      printf("Using hypergraph queries.\n");
+    if (use_graph)
+      printf("Using graph queries.\n");
+    if (gid_base != 0)
+      printf("Using the high order 32 bits of the global ID fields.\n");
+    if (unit_weights)
+      printf("Vertex weights will all be the same.\n");
+    else
+      printf("Vertex weights will vary widely.\n");
+  }
 
   /******************************************************************
   ** Check that this test makes sense.
@@ -316,41 +440,7 @@ int main(int argc, char *argv[])
                
     }
     MPI_Finalize();
-    exit(0);
-  }
-
-#ifdef GID_BASE
-  if (sizeof(ZOLTAN_ID_TYPE) < 8){
-    if (myRank == 0){
-      printf("ERROR: The Zoltan library and this test must be compiled with 8 byte global IDs if GID_BASE is defined.\n");
-    }
-    MPI_Finalize();
-    exit(0);
-  }
-#endif
-
-  /******************************************************************
-  ** Problem size
-  ******************************************************************/
-
-  numGlobalVertices = NUM_GLOBAL_VERTICES;
-/*
-  vwgt_dim = VERTEX_WEIGHT_DIMENSION;
-  ewgt_dim = EDGE_WEIGHT_DIMENSION;
-*/
-  vwgt_dim = 1;
-  ewgt_dim = 1;
-
-  if (argc > 1){
-    sscanf(argv[1], "%zd", &numGlobalVertices);
-/*
-    if (argc > 2){
-      vwgt_dim = atoi(argv[2]);
-      if (argc > 3){
-        ewgt_dim = atoi(argv[3]);
-      }
-    }
-*/
+    return 1;
   }
 
   create_a_graph();
@@ -388,19 +478,21 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, get_number_of_vertices, NULL);
   Zoltan_Set_Obj_List_Fn(zz, get_vertex_list, NULL);
 
-#ifdef USE_HYPERGRAPH_QUERIES
-  Zoltan_Set_HG_Size_CS_Fn(zz, get_local_hypergraph_size, NULL);
-  Zoltan_Set_HG_CS_Fn(zz, get_local_hypergraph, NULL);
-  Zoltan_Set_HG_Size_Edge_Wts_Fn(zz, get_edge_weights_size, NULL);
-  Zoltan_Set_HG_Edge_Wts_Fn(zz, get_edge_weights, NULL);
-#endif
+  if (use_hg){
+    Zoltan_Set_HG_Size_CS_Fn(zz, get_local_hypergraph_size, NULL);
+    Zoltan_Set_HG_CS_Fn(zz, get_local_hypergraph, NULL);
+    Zoltan_Set_HG_Size_Edge_Wts_Fn(zz, get_edge_weights_size, NULL);
+    Zoltan_Set_HG_Edge_Wts_Fn(zz, get_edge_weights, NULL);
+  }
 
-#ifdef USE_GRAPH_QUERIES
-  Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list,  NULL);
-  Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list,  NULL);
-#endif
+  if (use_graph){
+    Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list,  NULL);
+    Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list,  NULL);
+  }
 
   Zoltan_Set_Part_Multi_Fn(zz, get_partition_list, NULL);
+
+  rc = get_partition_quality(zz, cutn+0, imbalance+0);    /* partition quality */
 
   /******************************************************************
   ** Zoltan can now partition the vertices of hypergraph.
@@ -408,7 +500,6 @@ int main(int argc, char *argv[])
   ** equal to the number of processes.  Process rank 0 will own
   ** partition 0, process rank 1 will own partition 1, and so on.
   ******************************************************************/
-
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
@@ -429,30 +520,11 @@ int main(int argc, char *argv[])
     printf("sorry...\n");
     MPI_Finalize();
     Zoltan_Destroy(&zz);
-    exit(0);
+    return 1;
   }
 
   /******************************************************************
-  ** Check the balance of the partitions before running zoltan.
-  ** The query function get_partition_list() will give the
-  ** partitions of the vertices before we called Zoltan.
-  ******************************************************************/
-
-  if (myRank == 0){
-    printf("\nBALANCE before running Zoltan\n");
-  }
-
-  rc = Zoltan_LB_Eval_HG(zz, 1, NULL);
-
-  if (rc != ZOLTAN_OK){
-    printf("sorry first LB_Eval_HG...\n");
-    MPI_Finalize();
-    Zoltan_Destroy(&zz);
-    exit(0);
-  }
-
-  /******************************************************************
-  ** Print out the balance of the new partitions.
+  ** "Migrate"
   ******************************************************************/
 
   vertex_part = (int *)malloc(sizeof(int) * numMyVertices);
@@ -461,7 +533,7 @@ int main(int argc, char *argv[])
     printf("sorry memory error...\n");
     MPI_Finalize();
     Zoltan_Destroy(&zz);
-    exit(0);
+    return 1;
   }
 
   for (i=0; i < numMyVertices; i++){
@@ -478,15 +550,7 @@ int main(int argc, char *argv[])
     printf("\nBALANCE after running Zoltan\n");
   }
 
-  rc = Zoltan_LB_Eval_HG(zz, 1, NULL);
-
-  if (rc != ZOLTAN_OK){
-    printf("sorry second LB_Eval_HG...\n");
-    MPI_Finalize();
-    Zoltan_Destroy(&zz);
-    exit(0);
-  }
-
+  rc = get_partition_quality(zz, cutn+1, imbalance+1);   /* new partition quality */
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -505,9 +569,7 @@ int main(int argc, char *argv[])
   **********************/
 
   if (vertex_part) free(vertex_part);
-#ifndef UNIT_WEIGHTS
   if (vwgts) free(vwgts);
-#endif
 
   local= (double)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM)/(1024.0*1024);
   MPI_Reduce(&local, &avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -518,13 +580,23 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 
   if (myRank == 0){
+    printf("Imbalance:   BEFORE %f    AFTER %f\n",imbalance[0],imbalance[1]);
+    printf("Net Cut  :   BEFORE %f    AFTER %f\n",cutn[0],cutn[1]);
     printf("Total MBytes in use by test while Zoltan is running: %12.3lf\n",
              mbytes/(1024.0*1024));
     printf("Min/Avg/Max of maximum MBytes in use by Zoltan:    %12.3lf / %12.3lf / %12.3lf\n",
              min, avg, max);
   }
 
-  return 0;
+  status = 0;
+
+  if ((imbalance[1] >= imbalance[0]) || (cutn[1] >= cutn[0])){
+    if (myRank == 0)
+      printf("FAILED: partition quality did not improve\n");
+    status = 1;
+  }
+
+  return status;
 }
 
 /* Create a simple graph.  The vertices of the graph are the objects for Zoltan to partition.
@@ -534,11 +606,9 @@ int main(int argc, char *argv[])
 static int create_a_graph()
 {
   int i, j, nvtxs, num4, mid;
-  int nvtx, midProc;
-#ifndef UNIT_WEIGHTS
+  int midProc;
   int random_weights = (vwgt_dim > 0);
   int heavyPart = (myRank % 3 == 0);
-#endif
 
   nvtxs = (int)(numGlobalVertices / numProcs);
 
@@ -558,17 +628,15 @@ static int create_a_graph()
   ** Check again that this test makes sense.
   ******************************************************************/
 
-#ifdef GID_BASE
-  if ((numGlobalVertices/2) > GID_BASE){
-    /* half of the vertex gids should be below GID_BASE, the other half at or above */
+  if (gid_base > 0 && (numGlobalVertices/2) > gid_base){
+    /* half of the vertex gids should be below gid_base, the other half at or above */
     if (myRank == 0){
-      printf("ERROR: When GID_BASE is defined in the code, the global number of vertices must be < %ld\n",
-                 (GID_BASE)*2);
+      printf("ERROR: When using higher order bits, the global number of vertices must be < %ld\n",
+                 (gid_base)*2);
     }
     MPI_Finalize();
-    exit(0);
+    return 1;
   }
-#endif
 
   if (numProcs == 1){
     nborCount = 3;
@@ -586,53 +654,52 @@ static int create_a_graph()
 
   mbytes += sizeof(ZOLTAN_ID_TYPE) * numProcs;
 
-#ifdef GID_BASE
+  if (gid_base > 0){
+    midProc = numProcs / 2;
+    vertexGIDs[0] = 0;
+    vertexGIDs[midProc] = gid_base;
 
-  midProc = numProcs / 2;
-  vertexGIDs[0] = 0;
-  vertexGIDs[midProc] = GID_BASE;
-
-  for (i=1,j=midProc+1; (i < midProc) || (j < numProcs); i++,j++){
-    if (i < midProc) vertexGIDs[i] = vertexGIDs[i-1] + nvtxs;
-    if (j < numProcs) vertexGIDs[j] = vertexGIDs[j-1] + nvtxs;
+    for (i=1,j=midProc+1; (i < midProc) || (j < numProcs); i++,j++){
+      if (i < midProc) vertexGIDs[i] = vertexGIDs[i-1] + nvtxs;
+      if (j < numProcs) vertexGIDs[j] = vertexGIDs[j-1] + nvtxs;
+    }
   }
 
-#else
+  else{
 
-  vertexGIDs[0] = 0;
-  for (i=1; i < numProcs; i++){
-    vertexGIDs[i] = vertexGIDs[i-1] + nvtxs;
+    vertexGIDs[0] = 0;
+    for (i=1; i < numProcs; i++){
+      vertexGIDs[i] = vertexGIDs[i-1] + nvtxs;
+    }
   }
-
-#endif
 
   if (myRank == 0){
-    printf("Hypergraph will have %zd hyperedges, %d on each process\n", numGlobalVertices, nvtxs);
+    printf("Hypergraph will have %lld hyperedges, %d on each process\n", numGlobalVertices, nvtxs);
   }
 
   if (vwgt_dim == 0) 
     vwgt_dim = 1;
 
-#ifndef UNIT_WEIGHTS
-  vwgts = (float *)calloc( vwgt_dim * nvtxs, sizeof(float));
-  if (!vwgts) return 1;
-
-  mbytes += vwgt_dim * nvtxs * sizeof(float);
+  if (!unit_weights){
+    vwgts = (float *)calloc( vwgt_dim * nvtxs, sizeof(float));
+    if (!vwgts) return 1;
   
-  srand(0);
-
-  for (i = 0; i < nvtxs; i++)  {
-    if (!random_weights){ /* Unit weights if no weights were requested. */
-      vwgts[i] = 1.0;
-    }
-    else{
-      vwgts[i*vwgt_dim] = ((float) rand())/RAND_MAX;
-      if (heavyPart){
-        vwgts[i*vwgt_dim] += .2;
+    mbytes += vwgt_dim * nvtxs * sizeof(float);
+    
+    srand(0);
+  
+    for (i = 0; i < nvtxs; i++)  {
+      if (!random_weights){ /* Unit weights if no weights were requested. */
+        vwgts[i] = 1.0;
+      }
+      else{
+        vwgts[i*vwgt_dim] = ((float) rand())/RAND_MAX;
+        if (heavyPart){
+          vwgts[i*vwgt_dim] += .2;
+        }
       }
     }
   }
-#endif
 
   /* Make edge cut costs higher in the "center" */
 

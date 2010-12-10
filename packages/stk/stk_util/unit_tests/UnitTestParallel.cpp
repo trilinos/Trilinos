@@ -9,29 +9,11 @@
 
 #include <cstdlib>
 
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-class UnitTestParallel : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE( UnitTestParallel );
-  CPPUNIT_TEST( testUnit );
-  CPPUNIT_TEST_SUITE_END();
-
-public:
-  void setUp() {}
-  void tearDown() {}
-  void testUnit();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION( UnitTestParallel);
-
-void UnitTestParallel::testUnit()
+STKUNIT_UNIT_TEST(UnitTestParallel, testUnit)
 {
   int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
   int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
@@ -49,5 +31,5 @@ void UnitTestParallel::testUnit()
     stk::all_write_string(MPI_COMM_WORLD, strout, s);
   }
   
-  CPPUNIT_ASSERT(mpi_rank < mpi_size);
+  STKUNIT_ASSERT_LT(mpi_rank, mpi_size);
 }

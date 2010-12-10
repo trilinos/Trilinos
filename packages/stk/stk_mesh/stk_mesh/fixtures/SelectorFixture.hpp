@@ -29,6 +29,9 @@ namespace fixtures {
 // PartD contains no entities
 // Entity5 is not contained in any user-defined Part
 //
+// FieldA is defined on PartA
+// FieldABC is defined on Parts A, B, C
+//
 // |----------|--|-------|--|----------|    |-------------|
 // |<--PartA---->|       |<--PartC---->|    |   PartD     |
 // |          |<---PartB--->|          |    |             |
@@ -63,6 +66,9 @@ class SelectorFixture {
   stk::mesh::Entity * m_entity4 ;
   stk::mesh::Entity * m_entity5 ;
 
+  stk::mesh::Field<double>& m_fieldA;
+  stk::mesh::Field<double>& m_fieldABC;
+
   void generate_mesh();
 
  private:
@@ -90,4 +96,4 @@ class VariableSelectorFixture {
 } // mesh
 } // stk
 
-#endif // stk_mesh_fixture_UnitTestFixture_hpp
+#endif // stk_mesh_fixture_SelectorFixture_hpp

@@ -276,7 +276,7 @@ char msg[256];
   }
 
   for (int i = mesh->num_elems; i < New_Elem_Index_Size; i++) {
-    New_Elem_Index[i] = -1;
+    New_Elem_Index[i] = ZOLTAN_ID_INVALID;
   }
 
   for (int i = 0; i < num_export; i++) {
@@ -291,7 +291,7 @@ char msg[256];
 
     if (export_procs[i] != proc) {
       /* Export is moving to a new processor */
-      New_Elem_Index[exp_elem] = -1;
+      New_Elem_Index[exp_elem] = ZOLTAN_ID_INVALID;
       proc_ids[exp_elem] = export_procs[i];
     }
   }
@@ -302,7 +302,7 @@ char msg[256];
       /* search for first free location */
       int j=0;
       for (j = 0; j < New_Elem_Index_Size; j++) 
-        if (New_Elem_Index[j] == -1) break;
+        if (New_Elem_Index[j] == ZOLTAN_ID_INVALID) break;
 
       New_Elem_Index[j] = import_global_ids[gid+i*num_gid_entries];
     }
@@ -333,7 +333,7 @@ char msg[256];
     for (int j = 0; j < elements[exp_elem].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (elements[exp_elem].adj[j] == -1) continue;
+      if (elements[exp_elem].adj[j] == ZOLTAN_ID_INVALID) continue;
 
       /* Set change flag for adjacent local elements. */
       if (elements[exp_elem].adj_proc[j] == proc) {
@@ -350,7 +350,7 @@ char msg[256];
     for (int j = 0; j < elements[i].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (elements[i].adj[j] == -1) continue;
+      if (elements[i].adj[j] == ZOLTAN_ID_INVALID) continue;
 
       if (elements[i].adj_proc[j] == proc) {
         /* adjacent element is local; check whether it is moving. */
@@ -417,7 +417,7 @@ char msg[256];
       for (k = 0; k < elements[bor_elem].adj_len; k++) {
 
         /* Skip NULL adjacencies (sides that are not adj to another elem). */
-        if (elements[bor_elem].adj[k] == -1) continue;
+        if (elements[bor_elem].adj[k] == ZOLTAN_ID_INVALID) continue;
 
         if (elements[bor_elem].adj[k] == mesh->ecmap_neighids[offset] &&
             elements[bor_elem].adj_proc[k] == mesh->ecmap_id[i]) {
@@ -436,7 +436,7 @@ char msg[256];
               if (recv_vec) delete [] recv_vec;
               return;
             }
-            elements[bor_elem].adj[k] = (ZOLTAN_ID_TYPE)idx;
+            elements[bor_elem].adj[k] = idx;
           }
           break;  /* from k loop */
         }
@@ -496,7 +496,7 @@ void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
 
   /* compact elements array, as the application expects the array to be dense */
   for (int i = 0; i < New_Elem_Index_Size; i++) {
-    if (New_Elem_Index[i] != -1) continue;
+    if (New_Elem_Index[i] != ZOLTAN_ID_INVALID) continue;
 
     /* Don't want to shift all elements down one position to fill the  */
     /* blank spot -- too much work to adjust adjacencies!  So find the */
@@ -505,7 +505,7 @@ void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
     int last = 0;
 
     for (last = New_Elem_Index_Size-1; last >= 0; last--)
-      if (New_Elem_Index[last] != -1) break;
+      if (New_Elem_Index[last] != ZOLTAN_ID_INVALID) break;
 
     /* If (last < i), array is already dense; i is just in some blank spots  */
     /* at the end of the array.  Quit the compacting.                     */
@@ -520,7 +520,7 @@ void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
     for (int j = 0; j < elements[i].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (elements[i].adj[j] == -1) continue;
+      if (elements[i].adj[j] == ZOLTAN_ID_INVALID) continue;
 
       ZOLTAN_ID_TYPE adj_elem = elements[i].adj[j];
 
@@ -540,10 +540,10 @@ void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
 
     /* Update New_Elem_Index */
     New_Elem_Index[i] = New_Elem_Index[last];
-    New_Elem_Index[last] = -1;
+    New_Elem_Index[last] = ZOLTAN_ID_INVALID;
 
     /* clear elements[last] */
-    elements[last].globalID = -1;
+    elements[last].globalID = ZOLTAN_ID_INVALID;
     elements[last].border = 0;
     elements[last].my_part = -1;
     elements[last].perm_value = -1;
@@ -705,7 +705,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   /* send globalID for all adjacencies */
 
   for (int i =  0; i < current_elem->adj_len; i++) {
-    if (current_elem->adj[i] != -1 && current_elem->adj_proc[i] == proc) 
+    if (current_elem->adj[i] != ZOLTAN_ID_INVALID && current_elem->adj_proc[i] == proc) 
       *buf_id_type++ = New_Elem_Index[current_elem->adj[i]];
     else
       *buf_id_type++ = current_elem->adj[i];
@@ -763,9 +763,9 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
 
   /*
    * need to remove this entry from this procs list of elements
-   * do so by setting the globalID to -1
+   * do so by setting the globalID to ZOLTAN_ID_INVALID. 
    */
-  current_elem->globalID = -1;
+  current_elem->globalID = ZOLTAN_ID_INVALID;
   free_element_arrays(current_elem, mesh);
 
   /*
@@ -866,8 +866,12 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
       current_elem->adj[i] =      *buf_id_type++;
       current_elem->adj_proc[i] = *buf_int++;
 
-      if (current_elem->adj[i] != -1 && current_elem->adj_proc[i] == proc) {
-        current_elem->adj[i] = in_list(current_elem->adj[i], New_Elem_Index_Size, New_Elem_Index);
+      if (current_elem->adj[i] != ZOLTAN_ID_INVALID && current_elem->adj_proc[i] == proc) {
+        idx = in_list(current_elem->adj[i], New_Elem_Index_Size, New_Elem_Index);
+        if (idx < 0)
+          current_elem->adj[i] = ZOLTAN_ID_INVALID;
+        else
+          current_elem->adj[i] = (ZOLTAN_ID_TYPE)idx;
       }
     }
     size += (adjgids_len + adjprocs_len);

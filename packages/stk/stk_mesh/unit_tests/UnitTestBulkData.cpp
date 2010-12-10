@@ -19,8 +19,6 @@
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-
 #include <stk_mesh/fixtures/BoxFixture.hpp>
 #include <stk_mesh/fixtures/RingFixture.hpp>
 
@@ -37,7 +35,7 @@ using stk::mesh::EntityProc;
 using stk::mesh::BaseEntityRank;
 using stk::mesh::PairIterRelation;
 using stk::mesh::EntityId;
-using stk::mesh::TopologicalMetaData;
+using stk::mesh::DefaultFEM;
 using stk::mesh::fixtures::RingFixture;
 using stk::mesh::fixtures::BoxFixture;
 
@@ -227,7 +225,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
   const int spatial_dimension = 3;
-  MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
   BulkData bulk( meta , pm , 100 );
 
   const PartVector no_parts ;
@@ -345,7 +343,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
     const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
     const int spatial_dimension = 3;
-    MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
+    MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
 
     const PartVector no_parts ;
 
@@ -679,7 +677,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
   const unsigned p_size = stk::parallel_machine_size( pm );
 
   const int spatial_dimension = 3;
-  MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
 
   meta.commit();
 
@@ -783,9 +781,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
 
   // Make a ring_mesh and add an extra part
   RingFixture ring_mesh( pm , nPerProc, false /* don't use edge parts */);
-  TopologicalMetaData & top_data = ring_mesh.m_top_data;
   stk::mesh::Part& special_part =
-    ring_mesh.m_meta_data.declare_part( "special_node_part", stk::mesh::BaseEntityRank );
+    declare_part(ring_mesh.m_meta_data,  "special_node_part", stk::mesh::BaseEntityRank );
   ring_mesh.m_meta_data.commit();
   BulkData& bulk = ring_mesh.m_bulk_data;
 
@@ -799,7 +796,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
 
   // grab the first edge
   stk::mesh::EntityVector edges;
-  stk::mesh::get_entities( ring_mesh.m_bulk_data, top_data.edge_rank, edges );
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(ring_mesh.m_fem);
+  stk::mesh::get_entities( ring_mesh.m_bulk_data, element_rank, edges );
   stk::mesh::Entity& edge = *( edges.front() );
 
   // get one of the nodes related to this edge

@@ -48,19 +48,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace Teuchos {
 
 
-/** Stores the current stacktrace into an internal global variable.
+/** \brief Stores the current stacktrace into an internal global variable.
  *
  * \ingroup TeuchosStackTrace_grp
  */
 void store_stacktrace();
 
-/** Returns the last stored stacktrace as a string.
+/** \brief Returns the last stored stacktrace as a string.
  *
  * \ingroup TeuchosStackTrace_grp
  */
 std::string get_stored_stacktrace();
 
-/** Returns the current stacktrace as a string.
+/** \brief Returns the current stacktrace as a string.
  *
  * \param impl_stacktrace_depth [in] The stacktrace depth to remove from the
  * stacktrace printout to avoid showing users implementation functions in the
@@ -70,13 +70,13 @@ std::string get_stored_stacktrace();
  */
 std::string get_stacktrace(int impl_stacktrace_depth=0);
 
-/** Prints the current stacktrace to stdout.
+/** \brief Prints the current stacktrace to stdout.
  *
  * \ingroup TeuchosStackTrace_grp
  */
 void show_stacktrace();
 
-/** Prints the current stacktrace to stdout on segfault.
+/** \brief Prints the current stacktrace to stdout on segfault.
  *
  * \ingroup TeuchosStackTrace_grp
  */

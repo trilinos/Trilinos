@@ -50,7 +50,7 @@
 #include "Stokhos_ConstantOrthogPolyExpansion.hpp"
 #include "Stokhos_AlgebraicOrthogPolyExpansion.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
-#include "Stokhos_DerivOrthogPolyExpansion.hpp"
+//#include "Stokhos_DerivOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_ExpansionFactory.hpp"

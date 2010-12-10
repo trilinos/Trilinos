@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
   pio_info.file_type		= -1;
   pio_info.chunk_reader         = 0;
   pio_info.init_dist_type	= -1;
-  pio_info.init_size		= ZOLTAN_ID_CONSTANT(-1);
+  pio_info.init_size		= ZOLTAN_ID_INVALID;
   pio_info.init_dim 		= -1;
   pio_info.init_vwgt_dim 	= -1;
   pio_info.init_dist_pins       = -1;

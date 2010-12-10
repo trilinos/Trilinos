@@ -82,6 +82,7 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
  * entity keys.
  */
 void print_stk_mesh_relation_map(stk::diag::Writer &writer,
+                                 const std::vector<std::string> &entity_names,
                                  IdentProcRelation relation);
 } // namespace search_util
 } // namespace stk

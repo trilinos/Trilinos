@@ -199,5 +199,14 @@ public:
   TEUCHOS_ADD_ENHANCEDNUMBERCONVERTER(CONVERTER_MAP, T ); \
   TEUCHOS_ADD_ARRAYCONVERTER(CONVERTER_MAP, Teuchos::EnhancedNumberValidator< T >, T );
 
+/** \brief Add a validator converter of type CONVERTER_TYPE which converts
+ *  validators of VALIDATOR_TYPE to the map CONVERTER_MAP.
+ */
+#define TEUCHOS_ADD_VALIDATOR_CONVERTER(CONVERTER_MAP, VALIDATOR_TYPE, CONVERTER_TYPE) \
+  (CONVERTER_MAP).insert( \
+    Teuchos::ValidatorXMLConverterDB::ConverterPair( \
+      Teuchos::DummyObjectGetter< VALIDATOR_TYPE > \
+      ::getDummyObject()->getXMLTypeName(), \
+      Teuchos::rcp(new CONVERTER_TYPE )));
 
 #endif // TEUCHOS_VALIDATORXMLCONVERTERDB_HPP

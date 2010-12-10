@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -34,16 +32,11 @@
 #include <ostream>
 #include <map>
 
-#include "Teuchos_Array.hpp"
-
 namespace Stokhos {
 
   /*! 
    * \brief Data structure storing a sparse 3-tensor C(i,j,k) in a 
    * a compressed format.
-   */
-  /*!
-   * To do:  Remove old data structure and accessor methods.  
    */
   template <typename ordinal_type, typename value_type>
   class Sparse3Tensor {
@@ -52,19 +45,31 @@ namespace Stokhos {
 
     typedef std::map<const ordinal_type, value_type> i_map;
     typedef std::map<const ordinal_type, i_map> ji_map;
-    typedef Teuchos::Array<ji_map> kji_map;
+    typedef std::map<const ordinal_type, ji_map> kji_map;
 
     typedef std::map<const ordinal_type, value_type> j_map;
     typedef std::map<const ordinal_type, j_map> kj_map;
-    typedef Teuchos::Array<kj_map> ikj_map;
+    typedef std::map<const ordinal_type, kj_map> ikj_map;
 
   public:
+
+    //! Iterator for looping over k entries
+    typedef typename kji_map::const_iterator k_iterator;
+
+    //! Iterator for looping over k entries in reverse
+    typedef typename kji_map::const_reverse_iterator k_reverse_iterator;
 
     //! Iterator for looping over j entries given k
     typedef typename ji_map::const_iterator kj_iterator;
 
     //! Iterator for looping over i entries given k and j
     typedef typename j_map::const_iterator kji_iterator;
+
+    //! Iterator for looping over i entries
+    typedef typename ikj_map::const_iterator i_iterator;
+
+    //! Iterator for looping over i entries in reverse
+    typedef typename ikj_map::const_reverse_iterator i_reverse_iterator;
 
     //! Iterator for looping over k entries given i
     typedef typename kj_map::const_iterator ik_iterator;
@@ -73,10 +78,10 @@ namespace Stokhos {
     typedef typename j_map::const_iterator ikj_iterator;
     
     //! Constructor
-    Sparse3Tensor(ordinal_type sz);
+    Sparse3Tensor() {}
     
     //! Destructor
-    ~Sparse3Tensor();
+    ~Sparse3Tensor() {}
 
     //! Add new term for given (i,j,k)
     /*!
@@ -97,23 +102,46 @@ namespace Stokhos {
     //! Print tensor
     void print(std::ostream& os) const;
 
-    /** \name New k-based data-structure accessor methods */
+    /** \name k-based data-structure accessor methods */
     //@{
 
     //! Number of k entries in C(i,j,k)
     ordinal_type num_k() const { return kji_data.size(); }
 
     //! Number of j entries in C(i,j,k) for given k
-    ordinal_type num_j(ordinal_type k) const { return kji_data[k].size(); }
+    ordinal_type num_j(const k_iterator& k) const { return k->second.size(); }
 
     //! Number of i entries in C(i,j,k) for given k and j
     ordinal_type num_i(const kj_iterator& j) const { return j->second.size(); }
 
+    //! Return k iterator for given index k
+    k_iterator find_k(ordinal_type k) const { return kji_data.find(k); }
+
+    //! Iterator pointing to first k entry
+    k_iterator k_begin() const { return kji_data.begin(); }
+
+    //! Iterator pointing to last k entry
+    k_iterator k_end() const { return kji_data.end(); }
+
+    //! Reverse iterator pointing to last k entry
+    k_reverse_iterator k_rbegin() const { return kji_data.rbegin(); }
+
+    //! Reverse iterator pointing to first k entry
+    k_reverse_iterator k_rend() const { return kji_data.rend(); }
+
     //! Iterator pointing to first j entry for given k
-    kj_iterator j_begin(ordinal_type k) const { return kji_data[k].begin(); }
+    kj_iterator j_begin(const k_iterator& k) const { return k->second.begin(); }
 
     //! Iterator pointing to last j entry for given k
-    kj_iterator j_end(ordinal_type k) const { return kji_data[k].end(); }
+    kj_iterator j_end(const k_iterator& k) const { return k->second.end(); }
+
+    //! Iterator pointing to first j entry for given k
+    kj_iterator j_begin(const k_reverse_iterator& k) const { 
+      return k->second.begin(); }
+
+    //! Iterator pointing to last j entry for given k
+    kj_iterator j_end(const k_reverse_iterator& k) const { 
+      return k->second.end(); }
 
     //! Iterator pointing to first i entry for given j and k
     kji_iterator i_begin(const kj_iterator& j) const { 
@@ -124,23 +152,46 @@ namespace Stokhos {
 
     //@}
 
-    /** \name New i-based data-structure accessor methods */
+    /** \name i-based data-structure accessor methods */
     //@{
 
     //! Number of i entries in C(i,j,k)
     ordinal_type num_i() const { return ikj_data.size(); }
 
     //! Number of k entries in C(i,j,k) for given i
-    ordinal_type num_k(ordinal_type i) const { return ikj_data[i].size(); }
+    ordinal_type num_k(const i_iterator& i) const { return i->second.size(); }
 
     //! Number of j entries in C(i,j,k) for given i and k
     ordinal_type num_j(const ik_iterator& k) const { return k->second.size(); }
 
+    //! Return i iterator for given index i
+    i_iterator find_i(ordinal_type i) const { return ikj_data.find(i); }
+
+    //! Iterator pointing to first k entry
+    i_iterator i_begin() const { return ikj_data.begin(); }
+
+    //! Iterator pointing to last k entry
+    i_iterator i_end() const { return ikj_data.end(); }
+
+    //! Reverse iterator pointing to last k entry
+    i_reverse_iterator i_rbegin() const { return ikj_data.rbegin(); }
+
+    //! Reverse iterator pointing to first k entry
+    i_reverse_iterator i_rend() const { return ikj_data.rend(); }
+
     //! Iterator pointing to first k entry for given i
-    ik_iterator k_begin(ordinal_type i) const { return ikj_data[i].begin(); }
+    ik_iterator k_begin(const i_iterator& i) const { return i->second.begin(); }
 
     //! Iterator pointing to last k entry for given i
-    ik_iterator k_end(ordinal_type i) const { return ikj_data[i].end(); }
+    ik_iterator k_end(const i_iterator& i) const { return i->second.end(); }
+
+    //! Iterator pointing to first k entry for given i
+    ik_iterator k_begin(const i_reverse_iterator& i) const { 
+      return i->second.begin(); }
+
+    //! Iterator pointing to last k entry for given i
+    ik_iterator k_end(const i_reverse_iterator& i) const { 
+      return i->second.end(); }
 
     //! Iterator pointing to first j entry for given i and k
     ikj_iterator j_begin(const ik_iterator& k) const { 
@@ -151,17 +202,8 @@ namespace Stokhos {
 
     //@}
 
-    /** \name Old data-structure accessor methods */
-    //@{
-
-    //! Return number of n of non-zero's in C(:,:,k) for a given k
-    ordinal_type num_values(ordinal_type k) const;
-      
-    //! Get value C(i,j,k) for 0 <= l < n for a given k
-    void value(ordinal_type k, ordinal_type l, 
-	       ordinal_type& i, ordinal_type& j, value_type& c) const;
-
-    //@}
+    //! Get Cijk value for a given i, j, k indices
+    value_type getValue(ordinal_type i, ordinal_type j, ordinal_type k) const;
 
   private:
 
@@ -173,21 +215,7 @@ namespace Stokhos {
 
   protected:
 
-    /** \name Old data structures */
-    //@{
-
-    //! i-indices in Cijk for each k
-    Teuchos::Array< Teuchos::Array<ordinal_type> > i_indices;
-
-    //! j-indices in Cijk for each k
-    Teuchos::Array< Teuchos::Array<ordinal_type> > j_indices;
-
-    //! values in Cijk for each k
-    Teuchos::Array< Teuchos::Array<value_type> > Cijk_values;
-
-    //@}
-
-    /** \name New k-based structure */
+    /** \name k-based structure */
     //@{
 
     //! kji indices and values in Cijk
@@ -195,7 +223,7 @@ namespace Stokhos {
 
     //@}
 
-    /** \name New i-based structure */
+    /** \name i-based structure */
     //@{
 
     //! ikj indices and values in Cijk

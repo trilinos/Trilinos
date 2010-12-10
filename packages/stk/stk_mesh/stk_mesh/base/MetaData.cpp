@@ -115,19 +115,60 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
   m_shares_part = & declare_part( std::string("{SHARES}") );
 }
 
+MetaData::MetaData()
+  : m_commit( false ),
+    m_part_repo( this ),
+    m_attributes(),
+    m_universal_part( NULL ),
+    m_owns_part( NULL ),
+    m_shares_part( NULL ),
+    m_field_repo(),
+    m_field_relations( ),
+    m_properties( ),
+    m_entity_rank_names( )
+{
+  // Declare the predefined parts
+
+  m_universal_part = m_part_repo.universal_part();
+  m_owns_part = & declare_part( std::string("{OWNS}") );
+  m_shares_part = & declare_part( std::string("{SHARES}") );
+}
+
 //----------------------------------------------------------------------
 
-const std::string& MetaData::entity_rank_name( unsigned ent_type ) const
+void MetaData::set_entity_rank_names(const std::vector<std::string> &entity_rank_names) 
 {
-  if (ent_type >= m_entity_rank_names.size()) {
+  if ( entity_rank_names.empty() ) {
+    std::string msg( "stk::mesh::MetaData constructor FAILED: no entity types" );
+    throw std::runtime_error( msg );
+  }
+
+  m_entity_rank_names = entity_rank_names;
+}
+
+const std::string& MetaData::entity_rank_name( EntityRank entity_rank ) const
+{
+  if (entity_rank >= m_entity_rank_names.size()) {
     std::ostringstream msg;
-    msg << "Error in MetaData::entity_rank_name: entity-type (" << ent_type
+    msg << "Error in MetaData::entity_rank_name: entity-type (" << entity_rank
         << ") out of range. Must be in range [0 .. " << m_entity_rank_names.size()
         << ").";
     throw std::runtime_error( msg.str() );
   }
 
-  return m_entity_rank_names[ent_type];
+  return m_entity_rank_names[entity_rank];
+}
+
+EntityRank MetaData::entity_rank( const std::string &name ) const
+{
+  EntityRank entity_rank = InvalidEntityRank;
+
+  for (size_t i = 0; i < m_entity_rank_names.size(); ++i)
+    if (equal_case(name, m_entity_rank_names[i])) {
+      entity_rank = i;
+      break;
+    }
+  return entity_rank;
 }
 
 //----------------------------------------------------------------------
@@ -158,7 +199,7 @@ Part & MetaData::declare_part( const std::string & p_name )
 {
   require_not_committed();
 
-  const unsigned rank = std::numeric_limits<unsigned>::max();
+  const EntityRank rank = InvalidEntityRank;
 
   return *m_part_repo.declare_part( p_name, rank );
 }
@@ -261,7 +302,7 @@ MetaData::declare_field_base(
 
 void MetaData::declare_field_restriction(
   FieldBase      & arg_field ,
-  unsigned         arg_entity_rank ,
+  EntityRank         arg_entity_rank ,
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {

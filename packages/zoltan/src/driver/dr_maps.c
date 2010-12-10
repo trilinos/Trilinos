@@ -118,7 +118,7 @@ struct map_list_head *tmp_maps = NULL, *map = NULL;
     for (j = 0; j < elem->adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (elem->adj[j] == -1) continue;
+      if (elem->adj[j] == ZOLTAN_ID_INVALID) continue;
 
       iadj_elem = elem->adj[j];
       iadj_proc = elem->adj_proc[j];
@@ -333,7 +333,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     lids[i] = (ZOLTAN_ID_TYPE)i;
     for (j = 0; j < current->adj_len; j++) {
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current->adj[j] == -1) continue;
+      if (current->adj[j] == ZOLTAN_ID_INVALID) continue;
       if (current->adj_proc[j] != proc)
         num_nbor++;
     }
@@ -401,7 +401,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     current = &(mesh->elements[i]);
     for (j = 0; j < current->adj_len; j++) {
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current->adj[j] == -1) continue;
+      if (current->adj[j] == ZOLTAN_ID_INVALID) continue;
       if (current->adj_proc[j] != proc) {
         nbor_gids[cnt] = current->adj[j];
         my_gids[cnt] = current->globalID;
@@ -586,7 +586,7 @@ ZOLTAN_COMM_OBJ *comm, *comm_copy;
     current = &(mesh->elements[map.elem_id[map_size]]);
     for (k = 0; k < current->adj_len; k++) {
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (current->adj[k] == ZOLTAN_ID_CONSTANT(-1)) continue;
+      if (current->adj[k] == ZOLTAN_ID_INVALID) continue;
       if (current->adj_proc[k] == nbor_proc && 
           current->adj[k] ==  others_want[j+3]) {
         map.side_id[map_size] = k + 1;

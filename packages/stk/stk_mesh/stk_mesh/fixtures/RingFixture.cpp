@@ -20,8 +20,6 @@
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
@@ -31,18 +29,19 @@ namespace fixtures {
 
 /**
  * Creates a ring mesh (circular loop of edges and nodes). Note that we create
- * a part for each locally owned edge.
+ * a part for each locally owned edge. Also note that, since we are in 1D, 
+ * the "edges" are actually elements.
  */
 
 RingFixture::RingFixture( stk::ParallelMachine pm ,
                           unsigned num_edge_per_proc ,
                           bool use_edge_parts )
-  : m_spatial_dimension(3),
-    m_meta_data( TopologicalMetaData::entity_rank_names(m_spatial_dimension) ),
+  : m_spatial_dimension(1),
+    m_meta_data( fem::entity_rank_names(m_spatial_dimension) ),
     m_bulk_data( m_meta_data, pm, 100 ),
-    m_top_data( m_meta_data, m_spatial_dimension ),
+    m_fem( m_meta_data, m_spatial_dimension ),
     m_edge_parts(),
-    m_edge_part_extra( m_meta_data.declare_part( "edge_extra" , m_top_data.edge_rank ) ),
+    m_edge_part_extra( declare_part(m_meta_data, "edge_extra" , fem::element_rank(m_fem) ) ),
     m_num_edge_per_proc( num_edge_per_proc ),
     m_node_ids(),
     m_edge_ids()
@@ -52,7 +51,7 @@ RingFixture::RingFixture( stk::ParallelMachine pm ,
     for ( unsigned i = 0 ; i < num_edge_per_proc ; ++i ) {
       std::ostringstream name ;
       name << "EdgePart_" << i ;
-      m_edge_parts[i] = & m_meta_data.declare_part( name.str() , m_top_data.edge_rank );
+      m_edge_parts[i] = & declare_part(m_meta_data,  name.str() , fem::element_rank(m_fem) );
     }
   }
 }

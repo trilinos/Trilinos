@@ -10,13 +10,17 @@
 #define stk_linsys_unit_tests_UnitTest_helpers_hpp
 
 #include <stk_linsys/LinearSystemInterface.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
+
+typedef stk::mesh::Field<double>                          ScalarField ;
+typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
 
 void fill_utest_mesh_meta_data(stk::mesh::MetaData& meta_data, bool use_temperature=true);
 void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data);
 
-void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, stk::mesh::ScalarField& field, stk::linsys::LinearSystemInterface& ls);
+void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::LinearSystemInterface& ls);
 
-void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, stk::mesh::ScalarField& field, stk::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs);
+void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs);
 
 #endif
 

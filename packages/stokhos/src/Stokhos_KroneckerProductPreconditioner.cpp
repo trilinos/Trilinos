@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -29,19 +27,24 @@
 // @HEADER
 
 #include "Stokhos_KroneckerProductPreconditioner.hpp"
-#include "Epetra_config.h"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Epetra_LocalMap.h"
 #include "EpetraExt_BlockMultiVector.h"
 
 Stokhos::KroneckerProductPreconditioner::
 KroneckerProductPreconditioner(
+  const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
   const Teuchos::RCP<const Epetra_Map>& base_map_,
   const Teuchos::RCP<const Epetra_Map>& sg_map_,
   const Teuchos::RCP<Stokhos::PreconditionerFactory>& mean_prec_factory_,
   const Teuchos::RCP<Stokhos::PreconditionerFactory>& G_prec_factory_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_) :
   label("Stokhos Kronecker Product Preconditioner"),
+  sg_comm(sg_comm_),
+  sg_basis(sg_basis_),
+  epetraCijk(epetraCijk_),
   base_map(base_map_),
   sg_map(sg_map_),
   mean_prec_factory(mean_prec_factory_),
@@ -51,10 +54,23 @@ KroneckerProductPreconditioner(
   useTranspose(false),
   sg_op(),
   sg_poly(),
-  Cijk(),
+  Cijk(epetraCijk->getParallelCijk()),
+  scale_op(true),
   only_use_linear(false)
 {
+  scale_op = params->get("Scale Operator by Inverse Basis Norms", true);
   only_use_linear = params_->get("Only Use Linear Terms", false);
+  // Build new parallel Cijk if we are only using the linear terms, Cijk
+  // is distributed over proc's, and Cijk includes more than just the linear
+  // terms (so we have the right column map; otherwise we will be importing
+  // much more than necessary)
+  if (only_use_linear && epetraCijk->isStochasticParallel()) {
+    int dim = sg_basis->dimension();
+    if (epetraCijk->getKEnd() > dim+1)
+      epetraCijk = 
+	Teuchos::rcp(new EpetraSparse3Tensor(*epetraCijk, 1, dim+1));
+					     
+  }
 }
 
 Stokhos::KroneckerProductPreconditioner::
@@ -73,67 +89,39 @@ setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op_,
   label = std::string("Stokhos Kronecker Product Preconditioner:\n") + 
     std::string("		***** ") + 
     std::string(mean_prec->Label());
-  Cijk = sg_op->getTripleProduct();
   
-  // Number of stochastic rows
-  Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis =
-    sg_poly->basis();
-  int num_rows = basis->size();
-
-  int k_end = sg_poly->size();
-  int dim = sg_poly->basis()->dimension();
-  if (only_use_linear && sg_poly->size() > dim+1)
-    k_end = dim + 1;
-
   // Build graph of G matrix
-  // Loop over Cijk entries including a non-zero in the graph at
-  // indices (i,j) if there is any k for which Cijk is non-zero
-  Epetra_LocalMap G_map(num_rows, 0, base_map->Comm());
-  Teuchos::RCP<Epetra_CrsGraph> graph =
-    Teuchos::rcp(new Epetra_CrsGraph(Copy, G_map, 0));
-  for (int k=0; k<k_end; k++) { 
-    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
-	 j_it != Cijk->j_end(k); ++j_it) {
-      int j = index(j_it);
-      for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
-	   i_it != Cijk->i_end(j_it); ++i_it) {
-        int i = index(i_it);
-        graph->InsertGlobalIndices(i, 1, &j);
-      }
-    }
-  }
-
-  // Sort, remove redundencies, transform to local, ...
-  graph->FillComplete();
+  Teuchos::RCP<const Epetra_CrsGraph> graph = epetraCijk->getStochasticGraph();
 
   // Construct G matrix: G_{ij} = \sum tr(A'B)/tr(A'A)*<psi_alpha,psi_i,psi_j>.
+  const Teuchos::Array<double>& norms = sg_basis->norm_squared();
   G = Teuchos::rcp(new Epetra_CrsMatrix(Copy, *graph));
   Teuchos::RCP<Epetra_CrsMatrix> A0 =
     Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_poly->getCoeffPtr(0), true);
   double traceAB0 = MatrixTrace(*A0, *A0);
-  int * MyGlobalElements = G_map.MyGlobalElements();
-  Teuchos::Array<double> values;
-  Teuchos::Array<int> indices;
-  for (int k=0; k<k_end; k++) {
+  Cijk_type::k_iterator k_begin = Cijk->k_begin();
+  Cijk_type::k_iterator k_end = Cijk->k_end();
+  if (only_use_linear) {
+    int dim = sg_basis->dimension();
+    k_end = Cijk->find_k(dim+1);
+  }
+  for (Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+    int k = index(k_it);
     Teuchos::RCP<Epetra_CrsMatrix> A_k =
-      Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_poly->getCoeffPtr(k), true);
+      Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_poly->getCoeffPtr(k), 
+						  true);
     double traceAB = MatrixTrace(*A_k, *A0);
-    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k); 
-	 j_it != Cijk->j_end(k); ++j_it) {
-      int j = index(j_it);
-      int ni = Cijk->num_i(j_it);
-      indices.resize(ni);
-      values.resize(ni);
-      int ii=0;
+    for (Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	 j_it != Cijk->j_end(k_it); ++j_it) {
+      int j = epetraCijk->GCID(index(j_it));
       for (Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
 	   i_it != Cijk->i_end(j_it); ++i_it) {
-	int i = index(i_it);
-	double c = value(i_it);
-	indices[ii] = i;
-	values[ii] = c*traceAB/traceAB0;
-	ii++;
+        int i = epetraCijk->GRID(index(i_it));
+	double c = value(i_it)*traceAB/traceAB0;
+	if (scale_op)
+	  c /= norms[i];
+	G->SumIntoGlobalValues(i, 1, &c, &j);
       }
-      G->SumIntoGlobalValues(MyGlobalElements[j], ni, &values[0], &indices[0]);
     }
   }
   G->FillComplete();
@@ -165,10 +153,8 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
   EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
 
-  int num_blocks = sg_poly->basis()->size();
   const Epetra_Map& G_map = G->RowMap();
   int NumMyElements = G_map.NumMyElements();
-  int * MyGlobalElements = G_map.MyGlobalElements();
   int vecLen = sg_input.GetBlock(0)->MyLength(); // Global length of vector.
   int m = sg_input.NumVectors();
 
@@ -179,28 +165,28 @@ Apply(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   // Preconditioner is P = (G x I)(I x A_0)
 
   // Apply I x A_0
-  for (int i=0; i<num_blocks; i++) {
+  for (int i=0; i<NumMyElements; i++) {
     mean_prec->Apply(*(sg_input.GetBlock(i)), *(sg_result.GetBlock(i)));
   }
 
   Teuchos::RCP<Epetra_MultiVector> x;
   for (int irow=0 ; irow<NumMyElements; irow++) {
-    x = sg_result.GetBlock(MyGlobalElements[irow]);
+    x = sg_result.GetBlock(irow);
     for (int vcol=0; vcol<m; vcol++) {
       for (int icol=0; icol<vecLen; icol++) {
-	(*result_MVT)[m*vcol+icol][irow] = (*x)[vcol][icol];
+        (*result_MVT)[m*vcol+icol][irow] = (*x)[vcol][icol];
       }
     }
   }
 
   // Apply G x I
   G_prec->Apply(*result_MVT, *result_MVT);
-  
+
   for (int irow=0; irow<NumMyElements; irow++) {
-    x = sg_result.GetBlock(MyGlobalElements[irow]);
+    x = sg_result.GetBlock(irow);
     for (int vcol=0; vcol<m; vcol++) {
       for (int icol=0; icol<vecLen; icol++) {
-	(*x)[vcol][icol] = (*result_MVT)[m*vcol+icol][irow];
+        (*x)[vcol][icol] = (*result_MVT)[m*vcol+icol][irow];
       }
     }
   }
@@ -219,10 +205,8 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
   EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
 
-  int num_blocks = sg_poly->basis()->size();
   const Epetra_Map& G_map = G->RowMap();
   int NumMyElements = G_map.NumMyElements();
-  int * MyGlobalElements = G_map.MyGlobalElements();
   int vecLen = sg_input.GetBlock(0)->MyLength(); // Global length of vector.
   int m = sg_input.NumVectors();
 
@@ -231,10 +215,11 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   }
 
   // Preconditioner is P^{-1} = (I x A_0^{-1})(G^{-1} x I)
+  // => y = P^{-1}x => Y = A_0^{-1}(G^{-1}X^T)^T where X = multivec(x)
 
   Teuchos::RCP<Epetra_MultiVector> x;
   for (int irow=0 ; irow<NumMyElements; irow++) {
-    x = sg_input.GetBlock(MyGlobalElements[irow]);
+    x = sg_input.GetBlock(irow);
     for (int vcol=0; vcol<m; vcol++) {
       for (int icol=0; icol<vecLen; icol++) {
 	(*result_MVT)[m*vcol+icol][irow] = (*x)[vcol][icol];
@@ -251,7 +236,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
   }
   
   for (int irow=0; irow<NumMyElements; irow++) {
-    x = sg_result.GetBlock(MyGlobalElements[irow]);
+    x = sg_result.GetBlock(irow);
     for (int vcol=0; vcol<m; vcol++) {
       for (int icol=0; icol<vecLen; icol++) {
 	(*x)[vcol][icol] = (*result_MVT)[m*vcol+icol][irow];
@@ -264,7 +249,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 #ifdef STOKHOS_TEUCHOS_TIME_MONITOR
     TEUCHOS_FUNC_TIME_MONITOR("Mean Preconditioner Apply Inverse");
 #endif
-    for (int i=0; i<num_blocks; i++) {
+    for (int i=0; i<NumMyElements; i++) {
       mean_prec->ApplyInverse(*(sg_result.GetBlock(i)), 
 			      *(sg_result.GetBlock(i)));
     }
@@ -307,7 +292,7 @@ const Epetra_Comm &
 Stokhos::KroneckerProductPreconditioner::
 Comm() const
 {
-  return base_map->Comm();
+  return *sg_comm;
 }
 const Epetra_Map& 
 Stokhos::KroneckerProductPreconditioner::

@@ -1,10 +1,12 @@
-/**************************************************************
-* Stress test for a Zoltan partitioning.
+/************************************************************
+* This is called a stress test because it builds an
+* arbitrarily large graph.  It tests the HIER_ASSIST
+* option to hierarchical partitioning.
 *
-* Create a graph with varying edge weights.
-* Time communication that corresponds with the weights.
-*
-* Argument is approximate number of vertices in the graph
+* TODO:
+* Create a function that performs communication where comm
+* volume is proportional to the graph edge weight.  This is
+* to test the value of partitioning to network hierarchy.
 ***************************************************************/
 
 #include <mpi.h>
@@ -16,25 +18,40 @@
 #include "zoltan.h"
 #include "zz_util_const.h"
 
-#define NUM_GLOBAL_VERTICES     2500000    /* default */
+#define NUM_GLOBAL_VERTICES     2500    /* default */
 
 static int verbose=0;
 static int myRank, numProcs, numMyPins;
-static int cylCount, cylSize, numGlobalVertices;
-static int myFirstGID, numMyVertices;
+static long cylCount, cylSize, numGlobalVertices;
+static long myFirstGID; 
+static int numMyVertices;
 static float heavyCommWeight = 100;
-static float midCommWeight = 50;
 static float lowCommWeight = 1;
 
-int *vtxGID = NULL;
+ZOLTAN_ID_TYPE *vtxGID = NULL;
+ZOLTAN_ID_TYPE *nborGID = NULL;
 int *nborIndex = NULL;
-int *nborGID = NULL;
 int *nborProc = NULL;
 float *edgeWgt = NULL;
 
 struct Zoltan_DD_Struct *dd=NULL;
 static void debug(struct Zoltan_Struct *zz, char *s, int stop);
 static void usage();
+
+static void check_error_status(struct Zoltan_Struct *zz, int status, char *s)
+{
+int gstatus;
+
+  MPI_Allreduce(&status, &gstatus, 1, MPI_INT, MPI_MAX, zz->Communicator);
+
+  if (gstatus > 0){
+    if (zz->Proc == 0){
+      fprintf(stderr,"Error: %s\n",s);
+    }
+    MPI_Finalize();
+    exit(1);
+  }
+}
 
 static void free_graph()
 {
@@ -46,21 +63,22 @@ static void free_graph()
   if (nborProc) free(nborProc);
   if (edgeWgt) free(edgeWgt);
 
-  vtxGID = nborIndex = nborGID = nborProc = NULL;
+  vtxGID = nborGID = NULL;
+  nborIndex = nborProc = NULL;
   edgeWgt = NULL;
   dd=NULL;
 }
 
-static void gid_location(int gid, int *cylID, int *ringID)
+static void gid_location(long gid, long *cylID, long *ringID)
 {
-  div_t result;
-  result = div(gid, cylSize);
+  ldiv_t result;
+  result = ldiv(gid, cylSize);
   *cylID = result.quot;  /* cylinder ID */
   *ringID = result.rem;  /* ring ID */
 }
-static int gid_up(int gid)
+static long gid_up(long gid)
 {
-  int cylID, ringID;
+  long cylID, ringID;
   gid_location(gid, &cylID, &ringID); 
 
   if (ringID == cylSize-1){
@@ -70,9 +88,9 @@ static int gid_up(int gid)
     return gid + 1;
   }
 }
-static int gid_down(int gid)
+static long gid_down(long gid)
 {
-  int cylID, ringID;
+  long cylID, ringID;
   gid_location(gid, &cylID, &ringID); 
 
   if (ringID == 0){
@@ -82,9 +100,9 @@ static int gid_down(int gid)
     return gid - 1;
   }
 }
-static int gid_left(int gid)
+static long gid_left(long gid)
 {
-  int cylID, ringID;
+  long cylID, ringID;
   gid_location(gid, &cylID, &ringID); 
 
   if (cylID == 0){
@@ -93,9 +111,9 @@ static int gid_left(int gid)
 
   return gid - cylSize;
 }
-static int gid_right(int gid)
+static long gid_right(long gid)
 {
-  int cylID, ringID;
+  long cylID, ringID;
   gid_location(gid, &cylID, &ringID); 
 
   if (cylID == cylCount - 1){
@@ -104,23 +122,23 @@ static int gid_right(int gid)
 
   return gid + cylSize;
 }
-static int num_neighbors(int gid)
+static int num_neighbors(long gid)
 {
-  int cylID, ringID;
-  int nbors = 2;   /* up and down */
+  long cylID, ringID;
+  int nnbors = 2;   /* up and down */
 
   gid_location(gid, &cylID, &ringID); 
 
-  if (cylID > 0) nbors++;   /* left */
-  if (cylID < cylCount-1) nbors++;   /* right */
+  if (cylID > 0) nnbors++;   /* left */
+  if (cylID < cylCount-1) nnbors++;   /* right */
 
-  return nbors;
+  return nnbors;
 }
 
-static int get_nbor_info(int gid, int *nbors, float *wgt)
+static int get_nbor_info(long gid, long *nbors, float *wgt)
 {
   int i=0;
-  int n;
+  long n;
 
   /* TODO   Vary the weights more to see more of a difference */
 
@@ -145,54 +163,57 @@ static int get_nbor_info(int gid, int *nbors, float *wgt)
   return i+1;
 }
 
-static void create_a_graph()
+static int create_a_graph()
 {
-  int rc, i, j, sum, n, gid, nbors[4]; 
+  int rc, i, sum, n, j;
   float wgts[4]; 
-  div_t result;
+  long gid, nbors[4], count[2];
+  ldiv_t result;
   float c;
 
   c = sqrt((float)numGlobalVertices);
 
   c = (c < 3.0) ? 3.0 : c;
 
-  cylCount = cylSize = (int)c;
+  cylCount = cylSize = (long)c;
 
   numGlobalVertices = cylCount * cylSize;
 
-  result = div(numGlobalVertices, numProcs);
+  result = ldiv(numGlobalVertices, (long)numProcs);
 
-  numMyVertices = result.quot + (myRank < result.rem ? 1 : 0);
+  numMyVertices = (int)result.quot + (myRank < result.rem ? 1 : 0);
 
-  MPI_Scan(&numMyVertices, &sum, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  count[0] = (long)numMyVertices;
 
-  myFirstGID = sum - numMyVertices;
+  MPI_Scan(count+0, count+1, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+
+  myFirstGID = count[1] - count[0];
 
   numMyPins = 0;
 
-  for (i=0, j = myFirstGID; i < numMyVertices; i++, j++){
-    numMyPins += num_neighbors(j);
+  for (i=0, gid = myFirstGID; i < numMyVertices; i++, gid++){
+    numMyPins += num_neighbors(gid);
   }
 
-  vtxGID = (int *)malloc(sizeof(int) * numMyVertices);
+  vtxGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numMyVertices);
   nborIndex = (int *)malloc(sizeof(int) * (numMyVertices + 1));
-  nborGID = (int *)malloc(sizeof(int) * numMyPins);
+  nborGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numMyPins);
   nborProc = (int *)malloc(sizeof(int) * numMyPins);
   edgeWgt = (float *)malloc(sizeof(float) * numMyPins);
 
   if (numMyPins && !(vtxGID || nborIndex || nborGID || nborProc || edgeWgt)){
     fprintf(stderr,"%d out of memory\n",myRank);
-    MPI_Abort(MPI_COMM_WORLD, 1);
+    return 1;
   }
 
   nborIndex[0] = 0;
 
   for (i=0, gid=myFirstGID, n=0; i < numMyVertices; i++, gid++){
-    vtxGID[i] = gid;
+    vtxGID[i] = (ZOLTAN_ID_TYPE)gid;
     sum = get_nbor_info(gid, nbors, wgts);
 
     for (j=0; j < sum; j++, n++){
-      nborGID[n] = nbors[j];
+      nborGID[n] = (ZOLTAN_ID_TYPE)nbors[j];
       edgeWgt[n] = wgts[j];
 
       if (nborGID[n] < myFirstGID)
@@ -205,69 +226,74 @@ static void create_a_graph()
     nborIndex[i+1] = nborIndex[i] + sum; 
   }
 
-  rc = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 1, 1, 0, (int)(numGlobalVertices / numProcs), 0);
+  rc = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 1, 0, 0, (int)(numGlobalVertices / numProcs), 0);
 
   if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN)){
     fprintf(stderr,"%d DD Create failure\n",myRank);
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
-  rc = Zoltan_DD_Update(dd, (ZOLTAN_ID_PTR)vtxGID, NULL, NULL, NULL, numMyVertices);
+  rc = Zoltan_DD_Update(dd, vtxGID, NULL, NULL, NULL, numMyVertices);
 
   if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN)){
     fprintf(stderr,"%d DD Update failure in create\n",myRank);
-    MPI_Abort(MPI_COMM_WORLD, 1);
+    return 1;
   }
 
-  return;
+  return 0;
 }
 
-static void reallocate_buffers(int numNewVertices, int numNewPins)
+static int reallocate_buffers(int numNewVertices, int numNewPins)
 {
+  int status = 0;
+  ZOLTAN_ID_TYPE *idbuf=NULL;
   int *ibuf=NULL;
   float *fbuf=NULL;
 
   if (numNewVertices > numMyVertices){   /* avoid realloc bug */
-    ibuf = (int *)malloc(sizeof(int) * numNewVertices);
-    memcpy(ibuf, vtxGID, sizeof(int) * numMyVertices);
+    idbuf = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numNewVertices);
+    if (!idbuf) return 1;
+    memcpy(idbuf, vtxGID, sizeof(ZOLTAN_ID_TYPE) * numMyVertices);
     free(vtxGID);
-    vtxGID = ibuf; 
+    vtxGID = idbuf; 
 
     ibuf = (int *)malloc(sizeof(int) * (numNewVertices+1));
+    if (!ibuf) return 1;
     memcpy(ibuf, nborIndex, sizeof(int) * (1 +numMyVertices));
     free(nborIndex);
     nborIndex = ibuf; 
   }
 
   if (numNewPins > numMyPins){
-    ibuf = (int *)malloc(sizeof(int) * numNewPins);
-    memcpy(ibuf, nborGID, sizeof(int) * numMyPins);
+    idbuf = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numNewPins);
+    if (!idbuf) return 1;
+    memcpy(idbuf, nborGID, sizeof(ZOLTAN_ID_TYPE) * numMyPins);
     free(nborGID);
-    nborGID = ibuf; 
+    nborGID = idbuf; 
 
     ibuf = (int *)malloc(sizeof(int) * numNewPins);
+    if (!ibuf) return 1;
     memcpy(ibuf, nborProc, sizeof(int) * numMyPins);
     free(nborProc);
     nborProc = ibuf; 
 
     fbuf = (float *)malloc(sizeof(float) * numNewPins);
+    if (!fbuf) return 1;
     memcpy(fbuf, edgeWgt, sizeof(float) * numMyPins);
     free(edgeWgt);
     edgeWgt = fbuf; 
   }
 
-  if (numMyPins && !(vtxGID || nborIndex || nborGID || nborProc || edgeWgt)){
-    fprintf(stderr,"%d out of at realloc time\n",myRank);
-    MPI_Abort(MPI_COMM_WORLD, 1);
-  }
+  return status;
 }
 
-static void migrate_graph(int num_exports, int num_imports, int *export_lids, int *import_gids)
+static int migrate_graph(int num_exports, int num_imports, ZOLTAN_ID_TYPE *export_lids, ZOLTAN_ID_TYPE *import_gids)
 {
   int i, j, k, nextv, nextp, npins, numNewVertices, numNewPins, sum;
-  int nbors[4];
+  long nbors[4];
   float wgts[4];
   int rc;
+  int status = 0;
 
   numNewVertices = numMyVertices - num_exports + num_imports;
 
@@ -299,17 +325,19 @@ static void migrate_graph(int num_exports, int num_imports, int *export_lids, in
     numNewPins += num_neighbors(import_gids[i]);
   }
 
-  reallocate_buffers(numNewVertices, numNewPins);
+  status = reallocate_buffers(numNewVertices, numNewPins);
 
-  for (i=0; i < num_imports; i++, nextv++){
-    vtxGID[nextv] = import_gids[i];
-    sum = get_nbor_info(import_gids[i], nbors, wgts);
-
-    for (j=0; j < sum; j++, nextp++){
-      nborGID[nextp] = nbors[j];
-      edgeWgt[nextp] = wgts[j];
+  if (status == 0){
+    for (i=0; i < num_imports; i++, nextv++){
+      vtxGID[nextv] = import_gids[i];
+      sum = get_nbor_info(import_gids[i], nbors, wgts);
+  
+      for (j=0; j < sum; j++, nextp++){
+        nborGID[nextp] = (ZOLTAN_ID_TYPE)nbors[j];
+        edgeWgt[nextp] = wgts[j];
+      }
+      nborIndex[nextv+1] = nborIndex[nextv] + sum; 
     }
-    nborIndex[nextv+1] = nborIndex[nextv] + sum; 
   }
 
   numMyVertices = numNewVertices;
@@ -318,17 +346,31 @@ static void migrate_graph(int num_exports, int num_imports, int *export_lids, in
   rc = Zoltan_DD_Update(dd, (ZOLTAN_ID_PTR)vtxGID, NULL, NULL, NULL, numMyVertices);
 
   if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN)){
-    fprintf(stderr,"%d DD Update failure in migrate\n",myRank);
-    MPI_Abort(MPI_COMM_WORLD, 1);
+    status = 1;
   }
 
   rc = Zoltan_DD_Find(dd, (ZOLTAN_ID_PTR)nborGID, NULL, NULL, NULL, numNewPins, nborProc);
 
   if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN)){
-    fprintf(stderr,"%d DD find failure\n",myRank);
-    MPI_Abort(MPI_COMM_WORLD, 1);
+    status = 1;
   }
 
+  return status;
+}
+
+static float get_edge_cut_weight(struct Zoltan_Struct *zz)
+{
+ZOLTAN_GRAPH_EVAL result;
+int rc;
+
+  rc = Zoltan_LB_Eval_Graph(zz, 0, &result);
+
+  if (rc != ZOLTAN_OK){
+    fprintf(stderr,"%d Failure in Zoltan_LB_Eval_Graph\n",zz->Proc);
+    return -1.0;
+  }
+
+  return result.cut_wgt[EVAL_GLOBAL_SUM];
 }
 
 void time_communication(double *t)
@@ -403,22 +445,58 @@ int nextv, nextp, npins, p1, i, lid;
 
 int main(int argc, char *argv[])
 {
-  int rc, do_hier;
+  int rc, do_hier, status;
   float ver;
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   int generate_files = 0;
   char *platform=NULL, *topology=NULL;
   char *graph_package=NULL;
+  char *datatype_name=NULL;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   struct option opts[10];
-  double comm_times[10];
-  int nvert=0;
+  double comm_time[10];
+  float cut_weight[10];
+  long nvert=0;
+  char *debug_level=NULL;
+
+  status = 0;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+  Zoltan_Initialize(argc, argv, &ver);
+  zz = Zoltan_Create(MPI_COMM_WORLD);
+
+  /******************************************************************
+  ** Check that this test makes sense.
+  ******************************************************************/
+  
+  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
+    if (myRank == 0){
+      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
+                 datatype_name, zoltan_id_datatype_name);
+                
+    }
+    status = 1;
+    MPI_Finalize();
+    return 1;
+  }
+
+  if (sizeof(long) < sizeof(ZOLTAN_ID_TYPE)){
+    if (myRank == 0){
+      printf("ERROR: This code assumes that a long is at least %d bytes\n",(int)sizeof(ZOLTAN_ID_TYPE));
+    }
+    status = 1;
+  }
+
+  check_error_status(zz, status, "configuration error");
+
+  /******************************************************************
+  ** Initialize zoltan
+  ******************************************************************/
 
   /* options */
 
@@ -457,10 +535,17 @@ int main(int argc, char *argv[])
   opts[6].flag = NULL;
   opts[6].val = 8;
 
-  opts[7].name = 0;
-  opts[7].has_arg = 0;
+  opts[7].name = "debug_level";
+  opts[7].has_arg = 1;
   opts[7].flag = NULL;
-  opts[7].val = 0;
+  opts[7].val = 9;
+
+  opts[8].name = 0;
+  opts[8].has_arg = 0;
+  opts[8].flag = NULL;
+  opts[8].val = 0;
+
+  status = 0;
 
   while (1){
     rc = getopt_long_only(argc, argv, "",  opts, NULL);
@@ -492,17 +577,11 @@ int main(int argc, char *argv[])
         printf( "Zoltan_Generate_Files will be called for each level.\n");
     }
     else if (rc == 4){
-      nvert = atoi(optarg);
-      if (nvert < 1){
-        if (myRank == 0)
-          fprintf(stderr,"ERROR: --size={approximate number of vertices}\n");
-        MPI_Finalize();
-        exit(1);
-      }
-      else{
-        if (myRank == 0){
-          printf( "Graph will have approximately %d vertices.\n",nvert);
-        }
+      nvert = atol(optarg);
+      if (nvert < 1) status = 1;
+      check_error_status(zz, status, "--size={approximate number of vertices}");
+      if (myRank == 0){
+        printf( "Graph will have approximately %ld vertices.\n",nvert);
       }
     }
     else if (rc == 5){
@@ -513,6 +592,9 @@ int main(int argc, char *argv[])
       MPI_Finalize();
       exit(0);
     }
+    else if (rc == 9){
+      debug_level = optarg;
+    }
     else if (rc <= 0){
       break;
     }
@@ -520,7 +602,7 @@ int main(int argc, char *argv[])
 
   if ((platform==NULL) && (topology==NULL)){
     if (myRank == 0)
-      fprintf(stderr,"No platform or topology, so we'll skip hierarchical partitioning\n");
+      fprintf(stdout,"No platform or topology, so we'll skip hierarchical partitioning\n");
     do_hier = 0;
   }
   else{
@@ -529,14 +611,6 @@ int main(int argc, char *argv[])
 
   /* start */
 
-  rc = Zoltan_Initialize(argc, argv, &ver);
-
-  if (rc != ZOLTAN_OK){
-    if (myRank == 0) printf("sorry...\n");
-    MPI_Finalize();
-    exit(0);
-  }
-
   Zoltan_Memory_Debug(0);
 
   if (nvert > 0)
@@ -544,11 +618,9 @@ int main(int argc, char *argv[])
   else
     numGlobalVertices = NUM_GLOBAL_VERTICES;
 
-  create_a_graph(); 
-    
-  time_communication(comm_times+0);      /* Without partitioning */
+  status = create_a_graph(); 
+  check_error_status(zz, status, "creating the graph");
 
-  zz = Zoltan_Create(MPI_COMM_WORLD);
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
   Zoltan_Set_Param(zz, "REMAP", "0");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
@@ -575,8 +647,17 @@ int main(int argc, char *argv[])
   }
 
   if (generate_files){
-    rc = Zoltan_Generate_Files(zz, "flat", zz->Proc, 0, 1, 0);
+    rc = Zoltan_Generate_Files(zz, "flat", myRank, 0, 1, 0);
+    if (rc != ZOLTAN_OK) status = 1;
+    check_error_status(zz, status, "Zoltan_Generate_Files");
   }
+
+  /* Performance before partitioning */
+  time_communication(comm_time+0); 
+  cut_weight[0] = get_edge_cut_weight(zz);
+
+  if (cut_weight[0] < 0.0) status = 1;
+  check_error_status(zz, status, "First call to get_edge_cut_weight");
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
@@ -593,20 +674,21 @@ int main(int argc, char *argv[])
         &exportProcs,    /* Process to which I send each of the vertices */
         &exportToPart);  /* Partition to which each vertex will belong */
 
-  if (rc != ZOLTAN_OK){
-    printf("sorry...\n");
-    MPI_Finalize();
-    Zoltan_Destroy(&zz);
-    exit(0);
-  }
+  if (rc != ZOLTAN_OK) status = 1;
+  check_error_status(zz, status, "First call to LB_Partition");
 
-  migrate_graph(numExport, numImport, (int *)exportLocalGids, (int *)importGlobalGids);
+  status = migrate_graph(numExport, numImport, exportLocalGids, importGlobalGids);
+  check_error_status(zz, status, "migration");
 
   if (verbose){
     debug(zz, "After flat partitioning and migration", 0);
   }
 
-  time_communication(comm_times+1);      /* With graph partitioning */
+  time_communication(comm_time+1);      /* With graph partitioning */
+  cut_weight[1] = get_edge_cut_weight(zz);
+
+  if (cut_weight[1] < 0.0) status = 1;
+  check_error_status(zz, status, "Second call to get_edge_cut_weight");
 
   Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
                       &importProcs, &importToPart);
@@ -618,14 +700,19 @@ int main(int argc, char *argv[])
     /* HIERARCHICAL PARTITION */
 
     free_graph();
-    create_a_graph();
+    status = create_a_graph();
+    check_error_status(zz, status, "create graph for hierarchical partitioning");
   
     Zoltan_Set_Param(zz, "LB_METHOD", "HIER");
-    Zoltan_Set_Param(zz, "HIER_DEBUG_LEVEL", "0");
     Zoltan_Set_Param(zz, "HIER_ASSIST", "1");
     if (generate_files){
       Zoltan_Set_Param(zz, "HIER_GENERATE_FILES", "1"); 
     }
+
+    if (debug_level)   /* 1, 2 or 3 */
+      Zoltan_Set_Param(zz, "HIER_DEBUG_LEVEL", debug_level);
+    else
+      Zoltan_Set_Param(zz, "HIER_DEBUG_LEVEL", "0");
 
     /* TODO: Suppose graph is not symmetric, and we request SYMMETRIZE.  Do we still get
      *  a "good" answer when each sub-graph in the hierarchy is symmetrized?
@@ -651,35 +738,57 @@ int main(int argc, char *argv[])
           &exportProcs,    /* Process to which I send each of the vertices */
           &exportToPart);  /* Partition to which each vertex will belong */
   
-    if (rc != ZOLTAN_OK){
-      printf("sorry...\n");
-      MPI_Finalize();
-      Zoltan_Destroy(&zz);
-      exit(0);
-    }
+    if (rc != ZOLTAN_OK) status = 1;
+    check_error_status(zz, status, "Second call to LB_Partition");
   
-    migrate_graph(numExport, numImport, (int *)exportLocalGids, (int *)importGlobalGids);
+    status = migrate_graph(numExport, numImport, exportLocalGids, importGlobalGids);
+    check_error_status(zz, status, "second migration");
   
     if (verbose){
       debug(zz, "After hierarchical partitioning and migration", 0);
     }
   
-    time_communication(comm_times+2);      /* With hierarchical graph partitioning */
+    time_communication(comm_time+2);      /* With hierarchical graph partitioning */
+    cut_weight[2] = get_edge_cut_weight(zz);
+
+    if (cut_weight[2] < 0.0) status = 1;
+    check_error_status(zz, status, "Third call to get_edge_cut_weight");
   
     Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
                         &importProcs, &importToPart);
     Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
                         &exportProcs, &exportToPart);
-
   }
 
   Zoltan_Destroy(&zz);
 
   free_graph();
 
+  if (myRank == 0){
+    fprintf(stdout,"Graph cut weight before partitioning: %f\n",cut_weight[0]);
+    fprintf(stdout,"             after flat partitioning: %f\n",cut_weight[1]);
+    fprintf(stdout,"     after hierarchical partitioning: %f\n",cut_weight[2]);
+    fflush(stdout);
+  }
+
+  if (cut_weight[1] >= cut_weight[0]){
+    status = 1;
+    if (zz->Proc == 0){
+      fprintf(stderr,"FAILED: No improvement shown in flat partitioning");
+    }
+  }
+
+  if (do_hier && (cut_weight[2] > cut_weight[0])){
+    status = 1;
+    if (zz->Proc == 0){
+      fprintf(stderr,"FAILED: No improvement shown in hierarchical partitioning");
+    }
+  }
+
+
   MPI_Finalize();
 
-  return 0;
+  return status;
 }
 
 static void debug(struct Zoltan_Struct *zz, char *s, int stop)
@@ -698,16 +807,16 @@ int i,p,j, k, nedges;
       if (p == myRank){
   
         if (p==0){
-          fprintf(stdout,"%d global vertices\n",numGlobalVertices); 
+          fprintf(stdout,"%ld global vertices\n",numGlobalVertices); 
         }
   
         fprintf(stdout,"Partition %d, %d vertices:\n",p,numMyVertices);
         for (i=0, k=0; i < numMyVertices; i++){
-          fprintf(stdout,"%d: ",vtxGID[i]);
+          fprintf(stdout,ZOLTAN_ID_SPEC ": ",vtxGID[i]);
           nedges = nborIndex[i+1] - nborIndex[i];
            
           for (j=0; j < nedges; j++,k++){
-            fprintf(stdout,"%d/%f/%d ",nborGID[k],edgeWgt[k],nborProc[k]);
+            fprintf(stdout,ZOLTAN_ID_SPEC "/%f/%d ",nborGID[k],edgeWgt[k],nborProc[k]);
           }
           fprintf(stdout,"\n");
         

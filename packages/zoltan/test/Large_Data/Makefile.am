@@ -1,7 +1,7 @@
 
 
 
-check_PROGRAMS=stressTestRIB stressTestRCB stressTestPHG
+check_PROGRAMS=stressTestRIB stressTestRCB stressTestPHG stressTestGRAPH
 
 include $(top_builddir)/Makefile.export.zoltan
 

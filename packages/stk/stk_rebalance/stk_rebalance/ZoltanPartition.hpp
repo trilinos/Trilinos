@@ -211,6 +211,9 @@ public:
 
   virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition);
 
+  bool partition_dependents_needed() const
+  { return true; /* Zoltan partitions elements and leaves the rest to someone else */ }
+
   /**
    * Evaluate the performance/quality of dynamic load rebalancing
    */

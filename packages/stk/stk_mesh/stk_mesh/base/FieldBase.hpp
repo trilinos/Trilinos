@@ -85,9 +85,9 @@ public:
   { return m_impl.dimension_tags() ; }
 
   /** \brief  Maximum field data allocation size declared for this
-   *          field for the given entity type.
+   *          field for the given entity rank.
    */
-  unsigned max_size( unsigned entity_rank) const {
+  unsigned max_size( EntityRank entity_rank) const {
     return m_impl.max_size( entity_rank );
   }
 

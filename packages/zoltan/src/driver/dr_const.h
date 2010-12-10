@@ -17,6 +17,7 @@
 #include "zoltan.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #define MIN(A,B)                (((A) < (B)) ? (A) : (B))
 
@@ -351,6 +352,32 @@ extern double Total_Partition_Time;
 #define DEBUG_TRACE_DETAIL(proc,yo,str) \
   if (Debug_Driver > 2) \
     printf("%d DRIVER %s: %s\n", proc,yo, str);
+
+/*
+ * We need an invalid value for a ZOLTAN_ID_TYPE
+ */
+
+#undef ZOLTAN_ID_INVALID
+
+#ifdef ZOLTAN_ID_TYPE_LONG
+#define ZOLTAN_ID_INVALID LONG_MAX
+#endif
+
+#ifdef ZOLTAN_ID_TYPE_LONG_LONG
+#define ZOLTAN_ID_INVALID LLONG_MAX
+#endif
+
+#ifdef ZOLTAN_ID_TYPE_UINT
+#define ZOLTAN_ID_INVALID UINT_MAX
+#endif
+
+#ifdef ZOLTAN_ID_TYPE_INT
+#define ZOLTAN_ID_INVALID INT_MAX
+#endif
+
+#ifndef ZOLTAN_ID_INVALID
+#define ZOLTAN_ID_INVALID UINT_MAX
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

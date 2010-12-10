@@ -19,17 +19,18 @@
 
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
 #include <stk_rebalance/ZoltanPartition.hpp>
 
+using stk::mesh::fem::NODE_RANK;
+
 typedef stk::mesh::Field<double> ScalarField ;
 typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorField ;
 
 enum { nx = 2, ny = 2 };
-
 
 STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 {
@@ -40,15 +41,16 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 #endif
 
   unsigned spatial_dimension = 2;
-  stk::mesh::MetaData meta_data( stk::mesh::TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
   stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
-  stk::mesh::TopologicalMetaData top_data( meta_data, spatial_dimension );
-  stk::mesh::Part & quad_part( top_data.declare_part<shards::Quadrilateral<4> >( "quad" ) );
+  stk::mesh::DefaultFEM top_data( meta_data, spatial_dimension );
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(top_data);
+  stk::mesh::Part & quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" ) );
   VectorField & coord_field( meta_data.declare_field< VectorField >( "coordinates" ) );
   ScalarField & weight_field( meta_data.declare_field< ScalarField >( "element_weights" ) );
 
-  stk::mesh::put_field( coord_field , top_data.node_rank , meta_data.universal_part() );
-  stk::mesh::put_field(weight_field , top_data.element_rank , meta_data.universal_part() );
+  stk::mesh::put_field( coord_field , NODE_RANK , meta_data.universal_part() );
+  stk::mesh::put_field(weight_field , element_rank , meta_data.universal_part() );
 
   meta_data.commit();
 
@@ -75,7 +77,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( top_data.element_rank, elem );
+        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
         double * const e_weight = stk::mesh::field_data( weight_field , *e );
         *e_weight = 1.0;
       }
@@ -84,7 +86,7 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     for ( unsigned iy = 0 ; iy < ny+1 ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( top_data.node_rank, nid );
+        stk::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
         double * const coord = stk::mesh::field_data( coord_field , *n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
@@ -95,12 +97,12 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 
   // Only P0 has any nodes or elements
   if ( p_rank == 0 ) {
-    STKUNIT_ASSERT( ! bulk_data.buckets( top_data.node_rank ).empty() );
-    STKUNIT_ASSERT( ! bulk_data.buckets( top_data.element_rank ).empty() );
+    STKUNIT_ASSERT( ! bulk_data.buckets( NODE_RANK ).empty() );
+    STKUNIT_ASSERT( ! bulk_data.buckets( element_rank ).empty() );
   }
   else {
-    STKUNIT_ASSERT( bulk_data.buckets( top_data.node_rank ).empty() );
-    STKUNIT_ASSERT( bulk_data.buckets( top_data.element_rank ).empty() );
+    STKUNIT_ASSERT( bulk_data.buckets( NODE_RANK ).empty() );
+    STKUNIT_ASSERT( bulk_data.buckets( element_rank ).empty() );
   }
 
   bulk_data.modification_end();

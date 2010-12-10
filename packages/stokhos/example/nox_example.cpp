@@ -71,14 +71,13 @@ int main(int argc, char *argv[]) {
   try {
 
     // Create a communicator for Epetra objects
-    Teuchos::RCP<Epetra_Comm> Comm;
+    Teuchos::RCP<const Epetra_Comm> globalComm;
 #ifdef HAVE_MPI
-    Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
+    globalComm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
-    Comm = Teuchos::rcp(new Epetra_SerialComm);
+    globalComm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
-
-    MyPID = Comm->MyPID();
+    MyPID = globalComm->MyPID();
     
     // Create Stochastic Galerkin basis and expansion
     int p = 5;
@@ -92,11 +91,24 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<int,double>(basis,
 									 Cijk));
-    std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+    if (MyPID == 0)
+      std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
+
+    // Create stochastic parallel distribution
+    int num_spatial_procs = -1;
+    Teuchos::ParameterList parallelParams;
+    parallelParams.set("Number of Spatial Processors", num_spatial_procs);
+    Teuchos::RCP<Stokhos::ParallelData> sg_parallel_data =
+      Teuchos::rcp(new Stokhos::ParallelData(basis, Cijk, globalComm,
+					     parallelParams));
+    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm = 
+      sg_parallel_data->getMultiComm();
+    Teuchos::RCP<const Epetra_Comm> app_comm = 
+      sg_parallel_data->getSpatialComm();
     
     // Create application model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> model = 
-      Teuchos::rcp(new SimpleME(Comm));
+      Teuchos::rcp(new SimpleME(app_comm));
     
     // Setup stochastic Galerkin algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
@@ -131,8 +143,9 @@ int main(int argc, char *argv[]) {
     // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
-    						 expansion, Cijk, sgParams,
-    						 Comm, x_init_sg, p_init_sg));
+    						 expansion, sg_parallel_data, 
+						 sgParams,
+    						 x_init_sg, p_init_sg));
 
     // Set up NOX parameters
     Teuchos::RCP<Teuchos::ParameterList> noxParams =

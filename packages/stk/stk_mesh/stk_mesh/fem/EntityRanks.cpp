@@ -6,13 +6,16 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <string>
+#include <vector>
 
 namespace stk {
 namespace mesh {
 
-// DEPRECATED: 09/15/10 FEM TopologicalMetaData refactor
+// DEPRECATED: 09/15/10 FEM refactor
+
 const std::vector<std::string> & fem_entity_rank_names()
 {
   static std::vector<std::string> names ;
@@ -31,3 +34,4 @@ const std::vector<std::string> & fem_entity_rank_names()
 }//namespace mesh
 }//namespace stk
 
+#endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS

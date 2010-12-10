@@ -32,10 +32,12 @@
 #define STOKHOS_FULLY_ASSEMBLED_OPERATOR_HPP
 
 #include "Stokhos_SGOperator.hpp"
+#include "EpetraExt_MultiComm.h"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_EpetraSparse3Tensor.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "EpetraExt_BlockCrsMatrix.h"
 #include <vector>
-#include "Epetra_Comm.h"
-#include "Teuchos_ParameterList.hpp"
 
 namespace Stokhos {
     
@@ -51,11 +53,11 @@ namespace Stokhos {
 
     //! Constructor 
     FullyAssembledOperator(
-      const Teuchos::RCP<const Epetra_CrsMatrix>& base_matrix,
-      const Teuchos::RCP<const std::vector< std::vector<int> > >& rowStencil,
-      const Teuchos::RCP<const std::vector<int> >& rowIndex,
-      const Teuchos::RCP<const Epetra_Comm>& sg_comm,
-      const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+      const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk,
+      const Teuchos::RCP<const Epetra_CrsGraph>& base_graph,
+      const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
     virtual ~FullyAssembledOperator();
@@ -65,8 +67,7 @@ namespace Stokhos {
 
     //! Setup operator
     virtual void setupOperator(
-      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk);
+      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& poly);
 
     //! Get SG polynomial
     virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
@@ -75,10 +76,6 @@ namespace Stokhos {
     //! Get SG polynomial
     virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> > 
     getSGPolynomial() const;
-
-    //! Get triple product tensor
-    virtual Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > 
-    getTripleProduct() const;
 
     //@}
 
@@ -91,6 +88,15 @@ namespace Stokhos {
     FullyAssembledOperator& operator=(const FullyAssembledOperator&);
     
   protected:
+
+    //! Stores SG parallel communicator
+    Teuchos::RCP<const EpetraExt::MultiComm> sg_comm;
+
+    //! Stochastic Galerking basis
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+
+    //! Stores Epetra Cijk tensor
+    Teuchos::RCP<const Stokhos::EpetraSparse3Tensor> epetraCijk;
 
     //! Short-hand for Cijk
     typedef Stokhos::Sparse3Tensor<int,double> Cijk_type;

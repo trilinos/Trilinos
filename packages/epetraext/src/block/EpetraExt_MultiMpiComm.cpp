@@ -33,7 +33,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 namespace EpetraExt {
 
 MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTimeSteps_) :
-        EpetraExt::MultiComm(Teuchos::rcp(new Epetra_MpiComm(globalMpiComm))),
+	Epetra_MpiComm(globalMpiComm),
+	myComm(Teuchos::rcp(new Epetra_MpiComm(globalMpiComm))),
         subComm(0)
 {
   //Need to construct subComm for each sub domain, compute subDomainRank,
@@ -43,18 +44,28 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
   ierrmpi = MPI_Comm_size(globalMpiComm, &size);
   ierrmpi = MPI_Comm_rank(globalMpiComm, &rank);
 
-  if (size % subDomainProcs != 0) {cout<<"ERROR: num subDomainProcs "<< subDomainProcs
-     << " does not divide into num total procs " << size << endl; exit(-1);}
+  if (size % subDomainProcs != 0) {
+    cout << "ERROR: num subDomainProcs "<< subDomainProcs
+	 << " does not divide into num total procs " << size << endl; 
+    exit(-1);
+  }
 
   numSubDomains = size / subDomainProcs;
+  numTimeDomains = subDomainProcs;
 
-  // Create split communicators, the size of subDomainProcs
+  // Create split communicators
   MPI_Comm split_MPI_Comm;
-  subDomainRank = rank/subDomainProcs;
-  ierrmpi =  MPI_Comm_split(globalMpiComm, subDomainRank, rank, &split_MPI_Comm);
+  MPI_Comm time_split_MPI_Comm;
+  subDomainRank = rank / subDomainProcs;
+  timeDomainRank = rank % subDomainProcs;
+  ierrmpi =  MPI_Comm_split(globalMpiComm, subDomainRank, rank, 
+			    &split_MPI_Comm);
+  ierrmpi =  MPI_Comm_split(globalMpiComm, timeDomainRank, rank, 
+			    &time_split_MPI_Comm);
 
   // Construct second epetra communicators
   subComm = new Epetra_MpiComm(split_MPI_Comm);
+  timeComm = new Epetra_MpiComm(time_split_MPI_Comm);
 
   // Compute number of time steps on this sub domain
   ResetNumTimeSteps(numTimeSteps_);
@@ -70,7 +81,8 @@ MultiMpiComm::MultiMpiComm(MPI_Comm globalMpiComm, int subDomainProcs, int numTi
 // This constructor is for just one subdomain, so only adds the info
 // for multiple time steps on the domain. No two-level parallelism.
 MultiMpiComm::MultiMpiComm(const Epetra_MpiComm& EpetraMpiComm_, int numTimeSteps_) :
-        EpetraExt::MultiComm(Teuchos::rcp(new Epetra_MpiComm(EpetraMpiComm_))),
+	Epetra_MpiComm(EpetraMpiComm_),
+	myComm(Teuchos::rcp(new Epetra_MpiComm(EpetraMpiComm_))),
         subComm(0)
 {
 
@@ -81,15 +93,29 @@ MultiMpiComm::MultiMpiComm(const Epetra_MpiComm& EpetraMpiComm_, int numTimeStep
   firstTimeStepOnDomain = 0;
  
   subComm = new Epetra_MpiComm(EpetraMpiComm_);
+
+  // Create split communicators for time domain
+  MPI_Comm time_split_MPI_Comm;
+  int rank = EpetraMpiComm_.MyPID();
+  int ierrmpi =  MPI_Comm_split(EpetraMpiComm_.Comm(), rank, rank, 
+				&time_split_MPI_Comm);
+  timeComm = new Epetra_MpiComm(time_split_MPI_Comm);
+  numTimeDomains = EpetraMpiComm_.NumProc();
+  timeDomainRank = rank;
 }
   
 //Copy Constructor
 MultiMpiComm::MultiMpiComm(const MultiMpiComm &MMC ) :
-        EpetraExt::MultiComm(Teuchos::rcp(new Epetra_MpiComm(dynamic_cast<const Epetra_MpiComm&>(MMC)))),
-        subComm(new Epetra_MpiComm(*(MMC.subComm)))
+	Epetra_MpiComm(MMC),
+	myComm(Teuchos::rcp(new Epetra_MpiComm(dynamic_cast<const Epetra_MpiComm&>(MMC)))),
+        subComm(new Epetra_MpiComm(*MMC.subComm)),
+	timeComm(new Epetra_MpiComm(*MMC.timeComm))
 {
   numSubDomains = MMC.numSubDomains;
+  numTimeDomains = MMC.numTimeDomains;
   subDomainRank = MMC.subDomainRank;
+  timeDomainRank = MMC.timeDomainRank;
+
   numTimeSteps = MMC.numTimeSteps;
   numTimeStepsOnDomain = MMC.numTimeStepsOnDomain;
   firstTimeStepOnDomain = MMC.firstTimeStepOnDomain;
@@ -98,6 +124,7 @@ MultiMpiComm::MultiMpiComm(const MultiMpiComm &MMC ) :
 MultiMpiComm::~MultiMpiComm()
 {
   delete subComm;
+  delete timeComm;
 }
 
 void MultiMpiComm::ResetNumTimeSteps(int numTimeSteps_)

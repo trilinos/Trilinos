@@ -33,12 +33,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 namespace EpetraExt {
 
 MultiSerialComm::MultiSerialComm(int numTimeSteps_) :
-        EpetraExt::MultiComm(Teuchos::rcp(new Epetra_SerialComm())),
+        myComm(Teuchos::rcp(new Epetra_SerialComm())),
         subComm(0)
 {
-  numSubDomains=1;
-  subDomainRank=0;
-  firstTimeStepOnDomain = 0;
   ResetNumTimeSteps(numTimeSteps_);
 
   // Construct second epetra communicators
@@ -47,14 +44,10 @@ MultiSerialComm::MultiSerialComm(int numTimeSteps_) :
 
 //Copy Constructor
 MultiSerialComm::MultiSerialComm(const MultiSerialComm &MSC ) :
-        EpetraExt::MultiComm(Teuchos::rcp(new Epetra_SerialComm())),
+        myComm(Teuchos::rcp(new Epetra_SerialComm())),
         subComm(new Epetra_SerialComm(*(MSC.subComm)))
 {
-  numSubDomains = MSC.numSubDomains;
-  subDomainRank = MSC.subDomainRank;
   numTimeSteps = MSC.numTimeSteps;
-  numTimeStepsOnDomain = MSC.numTimeStepsOnDomain;
-  firstTimeStepOnDomain = MSC.firstTimeStepOnDomain;
 }
 
 MultiSerialComm::~MultiSerialComm()
@@ -65,7 +58,6 @@ MultiSerialComm::~MultiSerialComm()
 void MultiSerialComm::ResetNumTimeSteps(int numTimeSteps_)
 {
   numTimeSteps = numTimeSteps_;
-  numTimeStepsOnDomain = numTimeSteps_; 
 }
 
 } //namespace EpetraExt

@@ -949,8 +949,13 @@ int Zoltan_Hier(
     /* processing of output arrays is done by migration callbacks 
        except in the last round when we need to call just the
        mid-migrate function explicitly */
+
+    /* If hpp.num_parts == 1, then we didn't call Zoltan_LB_Partition, which is
+     *   is going to call Zoltan_Migrate which will call Mid_Migrate.  Mid_Migrate
+     *   does global communication, so all procs need to call it.
+     */
        
-    if (hpp.level == last_level) {
+    if ((hpp.level == last_level) || (hpp.num_parts == 1)) {
       Zoltan_Hier_Mid_Migrate_Fn((void *)&hpp, hier_num_gid_entries,
 				 hier_num_lid_entries,
 				 hier_num_import_objs,

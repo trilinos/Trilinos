@@ -35,6 +35,8 @@ NAMED_PAIR(EntitySide, EntitySideComponent, inside, EntitySideComponent, outside
  */
 typedef std::vector<EntitySide> EntitySideVector;
 
+typedef std::vector<EntitySideComponent> EntitySideComponentVector;
+
 /** \brief Given a closure, return a boundary of items of closure_rank-1
  *
  * A boundary will contain the entities "touching" the "outside" of the
@@ -61,6 +63,8 @@ void get_adjacent_entities( const Entity & entity ,
                             unsigned subcell_rank ,
                             unsigned subcell_identifier ,
                             std::vector< EntitySideComponent > & adjacent_entities );
+
+
 }
 }
 #endif

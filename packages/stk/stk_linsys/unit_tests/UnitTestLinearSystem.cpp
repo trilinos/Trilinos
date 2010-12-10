@@ -11,8 +11,8 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
-#include <stk_mesh/fem/FieldDeclarations.hpp>
+
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -31,8 +31,12 @@
 
 #include <fei_Factory_Trilinos.hpp>
 
+using stk::mesh::fem::NODE_RANK;
 
 namespace stk_linsys_unit_tests {
+
+typedef stk::mesh::Field<double>                          ScalarField ;
+typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
 
 void get_local_coefs(const fei::Vector& vec, std::vector<double>& coefs)
 {
@@ -63,17 +67,20 @@ void get_first_local_row_coefs(const fei::Matrix& mat, std::vector<double>& row_
 
 STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
 {
+  static const size_t spatial_dimension = 3;
+  
   MPI_Comm comm = MPI_COMM_WORLD;
 
   //First create and fill MetaData and BulkData objects:
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk::mesh::DefaultFEM fem_data( meta_data, spatial_dimension );
 
   //create a boundary-condition part for testing later:
-  stk::mesh::Part& bcpart = meta_data.declare_part("bcpart");
+  stk::mesh::Part& bcpart = declare_part(meta_data, "bcpart");
 
   fill_utest_mesh_meta_data( meta_data );
   fill_utest_mesh_bulk_data( bulk_data );
@@ -87,7 +94,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
   std::vector<stk::mesh::Entity*> local_nodes;
   stk::mesh::Selector select_owned(meta_data.locally_owned_part());
   stk::mesh::get_selected_entities(select_owned,
-                                   bulk_data.buckets(stk::mesh::Node),
+                                   bulk_data.buckets(NODE_RANK),
                                    local_nodes);
 
   stk::mesh::EntityId bc_node_id = 0;
@@ -105,22 +112,22 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
   stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
   std::vector<unsigned> count;
   stk::mesh::count_entities(select_used, bulk_data, count);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(spatial_dimension);
 
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Element], (unsigned)4 );
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Node],    (unsigned)20 );
+  STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
+  STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
   std::vector<stk::mesh::Entity*> nodes;
-  stk::mesh::get_entities(bulk_data, stk::mesh::Node, nodes);
+  stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
-  stk::mesh::ScalarField* temperature_field =
-      meta_data.get_field<stk::mesh::ScalarField>("temperature");
+  ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
   //Now we're ready to test the LinearSystem object:
 
   fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
   stk::linsys::LinearSystem ls(comm,factory);
 
-  stk::linsys::add_connectivities(ls, stk::mesh::Element, stk::mesh::Node,
+  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                               *temperature_field, select_owned, bulk_data);
 
   ls.synchronize_mappings_and_structure();
@@ -167,17 +174,20 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
 
 STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
 {
+  static const size_t spatial_dimension = 3;
+
   MPI_Comm comm = MPI_COMM_WORLD;
 
   //First create and fill MetaData and BulkData objects:
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk::mesh::DefaultFEM fem_data( meta_data, spatial_dimension );
 
   //create a boundary-condition part for testing later:
-  stk::mesh::Part& bcpart = meta_data.declare_part("bcpart");
+  stk::mesh::Part& bcpart = declare_part(meta_data, "bcpart");
 
   fill_utest_mesh_meta_data( meta_data );
   fill_utest_mesh_bulk_data( bulk_data );
@@ -191,7 +201,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   std::vector<stk::mesh::Entity*> local_nodes;
   stk::mesh::Selector select_owned(meta_data.locally_owned_part());
   stk::mesh::get_selected_entities(select_owned,
-                                   bulk_data.buckets(stk::mesh::Node),
+                                   bulk_data.buckets(NODE_RANK),
                                    local_nodes);
 
   stk::mesh::EntityId bc_node_id = 0;
@@ -209,15 +219,15 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
   std::vector<unsigned> count;
   stk::mesh::count_entities(select_used, bulk_data, count);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(spatial_dimension);
 
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Element], (unsigned)4 );
-  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Node],    (unsigned)20 );
+  STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
+  STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
   std::vector<stk::mesh::Entity*> nodes;
-  stk::mesh::get_entities(bulk_data, stk::mesh::Node, nodes);
+  stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
-  stk::mesh::ScalarField* temperature_field =
-      meta_data.get_field<stk::mesh::ScalarField>("temperature");
+  ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
   //Now we're ready to test the AggregateLinearSystem object:
 
@@ -226,7 +236,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   size_t num_rhsvecs = 2;
   stk::linsys::AggregateLinearSystem ls(comm,factory, num_matrices, num_rhsvecs);
 
-  stk::linsys::add_connectivities(ls, stk::mesh::Element, stk::mesh::Node,
+  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                               *temperature_field, select_owned, bulk_data);
 
   ls.synchronize_mappings_and_structure();

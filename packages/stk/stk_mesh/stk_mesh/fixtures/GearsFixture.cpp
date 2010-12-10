@@ -22,7 +22,6 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-
 #include <stk_mesh/fixtures/GearsFixture.hpp>
 #include <stk_mesh/fixtures/Gear.hpp>
 
@@ -30,71 +29,76 @@
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
+#include <stk_mesh/fem/FEMInterface.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 
 #include <Shards_BasicTopologies.hpp>
 
-#define PI     3.14159265358979
-#define TWO_PI 6.28210184121061
+namespace {
+
+using stk::mesh::fem::NODE_RANK;
+
+const unsigned ONE_STATE = 1;
+const unsigned TWO_STATE = 2;
+
+typedef shards::Hexahedron<8> Hex8 ;
+typedef shards::Wedge<6>      Wedge6 ;
+
+} // namespace
 
 namespace stk {
 namespace mesh {
 namespace fixtures {
 
-typedef shards::Hexahedron<8> Hex8 ;
-typedef shards::Wedge<6>      Wedge6 ;
-
-
-
-
 GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears)
-  : NUM_GEARS(num_gears)
-    , meta_data( TopologicalMetaData::entity_rank_names(SpatialDimension) )
-    , bulk_data( meta_data , pm )
-    , top_data( meta_data, SpatialDimension )
-    , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", SpatialDimension))
-    , hex_part( top_data.declare_part<Hex8>("hex8_part"))
-    , wedge_part( top_data.declare_part<Wedge6>("wedge6_part"))
-    , cartesian_coord_field( meta_data.declare_field<CartesianField>("coordinates", 1))
-    , displacement_field( meta_data.declare_field<CartesianField>("displacement", 2))
-    , translation_field( meta_data.declare_field<CartesianField>("translation", 2))
-    , cylindrical_coord_field( meta_data.declare_field<CylindricalField>("cylindrical_coordinates", 2))
-    , m_gears()
-  {
+  : num_gears(num_gears)
+  , meta_data( fem::entity_rank_names(SpatialDimension) )
+  , bulk_data( meta_data , pm )
+  , fem( meta_data, SpatialDimension )
+  , element_rank( fem::element_rank(fem) )
+  , cylindrical_coord_part( meta_data.declare_part("cylindrical_coord_part", element_rank))
+  , hex_part( declare_part<Hex8>(meta_data, "hex8_part"))
+  , wedge_part( declare_part<Wedge6>(meta_data, "wedge6_part"))
+  , cartesian_coord_field( meta_data.declare_field<CartesianField>("coordinates", ONE_STATE))
+  , displacement_field( meta_data.declare_field<CartesianField>("displacement", TWO_STATE))
+  , translation_field( meta_data.declare_field<CartesianField>("translation", TWO_STATE))
+  , cylindrical_coord_field( meta_data.declare_field<CylindricalField>("cylindrical_coordinates", TWO_STATE))
+  , m_gears()
+{
+  put_field(
+      cartesian_coord_field,
+      NODE_RANK,
+      meta_data.universal_part(),
+      SpatialDimension
+      );
 
-    put_field(
-        cartesian_coord_field,
-        top_data.node_rank,
-        meta_data.universal_part(),
-        SpatialDimension
-        );
+  put_field(
+      displacement_field,
+      NODE_RANK,
+      meta_data.universal_part(),
+      SpatialDimension
+      );
 
-    put_field(
-        displacement_field,
-        top_data.node_rank,
-        meta_data.universal_part(),
-        SpatialDimension
-        );
+  put_field(
+      translation_field,
+      NODE_RANK,
+      cylindrical_coord_part,
+      SpatialDimension
+      );
 
-    put_field(
-        translation_field,
-        top_data.node_rank,
-        cylindrical_coord_part,
-        SpatialDimension
-        );
+  put_field(
+      cylindrical_coord_field,
+      NODE_RANK,
+      cylindrical_coord_part,
+      SpatialDimension
+      );
 
-    put_field(
-        cylindrical_coord_field,
-        NodeRank,
-        cylindrical_coord_part,
-        SpatialDimension
-        );
+  m_gears.resize(num_gears);
 
-    m_gears.resize(NUM_GEARS);
-
-    for ( size_t i = 0; i < NUM_GEARS; ++i) {
-      std::ostringstream oss;
-      oss << "Gear_" << i ;
-      m_gears[i] = new Gear (
+  for ( size_t i = 0; i < num_gears; ++i) {
+    std::ostringstream oss;
+    oss << "Gear_" << i ;
+    m_gears[i] = new Gear (
           meta_data,
           bulk_data,
           meta_data.declare_part(oss.str(),SpatialDimension),
@@ -106,11 +110,11 @@ GearsFixture::GearsFixture( ParallelMachine pm, size_t num_gears)
           translation_field,
           cylindrical_coord_field
           );
-    }
   }
+}
 
-GearsFixture::~GearsFixture() {
-
+GearsFixture::~GearsFixture()
+{
   for( std::vector<Gear *>::iterator i = m_gears.begin();
        i != m_gears.end();
        ++i )
@@ -120,8 +124,8 @@ GearsFixture::~GearsFixture() {
   }
 }
 
-void GearsFixture::generate_mesh() {
-
+void GearsFixture::generate_mesh()
+{
   bulk_data.modification_begin();
 
   const unsigned p_size = bulk_data.parallel_size();
@@ -132,20 +136,16 @@ void GearsFixture::generate_mesh() {
     if (( (i*p_size)/m_gears.size()) == p_rank) {
       Gear & gear = get_gear(i);
       gear.generate_gear();
-
-      GearData data;
     }
   }
 
   bulk_data.modification_end();
 
   communicate_model_fields();
-
 }
 
-
-void GearsFixture::communicate_model_fields() {
-
+void GearsFixture::communicate_model_fields()
+{
   //copy the field data to the aura nodes
 
   std::vector< const FieldBase *> fields;

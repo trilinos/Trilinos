@@ -46,8 +46,6 @@
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
-typedef int MPI_Comm;
-#define MPI_COMM_WORLD 1
 #include "Epetra_SerialComm.h"
 #endif
 
