@@ -28,11 +28,18 @@
 // } 
 //
 
-#include "Cthulhu_Classes.hpp"
 #include <Cthulhu_UseShortNames.hpp>
 #include "MueLu_Classes.hpp"
 
 // New definition of types using the types ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
+#ifdef MUELU_LEVEL_HPP
+typedef MueLu::Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Level;
+#endif
+
+#ifdef MUELU_HIERARCHY_HPP
+typedef MueLu::Hierarchy<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>           Hierarchy;
+#endif
+
 #ifdef MUELU_SAPFACTORY_HPP
 typedef MueLu::SaPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      SaPFactory;
 #endif

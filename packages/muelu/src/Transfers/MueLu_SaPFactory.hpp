@@ -1,15 +1,17 @@
 #ifndef MUELU_SAPFACTORY_HPP
 #define MUELU_SAPFACTORY_HPP
 
+#include <Cthulhu_Map.hpp>
+#include <Cthulhu_CrsMatrix.hpp>
+#include <Cthulhu_EpetraCrsMatrix.hpp>
+#include <Cthulhu_CrsOperator.hpp>
+#include <Cthulhu.hpp>
+#include <Cthulhu_Vector.hpp>
+#include <Cthulhu_VectorFactory.hpp>
+
 #include <iostream>
 #include "MueLu_OperatorFactory.hpp"
 
-namespace MueLu {
-template<class SC, class LO, class GO, class NO, class LMO>
-class SaPFactory;
-}
-
-#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
 namespace MueLu {
@@ -77,13 +79,13 @@ class SaPFactory : public OperatorFactory<SC,LO,GO,NO, LMO> {
         4) Normalize each column.
         5) Voila!
       */
+
       Teuchos::RCP< Operator > Op = fineLevel.GetA();
       GO nFineDofs = Op->getGlobalNumRows();
       GO nCoarseDofs = nFineDofs/3;
       //prolongator is nFineDofs by nCoarseDofs
       //Teuchos::RCP<Cthulhu::CrsOperator> Ptent = Teuchos::rcp( new Cthulhu::CrsOperator(Op->Rowmap(), 2) );
-      Teuchos::RCP< Cthulhu::Operator > Ptent = Teuchos::rcp( new Cthulhu::CrsOperator(Op->Rowmap(), 2) );
-
+      Teuchos::RCP< Operator > Ptent = Teuchos::rcp( new CrsOperator(Op->getRowMap(), 2) );
 
       return true;
     }

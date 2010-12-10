@@ -22,14 +22,14 @@ namespace MueLu {
   */
   //template<class Scalar,class LO, class GO, class NO, class LMO>
   //class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,NO, LMO> > {
-  template<class Scalar,class LO, class GO, class NO, class LMO>
+  template<class SC,class LO, class GO, class NO, class LMO>
   class Level : public Needs {
 
-    typedef Cthulhu::Operator<Scalar,LO,GO,NO,LMO> Operator;
-    typedef Cthulhu::Vector<Scalar,LO,GO,NO> Vector;
-    typedef MueLu::Smoother<Scalar,LO,GO,NO,LMO> Smoother;
+    typedef Cthulhu::Operator<SC,LO,GO,NO,LMO> Operator;
+    typedef Cthulhu::Vector<SC,LO,GO,NO> Vector;
+    typedef MueLu::Smoother<SC,LO,GO,NO,LMO> Smoother;
 
-    //friend inline std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,NO,LMO> &level);
+    //friend inline std::ostream& operator<<(std::ostream& os, Level<SC,LO,GO,NO,LMO> &level);
 
   private: 
 
@@ -65,7 +65,7 @@ namespace MueLu {
     //@{
     //! @name Build methods
     //! Builds a new Level object.
-    static Teuchos::RCP<Level<Scalar,LO,GO,NO,LMO> > Build(std::ostream &os) {
+    static Teuchos::RCP<Level<SC,LO,GO,NO,LMO> > Build(std::ostream &os) {
       os << "Building a Level" << std::endl;
       return Teuchos::rcp( new Level() );
     }
@@ -150,8 +150,8 @@ namespace MueLu {
   }; //class Level
 
   //Print function.  Not a friend b/c it uses only public interfaces for data access.
-  template<class Scalar,class LO, class GO, class NO, class LMO>
-  std::ostream& operator<<(std::ostream& os, Level<Scalar,LO,GO,NO, LMO> const &level) {
+  template<class SC,class LO, class GO, class NO, class LMO>
+  std::ostream& operator<<(std::ostream& os, Level<SC,LO,GO,NO, LMO> const &level) {
     os << "Printing Level object " << level.GetLevelID() << std::endl;
     if (level.GetA() != Teuchos::null) os << *level.GetA() << std::endl;
     if (level.GetR() != Teuchos::null) os << *level.GetR() << std::endl;
