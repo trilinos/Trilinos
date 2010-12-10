@@ -5,6 +5,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.godel.gcc.cmake")
 # Test only Zoltan with the C compiler with MPI.  Here the only reason
 # that we are testing only Zoltan is that is the only package in
 # Trilinos that can build with only C.
+#   Use 64 bit global IDs in Zoltan.
 #
 
 SET(COMM_TYPE MPI)
@@ -19,7 +20,7 @@ SET(Trilinos_PACKAGES Zoltan)
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DMPI_EXEC_MAX_NUMPROCS:STRING=11"
-  "-DCMAKE_C_FLAGS:STRING=-std=c99"
+  "-DCMAKE_C_FLAGS:STRING=-std=c99 -DZOLTAN_ID_TYPE_LONG"
   "-DTrilinos_ENABLE_CXX:BOOL=OFF"
   "-DTrilinos_ENABLE_ForTrilinos:BOOL=OFF"
   "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
