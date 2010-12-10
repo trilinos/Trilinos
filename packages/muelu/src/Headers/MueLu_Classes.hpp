@@ -1,5 +1,8 @@
+#ifndef MUELU_CLASSES_HPP
+#define MUELU_CLASSES_HPP
 #include "MueLu_ConfigDefs.hpp"
 
+//Forward declaration of MueLu classes.
 namespace MueLu {
 
   class Needs;
@@ -12,4 +15,6 @@ namespace MueLu {
   template<class, class , class , class , class> class Smoother;
   template<class, class , class , class , class> class SmootherFactory;
 
-}
+} //namespace MueLu
+
+#endif//ifndef MUELU_CLASSES_HPP
