@@ -552,6 +552,7 @@ static void getOwnedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::v
       indices[i] = (OrdinalType) int_Indices[i];
 }
 
+/* // See DOFManager.cpp
 template < >
 void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
 {
@@ -562,6 +563,7 @@ void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vec
    // directly write to int indices
    vs->getIndices_Owned(numIndices,&indices[0],ni);
 }
+*/
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
@@ -585,12 +587,14 @@ static void getOwnedAndSharedIndices_T(const fei::SharedPtr<fei::VectorSpace> & 
       indices[i] = (OrdinalType) int_Indices[i];
 }
 
+/* // See DOFManager.cpp
 template < >
 void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
 {
    // get the global indices
    vs->getIndices_SharedAndOwned(indices);
 }
+*/
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const
