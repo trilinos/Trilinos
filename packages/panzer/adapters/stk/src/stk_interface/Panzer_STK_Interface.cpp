@@ -101,7 +101,7 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
    TEUCHOS_ASSERT(not initialized_);
    // TEUCHOS_ASSERT(dimension_!=0); // no zero dimensional meshes!
 
-   femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
+   // femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
 
    procRank_ = stk::parallel_machine_rank(parallelMach);
 

@@ -39,6 +39,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    buildLocalIds(*mesh,localIds);
 
    FieldContainer vert0, vert1;
+   out << "get vertices" << std::endl;
    mesh->getElementVertices(*localIds["eblock-0_0"],vert0);
    mesh->getElementVertices(*localIds["eblock-1_0"],vert1);
 
@@ -46,6 +47,7 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    ublock0.resize(localIds["eblock-0_0"]->size(),4);
    tblock0.resize(localIds["eblock-0_0"]->size(),4);
    tblock1.resize(localIds["eblock-1_0"]->size(),4);
+   out << "assigning" << std::endl;
 
    assignBlock(ublock0,vert0,xval);
    assignBlock(tblock0,vert0,yval);
@@ -54,6 +56,9 @@ TEUCHOS_UNIT_TEST(tSTK_IO, fields)
    mesh->setSolutionFieldData("u","eblock-0_0",*localIds["eblock-0_0"],ublock0);
    mesh->setSolutionFieldData("T","eblock-0_0",*localIds["eblock-0_0"],tblock0);
    mesh->setSolutionFieldData("T","eblock-1_0",*localIds["eblock-1_0"],tblock1);
+
+   out << "write to exodus" << std::endl;
+
    mesh->writeToExodus("output.exo");
 }
 

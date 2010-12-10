@@ -407,6 +407,7 @@ void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementId
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
    // get *master* cell toplogy...(belongs to first element)
+   TEUCHOS_ASSERT(stk::mesh::get_cell_topology(*elements[localElementIds[0]])!=0)
    unsigned masterVertexCount 
       = stk::mesh::get_cell_topology(*elements[localElementIds[0]])->vertex_count;
 
