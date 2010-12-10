@@ -9,6 +9,7 @@
 
 #include "Cthulhu_BlockMap.hpp"
 #include "Cthulhu_MultiVector.hpp"
+#include "Cthulhu_CrsGraph.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
 #include "Cthulhu_CrsMatrixFactory.hpp"
 #include "Cthulhu_OperatorView.hpp"
@@ -35,6 +36,7 @@ namespace Cthulhu {
     
     typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
     typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+    typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #ifdef HAVE_CTHULHU_TPETRA
     typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
@@ -262,6 +264,12 @@ namespace Cthulhu {
 
     //@}
   
+
+    // JG: Added:
+
+    //! Returns the CrsGraph associated with this matrix. 
+    virtual RCP<const CrsGraph> getCrsGraph() const =0;
+
   public: //TODO: protected
     Teuchos::Hashtable<viewLabel_t, RCP<OperatorView> > operatorViewTable_; // hashtable storing the operator views (keys = view names, values = views).
   

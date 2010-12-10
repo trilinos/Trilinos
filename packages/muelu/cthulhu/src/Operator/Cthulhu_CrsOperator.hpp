@@ -9,6 +9,7 @@
 
 #include "Cthulhu_BlockMap.hpp"
 #include "Cthulhu_MultiVector.hpp"
+#include "Cthulhu_CrsGraph.hpp"
 #include "Cthulhu_CrsMatrix.hpp"
 #include "Cthulhu_CrsMatrixFactory.hpp"
 
@@ -36,6 +37,7 @@ class CrsOperator : public Operator<ScalarType,LocalOrdinal,GlobalOrdinal,Node,L
 
   typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
   typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
+  typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #ifdef HAVE_CTHULHU_TPETRA
   typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
@@ -281,7 +283,12 @@ public:
 
     // Teuchos::OSTab tab(out);
   }
-  
+
+  // JG: Added:
+
+  //! Returns the CrsGraph associated with this matrix. 
+  RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }
+
   RCP<CrsMatrix> get_CrsMatrix() const { CTHULHU_DEBUG_ME; return matrixData_; }
 
   //@}
