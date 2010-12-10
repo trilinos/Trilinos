@@ -15,18 +15,18 @@
 // an std::invalid_argument exceptions.
 #define IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG(sourceCode)   \
   {                                                                     \
-    int localSuccess = 1; /* 1 == true */                               \
+    int localFailure = 0; /* 0 == success */                            \
     try {                                                               \
       sourceCode;                                                       \
     }                                                                   \
     catch (int epetraErrCode) {                                         \
-      localSuccess = 0; /* 0 == false */                                \
+      localFailure = 1; /* 1 == failure */                              \
     }                                                                   \
                                                                         \
     {                                                                   \
-      int globalSuccess = 0; /* 0 == success */                         \
-      Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_SUM, localSuccess, Teuchos::outArg(globalSuccess)); \
-      TEST_FOR_EXCEPTION(globalSuccess==0, std::invalid_argument, "Epetra threw exception"); \
+      int globalFailure = 0; /* 0 == success */                         \
+      Teuchos::reduceAll<int>(*comm, Teuchos::REDUCE_SUM, localFailure, Teuchos::outArg(globalFailure)); \
+      TEST_FOR_EXCEPTION(globalFailure != 0, std::invalid_argument, "Epetra threw exception"); \
     }                                                                   \
   }
 #endif
