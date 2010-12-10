@@ -23,6 +23,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   simple_bc
   SOURCES simple_bc.cpp ${UNIT_TEST_DRIVER}
   COMM serial mpi
-  NUM_MPI_PROCS 4
+  NUM_MPI_PROCS 1
   )
   
