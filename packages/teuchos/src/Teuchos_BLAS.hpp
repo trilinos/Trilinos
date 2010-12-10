@@ -589,7 +589,7 @@ namespace Teuchos
 	if (incx == ione) {
 	  for(j = izero; j < n; j++) {
 	    temp = y_zero;
-            if (noConj) {
+            if ( noConj ) {
               for(i = izero; i < m; i++) {
 	        temp += A[j*lda + i]*x[i];
               }
@@ -605,7 +605,7 @@ namespace Teuchos
 	  for(j = izero; j < n; j++) {
 	    temp = y_zero;
 	    ix = kx;
-            if (noConj) {
+            if ( noConj ) {
               for (i = izero; i < m; i++) {
 	        temp += A[j*lda + i]*x[ix];
 	        ix += incx;
@@ -654,7 +654,7 @@ namespace Teuchos
     if(!BadArgument) {
       OrdinalType i, j, ix, jx, kx = izero;
       ScalarType temp;
-      bool NoUnit = (EDiagChar[diag] == 'N');
+      bool noUnit = (EDiagChar[diag] == 'N');
    
       // Determine if this is a conjugate tranpose 
       noConj = (ETranspChar[trans] == 'T'); 
@@ -674,7 +674,7 @@ namespace Teuchos
 		for (i=izero; i<j; i++) {
 		  x[i] += temp*A[j*lda + i];
 		}
-		if (NoUnit) 
+		if ( noUnit ) 
 		  x[j] *= A[j*lda + j];
 	      }
 	    }
@@ -688,7 +688,7 @@ namespace Teuchos
 		  x[ix] += temp*A[j*lda + i];
 		  ix += incx;
 		}
-		if (NoUnit)
+		if ( noUnit )
 		  x[jx] *= A[j*lda + j];
 	      }
 	      jx += incx;
@@ -702,7 +702,7 @@ namespace Teuchos
 		for (i=n-ione; i>j; i--) {
 		  x[i] += temp*A[j*lda + i];
 		}
-		if (NoUnit)
+		if ( noUnit )
 		  x[j] *= A[j*lda + j];
 	      }
 	    }
@@ -717,7 +717,7 @@ namespace Teuchos
 		  x[ix] += temp*A[j*lda + i];
 		  ix -= incx;
 		}
-		if (NoUnit) 
+		if ( noUnit ) 
 		  x[jx] *= A[j*lda + j];
 	      }
 	      jx -= incx;
@@ -731,14 +731,14 @@ namespace Teuchos
 	  if (incx == ione) {
 	    for (j=n-ione; j>-ione; j--) {
 	      temp = x[j];
-              if (noConj) {
-                if (NoUnit)
+              if ( noConj ) {
+                if ( noUnit )
                   temp *= A[j*lda + j];
                 for (i=j-ione; i>-ione; i--) {
                   temp += A[j*lda + i]*x[i];
                 }
               } else {
-                if (NoUnit)
+                if ( noUnit )
                   temp *= ScalarTraits<A_type>::conjugate(A[j*lda + j]);
                 for (i=j-ione; i>-ione; i--) {
                   temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[i];
@@ -751,15 +751,15 @@ namespace Teuchos
 	    for (j=n-ione; j>-ione; j--) {
 	      temp = x[jx];
 	      ix = jx;
-              if (noConj) {
-                if (NoUnit)
+              if ( noConj ) {
+                if ( noUnit )
                   temp *= A[j*lda + j];
                 for (i=j-ione; i>-ione; i--) {
                   ix -= incx;
                   temp += A[j*lda + i]*x[ix];
 	        }
               } else {
-                if (NoUnit)
+                if ( noUnit )
                   temp *= ScalarTraits<A_type>::conjugate(A[j*lda + j]);
                 for (i=j-ione; i>-ione; i--) {
                   ix -= incx;
@@ -775,14 +775,14 @@ namespace Teuchos
 	  if (incx == ione) {
 	    for (j=izero; j<n; j++) {
 	      temp = x[j];
-              if (noConj) {
-                if (NoUnit)
+              if ( noConj ) {
+                if ( noUnit )
                   temp *= A[j*lda + j];
                 for (i=j+ione; i<n; i++) {
                   temp += A[j*lda + i]*x[i];
                 }
               } else {
-                if (NoUnit)
+                if ( noUnit )
                   temp *= ScalarTraits<A_type>::conjugate(A[j*lda + j]);
                 for (i=j+ione; i<n; i++) {
                   temp += ScalarTraits<A_type>::conjugate(A[j*lda + i])*x[i];
@@ -795,15 +795,15 @@ namespace Teuchos
 	    for (j=izero; j<n; j++) {
 	      temp = x[jx];
 	      ix = jx;
-              if (noConj) {
-                if (NoUnit) 
+              if ( noConj ) {
+                if ( noUnit ) 
                   temp *= A[j*lda + j];
                 for (i=j+ione; i<n; i++) {
                   ix += incx;
                   temp += A[j*lda + i]*x[ix];
                 }
               } else {
-                if (NoUnit) 
+                if ( noUnit ) 
                   temp *= ScalarTraits<A_type>::conjugate(A[j*lda + j]);
                 for (i=j+ione; i<n; i++) {
                   ix += incx;
@@ -1163,9 +1163,6 @@ namespace Teuchos
     bool Upper = (EUploChar[uplo] == 'U');
     if (ESideChar[side] == 'R') { NRowA = n; }
 
-    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
-	    "Teuchos::BLAS::SYMM() does not currently support complex data types.");
-    
     // Quick return.
     if ( (m==izero) || (n==izero) || ( (alpha==alpha_zero)&&(beta==beta_one) ) ) { return; }
     if( m < izero ) { 
@@ -1468,11 +1465,9 @@ namespace Teuchos
     ScalarType temp;
     bool BadArgument = false;
     bool LSide = (ESideChar[side] == 'L');
-    bool NoUnit = (EDiagChar[diag] == 'N');
+    bool noUnit = (EDiagChar[diag] == 'N');
     bool Upper = (EUploChar[uplo] == 'U');
-
-    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && transa == CONJ_TRANS, std::logic_error,
-	    "Teuchos::BLAS::TRMM() does not currently support CONJ_TRANS for complex data types.");
+    bool noConj = (EUploChar[transa] == 'T');
 
     if(!LSide) { NRowA = n; }
 
@@ -1519,7 +1514,7 @@ namespace Teuchos
 		  for( i=izero; i<k; i++ ) {
 		    B[j*ldb + i] += temp*A[k*lda + i];
 		  }
-		  if ( NoUnit )
+		  if ( noUnit )
 		    temp *=A[k*lda + k];
 		  B[j*ldb + k] = temp;
 		}
@@ -1532,7 +1527,7 @@ namespace Teuchos
 		if( B[j*ldb + k] != B_zero ) {
 		  temp = alpha*B[j*ldb + k];
 		  B[j*ldb + k] = temp;
-		  if ( NoUnit )
+		  if ( noUnit )
 		    B[j*ldb + k] *= A[k*lda + k];
 		  for( i=k+ione; i<m; i++ ) {
 		    B[j*ldb + i] += temp*A[k*lda + i];
@@ -1542,16 +1537,24 @@ namespace Teuchos
 	    }
 	  }
 	} else {
-	  // Compute B = alpha*A'*B
+	  // Compute B = alpha*A'*B or B = alpha*conj(A')*B
 	  if( Upper ) {
 	    for( j=izero; j<n; j++ ) {
 	      for( i=m-ione; i>-ione; i-- ) {
 		temp = B[j*ldb + i];
-		if( NoUnit )
-		  temp *= A[i*lda + i];
-		for( k=izero; k<i; k++ ) {
-		  temp += A[i*lda + k]*B[j*ldb + k];
-		}
+                if ( noConj ) {
+                  if( noUnit )
+                    temp *= A[i*lda + i];
+                  for( k=izero; k<i; k++ ) {
+                    temp += A[i*lda + k]*B[j*ldb + k];
+                  }
+                } else {
+                  if( noUnit )
+                    temp *= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
+                  for( k=izero; k<i; k++ ) {
+                    temp += ScalarTraits<A_type>::conjugate(A[i*lda + k])*B[j*ldb + k];
+                  }
+                }
 		B[j*ldb + i] = alpha*temp;
 	      }
 	    }
@@ -1559,11 +1562,19 @@ namespace Teuchos
 	    for( j=izero; j<n; j++ ) {
 	      for( i=izero; i<m; i++ ) {
 		temp = B[j*ldb + i];
-		if( NoUnit ) 
-		  temp *= A[i*lda + i];
-		for( k=i+ione; k<m; k++ ) {
-		  temp += A[i*lda + k]*B[j*ldb + k];
-		}
+                if ( noConj ) {
+                  if( noUnit ) 
+                    temp *= A[i*lda + i];
+                  for( k=i+ione; k<m; k++ ) {
+                    temp += A[i*lda + k]*B[j*ldb + k];
+                  }
+                } else {
+                  if( noUnit )
+                    temp *= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
+                  for( k=i+ione; k<m; k++ ) {
+                    temp += ScalarTraits<A_type>::conjugate(A[i*lda + k])*B[j*ldb + k];
+                  }
+                }
 		B[j*ldb + i] = alpha*temp;
 	      }
 	    }
@@ -1579,7 +1590,7 @@ namespace Teuchos
 	    // A is upper triangular.
 	    for( j=n-ione; j>-ione; j-- ) {
 	      temp = alpha;
-	      if( NoUnit )
+	      if( noUnit )
 		temp *= A[j*lda + j];
 	      for( i=izero; i<m; i++ ) {
 		B[j*ldb + i] *= temp;
@@ -1597,7 +1608,7 @@ namespace Teuchos
 	    // A is lower triangular.
 	    for( j=izero; j<n; j++ ) {
 	      temp = alpha;
-	      if( NoUnit )
+	      if( noUnit )
 		temp *= A[j*lda + j];
 	      for( i=izero; i<m; i++ ) {
 		B[j*ldb + i] *= temp;
@@ -1613,21 +1624,28 @@ namespace Teuchos
 	    }
 	  }
 	} else {
-	  // Compute B = alpha*B*A'
+	  // Compute B = alpha*B*A' or B = alpha*B*conj(A')
 
 	  if( Upper ) {
 	    for( k=izero; k<n; k++ ) {
 	      for( j=izero; j<k; j++ ) {
 		if( A[k*lda + j] != A_zero ) {
-		  temp = alpha*A[k*lda + j];
+                  if ( noConj )
+		    temp = alpha*A[k*lda + j];
+                  else 
+		    temp = alpha*ScalarTraits<A_type>::conjugate(A[k*lda + j]);
 		  for( i=izero; i<m; i++ ) {
 		    B[j*ldb + i] += temp*B[k*ldb + i];
 		  }
 		}
 	      }
 	      temp = alpha;
-	      if( NoUnit ) 
-		temp *= A[k*lda + k];
+	      if( noUnit ) {
+                if ( noConj ) 
+		  temp *= A[k*lda + k];
+                else 
+                  temp *= ScalarTraits<A_type>::conjugate(A[k*lda + k]);
+              }
 	      if( temp != one ) {
 		for( i=izero; i<m; i++ ) {
 		  B[k*ldb + i] *= temp;
@@ -1638,15 +1656,22 @@ namespace Teuchos
 	    for( k=n-ione; k>-ione; k-- ) {
 	      for( j=k+ione; j<n; j++ ) {
 		if( A[k*lda + j] != A_zero ) {
-		  temp = alpha*A[k*lda + j];
+                  if ( noConj )
+                    temp = alpha*A[k*lda + j];
+                  else
+		    temp = alpha*ScalarTraits<A_type>::conjugate(A[k*lda + j]);
 		  for( i=izero; i<m; i++ ) {
 		    B[j*ldb + i] += temp*B[k*ldb + i];
 		  }
 		}
 	      }
 	      temp = alpha;
-	      if( NoUnit )
-		temp *= A[k*lda + k];
+	      if( noUnit ) {
+		if ( noConj ) 
+                  temp *= A[k*lda + k];
+                else
+		  temp *= ScalarTraits<A_type>::conjugate(A[k*lda + k]);
+              }
 	      if( temp != one ) {
 		for( i=izero; i<m; i++ ) {
 		  B[k*ldb + i] *= temp;
@@ -1673,11 +1698,9 @@ namespace Teuchos
     ScalarType temp;
     OrdinalType NRowA = m;
     bool BadArgument = false;
-    bool NoUnit = (EDiagChar[diag]=='N');
+    bool noUnit = (EDiagChar[diag]=='N');
+    bool noConj = (EUploChar[transa] == 'T');
     
-    TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && transa == CONJ_TRANS, std::logic_error,
-	    "Teuchos::BLAS::TRSM() does not currently support CONJ_TRANS for complex data types.");
-
     if (!(ESideChar[side] == 'L')) { NRowA = n; }
 
     // Quick return.
@@ -1729,7 +1752,7 @@ namespace Teuchos
 			    for(k = (m - ione); k > -ione; k--) {
 				// If this entry is zero, we don't have to do anything.
 				if (B[j*ldb + k] != B_zero) {
-				    if (NoUnit) {
+				    if ( noUnit ) {
 					B[j*ldb + k] /= A[k*lda + k];
 				    }
 				    for(i = izero; i < k; i++) {
@@ -1752,7 +1775,7 @@ namespace Teuchos
                             for(k = izero; k < m; k++) {
                                 // If this entry is zero, we don't have to do anything.
                                 if (B[j*ldb + k] != B_zero) {   
-                                    if (NoUnit) {
+                                    if ( noUnit ) {
                                         B[j*ldb + k] /= A[k*lda + k];
                                     }
                                     for(i = k+ione; i < m; i++) {
@@ -1765,19 +1788,30 @@ namespace Teuchos
 		}  // if (transa =='N')	
 	    	else { 
 		    //
-		    //  Compute B = alpha*inv( A' )*B
+		    //  Compute B = alpha*inv( A' )*B 
+                    //  or      B = alpha*inv( conj(A') )*B
 		    //
 		    if(EUploChar[uplo] == 'U') { 
 			// A is upper triangular.
 			for(j = izero; j < n; j++) {
 	    	    	    for( i = izero; i < m; i++) {
 		    		temp = alpha*B[j*ldb+i];
-			    	for(k = izero; k < i; k++) {
-				    temp -= A[i*lda + k] * B[j*ldb + k];
-				}
-				if (NoUnit) {
-				    temp /= A[i*lda + i];
-				}
+                                if ( noConj ) {
+                                  for(k = izero; k < i; k++) {
+				      temp -= A[i*lda + k] * B[j*ldb + k];
+				  }
+				  if ( noUnit ) {
+				      temp /= A[i*lda + i];
+				  }
+                                } else {
+                                  for(k = izero; k < i; k++) {
+                                      temp -= ScalarTraits<A_type>::conjugate(A[i*lda + k]) 
+                                            * B[j*ldb + k];
+                                  }
+                                  if ( noUnit ) {
+                                      temp /= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
+                                  }
+                                }
 				B[j*ldb + i] = temp;
 			    }
 			}
@@ -1787,12 +1821,22 @@ namespace Teuchos
                         for(j = izero; j < n; j++) {
                             for(i = (m - ione) ; i > -ione; i--) {
                                 temp = alpha*B[j*ldb+i];
-                            	for(k = i+ione; k < m; k++) {
+                                if ( noConj ) {
+                            	  for(k = i+ione; k < m; k++) {
 				    temp -= A[i*lda + k] * B[j*ldb + k];
-				}
-				if (NoUnit) {
+				  }
+				  if ( noUnit ) {
 				    temp /= A[i*lda + i];
-				}
+				  }
+                                } else {
+                                  for(k = i+ione; k < m; k++) {
+                                    temp -= ScalarTraits<A_type>::conjugate(A[i*lda + k]) 
+                                          * B[j*ldb + k];
+                                  }
+                                  if ( noUnit ) {
+                                    temp /= ScalarTraits<A_type>::conjugate(A[i*lda + i]);
+                                  }
+                                }
 				B[j*ldb + i] = temp;
                             }
                         }
@@ -1826,7 +1870,7 @@ namespace Teuchos
 				    }
 				}
 			    }
-			    if (NoUnit) {
+			    if ( noUnit ) {
 				temp = B_one/A[j*lda + j];
 				for(i = izero; i < m; i++) {
 				    B[j*ldb + i] *= temp;
@@ -1852,7 +1896,7 @@ namespace Teuchos
                                     }
                                 } 
                             }
-			    if (NoUnit) {
+			    if ( noUnit ) {
 				temp = B_one/A[j*lda + j];
 				for(i = izero; i < m; i++) {
 				    B[j*ldb + i] *= temp;
@@ -1864,19 +1908,26 @@ namespace Teuchos
 	    	else { 
 		    //
 		    //  Compute B = alpha*B*inv( A' )
+                    //  or      B = alpha*B*inv( conj(A') )
 		    //
 		    if(EUploChar[uplo] == 'U') { 
 			// A is upper triangular.
 			for(k = (n - ione); k > -ione; k--) {
-			    if (NoUnit) {
-				temp = B_one/A[k*lda + k];
+			    if ( noUnit ) {
+                                if ( noConj )
+				  temp = B_one/A[k*lda + k];
+                                else
+				  temp = B_one/ScalarTraits<A_type>::conjugate(A[k*lda + k]);
 	    	    	    	for(i = izero; i < m; i++) {
 		    		    B[k*ldb + i] *= temp;
 				}
 			    }
 			    for(j = izero; j < k; j++) {
 				if (A[k*lda + j] != A_zero) {
-				    temp = A[k*lda + j];
+                                    if ( noConj ) 
+				      temp = A[k*lda + j];
+                                    else
+				      temp = ScalarTraits<A_type>::conjugate(A[k*lda + j]);
 				    for(i = izero; i < m; i++) {
 					B[j*ldb + i] -= temp*B[k*ldb + i];
 				    }
@@ -1892,15 +1943,21 @@ namespace Teuchos
 		    else
 		    { // A is lower triangular.
 			for(k = izero; k < n; k++) {
-			    if (NoUnit) {
-				temp = B_one/A[k*lda + k];
+			    if ( noUnit ) {
+                                if ( noConj )
+				  temp = B_one/A[k*lda + k];
+                                else
+				  temp = B_one/ScalarTraits<A_type>::conjugate(A[k*lda + k]);
 				for (i = izero; i < m; i++) {
 				    B[k*ldb + i] *= temp;
 				}
 			    }
 			    for(j = k+ione; j < n; j++) {
 				if(A[k*lda + j] != A_zero) {
-				    temp = A[k*lda + j];
+                                    if ( noConj )
+				      temp = A[k*lda + j];
+                                    else
+				      temp = ScalarTraits<A_type>::conjugate(A[k*lda + j]);
 				    for(i = izero; i < m; i++) {
 					B[j*ldb + i] -= temp*B[k*ldb + i];
 				    }

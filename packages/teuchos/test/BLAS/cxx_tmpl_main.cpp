@@ -89,10 +89,10 @@ using Teuchos::ScalarTraits;
 #define GERTESTS   0
 #define TRMVTESTS  5
 #define GEMMTESTS  5
-#define SYMMTESTS  0
+#define SYMMTESTS  5
 #define SYRKTESTS  5
-#define TRMMTESTS  0
-#define TRSMTESTS  0
+#define TRMMTESTS  5
+#define TRSMTESTS  5
 
 // Returns ScalarTraits<TYPE>::random() (the input parameters are ignored)
 template<typename TYPE>
