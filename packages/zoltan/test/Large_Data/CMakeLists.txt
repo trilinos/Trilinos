@@ -8,7 +8,7 @@ INCLUDE_DIRECTORIES(Zoltan/src/zz)
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS AND ${PACKAGE_NAME}_ENABLE_Scotch)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    stressTestGRAPH
+    stressTestGRAPH_P_S
     SOURCES stressTestGRAPH.c stress_const.h
     COMM mpi 
     NUM_MPI_PROCS 8
@@ -22,7 +22,7 @@ IF (${PACKAGE_NAME}_ENABLE_ParMETIS AND ${PACKAGE_NAME}_ENABLE_Scotch)
 ELSEIF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    stressTestGRAPH
+    stressTestGRAPH_P
     SOURCES stressTestGRAPH.c stress_const.h
     COMM mpi 
     NUM_MPI_PROCS 8
@@ -34,7 +34,7 @@ ELSEIF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 ELSEIF (${PACKAGE_NAME}_ENABLE_Scotch)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    stressTestGRAPH
+    stressTestGRAPH_S
     SOURCES stressTestGRAPH.c stress_const.h
     COMM mpi 
     NUM_MPI_PROCS 8
