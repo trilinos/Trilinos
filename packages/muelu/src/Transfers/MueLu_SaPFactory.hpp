@@ -5,27 +5,39 @@
 #include "MueLu_OperatorFactory.hpp"
 
 namespace MueLu {
+template<class SC, class LO, class GO, class NO, class LMO>
+class SaPFactory;
+}
+
+#include "MueLu_UseDefaultTypes.hpp"
+#include "MueLu_UseShortNames.hpp"
+
+namespace MueLu {
 
 /*!
   @class SaPFactory class.
   @brief Factory for building Smoothed Aggregation prolongators.
+
+  Right now this factory assumes a 1D problem.  Aggregation is hard-coded to divide
+  the # fine dofs by 3.
 */
 
-template<class Scalar, class LO, class GO, class NO, class LMO>
-class SaPFactory : public OperatorFactory<Scalar,LO,GO,NO, LMO> {
+template<class SC, class LO, class GO, class NO, class LMO>
+class SaPFactory : public OperatorFactory<SC,LO,GO,NO, LMO> {
+
   template<class AA, class BB, class CC, class DD, class EE>
   inline friend std::ostream& operator<<(std::ostream& os, SaPFactory<AA,BB,CC,DD, EE> &factory);
 
-  typedef Level<Scalar,LO,GO,NO, LMO> Level;
+  typedef Level<SC,LO,GO,NO, LMO> Level;
 
   private:
 /*
-     CoalesceFact_
      AggFact_
+     CoalesceFact_
      diagonalView_ = 'current' % diagonal view label (default == current view)
 */
      GO maxCoarseSize_;
-     Scalar dampingFactor_;
+     SC dampingFactor_;
      bool doQR_;
      bool reUseP_;
      bool reUsePtent_;
@@ -33,7 +45,9 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,NO, LMO> {
      bool reUseAggregates_;
 
   public:
-    //@{ Constructors/Destructors.
+    //! @name Constructors/Destructors.
+    //@{
+
     //! Constructor.
     SaPFactory() {
       Teuchos::OSTab tab(this->out_);
@@ -44,21 +58,44 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,NO, LMO> {
     virtual ~SaPFactory() {}
     //@}
 
-    //@{ Build methods.
+    //! @name Build methods.
+    //@{
 
-    //! Build method.
+    /*!
+      @brief Build method.
+
+      Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
+    */
     bool Build(Level &fineLevel, Level &coarseLevel) {
-      Teuchos::OSTab tab(this->out_); MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Building a prolongator" << std::endl; return true;
+      Teuchos::OSTab tab(this->out_);
+      MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Building a prolongator" << std::endl;
+
+      /*
+        1) Grab the fine level matrix and determine the # fine dofs.
+        2) Divide by 3 to get the # coarse dofs.
+        3) Set up the blocking (sparsity) of the prolongator
+        4) Normalize each column.
+        5) Voila!
+      */
+      Teuchos::RCP< Operator > Op = fineLevel.GetA();
+      GO nFineDofs = Op->getGlobalNumRows();
+      GO nCoarseDofs = nFineDofs/3;
+      //prolongator is nFineDofs by nCoarseDofs
+      //Teuchos::RCP<Cthulhu::CrsOperator> Ptent = Teuchos::rcp( new Cthulhu::CrsOperator(Op->Rowmap(), 2) );
+      Teuchos::RCP< Cthulhu::Operator > Ptent = Teuchos::rcp( new Cthulhu::CrsOperator(Op->Rowmap(), 2) );
+
+
+      return true;
     }
     //@}
 
+    //! @name Set methods.
     //@{
-    // @name Set methods.
     void SetMaxCoarseSize(GO maxCoarseSize) {
       maxCoarseSize_ = maxCoarseSize;
     }
 
-    void SetDampingFactor(Scalar dampingFactor) {
+    void SetDampingFactor(SC dampingFactor) {
       dampingFactor_ = dampingFactor;
     }
 
@@ -83,14 +120,14 @@ class SaPFactory : public OperatorFactory<Scalar,LO,GO,NO, LMO> {
     }
     //@}
 
+    //! @name Get methods.
     //@{
-    // @name Get methods.
 
     GO GetMaxCoarseSize() {
       return maxCoarseSize_;
     }
 
-    Scalar GetDampingFactor() {
+    SC GetDampingFactor() {
       return dampingFactor_;
     }
 
@@ -128,8 +165,8 @@ function  [P] = MakeNoQRTentative(AggInfo,Amat,nullspace,OutputLevel)
 }; //class SaPFactory
 
 //! Friend print function.
-template<class Scalar, class LO, class GO, class NO, class LMO>
-std::ostream& operator<<(std::ostream& os, SaPFactory<Scalar,LO,GO,NO, LMO> &factory) {
+template<class SC, class LO, class GO, class NO, class LMO>
+std::ostream& operator<<(std::ostream& os, SaPFactory<SC,LO,GO,NO, LMO> &factory) {
   os << "Printing an SaPFactory object" << std::endl;
   return os;
 }

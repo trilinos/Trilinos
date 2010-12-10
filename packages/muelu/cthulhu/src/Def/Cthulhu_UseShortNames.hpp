@@ -1,6 +1,6 @@
 #include "Cthulhu_ConfigDefs.hpp"
 
-// Get ride of template parameters
+// Get rid of template parameters
 // You have to include Cthulhu_Classes.hpp before this file.
 
 // New definition of types using the types ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
@@ -76,6 +76,7 @@ typedef ScalarType    SC;
 typedef LocalOrdinal  LO;
 typedef GlobalOrdinal GO;
 typedef Node          NO;
+typedef LocalMatOps   LMO;
 
 
 // TODO: do the same for Epetra object (problem of namespace)

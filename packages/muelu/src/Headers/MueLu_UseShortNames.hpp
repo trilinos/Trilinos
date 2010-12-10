@@ -10,7 +10,7 @@
 //    Example:
 //     #ifndef MY_HEADER
 //     #define MY_HEADER
-//     #include <MueLu_DefaultTypes.hpp>
+//     #include <MueLu_UseDefaultTypes.hpp>
 //     #include <MueLu_UseShortNames.hpp>
 //     #endif
 //
@@ -28,7 +28,9 @@
 // } 
 //
 
+#include "Cthulhu_Classes.hpp"
 #include <Cthulhu_UseShortNames.hpp>
+#include "MueLu_Classes"
 
 // New definition of types using the types ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
 #ifdef MUELU_SAPFACTORY_HPP
