@@ -25,9 +25,9 @@ export TDD_CTEST_TEST_TYPE=Nightly
 #
 # just testing
 #
-export TDD_IN_TESTING_MODE=ON
-export CTEST_DO_SUBMIT=FALSE
-export TDD_DO_SUBMIT=FALSE
+#export TDD_IN_TESTING_MODE=ON
+#export CTEST_DO_SUBMIT=FALSE
+#export TDD_DO_SUBMIT=FALSE
 #export CTEST_DO_UPDATES=FALSE
 
 # Machine specific environment:
