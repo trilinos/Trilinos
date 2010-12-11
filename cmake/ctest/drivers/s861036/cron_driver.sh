@@ -18,7 +18,7 @@ fi
 # TrilinosDriver settings:
 #
 export TDD_GIT_EXE=/usr/local/bin/git
-export TDD_PARALLEL_LEVEL=2
+export TDD_PARALLEL_LEVEL=1
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
 export TDD_CTEST_TEST_TYPE=Nightly
 
@@ -27,9 +27,8 @@ export TDD_CTEST_TEST_TYPE=Nightly
 #
 export TDD_IN_TESTING_MODE=ON
 export CTEST_DO_SUBMIT=FALSE
+export TDD_DO_SUBMIT=FALSE
 #export CTEST_DO_UPDATES=FALSE
-
-
 
 # Machine specific environment:
 #

@@ -13,7 +13,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_ZOLTAN_PLUS_ZOLTAN_USERS)
+SET(BUILD_DIR_NAME ZOLTAN_PLUS_USERS)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF)
 
@@ -22,30 +22,30 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTrilinos_DATA_DIR:STRING=$ENV{TRILINOSDATADIRECTORY}"
   "-DTPL_ENABLE_MPI:BOOL=ON"
-  "-D CMAKE_C_FLAGS:STRING=-std=c99"
-  "-D MPI_EXEC_MAX_NUMPROCS:STRING=11"
-  "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF"
-  "-D Trilinos_ENABLE_EXAMPLES:BOOL=ON"
-  "-D Trilinos_ENABLE_TESTS:BOOL=ON"
-  "-D Trilinos_ENABLE_Zoltan:BOOL=ON"
-  "-D Zoltan_ENABLE_ParMETIS:BOOL=ON"
-  "-D Zoltan_ENABLE_Scotch:BOOL=ON"
-  "-D ParMETIS_INCLUDE_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
-  "-D ParMETIS_LIBRARY_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
-  "-D Scotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/include"
-  "-D Scotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/lib"
-  "-D Trilinos_ENABLE_Isorropia:BOOL=ON"
-  "-D Trilinos_ENABLE_Epetra:BOOL=ON"
-  "-D Trilinos_ENABLE_EpetraExt:BOOL=ON"
-  "-D Trilinos_ENABLE_ML:BOOL=ON"
-  "-D Trilinos_ENABLE_STK:BOOL=ON"
-  "-D Trilinos_ENABLE_Didasko:BOOL=ON"
-  "-D Trilinos_ENABLE_trilinoscouplings:BOOL=ON"
+  "-DCMAKE_C_FLAGS:STRING=-std=c99"
+  "-DMPI_EXEC_MAX_NUMPROCS:STRING=11"
+  "-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF"
+  "-DTrilinos_ENABLE_EXAMPLES:BOOL=ON"
+  "-DTrilinos_ENABLE_TESTS:BOOL=ON"
+  "-DTrilinos_ENABLE_Zoltan:BOOL=ON"
+  "-DZoltan_ENABLE_ParMETIS:BOOL=ON"
+  "-DZoltan_ENABLE_Scotch:BOOL=ON"
+  "-DParMETIS_INCLUDE_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
+  "-DParMETIS_LIBRARY_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
+  "-DScotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/include"
+  "-DScotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/lib"
+  "-DTrilinos_ENABLE_Isorropia:BOOL=ON"
+  "-DTrilinos_ENABLE_Epetra:BOOL=ON"
+  "-DTrilinos_ENABLE_EpetraExt:BOOL=ON"
+  "-DTrilinos_ENABLE_ML:BOOL=ON"
+  "-DTrilinos_ENABLE_STK:BOOL=ON"
+  "-DTrilinos_ENABLE_Didasko:BOOL=ON"
+  "-DTrilinos_ENABLE_trilinoscouplings:BOOL=ON"
   )
 
 SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
 SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
-SET( CTEST_BUILD_FLAGS "-j8 -i" )
+SET( CTEST_BUILD_FLAGS "-j4 -i" )
 SET( CTEST_COVERAGE_COMMAND /usr/bin/gcov )
 SET( CTEST_MEMORYCHECK_COMMAND /usr/local/bin/valgrind )
 
