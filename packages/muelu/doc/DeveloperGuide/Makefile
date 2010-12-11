@@ -1,6 +1,6 @@
 MAIN = devGuide
 
-DEPS = $(MAIN) abstract introduction definitions namingConventions codingConventions testing hints
+DEPS = $(MAIN) abstract introduction definitions namingConventions codingConventions testing hints commonErrors
           
 LATEX  = pdflatex
 BIBTEX = bibtex
