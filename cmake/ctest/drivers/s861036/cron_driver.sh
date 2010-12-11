@@ -18,15 +18,17 @@ fi
 # TrilinosDriver settings:
 #
 export TDD_GIT_EXE=/usr/local/bin/git
-export TDD_PARALLEL_LEVEL=2
+export TDD_PARALLEL_LEVEL=1
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
 export TDD_CTEST_TEST_TYPE=Nightly
 
 #
 # just testing
 #
+export TDD_IN_TESTING_MODE=ON
 export CTEST_DO_SUBMIT=FALSE
-
+export TDD_DO_SUBMIT=FALSE
+#export CTEST_DO_UPDATES=FALSE
 
 # Machine specific environment:
 #
@@ -37,8 +39,6 @@ BASEDIR=`cd "\`dirname \"$0\"\`/../../../../..";pwd`
 echo BASEDIR=$BASEDIR
 BASEDATADIR=$BASEDIR
 
-#export CMAKE_LIBRARY_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/lib:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/lib"
-#export CMAKE_INCLUDE_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/include:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/include"
 export CVS_RSH=ssh
 export LD_LIBRARY_PATH="$BASEDIR/MPI_OPT_DEV_SHARED/BUILD/packages/PyTrilinos/src"
 export PYTHONPATH="/usr/local/lib/python2.7:/usr/local/lib/python2.7/site-packages:/usr/local/lib/python2.7/lib-dynload"

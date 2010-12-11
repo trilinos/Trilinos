@@ -30,6 +30,8 @@ public:
 
   UseCase_1_Mesh( stk::ParallelMachine comm );
 
+  enum { SpatialDim = 1};
+
   stk::mesh::MetaData m_metaData;
   stk::mesh::BulkData m_bulkData;
 };

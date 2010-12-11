@@ -102,7 +102,7 @@ void CellTopology::requireNodePermutation( const unsigned permutationOrd ,
 
 std::ostream & operator << ( std::ostream & os, const CellTopology & cell)
 {
-  const CellTopologyData* cell_top_data = cell.getTopologyData();
+  const CellTopologyData* cell_top_data = cell.getCellTopologyData();
   return shards::operator<<(os, *cell_top_data);
 }
 

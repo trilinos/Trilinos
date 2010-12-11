@@ -10,16 +10,20 @@
 #define Stk_Mesh_Use_Cases_UseCase_2_hpp
 
 #include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
+
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
 
 /** stk_mesh Use Case 2
- * Note, the basic layout of the mesh is the same as Use Case 1, with
- * the addition of fields.
+ *
+ * This use case creates a mesh containing a chain of elements.It'll
+ * split them between left and righte parts with left coming first.The
+ * point of this use case is to demonstrate construction of a very simple mesh.
  *
  * Assume the following mesh of 4 hex8 elements.
  *
@@ -85,6 +89,9 @@ public:
   const stk::mesh::EntityRank m_edge_rank;
 };
 
+/**
+ * Verify correctness of mesh
+ */
 bool verifyMesh( const UseCase_2_Mesh & mesh, unsigned nleft, unsigned nright );
 
 // Helper functions for verifyMesh

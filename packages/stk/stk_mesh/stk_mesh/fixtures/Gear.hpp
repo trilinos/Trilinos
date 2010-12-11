@@ -19,6 +19,14 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
+namespace {
+
+const double PI     = 3.14159265358979;
+const double TWO_PI = 2 * PI;
+
+} // namespace 
+
+
 namespace stk {
 namespace mesh {
 namespace fixtures {
@@ -132,7 +140,7 @@ class Gear {
     return static_cast<stk::mesh::EntityId>(num_nodes + iz + (height_num-1) * ( ir + (rad_num-1) * ia ));
   }
 
-  void populate_fields();
+  void populate_fields(stk::mesh::FieldState state);
 
   Part & cylindrical_coord_part;
   Part & hex_part;

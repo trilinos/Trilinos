@@ -74,7 +74,7 @@ using Teuchos::ScalarTraits;
 #define SCALARMAX  10
 // These define the number of tests to be run for each individual BLAS routine.
 #define ROTGTESTS  5
-#define ROTTESTS   10
+#define ROTTESTS   5
 #define ASUMTESTS  5
 #define AXPYTESTS  5
 #define COPYTESTS  5
@@ -87,6 +87,7 @@ using Teuchos::ScalarTraits;
 #define TRMVTESTS  5
 #define GEMMTESTS  5
 #define SYMMTESTS  5
+#define SYRKTESTS  5
 #define TRMMTESTS  5
 #define TRSMTESTS  5
 
@@ -152,7 +153,7 @@ int main(int argc, char *argv[])
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   bool verbose = 0;
-  bool debug = 1;
+  bool debug = 0;
   bool matlab = 0;
   bool InvalidCmdLineArgs = 0;
   OType i, j, k;
@@ -232,7 +233,7 @@ int main(int argc, char *argv[])
   OType incx, incy;
   OType SType1IAMAXresult;
   OType SType2IAMAXresult;
-  OType TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, LDA, LDB, LDC, Mx, My;
+  OType TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, K, P, LDA, LDB, LDC, Mx, My;
   Teuchos::EUplo UPLO;
   Teuchos::ESide SIDE;
   Teuchos::ETransp TRANS, TRANSA, TRANSB;
@@ -334,7 +335,6 @@ int main(int argc, char *argv[])
       PrintVector(SType2y, My, "SType2y_before_operation",  matlab);
     }
     TotalTestCount++;
-    TotalTestCount++;
     SType1BLAS.ROT(M, SType1x, incx, SType1y, incy, &c1, &s1);
     SType2BLAS.ROT(M, SType2x, incx, SType2y, incy, &c2, &s2);
     if(debug)
@@ -342,8 +342,8 @@ int main(int argc, char *argv[])
       PrintVector(SType1y, My, "SType1y_after_operation", matlab);
       PrintVector(SType2y, My, "SType2y_after_operation", matlab);
     }
-    GoodTestSubcount += CompareVectors(SType1x, SType2x, Mx, TOL);
-    GoodTestSubcount += CompareVectors(SType1y, SType2y, My, TOL);
+    GoodTestSubcount += ( CompareVectors(SType1x, SType2x, Mx, TOL) &&
+                          CompareVectors(SType1y, SType2y, My, TOL) );
     delete [] SType1x;
     delete [] SType1y;
     delete [] SType2x;
@@ -1209,6 +1209,114 @@ int main(int argc, char *argv[])
   if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End SYMM Tests
+  //--------------------------------------------------------------------------------
+
+  //--------------------------------------------------------------------------------
+  // Begin SYRK Tests
+  //--------------------------------------------------------------------------------
+  GoodTestSubcount = 0;
+  for(i = 0; i < SYRKTESTS; i++)
+  { 
+    N = GetRandom(MVMIN, MVMAX);
+    K = GetRandom(MVMIN, MVMAX);
+    while (K > N) { K = GetRandom(MVMIN, MVMAX); }
+
+    UPLO = RandomUPLO();
+    TRANSA = RandomTRANS();      
+
+    LDA = GetRandom(MVMIN, MVMAX);
+    if(Teuchos::ETranspChar[TRANSA] == 'N') {
+      while (LDA < N) { LDA = GetRandom(MVMIN, MVMAX); }
+      SType1A = new SType1[LDA * K];
+      SType2A = new SType2[LDA * K];
+      for(j = 0; j < LDA * K; j++) {
+        SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
+        SType2A[j] = ConvertType(SType1A[j], convertTo);
+      }
+    } else {
+      while (LDA < K) { LDA = GetRandom(MVMIN, MVMAX); }
+      SType1A = new SType1[LDA * N];
+      SType2A = new SType2[LDA * N];
+      for(j = 0; j < LDA * N; j++) {
+        SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
+        SType2A[j] = ConvertType(SType1A[j], convertTo);
+      }
+    }
+
+    LDC = GetRandom(MVMIN, MVMAX);
+    while (LDC < N) {  LDC = GetRandom(MVMIN, MVMAX); }
+    SType1C = new SType1[LDC * N];
+    SType2C = new SType2[LDC * N];
+    for(j = 0; j < N; j++) {
+
+      if(Teuchos::EUploChar[UPLO] == 'U') {
+        // The operator is upper triangular, make sure that the entries are
+        // only in the upper triangular part of C.
+        for(k = 0; k < N; k++)
+        {
+          if(k <= j) {
+            SType1C[j*LDC+k] = GetRandom(-SCALARMAX, SCALARMAX);
+          } else {
+            SType1C[j*LDC+k] = SType1zero;
+          }
+          SType2C[j*LDC+k] = ConvertType(SType1C[j*LDC+k], convertTo);
+        }
+      }
+      else {
+        for(k = 0; k < N; k++)
+        {
+          if(k >= j) {
+            SType1C[j*LDC+k] = GetRandom(-SCALARMAX, SCALARMAX);
+          } else {
+            SType1C[j*LDC+k] = SType1zero;
+          }
+          SType2C[j*LDC+k] = ConvertType(SType1C[j*LDC+k], convertTo);
+        }
+      }
+    }
+       
+    SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
+    SType1beta = GetRandom(-SCALARMAX, SCALARMAX);
+    SType2alpha = ConvertType(SType1alpha, convertTo);
+    SType2beta = ConvertType(SType1beta, convertTo);
+    if(debug)
+    {
+      std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+      std::cout << "SType1alpha = " << SType1alpha << std::endl;
+      std::cout << "SType2alpha = " << SType2alpha << std::endl;
+      std::cout << "SType1beta = " << SType1beta << std::endl;
+      std::cout << "SType2beta = " << SType2beta << std::endl;
+      if (Teuchos::ETranspChar[TRANSA] == 'N') {
+        PrintMatrix(SType1A, N, K, LDA,"SType1A", matlab);
+        PrintMatrix(SType2A, N, K, LDA,"SType2A", matlab);
+      } else {
+        PrintMatrix(SType1A, K, N, LDA, "SType1A", matlab);
+        PrintMatrix(SType2A, K, N, LDA, "SType2A", matlab);
+      }
+      PrintMatrix(SType1C, N, N, LDC,"SType1C_before_operation", matlab);
+      PrintMatrix(SType2C, N, N, LDC,"SType2C_before_operation", matlab);
+    }
+    TotalTestCount++;
+
+    SType1BLAS.SYRK(UPLO, TRANSA, N, K, SType1alpha, SType1A, LDA, SType1beta, SType1C, LDC);
+    SType2BLAS.SYRK(UPLO, TRANSA, N, K, SType2alpha, SType2A, LDA, SType2beta, SType2C, LDC);
+    if(debug)
+    {
+      PrintMatrix(SType1C, N, N, LDC,"SType1C_after_operation", matlab);
+      PrintMatrix(SType2C, N, N, LDC,"SType2C_after_operation", matlab);
+    }
+    GoodTestSubcount += CompareMatrices(SType1C, SType2C, N, N, LDC, TOL);
+
+    delete [] SType1A;
+    delete [] SType1C;
+    delete [] SType2A;
+    delete [] SType2C;
+  }
+  GoodTestCount += GoodTestSubcount;
+  if(verbose || debug) std::cout << "SYRK: " << GoodTestSubcount << " of " << SYRKTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
+  //--------------------------------------------------------------------------------
+  // End SYRK Tests
   //--------------------------------------------------------------------------------
 
   //--------------------------------------------------------------------------------

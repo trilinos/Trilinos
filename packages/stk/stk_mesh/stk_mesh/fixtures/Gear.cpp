@@ -29,9 +29,6 @@ namespace {
 
 using stk::mesh::fem::NODE_RANK;
 
-const double PI     = 3.14159265358979;
-const double TWO_PI = 2 * PI;
-
 }
 
 namespace stk {
@@ -90,8 +87,8 @@ Gear::Gear(
 //-----------------------------------------------------------------------------
 //
 
-void Gear::populate_fields()
-{
+void Gear::populate_fields(stk::mesh::FieldState state) {
+
   //setup the cylindrical_coord_field on the hex nodes
   for ( size_t ir = 0 ; ir < rad_num-1; ++ir ) {
     const double rad = rad_min + rad_increment * ir ;
@@ -107,7 +104,7 @@ void Gear::populate_fields()
         double * const cylindrical_data = field_data( cylindrical_coord_field , node );
         double * const translation_data = field_data( translation_field , node );
         double * const cartesian_data = field_data( cartesian_coord_field , node );
-        double * const displacement_data = field_data( displacement_field , node );
+        double * const displacement_data = field_data( displacement_field.field_of_state(state) , node );
 
         cylindrical_data[0] = rad ;
         cylindrical_data[1] = angle ;
@@ -145,7 +142,7 @@ void Gear::populate_fields()
         double * const cylindrical_data = field_data( cylindrical_coord_field , node );
         double * const translation_data = field_data( translation_field , node );
         double * const cartesian_data = field_data( cartesian_coord_field , node );
-        double * const displacement_data = field_data( displacement_field , node );
+        double * const displacement_data = field_data( displacement_field.field_of_state(state) , node );
 
         cylindrical_data[0] = rad ;
         cylindrical_data[1] = angle ;
@@ -181,6 +178,7 @@ void Gear::generate_gear()
   requests[NODE_RANK]     = num_nodes;
   requests[element_rank] = num_elements;
 
+  // Parallel collective call:
   bulk_data.generate_new_entities(requests, gear_entities);
 
   //setup hex elements
@@ -254,22 +252,23 @@ void Gear::generate_gear()
     }
   }
 
-  // Cylindrical and cartesian coordinates are 2 state fields. Need to
-  // update both states at construction
-  populate_fields();
+  //cylindrical and cartesian coordinates
+  //are 2 state fields.  Need to update
+  //both states at construction
+  populate_fields(stk::mesh::StateOld);
+  populate_fields(stk::mesh::StateNew);
 
-  bulk_data.update_field_data_states();
-
-  populate_fields();
 }
 
 //
 //-----------------------------------------------------------------------------
 //
 
-void Gear::move( const GearMovement & data)
-{
-  Selector select = gear_part & cylindrical_coord_part;
+void Gear::move( const GearMovement & data) {
+
+  enum { Node = 0 };
+
+  Selector select = gear_part & cylindrical_coord_part & (meta_data.locally_owned_part() | meta_data.globally_shared_part());
 
   BucketVector all_node_buckets = bulk_data.buckets(NODE_RANK);
 
@@ -286,18 +285,19 @@ void Gear::move( const GearMovement & data)
       ++b_itr)
   {
     Bucket & b = **b_itr;
-    BucketArray<CylindricalField> cylindrical_data(cylindrical_coord_field, b);
-    BucketArray<CartesianField>   translation_data(translation_field, b);
-    const BucketArray<CartesianField> cartesian_data(cartesian_coord_field, b);
-    BucketArray<CartesianField>   displacement_data(displacement_field, b);
+    BucketArray<CylindricalField> cylindrical_data( cylindrical_coord_field, b);  // ONE STATE
+    BucketArray<CartesianField>   translation_data( translation_field, b); // ONE STATE
+    const BucketArray<CartesianField>   old_coordinate_data( cartesian_coord_field, b); // ONE STATE
+    BucketArray<CartesianField>   new_displacement_data( displacement_field.field_of_state(stk::mesh::StateNew), b); // TWO STATE
 
-    double new_cartesian_data[3] = {0};
+    double new_coordinate_data[3] = {0,0,0};
     for (size_t i = 0; i < b.size(); ++i) {
       int index = i;
 
       const double   radius = cylindrical_data(0,index);
             double & angle  = cylindrical_data(1,index);
       const double   height = cylindrical_data(2,index);
+
 
       angle += data.rotation;
 
@@ -312,13 +312,14 @@ void Gear::move( const GearMovement & data)
       translation_data(1,index) += data.y;
       translation_data(2,index) += data.z;
 
-      new_cartesian_data[0] = translation_data(0,index) + radius * std::cos(angle);
-      new_cartesian_data[1] = translation_data(1,index) + radius * std::sin(angle);
-      new_cartesian_data[2] = translation_data(2,index) + height;
+      new_coordinate_data[0] = translation_data(0,index) + radius * std::cos(angle);
+      new_coordinate_data[1] = translation_data(1,index) + radius * std::sin(angle);
+      new_coordinate_data[2] = translation_data(2,index) + height;
 
-      displacement_data(0,index) = new_cartesian_data[0] - cartesian_data(0,index);
-      displacement_data(1,index) = new_cartesian_data[1] - cartesian_data(1,index);
-      displacement_data(2,index) = new_cartesian_data[2] - cartesian_data(2,index);
+      new_displacement_data(0,index) = new_coordinate_data[0] - old_coordinate_data(0,index);
+      new_displacement_data(1,index) = new_coordinate_data[1] - old_coordinate_data(1,index);
+      new_displacement_data(2,index) = new_coordinate_data[2] - old_coordinate_data(2,index);
+
     }
   }
 }

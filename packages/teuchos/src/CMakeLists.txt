@@ -359,7 +359,3 @@ PACKAGE_ADD_LIBRARY(
   SOURCES ${SOURCES}
   DEFINES -DTEUCHOS_LIB_EXPORTS_MODE
   )
-
-if(HAVE_TEUCHOS_BFD)
-    target_link_libraries(teuchos bfd iberty)
-endif(HAVE_TEUCHOS_BFD)

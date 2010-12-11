@@ -97,7 +97,7 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
       const CellTopologyData * cell_topology = stk::mesh::get_cell_topology(face);
 #else /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
-      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology(face).getTopologyData();
+      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology(face).getCellTopologyData();
 #endif /* SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS */
       STKUNIT_ASSERT( cell_topology );
 

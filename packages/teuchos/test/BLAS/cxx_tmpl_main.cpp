@@ -77,6 +77,7 @@ using Teuchos::ScalarTraits;
 #define SCALARMAX  10
 // These define the number of tests to be run for each individual BLAS routine.
 #define ROTGTESTS  5
+#define ROTTESTS  5
 #define ASUMTESTS  5
 #define AXPYTESTS  5
 #define COPYTESTS  5
@@ -84,13 +85,14 @@ using Teuchos::ScalarTraits;
 #define IAMAXTESTS 5
 #define NRM2TESTS  5
 #define SCALTESTS  5
-#define GEMVTESTS  5
-#define GERTESTS   5
-#define TRMVTESTS  5
-#define GEMMTESTS  5
-#define SYMMTESTS  5
-#define TRMMTESTS  5
-#define TRSMTESTS  5
+#define GEMVTESTS  0
+#define GERTESTS   0
+#define TRMVTESTS  0
+#define GEMMTESTS  0
+#define SYMMTESTS  0
+#define SYRKTESTS  5
+#define TRMMTESTS  0
+#define TRSMTESTS  0
 
 // Returns ScalarTraits<TYPE>::random() (the input parameters are ignored)
 template<typename TYPE>
@@ -218,12 +220,13 @@ int main(int argc, char *argv[])
   OType incx, incy;
   OType SType1IAMAXresult;
   OType SType2IAMAXresult;
-  OType TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, LDA, LDB, LDC, Mx, My;
+  OType TotalTestCount = 1, GoodTestSubcount, GoodTestCount = 0, M, M2, N, N2, P, K, LDA, LDB, LDC, Mx, My;
   Teuchos::EUplo UPLO;
   Teuchos::ESide SIDE;
   Teuchos::ETransp TRANS, TRANSA, TRANSB;
   Teuchos::EDiag DIAG;
   SType2 convertTo = ScalarTraits<SType2>::zero();
+  MType2 mConvertTo = ScalarTraits<MType2>::zero();
   MType2 TOL = 1e-5*ScalarTraits<MType2>::one();
   
   std::srand(time(NULL));
@@ -271,6 +274,74 @@ int main(int argc, char *argv[])
   if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End ROTG Tests
+  //--------------------------------------------------------------------------------
+
+  //--------------------------------------------------------------------------------
+  // Begin ROT Tests
+  //--------------------------------------------------------------------------------
+  typedef Teuchos::ScalarTraits<SType1>::magnitudeType MType1;
+  typedef Teuchos::ScalarTraits<SType2>::magnitudeType MType2;
+  GoodTestSubcount = 0;
+  for(i = 0; i < ROTTESTS; i++)
+  {
+    incx = GetRandom(-5,5);
+    incy = GetRandom(-5,5);
+    if (incx == 0) incx = 1;
+    if (incy == 0) incy = 1;
+    M = GetRandom(MVMIN, MVMIN+8);
+    Mx = M*std::abs(incx);
+    My = M*std::abs(incy);
+    if (Mx == 0) { Mx = 1; }
+    if (My == 0) { My = 1; }
+    SType1x = new SType1[Mx];
+    SType1y = new SType1[My];
+    SType2x = new SType2[Mx];
+    SType2y = new SType2[My];
+    for(j = 0; j < Mx; j++)
+    {
+      SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
+      SType2x[j] = ConvertType(SType1x[j], convertTo);
+    }
+    for(j = 0; j < My; j++)
+    {
+      SType1y[j] = GetRandom(-SCALARMAX, SCALARMAX);
+      SType2y[j] = ConvertType(SType1y[j], convertTo);
+    }
+    MType1 c1 = Teuchos::ScalarTraits<SType1>::magnitude(cos(static_cast<double>(GetRandom(-SCALARMAX,SCALARMAX))));
+    MType2 c2 = ConvertType(c1, mConvertTo);
+    SType1 s1 = sin(static_cast<double>(GetRandom(-SCALARMAX,SCALARMAX)));
+    SType2 s2 = ConvertType(s1, convertTo);
+    if(debug)
+    {
+      std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+      std::cout << "c1 = "  << c1 << ", s1 = " << s1 << std::endl;
+      std::cout << "c2 = " << c2 << ", s2 = " << s2 << std::endl;
+      std::cout << "incx = " << incx << ", incy = " << incy << std::endl;
+      PrintVector(SType1x, Mx, "SType1x", matlab);
+      PrintVector(SType1y, My, "SType1y_before_operation", matlab);
+      PrintVector(SType2x, Mx, "SType2x", matlab);
+      PrintVector(SType2y, My, "SType2y_before_operation",  matlab);
+    }
+    TotalTestCount++;
+    SType1BLAS.ROT(M, SType1x, incx, SType1y, incy, &c1, &s1);
+    SType2BLAS.ROT(M, SType2x, incx, SType2y, incy, &c2, &s2);
+    if(debug)
+    {
+      PrintVector(SType1y, My, "SType1y_after_operation", matlab);
+      PrintVector(SType2y, My, "SType2y_after_operation", matlab);
+    }
+    GoodTestSubcount += ( CompareVectors(SType1x, SType2x, Mx, TOL) &&
+                          CompareVectors(SType1y, SType2y, My, TOL) );
+    delete [] SType1x;
+    delete [] SType1y;
+    delete [] SType2x;
+    delete [] SType2y;
+  }
+  GoodTestCount += GoodTestSubcount;
+  if(verbose || debug) std::cout << "ROT: " << GoodTestSubcount << " of " << ROTTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
+  //--------------------------------------------------------------------------------
+  // End ROT Tests
   //--------------------------------------------------------------------------------
 
   //--------------------------------------------------------------------------------
@@ -723,6 +794,7 @@ int main(int argc, char *argv[])
     {
       UPLO = RandomUPLO();
       TRANSA = RandomTRANS();
+      
       // Since the entries are integers, we don't want to use the unit diagonal feature,
       // this creates ill-conditioned, nearly-singular matrices.
       //DIAG = RandomDIAG();  
@@ -1126,6 +1198,117 @@ int main(int argc, char *argv[])
   if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End SYMM Tests
+  //--------------------------------------------------------------------------------
+
+  //--------------------------------------------------------------------------------
+  // Begin SYRK Tests
+  //--------------------------------------------------------------------------------
+  GoodTestSubcount = 0;
+  for(i = 0; i < SYRKTESTS; i++)
+  {
+    N = GetRandom(MVMIN, MVMAX);
+    K = GetRandom(MVMIN, MVMAX);
+    while (K > N) { K = GetRandom(MVMIN, MVMAX); }
+
+    UPLO = RandomUPLO();
+    TRANS = RandomTRANS();
+#ifdef HAVE_TEUCHOS_COMPLEX
+    while (TRANS == Teuchos::CONJ_TRANS) { TRANS = RandomTRANS(); }
+#endif
+
+    LDA = GetRandom(MVMIN, MVMAX);
+    if(Teuchos::ETranspChar[TRANS] == 'N') {
+      while (LDA < N) { LDA = GetRandom(MVMIN, MVMAX); }
+      SType1A = new SType1[LDA * K];
+      SType2A = new SType2[LDA * K];
+      for(j = 0; j < LDA * K; j++) {
+        SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
+        SType2A[j] = ConvertType(SType1A[j], convertTo);
+      }
+    } else {
+      while (LDA < K) { LDA = GetRandom(MVMIN, MVMAX); }
+      SType1A = new SType1[LDA * N];
+      SType2A = new SType2[LDA * N];
+      for(j = 0; j < LDA * N; j++) {
+        SType1A[j] = GetRandom(-SCALARMAX, SCALARMAX);
+        SType2A[j] = ConvertType(SType1A[j], convertTo);
+      }
+    }
+
+    LDC = GetRandom(MVMIN, MVMAX);
+    while (LDC < N) {  LDC = GetRandom(MVMIN, MVMAX); }
+    SType1C = new SType1[LDC * N];
+    SType2C = new SType2[LDC * N];
+    for(j = 0; j < N; j++) {
+
+      if(Teuchos::EUploChar[UPLO] == 'U') {
+        // The operator is upper triangular, make sure that the entries are
+        // only in the upper triangular part of C.
+        for(k = 0; k < N; k++)
+        {
+          if(k <= j) {
+            SType1C[j*LDC+k] = GetRandom(-SCALARMAX, SCALARMAX);
+          } else {
+            SType1C[j*LDC+k] = SType1zero;
+          } 
+          SType2C[j*LDC+k] = ConvertType(SType1C[j*LDC+k], convertTo);
+        }
+      }
+      else {
+        for(k = 0; k < N; k++)
+        {
+          if(k >= j) {
+            SType1C[j*LDC+k] = GetRandom(-SCALARMAX, SCALARMAX);
+          } else {
+            SType1C[j*LDC+k] = SType1zero;
+          }
+          SType2C[j*LDC+k] = ConvertType(SType1C[j*LDC+k], convertTo);
+        }
+      } 
+    }
+       
+    SType1alpha = GetRandom(-SCALARMAX, SCALARMAX);
+    SType1beta = GetRandom(-SCALARMAX, SCALARMAX);
+    SType2alpha = ConvertType(SType1alpha, convertTo);
+    SType2beta = ConvertType(SType1beta, convertTo);
+    if(debug)
+    {
+      std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+      std::cout << "SType1alpha = " << SType1alpha << std::endl;
+      std::cout << "SType2alpha = " << SType2alpha << std::endl;
+      std::cout << "SType1beta = " << SType1beta << std::endl;
+      std::cout << "SType2beta = " << SType2beta << std::endl;
+      if (Teuchos::ETranspChar[TRANS] == 'N') {
+        PrintMatrix(SType1A, N, K, LDA,"SType1A", matlab);
+        PrintMatrix(SType2A, N, K, LDA,"SType2A", matlab);
+      } else {
+        PrintMatrix(SType1A, K, N, LDA, "SType1A", matlab);
+        PrintMatrix(SType2A, K, N, LDA, "SType2A", matlab);
+      }
+      PrintMatrix(SType1C, N, N, LDC,"SType1C_before_operation", matlab);
+      PrintMatrix(SType2C, N, N, LDC,"SType2C_before_operation", matlab);
+    }
+    TotalTestCount++;
+
+    SType1BLAS.SYRK(UPLO, TRANS, N, K, SType1alpha, SType1A, LDA, SType1beta, SType1C, LDC);
+    SType2BLAS.SYRK(UPLO, TRANS, N, K, SType2alpha, SType2A, LDA, SType2beta, SType2C, LDC);
+    if(debug)
+    {
+      PrintMatrix(SType1C, N, N, LDC,"SType1C_after_operation", matlab);
+      PrintMatrix(SType2C, N, N, LDC,"SType2C_after_operation", matlab);
+    }
+    GoodTestSubcount += CompareMatrices(SType1C, SType2C, N, N, LDC, TOL);
+
+    delete [] SType1A;
+    delete [] SType1C;
+    delete [] SType2A;
+    delete [] SType2C;
+  }
+  GoodTestCount += GoodTestSubcount;
+  if(verbose || debug) std::cout << "SYRK: " << GoodTestSubcount << " of " << SYRKTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
+  //--------------------------------------------------------------------------------
+  // End SYRK Tests
   //--------------------------------------------------------------------------------
 
   //--------------------------------------------------------------------------------

@@ -24,6 +24,7 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
+
 namespace stk {
 namespace mesh {
 namespace fixtures {
@@ -43,11 +44,11 @@ class GearsFixture{
 
   void generate_mesh();
 
-  const size_t num_gears;
+  const size_t NUM_GEARS;
 
-  MetaData   meta_data;
-  BulkData   bulk_data;
-  DefaultFEM fem;
+  MetaData  meta_data;
+  DefaultFEM fem_data;
+  BulkData  bulk_data;
 
   const EntityRank element_rank;
 
@@ -79,6 +80,10 @@ class GearsFixture{
   GearsFixture( const GearsFixture & );
   GearsFixture & operator = ( const GearsFixture & );
 };
+
+/// \brief Distribute gears across processors
+void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalField & cylindrical_coord_field);
+unsigned destination_processor(const Gear & gear, double rad, double angle, double height, unsigned p_rank, unsigned p_size);
 
 } // fixtures
 } // mesh

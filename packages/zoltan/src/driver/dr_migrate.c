@@ -455,7 +455,7 @@ char msg[256];
       /* Import is moving from a new processor, not just from a new partition */
       /* search for first free location */
       for ( ; j < New_Elem_Index_Size; j++) 
-        if (New_Elem_Index[j] == -1) break;
+        if (New_Elem_Index[j] == ZOLTAN_ID_INVALID) break;
 
       New_Elem_Index[j] = import_global_ids[gid+i*num_gid_entries];
       insert_in_hash(import_global_ids[gid+i*num_gid_entries], j);
@@ -643,14 +643,14 @@ ZOLTAN_ID_TYPE adj_elem;
 
   /* compact elements array, as the application expects the array to be dense */
   for (i = 0; i < New_Elem_Index_Size; i++) {
-    if (New_Elem_Index[i] != -1) continue;
+    if (New_Elem_Index[i] != ZOLTAN_ID_INVALID) continue;
 
     /* Don't want to shift all elements down one position to fill the  */
     /* blank spot -- too much work to adjust adjacencies!  So find the */
     /* last element in the array and move it to the blank spot.        */
 
     for (last = New_Elem_Index_Size-1; last >= 0; last--)
-      if (New_Elem_Index[last] != -1) break;
+      if (New_Elem_Index[last] != ZOLTAN_ID_INVALID) break;
 
     /* If (last < i), array is already dense; i is just in some blank spots  */
     /* at the end of the array.  Quit the compacting.                     */
@@ -685,7 +685,7 @@ ZOLTAN_ID_TYPE adj_elem;
 
     /* Update New_Elem_Index */
     New_Elem_Index[i] = New_Elem_Index[last];
-    New_Elem_Index[last] = -1;
+    New_Elem_Index[last] = ZOLTAN_ID_INVALID;
 
     /* clear elements[last] */
     elements[last].globalID = ZOLTAN_ID_INVALID;

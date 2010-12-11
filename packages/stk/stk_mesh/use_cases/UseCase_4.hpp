@@ -24,18 +24,40 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
+#include <use_cases/UseCase_Common.hpp>
 
 /** stk_mesh Use Case 4
+ *
+ * This use case creates the mesh below. We have only labelled the
+ * node ids of the vertices visible from the front. Sides are
+ * created for the side of the elements that are facing us in this diagram. 
+ *
+ * This mesh consists of two Hex27 elements side by side with three Wedge18 on top.
+ *
+ * <PRE>
+ *         +60-----66+
+ *        /         /\
+ *       /         /  \
+ *      +58-----64+    \
+ *     /  \     /  \    +45
+ *    /    \   /    \  /|
+ *   /      \ /      \/ |
+ *   +31-----+37---43+  |     Z  Y
+ *   |       |       |  +15   | /
+ *   |       |       | /      |/
+ *   |       |       |/       *--X
+ *   +-------+-------+
+ *   1       7      13
+ * </PRE>
+ *
+ * There are 22 nodes on this front face including mid-edge and
+ * mid-side nodes in addition to the labelled vertices.
+ *
  */
 
 namespace stk {
 namespace mesh {
 namespace use_cases {
-
-
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
-typedef stk::mesh::Field<double>                      ScalarFieldType ;
-typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerFieldType ;
 
 /** Use case for quadratic element with a mix of linear and quadratic nodes. */
 
@@ -44,7 +66,7 @@ public:
 
   ~UseCase_4_Mesh();
 
-  UseCase_4_Mesh( stk::ParallelMachine comm );
+  UseCase_4_Mesh( stk::ParallelMachine comm, bool doCommit=true );
 
   void populate();
 
@@ -55,8 +77,8 @@ public:
   const EntityRank m_elem_rank;
   const EntityRank m_side_rank;
 
-  stk::mesh::Part & m_block_hex20;
-  stk::mesh::Part & m_block_wedge15;
+  stk::mesh::Part & m_block_hex27;
+  stk::mesh::Part & m_block_wedge18;
   stk::mesh::Part & m_part_vertex_nodes;
   stk::mesh::Part & m_side_part;
 

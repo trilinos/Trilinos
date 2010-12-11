@@ -15,8 +15,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <getopt.h>
-#include "zoltan.h"
-#include "zz_util_const.h"
+#include "stress_const.h"
 
 #define NUM_GLOBAL_VERTICES     2500    /* default */
 
@@ -250,18 +249,26 @@ static int reallocate_buffers(int numNewVertices, int numNewPins)
   int *ibuf=NULL;
   float *fbuf=NULL;
 
+  if (verbose) MPI_Barrier(MPI_COMM_WORLD);
+
   if (numNewVertices > numMyVertices){   /* avoid realloc bug */
     idbuf = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numNewVertices);
     if (!idbuf) return 1;
     memcpy(idbuf, vtxGID, sizeof(ZOLTAN_ID_TYPE) * numMyVertices);
     free(vtxGID);
     vtxGID = idbuf; 
+    if (verbose){
+      printf("(%d) vtxGID allocated for %d vertices\n",myRank,numNewVertices);
+    }
 
     ibuf = (int *)malloc(sizeof(int) * (numNewVertices+1));
     if (!ibuf) return 1;
     memcpy(ibuf, nborIndex, sizeof(int) * (1 +numMyVertices));
     free(nborIndex);
     nborIndex = ibuf; 
+    if (verbose){
+      printf("(%d) nborIndex allocated for %d indices into nbor array\n",myRank,numNewVertices+1);
+    }
   }
 
   if (numNewPins > numMyPins){
@@ -270,18 +277,32 @@ static int reallocate_buffers(int numNewVertices, int numNewPins)
     memcpy(idbuf, nborGID, sizeof(ZOLTAN_ID_TYPE) * numMyPins);
     free(nborGID);
     nborGID = idbuf; 
+    if (verbose){
+      printf("(%d) nborGID allocated for %d neighbor IDs\n",myRank,numNewPins);
+    }
 
     ibuf = (int *)malloc(sizeof(int) * numNewPins);
     if (!ibuf) return 1;
     memcpy(ibuf, nborProc, sizeof(int) * numMyPins);
     free(nborProc);
     nborProc = ibuf; 
+    if (verbose){
+      printf("(%d) nborProc allocated for %d process IDs\n",myRank,numNewPins);
+    }
 
     fbuf = (float *)malloc(sizeof(float) * numNewPins);
     if (!fbuf) return 1;
     memcpy(fbuf, edgeWgt, sizeof(float) * numMyPins);
     free(edgeWgt);
     edgeWgt = fbuf; 
+    if (verbose){
+      printf("(%d) edgeWgt allocated for %d edge weights\n",myRank,numNewPins);
+    }
+  }
+
+  if (verbose) {
+    fflush(stdout);
+    MPI_Barrier(MPI_COMM_WORLD);
   }
 
   return status;
@@ -292,18 +313,18 @@ static int migrate_graph(int num_exports, int num_imports, ZOLTAN_ID_TYPE *expor
   int i, j, k, nextv, nextp, npins, numNewVertices, numNewPins, sum;
   long nbors[4];
   float wgts[4];
-  int rc;
+  int rc, startlocv, startloce;
   int status = 0;
 
   numNewVertices = numMyVertices - num_exports + num_imports;
 
   for (i=0; i < num_exports; i++){
-    vtxGID[export_lids[i]] = -1;
+    vtxGID[export_lids[i]] = ZOLTAN_ID_INVALID;
   }
 
   for (i=0, nextv=0, nextp=0; i < numMyVertices; i++){
     npins = nborIndex[i+1] - nborIndex[i];
-    if (vtxGID[i] >= 0){
+    if (vtxGID[i] != ZOLTAN_ID_INVALID){
       if (i > nextv){
         vtxGID[nextv] = vtxGID[i];
         for (j=nborIndex[i], k=0; j < nborIndex[i+1]; j++, k++){
@@ -320,6 +341,9 @@ static int migrate_graph(int num_exports, int num_imports, ZOLTAN_ID_TYPE *expor
   }
 
   numNewPins = nextp;
+
+  startlocv = nextv;
+  startloce = nextp;
 
   for (i=0; i < num_imports; i++){
     numNewPins += num_neighbors(import_gids[i]);
@@ -339,17 +363,21 @@ static int migrate_graph(int num_exports, int num_imports, ZOLTAN_ID_TYPE *expor
       nborIndex[nextv+1] = nborIndex[nextv] + sum; 
     }
   }
+  else{
+    fprintf(stderr,"memory allocation failure in reallocate buffers\n");
+    return 1;
+  }
 
   numMyVertices = numNewVertices;
   numMyPins = numNewPins;
 
-  rc = Zoltan_DD_Update(dd, (ZOLTAN_ID_PTR)vtxGID, NULL, NULL, NULL, numMyVertices);
+  rc = Zoltan_DD_Update(dd, vtxGID+startlocv, NULL, NULL, NULL, num_imports);
 
   if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN)){
     status = 1;
   }
 
-  rc = Zoltan_DD_Find(dd, (ZOLTAN_ID_PTR)nborGID, NULL, NULL, NULL, numNewPins, nborProc);
+  rc = Zoltan_DD_Find(dd, nborGID+startloce, NULL, NULL, NULL, numNewPins - startloce, nborProc+startloce);
 
   if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN)){
     status = 1;

@@ -122,10 +122,16 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
   if( rebalancingHasOccurred && partition.partition_dependents_needed() )
   {
     stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
-    const stk::mesh::EntityRank node_rank = stk::mesh::fem::node_rank(fem);
 
-    // TODO: Determine which dependent types this call needs to be made for
+    const stk::mesh::EntityRank node_rank = stk::mesh::fem::node_rank(fem);
+    const stk::mesh::EntityRank edge_rank = stk::mesh::fem::edge_rank(fem);
+    const stk::mesh::EntityRank face_rank = stk::mesh::fem::face_rank(fem);
+
     rebalance_dependent_entities( bulk_data, partition, node_rank, cs_elem );
+    if (stk::mesh::InvalidEntityRank != edge_rank)
+      rebalance_dependent_entities( bulk_data, partition, edge_rank, cs_elem );
+    if (stk::mesh::InvalidEntityRank != face_rank)
+      rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem );
   }
 
   if ( rebalancingHasOccurred ) 

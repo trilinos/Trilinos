@@ -87,14 +87,14 @@ bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p )
 bool in_owned_closure( const Entity & entity , unsigned proc )
 {
   bool result = entity.owner_rank() == proc ;
-  
+
   if ( ! result ) {
     const unsigned erank = entity.entity_rank();
 
     for ( PairIterRelation
           rel = entity.relations(); ! result && ! rel.empty() ; ++rel ) {
       result =  erank < rel->entity_rank() &&
-                proc == rel->entity()->owner_rank();
+                in_owned_closure( * rel->entity(), proc);
     }
   }
 

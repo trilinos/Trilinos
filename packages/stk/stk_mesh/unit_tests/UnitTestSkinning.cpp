@@ -16,6 +16,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/Comm.hpp>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/SkinMesh.hpp>
@@ -259,3 +260,4 @@ void UnitTestStkMeshSkinning::test_skinning()
   STKUNIT_EXPECT_TRUE(results == expected_results);
   STKUNIT_EXPECT_TRUE(sharing == expected_sharing);
 }
+

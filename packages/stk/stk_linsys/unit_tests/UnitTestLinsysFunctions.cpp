@@ -274,8 +274,8 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
   stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk::mesh::DefaultFEM fem_data( meta_data, spatial_dimension );
 
   fill_utest_mesh_meta_data( meta_data );
 
@@ -342,8 +342,8 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
   stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
-
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk::mesh::DefaultFEM fem_data( meta_data, spatial_dimension );
 
   fill_utest_mesh_meta_data( meta_data );
 

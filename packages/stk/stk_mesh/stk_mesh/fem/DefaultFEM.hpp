@@ -2,6 +2,8 @@
 #define stk_mesh_DefaultFEM_hpp
 
 #include <stdexcept>
+#include <vector>
+#include <map>
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -14,8 +16,8 @@ namespace mesh {
 class DefaultFEM : public fem::FEMInterface
 {
 public:
-  typedef std::vector< std::pair< fem::CellTopology , EntityRank > > TopologyEntityRankMap ;
-  typedef std::vector< std::pair< unsigned , fem::CellTopology > > PartCellTopologyMap ;
+  typedef std::map<fem::CellTopology, std::pair<Part *, EntityRank> > CellTopologyPartEntityRankMap;
+  typedef std::vector<fem::CellTopology> PartCellTopologyVector;
 
   DefaultFEM(MetaData &meta_data);
   
@@ -27,23 +29,25 @@ public:
 
   virtual void set_spatial_dimension(size_t spatial_dimension);
 
+  virtual void register_cell_topology(const fem::CellTopology cell_topology, EntityRank entity_rank);
   
-  virtual void set_cell_topology(const Part &part, fem::CellTopology cell_topology);
+  virtual void set_cell_topology(Part &part, fem::CellTopology cell_topology);
+
 
   virtual fem::CellTopology get_cell_topology(const Part &part) const;
 
+  virtual EntityRank get_entity_rank(const fem::CellTopology cell_topology) const;
+  
+  virtual Part &get_part(const fem::CellTopology cell_topology) const;
 
-  virtual void set_entity_rank(const fem::CellTopology cell_topology, EntityRank entity_rank);
-  
-  virtual EntityRank get_entity_rank(fem::CellTopology cell_topology) const;
-  
 private:
   void initialize(size_t spatial_dimension);
 
 private:
-  size_t                m_spatialDimension;
-  TopologyEntityRankMap m_topEntityRank;
-  PartCellTopologyMap   m_partCellTopologyMap;
+  MetaData &                    m_metaData;
+  size_t                        m_spatialDimension;
+  CellTopologyPartEntityRankMap m_cellTopologyPartEntityRankMap;
+  PartCellTopologyVector        m_partCellTopologyVector;
 };
 
 namespace fem {

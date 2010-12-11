@@ -13,9 +13,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <signal.h>
-#include "zoltan.h"
-#include "zz_util_const.h"
-
+#include "stress_const.h"
 
 static int myRank, numProcs;
 static double mbytes=0;

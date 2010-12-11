@@ -71,6 +71,15 @@ public:
    */
   Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner);
 
+  /** @ingroup partitioning_rcp_grp
+      This constructor sets the target map for the redistribution.
+
+      \param[in] target_map this input map determines the new matrices/vectors
+      to be created when Isorropia::Epetra::Redistributor::redistribute is
+      called
+   */
+  Redistributor(Teuchos::RCP<Epetra_Map> target_map);
+
   /** @ingroup partitioning_ptr_grp
       This constructor calls the Isorropia::Epetra::Partitioner::partition
       method on the @c partitioner if it has not already been called.
@@ -79,6 +88,15 @@ public:
             to be created when Isorropia::Epetra::Redistributor::redistribute is called
    */
   Redistributor(Isorropia::Epetra::Partitioner *partitioner);
+
+  /** @ingroup partitioning_ptr_grp
+      This constructor sets the target map for the redistribution.
+
+      \param[in] target_map this input map determines the new matrices/vectors
+      to be created when Isorropia::Epetra::Redistributor::redistribute is
+      called
+   */
+  Redistributor(Epetra_Map *target_map);
 
   /** 
        Destructor
@@ -298,8 +316,6 @@ private:
   Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner_;
   Teuchos::RCP<Epetra_Import> importer_;
   Teuchos::RCP<Epetra_Map> target_map_;
-
-  bool created_importer_;
 
 }; //class Redistributor
 

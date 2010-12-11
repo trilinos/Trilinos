@@ -26,8 +26,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <getopt.h>
-#include "zoltan.h"
-#include "zz_util_const.h"
+#include "stress_const.h"
 
 static int myRank, numProcs, numPins, nborCount;
 static int *vertex_part = NULL;

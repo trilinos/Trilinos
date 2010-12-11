@@ -61,8 +61,7 @@ namespace Epetra {
 Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner)
   : partitioner_(partitioner),
   importer_(),
-  target_map_(),
-  created_importer_(false)
+  target_map_()
 {
   if (!partitioner_->alreadyComputed()) {
     partitioner_->partition();
@@ -72,12 +71,27 @@ Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partit
 Redistributor::Redistributor(Isorropia::Epetra::Partitioner *partitioner)
   : partitioner_(Teuchos::RCP<Isorropia::Epetra::Partitioner>(partitioner,false)),
   importer_(),
-  target_map_(),
-  created_importer_(false)
+  target_map_()
 {
   if (!partitioner_->alreadyComputed()) {
     partitioner_->partition();
   }
+}
+
+Redistributor::Redistributor(Teuchos::RCP<Epetra_Map> target_map)
+  : partitioner_(),
+  importer_(),
+  target_map_(target_map)
+{
+    // Do not partition, target map is given.
+}
+
+Redistributor::Redistributor(Epetra_Map *target_map)
+  : partitioner_(),
+  importer_(),
+  target_map_(Teuchos::RCP<Epetra_Map>(target_map, false))
+{
+    // Do not partition, target map is given.
 }
 
 Redistributor::~Redistributor()
@@ -88,16 +102,7 @@ void
 Redistributor::redistribute(const Epetra_SrcDistObject& src,
 				 Epetra_DistObject& target)
 {
-  if (!created_importer_) {
-    create_importer(src.Map());
-  }
-  else {
-    if (!src.Map().PointSameAs(importer_->SourceMap()) ||
-	!target.Map().PointSameAs(importer_->TargetMap())) {
-      created_importer_ = false;
-      create_importer(src.Map());
-    }
-  }
+  create_importer(src.Map());
 
   target.Import(src, *importer_, Insert);
 }
@@ -114,9 +119,7 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillCom
 void 
 Redistributor::redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph * &outputGraphPtr, bool callFillComplete)
 {
-  if (!created_importer_) {
-    create_importer(input_graph.RowMap());
-  }
+  create_importer(input_graph.RowMap());
 
   // First obtain the length of each of my new rows
 
@@ -178,9 +181,7 @@ Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, bool callFillCo
 void 
 Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, Epetra_CrsMatrix * &outputMatrix, bool callFillComplete)
 {
-  if (!created_importer_) {
-    create_importer(inputMatrix.RowMap());
-  }
+  create_importer(inputMatrix.RowMap());
 
   // First obtain the length of each of my new rows
 
@@ -235,7 +236,8 @@ Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, Epetra_CrsMatri
   //     instead of just amount of output
   //     Metrics should be printed for each redistribute() method
 
-  if (partitioner_->printZoltanMetrics() > 0){
+  if (!Teuchos::is_null(partitioner_) &&
+        partitioner_->printZoltanMetrics() > 0){
     std::vector<double> balance(2), cutWgt(2), cutn(2), cutl(2);
     std::vector<int> numCuts(2);
     CostDescriber *defaultCosts = NULL;
@@ -299,9 +301,7 @@ Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatri
 {
 
 
-  if (!created_importer_) {
-    create_importer(inputMatrix.RowMatrixRowMap());
-  }
+  create_importer(inputMatrix.RowMatrixRowMap());
  // First obtain the length of each of my new rows
 
   int myOldRows = inputMatrix.NumMyRows();
@@ -356,7 +356,8 @@ Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatri
   //     instead of just amount of output
   //     Metrics should be printed for each redistribute() method
 
-  if (partitioner_->printZoltanMetrics() > 0){
+  if (!Teuchos::is_null(partitioner_) &&
+        partitioner_->printZoltanMetrics() > 0){
     std::vector<double> balance(2), cutWgt(2), cutn(2), cutl(2);
     std::vector<int> numCuts(2);
     CostDescriber *defaultCosts = NULL;
@@ -418,9 +419,7 @@ Redistributor::redistribute(const Epetra_Vector& input_vector)
 void
 Redistributor::redistribute(const Epetra_Vector& inputVector, Epetra_Vector * &outputVector)
 {
-  if (!created_importer_) {
-    create_importer(inputVector.Map());
-  }
+  create_importer(inputVector.Map());
 
   outputVector = new Epetra_Vector(*target_map_);
 
@@ -442,9 +441,7 @@ Redistributor::redistribute(const Epetra_MultiVector& input_vector)
 void
 Redistributor::redistribute(const Epetra_MultiVector& inputVector, Epetra_MultiVector * &outputVector)
 {
-  if (!created_importer_) {
-    create_importer(inputVector.Map());
-  }
+  create_importer(inputVector.Map());
 
   outputVector = new Epetra_MultiVector(*target_map_, inputVector.NumVectors());
 
@@ -459,9 +456,7 @@ Redistributor::redistribute(const Epetra_MultiVector& inputVector, Epetra_MultiV
 void
 Redistributor::redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Vector& output_vector)
 {
-  if (!created_importer_) {
-    create_importer(input_vector.Map());
-  }
+  create_importer(input_vector.Map());
 
   // Export using the importer
   output_vector.Export(input_vector, *importer_, Insert);
@@ -471,9 +466,7 @@ Redistributor::redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Ve
 void
 Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector)
 {
-  if (!created_importer_) {
-    create_importer(input_vector.Map());
-  }
+  create_importer(input_vector.Map());
 
   // Export using the importer
   output_vector.Export(input_vector, *importer_, Insert);
@@ -482,17 +475,17 @@ Redistributor::redistribute_reverse(const Epetra_MultiVector& input_vector, Epet
 
 void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 {
-  if (created_importer_) return;
 
-  if (partitioner_->numProperties() > src_map.Comm().NumProc()) {
+  if (!Teuchos::is_null(partitioner_) && partitioner_->numProperties() >
+                                src_map.Comm().NumProc()) {
     throw Isorropia::Exception("Cannot redistribute: Too many parts for too few processors.");
   }
 
-  target_map_ = partitioner_->createNewMap();
+  if (!Teuchos::is_null(partitioner_))
+      target_map_ = partitioner_->createNewMap();
 
   importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));
 
-  created_importer_ = true;
 }
 
 #endif //HAVE_EPETRA
