@@ -2,11 +2,11 @@
 //#include "Teuchos_ParameterList.hpp"
 #include "test_helpers.hpp"
 #include "MueLu_Version.hpp"
-#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 
 namespace {
@@ -17,20 +17,6 @@ TEUCHOS_UNIT_TEST(Hierarchy,Test0)
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
-
-/*
-  typedef double Scalar;
-  typedef int    LO;
-  typedef int    GO;
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
-  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
-
-  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
-  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
-*/
 
   using namespace Teuchos;
 
@@ -62,23 +48,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,Test0)
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
 {
 
-/*
-  typedef double Scalar;
-  typedef int    LO;
-  typedef int    GO;
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
-  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
-
-  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
-  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
-*/
-
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using namespace MueLu;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -105,24 +76,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy2)
 {
-
-/*
-  typedef double Scalar;
-  typedef int    LO;
-  typedef int    GO;
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
-  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
-
-  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
-  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
-*/
-
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using namespace MueLu;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -132,7 +87,7 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy2)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  RCP<SaPFactory<Scalar,LO,GO,Node,LMO> >    PFact = rcp(new SaPFactory<Scalar,LO,GO,Node,LMO>());
+  RCP<SaPFactory>    PFact = rcp(new SaPFactory());
 
   out << "Providing just prolongator factory to FillHierarchy." << std::endl;
   H.FillHierarchy(PFact);
@@ -140,24 +95,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy2)
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
 {
-
-/*
-  typedef double Scalar;
-  typedef int    LO;
-  typedef int    GO;
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
-  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
-
-  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
-  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
-*/
-
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using namespace MueLu;
 
   out << "version: " << MueLu::Version() << std::endl;
 
@@ -167,9 +106,9 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  RCP<SaPFactory<Scalar,LO,GO,Node,LMO> >    PFact = rcp(new SaPFactory<Scalar,LO,GO,Node,LMO>());
-  RCP<TransPFactory<Scalar,LO,GO,Node,LMO> > RFact = rcp(new TransPFactory<Scalar,LO,GO,Node,LMO>());
-  RCP<RAPFactory<Scalar,LO,GO,Node,LMO> >    AcFact= rcp(new RAPFactory<Scalar,LO,GO,Node,LMO>());
+  RCP<SaPFactory>    PFact = rcp(new SaPFactory());
+  RCP<TransPFactory> RFact = rcp(new TransPFactory());
+  RCP<RAPFactory>    AcFact= rcp(new RAPFactory());
 
   out << "Providing all three factories to FillHierarchy." << std::endl;
   H.FillHierarchy(PFact,RFact,AcFact);
@@ -177,24 +116,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy3)
 
 TEUCHOS_UNIT_TEST(Hierarchy,SetSmoothers)
 {
-
-/*
-  typedef double Scalar;
-  typedef int    LO;
-  typedef int    GO;
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
-  typedef Kokkos::DefaultKernels<Scalar,LO,Node>::SparseOps LMO;
-
-  typedef Cthulhu::Operator<Scalar,LO,GO,Node> Operator;
-  typedef Cthulhu::Vector<Scalar,LO,GO,Node>    Vector;
-  typedef MueLu::Level<Scalar,LO,GO,Node,LMO>    Level;
-
-  typedef MueLu::Hierarchy<Scalar,LO,GO,Node,LMO>    Hierarchy;
-*/
-
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using namespace MueLu;
 
   out << "version: " << MueLu::Version() << std::endl;
 
