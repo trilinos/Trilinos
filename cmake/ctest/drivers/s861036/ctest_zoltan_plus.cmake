@@ -41,6 +41,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_STK:BOOL=ON"
   "-DTrilinos_ENABLE_Didasko:BOOL=ON"
   "-DTrilinos_ENABLE_trilinoscouplings:BOOL=ON"
+  "-DTPL_BLAS_LIBRARIES:STRING=-L/usr/local/lib -lcblas -lf77blas -latlas -lblas"
+  "-DTPL_LAPACK_LIBRARIES:STRING=/usr/local/lib/liblapack.a"
   )
 
 SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
