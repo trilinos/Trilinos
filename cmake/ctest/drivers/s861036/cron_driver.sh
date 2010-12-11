@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo
-echo "Starting nightly Trilinos development testing on trilinos-test: `date`"
+echo "Testing Zoltan on s861036.srn.sandia.gov: `date`"
 echo
 
 #
@@ -22,6 +22,7 @@ export TDD_PARALLEL_LEVEL=1
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
 export TDD_CTEST_TEST_TYPE=Nightly
 export COMPILER_VERSION="GCC-4.1.2"
+export Trilinos_PACKAGES=Zoltan
 
 #
 # just testing
