@@ -144,9 +144,20 @@ namespace panzer {
     ies_1.prefix = "";
     ies_1.params.set<int>("junk", 1);
 
+    panzer::InputEquationSet ies_2;
+    ies_2.name = "Energy";
+    ies_2.basis = "Q1";
+    ies_2.integration_order = 1;
+    ies_2.model_id = 6;
+    ies_2.model_factory = "rf";
+    ies_2.prefix = "ION_";
+    ies_2.params.set<int>("junk", 1);
+
     ipb.physics_block_id = "test physics";
     ipb.eq_sets.push_back(ies_1);
+    ipb.eq_sets.push_back(ies_2);
 
+    // TEMPERATURE BCs
     {
       std::size_t bc_id = 0;
       panzer::BCType neumann = BCT_Dirichlet;
@@ -197,6 +208,64 @@ namespace panzer {
       std::string dof_name = "TEMPERATURE";
       std::string strategy = "Constant";
       double value = 4.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
+    }
+
+    // ION_TEMPERATURE BCs
+    {
+      std::size_t bc_id = 4;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "left";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "ION_TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 13.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
+    }    
+    {
+      std::size_t bc_id = 5;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "right";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "ION_TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 15.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
+    }   
+    {
+      std::size_t bc_id = 6;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "top";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "ION_TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 16.0;
+      Teuchos::ParameterList p;
+      p.set("Value",value);
+      panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
+		    strategy, p);
+      bcs.push_back(bc);
+    }
+    {
+      std::size_t bc_id = 7;
+      panzer::BCType neumann = BCT_Dirichlet;
+      std::string sideset_id = "bottom";
+      std::string element_block_id = "eblock-0_0";
+      std::string dof_name = "ION_TEMPERATURE";
+      std::string strategy = "Constant";
+      double value = 14.0;
       Teuchos::ParameterList p;
       p.set("Value",value);
       panzer::BC bc(bc_id, neumann, sideset_id, element_block_id, dof_name, 
