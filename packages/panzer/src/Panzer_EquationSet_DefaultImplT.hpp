@@ -121,7 +121,11 @@ buildAndRegisterModelEvaluators(PHX::FieldManager<panzer::Traits>& fm,
   
   Teuchos::RCP<Teuchos::ParameterList> default_params = this->getEvaluatorParameterList();
 
-  evaluators = factories.find(m_input_eq_set.model_factory)->second->getAsObject<EvalT>()->buildModels(m_input_eq_set, models, *default_params);
+  Teuchos::RCP<panzer::ModelFactory_TemplateManager<panzer::Traits> > modelFactory 
+        = factories.find(m_input_eq_set.model_factory)->second;
+ 
+  // evaluators = factories.find(m_input_eq_set.model_factory)->second->getAsObject<typename EvalT>()->buildModels(m_input_eq_set, models, *default_params);
+  evaluators = modelFactory->getAsObject<EvalT>()->buildModels(m_input_eq_set, models, *default_params);
   
   // Loop over evaluators and register them with field manager
   for (std::size_t i=0; i < evaluators->size(); ++i)
