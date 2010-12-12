@@ -116,16 +116,19 @@ evaluateFields(typename Traits::EvalData workset)
          int fieldNum = fieldIds_[fieldIndex];
    
          // this call "should" get the right ordering accordint to the Intrepid basis
-         const std::vector<int> & elmtOffset 
+         const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = dofManager_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+         const std::vector<int> & elmtOffset = indicePair.first;
+         const std::vector<int> & basisIdMap = indicePair.second;
    
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+            int basisId = basisIdMap[basis];
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
     
             if(is_owned[offset])
-               (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+               (*r)[lid] = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
             else
                (*r)[lid] = 0.0;
          }
@@ -236,15 +239,18 @@ evaluateFields(typename Traits::EvalData workset)
          int fieldNum = fieldIds_[fieldIndex];
    
          // this call "should" get the right ordering accordint to the Intrepid basis
-         const std::vector<int> & elmtOffset 
+         const std::pair<std::vector<int>,std::vector<int> > & indicePair 
                = dofManager_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+         const std::vector<int> & elmtOffset = indicePair.first;
+         const std::vector<int> & basisIdMap = indicePair.second;
    
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+            int basisId = basisIdMap[basis];
             int offset = elmtOffset[basis];
             int lid = LIDs[offset];
             int gid = GIDs[offset];
-            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basis);
+            const ScalarT & scatterField = (scatterFields_[fieldIndex])(worksetCellIndex,basisId);
     
             if(is_owned[offset])
                (*r)[lid] = scatterField.val();

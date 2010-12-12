@@ -240,14 +240,17 @@ public:
      *        cell you are interested in and gets the closure. Meaning all the
      *        IDs of equal or lesser sub cell dimension that are contained within
      *        the specified sub cell. For instance for an edge, this function would
-     *        return offsets for the edge and the nodes on that edge.
+     *        return offsets for the edge and the nodes on that edge. The first
+     *        vector returned contains the index into the GIDs array. The second vector
+     *        specifies the basis function IDs.
      *
      * \param[in] blockId
      * \param[in] fieldNum
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   const std::vector<int> & getGIDFieldOffsets_closure(const std::string & blockId,int fieldNum,int subcellDim,int subcellId) const
+   const std::pair<std::vector<int>,std::vector<int> > & 
+   getGIDFieldOffsets_closure(const std::string & blockId,int fieldNum,int subcellDim,int subcellId) const
    { return fieldAggPattern_.find(blockId)->second->localOffsets_closure(fieldNum,subcellDim,subcellId); }
 
    //@}

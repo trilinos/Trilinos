@@ -67,7 +67,9 @@ public:
      * \param[in] subcellDim
      * \param[in] subcellId
      */
-   virtual const std::vector<int> & getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
+   // virtual const std::vector<int> & 
+   virtual const std::pair<std::vector<int>,std::vector<int> > & 
+   getGIDFieldOffsets_closure(const std::string & blockId, int fieldNum,
                                                                int subcellDim,int subcellId) const = 0;
 
    /** Get set of indices owned by this processor

@@ -456,7 +456,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       // test (2,0) closure
       out << "Testing localOffsets_closure(3,2,0) on a C2 HEX" << std::endl;
       v_true.resize(9);
-      v = agg.localOffsets_closure(3,2,0);
+      v = agg.localOffsets_closure(3,2,0).first;
 
       // nodes
       v_true[0] = 0; v_true[1] = 1; v_true[2] = 4; v_true[3] = 5;
@@ -477,7 +477,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       // test (1,7) closure
       out << "Testing localOffsets_closure(3,1,7) on a C2 HEX" << std::endl;
       v_true.resize(3);
-      v = agg.localOffsets_closure(3,1,7);
+      v = agg.localOffsets_closure(3,1,7).first;
 
       // nodes
       v_true[0] = 4; v_true[1] = 7;
@@ -496,7 +496,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       out << "Testing localOffsets_closure(3,0,*) on a C2 HEX" << std::endl;
       v_true.resize(1);
       for(int i=0;i<8;i++) {
-         v = agg.localOffsets_closure(3,0,i);
+         v = agg.localOffsets_closure(3,0,i).first;
 
          // nodes
          v_true[0] = i;
@@ -524,8 +524,8 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       TEST_THROW(agg.localOffsets_closure(7,0,1),std::logic_error); // check for failure if ID does not exist
       TEST_THROW(agg.localOffsets_closure(3,2,6),std::logic_error); // check for failure if sub cell doesn't exist
 
-      TEST_EQUALITY(agg.localOffsets_closure(numP,1,6).size(),2); // pressure basis only has nodes
-      TEST_EQUALITY(agg.localOffsets_closure(numP,2,1).size(),4); // pressure basis only has nodes
+      TEST_EQUALITY(agg.localOffsets_closure(numP,1,6).first.size(),2); // pressure basis only has nodes
+      TEST_EQUALITY(agg.localOffsets_closure(numP,2,1).first.size(),4); // pressure basis only has nodes
 
       std::vector<int> v_true;
       std::vector<int> v;
@@ -536,7 +536,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       // test (2,2) closure
       out << "Testing localOffsets_closure(numP,2,2) on a C2 HEX" << std::endl;
       v_true.resize(4);
-      v = agg.localOffsets_closure(numP,2,2);
+      v = agg.localOffsets_closure(numP,2,2).first;
 
       // nodes
       v_true[0] = 2*2; v_true[1] = 2*3; v_true[2] = 2*7; v_true[3] = 2*6;
@@ -551,7 +551,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       // test (1,11) closure
       out << "Testing localOffsets_closure(numP,1,11) on a C2 HEX" << std::endl;
       v_true.resize(2);
-      v = agg.localOffsets_closure(numP,1,11);
+      v = agg.localOffsets_closure(numP,1,11).first;
 
       // nodes
       v_true[0] = 2*3; v_true[1] = 2*7;
@@ -567,7 +567,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       out << "Testing localOffsets_closure(numP,0,*) on a C2 HEX" << std::endl;
       v_true.resize(1);
       for(int i=0;i<8;i++) {
-         v = agg.localOffsets_closure(numP,0,i);
+         v = agg.localOffsets_closure(numP,0,i).first;
 
          // nodes
          v_true[0] = 2*i;
@@ -582,7 +582,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       // test (2,4) closure
       out << "Testing localOffsets_closure(numU,2,4) on a C2 HEX" << std::endl;
       v_true.resize(9);
-      v = agg.localOffsets_closure(numU,2,4);
+      v = agg.localOffsets_closure(numU,2,4).first;
 
       // nodes
       v_true[0] = 2*0+1; v_true[1] = 2*1+1; v_true[2] = 2*2+1; v_true[3] = 2*3+1;
@@ -603,7 +603,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       // test (1,10) closure
       out << "Testing localOffsets_closure(numU,1,10) on a C2 HEX" << std::endl;
       v_true.resize(3);
-      v = agg.localOffsets_closure(numU,1,10);
+      v = agg.localOffsets_closure(numU,1,10).first;
 
       // nodes
       v_true[0] = 2*2+1; v_true[1] = 2*6+1;
@@ -622,7 +622,7 @@ TEUCHOS_UNIT_TEST(tFieldAggPattern, testD)
       out << "Testing localOffsets_closure(numU,0,*) on a C2 HEX" << std::endl;
       v_true.resize(1);
       for(int i=0;i<8;i++) {
-         v = agg.localOffsets_closure(numU,0,i);
+         v = agg.localOffsets_closure(numU,0,i).first;
 
          // nodes
          v_true[0] = 2*i+1;

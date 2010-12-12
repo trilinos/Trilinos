@@ -217,17 +217,20 @@ bool FieldAggPattern::LessThan::operator()(const Teuchos::Tuple<int,3> & a,const
    return false; // these are equal to, but not less than!
 }
 
-const std::vector<int> & FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) const
+//const std::vector<int> & 
+const std::pair<std::vector<int>,std::vector<int> > &
+FieldAggPattern::localOffsets_closure(int fieldId,int subcellDim,int subcellId) const
 {
    // lazy evaluation
-   typedef std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> OffsetMap;
+   typedef std::map<Teuchos::Tuple<int,3>, std::pair<std::vector<int>,std::vector<int> >,LessThan> OffsetMap;
 
    Teuchos::Tuple<int,3> subcellTuple = Teuchos::tuple<int>(fieldId,subcellDim,subcellId);
 
    OffsetMap::const_iterator itr
          = fieldSubcellOffsets_closure_.find(subcellTuple);
-   if(itr!=fieldSubcellOffsets_closure_.end())
+   if(itr!=fieldSubcellOffsets_closure_.end()) {
       return itr->second;
+   }
 
    TEST_FOR_EXCEPTION(subcellDim>=getDimension(),std::logic_error,
                          "FieldAggPattern::localOffsets_closure precondition subcellDim<getDimension() failed");
@@ -248,11 +251,17 @@ const std::vector<int> & FieldAggPattern::localOffsets_closure(int fieldId,int s
    fieldPattern->getSubcellClosureIndices(subcellDim,subcellId,closureOffsets);
 
    // build closure indices into the correct location in lazy evaluation map.
-   std::vector<int> & closureIndices = fieldSubcellOffsets_closure_[subcellTuple];
+   std::pair<std::vector<int>,std::vector<int> > & indicesPair
+         = fieldSubcellOffsets_closure_[subcellTuple];
+
+   std::vector<int> & closureIndices = indicesPair.first;
    for(std::size_t i=0;i<closureOffsets.size();i++)
       closureIndices.push_back(fieldOffsets[closureOffsets[i]]);
 
-   TEUCHOS_ASSERT(fieldSubcellOffsets_closure_[subcellTuple].size()==closureIndices.size());
+   std::vector<int> & basisIndices = indicesPair.second;
+   basisIndices.assign(closureOffsets.begin(),closureOffsets.end());
+
+   TEUCHOS_ASSERT(fieldSubcellOffsets_closure_[subcellTuple].first.size()==closureIndices.size());
    return fieldSubcellOffsets_closure_[subcellTuple];
 }
 

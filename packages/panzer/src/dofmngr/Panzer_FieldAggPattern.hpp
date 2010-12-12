@@ -93,16 +93,20 @@ public:
      */
    const std::vector<int> & localOffsets(int fieldId) const;
      
-   /** Returns a vector offsets for the field and subcell specified. This will be the
+   /** Returns a pair of vectors. The first is the offsets into the global ID 
+     * array for the field and subcell specified. This will be the
      * indexing in the <code>GIDs</code> vector (see <code>localOffsets</code>). Notice
      * that this returns the "closure".  Meaning that all offsets for a particular subcell
      * and the IDs that are on lower dimensional sub cells will be returned. This function
-     * has no (currently) specified order. 
+     * has no (currently) specified order. The second vector is the index of the field's
+     * basis functions for the closure indices. The first and second vectors should
+     * have the same size.
      *
      * \note You cannot depend on the order of the IDs will remain consistent in future
      *       versions.
      */
-   const std::vector<int> & localOffsets_closure(int fieldId,int subcellDim,int subcellId) const;
+   const std::pair<std::vector<int>,std::vector<int> > &
+   localOffsets_closure(int fieldId,int subcellDim,int subcellId) const;
 
    //@}
 
@@ -158,7 +162,9 @@ protected:
 
    struct LessThan  
    { bool operator()(const Teuchos::Tuple<int,3> & a,const Teuchos::Tuple<int,3> & b) const; };
-   mutable std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> fieldSubcellOffsets_closure_;
+   // mutable std::map<Teuchos::Tuple<int,3>, std::vector<int>,LessThan> fieldSubcellOffsets_closure_;
+   mutable std::map<Teuchos::Tuple<int,3>, std::pair<std::vector<int>,std::vector<int> >,LessThan>
+         fieldSubcellOffsets_closure_;
 };
 
 }
