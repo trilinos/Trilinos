@@ -23,7 +23,8 @@
 //
 #ifdef HAVE_MPI
 #define RUN_TEST_REDUCE(error) \
-  int reduce_result = MPI_Allreduce ( &error, &error, 1 /*count*/, \
+  int tmp_error = error; \
+  int reduce_result = MPI_Allreduce ( &tmp_error, &error, 1 /*count*/, \
                                       MPI_INT, MPI_MAX, MPI_COMM_WORLD ); \
   if (reduce_result != MPI_SUCCESS) { \
     std::cerr << "MPI_Allreduce FAILED" << std::endl; \
