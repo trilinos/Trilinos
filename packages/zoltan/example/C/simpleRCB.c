@@ -386,10 +386,9 @@ int x_tag = 20, y_tag = 25;
         for (j=0; j < nobj; j++){
           num = get_next_line(fp, buf, bufsize);
           if (num == 0) input_file_error(numProcs, count_tag, i);
-          num = sscanf(buf, ZOLTAN_ID_SPEC, gids + j);
-          if (num != 1) input_file_error(numProcs, count_tag, i);
-          num = sscanf(buf, "%f %f", xcoord + j, ycoord + j);
-          if (num != 2) input_file_error(numProcs, count_tag, i);
+          num = sscanf(buf, ZOLTAN_ID_SPEC "%f %f", gids+j, xcoord+j, ycoord+j);
+
+          if (num != 3) input_file_error(numProcs, count_tag, i);
         }
       }
 
