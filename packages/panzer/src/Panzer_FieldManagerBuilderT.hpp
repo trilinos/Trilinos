@@ -159,7 +159,7 @@ setup(const Teuchos::RCP<panzer::ConnManager<LO,GO> >& conn_manager,
 
       // Setup the fieldmanager
       Traits::SetupData setupData;
-      setupData.dofManager_ = dofMngr_;
+      setupData.globalIndexer_ = dofMngr_;
       Teuchos::RCP<std::vector<panzer::Workset> > worksets = 
 	Teuchos::rcp(new(std::vector<panzer::Workset>));
       worksets->push_back(wkst->second);
@@ -298,7 +298,7 @@ void panzer::FieldManagerBuilder<LO,GO>::buildFieldManagers(MPI_Comm comm,
     //pb->buildAndRegisterModelEvaluators(fm, pb->getProvidedDOFs());
     
     Traits::SetupData setupData;
-    setupData.dofManager_ = dofMngr_;
+    setupData.globalIndexer_ = dofMngr_;
     setupData.worksets_ = worksets_[block];
     fm.postRegistrationSetup(setupData);
     

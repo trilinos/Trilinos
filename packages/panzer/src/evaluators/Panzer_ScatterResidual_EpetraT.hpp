@@ -7,7 +7,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_Basis.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -57,14 +57,14 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::Residual, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  dofManager_ = d.dofManager_;
+  globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
-    fieldIds_[fd] = dofManager_->getFieldNum(fieldName);
+    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
@@ -93,7 +93,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      dofManager_->getElementGIDs(cellLocalId,GIDs); 
+      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -103,7 +103,7 @@ evaluateFields(typename Traits::EvalData workset)
       // loop over each field to be scattered
       for (std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
-         const std::vector<int> & elmtOffset = dofManager_->getGIDFieldOffsets(blockId,fieldNum);
+         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
    
          // loop over basis functions
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
@@ -158,14 +158,14 @@ void panzer::ScatterResidual_Epetra<panzer::Traits::Jacobian, Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
-  dofManager_ = d.dofManager_;
+  globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
-    fieldIds_[fd] = dofManager_->getFieldNum(fieldName);
+    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
@@ -196,7 +196,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      dofManager_->getElementGIDs(cellLocalId,GIDs); 
+      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -206,7 +206,7 @@ evaluateFields(typename Traits::EvalData workset)
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
-         const std::vector<int> & elmtOffset = dofManager_->getGIDFieldOffsets(blockId,fieldNum);
+         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
         
          // loop over the basis functions (currently they are nodes)
          for(std::size_t rowBasisNum = 0; rowBasisNum < elmtOffset.size(); rowBasisNum++) {

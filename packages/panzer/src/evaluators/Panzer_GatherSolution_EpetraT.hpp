@@ -1,7 +1,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Phalanx_DataLayout.hpp"
 
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_Basis.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
@@ -38,14 +38,14 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  dofManager_ = d.dofManager_;
+  globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
     std::string fieldName = gatherFields_[fd].fieldTag().name();
-    fieldIds_[fd] = dofManager_->getFieldNum(fieldName);
+    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
@@ -74,7 +74,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
  
-      dofManager_->getElementGIDs(cellLocalId,GIDs); 
+      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
  
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -84,7 +84,7 @@ evaluateFields(typename Traits::EvalData workset)
       // loop over the fields to be gathered
       for (std::size_t fieldIndex=0; fieldIndex<gatherFields_.size();fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
-         const std::vector<int> & elmtOffset = dofManager_->getGIDFieldOffsets(blockId,fieldNum);
+         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
  
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
@@ -126,14 +126,14 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  dofManager_ = d.dofManager_;
+  globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(gatherFields_.size());
 
   for (std::size_t fd = 0; fd < gatherFields_.size(); ++fd) {
     // get field ID from DOF manager
     std::string fieldName = gatherFields_[fd].fieldTag().name();
-    fieldIds_[fd] = dofManager_->getFieldNum(fieldName);
+    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // setup the field data object
     this->utils.setFieldData(gatherFields_[fd],fm);
@@ -162,7 +162,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      dofManager_->getElementGIDs(cellLocalId,GIDs); 
+      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -173,7 +173,7 @@ evaluateFields(typename Traits::EvalData workset)
       for(std::size_t fieldIndex=0;
           fieldIndex<gatherFields_.size();fieldIndex++) {
          int fieldNum = fieldIds_[fieldIndex];
-         const std::vector<int> & elmtOffset = dofManager_->getGIDFieldOffsets(blockId,fieldNum);
+         const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
 
          // loop over basis functions and fill the fields
          for(std::size_t basis=0;basis<elmtOffset.size();basis++) {

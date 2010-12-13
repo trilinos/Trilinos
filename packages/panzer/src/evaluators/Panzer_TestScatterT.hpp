@@ -30,8 +30,6 @@ PHX_EVALUATOR_CTOR(TestScatter,p)
 
 PHX_POST_REGISTRATION_SETUP(TestScatter,setupData,fm)
 {
-  //Teuchos::RCP<panzer::DOFManager> dofManager = setupData.dofManager_;
-
   this->utils.setFieldData(scatter_value,fm);
   this->utils.setFieldData(value,fm);
 

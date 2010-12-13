@@ -25,7 +25,7 @@
 
 namespace panzer {
   template <typename LocalOrdinalT,typename GlobalOrdinalT>
-  class DOFManager;
+  class UniqueGlobalIndexer;
 
   struct Traits : public PHX::TraitsBase {
 
@@ -74,7 +74,7 @@ namespace panzer {
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
     struct SD { 
-      Teuchos::RCP<panzer::DOFManager<LocalOrdinal,GlobalOrdinal> > dofManager_; 
+      Teuchos::RCP<panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> > globalIndexer_; 
       Teuchos::RCP< std::vector<panzer::Workset> > worksets_;
     };
     typedef SD SetupData;

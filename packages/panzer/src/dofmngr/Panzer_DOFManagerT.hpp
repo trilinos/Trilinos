@@ -532,6 +532,19 @@ std::size_t DOFManager<LocalOrdinalT,GlobalOrdinalT>::blockIdToIndex(const std::
    return (*blockIdToIndex_)[blockId];
 }
 
+template <typename LocalOrdinalT,typename GlobalOrdinalT>
+void DOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const
+{
+   // verify size is correct
+   if(indices.size()!=isOwned.size())
+      isOwned.resize(indices.size(),false);
+
+   // figure out if indices are owned
+   const Epetra_Map & map = *getMap();
+   for(std::size_t i=0;i<indices.size();i++)
+      isOwned[i] = map.MyGID(indices[i]);
+}
+
 // These two functions are "helpers" for DOFManager::getOwnedIndices
 ///////////////////////////////////////////////////////////////////////////
 template <typename OrdinalType> 
@@ -551,19 +564,6 @@ static void getOwnedIndices_T(const fei::SharedPtr<fei::VectorSpace> & vs,std::v
    for(std::size_t i=0;i<int_Indices.size();i++) 
       indices[i] = (OrdinalType) int_Indices[i];
 }
-
-/* // See DOFManager.cpp
-template < >
-void getOwnedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
-{
-   int numIndices, ni;
-   numIndices = vs->getNumIndices_Owned();
-   indices.resize(numIndices);
-
-   // directly write to int indices
-   vs->getIndices_Owned(numIndices,&indices[0],ni);
-}
-*/
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedIndices(std::vector<GlobalOrdinalT> & indices) const
@@ -586,15 +586,6 @@ static void getOwnedAndSharedIndices_T(const fei::SharedPtr<fei::VectorSpace> & 
    for(std::size_t i=0;i<int_Indices.size();i++) 
       indices[i] = (OrdinalType) int_Indices[i];
 }
-
-/* // See DOFManager.cpp
-template < >
-void getOwnedAndSharedIndices_T<int>(const fei::SharedPtr<fei::VectorSpace> & vs,std::vector<int> & indices) 
-{
-   // get the global indices
-   vs->getIndices_SharedAndOwned(indices);
-}
-*/
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const

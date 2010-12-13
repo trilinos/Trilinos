@@ -81,6 +81,9 @@ public:
      */
    virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const = 0;
 
+   /** Get a yes/no on ownership for each index in a vector
+     */
+   virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const = 0;
 };
 
 // prevents a warning because a destructor does not exist

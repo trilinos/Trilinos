@@ -13,7 +13,7 @@
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class DOFManager; //forward declaration
+class UniqueGlobalIndexer; //forward declaration
 
 /** \brief Gathers solution values from the Newton solution vector into 
     the nodal fields of the field manager
@@ -54,7 +54,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<panzer::DOFManager<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > dofManager_;
+  Teuchos::RCP<panzer::UniqueGlobalIndexer<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;
@@ -83,7 +83,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<panzer::DOFManager<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > dofManager_;
+  Teuchos::RCP<panzer::UniqueGlobalIndexer<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   std::vector< PHX::MDField<ScalarT,Cell,NODE> > gatherFields_;

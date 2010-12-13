@@ -13,7 +13,7 @@
 namespace panzer {
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
-class DOFManager;
+class UniqueGlobalIndexer;
 
 /** \brief Pushes residual values into the residual vector for a 
            Newton-based solve
@@ -60,7 +60,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<panzer::DOFManager<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > dofManager_;
+  Teuchos::RCP<panzer::UniqueGlobalIndexer<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   // This maps the scattered field names to the DOF manager field
@@ -99,7 +99,7 @@ private:
 
   // maps the local (field,element,basis) triplet to a global ID
   // for scattering
-  Teuchos::RCP<panzer::DOFManager<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > dofManager_;
+  Teuchos::RCP<panzer::UniqueGlobalIndexer<panzer::Traits::LocalOrdinal,panzer::Traits::GlobalOrdinal> > globalIndexer_;
   std::vector<int> fieldIds_; // field IDs needing mapping
 
   // This maps the scattered field names to the DOF manager field

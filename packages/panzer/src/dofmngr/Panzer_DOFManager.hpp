@@ -277,6 +277,10 @@ public:
      * This can be thought of as the ``ghosted'' indices.
      */
    virtual void getOwnedAndSharedIndices(std::vector<GlobalOrdinalT> & indices) const;
+
+   /** Get a yes/no on ownership for each index in a vector
+     */
+   virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
  
 
    //! \defgroup LA_DS_Info Methods that are specific to the linear algebra

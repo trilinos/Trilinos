@@ -7,7 +7,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-#include "Panzer_DOFManager.hpp"
+#include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_Basis.hpp"
 
 #include "Phalanx_DataLayout_MDALayout.hpp"
@@ -61,14 +61,14 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Residual, Traits>::
 postRegistrationSetup(typename Traits::SetupData d, 
 		      PHX::FieldManager<Traits>& fm)
 {
-  dofManager_ = d.dofManager_;
+  globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
-    fieldIds_[fd] = dofManager_->getFieldNum(fieldName);
+    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
@@ -100,7 +100,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      dofManager_->getElementGIDs(cellLocalId,GIDs); 
+      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -108,8 +108,7 @@ evaluateFields(typename Traits::EvalData workset)
          LIDs[i] = r->Map().LID(GIDs[i]);
 
       std::vector<bool> is_owned(GIDs.size(), false);
-      for(std::size_t i=0;i<GIDs.size();i++)
-         is_owned[i] = dofManager_->getMap()->MyGID(GIDs[i]);
+      globalIndexer_->ownedIndices(GIDs,is_owned);
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -117,7 +116,7 @@ evaluateFields(typename Traits::EvalData workset)
    
          // this call "should" get the right ordering accordint to the Intrepid basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-               = dofManager_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+               = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;
          const std::vector<int> & basisIdMap = indicePair.second;
    
@@ -182,14 +181,14 @@ void panzer::ScatterDirichletResidual_Epetra<panzer::Traits::Jacobian, Traits>::
 postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
-  dofManager_ = d.dofManager_;
+  globalIndexer_ = d.globalIndexer_;
 
   fieldIds_.resize(scatterFields_.size());
   // load required field numbers for fast use
   for(std::size_t fd=0;fd<scatterFields_.size();++fd) {
     // get field ID from DOF manager
     std::string fieldName = fieldMap_->find(scatterFields_[fd].fieldTag().name())->second;
-    fieldIds_[fd] = dofManager_->getFieldNum(fieldName);
+    fieldIds_[fd] = globalIndexer_->getFieldNum(fieldName);
 
     // fill field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
@@ -223,7 +222,7 @@ evaluateFields(typename Traits::EvalData workset)
    for(std::size_t worksetCellIndex=0;worksetCellIndex<localCellIds.size();++worksetCellIndex) {
       std::size_t cellLocalId = localCellIds[worksetCellIndex];
 
-      dofManager_->getElementGIDs(cellLocalId,GIDs); 
+      globalIndexer_->getElementGIDs(cellLocalId,GIDs); 
 
       // caculate the local IDs for this element
       LIDs.resize(GIDs.size());
@@ -231,8 +230,7 @@ evaluateFields(typename Traits::EvalData workset)
          LIDs[i] = r->Map().LID(GIDs[i]);
 
       std::vector<bool> is_owned(GIDs.size(), false);
-      for(std::size_t i=0;i<GIDs.size();i++)
-         is_owned[i] = dofManager_->getMap()->MyGID(GIDs[i]);
+      globalIndexer_->ownedIndices(GIDs,is_owned);
 
       // loop over each field to be scattered
       for(std::size_t fieldIndex = 0; fieldIndex < scatterFields_.size(); fieldIndex++) {
@@ -240,7 +238,7 @@ evaluateFields(typename Traits::EvalData workset)
    
          // this call "should" get the right ordering accordint to the Intrepid basis
          const std::pair<std::vector<int>,std::vector<int> > & indicePair 
-               = dofManager_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
+               = globalIndexer_->getGIDFieldOffsets_closure(blockId,fieldNum, side_subcell_dim_, local_side_id_);
          const std::vector<int> & elmtOffset = indicePair.first;
          const std::vector<int> & basisIdMap = indicePair.second;
    
