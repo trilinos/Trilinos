@@ -17,6 +17,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
+#include <stk_mesh/fem/CreateAdjacentEntities.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
@@ -105,7 +106,12 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     STKUNIT_ASSERT( bulk_data.buckets( element_rank ).empty() );
   }
 
+
   bulk_data.modification_end();
+
+  // create some sides and faces to rebalance.
+  stk::mesh::PartVector add_parts;
+  stk::mesh::create_adjacent_entities(bulk_data, add_parts);
 
   // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
   // Other specializations are possible.
