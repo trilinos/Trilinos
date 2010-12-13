@@ -111,8 +111,9 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix( Copy, epetraMap, 1 ) );
   for ( int k=0; k<epetraMap.NumMyElements(); k++ )
   {
-      double val = 2*(epetraMap.GID(k)-m) + 1;
-      TEUCHOS_ASSERT_EQUALITY( 0, A->InsertGlobalValues( k, 1, &val, &k ) );
+      int GIDk = epetraMap.GID(k);
+      double val = 2*(GIDk-m) + 1;
+      TEUCHOS_ASSERT_EQUALITY( 0, A->InsertGlobalValues( GIDk, 1, &val, &GIDk ) );
   }
   TEUCHOS_ASSERT_EQUALITY( 0, A->FillComplete() );
   TEUCHOS_ASSERT_EQUALITY( 0, A->OptimizeStorage() );
@@ -202,7 +203,8 @@ int main(int argc, char *argv[]) {
   // Get the number of iterations for this solve.
   //
   int numIters = newSolver->getNumIters();
-  std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
+  if (proc_verbose)
+    std::cout << "Number of iterations performed for this solve: " << numIters << std::endl;
   //
   // Compute actual residuals.
   //
