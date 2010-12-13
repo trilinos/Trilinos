@@ -119,7 +119,7 @@ buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
       // UX
       {
 	ParameterList p("Constant UX");
-	p.set("Value", 4.0);
+	p.set("Value", 0.0);
 	p.set("Name", prefix+"UX");
 	p.set("Data Layout", this->m_int_rule->dl_scalar);
 	
