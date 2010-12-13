@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
-#include "zz_util_const.h"  /* included for Zoltan_get_global_id_type() */
 
 
 /* Name of file containing the mesh to be partitioned */
@@ -73,21 +72,6 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
-  ** Check that this example and the Zoltan library are both
-  ** built with the same ZOLTAN_ID_TYPE definition.
-  ******************************************************************/
-
-  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
-    if (myRank == 0){
-      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
-                 datatype_name, zoltan_id_datatype_name);
-
-    }
-    MPI_Finalize();
-    exit(0);
-  }
-
-  /******************************************************************
   ** Read geometry from input file and distribute it unevenly
   ******************************************************************/
 
@@ -138,7 +122,6 @@ int main(int argc, char *argv[])
   ** equal to the number of processes.  Process rank 0 will own
   ** partition 0, process rank 1 will own partition 1, and so on.
   ******************************************************************/
-
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
         &numGidEntries,  /* Number of integers used for a global ID */
@@ -371,13 +354,11 @@ int x_tag = 20, y_tag = 25;
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
 
-      num = sscanf(buf, ZOLTAN_ID_SPEC, myMesh->myGlobalIDs + i);
+      num = sscanf(buf, ZOLTAN_ID_SPEC "%f %f", myMesh->myGlobalIDs + i,
+                                                myMesh->x + i, myMesh->y + i);
 
-      if (num != 1) input_file_error(numProcs, count_tag, 1);
+      if (num != 3) input_file_error(numProcs, count_tag, 1);
 
-      num = sscanf(buf, "%f %f", myMesh->x + i, myMesh->y + i);
-
-      if (num != 2) input_file_error(numProcs, count_tag, 1);
     }
 
     gids = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * (nobj + 1));
