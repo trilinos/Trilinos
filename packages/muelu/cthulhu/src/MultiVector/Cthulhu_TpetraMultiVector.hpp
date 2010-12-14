@@ -359,6 +359,12 @@ namespace Cthulhu {
       CTHULHU_DEBUG_ME; 
       return rcp( new TpetraMap(vec_->getMap()) ); 
     }
+
+//     const RCP<const Comm<int> > getComm() const {
+//       CTHULHU_DEBUG_ME; 
+      
+//       //      return vec_->getComm();
+//     }
     
   private:
     RCP< Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > vec_;
@@ -377,4 +383,5 @@ namespace Cthulhu {
   
 } // namespace Cthulhu
 
+#define CTHULHU_TPETRAMULTIVECTOR_SHORT
 #endif // CTHULHU_MULTIVECTOR_DECL_HPP

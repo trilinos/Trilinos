@@ -385,6 +385,12 @@ namespace Cthulhu {
       RCP<const Epetra_Map> map; // TODO = rcp(new Epetra_Map(vec_->Map()));
       return rcp ( new Cthulhu::EpetraMap(map) );
     }
+
+    const RCP<const Comm<int> > getComm() const {
+      CTHULHU_DEBUG_ME; 
+      
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO getComm Epetra MultiVector not implemented");
+    }
     
   private:
     RCP< Epetra_MultiVector > vec_;
