@@ -31,11 +31,11 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<LocalOrdinalT>::getMap() c
 }
 
 template <typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<LocalOrdinalT>::getOverlapMap() const
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<LocalOrdinalT>::getGhostedMap() const
 {
-   if(overlappedMap_==Teuchos::null) overlappedMap_ = buildOverlapMap();
+   if(ghostedMap_==Teuchos::null) ghostedMap_ = buildGhostedMap();
 
-   return overlappedMap_;
+   return ghostedMap_;
 }
 
 // get the graph of the crs matrix
@@ -48,23 +48,23 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<LocalOrdinalT>::getGr
 }
 
 template <typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<LocalOrdinalT>::getOverlapGraph() const
+const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<LocalOrdinalT>::getGhostedGraph() const
 {
-   if(overlappedGraph_==Teuchos::null) overlappedGraph_ = buildOverlapGraph();
+   if(ghostedGraph_==Teuchos::null) ghostedGraph_ = buildGhostedGraph();
 
-   return overlappedGraph_;
+   return ghostedGraph_;
 }
 
 template <typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Import> EpetraLinearObjFactory<LocalOrdinalT>::getOverlapImport() const
+const Teuchos::RCP<Epetra_Import> EpetraLinearObjFactory<LocalOrdinalT>::getGhostedImport() const
 {
-   return Teuchos::rcp(new Epetra_Import(*getOverlapMap(),*getMap()));
+   return Teuchos::rcp(new Epetra_Import(*getGhostedMap(),*getMap()));
 }
 
 template <typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Export> EpetraLinearObjFactory<LocalOrdinalT>::getOverlapExport() const
+const Teuchos::RCP<Epetra_Export> EpetraLinearObjFactory<LocalOrdinalT>::getGhostedExport() const
 {
-   return Teuchos::rcp(new Epetra_Export(*getOverlapMap(),*getMap()));
+   return Teuchos::rcp(new Epetra_Export(*getGhostedMap(),*getMap()));
 }
 
 // "Build" functions
@@ -84,9 +84,9 @@ const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<LocalOrdinalT>::buildMap()
    return map;
 }
 
-// build the overlapped map
+// build the ghosted map
 template <typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<LocalOrdinalT>::buildOverlapMap() const
+const Teuchos::RCP<Epetra_Map> EpetraLinearObjFactory<LocalOrdinalT>::buildGhostedMap() const
 {
    std::vector<int> indices;
 
@@ -104,23 +104,23 @@ const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<LocalOrdinalT>::build
    using Teuchos::rcp;
 
    // build the map and allocate the space for the graph and
-   // grab the overlapped graph
+   // grab the ghosted graph
    RCP<Epetra_Map> map = getMap();
    RCP<Epetra_CrsGraph> graph  = rcp(new Epetra_CrsGraph(Copy,*map,0));
-   RCP<Epetra_CrsGraph> oGraph = getOverlapGraph();
+   RCP<Epetra_CrsGraph> oGraph = getGhostedGraph();
 
    // perform the communication to finish building graph
-   RCP<Epetra_Export> exporter = getOverlapExport();
+   RCP<Epetra_Export> exporter = getGhostedExport();
    graph->Export( *oGraph, *exporter, Insert );
    graph->FillComplete();
    return graph;
 }
 
 template <typename LocalOrdinalT>
-const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<LocalOrdinalT>::buildOverlapGraph() const
+const Teuchos::RCP<Epetra_CrsGraph> EpetraLinearObjFactory<LocalOrdinalT>::buildGhostedGraph() const
 {
    // build the map and allocate the space for the graph
-   Teuchos::RCP<Epetra_Map> map = getOverlapMap();
+   Teuchos::RCP<Epetra_Map> map = getGhostedMap();
    Teuchos::RCP<Epetra_CrsGraph> graph = Teuchos::rcp(new Epetra_CrsGraph(Copy,*map,0));
 
    std::vector<std::string> elementBlockIds;

@@ -19,6 +19,7 @@ using Teuchos::rcp;
 #include "Panzer_AssemblyEngine.hpp"
 #include "Panzer_AssemblyEngine_TemplateManager.hpp"
 #include "Panzer_AssemblyEngine_TemplateBuilder.hpp"
+#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "user_app_EquationSetFactory.hpp"
@@ -46,6 +47,8 @@ int main(int argc,char * argv[])
    using Teuchos::RCP;
 
    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+   RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
    Teuchos::FancyOStream out(Teuchos::rcpFromRef(std::cout));
    out.setOutputToRootOnly(0);
@@ -133,12 +136,13 @@ int main(int argc,char * argv[])
    // construct some linear algebra object, build object to pass to evaluators
    RCP<panzer::DOFManager<int,int> > dofManager = 
      ae_tm.getAsObject<panzer::Traits::Residual>()->getManagerBuilder()->getDOFManager();
-   RCP<Epetra_Map> ghosted_map = dofManager->getOverlapMap();
-   RCP<Epetra_CrsGraph> ghosted_graph = dofManager->getOverlapGraph();
-   RCP<Epetra_Export> exporter = dofManager->getOverlapExport();
-   RCP<Epetra_Import> importer = dofManager->getOverlapImport();
-   RCP<Epetra_Map> map = dofManager->getMap();
-   RCP<Epetra_CrsGraph> graph = dofManager->getGraph();
+   panzer::EpetraLinearObjFactory<int> linObjFactory(Comm,dofManager);
+   RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
+   RCP<Epetra_CrsGraph> ghosted_graph = linObjFactory.getGhostedGraph();
+   RCP<Epetra_Export> exporter = linObjFactory.getGhostedExport();
+   RCP<Epetra_Import> importer = linObjFactory.getGhostedImport();
+   RCP<Epetra_Map> map = linObjFactory.getMap();
+   RCP<Epetra_CrsGraph> graph = linObjFactory.getGraph();
    
    panzer::AssemblyEngineInArgs input;
    input.x = rcp(new Epetra_Vector(*ghosted_map));

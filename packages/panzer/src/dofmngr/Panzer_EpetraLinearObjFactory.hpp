@@ -27,36 +27,36 @@ public:
    //! get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> getMap() const;
 
-   //! get the overlapped map from the matrix
-   virtual const Teuchos::RCP<Epetra_Map> getOverlapMap() const;
+   //! get the ghosted map from the matrix
+   virtual const Teuchos::RCP<Epetra_Map> getGhostedMap() const;
 
    //! get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> getGraph() const;
 
-   //! get the overlapped graph of the crs matrix
-   virtual const Teuchos::RCP<Epetra_CrsGraph> getOverlapGraph() const;
+   //! get the ghosted graph of the crs matrix
+   virtual const Teuchos::RCP<Epetra_CrsGraph> getGhostedGraph() const;
 
    //! get importer for converting an overalapped object to a "normal" object
-   virtual const Teuchos::RCP<Epetra_Import> getOverlapImport() const;
+   virtual const Teuchos::RCP<Epetra_Import> getGhostedImport() const;
 
    //! get exporter for converting an overalapped object to a "normal" object
-   virtual const Teuchos::RCP<Epetra_Export> getOverlapExport() const;
+   virtual const Teuchos::RCP<Epetra_Export> getGhostedExport() const;
 
 protected:
    // get the map from the matrix
    virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
-   virtual const Teuchos::RCP<Epetra_Map> buildOverlapMap() const;
+   virtual const Teuchos::RCP<Epetra_Map> buildGhostedMap() const;
 
    // get the graph of the crs matrix
    virtual const Teuchos::RCP<Epetra_CrsGraph> buildGraph() const;
-   virtual const Teuchos::RCP<Epetra_CrsGraph> buildOverlapGraph() const;
+   virtual const Teuchos::RCP<Epetra_CrsGraph> buildGhostedGraph() const;
 
    // storage for Epetra graphs and maps
    Teuchos::RCP<Epetra_Comm> comm_;
    mutable Teuchos::RCP<Epetra_Map> map_;
-   mutable Teuchos::RCP<Epetra_Map> overlappedMap_;
+   mutable Teuchos::RCP<Epetra_Map> ghostedMap_;
    mutable Teuchos::RCP<Epetra_CrsGraph> graph_;
-   mutable Teuchos::RCP<Epetra_CrsGraph> overlappedGraph_;
+   mutable Teuchos::RCP<Epetra_CrsGraph> ghostedGraph_;
 
    Teuchos::RCP<const UniqueGlobalIndexer<LocalOrdinalT,int> > gidProvider_;
 };

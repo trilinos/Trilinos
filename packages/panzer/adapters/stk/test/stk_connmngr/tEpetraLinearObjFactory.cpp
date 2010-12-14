@@ -83,9 +83,9 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
 
    panzer::EpetraLinearObjFactory<int> laFactory(eComm,dofManager);
    Teuchos::RCP<Epetra_Map> map = laFactory.getMap();
-   Teuchos::RCP<Epetra_Map> oMap = laFactory.getOverlapMap();
+   Teuchos::RCP<Epetra_Map> gMap = laFactory.getGhostedMap();
    Teuchos::RCP<Epetra_CrsGraph> graph = laFactory.getGraph();
-   Teuchos::RCP<Epetra_CrsGraph> oGraph = laFactory.getOverlapGraph();
+   Teuchos::RCP<Epetra_CrsGraph> gGraph = laFactory.getGhostedGraph();
 
    std::vector<int> owned,ownedAndShared;
    dofManager->getOwnedIndices(owned);
@@ -94,23 +94,23 @@ TEUCHOS_UNIT_TEST(tEpetraLinearObjFactory, buildTest_quad)
    // test maps
    {
       TEST_EQUALITY(map->NumMyElements(),(int) owned.size());
-      TEST_EQUALITY(oMap->NumMyElements(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gMap->NumMyElements(),(int) ownedAndShared.size());
 
       // test indices
       for(std::size_t i=0;i<owned.size();i++) TEST_ASSERT(map->MyGID(owned[i]));
-      for(std::size_t i=0;i<ownedAndShared.size();i++) TEST_ASSERT(oMap->MyGID(ownedAndShared[i]));
+      for(std::size_t i=0;i<ownedAndShared.size();i++) TEST_ASSERT(gMap->MyGID(ownedAndShared[i]));
    }
 
    // test ograph
    {
-      TEST_ASSERT(oGraph->Filled());
+      TEST_ASSERT(gGraph->Filled());
 
-      TEST_EQUALITY(oGraph->NumMyRows(),(int) ownedAndShared.size());
-      TEST_EQUALITY(oGraph->MaxNumIndices(),numProcs==2 ? 6 : 9);
+      TEST_EQUALITY(gGraph->NumMyRows(),(int) ownedAndShared.size());
+      TEST_EQUALITY(gGraph->MaxNumIndices(),numProcs==2 ? 6 : 9);
 
       std::vector<int> indices(10);
       int numIndices = 0;
-      int err = oGraph->ExtractGlobalRowCopy(3,10,numIndices,&indices[0]);
+      int err = gGraph->ExtractGlobalRowCopy(3,10,numIndices,&indices[0]);
       TEST_EQUALITY(err,0);
       TEST_EQUALITY(numIndices,6); 
 

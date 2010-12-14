@@ -281,30 +281,6 @@ public:
    /** Get a yes/no on ownership for each index in a vector
      */
    virtual void ownedIndices(const std::vector<GlobalOrdinalT> & indices,std::vector<bool> & isOwned) const;
- 
-
-   //! \defgroup LA_DS_Info Methods that are specific to the linear algebra
-   //@{
-
-   //! get the map from the matrix
-   virtual const Teuchos::RCP<Epetra_Map> getMap() const;
-
-   //! get the overlapped map from the matrix
-   virtual const Teuchos::RCP<Epetra_Map> getOverlapMap() const;
-
-   //! get the graph of the crs matrix
-   virtual const Teuchos::RCP<Epetra_CrsGraph> getGraph() const;
-
-   //! get the overlapped graph of the crs matrix
-   virtual const Teuchos::RCP<Epetra_CrsGraph> getOverlapGraph() const;
-
-   //! get importer for converting an overalapped object to a "normal" object
-   virtual const Teuchos::RCP<Epetra_Import> getOverlapImport() const;
-
-   //! get exporter for converting an overalapped object to a "normal" object
-   virtual const Teuchos::RCP<Epetra_Export> getOverlapExport() const;
-
-   //@}
 
 protected:
    /** Build the default field ordering: simply uses ordering
@@ -322,13 +298,9 @@ protected:
    //! build the pattern associated with this manager
    void buildPattern(const std::string & blockId,const Teuchos::RCP<FieldPattern> & geomPattern);
 
-   // get the map from the matrix
+   //! get the map for fast-ish lookups
+   virtual const Teuchos::RCP<Epetra_Map> getMap() const;
    virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
-   virtual const Teuchos::RCP<Epetra_Map> buildOverlapMap() const;
-
-   // get the graph of the crs matrix
-   virtual const Teuchos::RCP<Epetra_CrsGraph> buildGraph() const;
-   virtual const Teuchos::RCP<Epetra_CrsGraph> buildOverlapGraph() const;
 
    // computes connectivity
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
@@ -360,9 +332,6 @@ protected:
    // storage for Epetra graphs and maps
    Teuchos::RCP<Epetra_Comm> comm_;
    mutable Teuchos::RCP<Epetra_Map> map_;
-   mutable Teuchos::RCP<Epetra_Map> overlappedMap_;
-   mutable Teuchos::RCP<Epetra_CrsGraph> graph_;
-   mutable Teuchos::RCP<Epetra_CrsGraph> overlappedGraph_;
 
    // maps blockIds to indices
    mutable Teuchos::RCP<std::map<std::string,std::size_t> > blockIdToIndex_;

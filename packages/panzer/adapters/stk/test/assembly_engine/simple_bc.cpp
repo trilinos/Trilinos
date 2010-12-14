@@ -14,6 +14,7 @@ using Teuchos::rcp;
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STK_SetupUtilities.hpp"
 #include "Panzer_Workset_Builder.hpp"
+#include "Panzer_EpetraLinearObjFactory.hpp"
 #include "Panzer_FieldManagerBuilder.hpp"
 #include "Panzer_STKConnManager.hpp"
 #include "Panzer_AssemblyEngine.hpp"
@@ -68,6 +69,7 @@ namespace panzer {
     panzer_stk::SquareQuadMeshFactory factory;
     factory.setParameterList(pl);
     RCP<panzer_stk::STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+    RCP<Epetra_Comm> Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 
     panzer::InputPhysicsBlock ipb;
     std::vector<panzer::BC> bcs;
@@ -115,8 +117,9 @@ namespace panzer {
 
     RCP<DOFManager<int,int> > dofManager = 
       ae_tm.getAsObject<panzer::Traits::Residual>()->getManagerBuilder()->getDOFManager();
-    RCP<Epetra_Map> ghosted_map = dofManager->getOverlapMap();
-    RCP<Epetra_CrsGraph> ghosted_graph = dofManager->getOverlapGraph();
+    panzer::EpetraLinearObjFactory<int> linObjFactory(Comm,dofManager);
+    RCP<Epetra_Map> ghosted_map = linObjFactory.getGhostedMap();
+    RCP<Epetra_CrsGraph> ghosted_graph =  linObjFactory.getGhostedGraph();
     
     panzer::AssemblyEngineInArgs input;
     input.x = rcp(new Epetra_Vector(*ghosted_map),true);
