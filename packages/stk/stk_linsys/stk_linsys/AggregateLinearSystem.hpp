@@ -37,6 +37,9 @@ class AggregateLinearSystem : public LinearSystemInterface {
   /** Destructor */
   virtual ~AggregateLinearSystem();
 
+  /** set the number of matrices and right-hand-sides */
+  void set_num_matrices_rhsvecs(size_t num_matrices, size_t num_rhsvecs);
+
   /** This is a collective call -- will hang if only a subset of processors
    * call it.
    * Internally calls fei::MatrixGraph::initComplete() and
