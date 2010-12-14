@@ -23,13 +23,11 @@
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 
-#define CTHULHU_ENABLED //TODO
 #include <MueLu_MatrixFactory.hpp>
 
+#include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
 /**********************************************************************************/
-
-typedef LocalMatOps LMO;
 
 int main(int argc, char *argv[]) {
   
@@ -99,11 +97,24 @@ int main(int argc, char *argv[]) {
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
   RCP<MueLu::Level<SC,LO,GO,NO,LMO> > Finest = rcp( new MueLu::Level<SC,LO,GO,NO,LMO>() );
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
+
   Finest->SetA(Op);
+
+  Teuchos::RCP< Operator > cOp = Finest->GetA();
+  GO nFineDofs = cOp->getGlobalNumRows();
+std::cout << "nFineDofs = " << nFineDofs << std::endl;
+  //prolongator is nFineDofs by nCoarseDofs
+  //Teuchos::RCP<Cthulhu::CrsOperator> Ptent = Teuchos::rcp( new Cthulhu::CrsOperator(cOp->Rowmap(), 2) );
+  Teuchos::RCP< Operator > Ptent = Teuchos::rcp( new CrsOperator(cOp->getRowMap(), 2) );
+
+
+
+
   Finest->Save("NullSpace",nullSpace);
   H.SetLevel(Finest);
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
+  std::cout << "hah" << std::endl;
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory() );
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   RCP<SmootherFactory>    SmooFact = Teuchos::null;
