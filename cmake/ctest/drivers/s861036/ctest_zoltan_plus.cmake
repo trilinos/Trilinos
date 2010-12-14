@@ -7,9 +7,6 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 #
 # Zoltan will use 32-bit global IDs.  ParMetis and
 #    Scotch are using 32-bit global IDs.
-#
-# Didsko, Epetra EpetraExt Isorropia ML STK TrilinosCouplings
-#
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
@@ -28,19 +25,13 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTrilinos_ENABLE_EXAMPLES:BOOL=ON"
   "-DTrilinos_ENABLE_TESTS:BOOL=ON"
   "-DTrilinos_ENABLE_Zoltan:BOOL=ON"
+  "-DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
   "-DZoltan_ENABLE_ParMETIS:BOOL=ON"
   "-DZoltan_ENABLE_Scotch:BOOL=ON"
   "-DParMETIS_INCLUDE_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
   "-DParMETIS_LIBRARY_DIRS:FILEPATH=/home/lafisk/system/parmetis/ParMetis-3.1"
   "-DScotch_INCLUDE_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/include"
   "-DScotch_LIBRARY_DIRS:FILEPATH=/home/lriesen/system/scotch_5.1.10a-32/lib"
-  "-DTrilinos_ENABLE_Isorropia:BOOL=ON"
-  "-DTrilinos_ENABLE_Epetra:BOOL=ON"
-  "-DTrilinos_ENABLE_EpetraExt:BOOL=ON"
-  "-DTrilinos_ENABLE_ML:BOOL=ON"
-  "-DTrilinos_ENABLE_STK:BOOL=ON"
-  "-DTrilinos_ENABLE_Didasko:BOOL=ON"
-  "-DTrilinos_ENABLE_trilinoscouplings:BOOL=ON"
   "-DTPL_BLAS_LIBRARIES:STRING=-L/usr/local/lib -lcblas -lf77blas -latlas -lblas"
   "-DTPL_LAPACK_LIBRARIES:STRING=/usr/local/lib/liblapack.a"
   )

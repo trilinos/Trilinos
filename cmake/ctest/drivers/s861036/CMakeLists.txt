@@ -20,8 +20,8 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 #  Scotch uses 64-bit IDs
 #
 TRILINOS_DRIVER_ADD_DASHBOARD(
-    ZOLTAN_ONLY_64_SCOTCH_64
-    ctest_zoltan_only_ids64_scotch_64.cmake
+    ZOLTAN_W_SCOTCH64
+    ctest_zoltan_only_ids64_scotch64.cmake
     CTEST_INSTALLER_TYPE dev
     TIMEOUT_MINUTES 120
 )
