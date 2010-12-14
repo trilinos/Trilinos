@@ -126,12 +126,15 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
     const stk::mesh::EntityRank node_rank = stk::mesh::fem::node_rank(fem);
     const stk::mesh::EntityRank edge_rank = stk::mesh::fem::edge_rank(fem);
     const stk::mesh::EntityRank face_rank = stk::mesh::fem::face_rank(fem);
+    const stk::mesh::EntityRank cons_rank = stk::mesh::fem::element_rank(fem)+1;
 
     rebalance_dependent_entities( bulk_data, partition, node_rank, cs_elem );
     if (stk::mesh::InvalidEntityRank != edge_rank)
       rebalance_dependent_entities( bulk_data, partition, edge_rank, cs_elem );
     if (stk::mesh::InvalidEntityRank != face_rank)
       rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem );
+    if (stk::mesh::InvalidEntityRank != cons_rank)
+      rebalance_dependent_entities( bulk_data, partition, cons_rank, cs_elem );
   }
 
   if ( rebalancingHasOccurred ) 
