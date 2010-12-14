@@ -42,10 +42,15 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 #endif
 
   unsigned spatial_dimension = 2;
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  std::vector<std::string> rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
+  const stk::mesh::EntityRank constraint_rank = rank_names.size();
+  rank_names.push_back("Constraint");
+
+  stk::mesh::MetaData meta_data( rank_names );
   stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
   stk::mesh::DefaultFEM top_data( meta_data, spatial_dimension );
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(top_data);
+  const stk::mesh::EntityRank element_rank    = stk::mesh::fem::element_rank(top_data);
+
   stk::mesh::Part & quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" ) );
   VectorField & coord_field( meta_data.declare_field< VectorField >( "coordinates" ) );
   ScalarField & weight_field( meta_data.declare_field< ScalarField >( "element_weights" ) );
@@ -61,7 +66,12 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   bulk_data.modification_begin();
 
   if ( p_rank == 0 ) {
+
+    std::vector<std::vector<stk::mesh::Entity*> > quads(nx);
+    for ( unsigned ix = 0 ; ix < nx ; ++ix ) quads[ix].resize(ny);
+
     const unsigned nnx = nx + 1 ;
+    const unsigned nny = ny + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
@@ -71,7 +81,8 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
+        quads[ix][iy] = &q; 
       }
     }
 
@@ -84,8 +95,8 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
       }
     }
 
-    for ( unsigned iy = 0 ; iy < ny+1 ; ++iy ) {
-      for ( unsigned ix = 0 ; ix < nx+1 ; ++ix ) {
+    for ( unsigned iy = 0 ; iy <= ny ; ++iy ) {
+      for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
         stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
         stk::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
         double * const coord = stk::mesh::field_data( coord_field , *n );
@@ -94,6 +105,23 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
         coord[2] = 0;
       }
     }
+
+    {
+      const unsigned iy_left  =  0; 
+      const unsigned iy_right = ny; 
+      stk::mesh::PartVector add(1, &meta_data.locally_owned_part());
+      for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
+        stk::mesh::EntityId nid_left  = 1 + ix + iy_left  * nnx ;
+        stk::mesh::EntityId nid_right = 1 + ix + iy_right * nnx ;
+        stk::mesh::Entity * n_left  = bulk_data.get_entity( NODE_RANK, nid_left  );
+        stk::mesh::Entity * n_right = bulk_data.get_entity( NODE_RANK, nid_right );
+        const stk::mesh::EntityId constraint_entity_id =  1 + ix + nny * nnx;
+        stk::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
+        bulk_data.declare_relation( c , *n_left  , 0 );
+        bulk_data.declare_relation( c , *n_right , 1 );
+      }
+    }
+
   }
 
   // Only P0 has any nodes or elements
