@@ -131,26 +131,40 @@ int smoother(ML_Smoother *mydata, int leng1, double x[], int leng2,
    return 0;
 }
 
-Teuchos::RCP<Teko::InverseFactory> ML_Gen_Init_Teko_Prec(const std::string smoothName,const Teuchos::ParameterList & pl)
+Teuchos::RCP<Teko::InverseFactory> ML_Gen_Init_Teko_Prec(const std::string smoothName,const Teko::InverseLibrary & invLib)
 {
    Teko_DEBUG_SCOPE("Teko::mlutils::ML_Gen_Init_Teko_Prec",10);
 
-   Teuchos::RCP<Teko::RequestHandler> rh = Teuchos::rcp(new Teko::RequestHandler());
-   Teuchos::RCP<Teko::PreconditionerFactory> precFact;
-   Teuchos::RCP<Teko::InverseLibrary> invLib
-         = Teko::InverseLibrary::buildFromParameterList(pl);
-   invLib->setRequestHandler(rh);
+   // Teuchos::RCP<Teko::RequestHandler> rh = Teuchos::rcp(new Teko::RequestHandler());
+   // Teuchos::RCP<Teko::InverseLibrary> invLib
+   //       = Teko::InverseLibrary::buildFromParameterList(pl);
+   // invLib->setRequestHandler(rh);
 
-   Teuchos::RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory(smoothName);
+   Teuchos::RCP<Teko::PreconditionerFactory> precFact;
+   Teuchos::RCP<Teko::InverseFactory> invFact = invLib.getInverseFactory(smoothName);
 
    return invFact;
 }
 
 extern "C" 
-int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes,const Teuchos::RCP<const Teuchos::ParameterList> & tekoPL, const std::string & inverse, bool isBlocked)
+int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes,const Teuchos::RCP<const Teuchos::ParameterList> & tekoPL,
+                         const Teuchos::RCP<const Teko::InverseLibrary> & invLib_in,const std::string & inverse, bool isBlocked)
 {
    Teko_DEBUG_SCOPE("Teko::mlutils::ML_Gen_Smoother_Teko",10);
    ML_Operator * BlkMat = &(ml->Amat[level]);
+
+   Teuchos::RCP<const Teko::InverseLibrary> invLib;
+   if(invLib_in ==Teuchos::null) {
+      Teuchos::RCP<Teko::RequestHandler> rh = Teuchos::rcp(new Teko::RequestHandler());
+      Teuchos::RCP<Teko::InverseLibrary> ncInvLib = Teko::InverseLibrary::buildFromParameterList(*tekoPL);
+      ncInvLib->setRequestHandler(rh);
+
+      invLib = ncInvLib.getConst();
+   }
+   else {
+      // this assumes a request handler has already been set
+      invLib = invLib_in;
+   }
 
    Teko::LinearOp tekoAmat;
    if(isBlocked) {
@@ -168,7 +182,7 @@ int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes,const Te
    data->Amat = Teuchos::rcp(new Teko::Epetra::EpetraOperatorWrapper(tekoAmat));
 
    // Teuchos::ParameterList pl = *Teuchos::getParametersFromXmlFile(filename);
-   Teuchos::RCP<Teko::InverseFactory> invFact = ML_Gen_Init_Teko_Prec(inverse,*tekoPL);
+   Teuchos::RCP<Teko::InverseFactory> invFact = ML_Gen_Init_Teko_Prec(inverse,*invLib);
    Teuchos::RCP<Teko::RequestHandler> rh = invFact->getRequestHandler();
 
    // build smoother operator

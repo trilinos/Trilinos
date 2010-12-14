@@ -19,7 +19,8 @@ public:
 
    //! Build an ML precondtioner object using the set of coarsening parameters
    Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> 
-   constructMLPreconditioner(Teuchos::ParameterList & mainList,std::vector<Teuchos::RCP<const Teuchos::ParameterList> > & coarseningParams);
+   constructMLPreconditioner(const Teuchos::ParameterList & mainList,
+                             const std::vector<Teuchos::RCP<const Teuchos::ParameterList> > & coarseningParams);
 
    // Set functions
    /////////////////////////////////////////////

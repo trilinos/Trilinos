@@ -10,6 +10,12 @@
 #include "ml_ValidateParameters.h"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
+# ifdef HAVE_ML_TekoSmoothers
+namespace Teko {
+class InverseLibrary;
+}
+#endif
+
 using namespace Teuchos;
 using namespace ML_Epetra;
 using namespace std;
@@ -96,6 +102,7 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   { 
      Teuchos::RCP<Teuchos::ParameterList> nullList;
      PL->set("smoother: teko filename",std::string("teko_smoother.xml"));
+     PL->set<Teuchos::RCP<const Teko::InverseLibrary> >("smoother: teko inverse library",Teuchos::null);
      PL->set("smoother: teko parameter list",nullList);
      PL->set("smoother: teko inverse",std::string("Amesos"));
      PL->set("smoother: teko is blocked",0);

@@ -44,10 +44,14 @@
 #ifdef HAVE_ML_TekoSmoothers
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+namespace Teko {
+class InverseLibrary;
+}
+
 extern "C"
 // int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const std::string & filename, const std::string & inverse,bool isBlocked);
 int ML_Gen_Smoother_Teko(ML *ml, int level, int pre_or_post, int ntimes, const Teuchos::RCP<const Teuchos::ParameterList> & tekoPList,
-                         const std::string & inverse,bool isBlocked);
+                         const Teuchos::RCP<const Teko::InverseLibrary> & invLib,const std::string & inverse,bool isBlocked);
 #endif
 
 extern "C" {
@@ -1196,6 +1200,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ======================================== //
       // Teko smoother (for block matrices only) //
       // ======================================== //
+      Teuchos::RCP<const Teko::InverseLibrary> invLib = 
+            List_.get<Teuchos::RCP<const Teko::InverseLibrary> >("smoother: teko inverse library",Teuchos::null);
+
       std::string tekoFilename = List_.get<std::string>("smoother: teko filename","teko_smoother.xml");
       Teuchos::RCP<Teuchos::ParameterList> tekoPList
              = List_.get<Teuchos::RCP<Teuchos::ParameterList> >("smoother: teko parameter list",Teuchos::null);
@@ -1208,13 +1215,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       isBlocked = smList.get("smoother: teko is blocked",isBlocked);
 
       // if no parameter list read one from the specified file
-      if(tekoPList==Teuchos::null) 
+      if(tekoPList==Teuchos::null && invLib==Teuchos::null) 
         tekoPList = Teuchos::getParametersFromXmlFile(tekoFilename); 
  
       // ML_Gen_Smoother_Teko(ml_, currentLevel, pre_or_post, Mynum_smoother_steps,
       //                      tekoFilename,tekoInverse,isBlocked);
       ML_Gen_Smoother_Teko(ml_, currentLevel, pre_or_post, Mynum_smoother_steps,
-                           tekoPList,tekoInverse,isBlocked);
+                           tekoPList,invLib,tekoInverse,isBlocked);
 #else
       if (Comm().MyPID() == 0)
        cerr << ErrorMsg_

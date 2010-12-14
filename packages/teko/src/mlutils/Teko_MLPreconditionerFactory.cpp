@@ -51,13 +51,16 @@ void MLPreconditionerState::setAggregationMatrices(const std::vector<Epetra_RowM
 }
 
 Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> 
-MLPreconditionerState::constructMLPreconditioner(Teuchos::ParameterList & mainList, std::vector<Teuchos::RCP<const Teuchos::ParameterList> > & coarseningParams)
+MLPreconditionerState::constructMLPreconditioner(const Teuchos::ParameterList & mainList,
+                                                 const std::vector<Teuchos::RCP<const Teuchos::ParameterList> > & coarseningParams)
 {
    TEUCHOS_ASSERT(isFilled());
    std::vector<Teuchos::ParameterList> cpls(coarseningParams.size());
    for(std::size_t i=0;i<coarseningParams.size();i++)
       cpls[i] = *coarseningParams[i];
  
+   std::cout << "diagops.size() = " << diagonalOps_.size() << std::endl;
+   std::cout << "cps.size() = " << cpls.size() << std::endl;
    mlPreconditioner_ = rcp(new ML_Epetra::MultiLevelPreconditioner(&*mlOp_, mainList, &diagonalOps_[0], &cpls[0], diagonalOps_.size()));
 
    return mlPreconditioner_;
@@ -79,7 +82,10 @@ LinearOp MLPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & 
       fillMLPreconditionerState(blo,mlState);
    TEUCHOS_ASSERT(mlState.isFilled());
 
-   TEUCHOS_ASSERT(false);
+   Teuchos::RCP<ML_Epetra::MultiLevelPreconditioner> mlPrecOp = 
+         mlState.constructMLPreconditioner(mainParams_,coarseningParams_);
+
+   return Thyra::epetraLinearOp(mlPrecOp);
 }
 
 Teuchos::RCP<PreconditionerState> MLPreconditionerFactory::buildPreconditionerState() const
@@ -159,25 +165,20 @@ void MLPreconditionerFactory::initializeFromParameterList(const Teuchos::Paramet
    // read in main parameter list: with smoothing information
    ////////////////////////////////////////////
    mainParams_ = settings.sublist("Smoothing Parameters"); 
+   mainParams_.set<Teuchos::RCP<const Teko::InverseLibrary> >("smoother: teko inverse library",getInverseLibrary());
  
    // read in aggregation sub lists
    ////////////////////////////////////////////
    const Teuchos::ParameterList & aggSublist = settings.sublist("Block Aggregation"); 
 
-   // build sub list defaults
-   Teuchos::ParameterList defaults;
-   ML_Epetra::SetDefaults("SA",defaults);
-
-   for(int block;block<blockRowCount_;block++) {
+   for(int block=0;block<blockRowCount_;block++) {
       // write out sub list name: "Block #"
       std::stringstream ss;
-      ss << "Block " << block << std::endl;
+      ss << "Block " << block;
       std::string sublistName = ss.str();
 
       // grab sublist
       RCP<Teuchos::ParameterList> userSpec = rcp(new Teuchos::ParameterList(aggSublist.sublist(sublistName)));
-      userSpec->validateParametersAndSetDefaults(defaults);
-
       coarseningParams_.push_back(userSpec);
    }
 }
