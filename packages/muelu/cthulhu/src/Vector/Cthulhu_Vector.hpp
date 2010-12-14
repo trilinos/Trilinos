@@ -130,4 +130,5 @@ namespace Cthulhu {
 #endif
 } // namespace Cthulhu
 
+#define CTHULHU_VECTOR_SHORT
 #endif // CTHULHU_VECTOR_DECL_HPP

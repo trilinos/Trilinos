@@ -68,4 +68,5 @@ namespace Cthulhu {
 
 }
 
+#define CTHULHU_MULTIVECTOR_FACTORY_SHORT
 #endif

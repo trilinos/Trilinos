@@ -460,4 +460,5 @@ non-optimized-storage state.
 // 
 //----------------------------------------------------------------------------
 
+#define CTHULHU_TPETRAVBRMATRIX_SHORT
 #endif //CTHULHU_VBRMATRIX_DECL_HPP

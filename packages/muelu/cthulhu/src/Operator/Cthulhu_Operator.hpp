@@ -280,4 +280,5 @@ namespace Cthulhu {
 
 } //namespace Cthulhu
 
+#define CTHULHU_OPERATOR_SHORT
 #endif //CTHULHU_OPERATOR_DECL_HPP

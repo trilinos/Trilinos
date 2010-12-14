@@ -136,4 +136,5 @@ namespace Cthulhu {
 
 } // Cthulhu namespace
 
+#define CTHULHU_MAP_SHORT
 #endif // CTHULHU_MAP_DECL_HPP

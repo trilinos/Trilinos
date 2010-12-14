@@ -53,4 +53,5 @@ namespace Cthulhu {
 
 } // namespace Cthulhu
 
+#define CTHULHU_OPERATORVIEW_SHORT
 #endif //CTHULHU_OPERATOR_VIEW_DECL_HPP

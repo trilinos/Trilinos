@@ -4,64 +4,64 @@
 // You have to include Cthulhu_Classes.hpp before this file.
 
 // New definition of types using the types ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
-#ifdef CTHULHU_MAP_HPP
+#ifdef CTHULHU_MAP_SHORT
 typedef Cthulhu::Map<LocalOrdinal, GlobalOrdinal, Node> Map;
 #endif
 
-#ifdef CTHULHU_CRSGRAPH_HPP
+#ifdef CTHULHU_CRSGRAPH_SHORT
 typedef Cthulhu::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsGraph;
 #endif
 
-#ifdef CTHULHU_CRSMATRIX_HPP
+#ifdef CTHULHU_CRSMATRIX_SHORT
 typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrix;
 #endif
 
-#ifdef CTHULHU_VECTOR_HPP
+#ifdef CTHULHU_VECTOR_SHORT
 typedef Cthulhu::Vector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> Vector;
 #endif
 
-#ifdef CTHULHU_MULTIVECTOR_HPP
+#ifdef CTHULHU_MULTIVECTOR_SHORT
 typedef Cthulhu::MultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
 #endif
 
-#ifdef CTHULHU_OPERATOR_HPP
+#ifdef CTHULHU_OPERATOR_SHORT
 typedef Cthulhu::Operator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> Operator;
 #endif
 
-#ifdef CTHULHU_CRSOPERATOR_HPP
+#ifdef CTHULHU_CRSOPERATOR_SHORT
 typedef Cthulhu::CrsOperator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsOperator;
 #endif
 
-#ifdef CTHULHU_VECTORFACTORY_HPP
+#ifdef CTHULHU_VECTORFACTORY_SHORT
 typedef Cthulhu::VectorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node> VectorFactory;
 #endif
 
-#ifdef CTHULHU_CRSMATRIXFACTORY_HPP
+#ifdef CTHULHU_CRSMATRIXFACTORY_SHORT
 typedef Cthulhu::CrsMatrixFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
 #endif
-#ifdef CTHULHU_MULTIVECTORFACTORY_HPP
+#ifdef CTHULHU_MULTIVECTORFACTORY_SHORT
 typedef Cthulhu::MultiVectorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
 #endif
 
-#ifdef CTHULHU_OPERATORFACTORY_HPP
+#ifdef CTHULHU_OPERATORFACTORY_SHORT
 typedef Cthulhu::OperatorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorFactory;
 #endif
 
 #ifdef HAVE_CTHULHU_TPETRA
 
-#ifdef CTHULHU_TPETRAMAP_HPP
+#ifdef CTHULHU_TPETRAMAP_SHORT
 typedef Cthulhu::TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
 #endif
 
-#ifdef CTHULHU_TPETRACRSGRAPH_HPP
+#ifdef CTHULHU_TPETRACRSGRAPH_SHORT
 typedef Cthulhu::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraph;
 #endif
 
-#ifdef CTHULHU_TPETRACRSMATRIX_HPP
+#ifdef CTHULHU_TPETRACRSMATRIX_SHORT
 typedef Cthulhu::TpetraCrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsMatrix;
 #endif
 
-#ifdef CTHULHU_TPETRAMULTIVECTOR_HPP
+#ifdef CTHULHU_TPETRAMULTIVECTOR_SHORT
 typedef Cthulhu::TpetraMultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> TpetraMultiVector;
 #endif
 

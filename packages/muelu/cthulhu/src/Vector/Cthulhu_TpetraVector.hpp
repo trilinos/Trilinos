@@ -236,6 +236,7 @@ namespace Cthulhu {
 #endif
 } // namespace Cthulhu
 
+#define CTHULHU_TPETRAVECTOR_SHORT
 #endif // CTHULHU_VECTOR_DECL_HPP
 
 

@@ -384,4 +384,5 @@ virtual void getLocalDiagCopy(Cthulhu::Vector<Scalar,LocalOrdinal,GlobalOrdinal,
 
 }//namespace Cthulhu
 
+#define CTHULHU_VBRMATRIX_SHORT
 #endif //CTHULHU_VBRMATRIX_DECL_HPP

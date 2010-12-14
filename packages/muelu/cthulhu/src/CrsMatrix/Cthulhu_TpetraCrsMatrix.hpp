@@ -585,4 +585,5 @@ namespace Cthulhu {
 
 } // namespace Cthulhu
 
+#define CTHULHU_TPETRACRSMATRIX_SHORT
 #endif

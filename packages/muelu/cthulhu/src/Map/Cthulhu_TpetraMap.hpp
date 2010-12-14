@@ -336,6 +336,7 @@ bool operator!= (const Cthulhu::TpetraMap<LocalOrdinal,GlobalOrdinal,Node> &map1
   return !map1.isSameAs(map2);
 }
 
+#define CTHULHU_TPETRAMAP_SHORT
 #endif // CTHULHU_TPETRAMAP_HPP
 
 // NOTE: not copy constructor for Tpetra::Map ?

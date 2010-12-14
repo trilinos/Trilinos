@@ -300,6 +300,7 @@ private:
 
 } //namespace Cthulhu
 
+#define CTHULHU_CRSOPERATOR_SHORT
 #endif //CTHULHU_CRSOPERATOR_DECL_HPP
 
 //NOTE: if CrsMatrix and VbrMatrix share a common interface for fillComplete() etc, I can move some stuff in Cthulhu_Operator.hpp

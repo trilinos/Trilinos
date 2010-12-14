@@ -95,5 +95,7 @@ class BlockMap : public Teuchos::Describable {
 
 }//namespace Cthulhu
 
+
+#define CTHULHU_BLOCKMAP_SHORT
 #endif
 

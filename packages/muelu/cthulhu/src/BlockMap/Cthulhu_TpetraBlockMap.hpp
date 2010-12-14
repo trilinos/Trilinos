@@ -156,4 +156,5 @@ private:
 
 }//namespace Cthulhu
 
+#define CTHULHU_TPETRABLOCKMAP_SHORT
 #endif

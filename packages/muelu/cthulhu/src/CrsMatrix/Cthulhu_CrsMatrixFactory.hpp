@@ -90,4 +90,5 @@ namespace Cthulhu {
 
 }
 
+#define CTHULHU_CRSMATRIX_FACTORY_SHORT
 #endif

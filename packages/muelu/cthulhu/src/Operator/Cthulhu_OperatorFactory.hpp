@@ -49,4 +49,5 @@ namespace Cthulhu {
 
 }
 
+#define CTHULHU_OPERATOR_FACTORY_SHORT
 #endif

@@ -557,4 +557,5 @@ namespace Cthulhu {
 
 } // namespace Cthulhu
 
+#define CTHULHU_CRSMATRIX_SHORT
 #endif

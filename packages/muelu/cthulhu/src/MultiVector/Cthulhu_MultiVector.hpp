@@ -316,10 +316,11 @@ namespace Cthulhu {
     // From DistObject:
 
     virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getMap() const =0;
+    //virtual const RCP<const Comm<int> > getComm() const = 0; // not implemented in Tpetra ??
 
   }; // class MultiVector
 
 } // namespace Cthulhu
 
-
+#define CTHULHU_MULTIVECTOR_SHORT
 #endif // CTHULHU_MULTIVECTOR_DECL_HPP
