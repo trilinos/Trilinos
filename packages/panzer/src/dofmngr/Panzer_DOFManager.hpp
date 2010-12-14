@@ -3,12 +3,6 @@
 
 #include <map>
 
-// Epetra includes
-#include "Epetra_Map.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-
 // FEI includes
 #include "fei_base.hpp"
 #include "fei_Factory.hpp"
@@ -24,6 +18,8 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 
 #include "Teuchos_RCP.hpp"
+
+#include <boost/unordered_set.hpp>
 
 namespace panzer {
 
@@ -298,10 +294,6 @@ protected:
    //! build the pattern associated with this manager
    void buildPattern(const std::string & blockId,const Teuchos::RCP<FieldPattern> & geomPattern);
 
-   //! get the map for fast-ish lookups
-   virtual const Teuchos::RCP<Epetra_Map> getMap() const;
-   virtual const Teuchos::RCP<Epetra_Map> buildMap() const;
-
    // computes connectivity
    Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > connMngr_; 
    
@@ -329,9 +321,8 @@ protected:
    // map from a field to a vector of local element IDs
    std::map<int,std::vector<int> > field2ElmtIDs_;
 
-   // storage for Epetra graphs and maps
-   Teuchos::RCP<Epetra_Comm> comm_;
-   mutable Teuchos::RCP<Epetra_Map> map_;
+   // storage for fast lookups of GID ownership
+   boost::unordered_set<GlobalOrdinal> ownedGIDHashTable_;
 
    // maps blockIds to indices
    mutable Teuchos::RCP<std::map<std::string,std::size_t> > blockIdToIndex_;

@@ -48,7 +48,6 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::setConnManager(const Teuchos::RCP
    feiFactory_ = Teuchos::rcp(new Factory_Trilinos(mpiComm));
 
    // build fei components
-   comm_ = Teuchos::rcp(new Epetra_MpiComm(mpiComm));
    vectorSpace_ = feiFactory_->createVectorSpace(mpiComm,"problem_vs");
    matrixGraph_ = feiFactory_->createMatrixGraph(vectorSpace_,vectorSpace_,"problem_mg");
 
@@ -74,15 +73,13 @@ Teuchos::RCP<ConnManager<LocalOrdinalT,GlobalOrdinalT> > DOFManager<LocalOrdinal
 
    connMngr_ = Teuchos::null;
 
-   // wipe out maps and graphs
-   map_ = Teuchos::null;
-
    // wipe out FEI objects
    patternNum_.clear();
    feiFactory_ = Teuchos::null;
-   comm_ = Teuchos::null;
    vectorSpace_.reset();
    matrixGraph_.reset();
+
+   ownedGIDHashTable_.clear(); 
 
    return connMngr;
 }
@@ -230,6 +227,11 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildGlobalUnknowns()
       }
    }
    matrixGraph_->initComplete();
+
+   // build owned map
+   std::vector<GlobalOrdinal> ownedIndices;
+   getOwnedIndices(ownedIndices);
+   ownedGIDHashTable_.insert(ownedIndices.begin(),ownedIndices.end());  
 }
 
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
@@ -308,39 +310,6 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildPattern(const std::string & 
 // "Get" functions
 /////////////////////////////////////////////////////////////////////
 
-// get the map from the matrix
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-const Teuchos::RCP<Epetra_Map> DOFManager<LocalOrdinalT,GlobalOrdinalT>::getMap() const
-{
-   if(map_==Teuchos::null) map_ = buildMap();
-
-   return map_;
-}
-
-// "Build" functions
-/////////////////////////////////////////////////////////////////////
-
-template <typename LocalOrdinalT,typename GlobalOrdinalT>
-const Teuchos::RCP<Epetra_Map> DOFManager<LocalOrdinalT,GlobalOrdinalT>::buildMap() const
-{
-   Teuchos::RCP<Epetra_Map> map; // result
-   int numIndices,ni;
-   std::vector<int> indices;
-
-   // get the number of locally owned degrees of freedom...allocate space
-   numIndices = vectorSpace_->getNumIndices_Owned();
-   indices.resize(numIndices);
-
-   // get the global indices
-   vectorSpace_->getIndices_Owned(numIndices,&indices[0],ni);
-
-   TEUCHOS_ASSERT(ni==numIndices); // sanity check
- 
-   map = Teuchos::rcp(new Epetra_Map(-1,numIndices,&indices[0],0,*comm_));
-
-   return map;
-}
-
 template <typename LocalOrdinalT,typename GlobalOrdinalT>
 void DOFManager<LocalOrdinalT,GlobalOrdinalT>::getElementGIDs(LocalOrdinalT localElmtId,std::vector<GlobalOrdinalT> & gids) const
 {
@@ -418,10 +387,10 @@ void DOFManager<LocalOrdinalT,GlobalOrdinalT>::ownedIndices(const std::vector<Gl
    if(indices.size()!=isOwned.size())
       isOwned.resize(indices.size(),false);
 
-   // figure out if indices are owned
-   const Epetra_Map & map = *getMap();
-   for(std::size_t i=0;i<indices.size();i++)
-      isOwned[i] = map.MyGID(indices[i]);
+   // use unordered set to check for ownership of the ID
+   typename boost::unordered_set<GlobalOrdinal>::const_iterator endItr = ownedGIDHashTable_.end();
+   for(std::size_t i=0;i<indices.size();i++) 
+      isOwned[i] = (ownedGIDHashTable_.find(indices[i])!=endItr);
 }
 
 // These two functions are "helpers" for DOFManager::getOwnedIndices
