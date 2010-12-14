@@ -264,10 +264,15 @@ namespace Cthulhu {
       return Teuchos::null;
     };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the importer associated with this graph.
-    inline RCP<const Import<int,int> > getImporter() const { CTHULHU_DEBUG_ME; return graph_->getImporter(); };
+    inline RCP<const Import<int,int> > getImporter() const { 
+    
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "getImporter() of EpetraCrsGraph()");
+      return Teuchos::null;
+      //      CTHULHU_DEBUG_ME; return graph_->getImporter(); 
+    };
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the exporter associated with this graph.
     inline RCP<const Export<int,int> > getExporter() const { CTHULHU_DEBUG_ME; return graph_->getExporter(); };
 #endif // CTHULHU_NOT_IMPLEMENTED

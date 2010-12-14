@@ -14,6 +14,7 @@
 // #include "Cthulhu_RowGraph.hpp"
 // #include "Cthulhu_DistObject.hpp"
 // #include "Cthulhu_Util.hpp"
+#include "Cthulhu_Import.hpp"
 
 namespace Cthulhu {
 
@@ -200,10 +201,10 @@ namespace Cthulhu {
     //! Returns the Map associated with the domain of this graph.
     virtual const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const = 0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the importer associated with this graph.
     virtual RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const = 0;
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the exporter associated with this graph.
     virtual RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const = 0;
 #endif // CTHULHU_NOT_IMPLEMENTED
@@ -468,4 +469,5 @@ namespace Cthulhu {
 
 } // namespace Cthulhu
 
+#define CTHULHU_CRSGRAPH_SHORT
 #endif

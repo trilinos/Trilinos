@@ -20,6 +20,7 @@
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_CrsGraph.hpp"
+#include "Cthulhu_TpetraImport.hpp"
 //#include "Cthulhu_RowGraph.hpp"
 //#include "Cthulhu_DistObject.hpp"
 //#include "Cthulhu_Util.hpp"
@@ -102,8 +103,7 @@ namespace Cthulhu {
       graph_ = rcp(new Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node, LocalMatOps>(tRowMap->getTpetra_Map(), colMap, NumEntriesPerRowToAlloc)); //TODO: convert, pftype));
     }
     
-    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &graph) : graph_(graph) { 
-      
+    TpetraCrsGraph(const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > &graph) : graph_(graph) {       
       CTHULHU_DEBUG_ME; 
     }
 
@@ -234,10 +234,10 @@ namespace Cthulhu {
     //! Returns the Map associated with the domain of this graph.
     inline const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const { CTHULHU_DEBUG_ME; return rcp( new TpetraMap(graph_->getRangeMap())); };
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the importer associated with this graph.
-    inline RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const { CTHULHU_DEBUG_ME; return graph_->getImporter(); };
+    inline RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const { CTHULHU_DEBUG_ME; return rcp( new TpetraImport<LocalOrdinal, GlobalOrdinal, Node>(graph_->getImporter())); };
 
+#ifdef CTHULHU_NOT_IMPLEMENTED
     //! Returns the exporter associated with this graph.
     inline RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const { CTHULHU_DEBUG_ME; return graph_->getExporter(); };
 #endif // CTHULHU_NOT_IMPLEMENTED
@@ -500,4 +500,5 @@ namespace Cthulhu {
 
 } // namespace Cthulhu
 
+#define CTHULHU_TPETRACRSGRAPH_SHORT
 #endif
