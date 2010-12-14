@@ -54,6 +54,7 @@ IF (Piro_ENABLE_NOX)
                  input_Solve_Rythmos_1.xml
           input_Analysis_Dakota.xml dak.in
           input_Analysis_MOOCHO.xml input_Analysis_OptiPack.xml 
+          input_Solve_RythmosMatrixFree_Fails.xml
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
     EXEDEPS Solver AnalysisDriver

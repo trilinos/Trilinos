@@ -33,6 +33,7 @@
 #include "Piro_Epetra_RythmosSolver.hpp"
 #include "Piro_Epetra_InvertMassMatrixDecorator.hpp"
 #include "Piro_ValidPiroParameters.hpp"
+#include "Piro_Epetra_MatrixFreeDecorator.hpp"
 
 #include "EpetraExt_ModelEvaluator.h"
 
@@ -58,6 +59,17 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
   using Teuchos::rcp;
 
       out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+  // Allow for Matrix-Free implementation
+  string jacobianSource = appParams->get("Jacobian Operator", "Have Jacobian");
+  if (jacobianSource == "Matrix-Free") {
+    if (appParams->isParameter("Matrix-Free Perturbation")) {
+      model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model,
+                           appParams->get<double>("Matrix-Free Perturbation")));
+    }
+    else model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model));
+  }
+
 
   num_p = model->createInArgs().Np();
   num_g = model->createOutArgs().Ng();
