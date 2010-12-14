@@ -49,6 +49,9 @@ SET( CMAKE_MODULE_PATH
    ${TRILINOS_HOME_DIR}/cmake/config_tests
    )
 
+#any overrides that we have for CMake functions
+INCLUDE(CMakeOverrides)
+
 #Pull in Trilinos version information and create the version header file.
 INCLUDE(TrilinosVersion)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
@@ -118,6 +121,10 @@ ADVANCED_OPTION(Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST
 
 SET(TRILINOS_BUILD_SHARED_LIBS "@BUILD_SHARED_LIBS@")
 
+# Find an installed version of Trilinos for installation testing
+# (the check that we are in installation mode is inside the macro)
+INCLUDE(TrilinosInstallationTestingMacros)
+FIND_TRILINOS_INSTALL()
 
 #
 # C) Read in Trilinos packages and TPLs and process dependencies
