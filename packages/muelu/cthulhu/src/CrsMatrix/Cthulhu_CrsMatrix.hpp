@@ -172,7 +172,6 @@ namespace Cthulhu {
     virtual void resumeFill() =0;
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
     Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
@@ -184,9 +183,7 @@ namespace Cthulhu {
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
-
     virtual void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
 
     /*! \brief Signal that data entry is complete. 
 

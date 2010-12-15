@@ -208,7 +208,6 @@ namespace Cthulhu {
     inline void resumeFill() { CTHULHU_DEBUG_ME; mtx_->resumeFill(); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
     /*! \brief Signal that data entry is complete, specifying domain and range maps.
 
     Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
@@ -220,8 +219,12 @@ namespace Cthulhu {
     \post <tt>isFillComplete() == true<tt>
     \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
     */ 
-    inline void fillComplete(const RCP<const Map<int,int> > &domainMap, const RCP<const Map<int,int> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { CTHULHU_DEBUG_ME; mtx_->fillComplete(domainMap, rangeMap, os); }
-#endif // CTHULHU_NOT_IMPLEMENTED
+    inline void fillComplete(const RCP<const Map<int,int> > &domainMap, const RCP<const Map<int,int> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { 
+      CTHULHU_DEBUG_ME; 
+      CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, domainMap, tDomainMap, "Cthulhu::EpetraCrsMatrix::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, rangeMap,  tRangeMap,  "Cthulhu::EpetraCrsMatrix::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
+      mtx_->FillComplete(tDomainMap->getEpetra_Map(), tRangeMap->getEpetra_Map()); // TODO: os 
+    }
 
     /*! \brief Signal that data entry is complete. 
 

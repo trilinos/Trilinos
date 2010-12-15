@@ -17,6 +17,7 @@
 #include <Kokkos_NodeHelpers.hpp>
 
 #include <Epetra_CrsGraph.h>
+#include <Cthulhu_EpetraMap.hpp>
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_CrsGraph.hpp"
@@ -167,7 +168,6 @@ namespace Cthulhu {
     inline void resumeFill() { CTHULHU_DEBUG_ME; graph_->resumeFill(); };
 #endif
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /*! \brief Signal that data entry is complete, specifying domain and range maps. 
 
     Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
@@ -181,9 +181,10 @@ namespace Cthulhu {
     */ 
     inline void fillComplete(const RCP<const Map<int,int> > &domainMap, const RCP<const Map<int,int> > &rangeMap, OptimizeOption os = DoOptimizeStorage) { 
       CTHULHU_DEBUG_ME; 
-      graph_->FillComplete(domainMap, rangeMap, os); 
+      CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, domainMap, tDomainMap, "Cthulhu::TpetraCrsMatrix::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, rangeMap,  tRangeMap,  "Cthulhu::TpetraCrsMatrix::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
+      graph_->FillComplete(tDomainMap->getEpetra_Map(), tRangeMap->getEpetra_Map());       //TODO: os
     };
-#endif
 
     /*! \brief Signal that data entry is complete. 
 

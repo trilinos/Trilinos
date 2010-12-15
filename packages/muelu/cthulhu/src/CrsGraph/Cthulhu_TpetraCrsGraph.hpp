@@ -191,8 +191,8 @@ namespace Cthulhu {
     */ 
     inline void fillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &domainMap, const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rangeMap, OptimizeOption os = DoOptimizeStorage) {  //TODO: os
       CTHULHU_DEBUG_ME; 
-      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, domainMap, tDomainMap, "Cthulhu::TpetraCrsGraph constructors only accept Cthulhu::TpetraMap as input arguments.");
-      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rangeMap,  tRangeMap,  "Cthulhu::TpetraCrsGraph constructors only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, domainMap, tDomainMap, "Cthulhu::TpetraCrsGraph::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
+      CTHULHU_RCP_DYNAMIC_CAST(const TpetraMap, rangeMap,  tRangeMap,  "Cthulhu::TpetraCrsGraph::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
       graph_->fillComplete(tDomainMap->getTpetra_Map(), tRangeMap->getTpetra_Map()); 
     };
 
