@@ -100,14 +100,14 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
          //TODO MueMat has a check for an empty level at position i+1
          //TODO I'm not sure how this can happen, but if it does, we must insert code to handle
          //TODO it similarly to MueMat.
-         if (PFact != Teuchos::null /*|| isempty(Levels_[i+1] */) {
-           if ((i+1) >= (int) Levels_.size()) {
+         if (PFact != Teuchos::null) {
+           if ( (i+1) >= (int) Levels_.size() || Levels_[i+1] == Teuchos::null ) {
              Teuchos::OSTab tab(out_);
              Levels_.push_back( Levels_[i]->Build(*out_) );
            }
            Levels_[i+1]->SetLevelID(i+1);
            goodBuild = PFact->Build(*(Levels_[i]),*(Levels_[i+1]) /*,MySpecs*/);
-         }
+         } //if (PFact != Teuchos::null)
          if ((int)Levels_.size() <= i) goodBuild=false; //TODO is this the right way to cast?
          if (!goodBuild) /*TODO make Levels_ be length i*/;
          if (RFact != Teuchos::null)
@@ -149,7 +149,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
                         Teuchos::RCP<OperatorFactory> AcFact=Teuchos::null,
                         int startLevel=0, int numDesiredLevels=10 /*,Needs*/)
      {
-       if (PFact == Teuchos::null) {throw("FillHierarchy: must supply at least a Prolongator factory");}
+       if (PFact == Teuchos::null) {throw(std::logic_error("FillHierarchy: must supply at least a Prolongator factory"));}
        if (RFact == Teuchos::null) RFact = Teuchos::rcp(new TransPFactory<Scalar,LO,GO,NO, LMO>());
        if (AcFact == Teuchos::null) AcFact = Teuchos::rcp(new RAPFactory<Scalar,LO,GO,NO, LMO>());
 

@@ -59,19 +59,8 @@ TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy1)
   Hierarchy H;
   H.SetLevel(levelOne);
 
-  try {
-    out << "Intentionally providing no prolongator factory to FillHierarchy .... ";
-
-    RCP< SaPFactory >    PFact = Teuchos::null;
-    //RCP<OperatorFactory<Scalar,LO,GO,Node> >  opFact = PFact;
-    //H.FillHierarchy(opFact);
-    H.FillHierarchy(PFact);
-    //H.FillHierarchy(Teuchos::null);
-  }
-  catch(...) {
-    out << "Caught the error" << std::endl;
-  }
-
+  RCP< SaPFactory >    PFact = Teuchos::null;
+  TEST_THROW(H.FillHierarchy(PFact), std::logic_error);
 }
 
 TEUCHOS_UNIT_TEST(Hierarchy,FillHierarchy2)

@@ -40,7 +40,7 @@ typedef MueLu::Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>    
 typedef MueLu::Hierarchy<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>           Hierarchy;
 #endif
 
-#ifdef MUELU_SAPFACTORY_HPP
+#ifdef MUELU_SAPFACTORY_SHORT
 typedef MueLu::SaPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      SaPFactory;
 #endif
 

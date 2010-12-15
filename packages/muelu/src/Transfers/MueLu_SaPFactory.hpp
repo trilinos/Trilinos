@@ -2,6 +2,7 @@
 #define MUELU_SAPFACTORY_HPP
 
 #include <Cthulhu_Map.hpp>
+#include <Cthulhu_EpetraMap.hpp>
 #include <Cthulhu_CrsMatrix.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
@@ -9,10 +10,14 @@
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
 
-#include <iostream>
-#include "MueLu_OperatorFactory.hpp"
+#include "EpetraExt_MatrixMatrix.h"
 
+#include "MueLu_OperatorFactory.hpp"
+#include "MueLu_Utilities.hpp"
+#include "MueLu_MatrixFactory.hpp"
 #include "MueLu_UseShortNames.hpp"
+
+#include <iostream>
 
 namespace MueLu {
 
@@ -86,6 +91,29 @@ class SaPFactory : public OperatorFactory<SC,LO,GO,NO, LMO> {
       //prolongator is nFineDofs by nCoarseDofs
       //Teuchos::RCP<Cthulhu::CrsOperator> Ptent = Teuchos::rcp( new Cthulhu::CrsOperator(Op->Rowmap(), 2) );
       Teuchos::RCP< Operator > Ptent = Teuchos::rcp( new CrsOperator(Op->getRowMap(), 2) );
+      std::vector<SC> Values(1);
+      Values[0] = 1.0/sqrt(3.0);
+      std::vector<LO> Indices(1);
+      Teuchos::ArrayView<SC> av(&Values[0],1);
+      Teuchos::ArrayView<GO> iv(&Indices[0],1);
+      for (int i=0; i<nFineDofs; i++) {
+        Indices[0] = i / 3;
+        Ptent->insertGlobalValues(i,iv,av);
+      }
+      //TODO replace this with a factory or something else
+      RCP<Map> domainMap = rcp( new Cthulhu::EpetraMap(nCoarseDofs,Op->getRowMap()->getIndexBase(),Op->getRowMap()->getComm()) );
+      Ptent->fillComplete(domainMap, Op->getRowMap());
+      //MatrixPrint(Op);
+
+      //Build the smoother prolongator
+      RCP<Operator> D = BuildMatrixInverseDiagonal(Op);
+      RCP<Operator> AP = TwoMatrixMultiply(Op,Ptent);
+      RCP<Operator> DAP = TwoMatrixMultiply(D,AP);
+      RCP<Operator> smP = TwoMatrixAdd(Ptent,DAP,1.0,-2.0/3.0);
+
+      coarseLevel.SetP(smP);
+
+      //MatrixPrint(smP);
 
       return true;
     }
@@ -174,5 +202,7 @@ std::ostream& operator<<(std::ostream& os, SaPFactory<SC,LO,GO,NO, LMO> &factory
 }
 
 } //namespace MueLu
+
+#define MUELU_SAPFACTORY_SHORT
 
 #endif //ifndef MUELU_SAPFACTORY_HPP

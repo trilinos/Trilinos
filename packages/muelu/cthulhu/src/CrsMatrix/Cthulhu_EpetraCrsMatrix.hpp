@@ -845,7 +845,10 @@ namespace Cthulhu {
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { CTHULHU_DEBUG_ME; return mtx_; }
-    
+
+    //FIXME should this be allowed on a const object?
+    RCP<Epetra_CrsMatrix> getEpetra_CrsMatrixNonConst() const { CTHULHU_DEBUG_ME; return mtx_; }
+
     /** TODO : interface of Teuchos_LabeledObject.hpp **/
     void setObjectLabel (const std::string &objectLabel) { CTHULHU_DEBUG_ME; //mtx_->setObjectLabel(objectLabel); TODO
     }

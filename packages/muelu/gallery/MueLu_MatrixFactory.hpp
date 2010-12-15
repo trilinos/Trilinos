@@ -1,8 +1,8 @@
 /*
   Direct translation of parts of Galeri matrix generator.
 */
-#ifndef __MATRIX_FACTORY_HPP__
-#define __MATRIX_FACTORY_HPP__
+#ifndef MUELU_MATRIXFACTORY_HPP
+#define MUELU_MATRIXFACTORY_HPP
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -116,6 +116,11 @@ namespace MueLu {
 
         returnMatrix = Brick3D<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, nx, ny, nz, 26.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0);
 
+      } else if (MatrixType == "Identity") {
+
+        Scalar a = list.get("a", 1.0);
+        returnMatrix = Identity<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix>(map, a);
+
       } else {
 
         TEST_FOR_EXCEPTION(true,
@@ -133,4 +138,6 @@ namespace MueLu {
   } // namespace Gallery
 } // namespace MueLu
 
-#endif //ifndef __MATRIX_FACTORY_HPP__
+#define MUELU_MATRIXFACTORY_SHORT
+
+#endif //ifndef MUELU_MATRIXFACTORY_HPP

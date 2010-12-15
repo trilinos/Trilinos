@@ -41,9 +41,9 @@ int main(int argc, char *argv[]) {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   LO numThreads=1;
-  GO nx=4;
-  GO ny=4;
-  GO nz=4;
+  GO nx=9;
+  GO ny=9;
+  GO nz=9;
   LO maxLevels = 3;
   Teuchos::CommandLineProcessor cmdp(false,true);
   std::string matrixType("Laplace1D");
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("nx",&nx,"mesh points in x-direction.");
   cmdp.setOption("ny",&ny,"mesh points in y-direction.");
   cmdp.setOption("nz",&nz,"mesh points in z-direction.");
-  cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Star2D, Laplace3D");
+  cmdp.setOption("matrixType",&matrixType,"matrix type: Laplace1D, Laplace2D, Star2D, Laplace3D, Identity");
   cmdp.setOption("maxLevels",&maxLevels,"maximum number of levels allowed");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return EXIT_FAILURE;
@@ -65,6 +65,8 @@ int main(int argc, char *argv[]) {
   pl.set("Num Threads",numThreads);
 
   GO numGlobalElements = nx*ny;
+  if (nx*nx - (nx*ny/3)*3 != 0)
+    throw(std::logic_error("problem size must be divisible by 3"));
   if (matrixType == "Laplace3D")
     numGlobalElements *= nz;
   LO indexBase = 0;
@@ -79,12 +81,10 @@ int main(int argc, char *argv[]) {
 
   RCP<CrsOperator> Op = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>(matrixType,map,matrixList); //TODO: Operator vs. CrsOperator
 
-  std::cout << "#rows = " << Op->getGlobalNumRows() << std::endl;
-
   RCP<const Epetra_CrsMatrix> A;
 
   { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I should create a function to do that)
-    RCP<const CrsMatrix> tmp_CrsMtx = Op->get_CrsMatrix();
+    RCP<const CrsMatrix> tmp_CrsMtx = Op->getCrsMatrix();
     const RCP<const Cthulhu::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Cthulhu::EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null) { std::cout << "Error !" << std::endl; return 1; }
     A = tmp_ECrsMtx->getEpetra_CrsMatrix();
@@ -101,8 +101,7 @@ int main(int argc, char *argv[]) {
   Finest->SetA(Op);
 
   Teuchos::RCP< Operator > cOp = Finest->GetA();
-  GO nFineDofs = cOp->getGlobalNumRows();
-std::cout << "nFineDofs = " << nFineDofs << std::endl;
+  //GO nFineDofs = cOp->getGlobalNumRows();
   //prolongator is nFineDofs by nCoarseDofs
   //Teuchos::RCP<Cthulhu::CrsOperator> Ptent = Teuchos::rcp( new Cthulhu::CrsOperator(cOp->Rowmap(), 2) );
   Teuchos::RCP< Operator > Ptent = Teuchos::rcp( new CrsOperator(cOp->getRowMap(), 2) );
@@ -114,7 +113,6 @@ std::cout << "nFineDofs = " << nFineDofs << std::endl;
   H.SetLevel(Finest);
 
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
-  std::cout << "hah" << std::endl;
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory() );
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
   RCP<SmootherFactory>    SmooFact = Teuchos::null;

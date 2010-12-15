@@ -8,6 +8,7 @@
 #include "Cthulhu_Operator.hpp"
 #include "Cthulhu_Vector.hpp"
 #include "MueLu_Smoother.hpp"
+#include <sstream>
 
 // JG TODO: add **default** template parameters
 
@@ -122,27 +123,54 @@ namespace MueLu {
 
     //! @brief Return matrix.
     Teuchos::RCP<Operator> GetA() const {
-      return A_;
+      if (A_ != Teuchos::null)
+        return A_;
+      else {
+        std::ostringstream buf;
+        buf << levelID_;
+        std::string msg = "Level " + buf.str() + ": A is not set";
+        throw(std::logic_error(msg));
+      }
     }
 
     //! @brief Return restriction matrix.
     Teuchos::RCP<Operator> GetR() const {
-      return R_;
+      if (R_ != Teuchos::null)
+        return R_;
+      else {
+        std::ostringstream buf;
+        buf << levelID_;
+        std::string msg = "Level " + buf.str() + ": R is not set";
+        throw(std::logic_error(msg));
+      }
     }
 
     //! @brief Return prolongation matrix.
     Teuchos::RCP<Operator> GetP() const {
-      return P_;
+      if (P_ != Teuchos::null)
+        return P_;
+      else {
+        std::ostringstream buf;
+        buf << levelID_;
+        std::string msg = "Level " + buf.str() + ": P is not set";
+        throw(std::logic_error(msg));
+      }
     }
 
     //! @brief Return presmoother.
     Teuchos::RCP<Smoother> GetPreSmoother() const {
-      return PreSmoother_;
+      if (PreSmoother_ != Teuchos::null)
+        return PreSmoother_;
+      else
+        throw(std::logic_error("PreSmoother is not set"));
     }
 
     //! @brief Return postsmoother.
     Teuchos::RCP<Smoother> GetPostSmoother() const {
-      return PostSmoother_;
+      if (PostSmoother_ != Teuchos::null)
+        return PostSmoother_;
+      else
+        throw(std::logic_error("PostSmoother is not set"));
     }
 
     //@}
@@ -150,8 +178,8 @@ namespace MueLu {
   }; //class Level
 
   //Print function.  Not a friend b/c it uses only public interfaces for data access.
-  template<class SC,class LO, class GO, class NO, class LMO>
-  std::ostream& operator<<(std::ostream& os, Level<SC,LO,GO,NO, LMO> const &level) {
+  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  std::ostream& operator<<(std::ostream& os, Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> const &level) {
     os << "Printing Level object " << level.GetLevelID() << std::endl;
     if (level.GetA() != Teuchos::null) os << *level.GetA() << std::endl;
     if (level.GetR() != Teuchos::null) os << *level.GetR() << std::endl;

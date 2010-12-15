@@ -4,8 +4,8 @@
 
 // TODO: rename variables (camelCase)
 
-#ifndef __MATRIX_TYPES_HPP__
-#define  __MATRIX_TYPES_HPP__
+#ifndef MUELU_MATRIXTYPES_HPP
+#define MUELU_MATRIXTYPES_HPP
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ArrayView.hpp"
@@ -99,6 +99,31 @@ namespace MueLu {
     };
 
 #endif
+
+    /* ****************************************************************************************************** *
+     *    (Scaled) Identity
+     * ****************************************************************************************************** */
+    template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, typename Map, typename Matrix>
+    RCP<Matrix>
+    Identity(const RCP<const Map> & map,
+            const Scalar a)
+    {
+  
+      RCP<Matrix> mtx = MatrixTraits<Map,Matrix>::Build(map, 1);
+
+      LocalOrdinal NumMyElements = map->getNodeNumElements();
+      Teuchos::ArrayView<const GlobalOrdinal> MyGlobalElements = map->getNodeElementList();
+
+      for (LocalOrdinal i = 0 ; i < NumMyElements ; ++i) {
+          mtx->insertGlobalValues(MyGlobalElements[i],
+                                  Teuchos::tuple<GlobalOrdinal>(MyGlobalElements[i]),
+                                  Teuchos::tuple<Scalar>(a) );
+      }
+
+      mtx->fillComplete();
+
+      return mtx;
+    } //Identity
 
     /* ****************************************************************************************************** *
      *    Laplace 1D
@@ -817,4 +842,4 @@ namespace MueLu {
 } // namespace MueLu
 
 
-#endif //ifndef __MATRIX_TYPES_HPP__
+#endif //ifndef MUELU_MATRIXTYPES_HPP
