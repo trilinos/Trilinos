@@ -6,6 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#ifndef Stk_Mesh_Fixtures_BoxFixture_hpp
+#define Stk_Mesh_Fixtures_BoxFixture_hpp
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -80,3 +82,5 @@ private:
 } // namespace fixtures
 } // namespace mesh
 } // namespace stk
+
+#endif
