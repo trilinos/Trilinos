@@ -9,20 +9,13 @@
 #ifndef Stk_Rebalance_Use_Cases_UseCase_1_hpp
 #define Stk_Rebalance_Use_Cases_UseCase_1_hpp
 
-#include <stk_util/parallel/Parallel.hpp>
+#include <stk_mesh/fixtures/HexFixture.hpp>
 
 namespace stk {
 namespace rebalance {
 namespace use_cases {
 
-class UseCase_1_Rebalance
-{
-public:
-  ~UseCase_1_Rebalance();
-
-  UseCase_1_Rebalance( stk::ParallelMachine comm );
-};
-
+  bool test_unequal_weights( stk::ParallelMachine comm );
 
 } //namespace use_cases
 } //namespace rebalance

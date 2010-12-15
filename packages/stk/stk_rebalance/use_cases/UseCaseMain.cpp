@@ -35,7 +35,7 @@ int main ( int argc, char * argv[] )
     std::cout << "Use Case 1 ... ";
     bool local_status = true ;
     try {
-      stk::rebalance::use_cases::UseCase_1_Rebalance rebal(parallel_machine);
+      local_status = stk::rebalance::use_cases::test_unequal_weights(parallel_machine);
       printStatus(local_status);
     }
     catch ( const std::exception & x ) {
