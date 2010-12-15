@@ -67,6 +67,17 @@ get_fem_interface(
 
 
 void
+set_spatial_dimension(
+  const MetaData &      meta_data, 
+  size_t                spatial_dimension)
+{
+  FEMInterface &fem = get_fem_interface(meta_data);
+  
+  fem.set_spatial_dimension(spatial_dimension);
+}
+
+
+void
 register_cell_topology(
   MetaData &            meta_data,
   const CellTopology    cell_topology,

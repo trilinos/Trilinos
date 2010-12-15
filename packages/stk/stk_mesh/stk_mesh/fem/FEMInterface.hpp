@@ -96,6 +96,8 @@ FEMInterface &get_fem_interface(const Part &part);
 FEMInterface &get_fem_interface(const Bucket &bucket);
 FEMInterface &get_fem_interface(const Entity &entity);
 
+void set_spatial_dimension(const MetaData &meta_data, size_t spatial_dimension);
+
 void register_cell_topology(MetaData &meta_data, const CellTopology cell_topology, EntityRank entity_rank);
 
 void set_cell_topology(Part & part, CellTopology cell_topology);
@@ -161,6 +163,7 @@ inline EntityRank element_rank(const FEMInterface &fem) {
 }
 
 } // namespace fem
+
 
 /** 
  * @brief <b>declare_part</b> 

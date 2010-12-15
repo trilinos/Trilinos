@@ -63,9 +63,18 @@ void
 DefaultFEM::set_spatial_dimension(
   size_t                spatial_dimension)
 {
-  m_spatialDimension = spatial_dimension;
+  if (m_spatialDimension != fem::INVALID_RANK && m_spatialDimension != spatial_dimension) {
+    std::ostringstream oss;
 
-  initialize(spatial_dimension);
+    oss << "The spatial dimension has already been defined as " << m_spatialDimension << " and cannot be changed to " << spatial_dimension;
+    
+    throw std::runtime_error(oss.str());
+  }
+  else if (m_spatialDimension == fem::INVALID_RANK) { 
+    m_spatialDimension = spatial_dimension;
+
+    initialize(spatial_dimension);
+  }
 }
 
   
