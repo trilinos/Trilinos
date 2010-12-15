@@ -103,6 +103,19 @@ namespace Cthulhu {
     //! @name Transformational Methods
     //@{ 
 
+    /*! \brief Signal that data entry is complete, specifying domain and range maps.
+
+    Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
+
+    \pre  <tt>isFillActive() == true<tt>
+    \pre <tt>isFillComplete()() == false<tt>
+
+    \post <tt>isFillActive() == false<tt>
+    \post <tt>isFillComplete() == true<tt>
+    \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
+    */ 
+    virtual void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, OptimizeOption os = DoOptimizeStorage) =0;
+
     /*! \brief Signal that data entry is complete. 
 
     Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.

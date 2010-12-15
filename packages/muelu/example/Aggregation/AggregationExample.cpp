@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   RCP<const Epetra_CrsMatrix> A;
 
   { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I should create a function to do that)
-    RCP<const CrsMatrix> tmp_CrsMtx = Op->get_CrsMatrix();
+    RCP<const CrsMatrix> tmp_CrsMtx = Op->getCrsMatrix();
     const RCP<const Cthulhu::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Cthulhu::EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null) { std::cout << "Error !" << std::endl; return 1; }
     A = tmp_ECrsMtx->getEpetra_CrsMatrix();

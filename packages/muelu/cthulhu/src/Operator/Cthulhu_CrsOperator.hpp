@@ -94,6 +94,21 @@ public:
   //! @name Transformational Methods
   //@{ 
 
+    /*! \brief Signal that data entry is complete, specifying domain and range maps.
+
+    Off-node indices are distributed (via globalAssemble()), indices are sorted, redundant indices are eliminated, and global indices are transformed to local indices.
+
+    \pre  <tt>isFillActive() == true<tt>
+    \pre <tt>isFillComplete()() == false<tt>
+
+    \post <tt>isFillActive() == false<tt>
+    \post <tt>isFillComplete() == true<tt>
+    \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
+    */ 
+  inline void fillComplete(const RCP<const Map> &domainMap, const RCP<const Map> &rangeMap, OptimizeOption os = DoOptimizeStorage) {
+    matrixData_->fillComplete(domainMap, rangeMap, os);
+  }
+
   /*! \brief Signal that data entry is complete. 
 
   Off-node entries are distributed (via globalAssemble()), repeated entries are summed, and global indices are transformed to local indices.
@@ -289,7 +304,7 @@ public:
   //! Returns the CrsGraph associated with this matrix. 
   RCP<const CrsGraph> getCrsGraph() const { return matrixData_->getCrsGraph(); }
 
-  RCP<CrsMatrix> get_CrsMatrix() const { CTHULHU_DEBUG_ME; return matrixData_; }
+  RCP<CrsMatrix> getCrsMatrix() const { CTHULHU_DEBUG_ME; return matrixData_; }
 
   //@}
   
