@@ -25,7 +25,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
    using Teuchos::rcp;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
 
-   RCP<STK_Interface> mesh = rcp(new STK_Interface());
+   RCP<STK_Interface> mesh = rcp(new STK_Interface(2));
    RCP<stk::mesh::MetaData> metaData = mesh->getMetaData();
 
    // read in meta data
@@ -35,7 +35,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
                                     *metaData, meshData, false); 
    // build spactial dimension and some topological meta data
    unsigned spaceDim = metaData->get_field<VectorFieldType>("coordinates")->max_size(stk::mesh::Node);
-   mesh->setDimension(spaceDim);
+   // mesh->setDimension(spaceDim);
 
    // build element blocks
    registerElementBlocks(*mesh);
@@ -74,7 +74,7 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh) const
    stk::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
       const stk::mesh::Part * part = *partItr;
-      const CellTopologyData * ct = stk::mesh::get_cell_topology(*part);
+      const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
 
       // if an element part ==> this is element block
       if(part->primary_entity_rank()==stk::mesh::Element) {
@@ -95,7 +95,7 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh) const
    stk::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
       const stk::mesh::Part * part = *partItr;
-      const CellTopologyData * ct = stk::mesh::get_cell_topology(*part);
+      const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
 
       // if an side part ==> this is a sideset: only take null cell topologies
       if(part->primary_entity_rank()==spatialDim-1 && ct==0)

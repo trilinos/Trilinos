@@ -7,12 +7,12 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/fem/FieldTraits.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/FEMInterface.hpp>
+#include <stk_mesh/fem/CoordinateSystems.hpp>
 
 #include <Shards_CellTopology.hpp>
 #include <Shards_CellTopologyData.h>
@@ -28,11 +28,6 @@ class ElementDescriptor {
 public:
    ElementDescriptor(stk::mesh::EntityId gid,const std::vector<stk::mesh::EntityId> & nodes);
    virtual ~ElementDescriptor();
-
-   /** Function adds element and its relations to the bulk data. This function
-     * will not be overriden by other classes. Its function is common to all elements.
-     */ 
-   void addOutlineToBulkData(stk::mesh::BulkData & bulkData,const std::vector<stk::mesh::Part*> & parts);
 
    stk::mesh::EntityId getGID() const { return gid_; }
    const std::vector<stk::mesh::EntityId> & getNodes() const { return nodes_; }
@@ -52,14 +47,14 @@ class STK_Interface {
 public:
    /** Default constructor
      */
-   STK_Interface();
+   STK_Interface(unsigned dim);
 
    // functions called before initialize
    //////////////////////////////////////////
 
    /** Set the dimension for this mesh
      */
-   void setDimension(unsigned dim);
+   // void setDimension(unsigned dim);
 
    /** Add an element block with a string name
      */
@@ -412,9 +407,9 @@ void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementId
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
    // get *master* cell toplogy...(belongs to first element)
-   TEUCHOS_ASSERT(stk::mesh::get_cell_topology(*elements[localElementIds[0]])!=0)
+   // TEUCHOS_ASSERT(stk::mesh::fem::get_cell_topology(*elements[localElementIds[0]])!=0)
    unsigned masterVertexCount 
-      = stk::mesh::get_cell_topology(*elements[localElementIds[0]])->vertex_count;
+      = stk::mesh::fem::get_cell_topology(*elements[localElementIds[0]]).getCellTopologyData()->vertex_count;
 
    // allocate space
    vertices.resize(localElementIds.size(),masterVertexCount,getDimension());
@@ -426,7 +421,7 @@ void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementId
       TEUCHOS_ASSERT(element!=0);
  
       unsigned vertexCount 
-         = stk::mesh::get_cell_topology(*elements[localElementIds[0]])->vertex_count;
+         = stk::mesh::fem::get_cell_topology(*element).getCellTopologyData()->vertex_count;
       TEST_FOR_EXCEPTION(vertexCount!=masterVertexCount,std::runtime_error,
                          "In call to STK_Interface::getElementVertices all elements "
                          "must have the same vertex count!");

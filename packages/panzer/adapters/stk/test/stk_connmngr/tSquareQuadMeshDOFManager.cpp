@@ -6,15 +6,11 @@
 
 #include "Panzer_STK_Version.hpp"
 #include "Panzer_STK_config.hpp"
-#include "Panzer_AlbanySTKConnManager.hpp"
 #include "Panzer_IntrepidFieldPattern.hpp"
 #include "Panzer_GeometricAggFieldPattern.hpp"
 #include "Panzer_DOFManager.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
 #include "Panzer_STKConnManager.hpp"
-
-#include "Albany_Quad2DSTKMeshStruct.hpp"
-#include "Albany_STKDiscretization.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 

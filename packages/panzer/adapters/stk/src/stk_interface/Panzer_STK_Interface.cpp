@@ -29,21 +29,6 @@ ElementDescriptor::ElementDescriptor(stk::mesh::EntityId gid,const std::vector<s
    : gid_(gid), nodes_(nodes) {}
 ElementDescriptor::~ElementDescriptor() {}
 
-void ElementDescriptor::addOutlineToBulkData(stk::mesh::BulkData & bulkData,const std::vector<stk::mesh::Part*> & parts)
-{
-   TEUCHOS_ASSERT(gid_>0);
-
-   stk::mesh::Entity & element = bulkData.declare_entity(stk::mesh::Element,gid_,parts);
-
-   // build relations that give the mesh structure
-   for(std::size_t i=0;i<nodes_.size();++i) {
-      // add element->node relation
-      stk::mesh::Entity * node = bulkData.get_entity(stk::mesh::Node,nodes_[i]);
-      TEUCHOS_ASSERT(node!=0);
-      bulkData.declare_relation(element,*node,i);
-   }
-}
-
 /** Constructor function for building the element descriptors.
   */ 
 Teuchos::RCP<ElementDescriptor> 
@@ -56,28 +41,30 @@ const std::string STK_Interface::coordsString = "coordinates";
 const std::string STK_Interface::nodesString = "nodes";
 const std::string STK_Interface::edgesString = "edges";
 
-STK_Interface::STK_Interface()
-   : dimension_(0), initialized_(false), currentLocalId_(0)
+STK_Interface::STK_Interface(unsigned dim)
+   : dimension_(dim), initialized_(false), currentLocalId_(0)
 {
-   metaData_ = rcp(new stk::mesh::MetaData(stk::mesh::fem_entity_rank_names()));
+   metaData_ = rcp(new stk::mesh::MetaData(stk::mesh::fem::entity_rank_names(dimension_)));
+   femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
 
    // declare coordinates and node parts
    coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
    processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
    localIdField_     = &metaData_->declare_field<LocalIdFieldType>("LOCAL_ID");
 
-   nodesPart_        = &metaData_->declare_part(nodesString,stk::mesh::Node);
+   nodesPart_        = &metaData_->declare_part(nodesString,getNodeRank());
    nodesPartVec_.push_back(nodesPart_);
 
    // edgesPart_        = &metaData_->declare_part(edgesString,stk::mesh::Edge);
    // edgesPartVec_.push_back(edgesPart_);
 }
 
+/*
 void STK_Interface::setDimension(unsigned dim)
 {
    dimension_ = dim;
-   femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dim));
 }
+*/
 
 void STK_Interface::addSideset(const std::string & name)
 {
@@ -86,7 +73,7 @@ void STK_Interface::addSideset(const std::string & name)
 
    stk::mesh::Part * sideset = &metaData_->declare_part(name,getSideRank());
    sidesets_.insert(std::make_pair(name,sideset));
-   stk::mesh::set_cell_topology(*sideset,shards::getCellTopologyData<shards::Line<2> >());
+   stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Line<2> >()));
 }
 
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
@@ -665,7 +652,7 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
       stk::mesh::EntityRank elementRank = getElementRank();
       block = &metaData_->declare_part(name,elementRank);
 
-      stk::mesh::set_cell_topology(*block,ctData);
+      stk::mesh::fem::set_cell_topology(*block,stk::mesh::fem::CellTopology(ctData));
    }
 
    // construct cell topology object for this block

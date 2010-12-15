@@ -5,17 +5,20 @@
 #include "Panzer_STK_config.hpp"
 #include "Panzer_STK_Interface.hpp"
 #include "Panzer_STK_SquareQuadMeshFactory.hpp"
+#include "Panzer_STK_SetupUtilities.hpp"
 #include "Intrepid_FieldContainer.hpp"
 
 #include <iostream>
 
 typedef Intrepid::FieldContainer<double> FieldContainer;
 
-void getNodeIds(const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds);
+void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds);
 
+/*
 void getSideElements(const panzer_stk::STK_Interface & mesh,
                      const std::string & blockId, const std::vector<stk::mesh::Entity*> & sides,
                      std::vector<std::size_t> & localSideIds, std::vector<stk::mesh::Entity*> & elements);
+*/
 
 /** This example whows how to get vertex IDs for all the elements
   */
@@ -65,7 +68,7 @@ int main( int argc, char **argv )
    
         std::vector<stk::mesh::Entity*> elements;
         std::vector<std::size_t> localSideIds;
-        getSideElements(*mesh,eBlockId,sideEntities,localSideIds,elements);
+        panzer_stk::workset_utils::getSideElements(*mesh,eBlockId,sideEntities,localSideIds,elements);
         TEUCHOS_ASSERT(localSideIds.size()==elements.size());
    
         FieldContainer vertices;
@@ -78,7 +81,7 @@ int main( int argc, char **argv )
            stk::mesh::Entity * element = elements[elm];
    
            localIds.push_back(mesh->elementLocalId(element));
-           getNodeIds(element,nodes);
+           getNodeIds(mesh->getNodeRank(),element,nodes);
    
            TEUCHOS_ASSERT(nodes.size()==4);
    
@@ -111,57 +114,9 @@ int main( int argc, char **argv )
   return 0;
 }
 
-/** This function loops over the passed in set of "Sides" and looks
-  * at there related elements. It is then determined which elements
-  * belong in the requested element block, and what the local ID of 
-  * the side is.
-  *
-  * \param[in] mesh STK mesh interface
-  * \param[in] blockId Requested element block identifier
-  * \param[in] sides Set of sides (entities of dimension-1) where
-  *                  there is assumed part membership (induced or not)
-  *                  in the requested element block.
-  * \param[out] localSideIds On output this will contain the local side ids. 
-  *             Assumed that on input <code>sides.size()==0</code>
-  * \param[out] elements On output this will contain the elements associated
-  *             with each side in the requested block. Assumed that on input
-  *             <code>elements.size()==0</code>
-  *
-  * \note Some elements may be repeated in the lists, however the
-  *       local side ID should be distinct for each of those.
-  */
-void getSideElements(const panzer_stk::STK_Interface & mesh,
-                     const std::string & blockId, const std::vector<stk::mesh::Entity*> & sides,
-                     std::vector<std::size_t> & localSideIds, std::vector<stk::mesh::Entity*> & elements) 
+void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
 {
-   // for verifying that an element is in specified block
-   stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
-
-   // loop over each side extracting elements and local side ID taht are containted
-   // in specified block.
-   std::vector<stk::mesh::Entity*>::const_iterator sideItr;
-   for(sideItr=sides.begin();sideItr!=sides.end();++sideItr) {
-      stk::mesh::Entity * side = *sideItr;
-
-      stk::mesh::PairIterRelation relations = side->relations(stk::mesh::Element);
-      for(std::size_t e=0;e<relations.size();++e) {
-         stk::mesh::Entity * element = relations[e].entity();
-         std::size_t sideId = relations[e].identifier();
-
-         // is this element in requested block
-         bool inBlock = element->bucket().member(*blockPart);
-         if(inBlock) {
-            // add element and Side ID to output vectors
-            elements.push_back(element);
-            localSideIds.push_back(sideId);
-         }
-      }
-   }
-}
-
-void getNodeIds(const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
-{
-   stk::mesh::PairIterRelation nodeRel = element->relations(stk::mesh::Node);
+   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
 
    stk::mesh::PairIterRelation::iterator itr;
    for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 

@@ -32,7 +32,7 @@ Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildMesh(stk::ParallelMachin
 
 Teuchos::RCP<STK_Interface> SquareQuadMeshFactory::buildUncommitedMesh(stk::ParallelMachine parallelMach) const
 {
-   RCP<STK_Interface> mesh = rcp(new STK_Interface);
+   RCP<STK_Interface> mesh = rcp(new STK_Interface(2));
 
    machRank_ = stk::parallel_machine_rank(parallelMach);
    machSize_ = stk::parallel_machine_size(parallelMach);
@@ -118,7 +118,7 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
 
    // build meta data
-   mesh.setDimension(2);
+   //mesh.setDimension(2);
    for(int bx=0;bx<xBlocks_;bx++) {
       for(int by=0;by<yBlocks_;by++) {
 
