@@ -19,7 +19,7 @@ using Teuchos::rcp;
 
 namespace panzer {
 
-  void getNodeIds(const stk::mesh::Entity * element,
+  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
 		  std::vector<stk::mesh::EntityId> & nodeIds);
 
   void testInitialzation(const panzer_stk::STK_Interface& mesh,
@@ -140,7 +140,7 @@ namespace panzer {
 	stk::mesh::Entity * element = elements[elm];
 	
 	local_cell_ids.push_back(mesh->elementLocalId(element));
-	getNodeIds(element,nodes);
+	getNodeIds(mesh->getNodeRank(),element,nodes);
 	
 	TEUCHOS_ASSERT(nodes.size()==4);
 	
@@ -206,10 +206,10 @@ namespace panzer {
   }
 
 
-  void getNodeIds(const stk::mesh::Entity * element,
+  void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,
 		  std::vector<stk::mesh::EntityId> & nodeIds)
   {
-    stk::mesh::PairIterRelation nodeRel = element->relations(stk::mesh::Node);
+    stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
     
     stk::mesh::PairIterRelation::iterator itr;
     for(itr=nodeRel.begin();itr!=nodeRel.end();++itr) 

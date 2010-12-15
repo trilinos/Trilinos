@@ -224,9 +224,13 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
    mesh.endModification();
    TEST_ASSERT(not mesh.isModifiable());
 
-   TEST_EQUALITY(mesh.getEntityCounts(stk::mesh::Node),6);
-   TEST_EQUALITY(mesh.getEntityCounts(stk::mesh::Edge),0);
-   TEST_EQUALITY(mesh.getEntityCounts(stk::mesh::Element),2);
+   stk::mesh::EntityRank nodeRank = mesh.getNodeRank();
+   stk::mesh::EntityRank sideRank = mesh.getSideRank();
+   stk::mesh::EntityRank elmtRank = mesh.getElementRank();
+
+   TEST_EQUALITY(mesh.getEntityCounts(nodeRank),6);
+   TEST_EQUALITY(mesh.getEntityCounts(sideRank),0);
+   TEST_EQUALITY(mesh.getEntityCounts(elmtRank),2);
 
    #ifdef HAVE_IOSS
       TEST_ASSERT(mesh.isWritable());
@@ -250,8 +254,8 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
    TEST_EQUALITY(coords[0],0.0);
    TEST_EQUALITY(coords[1],0.0);
 
-   TEST_EQUALITY(mesh.getMaxEntityId(stk::mesh::Node),6);
-   TEST_EQUALITY(mesh.getMaxEntityId(stk::mesh::Element),2);
+   TEST_EQUALITY(mesh.getMaxEntityId(nodeRank),6);
+   TEST_EQUALITY(mesh.getMaxEntityId(elmtRank),2);
 }
 
 class CompareID {
@@ -333,14 +337,19 @@ TEUCHOS_UNIT_TEST(tSTKInterface, subcellIndices)
 
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
-   mesh->buildSubcells(stk::mesh::Edge);
+
+   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
+   stk::mesh::EntityRank sideRank = mesh->getSideRank();
+
+   mesh->buildSubcells(sideRank);
+
 
    std::vector<stk::mesh::EntityId> subcells;
 
-   TEST_THROW(mesh->getSubcellIndices(stk::mesh::Node,9,subcells),std::logic_error);
+   TEST_THROW(mesh->getSubcellIndices(nodeRank,9,subcells),std::logic_error);
 
    // get nodes
-   mesh->getSubcellIndices(stk::mesh::Node,3,subcells);
+   mesh->getSubcellIndices(nodeRank,3,subcells);
    TEST_EQUALITY(subcells.size(),4);
    TEST_EQUALITY(subcells[0],4);
    TEST_EQUALITY(subcells[1],3);
@@ -348,7 +357,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, subcellIndices)
    TEST_EQUALITY(subcells[3],8);
 
    // get edges
-   mesh->getSubcellIndices(stk::mesh::Edge,3,subcells);
+   mesh->getSubcellIndices(sideRank,3,subcells);
    TEST_EQUALITY(subcells.size(),4);
    TEST_EQUALITY(subcells[0],20);
    TEST_EQUALITY(subcells[1],23);
@@ -364,6 +373,9 @@ TEUCHOS_UNIT_TEST(tSTKInterface, local_ids)
 
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
+
+   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
+
    mesh->getMyElements(elements);
 
    // loop over all elements of mesh
@@ -371,7 +383,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, local_ids)
       stk::mesh::Entity * elem = elements[elmI];
       std::size_t localId = mesh->elementLocalId(elem);
 
-      stk::mesh::PairIterRelation relations = elem->relations(stk::mesh::Node);
+      stk::mesh::PairIterRelation relations = elem->relations(nodeRank);
       stk::mesh::PairIterRelation::iterator itr;
       stk::mesh::Entity * node = 0;
       for(itr=relations.begin();itr!=relations.end();++itr) {
@@ -406,14 +418,19 @@ TEUCHOS_UNIT_TEST(tSTKInterface, edgeAddTest)
 
    // build edges
    RCP<STK_Interface> mesh = build2DMesh();
-   mesh->buildSubcells(stk::mesh::Edge);
+
+   stk::mesh::EntityRank nodeRank = mesh->getNodeRank();
+   stk::mesh::EntityRank sideRank = mesh->getSideRank();
+   stk::mesh::EntityRank elmtRank = mesh->getElementRank();
+
+   mesh->buildSubcells(sideRank);
 
    if(mesh->isWritable())
       mesh->writeToExodus("simplemesh_wedges.exo");
 
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Node),8);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Edge),10);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Element),3);
+   TEST_EQUALITY(mesh->getEntityCounts(nodeRank),8);
+   TEST_EQUALITY(mesh->getEntityCounts(sideRank),10);
+   TEST_EQUALITY(mesh->getEntityCounts(elmtRank),3);
 }
 
 }

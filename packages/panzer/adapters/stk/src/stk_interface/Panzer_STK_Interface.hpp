@@ -59,8 +59,7 @@ public:
 
    /** Set the dimension for this mesh
      */
-   void setDimension(unsigned dim)
-   { dimension_ = dim; }
+   void setDimension(unsigned dim);
 
    /** Add an element block with a string name
      */
@@ -285,6 +284,12 @@ public:
 
    const stk::mesh::fem::FEMInterface & getFEMInterface() const 
    { return *femPtr_; }
+
+   const stk::mesh::EntityRank getElementRank() const { return stk::mesh::fem::element_rank(*femPtr_); }
+   const stk::mesh::EntityRank getSideRank() const { return stk::mesh::fem::side_rank(*femPtr_); }
+   const stk::mesh::EntityRank getEdgeRank() const { return stk::mesh::fem::edge_rank(*femPtr_); }
+   const stk::mesh::EntityRank getNodeRank() const { return stk::mesh::fem::node_rank(*femPtr_); }
+
 
 public: // static operations
    static const std::string coordsString;

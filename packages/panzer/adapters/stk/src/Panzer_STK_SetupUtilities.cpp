@@ -109,6 +109,7 @@ void getSideElements(const panzer_stk::STK_Interface & mesh,
 {
   // for verifying that an element is in specified block
   stk::mesh::Part * blockPart = mesh.getElementBlockPart(blockId);
+  stk::mesh::EntityRank elementRank = mesh.getElementRank();
   
   // loop over each side extracting elements and local side ID that
   // are containted in specified block.
@@ -116,8 +117,7 @@ void getSideElements(const panzer_stk::STK_Interface & mesh,
   for(sideItr=sides.begin();sideItr!=sides.end();++sideItr) {
     stk::mesh::Entity * side = *sideItr;
     
-    stk::mesh::PairIterRelation relations = 
-        side->relations(stk::mesh::Element);
+    stk::mesh::PairIterRelation relations = side->relations(elementRank);
 
     for(std::size_t e=0;e<relations.size();++e) {
       stk::mesh::Entity * element = relations[e].entity();

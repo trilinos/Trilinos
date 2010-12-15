@@ -32,9 +32,9 @@ private:
    Teuchos::RCP<const STK_Interface> mesh_;
 };
 
-static void getNodeIds(const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
+static void getNodeIds(stk::mesh::EntityRank nodeRank,const stk::mesh::Entity * element,std::vector<stk::mesh::EntityId> & nodeIds)
 {
-   stk::mesh::PairIterRelation nodeRel = element->relations(stk::mesh::Node);
+   stk::mesh::PairIterRelation nodeRel = element->relations(nodeRank);
 
    stk::mesh::PairIterRelation::iterator itr;
    for(itr=nodeRel.begin();itr!=nodeRel.end();++itr)
@@ -44,7 +44,7 @@ static void getNodeIds(const stk::mesh::Entity * element,std::vector<stk::mesh::
 static const double * getNode(const Teuchos::RCP<const STK_Interface> & mesh, const stk::mesh::Entity * element,int id)
 {
    std::vector<stk::mesh::EntityId> nodeIds;
-   getNodeIds(element,nodeIds);
+   getNodeIds(mesh->getNodeRank(),element,nodeIds);
 
    return mesh->getNodeCoordinates(nodeIds[id]); 
 }
@@ -155,6 +155,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
    
    SquareQuadMeshFactory factory; 
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
+ 
    if(mesh->isWritable());
       mesh->writeToExodus("Square.exo");
 
@@ -164,9 +165,9 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
 
    TEST_EQUALITY(mesh->getNumElementBlocks(),1);
    TEST_EQUALITY(mesh->getNumSidesets(),4);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Element),25);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Edge),60);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Node),36);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),25);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),60);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),36);
 
    int numprocs = stk::parallel_machine_size(MPI_COMM_WORLD);
    int rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
@@ -176,16 +177,16 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,3,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,8,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),8,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[1]);
          TEST_EQUALITY(elmt0[3],elmt1[0]);
    
-         mesh->getSubcellIndices(stk::mesh::Edge,3,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Edge,8,elmt1);
+         mesh->getSubcellIndices(mesh->getSideRank(),3,elmt0);
+         mesh->getSubcellIndices(mesh->getSideRank(),8,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -195,8 +196,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,7,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,13,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),7,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),13,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -206,16 +207,16 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,14,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,19,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),14,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),19,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[1]);
          TEST_EQUALITY(elmt0[3],elmt1[0]);
    
-         mesh->getSubcellIndices(stk::mesh::Edge,14,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Edge,19,elmt1);
+         mesh->getSubcellIndices(mesh->getSideRank(),14,elmt0);
+         mesh->getSubcellIndices(mesh->getSideRank(),19,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -225,16 +226,16 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,17,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,18,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),17,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),18,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[1],elmt1[0]);
          TEST_EQUALITY(elmt0[2],elmt1[3]);
    
-         mesh->getSubcellIndices(stk::mesh::Edge,17,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Edge,18,elmt1);
+         mesh->getSubcellIndices(mesh->getSideRank(),17,elmt0);
+         mesh->getSubcellIndices(mesh->getSideRank(),18,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -246,16 +247,16 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,3,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,8,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),8,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[1]);
          TEST_EQUALITY(elmt0[3],elmt1[0]);
    
-         mesh->getSubcellIndices(stk::mesh::Edge,3,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Edge,8,elmt1);
+         mesh->getSubcellIndices(mesh->getSideRank(),3,elmt0);
+         mesh->getSubcellIndices(mesh->getSideRank(),8,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -265,16 +266,16 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,17,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,18,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),17,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),18,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[1],elmt1[0]);
          TEST_EQUALITY(elmt0[2],elmt1[3]);
    
-         mesh->getSubcellIndices(stk::mesh::Edge,17,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Edge,18,elmt1);
+         mesh->getSubcellIndices(mesh->getSideRank(),17,elmt0);
+         mesh->getSubcellIndices(mesh->getSideRank(),18,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -284,8 +285,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,7,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,13,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),7,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),13,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -297,16 +298,16 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,14,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,19,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),14,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),19,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
          TEST_EQUALITY(elmt0[2],elmt1[1]);
          TEST_EQUALITY(elmt0[3],elmt1[0]);
    
-         mesh->getSubcellIndices(stk::mesh::Edge,14,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Edge,19,elmt1);
+         mesh->getSubcellIndices(mesh->getSideRank(),14,elmt0);
+         mesh->getSubcellIndices(mesh->getSideRank(),19,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -316,8 +317,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       {
          std::vector<stk::mesh::EntityId> elmt0, elmt1;
    
-         mesh->getSubcellIndices(stk::mesh::Node,3,elmt0);
-         mesh->getSubcellIndices(stk::mesh::Node,9,elmt1);
+         mesh->getSubcellIndices(mesh->getNodeRank(),3,elmt0);
+         mesh->getSubcellIndices(mesh->getNodeRank(),9,elmt1);
    
          TEST_EQUALITY(elmt0.size(),4);
          TEST_EQUALITY(elmt0.size(),elmt1.size());
@@ -329,8 +330,8 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, defaults)
       TEST_ASSERT(false);
    }
 
-   TEST_EQUALITY(mesh->getMaxEntityId(stk::mesh::Node),36);
-   TEST_EQUALITY(mesh->getMaxEntityId(stk::mesh::Element),25);
+   TEST_EQUALITY(mesh->getMaxEntityId(mesh->getNodeRank()),36);
+   TEST_EQUALITY(mesh->getMaxEntityId(mesh->getElementRank()),25);
 }
 
 // triangle tests
@@ -354,9 +355,9 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, multi_xblock)
       mesh->writeToExodus("Square_Blocked.exo");
 
    TEST_EQUALITY(mesh->getNumElementBlocks(),6);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Node),(12+1)*(12+1));
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Edge),12*(12+1)+12*(12+1));
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Element),12*12);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(12+1)*(12+1));
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),12*(12+1)+12*(12+1));
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),12*12);
 
    std::vector<stk::mesh::Entity*> myElements;
    mesh->getMyElements(myElements);
@@ -387,9 +388,9 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
    RCP<STK_Interface> mesh = factory.buildMesh(MPI_COMM_WORLD);
 
    TEST_EQUALITY(mesh->getNumElementBlocks(),6);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Node),(12+1)*(12+1));
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Edge),12*(12+1)+12*(12+1));
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Element),12*12);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),(12+1)*(12+1));
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),12*(12+1)+12*(12+1));
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),12*12);
 
    std::vector<std::string> blockNames;
    mesh->getElementBlockNames(blockNames);
@@ -445,11 +446,11 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
          std::vector<stk::mesh::Entity*>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
             stk::mesh::Entity * side = *itr;
-            stk::mesh::PairIterRelation relations = side->relations(stk::mesh::Node);
+            stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
             stk::mesh::EntityId n0 = relations[0].entity()->identifier();
             stk::mesh::EntityId n1 = relations[1].entity()->identifier();
    
-            TEST_EQUALITY(side->entity_rank(),stk::mesh::Edge);
+            TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
             TEST_EQUALITY((int) side->relations().size(),3);
             TEST_EQUALITY(relations.size(),2);
             TEST_EQUALITY(side->identifier(),mesh->getEdgeId(n0,n1));
@@ -492,11 +493,11 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
          std::vector<stk::mesh::Entity*>::iterator itr;
          for(itr=mySides.begin();itr!=mySides.end();++itr) {
             stk::mesh::Entity * side = *itr;
-            stk::mesh::PairIterRelation relations = side->relations(stk::mesh::Node);
+            stk::mesh::PairIterRelation relations = side->relations(mesh->getNodeRank());
             stk::mesh::EntityId n0 = relations[0].entity()->identifier();
             stk::mesh::EntityId n1 = relations[1].entity()->identifier();
    
-            TEST_EQUALITY(side->entity_rank(),stk::mesh::Edge);
+            TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
             TEST_EQUALITY((int) side->relations().size(),3);
             TEST_EQUALITY(relations.size(),2);
             TEST_EQUALITY(side->identifier(),mesh->getEdgeId(n0,n1));
