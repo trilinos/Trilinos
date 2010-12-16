@@ -16,6 +16,7 @@
 #include "MueLu_Utilities.hpp"
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
+#include "MueLu_Exceptions.hpp"
 
 #include <iostream>
 
@@ -55,7 +56,10 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     //@{
 
     //! Constructor.
-    SaPFactory() {
+    SaPFactory() : dampingFactor_(4./3), doQR_(false),
+                   reUseP_(false), reUsePtent_(false),
+                   reUseGraph_(false), reUseAggregates_(false)
+    {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Instantiating a new factory" << std::endl;
     }
@@ -71,26 +75,74 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       @brief Build method.
 
       Builds smoothed aggregation prolongator and returns it in <tt>coarseLevel</tt>.
+      //FIXME what does the return code mean (unclear in MueMat)?
+      //FIXME how should nullspace be stored?
     */
     bool Build(Level &fineLevel, Level &coarseLevel) {
       Teuchos::OSTab tab(this->out_);
       MueLu_cout(Teuchos::VERB_HIGH) << "SaPFactory: Building a prolongator" << std::endl;
 
+
+      RCP<Operator> finalP;
+
+      if (reUseP_) {
+        if (coarseLevel.GetP() == Teuchos::null)
+          throw(std::runtime_error("SaPFactory: you have asked to reuse P, but it doesn't exist"));
+        if (coarseLevel.IsSaved("Nullspace") == false)
+          throw(std::runtime_error("SaPFactory: you have asked to reuse cnull, but it doesn't exist"));
+        return true;
+      }
+
+      //TODO get or generate fine grid nullspace here
+      RCP<MultiVector> fineNullspace;
+      if (fineLevel.IsSaved("Nullspace"))
+        fineLevel.CheckOut("Nullspace",fineNullspace);
+      else {
+        //TODO add this functionality
+        throw(Exceptions::NotImplemented("SaPFactory.Build():  nullspace generation not implemented yet"));
+        ;
+      }
+
       RCP<Operator> Ptent = TentativePFactory::MakeTentative(fineLevel);
+      RCP<MultiVector> coarseNullspace;
+      if (reUsePtent_) {
+        try {
+          coarseLevel.CheckOut("Ptent",Ptent); //FIXME throws an error, replace with recomputation
+          coarseLevel.CheckOut("Nullspace",coarseNullspace); //FIXME throws an error, replace with recomputation
+        }
+        catch(...) {
+          throw(Exceptions::NotImplemented("SaPFactory.Build(): regeneration of Ptent/nullspace not implemented yet"));
+        }
+      }
 
-      //Build the smoother prolongator
-      Teuchos::RCP< Operator > Op = fineLevel.GetA();
-      RCP<Operator> D = MueLu::Utils<SC, LO, GO, NO, LMO>::BuildMatrixInverseDiagonal(Op);
-      RCP<Operator> AP = MueLu::Utils<SC, LO, GO, NO, LMO>::TwoMatrixMultiply(Op,Ptent);
-      RCP<Operator> DAP = MueLu::Utils<SC, LO, GO, NO, LMO>::TwoMatrixMultiply(D,AP);
-      RCP<Operator> smP = MueLu::Utils<SC, LO, GO, NO, LMO>::TwoMatrixAdd(Ptent,DAP,1.0,-2.0/3.0);
+      if (coarseLevel.IsRequested("Ptent"))
+        coarseLevel.Save("Ptent",Ptent);
+      
 
-      coarseLevel.SetP(smP);
+      //Build final prolongator
 
-      //MatrixPrint(smP);
+      SC lambdaMax = 2.0; //FIXME hard-coded for right now for 1D constant-coefficient Poisson
+      //FIXME Cthulhu::Operator should calculate/stash max eigenvalue
+      //FIXME SC lambdaMax = Op->GetDinvALambda();
+
+      if (lambdaMax != 0) {
+        Teuchos::RCP< Operator > Op = fineLevel.GetA();
+        RCP<Operator> D = Utils::BuildMatrixInverseDiagonal(Op);
+        RCP<Operator> AP = Utils::TwoMatrixMultiply(Op,Ptent);
+        RCP<Operator> DAP = Utils::TwoMatrixMultiply(D,AP);
+        finalP = Utils::TwoMatrixAdd(Ptent,DAP,1.0,-dampingFactor_/lambdaMax);
+      }
+      else {
+        finalP = Ptent;
+      }
+
+      coarseLevel.SetP(finalP);
+      //coarseLevel.Save("Nullspace",coarseNullspace);
+
+      //Utils::MatrixPrint(finalP);
 
       return true;
-    }
+    } //Build()
     //@}
 
     //! @name Set methods.

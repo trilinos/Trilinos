@@ -71,3 +71,7 @@ typedef MueLu::Smoother<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatO
 typedef MueLu::SaLevel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               SaLevel;
 #endif
 
+#ifdef MUELU_UTILITIES_SHORT
+typedef MueLu::Utils<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Utils;
+#endif
+

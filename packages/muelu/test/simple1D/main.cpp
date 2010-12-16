@@ -22,6 +22,7 @@
 #include <Cthulhu.hpp>
 #include <Cthulhu_Vector.hpp>
 #include <Cthulhu_VectorFactory.hpp>
+#include <Cthulhu_MultiVectorFactory.hpp>
 
 #include <MueLu_MatrixFactory.hpp>
 
@@ -90,7 +91,8 @@ int main(int argc, char *argv[]) {
     A = tmp_ECrsMtx->getEpetra_CrsMatrix();
   }
 
-  RCP<Vector> nullSpace = VectorFactory::Build(map);
+  //RCP<Vector> nullSpace = VectorFactory::Build(map);
+  RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
 
   MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
@@ -99,6 +101,7 @@ int main(int argc, char *argv[]) {
   Finest->setDefaultVerbLevel(Teuchos::VERB_HIGH);
 
   Finest->SetA(Op);
+  Finest->Save("Nullspace",nullSpace);
 
   Teuchos::RCP< Operator > cOp = Finest->GetA();
   //GO nFineDofs = cOp->getGlobalNumRows();
