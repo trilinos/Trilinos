@@ -29,20 +29,20 @@ using namespace stk::rebalance;
 
 namespace {
 
-bool balance_comm_spec_domain( Partition & partition,
+bool balance_comm_spec_domain( Partition * partition,
                                mesh::EntityProcVec & rebal_spec )
 {
   bool rebalancingHasOccurred = false;
   {
-    int num_elems = partition.num_elems();
+    int num_elems = partition->num_elems();
     int tot_elems;
-    all_reduce_sum(partition.parallel(), &num_elems, &tot_elems, 1);
+    all_reduce_sum(partition->parallel(), &num_elems, &tot_elems, 1);
 
     if (tot_elems) {
-      partition.determine_new_partition(rebalancingHasOccurred);
+      partition->determine_new_partition(rebalancingHasOccurred);
     }
   }
-  if (rebalancingHasOccurred) partition.get_new_partition(rebal_spec);
+  if (rebalancingHasOccurred) partition->get_new_partition(rebal_spec);
 
   return rebalancingHasOccurred;
 }
@@ -56,7 +56,7 @@ bool balance_comm_spec_domain( Partition & partition,
  */
 
 void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
-                                   const Partition         & partition,
+                                   const Partition         * partition,
                                    const mesh::EntityRank  & dep_rank,
                                    mesh::EntityProcVec     & entity_procs )
 {
@@ -104,7 +104,7 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
   for( ; c_end != c_iter; ++c_iter )
   {
     mesh::Entity * de = bulk_data.get_entity( dep_rank, c_iter->first );
-    if( parallel_machine_rank(partition.parallel()) == de->owner_rank() )
+    if( parallel_machine_rank(partition->parallel()) == de->owner_rank() )
     {
       stk::mesh::EntityProc dep_proc(de, c_iter->second);
       entity_procs.push_back(dep_proc);
@@ -114,24 +114,28 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
 
 
 bool full_rebalance(mesh::BulkData  & bulk_data ,
-                    Partition       & partition)
+                    Partition       * partition)
 {
   mesh::EntityProcVec cs_elem;
   bool rebalancingHasOccurred =  balance_comm_spec_domain( partition, cs_elem );
 
-  if( rebalancingHasOccurred && partition.partition_dependents_needed() )
+  if( rebalancingHasOccurred && partition->partition_dependents_needed() )
   {
     stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
 
     const stk::mesh::EntityRank node_rank = stk::mesh::fem::node_rank(fem);
     const stk::mesh::EntityRank edge_rank = stk::mesh::fem::edge_rank(fem);
     const stk::mesh::EntityRank face_rank = stk::mesh::fem::face_rank(fem);
-    const stk::mesh::EntityRank cons_rank = stk::mesh::fem::element_rank(fem)+1;
+    const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+    const stk::mesh::EntityRank cons_rank = elem_rank+1;
 
+    // Don't know the rank of the elements rebalanced, assume all are dependent.
     rebalance_dependent_entities( bulk_data, partition, node_rank, cs_elem );
     if (stk::mesh::InvalidEntityRank != edge_rank)
       rebalance_dependent_entities( bulk_data, partition, edge_rank, cs_elem );
     if (stk::mesh::InvalidEntityRank != face_rank)
+      rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem );
+    if (stk::mesh::InvalidEntityRank != elem_rank)
       rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem );
     if (stk::mesh::InvalidEntityRank != cons_rank)
       rebalance_dependent_entities( bulk_data, partition, cons_rank, cs_elem );
@@ -179,8 +183,12 @@ bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
 
   for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
   {
-    double * load_val = mesh::field_data(*load_measure, **elem_it);
-    my_load += *load_val;
+    if (load_measure) {
+      double * load_val = mesh::field_data(*load_measure, **elem_it);
+      my_load += *load_val;
+    } else {
+      my_load += 1;
+    }
   }
 
   double max_load = my_load;
@@ -226,12 +234,12 @@ bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
     rebal_elem_ptrs.push_back( *iA );
   }
 
-  partition.set_mesh_info(
+  (&partition)->set_mesh_info(
       rebal_elem_ptrs,
       rebal_coord_ref,
       rebal_elem_weight_ref);
 
-  bool rebalancingHasOccurred = full_rebalance(bulk_data, partition);
+  bool rebalancingHasOccurred = full_rebalance(bulk_data, &partition);
 
   return rebalancingHasOccurred;
 }

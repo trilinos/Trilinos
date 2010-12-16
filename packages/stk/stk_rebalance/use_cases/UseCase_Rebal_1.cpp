@@ -111,7 +111,8 @@ bool test_unequal_weights( stk::ParallelMachine pm )
   do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, pm, imbalance_threshold);
 
   if( 0 == p_rank )
-    std::cerr << "imbalance_threshold after rebalance = " << imbalance_threshold << ", " << do_rebal << std::endl;
+    std::cerr << std::endl 
+     << "imbalance_threshold after rebalance = " << imbalance_threshold << ", " << do_rebal << std::endl;
 
   stk::mesh::Selector owned_selector = meta.locally_owned_part();
   size_t num_local_elems = stk::mesh::count_selected_entities(owned_selector, bulk.buckets(element_rank));
