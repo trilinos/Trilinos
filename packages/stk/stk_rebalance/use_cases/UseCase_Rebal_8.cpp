@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <use_cases/UseCase_Rebal_1.hpp>
+#include <use_cases/UseCase_Rebal_8.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -36,6 +36,25 @@ typedef stk::mesh::Field<double> ScalarField ;
 namespace stk {
 namespace rebalance {
 namespace use_cases {
+
+class Test_Case_8_Partition : public stk::rebalance::Zoltan {
+  public :
+  explicit Test_Case_8_Partition(ParallelMachine pm,
+                                 const unsigned ndim,
+                                 Teuchos::ParameterList & rebal_region_parameters,
+                                 std::string parameters_name=default_parameters_name());
+  virtual ~Test_Case_8_Partition();
+  virtual bool partition_dependents_needed() const; 
+};
+
+Test_Case_8_Partition::Test_Case_8_Partition(ParallelMachine pm,
+                                             const unsigned ndim,
+                                             Teuchos::ParameterList & rebal_region_parameters,
+                                             std::string parameters_name) :
+  stk::rebalance::Zoltan(pm, ndim, rebal_region_parameters, parameters_name) {}
+Test_Case_8_Partition::~Test_Case_8_Partition() {}
+bool Test_Case_8_Partition::partition_dependents_needed() const 
+{return false;} //Do NOT move dependent entities for this case
 
 enum { nx = 4, ny = 4 };
 
@@ -136,19 +155,18 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
   stk::mesh::PartVector add_parts;
   stk::mesh::create_adjacent_entities(bulk_data, add_parts);
 
-  // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
-  // Other specializations are possible.
-  Teuchos::ParameterList emptyList;
-  stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
-
-  stk::mesh::Selector selector(side_part);
-
   // Force a rebalance by using imbalance_threshold < 1.0
   double imbalance_threshold = 0.5;
   bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
   // Coordinates are passed to support geometric-based load balancing algorithms
-  if( do_rebal )
+  if( do_rebal ) {
+    // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
+    // Other specializations are possible.
+    Teuchos::ParameterList emptyList;
+    stk::rebalance::use_cases::Test_Case_8_Partition zoltan_partition(comm, spatial_dimension, emptyList);
+    stk::mesh::Selector selector(side_part);
     stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition);
+  }
 
   imbalance_threshold = 1.5;
   do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
