@@ -1,5 +1,23 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 10.8 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Framework Release Notes:
+
+- MPI Fortran compiler wrapper search change
+
+Starting with Trilinos 10.8, when MPI is enabled and a specific Fortran
+compiler is not specified at configure time, the first wrapper searched for
+will be mpif90 instead of mpif77.  If a mpif90 wrapper is not found, the
+search will continue and attempt to find mpif77.  Depending on the underlying
+compilers used and the mpi configuration, a mpif90 wrapper may exist, but not
+be functional.  In those cases, a functional Fortran compiler wrapper should
+be specified at configure time.
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 10.6 Release Notes                                         #
 #                                                                             #
 ###############################################################################
