@@ -13,6 +13,7 @@ TEUCHOS_UNIT_TEST(TransPFactory, Test0)
 //that method has these input arguments:
 //Teuchos::FancyOStream& out, bool& success
 
+  typedef double ScalarType;
   typedef double Scalar;
   typedef int    LO;
   typedef int    GO;

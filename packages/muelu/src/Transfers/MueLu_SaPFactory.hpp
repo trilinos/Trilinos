@@ -169,7 +169,7 @@ function  [P] = MakeNoQRTentative(AggInfo,Amat,nullspace,OutputLevel)
 
 //! Friend print function.
 template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-std::ostream& operator<<(std::ostream& os, SaPFactory<ScalarType,LO,GlobalOrdinal,Node, LocalMatOps> &factory) {
+std::ostream& operator<<(std::ostream& os, SaPFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &factory) {
   os << "Printing an SaPFactory object" << std::endl;
   return os;
 }

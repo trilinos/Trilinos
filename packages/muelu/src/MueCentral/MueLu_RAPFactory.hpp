@@ -46,7 +46,7 @@ class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
 //! Friend print method.
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LocalOrdinal,GO,Node,LocalMatOps> &factory) {
+std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &factory) {
   os << "Printing RAPFactory object" << std::endl;
   return os;
 }
