@@ -136,7 +136,7 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
     if (stk::mesh::InvalidEntityRank != face_rank)
       rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem );
     if (stk::mesh::InvalidEntityRank != elem_rank)
-      rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem );
+      rebalance_dependent_entities( bulk_data, partition, elem_rank, cs_elem );
     if (stk::mesh::InvalidEntityRank != cons_rank)
       rebalance_dependent_entities( bulk_data, partition, cons_rank, cs_elem );
   }

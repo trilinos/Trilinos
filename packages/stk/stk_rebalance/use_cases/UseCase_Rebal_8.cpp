@@ -89,7 +89,7 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
 
   if ( !p_rank ) { 
 
-    std::vector<std::vector<stk::mesh::Entity*> > quads(nx);
+    std::vector<stk::mesh::EntityVector> quads(nx);
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) quads[ix].resize(ny);
 
     const unsigned nnx = nx + 1 ; 
