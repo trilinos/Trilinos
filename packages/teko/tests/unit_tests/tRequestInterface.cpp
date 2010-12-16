@@ -50,6 +50,7 @@
 
 #include "Teko_Utilities.hpp"
 #include "Teko_PreconditionerFactory.hpp"
+#include "Teko_PreconditionerInverseFactory.hpp"
 
 #define SS_ECHO(ops) { std::stringstream ss; ss << ops; ECHO(ss.str()) };
 
@@ -191,4 +192,93 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
       TEST_ASSERT(false);
    } catch(std::exception & e) 
    { out << "expected exception = " << e.what() << std::endl; }
+}
+
+// Test widget for the parameter list based call back: 
+//    used in preconditioner_request_interface unit test
+///////////////////////////////////////////////////////////////////
+class PLCallback : public Teko::RequestCallback<Teuchos::RCP<Teuchos::ParameterList> > {
+public:
+   Teuchos::RCP<Teuchos::ParameterList> request(const Teko::RequestMesg & rm);
+
+   bool handlesRequest(const Teko::RequestMesg & rm);
+
+   void preRequest(const Teko::RequestMesg & rm);
+};
+
+Teuchos::RCP<Teuchos::ParameterList> PLCallback::request(const Teko::RequestMesg & rm)
+{
+   Teuchos::RCP<const Teuchos::ParameterList> inputPL = rm.getParameterList();
+   TEST_FOR_EXCEPTION(inputPL==Teuchos::null,std::runtime_error,
+                      "Parameter list not included in request message");
+
+   Teuchos::RCP<Teuchos::ParameterList> outputPL = Teuchos::rcp(new Teuchos::ParameterList);
+   
+   // build up new parameter list from message list
+   Teuchos::ParameterList::ConstIterator itr;
+   for(itr=inputPL->begin();itr!=inputPL->end();++itr) {
+      if(itr->first=="cat")
+         outputPL->set<int>("cat",7);
+      else
+         outputPL->setEntry(itr->first,itr->second);
+   }
+
+   return outputPL;
+}
+
+void PLCallback::preRequest(const Teko::RequestMesg & rm) 
+{
+}
+
+bool PLCallback::handlesRequest(const Teko::RequestMesg & rm) 
+{
+   if(rm.getName()=="Parameter List") return true;
+   else return false;
+}
+
+TEUCHOS_UNIT_TEST(tRequestInterface, preconditioner_request_interface)
+{
+   using Teuchos::RCP;
+   using Teuchos::rcp;
+
+   Teuchos::ParameterList pl;
+   {  // ML-Test requires a handler
+      Teuchos::ParameterList & mlList = pl.sublist("ML-Test");
+      mlList.set<std::string>("Type","ML");
+      mlList.sublist("ML Settings");
+      mlList.sublist("Required Parameters").set<std::string>("cat","dog"); 
+   }
+   {  // ML-Test2 does not require a handler
+      Teuchos::ParameterList & mlList = pl.sublist("ML-Test2");
+      mlList.set<std::string>("Type","ML");
+      mlList.sublist("ML Settings").set<std::string>("pet","horse");
+   }
+   
+   // make sure it throws if uses haven't set things up correctly
+   {
+      RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
+      TEST_NOTHROW(invLib->getInverseFactory("ML-Test2")); // this one doesn't require a handler
+      TEST_THROW(invLib->getInverseFactory("ML-Test"),std::runtime_error); // this one does
+   }
+
+   {
+      RCP<Teko::RequestHandler> reqHandler = rcp(new Teko::RequestHandler);
+      reqHandler->addRequestCallback(rcp(new PLCallback));
+
+      // build inverse library and set request handler
+      RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromParameterList(pl);
+      invLib->setRequestHandler(reqHandler);
+
+      RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("ML-Test");
+
+      // investigate the parameter list to see if it has bee correctly updated!
+      RCP<Teko::PreconditionerInverseFactory> pInvFact 
+            = Teuchos::rcp_dynamic_cast<Teko::PreconditionerInverseFactory>(invFact);
+      Teuchos::RCP<const Teuchos::ParameterList> pl = pInvFact->getPrecFactory()->getParameterList();
+
+      TEST_ASSERT(pl->sublist("ML Settings").isParameter("cat"));
+      TEST_EQUALITY(pl->sublist("ML Settings").get<int>("cat"),7);
+   }
+
+   
 }
