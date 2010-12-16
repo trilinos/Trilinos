@@ -80,10 +80,10 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 
       //Build the smoother prolongator
       Teuchos::RCP< Operator > Op = fineLevel.GetA();
-      RCP<Operator> D = BuildMatrixInverseDiagonal(Op);
-      RCP<Operator> AP = TwoMatrixMultiply(Op,Ptent);
-      RCP<Operator> DAP = TwoMatrixMultiply(D,AP);
-      RCP<Operator> smP = TwoMatrixAdd(Ptent,DAP,1.0,-2.0/3.0);
+      RCP<Operator> D = MueLu::Utils<SC, LO, GO, NO, LMO>::BuildMatrixInverseDiagonal(Op);
+      RCP<Operator> AP = MueLu::Utils<SC, LO, GO, NO, LMO>::TwoMatrixMultiply(Op,Ptent);
+      RCP<Operator> DAP = MueLu::Utils<SC, LO, GO, NO, LMO>::TwoMatrixMultiply(D,AP);
+      RCP<Operator> smP = MueLu::Utils<SC, LO, GO, NO, LMO>::TwoMatrixAdd(Ptent,DAP,1.0,-2.0/3.0);
 
       coarseLevel.SetP(smP);
 
