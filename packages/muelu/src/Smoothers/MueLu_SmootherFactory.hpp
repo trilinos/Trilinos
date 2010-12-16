@@ -14,11 +14,10 @@ namespace MueLu {
   @brief Base class for smoother factories.
 */
 
-  template <class Scalar,class LO,class GO,class NO, class LMO>
+template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class SmootherFactory : public Needs {
 
-  typedef Level<Scalar, LO, GO, NO, LMO> Level;
-  typedef MueLu::Smoother<Scalar,LO,GO,NO, LMO> Smoother;
+#include "MueLu_UseShortNames.hpp"
 
   public:
     //@{ Constructors/Destructors.
@@ -42,5 +41,7 @@ class SmootherFactory : public Needs {
 }; //class SmootherFactory
 
 } //namespace MueLu
+
+#define MUELU_SMOOTHERFACTORY_SHORT
 
 #endif //ifndef MUELU_SMOOTHERFACTORY_HPP

@@ -21,13 +21,10 @@ namespace MueLu {
   restrictors, and coarse level discretizations.  Additionally contains 
   a V-cycle apply method.
 */
-template<class Scalar,class LO, class GO, class NO, class LMO>
-class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> > {
+template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
 
-  typedef MueLu::Level<Scalar,LO,GO,NO,LMO>           Level;
-  typedef MueLu::OperatorFactory<Scalar,LO,GO,NO,LMO> OperatorFactory;
-  typedef MueLu::SmootherFactory<Scalar,LO,GO,NO,LMO> SmootherFactory;
-  typedef MueLu::Smoother<Scalar,LO,GO,NO,LMO>        Smoother;
+#include "MueLu_UseShortNames.hpp"
 
   template<class AA, class BB, class CC, class DD, class EE>
   inline friend std::ostream& operator<<(std::ostream& os, Hierarchy<AA,BB,CC,DD,EE> &hierarchy);
@@ -150,8 +147,8 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
                         int startLevel=0, int numDesiredLevels=10 /*,Needs*/)
      {
        if (PFact == Teuchos::null) {throw(std::logic_error("FillHierarchy: must supply at least a Prolongator factory"));}
-       if (RFact == Teuchos::null) RFact = Teuchos::rcp(new TransPFactory<Scalar,LO,GO,NO, LMO>());
-       if (AcFact == Teuchos::null) AcFact = Teuchos::rcp(new RAPFactory<Scalar,LO,GO,NO, LMO>());
+       if (RFact == Teuchos::null) RFact = Teuchos::rcp(new TransPFactory());
+       if (AcFact == Teuchos::null) AcFact = Teuchos::rcp(new RAPFactory());
 
        Teuchos::RCP<SmootherFactory> SmooFact=Teuchos::null;
        FullPopulate(PFact,RFact,AcFact,SmooFact,startLevel,numDesiredLevels);
@@ -167,15 +164,17 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LO,GO,NO,LMO> >
     
 }; //class Hierarchy
 
-template<class Scalar,class LO, class GO, class NO, class LMO>
-std::ostream& operator<<(std::ostream& os, Hierarchy<Scalar,LO,GO,NO, LMO> &hierarchy) {
+template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+std::ostream& operator<<(std::ostream& os, Hierarchy<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> &hierarchy) {
   os << "Printing Hierarchy object" << std::endl;
-  typename std::vector< Teuchos::RCP<Level<Scalar,LO,GO,NO, LMO> > >::const_iterator i;
+  typename std::vector< Teuchos::RCP<Level<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > >::const_iterator i;
   for (i=hierarchy.Levels_.begin(); i != hierarchy.Levels_.end(); ++i)
     os << *(*i) << std::endl;
   return os;
 }
 
 } //namespace MueLu
+
+#define MUELU_HIERARCHY_SHORT
 
 #endif //ifndef MUELU_HIERARCHY_HPP

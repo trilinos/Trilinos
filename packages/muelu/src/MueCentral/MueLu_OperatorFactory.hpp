@@ -16,11 +16,11 @@ namespace MueLu {
     Derives from Needs, but with an additional virtual Build method.
   */
 
-  template<class Scalar, class LO, class GO, class NO, class LMO>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class OperatorFactory : public Needs {
-    
-    typedef Level<Scalar, LO, GO, NO, LMO> Level;
 
+#include "MueLu_UseShortNames.hpp"
+    
   private:
 
   public:
@@ -44,5 +44,7 @@ namespace MueLu {
   }; //class OperatorFactory
 
 } //namespace MueLu
+
+#define MUELU_OPERATORFACTORY_SHORT
 
 #endif //ifndef MUELU_OPERATORFACTORY_HPP

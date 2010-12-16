@@ -10,8 +10,10 @@ namespace MueLu {
   @brief Smoother class. Just a stub right now.
 */
 
-  template<class Scalar,class LO, class GO, class NO, class LMO>
-  class Smoother : public Teuchos::VerboseObject<Smoother<Scalar,LO,GO,NO,LMO> > {
+  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class Smoother : public Teuchos::VerboseObject<Smoother<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
+
+#include "MueLu_UseShortNames.hpp"
 
   private:
 
@@ -25,5 +27,7 @@ namespace MueLu {
 }; //class Smoother
 
 } //namespace MueLu
+
+#define MUELU_SMOOTHER_SHORT
 
 #endif //ifndef MUELU_SMOOTHER_HPP

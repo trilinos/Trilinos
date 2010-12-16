@@ -13,11 +13,10 @@ namespace MueLu {
     In addition to standard AMG operators, SaLevel also provides
     a near null space associated with the discretization operator.
   */
-  template<class SC,class LO, class GO, class NO, class LMO>
-  class SaLevel : public Level<SC,LO,GO,NO,LMO> {
+  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  class SaLevel : public Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
-    typedef Cthulhu::Operator<SC,LO,GO,NO,LMO> Operator;
-    typedef Cthulhu::Vector<SC,LO,GO,NO> Vector;
+#include "MueLu_UseShortNames.hpp"
 
     //JG to JJH: use Teuchos::Describable instead ?
     template<class AA, class BB, class CC, class DD, class EE>
@@ -78,8 +77,8 @@ namespace MueLu {
 
   }; //class SaLevel
 
-  template<class SC,class LO, class GO, class NO, class LMO>
-  std::ostream& operator<<(std::ostream &os, SaLevel<SC,LO,GO,NO,LMO> const & level)
+  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  std::ostream& operator<<(std::ostream &os, SaLevel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> const & level)
   {
     os << level.nullSpace_;
     os << level.Ptent_;
@@ -89,6 +88,7 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#define MUELU_SALEVEL_SHORT
 
 #endif //ifndef MUELU_SALEVEL_HPP
 

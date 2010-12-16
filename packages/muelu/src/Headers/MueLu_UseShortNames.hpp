@@ -29,14 +29,13 @@
 //
 
 #include <Cthulhu_UseShortNames.hpp>
-#include "MueLu_Classes.hpp"
 
 // New definition of types using the types ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps of the current context.
-#ifdef MUELU_LEVEL_HPP
+#ifdef MUELU_LEVEL_SHORT
 typedef MueLu::Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Level;
 #endif
 
-#ifdef MUELU_HIERARCHY_HPP
+#ifdef MUELU_HIERARCHY_SHORT
 typedef MueLu::Hierarchy<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>           Hierarchy;
 #endif
 
@@ -44,14 +43,31 @@ typedef MueLu::Hierarchy<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
 typedef MueLu::SaPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      SaPFactory;
 #endif
 
-#ifdef MUELU_TRANSPFACTORY_HPP
+#ifdef MUELU_TRANSPFACTORY_SHORT
 typedef MueLu::TransPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>   TransPFactory;
 #endif
 
-#ifdef MUELU_RAPFACTORY_HPP
+#ifdef MUELU_RAPFACTORY_SHORT
 typedef MueLu::RAPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      RAPFactory;
 #endif
 
-#ifdef MUELU_SMOOTHERFACTORY_HPP
+#ifdef MUELU_SMOOTHERFACTORY_SHORT
 typedef MueLu::SmootherFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherFactory;
 #endif
+
+#ifdef MUELU_TENTATIVEPFACTORY_SHORT
+typedef MueLu::TentativePFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TentativePFactory;
+#endif
+
+#ifdef MUELU_OPERATORFACTORY_SHORT
+typedef MueLu::OperatorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> OperatorFactory;
+#endif
+
+#ifdef MUELU_SMOOTHER_SHORT
+typedef MueLu::Smoother<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>        Smoother;
+#endif
+
+#ifdef MUELU_SALEVEL_SHORT
+typedef MueLu::SaLevel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               SaLevel;
+#endif
+

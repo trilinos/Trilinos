@@ -115,8 +115,9 @@ namespace MueLu {
      //for (size_t i=0; i<A->getNodeNumRows(); ++i) {
      for (size_t i=0; i<rowmap->getNodeNumElements(); ++i) {
        A->getLocalRowView(i,cols,vals);
-       for (size_t j=0; j<cols.size(); j++) {
+       for (Teuchos::ArrayView<const LO>::size_type j=0; j<cols.size(); j++) {
          //TODO this will break down if diagonal entry is not present
+         //if (!(cols[j] > i)) {  //JG says this will work ... maybe
          if (cols[j] == i) {
            diag[i] = vals[j];
            break;

@@ -9,10 +9,11 @@ namespace MueLu {
   @class RAPFactory class.
   @brief Factory for building coarse matrices.
 */
-  template<class Scalar, class LO, class GO, class NO, class LMO>
-class RAPFactory : public OperatorFactory<Scalar,LO,GO,NO,LMO> {
+  template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
-  typedef Level<Scalar,LO,GO,NO,LMO> Level;
+#include "MueLu_UseShortNames.hpp"
+
 
   //JG to JJH: use Teuchos::Describable instead ?
   template<class AA, class BB, class CC, class DD, class EE>
@@ -44,12 +45,14 @@ class RAPFactory : public OperatorFactory<Scalar,LO,GO,NO,LMO> {
 }; //class RAPFactory
 
 //! Friend print method.
-  template<class Scalar, class LO, class GO, class NO, class LMO>
-std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LO,GO,NO,LMO> &factory) {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+std::ostream& operator<<(std::ostream& os, RAPFactory<Scalar,LocalOrdinal,GO,Node,LocalMatOps> &factory) {
   os << "Printing RAPFactory object" << std::endl;
   return os;
 }
 
 } //namespace MueLu
+
+#define MUELU_RAPFACTORY_SHORT
 
 #endif //ifndef MUELU_RAPFACTORY_HPP

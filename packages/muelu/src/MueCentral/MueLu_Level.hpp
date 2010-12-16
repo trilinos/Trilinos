@@ -21,16 +21,14 @@ namespace MueLu {
     explicitly.  All other data is stored in an associative list.
     See the Needs class for more information.
   */
-  //template<class Scalar,class LO, class GO, class NO, class LMO>
-  //class Level : public Teuchos::VerboseObject<Level<Scalar,LO,GO,NO, LMO> > {
-  template<class SC,class LO, class GO, class NO, class LMO>
+  //template<class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  //class Level : public Teuchos::VerboseObject<Level<Scalar,LocalOrdinal,GlobalOrdinal,Node, LocalMatOps> > {
+  template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class Level : public Needs {
 
-    typedef Cthulhu::Operator<SC,LO,GO,NO,LMO> Operator;
-    typedef Cthulhu::Vector<SC,LO,GO,NO> Vector;
-    typedef MueLu::Smoother<SC,LO,GO,NO,LMO> Smoother;
+#include "MueLu_UseShortNames.hpp"
 
-    //friend inline std::ostream& operator<<(std::ostream& os, Level<SC,LO,GO,NO,LMO> &level);
+    //friend inline std::ostream& operator<<(std::ostream& os, Level<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &level);
 
   private: 
 
@@ -66,7 +64,7 @@ namespace MueLu {
     //@{
     //! @name Build methods
     //! Builds a new Level object.
-    static Teuchos::RCP<Level<SC,LO,GO,NO,LMO> > Build(std::ostream &os) {
+    static Teuchos::RCP<Level> Build(std::ostream &os) {
       os << "Building a Level" << std::endl;
       return Teuchos::rcp( new Level() );
     }
@@ -188,5 +186,7 @@ namespace MueLu {
   }
 
 } //namespace MueLu
+
+#define MUELU_LEVEL_SHORT
 
 #endif //ifndef MUELU_LEVEL_HPP
