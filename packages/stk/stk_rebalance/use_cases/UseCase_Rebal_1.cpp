@@ -102,13 +102,13 @@ bool test_unequal_weights( stk::ParallelMachine pm )
 
   // Force a rebalance by using imbalance_threshold < 1.0
   double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk, weight_field, pm, imbalance_threshold);
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, pm, imbalance_threshold);
   // Coordinates are passed to support geometric-based load balancing algorithms
   if( do_rebal )
     stk::rebalance::rebalance(bulk, selector, &fixture.m_coord_field, &weight_field, zoltan_partition);
 
   imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk, weight_field, pm, imbalance_threshold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk, &weight_field, pm, imbalance_threshold);
 
   if( 0 == p_rank )
     std::cerr << "imbalance_threshold after rebalance = " << imbalance_threshold << ", " << do_rebal << std::endl;

@@ -155,13 +155,13 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
 // ------------------------------------------------------------------------------
 
 bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
-                                 const mesh::Field<double> & load_measure,
+                                 const mesh::Field<double> * load_measure,
                                  ParallelMachine    comm,
 				 double & imbalance_threshold)
 {
   // Need to make load_measure optional with weights defaulting to 1.0. ??
 
-  if ( imbalance_threshold < 1.0 ) return true;
+  if ( (imbalance_threshold < 1.0) || (NULL == load_measure) ) return true;
 
   double my_load = 0.0;
 
@@ -179,7 +179,7 @@ bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
 
   for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
   {
-    double * load_val = mesh::field_data(load_measure, **elem_it);
+    double * load_val = mesh::field_data(*load_measure, **elem_it);
     my_load += *load_val;
   }
 

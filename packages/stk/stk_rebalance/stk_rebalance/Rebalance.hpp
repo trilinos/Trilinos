@@ -37,7 +37,7 @@ namespace rebalance {
 
 // comm can also be obtained from Bulk data (as parallel_machine).
 bool rebalance_needed(mesh::BulkData &    bulk_data,
-                      const mesh::Field<double> & load_measure,
+                      const mesh::Field<double> * load_measure,
                       ParallelMachine    comm,
                       double & imbalance_threshold);
 

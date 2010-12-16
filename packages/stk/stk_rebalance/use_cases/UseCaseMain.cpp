@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include <use_cases/UseCase_Rebal_1.hpp>
+#include <use_cases/UseCase_Rebal_8.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_rebalance/Rebalance.hpp>
@@ -31,20 +32,21 @@ int main ( int argc, char * argv[] )
 
   bool status = true;
 
-   //if ( single_process ) {
-    std::cout << "Use Case 1 ... ";
-    bool local_status = true ;
-    try {
-      local_status = stk::rebalance::use_cases::test_unequal_weights(parallel_machine);
-      printStatus(local_status);
-    }
-    catch ( const std::exception & x ) {
-      local_status = false ;
-      printStatus(local_status);
-      std::cout << x.what();
-    }
+  //if ( single_process ) {
+  {
+    std::cout << "Use Case 1, unequal element weights ... ";
+    bool local_status = stk::rebalance::use_cases::test_unequal_weights(parallel_machine);
+    printStatus(local_status);
     status = status && local_status;
-   //}
+  }
+  //}
+
+  {
+    std::cout << "Use Case 8, contact surfaces ... ";
+    bool local_status = stk::rebalance::use_cases::test_contact_surfaces(parallel_machine);
+    printStatus(local_status);
+    status = status && local_status;
+  }
 
   int return_code = -1;
   if (status) {
