@@ -845,7 +845,7 @@ namespace Cthulhu {
 #endif // CTHULHU_NOT_IMPLEMENTED
 
     RCP<const Epetra_CrsMatrix> getEpetra_CrsMatrix() const { CTHULHU_DEBUG_ME; return mtx_; }
-
+    
     /** TODO : interface of Teuchos_LabeledObject.hpp **/
     void setObjectLabel (const std::string &objectLabel) { CTHULHU_DEBUG_ME; //mtx_->setObjectLabel(objectLabel); TODO
     }

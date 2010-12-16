@@ -307,6 +307,10 @@ namespace Cthulhu {
     //! Compute mean (average) value of each vector in multi-vector.
     inline void meanValue(const Teuchos::ArrayView<Scalar> &means) const { CTHULHU_DEBUG_ME; vec_->meanValue(means); }
 
+    // Added, not present in Tpetra
+    //! Compute max value of each vector in multi-vector.
+    inline void maxValue(const Teuchos::ArrayView<Scalar> &maxs) const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); vec_->meanValue(maxs); }
+
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).
     inline void multiply(Teuchos::ETransp transA, Teuchos::ETransp transB, const Scalar &alpha, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &A, const TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &B, const Scalar &beta) { CTHULHU_DEBUG_ME; vec_->multiply(transA, transB, alpha, A, B, beta); }
 

@@ -23,8 +23,7 @@ namespace Cthulhu {
       This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
       The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
   */
-  template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-  class EpetraImport<int,int>: public Import<int,int> {
+  class EpetraImport: public Import<int,int> {
 
   public:
 
@@ -33,21 +32,27 @@ namespace Cthulhu {
 
     //! Constructs a Import object from the source and target Maps.
     EpetraImport(const Teuchos::RCP<const Map<int,int> > & source, 
-            const Teuchos::RCP<const Map<int,int> > & target)       
+		 const Teuchos::RCP<const Map<int,int> > & target)       
     { CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, source, tSource, "Cthulhu::EpetraImport constructors only accept Cthulhu::EpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, target, tTarget, "Cthulhu::EpetraImport constructors only accept Cthulhu::EpetraMap as input arguments.");
-      import_ = rcp(new Epetra::Import<int,int>(tSource->getEpetra_Map(), tTarget->getEpetra_Map()));
+      import_ = rcp(new Epetra_Import(tSource->getEpetra_Map(), tTarget->getEpetra_Map()));
     }
  
     //! copy constructor. 
-    EpetraImport(const Import<int,int> & import) {
+    EpetraImport(const Import<int,int> & import) 
+      : import_(EpetraImportConstructorHelper(import))
+    {
       CTHULHU_DEBUG_ME;
-      CTHULHU_RCP_DYNAMIC_CAST(const EpetraImport, import, timport, "Cthulhu::EpetraImport copy constructors only accept Cthulhu::EpetraImport as input arguments.");
-      import_ = rcp(new Epetra::CrsGraph<int,int>(tImport->getEpetra_Map()));
     }
 
-    EpetraImport(const Teuchos::RCP<Epetra::Import<int, int> > &import) : import_(import) { CTHULHU_DEBUG_ME; }
+    static RCP<Epetra_Import> EpetraImportConstructorHelper(const Import<int,int> & import) {
+      CTHULHU_DEBUG_ME;
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, import, tImport, "Cthulhu::EpetraImport copy constructors only accept Cthulhu::EpetraImport as input arguments.");
+      return rcp(new Epetra_Import(*tImport.getEpetra_Import()));
+    }
+
+    EpetraImport(const Teuchos::RCP<const Epetra_Import> &import) : import_(import) { CTHULHU_DEBUG_ME; }
 
     //! destructor.
     ~EpetraImport() {}
@@ -58,39 +63,64 @@ namespace Cthulhu {
     //@{ 
 
     //! Returns the number of entries that are identical between the source and target maps, up to the first different ID.
-    inline size_t getNumSameIDs() const { CTHULHU_DEBUG_ME; return import_->getNumSameIDs(); }
+    inline size_t getNumSameIDs() const { CTHULHU_DEBUG_ME; return import_->NumSameIDs(); }
 
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
-    inline size_t getNumPermuteIDs() const { CTHULHU_DEBUG_ME; return import_->getNumPermuteIDs(); }
+    inline size_t getNumPermuteIDs() const { CTHULHU_DEBUG_ME; return import_->NumPermuteIDs(); }
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! List of entries in the source Map that are permuted. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getPermuteFromLIDs() const { CTHULHU_DEBUG_ME; return import_->getPermuteFromLIDs(); }
+    inline Teuchos::ArrayView<const int> getPermuteFromLIDs() const { 
+      CTHULHU_DEBUG_ME; 
+      return import_->PermuteFromLIDs(); 
+    }
 
     //! List of entries in the target Map that are permuted. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getPermuteToLIDs() const { CTHULHU_DEBUG_ME; return import_->getPermuteToLIDs(); }
+    inline Teuchos::ArrayView<const int> getPermuteToLIDs() const { 
+      CTHULHU_DEBUG_ME; 
+      return import_->PermuteToLIDs(); 
+    }
 
     //! Returns the number of entries that are not on the calling image.
-    inline size_t getNumRemoteIDs() const { CTHULHU_DEBUG_ME; return import_->getNumRemoteIDs(); }
+    inline size_t getNumRemoteIDs() const { CTHULHU_DEBUG_ME; return import_->NumRemoteIDs(); }
 
     //! List of entries in the target Map that are coming from other images. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getRemoteLIDs() const { CTHULHU_DEBUG_ME; return import_->getRemoteLIDs(); }
+    inline Teuchos::ArrayView<const int> getRemoteLIDs() const { 
+      CTHULHU_DEBUG_ME; 
+      return import_->RemoteLIDs(); 
+    }
 
     //! Returns the number of entries that must be sent by the calling image to other images.
     inline size_t getNumExportIDs() const { CTHULHU_DEBUG_ME; return import_->getNumExportIDs(); }
 
     //! List of entries in the source Map that will be sent to other images. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getExportLIDs() const { CTHULHU_DEBUG_ME; return import_->getExportLIDs(); }
+    inline Teuchos::ArrayView<const int> getExportLIDs() const { 
+      CTHULHU_DEBUG_ME; 
+      return import_->ExportLIDs(); 
+    }
 
     //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
-    inline Teuchos::ArrayView<const int> getExportImageIDs() const { CTHULHU_DEBUG_ME; return import_->getExportImageIDs(); }
+    inline Teuchos::ArrayView<const int> getExportImageIDs() const { 
+      CTHULHU_DEBUG_ME; 
+      return import_->ExportImageIDs(); 
+    }
 
     //! Returns the Source Map used to construct this importer.
-    inline const Teuchos::RCP<const Map<int,int> > getSourceMap() const { CTHULHU_DEBUG_ME; return import_->getSourceMap(); }
+    inline const Teuchos::RCP<const Map<int,int> > getSourceMap() const { 
+      CTHULHU_DEBUG_ME; 
+      return import_->SourceMap(); 
+    }
 
     //! Returns the Target Map used to construct this importer.
-    inline const Teuchos::RCP<const Map<int,int> > getTargetMap() const { CTHULHU_DEBUG_ME; return import_->getTargetMap(); }
+    inline const Teuchos::RCP<const Map<int,int> > getTargetMap() const { 
+      CTHULHU_DEBUG_ME; 
+      return import_->TargetMap(); 
+    }
+#endif
 
-    inline Distributor & getDistributor() const { CTHULHU_DEBUG_ME; return import_->getDistributor(); }
+#ifdef CTHULHU_NOT_IMPLEMENTED
+    inline Distributor & getDistributor() const { CTHULHU_DEBUG_ME; return import_->Distributor(); }
+#endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Assignment operator
@@ -107,11 +137,11 @@ namespace Cthulhu {
     //@}
 #endif
 
-    RCP< const Epetra::Import<int, int> > getEpetra_Import() const { CTHULHU_DEBUG_ME; return import_; }
+    RCP< const Epetra_Import > getEpetra_Import() const { CTHULHU_DEBUG_ME; return import_; }
     
   private:
     
-    RCP<Epetra::Import> import_;
+    RCP<const Epetra_Import> import_;
 
   };
 

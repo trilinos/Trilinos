@@ -223,13 +223,13 @@ namespace Cthulhu {
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
 // TODO: UnitTest FAILED
-//     EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, 
-//               const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
-//     { 
-//       CTHULHU_DEBUG_ME; 
-//       CATCH_EPETRA_EXCEPTION_AND_THROW_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, elementList.size(), elementList.getRawPtr(), indexBase, *Teuchos2Epetra_Comm(comm))))););
-//     }
-
+    EpetraMap(global_size_t numGlobalElements, const Teuchos::ArrayView<const int> &elementList, int indexBase, 
+	      const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
+    { 
+      CTHULHU_DEBUG_ME; 
+      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, elementList.size(), elementList.getRawPtr(), indexBase, *Teuchos2Epetra_Comm(comm))))));
+    }
+    
     /** \brief EpetraMap constructor to wrap a Epetra_Map object.
      */
     EpetraMap(const Teuchos::RCP<const Epetra_Map > &map) : map_(map) { CTHULHU_DEBUG_ME;}

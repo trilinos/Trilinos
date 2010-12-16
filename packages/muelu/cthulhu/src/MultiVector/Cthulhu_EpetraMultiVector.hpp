@@ -180,11 +180,20 @@ namespace Cthulhu {
     inline Teuchos::RCP<Vector<double,int,int> > getVectorNonConst(size_t j) { CTHULHU_DEBUG_ME; return vec_->getVectorNonConst(j); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
-    inline Teuchos::ArrayRCP<const double> getData(size_t j) const { CTHULHU_DEBUG_ME; return vec_->getData(j); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline Teuchos::ArrayRCP<const double> getData(size_t j) const { CTHULHU_DEBUG_ME;
+      CTHULHU_DEBUG_ME; 
+
+      double ** arrayOfPointers;
+      
+      vec_->ExtractView(&arrayOfPointers);
+     
+      double * data = arrayOfPointers[j];
+      int localLength = vec_->MyLength();
+      
+      return ArrayRCP<double>(data, 0, localLength, false); // not ownership
+    }
 
     //! Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
@@ -311,7 +320,11 @@ namespace Cthulhu {
     }
 
     //! Compute mean (average) value of each vector in multi-vector.
-    inline void meanValue(const Teuchos::ArrayView<double> &means) const { CTHULHU_DEBUG_ME; vec_->MeanValue(means.getRawPtr()); }
+    inline void meanValue(const Teuchos::ArrayView<double> &means) const { CTHULHU_DEBUG_ME; vec_->MeanValue(means.getRawPtr()); } //TODO: modify ArrayView size ??
+
+    // Added, not present in Tpetra
+    //! Compute max value of each vector in multi-vector.
+    inline void maxValue(const Teuchos::ArrayView<double> &maxs) const { CTHULHU_DEBUG_ME; vec_->MaxValue(maxs.getRawPtr()); } //TODO: size() ?
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).

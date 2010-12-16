@@ -90,30 +90,35 @@ namespace Cthulhu {
     //! Computes dot product of this Vector against input Vector x.
     int dot(const Vector<int,int,int> &a) const { 
       CTHULHU_DEBUG_ME; 
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO");
       return -1;
     }
 
     //using EpetraMultiVector::norm1; // overloading, not hiding
     //! Return 1-norm of this Vector.
-    Teuchos::ScalarTraits<int>::magnitudeType norm1() const { CTHULHU_DEBUG_ME; return -1; }
+    Teuchos::ScalarTraits<int>::magnitudeType norm1() const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
 
     //using EpetraMultiVector::norm2; // overloading, not hiding
     //! Compute 2-norm of this Vector.
-    Teuchos::ScalarTraits<int>::magnitudeType norm2() const { CTHULHU_DEBUG_ME; return -1; }
+    Teuchos::ScalarTraits<int>::magnitudeType norm2() const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
 
     //using EpetraMultiVector::normInf; // overloading, not hiding
     //! Compute Inf-norm of this Vector.
-    Teuchos::ScalarTraits<int>::magnitudeType normInf() const { CTHULHU_DEBUG_ME; return -1; }
+    Teuchos::ScalarTraits<int>::magnitudeType normInf() const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
 
     //using EpetraMultiVector::normWeighted; // overloading, not hiding
     //! Compute Weighted 2-norm (RMS Norm) of this Vector.
     Teuchos::ScalarTraits<int>::magnitudeType normWeighted(const Vector<int,int,int> &weights) const { CTHULHU_DEBUG_ME;
-      return -1;
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1;
     }
 
     //using EpetraMultiVector::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
-    int meanValue() const { CTHULHU_DEBUG_ME; return -1; }
+    int meanValue() const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
+
+    //using EpetraMultiVector::maxValue; // overloading, not hiding
+    //! Compute max value of this Vector.
+    int maxValue() const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return -1; }
     //@} 
 
     //! @name Overridden from Teuchos::Describable 
@@ -128,8 +133,7 @@ namespace Cthulhu {
       //TODO      oss << Teuchos::Describable::description();
       //TODO oss << "{length="<<this->getGlobalLength()
       //<< "}";
-      return oss.str();
-      
+      return oss.str();      
     };
 
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
@@ -270,11 +274,16 @@ namespace Cthulhu {
     inline Teuchos::RCP<Vector<int,int,int> > getVectorNonConst(size_t j) { CTHULHU_DEBUG_ME; return vec_->getVectorNonConst(j); }
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
-    inline Teuchos::ArrayRCP<const int> getData(size_t j) const { CTHULHU_DEBUG_ME; return vec_->getData(j); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline Teuchos::ArrayRCP<const int> getData(size_t j) const { CTHULHU_DEBUG_ME; 
+      CTHULHU_DEBUG_ME; 
+
+      int * data = vec_->Values();
+      int localLength = vec_->MyLength();
+      
+      return ArrayRCP<int>(data, 0, localLength, false); // not ownership
+    }
 
     //! Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
@@ -399,6 +408,9 @@ namespace Cthulhu {
 
     //! Compute mean (average) value of each vector in multi-vector.
     inline void meanValue(const Teuchos::ArrayView<int> &means) const { CTHULHU_DEBUG_ME;       TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
+
+    //! Compute max value of each vector in multi-vector.
+    inline void maxValue(const Teuchos::ArrayView<int> &maxs) const { CTHULHU_DEBUG_ME;       TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).

@@ -96,6 +96,11 @@ namespace Cthulhu {
     //! Compute mean (average) value of this Vector.
     virtual Scalar meanValue() const = 0;
 
+    // Note: Added to Cthulhu. Not present in Tpetra
+    //using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::maxValue; // overloading, not hiding
+    //! Compute max value of this Vector.
+    virtual Scalar maxValue() const = 0;
+
     //@} 
 
     //! @name Overridden from Teuchos::Describable 

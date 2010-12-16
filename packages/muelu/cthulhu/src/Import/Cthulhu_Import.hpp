@@ -43,6 +43,7 @@ namespace Cthulhu {
     //! Returns the number of entries that are local to the calling image, but not part of the first getNumSameIDs() entries.
     virtual size_t getNumPermuteIDs() const = 0;
 
+#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! List of entries in the source Map that are permuted. (non-persisting view)
     virtual Teuchos::ArrayView<const LocalOrdinal> getPermuteFromLIDs() const = 0;
 
@@ -69,6 +70,7 @@ namespace Cthulhu {
 
     //! Returns the Target Map used to construct this importer.
     virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getTargetMap() const = 0;
+#endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     virtual Distributor & getDistributor() const = 0;

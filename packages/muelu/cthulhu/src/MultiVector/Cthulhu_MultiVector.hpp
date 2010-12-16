@@ -157,11 +157,9 @@ namespace Cthulhu {
     virtual Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVectorNonConst(size_t j) =0;
 #endif // CTHULHU_NOT_IMPLEMENTED
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Const Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
     virtual Teuchos::ArrayRCP<const Scalar> getData(size_t j) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Local vector access function.
     //! View of the local values in a particular vector of this multi-vector.
@@ -252,6 +250,10 @@ namespace Cthulhu {
 
     //! Compute mean (average) value of each vector in multi-vector.
     virtual void meanValue(const Teuchos::ArrayView<Scalar> &means) const =0;
+
+    // Added, not present in Tpetra
+    //! Compute max value of each vector in multi-vector.
+    virtual void maxValue(const Teuchos::ArrayView<Scalar> &maxs) const =0;
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     //! Matrix-Matrix multiplication, this = beta*this + alpha*op(A)*op(B).

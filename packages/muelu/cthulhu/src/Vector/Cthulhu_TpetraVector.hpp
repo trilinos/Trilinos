@@ -136,6 +136,11 @@ namespace Cthulhu {
     using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::meanValue; // overloading, not hiding
     //! Compute mean (average) value of this Vector.
     Scalar meanValue() const { CTHULHU_DEBUG_ME; return getTpetra_Vector()->meanValue(); }
+
+    // Note: Added to Cthulhu. Not present in Tpetra
+    using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::maxValue; // overloading, not hiding
+    //! Compute max value of this Vector.
+    Scalar maxValue() const { CTHULHU_DEBUG_ME; TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO"); return getTpetra_Vector()->meanValue(); }
     //@} 
 
     //! @name Overridden from Teuchos::Describable 
