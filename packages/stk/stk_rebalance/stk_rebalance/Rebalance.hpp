@@ -39,7 +39,9 @@ namespace rebalance {
 bool rebalance_needed(mesh::BulkData &    bulk_data,
                       const mesh::Field<double> * load_measure,
                       ParallelMachine    comm,
-                      double & imbalance_threshold);
+                      double & imbalance_threshold,
+                      const stk::mesh::EntityRank rank = stk::mesh::InvalidEntityRank,
+                      const mesh::Selector *selector=NULL);
 
 /** Rebalance with a Partition object.
  * This rebalance function will use the Partition object passed
@@ -49,7 +51,8 @@ bool rebalance(mesh::BulkData & bulk_data ,
                const mesh::Selector & selector ,
                const VectorField * coord_ref ,
                const ScalarField * elem_weight_ref,
-               Partition & partition);
+               Partition & partition,
+               const stk::mesh::EntityRank rank = stk::mesh::InvalidEntityRank);
 
 }
 } // namespace stk

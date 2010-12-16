@@ -69,6 +69,7 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
   stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
   stk::mesh::DefaultFEM top_data( meta_data, spatial_dimension );
   const stk::mesh::EntityRank element_rank    = stk::mesh::fem::element_rank(top_data);
+  const stk::mesh::EntityRank side_rank       = stk::mesh::fem::side_rank(top_data);
   const stk::mesh::EntityRank node_rank       = stk::mesh::fem::node_rank(top_data);
 
   stk::mesh::Part & quad_part( stk::mesh::declare_part<shards::Quadrilateral<4> >( meta_data, "quad" ) );
@@ -156,29 +157,28 @@ bool test_contact_surfaces( stk::ParallelMachine comm )
   stk::mesh::create_adjacent_entities(bulk_data, add_parts);
 
   // Force a rebalance by using imbalance_threshold < 1.0
+  stk::mesh::Selector selector(side_part);
+  selector &=  meta_data.locally_owned_part();
   double imbalance_threshold = 0.5;
-  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
+  bool do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold, side_rank, &selector);
   // Coordinates are passed to support geometric-based load balancing algorithms
   if( do_rebal ) {
     // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
     // Other specializations are possible.
     Teuchos::ParameterList emptyList;
     stk::rebalance::use_cases::Test_Case_8_Partition zoltan_partition(comm, spatial_dimension, emptyList);
-    stk::mesh::Selector selector(side_part);
-    stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition);
+    stk::rebalance::rebalance(bulk_data, selector, &coord_field, NULL, zoltan_partition, side_rank);
   }
 
   imbalance_threshold = 1.5;
-  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold);
+  do_rebal = stk::rebalance::rebalance_needed(bulk_data, NULL, comm, imbalance_threshold, side_rank, &selector);
 
   if( !p_rank )
     std::cerr << std::endl 
      << "imbalance_threshold after rebalance = " << imbalance_threshold <<", "<<do_rebal << std::endl;
 
   // Check that we satisfy our threshhold
-  // Need to get this working ... RWH
-  //const bool result = fabs(imbalance_threshold-p_size) < 1.e-3;
-  bool result = true;
+  const bool result = !do_rebal ;
   return result;
 }
 

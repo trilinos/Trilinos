@@ -159,27 +159,33 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
 // ------------------------------------------------------------------------------
 
 bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
-                                 const mesh::Field<double> * load_measure,
-                                 ParallelMachine    comm,
-				 double & imbalance_threshold)
+                                      const mesh::Field<double> * load_measure,
+                                      ParallelMachine    comm,
+				      double & imbalance_threshold,
+                                      const stk::mesh::EntityRank rank,
+                                      const mesh::Selector *selector)
 {
-  // Need to make load_measure optional with weights defaulting to 1.0. ??
-
-  if ( (imbalance_threshold < 1.0) || (NULL == load_measure) ) return true;
+  if ( (imbalance_threshold < 1.0) ) return true;
 
   double my_load = 0.0;
 
   const mesh::MetaData & meta_data = bulk_data.mesh_meta_data();
   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(meta_data);
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+  const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank ) ? rank :
+                                             stk::mesh::fem::element_rank(fem);
 
   mesh::EntityVector local_elems;
-  mesh::Selector select_owned( meta_data.locally_owned_part() );
-
-  // Determine imbalance based on current element decomposition
-  mesh::get_selected_entities(select_owned,
-                              bulk_data.buckets(element_rank),
-                              local_elems);
+  if (selector) {
+    mesh::get_selected_entities(*selector,
+                                bulk_data.buckets(element_rank),
+                                local_elems);
+  } else {
+    mesh::Selector select_owned( meta_data.locally_owned_part() );
+    // Determine imbalance based on current element decomposition
+    mesh::get_selected_entities(select_owned,
+                                bulk_data.buckets(element_rank),
+                                local_elems);
+  }
 
   for(mesh::EntityVector::iterator elem_it = local_elems.begin(); elem_it != local_elems.end(); ++elem_it)
   {
@@ -205,14 +211,16 @@ bool stk::rebalance::rebalance_needed(mesh::BulkData &    bulk_data,
   return need_to_rebalance;
 }
 
-bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
-                          const mesh::Selector  & selector ,
-                          const VectorField * rebal_coord_ref ,
-                          const ScalarField * rebal_elem_weight_ref ,
-                          Partition & partition)
+bool stk::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
+                               const mesh::Selector  & selector ,
+                               const VectorField     * rebal_coord_ref ,
+                               const ScalarField     * rebal_elem_weight_ref ,
+                               Partition & partition,
+                               const stk::mesh::EntityRank rank)
 {
   stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(bulk_data);
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+  const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank) ? rank :
+                                             stk::mesh::fem::element_rank(fem);
 
   mesh::EntityVector rebal_elem_ptrs;
   mesh::EntityVector entities;
@@ -220,7 +228,7 @@ bool stk::rebalance::rebalance(mesh::BulkData        & bulk_data  ,
   mesh::get_selected_entities(selector,
                               bulk_data.buckets(element_rank),
                               entities);
-
+  
   for (mesh::EntityVector::iterator iA = entities.begin() ; iA != entities.end() ; ++iA ) {
     if(rebal_elem_weight_ref)
     {
