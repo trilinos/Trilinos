@@ -387,7 +387,6 @@ namespace Iovs {
           }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO imesh version
-          std::cerr << "nodal global value\n";
           // write_global_field(EX_NODAL, field, nb, data);
         }
       }
@@ -618,7 +617,6 @@ namespace Iovs {
           }
         } else if (role == Ioss::Field::REDUCTION) {
           // TODO replace with ITAPS
-          std::cerr << "elemental global value\n";
           // write_global_field(EX_ELEM_BLOCK, field, eb, data);
         }
       }
