@@ -212,9 +212,6 @@ class SaPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
 //TODO
 function [this] = SaPFactory(CoalesceFact,AggFact, diagonalView) //copy ctor
 function SetDiagonalView(this, diagonalView)
-function [z] = GetNeeds(this)
-function  AggInfo = BuildAggregates(FineLevel, ...
-function  [P] = MakeNoQRTentative(AggInfo,Amat,nullspace,OutputLevel)
 */
 
 }; //class SaPFactory
