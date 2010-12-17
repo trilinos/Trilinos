@@ -45,6 +45,8 @@ buildElementDescriptor(stk::mesh::EntityId elmtId,std::vector<stk::mesh::EntityI
 
 class STK_Interface {
 public:
+   STK_Interface();
+
    /** Default constructor
      */
    STK_Interface(unsigned dim);
@@ -285,6 +287,7 @@ public:
    const stk::mesh::EntityRank getEdgeRank() const { return stk::mesh::fem::edge_rank(*femPtr_); }
    const stk::mesh::EntityRank getNodeRank() const { return stk::mesh::fem::node_rank(*femPtr_); }
 
+   void initializeFromMetaData();
 
 public: // static operations
    static const std::string coordsString;

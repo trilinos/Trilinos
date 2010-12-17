@@ -25,7 +25,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
    using Teuchos::rcp;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
 
-   RCP<STK_Interface> mesh = rcp(new STK_Interface(2));
+   RCP<STK_Interface> mesh = rcp(new STK_Interface());
    RCP<stk::mesh::MetaData> metaData = mesh->getMetaData();
 
    // read in meta data
@@ -33,9 +33,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
    stk::io::util::MeshData meshData;
    stk::io::util::create_input_mesh("exodusii", fileName_, "", parallelMach,
                                     *metaData, meshData, false); 
-   // build spactial dimension and some topological meta data
-   unsigned spaceDim = metaData->get_field<VectorFieldType>("coordinates")->max_size(stk::mesh::Node);
-   // mesh->setDimension(spaceDim);
+   mesh->initializeFromMetaData();
 
    // build element blocks
    registerElementBlocks(*mesh);
@@ -44,11 +42,12 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
    // this calls commit on meta data
    mesh->initialize(parallelMach,false);
 
-   mesh->beginModification();
    RCP<stk::mesh::BulkData> bulkData = mesh->getBulkData();
+   mesh->beginModification();
    stk::io::util::populate_bulk_data(*bulkData, meshData, "exodusii");
-   // bulkData->modification_end();
    mesh->endModification();
+
+   mesh->buildSubcells();
    
    return mesh;
 }
@@ -70,6 +69,7 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh) const
 
    RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
    const stk::mesh::PartVector & parts = metaData->get_parts();
+   stk::mesh::EntityRank elementRank = mesh.getElementRank();
 
    stk::mesh::PartVector::const_iterator partItr;
    for(partItr=parts.begin();partItr!=parts.end();++partItr) {
@@ -77,7 +77,7 @@ void STK_ExodusReaderFactory::registerElementBlocks(STK_Interface & mesh) const
       const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
 
       // if an element part ==> this is element block
-      if(part->primary_entity_rank()==stk::mesh::Element) {
+      if(part->primary_entity_rank()==elementRank) {
          TEUCHOS_ASSERT(ct!=0);
          mesh.addElementBlock(part->name(),ct);
       }

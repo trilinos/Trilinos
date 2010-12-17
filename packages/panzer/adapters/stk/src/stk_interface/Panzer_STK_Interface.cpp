@@ -41,12 +41,21 @@ const std::string STK_Interface::coordsString = "coordinates";
 const std::string STK_Interface::nodesString = "nodes";
 const std::string STK_Interface::edgesString = "edges";
 
+STK_Interface::STK_Interface()
+   : dimension_(0), initialized_(false), currentLocalId_(0)
+{
+   metaData_ = rcp(new stk::mesh::MetaData());
+   femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_));
+}
+
 STK_Interface::STK_Interface(unsigned dim)
    : dimension_(dim), initialized_(false), currentLocalId_(0)
 {
    metaData_ = rcp(new stk::mesh::MetaData(stk::mesh::fem::entity_rank_names(dimension_)));
    femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
 
+   initializeFromMetaData();
+/*
    // declare coordinates and node parts
    coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
    processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
@@ -54,17 +63,8 @@ STK_Interface::STK_Interface(unsigned dim)
 
    nodesPart_        = &metaData_->declare_part(nodesString,getNodeRank());
    nodesPartVec_.push_back(nodesPart_);
-
-   // edgesPart_        = &metaData_->declare_part(edgesString,stk::mesh::Edge);
-   // edgesPartVec_.push_back(edgesPart_);
-}
-
-/*
-void STK_Interface::setDimension(unsigned dim)
-{
-   dimension_ = dim;
-}
 */
+}
 
 void STK_Interface::addSideset(const std::string & name)
 {
@@ -361,15 +361,9 @@ stk::mesh::EntityId STK_Interface::getEdgeId(stk::mesh::EntityId n0,stk::mesh::E
 
 void STK_Interface::buildSubcells()
 {
-   // const bool modifyState = isModifiable();
-   // if(not modifyState)
-   //    beginModification();
- 
+   std::cout << "building sub cells" << std::endl;
    stk::mesh::PartVector emptyPartVector;
    stk::mesh::create_adjacent_entities(*bulkData_,emptyPartVector);
-
-   // if(not modifyState)
-   //    endModification();
 }
 
 //! force the mesh to build the subcells of a particular rank
@@ -662,6 +656,19 @@ void STK_Interface::addElementBlock(const std::string & name,const CellTopologyD
    // add element block part and cell topology
    elementBlocks_.insert(std::make_pair(name,block));
    elementBlockCT_.insert(std::make_pair(name,ct));
+}
+
+void STK_Interface::initializeFromMetaData()
+{
+   dimension_ = femPtr_->get_spatial_dimension();   
+
+   // declare coordinates and node parts
+   coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
+   processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
+   localIdField_     = &metaData_->declare_field<LocalIdFieldType>("LOCAL_ID");
+
+   nodesPart_        = &metaData_->declare_part(nodesString,getNodeRank());
+   nodesPartVec_.push_back(nodesPart_);
 }
 
 }

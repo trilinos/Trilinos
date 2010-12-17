@@ -54,9 +54,10 @@ TEUCHOS_UNIT_TEST(tExodusReaderFactory, basic_test)
       out << "\"" << sidesets[i] << "\" ";
    out << std::endl;
 
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Element),8);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Edge),22);
-   TEST_EQUALITY(mesh->getEntityCounts(stk::mesh::Node),15);
+   TEST_EQUALITY(mesh->getSideRank(),mesh->getEdgeRank());
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getElementRank()),8);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getSideRank()),22);
+   TEST_EQUALITY(mesh->getEntityCounts(mesh->getNodeRank()),15);
 }
 
 }

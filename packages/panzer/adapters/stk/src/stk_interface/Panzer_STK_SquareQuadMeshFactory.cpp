@@ -52,7 +52,8 @@ void SquareQuadMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::P
    buildElements(parallelMach,mesh);
 
    // finish up the edges
-   mesh.buildSubcells(stk::mesh::Edge);
+   // mesh.buildSubcells(stk::mesh::Edge);
+   mesh.buildSubcells();
 
    // now that edges are built, sidets can be added
    addSideSets(mesh);

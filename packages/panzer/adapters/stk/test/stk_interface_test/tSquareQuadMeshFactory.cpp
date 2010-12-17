@@ -453,7 +453,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
             TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
             TEST_EQUALITY((int) side->relations().size(),3);
             TEST_EQUALITY(relations.size(),2);
-            TEST_EQUALITY(side->identifier(),mesh->getEdgeId(n0,n1));
+            // TEST_EQUALITY(side->identifier(),mesh->getEdgeId(n0,n1));
          }
          
       }
@@ -500,7 +500,7 @@ TEUCHOS_UNIT_TEST(tSquareQuadMeshFactory, side_elmt_access)
             TEST_EQUALITY(side->entity_rank(),mesh->getSideRank());
             TEST_EQUALITY((int) side->relations().size(),3);
             TEST_EQUALITY(relations.size(),2);
-            TEST_EQUALITY(side->identifier(),mesh->getEdgeId(n0,n1));
+            // TEST_EQUALITY(side->identifier(),mesh->getEdgeId(n0,n1));
          }
          
       }
