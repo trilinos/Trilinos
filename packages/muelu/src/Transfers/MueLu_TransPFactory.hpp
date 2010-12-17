@@ -3,12 +3,17 @@
 
 #include <iostream>
 #include "MueLu_OperatorFactory.hpp"
+#include "MueLu_MatrixFactory.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 
   /*!
     @class TransPFactory class.
     @brief Factory for building restriction operators.
+
+    This factory currently depends on an underlying matrix-matrix multiply with the identity
+    matrix to do the transpose.  This should probably be fixed at some point.
   */
 
   template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -20,7 +25,8 @@ namespace MueLu {
     inline friend std::ostream& operator<<(std::ostream& os, TransPFactory<AA,BB,CC,DD,EE> &factory);
 
   public:
-    //@{ Constructors/Destructors.
+    //! @name Constructors/Destructors.
+    //@{
 
     //! Constructor.
     TransPFactory() {
@@ -32,11 +38,28 @@ namespace MueLu {
     virtual ~TransPFactory() {}
     //@}
 
-    //@{ Build methods.
+    //! @name Build methods.
+    //@{
     bool Build(Level & fineLevel, Level & coarseLevel) {
-      Teuchos::OSTab tab(this->out_); MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Building a restriction operator" << std::endl; return true;
+      Teuchos::OSTab tab(this->out_);
+      MueLu_cout(Teuchos::VERB_HIGH) << "TransPFactory: Building a restriction operator" << std::endl;
+      Teuchos::ParameterList matrixList;
+      RCP<Operator> P = coarseLevel.GetP();
+      RCP<CrsOperator> I = MueLu::Gallery::CreateCrsMatrix<SC,LO,GO, Map, CrsOperator>("Identity",P->getRowMap(),matrixList); //FIXME should this be range map instead?
+      RCP<Operator> R = Utils::TwoMatrixMultiply(P,I,true);
+      coarseLevel.SetR(R);
+      return true;
     }
     //@}
+
+    //! @name Set methods.
+    //@{
+    void UsePtent(bool ToF) {
+      throw(Exceptions::NotImplemented("TransPFactory.UsePtent()")); //TODO
+    }
+    //@}
+
+
 
   }; //class TransPFactory
 

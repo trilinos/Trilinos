@@ -9,7 +9,7 @@ namespace MueLu {
   @class RAPFactory class.
   @brief Factory for building coarse matrices.
 */
-  template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class ScalarType, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
@@ -30,11 +30,16 @@ class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
     bool Build(Level &fineLevel, Level &coarseLevel) {
       Teuchos::OSTab tab(this->getOStream());
       MueLu_cout(Teuchos::VERB_HIGH) << "RAPFactory: Building a coarse operator" << std::endl;
-#ifdef CTHULHU_USE_EPETRA
-      //CTHULHU_RCP_DYNAMIC_CAST(Epetra_CrsMatrix, A, epA, "Problem casting A to Epetra_CrsMatrix");
+#ifdef CTHULHU_USE_EPETRA //FIXME this check goes away once Tpetra has MM multiply
       MueLu_cout(Teuchos::VERB_LOW) << "call the Epetra matrix-matrix multiply here" << std::endl;
+      RCP<Operator> P = coarseLevel.GetP();
+      RCP<Operator> A = fineLevel.GetA();
+      RCP<Operator> AP = Utils::TwoMatrixMultiply(A,P);
+      RCP<Operator> R = coarseLevel.GetR();
+      RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,AP);
+      coarseLevel.SetA(RAP);
 #else
-      MueLu_cout(Teuchos::VERB_LOW) << "Tpetra has no matrix-matrix multiply yet" << std::endl;
+      throw(Utils::NotImplemented("Tpetra has no matrix-matrix multiply yet"));
 #endif
 
       return true;
