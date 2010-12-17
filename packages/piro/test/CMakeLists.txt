@@ -48,10 +48,24 @@ IF (Piro_ENABLE_NOX)
     PASS_REGULAR_EXPRESSION "TEST PASSED"
   )
 
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    SecondOrderIntegrator
+    SOURCES 
+    Main_SecondOrderIntegrator.cpp
+    MockModelEval_B.cpp
+    MockModelEval_B.hpp
+    ObserveSolution_Epetra.hpp
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    ARGS -v
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+  )
+
   PACKAGE_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
     DEST_FILES   input_Solve_NOX_1.xml
                  input_Solve_LOCA_1.xml
                  input_Solve_Rythmos_1.xml
+                 input_Solve_VV.xml
           input_Analysis_Dakota.xml dak.in
           input_Analysis_MOOCHO.xml input_Analysis_OptiPack.xml 
           input_Solve_RythmosMatrixFree_Fails.xml

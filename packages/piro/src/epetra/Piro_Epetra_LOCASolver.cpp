@@ -53,6 +53,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
 
   string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  bool leanMatrixFree = piroParams->get("Lean Matrix Free",false);
 
   Teuchos::ParameterList& noxstratlsParams = noxParams.
         sublist("Direction").sublist("Newton").sublist("Stratimikos Linear Solver");
@@ -164,6 +165,9 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
                                        *currentSolution, linsys,
                                         shiftedLinSys, *pVector));
   grp->setDerivUtils(interface);
+
+  // Saves one resid calculation per solve, but not as safe
+  if (leanMatrixFree) grp->disableLinearResidualComputation(true);
   
   // Create the Solver convergence test
   Teuchos::ParameterList& statusParams = noxParams.sublist("Status Tests");

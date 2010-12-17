@@ -49,6 +49,7 @@ Piro::Epetra::NOXSolver::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroPara
   Teuchos::ParameterList& printParams = noxParams->sublist("Printing");
 
   string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+  bool leanMatrixFree = piroParams->get("Lean Matrix Free",false);
 
   Teuchos::ParameterList& noxstratlsParams = noxParams->
         sublist("Direction").sublist("Newton").sublist("Stratimikos Linear Solver");
@@ -129,6 +130,9 @@ Piro::Epetra::NOXSolver::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroPara
   // Build NOX group
   grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq,
                                            *currentSolution, linsys));
+
+  // Saves one resid calculation per solve, but not as safe
+  if (leanMatrixFree) grp->disableLinearResidualComputation(true);
 
   // Create the Solver convergence test
   Teuchos::ParameterList& statusParams = noxParams->sublist("Status Tests");
