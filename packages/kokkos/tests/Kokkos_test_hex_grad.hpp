@@ -10,7 +10,7 @@
 template< typename Scalar , class DeviceMap >
 KOKKOS_DEVICE_FUNCTION
 void kernel_hex_simple_fill(
-  Kokkos::MDArray<Scalar,DeviceMap> & coords, int ielem)
+  const Kokkos::MDArrayView<Scalar,DeviceMap> & coords, int ielem)
 {
     coords(0,0,ielem) = 0.;
     coords(1,0,ielem) = 0.;
@@ -50,8 +50,8 @@ void kernel_hex_simple_fill(
 template< typename Scalar , class DeviceMap >
 KOKKOS_DEVICE_FUNCTION
 void kernel_hex_grad(
-  Kokkos::MDArray<Scalar,DeviceMap> & coords, // (Space,Node,ParallelWork)
-  Kokkos::MDArray<Scalar,DeviceMap> & grad_op,// (Space,Node,ParallelWork)
+  const Kokkos::MDArrayView<Scalar,DeviceMap> & coords, // (Space,Node,ParallelWork)
+  const Kokkos::MDArrayView<Scalar,DeviceMap> & grad_op,// (Space,Node,ParallelWork)
   int ielem)
 {
   // Repeated re-use of nodal coordinates,

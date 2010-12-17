@@ -37,79 +37,78 @@
  *************************************************************************
  */
 
-#include <string>
-#include <stdexcept>
-#include <cstdlib>
+#include <map>
 #include <ostream>
-#include <Kokkos_CudaMappedArray.hpp>
+#include <Kokkos_HostDevice.hpp>
 
 namespace Kokkos {
-namespace {
 
-void device_free( void * pointer_on_device )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+class HostDeviceImpl {
+public:
+  std::map<void*,std::string> m_allocations ;
+
+  // Appropriate cached device information
+
+  HostDeviceImpl();
+};
+
+HostDeviceImpl::HostDeviceImpl()
+  : m_allocations()
 {
-  cudaFree( pointer_on_device );
+  // Appropriate device queries
+
 }
 
-void * device_allocate( int sizeof_value ,
-                        int chunk_count ,
-                        int work_count )
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+HostDevice & HostDevice::singleton()
 {
-  void * pointer_on_device = NULL ;
-
-  cudaMalloc( & pointer_on_device , sizeof_value * work_count * chunk_count );
-
-  return pointer_on_device ;
+  static HostDevice self ;
+  if ( self.m_impl == NULL ) { self.m_impl = new HostDeviceImpl(); }
+  return self ;
 }
 
+HostDevice::HostDevice() : m_impl( NULL ) {}
+
+void * HostDevice::allocate_memory( size_type member_size ,
+                                    size_type member_count ,
+                                    const std::string & label )
+{
+  void * ptr_on_device = NULL ;
+
+  ptr_on_device = calloc( member_size , member_count );
+
+  m_impl->m_allocations[ ptr_on_device ] = label ;
+
+  return ptr_on_device ;
 }
 
-CudaMap::CudaMap( CudaMap::size_type parallel_work_count )
-  : m_allocated_arrays()
-  , m_parallel_work_count( parallel_work_count )
-{}
-
-CudaMap::~CudaMap()
+void HostDevice::deallocate_memory( void * ptr_on_device )
 {
-  while ( ! m_allocated_arrays.empty() ) {
-    void * ptr = m_allocated_arrays.back().clear( m_allocated_arrays );
-    device_free( ptr );
+  free( ptr_on_device );
+
+  m_impl->m_allocations.erase( ptr_on_device );
+}
+
+void HostDevice::print_allocations( std::ostream & s ) const
+{
+  std::map<void*,std::string>::const_iterator i = m_impl->m_allocations.begin();
+  std::map<void*,std::string>::const_iterator end = m_impl->m_allocations.end();
+
+  for ( ; i != end ; ++i ) {
+    s << i->second << std::endl ;
   }
 }
 
-void CudaMap::deallocate( BaseMappedArray & array )
-{
-  // Clear all views and destroy the owned view
-  void * ptr = array.clear( m_allocated_arrays );
 
-  device_free( ptr );
-}
-
-void CudaMap::allocate( BaseMappedArray                 & array ,
-                        BaseMapInterface::size_type       sizeof_value ,
-                        BaseMapInterface::size_type       rank ,
-                        const BaseMapInterface::size_type * const dimension )
-{
-  array.require_not_allocated();
-
-  size_type dim[8] ;
-
-  size_type n = 1 ;
-
-  for ( size_type i = 0 ; i < rank - 1 ; ++i ) {
-    n *= ( dim[i] = dimension[i] );
-  }
-
-  dim[ rank - 1 ] = m_parallel_work_count ;
-
-  void * const pointer =
-    device_allocate( sizeof_value , n , m_parallel_work_count );
-
-  if ( pointer ) {
-    array.assign( m_allocated_arrays , this , pointer , rank , dim );
-  }
-}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 } // namespace Kokkos
+
 
 

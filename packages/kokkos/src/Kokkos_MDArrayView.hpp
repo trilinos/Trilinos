@@ -37,10 +37,13 @@
  *************************************************************************
  */
 
-#ifndef KOKKOS_MAPPEDARRAY_HPP
-#define KOKKOS_MAPPEDARRAY_HPP
+#ifndef KOKKOS_MDARRAYVIEW_HPP
+#define KOKKOS_MDARRAYVIEW_HPP
 
 namespace Kokkos {
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 /** \brief  Multidimensional array allocated and mapped
  *          onto a compute device.
@@ -57,17 +60,22 @@ namespace Kokkos {
  *  with respect to the type of the mapped array and thus achieve portability
  *  across compute devices.
  */
+
 template< typename ValueType , class DeviceMapType >
-class MDArray {
+class MDArrayView {
 public:
-  typedef ValueType                             value_type ;
-  typedef DeviceMapType                         device_map_type ;
-  typedef typename device_map_type::size_type   size_type ;
+  typedef DeviceMapType                          device_map_type ;
+  typedef typename device_map_type::device_type  device_type ;
+  typedef typename device_map_type::size_type    size_type ;
+  typedef ValueType                              value_type ;
 
   /*------------------------------------------------------------------*/
+  /** \brief  Query rank of the array */
+  size_type rank() const ;
+
   /** \brief  Query dimension of the given ordinate of the array */
   template < typename iType >
-  size_type dimension( const iType & ordinal ) const ;
+  size_type dimension( const iType & rank_ordinate ) const ;
 
   /*------------------------------------------------------------------*/
   /** \brief  Query value of a rank 8 array */
@@ -128,77 +136,33 @@ public:
 
   /*------------------------------------------------------------------*/
   /** \brief  Construct a NULL view */
-  MDArray();
+  MDArrayView();
 
   /** \brief  Construct a view of the array */
-  MDArray( const MDArray & rhs );
+  MDArrayView( const MDArrayView & rhs );
 
-  /** \brief  Assign a view of the array, the old view is discarded. */
-  MDArray & operator = ( const MDArray & rhs );
+  /** \brief  Assign to a view of the rhs array.
+   *          If the old view is the last view
+   *          then allocated memory is deallocated.
+   */
+  MDArrayView & operator = ( const MDArrayView & rhs );
   
-  /**  Destroy this view of the array, the memory is not deallocated. */
-  ~MDArray();
+  /**  \brief  Destroy this view of the array.
+   *           If the last view then allocated memory is deallocated.
+   */
+  ~MDArrayView();
 
-  /*------------------------------------------------------------------*/
-  /** \brief  Allocate a rank 8 array on device using the device array map */
-  template< typename iType0 , typename iType1 ,
-            typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 ,
-            typename iType6 >
-  void allocate( const iType0 & n0 , const iType1 & n1 ,
-                 const iType2 & n2 , const iType3 & n3 ,
-                 const iType4 & n4 , const iType5 & n5 ,
-                 const iType6 & n6 , device_map_type & map );
-
-  /** \brief  Allocate a rank 7 array on device using the device array map */
-  template< typename iType0 , typename iType1 ,
-            typename iType2 , typename iType3 ,
-            typename iType4 , typename iType5 >
-  void allocate( const iType0 & n0 , const iType1 & n1 ,
-                 const iType2 & n2 , const iType3 & n3 ,
-                 const iType4 & n4 , const iType5 & n5 ,
-                 device_map_type & map );
-
-  /** \brief  Allocate a rank 6 array on device using the device array map */
-  template< typename iType0 , typename iType1 ,
-            typename iType2 , typename iType3 ,
-            typename iType4 >
-  void allocate( const iType0 & n0 , const iType1 & n1 ,
-                 const iType2 & n2 , const iType3 & n3 ,
-                 const iType4 & n4 , device_map_type & map );
-
-  /** \brief  Allocate a rank 5 array on device using the device array map */
-  template< typename iType0 , typename iType1 ,
-            typename iType2 , typename iType3 >
-  void allocate( const iType0 & n0 , const iType1 & n1 ,
-                 const iType2 & n2 , const iType3 & n3 ,
-                 device_map_type & map );
-
-  /** \brief  Allocate a rank 4 array on device using the device array map */
-  template< typename iType0 , typename iType1 ,
-            typename iType2 >
-  void allocate( const iType0 & n0 , const iType1 & n1 ,
-                 const iType2 & n2 , device_map_type & map );
-
-  /** \brief  Allocate a rank 3 array on device using the device array map */
-  template< typename iType0 , typename iType1 >
-  void allocate( const iType0 & n0 , const iType1 & n1 ,
-                 device_map_type & map );
-
-  /** \brief  Allocate a rank 2 array on device using the device array map */
-  template< typename iType0 >
-  void allocate( const iType0 & n0 , device_map_type & map );
-
-  /** \brief  Allocate a rank 1 array on device using the device array map */
-  void allocate( device_map_type & map );
-
-  /** \brief  Deallocate an array, all views are set to NULL */
-  void deallocate();
-
+  /**  \brief  Destroy this view of the array.
+   *           If the last view then allocated memory is deallocated.
+   */
+  void clear_view();
 };
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 } // namespace Kokkos
 
-#endif /* KOKKOS_MAPPEDARRAY_HPP */
+#endif /* KOKKOS_MDARRAYVIEW_HPP */
 
 

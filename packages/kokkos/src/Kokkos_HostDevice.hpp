@@ -37,79 +37,72 @@
  *************************************************************************
  */
 
+#ifndef KOKKOS_HOSTDEVICE_HPP
+#define KOKKOS_HOSTDEVICE_HPP
+
 #include <string>
-#include <stdexcept>
-#include <cstdlib>
-#include <ostream>
-#include <Kokkos_HostMappedArray.hpp>
+#include <iosfwd>
+#include <Kokkos_MDArrayViewRawData.hpp>
+
+#undef  KOKKOS_DEVICE_FUNCTION
+#define KOKKOS_DEVICE_FUNCTION inline
+
+#undef  KOKKOS_DEVICE_AND_HOST_FUNCTION
+#define KOKKOS_DEVICE_AND_HOST_FUNCTION inline
 
 namespace Kokkos {
-namespace {
 
-void device_free( void * pointer_on_device )
-{
-  free( pointer_on_device );
-}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-void * device_allocate( int sizeof_value ,
-                        int chunk_count ,
-                        int work_count )
-{
-  void * pointer_on_device = NULL ;
+class HostDeviceImpl ;
 
-  pointer_on_device = calloc( work_count * chunk_count , sizeof_value );
+class HostDevice {
+public:
+  typedef size_t size_type ;
 
-  return pointer_on_device ;
-}
+  static HostDevice & singleton();
 
-}
+  template< typename ValueType >
+  void allocate( MDArrayViewRawData<ValueType,HostDevice> & array ,
+                 const std::string & label )
+    {
+      if ( array.m_rank ) {
+        size_type count = 1 ;
+        for ( size_type r = 0 ; r < array.m_rank ; ++r ) {
+          count *= array.m_dimension[r] ;
+        }
+        array.m_ptr_on_device = reinterpret_cast<ValueType*>(
+          allocate_memory( sizeof(ValueType) , count , label ) );
+      }
+    }
 
-HostMap::HostMap( BaseMapInterface::size_type parallel_work_count )
-  : m_allocated_arrays()
-  , m_parallel_work_count( parallel_work_count )
-{}
+  template< typename ValueType >
+  void deallocate( MDArrayViewRawData<ValueType,HostDevice> & array )
+    { deallocate_memory( array.m_ptr_on_device ); }
 
-HostMap::~HostMap()
-{
-  while ( ! m_allocated_arrays.empty() ) {
-    void * ptr = m_allocated_arrays.back().clear( m_allocated_arrays );
-    device_free( ptr );
-  }
-}
+  void print_allocations( std::ostream & ) const ;
 
-void HostMap::deallocate( BaseMappedArray & array )
-{
-  // Clear all views and destroy the owned view
-  void * ptr = array.clear( m_allocated_arrays );
+private:
 
-  device_free( ptr );
-}
+  void * allocate_memory( size_type member_size ,
+                          size_type member_count ,
+                          const std::string & label );
 
-void HostMap::allocate( BaseMappedArray                 & array ,
-                        BaseMapInterface::size_type       sizeof_value ,
-                        BaseMapInterface::size_type       rank ,
-                        const BaseMapInterface::size_type * const dimension )
-{
-  array.require_not_allocated();
+  void deallocate_memory( void * );
 
-  size_type dim[8] ;
+  HostDeviceImpl * m_impl ;
 
-  size_type n = 1 ;
+  HostDevice();
+  HostDevice( const HostDevice & );
+  HostDevice & operator = ( const HostDevice & );
+};
 
-  for ( size_type i = 0 ; i < rank - 1 ; ++i ) {
-    n *= ( dim[i] = dimension[i] );
-  }
-
-  dim[ rank - 1 ] = m_parallel_work_count ;
-
-  void * const pointer =
-    device_allocate( sizeof_value , n , m_parallel_work_count );
-
-  if ( pointer ) {
-    array.assign( m_allocated_arrays , this , pointer , rank , dim );
-  }
-}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 } // namespace Kokkos
+
+#endif /* KOKKOS_HOSTDEVICE_HPP */
 
 

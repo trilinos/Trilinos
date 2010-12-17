@@ -1,7 +1,7 @@
 
 #include <iostream>
 
-#include <Kokkos_CudaMappedArray.hpp>
+#include <Kokkos_CudaMDArrayView.hpp>
 
 #include <Kokkos_test_hex_grad.hpp>
 
@@ -17,7 +17,7 @@ inline __device__
 int work_begin() { return threadIdx.x + blockDim.x * blockIdx.x ; }
 
 __global__
-void global_hex_simple_fill( Kokkos::MDArray<float,array_map_type> coord )
+void global_hex_simple_fill( Kokkos::MDArrayView<float,array_map_type> coord )
 {
   const int stride = work_stride();
   const int nP = coord.dimension( coord.rank() - 1 );
@@ -28,8 +28,8 @@ void global_hex_simple_fill( Kokkos::MDArray<float,array_map_type> coord )
 }
 
 __global__
-void global_hex_grad( Kokkos::MDArray<float,array_map_type> coord ,
-                      Kokkos::MDArray<float,array_map_type> grad )
+void global_hex_grad( Kokkos::MDArrayView<float,array_map_type> coord ,
+                      Kokkos::MDArrayView<float,array_map_type> grad )
 {
   const int stride = work_stride();
   const int nP = coord.dimension( coord.rank() - 1 );
@@ -63,10 +63,10 @@ int main( int argc , char ** argv )
   array_map_type map( parallel_work_length );
   array_map_type map_2( parallel_work_length * 2 );
 
-  Kokkos::MDArray< float , array_map_type > coord , grad ;
+  Kokkos::MDArrayView< float , array_map_type > coord , grad ;
 
-  coord.allocate( 3 , 8 , map );
-  grad .allocate( 3 , 8 , map );
+  coord = map.create_mdarray<float>( 3 , 8 );
+  grad  = map.create_mdarray<float>( 3 , 8 );
 
   KOKKOS_RUN_1( global_hex_simple_fill , coord );
   KOKKOS_RUN_2( global_hex_grad , coord , grad );
