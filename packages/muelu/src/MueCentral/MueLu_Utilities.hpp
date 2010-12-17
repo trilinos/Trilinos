@@ -18,6 +18,13 @@ namespace MueLu {
   using Teuchos::rcp_dynamic_cast;
   using Cthulhu::EpetraCrsMatrix;
 
+/*!
+  @class Utils
+  @brief MueLu utility class.
+
+  This class provides a number of static helper methods.  Some are temporary and will eventually
+  go away, while others should be moved to Cthulhu.
+*/
   template <class ScalarType, 
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 

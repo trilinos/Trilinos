@@ -119,7 +119,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            }
          if (SmooFact != Teuchos::null) {
            Teuchos::RCP<Smoother> preSm, postSm;
-           SmooFact->Build(*(Levels_[i]) /*,MySpecs*/);
+           SmooFact->Build(Levels_[i], preSm, postSm);
            if (preSm != Teuchos::null) Levels_[i]->SetPreSmoother(preSm);
            if (postSm != Teuchos::null) Levels_[i]->SetPostSmoother(postSm);
          }
@@ -130,7 +130,17 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      /*! @brief Construct smoothers on all levels.
        TODO should return status
      */
-     void SetSmoothers() {Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::SetSmoothers()" << std::endl; }
+     void SetSmoothers(RCP<SmootherFactory> smooFact, LO startLevel=0, LO numDesiredLevels=-1) {
+       Teuchos::OSTab tab(out_);
+       MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::SetSmoothers()" << std::endl;
+       if (smooFact == Teuchos::null) {
+         //TODO need a real smoother!
+       }
+       if (numDesiredLevels == -1)
+         numDesiredLevels = Levels_.size()-startLevel+1;
+       //TODO FullPopulate should return boolean status
+       FullPopulate(Teuchos::null,Teuchos::null,smooFact,startLevel,numDesiredLevels);
+     } //SetSmoothers()
 
      /*!
        @brief Constructs components of the hierarchy.

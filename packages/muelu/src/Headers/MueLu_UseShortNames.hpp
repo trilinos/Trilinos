@@ -51,6 +51,18 @@ typedef MueLu::TransPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, Loca
 typedef MueLu::RAPFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>      RAPFactory;
 #endif
 
+#ifdef MUELU_SMOOTHERPROTOTYPE_SHORT
+typedef MueLu::SmootherPrototype<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherPrototype;
+#endif
+
+#ifdef MUELU_SMOOTHERBASE_SHORT
+typedef MueLu::SmootherBase<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>     SmootherBase;
+#endif
+
+#ifdef MUELU_SMOOTHERFACTORYBASE_SHORT
+typedef MueLu::SmootherFactoryBase<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherFactoryBase;
+#endif
+
 #ifdef MUELU_SMOOTHERFACTORY_SHORT
 typedef MueLu::SmootherFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> SmootherFactory;
 #endif

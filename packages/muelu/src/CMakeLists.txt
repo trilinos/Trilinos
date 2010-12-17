@@ -35,6 +35,9 @@ APPEND_SET(HEADERS
   Transfers/MueLu_SaPFactory.hpp
   Transfers/MueLu_TransPFactory.hpp
   Transfers/MueLu_TentativePFactory.hpp
+  Smoothers/MueLu_SmootherPrototype.hpp
+  Smoothers/MueLu_SmootherBase.hpp
+  Smoothers/MueLu_SmootherFactoryBase.hpp
   Smoothers/MueLu_SmootherFactory.hpp
   Smoothers/MueLu_Smoother.hpp
   Graph/MueLu_AggAlgorithm.hpp

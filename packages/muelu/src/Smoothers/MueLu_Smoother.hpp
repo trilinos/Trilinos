@@ -1,30 +1,71 @@
 #ifndef MUELU_SMOOTHER_HPP
 #define MUELU_SMOOTHER_HPP
 
-#include "Teuchos_VerboseObject.hpp"
+#include "MueLu_SmootherBase.hpp"
+#include "MueLu_SmootherPrototype.hpp"
 
 namespace MueLu {
 
+template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+class Level;
+
 /*!
-  @class Smoother class.
-  @brief Smoother class. Just a stub right now.
+  @class Smoother
+  @brief Smoother class. This is just a stub for a smoother.  It doesn't do any real computation.
 */
 
   template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class Smoother : public Teuchos::VerboseObject<Smoother<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > {
+  class Smoother : public SmootherBase<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>,
+                   public SmootherPrototype<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  {
 
 #include "MueLu_UseShortNames.hpp"
 
   private:
 
+    LO nIts_;
+
+  protected:
+    Teuchos::RCP<Teuchos::FancyOStream> out_;
+
   public:
 
     //! Constructor
-    Smoother() {std::cout << "Instantiating a new smoother" << std::endl;}
+    Smoother() : out_(this->getOStream()) {std::cout << "Instantiating a new smoother" << std::endl;}
 
     virtual ~Smoother() {}
 
-}; //class Smoother
+    void SetNIts(LO nIts) {
+      nIts_ = nIts;
+    }
+
+    LO GetNIts() {
+      return nIts_;
+    }
+
+    void CopyParameters(RCP<Smoother> source)
+    {
+      nIts_ = source.GetNIts();
+    }
+
+    void Setup(RCP<Level<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > level) {
+      Teuchos::OSTab tab(out_);
+      MueLu_cout(Teuchos::VERB_HIGH) << "Smoother::Setup()" << std::endl;
+      SmootherPrototype::IsSetup(true);
+    }
+
+    void Apply(RCP<MultiVector> x, RCP<MultiVector> const rhs, bool InitialGuessIsZero)
+    {
+      Teuchos::OSTab tab(out_);
+      MueLu_cout(Teuchos::VERB_HIGH) << "Smoother::Apply()" << std::endl;
+    }
+
+    void Print(std::string prefix) {
+      Teuchos::OSTab tab(out_);
+      MueLu_cout(Teuchos::VERB_HIGH) << "Smoother::Print()" << std::endl;
+    }
+
+  }; //class Smoother
 
 } //namespace MueLu
 
