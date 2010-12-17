@@ -28,7 +28,7 @@ cmake \
       -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpiCC" \
       -D CMAKE_C_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpicc" \
       -D CMAKE_Fortran_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpif77" \
-      -D CMAKE_CXX_FLAGS:STRING="-g -O0 -ansi -pedantic -ftrapv -Wall -Wno-long-long -Wno-strict-aliasing -DBOOST_NO_HASH" \
+      -D CMAKE_CXX_FLAGS:STRING="-g -O0 -ansi -pedantic -ftrapv -Wall -Wno-long-long -Wno-strict-aliasing -DBOOST_NO_HASH -DSKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS" \
       -D Trilinos_EXTRA_LINK_FLAGS:STRING="-L/usr/lib -lgfortran" \
       -D CMAKE_VERBOSE_MAKEFILE:BOOL=OFF \
       -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
