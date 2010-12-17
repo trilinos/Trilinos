@@ -1,7 +1,7 @@
 
 cuda_test.exe : \
 		Kokkos_test_hex_grad.hpp	\
-		Kokkos_test_mdarray_host.cpp	\
+		Kokkos_test_mdarray_cuda.cu	\
 		../src/Kokkos_MDArrayViewRawData.hpp	\
 		../src/Kokkos_CudaMDArrayView.hpp	\
 		../src/Kokkos_CudaMap.hpp	\
