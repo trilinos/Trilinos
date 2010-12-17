@@ -11,11 +11,13 @@ cd $HOME
 source $SCRIPT_DIR/bash_profile
 cd -
 
-export TDD_PARALLEL_LEVEL=2
 #export TDD_PARALLEL_LEVEL=1
 #export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
 #export TDD_CTEST_TEST_TYPE=Nightly
+
+export TDD_PARALLEL_LEVEL=1
 export TDD_CTEST_TEST_TYPE=Experimental
+
 time /usr/local/bin/python ../cron_driver.py
 
 echo
