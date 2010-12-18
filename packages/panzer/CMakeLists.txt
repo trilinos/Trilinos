@@ -32,6 +32,20 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
   "Build with Albany's IOSS code enabled."
   ON )
 
+
+## Explicit instatiation support
+#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
+#  PANZER_HAVE_EXPLICIT_INSTANTIATION
+#  "Build Panzer with explicit instantiation enabled."
+#  OFF )
+
+#ADD_OPTION(${PACKAGE_NAME}_EXPLICIT_INSTANTIATION_EVALUATION_TYPES
+#  "Set the explicit instantiation evaluation types."
+#  "panzer::Traits::Residual 2 panzer::Traits::Jacobian 1" )
+
+#FILE(WRITE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ${DEPS_XML} )
+
+
 #
 # C) Add the libraries, tests, and examples
 #
