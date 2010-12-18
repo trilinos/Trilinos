@@ -60,6 +60,8 @@ APPEND_SET(HEADERS
   Panzer_IntegrationValuesT.hpp
   Panzer_IntrepidBasisFactory.hpp
   Panzer_MaterialModelEntry.hpp
+  Panzer_ModelEvaluator.hpp
+  Panzer_ModelEvaluatorT.hpp
   Panzer_ModelFactory.hpp
   Panzer_ModelFactory_TemplateManager.hpp
   Panzer_PhysicsBlock.hpp
