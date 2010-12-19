@@ -55,15 +55,6 @@ STK_Interface::STK_Interface(unsigned dim)
    femPtr_ = Teuchos::rcp(new stk::mesh::DefaultFEM(*metaData_,dimension_));
 
    initializeFromMetaData();
-/*
-   // declare coordinates and node parts
-   coordinatesField_ = &metaData_->declare_field<VectorFieldType>(coordsString);
-   processorIdField_ = &metaData_->declare_field<ProcIdFieldType>("PROC_ID");
-   localIdField_     = &metaData_->declare_field<LocalIdFieldType>("LOCAL_ID");
-
-   nodesPart_        = &metaData_->declare_part(nodesString,getNodeRank());
-   nodesPartVec_.push_back(nodesPart_);
-*/
 }
 
 void STK_Interface::addSideset(const std::string & name)
@@ -345,6 +336,7 @@ stk::mesh::EntityId STK_Interface::getMaxEntityId(unsigned entityRank) const
    return maxEntityId_[entityRank];
 }
 
+/*
 stk::mesh::EntityId STK_Interface::getEdgeId(stk::mesh::EntityId n0,stk::mesh::EntityId n1) const
 {
    stk::mesh::EntityRank nodeRank = getNodeRank();
@@ -358,14 +350,18 @@ stk::mesh::EntityId STK_Interface::getEdgeId(stk::mesh::EntityId n0,stk::mesh::E
    // minus one to fix STK index starts at 1 restriction
    return nodeCount*(n0-1)+(n1-1) + 1;  
 }
+*/
 
 void STK_Interface::buildSubcells()
 {
-   std::cout << "building sub cells" << std::endl;
    stk::mesh::PartVector emptyPartVector;
    stk::mesh::create_adjacent_entities(*bulkData_,emptyPartVector);
+
+   buildEntityCounts();
+   buildMaxEntityIds();
 }
 
+/*
 //! force the mesh to build the subcells of a particular rank
 void STK_Interface::buildSubcells(unsigned subcellRank)
 {
@@ -395,7 +391,9 @@ void STK_Interface::buildSubcells(unsigned subcellRank)
    if(not modifyState)
       endModification();
 }
+*/
 
+/*
 void STK_Interface::addEdges_local(stk::mesh::Entity * cell)
 {
    // This function uses a two pass algorithm because
@@ -459,6 +457,7 @@ void STK_Interface::addEdges_local(stk::mesh::Entity * cell)
          bulkData_->declare_relation(*cell,*edgeIter->second,edgeIter->first);
    }
 }
+*/
 
 const double * STK_Interface::getNodeCoordinates(stk::mesh::EntityId nodeId) const
 {
@@ -555,6 +554,7 @@ void STK_Interface::getSidesetNames(std::vector<std::string> & names) const
       names.push_back(sideItr->first);
 }
 
+/*
 stk::mesh::Entity * STK_Interface::addEdge(stk::mesh::Entity * n0,stk::mesh::Entity * n1, stk::mesh::EntityId edgeId)
 {
     stk::mesh::Entity * edge = bulkData_->get_entity(getSideRank(),edgeId);
@@ -573,6 +573,7 @@ stk::mesh::Entity * STK_Interface::addEdge(stk::mesh::Entity * n0,stk::mesh::Ent
              
     return edge;
 }
+*/
 
 std::size_t STK_Interface::elementLocalId(stk::mesh::Entity * elmt) const
 {

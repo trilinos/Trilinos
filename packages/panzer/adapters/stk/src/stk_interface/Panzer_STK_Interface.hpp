@@ -220,12 +220,12 @@ public:
    void buildSubcells();
 
    //! force the mesh to build the subcells of a particular rank
-   void buildSubcells(unsigned subcellRank);
+   // void buildSubcells(unsigned subcellRank);
 
    /** Use a formula to determine the edge ID.  This formula is kind of bad
      * and should be viewed as a short term fix.
      */
-   stk::mesh::EntityId getEdgeId(stk::mesh::EntityId n0,stk::mesh::EntityId n1) const;
+   // stk::mesh::EntityId getEdgeId(stk::mesh::EntityId n0,stk::mesh::EntityId n1) const;
 
    /** Get an elements local index
      */
@@ -306,7 +306,7 @@ protected:
 
    /** Add an edge and its relations to this cell
      */
-   void addEdges_local(stk::mesh::Entity * cell);
+   // void addEdges_local(stk::mesh::Entity * cell);
 
    /** Add an edge with a given identifier to connect two nodes. If the edge
      * is already in the mesh then the entity is simply returned.
@@ -315,7 +315,7 @@ protected:
      * \param[in] n1 Node defining edge
      * \param[in] edgeId Global identifier for the edge
      */
-   stk::mesh::Entity * addEdge(stk::mesh::Entity * n0,stk::mesh::Entity * n1, stk::mesh::EntityId edgeId);
+   // stk::mesh::Entity * addEdge(stk::mesh::Entity * n0,stk::mesh::Entity * n1, stk::mesh::EntityId edgeId);
 
    typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
@@ -410,7 +410,6 @@ void STK_Interface::getElementVertices(std::vector<std::size_t> & localElementId
    const std::vector<stk::mesh::Entity*> & elements = *(this->getElementsOrderedByLID());
 
    // get *master* cell toplogy...(belongs to first element)
-   // TEUCHOS_ASSERT(stk::mesh::fem::get_cell_topology(*elements[localElementIds[0]])!=0)
    unsigned masterVertexCount 
       = stk::mesh::fem::get_cell_topology(*elements[localElementIds[0]]).getCellTopologyData()->vertex_count;
 
