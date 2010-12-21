@@ -10,8 +10,14 @@
 #define stk_mesh_BoundaryAnalysis_hpp
 
 #include <vector>
+
 #include <stk_mesh/base/Types.hpp>
+
+#include <stk_mesh/fem/FEMInterface.hpp>
+
 #include <stk_util/util/NamedPair.hpp>
+
+struct CellTopologyData;
 
 namespace stk {
 namespace mesh {
@@ -42,10 +48,22 @@ typedef std::vector<EntitySideComponent> EntitySideComponentVector;
  * A boundary will contain the entities "touching" the "outside" of the
  * closure.
  */
-void boundary_analysis(const BulkData& bulk_data,
-                       const std::vector< Entity *> & entities_closure,
+void boundary_analysis(const BulkData & bulk_data,
+                       const EntityVector & entities_closure,
                        EntityRank closure_rank,
                        EntitySideVector& boundary);
+
+/**
+ * Given an entity, subcell_rank, and subcell_id, return the nodes
+ * that make up the subcell. The polarity of the returned nodes will
+ * depend on the use_reverse_polarity_argument. The topology of the
+ * subcell will be returned as well.
+ */
+const CellTopologyData * get_subcell_nodes(const Entity & entity ,
+                                           EntityRank subcell_rank ,
+                                           unsigned subcell_identifier ,
+                                           EntityVector & subcell_nodes,
+                                           bool use_reverse_polarity = true);
 
 /** \brief  Get the entities adjacent to the input entity.
  *
@@ -60,11 +78,11 @@ void boundary_analysis(const BulkData& bulk_data,
  *     with respect to the adjacent entity.
  */
 void get_adjacent_entities( const Entity & entity ,
-                            unsigned subcell_rank ,
+                            EntityRank subcell_rank ,
                             unsigned subcell_identifier ,
-                            std::vector< EntitySideComponent > & adjacent_entities );
-
-
+                            std::vector< EntitySideComponent > & adjacent_entities,
+                            bool use_reverse_polarity = true,
+                            EntityRank adjacent_entities_rank = fem::INVALID_RANK);
 }
 }
 #endif

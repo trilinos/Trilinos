@@ -1,10 +1,8 @@
-
 #include <map>
 #include <set>
 #include <algorithm>
 
 #include <stk_mesh/base/Types.hpp>
-
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -13,10 +11,8 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Relation.hpp>
 
-
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-
 #include <stk_mesh/fem/SkinMesh.hpp>
 
 #include <stk_util/parallel/ParallelComm.hpp>
