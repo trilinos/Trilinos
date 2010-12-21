@@ -1307,8 +1307,6 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
 
 //==============================================================================
 int Epetra_CrsGraph::OptimizeStorage() {
-  int i;
-  int j;
   int NumIndices;
   const int numMyBlockRows = NumMyBlockRows();
 
@@ -1317,7 +1315,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
   if (!Filled()) EPETRA_CHK_ERR(-1); // Cannot optimize storage before calling FillComplete()
 
   bool Contiguous = true; // Assume contiguous is true
-  for(i = 1; i < numMyBlockRows; i++) {
+  for(int i = 1; i < numMyBlockRows; i++) {
     NumIndices = CrsGraphData_->NumIndicesPerRow_[i-1];
     int NumAllocateIndices = CrsGraphData_->NumAllocatedIndicesPerRow_[i-1];
 
@@ -1343,72 +1341,69 @@ int Epetra_CrsGraph::OptimizeStorage() {
   // This next step constructs the scan sum of the number of indices per row.  Note that the
   // storage associated with NumIndicesPerRow is used by IndexOffset, so we have to be
   // careful with this sum operation
-  int * indices = CrsGraphData_->NumIndicesPerRow_.Values();
-  int curNumIndices = indices[0];
-  indices[0] = 0;
-  for (i=0; i<numMyBlockRows; ++i) {
-    int nextNumIndices = indices[i+1];
-    indices[i+1] = indices[i]+curNumIndices;
+  int * NumIndicesPerRow = CrsGraphData_->NumIndicesPerRow_.Values();
+  int curNumIndices = NumIndicesPerRow[0];
+  NumIndicesPerRow[0] = 0;
+  for (int i=0; i<numMyBlockRows; ++i) {
+    int nextNumIndices = NumIndicesPerRow[i+1];
+    NumIndicesPerRow[i+1] = NumIndicesPerRow[i]+curNumIndices;
     curNumIndices = nextNumIndices;
   }
 
   if(!Contiguous) { // Must pack indices if not already contiguous
 
     // Allocate one big integer array for all index values
-    if (!(CrsGraphData_->StaticProfile_)) { // If static profile, All_Indices_ is already allocated, only need to pack data
+    if (!(StaticProfile())) { // If static profile, All_Indices_ is already allocated, only need to pack data
       int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
-      if(errorcode != 0) 
-	throw ReportError("Error with All_Indices_ allocation.", -99);
+      if(errorcode != 0) throw ReportError("Error with All_Indices_ allocation.", -99);
     }
-    
-    // Pack indices into All_Indices_
-    
+      // Pack indices into All_Indices_
+
     int* All_Indices = CrsGraphData_->All_Indices_.Values();
     int * IndexOffset = CrsGraphData_->IndexOffset_.Values();
     int ** Indices = CrsGraphData_->Indices_;
-    if (!StaticProfile()) {
+		
+    if (!(StaticProfile())) {
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for default(none) shared(numMyBlockRows,IndexOffset,All_Indices,Indices) \
-                         private(i,j)
-#endif
-      for(i = 0; i < numMyBlockRows; i++) {
+#pragma omp parallel for default(none) shared(IndexOffset,All_Indices,Indices)
+#endif   
+      for(int i = 0; i < numMyBlockRows; i++) {
         int curNumIndices = IndexOffset[i+1] - IndexOffset[i];
         int* ColIndices = Indices[i];
-        int* newColIndices = All_Indices+IndexOffset[i];
-	for(j = 0; j < curNumIndices; j++) 
-	  newColIndices[j] = ColIndices[j];
+        int *newColIndices = All_Indices+IndexOffset[i];
+        for(int j = 0; j < curNumIndices; j++) newColIndices[j] = ColIndices[j];
       }
-      for(i = 0; i < numMyBlockRows; i++) {
-        if (Indices[i]!=0) delete [] Indices[i];
-      }
-    }
-  else { // Static profile, so we can't thread the copy to improve locality
-      int * tmp = All_Indices;
-      for(i = 0; i < numMyBlockRows; i++) {
-        int curNumIndices = IndexOffset[i+1] - IndexOffset[i];
-        int* ColIndices = Indices[i];
-        if (tmp!=ColIndices) { // No need to copy if pointing to same space
-	  for(j = 0; j < curNumIndices; j++) 
-	    tmp[j] = ColIndices[j];
+      for(int i = 0; i < numMyBlockRows; i++) {
+        if (Indices[i]!=0) {
+          CrsGraphData_->SortedEntries_[i].entries_.clear();
+          Indices[i] = 0;
         }
-        CrsGraphData_->Indices_[i] = 0;
-        tmp += curNumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
-      }
-      if (!(CrsGraphData_->StaticProfile_) && ColIndices!=0)
-        CrsGraphData_->SortedEntries_[i].entries_.clear();
-      CrsGraphData_->Indices_[i] = 0;
-      tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
-    }
+     }
+   } // End of contiguous non-static section	 
+   else {
+
+     for(int i = 0; i < numMyBlockRows; i++) {
+       int curNumIndices = IndexOffset[i+1] - IndexOffset[i];
+       int* ColIndices = Indices[i];
+       int *newColIndices = All_Indices+IndexOffset[i];
+       if (ColIndices!=newColIndices) // No need to copy if pointing to same space
+       for(int j = 0; j < curNumIndices; j++) newColIndices[j] = ColIndices[j];
+       Indices[i] = 0;
+     }
+   } // End of Contiguous static section
   } // End of !Contiguous section
   else {
     //if contiguous, set All_Indices_ from CrsGraphData_->Indices_[0].
-    if (numMyBlockRows > 0 && !(CrsGraphData_->StaticProfile_)) {
-      int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
-      if(errorcode != 0) 
-	throw ReportError("Error with All_Indices_ allocation.", -99);
+    const int numMyNonzeros = NumMyNonzeros();
+    if (numMyBlockRows > 0 && !(StaticProfile())) {
+      int errorcode = CrsGraphData_->All_Indices_.Size(numMyNonzeros);
+      if(errorcode != 0)  throw ReportError("Error with All_Indices_ allocation.", -99);
       int* all_indices_values = CrsGraphData_->All_Indices_.Values();
       int* indices_values = CrsGraphData_->Indices_[0];
-      for(int ii=0; ii<CrsGraphData_->NumMyNonzeros_; ++ii) {
+#ifdef Epetra_HAVE_OMP
+#pragma omp parallel for default(none) shared(all_indices_values,indices_values)
+#endif   
+      for(int ii=0; ii<numMyNonzeros; ++ii) {
         all_indices_values[ii] = indices_values[ii];
       }
     }
