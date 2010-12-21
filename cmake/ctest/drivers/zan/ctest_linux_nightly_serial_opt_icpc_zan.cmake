@@ -13,7 +13,6 @@ SET(CTEST_TEST_TYPE Experimental)
 #SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos)
 
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_Fortran:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   )

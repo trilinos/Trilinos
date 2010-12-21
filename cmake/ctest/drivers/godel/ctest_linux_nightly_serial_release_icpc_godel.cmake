@@ -13,7 +13,6 @@ SET(BUILD_DIR_NAME SERIAL_RELEASE_ICPC)
 SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Tpetra Thyra OptiPack Stratimikos Phalanx Rythmos MOOCHO)
 
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   )
