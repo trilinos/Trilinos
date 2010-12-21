@@ -6,8 +6,8 @@
 *
 */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 
 #ifndef MM_IO_H
 #define MM_IO_H
