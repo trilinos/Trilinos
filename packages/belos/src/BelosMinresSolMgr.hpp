@@ -431,12 +431,6 @@ namespace Belos {
 		 "implementation of MINRES only accepts a block size of 1, "
 		 "since it can only solve for 1 right-hand side at a time.",
 		 rcp (new EnhancedNumberValidator< int > (1, 1)));  // [1,1] is inclusive range
-	// This parameter doesn't make sense, since the current
-	// implementation of MINRES only accepts one right-hand side.
-	//
-	// pl->set("Adaptive Block Size", adaptiveBlockSize_default_,
-	// 	      "Whether the solver manager should adapt to the block size\n"
-	// 	      "based on the number of right-hand sides to solve.");
 	pl->set ("Verbosity", (int) Belos::Errors,
 		 "The type(s) of solver information that should "
 		 "be written to the output stream.");
@@ -450,12 +444,6 @@ namespace Belos {
 	pl->set ("Output Stream", rcp(&std::cout, false),
 		 "A reference-counted pointer to the output stream where all "
 		 "solver output is sent.  The output stream defaults to stdout.");
-	// This parameter doesn't make sense, since the current
-	// implementation of MINRES only accepts one right-hand side.
-	//
-	// pl->set("Show Maximum Residual Norm Only", showMaxResNormOnly_default_,
-	// 	      "When convergence information is printed, only show the maximum "
-	// 	      "relative residual norm when the block size is greater than one.");
 	pl->set ("Timer Label", std::string("Belos"),
 		 "The string to use as a prefix for the timer labels.");
 	validPL = pl;
@@ -471,9 +459,6 @@ namespace Belos {
     numIters_ (0),
     parametersSet_ (false)
   {
-    using Teuchos::RCP;
-    using Teuchos::ParameterList;
-
     setParameters (defaultParameters());
   }
 
@@ -488,8 +473,12 @@ namespace Belos {
     numIters_ (0),
     parametersSet_ (false)
   {
-    validateProblem (problem_);
-    setParameters (params);
+    TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+
+    // If the parameter list pointer is null, then set the current parameters to the default parameter list.
+    if ( !is_null(params) ) {
+      setParameters( params );  
+    }
   }
 
   template<class ScalarType, class MV, class OP>
@@ -712,6 +701,10 @@ namespace Belos {
 			"problem to the solver manager's constructor, or call "
 			"setProblem() with a non-null linear problem, before "
 			"calling solve()." );
+
+    // Reset the status test for this solve.  
+    outputTest_->reset();
+
     // The linear problem has this many right-hand sides to solve.
     // MINRES can solve one at a time, so we solve for each right-hand
     // side in succession.
@@ -720,12 +713,13 @@ namespace Belos {
     // Create MINRES iteration object.  Pass along the solver
     // manager's parameters, which have already been validated.
     RCP< MinresIteration< ScalarType, MV, OP > > minres_iter =
-      rcp (new MinresIter< ScalarType, MV, OP > (problem_, printer_, sTest_, *params_));
+      rcp (new MinresIter< ScalarType, MV, OP > (problem_, printer_, outputTest_, *params_));
 
     // The index/indices of the right-hand sides for which MINRES did
     // _not_ converge.  Hopefully this is empty after the for loop below!
     // If it is not empty, at least one right-hand side did not converge.
     std::vector<int> notConverged;
+    std::vector<int> currentIndices(1);
 
     numIters_ = 0;
 
@@ -736,12 +730,9 @@ namespace Belos {
 	// being solved.  MINRES only knows how to solve linear problems
 	// with one right-hand side, so we only include one index, which
 	// is the index of the current right-hand side.
-	std::vector<int> currentIndices (1);
 	currentIndices[0] = currentRHS;
 	problem_->setLSIndex (currentIndices);
 
-	// Reset the status test.  
-	outputTest_->reset();
 	// Reset the number of iterations.
 	minres_iter->resetNumIters();
 	// Reset the number of calls that the status test output knows about.
@@ -751,54 +742,53 @@ namespace Belos {
 
 	// Get the residual vector for the current linear system
 	// (i.e., for the current right-hand side).
-	//
-	// FIXME (mfh 03 Dec 2010) WHY IS THIS A NON-CONST VIEW???
-	// WHY THE CONST CAST???  Those come straight from
-	// Belos::BlockCGSolMgr.
-	//
-	// FIXME (mfh 06 Dec 2010) Fix the above problem by making
-	// minres_iter->iterate() do this work -- instead of working
-	// with the residual directly, it should use LinearProblem's
-	// updateSolution() and computeCurr(Prec)ResVec() methods.
+	
 	newstate.Y = MVT::CloneViewNonConst (*(Teuchos::rcp_const_cast< MV > (problem_->getInitResVec())), currentIndices);
 	minres_iter->initializeMinres (newstate);
 
 	// Attempt to solve for the solution corresponding to the
 	// current right-hand side.
-	try {
-	  minres_iter->iterate();
+	while(1) {
+          try {
+	    minres_iter->iterate();
 
-	  // First check for convergence
-	  if (convTest_->getStatus() != Passed) 
-	    {
+            // First check for convergence
+	    if (convTest_->getStatus() == Passed) {
+	      break;
+	    }
+            // Now check for max # of iterations
+            else if (maxIterTest_->getStatus() == Passed) {
 	      // This right-hand side didn't converge!
 	      notConverged.push_back (currentRHS);
-	    }
-	  // Now check for max # of iterations
-	  if (maxIterTest_->getStatus() != Passed)
-	    {
+              break;
+            } else {
 	      // If we get here, we returned from iterate(), but none of
 	      // our status tests Passed.  Something is wrong, and it is
 	      // probably our fault.
 	      TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Belos::MinresSolMgr::solve(): iterations neither"
-				 " converged, nor reached the maximum number of it"
-				 "erations " << maxIters_ << ".  That means someth"
-				 "ing went wrong.");
-	    }
-	} catch (const std::exception &e) {
-	  printer_->stream(Errors) 
-	    << "Error! Caught (some subclass of) std::exception in "
-	    << "MinresSolMgr::iterate() at iteration "
-	    << minres_iter->getNumIters() << std::endl
-	    << e.what() << std::endl;
-	  throw e;
-	}
-
-	// Inform the linear problem that we are finished with the
-	// current right-hand side.  It may or may not have converged,
-	// but we don't try again if the first time didn't work.
-	problem_->setCurrLS();
+                               "Belos::MinresSolMgr::solve(): iterations neither"
+                               " converged, nor reached the maximum number of "
+                               "iterations " << maxIters_ << ".  That means someth"
+                               "ing went wrong.");
+	      }
+	  } catch (const std::exception &e) {
+	    printer_->stream(Errors) 
+	      << "Error! Caught std::exception in "
+	      << "MinresIter::iterate() at iteration "
+	      << minres_iter->getNumIters() << std::endl
+	      << e.what() << std::endl;
+	    throw e;
+	  }
+        }
+	
+        // Inform the linear problem that we are finished with the
+        // current right-hand side.  It may or may not have converged,
+        // but we don't try again if the first time didn't work.
+        problem_->setCurrLS();
+    
+        // Get iteration information for this solve: total number of
+        // iterations for all right-hand sides.
+        numIters_ += maxIterTest_->getNumIters();
       }
     
     // Print final summary of the solution process
@@ -808,10 +798,6 @@ namespace Belos {
     // Print timing information
     Teuchos::TimeMonitor::summarize (printer_->stream (TimingDetails));
 #endif
- 
-    // Get iteration information for this solve: total number of
-    // iterations for all right-hand sides.
-    numIters_ += maxIterTest_->getNumIters();
  
     if (notConverged.size() > 0)
       return Unconverged;

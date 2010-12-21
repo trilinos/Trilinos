@@ -407,10 +407,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     // Set up y and v for the first Lanczos vector v_1.
     // y  =  beta1_ P' v1,  where  P = C**(-1).
     // v is really P' v1.
-    Teuchos::RCP<const MV> rhsMV = lp_->getRHS();
-    *Y_ =  *rhsMV;
-    *R2_ = *rhsMV;
-    *R1_ = *rhsMV;
+    MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *R2_ );
+    MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *R1_ );
 
     // Initialize the W's to 0.
     MVT::MvInit ( *W_ );
@@ -418,12 +416,18 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     // MvInit ( *W1_ ); // Not necessary: Will be set in the MINRES loop.
 
     if ( lp_->getLeftPrec() != Teuchos::null ) {
-      lp_->applyLeftPrec( *rhsMV, *Y_ );
+      lp_->applyLeftPrec( *newstate.Y, *Y_ );
+    } 
+    else {
+      if (newstate.Y != Y_) {
+        // copy over the initial residual (unpreconditioned).
+        MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *Y_ );
+      }
     }
 
     // beta1_ = b'*y;
     beta1_ = Teuchos::SerialDenseMatrix<int,ScalarType>( 1, 1 );
-    MVT::MvTransMv( one, *rhsMV, *Y_, beta1_ );
+    MVT::MvTransMv( one, *newstate.Y, *Y_, beta1_ );
 
     TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < zero,
                         std::invalid_argument,
@@ -433,7 +437,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     {
         // X = 0
         Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
-        MVT::MvInit( *cur_soln_vec, zero );
+        MVT::MvInit( *cur_soln_vec );
     }
 
     beta1_(0,0) = SCT::squareroot( beta1_(0,0) );
@@ -481,8 +485,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     // Allocate workspace.
     Teuchos::RCP<MV> V    = MVT::Clone( *Y_, 1 );
-    Teuchos::RCP<MV> tmpY = MVT::Clone( *Y_, 1 );
-    Teuchos::RCP<MV> tmpW = MVT::Clone( *Y_, 1 );
+    Teuchos::RCP<MV> tmpY, tmpW;  // Not allocated, just used to transfer ownership.
 
     // Get the current solution vector.
     Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
@@ -495,8 +498,6 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
-    // TODO Replace this status test by something Belos-flavored.
-    //while ( phibar > 1.0e-10 ) { // phibar = residual norm
     while (stest_->checkStatus(this) != Passed) {
 
       // Increment the iteration
@@ -524,7 +525,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
       // r1 = r2;
       // r2 = y;
-      *R1_ = *Y_;
+      MVT::MvAddMv( one, *Y_, zero, *Y_, *R1_ );
       tmpY = R1_;
       R1_ = R2_;
       R2_ = Y_;
@@ -575,7 +576,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
       //  w1 = w2;
       //  w2 = w;
-      *W1_ = *W_;
+      MVT::MvAddMv( one, *W_, zero, *W_, *W1_ );
       tmpW = W1_;
       W1_ = W2_;
       W2_ = W_;
