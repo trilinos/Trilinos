@@ -129,7 +129,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
         throw(Exceptions::RuntimeError("Bad level"));
       
       if (PreSmootherPrototype_ != Teuchos::null) {
-        preSmoo = rcp(new SmootherPrototype(PreSmootherPrototype_));
+        preSmoo = PreSmootherPrototype_->Copy();
         //TODO if outputlevel high enough
         //TODO preSmoo.Print();
         preSmoo.Setup(level);
@@ -138,7 +138,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
       // Is post-smoother of the same type as pre-smoother ?
       if (PostSmootherPrototype_ != Teuchos::null) {
         if (PreSmootherPrototype_ != Teuchos::null &&
-            PreSmootherPrototype_.GetType() == PostSmootherPrototype_.GetType())
+            PreSmootherPrototype_->GetType() == PostSmootherPrototype_.GetType())
           // YES: post-smoother == pre-smoother 
           // => copy the pre-smoother to avoid the setup phase of the post-smoother.
           postSmoo = preSmoo.Copy();

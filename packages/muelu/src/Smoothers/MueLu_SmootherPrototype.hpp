@@ -48,6 +48,8 @@ class SmootherPrototype : public Needs {
 
     virtual void Setup(RCP<Level<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >) = 0;
 
+    virtual RCP<SmootherPrototype> Copy() = 0;
+
     //@}
 
     //! @name Get/Set methods.
