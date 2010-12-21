@@ -110,11 +110,11 @@ int Zoltan_Preprocess_Graph(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (zz->Debug_Level > 0 && zz->Debug_Proc == zz->Proc){
-    printf("Third party library index type is %zd-byte integer\n",sizeof(indextype));
+    printf("Third party library index type is %ld-byte integer\n",sizeof(indextype));
 #ifdef TPL_INTEGRAL_WEIGHT
-    printf("Third party library weight type is %zd-byte integer\n",sizeof(weighttype));
+    printf("Third party library weight type is %ld-byte integer\n",sizeof(weighttype));
 #else
-    printf("Third party library weight type is %zd-byte floating point value\n",sizeof(weighttype));
+    printf("Third party library weight type is %ld-byte floating point value\n",sizeof(weighttype));
 #endif    
 
 #if __parmetis__ + __metis__ + __ptscotch__ + __scotch__ > 1

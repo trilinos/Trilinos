@@ -814,7 +814,7 @@ ELEM_INFO *elem;
   MPI_Reduce(&tmp, &total_vertices, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (mesh->proc == 0){
-    printf("Dynamic graph factor %0.4f, " ZOLTAN_ID_SPEC " vertices, " ZOLTAN_ID_SPEC " blanked (%0.2lf%%)\n",
+    printf("Dynamic graph factor %0.4f, " ZOLTAN_ID_SPEC " vertices, " ZOLTAN_ID_SPEC " blanked (%0.2f%%)\n",
             blank_factor, total_vertices, mesh->global_blank_count,
             ((double)mesh->global_blank_count*100.0/total_vertices));
   }

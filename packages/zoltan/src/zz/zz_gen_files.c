@@ -328,7 +328,7 @@ int gen_geom, int gen_graph, int gen_hg)
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
       fprintf(fp, "%% First line: #vertices #edges weight_flag\n");
-      fprintf(fp, "%zd %zd %1d%1d%1d", glob_nvtxs, glob_edges, 
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC " %1d%1d%1d", glob_nvtxs, glob_edges, 
         print_vtx_num, (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
       if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
         fprintf(fp, " %d %d", zz->Obj_Weight_Dim, zz->Edge_Weight_Dim);
@@ -340,7 +340,7 @@ int gen_geom, int gen_graph, int gen_hg)
     for (i=0; i<num_obj; i++){
       /* Print vertex number at beginning of line? */
       if (print_vtx_num){
-        fprintf(fp, "%zd ", vtxdist[zz->Proc]+base_index+i);
+        fprintf(fp, ZOLTAN_GNO_SPEC " ", vtxdist[zz->Proc]+base_index+i);
       }
       /* First print object (vertex) weight, if any. */
       for (k=0; k<zz->Obj_Weight_Dim; k++)
@@ -348,7 +348,7 @@ int gen_geom, int gen_graph, int gen_hg)
       if (gen_graph){
         /* If graph, then print neighbor list */
         for (j=xadj[i]; j<xadj[i+1]; j++){
-          fprintf(fp, "%zd ", adjncy[j]+base_index);
+          fprintf(fp, ZOLTAN_GNO_SPEC " ", adjncy[j]+base_index);
           /* Also print edge weight, if any. */
           for (k=0; k<zz->Edge_Weight_Dim; k++)
             fprintf(fp, "%f ", ewgts[j*(zz->Edge_Weight_Dim)+k]);
@@ -409,7 +409,8 @@ int gen_geom, int gen_graph, int gen_hg)
       fprintf(fp, 
         "%%#rows #columns #pins #procs dim-vertex-weights "
         "#edge-weight-entries dim-edge-weights\n%%\n");
-      fprintf(fp, "%zd %zd %zd %d %d %zd %d\n", 
+      fprintf(fp, ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC " " ZOLTAN_GNO_SPEC 
+                  " %d %d " ZOLTAN_GNO_SPEC " %d\n", 
         glob_hedges, glob_nvtxs, glob_pins, 
         zz->Num_Proc,
         zz->Obj_Weight_Dim, glob_ewgts, zz->Edge_Weight_Dim);

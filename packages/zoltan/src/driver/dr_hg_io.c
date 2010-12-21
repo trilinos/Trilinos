@@ -34,6 +34,8 @@
 #include "dr_hg_readfile.h"
 #include "dr_compress_const.h"
 
+extern int isblank(int);
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {

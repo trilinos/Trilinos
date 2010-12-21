@@ -1539,20 +1539,20 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
     MPI_Allreduce(&counters[1],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Send count: ave = %g, min = %zd, max = %zd\n",ave,min,max);
+      printf(" Send count: ave = %g, min = " ZOLTAN_GNO_SPEC ", max = " ZOLTAN_GNO_SPEC "\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d send count = %zd\n",proc,counters[1]);
+      printf("    Proc %d send count = " ZOLTAN_GNO_SPEC "\n",proc,counters[1]);
     
     MPI_Allreduce(&counters[2],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
     MPI_Allreduce(&counters[2],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
     MPI_Allreduce(&counters[2],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Recv count: ave = %g, min = %zd, max = %zd\n",ave,min,max);
+      printf(" Recv count: ave = %g, min = " ZOLTAN_GNO_SPEC ", max = " ZOLTAN_GNO_SPEC "\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d recv count = %zd\n",proc,counters[2]);
+      printf("    Proc %d recv count = " ZOLTAN_GNO_SPEC "\n",proc,counters[2]);
   
     if (reuse) {
       MPI_Allreduce(&reuse_count[1],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
@@ -1560,20 +1560,20 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
       MPI_Allreduce(&reuse_count[1],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
       ave = ((double) sum)/nprocs;
       if (proc == print_proc) 
-        printf(" Presend count: ave = %g, min = %zd, max = %zd\n",ave,min,max);
+        printf(" Presend count: ave = %g, min = " ZOLTAN_GNO_SPEC ", max = " ZOLTAN_GNO_SPEC "\n",ave,min,max);
       MPI_Barrier(zz->Communicator);
       if (stats > 1) 
-        printf("    Proc %d presend count = %zd\n",proc,reuse_count[1]);
+        printf("    Proc %d presend count = " ZOLTAN_GNO_SPEC "\n",proc,reuse_count[1]);
     
       MPI_Allreduce(&reuse_count[2],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
       MPI_Allreduce(&reuse_count[2],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
       MPI_Allreduce(&reuse_count[2],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
       ave = ((double) sum)/nprocs;
       if (proc == print_proc) 
-        printf(" Prerecv count: ave = %g, min = %zd, max = %zd\n",ave,min,max);
+        printf(" Prerecv count: ave = %g, min = " ZOLTAN_GNO_SPEC ", max = " ZOLTAN_GNO_SPEC "\n",ave,min,max);
       MPI_Barrier(zz->Communicator);
       if (stats > 1) 
-        printf("    Proc %d prerecv count = %zd\n",proc,reuse_count[2]);
+        printf("    Proc %d prerecv count = " ZOLTAN_GNO_SPEC "\n",proc,reuse_count[2]);
     }
   
     MPI_Allreduce(&counters[3],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
@@ -1581,20 +1581,20 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
     MPI_Allreduce(&counters[3],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Max dots: ave = %g, min = %zd, max = %zd\n",ave,min,max);
+      printf(" Max dots: ave = %g, min = " ZOLTAN_GNO_SPEC ", max = " ZOLTAN_GNO_SPEC "\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d max dots = %zd\n",proc,counters[3]);
+      printf("    Proc %d max dots = " ZOLTAN_GNO_SPEC "\n",proc,counters[3]);
   
     MPI_Allreduce(&counters[4],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
     MPI_Allreduce(&counters[4],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
     MPI_Allreduce(&counters[4],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Max memory: ave = %g, min = %zd, max = %zd\n",ave,min,max);
+      printf(" Max memory: ave = %g, min = " ZOLTAN_GNO_SPEC ", max = " ZOLTAN_GNO_SPEC "\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d max memory = %zd\n",proc,counters[4]);
+      printf("    Proc %d max memory = " ZOLTAN_GNO_SPEC "\n",proc,counters[4]);
     
     if (reuse) {
       MPI_Allreduce(&counters[5],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
@@ -1602,10 +1602,10 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
       MPI_Allreduce(&counters[5],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
       ave = ((double) sum)/nprocs;
       if (proc == print_proc) 
-        printf(" # of Reuse: ave = %g, min = %zd, max = %zd\n",ave,min,max);
+        printf(" # of Reuse: ave = %g, min = " ZOLTAN_GNO_SPEC ", max = " ZOLTAN_GNO_SPEC "\n",ave,min,max);
       MPI_Barrier(zz->Communicator);
       if (stats > 1) 
-        printf("    Proc %d # of Reuse = %zd\n",proc,counters[5]);
+        printf("    Proc %d # of Reuse = " ZOLTAN_GNO_SPEC "\n",proc,counters[5]);
     }
   
     MPI_Allreduce(&counters[6],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
@@ -1613,10 +1613,10 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
     MPI_Allreduce(&counters[6],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" # of OverAlloc: ave = %g, min = %zd, max = %zd\n",ave,min,max);
+      printf(" # of OverAlloc: ave = %g, min = " ZOLTAN_GNO_SPEC ", max = " ZOLTAN_GNO_SPEC "\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d # of OverAlloc = %zd\n",proc,counters[6]);
+      printf("    Proc %d # of OverAlloc = " ZOLTAN_GNO_SPEC "\n",proc,counters[6]);
 
     par_median_print_counts(zz->Communicator, print_proc);
   }

@@ -15,9 +15,9 @@
 #ifndef __ZOLTAN_UTIL_CONST_H
 #define __ZOLTAN_UTIL_CONST_H
 
+#include <stdint.h>
 #include "zz_const.h"
 #include "zoltan_types.h"
-#include <limits.h>
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */

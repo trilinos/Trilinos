@@ -268,15 +268,15 @@ float *wgts;
    
   fprintf(stderr,"redist %d, completed %d, bipartite %d\n", m->redist, m->completed, m->bipartite);
 
-  fprintf(stderr,"globalX %zd, globalY %zd, nY %d, nY_ori %d, ywgtdim %d, nPins %d\n",
+  fprintf(stderr,"globalX " ZOLTAN_GNO_SPEC ", globalY " ZOLTAN_GNO_SPEC ", nY %d, nY_ori %d, ywgtdim %d, nPins %d\n",
                 m->globalX, m->globalY, m->nY, m->nY_ori, m->ywgtdim, m->nPins);
   fprintf(stderr,"Edges and non-zeroes:\n");
   wgts = m->pinwgt;
   if (m->yGNO && m->pinGNO){
     for (i=0; i < m->nY; i++){
-      fprintf(stderr,"%zd: ",m->yGNO[i]);
+      fprintf(stderr, ZOLTAN_GNO_SPEC ": ",m->yGNO[i]);
       for (j=m->ystart[i]; j < m->ystart[i+1]; j++){
-        fprintf(stderr,"%zd ", m->pinGNO[j]);
+        fprintf(stderr, ZOLTAN_GNO_SPEC " ", m->pinGNO[j]);
         if (wgts && (m->pinwgtdim > 0)){
           fprintf(stderr,"("); 
           for (k=0; k < m->pinwgtdim; k++){
@@ -299,12 +299,12 @@ float *wgts;
 int Zoltan_ZG_Print(ZZ *zz, ZG *gr, char *s)
 {
 int i, me, proc;
-me = zz->Proc;
 Zoltan_matrix_2d *m2d = &gr->mtx;
 Zoltan_matrix *m = &m2d->mtx;
 int nproc_x = m2d->comm->nProc_x;
 int nproc_y = m2d->comm->nProc_y;
 
+  me = zz->Proc;
   for (proc=0; proc < zz->Num_Proc; proc++){
     if (proc == me){
       if (proc == 0) fprintf(stderr,"\n%s\n",s);
@@ -313,7 +313,7 @@ int nproc_y = m2d->comm->nProc_y;
       fprintf(stderr,"GNO distribution in x direction: ");
       if (m2d->dist_x){
         for (i=0; i <= nproc_x; i++){
-          fprintf(stderr,"%zd ",m2d->dist_x[i]);
+          fprintf(stderr, ZOLTAN_GNO_SPEC " ",m2d->dist_x[i]);
         }
       }
       else{
@@ -322,7 +322,7 @@ int nproc_y = m2d->comm->nProc_y;
       fprintf(stderr,"\nGNO distribution in y direction: ");
       if (m2d->dist_y){
         for (i=0; i <= nproc_y; i++){
-          fprintf(stderr,"%zd ",m2d->dist_y[i]);
+          fprintf(stderr, ZOLTAN_GNO_SPEC " ",m2d->dist_y[i]);
         }
       }
       else{

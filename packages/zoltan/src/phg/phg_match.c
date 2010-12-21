@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include <stdlib.h>
 #include "phg.h"
 #include "g2l_hash.h"
@@ -2219,6 +2220,7 @@ static int pmatching_agg_ipm (ZZ *zz,
     MPI_Bcast (sendbuf, recsize, MPI_CHAR, 0, hgc->col_comm);
 
     if (hgc->myProc_y !=0) { /* master row already done this */
+      int lno, lheadno, partner, pref;
       for (s = sendbuf; s < sendbuf + recsize; ) {
 
         gnoptr = (ZOLTAN_GNO_TYPE *)s;
@@ -2226,9 +2228,10 @@ static int pmatching_agg_ipm (ZZ *zz,
         floatptr = (float *)(intptr + header_size);
         s = (char *)(floatptr + VtxDim);
 
-        int lno     = *intptr++;
-        int lheadno = *intptr++;
-        int partner = *gnoptr, pref = 0;
+        lno     = *intptr++;
+        lheadno = *intptr++;
+        partner = *gnoptr;
+        pref = 0;
         
         if (hgp->UsePrefPart)
             pref = *intptr++;

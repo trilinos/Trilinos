@@ -53,7 +53,6 @@ int main(int argc, char *argv[])
   int *parts;
   FILE *fp;
   MESH_DATA myMesh;
-  char *datatype_name;
 
   /******************************************************************
   ** Initialize MPI and Zoltan
