@@ -48,6 +48,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMach
    mesh->endModification();
 
    mesh->buildSubcells();
+   mesh->buildLocalElementIDs();
    
    return mesh;
 }

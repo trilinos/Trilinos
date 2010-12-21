@@ -287,7 +287,13 @@ public:
    const stk::mesh::EntityRank getEdgeRank() const { return stk::mesh::fem::edge_rank(*femPtr_); }
    const stk::mesh::EntityRank getNodeRank() const { return stk::mesh::fem::node_rank(*femPtr_); }
 
+   /** Build fields and parts from the meta data
+     */
    void initializeFromMetaData();
+
+   /** Setup local element IDs
+     */
+   void buildLocalElementIDs();
 
 public: // static operations
    static const std::string coordsString;

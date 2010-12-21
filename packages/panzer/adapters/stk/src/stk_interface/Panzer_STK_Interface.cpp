@@ -672,4 +672,28 @@ void STK_Interface::initializeFromMetaData()
    nodesPartVec_.push_back(nodesPart_);
 }
 
+void STK_Interface::buildLocalElementIDs()
+{
+   currentLocalId_ = 0;
+   
+   orderedElementVector_ = Teuchos::null; // forces rebuild of ordered lists
+
+   // might be better (faster) to do this by buckets
+   std::vector<stk::mesh::Entity*> elements;
+   getMyElements(elements);
+ 
+   for(std::size_t index=0;index<elements.size();++index) {
+      stk::mesh::Entity & element = *elements[index];
+
+      // set processor rank
+      int * procId = stk::mesh::field_data(*processorIdField_,element);
+      procId[0] = procRank_;
+
+      // set local element ID
+      std::size_t * localId = stk::mesh::field_data(*localIdField_,element);
+      localId[0] = currentLocalId_;
+      currentLocalId_++;
+   }
+}
+
 }
