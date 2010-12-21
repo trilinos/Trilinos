@@ -437,6 +437,7 @@ int  equal, larger;
   }
 }
 
+#ifdef HAVE_LONG_LONG_INT
 /* Exact same code except the list to be sorted is long long*/
 
 static void quickpart_list_inc_long_long (
@@ -478,6 +479,7 @@ int  equal, larger;
     Zoltan_quicksort_list_inc_long_long(list, parlist, larger, end);
   }
 }
+#endif
 
 
 

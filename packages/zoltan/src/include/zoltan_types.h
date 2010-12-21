@@ -53,6 +53,12 @@ extern "C" {
  * a pointer in an int we use types intptr_t or uintptr_t.
  */
 
+#undef HAVE_LONG_LONG_INT
+
+#ifdef ULLONG_MAX
+#define HAVE_LONG_LONG_INT
+#endif
+
 #undef ZOLTAN_ID_MPI_TYPE
 #undef ZOLTAN_ID_SPEC
 #undef ZOLTAN_ID_CONSTANT
@@ -78,7 +84,7 @@ extern "C" {
 
 #ifdef UNSIGNED_LONG_LONG_GLOBAL_IDS
 
-#ifndef ULLONG_MAX
+#ifndef HAVE_LONG_LONG_INT
 
 #undef UNSIGNED_LONG_LONG_GLOBAL_IDS
 #define UNSIGNED_LONG_GLOBAL_IDS
