@@ -31,7 +31,7 @@ namespace Cthulhu {
     type, if omitted, defaults to the \c LocalOrdinal type.
   */
   template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
-  class MultiVector { //: public DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> { // TODO
+  class MultiVector : public Teuchos::Describable { //: public DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> { // TODO
 
   public:
 
@@ -303,15 +303,11 @@ namespace Cthulhu {
 
     //! @name Overridden from Teuchos::Describable 
     //@{
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Return a simple one-line description of this object. */
     virtual std::string description() const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
     virtual void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //@}
 

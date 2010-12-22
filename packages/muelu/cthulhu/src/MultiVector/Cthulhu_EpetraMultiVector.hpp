@@ -375,15 +375,14 @@ namespace Cthulhu {
     //! @name Overridden from Teuchos::Describable 
     //@{
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Return a simple one-line description of this object. */
-    inline std::string description() const { CTHULHU_DEBUG_ME; return vec_->description(); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline std::string description() const { CTHULHU_DEBUG_ME; return "TODO"; }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     /** \brief Print the object with some verbosity level to an FancyOStream object. */
-    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { CTHULHU_DEBUG_ME; vec_->describe(out, verbLevel); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+    inline void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const { 
+      CTHULHU_DEBUG_ME;
+      std::cout << "TODO" << std::endl;
+    }
 
     //@}
 
@@ -393,9 +392,7 @@ namespace Cthulhu {
     const Teuchos::RCP<const Map<int,int> > getMap() const { 
       CTHULHU_DEBUG_ME; 
       
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO BlockMap/Map");
-      
-      RCP<const Epetra_Map> map; // TODO = rcp(new Epetra_Map(vec_->Map()));
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(vec_->Map()));
       return rcp ( new Cthulhu::EpetraMap(map) );
     }
 

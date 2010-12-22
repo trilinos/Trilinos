@@ -3,6 +3,7 @@
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_MultiVector.hpp"
+#include "Cthulhu_Import.hpp"
 
 namespace Cthulhu {
 
@@ -121,6 +122,30 @@ namespace Cthulhu {
 
 //     //! Advanced constructor accepting parallel buffer view.
 //     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) = 0;
+
+
+// Implements DistObjectInterface
+    // TODO: create a real Cthulhu::DistObject ?
+    
+    //! @name Import/Export Methods
+    //@{ 
+
+    //! Import
+//     virtual void doImport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &source, 
+//                           const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
+
+    virtual void doImport(const Vector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
+                          const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) = 0;
+
+//     //! Export (using an Importer)
+//     virtual void doExport(const DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node> &dest,
+//                   const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
+
+    //! Export (using an Importer)
+    virtual void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
+                  const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) = 0;
+
+    //@}
 
   }; // class Vector
 

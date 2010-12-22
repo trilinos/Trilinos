@@ -14,7 +14,10 @@
 
 #include "Cthulhu_EpetraMap.hpp"
 #include "Cthulhu_EpetraMultiVector.hpp"
+#include "Cthulhu_EpetraImport.hpp"
+
 #include "Epetra_Vector.h"
+
 
 namespace Cthulhu {
 
@@ -210,7 +213,49 @@ namespace Cthulhu {
     //     //! Advanced constructor accepting parallel buffer view.
     //     Vector(const Teuchos::RCP<const Map<int,int> > &map, Teuchos::ArrayRCP<double> data) { CTHULHU_DEBUG_ME; vec_->(); };
 
-    //TODO wrap RCP etc.   RCP<Epetra_Vector> getEpetra_Vector() const { CTHULHU_DEBUG_ME; this->EpetraMultiVector::getEpetra_MultiVector()->getVector(0); }
+    Epetra_Vector * getEpetra_Vector() const { CTHULHU_DEBUG_ME; return (*this->EpetraMultiVector::getEpetra_MultiVector())(0); }
+
+    inline void doImport(const Vector<double, int, int> &source, 
+                         const Import<int, int> &importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+
+      CTHULHU_DYNAMIC_CAST(const EpetraVector, source, tSource, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      Epetra_CombineMode tCM;
+      if (CM == Cthulhu::ADD)
+        tCM = Add;
+        else if (CM == Cthulhu::INSERT)
+          tCM = Insert;
+          else if (CM == Cthulhu::ABSMAX)
+            tCM = AbsMax;
+          else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unknow CombineMode value."); 
+
+      const Epetra_Vector * v = tSource.getEpetra_Vector();
+      this->EpetraMultiVector::getEpetra_MultiVector()->Import(*v, *tImporter.getEpetra_Import(), tCM); 
+
+    }
+
+    void doExport(const Vector<double, int, int> &dest,
+                  const Import<int, int>& importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      
+      CTHULHU_DYNAMIC_CAST(const EpetraVector, dest, tDest, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      Epetra_CombineMode tCM;
+      if (CM == Cthulhu::ADD)
+        tCM = Add;
+        else if (CM == Cthulhu::INSERT)
+          tCM = Insert;
+          else if (CM == Cthulhu::ABSMAX)
+            tCM = AbsMax;
+          else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unknow CombineMode value."); 
+
+      const Epetra_Vector * v = tDest.getEpetra_Vector();
+      this->EpetraMultiVector::getEpetra_MultiVector()->Export(*v, *tImporter.getEpetra_Import(), tCM); 
+
+    }
     
   }; // class EpetraVector
 

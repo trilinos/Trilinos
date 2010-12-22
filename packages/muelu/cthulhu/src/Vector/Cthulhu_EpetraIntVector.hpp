@@ -479,9 +479,7 @@ namespace Cthulhu {
     const Teuchos::RCP<const Map<int,int> > getMap() const { 
       CTHULHU_DEBUG_ME; 
       
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "TODO BlockMap/Map");
-      
-      RCP<const Epetra_Map> map; // TODO = rcp(new Epetra_Map(vec_->Map()));
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(vec_->Map()));
       return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
@@ -492,6 +490,48 @@ namespace Cthulhu {
     }
 
     // end of "Implementing Epetra interface"
+
+    // Implementing DistObject
+    
+    inline void doImport(const Vector<int, int, int> &source, 
+                         const Import<int, int> &importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+
+      CTHULHU_DYNAMIC_CAST(const EpetraIntVector, source, tSource, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      Epetra_CombineMode tCM;
+      if (CM == Cthulhu::ADD)
+        tCM = Add;
+      else if (CM == Cthulhu::INSERT)
+        tCM = Insert;
+      else if (CM == Cthulhu::ABSMAX)
+        tCM = AbsMax;
+      else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unknow CombineMode value."); 
+      
+      const Epetra_IntVector & v = *tSource.getEpetra_IntVector();
+      vec_->Import(v, *tImporter.getEpetra_Import(), tCM); 
+    }
+
+    void doExport(const Vector<int, int, int> &dest,
+                  const Import<int, int>& importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+
+      CTHULHU_DYNAMIC_CAST(const EpetraIntVector, dest, tDest, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraIntVector as input arguments.");
+      CTHULHU_DYNAMIC_CAST(const EpetraImport, importer, tImporter, "Cthulhu::EpetraIntVector::doImport only accept Cthulhu::EpetraImport as input arguments.");
+
+      Epetra_CombineMode tCM;
+      if (CM == Cthulhu::ADD)
+        tCM = Add;
+      else if (CM == Cthulhu::INSERT)
+        tCM = Insert;
+      else if (CM == Cthulhu::ABSMAX)
+        tCM = AbsMax;
+      else TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Epetra_CombineMode: unknow CombineMode value."); 
+      
+      const Epetra_IntVector & v = *tDest.getEpetra_IntVector();
+      vec_->Import(v, *tImporter.getEpetra_Import(), tCM); 
+    }
 
   private:
     RCP< Epetra_IntVector > vec_;

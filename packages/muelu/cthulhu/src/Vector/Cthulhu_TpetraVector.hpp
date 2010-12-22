@@ -16,6 +16,8 @@
 
 #include "Cthulhu_TpetraMap.hpp"
 #include "Cthulhu_TpetraMultiVector.hpp"
+#include "Cthulhu_TpetraImport.hpp"
+
 #include "Tpetra_Vector.hpp"
 
 namespace Cthulhu {
@@ -195,20 +197,21 @@ namespace Cthulhu {
               out << "node " << setw(width) << myImageID << ": local length=" << this->getLocalLength() << endl;
               if (vl != VERB_MEDIUM) {
                 // VERB_HIGH and higher prints isConstantStride() and stride()
-                if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
-                  Teuchos::RCP<Node> node = this->lclMV_.getNode();
-                  KOKKOS_NODE_TRACE("Vector::describe()")
-                    Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
-                                                                                               this->getLocalLength(), 
-                                                                                               MVT::getValues(this->lclMV_) );
-                  // VERB_EXTREME prints values
-                  for (size_t i=0; i<this->getLocalLength(); ++i) {
-                    out << setw(width) << this->getMap()->getGlobalElement(i) 
-                        << ": "
-                        << myview[i] << endl;
-                  }
-                  myview = Teuchos::null;
-                }
+                //TODO
+//                 if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
+//                   Teuchos::RCP<Node> node = this->lclMV_.getNode();
+//                   KOKKOS_NODE_TRACE("Vector::describe()")
+//                     Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
+//                                                                                                this->getLocalLength(), 
+//                                                                                                MVT::getValues(this->lclMV_) );
+//                   // VERB_EXTREME prints values
+//                   for (size_t i=0; i<this->getLocalLength(); ++i) {
+//                     out << setw(width) << this->getMap()->getGlobalElement(i) 
+//                         << ": "
+//                         << myview[i] << endl;
+//                   }
+//                   myview = Teuchos::null;
+//                 }
               }
               else {
                 out << endl;
@@ -226,6 +229,40 @@ namespace Cthulhu {
     //     //! Advanced constructor accepting parallel buffer view.
     //     Vector(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, Teuchos::ArrayRCP<Scalar> data) { CTHULHU_DEBUG_ME; vec_->(); };
 
+
+    inline void doImport(const Vector<Scalar, LocalOrdinal,GlobalOrdinal,Node> &source, 
+                         const Import<LocalOrdinal,GlobalOrdinal,Node> &importer, CombineMode CM) { 
+      CTHULHU_DEBUG_ME;
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "TODO");
+
+      typedef TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> TTpetraVector;      
+      CTHULHU_DYNAMIC_CAST(const TTpetraVector, source, tSource, "Cthulhu::TpetraVector::doImport only accept Cthulhu::TpetraVector as input arguments.");
+
+      typedef TpetraImport<LocalOrdinal, GlobalOrdinal, Node> TTpetraImport;
+      CTHULHU_DYNAMIC_CAST(const TTpetraImport, importer, tImporter, "Cthulhu::TpetraImport::doImport only accept Cthulhu::TpetraImport as input arguments.");
+
+      Tpetra::CombineMode tCM;
+      // TODO check if I undrstand that correctly...
+//       if (CM == Cthulhu::ADD)
+//         tCM = Tpetra::;
+//         else if (CM == Cthulhu::INSERT)
+//           tCM = Tpetra::;
+//           else if (CM == Cthulhu::REPLACE)
+//             tCM = Tpetra::;
+//           else  
+            TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Tpetra::CombineMode: unknow CombineMode value."); 
+
+      const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> & v = *tSource.getTpetra_Vector();
+      this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doImport(v, *tImporter.getTpetra_Import(), tCM); 
+    }
+
+    void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
+                  const Import<LocalOrdinal,GlobalOrdinal,Node>& importer, CombineMode CM) {
+      CTHULHU_DEBUG_ME;
+      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "TODO");
+    }
+
+    
     RCP< Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> > getTpetra_Vector() const { CTHULHU_DEBUG_ME; return this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->getVectorNonConst(0); }
     
   }; // class TpetraVector
