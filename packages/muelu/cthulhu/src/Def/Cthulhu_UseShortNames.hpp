@@ -18,10 +18,18 @@ typedef Cthulhu::CrsMatrix<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalM
 
 #ifdef CTHULHU_VECTOR_SHORT
 typedef Cthulhu::Vector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> Vector;
+typedef Cthulhu::Vector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVector;
+typedef Cthulhu::Vector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalVector;
+typedef LocalOrdinalVector  LOVector;
+typedef GlobalOrdinalVector GOVector;
 #endif
 
 #ifdef CTHULHU_MULTIVECTOR_SHORT
 typedef Cthulhu::MultiVector<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MultiVector;
+typedef Cthulhu::MultiVector<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalMultiVector;
+typedef Cthulhu::MultiVector<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalMultiVector;
+typedef LocalOrdinalMultiVector  LOMultiVector;
+typedef GlobalOrdinalMultiVector GOMultiVector;
 #endif
 
 #ifdef CTHULHU_OPERATOR_SHORT
@@ -34,13 +42,22 @@ typedef Cthulhu::CrsOperator<ScalarType, LocalOrdinal, GlobalOrdinal, Node, Loca
 
 #ifdef CTHULHU_VECTORFACTORY_SHORT
 typedef Cthulhu::VectorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node> VectorFactory;
+typedef Cthulhu::VectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalVectorFactory;
+typedef Cthulhu::VectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalVectorFactory;
+typedef LocalOrdinalVectorFactory  LOVectorFactory;
+typedef GlobalOrdinalVectorFactory GOVectorFactory;
 #endif
 
 #ifdef CTHULHU_CRSMATRIXFACTORY_SHORT
 typedef Cthulhu::CrsMatrixFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> CrsMatrixFactory;
 #endif
+
 #ifdef CTHULHU_MULTIVECTORFACTORY_SHORT
 typedef Cthulhu::MultiVectorFactory<ScalarType, LocalOrdinal, GlobalOrdinal, Node> MultiVectorFactory;
+typedef Cthulhu::MultiVectorFactory<LocalOrdinal, LocalOrdinal, GlobalOrdinal, Node> LocalOrdinalMultiVectorFactory;
+typedef Cthulhu::MultiVectorFactory<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> GlobalOrdinalMultiVectorFactory;
+typedef LocalOrdinalMultiVectorFactory  LOMultiVectorFactory;
+typedef GlobalOrdinalMultiVectorFactory GOMultiVectorFactory;
 #endif
 
 #ifdef CTHULHU_OPERATORFACTORY_SHORT
@@ -77,6 +94,5 @@ typedef LocalOrdinal  LO;
 typedef GlobalOrdinal GO;
 typedef Node          NO;
 typedef LocalMatOps   LMO;
-
 
 // TODO: do the same for Epetra object (problem of namespace)
