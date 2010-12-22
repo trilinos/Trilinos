@@ -306,7 +306,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
         for(j = 0; j < NumIndices; ++j) {
           const int Index = CrsGraphData_->ColMap_.LID(UserIndices[j]);
           if (Index > -1)
-            tempIndices[loc++] = Index;
+            tempIndices[loc++] = UserIndices[j];
         }
 
       }
@@ -388,14 +388,14 @@ int Epetra_CrsGraph::InsertIndicesIntoSorted(int Row,
     int loc = 0;
     if(IndicesAreLocal()) {
       for(int j = 0; j < NumIndices; ++j)
- if(CrsGraphData_->ColMap_.MyLID(UserIndices[j]))
-   tempIndices[loc++] = UserIndices[j];
+        if(CrsGraphData_->ColMap_.MyLID(UserIndices[j]))
+          tempIndices[loc++] = UserIndices[j];
     }
     else {
       for(int j = 0; j < NumIndices; ++j) {
- const int Index = CrsGraphData_->ColMap_.LID(UserIndices[j]);
- if (Index > -1)
-   tempIndices[loc++] = Index;
+        if (CrsGraphData_->ColMap_.MyGID(UserIndices[j])) {
+          tempIndices[loc++] = UserIndices[j];
+        }
       }
     }
     if(loc != NumIndices) 
@@ -1255,11 +1255,6 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
   if(IndicesAreLocal() && IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-1); // Return error: Indices must not be both local and global
 
-  if(CrsGraphData_->HaveColMap_) {
-    SetIndicesAreLocal(true);
-    SetIndicesAreGlobal(false);
-  }
-
   MakeColMap(DomainMap, RangeMap); // If user has not prescribed column map, create one from indices
   const Epetra_BlockMap& colmap = ColMap();
 
@@ -1276,11 +1271,11 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
     {
       int oldGID = colmap.GID(0);
       for (int i=1; i<colmap.NumMyElements(); ++i) {
- if (oldGID > colmap.GID(i)) {
-   mapMonotone = false;
-   break;
- }
- oldGID = colmap.GID(i);
+        if (oldGID > colmap.GID(i)) {
+          mapMonotone = false;
+          break;
+        }
+        oldGID = colmap.GID(i);
       }
     }
     if (Sorted())
@@ -1291,12 +1286,12 @@ int Epetra_CrsGraph::MakeIndicesLocal(const Epetra_BlockMap& DomainMap, const Ep
       const int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
       int* ColIndices = CrsGraphData_->Indices_[i];
       for(int j = 0; j < NumIndices; j++) {
-	int GID = ColIndices[j];
-	int LID = colmap.LID(GID);
-	if(LID != -1) 
-	  ColIndices[j] = LID;
-	else 
-	  throw ReportError("Internal error in FillComplete ",-1); 
+        int GID = ColIndices[j];
+        int LID = colmap.LID(GID);
+        if(LID != -1) 
+          ColIndices[j] = LID;
+        else 
+          throw ReportError("Internal error in FillComplete ",-1); 
       }
     }
   }
