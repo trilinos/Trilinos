@@ -275,6 +275,7 @@ namespace Cthulhu {
 	      const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
     { 
       CTHULHU_DEBUG_ME; 
+
       IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
     
@@ -532,9 +533,12 @@ namespace Cthulhu {
 
     //@}
 
+    /** \brief Get the underlying Epetra map.. */
     const Epetra_BlockMap& getEpetra_BlockMap() const { CTHULHU_DEBUG_ME; return *map_; }
     
-    /** \brief try to use getEpetra_BlockMap instead of getEpetra_Map as much as possible. */
+    /** \brief Get the underlying Epetra map. This method cast the underlying EpetraBlockMap to an EpetraMap.
+        Try to use getEpetra_BlockMap() instead of getEpetra_Map() as much as possible. See the note in the top of the file Cthulhu_EpetraMap.hpp for more information. 
+    */
     const Epetra_Map& getEpetra_Map() const { CTHULHU_DEBUG_ME; return (Epetra_Map &)*map_; } //TODO: write a note about that. It's the same in Epetra_CrsMatrix.h to get the map.
 
   private:
