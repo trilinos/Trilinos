@@ -167,7 +167,7 @@ computeTripleProductTensor(ordinal_type order) const
 
 {
   Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
-    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
+    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>);
   ordinal_type nqp = weights.size();
   for (ordinal_type j=0; j<sz; j++) {
     for (ordinal_type i=0; i<sz; i++) {

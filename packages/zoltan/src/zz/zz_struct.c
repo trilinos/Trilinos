@@ -23,6 +23,7 @@ extern "C" {
 #include "lb_init_const.h"
 #include "params_const.h"
 #include "ha_const.h"
+#include "zz_util_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -39,6 +40,8 @@ extern "C" {
 static void Zoltan_Free_Structures(ZZ *);
 static void Zoltan_Init(ZZ *);
 static void Zoltan_Free_Zoltan_Struct_Members(ZZ *);
+
+extern MPI_Datatype zoltan_mpi_gno_datatype;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -57,6 +60,9 @@ ZZ *Zoltan_Create(MPI_Comm communicator)
 
 char *yo = "Zoltan_Create";
 ZZ *zz;
+int proc;
+
+    MPI_Comm_rank(communicator, &proc);
 
   /*
    * Allocate storage for the Zoltan structure.
@@ -64,8 +70,6 @@ ZZ *zz;
 
   zz = (ZZ *) ZOLTAN_MALLOC(sizeof(ZZ));
   if (!zz) {
-    int proc;
-    MPI_Comm_rank(communicator, &proc);
     ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory to create structure.");
     return NULL;
   }
@@ -114,6 +118,18 @@ ZZ *zz;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                          "min sizeof(size_t) != max sizeof(size_t)");
       Zoltan_Destroy(&zz);
+    }
+  }
+
+  if (zoltan_mpi_gno_datatype == MPI_UNDEFINED){
+
+    /* User did not called Zoltan_Initialize, which is required
+     *  to get the MPI_Datatype for ZOLTAN_GNO_TYPEs
+     */
+
+    if (Zoltan_set_mpi_types() == ZOLTAN_FATAL){
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error setting up Zoltan.");
+      return NULL;
     }
   }
 

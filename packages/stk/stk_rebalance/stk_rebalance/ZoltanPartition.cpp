@@ -6,9 +6,10 @@
 
 #include <stk_rebalance/ZoltanPartition.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -477,15 +478,18 @@ void Callback_Centroid_Coord( void *data,
 
 
 void getNeighbors( const mesh::Entity & obj,
-                   std::set<const mesh::Entity*> & nodes ) {
+                   std::set<const mesh::Entity*> & nodes )
+{
+  stk::mesh::fem::FEMInterface &fem = stk::mesh::fem::get_fem_interface(obj);
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
 
   nodes.clear();
 
-  mesh::PairIterRelation iElem = obj.relations(mesh::Element);
+  mesh::PairIterRelation iElem = obj.relations(element_rank);
 
   for ( ; iElem.first != iElem.second; ++iElem.first ) {
     mesh::Entity * elem = iElem.first->entity();
-    mesh::PairIterRelation iNode = elem->relations(mesh::Node);
+    mesh::PairIterRelation iNode = elem->relations(stk::mesh::fem::NODE_RANK);
     for ( ; iNode.first != iNode.second; ++iNode.first ) {
       mesh::Entity * node = iNode.first->entity();
       if (&obj != node) nodes.insert( node );

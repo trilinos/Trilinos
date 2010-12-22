@@ -71,7 +71,7 @@ double gsumload, gmaxload, gminload;
   MPI_Allreduce(&load, &gminload, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 
   if (proc == 0) {
-    printf("DRIVER EVAL:  load:  max %lf  min %lf  sum %lf\n", 
+    printf("DRIVER EVAL:  load:  max %f  min %f  sum %f\n", 
            gmaxload, gminload, gsumload);
     printf("DRIVER EVAL:  objs:  max " ZOLTAN_ID_SPEC "  min " ZOLTAN_ID_SPEC "  sum " ZOLTAN_ID_SPEC "\n", 
            gmaxelems, gminelems, gsumelems);

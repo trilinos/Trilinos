@@ -14,7 +14,6 @@
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 
 namespace stk {
 namespace search_util {
@@ -149,10 +148,11 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
  * what is really being stored in the IdentProc is stk::mesh
  * entity keys.
  */
-void print_stk_mesh_relation_map(stk::diag::Writer &writer,
-                                 IdentProcRelation relation)
+void print_stk_mesh_relation_map(
+  stk::diag::Writer &writer,
+  const std::vector<std::string> &entity_names,
+  IdentProcRelation relation)
 {
-  static std::vector<std::string> entity_names = stk::mesh::fem_entity_rank_names();
   if (writer.shouldPrint()) {
     size_t size = relation.size();
     writer << "relation  [size " << size << "]\n";

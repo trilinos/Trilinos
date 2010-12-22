@@ -11,7 +11,6 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME "ZOLTAN_INT_IDS")
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
-SET(Trilinos_BRANCH "zoltan_gid_64")
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test
@@ -26,7 +25,7 @@ SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
 
 SET( CTEST_BUILD_FLAGS "-j8 -i" )
 
-SET_DEFAULT( CTEST_PARALLEL_LEVEL "8" )
+SET_DEFAULT( CTEST_PARALLEL_LEVEL "1" )
 SET_DEFAULT(COMPILER_VERSION "GCC-3.4.6")
 
 
@@ -44,8 +43,8 @@ SET(KDD_GCC  "/usr/bin/gcc346")
 SET(KDD_GCXX "/usr/bin/g++346")
 
 # Output of "mpicc --showme:compile" and "mpiCC --showme:compile"
-SET(KDD_CFLAGS   "-std=c99 -DZOLTAN_ID_TYPE_INT -m64 -g -I/opt/lam714-gcc346-pure/include -pthread")
-SET(KDD_CXXFLAGS "-DZOLTAN_ID_TYPE_INT -m64 -g -I/opt/lam714-gcc346-pure/include -pthread")
+SET(KDD_CFLAGS   "-std=c99 -DZOLTAN_ID_TYPE_UINT -m64 -g -I/opt/lam714-gcc346-pure/include -pthread")
+SET(KDD_CXXFLAGS "-DZOLTAN_ID_TYPE_UINT -m64 -g -I/opt/lam714-gcc346-pure/include -pthread")
 
 # Output of "mpiCC --showme:link"
 SET(KDD_LINKFLAGS "-m64 -L/opt/lam714-gcc346-pure/lib -llammpio -llammpi++ -llamf77mpi -lmpi -llam -laio -laio -lutil -ldl")
@@ -79,7 +78,6 @@ SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
     "-DZoltan_ENABLE_Scotch:BOOL=OFF"
     "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
     "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
-    "-DDART_TESTING_TIMEOUT:STRING=600"
   )
 
 TRILINOS_CTEST_DRIVER()

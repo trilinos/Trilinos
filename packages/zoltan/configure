@@ -1527,7 +1527,8 @@ Optional Packages:
                           --with-perl=<perl executable>. Configure will check
                           for the existence of the perl executable and quit
                           with an error if it is not found. (default is no)
-  --with-id-type          Zoltan global ID type: long (default), int, or llong
+  --with-id-type          Zoltan global ID type: uint (default), ulong, or
+                          ullong
   --with-parmetis         Enable Parmetis support. (default is no)
   --with-parmetis-libdir  Specify where the Parmetis library is located. Ex.
                           /path/to/library
@@ -6467,36 +6468,37 @@ fi
 
 { $as_echo "$as_me:$LINENO: checking data type for ZOLTAN_ID_TYPE" >&5
 $as_echo_n "checking data type for ZOLTAN_ID_TYPE... " >&6; }
-zoltan_id_type="long"
+zoltan_id_type="unset"
 
 # Check whether --with-id-type was given.
 if test "${with_id_type+set}" = set; then
   withval=$with_id_type;
-if test "X$withval" == "Xint" ; then
+if test "X$withval" == "Xuint" ; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZOLTAN_ID_TYPE_INT 1
+#define UNSIGNED_INT_GLOBAL_IDS 1
 _ACEOF
 
-  zoltan_id_type="int"
+  zoltan_id_type="unsigned int"
 else
-  if test "X$withval" == "Xllong" ; then
+  if test "X$withval" == "Xulong" ; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZOLTAN_ID_TYPE_LONG_LONG 1
+#define UNSIGNED_LONG_GLOBAL_IDS 1
 _ACEOF
 
-    zoltan_id_type="long long"
+    zoltan_id_type="unsigned long"
   else
-    if test "X$withval" == "Xlong" ; then
+    if test "X$withval" == "Xullong" ; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZOLTAN_ID_TYPE_LONG 1
+#define UNSIGNED_LONG_LONG_GLOBAL_IDS 1
 _ACEOF
 
+      zoltan_id_type="unsigned long long"
     else
-      { { $as_echo "$as_me:$LINENO: error: Valid global ID types for Zoltan are int, long, and llong" >&5
-$as_echo "$as_me: error: Valid global ID types for Zoltan are int, long, and llong" >&2;}
+       { { $as_echo "$as_me:$LINENO: error: Valid global ID types for Zoltan are uint, ulong, and ullong" >&5
+$as_echo "$as_me: error: Valid global ID types for Zoltan are uint, ulong, and ullong" >&2;}
    { (exit 1); exit 1; }; }
     fi
   fi
@@ -6506,9 +6508,10 @@ else
 
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZOLTAN_ID_TYPE_LONG 1
+#define UNSIGNED_INT_GLOBAL_IDS 1
 _ACEOF
 
+zoltan_id_type="unsigned int"
 
 
 fi

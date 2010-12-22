@@ -53,15 +53,6 @@
 /* Define if want to build zoltan-examples */
 #undef HAVE_ZOLTAN_EXAMPLES
 
-/* Define if "typedef int ZOLTAN_ID_TYPE" */
-#undef HAVE_ZOLTAN_ID_TYPE_INT
-
-/* Define if "typedef long ZOLTAN_ID_TYPE" */
-#undef HAVE_ZOLTAN_ID_TYPE_LONG
-
-/* Define if "typedef long long ZOLTAN_ID_TYPE" */
-#undef HAVE_ZOLTAN_ID_TYPE_LONG_LONG
-
 /* Define if want to build with octreepartitioning enabled */
 #undef HAVE_ZOLTAN_OCT
 
@@ -94,3 +85,12 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* define if ZOLTAN_ID_TYPE is unsigned int */
+#undef UNSIGNED_INT_GLOBAL_IDS
+
+/* define if ZOLTAN_ID_TYPE is unsigned long */
+#undef UNSIGNED_LONG_GLOBAL_IDS
+
+/* define if ZOLTAN_ID_TYPE is unsigned long long */
+#undef UNSIGNED_LONG_LONG_GLOBAL_IDS

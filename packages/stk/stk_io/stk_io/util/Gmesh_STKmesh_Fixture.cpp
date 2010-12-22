@@ -2,9 +2,11 @@
 
 #include <stk_mesh/base/Part.hpp>
 
-#include <stk_mesh/fem/FieldDeclarations.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 #include <stk_mesh/fem/EntityRanks.hpp>
+#endif
 
 #include <stk_io/IossBridge.hpp>
 
@@ -20,11 +22,21 @@
 
 using namespace stk::io::util;
 
+static const size_t spatial_dimension = 3;
+
 ///////////////////////////////////////////////////////////////////////////////
 Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
                                              const std::string& gmesh_spec)
 ///////////////////////////////////////////////////////////////////////////////
-  : m_meta_data(stk::mesh::fem_entity_rank_names()),
+  : 
+#ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+    m_meta_data(stk::mesh::fem_entity_rank_names()),
+#else
+    m_meta_data(stk::mesh::fem::entity_rank_names(spatial_dimension)),
+#endif
+#ifdef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
+    m_fem(m_meta_data, spatial_dimension),
+#endif
     m_bulk_data(m_meta_data, comm),
     m_num_x(0),
     m_num_y(0),

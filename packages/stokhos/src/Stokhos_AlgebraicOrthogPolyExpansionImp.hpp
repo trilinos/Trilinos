@@ -1,5 +1,3 @@
-// $Id$ 
-// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -159,19 +157,33 @@ timesEqual(
 
   value_type* cc = c.coeff();
   const value_type* xc = x.coeff();
+
+  typename Cijk_type::k_iterator k_begin = Cijk->k_begin();
+  typename Cijk_type::k_iterator k_end = Cijk->k_end();
+  typename Cijk_type::k_reverse_iterator k_last = Cijk->k_rbegin();
+  if (index(k_last) > pc)
+    k_end = ++(Cijk->find_k(pc));
   
   if (p > 1 && xp > 1) {
     // Copy c coefficients into temporary array
     value_type* tc = Stokhos::ds_array<value_type>::get_and_fill(cc,p);
     value_type tmp, cijk;
-    ordinal_type i,j;
-    for (ordinal_type k=0; k<pc; k++) {
+    ordinal_type i,j,k;
+     for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+      k = index(k_it);
       tmp = value_type(0.0);
-      ordinal_type n = Cijk->num_values(k);
-      for (ordinal_type l=0; l<n; l++) {
-	Cijk->value(k,l,i,j,cijk);
-	if (i < p && j < xp)
-	  tmp += cijk*tc[i]*xc[j];
+      for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	   j_it != Cijk->j_end(k_it); ++j_it) {
+	j = index(j_it);
+	if (j < xp) {
+	  for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	       i_it != Cijk->i_end(j_it); ++i_it) {
+	    i = index(i_it);
+	    cijk = value(i_it);
+	    if (i < p)
+	      tmp += cijk*tc[i]*xc[j];
+	  }
+	}
       }
       cc[k] = tmp / basis->norm_squared(k);
     }
@@ -367,16 +379,30 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type, node_type>& c,
   const value_type* cb = b.coeff();
   value_type* cc = c.coeff();
 
+  typename Cijk_type::k_iterator k_begin = Cijk->k_begin();
+  typename Cijk_type::k_iterator k_end = Cijk->k_end();
+  typename Cijk_type::k_reverse_iterator k_last = Cijk->k_rbegin();
+  if (index(k_last) > pc)
+    k_end = ++(Cijk->find_k(pc));
+
   if (pa > 1 && pb > 1) {
     value_type tmp, cijk;
-    ordinal_type i,j;
-    for (ordinal_type k=0; k<pc; k++) {
+    ordinal_type i,j,k;
+    for (typename Cijk_type::k_iterator k_it=k_begin; k_it!=k_end; ++k_it) {
+      k = index(k_it);
       tmp = value_type(0.0);
-      ordinal_type n = Cijk->num_values(k);
-      for (ordinal_type l=0; l<n; l++) {
-    	Cijk->value(k,l,i,j,cijk);
-	if (i < pa && j < pb)
-	  tmp += cijk*ca[i]*cb[j];
+      for (typename Cijk_type::kj_iterator j_it = Cijk->j_begin(k_it); 
+	   j_it != Cijk->j_end(k_it); ++j_it) {
+	j = index(j_it);
+	if (j < pb) {
+	  for (typename Cijk_type::kji_iterator i_it = Cijk->i_begin(j_it);
+	       i_it != Cijk->i_end(j_it); ++i_it) {
+	    i = index(i_it);
+	    cijk = value(i_it);
+	    if (i < pa)
+	      tmp += cijk*ca[i]*cb[j];
+	  }
+	}
       }
       cc[k] = tmp / basis->norm_squared(k);
     }

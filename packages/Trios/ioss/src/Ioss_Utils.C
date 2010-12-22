@@ -365,3 +365,142 @@ void Ioss::Utils::fixup_name(char *name)
       name[i] = '_';
   }
 }
+
+namespace {
+  std::string two_letter_hash (const char *symbol)
+  {
+    // Hash function from Aho, Sethi, Ullman "Compilers: Principles,
+    // Techniques, and Tools.  Page 436
+    const int HASHSIZE=673; // Largest prime less than 676 (26*26)
+    char word[3];
+    unsigned int hashval;
+    unsigned int g;
+    for (hashval = 0; *symbol != '\0'; symbol++) {
+      hashval = (hashval << 4) + *symbol;
+      g = hashval&0xf0000000;
+      if (g != 0) {
+	hashval = hashval ^ (g >> 24);
+	hashval = hashval ^ g;
+      }
+    }
+
+    // Convert to base-26 'number'
+    hashval %= HASHSIZE;
+    word[0] = char(hashval / 26) + 'a';
+    word[1] = char(hashval % 26) + 'a';
+    word[2] = '\0';
+    return (std::string(word));
+  }
+}
+
+std::string Ioss::Utils::variable_name_kluge(const std::string &name,
+					     size_t component_count, size_t copies,
+					     size_t max_var_len)
+{
+  // This routine tries to shorten long variable names to an acceptable
+  // length ('max_var_len' characters max).  If the name is already less than this
+  // length, it is returned unchanged except for the appending of the hash...
+  //
+  // Since there is a (good) chance that two shortened names will match,
+  // a 2-letter 'hash' code is appended to the end of the variable
+  // name. This can be treated as a 2-digit base 26 number
+  //
+  // So, we shorten the name to a maximum of 'max_var_len-3' characters and append a
+  // dot ('.') and 2 character hash.
+  //
+  // But, we also have to deal with the suffices that Ioex_DatabaseIO
+  // appends on non-scalar values.  For the 'standard' types, the
+  // maximum suffix is 4 characters (underscore + 1, 2, or 3 characters).
+  // So...shorten name to maximum of 'max_var_len-3-{3|4|n}' characters depending on the
+  // number of components.
+  //
+  // This function alo converts name to lowercase and converts spaces
+  // to '_'
+
+  // Width = 'max_var_len'.
+  // Reserve space for suffix '_00...'
+  // Reserve 3 for hash   '.xx'
+  int hash_len = 3;
+  int comp_len = 3; // _00
+  int copy_len = 0;
+
+  if (copies > 1) {
+    assert(component_count % copies == 0);
+    component_count /= copies;
+  }
+
+  if (component_count     <=      1)
+    comp_len = 0;
+  else if (component_count <    100)
+    comp_len = 3;
+  else if (component_count <   1000)
+    comp_len = 4; //   _000
+  else if (component_count <  10000)
+    comp_len = 5; //  _0000
+  else if (component_count < 100000)
+    comp_len = 6; // _00000
+  else {
+    std::ostringstream errmsg;
+    errmsg << "Variable '" << name << "' has " << component_count
+	   << " components which is larger than the current maximum"
+	   << " of 100,000. Please contact developer.";
+    IOSS_ERROR(errmsg);
+  }
+
+  if (copies     <=      1)
+    copy_len = 0;
+  else if (copies <     10)
+    copy_len = 2;
+  else if (copies <    100)
+    copy_len = 3; 
+  else if (copies <   1000)
+    copy_len = 4; //   _000
+  else if (copies <  10000)
+    copy_len = 5; //  _0000
+  else if (copies < 100000)
+    copy_len = 6; // _00000
+  else {
+    std::ostringstream errmsg;
+    errmsg << "Variable '" << name << "' has " << copies
+	   << " copies which is larger than the current maximum"
+	   << " of 100,000. Please contact developer.";
+    IOSS_ERROR(errmsg);
+  }
+
+  size_t maxlen = max_var_len - comp_len - copy_len;
+
+  std::string new_str = name;
+  if (name.length() <= maxlen) {
+    // If name fits without kluging, then just use name as it is
+    // without adding on the hash...
+    std::transform(new_str.begin(), new_str.end(), new_str.begin(), to_lower);
+    return new_str;
+  } else {
+    // Know that the name is too long, try to shorten. Need room for
+    // hash now.
+    maxlen -= hash_len;
+    int len = name.length();
+
+    // Take last 'maxlen' characters.  Motivation for this is that the
+    // beginning of the composed (or generated) variable name is the
+    // names of the mechanics and mechanics instances in which this
+    // variable is nested, so they will be similar for all variables at
+    // the same scope and the differences will occur at the variable
+    // name level...
+    //
+    // However, there will likely be variables at the
+    // same level but in different scope that have the same name which
+    // would cause a clash, so we *hope* that the hash will make those
+    // scope names unique...
+    std::string s = std::string(name.c_str()).substr(len-maxlen,len);
+    assert(s.length() <= maxlen);
+    new_str = s;
+  }
+
+  // NOTE: The hash is not added if the name is not shortened. 
+  std::string hash_string = two_letter_hash(name.c_str());
+  new_str += std::string(".");
+  new_str += hash_string;
+  std::transform(new_str.begin(), new_str.end(), new_str.begin(), to_lower);
+  return new_str;
+}

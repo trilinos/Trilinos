@@ -29,6 +29,8 @@ ADD_SUBDIRECTORY(stk_util)
 
 ADD_SUBDIRECTORY(stk_mesh)
 
+ADD_SUBDIRECTORY(stk_expreval)
+
 IF( STK_ENABLE_Trios )
   ADD_SUBDIRECTORY(stk_io)
 ENDIF()
@@ -46,6 +48,8 @@ ADD_SUBDIRECTORY(stk_transfer)
 IF( STK_ENABLE_ThreadPool )
   ADD_SUBDIRECTORY(stk_search)
 ENDIF()
+
+# ADD_SUBDIRECTORY(stk_expreval)
 
 #
 # D) Do standard postprocessing

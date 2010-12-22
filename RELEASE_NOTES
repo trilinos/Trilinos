@@ -1,5 +1,253 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 10.8 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Framework Release Notes:
+
+- MPI Fortran compiler wrapper search change
+
+Starting with Trilinos 10.8, when MPI is enabled and a specific Fortran
+compiler is not specified at configure time, the first wrapper searched for
+will be mpif90 instead of mpif77.  If a mpif90 wrapper is not found, the
+search will continue and attempt to find mpif77.  Depending on the underlying
+compilers used and the mpi configuration, a mpif90 wrapper may exist, but not
+be functional.  In those cases, a functional Fortran compiler wrapper should
+be specified at configure time.
+
+###############################################################################
+#                                                                             #
+# Trilinos Release 10.6 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 10.6 general release contains 48 packages: Amesos, Anasazi,
+AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI, ForTrilinos^,
+Galeri, GlobiPack, Ifpack, Ifpack2**, Intrepid, Isorropia, Kokkos, Komplex,
+LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen, Phalanx,
+Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, Shards, STK, Stokhos,
+Stratimikos, Sundance, Teko*, Teuchos, ThreadPool, Thyra, Tpetra, TriKota,
+TrilinosCouplings, Triutils, Zoltan.
+
+(* denotes package is being released externally as a part of Trilinos for the
+first time.)
+
+(** Ifpack2 was previously released under the name "Tifpack".)
+
+(^ ForTrilinos was added to the external release for Trilinos 10.4.1.)
+
+Framework Release Notes:
+
+  - New to Trilinos 10.6 is a small functional example to be used as a template
+    for applications that use CMake and want to build against an installed
+    version of Trilinos.  The application automatically pulls required
+    information from Trilinos including compilers, include paths, and library
+    names (in the correct order).  The example can be found in
+    demos/buildAgainstTrilinos.
+
+More information:
+
+Trilinos website: http://trilinos.sandia.gov
+
+===============================================================================
+
+Package Release Notes:
+
+-------------------------------------------------------------------------------
+
+Anasazi
+
+  - Better support for Tpetra in Anasazi.
+
+-------------------------------------------------------------------------------
+
+Belos
+
+  - Minor changes in Belos/Tpetra adaptors.
+
+-------------------------------------------------------------------------------
+
+ForTrilinos
+
+ - This release includes 11 modules or classes of the Epetra package.
+
+ - This package is still in its experimental stage and is only supported on AIX.
+
+ - Sample configure script are provided in
+   Trilinos/sampleScripts/aix-fortrilinos-serial and
+   Trilinos/sampleScripts/aix-fortrilinos-mpif90 for serial and mpi builds
+   respectively.
+ 
+ - Because of the object-oriented features used, it requires a XL Fortran
+   compiler v13.1. The source code can be compiled using the xlf compiler
+   option.
+
+ - Required compiler flags for Fortran include:
+   -qfixed=72 -qxlines:   deals with older Fortran source code in other Trilinos
+                          packages. These flags are used for mpi builds and must
+                          be specified in the configure script.
+   -qxlf2003=polymorphic: allows for the use of polymorphism in the source code.
+   -qxlf2003=autorealloc: allows the compiler to automatically reallocate the
+                          left hand side with the shape of the right hand side
+                          when using allocatable variables in an assignment.
+   -qfree=f90:            informs the compiler that the source code is free form
+                          and conforms to Fortran 90.
+
+   These flags(-qfree=f90 -qxlf2003=polymorphic -qxlf2003=autorealloc) are
+   hardcoded in Trilinos/packages/ForTrilinos/CMakeLists.txt
+
+ - Required compiler flag for xlc++ include:
+   -qrtti=all:            this flag should be included in the configure script.
+
+ - The project is primarily user-driven; so new interfaces are developed at the
+   request of Trilinos users.
+
+-------------------------------------------------------------------------------
+  
+Kokkos
+
+  Significant internal/external changes to both the Kokkos Node API and the
+  Kokkos Linear Algebra library. Most of these changes are centered around 
+  CrsGraph and CrsMatrix and their kernels. Some exciting developments
+  regarding  sparse mat-vec on multi-core/GPUs did not make it in this release;
+  look for more development in 10.6.1.
+
+  - Lots of additional documentation, testing and examples in Kokkos.
+
+  - Improved debugging in Kokkos Node API
+
+  - Added isHostNode static bool to all Kokkos nodes (false for ThrustGPUNode)
+
+  - Imported select Teuchos memory management classes/methods into the Kokkos
+    namespace.
+
+  - Minor bug fixes, warnings addressed.
+
+  Changes breaking backwards compatbility:
+  - Kokkos CRS classes (i.e., CrsGraph and CrsMatrix) are now templated on the 
+    sparse kernel operator, allowing specialization of the class data 
+    according to the implementation of the kernel.
+
+  - Kokkos CRS classes now contain host-allocated memory, instead of
+    node-allocated memory. This means that use of these buffers by the node
+    will, in general, require a copy. 
+
+-------------------------------------------------------------------------------
+  
+Meros
+  
+  - Meros has been removed from the release. Teko provides replacement
+    Functionality.
+
+-------------------------------------------------------------------------------
+
+ML
+
+  User-Level functionality changes
+  
+  - Modifications to ML to allow user to specify the use of CRS storage.
+    Certain methods in Ifpack are much more efficient if the matrix is in
+    Epetra_CRS_Matrix mode.  This new switch tells ML to store things as CSR
+    instead of MSR (it's still the default).
+
+  - Modifying MLMEX so the solve mode can (optionally) return iteration
+    counts.  Only works in ML_Epetra mode, not MLAPI.
+
+  - Adding ML support for Ifpack-SuperLU(ILUTP) smoother.
+
+  - Adding a face-based least-squares finite element (LSFEM)
+    preconditioner to ML.  See TrilinosCouplings for an example.
+
+  - Adding MLMEX matlab interface to the cmake build system.
+
+  Internal changes, output changes and bugfixes
+
+  - Fixed a bug in ML_Project_Coordinates so that it works where
+    dim != numPDEs. For using auxillary aggregation for problems like linear
+    elasticity.
+
+  - Fixing a memory leak in ML_Init_Aux.
+
+  - Adding additional output to ML. This focuses on the IFPACK/SORa
+    smoother as well as improved RefMaxwell output.
+
+  - Modifications to RefMaxwell to allow direct use of Ifpack (rather
+    than via MLP).
+
+  - Removing ML's dependence on ZoltanTpl.
+
+  - Changed the output of the IFPACK-ILU smoother so that it is more
+    informative.
+
+-------------------------------------------------------------------------------
+
+Teko
+
+  Teko is a library for implementation of blocked and segregated preconditioners
+  in the context of iterative solvers for linear systems. This includes a high
+  level interface for manipulating block operators and creating inverse
+  operators using solver and preconditioning capabilities in Trilinos. In
+  addition, utilities are provided that decompose large Epetra_CrsMatrix objects
+  into physically meaningful sub blocks.  A brief over view of the capabilities
+  built in Teko is
+
+  - Generic preconditioners operations: Additive, multiplicative, Neumann
+    series, block Gauss-Seidel, block Jacobi, and 2x2 block LU factorization
+
+  - Manipulation of abstract linear operators: implicit/explicit operator
+    addition and multiplication, constructing an approximate inverse operator
+    using Trilinos preconditioner and solver technology
+
+  - Deconstruction of Epetra_CrsMatrix into is physical components
+
+  - Parameter list driven interface for constructing preconditioners
+
+  NOTE: A word of caution.  The interfaces in Teko are still maturing and may
+  change substantially in the future. 
+
+-------------------------------------------------------------------------------
+
+Tpetra
+
+  Significant internal changes in Tpetra for this release, mostly centered
+  around the CrsMatrix class. Lots of new features centering around
+  multi-core/GPUs did not make it in this release; look for more development in
+  10.6.1.
+
+  - Lots of additional documentation, testing and examples in Tpetra.
+
+  - Imported select Teuchos memory management classes/methods into the Tpetra
+    namespace.
+
+  - Updates to the Anasazi/Tpetra adaptors for efficiency, node-awareness and
+    debugging.
+
+  - Minor bug fixes, warnings addressed.
+
+  Changes breaking backwards compatbility:
+  - Tpetra CRS objects (i.e., CrsGraph and CrsMatrix) are required to be
+    "fill-active" in order to be modified. Furthermore, they are requried to be
+    "fill-complete" in order to call multiply/solve. The transition between
+    these states is mediated by the methods fillComplete() and resumeFill(). 
+    This will only effect users that modify a matrix after calling
+    fillComplete().
+
+  Newly deprecated functionality:
+  - CrsGraph/CrsMatrix persisting views of graph and matrix data are now
+    deprecated. New, non-persisting versions of these are provided.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 10.4 Release Notes                                         #
 #                                                                             #
 ###############################################################################

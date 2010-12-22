@@ -17,7 +17,6 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 /*
@@ -43,13 +42,12 @@ namespace fixtures {
 
 GridFixture::GridFixture(stk::ParallelMachine pm)
   : m_spatial_dimension(2)
-  , m_meta_data( TopologicalMetaData::entity_rank_names(m_spatial_dimension) )
+  , m_meta_data( fem::entity_rank_names(m_spatial_dimension) )
   , m_bulk_data( m_meta_data , pm )
-  , m_top_data( m_meta_data, m_spatial_dimension )
-  , m_quad_part( m_top_data.declare_part<shards::Quadrilateral<4> >("quad_part" ) )
-  , m_dead_part( m_meta_data.declare_part("dead_part"))
-{
-}
+  , m_fem(  m_meta_data, m_spatial_dimension )
+  , m_quad_part( declare_part<shards::Quadrilateral<4> >(m_meta_data, "quad_part") )
+  , m_dead_part( declare_part(m_meta_data, "dead_part"))
+{}
 
 GridFixture::~GridFixture()
 { }
@@ -60,6 +58,7 @@ void GridFixture::generate_grid()
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
+  const EntityRank element_rank = fem::element_rank(m_fem);
   std::vector<Entity*> all_entities;
 
   // assign ids, quads, nodes, then shells
@@ -97,13 +96,13 @@ void GridFixture::generate_grid()
       unsigned face_id = quad_face_ids[i];
       unsigned row = (face_id - 1) / num_nodes_per_quad;
 
-      Entity& face = m_bulk_data.declare_entity(m_top_data.element_rank, face_id, face_parts);
+      Entity& face = m_bulk_data.declare_entity(element_rank, face_id, face_parts);
 
       unsigned node_id = num_quad_faces + face_id + row;
 
       for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
         node_id += stencil_for_4x4_quad_mesh[chg_itr];
-        Entity& node = m_bulk_data.declare_entity(m_top_data.node_rank, node_id, no_parts);
+        Entity& node = m_bulk_data.declare_entity(fem::NODE_RANK, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }

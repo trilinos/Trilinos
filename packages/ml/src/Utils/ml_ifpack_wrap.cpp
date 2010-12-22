@@ -132,8 +132,8 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
   Epetra_Map*       Ifpack_RowMap;
 
 #ifdef IFPACK_NODE_AWARE_CODE
-  // NODE_AWARE always uses force_crs
-  force_crs=1;
+  // NODE_AWARE always uses use_crs
+  use_crs=1;
 #endif
 
   (*Ifpack_Handle)->freeMpiComm = 0;
@@ -161,10 +161,13 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
     // creates the wrapper from ML_Operator to Epetra_RowMatrix
     // (ML_Epetra::RowMatrix). This is a cheap conversion
 #   ifdef ML_MPI
+/*
     hasRows = MPI_UNDEFINED;
     if (Ke->invec_leng > 0 || Ke->outvec_leng > 0) hasRows = 1;
     MPI_Comm_split(Ke->comm->USR_comm,hasRows,Ke->comm->ML_mypid,&ifpackComm);
     if (hasRows == 1) (*Ifpack_Handle)->freeMpiComm = 1;
+*/
+    ifpackComm = Ke->comm->USR_comm;
 #   endif //ifdef ML_MPI
     
     // Do I have CRS storage?

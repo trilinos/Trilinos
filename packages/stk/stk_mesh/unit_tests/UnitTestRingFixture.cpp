@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_mesh/fixtures/RingFixture.hpp>
@@ -14,8 +13,6 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
-
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 
@@ -25,6 +22,7 @@ using stk::mesh::Selector;
 using stk::mesh::Entity;
 using stk::mesh::EntityProc;
 using stk::mesh::fixtures::RingFixture;
+using stk::mesh::fem::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
 {
@@ -39,7 +37,8 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   MetaData& meta = fixture.m_meta_data;
   BulkData& bulk = fixture.m_bulk_data;
 
-  stk::mesh::TopologicalMetaData top( meta, 1 /* spatial dim */ );
+  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fixture.m_fem);
+
   meta.commit();
 
   const unsigned p_rank     = bulk.parallel_rank();
@@ -62,18 +61,18 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
 
   std::vector<unsigned> local_count;
   stk::mesh::count_entities( select_used , bulk , local_count );
-  STKUNIT_ASSERT_EQUAL( local_count[top.node_rank] , nLocalNode );
-  STKUNIT_ASSERT_EQUAL( local_count[top.element_rank] , nLocalEdge );
+  STKUNIT_ASSERT_EQUAL( local_count[NODE_RANK]     , nLocalNode );
+  STKUNIT_ASSERT_EQUAL( local_count[element_rank] , nLocalEdge );
 
   std::vector<Entity*> all_nodes;
-  get_entities( bulk, top.node_rank, all_nodes);
+  get_entities( bulk, NODE_RANK, all_nodes);
 
   unsigned num_selected_nodes =
-    count_selected_entities( select_used, bulk.buckets(top.node_rank) );
-  STKUNIT_ASSERT_EQUAL( num_selected_nodes , local_count[top.node_rank] );
+    count_selected_entities( select_used, bulk.buckets(NODE_RANK) );
+  STKUNIT_ASSERT_EQUAL( num_selected_nodes , local_count[NODE_RANK] );
 
   std::vector<Entity*> universal_nodes;
-  get_selected_entities(select_all, bulk.buckets(top.node_rank),
+  get_selected_entities(select_all, bulk.buckets(NODE_RANK),
                         universal_nodes );
   STKUNIT_ASSERT_EQUAL( universal_nodes.size() , all_nodes.size() );
 
@@ -89,8 +88,8 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
     const unsigned n0 = id_end < id_total ? id_begin : 0 ;
     const unsigned n1 = id_end < id_total ? id_end : id_begin ;
 
-    Entity * const node0 = bulk.get_entity( top.node_rank , fixture.m_node_ids[n0] );
-    Entity * const node1 = bulk.get_entity( top.node_rank , fixture.m_node_ids[n1] );
+    Entity * const node0 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n0] );
+    Entity * const node1 = bulk.get_entity( NODE_RANK , fixture.m_node_ids[n1] );
 
     STKUNIT_ASSERT( node0 != NULL );
     STKUNIT_ASSERT( node1 != NULL );
@@ -225,8 +224,8 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   STKUNIT_ASSERT_EQUAL( count_shared , 2u );
 
   {
-    Entity * const node_recv = bulk.get_entity( 0 /*node_rank*/ , ring.m_node_ids[id_recv] );
-    Entity * const node_send = bulk.get_entity( 0 /*node rank*/, ring.m_node_ids[id_send] );
+    Entity * const node_recv = bulk.get_entity( NODE_RANK , ring.m_node_ids[id_recv] );
+    Entity * const node_send = bulk.get_entity( NODE_RANK , ring.m_node_ids[id_send] );
 
     STKUNIT_ASSERT_EQUAL( node_recv->sharing().size() , 1u );
     STKUNIT_ASSERT_EQUAL( node_send->sharing().size() , 1u );

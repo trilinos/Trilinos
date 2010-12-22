@@ -36,6 +36,7 @@
  * date and should be cleared and re-initialized.
  */
 
+#include <stdexcept>
 
 // STL components
 #include <vector>
@@ -123,6 +124,10 @@ public:
    * again.
    */
   virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition) = 0;
+
+  /** Query whether element dependents need to be rebalanced outside this Partition. */
+  virtual bool partition_dependents_needed() const = 0;
+
 
 protected:
 

@@ -27,13 +27,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  DerivExpansionUnitTest
-  SOURCES Stokhos_DerivExpansionUnitTest.cpp
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  NUM_MPI_PROCS 1
-  )
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#  DerivExpansionUnitTest
+#  SOURCES Stokhos_DerivExpansionUnitTest.cpp
+#  COMM serial mpi
+#  STANDARD_PASS_OUTPUT
+#  NUM_MPI_PROCS 1
+#  )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   QuadExpansionUnitTest

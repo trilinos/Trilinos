@@ -19,9 +19,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/Stencils.hpp>
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -35,12 +33,10 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
   // Create the fixture, adding a part for the shell
 
   stk::mesh::fixtures::HexFixture fixture( pm , 2 , 1 , 1 );
-  stk::mesh::TopologicalMetaData & top_data = fixture.m_top_data;
 
   const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
 
-  stk::mesh::Part & shell_part =
-    top_data.declare_part<shards::ShellQuadrilateral<4> >("shell_part");
+  stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellQuadrilateral<4> >( fixture.m_meta_data, "shell_part");
 
   fixture.m_meta_data.commit();
 

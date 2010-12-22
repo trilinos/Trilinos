@@ -254,7 +254,6 @@ void Piro::Epetra::MatrixFreeOperator::setBase(
   modelInArgs.get_x()->Norm2(&solutionNorm);
   baseIsSet = true;
 
-  cout << "XXX Base X reset with norm = " << solutionNorm << endl;
 }
 
 int  Piro::Epetra::MatrixFreeOperator::Apply

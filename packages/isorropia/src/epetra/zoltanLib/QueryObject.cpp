@@ -923,17 +923,17 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
   }
 
   int pin_start_pos = 0;
-  int *gids = NULL;
+  unsigned int *gids = NULL;
 
-  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
-    gids = new int [maxrow];
+  if (sizeof(ZOLTAN_ID_TYPE) != sizeof(unsigned int)){
+    gids = new unsigned int [maxrow];
     if (maxrow && !gids){
       *ierr = ZOLTAN_MEMERR;
       return;
     }
   }
   else{
-    gids = (int *)pin_GID;
+    gids = (unsigned int *)pin_GID;
   }
 
   for (int i=0; i<num_row_or_col; i++){ 
@@ -942,10 +942,10 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
 
     if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
       if (haveGraph_){
-        rc = graph_->ExtractMyRowCopy(i, maxrow, num_indices,gids);
+        rc = graph_->ExtractMyRowCopy(i, maxrow, num_indices, (int *)gids);
       }
       else{
-        rc = matrix_->ExtractMyRowCopy(i, maxrow, num_indices, tmp, gids);
+        rc = matrix_->ExtractMyRowCopy(i, maxrow, num_indices, tmp,  (int *)gids);
       }
       if (rc == 0){
         for (int j=pin_start_pos, count=0; count < num_indices; j++, count++){
@@ -967,15 +967,15 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     }
     else{
       if (haveGraph_){
-        rc = graph_->ExtractMyRowCopy(i, npins, num_indices,gids + pin_start_pos);
+        rc = graph_->ExtractMyRowCopy(i, npins, num_indices,(int *)gids + pin_start_pos);
       }
       else{
-        rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, gids + pin_start_pos);
+        rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, (int *)gids + pin_start_pos);
       }
 
       if (rc == 0){
         for (int i=pin_start_pos; i<pin_start_pos+num_indices; i++){
-          gids[i] = colMap_->GID(gids[i]); // convert to global IDs
+          gids[i] = (unsigned int)colMap_->GID(gids[i]); // convert to global IDs
           if (gids[i] < base_){
      	    *ierr = ZOLTAN_FATAL;
     	    std::cout << "Proc:" << myProc_ << " Error: ";
@@ -996,7 +996,7 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     npins -= num_indices;
   }
 
-  if (gids && (gids != (int *)pin_GID)){
+  if (gids && (gids != (unsigned int *)pin_GID)){
     delete [] gids;
   }
 

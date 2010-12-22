@@ -29,25 +29,43 @@
 // @HEADER
 
 #include "Stokhos_GaussSeidelPreconditioner.hpp"
-#include "Epetra_config.h"
 #include "Teuchos_TimeMonitor.hpp"
+#include "EpetraExt_BlockUtility.h"
 
 Stokhos::GaussSeidelPreconditioner::
 GaussSeidelPreconditioner(
+  const Teuchos::RCP<const EpetraExt::MultiComm>& sg_comm_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::RCP<const Stokhos::EpetraSparse3Tensor>& epetraCijk_,
   const Teuchos::RCP<const Epetra_Map>& base_map_,
   const Teuchos::RCP<const Epetra_Map>& sg_map_,
   const Teuchos::RCP<NOX::Epetra::LinearSystem>& det_solver_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_):
   label("Stokhos Gauss-Seidel Preconditioner"),
+  sg_comm(sg_comm_),
+  sg_basis(sg_basis_),
+  epetraCijk(epetraCijk_),
   base_map(base_map_),
   sg_map(sg_map_),
+  is_stoch_parallel(epetraCijk->isStochasticParallel()),
+  stoch_row_map(epetraCijk->getStochasticRowMap()),
   det_solver(det_solver_),
   params(params_),
   useTranspose(false),
   sg_op(),
   sg_poly(),
-  Cijk()
+  Cijk(epetraCijk->getParallelCijk()),
+  is_parallel(epetraCijk->isStochasticParallel())
 {
+  if (is_parallel) {
+    Teuchos::RCP<const Epetra_BlockMap> stoch_col_map =
+      epetraCijk->getStochasticColMap();
+    sg_col_map =
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*base_map,
+							     *stoch_col_map,
+							     sg_map->Comm()));
+    col_exporter = Teuchos::rcp(new Epetra_Export(*sg_col_map, *sg_map));
+  }
 }
 
 Stokhos::GaussSeidelPreconditioner::
@@ -67,7 +85,6 @@ setupPreconditioner(const Teuchos::RCP<Stokhos::SGOperator>& sg_op_,
   det_solver->createPreconditioner(*(sg_x_block.GetBlock(0)),
 				   params->sublist("Deterministic Solver Parameters"),
 				   false);
-  Cijk = sg_op->getTripleProduct();
 }
 
 int 
@@ -92,6 +109,7 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 {
   int max_iter = params->get("Max Iterations",100 );
   double sg_tol = params->get("Tolerance", 1e-12);
+  bool scale_op = params->get("Scale Operator by Inverse Basis Norms", true);
   bool only_use_linear = params->get("Only Use Linear Terms", true);
   
   // We have to be careful if Input and Result are the same vector.
@@ -103,13 +121,12 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     made_copy = true;
   }
 
-  int sz = sg_poly->basis()->size();
-  int K_limit = sg_poly->size();
+  int k_limit = sg_poly->size();
   int dim = sg_poly->basis()->dimension();
   if (only_use_linear && sg_poly->size() > dim+1)
-    K_limit = dim + 1;
-  const Teuchos::Array<double>& norms = sg_poly->basis()->norm_squared();
-
+    k_limit = dim + 1;
+  const Teuchos::Array<double>& norms = sg_basis->norm_squared();
+  
   int m = input->NumVectors();
   if (sg_df_block == Teuchos::null || sg_df_block->NumVectors() != m) {
     sg_df_block = 
@@ -117,6 +134,12 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     sg_y_block = 
       Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
     kx = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
+    if (is_parallel) {
+      sg_df_col = Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, 
+							       *sg_col_map, m));
+      sg_df_tmp = Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, 
+							       *sg_map, m));
+    }
   }
   
   // Extract blocks
@@ -143,8 +166,13 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
     iter++;
 
     sg_y_block->Update(1.0, sg_f_block, 0.0);
+    if (is_parallel)
+      sg_df_col->PutScalar(0.0);
     
-    for (int i=0; i<sz; i++) {
+    for (Cijk_type::i_iterator i_it=Cijk->i_begin(); 
+	 i_it!=Cijk->i_end(); ++i_it) {
+      int i = index(i_it);
+
       f = sg_f_block.GetBlock(i);
       df = sg_df_block->GetBlock(i);
       dx = sg_dx_block.GetBlock(i);
@@ -168,17 +196,25 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
 
       df->Update(1.0, *f, 0.0);
       
-      for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i);
-	   k_it != Cijk->k_end(i); ++k_it) {
+      for (Cijk_type::ik_iterator k_it = Cijk->k_begin(i_it);
+	   k_it != Cijk->k_end(i_it); ++k_it) {
 	int k = index(k_it);
-	if (k!=0 && k<K_limit) {
+	if (k!=0 && k<k_limit) {
 	  (*sg_poly)[k].Apply(*dx, *kx);
 	  for (Cijk_type::ikj_iterator j_it = Cijk->j_begin(k_it);
 	       j_it != Cijk->j_end(k_it); ++j_it) {
 	    int j = index(j_it);
+	    int j_gid = epetraCijk->GCID(j);
 	    double c = value(j_it);
-	    sg_df_block->GetBlock(j)->Update(-1.0*c/norms[j], *kx, 1.0);
-	    sg_y_block->GetBlock(j)->Update(-1.0*c/norms[j], *kx, 1.0);
+	    if (scale_op)
+	      c /= norms[j_gid];
+	    bool owned = epetraCijk->myGRID(j_gid);
+	    if (!is_parallel || owned) {
+	      sg_df_block->GetBlock(j)->Update(-c, *kx, 1.0);
+	      sg_y_block->GetBlock(j)->Update(-c, *kx, 1.0);
+	    }
+	    else
+	      sg_df_col->GetBlock(j)->Update(-c, *kx, 1.0);
 	  }
 	}
       }
@@ -187,6 +223,13 @@ ApplyInverse(const Epetra_MultiVector& Input, Epetra_MultiVector& Result) const
       sg_y_block->GetBlock(i)->Update(-1.0, *kx, 1.0);
       
     } //End of k loop
+
+    // Add in contributions from off-process
+    if (is_parallel) {
+      sg_df_tmp->Export(*sg_df_col, *col_exporter, InsertAdd);
+      sg_df_block->Update(1.0, *sg_df_tmp, 1.0);
+      sg_y_block->Update(1.0, *sg_df_tmp, 1.0);
+    }
     
     sg_y_block->Norm2(&norm_df);
     //std::cout << "norm_df = " << norm_df << std::endl;
@@ -231,7 +274,7 @@ const Epetra_Comm &
 Stokhos::GaussSeidelPreconditioner::
 Comm() const
 {
-  return base_map->Comm();
+  return *sg_comm;
 }
 const Epetra_Map& 
 Stokhos::GaussSeidelPreconditioner::

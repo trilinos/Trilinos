@@ -19,18 +19,30 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
+namespace {
+
+const double PI     = 3.14159265358979;
+const double TWO_PI = 2 * PI;
+
+} // namespace 
+
+
 namespace stk {
 namespace mesh {
 namespace fixtures {
 
-
-struct GearData {
+/**
+ * Defines a single movement of a gear. This include rotation and movement in
+ * the x, y, z dimensions.
+ */
+struct GearMovement
+{
   double rotation;
   double x;
   double y;
   double z;
 
-  GearData(
+  GearMovement(
       double arg_rotation = 0.0,
       double arg_x = 0.0,
       double arg_y = 0.0,
@@ -50,102 +62,99 @@ class Gear {
 
   enum { SpatialDimension = 3 };
 
+ public:
+  Gear(
+       MetaData & meta,
+       BulkData & bulk,
+       Part & gear,
+       Part & cylindrical_coord,
+       Part & hex,
+       Part & wedge,
+       CartesianField    & arg_cartesian_coord_field,
+       CartesianField    & arg_displacement_field,
+       CartesianField    & arg_translation_field,
+       CylindricalField  & arg_cylindrical_coord_field,
+       double arg_element_size  =  0.10,
+       double arg_radius_min    =  0.6,
+       double arg_radius_max    =  1.0 + 0.05,
+       double arg_height_min = -0.4,
+       double arg_height_max =  0.4
+       );
 
-  public:
-    Gear(
-        MetaData & meta,
-        BulkData & bulk,
-        Part & gear,
-        Part & cylindrical_coord,
-        Part & hex,
-        Part & wedge,
-        CartesianField    & arg_cartesian_coord_field,
-        CartesianField    & arg_displacement_field,
-        CartesianField    & arg_translation_field,
-        CylindricalField  & arg_cylindrical_coord_field,
-        double arg_element_size  =  0.10,
-        double arg_radius_min    =  0.6,
-        double arg_radius_max    =  1.0 + 0.05,
-        double arg_height_min = -0.4,
-        double arg_height_max =  0.4
-        );
+  const double element_size;
+  const double rad_min, rad_max;
+  const double height_min, height_max;
 
-    const double element_size;
-    const double rad_min, rad_max;
-    const double height_min, height_max;
+  const size_t angle_num;
+  const size_t rad_num;
+  const size_t height_num;
 
-    const size_t angle_num;
-    const size_t rad_num;
-    const size_t height_num;
+  const double angle_increment;
+  const double rad_increment;
+  const double height_increment;
 
-    const double angle_increment;
-    const double rad_increment;
-    const double height_increment;
+  const size_t num_elements;
+  const size_t num_nodes;
 
-    const size_t num_elements;
-    const size_t num_nodes;
+  MetaData & meta_data;
+  BulkData & bulk_data;
 
-    MetaData & meta_data;
-    BulkData & bulk_data;
+  Part & gear_part;
 
-    Part & gear_part;
+  //must be called between modification_begin / modification_end
+  void generate_gear();
 
+  void move( const GearMovement & data );
 
-    //must be called between modification_begin / modification_end
-    void generate_gear();
+ private:
 
-    void move( const GearData & data = GearData());
-
-
-  private:
-
-    Entity & get_node (
+  Entity & get_node (
         size_t iz ,       // Thickness index
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
-    {
-      return * gear_entities[ node_index(iz,ir,ia)];
-    }
+  {
+    return * gear_entities[ node_index(iz,ir,ia)];
+  }
 
     Entity & get_element(
         size_t iz ,       // Thickness index
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
-    {
-      return * gear_entities[ elem_index(iz,ir,ia)];
-    }
+  {
+    return * gear_entities[ elem_index(iz,ir,ia)];
+  }
 
     EntityId node_index(
         size_t iz ,       // Thickness index
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
-    {
-      return static_cast<stk::mesh::EntityId>(iz + height_num * ( ir + rad_num * ia ));
-    }
+  {
+    return static_cast<stk::mesh::EntityId>(iz + height_num * ( ir + rad_num * ia ));
+  }
 
-    EntityId elem_index(
+  EntityId elem_index(
         size_t iz ,       // Thickness index
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
-    {
-      return static_cast<stk::mesh::EntityId>(num_nodes + iz + (height_num-1) * ( ir + (rad_num-1) * ia ));
-    }
+  {
+    return static_cast<stk::mesh::EntityId>(num_nodes + iz + (height_num-1) * ( ir + (rad_num-1) * ia ));
+  }
 
-    void populate_fields();
+  void populate_fields(stk::mesh::FieldState state);
 
-    Part & cylindrical_coord_part;
-    Part & hex_part;
-    Part & wedge_part;
+  Part & cylindrical_coord_part;
+  Part & hex_part;
+  Part & wedge_part;
 
-    CartesianField    & cartesian_coord_field ;
-    CartesianField    & displacement_field ;
-    CartesianField    & translation_field ;
-    CylindricalField  & cylindrical_coord_field ;
+  CartesianField    & cartesian_coord_field ;
+  CartesianField    & displacement_field ;
+  CartesianField    & translation_field ;
+  CylindricalField  & cylindrical_coord_field ;
 
-    EntityVector gear_entities;
+  EntityVector gear_entities;
 
-    Gear(const Gear &);
-    void operator = (const Gear &);
+  Gear(const Gear &);
+  void operator = (const Gear &);
 };
 
 } // fixtures

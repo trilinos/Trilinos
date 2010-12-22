@@ -57,7 +57,7 @@ class SimpleME : public EpetraExt::ModelEvaluator {
 public:
 
   //! Constructor
-  SimpleME(const Teuchos::RCP<Epetra_Comm>& comm);
+  SimpleME(const Teuchos::RCP<const Epetra_Comm>& comm);
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{

@@ -204,7 +204,7 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
     // Rank is the minimum rank of the intersection members.
 
     std::string p_name ;
-    EntityRank p_rank = std::numeric_limits<EntityRank>::max();
+    EntityRank p_rank = InvalidEntityRank;
 
     p_name.assign("{");
     for ( PartVector::iterator

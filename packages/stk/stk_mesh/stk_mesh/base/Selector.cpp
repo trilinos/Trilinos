@@ -369,6 +369,18 @@ Selector selectIntersection( const PartVector& intersection_part_vector )
   return selector;
 }
 
+Selector selectField( const FieldBase& field )
+{
+  Selector selector;
+  const MetaData& meta = field.mesh_meta_data();
+  const FieldRestrictionVector& rvec = field.restrictions();
+
+  for(size_t i=0; i<rvec.size(); ++i) {
+    selector |= meta.get_part(rvec[i].ordinal());
+  }
+  return selector;
+}
+
 
 
 } // namespace mesh

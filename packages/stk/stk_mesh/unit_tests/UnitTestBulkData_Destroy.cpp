@@ -14,8 +14,6 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_mesh/fem/TopologicalMetaData.hpp>
-
 #include <stk_mesh/fixtures/RingFixture.hpp>
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
@@ -26,7 +24,6 @@ using stk::mesh::BulkData;
 using stk::mesh::Entity;
 using stk::mesh::Selector;
 using stk::mesh::PartVector;
-using stk::mesh::TopologicalMetaData;
 using stk::mesh::EntityId;
 using stk::mesh::fixtures::RingFixture;
 
@@ -46,7 +43,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
   const int spatial_dimension = 3;
-  MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
 
   const PartVector no_parts ;
 
@@ -127,7 +124,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
   const unsigned nLocalEdge = nPerProc ;
 
   const int spatial_dimension = 3;
-  MetaData meta( TopologicalMetaData::entity_rank_names(spatial_dimension) );
+  MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
 
   meta.commit();
 

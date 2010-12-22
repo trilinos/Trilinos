@@ -234,10 +234,11 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).</li>
 
   <li> <em>Stack Tracing</em>: When a debug build is enabled
-  (CMAKE_BUILD_TYPE=DEBUG or
-  Trilinos_ENABLE_DEBUG=ON) then the TEST_FOR_EXCEPTION() family of macros
+  (CMAKE_BUILD_TYPE=DEBUG OR Trilinos_ENABLE_DEBUG=ON) and when using GCC and
+  when enabling BinUtils (TPL_ENABLE_BinUtils=ON) then the
+  TEST_FOR_EXCEPTION() family of macros
   will take snapshopts of the stacktrace when exceptions are thrown.  These
-  stack traces can be printed out after an exception is thrown using the
+  stacktraces can be printed out after an exception is thrown using the
   funciton Teuchos::get_stored_stacktrace().  The standard catch macro
   TEUCHOS_STANDARD_CATCH_STATEMENTS() automatically invokes this function so
   all main() programs written using this macro will automatically print out

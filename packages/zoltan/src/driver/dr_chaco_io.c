@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <values.h>
+#include <limits.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -529,7 +529,7 @@ int Proc;
   ch_dist_vtx_list(*vtx_list, num_vtx, Proc, assignments);
 
   if (*num_vtx > 0) {
-    *min_vtx = MAXINT;
+    *min_vtx = INT_MAX;
     *max_vtx = -1;
     for (i = 0; i < *num_vtx; i++) {
       if ((*vtx_list)[i] > *max_vtx) *max_vtx = (*vtx_list)[i];

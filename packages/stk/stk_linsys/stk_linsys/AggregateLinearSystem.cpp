@@ -30,6 +30,13 @@ AggregateLinearSystem::~AggregateLinearSystem()
 }
 
 void
+AggregateLinearSystem::set_num_matrices_rhsvecs(size_t num_matrices, size_t num_rhsvecs)
+{
+  m_matrices.resize(num_matrices);
+  m_rhsvecs.resize(num_rhsvecs);
+}
+
+void
 AggregateLinearSystem::synchronize_mappings_and_structure()
 {
   m_linear_system.synchronize_mappings_and_structure();

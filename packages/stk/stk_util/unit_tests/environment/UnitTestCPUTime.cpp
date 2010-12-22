@@ -6,31 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
 #include <iostream>
 
 #include <stk_util/environment/CPUTime.hpp>
 
-class UnitTestCPUTime : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE( UnitTestCPUTime );
-  CPPUNIT_TEST( testUnit );
-  CPPUNIT_TEST_SUITE_END();
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-public:
-  void setUp() {}
-  void tearDown() {}
-  void testUnit();
-};
-
-CPPUNIT_TEST_SUITE_REGISTRATION(UnitTestCPUTime);
-
-void
-UnitTestCPUTime::testUnit()
+STKUNIT_UNIT_TEST(UnitTestCPUTime, testUnit)
 {
   std::ostringstream oss;
   
@@ -46,5 +28,5 @@ UnitTestCPUTime::testUnit()
   
   double cpu_delta = stk::cpu_time() - cpu_now;
   
-  CPPUNIT_ASSERT(cpu_delta >= 0.0 && cpu_delta <= 1.0);
+  STKUNIT_ASSERT(cpu_delta >= 0.0 && cpu_delta <= 1.0);
 }

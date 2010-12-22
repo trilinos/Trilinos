@@ -55,11 +55,11 @@ enum EVerbosityLevel {
 };
 
 /** Needed for serialization KLN 23/09/2010 */
-inline std::istream& operator>>(std::istream& is, EVerbosityLevel& prec){
+inline std::istream& operator>>(std::istream& std_is, EVerbosityLevel& prec){
   int intval;
-  is >> intval;
+  std_is >> intval;
   prec = (EVerbosityLevel)intval;
-  return is;
+  return std_is;
 }
 
 

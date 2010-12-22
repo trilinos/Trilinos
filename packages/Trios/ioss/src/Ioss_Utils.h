@@ -133,6 +133,26 @@ namespace Ioss {
 	os << t;
 	return os.str();
       }
-  };
+    
+    /*!
+     * Many databases have a maximum length for variable names which can
+     * cause a problem with variable name length.
+     *
+     * This routine tries to shorten long variable names to an acceptable
+     * length ('max_var_len' characters max).  If the name is already less than this
+     * length, it is returned unchanged...
+     *
+     * Since there is a (good) chance that two shortened names will match,
+     * a 2-letter 'hash' code is appended to the end of the variable name.
+     *
+     * So, we shorten the name to a maximum of 'max_var_len'-3 characters and append a
+     * 2 character hash+separator.
+     *
+     * It also converts name to lowercase and converts spaces to '_'
+     */
+    static std::string variable_name_kluge(const std::string &name,
+					   size_t component_count, size_t copies,
+					   size_t max_var_len);
+      };
 }
 #endif

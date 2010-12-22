@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
   pio_info.file_type		= -1;
   pio_info.chunk_reader         = 0;
   pio_info.init_dist_type	= -1;
-  pio_info.init_size		= ZOLTAN_ID_CONSTANT(-1);
+  pio_info.init_size		= ZOLTAN_ID_INVALID;
   pio_info.init_dim 		= -1;
   pio_info.init_vwgt_dim 	= -1;
   pio_info.init_dist_pins       = -1;
@@ -814,7 +814,7 @@ ELEM_INFO *elem;
   MPI_Reduce(&tmp, &total_vertices, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (mesh->proc == 0){
-    printf("Dynamic graph factor %0.4f, " ZOLTAN_ID_SPEC " vertices, " ZOLTAN_ID_SPEC " blanked (%0.2lf%%)\n",
+    printf("Dynamic graph factor %0.4f, " ZOLTAN_ID_SPEC " vertices, " ZOLTAN_ID_SPEC " blanked (%0.2f%%)\n",
             blank_factor, total_vertices, mesh->global_blank_count,
             ((double)mesh->global_blank_count*100.0/total_vertices));
   }

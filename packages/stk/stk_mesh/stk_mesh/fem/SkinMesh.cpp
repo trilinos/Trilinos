@@ -14,9 +14,7 @@
 #include <stk_mesh/base/Relation.hpp>
 
 
-#include <stk_mesh/fem/FEMTypes.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_mesh/fem/SkinMesh.hpp>

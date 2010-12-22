@@ -10,6 +10,9 @@
 #include "NOX_Epetra_LinearSystem.H"	// base class
 #include "NOX_Utils.H"                  // class data element
 
+#include "Stokhos_ParallelData.hpp"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_EpetraSparse3Tensor.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 #include "Stokhos_SGOperator.hpp"
@@ -42,9 +45,10 @@ namespace NOX {
 	Teuchos::ParameterList& printingParams, 
 	Teuchos::ParameterList& linearSolverParams, 
 	const Teuchos::RCP<NOX::Epetra::LinearSystem>& detsolve,
-	const Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> >& Cijk, 
 	const Teuchos::RCP<NOX::Epetra::Interface::Required>& iReq, 
-	const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac, 
+	const Teuchos::RCP<NOX::Epetra::Interface::Jacobian>& iJac,
+	const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+	const Teuchos::RCP<const Stokhos::ParallelData>& sg_parallel_data,
 	const Teuchos::RCP<Epetra_Operator>& J,
 	const Teuchos::RCP<const Epetra_Map>& base_map,
 	const Teuchos::RCP<const Epetra_Map>& sg_map,
@@ -137,10 +141,10 @@ namespace NOX {
 
       //! Pointer to deterministic solver
       Teuchos::RCP<NOX::Epetra::LinearSystem> det_solver;
+
+      //! Stores Epetra Cijk tensor
+      Teuchos::RCP<const Stokhos::EpetraSparse3Tensor> epetraCijk;
    
-      //! Pointer to Cijk
-      Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
- 
       //! Reference to the user supplied Jacobian interface functions
       Teuchos::RCP<NOX::Epetra::Interface::Jacobian> jacInterfacePtr;
       
@@ -167,9 +171,6 @@ namespace NOX {
       
       //! Temporary vector used in Gauss-Seidel iteration
       mutable Teuchos::RCP<Epetra_Vector> kx;
-
-      //! Size of SG expansion
-      int sz;
 
       //! SG operator to implement SG mat-vec
       Teuchos::RCP<Stokhos::SGOperator> mat_free_op;

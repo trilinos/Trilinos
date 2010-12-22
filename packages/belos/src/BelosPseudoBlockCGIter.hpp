@@ -242,6 +242,9 @@ namespace Belos {
     // Current number of iterations performed.
     int iter_;
 
+    // Current number of iterations performed.
+    bool assertPositiveDefiniteness_;
+
     // 
     // State Storage
     //
@@ -271,7 +274,8 @@ namespace Belos {
     stest_(tester),
     numRHS_(0),
     initialized_(false),
-    iter_(0)
+    iter_(0),
+    assertPositiveDefiniteness_( params.get("Assert Positive Definiteness", true) )
   {
   }
   
@@ -373,7 +377,13 @@ namespace Belos {
 
     // Compute first <r,z> a.k.a. rHz
     MVT::MvDot( *R_, *Z_, rHz );
-    
+
+    if ( assertPositiveDefiniteness_ )
+        for (i=0; i<numRHS_; ++i)
+            TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
+                                CGIterateFailure,
+                                "Belos::PseudoBlockCGIter::iterate(): negative value for r^H*M*r encountered!" );
+
     ////////////////////////////////////////////////////////////////
     // Iterate until the status test tells us to stop.
     //
@@ -387,13 +397,17 @@ namespace Belos {
       
       // Compute alpha := <R_,Z_> / <P_,AP_>
       MVT::MvDot( *P_, *AP_, pAp );
+
       for (i=0; i<numRHS_; ++i) {
+        if ( assertPositiveDefiniteness_ )
+            // Check that pAp[i] is a positive number!
+            TEST_FOR_EXCEPTION( SCT::real(pAp[i]) <= zero,
+                                CGIterateFailure,
+                                "Belos::PseudoBlockCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
+
         alpha(i,i) = rHz[i] / pAp[i];
-        // Check that alpha is a positive number!
-        TEST_FOR_EXCEPTION( SCT::real(alpha(i,i)) <= zero, CGIterateFailure,
-			  "Belos::PseudoBlockCGIter::iterate(): non-positive value for p^H*A*p encountered!" );
       }
-      
+
       //
       // Update the solution std::vector x := x + alpha * P_
       //
@@ -420,6 +434,11 @@ namespace Belos {
       }
       //
       MVT::MvDot( *R_, *Z_, rHz );
+      if ( assertPositiveDefiniteness_ )
+          for (i=0; i<numRHS_; ++i)
+              TEST_FOR_EXCEPTION( SCT::real(rHz[i]) < zero,
+                                  CGIterateFailure,
+                                  "Belos::PseudoBlockCGIter::iterate(): negative value for r^H*M*r encountered!" );
       //
       // Update the search directions.
       for (i=0; i<numRHS_; ++i) {

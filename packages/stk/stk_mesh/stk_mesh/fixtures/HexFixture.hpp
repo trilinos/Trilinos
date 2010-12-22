@@ -19,7 +19,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/DefaultFEM.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
@@ -46,16 +46,16 @@ class HexFixture
    */
   HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz);
 
-  const int              m_spatial_dimension;
-  const unsigned         m_nx;
-  const unsigned         m_ny;
-  const unsigned         m_nz;
-  MetaData               m_meta_data;
-  BulkData               m_bulk_data;
-  TopologicalMetaData    m_top_data;
-  Part &                 m_hex_part;
-  CoordFieldType &       m_coord_field ;
-  CoordGatherFieldType & m_coord_gather_field ;
+  const int                     m_spatial_dimension;
+  const unsigned                m_nx;
+  const unsigned                m_ny;
+  const unsigned                m_nz;
+  MetaData                      m_meta_data;
+  BulkData                      m_bulk_data;
+  DefaultFEM                    m_fem;
+  Part &                        m_hex_part;
+  CoordFieldType &              m_coord_field ;
+  CoordGatherFieldType &        m_coord_gather_field ;
 
   /**
    * Thinking in terms of a 3D grid of nodes, get the id of the node in
@@ -78,7 +78,7 @@ class HexFixture
    * position. Return NULL if this process doesn't know about this node.
    */
   Entity * node( unsigned x , unsigned y , unsigned z ) const {
-    return m_bulk_data.get_entity( m_top_data.node_rank , node_id(x, y, z) );
+    return m_bulk_data.get_entity( fem::NODE_RANK , node_id(x, y, z) );
   }
 
   /**
@@ -87,7 +87,7 @@ class HexFixture
    * element.
    */
   Entity * elem( unsigned x , unsigned y , unsigned z ) const {
-    return m_bulk_data.get_entity( m_top_data.element_rank, elem_id(x, y, z) );
+    return m_bulk_data.get_entity( fem::element_rank(m_fem), elem_id(x, y, z) );
   }
 
   /**

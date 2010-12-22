@@ -6,33 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cppunit/TestCase.h>
-#include <cppunit/extensions/HelperMacros.h>
-#include <cppunit/extensions/TestFactoryRegistry.h>
-#include <cppunit/ui/text/TestRunner.h>
-
 #include <sstream>
 #include <string>
 #include <stk_util/util/TeeStreambuf.hpp>
 
-class UnitTestTeeStreambuf : public CppUnit::TestCase {
-private:
-  CPPUNIT_TEST_SUITE(UnitTestTeeStreambuf);
-  CPPUNIT_TEST(testUnit);
-  CPPUNIT_TEST_SUITE_END();
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-public:
-  void setUp()
-  {}
-
-  void tearDown()
-  {}
-
-  void testUnit();
-};
-
-
-void UnitTestTeeStreambuf::testUnit()
+STKUNIT_UNIT_TEST(UnitTestTeeStreambuf, UnitTest)
 {
   stk::tee_streambuf    out_tee_streambuf;
 
@@ -51,23 +31,21 @@ void UnitTestTeeStreambuf::testUnit()
   
   out << message1;
 
-  CPPUNIT_ASSERT_EQUAL(dest1.str(), message1);
-  CPPUNIT_ASSERT_EQUAL(dest2.str(), message1);
+  STKUNIT_ASSERT_EQUAL(dest1.str(), message1);
+  STKUNIT_ASSERT_EQUAL(dest2.str(), message1);
 
   out_tee_streambuf.remove(&dest2);
 
   out << message2;
   
-  CPPUNIT_ASSERT_EQUAL(dest1.str(), message3);
-  CPPUNIT_ASSERT_EQUAL(dest2.str(), message1);
+  STKUNIT_ASSERT_EQUAL(dest1.str(), message3);
+  STKUNIT_ASSERT_EQUAL(dest2.str(), message1);
 
   out_tee_streambuf.remove(&dest1);
 
   out << message2;
 
-  CPPUNIT_ASSERT_EQUAL(dest1.str(), message3);
-  CPPUNIT_ASSERT_EQUAL(dest2.str(), message1);
+  STKUNIT_ASSERT_EQUAL(dest1.str(), message3);
+  STKUNIT_ASSERT_EQUAL(dest2.str(), message1);
 }
-
-CPPUNIT_TEST_SUITE_REGISTRATION(UnitTestTeeStreambuf);
 

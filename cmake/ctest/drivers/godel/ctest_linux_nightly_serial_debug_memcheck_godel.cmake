@@ -15,7 +15,6 @@ SET(Trilinos_PACKAGES Teuchos RTOp Epetra GlobiPack Tpetra EpetraExt
   Sacado Thyra OptiPack AztecOO Ifpack ML Stratimikos Rythmos MOOCHO)
 
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DDART_TESTING_TIMEOUT:STRING=600"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   )
 

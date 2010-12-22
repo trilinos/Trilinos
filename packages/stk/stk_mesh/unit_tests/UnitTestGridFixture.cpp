@@ -33,7 +33,6 @@
 #include <algorithm>
 
 using stk::mesh::MetaData;
-using stk::mesh::TopologicalMetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
 using stk::mesh::PartRelation;
@@ -42,6 +41,7 @@ using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
 using stk::mesh::Selector;
 using stk::mesh::BulkData;
+using stk::mesh::DefaultFEM;
 using stk::ParallelMachine;
 using std::cout;
 using std::endl;
@@ -55,35 +55,29 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
   stk::mesh::MetaData& meta_data = grid_mesh.meta_data();
-  stk::mesh::TopologicalMetaData& top_data = grid_mesh.top_data();
-
+  stk::mesh::DefaultFEM& fem = grid_mesh.fem();
+  const stk::mesh::EntityRank elem_rank = stk::mesh::fem::element_rank(fem);
+  
   int  size , rank;
   rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
   size = stk::parallel_machine_size( MPI_COMM_WORLD );
 
   // Create a part for the shells
-  stk::mesh::Part & shell_part = top_data.declare_part<shards::ShellLine<2> >("shell_part");
+  stk::mesh::Part & shell_part = stk::mesh::declare_part<shards::ShellLine<2> >(meta_data, "shell_part");
 
   meta_data.commit();
 
-  // Begin modification cycle
-  bulk_data.modification_begin();
-
   // Generate the plain grid
-
+  bulk_data.modification_begin();
   grid_mesh.generate_grid();
+  bulk_data.modification_end();
 
   // Add the shells
+  bulk_data.modification_begin();
 
-  std::vector<unsigned> count;
-  stk::mesh::Selector locally_owned(meta_data.locally_owned_part());
-  stk::mesh::count_entities(locally_owned, bulk_data, count);
   const unsigned num_shell_1_faces = 4*size + rank;
   const unsigned num_shell_2_faces = 2*size + rank;
   const unsigned num_shell_faces = num_shell_1_faces + num_shell_2_faces;
-
-  const unsigned num_entities = count[top_data.node_rank] +
-                                count[top_data.element_rank];
 
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
@@ -91,12 +85,13 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   std::vector<stk::mesh::Entity*> shell_faces;
 
   unsigned id_base = 0;
+  unsigned id_offset = 500; // a safe offset to avoid id overlap
   //Start at 1 so as not to have same element on different processors
   for (id_base = 1; id_base <= num_shell_faces; ++id_base) {
 
-    int new_id = size * id_base + rank;
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(top_data.element_rank,
-                                                            num_entities + new_id,
+    int new_id = rank * num_shell_faces + id_base;
+    stk::mesh::Entity& new_shell = bulk_data.declare_entity(elem_rank,
+                                                            id_offset + new_id,
                                                             shell_parts);
     shell_faces.push_back(&new_shell);
   }

@@ -57,7 +57,7 @@ int i, j;
 
   for (j = 0, i = 0; i < mesh->elem_array_len; i++) {
     current_elem = &(mesh->elements[i]);
-    if (current_elem->globalID >= 0) {
+    if (current_elem->globalID != ZOLTAN_ID_INVALID) {
       gids[j] = (ZOLTAN_ID_TYPE)current_elem->globalID;
       parts[j] = current_elem->my_part;
       j++;

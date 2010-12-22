@@ -13,12 +13,20 @@
 #include <stdlib.h>
 #include <math.h>
 #include <signal.h>
-#include "zoltan.h"
-#include "zz_util_const.h"
+#include "zz_const.h"
 
 
 static int myRank, numProcs;
 static double mbytes=0;
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef M_PI_2
+#define M_PI_2 1.57079632679489661923
+#endif
+
 
 /* Mesh data */
 
@@ -80,7 +88,6 @@ int main(int argc, char *argv[])
   ZOLTAN_GNO_TYPE numGlobalVertices;
   float ver;
   char dimstring[16];
-  char *datatype_name;
   double min, max, avg, local;
 
   struct Zoltan_Struct *zz;
@@ -129,16 +136,6 @@ int main(int argc, char *argv[])
     MPI_Finalize();
     exit(1);
   }
-
-  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
-    if (myRank == 0){
-      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
-                 datatype_name, zoltan_id_datatype_name);
-               
-    }
-    MPI_Finalize();
-    exit(0);
-  } 
 
   Zoltan_Memory_Debug(2);
 

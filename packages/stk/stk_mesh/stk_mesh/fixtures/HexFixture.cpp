@@ -18,7 +18,6 @@
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/fem/Stencils.hpp>
-#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
@@ -27,45 +26,39 @@ namespace mesh {
 namespace fixtures {
 
 HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz)
-  :
-  m_spatial_dimension(3)
-  , m_nx(nx)
-  , m_ny(ny)
-  , m_nz(nz)
-  , m_meta_data( TopologicalMetaData::entity_rank_names(m_spatial_dimension) )
-  , m_bulk_data( m_meta_data , pm )
-  , m_top_data( m_meta_data, m_spatial_dimension )
-  , m_hex_part( m_top_data.declare_part<shards::Hexahedron<8> >("hex_part" ) )
-  , m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") )
-  , m_coord_gather_field(
-      m_meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates")
-      )
+  : m_spatial_dimension(3),
+    m_nx(nx),
+    m_ny(ny),
+    m_nz(nz),
+    m_meta_data( fem::entity_rank_names(m_spatial_dimension) ),
+    m_bulk_data( m_meta_data , pm ),
+    m_fem(m_meta_data, m_spatial_dimension),
+    m_hex_part( declare_part<shards::Hexahedron<8> >( m_meta_data, "hex_part" ) ),
+    m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") ),
+    m_coord_gather_field(m_meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates"))
 {
-  typedef shards::Hexahedron<8> Hex8;
+  typedef shards::Hexahedron<8> Hex8 ;
   const unsigned nodes_per_elem = Hex8::node_count;
 
   //put coord-field on all nodes:
   put_field(
-      m_coord_field,
-      m_top_data.node_rank,
-      m_meta_data.universal_part(),
-      m_spatial_dimension
-      );
+    m_coord_field,
+    fem::NODE_RANK,
+    m_meta_data.universal_part(),
+    m_spatial_dimension);
 
   //put coord-gather-field on all elements:
   put_field(
-      m_coord_gather_field,
-      m_top_data.element_rank,
-      m_meta_data.universal_part(),
-      nodes_per_elem
-      );
+    m_coord_gather_field,
+    fem::element_rank(m_fem),
+    m_meta_data.universal_part(),
+    nodes_per_elem);
 
   // Field relation so coord-gather-field on elements points
   // to coord-field of the element's nodes
   m_meta_data.declare_field_relation( m_coord_gather_field,
-                                      element_node_stencil<Hex8>,
+                                      fem::element_node_stencil<Hex8, 3>,
                                       m_coord_field);
-
 }
 
 void HexFixture::generate_mesh()
@@ -150,8 +143,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       stk::mesh::declare_element( m_bulk_data, m_hex_part, elem_id( ix , iy , iz ) , elem_node);
 
       for (unsigned i = 0; i<8; ++i) {
-        stk::mesh::Entity * const node =
-          m_bulk_data.get_entity( m_top_data.node_rank , elem_node[i] );
+        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::NODE_RANK , elem_node[i] );
 
         ThrowRequireMsg( node != NULL,
           "This process should know about the nodes that make up its element");

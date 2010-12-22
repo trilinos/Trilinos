@@ -407,11 +407,11 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
    * ParMETIS 3.0 Partkway ignores partition sizes for problems with
    * less than 10000 objects.
    */
-  long long tmp_gno, gsum;
+  ZOLTAN_GNO_TYPE tmp_gno, gsum;
   if (!strcmp(alg, "PARTKWAY") && !(zz->LB.Uniform_Parts)
       && (zz->Obj_Weight_Dim <= 1)) {
-    tmp_gno = (long long )gr->num_obj;
-    MPI_Allreduce(&tmp_gno, &gsum, 1, MPI_LONG_LONG_INT, MPI_SUM, comm);
+    tmp_gno = (ZOLTAN_GNO_TYPE)gr->num_obj;
+    MPI_Allreduce(&tmp_gno, &gsum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
     if (gsum < 10000) {
       char str[256];
       sprintf(str, "Total objects %d < 10000 causes ParMETIS 3.0 PARTKWAY "
