@@ -11,7 +11,7 @@ namespace MueLu {
     
   public:
     
-    AggregationOptions() {}
+    AggregationOptions() {} //TODO: init
     ~AggregationOptions() {}
 
     inline void SetPrintFlag(double printFlag) { printFlag_ = printFlag; } //TODO: to be removed
@@ -20,11 +20,11 @@ namespace MueLu {
     inline void SetMaxNeighAlreadySelected(int maxNeighAlreadySelected) { maxNeighAlreadySelected_ = maxNeighAlreadySelected; }
     inline void SetPhase3AggCreation(double phase3AggCreation) { phase3AggCreation_ = phase3AggCreation; }
     
-    inline double GetPrintFlag() { return printFlag_; } //TODO: to be removed
-    inline int GetOrdering()      { return ordering_;   }
-    inline int GetMinNodesPerAggregate() { return minNodesPerAggregate_; }
-    inline int GetMaxNeighAlreadySelected() { return maxNeighAlreadySelected_; }
-    inline double GetPhase3AggCreation() { return phase3AggCreation_; }
+    inline double GetPrintFlag() const { return printFlag_; } //TODO: to be removed
+    inline int GetOrdering() const     { return ordering_;   }
+    inline int GetMinNodesPerAggregate() const { return minNodesPerAggregate_; }
+    inline int GetMaxNeighAlreadySelected() const { return maxNeighAlreadySelected_; }
+    inline double GetPhase3AggCreation() const { return phase3AggCreation_; }
         
   private:
     double printFlag_;

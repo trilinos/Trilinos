@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
 
   LO numThreads=1;
-  GO nx=4;
-  GO ny=4;
-  GO nz=4;
+  GO nx=16;
+  GO ny=16;
+  GO nz=16;
   Teuchos::CommandLineProcessor cmdp(false,true);
   std::string matrixType("Laplace1D");
   cmdp.setOption("nt",&numThreads,"number of threads.");
@@ -75,19 +75,17 @@ int main(int argc, char *argv[]) {
 
   RCP<const Epetra_CrsMatrix> A;
 
-  { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I should create a function to do that)
+  //  { // Get the underlying Epetra Mtx (Wow ! It's paintful ! => I should create a function to do that)
     RCP<const CrsMatrix> tmp_CrsMtx = Op->getCrsMatrix();
     const RCP<const Cthulhu::EpetraCrsMatrix> &tmp_ECrsMtx = Teuchos::rcp_dynamic_cast<const Cthulhu::EpetraCrsMatrix>(tmp_CrsMtx);
     if (tmp_ECrsMtx == Teuchos::null) { std::cout << "Error !" << std::endl; return 1; }
     A = tmp_ECrsMtx->getEpetra_CrsMatrix();
-  }
+    // }
   
-  Graph *graph;
-  std::string name = "Uncoupled";
-  graph = new Graph(A->Graph(), name.c_str());
+    RCP<Graph<> > graph = rcp(new Graph<>(Op->getCrsGraph(), "Uncoupled"));
   
   int printFlag=6;
-  if (graph->GetComm().MyPID() == 0 && printFlag < MueLu_PrintLevel())
+  if (graph->GetComm()->getRank() == 0 && printFlag < MueLu_PrintLevel())
     printf("main() Aggregate_CoarsenUncoupled : \n");
   
   AggregationOptions aggOptions;
@@ -98,23 +96,24 @@ int main(int argc, char *argv[]) {
   aggOptions.SetOrdering(1);
   aggOptions.SetPhase3AggCreation(0.5);
   
-  Aggregates *aggregates = NULL;
-  
-  aggregates = MueLu_Aggregate_CoarsenUncoupled(&aggOptions,graph);
+  RCP<Aggregates<> > aggregates = MueLu_Aggregate_CoarsenUncoupled(aggOptions,*graph);
 
-  name = "UC_CleanUp";
-  MueLu_AggregateLeftOvers(&aggOptions, aggregates, name.c_str(), graph);
+  std::string name = "UC_CleanUp";
+  MueLu_AggregateLeftOvers(aggOptions, *aggregates, name, *graph);
   
-  Epetra_IntVector Final( aggregates->GetVertex2AggId()->Map() );
+  RCP<Cthulhu::Vector<int> > Final_ = Cthulhu::VectorFactory<int>::Build( aggregates->GetVertex2AggId()->getMap() );
 
-  for (int i = 0; i < aggregates->GetVertex2AggId()->Map().NumMyElements(); i++) 
-    Final[i] = (*(aggregates->GetVertex2AggId()))[i] + (*(aggregates->GetProcWinner()))[i]*1000;
+  {
+    Teuchos::ArrayRCP<int> Final = Final_->getDataNonConst(0);
+    Teuchos::ArrayRCP<const int> vertex2AggId = aggregates->GetVertex2AggId()->getData(0);
+    Teuchos::ArrayRCP<const int> procWinner   = aggregates->GetProcWinner()->getData(0);
+
+    for (size_t i = 0; i < aggregates->GetVertex2AggId()->getMap()->getNodeNumElements(); i++) 
+      Final[i] = vertex2AggId[i] + procWinner[i]*1000;
+  }
+  
   printf("finals\n");
-  cout << Final << endl; sleep(2);
-  
-  delete aggregates; 
-  delete graph;
-  
+  cout << *Final_ << endl; sleep(2);
   return EXIT_SUCCESS;
 
 }

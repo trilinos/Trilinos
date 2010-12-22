@@ -85,5 +85,14 @@ typedef MueLu::SaLevel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>  
 
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Utils;
+
+#ifdef MUELU_GRAPH_SHORT
+typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>                          Graph;
+#endif
+
+#ifdef MUELU_AGGREGATES_SHORT
+typedef MueLu::Aggregates<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Aggregates;
+#endif
+
 #endif
 

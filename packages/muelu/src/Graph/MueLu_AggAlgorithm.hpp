@@ -6,7 +6,7 @@
 /* ************************************************************************* */
 /* Functions to aggregate vertices in a graph                                */
 /* ************************************************************************* */
-/* Author        : Ray Tuminaro                                              */
+/* Inital author : Ray Tuminaro                                              */
 /* Date          : Jan, 2010                                                 */
 /* ************************************************************************* */
 
@@ -32,9 +32,22 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+#include <Cthulhu_VectorFactory.hpp>
+#include <Cthulhu_Import.hpp>
+//#include <Cthulhu_ConfigDefs.hpp> // CombineMode
+#include <Cthulhu_EpetraImport.hpp> //tmp
+
 #include "MueLu_AggregationOptions.hpp"
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Graph.hpp"
+
+// MPI helper
+#define sumAll(rcpComm, in, out) \
+  Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
+#define minAll(rcpComm, in, out) \
+  Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
+#define maxAll(rcpComm, in, out) \
+  Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
 using namespace std;
 using namespace MueLu;
@@ -64,42 +77,42 @@ typedef struct MueLu_SuperNode_Struct
   struct MueLu_SuperNode_Struct *next;
 } MueLu_SuperNode;
 
-extern int MueLu_RandomReorder(int *randomVector, const Epetra_BlockMap &map);
+//extern int MueLu_RandomReorder(int *randomVector, const Map &map);
+extern int MueLu_RandomReorder(int *randomVector, const Epetra_BlockMap &map); //RRTODO
 
 
-extern Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions *aggOptions,
-                                                    Graph *graph);
+extern RCP<MueLu::Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOptions & aggOptions,
+								  const MueLu::Graph<int,int> & graph);
 
-extern int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions, 
-                                    Aggregates *aggregates,
-                                    const char *label, Graph *graph);
+extern int MueLu_AggregateLeftOvers(const AggregationOptions & aggOptions, 
+                                    Aggregates<int,int> & aggregates,
+                                    const std::string & label, const Graph<int,int> & graph);
 
-extern int MueLu_NonUnique2NonUnique(const Epetra_Vector &source, 
-                                     Epetra_Vector &dest, const Epetra_Map &uniqueMap, 
-                                     const Epetra_Import &unique2NonUniqueWidget, 
-                                     const Epetra_CombineMode what);
+//TODO: template
+extern int MueLu_NonUnique2NonUnique(const Cthulhu::Vector<double> &source, 
+                                     Cthulhu::Vector<double> &dest, const Map&uniqueMap, 
+                                     const Cthulhu::Import<int,int> &unique2NonUniqueWidget, 
+                                     const Cthulhu::CombineMode what);
 
-extern int MueLu_NonUnique2NonUnique(const Epetra_IntVector &source, 
-                                     Epetra_IntVector &dest, const Epetra_Map &uniqueMap, 
-                                     const Epetra_Import &unique2NonUniqueWidget, 
-                                     const Epetra_CombineMode what);
+//TODO: template
+extern int MueLu_NonUnique2NonUnique(const Cthulhu::Vector<int> &source, 
+                                     Cthulhu::Vector<int> &dest, const Map &uniqueMap, 
+                                     const Cthulhu::Import<int,int> &unique2NonUniqueWidget, 
+                                     const Cthulhu::CombineMode what);
 
-int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight, 
-                                  Epetra_IntVector &procWinner,
-                                  Epetra_IntVector *companion, const Epetra_Map &uniqueMap, 
-                                  const Epetra_Import &unique2NonUniqueWidget, const bool perturb);
+int MueLu_ArbitrateAndCommunicate(Cthulhu::Vector<double> &weight, 
+                                  Cthulhu::Vector<int> &procWinner,
+                                  Cthulhu::Vector<int> *companion, const Map &uniqueMap, 
+                                  const Cthulhu::Import<int,int> &unique2NonUniqueWidget, const bool perturb);
 
-extern int MueLu_RootCandidates(int nVertices, int *vertex2AggId, Graph *graph,
-                                int *Candidates, int &NCandidates, int &NCandidatesGlobal);
+extern int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
+                                int *candidates, int &nCandidates, int &nCandidatesGlobal);
 
-extern int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
-                                 Epetra_Vector &weights, const Epetra_Map &uniqueMap, 
-                                 const Epetra_Import &unique2NonUniqueWidget);
+int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
+                          RCP<Cthulhu::Vector<double> > & weights_, const RCP<const Map > &uniqueMap, 
+                          const Cthulhu::Import<int,int> &unique2NonUniqueWidget); 
 
-extern int MueLu_ComputeAggSizes(Aggregates *aggregates, int *AggSizes);
-
-
-
+extern int MueLu_ComputeAggSizes(Aggregates<int,int> &aggregates, int *AggSizes);
 
 /* ************************************************************************ */
 /* Coarsen Graph by aggregation. In particular, each processor works        */
@@ -127,12 +140,11 @@ extern int MueLu_ComputeAggSizes(Aggregates *aggregates, int *AggSizes);
 /*       procWinner[] is set during Phase 1.                                */
 /* ------------------------------------------------------------------------ */
 
-Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions 
-                                             *aggOptions, Graph *graph)
+RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOptions & aggOptions, const Graph<int,int> & graph)
 {
   int     i, j, k, m, iNode = 0, jNode, length, nRows;
   int     selectFlag, nAggregates, index, myPid, iNode2;
-  int     *vertex2AggId = NULL; //, *itmpArray = NULL,
+  Teuchos::ArrayRCP<int> vertex2AggId; //, *itmpArray = NULL,
   int     count;
   int     *aggStat = NULL, ordering;
   double  printFlag;
@@ -141,23 +153,22 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
   unsigned int nBytes;
   MueLu_Node       *nodeHead=NULL, *nodeTail=NULL, *newNode=NULL;
   MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
-  Aggregates *aggregates=NULL;
 
   std::string name = "Uncoupled";
+  RCP<Aggregates<int,int> > aggregates = Teuchos::rcp(new Aggregates<int,int>(graph, name));
 
-  aggregates = new Aggregates(graph, name.c_str());
-  aggregates->GetVertex2AggId()->ExtractView(&vertex2AggId);
-   
+  vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
+
   /* ============================================================= */
   /* get the machine information and matrix references             */
   /* ============================================================= */
 
-  myPid                   = graph->GetComm().MyPID();
-  minNodesPerAggregate    = aggOptions->GetMinNodesPerAggregate();
-  maxNeighSelected        = aggOptions->GetMaxNeighAlreadySelected();
-  ordering                = aggOptions->GetOrdering();
-  printFlag               = aggOptions->GetPrintFlag();
-  nRows                   = graph->GetNodeNumVertices();
+  myPid                   = graph.GetComm()->getRank();
+  minNodesPerAggregate    = aggOptions.GetMinNodesPerAggregate();
+  maxNeighSelected        = aggOptions.GetMaxNeighAlreadySelected();
+  ordering                = aggOptions.GetOrdering();
+  printFlag               = aggOptions.GetPrintFlag();
+  nRows                   = graph.GetNodeNumVertices();
 
   /* ============================================================= */
   /* aggStat indicates whether this node has been aggreated, and */
@@ -192,7 +203,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
       nBytes = nRows * sizeof(int);
       randomVector = (int *) malloc(nBytes);
       for (i = 0; i < nRows; i++) randomVector[i] = i;
-      MueLu_RandomReorder(randomVector, graph->GetDomainMap());
+//RRTODO      MueLu_RandomReorder(randomVector, *graph.GetDomainMap()); //RTODO
     } 
   else if ( ordering == 2 )  /* graph ordering */
     {
@@ -243,7 +254,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
       if ( aggStat[iNode] == MUELOO_AGGR_READY ) 
         {
           // neighOfINode is the neighbor node list of node 'iNode'.
-          ArrayView<int> neighOfINode = graph->getNeighborVertices(iNode);
+          ArrayView<const int> neighOfINode = graph.getNeighborVertices(iNode);
           length = neighOfINode.size();
           
           supernode = (MueLu_SuperNode *) malloc(sizeof(MueLu_SuperNode));      
@@ -266,7 +277,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
           /*--------------------------------------------------- */
 
           count = 0;
-          for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+          for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
             {
               index = *it;
               if ( index < nRows ) 
@@ -301,7 +312,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
               free( supernode );
               if ( ordering == 2 ) /* if graph ordering */
                 {
-                  for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                  for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                     {
                       index = *it;
                       if ( aggStat[index] == MUELOO_AGGR_READY )
@@ -331,7 +342,7 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
                   vertex2AggId[jNode] = nAggregates;
                   if ( ordering == 2 ) /* if graph ordering */
                     {
-                      for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                         {
                           index = *it;
                           if ( aggStat[index] == MUELOO_AGGR_READY )
@@ -378,22 +389,28 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
         }
     }
 
+  // TODO: replace AllReduce by Reduce to proc 0
+
+  // Compute 'm'
   m = 0;
   for ( i = 0; i < nRows; i++ ) 
     if ( aggStat[i] == MUELOO_AGGR_READY ) m++;
 
-  graph->GetComm().SumAll(&m,&k,1);
+  sumAll(graph.GetComm(), m, k);
+
   if ( k > 0 && myPid == 0 && printFlag  < MueLu_PrintLevel())
     printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",k);
+
+  // Compute 'm'
   m = 0;
   for ( i = 0; i < nRows; i++ ) 
     if ( aggStat[i] == MUELOO_AGGR_SELECTED ) m++;
 
-  graph->GetComm().SumAll(&m,&k,1);
-  graph->GetComm().SumAll(&nRows,&m,1);
-  graph->GetComm().SumAll(&nAggregates,&j,1);
-  aggregates->SetNumAggregates(nAggregates);
+  sumAll(graph.GetComm(), m, k);
+  sumAll(graph.GetComm(), nRows, m);
+  sumAll(graph.GetComm(), nAggregates, j);
 
+  aggregates->SetNumAggregates(nAggregates);
   if ( myPid == 0 && printFlag  < MueLu_PrintLevel()) 
     {
       printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",k,m);
@@ -570,68 +587,72 @@ Aggregates *MueLu_Aggregate_CoarsenUncoupled(AggregationOptions
 // for any nonshared gid's with a nonzero weight.
 //
 
-int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions, 
-                             Aggregates *aggregates,
-                             const char *label,
-                             Graph *graph)
+int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions, 
+                             Aggregates<int,int> &aggregates,
+                             const std::string & label,
+                             const Graph<int,int> &graph)
 {
   int      Nphase1_agg, i, j, k, kk, nonaggd_neighbors;
   int      AdjacentAgg, total_aggs, *agg_incremented = NULL;
   int      *Mark = NULL, *SumOfMarks = NULL;
   int      best_score, score, best_agg, BestMark, myPid;
-  int      nAggregates, *vertex2AggId, nVertices, exp_nRows;
+  int      nAggregates, nVertices, exp_nRows;
   int      Nleftover = 0, Nsingle = 0, Adjacent;
   double   printFlag, factor = 1., penalty;
 
-  nVertices    = graph->GetNodeNumVertices();
-  exp_nRows    = nVertices + graph->GetNodeNumGhost();
-  myPid        = graph->GetComm().MyPID();
-  printFlag    = aggOptions->GetPrintFlag();
-  nAggregates  = aggregates->GetNumAggregates();
+  nVertices    = graph.GetNodeNumVertices();
+  exp_nRows    = nVertices + graph.GetNodeNumGhost();
+  myPid        = graph.GetComm()->getRank();
+  printFlag    = aggOptions.GetPrintFlag();
+  nAggregates  = aggregates.GetNumAggregates();
 
-  int minNodesPerAggregate = aggOptions->GetMinNodesPerAggregate();
+  int minNodesPerAggregate = aggOptions.GetMinNodesPerAggregate();
   Nphase1_agg = nAggregates;
 
-  const Epetra_Map &nonUniqueMap=(Epetra_Map &) aggregates->GetVertex2AggId()->Map();
-  const Epetra_Map &uniqueMap=(Epetra_Map &) graph->GetDomainMap();
-  const Epetra_Import unique2NonUniqueWidget(nonUniqueMap, uniqueMap);
+  const RCP<const Cthulhu::Map<int,int> > nonUniqueMap = aggregates.GetVertex2AggId()->getMap();
+  const RCP<const Cthulhu::Map<int,int> > uniqueMap = graph.GetDomainMap(); //RTODO
+
+  const Cthulhu::EpetraImport unique2NonUniqueWidget(nonUniqueMap, uniqueMap);
 
   // Pull stuff out of epetra vectors
 
-  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(aggregates->GetVertex2AggId());
-  aggregates->GetVertex2AggId()->ExtractView(&vertex2AggId);
-  Epetra_IntVector &procWinner = *(aggregates->GetProcWinner());
+  RCP<Cthulhu::Vector<int> > Vtx2AggId = aggregates.GetVertex2AggId();
+  Teuchos::ArrayRCP<int>  vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
 
+  RCP<Cthulhu::Vector<int> > procWinner_ = aggregates.GetProcWinner();
+  Teuchos::ArrayRCP<int>     procWinner  = procWinner_->getDataNonConst(0);
 
-  Epetra_Vector weights(nonUniqueMap);
+  RCP<Cthulhu::Vector<double> > weights_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap); //TODO
+  Teuchos::ArrayRCP<double> weights = weights_->getDataNonConst(0); //TODO
 
   // Aggregated vertices not "definitively" assigned to processors are
   // arbitrated by MueLu_ArbitrateAndCommunicate(). There is some
   // additional logic to prevent losing root nodes in arbitration.
   
-  weights.PutScalar(0.);
-  for (int i=0;i<nonUniqueMap.NumMyElements();i++) {
+  weights_->putScalar(0.);
+  for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
     if (procWinner[i] == MUELOO_UNASSIGNED) {
       if (vertex2AggId[i] != MUELOO_UNAGGREGATED) {
         weights[i] = 1.;
-        if (aggregates->IsRoot(i)) weights[i] = 2.;
+        if (aggregates.IsRoot(i)) weights[i] = 2.;
       }
     }
   }
-  MueLu_ArbitrateAndCommunicate(weights, procWinner, &Vtx2AggId, 
-                                uniqueMap, unique2NonUniqueWidget, true);
-  weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+
+  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, &*Vtx2AggId, 
+                                *uniqueMap, unique2NonUniqueWidget, true);
+  weights_->putScalar(0.); //All tentatively assigned vertices are now definitive
 
   // Tentatively assign any vertex (ghost or local) which neighbors a root
   // to the aggregate associated with the root.
 
   for (int i = 0; i < nVertices; i++) { 
-    if ( aggregates->IsRoot(i) && (procWinner[i] == myPid) ) {
+    if ( aggregates.IsRoot(i) && (procWinner[i] == myPid) ) {
 
       // neighOfINode is the neighbor node list of node 'i'.
-      ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
       
-      for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         int colj = *it;
         if (vertex2AggId[colj] == MUELOO_UNAGGREGATED) {
           weights[colj]= 1.;
@@ -640,9 +661,10 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
       }
     }
   }
-  MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
-                                uniqueMap, unique2NonUniqueWidget, true);
-  weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+
+  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, &*Vtx2AggId, 
+				*uniqueMap, unique2NonUniqueWidget, true);
+  weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // Record the number of aggregated vertices
   int total_phase_one_aggregated = 0;
@@ -653,12 +675,13 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
         phase_one_aggregated++;
     }
 
-    graph->GetComm().SumAll(&phase_one_aggregated,&total_phase_one_aggregated,1);
+    sumAll(graph.GetComm(), phase_one_aggregated, total_phase_one_aggregated);
+  
   }
   
   int total_nVertices = 0;
-  graph->GetComm().SumAll(&nVertices,&total_nVertices,1);
-  
+  sumAll(graph.GetComm(), nVertices, total_nVertices);
+
   /* Among unaggregated points, see if we can make a reasonable size    */
   /* aggregate out of it. We do this by looking at neighbors and seeing */
   /* how many are unaggregated and on my processor. Loosely,            */
@@ -666,18 +689,18 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   /* unaggregated nodes.                                                */
 
   factor = ((double) total_phase_one_aggregated)/((double)(total_nVertices + 1));
-  factor = pow(factor, aggOptions->GetPhase3AggCreation());
+  factor = pow(factor, aggOptions.GetPhase3AggCreation());
 
   for (i = 0; i < nVertices; i++) {
     if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
       {
 
         // neighOfINode is the neighbor node list of node 'iNode'.
-        ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+        ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
         int rowi_N = neighOfINode.size();
 
         nonaggd_neighbors = 0;
-        for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
           int colj = *it;
           if (vertex2AggId[colj] == MUELOO_UNAGGREGATED && colj < nVertices)
             nonaggd_neighbors++;
@@ -686,7 +709,7 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
               (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
           {
             vertex2AggId[i] = (nAggregates)++;
-            for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+            for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
               int colj = *it;
               if (vertex2AggId[colj]==MUELOO_UNAGGREGATED) {
                 vertex2AggId[colj] = vertex2AggId[i];
@@ -694,44 +717,48 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
                 else                  weights[colj] = 1.;
               }
             }
-            aggregates->SetIsRoot(i);
+            aggregates.SetIsRoot(i);
             weights[i] = 2.;
           }
       }
   } /*for (i = 0; i < nVertices; i++)*/
-
-  MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
-                                uniqueMap, unique2NonUniqueWidget, true);
-  weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+  
+  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
+				*uniqueMap, unique2NonUniqueWidget, true);
+  weights_->putScalar(0.);//All tentatively assigned vertices are now definitive
 
 
   if ( printFlag < MueLu_PrintLevel()) {
 
-    graph->GetComm().SumAll(&Nphase1_agg,&total_aggs,1);
+    sumAll(graph.GetComm(), Nphase1_agg, total_aggs);
+
     if (myPid == 0) {
-      printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label,
+      printf("Aggregation(%s) : Phase 1 - nodes aggregated = %d \n",label.c_str(),
              total_phase_one_aggregated);
-      printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n",label, total_aggs);
+      printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n",label.c_str(), total_aggs);
     }
     i = nAggregates - Nphase1_agg;
 
-    { int ii; graph->GetComm().SumAll(&i,&ii,1); i = ii; }
+    { int ii; sumAll(graph.GetComm(),i,ii); i = ii; }
     if ( myPid == 0 ) {
-      printf("Aggregation(%s) : Phase 3 - additional aggregates = %d\n",label, i);
+      printf("Aggregation(%s) : Phase 3 - additional aggregates = %d\n",label.c_str(), i);
     }
   }
 
   // Determine vertices that are not shared by setting Temp to all ones
-  // and doing MueLu_NonUnique2NonUnique(..., Add). This sums values of all
+  // and doing MueLu_NonUnique2NonUnique(..., ADD). This sums values of all
   // local copies associated with each Gid. Thus, sums > 1 are shared.
 
-  Epetra_Vector temp(nonUniqueMap);
-  Epetra_Vector tempOutput(nonUniqueMap);
+  RCP<Cthulhu::Vector<double> > temp_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
 
-  temp.PutScalar(1.);  
-  tempOutput.PutScalar(0.); 
-  MueLu_NonUnique2NonUnique(temp, tempOutput, uniqueMap, 
-                            unique2NonUniqueWidget, Add);
+  RCP<Cthulhu::Vector<double> > tempOutput_ = Cthulhu::VectorFactory<double>::Build(nonUniqueMap);
+  Teuchos::ArrayRCP<double> tempOutput = tempOutput_->getDataNonConst(0);
+
+  temp_->putScalar(1.);  
+  tempOutput_->putScalar(0.); 
+
+  MueLu_NonUnique2NonUnique(*temp_, *tempOutput_, *uniqueMap, 
+			    unique2NonUniqueWidget, Cthulhu::ADD);
    
   vector<bool> gidNotShared(exp_nRows);
   for (int i = 0; i < exp_nRows; i++) {
@@ -744,29 +771,33 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   double nAggregatesTarget;
   int    nAggregatesGlobal, minNAggs, maxNAggs;
 
-  nAggregatesTarget = ((double)  uniqueMap.NumGlobalElements())*
-    (((double) uniqueMap.NumGlobalElements())/
-     ((double) graph->GetGlobalNumEdges()));
+  nAggregatesTarget = ((double)  uniqueMap->getGlobalNumElements())*
+    (((double) uniqueMap->getGlobalNumElements())/
+     ((double) graph.GetGlobalNumEdges()));
 
-  graph->GetComm().SumAll(&nAggregates,&nAggregatesGlobal,1);
-  graph->GetComm().MinAll(&nAggregates,&minNAggs,1);
-  graph->GetComm().MaxAll(&nAggregates,&maxNAggs,1);
+  sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal);
+
+  minAll(graph.GetComm(), nAggregates, minNAggs);
+  maxAll(graph.GetComm(), nAggregates, maxNAggs);
 
   //
   // Only do this phase if things look really bad. THIS
   // CODE IS PRETTY EXPERIMENTAL 
   //
 #define MUELOO_PHASE4BUCKETS 6
-  if ((nAggregatesGlobal < graph->GetComm().NumProc()) &&
+  if ((nAggregatesGlobal < graph.GetComm()->getSize()) &&
       (2.5*nAggregatesGlobal < nAggregatesTarget) &&
       (minNAggs ==0) && (maxNAggs <= 1)) {
 
-    Epetra_Util util;
-    util.SetSeed( (unsigned int) myPid*2 + (int) (11*rand()));
-    k = (int)ceil( (10.*myPid)/graph->GetComm().NumProc());
-    for (i = 0; i < k+7; i++) util.SetSeed( (unsigned int) util.RandomInt() );
-    temp.SetSeed( (unsigned int) util.RandomInt() );
-    temp.Random(); 
+    //TODO TODO
+//     Epetra_Util util;
+//     util.SetSeed( (unsigned int) myPid*2 + (int) (11*rand()));
+//     k = (int)ceil( (10.*myPid)/graph.GetComm()->getSize());
+//     for (i = 0; i < k+7; i++) util.SetSeed( (unsigned int) util.RandomInt() );
+//    temp_->SetSeed( (unsigned int) util.RandomInt() );
+    temp_->randomize(); 
+
+    Teuchos::ArrayRCP<double> temp = temp_->getDataNonConst(0);
 
     // build a list of candidate root nodes (vertices not adjacent
     // to aggregated vertices)
@@ -795,11 +826,11 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
           // Note: priorThreshold <= fabs(temp[i]) <= 1
 
           // neighOfINode is the neighbor node list of node 'iNode'.
-          ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+          ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
 
           if (neighOfINode.size() > minNodesPerAggregate) { //TODO: check if this test is exactly was we want to do
             int count = 0;
-            for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+            for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
               Adjacent    = *it;
               // This might not be true if someone close to i
               // is chosen as a root via fabs(temp[]) < Threshold
@@ -812,10 +843,10 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
             if (count >= minNodesPerAggregate) {
               vertex2AggId[i] = nAggregates++;
               weights[i] = 2.;
-              aggregates->SetIsRoot(i);
+              aggregates.SetIsRoot(i);
             }
             else { // undo things
-              for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+              for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 Adjacent    = *it;
                 if (vertex2AggId[Adjacent] == nAggregates){
                   vertex2AggId[Adjacent] = MUELOO_UNAGGREGATED;
@@ -827,19 +858,20 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
           }
         }
       }
-      MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
-                                    uniqueMap, unique2NonUniqueWidget, true);
-      weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
-      graph->GetComm().SumAll(&nAggregates,&nAggregatesGlobal,1);
+
+      MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
+				    *uniqueMap, unique2NonUniqueWidget, true);
+      weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
+      sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal);
 
       // check that there are no aggregates sizes below minNodesPerAggregate
      
-      aggregates->SetNumAggregates(nAggregates);
+      aggregates.SetNumAggregates(nAggregates);
 
       MueLu_RemoveSmallAggs(aggregates, minNodesPerAggregate, 
-                            weights, uniqueMap, unique2NonUniqueWidget);
-
-      nAggregates = aggregates->GetNumAggregates();
+			    weights_, uniqueMap, unique2NonUniqueWidget);
+      
+      nAggregates = aggregates.GetNumAggregates();
     }   // one possibility
   }
 
@@ -864,9 +896,9 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   for (i = 0; i < nVertices;  i++) {
 
     // neighOfINode is the neighbor node list of node 'iNode'.
-    ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+    ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
 
-    for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+    for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
       j = *it;
       if ( (j >= nVertices) && (vertex2AggId[j] == MUELOO_UNAGGREGATED)){
         RowPtr[j-nVertices]++;
@@ -889,9 +921,9 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
   for (i = 0; i < nVertices;  i++) {
 
     // neighOfINode is the neighbor node list of node 'iNode'.
-    ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+    ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
     
-    for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+    for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
       j = *it;
       if ( (j >= nVertices) && (vertex2AggId[j] == MUELOO_UNAGGREGATED)){
         cols[RowPtr[j-nVertices]++] = i;
@@ -917,21 +949,21 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
       if (vertex2AggId[i] == MUELOO_UNAGGREGATED) {
 
         // neighOfINode is the neighbor node list of node 'iNode'.
-        ArrayView<int> neighOfINode;
+        ArrayView<const int> neighOfINode;
 
         // Grab neighboring vertices which is either in graph for local ids
         // or sits in transposed fragment just constructed above for ghosts.
         if (i < nVertices) {
-          neighOfINode = graph->getNeighborVertices(i);
+          neighOfINode = graph.getNeighborVertices(i);
         }
         else {
           int *rowi_col = NULL, rowi_N;
           rowi_col = &(cols[RowPtr[i-nVertices]]);
           rowi_N   = RowPtr[i+1-nVertices] - RowPtr[i-nVertices];
           
-          neighOfINode = ArrayView<int>(rowi_col, rowi_N);
+          neighOfINode = ArrayView<const int>(rowi_col, rowi_N);
         }
-        for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
           Adjacent    = *it;
           AdjacentAgg = vertex2AggId[Adjacent];
 
@@ -944,7 +976,7 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
           }
         }
         best_score = MUELOO_NOSCORE;
-        for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
           Adjacent    = *it;
           AdjacentAgg = vertex2AggId[Adjacent];
           //Adjacent is unaggregated, has some value and no
@@ -988,7 +1020,7 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
           }
         }
         // Clean up
-         for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+         for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
           Adjacent    = *it;
           AdjacentAgg = vertex2AggId[Adjacent];
           if (AdjacentAgg >= 0) SumOfMarks[AdjacentAgg] = 0;
@@ -1002,9 +1034,10 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
         }
       }
     }
-    MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
-                                  uniqueMap, unique2NonUniqueWidget, true);
-    weights.PutScalar(0.); // All tentatively assigned vertices are now definitive
+
+    MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
+				  *uniqueMap, unique2NonUniqueWidget, true);
+    weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
   }
 
   // Phase 6: Aggregate remain unaggregated vertices and try at all costs
@@ -1021,16 +1054,16 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
       Nleftover++;
 
       // neighOfINode is the neighbor node list of node 'iNode'.
-      ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
 
       // We don't want too small of an aggregate. So lets see if there is an
       // unaggregated neighbor that we can also put with this vertex
 
       vertex2AggId[i] = nAggregates;
       weights[i] = 1.;
-      if (count == 0) aggregates->SetIsRoot(i);
+      if (count == 0) aggregates.SetIsRoot(i);
       count++;
-      for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         int j = *it;
         if ((j != i)&&(vertex2AggId[j] == MUELOO_UNAGGREGATED)&&
             (j < nVertices)) {
@@ -1052,7 +1085,7 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
       for (i = 0; i < nVertices; i++) {
         if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
           vertex2AggId[i] = 0;
-          aggregates->SetIsRoot(i,false);
+          aggregates.SetIsRoot(i,false);
         }
       }
     }
@@ -1061,23 +1094,24 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
       nAggregates++;
     }
   }
-  MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
-                                uniqueMap, unique2NonUniqueWidget, false);
+
+  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
+				*uniqueMap, unique2NonUniqueWidget, false);
 
 
   if (printFlag < MueLu_PrintLevel()) {
-    { int total_Nsingle=0;   graph->GetComm().SumAll(&Nsingle,&total_Nsingle,1);     Nsingle = total_Nsingle; }
-    { int total_Nleftover=0; graph->GetComm().SumAll(&Nleftover,&total_Nleftover,1); Nleftover = total_Nleftover; }
-    graph->GetComm().SumAll(&nAggregates,&total_aggs,1);
+    { int total_Nsingle=0;   sumAll(graph.GetComm(), Nsingle, total_Nsingle);     Nsingle = total_Nsingle; }
+    { int total_Nleftover=0; sumAll(graph.GetComm(), Nleftover, total_Nleftover); Nleftover = total_Nleftover; }
+    sumAll(graph.GetComm(), nAggregates, total_aggs);
     if ( myPid == 0 ) {
-      printf("Aggregation(%s) : Phase 3 - total aggregates = %d\n",label, total_aggs);
-      printf("Aggregation(%s) : Phase 6 - leftovers = %d and singletons = %d\n",label ,Nleftover, Nsingle);
+      printf("Aggregation(%s) : Phase 3 - total aggregates = %d\n",label.c_str(), total_aggs);
+      printf("Aggregation(%s) : Phase 6 - leftovers = %d and singletons = %d\n",label.c_str() ,Nleftover, Nsingle);
     }
   }
   if (agg_incremented != NULL) free(agg_incremented);
   if (Mark != NULL) free(Mark);
   if (SumOfMarks != NULL) free(SumOfMarks);
-  aggregates->SetNumAggregates(nAggregates);
+  aggregates.SetNumAggregates(nAggregates);
 
   return 0;
 }
@@ -1090,17 +1124,22 @@ int MueLu_AggregateLeftOvers(AggregationOptions *aggOptions,
 //     list[]      Same integers as on input but in a different order
 //                 that is determined randomly.
 //
+//int MueLu_RandomReorder(int *list, const Map &map) //RRTODO
 int MueLu_RandomReorder(int *list, const Epetra_BlockMap &map)
 {
-  Epetra_Vector     RandVec(map);
-  Epetra_IntVector iRandVec(map);
 
-  double *ptr;
-  int  *iptr;
+  TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "RandomReorder: TODO");
 
-  RandVec.Random(); RandVec.ExtractView(&ptr); iRandVec.ExtractView(&iptr);
-  for (int i=0; i <  map.NumMyElements(); i++) iptr[i] = (int) (10000.*ptr[i]);
-  Epetra_Util::Sort(true,RandVec.Map().NumMyElements(), iptr, 0,NULL,1,&list);
+//   Epetra_Vector     RandVec(map);
+//   Epetra_IntVector iRandVec(map);
+
+//   double *ptr;
+//   int  *iptr;
+
+//   RandVec.Random(); RandVec.ExtractView(&ptr); iRandVec.ExtractView(&iptr);
+//   for (int i=0; i <  map.NumMyElements(); i++) iptr[i] = (int) (10000.*ptr[i]);
+//   Epetra_Util::Sort(true,RandVec.getMap().NumMyElements(), iptr, 0,NULL,1,&list);
+
   return 0; 
 }
 
@@ -1109,7 +1148,7 @@ int MueLu_RandomReorder(int *list, const Epetra_BlockMap &map)
 // may not have the same value for all of these multiple copies, but on 
 // termination dest will have a unique value for each global id.  When multiple
 // copies exist in source, 'what' determines how they are combined to make a 
-// unique value in dest (see Epetra_CombineMode).
+// unique value in dest (see CombineMode).
 //
 //  Input:
 //     source                   Vector where multiple copies of some GlobalIds
@@ -1117,9 +1156,9 @@ int MueLu_RandomReorder(int *list, const Epetra_BlockMap &map)
 //
 //     dest                     Allocated but contents ignored.
 //
-//     uniqueMap                A subset of source.Map() where each GlobalId 
+//     uniqueMap                A subset of source.getMap() where each GlobalId 
 //                              has only one unique copy on one processor.
-//                              Normally, source.Map() would have both locals
+//                              Normally, source.getMap() would have both locals
 //                              and ghost elements while uniqueMap would just
 //                              have the locals. It should be possible to
 //                              remove this or make it an optional argument
@@ -1127,13 +1166,13 @@ int MueLu_RandomReorder(int *list, const Epetra_BlockMap &map)
 //                              make a uniqueMap.
 //
 //     unique2NonUniqueWidget   This corresponds precisely to 
-//                                   Epetra_Import unique2NonUniqueWidget(
-//                                           source.Map(), uniqueMap);
+//                                   Import unique2NonUniqueWidget(
+//                                           source.getMap(), uniqueMap);
 //                              This could also be eliminated and created
 //                              here, but for efficiency user's must pass in.
 //
 //     what                     Determines how multiple copies of the same
-//                              GlobalId are combined (see Epetra_CombineMode).
+//                              GlobalId are combined (see CombineMode).
 //
 //  Output:
 //
@@ -1142,19 +1181,20 @@ int MueLu_RandomReorder(int *list, const Epetra_BlockMap &map)
 //                              values associated with the same GlobalId are
 //                              combined into a unique value on all processors.
 //
-int MueLu_NonUnique2NonUnique(const Epetra_Vector &source, 
-                              Epetra_Vector &dest, const Epetra_Map &uniqueMap, 
-                              const Epetra_Import &unique2NonUniqueWidget, const Epetra_CombineMode what)
+int MueLu_NonUnique2NonUnique(const Cthulhu::Vector<double> &source, 
+                              Cthulhu::Vector<double> &dest, const Map &uniqueMap, 
+                              const Cthulhu::Import<int,int> &unique2NonUniqueWidget, const Cthulhu::CombineMode what)
 {
-  Epetra_Vector temp(uniqueMap);
-  temp.Export(source, unique2NonUniqueWidget, what);
-  dest.Import(temp,   unique2NonUniqueWidget, Insert);
+  RCP<Cthulhu::Vector<double> > temp = Cthulhu::VectorFactory<double>::Build(Teuchos::rcpFromRef(uniqueMap));
+  
+  temp->doExport(source, unique2NonUniqueWidget, what);
+  dest.doImport(*temp,   unique2NonUniqueWidget, Cthulhu::INSERT);
 
   return 0;
 }
 
 //
-// For each GlobalId associated with weight.Map():
+// For each GlobalId associated with weight.getMap():
 //
 //      1) find the maximum absolute value of weight[] distributed across all
 //         processors and assign this to all local elements of weight[] (across 
@@ -1181,9 +1221,9 @@ int MueLu_NonUnique2NonUnique(const Epetra_Vector &source,
 //     companion                Either NULL or allocated but contents ignored.
 //                              If NULL, step 3 above is skipped.
 //
-//     uniqueMap                A subset of weight.Map() where each GlobalId 
+//     uniqueMap                A subset of weight.getMap() where each GlobalId 
 //                              has only one unique copy on one processor.
-//                              Normally, weight.Map() would have both locals
+//                              Normally, weight.getMap() would have both locals
 //                              and ghost elements while uniqueMap would just
 //                              have the locals. It should be possible to
 //                              remove this or make it an optional argument
@@ -1191,8 +1231,8 @@ int MueLu_NonUnique2NonUnique(const Epetra_Vector &source,
 //                              make a uniqueMap.
 //
 //     unique2NonUniqueWidget   This corresponds precisely to 
-//                                   Epetra_Import unique2NonUniqueWidget(
-//                                           weight.Map(), uniqueMap);
+//                                   Import unique2NonUniqueWidget(
+//                                           weight.getMap(), uniqueMap);
 //                              This could also be eliminated and created
 //                              here, but for efficiency user's must pass in.
 //
@@ -1225,31 +1265,34 @@ int MueLu_NonUnique2NonUnique(const Epetra_Vector &source,
 //                                    its MyPid, the corresponding companion
 //                                    is not altered.
 //
-int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight, 
-                                  Epetra_IntVector &procWinner,
-                                  Epetra_IntVector *companion, const Epetra_Map &uniqueMap, 
-                                  const Epetra_Import &unique2NonUniqueWidget, const bool perturb)
+int MueLu_ArbitrateAndCommunicate(Cthulhu::Vector<double> &weight_, 
+                                  Cthulhu::Vector<int> &procWinner_,
+                                  Cthulhu::Vector<int> *companion, const Map &uniqueMap, 
+                                  const Cthulhu::Import<int,int> &unique2NonUniqueWidget, const bool perturb)
 {
-  int MyPid = weight.Comm().MyPID();
+  int MyPid = weight_.getMap()->getComm()->getRank(); // TODO:remove the getMap() step
 
   if (perturb) {
-    Epetra_Vector perturbWt(weight.Map());
+    Cthulhu::EpetraVector perturbWt_(weight_.getMap()); //TODO: remove Epetra
 
-    double largestGlobalWeight;
-    weight.MaxValue(&largestGlobalWeight);
+    double largestGlobalWeight = weight_.maxValue();
 
-    Epetra_Util util;
-    util.SetSeed( (unsigned int) MyPid*2 + (int) (11*rand()));
-    for (int i = 0; i < 10; i++) util.SetSeed( (unsigned int) util.RandomInt() );
+    //TODO
+    //    Epetra_Util util;
+    //    util.SetSeed( (unsigned int) MyPid*2 + (int) (11*rand()));
+    //    for (int i = 0; i < 10; i++) util.SetSeed( (unsigned int) util.RandomInt() );
 
-    perturbWt.SetSeed( (unsigned int) util.RandomInt() );
-    perturbWt.Random(); 
+    // perturbWt.SetSeed( (unsigned int) util.RandomInt() );
+    perturbWt_.randomize(); 
 
-    for (int i=0; i < weight.Map().NumMyElements(); i++) {
+    Teuchos::ArrayRCP<double> weight = weight_.getDataNonConst(0);
+    Teuchos::ArrayRCP<double> perturbWt = perturbWt_.getDataNonConst(0);
+
+    for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) {
       if (weight[i] == 0.) perturbWt[i] = 0.;
-      else (perturbWt)[i] = weight[i] + 1.0e-7*largestGlobalWeight*fabs(perturbWt[i]);
+      else perturbWt[i] = weight[i] + 1.0e-7*largestGlobalWeight*fabs(perturbWt[i]);
     }
-    for (int i=0; i < weight.Map().NumMyElements(); i++) weight[i]= perturbWt[i]; 
+    for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) weight[i] = perturbWt[i]; 
   }
   
   // Communicate weights and store results in PostComm (which will be copied
@@ -1258,10 +1301,11 @@ int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight,
   // processor should have the same value for PostComm[] even when multiple
   // copies of the same Gid are involved.
 
-  Epetra_Vector postComm(weight.Map());
-  postComm.PutScalar(0.0);
+  Cthulhu::EpetraVector postComm_(weight_.getMap());
+  Teuchos::ArrayRCP<double> postComm = postComm_.getDataNonConst(0);
+  postComm_.putScalar(0.0);
 
-  MueLu_NonUnique2NonUnique(weight, postComm, uniqueMap, unique2NonUniqueWidget, AbsMax);
+  MueLu_NonUnique2NonUnique(weight_, postComm_, uniqueMap, unique2NonUniqueWidget, Cthulhu::ABSMAX);
 
    
   // Let every processor know who is the procWinner. For nonunique
@@ -1278,23 +1322,26 @@ int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight,
   //      When all weight's for a GID are zero, the associated procWinner's
   //      are left untouched.
 
-  Epetra_Vector candidateWinners(weight.Map());
-  candidateWinners.PutScalar(0.0);
+  Cthulhu::EpetraVector candidateWinners_(weight_.getMap());
+  Teuchos::ArrayRCP<double> candidateWinners = candidateWinners_.getDataNonConst(0);
+  candidateWinners_.putScalar(0.0);
 
-  for (int i=0; i < weight.Map().NumMyElements(); i++) {
+  Teuchos::ArrayRCP<double> weight = weight_.getDataNonConst(0);
+  for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) {
     if (postComm[i] == weight[i]) candidateWinners[i] = (double) MyPid+1;
   }
 
-  for (int i=0; i < weight.Map().NumMyElements(); i++) weight[i]=postComm[i]; 
+  for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++) weight[i]=postComm[i]; 
 
-  MueLu_NonUnique2NonUnique(candidateWinners, postComm, uniqueMap, unique2NonUniqueWidget, AbsMax);
+  MueLu_NonUnique2NonUnique(candidateWinners_, postComm_, uniqueMap, unique2NonUniqueWidget, Cthulhu::ABSMAX);
 
   // Note: 
   //                      associated CandidateWinners[]
   //    weight[i]!=0  ==> on some proc is equal to its ==> postComm[i]!=0
   //                      MyPid+1.
   //          
-  for (int i=0; i < weight.Map().NumMyElements(); i++)  {
+  Teuchos::ArrayRCP<int> procWinner = procWinner_.getDataNonConst(0);
+  for (size_t i=0; i < weight_.getMap()->getNodeNumElements(); i++)  {
     if ( weight[i] != 0.) procWinner[i] = ((int) (postComm[i])) - 1;
   }
 
@@ -1305,38 +1352,42 @@ int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight,
     // WinnerMap is then constructed using MyWinners.
    
     int numMyWinners = 0;
-    for (int i = 0; i < weight.Map().NumMyElements(); i++) {
+    for (size_t i = 0; i < weight_.getMap()->getNodeNumElements(); i++) {
       if (procWinner[i] == MyPid) numMyWinners++;
     }
    
-    int *myGids    = new int[weight.Map().NumMyElements()+1];
-    int *myWinners = new int[numMyWinners+1];
-   
-    weight.Map().MyGlobalElements(myGids);
-   
+    //    int *myGids    = new int[weight_.getMap()->getNodeNumElements()+1];
+    //    int *myWinners = new int[numMyWinners+1];
+    Teuchos::ArrayView<const int> myGids = weight_.getMap()->getNodeElementList(); //== weight_.getMap()->MyGlobalElements(myGids);
+    Teuchos::ArrayRCP<int> myWinners(numMyWinners+1);
+
     numMyWinners = 0;
-    for (int i = 0; i < weight.Map().NumMyElements(); i++) {
+    for (size_t i = 0; i < weight_.getMap()->getNodeNumElements(); i++) {
       if (procWinner[i] == MyPid)
         myWinners[numMyWinners++] = myGids[i];
     }
-    Epetra_Map winnerMap(-1, numMyWinners, myWinners, 0, weight.Comm());
-   
+    
+     // Cthulhu::EpetraMap winnerMap(-1, numMyWinners, myWinners, 0, weight_.getMap()->getComm());    
+    Cthulhu::global_size_t g = -1; //TODO for Tpetra -1 == ??
+    RCP<Cthulhu::EpetraMap > winnerMap = rcp( new Cthulhu::EpetraMap(g, myWinners(), 0, weight_.getMap()->getComm()) );
+       
     // Pull the Winners out of companion
     //     JustWinners <-- companion[Winners];
    
-    Epetra_IntVector justWinners(winnerMap);
-    Epetra_Import winnerImport(winnerMap,weight.Map());
-    justWinners.Import(*companion, winnerImport, Insert);
+    Cthulhu::EpetraIntVector justWinners(winnerMap);
+    Cthulhu::EpetraImport winnerImport(winnerMap,weight_.getMap());
+
+    const Cthulhu::Import<int,int> & winnerImport2 = winnerImport;
+
+    justWinners.doImport(*companion, winnerImport2, Cthulhu::INSERT);
    
     // Put the JustWinner values back into companion so that
     // all nonunique copies of the same Gid have the procWinner's
     // version of the companion.
    
-    Epetra_Import pushWinners(weight.Map(), winnerMap);
-    companion->Import(justWinners, pushWinners, Insert);
+    Cthulhu::EpetraImport pushWinners(weight_.getMap(), winnerMap);
+    companion->doImport(justWinners, pushWinners, Cthulhu::INSERT);
 
-    delete [] myWinners;
-    delete [] myGids;
   }
 
   return 0; //TODO
@@ -1344,8 +1395,10 @@ int MueLu_ArbitrateAndCommunicate(Epetra_Vector &weight,
 
 // build a list of candidate root nodes (vertices not adjacent to already
 // aggregated vertices)
-int MueLu_RootCandidates(int nVertices, int *vertex2AggId, Graph *graph,
+int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
                          int *candidates, int &nCandidates, int &nCandidatesGlobal) {
+
+  //TODO: interface : ArrayRCP useless ?
 
   int  adjacent;
   bool noAggdNeighbors;
@@ -1357,9 +1410,9 @@ int MueLu_RootCandidates(int nVertices, int *vertex2AggId, Graph *graph,
       noAggdNeighbors = true;
 
       // neighOfINode is the neighbor node list of node 'iNode'.
-      ArrayView<int> neighOfINode = graph->getNeighborVertices(i);
+      ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
 
-      for (ArrayView<int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         adjacent    = *it;
         if (vertex2AggId[adjacent] != MUELOO_UNAGGREGATED) 
           noAggdNeighbors = false;
@@ -1367,21 +1420,23 @@ int MueLu_RootCandidates(int nVertices, int *vertex2AggId, Graph *graph,
       if (noAggdNeighbors == true) candidates[nCandidates++] = i;
     }
   }
-  graph->GetComm().SumAll(&nCandidates,&nCandidatesGlobal,1);
+  sumAll(graph.GetComm(), nCandidates, nCandidatesGlobal);
 
   return 0;
 }
 
 // Compute sizes of all the aggregates.
-int MueLu_ComputeAggSizes(Aggregates *aggregates, int *aggSizes)
+int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, int *aggSizes)
 {
-  int *vertex2AggId;
-  int nAggregates = aggregates->GetNumAggregates();
-  Epetra_IntVector &procWinner = *(aggregates->GetProcWinner());
-  int N = procWinner.Map().NumMyElements();
-  int myPid = procWinner.Comm().MyPID();
+  int nAggregates = aggregates.GetNumAggregates();
 
-  aggregates->GetVertex2AggId()->ExtractView(&vertex2AggId);
+  RCP<Cthulhu::Vector<int> > procWinner_ = aggregates.GetProcWinner();
+  Teuchos::ArrayRCP<int>     procWinner  = procWinner_->getDataNonConst(0);
+  int N = procWinner_->getMap()->getNodeNumElements();
+  int myPid = procWinner_->getMap()->getComm()->getRank();
+
+  Teuchos::ArrayRCP<int> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+
   for (int i = 0; i < nAggregates; i++) aggSizes[i] = 0;
   for (int k = 0; k < N; k++ ) {
     if (procWinner[k] == myPid) aggSizes[vertex2AggId[k]]++;
@@ -1390,20 +1445,22 @@ int MueLu_ComputeAggSizes(Aggregates *aggregates, int *aggSizes)
   return 0; //TODO
 }
 
-int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
-                          Epetra_Vector &weights, const Epetra_Map &uniqueMap, 
-                          const Epetra_Import &unique2NonUniqueWidget) 
+int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
+                          RCP<Cthulhu::Vector<double> > & weights_, const RCP<const Map > &uniqueMap, 
+                          const Cthulhu::Import<int,int> &unique2NonUniqueWidget) 
 {
-  int nAggregates = aggregates->GetNumAggregates();
+  int nAggregates = aggregates.GetNumAggregates();
   int *AggInfo = new int[nAggregates+1];
-  int *vertex2AggId;
 
-  Epetra_IntVector &procWinner = *(aggregates->GetProcWinner());
-  int N = procWinner.Map().NumMyElements();
-  int myPid = procWinner.Comm().MyPID();
+  RCP<Cthulhu::Vector<int> > procWinner_ = aggregates.GetProcWinner();
+  Teuchos::ArrayRCP<int>     procWinner  = procWinner_->getDataNonConst(0);
+  int N = procWinner_->getMap()->getNodeNumElements();
+  int myPid = procWinner_->getMap()->getComm()->getRank();
 
-  Epetra_IntVector &Vtx2AggId= (Epetra_IntVector &) *(aggregates->GetVertex2AggId());
-  aggregates->GetVertex2AggId()->ExtractView(&vertex2AggId);
+  RCP<Cthulhu::Vector<int> > Vtx2AggId = aggregates.GetVertex2AggId();
+  Teuchos::ArrayRCP<int>  vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+
+  Teuchos::ArrayRCP<double> weights = weights_->getDataNonConst(0);
 
   MueLu_ComputeAggSizes(aggregates, AggInfo);
 
@@ -1425,14 +1482,15 @@ int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
         weights[k] = 1.;
       }
       if (vertex2AggId[k] ==  MUELOO_UNAGGREGATED) 
-        aggregates->SetIsRoot(k,false);
+        aggregates.SetIsRoot(k,false);
     }
   }
   nAggregates = NewNAggs;
 
-  MueLu_ArbitrateAndCommunicate(weights, procWinner,&Vtx2AggId, 
-                                uniqueMap, unique2NonUniqueWidget, true);
-  weights.PutScalar(0.);//All tentatively assigned vertices are now definitive
+  
+  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
+				*uniqueMap, unique2NonUniqueWidget, true);
+  weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // procWinner is not set correctly for aggregates which have 
   // been eliminated
@@ -1440,13 +1498,13 @@ int MueLu_RemoveSmallAggs(Aggregates *aggregates, int min_size,
     if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
       procWinner[i] = MUELOO_UNASSIGNED;
   }
-  aggregates->SetNumAggregates(nAggregates);
+  aggregates.SetNumAggregates(nAggregates);
 
   return 0; //TODO
 }
 
 
-// TODO: rename variables:
+// JG TODO: rename variables:
 //  Adjacent-> adjacent
 //  homogenization of variables names :
 //  - colj and j

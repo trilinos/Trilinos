@@ -2,7 +2,7 @@
 #define MUELU_GRAPH_HPP
 
 #include <Teuchos_ArrayView.hpp>
-#include <Epetra_CrsGraph.h>
+#include <Cthulhu_CrsGraph.hpp>
 
 #include "MueLu_Exceptions.hpp"
 
@@ -12,39 +12,44 @@
 
 namespace MueLu {
   
-  class Graph : public Teuchos::Describable {
+  template <class LocalOrdinal  = int, 
+            class GlobalOrdinal = LocalOrdinal, 
+            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps >
+  class Graph 
+    : public Teuchos::Describable {
     
+#include "MueLu_UseShortNames.hpp"
+
   public:
 
-    Graph(const Epetra_CrsGraph & graph, const std::string & objectLabel="") : graph_(graph) { setObjectLabel(objectLabel); }
+    Graph(const RCP<const CrsGraph> & graph, const std::string & objectLabel="") : graph_(graph) { setObjectLabel(objectLabel); }
     ~Graph() {}
     
-    inline int GetNodeNumVertices() { return graph_.NumMyRows(); }
-    inline int GetNodeNumEdges()    { return graph_.NumMyNonzeros();  }
+    inline int GetNodeNumVertices() const { return graph_->getNodeNumRows(); }
+    inline int GetNodeNumEdges() const    { return graph_->getNodeNumEntries();  }
     
-    inline int GetGlobalNumEdges()  { return graph_.NumGlobalNonzeros(); }
+    inline int GetGlobalNumEdges() const { return graph_->getGlobalNumEntries(); }
 
-    inline const Epetra_Comm & GetComm() { return graph_.Comm(); }
-    inline const Epetra_BlockMap & GetDomainMap() { return graph_.DomainMap(); }
-    inline const Epetra_BlockMap & GetImportMap() { return graph_.ImportMap(); }
+    inline const RCP<const Teuchos::Comm<int> > GetComm() const { return graph_->getComm(); }
+    inline const RCP<const Map> GetDomainMap() const { return graph_->getDomainMap(); }
+    inline const RCP<const Map> GetImportMap() const { return graph_->getColMap(); }
 
     //! Return the list of vertices adjacent to the vertex 'v'
-    Teuchos::ArrayView<int> getNeighborVertices(int v) {
-      int* startPtr;
-      int  size;
-      
-      graph_.ExtractMyRowView(v, size, startPtr);
-      return Teuchos::ArrayView<int>(startPtr, size);
+    inline Teuchos::ArrayView<const int> getNeighborVertices(int v) const { 
+      Teuchos::ArrayView<const int> neighborVertices;
+      graph_->getLocalRowView(v, neighborVertices); 
+      return neighborVertices;
     }
 
-    int GetNodeNumGhost()    { 
+    int GetNodeNumGhost() const { 
       /*
-        Ray comments about nGhost:
-        Graph.NGhost == graph_.RowMatrixColMap().NumMyElements() - graph_.OperatorDomainMap().NumMyElements()
+        Ray's comments about nGhost:
+        Graph->NGhost == graph_->RowMatrixColMap()->NumMyElements() - graph_->OperatorDomainMap()->NumMyElements()
         is basically right. But we've had some issues about how epetra handles empty columns.
         Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right. 
       */
-      int nGhost = graph_.ColMap().NumMyElements() - graph_.DomainMap().NumMyElements();
+      int nGhost;//TODO = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
       if (nGhost < 0) nGhost = 0;
       
       return nGhost;
@@ -52,10 +57,11 @@ namespace MueLu {
 
   private:
 
-    const Epetra_CrsGraph & graph_;
+    RCP<const CrsGraph> graph_;
 
   };
 
 }
 
+#define MUELU_GRAPH_SHORT
 #endif

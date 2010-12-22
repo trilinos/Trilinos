@@ -63,27 +63,33 @@
 
 namespace MueLu {
 
-  class Aggregates : public Teuchos::Describable {
-    
-  public:
-    
-    Aggregates(Graph *Graph, const std::string & objectLabel);
-    ~Aggregates();
+   template <class LocalOrdinal  = int, 
+            class GlobalOrdinal = LocalOrdinal, 
+            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+            class LocalMatOps   = typename Kokkos::DefaultKernels<void,LocalOrdinal,Node>::SparseOps > //TODO: or BlockSparseOp ?
+   class Aggregates : public Teuchos::Describable {
 
-    inline int GetNumAggregates()                      { return nAggregates_;            }
-    inline void SetNumAggregates(int nAggregates)      { nAggregates_ = nAggregates;     }
-    inline Epetra_IntVector* GetVertex2AggId()         { return vertex2AggId_;           }
-    inline Epetra_IntVector* GetProcWinner() { return procWinner_;             }
-    inline bool IsRoot(int i)                          { return isRoot_[i];              }
-    inline void SetIsRoot(int vertex, bool value=true) { isRoot_[vertex] = value; }
-
-  private:
+#include "MueLu_UseShortNames.hpp"
+    
+   public:
+     
+     Aggregates(const MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & graph, const std::string & objectLabel = "");
+     ~Aggregates();
+     
+     inline int GetNumAggregates()                      { return nAggregates_;            }
+     inline void SetNumAggregates(int nAggregates)      { nAggregates_ = nAggregates;     }
+     inline RCP<LOVector> & GetVertex2AggId() { return vertex2AggId_;           } // LO or GO ?
+     inline RCP<LOVector> & GetProcWinner()   { return procWinner_;             }
+     inline bool IsRoot(int i)                          { return isRoot_[i];              }
+     inline void SetIsRoot(int vertex, bool value=true) { isRoot_[vertex] = value; }
+     
+   private:
     int   nAggregates_;             /* Number of aggregates on this processor  */
     
-    Epetra_IntVector *vertex2AggId_;/* vertex2AggId[k] gives a local id        */
+    RCP<LOVector> vertex2AggId_;/* vertex2AggId[k] gives a local id        */
                                     /* corresponding to the aggregate to which */
                                     /* local id k has been assigned.  While k  */
-    Epetra_IntVector *procWinner_;  /* is the local id on my processor (MyPID),*/
+    RCP<LOVector> procWinner_;  /* is the local id on my processor (MyPID),*/
                                     /* vertex2AggId[k] is the local id on the  */
                                     /* processor which actually owns the       */
                                     /* aggregate. This owning processor has id */
@@ -92,40 +98,44 @@ namespace MueLu {
     bool *isRoot_;                  /* IsRoot[i] indicates whether vertex i  */
                                     /* is a root node.                       */
 
-    // Epetra_CrsGraph *agg2Vertex_;/* Currently not used                    */
-
   };
 
   // Constructors to create aggregates.
-  Aggregates::Aggregates(Graph *graph, const std::string & objectLabel)
+   template <class LocalOrdinal ,
+             class GlobalOrdinal,
+             class Node         ,
+            class LocalMatOps  >
+   Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Aggregates(const MueLu::Graph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & graph, const std::string & objectLabel)
   {
     
     setObjectLabel(objectLabel);
     
     nAggregates_  = 0;
     
-    vertex2AggId_ = new Epetra_IntVector(graph->GetImportMap());
-    vertex2AggId_->PutValue(MUELOO_UNAGGREGATED);
+    vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap()); //RTODO
+    vertex2AggId_->putScalar(MUELOO_UNAGGREGATED);
     
-    procWinner_ = new Epetra_IntVector(graph->GetImportMap());
-    procWinner_->PutValue(MUELOO_UNASSIGNED);
+    procWinner_ = LOVectorFactory::Build(graph.GetImportMap()); //RTODO
+    procWinner_->putScalar(MUELOO_UNASSIGNED);
     
-    isRoot_ = new bool[graph->GetImportMap().NumMyElements()];
-    for (int i=0; i < graph->GetImportMap().NumMyElements(); i++)
+    //RTODO 
+    isRoot_ = new bool[graph.GetImportMap()->getNodeNumElements()]; //TODO: use ArrayRCP
+    for (size_t i=0; i < graph.GetImportMap()->getNodeNumElements(); i++)
       isRoot_[i] = false;
 
-    //agg2Vertex_   = NULL; /* Currently not used */
   }
 
   // Destructor for aggregates.
-  Aggregates::~Aggregates()
+template <class LocalOrdinal ,
+          class GlobalOrdinal,
+          class Node        , 
+            class LocalMatOps  >
+  Aggregates<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::~Aggregates()
   {
     if (isRoot_       != NULL) delete [] (isRoot_);
-    if (procWinner_   != NULL) delete procWinner_;
-    if (vertex2AggId_ != NULL) delete vertex2AggId_;
-    // if (agg2Vertex_   != NULL) delete agg2Vertex_; /* Currently not used */
   }
 
 }
 
+#define MUELU_AGGREGATES_SHORT
 #endif
