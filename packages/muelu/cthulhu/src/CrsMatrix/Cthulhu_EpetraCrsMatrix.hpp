@@ -9,7 +9,8 @@
 
 #include <Teuchos_ArrayViewDecl.hpp>
 
-#include "Epetra_CrsMatrix.h"
+#include <Epetra_CrsMatrix.h>
+#include <Epetra_Map.h>
 
 #include "Cthulhu_CrsMatrix.hpp"
 #include "Cthulhu_EpetraCrsGraph.hpp"
@@ -19,6 +20,7 @@
 #include "Cthulhu_Trans.hpp"
 
 #include "Cthulhu_Debug.hpp"
+
 
 namespace Cthulhu {
 
@@ -55,6 +57,8 @@ namespace Cthulhu {
     EpetraCrsMatrix(const RCP<const Map<int,int> > &rowMap, size_t maxNumEntriesPerRow, Cthulhu::ProfileType pftype = Cthulhu::DynamicProfile) 
     { CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, rowMap, eRowMap, "Cthulhu::EpetraCrsMatrix constructors only accept Cthulhu::EpetraMap as input arguments.");
+
+      //TODO: test constblk and blksize=1 for the Map ?
       mtx_ = rcp(new Epetra_CrsMatrix(Copy, eRowMap->getEpetra_Map(), maxNumEntriesPerRow, false)); // TODO Copy or View by default ? // TODO: bool StaticProfile
     }
 

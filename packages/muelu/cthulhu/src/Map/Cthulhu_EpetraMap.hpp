@@ -1,3 +1,50 @@
+/*
+Important note: 
+
+While Tpetra object take in argument a Tpetra::Map, Epetra objects take in argument a BlockMap.
+So this adapter wraps an Epetra_BlockMap. In the current Epetra implementation, an Epetra_Map is just a Epetra_BlockMap.
+
+More details:
+-------------
+There is an important difference between Epetra and Tpetra. 
+Tpetra uses Map everywhere but in VbrMatrix. In Epetra, a lot of
+thinks use BlockMap instead of a Map (basically, all the constructors
+of Vector, Graph, Import etc...). So I think that the Cthulhu::Map
+should be a Epetra_BlockMap when we use Epetra in Cthulhu.
+
+But I faced a problem with the CrsMatrix class. Most Epetra_CrsMatrix
+constructors need an Epetra_Map (ie: not a BlockMap) as input
+argument. It is not consistent with the rest of the code. For
+instance, that prevent you to create a CrsMatrix from the Map of any
+DistObject because by inheritence, a Map is a BlockMap but the inverse
+statment is false. CrsGraph constructors use BlockMap and thus can
+either take an Epetra_Map or an Epetra_BlockMap. It seems very strange
+to me that the interface of CrsMatrix constructors are not the same as
+the interface of CrsGraph.
+
+I took a look on the implementation of Epetra_CrsMatrix. Here are some comments:
+- Epetra_CrsMatrix don't use specifically the fact that it is a Map
+  and not a BlockMap. The map is just given as input argument to the
+  graph constructor.
+- You can create a CrsMatrix from a CrsGraph using another
+  constructor. In this case, you don't need a Map. Note that CrsGraph
+  don't know anything about Map but stores a BlockMap instead. So a
+  CrsMatrix don't really use a Map.
+- Epetra_CrsMatrix::ColMap() return a Map just by casting the BlockMap
+  of the underlying graph object:
+    const Epetra_Map& ColMap() const {return((Epetra_Map &) Graph_.ColMap());}
+- I also checked the implementation of Epetra_Map. Basically, there is
+  no difference at all between a Map and a BlockMap. So casting a
+  BlockMap to a Map should be safe.
+Finally, I think that all of that is just a design problem of Epetra.
+
+To solve this problem, I cast the Epetra_BlockMap to a Epetra_Map like
+it is done in Epetra_CrsMatrix::ColMap(). I need to do that only in
+two spot: the constructors of CrsMatrix and
+CrsMatrix::fillComplete(map,map). I think it is OK but maybe I need
+to do more tests.
+*/
+
 #ifndef CTHULHU_EPETRAMAP_HPP
 #define CTHULHU_EPETRAMAP_HPP
 
@@ -17,6 +64,7 @@
 #include "Cthulhu_Comm.hpp"
 #include "Cthulhu_EpetraExceptions.hpp"
 
+#include <Epetra_BlockMap.h>
 #include <Epetra_Map.h>
 
 namespace Tpetra { //TODO
@@ -47,7 +95,7 @@ namespace Cthulhu {
     //! @name Constructor/Destructor Methods
     //@{ 
 
-    // Implementation note for constructors: the Epetra_Comm is cloned in the constructor of Epetra_Map. We don't need to keep a reference on it.
+    // Implementation note for constructors: the Epetra_Comm is cloned in the constructor of Epetra_BlockMap. We don't need to keep a reference on it.
 
     /** \brief EpetraMap constructor with Cthulhu-defined contiguous uniform distribution.
      *   The elements are distributed among nodes so that the subsets of global elements
@@ -105,7 +153,7 @@ namespace Cthulhu {
       
       // Note: validity of numGlobalElements checked by Epetra.
 
-      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, indexBase, *Teuchos2Epetra_Comm(comm))))));
+      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
 
     /** \brief EpetraMap constructor with a user-defined contiguous distribution.
@@ -212,7 +260,7 @@ namespace Cthulhu {
         
       }
 
-      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm))))));
+      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, numLocalElements, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
         
     /** \brief EpetraMap constructor with user-defined non-contiguous (arbitrary) distribution.
@@ -227,12 +275,12 @@ namespace Cthulhu {
 	      const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Kokkos::DefaultNode::DefaultNodeType> &node = Kokkos::DefaultNode::getDefaultNode())
     { 
       CTHULHU_DEBUG_ME; 
-      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_Map(numGlobalElements, elementList.size(), elementList.getRawPtr(), indexBase, *Teuchos2Epetra_Comm(comm))))));
+      IF_EPETRA_EXCEPTION_THEN_THROW_GLOBAL_INVALID_ARG((map_ = (rcp(new Epetra_BlockMap(numGlobalElements, elementList.size(), elementList.getRawPtr(), 1, indexBase, *Teuchos2Epetra_Comm(comm))))));
     }
     
-    /** \brief EpetraMap constructor to wrap a Epetra_Map object.
+    /** \brief EpetraMap constructor to wrap a Epetra_BlockMap object.
      */
-    EpetraMap(const Teuchos::RCP<const Epetra_Map > &map) : map_(map) { CTHULHU_DEBUG_ME;}
+    EpetraMap(const Teuchos::RCP<const Epetra_BlockMap > &map) : map_(map) { CTHULHU_DEBUG_ME;}
 
     //! EpetraMap destructor. 
     ~EpetraMap() { CTHULHU_DEBUG_ME;}
@@ -299,7 +347,7 @@ namespace Cthulhu {
     Cthulhu::LookupStatus getRemoteIndexList(const Teuchos::ArrayView<const int> & GIDList, 
                                             const Teuchos::ArrayView<      int> & nodeIDList) const { CTHULHU_DEBUG_ME; 
 
-      // JG Note: It's not on the documentation of Epetra_Map but it is in fact safe to call
+      // JG Note: It's not on the documentation of Epetra_BlockMap but it is in fact safe to call
       // EpetraMap RemoteIDList with LIDList == 0.
       // (because RemoteIDList only call directory->GetDirectoryEntries and this method accept LocalEntries=0)
 
@@ -343,7 +391,7 @@ namespace Cthulhu {
       try
 	{
           const EpetraMap & epetraMap = dynamic_cast<const EpetraMap &>(map);
-          return map_->PointSameAs(epetraMap.getEpetra_Map()); 
+          return map_->PointSameAs(epetraMap.getEpetra_BlockMap()); 
 	}
       catch (const std::bad_cast& e)
 	{
@@ -359,7 +407,7 @@ namespace Cthulhu {
       try
 	{
           const EpetraMap & epetraMap = dynamic_cast<const EpetraMap &>(map);
-          return map_->SameAs(epetraMap.getEpetra_Map()); 
+          return map_->SameAs(epetraMap.getEpetra_BlockMap()); 
 	}
       catch (const std::bad_cast& e)
 	{
@@ -484,11 +532,14 @@ namespace Cthulhu {
 
     //@}
 
-    const Epetra_Map& getEpetra_Map() const { CTHULHU_DEBUG_ME; return *map_; }
+    const Epetra_BlockMap& getEpetra_BlockMap() const { CTHULHU_DEBUG_ME; return *map_; }
+    
+    /** \brief try to use getEpetra_BlockMap instead of getEpetra_Map as much as possible. */
+    const Epetra_Map& getEpetra_Map() const { CTHULHU_DEBUG_ME; return (Epetra_Map &)*map_; } //TODO: write a note about that. It's the same in Epetra_CrsMatrix.h to get the map.
 
   private:
 
-    RCP<const Epetra_Map> map_;
+    RCP<const Epetra_BlockMap> map_;
 
   }; // EpetraMap class
 

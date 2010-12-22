@@ -32,7 +32,7 @@ namespace Cthulhu {
     {
       CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Cthulhu::EpetraCrsMatrix constructors only accept Cthulhu::EpetraMap as input arguments.");
-      vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_Map(), zeroOut));
+      vec_ = rcp(new Epetra_IntVector(eMap->getEpetra_BlockMap(), zeroOut));
     }
     
 #ifdef CTHULHU_NOT_IMPLEMENTED

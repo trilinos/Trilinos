@@ -39,7 +39,7 @@ namespace Cthulhu {
     EpetraMultiVector(const Teuchos::RCP<const Map<int,int> > &map, size_t NumVectors, bool zeroOut=true) {
       CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, map, eMap, "Cthulhu::TpetraMultiVector constructors only accept Cthulhu::TpetraMap as input arguments.");
-      vec_ = rcp(new Epetra_MultiVector(eMap->getEpetra_Map(), NumVectors, zeroOut));
+      vec_ = rcp(new Epetra_MultiVector(eMap->getEpetra_BlockMap(), NumVectors, zeroOut));
     }
 
 #ifdef CTHULHU_NOT_IMPLEMENTED    

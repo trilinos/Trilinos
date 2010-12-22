@@ -36,7 +36,7 @@ namespace Cthulhu {
     { CTHULHU_DEBUG_ME;
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, source, tSource, "Cthulhu::EpetraImport constructors only accept Cthulhu::EpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, target, tTarget, "Cthulhu::EpetraImport constructors only accept Cthulhu::EpetraMap as input arguments.");
-      import_ = rcp(new Epetra_Import(tSource->getEpetra_Map(), tTarget->getEpetra_Map()));
+      import_ = rcp(new Epetra_Import(tSource->getEpetra_BlockMap(), tTarget->getEpetra_BlockMap()));
     }
  
     //! copy constructor. 

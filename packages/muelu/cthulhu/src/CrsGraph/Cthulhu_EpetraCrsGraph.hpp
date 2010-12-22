@@ -183,7 +183,7 @@ namespace Cthulhu {
       CTHULHU_DEBUG_ME; 
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, domainMap, tDomainMap, "Cthulhu::TpetraCrsMatrix::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
       CTHULHU_RCP_DYNAMIC_CAST(const EpetraMap, rangeMap,  tRangeMap,  "Cthulhu::TpetraCrsMatrix::fillComplete() only accept Cthulhu::TpetraMap as input arguments.");
-      graph_->FillComplete(tDomainMap->getEpetra_Map(), tRangeMap->getEpetra_Map());       //TODO: os
+      graph_->FillComplete(tDomainMap->getEpetra_BlockMap(), tRangeMap->getEpetra_BlockMap());       //TODO: os
     };
 
     /*! \brief Signal that data entry is complete. 

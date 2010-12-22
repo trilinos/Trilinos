@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::RCP<Cthulhu::EpetraMap> map = rcp(new Cthulhu::EpetraMap(numGlobalElements, 0, comm));
   
-  const Epetra_Map& eMap = map->getEpetra_Map();
+  const Epetra_BlockMap& eMap = map->getEpetra_BlockMap();
 
   const Epetra_Comm & ref = eMap.Comm();
 
