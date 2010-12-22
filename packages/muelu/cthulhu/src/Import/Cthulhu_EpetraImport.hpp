@@ -8,6 +8,7 @@
 #include <iterator>
 
 #include "Cthulhu_Import.hpp"
+#include "Epetra_Import.h"
 
 namespace Cthulhu {
 

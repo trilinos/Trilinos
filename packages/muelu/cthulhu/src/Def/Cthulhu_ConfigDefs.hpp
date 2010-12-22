@@ -142,12 +142,19 @@ namespace Cthulhu {
 		zero will be inserted, and then summed with or replaced by the new value.)
 		However, performance may suffer. (The same goes for Insert.)
   */
-	enum CombineMode {
-		ADD,    /*!< Existing values will be summed with new values. */
-		INSERT, /*!< Insert new values that don't currently exist. */
-		REPLACE /*!< Existing values will be replaced with new values. */
-	};
 
+//   enum CombineMode {
+//     ADD,    /*!< Existing values will be summed with new values. */
+//     INSERT, /*!< Insert new values that don't currently exist. */
+//     REPLACE, /*!< Existing values will be replaced with new values. */
+//   };
+
+  enum CombineMode {
+    ADD,    /*!< TODO */
+    INSERT, /*!< TODO */
+    ABSMAX  /*!< TODO: don't exist for Tpetra */
+  };
+ 
   // import Teuchos memory management classes into Cthulu
 #ifndef __CUDACC__
   using Teuchos::ArrayRCP;
