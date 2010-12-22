@@ -17,7 +17,10 @@
 #include <Kokkos_NodeHelpers.hpp>
 
 #include <Epetra_CrsGraph.h>
+#include <Epetra_Import.h>
 #include <Cthulhu_EpetraMap.hpp>
+#include <Cthulhu_EpetraImport.hpp>
+#include <Cthulhu_EpetraBlockMap.hpp>//TMP?
 
 #include "Cthulhu_ConfigDefs.hpp"
 #include "Cthulhu_CrsGraph.hpp"
@@ -225,52 +228,44 @@ namespace Cthulhu {
     inline const RCP<const Map<int,int> > getRowMap() const { 
       CTHULHU_DEBUG_ME; 
     
-      // RCP<const Epetra_Map> map = rcp(new Epetra_Map(graph_->RowMap()));
-      //       return rcp ( new Cthulhu::EpetraMap(map) );
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(graph_->RowMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
       
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
-      return Teuchos::null;
+      // TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
+      // return Teuchos::null;
     };
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    inline const RCP<const Map<int,int> > getColMap() const { 
+    inline const RCP<const Map<int,int> > getColMap() const {  //TODO TODO TODO BlockMap vs Map
       CTHULHU_DEBUG_ME; 
     
-//       RCP<const Epetra_Map> map = rcp(new Epetra_Map(graph_->ColMap()));
-//       return rcp ( new Cthulhu::EpetraMap(map) );
-
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
-      return Teuchos::null;
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(graph_->ColMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     };
 
     //! Returns the Map associated with the domain of this graph.
     inline const RCP<const Map<int,int> > getDomainMap() const { 
       CTHULHU_DEBUG_ME; 
     
-//       RCP<const Epetra_Map> map = rcp(new Epetra_Map(graph_->DomainMap()));
-//       return rcp ( new Cthulhu::EpetraMap(map) );
-
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
-      return Teuchos::null;
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(graph_->DomainMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     };
 
     //! Returns the Map associated with the domain of this graph.
     inline const RCP<const Map<int,int> > getRangeMap() const { 
       CTHULHU_DEBUG_ME; 
-    
-//       RCP<const Epetra_Map> map = rcp(new Epetra_Map(graph_->RangeMap()));
-//       return rcp ( new Cthulhu::EpetraMap(map) );
 
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "get*Map() of EpetraCrsGraph()");
-      return Teuchos::null;
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(graph_->RangeMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     };
 
     //! Returns the importer associated with this graph.
     inline RCP<const Import<int,int> > getImporter() const { 
-    
-      TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::NotImplemented, "getImporter() of EpetraCrsGraph()");
-      return Teuchos::null;
-      //      CTHULHU_DEBUG_ME; return graph_->getImporter(); 
+      CTHULHU_DEBUG_ME; 
+      
+      RCP<const Epetra_Import> imp = rcp(new Epetra_Import(*graph_->Importer())); //NOTE: non consitent: return pointer, take ref
+      return rcp ( new Cthulhu::EpetraImport(imp) );
+
     };
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
