@@ -42,19 +42,15 @@ MetaData::get_property_base( const std::string    & name ,
       const bool error_type =         ( (*i)->m_type != type );
       const bool error_size = size && ( (*i)->m_size != size );
 
-      if ( error_type || error_size ) {
-        std::ostringstream msg ;
-        msg << "stk::mesh::MetaData::get_property( " << name << " ) FAILED:" ;
-        if ( error_type ) {
-          msg << " actual_type(" << (*i)->m_type.name();
-          msg << ") != request_type(" << type.name() << ")" ;
-        }
-        if ( error_type ) {
-          msg << " actual_size(" << (*i)->m_size ;
-          msg << ") != request_size(" << size << ")" ;
-        }
-        throw std::runtime_error( msg.str() );
-      }
+      ThrowErrorMsgIf( error_type,
+                       "For property name " << name << ": " <<
+                       " actual_type(" << (*i)->m_type.name() <<
+                       ") != request_type(" << type.name() << ")");
+
+      ThrowErrorMsgIf( error_size,
+                       "For property name " << name << ": " <<
+                       " actual_size(" << (*i)->m_size <<
+                       ") != request_size(" << size << ")") ;
       p = *i;
     }
   }

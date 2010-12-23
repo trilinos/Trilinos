@@ -162,11 +162,6 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
     STKUNIT_ASSERT_EQUAL ( bulk.buckets(0)[0]->member_all ( tmp ) , bulk.parallel_size() == 1 );
     STKUNIT_ASSERT ( bulk.buckets(0)[0]->member ( **meta.get_parts().begin() ) );
   }
-
-  // Fifth, check throw_field_data_array (...)
-  {
-    STKUNIT_ASSERT_THROW ( throw_field_data_array ( *meta.get_fields()[0] , 10 ) , std::runtime_error );
-  }
 }
 
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)

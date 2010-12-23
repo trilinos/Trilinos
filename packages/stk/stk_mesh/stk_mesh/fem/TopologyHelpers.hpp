@@ -77,15 +77,8 @@ Entity & declare_element( BulkData & mesh ,
   const CellTopologyData * const top = fem::get_cell_topology( part ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
-  if ( top == NULL ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::declare_element( mesh , " ;
-    msg << part.name();
-    msg << " , " ;
-    msg << elem_id ;
-    msg << " , node_id[] ) ERROR, Part does not have a local topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf(top == NULL,
+                  "Part " << part.name() << " does not have a local topology");
 
   PartVector empty ;
   PartVector add( 1 ); add[0] = & part ;
@@ -125,15 +118,8 @@ Entity & declare_element( BulkData & mesh ,
   const CellTopologyData * const top = fem::get_cell_topology( part ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
-  if ( top == NULL ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::declare_element( mesh , " ;
-    msg << part.name();
-    msg << " , " ;
-    msg << elem_id ;
-    msg << " , node[] ) ERROR, Part does not have a local topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf(top == NULL,
+                  "Part " << part.name() << " does not have a local topology");
 
   PartVector add( 1 ); add[0] = & part ;
 

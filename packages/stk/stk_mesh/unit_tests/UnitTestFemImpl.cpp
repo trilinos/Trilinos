@@ -274,10 +274,10 @@ STKUNIT_UNIT_TEST(UnitTestDefaultFEM, expected_throws)
 
   STKUNIT_ASSERT_THROW(test.m_fem.register_cell_topology(top_quad4, 0), std::runtime_error);
   STKUNIT_ASSERT_THROW(test.m_fem.register_cell_topology(top_quad4, 1), std::runtime_error);
-  STKUNIT_ASSERT_THROW(test.m_fem.register_cell_topology(top_quad4, 3), std::runtime_error);
+  STKUNIT_ASSERT_THROW(test.m_fem.register_cell_topology(top_quad4, 3), std::invalid_argument);
 
-  STKUNIT_ASSERT_THROW(test.m_fem.register_cell_topology(top_tri3, 3), std::runtime_error);
-  STKUNIT_ASSERT_THROW(test.m_fem.register_cell_topology(top_tet4, 3), std::runtime_error);
+  STKUNIT_ASSERT_THROW(test.m_fem.register_cell_topology(top_tri3, 3), std::invalid_argument);
+  STKUNIT_ASSERT_THROW(test.m_fem.register_cell_topology(top_tet4, 3), std::invalid_argument);
 
   STKUNIT_ASSERT_THROW(stk::mesh::fem::set_spatial_dimension(test.m_meta_data, 3), std::runtime_error);
 }

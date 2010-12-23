@@ -207,14 +207,13 @@ void get_adjacent_entities(
     }
   }
 }
+
 } // un-named namespace
 
-
-void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts) {
-
-  if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
-    throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
-  }
+void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
+{
+  ThrowErrorMsgIf(mesh.synchronized_state() == BulkData::MODIFIABLE,
+                  "stk::mesh::skin_mesh is not SYNCHRONIZED");
 
   const size_t num_ranks = mesh.mesh_meta_data().entity_rank_count();
 

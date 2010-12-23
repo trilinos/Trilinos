@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef Stk_Rebalance_Use_Cases_UseCase_8_hpp
-#define Stk_Rebalance_Use_Cases_UseCase_8_hpp
+#ifndef Stk_Rebalance_Use_Cases_UseCase_3_hpp
+#define Stk_Rebalance_Use_Cases_UseCase_3_hpp
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
@@ -21,5 +21,5 @@ namespace use_cases {
 } //namespace rebalance
 } //namespace stk
 
-#endif // Stk_Rebalance_Use_Cases_UseCase_1_hpp
+#endif // Stk_Rebalance_Use_Cases_UseCase_3_hpp
 

@@ -1,4 +1,3 @@
-
 #include <algorithm>
 
 #include <Shards_CellTopology.hpp>
@@ -23,7 +22,7 @@ insert(
 {
   if (index >= vector.size())
     vector.resize(index + 1);
-    
+
   vector[index] = value;
 }
 
@@ -33,7 +32,7 @@ insert(
 
 
 DefaultFEM::DefaultFEM(
-  MetaData &            meta_data, 
+  MetaData &            meta_data,
   size_t                spatial_dimension)
   : FEMInterface(),
     m_metaData(meta_data),
@@ -77,7 +76,7 @@ DefaultFEM::set_spatial_dimension(
   }
 }
 
-  
+
 void
 DefaultFEM::initialize(
   size_t                spatial_dimension)
@@ -182,25 +181,19 @@ DefaultFEM::get_part(
   const fem::CellTopology       cell_topology) const
 {
   CellTopologyPartEntityRankMap::const_iterator it = m_cellTopologyPartEntityRankMap.find(cell_topology);
-  if (it == m_cellTopologyPartEntityRankMap.end()) {
-    std::ostringstream oss;
+  ThrowErrorMsgIf(it == m_cellTopologyPartEntityRankMap.end(),
+                  "Cell topology " << cell_topology.getName() <<
+                  " has not been registered");
 
-    oss << "Cell topology " << cell_topology.getName() << " has not been registered";
-    
-    throw std::runtime_error(oss.str());
-  }
-  else
-    return *(*it).second.first;
+  return *(*it).second.first;
 }
 
 
 void
 DefaultFEM::set_cell_topology(
-  Part &                        part, 
-  fem::CellTopology             cell_topology) 
+  Part &                        part,
+  fem::CellTopology             cell_topology)
 {
-  static const char method[] = "stk::mesh::DefaultFEM::set_cell_topology";
-
   EntityRank entity_rank = get_entity_rank(cell_topology);
   if (entity_rank == fem::INVALID_RANK)
     entity_rank = cell_topology.getDimension();
@@ -209,23 +202,14 @@ DefaultFEM::set_cell_topology(
   fem::CellTopology existing_cell_topology = part_ordinal < m_partCellTopologyVector.size() ? m_partCellTopologyVector[part_ordinal] : fem::CellTopology();
 
   const bool duplicate  = existing_cell_topology.getCellTopologyData() != 0;
-  const bool error_rank = part.primary_entity_rank() != entity_rank;
-  const bool error_top  = duplicate && cell_topology != existing_cell_topology;
 
-  if (error_rank || error_top) {
-    std::ostringstream oss;
-    oss << method << "(" << part.name()
-        << ", " << cell_topology.getName() << ") ERROR ";
-    if (error_rank) {
-      oss << ": different entity_rank " << part.primary_entity_rank()
-          << " != " << entity_rank;
-    }
-    if (error_top) {
-      oss << ": different topology " << existing_cell_topology.getName()
-          << " != " << cell_topology.getName();
-    }
-    throw std::runtime_error(oss.str());
-  }
+  ThrowErrorMsgIf( part.primary_entity_rank() != entity_rank,
+    "For args: part " << part.name() << " and topology " << cell_topology.getName() << ", " <<
+    "different entity_rank " << part.primary_entity_rank() << " != " << entity_rank );
+
+  ThrowErrorMsgIf( duplicate && cell_topology != existing_cell_topology,
+    "For args: part " << part.name() << " and topology " << cell_topology.getName() << ", " <<
+    "different topology " << cell_topology.getName() << " != " << existing_cell_topology.getName() );
 
   if (!duplicate) {
     insert(m_partCellTopologyVector, part.mesh_meta_data_ordinal(), cell_topology);
@@ -242,32 +226,21 @@ DefaultFEM::set_cell_topology(
 
 void
 DefaultFEM::register_cell_topology(
-  const fem::CellTopology       cell_topology, 
+  const fem::CellTopology       cell_topology,
   EntityRank                    entity_rank)
 {
-  static const char method[] = "stk::mesh::DefaultFEM::register_cell_topology";
-
   CellTopologyPartEntityRankMap::const_iterator it = m_cellTopologyPartEntityRankMap.find(cell_topology);
 
   const bool       duplicate     = it != m_cellTopologyPartEntityRankMap.end();
   const EntityRank existing_rank = duplicate ? (*it).second.second : 0;
 
-  const bool error_change = duplicate && existing_rank != entity_rank;
-  const bool error_rank   = m_spatialDimension < entity_rank;
+  ThrowInvalidArgMsgIf(m_spatialDimension < entity_rank,
+    "entity_rank " << entity_rank << ", " <<
+    "exceeds maximum spatial_dimension = " << m_spatialDimension );
 
-  if (error_rank || error_change) {
-    std::ostringstream oss;
-    oss << method << "(" << cell_topology.getName()
-        << ", rank = " << entity_rank << ") ERROR ";
-    if (error_rank) {
-      oss << ": rank exceeds maximum spatial_dimension = "
-          << m_spatialDimension;
-    }
-    if (error_change) {
-      oss << ": previously declared rank = " << existing_rank;
-    }
-    throw std::runtime_error(oss.str());
-  }
+  ThrowErrorMsgIf(duplicate && existing_rank != entity_rank,
+    "For args: cell_topolgy " << cell_topology.getName() << " and entity_rank " << entity_rank << ", " <<
+    "previously declared rank = " << existing_rank );
   
   if (! duplicate) {
     Part &part = m_metaData.declare_part(cell_topology.getName(), entity_rank);
@@ -283,7 +256,7 @@ DefaultFEM::get_cell_topology(
   const Part &          part) const
 {
   fem::CellTopology cell_topology;
-  
+
   PartOrdinal part_ordinal = part.mesh_meta_data_ordinal();
   if (part_ordinal < m_partCellTopologyVector.size())
     cell_topology = m_partCellTopologyVector[part_ordinal];

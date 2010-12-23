@@ -21,6 +21,8 @@ class LinearSystemInterface {
  public:
   virtual ~LinearSystemInterface() {}
 
+  virtual void set_parameters(Teuchos::ParameterList& paramlist) = 0;
+
   virtual void synchronize_mappings_and_structure() = 0;
   virtual void create_fei_LinearSystem() = 0;
   virtual void finalize_assembly() = 0;
@@ -30,6 +32,9 @@ class LinearSystemInterface {
 
   /** Return DOF-mapping object */
   virtual DofMapper& get_DofMapper() = 0;
+
+  /** set all matrix/vector coefficients to zero (if allocated) */
+  virtual void reset_to_zero() = 0;
 
   /** Return fei::MatrixGraph object */
   virtual const fei::SharedPtr<fei::MatrixGraph> get_fei_MatrixGraph() const = 0;
@@ -42,6 +47,11 @@ class LinearSystemInterface {
 
   /** Return fei::LinearSystem object */
   virtual fei::SharedPtr<fei::LinearSystem> get_fei_LinearSystem() = 0;
+
+  /** Write matrix and vector objects out to file.
+   * Use 'base_name' in the file-names.
+   */
+  virtual void write_files(const std::string& base_name) const = 0;
 
   /** Solve the linear system
    *

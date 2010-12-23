@@ -37,7 +37,6 @@ void verify_declare_element_side(
     const unsigned local_side_id
     )
 {
-  static const char method[] = "stk::mesh::declare_element_side" ;
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -48,39 +47,17 @@ void verify_declare_element_side(
     ( elem_top && local_side_id < elem_top->side_count )
     ? elem_top->side[ local_side_id ].topology : NULL ;
 
-  bool different_bulk_data =  &mesh != & (elem.bucket().mesh());
+  ThrowErrorMsgIf( &mesh != & (elem.bucket().mesh()),
+    "For elem " << print_entity_key(elem) <<
+    ", Bulkdata for 'elem' and mesh are different");
 
-  bool no_elem_top = (side_top == NULL);
+  ThrowErrorMsgIf( elem_top && local_side_id >= elem_top->side_count,
+    "For elem " << print_entity_key(elem) << ", local_side_id " << local_side_id << ", " <<
+    "local_side_id exceeds " << elem_top->name << ".side_count = " << elem_top->side_count );
 
-  bool bad_side_id = false;
-  if( elem_top && local_side_id >= elem_top->side_count){
-      bad_side_id = true;
-  }
-
-
-  if ( different_bulk_data || no_elem_top || bad_side_id ) {
-     std::ostringstream msg ;
-     msg << method << "( ";
-     print_entity_key( msg , mesh.mesh_meta_data() , elem.key() );
-     msg << " , "
-         << local_side_id
-         << " ) FAILED" ;
-     if ( different_bulk_data ) {
-       msg << " Bulkdata for 'elem' and 'side' are different" ;
-     } else if (no_elem_top && !bad_side_id ){
-       msg << " No element topology found" ;
-
-     } else if ( no_elem_top && bad_side_id ){
-       msg << " No element topology found and " ;
-       msg << " cell side id ";
-       msg << local_side_id ;
-       msg << " exceeds " ;
-       msg << elem_top->name ;
-       msg << ".side_count = " ;
-       msg << elem_top->side_count ;
-     }
-     throw std::runtime_error( msg.str() );
-   }
+  ThrowErrorMsgIf( side_top == NULL,
+    "For elem " << print_entity_key(elem) << ", local_side_id " << local_side_id << ", " <<
+    "No element topology found");
 }
 
 }
@@ -93,8 +70,6 @@ Entity & declare_element_side(
   const unsigned local_side_id ,
   Part * part )
 {
-  static const char method[] = "stk::mesh::declare_element_side" ;
-
   BulkData & mesh = side.bucket().mesh();
 
   verify_declare_element_side(mesh, elem, local_side_id);
@@ -105,23 +80,14 @@ Entity & declare_element_side(
   const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
-  if (elem_top == NULL) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "] has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( elem_top == NULL,
+      "Element[" << elem.identifier() << "] has no defined topology" );
 
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
 
-  if (side_top == NULL) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "]" ;
-    msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
-    msg << " Side has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( side_top == NULL,
+      "Element[" << elem.identifier() << "], local_side_id = " <<
+      local_side_id << ", side has no defined topology" );
 
   const unsigned * const side_node_map = elem_top->side[ local_side_id ].node ;
 
@@ -152,7 +118,6 @@ Entity & declare_element_side(
   const unsigned local_side_id ,
   Part * part )
 {
-  static const char method[] = "stk::mesh::declare_element_side" ;
   verify_declare_element_side(mesh, elem, local_side_id);
 
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -161,24 +126,14 @@ Entity & declare_element_side(
   const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
 
-  if (elem_top == NULL) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "] has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( elem_top == NULL,
+      "Element[" << elem.identifier() << "] has no defined topology");
 
   const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
 
-  if (side_top == NULL) {
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "]" ;
-    msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
-    msg << " Side has no defined topology" ;
-    throw std::runtime_error( msg.str() );
-  }
-
+  ThrowErrorMsgIf( side_top == NULL,
+      "Element[" << elem.identifier() << "], local_side_id = " <<
+      local_side_id << ", side has no defined topology" );
 
   PartVector empty_parts ;
 
@@ -191,8 +146,6 @@ Entity & declare_element_side(
 bool element_side_polarity( const Entity & elem ,
                             const Entity & side , int local_side_id )
 {
-  static const char method[] = "stk::mesh::element_side_polarity" ;
-
   // 09/14/10:  TODO:  tscoffe:  Will this work in 1D?
   // 09/14/10:  TODO:  tscoffe:  We need an exception here if we don't get a TopologicalMetaData off of MetaData or we need to take one on input.
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
@@ -208,24 +161,14 @@ bool element_side_polarity( const Entity & elem ,
                                 is_side ? elem_top->side_count
                                         : elem_top->edge_count );
 
-  if ( NULL == elem_top ||
-       local_side_id < 0 ||
-       static_cast<int>(side_count) <= local_side_id ) {
-    const MetaData & meta_data = elem.bucket().mesh().mesh_meta_data();
-    std::ostringstream msg ;
-    msg << method ;
-    msg << "( Element[" << elem.identifier() << "]" ;
-    msg << " , " << meta_data.entity_rank_names()[ side.entity_rank() ];
-    msg << "[" << side.identifier() << "]" ;
-    msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
-    if ( NULL == elem_top ) {
-      msg << " Element has no defined topology" ;
-    }
-    else {
-      msg << " Unsupported local_side_id" ;
-    }
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( elem_top == NULL,
+                   "For Element[" << elem.identifier() << "], element has no defined topology");
+
+  ThrowErrorMsgIf( local_side_id < 0 || static_cast<int>(side_count) <= local_side_id,
+    "For Element[" << elem.identifier() << "], " <<
+    "side: " << print_entity_key(side) << ", " <<
+    "local_side_id = " << local_side_id <<
+    " ; unsupported local_side_id");
 
   const CellTopologyData * const side_top =
     is_side ? elem_top->side[ local_side_id ].topology

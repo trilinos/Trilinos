@@ -58,24 +58,28 @@ bool balance_comm_spec_domain( Partition * partition,
 void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                    const Partition         * partition,
                                    const mesh::EntityRank  & dep_rank,
-                                   mesh::EntityProcVec     & entity_procs )
+                                   mesh::EntityProcVec     & entity_procs,
+                                   const stk::mesh::EntityRank rank)
 {
 
   stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::element_rank(fem);
+  const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank) ? rank :
+                                             stk::mesh::fem::element_rank(fem);
 
+  if (dep_rank == element_rank) return;
   // Create a map of ids of migrating elements to their owner proc and a vector of the migrating elements.
   std::map<mesh::EntityId, unsigned> elem_procs;
   mesh::EntityVector owned_moving_elems;
   mesh::EntityProcVec::iterator ep_iter = entity_procs.begin(),
                                  ep_end = entity_procs.end();
-  for( ; ep_end != ep_iter; ++ep_iter )
+  for( ; ep_end != ep_iter; ++ep_iter ) {
     if( element_rank == ep_iter->first->entity_rank() )
     {
-      elem_procs[ep_iter->first->identifier()] = ep_iter->second;
+      const mesh::EntityId elem_id = ep_iter->first->identifier();
+      elem_procs[elem_id] = ep_iter->second;
       owned_moving_elems.push_back(ep_iter->first);
     }
-
+  }
   // TODO: Determine if this "dumb" greedy approach is adequate and the cost/benefit
   //       of doing something more sophisticated
 
@@ -89,13 +93,14 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                         r_end = owned_moving_elems.rend();
   for( ; r_end != r_iter; ++r_iter )
   {
-    mesh::EntityId elem_id = (*r_iter)->identifier();
+    const mesh::EntityId elem_id = (*r_iter)->identifier();
     mesh::EntityVector related_entities;
     mesh::EntityVector elems(1);
     elems[0] = *r_iter;
     stk::mesh::get_entities_through_relations(elems, dep_rank, related_entities);
-    for( size_t j = 0; j < related_entities.size(); ++j )
+    for( size_t j = 0; j < related_entities.size(); ++j ) {
       dep_entity_procs[related_entities[j]->identifier()] = elem_procs[elem_id];
+    }
   }
 
 
@@ -114,12 +119,13 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
 
 
 bool full_rebalance(mesh::BulkData  & bulk_data ,
-                    Partition       * partition)
+                    Partition       * partition,
+                    const stk::mesh::EntityRank rank)
 {
   mesh::EntityProcVec cs_elem;
   bool rebalancingHasOccurred =  balance_comm_spec_domain( partition, cs_elem );
 
-  if( rebalancingHasOccurred && partition->partition_dependents_needed() )
+  if(rebalancingHasOccurred && partition->partition_dependents_needed() )
   {
     stk::mesh::fem::FEMInterface & fem = stk::mesh::fem::get_fem_interface(bulk_data.mesh_meta_data());
 
@@ -130,15 +136,15 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
     const stk::mesh::EntityRank cons_rank = elem_rank+1;
 
     // Don't know the rank of the elements rebalanced, assume all are dependent.
-    rebalance_dependent_entities( bulk_data, partition, node_rank, cs_elem );
-    if (stk::mesh::InvalidEntityRank != edge_rank)
-      rebalance_dependent_entities( bulk_data, partition, edge_rank, cs_elem );
-    if (stk::mesh::InvalidEntityRank != face_rank)
-      rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem );
-    if (stk::mesh::InvalidEntityRank != elem_rank)
-      rebalance_dependent_entities( bulk_data, partition, elem_rank, cs_elem );
-    if (stk::mesh::InvalidEntityRank != cons_rank)
-      rebalance_dependent_entities( bulk_data, partition, cons_rank, cs_elem );
+    rebalance_dependent_entities( bulk_data, partition, node_rank, cs_elem, rank );
+    if (stk::mesh::InvalidEntityRank != edge_rank && rank != edge_rank)
+      rebalance_dependent_entities( bulk_data, partition, edge_rank, cs_elem, rank );
+    if (stk::mesh::InvalidEntityRank != face_rank && rank != face_rank)
+      rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem, rank );
+    if (stk::mesh::InvalidEntityRank != elem_rank && rank != elem_rank)
+      rebalance_dependent_entities( bulk_data, partition, elem_rank, cs_elem, rank );
+    if (stk::mesh::InvalidEntityRank != cons_rank && rank != cons_rank)
+      rebalance_dependent_entities( bulk_data, partition, cons_rank, cs_elem, rank );
   }
 
   if ( rebalancingHasOccurred ) 
@@ -247,7 +253,7 @@ bool stk::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
       rebal_coord_ref,
       rebal_elem_weight_ref);
 
-  bool rebalancingHasOccurred = full_rebalance(bulk_data, &partition);
+  bool rebalancingHasOccurred = full_rebalance(bulk_data, &partition, rank);
 
   return rebalancingHasOccurred;
 }

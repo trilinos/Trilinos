@@ -79,7 +79,18 @@ namespace Ioss {
      * Convert 'name' to lowercase and convert spaces to '_'
      */
     static void fixup_name(char *name);
+    static void fixup_name(std::string &name);
     
+    /*!
+     * Process the base element type 'base' which has
+     * 'nodes_per_element' nodes and a spatial dimension of 'spatial'
+     * into a form that the IO system can (hopefully) recognize.
+     * Lowercases the name; converts spaces to '_', adds
+     * nodes_per_element at end of name (if not already there), and
+     * does some other transformations to remove some exodusII ambiguity.
+     */
+    static std::string fixup_element_type(const std::string &base, int nodes_per_element, int spatial);
+
     static std::string uppercase(const std::string &name);
     static std::string lowercase(const std::string &name);
 

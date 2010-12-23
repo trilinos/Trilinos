@@ -99,8 +99,6 @@ field_data( const field_type & f , const Entity & e )
 
 #ifndef DOXYGEN_COMPILE
 
-void throw_field_data_array( const FieldBase & , unsigned );
-
 template< typename ScalarType >
 struct EntityArray< Field<ScalarType,void,void,void,void,void,void,void> >
   : public shards::Array<ScalarType,shards::RankZero,void,void,void,void,void,void,void>

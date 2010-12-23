@@ -177,7 +177,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_invalid )
     const EntityId valid_subcell_identifier = 0;
     STKUNIT_ASSERT_THROW(
         get_adjacent_entities( elem3 , invalid_subcell_rank, valid_subcell_identifier, adjacent_entities2),
-        std::runtime_error
+        std::invalid_argument
         );
   }
   {
@@ -185,7 +185,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_invalid )
     const EntityId invalid_subcell_identifier = 8;
     STKUNIT_ASSERT_THROW(
       get_adjacent_entities( elem3 , valid_subcell_rank, invalid_subcell_identifier, adjacent_entities2),
-      std::runtime_error
+      std::invalid_argument
       );
   }
 }
