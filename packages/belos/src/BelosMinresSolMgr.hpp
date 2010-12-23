@@ -459,7 +459,9 @@ namespace Belos {
     numIters_ (0),
     parametersSet_ (false)
   {
-    setParameters (defaultParameters());
+    // Pass in a null parameter list so setParameters grabs the default parameter list.
+    Teuchos::RCP< Teuchos::ParameterList > nullParams = Teuchos::null;
+    setParameters ( nullParams );
   }
 
   //

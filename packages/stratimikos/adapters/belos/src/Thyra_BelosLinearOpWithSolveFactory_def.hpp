@@ -11,6 +11,7 @@
 #include "BelosBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosGCRODRSolMgr.hpp"
+#include "BelosMinresSolMgr.hpp"
 #include "BelosThyraAdapter.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
@@ -41,6 +42,8 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::PseudoBlockCG_name = "Pseudo Block CG";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GCRODR_name = "GCRODR";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::MINRES_name = "MINRES";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::ConvergenceTestFrequency_name = "Convergence Test Frequency";
 
@@ -327,7 +330,8 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "Pseudo Block GMRES",
         "Block CG",
         "Pseudo Block CG",
-        "GCRODR"
+        "GCRODR",
+        "MINRES"
         ),
       tuple<std::string>(
         "Performs block and single single-RHS GMRES as well as\n"
@@ -345,19 +349,22 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
         "of global communication.  Individual linear systems are deflated out as\n"
         "they are solved.",
 
-        "GMRES solver that performs subspace recycling between RHS and linear systems."
+        "GMRES solver that performs subspace recycling between RHS and linear systems.",
+
+        "MINRES solver that performs single-RHS MINRES on multiple RHSs sequentially."
         ),
       tuple<EBelosSolverType>(
         SOLVER_TYPE_BLOCK_GMRES,
         SOLVER_TYPE_PSEUDO_BLOCK_GMRES,
         SOLVER_TYPE_BLOCK_CG,
         SOLVER_TYPE_PSEUDO_BLOCK_CG,
-        SOLVER_TYPE_GCRODR
+        SOLVER_TYPE_GCRODR,
+        SOLVER_TYPE_MINRES
         ),
       &*validParamList
       );
     validParamList->set(ConvergenceTestFrequency_name, as<int>(1),
-      "Number of linear solver iterations to skip betwee applying"
+      "Number of linear solver iterations to skip between applying"
       " user-defined convergence test.");
     Teuchos::ParameterList
       &solverTypesSL = validParamList->sublist(SolverTypes_name);
@@ -388,6 +395,12 @@ Teuchos::ValidatorXMLConverterDB::addConverter(
     {
       Belos::GCRODRSolMgr<Scalar,MV_t,LO_t> mgr;
       solverTypesSL.sublist(GCRODR_name).setParameters(
+        *mgr.getValidParameters()
+        );
+    }
+    {
+      Belos::MinresSolMgr<Scalar,MV_t,LO_t> mgr;
+      solverTypesSL.sublist(MINRES_name).setParameters(
         *mgr.getValidParameters()
         );
     }
@@ -666,6 +679,26 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       }
       break;
     }
+    case SOLVER_TYPE_MINRES:
+    {
+      // Set the PL
+      if(paramList_.get()) {
+        Teuchos::ParameterList &solverTypesPL = paramList_->sublist(SolverTypes_name);
+        Teuchos::ParameterList &minresPL = solverTypesPL.sublist(MINRES_name);
+        solverPL = Teuchos::rcp( &minresPL, false );
+      }
+      // Create the solver
+      if (oldIterSolver != Teuchos::null) {
+        iterativeSolver = oldIterSolver;
+        iterativeSolver->setProblem( lp );
+        iterativeSolver->setParameters( solverPL );
+      }
+      else {
+        iterativeSolver = rcp(new Belos::MinresSolMgr<Scalar,MV_t,LO_t>(lp,solverPL));
+      }
+      break;
+    }
+
     default:
     {
       TEST_FOR_EXCEPT(true);
