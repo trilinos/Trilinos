@@ -227,7 +227,7 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         int wgt_dim, float *ewgts, int *ierr)
 {
 int i;
-ZOLTAN_ID_TYPE lid, before, after, left, right;
+ZOLTAN_ID_TYPE lid, before, after, left=0, right;
 float wgt;
 
   *ierr = ZOLTAN_OK;

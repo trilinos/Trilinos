@@ -783,7 +783,8 @@ int main(int argc, char *argv[])
   if (myRank == 0){
     fprintf(stdout,"Graph cut weight before partitioning: %f\n",cut_weight[0]);
     fprintf(stdout,"             after flat partitioning: %f\n",cut_weight[1]);
-    fprintf(stdout,"     after hierarchical partitioning: %f\n",cut_weight[2]);
+    if (do_hier)
+      fprintf(stdout,"     after hierarchical partitioning: %f\n",cut_weight[2]);
     fflush(stdout);
   }
 
