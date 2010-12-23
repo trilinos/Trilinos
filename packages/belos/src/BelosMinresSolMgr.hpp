@@ -689,9 +689,6 @@ namespace Belos {
     Teuchos::TimeMonitor slvtimer(*timerSolve_);
 #endif
 
-    Teuchos::BLAS<int,ScalarType> blas;
-    Teuchos::LAPACK<int,ScalarType> lapack;
-
     // We need a problem to solve, else we can't solve it.
     TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
 			MinresSolMgrLinearProblemFailure,

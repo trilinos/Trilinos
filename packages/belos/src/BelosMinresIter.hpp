@@ -56,6 +56,8 @@
 /// C. Paige and M. Saunders.  "Solution of sparse indefinite systems
 /// of linear equations."  SIAM J. Numer. Anal., vol. 12, pp. 617-629,
 /// 1975.
+///
+/// http://www.stanford.edu/group/SOL/software/minres/matlab/minres.m
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
@@ -72,7 +74,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-
+#include "Teuchos_BLAS.hpp"
 
 namespace Belos {
 
@@ -82,7 +84,10 @@ namespace Belos {
 /// \author Nico Schl\"omer
 ///
 /// Implementation of the preconditioned Minimal Residual Method
-/// (MINRES) iteration.
+/// (MINRES) iteration.  This a bilinear form implementation, that
+/// uses inner products of the form <x,My> to solve the preconditioned
+/// linear system M^{-1}*A x = b.  Thus, it is necessary that the
+/// left preconditioner M is positive definite.
 ///
 /// \ingroup belos_solver_framework
 ///
@@ -108,14 +113,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
   /// \params problem The linear problem to solve
   /// \params printer Output manager, for intermediate solver output
   /// \params tester Status test for determining when the current
-  ///   approximate solution has converged (currently ignored)
-  /// \params params Parameter list of solver options (currently
-  ///   ignored)
-  ///
-  /// \warning Currently the solver ignores the status test object.
-  ///   This will eventually be fixed.  (Any volunteers?)  The solver
-  ///   currently merely tests the residual 2-norm for convergence to
-  ///   within a specified tolerance.
+  ///   approximate solution has converged 
+  /// \params params Parameter list of solver options 
   ///
   MinresIter (const Teuchos::RCP< LinearProblem< ScalarType, MV, OP > >& problem,
 	      const Teuchos::RCP< OutputManager< ScalarType > > &        printer,
@@ -217,7 +216,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 	  theNorms.resize(1);
 	theNorms[0] = phibar_;
       }
-    return Y_; 
+    return Teuchos::null; 
   }
 
   //! Get the current update to the linear system.
@@ -413,7 +412,6 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     // Initialize the W's to 0.
     MVT::MvInit ( *W_ );
     MVT::MvInit ( *W2_ );
-    // MvInit ( *W1_ ); // Not necessary: Will be set in the MINRES loop.
 
     if ( lp_->getLeftPrec() != Teuchos::null ) {
       lp_->applyLeftPrec( *newstate.Y, *Y_ );
@@ -458,6 +456,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     if (initialized_ == false) {
       initialize();
     }
+
+    Teuchos::BLAS<int,ScalarType> blas;
 
     // Create convenience variables for zero and one.
     const ScalarType one = SCT::one();
@@ -525,7 +525,6 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
       // r1 = r2;
       // r2 = y;
-      MVT::MvAddMv( one, *Y_, zero, *Y_, *R1_ );
       tmpY = R1_;
       R1_ = R2_;
       R2_ = Y_;
@@ -534,7 +533,10 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // apply left preconditioner
       if ( lp_->getLeftPrec() != Teuchos::null ) {
         lp_->applyLeftPrec( *R2_, *Y_ );
-      } // else "y = r2": is already the case
+      } // else "y = r2"
+      else {
+        MVT::MvAddMv( one, *R2_, zero, *R2_, *Y_ );
+      }
 
       // Get new beta.
       oldBeta = beta(0,0);
@@ -560,7 +562,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // Apply previous rotation Q_{k-1} to get
       //
       //    [delta_k epsln_{k+1}] = [cs  sn][dbar_k  0         ]
-      //    [gbar_k  dbar_{k+1} ]   [sn -cs][alpha_k beta_{k+1}].
+      //    [gbar_k  dbar_{k+1} ]   [-sn cs][alpha_k beta_{k+1}].
       //
       oldeps = epsln;
       delta  = cs*dbar + sn*alpha(0,0);
@@ -569,7 +571,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       dbar   =         - cs*beta(0,0);
 
       // Compute the next plane rotation Q_k.
-      this->symOrtho( gbar, beta(0,0), &cs, &sn, &gamma );
+      this->symOrtho(gbar, beta(0,0), &cs, &sn, &gamma);
 
       phi    = cs * phibar_; // phi_k
       phibar_ = sn * phibar_; // phibar_{k+1}

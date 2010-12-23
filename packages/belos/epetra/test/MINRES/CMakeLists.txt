@@ -9,3 +9,23 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     "--debug --verbose --tol=1e-5"
   STANDARD_PASS_OUTPUT 
   )
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+IF (${PACKAGE_NAME}_ENABLE_Triutils)
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    minres_hb
+    SOURCES test_minres_hb.cpp createEpetraProblem.cpp
+    COMM serial mpi
+    ARGS
+      "--verbose --filename=bcsstk14.hb --tol=1e-5"
+    STANDARD_PASS_OUTPUT 
+    )
+
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestMinresFiles
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/epetra/example/BlockCG
+    SOURCE_FILES bcsstk14.hb
+    EXEDEPS minres_hb
+    )
+ 
+ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)

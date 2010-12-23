@@ -246,81 +246,50 @@ main(int argc, char *argv[])
   //
   // Perform solve
   //
-  Belos::ReturnType solverRetVal = Belos::Unconverged;
+  Belos::ReturnType ret = Belos::Unconverged;
   try {
-    solverRetVal = newSolver->solve();
+    ret = newSolver->solve();
   } catch (std::exception& e) {
     if (MyPID == 0)
-      cout << "Solver threw an exception: " << e.what() << endl;
+      cout << "MINRES solver threw an exception: " << e.what() << endl;
     throw e;
   }
-  if (proc_verbose)
-    {
-      if (solverRetVal == Belos::Converged)
-	cout << "Solver reports that the problem converged." << endl;
-      else
-	cout << "Solver reports that the problem did _not_ converge." << endl;
-    }
-  //
-  // Get the number of iterations for this solve.
-  //
-  int numIters = newSolver->getNumIters();
-  if (MyPID == 0)
-    cout << "Number of iterations performed for this solve: " << numIters << endl;
   //
   // Compute actual residuals.
   //
-  bool everyProblemConverged = true;
-  std::vector<MT> absoluteResidualNorms (numrhs);
-  std::vector<MT> rhsNorm (numrhs);
-  Epetra_MultiVector resid (epetraMap, numrhs);
-  OPT::Apply (*A, *X, resid);
-  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
-  MVT::MvNorm( resid, absoluteResidualNorms );
-  MVT::MvNorm( *B, rhsNorm );
-
-  if (proc_verbose) 
-    cout << "Relative residuals (computed via b-Ax) "
-      "for each right-hand side:" << endl << endl;
-  for (int i = 0; i < numrhs; ++i)
-    {
-      // The right-hand side shouldn't have a zero norm, but avoid
-      // dividing by zero anyway.  It's sensible to test an
-      // iterative solver with a zero right-hand side; it should,
-      // of course, return a zero solution vector.
-      const MT relativeResidualNorm = (rhsNorm[i] == 0) ? 
-	absoluteResidualNorms[i] : 
-	absoluteResidualNorms[i] / rhsNorm[i];
-      if (proc_verbose)
-	cout << "Problem " << i << ": ||b - Ax|| / ||b|| = " 
-	     << relativeResidualNorm;
-      if (relativeResidualNorm > tol) 
-	{
-	  if (proc_verbose)
-	    cout << " > tolerance = " << tol << endl;
-	  everyProblemConverged = false;
-	}
-      else if (proc_verbose)
-	cout << " <= tolerance = " << tol << endl;
+  bool badRes = false;
+  std::vector<double> actual_resids( numrhs );
+  std::vector<double> rhs_norm( numrhs );
+  Epetra_MultiVector resid(A->Map(), numrhs);
+  OPT::Apply( *A, *X, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
+  MVT::MvNorm( resid, actual_resids );
+  MVT::MvNorm( *B, rhs_norm );
+  if (proc_verbose) {
+    std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
+    for ( int i=0; i<numrhs; i++) {
+      double actRes = actual_resids[i]/rhs_norm[i];
+      std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
+      if (actRes > tol) badRes = true;
     }
+  }
 
-  const bool success = (solverRetVal == Belos::Converged) && everyProblemConverged;
-  // The Trilinos test framework expects a message like one of the two
-  // below to be printed out; otherwise, it considers the test to have
-  // failed.
-  if (MyPID == 0)
-    {
-      if (success)
-	cout << "End Result: TEST PASSED" << endl;
-      else
-	cout << "End Result: TEST FAILED" << endl;
-    }
+  if (ret!=Belos::Converged || badRes) {
+    if (proc_verbose)
+      std::cout << std::endl << "End Result: TEST FAILED" << std::endl;
+  }
+  //
+  // Default return value
+  //
+  if (proc_verbose)
+    std::cout << std::endl << "End Result: TEST PASSED" << std::endl;
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
 
-  if (success)
-    return 0;
+  if (ret!=Belos::Converged || badRes)
+    return -1;
   else
-    return 1;
+    return 0;
 } 
