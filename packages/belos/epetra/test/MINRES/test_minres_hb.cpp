@@ -110,13 +110,13 @@ int main(int argc, char *argv[]) {
   //
   // *****Construct initial guess and random right-hand-sides *****
   //
-  //if (numrhs != 1) {
+  if (numrhs != 1) {
     X = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
-    MVT::MvInit( *X, 1.0 );
+    MVT::MvRandom( *X );
     B = rcp( new Epetra_MultiVector( A->Map(), numrhs ) );
     OPT::Apply( *A, *X, *B );
     MVT::MvInit( *X, 0.0 );
-  //}
+  }
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
