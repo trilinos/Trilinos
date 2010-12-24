@@ -194,7 +194,7 @@ void Epetra_IntVector::Print(ostream& os) const {
       int NumMyElements1 =Map(). NumMyElements();
       int MaxElementSize1 = Map().MaxElementSize();
       int * MyGlobalElements1 = Map().MyGlobalElements();
-      int * FirstPointInElementList1;
+      int * FirstPointInElementList1=0;
       if (MaxElementSize1!=1) FirstPointInElementList1 = Map().FirstPointInElementList();
 
       if (MyPID==0) {

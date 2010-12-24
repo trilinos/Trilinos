@@ -351,8 +351,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   //@{ 
   //! Returns the processor IDs and corresponding local index value for a given list of global indices
   /*! For each element (GID) of a given list of global element numbers (stored in GIDList) of length NumIDs,
-      this function returns (in PIDList) the with processor that owns the GID for this map and returns the
+      this function returns (in PIDList) the ID (rank) of the processor that owns the GID for this map and returns the
       local index (in LIDList) of the GID on that processor.
+
+      If a GID is present on more than one processor, the lowest rank processor ID is used, as is the LID for that processor.
+      If a GID is not present on any processor, the correspoding PID will return as -1.
   */
   int RemoteIDList(int NumIDs, const int * GIDList, int * PIDList, int * LIDList) const {
     return(RemoteIDList(NumIDs, GIDList, PIDList, LIDList, 0));
