@@ -151,10 +151,14 @@ double compute_residual_norm2(fei::LinearSystem& fei_ls, fei::Vector& r)
   for(size_t i=0; i<indices.size(); ++i) {
     local_sum += coefs[i]*coefs[i];
   }
+#ifdef HAVE_MPI
   MPI_Comm comm = r.getVectorSpace()->getCommunicator();
   double global_sum = 0;
   int num_doubles = 1;
   MPI_Allreduce(&local_sum, &global_sum, num_doubles, MPI_DOUBLE, MPI_SUM, comm);
+#else
+  double global_sum = 0;
+#endif
   return std::sqrt(global_sum);
 }
 
