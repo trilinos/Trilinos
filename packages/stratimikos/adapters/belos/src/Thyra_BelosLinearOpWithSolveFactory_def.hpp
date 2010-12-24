@@ -443,8 +443,10 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
 
-  typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
-  VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
+  // These lines are changing the verbosity of the preconditioner, which has its own verbose object list,
+  // so I am commenting these out, as it is not the job of the linear solver to dictate preconditioner verbosity.
+  //typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
+  //VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
   
   TEST_FOR_EXCEPT(Op==NULL);
   TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
