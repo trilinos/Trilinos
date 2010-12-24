@@ -174,9 +174,9 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 //==============================================================================
 // Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
-                                 const int * MyGlobalElements, 
-				 int Element_Size, int IndexBase,
-                                 const Epetra_Comm& Comm)
+                                 const int * myGlobalElements, 
+				 int Element_Size, int indexBase,
+                                 const Epetra_Comm& comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
 {
@@ -192,7 +192,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 
   // Allocate storage for global index list information
 
-  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, IndexBase, Comm);
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, Element_Size, indexBase, comm);
   if (NumMy_Elements > 0) {
     int errorcode = BlockMapData_->MyGlobalElements_.Size(NumMy_Elements);
     if(errorcode != 0)
@@ -208,15 +208,15 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
   BlockMapData_->LinearMap_ = false;
   // Get processor information
 
-  int NumProc = Comm.NumProc();
+  int NumProc = comm.NumProc();
   if (NumMy_Elements > 0) {
     // Compute min/max GID on this processor
-    BlockMapData_->MinMyGID_ = MyGlobalElements[0];
-    BlockMapData_->MaxMyGID_ = MyGlobalElements[0];
+    BlockMapData_->MinMyGID_ = myGlobalElements[0];
+    BlockMapData_->MaxMyGID_ = myGlobalElements[0];
     for (i = 0; i < NumMy_Elements; i++) {
-      BlockMapData_->MyGlobalElements_[i] = MyGlobalElements[i];
-      BlockMapData_->MinMyGID_ = EPETRA_MIN(BlockMapData_->MinMyGID_,MyGlobalElements[i]);
-      BlockMapData_->MaxMyGID_ = EPETRA_MAX(BlockMapData_->MaxMyGID_,MyGlobalElements[i]);
+      BlockMapData_->MyGlobalElements_[i] = myGlobalElements[i];
+      BlockMapData_->MinMyGID_ = EPETRA_MIN(BlockMapData_->MinMyGID_,myGlobalElements[i]);
+      BlockMapData_->MaxMyGID_ = EPETRA_MAX(BlockMapData_->MaxMyGID_,myGlobalElements[i]);
     }
   }
   else {
@@ -269,9 +269,9 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
 //==============================================================================
 // Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
 Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
-                                 const int * MyGlobalElements, 
-				 const int *ElementSizeList, int IndexBase,
-                                 const Epetra_Comm& Comm)
+                                 const int * myGlobalElements, 
+				 const int *elementSizeList, int indexBase,
+                                 const Epetra_Comm& comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
 {
@@ -284,10 +284,10 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
   if (NumMy_Elements < 0) 
     throw ReportError("NumMy_Elements = " + toString(NumMy_Elements) + ".  Should be >= 0.", -2);
   for (i = 0; i < NumMy_Elements; i++)
-    if (ElementSizeList[i] <= 0) 
-      throw ReportError("ElementSizeList["+toString(i)+"] = " + toString(ElementSizeList[i]) + ". Should be > 0.", -3);
+    if (elementSizeList[i] <= 0) 
+      throw ReportError("elementSizeList["+toString(i)+"] = " + toString(elementSizeList[i]) + ". Should be > 0.", -3);
   
-  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, 0, IndexBase, Comm);
+  BlockMapData_ = new Epetra_BlockMapData(NumGlobal_Elements, 0, indexBase, comm);
   BlockMapData_->NumMyElements_ = NumMy_Elements;
   BlockMapData_->ConstantElementSize_ = false;
   BlockMapData_->LinearMap_ = false;
@@ -303,23 +303,23 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int NumMy_Elements,
   }
   // Get processor information
 
-  int NumProc = Comm.NumProc();
+  int NumProc = comm.NumProc();
   
   if (NumMy_Elements > 0) {
     // Compute min/max GID and element size, number of points on this processor
-    BlockMapData_->MinMyGID_ = MyGlobalElements[0];
-    BlockMapData_->MaxMyGID_ = MyGlobalElements[0];
-    BlockMapData_->MinMyElementSize_ = ElementSizeList[0];
-    BlockMapData_->MaxMyElementSize_ = ElementSizeList[0];
+    BlockMapData_->MinMyGID_ = myGlobalElements[0];
+    BlockMapData_->MaxMyGID_ = myGlobalElements[0];
+    BlockMapData_->MinMyElementSize_ = elementSizeList[0];
+    BlockMapData_->MaxMyElementSize_ = elementSizeList[0];
     BlockMapData_->NumMyPoints_ = 0;
     for (i = 0; i < NumMy_Elements; i++) {
-      BlockMapData_->MyGlobalElements_[i] = MyGlobalElements[i];
-      BlockMapData_->ElementSizeList_[i] = ElementSizeList[i];
-      BlockMapData_->MinMyGID_ = EPETRA_MIN(BlockMapData_->MinMyGID_,MyGlobalElements[i]);
-      BlockMapData_->MaxMyGID_ = EPETRA_MAX(BlockMapData_->MaxMyGID_,MyGlobalElements[i]);
-      BlockMapData_->MinMyElementSize_ = EPETRA_MIN(BlockMapData_->MinMyElementSize_,ElementSizeList[i]);
-      BlockMapData_->MaxMyElementSize_ = EPETRA_MAX(BlockMapData_->MaxMyElementSize_,ElementSizeList[i]);
-      BlockMapData_->NumMyPoints_ += ElementSizeList[i];
+      BlockMapData_->MyGlobalElements_[i] = myGlobalElements[i];
+      BlockMapData_->ElementSizeList_[i] = elementSizeList[i];
+      BlockMapData_->MinMyGID_ = EPETRA_MIN(BlockMapData_->MinMyGID_,myGlobalElements[i]);
+      BlockMapData_->MaxMyGID_ = EPETRA_MAX(BlockMapData_->MaxMyGID_,myGlobalElements[i]);
+      BlockMapData_->MinMyElementSize_ = EPETRA_MIN(BlockMapData_->MinMyElementSize_,elementSizeList[i]);
+      BlockMapData_->MaxMyElementSize_ = EPETRA_MAX(BlockMapData_->MaxMyElementSize_,elementSizeList[i]);
+      BlockMapData_->NumMyPoints_ += elementSizeList[i];
     }
   }
   else {
@@ -489,7 +489,7 @@ bool Epetra_BlockMap::PointSameAs(const Epetra_BlockMap & Map) const
 }
 
 //==============================================================================
-int Epetra_BlockMap::MyGlobalElements(int * MyGlobalElements) const
+int Epetra_BlockMap::MyGlobalElements(int * myGlobalElements) const
 {
   // If the global element list is not create, then do so.  This can only happen when
   // a linear distribution has been specified.  Thus we can easily construct the update
@@ -500,10 +500,10 @@ int Epetra_BlockMap::MyGlobalElements(int * MyGlobalElements) const
   
   if (BlockMapData_->MyGlobalElements_.Length() == 0)
     for (i = 0; i < numMyElements; i++)
-      MyGlobalElements[i] = BlockMapData_->MinMyGID_ + i;
+      myGlobalElements[i] = BlockMapData_->MinMyGID_ + i;
   else
     for (i = 0; i < numMyElements; i++)
-      MyGlobalElements[i] = BlockMapData_->MyGlobalElements_[i];
+      myGlobalElements[i] = BlockMapData_->MyGlobalElements_[i];
   return(0);
 }
 
@@ -525,24 +525,24 @@ int * Epetra_BlockMap::MyGlobalElements() const {
 }
 
 //==============================================================================
-int Epetra_BlockMap::FirstPointInElement(int LID) const
+int Epetra_BlockMap::FirstPointInElement(int lid) const
 {
-  if (!MyLID(LID)) 
+  if (!MyLID(lid)) 
     EPETRA_CHK_ERR(-1);
   
   int entry;
 
   if (ConstantElementSize())
-    entry = MaxElementSize() * LID; // convert to vector entry
+    entry = MaxElementSize() * lid; // convert to vector entry
   else {
     int * entrylist = FirstPointInElementList(); // get entry list
-    entry = entrylist[LID];
+    entry = entrylist[lid];
   }
   return(entry);
 }
 
 //==============================================================================
-int Epetra_BlockMap::FirstPointInElementList(int * FirstPointInElementList) const
+int Epetra_BlockMap::FirstPointInElementList(int * firstPointInElementList) const
 {
   // If the first element entry list is not create, then do so.  
 
@@ -552,18 +552,18 @@ int Epetra_BlockMap::FirstPointInElementList(int * FirstPointInElementList) cons
   int numMyElements = BlockMapData_->NumMyElements_;
 
   if (BlockMapData_->FirstPointInElementList_.Length() == 0) {
-    FirstPointInElementList[0] = 0; // First element of first entry is always zero
+    firstPointInElementList[0] = 0; // First element of first entry is always zero
     
     if (BlockMapData_->ConstantElementSize_)
       for (i = 0; i < numMyElements; i++)
-	FirstPointInElementList[i+1] = FirstPointInElementList[i] + BlockMapData_->ElementSize_;
+	firstPointInElementList[i+1] = firstPointInElementList[i] + BlockMapData_->ElementSize_;
     else
       for (i = 0; i < numMyElements; i++)
-	FirstPointInElementList[i+1] = FirstPointInElementList[i] + BlockMapData_->ElementSizeList_[i];
+	firstPointInElementList[i+1] = firstPointInElementList[i] + BlockMapData_->ElementSizeList_[i];
   }
   else 
     for (i = 0; i <= numMyElements; i++)
-      FirstPointInElementList[i] = BlockMapData_->FirstPointInElementList_[i];
+      firstPointInElementList[i] = BlockMapData_->FirstPointInElementList_[i];
   return(0);
 }
 
@@ -586,7 +586,7 @@ int * Epetra_BlockMap::FirstPointInElementList() const {
 }
 
 //==============================================================================
-int Epetra_BlockMap::ElementSizeList(int * ElementSizeList) const
+int Epetra_BlockMap::ElementSizeList(int * elementSizeList) const
 {
   // If the element size list is not create, then do so.  This can only happen when
   // a constant element size has been specified.  Thus we can easily construct the element size
@@ -597,10 +597,10 @@ int Epetra_BlockMap::ElementSizeList(int * ElementSizeList) const
 
   if (BlockMapData_->ElementSizeList_.Length() == 0)
     for (i = 0; i < numMyElements; i++)
-      ElementSizeList[i] = BlockMapData_->ElementSize_;
+      elementSizeList[i] = BlockMapData_->ElementSize_;
   else
     for (i = 0; i < numMyElements; i++)
-      ElementSizeList[i] = BlockMapData_->ElementSizeList_[i];
+      elementSizeList[i] = BlockMapData_->ElementSizeList_[i];
   
   return(0);
 }
@@ -619,13 +619,13 @@ int * Epetra_BlockMap::ElementSizeList() const {
 }
 
 //==============================================================================
-int Epetra_BlockMap::PointToElementList(int * PointToElementList) const {
+int Epetra_BlockMap::PointToElementList(int * pointToElementList) const {
   // Build an array such that the local element ID is stored for each point
 
   int i;
   if (BlockMapData_->PointToElementList_.Length() == 0) {
     int numMyElements = BlockMapData_->NumMyElements_;
-    int * ptr = PointToElementList;
+    int * ptr = pointToElementList;
     for (i = 0; i < numMyElements; i++) {
       int Size = ElementSize(i);
       for (int j = 0; j < Size; j++) 
@@ -635,7 +635,7 @@ int Epetra_BlockMap::PointToElementList(int * PointToElementList) const {
   else {
     int numMyPoints = BlockMapData_->NumMyPoints_;
     for (i = 0; i < numMyPoints; i++)
-      PointToElementList[i] = BlockMapData_->PointToElementList_[i];
+      pointToElementList[i] = BlockMapData_->PointToElementList_[i];
   }
   return(0);
 }
@@ -658,12 +658,12 @@ int * Epetra_BlockMap::PointToElementList() const {
 }
 
 //==============================================================================
-int Epetra_BlockMap::ElementSize(int LID) const {
+int Epetra_BlockMap::ElementSize(int lid) const {
 
   if (ConstantElementSize()) 
     return(BlockMapData_->ElementSize_);
   else
-    return(BlockMapData_->ElementSizeList_[LID]);
+    return(BlockMapData_->ElementSizeList_[lid]);
 }
 
 //==============================================================================
@@ -730,43 +730,43 @@ void Epetra_BlockMap::GlobalToLocalSetup()
 }
 
 //==============================================================================
-int Epetra_BlockMap::LID(int GID) const
+int Epetra_BlockMap::LID(int gid) const
 {
-  if ((GID < BlockMapData_->MinMyGID_) || 
-      (GID > BlockMapData_->MaxMyGID_)) {
+  if ((gid < BlockMapData_->MinMyGID_) || 
+      (gid > BlockMapData_->MaxMyGID_)) {
     return(-1); // Out of range
   }
 
   if (BlockMapData_->LinearMap_) {
-    return(GID - BlockMapData_->MinMyGID_); // Can compute with an offset
+    return(gid - BlockMapData_->MinMyGID_); // Can compute with an offset
   }
 
-  if( GID >= BlockMapData_->MyGlobalElements_[0] &&
-      GID <= BlockMapData_->LastContiguousGID_ ) {
-    return( GID - BlockMapData_->MyGlobalElements_[0] );
+  if( gid >= BlockMapData_->MyGlobalElements_[0] &&
+      gid <= BlockMapData_->LastContiguousGID_ ) {
+    return( gid - BlockMapData_->MyGlobalElements_[0] );
   }
 
 #ifdef EPETRA_BLOCKMAP_NEW_LID
-  return BlockMapData_->LIDHash_->Get( GID );
+  return BlockMapData_->LIDHash_->Get( gid );
 #else
-  return(BlockMapData_->LID_[GID - BlockMapData_->MinMyGID_]); // Find it in LID array  
+  return(BlockMapData_->LID_[gid - BlockMapData_->MinMyGID_]); // Find it in LID array  
 #endif
 }
 
 //==============================================================================
-int Epetra_BlockMap::GID(int LID) const
+int Epetra_BlockMap::GID(int lid) const
 {
   if ((BlockMapData_->NumMyElements_==0) ||
-      (LID < BlockMapData_->MinLID_) || 
-      (LID > BlockMapData_->MaxLID_)) {
+      (lid < BlockMapData_->MinLID_) || 
+      (lid > BlockMapData_->MaxLID_)) {
     return(BlockMapData_->IndexBase_ - 1); // Out of range
   }
 
   if (LinearMap()) {
-    return(LID + BlockMapData_->MinMyGID_); // Can compute with an offset
+    return(lid + BlockMapData_->MinMyGID_); // Can compute with an offset
   }
 
-  return(BlockMapData_->MyGlobalElements_[LID]); // Find it in MyGlobalElements array
+  return(BlockMapData_->MyGlobalElements_[lid]); // Find it in MyGlobalElements array
 }
 
 //==============================================================================
@@ -829,31 +829,31 @@ bool Epetra_BlockMap::DetermineIsOneToOne()
 }
 
 //==============================================================================
-bool Epetra_BlockMap::IsDistributedGlobal(int NumGlobalElements, int NumMyElements) const {
+bool Epetra_BlockMap::IsDistributedGlobal(int numGlobalElements, int numMyElements) const {
 
-  bool DistributedGlobal = false; // Assume map is not global distributed
+  bool isDistributedGlobal = false; // Assume map is not global distributed
   if (BlockMapData_->Comm_->NumProc() > 1) {
     int LocalReplicated = 0;
     int AllLocalReplicated;
-    if (NumGlobalElements == NumMyElements) 
+    if (numGlobalElements == numMyElements) 
       LocalReplicated=1;
     BlockMapData_->Comm_->MinAll(&LocalReplicated, &AllLocalReplicated, 1);
     
     // If any PE has LocalReplicated=0, then map is distributed global
     if (AllLocalReplicated != 1) 
-      DistributedGlobal = true;
+      isDistributedGlobal = true;
   }
-  return(DistributedGlobal);
+  return(isDistributedGlobal);
 }
 
 //==============================================================================
-void Epetra_BlockMap::CheckValidNGE(int NumGlobalElements) {
-  // Check to see if user's value for NumGlobalElements is either -1 
+void Epetra_BlockMap::CheckValidNGE(int numGlobalElements) {
+  // Check to see if user's value for numGlobalElements is either -1 
   // (in which case we use our computed value) or matches ours.
-  if ((NumGlobalElements != -1) && (NumGlobalElements != BlockMapData_->NumGlobalElements_)) {
+  if ((numGlobalElements != -1) && (numGlobalElements != BlockMapData_->NumGlobalElements_)) {
     int BmdNumGlobalElements = BlockMapData_->NumGlobalElements_;
     CleanupData();
-    throw ReportError("Invalid NumGlobalElements.  NumGlobalElements = " + toString(NumGlobalElements) + 
+    throw ReportError("Invalid NumGlobalElements.  NumGlobalElements = " + toString(numGlobalElements) + 
 		      ".  Should equal " + toString(BmdNumGlobalElements) + 
 		      ", or be set to -1 to compute automatically", -4);
   }

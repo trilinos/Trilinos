@@ -49,15 +49,15 @@ Epetra_SerialDenseVector::Epetra_SerialDenseVector()
 }
 
 //=============================================================================
-Epetra_SerialDenseVector::Epetra_SerialDenseVector(int Length)
-  : Epetra_SerialDenseMatrix(Length, 1)
+Epetra_SerialDenseVector::Epetra_SerialDenseVector(int length)
+  : Epetra_SerialDenseMatrix(length, 1)
 {
 	SetLabel("Epetra::SerialDenseVector");
 }
 
 //=============================================================================
-Epetra_SerialDenseVector::Epetra_SerialDenseVector(Epetra_DataAccess CV, double *Values, int Length)
-  : Epetra_SerialDenseMatrix(CV, Values, Length, Length, 1)
+Epetra_SerialDenseVector::Epetra_SerialDenseVector(Epetra_DataAccess CV_in, double *values, int length)
+  : Epetra_SerialDenseMatrix(CV_in, values, length, length, 1)
 {
 	SetLabel("Epetra::SerialDenseVector");	
 }

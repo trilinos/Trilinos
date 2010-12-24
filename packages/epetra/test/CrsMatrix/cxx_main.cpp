@@ -70,7 +70,7 @@ int check_graph_sharing(Epetra_Comm& Comm);
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, forierr = 0;
+  int ierr = 0, forierr = 0;
   bool debug = false;
 
 #ifdef EPETRA_MPI
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
   // We are building a tridiagonal matrix where each row has (-1 2 -1)
   // So we need 2 off-diagonal terms (except for the first and last equation)
 
-  for(i = 0; i < NumMyEquations; i++)
+  for (int i = 0; i < NumMyEquations; i++)
     if((MyGlobalElements[i] == 0) || (MyGlobalElements[i] == NumGlobalEquations - 1))
       NumNz[i] = 1;
     else
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
   int NumEntries;
 
   forierr = 0;
-  for(i = 0; i < NumMyEquations; i++) {
+  for (int i = 0; i < NumMyEquations; i++) {
     if(MyGlobalElements[i] == 0) {
 			Indices[0] = 1;
 			NumEntries = 1;
@@ -212,11 +212,11 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(check(A, NumMyEquations, NumGlobalEquations, NumMyNonzeros, 3*NumGlobalEquations-2, 
 	       MyGlobalElements, verbose),ierr);
   forierr = 0;
-  for(i = 0; i < NumMyEquations; i++) 
+  for (int i = 0; i < NumMyEquations; i++) 
 		forierr += !(A.NumGlobalEntries(MyGlobalElements[i])==NumNz[i]+1);
   EPETRA_TEST_ERR(forierr,ierr);
   forierr = 0;
-  for(i = 0; i < NumMyEquations; i++) 
+  for (int i = 0; i < NumMyEquations; i++) 
 		forierr += !(A.NumMyEntries(i)==NumNz[i]+1);
   EPETRA_TEST_ERR(forierr,ierr);
 
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
     int    * Rowinds = new int    [numvals];
     A.ExtractGlobalRowCopy(0, numvals, numvals, Rowvals, Rowinds); // Get A[0,0]
 
-    for (i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
+    for (int i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
     
     A.ReplaceGlobalValues(0, numvals, Rowvals, Rowinds);
     delete [] Rowvals;
@@ -329,7 +329,7 @@ int main(int argc, char *argv[])
   if (debug) Comm.Barrier();
 
   double dble_one = 1.0;
-  for (i=0; i< NumMyEquations; i++) AA.InsertGlobalValues(MyGlobalElements[i], 1, &dble_one, MyGlobalElements+i);
+  for (int i=0; i< NumMyEquations; i++) AA.InsertGlobalValues(MyGlobalElements[i], 1, &dble_one, MyGlobalElements+i);
 
   // Note:  All processors will call the following Insert routines, but only the processor
   //        that owns it will actually do anything
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
   if (debug) Comm.Barrier();
 
   forierr = 0;
-  for (i=0; i<NumMyEquations; i++) forierr += !(AA.NumGlobalEntries(MyGlobalElements[i])==1);
+  for (int i=0; i<NumMyEquations; i++) forierr += !(AA.NumGlobalEntries(MyGlobalElements[i])==1);
   EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
 	       MyGlobalElements, verbose),ierr);
 
   forierr = 0;
-  for (i=0; i<NumMyEquations; i++) forierr += !(B.NumGlobalEntries(MyGlobalElements[i])==1);
+  for (int i=0; i<NumMyEquations; i++) forierr += !(B.NumGlobalEntries(MyGlobalElements[i])==1);
   EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
   forierr = 0;
   int* Inds;
   double* Vals;
-  for(i = 0; i < NumMyEquations; i++) {
+  for (int i = 0; i < NumMyEquations; i++) {
     forierr += !(AA.ExtractMyRowView(i, NumEntries, Vals, Inds)==0);
     forierr += !(BV.InsertMyValues(i, NumEntries, Vals, Inds)==0);
   }
@@ -388,7 +388,7 @@ int main(int argc, char *argv[])
 												MyGlobalElements, verbose),ierr);
 
   forierr = 0;
-  for (i=0; i<NumMyEquations; i++) forierr += !(BV.NumGlobalEntries(MyGlobalElements[i])==1);
+  for (int i=0; i<NumMyEquations; i++) forierr += !(BV.NumGlobalEntries(MyGlobalElements[i])==1);
   EPETRA_TEST_ERR(forierr,ierr);
 
   if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
@@ -428,7 +428,7 @@ int main(int argc, char *argv[])
     // We are building a tridiagonal matrix where each row has (-1 2 -1)
     // So we need 2 off-diagonal terms (except for the first and last equation)
     
-    for (i=0; i<NumMyEquations1; i++)
+    for (int i=0; i<NumMyEquations1; i++)
       if (MyGlobalElements1[i]==0 || MyGlobalElements1[i] == NumGlobalEquations1-1)
 	NumNz1[i] = 1;
       else
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
     int NumEntries1;
 
     forierr = 0;
-    for (i=0; i<NumMyEquations1; i++)
+    for (int i=0; i<NumMyEquations1; i++)
       {
 	if (MyGlobalElements1[i]==0)
 	  {
@@ -484,13 +484,13 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(!(A1.ExtractDiagonalCopy(checkDiag)==0),ierr);
 
     forierr = 0;
-    for (i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==two1);
+    for (int i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==two1);
     EPETRA_TEST_ERR(forierr,ierr);
 
     // Test diagonal replacement method
 
     forierr = 0;
-    for (i=0; i<NumMyEquations1; i++) checkDiag[i]=two1*two1;
+    for (int i=0; i<NumMyEquations1; i++) checkDiag[i]=two1*two1;
     EPETRA_TEST_ERR(forierr,ierr);
 
     EPETRA_TEST_ERR(!(A1.ReplaceDiagonalValues(checkDiag)==0),ierr);
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
     EPETRA_TEST_ERR(!(A1.ExtractDiagonalCopy(checkDiag1)==0),ierr);
 
     forierr = 0;
-    for (i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==checkDiag1[i]);
+    for (int i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==checkDiag1[i]);
     EPETRA_TEST_ERR(forierr,ierr);
 
     if (verbose) cout << "\n\nDiagonal extraction and replacement OK.\n\n" << endl;
@@ -965,7 +965,7 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonz
 					int NumGlobalNonzeros1, int* MyGlobalElements, bool verbose) 
 {  
   (void)MyGlobalElements;
-  int ierr = 0, i, j, forierr = 0;
+  int ierr = 0, forierr = 0;
   int NumGlobalIndices;
   int NumMyIndices;
 	int* MyViewIndices = 0;
@@ -1018,15 +1018,15 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonz
   EPETRA_TEST_ERR(A.MyLRID(NumMyRows),ierr);
 
   forierr = 0;
-  for(i = 0; i < NumMyRows; i++) {
+  for (int i = 0; i < NumMyRows; i++) {
     int Row = A.GRID(i);
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyValues, GlobalCopyIndices);
     A.ExtractMyRowView(i, NumMyIndices, MyViewValues, MyViewIndices); // this is where the problem comes from
     forierr += !(NumGlobalIndices == NumMyIndices);
-    for(j = 1; j < NumMyIndices; j++) {
+    for(int j = 1; j < NumMyIndices; j++) {
 			forierr += !(MyViewIndices[j-1] < MyViewIndices[j]); // this is where the test fails
 		}
-    for(j = 0; j < NumGlobalIndices; j++) {
+    for(int j = 0; j < NumGlobalIndices; j++) {
 			forierr += !(GlobalCopyIndices[j] == A.GCID(MyViewIndices[j]));
 			forierr += !(A.LCID(GlobalCopyIndices[j]) == MyViewIndices[j]);
 			forierr += !(GlobalCopyValues[j] == MyViewValues[j]);
@@ -1035,14 +1035,14 @@ int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonz
   EPETRA_TEST_ERR(forierr,ierr);
 
   forierr = 0;
-  for(i = 0; i < NumMyRows; i++) {
+  for (int i = 0; i < NumMyRows; i++) {
     int Row = A.GRID(i);
     A.ExtractGlobalRowCopy(Row, MaxNumIndices, NumGlobalIndices, GlobalCopyValues, GlobalCopyIndices);
     A.ExtractMyRowCopy(i, MaxNumIndices, NumMyIndices, MyCopyValues, MyCopyIndices);
     forierr += !(NumGlobalIndices == NumMyIndices);
-    for(j = 1; j < NumMyIndices; j++) 
+    for (int j = 1; j < NumMyIndices; j++) 
 			forierr += !(MyCopyIndices[j-1] < MyCopyIndices[j]);
-    for(j = 0; j < NumGlobalIndices; j++) {
+    for (int j = 0; j < NumGlobalIndices; j++) {
 			forierr += !(GlobalCopyIndices[j] == A.GCID(MyCopyIndices[j]));
 			forierr += !(A.LCID(GlobalCopyIndices[j]) == MyCopyIndices[j]);
 			forierr += !(GlobalCopyValues[j] == MyCopyValues[j]);
@@ -1066,12 +1066,12 @@ int check_graph_sharing(Epetra_Comm& Comm)
   int numLocalElems = 5;
   int localProc = Comm.MyPID();
   int firstElem = localProc*numLocalElems;
-  int i, err;
+  int err;
   Epetra_Map map(-1, numLocalElems, 0, Comm);
 
   Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy, map, 1);
 
-  for(i=0; i<numLocalElems; ++i) {
+  for (int i=0; i<numLocalElems; ++i) {
     int row = firstElem+i;
     int col = row;
     double val = 1.0;
@@ -1089,7 +1089,7 @@ int check_graph_sharing(Epetra_Comm& Comm)
 
   delete A;
 
-  for(i=0; i<numLocalElems; ++i) {
+  for (int i=0; i<numLocalElems; ++i) {
     int row = firstElem+i;
     int col = row;
     double val = 1.0;

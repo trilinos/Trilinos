@@ -50,10 +50,10 @@
 
 //==============================================================================
 // Epetra_Import constructor for a Epetra_BlockMap object
-Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_BlockMap & SourceMap)
+Epetra_Import::Epetra_Import( const Epetra_BlockMap &  targetMap, const Epetra_BlockMap & sourceMap)
   : Epetra_Object("Epetra::Import"),
-    TargetMap_(TargetMap),
-    SourceMap_(SourceMap),
+    TargetMap_(targetMap),
+    SourceMap_(sourceMap),
     NumSameIDs_(0),
     NumPermuteIDs_(0),
     PermuteToLIDs_(0),
@@ -76,19 +76,19 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
   // NumPermuteIDs - Number of IDs in SourceMap that must be indirectly loaded but are on this processor.
   // NumRemoteIDs - Number of IDs that are in SourceMap but not in TargetMap, and thus must be imported.
   
-  int NumSourceIDs = SourceMap.NumMyElements();
-  int NumTargetIDs = TargetMap.NumMyElements();
+  int NumSourceIDs = sourceMap.NumMyElements();
+  int NumTargetIDs = targetMap.NumMyElements();
   
   int *TargetGIDs = 0;
   if (NumTargetIDs>0) {
     TargetGIDs = new int[NumTargetIDs];
-    TargetMap.MyGlobalElements(TargetGIDs);
+    targetMap.MyGlobalElements(TargetGIDs);
   }
   
   int * SourceGIDs = 0;
   if (NumSourceIDs>0) {
     SourceGIDs = new int[NumSourceIDs];
-    SourceMap.MyGlobalElements(SourceGIDs);
+    sourceMap.MyGlobalElements(SourceGIDs);
   }
   
   int MinIDs = EPETRA_MIN(NumSourceIDs, NumTargetIDs);
@@ -103,7 +103,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
   NumPermuteIDs_ = 0;
   NumRemoteIDs_ = 0;
   for (i=NumSameIDs_; i< NumTargetIDs; i++) 
-    if (SourceMap.MyGID(TargetGIDs[i])) NumPermuteIDs_++; // Check if Target GID is a local Source GID
+    if (sourceMap.MyGID(TargetGIDs[i])) NumPermuteIDs_++; // Check if Target GID is a local Source GID
     else NumRemoteIDs_++; // If not, then it is remote
   
   
@@ -124,30 +124,30 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
   NumPermuteIDs_ = 0;
   NumRemoteIDs_ = 0;
   for (i=NumSameIDs_; i< NumTargetIDs; i++) {
-    if (SourceMap.MyGID(TargetGIDs[i])) {
+    if (sourceMap.MyGID(TargetGIDs[i])) {
       PermuteToLIDs_[NumPermuteIDs_] = i;
-      PermuteFromLIDs_[NumPermuteIDs_++] = SourceMap.LID(TargetGIDs[i]);
+      PermuteFromLIDs_[NumPermuteIDs_++] = sourceMap.LID(TargetGIDs[i]);
     }
     else {
       //NumRecv_ +=TargetMap.ElementSize(i); // Count total number of entries to receive
-      NumRecv_ +=TargetMap.MaxElementSize(); // Count total number of entries to receive (currently need max)
+      NumRecv_ +=targetMap.MaxElementSize(); // Count total number of entries to receive (currently need max)
       RemoteGIDs[NumRemoteIDs_] = TargetGIDs[i];
       RemoteLIDs_[NumRemoteIDs_++] = i;
     }
   }
 
-  if( NumRemoteIDs_>0 && !SourceMap.DistributedGlobal() )
+  if( NumRemoteIDs_>0 && !sourceMap.DistributedGlobal() )
     ReportError("Warning in Epetra_Import: Serial Import has remote IDs. (Importing to Subset of Target Map)", 1);
   
   // Test for distributed cases
   
   int * RemotePIDs = 0;
 
-  if (SourceMap.DistributedGlobal()) {
+  if (sourceMap.DistributedGlobal()) {
     
     if (NumRemoteIDs_>0)  RemotePIDs = new int[NumRemoteIDs_];
-    int ierr = SourceMap.RemoteIDList(NumRemoteIDs_, RemoteGIDs, RemotePIDs, 0); // Get remote PIDs
-    if (ierr) throw ReportError("Error in SourceMap.RemoteIDList call", ierr);
+    int ierr = sourceMap.RemoteIDList(NumRemoteIDs_, RemoteGIDs, RemotePIDs, 0); // Get remote PIDs
+    if (ierr) throw ReportError("Error in sourceMap.RemoteIDList call", ierr);
 
     //Get rid of IDs that don't exist in SourceMap
     if(NumRemoteIDs_>0) {
@@ -164,7 +164,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
             if( RemotePIDs[i] != -1 ) {
               NewRemoteGIDs[cnt] = RemoteGIDs[i];
               NewRemotePIDs[cnt] = RemotePIDs[i];
-              NewRemoteLIDs[cnt] = TargetMap.LID(RemoteGIDs[i]);
+              NewRemoteLIDs[cnt] = targetMap.LID(RemoteGIDs[i]);
               ++cnt;
             }
           NumRemoteIDs_ = cnt;
@@ -192,7 +192,7 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
     tmpPtr[0] = RemoteLIDs_, tmpPtr[1] = RemoteGIDs;
     util.Sort(true,NumRemoteIDs_,RemotePIDs,0,0,2,tmpPtr);
 
-    Distor_ = SourceMap.Comm().CreateDistributor();
+    Distor_ = sourceMap.Comm().CreateDistributor();
     
     // Construct list of exports that calling processor needs to send as a result
     // of everyone asking for what it needs to receive.
@@ -204,9 +204,9 @@ Epetra_Import::Epetra_Import( const Epetra_BlockMap &  TargetMap, const Epetra_B
 
     // Export IDs come in as GIDs, convert to LIDs
     for (i=0; i< NumExportIDs_; i++) {
-      if (ExportPIDs_[i] < 0) throw ReportError("TargetMap requested a GID that is not in the SourceMap.", -1);
-      ExportLIDs_[i] = SourceMap.LID(ExportLIDs_[i]);
-      NumSend_ += SourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
+      if (ExportPIDs_[i] < 0) throw ReportError("targetMap requested a GID that is not in the sourceMap.", -1);
+      ExportLIDs_[i] = sourceMap.LID(ExportLIDs_[i]);
+      NumSend_ += sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
     }
   }
 

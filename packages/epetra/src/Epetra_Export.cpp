@@ -47,10 +47,10 @@
 
 //==============================================================================
 // Epetra_Export constructor for a Epetra_BlockMap object
-Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_BlockMap & TargetMap)
+Epetra_Export::Epetra_Export( const Epetra_BlockMap &  sourceMap, const Epetra_BlockMap & targetMap)
   : Epetra_Object("Epetra::Export"), 
-    TargetMap_(TargetMap),
-    SourceMap_(SourceMap),
+    TargetMap_(targetMap),
+    SourceMap_(sourceMap),
     NumSameIDs_(0),
     NumPermuteIDs_(0),
     PermuteToLIDs_(0),
@@ -73,19 +73,19 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
   // NumPermuteIDs - Number of IDs in SourceMap that must be indirectly loaded but are on this processor.
   // NumExportIDs - Number of IDs that are in SourceMap but not in TargetMap, and thus must be exported.
 
-  int NumSourceIDs = SourceMap.NumMyElements();
-  int NumTargetIDs = TargetMap.NumMyElements();
+  int NumSourceIDs = sourceMap.NumMyElements();
+  int NumTargetIDs = targetMap.NumMyElements();
 
   int *TargetGIDs = 0;
   if (NumTargetIDs>0) {
     TargetGIDs = new int[NumTargetIDs];
-    TargetMap.MyGlobalElements(TargetGIDs);
+    targetMap.MyGlobalElements(TargetGIDs);
   }
 
   int * SourceGIDs = 0;
   if (NumSourceIDs>0) {
     SourceGIDs = new int[NumSourceIDs];
-    SourceMap.MyGlobalElements(SourceGIDs);
+    sourceMap.MyGlobalElements(SourceGIDs);
   }
 
   int MinIDs = EPETRA_MIN(NumSourceIDs, NumTargetIDs);
@@ -98,7 +98,7 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
   NumPermuteIDs_ = 0;
   NumExportIDs_ = 0;
   for (i=NumSameIDs_; i< NumSourceIDs; i++) 
-    if (TargetMap.MyGID(SourceGIDs[i])) NumPermuteIDs_++; // Check if Source GID is a local Target GID
+    if (targetMap.MyGID(SourceGIDs[i])) NumPermuteIDs_++; // Check if Source GID is a local Target GID
     else NumExportIDs_++; // If not, then it is remote
 
   // Define remote and permutation lists
@@ -116,28 +116,28 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
   NumPermuteIDs_ = 0;
   NumExportIDs_ = 0;
   for (i=NumSameIDs_; i< NumSourceIDs; i++) {
-    if (TargetMap.MyGID(SourceGIDs[i])) {
+    if (targetMap.MyGID(SourceGIDs[i])) {
       PermuteFromLIDs_[NumPermuteIDs_] = i;
-      PermuteToLIDs_[NumPermuteIDs_++] = TargetMap.LID(SourceGIDs[i]);
+      PermuteToLIDs_[NumPermuteIDs_++] = targetMap.LID(SourceGIDs[i]);
     }
     else {
-      //NumSend_ +=SourceMap.ElementSize(i); // Count total number of entries to send
-      NumSend_ +=SourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
+      //NumSend_ +=sourceMap.ElementSize(i); // Count total number of entries to send
+      NumSend_ +=sourceMap.MaxElementSize(); // Count total number of entries to send (currently need max)
       ExportGIDs[NumExportIDs_] = SourceGIDs[i];
       ExportLIDs_[NumExportIDs_++] = i;
     }
   }
      
-  if ( NumExportIDs_>0 && !SourceMap.DistributedGlobal()) 
+  if ( NumExportIDs_>0 && !sourceMap.DistributedGlobal()) 
     ReportError("Warning in Epetra_Export: Serial Export has remote IDs. (Exporting from Subset of Source Map)", 1);
 
   // Test for distributed cases
   int ierr = 0;
 
-  if (SourceMap.DistributedGlobal()) {
+  if (sourceMap.DistributedGlobal()) {
 
     if (NumExportIDs_>0) ExportPIDs_ = new int[NumExportIDs_];
-    ierr = TargetMap.RemoteIDList(NumExportIDs_, ExportGIDs, ExportPIDs_, 0); // Get remote PIDs
+    ierr = targetMap.RemoteIDList(NumExportIDs_, ExportGIDs, ExportPIDs_, 0); // Get remote PIDs
     if( ierr ) throw ReportError("Error in Epetra_BlockMap::RemoteIDList", ierr);
 
     //Get rid of IDs not in Target Map
@@ -181,7 +181,7 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
     tmpPtr[0] = ExportLIDs_, tmpPtr[1] = ExportGIDs;
     util.Sort(true,NumExportIDs_,ExportPIDs_,0,0,2,tmpPtr);
 
-    Distor_ = SourceMap.Comm().CreateDistributor();
+    Distor_ = sourceMap.Comm().CreateDistributor();
     
     // Construct list of exports that calling processor needs to send as a result
     // of everyone asking for what it needs to receive.
@@ -206,9 +206,9 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
 
     // Remote IDs come in as GIDs, convert to LIDs
     for (i=0; i< NumRemoteIDs_; i++) {
-      RemoteLIDs_[i] = TargetMap.LID(RemoteGIDs[i]);
-      //NumRecv_ += TargetMap.ElementSize(RemoteLIDs_[i]); // Count total number of entries to receive
-      NumRecv_ += TargetMap.MaxElementSize(); // Count total number of entries to receive (currently need max)
+      RemoteLIDs_[i] = targetMap.LID(RemoteGIDs[i]);
+      //NumRecv_ += targetMap.ElementSize(RemoteLIDs_[i]); // Count total number of entries to receive
+      NumRecv_ += targetMap.MaxElementSize(); // Count total number of entries to receive (currently need max)
     }
 
     if (NumExportIDs_>0) delete [] ExportGIDs;

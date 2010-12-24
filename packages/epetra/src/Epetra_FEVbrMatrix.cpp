@@ -53,10 +53,10 @@
 
 //----------------------------------------------------------------------------
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
-				       const Epetra_BlockMap& RowMap,
+				       const Epetra_BlockMap& rowMap,
 				       int *NumBlockEntriesPerRow,
 				       bool ignoreNonLocalEntries) 
-  : Epetra_VbrMatrix(CV, RowMap, NumBlockEntriesPerRow),
+  : Epetra_VbrMatrix(CV, rowMap, NumBlockEntriesPerRow),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
     nonlocalBlockRows_(NULL),
@@ -74,10 +74,10 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
-				       const Epetra_BlockMap& RowMap,
+				       const Epetra_BlockMap& rowMap,
 				       int NumBlockEntriesPerRow,
 				       bool ignoreNonLocalEntries) 
-  : Epetra_VbrMatrix(CV, RowMap, NumBlockEntriesPerRow),
+  : Epetra_VbrMatrix(CV, rowMap, NumBlockEntriesPerRow),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
     nonlocalBlockRows_(NULL),
@@ -95,11 +95,11 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
-				       const Epetra_BlockMap& RowMap,
-				       const Epetra_BlockMap& ColMap,
+				       const Epetra_BlockMap& rowMap,
+				       const Epetra_BlockMap& colMap,
 				       int *NumBlockEntriesPerRow,
 				       bool ignoreNonLocalEntries) 
-  : Epetra_VbrMatrix(CV, RowMap, ColMap, NumBlockEntriesPerRow),
+  : Epetra_VbrMatrix(CV, rowMap, colMap, NumBlockEntriesPerRow),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
     nonlocalBlockRows_(NULL),
@@ -117,11 +117,11 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
-				       const Epetra_BlockMap& RowMap,
-				       const Epetra_BlockMap& ColMap,
+				       const Epetra_BlockMap& rowMap,
+				       const Epetra_BlockMap& colMap,
 				       int NumBlockEntriesPerRow,
 				       bool ignoreNonLocalEntries) 
-  : Epetra_VbrMatrix(CV, RowMap, ColMap, NumBlockEntriesPerRow),
+  : Epetra_VbrMatrix(CV, rowMap, colMap, NumBlockEntriesPerRow),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
     nonlocalBlockRows_(NULL),
@@ -139,9 +139,9 @@ Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FEVbrMatrix::Epetra_FEVbrMatrix(Epetra_DataAccess CV,
-				       const Epetra_CrsGraph& Graph,
+				       const Epetra_CrsGraph& graph,
 				       bool ignoreNonLocalEntries) 
-  : Epetra_VbrMatrix(CV, Graph),
+  : Epetra_VbrMatrix(CV, graph),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
     numNonlocalBlockRows_(0),
     nonlocalBlockRows_(NULL),
@@ -392,7 +392,7 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete)
 }
 
 //----------------------------------------------------------------------------
-int Epetra_FEVbrMatrix::InputNonlocalBlockEntry(double *Values, int LDA,
+int Epetra_FEVbrMatrix::InputNonlocalBlockEntry(double *values, int LDA,
 						int NumRows, int NumCols)
 {
   if (curRowOffset_ < 0) {
@@ -413,7 +413,7 @@ int Epetra_FEVbrMatrix::InputNonlocalBlockEntry(double *Values, int LDA,
     //For the construction of the serial dense matrix here, we choose Copy mode
     //in case the user deletes or reuses the Values array after this method is
     //called.
-    subblock = new Epetra_SerialDenseMatrix(Copy, Values, LDA, NumRows, NumCols);
+    subblock = new Epetra_SerialDenseMatrix(Copy, values, LDA, NumRows, NumCols);
 
     if (subblock == NULL) {
       return(-1);
@@ -429,7 +429,7 @@ int Epetra_FEVbrMatrix::InputNonlocalBlockEntry(double *Values, int LDA,
     int Target_LDA = subblock->LDA();
     int Source_LDA = LDA;
     double* tptr = subblock->A();
-    double* sptr = Values;
+    double* sptr = values;
     if (curMode_ == Add) {
       for(int j=0; j<NumCols; ++j) {
         for(int i=0; i<NumRows; ++i) {
@@ -568,10 +568,10 @@ int Epetra_FEVbrMatrix::BeginSumIntoGlobalValues(int BlockRow,
 int Epetra_FEVbrMatrix::SetupForNonlocalSubmits(int BlockRow,
 						int NumBlockEntries,
 						int * BlockIndices, 
-						bool IndicesAreLocal,
+						bool indicesAreLocal,
 						Epetra_CombineMode SubmitMode)
 {
-  (void)IndicesAreLocal;
+  (void)indicesAreLocal;
   if (ignoreNonLocalEntries_) {
     curRowOffset_ = 0;
     return(0);
@@ -626,13 +626,13 @@ int Epetra_FEVbrMatrix::SetupForNonlocalSubmits(int BlockRow,
 }
 
 //--------------------------------------------------------------------------
-int Epetra_FEVbrMatrix::SubmitBlockEntry(double *Values,
+int Epetra_FEVbrMatrix::SubmitBlockEntry(double *values,
 					 int LDA,
 					 int NumRows,
 					 int NumCols)
 {
   if (curRowOffset_ < 0) {
-    EPETRA_CHK_ERR( Epetra_VbrMatrix::SubmitBlockEntry(Values, LDA,
+    EPETRA_CHK_ERR( Epetra_VbrMatrix::SubmitBlockEntry(values, LDA,
 							NumRows, NumCols) );
   }
   else {
@@ -640,7 +640,7 @@ int Epetra_FEVbrMatrix::SubmitBlockEntry(double *Values,
       return(0);
     }
 
-    EPETRA_CHK_ERR( InputNonlocalBlockEntry(Values, LDA,
+    EPETRA_CHK_ERR( InputNonlocalBlockEntry(values, LDA,
 					    NumRows, NumCols) );
   }
 

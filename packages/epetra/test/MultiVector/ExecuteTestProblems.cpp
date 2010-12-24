@@ -98,7 +98,6 @@
     Epetra_MultiVector C1(View, Map2d, Cpp, NumVectors);
 
     for (int strided = 0; strided<2; strided++) {
-      int ierr;
     // Loop through all trans cases using a variety of values for alpha and beta
     for (i=0; i<4; i++)  {
 	ierr = 0;

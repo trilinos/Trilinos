@@ -141,16 +141,16 @@ void Epetra_CrsSingletonFilter::InitializeDefaults() {
   return;
 }
 //==============================================================================
-int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
+int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * fullMatrix) {
 
   int i, j, jj;
 
-  FullMatrix_ = FullMatrix; 
+  FullMatrix_ = fullMatrix; 
 
   if (AnalysisDone_) EPETRA_CHK_ERR(-1); // Analysis already done once.  Cannot do it again
-  if (FullMatrix==0) EPETRA_CHK_ERR(-2); // Input matrix pointer is zero
-  if (FullMatrix->NumGlobalRows()==0) EPETRA_CHK_ERR(-3); // Full matrix has zero dimension.
-  if (FullMatrix->NumGlobalNonzeros()==0) EPETRA_CHK_ERR(-4); // Full matrix has no nonzero terms.
+  if (fullMatrix==0) EPETRA_CHK_ERR(-2); // Input matrix pointer is zero
+  if (fullMatrix->NumGlobalRows()==0) EPETRA_CHK_ERR(-3); // Full matrix has zero dimension.
+  if (fullMatrix->NumGlobalNonzeros()==0) EPETRA_CHK_ERR(-4); // Full matrix has no nonzero terms.
 
 
   // First check for columns with single entries and find columns with singleton rows
@@ -164,12 +164,12 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
   // Define MapColoring objects
   RowMapColors_ = new Epetra_MapColoring(FullMatrixRowMap());  // Initial colors are all 0
   ColMapColors_ = new Epetra_MapColoring(FullMatrixColMap());
-  Epetra_MapColoring & RowMapColors = *RowMapColors_;
-  Epetra_MapColoring & ColMapColors = *ColMapColors_;
+  Epetra_MapColoring & rowMapColors = *RowMapColors_;
+  Epetra_MapColoring & colMapColors = *ColMapColors_;
 
 
-  int NumMyRows = FullMatrix->NumMyRows();
-  int NumMyCols = FullMatrix->NumMyCols();
+  int NumMyRows = fullMatrix->NumMyRows();
+  int NumMyCols = fullMatrix->NumMyCols();
 
   // Set up for accessing full matrix.  Will do so row-by-row.
   EPETRA_CHK_ERR(InitFullMatrixAccess()); 
@@ -192,8 +192,8 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
     if (NumIndices==1) {
       j = Indices[0];
       ColHasRowWithSingleton[j]++;
-      RowMapColors[i] = 1;
-      ColMapColors[j] = 1;
+      rowMapColors[i] = 1;
+      colMapColors[j] = 1;
       NumMyRowSingletons_++;
     }
   }
@@ -211,14 +211,14 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
 
   // If RowMatrixImporter is non-trivial, we need to perform a gather/scatter to accumulate results
 
-  if (FullMatrix->RowMatrixImporter()!=0) {
+  if (fullMatrix->RowMatrixImporter()!=0) {
     Epetra_IntVector tmpVec(FullMatrixDomainMap()); // Use for gather/scatter of column vectors
-    EPETRA_CHK_ERR(tmpVec.Export(ColProfiles, *FullMatrix->RowMatrixImporter(), Add));
-    EPETRA_CHK_ERR(ColProfiles.Import(tmpVec, *FullMatrix->RowMatrixImporter(), Insert));
+    EPETRA_CHK_ERR(tmpVec.Export(ColProfiles, *fullMatrix->RowMatrixImporter(), Add));
+    EPETRA_CHK_ERR(ColProfiles.Import(tmpVec, *fullMatrix->RowMatrixImporter(), Insert));
     
     EPETRA_CHK_ERR(tmpVec.PutValue(0));
-    EPETRA_CHK_ERR(tmpVec.Export(ColHasRowWithSingleton, *FullMatrix->RowMatrixImporter(), Add));
-    EPETRA_CHK_ERR(ColHasRowWithSingleton.Import(tmpVec, *FullMatrix->RowMatrixImporter(), Insert));
+    EPETRA_CHK_ERR(tmpVec.Export(ColHasRowWithSingleton, *fullMatrix->RowMatrixImporter(), Add));
+    EPETRA_CHK_ERR(ColHasRowWithSingleton.Import(tmpVec, *fullMatrix->RowMatrixImporter(), Insert));
   }
   // ColProfiles now contains the nonzero column entry count for all columns that have
   // an entry on this processor.
@@ -230,7 +230,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
   }
 
 
-  Epetra_IntVector RowHasColWithSingleton(FullMatrix->RowMatrixRowMap()); // Use to check for errors
+  Epetra_IntVector RowHasColWithSingleton(fullMatrix->RowMatrixRowMap()); // Use to check for errors
   RowHasColWithSingleton.PutValue(0);
  
   NumMyColSingletons_ = 0;
@@ -240,10 +240,10 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
     // Check if column is a singleton
     if (ColProfiles[j]==1) {
       // Check to see if this column already eliminated by the row check above
-      if (RowMapColors[i]!=1) {
+      if (rowMapColors[i]!=1) {
 	RowHasColWithSingleton[i]++; // Increment col singleton counter for ith row
-	RowMapColors[i] = 2; // Use 2 for now, to distinguish between row eliminated directly or via column singletons
-	ColMapColors[j] = 1;
+	rowMapColors[i] = 2; // Use 2 for now, to distinguish between row eliminated directly or via column singletons
+	colMapColors[j] = 1;
 	NumMyColSingletons_++;
 	// If we delete a row, we need to keep track of associated column entries that were also deleted 
 	// in case all entries in a column are eventually deleted, in which case the column should
@@ -254,8 +254,8 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
       }
     }
     // Check if some other processor eliminated this column    
-    else if (ColHasRowWithSingleton[j]==1 && RowMapColors[i]!=1) { 
-	ColMapColors[j] = 1;
+    else if (ColHasRowWithSingleton[j]==1 && rowMapColors[i]!=1) { 
+	colMapColors[j] = 1;
     }
   }
   if (RowHasColWithSingleton.MaxValue()>1) {
@@ -264,13 +264,13 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
 
 
  // Generate arrays that keep track of column singleton row, col and pivot info needed for post-solve phase
-  EPETRA_CHK_ERR(CreatePostSolveArrays(RowIDs, RowMapColors, ColProfiles, NewColProfiles,
+  EPETRA_CHK_ERR(CreatePostSolveArrays(RowIDs, rowMapColors, ColProfiles, NewColProfiles,
 				       ColHasRowWithSingleton));
 
-  for (i=0; i<NumMyRows; i++) if (RowMapColors[i]==2) RowMapColors[i] = 1; // Convert all eliminated rows to same color
+  for (i=0; i<NumMyRows; i++) if (rowMapColors[i]==2) rowMapColors[i] = 1; // Convert all eliminated rows to same color
 
-  FullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyRowSingletons_, &NumGlobalRowSingletons_, 1);
-  FullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyColSingletons_, &NumGlobalColSingletons_, 1);
+  fullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyRowSingletons_, &NumGlobalRowSingletons_, 1);
+  fullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyColSingletons_, &NumGlobalColSingletons_, 1);
   AnalysisDone_ = true;
   return(0);
 }
@@ -288,11 +288,11 @@ int Epetra_CrsSingletonFilter::ConstructReducedProblem(Epetra_LinearProblem * Pr
   if (Problem->GetLHS()==0) EPETRA_CHK_ERR(-5); // Need a LHS
   // Generate reduced row and column maps
 
-  Epetra_MapColoring & RowMapColors = *RowMapColors_;
-  Epetra_MapColoring & ColMapColors = *ColMapColors_;
+  Epetra_MapColoring & rowMapColors = *RowMapColors_;
+  Epetra_MapColoring & colMapColors = *ColMapColors_;
 
-  ReducedMatrixRowMap_ = RowMapColors.GenerateMap(0);
-  ReducedMatrixColMap_ = ColMapColors.GenerateMap(0);
+  ReducedMatrixRowMap_ = rowMapColors.GenerateMap(0);
+  ReducedMatrixColMap_ = colMapColors.GenerateMap(0);
 
   // Create domain and range map colorings by exporting map coloring of column and row maps
 
@@ -676,7 +676,7 @@ int Epetra_CrsSingletonFilter::GetRowGCIDs(int Row, int & NumIndices,
 }
 //==============================================================================
 int Epetra_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & RowIDs,
-						     const Epetra_MapColoring & RowMapColors,
+						     const Epetra_MapColoring & rowMapColors,
 						     const Epetra_IntVector & ColProfiles,
 						     const Epetra_IntVector & NewColProfiles,
 						     const Epetra_IntVector & ColHasRowWithSingleton) {
@@ -685,7 +685,7 @@ int Epetra_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & Ro
 
   if (NumMyColSingletons_==0) return(0); // Nothing to do
 
-  Epetra_MapColoring & ColMapColors = *ColMapColors_;
+  Epetra_MapColoring & colMapColors = *ColMapColors_;
 
   int NumMyCols = FullMatrix()->NumMyCols();
 
@@ -700,15 +700,15 @@ int Epetra_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & Ro
   int NumMyColSingletonstmp = 0;
   for (j=0; j<NumMyCols; j++) {
     int i = RowIDs[j];
-    if ( ColProfiles[j]==1 && RowMapColors[i]!=1) {
+    if ( ColProfiles[j]==1 && rowMapColors[i]!=1) {
       ColSingletonRowLIDs_[NumMyColSingletonstmp] = i;
       ColSingletonColLIDs_[NumMyColSingletonstmp] = j;
       NumMyColSingletonstmp++;
     }
     // Also check for columns that were eliminated implicitly by 
     // having all associated row eliminated
-    else if (NewColProfiles[j]==0 && ColHasRowWithSingleton[j]!=1 && RowMapColors[i]==0) {
-	  ColMapColors[j] = 1;
+    else if (NewColProfiles[j]==0 && ColHasRowWithSingleton[j]!=1 && rowMapColors[i]==0) {
+	  colMapColors[j] = 1;
     }
   }
 

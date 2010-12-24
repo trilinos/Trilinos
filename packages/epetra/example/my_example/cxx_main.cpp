@@ -478,32 +478,32 @@ int checkSharedOwnership(Epetra_Comm& Comm, bool verbose) {
 	{
 		// make new Graphs so that we can insert Global instead of Local
 		// inside of new scope so that we can use same names
-		Epetra_CrsGraph SoleOwner(Copy, Map1, NumIndicesPerRow);
-		Epetra_CrsGraph SharedOrig(Copy, Map1, NumIndicesPerRow);
-		Epetra_CrsGraph SharedOwner(SharedOrig);
+		Epetra_CrsGraph SoleOwnerG(Copy, Map1, NumIndicesPerRow);
+		Epetra_CrsGraph SharedOrigG(Copy, Map1, NumIndicesPerRow);
+		Epetra_CrsGraph SharedOwnerG(SharedOrig);
 		
-		int GlobalRow = SoleOwner.GRID(0);
+		int GlobalRow = SoleOwnerG.GRID(0);
 
 		// InsertGlobalIndices
 		if(verbose) cout << "InsertGlobalIndices..." << endl;
-		soleOutput = SoleOwner.InsertGlobalIndices(GlobalRow, 2, array2.Values());
-		sharedOutput = SharedOwner.InsertGlobalIndices(GlobalRow, 2, array2.Values());
+		soleOutput = SoleOwnerG.InsertGlobalIndices(GlobalRow, 2, array2.Values());
+		sharedOutput = SharedOwnerG.InsertGlobalIndices(GlobalRow, 2, array2.Values());
 		EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 		EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
 		if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
 		
 		// RemoveGlobalIndices (#1)
 		if(verbose) cout << "RemoveGlobalIndices..." << endl;
-		soleOutput = SoleOwner.RemoveGlobalIndices(GlobalRow, 1, &array2[1]);
-		sharedOutput = SharedOwner.RemoveGlobalIndices(GlobalRow, 1, &array2[1]);
+		soleOutput = SoleOwnerG.RemoveGlobalIndices(GlobalRow, 1, &array2[1]);
+		sharedOutput = SharedOwnerG.RemoveGlobalIndices(GlobalRow, 1, &array2[1]);
 		EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 		EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
 		if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;
 		
 		// RemoveGlobalIndices (#2)
 		if(verbose) cout << "RemoveGlobalIndices(#2)..." << endl;
-		soleOutput = SoleOwner.RemoveGlobalIndices(GlobalRow);
-		sharedOutput = SharedOwner.RemoveGlobalIndices(GlobalRow);
+		soleOutput = SoleOwnerG.RemoveGlobalIndices(GlobalRow);
+		sharedOutput = SharedOwnerG.RemoveGlobalIndices(GlobalRow);
 		EPETRA_TEST_ERR(!(soleOutput == 0), ierr);
 		EPETRA_TEST_ERR(!(sharedOutput == 1), ierr);
 		if(verbose && ierr > 0) cout << "soleOutput = " << soleOutput << " sharedOutput = " << sharedOutput << endl;

@@ -46,10 +46,10 @@
 #include "Epetra_MapColoring.h"
 #include "Epetra_Util.h"
 //=============================================================================
-Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& Map, int * ElementColors, 
-				       const int DefaultColor)
-  : Epetra_DistObject(Map, "Epetra::MapColoring"),
-    DefaultColor_(DefaultColor),
+Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& map, int * elementColors, 
+				       const int defaultColor)
+  : Epetra_DistObject(map, "Epetra::MapColoring"),
+    DefaultColor_(defaultColor),
     ColorIDs_(0),
     FirstColor_(0),
     NumColors_(0),
@@ -61,13 +61,13 @@ Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& Map, int * Element
     ListsAreGenerated_(false),
     ListsAreValid_(false)
 {
-  Allocate(ElementColors, 1);
+  Allocate(elementColors, 1);
 }
 //=============================================================================
-Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& Map,
-				       const int DefaultColor)
-  : Epetra_DistObject(Map, "Epetra::MapColoring"),
-    DefaultColor_(DefaultColor),
+Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap& map,
+				       const int defaultColor)
+  : Epetra_DistObject(map, "Epetra::MapColoring"),
+    DefaultColor_(defaultColor),
     ColorIDs_(0),
     FirstColor_(0),
     NumColors_(0),
@@ -128,14 +128,14 @@ int Epetra_MapColoring::DeleteLists() const {
 }
 
 //=========================================================================
-int Epetra_MapColoring::Allocate(int * ElementColors, int Increment)
+int Epetra_MapColoring::Allocate(int * elementColors, int Increment)
 {
   
   if (Allocated_) return(0);
   
   int NumMyElements = Map().NumMyElements();
   if (NumMyElements>0) ElementColors_ = new int[NumMyElements];
-  for (int i=0; i< NumMyElements; i++) ElementColors_[i] = ElementColors[i*Increment];
+  for (int i=0; i< NumMyElements; i++) ElementColors_[i] = elementColors[i*Increment];
   Allocated_ = true;
   return(0);
 }

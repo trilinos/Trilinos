@@ -51,10 +51,10 @@
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_Map& RowMap,
+				       const Epetra_Map& rowMap,
 				       int* NumEntriesPerRow,
 				       bool ignoreNonLocalEntries)
-  : Epetra_CrsMatrix(CV, RowMap, NumEntriesPerRow),
+  : Epetra_CrsMatrix(CV, rowMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
@@ -69,8 +69,8 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
-  myFirstRow_ = RowMap.MinMyGID();
-  myNumRows_ = RowMap.NumMyElements();
+  myFirstRow_ = rowMap.MinMyGID();
+  myNumRows_ = rowMap.NumMyElements();
 
   workData_ = new double[128];
   workDataLength_ = 128;
@@ -78,10 +78,10 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_Map& RowMap,
+				       const Epetra_Map& rowMap,
 				       int NumEntriesPerRow,
 				       bool ignoreNonLocalEntries)
-  : Epetra_CrsMatrix(CV, RowMap, NumEntriesPerRow),
+  : Epetra_CrsMatrix(CV, rowMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
@@ -96,8 +96,8 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
-  myFirstRow_ = RowMap.MinMyGID();
-  myNumRows_ = RowMap.NumMyElements();
+  myFirstRow_ = rowMap.MinMyGID();
+  myNumRows_ = rowMap.NumMyElements();
 
   workData_ = new double[128];
   workDataLength_ = 128;
@@ -105,11 +105,11 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_Map& RowMap,
-				       const Epetra_Map& ColMap,
+				       const Epetra_Map& rowMap,
+				       const Epetra_Map& colMap,
 				       int* NumEntriesPerRow,
 				       bool ignoreNonLocalEntries)
-  : Epetra_CrsMatrix(CV, RowMap, ColMap, NumEntriesPerRow),
+  : Epetra_CrsMatrix(CV, rowMap, colMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
@@ -124,8 +124,8 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
-  myFirstRow_ = RowMap.MinMyGID();
-  myNumRows_ = RowMap.NumMyElements();
+  myFirstRow_ = rowMap.MinMyGID();
+  myNumRows_ = rowMap.NumMyElements();
 
   workData_ = new double[128];
   workDataLength_ = 128;
@@ -133,11 +133,11 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_Map& RowMap,
-				       const Epetra_Map& ColMap,
+				       const Epetra_Map& rowMap,
+				       const Epetra_Map& colMap,
 				       int NumEntriesPerRow,
 				       bool ignoreNonLocalEntries)
-  : Epetra_CrsMatrix(CV, RowMap, ColMap, NumEntriesPerRow),
+  : Epetra_CrsMatrix(CV, rowMap, colMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
@@ -152,8 +152,8 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     useNonlocalMatrix_ (false),
     nonlocalMatrix_ (NULL)
 {
-  myFirstRow_ = RowMap.MinMyGID();
-  myNumRows_ = RowMap.NumMyElements();
+  myFirstRow_ = rowMap.MinMyGID();
+  myNumRows_ = rowMap.NumMyElements();
 
   workData_ = new double[128];
   workDataLength_ = 128;
@@ -161,9 +161,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-				       const Epetra_CrsGraph& Graph,
+				       const Epetra_CrsGraph& graph,
 				       bool ignoreNonLocalEntries)
-  : Epetra_CrsMatrix(CV, Graph),
+  : Epetra_CrsMatrix(CV, graph),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
@@ -187,9 +187,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
    
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-              const Epetra_FECrsGraph& Graph,
+              const Epetra_FECrsGraph& graph,
               bool ignoreNonLocalEntries)
-  : Epetra_CrsMatrix(CV, Graph),
+  : Epetra_CrsMatrix(CV, graph),
     myFirstRow_(0),
     myNumRows_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries),
@@ -201,9 +201,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(NULL),
     workData_(NULL),
     workDataLength_(0),
-    useNonlocalMatrix_ (Graph.UseNonlocalGraph() && Graph.nonlocalGraph_ != 0),
+    useNonlocalMatrix_ (graph.UseNonlocalGraph() && graph.nonlocalGraph_ != 0),
     nonlocalMatrix_ (useNonlocalMatrix_ ? 
-        new Epetra_CrsMatrix(Copy,*Graph.nonlocalGraph_) : NULL)
+        new Epetra_CrsMatrix(Copy,*graph.nonlocalGraph_) : NULL)
 {
   myFirstRow_ = RowMap().MinMyGID();
   myNumRows_ = RowMap().NumMyElements();
@@ -483,33 +483,33 @@ int Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const int* rows,
 
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
-                                            const double* Values, const int* Indices)
+                                            const double* values, const int* Indices)
 {
   if (Map().MyGID(GlobalRow))
     return Epetra_CrsMatrix::SumIntoGlobalValues(GlobalRow, NumEntries,
-            Values, Indices);
+            values, Indices);
   else if (useNonlocalMatrix_)
     return nonlocalMatrix_->SumIntoGlobalValues(GlobalRow,
-           NumEntries, Values, Indices);
+           NumEntries, values, Indices);
   else
-    return InputNonlocalGlobalValues(GlobalRow, NumEntries, Indices, Values, SUMINTO);
+    return InputNonlocalGlobalValues(GlobalRow, NumEntries, Indices, values, SUMINTO);
 }
 
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
-                                            const double* Values, const int* Indices)
+                                            const double* values, const int* Indices)
 {
   return(InputGlobalValues(1, &GlobalRow,
-                           NumEntries, Indices, Values,
+                           NumEntries, Indices, values,
                            Epetra_FECrsMatrix::ROW_MAJOR, INSERT));
 }
 
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
-                                            const double* Values, const int* Indices)
+                                            const double* values, const int* Indices)
 {
   return(InputGlobalValues(1, &GlobalRow,
-                           NumEntries, Indices, Values,
+                           NumEntries, Indices, values,
                            Epetra_FECrsMatrix::ROW_MAJOR, REPLACE));
 }
 

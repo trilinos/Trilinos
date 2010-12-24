@@ -161,17 +161,17 @@ void Epetra_SerialDenseSVD::ResetMatrix()
   if( Vt_ ) { delete [] Vt_; Vt_ = 0; }
 }
 //=============================================================================
-int Epetra_SerialDenseSVD::SetMatrix(Epetra_SerialDenseMatrix & A) {
+int Epetra_SerialDenseSVD::SetMatrix(Epetra_SerialDenseMatrix & A_in) {
   ResetMatrix();
-  Matrix_ = &A;
-//  Factor_ = &A;
-  M_ = A.M();
-  N_ = A.N();
+  Matrix_ = &A_in;
+//  Factor_ = &A_in;
+  M_ = A_in.M();
+  N_ = A_in.N();
   Min_MN_ = EPETRA_MIN(M_,N_);
-  LDA_ = A.LDA();
+  LDA_ = A_in.LDA();
 //  LDAF_ = LDA_;
-  A_ = A.A();
-//  AF_ = A.A();
+  A_ = A_in.A();
+//  AF_ = A_in.A();
   return(0);
 }
 //=============================================================================
@@ -191,23 +191,23 @@ void Epetra_SerialDenseSVD::ResetVectors()
   LDX_ = 0;
 }
 //=============================================================================
-int Epetra_SerialDenseSVD::SetVectors(Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & B)
+int Epetra_SerialDenseSVD::SetVectors(Epetra_SerialDenseMatrix & X_in, Epetra_SerialDenseMatrix & B_in)
 {
-  if (B.M()!=X.M() || B.N() != X.N()) EPETRA_CHK_ERR(-1);
-  if (B.A()==0) EPETRA_CHK_ERR(-2);
-  if (B.LDA()<1) EPETRA_CHK_ERR(-3);
-  if (X.A()==0) EPETRA_CHK_ERR(-4);
-  if (X.LDA()<1) EPETRA_CHK_ERR(-5);
+  if (B_in.M()!=X_in.M() || B_in.N() != X_in.N()) EPETRA_CHK_ERR(-1);
+  if (B_in.A()==0) EPETRA_CHK_ERR(-2);
+  if (B_in.LDA()<1) EPETRA_CHK_ERR(-3);
+  if (X_in.A()==0) EPETRA_CHK_ERR(-4);
+  if (X_in.LDA()<1) EPETRA_CHK_ERR(-5);
 
   ResetVectors(); 
-  LHS_ = &X;
-  RHS_ = &B;
-  NRHS_ = B.N();
+  LHS_ = &X_in;
+  RHS_ = &B_in;
+  NRHS_ = B_in.N();
 
-  B_ = B.A();
-  LDB_ = B.LDA();
-  X_ = X.A();
-  LDX_ = X.LDA();
+  B_ = B_in.A();
+  LDB_ = B_in.LDA();
+  X_ = X_in.A();
+  LDX_ = X_in.LDA();
   return(0);
 }
 //=============================================================================

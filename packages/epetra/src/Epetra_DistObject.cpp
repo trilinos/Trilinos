@@ -51,11 +51,11 @@
 //=============================================================================
 // Constructor
 
-Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& Map)
+Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& map)
   : Epetra_Object("Epetra::DistObject"),
-    Map_(Map),
+    Map_(map),
     Comm_(&Map_.Comm()),
-    DistributedGlobal_(Map.DistributedGlobal()),
+    DistributedGlobal_(map.DistributedGlobal()),
     Exports_(0),
     Imports_(0),
     LenExports_(0),
@@ -66,11 +66,11 @@ Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& Map)
 //=============================================================================
 // Constructor (label given)
 
-Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& Map, const char* const Label)
-  : Epetra_Object(Label),
-    Map_(Map),
+Epetra_DistObject::Epetra_DistObject(const Epetra_BlockMap& map, const char* const label)
+  : Epetra_Object(label),
+    Map_(map),
     Comm_(&Map_.Comm()),
-    DistributedGlobal_(Map.DistributedGlobal()),
+    DistributedGlobal_(map.DistributedGlobal()),
     Exports_(0),
     Imports_(0),
     LenExports_(0),
