@@ -52,8 +52,6 @@ namespace panzer {
     const std::map<panzer::BC,Teuchos::RCP<std::map<unsigned,panzer::Workset> >,panzer::LessBC> bc_worksets 
           = panzer_stk::buildBCWorksets(*mesh,ipb,bcs);
 
-    cout << "ROGER" << bcs.size();
-
     std::map<std::string,std::string> block_ids_to_physics_ids;
     block_ids_to_physics_ids["eblock-0_0"] = "test physics";
     block_ids_to_physics_ids["eblock-1_0"] = "test physics";
