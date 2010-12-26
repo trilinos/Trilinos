@@ -44,7 +44,8 @@ setup(const Teuchos::RCP<panzer::ConnManager<LO,GO> >& conn_manager,
       int base_cell_dimension,
       const panzer::EquationSetFactory& eqset_factory,
       const panzer::BCStrategyFactory& bc_factory,
-      std::size_t workset_size)
+      std::size_t workset_size,
+      bool write_graphviz_files)
 {
   Teuchos::RCP<Teuchos::FancyOStream> pout = Teuchos::getFancyOStream(Teuchos::rcpFromRef(std::cout));
   pout->setShowProcRank(true);
@@ -52,7 +53,6 @@ setup(const Teuchos::RCP<panzer::ConnManager<LO,GO> >& conn_manager,
 
   // Build the physics objects and register all variable providers
   std::vector<Teuchos::RCP<panzer::PhysicsBlock> > phxPhysicsBlocks;
-
 
   {
     using Teuchos::RCP;
@@ -72,31 +72,10 @@ setup(const Teuchos::RCP<panzer::ConnManager<LO,GO> >& conn_manager,
     for (;itr!=phxPhysicsBlocks.end();++itr) 
       worksets_.push_back(volume_worksets.find((*itr)->elementBlockID())->second);
 
-    this->buildFieldManagers(comm, phxPhysicsBlocks, phx_volume_field_managers_);
-
-#ifdef PANZER_DEBUG_ROGER
-    for (std::size_t block=0; block < worksets_.size(); ++block) {
-      *pout << "Block Index = " << block << std::endl;
-      *pout << "  Number of Worksets = " << worksets_[block]->size() 
-		  << std::endl;
-      for (std::size_t i=0; i < worksets_[block]->size(); ++i) {
-	*pout << "  Workset[" << i << "] size = " 
-		    << (*worksets_[block])[i].num_cells << endl;
-	for (THashList::iterator cell = (*worksets_[block])[i].begin; 
-	     cell != (*worksets_[block])[i].end; ++ cell) {
-	  *pout << "    " << cell.element()->globalIndex() << endl;
-	}
-      }
-    }
-#endif
-    
-   
-
-
+    this->buildFieldManagers(comm, phxPhysicsBlocks, 
+			     phx_volume_field_managers_, write_graphviz_files);
 
   }
-  
-
 
   // ***************************
   // BCs
@@ -166,22 +145,19 @@ setup(const Teuchos::RCP<panzer::ConnManager<LO,GO> >& conn_manager,
       setupData.worksets_ = worksets;
       fm.postRegistrationSetup(setupData);
     }
-
-    /*
-    int my_rank;
-    MPI_Comm_rank(NEVADA::comm.getComm(), &my_rank);
-    // ROGER FIXME: This seg faults on "navierstokes_phx"
-    // if (my_rank == 0) {
-    //   std::stringstream filename;
-    //   filename << "panzer_dependency_graph_bc_" << std::endl;  
-    //   std::cout << "writing dependcy graph" << std::endl;
-    //   field_managers.begin()->second.writeGraphvizFile(filename.str(), ".dot");
-    // }
-   
-    */ 
-
-
     
+  }
+
+  // BCs and Worksets only exist in workset map if elements are on this processor. 
+  // For now only write bcs if being run in serial
+  int num_procs = 0;
+  MPI_Comm_size(comm, &num_procs);
+  if (write_graphviz_files && (num_procs == 1)) {
+    for (bc = bc_worksets.begin(); bc != bc_worksets.end(); ++bc) {
+      std::stringstream filename;
+      filename << "panzer_dependency_graph_bc_" << bc->first.bcID();  
+      bc_field_managers_[bc->first].begin()->second.writeGraphvizFile(filename.str(), ".dot");
+    }
   }
 
 }
@@ -276,7 +252,8 @@ void panzer::FieldManagerBuilder<LO,GO>::buildDOFManager(const Teuchos::RCP<panz
 template<typename LO, typename GO>
 void panzer::FieldManagerBuilder<LO,GO>::buildFieldManagers(MPI_Comm comm,
 							    const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& phxPhysicsBlocks, 
-							    std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_volume_field_managers) const
+							    std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_volume_field_managers,
+							    bool write_graphviz_files) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -302,13 +279,16 @@ void panzer::FieldManagerBuilder<LO,GO>::buildFieldManagers(MPI_Comm comm,
     setupData.worksets_ = worksets_[block];
     fm.postRegistrationSetup(setupData);
     
-    int my_rank;
-    MPI_Comm_rank(comm, &my_rank);
-    if (my_rank == 0) {
-      std::stringstream filename;
-      filename << "panzer_dependency_graph_" << block;  
-      fm.writeGraphvizFile(filename.str(), ".dot");
+    if (write_graphviz_files) {
+      int my_rank;
+      MPI_Comm_rank(comm, &my_rank);
+      if (my_rank == 0) {
+	std::stringstream filename;
+	filename << "panzer_dependency_graph_" << block;  
+	fm.writeGraphvizFile(filename.str(), ".dot");
+      }
     }
+
   }
   
 }

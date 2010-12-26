@@ -70,6 +70,8 @@ namespace panzer {
 
     user_app::BCFactory bc_factory;
 
+    const bool write_graphviz_files = true;
+
     fmb.setup(conn_manager,
 	      MPI_COMM_WORLD,
 	      block_ids_to_physics_ids,
@@ -79,7 +81,8 @@ namespace panzer {
 	      Teuchos::as<int>(mesh->getDimension()),
 	      eqset_factory,
 	      bc_factory,
-	      workset_size);
+	      workset_size,
+	      write_graphviz_files);
  
     const std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& fmb_vol_fm = 
       fmb.getVolumeFieldManagers();

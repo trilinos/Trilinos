@@ -44,7 +44,8 @@ namespace panzer {
 	  int base_cell_dimension,
 	  const panzer::EquationSetFactory& factory,
 	  const panzer::BCStrategyFactory& bc_factory,
-	  std::size_t workset_size);
+	  std::size_t workset_size,
+	  bool write_graphviz_files = false);
 
     void print(std::ostream& os) const;
 
@@ -98,7 +99,7 @@ namespace panzer {
                          const std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physicsBlocks);
 
 
-    void buildFieldManagers(MPI_Comm, const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_volume_field_managers) const;
+    void buildFieldManagers(MPI_Comm, const std::vector<Teuchos::RCP<panzer::PhysicsBlock> >& physicsBlocks, std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >& phx_volume_field_managers, bool write_graphviz_files) const;
 
     //! Phalanx volume field managers for each element block.
     std::vector< Teuchos::RCP< PHX::FieldManager<panzer::Traits> > >
