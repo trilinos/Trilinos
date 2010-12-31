@@ -54,10 +54,6 @@ public:
    // functions called before initialize
    //////////////////////////////////////////
 
-   /** Set the dimension for this mesh
-     */
-   // void setDimension(unsigned dim);
-
    /** Add an element block with a string name
      */
    void addElementBlock(const std::string & name,const CellTopologyData * ctData);
@@ -219,14 +215,6 @@ public:
    //! force the mesh to build subcells: edges and faces
    void buildSubcells();
 
-   //! force the mesh to build the subcells of a particular rank
-   // void buildSubcells(unsigned subcellRank);
-
-   /** Use a formula to determine the edge ID.  This formula is kind of bad
-     * and should be viewed as a short term fix.
-     */
-   // stk::mesh::EntityId getEdgeId(stk::mesh::EntityId n0,stk::mesh::EntityId n1) const;
-
    /** Get an elements local index
      */
    std::size_t elementLocalId(stk::mesh::Entity * elmt) const;
@@ -309,19 +297,6 @@ protected:
    /** Compute global entity counts.
      */
    void buildMaxEntityIds();
-
-   /** Add an edge and its relations to this cell
-     */
-   // void addEdges_local(stk::mesh::Entity * cell);
-
-   /** Add an edge with a given identifier to connect two nodes. If the edge
-     * is already in the mesh then the entity is simply returned.
-     * 
-     * \param[in] n0 Node defining edge
-     * \param[in] n1 Node defining edge
-     * \param[in] edgeId Global identifier for the edge
-     */
-   // stk::mesh::Entity * addEdge(stk::mesh::Entity * n0,stk::mesh::Entity * n1, stk::mesh::EntityId edgeId);
 
    typedef stk::mesh::Field<double> SolutionFieldType;
    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType;
