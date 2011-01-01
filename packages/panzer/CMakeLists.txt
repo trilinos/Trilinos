@@ -32,6 +32,10 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Trios
   "Build with Albany's IOSS code enabled."
   ON )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
+  "PANZER_EXPLICIT_TEMPLATE_INSTANTIATION"
+  "Build with explicit template instantion enabled.  Defaults to ON."
+  ON )
 
 ## Explicit instatiation support
 #ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION

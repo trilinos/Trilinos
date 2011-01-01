@@ -6,3 +6,4 @@
 #cmakedefine PANZER_STK_DEBUG
 #cmakedefine HAVE_IOSS
 #cmakedefine ALBANY_IOSS
+#cmakedefine PANZER_EXPLICIT_TEMPLATE_INSTANTIATION
