@@ -15,8 +15,7 @@ class Level;
 */
 
   template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  class Smoother : public SmootherBase<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>,
-                   public SmootherPrototype<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  class Smoother : public SmootherPrototype<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
 
 #include "MueLu_UseShortNames.hpp"

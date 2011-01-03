@@ -124,7 +124,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
         the Setup() phase is also done only once when parameters
         don't change the result of the setup computation.
     */
-    void Build(RCP<Level> level, RCP<SmootherBase> preSmoo, RCP<SmootherBase> postSmoo) {
+    void Build(RCP<Level> level, RCP<SmootherPrototype> preSmoo, RCP<SmootherPrototype> postSmoo) {
       if (level == Teuchos::null)
         throw(Exceptions::RuntimeError("Bad level"));
       
@@ -132,34 +132,34 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
         preSmoo = PreSmootherPrototype_->Copy();
         //TODO if outputlevel high enough
         //TODO preSmoo.Print();
-        preSmoo.Setup(level);
+        preSmoo->Setup(level);
       }
 
       // Is post-smoother of the same type as pre-smoother ?
       if (PostSmootherPrototype_ != Teuchos::null) {
         if (PreSmootherPrototype_ != Teuchos::null &&
-            PreSmootherPrototype_->GetType() == PostSmootherPrototype_.GetType())
+            PreSmootherPrototype_->GetType() == PostSmootherPrototype_->GetType())
           // YES: post-smoother == pre-smoother 
           // => copy the pre-smoother to avoid the setup phase of the post-smoother.
-          postSmoo = preSmoo.Copy();
+          postSmoo = preSmoo->Copy();
           // If the post-smoother parameters are different from
           // pre-smoother, the parameters stored in the post-smoother
           // prototype are copied in the new post-smoother object.
-          postSmoo.CopyParameters(PostSmootherPrototype_);
+          postSmoo->CopyParameters(PostSmootherPrototype_);
           // If parameters don't influence the Setup phase (it is the case
           // for Jacobi, Chebyshev...), PostSmoo is already setup. Nothing
           // more to do. In the case of ILU, parameters of the smoother
           // are in fact the parameters of the Setup phase. The call to
           // CopyParameters resets the smoother (only if parameters are
           // different) and we must call Setup() again.
-          postSmoo.Setup(level);
+          postSmoo->Setup(level);
 
           // TODO: if CopyParameters do not exist, do setup twice.
       } else {
         // NO: post-smoother != pre-smoother 
         // Copy the prototype and run the setup phase.
-        postSmoo = PostSmootherPrototype_.Copy();
-        postSmoo.Setup(level);
+        postSmoo = PostSmootherPrototype_->Copy();
+        postSmoo->Setup(level);
       }
 
     } //Build()

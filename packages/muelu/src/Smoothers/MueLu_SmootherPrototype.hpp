@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "MueLu_Needs.hpp"
+#include "MueLu_SmootherBase.hpp"
 #include "MueLu_Level.hpp"
 
 namespace MueLu {
@@ -26,7 +26,7 @@ template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, cl
 class Level;
 
 template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
-class SmootherPrototype : public Needs {
+class SmootherPrototype : public SmootherBase<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
 
 #include "MueLu_UseShortNames.hpp"
 
