@@ -15,7 +15,14 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #cmakedefine FC_DUMMY_MAIN_EQ_F77
 
+/* ZOLTAN_ID_TYPE is unsigned int */
+#cmakedefine UNSIGNED_INT_GLOBAL_IDS
 
+/* ZOLTAN_ID_TYPE is unsigned long */
+#cmakedefine UNSIGNED_LONG_GLOBAL_IDS
+
+/* ZOLTAN_ID_TYPE is unsigned long long */
+#cmakedefine UNSIGNED_LONG_LONG_GLOBAL_IDS
 
 /* Define if want to build with drum enabled */
 #cmakedefine HAVE_DRUM

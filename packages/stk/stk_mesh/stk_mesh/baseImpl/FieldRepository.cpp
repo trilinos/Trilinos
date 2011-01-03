@@ -17,33 +17,20 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
-  namespace {
+namespace {
 
-void throw_name_suffix( const char * method ,
-                        const std::string & name ,
-                        const char * suffix )
+std::string print_field_type(const DataTraits                  & arg_traits ,
+                             unsigned                            arg_rank ,
+                             const shards::ArrayDimTag * const * arg_tags )
 {
-  std::ostringstream msg ;
-  msg << method ;
-  msg << " FAILED: name = \"" ;
-  msg << name ;
-  msg << "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" ;
-  msg << suffix ;
-  msg << "\"" ;
-  throw std::runtime_error( msg.str() );
-}
-
-void print_field_type( std::ostream                      & arg_msg ,
-                  const DataTraits                  & arg_traits ,
-                  unsigned                            arg_rank ,
-                  const shards::ArrayDimTag * const * arg_tags )
-{
-  arg_msg << "FieldBase<" ;
-  arg_msg << arg_traits.name ;
+  std::ostringstream oss;
+  oss << "FieldBase<" ;
+  oss << arg_traits.name ;
   for ( unsigned i = 0 ; i < arg_rank ; ++i ) {
-    arg_msg << "," << arg_tags[i]->name();
+    oss << "," << arg_tags[i]->name();
   }
-  arg_msg << ">" ;
+  oss << ">" ;
+  return oss.str();
 }
 
 // Check for compatibility:
@@ -76,26 +63,18 @@ void verify_field_type( const char                        * arg_method ,
     ok_dimension = arg_dim_tags[i] == arg_field.dimension_tags()[i] ;
   }
 
-  if ( ! ok_traits || ! ok_number_states || ! ok_dimension ) {
-
-    std::ostringstream msg ;
-
-    msg << arg_method << " FAILED: Existing field = " ;
-
-    print_field_type( msg , arg_field.data_traits() ,
-                            arg_field.rank() ,
-                            arg_field.dimension_tags() );
-
-    msg << "[ name = \"" << arg_field.name();
-    msg << "\" , #states = " << arg_field.number_of_states() << " ]" ;
-    msg << " Expected field info = " ;
-
-    print_field_type( msg , arg_traits , arg_rank , arg_dim_tags );
-    msg << "[ #states = " << arg_num_states << " ]" ;
-
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( ! ok_traits || ! ok_number_states || ! ok_dimension,
+                   arg_method << " FAILED: Existing field = " <<
+                   print_field_type( arg_field.data_traits() ,
+                                     arg_field.rank() ,
+                                     arg_field.dimension_tags() ) <<
+                   "[ name = \"" << arg_field.name() <<
+                   "\" , #states = " << arg_field.number_of_states() << " ]" <<
+                   " Expected field info = " <<
+                   print_field_type( arg_traits , arg_rank , arg_dim_tags ) <<
+                   "[ #states = " << arg_num_states << " ]");
 }
+
 } //unamed namespace
 
 //----------------------------------------------------------------------
@@ -124,7 +103,6 @@ FieldBase * FieldRepository::get_field(
   return f ;
 }
 
-
 FieldBase * FieldRepository::declare_field(
   const std::string                 & arg_name ,
   const DataTraits                  & arg_traits ,
@@ -133,8 +111,6 @@ FieldBase * FieldRepository::declare_field(
   unsigned                            arg_num_states ,
   MetaData                          * arg_meta_data )
 {
-  static const char method[] = "stk::mesh::FieldBase::declare_field" ;
-
   static const char reserved_state_suffix[6][8] = {
     "_OLD" , "_N" , "_NM1" , "_NM2" , "_NM3" , "_NM4" };
 
@@ -146,9 +122,10 @@ FieldBase * FieldRepository::declare_field(
     const int offset     = len_name - len_suffix ;
     if ( 0 <= offset ) {
       const char * const name_suffix = arg_name.c_str() + offset ;
-      if ( equal_case( name_suffix , reserved_state_suffix[i] ) ) {
-        throw_name_suffix( method , arg_name , reserved_state_suffix[i] );
-      }
+      ThrowErrorMsgIf( equal_case( name_suffix , reserved_state_suffix[i] ),
+                       "For name = \"" << name_suffix <<
+                       "\" CANNOT HAVE THE RESERVED STATE SUFFIX \"" <<
+                       reserved_state_suffix[i] << "\"" );
     }
   }
 
@@ -157,7 +134,7 @@ FieldBase * FieldRepository::declare_field(
   FieldBase * f[ MaximumFieldStates ] ;
 
   f[0] = get_field(
-                method ,
+                "FieldRepository::declare_field" ,
                 arg_name ,
                 arg_traits ,
                 arg_rank ,
@@ -221,7 +198,6 @@ void FieldRepository::verify_and_clean_restrictions(
   }
 }
 
-
 FieldRepository::~FieldRepository() {
   try {
     FieldVector::iterator j = m_fields.begin();
@@ -229,7 +205,6 @@ FieldRepository::~FieldRepository() {
     m_fields.clear();
   } catch(...) {}
 }
-
 
 } // namespace impl
 } // namespace mesh

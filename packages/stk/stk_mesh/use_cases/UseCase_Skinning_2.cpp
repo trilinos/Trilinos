@@ -1,4 +1,3 @@
-
 #include <iostream>
 
 #include <use_cases/UseCase_Skinning.hpp>
@@ -44,9 +43,9 @@ void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity * ent
   stk::mesh::PairIterRelation relations = entity->relations();
   stk::mesh::EntityRank entity_rank = entity->entity_rank();
 
-  if ( !relations.empty() && relations.back().entity()->entity_rank() > entity_rank) {
-    throw std::runtime_error("Unable to destroy and entity with upward relations");
-  }
+  ThrowErrorMsgIf( !relations.empty() &&
+                   relations.back().entity()->entity_rank() > entity_rank,
+                   "Unable to destroy and entity with upward relations" );
 
   for (; !entity->relations().empty();) {
     stk::mesh::Entity * related_entity = (entity->relations().back().entity());

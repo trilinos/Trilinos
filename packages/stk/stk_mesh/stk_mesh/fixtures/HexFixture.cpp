@@ -156,7 +156,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
 
         data[0] = nx ;
         data[1] = ny ;
-        data[2] = -nz ;
+        data[2] = -(Scalar)nz ;
       }
     }
   }

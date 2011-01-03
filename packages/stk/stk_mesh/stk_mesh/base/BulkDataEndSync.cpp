@@ -539,9 +539,6 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
 void BulkData::internal_resolve_parallel_create()
 {
-  static const char method[] =
-    "stk::mesh::BulkData::internal_resolve_parallel_create" ;
-
   std::vector<Entity*> shared_modified ;
 
   // Update the parallel index and
@@ -649,31 +646,24 @@ void BulkData::internal_resolve_parallel_create()
       if ( 0 == error_flag ) {
         error_flag = 1 ;
         error_msg
-          << std::endl
-          << "P" << m_parallel_rank << ": " << method << " FAILED"
-          << std::endl
-          << "  The following entities were declared on multiple processors,"
-          << std::endl
+          << "\nP" << m_parallel_rank << ": " << " FAILED\n"
+          << "  The following entities were declared on multiple processors,\n"
           << "  cannot be parallel-shared, and were declared with"
-          << "  parallel-ghosting information. { "
-          << std::endl ;
+          << "  parallel-ghosting information. {\n";
       }
-      error_msg << "    " ;
-      print_entity_key( error_msg , m_mesh_meta_data , entity->key() );
+      error_msg << "    " << print_entity_key(entity);
       error_msg << " also declared on" ;
       for ( PairIterEntityComm ec = entity->sharing(); ! ec.empty() ; ++ec ) {
         error_msg << " P" << ec->proc ;
       }
-      error_msg << std::endl ;
+      error_msg << "\n" ;
     }
   }
-  if ( error_flag ) { error_msg << "}" << std::endl ; }
+  if ( error_flag ) { error_msg << "}\n" ; }
 
   all_reduce( m_parallel_machine , ReduceMax<1>( & error_flag ) );
 
-  if ( error_flag ) {
-    throw std::runtime_error( error_msg.str() );
-  }
+  ThrowErrorMsgIf( error_flag, error_msg.str() );
 
   const size_t n_old = m_entity_comm.size();
 
@@ -786,20 +776,16 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
   // Verify parallel consistency of mesh entities.
   // Unique ownership, communication lists, sharing part membership,
   // application part membership consistency.
-  {
-    std::ostringstream msg ;
-    if ( ! comm_mesh_verify_parallel_consistency( *this , msg ) ) {
-      std::cerr << msg.str() << std::endl ;
-      throw std::runtime_error( msg.str() );
-    }
-  }
+  std::ostringstream msg ;
+  ThrowErrorMsgIf( ! comm_mesh_verify_parallel_consistency( *this , msg ),
+                   msg.str() );
+
   // ------------------------------
   // The very last operation performed is to sort the bucket entities.
   // This does not change the entities, relations, or field data.
   // However, it insures that the ordering of entities and buckets
   // is independent of the order in which a set of changes were
   // performed.
-
   m_bucket_repository.internal_sort_bucket_entities();
 
   // ------------------------------

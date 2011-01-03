@@ -19,7 +19,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <ctype.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -1202,13 +1201,13 @@ static int process_mtxp_file(PARIO_INFO_PTR pio_info,
 {
 ZOLTAN_ID_TYPE nedges, nvtxs, npins, numew;
 ZOLTAN_ID_TYPE eid, vid, i, j;
-ZOLTAN_ID_TYPE myminPin, mymaxPin, myminVtx, mymaxVtx, myshare, share;
+ZOLTAN_ID_TYPE myminPin=0, mymaxPin=0, myminVtx=0, mymaxVtx=0, myshare, share;
 ZOLTAN_ID_TYPE *myi, *myj, *myvno, *myeno;
 int ok, not_ok;
 int vdim, edim, nFileProcs;
 int countMyVtxs, countMyEdges, countMyPins;
 int proc, mine, nextpin, rc, counter;
-int nexte, nextv, nDistProcs;
+int nexte, nextv, nDistProcs=0;
 float pinVal;
 char *line, *token, *pinBuf, *vwgtBuf, *ewgtBuf;
 float *myvwgt, *myewgt;
@@ -1869,15 +1868,15 @@ int found;
 
   c2--;
 
-  while ((c2 > c1) && isblank(*c2)) c2--; 
+  while ((c2 > c1) && IS_BLANK(*c2)) c2--; 
   *(c2+1) = 0;
 
   found = 0;     /* null terminate last token */
 
   while (*c1){
     loc[found++] = c1++;
-    while (*c1 && !isblank(*c1)) c1++;
-    while (*c1 && isblank(*c1)) c1++;
+    while (*c1 && !IS_BLANK(*c1)) c1++;
+    while (*c1 && IS_BLANK(*c1)) c1++;
   }
 
   if (nth < found){

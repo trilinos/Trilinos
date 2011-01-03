@@ -24,7 +24,6 @@ const MetaData & metadata_from_entity(const Entity *e) {
   return e->bucket().mesh().mesh_meta_data();
 }
 
-
 }
 
 EntityRepository::~EntityRepository() {
@@ -35,26 +34,15 @@ EntityRepository::~EntityRepository() {
   } catch(...){}
 }
 
-
 void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
 {
-  const bool ok_ptr = i->second != NULL ;
-  const bool ok_key = ok_ptr ? i->first == i->second->key() : true ;
+  ThrowErrorMsgIf( i->second == NULL,
+                   "For key " << entity_rank(i->first) << " " <<
+                   entity_id(i->first) << ", value was NULL");
 
-  if ( ! ok_ptr || ! ok_key ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::baseImple::EntityRepository::internal_expunge_entity( " ;
-    print_entity_key( msg , metadata_from_entity(i->second) , i->first );
-    if ( ! ok_ptr ) {
-      msg << "NULL" ;
-    }
-    else {
-      msg << " != " ;
-      print_entity_key( msg , metadata_from_entity(i->second) , i->second->key() );
-    }
-    msg << ") FAILED" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( i->first != i->second->key(),
+    "Key " << print_entity_key(metadata_from_entity(i->second), i->first) <<
+    " != " << print_entity_key(i->second));
 
   delete i->second ;
   i->second = NULL ;
@@ -91,26 +79,10 @@ void EntityRepository::log_created_parallel_copy( Entity & entity )
 
 Entity * EntityRepository::get_entity(const EntityKey &key) const
 {
-  const bool valid_key = entity_key_valid( key );
+  ThrowErrorMsgIf( ! entity_key_valid( key ),
+      "Invalid key: " << entity_rank(key) << " " << entity_id(key));
 
   const EntityMap::const_iterator i = m_entities.find( key );
-
-  if ( ! valid_key ) {
-    static const char method[] = "stk::mesh::BulkData::get_entity" ;
-    std::ostringstream msg ;
-    msg << method << "( " ;
-    // QUESTION: If the key is invalid, then will 'i' ever be a valid iterator?
-    if (i != m_entities.end()) {
-      print_entity_key( msg , metadata_from_entity(i->second) , key );
-    } else {
-      const unsigned type = entity_rank(key);
-      const EntityId id   = entity_id(key);
-      msg << "Invalid key: " << type << " " << id;
-    }
-    msg << " INVALID KEY" ;
-    msg << " ) FAILED" ;
-    throw std::runtime_error( msg.str() );
-  }
 
   return i != m_entities.end() ? i->second : NULL ;
 }
@@ -147,13 +119,10 @@ bool EntityRepository::insert_comm_info( Entity & e, const EntityCommInfo & comm
   return e.m_entityImpl.insert( comm_info );
 }
 
-void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket ) {
-  if ( e.log_query() == EntityLogDeleted ) {
-    std::ostringstream msg;
-    msg << "Error: double deletion of entity: ";
-    print_entity_key( msg, nil_bucket->mesh().mesh_meta_data(), e.key() );
-    throw std::runtime_error(msg.str());
-  }
+void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket )
+{
+  ThrowErrorMsgIf( e.log_query() == EntityLogDeleted,
+                   "double deletion of entity: " << print_entity_key( e ));
 
   change_entity_bucket( *nil_bucket, e, 0);
   e.m_entityImpl.log_deleted(); //important that this come last
@@ -177,24 +146,14 @@ Bucket * EntityRepository::get_entity_bucket( Entity & e ) const
 
 void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
 {
-  const MetaData & meta_data =
-    e_from.m_entityImpl.bucket().mesh().mesh_meta_data();
-
   bool caused_change_fwd = e_from.m_entityImpl.destroy_relation(e_to);
 
   // Relationships should always be symmetrical
   if ( caused_change_fwd ) {
     bool caused_change_inv = e_to.m_entityImpl.destroy_relation(e_from);
-    if ( ! caused_change_inv ) {
-      std::ostringstream msg ;
-      msg << "destroy_relation( from "
-          << print_entity_key( msg , meta_data, e_from.key() )
-          << " , to "
-          << print_entity_key( msg , meta_data, e_to.key() )
-          << " ) FAILED"
-          << " Internal error - could not destroy inverse relation" ;
-      throw std::runtime_error( msg.str() );
-    }
+    ThrowErrorMsgIf( !caused_change_inv,
+        " Internal error - could not destroy inverse relation of " <<
+        print_entity_key( e_from ) << " to " << print_entity_key( e_to ));
   }
 
   // It is critical that the modification be done AFTER the relations are
@@ -210,9 +169,6 @@ void EntityRepository::declare_relation( Entity & e_from,
                                          const unsigned local_id,
                                          unsigned sync_count )
 {
-  const MetaData & meta_data =
-    e_from.m_entityImpl.bucket().mesh().mesh_meta_data();
-
   bool caused_change_fwd =
     e_from.m_entityImpl.declare_relation( e_to, local_id, sync_count);
 
@@ -225,17 +181,9 @@ void EntityRepository::declare_relation( Entity & e_from,
       e_to.m_entityImpl.declare_relation( e_from, local_id, sync_count,
                                           is_converse );
 
-    if ( ! caused_change_inv ) {
-      std::ostringstream msg ;
-      msg << "declare_relation( from "
-          << print_entity_key( msg , meta_data, e_from.key() )
-          << " , to "
-          << print_entity_key( msg , meta_data, e_to.key() )
-          << " , id " << local_id
-          << " ) FAILED"
-          << " Internal error - could not create inverse relation" ;
-      throw std::runtime_error( msg.str() );
-    }
+    ThrowErrorMsgIf( !caused_change_inv,
+        " Internal error - could not create inverse relation of " <<
+        print_entity_key( e_from ) << " to " << print_entity_key( e_to ));
   }
 
   // It is critical that the modification be done AFTER the relations are
@@ -249,4 +197,3 @@ void EntityRepository::declare_relation( Entity & e_from,
 } // namespace impl
 } // namespace mesh
 } // namespace stk
-

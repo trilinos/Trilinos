@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(Zoltan/src/zz)
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS AND ${PACKAGE_NAME}_ENABLE_Scotch)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stressTestGRAPH_P_S
-    SOURCES stressTestGRAPH.c stress_const.h
+    SOURCES stressTestGRAPH.c 
     COMM mpi 
     NUM_MPI_PROCS 8
     ARGS
@@ -23,7 +23,7 @@ ELSEIF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stressTestGRAPH_P
-    SOURCES stressTestGRAPH.c stress_const.h
+    SOURCES stressTestGRAPH.c 
     COMM mpi 
     NUM_MPI_PROCS 8
     ARGS
@@ -35,7 +35,7 @@ ELSEIF (${PACKAGE_NAME}_ENABLE_Scotch)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stressTestGRAPH_S
-    SOURCES stressTestGRAPH.c stress_const.h
+    SOURCES stressTestGRAPH.c 
     COMM mpi 
     NUM_MPI_PROCS 8
     ARGS
@@ -46,7 +46,7 @@ ELSEIF (${PACKAGE_NAME}_ENABLE_Scotch)
 ELSE()
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stressTestGRAPH
-    SOURCES stressTestGRAPH.c stress_const.h
+    SOURCES stressTestGRAPH.c 
     COMM mpi 
     NUM_MPI_PROCS 8
     ARGS
@@ -60,7 +60,7 @@ ENDIF()
 #  Might be useful for scalbility tests
 #PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #  stressTestRCB
-#  SOURCES stressTestRCB.c stress_const.h
+#  SOURCES stressTestRCB.c 
 #  COMM mpi
 #  ARGS
 #    "10000"
@@ -68,7 +68,7 @@ ENDIF()
 #
 #PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #  stressTestRIB
-#  SOURCES stressTestRIB.c stress_const.h
+#  SOURCES stressTestRIB.c 
 #  COMM mpi
 #  ARGS
 #    "10000"
@@ -80,7 +80,7 @@ ENDIF()
 #
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   stressTestPHG
-  SOURCES stressTestPHG.c stress_const.h
+  SOURCES stressTestPHG.c 
   COMM mpi 
   NUM_MPI_PROCS 8
   ARGS

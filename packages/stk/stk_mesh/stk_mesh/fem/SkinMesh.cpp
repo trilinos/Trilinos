@@ -251,9 +251,8 @@ size_t determine_creating_processes(
 } //end un-named namespace
 
 void skin_mesh( BulkData & mesh, EntityRank element_rank, Part * skin_part) {
-  if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
-    throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
-  }
+  ThrowErrorMsgIf( mesh.synchronized_state() == BulkData::MODIFIABLE,
+                   "mesh is not SYNCHRONIZED" );
 
   EntityVector owned_elements;
 
@@ -267,9 +266,8 @@ void skin_mesh( BulkData & mesh, EntityRank element_rank, Part * skin_part) {
 }
 
 void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned_elements, Part * skin_part) {
-  if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
-    throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
-  }
+  ThrowErrorMsgIf( mesh.synchronized_state() == BulkData::MODIFIABLE,
+                   "mesh is not SYNCHRONIZED" );
 
   EntityVector elements_closure;
 

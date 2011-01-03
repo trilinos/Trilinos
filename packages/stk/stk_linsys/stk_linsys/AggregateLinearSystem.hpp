@@ -37,6 +37,11 @@ class AggregateLinearSystem : public LinearSystemInterface {
   /** Destructor */
   virtual ~AggregateLinearSystem();
 
+  void set_parameters(Teuchos::ParameterList& paramlist);
+
+  /** set the number of matrices and right-hand-sides */
+  void set_num_matrices_rhsvecs(size_t num_matrices, size_t num_rhsvecs);
+
   /** This is a collective call -- will hang if only a subset of processors
    * call it.
    * Internally calls fei::MatrixGraph::initComplete() and
@@ -80,6 +85,8 @@ class AggregateLinearSystem : public LinearSystemInterface {
   /** Return DOF-mapping object */
   DofMapper& get_DofMapper();
 
+  void reset_to_zero();
+
   /** Return fei::MatrixGraph object */
   const fei::SharedPtr<fei::MatrixGraph> get_fei_MatrixGraph() const;
 
@@ -91,6 +98,8 @@ class AggregateLinearSystem : public LinearSystemInterface {
 
   /** Return fei::LinearSystem object */
   fei::SharedPtr<fei::LinearSystem> get_fei_LinearSystem();
+
+  void write_files(const std::string& base_name) const;
 
   /** Solve the linear system
    * Note that the caller is expected to have already called the method

@@ -256,8 +256,7 @@ inline bool quick_verify_change_part(const Entity& entity,
 // 2) PartRelation target part
 // 3) Part that does not match the entity rank.
 
-void verify_change_parts( const char * method ,
-                          const MetaData   & meta ,
+void verify_change_parts( const MetaData   & meta ,
                           const Entity     & entity ,
                           const PartVector & parts )
 {
@@ -286,9 +285,7 @@ void verify_change_parts( const char * method ,
     if ( error_intersection || error_rel_target || error_rank ) {
       if ( ok ) {
         ok = false ;
-        msg << method ;
-        msg << "( " ;
-        print_entity_key( msg , meta , entity.key() );
+        msg << "change parts for entity " << print_entity_key( entity );
         msg << " , { " ;
       }
       else {
@@ -309,10 +306,7 @@ void verify_change_parts( const char * method ,
     }
   }
 
-  if ( ! ok ) {
-    msg << " }" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( !ok, msg.str() << "}" );
 }
 
 }
@@ -322,8 +316,6 @@ void BulkData::change_entity_parts(
   const std::vector<Part*> & add_parts ,
   const std::vector<Part*> & remove_parts )
 {
-  static const char method[] = "stk::mesh::BulkData::change_entity_parts" ;
-
   require_ok_to_modify();
 
   require_entity_owner( entity , m_parallel_rank );
@@ -360,12 +352,12 @@ void BulkData::change_entity_parts(
     // the three special parts.  Without refactoring, these guards
     // cannot be put in place.
     /*
-    if ( m_mesh_meta_data.universal_part() == **ir )
-      throw std::runtime_error ( "Cannot remove entity from universal part" );
-    if ( m_mesh_meta_data.locally_owned_part() == **ir )
-      throw std::runtime_error ( "Cannot remove entity from locally owned part" );
-    if ( m_mesh_meta_data.globally_shared_part() == **ir )
-      throw std::runtime_error ( "Cannot remove entity from globally shared part" );
+    ThrowErrorMsgIf( m_mesh_meta_data.universal_part() == **ir,
+                     "Cannot remove entity from universal part" );
+    ThrowErrorMsgIf( m_mesh_meta_data.locally_owned_part() == **ir,
+                     "Cannot remove entity from locally owned part" );
+    ThrowErrorMsgIf( m_mesh_meta_data.globally_shared_part() == **ir,
+                     "Cannot remove entity from globally shared part" );
     */
 
     quick_verify_check = quick_verify_check &&
@@ -387,14 +379,14 @@ void BulkData::change_entity_parts(
   // expect to see an exception thrown; otherwise, only do the full check in
   // debug mode because it incurs significant overhead.
   if ( ! quick_verify_check ) {
-    verify_change_parts( method , m_mesh_meta_data , entity , a_parts );
-    verify_change_parts( method , m_mesh_meta_data , entity , r_parts );
+    verify_change_parts( m_mesh_meta_data , entity , a_parts );
+    verify_change_parts( m_mesh_meta_data , entity , r_parts );
     ThrowRequireMsg(false, "Expected throw from verify methods above.");
   }
   else {
 #ifndef NDEBUG
-    verify_change_parts( method , m_mesh_meta_data , entity , a_parts );
-    verify_change_parts( method , m_mesh_meta_data , entity , r_parts );
+    verify_change_parts( m_mesh_meta_data , entity , a_parts );
+    verify_change_parts( m_mesh_meta_data , entity , r_parts );
 #endif
   }
 
@@ -633,22 +625,18 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
       EntityKey key(&(*kitr));
       std::pair<Entity *, bool> result = m_entity_repo.internal_create_entity(key);
 
-      if ( result.second ) {
-        // A new application-created entity
-        m_entity_repo.set_entity_owner_rank( *(result.first), m_parallel_rank);
-        m_entity_repo.set_entity_sync_count( *(result.first), m_sync_count);
-      }
-      else {
-        //if an entity is declare with the declare_entity function in the same
-        //modification cycle as the generate_new_entities function, and it happens to
-        //generate a key that was declare previously in the same cycle it is an error
-        std::ostringstream msg;
-        msg << "stk::mesh::BulkData::generate_new_entities ERROR:";
-        msg << " generated ";
-        print_entity_key(msg, m_mesh_meta_data, key);
-        msg << " which was already used in this modification cycle.";
-        throw std::runtime_error(msg.str());
-      }
+      //if an entity is declare with the declare_entity function in
+      //the same modification cycle as the generate_new_entities
+      //function, and it happens to generate a key that was declare
+      //previously in the same cycle it is an error
+      ThrowErrorMsgIf( ! result.second,
+                       "Generated " << print_entity_key(m_mesh_meta_data, key) <<
+                       " which was already used in this modification cycle.");
+
+      // A new application-created entity
+      m_entity_repo.set_entity_owner_rank( *(result.first), m_parallel_rank);
+      m_entity_repo.set_entity_sync_count( *(result.first), m_sync_count);
+
       //add entity to 'owned' part
       change_entity_parts( * result.first , add , rem );
       requested_entities.push_back(result.first);

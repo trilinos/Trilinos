@@ -15,7 +15,7 @@
 #include <ctype.h>
 #include <signal.h>
 #include <getopt.h>
-#include "stress_const.h"
+#include "zz_const.h"
 
 #define NUM_GLOBAL_VERTICES     2500    /* default */
 
@@ -37,14 +37,14 @@ struct Zoltan_DD_Struct *dd=NULL;
 static void debug(struct Zoltan_Struct *zz, char *s, int stop);
 static void usage();
 
-static void check_error_status(struct Zoltan_Struct *zz, int status, char *s)
+static void check_error_status(int status, char *s)
 {
 int gstatus;
 
-  MPI_Allreduce(&status, &gstatus, 1, MPI_INT, MPI_MAX, zz->Communicator);
+  MPI_Allreduce(&status, &gstatus, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   if (gstatus > 0){
-    if (zz->Proc == 0){
+    if (myRank == 0){
       fprintf(stderr,"Error: %s\n",s);
     }
     MPI_Finalize();
@@ -480,7 +480,6 @@ int main(int argc, char *argv[])
   int generate_files = 0;
   char *platform=NULL, *topology=NULL;
   char *graph_package=NULL;
-  char *datatype_name=NULL;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   struct option opts[10];
@@ -502,17 +501,6 @@ int main(int argc, char *argv[])
   ** Check that this test makes sense.
   ******************************************************************/
   
-  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
-    if (myRank == 0){
-      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
-                 datatype_name, zoltan_id_datatype_name);
-                
-    }
-    status = 1;
-    MPI_Finalize();
-    return 1;
-  }
-
   if (sizeof(long) < sizeof(ZOLTAN_ID_TYPE)){
     if (myRank == 0){
       printf("ERROR: This code assumes that a long is at least %d bytes\n",(int)sizeof(ZOLTAN_ID_TYPE));
@@ -520,7 +508,7 @@ int main(int argc, char *argv[])
     status = 1;
   }
 
-  check_error_status(zz, status, "configuration error");
+  check_error_status(status, "configuration error");
 
   /******************************************************************
   ** Initialize zoltan
@@ -607,7 +595,7 @@ int main(int argc, char *argv[])
     else if (rc == 4){
       nvert = atol(optarg);
       if (nvert < 1) status = 1;
-      check_error_status(zz, status, "--size={approximate number of vertices}");
+      check_error_status(status, "--size={approximate number of vertices}");
       if (myRank == 0){
         printf( "Graph will have approximately %ld vertices.\n",nvert);
       }
@@ -647,7 +635,7 @@ int main(int argc, char *argv[])
     numGlobalVertices = NUM_GLOBAL_VERTICES;
 
   status = create_a_graph(); 
-  check_error_status(zz, status, "creating the graph");
+  check_error_status(status, "creating the graph");
 
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
   Zoltan_Set_Param(zz, "REMAP", "0");
@@ -677,7 +665,7 @@ int main(int argc, char *argv[])
   if (generate_files){
     rc = Zoltan_Generate_Files(zz, "flat", myRank, 0, 1, 0);
     if (rc != ZOLTAN_OK) status = 1;
-    check_error_status(zz, status, "Zoltan_Generate_Files");
+    check_error_status(status, "Zoltan_Generate_Files");
   }
 
   /* Performance before partitioning */
@@ -685,7 +673,7 @@ int main(int argc, char *argv[])
   cut_weight[0] = get_edge_cut_weight(zz);
 
   if (cut_weight[0] < 0.0) status = 1;
-  check_error_status(zz, status, "First call to get_edge_cut_weight");
+  check_error_status(status, "First call to get_edge_cut_weight");
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
@@ -703,10 +691,10 @@ int main(int argc, char *argv[])
         &exportToPart);  /* Partition to which each vertex will belong */
 
   if (rc != ZOLTAN_OK) status = 1;
-  check_error_status(zz, status, "First call to LB_Partition");
+  check_error_status(status, "First call to LB_Partition");
 
   status = migrate_graph(numExport, numImport, exportLocalGids, importGlobalGids);
-  check_error_status(zz, status, "migration");
+  check_error_status(status, "migration");
 
   if (verbose){
     debug(zz, "After flat partitioning and migration", 0);
@@ -716,7 +704,7 @@ int main(int argc, char *argv[])
   cut_weight[1] = get_edge_cut_weight(zz);
 
   if (cut_weight[1] < 0.0) status = 1;
-  check_error_status(zz, status, "Second call to get_edge_cut_weight");
+  check_error_status(status, "Second call to get_edge_cut_weight");
 
   Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
                       &importProcs, &importToPart);
@@ -729,7 +717,7 @@ int main(int argc, char *argv[])
 
     free_graph();
     status = create_a_graph();
-    check_error_status(zz, status, "create graph for hierarchical partitioning");
+    check_error_status(status, "create graph for hierarchical partitioning");
   
     Zoltan_Set_Param(zz, "LB_METHOD", "HIER");
     Zoltan_Set_Param(zz, "HIER_ASSIST", "1");
@@ -767,10 +755,10 @@ int main(int argc, char *argv[])
           &exportToPart);  /* Partition to which each vertex will belong */
   
     if (rc != ZOLTAN_OK) status = 1;
-    check_error_status(zz, status, "Second call to LB_Partition");
+    check_error_status(status, "Second call to LB_Partition");
   
     status = migrate_graph(numExport, numImport, exportLocalGids, importGlobalGids);
-    check_error_status(zz, status, "second migration");
+    check_error_status(status, "second migration");
   
     if (verbose){
       debug(zz, "After hierarchical partitioning and migration", 0);
@@ -780,7 +768,7 @@ int main(int argc, char *argv[])
     cut_weight[2] = get_edge_cut_weight(zz);
 
     if (cut_weight[2] < 0.0) status = 1;
-    check_error_status(zz, status, "Third call to get_edge_cut_weight");
+    check_error_status(status, "Third call to get_edge_cut_weight");
   
     Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
                         &importProcs, &importToPart);
@@ -795,7 +783,8 @@ int main(int argc, char *argv[])
   if (myRank == 0){
     fprintf(stdout,"Graph cut weight before partitioning: %f\n",cut_weight[0]);
     fprintf(stdout,"             after flat partitioning: %f\n",cut_weight[1]);
-    fprintf(stdout,"     after hierarchical partitioning: %f\n",cut_weight[2]);
+    if (do_hier)
+      fprintf(stdout,"     after hierarchical partitioning: %f\n",cut_weight[2]);
     fflush(stdout);
   }
 

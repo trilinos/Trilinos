@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
 #include "phg.h"
 #include "phg_verbose.h"
 #include "zz_const.h"
@@ -1698,7 +1699,7 @@ ZOLTAN_GNO_TYPE localval[2], globalval[2];
 
   if ((zhg->globalHedges > zz->Num_Proc) && (numGlobalEdges < zz->Num_Proc)){
     if (zz->Proc == 0) fprintf(stderr,
-     "\nWARNING: PHG_EDGE_SIZE_THRESHOLD is low (%f), resulting in only %zd edges\n remaining.",
+     "\nWARNING: PHG_EDGE_SIZE_THRESHOLD is low (%f), resulting in only " ZOLTAN_GNO_SPEC " edges\n remaining.",
         esize_threshold, numGlobalEdges);
   }
 

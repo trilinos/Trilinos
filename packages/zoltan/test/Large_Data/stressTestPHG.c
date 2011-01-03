@@ -26,7 +26,10 @@
 #include <ctype.h>
 #include <signal.h>
 #include <getopt.h>
-#include "stress_const.h"
+#include <stdint.h>
+#include "zz_const.h"
+
+extern long long atoll(const char *);
 
 static int myRank, numProcs, numPins, nborCount;
 static int *vertex_part = NULL;
@@ -224,7 +227,7 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         int wgt_dim, float *ewgts, int *ierr)
 {
 int i;
-ZOLTAN_ID_TYPE lid, before, after, left, right;
+ZOLTAN_ID_TYPE lid, before, after, left=0, right;
 float wgt;
 
   *ierr = ZOLTAN_OK;
@@ -299,7 +302,6 @@ int main(int argc, char *argv[])
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-  char *datatype_name;
   double local, min, max, avg;
   float cutn[10], imbalance[10];
 
@@ -426,20 +428,6 @@ int main(int argc, char *argv[])
       printf("Vertex weights will all be the same.\n");
     else
       printf("Vertex weights will vary widely.\n");
-  }
-
-  /******************************************************************
-  ** Check that this test makes sense.
-  ******************************************************************/
-
-  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
-    if (myRank == 0){
-      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
-                 datatype_name, zoltan_id_datatype_name);
-               
-    }
-    MPI_Finalize();
-    return 1;
   }
 
   create_a_graph();
@@ -581,9 +569,9 @@ int main(int argc, char *argv[])
   if (myRank == 0){
     printf("Imbalance:   BEFORE %f    AFTER %f\n",imbalance[0],imbalance[1]);
     printf("Net Cut  :   BEFORE %f    AFTER %f\n",cutn[0],cutn[1]);
-    printf("Total MBytes in use by test while Zoltan is running: %12.3lf\n",
+    printf("Total MBytes in use by test while Zoltan is running: %12.3f\n",
              mbytes/(1024.0*1024));
-    printf("Min/Avg/Max of maximum MBytes in use by Zoltan:    %12.3lf / %12.3lf / %12.3lf\n",
+    printf("Min/Avg/Max of maximum MBytes in use by Zoltan:    %12.3f / %12.3f / %12.3f\n",
              min, avg, max);
   }
 

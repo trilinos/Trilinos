@@ -36,6 +36,7 @@
  * date and should be cleared and re-initialized.
  */
 
+#include <stdexcept>
 
 // STL components
 #include <vector>

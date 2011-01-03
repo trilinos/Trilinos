@@ -34,9 +34,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
 IF (Piro_ENABLE_NOX) 
   APPEND_SET(HEADERS epetra/Piro_Epetra_NOXSolver.hpp
                      epetra/Piro_Epetra_LOCASolver.hpp
+                     epetra/Piro_Epetra_VelocityVerletSolver.hpp
                      epetra/Piro_Epetra_MatrixFreeDecorator.hpp)
   APPEND_SET(SOURCES epetra/Piro_Epetra_NOXSolver.cpp
                      epetra/Piro_Epetra_LOCASolver.cpp
+                     epetra/Piro_Epetra_VelocityVerletSolver.cpp
                      epetra/Piro_Epetra_MatrixFreeDecorator.cpp)
 ENDIF()
 # Optional Rythmos Dependency

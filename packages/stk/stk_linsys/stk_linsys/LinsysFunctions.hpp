@@ -73,6 +73,9 @@ void dirichlet_bc(stk::linsys::LinearSystemInterface& ls,
  */
 int fei_solve(int & status, fei::LinearSystem &fei_ls, const Teuchos::ParameterList & params);
 
+/** Return a 2-norm of |b - A*x|
+ */
+double compute_residual_norm2(fei::LinearSystem& fei_ls, fei::Vector& r);
 
 /** Copy the contents of an fei::Vector to the corresponding field-data
  * locations in a stk::mesh::BulkData instance.

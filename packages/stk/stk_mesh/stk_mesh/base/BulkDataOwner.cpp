@@ -135,7 +135,6 @@ bool member_of_owned_closure( const Entity & e , const unsigned p_rank )
 //----------------------------------------------------------------------
 
 void clean_and_verify_parallel_change(
-  const char method[] ,
   const BulkData & mesh ,
   std::vector<EntityProc> & local_change )
 {
@@ -202,15 +201,9 @@ void clean_and_verify_parallel_change(
   all_reduce( p_comm , ReduceSum<1>( & error_count ) );
 
   if ( error_count ) {
-    std::string msg_throw ;
-    msg_throw.append( method );
-    msg_throw.append( " FAILED: Bad change ownership directives" );
-
-    if ( 0 == p_rank ) { std::cerr << msg_throw ; }
-
     all_write_string( p_comm , std::cerr , error_msg.str() );
 
-    throw std::runtime_error( msg_throw );
+    ThrowErrorMsg("Bad change ownership directives\n");
   }
 
   {
@@ -300,8 +293,6 @@ void generate_parallel_change( const BulkData & mesh ,
 
 void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 {
-  static const char method[] = "stk::mesh::BulkData::change_entity_owner" ;
-
   const MetaData  & meta = m_mesh_meta_data ;
   const unsigned  p_rank = m_parallel_rank ;
   const unsigned  p_size = m_parallel_size ;
@@ -315,7 +306,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   std::vector<EntityProc> local_change( arg_change );
 
   // Parallel synchronous clean up and verify the requested changes:
-  clean_and_verify_parallel_change( method , *this , local_change );
+  clean_and_verify_parallel_change( *this , local_change );
 
   //----------------------------------------
   // Parallel synchronous determination of changing
@@ -476,8 +467,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     }
 
     all_reduce( p_comm , ReduceSum<1>( & error_count ) );
-
-    if ( error_count ) { throw std::runtime_error( error_msg.str() ); }
+    ThrowErrorMsgIf( error_count, error_msg.str() );
 
     // Any entity that I sent and is not in an owned closure is deleted.
     // The owned closure will be effected by received entities, so can

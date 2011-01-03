@@ -131,18 +131,8 @@ void get_adjacent_entities( const Entity & entity ,
     bad_id = subcell_identifier >= celltopology->subcell_count[subcell_rank];
   }
 
-  if (bad_rank || bad_id) {
-    std::ostringstream msg;
-    //parallel consisent throw
-    if (bad_rank) {
-      msg << "get_adjacent_entities( const Entity& entity, unsigned subcell_rank, ... ) subcell_rank is >= celltopology dimension\n";
-    }
-    else if (bad_id) {
-      msg << "get_adjacent_entities( const Entity& entity, unsigned subcell_rank, unsigned subcell_identifier, ... ) subcell_identifier is >= subcell count\n";
-    }
-
-    throw std::runtime_error(msg.str());
-  }
+  ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension" );
+  ThrowInvalidArgMsgIf( bad_id,   "subcell_identifier is >= subcell count" );
 
   // For the potentially common subcell, get it's nodes and num_nodes
   const unsigned* side_node_local_ids =

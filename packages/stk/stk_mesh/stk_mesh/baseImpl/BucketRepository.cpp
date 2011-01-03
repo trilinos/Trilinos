@@ -26,11 +26,7 @@ void * local_malloc( size_t n )
 {
   void * const ptr = std::malloc( n );
 
-  if ( NULL == ptr ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::impl::BucketImpl::declare_bucket FAILED malloc( " << n << " )" ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( NULL == ptr, "malloc of size " << n << " failed" );
 
   return ptr ;
 }
@@ -98,7 +94,7 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
         msg << "] and Part[" << p_new.name() ;
         msg << "]" ;
 
-        throw std::runtime_error( msg.str() );
+        ThrowErrorMsg( msg.str() );
       }
     }
   }

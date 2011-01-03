@@ -148,6 +148,57 @@ std::string Ioss::Utils::encode_entity_name(const std::string &entity_type, int 
   return entity_name;
 }
 
+std::string Ioss::Utils::fixup_element_type(const std::string &base, int nodes_per_element, int spatial)
+{
+  std::string type = base;
+  Ioss::Utils::fixup_name(type); // Convert to lowercase; replace spaces with '_'
+
+  // Fixup an exodusII kluge/ambiguity.
+  // The element block type does not fully define the element. For
+  // example, a block of type 'triangle' may have either 3 or 6
+  // nodes.  To fix this, check the block type name and see if it
+  // ends with a number.  If it does, assume it is OK; if not, append
+  // the 'nodes_per_element'.
+  if (!isdigit(*(type.rbegin()))) {
+    if (nodes_per_element > 1) {
+      type += Ioss::Utils::to_string(nodes_per_element);
+    }
+  }
+
+  // Fixup an exodusII kludge.  For triangular elements, the same
+  // name is used for 2D elements and 3D shell elements.  Convert
+  // to unambiguous names for the IO Subsystem.  The 2D name
+  // stays the same, the 3D name becomes 'trishell#'
+  if (spatial == 3) {
+    if      (type == "triangle3") type = "trishell3";
+    else if (type == "triangle6") type = "trishell6";
+    else if (type == "tri3")      type = "trishell3";
+    else if (type == "tri6")      type = "trishell6";
+  }
+
+  if (spatial == 2) {
+    if (type == "shell2")
+      type = "shellline2d2";
+    else if (type == "rod2" || type == "bar2" || type == "truss2")
+      type = "rod2d2";
+    else if (type == "shell3")
+      type = "shellline2d3";
+    else if (type == "bar3"  || type == "rod3"  || type == "truss3")
+      type = "rod2d3";
+  }
+
+  if (std::strncmp(type.c_str(), "super", 5) == 0) {
+    // A super element can have a varying number of nodes.  Create
+    // an IO element type for this super element just so the IO
+    // system can read a mesh containing super elements.  This
+    // allows the "omit volume" command to be used in the Sierra
+    // applications to skip creating a corresponding element block
+    // in the application.
+    type = "super" + Ioss::Utils::to_string(nodes_per_element);
+  }
+  return type;
+}
+
 void Ioss::Utils::abort()
 {
   std::ostringstream errmsg("I/O abort");
@@ -361,6 +412,18 @@ void Ioss::Utils::fixup_name(char *name)
   size_t len = std::strlen(name);
   for (size_t i=0; i < len; i++) {
     name[i] = static_cast<char>(tolower(name[i]));  // guaranteed(?) to be ascii...
+    if (name[i] == ' ')
+      name[i] = '_';
+  }
+}
+
+void Ioss::Utils::fixup_name(std::string &name)
+{
+  // Convert 'name' to lowercase and convert spaces to '_'
+  name = Ioss::Utils::lowercase(name);
+  
+  size_t len = name.length();
+  for (size_t i=0; i < len; i++) {
     if (name[i] == ' ')
       name[i] = '_';
   }

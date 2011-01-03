@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
-#include "zz_util_const.h"  /* included for Zoltan_get_global_id_type() */
+#include "zz_util_const.h"  /* For Zoltan_Hash function */
 
 /* Name of file containing graph to be partitioned */
 
@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
   FILE *fp;
   struct Zoltan_DD_Struct *dd;
   GRAPH_DATA myGraph;
-  char *datatype_name;
   int gid_length = 1;   /* our global IDs consist of 1 integer */
   int lid_length = 1;   /* our local IDs consist of 1 integer */
 
@@ -108,22 +107,6 @@ int main(int argc, char *argv[])
     MPI_Finalize();
     exit(0);
   }
-
-  /******************************************************************
-  ** Check that this example and the Zoltan library are both
-  ** built with the same ZOLTAN_ID_TYPE definition.
-  ******************************************************************/
-
-  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
-    if (myRank == 0){
-      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
-                 datatype_name, zoltan_id_datatype_name);
-
-    }
-    MPI_Finalize();
-    exit(0);
-  }
-  
 
   /******************************************************************
   ** Read graph from input file and distribute it 

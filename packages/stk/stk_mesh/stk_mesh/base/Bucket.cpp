@@ -173,43 +173,21 @@ bool field_data_valid( const FieldBase & f ,
                           NULL != field_data( f , k.begin() );
 
   if ( required_by && ! exists ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::field_data_valid( " ;
-    msg << f ;
-    msg << " , " ;
-    msg << k ;
-    msg << " , " ;
-    msg << ord ;
-    msg << " , " ;
-    msg << required_by ;
-    msg << " ) FAILED with " ;
-    if ( ! ok_mesh_meta_data ) {
-      msg << " different MetaData" ;
-    }
-    else if ( ! ok_ord ) {
-      msg << " Ordinal " ;
-      msg << ord ;
-      msg << " >= " ;
-      msg << " size " ;
-      msg << k.size();
-    }
-    else {
-      msg << " no data" ;
-    }
-    throw std::runtime_error( msg.str() );
+    std::ostringstream msg_begin ;
+    msg_begin << "For args: " ;
+    msg_begin << f << " , " ;
+    msg_begin << k << " , " ;
+    msg_begin << ord << " , " ;
+    msg_begin << required_by ;
+    msg_begin << "; operation FAILED with " ;
+    ThrowErrorMsgIf( ! ok_mesh_meta_data,
+                     msg_begin.str() << " different MetaData");
+    ThrowErrorMsgIf( ! ok_ord, msg_begin.str() <<
+                     " Ordinal " <<  ord << " >= " << " size " << k.size());
+    ThrowErrorMsg( msg_begin.str() << " no data");
   }
 
   return exists ;
-}
-
-void throw_field_data_array( const FieldBase & f , unsigned R )
-{
-  std::ostringstream msg ;
-  msg << "stk::mesh::throw_field_data_array( Field["
-      << f.name() << "].rank() = " << f.rank()
-      << " , truncation_rank = " << R
-      << " ) FAILED, bad array truncation" ;
-  throw std::runtime_error( msg.str() );
 }
 
 //----------------------------------------------------------------------
@@ -224,13 +202,10 @@ Bucket::Bucket( BulkData        & arg_mesh ,
 : m_bucketImpl( arg_mesh, arg_entity_rank, arg_key, arg_alloc_size, arg_capacity, arg_field_map, arg_entity_array )
 {}
 
-
 //----------------------------------------------------------------------
 
 Bucket::~Bucket()
 {}
-
-
 
 //----------------------------------------------------------------------
 
@@ -279,18 +254,6 @@ print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 
   return os ;
 }
-
-//----------------------------------------------------------------------
-
-void
-BucketIterator::throw_error(const char * err) const
-{
-  static const char header[] = "stk::mesh::Bucket::iterator FAILED: " ;
-  std::string msg( header );
-  msg.append( err );
-  throw std::runtime_error( msg );
-}
-
 
 } // namespace mesh
 } // namespace stk

@@ -1091,54 +1091,9 @@ namespace Ioex {
       Ioss::ElementBlock *block = NULL;
       std::string block_name = get_entity_name(get_file_pointer(), EX_ELEM_BLOCK, id, "block");
 
-      Ioss::Utils::fixup_name(element_type); // Convert to lowercase; replace spaces with '_'
-      std::string type = std::string(element_type);
-      std::string save_type = type;
-
-      // Fixup an exodusII kluge/ambiguity.
-      // The element block type does not fully define the element. For
-      // example, a block of type 'triangle' may have either 3 or 6
-      // nodes.  To fix this, check the block type name and see if it
-      // ends with a number.  If it does, assume it is OK; if not, append
-      // the 'nodes_per_element'.
-      if (!isdigit(*(type.rbegin()))) {
-	if (my_node_count[iblk] > 1) {
-	  type += Ioss::Utils::to_string(my_node_count[iblk]);
-	}
-      }
-
-      // Fixup an exodusII kludge.  For triangular elements, the same
-      // name is used for 2D elements and 3D shell elements.  Convert
-      // to unambiguous names for the IO Subsystem.  The 2D name
-      // stays the same, the 3D name becomes 'trishell#'
-      if (spatialDimension == 3) {
-	if      (type == "triangle3") type = "trishell3";
-	else if (type == "triangle6") type = "trishell6";
-	else if (type == "tri3")      type = "trishell3";
-	else if (type == "tri6")      type = "trishell6";
-      }
-
-      if (spatialDimension == 2) {
-	if (type == "shell2")
-	  type = "shellline2d2";
-	else if (type == "rod2" || type == "bar2" || type == "truss2")
-	  type = "rod2d2";
-	else if (type == "shell3")
-	  type = "shellline2d3";
-	else if (type == "bar3"  || type == "rod3"  || type == "truss3")
-	  type = "rod2d3";
-      }
-
-      if (std::strncmp(type.c_str(), "super", 5) == 0) {
-	// A super element can have a varying number of nodes.  Create
-	// an IO element type for this super element just so the IO
-	// system can read a mesh containing super elements.  This
-	// allows the "omit volume" command to be used in the Sierra
-	// applications to skip creating a corresponding element block
-	// in the application.
-	type = "super" + Ioss::Utils::to_string(my_node_count[iblk]);
-      }
-      
+      std::string save_type = element_type;
+      std::string type = Ioss::Utils::fixup_element_type(element_type, my_node_count[iblk],
+							 spatialDimension);
       if (local_element_count[iblk] == 0 && type == "") {
 	// For an empty block, exodusII does not store the element
 	// type information and returns "NULL" If there are no

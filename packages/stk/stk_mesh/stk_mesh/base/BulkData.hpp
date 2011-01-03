@@ -217,8 +217,7 @@ public:
    */
   void change_entity_parts( Entity & entity,
       const std::vector<Part*> & add_parts ,
-      const std::vector<Part*> & remove_parts =
-      std::vector<Part*>() );
+      const std::vector<Part*> & remove_parts = std::vector<Part*>() );
 
   /** \brief  Request the destruction an entity on the local process.
    *

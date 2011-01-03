@@ -48,13 +48,9 @@ operator << ( std::ostream & s , const Relation & rel )
 Relation::raw_attr_type
 Relation::attribute( unsigned rank , unsigned id )
 {
-  if ( id_mask < id ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::Relation::attribute( " ;
-    msg << rank << " , " << id << " ) FAILED : " ;
-    msg << id << " > " << id_mask ;
-    throw std::runtime_error( msg.str() );
-  }
+  ThrowErrorMsgIf( id_mask < id,
+                   "For args rank " << rank << ", id " << id << ": " <<
+                   "id=" << id << " > id_mask=" << id_mask );
 
   return ( raw_attr_type(rank) << rank_shift ) | id ;
 }
@@ -67,13 +63,9 @@ Relation::Relation( Entity & entity , unsigned identifier )
 Relation::Relation( Relation::raw_attr_type attr , Entity & entity )
   : m_attr( attr ), m_entity( & entity )
 {
-  if ( entity_rank() != entity.entity_rank() ) {
-    std::ostringstream msg ;
-    msg << "stk::mesh::Relation::Relation( "  ;
-    msg << *this ;
-    msg << " ) INCOMPATIBLE ARGUMENTS" ;
-    throw std::invalid_argument( msg.str() );
-  }
+  ThrowInvalidArgMsgIf( entity_rank() != entity.entity_rank(),
+                        "For entity " << print_entity_key(entity) <<
+                        ", entity_rank incompatible with " << entity_rank() );
 }
 
 bool Relation::operator < ( const Relation & r ) const
