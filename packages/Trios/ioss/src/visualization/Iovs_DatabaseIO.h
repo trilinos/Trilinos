@@ -16,9 +16,11 @@
 #include <Ioss_Map.h>
 #include <Ioss_Utils.h>
 
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
 #include <iBase.h>
 #include <iMesh.h>
 #include <iField.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -130,8 +132,10 @@ namespace Iovs {
       bool doLogging; // True if logging field input/output
 
       // Private member data...
+#if !defined(NO_PARAVIEWIMESH_SUPPORT)
       iMesh_Instance mesh_instance; // interface to the vis component
       iBase_EntitySetHandle rootset;
+#endif
       // mutable EntityIdSet ids_;
 
       std::string databaseTitle;
