@@ -100,53 +100,51 @@ void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
   // once. We do this by assigning responsibility for the side/edge to
   // the element with the lowest id.
 
-  for ( int fill_request = 1; fill_request >= 0; --fill_request ) {
-    for ( EntityRank subcell_rank = side_rank; subcell_rank >= edge_rank; --subcell_rank) {
-      for (BucketVector::iterator bitr = element_buckets.begin();
-           bitr != element_buckets.end();
-           ++bitr) {
-        Bucket & bucket = **bitr;
-        const fem::CellTopology topo = fem::get_cell_topology(bucket);
+  for ( EntityRank subcell_rank = side_rank; subcell_rank >= edge_rank; --subcell_rank) {
+    for (BucketVector::iterator bitr = element_buckets.begin();
+         bitr != element_buckets.end();
+         ++bitr) {
+      Bucket & bucket = **bitr;
+      const fem::CellTopology topo = fem::get_cell_topology(bucket);
 
-        if ( !is_degenerate(topo) ) { // don't loop over shell elements
+      if ( !is_degenerate(topo) ) { // don't loop over shell elements
 
-          for (size_t i = 0; i < bucket.size(); ++i) {
-            Entity & elem = bucket[i];
+        for (size_t i = 0; i < bucket.size(); ++i) {
+          Entity & elem = bucket[i];
 
-            PairIterRelation node_relations = elem.relations(node_rank);
+          PairIterRelation node_relations = elem.relations(node_rank);
 
-            PairIterRelation subcell_relations = elem.relations(subcell_rank);
+          PairIterRelation subcell_relations = elem.relations(subcell_rank);
 
-            const unsigned subcell_count = topo.getSubcellCount(subcell_rank);
+          const unsigned subcell_count = topo.getSubcellCount(subcell_rank);
 
-            for (size_t subcell_id = 0; subcell_id < subcell_count; ++subcell_id ) {
+          for (size_t subcell_id = 0; subcell_id < subcell_count; ++subcell_id ) {
 
-              if ( ! relation_exist( elem, subcell_rank, subcell_id) ) {
-                EntitySideComponentVector adjacent_elements;
-                get_adjacent_entities_both_polarities(elem,
-                                                      subcell_rank,
-                                                      subcell_id,
-                                                      adjacent_elements);
+            if ( ! relation_exist( elem, subcell_rank, subcell_id) ) {
+              EntitySideComponentVector adjacent_elements;
+              get_adjacent_entities_both_polarities(elem,
+                                                    subcell_rank,
+                                                    subcell_id,
+                                                    adjacent_elements);
 
-                bool current_elem_has_lowest_id = true;
-                //does this process own the element with the lowest id?
+              bool current_elem_has_lowest_id = true;
+              //does this process own the element with the lowest id?
 
-                for (EntitySideComponentVector::iterator adjacent_itr = adjacent_elements.begin();
-                     adjacent_itr != adjacent_elements.end();
-                     ++adjacent_itr)
-                {
-                  if (adjacent_itr->entity->identifier() < elem.identifier()) {
-                    current_elem_has_lowest_id = false;
-                    break;
-                  }
+              for (EntitySideComponentVector::iterator adjacent_itr = adjacent_elements.begin();
+                   adjacent_itr != adjacent_elements.end();
+                   ++adjacent_itr)
+              {
+                if (adjacent_itr->entity->identifier() < elem.identifier()) {
+                  current_elem_has_lowest_id = false;
+                  break;
                 }
+              }
 
-                // This process owns the lowest element so
-                // needs to generate a request to create
-                // the subcell
-                if (current_elem_has_lowest_id) {
-                  entities_to_request[subcell_rank]++;
-                }
+              // This process owns the lowest element so
+              // needs to generate a request to create
+              // the subcell
+              if (current_elem_has_lowest_id) {
+                entities_to_request[subcell_rank]++;
               }
             }
           }
