@@ -122,9 +122,10 @@ namespace Belos {
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > 
-    CloneCopy( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const Teuchos::Range1D& index )
+    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+	       const Teuchos::Range1D& index)
     { 
-      KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)");
+      KOKKOS_NODE_TRACE("Belos::MVT::CloneCopy(MV,ind)")
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && 
 	index.ubound() < mv.getNumVectors();
@@ -145,6 +146,7 @@ namespace Belos {
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     className << fnName << "Index range includes "
 			     "negative index/ices, which is not allowed.");
+	  // Range1D bounds are signed; size_t is unsigned.
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
 			     std::invalid_argument, className << fnName << 
 			     "Index range exceeds number of vectors " 
@@ -203,6 +205,7 @@ namespace Belos {
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     className << fnName << "Index range includes "
 			     "negative index/ices, which is not allowed.");
+	  // Range1D bounds are signed; size_t is unsigned.
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
 			     std::invalid_argument, className << fnName << 
 			     "Index range exceeds number of vectors " 
@@ -260,6 +263,7 @@ namespace Belos {
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     className << fnName << "Index range includes "
 			     "negative index/ices, which is not allowed.");
+	  // Range1D bounds are signed; size_t is unsigned.
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
 			     std::invalid_argument, className << fnName << 
 			     "Index range exceeds number of vectors " 
@@ -417,10 +421,11 @@ namespace Belos {
 	      const Teuchos::Range1D& index, 
 	      Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
     {
-      KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()");
+      KOKKOS_NODE_TRACE("Belos::MVT::SetBlock()")
 
       const bool validRange = index.size() > 0 && 
 	index.lbound() >= 0 && 
+	index.ubound() < A.getNumVectors() &&
 	index.ubound() < mv.getNumVectors();
       if (! validRange)
 	{
@@ -439,6 +444,7 @@ namespace Belos {
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
 			     className << fnName << "Index range includes "
 			     "negative index/ices, which is not allowed.");
+	  // Range1D bounds are signed; size_t is unsigned.
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= A.getNumVectors(), 
 			     std::invalid_argument, className << fnName << 
 			     "Index range exceeds number of vectors " 
