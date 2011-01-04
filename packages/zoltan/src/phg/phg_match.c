@@ -746,9 +746,8 @@ static int pmatching_ipm (ZZ *zz,
         MEMORY_ERROR;
 
   if (!cFLAG && total_nCandidates && (hgc->myProc_y == 0)) {  /* Master row */
-    i = total_nCandidates * sizeof(Triplet);  
-    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(i))
-     || !(global_best = (Triplet*) ZOLTAN_MALLOC(i)))
+    if (!(master_data=(Triplet*)ZOLTAN_CALLOC(total_nCandidates,sizeof(Triplet)))
+     || !(global_best=(Triplet*)ZOLTAN_CALLOC(total_nCandidates,sizeof(Triplet))))
         MEMORY_ERROR;
     for (i = 0; i < total_nCandidates; i++) {
       master_data[i].candidate = -1;
@@ -1468,7 +1467,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   MPI_Datatype phasethreetype;
   int VtxDim = (hg->VtxWeightDim>0) ? hg->VtxWeightDim : 1;
   int pref = 0;
-  int replycnt, len, header_size;
+  int replycnt, header_size;
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   char *yo = "pmatching_agg_ipm";
   KVHash hash;
@@ -1560,9 +1559,8 @@ static int pmatching_agg_ipm (ZZ *zz,
       MEMORY_ERROR;
 
   if (hgc->myProc_y==0 && total_nCandidates ) {  
-    len = total_nCandidates * sizeof(Triplet);  
-    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(len))
-        || !(global_best = (Triplet*) ZOLTAN_MALLOC(len)))
+    if (!(master_data=(Triplet*)ZOLTAN_CALLOC(total_nCandidates,sizeof(Triplet)))
+     || !(global_best=(Triplet*)ZOLTAN_CALLOC(total_nCandidates,sizeof(Triplet))))
       MEMORY_ERROR;
     for (i = 0; i < total_nCandidates; i++) {
       master_data[i].candidate = -1;
