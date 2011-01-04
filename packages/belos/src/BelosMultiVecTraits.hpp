@@ -103,6 +103,18 @@ namespace Belos {
     static Teuchos::RCP<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
+    /// \brief Deep copy of specified columns of mv
+    ///
+    /// Create a new MV, and copy (deep copy) the columns of mv
+    /// specified by the given inclusive index range into the new
+    /// multivector.
+    ///
+    /// \param mv [in] Multivector to copy
+    /// \param index [in] Inclusive index range of columns of mv
+    /// \return Reference-counted pointer to the new multivector of type \c MV.
+    static Teuchos::RCP<MV> CloneCopy( const MV& mv, const Teuchos::Range1D& index )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
+
     /*! \brief Creates a new \c MV that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
@@ -111,12 +123,34 @@ namespace Belos {
     static Teuchos::RCP<MV> CloneViewNonConst( MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
+    /// \brief Non-const view of specified columns of mv
+    ///
+    /// Return a non-const view of the columns of mv specified by the
+    /// given inclusive index range.
+    ///
+    /// \param mv [in] Multivector to view (shallow non-const copy)
+    /// \param index [in] Inclusive index range of columns of mv
+    /// \return Reference-counted pointer to the non-const view of specified columns of mv
+    static Teuchos::RCP<MV> CloneViewNonConst( MV& mv, const Teuchos::Range1D& index )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
+
     /*! \brief Creates a new const \c MV that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new const multivector of type \c MV.
     */
     static Teuchos::RCP<const MV> CloneView( const MV& mv, const std::vector<int>& index )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
+
+    /// \brief Const view of specified columns of mv
+    ///
+    /// Return a const view of the columns of mv specified by the
+    /// given inclusive index range.
+    ///
+    /// \param mv [in] Multivector to view (shallow const copy)
+    /// \param index [in] Inclusive index range of columns of mv
+    /// \return Reference-counted pointer to the const view of specified columns of mv
+    static Teuchos::RCP<MV> CloneView( MV& mv, const Teuchos::Range1D& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     //@}
@@ -132,7 +166,12 @@ namespace Belos {
     static int GetNumberVecs( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return 0; }     
 
-    //! Ask whether the given multivector \c mv has constant stride.  This is useful for certain orthogonalization methods, for example.
+    /// Whether the given multivector \c mv has constant stride
+    ///
+    /// \param mv [in] Multivector to check
+    ///
+    /// Knowing whether \c mv has constant stride is useful for
+    /// certain orthogonalization methods, for example.
     static bool HasConstantStride( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return false; }
 
@@ -193,6 +232,20 @@ namespace Belos {
     i.e.<tt> mv[index[i]] = A[i]</tt>.
     */
     static void SetBlock( const MV& A, const std::vector<int>& index, MV& mv )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
+
+    /// \brief Deep copy of specified columns of A into mv
+    ///
+    /// Copy (deep copy) the columns of \c A (specified by the given
+    /// inclusive range of indices \c index) into the corresponding
+    /// columns of \c mv.
+    ///
+    /// Postcondition: <tt>mv[index[j]] = A[j]</tt> for all j in index.
+    ///
+    /// \param A [in] Multivector from which to copy
+    /// \param index [in] Inclusive index range of columns of A and mv
+    /// \param mv [out] Multivector into which to copy
+    static void SetBlock( const MV& A, const Teuchos::Range1D& index, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
     /*! \brief Replace the vectors in \c mv with random vectors.
