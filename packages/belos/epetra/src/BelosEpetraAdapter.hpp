@@ -272,18 +272,39 @@ namespace Belos {
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, &tmp_index[0], index.size()) ); 
     }
+
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneCopy( const Epetra_MultiVector& mv, const Teuchos::Range1D& index )
+    { 
+      return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, index.lbound(), index.size()) );
+    }
+
     ///
     static Teuchos::RCP<Epetra_MultiVector> CloneViewNonConst( Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
     }
+
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneViewNonConst( Epetra_MultiVector& mv, const Teuchos::Range1D& index )
+    { 
+      return Teuchos::rcp( new Epetra_MultiVector(View, mv, index.lbound(), index.size()) );
+    }
+
     ///
     static Teuchos::RCP<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
     }
+
+    static Teuchos::RCP<Epetra_MultiVector> 
+    CloneView( const Epetra_MultiVector& mv, const Teuchos::Range1D& index )
+    { 
+      return Teuchos::rcp( new Epetra_MultiVector(View, mv, index.lbound(), index.size()) );
+    }
+
     ///
     static int GetVecLength( const Epetra_MultiVector& mv )
     { return mv.GlobalLength(); }
@@ -401,6 +422,34 @@ namespace Belos {
       TEST_FOR_EXCEPTION(info!=0, EpetraMultiVecFailure, 
 			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::SetBlock call to Update() returned a nonzero value.");
     }
+
+    static void 
+    SetBlock( const Epetra_MultiVector& A, const Teuchos::Range1D& index, Epetra_MultiVector& mv )
+    { 
+      const int numVecs = index.size(); // Number of columns of mv to extract
+      int info = 0;
+
+      // Temporary view of the columns of mv to extract
+      Epetra_MultiVector mv_view (View, mv, index.lbound(), numVecs);
+
+      // If A has numVecs columns, a simple Update call suffices.
+      // Otherwise, we need to make a view of the corresponding
+      // columns of A, and update via the view.
+      if (A.NumVectors() == numVecs)
+        info = mv_view.Update (1.0, A, 0.0, A, 0.0);
+      else {
+        const Epetra_MultiVector A_view (View, A, index.lbound(), numVecs);
+        info = mv_view.Update (1.0, A_view, 0.0, A_view, 0.0);
+      }
+      TEST_FOR_EXCEPTION(info != 0, EpetraMultiVecFailure, 
+			 "Belos::MultiVecTraits<double,Epetra_MultiVector>::"
+			 "SetBlock(): call to Epetra_MultiVector::Update() "
+			 "returned a nonzero flag INFO = " << info << ", for "
+			 "the specified inclusive column range [" 
+			 << index.lbound() << ", " << index.ubound() << "].");
+    }
+
+
     ///
     static void MvRandom( Epetra_MultiVector& mv )
     { TEST_FOR_EXCEPTION( mv.Random()!=0, EpetraMultiVecFailure, 
