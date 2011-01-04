@@ -60,7 +60,7 @@ public:
 
    /** Add a side set with a string name
      */
-   void addSideset(const std::string & name);
+   void addSideset(const std::string & name,const CellTopologyData * ctData);
 
    /** Add a solution field
      */ 

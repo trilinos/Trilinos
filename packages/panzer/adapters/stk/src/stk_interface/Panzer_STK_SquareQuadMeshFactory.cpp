@@ -117,6 +117,7 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
 {
    typedef shards::Quadrilateral<4> QuadTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
+   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseTopology(1,0);
 
    // build meta data
    //mesh.setDimension(2);
@@ -136,10 +137,10 @@ void SquareQuadMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK
    }
 
    // add sidesets 
-   mesh.addSideset("left");
-   mesh.addSideset("right");
-   mesh.addSideset("top");
-   mesh.addSideset("bottom");
+   mesh.addSideset("left",side_ctd);
+   mesh.addSideset("right",side_ctd);
+   mesh.addSideset("top",side_ctd);
+   mesh.addSideset("bottom",side_ctd);
 }
 
 void SquareQuadMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const

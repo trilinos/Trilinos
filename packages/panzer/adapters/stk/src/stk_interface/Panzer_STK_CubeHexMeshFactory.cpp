@@ -51,11 +51,11 @@ void CubeHexMeshFactory::completeMeshConstruction(STK_Interface & mesh,stk::Para
    // add node and element information
    buildElements(parallelMach,mesh);
 
-   // finish up the edges
+   // finish up the edges and faces
    mesh.buildSubcells();
 
    // now that edges are built, sidets can be added
-   // addSideSets(mesh);
+   addSideSets(mesh);
 }
 
 //! From ParameterListAcceptor
@@ -124,6 +124,7 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_In
 {
    typedef shards::Hexahedron<8> HexTopo;
    const CellTopologyData * ctd = shards::getCellTopologyData<HexTopo>();
+   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseTopology(2,0);
 
    // build meta data
    //mesh.setDimension(2);
@@ -141,12 +142,12 @@ void CubeHexMeshFactory::buildMetaData(stk::ParallelMachine parallelMach, STK_In
    }
 
    // add sidesets 
-   mesh.addSideset("left");
-   mesh.addSideset("right");
-   mesh.addSideset("top");
-   mesh.addSideset("bottom");
-   mesh.addSideset("front");
-   mesh.addSideset("back");
+   mesh.addSideset("left",side_ctd);
+   mesh.addSideset("right",side_ctd);
+   mesh.addSideset("top",side_ctd);
+   mesh.addSideset("bottom",side_ctd);
+   mesh.addSideset("front",side_ctd);
+   mesh.addSideset("back",side_ctd);
 }
 
 void CubeHexMeshFactory::buildElements(stk::ParallelMachine parallelMach,STK_Interface & mesh) const
@@ -208,7 +209,7 @@ void CubeHexMeshFactory::buildBlock(stk::ParallelMachine parallelMach,int xBlock
    for(int nx=myXElems_start;nx<myXElems_end;++nx) {
       for(int ny=myYElems_start;ny<myYElems_end;++ny) {
          for(int nz=myZElems_start;nz<myYElems_end;++nz) {
-            stk::mesh::EntityId gid = totalXElems*totalZElems*nz+totalXElems*ny+nx+1;
+            stk::mesh::EntityId gid = totalXElems*totalYElems*nz+totalXElems*ny+nx+1;
             std::vector<stk::mesh::EntityId> nodes(8);
             nodes[0] = nx+1+ny*(totalXElems+1) +nz*(totalYElems+1)*(totalXElems+1);
             nodes[1] = nodes[0]+1;              
@@ -278,53 +279,42 @@ void CubeHexMeshFactory::addSideSets(STK_Interface & mesh) const
 
    int totalXElems = nXElems_*xBlocks_;
    int totalYElems = nYElems_*yBlocks_;
+   int totalZElems = nZElems_*zBlocks_;
 
    // get all part vectors
    stk::mesh::Part * left = mesh.getSideset("left");
    stk::mesh::Part * right = mesh.getSideset("right");
    stk::mesh::Part * top = mesh.getSideset("top");
    stk::mesh::Part * bottom = mesh.getSideset("bottom");
+   stk::mesh::Part * front = mesh.getSideset("front");
+   stk::mesh::Part * back = mesh.getSideset("back");
 
    std::vector<stk::mesh::Entity*> localElmts;
    mesh.getMyElements(localElmts);
 
-   // loop over elements adding edges to sidesets
+   // gid = totalXElems*totalYElems*nz+totalXElems*ny+nx+1
+
+   // loop over elements adding sides to sidesets
    std::vector<stk::mesh::Entity*>::const_iterator itr;
    for(itr=localElmts.begin();itr!=localElmts.end();++itr) {
       stk::mesh::Entity * element = (*itr);
       stk::mesh::EntityId gid = element->identifier();      
-      stk::mesh::PairIterRelation relations = element->relations(stk::mesh::Edge);
+      stk::mesh::PairIterRelation relations = element->relations(mesh.getSideRank());
       
       // vertical boundaries
       if(gid % totalXElems==0) { 
-         stk::mesh::Entity * edge = getRelationByID(1,relations)->entity();
+         stk::mesh::Entity * side = getRelationByID(1,relations)->entity();
 
          // on the right
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,right);
+         if(side->owner_rank()==machRank_)
+            mesh.addEntityToSideset(*side,right);
       }
-      else if((gid-1) % totalXElems ==0) {
-         stk::mesh::Entity * edge = getRelationByID(3,relations)->entity();
+      else if((gid-1) % totalXElems == 0) {
+         stk::mesh::Entity * side = getRelationByID(3,relations)->entity();
 
          // on the left
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,left);
-      }
-
-      // horizontal boundaries
-      if(gid <= (std::size_t) totalXElems) {
-         stk::mesh::Entity * edge = getRelationByID(0,relations)->entity();
-
-         // on the bottom
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,bottom);
-      }
-      else if(gid > (std::size_t) totalXElems*totalYElems-totalXElems ) {
-         stk::mesh::Entity * edge = getRelationByID(2,relations)->entity();
-
-         // on the top
-         if(edge->owner_rank()==machRank_)
-            mesh.addEntityToSideset(*edge,top);
+         if(side->owner_rank()==machRank_)
+            mesh.addEntityToSideset(*side,left);
       }
    }
 

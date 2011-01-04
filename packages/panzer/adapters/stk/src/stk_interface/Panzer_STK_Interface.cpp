@@ -57,14 +57,14 @@ STK_Interface::STK_Interface(unsigned dim)
    initializeFromMetaData();
 }
 
-void STK_Interface::addSideset(const std::string & name)
+void STK_Interface::addSideset(const std::string & name,const CellTopologyData * ctData)
 {
    TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_ASSERT(dimension_!=0);
 
-   stk::mesh::Part * sideset = &metaData_->declare_part(name,getSideRank()); // need "getSideTopology"!
+   stk::mesh::Part * sideset = &metaData_->declare_part(name,getSideRank()); 
    sidesets_.insert(std::make_pair(name,sideset));
-   // stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Line<2> >()));
+   stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(ctData));
 }
 
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
@@ -110,10 +110,19 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 #ifdef HAVE_IOSS
    if(setupIO) {
       // setup Exodus file IO
+      /////////////////////////////////////////
+
+      // add element blocks
       {
-         // add element blocks
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr) 
+            stk::io::put_io_part_attribute(*itr->second);
+      }
+
+      // add side sets
+      {
+         std::map<std::string, stk::mesh::Part*>::iterator itr;
+         for(itr=sidesets_.begin();itr!=sidesets_.end();++itr) 
             stk::io::put_io_part_attribute(*itr->second);
       }
    
