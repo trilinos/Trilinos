@@ -15,6 +15,8 @@
 
 /*! \file Zoltan2_ObjectSource.hpp
     \brief The ObjectSource base class and derived classes.
+
+  Detailed description of ObjectSource.
 */
 
 /*
@@ -58,7 +60,7 @@ class Tpetra::MultiVector;
 namespace Zoltan2
 {
 
-/*! \class Zoltan2::ObjectSource
+/*! Zoltan2::ObjectSource
     \brief The adapter class for specific mesh, graph, hypergraph or matrix sources.
 
     The ObjectSource presents a uniform interface to the Zoltan methods for 
@@ -94,18 +96,21 @@ public:
   virtual bool has_matrix(){}
 
   /*! True if ObjectSource is stored in dense matrix format.
+
       The function using the ObjectSource may be able to use
       it more efficiently if it know how it is stored.
    */
   virtual bool has_dense_matrix(){}
 
   /*! True if ObjectSource is stored in compressed sparse row format.
+
       The function using the ObjectSource may be able to use
       it more efficiently if it know how it is stored.
    */
   virtual bool has_csr_matrix(){}
 
   /*! True if ObjectSource is stored in compressed sparse column format.
+
       The function using the ObjectSource may be able to use
       it more efficiently if it know how it is stored.
    */
@@ -136,22 +141,32 @@ public:
   virtual bool bipartite_graph(){}
 
   /*! Returns the global and local number of vertices.
-   *  Vertices may also be abstract objects known only by an ID.  We call them
-   *  "vertices" because the normal use case is geometric or a graph.
+
+      Vertices may also be abstract objects known only by an ID.  We call them
+      "vertices" because the normal use case is geometric or a graph.
+
+     \param global_count will contain the global number of vertices on return
+     \param global_count will contain the local number of vertices on return
    */
   virtual void number_of_vertices(GNO &global_count, LNO &local_count){}
 
   /*! Returns the applications's object global IDs.
-   *   TODO: we should be able to do partitioning without having global
-   *         IDs from the application when there's no connectivity.
-   *   The Zoltan methods shouldn't call this - they will work with GNOs.
-   *   But when creating or reading the Result object, they need the AppGIDs.
+
+       TODO: we should be able to do partitioning without having global
+             IDs from the application when there's no connectivity.
+       The Zoltan methods shouldn't call this - they will work with GNOs.
+       But when creating or reading the Result object, they need the AppGIDs.
+
+     \param gids will contain a pointer to the application's global IDs on return 
    */
-  virtual int caller_gid_list(AppGID *gids){}
+  virtual int caller_gid_list(AppGID * &gids){}
 
   /*! Returns the library's global numbering for the objects.
-   *   Info returned by other methods is in the order corresponding
-   *   to the order of the gnos in this list.
+
+       Info returned by other methods is in the order corresponding
+       to the order of the gnos in this list.
+
+     \param gnos will contain a pointer to the ObjectSource's global numbers on return
    */
   virtual int global_number_list(GNO *gnos){}
 
@@ -162,31 +177,31 @@ public:
   // TODO: add methods to get matrix and graph info.
 
   /*! Return the local number corresponding to the global number.
-   *
-   *  Local numbers are consecutive numbers beginning at 0 for each process.
-   *  Global numbers are consecutive across the application and begin at 0.
-   *
-   *  TODO - local/global/application ID management is likely to be the same across
-   *    all sources.  Maybe this should be done in the base class.
-   *
-   *  TODO - for efficiency, list versions of these calls.
+    
+      Local numbers are consecutive numbers beginning at 0 for each process.
+      Global numbers are consecutive across the application and begin at 0.
+    
+      TODO - local/global/application ID management is likely to be the same across
+        all sources.  Maybe this should be done in the base class.
+    
+      TODO - for efficiency, list versions of these calls.
    */
   virtual LNO gno_to_lno(GNO gno);
 
-  /*! Return the global number corresponding to the local number.
-   *
+  /*! Return the global number corresponding to the local number. */
+
   virtual GNO lno_to_gno(LNO lno);
 
-  /*! Return the application's GID corresponding to the global number.
-   *
+  /*! Return the application's GID corresponding to the global number. */
+   
   virtual AppGID &gno_to_appGid(GNO gno);
 
-  /*! Return the application's GID corresponding to the local number.
-   *
+  /*! Return the application's GID corresponding to the local number. */
+   
   virtual AppGID &lno_to_appGid(GNO gno);
 };
 
-/*! \class Zoltan2::ExodusFileSource
+/*! Zoltan2::ExodusFileSource
     \brief This class represents a mesh read in from an Exodus file.
 */
 
@@ -204,8 +219,9 @@ public:
   ExodusFileSource():file_name("unset"){}
 
   /*! Constructor 
-   *   TODO: A constructor and private variables
-   *         containing the parallel file info in Zoltan's PARIO_INFO
+  
+       TODO: A constructor and private variables
+             containing the parallel file info in Zoltan's PARIO_INFO
    */
   ExodusFileSource(std::string &fileName){file_name = string(fileName);}
 
@@ -244,12 +260,14 @@ public:
   bool bipartite_graph(){return false;}
 
   /*! Returns the global and local number of vertices.
+
    *  Vertices may also be abstract objects known only by an ID.  We call them
    *  "vertices" because the normal use case is geometric or a graph.
    */
   void number_of_vertices(GNO &global_count, LNO &local_count){}
 
   /*! Returns the applications's object global IDs.
+
    *   TODO: we should be able to do partitioning without having global
    *         IDs from the application when there's no connectivity.
    *   The Zoltan methods shouldn't call this - they will work with GNOs.
@@ -258,43 +276,43 @@ public:
   int caller_gid_list(AppGID *gids){}
 
   /*! Returns the library's global numbering for the objects.
-   *   Info returned by other methods is in the order corresponding
+
    *   to the order of the gnos in this list.
    */
   int global_number_list(GNO *gnos){}
 
-  /*! Returns the coordinates of the vertices.
-   */
+  /*! Returns the coordinates of the vertices. */
+
   int vertex_coordinates(Tpetra_MultiVector<Scalar, LNO, GNO> &coords){}
 
   // TODO: add methods to get matrix and graph info.
 
   /*! Return the local number corresponding to the global number.
-   *
-   *  Local numbers are consecutive numbers beginning at 0 for each process.
-   *  Global numbers are consecutive across the application and begin at 0.
-   *
-   *  TODO - local/global/application ID management is likely to be the same across
-   *    all sources.  Maybe this should be done in the base class.
-   *
-   *  TODO - for efficiency, there should be list/vector versions of these calls.
+    
+      Local numbers are consecutive numbers beginning at 0 for each process.
+      Global numbers are consecutive across the application and begin at 0.
+    
+      TODO - local/global/application ID management is likely to be the same across
+        all sources.  Maybe this should be done in the base class.
+    
+      TODO - for efficiency, there should be list/vector versions of these calls.
    */
   LNO gno_to_lno(GNO gno);
 
-  /*! Return the global number corresponding to the local number.
-   *
+  /*! Return the global number corresponding to the local number. */
+
   GNO lno_to_gno(LNO lno);
 
-  /*! Return the application's GID corresponding to the global number.
-   *
+  /*! Return the application's GID corresponding to the global number. */
+
   AppGID &gno_to_appGid(GNO gno);
 
-  /*! Return the application's GID corresponding to the local number.
-   *
+  /*! Return the application's GID corresponding to the local number. */
+
   AppGID &lno_to_appGid(GNO gno);
 };
 
-/*! \class Zoltan2::ExodusFileDualSource
+/*! Zoltan2::ExodusFileDualSource
     \brief This class represents a graph created from the mesh in an Exodus file.
 
    The mesh elements are the vertices and the edges represent shared faces.

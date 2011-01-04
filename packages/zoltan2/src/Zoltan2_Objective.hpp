@@ -13,7 +13,8 @@
 #ifndef _ZOLTAN2_OBJECTIVE_HPP_
 #define _ZOLTAN2_OBJECTIVE_HPP_
 
-/*! \file Zoltan2_Objective.hpp
+/*!
+    \file Zoltan2_Objective.hpp
     \brief The Objective base class and derived classes.
 
   The Objective is the problem that Zoltan2 has to solve.  It has an
@@ -32,9 +33,13 @@
 namespace Zoltan2
 {
 
-/*! \class Zoltan2::Objective
+class ObjectSource;
+class Result;
+
+/*! Zoltan2::Objective
     \brief Objective is the base class for the problem descriptions.
 
+  Detailed description of Objective.
 */
 
 template<class Scalar, class LNO , class GNO, class AppGID>
@@ -42,15 +47,13 @@ template<class Scalar, class LNO , class GNO, class AppGID>
 
 private:
 
-  ObjectSource object;         // TODO some of these are RCPs to objects created
-  Result result;               // by the user 
-  vector<Scalar> objWeights;
-  vector<Scalar> edgeWeights;
-  map<GNO, int> fixedVertices;    // vertex GNO -> part
+  // TODO some of these are RCPs to objects created elsewhere
 
-  // TODO: would the problem have parameters?  Not sure.
-  //    Certainly the method being called to solve the problem would have parameters 
-  //    Zoltan2::RCB(Objective &obj, Teuchos::ParameterList &params, Results &answer)
+  ObjectSource object;         /*!< The objects to be partitioned, colored, etc. */
+  Result in_result;            /*!< An optional starting solution. */
+  vector<Scalar> objWeights;   /*!< Optional weighting of objects. */
+  vector<Scalar> edgeWeights;  /*!< Optional weighting of edges. */
+  map<GNO, int> fixedVertices; /*!< Maybe this should be in a constraints object */
 
 public:
 
@@ -60,18 +63,46 @@ public:
   /*! Destructor */
   ~Objective(){}
 
-  /*! Copy Constructor */
-  Objective(const Objective &os){
+  /*! Copy Constructor 
+  
+    \param o is the initializer of this object.
+  */
+  Objective(const Objective &o){
   }
 
-  /*! Assignment operator */
-  Objective &operator=(const Objective &os){
+  /*! Assignment operator 
+
+    \param o is the right hand side of the copy operator.
+  */
+  Objective &operator=(const Objective &o){
   }
 
   // TODO virtual set/get problem components
 };
 
-// TODO - concrete objective classes
+/*! Zoltan2::PartitioningObjective
+    \brief A PartitioningObjective contains a partitioning problem.
+*/
+
+template<class Scalar, class LNO , class GNO, class AppGID>
+  class PartitioningObjective : public Objective<Scalar, LNO, GNO, AppGID> {
+};
+
+/*! Zoltan2::ColoringObjective
+    \brief A ColoringObjective contains a coloring problem.
+*/
+
+template<class Scalar, class LNO , class GNO, class AppGID>
+  class ColoringObjective : public Objective<Scalar, LNO, GNO, AppGID> {
+};
+
+/*! Zoltan2::OrderingObjective
+    \brief A OrderingObjective contains a matrix ordering problem.
+*/
+
+template<class Scalar, class LNO , class GNO, class AppGID>
+  class OrderingObjective : public Objective<Scalar, LNO, GNO, AppGID> {
+};
 
 } // namespace Zoltan2
 

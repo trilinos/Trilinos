@@ -19,7 +19,7 @@
 namespace Zoltan2
 {
 
-/*! \class Zoltan2::Result
+/*! Zoltan2::Result
     \brief The Result object contains a solution computed by Zoltan2.
 
     The Result contains the result of partitioning, ordering or coloring
