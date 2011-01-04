@@ -94,5 +94,9 @@ typedef MueLu::Graph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               
 typedef MueLu::Aggregates<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>               Aggregates;
 #endif
 
+#ifdef MUELU_GAUSSSEIDEL_SHORT
+typedef MueLu::GaussSeidel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>          GaussSeidel;
+#endif
+
 #endif
 

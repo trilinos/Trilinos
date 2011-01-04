@@ -11,6 +11,7 @@
 #include "MueLu_SaLevel.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
+#include "MueLu_GaussSeidel.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
@@ -64,7 +65,7 @@ int main(int argc, char *argv[]) {
   pl.set("Num Threads",numThreads);
 
   GO numGlobalElements = nx*ny;
-  if (nx*nx - (nx*ny/3)*3 != 0)
+  if (nx*ny - (nx*ny/3)*3 != 0)
     throw(std::logic_error("problem size must be divisible by 3"));
   if (matrixType == "Laplace3D")
     numGlobalElements *= nz;
@@ -107,7 +108,9 @@ int main(int argc, char *argv[]) {
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory() );
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-  RCP<SmootherFactory>    SmooFact = Teuchos::null;
+  RCP<SmootherPrototype>  smoother = rcp( new GaussSeidel() );
+  RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smoother) );
+//  RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(Teuchos::null,Teuchos::null) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   //H.FillHierarchy(Pfact,Rfact,Acfact);
