@@ -20,6 +20,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Bucket.hpp>
+
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
@@ -188,6 +189,8 @@ bool element_side_polarity( const Entity & elem ,
   return good ;
 }
 
+//----------------------------------------------------------------------
+
 int get_entity_subcell_id( const Entity & entity ,
                            const EntityRank subcell_rank,
                            const CellTopologyData * subcell_topology,
@@ -265,67 +268,62 @@ int get_entity_subcell_id( const Entity & entity ,
 
 //----------------------------------------------------------------------
 
-const CellTopologyData * get_elem_side_nodes( const Entity & elem,
-                          RelationIdentifier side_ordinal,
-                          EntityVector & side_nodes
-                        )
+const CellTopologyData * get_subcell_nodes(const Entity & entity ,
+                                           EntityRank subcell_rank ,
+                                           unsigned subcell_identifier ,
+                                           EntityVector & subcell_nodes,
+                                           bool use_reverse_polarity)
 {
-  side_nodes.clear();
+  subcell_nodes.clear();
 
-  const CellTopologyData * const elem_top = fem::get_cell_topology( elem ).getCellTopologyData();
-  if (elem_top == NULL) {
-    return NULL;
+  // get cell topology
+  const CellTopologyData* celltopology = fem::get_cell_topology(entity).getCellTopologyData();
+
+  //error checking
+  {
+    //no celltopology defined
+    if (celltopology == NULL) {
+      return NULL;
+    }
+
+    // valid ranks fall within the dimension of the cell topology
+    const bool bad_rank = subcell_rank >= celltopology->dimension;
+    ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
+
+    // subcell_identifier must be less than the subcell count
+    const bool bad_id = subcell_identifier >= celltopology->subcell_count[subcell_rank];
+    ThrowInvalidArgMsgIf( bad_id,   "subcell_id is >= subcell_count\n");
   }
 
-  const CellTopologyData * const side_top = elem_top->side[ side_ordinal ].topology;
-  if (side_top == NULL) {
-    return NULL;
+  // Get the cell topology of the subcell
+  const CellTopologyData * subcell_topology =
+    celltopology->subcell[subcell_rank][subcell_identifier].topology;
+
+  const int num_nodes_in_subcell = subcell_topology->node_count;
+
+  // For the subcell, get it's local nodes ids
+  const unsigned* subcell_node_local_ids =
+    celltopology->subcell[subcell_rank][subcell_identifier].node;
+
+  PairIterRelation node_relations = entity.relations(fem::NODE_RANK);
+
+  subcell_nodes.reserve(num_nodes_in_subcell);
+
+  // push the nodes onto the subcell_nodes vector in the correct
+  // order for the desired polarity
+  if (use_reverse_polarity) {
+    for (int i = num_nodes_in_subcell - 1; i >= 0; --i) {
+      subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]].entity() );
+    }
   }
-
-  const unsigned * const side_node_map = elem_top->side[ side_ordinal ].node ;
-
-  PairIterRelation relations = elem.relations( fem::NODE_RANK );
-
-  // Find positive polarity permutation that starts with lowest entity id:
-  const int num_permutations = side_top->permutation_count;
-  int lowest_entity_id_permutation = 0;
-  for (int p = 0; p < num_permutations; ++p) {
-
-    if (side_top->permutation[p].polarity ==
-        CELL_PERMUTATION_POLARITY_POSITIVE) {
-
-      const unsigned * const pot_lowest_perm_node =
-        side_top->permutation[p].node ;
-
-      const unsigned * const curr_lowest_perm_node =
-        side_top->permutation[lowest_entity_id_permutation].node;
-
-      unsigned first_node_index = 0;
-
-      unsigned current_lowest_entity_id =
-        relations[side_node_map[curr_lowest_perm_node[first_node_index]]].entity()->identifier();
-
-      unsigned potential_lowest_entity_id =
-        relations[side_node_map[pot_lowest_perm_node[first_node_index]]].entity()->identifier();
-
-      if ( potential_lowest_entity_id < current_lowest_entity_id ) {
-        lowest_entity_id_permutation = p;
-      }
+  else {
+    for (int i = 0; i < num_nodes_in_subcell; ++i ) {
+      subcell_nodes.push_back( node_relations[subcell_node_local_ids[i]].entity() );
     }
   }
 
-  const unsigned * const perm_node =
-    side_top->permutation[lowest_entity_id_permutation].node;
-
-  side_nodes.reserve(side_top->node_count);
-  for ( unsigned i = 0 ; i < side_top->node_count ; ++i ) {
-    Entity * node = relations[side_node_map[perm_node[i]]].entity();
-    side_nodes.push_back(node);
-  }
-
-  return side_top;
-
+  return subcell_topology;
 }
+
 }// namespace mesh
 }// namespace stk
-
