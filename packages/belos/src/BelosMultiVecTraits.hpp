@@ -46,6 +46,7 @@
     \brief Virtual base class which defines basic traits for the multivector type
 */
 
+#include "Teuchos_Range1D.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "BelosTypes.hpp"
