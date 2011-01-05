@@ -7,6 +7,11 @@
 #include <Cthulhu_CrsMatrix.hpp>
 #include <Cthulhu_EpetraCrsMatrix.hpp>
 #include <Cthulhu_CrsOperator.hpp>
+#include <Cthulhu_Vector.hpp>
+#include <Cthulhu_VectorFactory.hpp>
+#include <Cthulhu_MultiVectorFactory.hpp>
+#include <Cthulhu_EpetraVector.hpp>
+#include <Cthulhu_EpetraMultiVector.hpp>
 #include <Cthulhu.hpp>
 
 #include "MueLu_MatrixFactory.hpp"
@@ -17,6 +22,7 @@ namespace MueLu {
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
   using Cthulhu::EpetraCrsMatrix;
+  using Cthulhu::EpetraMultiVector;
 
 /*!
   @class Utils
@@ -36,7 +42,26 @@ namespace MueLu {
 
 
   public:
-    
+    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Cthulhu::MultiVector.
+    static RCP<const Epetra_MultiVector> MV2EpetraMV(RCP<MultiVector> const Vec) {
+      //rcp<const EpetraMultiVector> tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
+      RCP<const EpetraMultiVector > tmpVec;
+      tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
+      if (tmpVec == Teuchos::null)
+        throw(Exceptions::BadCast("Cast from Cthulhu::MultiVector to Cthulhu::EpetraMultiVector failed"));
+      RCP<const Epetra_MultiVector> epVec = tmpVec->getEpetra_MultiVector();
+      return epVec;
+    } //MV2EpetraMV
+
+    //! @brief Helper utility to pull out the underlying Epetra_MultiVector from an Cthulhu::MultiVector.
+    static RCP<Epetra_MultiVector> MV2NonConstEpetraMV(RCP<MultiVector> Vec) {
+      RCP<const EpetraMultiVector> tmpVec = rcp_dynamic_cast<EpetraMultiVector>(Vec);
+      if (tmpVec == Teuchos::null)
+        throw(Exceptions::BadCast("Cast from Cthulhu::MultiVector to Cthulhu::EpetraMultiVector failed"));
+      RCP<Epetra_MultiVector> epVec = tmpVec->getEpetra_MultiVector();
+      return epVec;
+    } //MV2EpetraMV
+
     //! @brief Helper utility to pull out the underlying Epetra_CrsMatrix from an Cthulhu::Operator.
    static RCP<const Epetra_CrsMatrix> Op2EpetraCrs(RCP<Operator> Op) {
       RCP<const Epetra_CrsMatrix> A;
