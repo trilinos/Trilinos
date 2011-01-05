@@ -130,6 +130,7 @@ class SmootherFactory : public SmootherFactoryBase<ScalarType,LocalOrdinal,Globa
       
       if (PreSmootherPrototype_ != Teuchos::null) {
         preSmoo = PreSmootherPrototype_->Copy();
+        //preSmoo = rcp( new SmootherPrototype(PreSmootherPrototype_) );
         //TODO if outputlevel high enough
         //TODO preSmoo.Print();
         preSmoo->Setup(level);

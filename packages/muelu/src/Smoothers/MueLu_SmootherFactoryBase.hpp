@@ -36,7 +36,8 @@ class SmootherFactoryBase : public Needs {
     //@{
 
     //! Build pre-smoother and/or post-smoother
-    virtual bool Build(Level &level) = 0;
+    //virtual bool Build(Level &level) = 0;
+    virtual void Build(RCP<Level> level, RCP<SmootherPrototype> preSmoo, RCP<SmootherPrototype> postSmoo) = 0;
 
     //@}
 
