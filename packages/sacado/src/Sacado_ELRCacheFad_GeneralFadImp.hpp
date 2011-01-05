@@ -99,12 +99,16 @@ template <typename T, typename Storage>
 template <typename S> 
 inline Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 GeneralFad(const Expr<S>& x) :
-  Storage(T(0.))
+  Storage(T(0.)),
+  update_val_(x.updateValue())
 {
+  x.cache();
+
   int sz = x.size();
 
   // Compute value
-  T xval = x.val();
+  if (update_val_)
+    this->val() = x.val();
 
   if (sz != this->size()) 
     this->resize(sz);
@@ -131,8 +135,6 @@ GeneralFad(const Expr<S>& x) :
     }
 
   }
-  
-  this->val() = xval;
 }
 
 template <typename T, typename Storage> 
@@ -170,6 +172,7 @@ operator=(const Sacado::ELRCacheFad::GeneralFad<T,Storage>& x)
 {
   // Copy value & dx_
   Storage::operator=(x);
+  update_val_ = x.update_val_;
   
   return *this;
 }
@@ -180,10 +183,9 @@ inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator=(const Expr<S>& x) 
 {
-  int sz = x.size();
+  x.cache();
 
-  // Compute value
-  T xval = x.val();
+  int sz = x.size();
 
   if (sz != this->size()) 
     this->resize(sz);
@@ -211,7 +213,9 @@ operator=(const Expr<S>& x)
 
   }
   
-  this->val() = xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() = x.val();
   
   return *this;
 }
@@ -221,7 +225,8 @@ inline  Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const T& v)
 {
-  this->val() += v;
+  if (update_val_)
+    this->val() += v;
 
   return *this;
 }
@@ -231,7 +236,8 @@ inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const T& v)
 {
-  this->val() -= v;
+  if (update_val_)
+    this->val() -= v;
 
   return *this;
 }
@@ -243,7 +249,8 @@ operator *= (const T& v)
 {
   int sz = this->size();
 
-  this->val() *= v;
+  if (update_val_)
+    this->val() *= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) *= v;
 
@@ -257,7 +264,8 @@ operator /= (const T& v)
 {
   int sz = this->size();
 
-  this->val() /= v;
+  if (update_val_)
+    this->val() /= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) /= v;
 
@@ -269,7 +277,8 @@ inline  Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  this->val() += v;
+  if (update_val_)
+    this->val() += v;
 
   return *this;
 }
@@ -279,7 +288,8 @@ inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
-  this->val() -= v;
+  if (update_val_)
+    this->val() -= v;
 
   return *this;
 }
@@ -291,7 +301,8 @@ operator *= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
   int sz = this->size();
 
-  this->val() *= v;
+  if (update_val_)
+    this->val() *= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) *= v;
 
@@ -305,7 +316,8 @@ operator /= (const typename Sacado::dummy<value_type,scalar_type>::type& v)
 {
   int sz = this->size();
 
-  this->val() /= v;
+  if (update_val_)
+    this->val() /= v;
   for (int i=0; i<sz; ++i)
     this->fastAccessDx(i) /= v;
 
@@ -318,15 +330,14 @@ inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 {
+  x.cache();
+
   int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
-
-  // Compute value
-  T xval = x.val();
 
   // Number of arguments
   const int N = Expr<S>::num_args;
@@ -374,7 +385,9 @@ operator += (const Sacado::ELRCacheFad::Expr<S>& x)
 
   }
   
-  this->val() += xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() += x.val();
 
   return *this;
 }
@@ -385,15 +398,14 @@ inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
+  x.cache();
+
   int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
 #endif
-
-  // Compute value
-  T xval = x.val();
 
   // Number of arguments
   const int N = Expr<S>::num_args;
@@ -441,7 +453,9 @@ operator -= (const Sacado::ELRCacheFad::Expr<S>& x)
 
   }
 
-  this->val() -= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    this->val() -= x.val();
 
   return *this;
 }
@@ -452,7 +466,10 @@ inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
+  x.cache();
+
   int xsz = x.size(), sz = this->size();
+  update_val_ = x.updateValue();
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -515,7 +532,8 @@ operator *= (const Sacado::ELRCacheFad::Expr<S>& x)
 
   }
 
-  this->val() *= xval;
+  if (update_val_)
+    this->val() *= xval;
 
   return *this;
 }
@@ -526,7 +544,10 @@ inline Sacado::ELRCacheFad::GeneralFad<T,Storage>&
 Sacado::ELRCacheFad::GeneralFad<T,Storage>::
 operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
 {
+  x.cache();
+
   int xsz = x.size(), sz = this->size();
+  update_val_ = x.updateValue();
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -591,7 +612,8 @@ operator /= (const Sacado::ELRCacheFad::Expr<S>& x)
 
   }
 
-  this->val() /= xval;
+  if (update_val_)
+    this->val() /= xval;
 
   return *this;
 }

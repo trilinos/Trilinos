@@ -57,7 +57,7 @@
 
 template <typename T, int Num> 
 inline Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >::
-Expr(const int sz, const T & x) : val_(x)
+Expr(const int sz, const T & x) : val_(x), update_val_(true)
 {
 #ifdef SACADO_DEBUG
   if (sz != Num)
@@ -69,7 +69,7 @@ Expr(const int sz, const T & x) : val_(x)
 
 template <typename T, int Num> 
 inline Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >::
-Expr(const int sz, const int i, const T & x) : val_(x) 
+Expr(const int sz, const int i, const T & x) : val_(x), update_val_(true)
 {
 #ifdef SACADO_DEBUG
   if (sz != Num)
@@ -85,7 +85,7 @@ Expr(const int sz, const int i, const T & x) : val_(x)
 template <typename T, int Num> 
 template <typename S> 
 inline Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >::
-Expr(const Expr<S>& x) : val_(x.val())
+Expr(const Expr<S>& x) : update_val_(x.updateValue())
 {
 #ifdef SACADO_DEBUG
   if (x.size() != Num)
@@ -111,6 +111,9 @@ Expr(const Expr<S>& x) : val_(x.val())
     dx_[i] = op.t;
 
   }
+
+  if (update_val_)
+    this->val() = x.val();
 }
 
 
@@ -162,6 +165,8 @@ operator=(const Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >& x)
   //ss_array<T>::copy(x.dx_, dx_, Num);
   for (int i=0; i<Num; i++)
     dx_[i] = x.dx_[i];
+
+  update_val_ = x.update_val_;
   
   return *this;
 }
@@ -197,7 +202,9 @@ operator=(const Expr<S>& x)
   }
   
   // Compute value
-  val_ = x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ = x.val();
   
   return *this;
 }
@@ -207,7 +214,8 @@ inline  Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >&
 Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >::
 operator += (const T& v)
 {
-  val_ += v;
+  if (update_val_)
+    val_ += v;
 
   return *this;
 }
@@ -217,7 +225,8 @@ inline Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >&
 Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >::
 operator -= (const T& v)
 {
-  val_ -= v;
+  if (update_val_)
+    val_ -= v;
 
   return *this;
 }
@@ -227,7 +236,8 @@ inline Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >&
 Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >::
 operator *= (const T& v)
 {
-  val_ *= v;
+  if (update_val_)
+    val_ *= v;
 
   for (int i=0; i<Num; ++i)
     dx_[i] *= v;
@@ -240,7 +250,8 @@ inline Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >&
 Sacado::ELRFad::Expr< Sacado::ELRFad::SFadExprTag<T,Num> >::
 operator /= (const T& v)
 {
-  val_ /= v;
+  if (update_val_)
+    val_ /= v;
 
   for (int i=0; i<Num; ++i)
     dx_[i] /= v;
@@ -279,7 +290,9 @@ operator += (const Sacado::ELRFad::Expr<S>& x)
   }
  
   // Compute value
-  val_ += x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ += x.val();
 
   return *this;
 }
@@ -315,7 +328,9 @@ operator -= (const Sacado::ELRFad::Expr<S>& x)
   }
 
   // Compute value
-  val_ -= x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ -= x.val();
 
   return *this;
 }
@@ -353,7 +368,9 @@ operator *= (const Sacado::ELRFad::Expr<S>& x)
   }
  
   // Compute value
-  val_ *= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ *= xval;
 
   return *this;
 }
@@ -393,7 +410,9 @@ operator /= (const Sacado::ELRFad::Expr<S>& x)
   }
 
   // Compute value
-  val_ /= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ /= xval;
 
   return *this;
 }

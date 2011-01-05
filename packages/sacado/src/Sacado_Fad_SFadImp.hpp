@@ -55,7 +55,7 @@
 
 template <typename T, int Num> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-Expr(const int sz, const T & x) : val_(x)
+Expr(const int sz, const T & x) : val_(x), update_val_(true)
 {
 #ifdef SACADO_DEBUG
   if (sz != Num)
@@ -67,7 +67,7 @@ Expr(const int sz, const T & x) : val_(x)
 
 template <typename T, int Num> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-Expr(const int sz, const int i, const T & x) : val_(x) 
+Expr(const int sz, const int i, const T & x) : val_(x), update_val_(true)
 {
 #ifdef SACADO_DEBUG
   if (sz != Num)
@@ -82,7 +82,8 @@ Expr(const int sz, const int i, const T & x) : val_(x)
 
 template <typename T, int Num> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-Expr(const Expr< Sacado::Fad::SFadExprTag<T,Num> >& x) : val_(x.val())
+Expr(const Expr< Sacado::Fad::SFadExprTag<T,Num> >& x) : 
+  val_(x.val()), update_val_(x.update_val_)
 { 
   for (int i=0; i<Num; i++)
     dx_[i] = x.dx_[i];
@@ -91,7 +92,7 @@ Expr(const Expr< Sacado::Fad::SFadExprTag<T,Num> >& x) : val_(x.val())
 template <typename T, int Num> 
 template <typename S> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-Expr(const Expr<S>& x) : val_(x.val())
+Expr(const Expr<S>& x) : update_val_(x.updateValue())
 {
 #ifdef SACADO_DEBUG
   if (x.size() != Num)
@@ -100,6 +101,9 @@ Expr(const Expr<S>& x) : val_(x.val())
 
   for(int i=0; i<Num; ++i) 
     dx_[i] = x.fastAccessDx(i);
+
+  if (update_val_)
+    this->val() = x.val();
 }
 
 
@@ -150,6 +154,8 @@ operator=(const Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >& x)
   // Copy dx_
   for (int i=0; i<Num; i++)
     dx_[i] = x.dx_[i];
+
+  update_val_ = x.update_val_;
   
   return *this;
 }
@@ -168,7 +174,9 @@ operator=(const Expr<S>& x)
   for(int i=0; i<Num; ++i)
     dx_[i] = x.fastAccessDx(i);
   
-  val_ = x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ = x.val();
   
   return *this;
 }
@@ -178,7 +186,8 @@ inline  Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >&
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 operator += (const T& v)
 {
-  val_ += v;
+  if (update_val_)
+    val_ += v;
 
   return *this;
 }
@@ -188,7 +197,8 @@ inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >&
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 operator -= (const T& v)
 {
-  val_ -= v;
+  if (update_val_)
+    val_ -= v;
 
   return *this;
 }
@@ -198,7 +208,8 @@ inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >&
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 operator *= (const T& v)
 {
-  val_ *= v;
+  if (update_val_)
+    val_ *= v;
 
   for (int i=0; i<Num; ++i)
     dx_[i] *= v;
@@ -211,7 +222,8 @@ inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >&
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 operator /= (const T& v)
 {
-  val_ /= v;
+  if (update_val_)
+    val_ /= v;
 
   for (int i=0; i<Num; ++i)
     dx_[i] /= v;
@@ -233,7 +245,9 @@ operator += (const Sacado::Fad::Expr<S>& x)
   for (int i=0; i<Num; ++i)
     dx_[i] += x.fastAccessDx(i);
  
-  val_ += x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ += x.val();
 
   return *this;
 }
@@ -252,7 +266,9 @@ operator -= (const Sacado::Fad::Expr<S>& x)
   for(int i=0; i<Num; ++i)
     dx_[i] -= x.fastAccessDx(i);
 
-  val_ -= x.val();
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ -= x.val();
 
   return *this;
 }
@@ -273,7 +289,9 @@ operator *= (const Sacado::Fad::Expr<S>& x)
   for(int i=0; i<Num; ++i)
     dx_[i] = val_ * x.fastAccessDx(i) + dx_[i] * xval;
  
-  val_ *= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ *= xval;
 
   return *this;
 }
@@ -294,7 +312,9 @@ operator /= (const Sacado::Fad::Expr<S>& x)
   for(int i=0; i<Num; ++i)
     dx_[i] = ( dx_[i]*xval - val_*x.fastAccessDx(i) )/ (xval*xval);
 
-  val_ /= xval;
+  update_val_ = x.updateValue();
+  if (update_val_)
+    val_ /= xval;
 
   return *this;
 }
