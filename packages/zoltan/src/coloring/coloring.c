@@ -181,8 +181,9 @@ int Zoltan_Color(
   ZOLTAN_ID_PTR my_global_ids= NULL;  /* gids local to this proc */
   struct Zoltan_DD_Struct *dd_color;  /* DDirectory for colors */
 
+  #define _DEBUG_TIMES  
 #ifdef _DEBUG_TIMES  
-  double times[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
+  double times[6]={0.,0.,0.,0.,0.,0.}, rtimes[6]; /* Used for timing measurements */
   double gtimes[6]={0.,0.,0.,0.,0.,0.}; /* Used for timing measurements */
   char *timenames[6]= {"", "setup", "graph build", "renumber", "color", "clean up"};
 #endif
@@ -397,12 +398,15 @@ int Zoltan_Color(
 #ifdef _DEBUG_TIMES    
   MPI_Barrier(zz->Communicator);
   times[5] = Zoltan_Time(zz->Timer);
-  MPI_Reduce(times, gtimes, 6, MPI_DOUBLE, MPI_MAX, 0, zz->Communicator);
+  rtimes[0] = times[5]-times[0];
+  for (i=1; i<6; ++i) 
+      rtimes[i] = times[i]-times[i-1]; 
+  MPI_Reduce(rtimes, gtimes, 6, MPI_DOUBLE, MPI_MAX, 0, zz->Communicator);
   if (!zz->Proc) {
       int i;
       for (i=1; i<6; ++i)
-          printf("Zoltan_Color %-13s in Proc-0: %8.2lf  Max: %8.2lf\n", timenames[i], times[i]-times[i-1], gtimes[i]-gtimes[i-1]);
-      printf("Zoltan_Color Total Time in Proc-0: %.2lf    Max: %.2lf\n", times[5]-times[0], gtimes[5]-times[0]);
+          printf("Zoltan_Color %-13s in Proc-0: %8.2lf  Max: %8.2lf\n", timenames[i], times[i]-times[i-1], gtimes[i]);
+      printf("Zoltan_Color %-13s in Proc-0: %8.2lf  Max: %8.2lf\n", "Total Time", times[5]-times[0], gtimes[0]);
   }
 #endif
  End:
