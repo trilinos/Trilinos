@@ -207,6 +207,27 @@ public:
     return  matrixData_->isFillComplete();
   }
 
+  //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
+  /*!
+    \param LocalRow - (In) Local row number for which indices are desired.
+    \param Indices - (Out) Local column indices corresponding to values.
+    \param Values - (Out) Matrix values.
+    \param NumIndices - (Out) Number of indices.
+    
+    Note: A std::runtime_error exception is thrown if either \c Indices or \c Values is not large enough to hold the data associated
+    with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is 
+    returned as OrdinalTraits<size_t>::invalid().
+    
+    \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
+  */
+    virtual void getLocalRowCopy(LocalOrdinal LocalRow, 
+                                 const ArrayView<LocalOrdinal> &Indices, 
+                                 const ArrayView<ScalarType> &Values,
+                                 size_t &NumEntries
+                                 ) const {
+      matrixData_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries);
+    }
+  
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow - (In) Global row number for which indices are desired.
@@ -233,6 +254,13 @@ public:
   */
   inline void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const ScalarType> &values) const {
      matrixData_->getLocalRowView(LocalRow, indices, values);
+  }
+
+  //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+  /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
+    the zero and non-zero diagonals owned by this node. */
+  inline void getLocalDiagCopy(Vector<ScalarType,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
+    matrixData_->getLocalDiagCopy(diag);
   }
 
   //@}

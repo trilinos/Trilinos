@@ -10,10 +10,10 @@
 //TODO #include "Cthulhu_DistObject.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Cthulhu_CrsGraph.hpp"
-//#include "Cthulhu_Vector.hpp"
 //TODO ??? #include "Cthulhu_CrsMatrixMultiplyOp_decl.hpp"
 
 #include "Cthulhu_Map.hpp"
+#include "Cthulhu_Vector.hpp"
 #include "Cthulhu_MultiVector.hpp"
 
 //#include "Tpetra_Map.hpp" //TODO TMP
@@ -364,7 +364,6 @@ namespace Cthulhu {
                                   ) const =0;
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
     /*!
       \param LocalRow - (In) Local row number for which indices are desired.
@@ -383,7 +382,6 @@ namespace Cthulhu {
                                  const ArrayView<Scalar> &Values,
                                  size_t &NumEntries
                                  ) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     /*!
@@ -409,12 +407,10 @@ namespace Cthulhu {
     */
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const =0;
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //       //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
-    //       /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
-    //           the zero and non-zero diagonals owned by this node. */
-           virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const =0;
-#endif // CTHULHU_NOT_IMPLEMENTED
+    //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+    /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
+      the zero and non-zero diagonals owned by this node. */
+    virtual void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const =0;
 
     //@}
 

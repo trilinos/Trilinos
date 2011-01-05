@@ -13,6 +13,7 @@
 
 #include "Cthulhu_TpetraMap.hpp"
 #include "Cthulhu_TpetraMultiVector.hpp"
+#include "Cthulhu_TpetraVector.hpp"
 #include "Cthulhu_TpetraCrsGraph.hpp"
 
 #include "Cthulhu_Exceptions.hpp"
@@ -52,6 +53,7 @@ namespace Cthulhu {
               // The following typedef are used by the CTHULHU_DYNAMIC_CAST() macro.
               typedef TpetraMap<LocalOrdinal, GlobalOrdinal, Node> TpetraMap;
               typedef TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraMultiVector;
+              typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVector;
 
   public:
     //! @name Constructor/Destructor Methods
@@ -429,12 +431,16 @@ namespace Cthulhu {
      */
      inline void getLocalRowView(LocalOrdinal LocalRow, ArrayView<const LocalOrdinal> &indices, ArrayView<const Scalar> &values) const { CTHULHU_DEBUG_ME; mtx_->getLocalRowView(LocalRow, indices, values); }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
      //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
      /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
        the zero and non-zero diagonals owned by this node. */
-    inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
-#endif // CTHULHU_NOT_IMPLEMENTED
+    inline void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const { 
+      CTHULHU_DEBUG_ME; 
+      
+      CTHULHU_DYNAMIC_CAST(TpetraVector, diag, tDiag, "Cthulhu::TpetraCrsMatrix.getLocalDiagCopy() only accept Cthulhu::TpetraVector as input arguments.");
+      mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector()); 
+    }
+    
      //@}
 
      //! @name Advanced Matrix-vector multiplication and solve methods

@@ -17,6 +17,7 @@
 
 #include "Cthulhu_EpetraMap.hpp"
 #include "Cthulhu_EpetraMultiVector.hpp"
+#include "Cthulhu_EpetraVector.hpp"
 #include "Cthulhu_Trans.hpp"
 
 #include "Cthulhu_Debug.hpp"
@@ -435,7 +436,6 @@ namespace Cthulhu {
                                  ) const { CTHULHU_DEBUG_ME; mtx_->getGlobalRowCopy(GlobalRow, Indices, Values, NumEntries); }
 #endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
 
-#ifdef CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
     /*!
       \param LocalRow - (In) Local row number for which indices are desired.
@@ -449,12 +449,18 @@ namespace Cthulhu {
 
       \pre <tt>isLocallyIndexed()==true</tt> or <tt>hasColMap() == true</tt>
     */
+    //TODO: throw same exception as Tpetra
     inline void getLocalRowCopy(int LocalRow, 
                                 const ArrayView<int> &Indices, 
                                 const ArrayView<double> &Values,
                                 size_t &NumEntries
-                                ) const { CTHULHU_DEBUG_ME; mtx_->getLocalRowCopy(LocalRow, Indices, Values, NumEntries); }
-#endif // CTHULHU_NOT_IMPLEMENTED_FOR_EPETRA
+                                ) const { 
+      CTHULHU_DEBUG_ME; 
+      
+      int numEntries=-1;
+      CTHULHU_ERR_CHECK(mtx_->ExtractMyRowCopy(LocalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
+      NumEntries = numEntries;
+    }
 
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     /*!
@@ -504,12 +510,16 @@ namespace Cthulhu {
       values  = ArrayView<const double>(eValues, numEntries);
     }
 
-#ifdef CTHULHU_NOT_IMPLEMENTED
-    //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
+    //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
     /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the 
       the zero and non-zero diagonals owned by this node. */
-    inline void getLocalDiagCopy(Vector<double,int,int> &diag) const { CTHULHU_DEBUG_ME; mtx_->getLocalDiagCopy(diag); }
-#endif // CTHULHU_NOT_IMPLEMENTED
+    inline void getLocalDiagCopy(Vector<double,int,int> &diag) const { 
+      CTHULHU_DEBUG_ME; 
+      
+      CTHULHU_DYNAMIC_CAST(EpetraVector, diag, eDiag, "Cthulhu::EpetraCrsMatrix.getLocalDiagCopy() only accept Cthulhu::EpetraVector as input arguments.");
+      mtx_->ExtractDiagonalCopy(*eDiag.getEpetra_Vector()); 
+    }
+
     //@}
 
     //! @name Advanced Matrix-vector multiplication and solve methods
