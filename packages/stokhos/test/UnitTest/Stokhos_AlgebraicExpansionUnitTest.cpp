@@ -75,8 +75,6 @@ namespace AlgebraicExpansionUnitTest {
 
       // Triple product tensor
       Cijk = basis->computeTripleProductTensor(basis->size());
-
-      // Triple product tensor (linear)
       Cijk_linear = basis->computeTripleProductTensor(basis->dimension()+1);
       
       // Algebraic expansion
