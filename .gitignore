@@ -45,3 +45,11 @@ packages/epetra/src/new_Epetra_CrsGraph.cpp
 packages/jpetra.tar.gz
 packages/kokkos/doc/.DS_Store
 CHECKINS
+  XPETRA_MPI_THREADED/
+  ALL_OMP_GCC/
+  XPETRA_THREADED_GCC/
+  XPETRA_THREADED/
+  XPETRA_MPI_THREADED/
+  ALL_OMP_GCC/
+  XPETRA_THREADED_GCC/
+  XPETRA_THREADED/

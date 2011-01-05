@@ -11,6 +11,8 @@ IF(CMAKE_SIZEOF_VOID_P GREATER 4)
   SET(EPETRA_ADDRESS64BIT ON)
 ENDIF()
 SET(Epetra_HAVE_OMP ${Trilinos_ENABLE_OpenMP})
+# This is the preferred macro to key on, but am keeping the old one for backward compatibility
+SET(EPETRA_HAVE_OMP ${Trilinos_ENABLE_OpenMP})
 
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 

@@ -1364,8 +1364,8 @@ int Epetra_CrsGraph::OptimizeStorage() {
     int ** indices = CrsGraphData_->Indices_;
 		
     if (!(StaticProfile())) {
-#ifdef Epetra_HAVE_OMP
-#pragma omp parallel for default(none) shared(indexOffset,all_indices,indices)
+#ifdef EPETRA_HAVE_OMP
+#pragma omp parallel for default(none) shared(curNumIndices,indexOffset,all_indices,indices)
 #endif   
       for(int i = 0; i < numMyBlockRows; i++) {
 	curNumIndices = indexOffset[i+1] - indexOffset[i];
@@ -1400,7 +1400,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
       if(errorcode != 0)  throw ReportError("Error with All_Indices_ allocation.", -99);
       int* all_indices_values = CrsGraphData_->All_Indices_.Values();
       int* indices_values = CrsGraphData_->Indices_[0];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETREPETRA_OMP
 #pragma omp parallel for default(none) shared(all_indices_values,indices_values)
 #endif   
       for(int ii=0; ii<numMyNonzeros; ++ii) {

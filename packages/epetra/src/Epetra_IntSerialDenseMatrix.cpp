@@ -170,7 +170,7 @@ int Epetra_IntSerialDenseMatrix::Shape(int NumRows, int NumCols) {
 	const int newsize = LDA_ * N_;
 	if(newsize > 0) {
 		A_ = new int[newsize];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for
 #endif
 		for(int k = 0; k < newsize; k++)

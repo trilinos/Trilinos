@@ -291,7 +291,7 @@ int Epetra_MultiVector::DoCopy(void)
       double * to = Values_+i*Stride_;
       Pointers_[i] = to;
       const int myLength = MyLength_;
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(to,from)
 #endif
       for (int j=0; j<myLength; j++) to[j] = from[j];
@@ -453,7 +453,7 @@ int Epetra_MultiVector::Random() {
    const int myLength = MyLength_;
 	for(int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
 		for(int j = 0; j < myLength; j++)
@@ -542,7 +542,7 @@ int Epetra_MultiVector::PutScalar(double ScalarConstant) {
   const int myLength = MyLength_;
   for (int i = 0; i < NumVectors_; i++) {
     double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarConstant)
 #endif
     for (int j=0; j<myLength; j++) to[j] = ScalarConstant;
@@ -1013,7 +1013,7 @@ int Epetra_MultiVector::Dot(const Epetra_MultiVector& A, double *Result) const {
     
   double **A_Pointers = A.Pointers();
 
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
   for (int i=0; i < NumVectors_; i++) 
     {
       const double * const from = Pointers_[i];
@@ -1050,7 +1050,7 @@ int Epetra_MultiVector::Abs(const Epetra_MultiVector& A) {
   for (int i=0; i < NumVectors_; i++) {
     double * const to = Pointers_[i];
     const double * const from = A_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
     for (int j=0; j < myLength; j++) to[j] = std::abs(from[j]);
@@ -1064,7 +1064,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
   // this[i][j] = 1.0/(A[i][j])
 
   int ierr = 0;
-#ifndef Epetra_HAVE_OMP
+#ifndef EPETRA_HAVE_OMP
   int localierr = 0;
 #endif
   const int myLength = MyLength_;
@@ -1076,7 +1076,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
   for (int i=0; i < NumVectors_; i++) {
     double * const to = Pointers_[i];
     const double * const from = A_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel default(none) shared(ierr)
 {
     int localierr = 0;
@@ -1093,14 +1093,14 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
       else
         to[j] = 1.0/value;
     }
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp critical 
 #endif
 {
    if (localierr==1) ierr = 1;
    else if (localierr==2 && ierr!=1) ierr = 2;
 }
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 }
 #endif
   }
@@ -1114,7 +1114,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
   
 
   const int myLength = MyLength_;
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
     for (int i = 0; i < NumVectors_; i++) {
       double * const to = Pointers_[i];
 #pragma omp parallel for default(none) shared(ScalarValue)
@@ -1144,7 +1144,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
     for (int i = 0; i < NumVectors_; i++) {
       double * const to = Pointers_[i];
       const double * const from = A_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
       for (int j = 0; j < myLength; j++) to[j] = ScalarA * from[j];
@@ -1171,7 +1171,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
 	for (int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
           const double * const from = A_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
 	  for (int j = 0; j < myLength; j++) to[j] = ScalarA * from[j];
@@ -1183,7 +1183,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
 	for (int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
           const double * const from = A_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
 	  for (int j = 0; j < myLength; j++) to[j] = to[j] + ScalarA * from[j];
@@ -1195,7 +1195,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
 	for (int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
           const double * const from = A_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarThis)
 #endif
 	  for (int j = 0; j < myLength; j++) to[j] = ScalarThis * to[j] + from[j];
@@ -1207,7 +1207,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
 	for (int i = 0; i < NumVectors_; i++) {
           double * const to = Pointers_[i];
           const double * const from = A_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarThis)
 #endif
 	  for (int j = 0; j < myLength; j++) to[j] = ScalarThis * to[j] +
@@ -1251,7 +1251,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarB)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] =           fromA[j] + 
@@ -1265,7 +1265,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] = ScalarA * fromA[j] +
@@ -1279,7 +1279,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarB)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] = ScalarA * fromA[j] + 
@@ -1296,7 +1296,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarB)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] +=           fromA[j] + 
@@ -1310,7 +1310,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] += ScalarA * fromA[j] +
@@ -1324,7 +1324,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarB)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] += ScalarA * fromA[j] + 
@@ -1341,7 +1341,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarB,ScalarThis)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
@@ -1356,7 +1356,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarThis)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
@@ -1371,7 +1371,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
               double * const to = Pointers_[i];
               const double * const fromA = A_Pointers[i];
               const double * const fromB = B_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarA,ScalarB,ScalarThis)
 #endif
 	      for (int j = 0; j < myLength; j++) to[j] =  ScalarThis *    to[j] +
@@ -1395,7 +1395,7 @@ int  Epetra_MultiVector::Norm1 (double* Result) const {
 
   const int myLength = MyLength_;
   UpdateDoubleTemp();
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
   for (int i=0; i < NumVectors_; i++) 
     {
       const double * const from = Pointers_[i];
@@ -1440,7 +1440,7 @@ int  Epetra_MultiVector::Norm2 (double* Result) const {
     {
       const double * const from = Pointers_[i];
       double sum = 0.0;
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for reduction (+:sum) default(none)
 #endif
       for (int j=0; j < myLength; j++) sum += from[j] * from[j];
@@ -1473,7 +1473,7 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
       double normval = 0.0;
       const double * const from = Pointers_[i];
       if (myLength>0) normval = from[0];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel default(none) shared(normval)
 {
       double localnormval = 0.0;
@@ -1526,7 +1526,7 @@ int  Epetra_MultiVector::NormWeighted (const Epetra_MultiVector& Weights, double
       if (!OneW) W = W_Pointers[i]; // If Weights has the same number of vectors as this, use each weight vector
       double sum = 0.0;
       const double * const from = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for reduction (+:sum) default(none) shared(W)
 #endif
       for (int j=0; j < myLength; j++) {
@@ -1566,7 +1566,7 @@ int  Epetra_MultiVector::MinValue (double* Result) const {
       const double * const from = Pointers_[i];
       double MinVal = Epetra_MaxDouble;
       if (myLength>0) MinVal = from[0];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel default(none) shared(MinVal)
 {
       double localMinVal = MinVal;
@@ -1679,7 +1679,7 @@ int  Epetra_MultiVector::MaxValue (double* Result) const {
       const double * const from = Pointers_[i];
       double MaxVal = -Epetra_MaxDouble;
       if (myLength>0) MaxVal = from[0];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel default(none) shared(MaxVal)
 {
       double localMaxVal = MaxVal;
@@ -1795,7 +1795,7 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
     {
       double sum = 0.0;
       const double * const from = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for reduction (+:sum) default(none)
 #endif
       for (int j=0; j < myLength; j++) sum += from[j];
@@ -1995,7 +1995,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2010,7 +2010,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2027,7 +2027,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2041,7 +2041,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2058,7 +2058,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarThis)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2074,7 +2074,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarThis,ScalarAB)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2118,7 +2118,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2133,7 +2133,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2150,7 +2150,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2165,7 +2165,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2182,7 +2182,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarThis)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2197,7 +2197,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	    const double * const Aptr = A_Pointers[i*IncA];
             const double * const Bptr = B_Pointers[i];
             double * const to = Pointers_[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none) shared(ScalarAB,ScalarThis)
 #endif
 	    for (int j = 0; j < myLength; j++) {
@@ -2269,7 +2269,7 @@ void Epetra_MultiVector::Assign(const Epetra_MultiVector& A) {
   for (int i = 0; i< NumVectors_; i++) {
       double * const to = Pointers_[i];
       const double * const from = A_Pointers[i];
-#ifdef Epetra_HAVE_OMP
+#ifdef EPETRA_HAVE_OMP
 #pragma omp parallel for default(none)
 #endif
       for (int j=0; j<myLength; j++) to[j] = from[j];
