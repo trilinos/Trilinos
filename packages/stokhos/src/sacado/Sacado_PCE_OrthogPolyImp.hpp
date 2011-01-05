@@ -27,8 +27,8 @@
 // @HEADER
 
 #include "Sacado_DynamicArrayTraits.hpp"
-#include "Stokhos_ConstantOrthogPolyExpansion.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Stokhos_ConstantOrthogPolyExpansion.hpp"
 
 namespace Sacado {
 namespace PCE {
@@ -36,21 +36,17 @@ namespace PCE {
 template <typename T, typename Storage> 
 OrthogPoly<T,Storage>::
 OrthogPoly() :
-  expansion_(),
+  expansion_(const_expansion_),
   th(new Stokhos::OrthogPolyApprox<int,value_type,Storage>)
-{
-  expansion_ = 
-    Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
+{ 
 }
 
 template <typename T, typename Storage> 
 OrthogPoly<T,Storage>::
 OrthogPoly(const typename OrthogPoly<T,Storage>::value_type& x) :
-  expansion_(),
+  expansion_(const_expansion_),
   th(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(Teuchos::null, 1, &x))
 {
-  expansion_ = 
-    Teuchos::rcp(new Stokhos::ConstantOrthogPolyExpansion<int,T>);
 }
 
 template <typename T, typename Storage> 

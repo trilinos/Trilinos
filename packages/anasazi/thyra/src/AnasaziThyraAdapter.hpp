@@ -61,6 +61,8 @@ namespace Anasazi {
   template<class ScalarType>
   class MultiVecTraits< ScalarType, Thyra::MultiVectorBase<ScalarType> >
   {
+  private:
+    typedef Thyra::MultiVectorBase<ScalarType> TMVB;
   public:
 
     /** \name Creation methods */
@@ -107,6 +109,20 @@ namespace Anasazi {
       return cc;
     }
 
+    static Teuchos::RCP<TMVB>
+    CloneCopy (const TMVB& mv, const Teuchos::Range1D& index)
+    { 
+      const int numVecs = index.size();      
+      // Create the new multivector
+      Teuchos::RCP<TMVB> cc = Thyra::createMembers (mv.range(), numVecs);
+      // Create a view to the relevant part of the source multivector
+      Teuchos::RCP<const TMVB> view = mv.subView (index);
+      // Copy the data from the view to the new multivector.
+      // &*cc converts cc from an RCP to a Ptr.
+      Thyra::assign (&*cc, *view);
+      return cc;
+    }
+
     /*! \brief Creates a new MultiVectorBase that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
@@ -147,6 +163,17 @@ namespace Anasazi {
       return cc;
     }
 
+    static Teuchos::RCP<TMVB> 
+    CloneViewNonConst (TMVB& mv, const Teuchos::Range1D& index)
+    {
+      // We let Thyra be responsible for checking that the index range
+      // is nonempty.
+      //
+      // Create and return a contiguous view to the relevant part of
+      // the source multivector.
+      return mv.subView (index);
+    }
+
     /*! \brief Creates a new const MultiVectorBase that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
@@ -185,6 +212,17 @@ namespace Anasazi {
         cc = mv.subView( numvecs, &(index[0]) );
       }
       return cc;
+    }
+
+    static Teuchos::RCP<const TMVB> 
+    CloneView (const TMVB& mv, const Teuchos::Range1D& index)
+    {
+      // We let Thyra be responsible for checking that the index range
+      // is nonempty.
+      //
+      // Create and return a contiguous view to the relevant part of
+      // the source multivector.
+      return mv.subView (index);
     }
 
     //@}
@@ -320,6 +358,31 @@ namespace Anasazi {
       Teuchos::RCP<  Thyra::MultiVectorBase< ScalarType >  > reldest = mv.subView( numvecs, &(index[0]) );
       // copy the data to the destination multivector subview
       Thyra::assign(&*reldest, *relsource);
+    }
+
+    static void 
+    SetBlock (const TMVB& A, const Teuchos::Range1D& index, TMVB& mv)
+    { 
+      // We let Thyra be responsible for checking that the index range
+      // is nonempty, and that it fits within the column ranges of A
+      // and mv.
+      //
+      // (View of) the relevant columns of A
+      Teuchos::RCP<const TMVB> A_view;
+      if (index.lbound() == 0 && index.ubound()+1 == A.domain()->dim())
+	A_view = A;
+      else
+	A_view = A.subView (index);
+
+      // (View of) the relevant columns of mv
+      Teuchos::RCP<TMVB> mv_view;
+      if (index.lbound() == 0 && index.ubound()+1 == mv.domain()->dim())
+	mv_view = mv;
+      else
+	mv_view = mv.subView (index);
+
+      // Copy the data to the destination multivector
+      Thyra::assign (&*mv_view, *A_view);
     }
 
     /*! \brief Replace the vectors in \c mv with random vectors.

@@ -59,7 +59,7 @@
 #include "Sacado_dummy_arg.hpp"
 #include <ostream>	// for std::ostream
 
-#define FAD_UNARYOP_MACRO(OPNAME,OP,PARTIAL,VALUE,DX,FASTACCESSDX)	\
+#define FAD_UNARYOP_MACRO(OPNAME,OP,DECL,PARTIAL,VALUE,DX,FASTACCESSDX)	\
 namespace Sacado {							\
   namespace CacheFad {							\
 									\
@@ -81,9 +81,15 @@ namespace Sacado {							\
 									\
       bool isPassive() const { return expr.isPassive();}		\
 									\
-      value_type val() const {						\
-	v = expr.val();							\
+      bool updateValue() const { return expr.updateValue(); }		\
+									\
+      void cache() const {						\
+	expr.cache();							\
+        v = expr.val();							\
 	PARTIAL;							\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
@@ -100,7 +106,7 @@ namespace Sacado {							\
       const ExprT& expr;						\
       mutable value_type v;						\
       mutable value_type a;						\
-    };									\
+      DECL								\
 									\
     template <typename T>						\
     inline Expr< OP< Expr<T> > >					\
@@ -115,114 +121,133 @@ namespace Sacado {							\
 
 FAD_UNARYOP_MACRO(operator+,
 		  UnaryPlusOp, 
+		  };,
 		  ;,
 		  v,
 		  expr.dx(i),
 		  expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(operator-,
 		  UnaryMinusOp,
+		  };,
 		  ;, 
 		  -v,
 		  -expr.dx(i),
 		  -expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(exp,
 		  ExpOp, 
+		  };,
 		  a = std::exp(v),
 		  a,
 		  expr.dx(i)*a,
 		  expr.fastAccessDx(i)*a)
 FAD_UNARYOP_MACRO(log,
 		  LogOp, 
+		  };,
 		  ;,
 		  std::log(v),
 		  expr.dx(i)/v,
 		  expr.fastAccessDx(i)/v)
 FAD_UNARYOP_MACRO(log10,
 		  Log10Op, 
+		  };,
 		  a = std::log(value_type(10))*v,
 		  std::log10(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(sqrt,
 		  SqrtOp,
+		  };,
 		  a = value_type(2)*std::sqrt(v),
 		  std::sqrt(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(cos,
 		  CosOp, 
+		  };,
 		  a = std::sin(v),
 		  std::cos(v),
 		  -expr.dx(i)*a,
 		  -expr.fastAccessDx(i)*a)
 FAD_UNARYOP_MACRO(sin,
 		  SinOp, 
+		  };,
 		  a = std::cos(v),
 		  std::sin(v),
 		  expr.dx(i)*a,
 		  expr.fastAccessDx(i)*a)
 FAD_UNARYOP_MACRO(tan,
 		  TanOp, 
-		  value_type t = std::tan(v); a = value_type(1)+t*t,
-		  t,
+		  mutable value_type c;};,
+		  c = std::tan(v); a = value_type(1)+c*c,
+		  c,
 		  expr.dx(i)*a,
 		  expr.fastAccessDx(i)*a)
 FAD_UNARYOP_MACRO(acos,
 		  ACosOp, 
+		  };,
 		  a = - std::sqrt(value_type(1)-v*v),
 		  std::acos(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(asin,
 		  ASinOp, 
+		  };,
 		  a = std::sqrt(value_type(1)-v*v),
 		  std::asin(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(atan,
 		  ATanOp, 
+		  };,
 		  a = (value_type(1)+v*v),
 		  std::atan(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(cosh,
 		  CoshOp, 
+		  };,
 		  a = std::sinh(v),
 		  std::cosh(v),
 		  expr.dx(i)*a,
 		  expr.fastAccessDx(i)*a)
 FAD_UNARYOP_MACRO(sinh,
 		  SinhOp, 
+		  };,
 		  a = std::cosh(v),
 		  std::sinh(v),
 		  expr.dx(i)*a,
 		  expr.fastAccessDx(i)*a)
 FAD_UNARYOP_MACRO(tanh,
 		  TanhOp, 
+		  };,
 		  a = std::cosh(v); a = a*a,
 		  std::tanh(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(acosh,
 		  ACoshOp, 
+		  };,
 		  a = std::sqrt((v-value_type(1))*(v+value_type(1))),
 		  std::acosh(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(asinh,
 		  ASinhOp, 
+		  };,
 		  a = std::sqrt(value_type(1)+v*v),
 		  std::asinh(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(atanh,
 		  ATanhOp, 
+		  };,
 		  a = value_type(1)-v*v,
 		  std::atanh(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(abs,
 		  AbsOp, 
+		  };,
 		  ;,
 		  std::abs(v),
 		  v >= 0 ? value_type(+expr.dx(i)) : value_type(-expr.dx(i)),
@@ -230,6 +255,7 @@ FAD_UNARYOP_MACRO(abs,
 		    value_type(-expr.fastAccessDx(i)))
 FAD_UNARYOP_MACRO(fabs,
 		  FAbsOp, 
+		  };,
 		  ;,
 		  std::fabs(v),
 		  v >= 0 ? value_type(+expr.dx(i)) : value_type(-expr.dx(i)),
@@ -238,7 +264,7 @@ FAD_UNARYOP_MACRO(fabs,
 
 #undef FAD_UNARYOP_MACRO
 
-#define FAD_BINARYOP_MACRO(OPNAME,OP,PARTIAL,VALUE,DX,FASTACCESSDX,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
+#define FAD_BINARYOP_MACRO(OPNAME,OP,DECL,PARTIAL,VALUE,DX,FASTACCESSDX,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
 namespace Sacado {							\
   namespace CacheFad {							\
 									\
@@ -275,10 +301,19 @@ namespace Sacado {							\
 	return expr1.isPassive() && expr2.isPassive();			\
       }									\
 									\
-      value_type val() const {						\
-	v1 = expr1.val();						\
+      bool updateValue() const {					\
+	return expr1.updateValue() && expr2.updateValue();		\
+      }									\
+									\
+      void cache() const {						\
+	expr1.cache();							\
+	expr2.cache();							\
+        v1 = expr1.val();						\
 	v2 = expr2.val();						\
 	PARTIAL;							\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
@@ -298,7 +333,7 @@ namespace Sacado {							\
       mutable value_type_2 v2;						\
       mutable value_type a;						\
       mutable value_type b;						\
-    };									\
+      DECL								\
 									\
     template <typename ExprT1>						\
     class Expr< OP<ExprT1, ConstExpr<typename ExprT1::value_type> >  >{ \
@@ -324,10 +359,17 @@ namespace Sacado {							\
 	return expr1.isPassive();					\
       }									\
 									\
-      value_type val() const {						\
-	v1 = expr1.val();						\
+      bool updateValue() const { return expr1.updateValue(); }		\
+									\
+      void cache() const {						\
+	expr1.cache();							\
+	expr2.cache();							\
+        v1 = expr1.val();						\
 	v2 = expr2.val();						\
 	PARTIAL;							\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
@@ -347,7 +389,7 @@ namespace Sacado {							\
       mutable value_type v2;						\
       mutable value_type a;						\
       mutable value_type b;						\
-    };									\
+      DECL								\
 									\
     template <typename ExprT2>						\
     class Expr< OP<ConstExpr<typename ExprT2::value_type>, ExprT2 >  >{	\
@@ -373,10 +415,17 @@ namespace Sacado {							\
 	return expr2.isPassive();					\
       }									\
 									\
-      value_type val() const {						\
-	v1 = expr1.val();						\
+      bool updateValue() const { return expr2.updateValue(); }		\
+									\
+      void cache() const {						\
+	expr1.cache();							\
+	expr2.cache();							\
+        v1 = expr1.val();						\
 	v2 = expr2.val();						\
 	PARTIAL;							\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
@@ -396,7 +445,7 @@ namespace Sacado {							\
       mutable value_type v2;						\
       mutable value_type a;						\
       mutable value_type b;						\
-    };									\
+      DECL								\
 									\
     template <typename ExprT1>						\
     class Expr< OP<ExprT1, ConstExpr<typename dummy<typename ExprT1::value_type,typename ExprT1::scalar_type>::type> > >{ \
@@ -422,10 +471,17 @@ namespace Sacado {							\
 	return expr1.isPassive();					\
       }									\
 									\
-      value_type val() const {						\
-	v1 = expr1.val();						\
+      bool updateValue() const { return expr1.updateValue(); }		\
+									\
+      void cache() const {						\
+	expr1.cache();							\
+	expr2.cache();							\
+        v1 = expr1.val();						\
 	v2 = expr2.val();						\
 	PARTIAL;							\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
@@ -445,7 +501,7 @@ namespace Sacado {							\
       mutable value_type v2;						\
       mutable value_type a;						\
       mutable value_type b;						\
-    };									\
+      DECL								\
 									\
     template <typename ExprT2>						\
     class Expr< OP<ConstExpr<typename dummy<typename ExprT2::value_type,typename ExprT2::scalar_type>::type>, ExprT2 >  >{	\
@@ -471,10 +527,17 @@ namespace Sacado {							\
 	return expr2.isPassive();					\
       }									\
 									\
-      value_type val() const {						\
-	v1 = expr1.val();						\
+      bool updateValue() const { return expr2.updateValue(); }		\
+									\
+      void cache() const {						\
+	expr1.cache();							\
+	expr2.cache();							\
+        v1 = expr1.val();						\
 	v2 = expr2.val();						\
 	PARTIAL;							\
+      }									\
+									\
+      value_type val() const {						\
 	return VALUE;							\
       }									\
 									\
@@ -494,7 +557,7 @@ namespace Sacado {							\
       mutable value_type v2;						\
       mutable value_type a;						\
       mutable value_type b;						\
-    };									\
+      DECL								\
 									\
     template <typename T1, typename T2>					\
     inline Expr< OP< Expr<T1>, Expr<T2> > >				\
@@ -572,6 +635,7 @@ namespace Sacado {							\
 
 FAD_BINARYOP_MACRO(operator+,
 		   AdditionOp, 
+		   };,
 		   ;,
 		   v1 + v2,
 		   expr1.dx(i) + expr2.dx(i),
@@ -582,6 +646,7 @@ FAD_BINARYOP_MACRO(operator+,
 		   expr1.fastAccessDx(i))
 FAD_BINARYOP_MACRO(operator-,
 		   SubtractionOp, 
+		   };,
 		   ;,
 		   v1 - v2,
 		   expr1.dx(i) - expr2.dx(i),
@@ -592,6 +657,7 @@ FAD_BINARYOP_MACRO(operator-,
 		   expr1.fastAccessDx(i))
 // FAD_BINARYOP_MACRO(operator*,
 // 		   MultiplicationOp, 
+//                 ;,
 // 		   ;,
 // 		   v1*v2,
 // 		   v1*expr2.dx(i) + expr1.dx(i)*v2,
@@ -636,10 +702,19 @@ namespace Sacado {
       bool isPassive() const {						
 	return expr1.isPassive() && expr2.isPassive();			
       }									
+
+      bool updateValue() const { 
+	return expr1.updateValue() && expr2.updateValue(); 
+      }
+
+      void cache() const {
+	expr1.cache();
+	expr2.cache();
+	v1 = expr1.val();
+	v2 = expr2.val();
+      }
 									
       value_type val() const {						
-	v1 = expr1.val();						
-	v2 = expr2.val();						
 	return v1*v2;							
       }									
 									
@@ -690,10 +765,17 @@ namespace Sacado {
       bool isPassive() const {						
 	return expr1.isPassive();					
       }									
+
+      bool updateValue() const { return expr1.updateValue(); }
+
+      void cache() const {
+	expr1.cache();
+	expr2.cache();
+	v1 = expr1.val();
+	v2 = expr2.val();
+      }
 									
-      value_type val() const {						
-	v1 = expr1.val();						
-	v2 = expr2.val();						
+      value_type val() const {
 	return v1*v2;							
       }									
 									
@@ -738,10 +820,17 @@ namespace Sacado {
       bool isPassive() const {						
 	return expr2.isPassive();					
       }									
+
+      bool updateValue() const { return expr2.updateValue(); }
+
+      void cache() const {
+	expr1.cache();
+	expr2.cache();
+	v1 = expr1.val();
+	v2 = expr2.val();
+      }
 									
-      value_type val() const {						
-	v1 = expr1.val();						
-	v2 = expr2.val();						
+      value_type val() const {
 	return v1*v2;							
       }									
 									
@@ -786,10 +875,17 @@ namespace Sacado {
       bool isPassive() const {						
 	return expr1.isPassive();					
       }									
+
+      bool updateValue() const { return expr1.updateValue(); }
+
+      void cache() const {
+	expr1.cache();
+	expr2.cache();
+	v1 = expr1.val();
+	v2 = expr2.val();
+      }
 									
-      value_type val() const {						
-	v1 = expr1.val();						
-	v2 = expr2.val();						
+      value_type val() const {
 	return v1*v2;							
       }									
 									
@@ -834,10 +930,17 @@ namespace Sacado {
       bool isPassive() const {						
 	return expr2.isPassive();					
       }									
+
+      bool updateValue() const { return expr2.updateValue(); }
+
+      void cache() const {
+	expr1.cache();
+	expr2.cache();
+	v1 = expr1.val();
+	v2 = expr2.val();
+      }
 									
-      value_type val() const {						
-	v1 = expr1.val();						
-	v2 = expr2.val();						
+      value_type val() const {
 	return v1*v2;							
       }									
 									
@@ -931,7 +1034,8 @@ namespace Sacado {
 
 FAD_BINARYOP_MACRO(operator/,
 		   DivisionOp, 
-		   value_type c = v1/v2; a = value_type(1)/v2; b = -c/v2,
+		   mutable value_type c;};,
+		   c = v1/v2; a = value_type(1)/v2; b = -c/v2,
 		   c,
 		   expr1.dx(i)*a + expr2.dx(i)*b,
 		   expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b,
@@ -941,6 +1045,7 @@ FAD_BINARYOP_MACRO(operator/,
 		   expr1.fastAccessDx(i)*a)
 FAD_BINARYOP_MACRO(atan2,
 		   Atan2Op,
+		   };,
 		   a=v1*v1 + v2*v2,
 		   std::atan2(v1,v2),
 		   (expr1.dx(i)*v2 - expr2.dx(i)*v1)/a,
@@ -951,7 +1056,8 @@ FAD_BINARYOP_MACRO(atan2,
 		   (expr1.fastAccessDx(i)*v2)/a)
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
-		   value_type c=std::pow(v1,v2); a=(v1 == 0 ? value_type(0) : value_type(c*v2/v1)); b=(v1 == 0 ? value_type(0) : value_type(c*std::log(v1))),
+		   mutable value_type c;};,
+		   c=std::pow(v1,v2); a=(v1 == 0 ? value_type(0) : value_type(c*v2/v1)); b=(v1 == 0 ? value_type(0) : value_type(c*std::log(v1))),
 		   c,
 		   v1 == 0 ? value_type(0) : value_type(expr1.dx(i)*a + expr2.dx(i)*b),
 		   v1 == 0 ? value_type(0) : value_type(expr1.fastAccessDx(i)*a + expr2.fastAccessDx(i)*b),
@@ -961,6 +1067,7 @@ FAD_BINARYOP_MACRO(pow,
 		   v1 == 0 ? value_type(0) : value_type(expr1.fastAccessDx(i)*a))
 FAD_BINARYOP_MACRO(max,
 		   MaxOp,
+		   };,
 		   ;,
 		   std::max(expr1.val(), expr2.val()),
 		   expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
@@ -974,6 +1081,7 @@ FAD_BINARYOP_MACRO(max,
 		                                value_type(0))
 FAD_BINARYOP_MACRO(min,
 		   MinOp,
+		   };,
 		   ;,
 		   std::min(expr1.val(), expr2.val()),
 		   expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),

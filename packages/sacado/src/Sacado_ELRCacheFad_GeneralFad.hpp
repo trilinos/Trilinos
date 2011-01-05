@@ -85,19 +85,20 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      GeneralFad() : Storage(T(0.)) {}
+      GeneralFad() : Storage(T(0.)), update_val_(true) {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      GeneralFad(const T & x) : Storage(x) {}
+      GeneralFad(const T & x) : Storage(x), update_val_(true) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      GeneralFad(const int sz, const T & x) : Storage(sz, x) {}
+      GeneralFad(const int sz, const T & x) : 
+	Storage(sz, x), update_val_(true) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -106,13 +107,13 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       GeneralFad(const int sz, const int i, const T & x) : 
-	Storage(sz, x) { 
+	Storage(sz, x), update_val_(true) { 
 	this->fastAccessDx(i)=1.; 
       }
 
       //! Copy constructor
       GeneralFad(const GeneralFad& x) : 
-	Storage(x) {}
+	Storage(x), update_val_(x.update_val_) {}
 
       //! Copy constructor from any Expression object
       template <typename S> GeneralFad(const Expr<S>& x);
@@ -128,6 +129,15 @@ namespace Sacado {
        * constructor.
        */
       void diff(const int ith, const int n);
+
+      //! Set whether this Fad object should update values
+      void setUpdateValue(bool update_val) { update_val_ = update_val; }
+
+      //! Return whether this Fad object has an updated value
+      bool updateValue() const { return update_val_; }
+
+      //! Cache values
+      void cache() const {}
 
       //@}
 
@@ -238,6 +248,9 @@ namespace Sacado {
       //@}
 
     protected:
+
+      //! Update value
+      bool update_val_;
 
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative

@@ -85,6 +85,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
+  Stokhos_OrthogPolyExpansionBase.hpp
+  Stokhos_OrthogPolyExpansionBaseImp.hpp
   Stokhos_ConstantOrthogPolyExpansion.hpp
   Stokhos_ConstantOrthogPolyExpansionImp.hpp
   Stokhos_AlgebraicOrthogPolyExpansion.hpp
@@ -181,6 +183,10 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_ETPCE_OrthogPolyImp.hpp
     sacado/Sacado_ETPCE_OrthogPolyTraits.hpp
     sacado/Sacado_ETPCE_OrthogPolyOps.hpp
+    )
+  SET(SOURCES ${SOURCES}
+    sacado/Sacado_PCE_OrthogPoly.cpp
+    sacado/Sacado_ETPCE_OrthogPoly.cpp
     )
 ENDIF()
 

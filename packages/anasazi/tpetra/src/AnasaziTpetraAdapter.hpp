@@ -112,6 +112,38 @@ namespace Anasazi {
       return mv.subCopy(Teuchos::Range1D(index.front(),index.back()));
     }
 
+
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > 
+    CloneCopy (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+	       const Teuchos::Range1D& index)
+    { 
+      KOKKOS_NODE_TRACE("Anasazi::MVT::CloneCopy(MV,ind)")
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < mv.getNumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os << "Anasazi::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound() 
+	     << "]): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Empty index range is not allowed.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Index range includes negative "
+			     "index/ices, which is not allowed.");
+	  // Range1D bounds are signed; size_t is unsigned.
+	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
+			     std::invalid_argument, 
+			     os.str() << "Index range exceeds number of vectors " 
+			     << mv.getNumVectors() << " in the input multivector.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     os.str() << "Should never get here!");
+	}
+      return mv.subCopy (index);
+    }
+
+
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
@@ -133,6 +165,37 @@ namespace Anasazi {
       return mv.subViewNonConst(Teuchos::Range1D(index.front(),index.back()));
     }
 
+
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > 
+    CloneViewNonConst (Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+		       const Teuchos::Range1D& index)
+    {
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < mv.getNumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os << "Anasazi::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "CloneViewNonConst(mv,index=[" << index.lbound() << ", " 
+	     << index.ubound() << "]): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Empty index range is not allowed.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Index range includes negative "
+			     "index/ices, which is not allowed.");
+	  // Range1D bounds are signed; size_t is unsigned.
+	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
+			     std::invalid_argument, 
+			     os.str() << "Index range exceeds number of vectors " 
+			     << mv.getNumVectors() << " in the input multivector.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     os.str() << "Should never get here!");
+	}
+      return mv.subViewNonConst (index);
+    }
+
+
     static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
@@ -152,6 +215,35 @@ namespace Anasazi {
       }
       // contiguous
       return mv.subView(Teuchos::Range1D(index.front(),index.back()));
+    }
+
+    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > 
+    CloneView (const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, 
+	       const Teuchos::Range1D& index)
+    {
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < mv.getNumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os << "Anasazi::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "CloneView(mv,index=[" << index.lbound() << ", " 
+	     << index.ubound() << "]): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Empty index range is not allowed.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Index range includes negative "
+			     "index/ices, which is not allowed.");
+	  // Range1D bounds are signed; size_t is unsigned.
+	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
+			     std::invalid_argument, 
+			     os.str() << "Index range exceeds number of vectors " 
+			     << mv.getNumVectors() << " in the input multivector.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     os.str() << "Should never get here!");
+	}
+      return mv.subView (index);
     }
 
     static int GetVecLength( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
@@ -279,6 +371,57 @@ namespace Anasazi {
         (*mvsub) = A;
       }
       mvsub = Teuchos::null;
+    }
+
+    static void
+    SetBlock (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
+	      const Teuchos::Range1D& index, 
+	      Tpetra::MultiVector<Scalar,LO,GO,Node>& mv)
+    {
+      KOKKOS_NODE_TRACE("Anasazi::MVT::SetBlock()")
+
+      const bool validRange = index.size() > 0 && 
+	index.lbound() >= 0 && 
+	index.ubound() < A.getNumVectors() &&
+	index.ubound() < mv.getNumVectors();
+      if (! validRange)
+	{
+	  std::ostringstream os;
+	  os << "Anasazi::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "SetBlock(A,index=[" << index.lbound() << ", " << index.ubound() 
+	     << "],mv): ";
+	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
+			     os.str() << "Empty index range is not allowed.");
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Index range includes "
+			     "negative index/ices, which is not allowed.");
+	  // Range1D bounds are signed; size_t is unsigned.
+	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= A.getNumVectors(), 
+			     std::invalid_argument, os.str() << 
+			     "Index range exceeds number of vectors " 
+			     << A.getNumVectors() << " in the input "
+			     "multivector A.");
+	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
+			     std::invalid_argument, os.str() << 
+			     "Index range exceeds number of vectors " 
+			     << mv.getNumVectors() << " in the output "
+			     "multivector.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, 
+			     os.str() << "Should never get here!");
+	}
+      typedef Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > MV_ptr;
+      typedef Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > const_MV_ptr;
+
+      // Non-const view of the specified range of columns of mv.
+      MV_ptr mv_view = CloneViewNonConst (mv,index);
+      // Avoid creating a view of A, if A has the same number of
+      // columns as the number of columns to copy.
+      if (A.getNumVectors() == index.size())
+	(*mv_view) = A; // Assignment of Tpetra::MultiVector is a deep copy.
+      else {
+        const_MV_ptr A_view = A.subView (index);
+	(*mv_view) = (*A_view);
+      }
     }
 
     static void MvRandom( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )

@@ -274,9 +274,9 @@ namespace Belos {
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
-    CloneCopy( const Epetra_MultiVector& mv, const Teuchos::Range1D& index )
+    CloneCopy (const Epetra_MultiVector& mv, const Teuchos::Range1D& index)
     { 
-      return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, index.lbound(), index.size()) );
+      return Teuchos::rcp (new Epetra_MultiVector(Copy, mv, index.lbound(), index.size()));
     }
 
     ///
@@ -287,9 +287,9 @@ namespace Belos {
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
-    CloneViewNonConst( Epetra_MultiVector& mv, const Teuchos::Range1D& index )
+    CloneViewNonConst (Epetra_MultiVector& mv, const Teuchos::Range1D& index)
     { 
-      return Teuchos::rcp( new Epetra_MultiVector(View, mv, index.lbound(), index.size()) );
+      return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
     }
 
     ///
@@ -300,9 +300,9 @@ namespace Belos {
     }
 
     static Teuchos::RCP<Epetra_MultiVector> 
-    CloneView( const Epetra_MultiVector& mv, const Teuchos::Range1D& index )
+    CloneView (const Epetra_MultiVector& mv, const Teuchos::Range1D& index)
     { 
-      return Teuchos::rcp( new Epetra_MultiVector(View, mv, index.lbound(), index.size()) );
+      return Teuchos::rcp (new Epetra_MultiVector(View, mv, index.lbound(), index.size()));
     }
 
     ///
@@ -424,7 +424,9 @@ namespace Belos {
     }
 
     static void 
-    SetBlock( const Epetra_MultiVector& A, const Teuchos::Range1D& index, Epetra_MultiVector& mv )
+    SetBlock (const Epetra_MultiVector& A, 
+	      const Teuchos::Range1D& index, 
+	      Epetra_MultiVector& mv)
     { 
       const int numVecs = index.size(); // Number of columns of mv to extract
       int info = 0;

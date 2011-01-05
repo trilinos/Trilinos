@@ -104,6 +104,9 @@ namespace Sacado {
       //! Return size of the derivative array of the operation
       int size() const { return 0; }
 
+      //! Return whether value should be updated
+      bool updateValue() const { return true; }
+
       //! Return value of operation
       value_type val() const { return constant_; }
 

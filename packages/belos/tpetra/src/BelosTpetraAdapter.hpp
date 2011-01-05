@@ -131,29 +131,22 @@ namespace Belos {
 	index.ubound() < mv.getNumVectors();
       if (! validRange)
 	{
-	  const std::string className ("Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >");
-	  std::string fnName;
-	  {
-	    std::ostringstream rangeString;
-	    rangeString << "[" << index.lbound() << ", " << index.ubound() << "]";
-
-	    std::ostringstream os;
-	    os << "CloneCopy(mv,index=" << rangeString.str() << "): ";
-	    fnName = os.str();
-	  }
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "CloneCopy(mv,index=[" << index.lbound() << ", " << index.ubound() 
+	     << "]): ";
 	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     className << fnName << "Empty index range is not allowed.");
+			     os.str() << "Empty index range is not allowed.");
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     className << fnName << "Index range includes "
-			     "negative index/ices, which is not allowed.");
+			     os.str() << "Index range includes negative "
+			     "index/ices, which is not allowed.");
 	  // Range1D bounds are signed; size_t is unsigned.
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
-			     std::invalid_argument, className << fnName << 
-			     "Index range exceeds number of vectors " 
-			     << mv.getNumVectors() << " in the input "
-			     "multivector.");
+			     std::invalid_argument, 
+			     os.str() << "Index range exceeds number of vectors " 
+			     << mv.getNumVectors() << " in the input multivector.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     className << fnName << "Should never get here!");
+			     os.str() << "Should never get here!");
 	}
       return mv.subCopy (index);
     }
@@ -190,29 +183,22 @@ namespace Belos {
 	index.ubound() < mv.getNumVectors();
       if (! validRange)
 	{
-	  const std::string className ("Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >");
-	  std::string fnName;
-	  {
-	    std::ostringstream rangeString;
-	    rangeString << "[" << index.lbound() << ", " << index.ubound() << "]";
-
-	    std::ostringstream os;
-	    os << "CloneViewNonConst(mv,index=" << rangeString.str() << "): ";
-	    fnName = os.str();
-	  }
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "CloneViewNonConst(mv,index=[" << index.lbound() << ", " 
+	     << index.ubound() << "]): ";
 	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     className << fnName << "Empty index range is not allowed.");
+			     os.str() << "Empty index range is not allowed.");
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     className << fnName << "Index range includes "
-			     "negative index/ices, which is not allowed.");
+			     os.str() << "Index range includes negative "
+			     "index/ices, which is not allowed.");
 	  // Range1D bounds are signed; size_t is unsigned.
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
-			     std::invalid_argument, className << fnName << 
-			     "Index range exceeds number of vectors " 
-			     << mv.getNumVectors() << " in the input "
-			     "multivector.");
+			     std::invalid_argument, 
+			     os.str() << "Index range exceeds number of vectors " 
+			     << mv.getNumVectors() << " in the input multivector.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     className << fnName << "Should never get here!");
+			     os.str() << "Should never get here!");
 	}
       return mv.subViewNonConst (index);
     }
@@ -248,29 +234,22 @@ namespace Belos {
 	index.ubound() < mv.getNumVectors();
       if (! validRange)
 	{
-	  const std::string className ("Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >");
-	  std::string fnName;
-	  {
-	    std::ostringstream rangeString;
-	    rangeString << "[" << index.lbound() << ", " << index.ubound() << "]";
-
-	    std::ostringstream os;
-	    os << "CloneView(mv,index=" << rangeString.str() << "): ";
-	    fnName = os.str();
-	  }
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "CloneView(mv,index=[" << index.lbound() << ", " 
+	     << index.ubound() << "]): ";
 	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     className << fnName << "Empty index range is not allowed.");
+			     os.str() << "Empty index range is not allowed.");
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     className << fnName << "Index range includes "
-			     "negative index/ices, which is not allowed.");
+			     os.str() << "Index range includes negative "
+			     "index/ices, which is not allowed.");
 	  // Range1D bounds are signed; size_t is unsigned.
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
-			     std::invalid_argument, className << fnName << 
-			     "Index range exceeds number of vectors " 
-			     << mv.getNumVectors() << " in the input "
-			     "multivector.");
+			     std::invalid_argument, 
+			     os.str() << "Index range exceeds number of vectors " 
+			     << mv.getNumVectors() << " in the input multivector.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     className << fnName << "Should never get here!");
+			     os.str() << "Should never get here!");
 	}
       return mv.subView (index);
     }
@@ -415,7 +394,6 @@ namespace Belos {
       mvsub = Teuchos::null;
     }
 
-
     static void
     SetBlock (const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, 
 	      const Teuchos::Range1D& index, 
@@ -429,34 +407,28 @@ namespace Belos {
 	index.ubound() < mv.getNumVectors();
       if (! validRange)
 	{
-	  const std::string className ("Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >");
-	  std::string fnName;
-	  {
-	    std::ostringstream rangeString;
-	    rangeString << "[" << index.lbound() << ", " << index.ubound() << "]";
-
-	    std::ostringstream os;
-	    os << "SetBlock(A,index=" << rangeString.str() << ",mv): ";
-	    fnName = os.str();
-	  }
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<Scalar, Tpetra::MultiVector<...> >::"
+	    "SetBlock(A,index=[" << index.lbound() << ", " << index.ubound() 
+	     << "],mv): ";
 	  TEST_FOR_EXCEPTION(index.size() == 0, std::invalid_argument,
-			     className << fnName << "Empty index range is not allowed.");
+			     os.str() << "Empty index range is not allowed.");
 	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
-			     className << fnName << "Index range includes "
+			     os.str() << "Index range includes "
 			     "negative index/ices, which is not allowed.");
 	  // Range1D bounds are signed; size_t is unsigned.
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= A.getNumVectors(), 
-			     std::invalid_argument, className << fnName << 
+			     std::invalid_argument, os.str() << 
 			     "Index range exceeds number of vectors " 
 			     << A.getNumVectors() << " in the input "
 			     "multivector A.");
 	  TEST_FOR_EXCEPTION((size_t) index.ubound() >= mv.getNumVectors(), 
-			     std::invalid_argument, className << fnName << 
+			     std::invalid_argument, os.str() << 
 			     "Index range exceeds number of vectors " 
 			     << mv.getNumVectors() << " in the output "
 			     "multivector.");
 	  TEST_FOR_EXCEPTION(true, std::logic_error, 
-			     className << fnName << "Should never get here!");
+			     os.str() << "Should never get here!");
 	}
       typedef Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > MV_ptr;
       typedef Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > const_MV_ptr;
