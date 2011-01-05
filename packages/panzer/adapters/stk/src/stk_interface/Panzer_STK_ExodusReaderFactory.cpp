@@ -98,9 +98,10 @@ void STK_ExodusReaderFactory::registerSidesets(STK_Interface & mesh) const
       const stk::mesh::Part * part = *partItr;
       const CellTopologyData * ct = stk::mesh::fem::get_cell_topology(*part).getCellTopologyData();
 
-      // if an side part ==> this is a sideset: only take null cell topologies
-      if(part->primary_entity_rank()==spatialDim-1 && ct==0)
-         mesh.addSideset(part->name());
+      // ERROR! How to set cell topologies?
+      // // if an side part ==> this is a sideset: only take null cell topologies
+      // if(part->primary_entity_rank()==spatialDim-1 && ct==0)
+      //    mesh.addSideset(part->name());
    }
 }
 

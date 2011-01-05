@@ -23,14 +23,16 @@ typedef shards::Quadrilateral<4> QuadTopo;
 Teuchos::RCP<STK_Interface> build2DMesh()
 {
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
+   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseTopology(1,0);
+
    Teuchos::RCP<STK_Interface> meshPtr = Teuchos::rcp(new STK_Interface(2));
    STK_Interface & mesh = *meshPtr;
 
    mesh.addElementBlock("quad_elements",ctd);
-   mesh.addSideset("Left");
-   mesh.addSideset("Right");
-   mesh.addSideset("Top");
-   mesh.addSideset("Bottom");
+   mesh.addSideset("Left",side_ctd);
+   mesh.addSideset("Right",side_ctd);
+   mesh.addSideset("Top",side_ctd);
+   mesh.addSideset("Bottom",side_ctd);
 
    mesh.initialize(MPI_COMM_WORLD);
    mesh.beginModification();
@@ -131,6 +133,7 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
   using Teuchos::rcpFromRef;
 
    const CellTopologyData * ctd = shards::getCellTopologyData<QuadTopo>();
+   const CellTopologyData * side_ctd = shards::CellTopology(ctd).getBaseTopology(1,0);
 
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -145,10 +148,10 @@ TEUCHOS_UNIT_TEST(tSTKInterface, interface_test)
    TEST_EQUALITY(mesh.getDimension(),2);
 
    mesh.addElementBlock("0",ctd);
-   mesh.addSideset("Inflow");
-   mesh.addSideset("Outflow");
-   mesh.addSideset("Top");
-   mesh.addSideset("Bottom");
+   mesh.addSideset("Inflow",side_ctd);
+   mesh.addSideset("Outflow",side_ctd);
+   mesh.addSideset("Top",side_ctd);
+   mesh.addSideset("Bottom",side_ctd);
 
    TEST_EQUALITY(mesh.getDimension(),2);
    TEST_EQUALITY(mesh.getNumSidesets(),4);

@@ -57,14 +57,14 @@ STK_Interface::STK_Interface(unsigned dim)
    initializeFromMetaData();
 }
 
-void STK_Interface::addSideset(const std::string & name)
+void STK_Interface::addSideset(const std::string & name,const CellTopologyData * ctData)
 {
    TEUCHOS_ASSERT(not initialized_);
    TEUCHOS_ASSERT(dimension_!=0);
 
-   stk::mesh::Part * sideset = &metaData_->declare_part(name,getSideRank());
+   stk::mesh::Part * sideset = &metaData_->declare_part(name,getSideRank()); 
    sidesets_.insert(std::make_pair(name,sideset));
-   stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Line<2> >()));
+   stk::mesh::fem::set_cell_topology(*sideset,stk::mesh::fem::CellTopology(ctData));
 }
 
 void STK_Interface::addSolutionField(const std::string & fieldName,const std::string & blockId) 
@@ -110,10 +110,19 @@ void STK_Interface::initialize(stk::ParallelMachine parallelMach,bool setupIO)
 #ifdef HAVE_IOSS
    if(setupIO) {
       // setup Exodus file IO
+      /////////////////////////////////////////
+
+      // add element blocks
       {
-         // add element blocks
          std::map<std::string, stk::mesh::Part*>::iterator itr;
          for(itr=elementBlocks_.begin();itr!=elementBlocks_.end();++itr) 
+            stk::io::put_io_part_attribute(*itr->second);
+      }
+
+      // add side sets
+      {
+         std::map<std::string, stk::mesh::Part*>::iterator itr;
+         for(itr=sidesets_.begin();itr!=sidesets_.end();++itr) 
             stk::io::put_io_part_attribute(*itr->second);
       }
    
@@ -336,22 +345,6 @@ stk::mesh::EntityId STK_Interface::getMaxEntityId(unsigned entityRank) const
    return maxEntityId_[entityRank];
 }
 
-/*
-stk::mesh::EntityId STK_Interface::getEdgeId(stk::mesh::EntityId n0,stk::mesh::EntityId n1) const
-{
-   stk::mesh::EntityRank nodeRank = getNodeRank();
-   std::size_t nodeCount = getEntityCounts(nodeRank);
-
-   if(n0>n1) std::swap(n0,n1);
-
-   double largest = double(nodeCount-1)*double(nodeCount-1);
-   TEUCHOS_ASSERT(std::numeric_limits<std::size_t>::max()>largest);
-  
-   // minus one to fix STK index starts at 1 restriction
-   return nodeCount*(n0-1)+(n1-1) + 1;  
-}
-*/
-
 void STK_Interface::buildSubcells()
 {
    stk::mesh::PartVector emptyPartVector;
@@ -360,104 +353,6 @@ void STK_Interface::buildSubcells()
    buildEntityCounts();
    buildMaxEntityIds();
 }
-
-/*
-//! force the mesh to build the subcells of a particular rank
-void STK_Interface::buildSubcells(unsigned subcellRank)
-{
-   TEUCHOS_ASSERT(subcellRank==getSideRank());
-
-   const bool modifyState = isModifiable();
-   if(not modifyState)
-      beginModification();
-
-   stk::mesh::EntityRank elementRank = getElementRank();
-
-   std::map<std::string, stk::mesh::Part*>::const_iterator blkIter;
-   for(blkIter=elementBlocks_.begin();blkIter!=elementBlocks_.end();++blkIter) {
-      stk::mesh::Selector cellsInBlock = stk::mesh::Selector(*blkIter->second)
-                                       & stk::mesh::Selector(metaData_->locally_owned_part());
-            
-      // do a quad specific implemenation
-      std::vector<stk::mesh::Entity *> cells;
-      stk::mesh::get_selected_entities(cellsInBlock,bulkData_->buckets(elementRank),cells);
-
-      // loop over elements
-      std::vector<stk::mesh::Entity*>::const_iterator cellIter;
-      for(cellIter=cells.begin();cellIter!=cells.end();++cellIter)
-         addEdges_local(*cellIter);
-   }
-
-   if(not modifyState)
-      endModification();
-}
-*/
-
-/*
-void STK_Interface::addEdges_local(stk::mesh::Entity * cell)
-{
-   // This function uses a two pass algorithm because
-   // the container returned by relations is altered by 
-   // "declare_relation"
-   //    First pass: Declare all required edges (put 
-   //                them in "edges" map)
-   //    Second pass: add edge element relations (use
-   //                 "edges" map)
-
-   std::map<unsigned int,stk::mesh::Entity*> edges;
-   stk::mesh::EntityRank nodeRank = getNodeRank();
-
-   // First Pass
-   //////////////////////////////////////
-   { 
-      stk::mesh::PairIterRelation nodes = cell->relations(nodeRank);
-      stk::mesh::Entity * beginEntity = nodes->entity();
-   
-      unsigned int localInd = 0;
-      stk::mesh::Entity * previous = 0;
-      for(std::size_t i=0;i<nodes.size();++i) {
-         const stk::mesh::Relation & relation = nodes[i];
-   
-         if(previous!=0) {
-            // get two global node IDs for this relation
-            stk::mesh::Entity * n0 = previous;
-            stk::mesh::Entity * n1 = relation.entity();
-      
-            // ID is globally unique by construction
-            stk::mesh::EntityId edgeId = getEdgeId(n0->identifier(),
-                                                   n1->identifier()); 
-
-            stk::mesh::Entity * edge = addEdge(n0,n1,edgeId);
-            edges[localInd] = edge;
-
-            localInd++;
-         }
-   
-         previous = relation.entity();
-      }
-   
-      // get two global node IDs for this relation
-      stk::mesh::Entity * n0 = previous;
-      stk::mesh::Entity * n1 = beginEntity;
-   
-      // ID is globally unique by construction
-      stk::mesh::EntityId edgeId = getEdgeId(n0->identifier(),
-                                             n1->identifier()); 
-
-      stk::mesh::Entity * edge = addEdge(n0,n1,edgeId);
-      edges[localInd] = edge;
-   }
-
-   // Second Pass
-   //////////////////////////////////////
-   {
-      // add edge relations
-      std::map<unsigned int,stk::mesh::Entity*>::iterator edgeIter;
-      for(edgeIter=edges.begin();edgeIter!=edges.end();++edgeIter)
-         bulkData_->declare_relation(*cell,*edgeIter->second,edgeIter->first);
-   }
-}
-*/
 
 const double * STK_Interface::getNodeCoordinates(stk::mesh::EntityId nodeId) const
 {
@@ -553,27 +448,6 @@ void STK_Interface::getSidesetNames(std::vector<std::string> & names) const
    for(sideItr=sidesets_.begin();sideItr!=sidesets_.end();++sideItr) 
       names.push_back(sideItr->first);
 }
-
-/*
-stk::mesh::Entity * STK_Interface::addEdge(stk::mesh::Entity * n0,stk::mesh::Entity * n1, stk::mesh::EntityId edgeId)
-{
-    stk::mesh::Entity * edge = bulkData_->get_entity(getSideRank(),edgeId);
-    bool edgeExists = (edge!=0); // edge will be constructed by declare_entity
- 
-    if(not edgeExists) {
-       edge = &bulkData_->declare_entity(getSideRank(),edgeId,edgesPartVec_);
-
-       // add edge->node relations 
-       if( n0->identifier() > n1->identifier() )
-          std::swap(n0,n1);
-
-       bulkData_->declare_relation(*edge,*n0,1);
-       bulkData_->declare_relation(*edge,*n1,2);
-    }
-             
-    return edge;
-}
-*/
 
 std::size_t STK_Interface::elementLocalId(stk::mesh::Entity * elmt) const
 {

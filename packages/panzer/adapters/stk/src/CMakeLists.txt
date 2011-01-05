@@ -21,7 +21,6 @@ SET(HEADERS ${HEADERS}
   )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/albany)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/stk_interface)
 
 # FAD
@@ -36,6 +35,7 @@ APPEND_SET(HEADERS
   stk_interface/Panzer_STK_MeshFactory.hpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.hpp
   stk_interface/Panzer_STK_ExodusReaderFactory.hpp
+  stk_interface/Panzer_STK_CubeHexMeshFactory.hpp
   ) 
 
 APPEND_SET(SOURCES
@@ -45,6 +45,7 @@ APPEND_SET(SOURCES
   stk_interface/Panzer_STK_Interface.cpp
   stk_interface/Panzer_STK_SquareQuadMeshFactory.cpp
   stk_interface/Panzer_STK_ExodusReaderFactory.cpp
+  stk_interface/Panzer_STK_CubeHexMeshFactory.cpp
   )
 
 #
