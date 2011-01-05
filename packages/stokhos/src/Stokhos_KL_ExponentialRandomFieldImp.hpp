@@ -139,8 +139,8 @@ evaluate(const Teuchos::Array<value_type>& point,
   result_type result = 0.0;
   for (int i=0; i<num_KL; i++) {
     result += 
-      random_variables[i]*std::sqrt(product_eig_pairs[i].eig_val)*
-      product_eig_pairs[i].evalEigenfunction(point);
+      random_variables[i]*(std::sqrt(product_eig_pairs[i].eig_val)*
+			   product_eig_pairs[i].evalEigenfunction(point));
   }
   result = mean + std_dev*result;
   return result;
