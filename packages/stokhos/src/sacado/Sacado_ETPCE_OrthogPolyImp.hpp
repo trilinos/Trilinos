@@ -28,6 +28,7 @@
 
 #include "Sacado_DynamicArrayTraits.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Stokhos_ConstantOrthogPolyExpansion.hpp"
 
 namespace Sacado {
 namespace ETPCE {
@@ -50,20 +51,47 @@ void
 OrthogPolyImpl<T,Storage>::
 expressionCopy(const Expr<S>& x)
 {
+#ifdef STOKHOS_TEUCHOS_TIME_MONITOR
+  TEUCHOS_FUNC_TIME_MONITOR("ETPCE ExpressionCopy(" << x.name() << ")");
+#endif
   int p = x.order();
   if (p == 0) {
     (*th_)[0] = x.val();
   }
   else if (p <= 2) {
     int sz = th_->size();
-    (*th_)[0] = x.val();
-    if (x.has_fast_access()) {
+    approx_type* tc = th_.get();
+    bool on_rhs = false;
+
+    // Check if *this is on the right-hand-side of the expression
+    if (p == 2) {
+      const int N = Expr<S>::num_args;
+      for (int i=0; i<N; i++) {
+	const approx_type* opa = &(x.getArg(i));
+	if (opa == &(*th_)) {
+	  on_rhs = true;
+	  break;
+	}
+      }
+    }
+
+    // If we are on the RHS, we have to put the results in a temporary
+    if (on_rhs)
+      tc = new approx_type(expansion_->getBasis(), sz);
+    
+    (*tc)[0] = x.val();
+    if (x.has_fast_access(sz)) {
       for (int i=1; i<sz; i++)
-  	(*th_)[i] = x.fast_higher_order_coeff(i);
+  	(*tc)[i] = x.fast_higher_order_coeff(i);
     }
     else {
       for (int i=1; i<sz; i++)
-  	(*th_)[i] = x.higher_order_coeff(i);
+  	(*tc)[i] = x.higher_order_coeff(i);
+    }
+
+    // Set underlying OPA if we created a temporary
+    if (on_rhs) {
+      th_ = Sacado::Handle<approx_type>(tc);
     }
   }
   else {
@@ -72,14 +100,15 @@ expressionCopy(const Expr<S>& x)
     for (int i=0; i<N; i++)
       opas[i] = &(x.getArg(i));
     ExprQuadFuncWrapper< N, Expr<S> > func(x);
-    expansion_->nary_op(func, *th_, opas);
+    quad_expansion_->nary_op(func, *th_, opas);
   }
 }
 
 template <typename T, typename Storage> 
 OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl() :
-  expansion_(),
+  expansion_(const_expansion_),
+  quad_expansion_(),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>)
 {
 }
@@ -87,7 +116,8 @@ OrthogPolyImpl() :
 template <typename T, typename Storage> 
 OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl(const typename OrthogPolyImpl<T,Storage>::value_type& x) :
-  expansion_(),
+  expansion_(const_expansion_),
+  quad_expansion_(),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(Teuchos::null, 1, &x))
 {
 }
@@ -96,6 +126,7 @@ template <typename T, typename Storage>
 OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl(const Teuchos::RCP<expansion_type>& expansion) :
   expansion_(expansion),
+  quad_expansion_(Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_)),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(expansion_->getBasis()))
 {
 }
@@ -105,6 +136,7 @@ OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl(const Teuchos::RCP<expansion_type>& expansion,
 	   ordinal_type sz) :
   expansion_(expansion),
+  quad_expansion_(Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_)),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(expansion_->getBasis(), sz))
 {
 }
@@ -113,6 +145,7 @@ template <typename T, typename Storage>
 OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl(const OrthogPolyImpl<T,Storage>& x) :
   expansion_(x.expansion_),
+  quad_expansion_(x.quad_expansion_),
   th_(x.th_)
 {
 }
@@ -122,6 +155,7 @@ template <typename S>
 OrthogPolyImpl<T,Storage>::
 OrthogPolyImpl(const Expr<S>& x) :
   expansion_(x.expansion()),
+  quad_expansion_(Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_)),
   th_(new Stokhos::OrthogPolyApprox<int,value_type,Storage>(expansion_->getBasis(), x.size()))
 {
   expressionCopy(x);
@@ -133,6 +167,7 @@ OrthogPolyImpl<T,Storage>::
 reset(const Teuchos::RCP<expansion_type>& expansion)
 {
   expansion_ = expansion;
+  quad_expansion_ = Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_);
   th_->reset(expansion_->getBasis());
 }
 
@@ -142,6 +177,7 @@ OrthogPolyImpl<T,Storage>::
 reset(const Teuchos::RCP<expansion_type>& expansion, ordinal_type sz)
 {
   expansion_ = expansion;
+  quad_expansion_ = Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_);
   th_->reset(expansion_->getBasis(), sz);
 }
 
@@ -179,6 +215,7 @@ OrthogPolyImpl<T,Storage>::
 operator=(const OrthogPolyImpl<T,Storage>& x) 
 {
   expansion_ = x.expansion_;
+  quad_expansion_ = x.quad_expansion_;
   th_ = x.th_;
   return *this;
 }
@@ -191,6 +228,7 @@ operator=(const Expr<S>& x)
 {
   th_.makeOwnCopy();
   expansion_ = x.expansion();
+  quad_expansion_ = Teuchos::rcp_dynamic_cast<quad_expansion_type>(expansion_);
   th_->reset(expansion_->getBasis(), x.size());
   expressionCopy(x);
   return *this;

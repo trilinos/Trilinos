@@ -46,21 +46,34 @@ namespace Sacado {							\
       typedef typename ExprT::value_type value_type;			\
       typedef typename ExprT::approx_type approx_type;			\
       typedef typename ExprT::expansion_type expansion_type;		\
+      typedef typename ExprT::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT::storage_type storage_type;		\
 									\
       static const int num_args = ExprT::num_args;			\
 									\
       Expr(const ExprT& expr_) : expr(expr_)  {}			\
 									\
+      std::string name() const {					\
+	return std::string(#OPER) + expr.name();			\
+      }									\
+									\
       int size() const { return expr.size(); }				\
 									\
       const approx_type& getArg(int i) const { return expr.getArg(i); }	\
+      									\
+      bool has_nonconst_expansion() const {				\
+	return expr.has_nonconst_expansion();				\
+      }									\
 									\
       Teuchos::RCP<expansion_type> expansion() const {			\
 	return expr.expansion();					\
       }									\
 									\
-      bool has_fast_access() const { return expr.has_fast_access(); }	\
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {	\
+	return expr.quad_expansion();					\
+      }									\
+									\
+      bool has_fast_access(int sz) const { return expr.has_fast_access(sz); }	\
       									\
       int order() const { return expr.order(); }			\
 									\
@@ -110,21 +123,40 @@ namespace Sacado {							\
       typedef typename ExprT::value_type value_type;			\
       typedef typename ExprT::approx_type approx_type;			\
       typedef typename ExprT::expansion_type expansion_type;		\
+      typedef typename ExprT::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT::storage_type storage_type;		\
 									\
       static const int num_args = ExprT::num_args;			\
 									\
       Expr(const ExprT& expr_) : expr(expr_)  {}			\
 									\
-      int size() const { return expr.size(); }				\
+      std::string name() const {					\
+	return std::string(#OPER) + std::string("(") + expr.name() +	\
+	  std::string(")");						\
+      }									\
+									\
+      int size() const {						\
+	if (expr.size() == 1)						\
+	  return 1;							\
+	else								\
+	  return expansion()->size();					\
+      }									\
      									\
       const approx_type& getArg(int i) const { return expr.getArg(i); }	\
+									\
+      bool has_nonconst_expansion() const {				\
+	return expr.has_nonconst_expansion();				\
+      }									\
 									\
       Teuchos::RCP<expansion_type> expansion() const {			\
 	return expr.expansion();					\
       }									\
 									\
-      bool has_fast_access() const { return false; }			\
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {	\
+	return expr.quad_expansion();					\
+      }									\
+									\
+      bool has_fast_access(int sz) const { return false; }			\
       									\
       int order() const { return size() == 0 ? 0 : 100; }		\
 									\
@@ -206,6 +238,7 @@ namespace Sacado {							\
 									\
       typedef typename ExprT1::approx_type approx_type;			\
       typedef typename ExprT1::expansion_type expansion_type;		\
+      typedef typename ExprT1::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT1::storage_type storage_type;		\
 									\
       static const int num_args1 = ExprT1::num_args;			\
@@ -214,6 +247,10 @@ namespace Sacado {							\
 									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
 	expr1(expr1_), expr2(expr2_) {}					\
+      									\
+      std::string name() const {					\
+	return expr1.name() + std::string(#OPER) + expr2.name();	\
+      }									\
 									\
       int size() const {						\
 	int sz1 = expr1.size(), sz2 = expr2.size();			\
@@ -227,13 +264,24 @@ namespace Sacado {							\
 	  return expr2.getArg(i-num_args1);				\
       }									\
 									\
+      bool has_nonconst_expansion() const {				\
+	return expr1.has_nonconst_expansion() ||			\
+	  expr2.has_nonconst_expansion();				\
+      }									\
+									\
       Teuchos::RCP<expansion_type> expansion() const {			\
-        return expr1.expansion() != Teuchos::null ? expr1.expansion() : \
+        return expr1.has_nonconst_expansion() ? expr1.expansion() :	\
           expr2.expansion();						\
       }									\
 									\
-      bool has_fast_access() const {					\
-	return expr1.has_fast_access() && expr2.has_fast_access();	\
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {	\
+        return expr1.quad_expansion() != Teuchos::null ?		\
+	  expr1.quad_expansion() :					\
+          expr2.quad_expansion();					\
+      }									\
+									\
+      bool has_fast_access(int sz) const {					\
+	return expr1.has_fast_access(sz) && expr2.has_fast_access(sz);	\
       }									\
 									\
       int order() const {						\
@@ -279,6 +327,7 @@ namespace Sacado {							\
 									\
       typedef typename ExprT1::approx_type approx_type;			\
       typedef typename ExprT1::expansion_type expansion_type;		\
+      typedef typename ExprT1::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT1::storage_type storage_type;		\
 									\
       static const int num_args = ExprT1::num_args;			\
@@ -286,17 +335,29 @@ namespace Sacado {							\
       Expr(const ExprT1& expr1_, const ConstT& c_) :			\
 	expr1(expr1_), c(c_) {}						\
 									\
+      std::string name() const {					\
+	return expr1.name() + std::string(#OPER) + std::string("c");	\
+      }									\
+									\
       int size() const { return expr1.size(); }				\
 									\
       const approx_type& getArg(int i) const {				\
 	return expr1.getArg(i);						\
       }									\
 									\
+      bool has_nonconst_expansion() const {				\
+	return expr1.has_nonconst_expansion();				\
+      }									\
+									\
       Teuchos::RCP<expansion_type> expansion() const {			\
 	return expr1.expansion();					\
       }									\
 									\
-      bool has_fast_access() const { return expr1.has_fast_access(); }	\
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {	\
+	return expr1.quad_expansion();					\
+      }									\
+									\
+      bool has_fast_access(int sz) const { return expr1.has_fast_access(sz); }	\
 									\
       int order() const { return expr1.order(); }			\
 									\
@@ -305,11 +366,11 @@ namespace Sacado {							\
       }									\
 									\
       value_type fast_higher_order_coeff(int i) const {			\
-	return expr1.fast_higher_order_coeff(i) OPER c;			\
+	return expr1.fast_higher_order_coeff(i);			\
       }									\
 									\
       value_type higher_order_coeff(int i) const {			\
-	return expr1.higher_order_coeff(i) OPER c;			\
+	return expr1.higher_order_coeff(i);				\
       }									\
 									\
       template <int offset, typename tuple_type>			\
@@ -334,6 +395,7 @@ namespace Sacado {							\
 									\
       typedef typename ExprT2::approx_type approx_type;			\
       typedef typename ExprT2::expansion_type expansion_type;		\
+      typedef typename ExprT2::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT2::storage_type storage_type;		\
 									\
       static const int num_args = ExprT2::num_args;			\
@@ -341,15 +403,27 @@ namespace Sacado {							\
       Expr(const ConstT& c_, const ExprT2& expr2_) :			\
 	c(c_), expr2(expr2_) {}						\
 									\
+      std::string name() const {					\
+	return std::string("c") + std::string(#OPER) + expr2.name();	\
+      }									\
+									\
       int size() const { return expr2.size(); }				\
 									\
      const approx_type& getArg(int i) const { return expr2.getArg(i); } \
+									\
+      bool has_nonconst_expansion() const {				\
+	return expr2.has_nonconst_expansion();				\
+      }									\
 									\
       Teuchos::RCP<expansion_type> expansion() const {			\
 	return expr2.expansion();					\
       }									\
 									\
-      bool has_fast_access() const { return expr2.has_fast_access(); }	\
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {	\
+	return expr2.quad_expansion();					\
+      }									\
+									\
+      bool has_fast_access(int sz) const { return expr2.has_fast_access(sz); }	\
 									\
       int order() const { return expr2.order(); }			\
 									\
@@ -358,11 +432,11 @@ namespace Sacado {							\
       }									\
 									\
       value_type fast_higher_order_coeff(int i) const {			\
-	return c OPER expr2.fast_higher_order_coeff(i);			\
+	return  OPER expr2.fast_higher_order_coeff(i);			\
       }									\
 									\
       value_type higher_order_coeff(int i) const {			\
-	return c OPER expr2.higher_order_coeff(i);			\
+	return  OPER expr2.higher_order_coeff(i);			\
       }									\
 									\
       template <int offset, typename tuple_type>			\
@@ -439,6 +513,7 @@ namespace Sacado {							\
 									\
       typedef typename ExprT1::approx_type approx_type;			\
       typedef typename ExprT1::expansion_type expansion_type;		\
+      typedef typename ExprT1::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT1::storage_type storage_type;		\
 									\
       static const int num_args1 = ExprT1::num_args;			\
@@ -448,9 +523,16 @@ namespace Sacado {							\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
 	expr1(expr1_), expr2(expr2_) {}					\
 									\
+      std::string name() const {					\
+	return std::string(#OPER) + std::string("(") + expr1.name() +	\
+	  std::string(",") + expr2.name() + std::string(")");		\
+      }									\
+									\
       int size() const {						\
-	int sz1 = expr1.size(), sz2 = expr2.size();			\
-	return sz1 > sz2 ? sz1 : sz2;					\
+	if (expr1.size() == 1 && expr2.size() == 1)			\
+	  return 1;							\
+	else								\
+	  return expansion()->size();					\
       }									\
 									\
       const approx_type& getArg(int i) const {				\
@@ -460,12 +542,23 @@ namespace Sacado {							\
 	  return expr2.getArg(i-num_args1);				\
       }									\
 									\
+      bool has_nonconst_expansion() const {				\
+	return expr1.has_nonconst_expansion() ||			\
+	  expr2.has_nonconst_expansion();				\
+      }									\
+									\
       Teuchos::RCP<expansion_type> expansion() const {			\
-	return expr1.expansion() != Teuchos::null ? expr1.expansion() : \
+	return expr1.has_nonconst_expansion() ? expr1.expansion() :	\
 	  expr2.expansion();						\
       }									\
 									\
-      bool has_fast_access() const { return false; }			\
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {	\
+        return expr1.quad_expansion() != Teuchos::null ?		\
+	  expr1.quad_expansion() :					\
+          expr2.quad_expansion();					\
+      }									\
+									\
+      bool has_fast_access(int sz) const { return false; }			\
 									\
       int order() const { return size() == 0 ? 0 : 100; }		\
 									\
@@ -505,6 +598,7 @@ namespace Sacado {							\
 									\
       typedef typename ExprT1::approx_type approx_type;			\
       typedef typename ExprT1::expansion_type expansion_type;		\
+      typedef typename ExprT1::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT1::storage_type storage_type;		\
 									\
       static const int num_args = ExprT1::num_args;			\
@@ -512,17 +606,35 @@ namespace Sacado {							\
       Expr(const ExprT1& expr1_, const ConstT& c_) :			\
 	expr1(expr1_), c(c_) {}						\
 									\
-      int size() const { return expr1.size(); }				\
+      std::string name() const {					\
+	return std::string(#OPER) + std::string("(") + expr1.name() +	\
+	  std::string(",c)");						\
+      }									\
+									\
+      int size() const {						\
+	if (expr1.size() == 1)						\
+	  return 1;							\
+	else								\
+	  return expansion()->size();					\
+      }									\
 									\
       const approx_type& getArg(int i) const {				\
 	return expr1.getArg(i);						\
+      }									\
+									\
+      bool has_nonconst_expansion() const {				\
+	return expr1.has_nonconst_expansion();				\
       }									\
 									\
       Teuchos::RCP<expansion_type> expansion() const {			\
 	return expr1.expansion();					\
       }									\
 									\
-      bool has_fast_access() const { return false; }			\
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {	\
+	return expr1.quad_expansion();					\
+      }									\
+									\
+      bool has_fast_access(int sz) const { return false; }			\
 									\
       int order() const { return size() == 0 ? 0 : 100; }		\
 									\
@@ -560,6 +672,7 @@ namespace Sacado {							\
 									\
       typedef typename ExprT2::approx_type approx_type;			\
       typedef typename ExprT2::expansion_type expansion_type;		\
+      typedef typename ExprT2::quad_expansion_type quad_expansion_type;	\
       typedef typename ExprT2::storage_type storage_type;		\
 									\
       static const int num_args = ExprT2::num_args;			\
@@ -567,7 +680,17 @@ namespace Sacado {							\
       Expr(const ConstT& c_, const ExprT2& expr2_) :			\
 	c(c_), expr2(expr2_) {}						\
 									\
-      int size() const { return expr2.size(); }				\
+      std::string name() const {					\
+	return std::string(#OPER) + std::string("(c,") +		\
+	  expr2.name() + std::string(")");				\
+      }									\
+									\
+      int size() const {						\
+	if (expr2.size() == 1)						\
+	  return 1;							\
+	else								\
+	  return expansion()->size();					\
+      }									\
 									\
      const approx_type& getArg(int i) const { return expr2.getArg(i); } \
 									\
@@ -575,7 +698,15 @@ namespace Sacado {							\
 	return expr2.expansion();					\
       }									\
 									\
-      bool has_fast_access() const { return false; }			\
+      bool has_nonconst_expansion() const {				\
+	return expr2.has_nonconst_expansion();				\
+      }									\
+									\
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {	\
+	return expr2.quad_expansion();					\
+      }									\
+									\
+      bool has_fast_access(int sz) const { return false; }			\
 									\
       int order() const { return size() == 0 ? 0 : 100; }		\
 									\
@@ -677,6 +808,7 @@ namespace Sacado {
 
       typedef typename ExprT1::approx_type approx_type;
       typedef typename ExprT1::expansion_type expansion_type;
+      typedef typename ExprT1::quad_expansion_type quad_expansion_type;
       typedef typename ExprT1::storage_type storage_type;
 
       static const int num_args1 = ExprT1::num_args;
@@ -685,10 +817,18 @@ namespace Sacado {
 
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
+      
+      std::string name() const {
+	return expr1.name() + std::string("*") + expr2.name();
+      }
 
       int size() const {
-	int sz1 = expr1.size(), sz2 = expr2.size();
-	return sz1 > sz2 ? sz1 : sz2;
+	int sz1 = expr1.size();
+	int sz2 = expr2.size();
+	if (sz1 > 1 && sz2 > 1)
+	  return expansion()->size();
+	else
+	  return sz1*sz2;
       }
 
       const approx_type& getArg(int i) const {
@@ -698,27 +838,40 @@ namespace Sacado {
 	  return expr2.getArg(i-num_args1);
       }
 
+      bool has_nonconst_expansion() const {
+	return expr1.has_nonconst_expansion() || expr2.has_nonconst_expansion();
+      }
+
       Teuchos::RCP<expansion_type> expansion() const {
-	return expr1.expansion() != Teuchos::null ? expr1.expansion() : 
+	return expr1.has_nonconst_expansion() ? expr1.expansion() : 
 	  expr2.expansion();
       }
 
-      bool has_fast_access() const {
-	return expr1.has_fast_access() && expr2.has_fast_access();
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {
+        return expr1.quad_expansion() != Teuchos::null ?
+	  expr1.quad_expansion() :
+          expr2.quad_expansion();
+      }
+
+      bool has_fast_access(int sz) const {
+	return expr1.has_fast_access(sz) && expr2.has_fast_access(sz);
       }
 
       int order() const { return expr1.order() + expr2.order(); }
 
       value_type val() const {
-	return expr1.expansion()->compute_times_coeff(0,expr1,expr2);
+	if (order() == 0)
+	  return expr1.val() * expr2.val();
+	else
+	  return quad_expansion()->compute_times_coeff(0,expr1,expr2);
       }
 
       value_type fast_higher_order_coeff(int i) const {
-	return expr1.expansion()->fast_compute_times_coeff(i,expr1,expr2);
+	return quad_expansion()->fast_compute_times_coeff(i,expr1,expr2);
       }
 
       value_type higher_order_coeff(int i) const {
-	return expr1.expansion()->compute_times_coeff(i,expr1,expr2);
+	return quad_expansion()->compute_times_coeff(i,expr1,expr2);
       }
 
       template <int offset, typename tuple_type>
@@ -745,6 +898,7 @@ namespace Sacado {
 
       typedef typename ExprT1::approx_type approx_type;
       typedef typename ExprT1::expansion_type expansion_type;
+      typedef typename ExprT1::quad_expansion_type quad_expansion_type;
       typedef typename ExprT1::storage_type storage_type;
 
       static const int num_args = ExprT1::num_args;
@@ -752,17 +906,29 @@ namespace Sacado {
       Expr(const ExprT1& expr1_, const ConstT& c_) :
 	expr1(expr1_), c(c_) {}
 
+      std::string name() const {
+	return expr1.name() + std::string("*c");
+      }
+
       int size() const { return expr1.size(); }
 
       const approx_type& getArg(int i) const {
 	return expr1.getArg(i);
+      }
+      
+      bool has_nonconst_expansion() const {
+	return expr1.has_nonconst_expansion();
       }
 
       Teuchos::RCP<expansion_type> expansion() const {
 	return expr1.expansion();
       }
 
-      bool has_fast_access() const { return expr1.has_fast_access(); }
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {
+	return expr1.quad_expansion();
+      }
+
+      bool has_fast_access(int sz) const { return expr1.has_fast_access(sz); }
 
       int order() const { return expr1.order(); }
 
@@ -800,6 +966,7 @@ namespace Sacado {
 
       typedef typename ExprT2::approx_type approx_type;
       typedef typename ExprT2::expansion_type expansion_type;
+      typedef typename ExprT2::quad_expansion_type quad_expansion_type;
       typedef typename ExprT2::storage_type storage_type;
 
       static const int num_args = ExprT2::num_args;
@@ -807,15 +974,27 @@ namespace Sacado {
       Expr(const ConstT& c_, const ExprT2& expr2_) :
 	c(c_), expr2(expr2_) {}
 
+      std::string name() const {
+	return std::string("c*") + expr2.name();
+      }
+
       int size() const { return expr2.size(); }
 
-     const approx_type& getArg(int i) const { return expr2.getArg(i); } 
+      const approx_type& getArg(int i) const { return expr2.getArg(i); } 
+
+      bool has_nonconst_expansion() const {
+	return expr2.has_nonconst_expansion();
+      }
 
       Teuchos::RCP<expansion_type> expansion() const {
 	return expr2.expansion();
       }
 
-      bool has_fast_access() const { return expr2.has_fast_access(); }
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {
+	return expr2.quad_expansion();
+      }
+
+      bool has_fast_access(int sz) const { return expr2.has_fast_access(sz); }
 
       int order() const { return expr2.order(); }
 
@@ -906,6 +1085,7 @@ namespace Sacado {
 
       typedef typename ExprT1::approx_type approx_type;
       typedef typename ExprT1::expansion_type expansion_type;
+      typedef typename ExprT1::quad_expansion_type quad_expansion_type;
       typedef typename ExprT1::storage_type storage_type;
 
       static const int num_args1 = ExprT1::num_args;
@@ -915,9 +1095,15 @@ namespace Sacado {
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :
 	expr1(expr1_), expr2(expr2_) {}
 
+      std::string name() const {
+	return expr1.name() + std::string("/") + expr2.name();
+      }
+
       int size() const {
-	int sz1 = expr1.size(), sz2 = expr2.size();
-	return sz1 > sz2 ? sz1 : sz2;
+	if (expr2.size() == 1)
+	  return expr1.size();
+	else
+	  return expansion()->size();
       }
 
       const approx_type& getArg(int i) const {
@@ -927,13 +1113,23 @@ namespace Sacado {
 	  return expr2.getArg(i-num_args1);
       }
 
+      bool has_nonconst_expansion() const {
+	return expr1.has_nonconst_expansion() || expr2.has_nonconst_expansion();
+      }
+
       Teuchos::RCP<expansion_type> expansion() const {
-	return expr1.expansion() != Teuchos::null ? expr1.expansion() : 
+	return expr1.has_nonconst_expansion() ? expr1.expansion() : 
 	  expr2.expansion();
       }
 
-      bool has_fast_access() const {
-	return expr1.has_fast_access() && (expr2.order() == 0); 
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {
+        return expr1.quad_expansion() != Teuchos::null ?
+	  expr1.quad_expansion() :
+          expr2.quad_expansion();
+      }
+
+      bool has_fast_access(int sz) const {
+	return expr1.has_fast_access(sz) && (expr2.order() == 0); 
       }
 
       int order() const { return expr2.order() == 0 ? expr1.order() : 100; }
@@ -974,6 +1170,7 @@ namespace Sacado {
 
       typedef typename ExprT1::approx_type approx_type;
       typedef typename ExprT1::expansion_type expansion_type;
+      typedef typename ExprT1::quad_expansion_type quad_expansion_type;
       typedef typename ExprT1::storage_type storage_type;
 
       static const int num_args = ExprT1::num_args;
@@ -981,17 +1178,29 @@ namespace Sacado {
       Expr(const ExprT1& expr1_, const ConstT& c_) :
 	expr1(expr1_), c(c_) {}
 
+      std::string name() const {
+	return expr1.name() + std::string("/c");
+      }
+
       int size() const { return expr1.size(); }
 
       const approx_type& getArg(int i) const {
 	return expr1.getArg(i);
       }
 
+      bool has_nonconst_expansion() const {
+	return expr1.has_nonconst_expansion();
+      }
+
       Teuchos::RCP<expansion_type> expansion() const {
 	return expr1.expansion();
       }
 
-      bool has_fast_access() const { return expr1.has_fast_access(); }
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {
+	return expr1.quad_expansion();
+      }
+
+      bool has_fast_access(int sz) const { return expr1.has_fast_access(sz); }
 
       int order() const { return expr1.order(); }
 
@@ -1029,6 +1238,7 @@ namespace Sacado {
 
       typedef typename ExprT2::approx_type approx_type;
       typedef typename ExprT2::expansion_type expansion_type;
+      typedef typename ExprT2::quad_expansion_type quad_expansion_type;
       typedef typename ExprT2::storage_type storage_type;
 
       static const int num_args = ExprT2::num_args;
@@ -1036,15 +1246,32 @@ namespace Sacado {
       Expr(const ConstT& c_, const ExprT2& expr2_) :
 	c(c_), expr2(expr2_) {}
 
-      int size() const { return expr2.size(); }
+      std::string name() const {
+	return std::string("c/") + expr2.name();
+      }
+
+      int size() const {
+	if (expr2.size() == 1)
+	  return 1;
+	else
+	  return expansion()->size();
+      }
 
      const approx_type& getArg(int i) const { return expr2.getArg(i); } 
+
+      bool has_nonconst_expansion() const {
+	return expr2.has_nonconst_expansion();
+      }
 
       Teuchos::RCP<expansion_type> expansion() const {
 	return expr2.expansion();
       }
 
-      bool has_fast_access() const { return false; }
+      Teuchos::RCP<quad_expansion_type> quad_expansion() const {
+	return expr2.quad_expansion();
+      }
+
+      bool has_fast_access(int sz) const { return false; }
 
       int order() const { return expr2.order() == 0 ? 0 : 100; }
 

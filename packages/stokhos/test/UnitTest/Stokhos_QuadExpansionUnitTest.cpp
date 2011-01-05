@@ -46,8 +46,8 @@ namespace QuadExpansionUnitTest {
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > exp;
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk, Cijk_linear;
+    Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > exp, exp_linear;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2, cx, cu, cu2, sx, su, su2;
     ValueType a;
     
@@ -74,10 +74,13 @@ namespace QuadExpansionUnitTest {
 
       // Triple product tensor
       Cijk = basis->computeTripleProductTensor(basis->size());
+      Cijk_linear = basis->computeTripleProductTensor(basis->dimension()+1);
       
       // Quadrature expansion
       exp = 
 	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk, quad));
+      exp_linear = 
+	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk_linear, quad));
       
       // Create approximation
       sz = basis->size();
@@ -929,6 +932,22 @@ namespace QuadExpansionUnitTest {
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
+  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, TimesLSLinear ) {
+    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
+    setup.exp->sin(v, setup.x);
+    setup.exp_linear->times(setup.u, setup.sx, v);
+    setup.computePCE2<TimesFunc>(setup.u2, setup.sx, v);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, TimesRSLinear ) {
+    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
+    setup.exp->sin(v, setup.x);
+    setup.exp_linear->times(setup.u, v, setup.sx);
+    setup.computePCE2<TimesFunc>(setup.u2, v, setup.sx);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+				   setup.rtol, setup.atol, out);
+  }
   TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, TimesLSRC ) {
     setup.exp->times(setup.su, setup.sx, setup.a);
     setup.computePCE2RC<TimesFunc>(setup.su2, setup.sx, setup.a);
@@ -1307,6 +1326,13 @@ namespace QuadExpansionUnitTest {
     setup.exp->cos(setup.u, setup.x);
     setup.computePCE2<TimesFunc>(setup.u2, setup.u, setup.sx);
     setup.exp->timesEqual(setup.u, setup.sx);
+    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
+  				   setup.rtol, setup.atol, out);
+  }
+  TEUCHOS_UNIT_TEST( Stokhos_QuadExpansion, TimesEqualSLinear ) {
+    setup.exp->cos(setup.u, setup.x);
+    setup.computePCE2<TimesFunc>(setup.u2, setup.u, setup.sx);
+    setup.exp_linear->timesEqual(setup.u, setup.sx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
