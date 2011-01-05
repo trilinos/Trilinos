@@ -1,50 +1,49 @@
-#
+# ReStructured Text conversion utilities
+RST2HTML  = rst2html.py
+RST2LATEX = rst2latex.py
 
-TEX = latex
+HTML_FLAGS = --generator --time --section-numbering --no-xml-declaration
+TEX_FLAGS  = --generator --time --section-numbering --use-latex-toc --use-latex-docinfo
 
-BTEX = bibtex
+# LaTeX
+LATEX = pdflatex
 
-BIBFILE = 
+# ReStructured Text main source file
+SRC_FILE = UsersGuide.txt
 
-PAPER = guide
+# Files that $(SRC_FILE) depends on
+DEPEND_FILES = BuildingAndInstalling.txt Prerequisites.txt
 
-PARTS = ${PAPER}.tex
+# Web page to be made
+WEB_PAGE = $(SRC_FILE:txt=html)
 
-PICTURES =
+# PDF file generation
+TEX_FILE = $(SRC_FILE:txt=tex)
+PDF_FILE = $(TEX_FILE:tex=pdf)
 
-all: ${PAPER}.ps
+AUX_FILES = $(TEX_FILE:tex=aux) \
+	    $(TEX_FILE:tex=out) \
+	    $(TEX_FILE:tex=log) \
+	    $(TEX_FILE:tex=toc)
 
-########################################################################
-#
-# Dependencies - 3 are required for latex/bibtex
-# - a rule must exist for the .dvi, the .bbl and the .aux file
-#   in order for a clean make with a new .tex file
-#
-########################################################################
+# Default target depends on all of the recursive subdirectories
+all: $(WEB_PAGE) $(PDF_FILE)
 
-${PAPER}.dvi: ${PAPER}.tex ${PARTS} ${PAPER}.bbl
-	${TEX} ${PAPER}
-	${TEX} ${PAPER}
+$(WEB_PAGE): $(SRC_FILE) $(DEPEND_FILES)
+	$(RST2HTML) $(HTML_FLAGS) $< $@
 
-${PAPER}.bbl: ${PAPER}.aux
-	${BTEX} ${PAPER}
+$(TEX_FILE): $(SRC_FILE) $(DEPEND_FILES)
+	$(RST2LATEX) $(TEX_FLAGS) $< $@
 
-${PAPER}.aux: ${PAPER}.tex ${PARTS} force
-	${TEX} ${PAPER}
-
-force:
-
-${PAPER}.pdf:    ${PAPER}.dvi
-	dvipdf -o ${PAPER}.pdf ${PAPER}
-
-${PAPER}.ps:    ${PAPER}.dvi
-	dvips -o ${PAPER}.ps ${PAPER}
-
-tarfile:
-	tar chvf ${PAPER}.tar Makefile ${PARTS} ${PICTURES} ${BIBFILE}
-	gzip ${PAPER}.tar
+$(PDF_FILE): $(TEX_FILE)
+	$(LATEX) $<
+	$(LATEX) $<
+	$(LATEX) $<
 
 clean:
-	/bin/rm -f *.pdf ${PAPER}.ps ${PAPER}.dj ${PAPER}.dvi *.aux *.bbl *.blg *.log *.lof *.lot *.toc *.tar *.tar.Z
+	$(RM) $(TEX_FILE) $(AUX_FILES) *~
 
+clobber: clean
+	$(RM) $(WEB_PAGE) $(PDF_FILE)
 
+.PHONY : clean clobber

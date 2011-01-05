@@ -160,11 +160,12 @@ bool element_side_polarity( const Entity & elem ,
                             const Entity & side , int local_side_id = -1 );
 
 
-/** \brief  Given an element and collection of nodes, return the
- *          local id of the side that contains those nodes in the
+/** \brief  Given an entity and collection of nodes, return the
+ *          local id of the subcell that contains those nodes in the
  *          correct orientation.
  */
-int element_local_side_id( const Entity & elem ,
+int get_entity_subcell_id( const Entity & elem ,
+                           const EntityRank subcell_rank,
                            const CellTopologyData * side_topology,
                            const EntityVector & side_nodes );
 

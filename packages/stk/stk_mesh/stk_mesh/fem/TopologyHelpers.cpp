@@ -188,67 +188,64 @@ bool element_side_polarity( const Entity & elem ,
   return good ;
 }
 
-
-int element_local_side_id( const Entity & elem ,
-                           const CellTopologyData * side_topology,
-                           const std::vector<Entity*>& side_nodes )
+int get_entity_subcell_id( const Entity & entity ,
+                           const EntityRank subcell_rank,
+                           const CellTopologyData * subcell_topology,
+                           const std::vector<Entity*>& subcell_nodes )
 {
   const int INVALID_SIDE = -1;
 
-  unsigned num_nodes = side_topology->node_count;
+  unsigned num_nodes = subcell_topology->node_count;
 
-  if (num_nodes != side_nodes.size()) {
+  if (num_nodes != subcell_nodes.size()) {
     return INVALID_SIDE;
   }
 
   // get topology of elem
 #ifndef SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData* elem_topology = get_cell_topology(elem);
+  const CellTopologyData* entity_topology = get_cell_topology(entity);
 #else // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  const CellTopologyData* elem_topology = fem::get_cell_topology(elem).getCellTopologyData();
+  const CellTopologyData* entity_topology = fem::get_cell_topology(entity).getCellTopologyData();
 #endif // SKIP_DEPRECATED_STK_MESH_TOPOLOGY_HELPERS
-  if (elem_topology == NULL) {
+  if (entity_topology == NULL) {
     return INVALID_SIDE;
   }
 
-  // get nodal relations for elem
-  PairIterRelation relations = elem.relations(fem::NODE_RANK);
+  // get nodal relations for entity
+  PairIterRelation relations = entity.relations(fem::NODE_RANK);
 
-  const unsigned subcell_rank = elem_topology->dimension - 1;
+  const int num_permutations = subcell_topology->permutation_count;
 
-  const int num_permutations = side_topology->permutation_count;
+  // Iterate over the subcells of entity...
+  for (unsigned local_subcell_ordinal = 0;
+      local_subcell_ordinal < entity_topology->subcell_count[subcell_rank];
+      ++local_subcell_ordinal) {
 
+    // get topological data for this subcell
+    const CellTopologyData* curr_subcell_topology =
+      entity_topology->subcell[subcell_rank][local_subcell_ordinal].topology;
 
-  // Iterate over the subcells of elem...
-  for (unsigned local_side_ordinal = 0;
-       local_side_ordinal < elem_topology->subcell_count[subcell_rank];
-       ++local_side_ordinal) {
+    // If topologies are not the same, there is no way the subcells are the same
+    if (subcell_topology == curr_subcell_topology) {
 
-    // get topological data for this side
-    const CellTopologyData* curr_side_topology =
-      elem_topology->subcell[subcell_rank][local_side_ordinal].topology;
+      const unsigned* const subcell_node_map = entity_topology->subcell[subcell_rank][local_subcell_ordinal].node;
 
-    // If topologies are not the same, there is no way the sides are the same
-    if (side_topology == curr_side_topology) {
-
-      const unsigned* const side_node_map = elem_topology->side[local_side_ordinal].node;
-
-      // Taking all positive permutations into account, check if this side
-      // has the same nodes as the side_nodes argument. Note that this
+      // Taking all positive permutations into account, check if this subcell
+      // has the same nodes as the subcell_nodes argument. Note that this
       // implementation preserves the node-order so that we can take
       // entity-orientation into account.
       for (int p = 0; p < num_permutations; ++p) {
 
-        if (curr_side_topology->permutation[p].polarity ==
+        if (curr_subcell_topology->permutation[p].polarity ==
             CELL_PERMUTATION_POLARITY_POSITIVE) {
 
           const unsigned * const perm_node =
-            curr_side_topology->permutation[p].node ;
+            curr_subcell_topology->permutation[p].node ;
 
           bool all_match = true;
           for (unsigned j = 0 ; j < num_nodes; ++j ) {
-            if (side_nodes[j] !=
-                relations[side_node_map[perm_node[j]]].entity()) {
+            if (subcell_nodes[j] !=
+                relations[subcell_node_map[perm_node[j]]].entity()) {
               all_match = false;
               break;
             }
@@ -256,7 +253,7 @@ int element_local_side_id( const Entity & elem ,
 
           // all nodes were the same, we have a match
           if ( all_match ) {
-            return local_side_ordinal ;
+            return local_subcell_ordinal ;
           }
         }
       }
