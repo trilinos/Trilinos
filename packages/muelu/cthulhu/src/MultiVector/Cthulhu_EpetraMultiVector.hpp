@@ -419,4 +419,4 @@ namespace Cthulhu {
   
 } // namespace Cthulhu
 
-#endif // CTHULHU_MULTIVECTOR_DECL_HPP
+#endif // ifndef CTHULHU_EPETRAMULTIVECTOR_HPP
