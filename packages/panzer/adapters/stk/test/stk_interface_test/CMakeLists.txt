@@ -41,9 +41,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #  COMM serial mpi
 #  )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
-  SOURCE_FILES basic.gen
-  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/meshes"
-  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/meshes"
-  EXEDEPS tExodusReaderFactory
-  )
+#PACKAGE_COPY_FILES_TO_BINARY_DIR(stk_interface_copy
+#  SOURCE_FILES basic.gen
+#  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/meshes"
+#  DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/meshes"
+#  EXEDEPS tExodusReaderFactory
+#  )
