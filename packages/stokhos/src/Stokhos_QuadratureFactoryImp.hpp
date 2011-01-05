@@ -58,9 +58,17 @@ create(Teuchos::ParameterList& sgParams)
 
   // Create quadrature
   std::string quad_type = quadParams.get("Type", "Tensor Product");
-  if (quad_type == "Tensor Product")
-    quad = 
-      Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(product_basis));
+  if (quad_type == "Tensor Product") {
+    if (quadParams.isType<ordinal_type>("Quadrature Order")) {
+      ordinal_type order = quadParams.get<ordinal_type>("Quadrature Order");
+      quad = 
+	Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(product_basis, order));
+    }
+    else {
+      quad = 
+	Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(product_basis));
+    }
+  }
   else if (quad_type == "Sparse Grid") {
 #ifdef HAVE_STOKHOS_DAKOTA
     if (quadParams.isType<ordinal_type>("Sparse Grid Level")) {
