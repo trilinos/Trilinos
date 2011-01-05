@@ -133,6 +133,8 @@ setupOperator(
 {
   block_ops = ops;
   num_blocks = block_ops->size();
+  if (num_blocks < Cijk->num_k())
+    k_end = Cijk->find_k(num_blocks);
 }
 
 Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > 
