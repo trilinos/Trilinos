@@ -11,7 +11,8 @@
 #include "MueLu_SaLevel.hpp"
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
-#include "MueLu_GaussSeidel.hpp"
+//#include "MueLu_GaussSeidel.hpp"
+#include "MueLu_IfpackSmoother.hpp"
 
 /**********************************************************************************/
 /* CREATE INITAL MATRIX                                                           */
@@ -26,6 +27,8 @@
 #include <Cthulhu_MultiVectorFactory.hpp>
 
 #include <MueLu_MatrixFactory.hpp>
+
+#include "MueLu_Utilities.hpp"
 
 #include "MueLu_UseDefaultTypes.hpp"
 #include "MueLu_UseShortNames.hpp"
@@ -84,6 +87,10 @@ int main(int argc, char *argv[]) {
   //RCP<Vector> nullSpace = VectorFactory::Build(map);
   RCP<MultiVector> nullSpace = MultiVectorFactory::Build(map,1);
   nullSpace->putScalar( (SC) 1.0);
+  RCP<Epetra_MultiVector> foo = Utils::MV2NonConstEpetraMV(nullSpace);
+  double n;
+  foo->Norm1(&n);
+  std::cout << "||NS|| = " << n << std::endl;
 
   MueLu::Hierarchy<SC,LO,GO,NO,LMO> H;
   H.setDefaultVerbLevel(Teuchos::VERB_HIGH);
@@ -108,9 +115,13 @@ int main(int argc, char *argv[]) {
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory() );
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-  RCP<SmootherPrototype>  smoother = rcp( new GaussSeidel() );
+  Teuchos::ParameterList  ifpackList;
+  ifpackList.set("relaxation: type", "Gauss-Seidel");
+  ifpackList.set("relaxation: sweeps", (LO) 1);
+  ifpackList.set("relaxation: damping factor", (SC) 1.0);
+  RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smoother) );
-//  RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(Teuchos::null,Teuchos::null) );
+  //RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(Teuchos::null,Teuchos::null) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
 
   //H.FillHierarchy(Pfact,Rfact,Acfact);

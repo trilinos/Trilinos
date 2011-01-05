@@ -98,3 +98,7 @@ typedef MueLu::Aggregates<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 #ifdef MUELU_GAUSSSEIDEL_SHORT
 typedef MueLu::GaussSeidel<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>          GaussSeidel;
 #endif
+
+#ifdef MUELU_IFPACK_SMOOTHER_SHORT
+typedef MueLu::IfpackSmoother<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>       IfpackSmoother;
+#endif

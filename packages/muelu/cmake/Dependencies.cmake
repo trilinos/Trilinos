@@ -1,5 +1,5 @@
 SET(LIB_REQUIRED_DEP_PACKAGES Teuchos Kokkos) #TODO: remove Kokkos
-SET(LIB_OPTIONAL_DEP_PACKAGES Epetra Tpetra)  #TODO: EpetraExt ?
+SET(LIB_OPTIONAL_DEP_PACKAGES Epetra Tpetra Ifpack Ifpack2)  #TODO: EpetraExt ?
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES Epetra EpetraExt Tpetra Kokkos) #TODO: clean up this line
 SET(LIB_REQUIRED_DEP_TPLS)
