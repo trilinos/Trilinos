@@ -36,8 +36,8 @@ int Zoltan_GenPrime(int stopafter, int *prime_num)
 
     int uplimit=MAX_PRIME-1;
     int botlimit=0;
-    int i=2,j;
-    int result;
+    int j;
+    int result=primes[uplimit];
     while(1) {
         if (uplimit-botlimit < 5) {
 	    for (j = botlimit; j <= uplimit; j++) {
