@@ -29,6 +29,7 @@
 using namespace std;
 using namespace MueLu;
 using Teuchos::ArrayView;
+typedef ArrayView<const int>::const_iterator iter;
 
 int MueLu_PrintLevel() { return 7; }    /* Normally this should be some general*/
                                         /* attribute the indicates the level   */
@@ -50,11 +51,25 @@ typedef struct MueLu_SuperNode_Struct
   int    length;
   int    maxLength;
   int    index;
-  int    *list;
+  Teuchos::ArrayRCP<int> list;
   struct MueLu_SuperNode_Struct *next;
 } MueLu_SuperNode;
 
-int MueLu_RandomReorder(int *randomVector, const Map &map);
+/* In the algorithm, aggStat[]=READY/NOTSEL/SELECTED indicates whether a node has been aggreated. */
+enum NodeState {
+  READY   = -11,   /* indicates that a node is available to be */
+                   /* selected as a root node of an aggregate  */
+
+  NOTSEL  = -12,   /* indicates that a node has been rejected  */
+                   /* as a root node. This could perhaps be    */
+                   /* because if this node had been selected a */
+                   /* small aggregate would have resulted.     */
+
+  SELECTED = -13   /* indicates that a node has been assigned  */
+                   /* to an aggregate.                         */
+};
+
+int MueLu_RandomReorder(Teuchos::ArrayRCP<int> randomVector, const Map &map);
 
 /* ************************************************************************ */
 /* Coarsen Graph by aggregation. In particular, each processor works        */
@@ -84,80 +99,61 @@ int MueLu_RandomReorder(int *randomVector, const Map &map);
 
 RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOptions & aggOptions, const Graph<int,int> & graph)
 {
-  int     i, j, k, m, iNode = 0, jNode, length, nRows;
-  int     selectFlag, nAggregates, index, myPid, iNode2;
-  Teuchos::ArrayRCP<int> vertex2AggId; //, *itmpArray = NULL,
-  int     count;
-  int     *aggStat = NULL, ordering;
-  double  printFlag;
-  int     *randomVector = NULL, *aggCntArray = NULL;
-  int     minNodesPerAggregate, maxNeighSelected;
-  unsigned int nBytes;
-  MueLu_Node       *nodeHead=NULL, *nodeTail=NULL, *newNode=NULL;
-  MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
-
-  std::string name = "Uncoupled";
+  /* Create Aggregation object */
+  const std::string name = "Uncoupled";
+  int nAggregates = 0;
   RCP<Aggregates<int,int> > aggregates = Teuchos::rcp(new Aggregates<int,int>(graph, name));
 
-  vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0);
-
   /* ============================================================= */
-  /* get the machine information and matrix references             */
-  /* ============================================================= */
-
-  myPid                   = graph.GetComm()->getRank();
-  minNodesPerAggregate    = aggOptions.GetMinNodesPerAggregate();
-  maxNeighSelected        = aggOptions.GetMaxNeighAlreadySelected();
-  ordering                = aggOptions.GetOrdering();
-  printFlag               = aggOptions.GetPrintFlag();
-  nRows                   = graph.GetNodeNumVertices();
-
-  /* ============================================================= */
-  /* aggStat indicates whether this node has been aggreated, and */
-  /* vertex2AggId stores the aggregate number where this node has    */
+  /* aggStat indicates whether this node has been aggreated, and   */
+  /* vertex2AggId stores the aggregate number where this node has  */
   /* been aggregated into.                                         */
   /* ============================================================= */
 
-  nBytes = nRows * sizeof( int );
-  if (nBytes > 0) aggStat = (int *) malloc(nBytes);
-  for ( i = 0; i < nRows; i++ ) aggStat[i] = MUELU_AGGR_READY;
+  Teuchos::ArrayRCP<NodeState> aggStat;
+  const int nRows = graph.GetNodeNumVertices();
+  if (nRows > 0) aggStat = Teuchos::arcp<NodeState>(nRows);
+  for ( int i = 0; i < nRows; ++i ) aggStat[i] = READY;
 
-  /* ============================================================= */
-  /* Set up the data structures for aggregation                    */
-  /* ============================================================= */
-
-  nAggregates = 0;
-  aggHead = NULL;
-  nBytes = (nRows+1)*sizeof(int);
-  aggCntArray = (int *) malloc(nBytes);
-  for ( i = 0; i <= nRows; i++ ) aggCntArray[i] = 0;
+  /* unused */
+  // Teuchos::ArrayRCP<int> aggCntArray = Teuchos::arcp<int>(nRows+1);
+  // for ( int i = 0; i <= nRows; ++i ) aggCntArray[i] = 0;
 
   /* ============================================================= */
   /* Phase 1  :                                                    */
   /*    for all nodes, form a new aggregate with its neighbors     */
   /*    if the number of its neighbors having been aggregated does */
   /*    not exceed a given threshold                               */
-  /*    (maxNeighSelected = 0 ===> Vanek's scheme)               */
+  /*    (aggOptions.GetMaxNeighAlreadySelected() = 0 ===> Vanek's scheme) */
   /* ============================================================= */
+
+  /* some general variable declarations */   
+  const int ordering = aggOptions.GetOrdering();
+  Teuchos::ArrayRCP<int> randomVector;
+  MueLu_Node       *nodeHead=NULL, *nodeTail=NULL, *newNode=NULL;
+  MueLu_SuperNode  *aggHead=NULL, *aggCurrent=NULL, *supernode=NULL;
+  Teuchos::ArrayRCP<int> vertex2AggId = aggregates->GetVertex2AggId()->getDataNonConst(0); // output only: contents ignored
+  /**/
 
   if ( ordering == 1 )       /* random ordering */
     {
-      nBytes = nRows * sizeof(int);
-      randomVector = (int *) malloc(nBytes);
-      for (i = 0; i < nRows; i++) randomVector[i] = i;
+      randomVector = Teuchos::arcp<int>(nRows);
+      for (int i = 0; i < nRows; ++i) randomVector[i] = i;
       MueLu_RandomReorder(randomVector, *graph.GetDomainMap());
     } 
   else if ( ordering == 2 )  /* graph ordering */
     {
-      newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
+      newNode = new MueLu_Node;      
       newNode->nodeId = 0;
       nodeHead = newNode;
       nodeTail = newNode;
       newNode->next = NULL;
     }
-   
-  iNode2 = 0;
-  while ( iNode2 < nRows)
+
+  /* main loop */
+  int iNode  = 0;
+  int iNode2 = 0;
+  while (iNode2 < nRows)
     {
       /*------------------------------------------------------ */
       /* pick the next node to aggregate                       */
@@ -169,11 +165,11 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
         {
           if ( nodeHead == NULL ) 
             {
-              for ( jNode = 0; jNode < nRows; jNode++ ) 
+              for ( int jNode = 0; jNode < nRows; ++jNode ) 
                 {
-                  if ( aggStat[jNode] == MUELU_AGGR_READY )
+                  if ( aggStat[jNode] == READY )
                     { 
-                      newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
+                      newNode = new MueLu_Node;
                       newNode->nodeId = jNode;
                       nodeHead = newNode;
                       nodeTail = newNode;
@@ -186,59 +182,59 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
           newNode = nodeHead;
           iNode = newNode->nodeId;
           nodeHead = newNode->next;
-          free(newNode);
+          delete newNode;
         }
 
       /*------------------------------------------------------ */
       /* consider further only if the node is in READY mode    */
       /*------------------------------------------------------ */
 
-      if ( aggStat[iNode] == MUELU_AGGR_READY ) 
+      if ( aggStat[iNode] == READY ) 
         {
           // neighOfINode is the neighbor node list of node 'iNode'.
           ArrayView<const int> neighOfINode = graph.getNeighborVertices(iNode);
-          length = neighOfINode.size();
+          int length = neighOfINode.size();
           
-          supernode = (MueLu_SuperNode *) malloc(sizeof(MueLu_SuperNode));      
-          supernode->list = (int*) malloc((length+1)*sizeof(int));
-
-          if ((supernode->list) == NULL) 
-            {
-              printf("Error:couldn't allocate memory for supernode! %d\n",
-                     length);
-              exit(1);
-            }
+          supernode = new MueLu_SuperNode;
+          try {
+            supernode->list = Teuchos::arcp<int>(length+1);
+          } catch (std::bad_alloc&) {
+            printf("Error:couldn't allocate memory for supernode! %d\n", length);
+            exit(1);
+          }
 
           supernode->maxLength = length;
           supernode->length = 1;
           supernode->list[0] = iNode;
-          selectFlag = 1;
-
-          /*--------------------------------------------------- */
-          /* count the no. of neighbors having been aggregated  */
-          /*--------------------------------------------------- */
-
-          count = 0;
-          for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
-            {
-              index = *it;
-              if ( index < nRows ) 
-                {
-                  if ( aggStat[index] == MUELU_AGGR_READY || 
-                       aggStat[index] == MUELU_AGGR_NOTSEL ) 
-                    supernode->list[supernode->length++] = index;
-                  else count++;
-
-                }
-            }
-
-          /*--------------------------------------------------- */
-          /* if there are too many neighbors aggregated or the  */
-          /* number of nodes in the new aggregate is too few,   */
-          /* don't do this one                                  */
-          /*--------------------------------------------------- */
-
-          if ( count > maxNeighSelected ) selectFlag = 0;
+          
+          int selectFlag = 1;
+          {
+            /*--------------------------------------------------- */
+            /* count the no. of neighbors having been aggregated  */
+            /*--------------------------------------------------- */
+            
+            int count = 0;
+            for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+              {
+                int index = *it;
+                if ( index < nRows ) 
+                  {
+                    if ( aggStat[index] == READY || 
+                         aggStat[index] == NOTSEL ) 
+                      supernode->list[supernode->length++] = index;
+                    else count++;
+                    
+                  }
+              }
+            
+            /*--------------------------------------------------- */
+            /* if there are too many neighbors aggregated or the  */
+            /* number of nodes in the new aggregate is too few,   */
+            /* don't do this one                                  */
+            /*--------------------------------------------------- */
+            
+            if ( count > aggOptions.GetMaxNeighAlreadySelected() ) selectFlag = 0;
+          }
 
           // Note: the supernode length is actually 1 more than the 
           //       number of nodes in the candidate aggregate. The 
@@ -247,19 +243,18 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
           //       < to <= in the if just below.
 
           if (selectFlag != 1 || 
-              supernode->length <= minNodesPerAggregate) 
+              supernode->length <= aggOptions.GetMinNodesPerAggregate()) 
             {
-              aggStat[iNode] = MUELU_AGGR_NOTSEL;
-              free( supernode->list );
-              free( supernode );
+              aggStat[iNode] = NOTSEL;
+              delete supernode;
               if ( ordering == 2 ) /* if graph ordering */
                 {
-                  for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                  for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                     {
-                      index = *it;
-                      if ( aggStat[index] == MUELU_AGGR_READY )
+                      int index = *it;
+                      if ( aggStat[index] == READY )
                         { 
-                          newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
+                          newNode = new MueLu_Node;
                           newNode->nodeId = index;
                           newNode->next = NULL;
                           if ( nodeHead == NULL )
@@ -277,19 +272,19 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
           else 
             {
               aggregates->SetIsRoot(iNode);
-              for ( j = 0; j < supernode->length; j++ ) 
+              for ( int j = 0; j < supernode->length; ++j ) 
                 {
-                  jNode = supernode->list[j];
-                  aggStat[jNode] = MUELU_AGGR_SELECTED;
+                  int jNode = supernode->list[j];
+                  aggStat[jNode] = SELECTED;
                   vertex2AggId[jNode] = nAggregates;
                   if ( ordering == 2 ) /* if graph ordering */
                     {
-                      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
+                      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                         {
-                          index = *it;
-                          if ( aggStat[index] == MUELU_AGGR_READY )
+                          int index = *it;
+                          if ( aggStat[index] == READY )
                             { 
-                              newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
+                              newNode = new MueLu_Node;
                               newNode->nodeId = index;
                               newNode->next = NULL;
                               if ( nodeHead == NULL )
@@ -316,62 +311,78 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
                   aggCurrent->next = supernode;
                   aggCurrent = supernode;
                 } 
-              aggCntArray[nAggregates++] = supernode->length;
+              nAggregates++;
+              // unused aggCntArray[nAggregates] = supernode->length;
             }
         }
     }
-  if ( ordering == 1 ) free(randomVector);
-  else if ( ordering == 2 ) 
+
+  if ( ordering == 2 ) 
     {
       while ( nodeHead != NULL )
         {
           newNode = nodeHead;
           nodeHead = newNode->next;
-          free( newNode );
+          delete newNode;
         }
     }
-
-  // TODO: replace AllReduce by Reduce to proc 0
-
-  // Compute 'm'
-  m = 0;
-  for ( i = 0; i < nRows; i++ ) 
-    if ( aggStat[i] == MUELU_AGGR_READY ) m++;
-
-  sumAll(graph.GetComm(), m, k);
-
-  if ( k > 0 && myPid == 0 && printFlag  < MueLu_PrintLevel())
-    printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",k);
-
-  // Compute 'm'
-  m = 0;
-  for ( i = 0; i < nRows; i++ ) 
-    if ( aggStat[i] == MUELU_AGGR_SELECTED ) m++;
-
-  sumAll(graph.GetComm(), m, k);
-  sumAll(graph.GetComm(), nRows, m);
-  sumAll(graph.GetComm(), nAggregates, j);
-
+  
+  /* Update aggregate object */
   aggregates->SetNumAggregates(nAggregates);
-  if ( myPid == 0 && printFlag  < MueLu_PrintLevel()) 
-    {
-      printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",k,m);
-      printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",j);
-    }
 
+  /* Verbose */
+  // TODO: replace AllReduce by Reduce to proc 0
+  int myPid = graph.GetComm()->getRank();
+  if ( myPid == 0 && aggOptions.GetPrintFlag() < MueLu_PrintLevel()) {
+    const RCP<const Teuchos::Comm<int> > & comm = graph.GetComm();
+
+    {
+      int localReady=0, globalReady;
+      
+      // Compute 'localReady'
+      for ( int i = 0; i < nRows; ++i ) 
+        if ( aggStat[i] == READY ) localReady++;
+      
+      // Compute 'globalReady'
+      sumAll(comm, localReady, globalReady);
+      
+      if (globalReady > 0)
+        printf("Aggregation(UC) : Phase 1 (WARNING) - %d READY nodes left\n",globalReady);
+    }
+    
+    {
+      int localSelected=0, globalSelected;
+      int globalNRows;
+      
+      // Compute 'localSelected'
+      for ( int i = 0; i < nRows; ++i ) 
+          if ( aggStat[i] == SELECTED ) localSelected++;
+      
+      // Compute 'globalSelected' and 'globalNRows'
+      sumAll(comm, localSelected, globalSelected);
+      sumAll(comm, nRows, globalNRows);
+      
+      printf("Aggregation(UC) : Phase 1 - nodes aggregated = %d (%d)\n",globalSelected, globalNRows);
+    }
+    
+    {
+      int nAggregatesGlobal; 
+      sumAll(comm, nAggregates, nAggregatesGlobal);
+      printf("Aggregation(UC) : Phase 1 - total aggregates = %d \n",nAggregatesGlobal);
+    }
+    
+  } // if myPid == 0 ...
+  
   /* ------------------------------------------------------------- */
   /* clean up                                                      */
   /* ------------------------------------------------------------- */
 
-  if (aggStat != NULL) free(aggStat);
-  free(aggCntArray);
   aggCurrent = aggHead;
   while ( aggCurrent != NULL ) 
     {
       supernode = aggCurrent;
       aggCurrent = aggCurrent->next;
-      if ( supernode->maxLength > 0 ) free( supernode->list );
-      free( supernode );
+      delete supernode;
     }
 
   return aggregates;
@@ -385,7 +396,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
 //     list[]      Same integers as on input but in a different order
 //                 that is determined randomly.
 //
-int MueLu_RandomReorder(int *list, const Map &map)
+int MueLu_RandomReorder(Teuchos::ArrayRCP<int> list, const Map &map)
 {
 
   TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "RandomReorder: TODO");
@@ -397,12 +408,11 @@ int MueLu_RandomReorder(int *list, const Map &map)
 //   int  *iptr;
 
 //   RandVec.Random(); RandVec.ExtractView(&ptr); iRandVec.ExtractView(&iptr);
-//   for (int i=0; i <  map.NumMyElements(); i++) iptr[i] = (int) (10000.*ptr[i]);
+//   for (int i=0; i <  map.NumMyElements(); ++i) iptr[i] = (int) (10000.*ptr[i]);
 //   Epetra_Util::Sort(true,RandVec.getMap().NumMyElements(), iptr, 0,NULL,1,&list);
 
   return 0; 
 }
-
 
 // JG TODO: rename variables:
 //  Adjacent-> adjacent

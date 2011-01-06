@@ -5,14 +5,6 @@
 
 #include "MueLu_Graph.hpp"
 
-#define MUELU_AGGR_READY    -11  /* indicates that a node is available to be*/
-                                  /* selected as a root node of an aggregate */
-#define MUELU_AGGR_NOTSEL   -12  /* indicates that a node has been rejected */
-                                  /* as a root node. This could perhaps be   */
-                                  /* because if this node had been selected a*/
-                                  /* small aggregate would have resulted.    */
-#define MUELU_AGGR_SELECTED -13  /* indicates that a node has been assigned */
-                                  /* to an aggregate.                        */
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                   /* any aggregate.                          */
 #define MUELU_UNASSIGNED    -1   /* indicates a vertex is not yet claimed   */
