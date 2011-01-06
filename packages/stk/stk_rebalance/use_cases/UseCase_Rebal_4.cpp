@@ -107,35 +107,6 @@ void GreedySideset::set_mesh_info ( const std::vector<mesh::Entity *> &mesh_enti
   mesh_info.dest_proc_ids.assign(mesh_entities.size(), stk::parallel_machine_rank(comm_));
 
   mesh_information_ = mesh_info;
-
-const unsigned p_rank = bulk_data_.parallel_rank();
-const unsigned p_size = bulk_data_.parallel_size();
-for (unsigned i=0; i<p_size; ++i) {
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (i == p_rank) {
-    std::cout<<"Initial Distrobution for Processor: "<<p_rank<<std::endl;
-    std::map<mesh::EntityId, mesh::Entity*>  objs;
-    for (std::vector<mesh::Entity *>::iterator obj=mesh_info.mesh_entities.begin();
-         obj!= mesh_info.mesh_entities.end(); ++obj) {
-      mesh::Entity *o = *obj;
-      objs[o->identifier()]=o;
-      mesh::EntityVector related_entities;
-      std::vector<mesh::Entity*> elems(1,o);
-      stk::mesh::get_entities_through_relations(elems, related_entities);
-      for (size_t i=0; i<related_entities.size(); ++i) objs[related_entities[i]->identifier()]=related_entities[i];
-    }
-    for (std::map<mesh::EntityId,mesh::Entity*>::iterator obj=objs.begin(); obj!=objs.end(); ++obj) {
-      const mesh::Entity *o = obj->second;
-      std::cout 
-       <<"  id:"<<o->identifier() 
-       <<"  owner:"<<o->owner_rank() 
-       <<"  rank:"<<o->entity_rank() 
-       <<std::endl;
-    } 
-  }
-  std::cout<<std::flush;
-  MPI_Barrier(MPI_COMM_WORLD);
-}
 }
 
 unsigned GreedySideset::num_elems() const {return total_number_entities_ ;}
