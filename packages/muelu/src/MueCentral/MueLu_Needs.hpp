@@ -164,4 +164,6 @@ std::ostream& operator<<(std::ostream &os, Needs const &foo) {
 
 } //namespace MueLu
 
+#define MUELU_NEEDS_SHORT
+
 #endif //ifndef MUELU_NEEDS_HPP
