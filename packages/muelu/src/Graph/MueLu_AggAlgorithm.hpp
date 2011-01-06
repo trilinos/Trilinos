@@ -54,8 +54,7 @@ typedef struct MueLu_SuperNode_Struct
   struct MueLu_SuperNode_Struct *next;
 } MueLu_SuperNode;
 
-//extern int MueLu_RandomReorder(int *randomVector, const Map &map);
-int MueLu_RandomReorder(int *randomVector, const Epetra_BlockMap &map); //RRTODO
+int MueLu_RandomReorder(int *randomVector, const Map &map);
 
 /* ************************************************************************ */
 /* Coarsen Graph by aggregation. In particular, each processor works        */
@@ -146,7 +145,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
       nBytes = nRows * sizeof(int);
       randomVector = (int *) malloc(nBytes);
       for (i = 0; i < nRows; i++) randomVector[i] = i;
-//RRTODO      MueLu_RandomReorder(randomVector, *graph.GetDomainMap()); //RTODO
+      MueLu_RandomReorder(randomVector, *graph.GetDomainMap());
     } 
   else if ( ordering == 2 )  /* graph ordering */
     {
@@ -386,8 +385,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
 //     list[]      Same integers as on input but in a different order
 //                 that is determined randomly.
 //
-//int MueLu_RandomReorder(int *list, const Map &map) //RRTODO
-int MueLu_RandomReorder(int *list, const Epetra_BlockMap &map)
+int MueLu_RandomReorder(int *list, const Map &map)
 {
 
   TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "RandomReorder: TODO");
