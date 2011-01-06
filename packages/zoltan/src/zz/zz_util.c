@@ -270,12 +270,13 @@ Zoltan_AllReduceInPlace(void *sndrcvbuf, int count, MPI_Datatype datatype, MPI_O
 
 static MPI_Datatype zz_mpi_gno_type;
 static char* zz_mpi_gno_name=NULL;
-static char* zz_mpi_datatype_names[4] = 
+static char* zz_mpi_datatype_names[5] = 
 {
 "MPI_SHORT",
 "MPI_INT",
 "MPI_LONG",
-"MPI_LONG_LONG_INT"
+"MPI_LONG_LONG_INT",     /* not standard, but shows up */
+"MPI_LONG_LONG"             /* standard */
 };
 
 MPI_Datatype Zoltan_mpi_gno_type()
@@ -289,31 +290,43 @@ MPI_Datatype Zoltan_mpi_gno_type()
   MPI_Type_size(MPI_SHORT, &size_short);
   MPI_Type_size(MPI_INT, &size_int);
   MPI_Type_size(MPI_LONG, &size_long);
-#ifdef MPI_LONG_LONG_INT
-  MPI_Type_size(MPI_LONG_LONG_INT, &size_long_long);
+#ifdef MPI_LONG_LONG
+  MPI_Type_size(MPI_LONG_LONG, &size_long_long);
+#else
+  #ifdef MPI_LONG_LONG_INT
+    MPI_Type_size(MPI_LONG_LONG_INT, &size_long_long);
+  #endif
 #endif
 
   if (sizeof(ssize_t) == size_short){
     zz_mpi_gno_type = MPI_SHORT;
-    zz_mpi_gno_name=zz_mpi_datatype_names+0;
+    zz_mpi_gno_name=zz_mpi_datatype_names[0];
   }
   else if (sizeof(ssize_t) == size_int){
     zz_mpi_gno_type = MPI_INT;
-    zz_mpi_gno_name=zz_mpi_datatype_names+1;
+    zz_mpi_gno_name=zz_mpi_datatype_names[1];
   }
   else if (sizeof(ssize_t) == size_long){
     zz_mpi_gno_type = MPI_LONG;
-    zz_mpi_gno_name=zz_mpi_datatype_names+2;
+    zz_mpi_gno_name=zz_mpi_datatype_names[2];
   }
   else if (sizeof(ssize_t) == size_long_long){
-#ifdef MPI_LONG_LONG_INT
+
+#ifdef MPI_LONG_LONG
+    zz_mpi_gno_type = MPI_LONG_LONG;
+    zz_mpi_gno_name=zz_mpi_datatype_names[4];
+#else
+  #ifdef MPI_LONG_LONG_INT
     zz_mpi_gno_type = MPI_LONG_LONG_INT;
-    zz_mpi_gno_name=zz_mpi_datatype_names+3;
+    zz_mpi_gno_name=zz_mpi_datatype_names[5];
+  #endif
 #endif
+
   }
 
   if (!zz_mpi_gno_name){
     /* should never happen */
+    fprintf(stderr,"Zoltan_mpi_gno_type: It happened\n");
     MPI_Abort(MPI_COMM_WORLD,99);
   }
 
