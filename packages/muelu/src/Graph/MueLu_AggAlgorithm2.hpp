@@ -68,7 +68,7 @@ int MueLu_PrintLevel();
                                   /* vertex.  Should be between 0 and 1.     */
 
 int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
-                         int *candidates, int &nCandidates, int &nCandidatesGlobal);
+                         Teuchos::ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal);
 
 int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
                           RCP<Cthulhu::Vector<double> > & weights_, const AggAlgorithm2Comm & myWidget);
@@ -232,8 +232,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
                              const Graph<int,int> &graph)
 {
   int      Nphase1_agg, i, j, k, kk, nonaggd_neighbors;
-  int      AdjacentAgg, total_aggs, *agg_incremented = NULL;
-  int      *Mark = NULL, *SumOfMarks = NULL;
+  int      AdjacentAgg, total_aggs;
   int      best_score, score, best_agg, BestMark, myPid;
   int      nAggregates, nVertices, exp_nRows;
   int      Nleftover = 0, Nsingle = 0, Adjacent;
@@ -438,7 +437,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     // to aggregated vertices)
 
     int nCandidates = 0, nCandidatesGlobal;
-    int *candidates = new int[nVertices+1];
+
+    Teuchos::ArrayRCP<int> candidates = Teuchos::arcp<int>(nVertices+1);
 
     double priorThreshold = 0.;
     for (int kkk = 0 ; kkk < MUELU_PHASE4BUCKETS; kkk++) {
@@ -514,9 +514,9 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   // ghost vertices. Further, the transpose is only a local transpose. 
   // Nonzero edges which exist on other processors are not represented.
 
-  Mark = (int *) malloc(sizeof(int)* (exp_nRows+1));
-  agg_incremented = (int *) malloc(sizeof(int)* (nAggregates+1)); 
-  SumOfMarks = (int *) malloc(sizeof(int)*(nAggregates+1));
+  Teuchos::ArrayRCP<int> Mark = Teuchos::arcp<int>(exp_nRows+1);
+  Teuchos::ArrayRCP<int> agg_incremented = Teuchos::arcp<int>(nAggregates+1);
+  Teuchos::ArrayRCP<int> SumOfMarks = Teuchos::arcp<int>(nAggregates+1);
 
   for (i = 0; i < exp_nRows; i++)   Mark[i] = MUELU_DISTONE_VERTEX_WEIGHT;
   for (i = 0; i < nAggregates; i++) agg_incremented[i] = 0;
@@ -740,9 +740,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       printf("Aggregation(%s) : Phase 6 - leftovers = %d and singletons = %d\n",label.c_str() ,Nleftover, Nsingle);
     }
   }
-  if (agg_incremented != NULL) free(agg_incremented);
-  if (Mark != NULL) free(Mark);
-  if (SumOfMarks != NULL) free(SumOfMarks);
+
   aggregates.SetNumAggregates(nAggregates);
 
   return 0;
@@ -751,7 +749,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 // build a list of candidate root nodes (vertices not adjacent to already
 // aggregated vertices)
 int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
-                         int *candidates, int &nCandidates, int &nCandidatesGlobal) {
+                         Teuchos::ArrayRCP<int> &candidates, int &nCandidates, int &nCandidatesGlobal) {
 
   //TODO: interface : ArrayRCP useless ?
 
@@ -781,7 +779,7 @@ int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, con
 }
 
 // Compute sizes of all the aggregates.
-int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, int *aggSizes)
+int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, Teuchos::ArrayRCP<int> & aggSizes)
 {
   int nAggregates = aggregates.GetNumAggregates();
 
@@ -804,7 +802,8 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
                           RCP<Cthulhu::Vector<double> > & weights_, const AggAlgorithm2Comm & myWidget)
 {
   int nAggregates = aggregates.GetNumAggregates();
-  int *AggInfo = new int[nAggregates+1];
+
+  Teuchos::ArrayRCP<int> AggInfo = Teuchos::arcp<int>(nAggregates+1);
 
   RCP<Cthulhu::Vector<int> > procWinner_ = aggregates.GetProcWinner();
   Teuchos::ArrayRCP<int>     procWinner  = procWinner_->getDataNonConst(0);
