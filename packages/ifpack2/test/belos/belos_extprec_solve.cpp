@@ -44,6 +44,8 @@
 #include "Tpetra_DefaultPlatform.hpp"
 
 #include <qd/dd_real.h>
+// Set a flag that we are using QD so that the solver builder only instantiates supported solvers
+#define USING_QD
 
 #include "build_problem.hpp"
 #include "build_solver.hpp"
