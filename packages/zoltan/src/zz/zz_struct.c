@@ -121,7 +121,7 @@ int proc;
     }
   }
 
-  if (zoltan_mpi_gno_datatype == MPI_UNDEFINED){
+  if (zoltan_mpi_gno_datatype == (MPI_Datatype)MPI_UNDEFINED){
 
     /* User did not called Zoltan_Initialize, which is required
      *  to get the MPI_Datatype for ZOLTAN_GNO_TYPEs
