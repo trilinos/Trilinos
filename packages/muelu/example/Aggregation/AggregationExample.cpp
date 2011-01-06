@@ -22,6 +22,7 @@
 /**********************************************************************************/
 
 #include <MueLu_AggAlgorithm.hpp>
+#include <MueLu_AggAlgorithm2.hpp>
 
 // For the moment, this file is just a modified version of ML_Linker.hpp
 
