@@ -160,68 +160,6 @@ void boundary_analysis(const BulkData& bulk_data,
   }
 }
 
-const CellTopologyData * get_subcell_nodes(const Entity & entity ,
-                                           EntityRank subcell_rank ,
-                                           unsigned subcell_identifier ,
-                                           EntityVector & subcell_nodes,
-                                           bool use_reverse_polarity)
-{
-  // get cell topology
-  const CellTopologyData* celltopology = fem::get_cell_topology(entity).getCellTopologyData();
-  if (celltopology == NULL) {
-    return NULL;
-  }
-
-  // valid ranks fall within the dimension of the cell topology
-  bool bad_rank = subcell_rank >= celltopology->dimension;
-
-  // local id should be < number of entities of the desired type
-  // (if you have 4 edges, their ids should be 0-3)
-  bool bad_id = false;
-  if (!bad_rank) {
-    bad_id = subcell_identifier >= celltopology->subcell_count[subcell_rank];
-  }
-
-  ThrowInvalidArgMsgIf( bad_rank, "subcell_rank is >= celltopology dimension\n");
-  ThrowInvalidArgMsgIf( bad_id,   "subcell_id is >= subcell_count\n");
-
-  // For the subcell, get it's nodes and num_nodes
-
-  const unsigned* subcell_node_local_ids =
-    celltopology->subcell[subcell_rank][subcell_identifier].node;
-
-  const CellTopologyData * subcell_topology =
-    celltopology->subcell[subcell_rank][subcell_identifier].topology;
-  int num_nodes_in_subcell = subcell_topology->node_count;
-
-  // Get all the nodal relationships for this entity. We are guaranteed
-  // that, if we make it this far, the entity is guaranteed to have
-  // some relationship to nodes (we know it is a higher-order entity
-  // than Node).
-  PairIterRelation irel = entity.relations(fem::NODE_RANK);
-
-  // Get the node entities for the nodes that make up the side. We put these
-  // in in reverse order so that it has the correct orientation with respect
-  // the potential adjacent entities we are evaluating. The relations are
-  // right-hand-rule ordered for the owning entity, but we need something
-  // that's compatible w/ the adjacent entities. However, if check_both_polarities
-  // is defined, we need to do both.
-
-  subcell_nodes.reserve(num_nodes_in_subcell);
-  if (use_reverse_polarity) {
-    for (int itr = num_nodes_in_subcell - 1; itr >= 0; --itr) {
-      subcell_nodes.push_back(irel[subcell_node_local_ids[itr]].entity());
-    }
-  }
-  else {
-    for (int itr = 0; itr < num_nodes_in_subcell; ++itr ) {
-      subcell_nodes.push_back(irel[subcell_node_local_ids[itr]].entity());
-    }
-  }
-
-  return subcell_topology;
-}
-
 void get_adjacent_entities( const Entity & entity ,
                             EntityRank subcell_rank ,
                             unsigned subcell_identifier ,
@@ -249,11 +187,16 @@ void get_adjacent_entities( const Entity & entity ,
                                  entity_rank_to_get,
                                  potentially_adjacent_entities);
 
+  // FIXME: The handling of superimposed entities should not happen here.
+  // The skinning algorithm needs to be changed to handle superimposition.
+  // Once that is done, remove the call immediately below.
+
   // We don't want to include entities that are superimposed with
   // the input entity
   filter_superimposed_entities(entity, potentially_adjacent_entities);
 
-  // Add the local ids, from the POV of the adj entitiy, to the return value
+  // Add the local ids, from the POV of the adj entitiy, to the return value.
+  // This is where the order of the subcell nodes becomes relevant
   for (EntityVector::const_iterator eitr = potentially_adjacent_entities.begin();
        eitr != potentially_adjacent_entities.end(); ++eitr) {
     int local_subcell_num = get_entity_subcell_id(**eitr,

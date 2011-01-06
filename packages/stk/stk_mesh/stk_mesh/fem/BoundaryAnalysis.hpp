@@ -53,17 +53,6 @@ void boundary_analysis(const BulkData & bulk_data,
                        EntityRank closure_rank,
                        EntitySideVector& boundary);
 
-/**
- * Given an entity, subcell_rank, and subcell_id, return the nodes
- * that make up the subcell. The polarity of the returned nodes will
- * depend on the use_reverse_polarity_argument. The topology of the
- * subcell will be returned as well.
- */
-const CellTopologyData * get_subcell_nodes(const Entity & entity ,
-                                           EntityRank subcell_rank ,
-                                           unsigned subcell_identifier ,
-                                           EntityVector & subcell_nodes,
-                                           bool use_reverse_polarity = true);
 
 /** \brief  Get the entities adjacent to the input entity.
  *

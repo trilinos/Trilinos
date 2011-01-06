@@ -52,14 +52,12 @@ int main ( int argc, char * argv[] )
     printStatus(local_status);
     status = status && local_status;
   }
-#if 0
   {
     std::cout << "Use Case 4, greedy sideset ... ";
     bool local_status = stk::rebalance::use_cases::test_greedy_sideset(parallel_machine);
     printStatus(local_status);
     status = status && local_status;
   }
-#endif
 
   int return_code = -1;
   if (status) {

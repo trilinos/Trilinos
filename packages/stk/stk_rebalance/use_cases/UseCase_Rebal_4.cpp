@@ -259,7 +259,6 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) quads[ix].resize(ny);
 
     const unsigned nnx = nx + 1 ; 
-    unsigned face_id   = 1;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) { 
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) { 
         stk::mesh::EntityId elem = 1 + ix + iy * nx ;
@@ -270,14 +269,6 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
         stk::mesh::Entity &q = stk::mesh::declare_element( bulk_data , quad_part , elem , nodes );
-        if (1==ix) {
-          stk::mesh::declare_element_side( bulk_data, face_id, q, 2 /*local side id*/, &side_part);
-          ++face_id;
-        }
-        if (2==ix) {
-          stk::mesh::declare_element_side( bulk_data, face_id, q, 0 /*local side id*/, &side_part);
-          ++face_id;
-        }
         quads[ix][iy] = &q; 
       }   
     }   

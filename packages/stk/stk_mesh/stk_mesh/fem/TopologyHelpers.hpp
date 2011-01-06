@@ -164,23 +164,30 @@ bool element_side_polarity( const Entity & elem ,
  *          local id of the subcell that contains those nodes in the
  *          correct orientation.
  */
-int get_entity_subcell_id( const Entity & elem ,
-                           const EntityRank subcell_rank,
-                           const CellTopologyData * side_topology,
-                           const EntityVector & side_nodes );
+int get_entity_subcell_id( const Entity            & entity ,
+                           const EntityRank          subcell_rank,
+                           const CellTopologyData  * side_topology,
+                           const EntityVector      & side_nodes );
 
-//----------------------------------------------------------------------
-
-/** \brief Given an element and a side ordinal, populate a vector of nodes that make up the side.
- * The nodes are ordered such that the correct node ordering for the side is preserved and the node
- * with the lowest identifier comes first
+/**
+ * Given an entity, subcell_rank, and subcell_id, return the nodes
+ * that make up the subcell in a correct order for the given polarity.
  *
- * return the CellTopologyData * for the given side if it exist, else return null
+ * \param entity
+ * \param subcell_rank
+ * \param subcell_indentifier
+ * \param subcell_nodes EntityVector output of the subcell nodes
+ * \param use_reverse_polarity
+ * \return CellTopologyData * of the requested subcell
  */
-const CellTopologyData * get_elem_side_nodes( const Entity & elem,
-                          RelationIdentifier side_ordinal,
-                          EntityVector & side_key_nodes
-                        );
+const CellTopologyData * get_subcell_nodes(
+    const Entity     & entity ,
+    EntityRank         subcell_rank ,
+    unsigned           subcell_identifier ,
+    EntityVector     & subcell_nodes,
+    bool               use_reverse_polarity = true
+    );
+
 /** \} */
 
 }//namespace mesh
