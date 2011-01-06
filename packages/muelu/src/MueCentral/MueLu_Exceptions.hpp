@@ -4,7 +4,7 @@
 #include <exception>
 #include <Teuchos_Exceptions.hpp>
 
-#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_config.hpp"
 
 namespace MueLu {
   namespace Exceptions {
@@ -34,4 +34,4 @@ namespace MueLu {
   }
 }
 
-#endif
+#endif //ifndef MUELU_EXCEPTIONS_HPP

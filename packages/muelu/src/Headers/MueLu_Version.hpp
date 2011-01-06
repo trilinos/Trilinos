@@ -5,7 +5,7 @@
 #define MUELU_VERSION_HPP
 
 #include <string>
-#include "MueLu_ConfigDefs.hpp"
+#include "MueLu_config.hpp"
 
 namespace MueLu {
 
