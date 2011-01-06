@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 
-#include "zz_const.h"
+#include "zz_util_const.h"
 #include "create_proc_list_const.h"
 
 static void Zoltan_RB_Gather(ZOLTAN_GNO_TYPE *, ZOLTAN_GNO_TYPE *, int, int, int, MPI_Comm);
@@ -58,6 +58,7 @@ int Zoltan_RB_Create_Proc_List(
      ZOLTAN_GNO_TYPE *tmp_send;     /* Work vector */
 
      zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+
 
      /* allocate memory for arrays */
      MPI_Comm_rank(comm, &rank);
@@ -200,6 +201,7 @@ int Zoltan_RB_Create_Proc_List(
 End:
      /* free memory and return */
      ZOLTAN_FREE(&send);
+
 
      return err;
 }

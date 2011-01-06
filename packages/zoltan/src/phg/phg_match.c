@@ -20,7 +20,7 @@ extern "C" {
 #include <stdlib.h>
 #include "phg.h"
 #include "g2l_hash.h"
-#include "zz_const.h"
+#include "zz_util_const.h"
 
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;         /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_agg_ipm;     /* agglomerative IPM */
