@@ -301,7 +301,7 @@ int Zoltan_RB_find_bisector(
     MPI_Datatype types[5];
 
     types[0] = types[3] = MPI_DOUBLE;
-    types[1] = ZOLTAN_GNO_MPI_TYPE;
+    types[1] = Zoltan_mpi_gno_type();
     types[2] = MPI_INT;
     types[4] = MPI_UB;
 

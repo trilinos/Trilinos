@@ -56,11 +56,14 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   int *xpid = NULL;
   int i;
   int gno_size_for_dd;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* ZOLTAN_GNO_TYPE is >= ZOLTAN_ID_TYPE */
   gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   memset (matrix, 0, sizeof(Zoltan_matrix)); /* Set all fields to 0 */
   memcpy (&matrix->opts, opt, sizeof(Zoltan_matrix_options));
@@ -117,7 +120,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     }
      
     tmp = (ZOLTAN_GNO_TYPE)nX; 
-    MPI_Allreduce(&tmp, &matrix->globalX, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);
+    MPI_Allreduce(&tmp, &matrix->globalX, 1, zoltan_gno_mpi_type, MPI_SUM, zz->Communicator);
   }
 
   /* I store : xGNO, xGID, xpid,  */

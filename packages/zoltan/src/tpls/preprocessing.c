@@ -104,10 +104,13 @@ int Zoltan_Preprocess_Graph(
   int i, j, local;
   int *input_part = NULL;
   ZOLTAN_GNO_TYPE *sum, nobj;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   char add_obj_weight[MAX_PARAM_STRING_LEN+1];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   if (zz->Debug_Level > 0 && zz->Debug_Proc == zz->Proc){
     printf("Third party library index type is %ld-byte integer\n",sizeof(indextype));
@@ -342,7 +345,7 @@ int Zoltan_Preprocess_Graph(
 
     sum = (ZOLTAN_GNO_TYPE *)ZOLTAN_MALLOC(sizeof(ZOLTAN_GNO_TYPE) * zz->Num_Proc);
     nobj = (ZOLTAN_GNO_TYPE )gr->num_obj;
-    MPI_Allgather(&nobj, 1, ZOLTAN_GNO_MPI_TYPE, sum, 1, ZOLTAN_GNO_MPI_TYPE, zz->Communicator);
+    MPI_Allgather(&nobj, 1, zoltan_gno_mpi_type, sum, 1, zoltan_gno_mpi_type, zz->Communicator);
 
     for (i=1 ; i <= zz->Num_Proc ; ++i) {
       gr->vtxdist[i] = (gr->vtxdist[i-1] + (indextype)sum[i-1]);

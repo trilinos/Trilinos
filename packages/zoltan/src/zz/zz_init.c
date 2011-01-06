@@ -51,12 +51,6 @@ int mpi_flag, ierr;
     MPI_Init(&argc, &argv);
   }
 
-  ierr = Zoltan_set_mpi_types();
-
-  if (ierr == ZOLTAN_FATAL){
-    return ZOLTAN_FATAL;
-  }
-
   /*
    * Now return the version so that the user knows which version of
    * the libarary is being used without having to get the source

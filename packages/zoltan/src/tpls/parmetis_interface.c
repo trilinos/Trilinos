@@ -408,10 +408,14 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
    * less than 10000 objects.
    */
   ZOLTAN_GNO_TYPE tmp_gno, gsum;
+  MPI_Datatype zoltan_gno_mpi_type;
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+
   if (!strcmp(alg, "PARTKWAY") && !(zz->LB.Uniform_Parts)
       && (zz->Obj_Weight_Dim <= 1)) {
     tmp_gno = (ZOLTAN_GNO_TYPE)gr->num_obj;
-    MPI_Allreduce(&tmp_gno, &gsum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
+    MPI_Allreduce(&tmp_gno, &gsum, 1, zoltan_gno_mpi_type, MPI_SUM, comm);
     if (gsum < 10000) {
       char str[256];
       sprintf(str, "Total objects %d < 10000 causes ParMETIS 3.0 PARTKWAY "

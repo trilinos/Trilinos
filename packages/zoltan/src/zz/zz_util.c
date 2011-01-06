@@ -266,42 +266,64 @@ Zoltan_AllReduceInPlace(void *sndrcvbuf, int count, MPI_Datatype datatype, MPI_O
   return (ierr);
 }
 
-MPI_Datatype zoltan_mpi_gno_datatype=(MPI_Datatype)MPI_UNDEFINED;
-char zoltan_mpi_gno_datatype_name[32];
+/* The MPI_Datatype for a ZOLTAN_GNO_TYPE can only be determined at run time */
 
-int Zoltan_set_mpi_types()
+static MPI_Datatype zz_mpi_gno_type;
+static char* zz_mpi_gno_name=NULL;
+static char* zz_mpi_datatype_names[4] = 
 {
-  int size_short, size_int, size_long, size_long_long;
+"MPI_SHORT",
+"MPI_INT",
+"MPI_LONG",
+"MPI_LONG_LONG_INT"
+};
+
+MPI_Datatype Zoltan_mpi_gno_type()
+{
+  int size_short=0, size_int=0, size_long=0, size_long_long=0;
+
+  if (zz_mpi_gno_name){
+    return zz_mpi_gno_type;
+  }
 
   MPI_Type_size(MPI_SHORT, &size_short);
   MPI_Type_size(MPI_INT, &size_int);
   MPI_Type_size(MPI_LONG, &size_long);
+#ifdef MPI_LONG_LONG_INT
   MPI_Type_size(MPI_LONG_LONG_INT, &size_long_long);
+#endif
 
   if (sizeof(ssize_t) == size_short){
-    zoltan_mpi_gno_datatype = MPI_SHORT;
-    strcpy(zoltan_mpi_gno_datatype_name, "MPI_SHORT");
+    zz_mpi_gno_type = MPI_SHORT;
+    zz_mpi_gno_name=zz_mpi_datatype_names+0;
   }
   else if (sizeof(ssize_t) == size_int){
-    zoltan_mpi_gno_datatype = MPI_INT;
-    strcpy(zoltan_mpi_gno_datatype_name, "MPI_INT");
+    zz_mpi_gno_type = MPI_INT;
+    zz_mpi_gno_name=zz_mpi_datatype_names+1;
   }
   else if (sizeof(ssize_t) == size_long){
-    zoltan_mpi_gno_datatype = MPI_LONG;
-    strcpy(zoltan_mpi_gno_datatype_name, "MPI_LONG");
+    zz_mpi_gno_type = MPI_LONG;
+    zz_mpi_gno_name=zz_mpi_datatype_names+2;
   }
   else if (sizeof(ssize_t) == size_long_long){
-    zoltan_mpi_gno_datatype = MPI_LONG_LONG_INT;
-    strcpy(zoltan_mpi_gno_datatype_name, "MPI_LONG_LONG_INT");
+#ifdef MPI_LONG_LONG_INT
+    zz_mpi_gno_type = MPI_LONG_LONG_INT;
+    zz_mpi_gno_name=zz_mpi_datatype_names+3;
+#endif
   }
 
-  if (zoltan_mpi_gno_datatype == (MPI_Datatype)MPI_UNDEFINED){
-    strcpy(zoltan_mpi_gno_datatype_name, "no type");
-    return ZOLTAN_FATAL;
+  if (!zz_mpi_gno_name){
+    /* should never happen */
+    MPI_Abort(MPI_COMM_WORLD,99);
   }
 
+  return zz_mpi_gno_type;
+}
 
-  return ZOLTAN_OK;
+char *Zoltan_mpi_gno_name()
+{
+  Zoltan_mpi_gno_type();
+  return zz_mpi_gno_name;
 }
 
 /* On a linux node, try to write the contents of /proc/meminfo to a file.

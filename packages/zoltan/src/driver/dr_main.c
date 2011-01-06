@@ -199,16 +199,6 @@ int main(int argc, char *argv[])
     goto End;
   }
 
-  if (Zoltan_get_global_id_type(&info) != sizeof(ZOLTAN_ID_TYPE)){
-    if (Proc == 0){
-      printf("ERROR: Zoltan is compiled to use ZOLTAN_ID_TYPE %s, driver is compiled to use %s.\n",
-                 info, zoltan_id_datatype_name);
-
-    }
-    MPI_Finalize();
-    exit(0);
-  }
-
   /* initialize some variables */
   initialize_mesh(&mesh, Proc);
 

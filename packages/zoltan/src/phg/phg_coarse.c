@@ -177,11 +177,14 @@ int Zoltan_PHG_Coarsening
   ZOLTAN_GNO_TYPE *gnoptr;
   int *intptr;
   float *floatptr;
+  MPI_Datatype zoltan_gno_mpi_type;
 
 #ifdef _DEBUG1
   int    totiden, totsize1;  
   double t_all, t_coarse, t_redhash, t_redsize, t_userredop, t_suffle, t_sort, t_iden, t_shrink, t_mirror, t_cur;
 #endif
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   int time_details = (hgp->use_timers > 3);
@@ -952,13 +955,13 @@ int Zoltan_PHG_Coarsening
       MEMORY_ERROR;
 
   tmp_gno = (ZOLTAN_GNO_TYPE)c_hg->nVtx;
-  MPI_Scan(&tmp_gno, c_hg->dist_x, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hgc->row_comm);
-  MPI_Allgather(c_hg->dist_x, 1, ZOLTAN_GNO_MPI_TYPE, &(c_hg->dist_x[1]), 1, ZOLTAN_GNO_MPI_TYPE, hgc->row_comm);
+  MPI_Scan(&tmp_gno, c_hg->dist_x, 1, zoltan_gno_mpi_type, MPI_SUM, hgc->row_comm);
+  MPI_Allgather(c_hg->dist_x, 1, zoltan_gno_mpi_type, &(c_hg->dist_x[1]), 1, zoltan_gno_mpi_type, hgc->row_comm);
   c_hg->dist_x[0] = 0;
   
   tmp_gno = (ZOLTAN_GNO_TYPE)c_hg->nEdge;
-  MPI_Scan(&tmp_gno, c_hg->dist_y, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hgc->col_comm);
-  MPI_Allgather(c_hg->dist_y, 1, ZOLTAN_GNO_MPI_TYPE, &(c_hg->dist_y[1]), 1, ZOLTAN_GNO_MPI_TYPE, hgc->col_comm);
+  MPI_Scan(&tmp_gno, c_hg->dist_y, 1, zoltan_gno_mpi_type, MPI_SUM, hgc->col_comm);
+  MPI_Allgather(c_hg->dist_y, 1, zoltan_gno_mpi_type, &(c_hg->dist_y[1]), 1, zoltan_gno_mpi_type, hgc->col_comm);
   c_hg->dist_y[0] = 0;  
 
   ierr = Zoltan_HG_Create_Mirror(zz, c_hg);

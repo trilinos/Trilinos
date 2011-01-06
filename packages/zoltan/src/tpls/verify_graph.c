@@ -83,9 +83,10 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   ZOLTAN_GNO_TYPE num_duplicates, num_singletons;
   ZOLTAN_GNO_TYPE num_selfs, nedges, global_sum, num_zeros;
   ZOLTAN_GNO_TYPE i, j, ii, k;
-
+  MPI_Datatype zoltan_gno_mpi_type;
 
   ierr = ZOLTAN_OK;
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
   /* Make sure all procs have same value of check_graph. */
   MPI_Allreduce(&check_graph, &i, 1, MPI_INT, MPI_MAX, comm);
@@ -100,7 +101,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
 
   /* Check number of vertices (objects) */
   num_obj = (ZOLTAN_GNO_TYPE)(vtxdist[proc+1] - vtxdist[proc]);
-  MPI_Reduce(&num_obj, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_obj, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
     if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
     if (output_level>0)
@@ -130,7 +131,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
           if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
        }
     }
-    MPI_Reduce(&num_zeros, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+    MPI_Reduce(&num_zeros, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
     if ((proc==0) && (global_sum>0)){
       if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
@@ -142,7 +143,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
 
   /* Check number of edges */
   nedges = (ZOLTAN_GNO_TYPE)xadj[num_obj];
-  MPI_Reduce(&nedges, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&nedges, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
     if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
     if (output_level>0)
@@ -173,7 +174,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       }
     }
 
-    MPI_Reduce(&num_zeros, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+    MPI_Reduce(&num_zeros, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
     if ((proc==0) && (global_sum>0)){
       if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
@@ -331,7 +332,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   }
 
   /* Sum up warnings so far. */
-  MPI_Reduce(&num_selfs, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_selfs, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){
@@ -339,7 +340,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
-  MPI_Reduce(&num_duplicates, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_duplicates, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){
@@ -347,7 +348,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
-  MPI_Reduce(&num_singletons, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_singletons, &global_sum, 1, zoltan_gno_mpi_type, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){

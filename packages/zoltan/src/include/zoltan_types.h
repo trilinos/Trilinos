@@ -47,7 +47,7 @@ extern "C" {
  *
  * It's decimal type specifier is "z":    printf("%zd\n",globalNum);
  *
- * The MPI_Datatype for ssize_t is ZOLTAN_GNO_MPI_TYPE.
+ * The MPI_Datatype for ssize_t is returned by Zoltan_mpi_gno_type().
  *
  * We don't assume a pointer is the same size as any size of int.  If we want to store
  * a pointer in an int we use types intptr_t or uintptr_t.
@@ -135,13 +135,8 @@ typedef unsigned int ZOLTAN_ID_TYPE;
 typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 
 /* 
- * The MPI_Datatype for size_t and ssize_t are figured out at runtime in Zoltan_set_mpi_types.
+ * The MPI_Datatype for ZOLTAN_GNO_TYPE is returned by Zoltan_mpi_gno_type().
  */
-
-extern MPI_Datatype          zoltan_mpi_gno_datatype;
-extern char zoltan_mpi_gno_datatype_name[];
-
-#define ZOLTAN_GNO_MPI_TYPE  zoltan_mpi_gno_datatype
 
 #define ZOLTAN_GNO_TYPE      ssize_t
 

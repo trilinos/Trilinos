@@ -45,6 +45,7 @@ int Zoltan_RB_Create_Proc_List(
      int  np_other = 0;       /* number of processors in other group */
      int  i, k;            /* loop indexes */
      int  err = ZOLTAN_OK;    /* error code */
+     MPI_Datatype zoltan_gno_mpi_type;
 
      ZOLTAN_GNO_TYPE *send;         /* array of number of dots outgoing */
      ZOLTAN_GNO_TYPE *rem;          /* array of number of dots that remain */
@@ -55,6 +56,8 @@ int Zoltan_RB_Create_Proc_List(
      ZOLTAN_GNO_TYPE  s, sp;        /* temporary sums */
      ZOLTAN_GNO_TYPE  num_to;       /* number of dots to send to a processor */
      ZOLTAN_GNO_TYPE *tmp_send;     /* Work vector */
+
+     zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
      /* allocate memory for arrays */
      MPI_Comm_rank(comm, &rank);
@@ -91,7 +94,7 @@ int Zoltan_RB_Create_Proc_List(
         tmp_send[rank+nprocs] = dotnum - outgoing;
         tmp_send[rank+2*nprocs] = set;
         i = 3*nprocs;
-        MPI_Allreduce(tmp_send, send, i, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
+        MPI_Allreduce(tmp_send, send, i, zoltan_gno_mpi_type, MPI_SUM, comm);
      }
 
      ZOLTAN_FREE(&tmp_send);
@@ -219,6 +222,9 @@ static void Zoltan_RB_Gather(
    int len;                   /* message length */
    int i;                     /* loop counter */
    MPI_Status status;
+   MPI_Datatype zoltan_gno_mpi_type;
+
+   zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
 
    /* This routine sums a vector of integers on a subset of processors */
 
@@ -235,13 +241,13 @@ static void Zoltan_RB_Gather(
 
    to = proclower + (rank ^ nprocs_small);
    if (rank & nprocs_small) {  /* processors greater than largest power of 2 */
-      MPI_Send(send, len, ZOLTAN_GNO_MPI_TYPE, to, tag, comm);
+      MPI_Send(send, len, zoltan_gno_mpi_type, to, tag, comm);
       tag += hbit + 1;
-      MPI_Recv(send, len, ZOLTAN_GNO_MPI_TYPE, to, tag, comm, &status);
+      MPI_Recv(send, len, zoltan_gno_mpi_type, to, tag, comm, &status);
    }
    else {   /* processors within greatest power of 2 */
       if (rank + nprocs_small < nprocs) {
-         MPI_Recv(tmp_send, len, ZOLTAN_GNO_MPI_TYPE, to, tag, comm, &status);
+         MPI_Recv(tmp_send, len, zoltan_gno_mpi_type, to, tag, comm, &status);
          for (i = 0; i < len; i++)
             send[i] += tmp_send[i];
       }
@@ -250,17 +256,17 @@ static void Zoltan_RB_Gather(
          partner = proclower + (rank ^ mask);
          /* Change requested by Qingyu Meng <qymeng@cs.utah.edu> to        */
          /* support mvapich 1.0 on TACC Ranger.                            */
-         /* MPI_Send(send, len, ZOLTAN_GNO_MPI_TYPE, partner, tag, comm);              */
-         /* MPI_Recv(tmp_send, len, ZOLTAN_GNO_MPI_TYPE, partner, tag, comm, &status); */
-         MPI_Sendrecv(send, len, ZOLTAN_GNO_MPI_TYPE, partner, tag,
-            tmp_send, len, ZOLTAN_GNO_MPI_TYPE, partner, tag, comm, &status);
+         /* MPI_Send(send, len, zoltan_gno_mpi_type, partner, tag, comm);              */
+         /* MPI_Recv(tmp_send, len, zoltan_gno_mpi_type, partner, tag, comm, &status); */
+         MPI_Sendrecv(send, len, zoltan_gno_mpi_type, partner, tag,
+            tmp_send, len, zoltan_gno_mpi_type, partner, tag, comm, &status);
 
          for (i = 0; i < len; i++)
             send[i] += tmp_send[i];
       }
       tag++;
       if (rank + nprocs_small < nprocs)
-         MPI_Send(send, len, ZOLTAN_GNO_MPI_TYPE, to, tag, comm);
+         MPI_Send(send, len, zoltan_gno_mpi_type, to, tag, comm);
    }
 }
 

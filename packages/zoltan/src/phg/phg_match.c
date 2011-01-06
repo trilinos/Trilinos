@@ -222,6 +222,7 @@ static int Zoltan_PHG_compute_esize(
 )
 {
     int  i;
+    MPI_Datatype zoltan_gno_mpi_type;
     ZOLTAN_GNO_TYPE *lsize = NULL;
     static char *yo = "Zoltan_PHG_compute_esize";
     int ierr = ZOLTAN_OK;
@@ -234,7 +235,9 @@ static int Zoltan_PHG_compute_esize(
 
       for (i=0; i<hg->nEdge; ++i)
           lsize[i] = (ZOLTAN_GNO_TYPE)(hg->hindex[i+1] - hg->hindex[i]);
-      MPI_Allreduce(lsize, hg->esize, hg->nEdge, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hg->comm->row_comm);
+
+      zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+      MPI_Allreduce(lsize, hg->esize, hg->nEdge, zoltan_gno_mpi_type, MPI_SUM, hg->comm->row_comm);
       
 End:
       ZOLTAN_FREE(&lsize);
@@ -419,6 +422,7 @@ static int pmatching_local_ipm(
     int limit=hg->nVtx, err=ZOLTAN_OK;
     PHGComm *hgc=hg->comm;
     int root_matchcnt, root_rank;
+    MPI_Datatype zoltan_gno_mpi_type;
 
     /* UVC: In order to simplify adding/testing old sequential matching codes easy
        I'm keeping the interface same; just move your favorite matching code to this file
@@ -436,7 +440,9 @@ static int pmatching_local_ipm(
     Zoltan_PHG_Find_Root(hg->nVtx-limit, hgc->myProc_y, hgc->col_comm,
                          &root_matchcnt, &root_rank);
     
-    MPI_Bcast(match, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, root_rank, hgc->col_comm);
+    zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
+
+    MPI_Bcast(match, hg->nVtx, zoltan_gno_mpi_type, root_rank, hgc->col_comm);
     
     return err;
 }
@@ -645,6 +651,7 @@ static int pmatching_ipm (ZZ *zz,
   int total_nCandidates;      /* Sum of nCandidates across row. */
   int candidate_index = 0, first_candidate_index = 0;
   int nTotal;
+  MPI_Datatype zoltan_gno_mpi_type;
 
   ZOLTAN_GNO_TYPE candidate_gno = 0;             /* gno of current candidate */
 
@@ -667,6 +674,7 @@ static int pmatching_ipm (ZZ *zz,
   int *intptr=NULL;
   float *floatptr=NULL;
   int gno_size, int_size, float_size;
+
 
   /* TODO64 These seven variables are ints, but it seems likely that if the global
    * number of vertices or edges requires a 64 bit integer, that these counts, sizes,
@@ -695,6 +703,7 @@ static int pmatching_ipm (ZZ *zz,
    
   ZOLTAN_TRACE_ENTER (zz, yo);
   MACRO_TIMER_START (0, "matching setup", 0);
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
   Zoltan_Srand_Sync (Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
      
   /* set a flag if user wants a column matching or a full matching */
@@ -1225,7 +1234,7 @@ static int pmatching_ipm (ZZ *zz,
     }            /* DONE: kstart < max_nTotal loop */
 
     if (cFLAG)  {
-      MPI_Bcast (match, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, 0, hgc->col_comm);          
+      MPI_Bcast (match, hg->nVtx, zoltan_gno_mpi_type, 0, hgc->col_comm);          
       continue;      /* skip phases 3 and 4, continue rounds */ 
     }    
 
@@ -1273,7 +1282,7 @@ static int pmatching_ipm (ZZ *zz,
     } /* End (hgc->myProc_y == 0) */
 
     /* broadcast match array to the entire column */
-    MPI_Bcast (match, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, 0, hgc->col_comm);
+    MPI_Bcast (match, hg->nVtx, zoltan_gno_mpi_type, 0, hgc->col_comm);
     MACRO_TIMER_STOP (4);                       /* end of phase 3 */
   }                                             /* DONE: loop over rounds */
 
@@ -1333,7 +1342,7 @@ static int pmatching_ipm (ZZ *zz,
 
     gno = (ZOLTAN_GNO_TYPE *)recvbuf;
 
-    MPI_Allgatherv (cmatch, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, recvbuf, size, dest, ZOLTAN_GNO_MPI_TYPE,
+    MPI_Allgatherv (cmatch, hg->nVtx, zoltan_gno_mpi_type, recvbuf, size, dest, zoltan_gno_mpi_type,
      hgc->row_comm);
 
     if (nSend < msgsize){

@@ -41,8 +41,6 @@ static void Zoltan_Free_Structures(ZZ *);
 static void Zoltan_Init(ZZ *);
 static void Zoltan_Free_Zoltan_Struct_Members(ZZ *);
 
-extern MPI_Datatype zoltan_mpi_gno_datatype;
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -118,18 +116,6 @@ int proc;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                          "min sizeof(size_t) != max sizeof(size_t)");
       Zoltan_Destroy(&zz);
-    }
-  }
-
-  if (zoltan_mpi_gno_datatype == (MPI_Datatype)MPI_UNDEFINED){
-
-    /* User did not called Zoltan_Initialize, which is required
-     *  to get the MPI_Datatype for ZOLTAN_GNO_TYPEs
-     */
-
-    if (Zoltan_set_mpi_types() == ZOLTAN_FATAL){
-      ZOLTAN_PRINT_ERROR(proc, yo, "Error setting up Zoltan.");
-      return NULL;
     }
   }
 

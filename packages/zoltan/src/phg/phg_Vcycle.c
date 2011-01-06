@@ -206,6 +206,7 @@ int Zoltan_PHG_Partition (
   ZOLTAN_GNO_TYPE prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
 				 		               before any coarsening */
   ZOLTAN_GNO_TYPE tot_nPins, local_nPins;
+  MPI_Datatype zoltan_gno_mpi_type;
   char *yo = "Zoltan_PHG_Partition";
   int do_timing = (hgp->use_timers > 1);
   int fine_timing = (hgp->use_timers > 2);
@@ -214,6 +215,8 @@ int Zoltan_PHG_Partition (
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  zoltan_gno_mpi_type = Zoltan_mpi_gno_type();
     
   if (do_timing) {
     if (timer->vcycle < 0) 
@@ -237,7 +240,7 @@ int Zoltan_PHG_Partition (
 
   local_nPins = (ZOLTAN_GNO_TYPE)hg->nPins;
 
-  MPI_Allreduce(&local_nPins,&tot_nPins,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,hgc->Communicator);
+  MPI_Allreduce(&local_nPins,&tot_nPins,1,zoltan_gno_mpi_type,MPI_SUM,hgc->Communicator);
 
   origVpincnt = tot_nPins;
 
@@ -362,7 +365,7 @@ int Zoltan_PHG_Partition (
 
       if (hgc->nProc > 1 && hgp->ProRedL > 0) {
         local_nPins = (ZOLTAN_GNO_TYPE)hg->nPins;
-	MPI_Allreduce(&local_nPins, &tot_nPins, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM,
+	MPI_Allreduce(&local_nPins, &tot_nPins, 1, zoltan_gno_mpi_type, MPI_SUM,
 		      hgc->Communicator);
 
 	if (tot_nPins < (ZOLTAN_GNO_TYPE)(hgp->ProRedL * origVpincnt + 0.5)) {
