@@ -49,7 +49,7 @@ namespace MueLu {
         is basically right. But we've had some issues about how epetra handles empty columns.
         Probably worth discussing this with Jonathan and Chris to see if this is ALWAYS right. 
       */
-      int nGhost;//TODO = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
+      int nGhost = graph_->getColMap()->getNodeNumElements() - graph_->getDomainMap()->getNodeNumElements();
       if (nGhost < 0) nGhost = 0;
       
       return nGhost;

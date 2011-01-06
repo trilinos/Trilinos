@@ -258,7 +258,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
           length = neighOfINode.size();
           
           supernode = (MueLu_SuperNode *) malloc(sizeof(MueLu_SuperNode));      
-          supernode->list = (int*) malloc(length*sizeof(int));
+          supernode->list = (int*) malloc((length+1)*sizeof(int));
 
           if ((supernode->list) == NULL) 
             {
