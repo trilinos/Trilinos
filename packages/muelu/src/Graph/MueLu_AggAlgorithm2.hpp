@@ -252,7 +252,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   const RCP<const Cthulhu::Map<int,int> > nonUniqueMap = aggregates.GetVertex2AggId()->getMap();
   const RCP<const Cthulhu::Map<int,int> > uniqueMap = graph.GetDomainMap(); //RTODO
 
-  const Cthulhu::EpetraImport unique2NonUniqueWidget(nonUniqueMap, uniqueMap);
+  const Cthulhu::EpetraImport unique2NonUniqueWidget(uniqueMap, nonUniqueMap);
 
   // Pull stuff out of epetra vectors
 
