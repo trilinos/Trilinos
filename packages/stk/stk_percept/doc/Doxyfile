@@ -1,0 +1,39 @@
+@INCLUDE = Doxyfile.options
+#
+# Package options
+#
+PROJECT_NAME           = "STK Encore"
+#OUTPUT_DIRECTORY       = ../..
+OUTPUT_DIRECTORY       = .
+
+#
+# What and how documentation is extracted
+#
+@INCLUDE = Doxyfile.input
+
+FILE_PATTERNS          = *.dox *.hpp *.h
+                         
+IMAGE_PATH             =
+EXAMPLE_PATH           = ../unit_tests
+EXCLUDE                = 
+EXAMPLE_PATTERNS       =
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+RECURSIVE              = YES
+#
+# Links to other packages
+#
+ALLEXTERNALS           = YES
+EXTERNAL_GROUPS        = YES
+
+GENERATE_TREEVIEW      = YES
+TREEVIEW_WIDTH         = 250
+
+GENERATE_TAGFILE       = ./tags
+
+
+#  see http://stackoverflow.com/questions/1579007/how-can-i-include-a-subset-of-a-cpp-file-in-a-doxygen-comment
+ALIASES += clip{2}="\dontinclude \1 \n \skipline \2 \n \until end_demo"
+
+# use: \clip{Time_Limiter_example.cpp,tl_demo}
