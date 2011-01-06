@@ -74,7 +74,8 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   ZOLTAN_COMM_OBJ *comm_plan;
   static char *yo = "Zoltan_Verify_Graph";
   char msg[256];
-  int num_obj, nrecv;
+  ZOLTAN_GNO_TYPE num_obj;
+  int nrecv;
   indextype *ptr, *ptr1, *ptr2;
   indextype global_i, global_j;
   indextype *sendgno=NULL, *recvgno=NULL, *adjncy_sort=NULL;
@@ -98,7 +99,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   MPI_Comm_rank(comm, &proc);
 
   /* Check number of vertices (objects) */
-  num_obj = (int)(vtxdist[proc+1] - vtxdist[proc]);
+  num_obj = (ZOLTAN_GNO_TYPE)(vtxdist[proc+1] - vtxdist[proc]);
   MPI_Reduce(&num_obj, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
     if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
