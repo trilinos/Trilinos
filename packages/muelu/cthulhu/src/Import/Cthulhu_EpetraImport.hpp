@@ -105,19 +105,23 @@ namespace Cthulhu {
       CTHULHU_DEBUG_ME; 
       return import_->ExportImageIDs(); 
     }
+#endif
 
     //! Returns the Source Map used to construct this importer.
     inline const Teuchos::RCP<const Map<int,int> > getSourceMap() const { 
       CTHULHU_DEBUG_ME; 
-      return import_->SourceMap(); 
+
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(import_->SourceMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     }
 
     //! Returns the Target Map used to construct this importer.
     inline const Teuchos::RCP<const Map<int,int> > getTargetMap() const { 
       CTHULHU_DEBUG_ME; 
-      return import_->TargetMap(); 
+
+      RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(import_->TargetMap()));
+      return rcp ( new Cthulhu::EpetraMap(map) );
     }
-#endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     inline Distributor & getDistributor() const { CTHULHU_DEBUG_ME; return import_->Distributor(); }

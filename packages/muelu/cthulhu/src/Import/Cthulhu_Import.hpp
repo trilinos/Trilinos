@@ -64,13 +64,13 @@ namespace Cthulhu {
 
     //! List of images to which entries will be sent, getExportLIDs() [i] will be sent to image getExportImageIDs() [i]. (non-persisting view)
     virtual Teuchos::ArrayView<const int> getExportImageIDs() const = 0;
+#endif
 
     //! Returns the Source Map used to construct this importer.
     virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getSourceMap() const = 0;
 
     //! Returns the Target Map used to construct this importer.
     virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getTargetMap() const = 0;
-#endif
 
 #ifdef CTHULHU_NOT_IMPLEMENTED
     virtual Distributor & getDistributor() const = 0;

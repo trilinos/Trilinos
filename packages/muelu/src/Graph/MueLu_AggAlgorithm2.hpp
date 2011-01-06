@@ -71,8 +71,7 @@ int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, con
                          int *candidates, int &nCandidates, int &nCandidatesGlobal);
 
 int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
-                          RCP<Cthulhu::Vector<double> > & weights_, const RCP<const Map > &uniqueMap, 
-                          const Cthulhu::Import<int,int> &unique2NonUniqueWidget) ;
+                          RCP<Cthulhu::Vector<double> > & weights_, const AggAlgorithm2Comm & myWidget);
 
 // Take a partially aggregated graph and complete the aggregation. This is
 // typically needed to take care of vertices that are left over after
@@ -250,11 +249,11 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   Nphase1_agg = nAggregates;
 
   const RCP<const Cthulhu::Map<int,int> > nonUniqueMap = aggregates.GetVertex2AggId()->getMap();
-  const RCP<const Cthulhu::Map<int,int> > uniqueMap = graph.GetDomainMap(); //RTODO
+  const RCP<const Cthulhu::Map<int,int> > uniqueMap = graph.GetDomainMap();
 
-  const Cthulhu::EpetraImport unique2NonUniqueWidget(uniqueMap, nonUniqueMap);
+  AggAlgorithm2Comm myWidget(uniqueMap, nonUniqueMap);
 
-  // Pull stuff out of epetra vectors
+  // Pull stuff out of vectors
 
   RCP<Cthulhu::Vector<int> > Vtx2AggId = aggregates.GetVertex2AggId();
   Teuchos::ArrayRCP<int>  vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
@@ -279,8 +278,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     }
   }
 
-  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, &*Vtx2AggId, 
-                                *uniqueMap, unique2NonUniqueWidget, true);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, &*Vtx2AggId, true);
   weights_->putScalar(0.); //All tentatively assigned vertices are now definitive
 
   // Tentatively assign any vertex (ghost or local) which neighbors a root
@@ -302,8 +300,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     }
   }
 
-  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, &*Vtx2AggId, 
-				*uniqueMap, unique2NonUniqueWidget, true);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, &*Vtx2AggId, true);
   weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // Record the number of aggregated vertices
@@ -363,8 +360,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       }
   } /*for (i = 0; i < nVertices; i++)*/
   
-  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
-				*uniqueMap, unique2NonUniqueWidget, true);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, true);
   weights_->putScalar(0.);//All tentatively assigned vertices are now definitive
 
 
@@ -397,8 +393,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   temp_->putScalar(1.);  
   tempOutput_->putScalar(0.); 
 
-  MueLu_NonUnique2NonUnique(*temp_, *tempOutput_, *uniqueMap, 
-			    unique2NonUniqueWidget, Cthulhu::ADD);
+  myWidget.MueLu_NonUnique2NonUnique(*temp_, *tempOutput_, Cthulhu::ADD);
    
   vector<bool> gidNotShared(exp_nRows);
   for (int i = 0; i < exp_nRows; i++) {
@@ -499,8 +494,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
         }
       }
 
-      MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
-				    *uniqueMap, unique2NonUniqueWidget, true);
+      myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, true);
       weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
       sumAll(graph.GetComm(), nAggregates, nAggregatesGlobal);
 
@@ -509,7 +503,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       aggregates.SetNumAggregates(nAggregates);
 
       MueLu_RemoveSmallAggs(aggregates, minNodesPerAggregate, 
-			    weights_, uniqueMap, unique2NonUniqueWidget);
+			    weights_, myWidget);
       
       nAggregates = aggregates.GetNumAggregates();
     }   // one possibility
@@ -675,8 +669,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       }
     }
 
-    MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
-				  *uniqueMap, unique2NonUniqueWidget, true);
+    myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, true);
     weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
   }
 
@@ -735,8 +728,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     }
   }
 
-  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
-				*uniqueMap, unique2NonUniqueWidget, false);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, false);
 
 
   if (printFlag < MueLu_PrintLevel()) {
@@ -809,8 +801,7 @@ int MueLu_ComputeAggSizes(Aggregates<int,int> & aggregates, int *aggSizes)
 }
 
 int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
-                          RCP<Cthulhu::Vector<double> > & weights_, const RCP<const Map > &uniqueMap, 
-                          const Cthulhu::Import<int,int> &unique2NonUniqueWidget) 
+                          RCP<Cthulhu::Vector<double> > & weights_, const AggAlgorithm2Comm & myWidget)
 {
   int nAggregates = aggregates.GetNumAggregates();
   int *AggInfo = new int[nAggregates+1];
@@ -851,8 +842,7 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
   nAggregates = NewNAggs;
 
   
-  MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, 
-				*uniqueMap, unique2NonUniqueWidget, true);
+  myWidget.MueLu_ArbitrateAndCommunicate(*weights_, *procWinner_, & *Vtx2AggId, true);
   weights_->putScalar(0.); // All tentatively assigned vertices are now definitive
 
   // procWinner is not set correctly for aggregates which have 
