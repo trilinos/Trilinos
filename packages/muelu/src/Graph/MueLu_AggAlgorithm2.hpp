@@ -16,26 +16,9 @@
 #include <stdio.h>
 #include <math.h>
 #include <vector>
-#include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_Time.h"
-#ifdef ML_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
 
 #include <Cthulhu_VectorFactory.hpp>
-#include <Cthulhu_Import.hpp>
 //#include <Cthulhu_ConfigDefs.hpp> // CombineMode
-#include <Cthulhu_EpetraImport.hpp> //tmp
 
 #include "MueLu_AggregationOptions.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -59,35 +42,12 @@ int MueLu_PrintLevel();    /* Normally this should be some general*/
                            /* attribute the indicates the level   */
                            /* verbosity.                          */
 
-extern int MueLu_AggregateLeftOvers(const AggregationOptions & aggOptions, 
-                                    Aggregates<int,int> & aggregates,
-                                    const std::string & label, const Graph<int,int> & graph);
-
-//TODO: template
-extern int MueLu_NonUnique2NonUnique(const Cthulhu::Vector<double> &source, 
-                                     Cthulhu::Vector<double> &dest, const Map&uniqueMap, 
-                                     const Cthulhu::Import<int,int> &unique2NonUniqueWidget, 
-                                     const Cthulhu::CombineMode what);
-
-//TODO: template
-extern int MueLu_NonUnique2NonUnique(const Cthulhu::Vector<int> &source, 
-                                     Cthulhu::Vector<int> &dest, const Map &uniqueMap, 
-                                     const Cthulhu::Import<int,int> &unique2NonUniqueWidget, 
-                                     const Cthulhu::CombineMode what);
-
-int MueLu_ArbitrateAndCommunicate(Cthulhu::Vector<double> &weight, 
-                                  Cthulhu::Vector<int> &procWinner,
-                                  Cthulhu::Vector<int> *companion, const Map &uniqueMap, 
-                                  const Cthulhu::Import<int,int> &unique2NonUniqueWidget, const bool perturb);
-
-extern int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
-                                int *candidates, int &nCandidates, int &nCandidatesGlobal);
+int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
+                         int *candidates, int &nCandidates, int &nCandidatesGlobal);
 
 int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
                           RCP<Cthulhu::Vector<double> > & weights_, const RCP<const Map > &uniqueMap, 
-                          const Cthulhu::Import<int,int> &unique2NonUniqueWidget); 
-
-extern int MueLu_ComputeAggSizes(Aggregates<int,int> &aggregates, int *AggSizes);
+                          const Cthulhu::Import<int,int> &unique2NonUniqueWidget) ;
 
 // Take a partially aggregated graph and complete the aggregation. This is
 // typically needed to take care of vertices that are left over after

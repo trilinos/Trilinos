@@ -14,28 +14,9 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <math.h>
-#include <vector>
-#include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_Time.h"
-#ifdef ML_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
 
 #include <Cthulhu_VectorFactory.hpp>
-#include <Cthulhu_Import.hpp>
 //#include <Cthulhu_ConfigDefs.hpp> // CombineMode
-#include <Cthulhu_EpetraImport.hpp> //tmp
 
 #include "MueLu_AggregationOptions.hpp"
 #include "MueLu_Aggregates.hpp"
@@ -44,10 +25,6 @@
 // MPI helper
 #define sumAll(rcpComm, in, out) \
   Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-#define minAll(rcpComm, in, out) \
-  Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
-#define maxAll(rcpComm, in, out) \
-  Teuchos::reduceAll<int>(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
 
 using namespace std;
 using namespace MueLu;

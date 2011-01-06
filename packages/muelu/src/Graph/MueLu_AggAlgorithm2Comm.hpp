@@ -1,15 +1,5 @@
-
-//TODO: template
-extern int MueLu_NonUnique2NonUnique(const Cthulhu::Vector<double> &source, 
-                                     Cthulhu::Vector<double> &dest, const Map&uniqueMap, 
-                                     const Cthulhu::Import<int,int> &unique2NonUniqueWidget, 
-                                     const Cthulhu::CombineMode what);
-
-//TODO: template
-extern int MueLu_NonUnique2NonUnique(const Cthulhu::Vector<int> &source, 
-                                     Cthulhu::Vector<int> &dest, const Map &uniqueMap, 
-                                     const Cthulhu::Import<int,int> &unique2NonUniqueWidget, 
-                                     const Cthulhu::CombineMode what);
+#include <Cthulhu_Import.hpp>
+#include <Cthulhu_EpetraImport.hpp> //tmp
 
 // Redistribute data in source to dest where both source and dest might have 
 // multiple copies of the same global id across many processors. The source
