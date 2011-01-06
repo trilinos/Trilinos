@@ -38,9 +38,34 @@ using namespace std;
 using namespace MueLu;
 using Teuchos::ArrayView;
 
-int MueLu_PrintLevel();    /* Normally this should be some general*/
-                           /* attribute the indicates the level   */
-                           /* verbosity.                          */
+int MueLu_PrintLevel();
+
+#define MUELU_NOSCORE       -100  /* indicates that a quality score has not  */
+                                  /* yet been assigned when determining to   */
+                                  /* which existing aggregate a vertex       */
+                                  /* should be assigned.                     */
+
+#define MUELU_DISTONE_VERTEX_WEIGHT 100  /* Weights associated with all      */
+                                  /* vertices that have a direct connection  */
+                                  /* to the aggregate root.                  */
+
+#define INCR_SCALING 3            /* Determines how much of a penalty should */
+                                  /* be deduced from a score during Phase 5  */
+                                  /* for each Phase 5 vertex already added   */
+                                  /* to this aggregate. Specifically the     */
+                                  /* penalty associated with aggregate y is  */
+                                  /*   max (INCR_SCALING*NNewVtx,            */
+                                  /*        UnpenalizedScore*(1-             */
+                                  /*              MUELU_PENALTYFACTOR))      */
+                                  /* where NNewVtx is the number of phase 5  */
+                                  /* vertices already assigned to y.         */
+
+#define MUELU_PENALTYFACTOR .30   /* Determines maximum allowable            */
+                                  /* percentage of a score that can be       */
+                                  /* deducted from this score for having     */
+                                  /* already enlargened an aggregate to      */
+                                  /* which we are contemplated adding another*/
+                                  /* vertex.  Should be between 0 and 1.     */
 
 int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, const Graph<int,int> graph,
                          int *candidates, int &nCandidates, int &nCandidatesGlobal);

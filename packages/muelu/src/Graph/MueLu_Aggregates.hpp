@@ -6,41 +6,19 @@
 #include "MueLu_Graph.hpp"
 
 #define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
-                                  /* any aggregate.                          */
+                                 /* any aggregate.                          */
+
 #define MUELU_UNASSIGNED    -1   /* indicates a vertex is not yet claimed   */
-                                  /* by a processor during aggregation.      */
-                                  /* Note, it is possible at                 */
-                                  /* this stage that some processors may have*/
-                                  /* claimed their copy of a vertex for one  */
-                                  /* of their aggregates.  However, some     */
-                                  /* arbitration still needs to occur.       */
-                                  /* The corresponding procWinner[]'s remain */
-                                  /* as MUELU_UNASSIGNED until              */
-                                  /* MueLu_ArbitrateAndCommunicate() is     */
-                                  /* invoked to arbitrate.                   */
-#define MUELU_NOSCORE       -100 /* indicates that a quality score has not  */
-                                  /* yet been assigned when determining to   */
-                                  /* which existing aggregate a vertex       */
-                                  /* should be assigned.                     */
-#define MUELU_DISTONE_VERTEX_WEIGHT 100  /* Weights associated with all     */
-                                  /* vertices that have a direct connection  */
-                                  /* to the aggregate root.                  */
-#define INCR_SCALING 3            /* Determines how much of a penalty should */
-                                  /* be deduced from a score during Phase 5  */
-                                  /* for each Phase 5 vertex already added   */
-                                  /* to this aggregate. Specifically the     */
-                                  /* penalty associated with aggregate y is  */
-                                  /*   max (INCR_SCALING*NNewVtx,            */
-                                  /*        UnpenalizedScore*(1-             */
-                                  /*              MUELU_PENALTYFACTOR))*/
-                                  /* where NNewVtx is the number of phase 5  */
-                                  /* vertices already assigned to y.         */
-#define MUELU_PENALTYFACTOR .30 /* determines maximum allowable        */
-                                  /* percentage of a score that can be       */
-                                  /* deducted from this score for having     */
-                                  /* already enlargened an aggregate to      */
-                                  /* which we are contemplated adding another*/
-                                  /* vertex.  Should be between 0 and 1.     */
+                                 /* by a processor during aggregation.      */
+                                 /* Note, it is possible at                 */
+                                 /* this stage that some processors may have*/
+                                 /* claimed their copy of a vertex for one  */
+                                 /* of their aggregates.  However, some     */
+                                 /* arbitration still needs to occur.       */
+                                 /* The corresponding procWinner[]'s remain */
+                                 /* as MUELU_UNASSIGNED until               */
+                                 /* MueLu_ArbitrateAndCommunicate() is      */
+                                 /* invoked to arbitrate.                   */
 
 /***************************************************************************** 
    Structure holding aggregate information. Right now, nAggregates, IsRoot,
