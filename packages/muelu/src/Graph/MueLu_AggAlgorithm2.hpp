@@ -56,7 +56,7 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
 // On input, the structure Aggregates describes already aggregated vertices.
 // The field procWinners[] indicates the processor owning the aggregate to
 // which a vertex is "definitively" assigned. If on entry 
-// procWinners[i] == MUELOO_UNASSIGNED, MueLu_ArbitrateAndCommunicate() 
+// procWinners[i] == MUELU_UNASSIGNED, MueLu_ArbitrateAndCommunicate() 
 // will arbitrate and decide which processor's aggregate really has
 // the vertex. If only one processor claims ownership (as in
 // the Uncoupled case), no real arbitration is needed. Otherwise,
@@ -124,7 +124,7 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
 //             already been assigned to aggregates. This mark essentially
 //             reflects the distance of this point to the root. Specifically,
 //
-//               mark(v) <-- MUELOO_DISTONE_VERTEX_WEIGHT if v assigned to 
+//               mark(v) <-- MUELU_DISTONE_VERTEX_WEIGHT if v assigned to 
 //                                                        aggregate prior
 //                                                        to this phase.
 //
@@ -141,7 +141,7 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
 //             with a direct connection to vtilde. AggregateIncrementPenalty
 //             is equal to 
 //                 max (INCR_SCALING*NNewVtx,
-//                      sum(mark(vkhat))*(1-MUELOO_PENALTYFACTOR))
+//                      sum(mark(vkhat))*(1-MUELU_PENALTYFACTOR))
 //             where NNewVtx is the number of phase 5 vertices already
 //             assigned to y.
 //
@@ -246,8 +246,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   
   weights_->putScalar(0.);
   for (size_t i=0;i<nonUniqueMap->getNodeNumElements();i++) {
-    if (procWinner[i] == MUELOO_UNASSIGNED) {
-      if (vertex2AggId[i] != MUELOO_UNAGGREGATED) {
+    if (procWinner[i] == MUELU_UNASSIGNED) {
+      if (vertex2AggId[i] != MUELU_UNAGGREGATED) {
         weights[i] = 1.;
         if (aggregates.IsRoot(i)) weights[i] = 2.;
       }
@@ -269,7 +269,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       
       for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         int colj = *it;
-        if (vertex2AggId[colj] == MUELOO_UNAGGREGATED) {
+        if (vertex2AggId[colj] == MUELU_UNAGGREGATED) {
           weights[colj]= 1.;
           vertex2AggId[colj] = vertex2AggId[i];
         }
@@ -286,7 +286,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   {
     int phase_one_aggregated = 0;
     for (i = 0; i < nVertices; i++) {
-      if (vertex2AggId[i] != MUELOO_UNAGGREGATED)
+      if (vertex2AggId[i] != MUELU_UNAGGREGATED)
         phase_one_aggregated++;
     }
 
@@ -307,7 +307,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   factor = pow(factor, aggOptions.GetPhase3AggCreation());
 
   for (i = 0; i < nVertices; i++) {
-    if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
+    if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
       {
 
         // neighOfINode is the neighbor node list of node 'iNode'.
@@ -317,7 +317,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
         nonaggd_neighbors = 0;
         for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
           int colj = *it;
-          if (vertex2AggId[colj] == MUELOO_UNAGGREGATED && colj < nVertices)
+          if (vertex2AggId[colj] == MUELU_UNAGGREGATED && colj < nVertices)
             nonaggd_neighbors++;
         }
         if (  (nonaggd_neighbors > minNodesPerAggregate) &&
@@ -326,7 +326,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
             vertex2AggId[i] = (nAggregates)++;
             for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
               int colj = *it;
-              if (vertex2AggId[colj]==MUELOO_UNAGGREGATED) {
+              if (vertex2AggId[colj]==MUELU_UNAGGREGATED) {
                 vertex2AggId[colj] = vertex2AggId[i];
                 if (colj < nVertices) weights[colj] = 2.;
                 else                  weights[colj] = 1.;
@@ -399,7 +399,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   // Only do this phase if things look really bad. THIS
   // CODE IS PRETTY EXPERIMENTAL 
   //
-#define MUELOO_PHASE4BUCKETS 6
+#define MUELU_PHASE4BUCKETS 6
   if ((nAggregatesGlobal < graph.GetComm()->getSize()) &&
       (2.5*nAggregatesGlobal < nAggregatesTarget) &&
       (minNAggs ==0) && (maxNAggs <= 1)) {
@@ -421,7 +421,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     int *candidates = new int[nVertices+1];
 
     double priorThreshold = 0.;
-    for (int kkk = 0 ; kkk < MUELOO_PHASE4BUCKETS; kkk++) {
+    for (int kkk = 0 ; kkk < MUELU_PHASE4BUCKETS; kkk++) {
       MueLu_RootCandidates(nVertices, vertex2AggId, graph,
                            candidates, nCandidates, nCandidatesGlobal);
 
@@ -431,12 +431,12 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
         nTargetNewGuys/(nCandidatesGlobal + .001);
    
 
-      threshold = (threshold*(kkk+1.))/((double) MUELOO_PHASE4BUCKETS);
+      threshold = (threshold*(kkk+1.))/((double) MUELU_PHASE4BUCKETS);
       priorThreshold = threshold;
 
       for (k = 0; k < nCandidates ; k++ ) { 
         i = candidates[k];                  
-        if ((vertex2AggId[i] == MUELOO_UNAGGREGATED) && 
+        if ((vertex2AggId[i] == MUELU_UNAGGREGATED) && 
             (fabs(temp[i])  < threshold)) {
           // Note: priorThreshold <= fabs(temp[i]) <= 1
 
@@ -449,7 +449,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
               Adjacent    = *it;
               // This might not be true if someone close to i
               // is chosen as a root via fabs(temp[]) < Threshold
-              if (vertex2AggId[Adjacent] == MUELOO_UNAGGREGATED){
+              if (vertex2AggId[Adjacent] == MUELU_UNAGGREGATED){
                 count++;
                 vertex2AggId[Adjacent] = nAggregates;
                 weights[Adjacent] = 1.;
@@ -464,7 +464,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
               for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
                 Adjacent    = *it;
                 if (vertex2AggId[Adjacent] == nAggregates){
-                  vertex2AggId[Adjacent] = MUELOO_UNAGGREGATED;
+                  vertex2AggId[Adjacent] = MUELU_UNAGGREGATED;
                   weights[Adjacent] = 0.;
                 }
               }
@@ -499,7 +499,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   agg_incremented = (int *) malloc(sizeof(int)* (nAggregates+1)); 
   SumOfMarks = (int *) malloc(sizeof(int)*(nAggregates+1));
 
-  for (i = 0; i < exp_nRows; i++)   Mark[i] = MUELOO_DISTONE_VERTEX_WEIGHT;
+  for (i = 0; i < exp_nRows; i++)   Mark[i] = MUELU_DISTONE_VERTEX_WEIGHT;
   for (i = 0; i < nAggregates; i++) agg_incremented[i] = 0;
   for (i = 0; i < nAggregates; i++) SumOfMarks[i] = 0;
 
@@ -515,7 +515,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
     for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
       j = *it;
-      if ( (j >= nVertices) && (vertex2AggId[j] == MUELOO_UNAGGREGATED)){
+      if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
         RowPtr[j-nVertices]++;
       }
     }
@@ -540,7 +540,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
     
     for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
       j = *it;
-      if ( (j >= nVertices) && (vertex2AggId[j] == MUELOO_UNAGGREGATED)){
+      if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
         cols[RowPtr[j-nVertices]++] = i;
       }
     }
@@ -561,7 +561,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   for (kk = 0; kk < 10; kk += 2) {
     bestScoreCutoff = thresholds[kk];
     for (i = 0; i < exp_nRows; i++) {
-      if (vertex2AggId[i] == MUELOO_UNAGGREGATED) {
+      if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
 
         // neighOfINode is the neighbor node list of node 'iNode'.
         ArrayView<const int> neighOfINode;
@@ -584,30 +584,30 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
           //Adjacent is aggregated and either I own the aggregate
           // or I could own the aggregate after arbitration.
-          if ((AdjacentAgg != MUELOO_UNAGGREGATED) && 
+          if ((AdjacentAgg != MUELU_UNAGGREGATED) && 
               ((procWinner[Adjacent] == myPid) ||     
-               (procWinner[Adjacent] == MUELOO_UNASSIGNED))){
+               (procWinner[Adjacent] == MUELU_UNASSIGNED))){
             SumOfMarks[AdjacentAgg] += Mark[Adjacent];
           }
         }
-        best_score = MUELOO_NOSCORE;
+        best_score = MUELU_NOSCORE;
         for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
           Adjacent    = *it;
           AdjacentAgg = vertex2AggId[Adjacent];
           //Adjacent is unaggregated, has some value and no
           //other processor has definitively claimed him
-          if ((AdjacentAgg != MUELOO_UNAGGREGATED) && 
+          if ((AdjacentAgg != MUELU_UNAGGREGATED) && 
               (SumOfMarks[AdjacentAgg] != 0) &&
               ((procWinner[Adjacent] == myPid) ||
-               (procWinner[Adjacent] == MUELOO_UNASSIGNED ))) {
+               (procWinner[Adjacent] == MUELU_UNASSIGNED ))) {
 
             // first figure out the penalty associated with
             // AdjacentAgg having already been incremented 
             // during this phase, then compute score.
 
             penalty = (double) (INCR_SCALING*agg_incremented[AdjacentAgg]);
-            if (penalty > MUELOO_PENALTYFACTOR*((double)SumOfMarks[AdjacentAgg]))
-              penalty = MUELOO_PENALTYFACTOR*((double)SumOfMarks[AdjacentAgg]);
+            if (penalty > MUELU_PENALTYFACTOR*((double)SumOfMarks[AdjacentAgg]))
+              penalty = MUELU_PENALTYFACTOR*((double)SumOfMarks[AdjacentAgg]);
             score = SumOfMarks[AdjacentAgg]- ((int) floor(penalty));
 
             if (score > best_score) { 
@@ -665,7 +665,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
   int count = 0;
   for (i = 0; i < nVertices; i++) { 
-    if ((vertex2AggId[i] == MUELOO_UNAGGREGATED) ) {
+    if ((vertex2AggId[i] == MUELU_UNAGGREGATED) ) {
       Nleftover++;
 
       // neighOfINode is the neighbor node list of node 'iNode'.
@@ -680,7 +680,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       count++;
       for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         int j = *it;
-        if ((j != i)&&(vertex2AggId[j] == MUELOO_UNAGGREGATED)&&
+        if ((j != i)&&(vertex2AggId[j] == MUELU_UNAGGREGATED)&&
             (j < nVertices)) {
           vertex2AggId[j] = nAggregates;
           weights[j] = 1.;
@@ -744,7 +744,7 @@ int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, con
   nCandidates = 0;
  
   for (int i = 0; i < nVertices; i++ ) {
-    if (vertex2AggId[i] == MUELOO_UNAGGREGATED) {
+    if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
       noAggdNeighbors = true;
 
       // neighOfINode is the neighbor node list of node 'iNode'.
@@ -752,7 +752,7 @@ int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, con
 
       for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         adjacent    = *it;
-        if (vertex2AggId[adjacent] != MUELOO_UNAGGREGATED) 
+        if (vertex2AggId[adjacent] != MUELU_UNAGGREGATED) 
           noAggdNeighbors = false;
       }
       if (noAggdNeighbors == true) candidates[nCandidates++] = i;
@@ -808,18 +808,18 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
   int NewNAggs = 0; 
   for (int i = 0; i < nAggregates; i++) {
     if ( AggInfo[i] < min_size) { 
-      AggInfo[i] =  MUELOO_UNAGGREGATED;
+      AggInfo[i] =  MUELU_UNAGGREGATED;
     }
     else AggInfo[i] = NewNAggs++;
   }
 
   for (int k = 0; k < N; k++ ) {
     if (procWinner[k] == myPid) {
-      if (vertex2AggId[k] !=  MUELOO_UNAGGREGATED) {
+      if (vertex2AggId[k] !=  MUELU_UNAGGREGATED) {
         vertex2AggId[k] = AggInfo[vertex2AggId[k]];
         weights[k] = 1.;
       }
-      if (vertex2AggId[k] ==  MUELOO_UNAGGREGATED) 
+      if (vertex2AggId[k] ==  MUELU_UNAGGREGATED) 
         aggregates.SetIsRoot(k,false);
     }
   }
@@ -833,8 +833,8 @@ int MueLu_RemoveSmallAggs(Aggregates<int,int> & aggregates, int min_size,
   // procWinner is not set correctly for aggregates which have 
   // been eliminated
   for (int i = 0; i < N; i++) {
-    if (vertex2AggId[i] == MUELOO_UNAGGREGATED) 
-      procWinner[i] = MUELOO_UNASSIGNED;
+    if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
+      procWinner[i] = MUELU_UNASSIGNED;
   }
   aggregates.SetNumAggregates(nAggregates);
 

@@ -71,7 +71,7 @@ int MueLu_RandomReorder(int *randomVector, const Epetra_BlockMap &map); //RRTODO
 /*                                                                          */
 /* New aggregates are specified by setting vertex2AggId. In particular,     */
 /* vertex2AggId[k] = j >= 0 indicates that the kth node resides in the      */
-/* jth aggregate. vertex2AggId[k] == MUELOO_UNAGGREGATED indicates that the */
+/* jth aggregate. vertex2AggId[k] == MUELU_UNAGGREGATED indicates that the */
 /* kth node is  unaggregated.                                               */
 /*                                                                          */
 /* NOTE: This function does not set procWinner[]'s. The main trickness      */
@@ -121,7 +121,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
 
   nBytes = nRows * sizeof( int );
   if (nBytes > 0) aggStat = (int *) malloc(nBytes);
-  for ( i = 0; i < nRows; i++ ) aggStat[i] = MUELOO_AGGR_READY;
+  for ( i = 0; i < nRows; i++ ) aggStat[i] = MUELU_AGGR_READY;
 
   /* ============================================================= */
   /* Set up the data structures for aggregation                    */
@@ -172,7 +172,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
             {
               for ( jNode = 0; jNode < nRows; jNode++ ) 
                 {
-                  if ( aggStat[jNode] == MUELOO_AGGR_READY )
+                  if ( aggStat[jNode] == MUELU_AGGR_READY )
                     { 
                       newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
                       newNode->nodeId = jNode;
@@ -194,7 +194,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
       /* consider further only if the node is in READY mode    */
       /*------------------------------------------------------ */
 
-      if ( aggStat[iNode] == MUELOO_AGGR_READY ) 
+      if ( aggStat[iNode] == MUELU_AGGR_READY ) 
         {
           // neighOfINode is the neighbor node list of node 'iNode'.
           ArrayView<const int> neighOfINode = graph.getNeighborVertices(iNode);
@@ -225,8 +225,8 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
               index = *it;
               if ( index < nRows ) 
                 {
-                  if ( aggStat[index] == MUELOO_AGGR_READY || 
-                       aggStat[index] == MUELOO_AGGR_NOTSEL ) 
+                  if ( aggStat[index] == MUELU_AGGR_READY || 
+                       aggStat[index] == MUELU_AGGR_NOTSEL ) 
                     supernode->list[supernode->length++] = index;
                   else count++;
 
@@ -250,7 +250,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
           if (selectFlag != 1 || 
               supernode->length <= minNodesPerAggregate) 
             {
-              aggStat[iNode] = MUELOO_AGGR_NOTSEL;
+              aggStat[iNode] = MUELU_AGGR_NOTSEL;
               free( supernode->list );
               free( supernode );
               if ( ordering == 2 ) /* if graph ordering */
@@ -258,7 +258,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
                   for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                     {
                       index = *it;
-                      if ( aggStat[index] == MUELOO_AGGR_READY )
+                      if ( aggStat[index] == MUELU_AGGR_READY )
                         { 
                           newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
                           newNode->nodeId = index;
@@ -281,14 +281,14 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
               for ( j = 0; j < supernode->length; j++ ) 
                 {
                   jNode = supernode->list[j];
-                  aggStat[jNode] = MUELOO_AGGR_SELECTED;
+                  aggStat[jNode] = MUELU_AGGR_SELECTED;
                   vertex2AggId[jNode] = nAggregates;
                   if ( ordering == 2 ) /* if graph ordering */
                     {
                       for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it)
                         {
                           index = *it;
-                          if ( aggStat[index] == MUELOO_AGGR_READY )
+                          if ( aggStat[index] == MUELU_AGGR_READY )
                             { 
                               newNode = (MueLu_Node *) malloc(sizeof(MueLu_Node));      
                               newNode->nodeId = index;
@@ -337,7 +337,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
   // Compute 'm'
   m = 0;
   for ( i = 0; i < nRows; i++ ) 
-    if ( aggStat[i] == MUELOO_AGGR_READY ) m++;
+    if ( aggStat[i] == MUELU_AGGR_READY ) m++;
 
   sumAll(graph.GetComm(), m, k);
 
@@ -347,7 +347,7 @@ RCP<Aggregates<int,int> > MueLu_Aggregate_CoarsenUncoupled(const AggregationOpti
   // Compute 'm'
   m = 0;
   for ( i = 0; i < nRows; i++ ) 
-    if ( aggStat[i] == MUELOO_AGGR_SELECTED ) m++;
+    if ( aggStat[i] == MUELU_AGGR_SELECTED ) m++;
 
   sumAll(graph.GetComm(), m, k);
   sumAll(graph.GetComm(), nRows, m);

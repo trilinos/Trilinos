@@ -5,17 +5,17 @@
 
 #include "MueLu_Graph.hpp"
 
-#define MUELOO_AGGR_READY    -11  /* indicates that a node is available to be*/
+#define MUELU_AGGR_READY    -11  /* indicates that a node is available to be*/
                                   /* selected as a root node of an aggregate */
-#define MUELOO_AGGR_NOTSEL   -12  /* indicates that a node has been rejected */
+#define MUELU_AGGR_NOTSEL   -12  /* indicates that a node has been rejected */
                                   /* as a root node. This could perhaps be   */
                                   /* because if this node had been selected a*/
                                   /* small aggregate would have resulted.    */
-#define MUELOO_AGGR_SELECTED -13  /* indicates that a node has been assigned */
+#define MUELU_AGGR_SELECTED -13  /* indicates that a node has been assigned */
                                   /* to an aggregate.                        */
-#define MUELOO_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
+#define MUELU_UNAGGREGATED  -1   /* indicates that a node is unassigned to  */
                                   /* any aggregate.                          */
-#define MUELOO_UNASSIGNED    -1   /* indicates a vertex is not yet claimed   */
+#define MUELU_UNASSIGNED    -1   /* indicates a vertex is not yet claimed   */
                                   /* by a processor during aggregation.      */
                                   /* Note, it is possible at                 */
                                   /* this stage that some processors may have*/
@@ -23,14 +23,14 @@
                                   /* of their aggregates.  However, some     */
                                   /* arbitration still needs to occur.       */
                                   /* The corresponding procWinner[]'s remain */
-                                  /* as MUELOO_UNASSIGNED until              */
+                                  /* as MUELU_UNASSIGNED until              */
                                   /* MueLu_ArbitrateAndCommunicate() is     */
                                   /* invoked to arbitrate.                   */
-#define MUELOO_NOSCORE       -100 /* indicates that a quality score has not  */
+#define MUELU_NOSCORE       -100 /* indicates that a quality score has not  */
                                   /* yet been assigned when determining to   */
                                   /* which existing aggregate a vertex       */
                                   /* should be assigned.                     */
-#define MUELOO_DISTONE_VERTEX_WEIGHT 100  /* Weights associated with all     */
+#define MUELU_DISTONE_VERTEX_WEIGHT 100  /* Weights associated with all     */
                                   /* vertices that have a direct connection  */
                                   /* to the aggregate root.                  */
 #define INCR_SCALING 3            /* Determines how much of a penalty should */
@@ -40,10 +40,10 @@
                                   /* penalty associated with aggregate y is  */
                                   /*   max (INCR_SCALING*NNewVtx,            */
                                   /*        UnpenalizedScore*(1-             */
-                                  /*              MUELOO_PENALTYFACTOR))*/
+                                  /*              MUELU_PENALTYFACTOR))*/
                                   /* where NNewVtx is the number of phase 5  */
                                   /* vertices already assigned to y.         */
-#define MUELOO_PENALTYFACTOR .30 /* determines maximum allowable        */
+#define MUELU_PENALTYFACTOR .30 /* determines maximum allowable        */
                                   /* percentage of a score that can be       */
                                   /* deducted from this score for having     */
                                   /* already enlargened an aggregate to      */
@@ -113,10 +113,10 @@ namespace MueLu {
     nAggregates_  = 0;
     
     vertex2AggId_ = LOVectorFactory::Build(graph.GetImportMap()); //RTODO
-    vertex2AggId_->putScalar(MUELOO_UNAGGREGATED);
+    vertex2AggId_->putScalar(MUELU_UNAGGREGATED);
     
     procWinner_ = LOVectorFactory::Build(graph.GetImportMap()); //RTODO
-    procWinner_->putScalar(MUELOO_UNASSIGNED);
+    procWinner_->putScalar(MUELU_UNASSIGNED);
     
     //RTODO 
     isRoot_ = new bool[graph.GetImportMap()->getNodeNumElements()]; //TODO: use ArrayRCP
