@@ -29,6 +29,7 @@
 // @HEADER
 
 #include "Stokhos_Epetra.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -39,7 +40,7 @@
 // sparsity_example
 //
 //  usage: 
-//     sparsity_example basis dimension order full/linear filename
+//     sparsity_example [options]
 //
 //  output:  
 //     prints the sparsity of the sparse 3 tensor specified by the basis,
@@ -49,6 +50,13 @@
 //     The full/linear flag determines whether the third index ranges over
 //     the full polynomial dimension, or only over the zeroth and first order
 //     terms.
+
+// Basis types
+enum BasisType { HERMITE, LEGENDRE, RYS };
+const int num_basis_types = 3;
+const BasisType basis_type_values[] = { HERMITE, LEGENDRE, RYS };
+const char *basis_type_names[] = { "hermite", "legendre", "rys" };
+
 int main(int argc, char **argv)
 {
   try {
@@ -58,48 +66,52 @@ int main(int argc, char **argv)
     MPI_Init(&argc,&argv);
 #endif
 
+    // Setup command line options
+    Teuchos::CommandLineProcessor CLP;
+    CLP.setDocString(
+      "This example generates the sparsity pattern for the block stochastic Galerkin matrix.\n");
+    int d = 3;
+    CLP.setOption("dimension", &d, "Stochastic dimension");
+    int p = 5;
+    CLP.setOption("order", &p, "Polynomial order");
+    double drop = 1.0e-15;
+    CLP.setOption("drop", &drop, "Drop tolerance");
+    std::string file = "A.mm";
+    CLP.setOption("filename", &file, "Matrix Market filename");
+    BasisType basis_type = LEGENDRE;
+    CLP.setOption("basis", &basis_type, 
+		  num_basis_types, basis_type_values, basis_type_names, 
+		  "Basis type");
+    bool full = true;
+    CLP.setOption("full", "linear", &full, "Use full or linear expansion");
+    bool use_old = false;
+    CLP.setOption("old", "new", &use_old, "Use old or new Cijk algorithm");
+
     // Parse arguments
-    if (argc != 7) {
-      std::cout << "Usage:  Stokhos_sparsity_example.exe basis d p full/linear drop fname" << std::endl;
-      exit(-1);
-    }
-    std::string basis_type(argv[1]);
-    int d = std::atoi(argv[2]);
-    int p = std::atoi(argv[3]);
-    std::string Cijk_type(argv[4]);
-    double drop = std::atof(argv[5]);
-    std::string file(argv[6]);
+    CLP.parse( argc, argv );
 
     // Basis
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
     for (int i=0; i<d; i++) {
-      if (basis_type == "hermite")
+      if (basis_type == HERMITE)
 	bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
-      else if (basis_type == "legendre")
+      else if (basis_type == LEGENDRE)
 	bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p));
-      else if (basis_type == "rys")
+      else if (basis_type == RYS)
 	bases[i] = Teuchos::rcp(new Stokhos::RysBasis<int,double>(p, 1.0, 
 								  false));
-      else {
-	std::cout << "Uknown basis type " << basis_type << std::endl;
-	exit(-1);
-      }
     }
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases,
-								    drop));
+								    drop,
+								    use_old));
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    if (Cijk_type == "full")
+    if (full)
       Cijk = basis->computeTripleProductTensor(basis->size());
-    else if (Cijk_type == "linear")
+    else
       Cijk = basis->computeTripleProductTensor(basis->dimension()+1);
-    else {
-      std::cout << "Unknown triple product size flag " << Cijk_type 
-		<< std::endl;
-      exit(-1);
-    }
 
 #ifdef HAVE_MPI
     Epetra_MpiComm comm(MPI_COMM_WORLD);
@@ -109,6 +121,8 @@ int main(int argc, char **argv)
     
     // Print triple product sparsity to matrix market file
     Stokhos::sparse3Tensor2MatrixMarket(*basis, *Cijk, comm, file);
+
+    Teuchos::TimeMonitor::summarize(std::cout);
     
   }
   catch (std::exception& e) {

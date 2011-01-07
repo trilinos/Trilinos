@@ -83,7 +83,16 @@ namespace Iogn {
 
   void GeneratedMesh::initialize()
   {
-    assert(numZ >= processorCount);
+    if (processorCount > numZ) {
+      if (myProcessor == 0) {
+	std::cerr << "ERROR: (Iogn::GeneratedMesh::initialize)\n"
+		  << "       The number of mesh intervals in the Z direction (" << numZ << ")\n"
+		  << "       must be at least as large as the number of processors (" << processorCount << ").\n"
+		  << "       The current parameters do not meet that requirement. Execution will terminate.\n";
+      }
+      std::exit(EXIT_FAILURE);
+    }
+
     if (processorCount > 1) {
       myNumZ = numZ / processorCount;
       if (myProcessor < (numZ % processorCount)) myNumZ++;

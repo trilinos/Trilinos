@@ -14,7 +14,6 @@ SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 SET(CTEST_TEST_TIMEOUT "2400")
 
-
 #
 # Set the rest of the system-specific options and run the dashboard build/test
 # Platform/compiler specific options for octopi

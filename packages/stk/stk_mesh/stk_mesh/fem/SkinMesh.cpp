@@ -113,6 +113,29 @@ class SideCommHelper {
     }
 };
 
+// Use permutation that starts with lowest entity id
+void ensure_consistent_order(EntityVector & side_entities)
+{
+  ThrowRequire( !side_entities.empty() );
+
+  EntityId lowest_id = side_entities.front()->identifier();
+  unsigned idx_of_lowest_id = 0;
+
+  for (unsigned idx = 1; idx < side_entities.size(); ++idx) {
+    EntityId curr_id = side_entities[idx]->identifier();
+    if (curr_id < lowest_id) {
+      idx_of_lowest_id = idx;
+      lowest_id = curr_id;
+    }
+  }
+
+  if (idx_of_lowest_id != 0) {
+    std::rotate(side_entities.begin(),
+                side_entities.begin() + idx_of_lowest_id,
+                side_entities.end());
+  }
+}
+
 // populate the side_map with 'owned' sides that need to be created
 //
 // a side needs to be created if the outside is NULL and the element
@@ -147,7 +170,14 @@ void add_owned_sides_to_map(
         //                                            the node with the smallest identifier
         SideKey side_key;
 
-        side_key.first = get_elem_side_nodes(inside_entity, side_ordinal, side_key.second);
+        side_key.first = get_subcell_nodes(
+            inside_entity,
+            element_rank - 1, // subcell rank
+            side_ordinal,     // subcell identifier
+            side_key.second,  // subcell nodes
+            false             // use reverse polarity
+            );
+        ensure_consistent_order(side_key.second);
 
         //add this side to the side_map
         side_map[side_key].push_back(inside);
@@ -189,7 +219,14 @@ void add_non_owned_sides_to_map(
         // Get the nodes for the inside entity
         SideKey side_key;
 
-        side_key.first = get_elem_side_nodes(inside_entity, side_ordinal, side_key.second);
+        side_key.first = get_subcell_nodes(
+            inside_entity,
+            element_rank - 1, // subcell rank
+            side_ordinal,     // subcell identifier
+            side_key.second,  // subcell nodes
+            false             // use reverse polarity
+            );
+        ensure_consistent_order(side_key.second);
 
         //only add the side if the side_key currently exist in the map
         if ( side_map.find(side_key) != side_map.end()) {

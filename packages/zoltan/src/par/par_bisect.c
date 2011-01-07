@@ -20,7 +20,7 @@ extern "C" {
 #include <stdlib.h>
 #include <float.h>
 #include "zoltan_types.h"
-#include "zz_const.h"
+#include "zz_util_const.h"
 #include "shared.h"
 #include "par_bisect_const.h"
 #include "par_median_const.h"

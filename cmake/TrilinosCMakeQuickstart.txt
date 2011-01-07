@@ -120,7 +120,6 @@ C) Configuring (Makefile Generator)
           -D CMAKE_BUILD_TYPE:STRING=DEBUG \
           -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
           -D Trilinos_ENABLE_TESTS:BOOL=ON \
-          -D DART_TESTING_TIMEOUT:STRING=600 \
           $EXTRA_ARGS \
           ${TRILINOS_HOME}
 

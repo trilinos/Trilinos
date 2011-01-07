@@ -20,7 +20,7 @@ extern "C" {
 #include "phg.h"
 #include "phg_tree.h"
 #include "phg_distrib.h"
-#include "zz_const.h"
+#include "zz_util_const.h"
 
 /*
 #define _DEBUG1

@@ -18,7 +18,7 @@ extern "C" {
 #endif
 
 
-#include "zz_const.h"
+#include "zz_util_const.h"
 #include "third_library_const.h"
 #include "third_library_tools.h"
 #include "graph_util.h"

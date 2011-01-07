@@ -12,6 +12,7 @@ SET(BUILD_DIR_NAME "SERIAL_OPT_RELEASE_ICPC_${Trilinos_VERSION}")
 SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 SET(CTEST_TEST_TYPE Experimental)
+#SET(CTEST_TEST_TIMEOUT 900)
 
 #SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos)
 SET(EXTRA_EXCLUDE_PACKAGES Didasko Sundance Piro Rythmos TrilinosCouplings NOX STK Pamgen Thyra Tpetra Zoltan Stokhos FEApp)

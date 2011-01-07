@@ -318,7 +318,7 @@ MPI_Datatype Zoltan_mpi_gno_type()
 #else
   #ifdef MPI_LONG_LONG_INT
     zz_mpi_gno_type = MPI_LONG_LONG_INT;
-    zz_mpi_gno_name=zz_mpi_datatype_names[5];
+    zz_mpi_gno_name=zz_mpi_datatype_names[3];
   #endif
 #endif
 
