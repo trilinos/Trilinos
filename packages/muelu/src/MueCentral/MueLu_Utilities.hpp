@@ -17,6 +17,10 @@
 #include "MueLu_MatrixFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 
+#ifdef HAVE_MUELU_EPETRAEXT
+#include "EpetraExt_MatrixMatrix.h"
+#endif
+
 namespace MueLu {
   using Teuchos::RCP;
   using Teuchos::rcp;

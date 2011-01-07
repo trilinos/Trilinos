@@ -10,3 +10,5 @@
 #cmakedefine HAVE_MUELU_IFPACK
 
 #cmakedefine HAVE_MUELU_IFPACK2
+
+#cmakedefine HAVE_MUELU_EPETRAEXT
