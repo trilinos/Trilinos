@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include "MueLu_OperatorFactory.hpp"
+#include "MueLu_Exceptions.hpp"
 
 namespace MueLu {
 /*!
@@ -39,7 +40,7 @@ class RAPFactory : public OperatorFactory<ScalarType,LocalOrdinal,GlobalOrdinal,
       RCP<Operator> RAP = Utils::TwoMatrixMultiply(R,AP);
       coarseLevel.SetA(RAP);
 #else
-      throw(Utils::NotImplemented("Tpetra has no matrix-matrix multiply yet"));
+      throw(Exceptions::NotImplemented("Tpetra has no matrix-matrix multiply yet"));
 #endif
 
       return true;
