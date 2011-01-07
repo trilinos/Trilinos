@@ -24,12 +24,63 @@
 #include <boost/program_options.hpp>
 #include <boost/shared_ptr.hpp>
 
+#define ALLOW_MEM_TEST 1
+
 extern double s_timers[10]; // = {0,0,0,0,0,0,0,0,0,0};
 
 
 namespace stk { 
 
   namespace adapt {
+
+    //extern void test_memory(int, int);
+    void test_memory(percept::PerceptMesh& eMesh, int n_elements, int n_nodes)
+    {
+      vector<Entity *> new_elements;
+      vector<Entity *> new_nodes;
+      
+      eMesh.getBulkData()->modification_begin();
+
+      std::cout << "creating " << n_elements << " elements..." <<std::endl;
+      eMesh.createEntities( mesh::Element, n_elements, new_elements);
+      std::cout << "... done creating " << n_elements << " elements" << std::endl;
+
+      std::cout << "creating " << n_nodes << " nodes..." <<std::endl;
+      eMesh.createEntities( mesh::Node, n_nodes, new_nodes);
+      std::cout << "... done creating " << n_nodes << " nodes" << std::endl;
+
+      int num_prints = 100;
+      int print_mod = n_elements/num_prints;
+      int i_node = 0;
+      int n_node_per_element = 4; 
+      for (int i_element = 0; i_element < n_elements; i_element++)
+        {
+          if (!i_element || (i_element % print_mod == 0))
+            {
+              std::cout << "declare_relation for i_element = " << i_element << " [" << n_elements << "] = " << ((double)i_element)/((double)n_elements)*100 << "%"
+                        << std::endl;
+            }
+          //Entity& element = eMesh.getBulkData()->get_entity( stk::mesh::Element , i_element+1);
+          Entity& element = *new_elements[i_element];
+
+          for (int j_node = 0; j_node < n_node_per_element; j_node++)
+            {
+              Entity& node = *new_nodes[i_node];
+
+              eMesh.getBulkData()->declare_relation(element, node, j_node);
+              
+              i_node++;
+              if (i_node >= n_nodes-1)
+                i_node = 0;
+            }
+        }
+
+      std::cout << " doing modification_end ... " << std::endl;
+      eMesh.getBulkData()->modification_end();
+      std::cout << " done modification_end ... " << std::endl;
+      
+
+    }
 
     using namespace boost::program_options;
 
@@ -113,6 +164,8 @@ namespace stk {
 
       std::string def1= Util::split(convert_options, ", ")[0] ;
       if (0) std::cout << def1 << "tmp split = " << Util::split(convert_options, ", ") << std::endl;
+      int test_memory_elements = 0;
+      int test_memory_nodes = 0;
       
       desc.add_options()
         //         ("convert",    bopt::value<std::string>(&convert)->default_value(Util::split(convert_options, ", ")[0]), convert_options.c_str())
@@ -127,6 +180,10 @@ namespace stk {
         ("block_name",    bopt::value<std::string>(&block_name)->default_value(""), block_name_desc.c_str())
         ("print_info",    bopt::value<int>(&printInfo)->default_value(0),                 ">= 0  (higher values print more info)")
         ("load_balance",    bopt::value<bool>(&doLoadBal)->default_value(true), " load balance (slice/spread) input mesh file")
+#if ALLOW_MEM_TEST
+        ("test_memory_elements",  bopt::value<int>(&test_memory_elements)->default_value(0), " give a number of elements")
+        ("test_memory_nodes",  bopt::value<int>(&test_memory_nodes)->default_value(0), " give a number of nodes")
+#endif
         ("proc_rank_field",    bopt::value<bool>(&addProcRankField)->default_value(false), " add an element field to show processor rank")
         ("remove_original_elements",    bopt::value<bool>(&remove_original_elements)->default_value(true), " remove original (converted) elements (default=true)")
         ;
@@ -139,6 +196,7 @@ namespace stk {
 
       RunEnvironment run_environment(&argc, &argv);
       unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
+
 
       try {
 
@@ -230,6 +288,12 @@ namespace stk {
           eMesh.addField("proc_rank", mesh::Element, scalarDimension);
 
         eMesh.commit();
+
+        if (test_memory_nodes && test_memory_elements)
+          {
+            test_memory(eMesh, test_memory_elements, test_memory_nodes);
+            return 0;
+          }
 
         // FIXME
         if (0)

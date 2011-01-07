@@ -369,10 +369,12 @@ namespace stk {
         return checkForRemote(element, needed_entity_rank, iSubDimOrd);
       }
 
-      NodeIdsOnSubDimEntityType getNewNodesOnSubDimEntity(const Entity& element,  EntityRank& needed_entity_rank, unsigned iSubDimOrd)
+      NodeIdsOnSubDimEntityType& getNewNodesOnSubDimEntity(const Entity& element,  EntityRank& needed_entity_rank, unsigned iSubDimOrd)
       {
         EXCEPTWATCH;
-        SubDimCell_EntityId subDimEntity;
+        static SubDimCell_EntityId subDimEntity;
+        subDimEntity.clear();
+        //SubDimCell_EntityId subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static const SubDimCellData empty_SubDimCellData;
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
@@ -387,7 +389,7 @@ namespace stk {
 
             //return 0;
           }
-        NodeIdsOnSubDimEntityType nodeId = nodeId_elementOwnderId.get<GLOBAL_NODE_IDS>();
+        NodeIdsOnSubDimEntityType& nodeId = nodeId_elementOwnderId.get<GLOBAL_NODE_IDS>();
         return nodeId;
       }
 
@@ -517,14 +519,19 @@ namespace stk {
           }
       }
 
+
       /// check for adding new nodes to existing parts based on sub-entity part ownership
+      static SubDimCell_EntityId s_subDimEntity;
+
       void addToExistingParts(const Entity& element,  EntityRank needed_entity_rank, unsigned iSubDimOrd)
       {
         const std::vector< stk::mesh::Part * > & parts = m_eMesh.getMetaData()->get_parts();
 
         unsigned nparts = parts.size();
 
-        SubDimCell_EntityId subDimEntity;
+        //CHECK
+        static SubDimCell_EntityId subDimEntity;
+        subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static const SubDimCellData empty_SubDimCellData;
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];

@@ -24,10 +24,10 @@ namespace stk {
     {
       std::size_t m_hash;
     public:
-      typedef std::set<Ids> SetIds;
+      typedef std::set<Ids> BaseClass;
       //set<Ids> m_ids;
-      SubDimCell() : SetIds(), m_hash(0u) {}
-      SubDimCell(unsigned num_ids, Ids *ids) : SetIds(ids, ids+num_ids), m_hash(0u)
+      SubDimCell() : BaseClass(), m_hash(0u) {}
+      SubDimCell(unsigned num_ids, Ids *ids) : BaseClass(ids, ids+num_ids), m_hash(0u)
       {
       }
       unsigned getHash() const
@@ -38,7 +38,11 @@ namespace stk {
       {
         m_hash = hash;
       }
-
+      void clear() 
+      {
+        m_hash = 0u;
+        BaseClass::clear();
+      }
     };
 #else
     //typedef array<int, 3> SubDimCell;

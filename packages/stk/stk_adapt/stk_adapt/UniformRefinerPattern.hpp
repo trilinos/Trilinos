@@ -762,10 +762,14 @@ namespace stk {
 
         if (rank_of_subcell == 0 || rank_of_subcell == 3) return 0;
 
-        std::set<unsigned> subdimCell_global_baseline;
-        std::vector<unsigned> subdimCell_global_baseline_vector;
-        std::set<unsigned>::iterator subdimCell_global_baseline_iter;
-        std::vector<unsigned> subCell_from_element;
+        static std::set<unsigned> subdimCell_global_baseline;
+        static std::vector<unsigned> subdimCell_global_baseline_vector;
+        static std::set<unsigned>::iterator subdimCell_global_baseline_iter;
+        static std::vector<unsigned> subCell_from_element;
+
+        subdimCell_global_baseline.clear();
+        subdimCell_global_baseline_vector.resize(0);
+        subCell_from_element.resize(0);
 
         const mesh::PairIterRelation elem_nodes = element.relations(mesh::Node);
 
@@ -833,7 +837,7 @@ namespace stk {
               }
 
             perm = findPermutation(cell_topo.getTopology()->subcell[rank_of_subcell][ordinal_of_subcell].topology,
-                                   &subdimCell_global_baseline_vector[0], &subCell_from_element[0]);
+                                              &subdimCell_global_baseline_vector[0], &subCell_from_element[0]);
 
             if ( perm < 0)
               {
@@ -863,20 +867,26 @@ namespace stk {
         return perm;
       }
 
+      //static std::vector<NeededEntityType> s_needed_entities;
+      //static vector<refined_element_type> s_elems;
+      //static std::vector<stk::mesh::Part*> s_add_parts;
+      //static std::vector<stk::mesh::Part*> s_remove_parts;
+
       void
       genericRefine_createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
                                       Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<Entity *>::iterator& element_pool,
                                       FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
-        std::vector<NeededEntityType> needed_entities;
+        static std::vector<NeededEntityType> needed_entities;
         fillNeededEntities(needed_entities);
 
         //
 
         const CellTopologyData * const cell_topo_data = get_cell_topology(element);
 
-        vector<refined_element_type> elems(getNumNewElemPerElem());
+        static vector<refined_element_type> elems;
+        elems.resize(getNumNewElemPerElem());
 
         CellTopology cell_topo(cell_topo_data);
         bool linearElement = Util::isLinearElement(cell_topo);
@@ -885,8 +895,8 @@ namespace stk {
 
         unsigned cellDimension = cell_topo.getDimension();
 
-        std::vector<stk::mesh::Part*> add_parts;
-        std::vector<stk::mesh::Part*> remove_parts;
+        //std::vector<stk::mesh::Part*>& add_parts = m_toParts;
+        //std::vector<stk::mesh::Part*>& remove_parts = s_remove_parts;
 
         unsigned n_edges = cell_topo_data->edge_count;
         if (n_edges == 0) n_edges = 1; // 1D edge has one "edge"
@@ -895,7 +905,6 @@ namespace stk {
         unsigned n_sides = cell_topo.getSideCount();
         if (0) std::cout << "tmp  n_edges= " << n_edges << " n_faces= " << n_faces << " n_sides= " << n_sides << std::endl;
 
-        add_parts = m_toParts;
 
         for (unsigned i_need = 0; i_need < needed_entities.size(); i_need++)
           {
@@ -931,7 +940,7 @@ namespace stk {
         shards::CellTopology cellTopo(cell_topo_data_toTopo);
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
-        const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
+        const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo); // CHECK
         const Elem::RefinementTopology& ref_topo = *ref_topo_p;
 
         unsigned num_child = ref_topo.num_child();
@@ -942,7 +951,7 @@ namespace stk {
         //bool homogeneous_child = ref_topo.homogeneous_child();
         //VERIFY_OP(homogeneous_child, ==, true, "genericRefine_createNewElements homogeneous_child");
 
-        RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;
+        RefTopoX& ref_topo_x = Elem::StdMeshObjTopologies::RefinementTopologyExtra< FromTopology > ::refinement_topology;  
 
         for (unsigned iChild = 0; iChild < num_child; iChild++)
           {
@@ -1058,6 +1067,7 @@ namespace stk {
             // FIXME
             if (m_primaryEntityRank == Element &&  proc_rank_field)
               {
+                //exit(1);  // FIXME FIXME FIXME CHECK
                 double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
               }
