@@ -8,6 +8,8 @@
 
 #ifdef HAVE_IOSS
 
+#include <stk_io/util/UseCase_mesh.hpp>
+
 namespace panzer_stk {
 
 class STK_Interface;
@@ -56,8 +58,8 @@ public:
 
 protected:
 
-   void registerElementBlocks(STK_Interface & mesh) const;
-   void registerSidesets(STK_Interface & mesh) const;
+   void registerElementBlocks(STK_Interface & mesh,stk::io::util::MeshData & meshData) const;
+   void registerSidesets(STK_Interface & mesh,stk::io::util::MeshData & meshData) const;
 
    std::string fileName_;
 };
