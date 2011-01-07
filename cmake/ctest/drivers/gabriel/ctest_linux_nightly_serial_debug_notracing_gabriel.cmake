@@ -8,6 +8,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.gabriel.gcc.cmake")
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_NOTRACE)
+#SET(CTEST_TEST_TIMEOUT 900)
 
 # Only test packages that uses RCP up to Thyra
 SET(Trilinos_PACKAGES Teuchos RTOp EpetraExt Thyra)

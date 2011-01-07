@@ -8,6 +8,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test.gcc.cma
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME CONTINUOUS_${COMM_TYPE}_OPT_DEV_SHARED)
+#SET(CTEST_TEST_TIMEOUT 900)
 
 #override the default number of processors to run on.
 SET( CTEST_BUILD_FLAGS "-j11 -i" )

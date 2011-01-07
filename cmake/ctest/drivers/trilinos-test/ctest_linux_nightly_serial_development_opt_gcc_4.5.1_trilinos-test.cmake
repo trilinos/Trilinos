@@ -10,6 +10,7 @@ SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME SERIAL_OPT_DEV)
 SET(COMPILER_VERSION "GCC-4.5.1")
 SET(ENV{LD_LIBRARY_PATH} "/home/trilinos/install/gmp-4.3.2/lib:/home/trilinos/install/mpfr2.4.2/lib:/home/trilinos/install/mpc-0.8.1/lib:/home/trilinos/gcc4.5.1/lib64:$ENV{LD_LIBRARY_PATH}")
+#SET(CTEST_TEST_TIMEOUT 900)
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being

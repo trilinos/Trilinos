@@ -8,6 +8,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.gabriel.gcc.cmake")
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE RELEASE)
 SET(BUILD_DIR_NAME SERIAL_RELEASE_PS)
+#SET(CTEST_TEST_TIMEOUT 900)
 
 # 2009/08/28: Sundance is not building for this build case.  Kevin long said
 # to turn it off for now.
