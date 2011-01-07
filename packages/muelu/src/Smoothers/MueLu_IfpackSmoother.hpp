@@ -5,7 +5,7 @@
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Utilities.hpp"
 
-//#ifdef HAVE_MUELU_IFPACK //FIXME doesn't work right now
+#ifdef HAVE_MUELU_IFPACK
 #include "Ifpack.h"
 
 namespace MueLu {
@@ -17,7 +17,8 @@ class Level;
   @class IfpackSmoother
   @brief Class that encapsulates Ifpack smoothers.
 
-  It does this by invoking the Ifpack preconditioner factory.
+  This class creates an Ifpack preconditioner factory.  The factory creates a smoother based on the
+  type and ParameterList passed into the constructor.  See the constructor for more information.
 */
 
   template<class ScalarType,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -30,11 +31,15 @@ class Level;
 
     //! Ifpack-specified key phrase that denote smoother type
     std::string type_;
+    //! number of smoother sweeps
     LO nIts_;
+    //! overlap when using the smoother in additive Schwarz mode
     LO overlap_;
     //RCP<Ifpack_Preconditioner> prec_;
     Ifpack_Preconditioner* prec_;
+    //! matrix operator 
     Teuchos::RCP<Operator> A_;
+    //! parameter list that is used by Ifpack internally
     Teuchos::ParameterList list_;
 
   protected:
@@ -44,6 +49,38 @@ class Level;
 
     //! @name Constructors / destructors
     //@{
+
+    /*! @brief Constructor
+
+        The options passed into IfpackSmoother are those given in the Ifpack user's manual.
+
+        @param type smoother type
+        @param list options for the particular smoother (e.g., fill factor or damping parameter)
+
+        Here is how to select some of the most common smoothers.
+
+         - Gauss-Seidel
+            - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
+            - parameter list options
+                - <tt>relaxation: type</tt> = <tt>Gauss-Seidel</tt>
+                - <tt>relaxation: damping factor</tt>
+         - symmetric Gauss-Seidel
+            - <tt>type</tt> = <tt>point relaxation stand-alone</tt>
+            - parameter list options
+                - <tt>relaxation: type</tt> = <tt>symmetric Gauss-Seidel</tt>
+                - <tt>relaxation: damping factor</tt>
+         - Chebyshev
+            - <tt>type</tt> = <tt>Chebyshev</tt>
+            - parameter list options
+                - <tt>chebyshev: ratio eigenvalue</tt>
+                - <tt>chebyshev: min eigenvalue</tt>
+                - <tt>chebyshev: max eigenvalue</tt>
+                - <tt>chebyshev: degree</tt>
+         - ILU
+            - <tt>type</tt> = <tt>ILU</tt>
+            - parameter list options
+                - <tt>fact: level-of-fill</tt>
+    */
     IfpackSmoother(std::string const & type, Teuchos::ParameterList & list)
       : type_(type), list_(list), out_(this->getOStream())
     {
@@ -51,9 +88,13 @@ class Level;
       overlap_ = list.get("Overlap",(LO) 0);
     }
 
+    //! Destructor
     virtual ~IfpackSmoother() {}
     //@}
 
+    //! @name Set/Get methods
+
+    //@{
     void SetNIts(LO nIts) {
       nIts_ = nIts;
     }
@@ -61,6 +102,7 @@ class Level;
     LO GetNIts() {
       return nIts_;
     }
+    //@}
 
     void Setup(RCP<Level> level) {
       Teuchos::OSTab tab(out_);
@@ -111,6 +153,6 @@ class Level;
 
 #define MUELU_IFPACK_SMOOTHER_SHORT
 
-//#endif //ifdef HAVE_MUELU_IFPACK //FIXME doesn't work right now
+#endif //ifdef HAVE_MUELU_IFPACK
 
 #endif //ifndef MUELU_IFPACK_SMOOTHER_HPP
