@@ -120,6 +120,7 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+  //RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("IC",ifpackList) );
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smoother) );
   //RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(Teuchos::null,Teuchos::null) );
   Acfact->setVerbLevel(Teuchos::VERB_HIGH);
