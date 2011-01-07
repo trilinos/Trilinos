@@ -4,7 +4,8 @@
 #include <iostream>
 
 #include "MueLu_Needs.hpp"
-#include "MueLu_Smoother.hpp"
+//#include "MueLu_Smoother.hpp"
+#include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_Level.hpp"
 
 namespace MueLu {

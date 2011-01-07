@@ -9,6 +9,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
+#include "MueLu_Types.hpp"
 
 namespace MueLu {
 /*!
@@ -118,7 +119,7 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
            break;
            }
          if (SmooFact != Teuchos::null) {
-           Teuchos::RCP<Smoother> preSm, postSm;
+           Teuchos::RCP<SmootherPrototype> preSm, postSm;
            SmooFact->Build(Levels_[i], preSm, postSm);
            if (preSm != Teuchos::null) Levels_[i]->SetPreSmoother(preSm);
            if (postSm != Teuchos::null) Levels_[i]->SetPostSmoother(postSm);
@@ -130,16 +131,16 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
      /*! @brief Construct smoothers on all levels.
        TODO should return status
      */
-     void SetSmoothers(RCP<SmootherFactory> smooFact, LO startLevel=0, LO numDesiredLevels=-1) {
+     void SetSmoothers(RCP<SmootherFactory> smooFact=Teuchos::null, LO startLevel=0, LO numDesiredLevels=-1) {
        Teuchos::OSTab tab(out_);
        MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::SetSmoothers()" << std::endl;
        if (smooFact == Teuchos::null) {
-         //TODO need a real smoother!
+         throw(Exceptions::NotImplemented("No default smoother is defined"));
        }
        if (numDesiredLevels == -1)
          numDesiredLevels = Levels_.size()-startLevel+1;
        //TODO FullPopulate should return boolean status
-       FullPopulate(Teuchos::null,Teuchos::null,smooFact,startLevel,numDesiredLevels);
+       FullPopulate(Teuchos::null,Teuchos::null,Teuchos::null,smooFact,startLevel,numDesiredLevels);
      } //SetSmoothers()
 
      /*!
@@ -166,9 +167,38 @@ class Hierarchy : public Teuchos::VerboseObject<Hierarchy<Scalar,LocalOrdinal,Gl
 
      /*!
        @brief Apply the multigrid preconditioner.
-       FIXME Does not return solution vector right now!
      */
-     void Iterate() {Teuchos::OSTab tab(out_); MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::Iterate()" << std::endl; }
+
+     void Iterate(MultiVector const &rhs, LO nIts, MultiVector const &solution,
+                  bool InitialGuessIsZero=false, CycleType const Cycle=VCYCLE, LO const startLevel=1)
+     {
+       Teuchos::OSTab tab(out_);
+       MueLu_cout(Teuchos::VERB_HIGH) << "Hierarchy::Iterate()" << std::endl;
+
+     /*
+       for (LO i=0; i<nIts; i++) {
+         RCP<Level> Fine = Levels_[startLevel];
+         RCP<Smoother> preSmoo = Fine->GetPreSmoother();}
+         RCP<Smoother> postSmoo = Fine->GetPostSmoother();
+
+         //If on the coarse level, do either smoothing (if defined) or a direct solve.
+         if (// check if on coarse level//) {
+
+         //intermediate level
+         } else {
+           Coarse = Levels_[startLevel+];
+           if (preSmoo != Teuchos::null)
+             preSmoo->Apply(solution, rhs, InitialGuessIsZero);
+
+           RCP<MultiVector> residual;
+           RCP<MultiVector> workVector;
+           //TODO FINISH ME 
+
+         }
+
+       */
+
+     } //Iterate()
 
    //@}
     

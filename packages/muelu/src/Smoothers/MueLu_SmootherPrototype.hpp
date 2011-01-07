@@ -8,6 +8,9 @@
 
 namespace MueLu {
 
+template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+class Level;
+
 /*!
   @class SmootherPrototype
   @brief Base class for smoother prototypes
@@ -21,9 +24,6 @@ namespace MueLu {
  another smoother object of the same type (CopyParameters()). Both
  capabilities are used by the SmootherFactory.
 */
-
-template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
-class Level;
 
 template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
 class SmootherPrototype : public SmootherBase<ScalarType,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {

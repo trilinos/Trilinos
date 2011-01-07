@@ -7,12 +7,16 @@
 #include "MueLu_Needs.hpp"
 #include "Cthulhu_Operator.hpp"
 #include "Cthulhu_Vector.hpp"
-#include "MueLu_Smoother.hpp"
+#include "MueLu_SmootherPrototype.hpp"
 #include <sstream>
 
 // JG TODO: add **default** template parameters
 
 namespace MueLu {
+
+  template <class ScalarType,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalMatOps>
+  class SmootherPrototype;
+
   /*!
     @class Level
     @brief Class that holds all level-specific information.
@@ -35,8 +39,10 @@ namespace MueLu {
     Teuchos::RCP<Operator> A_;             // discretization operator
     Teuchos::RCP<Operator> R_;             // restriction operator
     Teuchos::RCP<Operator> P_;             // prolongator operator
-    Teuchos::RCP<Smoother> PreSmoother_;   // smoother operator
-    Teuchos::RCP<Smoother> PostSmoother_;  // smoother operator
+    //Teuchos::RCP<SmootherPrototype<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > PreSmoother_;   // smoother operator
+    //Teuchos::RCP<SmootherPrototype<ScalarType, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > PostSmoother_;  // smoother operator
+    Teuchos::RCP<SmootherPrototype> PreSmoother_;   // smoother operator
+    Teuchos::RCP<SmootherPrototype> PostSmoother_;  // smoother operator
     mutable int levelID_;                  // id number associated with level
 
   protected:
@@ -100,12 +106,12 @@ namespace MueLu {
     }
 
     //! @brief Set presmoother.
-    void SetPreSmoother(Teuchos::RCP<Smoother> &preSmoo) {
+    void SetPreSmoother(Teuchos::RCP<SmootherPrototype> &preSmoo) {
       PreSmoother_ = preSmoo;
     }
 
     //! @brief Set postsmoother.
-    void SetPostSmoother(Teuchos::RCP<Smoother> &postSmoo) {
+    void SetPostSmoother(Teuchos::RCP<SmootherPrototype> &postSmoo) {
       PostSmoother_ = postSmoo;
     }
 
@@ -155,20 +161,20 @@ namespace MueLu {
       }
     }
 
-    //! @brief Return presmoother.
-    Teuchos::RCP<Smoother> GetPreSmoother() const {
-      if (PreSmoother_ != Teuchos::null)
-        return PreSmoother_;
-      else
-        throw(std::logic_error("PreSmoother is not set"));
+    /*! @brief Return presmoother.
+
+        Does not throw exception if smoother is null.
+    */
+    Teuchos::RCP<SmootherPrototype> GetPreSmoother() const {
+      return PreSmoother_;
     }
 
-    //! @brief Return postsmoother.
-    Teuchos::RCP<Smoother> GetPostSmoother() const {
-      if (PostSmoother_ != Teuchos::null)
-        return PostSmoother_;
-      else
-        throw(std::logic_error("PostSmoother is not set"));
+    /*! @brief Return postsmoother.
+
+        Does not throw exception if smoother is null.
+    */
+    Teuchos::RCP<SmootherPrototype> GetPostSmoother() const {
+      return PostSmoother_;
     }
 
     //@}
