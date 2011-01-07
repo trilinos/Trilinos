@@ -208,14 +208,16 @@ computeTripleProductTensorNew(ordinal_type order) const
     Cijk_1d[i] = bases[i]->computeSparseTripleProductTensor(k_lim);
   }
 
+  // Create i, j, k iterators for each dimension
+  // Note:  we have to supply an initializer in the arrays of iterators to 
+  // avoid checked-stl errors about singular iterators
   typedef Sparse3Tensor<ordinal_type,value_type> Cijk_type;
   typedef typename Cijk_type::k_iterator k_iterator;
   typedef typename Cijk_type::kj_iterator kj_iterator;
   typedef typename Cijk_type::kji_iterator kji_iterator;
-
-  Teuchos::Array<k_iterator> k_iterators(d);
-  Teuchos::Array<kj_iterator > j_iterators(d);
-  Teuchos::Array<kji_iterator > i_iterators(d);
+  Teuchos::Array<k_iterator> k_iterators(d, Cijk_1d[0]->k_begin());
+  Teuchos::Array<kj_iterator > j_iterators(d, Cijk_1d[0]->j_begin(k_iterators[0]));
+  Teuchos::Array<kji_iterator > i_iterators(d, Cijk_1d[0]->i_begin(j_iterators[0]));
   Teuchos::Array<ordinal_type> terms_i(d), terms_j(d), terms_k(d);
   ordinal_type sum_i = 0;
   ordinal_type sum_j = 0;
