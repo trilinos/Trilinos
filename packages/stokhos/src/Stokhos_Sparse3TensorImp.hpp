@@ -77,3 +77,16 @@ getValue(ordinal_type i, ordinal_type j, ordinal_type k) const
 
   return i_it->second;
 }
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::Sparse3Tensor<ordinal_type, value_type>::
+num_entries() const
+{
+  ordinal_type num = 0;
+  for (k_iterator k = k_begin(); k != k_end(); ++k)
+    for (kj_iterator j = j_begin(k); j != j_end(k); ++j)
+      for (kji_iterator i = i_begin(j); i != i_end(j); ++i)
+	++num;
+  return num;
+}

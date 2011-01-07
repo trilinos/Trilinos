@@ -65,8 +65,11 @@ create(Teuchos::ParameterList& sgParams)
       bases[i] = create1DBasis(bp);
     }
   }
+
+  value_type drop = basisParams.get("Cijk Drop Tolerance", 1e-15);
+  bool use_old = basisParams.get("Use Old Cijk Algorithm", false);
   basis = 
-    Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases));
+    Teuchos::rcp(new Stokhos::CompletePolynomialBasis<ordinal_type,value_type>(bases, drop, use_old));
   basisParams.set("Stochastic Galerkin Basis", basis);
   
   return basis;

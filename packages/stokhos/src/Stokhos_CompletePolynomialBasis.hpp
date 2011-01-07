@@ -67,6 +67,9 @@ namespace Stokhos {
      * \param bases array of 1-D coordinate bases
      * \param sparse_tol tolerance used to drop terms in sparse triple-product
      *                   tensors
+     * \param use_old_cijk_alg use old algorithm for computing the sparse
+     *                         triple product tensor  (significantly slower,
+     *                         but simpler)
      * \param deriv_coeffs direction used to define derivatives for
      *                     derivative product tensors.  Defaults to
      *                     all one's if not supplied.
@@ -75,6 +78,7 @@ namespace Stokhos {
       const Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,
  value_type> > >& bases,
       const value_type& sparse_tol = 1.0e-15,
+      bool use_old_cijk_alg = false,
       const Teuchos::RCP< Teuchos::Array<value_type> >& deriv_coeffs = Teuchos::null);
 
     //! Destructor
@@ -199,6 +203,16 @@ namespace Stokhos {
 
   protected:
 
+    //! Compute triple product tensor using old algorithm
+    virtual 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeTripleProductTensorOld(ordinal_type order) const;
+
+    //! Compute triple product tensor using new algorithm
+    virtual 
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeTripleProductTensorNew(ordinal_type order) const;
+
     /*! 
      * \brief Computes the number of terms in an expansion of dimension \c dim
      * and order \c order.
@@ -247,6 +261,9 @@ namespace Stokhos {
 
     //! Tolerance for computing sparse Cijk
     value_type sparse_tol;
+
+    //! Use old algorithm for computing Cijk
+    bool use_old_cijk_alg;
 
     //! Coefficients for derivative
     Teuchos::RCP< Teuchos::Array<value_type> > deriv_coeffs;
