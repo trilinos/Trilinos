@@ -621,6 +621,11 @@ int main(int argc, char *argv[])
       fprintf(stdout,"No platform or topology, so we'll skip hierarchical partitioning\n");
     do_hier = 0;
   }
+  else if (graph_package == NULL){
+    if (myRank == 0)
+      fprintf(stdout,"No graph package, so we'll skip hierarchical partitioning\n");
+    do_hier = 0;
+  }
   else{
     do_hier = 1;
   }
