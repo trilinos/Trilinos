@@ -380,7 +380,56 @@ namespace stk {
           connectLocal(ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
           if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: connectLocal...done " << std::endl;
 
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: modification_end... " << std::endl;
+          if (m_doRemove && 1)
+            {
+              EXCEPTWATCH;
+
+              if (TRACE_STAGE_PRINT) {
+                size_t heap_in_Mb = 0;
+                size_t memory_in_Mb = Util::memory(heap_in_Mb);
+                memory_in_Mb = memory_in_Mb / (1024*1024);
+                heap_in_Mb = heap_in_Mb / (1024*1024);
+
+                double cpu = Util::cpu_time();
+                std::cout << "UniformRefiner: remove old elements...start " 
+                          << " mem= " << memory_in_Mb << " [Mb] "
+                          << " heap= " << heap_in_Mb << " [Mb] "
+                          << " cpu_time= " << cpu/(60.) << " [min] "
+                          <<std::endl;
+              }
+
+              removeOldElements(ranks[irank], m_breakPattern[irank]);
+              renameNewParts(ranks[irank], m_breakPattern[irank]);
+              fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
+
+              if (TRACE_STAGE_PRINT) {
+                size_t heap_in_Mb = 0;
+                size_t memory_in_Mb = Util::memory(heap_in_Mb);
+                memory_in_Mb = memory_in_Mb / (1024*1024);
+                heap_in_Mb = heap_in_Mb / (1024*1024);
+
+                double cpu = Util::cpu_time();
+                std::cout << "UniformRefiner: remove old elements...done " 
+                          << " mem= " << memory_in_Mb << " [Mb] "
+                          << " heap= " << heap_in_Mb << " [Mb] "
+                          << " cpu_time= " << cpu/(60.) << " [min] "
+                          <<std::endl;
+              }
+            }
+
+          if (TRACE_STAGE_PRINT) {
+            size_t heap_in_Mb = 0;
+            size_t memory_in_Mb = Util::memory(heap_in_Mb);
+            memory_in_Mb = memory_in_Mb / (1024*1024);
+            heap_in_Mb = heap_in_Mb / (1024*1024);
+
+            double cpu = Util::cpu_time();
+            std::cout << "UniformRefiner: modification_end...start... "
+                      << " mem= " << memory_in_Mb << " [Mb] "
+                      << " heap= " << heap_in_Mb << " [Mb] "
+                      << " cpu_time= " << cpu/(60.) << " [min] "
+                      <<std::endl;
+          }
 
           bulkData.modification_end();
           if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: modification_end...done " << std::endl;
@@ -397,22 +446,27 @@ namespace stk {
           bulkData.modification_begin();
           //std::cout << "ranks.size() = " << ranks.size() << std::endl;
 
-          for (unsigned irank = 0; irank < ranks.size(); irank++)
+          // FIXME FIXME FIXME
+          if (0) 
             {
-              removeOldElements(ranks[irank], m_breakPattern[irank]);
-              renameNewParts(ranks[irank], m_breakPattern[irank]);
-              //std::cout << "000 typeid= " << typeid(*m_breakPattern[irank]).name() << std::endl;
 
-              fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
-            }  // irank
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: remove old elements...done " << std::endl;
+              for (unsigned irank = 0; irank < ranks.size(); irank++)
+                {
+                  removeOldElements(ranks[irank], m_breakPattern[irank]);
+                  renameNewParts(ranks[irank], m_breakPattern[irank]);
+                  //std::cout << "000 typeid= " << typeid(*m_breakPattern[irank]).name() << std::endl;
+
+                  fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
+                }  // irank
+              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: remove old elements...done " << std::endl;
+            }
 
           if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: fixElementSides " << std::endl;
           fixElementSides();
 
           if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: fixElementSides...done " << std::endl;
 
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: modification_end... " << std::endl;
+          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: modification_end...start " << std::endl;
           bulkData.modification_end();
           if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: modification_end...done " << std::endl;
         }
@@ -475,8 +529,19 @@ namespace stk {
       unsigned ncolors = elementColors.size();
       for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
         {
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner:connectLocal color= " << icolor << " [ " << ((double)icolor)/((double)ncolors)*100 << " %]" 
-                                           <<std::endl;
+          if (TRACE_STAGE_PRINT) {
+            size_t heap_in_Mb = 0;
+            size_t memory_in_Mb = Util::memory(heap_in_Mb);
+            memory_in_Mb = memory_in_Mb / (1024*1024);
+            heap_in_Mb = heap_in_Mb / (1024*1024);
+
+            double cpu = Util::cpu_time();
+            std::cout << "UniformRefiner:connectLocal color= " << icolor << " [ " << ((double)icolor)/((double)ncolors)*100 << " %] "
+                      << " mem= " << memory_in_Mb << " [Mb] "
+                      << " heap= " << heap_in_Mb << " [Mb] "
+                      << " cpu_time= " << cpu/(60.) << " [min] "
+                      <<std::endl;
+          }
           
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();  iele !=  elementColors[icolor].end();  iele++)

@@ -107,6 +107,8 @@ namespace stk {
       static double s_timers[10];
 
       static bool isLinearElement(shards::CellTopology& cell_topo);
+      static double cpu_time();
+      static size_t memory(size_t& heap);
       static void pause(bool doPause=true, const char *msg=0);
       static void setDoPause(bool enableOrDisablePause);
       static void setFlag(int which_flag, bool val);

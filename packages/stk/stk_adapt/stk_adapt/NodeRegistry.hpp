@@ -372,9 +372,10 @@ namespace stk {
       NodeIdsOnSubDimEntityType& getNewNodesOnSubDimEntity(const Entity& element,  EntityRank& needed_entity_rank, unsigned iSubDimOrd)
       {
         EXCEPTWATCH;
+        //SubDimCell_EntityId subDimEntity;
+
         static SubDimCell_EntityId subDimEntity;
         subDimEntity.clear();
-        //SubDimCell_EntityId subDimEntity;
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static const SubDimCellData empty_SubDimCellData;
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
@@ -403,7 +404,8 @@ namespace stk {
       {
         EXCEPTWATCH;
         unsigned *null_u = 0;
-        SubDimCell_EntityId subDimEntity;
+        static SubDimCell_EntityId subDimEntity;
+        subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static const SubDimCellData empty_SubDimCellData;
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
@@ -521,7 +523,6 @@ namespace stk {
 
 
       /// check for adding new nodes to existing parts based on sub-entity part ownership
-      static SubDimCell_EntityId s_subDimEntity;
 
       void addToExistingParts(const Entity& element,  EntityRank needed_entity_rank, unsigned iSubDimOrd)
       {

@@ -323,9 +323,13 @@ namespace stk {
               {
                 if (!eMesh.getRank())
                   {
-                    std::cout << "Refinement pass # " << (iBreak+1) << std::endl;
+                    std::cout << "Refinement pass # " << (iBreak+1) << " start..." << std::endl;
                   }
                 breaker.doBreak();
+                if (!eMesh.getRank())
+                  {
+                    std::cout << "Refinement pass # " << (iBreak+1) << " ...done" << std::endl;
+                  }
               }
 
             // FIXME

@@ -895,8 +895,6 @@ namespace stk {
 
         unsigned cellDimension = cell_topo.getDimension();
 
-        //std::vector<stk::mesh::Part*>& add_parts = m_toParts;
-        //std::vector<stk::mesh::Part*>& remove_parts = s_remove_parts;
 
         unsigned n_edges = cell_topo_data->edge_count;
         if (n_edges == 0) n_edges = 1; // 1D edge has one "edge"
@@ -904,7 +902,6 @@ namespace stk {
         if (n_faces == 0) n_faces = 1; // 2D face has one "face"
         unsigned n_sides = cell_topo.getSideCount();
         if (0) std::cout << "tmp  n_edges= " << n_edges << " n_faces= " << n_faces << " n_sides= " << n_sides << std::endl;
-
 
         for (unsigned i_need = 0; i_need < needed_entities.size(); i_need++)
           {
@@ -922,7 +919,6 @@ namespace stk {
                 nSubDimEntities = 1;
               }
 
-#if 1
             // FIXME - assumes first node on each sub-dim entity is the "linear" one
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
@@ -933,7 +929,6 @@ namespace stk {
                     nodeRegistry.interpolateFields(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                   }
               }
-#endif
           }
 
         const CellTopologyData * const cell_topo_data_toTopo = shards::getCellTopologyData< ToTopology >();

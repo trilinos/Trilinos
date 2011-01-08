@@ -1,39 +1,25 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
+#include <iostream>
+#include <ostream>
+#include <fstream>
+#include <sstream>
+#include <cstring>
+#include <cstdlib>
+#include <stdexcept>
+#include <iomanip>
+#include <algorithm>
+#include <locale>
 
 #include <stk_percept/Util.hpp>
 #include <stk_percept/PerceptMesh.hpp>
 #include <sys/resource.h>
 
+// FIXME
     double s_timers[10] = {0,0,0,0,0,0,0,0,0,0};
 
 
-double
-srk_cpu_time()
-{
-#if defined(REDS)
-  struct rusage my_rusage;
-
-  ::getrusage(RUSAGE_SELF, &my_rusage);
-
-  double seconds = my_rusage.ru_utime.tv_sec;
-  double micro_seconds = my_rusage.ru_utime.tv_usec;
-  
-  return seconds + micro_seconds*1.0e-6;
-
-#else
-  static struct rusage my_rusage;
-
-  ::getrusage(RUSAGE_SELF, &my_rusage);
-
-  double seconds = my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec;
-  double micro_seconds = my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec;
-  
-  return seconds + micro_seconds*1.0e-6;
-
-#endif
-}
 
 
 namespace shards {
@@ -251,6 +237,137 @@ namespace stk {
           pos += replace_with.length();
         }
     }
+
+
+
+static void
+get_memory_info(
+  size_t &		memory_usage,
+  size_t &		faults)
+{
+  memory_usage = 0;
+  faults = 0;
+
+  std::ifstream proc("/proc/self/stat", std::ios_base::in|std::ios_base::binary);
+  if (proc) {
+
+    std::string s;
+    int i;
+    for (i = 0; i < 11; ++i)
+      proc >> s;
+
+    proc >> faults;
+    ++i;
+
+    for (; i < 22; ++i)
+      proc >> s;
+
+    proc >> memory_usage;
+    ++i;
+  }
+}
+
+static void
+get_heap_info(
+  size_t &		heap_size,
+  size_t &		largest_free)
+{
+  heap_size = 0;
+  largest_free = 0;
+
+#if defined(SIERRA_HEAP_INFO)
+# if 0 // if defined(REDS) // Redstorm now links in gnu's malloc
+  static size_t reds_fragments;
+  static unsigned long reds_total_free;
+  static unsigned long reds_heap_size;
+  static unsigned long reds_largest_free;
+
+  ::heap_info(&reds_fragments, &reds_total_free, &reds_largest_free, &reds_heap_size);
+
+  heap_size = reds_heap_size;
+  largest_free = reds_largest_free;
+
+  slibout.m(Slib::LOG_MEMORY) <<"reds_fragments " << reds_fragments
+			      << ", reds_total_free " << reds_total_free
+			      << ", reds_largest_free " << reds_largest_free
+			      << ", reds_heap_size " << reds_heap_size << Diag::dendl;
+
+// # elif defined(__linux__)
+# elif defined(__linux__) || defined(REDS) && ! defined(__IBMCPP__)
+  static struct mallinfo minfo;
+  minfo = mallinfo();
+  heap_size = (unsigned int) minfo.uordblks + (unsigned int) minfo.hblkhd;
+  largest_free = (unsigned int) minfo.fordblks;
+
+
+# elif defined(__sun)
+  pstatus_t proc_status;
+
+  std::ifstream proc("/proc/self/status", std::ios_base::in|std::ios_base::binary);
+  if (proc) {
+    proc.read((char *)&proc_status, sizeof(proc_status));
+    heap_size = proc_status.pr_brksize;
+    slibout.m(Slib::LOG_MEMORY) <<"pr_brksize " << proc_status.pr_brksize
+				<< ", pr_stksize " << proc_status.pr_stksize << Diag::dendl;
+  }
+# endif
+#endif // defined(SIERRA_HEAP_INFO)
+}
+
+
+
+    double
+    Util::cpu_time()
+    {
+#if defined(REDS)
+      struct rusage my_rusage;
+
+      ::getrusage(RUSAGE_SELF, &my_rusage);
+
+      double seconds = my_rusage.ru_utime.tv_sec;
+      double micro_seconds = my_rusage.ru_utime.tv_usec;
+  
+      return seconds + micro_seconds*1.0e-6;
+
+#else
+      static struct rusage my_rusage;
+
+      ::getrusage(RUSAGE_SELF, &my_rusage);
+
+      double seconds = my_rusage.ru_utime.tv_sec + my_rusage.ru_stime.tv_sec;
+      double micro_seconds = my_rusage.ru_utime.tv_usec + my_rusage.ru_stime.tv_usec;
+      return seconds + micro_seconds*1.0e-6;
+
+#endif
+    }
+
+    size_t
+    Util::memory(size_t& heap)
+    {
+#if defined(REDS)
+      struct rusage my_rusage;
+
+      ::getrusage(RUSAGE_SELF, &my_rusage);
+
+      double seconds = my_rusage.ru_utime.tv_sec;
+      double micro_seconds = my_rusage.ru_utime.tv_usec;
+  
+      return seconds + micro_seconds*1.0e-6;
+
+#else
+
+      /* Maximum resident set size (in kilobytes).  */
+      size_t largest_free = 0;
+      size_t faults = 0;
+      size_t memory_in_bytes = 0;
+      get_heap_info(heap, largest_free);
+      get_memory_info(memory_in_bytes, faults);
+      return memory_in_bytes;
+
+#endif
+    }
+
+    //========================================================================================================================
 
     // FIXME
     bool Util::isLinearElement(shards::CellTopology& cell_topo)
