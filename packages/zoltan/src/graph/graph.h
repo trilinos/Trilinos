@@ -24,7 +24,7 @@ extern "C" {
 
 typedef struct ZG_ {
   Zoltan_matrix_2d mtx;
-  int         *fixed_vertices;   /* TODO64 - these are partition numbers? */
+  int         *fixed_vertices; 
   int          bipartite;
   int          fixObj;
 } ZG;
