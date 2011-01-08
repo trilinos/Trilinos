@@ -26,20 +26,34 @@ namespace Zoltan2
     the caller's object. 
 
     It can be queried by the caller.  It can be passed with an Objective
-    to a method that will compute a quality metric.  It can be passed to a
-    Zoltan2 method for further computation and improvement.
+    to a method that will compute a quality metric.  It can be passed with
+    an objective to a Zoltan2 method for further computation and improvement.
 
     TODO: Enhance methods so they can use the result even if refinement of
       a mesh has occured since the result was computed.
+
+    TODO: some of the instance variables are actually smart pointers to objects
+           created elsewhere
+
+    TODO: It's not clear to me yet what the design of this class should be.
+      Solutions differ depending on the problem input (ObjectSource) and the
+      method applied.  So if an Epetra_RowMatrix is partitioned the result
+      could be new Epetra_Maps.  Or it could be a mapping from global row
+      ID to process ID.  If a graph read from a matrix market file is colored,
+      the result could be a map from vertex global IDs to color numbers. If
+      matrix rows are ordered, do we provide the order for the local rows or
+      all rows.  Is this all in one class, or do we have subclasses for
+      different combinations of input type and zoltan method.
 */
 
-template<class GNO, class AppGID>
+template<typename GNO, typename AppGID>
   class Result {
 
 private:
 
-  int num_parts;
-  int num_colors;
+  bool set;                 /*!< true iff a solution has been computed */
+  std::map<AppGID, GNO> gid2gno;   /*!< mapping caller's gid to ours   */
+  std::map<GNO, AppGID> gno2gid;   /*!< mapping our gid to the caller's*/
   
 public:
 
@@ -69,4 +83,7 @@ public:
   /*    set/get for color information TODO */
 
 };
+
+}
+
 #endif /* _ZOLTAN2_RESULT_HPP_ */

@@ -42,7 +42,7 @@ class Result;
   Detailed description of Objective.
 */
 
-template<class Scalar, class LNO , class GNO, class AppGID>
+template<typename Scalar, typename LNO , typename GNO, typename AppGID>
   class Objective {
 
 private:

@@ -6,6 +6,18 @@
 
 \section zoltan2_startup Overview of Zoltan2
 
+The workflow for a Zoltan2 problem is illustrated below:
+
+A Zoltan algorithm is presented with an objective, for example partitioning objects in order
+to balance a workload or coloring the vertices of a graph.  In addition, algorithm parameters 
+and a candidate solution may provided.
+The algorithm calculates a solution for the objective.  These inputs and output correspond
+to classes in Zoltan2, and the algorithms are the Zoltan methods.
+
+\section zoltan2_classes Zoltan 2 classes
+
+\section zoltan2_classes Zoltan 2 examples
+
 // These sections can have links to sections on other .doc files.  See isorropia.
 // HTML lists can be used in this file.
 
