@@ -36,6 +36,8 @@
 
 int main(int argc, char *argv[]) {
   
+#ifdef HAVE_MUELU_IFPACK //TODO
+
   /**********************************************************************************/
   /* CREATE INITIAL MATRIX                                                          */
   /**********************************************************************************/
@@ -120,6 +122,7 @@ int main(int argc, char *argv[]) {
   ifpackList.set("relaxation: sweeps", (LO) 1);
   ifpackList.set("relaxation: damping factor", (SC) 1.0);
   RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("point relaxation stand-alone",ifpackList) );
+
   //RCP<SmootherPrototype>  smoother = rcp( new IfpackSmoother("IC",ifpackList) );
   RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(smoother) );
   //RCP<SmootherFactory>    SmooFact = rcp( new SmootherFactory(Teuchos::null,Teuchos::null) );
@@ -127,6 +130,8 @@ int main(int argc, char *argv[]) {
 
   //H.FillHierarchy(Pfact,Rfact,Acfact);
   H.FullPopulate(Pfact,Rfact,Acfact,SmooFact,0,maxLevels);
+
+#endif // HAVE_MUELU_IFPACK
   
   return EXIT_SUCCESS;
 

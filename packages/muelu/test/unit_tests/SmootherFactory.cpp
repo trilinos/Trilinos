@@ -29,7 +29,7 @@ TEUCHOS_UNIT_TEST(SmootherFactory, DefaultCtor)
 */
 
   using namespace Teuchos;
-  using namespace MueLu;
+  //using namespace MueLu;
 
   out << "version: " << MueLu::Version() << std::endl;
 
