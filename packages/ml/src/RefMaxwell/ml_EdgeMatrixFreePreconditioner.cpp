@@ -103,6 +103,11 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   
   /* ML Communicator */
   ML_Comm_Create(&ml_comm_);
+#ifdef ML_MPI
+  // Use the same communicator as A if we're using MPI.
+  const Epetra_MpiComm * Mcomm=dynamic_cast<const Epetra_MpiComm*>(Comm_);
+  if(Mcomm) ML_Comm_Set_UsrComm(ml_comm_,Mcomm->GetMpiComm());
+#endif
 
   /* Parameter List Options */
   int OutputLevel = List_.get("ML output", -47);
@@ -147,7 +152,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     ML_CHK_ERR(BuildProlongator(*nullspace));
     
     /* DEBUG: Output matrices */
-    if(print_hierarchy) EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);
+    if(print_hierarchy) 
+      EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);
     
     /* Form the coarse matrix */
     ML_CHK_ERR(FormCoarseMatrix());
@@ -305,10 +311,11 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
 //! Build the edge-to-vector-node prolongator described in Bochev, Hu, Siefert and Tuminaro (2006).
 int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_MultiVector & nullspace)
 {
+  ML_Operator* TMT_ML = ML_Operator_Create(ml_comm_);
 
   /* Wrap TMT_Matrix in a ML_Operator */
-  ML_Operator* TMT_ML = ML_Operator_Create(ml_comm_);
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)TMT_Matrix_,TMT_ML);
+      
 
   /* Pull Teuchos Options */
   string CoarsenType = List_.get("aggregation: type", "Uncoupled");
