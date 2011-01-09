@@ -227,6 +227,49 @@ namespace stk {
       std::cout << "in debug_stop" << std::endl;
     }
 
+    static unsigned s_trace_mem_0[] = {0u,0u,0u,0u,0u,0u,0u,0u,0u,0u};
+    static unsigned s_trace_mem_1[] = {0u,0u,0u,0u,0u,0u,0u,0u,0u,0u};
+    static double s_trace_time_0[] = {0,0,0,0,0,0,0,0,0,0};
+    static double s_trace_time_1[] = {0,0,0,0,0,0,0,0,0,0};
+
+    void 
+    Util::
+    trace_cpu_time_and_mem_0(unsigned index)
+    {
+        {
+          size_t heap_in_bytes = 0;
+          size_t memory_in_bytes = Util::memory(heap_in_bytes);
+
+          double cpu_in_min = Util::cpu_time()/60.0;
+        
+          s_trace_mem_0[index] = memory_in_bytes;
+          s_trace_time_0[index] = cpu_in_min;
+        }
+    }
+
+    void 
+    Util::
+    trace_cpu_time_and_mem_1(unsigned index)
+    {
+        {
+          size_t heap_in_bytes = 0;
+          size_t memory_in_bytes = Util::memory(heap_in_bytes);
+
+          double cpu_in_min = Util::cpu_time()/60.0;
+        
+          s_trace_mem_1[index] += memory_in_bytes - s_trace_mem_0[index];
+          s_trace_time_1[index] += cpu_in_min - s_trace_time_0[index];
+        }
+    }
+
+
+    void Util::trace_cpu_time_and_mem_print(int index, std::string msg)
+    {
+      std::cout << "tmp trace_cpu_time_and_mem_print "              
+                << msg << " = " << ((double)s_trace_mem_1[index])/(1024.0*1024.0) << " [Mb] " 
+                << s_trace_time_1[index] << " [min] " << std::endl ;
+    }
+
     void Util::replace(std::string &str, const std::string &find_what, const std::string &replace_with)
     {
       std::string::size_type pos = 0;

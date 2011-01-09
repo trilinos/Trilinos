@@ -321,6 +321,7 @@ namespace stk {
 
             for (unsigned iBreak = 0; iBreak < numRefines; iBreak++)
               {
+                //if (iBreak == 3) Util::setFlag(1245, true);
                 if (!eMesh.getRank())
                   {
                     std::cout << "Refinement pass # " << (iBreak+1) << " start..." << std::endl;

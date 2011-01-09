@@ -7,8 +7,11 @@
 
 #include <stk_adapt/UniformRefiner.hpp>
 
-#define TRACE_STAGE_PRINT_ON 1
-#define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
+// FIXME
+// #include <stk_mesh/baseImpl/EntityImpl.hpp>
+// #include <stk_mesh/base/Entity.hpp>
+// FIXME
+
 
 namespace stk {
   namespace adapt {
@@ -147,11 +150,56 @@ namespace stk {
     }
 
     void UniformRefiner::
+    trace_print(std::string msg)
+    {
+      if (TRACE_STAGE_PRINT) {
+        size_t heap_in_Mb = 0;
+        size_t memory_in_Mb = Util::memory(heap_in_Mb);
+        memory_in_Mb = memory_in_Mb / (1024*1024);
+        heap_in_Mb = heap_in_Mb / (1024*1024);
+
+        double cpu = Util::cpu_time();
+        std::cout
+          << msg
+                  << " mem= " << memory_in_Mb << " [Mb] "
+          //<< " heap= " << heap_in_Mb << " [Mb] "
+                  << " cpu_time= " << cpu/(60.) << " [min] "
+                  <<std::endl;
+      }
+
+    }
+
+
+    struct myVec
+    {
+      double *data;
+      int len;
+      int res;
+    };
+
+    void UniformRefiner::
     doBreak()
     {
       EXCEPTWATCH;
 
-      if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: start... " << std::endl;
+      /**/                                                TRACE_PRINT( "UniformRefiner:doBreak start...");
+
+      if (0)
+        {
+        std::cout 
+          << "sizeof(myVec) = " << sizeof(myVec) << " "
+          << "sizeof(Relation) = " << sizeof(stk::mesh::Relation) << " "
+          << "sizeof(Entity) = " << sizeof(stk::mesh::Entity) << " "
+          << "sizeof(EntityImpl) = " << sizeof(stk::mesh::impl::EntityImpl) << " "
+          << "\nsizeof(EntityKey) = " << sizeof(stk::mesh::EntityKey) << " "
+          << "\nsizeof(RelationVector) = " << sizeof(stk::mesh::RelationVector) << " "
+          << "\nsizeof(EntityCommInfoVector) = " << sizeof(stk::mesh::EntityCommInfoVector) << " "
+          << "\nsizeof(Bucket *) = " << sizeof(stk::mesh::Bucket *) << " "
+          << "\nsizeof(unsigned) = " << sizeof(unsigned) << " "
+          << "\nsizeof(size_t) = " << sizeof(size_t) << " "
+          << "\nsizeof(EntityModificationLog) = " << sizeof(EntityModificationLog) << std::endl;
+
+        }
 
       //m_nodeRegistry = new NodeRegistry(m_eMesh);
       NodeRegistry nr (m_eMesh);
@@ -218,9 +266,9 @@ namespace stk {
         // this gives a list of colored elements for all elements of this rank (e.g., hex, tet, wedge... for a heterogeneous mesh)
         Colorer meshColorer(ranks_one);
 
-        if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: Color mesh (all top level rank elements)... " << std::endl;
+        /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)... ");
         meshColorer.color(m_eMesh);
-        if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: Color mesh (all top level rank elements)...done " << std::endl;
+        /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (all top level rank elements)...done ");
         vector< ColorerSetType >& elementColors = meshColorer.getElementColors();
 
         // loop over elements, build faces, edges in threaded mode (guaranteed no mem conflicts)
@@ -233,24 +281,23 @@ namespace stk {
           m_nodeRegistry->initialize();
 
           // register non-ghosted elements needs for new nodes, parallel create new nodes
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: beginRegistration (top-level rank)... " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: beginRegistration (top-level rank)... ");
           m_nodeRegistry->beginRegistration();
           num_elem_not_ghost_0 = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks);
           m_nodeRegistry->endRegistration();
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: endRegistration (top-level rank)... " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: endRegistration (top-level rank)... ");
         }
 
         {
           EXCEPTWATCH;
 
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: beginCheckForRemote (top-level rank)... " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: beginCheckForRemote (top-level rank)... ");
 
           // now register ghosted elements needs for new nodes (this does a pack operation)
           m_nodeRegistry->beginCheckForRemote();
           unsigned num_elem = doForAllElements(ranks[irank], &NodeRegistry::checkForRemote, elementColors, needed_entity_ranks);
           m_nodeRegistry->endCheckForRemote();
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: endCheckForRemote (top-level rank)... " << std::endl;
-
+          /**/                                                TRACE_PRINT("UniformRefiner: endCheckForRemote (top-level rank)... ");
 
           if (0)
             {
@@ -272,11 +319,11 @@ namespace stk {
           // communicate all-to-all the new node creation information which also updates the node registry so it can
           // be queried locally now for any ghost or non-ghost element
 
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: beginGetFromRemote (top-level rank)... " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: beginGetFromRemote (top-level rank)... ");
           m_nodeRegistry->beginGetFromRemote();
           unsigned num_elem = doForAllElements(ranks[irank], &NodeRegistry::getFromRemote, elementColors, needed_entity_ranks);
           m_nodeRegistry->endGetFromRemote();
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: endGetFromRemote (top-level rank)... " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: endGetFromRemote (top-level rank)... ");
 
 
           //stk::diag::printTimersTable(std::cout, perceptTimer(), stk::diag::METRICS_ALL, false);
@@ -304,17 +351,16 @@ namespace stk {
           EXCEPTWATCH;
 
           unsigned elementType = m_breakPattern[irank]->getFromType();
-          if (TRACE_STAGE_PRINT)
-            std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
+          if (TRACE_STAGE_PRINT) std::cout << "tmp UniformRefiner:: irank = " << irank << " ranks[irank] = " << ranks[irank] << " elementType= " << elementType << std::endl;
 
           std::vector<EntityRank> ranks_one(1, ranks[irank]);
 
           // this gives a list of colored elements for this element type only
           Colorer meshColorerThisTypeOnly(ranks_one);
           //meshColorer.color(m_eMesh, elementType);
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: Color mesh (specific element type)... " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (specific element type)... ");
           meshColorerThisTypeOnly.color(m_eMesh);
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: Color mesh (specific element type)...done " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: Color mesh (specific element type)...done ");
 
           vector< ColorerSetType >& elementColors = meshColorerThisTypeOnly.getElementColors();
 
@@ -333,9 +379,9 @@ namespace stk {
 
               // count num new elements needed on this proc (served by UniformRefinerPattern)
               bool count_only = true;
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... " << std::endl;
+              /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... ");
               unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks, count_only);
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done " << std::endl;
+              /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode count_only(true) ranks[irank]==ranks[0]... done ");
 
 
               unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
@@ -351,9 +397,9 @@ namespace stk {
               // first, create elements...
               m_nodeRegistry->beginLocalMeshMods();
               new_elements.resize(0);
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: createEntities... ranks[irank]==ranks[0] " << std::endl;
+              /**/                                                TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] ");
               m_eMesh.createEntities( mesh::Element, num_elem_needed, new_elements);
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: createEntities... ranks[irank]==ranks[0] done " << std::endl;
+              /**/                                                TRACE_PRINT("UniformRefiner: createEntities... ranks[irank]==ranks[0] done ");
               m_nodeRegistry->endLocalMeshMods();
 
               bulkData.modification_end();  // FIXME
@@ -366,73 +412,48 @@ namespace stk {
             {
               EXCEPTWATCH;
               bool count_only = true;
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: registerNeedNewNode...(count_only(true)) (irank != 0)" << std::endl;
+              /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode...(count_only(true)) (irank != 0)");
               unsigned num_elem_not_ghost = doForAllElements(ranks[irank], &NodeRegistry::registerNeedNewNode, elementColors, needed_entity_ranks, count_only);
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: registerNeedNewNode...(count_only(true)) (irank != 0) done " << std::endl;
+              /**/                                                TRACE_PRINT("UniformRefiner: registerNeedNewNode...(count_only(true)) (irank != 0) done ");
 
               unsigned num_elem_needed = num_elem_not_ghost * m_breakPattern[irank]->getNumNewElemPerElem();
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: createEntities... (irank != 0) " << std::endl;
+              /**/                                                TRACE_PRINT("UniformRefiner: createEntities... (irank != 0) ");
               m_eMesh.createEntities(  ranks[irank], num_elem_needed, new_elements);
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: createEntities... (irank != 0) done " << std::endl;
+              /**/                                                TRACE_PRINT("UniformRefiner: createEntities... (irank != 0) done ");
             }
 
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: connectLocal... " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: connectLocal... ");
+          /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL);
           connectLocal(ranks[irank], m_breakPattern[irank], elementColors, needed_entity_ranks, new_elements);
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: connectLocal...done " << std::endl;
+          /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL);
+          /**/                                                TRACE_PRINT("UniformRefiner: connectLocal...done ");
 
-          if (m_doRemove && 1)
+          // new way, see below
+          if (m_doRemove)
             {
               EXCEPTWATCH;
 
-              if (TRACE_STAGE_PRINT) {
-                size_t heap_in_Mb = 0;
-                size_t memory_in_Mb = Util::memory(heap_in_Mb);
-                memory_in_Mb = memory_in_Mb / (1024*1024);
-                heap_in_Mb = heap_in_Mb / (1024*1024);
-
-                double cpu = Util::cpu_time();
-                std::cout << "UniformRefiner: remove old elements...start " 
-                          << " mem= " << memory_in_Mb << " [Mb] "
-                          << " heap= " << heap_in_Mb << " [Mb] "
-                          << " cpu_time= " << cpu/(60.) << " [min] "
-                          <<std::endl;
-              }
+              /**/                                                TRACE_PRINT( "UniformRefiner: remove old elements...start " );
 
               removeOldElements(ranks[irank], m_breakPattern[irank]);
               renameNewParts(ranks[irank], m_breakPattern[irank]);
               fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
 
-              if (TRACE_STAGE_PRINT) {
-                size_t heap_in_Mb = 0;
-                size_t memory_in_Mb = Util::memory(heap_in_Mb);
-                memory_in_Mb = memory_in_Mb / (1024*1024);
-                heap_in_Mb = heap_in_Mb / (1024*1024);
-
-                double cpu = Util::cpu_time();
-                std::cout << "UniformRefiner: remove old elements...done " 
-                          << " mem= " << memory_in_Mb << " [Mb] "
-                          << " heap= " << heap_in_Mb << " [Mb] "
-                          << " cpu_time= " << cpu/(60.) << " [min] "
-                          <<std::endl;
-              }
+              /**/                                                TRACE_PRINT( "UniformRefiner: remove old elements...done " );
             }
 
-          if (TRACE_STAGE_PRINT) {
-            size_t heap_in_Mb = 0;
-            size_t memory_in_Mb = Util::memory(heap_in_Mb);
-            memory_in_Mb = memory_in_Mb / (1024*1024);
-            heap_in_Mb = heap_in_Mb / (1024*1024);
+          if (!m_eMesh.getRank()) {
+            Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL, "CONNECT_LOCAL");
+            Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_createNewNeededNodes, "CONNECT_LOCAL_createNewNeededNodes");
+            Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_createNewElements, "CONNECT_LOCAL_createNewElements");
+            Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_URP_createOrGetNode, "CONNECT_LOCAL_URP_createOrGetNode");
+            Util::trace_cpu_time_and_mem_print(CONNECT_LOCAL_URP_declare_relation, "CONNECT_LOCAL_URP_declare_relation");
 
-            double cpu = Util::cpu_time();
-            std::cout << "UniformRefiner: modification_end...start... "
-                      << " mem= " << memory_in_Mb << " [Mb] "
-                      << " heap= " << heap_in_Mb << " [Mb] "
-                      << " cpu_time= " << cpu/(60.) << " [min] "
-                      <<std::endl;
           }
 
+          /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start... ");
           bulkData.modification_end();
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: modification_end...done " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
 
         } // irank
 
@@ -441,37 +462,33 @@ namespace stk {
         {
           EXCEPTWATCH;
 
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: remove old elements... " << std::endl;
-
           bulkData.modification_begin();
-          //std::cout << "ranks.size() = " << ranks.size() << std::endl;
-
-          // FIXME FIXME FIXME
+ 
+          // old way (see above)
           if (0) 
             {
+              /**/                                                TRACE_PRINT("UniformRefiner: remove old elements... ");
 
               for (unsigned irank = 0; irank < ranks.size(); irank++)
                 {
                   removeOldElements(ranks[irank], m_breakPattern[irank]);
                   renameNewParts(ranks[irank], m_breakPattern[irank]);
-                  //std::cout << "000 typeid= " << typeid(*m_breakPattern[irank]).name() << std::endl;
-
                   fixSurfaceAndEdgeSetNames(ranks[irank], m_breakPattern[irank]);
-                }  // irank
-              if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: remove old elements...done " << std::endl;
+                }  
+              /**/                                                TRACE_PRINT("UniformRefiner: remove old elements...done ");
             }
 
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: fixElementSides " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: fixElementSides ");
           fixElementSides();
+          /**/                                                TRACE_PRINT("UniformRefiner: fixElementSides...done ");
 
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: fixElementSides...done " << std::endl;
-
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: modification_end...start " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: modification_end...start ");
           bulkData.modification_end();
-          if (TRACE_STAGE_PRINT) std::cout << "UniformRefiner: modification_end...done " << std::endl;
+          /**/                                                TRACE_PRINT("UniformRefiner: modification_end...done ");
         }
 
 
+      /**/                                                TRACE_PRINT( "UniformRefiner:doBreak ... done");
 
 
     } // doBreak
@@ -509,53 +526,44 @@ namespace stk {
     }
 
 
-    static NewSubEntityNodesType s_new_sub_entity_nodes(mesh::EntityRankEnd);
+    //static NewSubEntityNodesType s_new_sub_entity_nodes(mesh::EntityRankEnd);
 
     void UniformRefiner::
     connectLocal(EntityRank rank, UniformRefinerPatternBase *breakPattern,
                  vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,  vector<Entity *>& new_elements_pool)
     {
       EXCEPTWATCH;
-      //!NewSubEntityNodesType new_sub_entity_nodes(mesh::EntityRankEnd);
-      //NewSubEntityNodesType new_sub_entity_nodes(boost::extents[3][4][2]);
-      //NewSubEntityNodesType new_sub_entity_nodes(mesh::EntityRankEnd);
-      s_new_sub_entity_nodes.resize(mesh::EntityRankEnd);
+      static NewSubEntityNodesType s_new_sub_entity_nodes(mesh::EntityRankEnd);
+
       NewSubEntityNodesType& new_sub_entity_nodes = s_new_sub_entity_nodes;
 
       vector<Entity *>::iterator element_pool_it = new_elements_pool.begin();
 
       int jele = 0;
       // create new elements and connect them up
-      unsigned ncolors = elementColors.size();
+
       for (unsigned icolor = 0; icolor < elementColors.size(); icolor++)
         {
-          if (TRACE_STAGE_PRINT) {
-            size_t heap_in_Mb = 0;
-            size_t memory_in_Mb = Util::memory(heap_in_Mb);
-            memory_in_Mb = memory_in_Mb / (1024*1024);
-            heap_in_Mb = heap_in_Mb / (1024*1024);
+          //std::string msg = 
+          TRACE_PRINT(  "UniformRefiner:connectLocal color= " + percept::toString(icolor) + " [ " +
+                        percept::toString (((double)icolor)/((double)elementColors.size())*100 ) + " %] ");
+          
+          Entity* first_element_p = m_eMesh.getBulkData()->get_entity( rank, *(elementColors[icolor].begin()) );
 
-            double cpu = Util::cpu_time();
-            std::cout << "UniformRefiner:connectLocal color= " << icolor << " [ " << ((double)icolor)/((double)ncolors)*100 << " %] "
-                      << " mem= " << memory_in_Mb << " [Mb] "
-                      << " heap= " << heap_in_Mb << " [Mb] "
-                      << " cpu_time= " << cpu/(60.) << " [min] "
-                      <<std::endl;
-          }
+          const CellTopologyData * const cell_topo_data = get_cell_topology(*first_element_p);
+          CellTopology cell_topo(cell_topo_data);
           
           // do in threaded mode FIXME
           for (ColorerSetType::iterator iele = elementColors[icolor].begin();  iele !=  elementColors[icolor].end();  iele++)
             {
               const EntityId& eid = *iele;
 
-              Entity* element_p = 0;
-              element_p = m_eMesh.getBulkData()->get_entity(/* mesh::Element */ rank, eid);
+              Entity* element_p = m_eMesh.getBulkData()->get_entity( rank, eid);
               if (!element_p) 
                 {
                   throw std::runtime_error("UniformRefiner::connectLocal");
                 }
 
-              //Entity& element = * m_eMesh.getBulkData()->get_entity(/* mesh::Element */ rank, eid);
               Entity& element = * element_p;
 
               if (m_proc_rank_field && rank == mesh::Element)
@@ -570,15 +578,19 @@ namespace stk {
               if (!m_eMesh.isGhostElement(element))
                 {
                   //std::cout << "P["<< m_eMesh.getRank() << "] element.owner_rank() = " << element.owner_rank() << std::endl;
-                  if (createNewNeededNodes(element, needed_entity_ranks, new_sub_entity_nodes))
+                  /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_createNewNeededNodes);
+                  if (createNewNeededNodes(cell_topo_data, element, needed_entity_ranks, new_sub_entity_nodes))
                     {
                       std::cout << "typeid= " << typeid(*breakPattern).name() << std::endl;
                       //breakPattern;
                       throw std::logic_error("needed_entity_ranks[ineed_ent].second");
                       
                     }
+                  /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_createNewNeededNodes);
 
+                  /**/                                                TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_createNewElements);
                   breakPattern->createNewElements(m_eMesh, *m_nodeRegistry, element, new_sub_entity_nodes, element_pool_it, m_proc_rank_field);
+                  /**/                                                TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_createNewElements);
                 }
               
               ++jele;
@@ -1116,15 +1128,20 @@ namespace stk {
     /// Returns the 2D array new_sub_entity_nodes[entity_rank][ordinal_of_node_on_sub_dim_entity]
     
     bool UniformRefiner::
-    createNewNeededNodes(const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& new_sub_entity_nodes)
+    createNewNeededNodes(const CellTopologyData * const cell_topo_data, 
+                         const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& new_sub_entity_nodes)
     {
       EXCEPTWATCH;
-      const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+
+      // CHECK
+      //const CellTopologyData * const cell_topo_data = get_cell_topology(element);
+      //CellTopology cell_topo(cell_topo_data);
+
       NodeRegistry& nodeRegistry = *m_nodeRegistry;
 
-      CellTopology cell_topo(cell_topo_data);
       const mesh::PairIterRelation elem_nodes = element.relations(Node);
 
+      // CHECK - cache this
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
           unsigned numSubDimNeededEntities = 0;
@@ -1152,7 +1169,7 @@ namespace stk {
           for (unsigned iSubDimOrd = 0; iSubDimOrd < numSubDimNeededEntities; iSubDimOrd++)
             {
               // CHECK
-              NodeIdsOnSubDimEntityType nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element, needed_entity_ranks[ineed_ent].first, iSubDimOrd);
+              NodeIdsOnSubDimEntityType& nodeIds_onSE = nodeRegistry.getNewNodesOnSubDimEntity(element, needed_entity_ranks[ineed_ent].first, iSubDimOrd);
               
               if (!nodeIds_onSE[0]) {
                 std::cout << "P[" << m_eMesh.getRank() << "] nodeId ## = 0 << " << std::endl;

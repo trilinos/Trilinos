@@ -60,6 +60,7 @@ namespace stk {
       UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, FieldBase *proc_rank_field=0);
       UniformRefiner(percept::PerceptMesh& eMesh, std::vector<UniformRefinerPatternBase *>&  bp, FieldBase *proc_rank_field=0);
 
+
       //UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPattern<void, void, 0>& bp);
   
       void 
@@ -91,7 +92,8 @@ namespace stk {
                    vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,  vector<Entity *>& new_elements_pool);
 
       bool
-      createNewNeededNodes(const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes);
+      createNewNeededNodes(const CellTopologyData * const cell_topo_data, 
+                           const Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes);
 
       void 
       removeOldElements(EntityRank rank, UniformRefinerPatternBase* breakPattern );
@@ -116,6 +118,9 @@ namespace stk {
 
       void 
       buildElementSideDB(SubDimCellToDataMap& cell_2_data_map);
+
+      void 
+      trace_print(std::string msg);
 
     private:
       percept::PerceptMesh& m_eMesh;

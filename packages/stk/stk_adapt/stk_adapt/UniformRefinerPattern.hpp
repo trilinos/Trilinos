@@ -38,6 +38,19 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
+#define TRACE_STAGE_PRINT_ON 0
+#define TRACE_STAGE_PRINT (TRACE_STAGE_PRINT_ON && (m_eMesh.getRank()==0))
+
+#if TRACE_STAGE_PRINT_ON
+#  define TRACE_PRINT(a) do { trace_print(a); } while(0)
+#  define TRACE_CPU_TIME_AND_MEM_0(a) do { Util::trace_cpu_time_and_mem_0(a); } while(0)
+#  define TRACE_CPU_TIME_AND_MEM_1(a) do { Util::trace_cpu_time_and_mem_1(a); } while(0)
+#else
+#  define TRACE_PRINT(a) do {} while(0)
+#  define TRACE_CPU_TIME_AND_MEM_0(a) do { } while(0)
+#  define TRACE_CPU_TIME_AND_MEM_1(a) do { } while(0)
+#endif
+
 namespace stk {
   namespace adapt {
 
@@ -883,6 +896,7 @@ namespace stk {
 
         //
 
+        // CHECK
         const CellTopologyData * const cell_topo_data = get_cell_topology(element);
 
         static vector<refined_element_type> elems;
@@ -922,7 +936,6 @@ namespace stk {
             // FIXME - assumes first node on each sub-dim entity is the "linear" one
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
-                //nodeRegistry.makeCentroid(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                 nodeRegistry.addToExistingParts(*const_cast<Entity *>(&element), needed_entities[i_need].first, iSubDim);
                 if (linearElement)
                   {
@@ -964,7 +977,8 @@ namespace stk {
                 unsigned ordinal_of_node_on_subcell = ref_topo_x[childNodeIdx].ordinal_of_node_on_subcell;
                 unsigned num_nodes_on_subcell       = ref_topo_x[childNodeIdx].num_nodes_on_subcell;
 
-                bool usePerm = true;
+                // bool usePerm = true;  FIXME FIXME FIXME
+                bool usePerm = false;
                 const unsigned * perm_array = 0;
                 if (usePerm)
                   {
@@ -1067,6 +1081,7 @@ namespace stk {
                 fdata[0] = double(newElement.owner_rank());
               }
 
+            // CHECK
             change_entity_parts(eMesh, element, newElement);
 
             for (int inode=0; inode < ToTopology::node_count; inode++)
@@ -1077,8 +1092,15 @@ namespace stk {
                     std::cout << "P[" << eMesh.getRank() << "] eid = 0 for inode = " << inode << std::endl;
                     throw std::logic_error("UniformRefinerPatternBase::genericRefine_createNewElements bad entity id = 0 ");
                   }
+
+                /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_createOrGetNode);
                 mesh::Entity& node = eMesh.createOrGetNode(eid);
+                /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
+               
+                /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);
                 eMesh.getBulkData()->declare_relation(newElement, node, inode);
+                //register_relation(newElement, node, inode);
+                /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_declare_relation);
               }
 
             if (!linearElement)

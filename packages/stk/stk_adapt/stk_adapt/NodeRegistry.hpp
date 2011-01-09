@@ -375,7 +375,7 @@ namespace stk {
         //SubDimCell_EntityId subDimEntity;
 
         static SubDimCell_EntityId subDimEntity;
-        subDimEntity.clear();
+        //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static const SubDimCellData empty_SubDimCellData;
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
@@ -405,7 +405,7 @@ namespace stk {
         EXCEPTWATCH;
         unsigned *null_u = 0;
         static SubDimCell_EntityId subDimEntity;
-        subDimEntity.clear();
+        //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static const SubDimCellData empty_SubDimCellData;
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
@@ -532,7 +532,7 @@ namespace stk {
 
         //CHECK
         static SubDimCell_EntityId subDimEntity;
-        subDimEntity.clear();
+        //subDimEntity.clear();
         getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);
         static const SubDimCellData empty_SubDimCellData;
         SubDimCellData& nodeId_elementOwnderId = m_cell_2_data_map[subDimEntity];
@@ -705,7 +705,7 @@ namespace stk {
 
         const CellTopologyData * const cell_topo_data = get_cell_topology(element);
                 
-        CellTopology cell_topo(cell_topo_data);
+        //CellTopology cell_topo(cell_topo_data);
         const mesh::PairIterRelation elem_nodes = element.relations(Node);
 
         const unsigned *  inodes = 0;
@@ -752,6 +752,7 @@ namespace stk {
             inodes = cell_topo_data->side[iSubDimOrd].node;
           }
 
+        //subDimEntity.reserve(nSubDimNodes);
         for (unsigned jnode = 0; jnode < nSubDimNodes; jnode++)
           {
             subDimEntity.insert(elem_nodes[inodes[jnode]].entity()->identifier());

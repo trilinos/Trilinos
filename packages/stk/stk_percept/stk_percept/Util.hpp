@@ -93,6 +93,14 @@ namespace stk {
 
   namespace percept { 
 
+      enum TraceTypes {
+        CONNECT_LOCAL,
+        CONNECT_LOCAL_createNewNeededNodes,
+        CONNECT_LOCAL_createNewElements,
+        CONNECT_LOCAL_URP_createOrGetNode,
+        CONNECT_LOCAL_URP_declare_relation
+      };
+
     //========================================================================================================================
     enum TurboOption {
       TURBO_ELEMENT,
@@ -117,6 +125,11 @@ namespace stk {
       static int getRank();
       static void debug_stop();
       static void replace(std::string &str, const std::string &find_what, const std::string &replace_with);
+
+      static void trace_cpu_time_and_mem_0(unsigned index);
+      static void trace_cpu_time_and_mem_1(unsigned index);
+      static void trace_cpu_time_and_mem_print(int index, std::string msg);
+
       static std::vector<std::string> split(std::string str, std::string separators, bool remove_spaces=true)
       {
         if (remove_spaces)
