@@ -377,25 +377,52 @@ namespace Belos {
     static void 
     SetBlock (const TMVB& A, const Teuchos::Range1D& index, TMVB& mv)
     { 
-      // We let Thyra be responsible for checking that the index range
-      // is nonempty, and that it fits within the column ranges of A
-      // and mv.
-      //
-      // (View of) the relevant columns of A
-      Teuchos::RCP<const TMVB> A_view;
-      if (index.lbound() == 0 && index.ubound()+1 == A.domain()->dim())
-	A_view = A;
-      else
-	A_view = A.subView (index);
+      const int numColsA = A.domain()->dim();
+      const int numColsMv = mv.domain()->dim();
+      // 'index' indexes into mv; it's the index set of the target.
+      const bool validIndex = index.lbound() >= 0 && index.ubound() < numColsMv;
+      // We can't take more columns out of A than A has.
+      const bool validSource = index.size() <= numColsA;
 
-      // (View of) the relevant columns of mv
-      Teuchos::RCP<TMVB> mv_view;
-      if (index.lbound() == 0 && index.ubound()+1 == mv.domain()->dim())
-	mv_view = mv;
+      if (! validIndex || ! validSource)
+	{
+	  std::ostringstream os;
+	  os << "Belos::MultiVecTraits<Scalar, Thyra::MultiVectorBase<Scalar> "
+	    ">::SetBlock(A, [" << index.lbound() << ", " << index.ubound() 
+	     << "], mv): ";
+	  TEST_FOR_EXCEPTION(index.lbound() < 0, std::invalid_argument,
+			     os.str() << "Range lower bound must be nonnegative.");
+	  TEST_FOR_EXCEPTION(index.ubound() >= numColsMv, std::invalid_argument,
+			     os.str() << "Range upper bound must be less than "
+			     "the number of columns " << numColsA << " in the "
+			     "'mv' output argument.");
+	  TEST_FOR_EXCEPTION(index.size() > numColsA, std::invalid_argument,
+			     os.str() << "Range must have no more elements than"
+			     " the number of columns " << numColsA << " in the "
+			     "'A' input argument.");
+	  TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
+	}
+
+      // View of the relevant column(s) of the target multivector mv.
+      // We avoid view creation overhead by only creating a view if
+      // the index range is different than [0, (# columns in mv) - 1].
+      Teuchos::RCP<const TMVB> mv_view;
+      if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
+	mv_view = Teuchos::rcp (&mv, false); // Non-owning RCP
       else
 	mv_view = mv.subView (index);
 
-      // Copy the data to the destination multivector
+      // View of the relevant column(s) of the source multivector A.
+      // If A has fewer columns than mv_view, then create a view of
+      // the first index.size() columns of A.
+      Teuchos::RCP<TMVB> A_view;
+      if (index.size() == numColsA)
+	A_view = Teuchos::rcp (&A, false); // Non-owning RCP
+      else
+	A_view = A.subView (Teuchos::Range1D(0, index.size()-1));
+
+      // Copy the data to the destination multivector.  "&*" is a
+      // typical Thyra idiom for turning an RCP into a raw pointer.
       Thyra::assign (&*mv_view, *A_view);
     }
 
