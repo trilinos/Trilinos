@@ -52,8 +52,9 @@ template< typename ValueType , class DeviceMapType > class MDArrayView ;
 class CudaMap {
 public:
 
-  typedef size_t     size_type ;
+  typedef CudaMap    device_map_type ;
   typedef CudaDevice device_type ;
+  typedef size_t     size_type ;
 
   ~CudaMap() {}
 
@@ -66,221 +67,170 @@ public:
   /** \brief Allocate rank-8 array mapped onto the device. */
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_labeled_mdarray( size_type n0 , size_type n1 ,
                             size_type n2 , size_type n3 ,
                             size_type n4 , size_type n5 ,
                             size_type n6 , const std::string & label )
     {
-      MDArrayViewRawData<ValueType,device_type> tmp ;
-
-      tmp.m_rank         = 8 ;
-      tmp.m_dimension[0] = n0 ;
-      tmp.m_dimension[1] = n1 ;
-      tmp.m_dimension[2] = n2 ;
-      tmp.m_dimension[3] = n3 ;
-      tmp.m_dimension[4] = n4 ;
-      tmp.m_dimension[5] = n5 ;
-      tmp.m_dimension[6] = n6 ;
-      tmp.m_dimension[7] = m_parallel_work_count ;
-
-      device_type::singleton().allocate( tmp , label );
-
-      return MDArrayView<ValueType,CudaMap>( tmp );
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,n3,n4,n5,n6,m_parallel_work_count,label);
     }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_labeled_mdarray( size_type n0 , size_type n1 ,
                             size_type n2 , size_type n3 ,
                             size_type n4 , size_type n5 ,
                             const std::string & label )
     {
-      MDArrayViewRawData<ValueType,device_type> tmp ;
-
-      tmp.m_rank         = 7 ;
-      tmp.m_dimension[0] = n0 ;
-      tmp.m_dimension[1] = n1 ;
-      tmp.m_dimension[2] = n2 ;
-      tmp.m_dimension[3] = n3 ;
-      tmp.m_dimension[4] = n4 ;
-      tmp.m_dimension[5] = n5 ;
-      tmp.m_dimension[6] = m_parallel_work_count ;
-
-      device_type::singleton().allocate( tmp , label );
-
-      return MDArrayView<ValueType,CudaMap>( tmp );
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,n3,n4,n5,m_parallel_work_count,label);
     }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_labeled_mdarray( size_type n0 , size_type n1 ,
                             size_type n2 , size_type n3 ,
                             size_type n4 , const std::string & label )
     {
-      MDArrayViewRawData<ValueType,device_type> tmp ;
-
-      tmp.m_rank         = 6 ;
-      tmp.m_dimension[0] = n0 ;
-      tmp.m_dimension[1] = n1 ;
-      tmp.m_dimension[2] = n2 ;
-      tmp.m_dimension[3] = n3 ;
-      tmp.m_dimension[4] = n4 ;
-      tmp.m_dimension[5] = m_parallel_work_count ;
-
-      device_type::singleton().allocate( tmp , label );
-
-      return MDArrayView<ValueType,CudaMap>( tmp );
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,n3,n4,m_parallel_work_count,label);
     }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_labeled_mdarray( size_type n0 , size_type n1 ,
                             size_type n2 , size_type n3 ,
                             const std::string & label )
     {
-      MDArrayViewRawData<ValueType,device_type> tmp ;
-
-      tmp.m_rank         = 5 ;
-      tmp.m_dimension[0] = n0 ;
-      tmp.m_dimension[1] = n1 ;
-      tmp.m_dimension[2] = n2 ;
-      tmp.m_dimension[3] = n3 ;
-      tmp.m_dimension[4] = m_parallel_work_count ;
-
-      device_type::singleton().allocate( tmp , label );
-
-      return MDArrayView<ValueType,CudaMap>( tmp );
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,n3,m_parallel_work_count,label);
     }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_labeled_mdarray( size_type n0 , size_type n1 ,
                             size_type n2 ,
                             const std::string & label )
     {
-      MDArrayViewRawData<ValueType,device_type> tmp ;
-
-      tmp.m_rank         = 4 ;
-      tmp.m_dimension[0] = n0 ;
-      tmp.m_dimension[1] = n1 ;
-      tmp.m_dimension[2] = n2 ;
-      tmp.m_dimension[3] = m_parallel_work_count ;
-
-      device_type::singleton().allocate( tmp , label );
-
-      return MDArrayView<ValueType,CudaMap>( tmp );
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,m_parallel_work_count,label);
     }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_labeled_mdarray( size_type n0 , size_type n1 ,
                             const std::string & label )
     {
-      MDArrayViewRawData<ValueType,device_type> tmp ;
-
-      tmp.m_rank         = 3 ;
-      tmp.m_dimension[0] = n0 ;
-      tmp.m_dimension[1] = n1 ;
-      tmp.m_dimension[2] = m_parallel_work_count ;
-
-      device_type::singleton().allocate( tmp , label );
-
-      return MDArrayView<ValueType,CudaMap>( tmp );
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,m_parallel_work_count,label);
     }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_labeled_mdarray( size_type n0 , const std::string & label )
     {
-      MDArrayViewRawData<ValueType,device_type> tmp ;
-
-      tmp.m_rank         = 2 ;
-      tmp.m_dimension[0] = n0 ;
-      tmp.m_dimension[1] = m_parallel_work_count ;
-
-      device_type::singleton().allocate( tmp , label );
-
-      return MDArrayView<ValueType,CudaMap>( tmp );
+      return MDArrayView<ValueType,device_map_type>
+        (n0,m_parallel_work_count,label);
     }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_labeled_mdarray( const std::string & label )
     {
-      MDArrayViewRawData<ValueType,device_type> tmp ;
-
-      tmp.m_rank         = 1 ;
-      tmp.m_dimension[0] = m_parallel_work_count ;
-
-      device_type::singleton().allocate( tmp , label );
-
-      return MDArrayView<ValueType,CudaMap>( tmp );
+      return MDArrayView<ValueType,device_map_type>
+        (m_parallel_work_count,label);
     }
 
+  /*------------------------------------------------------------------------*/
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_mdarray( size_type n0 , size_type n1 ,
                     size_type n2 , size_type n3 ,
                     size_type n4 , size_type n5 ,
                     size_type n6 )
-    { return create_labeled_mdarray<ValueType>( n0, n1, n2, n3, n4, n5, n6, std::string() ); }
+    {
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,n3,n4,n5,n6,m_parallel_work_count,std::string());
+    }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_mdarray( size_type n0 , size_type n1 ,
                     size_type n2 , size_type n3 ,
                     size_type n4 , size_type n5 )
-    { return create_labeled_mdarray<ValueType>( n0, n1, n2, n3, n4, n5, std::string() ); }
+    {
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,n3,n4,n5,m_parallel_work_count,std::string());
+    }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_mdarray( size_type n0 , size_type n1 ,
                     size_type n2 , size_type n3 ,
                     size_type n4 )
-    { return create_labeled_mdarray<ValueType>( n0, n1, n2, n3, n4, std::string() ); }
+    {
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,n3,n4,m_parallel_work_count,std::string());
+    }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_mdarray( size_type n0 , size_type n1 ,
                     size_type n2 , size_type n3 )
-    { return create_labeled_mdarray<ValueType>( n0, n1, n2, n3, std::string() ); }
+    {
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,n3,m_parallel_work_count,std::string());
+    }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_mdarray( size_type n0 , size_type n1 ,
                     size_type n2 )
-    { return create_labeled_mdarray<ValueType>( n0, n1, n2, std::string() ); }
+    {
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,n2,m_parallel_work_count,std::string());
+    }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_mdarray( size_type n0 , size_type n1 )
-    { return create_labeled_mdarray<ValueType>( n0, n1, std::string() ); }
+    {
+      return MDArrayView<ValueType,device_map_type>
+        (n0,n1,m_parallel_work_count,std::string());
+    }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_mdarray( size_type n0 )
-    { return create_labeled_mdarray<ValueType>( n0, std::string() ); }
+    {
+      return MDArrayView<ValueType,device_map_type>
+        (n0,m_parallel_work_count,std::string());
+    }
 
   template< typename ValueType >
   inline
-  MDArrayView<ValueType,CudaMap>
+  MDArrayView<ValueType,device_map_type>
     create_mdarray()
-    { return create_labeled_mdarray<ValueType>( std::string() ); }
+    {
+      return MDArrayView<ValueType,device_map_type>
+        (m_parallel_work_count,std::string());
+    }
 
   /*------------------------------------------------------------------------*/
 

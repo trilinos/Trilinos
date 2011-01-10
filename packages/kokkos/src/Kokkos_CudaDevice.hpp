@@ -55,43 +55,154 @@ namespace Kokkos {
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
-class CudaDeviceImpl ;
-
 class CudaDevice {
 public:
-  typedef size_t size_type ;
+  typedef unsigned int size_type ;
+  typedef CudaDevice   device_type ;
 
-  static CudaDevice & singleton();
-
-  template< typename ValueType >
-  void allocate( MDArrayViewRawData<ValueType,CudaDevice> & array ,
-                 const std::string & label )
-    {
-      if ( array.m_rank ) {
-        size_type count = 1 ;
-        for ( size_type r = 0 ; r < array.m_rank ; ++r ) {
-          count *= array.m_dimension[r] ;
-        }
-        array.m_ptr_on_device = reinterpret_cast<ValueType*>(
-          allocate_memory( sizeof(ValueType) , count , label ) );
-      }
-    }
+  //----------------------------------
+  // Non-parallel work arrays...
 
   template< typename ValueType >
-  void deallocate( MDArrayViewRawData<ValueType,CudaDevice> & array )
-    { deallocate_memory( array.m_ptr_on_device ); }
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_labeled_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            size_type n4 , size_type n5 ,
+                            size_type n6 , size_type n7 ,
+                            const std::string & label )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,n6,n7,label); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_labeled_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            size_type n4 , size_type n5 ,
+                            size_type n6 ,
+                            const std::string & label )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,n6,label); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_labeled_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            size_type n4 , size_type n5 ,
+                            const std::string & label )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,label); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_labeled_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            size_type n4 ,
+                            const std::string & label )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,label); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_labeled_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 , size_type n3 ,
+                            const std::string & label )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,label); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_labeled_mdarray( size_type n0 , size_type n1 ,
+                            size_type n2 ,
+                            const std::string & label )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,label); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_labeled_mdarray( size_type n0 , size_type n1 ,
+                            const std::string & label )
+  { return MDArrayView<ValueType,device_type>(n0,n1,label); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_labeled_mdarray( size_type n0 ,
+                            const std::string & label )
+  { return MDArrayView<ValueType,device_type>(n0,label); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_mdarray( size_type n0 , size_type n1 ,
+                    size_type n2 , size_type n3 ,
+                    size_type n4 , size_type n5 ,
+                    size_type n6 , size_type n7 )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,n6,n7,std::string()); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_mdarray( size_type n0 , size_type n1 ,
+                    size_type n2 , size_type n3 ,
+                    size_type n4 , size_type n5 ,
+                    size_type n6 )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,n6,std::string()); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_mdarray( size_type n0 , size_type n1 ,
+                    size_type n2 , size_type n3 ,
+                    size_type n4 , size_type n5 )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,n5,std::string()); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_mdarray( size_type n0 , size_type n1 ,
+                    size_type n2 , size_type n3 ,
+                    size_type n4 )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,n4,std::string()); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_mdarray( size_type n0 , size_type n1 ,
+                    size_type n2 , size_type n3 )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,n3,std::string()); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_mdarray( size_type n0 , size_type n1 ,
+                    size_type n2 )
+  { return MDArrayView<ValueType,device_type>(n0,n1,n2,std::string()); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_mdarray( size_type n0 , size_type n1 )
+  { return MDArrayView<ValueType,device_type>(n0,n1,std::string()); }
+
+  template< typename ValueType >
+  static inline
+  MDArrayView<ValueType,device_type>
+    create_mdarray( size_type n0 )
+  { return MDArrayView<ValueType,device_type>(n0,std::string()); }
+
+  //----------------------------------
+  // Device functionality:
 
   void print_allocations( std::ostream & ) const ;
 
+  static void * allocate_memory( size_type member_size ,
+                                 size_type member_count ,
+                                 const std::string & label );
+
+  static void deallocate_memory( void * );
+
 private:
-
-  void * allocate_memory( size_type member_size ,
-                          size_type member_count ,
-                          const std::string & label );
-
-  void deallocate_memory( void * );
-
-  CudaDeviceImpl * m_impl ;
 
   CudaDevice();
   CudaDevice( const CudaDevice & );

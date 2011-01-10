@@ -37,11 +37,13 @@
  *************************************************************************
  */
 
+#include <stdlib.h>
 #include <map>
 #include <ostream>
 #include <Kokkos_HostDevice.hpp>
 
 namespace Kokkos {
+namespace {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
@@ -53,6 +55,8 @@ public:
   // Appropriate cached device information
 
   HostDeviceImpl();
+
+  static HostDeviceImpl & singleton();
 };
 
 HostDeviceImpl::HostDeviceImpl()
@@ -62,17 +66,17 @@ HostDeviceImpl::HostDeviceImpl()
 
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-HostDevice & HostDevice::singleton()
+HostDeviceImpl & HostDeviceImpl::singleton()
 {
-  static HostDevice self ;
-  if ( self.m_impl == NULL ) { self.m_impl = new HostDeviceImpl(); }
-  return self ;
+  static HostDeviceImpl * impl = NULL ;
+  if ( impl == NULL ) { impl = new HostDeviceImpl(); }
+  return *impl ;
 }
 
-HostDevice::HostDevice() : m_impl( NULL ) {}
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 void * HostDevice::allocate_memory( size_type member_size ,
                                     size_type member_count ,
@@ -82,7 +86,7 @@ void * HostDevice::allocate_memory( size_type member_size ,
 
   ptr_on_device = calloc( member_size , member_count );
 
-  m_impl->m_allocations[ ptr_on_device ] = label ;
+  HostDeviceImpl::singleton().m_allocations[ ptr_on_device ] = label ;
 
   return ptr_on_device ;
 }
@@ -91,13 +95,15 @@ void HostDevice::deallocate_memory( void * ptr_on_device )
 {
   free( ptr_on_device );
 
-  m_impl->m_allocations.erase( ptr_on_device );
+  HostDeviceImpl::singleton().m_allocations.erase( ptr_on_device );
 }
 
 void HostDevice::print_allocations( std::ostream & s ) const
 {
-  std::map<void*,std::string>::const_iterator i = m_impl->m_allocations.begin();
-  std::map<void*,std::string>::const_iterator end = m_impl->m_allocations.end();
+  HostDeviceImpl & impl = HostDeviceImpl::singleton();
+
+  std::map<void*,std::string>::const_iterator i = impl.m_allocations.begin();
+  std::map<void*,std::string>::const_iterator end = impl.m_allocations.end();
 
   for ( ; i != end ; ++i ) {
     s << i->second << std::endl ;

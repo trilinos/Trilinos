@@ -42,9 +42,11 @@
 #include <Kokkos_CudaDevice.hpp>
 
 namespace Kokkos {
+namespace {
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+// For the cuda device singleton.
 
 class CudaDeviceImpl {
 public:
@@ -53,6 +55,8 @@ public:
   // Appropriate cached device information
 
   CudaDeviceImpl();
+
+  static CudaDeviceImpl & singleton();
 };
 
 CudaDeviceImpl::CudaDeviceImpl()
@@ -62,17 +66,17 @@ CudaDeviceImpl::CudaDeviceImpl()
 
 }
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-CudaDevice & CudaDevice::singleton()
+CudaDeviceImpl & CudaDeviceImpl::singleton()
 {
-  static CudaDevice self ;
-  if ( self.m_impl == NULL ) { self.m_impl = new CudaDeviceImpl(); }
-  return self ;
+  static CudaDeviceImpl * impl = NULL ;
+  if ( impl == NULL ) { impl = new CudaDeviceImpl(); }
+  return *impl ;
 }
 
-CudaDevice::CudaDevice() : m_impl( NULL ) {}
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 __global__
 void clear_memory( int * ptr , int count )
@@ -94,26 +98,30 @@ void * CudaDevice::allocate_memory( size_type member_size ,
   dim3 dimGrid(  256 , 1 , 1 );
   dim3 dimBlock( 256 , 1 , 1 );
 
+  // Require member_size be a multiple of word size?
+
   cudaMalloc( & ptr_on_device , member_size * member_count );
 
   clear_memory<<< dimGrid , dimBlock >>>( ptr_on_device , member_size * member_count / sizeof(unsigned) );
 
-  m_impl->m_allocations[ ptr_on_device ] = label ;
+  CudaDeviceImpl::singleton().m_allocations[ ptr_on_device ] = label ;
 
   return ptr_on_device ;
 }
 
 void CudaDevice::deallocate_memory( void * ptr_on_device )
 {
-  cudaFree( ptr_on_device );
+  CudaDeviceImpl::singleton().m_allocations.erase( ptr_on_device );
 
-  m_impl->m_allocations.erase( ptr_on_device );
+  cudaFree( ptr_on_device );
 }
 
 void CudaDevice::print_allocations( std::ostream & s ) const
 {
-  std::map<void*,std::string>::const_iterator i = m_impl->m_allocations.begin();
-  std::map<void*,std::string>::const_iterator end = m_impl->m_allocations.end();
+  CudaDeviceImpl & impl = CudaDeviceImpl::singleton() ;
+
+  std::map<void*,std::string>::const_iterator i = impl.m_allocations.begin();
+  std::map<void*,std::string>::const_iterator end = impl.m_allocations.end();
 
   for ( ; i != end ; ++i ) {
     s << i->second << std::endl ;

@@ -40,6 +40,7 @@
 #ifndef KOKKOS_CUDAMDARRAYVIEW_HPP
 #define KOKKOS_CUDAMDARRAYVIEW_HPP
 
+#include <Kokkos_MDArrayViewHelper.hpp>
 #include <Kokkos_CudaDevice.hpp>
 #include <Kokkos_CudaMap.hpp>
 
@@ -103,11 +104,8 @@ public:
       KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3,i4,i5,i6,iP) );
 
       return ( (value_type*) m_data.m_ptr_on_device )
-             [ ( iP + m_data.m_dimension[7] *
-               ( i0 + m_data.m_dimension[0] * ( i1 + m_data.m_dimension[1] *
-               ( i2 + m_data.m_dimension[2] * ( i3 + m_data.m_dimension[3] *
-               ( i4 + m_data.m_dimension[4] * ( i5 + m_data.m_dimension[5] *
-               ( i6 )))))))) ];
+             [ iP + m_data.m_dimension[7] *
+               MULTI_INDEX_LEFT_7(i0,i1,i2,i3,i4,i5,i6,m_data.m_dimension) ];
     }
 
   /** \brief  Query value of a rank 7 array */
@@ -124,10 +122,8 @@ public:
       KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3,i4,i5,iP) );
 
       return ( (value_type*) m_data.m_ptr_on_device )
-             [ ( iP + m_data.m_dimension[6] *
-               ( i0 + m_data.m_dimension[0] * ( i1 + m_data.m_dimension[1] *
-               ( i2 + m_data.m_dimension[2] * ( i3 + m_data.m_dimension[3] *
-               ( i4 + m_data.m_dimension[4] * ( i5 ))))))) ];
+             [ iP + m_data.m_dimension[6] *
+               MULTI_INDEX_LEFT_6(i0,i1,i2,i3,i4,i5,m_data.m_dimension) ];
     }
 
   /** \brief  Query value of a rank 6 array */
@@ -142,10 +138,8 @@ public:
       KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3,i4,iP) );
 
       return ( (value_type*) m_data.m_ptr_on_device )
-             [ ( iP + m_data.m_dimension[5] *
-               ( i0 + m_data.m_dimension[0] * ( i1 + m_data.m_dimension[1] *
-               ( i2 + m_data.m_dimension[2] * ( i3 + m_data.m_dimension[3] *
-               ( i4 )))))) ];
+             [ iP + m_data.m_dimension[5] *
+               MULTI_INDEX_LEFT_5(i0,i1,i2,i3,i4,m_data.m_dimension) ];
     }
 
   /** \brief  Query value of a rank 5 array */
@@ -160,9 +154,8 @@ public:
       KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3,iP) );
 
       return ( (value_type*) m_data.m_ptr_on_device )
-             [ ( iP + m_data.m_dimension[4] *
-               ( i0 + m_data.m_dimension[0] * ( i1 + m_data.m_dimension[1] *
-               ( i2 + m_data.m_dimension[2] * ( i3 ))))) ];
+             [ iP + m_data.m_dimension[4] *
+               MULTI_INDEX_LEFT_4(i0,i1,i2,i3,m_data.m_dimension) ];
     }
 
   /** \brief  Query value of a rank 4 array */
@@ -175,9 +168,8 @@ public:
       KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,iP) );
 
       return ( (value_type*) m_data.m_ptr_on_device )
-             [ ( iP + m_data.m_dimension[3] *
-               ( i0 + m_data.m_dimension[0] * ( i1 + m_data.m_dimension[1] *
-               ( i2 )))) ];
+             [ iP + m_data.m_dimension[3] *
+               MULTI_INDEX_LEFT_3(i0,i1,i2,m_data.m_dimension) ];
     }
 
   /** \brief  Query value of a rank 3 array */
@@ -190,8 +182,8 @@ public:
       KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,iP) );
 
       return ( (value_type*) m_data.m_ptr_on_device )
-             [ ( iP + m_data.m_dimension[2] *
-               ( i0 + m_data.m_dimension[0] * ( i1 ))) ];
+             [ iP + m_data.m_dimension[2] *
+               MULTI_INDEX_LEFT_2(i0,i1,m_data.m_dimension) ];
     }
 
   /** \brief  Query value of a rank 2 array */
@@ -202,7 +194,8 @@ public:
       KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,iP) );
 
       return ( (value_type*) m_data.m_ptr_on_device )
-             [ ( iP + m_data.m_dimension[1] * ( i0 )) ];
+             [ iP + m_data.m_dimension[1] *
+               MULTI_INDEX_LEFT_1(i0,m_data.m_dimension) ];
     }
 
   /** \brief  Query value of a rank 1 array */
@@ -248,14 +241,327 @@ private:
 
   friend class CudaMap ;
 
-  typedef MDArrayViewRawData<value_type,CudaDevice> raw_data_type ;
+  /** \brief  Separate view and data management details from
+   *          multi-index mapping details.
+   */
+  MDArrayViewRawData<value_type,CudaDevice> m_data ;
 
-  MDArrayView( raw_data_type & rhs ) : m_data( rhs ) {}
+  // Constructors that allocate the view on the device,
+  // only callable by the CudaMap class.
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               size_type n4 , size_type n5 ,
+               size_type n6 , size_type n7 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, n4, n5, n6, n7, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               size_type n4 , size_type n5 ,
+               size_type n6 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, n4, n5, n6, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               size_type n4 , size_type n5 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, n4, n5, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               size_type n4 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, n4, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               const std::string & label )
+    : m_data( n0, n1, label ) {}
+
+  MDArrayView( size_type n0 ,
+               const std::string & label )
+    : m_data( n0, label ) {}
+
+  MDArrayView( const std::string & label )
+    : m_data( label ) {}
+};
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+/** \brief  Multidimensional array allocated on a compute device.
+ *
+ *  The array is a simple rank-N container of simple scalar values
+ *  where 1 <= N <= 8.
+ *
+ *  No assumptions should be made as to the mapping, contiguity, or strides
+ *  of the storage of these arrays.
+ *
+ *  Unmapped arrays are typically used for shared values such as
+ *  the results of a reduction operation.
+ */
+
+template< typename ValueType >
+class MDArrayView< ValueType , CudaDevice > {
+public:
+  typedef CudaDevice  device_map_type ;
+  typedef CudaDevice  device_type ;
+  typedef CudaDevice  size_type ;
+  typedef ValueType   value_type ;
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Query rank of the array */
+  KOKKOS_DEVICE_AND_HOST_FUNCTION
+  size_type rank() const { return m_data.m_rank ; }
+
+  /** \brief  Query dimension of the given ordinate of the array */
+  template < typename iType >
+  KOKKOS_DEVICE_AND_HOST_FUNCTION
+  size_type dimension( const iType & rank_ordinate ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_rank(rank_ordinate) );
+      return m_data.m_dimension[rank_ordinate] ;
+    }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Query value of a rank 8 array */
+  template< typename iType0 , typename iType1 ,
+            typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 ,
+            typename iType6 , typename iType7 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
+                           const iType2 & i2 , const iType3 & i3 ,
+                           const iType4 & i4 , const iType5 & i5 ,
+                           const iType6 & i6 , const iType7 & i7 ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3,i4,i5,i6,i7) );
+
+      return ( (value_type*) m_data.m_ptr_on_device )
+             [ MULTI_INDEX_LEFT_8(i0,i1,i2,i3,i4,i5,i6,i7,m_data.m_dimension) ];
+    }
+
+  /** \brief  Query value of a rank 7 array */
+  template< typename iType0 , typename iType1 ,
+            typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 ,
+            typename iType6 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
+                           const iType2 & i2 , const iType3 & i3 ,
+                           const iType4 & i4 , const iType5 & i5 ,
+                           const iType6 & i6 ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3,i4,i5,i6) );
+
+      return ( (value_type*) m_data.m_ptr_on_device )
+             [ MULTI_INDEX_LEFT_7(i0,i1,i2,i3,i4,i5,i6,m_data.m_dimension) ];
+    }
+
+  /** \brief  Query value of a rank 6 array */
+  template< typename iType0 , typename iType1 ,
+            typename iType2 , typename iType3 ,
+            typename iType4 , typename iType5 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
+                           const iType2 & i2 , const iType3 & i3 ,
+                           const iType4 & i4 , const iType5 & i5 ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3,i4,i5) );
+
+      return ( (value_type*) m_data.m_ptr_on_device )
+             [ MULTI_INDEX_LEFT_6(i0,i1,i2,i3,i4,i5,m_data.m_dimension) ];
+    }
+
+  /** \brief  Query value of a rank 5 array */
+  template< typename iType0 , typename iType1 ,
+            typename iType2 , typename iType3 ,
+            typename iType4 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
+                           const iType2 & i2 , const iType3 & i3 ,
+                           const iType4 & i4 ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3,i4) );
+
+      return ( (value_type*) m_data.m_ptr_on_device )
+             [ MULTI_INDEX_LEFT_5(i0,i1,i2,i3,i4,m_data.m_dimension) ];
+    }
+
+  /** \brief  Query value of a rank 4 array */
+  template< typename iType0 , typename iType1 ,
+            typename iType2 , typename iType3 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
+                           const iType2 & i2 , const iType3 & i3 ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2,i3) );
+
+      return ( (value_type*) m_data.m_ptr_on_device )
+             [ MULTI_INDEX_LEFT_4(i0,i1,i2,i3,m_data.m_dimension) ];
+    }
+
+  /** \brief  Query value of a rank 3 array */
+  template< typename iType0 , typename iType1 ,
+            typename iType2 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()( const iType0 & i0 , const iType1 & i1 ,
+                           const iType2 & i2 ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1,i2) );
+
+      return ( (value_type*) m_data.m_ptr_on_device )
+             [ MULTI_INDEX_LEFT_3(i0,i1,i2,m_data.m_dimension) ];
+    }
+
+  /** \brief  Query value of a rank 2 array */
+  template< typename iType0 , typename iType1 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()( const iType0 & i0 , const iType1 & i1 ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0,i1) );
+
+      return ( (value_type*) m_data.m_ptr_on_device )
+             [ MULTI_INDEX_LEFT_2(i0,i1,m_data.m_dimension) ];
+    }
+
+  /** \brief  Query value of a rank 1 array */
+  template< typename iType0 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()( const iType0 & i0 ) const
+    {
+      KOKKOS_MDARRAY_CHECK( m_data.require_in_bounds(i0) );
+
+      return ( (value_type*) m_data.m_ptr_on_device )
+             [ ( i0 ) ];
+    }
+
+  /** \brief  Query value of a rank 0 array */
+  template< typename iType0 >
+  KOKKOS_DEVICE_FUNCTION
+  value_type & operator()() const
+    {
+      return *( (value_type*) m_data.m_ptr_on_device );
+    }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Construct a NULL view */
+  inline
+  MDArrayView() : m_data() {}
+
+  /** \brief  Construct a view of the array */
+  inline
+  MDArrayView( const MDArrayView & rhs ) : m_data( rhs.m_data ) {}
+
+  /** \brief  Assign to a view of the rhs array.
+   *          If the old view is the last view
+   *          then allocated memory is deallocated.
+   */
+  inline
+  MDArrayView & operator = ( const MDArrayView & rhs )
+    { m_data.operator=( rhs.m_data ); return *this ; }
+  
+  /**  \brief  Destroy this view of the array.
+   *           If the last view then allocated memory is deallocated.
+   */
+  inline
+  ~MDArrayView() {}
+
+  void clear_view()
+    { m_data.clear_view(); }
+
+  /*------------------------------------------------------------------*/
+  /** \brief  Wrap MDArrayView around CUDA memory on device. */
+
+  __device__
+  void assign( value_type * ptr_on_device ,
+               const size_type rank ,
+               const size_type dimension[] )
+    {
+      m_data.m_next_on_host  = NULL ;
+      m_data.m_ptr_on_device = ptr_on_device ;
+      for ( m_data.m_rank = 0 ; m_data.m_rank < rank ; ++m_data.m_rank ) {
+        m_data.m_dimension[ m_data.m_rank ] = dimension[ m_data.m_rank ] ;
+      }
+    }
+
+  /** \brief  Assign MDArrayView to CUDA memory on device. */
+  __device__
+  void assign( value_type * ptr_on_device )
+    {
+      m_data.m_next_on_host  = NULL ;
+      m_data.m_ptr_on_device = ptr_on_device ;
+    }
+
+  /*------------------------------------------------------------------*/
+
+private:
+
+  friend class CudaDevice ;
 
   /** \brief  Separate view and data management details from
    *          multi-index mapping details.
    */
-  raw_data_type m_data ;
+  MDArrayViewRawData<value_type,CudaDevice> m_data ;
+
+  // Constructors that allocate the view on the device
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               size_type n4 , size_type n5 ,
+               size_type n6 , size_type n7 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, n4, n5, n6, n7, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               size_type n4 , size_type n5 ,
+               size_type n6 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, n4, n5, n6, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               size_type n4 , size_type n5 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, n4, n5, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               size_type n4 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, n4, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 , size_type n3 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, n3, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               size_type n2 ,
+               const std::string & label )
+    : m_data( n0, n1, n2, label ) {}
+
+  MDArrayView( size_type n0 , size_type n1 ,
+               const std::string & label )
+    : m_data( n0, n1, label ) {}
+
+  MDArrayView( size_type n0 ,
+               const std::string & label )
+    : m_data( n0, label ) {}
+
+  MDArrayView( const std::string & label )
+    : m_data( label ) {}
 };
 
 //----------------------------------------------------------------------------
