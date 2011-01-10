@@ -71,60 +71,60 @@
 <a name="l00063"></a>00063 {
 <a name="l00064"></a>00064 
 <a name="l00074"></a>00074 <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Scalar, <span class="keyword">typename</span> LNO , <span class="keyword">typename</span> GNO, <span class="keyword">typename</span> AppGID&gt;
-<a name="l00075"></a>00075   <span class="keyword">class </span>ObjectSource {
+<a name="l00075"></a><a class="code" href="classZoltan2_1_1ObjectSource.html">00075</a>   <span class="keyword">class </span><a class="code" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> {
 <a name="l00076"></a>00076 
 <a name="l00077"></a>00077 <span class="keyword">private</span>:
 <a name="l00078"></a>00078 
-<a name="l00079"></a>00079   ObjectID&lt;LNO, GNO, AppGID&gt;  id;       
+<a name="l00079"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#fdc52e61d627c1224877e3eceb1ec9e9">00079</a>   <a class="code" href="classZoltan2_1_1ObjectID.html">ObjectID&lt;LNO, GNO, AppGID&gt;</a>  <a class="code" href="classZoltan2_1_1ObjectSource.html#fdc52e61d627c1224877e3eceb1ec9e9">id</a>;       
 <a name="l00081"></a>00081 <span class="keyword">public</span>:
 <a name="l00082"></a>00082 
-<a name="l00084"></a>00084   ObjectSource(){}
+<a name="l00084"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#55bb33a68539f710a23e51fc2bf29730">00084</a>   <a class="code" href="classZoltan2_1_1ObjectSource.html#55bb33a68539f710a23e51fc2bf29730">ObjectSource</a>(){}
 <a name="l00085"></a>00085 
-<a name="l00087"></a>00087   ~ObjectSource(){}
+<a name="l00087"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#9540b53d0a715bebc0bfccbc586bda71">00087</a>   <a class="code" href="classZoltan2_1_1ObjectSource.html#9540b53d0a715bebc0bfccbc586bda71">~ObjectSource</a>(){}
 <a name="l00088"></a>00088 
-<a name="l00090"></a>00090   ObjectSource(<span class="keyword">const</span> ObjectSource &amp;os){
+<a name="l00090"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#4fd8da87502131ae47dff75aa20d3b19">00090</a>   <a class="code" href="classZoltan2_1_1ObjectSource.html#55bb33a68539f710a23e51fc2bf29730">ObjectSource</a>(<span class="keyword">const</span> <a class="code" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> &amp;os){
 <a name="l00091"></a>00091   }
 <a name="l00092"></a>00092 
-<a name="l00094"></a>00094   ObjectSource &amp;operator=(<span class="keyword">const</span> ObjectSource &amp;os){
+<a name="l00094"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#97781c3a7c122054f7402bf3d1e83c31">00094</a>   <a class="code" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> &amp;<a class="code" href="classZoltan2_1_1ObjectSource.html#97781c3a7c122054f7402bf3d1e83c31">operator=</a>(<span class="keyword">const</span> <a class="code" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> &amp;os){
 <a name="l00095"></a>00095   }
 <a name="l00096"></a>00096 
-<a name="l00100"></a>00100   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> has_matrix(){}
+<a name="l00100"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#e6d584513fd9f0cc46100256789db4d9">00100</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#e6d584513fd9f0cc46100256789db4d9">has_matrix</a>(){}
 <a name="l00101"></a>00101 
-<a name="l00107"></a>00107   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> has_dense_matrix(){}
+<a name="l00107"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#816268bbaedb0f375ec9ab42a0f92848">00107</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#816268bbaedb0f375ec9ab42a0f92848">has_dense_matrix</a>(){}
 <a name="l00108"></a>00108 
-<a name="l00114"></a>00114   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> has_csr_matrix(){}
+<a name="l00114"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#dd96b2214f41c284c098f85992b4705d">00114</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#dd96b2214f41c284c098f85992b4705d">has_csr_matrix</a>(){}
 <a name="l00115"></a>00115 
-<a name="l00121"></a>00121   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> has_csc_matrix(){}
+<a name="l00121"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#40f686656987b5d3fb18d3ade69a4fd2">00121</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#40f686656987b5d3fb18d3ade69a4fd2">has_csc_matrix</a>(){}
 <a name="l00122"></a>00122 
-<a name="l00125"></a>00125   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> has_graph(){}
+<a name="l00125"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#dea3c4bcee72bd93ea1012bd68e9ca48">00125</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#dea3c4bcee72bd93ea1012bd68e9ca48">has_graph</a>(){}
 <a name="l00126"></a>00126 
-<a name="l00129"></a>00129   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> has_vertices(){}
+<a name="l00129"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#1767a4cf6b9a5fdc7fa17eed5391d3f9">00129</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#1767a4cf6b9a5fdc7fa17eed5391d3f9">has_vertices</a>(){}
 <a name="l00130"></a>00130 
-<a name="l00133"></a>00133   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> has_vertex_coordinates(){}
+<a name="l00133"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#b7eee12ae0820fbdbec5e2af05ce65b3">00133</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#b7eee12ae0820fbdbec5e2af05ce65b3">has_vertex_coordinates</a>(){}
 <a name="l00134"></a>00134 
-<a name="l00137"></a>00137   <span class="keyword">virtual</span> <span class="keywordtype">int</span> coordinate_dimension(){}
+<a name="l00137"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#c6a03245a92709311f1c7cda785f0180">00137</a>   <span class="keyword">virtual</span> <span class="keywordtype">int</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#c6a03245a92709311f1c7cda785f0180">coordinate_dimension</a>(){}
 <a name="l00138"></a>00138 
-<a name="l00141"></a>00141   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> symmetric_matrix(){}
+<a name="l00141"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#bd95873fd99437d8fc1850a1f01208ac">00141</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#bd95873fd99437d8fc1850a1f01208ac">symmetric_matrix</a>(){}
 <a name="l00142"></a>00142 
-<a name="l00145"></a>00145   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> bipartite_graph(){}
+<a name="l00145"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#bb213bba1500e9e6cf6706b203a16ebc">00145</a>   <span class="keyword">virtual</span> <span class="keywordtype">bool</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#bb213bba1500e9e6cf6706b203a16ebc">bipartite_graph</a>(){}
 <a name="l00146"></a>00146 
-<a name="l00155"></a>00155   <span class="keyword">virtual</span> <span class="keywordtype">void</span> number_of_vertices(GNO &amp;global_count, LNO &amp;local_count){}
+<a name="l00155"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#6f93ca27c03b7e30b0827bb1722399c5">00155</a>   <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#6f93ca27c03b7e30b0827bb1722399c5">number_of_vertices</a>(GNO &amp;global_count, LNO &amp;local_count){}
 <a name="l00156"></a>00156 
-<a name="l00166"></a>00166   <span class="keyword">virtual</span> <span class="keywordtype">int</span> caller_gid_list(AppGID * &amp;gids){}
+<a name="l00166"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#4f0dbe7ec15bfbe7daa107bcefed9742">00166</a>   <span class="keyword">virtual</span> <span class="keywordtype">int</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#4f0dbe7ec15bfbe7daa107bcefed9742">caller_gid_list</a>(AppGID * &amp;gids){}
 <a name="l00167"></a>00167 
-<a name="l00175"></a>00175   <span class="keyword">virtual</span> <span class="keywordtype">int</span> global_number_list(GNO *gnos){}
+<a name="l00175"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#be29b81a455d5d9f8a87016d09aaff79">00175</a>   <span class="keyword">virtual</span> <span class="keywordtype">int</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#be29b81a455d5d9f8a87016d09aaff79">global_number_list</a>(GNO *gnos){}
 <a name="l00176"></a>00176 
-<a name="l00179"></a>00179   <span class="keyword">virtual</span> <span class="keywordtype">int</span> vertex_coordinates(Tpetra_MultiVector&lt;Scalar, LNO, GNO&gt; &amp;coords){}
+<a name="l00179"></a><a class="code" href="classZoltan2_1_1ObjectSource.html#6e8343ca0641886bb75bb1fa2ae9c36d">00179</a>   <span class="keyword">virtual</span> <span class="keywordtype">int</span> <a class="code" href="classZoltan2_1_1ObjectSource.html#6e8343ca0641886bb75bb1fa2ae9c36d">vertex_coordinates</a>(Tpetra_MultiVector&lt;Scalar, LNO, GNO&gt; &amp;coords){}
 <a name="l00180"></a>00180 
 <a name="l00181"></a>00181   <span class="comment">// TODO: add methods to get matrix and graph info.</span>
 <a name="l00182"></a>00182 
-<a name="l00193"></a>00193   <span class="keyword">virtual</span> LNO gno_to_lno(GNO gno);
+<a name="l00193"></a>00193   <span class="keyword">virtual</span> LNO <a class="code" href="classZoltan2_1_1ObjectSource.html#239470f05d99811db1a650d1694a1417">gno_to_lno</a>(GNO gno);
 <a name="l00194"></a>00194 
-<a name="l00197"></a>00197   <span class="keyword">virtual</span> GNO lno_to_gno(LNO lno);
+<a name="l00197"></a>00197   <span class="keyword">virtual</span> GNO <a class="code" href="classZoltan2_1_1ObjectSource.html#ef52112e6373c5b4b94847c956ede3c1">lno_to_gno</a>(LNO lno);
 <a name="l00198"></a>00198 
-<a name="l00201"></a>00201   <span class="keyword">virtual</span> AppGID &amp;gno_to_appGid(GNO gno);
+<a name="l00201"></a>00201   <span class="keyword">virtual</span> AppGID &amp;<a class="code" href="classZoltan2_1_1ObjectSource.html#1bbc86917da448a27e087dacfb2c06b9">gno_to_appGid</a>(GNO gno);
 <a name="l00202"></a>00202 
-<a name="l00205"></a>00205   <span class="keyword">virtual</span> AppGID &amp;lno_to_appGid(GNO gno);
+<a name="l00205"></a>00205   <span class="keyword">virtual</span> AppGID &amp;<a class="code" href="classZoltan2_1_1ObjectSource.html#30de78b423736c73e8f57a4e015a1b5d">lno_to_appGid</a>(GNO gno);
 <a name="l00206"></a>00206 };
 <a name="l00207"></a>00207 
 <a name="l00208"></a>00208 <span class="preprocessor">#if 0</span>
@@ -261,11 +261,12 @@
 <a name="l00467"></a>00467 <span class="comment">    ExodusFileSource  </span>
 <a name="l00468"></a>00468 <span class="comment">    TpetraCrsMatrixSource, etc.       Tpetra and Epetra objects</span>
 <a name="l00469"></a>00469 <span class="comment">*/</span>
-<a name="l00470"></a>00470 
-<a name="l00471"></a>00471 } <span class="comment">// namespace Zoltan2</span>
-<a name="l00472"></a>00472 
-<a name="l00473"></a>00473 <span class="preprocessor">#endif </span><span class="comment">/* _ZOLTAN2_OBJECTSOURCE_HPP_ */</span>
-</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jan 10 12:17:18 2011 for Zoltan 2 by&nbsp;
+<a name="l00470"></a>00470 <span class="preprocessor">#endif</span>
+<a name="l00471"></a>00471 <span class="preprocessor"></span>
+<a name="l00472"></a>00472 } <span class="comment">// namespace Zoltan2</span>
+<a name="l00473"></a>00473 
+<a name="l00474"></a>00474 <span class="preprocessor">#endif </span><span class="comment">/* _ZOLTAN2_OBJECTSOURCE_HPP_ */</span>
+</pre></div><hr size="1"><address style="align: right;"><small>Generated on Mon Jan 10 12:33:29 2011 for Zoltan 2 by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.7 </small></address>
 </body>

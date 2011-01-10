@@ -150,7 +150,7 @@ public:
       "vertices" because the normal use case is geometric or a graph.
 
      \param global_count will contain the global number of vertices on return
-     \param global_count will contain the local number of vertices on return
+     \param local_count will contain the local number of vertices on return
    */
   virtual void number_of_vertices(GNO &global_count, LNO &local_count){}
 
@@ -467,6 +467,7 @@ public:
     ExodusFileSource  
     TpetraCrsMatrixSource, etc.       Tpetra and Epetra objects
 */
+#endif
 
 } // namespace Zoltan2
 

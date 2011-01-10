@@ -15,7 +15,7 @@ The workflow for a Zoltan2 problem is illustrated below:
 A Zoltan algorithm is presented with an objective, for example partitioning objects in order
 to balance a workload.  In addition, algorithm parameters 
 and a candidate solution may provided.
-The algorithm calculates a solution for the objective.  These Objective and the Result correspond
+The algorithm calculates a solution for the objective.  The Objective and the Result correspond
 to classes in Zoltan2, and the algorithms are the Zoltan methods.
 
 \code

@@ -64,7 +64,7 @@ The <a class="el" href="classZoltan2_1_1Result.html">Result</a> contains the res
 It can be queried by the caller. It can be passed with an <a class="el" href="classZoltan2_1_1Objective.html">Objective</a> to a method that will compute a quality metric. It can be passed with an objective to a <a class="el" href="namespaceZoltan2.html">Zoltan2</a> method for further computation and improvement.<p>
 TODO: Enhance methods so they can use the result even if refinement of a mesh has occured since the result was computed.<p>
 TODO: some of the instance variables are actually smart pointers to objects created elsewhere<p>
-TODO: It's not clear to me yet what the design of this class should be. Solutions differ depending on the problem input (ObjectSource) and the method applied. So if an Epetra_RowMatrix is partitioned the result could be new Epetra_Maps. Or it could be a mapping from global row ID to process ID. If a graph read from a matrix market file is colored, the result could be a map from vertex global IDs to color numbers. If matrix rows are ordered, do we provide the order for the local rows or all rows. Is this all in one class, or do we have subclasses for different combinations of input type and zoltan method. 
+TODO: It's not clear to me yet what the design of this class should be. Solutions differ depending on the problem input (<a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a>) and the method applied. So if an Epetra_RowMatrix is partitioned the result could be new Epetra_Maps. Or it could be a mapping from global row ID to process ID. If a graph read from a matrix market file is colored, the result could be a map from vertex global IDs to color numbers. If matrix rows are ordered, do we provide the order for the local rows or all rows. Is this all in one class, or do we have subclasses for different combinations of input type and zoltan method. 
 <p>
 <hr><h2>Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" name="7ef8c0fa5a9f949e559f94081f295ea0"></a><!-- doxytag: member="Zoltan2::Result::Result" ref="7ef8c0fa5a9f949e559f94081f295ea0" args="()" -->
@@ -314,7 +314,7 @@ mapping our gid to the caller's
 </div><p>
 <hr>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="Zoltan2__Result_8hpp-source.html">Zoltan2_Result.hpp</a></ul>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Jan 10 12:17:18 2011 for Zoltan 2 by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jan 10 12:33:29 2011 for Zoltan 2 by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.7 </small></address>
 </body>

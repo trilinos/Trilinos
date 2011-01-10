@@ -26,12 +26,7 @@
 <p>
 <code>#include &lt;<a class="el" href="Zoltan2__ObjectSource_8hpp-source.html">Zoltan2_ObjectSource.hpp</a>&gt;</code>
 <p>
-Inheritance diagram for Zoltan2::ObjectSource&lt; Scalar, LNO, GNO, AppGID &gt;:<p><center><img src="classZoltan2_1_1ObjectSource__inherit__graph.png" border="0" usemap="#Zoltan2_1_1ObjectSource_3_01Scalar_00_01LNO_00_01GNO_00_01AppGID_01_4__inherit__map" alt="Inheritance graph"></center>
-<map name="Zoltan2_1_1ObjectSource_3_01Scalar_00_01LNO_00_01GNO_00_01AppGID_01_4__inherit__map">
-<area href="classZoltan2_1_1ExodusFileDualSource.html" shape="rect" coords="5,83,432,111" alt="">
-<area href="classZoltan2_1_1ExodusFileSource.html" shape="rect" coords="456,83,853,111" alt="">
-</map>
-<center><font size="2">[<a href="graph_legend.html">legend</a>]</font></center><a href="classZoltan2_1_1ObjectSource-members.html">List of all members.</a><table border="0" cellpadding="0" cellspacing="0">
+<a href="classZoltan2_1_1ObjectSource-members.html">List of all members.</a><table border="0" cellpadding="0" cellspacing="0">
 <tr><td></td></tr>
 <tr><td colspan="2"><br><h2>Public Member Functions</h2></td></tr>
 <tr><td class="memItemLeft" nowrap align="right" valign="top">&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classZoltan2_1_1ObjectSource.html#55bb33a68539f710a23e51fc2bf29730">ObjectSource</a> ()</td></tr>
@@ -78,9 +73,12 @@ Inheritance diagram for Zoltan2::ObjectSource&lt; Scalar, LNO, GNO, AppGID &gt;:
 
 <tr><td class="memItemLeft" nowrap align="right" valign="top">virtual AppGID &amp;&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classZoltan2_1_1ObjectSource.html#30de78b423736c73e8f57a4e015a1b5d">lno_to_appGid</a> (GNO gno)</td></tr>
 
+<tr><td colspan="2"><br><h2>Private Attributes</h2></td></tr>
+<tr><td class="memItemLeft" nowrap align="right" valign="top"><a class="el" href="classZoltan2_1_1ObjectID.html">ObjectID</a>&lt; LNO, GNO, AppGID &gt;&nbsp;</td><td class="memItemRight" valign="bottom"><a class="el" href="classZoltan2_1_1ObjectSource.html#fdc52e61d627c1224877e3eceb1ec9e9">id</a></td></tr>
+
 </table>
 <hr><a name="_details"></a><h2>Detailed Description</h2>
-<h3>template&lt;class Scalar, class LNO, class GNO, class AppGID&gt;<br>
+<h3>template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt;<br>
  class Zoltan2::ObjectSource&lt; Scalar, LNO, GNO, AppGID &gt;</h3>
 
 The adapter class for specific mesh, graph, hypergraph or matrix sources. 
@@ -93,7 +91,7 @@ The <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> pres
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::<a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a>           </td>
@@ -114,7 +112,7 @@ Constructor
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::~<a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a>           </td>
@@ -135,7 +133,7 @@ Destructor
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::<a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a>           </td>
@@ -158,7 +156,7 @@ Copy Constructor
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname"><a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a>&amp; <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::operator=           </td>
@@ -180,7 +178,7 @@ Assignment operator
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::has_matrix           </td>
@@ -195,15 +193,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 True if <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> represents a matrix TODO - declare const functions 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#446795faba07cb4a86ddd71d27257898">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="816268bbaedb0f375ec9ab42a0f92848"></a><!-- doxytag: member="Zoltan2::ObjectSource::has_dense_matrix" ref="816268bbaedb0f375ec9ab42a0f92848" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::has_dense_matrix           </td>
@@ -219,15 +215,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 <p>
 True if <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> is stored in dense matrix format.<p>
 The function using the <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> may be able to use it more efficiently if it know how it is stored. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#bd3107f91f3ebea8b3f9c5a19514c63f">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="dd96b2214f41c284c098f85992b4705d"></a><!-- doxytag: member="Zoltan2::ObjectSource::has_csr_matrix" ref="dd96b2214f41c284c098f85992b4705d" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::has_csr_matrix           </td>
@@ -243,15 +237,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 <p>
 True if <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> is stored in compressed sparse row format.<p>
 The function using the <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> may be able to use it more efficiently if it know how it is stored. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#fb42a2de90e912fbbb0b6727a1afe7f9">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="40f686656987b5d3fb18d3ade69a4fd2"></a><!-- doxytag: member="Zoltan2::ObjectSource::has_csc_matrix" ref="40f686656987b5d3fb18d3ade69a4fd2" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::has_csc_matrix           </td>
@@ -267,15 +259,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 <p>
 True if <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> is stored in compressed sparse column format.<p>
 The function using the <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> may be able to use it more efficiently if it know how it is stored. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#6f179c15a75152e85d74739abab8959c">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="dea3c4bcee72bd93ea1012bd68e9ca48"></a><!-- doxytag: member="Zoltan2::ObjectSource::has_graph" ref="dea3c4bcee72bd93ea1012bd68e9ca48" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::has_graph           </td>
@@ -290,15 +280,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 True if <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> is stored as vertices and edges. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#8d79adfa977292c04a54eb7b47276c21">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="1767a4cf6b9a5fdc7fa17eed5391d3f9"></a><!-- doxytag: member="Zoltan2::ObjectSource::has_vertices" ref="1767a4cf6b9a5fdc7fa17eed5391d3f9" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::has_vertices           </td>
@@ -313,15 +301,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 True if <a class="el" href="classZoltan2_1_1ObjectSource.html">ObjectSource</a> has a vertex list. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#9061a6aa260c6ed286035190c1ee700c">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="b7eee12ae0820fbdbec5e2af05ce65b3"></a><!-- doxytag: member="Zoltan2::ObjectSource::has_vertex_coordinates" ref="b7eee12ae0820fbdbec5e2af05ce65b3" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::has_vertex_coordinates           </td>
@@ -336,15 +322,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 True if vertices have coordinates. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#8dc22825a00b8410bc903abec4a07d4a">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="c6a03245a92709311f1c7cda785f0180"></a><!-- doxytag: member="Zoltan2::ObjectSource::coordinate_dimension" ref="c6a03245a92709311f1c7cda785f0180" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual int <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::coordinate_dimension           </td>
@@ -359,15 +343,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 Returns the dimension of coordinates, or 0 if there are no coordinates. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#363443f2f809085b067841f918f3bc50">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="bd95873fd99437d8fc1850a1f01208ac"></a><!-- doxytag: member="Zoltan2::ObjectSource::symmetric_matrix" ref="bd95873fd99437d8fc1850a1f01208ac" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::symmetric_matrix           </td>
@@ -382,15 +364,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 Returns true if the matrix is symmetric (TODO - other important matrix properties?) 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#6ff6df2027361b1dc136b36a3886fc34">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="bb213bba1500e9e6cf6706b203a16ebc"></a><!-- doxytag: member="Zoltan2::ObjectSource::bipartite_graph" ref="bb213bba1500e9e6cf6706b203a16ebc" args="()" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual bool <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::bipartite_graph           </td>
@@ -405,15 +385,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 Returns true if the graph is bipartite (TODO - other important graph properties?) 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#9aa93a80e35208c7feb044019e2dd1da">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="6f93ca27c03b7e30b0827bb1722399c5"></a><!-- doxytag: member="Zoltan2::ObjectSource::number_of_vertices" ref="6f93ca27c03b7e30b0827bb1722399c5" args="(GNO &amp;global_count, LNO &amp;local_count)" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual void <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::number_of_vertices           </td>
@@ -442,19 +420,17 @@ Vertices may also be abstract objects known only by an ID. We call them "vertice
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>global_count</em>&nbsp;</td><td>will contain the global number of vertices on return </td></tr>
-    <tr><td valign="top"></td><td valign="top"><em>global_count</em>&nbsp;</td><td>will contain the local number of vertices on return </td></tr>
+    <tr><td valign="top"></td><td valign="top"><em>local_count</em>&nbsp;</td><td>will contain the local number of vertices on return </td></tr>
   </table>
 </dl>
 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#04b48079ec40ef6eeffa0b980c1bffec">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="4f0dbe7ec15bfbe7daa107bcefed9742"></a><!-- doxytag: member="Zoltan2::ObjectSource::caller_gid_list" ref="4f0dbe7ec15bfbe7daa107bcefed9742" args="(AppGID *&amp;gids)" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual int <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::caller_gid_list           </td>
@@ -470,7 +446,7 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 Returns the applications's object global IDs.<p>
-TODO: we should be able to do partitioning without having global IDs from the application when there's no connectivity. The Zoltan methods shouldn't call this - they will work with GNOs. But when creating or reading the Result object, they need the AppGIDs.<p>
+TODO: we should be able to do partitioning without having global IDs from the application when there's no connectivity. The Zoltan methods shouldn't call this - they will work with GNOs. But when creating or reading the <a class="el" href="classZoltan2_1_1Result.html">Result</a> object, they need the AppGIDs.<p>
 <dl compact><dt><b>Parameters:</b></dt><dd>
   <table border="0" cellspacing="2" cellpadding="0">
     <tr><td valign="top"></td><td valign="top"><em>gids</em>&nbsp;</td><td>will contain a pointer to the application's global IDs on return </td></tr>
@@ -483,7 +459,7 @@ TODO: we should be able to do partitioning without having global IDs from the ap
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual int <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::global_number_list           </td>
@@ -506,15 +482,13 @@ Info returned by other methods is in the order corresponding to the order of the
   </table>
 </dl>
 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#93b91e95deadc59b1e20578d64cbb09b">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="6e8343ca0641886bb75bb1fa2ae9c36d"></a><!-- doxytag: member="Zoltan2::ObjectSource::vertex_coordinates" ref="6e8343ca0641886bb75bb1fa2ae9c36d" args="(Tpetra_MultiVector&lt; Scalar, LNO, GNO &gt; &amp;coords)" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual int <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::vertex_coordinates           </td>
@@ -530,15 +504,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 Returns the coordinates of the vertices. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#d03684f3c57eeb276a62d38391732f02">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="239470f05d99811db1a650d1694a1417"></a><!-- doxytag: member="Zoltan2::ObjectSource::gno_to_lno" ref="239470f05d99811db1a650d1694a1417" args="(GNO gno)" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual LNO <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::gno_to_lno           </td>
@@ -557,15 +529,13 @@ Return the local number corresponding to the global number.<p>
 Local numbers are consecutive numbers beginning at 0 for each process. Global numbers are consecutive across the application and begin at 0.<p>
 TODO - local/global/application ID management is likely to be the same across all sources. Maybe this should be done in the base class.<p>
 TODO - for efficiency, list versions of these calls. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#1363bfe7e12058ee2513f7409f2a7f84">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="ef52112e6373c5b4b94847c956ede3c1"></a><!-- doxytag: member="Zoltan2::ObjectSource::lno_to_gno" ref="ef52112e6373c5b4b94847c956ede3c1" args="(LNO lno)" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual GNO <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::lno_to_gno           </td>
@@ -581,15 +551,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 Return the global number corresponding to the local number. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#4b1e5de9b23b1f9b22eb03911144a4c8">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="1bbc86917da448a27e087dacfb2c06b9"></a><!-- doxytag: member="Zoltan2::ObjectSource::gno_to_appGid" ref="1bbc86917da448a27e087dacfb2c06b9" args="(GNO gno)" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual AppGID&amp; <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::gno_to_appGid           </td>
@@ -605,15 +573,13 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 Return the application's GID corresponding to the global number. 
-<p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#492e3bf54e7869d8bc6094a921c91557">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
 </div>
 </div><p>
 <a class="anchor" name="30de78b423736c73e8f57a4e015a1b5d"></a><!-- doxytag: member="Zoltan2::ObjectSource::lno_to_appGid" ref="30de78b423736c73e8f57a4e015a1b5d" args="(GNO gno)" -->
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">virtual AppGID&amp; <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::lno_to_appGid           </td>
@@ -629,13 +595,29 @@ template&lt;class Scalar, class LNO, class GNO, class AppGID&gt; </div>
 
 <p>
 Return the application's GID corresponding to the local number. 
+</div>
+</div><p>
+<hr><h2>Member Data Documentation</h2>
+<a class="anchor" name="fdc52e61d627c1224877e3eceb1ec9e9"></a><!-- doxytag: member="Zoltan2::ObjectSource::id" ref="fdc52e61d627c1224877e3eceb1ec9e9" args="" -->
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Scalar, typename LNO, typename GNO, typename AppGID&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classZoltan2_1_1ObjectID.html">ObjectID</a>&lt;LNO, GNO, AppGID&gt; <a class="el" href="classZoltan2_1_1ObjectSource.html">Zoltan2::ObjectSource</a>&lt; Scalar, LNO, GNO, AppGID &gt;::<a class="el" href="classZoltan2_1_1ObjectSource.html#fdc52e61d627c1224877e3eceb1ec9e9">id</a><code> [private]</code>          </td>
+        </tr>
+      </table>
+</div>
+<div class="memdoc">
+
 <p>
-Reimplemented in <a class="el" href="classZoltan2_1_1ExodusFileSource.html#d63a0c19f8b0662e4d4b9324ade6c0bc">Zoltan2::ExodusFileSource&lt; Scalar, LNO, GNO, AppGID &gt;</a>.
+The global IDs, and global numbers 
 </div>
 </div><p>
 <hr>The documentation for this class was generated from the following file:<ul>
 <li><a class="el" href="Zoltan2__ObjectSource_8hpp-source.html">Zoltan2_ObjectSource.hpp</a></ul>
-<hr size="1"><address style="align: right;"><small>Generated on Mon Jan 3 17:46:47 2011 for Zoltan 2 by&nbsp;
+<hr size="1"><address style="align: right;"><small>Generated on Mon Jan 10 12:33:29 2011 for Zoltan 2 by&nbsp;
 <a href="http://www.doxygen.org/index.html">
 <img src="doxygen.png" alt="doxygen" align="middle" border="0"></a> 1.4.7 </small></address>
 </body>
