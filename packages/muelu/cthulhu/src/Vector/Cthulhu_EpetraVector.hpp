@@ -125,7 +125,7 @@ namespace Cthulhu {
     double meanValue() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->MeanValue(&r); return r; }
 
     // Note: Added to Cthulhu. Not present in Tpetra
-    //using TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::maxValue; // overloading, not hiding
+    using EpetraMultiVector::maxValue; // overloading, not hiding
     //! Compute max value of this Vector.
     double maxValue() const { CTHULHU_DEBUG_ME; double r; getEpetra_MultiVector()->MaxValue(&r); return r; }
     //@} 

@@ -252,8 +252,8 @@ namespace Cthulhu {
 //           else  
             TEST_FOR_EXCEPTION(1, Cthulhu::Exceptions::RuntimeError, "Cannot convert Cthulhu::CombineMode to Tpetra::CombineMode: unknow CombineMode value."); 
 
-      const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> & v = *tSource.getTpetra_Vector();
-      this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doImport(v, *tImporter.getTpetra_Import(), tCM); 
+            //      const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal,Node> & v = *tSource.getTpetra_Vector();
+            // this->TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getTpetra_MultiVector()->doImport(v, *tImporter.getTpetra_Import(), tCM); 
     }
 
     void doExport(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dest,
