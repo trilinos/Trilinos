@@ -436,7 +436,7 @@ namespace Anasazi {
       // the index range is different than [0, (# columns in mv) - 1].
       MV_ptr mv_view;
       if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
-	mv_view = Teuchos::rcp (&mv, false); // Non-owning RCP
+	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
       else
 	mv_view = CloneViewNonConst (mv, index);
 
@@ -445,7 +445,7 @@ namespace Anasazi {
       // the first index.size() columns of A.
       const_MV_ptr A_view;
       if (index.size() == numColsA)
-	A_view = Teuchos::rcp (&A, false); // Non-owning RCP
+	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
       else
 	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
@@ -454,7 +454,7 @@ namespace Anasazi {
       // HAVE_TPETRA_DEBUG is defined at compile time, operator=()
       // will throw an std::runtime_error if the Maps are
       // incompatible.
-      *mv_view = A_view; 
+      *mv_view = *A_view; 
     }
 
     static void MvRandom( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )

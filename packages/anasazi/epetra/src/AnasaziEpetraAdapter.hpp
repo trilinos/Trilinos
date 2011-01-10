@@ -1011,16 +1011,16 @@ namespace Anasazi {
       // the index range is different than [0, (# columns in mv) - 1].
       Teuchos::RCP<Epetra_MultiVector> mv_view;
       if (index.lbound() == 0 && index.ubound()+1 == numColsMv)
-	mv_view = Teuchos::rcp (&mv, false); // Non-owning RCP
+	mv_view = Teuchos::rcpFromRef (mv); // Non-const, non-owning RCP
       else
 	mv_view = CloneViewNonConst (mv, index);
 
       // View of the relevant column(s) of the source multivector A.
       // If A has fewer columns than mv_view, then create a view of
       // the first index.size() columns of A.
-      Teuchos::RCP<Epetra_MultiVector> A_view;
+      Teuchos::RCP<const Epetra_MultiVector> A_view;
       if (index.size() == numColsA)
-	A_view = Teuchos::rcp (&A, false); // Non-owning RCP
+	A_view = Teuchos::rcpFromRef (A); // Const, non-owning RCP
       else
 	A_view = CloneView (A, Teuchos::Range1D(0, index.size()-1));
 
@@ -1031,7 +1031,7 @@ namespace Anasazi {
       // undefined behavior.  Epetra_MultiVector::Update() also
       // ignores the Epetra_Maps, so we might as well just use the
       // (perhaps slightly cheaper) Assign() method via operator=().
-      *mv_view = A_view; 
+      *mv_view = *A_view; 
     }
 
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.
