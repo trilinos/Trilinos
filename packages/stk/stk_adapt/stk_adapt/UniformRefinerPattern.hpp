@@ -977,8 +977,8 @@ namespace stk {
                 unsigned ordinal_of_node_on_subcell = ref_topo_x[childNodeIdx].ordinal_of_node_on_subcell;
                 unsigned num_nodes_on_subcell       = ref_topo_x[childNodeIdx].num_nodes_on_subcell;
 
-                // bool usePerm = true;  FIXME FIXME FIXME
-                bool usePerm = false;
+                bool usePerm = true;  //FIXME FIXME FIXME
+                //bool usePerm = false;
                 const unsigned * perm_array = 0;
                 if (usePerm)
                   {
