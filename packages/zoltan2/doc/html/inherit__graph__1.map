@@ -1,0 +1,5 @@
+base referer
+rect $classZoltan2_1_1Objective.html 5,55 352,83
+rect $classZoltan2_1_1ColoringObjective.html 411,5 811,33
+rect $classZoltan2_1_1OrderingObjective.html 409,55 812,83
+rect $classZoltan2_1_1PartitioningObjective.html 400,106 821,134

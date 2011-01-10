@@ -4,19 +4,52 @@
 
 \section zoltan2_intro Introduction to Zoltan2
 
+This document is a work in progress.
+
 \section zoltan2_startup Overview of Zoltan2
 
 The workflow for a Zoltan2 problem is illustrated below:
 
+\image html algorithmWorkflow.png
+
 A Zoltan algorithm is presented with an objective, for example partitioning objects in order
-to balance a workload or coloring the vertices of a graph.  In addition, algorithm parameters 
+to balance a workload.  In addition, algorithm parameters 
 and a candidate solution may provided.
-The algorithm calculates a solution for the objective.  These inputs and output correspond
+The algorithm calculates a solution for the objective.  These Objective and the Result correspond
 to classes in Zoltan2, and the algorithms are the Zoltan methods.
+
+\code
+void rcb(Objective<Scalar, LNO, GNO, AppGID> &o, Teuchos::ParameterList &p, Result<LNO, GNO> &r)
+\endcode
 
 \section zoltan2_classes Zoltan 2 classes
 
-\section zoltan2_classes Zoltan 2 examples
+These diagrams were created with plantUML.  Each class is templated, but I wasn't able to show that with plantUML.
+
+\subsection zoltan2_objectid The ObjectID class
+\image html ObjectIDClass.png
+
+\subsection zoltan2_objectsource The ObjectSource class
+\image html ObjectSourceClass.png
+
+\subsection zoltan2_objective The Objective class
+\image html ObjectiveClass.png
+
+\subsection zoltan2_result The Result class
+\image html ResultClass.png
+
+\section zoltan2_evaluation Evaluating the quality of a Zoltan result
+
+The workflow for evaluating a result for an objective is illustrated here:
+
+\image html evaluationWorkflow.png
+
+\code
+void evaluate(Objective<Scalar, LNO, GNO, AppGID> &o, Result<LNO, GNO> &r)
+\endcode
+
+
+\section zoltan2_examples Zoltan 2 examples
 
 // These sections can have links to sections on other .doc files.  See isorropia.
 // HTML lists can be used in this file.

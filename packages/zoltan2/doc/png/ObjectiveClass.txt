@@ -1,0 +1,26 @@
+'plantUML input file
+'Class diagram for Objective
+'
+
+@startuml
+
+class Objective{
+ObjectSource<Scalar, LNO, GNO, AppGID> source
+ObjectID<LNO, GNO, AppGID> gid
+vector<GNO> fixed_vertices
+vector<float> part_sizes
+vector<float> vertex_weights
+virtual void get_weights() 
+virtual bool get_edge_list()
+virtual void etc()
+}
+
+note  "The Objective provides a uniform interface to \nthe problem definition for the Zoltan methods." as N
+
+Objective <|-- PartitioningObjective
+Objective <|-- ColoringObjective
+Objective <|-- OrderingObjective
+Objective <|-- MatchingObjective
+
+@enduml
+

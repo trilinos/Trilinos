@@ -1,0 +1,20 @@
+'plantUML input file
+'Class diagram for Result
+'
+
+@startuml
+
+class Result {
+Tpetra::Vector<int, LNO, GNO> value
+void setPartForGNOs()
+void getPartForGIDs()
+void getPartForGNOs()
+void setColorForGNOs()
+void getColorForGIDs()
+void getColorForGNOs()
+void etc()
+}
+note  "A Result object contains a solution for\nan objective.  I'm not clear whether it\nshould be an abstract base class with instantiations\nfor Partition, Color, etc or just a class." as N
+
+@enduml
+

@@ -1,0 +1,27 @@
+'plantUML input file
+'Highest level workflow diagram, also known as activity diagram
+'  "Evaluate quality of Result" is a Zoltan2 LB_Eval.
+'
+@startuml
+
+(*) --> "Objective object\nResult object" 
+
+if "validate input" then
+  ---->[valid] "Evaluate quality\nof Result"
+  if "test success\nof evaluation" then
+    -down->[yes] "write\nQuality"
+  else
+    --right--->[no] "throw error" 
+  endif
+
+else
+  ---->[invalid] "throw error" 
+endif
+
+"throw error" -down-> (*)
+"write\nQuality" --right-> (*)
+
+
+
+@enduml
+

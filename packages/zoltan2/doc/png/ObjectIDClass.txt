@@ -1,0 +1,20 @@
+'plantUML input file
+'Class diagram for ObjectID
+'
+@startuml
+
+class ObjectID {
+Tpetra::MultiVector<AppGID, LNO, GNO> gid
+Tpetra::MultiVector<int, LNO, GNO> value
+void update()
+void find()
+void gid2gno()
+void gno2lno()
+void gno2gid()
+void etc()
+}
+
+note  "Object ID maps between application GID,\nZoltan2 GNO, and process LNO.  It can also\nmap an object to a part, color,order or\nother integer value." as N
+
+@enduml
+

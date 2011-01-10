@@ -1,0 +1,30 @@
+'plantUML input file
+'Class diagram for ObjectSource
+'
+
+@startuml
+
+class ObjectSource{
+ObjectID<LNO, GNO, AppGID> ids;
+Tpetra_MultiVector<Scalar, LNO, GNO> coordinates;
+virtual bool has_matrix()
+virtual bool has_dense_matrix()
+virtual bool has_csr_matrix()
+virtual bool has_csc_matrix()
+virtual bool has_graph()
+virtual bool has_vertices()
+virtual bool has_vertex_coordinates()
+virtual int coordinate_dimension()
+virtual void get_vertex_coordinates()
+virtual void etc()
+}
+
+note  "The ObjectSource is the base class for classes\nrepresenting the application objects." as N
+
+ObjectSource <|-- ArrayObjectSource
+ObjectSource <|-- TestObjectSource
+ObjectSource <|-- MatrixMarketObjectSource
+ObjectSource <|-- CallbackObjectSource
+
+@enduml
+

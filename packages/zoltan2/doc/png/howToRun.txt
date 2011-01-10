@@ -1,0 +1,9 @@
+java -jar plantuml.jar file1 file2 file3
+
+will create a png for each startuml.
+
+java -jar plantuml.jar directoryName
+
+all files in that directory
+
+java -jar plantuml.jar -help

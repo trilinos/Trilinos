@@ -1,0 +1,27 @@
+'plantUML input file
+'Highest level workflow diagram, also known as activity diagram.
+'  "Algorithm" is partitioning, or coloring, or ordering.
+'
+@startuml
+
+(*) --> "Objective object\nTeuchos::ParameterList (optional)\nResult object (optional)" 
+
+if "validate input" then
+  ---->[valid] "Algorithm"
+  if "test success" then
+    -down->[yes] "write\nResult object"
+  else
+    --right--->[no] "throw error" 
+  endif
+
+else
+  ---->[invalid] "throw error" 
+endif
+
+"throw error" -down-> (*)
+"write\nResult object" --right-> (*)
+
+
+
+@enduml
+
