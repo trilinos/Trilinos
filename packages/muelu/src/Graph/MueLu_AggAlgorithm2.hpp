@@ -37,6 +37,7 @@
 using namespace std;
 using namespace MueLu;
 using Teuchos::ArrayView;
+typedef ArrayView<const int>::const_iterator iter;
 
 int MueLu_PrintLevel();
 
@@ -231,21 +232,13 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
                              const std::string & label,
                              const Graph<int,int> &graph)
 {
-  int      Nphase1_agg, i, j, k, kk, nonaggd_neighbors;
-  int      AdjacentAgg, total_aggs;
-  int      best_score, score, best_agg, BestMark, myPid;
-  int      nAggregates, nVertices, exp_nRows;
-  int      Nleftover = 0, Nsingle = 0, Adjacent;
-  double   printFlag, factor = 1., penalty;
-
-  nVertices    = graph.GetNodeNumVertices();
-  exp_nRows    = nVertices + graph.GetNodeNumGhost();
-  myPid        = graph.GetComm()->getRank();
-  printFlag    = aggOptions.GetPrintFlag();
-  nAggregates  = aggregates.GetNumAggregates();
+  int nVertices    = graph.GetNodeNumVertices();
+  int exp_nRows    = nVertices + graph.GetNodeNumGhost();
+  int myPid        = graph.GetComm()->getRank();
+  double printFlag = aggOptions.GetPrintFlag();
+  int nAggregates  = aggregates.GetNumAggregates();
 
   int minNodesPerAggregate = aggOptions.GetMinNodesPerAggregate();
-  Nphase1_agg = nAggregates;
 
   const RCP<const Cthulhu::Map<int,int> > nonUniqueMap = aggregates.GetVertex2AggId()->getMap();
   const RCP<const Cthulhu::Map<int,int> > uniqueMap = graph.GetDomainMap();
@@ -289,7 +282,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       // neighOfINode is the neighbor node list of node 'i'.
       ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
       
-      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         int colj = *it;
         if (vertex2AggId[colj] == MUELU_UNAGGREGATED) {
           weights[colj]= 1.;
@@ -306,7 +299,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   int total_phase_one_aggregated = 0;
   {
     int phase_one_aggregated = 0;
-    for (i = 0; i < nVertices; i++) {
+    for (int i = 0; i < nVertices; i++) {
       if (vertex2AggId[i] != MUELU_UNAGGREGATED)
         phase_one_aggregated++;
     }
@@ -324,10 +317,11 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   /* base the number of new aggregates created on the percentage of     */
   /* unaggregated nodes.                                                */
 
+  double factor = 1.;
   factor = ((double) total_phase_one_aggregated)/((double)(total_nVertices + 1));
   factor = pow(factor, aggOptions.GetPhase3AggCreation());
 
-  for (i = 0; i < nVertices; i++) {
+  for (int i = 0; i < nVertices; i++) {
     if (vertex2AggId[i] == MUELU_UNAGGREGATED) 
       {
 
@@ -335,8 +329,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
         ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
         int rowi_N = neighOfINode.size();
 
-        nonaggd_neighbors = 0;
-        for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        int nonaggd_neighbors = 0;
+        for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
           int colj = *it;
           if (vertex2AggId[colj] == MUELU_UNAGGREGATED && colj < nVertices)
             nonaggd_neighbors++;
@@ -345,7 +339,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
               (((double) nonaggd_neighbors)/((double) rowi_N) > factor))
           {
             vertex2AggId[i] = (nAggregates)++;
-            for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+            for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
               int colj = *it;
               if (vertex2AggId[colj]==MUELU_UNAGGREGATED) {
                 vertex2AggId[colj] = vertex2AggId[i];
@@ -364,6 +358,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
 
   if ( printFlag < MueLu_PrintLevel()) {
+    int Nphase1_agg = nAggregates;
+    int total_aggs;
 
     sumAll(graph.GetComm(), Nphase1_agg, total_aggs);
 
@@ -372,7 +368,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
              total_phase_one_aggregated);
       printf("Aggregation(%s) : Phase 1 - total aggregates = %d\n",label.c_str(), total_aggs);
     }
-    i = nAggregates - Nphase1_agg;
+    int i = nAggregates - Nphase1_agg;
 
     { int ii; sumAll(graph.GetComm(),i,ii); i = ii; }
     if ( myPid == 0 ) {
@@ -454,8 +450,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       threshold = (threshold*(kkk+1.))/((double) MUELU_PHASE4BUCKETS);
       priorThreshold = threshold;
 
-      for (k = 0; k < nCandidates ; k++ ) { 
-        i = candidates[k];                  
+      for (int k = 0; k < nCandidates ; k++ ) { 
+        int i = candidates[k];                  
         if ((vertex2AggId[i] == MUELU_UNAGGREGATED) && 
             (fabs(temp[i])  < threshold)) {
           // Note: priorThreshold <= fabs(temp[i]) <= 1
@@ -465,8 +461,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
 
           if (neighOfINode.size() > minNodesPerAggregate) { //TODO: check if this test is exactly was we want to do
             int count = 0;
-            for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-              Adjacent    = *it;
+            for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+              int Adjacent    = *it;
               // This might not be true if someone close to i
               // is chosen as a root via fabs(temp[]) < Threshold
               if (vertex2AggId[Adjacent] == MUELU_UNAGGREGATED){
@@ -481,8 +477,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
               aggregates.SetIsRoot(i);
             }
             else { // undo things
-              for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-                Adjacent    = *it;
+              for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+                int Adjacent    = *it;
                 if (vertex2AggId[Adjacent] == nAggregates){
                   vertex2AggId[Adjacent] = MUELU_UNAGGREGATED;
                   weights[Adjacent] = 0.;
@@ -518,22 +514,22 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   Teuchos::ArrayRCP<int> agg_incremented = Teuchos::arcp<int>(nAggregates+1);
   Teuchos::ArrayRCP<int> SumOfMarks = Teuchos::arcp<int>(nAggregates+1);
 
-  for (i = 0; i < exp_nRows; i++)   Mark[i] = MUELU_DISTONE_VERTEX_WEIGHT;
-  for (i = 0; i < nAggregates; i++) agg_incremented[i] = 0;
-  for (i = 0; i < nAggregates; i++) SumOfMarks[i] = 0;
+  for (int i = 0; i < exp_nRows; i++)   Mark[i] = MUELU_DISTONE_VERTEX_WEIGHT;
+  for (int i = 0; i < nAggregates; i++) agg_incremented[i] = 0;
+  for (int i = 0; i < nAggregates; i++) SumOfMarks[i] = 0;
 
   // Grab the transpose matrix graph for unaggregated ghost vertices.
   //     a) count the number of nonzeros per row in the transpose
 
   vector<int> RowPtr(exp_nRows+1-nVertices);
-  for (i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
-  for (i = 0; i < nVertices;  i++) {
+  for (int i = nVertices; i < exp_nRows ;  i++) RowPtr[i-nVertices] = 0;
+  for (int i = 0; i < nVertices;  i++) {
 
     // neighOfINode is the neighbor node list of node 'iNode'.
     ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
 
-    for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-      j = *it;
+    for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      int j = *it;
       if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
         RowPtr[j-nVertices]++;
       }
@@ -543,7 +539,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   //     b) Convert RowPtr[i] to point to 1st first nnz spot in row i.
 
   int iSum = 0, iTemp;
-  for (i = nVertices; i < exp_nRows ;  i++) {
+  for (int i = nVertices; i < exp_nRows ;  i++) {
     iTemp = RowPtr[i-nVertices];
     RowPtr[i-nVertices] = iSum;
     iSum += iTemp;
@@ -552,13 +548,13 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   vector<int> cols(iSum+1);
    
   //     c) Traverse matrix and insert entries in proper location.
-  for (i = 0; i < nVertices;  i++) {
+  for (int i = 0; i < nVertices;  i++) {
 
     // neighOfINode is the neighbor node list of node 'iNode'.
     ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
     
-    for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-      j = *it;
+    for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      int j = *it;
       if ( (j >= nVertices) && (vertex2AggId[j] == MUELU_UNAGGREGATED)){
         cols[RowPtr[j-nVertices]++] = i;
       }
@@ -566,7 +562,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   }
 
   //     d) RowPtr[i] points to beginning of row i+1 so shift by one location.
-  for (i = exp_nRows; i > nVertices;  i--)
+  for (int i = exp_nRows; i > nVertices;  i--)
     RowPtr[i-nVertices] = RowPtr[i-1-nVertices];
   RowPtr[0] = 0;
   
@@ -577,9 +573,9 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
  
   bool cannotLoseAllFriends; // Used to address possible loss of vertices in 
   // arbitration of shared nodes discussed above.
-  for (kk = 0; kk < 10; kk += 2) {
+  for (int kk = 0; kk < 10; kk += 2) {
     bestScoreCutoff = thresholds[kk];
-    for (i = 0; i < exp_nRows; i++) {
+    for (int i = 0; i < exp_nRows; i++) {
       if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
 
         // neighOfINode is the neighbor node list of node 'iNode'.
@@ -597,9 +593,9 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
           
           neighOfINode = ArrayView<const int>(rowi_col, rowi_N);
         }
-        for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-          Adjacent    = *it;
-          AdjacentAgg = vertex2AggId[Adjacent];
+        for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          int Adjacent    = *it;
+          int AdjacentAgg = vertex2AggId[Adjacent];
 
           //Adjacent is aggregated and either I own the aggregate
           // or I could own the aggregate after arbitration.
@@ -609,10 +605,12 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
             SumOfMarks[AdjacentAgg] += Mark[Adjacent];
           }
         }
-        best_score = MUELU_NOSCORE;
-        for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-          Adjacent    = *it;
-          AdjacentAgg = vertex2AggId[Adjacent];
+        int best_score = MUELU_NOSCORE;
+        int best_agg; // TODO: init ?
+        int BestMark;
+        for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          int Adjacent    = *it;
+          int AdjacentAgg = vertex2AggId[Adjacent];
           //Adjacent is unaggregated, has some value and no
           //other processor has definitively claimed him
           if ((AdjacentAgg != MUELU_UNAGGREGATED) && 
@@ -624,10 +622,10 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
             // AdjacentAgg having already been incremented 
             // during this phase, then compute score.
 
-            penalty = (double) (INCR_SCALING*agg_incremented[AdjacentAgg]);
+            double penalty = (double) (INCR_SCALING*agg_incremented[AdjacentAgg]);
             if (penalty > MUELU_PENALTYFACTOR*((double)SumOfMarks[AdjacentAgg]))
               penalty = MUELU_PENALTYFACTOR*((double)SumOfMarks[AdjacentAgg]);
-            score = SumOfMarks[AdjacentAgg]- ((int) floor(penalty));
+            int score = SumOfMarks[AdjacentAgg]- ((int) floor(penalty));
 
             if (score > best_score) { 
               best_agg             = AdjacentAgg; 
@@ -654,9 +652,9 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
           }
         }
         // Clean up
-         for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-          Adjacent    = *it;
-          AdjacentAgg = vertex2AggId[Adjacent];
+         for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+          int Adjacent    = *it;
+          int AdjacentAgg = vertex2AggId[Adjacent];
           if (AdjacentAgg >= 0) SumOfMarks[AdjacentAgg] = 0;
         }
         // Tentatively assign vertex to best_agg. 
@@ -682,7 +680,8 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   //          aggregates.
 
   int count = 0;
-  for (i = 0; i < nVertices; i++) { 
+  int Nleftover = 0, Nsingle = 0;
+  for (int i = 0; i < nVertices; i++) { 
     if ((vertex2AggId[i] == MUELU_UNAGGREGATED) ) {
       Nleftover++;
 
@@ -696,7 +695,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
       weights[i] = 1.;
       if (count == 0) aggregates.SetIsRoot(i);
       count++;
-      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
         int j = *it;
         if ((j != i)&&(vertex2AggId[j] == MUELU_UNAGGREGATED)&&
             (j < nVertices)) {
@@ -715,7 +714,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   if (count != 0) {
     // Can stick small aggregate with 0th aggregate?
     if (nAggregates > 0) {
-      for (i = 0; i < nVertices; i++) {
+      for (int i = 0; i < nVertices; i++) {
         if ((vertex2AggId[i] == nAggregates) && (procWinner[i] == myPid)){
           vertex2AggId[i] = 0;
           aggregates.SetIsRoot(i,false);
@@ -734,6 +733,7 @@ int MueLu_AggregateLeftOvers(const AggregationOptions &aggOptions,
   if (printFlag < MueLu_PrintLevel()) {
     { int total_Nsingle=0;   sumAll(graph.GetComm(), Nsingle, total_Nsingle);     Nsingle = total_Nsingle; }
     { int total_Nleftover=0; sumAll(graph.GetComm(), Nleftover, total_Nleftover); Nleftover = total_Nleftover; }
+    int total_aggs;
     sumAll(graph.GetComm(), nAggregates, total_aggs);
     if ( myPid == 0 ) {
       printf("Aggregation(%s) : Phase 3 - total aggregates = %d\n",label.c_str(), total_aggs);
@@ -753,26 +753,24 @@ int MueLu_RootCandidates(int nVertices, Teuchos::ArrayRCP<int> vertex2AggId, con
 
   //TODO: interface : ArrayRCP useless ?
 
-  int  adjacent;
-  bool noAggdNeighbors;
-
   nCandidates = 0;
  
   for (int i = 0; i < nVertices; i++ ) {
     if (vertex2AggId[i] == MUELU_UNAGGREGATED) {
-      noAggdNeighbors = true;
+      bool noAggdNeighbors = true;
 
       // neighOfINode is the neighbor node list of node 'iNode'.
       ArrayView<const int> neighOfINode = graph.getNeighborVertices(i);
 
-      for (ArrayView<const int>::const_iterator it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
-        adjacent    = *it;
+      for (iter it = neighOfINode.begin(); it != neighOfINode.end(); ++it) {
+        int adjacent    = *it;
         if (vertex2AggId[adjacent] != MUELU_UNAGGREGATED) 
           noAggdNeighbors = false;
       }
       if (noAggdNeighbors == true) candidates[nCandidates++] = i;
     }
   }
+
   sumAll(graph.GetComm(), nCandidates, nCandidatesGlobal);
 
   return 0;
