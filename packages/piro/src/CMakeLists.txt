@@ -11,64 +11,67 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.hpp)
 #
 
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 SET(HEADERS ${HEADERS}
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.hpp
   )
 
 #
-# B.1) utilities directory
+# B.1) utilities 
 #
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utilities)
-APPEND_SET(HEADERS utilities/Piro_ValidPiroParameters.hpp
-            utilities/Piro_Version.hpp
-            utilities/Piro_ConfigDefs.hpp)
-APPEND_SET(SOURCES utilities/Piro_ValidPiroParameters.cpp
-            utilities/Piro_Version.cpp)
+APPEND_SET(HEADERS Piro_ValidPiroParameters.hpp
+                   Piro_Version.hpp
+                   Piro_ConfigDefs.hpp)
+APPEND_SET(SOURCES Piro_ValidPiroParameters.cpp
+                   Piro_Version.cpp)
 
 #
-# B.2) epetra directory
+# B.2) epetra files
 #
 # Optional NOX Dependency (which includes LOCA)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/epetra)
 IF (Piro_ENABLE_NOX) 
-  APPEND_SET(HEADERS epetra/Piro_Epetra_NOXSolver.hpp
-                     epetra/Piro_Epetra_LOCASolver.hpp
-                     epetra/Piro_Epetra_VelocityVerletSolver.hpp
-                     epetra/Piro_Epetra_MatrixFreeDecorator.hpp)
-  APPEND_SET(SOURCES epetra/Piro_Epetra_NOXSolver.cpp
-                     epetra/Piro_Epetra_LOCASolver.cpp
-                     epetra/Piro_Epetra_VelocityVerletSolver.cpp
-                     epetra/Piro_Epetra_MatrixFreeDecorator.cpp)
+  APPEND_SET(HEADERS Piro_Epetra_NOXSolver.hpp
+                     Piro_Epetra_LOCASolver.hpp
+                     Piro_Epetra_VelocityVerletSolver.hpp
+                     Piro_Epetra_MatrixFreeDecorator.hpp)
+  APPEND_SET(SOURCES Piro_Epetra_NOXSolver.cpp
+                     Piro_Epetra_LOCASolver.cpp
+                     Piro_Epetra_VelocityVerletSolver.cpp
+                     Piro_Epetra_MatrixFreeDecorator.cpp)
 ENDIF()
 # Optional Rythmos Dependency
 IF (Piro_ENABLE_Rythmos) 
-  APPEND_SET(HEADERS epetra/Piro_Epetra_RythmosSolver.hpp
-                     thyra/Piro_Thyra_RythmosSolver.hpp
-                     thyra/Piro_Thyra_RythmosSolver_Def.hpp
-                     epetra/Piro_Epetra_InvertMassMatrixDecorator.hpp) 
-  APPEND_SET(SOURCES epetra/Piro_Epetra_RythmosSolver.cpp
-                     epetra/Piro_Epetra_InvertMassMatrixDecorator.cpp)
+  APPEND_SET(HEADERS Piro_Epetra_RythmosSolver.hpp
+                     Piro_RythmosSolver.hpp
+                     Piro_RythmosSolver_Def.hpp
+                     Piro_Epetra_InvertMassMatrixDecorator.hpp) 
+  APPEND_SET(SOURCES Piro_Epetra_RythmosSolver.cpp
+                     Piro_Epetra_InvertMassMatrixDecorator.cpp)
 ENDIF()
+
 # Optional StochasticGalerkin capability, dependion upon Stokhos and NOX
-# NEED TO CREATE  epetra/Piro_Epetra_StokhosNOXSolver from ENAT
+# NEED TO CREATE  Piro_Epetra_StokhosNOXSolver from ENAT
 IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
-  APPEND_SET(HEADERS epetra/Piro_Epetra_StokhosNOXObserver.hpp) 
-  APPEND_SET(SOURCES epetra/Piro_Epetra_StokhosNOXObserver.cpp)
+  APPEND_SET(HEADERS Piro_Epetra_StokhosNOXObserver.hpp) 
+  APPEND_SET(SOURCES Piro_Epetra_StokhosNOXObserver.cpp)
 ENDIF()
 #
 
 #
-# B.2) thyra directory
+# B.2) Analysis Tools
 #
 
 IF (Piro_ENABLE_TriKota)
   ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 ENDIF() 
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/thyra)
-  APPEND_SET(HEADERS thyra/Piro_Thyra_PerformAnalysis.hpp) 
-  APPEND_SET(SOURCES thyra/Piro_Thyra_PerformAnalysis.cpp)
+APPEND_SET(HEADERS Piro_PerformAnalysis.hpp) 
+APPEND_SET(SOURCES Piro_PerformAnalysis.cpp)
+
+## DEPRECATED Thyra Namespace in Piro: REMOVE THESE FOR TRILINOS 11.0)
+APPEND_SET(HEADERS Piro_Thyra_PerformAnalysis.hpp) 
+APPEND_SET(SOURCES Piro_Thyra_PerformAnalysis.cpp)
 
 #
 # C) Define the targets for package's library(s)
@@ -79,4 +82,3 @@ PACKAGE_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
-

@@ -35,6 +35,9 @@
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
+
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 
@@ -42,12 +45,12 @@
 
 #ifdef  NOX_NOT_YET_CONVERTED_TO_THYRA
 #ifdef Piro_ENABLE_NOX
-#include "Piro_Thyra_NOXSolver.hpp"
-#include "Piro_Thyra_LOCASolver.hpp"
+#include "Piro_NOXSolver.hpp"
+#include "Piro_LOCASolver.hpp"
 #endif
 #endif
 #ifdef Piro_ENABLE_Rythmos
-#include "Piro_Thyra_RythmosSolver.hpp"
+#include "Piro_RythmosSolver.hpp"
 #endif
 
 
@@ -55,13 +58,12 @@ int main(int argc, char *argv[]) {
 
   int status=0; // 0 = pass, failures are incremented
   int overall_status=0; // 0 = pass, failures are incremented over multiple tests
+  bool success=true;
 
-  // Initialize MPI and timer
-  int Proc=0;
+  // Initialize MPI 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  int Proc=mpiSession.getRank();
 #ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-  double total_time = -MPI_Wtime();
-  (void) MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
   MPI_Comm appComm = MPI_COMM_WORLD;
 #else
   int appComm=0;
@@ -69,7 +71,7 @@ int main(int argc, char *argv[]) {
 
   using Teuchos::RCP;
   using Teuchos::rcp;
-  char* inputFile;
+  std::string inputFile;
 
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
@@ -133,10 +135,10 @@ int main(int argc, char *argv[]) {
 #ifdef  NOX_NOT_YET_CONVERTED_TO_THYRA
 #ifdef Piro_ENABLE_NOX
       if (solver=="NOX") {
-        piro = rcp(new Piro::Thyra::NOXSolver(piroParams, thyraModel));
+        piro = rcp(new Piro::NOXSolver(piroParams, thyraModel));
       }
       else if (solver=="LOCA") {
-        piro = rcp(new Piro::Thyra::LOCASolver(
+        piro = rcp(new Piro::LOCASolver(
                        piroParams, thyraModel, Teuchos::null));
       }
       else
@@ -144,7 +146,7 @@ int main(int argc, char *argv[]) {
 #endif
 #ifdef Piro_ENABLE_Rythmos
       if (solver=="Rythmos") {
-        piro = rcp(new Piro::Thyra::RythmosSolver<double>(piroParams, thyraModel));
+        piro = rcp(new Piro::RythmosSolver<double>(piroParams, thyraModel));
       }
       else 
 #endif
@@ -161,7 +163,7 @@ int main(int argc, char *argv[]) {
       int num_p = inArgs.Np();     // Number of *vectors* of parameters
       assert (num_p == 1);  // Logic needs to be generalized -- hardwire to 1 p vector in model
       RCP<Thyra::VectorBase<double> > p1 = Thyra::createMember(*piro->get_p_space(0));
-      Thyra::copy(*inArgsNominal.get_p(0), p1.get());
+      Thyra::copy(*inArgsNominal.get_p(0), p1.ptr());
       int numParams = p1->space()->dim(); // Number of parameters in p1 vector
       
       inArgs.set_p(0,p1);
@@ -201,34 +203,11 @@ int main(int argc, char *argv[]) {
         cout <<
           "\n-----------------------------------------------------------------\n";
     }
-
-    catch (std::exception& e) {
-      cout << e.what() << endl;
-      status = 10;
-    }
-    catch (string& s) {
-      cout << s << endl;
-      status = 20;
-    }
-    catch (char *s) {
-      cout << s << endl;
-      status = 30;
-    }
-    catch (...) {
-      cout << "Caught unknown exception!" << endl;
-      status = 40;
-    }
+    TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+    if (!success) status+=1000;
 
     overall_status += status;
   }
-
-#ifdef HAVE_MPI
-  total_time +=  MPI_Wtime();
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (Proc==0) cout << "\n\nTOTAL TIME     " 
-                    << total_time << endl;
-  MPI_Finalize() ;
-#endif
 
   if (Proc==0) {
     if (overall_status==0) 

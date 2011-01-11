@@ -28,8 +28,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_THYRA_RYTHMOSSOLVER_H
-#define PIRO_THYRA_RYTHMOSSOLVER_H
+#ifndef PIRO_RYTHMOSSOLVER_H
+#define PIRO_RYTHMOSSOLVER_H
 
 #include <iostream>
 
@@ -51,11 +51,10 @@
  */
 
 namespace Piro {
-namespace Thyra {
 
 template <typename Scalar>
 class RythmosSolver
-    : public ::Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
+    : public Thyra::ResponseOnlyModelEvaluatorBase<Scalar>
 {
 
   public:
@@ -65,7 +64,7 @@ class RythmosSolver
 
   /** \brief Takes the number of elements in the discretization . */
   RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> appParams,
-                Teuchos::RCP< ::Thyra::ModelEvaluatorDefaultBase<Scalar> > model,
+                Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model,
                 Teuchos::RCP<Rythmos::IntegrationObserverBase<Scalar> > observer = Teuchos::null
                 );
 
@@ -78,19 +77,19 @@ class RythmosSolver
   //@{
 
   /** \brief . */
-  ::Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
-  ::Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
-  ::Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar> createOutArgsImpl() const;
   /** \brief . */
-  Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int i) const;
   /** \brief . */
-  Teuchos::RCP<const ::Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int i) const;
 
   /** \brief . */
-  void evalModelImpl( const ::Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
-                  const ::Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs ) const;
+  void evalModelImpl( const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,
+                  const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs ) const;
 
   private:
   /** \brief . */
@@ -102,7 +101,7 @@ class RythmosSolver
 
    //These are set in the constructor and used in evalModel
    mutable Teuchos::RCP<Teuchos::ParameterList> appParams;
-   Teuchos::RCP< ::Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
+   Teuchos::RCP< Thyra::ModelEvaluatorDefaultBase<Scalar> > model;
 
    int num_p;
    int num_g;
@@ -117,7 +116,6 @@ class RythmosSolver
 };
 
 }
-}
 
-#include "Piro_Thyra_RythmosSolver_Def.hpp"
+#include "Piro_RythmosSolver_Def.hpp"
 #endif

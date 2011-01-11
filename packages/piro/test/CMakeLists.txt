@@ -21,9 +21,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 IF (Piro_ENABLE_NOX) 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    Solver
+    EpetraSolver
     SOURCES 
-    Main_Solver.cpp
+    Main_EpetraSolver.cpp
     MockModelEval_A.cpp
     MockModelEval_A.hpp
     SaveEigenData_Epetra.cpp
@@ -78,7 +78,7 @@ IF (Piro_ENABLE_NOX)
           input_Solve_RythmosMatrixFree_Fails.xml
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    EXEDEPS Solver AnalysisDriver
+    EXEDEPS EpetraSolver ThyraSolver AnalysisDriver
   )
 
 ENDIF()
